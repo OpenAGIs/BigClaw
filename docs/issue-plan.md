@@ -9,6 +9,15 @@
 - BIG-EPIC-11: 产品化 UI 与控制台
 - BIG-EPIC-12: 计费、套餐与商业化控制
 
+### Epic 10: 跨部门 Agent Orchestration (`OPE-83`)
+
+#### Goal
+- Add a cross-team flow overview page so operations can track orchestration handoffs, approvals, and blocked departments in one place.
+
+#### Delivery shape
+- Reuse `OrchestrationPlan`, premium policy decisions, and `TaskRun` execution evidence to summarize active cross-team flows.
+- Provide both report and HTML page renderers so the overview can feed future console/dashboard surfaces without duplicating orchestration logic.
+
 ### Epic 9: 工程运营系统 (`OPE-65`)
 
 #### Goal

@@ -1,12 +1,17 @@
 from pathlib import Path
 
 from bigclaw.reports import (
-    build_auto_triage_center,
+    CrossTeamFlowOverview,
+    CrossTeamFlowSnapshot,
     PilotMetric,
     PilotPortfolio,
     PilotScorecard,
+    build_auto_triage_center,
+    build_cross_team_flow_overview,
     evaluate_issue_closure,
     render_auto_triage_center_report,
+    render_cross_team_flow_overview_page,
+    render_cross_team_flow_overview_report,
     render_issue_validation_report,
     render_pilot_portfolio_report,
     render_pilot_scorecard,
@@ -14,7 +19,8 @@ from bigclaw.reports import (
     write_report,
 )
 from bigclaw.observability import TaskRun
-from bigclaw.models import Task
+from bigclaw.models import RiskLevel, Task
+from bigclaw.orchestration import CrossDepartmentOrchestrator, PremiumOrchestrationPolicy
 
 
 def test_render_and_write_report(tmp_path: Path):
@@ -200,3 +206,81 @@ def test_auto_triage_center_prioritizes_failed_and_pending_runs():
     assert "Severity Mix: critical=1 high=1 medium=0" in report
     assert "run-browser: severity=critical owner=engineering status=failed" in report
     assert "run-risk: severity=high owner=security status=needs-approval" in report
+
+
+def test_cross_team_flow_overview_summarizes_handoffs_and_blockers() -> None:
+    orchestrator = CrossDepartmentOrchestrator()
+
+    approval_task = Task(
+        task_id="OPE-83-approval",
+        source="linear",
+        title="Customer analytics rollout approval",
+        description="Stakeholder rollout needs security approval",
+        labels=["data", "customer", "premium"],
+        risk_level=RiskLevel.HIGH,
+        required_tools=["browser", "sql"],
+        acceptance_criteria=["approval recorded"],
+    )
+    approval_plan = orchestrator.plan(approval_task)
+    approval_run = TaskRun.from_task(approval_task, run_id="run-approval", medium="browser")
+    approval_run.finalize("needs-approval", "waiting on security review before customer rollout")
+
+    blocked_task = Task(
+        task_id="OPE-83-blocked",
+        source="jira",
+        title="Warehouse launch coordination",
+        description="Customer-ready release with data validation",
+        labels=["data", "customer"],
+        required_tools=["sql"],
+        risk_level=RiskLevel.HIGH,
+    )
+    blocked_plan = orchestrator.plan(blocked_task)
+    constrained_plan, blocked_policy = PremiumOrchestrationPolicy().apply(blocked_task, blocked_plan)
+
+    healthy_task = Task(
+        task_id="OPE-83-healthy",
+        source="linear",
+        title="Cross-team browser rollout",
+        description="Program managed release",
+        labels=["ops"],
+        required_tools=["browser"],
+    )
+    healthy_plan = orchestrator.plan(healthy_task)
+    healthy_run = TaskRun.from_task(healthy_task, run_id="run-healthy", medium="browser")
+    healthy_run.finalize("approved", "handoff completed and rollout is on track")
+
+    overview = build_cross_team_flow_overview(
+        [
+            CrossTeamFlowSnapshot(plan=approval_plan, run=approval_run),
+            CrossTeamFlowSnapshot(plan=constrained_plan, policy=blocked_policy, source="jira"),
+            CrossTeamFlowSnapshot(plan=healthy_plan, run=healthy_run),
+        ],
+        name="Program Rollouts",
+        period="2026-W11",
+    )
+
+    report = render_cross_team_flow_overview_report(overview)
+    page = render_cross_team_flow_overview_page(overview)
+
+    assert isinstance(overview, CrossTeamFlowOverview)
+    assert overview.total_flows == 3
+    assert overview.cross_team_flows == 3
+    assert overview.approval_queue_depth == 1
+    assert overview.blocked_flows == 1
+    assert overview.department_counts == {
+        "customer-success": 1,
+        "data": 1,
+        "engineering": 3,
+        "operations": 3,
+        "security": 1,
+    }
+    assert overview.source_counts == {"jira": 1, "linear": 2}
+    assert overview.status_counts == {"approved": 1, "needs-approval": 1, "planned": 1}
+    assert [flow.task_id for flow in overview.at_risk_flows] == ["OPE-83-approval", "OPE-83-blocked"]
+    assert "# Cross-Team Flow Overview" in report
+    assert "- Approval Queue Depth: 1" in report
+    assert "OPE-83-blocked: source=jira" in report
+    assert "premium tier required to unblock security, data, customer-success" in report
+    assert "Cross-Team Flow Overview" in page
+    assert "upgrade tier to unlock security, data, customer-success" in page
+    assert "waiting on security review before customer rollout" in page

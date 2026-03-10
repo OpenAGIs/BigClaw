@@ -2,9 +2,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from html import escape
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional, Sequence
 
 from .observability import TaskRun
+from .orchestration import OrchestrationPlan, OrchestrationPolicyDecision
 
 
 @dataclass
@@ -161,6 +162,118 @@ class AutoTriageCenter:
         if counts["high"]:
             return "review-queue"
         return "monitor"
+
+
+@dataclass
+class CrossTeamFlowSnapshot:
+    plan: OrchestrationPlan
+    run: Optional[TaskRun] = None
+    policy: Optional[OrchestrationPolicyDecision] = None
+    source: str = "orchestration"
+
+
+@dataclass
+class CrossTeamFlow:
+    task_id: str
+    source: str
+    collaboration_mode: str
+    departments: List[str] = field(default_factory=list)
+    required_approvals: List[str] = field(default_factory=list)
+    blocked_departments: List[str] = field(default_factory=list)
+    status: str = "planned"
+    summary: str = ""
+    next_action: str = "continue handoff execution"
+
+    @property
+    def is_cross_team(self) -> bool:
+        return len(self.departments) > 1
+
+    @property
+    def is_blocked(self) -> bool:
+        return bool(self.blocked_departments)
+
+    @property
+    def needs_attention(self) -> bool:
+        return self.status in {"needs-approval", "failed", "rejected", "blocked"} or self.is_blocked
+
+
+@dataclass
+class CrossTeamFlowOverview:
+    name: str
+    period: str
+    flows: List[CrossTeamFlow] = field(default_factory=list)
+
+    @property
+    def total_flows(self) -> int:
+        return len(self.flows)
+
+    @property
+    def cross_team_flows(self) -> int:
+        return sum(1 for flow in self.flows if flow.is_cross_team)
+
+    @property
+    def blocked_flows(self) -> int:
+        return sum(1 for flow in self.flows if flow.is_blocked)
+
+    @property
+    def approval_queue_depth(self) -> int:
+        return sum(1 for flow in self.flows if flow.status == "needs-approval")
+
+    @property
+    def department_counts(self) -> Dict[str, int]:
+        counts: Dict[str, int] = {}
+        for flow in self.flows:
+            for department in flow.departments:
+                counts[department] = counts.get(department, 0) + 1
+        return dict(sorted(counts.items()))
+
+    @property
+    def status_counts(self) -> Dict[str, int]:
+        counts: Dict[str, int] = {}
+        for flow in self.flows:
+            counts[flow.status] = counts.get(flow.status, 0) + 1
+        return dict(sorted(counts.items()))
+
+    @property
+    def source_counts(self) -> Dict[str, int]:
+        counts: Dict[str, int] = {}
+        for flow in self.flows:
+            counts[flow.source] = counts.get(flow.source, 0) + 1
+        return dict(sorted(counts.items()))
+
+    @property
+    def at_risk_flows(self) -> List[CrossTeamFlow]:
+        return [flow for flow in self.flows if flow.needs_attention]
+
+
+def build_cross_team_flow_overview(
+    snapshots: Sequence[CrossTeamFlowSnapshot],
+    name: str = "Cross-Team Flow Overview",
+    period: str = "current",
+) -> CrossTeamFlowOverview:
+    flows: List[CrossTeamFlow] = []
+    for snapshot in snapshots:
+        run = snapshot.run
+        policy = snapshot.policy
+        status = run.status if run is not None else "planned"
+        summary = _cross_team_flow_summary(snapshot)
+        flows.append(
+            CrossTeamFlow(
+                task_id=snapshot.plan.task_id,
+                source=(run.source if run is not None else snapshot.source),
+                collaboration_mode=snapshot.plan.collaboration_mode,
+                departments=list(snapshot.plan.departments),
+                required_approvals=list(snapshot.plan.required_approvals),
+                blocked_departments=list(policy.blocked_departments if policy is not None else []),
+                status=status,
+                summary=summary,
+                next_action=_cross_team_flow_next_action(snapshot, status),
+            )
+        )
+
+    severity_rank = {"failed": 0, "rejected": 1, "needs-approval": 2, "blocked": 3, "planned": 4}
+    flows.sort(key=lambda flow: (severity_rank.get(flow.status, 5), flow.task_id))
+    return CrossTeamFlowOverview(name=name, period=period, flows=flows)
 
 
 def render_issue_validation_report(issue_id: str, version: str, environment: str, summary: str) -> str:
@@ -338,6 +451,121 @@ def render_auto_triage_center_report(center: AutoTriageCenter, total_runs: Optio
     return "\n".join(lines) + "\n"
 
 
+def render_cross_team_flow_overview_report(overview: CrossTeamFlowOverview) -> str:
+    department_mix = _format_counts(overview.department_counts)
+    source_mix = _format_counts(overview.source_counts)
+    status_mix = _format_counts(overview.status_counts)
+    lines = [
+        "# Cross-Team Flow Overview",
+        "",
+        f"- Overview: {overview.name}",
+        f"- Period: {overview.period}",
+        f"- Total Flows: {overview.total_flows}",
+        f"- Cross-Team Flows: {overview.cross_team_flows}",
+        f"- Approval Queue Depth: {overview.approval_queue_depth}",
+        f"- Blocked Flows: {overview.blocked_flows}",
+        f"- Department Mix: {department_mix}",
+        f"- Source Mix: {source_mix}",
+        f"- Status Mix: {status_mix}",
+        "",
+        "## Active Flows",
+        "",
+    ]
+
+    if overview.flows:
+        for flow in overview.flows:
+            approvals = ", ".join(flow.required_approvals) if flow.required_approvals else "none"
+            blocked = ", ".join(flow.blocked_departments) if flow.blocked_departments else "none"
+            departments = " -> ".join(flow.departments) if flow.departments else "none"
+            lines.append(
+                f"- {flow.task_id}: source={flow.source} mode={flow.collaboration_mode} departments={departments} "
+                f"status={flow.status} approvals={approvals} blocked={blocked} next={flow.next_action}"
+            )
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Attention Queue", ""])
+    if overview.at_risk_flows:
+        for flow in overview.at_risk_flows:
+            lines.append(f"- {flow.task_id}: {flow.summary}")
+    else:
+        lines.append("- None")
+
+    return "\n".join(lines) + "\n"
+
+
+def render_cross_team_flow_overview_page(overview: CrossTeamFlowOverview) -> str:
+    cards = [
+        ("Total Flows", str(overview.total_flows)),
+        ("Cross-Team Flows", str(overview.cross_team_flows)),
+        ("Approval Queue", str(overview.approval_queue_depth)),
+        ("Blocked Flows", str(overview.blocked_flows)),
+        ("Department Mix", _format_counts(overview.department_counts)),
+        ("Status Mix", _format_counts(overview.status_counts)),
+    ]
+    card_html = "".join(
+        f'<div class="card"><strong>{escape(label)}</strong><br>{escape(value)}</div>' for label, value in cards
+    )
+    rows = "".join(
+        "<tr>"
+        f"<td><strong>{escape(flow.task_id)}</strong></td>"
+        f"<td>{escape(flow.source)}</td>"
+        f"<td>{escape(flow.collaboration_mode)}</td>"
+        f"<td>{escape(' → '.join(flow.departments) if flow.departments else 'none')}</td>"
+        f"<td>{escape(', '.join(flow.required_approvals) if flow.required_approvals else 'none')}</td>"
+        f"<td>{escape(flow.status)}</td>"
+        f"<td>{escape(', '.join(flow.blocked_departments) if flow.blocked_departments else 'none')}</td>"
+        f"<td>{escape(flow.next_action)}</td>"
+        "</tr>"
+        for flow in overview.flows
+    ) or '<tr><td colspan="8">None</td></tr>'
+    attention = "".join(
+        f"<li><strong>{escape(flow.task_id)}</strong> · {escape(flow.summary)}</li>" for flow in overview.at_risk_flows
+    ) or "<li>None</li>"
+
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Cross-Team Flow Overview · {escape(overview.name)}</title>
+  <style>
+    :root {{ color-scheme: light dark; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
+    body {{ margin: 2rem auto; max-width: 1180px; padding: 0 1rem 3rem; line-height: 1.5; }}
+    .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin: 1rem 0 1.5rem; }}
+    .card {{ border: 1px solid #cbd5e1; border-radius: 10px; padding: 0.9rem; background: rgba(148, 163, 184, 0.08); }}
+    table {{ width: 100%; border-collapse: collapse; margin-top: 1rem; }}
+    th, td {{ text-align: left; padding: 0.75rem; border-bottom: 1px solid #cbd5e1; vertical-align: top; }}
+    h1, h2 {{ margin-bottom: 0.5rem; }}
+    ul {{ padding-left: 1.2rem; }}
+  </style>
+</head>
+<body>
+  <h1>Cross-Team Flow Overview</h1>
+  <p>{escape(overview.name)} · <code>{escape(overview.period)}</code></p>
+  <div class="grid">{card_html}</div>
+  <h2>Flow Table</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Task</th>
+        <th>Source</th>
+        <th>Mode</th>
+        <th>Departments</th>
+        <th>Approvals</th>
+        <th>Status</th>
+        <th>Blocked</th>
+        <th>Next Action</th>
+      </tr>
+    </thead>
+    <tbody>{rows}</tbody>
+  </table>
+  <h2>Attention Queue</h2>
+  <ul>{attention}</ul>
+</body>
+</html>
+"""
+
+
 def _run_requires_triage(run: TaskRun) -> bool:
     if run.status in {"failed", "needs-approval"}:
         return True
@@ -401,6 +629,37 @@ def _triage_next_action(severity: str, owner: str) -> str:
     if owner == "engineering":
         return "inspect execution evidence and retry when safe"
     return "confirm owner and clear pending workflow gate"
+
+
+def _cross_team_flow_summary(snapshot: CrossTeamFlowSnapshot) -> str:
+    if snapshot.policy is not None and snapshot.policy.upgrade_required:
+        blocked = ", ".join(snapshot.policy.blocked_departments) if snapshot.policy.blocked_departments else "additional teams"
+        return f"premium tier required to unblock {blocked}"
+    if snapshot.run is not None and snapshot.run.summary:
+        return snapshot.run.summary
+    approvals = ", ".join(snapshot.plan.required_approvals)
+    if approvals:
+        return f"waiting for {approvals} approval"
+    return "handoffs aligned and ready to proceed"
+
+
+def _cross_team_flow_next_action(snapshot: CrossTeamFlowSnapshot, status: str) -> str:
+    if snapshot.policy is not None and snapshot.policy.upgrade_required:
+        blocked = ", ".join(snapshot.policy.blocked_departments) if snapshot.policy.blocked_departments else "advanced departments"
+        return f"upgrade tier to unlock {blocked}"
+    if status == "needs-approval" and snapshot.plan.required_approvals:
+        return f"collect {', '.join(snapshot.plan.required_approvals)} approval"
+    if status in {"failed", "rejected", "blocked"}:
+        return "review the failed handoff and replay safely"
+    if snapshot.plan.required_approvals:
+        return f"confirm handoff owners and prepare {', '.join(snapshot.plan.required_approvals)} approval"
+    return "continue handoff execution"
+
+
+def _format_counts(counts: Dict[str, int]) -> str:
+    if not counts:
+        return "none"
+    return " ".join(f"{key}={value}" for key, value in counts.items())
 
 
 def render_task_run_report(run: TaskRun) -> str:
