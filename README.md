@@ -5,7 +5,20 @@ BigClaw is a Symphony/Codex workflow project scaffolded from `workflow.md`.
 ## What is included
 
 - `workflow.md`: Linear-driven unattended workflow configuration
-- `.gitignore`: basic ignores for local artifacts
+- `docs/issue-plan.md`: Epic/Issue decomposition from BigClaw PRD v1.0
+- `src/bigclaw`: v0.1 foundation modules
+  - unified task model
+  - persistent priority queue
+  - risk/tool based scheduler
+  - report renderer
+- `tests/`: unit tests
+
+## Local test
+
+```bash
+python3 -m pip install -e . pytest
+python3 -m pytest
+```
 
 ## Quick verify
 
