@@ -187,19 +187,26 @@ def test_workflow_engine_writes_orchestration_report_without_duplicating_ledger_
         ledger=ledger,
         journal_path=str(tmp_path / "journals" / "run-wf-ope-66.json"),
         orchestration_report_path=str(tmp_path / "reports" / "run-wf-ope-66-orchestration.md"),
+        orchestration_canvas_path=str(tmp_path / "reports" / "run-wf-ope-66-canvas.md"),
         validation_evidence=["pytest", "report-shared"],
     )
 
     assert result.orchestration_report_path is not None
     assert Path(result.orchestration_report_path).exists()
+    assert result.orchestration_canvas_path is not None
+    assert Path(result.orchestration_canvas_path).exists()
     report = Path(result.orchestration_report_path).read_text()
     assert "- customer-success:" not in report
     assert "Upgrade Required: True" in report
     assert "Human Handoff Team: operations" in report
+    canvas = Path(result.orchestration_canvas_path).read_text()
+    assert "# Orchestration Canvas" in canvas
+    assert "Recommendation: resolve-entitlement-gap" in canvas
 
     entries = ledger.load()
     assert len(entries) == 1
     assert entries[0]["artifacts"][0]["name"] == "cross-department-orchestration"
+    assert entries[0]["artifacts"][1]["name"] == "orchestration-canvas"
 
     journal = json.loads(Path(result.journal_path).read_text())
     assert journal["entries"][2]["step"] == "orchestration"

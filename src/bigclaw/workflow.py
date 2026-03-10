@@ -7,7 +7,7 @@ from .dsl import WorkflowDefinition
 from .models import RiskLevel, Task
 from .observability import ObservabilityLedger, utc_now
 from .orchestration import render_orchestration_plan
-from .reports import PilotScorecard, render_pilot_scorecard, write_report
+from .reports import build_orchestration_canvas, PilotScorecard, render_orchestration_canvas, render_pilot_scorecard, write_report
 from .scheduler import ExecutionRecord, Scheduler
 
 
@@ -123,6 +123,7 @@ class WorkflowRunResult:
     journal: WorkpadJournal
     journal_path: Optional[str]
     orchestration_report_path: Optional[str] = None
+    orchestration_canvas_path: Optional[str] = None
     pilot_report_path: Optional[str] = None
 
 
@@ -143,6 +144,7 @@ class WorkflowEngine:
         pilot_scorecard: Optional[PilotScorecard] = None,
         pilot_report_path: Optional[str] = None,
         orchestration_report_path: Optional[str] = None,
+        orchestration_canvas_path: Optional[str] = None,
     ) -> WorkflowRunResult:
         journal = WorkpadJournal(task_id=task.task_id, run_id=run_id)
         journal.record("intake", "recorded", source=task.source)
@@ -162,6 +164,7 @@ class WorkflowEngine:
         )
 
         resolved_orchestration_report_path = None
+        resolved_orchestration_canvas_path = None
         if execution.orchestration_plan is not None and orchestration_report_path:
             resolved_orchestration_report_path = str(Path(orchestration_report_path))
             write_report(
@@ -181,6 +184,23 @@ class WorkflowEngine:
                 departments=execution.orchestration_plan.departments,
             )
             ledger.upsert(execution.run)
+            if orchestration_canvas_path:
+                resolved_orchestration_canvas_path = str(Path(orchestration_canvas_path))
+                canvas = build_orchestration_canvas(
+                    execution.run,
+                    execution.orchestration_plan,
+                    execution.orchestration_policy,
+                    execution.handoff_request,
+                )
+                write_report(resolved_orchestration_canvas_path, render_orchestration_canvas(canvas))
+                execution.run.register_artifact(
+                    "orchestration-canvas",
+                    "report",
+                    resolved_orchestration_canvas_path,
+                    format="markdown",
+                    recommendation=canvas.recommendation,
+                )
+                ledger.upsert(execution.run)
             journal.record(
                 "orchestration",
                 execution.orchestration_plan.collaboration_mode,
@@ -236,6 +256,7 @@ class WorkflowEngine:
             journal=journal,
             journal_path=resolved_journal_path,
             orchestration_report_path=resolved_orchestration_report_path,
+            orchestration_canvas_path=resolved_orchestration_canvas_path,
             pilot_report_path=resolved_pilot_report_path,
         )
 

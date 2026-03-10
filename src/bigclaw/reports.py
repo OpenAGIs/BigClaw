@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from .observability import TaskRun
+from .orchestration import HandoffRequest, OrchestrationPlan, OrchestrationPolicyDecision
 
 
 @dataclass
@@ -251,6 +252,33 @@ class TakeoverQueue:
         return "monitor"
 
 
+
+@dataclass
+class OrchestrationCanvas:
+    task_id: str
+    run_id: str
+    collaboration_mode: str
+    departments: List[str] = field(default_factory=list)
+    required_approvals: List[str] = field(default_factory=list)
+    tier: str = "standard"
+    upgrade_required: bool = False
+    blocked_departments: List[str] = field(default_factory=list)
+    handoff_team: str = "none"
+    handoff_status: str = "none"
+    handoff_reason: str = ""
+    active_tools: List[str] = field(default_factory=list)
+
+    @property
+    def recommendation(self) -> str:
+        if self.handoff_team == "security":
+            return "review-security-takeover"
+        if self.upgrade_required:
+            return "resolve-entitlement-gap"
+        if len(self.departments) > 1:
+            return "continue-cross-team-execution"
+        return "monitor"
+
+
 def render_issue_validation_report(issue_id: str, version: str, environment: str, summary: str) -> str:
     return f"""# Issue Validation Report\n\n- Issue ID: {issue_id}\n- 版本号: {version}\n- 测试环境: {environment}\n- 生成时间: {datetime.utcnow().isoformat()}Z\n\n## 结论\n\n{summary}\n"""
 
@@ -474,6 +502,52 @@ def render_auto_triage_center_report(center: AutoTriageCenter, total_runs: Optio
     else:
         lines.append("- None")
 
+    return "\n".join(lines) + "\n"
+
+
+def build_orchestration_canvas(
+    run: TaskRun,
+    plan: OrchestrationPlan,
+    policy: Optional[OrchestrationPolicyDecision] = None,
+    handoff_request: Optional[HandoffRequest] = None,
+) -> OrchestrationCanvas:
+    return OrchestrationCanvas(
+        task_id=run.task_id,
+        run_id=run.run_id,
+        collaboration_mode=plan.collaboration_mode,
+        departments=plan.departments,
+        required_approvals=plan.required_approvals,
+        tier=policy.tier if policy is not None else "standard",
+        upgrade_required=policy.upgrade_required if policy is not None else False,
+        blocked_departments=policy.blocked_departments if policy is not None else [],
+        handoff_team=handoff_request.target_team if handoff_request is not None else "none",
+        handoff_status=handoff_request.status if handoff_request is not None else "none",
+        handoff_reason=handoff_request.reason if handoff_request is not None else "",
+        active_tools=sorted({str(entry.details.get("tool", "")) for entry in run.audits if entry.action == "tool.invoke" and entry.details.get("tool")}),
+    )
+
+
+def render_orchestration_canvas(canvas: OrchestrationCanvas) -> str:
+    lines = [
+        "# Orchestration Canvas",
+        "",
+        f"- Task ID: {canvas.task_id}",
+        f"- Run ID: {canvas.run_id}",
+        f"- Collaboration Mode: {canvas.collaboration_mode}",
+        f"- Departments: {', '.join(canvas.departments) if canvas.departments else 'none'}",
+        f"- Required Approvals: {', '.join(canvas.required_approvals) if canvas.required_approvals else 'none'}",
+        f"- Tier: {canvas.tier}",
+        f"- Upgrade Required: {canvas.upgrade_required}",
+        f"- Blocked Departments: {', '.join(canvas.blocked_departments) if canvas.blocked_departments else 'none'}",
+        f"- Handoff Team: {canvas.handoff_team}",
+        f"- Handoff Status: {canvas.handoff_status}",
+        f"- Recommendation: {canvas.recommendation}",
+        "",
+        "## Execution Context",
+        "",
+        f"- Active Tools: {', '.join(canvas.active_tools) if canvas.active_tools else 'none'}",
+        f"- Handoff Reason: {canvas.handoff_reason or 'none'}",
+    ]
     return "\n".join(lines) + "\n"
 
 

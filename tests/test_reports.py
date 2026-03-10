@@ -3,14 +3,17 @@ from pathlib import Path
 from bigclaw.reports import (
     DocumentationArtifact,
     LaunchChecklistItem,
+    OrchestrationCanvas,
     PilotMetric,
     PilotPortfolio,
     PilotScorecard,
     build_auto_triage_center,
+    build_orchestration_canvas,
     build_launch_checklist,
     build_takeover_queue_from_ledger,
     evaluate_issue_closure,
     render_auto_triage_center_report,
+    render_orchestration_canvas,
     render_issue_validation_report,
     render_launch_checklist_report,
     render_pilot_portfolio_report,
@@ -350,3 +353,38 @@ def test_takeover_queue_from_ledger_groups_pending_handoffs():
     assert "Team Mix: operations=1 security=1" in report
     assert "run-sec: team=security status=pending task=OPE-66-sec approvals=security-review" in report
     assert "run-ops: team=operations status=pending task=OPE-66-ops approvals=ops-manager" in report
+
+
+def test_orchestration_canvas_summarizes_policy_and_handoff():
+    task = Task(task_id="OPE-66-canvas", source="linear", title="Canvas run", description="")
+    run = TaskRun.from_task(task, run_id="run-canvas", medium="browser")
+    run.audit("tool.invoke", "worker", "success", tool="browser")
+
+    from bigclaw.orchestration import DepartmentHandoff, HandoffRequest, OrchestrationPlan, OrchestrationPolicyDecision
+
+    plan = OrchestrationPlan(
+        task_id="OPE-66-canvas",
+        collaboration_mode="tier-limited",
+        handoffs=[
+            DepartmentHandoff("operations", "coordinate"),
+            DepartmentHandoff("engineering", "execute", required_tools=["browser"]),
+        ],
+    )
+    policy = OrchestrationPolicyDecision(
+        tier="standard",
+        upgrade_required=True,
+        reason="premium tier required for advanced cross-department orchestration",
+        blocked_departments=["customer-success"],
+    )
+    handoff = HandoffRequest(target_team="operations", reason=policy.reason, required_approvals=["ops-manager"])
+
+    canvas = build_orchestration_canvas(run, plan, policy, handoff)
+    report = render_orchestration_canvas(canvas)
+
+    assert isinstance(canvas, OrchestrationCanvas)
+    assert canvas.recommendation == "resolve-entitlement-gap"
+    assert canvas.active_tools == ["browser"]
+    assert "# Orchestration Canvas" in report
+    assert "- Tier: standard" in report
+    assert "- Handoff Team: operations" in report
+    assert "- Recommendation: resolve-entitlement-gap" in report
