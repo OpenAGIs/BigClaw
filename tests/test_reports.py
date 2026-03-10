@@ -2,12 +2,16 @@ from pathlib import Path
 
 from bigclaw.reports import (
     build_auto_triage_center,
+    build_launch_checklist,
+    DocumentationArtifact,
+    LaunchChecklistItem,
     PilotMetric,
     PilotPortfolio,
     PilotScorecard,
     evaluate_issue_closure,
     render_auto_triage_center_report,
     render_issue_validation_report,
+    render_launch_checklist_report,
     render_pilot_portfolio_report,
     render_pilot_scorecard,
     validation_report_exists,
@@ -113,8 +117,90 @@ def test_issue_closure_allows_completed_validation_report(tmp_path: Path):
     decision = evaluate_issue_closure("BIG-602", str(report_path), validation_passed=True)
 
     assert decision.allowed is True
-    assert decision.reason == "validation report present; issue can be closed"
+    assert decision.reason == "validation report and launch checklist requirements satisfied; issue can be closed"
     assert decision.report_path == str(report_path)
+
+
+def test_launch_checklist_auto_links_documentation_status(tmp_path: Path):
+    runbook = tmp_path / "runbook.md"
+    faq = tmp_path / "faq.md"
+    write_report(str(runbook), "# Runbook\n\nready")
+
+    checklist = build_launch_checklist(
+        "BIG-1003",
+        documentation=[
+            DocumentationArtifact(name="runbook", path=str(runbook)),
+            DocumentationArtifact(name="faq", path=str(faq)),
+        ],
+        items=[
+            LaunchChecklistItem(name="Operations handoff", evidence=["runbook"]),
+            LaunchChecklistItem(name="Support handoff", evidence=["faq"]),
+        ],
+    )
+
+    report = render_launch_checklist_report(checklist)
+
+    assert checklist.documentation_status == {"runbook": True, "faq": False}
+    assert checklist.completed_items == 1
+    assert checklist.missing_documentation == ["faq"]
+    assert checklist.ready is False
+    assert "runbook: available=True" in report
+    assert "faq: available=False" in report
+    assert "Support handoff: completed=False evidence=faq" in report
+
+
+def test_issue_closure_blocks_incomplete_linked_launch_checklist(tmp_path: Path):
+    report_path = tmp_path / "validation.md"
+    runbook = tmp_path / "runbook.md"
+    write_report(str(report_path), render_issue_validation_report("BIG-1003", "v0.2", "staging", "pass"))
+    write_report(str(runbook), "# Runbook\n\nready")
+
+    checklist = build_launch_checklist(
+        "BIG-1003",
+        documentation=[
+            DocumentationArtifact(name="runbook", path=str(runbook)),
+            DocumentationArtifact(name="launch-faq", path=str(tmp_path / "launch-faq.md")),
+        ],
+        items=[LaunchChecklistItem(name="Launch comms", evidence=["runbook", "launch-faq"])],
+    )
+
+    decision = evaluate_issue_closure(
+        "BIG-1003",
+        str(report_path),
+        validation_passed=True,
+        launch_checklist=checklist,
+    )
+
+    assert decision.allowed is False
+    assert decision.reason == "launch checklist incomplete; linked documentation missing or empty"
+
+
+def test_issue_closure_allows_when_linked_launch_checklist_is_ready(tmp_path: Path):
+    report_path = tmp_path / "validation.md"
+    runbook = tmp_path / "runbook.md"
+    faq = tmp_path / "launch-faq.md"
+    write_report(str(report_path), render_issue_validation_report("BIG-1003", "v0.2", "staging", "pass"))
+    write_report(str(runbook), "# Runbook\n\nready")
+    write_report(str(faq), "# FAQ\n\nready")
+
+    checklist = build_launch_checklist(
+        "BIG-1003",
+        documentation=[
+            DocumentationArtifact(name="runbook", path=str(runbook)),
+            DocumentationArtifact(name="launch-faq", path=str(faq)),
+        ],
+        items=[LaunchChecklistItem(name="Launch comms", evidence=["runbook", "launch-faq"])],
+    )
+
+    decision = evaluate_issue_closure(
+        "BIG-1003",
+        str(report_path),
+        validation_passed=True,
+        launch_checklist=checklist,
+    )
+
+    assert decision.allowed is True
+    assert decision.reason == "validation report and launch checklist requirements satisfied; issue can be closed"
 
 
 def test_render_pilot_portfolio_report_summarizes_commercial_readiness():

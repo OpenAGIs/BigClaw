@@ -118,6 +118,53 @@ class IssueClosureDecision:
 
 
 @dataclass
+class DocumentationArtifact:
+    name: str
+    path: str
+
+    @property
+    def available(self) -> bool:
+        return validation_report_exists(self.path)
+
+
+@dataclass
+class LaunchChecklistItem:
+    name: str
+    evidence: List[str] = field(default_factory=list)
+
+
+@dataclass
+class LaunchChecklist:
+    issue_id: str
+    documentation: List[DocumentationArtifact] = field(default_factory=list)
+    items: List[LaunchChecklistItem] = field(default_factory=list)
+
+    @property
+    def documentation_status(self) -> dict[str, bool]:
+        return {artifact.name: artifact.available for artifact in self.documentation}
+
+    @property
+    def completed_items(self) -> int:
+        return sum(1 for item in self.items if self.item_completed(item))
+
+    @property
+    def missing_documentation(self) -> List[str]:
+        return [artifact.name for artifact in self.documentation if not artifact.available]
+
+    @property
+    def ready(self) -> bool:
+        if self.missing_documentation:
+            return False
+        return all(self.item_completed(item) for item in self.items)
+
+    def item_completed(self, item: LaunchChecklistItem) -> bool:
+        status = self.documentation_status
+        if not item.evidence:
+            return True
+        return all(status.get(name, False) for name in item.evidence)
+
+
+@dataclass
 class TriageFinding:
     run_id: str
     task_id: str
@@ -165,6 +212,48 @@ class AutoTriageCenter:
 
 def render_issue_validation_report(issue_id: str, version: str, environment: str, summary: str) -> str:
     return f"""# Issue Validation Report\n\n- Issue ID: {issue_id}\n- 版本号: {version}\n- 测试环境: {environment}\n- 生成时间: {datetime.utcnow().isoformat()}Z\n\n## 结论\n\n{summary}\n"""
+
+
+def build_launch_checklist(
+    issue_id: str,
+    documentation: List[DocumentationArtifact],
+    items: List[LaunchChecklistItem],
+) -> LaunchChecklist:
+    return LaunchChecklist(issue_id=issue_id, documentation=documentation, items=items)
+
+
+def render_launch_checklist_report(checklist: LaunchChecklist) -> str:
+    lines = [
+        "# Launch Checklist",
+        "",
+        f"- Issue ID: {checklist.issue_id}",
+        f"- Linked Documentation: {len(checklist.documentation)}",
+        f"- Completed Items: {checklist.completed_items}/{len(checklist.items)}",
+        f"- Ready: {checklist.ready}",
+        "",
+        "## Documentation",
+        "",
+    ]
+
+    if checklist.documentation:
+        for artifact in checklist.documentation:
+            lines.append(
+                f"- {artifact.name}: available={artifact.available} path={artifact.path}"
+            )
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Checklist", ""])
+    if checklist.items:
+        for item in checklist.items:
+            evidence = ", ".join(item.evidence) if item.evidence else "none"
+            lines.append(
+                f"- {item.name}: completed={checklist.item_completed(item)} evidence={evidence}"
+            )
+    else:
+        lines.append("- None")
+
+    return "\n".join(lines) + "\n"
 
 
 def render_pilot_scorecard(scorecard: PilotScorecard) -> str:
@@ -255,6 +344,7 @@ def evaluate_issue_closure(
     issue_id: str,
     report_path: Optional[str],
     validation_passed: bool = True,
+    launch_checklist: Optional[LaunchChecklist] = None,
 ) -> IssueClosureDecision:
     resolved_path = str(Path(report_path)) if report_path else ""
 
@@ -274,10 +364,18 @@ def evaluate_issue_closure(
             report_path=resolved_path,
         )
 
+    if launch_checklist is not None and not launch_checklist.ready:
+        return IssueClosureDecision(
+            issue_id=issue_id,
+            allowed=False,
+            reason="launch checklist incomplete; linked documentation missing or empty",
+            report_path=resolved_path,
+        )
+
     return IssueClosureDecision(
         issue_id=issue_id,
         allowed=True,
-        reason="validation report present; issue can be closed",
+        reason="validation report and launch checklist requirements satisfied; issue can be closed",
         report_path=resolved_path,
     )
 
