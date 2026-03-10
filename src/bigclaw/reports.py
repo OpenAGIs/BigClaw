@@ -210,6 +210,47 @@ class AutoTriageCenter:
         return "monitor"
 
 
+@dataclass
+class TakeoverRequest:
+    run_id: str
+    task_id: str
+    source: str
+    target_team: str
+    status: str
+    reason: str
+    required_approvals: List[str] = field(default_factory=list)
+
+
+@dataclass
+class TakeoverQueue:
+    name: str
+    period: str
+    requests: List[TakeoverRequest] = field(default_factory=list)
+
+    @property
+    def pending_requests(self) -> int:
+        return len(self.requests)
+
+    @property
+    def team_counts(self) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for request in self.requests:
+            counts[request.target_team] = counts.get(request.target_team, 0) + 1
+        return counts
+
+    @property
+    def approval_count(self) -> int:
+        return sum(len(request.required_approvals) for request in self.requests)
+
+    @property
+    def recommendation(self) -> str:
+        if any(request.target_team == "security" for request in self.requests):
+            return "expedite-security-review"
+        if self.requests:
+            return "staff-takeover-queue"
+        return "monitor"
+
+
 def render_issue_validation_report(issue_id: str, version: str, environment: str, summary: str) -> str:
     return f"""# Issue Validation Report\n\n- Issue ID: {issue_id}\n- 版本号: {version}\n- 测试环境: {environment}\n- 生成时间: {datetime.utcnow().isoformat()}Z\n\n## 结论\n\n{summary}\n"""
 
@@ -434,6 +475,72 @@ def render_auto_triage_center_report(center: AutoTriageCenter, total_runs: Optio
         lines.append("- None")
 
     return "\n".join(lines) + "\n"
+
+
+def build_takeover_queue_from_ledger(
+    entries: List[dict],
+    name: str = "Human Takeover Queue",
+    period: str = "current",
+) -> TakeoverQueue:
+    requests: List[TakeoverRequest] = []
+    for entry in entries:
+        handoff_audit = _latest_handoff_audit(entry.get("audits", []))
+        if handoff_audit is None:
+            continue
+
+        details = handoff_audit.get("details", {})
+        requests.append(
+            TakeoverRequest(
+                run_id=str(entry.get("run_id", "")),
+                task_id=str(entry.get("task_id", "")),
+                source=str(entry.get("source", "")),
+                target_team=str(details.get("target_team", "operations")),
+                status=str(handoff_audit.get("outcome", "pending")),
+                reason=str(details.get("reason", entry.get("summary", "handoff requested"))),
+                required_approvals=[str(value) for value in details.get("required_approvals", [])],
+            )
+        )
+
+    requests.sort(key=lambda request: (request.target_team, request.run_id))
+    return TakeoverQueue(name=name, period=period, requests=requests)
+
+
+def render_takeover_queue_report(queue: TakeoverQueue, total_runs: Optional[int] = None) -> str:
+    team_counts = queue.team_counts
+    team_mix = " ".join(f"{team}={count}" for team, count in sorted(team_counts.items())) or "none"
+    lines = [
+        "# Human Takeover Queue",
+        "",
+        f"- Queue: {queue.name}",
+        f"- Period: {queue.period}",
+        f"- Pending Requests: {queue.pending_requests}",
+        f"- Total Runs: {total_runs if total_runs is not None else queue.pending_requests}",
+        f"- Recommendation: {queue.recommendation}",
+        f"- Team Mix: {team_mix}",
+        f"- Required Approvals: {queue.approval_count}",
+        "",
+        "## Requests",
+        "",
+    ]
+
+    if queue.requests:
+        for request in queue.requests:
+            approvals = ",".join(request.required_approvals) if request.required_approvals else "none"
+            lines.append(
+                f"- {request.run_id}: team={request.target_team} status={request.status} task={request.task_id} "
+                f"approvals={approvals} reason={request.reason}"
+            )
+    else:
+        lines.append("- None")
+
+    return "\n".join(lines) + "\n"
+
+
+def _latest_handoff_audit(audits: List[dict]) -> Optional[dict]:
+    for audit in reversed(audits):
+        if audit.get("action") == "orchestration.handoff":
+            return audit
+    return None
 
 
 def _run_requires_triage(run: TaskRun) -> bool:

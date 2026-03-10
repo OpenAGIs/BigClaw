@@ -1,22 +1,25 @@
 from pathlib import Path
 
 from bigclaw.reports import (
-    build_auto_triage_center,
-    build_launch_checklist,
     DocumentationArtifact,
     LaunchChecklistItem,
     PilotMetric,
     PilotPortfolio,
     PilotScorecard,
+    build_auto_triage_center,
+    build_launch_checklist,
+    build_takeover_queue_from_ledger,
     evaluate_issue_closure,
     render_auto_triage_center_report,
     render_issue_validation_report,
     render_launch_checklist_report,
     render_pilot_portfolio_report,
     render_pilot_scorecard,
+    render_takeover_queue_report,
     validation_report_exists,
     write_report,
 )
+
 from bigclaw.observability import TaskRun
 from bigclaw.models import Task
 
@@ -286,3 +289,64 @@ def test_auto_triage_center_prioritizes_failed_and_pending_runs():
     assert "Severity Mix: critical=1 high=1 medium=0" in report
     assert "run-browser: severity=critical owner=engineering status=failed" in report
     assert "run-risk: severity=high owner=security status=needs-approval" in report
+
+
+def test_takeover_queue_from_ledger_groups_pending_handoffs():
+    entries = [
+        {
+            "run_id": "run-sec",
+            "task_id": "OPE-66-sec",
+            "source": "linear",
+            "summary": "requires approval for high-risk task",
+            "audits": [
+                {
+                    "action": "orchestration.handoff",
+                    "outcome": "pending",
+                    "details": {
+                        "target_team": "security",
+                        "reason": "requires approval for high-risk task",
+                        "required_approvals": ["security-review"],
+                    },
+                }
+            ],
+        },
+        {
+            "run_id": "run-ops",
+            "task_id": "OPE-66-ops",
+            "source": "linear",
+            "summary": "premium tier required for advanced cross-department orchestration",
+            "audits": [
+                {
+                    "action": "orchestration.handoff",
+                    "outcome": "pending",
+                    "details": {
+                        "target_team": "operations",
+                        "reason": "premium tier required for advanced cross-department orchestration",
+                        "required_approvals": ["ops-manager"],
+                    },
+                }
+            ],
+        },
+        {
+            "run_id": "run-ok",
+            "task_id": "OPE-66-ok",
+            "source": "linear",
+            "summary": "default low risk path",
+            "audits": [
+                {"action": "scheduler.decision", "outcome": "approved", "details": {"reason": "default low risk path"}}
+            ],
+        },
+    ]
+
+    queue = build_takeover_queue_from_ledger(entries, name="Cross-Team Takeovers", period="2026-03-10")
+    report = render_takeover_queue_report(queue, total_runs=3)
+
+    assert queue.pending_requests == 2
+    assert queue.team_counts == {"operations": 1, "security": 1}
+    assert queue.approval_count == 2
+    assert queue.recommendation == "expedite-security-review"
+    assert [request.run_id for request in queue.requests] == ["run-ops", "run-sec"]
+    assert "Pending Requests: 2" in report
+    assert "Team Mix: operations=1 security=1" in report
+    assert "run-sec: team=security status=pending task=OPE-66-sec approvals=security-review" in report
+    assert "run-ops: team=operations status=pending task=OPE-66-ops approvals=ops-manager" in report
