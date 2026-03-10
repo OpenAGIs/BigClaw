@@ -62,6 +62,7 @@ class BenchmarkResult:
     criteria: List[EvaluationCriterion]
     record: ExecutionRecord
     replay: ReplayOutcome
+    detail_page_path: Optional[str] = None
 
 
 @dataclass
@@ -132,6 +133,10 @@ class BenchmarkRunner:
         earned_weight = sum(item.weight for item in criteria if item.passed)
         score = round((earned_weight / total_weight) * 100) if total_weight else 0
         passed = all(item.passed for item in criteria) and replay.matched
+        detail_page_path = None
+        if self.storage_dir is not None:
+            detail_page_path = str(self._case_path(case.case_id, "run-detail.html"))
+            write_report(detail_page_path, render_run_replay_index_page(case.case_id, record, replay, criteria))
         return BenchmarkResult(
             case_id=case.case_id,
             score=score,
@@ -139,6 +144,7 @@ class BenchmarkRunner:
             criteria=criteria,
             record=record,
             replay=replay,
+            detail_page_path=detail_page_path,
         )
 
     def run_suite(self, cases: List[BenchmarkCase], version: str = "current") -> BenchmarkSuiteResult:
@@ -297,6 +303,57 @@ def render_replay_detail_page(expected: ReplayRecord, observed: ReplayRecord, mi
   </table>
   <h2>Mismatches</h2>
   <ul>{mismatch_items}</ul>
+</body>
+</html>
+"""
+
+
+def render_run_replay_index_page(
+    case_id: str,
+    record: ExecutionRecord,
+    replay: ReplayOutcome,
+    criteria: List[EvaluationCriterion],
+) -> str:
+    report_path = escape(record.report_path or "n/a")
+    detail_path = escape(str(Path(record.report_path).with_suffix(".html"))) if record.report_path else "n/a"
+    replay_path = escape(replay.report_path or "n/a")
+    criteria_items = "".join(
+        f"<li><strong>{escape(item.name)}</strong>: {escape(item.detail)} · passed={escape(str(item.passed))}</li>"
+        for item in criteria
+    ) or "<li>None</li>"
+    mismatch_items = "".join(f"<li>{escape(item)}</li>" for item in replay.mismatches) or "<li>None</li>"
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Run Detail Index · {escape(case_id)}</title>
+  <style>
+    :root {{ color-scheme: light dark; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
+    body {{ margin: 2rem auto; max-width: 900px; padding: 0 1rem 3rem; line-height: 1.5; }}
+    .card {{ border: 1px solid #cbd5e1; border-radius: 10px; padding: 1rem; margin: 1rem 0; background: rgba(148, 163, 184, 0.08); }}
+    code {{ font-size: 0.95em; }}
+  </style>
+</head>
+<body>
+  <h1>Run Detail Index</h1>
+  <p>Benchmark case <strong>{escape(case_id)}</strong> · task <strong>{escape(record.run.task_id)}</strong></p>
+  <div class="card">
+    <h2>Execution</h2>
+    <p>Status: <strong>{escape(record.run.status)}</strong> · Medium: <strong>{escape(record.decision.medium)}</strong></p>
+    <ul>
+      <li>Markdown report: <code>{report_path}</code></li>
+      <li>Run detail page: <code>{detail_path}</code></li>
+      <li>Replay page: <code>{replay_path}</code></li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>Acceptance Criteria</h2>
+    <ul>{criteria_items}</ul>
+  </div>
+  <div class="card">
+    <h2>Replay Mismatches</h2>
+    <ul>{mismatch_items}</ul>
+  </div>
 </body>
 </html>
 """

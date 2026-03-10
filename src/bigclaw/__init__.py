@@ -37,6 +37,7 @@ from .evaluation import (
     EvaluationCriterion,
     ReplayOutcome,
     ReplayRecord,
+    render_run_replay_index_page,
     render_replay_detail_page,
     render_benchmark_suite_report,
 )
@@ -93,6 +94,7 @@ __all__ = [
     "EvaluationCriterion",
     "ReplayOutcome",
     "ReplayRecord",
+    "render_run_replay_index_page",
     "render_replay_detail_page",
     "render_benchmark_suite_report",
 ]

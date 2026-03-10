@@ -4,11 +4,14 @@ from bigclaw.evaluation import (
     BenchmarkCase,
     BenchmarkRunner,
     BenchmarkSuiteResult,
+    ReplayOutcome,
     ReplayRecord,
     render_benchmark_suite_report,
+    render_run_replay_index_page,
     render_replay_detail_page,
 )
 from bigclaw.models import RiskLevel, Task
+from bigclaw.observability import ObservabilityLedger
 from bigclaw.scheduler import Scheduler
 
 
@@ -37,6 +40,8 @@ def test_benchmark_runner_scores_and_replays_case(tmp_path: Path):
     assert result.replay.matched is True
     assert (tmp_path / "browser-low-risk" / "task-run.md").exists()
     assert (tmp_path / "benchmark-browser-low-risk" / "replay.html").exists()
+    assert (tmp_path / "browser-low-risk" / "run-detail.html").exists()
+    assert result.detail_page_path == str(tmp_path / "browser-low-risk" / "run-detail.html")
 
 
 
@@ -135,3 +140,47 @@ def test_render_replay_detail_page_lists_mismatches():
     assert "Replay Detail" in page
     assert "medium expected docker got browser" in page
     assert "needs-approval" in page
+
+
+def test_render_run_replay_index_page_links_outputs(tmp_path: Path):
+    runner = BenchmarkRunner(storage_dir=str(tmp_path))
+    case = BenchmarkCase(
+        case_id="big-804-index",
+        task=Task(
+            task_id="BIG-804",
+            source="linear",
+            title="Run detail index",
+            description="single landing page",
+            required_tools=["browser"],
+        ),
+        expected_medium="browser",
+        expected_approved=True,
+        expected_status="approved",
+        require_report=True,
+    )
+
+    result = runner.run_case(case)
+    page = Path(result.detail_page_path).read_text()
+
+    assert "Run Detail Index" in page
+    assert "task-run.md" in page
+    assert "replay.html" in page
+    assert "decision-medium" in page
+
+
+def test_render_run_replay_index_page_without_report_path(tmp_path: Path):
+    task = Task(task_id="BIG-804", source="linear", title="Run detail index", description="")
+    replay = ReplayOutcome(
+        matched=True,
+        replay_record=ReplayRecord(task=task, run_id="run-1", medium="docker", approved=True, status="approved"),
+        report_path=None,
+    )
+    record = Scheduler().execute(
+        task,
+        run_id="run-1",
+        ledger=ObservabilityLedger(str(tmp_path / "ledger.json")),
+    )
+
+    page = render_run_replay_index_page("big-804-index", record, replay, [])
+
+    assert "n/a" in page
