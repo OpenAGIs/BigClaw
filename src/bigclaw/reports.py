@@ -73,6 +73,42 @@ class PilotScorecard:
 
 
 @dataclass
+class PilotPortfolio:
+    name: str
+    period: str
+    scorecards: List[PilotScorecard] = field(default_factory=list)
+
+    @property
+    def total_monthly_net_value(self) -> float:
+        return sum(scorecard.monthly_net_value for scorecard in self.scorecards)
+
+    @property
+    def average_roi(self) -> float:
+        if not self.scorecards:
+            return 0.0
+        return round(
+            sum(scorecard.annualized_roi for scorecard in self.scorecards) / len(self.scorecards),
+            1,
+        )
+
+    @property
+    def recommendation_counts(self) -> dict[str, int]:
+        counts = {"go": 0, "iterate": 0, "hold": 0}
+        for scorecard in self.scorecards:
+            counts[scorecard.recommendation] += 1
+        return counts
+
+    @property
+    def recommendation(self) -> str:
+        counts = self.recommendation_counts
+        if self.scorecards and counts["go"] == len(self.scorecards):
+            return "scale"
+        if counts["go"] or counts["iterate"]:
+            return "continue"
+        return "stop"
+
+
+@dataclass
 class IssueClosureDecision:
     issue_id: str
     allowed: bool
@@ -115,6 +151,35 @@ def render_pilot_scorecard(scorecard: PilotScorecard) -> str:
             lines.append(
                 f"- {metric.name}: baseline={metric.baseline}{unit_suffix} current={metric.current}{unit_suffix} "
                 f"target{comparator}{metric.target}{unit_suffix} delta={metric.delta:+.2f}{unit_suffix} met={metric.met_target}"
+            )
+    else:
+        lines.append("- None")
+
+    return "\n".join(lines) + "\n"
+
+
+def render_pilot_portfolio_report(portfolio: PilotPortfolio) -> str:
+    counts = portfolio.recommendation_counts
+    lines = [
+        "# Pilot Portfolio Report",
+        "",
+        f"- Portfolio: {portfolio.name}",
+        f"- Period: {portfolio.period}",
+        f"- Scorecards: {len(portfolio.scorecards)}",
+        f"- Recommendation: {portfolio.recommendation}",
+        f"- Total Monthly Net Value: {portfolio.total_monthly_net_value:.2f}",
+        f"- Average ROI: {portfolio.average_roi:.1f}%",
+        f"- Recommendation Mix: go={counts['go']} iterate={counts['iterate']} hold={counts['hold']}",
+        "",
+        "## Customers",
+        "",
+    ]
+
+    if portfolio.scorecards:
+        for scorecard in portfolio.scorecards:
+            lines.append(
+                f"- {scorecard.customer}: recommendation={scorecard.recommendation} roi={scorecard.annualized_roi:.1f}% "
+                f"monthly-net={scorecard.monthly_net_value:.2f} benchmark={scorecard.benchmark_score if scorecard.benchmark_score is not None else 'n/a'}"
             )
     else:
         lines.append("- None")
