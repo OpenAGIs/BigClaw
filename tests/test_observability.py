@@ -76,3 +76,23 @@ def test_render_task_run_detail_page(tmp_path: Path):
     assert "opened detail page" in page
     assert "playback.render" in page
     assert "detail page ready" in page
+
+
+def test_observability_ledger_load_runs_round_trips_entries(tmp_path: Path):
+    task = Task(task_id="BIG-502-roundtrip", source="linear", title="Round trip", description="")
+    run = TaskRun.from_task(task, run_id="run-roundtrip", medium="docker")
+    run.log("info", "persisted")
+    run.trace("scheduler.decide", "ok")
+    run.audit("scheduler.decision", "scheduler", "approved", reason="default low risk path")
+    run.finalize("approved", "default low risk path")
+
+    ledger = ObservabilityLedger(str(tmp_path / "observability.json"))
+    ledger.append(run)
+
+    loaded_runs = ledger.load_runs()
+
+    assert len(loaded_runs) == 1
+    assert loaded_runs[0].run_id == "run-roundtrip"
+    assert loaded_runs[0].logs[0].message == "persisted"
+    assert loaded_runs[0].traces[0].span == "scheduler.decide"
+    assert loaded_runs[0].audits[0].details["reason"] == "default low risk path"

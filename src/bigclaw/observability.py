@@ -39,6 +39,15 @@ class LogEntry:
             "context": self.context,
         }
 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "LogEntry":
+        return cls(
+            level=data["level"],
+            message=data["message"],
+            timestamp=data.get("timestamp", utc_now()),
+            context=data.get("context", {}),
+        )
+
 
 @dataclass
 class TraceEntry:
@@ -54,6 +63,15 @@ class TraceEntry:
             "timestamp": self.timestamp,
             "attributes": self.attributes,
         }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TraceEntry":
+        return cls(
+            span=data["span"],
+            status=data["status"],
+            timestamp=data.get("timestamp", utc_now()),
+            attributes=data.get("attributes", {}),
+        )
 
 
 @dataclass
@@ -75,6 +93,17 @@ class ArtifactRecord:
             "metadata": self.metadata,
         }
 
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ArtifactRecord":
+        return cls(
+            name=data["name"],
+            kind=data["kind"],
+            path=data["path"],
+            timestamp=data.get("timestamp", utc_now()),
+            sha256=data.get("sha256", ""),
+            metadata=data.get("metadata", {}),
+        )
+
 
 @dataclass
 class AuditEntry:
@@ -92,6 +121,16 @@ class AuditEntry:
             "timestamp": self.timestamp,
             "details": self.details,
         }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "AuditEntry":
+        return cls(
+            action=data["action"],
+            actor=data["actor"],
+            outcome=data["outcome"],
+            timestamp=data.get("timestamp", utc_now()),
+            details=data.get("details", {}),
+        )
 
 
 @dataclass
@@ -118,6 +157,24 @@ class TaskRun:
             source=task.source,
             title=task.title,
             medium=medium,
+        )
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TaskRun":
+        return cls(
+            run_id=data["run_id"],
+            task_id=data["task_id"],
+            source=data["source"],
+            title=data["title"],
+            medium=data["medium"],
+            started_at=data.get("started_at", utc_now()),
+            ended_at=data.get("ended_at", ""),
+            status=data.get("status", "running"),
+            summary=data.get("summary", ""),
+            logs=[LogEntry.from_dict(entry) for entry in data.get("logs", [])],
+            traces=[TraceEntry.from_dict(entry) for entry in data.get("traces", [])],
+            artifacts=[ArtifactRecord.from_dict(entry) for entry in data.get("artifacts", [])],
+            audits=[AuditEntry.from_dict(entry) for entry in data.get("audits", [])],
         )
 
     def log(self, level: str, message: str, **context: Any) -> None:
@@ -189,3 +246,6 @@ class ObservabilityLedger:
                 return
         entries.append(serialized)
         self._write_entries(entries)
+
+    def load_runs(self) -> List[TaskRun]:
+        return [TaskRun.from_dict(entry) for entry in self.load()]

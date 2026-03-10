@@ -117,6 +117,52 @@ class IssueClosureDecision:
     report_path: str = ""
 
 
+@dataclass
+class TriageFinding:
+    run_id: str
+    task_id: str
+    source: str
+    severity: str
+    owner: str
+    status: str
+    reason: str
+    next_action: str
+
+
+@dataclass
+class AutoTriageCenter:
+    name: str
+    period: str
+    findings: List[TriageFinding] = field(default_factory=list)
+
+    @property
+    def flagged_runs(self) -> int:
+        return len(self.findings)
+
+    @property
+    def severity_counts(self) -> dict[str, int]:
+        counts = {"critical": 0, "high": 0, "medium": 0}
+        for finding in self.findings:
+            counts[finding.severity] += 1
+        return counts
+
+    @property
+    def owner_counts(self) -> dict[str, int]:
+        counts = {"security": 0, "engineering": 0, "operations": 0}
+        for finding in self.findings:
+            counts[finding.owner] = counts.get(finding.owner, 0) + 1
+        return counts
+
+    @property
+    def recommendation(self) -> str:
+        counts = self.severity_counts
+        if counts["critical"]:
+            return "immediate-attention"
+        if counts["high"]:
+            return "review-queue"
+        return "monitor"
+
+
 def render_issue_validation_report(issue_id: str, version: str, environment: str, summary: str) -> str:
     return f"""# Issue Validation Report\n\n- Issue ID: {issue_id}\n- 版本号: {version}\n- 测试环境: {environment}\n- 生成时间: {datetime.utcnow().isoformat()}Z\n\n## 结论\n\n{summary}\n"""
 
@@ -234,6 +280,127 @@ def evaluate_issue_closure(
         reason="validation report present; issue can be closed",
         report_path=resolved_path,
     )
+
+
+def build_auto_triage_center(runs: List[TaskRun], name: str = "Auto Triage Center", period: str = "current") -> AutoTriageCenter:
+    findings: List[TriageFinding] = []
+    for run in runs:
+        if not _run_requires_triage(run):
+            continue
+
+        severity = _triage_severity(run)
+        owner = _triage_owner(run)
+        findings.append(
+            TriageFinding(
+                run_id=run.run_id,
+                task_id=run.task_id,
+                source=run.source,
+                severity=severity,
+                owner=owner,
+                status=run.status,
+                reason=_triage_reason(run),
+                next_action=_triage_next_action(severity, owner),
+            )
+        )
+
+    severity_rank = {"critical": 0, "high": 1, "medium": 2}
+    findings.sort(key=lambda finding: (severity_rank[finding.severity], finding.owner, finding.run_id))
+    return AutoTriageCenter(name=name, period=period, findings=findings)
+
+
+def render_auto_triage_center_report(center: AutoTriageCenter, total_runs: Optional[int] = None) -> str:
+    severity = center.severity_counts
+    owners = center.owner_counts
+    lines = [
+        "# Auto Triage Center",
+        "",
+        f"- Center: {center.name}",
+        f"- Period: {center.period}",
+        f"- Flagged Runs: {center.flagged_runs}",
+        f"- Total Runs: {total_runs if total_runs is not None else center.flagged_runs}",
+        f"- Recommendation: {center.recommendation}",
+        f"- Severity Mix: critical={severity['critical']} high={severity['high']} medium={severity['medium']}",
+        f"- Owner Mix: security={owners['security']} engineering={owners['engineering']} operations={owners['operations']}",
+        "",
+        "## Queue",
+        "",
+    ]
+
+    if center.findings:
+        for finding in center.findings:
+            lines.append(
+                f"- {finding.run_id}: severity={finding.severity} owner={finding.owner} status={finding.status} "
+                f"task={finding.task_id} reason={finding.reason} next={finding.next_action}"
+            )
+    else:
+        lines.append("- None")
+
+    return "\n".join(lines) + "\n"
+
+
+def _run_requires_triage(run: TaskRun) -> bool:
+    if run.status in {"failed", "needs-approval"}:
+        return True
+    if any(entry.status in {"pending", "error", "failed"} for entry in run.traces):
+        return True
+    return any(entry.outcome in {"pending", "failed", "rejected"} for entry in run.audits)
+
+
+def _triage_severity(run: TaskRun) -> str:
+    if run.status == "failed":
+        return "critical"
+    if any(entry.status in {"error", "failed"} for entry in run.traces):
+        return "critical"
+    if any(entry.outcome in {"failed", "rejected"} for entry in run.audits):
+        return "critical"
+    if run.status == "needs-approval":
+        return "high"
+    if any(entry.status == "pending" for entry in run.traces):
+        return "high"
+    if any(entry.outcome == "pending" for entry in run.audits):
+        return "high"
+    return "medium"
+
+
+def _triage_owner(run: TaskRun) -> str:
+    evidence = " ".join(
+        [run.summary, run.title, run.source, run.medium]
+        + [entry.status for entry in run.traces]
+        + [entry.span for entry in run.traces]
+        + [entry.outcome for entry in run.audits]
+        + [str(entry.details.get("reason", "")) for entry in run.audits]
+        + [str(entry.details.get("approvals", [])) for entry in run.audits]
+    ).lower()
+
+    if "security" in evidence or "high-risk" in evidence or "security-review" in evidence:
+        return "security"
+    if run.medium == "browser" or any(artifact.kind == "page" for artifact in run.artifacts):
+        return "engineering"
+    return "operations"
+
+
+def _triage_reason(run: TaskRun) -> str:
+    for audit in run.audits:
+        if audit.outcome in {"failed", "rejected", "pending"} and audit.details.get("reason"):
+            return str(audit.details["reason"])
+    for trace in run.traces:
+        if trace.status in {"error", "failed", "pending"}:
+            return f"{trace.span} is {trace.status}"
+    return run.summary or run.status
+
+
+def _triage_next_action(severity: str, owner: str) -> str:
+    if severity == "critical":
+        if owner == "engineering":
+            return "replay run and inspect tool failures"
+        if owner == "security":
+            return "page security reviewer and block rollout"
+        return "open incident review and coordinate response"
+    if owner == "security":
+        return "request approval and queue security review"
+    if owner == "engineering":
+        return "inspect execution evidence and retry when safe"
+    return "confirm owner and clear pending workflow gate"
 
 
 def render_task_run_report(run: TaskRun) -> str:
