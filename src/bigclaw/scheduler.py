@@ -12,6 +12,7 @@ from .orchestration import (
     PremiumOrchestrationPolicy,
 )
 from .reports import render_task_run_detail_page, render_task_run_report, write_report
+from .risk import RiskScore, RiskScorer
 from .runtime import ClawWorkerRuntime, ToolCallResult
 
 
@@ -30,6 +31,7 @@ class ExecutionRecord:
     orchestration_plan: Optional[OrchestrationPlan] = None
     orchestration_policy: Optional[OrchestrationPolicyDecision] = None
     handoff_request: Optional[HandoffRequest] = None
+    risk_score: Optional[RiskScore] = None
     tool_results: list[ToolCallResult] = field(default_factory=list)
 
 
@@ -39,22 +41,25 @@ class Scheduler:
         worker_runtime: Optional[ClawWorkerRuntime] = None,
         orchestrator: Optional[CrossDepartmentOrchestrator] = None,
         orchestration_policy: Optional[PremiumOrchestrationPolicy] = None,
+        risk_scorer: Optional[RiskScorer] = None,
     ):
         self.worker_runtime = worker_runtime or ClawWorkerRuntime()
         self.orchestrator = orchestrator or CrossDepartmentOrchestrator()
         self.orchestration_policy = orchestration_policy or PremiumOrchestrationPolicy()
+        self.risk_scorer = risk_scorer or RiskScorer()
 
-    def decide(self, task: Task) -> SchedulerDecision:
+    def decide(self, task: Task, risk_score: Optional[RiskScore] = None) -> SchedulerDecision:
+        resolved_risk = risk_score or self.risk_scorer.score_task(task)
         if task.budget < 0:
             return SchedulerDecision("none", False, "invalid budget")
 
-        if task.risk_level == RiskLevel.HIGH:
+        if resolved_risk.level == RiskLevel.HIGH:
             return SchedulerDecision("vm", False, "requires approval for high-risk task")
 
         if "browser" in task.required_tools:
             return SchedulerDecision("browser", True, "browser automation task")
 
-        if task.risk_level == RiskLevel.MEDIUM:
+        if resolved_risk.level == RiskLevel.MEDIUM:
             return SchedulerDecision("docker", True, "medium risk in docker")
 
         return SchedulerDecision("docker", True, "default low risk path")
@@ -67,7 +72,8 @@ class Scheduler:
         report_path: Optional[str] = None,
         actor: str = "scheduler",
     ) -> ExecutionRecord:
-        decision = self.decide(task)
+        risk_score = self.risk_scorer.score_task(task)
+        decision = self.decide(task, risk_score=risk_score)
         raw_plan = self.orchestrator.plan(task)
         orchestration_plan, policy_decision = self.orchestration_policy.apply(task, raw_plan)
         handoff_request = self._build_handoff_request(decision, orchestration_plan, policy_decision)
@@ -86,6 +92,13 @@ class Scheduler:
             medium=decision.medium,
         )
         run.trace(
+            "risk.score",
+            risk_score.level.value,
+            total=risk_score.total,
+            requires_approval=risk_score.requires_approval,
+            factors=[factor.name for factor in risk_score.factors],
+        )
+        run.trace(
             "orchestration.plan",
             "ready",
             collaboration_mode=orchestration_plan.collaboration_mode,
@@ -99,6 +112,14 @@ class Scheduler:
             blocked_departments=policy_decision.blocked_departments,
         )
         run.audit("scheduler.decision", actor, "approved" if decision.approved else "pending", reason=decision.reason)
+        run.audit(
+            "risk.score",
+            actor,
+            risk_score.level.value,
+            total=risk_score.total,
+            requires_approval=risk_score.requires_approval,
+            summary=risk_score.summary,
+        )
         run.audit(
             "orchestration.plan",
             actor,
@@ -154,9 +175,9 @@ class Scheduler:
             orchestration_plan=orchestration_plan,
             orchestration_policy=policy_decision,
             handoff_request=handoff_request,
+            risk_score=risk_score,
             tool_results=worker_execution.tool_results,
         )
-
 
     def _build_handoff_request(
         self,

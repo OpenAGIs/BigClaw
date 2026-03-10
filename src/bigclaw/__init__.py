@@ -2,6 +2,7 @@ from .models import Task, TaskState, RiskLevel, Priority
 from .queue import PersistentTaskQueue
 from .scheduler import Scheduler, SchedulerDecision, ExecutionRecord
 from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
+from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
 from .mapping import map_source_issue_to_task
 from .observability import ObservabilityLedger, TaskRun
@@ -76,6 +77,9 @@ __all__ = [
     "GitHubConnector",
     "LinearConnector",
     "JiraConnector",
+    "RiskFactor",
+    "RiskScore",
+    "RiskScorer",
     "WorkflowDefinition",
     "WorkflowStep",
     "map_source_issue_to_task",
