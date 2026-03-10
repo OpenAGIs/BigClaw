@@ -16,6 +16,7 @@ from bigclaw.reports import (
     evaluate_issue_closure,
     render_auto_triage_center_report,
     render_orchestration_canvas,
+    render_orchestration_overview_page,
     render_orchestration_portfolio_report,
     render_issue_validation_report,
     render_launch_checklist_report,
@@ -467,3 +468,46 @@ def test_orchestration_portfolio_rolls_up_canvas_and_takeover_state():
     assert "- Tier Mix: premium=1 standard=1" in report
     assert "- Takeover Queue: pending=2 recommendation=expedite-security-review" in report
     assert "- run-a: mode=cross-functional tier=premium upgrade_required=False handoff=security" in report
+
+
+def test_render_orchestration_overview_page():
+    portfolio = OrchestrationPortfolio(
+        name="Cross-Team Portfolio",
+        period="2026-03-10",
+        canvases=[
+            OrchestrationCanvas(
+                task_id="OPE-66-a",
+                run_id="run-a",
+                collaboration_mode="cross-functional",
+                departments=["operations", "engineering"],
+                tier="premium",
+                handoff_team="security",
+            )
+        ],
+        takeover_queue=build_takeover_queue_from_ledger(
+            [
+                {
+                    "run_id": "run-a",
+                    "task_id": "OPE-66-a",
+                    "source": "linear",
+                    "audits": [
+                        {
+                            "action": "orchestration.handoff",
+                            "outcome": "pending",
+                            "details": {"target_team": "security", "reason": "risk", "required_approvals": ["security-review"]},
+                        }
+                    ],
+                }
+            ],
+            name="Cross-Team Takeovers",
+            period="2026-03-10",
+        ),
+    )
+
+    page = render_orchestration_overview_page(portfolio)
+
+    assert "<title>Orchestration Overview" in page
+    assert "Cross-Team Portfolio" in page
+    assert "review-security-takeover" in page
+    assert "pending=1 recommendation=expedite-security-review" in page
+    assert "run-a" in page

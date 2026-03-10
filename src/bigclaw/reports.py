@@ -605,6 +605,67 @@ def render_orchestration_portfolio_report(portfolio: OrchestrationPortfolio) -> 
     return "\n".join(lines) + "\n"
 
 
+
+def render_orchestration_overview_page(portfolio: OrchestrationPortfolio) -> str:
+    def render_items(items: List[str]) -> str:
+        if not items:
+            return "<li>None</li>"
+        return "".join(f"<li>{item}</li>" for item in items)
+
+    collaboration = render_items(
+        [f"<strong>{escape(mode)}</strong>: {count}" for mode, count in sorted(portfolio.collaboration_modes.items())]
+    )
+    tiers = render_items(
+        [f"<strong>{escape(tier)}</strong>: {count}" for tier, count in sorted(portfolio.tier_counts.items())]
+    )
+    runs = render_items(
+        [
+            f"<strong>{escape(canvas.run_id)}</strong> · mode={escape(canvas.collaboration_mode)} · tier={escape(canvas.tier)} · handoff={escape(canvas.handoff_team)} · recommendation={escape(canvas.recommendation)}"
+            for canvas in portfolio.canvases
+        ]
+    )
+    takeover = "none"
+    if portfolio.takeover_queue is not None:
+        takeover = (
+            f"pending={portfolio.takeover_queue.pending_requests} recommendation={portfolio.takeover_queue.recommendation}"
+        )
+
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Orchestration Overview · {escape(portfolio.name)}</title>
+  <style>
+    :root {{ color-scheme: light dark; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
+    body {{ margin: 2rem auto; max-width: 1080px; padding: 0 1rem 3rem; line-height: 1.5; }}
+    .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin: 1rem 0 1.5rem; }}
+    .card {{ border: 1px solid #cbd5e1; border-radius: 10px; padding: 0.9rem; background: rgba(148, 163, 184, 0.08); }}
+    h1, h2 {{ margin-bottom: 0.5rem; }}
+    ul {{ padding-left: 1.2rem; }}
+    code {{ font-size: 0.95em; }}
+  </style>
+</head>
+<body>
+  <h1>Orchestration Overview</h1>
+  <p>{escape(portfolio.name)} · {escape(portfolio.period)}</p>
+  <div class="grid">
+    <div class="card"><strong>Total Runs</strong><br>{portfolio.total_runs}</div>
+    <div class="card"><strong>Recommendation</strong><br>{escape(portfolio.recommendation)}</div>
+    <div class="card"><strong>Upgrade Required</strong><br>{portfolio.upgrade_required_count}</div>
+    <div class="card"><strong>Active Handoffs</strong><br>{portfolio.active_handoffs}</div>
+    <div class="card"><strong>Takeover Queue</strong><br>{escape(takeover)}</div>
+  </div>
+  <h2>Collaboration Mix</h2>
+  <ul>{collaboration}</ul>
+  <h2>Tier Mix</h2>
+  <ul>{tiers}</ul>
+  <h2>Runs</h2>
+  <ul>{runs}</ul>
+</body>
+</html>
+"""
+
+
 def build_orchestration_canvas(
     run: TaskRun,
     plan: OrchestrationPlan,
