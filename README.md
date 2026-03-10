@@ -22,6 +22,17 @@ BigClaw is a Symphony/Codex workflow project scaffolded from `workflow.md`.
 
 Use `bigclaw.generate_weekly_operations_report(...)` to aggregate observability ledger runs into a weekly engineering operations summary with throughput, approval backlog, execution mix, and follow-up items.
 
+CLI example:
+
+```bash
+python3 scripts/generate_weekly_ops_report.py \
+  --ledger reports/observability.json \
+  --out reports/weekly-ops.md \
+  --team OpenAGI \
+  --period-start 2026-03-03T00:00:00Z \
+  --period-end 2026-03-09T23:59:59Z
+```
+
 ## Local test
 
 ```bash
