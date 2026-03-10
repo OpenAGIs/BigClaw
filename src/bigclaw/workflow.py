@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from .dsl import WorkflowDefinition
 from .models import RiskLevel, Task
 from .observability import ObservabilityLedger, utc_now
+from .reports import PilotScorecard, render_pilot_scorecard, write_report
 from .scheduler import ExecutionRecord, Scheduler
 
 
@@ -65,6 +66,7 @@ class AcceptanceGate:
         record: ExecutionRecord,
         validation_evidence: Optional[Sequence[str]] = None,
         approvals: Optional[Sequence[str]] = None,
+        pilot_scorecard: Optional[PilotScorecard] = None,
     ) -> AcceptanceDecision:
         evidence = set(validation_evidence or [])
         approval_list = list(approvals or [])
@@ -80,6 +82,16 @@ class AcceptanceGate:
                 passed=False,
                 status="needs-approval",
                 summary="manual approval required before acceptance closure",
+                missing_acceptance_criteria=missing_acceptance,
+                missing_validation_steps=missing_validation,
+                approvals=approval_list,
+            )
+
+        if pilot_scorecard is not None and pilot_scorecard.recommendation == "hold":
+            return AcceptanceDecision(
+                passed=False,
+                status="rejected",
+                summary="pilot scorecard indicates insufficient ROI or KPI progress",
                 missing_acceptance_criteria=missing_acceptance,
                 missing_validation_steps=missing_validation,
                 approvals=approval_list,
@@ -109,6 +121,7 @@ class WorkflowRunResult:
     acceptance: AcceptanceDecision
     journal: WorkpadJournal
     journal_path: Optional[str]
+    pilot_report_path: Optional[str] = None
 
 
 class WorkflowEngine:
@@ -125,6 +138,8 @@ class WorkflowEngine:
         journal_path: Optional[str] = None,
         validation_evidence: Optional[Sequence[str]] = None,
         approvals: Optional[Sequence[str]] = None,
+        pilot_scorecard: Optional[PilotScorecard] = None,
+        pilot_report_path: Optional[str] = None,
     ) -> WorkflowRunResult:
         journal = WorkpadJournal(task_id=task.task_id, run_id=run_id)
         journal.record("intake", "recorded", source=task.source)
@@ -143,11 +158,32 @@ class WorkflowEngine:
             approved=execution.decision.approved,
         )
 
+        resolved_pilot_report_path = None
+        if pilot_scorecard is not None and pilot_report_path:
+            resolved_pilot_report_path = str(Path(pilot_report_path))
+            write_report(resolved_pilot_report_path, render_pilot_scorecard(pilot_scorecard))
+            execution.run.register_artifact(
+                "pilot-scorecard",
+                "report",
+                resolved_pilot_report_path,
+                format="markdown",
+                recommendation=pilot_scorecard.recommendation,
+            )
+            ledger.append(execution.run)
+            journal.record(
+                "pilot-scorecard",
+                pilot_scorecard.recommendation,
+                metrics_met=pilot_scorecard.metrics_met,
+                metrics_total=len(pilot_scorecard.metrics),
+                annualized_roi=round(pilot_scorecard.annualized_roi, 1),
+            )
+
         acceptance = self.gate.evaluate(
             task,
             execution,
             validation_evidence=validation_evidence,
             approvals=approvals,
+            pilot_scorecard=pilot_scorecard,
         )
         journal.record(
             "acceptance",
@@ -166,6 +202,7 @@ class WorkflowEngine:
             acceptance=acceptance,
             journal=journal,
             journal_path=resolved_journal_path,
+            pilot_report_path=resolved_pilot_report_path,
         )
 
     def run_definition(

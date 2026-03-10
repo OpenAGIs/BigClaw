@@ -3,6 +3,7 @@ from pathlib import Path
 
 from bigclaw.models import Priority, RiskLevel, Task
 from bigclaw.observability import ObservabilityLedger
+from bigclaw.reports import PilotMetric, PilotScorecard
 from bigclaw.workflow import AcceptanceGate, WorkflowEngine
 
 
@@ -81,3 +82,84 @@ def test_workflow_engine_keeps_high_risk_task_pending_manual_approval(tmp_path: 
     assert result.execution.run.status == "needs-approval"
     assert result.acceptance.passed is False
     assert result.acceptance.status == "needs-approval"
+
+
+def test_workflow_engine_writes_pilot_scorecard_and_accepts_positive_roi(tmp_path: Path):
+    ledger = ObservabilityLedger(str(tmp_path / "ledger.json"))
+    task = Task(
+        task_id="OPE-60",
+        source="linear",
+        title="Pilot closeout",
+        description="capture KPI and ROI evidence",
+        priority=Priority.P0,
+        acceptance_criteria=["pilot-scorecard", "report-shared"],
+        validation_plan=["pytest"],
+    )
+    scorecard = PilotScorecard(
+        issue_id="OPE-60",
+        customer="Design Partner A",
+        period="2026-Q2",
+        metrics=[
+            PilotMetric(name="Automation coverage", baseline=30, current=81, target=80, unit="%"),
+            PilotMetric(name="Review cycle time", baseline=10, current=4, target=5, unit="h", higher_is_better=False),
+        ],
+        monthly_benefit=15000,
+        monthly_cost=3000,
+        implementation_cost=18000,
+        benchmark_score=98,
+        benchmark_passed=True,
+    )
+
+    result = WorkflowEngine().run(
+        task,
+        run_id="run-wf-pilot-1",
+        ledger=ledger,
+        journal_path=str(tmp_path / "journals" / "run-wf-pilot-1.json"),
+        validation_evidence=["pytest", "report-shared", "pilot-scorecard"],
+        pilot_scorecard=scorecard,
+        pilot_report_path=str(tmp_path / "reports" / "pilot-scorecard.md"),
+    )
+
+    assert result.acceptance.passed is True
+    assert result.acceptance.status == "accepted"
+    assert result.pilot_report_path is not None
+    assert Path(result.pilot_report_path).exists()
+
+    journal = json.loads(Path(result.journal_path).read_text())
+    assert [entry["step"] for entry in journal["entries"]] == ["intake", "execution", "pilot-scorecard", "acceptance"]
+    assert journal["entries"][2]["status"] == "go"
+    assert "Annualized ROI" in Path(result.pilot_report_path).read_text()
+
+
+def test_acceptance_gate_rejects_hold_pilot_scorecard(tmp_path: Path):
+    ledger = ObservabilityLedger(str(tmp_path / "ledger.json"))
+    task = Task(
+        task_id="OPE-60-hold",
+        source="linear",
+        title="Pilot hold decision",
+        description="scorecard blocks closure",
+        acceptance_criteria=["pilot-scorecard"],
+        validation_plan=["pytest"],
+    )
+    scorecard = PilotScorecard(
+        issue_id="OPE-60",
+        customer="Design Partner B",
+        period="2026-Q2",
+        metrics=[PilotMetric(name="Backlog aging", baseline=4, current=6, target=4, unit="d", higher_is_better=False)],
+        monthly_benefit=1000,
+        monthly_cost=2500,
+        implementation_cost=8000,
+        benchmark_passed=False,
+    )
+
+    execution = WorkflowEngine().scheduler.execute(task, run_id="run-gate-pilot-1", ledger=ledger)
+    decision = AcceptanceGate().evaluate(
+        task,
+        execution,
+        validation_evidence=["pytest", "pilot-scorecard"],
+        pilot_scorecard=scorecard,
+    )
+
+    assert decision.passed is False
+    assert decision.status == "rejected"
+    assert decision.summary == "pilot scorecard indicates insufficient ROI or KPI progress"
