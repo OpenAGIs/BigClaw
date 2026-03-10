@@ -172,8 +172,20 @@ class ObservabilityLedger:
             return []
         return json.loads(self.storage_path.read_text())
 
-    def append(self, run: TaskRun) -> None:
-        entries = self.load()
-        entries.append(run.to_dict())
+    def _write_entries(self, entries: List[Dict[str, Any]]) -> None:
         self.storage_path.parent.mkdir(parents=True, exist_ok=True)
         self.storage_path.write_text(json.dumps(entries, ensure_ascii=False, indent=2))
+
+    def append(self, run: TaskRun) -> None:
+        self.upsert(run)
+
+    def upsert(self, run: TaskRun) -> None:
+        entries = self.load()
+        serialized = run.to_dict()
+        for index, entry in enumerate(entries):
+            if entry.get("run_id") == run.run_id:
+                entries[index] = serialized
+                self._write_entries(entries)
+                return
+        entries.append(serialized)
+        self._write_entries(entries)

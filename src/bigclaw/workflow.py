@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from .dsl import WorkflowDefinition
 from .models import RiskLevel, Task
 from .observability import ObservabilityLedger, utc_now
+from .orchestration import render_orchestration_plan
 from .reports import PilotScorecard, render_pilot_scorecard, write_report
 from .scheduler import ExecutionRecord, Scheduler
 
@@ -121,6 +122,7 @@ class WorkflowRunResult:
     acceptance: AcceptanceDecision
     journal: WorkpadJournal
     journal_path: Optional[str]
+    orchestration_report_path: Optional[str] = None
     pilot_report_path: Optional[str] = None
 
 
@@ -140,6 +142,7 @@ class WorkflowEngine:
         approvals: Optional[Sequence[str]] = None,
         pilot_scorecard: Optional[PilotScorecard] = None,
         pilot_report_path: Optional[str] = None,
+        orchestration_report_path: Optional[str] = None,
     ) -> WorkflowRunResult:
         journal = WorkpadJournal(task_id=task.task_id, run_id=run_id)
         journal.record("intake", "recorded", source=task.source)
@@ -158,6 +161,29 @@ class WorkflowEngine:
             approved=execution.decision.approved,
         )
 
+        resolved_orchestration_report_path = None
+        if execution.orchestration_plan is not None and orchestration_report_path:
+            resolved_orchestration_report_path = str(Path(orchestration_report_path))
+            write_report(
+                resolved_orchestration_report_path,
+                render_orchestration_plan(execution.orchestration_plan),
+            )
+            execution.run.register_artifact(
+                "cross-department-orchestration",
+                "report",
+                resolved_orchestration_report_path,
+                format="markdown",
+                collaboration_mode=execution.orchestration_plan.collaboration_mode,
+                departments=execution.orchestration_plan.departments,
+            )
+            ledger.upsert(execution.run)
+            journal.record(
+                "orchestration",
+                execution.orchestration_plan.collaboration_mode,
+                departments=execution.orchestration_plan.departments,
+                approvals=execution.orchestration_plan.required_approvals,
+            )
+
         resolved_pilot_report_path = None
         if pilot_scorecard is not None and pilot_report_path:
             resolved_pilot_report_path = str(Path(pilot_report_path))
@@ -169,7 +195,7 @@ class WorkflowEngine:
                 format="markdown",
                 recommendation=pilot_scorecard.recommendation,
             )
-            ledger.append(execution.run)
+            ledger.upsert(execution.run)
             journal.record(
                 "pilot-scorecard",
                 pilot_scorecard.recommendation,
@@ -202,6 +228,7 @@ class WorkflowEngine:
             acceptance=acceptance,
             journal=journal,
             journal_path=resolved_journal_path,
+            orchestration_report_path=resolved_orchestration_report_path,
             pilot_report_path=resolved_pilot_report_path,
         )
 

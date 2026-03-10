@@ -48,15 +48,17 @@ def test_workflow_engine_records_journal_and_accepts_complete_evidence(tmp_path:
         report_path=str(tmp_path / "reports" / "run-wf-1.md"),
         journal_path=str(tmp_path / "journals" / "run-wf-1.json"),
         validation_evidence=["pytest", "report-shared"],
+        orchestration_report_path=str(tmp_path / "reports" / "run-wf-1-orchestration.md"),
     )
 
     assert result.execution.decision.medium == "browser"
     assert result.acceptance.passed is True
     assert result.acceptance.status == "accepted"
     assert result.journal_path is not None
+    assert result.orchestration_report_path is not None
 
     journal = json.loads(Path(result.journal_path).read_text())
-    assert [entry["step"] for entry in journal["entries"]] == ["intake", "execution", "acceptance"]
+    assert [entry["step"] for entry in journal["entries"]] == ["intake", "execution", "orchestration", "acceptance"]
     assert journal["entries"][-1]["status"] == "accepted"
 
 
@@ -163,3 +165,38 @@ def test_acceptance_gate_rejects_hold_pilot_scorecard(tmp_path: Path):
     assert decision.passed is False
     assert decision.status == "rejected"
     assert decision.summary == "pilot scorecard indicates insufficient ROI or KPI progress"
+
+
+def test_workflow_engine_writes_orchestration_report_without_duplicating_ledger_entries(tmp_path: Path):
+    ledger = ObservabilityLedger(str(tmp_path / "ledger.json"))
+    task = Task(
+        task_id="OPE-66-workflow",
+        source="linear",
+        title="Coordinate customer rollout",
+        description="Need browser and analytics support",
+        labels=["customer", "data"],
+        priority=Priority.P0,
+        required_tools=["browser", "sql"],
+        acceptance_criteria=["report-shared"],
+        validation_plan=["pytest"],
+    )
+
+    result = WorkflowEngine().run(
+        task,
+        run_id="run-wf-ope-66",
+        ledger=ledger,
+        journal_path=str(tmp_path / "journals" / "run-wf-ope-66.json"),
+        orchestration_report_path=str(tmp_path / "reports" / "run-wf-ope-66-orchestration.md"),
+        validation_evidence=["pytest", "report-shared"],
+    )
+
+    assert result.orchestration_report_path is not None
+    assert Path(result.orchestration_report_path).exists()
+    assert "customer-success" in Path(result.orchestration_report_path).read_text()
+
+    entries = ledger.load()
+    assert len(entries) == 1
+    assert entries[0]["artifacts"][0]["name"] == "cross-department-orchestration"
+
+    journal = json.loads(Path(result.journal_path).read_text())
+    assert journal["entries"][2]["step"] == "orchestration"
