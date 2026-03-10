@@ -2,6 +2,15 @@ from .models import Task, TaskState, RiskLevel, Priority
 from .queue import PersistentTaskQueue
 from .scheduler import Scheduler, SchedulerDecision, ExecutionRecord
 from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
+from .design_system import (
+    ComponentLibrary,
+    ComponentSpec,
+    ComponentVariant,
+    DesignSystem,
+    DesignSystemAudit,
+    DesignToken,
+    render_design_system_report,
+)
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
 from .mapping import map_source_issue_to_task
@@ -88,6 +97,13 @@ __all__ = [
     "GitHubConnector",
     "LinearConnector",
     "JiraConnector",
+    "ComponentLibrary",
+    "ComponentSpec",
+    "ComponentVariant",
+    "DesignSystem",
+    "DesignSystemAudit",
+    "DesignToken",
+    "render_design_system_report",
     "RiskFactor",
     "RiskScore",
     "RiskScorer",

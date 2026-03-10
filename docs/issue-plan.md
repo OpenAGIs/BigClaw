@@ -9,6 +9,19 @@
 - BIG-EPIC-11: 产品化 UI 与控制台
 - BIG-EPIC-12: 计费、套餐与商业化控制
 
+### Epic 11: 产品化 UI 与控制台 (`OPE-86`)
+
+#### Goal
+- Establish the reusable UI foundation for the BigClaw console so dashboard, replay, triage, and orchestration views can share one token system and governed component library.
+
+#### Child issues
+- `OPE-86` / `BIG-1103`: 设计系统与组件库 — P1, v2 design system and component library foundation.
+
+#### Delivery shape
+- Treat design tokens as a platform asset rather than per-page styling so future console slices can audit consistency and release readiness.
+- Model component readiness around documentation, accessibility coverage, and interactive-state completeness to keep operational UI slices shippable.
+- Expose a renderer that can summarize inventory, gaps, and orphan tokens for design reviews and launch gates.
+
 ### Epic 9: 工程运营系统 (`OPE-65`)
 
 #### Goal
