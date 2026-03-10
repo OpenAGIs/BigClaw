@@ -13,6 +13,7 @@ from .orchestration import (
     OrchestrationPlan,
     OrchestrationPolicyDecision,
     PremiumOrchestrationPolicy,
+    render_orchestration_canvas,
     render_orchestration_plan,
 )
 from .runtime import (
@@ -97,6 +98,7 @@ __all__ = [
     "OrchestrationPlan",
     "OrchestrationPolicyDecision",
     "PremiumOrchestrationPolicy",
+    "render_orchestration_canvas",
     "render_orchestration_plan",
     "ClawWorkerRuntime",
     "SandboxProfile",

@@ -5,6 +5,7 @@ from bigclaw.observability import ObservabilityLedger
 from bigclaw.orchestration import (
     CrossDepartmentOrchestrator,
     PremiumOrchestrationPolicy,
+    render_orchestration_canvas,
     render_orchestration_plan,
 )
 from bigclaw.scheduler import Scheduler
@@ -70,6 +71,30 @@ def test_render_orchestration_plan_lists_handoffs_and_policy() -> None:
     assert "- Tier: standard" in content
     assert "- Blocked Departments: data, customer-success" in content
     assert "- Human Handoff Team:" not in content
+
+def test_render_orchestration_canvas_highlights_delivery_lanes() -> None:
+    task = Task(
+        task_id="BIG-1001",
+        source="linear",
+        title="Launch orchestration canvas",
+        description="Coordinate rollout with customer and analytics workstreams",
+        labels=["customer", "data", "ops"],
+        required_tools=["browser", "sql"],
+        acceptance_criteria=["canvas-reviewed"],
+        validation_plan=["pytest", "ux-walkthrough"],
+    )
+
+    raw_plan = CrossDepartmentOrchestrator().plan(task)
+    plan, policy = PremiumOrchestrationPolicy().apply(task, raw_plan)
+    page = render_orchestration_canvas(task, plan, policy)
+
+    assert "Orchestration Canvas" in page
+    assert "Launch orchestration canvas" in page
+    assert "Upgrade Required: True" in page
+    assert "operations" in page
+    assert "canvas-reviewed" in page
+    assert "ux-walkthrough" in page
+
 
 
 def test_scheduler_execution_records_orchestration_plan_and_policy(tmp_path: Path) -> None:

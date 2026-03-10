@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from .dsl import WorkflowDefinition
 from .models import RiskLevel, Task
 from .observability import ObservabilityLedger, utc_now
-from .orchestration import render_orchestration_plan
+from .orchestration import render_orchestration_canvas, render_orchestration_plan
 from .reports import PilotScorecard, render_pilot_scorecard, write_report
 from .scheduler import ExecutionRecord, Scheduler
 
@@ -123,6 +123,7 @@ class WorkflowRunResult:
     journal: WorkpadJournal
     journal_path: Optional[str]
     orchestration_report_path: Optional[str] = None
+    orchestration_canvas_path: Optional[str] = None
     pilot_report_path: Optional[str] = None
 
 
@@ -162,24 +163,64 @@ class WorkflowEngine:
         )
 
         resolved_orchestration_report_path = None
+        resolved_orchestration_canvas_path = None
         if execution.orchestration_plan is not None and orchestration_report_path:
             resolved_orchestration_report_path = str(Path(orchestration_report_path))
-            write_report(
-                resolved_orchestration_report_path,
-                render_orchestration_plan(
-                    execution.orchestration_plan,
-                    execution.orchestration_policy,
-                    execution.handoff_request,
-                ),
-            )
-            execution.run.register_artifact(
-                "cross-department-orchestration",
-                "report",
-                resolved_orchestration_report_path,
-                format="markdown",
-                collaboration_mode=execution.orchestration_plan.collaboration_mode,
-                departments=execution.orchestration_plan.departments,
-            )
+            orchestration_file = Path(resolved_orchestration_report_path)
+            if orchestration_file.suffix.lower() == ".html":
+                resolved_orchestration_canvas_path = resolved_orchestration_report_path
+                write_report(
+                    resolved_orchestration_canvas_path,
+                    render_orchestration_canvas(
+                        task,
+                        execution.orchestration_plan,
+                        execution.orchestration_policy,
+                        execution.handoff_request,
+                    ),
+                )
+                execution.run.register_artifact(
+                    "orchestration-canvas",
+                    "page",
+                    resolved_orchestration_canvas_path,
+                    format="html",
+                    collaboration_mode=execution.orchestration_plan.collaboration_mode,
+                    departments=execution.orchestration_plan.departments,
+                )
+            else:
+                write_report(
+                    resolved_orchestration_report_path,
+                    render_orchestration_plan(
+                        execution.orchestration_plan,
+                        execution.orchestration_policy,
+                        execution.handoff_request,
+                    ),
+                )
+                execution.run.register_artifact(
+                    "cross-department-orchestration",
+                    "report",
+                    resolved_orchestration_report_path,
+                    format="markdown",
+                    collaboration_mode=execution.orchestration_plan.collaboration_mode,
+                    departments=execution.orchestration_plan.departments,
+                )
+                resolved_orchestration_canvas_path = str(orchestration_file.with_suffix(".html"))
+                write_report(
+                    resolved_orchestration_canvas_path,
+                    render_orchestration_canvas(
+                        task,
+                        execution.orchestration_plan,
+                        execution.orchestration_policy,
+                        execution.handoff_request,
+                    ),
+                )
+                execution.run.register_artifact(
+                    "orchestration-canvas",
+                    "page",
+                    resolved_orchestration_canvas_path,
+                    format="html",
+                    collaboration_mode=execution.orchestration_plan.collaboration_mode,
+                    departments=execution.orchestration_plan.departments,
+                )
             ledger.upsert(execution.run)
             journal.record(
                 "orchestration",
@@ -189,6 +230,7 @@ class WorkflowEngine:
                 tier=execution.orchestration_policy.tier if execution.orchestration_policy else "standard",
                 upgrade_required=execution.orchestration_policy.upgrade_required if execution.orchestration_policy else False,
                 handoff_team=execution.handoff_request.target_team if execution.handoff_request else "none",
+                canvas_path=resolved_orchestration_canvas_path,
             )
 
         resolved_pilot_report_path = None
@@ -236,6 +278,7 @@ class WorkflowEngine:
             journal=journal,
             journal_path=resolved_journal_path,
             orchestration_report_path=resolved_orchestration_report_path,
+            orchestration_canvas_path=resolved_orchestration_canvas_path,
             pilot_report_path=resolved_pilot_report_path,
         )
 

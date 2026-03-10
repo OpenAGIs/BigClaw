@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from html import escape
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from .models import RiskLevel, Task
@@ -260,3 +261,89 @@ def render_orchestration_plan(
             )
 
     return "\n".join(lines) + "\n"
+
+
+def render_orchestration_canvas(
+    task: Task,
+    plan: OrchestrationPlan,
+    policy_decision: Optional[OrchestrationPolicyDecision] = None,
+    handoff_request: Optional[HandoffRequest] = None,
+) -> str:
+    handoff_cards = "".join(
+        f"""
+        <section class=\"card handoff\">
+          <div class=\"eyebrow\">Lane {index}</div>
+          <h2>{escape(handoff.department)}</h2>
+          <p>{escape(handoff.reason)}</p>
+          <dl>
+            <div><dt>Tools</dt><dd>{escape(', '.join(handoff.required_tools) if handoff.required_tools else 'none')}</dd></div>
+            <div><dt>Approvals</dt><dd>{escape(', '.join(handoff.approvals) if handoff.approvals else 'none')}</dd></div>
+          </dl>
+        </section>
+        """
+        for index, handoff in enumerate(plan.handoffs, start=1)
+    ) or "<section class=\"card handoff\"><h2>No handoffs</h2><p>This task stays within a single delivery lane.</p></section>"
+
+    acceptance_items = "".join(f"<li>{escape(item)}</li>" for item in task.acceptance_criteria) or "<li>none</li>"
+    validation_items = "".join(f"<li>{escape(item)}</li>" for item in task.validation_plan) or "<li>none</li>"
+    label_items = escape(", ".join(task.labels) if task.labels else "none")
+    tool_items = escape(", ".join(task.required_tools) if task.required_tools else "none")
+    approval_items = escape(", ".join(plan.required_approvals) if plan.required_approvals else "none")
+    tier = policy_decision.tier if policy_decision is not None else "standard"
+    upgrade_required = policy_decision.upgrade_required if policy_decision is not None else False
+    blocked_departments = (
+        escape(", ".join(policy_decision.blocked_departments))
+        if policy_decision is not None and policy_decision.blocked_departments
+        else "none"
+    )
+    handoff_team = handoff_request.target_team if handoff_request is not None else "none"
+    handoff_reason = handoff_request.reason if handoff_request is not None else "No manual handoff required"
+
+    return f"""<!doctype html>
+<html lang=\"en\">
+<head>
+  <meta charset=\"utf-8\">
+  <title>Orchestration Canvas · {escape(task.task_id)}</title>
+  <style>
+    :root {{ color-scheme: light dark; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
+    body {{ margin: 2rem auto; max-width: 1100px; padding: 0 1rem 3rem; line-height: 1.5; }}
+    .grid {{ display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }}
+    .canvas {{ display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-top: 1rem; }}
+    .card {{ border: 1px solid #cbd5e1; border-radius: 14px; padding: 1rem; background: rgba(148, 163, 184, 0.08); }}
+    .handoff {{ position: relative; }}
+    .handoff::after {{ content: "→"; position: absolute; right: -0.7rem; top: 50%; transform: translateY(-50%); font-size: 1.4rem; opacity: 0.45; }}
+    .handoff:last-child::after {{ content: ""; }}
+    .eyebrow {{ text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; opacity: 0.7; }}
+    dl {{ margin: 0; }}
+    dt {{ font-weight: 600; margin-top: 0.75rem; }}
+    dd {{ margin: 0.15rem 0 0; }}
+    ul {{ padding-left: 1.2rem; }}
+  </style>
+</head>
+<body>
+  <h1>Orchestration Canvas</h1>
+  <p><strong>{escape(task.task_id)}</strong> · {escape(task.title)}</p>
+  <div class=\"grid\">
+    <section class=\"card\"><div class=\"eyebrow\">Mode</div><strong>{escape(plan.collaboration_mode)}</strong></section>
+    <section class=\"card\"><div class=\"eyebrow\">Departments</div><strong>{escape(str(plan.department_count))}</strong><br>{escape(', '.join(plan.departments) if plan.departments else 'none')}</section>
+    <section class=\"card\"><div class=\"eyebrow\">Required approvals</div><strong>{approval_items}</strong></section>
+    <section class=\"card\"><div class=\"eyebrow\">Task profile</div>Labels: {label_items}<br>Tools: {tool_items}</section>
+    <section class=\"card\"><div class=\"eyebrow\">Tier</div><strong>{escape(tier)}</strong><br>Upgrade Required: {escape(str(upgrade_required))}</section>
+    <section class=\"card\"><div class=\"eyebrow\">Blocked departments</div>{blocked_departments}</section>
+    <section class=\"card\"><div class=\"eyebrow\">Human handoff</div><strong>{escape(handoff_team)}</strong><br>{escape(handoff_reason)}</section>
+  </div>
+  <h2>Delivery lanes</h2>
+  <div class=\"canvas\">{handoff_cards}</div>
+  <div class=\"grid\" style=\"margin-top: 1rem;\">
+    <section class=\"card\">
+      <h2>Acceptance</h2>
+      <ul>{acceptance_items}</ul>
+    </section>
+    <section class=\"card\">
+      <h2>Validation</h2>
+      <ul>{validation_items}</ul>
+    </section>
+  </div>
+</body>
+</html>
+"""

@@ -56,6 +56,7 @@ def test_workflow_engine_records_journal_and_accepts_complete_evidence(tmp_path:
     assert result.acceptance.status == "accepted"
     assert result.journal_path is not None
     assert result.orchestration_report_path is not None
+    assert result.orchestration_canvas_path is not None
 
     journal = json.loads(Path(result.journal_path).read_text())
     assert [entry["step"] for entry in journal["entries"]] == ["intake", "execution", "orchestration", "acceptance"]
@@ -191,15 +192,53 @@ def test_workflow_engine_writes_orchestration_report_without_duplicating_ledger_
     )
 
     assert result.orchestration_report_path is not None
+    assert result.orchestration_canvas_path is not None
     assert Path(result.orchestration_report_path).exists()
+    assert Path(result.orchestration_canvas_path).exists()
     report = Path(result.orchestration_report_path).read_text()
+    canvas = Path(result.orchestration_canvas_path).read_text()
     assert "- customer-success:" not in report
     assert "Upgrade Required: True" in report
     assert "Human Handoff Team: operations" in report
+    assert "Orchestration Canvas" in canvas
+    assert "Upgrade Required: True" in canvas
+    assert "operations" in canvas
 
     entries = ledger.load()
     assert len(entries) == 1
-    assert entries[0]["artifacts"][0]["name"] == "cross-department-orchestration"
+    assert {artifact["name"] for artifact in entries[0]["artifacts"]} == {
+        "cross-department-orchestration",
+        "orchestration-canvas",
+    }
 
     journal = json.loads(Path(result.journal_path).read_text())
     assert journal["entries"][2]["step"] == "orchestration"
+
+
+def test_workflow_engine_can_write_orchestration_canvas_directly(tmp_path: Path):
+    ledger = ObservabilityLedger(str(tmp_path / "ledger.json"))
+    task = Task(
+        task_id="OPE-79-html",
+        source="linear",
+        title="Direct canvas export",
+        description="Cross-team launch readiness",
+        labels=["customer", "ops"],
+        acceptance_criteria=["canvas-shared"],
+        validation_plan=["pytest"],
+    )
+
+    result = WorkflowEngine().run(
+        task,
+        run_id="run-wf-ope-79-html",
+        ledger=ledger,
+        orchestration_report_path=str(tmp_path / "reports" / "ope-79-canvas.html"),
+        validation_evidence=["pytest", "canvas-shared"],
+    )
+
+    assert result.orchestration_report_path is not None
+    assert result.orchestration_canvas_path == result.orchestration_report_path
+    assert Path(result.orchestration_canvas_path).exists()
+    assert "Orchestration Canvas" in Path(result.orchestration_canvas_path).read_text()
+
+    artifacts = ledger.load()[0]["artifacts"]
+    assert [artifact["name"] for artifact in artifacts] == ["orchestration-canvas"]
