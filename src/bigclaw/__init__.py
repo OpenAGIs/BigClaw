@@ -5,6 +5,15 @@ from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConne
 from .mapping import map_source_issue_to_task
 from .observability import ObservabilityLedger, TaskRun
 from .reports import render_task_run_report
+from .evaluation import (
+    BenchmarkCase,
+    BenchmarkResult,
+    BenchmarkRunner,
+    BenchmarkSuiteResult,
+    EvaluationCriterion,
+    ReplayOutcome,
+    ReplayRecord,
+)
 
 __all__ = [
     "Task",
@@ -23,4 +32,11 @@ __all__ = [
     "ObservabilityLedger",
     "TaskRun",
     "render_task_run_report",
+    "BenchmarkCase",
+    "BenchmarkResult",
+    "BenchmarkRunner",
+    "BenchmarkSuiteResult",
+    "EvaluationCriterion",
+    "ReplayOutcome",
+    "ReplayRecord",
 ]
