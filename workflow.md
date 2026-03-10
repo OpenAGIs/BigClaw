@@ -2,12 +2,11 @@
 tracker:
   kind: linear
   api_key: "$LINEAR_API_KEY"
-  project_slug: "bigclaw"
+  project_slug: "1b50e092958c"
   active_states:
     - Todo
     - In Progress
-    - Merging
-    - Rework
+    - In Review
   terminal_states:
     - Closed
     - Cancelled
@@ -23,7 +22,7 @@ workspace:
 
 hooks:
   after_create: |
-    git clone git@github.com:OpenAGIs/BigClaw.git .
+    git clone https://$GITHUB_TOKEN@github.com/OpenAGIs/BigClaw.git .
     git config user.email "dcjcloud@gmail.com"
     git config user.name "native cloud"
     git remote set-url origin https://$GITHUB_TOKEN@github.com/OpenAGIs/BigClaw.git
