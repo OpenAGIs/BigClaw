@@ -53,3 +53,20 @@ class Task:
             "acceptance_criteria": self.acceptance_criteria,
             "validation_plan": self.validation_plan,
         }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "Task":
+        return cls(
+            task_id=data["task_id"],
+            source=data["source"],
+            title=data["title"],
+            description=data.get("description", ""),
+            labels=data.get("labels", []),
+            priority=Priority(data.get("priority", Priority.P2)),
+            state=TaskState(data.get("state", TaskState.TODO.value)),
+            risk_level=RiskLevel(data.get("risk_level", RiskLevel.LOW.value)),
+            budget=data.get("budget", 0.0),
+            required_tools=data.get("required_tools", []),
+            acceptance_criteria=data.get("acceptance_criteria", []),
+            validation_plan=data.get("validation_plan", []),
+        )

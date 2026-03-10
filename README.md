@@ -11,6 +11,7 @@ BigClaw is a Symphony/Codex workflow project scaffolded from `workflow.md`.
   - persistent priority queue
   - risk/tool based scheduler
   - observability ledger with logs/trace/artifact/audit capture
+  - queue-to-scheduler execution recording with audit reports
   - report renderer
 - `tests/`: unit tests
 

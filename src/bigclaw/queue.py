@@ -37,5 +37,11 @@ class PersistentTaskQueue:
         self._save()
         return task
 
+    def dequeue_task(self) -> Optional[Task]:
+        task = self.dequeue()
+        if task is None:
+            return None
+        return Task.from_dict(task)
+
     def size(self) -> int:
         return len(self._heap)

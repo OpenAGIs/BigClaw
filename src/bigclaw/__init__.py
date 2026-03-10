@@ -1,6 +1,6 @@
 from .models import Task, TaskState, RiskLevel, Priority
 from .queue import PersistentTaskQueue
-from .scheduler import Scheduler, SchedulerDecision
+from .scheduler import Scheduler, SchedulerDecision, ExecutionRecord
 from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
 from .mapping import map_source_issue_to_task
 from .observability import ObservabilityLedger, TaskRun
@@ -14,6 +14,7 @@ __all__ = [
     "PersistentTaskQueue",
     "Scheduler",
     "SchedulerDecision",
+    "ExecutionRecord",
     "SourceIssue",
     "GitHubConnector",
     "LinearConnector",
