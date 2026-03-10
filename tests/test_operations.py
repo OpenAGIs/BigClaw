@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from bigclaw.evaluation import (
     BenchmarkResult,
     BenchmarkSuiteResult,
@@ -12,6 +14,7 @@ from bigclaw.operations import (
     render_operations_dashboard,
     render_regression_center,
     render_weekly_operations_report,
+    write_weekly_operations_bundle,
 )
 from bigclaw.scheduler import ExecutionRecord, SchedulerDecision
 
@@ -167,3 +170,31 @@ def test_build_regression_center_separates_regressions_and_improvements() -> Non
     assert "# Regression Analysis Center" in report
     assert "case-drop" in report
     assert "case-up" in report
+
+
+def test_write_weekly_operations_bundle_emits_expected_reports(tmp_path: Path) -> None:
+    analytics = OperationsAnalytics()
+    runs = [
+        make_run("run-1", "BIG-905-1", "approved", "2026-03-10T10:00:00Z", "2026-03-10T10:20:00Z", "ok", "default low risk path"),
+        make_run("run-2", "BIG-905-2", "needs-approval", "2026-03-10T11:00:00Z", "2026-03-10T11:50:00Z", "hold", "requires approval for high-risk task"),
+    ]
+    baseline = BenchmarkSuiteResult(version="v0.1", results=[make_result("case-drop", 100, True)])
+    current = BenchmarkSuiteResult(version="v0.2", results=[make_result("case-drop", 70, False)])
+
+    weekly_report = analytics.build_weekly_report(
+        name="Engineering Ops",
+        period="2026-W11",
+        runs=runs,
+        current_suite=current,
+        baseline_suite=baseline,
+    )
+    regression_center = analytics.build_regression_center(current, baseline)
+    artifacts = write_weekly_operations_bundle(str(tmp_path / "weekly"), weekly_report, regression_center=regression_center)
+
+    assert Path(artifacts.weekly_report_path).exists()
+    assert Path(artifacts.dashboard_path).exists()
+    assert artifacts.regression_center_path is not None
+    assert Path(artifacts.regression_center_path).exists()
+    assert "# Weekly Operations Report" in Path(artifacts.weekly_report_path).read_text()
+    assert "# Operations Dashboard" in Path(artifacts.dashboard_path).read_text()
+    assert "# Regression Analysis Center" in Path(artifacts.regression_center_path).read_text()

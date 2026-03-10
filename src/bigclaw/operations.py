@@ -1,11 +1,13 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
 from .models import Task
 from .queue import PersistentTaskQueue
 
 from .evaluation import BenchmarkSuiteResult
+from .reports import write_report
 
 
 STATUS_COMPLETE = {"approved", "accepted", "completed", "succeeded"}
@@ -66,6 +68,15 @@ class RegressionCenter:
     @property
     def regression_count(self) -> int:
         return len(self.regressions)
+
+
+@dataclass
+class WeeklyOperationsArtifacts:
+    root_dir: str
+    weekly_report_path: str
+    dashboard_path: str
+    regression_center_path: Optional[str] = None
+    queue_control_path: Optional[str] = None
 
 
 @dataclass
@@ -384,6 +395,41 @@ def render_queue_control_center(center: QueueControlCenter) -> str:
         lines.append("- None")
 
     return "\n".join(lines) + "\n"
+
+
+
+
+def write_weekly_operations_bundle(
+    root_dir: str,
+    report: WeeklyOperationsReport,
+    regression_center: Optional[RegressionCenter] = None,
+    queue_control_center: Optional[QueueControlCenter] = None,
+) -> WeeklyOperationsArtifacts:
+    base = Path(root_dir)
+    base.mkdir(parents=True, exist_ok=True)
+
+    weekly_report_path = str(base / "weekly-operations.md")
+    dashboard_path = str(base / "operations-dashboard.md")
+    write_report(weekly_report_path, render_weekly_operations_report(report))
+    write_report(dashboard_path, render_operations_dashboard(report.snapshot))
+
+    regression_center_path = None
+    if regression_center is not None:
+        regression_center_path = str(base / "regression-center.md")
+        write_report(regression_center_path, render_regression_center(regression_center))
+
+    queue_control_path = None
+    if queue_control_center is not None:
+        queue_control_path = str(base / "queue-control-center.md")
+        write_report(queue_control_path, render_queue_control_center(queue_control_center))
+
+    return WeeklyOperationsArtifacts(
+        root_dir=str(base),
+        weekly_report_path=weekly_report_path,
+        dashboard_path=dashboard_path,
+        regression_center_path=regression_center_path,
+        queue_control_path=queue_control_path,
+    )
 
 
 def render_regression_center(center: RegressionCenter) -> str:
