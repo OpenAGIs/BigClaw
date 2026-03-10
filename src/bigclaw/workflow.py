@@ -166,7 +166,11 @@ class WorkflowEngine:
             resolved_orchestration_report_path = str(Path(orchestration_report_path))
             write_report(
                 resolved_orchestration_report_path,
-                render_orchestration_plan(execution.orchestration_plan, execution.orchestration_policy),
+                render_orchestration_plan(
+                    execution.orchestration_plan,
+                    execution.orchestration_policy,
+                    execution.handoff_request,
+                ),
             )
             execution.run.register_artifact(
                 "cross-department-orchestration",
@@ -184,6 +188,7 @@ class WorkflowEngine:
                 approvals=execution.orchestration_plan.required_approvals,
                 tier=execution.orchestration_policy.tier if execution.orchestration_policy else "standard",
                 upgrade_required=execution.orchestration_policy.upgrade_required if execution.orchestration_policy else False,
+                handoff_team=execution.handoff_request.target_team if execution.handoff_request else "none",
             )
 
         resolved_pilot_report_path = None

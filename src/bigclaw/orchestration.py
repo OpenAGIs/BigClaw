@@ -54,6 +54,22 @@ class OrchestrationPlan:
 
 
 @dataclass
+class HandoffRequest:
+    target_team: str
+    reason: str
+    status: str = "pending"
+    required_approvals: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "target_team": self.target_team,
+            "reason": self.reason,
+            "status": self.status,
+            "required_approvals": self.required_approvals,
+        }
+
+
+@dataclass
 class OrchestrationPolicyDecision:
     tier: str
     upgrade_required: bool
@@ -198,6 +214,7 @@ class PremiumOrchestrationPolicy:
 def render_orchestration_plan(
     plan: OrchestrationPlan,
     policy_decision: Optional[OrchestrationPolicyDecision] = None,
+    handoff_request: Optional[HandoffRequest] = None,
 ) -> str:
     lines = [
         "# Cross-Department Orchestration Plan",
@@ -216,6 +233,17 @@ def render_orchestration_plan(
                 f"- Upgrade Required: {policy_decision.upgrade_required}",
                 f"- Policy Reason: {policy_decision.reason}",
                 f"- Blocked Departments: {blocked}",
+            ]
+        )
+
+    if handoff_request is not None:
+        approvals = ", ".join(handoff_request.required_approvals) if handoff_request.required_approvals else "none"
+        lines.extend(
+            [
+                f"- Human Handoff Team: {handoff_request.target_team}",
+                f"- Human Handoff Status: {handoff_request.status}",
+                f"- Human Handoff Reason: {handoff_request.reason}",
+                f"- Human Handoff Approvals: {approvals}",
             ]
         )
 

@@ -6,6 +6,7 @@ from .models import RiskLevel, Task
 from .observability import ObservabilityLedger, TaskRun
 from .orchestration import (
     CrossDepartmentOrchestrator,
+    HandoffRequest,
     OrchestrationPlan,
     OrchestrationPolicyDecision,
     PremiumOrchestrationPolicy,
@@ -28,6 +29,7 @@ class ExecutionRecord:
     report_path: Optional[str]
     orchestration_plan: Optional[OrchestrationPlan] = None
     orchestration_policy: Optional[OrchestrationPolicyDecision] = None
+    handoff_request: Optional[HandoffRequest] = None
     tool_results: list[ToolCallResult] = field(default_factory=list)
 
 
@@ -68,6 +70,7 @@ class Scheduler:
         decision = self.decide(task)
         raw_plan = self.orchestrator.plan(task)
         orchestration_plan, policy_decision = self.orchestration_policy.apply(task, raw_plan)
+        handoff_request = self._build_handoff_request(decision, orchestration_plan, policy_decision)
         run = TaskRun.from_task(task, run_id=run_id, medium=decision.medium)
         run.log("info", "task received", source=task.source, priority=int(task.priority))
         run.log(
@@ -112,6 +115,21 @@ class Scheduler:
             reason=policy_decision.reason,
             blocked_departments=policy_decision.blocked_departments,
         )
+        if handoff_request is not None:
+            run.trace(
+                "orchestration.handoff",
+                handoff_request.status,
+                target_team=handoff_request.target_team,
+                required_approvals=handoff_request.required_approvals,
+            )
+            run.audit(
+                "orchestration.handoff",
+                actor,
+                handoff_request.status,
+                target_team=handoff_request.target_team,
+                reason=handoff_request.reason,
+                required_approvals=handoff_request.required_approvals,
+            )
 
         worker_execution = self.worker_runtime.execute(task, decision, run, actor=actor)
 
@@ -135,5 +153,27 @@ class Scheduler:
             report_path=resolved_report_path,
             orchestration_plan=orchestration_plan,
             orchestration_policy=policy_decision,
+            handoff_request=handoff_request,
             tool_results=worker_execution.tool_results,
         )
+
+
+    def _build_handoff_request(
+        self,
+        decision: SchedulerDecision,
+        plan: OrchestrationPlan,
+        policy_decision: OrchestrationPolicyDecision,
+    ) -> Optional[HandoffRequest]:
+        if not decision.approved:
+            return HandoffRequest(
+                target_team="security",
+                reason=decision.reason,
+                required_approvals=plan.required_approvals or ["security-review"],
+            )
+        if policy_decision.upgrade_required:
+            return HandoffRequest(
+                target_team="operations",
+                reason=policy_decision.reason,
+                required_approvals=["ops-manager"],
+            )
+        return None

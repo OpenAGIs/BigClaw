@@ -195,6 +195,7 @@ def test_workflow_engine_writes_orchestration_report_without_duplicating_ledger_
     report = Path(result.orchestration_report_path).read_text()
     assert "- customer-success:" not in report
     assert "Upgrade Required: True" in report
+    assert "Human Handoff Team: operations" in report
 
     entries = ledger.load()
     assert len(entries) == 1

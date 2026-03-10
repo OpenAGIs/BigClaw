@@ -69,6 +69,7 @@ def test_render_orchestration_plan_lists_handoffs_and_policy() -> None:
     assert "- Departments: operations, engineering" in content
     assert "- Tier: standard" in content
     assert "- Blocked Departments: data, customer-success" in content
+    assert "- Human Handoff Team:" not in content
 
 
 def test_scheduler_execution_records_orchestration_plan_and_policy(tmp_path: Path) -> None:
@@ -95,3 +96,23 @@ def test_scheduler_execution_records_orchestration_plan_and_policy(tmp_path: Pat
     assert any(trace["span"] == "orchestration.policy" for trace in entry["traces"])
     assert any(audit["action"] == "orchestration.plan" for audit in entry["audits"])
     assert any(audit["action"] == "orchestration.policy" for audit in entry["audits"])
+
+
+def test_scheduler_creates_handoff_for_policy_or_approval_blockers(tmp_path: Path) -> None:
+    ledger = ObservabilityLedger(str(tmp_path / "ledger.json"))
+    task = Task(
+        task_id="OPE-66-handoff",
+        source="linear",
+        title="Customer analytics rollout",
+        description="Need cross-team coordination",
+        labels=["customer", "data"],
+        required_tools=["browser", "sql"],
+    )
+
+    record = Scheduler().execute(task, run_id="run-ope-66-handoff", ledger=ledger)
+    entry = ledger.load()[0]
+
+    assert record.handoff_request is not None
+    assert record.handoff_request.target_team == "operations"
+    assert any(trace["span"] == "orchestration.handoff" for trace in entry["traces"])
+    assert any(audit["action"] == "orchestration.handoff" for audit in entry["audits"])

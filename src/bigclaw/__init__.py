@@ -8,6 +8,7 @@ from .observability import ObservabilityLedger, TaskRun
 from .orchestration import (
     CrossDepartmentOrchestrator,
     DepartmentHandoff,
+    HandoffRequest,
     OrchestrationPlan,
     OrchestrationPolicyDecision,
     PremiumOrchestrationPolicy,
@@ -82,6 +83,7 @@ __all__ = [
     "TaskRun",
     "CrossDepartmentOrchestrator",
     "DepartmentHandoff",
+    "HandoffRequest",
     "OrchestrationPlan",
     "OrchestrationPolicyDecision",
     "PremiumOrchestrationPolicy",
