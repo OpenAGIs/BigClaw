@@ -2,7 +2,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from .models import Task, RiskLevel
+from .events import EventBus
+from .models import Task, RiskLevel, TaskState
 from .observability import ObservabilityLedger, TaskRun
 from .runtime import ClawWorkerRuntime, ToolCallResult
 from .reports import render_task_run_report, write_report
@@ -49,8 +50,11 @@ class Scheduler:
         ledger: ObservabilityLedger,
         report_path: Optional[str] = None,
         actor: str = "scheduler",
+        event_bus: Optional[EventBus] = None,
     ) -> ExecutionRecord:
         decision = self.decide(task)
+        previous_state = task.state.value
+        task.state = TaskState.IN_PROGRESS if decision.approved else TaskState.BLOCKED
         run = TaskRun.from_task(task, run_id=run_id, medium=decision.medium)
         run.log("info", "task received", source=task.source, priority=int(task.priority))
         run.trace(
@@ -60,6 +64,8 @@ class Scheduler:
             medium=decision.medium,
         )
         run.audit("scheduler.decision", actor, "approved" if decision.approved else "pending", reason=decision.reason)
+        if event_bus is not None:
+            event_bus.publish_task_state_changed(task, previous_state=previous_state, actor=actor, reason=decision.reason)
 
         worker_execution = self.worker_runtime.execute(task, decision, run, actor=actor)
 

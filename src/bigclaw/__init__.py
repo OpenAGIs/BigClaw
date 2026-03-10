@@ -14,6 +14,7 @@ from .runtime import (
     ToolRuntime,
     WorkerExecutionResult,
 )
+from .events import DispatchResult, Event, EventBus, WebhookDelivery, WebhookEndpoint
 from .reports import (
     IssueClosureDecision,
     PilotMetric,
@@ -63,6 +64,11 @@ __all__ = [
     "ToolPolicy",
     "ToolRuntime",
     "WorkerExecutionResult",
+    "DispatchResult",
+    "Event",
+    "EventBus",
+    "WebhookDelivery",
+    "WebhookEndpoint",
     "IssueClosureDecision",
     "PilotMetric",
     "PilotPortfolio",
