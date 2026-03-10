@@ -2,6 +2,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Sequence
 
+from .models import Task
+from .queue import PersistentTaskQueue
+
 from .evaluation import BenchmarkSuiteResult
 
 
@@ -49,6 +52,17 @@ class WeeklyOperationsReport:
     period: str
     snapshot: OperationsSnapshot
     regressions: List[RegressionFinding] = field(default_factory=list)
+
+
+@dataclass
+class QueueControlCenter:
+    queue_depth: int
+    queued_by_priority: Dict[str, int]
+    queued_by_risk: Dict[str, int]
+    execution_media: Dict[str, int]
+    waiting_approval_runs: int
+    blocked_tasks: List[str] = field(default_factory=list)
+    queued_tasks: List[str] = field(default_factory=list)
 
 
 class OperationsAnalytics:
@@ -153,6 +167,40 @@ class OperationsAnalytics:
             )
 
         return sorted(findings, key=lambda finding: (finding.delta, finding.case_id))
+
+    def build_queue_control_center(
+        self,
+        queue: PersistentTaskQueue,
+        runs: Sequence[dict],
+    ) -> QueueControlCenter:
+        queued_tasks = queue.peek_tasks()
+        queued_by_priority = {"P0": 0, "P1": 0, "P2": 0}
+        queued_by_risk = {"low": 0, "medium": 0, "high": 0}
+        for task in queued_tasks:
+            queued_by_priority[f"P{int(task.priority)}"] += 1
+            queued_by_risk[task.risk_level.value] += 1
+
+        execution_media: Dict[str, int] = {}
+        waiting_approval_runs = 0
+        blocked_tasks: List[str] = []
+        for run in runs:
+            medium = str(run.get("medium", "unknown"))
+            execution_media[medium] = execution_media.get(medium, 0) + 1
+            if run.get("status") == "needs-approval":
+                waiting_approval_runs += 1
+                task_id = str(run.get("task_id", ""))
+                if task_id and task_id not in blocked_tasks:
+                    blocked_tasks.append(task_id)
+
+        return QueueControlCenter(
+            queue_depth=queue.size(),
+            queued_by_priority=queued_by_priority,
+            queued_by_risk=queued_by_risk,
+            execution_media=execution_media,
+            waiting_approval_runs=waiting_approval_runs,
+            blocked_tasks=blocked_tasks,
+            queued_tasks=[task.task_id for task in queued_tasks],
+        )
 
     def build_weekly_report(
         self,
@@ -263,6 +311,42 @@ def render_weekly_operations_report(report: WeeklyOperationsReport) -> str:
             lines.append(
                 f"- {finding.case_id}: severity={finding.severity} delta={finding.delta} summary={finding.summary}"
             )
+    else:
+        lines.append("- None")
+
+    return "\n".join(lines) + "\n"
+
+
+def render_queue_control_center(center: QueueControlCenter) -> str:
+    lines = [
+        "# Queue Control Center",
+        "",
+        f"- Queue Depth: {center.queue_depth}",
+        f"- Waiting Approval Runs: {center.waiting_approval_runs}",
+        f"- Queued Tasks: {', '.join(center.queued_tasks) if center.queued_tasks else 'none'}",
+        "",
+        "## Queue By Priority",
+        "",
+    ]
+
+    for priority, count in center.queued_by_priority.items():
+        lines.append(f"- {priority}: {count}")
+
+    lines.extend(["", "## Queue By Risk", ""])
+    for risk_level, count in center.queued_by_risk.items():
+        lines.append(f"- {risk_level}: {count}")
+
+    lines.extend(["", "## Execution Media", ""])
+    if center.execution_media:
+        for medium, count in sorted(center.execution_media.items()):
+            lines.append(f"- {medium}: {count}")
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Blocked Tasks", ""])
+    if center.blocked_tasks:
+        for task_id in center.blocked_tasks:
+            lines.append(f"- {task_id}")
     else:
         lines.append("- None")
 

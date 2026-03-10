@@ -45,3 +45,6 @@ class PersistentTaskQueue:
 
     def size(self) -> int:
         return len(self._heap)
+    def peek_tasks(self) -> List[Task]:
+        return [Task.from_dict(task) for (_p, _tid, task) in sorted(self._heap)]
+

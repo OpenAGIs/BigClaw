@@ -51,7 +51,9 @@ from .operations import (
     RegressionFinding,
     TriageCluster,
     WeeklyOperationsReport,
+    QueueControlCenter,
     render_operations_dashboard,
+    render_queue_control_center,
     render_weekly_operations_report,
 )
 from .evaluation import (
@@ -131,7 +133,9 @@ __all__ = [
     "RegressionFinding",
     "TriageCluster",
     "WeeklyOperationsReport",
+    "QueueControlCenter",
     "render_operations_dashboard",
+    "render_queue_control_center",
     "render_weekly_operations_report",
     "BenchmarkCase",
     "BenchmarkComparison",
