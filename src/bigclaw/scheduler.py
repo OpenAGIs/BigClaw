@@ -4,6 +4,7 @@ from typing import Optional
 
 from .models import Task, RiskLevel
 from .observability import ObservabilityLedger, TaskRun
+from .orchestration import CrossDepartmentOrchestrator, OrchestrationPlan
 from .runtime import ClawWorkerRuntime, ToolCallResult
 from .reports import render_task_run_report, write_report
 
@@ -20,12 +21,18 @@ class ExecutionRecord:
     decision: SchedulerDecision
     run: TaskRun
     report_path: Optional[str]
+    orchestration_plan: Optional[OrchestrationPlan] = None
     tool_results: list[ToolCallResult] = field(default_factory=list)
 
 
 class Scheduler:
-    def __init__(self, worker_runtime: Optional[ClawWorkerRuntime] = None):
+    def __init__(
+        self,
+        worker_runtime: Optional[ClawWorkerRuntime] = None,
+        orchestrator: Optional[CrossDepartmentOrchestrator] = None,
+    ):
         self.worker_runtime = worker_runtime or ClawWorkerRuntime()
+        self.orchestrator = orchestrator or CrossDepartmentOrchestrator()
 
     def decide(self, task: Task) -> SchedulerDecision:
         if task.budget < 0:
@@ -51,15 +58,37 @@ class Scheduler:
         actor: str = "scheduler",
     ) -> ExecutionRecord:
         decision = self.decide(task)
+        orchestration_plan = self.orchestrator.plan(task)
         run = TaskRun.from_task(task, run_id=run_id, medium=decision.medium)
         run.log("info", "task received", source=task.source, priority=int(task.priority))
+        run.log(
+            "info",
+            "orchestration planned",
+            collaboration_mode=orchestration_plan.collaboration_mode,
+            departments=orchestration_plan.departments,
+        )
         run.trace(
             "scheduler.decide",
             "ok" if decision.approved else "pending",
             approved=decision.approved,
             medium=decision.medium,
         )
+        run.trace(
+            "orchestration.plan",
+            "ready",
+            collaboration_mode=orchestration_plan.collaboration_mode,
+            departments=orchestration_plan.departments,
+            handoffs=orchestration_plan.department_count,
+        )
         run.audit("scheduler.decision", actor, "approved" if decision.approved else "pending", reason=decision.reason)
+        run.audit(
+            "orchestration.plan",
+            actor,
+            "ready",
+            collaboration_mode=orchestration_plan.collaboration_mode,
+            departments=orchestration_plan.departments,
+            approvals=orchestration_plan.required_approvals,
+        )
 
         worker_execution = self.worker_runtime.execute(task, decision, run, actor=actor)
 
@@ -77,5 +106,6 @@ class Scheduler:
             decision=decision,
             run=run,
             report_path=resolved_report_path,
+            orchestration_plan=orchestration_plan,
             tool_results=worker_execution.tool_results,
         )

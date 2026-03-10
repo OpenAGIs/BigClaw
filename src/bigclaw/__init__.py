@@ -5,6 +5,7 @@ from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConne
 from .dsl import WorkflowDefinition, WorkflowStep
 from .mapping import map_source_issue_to_task
 from .observability import ObservabilityLedger, TaskRun
+from .orchestration import CrossDepartmentOrchestrator, DepartmentHandoff, OrchestrationPlan, render_orchestration_plan
 from .runtime import (
     ClawWorkerRuntime,
     SandboxProfile,
@@ -56,6 +57,10 @@ __all__ = [
     "map_source_issue_to_task",
     "ObservabilityLedger",
     "TaskRun",
+    "CrossDepartmentOrchestrator",
+    "DepartmentHandoff",
+    "OrchestrationPlan",
+    "render_orchestration_plan",
     "ClawWorkerRuntime",
     "SandboxProfile",
     "SandboxRouter",
