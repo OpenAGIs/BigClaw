@@ -7,6 +7,7 @@ BigClaw is a Symphony/Codex workflow project scaffolded from `workflow.md`.
 - `workflow.md`: Linear-driven unattended workflow configuration
 - `docs/issue-plan.md`: Epic/Issue decomposition from BigClaw PRD v1.0
 - `src/bigclaw`: v0.1 foundation modules
+  - engineering operations analytics for dashboards, triage, regressions, and weekly reports
   - unified task model
   - persistent priority queue
   - risk/tool based scheduler

@@ -32,6 +32,15 @@ from .reports import (
     validation_report_exists,
 )
 from .workflow import AcceptanceDecision, AcceptanceGate, WorkflowEngine, WorkflowRunResult, WorkpadJournal
+from .operations import (
+    OperationsAnalytics,
+    OperationsSnapshot,
+    RegressionFinding,
+    TriageCluster,
+    WeeklyOperationsReport,
+    render_operations_dashboard,
+    render_weekly_operations_report,
+)
 from .evaluation import (
     BenchmarkCase,
     BenchmarkComparison,
@@ -94,6 +103,13 @@ __all__ = [
     "WorkflowEngine",
     "WorkflowRunResult",
     "WorkpadJournal",
+    "OperationsAnalytics",
+    "OperationsSnapshot",
+    "RegressionFinding",
+    "TriageCluster",
+    "WeeklyOperationsReport",
+    "render_operations_dashboard",
+    "render_weekly_operations_report",
     "BenchmarkCase",
     "BenchmarkComparison",
     "BenchmarkResult",
