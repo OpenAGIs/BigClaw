@@ -146,6 +146,7 @@ class WeeklyOperationsReport:
     medium_counts: dict[str, int] = field(default_factory=dict)
     daily_volume: dict[str, int] = field(default_factory=dict)
     focus_items: List[WeeklyOperationsFocusItem] = field(default_factory=list)
+    recommendations: List[str] = field(default_factory=list)
 
 
 SUCCESS_STATUSES = {"approved", "completed", "succeeded", "accepted"}
@@ -181,6 +182,46 @@ def _extract_focus_reason(run: TaskRun | dict) -> str:
             return trace.get("span", "pending review")
 
     return "requires follow-up"
+
+
+def _build_recommendations(
+    total_runs: int,
+    success_rate: float,
+    approvals_pending: int,
+    medium_counts: Counter,
+    focus_items: List[WeeklyOperationsFocusItem],
+) -> List[str]:
+    recommendations: List[str] = []
+
+    if total_runs == 0:
+        return ["No activity detected this period; verify ingestion and scheduler triggers for the team."]
+
+    if approvals_pending:
+        recommendations.append(
+            f"Clear the approval backlog for {approvals_pending} run(s) to reduce manual handoff delay next week."
+        )
+
+    if success_rate < 80:
+        recommendations.append(
+            f"Investigate the failure and review path behind the {success_rate:.1f}% success rate before the next reporting window."
+        )
+
+    if medium_counts.get("vm", 0) > medium_counts.get("docker", 0):
+        recommendations.append(
+            "Review VM-heavy execution patterns and shift eligible workloads back to docker/browser lanes to improve throughput."
+        )
+
+    if focus_items:
+        recommendations.append(
+            f"Prioritize follow-up on {focus_items[0].task_id}/{focus_items[0].run_id} because it is the newest unresolved operation in the report."
+        )
+
+    if not recommendations:
+        recommendations.append(
+            "Sustain the current operating cadence and expand automation coverage for additional recurring workflows."
+        )
+
+    return recommendations
 
 
 def build_weekly_operations_report(
@@ -234,6 +275,13 @@ def build_weekly_operations_report(
     focus_items = [item for _, item in sorted(focus_candidates, key=lambda candidate: candidate[0], reverse=True)[:5]]
     total_runs = len(selected_runs)
     success_rate = round((successful_runs / total_runs) * 100, 1) if total_runs else 0.0
+    recommendations = _build_recommendations(
+        total_runs=total_runs,
+        success_rate=success_rate,
+        approvals_pending=status_counts.get("needs-approval", 0),
+        medium_counts=medium_counts,
+        focus_items=focus_items,
+    )
 
     return WeeklyOperationsReport(
         team=team,
@@ -251,6 +299,7 @@ def build_weekly_operations_report(
         medium_counts=dict(sorted(medium_counts.items())),
         daily_volume=dict(sorted(daily_volume.items())),
         focus_items=focus_items,
+        recommendations=recommendations,
     )
 
 
@@ -307,6 +356,12 @@ def render_weekly_operations_report(report: WeeklyOperationsReport) -> str:
             )
     else:
         lines.append("- No outstanding follow-up items.")
+
+    lines.extend(["", "## Recommendations", ""])
+    if report.recommendations:
+        lines.extend(f"- {recommendation}" for recommendation in report.recommendations)
+    else:
+        lines.append("- None")
 
     return "\n".join(lines) + "\n"
 

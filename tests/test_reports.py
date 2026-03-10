@@ -238,6 +238,11 @@ def test_build_weekly_operations_report_summarizes_runs_in_period():
     assert report.daily_volume == {"2026-03-03": 1, "2026-03-05": 1, "2026-03-08": 1}
     assert report.focus_items[0].run_id == "run-2"
     assert report.focus_items[0].reason == "requires approval for high-risk task"
+    assert report.recommendations == [
+        "Clear the approval backlog for 1 run(s) to reduce manual handoff delay next week.",
+        "Investigate the failure and review path behind the 66.7% success rate before the next reporting window.",
+        "Prioritize follow-up on OPE-75/run-2 because it is the newest unresolved operation in the report.",
+    ]
 
     content = render_weekly_operations_report(report)
 
@@ -245,6 +250,8 @@ def test_build_weekly_operations_report_summarizes_runs_in_period():
     assert "Success Rate: 66.7%" in content
     assert "Approvals Pending: 1" in content
     assert "OPE-75/run-2: status=needs-approval" in content
+    assert "## Recommendations" in content
+    assert "Clear the approval backlog for 1 run(s)" in content
 
 
 def test_generate_weekly_operations_report_writes_markdown(tmp_path: Path):

@@ -76,3 +76,5 @@ def test_generate_weekly_ops_report_script(tmp_path: Path):
     assert "Total Runs: 2" in content
     assert "Approvals Pending: 1" in content
     assert "OPE-75/run-2: status=needs-approval" in content
+    assert "## Recommendations" in content
+    assert "Clear the approval backlog for 1 run(s)" in content
