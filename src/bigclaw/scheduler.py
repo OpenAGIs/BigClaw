@@ -2,7 +2,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from .models import Task, RiskLevel
+from .budget import BudgetGuard, BudgetPolicy
+from .memory import MemoryStore
+from .models import RiskLevel, Task
 from .observability import ObservabilityLedger, TaskRun
 from .reports import render_task_run_report, write_report
 
@@ -22,9 +24,18 @@ class ExecutionRecord:
 
 
 class Scheduler:
+    def __init__(
+        self,
+        budget_policy: Optional[BudgetPolicy] = None,
+        memory_store: Optional[MemoryStore] = None,
+    ):
+        self.budget_guard = BudgetGuard(budget_policy)
+        self.memory_store = memory_store
+
     def decide(self, task: Task) -> SchedulerDecision:
-        if task.budget < 0:
-            return SchedulerDecision("none", False, "invalid budget")
+        budget_decision = self.budget_guard.evaluate(task)
+        if not budget_decision.allowed:
+            return SchedulerDecision("none", False, budget_decision.reason)
 
         if task.risk_level == RiskLevel.HIGH:
             return SchedulerDecision("vm", False, "requires approval for high-risk task")
@@ -47,14 +58,27 @@ class Scheduler:
     ) -> ExecutionRecord:
         decision = self.decide(task)
         run = TaskRun.from_task(task, run_id=run_id, medium=decision.medium)
-        run.log("info", "task received", source=task.source, priority=int(task.priority))
+        run.log(
+            "info",
+            "task received",
+            source=task.source,
+            priority=int(task.priority),
+            estimated_tokens=task.estimated_tokens,
+            estimated_runtime_seconds=task.estimated_runtime_seconds,
+            required_workers=task.required_workers,
+        )
         run.trace(
             "scheduler.decide",
             "ok" if decision.approved else "pending",
             approved=decision.approved,
             medium=decision.medium,
         )
-        run.audit("scheduler.decision", actor, "approved" if decision.approved else "pending", reason=decision.reason)
+        run.audit(
+            "scheduler.decision",
+            actor,
+            "approved" if decision.approved else "pending",
+            reason=decision.reason,
+        )
 
         resolved_report_path = None
         if report_path:
@@ -66,4 +90,6 @@ class Scheduler:
         final_status = "approved" if decision.approved else "needs-approval"
         run.finalize(final_status, decision.reason)
         ledger.append(run)
+        if self.memory_store is not None:
+            self.memory_store.record_run(task, run, actor)
         return ExecutionRecord(decision=decision, run=run, report_path=resolved_report_path)

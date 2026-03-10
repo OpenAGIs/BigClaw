@@ -1,10 +1,5 @@
-from .models import Task, TaskState, RiskLevel, Priority
-from .queue import PersistentTaskQueue
-from .scheduler import Scheduler, SchedulerDecision, ExecutionRecord
-from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
-from .mapping import map_source_issue_to_task
-from .observability import ObservabilityLedger, TaskRun
-from .reports import render_task_run_report
+from .budget import BudgetDecision, BudgetGuard, BudgetPolicy
+from .connectors import GitHubConnector, JiraConnector, LinearConnector, SourceIssue
 from .evaluation import (
     BenchmarkCase,
     BenchmarkComparison,
@@ -16,6 +11,13 @@ from .evaluation import (
     ReplayRecord,
     render_benchmark_suite_report,
 )
+from .mapping import map_source_issue_to_task
+from .memory import MemoryRecord, MemoryScope, MemoryStore
+from .models import Priority, RiskLevel, Task, TaskState
+from .observability import ObservabilityLedger, TaskRun
+from .queue import PersistentTaskQueue
+from .reports import render_task_run_report
+from .scheduler import ExecutionRecord, Scheduler, SchedulerDecision
 
 __all__ = [
     "Task",
@@ -43,4 +45,10 @@ __all__ = [
     "ReplayOutcome",
     "ReplayRecord",
     "render_benchmark_suite_report",
+    "MemoryRecord",
+    "MemoryScope",
+    "MemoryStore",
+    "BudgetDecision",
+    "BudgetGuard",
+    "BudgetPolicy",
 ]
