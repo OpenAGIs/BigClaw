@@ -279,6 +279,51 @@ class OrchestrationCanvas:
         return "monitor"
 
 
+
+@dataclass
+class OrchestrationPortfolio:
+    name: str
+    period: str
+    canvases: List[OrchestrationCanvas] = field(default_factory=list)
+    takeover_queue: Optional[TakeoverQueue] = None
+
+    @property
+    def total_runs(self) -> int:
+        return len(self.canvases)
+
+    @property
+    def collaboration_modes(self) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for canvas in self.canvases:
+            counts[canvas.collaboration_mode] = counts.get(canvas.collaboration_mode, 0) + 1
+        return counts
+
+    @property
+    def tier_counts(self) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for canvas in self.canvases:
+            counts[canvas.tier] = counts.get(canvas.tier, 0) + 1
+        return counts
+
+    @property
+    def upgrade_required_count(self) -> int:
+        return sum(1 for canvas in self.canvases if canvas.upgrade_required)
+
+    @property
+    def active_handoffs(self) -> int:
+        return sum(1 for canvas in self.canvases if canvas.handoff_team != "none")
+
+    @property
+    def recommendation(self) -> str:
+        if self.takeover_queue is not None and self.takeover_queue.recommendation == "expedite-security-review":
+            return "stabilize-security-takeovers"
+        if self.upgrade_required_count:
+            return "close-entitlement-gaps"
+        if self.active_handoffs:
+            return "manage-cross-team-flow"
+        return "monitor"
+
+
 def render_issue_validation_report(issue_id: str, version: str, environment: str, summary: str) -> str:
     return f"""# Issue Validation Report\n\n- Issue ID: {issue_id}\n- 版本号: {version}\n- 测试环境: {environment}\n- 生成时间: {datetime.utcnow().isoformat()}Z\n\n## 结论\n\n{summary}\n"""
 
@@ -498,6 +543,61 @@ def render_auto_triage_center_report(center: AutoTriageCenter, total_runs: Optio
             lines.append(
                 f"- {finding.run_id}: severity={finding.severity} owner={finding.owner} status={finding.status} "
                 f"task={finding.task_id} reason={finding.reason} next={finding.next_action}"
+            )
+    else:
+        lines.append("- None")
+
+    return "\n".join(lines) + "\n"
+
+
+def build_orchestration_portfolio(
+    canvases: List[OrchestrationCanvas],
+    name: str = "Cross-Department Orchestration",
+    period: str = "current",
+    takeover_queue: Optional[TakeoverQueue] = None,
+) -> OrchestrationPortfolio:
+    return OrchestrationPortfolio(
+        name=name,
+        period=period,
+        canvases=sorted(canvases, key=lambda canvas: canvas.run_id),
+        takeover_queue=takeover_queue,
+    )
+
+
+def render_orchestration_portfolio_report(portfolio: OrchestrationPortfolio) -> str:
+    collaboration = " ".join(
+        f"{mode}={count}" for mode, count in sorted(portfolio.collaboration_modes.items())
+    ) or "none"
+    tiers = " ".join(
+        f"{tier}={count}" for tier, count in sorted(portfolio.tier_counts.items())
+    ) or "none"
+    takeover_summary = (
+        f"pending={portfolio.takeover_queue.pending_requests} recommendation={portfolio.takeover_queue.recommendation}"
+        if portfolio.takeover_queue is not None
+        else "none"
+    )
+    lines = [
+        "# Orchestration Portfolio Report",
+        "",
+        f"- Portfolio: {portfolio.name}",
+        f"- Period: {portfolio.period}",
+        f"- Total Runs: {portfolio.total_runs}",
+        f"- Recommendation: {portfolio.recommendation}",
+        f"- Collaboration Mix: {collaboration}",
+        f"- Tier Mix: {tiers}",
+        f"- Upgrade Required Count: {portfolio.upgrade_required_count}",
+        f"- Active Handoffs: {portfolio.active_handoffs}",
+        f"- Takeover Queue: {takeover_summary}",
+        "",
+        "## Runs",
+        "",
+    ]
+
+    if portfolio.canvases:
+        for canvas in portfolio.canvases:
+            lines.append(
+                f"- {canvas.run_id}: mode={canvas.collaboration_mode} tier={canvas.tier} "
+                f"upgrade_required={canvas.upgrade_required} handoff={canvas.handoff_team} recommendation={canvas.recommendation}"
             )
     else:
         lines.append("- None")

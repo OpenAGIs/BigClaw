@@ -4,16 +4,19 @@ from bigclaw.reports import (
     DocumentationArtifact,
     LaunchChecklistItem,
     OrchestrationCanvas,
+    OrchestrationPortfolio,
     PilotMetric,
     PilotPortfolio,
     PilotScorecard,
     build_auto_triage_center,
     build_orchestration_canvas,
+    build_orchestration_portfolio,
     build_launch_checklist,
     build_takeover_queue_from_ledger,
     evaluate_issue_closure,
     render_auto_triage_center_report,
     render_orchestration_canvas,
+    render_orchestration_portfolio_report,
     render_issue_validation_report,
     render_launch_checklist_report,
     render_pilot_portfolio_report,
@@ -388,3 +391,79 @@ def test_orchestration_canvas_summarizes_policy_and_handoff():
     assert "- Tier: standard" in report
     assert "- Handoff Team: operations" in report
     assert "- Recommendation: resolve-entitlement-gap" in report
+
+
+def test_orchestration_portfolio_rolls_up_canvas_and_takeover_state():
+    canvases = [
+        OrchestrationCanvas(
+            task_id="OPE-66-a",
+            run_id="run-a",
+            collaboration_mode="cross-functional",
+            departments=["operations", "engineering", "security"],
+            tier="premium",
+            handoff_team="security",
+            handoff_status="pending",
+        ),
+        OrchestrationCanvas(
+            task_id="OPE-66-b",
+            run_id="run-b",
+            collaboration_mode="tier-limited",
+            departments=["operations", "engineering"],
+            tier="standard",
+            upgrade_required=True,
+            blocked_departments=["customer-success"],
+            handoff_team="operations",
+            handoff_status="pending",
+        ),
+    ]
+    queue = build_takeover_queue_from_ledger(
+        [
+            {
+                "run_id": "run-a",
+                "task_id": "OPE-66-a",
+                "source": "linear",
+                "audits": [
+                    {
+                        "action": "orchestration.handoff",
+                        "outcome": "pending",
+                        "details": {"target_team": "security", "reason": "risk", "required_approvals": ["security-review"]},
+                    }
+                ],
+            },
+            {
+                "run_id": "run-b",
+                "task_id": "OPE-66-b",
+                "source": "linear",
+                "audits": [
+                    {
+                        "action": "orchestration.handoff",
+                        "outcome": "pending",
+                        "details": {"target_team": "operations", "reason": "entitlement", "required_approvals": ["ops-manager"]},
+                    }
+                ],
+            },
+        ],
+        name="Cross-Team Takeovers",
+        period="2026-03-10",
+    )
+
+    portfolio = build_orchestration_portfolio(
+        canvases,
+        name="Cross-Team Portfolio",
+        period="2026-03-10",
+        takeover_queue=queue,
+    )
+    report = render_orchestration_portfolio_report(portfolio)
+
+    assert isinstance(portfolio, OrchestrationPortfolio)
+    assert portfolio.total_runs == 2
+    assert portfolio.collaboration_modes == {"cross-functional": 1, "tier-limited": 1}
+    assert portfolio.tier_counts == {"premium": 1, "standard": 1}
+    assert portfolio.upgrade_required_count == 1
+    assert portfolio.active_handoffs == 2
+    assert portfolio.recommendation == "stabilize-security-takeovers"
+    assert "# Orchestration Portfolio Report" in report
+    assert "- Collaboration Mix: cross-functional=1 tier-limited=1" in report
+    assert "- Tier Mix: premium=1 standard=1" in report
+    assert "- Takeover Queue: pending=2 recommendation=expedite-security-review" in report
+    assert "- run-a: mode=cross-functional tier=premium upgrade_required=False handoff=security" in report
