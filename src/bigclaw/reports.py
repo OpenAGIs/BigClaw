@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from html import escape
+from collections import Counter
 from pathlib import Path
 from typing import List, Optional
 
@@ -115,6 +118,216 @@ class IssueClosureDecision:
     allowed: bool
     reason: str
     report_path: str = ""
+
+
+@dataclass
+class WeeklyOperationsFocusItem:
+    task_id: str
+    run_id: str
+    title: str
+    status: str
+    reason: str
+
+
+@dataclass
+class WeeklyOperationsReport:
+    team: str
+    period_start: str
+    period_end: str
+    generated_at: str
+    total_runs: int
+    successful_runs: int
+    success_rate: float
+    approvals_pending: int
+    total_artifacts: int
+    total_audits: int
+    status_counts: dict[str, int] = field(default_factory=dict)
+    source_counts: dict[str, int] = field(default_factory=dict)
+    medium_counts: dict[str, int] = field(default_factory=dict)
+    daily_volume: dict[str, int] = field(default_factory=dict)
+    focus_items: List[WeeklyOperationsFocusItem] = field(default_factory=list)
+
+
+SUCCESS_STATUSES = {"approved", "completed", "succeeded", "accepted"}
+
+
+def _parse_report_timestamp(value: str) -> datetime:
+    normalized = value.replace("Z", "+00:00")
+    return datetime.fromisoformat(normalized)
+
+
+def _extract_run_field(run: TaskRun | dict, field_name: str, default=None):
+    if isinstance(run, TaskRun):
+        return getattr(run, field_name, default)
+    return run.get(field_name, default)
+
+
+def _extract_run_collection(run: TaskRun | dict, field_name: str) -> list:
+    value = _extract_run_field(run, field_name, [])
+    return list(value or [])
+
+
+def _extract_focus_reason(run: TaskRun | dict) -> str:
+    summary = (_extract_run_field(run, "summary", "") or "").strip()
+    if summary:
+        return summary
+
+    for audit in _extract_run_collection(run, "audits"):
+        if audit.get("outcome") == "pending":
+            return audit.get("details", {}).get("reason") or audit.get("action", "pending review")
+
+    for trace in _extract_run_collection(run, "traces"):
+        if trace.get("status") == "pending":
+            return trace.get("span", "pending review")
+
+    return "requires follow-up"
+
+
+def build_weekly_operations_report(
+    runs: List[TaskRun | dict],
+    team: str,
+    period_start: str,
+    period_end: str,
+    generated_at: Optional[str] = None,
+) -> WeeklyOperationsReport:
+    start_at = _parse_report_timestamp(period_start)
+    end_at = _parse_report_timestamp(period_end)
+    selected_runs: list[TaskRun | dict] = []
+
+    for run in runs:
+        started_at = _extract_run_field(run, "started_at", "")
+        if not started_at:
+            continue
+        started_at_dt = _parse_report_timestamp(started_at)
+        if start_at <= started_at_dt <= end_at:
+            selected_runs.append(run)
+
+    status_counts = Counter(_extract_run_field(run, "status", "unknown") or "unknown" for run in selected_runs)
+    source_counts = Counter(_extract_run_field(run, "source", "unknown") or "unknown" for run in selected_runs)
+    medium_counts = Counter(_extract_run_field(run, "medium", "unknown") or "unknown" for run in selected_runs)
+    daily_volume = Counter((_extract_run_field(run, "started_at", "") or "")[:10] for run in selected_runs)
+    total_artifacts = sum(len(_extract_run_collection(run, "artifacts")) for run in selected_runs)
+    total_audits = sum(len(_extract_run_collection(run, "audits")) for run in selected_runs)
+    successful_runs = sum(1 for run in selected_runs if _extract_run_field(run, "status", "") in SUCCESS_STATUSES)
+
+    focus_candidates: list[tuple[datetime, WeeklyOperationsFocusItem]] = []
+    for run in selected_runs:
+        status = _extract_run_field(run, "status", "unknown") or "unknown"
+        has_pending_audit = any(audit.get("outcome") == "pending" for audit in _extract_run_collection(run, "audits"))
+        if status in SUCCESS_STATUSES and not has_pending_audit:
+            continue
+
+        started_at = _extract_run_field(run, "started_at", period_start)
+        focus_candidates.append(
+            (
+                _parse_report_timestamp(started_at),
+                WeeklyOperationsFocusItem(
+                    task_id=_extract_run_field(run, "task_id", "unknown"),
+                    run_id=_extract_run_field(run, "run_id", "unknown"),
+                    title=_extract_run_field(run, "title", "Untitled task"),
+                    status=status,
+                    reason=_extract_focus_reason(run),
+                ),
+            )
+        )
+
+    focus_items = [item for _, item in sorted(focus_candidates, key=lambda candidate: candidate[0], reverse=True)[:5]]
+    total_runs = len(selected_runs)
+    success_rate = round((successful_runs / total_runs) * 100, 1) if total_runs else 0.0
+
+    return WeeklyOperationsReport(
+        team=team,
+        period_start=period_start,
+        period_end=period_end,
+        generated_at=generated_at or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        total_runs=total_runs,
+        successful_runs=successful_runs,
+        success_rate=success_rate,
+        approvals_pending=status_counts.get("needs-approval", 0),
+        total_artifacts=total_artifacts,
+        total_audits=total_audits,
+        status_counts=dict(sorted(status_counts.items())),
+        source_counts=dict(sorted(source_counts.items())),
+        medium_counts=dict(sorted(medium_counts.items())),
+        daily_volume=dict(sorted(daily_volume.items())),
+        focus_items=focus_items,
+    )
+
+
+def render_weekly_operations_report(report: WeeklyOperationsReport) -> str:
+    lines = [
+        "# Weekly Operations Report",
+        "",
+        f"- Team: {report.team}",
+        f"- Period Start: {report.period_start}",
+        f"- Period End: {report.period_end}",
+        f"- Generated At: {report.generated_at}",
+        "",
+        "## Overview",
+        "",
+        f"- Total Runs: {report.total_runs}",
+        f"- Successful Runs: {report.successful_runs}",
+        f"- Success Rate: {report.success_rate:.1f}%",
+        f"- Approvals Pending: {report.approvals_pending}",
+        f"- Artifacts Captured: {report.total_artifacts}",
+        f"- Audit Events: {report.total_audits}",
+        "",
+        "## Status Breakdown",
+        "",
+    ]
+
+    if report.status_counts:
+        lines.extend(f"- {status}: {count}" for status, count in report.status_counts.items())
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Source Mix", ""])
+    if report.source_counts:
+        lines.extend(f"- {source}: {count}" for source, count in report.source_counts.items())
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Execution Media", ""])
+    if report.medium_counts:
+        lines.extend(f"- {medium}: {count}" for medium, count in report.medium_counts.items())
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Daily Throughput", ""])
+    if report.daily_volume:
+        lines.extend(f"- {day}: {count}" for day, count in report.daily_volume.items())
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Attention Needed", ""])
+    if report.focus_items:
+        for item in report.focus_items:
+            lines.append(
+                f"- {item.task_id}/{item.run_id}: status={item.status} title={item.title} reason={item.reason}"
+            )
+    else:
+        lines.append("- No outstanding follow-up items.")
+
+    return "\n".join(lines) + "\n"
+
+
+def generate_weekly_operations_report(
+    runs: List[TaskRun | dict],
+    report_path: str,
+    team: str,
+    period_start: str,
+    period_end: str,
+    generated_at: Optional[str] = None,
+) -> WeeklyOperationsReport:
+    report = build_weekly_operations_report(
+        runs,
+        team=team,
+        period_start=period_start,
+        period_end=period_end,
+        generated_at=generated_at,
+    )
+    write_report(report_path, render_weekly_operations_report(report))
+    return report
 
 
 def render_issue_validation_report(issue_id: str, version: str, environment: str, summary: str) -> str:

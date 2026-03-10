@@ -4,10 +4,13 @@ from bigclaw.reports import (
     PilotMetric,
     PilotPortfolio,
     PilotScorecard,
+    build_weekly_operations_report,
     evaluate_issue_closure,
+    generate_weekly_operations_report,
     render_issue_validation_report,
     render_pilot_portfolio_report,
     render_pilot_scorecard,
+    render_weekly_operations_report,
     validation_report_exists,
     write_report,
 )
@@ -152,3 +155,125 @@ def test_render_pilot_portfolio_report_summarizes_commercial_readiness():
     assert "Recommendation Mix: go=1 iterate=1 hold=0" in content
     assert "Partner A: recommendation=go" in content
     assert "Partner B: recommendation=iterate" in content
+
+
+def test_build_weekly_operations_report_summarizes_runs_in_period():
+    runs = [
+        {
+            "run_id": "run-1",
+            "task_id": "OPE-74",
+            "title": "SLA dashboard refresh",
+            "source": "linear",
+            "medium": "browser",
+            "status": "approved",
+            "started_at": "2026-03-03T09:00:00Z",
+            "summary": "browser automation task",
+            "artifacts": [{"name": "dashboard", "kind": "page", "path": "reports/run-1.html"}],
+            "audits": [{"action": "scheduler.decision", "actor": "scheduler", "outcome": "approved", "details": {}}],
+            "traces": [],
+        },
+        {
+            "run_id": "run-2",
+            "task_id": "OPE-75",
+            "title": "Risk review",
+            "source": "jira",
+            "medium": "vm",
+            "status": "needs-approval",
+            "started_at": "2026-03-05T13:30:00Z",
+            "summary": "requires approval for high-risk task",
+            "artifacts": [],
+            "audits": [
+                {
+                    "action": "scheduler.decision",
+                    "actor": "scheduler",
+                    "outcome": "pending",
+                    "details": {"reason": "requires approval for high-risk task"},
+                }
+            ],
+            "traces": [{"span": "scheduler.decide", "status": "pending"}],
+        },
+        {
+            "run_id": "run-3",
+            "task_id": "OPE-77",
+            "title": "Regression analytics rerun",
+            "source": "linear",
+            "medium": "docker",
+            "status": "succeeded",
+            "started_at": "2026-03-08T18:45:00Z",
+            "summary": "replay completed",
+            "artifacts": [{"name": "replay", "kind": "report", "path": "reports/run-3.md"}],
+            "audits": [{"action": "replay", "actor": "engine", "outcome": "success", "details": {}}],
+            "traces": [{"span": "replay", "status": "ok"}],
+        },
+        {
+            "run_id": "old-run",
+            "task_id": "OPE-69",
+            "title": "Out of range",
+            "source": "linear",
+            "medium": "docker",
+            "status": "approved",
+            "started_at": "2026-02-25T08:00:00Z",
+            "summary": "ignored",
+            "artifacts": [],
+            "audits": [],
+            "traces": [],
+        },
+    ]
+
+    report = build_weekly_operations_report(
+        runs,
+        team="OpenAGI",
+        period_start="2026-03-03T00:00:00Z",
+        period_end="2026-03-09T23:59:59Z",
+        generated_at="2026-03-10T00:00:00Z",
+    )
+
+    assert report.total_runs == 3
+    assert report.successful_runs == 2
+    assert report.success_rate == 66.7
+    assert report.approvals_pending == 1
+    assert report.status_counts == {"approved": 1, "needs-approval": 1, "succeeded": 1}
+    assert report.source_counts == {"jira": 1, "linear": 2}
+    assert report.medium_counts == {"browser": 1, "docker": 1, "vm": 1}
+    assert report.daily_volume == {"2026-03-03": 1, "2026-03-05": 1, "2026-03-08": 1}
+    assert report.focus_items[0].run_id == "run-2"
+    assert report.focus_items[0].reason == "requires approval for high-risk task"
+
+    content = render_weekly_operations_report(report)
+
+    assert "# Weekly Operations Report" in content
+    assert "Success Rate: 66.7%" in content
+    assert "Approvals Pending: 1" in content
+    assert "OPE-75/run-2: status=needs-approval" in content
+
+
+def test_generate_weekly_operations_report_writes_markdown(tmp_path: Path):
+    out = tmp_path / "reports" / "weekly-ops.md"
+
+    report = generate_weekly_operations_report(
+        runs=[
+            {
+                "run_id": "run-9",
+                "task_id": "OPE-78",
+                "title": "Generate weekly report",
+                "source": "linear",
+                "medium": "docker",
+                "status": "completed",
+                "started_at": "2026-03-09T09:00:00Z",
+                "summary": "report generated",
+                "artifacts": [],
+                "audits": [],
+                "traces": [],
+            }
+        ],
+        report_path=str(out),
+        team="OpenAGI",
+        period_start="2026-03-09T00:00:00Z",
+        period_end="2026-03-09T23:59:59Z",
+        generated_at="2026-03-10T00:00:00Z",
+    )
+
+    assert report.total_runs == 1
+    assert out.exists()
+    assert "Generate weekly report" not in out.read_text()
+    assert "Total Runs: 1" in out.read_text()

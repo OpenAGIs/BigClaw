@@ -18,6 +18,10 @@ BigClaw is a Symphony/Codex workflow project scaffolded from `workflow.md`.
   - report renderer, issue-close validation gate, and pilot ROI scorecard/portfolio renderer
 - `tests/`: unit tests
 
+## Weekly operations report
+
+Use `bigclaw.generate_weekly_operations_report(...)` to aggregate observability ledger runs into a weekly engineering operations summary with throughput, approval backlog, execution mix, and follow-up items.
+
 ## Local test
 
 ```bash
