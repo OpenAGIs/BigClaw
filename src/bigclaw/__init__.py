@@ -5,6 +5,7 @@ from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConne
 from .mapping import map_source_issue_to_task
 from .observability import ObservabilityLedger, TaskRun
 from .reports import render_task_run_report
+from .workflow import AcceptanceDecision, AcceptanceGate, WorkflowEngine, WorkflowRunResult, WorkpadJournal
 from .evaluation import (
     BenchmarkCase,
     BenchmarkComparison,
@@ -34,6 +35,11 @@ __all__ = [
     "ObservabilityLedger",
     "TaskRun",
     "render_task_run_report",
+    "AcceptanceDecision",
+    "AcceptanceGate",
+    "WorkflowEngine",
+    "WorkflowRunResult",
+    "WorkpadJournal",
     "BenchmarkCase",
     "BenchmarkComparison",
     "BenchmarkResult",
