@@ -5,6 +5,15 @@ from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConne
 from .dsl import WorkflowDefinition, WorkflowStep
 from .mapping import map_source_issue_to_task
 from .observability import ObservabilityLedger, TaskRun
+from .runtime import (
+    ClawWorkerRuntime,
+    SandboxProfile,
+    SandboxRouter,
+    ToolCallResult,
+    ToolPolicy,
+    ToolRuntime,
+    WorkerExecutionResult,
+)
 from .reports import (
     IssueClosureDecision,
     PilotMetric,
@@ -47,6 +56,13 @@ __all__ = [
     "map_source_issue_to_task",
     "ObservabilityLedger",
     "TaskRun",
+    "ClawWorkerRuntime",
+    "SandboxProfile",
+    "SandboxRouter",
+    "ToolCallResult",
+    "ToolPolicy",
+    "ToolRuntime",
+    "WorkerExecutionResult",
     "IssueClosureDecision",
     "PilotMetric",
     "PilotPortfolio",

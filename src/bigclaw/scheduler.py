@@ -1,9 +1,10 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
 from .models import Task, RiskLevel
 from .observability import ObservabilityLedger, TaskRun
+from .runtime import ClawWorkerRuntime, ToolCallResult
 from .reports import render_task_run_report, write_report
 
 
@@ -19,9 +20,13 @@ class ExecutionRecord:
     decision: SchedulerDecision
     run: TaskRun
     report_path: Optional[str]
+    tool_results: list[ToolCallResult] = field(default_factory=list)
 
 
 class Scheduler:
+    def __init__(self, worker_runtime: Optional[ClawWorkerRuntime] = None):
+        self.worker_runtime = worker_runtime or ClawWorkerRuntime()
+
     def decide(self, task: Task) -> SchedulerDecision:
         if task.budget < 0:
             return SchedulerDecision("none", False, "invalid budget")
@@ -56,6 +61,8 @@ class Scheduler:
         )
         run.audit("scheduler.decision", actor, "approved" if decision.approved else "pending", reason=decision.reason)
 
+        worker_execution = self.worker_runtime.execute(task, decision, run, actor=actor)
+
         resolved_report_path = None
         if report_path:
             resolved_report_path = str(Path(report_path))
@@ -66,4 +73,9 @@ class Scheduler:
         final_status = "approved" if decision.approved else "needs-approval"
         run.finalize(final_status, decision.reason)
         ledger.append(run)
-        return ExecutionRecord(decision=decision, run=run, report_path=resolved_report_path)
+        return ExecutionRecord(
+            decision=decision,
+            run=run,
+            report_path=resolved_report_path,
+            tool_results=worker_execution.tool_results,
+        )
