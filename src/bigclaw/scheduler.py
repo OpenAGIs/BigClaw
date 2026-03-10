@@ -2,11 +2,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from .models import Task, RiskLevel
+from .models import RiskLevel, Task
 from .observability import ObservabilityLedger, TaskRun
-from .orchestration import CrossDepartmentOrchestrator, OrchestrationPlan
-from .runtime import ClawWorkerRuntime, ToolCallResult
+from .orchestration import (
+    CrossDepartmentOrchestrator,
+    OrchestrationPlan,
+    OrchestrationPolicyDecision,
+    PremiumOrchestrationPolicy,
+)
 from .reports import render_task_run_detail_page, render_task_run_report, write_report
+from .runtime import ClawWorkerRuntime, ToolCallResult
 
 
 @dataclass
@@ -22,6 +27,7 @@ class ExecutionRecord:
     run: TaskRun
     report_path: Optional[str]
     orchestration_plan: Optional[OrchestrationPlan] = None
+    orchestration_policy: Optional[OrchestrationPolicyDecision] = None
     tool_results: list[ToolCallResult] = field(default_factory=list)
 
 
@@ -30,9 +36,11 @@ class Scheduler:
         self,
         worker_runtime: Optional[ClawWorkerRuntime] = None,
         orchestrator: Optional[CrossDepartmentOrchestrator] = None,
+        orchestration_policy: Optional[PremiumOrchestrationPolicy] = None,
     ):
         self.worker_runtime = worker_runtime or ClawWorkerRuntime()
         self.orchestrator = orchestrator or CrossDepartmentOrchestrator()
+        self.orchestration_policy = orchestration_policy or PremiumOrchestrationPolicy()
 
     def decide(self, task: Task) -> SchedulerDecision:
         if task.budget < 0:
@@ -58,7 +66,8 @@ class Scheduler:
         actor: str = "scheduler",
     ) -> ExecutionRecord:
         decision = self.decide(task)
-        orchestration_plan = self.orchestrator.plan(task)
+        raw_plan = self.orchestrator.plan(task)
+        orchestration_plan, policy_decision = self.orchestration_policy.apply(task, raw_plan)
         run = TaskRun.from_task(task, run_id=run_id, medium=decision.medium)
         run.log("info", "task received", source=task.source, priority=int(task.priority))
         run.log(
@@ -80,6 +89,12 @@ class Scheduler:
             departments=orchestration_plan.departments,
             handoffs=orchestration_plan.department_count,
         )
+        run.trace(
+            "orchestration.policy",
+            "upgrade-required" if policy_decision.upgrade_required else "ok",
+            tier=policy_decision.tier,
+            blocked_departments=policy_decision.blocked_departments,
+        )
         run.audit("scheduler.decision", actor, "approved" if decision.approved else "pending", reason=decision.reason)
         run.audit(
             "orchestration.plan",
@@ -88,6 +103,14 @@ class Scheduler:
             collaboration_mode=orchestration_plan.collaboration_mode,
             departments=orchestration_plan.departments,
             approvals=orchestration_plan.required_approvals,
+        )
+        run.audit(
+            "orchestration.policy",
+            actor,
+            "upgrade-required" if policy_decision.upgrade_required else "enabled",
+            tier=policy_decision.tier,
+            reason=policy_decision.reason,
+            blocked_departments=policy_decision.blocked_departments,
         )
 
         worker_execution = self.worker_runtime.execute(task, decision, run, actor=actor)
@@ -98,16 +121,12 @@ class Scheduler:
         resolved_report_path = None
         if report_path:
             resolved_report_path = str(Path(report_path))
-            report_file = Path(resolved_report_path)
-            if report_file.suffix.lower() == ".html":
-                write_report(resolved_report_path, render_task_run_detail_page(run))
-                run.register_artifact("task-run-detail", "page", resolved_report_path, format="html")
-            else:
-                detail_path = str(report_file.with_suffix(".html"))
-                write_report(detail_path, render_task_run_detail_page(run))
-                run.register_artifact("task-run-detail", "page", detail_path, format="html")
-                write_report(resolved_report_path, render_task_run_report(run))
-                run.register_artifact("task-run-report", "report", resolved_report_path, format="markdown")
+            report_content = render_task_run_report(run)
+            write_report(resolved_report_path, report_content)
+            detail_page_path = str(Path(report_path).with_suffix(".html"))
+            write_report(detail_page_path, render_task_run_detail_page(run))
+            run.register_artifact("task-run-detail", "page", detail_page_path, format="html")
+            run.register_artifact("task-run-report", "report", resolved_report_path, format="markdown")
 
         ledger.append(run)
         return ExecutionRecord(
@@ -115,5 +134,6 @@ class Scheduler:
             run=run,
             report_path=resolved_report_path,
             orchestration_plan=orchestration_plan,
+            orchestration_policy=policy_decision,
             tool_results=worker_execution.tool_results,
         )

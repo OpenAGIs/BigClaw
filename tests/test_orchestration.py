@@ -2,7 +2,11 @@ from pathlib import Path
 
 from bigclaw.models import Priority, RiskLevel, Task
 from bigclaw.observability import ObservabilityLedger
-from bigclaw.orchestration import CrossDepartmentOrchestrator, render_orchestration_plan
+from bigclaw.orchestration import (
+    CrossDepartmentOrchestrator,
+    PremiumOrchestrationPolicy,
+    render_orchestration_plan,
+)
 from bigclaw.scheduler import Scheduler
 
 
@@ -12,7 +16,7 @@ def test_cross_department_orchestrator_routes_security_data_and_customer_work() 
         source="linear",
         title="Coordinate customer analytics rollout approval",
         description="Need stakeholder sign-off for warehouse-backed browser workflow",
-        labels=["data", "customer"],
+        labels=["data", "customer", "premium"],
         priority=Priority.P0,
         risk_level=RiskLevel.HIGH,
         required_tools=["browser", "sql"],
@@ -27,7 +31,27 @@ def test_cross_department_orchestrator_routes_security_data_and_customer_work() 
     assert plan.required_approvals == ["security-review"]
 
 
-def test_render_orchestration_plan_lists_handoffs_and_approvals() -> None:
+def test_standard_policy_limits_advanced_cross_department_routing() -> None:
+    task = Task(
+        task_id="OPE-66-standard",
+        source="linear",
+        title="Coordinate customer analytics rollout approval",
+        description="Need stakeholder sign-off for warehouse-backed browser workflow",
+        labels=["data", "customer"],
+        required_tools=["browser", "sql"],
+        risk_level=RiskLevel.HIGH,
+    )
+
+    raw_plan = CrossDepartmentOrchestrator().plan(task)
+    plan, policy = PremiumOrchestrationPolicy().apply(task, raw_plan)
+
+    assert plan.collaboration_mode == "tier-limited"
+    assert plan.departments == ["operations", "engineering"]
+    assert policy.upgrade_required is True
+    assert policy.blocked_departments == ["security", "data", "customer-success"]
+
+
+def test_render_orchestration_plan_lists_handoffs_and_policy() -> None:
     task = Task(
         task_id="OPE-66-render",
         source="jira",
@@ -37,14 +61,17 @@ def test_render_orchestration_plan_lists_handoffs_and_approvals() -> None:
         required_tools=["sql"],
     )
 
-    content = render_orchestration_plan(CrossDepartmentOrchestrator().plan(task))
+    raw_plan = CrossDepartmentOrchestrator().plan(task)
+    plan, policy = PremiumOrchestrationPolicy().apply(task, raw_plan)
+    content = render_orchestration_plan(plan, policy)
 
     assert "# Cross-Department Orchestration Plan" in content
-    assert "- Departments: operations, engineering, data, customer-success" in content
-    assert "- data: reason=validates analytics, warehouse, or measurement dependencies" in content
+    assert "- Departments: operations, engineering" in content
+    assert "- Tier: standard" in content
+    assert "- Blocked Departments: data, customer-success" in content
 
 
-def test_scheduler_execution_records_orchestration_plan(tmp_path: Path) -> None:
+def test_scheduler_execution_records_orchestration_plan_and_policy(tmp_path: Path) -> None:
     ledger = ObservabilityLedger(str(tmp_path / "ledger.json"))
     task = Task(
         task_id="OPE-66-exec",
@@ -61,6 +88,10 @@ def test_scheduler_execution_records_orchestration_plan(tmp_path: Path) -> None:
     entry = ledger.load()[0]
 
     assert record.orchestration_plan is not None
+    assert record.orchestration_policy is not None
     assert record.orchestration_plan.departments == ["operations", "engineering"]
+    assert record.orchestration_policy.upgrade_required is False
     assert any(trace["span"] == "orchestration.plan" for trace in entry["traces"])
+    assert any(trace["span"] == "orchestration.policy" for trace in entry["traces"])
     assert any(audit["action"] == "orchestration.plan" for audit in entry["audits"])
+    assert any(audit["action"] == "orchestration.policy" for audit in entry["audits"])

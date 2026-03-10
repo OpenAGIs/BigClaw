@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from .models import RiskLevel, Task
 
@@ -50,6 +50,22 @@ class OrchestrationPlan:
             "departments": self.departments,
             "required_approvals": self.required_approvals,
             "handoffs": [handoff.to_dict() for handoff in self.handoffs],
+        }
+
+
+@dataclass
+class OrchestrationPolicyDecision:
+    tier: str
+    upgrade_required: bool
+    reason: str
+    blocked_departments: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "tier": self.tier,
+            "upgrade_required": self.upgrade_required,
+            "reason": self.reason,
+            "blocked_departments": self.blocked_departments,
         }
 
 
@@ -132,7 +148,57 @@ class CrossDepartmentOrchestrator:
         )
 
 
-def render_orchestration_plan(plan: OrchestrationPlan) -> str:
+class PremiumOrchestrationPolicy:
+    def apply(self, task: Task, plan: OrchestrationPlan) -> Tuple[OrchestrationPlan, OrchestrationPolicyDecision]:
+        if self._is_premium(task):
+            return (
+                plan,
+                OrchestrationPolicyDecision(
+                    tier="premium",
+                    upgrade_required=False,
+                    reason="premium tier enables advanced cross-department orchestration",
+                ),
+            )
+
+        blocked_departments = [
+            department for department in plan.departments if department not in {"operations", "engineering"}
+        ]
+        if not blocked_departments:
+            return (
+                plan,
+                OrchestrationPolicyDecision(
+                    tier="standard",
+                    upgrade_required=False,
+                    reason="standard tier supports baseline orchestration",
+                ),
+            )
+
+        constrained_handoffs = [
+            handoff for handoff in plan.handoffs if handoff.department in {"operations", "engineering"}
+        ]
+        constrained_plan = OrchestrationPlan(
+            task_id=plan.task_id,
+            collaboration_mode="tier-limited",
+            handoffs=constrained_handoffs,
+        )
+        return (
+            constrained_plan,
+            OrchestrationPolicyDecision(
+                tier="standard",
+                upgrade_required=True,
+                reason="premium tier required for advanced cross-department orchestration",
+                blocked_departments=blocked_departments,
+            ),
+        )
+
+    def _is_premium(self, task: Task) -> bool:
+        return any(label.lower() in {"premium", "enterprise"} for label in task.labels)
+
+
+def render_orchestration_plan(
+    plan: OrchestrationPlan,
+    policy_decision: Optional[OrchestrationPolicyDecision] = None,
+) -> str:
     lines = [
         "# Cross-Department Orchestration Plan",
         "",
@@ -140,10 +206,20 @@ def render_orchestration_plan(plan: OrchestrationPlan) -> str:
         f"- Collaboration Mode: {plan.collaboration_mode}",
         f"- Departments: {', '.join(plan.departments) if plan.departments else 'none'}",
         f"- Required Approvals: {', '.join(plan.required_approvals) if plan.required_approvals else 'none'}",
-        "",
-        "## Handoffs",
-        "",
     ]
+
+    if policy_decision is not None:
+        blocked = ", ".join(policy_decision.blocked_departments) if policy_decision.blocked_departments else "none"
+        lines.extend(
+            [
+                f"- Tier: {policy_decision.tier}",
+                f"- Upgrade Required: {policy_decision.upgrade_required}",
+                f"- Policy Reason: {policy_decision.reason}",
+                f"- Blocked Departments: {blocked}",
+            ]
+        )
+
+    lines.extend(["", "## Handoffs", ""])
 
     if not plan.handoffs:
         lines.append("- None")

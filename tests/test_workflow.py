@@ -192,7 +192,9 @@ def test_workflow_engine_writes_orchestration_report_without_duplicating_ledger_
 
     assert result.orchestration_report_path is not None
     assert Path(result.orchestration_report_path).exists()
-    assert "customer-success" in Path(result.orchestration_report_path).read_text()
+    report = Path(result.orchestration_report_path).read_text()
+    assert "- customer-success:" not in report
+    assert "Upgrade Required: True" in report
 
     entries = ledger.load()
     assert len(entries) == 1
