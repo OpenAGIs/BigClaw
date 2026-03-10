@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
+from .dsl import WorkflowDefinition
 from .models import RiskLevel, Task
 from .observability import ObservabilityLedger, utc_now
 from .scheduler import ExecutionRecord, Scheduler
@@ -165,4 +166,21 @@ class WorkflowEngine:
             acceptance=acceptance,
             journal=journal,
             journal_path=resolved_journal_path,
+        )
+
+    def run_definition(
+        self,
+        task: Task,
+        definition: WorkflowDefinition,
+        run_id: str,
+        ledger: ObservabilityLedger,
+    ) -> WorkflowRunResult:
+        return self.run(
+            task,
+            run_id=run_id,
+            ledger=ledger,
+            report_path=definition.render_report_path(task, run_id),
+            journal_path=definition.render_journal_path(task, run_id),
+            validation_evidence=definition.validation_evidence,
+            approvals=definition.approvals,
         )
