@@ -10,6 +10,7 @@ from bigclaw.observability import TaskRun
 from bigclaw.operations import (
     OperationsAnalytics,
     render_operations_dashboard,
+    render_regression_center,
     render_weekly_operations_report,
 )
 from bigclaw.scheduler import ExecutionRecord, SchedulerDecision
@@ -143,3 +144,26 @@ def test_render_weekly_operations_report_includes_blockers_and_regressions() -> 
     assert "# Weekly Operations Report" in weekly
     assert "case-drop" in weekly
     assert "severity=high" in weekly
+
+
+def test_build_regression_center_separates_regressions_and_improvements() -> None:
+    analytics = OperationsAnalytics()
+    baseline = BenchmarkSuiteResult(
+        version="v0.1",
+        results=[make_result("case-drop", 100, True), make_result("case-up", 60, False), make_result("case-stable", 100, True)],
+    )
+    current = BenchmarkSuiteResult(
+        version="v0.2",
+        results=[make_result("case-drop", 70, False), make_result("case-up", 100, True), make_result("case-stable", 100, True)],
+    )
+
+    center = analytics.build_regression_center(current, baseline)
+    report = render_regression_center(center)
+
+    assert center.regression_count == 1
+    assert center.regressions[0].case_id == "case-drop"
+    assert center.improved_cases == ["case-up"]
+    assert center.unchanged_cases == ["case-stable"]
+    assert "# Regression Analysis Center" in report
+    assert "case-drop" in report
+    assert "case-up" in report

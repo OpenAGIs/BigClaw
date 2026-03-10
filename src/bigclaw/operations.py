@@ -55,6 +55,20 @@ class WeeklyOperationsReport:
 
 
 @dataclass
+class RegressionCenter:
+    name: str
+    baseline_version: str
+    current_version: str
+    regressions: List[RegressionFinding] = field(default_factory=list)
+    improved_cases: List[str] = field(default_factory=list)
+    unchanged_cases: List[str] = field(default_factory=list)
+
+    @property
+    def regression_count(self) -> int:
+        return len(self.regressions)
+
+
+@dataclass
 class QueueControlCenter:
     queue_depth: int
     queued_by_priority: Dict[str, int]
@@ -167,6 +181,25 @@ class OperationsAnalytics:
             )
 
         return sorted(findings, key=lambda finding: (finding.delta, finding.case_id))
+
+    def build_regression_center(
+        self,
+        current: BenchmarkSuiteResult,
+        baseline: BenchmarkSuiteResult,
+        name: str = "Regression Analysis Center",
+    ) -> RegressionCenter:
+        regressions = self.analyze_regressions(current, baseline)
+        comparisons = current.compare(baseline)
+        improved_cases = sorted(comparison.case_id for comparison in comparisons if comparison.delta > 0)
+        unchanged_cases = sorted(comparison.case_id for comparison in comparisons if comparison.delta == 0)
+        return RegressionCenter(
+            name=name,
+            baseline_version=baseline.version,
+            current_version=current.version,
+            regressions=regressions,
+            improved_cases=improved_cases,
+            unchanged_cases=unchanged_cases,
+        )
 
     def build_queue_control_center(
         self,
@@ -347,6 +380,39 @@ def render_queue_control_center(center: QueueControlCenter) -> str:
     if center.blocked_tasks:
         for task_id in center.blocked_tasks:
             lines.append(f"- {task_id}")
+    else:
+        lines.append("- None")
+
+    return "\n".join(lines) + "\n"
+
+
+def render_regression_center(center: RegressionCenter) -> str:
+    lines = [
+        "# Regression Analysis Center",
+        "",
+        f"- Name: {center.name}",
+        f"- Baseline Version: {center.baseline_version}",
+        f"- Current Version: {center.current_version}",
+        f"- Regressions: {center.regression_count}",
+        f"- Improved Cases: {len(center.improved_cases)}",
+        f"- Unchanged Cases: {len(center.unchanged_cases)}",
+        "",
+        "## Regressions",
+        "",
+    ]
+
+    if center.regressions:
+        for finding in center.regressions:
+            lines.append(
+                f"- {finding.case_id}: severity={finding.severity} delta={finding.delta} summary={finding.summary}"
+            )
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Improved Cases", ""])
+    if center.improved_cases:
+        for case_id in center.improved_cases:
+            lines.append(f"- {case_id}")
     else:
         lines.append("- None")
 
