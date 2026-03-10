@@ -62,8 +62,18 @@ class BenchmarkResult:
 
 
 @dataclass
+class BenchmarkComparison:
+    case_id: str
+    baseline_score: int
+    current_score: int
+    delta: int
+    changed: bool
+
+
+@dataclass
 class BenchmarkSuiteResult:
     results: List[BenchmarkResult]
+    version: str = "current"
 
     @property
     def score(self) -> int:
@@ -74,6 +84,24 @@ class BenchmarkSuiteResult:
     @property
     def passed(self) -> bool:
         return all(result.passed for result in self.results)
+
+    def compare(self, baseline: "BenchmarkSuiteResult") -> List[BenchmarkComparison]:
+        baseline_by_case = {result.case_id: result for result in baseline.results}
+        comparisons = []
+        for result in self.results:
+            baseline_result = baseline_by_case.get(result.case_id)
+            baseline_score = baseline_result.score if baseline_result else 0
+            delta = result.score - baseline_score
+            comparisons.append(
+                BenchmarkComparison(
+                    case_id=result.case_id,
+                    baseline_score=baseline_score,
+                    current_score=result.score,
+                    delta=delta,
+                    changed=delta != 0,
+                )
+            )
+        return comparisons
 
 
 class BenchmarkRunner:
@@ -110,8 +138,11 @@ class BenchmarkRunner:
             replay=replay,
         )
 
-    def run_suite(self, cases: List[BenchmarkCase]) -> BenchmarkSuiteResult:
-        return BenchmarkSuiteResult(results=[self.run_case(case) for case in cases])
+    def run_suite(self, cases: List[BenchmarkCase], version: str = "current") -> BenchmarkSuiteResult:
+        return BenchmarkSuiteResult(
+            results=[self.run_case(case) for case in cases],
+            version=version,
+        )
 
     def replay(self, replay_record: ReplayRecord) -> ReplayOutcome:
         ledger = ObservabilityLedger(str(self._case_path(replay_record.run_id, "replay-ledger.json")))
@@ -138,7 +169,7 @@ class BenchmarkRunner:
         return ReplayOutcome(matched=not mismatches, replay_record=observed, mismatches=mismatches)
 
     def _evaluate(self, case: BenchmarkCase, record: ExecutionRecord) -> List[EvaluationCriterion]:
-        criteria = [
+        return [
             self._criterion(
                 name="decision-medium",
                 weight=40,
@@ -168,7 +199,6 @@ class BenchmarkRunner:
                 ),
             ),
         ]
-        return criteria
 
     def _criterion(self, name: str, weight: int, expected: Optional[object], actual: object) -> EvaluationCriterion:
         if expected is None:
@@ -181,3 +211,45 @@ class BenchmarkRunner:
         if self.storage_dir is None:
             return Path(file_name)
         return self.storage_dir / case_id / file_name
+
+
+def render_benchmark_suite_report(
+    suite: BenchmarkSuiteResult,
+    baseline: Optional[BenchmarkSuiteResult] = None,
+) -> str:
+    lines = [
+        "# Benchmark Suite Report",
+        "",
+        f"- Version: {suite.version}",
+        f"- Cases: {len(suite.results)}",
+        f"- Passed: {suite.passed}",
+        f"- Score: {suite.score}",
+        "",
+        "## Cases",
+        "",
+    ]
+
+    if suite.results:
+        lines.extend(
+            f"- {result.case_id}: score={result.score} passed={result.passed} replay={result.replay.matched}"
+            for result in suite.results
+        )
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Comparison", ""])
+    if baseline is None:
+        lines.append("- No baseline provided")
+    else:
+        lines.append(f"- Baseline Version: {baseline.version}")
+        lines.append(f"- Score Delta: {suite.score - baseline.score}")
+        comparisons = suite.compare(baseline)
+        if comparisons:
+            lines.extend(
+                f"- {comparison.case_id}: baseline={comparison.baseline_score} current={comparison.current_score} delta={comparison.delta}"
+                for comparison in comparisons
+            )
+        else:
+            lines.append("- No comparable cases")
+
+    return "\n".join(lines) + "\n"

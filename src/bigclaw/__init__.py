@@ -7,12 +7,14 @@ from .observability import ObservabilityLedger, TaskRun
 from .reports import render_task_run_report
 from .evaluation import (
     BenchmarkCase,
+    BenchmarkComparison,
     BenchmarkResult,
     BenchmarkRunner,
     BenchmarkSuiteResult,
     EvaluationCriterion,
     ReplayOutcome,
     ReplayRecord,
+    render_benchmark_suite_report,
 )
 
 __all__ = [
@@ -33,10 +35,12 @@ __all__ = [
     "TaskRun",
     "render_task_run_report",
     "BenchmarkCase",
+    "BenchmarkComparison",
     "BenchmarkResult",
     "BenchmarkRunner",
     "BenchmarkSuiteResult",
     "EvaluationCriterion",
     "ReplayOutcome",
     "ReplayRecord",
+    "render_benchmark_suite_report",
 ]

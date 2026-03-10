@@ -1,6 +1,12 @@
 from pathlib import Path
 
-from bigclaw.evaluation import BenchmarkCase, BenchmarkRunner, ReplayRecord
+from bigclaw.evaluation import (
+    BenchmarkCase,
+    BenchmarkRunner,
+    BenchmarkSuiteResult,
+    ReplayRecord,
+    render_benchmark_suite_report,
+)
 from bigclaw.models import RiskLevel, Task
 from bigclaw.scheduler import Scheduler
 
@@ -31,6 +37,7 @@ def test_benchmark_runner_scores_and_replays_case(tmp_path: Path):
     assert (tmp_path / "browser-low-risk" / "task-run.md").exists()
 
 
+
 def test_benchmark_runner_detects_failed_expectation(tmp_path: Path):
     runner = BenchmarkRunner(storage_dir=str(tmp_path))
     case = BenchmarkCase(
@@ -54,6 +61,7 @@ def test_benchmark_runner_detects_failed_expectation(tmp_path: Path):
     assert any(item.name == "decision-medium" and item.passed is False for item in result.criteria)
 
 
+
 def test_replay_outcome_reports_mismatch(tmp_path: Path):
     runner = BenchmarkRunner(scheduler=Scheduler(), storage_dir=str(tmp_path))
     replay_record = ReplayRecord(
@@ -74,3 +82,36 @@ def test_replay_outcome_reports_mismatch(tmp_path: Path):
 
     assert outcome.matched is False
     assert outcome.mismatches == ["medium expected docker got browser"]
+
+
+
+def test_suite_comparison_and_report(tmp_path: Path):
+    runner = BenchmarkRunner(storage_dir=str(tmp_path))
+    improved_suite = runner.run_suite(
+        [
+            BenchmarkCase(
+                case_id="browser-low-risk",
+                task=Task(
+                    task_id="BIG-601-v2",
+                    source="linear",
+                    title="Run browser benchmark",
+                    description="validate routing",
+                    required_tools=["browser"],
+                ),
+                expected_medium="browser",
+                expected_approved=True,
+                expected_status="approved",
+            )
+        ],
+        version="v0.2",
+    )
+    baseline_suite = BenchmarkSuiteResult(results=[], version="v0.1")
+
+    comparison = improved_suite.compare(baseline_suite)
+    report = render_benchmark_suite_report(improved_suite, baseline_suite)
+
+    assert comparison[0].delta == 100
+    assert improved_suite.score == 100
+    assert "Version: v0.2" in report
+    assert "Baseline Version: v0.1" in report
+    assert "Score Delta: 100" in report
