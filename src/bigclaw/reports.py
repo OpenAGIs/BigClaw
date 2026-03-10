@@ -666,6 +666,42 @@ def render_orchestration_overview_page(portfolio: OrchestrationPortfolio) -> str
 """
 
 
+def build_orchestration_canvas_from_ledger_entry(entry: dict) -> OrchestrationCanvas:
+    audits = entry.get("audits", [])
+
+    plan_audit = _latest_named_audit(audits, "orchestration.plan")
+    policy_audit = _latest_named_audit(audits, "orchestration.policy")
+    handoff_audit = _latest_named_audit(audits, "orchestration.handoff")
+    tool_audits = [audit for audit in audits if audit.get("action") == "tool.invoke"]
+
+    plan_details = plan_audit.get("details", {}) if plan_audit is not None else {}
+    policy_details = policy_audit.get("details", {}) if policy_audit is not None else {}
+    handoff_details = handoff_audit.get("details", {}) if handoff_audit is not None else {}
+
+    active_tools = sorted(
+        {
+            str(audit.get("details", {}).get("tool", ""))
+            for audit in tool_audits
+            if audit.get("details", {}).get("tool")
+        }
+    )
+
+    return OrchestrationCanvas(
+        task_id=str(entry.get("task_id", "")),
+        run_id=str(entry.get("run_id", "")),
+        collaboration_mode=str(plan_details.get("collaboration_mode", "single-team")),
+        departments=[str(value) for value in plan_details.get("departments", [])],
+        required_approvals=[str(value) for value in plan_details.get("approvals", [])],
+        tier=str(policy_details.get("tier", "standard")),
+        upgrade_required=bool(policy_details.get("tier") and policy_audit.get("outcome") == "upgrade-required") if policy_audit is not None else False,
+        blocked_departments=[str(value) for value in policy_details.get("blocked_departments", [])],
+        handoff_team=str(handoff_details.get("target_team", "none")) if handoff_audit is not None else "none",
+        handoff_status=str(handoff_audit.get("outcome", "none")) if handoff_audit is not None else "none",
+        handoff_reason=str(handoff_details.get("reason", "")),
+        active_tools=active_tools,
+    )
+
+
 def build_orchestration_canvas(
     run: TaskRun,
     plan: OrchestrationPlan,
@@ -710,6 +746,25 @@ def render_orchestration_canvas(canvas: OrchestrationCanvas) -> str:
         f"- Handoff Reason: {canvas.handoff_reason or 'none'}",
     ]
     return "\n".join(lines) + "\n"
+
+
+def build_orchestration_portfolio_from_ledger(
+    entries: List[dict],
+    name: str = "Cross-Department Orchestration",
+    period: str = "current",
+) -> OrchestrationPortfolio:
+    canvases = [
+        build_orchestration_canvas_from_ledger_entry(entry)
+        for entry in entries
+        if _latest_named_audit(entry.get("audits", []), "orchestration.plan") is not None
+    ]
+    takeover_queue = build_takeover_queue_from_ledger(entries, name=f"{name} Takeovers", period=period)
+    return build_orchestration_portfolio(
+        canvases,
+        name=name,
+        period=period,
+        takeover_queue=takeover_queue,
+    )
 
 
 def build_takeover_queue_from_ledger(
@@ -771,11 +826,15 @@ def render_takeover_queue_report(queue: TakeoverQueue, total_runs: Optional[int]
     return "\n".join(lines) + "\n"
 
 
-def _latest_handoff_audit(audits: List[dict]) -> Optional[dict]:
+def _latest_named_audit(audits: List[dict], action: str) -> Optional[dict]:
     for audit in reversed(audits):
-        if audit.get("action") == "orchestration.handoff":
+        if audit.get("action") == action:
             return audit
     return None
+
+
+def _latest_handoff_audit(audits: List[dict]) -> Optional[dict]:
+    return _latest_named_audit(audits, "orchestration.handoff")
 
 
 def _run_requires_triage(run: TaskRun) -> bool:

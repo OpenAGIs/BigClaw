@@ -10,7 +10,9 @@ from bigclaw.reports import (
     PilotScorecard,
     build_auto_triage_center,
     build_orchestration_canvas,
+    build_orchestration_canvas_from_ledger_entry,
     build_orchestration_portfolio,
+    build_orchestration_portfolio_from_ledger,
     build_launch_checklist,
     build_takeover_queue_from_ledger,
     evaluate_issue_closure,
@@ -511,3 +513,114 @@ def test_render_orchestration_overview_page():
     assert "review-security-takeover" in page
     assert "pending=1 recommendation=expedite-security-review" in page
     assert "run-a" in page
+
+
+def test_build_orchestration_canvas_from_ledger_entry_extracts_audit_state():
+    entry = {
+        "run_id": "run-ledger",
+        "task_id": "OPE-66-ledger",
+        "audits": [
+            {
+                "action": "orchestration.plan",
+                "outcome": "ready",
+                "details": {
+                    "collaboration_mode": "tier-limited",
+                    "departments": ["operations", "engineering"],
+                    "approvals": ["security-review"],
+                },
+            },
+            {
+                "action": "orchestration.policy",
+                "outcome": "upgrade-required",
+                "details": {
+                    "tier": "standard",
+                    "blocked_departments": ["security", "customer-success"],
+                },
+            },
+            {
+                "action": "orchestration.handoff",
+                "outcome": "pending",
+                "details": {
+                    "target_team": "operations",
+                    "reason": "premium tier required for advanced cross-department orchestration",
+                },
+            },
+            {"action": "tool.invoke", "outcome": "success", "details": {"tool": "browser"}},
+        ],
+    }
+
+    canvas = build_orchestration_canvas_from_ledger_entry(entry)
+
+    assert canvas.run_id == "run-ledger"
+    assert canvas.collaboration_mode == "tier-limited"
+    assert canvas.departments == ["operations", "engineering"]
+    assert canvas.required_approvals == ["security-review"]
+    assert canvas.tier == "standard"
+    assert canvas.upgrade_required is True
+    assert canvas.blocked_departments == ["security", "customer-success"]
+    assert canvas.handoff_team == "operations"
+    assert canvas.active_tools == ["browser"]
+
+
+def test_build_orchestration_portfolio_from_ledger_rolls_up_entries():
+    entries = [
+        {
+            "run_id": "run-a",
+            "task_id": "OPE-66-a",
+            "audits": [
+                {
+                    "action": "orchestration.plan",
+                    "outcome": "ready",
+                    "details": {
+                        "collaboration_mode": "cross-functional",
+                        "departments": ["operations", "engineering", "security"],
+                        "approvals": ["security-review"],
+                    },
+                },
+                {
+                    "action": "orchestration.policy",
+                    "outcome": "enabled",
+                    "details": {"tier": "premium", "blocked_departments": []},
+                },
+                {
+                    "action": "orchestration.handoff",
+                    "outcome": "pending",
+                    "details": {"target_team": "security", "reason": "approval required", "required_approvals": ["security-review"]},
+                },
+            ],
+        },
+        {
+            "run_id": "run-b",
+            "task_id": "OPE-66-b",
+            "audits": [
+                {
+                    "action": "orchestration.plan",
+                    "outcome": "ready",
+                    "details": {
+                        "collaboration_mode": "tier-limited",
+                        "departments": ["operations", "engineering"],
+                        "approvals": [],
+                    },
+                },
+                {
+                    "action": "orchestration.policy",
+                    "outcome": "upgrade-required",
+                    "details": {"tier": "standard", "blocked_departments": ["customer-success"]},
+                },
+                {
+                    "action": "orchestration.handoff",
+                    "outcome": "pending",
+                    "details": {"target_team": "operations", "reason": "entitlement gap", "required_approvals": ["ops-manager"]},
+                },
+            ],
+        },
+    ]
+
+    portfolio = build_orchestration_portfolio_from_ledger(entries, name="Ledger Portfolio", period="2026-03-10")
+
+    assert portfolio.total_runs == 2
+    assert portfolio.collaboration_modes == {"cross-functional": 1, "tier-limited": 1}
+    assert portfolio.tier_counts == {"premium": 1, "standard": 1}
+    assert portfolio.takeover_queue is not None
+    assert portfolio.takeover_queue.pending_requests == 2
+    assert portfolio.recommendation == "stabilize-security-takeovers"
