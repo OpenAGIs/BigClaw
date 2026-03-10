@@ -72,6 +72,14 @@ class PilotScorecard:
         return "hold"
 
 
+@dataclass
+class IssueClosureDecision:
+    issue_id: str
+    allowed: bool
+    reason: str
+    report_path: str = ""
+
+
 def render_issue_validation_report(issue_id: str, version: str, environment: str, summary: str) -> str:
     return f"""# Issue Validation Report\n\n- Issue ID: {issue_id}\n- 版本号: {version}\n- 测试环境: {environment}\n- 生成时间: {datetime.utcnow().isoformat()}Z\n\n## 结论\n\n{summary}\n"""
 
@@ -118,6 +126,48 @@ def write_report(path: str, content: str) -> None:
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(content)
+
+
+def validation_report_exists(report_path: Optional[str]) -> bool:
+    if not report_path:
+        return False
+
+    path = Path(report_path)
+    if not path.exists() or not path.is_file():
+        return False
+
+    return bool(path.read_text().strip())
+
+
+def evaluate_issue_closure(
+    issue_id: str,
+    report_path: Optional[str],
+    validation_passed: bool = True,
+) -> IssueClosureDecision:
+    resolved_path = str(Path(report_path)) if report_path else ""
+
+    if not validation_report_exists(report_path):
+        return IssueClosureDecision(
+            issue_id=issue_id,
+            allowed=False,
+            reason="validation report required before closing issue",
+            report_path=resolved_path,
+        )
+
+    if not validation_passed:
+        return IssueClosureDecision(
+            issue_id=issue_id,
+            allowed=False,
+            reason="validation failed; issue must remain open",
+            report_path=resolved_path,
+        )
+
+    return IssueClosureDecision(
+        issue_id=issue_id,
+        allowed=True,
+        reason="validation report present; issue can be closed",
+        report_path=resolved_path,
+    )
 
 
 def render_task_run_report(run: TaskRun) -> str:

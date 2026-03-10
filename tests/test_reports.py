@@ -3,8 +3,10 @@ from pathlib import Path
 from bigclaw.reports import (
     PilotMetric,
     PilotScorecard,
+    evaluate_issue_closure,
     render_issue_validation_report,
     render_pilot_scorecard,
+    validation_report_exists,
     write_report,
 )
 
@@ -74,3 +76,36 @@ def test_pilot_scorecard_returns_hold_when_value_is_negative():
     assert scorecard.monthly_net_value == -2000
     assert scorecard.payback_months is None
     assert scorecard.recommendation == "hold"
+
+
+def test_issue_closure_requires_non_empty_validation_report(tmp_path: Path):
+    report_path = tmp_path / "validation.md"
+
+    decision = evaluate_issue_closure("BIG-602", str(report_path))
+
+    assert decision.allowed is False
+    assert decision.reason == "validation report required before closing issue"
+    assert validation_report_exists(str(report_path)) is False
+
+
+def test_issue_closure_blocks_failed_validation_report(tmp_path: Path):
+    report_path = tmp_path / "validation.md"
+    write_report(str(report_path), "# Validation\n\nfailed")
+
+    decision = evaluate_issue_closure("BIG-602", str(report_path), validation_passed=False)
+
+    assert decision.allowed is False
+    assert decision.reason == "validation failed; issue must remain open"
+    assert validation_report_exists(str(report_path)) is True
+
+
+def test_issue_closure_allows_completed_validation_report(tmp_path: Path):
+    report_path = tmp_path / "validation.md"
+    content = render_issue_validation_report("BIG-602", "v0.1", "sandbox", "pass")
+    write_report(str(report_path), content)
+
+    decision = evaluate_issue_closure("BIG-602", str(report_path), validation_passed=True)
+
+    assert decision.allowed is True
+    assert decision.reason == "validation report present; issue can be closed"
+    assert decision.report_path == str(report_path)
