@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
+from html import escape
 from pathlib import Path
 from typing import List, Optional
 
@@ -287,3 +288,77 @@ def render_task_run_report(run: TaskRun) -> str:
         lines.append("- None")
 
     return "\n".join(lines) + "\n"
+
+
+def render_task_run_detail_page(run: TaskRun) -> str:
+    def render_items(items: List[str]) -> str:
+        if not items:
+            return "<li>None</li>"
+        return "".join(f"<li>{item}</li>" for item in items)
+
+    summary = escape(run.summary or "No summary recorded.")
+    logs = render_items(
+        [
+            f"<strong>[{escape(entry.level)}]</strong> <code>{escape(entry.timestamp)}</code> {escape(entry.message)}"
+            for entry in run.logs
+        ]
+    )
+    traces = render_items(
+        [
+            f"<strong>{escape(entry.span)}</strong> · {escape(entry.status)} · <code>{escape(entry.timestamp)}</code>"
+            for entry in run.traces
+        ]
+    )
+    artifacts = render_items(
+        [
+            f"<strong>{escape(entry.name)}</strong> ({escape(entry.kind)}) · <code>{escape(entry.path)}</code>"
+            for entry in run.artifacts
+        ]
+    )
+    audits = render_items(
+        [
+            f"<strong>{escape(entry.action)}</strong> by {escape(entry.actor)} · {escape(entry.outcome)}"
+            for entry in run.audits
+        ]
+    )
+
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Task Run Detail · {escape(run.run_id)}</title>
+  <style>
+    :root {{ color-scheme: light dark; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
+    body {{ margin: 2rem auto; max-width: 960px; padding: 0 1rem 3rem; line-height: 1.5; }}
+    .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin: 1rem 0 1.5rem; }}
+    .card {{ border: 1px solid #cbd5e1; border-radius: 10px; padding: 0.9rem; background: rgba(148, 163, 184, 0.08); }}
+    h1, h2 {{ margin-bottom: 0.5rem; }}
+    ul {{ padding-left: 1.2rem; }}
+    code {{ font-size: 0.95em; }}
+  </style>
+</head>
+<body>
+  <h1>Task Run Detail</h1>
+  <p>{escape(run.title)}</p>
+  <div class="grid">
+    <div class="card"><strong>Run ID</strong><br>{escape(run.run_id)}</div>
+    <div class="card"><strong>Task ID</strong><br>{escape(run.task_id)}</div>
+    <div class="card"><strong>Source</strong><br>{escape(run.source)}</div>
+    <div class="card"><strong>Medium</strong><br>{escape(run.medium)}</div>
+    <div class="card"><strong>Status</strong><br>{escape(run.status)}</div>
+    <div class="card"><strong>Started</strong><br><code>{escape(run.started_at)}</code></div>
+    <div class="card"><strong>Ended</strong><br><code>{escape(run.ended_at or 'n/a')}</code></div>
+  </div>
+  <h2>Summary</h2>
+  <p>{summary}</p>
+  <h2>Logs</h2>
+  <ul>{logs}</ul>
+  <h2>Trace</h2>
+  <ul>{traces}</ul>
+  <h2>Artifacts</h2>
+  <ul>{artifacts}</ul>
+  <h2>Audit</h2>
+  <ul>{audits}</ul>
+</body>
+</html>
+"""

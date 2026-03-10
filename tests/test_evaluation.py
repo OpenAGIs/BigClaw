@@ -6,6 +6,7 @@ from bigclaw.evaluation import (
     BenchmarkSuiteResult,
     ReplayRecord,
     render_benchmark_suite_report,
+    render_replay_detail_page,
 )
 from bigclaw.models import RiskLevel, Task
 from bigclaw.scheduler import Scheduler
@@ -35,6 +36,7 @@ def test_benchmark_runner_scores_and_replays_case(tmp_path: Path):
     assert result.passed is True
     assert result.replay.matched is True
     assert (tmp_path / "browser-low-risk" / "task-run.md").exists()
+    assert (tmp_path / "benchmark-browser-low-risk" / "replay.html").exists()
 
 
 
@@ -82,6 +84,8 @@ def test_replay_outcome_reports_mismatch(tmp_path: Path):
 
     assert outcome.matched is False
     assert outcome.mismatches == ["medium expected docker got browser"]
+    assert outcome.report_path is not None
+    assert Path(outcome.report_path).exists()
 
 
 
@@ -115,3 +119,19 @@ def test_suite_comparison_and_report(tmp_path: Path):
     assert "Version: v0.2" in report
     assert "Baseline Version: v0.1" in report
     assert "Score Delta: 100" in report
+
+
+def test_render_replay_detail_page_lists_mismatches():
+    task = Task(task_id="BIG-804", source="linear", title="Replay detail", description="")
+    expected = ReplayRecord(task=task, run_id="run-1", medium="docker", approved=True, status="approved")
+    observed = ReplayRecord(task=task, run_id="run-1", medium="browser", approved=False, status="needs-approval")
+
+    page = render_replay_detail_page(
+        expected,
+        observed,
+        ["medium expected docker got browser", "approved expected True got False"],
+    )
+
+    assert "Replay Detail" in page
+    assert "medium expected docker got browser" in page
+    assert "needs-approval" in page

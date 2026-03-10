@@ -6,7 +6,7 @@ from .models import Task, RiskLevel
 from .observability import ObservabilityLedger, TaskRun
 from .orchestration import CrossDepartmentOrchestrator, OrchestrationPlan
 from .runtime import ClawWorkerRuntime, ToolCallResult
-from .reports import render_task_run_report, write_report
+from .reports import render_task_run_detail_page, render_task_run_report, write_report
 
 
 @dataclass
@@ -92,15 +92,23 @@ class Scheduler:
 
         worker_execution = self.worker_runtime.execute(task, decision, run, actor=actor)
 
+        final_status = "approved" if decision.approved else "needs-approval"
+        run.finalize(final_status, decision.reason)
+
         resolved_report_path = None
         if report_path:
             resolved_report_path = str(Path(report_path))
-            report_content = render_task_run_report(run)
-            write_report(resolved_report_path, report_content)
-            run.register_artifact("task-run-report", "report", resolved_report_path, format="markdown")
+            report_file = Path(resolved_report_path)
+            if report_file.suffix.lower() == ".html":
+                write_report(resolved_report_path, render_task_run_detail_page(run))
+                run.register_artifact("task-run-detail", "page", resolved_report_path, format="html")
+            else:
+                detail_path = str(report_file.with_suffix(".html"))
+                write_report(detail_path, render_task_run_detail_page(run))
+                run.register_artifact("task-run-detail", "page", detail_path, format="html")
+                write_report(resolved_report_path, render_task_run_report(run))
+                run.register_artifact("task-run-report", "report", resolved_report_path, format="markdown")
 
-        final_status = "approved" if decision.approved else "needs-approval"
-        run.finalize(final_status, decision.reason)
         ledger.append(run)
         return ExecutionRecord(
             decision=decision,

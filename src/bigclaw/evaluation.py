@@ -1,10 +1,12 @@
 from dataclasses import dataclass, field
+from html import escape
 from pathlib import Path
 from typing import List, Optional
 
 from .models import Task
 from .observability import ObservabilityLedger
 from .scheduler import ExecutionRecord, Scheduler
+from .reports import write_report
 
 
 @dataclass
@@ -49,6 +51,7 @@ class ReplayOutcome:
     matched: bool
     replay_record: ReplayRecord
     mismatches: List[str] = field(default_factory=list)
+    report_path: Optional[str] = None
 
 
 @dataclass
@@ -166,7 +169,16 @@ class BenchmarkRunner:
             )
         if observed.status != replay_record.status:
             mismatches.append(f"status expected {replay_record.status} got {observed.status}")
-        return ReplayOutcome(matched=not mismatches, replay_record=observed, mismatches=mismatches)
+        report_path = None
+        if self.storage_dir is not None:
+            report_path = str(self._case_path(replay_record.run_id, "replay.html"))
+            write_report(report_path, render_replay_detail_page(replay_record, observed, mismatches))
+        return ReplayOutcome(
+            matched=not mismatches,
+            replay_record=observed,
+            mismatches=mismatches,
+            report_path=report_path,
+        )
 
     def _evaluate(self, case: BenchmarkCase, record: ExecutionRecord) -> List[EvaluationCriterion]:
         return [
@@ -253,3 +265,38 @@ def render_benchmark_suite_report(
             lines.append("- No comparable cases")
 
     return "\n".join(lines) + "\n"
+
+
+def render_replay_detail_page(expected: ReplayRecord, observed: ReplayRecord, mismatches: List[str]) -> str:
+    mismatch_items = "".join(f"<li>{escape(item)}</li>" for item in mismatches) or "<li>None</li>"
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Replay Detail · {escape(expected.run_id)}</title>
+  <style>
+    :root {{ color-scheme: light dark; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif; }}
+    body {{ margin: 2rem auto; max-width: 880px; padding: 0 1rem 3rem; line-height: 1.5; }}
+    table {{ border-collapse: collapse; width: 100%; margin: 1rem 0 1.5rem; }}
+    th, td {{ border: 1px solid #cbd5e1; padding: 0.6rem; text-align: left; }}
+    th {{ background: rgba(148, 163, 184, 0.12); }}
+  </style>
+</head>
+<body>
+  <h1>Replay Detail</h1>
+  <p>Task <strong>{escape(expected.task.task_id)}</strong> · baseline run <code>{escape(expected.run_id)}</code></p>
+  <table>
+    <thead>
+      <tr><th>Field</th><th>Expected</th><th>Observed</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Medium</td><td>{escape(expected.medium)}</td><td>{escape(observed.medium)}</td></tr>
+      <tr><td>Approved</td><td>{escape(str(expected.approved))}</td><td>{escape(str(observed.approved))}</td></tr>
+      <tr><td>Status</td><td>{escape(expected.status)}</td><td>{escape(observed.status)}</td></tr>
+    </tbody>
+  </table>
+  <h2>Mismatches</h2>
+  <ul>{mismatch_items}</ul>
+</body>
+</html>
+"""

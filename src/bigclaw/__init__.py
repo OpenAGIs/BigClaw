@@ -23,6 +23,7 @@ from .reports import (
     evaluate_issue_closure,
     render_pilot_portfolio_report,
     render_pilot_scorecard,
+    render_task_run_detail_page,
     render_task_run_report,
     validation_report_exists,
 )
@@ -36,6 +37,7 @@ from .evaluation import (
     EvaluationCriterion,
     ReplayOutcome,
     ReplayRecord,
+    render_replay_detail_page,
     render_benchmark_suite_report,
 )
 
@@ -75,6 +77,7 @@ __all__ = [
     "evaluate_issue_closure",
     "render_pilot_portfolio_report",
     "render_pilot_scorecard",
+    "render_task_run_detail_page",
     "render_task_run_report",
     "validation_report_exists",
     "AcceptanceDecision",
@@ -90,5 +93,6 @@ __all__ = [
     "EvaluationCriterion",
     "ReplayOutcome",
     "ReplayRecord",
+    "render_replay_detail_page",
     "render_benchmark_suite_report",
 ]

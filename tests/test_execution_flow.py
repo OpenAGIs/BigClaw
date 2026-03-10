@@ -33,9 +33,12 @@ def test_queue_to_scheduler_execution_records_full_chain(tmp_path: Path):
     assert record.decision.approved is True
     assert record.run.status == "approved"
     assert report_path.exists()
+    assert report_path.with_suffix(".html").exists()
+    assert "Status: approved" in report_path.read_text()
     assert len(entries) == 1
     assert entries[0]["traces"][0]["span"] == "scheduler.decide"
-    assert entries[0]["artifacts"][0]["kind"] == "report"
+    assert entries[0]["artifacts"][0]["kind"] == "page"
+    assert entries[0]["artifacts"][1]["kind"] == "report"
     assert entries[0]["audits"][0]["details"]["reason"] == "browser automation task"
 
 

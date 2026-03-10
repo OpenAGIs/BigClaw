@@ -3,7 +3,7 @@ from pathlib import Path
 
 from bigclaw.models import Priority, Task
 from bigclaw.observability import ObservabilityLedger, TaskRun
-from bigclaw.reports import render_task_run_report
+from bigclaw.reports import render_task_run_detail_page, render_task_run_report
 
 
 def test_task_run_captures_logs_trace_artifacts_and_audits(tmp_path: Path):
@@ -56,3 +56,23 @@ def test_render_task_run_report(tmp_path: Path):
     assert "## Trace" in report
     assert "## Artifacts" in report
     assert "## Audit" in report
+
+
+def test_render_task_run_detail_page(tmp_path: Path):
+    artifact = tmp_path / "artifact.txt"
+    artifact.write_text("audit trail")
+
+    task = Task(task_id="BIG-502", source="linear", title="Observe execution", description="")
+    run = TaskRun.from_task(task, run_id="run-3", medium="browser")
+    run.log("info", "opened detail page")
+    run.trace("playback.render", "ok")
+    run.register_artifact("approval-note", "note", str(artifact))
+    run.audit("playback.render", "reviewer", "success")
+    run.finalize("approved", "detail page ready")
+
+    page = render_task_run_detail_page(run)
+
+    assert "<title>Task Run Detail" in page
+    assert "opened detail page" in page
+    assert "playback.render" in page
+    assert "detail page ready" in page
