@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Protocol
 from urllib import request
 from urllib.error import HTTPError, URLError
 
-from .models import Task
+from .models import Task, TaskState
 from .observability import utc_now
 
 
@@ -35,6 +35,7 @@ class Event:
 
 
 EventHandler = Callable[[Event], None]
+SignalHandler = Callable[[Task, Dict[str, Any]], Optional[TaskState]]
 
 
 @dataclass
@@ -112,12 +113,20 @@ class EventBus:
         self.transport = transport or UrllibWebhookTransport()
         self._subscribers: Dict[str, List[EventHandler]] = {}
         self._webhooks: List[WebhookEndpoint] = []
+        self._signal_handlers: Dict[str, SignalHandler] = {
+            "pr.comment.created": self._handle_pr_comment_created,
+            "ci.completed": self._handle_ci_completed,
+            "task.failed": self._handle_task_failed,
+        }
 
     def subscribe(self, event_type: str, handler: EventHandler) -> None:
         self._subscribers.setdefault(event_type, []).append(handler)
 
     def register_webhook(self, endpoint: WebhookEndpoint) -> None:
         self._webhooks.append(endpoint)
+
+    def register_signal_handler(self, signal_type: str, handler: SignalHandler) -> None:
+        self._signal_handlers[signal_type] = handler
 
     def publish(self, event: Event) -> DispatchResult:
         handlers = self._subscribers.get(event.event_type, [])
@@ -134,6 +143,29 @@ class EventBus:
             subscribers_notified=len(handlers),
             deliveries=deliveries,
         )
+
+    def process_task_signal(
+        self,
+        task: Task,
+        signal_type: str,
+        payload: Dict[str, Any],
+        actor: str = "system",
+    ) -> Optional[DispatchResult]:
+        handler = self._signal_handlers.get(signal_type)
+        if handler is None:
+            return None
+
+        next_state = handler(task, payload)
+        if next_state is None or next_state == task.state:
+            return None
+
+        previous_state = task.state.value
+        task.state = next_state
+        metadata = {
+            "signal_type": signal_type,
+            "signal_payload": payload,
+        }
+        return self.publish_task_state_changed(task, previous_state=previous_state, actor=actor, **metadata)
 
     def publish_task_state_changed(
         self,
@@ -155,3 +187,41 @@ class EventBus:
             },
         )
         return self.publish(event)
+
+    def _handle_pr_comment_created(self, task: Task, payload: Dict[str, Any]) -> Optional[TaskState]:
+        transition = payload.get("transition_to") or payload.get("state")
+        if transition:
+            return self._coerce_task_state(transition)
+
+        comment_body = str(payload.get("body", "")).lower()
+        command_map = {
+            "/start": TaskState.IN_PROGRESS,
+            "/block": TaskState.BLOCKED,
+            "/done": TaskState.DONE,
+            "/fail": TaskState.FAILED,
+            "/todo": TaskState.TODO,
+        }
+        for command, state in command_map.items():
+            if command in comment_body:
+                return state
+        return None
+
+    def _handle_ci_completed(self, task: Task, payload: Dict[str, Any]) -> Optional[TaskState]:
+        conclusion = str(payload.get("conclusion") or payload.get("status") or "").lower()
+        if conclusion in {"success", "passed", "succeeded"}:
+            return TaskState.DONE
+        if conclusion in {"failure", "failed", "cancelled", "timed_out"}:
+            return TaskState.FAILED
+        return None
+
+    def _handle_task_failed(self, task: Task, payload: Dict[str, Any]) -> Optional[TaskState]:
+        if payload.get("failed") is False:
+            return None
+        return TaskState.FAILED
+
+    def _coerce_task_state(self, value: str) -> TaskState:
+        normalized = value.strip().lower().replace("_", " ")
+        for state in TaskState:
+            if state.value.lower() == normalized:
+                return state
+        raise ValueError(f"unsupported task state: {value}")
