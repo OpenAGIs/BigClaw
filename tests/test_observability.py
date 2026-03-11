@@ -142,6 +142,17 @@ def test_render_task_run_detail_page(tmp_path: Path):
     assert "Replay copy approved for external review." in page
 
 
+def test_render_task_run_detail_page_escapes_timeline_json_script_breakout():
+    task = Task(task_id="BIG-escape", source="linear", title="Escape check", description="")
+    run = TaskRun.from_task(task, run_id="run-escape", medium="browser")
+    run.log("info", "contains </script> marker")
+    run.finalize("approved", "ok")
+
+    page = render_task_run_detail_page(run)
+
+    assert "contains <\\/script> marker" in page
+
+
 def test_observability_ledger_load_runs_round_trips_entries(tmp_path: Path):
     task = Task(task_id="BIG-502-roundtrip", source="linear", title="Round trip", description="")
     run = TaskRun.from_task(task, run_id="run-roundtrip", medium="docker")
