@@ -163,6 +163,9 @@ def test_render_run_replay_index_page_links_outputs(tmp_path: Path):
     page = Path(result.detail_page_path).read_text()
 
     assert "Run Detail Index" in page
+    assert "Timeline / Log Sync" in page
+    assert "Acceptance" in page
+    assert "Reports" in page
     assert "task-run.md" in page
     assert "replay.html" in page
     assert "decision-medium" in page
@@ -184,3 +187,4 @@ def test_render_run_replay_index_page_without_report_path(tmp_path: Path):
     page = render_run_replay_index_page("big-804-index", record, replay, [])
 
     assert "n/a" in page
+    assert "Replay" in page

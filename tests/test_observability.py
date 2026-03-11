@@ -73,8 +73,12 @@ def test_render_task_run_detail_page(tmp_path: Path):
     page = render_task_run_detail_page(run)
 
     assert "<title>Task Run Detail" in page
+    assert "Timeline / Log Sync" in page
+    assert "data-detail=\"title\"" in page
+    assert "Reports" in page
     assert "opened detail page" in page
     assert "playback.render" in page
+    assert str(artifact) in page
     assert "detail page ready" in page
 
 

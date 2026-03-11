@@ -6,6 +6,15 @@ from typing import List, Optional
 
 from .observability import TaskRun
 from .orchestration import HandoffRequest, OrchestrationPlan, OrchestrationPolicyDecision
+from .run_detail import (
+    RunDetailEvent,
+    RunDetailResource,
+    RunDetailStat,
+    RunDetailTab,
+    render_resource_grid,
+    render_run_detail_console,
+    render_timeline_panel,
+)
 
 
 @dataclass
@@ -1035,74 +1044,130 @@ def render_task_run_report(run: TaskRun) -> str:
 
 
 def render_task_run_detail_page(run: TaskRun) -> str:
-    def render_items(items: List[str]) -> str:
-        if not items:
-            return "<li>None</li>"
-        return "".join(f"<li>{item}</li>" for item in items)
+    status_tone = "accent" if run.status in {"approved", "completed", "succeeded"} else "warning"
+    if run.status in {"failed", "rejected"}:
+        status_tone = "danger"
 
-    summary = escape(run.summary or "No summary recorded.")
-    logs = render_items(
+    timeline_events = sorted(
         [
-            f"<strong>[{escape(entry.level)}]</strong> <code>{escape(entry.timestamp)}</code> {escape(entry.message)}"
-            for entry in run.logs
-        ]
-    )
-    traces = render_items(
-        [
-            f"<strong>{escape(entry.span)}</strong> · {escape(entry.status)} · <code>{escape(entry.timestamp)}</code>"
-            for entry in run.traces
-        ]
-    )
-    artifacts = render_items(
-        [
-            f"<strong>{escape(entry.name)}</strong> ({escape(entry.kind)}) · <code>{escape(entry.path)}</code>"
-            for entry in run.artifacts
-        ]
-    )
-    audits = render_items(
-        [
-            f"<strong>{escape(entry.action)}</strong> by {escape(entry.actor)} · {escape(entry.outcome)}"
-            for entry in run.audits
-        ]
+            *[
+                RunDetailEvent(
+                    event_id=f"log-{index}",
+                    lane="log",
+                    title=entry.message,
+                    timestamp=entry.timestamp,
+                    status=entry.level,
+                    summary=f"log entry at {entry.timestamp}",
+                    details=[f"{key}={value}" for key, value in sorted(entry.context.items())] or ["No structured context recorded."],
+                )
+                for index, entry in enumerate(run.logs)
+            ],
+            *[
+                RunDetailEvent(
+                    event_id=f"trace-{index}",
+                    lane="trace",
+                    title=entry.span,
+                    timestamp=entry.timestamp,
+                    status=entry.status,
+                    summary=f"trace span {entry.span}",
+                    details=[f"{key}={value}" for key, value in sorted(entry.attributes.items())] or ["No trace attributes recorded."],
+                )
+                for index, entry in enumerate(run.traces)
+            ],
+            *[
+                RunDetailEvent(
+                    event_id=f"audit-{index}",
+                    lane="audit",
+                    title=entry.action,
+                    timestamp=entry.timestamp,
+                    status=entry.outcome,
+                    summary=f"audit by {entry.actor}",
+                    details=[f"actor={entry.actor}", *[f"{key}={value}" for key, value in sorted(entry.details.items())]] or ["No audit details recorded."],
+                )
+                for index, entry in enumerate(run.audits)
+            ],
+            *[
+                RunDetailEvent(
+                    event_id=f"artifact-{index}",
+                    lane="artifact",
+                    title=entry.name,
+                    timestamp=entry.timestamp,
+                    status=entry.kind,
+                    summary=f"artifact emitted at {entry.path}",
+                    details=[
+                        f"path={entry.path}",
+                        f"sha256={entry.sha256 or 'n/a'}",
+                        *[f"{key}={value}" for key, value in sorted(entry.metadata.items())],
+                    ],
+                )
+                for index, entry in enumerate(run.artifacts)
+            ],
+        ],
+        key=lambda event: event.timestamp,
     )
 
-    return f"""<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Task Run Detail · {escape(run.run_id)}</title>
-  <style>
-    :root {{ color-scheme: light dark; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
-    body {{ margin: 2rem auto; max-width: 960px; padding: 0 1rem 3rem; line-height: 1.5; }}
-    .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin: 1rem 0 1.5rem; }}
-    .card {{ border: 1px solid #cbd5e1; border-radius: 10px; padding: 0.9rem; background: rgba(148, 163, 184, 0.08); }}
-    h1, h2 {{ margin-bottom: 0.5rem; }}
-    ul {{ padding-left: 1.2rem; }}
-    code {{ font-size: 0.95em; }}
-  </style>
-</head>
-<body>
-  <h1>Task Run Detail</h1>
-  <p>{escape(run.title)}</p>
-  <div class="grid">
-    <div class="card"><strong>Run ID</strong><br>{escape(run.run_id)}</div>
-    <div class="card"><strong>Task ID</strong><br>{escape(run.task_id)}</div>
-    <div class="card"><strong>Source</strong><br>{escape(run.source)}</div>
-    <div class="card"><strong>Medium</strong><br>{escape(run.medium)}</div>
-    <div class="card"><strong>Status</strong><br>{escape(run.status)}</div>
-    <div class="card"><strong>Started</strong><br><code>{escape(run.started_at)}</code></div>
-    <div class="card"><strong>Ended</strong><br><code>{escape(run.ended_at or 'n/a')}</code></div>
-  </div>
-  <h2>Summary</h2>
-  <p>{summary}</p>
-  <h2>Logs</h2>
-  <ul>{logs}</ul>
-  <h2>Trace</h2>
-  <ul>{traces}</ul>
-  <h2>Artifacts</h2>
-  <ul>{artifacts}</ul>
-  <h2>Audit</h2>
-  <ul>{audits}</ul>
-</body>
-</html>
-"""
+    artifacts = [
+        RunDetailResource(
+            name=entry.name,
+            kind=entry.kind,
+            path=entry.path,
+            meta=[f"sha256={entry.sha256 or 'n/a'}", *[f"{key}={value}" for key, value in sorted(entry.metadata.items())]],
+            tone="report" if entry.kind == "report" else "page" if entry.kind == "page" else "default",
+        )
+        for entry in run.artifacts
+    ]
+    report_resources = [resource for resource in artifacts if resource.kind == "report"]
+
+    overview_html = f"""
+    <section class="surface">
+      <h2>Overview</h2>
+      <p>{escape(run.summary or 'No summary recorded.')}</p>
+      <p class="meta">Task {escape(run.task_id)} from {escape(run.source)} started at {escape(run.started_at)} and ended at {escape(run.ended_at or 'n/a')}.</p>
+    </section>
+    """
+
+    return render_run_detail_console(
+        page_title=f"Task Run Detail · {run.run_id}",
+        eyebrow="Run Detail",
+        hero_title=run.title,
+        hero_summary=run.summary or "Operational detail page with synced logs, traces, audits, and artifacts.",
+        stats=[
+            RunDetailStat("Run ID", run.run_id),
+            RunDetailStat("Task ID", run.task_id),
+            RunDetailStat("Medium", run.medium, tone="accent" if run.medium == "browser" else "default"),
+            RunDetailStat("Status", run.status, tone=status_tone),
+            RunDetailStat("Artifacts", str(len(run.artifacts))),
+            RunDetailStat("Reports", str(len(report_resources)), tone="accent" if report_resources else "default"),
+        ],
+        tabs=[
+            RunDetailTab("overview", "Overview", overview_html),
+            RunDetailTab(
+                "timeline",
+                "Timeline / Log Sync",
+                render_timeline_panel(
+                    "Timeline / Log Sync",
+                    "Unified execution timeline for logs, traces, audits, and emitted artifacts. Selecting an item updates the inspector in the split view.",
+                    timeline_events,
+                ),
+            ),
+            RunDetailTab(
+                "artifacts",
+                "Artifacts",
+                render_resource_grid(
+                    "Artifacts",
+                    "Execution artifacts and generated outputs attached to this run.",
+                    artifacts,
+                ),
+            ),
+            RunDetailTab(
+                "reports",
+                "Reports",
+                render_resource_grid(
+                    "Reports",
+                    "Report artifacts emitted for this run, including markdown summaries and linked detail pages when present.",
+                    report_resources,
+                ),
+            ),
+        ],
+        timeline_events=timeline_events,
+    )

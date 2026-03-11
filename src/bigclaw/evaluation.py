@@ -5,6 +5,15 @@ from typing import List, Optional
 
 from .models import Task
 from .observability import ObservabilityLedger
+from .run_detail import (
+    RunDetailEvent,
+    RunDetailResource,
+    RunDetailStat,
+    RunDetailTab,
+    render_resource_grid,
+    render_run_detail_console,
+    render_timeline_panel,
+)
 from .scheduler import ExecutionRecord, Scheduler
 from .reports import write_report
 
@@ -314,46 +323,176 @@ def render_run_replay_index_page(
     replay: ReplayOutcome,
     criteria: List[EvaluationCriterion],
 ) -> str:
-    report_path = escape(record.report_path or "n/a")
-    detail_path = escape(str(Path(record.report_path).with_suffix(".html"))) if record.report_path else "n/a"
-    replay_path = escape(replay.report_path or "n/a")
-    criteria_items = "".join(
-        f"<li><strong>{escape(item.name)}</strong>: {escape(item.detail)} · passed={escape(str(item.passed))}</li>"
-        for item in criteria
-    ) or "<li>None</li>"
-    mismatch_items = "".join(f"<li>{escape(item)}</li>" for item in replay.mismatches) or "<li>None</li>"
-    return f"""<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Run Detail Index · {escape(case_id)}</title>
-  <style>
-    :root {{ color-scheme: light dark; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
-    body {{ margin: 2rem auto; max-width: 900px; padding: 0 1rem 3rem; line-height: 1.5; }}
-    .card {{ border: 1px solid #cbd5e1; border-radius: 10px; padding: 1rem; margin: 1rem 0; background: rgba(148, 163, 184, 0.08); }}
-    code {{ font-size: 0.95em; }}
-  </style>
-</head>
-<body>
-  <h1>Run Detail Index</h1>
-  <p>Benchmark case <strong>{escape(case_id)}</strong> · task <strong>{escape(record.run.task_id)}</strong></p>
-  <div class="card">
-    <h2>Execution</h2>
-    <p>Status: <strong>{escape(record.run.status)}</strong> · Medium: <strong>{escape(record.decision.medium)}</strong></p>
-    <ul>
-      <li>Markdown report: <code>{report_path}</code></li>
-      <li>Run detail page: <code>{detail_path}</code></li>
-      <li>Replay page: <code>{replay_path}</code></li>
-    </ul>
-  </div>
-  <div class="card">
-    <h2>Acceptance Criteria</h2>
-    <ul>{criteria_items}</ul>
-  </div>
-  <div class="card">
-    <h2>Replay Mismatches</h2>
-    <ul>{mismatch_items}</ul>
-  </div>
-</body>
-</html>
-"""
+    status_tone = "accent" if record.run.status == "approved" else "warning"
+    if replay.mismatches:
+        status_tone = "danger"
+
+    report_path = record.report_path or "n/a"
+    detail_path = str(Path(record.report_path).with_suffix(".html")) if record.report_path else "n/a"
+    replay_path = replay.report_path or "n/a"
+
+    criteria_events = [
+        RunDetailEvent(
+            event_id=f"criterion-{index}",
+            lane="acceptance",
+            title=item.name,
+            timestamp=f"step-{index + 1}",
+            status="passed" if item.passed else "failed",
+            summary=item.detail,
+            details=[f"weight={item.weight}", f"passed={item.passed}"],
+        )
+        for index, item in enumerate(criteria)
+    ]
+    mismatch_events = [
+        RunDetailEvent(
+            event_id=f"mismatch-{index}",
+            lane="replay",
+            title=f"Replay mismatch {index + 1}",
+            timestamp=f"replay-{index + 1}",
+            status="mismatch",
+            summary=item,
+            details=[item],
+        )
+        for index, item in enumerate(replay.mismatches)
+    ]
+    run_events = sorted(
+        [
+            *[
+                RunDetailEvent(
+                    event_id=f"log-{index}",
+                    lane="log",
+                    title=entry.message,
+                    timestamp=entry.timestamp,
+                    status=entry.level,
+                    summary=f"log entry at {entry.timestamp}",
+                    details=[f"{key}={value}" for key, value in sorted(entry.context.items())] or ["No structured context recorded."],
+                )
+                for index, entry in enumerate(record.run.logs)
+            ],
+            *[
+                RunDetailEvent(
+                    event_id=f"trace-{index}",
+                    lane="trace",
+                    title=entry.span,
+                    timestamp=entry.timestamp,
+                    status=entry.status,
+                    summary=f"trace span {entry.span}",
+                    details=[f"{key}={value}" for key, value in sorted(entry.attributes.items())] or ["No trace attributes recorded."],
+                )
+                for index, entry in enumerate(record.run.traces)
+            ],
+            *[
+                RunDetailEvent(
+                    event_id=f"audit-{index}",
+                    lane="audit",
+                    title=entry.action,
+                    timestamp=entry.timestamp,
+                    status=entry.outcome,
+                    summary=f"audit by {entry.actor}",
+                    details=[f"actor={entry.actor}", *[f"{key}={value}" for key, value in sorted(entry.details.items())]] or ["No audit details recorded."],
+                )
+                for index, entry in enumerate(record.run.audits)
+            ],
+            *criteria_events,
+            *mismatch_events,
+        ],
+        key=lambda event: event.timestamp,
+    )
+
+    execution_resources = [
+        RunDetailResource(
+            name="Markdown report",
+            kind="report",
+            path=report_path,
+            meta=["execution report"],
+            tone="report",
+        ),
+        RunDetailResource(
+            name="Run detail page",
+            kind="page",
+            path=detail_path,
+            meta=["task run detail"],
+            tone="page",
+        ),
+        RunDetailResource(
+            name="Replay page",
+            kind="page",
+            path=replay_path,
+            meta=[f"matched={replay.matched}"],
+            tone="page",
+        ),
+    ]
+
+    overview_html = f"""
+    <section class="surface">
+      <h2>Overview</h2>
+      <p>Benchmark case <strong>{escape(case_id)}</strong> executed task <strong>{escape(record.run.task_id)}</strong> with scheduler medium <strong>{escape(record.decision.medium)}</strong>.</p>
+      <p class="meta">Replay matched={escape(str(replay.matched))} | mismatches={escape(str(len(replay.mismatches)))}</p>
+    </section>
+    """
+    acceptance_html = f"""
+    <section class="surface">
+      <h2>Acceptance Criteria</h2>
+      <p>Scored checks used to grade the run detail and replay execution path.</p>
+      <ul>
+        {''.join(f'<li><strong>{escape(item.name)}</strong>: {escape(item.detail)} | weight={item.weight} | passed={item.passed}</li>' for item in criteria) or '<li>None</li>'}
+      </ul>
+    </section>
+    """
+    replay_html = f"""
+    <section class="surface">
+      <h2>Replay</h2>
+      <p>Replay status <strong>{escape('matched' if replay.matched else 'mismatch')}</strong> for baseline run <code>{escape(replay.replay_record.run_id)}</code>.</p>
+      <ul>
+        {''.join(f'<li>{escape(item)}</li>' for item in replay.mismatches) or '<li>None</li>'}
+      </ul>
+    </section>
+    """
+
+    return render_run_detail_console(
+        page_title=f"Run Detail Index · {case_id}",
+        eyebrow="Replay Console",
+        hero_title=f"Run Detail Index · {case_id}",
+        hero_summary="Benchmark execution, replay evidence, and acceptance criteria in a single operator-facing run console.",
+        stats=[
+            RunDetailStat("Task ID", record.run.task_id),
+            RunDetailStat("Status", record.run.status, tone=status_tone),
+            RunDetailStat("Medium", record.decision.medium, tone="accent" if record.decision.medium == "browser" else "default"),
+            RunDetailStat("Replay", "matched" if replay.matched else "mismatch", tone="accent" if replay.matched else "danger"),
+            RunDetailStat("Criteria", str(len(criteria))),
+            RunDetailStat("Mismatches", str(len(replay.mismatches)), tone="danger" if replay.mismatches else "default"),
+        ],
+        tabs=[
+            RunDetailTab("overview", "Overview", overview_html),
+            RunDetailTab(
+                "timeline",
+                "Timeline / Log Sync",
+                render_timeline_panel(
+                    "Timeline / Log Sync",
+                    "Run logs, trace spans, audits, acceptance checks, and replay mismatches are merged into one synced timeline inspector.",
+                    run_events,
+                ),
+            ),
+            RunDetailTab("acceptance", "Acceptance", acceptance_html),
+            RunDetailTab(
+                "artifacts",
+                "Artifacts",
+                render_resource_grid(
+                    "Artifacts",
+                    "Generated reports and pages emitted for benchmark review and replay inspection.",
+                    execution_resources,
+                ),
+            ),
+            RunDetailTab(
+                "reports",
+                "Reports",
+                render_resource_grid(
+                    "Reports",
+                    "Report-first view for markdown output and linked run/replay pages.",
+                    [resource for resource in execution_resources if resource.kind == "report" or resource.name.endswith("page")],
+                ),
+            ),
+            RunDetailTab("replay", "Replay", replay_html),
+        ],
+        timeline_events=run_events,
+    )
