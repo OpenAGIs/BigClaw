@@ -176,6 +176,50 @@ class LaunchChecklist:
 
 
 @dataclass
+class NarrativeSection:
+    heading: str
+    body: str
+    evidence: List[str] = field(default_factory=list)
+    callouts: List[str] = field(default_factory=list)
+
+    @property
+    def ready(self) -> bool:
+        return bool(self.heading.strip()) and bool(self.body.strip())
+
+
+@dataclass
+class ReportStudio:
+    name: str
+    issue_id: str
+    audience: str
+    period: str
+    summary: str
+    sections: List[NarrativeSection] = field(default_factory=list)
+    action_items: List[str] = field(default_factory=list)
+    source_reports: List[str] = field(default_factory=list)
+
+    @property
+    def ready(self) -> bool:
+        return bool(self.summary.strip()) and bool(self.sections) and all(section.ready for section in self.sections)
+
+    @property
+    def recommendation(self) -> str:
+        return "publish" if self.ready else "draft"
+
+    @property
+    def export_slug(self) -> str:
+        return _slugify(self.name) or "report-studio"
+
+
+@dataclass
+class ReportStudioArtifacts:
+    root_dir: str
+    markdown_path: str
+    html_path: str
+    text_path: str
+
+
+@dataclass
 class TriageFinding:
     run_id: str
     task_id: str
@@ -567,6 +611,134 @@ def render_issue_validation_report(issue_id: str, version: str, environment: str
     return f"""# Issue Validation Report\n\n- Issue ID: {issue_id}\n- 版本号: {version}\n- 测试环境: {environment}\n- 生成时间: {datetime.utcnow().isoformat()}Z\n\n## 结论\n\n{summary}\n"""
 
 
+def render_report_studio_report(studio: ReportStudio) -> str:
+    lines = [
+        "# Report Studio",
+        "",
+        f"- Name: {studio.name}",
+        f"- Issue ID: {studio.issue_id}",
+        f"- Audience: {studio.audience}",
+        f"- Period: {studio.period}",
+        f"- Sections: {len(studio.sections)}",
+        f"- Recommendation: {studio.recommendation}",
+        "",
+        "## Narrative Summary",
+        "",
+        studio.summary or "No summary drafted.",
+        "",
+        "## Sections",
+        "",
+    ]
+
+    if studio.sections:
+        for section in studio.sections:
+            lines.append(f"### {section.heading}")
+            lines.append("")
+            lines.append(section.body or "No narrative drafted.")
+            lines.append("")
+            lines.append("- Evidence: " + (", ".join(section.evidence) if section.evidence else "None"))
+            lines.append("- Callouts: " + (", ".join(section.callouts) if section.callouts else "None"))
+            lines.append("")
+    else:
+        lines.append("- None")
+        lines.append("")
+
+    lines.append("## Action Items")
+    lines.append("")
+    if studio.action_items:
+        lines.extend(f"- {item}" for item in studio.action_items)
+    else:
+        lines.append("- None")
+    lines.append("")
+
+    lines.append("## Sources")
+    lines.append("")
+    if studio.source_reports:
+        lines.extend(f"- {path}" for path in studio.source_reports)
+    else:
+        lines.append("- None")
+
+    return "\n".join(lines) + "\n"
+
+
+def render_report_studio_plain_text(studio: ReportStudio) -> str:
+    lines = [
+        f"{studio.name} ({studio.issue_id})",
+        f"Audience: {studio.audience}",
+        f"Period: {studio.period}",
+        f"Recommendation: {studio.recommendation}",
+        "",
+        studio.summary or "No summary drafted.",
+        "",
+    ]
+    for section in studio.sections:
+        lines.append(section.heading.upper())
+        lines.append(section.body or "No narrative drafted.")
+        if section.callouts:
+            lines.append("Callouts: " + "; ".join(section.callouts))
+        if section.evidence:
+            lines.append("Evidence: " + "; ".join(section.evidence))
+        lines.append("")
+
+    if studio.action_items:
+        lines.append("Action Items:")
+        lines.extend(f"- {item}" for item in studio.action_items)
+        lines.append("")
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def render_report_studio_html(studio: ReportStudio) -> str:
+    section_html = "".join(
+        f"""
+        <section class="section">
+          <h2>{escape(section.heading)}</h2>
+          <p>{escape(section.body)}</p>
+          <p class="meta">Evidence: {escape(', '.join(section.evidence) if section.evidence else 'None')}</p>
+          <p class="meta">Callouts: {escape(', '.join(section.callouts) if section.callouts else 'None')}</p>
+        </section>
+        """
+        for section in studio.sections
+    )
+    action_html = "".join(f"<li>{escape(item)}</li>" for item in studio.action_items) or "<li>None</li>"
+    source_html = "".join(f"<li>{escape(path)}</li>" for path in studio.source_reports) or "<li>None</li>"
+    return f"""<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{escape(studio.name)}</title>
+    <style>
+      body {{ font-family: Georgia, 'Times New Roman', serif; margin: 40px auto; max-width: 840px; color: #1f2933; line-height: 1.6; }}
+      h1, h2 {{ font-family: 'Avenir Next', 'Segoe UI', sans-serif; }}
+      .meta {{ color: #52606d; font-size: 0.95rem; }}
+      .summary {{ padding: 16px 20px; background: #f7f3e8; border-left: 4px solid #c58b32; }}
+      .section {{ margin-top: 28px; }}
+    </style>
+  </head>
+  <body>
+    <header>
+      <p class="meta">{escape(studio.issue_id)} · {escape(studio.audience)} · {escape(studio.period)}</p>
+      <h1>{escape(studio.name)}</h1>
+      <p class="meta">Recommendation: {escape(studio.recommendation)}</p>
+    </header>
+    <section class="summary">
+      <h2>Narrative Summary</h2>
+      <p>{escape(studio.summary or 'No summary drafted.')}</p>
+    </section>
+    {section_html or '<section class="section"><p>No sections drafted.</p></section>'}
+    <section class="section">
+      <h2>Action Items</h2>
+      <ul>{action_html}</ul>
+    </section>
+    <section class="section">
+      <h2>Sources</h2>
+      <ul>{source_html}</ul>
+    </section>
+  </body>
+</html>
+"""
+
+
 def build_launch_checklist(
     issue_id: str,
     documentation: List[DocumentationArtifact],
@@ -680,6 +852,23 @@ def write_report(path: str, content: str) -> None:
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(content)
+
+
+def write_report_studio_bundle(root_dir: str, studio: ReportStudio) -> ReportStudioArtifacts:
+    base = Path(root_dir)
+    base.mkdir(parents=True, exist_ok=True)
+    markdown_path = str(base / f"{studio.export_slug}.md")
+    html_path = str(base / f"{studio.export_slug}.html")
+    text_path = str(base / f"{studio.export_slug}.txt")
+    write_report(markdown_path, render_report_studio_report(studio))
+    write_report(html_path, render_report_studio_html(studio))
+    write_report(text_path, render_report_studio_plain_text(studio))
+    return ReportStudioArtifacts(
+        root_dir=str(base),
+        markdown_path=markdown_path,
+        html_path=html_path,
+        text_path=text_path,
+    )
 
 
 def validation_report_exists(report_path: Optional[str]) -> bool:
@@ -1684,6 +1873,11 @@ def _feedback_status(run_id: str, action: str, feedback: List[TriageFeedbackReco
         if record.run_id == run_id and record.action == action:
             return record.decision
     return "pending"
+
+
+def _slugify(value: str) -> str:
+    normalized = "".join(char.lower() if char.isalnum() else "-" for char in value.strip())
+    return "-".join(part for part in normalized.split("-") if part)
 
 
 def _similarity_evidence(run: TaskRun, runs: List[TaskRun], limit: int = 2) -> List[TriageSimilarityEvidence]:

@@ -33,6 +33,7 @@
 - `OPE-93` / `BIG-1302`: 顶部全局区与命令入口 — P0, global header with search, context switching, alert entry, and command shell.
 - `OPE-89` / `BIG-1106`: 信息架构与全局交互 — P1, global IA, top bar, filters, states, and actions for the console shell.
 - `OPE-115` / `BIG-1701`: v3.0 UI 测试与验收体系 — P0, role-permission, data accuracy, performance, usability, and audit completeness acceptance gates.
+- `OPE-112` / `BIG-1607`: Report Studio (v3) — P1, narrative report composing and export.
 
 #### Delivery shape
 - Treat design tokens as a platform asset rather than per-page styling so future console slices can audit consistency and release readiness.
@@ -41,6 +42,7 @@
 - Add governed console-chrome slices for global navigation patterns so search, time/environment switching, alerts, and command entry can be audited before they reach product surfaces.
 - Model console-level navigation, top-bar actions, filter systems, and surface states as auditable assets so dashboard and control-center pages inherit one interaction contract.
 - Add a UI acceptance suite that scores release readiness across role-permission coverage, data accuracy, performance budgets, usability journeys, and audit-trail completeness before v3.0 console slices ship.
+- Add a report-studio layer that composes narrative sections from operational evidence and exports the same report as markdown, plain text, and HTML for downstream sharing.
 
 ### Epic 9: 工程运营系统 (`OPE-65`)
 

@@ -7,11 +7,13 @@ from bigclaw.reports import (
     BillingRunCharge,
     DocumentationArtifact,
     LaunchChecklistItem,
+    NarrativeSection,
     OrchestrationCanvas,
     OrchestrationPortfolio,
     PilotMetric,
     PilotPortfolio,
     PilotScorecard,
+    ReportStudio,
     SharedViewContext,
     SharedViewFilter,
     build_auto_triage_center,
@@ -34,9 +36,13 @@ from bigclaw.reports import (
     render_launch_checklist_report,
     render_pilot_portfolio_report,
     render_pilot_scorecard,
+    render_report_studio_html,
+    render_report_studio_plain_text,
+    render_report_studio_report,
     render_takeover_queue_report,
     validation_report_exists,
     write_report,
+    write_report_studio_bundle,
     TriageFeedbackRecord,
 )
 
@@ -80,6 +86,62 @@ def test_console_action_state_reflects_enabled_flag():
 
     assert enabled.state == "enabled"
     assert disabled.state == "disabled"
+
+
+def test_report_studio_renders_narrative_sections_and_export_bundle(tmp_path: Path):
+    studio = ReportStudio(
+        name="Executive Weekly Narrative",
+        issue_id="OPE-112",
+        audience="executive",
+        period="2026-W11",
+        summary="Delivery recovered after approval bottlenecks were cleared in the second half of the week.",
+        sections=[
+            NarrativeSection(
+                heading="What changed",
+                body="Approval queue depth fell from 5 to 1 after moving browser-heavy runs onto the shared operations lane.",
+                evidence=["queue-control-center", "weekly-operations"],
+                callouts=["SLA risk contained", "No new regressions opened"],
+            ),
+            NarrativeSection(
+                heading="What needs attention",
+                body="Security takeover requests still cluster around data-export tasks and need a dedicated reviewer window.",
+                evidence=["takeover-queue"],
+                callouts=["Review staffing before Friday close"],
+            ),
+        ],
+        action_items=["Publish the markdown export to leadership", "Review security handoff staffing"],
+        source_reports=["reports/weekly-operations.md", "reports/takeover-queue.md"],
+    )
+
+    markdown = render_report_studio_report(studio)
+    plain_text = render_report_studio_plain_text(studio)
+    html = render_report_studio_html(studio)
+    artifacts = write_report_studio_bundle(str(tmp_path / "studio"), studio)
+
+    assert studio.ready is True
+    assert studio.recommendation == "publish"
+    assert "# Report Studio" in markdown
+    assert "### What changed" in markdown
+    assert "Recommendation: publish" in plain_text
+    assert "<h1>Executive Weekly Narrative</h1>" in html
+    assert Path(artifacts.markdown_path).exists()
+    assert Path(artifacts.html_path).exists()
+    assert Path(artifacts.text_path).exists()
+    assert "executive-weekly-narrative.md" in artifacts.markdown_path
+
+
+def test_report_studio_requires_summary_and_complete_sections():
+    studio = ReportStudio(
+        name="Draft Narrative",
+        issue_id="OPE-112",
+        audience="operations",
+        period="2026-W11",
+        summary="",
+        sections=[NarrativeSection(heading="Open risks", body="")],
+    )
+
+    assert studio.ready is False
+    assert studio.recommendation == "draft"
 
 
 def test_render_pilot_scorecard_includes_roi_and_recommendation():
