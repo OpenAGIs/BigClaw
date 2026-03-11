@@ -3,7 +3,7 @@
 - Issue ID: OPE-100
 - Version: v0.1.0
 - Test Environment: local-python3
-- Generated At: 2026-03-11T02:16:56Z
+- Generated At: 2026-03-11T02:22:17Z
 
 ## Conclusion
 
@@ -11,5 +11,5 @@ Delivered `BIG-1405` as an expanded auto triage center model over existing `Task
 
 ## Validation Evidence
 
-- `python3 -m pytest tests/test_reports.py tests/test_observability.py -q` -> `...................... [100%]`
-- `python3 -m pytest -q` -> `........................................................................ [ 90%] ........ [100%]`
+- `python3 -m pytest tests/test_reports.py tests/test_observability.py -q` -> `......................... [100%]`
+- `python3 -m pytest -q` -> `........................................................................ [ 78%] .................... [100%]`
