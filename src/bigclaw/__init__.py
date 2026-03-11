@@ -62,6 +62,7 @@ from .saved_views import (
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
 from .mapping import map_source_issue_to_task
+from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
 from .observability import ObservabilityLedger, RunCloseout, TaskRun
 from .orchestration import (
     CrossDepartmentOrchestrator,
@@ -250,6 +251,9 @@ __all__ = [
     "WorkflowDefinition",
     "WorkflowStep",
     "map_source_issue_to_task",
+    "EpicMilestone",
+    "ExecutionPackRoadmap",
+    "build_execution_pack_roadmap",
     "ObservabilityLedger",
     "RunCloseout",
     "TaskRun",

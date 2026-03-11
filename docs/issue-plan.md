@@ -9,6 +9,13 @@
 - BIG-EPIC-11: 产品化 UI 与控制台
 - BIG-EPIC-12: 计费、套餐与商业化控制
 
+### Epic-Milestone Mapping
+- BIG-EPIC-8: Phase 1 / M1 Foundation uplift / owner `engineering-platform`
+- BIG-EPIC-9: Phase 2 / M2 Operations control plane / owner `engineering-operations`
+- BIG-EPIC-10: Phase 3 / M3 Cross-team orchestration / owner `orchestration-office`
+- BIG-EPIC-11: Phase 4 / M4 Productized console / owner `product-experience`
+- BIG-EPIC-12: Phase 5 / M5 Billing and packaging / owner `commercialization`
+
 ### Epic 10: 跨部门 Agent Orchestration (`OPE-66`)
 
 #### Goal
