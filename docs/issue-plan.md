@@ -9,6 +9,20 @@
 - BIG-EPIC-11: 产品化 UI 与控制台
 - BIG-EPIC-12: 计费、套餐与商业化控制
 
+### Epic 10: 跨部门 Agent Orchestration (`OPE-66`)
+
+#### Goal
+- Build the cross-department orchestration layer on top of the BigClaw scheduler, workflow engine, and observability ledger so tasks can plan handoffs, enforce collaboration policy, and render auditable coordination artifacts.
+
+#### Child issues
+- `OPE-71` / `BIG-803`: Premium Orchestration Policy — P0, entitlement-aware orchestration upgrades and approval requirements.
+- `OPE-73` / `BIG-805`: 团队协作与人工接管 — P1, handoff routing and takeover queues for multi-team execution.
+
+#### Delivery shape
+- Model orchestration as a first-class planning step with explicit departments, handoffs, approvals, and collaboration modes attached to each scheduled task.
+- Record orchestration policy, handoff requests, and execution traces in the observability ledger so every cross-team run can be replayed and audited.
+- Render orchestration plans, per-run canvases, portfolio rollups, and overview pages from ledger-backed artifacts rather than maintaining a separate reporting store.
+
 ### Epic 11: 产品化 UI 与控制台 (`OPE-86`)
 
 #### Goal
