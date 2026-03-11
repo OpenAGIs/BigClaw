@@ -98,6 +98,7 @@ from .runtime import (
 )
 from .execution_contract import (
     AuditPolicy,
+    build_operations_api_contract,
     ExecutionApiSpec,
     ExecutionContract,
     ExecutionContractAudit,
@@ -341,6 +342,7 @@ __all__ = [
     "MetricDefinition",
     "PermissionCheckResult",
     "render_execution_contract_report",
+    "build_operations_api_contract",
     "AutoTriageCenter",
     "ConsoleAction",
     "BillingEntitlementsPage",

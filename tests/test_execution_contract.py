@@ -1,5 +1,6 @@
 from bigclaw.execution_contract import (
     AuditPolicy,
+    build_operations_api_contract,
     ExecutionApiSpec,
     ExecutionContract,
     ExecutionContractAudit,
@@ -142,3 +143,40 @@ def test_execution_contract_round_trip_and_permission_matrix() -> None:
     assert decision.allowed is False
     assert decision.granted_permissions == ["execution.run.write"]
     assert decision.missing_permissions == ["missing.permission"]
+
+
+def test_operations_api_contract_draft_is_release_ready() -> None:
+    contract = build_operations_api_contract()
+
+    audit = ExecutionContractLibrary().audit(contract)
+    report = render_execution_contract_report(contract, audit)
+
+    assert contract.contract_id == "OPE-131"
+    assert audit.release_ready is True
+    assert len(contract.apis) == 12
+    assert "GET /operations/dashboard" in report
+    assert "GET /operations/runs/{run_id}" in report
+    assert "GET /operations/queue/control-center" in report
+    assert "GET /operations/risk/overview" in report
+    assert "GET /operations/sla/overview" in report
+    assert "GET /operations/regressions" in report
+    assert "GET /operations/flows/{run_id}" in report
+    assert "GET /operations/billing/entitlements" in report
+
+
+def test_operations_api_contract_permissions_cover_read_and_action_paths() -> None:
+    contract = build_operations_api_contract()
+    matrix = ExecutionPermissionMatrix(contract.permissions)
+
+    viewer = matrix.evaluate(
+        ["operations.dashboard.read", "operations.queue.read", "operations.run.read"],
+        ["operations.dashboard.read", "operations.queue.read", "operations.run.read"],
+    )
+    operator = matrix.evaluate(
+        ["operations.queue.act", "operations.run.approve", "operations.billing.read"],
+        ["operations.queue.act", "operations.billing.read"],
+    )
+
+    assert viewer.allowed is True
+    assert operator.allowed is False
+    assert operator.missing_permissions == ["operations.run.approve"]
