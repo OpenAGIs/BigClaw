@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List, Optional
 
 from bigclaw.reports import (
     DocumentationArtifact,
@@ -8,6 +9,8 @@ from bigclaw.reports import (
     PilotMetric,
     PilotPortfolio,
     PilotScorecard,
+    SharedViewContext,
+    SharedViewFilter,
     build_auto_triage_center,
     build_orchestration_canvas,
     build_orchestration_canvas_from_ledger_entry,
@@ -31,6 +34,26 @@ from bigclaw.reports import (
 
 from bigclaw.observability import TaskRun
 from bigclaw.models import Task
+
+
+def make_shared_view(
+    result_count: int,
+    *,
+    loading: bool = False,
+    errors: Optional[List[str]] = None,
+    partial_data: Optional[List[str]] = None,
+) -> SharedViewContext:
+    return SharedViewContext(
+        filters=[
+            SharedViewFilter(label="Team", value="engineering"),
+            SharedViewFilter(label="Window", value="2026-03-10"),
+        ],
+        result_count=result_count,
+        loading=loading,
+        errors=errors or [],
+        partial_data=partial_data or [],
+        last_updated="2026-03-11T09:00:00Z",
+    )
 
 
 def test_render_and_write_report(tmp_path: Path):
@@ -300,6 +323,26 @@ def test_auto_triage_center_prioritizes_failed_and_pending_runs():
     assert "run-risk: severity=high owner=security status=needs-approval" in report
 
 
+def test_auto_triage_center_report_renders_shared_view_partial_state():
+    task = Task(task_id="OPE-94-risk", source="linear", title="Prod approval", description="")
+    run = TaskRun.from_task(task, run_id="run-risk", medium="vm")
+    run.audit("scheduler.decision", "scheduler", "pending", reason="requires approval for high-risk task")
+    run.finalize("needs-approval", "requires approval for high-risk task")
+
+    center = build_auto_triage_center([run], name="Engineering Ops", period="2026-03-10")
+    report = render_auto_triage_center_report(
+        center,
+        total_runs=1,
+        view=make_shared_view(1, partial_data=["Replay ledger data is still backfilling."]),
+    )
+
+    assert "## View State" in report
+    assert "- State: partial-data" in report
+    assert "- Team: engineering" in report
+    assert "## Partial Data" in report
+    assert "Replay ledger data is still backfilling." in report
+
+
 def test_takeover_queue_from_ledger_groups_pending_handoffs():
     entries = [
         {
@@ -359,6 +402,20 @@ def test_takeover_queue_from_ledger_groups_pending_handoffs():
     assert "Team Mix: operations=1 security=1" in report
     assert "run-sec: team=security status=pending task=OPE-66-sec approvals=security-review" in report
     assert "run-ops: team=operations status=pending task=OPE-66-ops approvals=ops-manager" in report
+
+
+def test_takeover_queue_report_renders_shared_view_error_state():
+    queue = build_takeover_queue_from_ledger([], name="Cross-Team Takeovers", period="2026-03-10")
+    report = render_takeover_queue_report(
+        queue,
+        total_runs=0,
+        view=make_shared_view(0, errors=["Takeover approvals service timed out."]),
+    )
+
+    assert "- State: error" in report
+    assert "- Summary: Unable to load data for the current filters." in report
+    assert "## Errors" in report
+    assert "Takeover approvals service timed out." in report
 
 
 def test_orchestration_canvas_summarizes_policy_and_handoff():
@@ -497,6 +554,18 @@ def test_orchestration_portfolio_rolls_up_canvas_and_takeover_state():
     assert "- Overage Cost (USD): 4.00" in report
     assert "- Takeover Queue: pending=2 recommendation=expedite-security-review" in report
     assert "- run-a: mode=cross-functional tier=premium entitlement=included billing=premium-included estimated_cost_usd=4.50 overage_cost_usd=0.00 upgrade_required=False handoff=security" in report
+
+
+def test_orchestration_portfolio_report_renders_shared_view_empty_state():
+    portfolio = build_orchestration_portfolio([], name="Cross-Team Portfolio", period="2026-03-10")
+    report = render_orchestration_portfolio_report(
+        portfolio,
+        view=make_shared_view(0),
+    )
+
+    assert "- State: empty" in report
+    assert "- Summary: No records match the current filters." in report
+    assert "## Filters" in report
 
 
 def test_render_orchestration_overview_page():

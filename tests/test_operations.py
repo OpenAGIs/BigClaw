@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List, Optional
 
 from bigclaw.evaluation import (
     BenchmarkResult,
@@ -18,6 +19,7 @@ from bigclaw.operations import (
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
+from bigclaw.reports import SharedViewContext, SharedViewFilter
 from bigclaw.scheduler import ExecutionRecord, SchedulerDecision
 
 
@@ -63,6 +65,26 @@ def make_result(case_id: str, score: int, passed: bool) -> BenchmarkResult:
         criteria=[EvaluationCriterion(name="score", weight=100, passed=passed, detail="detail")],
         record=record,
         replay=replay,
+    )
+
+
+def make_shared_view(
+    result_count: int,
+    *,
+    loading: bool = False,
+    errors: Optional[List[str]] = None,
+    partial_data: Optional[List[str]] = None,
+) -> SharedViewContext:
+    return SharedViewContext(
+        filters=[
+            SharedViewFilter(label="Team", value="engineering"),
+            SharedViewFilter(label="Status", value="needs-approval"),
+        ],
+        result_count=result_count,
+        loading=loading,
+        errors=errors or [],
+        partial_data=partial_data or [],
+        last_updated="2026-03-11T09:00:00Z",
     )
 
 
@@ -151,6 +173,18 @@ def test_render_weekly_operations_report_includes_blockers_and_regressions() -> 
     assert "severity=high" in weekly
 
 
+def test_operations_dashboard_renders_shared_view_loading_state() -> None:
+    analytics = OperationsAnalytics()
+    snapshot = analytics.summarize_runs([])
+
+    dashboard = render_operations_dashboard(snapshot, view=make_shared_view(0, loading=True))
+
+    assert "## View State" in dashboard
+    assert "- State: loading" in dashboard
+    assert "- Summary: Loading data for the current filters." in dashboard
+    assert "- Team: engineering" in dashboard
+
+
 def test_build_regression_center_separates_regressions_and_improvements() -> None:
     analytics = OperationsAnalytics()
     baseline = BenchmarkSuiteResult(
@@ -172,6 +206,22 @@ def test_build_regression_center_separates_regressions_and_improvements() -> Non
     assert "# Regression Analysis Center" in report
     assert "case-drop" in report
     assert "case-up" in report
+
+
+def test_regression_center_renders_shared_view_partial_state() -> None:
+    analytics = OperationsAnalytics()
+    baseline = BenchmarkSuiteResult(version="v0.1", results=[make_result("case-drop", 100, True)])
+    current = BenchmarkSuiteResult(version="v0.2", results=[make_result("case-drop", 70, False)])
+
+    center = analytics.build_regression_center(current, baseline)
+    report = render_regression_center(
+        center,
+        view=make_shared_view(1, partial_data=["Historical baseline fetch is delayed."]),
+    )
+
+    assert "- State: partial-data" in report
+    assert "## Partial Data" in report
+    assert "Historical baseline fetch is delayed." in report
 
 
 def test_write_weekly_operations_bundle_emits_expected_reports(tmp_path: Path) -> None:

@@ -3,6 +3,7 @@ from pathlib import Path
 from bigclaw.models import Priority, RiskLevel, Task
 from bigclaw.operations import OperationsAnalytics, render_queue_control_center
 from bigclaw.queue import PersistentTaskQueue
+from bigclaw.reports import SharedViewContext, SharedViewFilter
 
 
 
@@ -49,3 +50,22 @@ def test_queue_control_center_summarizes_queue_and_execution_media(tmp_path: Pat
     assert "# Queue Control Center" in report
     assert "- Waiting Approval Runs: 1" in report
     assert "- BIG-802-1" in report
+
+
+def test_queue_control_center_renders_shared_view_empty_state(tmp_path: Path) -> None:
+    queue = PersistentTaskQueue(str(tmp_path / "queue.json"))
+    center = OperationsAnalytics().build_queue_control_center(queue, runs=[])
+
+    report = render_queue_control_center(
+        center,
+        view=SharedViewContext(
+            filters=[SharedViewFilter(label="Team", value="operations")],
+            result_count=0,
+            empty_message="No queued work for the selected team.",
+        ),
+    )
+
+    assert "## View State" in report
+    assert "- State: empty" in report
+    assert "- Summary: No queued work for the selected team." in report
+    assert "- Team: operations" in report

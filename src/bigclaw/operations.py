@@ -7,7 +7,7 @@ from .models import Task
 from .queue import PersistentTaskQueue
 
 from .evaluation import BenchmarkSuiteResult
-from .reports import write_report
+from .reports import SharedViewContext, render_shared_view_context, write_report
 
 
 STATUS_COMPLETE = {"approved", "accepted", "completed", "succeeded"}
@@ -477,7 +477,10 @@ class OperationsAnalytics:
         return "medium"
 
 
-def render_operations_dashboard(snapshot: OperationsSnapshot) -> str:
+def render_operations_dashboard(
+    snapshot: OperationsSnapshot,
+    view: Optional[SharedViewContext] = None,
+) -> str:
     lines = [
         "# Operations Dashboard",
         "",
@@ -491,6 +494,7 @@ def render_operations_dashboard(snapshot: OperationsSnapshot) -> str:
         "## Status Counts",
         "",
     ]
+    lines.extend(render_shared_view_context(view))
 
     if snapshot.status_counts:
         for status, count in sorted(snapshot.status_counts.items()):
@@ -544,7 +548,10 @@ def render_weekly_operations_report(report: WeeklyOperationsReport) -> str:
     return "\n".join(lines) + "\n"
 
 
-def render_queue_control_center(center: QueueControlCenter) -> str:
+def render_queue_control_center(
+    center: QueueControlCenter,
+    view: Optional[SharedViewContext] = None,
+) -> str:
     lines = [
         "# Queue Control Center",
         "",
@@ -555,6 +562,7 @@ def render_queue_control_center(center: QueueControlCenter) -> str:
         "## Queue By Priority",
         "",
     ]
+    lines.extend(render_shared_view_context(view))
 
     for priority, count in center.queued_by_priority.items():
         lines.append(f"- {priority}: {count}")
@@ -670,7 +678,10 @@ def write_weekly_operations_bundle(
     )
 
 
-def render_regression_center(center: RegressionCenter) -> str:
+def render_regression_center(
+    center: RegressionCenter,
+    view: Optional[SharedViewContext] = None,
+) -> str:
     lines = [
         "# Regression Analysis Center",
         "",
@@ -684,6 +695,7 @@ def render_regression_center(center: RegressionCenter) -> str:
         "## Regressions",
         "",
     ]
+    lines.extend(render_shared_view_context(view))
 
     if center.regressions:
         for finding in center.regressions:

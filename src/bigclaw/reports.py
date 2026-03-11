@@ -261,6 +261,47 @@ class TakeoverQueue:
         return "monitor"
 
 
+@dataclass
+class SharedViewFilter:
+    label: str
+    value: str
+
+
+@dataclass
+class SharedViewContext:
+    filters: List[SharedViewFilter] = field(default_factory=list)
+    result_count: Optional[int] = None
+    loading: bool = False
+    errors: List[str] = field(default_factory=list)
+    partial_data: List[str] = field(default_factory=list)
+    empty_message: str = "No records match the current filters."
+    last_updated: str = ""
+
+    @property
+    def state(self) -> str:
+        if self.loading:
+            return "loading"
+        if self.errors and not self.result_count:
+            return "error"
+        if self.result_count == 0 and not self.partial_data:
+            return "empty"
+        if self.errors or self.partial_data:
+            return "partial-data"
+        return "ready"
+
+    @property
+    def summary(self) -> str:
+        if self.state == "loading":
+            return "Loading data for the current filters."
+        if self.state == "error":
+            return "Unable to load data for the current filters."
+        if self.state == "empty":
+            return self.empty_message
+        if self.state == "partial-data":
+            return "Showing partial data while one or more sources are unavailable."
+        return "Data is current for the selected filters."
+
+
 
 @dataclass
 class OrchestrationCanvas:
@@ -559,7 +600,44 @@ def build_auto_triage_center(runs: List[TaskRun], name: str = "Auto Triage Cente
     return AutoTriageCenter(name=name, period=period, findings=findings)
 
 
-def render_auto_triage_center_report(center: AutoTriageCenter, total_runs: Optional[int] = None) -> str:
+def render_shared_view_context(view: Optional[SharedViewContext]) -> List[str]:
+    if view is None:
+        return []
+
+    lines = [
+        "## View State",
+        "",
+        f"- State: {view.state}",
+        f"- Summary: {view.summary}",
+    ]
+    if view.result_count is not None:
+        lines.append(f"- Result Count: {view.result_count}")
+    if view.last_updated:
+        lines.append(f"- Last Updated: {view.last_updated}")
+
+    lines.extend(["", "## Filters", ""])
+    if view.filters:
+        lines.extend(f"- {item.label}: {item.value}" for item in view.filters)
+    else:
+        lines.append("- None")
+
+    if view.errors:
+        lines.extend(["", "## Errors", ""])
+        lines.extend(f"- {message}" for message in view.errors)
+
+    if view.partial_data:
+        lines.extend(["", "## Partial Data", ""])
+        lines.extend(f"- {message}" for message in view.partial_data)
+
+    lines.append("")
+    return lines
+
+
+def render_auto_triage_center_report(
+    center: AutoTriageCenter,
+    total_runs: Optional[int] = None,
+    view: Optional[SharedViewContext] = None,
+) -> str:
     severity = center.severity_counts
     owners = center.owner_counts
     lines = [
@@ -576,6 +654,7 @@ def render_auto_triage_center_report(center: AutoTriageCenter, total_runs: Optio
         "## Queue",
         "",
     ]
+    lines.extend(render_shared_view_context(view))
 
     if center.findings:
         for finding in center.findings:
@@ -603,7 +682,10 @@ def build_orchestration_portfolio(
     )
 
 
-def render_orchestration_portfolio_report(portfolio: OrchestrationPortfolio) -> str:
+def render_orchestration_portfolio_report(
+    portfolio: OrchestrationPortfolio,
+    view: Optional[SharedViewContext] = None,
+) -> str:
     collaboration = " ".join(
         f"{mode}={count}" for mode, count in sorted(portfolio.collaboration_modes.items())
     ) or "none"
@@ -641,6 +723,7 @@ def render_orchestration_portfolio_report(portfolio: OrchestrationPortfolio) -> 
         "## Runs",
         "",
     ]
+    lines.extend(render_shared_view_context(view))
 
     if portfolio.canvases:
         for canvas in portfolio.canvases:
@@ -882,7 +965,11 @@ def build_takeover_queue_from_ledger(
     return TakeoverQueue(name=name, period=period, requests=requests)
 
 
-def render_takeover_queue_report(queue: TakeoverQueue, total_runs: Optional[int] = None) -> str:
+def render_takeover_queue_report(
+    queue: TakeoverQueue,
+    total_runs: Optional[int] = None,
+    view: Optional[SharedViewContext] = None,
+) -> str:
     team_counts = queue.team_counts
     team_mix = " ".join(f"{team}={count}" for team, count in sorted(team_counts.items())) or "none"
     lines = [
@@ -899,6 +986,7 @@ def render_takeover_queue_report(queue: TakeoverQueue, total_runs: Optional[int]
         "## Requests",
         "",
     ]
+    lines.extend(render_shared_view_context(view))
 
     if queue.requests:
         for request in queue.requests:
