@@ -17,8 +17,10 @@ from bigclaw.operations import (
     DashboardWidgetSpec,
     OperationsAnalytics,
     render_dashboard_builder_report,
+    VersionedArtifact,
     render_engineering_overview,
     render_operations_dashboard,
+    render_policy_prompt_version_center,
     render_regression_center,
     render_weekly_operations_report,
     write_dashboard_builder_bundle,
@@ -91,6 +93,29 @@ def make_shared_view(
         errors=errors or [],
         partial_data=partial_data or [],
         last_updated="2026-03-11T09:00:00Z",
+    )
+
+
+def make_versioned_artifact(
+    artifact_type: str,
+    artifact_id: str,
+    version: str,
+    updated_at: str,
+    summary: str,
+    content: str,
+    *,
+    author: str = "ops-bot",
+    change_ticket: Optional[str] = None,
+) -> VersionedArtifact:
+    return VersionedArtifact(
+        artifact_type=artifact_type,
+        artifact_id=artifact_id,
+        version=version,
+        updated_at=updated_at,
+        author=author,
+        summary=summary,
+        content=content,
+        change_ticket=change_ticket,
     )
 
 
@@ -445,6 +470,89 @@ def test_regression_center_renders_shared_view_partial_state() -> None:
     assert "Historical baseline fetch is delayed." in report
 
 
+def test_build_policy_prompt_version_center_tracks_history_diff_and_rollback() -> None:
+    analytics = OperationsAnalytics()
+    center = analytics.build_policy_prompt_version_center(
+        [
+            make_versioned_artifact(
+                "workflow",
+                "deploy-prod",
+                "v1",
+                "2026-03-09T08:00:00Z",
+                "initial rollout",
+                "step: build\nstep: deploy\n",
+                change_ticket="OPE-101",
+            ),
+            make_versioned_artifact(
+                "workflow",
+                "deploy-prod",
+                "v2",
+                "2026-03-10T08:00:00Z",
+                "added verification gate",
+                "step: build\nstep: verify\nstep: deploy\n",
+                change_ticket="OPE-111",
+            ),
+            make_versioned_artifact(
+                "policy",
+                "prod-approval",
+                "v3",
+                "2026-03-10T10:00:00Z",
+                "tighten reviewer quorum",
+                "approvals: 2\nregions: us, eu\n",
+                change_ticket="OPE-109",
+            ),
+        ],
+        generated_at="2026-03-11T09:30:00Z",
+    )
+
+    assert center.artifact_count == 2
+    assert center.rollback_ready_count == 1
+    workflow_history = next(history for history in center.histories if history.artifact_id == "deploy-prod")
+    assert workflow_history.current_version == "v2"
+    assert workflow_history.rollback_version == "v1"
+    assert workflow_history.rollback_ready is True
+    assert workflow_history.change_summary is not None
+    assert workflow_history.change_summary.additions == 1
+    assert workflow_history.change_summary.deletions == 0
+    assert workflow_history.change_summary.preview[:2] == ["--- v1", "+++ v2"]
+
+
+def test_render_policy_prompt_version_center_supports_shared_view_context() -> None:
+    analytics = OperationsAnalytics()
+    center = analytics.build_policy_prompt_version_center(
+        [
+            make_versioned_artifact(
+                "prompt",
+                "triage-system",
+                "v2",
+                "2026-03-10T14:00:00Z",
+                "reduce false escalations",
+                "system: keep concise\nrubric: strict\n",
+            ),
+            make_versioned_artifact(
+                "prompt",
+                "triage-system",
+                "v1",
+                "2026-03-08T14:00:00Z",
+                "initial prompt",
+                "system: keep concise\n",
+            ),
+        ]
+    )
+
+    report = render_policy_prompt_version_center(
+        center,
+        view=make_shared_view(1, partial_data=["Rollback simulation still running."]),
+    )
+
+    assert "# Policy/Prompt Version Center" in report
+    assert "### prompt / triage-system" in report
+    assert "- Rollback Version: v1" in report
+    assert "```diff" in report
+    assert "- State: partial-data" in report
+    assert "Rollback simulation still running." in report
+
+
 def test_write_weekly_operations_bundle_emits_expected_reports(tmp_path: Path) -> None:
     analytics = OperationsAnalytics()
     runs = [
@@ -462,15 +570,43 @@ def test_write_weekly_operations_bundle_emits_expected_reports(tmp_path: Path) -
         baseline_suite=baseline,
     )
     regression_center = analytics.build_regression_center(current, baseline)
-    artifacts = write_weekly_operations_bundle(str(tmp_path / "weekly"), weekly_report, regression_center=regression_center)
+    version_center = analytics.build_policy_prompt_version_center(
+        [
+            make_versioned_artifact(
+                "policy",
+                "release-approval",
+                "v2",
+                "2026-03-10T09:00:00Z",
+                "add rollback owner",
+                "approvals: 2\nrollback_owner: release-manager\n",
+            ),
+            make_versioned_artifact(
+                "policy",
+                "release-approval",
+                "v1",
+                "2026-03-08T09:00:00Z",
+                "initial policy",
+                "approvals: 2\n",
+            ),
+        ]
+    )
+    artifacts = write_weekly_operations_bundle(
+        str(tmp_path / "weekly"),
+        weekly_report,
+        regression_center=regression_center,
+        version_center=version_center,
+    )
 
     assert Path(artifacts.weekly_report_path).exists()
     assert Path(artifacts.dashboard_path).exists()
     assert artifacts.regression_center_path is not None
     assert Path(artifacts.regression_center_path).exists()
+    assert artifacts.version_center_path is not None
+    assert Path(artifacts.version_center_path).exists()
     assert "# Weekly Operations Report" in Path(artifacts.weekly_report_path).read_text()
     assert "# Operations Dashboard" in Path(artifacts.dashboard_path).read_text()
     assert "# Regression Analysis Center" in Path(artifacts.regression_center_path).read_text()
+    assert "# Policy/Prompt Version Center" in Path(artifacts.version_center_path).read_text()
 
 
 def test_build_engineering_overview_includes_kpis_funnel_blockers_and_activity() -> None:
