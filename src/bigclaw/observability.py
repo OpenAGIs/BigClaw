@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from .audit_events import missing_required_fields
 from .collaboration import CollaborationComment, DecisionNote
 from .models import Task
 
@@ -232,6 +233,13 @@ class TaskRun:
 
     def audit(self, action: str, actor: str, outcome: str, **details: Any) -> None:
         self.audits.append(AuditEntry(action=action, actor=actor, outcome=outcome, details=details))
+
+    def audit_spec_event(self, action: str, actor: str, outcome: str, **details: Any) -> None:
+        missing = missing_required_fields(action, details)
+        if missing:
+            missing_text = ", ".join(missing)
+            raise ValueError(f"audit event {action} missing required fields: {missing_text}")
+        self.audit(action, actor, outcome, **details)
 
     def add_comment(
         self,

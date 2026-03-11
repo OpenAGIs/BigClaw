@@ -5,6 +5,7 @@ from html import escape
 from pathlib import Path
 from typing import List, Optional
 
+from .audit_events import FLOW_HANDOFF_EVENT, MANUAL_TAKEOVER_EVENT
 from .collaboration import (
     CollaborationThread,
     build_collaboration_thread_from_audits,
@@ -1537,7 +1538,7 @@ def build_orchestration_canvas_from_ledger_entry(entry: dict) -> OrchestrationCa
 
     plan_audit = _latest_named_audit(audits, "orchestration.plan")
     policy_audit = _latest_named_audit(audits, "orchestration.policy")
-    handoff_audit = _latest_named_audit(audits, "orchestration.handoff")
+    handoff_audit = _latest_handoff_audit(audits)
     tool_audits = [audit for audit in audits if audit.get("action") == "tool.invoke"]
 
     plan_details = plan_audit.get("details", {}) if plan_audit is not None else {}
@@ -1782,7 +1783,11 @@ def _latest_named_audit(audits: List[dict], action: str) -> Optional[dict]:
 
 
 def _latest_handoff_audit(audits: List[dict]) -> Optional[dict]:
-    return _latest_named_audit(audits, "orchestration.handoff")
+    for action in (MANUAL_TAKEOVER_EVENT, FLOW_HANDOFF_EVENT, "orchestration.handoff"):
+        audit = _latest_named_audit(audits, action)
+        if audit is not None:
+            return audit
+    return None
 
 
 def _run_requires_triage(run: TaskRun) -> bool:

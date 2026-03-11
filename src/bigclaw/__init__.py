@@ -98,6 +98,17 @@ from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
 from .mapping import map_source_issue_to_task
 from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
+from .audit_events import (
+    APPROVAL_RECORDED_EVENT,
+    BUDGET_OVERRIDE_EVENT,
+    FLOW_HANDOFF_EVENT,
+    MANUAL_TAKEOVER_EVENT,
+    P0_AUDIT_EVENT_SPECS,
+    SCHEDULER_DECISION_EVENT,
+    AuditEventSpec,
+    get_audit_event_spec,
+    missing_required_fields,
+)
 from .observability import ObservabilityLedger, RunCloseout, TaskRun
 from .orchestration import (
     CrossDepartmentOrchestrator,
@@ -350,6 +361,15 @@ __all__ = [
     "EpicMilestone",
     "ExecutionPackRoadmap",
     "build_execution_pack_roadmap",
+    "APPROVAL_RECORDED_EVENT",
+    "BUDGET_OVERRIDE_EVENT",
+    "FLOW_HANDOFF_EVENT",
+    "MANUAL_TAKEOVER_EVENT",
+    "P0_AUDIT_EVENT_SPECS",
+    "SCHEDULER_DECISION_EVENT",
+    "AuditEventSpec",
+    "get_audit_event_spec",
+    "missing_required_fields",
     "ObservabilityLedger",
     "RunCloseout",
     "TaskRun",

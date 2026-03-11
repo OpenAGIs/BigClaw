@@ -2,6 +2,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
+from .audit_events import (
+    BUDGET_OVERRIDE_EVENT,
+    FLOW_HANDOFF_EVENT,
+    MANUAL_TAKEOVER_EVENT,
+    SCHEDULER_DECISION_EVENT,
+)
 from .models import RiskLevel, Task
 from .observability import ObservabilityLedger, TaskRun
 from .orchestration import (
@@ -118,6 +124,18 @@ class Scheduler:
             blocked_departments=policy_decision.blocked_departments,
         )
         run.audit("scheduler.decision", actor, "approved" if decision.approved else "pending", reason=decision.reason)
+        run.audit_spec_event(
+            SCHEDULER_DECISION_EVENT,
+            actor,
+            "approved" if decision.approved else "pending",
+            task_id=task.task_id,
+            run_id=run_id,
+            medium=decision.medium,
+            approved=decision.approved,
+            reason=decision.reason,
+            risk_level=risk_score.level.value,
+            risk_score=risk_score.total,
+        )
         run.audit(
             "risk.score",
             actor,
@@ -148,6 +166,18 @@ class Scheduler:
             overage_cost_usd=policy_decision.overage_cost_usd,
             blocked_departments=policy_decision.blocked_departments,
         )
+        if task.budget_override_reason.strip():
+            run.audit_spec_event(
+                BUDGET_OVERRIDE_EVENT,
+                task.budget_override_actor or actor,
+                "recorded",
+                task_id=task.task_id,
+                run_id=run_id,
+                requested_budget=task.budget,
+                approved_budget=task.budget + task.budget_override_amount,
+                override_actor=task.budget_override_actor or actor,
+                reason=task.budget_override_reason,
+            )
         if handoff_request is not None:
             run.trace(
                 "orchestration.handoff",
@@ -161,6 +191,29 @@ class Scheduler:
                 handoff_request.status,
                 target_team=handoff_request.target_team,
                 reason=handoff_request.reason,
+                required_approvals=handoff_request.required_approvals,
+            )
+            run.audit_spec_event(
+                MANUAL_TAKEOVER_EVENT,
+                actor,
+                handoff_request.status,
+                task_id=task.task_id,
+                run_id=run_id,
+                target_team=handoff_request.target_team,
+                reason=handoff_request.reason,
+                requested_by=actor,
+                required_approvals=handoff_request.required_approvals,
+            )
+            run.audit_spec_event(
+                FLOW_HANDOFF_EVENT,
+                actor,
+                handoff_request.status,
+                task_id=task.task_id,
+                run_id=run_id,
+                source_stage="scheduler",
+                target_team=handoff_request.target_team,
+                reason=handoff_request.reason,
+                collaboration_mode=orchestration_plan.collaboration_mode,
                 required_approvals=handoff_request.required_approvals,
             )
 

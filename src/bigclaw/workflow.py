@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
+from .audit_events import APPROVAL_RECORDED_EVENT
 from .dsl import WorkflowDefinition
 from .models import RiskLevel, Task
 from .observability import ObservabilityLedger, utc_now
@@ -241,6 +242,17 @@ class WorkflowEngine:
             approvals=approvals,
             pilot_scorecard=pilot_scorecard,
         )
+        if acceptance.approvals:
+            execution.run.audit_spec_event(
+                APPROVAL_RECORDED_EVENT,
+                "workflow-engine",
+                "recorded",
+                task_id=task.task_id,
+                run_id=run_id,
+                approvals=list(acceptance.approvals),
+                approval_count=len(acceptance.approvals),
+                acceptance_status=acceptance.status,
+            )
         journal.record(
             "acceptance",
             acceptance.status,

@@ -69,6 +69,9 @@ class Task:
     state: TaskState = TaskState.TODO
     risk_level: RiskLevel = RiskLevel.LOW
     budget: float = 0.0
+    budget_override_actor: str = ""
+    budget_override_reason: str = ""
+    budget_override_amount: float = 0.0
     required_tools: List[str] = field(default_factory=list)
     acceptance_criteria: List[str] = field(default_factory=list)
     validation_plan: List[str] = field(default_factory=list)
@@ -84,6 +87,9 @@ class Task:
             "state": self.state.value,
             "risk_level": self.risk_level.value,
             "budget": self.budget,
+            "budget_override_actor": self.budget_override_actor,
+            "budget_override_reason": self.budget_override_reason,
+            "budget_override_amount": self.budget_override_amount,
             "required_tools": self.required_tools,
             "acceptance_criteria": self.acceptance_criteria,
             "validation_plan": self.validation_plan,
@@ -101,6 +107,9 @@ class Task:
             state=TaskState(data.get("state", TaskState.TODO.value)),
             risk_level=RiskLevel(data.get("risk_level", RiskLevel.LOW.value)),
             budget=data.get("budget", 0.0),
+            budget_override_actor=str(data.get("budget_override_actor", "")),
+            budget_override_reason=str(data.get("budget_override_reason", "")),
+            budget_override_amount=float(data.get("budget_override_amount", 0.0)),
             required_tools=data.get("required_tools", []),
             acceptance_criteria=data.get("acceptance_criteria", []),
             validation_plan=data.get("validation_plan", []),
