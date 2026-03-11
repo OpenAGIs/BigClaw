@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
+from difflib import SequenceMatcher
 from html import escape
 from pathlib import Path
 from typing import List, Optional
@@ -187,10 +188,53 @@ class TriageFinding:
 
 
 @dataclass
+class TriageSimilarityEvidence:
+    related_run_id: str
+    related_task_id: str
+    score: float
+    reason: str
+
+
+@dataclass
+class TriageSuggestion:
+    label: str
+    action: str
+    owner: str
+    confidence: float
+    evidence: List[TriageSimilarityEvidence] = field(default_factory=list)
+    feedback_status: str = "pending"
+
+
+@dataclass
+class TriageInboxItem:
+    run_id: str
+    task_id: str
+    source: str
+    status: str
+    severity: str
+    owner: str
+    summary: str
+    submitted_at: str
+    suggestions: List[TriageSuggestion] = field(default_factory=list)
+
+
+@dataclass
+class TriageFeedbackRecord:
+    run_id: str
+    action: str
+    decision: str
+    actor: str
+    notes: str = ""
+    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+
+
+@dataclass
 class AutoTriageCenter:
     name: str
     period: str
     findings: List[TriageFinding] = field(default_factory=list)
+    inbox: List[TriageInboxItem] = field(default_factory=list)
+    feedback: List[TriageFeedbackRecord] = field(default_factory=list)
 
     @property
     def flagged_runs(self) -> int:
@@ -215,9 +259,29 @@ class AutoTriageCenter:
         counts = self.severity_counts
         if counts["critical"]:
             return "immediate-attention"
+        if self.feedback_counts["rejected"] > self.feedback_counts["accepted"]:
+            return "retune-suggestions"
         if counts["high"]:
             return "review-queue"
         return "monitor"
+
+    @property
+    def inbox_size(self) -> int:
+        return len(self.inbox)
+
+    @property
+    def feedback_counts(self) -> dict[str, int]:
+        counts = {"accepted": 0, "rejected": 0, "pending": 0}
+        for record in self.feedback:
+            counts[record.decision] = counts.get(record.decision, 0) + 1
+        pending = sum(
+            1
+            for item in self.inbox
+            for suggestion in item.suggestions
+            if suggestion.feedback_status == "pending"
+        )
+        counts["pending"] = pending
+        return counts
 
 
 @dataclass
@@ -574,14 +638,24 @@ def evaluate_issue_closure(
     )
 
 
-def build_auto_triage_center(runs: List[TaskRun], name: str = "Auto Triage Center", period: str = "current") -> AutoTriageCenter:
+def build_auto_triage_center(
+    runs: List[TaskRun],
+    name: str = "Auto Triage Center",
+    period: str = "current",
+    feedback: Optional[List[TriageFeedbackRecord]] = None,
+) -> AutoTriageCenter:
     findings: List[TriageFinding] = []
+    inbox: List[TriageInboxItem] = []
+    feedback = feedback or []
     for run in runs:
         if not _run_requires_triage(run):
             continue
 
         severity = _triage_severity(run)
         owner = _triage_owner(run)
+        reason = _triage_reason(run)
+        next_action = _triage_next_action(severity, owner)
+        suggestions = _build_triage_suggestions(run, runs, severity, owner, feedback)
         findings.append(
             TriageFinding(
                 run_id=run.run_id,
@@ -590,14 +664,28 @@ def build_auto_triage_center(runs: List[TaskRun], name: str = "Auto Triage Cente
                 severity=severity,
                 owner=owner,
                 status=run.status,
-                reason=_triage_reason(run),
-                next_action=_triage_next_action(severity, owner),
+                reason=reason,
+                next_action=next_action,
+            )
+        )
+        inbox.append(
+            TriageInboxItem(
+                run_id=run.run_id,
+                task_id=run.task_id,
+                source=run.source,
+                status=run.status,
+                severity=severity,
+                owner=owner,
+                summary=reason,
+                submitted_at=run.ended_at or run.started_at,
+                suggestions=suggestions,
             )
         )
 
     severity_rank = {"critical": 0, "high": 1, "medium": 2}
     findings.sort(key=lambda finding: (severity_rank[finding.severity], finding.owner, finding.run_id))
-    return AutoTriageCenter(name=name, period=period, findings=findings)
+    inbox.sort(key=lambda item: (severity_rank[item.severity], item.owner, item.run_id))
+    return AutoTriageCenter(name=name, period=period, findings=findings, inbox=inbox, feedback=feedback)
 
 
 def render_shared_view_context(view: Optional[SharedViewContext]) -> List[str]:
@@ -640,16 +728,19 @@ def render_auto_triage_center_report(
 ) -> str:
     severity = center.severity_counts
     owners = center.owner_counts
+    feedback = center.feedback_counts
     lines = [
         "# Auto Triage Center",
         "",
         f"- Center: {center.name}",
         f"- Period: {center.period}",
         f"- Flagged Runs: {center.flagged_runs}",
+        f"- Inbox Size: {center.inbox_size}",
         f"- Total Runs: {total_runs if total_runs is not None else center.flagged_runs}",
         f"- Recommendation: {center.recommendation}",
         f"- Severity Mix: critical={severity['critical']} high={severity['high']} medium={severity['medium']}",
         f"- Owner Mix: security={owners['security']} engineering={owners['engineering']} operations={owners['operations']}",
+        f"- Feedback Loop: accepted={feedback['accepted']} rejected={feedback['rejected']} pending={feedback['pending']}",
         "",
         "## Queue",
         "",
@@ -661,6 +752,23 @@ def render_auto_triage_center_report(
             lines.append(
                 f"- {finding.run_id}: severity={finding.severity} owner={finding.owner} status={finding.status} "
                 f"task={finding.task_id} reason={finding.reason} next={finding.next_action}"
+            )
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Inbox", ""])
+    if center.inbox:
+        for item in center.inbox:
+            suggestion_summary = "; ".join(
+                f"{suggestion.action}({suggestion.feedback_status}, confidence={suggestion.confidence:.2f})"
+                for suggestion in item.suggestions
+            ) or "none"
+            evidence_summary = ", ".join(
+                f"{e.related_run_id}:{e.score:.2f}" for suggestion in item.suggestions for e in suggestion.evidence
+            ) or "none"
+            lines.append(
+                f"- {item.run_id}: severity={item.severity} owner={item.owner} status={item.status} "
+                f"summary={item.summary} suggestions={suggestion_summary} similar={evidence_summary}"
             )
     else:
         lines.append("- None")
@@ -1075,6 +1183,113 @@ def _triage_next_action(severity: str, owner: str) -> str:
     if owner == "engineering":
         return "inspect execution evidence and retry when safe"
     return "confirm owner and clear pending workflow gate"
+
+
+def _build_triage_suggestions(
+    run: TaskRun,
+    runs: List[TaskRun],
+    severity: str,
+    owner: str,
+    feedback: List[TriageFeedbackRecord],
+) -> List[TriageSuggestion]:
+    action = _triage_next_action(severity, owner)
+    label = _triage_suggestion_label(run, severity, owner)
+    evidence = _similarity_evidence(run, runs)
+    confidence = _triage_suggestion_confidence(run, evidence)
+    feedback_status = _feedback_status(run.run_id, action, feedback)
+    return [
+        TriageSuggestion(
+            label=label,
+            action=action,
+            owner=owner,
+            confidence=confidence,
+            evidence=evidence,
+            feedback_status=feedback_status,
+        )
+    ]
+
+
+def _triage_suggestion_label(run: TaskRun, severity: str, owner: str) -> str:
+    if severity == "critical" and owner == "engineering":
+        return "replay candidate"
+    if owner == "security":
+        return "approval review"
+    if run.status == "failed":
+        return "incident review"
+    return "workflow follow-up"
+
+
+def _triage_suggestion_confidence(run: TaskRun, evidence: List[TriageSimilarityEvidence]) -> float:
+    base = 0.55 if run.status in {"needs-approval", "failed"} else 0.45
+    if evidence:
+        base = max(base, min(0.95, 0.45 + evidence[0].score / 2))
+    return round(base, 2)
+
+
+def _feedback_status(run_id: str, action: str, feedback: List[TriageFeedbackRecord]) -> str:
+    for record in reversed(feedback):
+        if record.run_id == run_id and record.action == action:
+            return record.decision
+    return "pending"
+
+
+def _similarity_evidence(run: TaskRun, runs: List[TaskRun], limit: int = 2) -> List[TriageSimilarityEvidence]:
+    scored_matches: List[tuple[float, TaskRun]] = []
+    for candidate in runs:
+        if candidate.run_id == run.run_id:
+            continue
+        score = _run_similarity_score(run, candidate)
+        if score < 0.35:
+            continue
+        scored_matches.append((score, candidate))
+
+    scored_matches.sort(key=lambda item: (-item[0], item[1].run_id))
+    evidence: List[TriageSimilarityEvidence] = []
+    for score, candidate in scored_matches[:limit]:
+        evidence.append(
+            TriageSimilarityEvidence(
+                related_run_id=candidate.run_id,
+                related_task_id=candidate.task_id,
+                score=round(score, 2),
+                reason=_similarity_reason(run, candidate),
+            )
+        )
+    return evidence
+
+
+def _run_similarity_score(run: TaskRun, candidate: TaskRun) -> float:
+    haystack = " ".join(
+        [
+            run.title,
+            run.summary,
+            " ".join(trace.span for trace in run.traces),
+            " ".join(audit.outcome for audit in run.audits),
+        ]
+    ).lower()
+    needle = " ".join(
+        [
+            candidate.title,
+            candidate.summary,
+            " ".join(trace.span for trace in candidate.traces),
+            " ".join(audit.outcome for audit in candidate.audits),
+        ]
+    ).lower()
+    status_bonus = 0.15 if run.status == candidate.status else 0.0
+    owner_bonus = 0.1 if _triage_owner(run) == _triage_owner(candidate) else 0.0
+    return min(1.0, SequenceMatcher(a=haystack, b=needle).ratio() + status_bonus + owner_bonus)
+
+
+def _similarity_reason(run: TaskRun, candidate: TaskRun) -> str:
+    reasons: List[str] = []
+    if run.status == candidate.status:
+        reasons.append(f"shared status {run.status}")
+    if _triage_owner(run) == _triage_owner(candidate):
+        reasons.append(f"shared owner {_triage_owner(run)}")
+    run_reason = _triage_reason(run)
+    candidate_reason = _triage_reason(candidate)
+    if run_reason == candidate_reason:
+        reasons.append("matching failure reason")
+    return ", ".join(reasons) or "similar execution trail"
 
 
 def render_task_run_report(run: TaskRun) -> str:
