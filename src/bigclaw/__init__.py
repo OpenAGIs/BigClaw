@@ -182,6 +182,14 @@ from .evaluation import (
     render_replay_detail_page,
     render_benchmark_suite_report,
 )
+from .planning import (
+    CandidateBacklog,
+    CandidateEntry,
+    CandidatePlanner,
+    EntryGate,
+    EntryGateDecision,
+    render_candidate_backlog_report,
+)
 
 __all__ = [
     "Task",
@@ -369,4 +377,10 @@ __all__ = [
     "render_run_replay_index_page",
     "render_replay_detail_page",
     "render_benchmark_suite_report",
+    "CandidateBacklog",
+    "CandidateEntry",
+    "CandidatePlanner",
+    "EntryGate",
+    "EntryGateDecision",
+    "render_candidate_backlog_report",
 ]

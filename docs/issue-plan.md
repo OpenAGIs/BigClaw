@@ -1,5 +1,30 @@
 # BigClaw Issue Plan
 
+## BigClaw PRD v4.0
+
+### Epic
+- BIG-EPIC-20: v4.0 v3候选与进入条件
+
+### Epic 20: v4.0 v3候选与进入条件 (`OPE-120`)
+
+#### Goal
+- Define the v4.0 v3 candidate backlog as an auditable planning artifact so downstream implementation starts only after the scope, validation commands, and entry conditions are explicit.
+
+#### Candidate backlog
+- Console release control center: converge console shell governance, acceptance evidence, and report output into one release-control candidate with a clear promotion contract.
+- Operations command-center hardening: promote queue, triage, regression, and weekly-review surfaces as one candidate with operator-facing validation and reporting coverage.
+- Agent orchestration rollout: carry entitlement-aware orchestration, handoff visibility, and commercialization evidence into a candidate that is ready for v3-level release review.
+
+#### Entry gate
+- At least 3 candidates must be ready with named owners, validation commands, and no unresolved launch blockers.
+- The ready set must cover `release-gate`, `ops-control`, and `commercialization` capabilities so the epic advances with both console and execution-plane scope.
+- The ready set must include `acceptance-suite`, `pilot-evidence`, and `validation-report` evidence so implementation can be validated and reviewed without inventing a parallel checklist.
+
+#### Delivery shape
+- Store the candidate backlog in code so readiness can be ranked, rendered, and regression-tested like the rest of the BigClaw planning/reporting surface.
+- Treat the entry gate as a deterministic evaluation over candidate capabilities, evidence, and blockers instead of a narrative-only milestone.
+- Keep repo traceability in `docs/issue-plan.md` and an issue validation report so the Linear ticket, planning artifact, and validation commands stay aligned.
+
 ## BigClaw PRD v2.0
 
 ### Epic
