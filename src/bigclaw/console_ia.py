@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Dict, List
 
+from .design_system import ConsoleChromeLibrary, ConsoleTopBar, ConsoleTopBarAudit
+
 
 REQUIRED_SURFACE_STATES = {"default", "loading", "empty", "error"}
 
@@ -181,6 +183,7 @@ class ConsoleIA:
     version: str
     navigation: List[NavigationItem] = field(default_factory=list)
     surfaces: List[ConsoleSurface] = field(default_factory=list)
+    top_bar: ConsoleTopBar = field(default_factory=lambda: ConsoleTopBar(name="", search_placeholder=""))
 
     @property
     def route_index(self) -> Dict[str, ConsoleSurface]:
@@ -192,6 +195,7 @@ class ConsoleIA:
             "version": self.version,
             "navigation": [item.to_dict() for item in self.navigation],
             "surfaces": [surface.to_dict() for surface in self.surfaces],
+            "top_bar": self.top_bar.to_dict(),
         }
 
     @classmethod
@@ -201,6 +205,7 @@ class ConsoleIA:
             version=str(data["version"]),
             navigation=[NavigationItem.from_dict(item) for item in data.get("navigation", [])],
             surfaces=[ConsoleSurface.from_dict(item) for item in data.get("surfaces", [])],
+            top_bar=ConsoleTopBar.from_dict(dict(data.get("top_bar", {}))),
         )
 
 
@@ -210,6 +215,7 @@ class ConsoleIAAudit:
     version: str
     surface_count: int
     navigation_count: int
+    top_bar_audit: ConsoleTopBarAudit = field(default_factory=lambda: ConsoleTopBarAudit(name=""))
     surfaces_missing_filters: List[str] = field(default_factory=list)
     surfaces_missing_actions: List[str] = field(default_factory=list)
     surfaces_missing_states: Dict[str, List[str]] = field(default_factory=dict)
@@ -223,7 +229,8 @@ class ConsoleIAAudit:
         if self.surface_count == 0:
             return 0.0
         penalties = (
-            len(self.surfaces_missing_filters)
+            (0 if self.top_bar_audit.release_ready else 1)
+            + len(self.surfaces_missing_filters)
             + len(self.surfaces_missing_actions)
             + len(self.surfaces_missing_states)
             + len(self.states_missing_actions)
@@ -240,6 +247,7 @@ class ConsoleIAAudit:
             "version": self.version,
             "surface_count": self.surface_count,
             "navigation_count": self.navigation_count,
+            "top_bar_audit": self.top_bar_audit.to_dict(),
             "surfaces_missing_filters": list(self.surfaces_missing_filters),
             "surfaces_missing_actions": list(self.surfaces_missing_actions),
             "surfaces_missing_states": {
@@ -263,6 +271,7 @@ class ConsoleIAAudit:
             version=str(data["version"]),
             surface_count=int(data.get("surface_count", 0)),
             navigation_count=int(data.get("navigation_count", 0)),
+            top_bar_audit=ConsoleTopBarAudit.from_dict(dict(data.get("top_bar_audit", {}))),
             surfaces_missing_filters=[str(name) for name in data.get("surfaces_missing_filters", [])],
             surfaces_missing_actions=[str(name) for name in data.get("surfaces_missing_actions", [])],
             surfaces_missing_states={
@@ -287,6 +296,7 @@ class ConsoleIAAudit:
 
 class ConsoleIAAuditor:
     def audit(self, architecture: ConsoleIA) -> ConsoleIAAudit:
+        top_bar_audit = ConsoleChromeLibrary().audit_top_bar(architecture.top_bar)
         route_index = architecture.route_index
         navigation_routes = {item.route for item in architecture.navigation}
         surfaces_missing_filters: List[str] = []
@@ -315,6 +325,7 @@ class ConsoleIAAuditor:
             version=architecture.version,
             surface_count=len(architecture.surfaces),
             navigation_count=len(architecture.navigation),
+            top_bar_audit=top_bar_audit,
             surfaces_missing_filters=sorted(surfaces_missing_filters),
             surfaces_missing_actions=sorted(surfaces_missing_actions),
             surfaces_missing_states=dict(sorted(surfaces_missing_states.items())),
@@ -334,6 +345,14 @@ def render_console_ia_report(architecture: ConsoleIA, audit: ConsoleIAAudit) -> 
         f"- Navigation Items: {audit.navigation_count}",
         f"- Surfaces: {audit.surface_count}",
         f"- Readiness Score: {audit.readiness_score:.1f}",
+        "",
+        "## Global Header",
+        "",
+        f"- Name: {architecture.top_bar.name or 'none'}",
+        f"- Release Ready: {audit.top_bar_audit.release_ready}",
+        f"- Missing capabilities: {', '.join(audit.top_bar_audit.missing_capabilities) if audit.top_bar_audit.missing_capabilities else 'none'}",
+        f"- Command Count: {audit.top_bar_audit.command_count}",
+        f"- Cmd/Ctrl+K supported: {audit.top_bar_audit.command_shortcut_supported}",
         "",
         "## Navigation",
         "",

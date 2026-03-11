@@ -9,12 +9,28 @@ from bigclaw.console_ia import (
     SurfaceState,
     render_console_ia_report,
 )
+from bigclaw.design_system import CommandAction, ConsoleCommandEntry, ConsoleTopBar
 
 
 def test_console_ia_round_trip_preserves_manifest_shape() -> None:
     architecture = ConsoleIA(
         name="BigClaw Console IA",
         version="v3",
+        top_bar=ConsoleTopBar(
+            name="BigClaw Global Header",
+            search_placeholder="Search runs, issues, commands",
+            environment_options=["Production", "Staging"],
+            time_range_options=["24h", "7d"],
+            alert_channels=["approvals"],
+            documentation_complete=True,
+            accessibility_requirements=["keyboard-navigation", "screen-reader-label", "focus-visible"],
+            command_entry=ConsoleCommandEntry(
+                trigger_label="Command Menu",
+                placeholder="Type a command",
+                shortcut="Cmd+K / Ctrl+K",
+                commands=[CommandAction(id="search-runs", title="Search runs", section="Navigate")],
+            ),
+        ),
         navigation=[
             NavigationItem(name="Overview", route="/overview", section="Operate", icon="dashboard", badge_count=2)
         ],
@@ -52,6 +68,15 @@ def test_console_ia_audit_surfaces_global_interaction_gaps() -> None:
     architecture = ConsoleIA(
         name="BigClaw Console IA",
         version="v3",
+        top_bar=ConsoleTopBar(
+            name="Incomplete Header",
+            search_placeholder="",
+            environment_options=["Production"],
+            time_range_options=["24h"],
+            documentation_complete=False,
+            accessibility_requirements=["focus-visible"],
+            command_entry=ConsoleCommandEntry(trigger_label="", placeholder="", shortcut="Cmd+K"),
+        ),
         navigation=[
             NavigationItem(name="Overview", route="/overview", section="Operate"),
             NavigationItem(name="Ghost", route="/ghost", section="Operate"),
@@ -87,6 +112,14 @@ def test_console_ia_audit_surfaces_global_interaction_gaps() -> None:
 
     assert audit.surfaces_missing_filters == ["Queue"]
     assert audit.surfaces_missing_actions == ["Queue"]
+    assert audit.top_bar_audit.missing_capabilities == [
+        "global-search",
+        "time-range-switch",
+        "environment-switch",
+        "alert-entry",
+        "command-shell",
+    ]
+    assert audit.top_bar_audit.release_ready is False
     assert audit.surfaces_missing_states == {"Queue": ["error"]}
     assert audit.states_missing_actions == {"Queue": ["loading"]}
     assert audit.unresolved_state_actions == {"Queue": {"empty": ["retry"]}}
@@ -101,6 +134,21 @@ def test_console_ia_audit_round_trip_preserves_findings() -> None:
         version="v3",
         surface_count=2,
         navigation_count=1,
+        top_bar_audit=ConsoleIAAuditor().audit(
+            ConsoleIA(
+                name="BigClaw Console IA",
+                version="v3",
+                top_bar=ConsoleTopBar(
+                    name="Incomplete Header",
+                    search_placeholder="",
+                    environment_options=["Production"],
+                    time_range_options=["24h"],
+                    documentation_complete=False,
+                    accessibility_requirements=["focus-visible"],
+                    command_entry=ConsoleCommandEntry(trigger_label="", placeholder="", shortcut="Cmd+K"),
+                ),
+            )
+        ).top_bar_audit,
         surfaces_missing_filters=["Queue"],
         surfaces_missing_actions=["Queue"],
         surfaces_missing_states={"Queue": ["error"]},
@@ -119,6 +167,24 @@ def test_render_console_ia_report_summarizes_surface_coverage() -> None:
     architecture = ConsoleIA(
         name="BigClaw Console IA",
         version="v3",
+        top_bar=ConsoleTopBar(
+            name="BigClaw Global Header",
+            search_placeholder="Search runs, issues, commands",
+            environment_options=["Production", "Staging"],
+            time_range_options=["24h", "7d", "30d"],
+            alert_channels=["approvals", "sla"],
+            documentation_complete=True,
+            accessibility_requirements=["keyboard-navigation", "screen-reader-label", "focus-visible"],
+            command_entry=ConsoleCommandEntry(
+                trigger_label="Command Menu",
+                placeholder="Type a command or jump to a run",
+                shortcut="Cmd+K / Ctrl+K",
+                commands=[
+                    CommandAction(id="search-runs", title="Search runs", section="Navigate", shortcut="/"),
+                    CommandAction(id="open-alerts", title="Open alerts", section="Monitor"),
+                ],
+            ),
+        ),
         navigation=[NavigationItem(name="Overview", route="/overview", section="Operate")],
         surfaces=[
             ConsoleSurface(
@@ -141,6 +207,8 @@ def test_render_console_ia_report_summarizes_surface_coverage() -> None:
     report = render_console_ia_report(architecture, audit)
 
     assert "# Console Information Architecture Report" in report
+    assert "- Name: BigClaw Global Header" in report
+    assert "- Release Ready: True" in report
     assert "- Navigation Items: 1" in report
     assert "- Overview: route=/overview filters=Team actions=Refresh states=default, loading, empty, error missing_states=none states_without_actions=none unresolved_state_actions=none" in report
     assert "- Surfaces missing filters: none" in report
