@@ -15,21 +15,54 @@ BigClaw is a Symphony/Codex workflow project scaffolded from `workflow.md`.
   - worker runtime with sandbox profiles and auditable tool gateway
   - workflow DSL plus workflow engine with workpad journal, orchestration artifacts/canvas, entitlement-aware policy, and acceptance gate
   - observability ledger with logs/trace/artifact/audit capture
-  - dashboard KPI aggregate and run-detail schema contract definitions with auditable sample JSON payloads
   - queue-to-scheduler execution recording with audit reports
   - auto triage center for failed, pending-approval, and replay-needed runs, with inbox suggestions, similarity evidence, and reviewer feedback tracking
   - benchmark runner with replay, weighted scoring, and version comparison
   - report renderer, issue-close validation gate, pilot ROI scorecard/portfolio renderer, human takeover queue reporting, ledger-driven orchestration portfolio rollups, and HTML overview pages
   - narrative report studio with section composing plus markdown, HTML, and plain-text export
   - v2 design-system token/component inventory with release-readiness audit reporting
-  - v4 scope-freeze and backlog-governance board with auditable exceptions plus required run closeout evidence
 - `tests/`: unit tests
 
-## Local test
+## Developer quick start (recommended)
+
+> Do not use system Python directly for editable install. Use a virtualenv.
 
 ```bash
-python3 -m pip install -e . pytest
-python3 -m pytest
+cd BigClaw
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
+pip install -e .[dev]
+python -m pytest
+```
+
+Or use the helper script:
+
+```bash
+bash scripts/dev_bootstrap.sh
+```
+
+## Local test (without editable install)
+
+If your environment has restrictive system-packages permissions, run tests with `PYTHONPATH`:
+
+```bash
+PYTHONPATH=src python3 -m pytest
+```
+
+## Smoke verify
+
+```bash
+PYTHONPATH=src python3 scripts/dev_smoke.py
+```
+
+## Quality gates
+
+```bash
+ruff check src tests scripts
+python -m pytest
+python -m build
+pre-commit run --all-files
 ```
 
 ## Quick verify
