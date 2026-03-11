@@ -761,6 +761,7 @@ def render_console_top_bar_report(top_bar: ConsoleTopBar, audit: ConsoleTopBarAu
     lines.append(f"- Documentation complete: {audit.documentation_complete}")
     lines.append(f"- Accessibility complete: {audit.accessibility_complete}")
     lines.append(f"- Cmd/Ctrl+K supported: {audit.command_shortcut_supported}")
+    return "\n".join(lines) + "\n"
 
 
 def render_information_architecture_report(
