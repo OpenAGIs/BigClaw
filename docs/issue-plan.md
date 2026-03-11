@@ -66,6 +66,16 @@
 - Require backlog items to define acceptance criteria, validation plans, and the run-closeout contract of validation evidence, `git push`, and `git log -1 --stat` capture before work can be considered governance-ready.
 - Keep v4.0 planning attached to the same evidence-first workflow as execution so downstream UI, contract, and review epics inherit a shared release gate.
 
+### Issue `OPE-137` / `BIG-4403`: 问题清单与优先级归档
+
+#### Goal
+- Archive the v4.0 review findings as one deterministic artifact so UI, IA, permission, and metric issues can be prioritized with explicit `P0`/`P1`/`P2` severity and named owners.
+
+#### Delivery shape
+- Store each finding in code with category, priority, owner, surface, impact, and evidence so the review backlog can be serialized and regression-tested.
+- Audit the archive for missing owners, invalid priorities/categories, and unresolved `P0` findings so release review cannot hand-wave critical defects.
+- Render a plain-text report with per-priority and per-category rollups so the issue packet is reviewable in repo-native validation output.
+
 ### Epic-Milestone Mapping
 - BIG-EPIC-8: Phase 1 / M1 Foundation uplift / owner `engineering-platform`
 - BIG-EPIC-9: Phase 2 / M2 Operations control plane / owner `engineering-operations`
