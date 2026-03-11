@@ -274,13 +274,18 @@ from .evaluation import (
     render_benchmark_suite_report,
 )
 from .planning import (
+    FourWeekExecutionPlan,
     CandidateBacklog,
     CandidateEntry,
     CandidatePlanner,
     EvidenceLink,
     EntryGate,
     EntryGateDecision,
+    WeeklyExecutionPlan,
+    WeeklyGoal,
+    build_big_4701_execution_plan,
     render_candidate_backlog_report,
+    render_four_week_execution_report,
 )
 from .ui_review import (
     InteractionFlow,
@@ -556,7 +561,12 @@ __all__ = [
     "EvidenceLink",
     "EntryGate",
     "EntryGateDecision",
+    "FourWeekExecutionPlan",
+    "WeeklyExecutionPlan",
+    "WeeklyGoal",
+    "build_big_4701_execution_plan",
     "render_candidate_backlog_report",
+    "render_four_week_execution_report",
     "InteractionFlow",
     "OpenQuestion",
     "ReviewObjective",

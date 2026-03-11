@@ -1,11 +1,18 @@
+import pytest
+
 from bigclaw.planning import (
+    FourWeekExecutionPlan,
     CandidateBacklog,
     CandidateEntry,
     CandidatePlanner,
     EvidenceLink,
     EntryGate,
     EntryGateDecision,
+    WeeklyExecutionPlan,
+    WeeklyGoal,
+    build_big_4701_execution_plan,
     render_candidate_backlog_report,
+    render_four_week_execution_report,
 )
 from bigclaw.governance import ScopeFreezeAudit
 
@@ -323,7 +330,92 @@ def test_candidate_entry_round_trip_preserves_evidence_links() -> None:
             ),
         ],
     )
-
     restored = CandidateEntry.from_dict(candidate.to_dict())
 
     assert restored == candidate
+
+
+def test_four_week_execution_plan_round_trip_preserves_weeks_and_goals() -> None:
+    plan = build_big_4701_execution_plan()
+
+    restored = FourWeekExecutionPlan.from_dict(plan.to_dict())
+
+    assert restored == plan
+
+
+def test_four_week_execution_plan_rolls_up_progress_and_at_risk_weeks() -> None:
+    plan = build_big_4701_execution_plan()
+
+    assert plan.total_goals == 8
+    assert plan.completed_goals == 2
+    assert plan.overall_progress_percent == 25
+    assert plan.at_risk_weeks == [2]
+    assert plan.goal_status_counts() == {
+        "done": 2,
+        "on-track": 1,
+        "at-risk": 1,
+        "not-started": 4,
+    }
+
+
+def test_four_week_execution_plan_validate_rejects_missing_or_unordered_weeks() -> None:
+    plan = FourWeekExecutionPlan(
+        plan_id="BIG-4701",
+        title="4周执行计划与周目标",
+        owner="execution-office",
+        start_date="2026-03-11",
+        weeks=[
+            WeeklyExecutionPlan(week_number=1, theme="One", objective="One"),
+            WeeklyExecutionPlan(week_number=3, theme="Three", objective="Three"),
+            WeeklyExecutionPlan(week_number=2, theme="Two", objective="Two"),
+            WeeklyExecutionPlan(week_number=4, theme="Four", objective="Four"),
+        ],
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Four-week execution plans must include weeks 1 through 4 in order",
+    ):
+        plan.validate()
+
+
+def test_render_four_week_execution_report_summarizes_plan_status() -> None:
+    report = render_four_week_execution_report(build_big_4701_execution_plan())
+
+    assert "# Four-Week Execution Plan" in report
+    assert "- Plan: BIG-4701 4周执行计划与周目标" in report
+    assert "- Overall progress: 2/8 goals complete (25%)" in report
+    assert "- At-risk weeks: 2" in report
+    assert "- Week 2: Build and integration progress=0/2 (0%)" in report
+    assert (
+        "- w2-handoff-sync: Resolve orchestration and console handoff dependencies "
+        "owner=orchestration-office status=at-risk"
+    ) in report
+
+
+def test_weekly_execution_plan_flags_at_risk_goal_ids() -> None:
+    week = WeeklyExecutionPlan(
+        week_number=2,
+        theme="Build and integration",
+        objective="Land high-risk integration work.",
+        goals=[
+            WeeklyGoal(
+                goal_id="w2-green",
+                title="Green goal",
+                owner="eng",
+                status="on-track",
+                success_metric="merged PRs",
+                target_value="2",
+            ),
+            WeeklyGoal(
+                goal_id="w2-blocked",
+                title="Blocked goal",
+                owner="eng",
+                status="blocked",
+                success_metric="open blockers",
+                target_value="0",
+            ),
+        ],
+    )
+
+    assert week.at_risk_goal_ids == ["w2-blocked"]

@@ -5,6 +5,13 @@ from .governance import ScopeFreezeAudit
 
 
 PRIORITY_WEIGHTS = {"P0": 4, "P1": 3, "P2": 2, "P3": 1}
+GOAL_STATUS_ORDER = {
+    "done": 4,
+    "on-track": 3,
+    "at-risk": 2,
+    "blocked": 1,
+    "not-started": 0,
+}
 
 
 @dataclass(frozen=True)
@@ -321,4 +328,355 @@ def render_candidate_backlog_report(
             f"- Baseline findings: {', '.join(decision.baseline_findings) or 'none'}",
         ]
     )
+    return "\n".join(lines)
+
+
+@dataclass(frozen=True)
+class WeeklyGoal:
+    goal_id: str
+    title: str
+    owner: str
+    status: str
+    success_metric: str
+    target_value: str
+    current_value: str = ""
+    dependencies: List[str] = field(default_factory=list)
+    risks: List[str] = field(default_factory=list)
+
+    @property
+    def status_rank(self) -> int:
+        return GOAL_STATUS_ORDER.get(self.status.strip().lower(), -1)
+
+    @property
+    def is_complete(self) -> bool:
+        return self.status.strip().lower() == "done"
+
+    @property
+    def is_at_risk(self) -> bool:
+        return self.status.strip().lower() in {"at-risk", "blocked"}
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "goal_id": self.goal_id,
+            "title": self.title,
+            "owner": self.owner,
+            "status": self.status,
+            "success_metric": self.success_metric,
+            "target_value": self.target_value,
+            "current_value": self.current_value,
+            "dependencies": list(self.dependencies),
+            "risks": list(self.risks),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "WeeklyGoal":
+        return cls(
+            goal_id=str(data["goal_id"]),
+            title=str(data["title"]),
+            owner=str(data["owner"]),
+            status=str(data["status"]),
+            success_metric=str(data["success_metric"]),
+            target_value=str(data["target_value"]),
+            current_value=str(data.get("current_value", "")),
+            dependencies=[str(item) for item in data.get("dependencies", [])],
+            risks=[str(item) for item in data.get("risks", [])],
+        )
+
+
+@dataclass(frozen=True)
+class WeeklyExecutionPlan:
+    week_number: int
+    theme: str
+    objective: str
+    exit_criteria: List[str] = field(default_factory=list)
+    deliverables: List[str] = field(default_factory=list)
+    goals: List[WeeklyGoal] = field(default_factory=list)
+
+    @property
+    def completed_goals(self) -> int:
+        return sum(goal.is_complete for goal in self.goals)
+
+    @property
+    def total_goals(self) -> int:
+        return len(self.goals)
+
+    @property
+    def progress_percent(self) -> int:
+        if not self.goals:
+            return 0
+        return int((self.completed_goals / len(self.goals)) * 100)
+
+    @property
+    def at_risk_goal_ids(self) -> List[str]:
+        return [goal.goal_id for goal in self.goals if goal.is_at_risk]
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "week_number": self.week_number,
+            "theme": self.theme,
+            "objective": self.objective,
+            "exit_criteria": list(self.exit_criteria),
+            "deliverables": list(self.deliverables),
+            "goals": [goal.to_dict() for goal in self.goals],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "WeeklyExecutionPlan":
+        return cls(
+            week_number=int(data["week_number"]),
+            theme=str(data["theme"]),
+            objective=str(data["objective"]),
+            exit_criteria=[str(item) for item in data.get("exit_criteria", [])],
+            deliverables=[str(item) for item in data.get("deliverables", [])],
+            goals=[WeeklyGoal.from_dict(item) for item in data.get("goals", [])],
+        )
+
+
+@dataclass
+class FourWeekExecutionPlan:
+    plan_id: str
+    title: str
+    owner: str
+    start_date: str
+    weeks: List[WeeklyExecutionPlan] = field(default_factory=list)
+
+    @property
+    def total_goals(self) -> int:
+        return sum(week.total_goals for week in self.weeks)
+
+    @property
+    def completed_goals(self) -> int:
+        return sum(week.completed_goals for week in self.weeks)
+
+    @property
+    def overall_progress_percent(self) -> int:
+        if self.total_goals == 0:
+            return 0
+        return int((self.completed_goals / self.total_goals) * 100)
+
+    @property
+    def at_risk_weeks(self) -> List[int]:
+        return [week.week_number for week in self.weeks if week.at_risk_goal_ids]
+
+    def goal_status_counts(self) -> Dict[str, int]:
+        counts: Dict[str, int] = {}
+        for week in self.weeks:
+            for goal in week.goals:
+                counts[goal.status] = counts.get(goal.status, 0) + 1
+        return counts
+
+    def validate(self) -> None:
+        week_numbers = [week.week_number for week in self.weeks]
+        if week_numbers != [1, 2, 3, 4]:
+            raise ValueError("Four-week execution plans must include weeks 1 through 4 in order")
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "plan_id": self.plan_id,
+            "title": self.title,
+            "owner": self.owner,
+            "start_date": self.start_date,
+            "weeks": [week.to_dict() for week in self.weeks],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "FourWeekExecutionPlan":
+        return cls(
+            plan_id=str(data["plan_id"]),
+            title=str(data["title"]),
+            owner=str(data["owner"]),
+            start_date=str(data["start_date"]),
+            weeks=[WeeklyExecutionPlan.from_dict(item) for item in data.get("weeks", [])],
+        )
+
+
+def build_big_4701_execution_plan() -> FourWeekExecutionPlan:
+    plan = FourWeekExecutionPlan(
+        plan_id="BIG-4701",
+        title="4周执行计划与周目标",
+        owner="execution-office",
+        start_date="2026-03-11",
+        weeks=[
+            WeeklyExecutionPlan(
+                week_number=1,
+                theme="Scope freeze and operating baseline",
+                objective="Freeze scope, align owners, and establish validation and reporting cadence.",
+                exit_criteria=[
+                    "Scope freeze board published",
+                    "Owners and validation commands assigned for all streams",
+                ],
+                deliverables=[
+                    "Execution baseline report",
+                    "Scope freeze audit snapshot",
+                ],
+                goals=[
+                    WeeklyGoal(
+                        goal_id="w1-scope-freeze",
+                        title="Lock the v4.0 scope and escalation path",
+                        owner="program-office",
+                        status="done",
+                        success_metric="frozen backlog items",
+                        target_value="5 epics aligned",
+                        current_value="5 epics aligned",
+                    ),
+                    WeeklyGoal(
+                        goal_id="w1-validation-matrix",
+                        title="Assign validation commands and evidence owners",
+                        owner="engineering-ops",
+                        status="done",
+                        success_metric="streams with validation owners",
+                        target_value="5/5 streams",
+                        current_value="5/5 streams",
+                    ),
+                ],
+            ),
+            WeeklyExecutionPlan(
+                week_number=2,
+                theme="Build and integration",
+                objective="Land the highest-risk implementation slices and wire cross-team dependencies.",
+                exit_criteria=[
+                    "P0 build items merged",
+                    "Cross-team dependency review completed",
+                ],
+                deliverables=[
+                    "Integrated build checkpoint",
+                    "Dependency burn-down",
+                ],
+                goals=[
+                    WeeklyGoal(
+                        goal_id="w2-p0-burndown",
+                        title="Close the top P0 implementation gaps",
+                        owner="engineering-platform",
+                        status="on-track",
+                        success_metric="P0 items merged",
+                        target_value=">=3 merged",
+                        current_value="2 merged",
+                    ),
+                    WeeklyGoal(
+                        goal_id="w2-handoff-sync",
+                        title="Resolve orchestration and console handoff dependencies",
+                        owner="orchestration-office",
+                        status="at-risk",
+                        success_metric="open handoff blockers",
+                        target_value="0 blockers",
+                        current_value="1 blocker",
+                        dependencies=["w2-p0-burndown"],
+                        risks=["console entitlement contract is pending"],
+                    ),
+                ],
+            ),
+            WeeklyExecutionPlan(
+                week_number=3,
+                theme="Stabilization and validation",
+                objective="Drive regression triage, benchmark replay, and release-readiness evidence.",
+                exit_criteria=[
+                    "Regression backlog under control threshold",
+                    "Benchmark comparison published",
+                ],
+                deliverables=[
+                    "Stabilization report",
+                    "Benchmark replay pack",
+                ],
+                goals=[
+                    WeeklyGoal(
+                        goal_id="w3-regression-triage",
+                        title="Reduce critical regressions before release gate",
+                        owner="quality-ops",
+                        status="not-started",
+                        success_metric="critical regressions",
+                        target_value="<=2 open",
+                    ),
+                    WeeklyGoal(
+                        goal_id="w3-benchmark-pack",
+                        title="Publish replay and weighted benchmark evidence",
+                        owner="evaluation-lab",
+                        status="not-started",
+                        success_metric="benchmark evidence bundle",
+                        target_value="1 bundle published",
+                    ),
+                ],
+            ),
+            WeeklyExecutionPlan(
+                week_number=4,
+                theme="Launch decision and weekly operating rhythm",
+                objective="Convert validation evidence into launch readiness and the post-launch weekly review cadence.",
+                exit_criteria=[
+                    "Launch decision signed off",
+                    "Weekly operating review template adopted",
+                ],
+                deliverables=[
+                    "Launch readiness packet",
+                    "Weekly review operating template",
+                ],
+                goals=[
+                    WeeklyGoal(
+                        goal_id="w4-launch-decision",
+                        title="Complete launch readiness review",
+                        owner="release-governance",
+                        status="not-started",
+                        success_metric="required sign-offs",
+                        target_value="all sign-offs complete",
+                    ),
+                    WeeklyGoal(
+                        goal_id="w4-weekly-rhythm",
+                        title="Roll out the weekly KPI and issue review cadence",
+                        owner="engineering-operations",
+                        status="not-started",
+                        success_metric="weekly review adoption",
+                        target_value="1 recurring cadence active",
+                    ),
+                ],
+            ),
+        ],
+    )
+    plan.validate()
+    return plan
+
+
+def render_four_week_execution_report(plan: FourWeekExecutionPlan) -> str:
+    plan.validate()
+    status_counts = plan.goal_status_counts()
+    lines = [
+        "# Four-Week Execution Plan",
+        "",
+        f"- Plan: {plan.plan_id} {plan.title}",
+        f"- Owner: {plan.owner}",
+        f"- Start date: {plan.start_date}",
+        f"- Overall progress: {plan.completed_goals}/{plan.total_goals} goals complete ({plan.overall_progress_percent}%)",
+        f"- At-risk weeks: {', '.join(str(week_number) for week_number in plan.at_risk_weeks) or 'none'}",
+        (
+            "- Goal status counts: "
+            f"done={status_counts.get('done', 0)} "
+            f"on-track={status_counts.get('on-track', 0)} "
+            f"at-risk={status_counts.get('at-risk', 0)} "
+            f"blocked={status_counts.get('blocked', 0)} "
+            f"not-started={status_counts.get('not-started', 0)}"
+        ),
+        "",
+        "## Weekly Plans",
+    ]
+    for week in plan.weeks:
+        lines.extend(
+            [
+                (
+                    f"- Week {week.week_number}: {week.theme} "
+                    f"progress={week.completed_goals}/{week.total_goals} ({week.progress_percent}%)"
+                ),
+                f"  objective={week.objective}",
+                f"  exit_criteria={', '.join(week.exit_criteria) or 'none'}",
+                f"  deliverables={', '.join(week.deliverables) or 'none'}",
+            ]
+        )
+        for goal in week.goals:
+            lines.append(
+                "  "
+                f"- {goal.goal_id}: {goal.title} owner={goal.owner} status={goal.status} "
+                f"metric={goal.success_metric} current={goal.current_value or 'n/a'} "
+                f"target={goal.target_value}"
+            )
+            lines.append(
+                "    "
+                f"dependencies={','.join(goal.dependencies) or 'none'} "
+                f"risks={','.join(goal.risks) or 'none'}"
+            )
     return "\n".join(lines)
