@@ -37,7 +37,7 @@ from .console_ia import (
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
 from .mapping import map_source_issue_to_task
-from .observability import ObservabilityLedger, TaskRun
+from .observability import ObservabilityLedger, RunCloseout, TaskRun
 from .orchestration import (
     CrossDepartmentOrchestrator,
     DepartmentHandoff,
@@ -177,6 +177,7 @@ __all__ = [
     "WorkflowStep",
     "map_source_issue_to_task",
     "ObservabilityLedger",
+    "RunCloseout",
     "TaskRun",
     "CrossDepartmentOrchestrator",
     "DepartmentHandoff",

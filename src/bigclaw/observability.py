@@ -134,6 +134,39 @@ class AuditEntry:
 
 
 @dataclass
+class RunCloseout:
+    validation_evidence: List[str] = field(default_factory=list)
+    git_push_succeeded: bool = False
+    git_push_output: str = ""
+    git_log_stat_output: str = ""
+    timestamp: str = field(default_factory=utc_now)
+
+    @property
+    def complete(self) -> bool:
+        return bool(self.validation_evidence) and self.git_push_succeeded and bool(self.git_log_stat_output.strip())
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "validation_evidence": self.validation_evidence,
+            "git_push_succeeded": self.git_push_succeeded,
+            "git_push_output": self.git_push_output,
+            "git_log_stat_output": self.git_log_stat_output,
+            "timestamp": self.timestamp,
+            "complete": self.complete,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "RunCloseout":
+        return cls(
+            validation_evidence=data.get("validation_evidence", []),
+            git_push_succeeded=data.get("git_push_succeeded", False),
+            git_push_output=data.get("git_push_output", ""),
+            git_log_stat_output=data.get("git_log_stat_output", ""),
+            timestamp=data.get("timestamp", utc_now()),
+        )
+
+
+@dataclass
 class TaskRun:
     run_id: str
     task_id: str
@@ -148,6 +181,7 @@ class TaskRun:
     traces: List[TraceEntry] = field(default_factory=list)
     artifacts: List[ArtifactRecord] = field(default_factory=list)
     audits: List[AuditEntry] = field(default_factory=list)
+    closeout: RunCloseout = field(default_factory=RunCloseout)
 
     @classmethod
     def from_task(cls, task: Task, run_id: str, medium: str) -> "TaskRun":
@@ -175,6 +209,7 @@ class TaskRun:
             traces=[TraceEntry.from_dict(entry) for entry in data.get("traces", [])],
             artifacts=[ArtifactRecord.from_dict(entry) for entry in data.get("artifacts", [])],
             audits=[AuditEntry.from_dict(entry) for entry in data.get("audits", [])],
+            closeout=RunCloseout.from_dict(data.get("closeout", {})),
         )
 
     def log(self, level: str, message: str, **context: Any) -> None:
@@ -197,6 +232,21 @@ class TaskRun:
     def audit(self, action: str, actor: str, outcome: str, **details: Any) -> None:
         self.audits.append(AuditEntry(action=action, actor=actor, outcome=outcome, details=details))
 
+    def record_closeout(
+        self,
+        *,
+        validation_evidence: List[str],
+        git_push_succeeded: bool,
+        git_push_output: str = "",
+        git_log_stat_output: str = "",
+    ) -> None:
+        self.closeout = RunCloseout(
+            validation_evidence=list(validation_evidence),
+            git_push_succeeded=git_push_succeeded,
+            git_push_output=git_push_output,
+            git_log_stat_output=git_log_stat_output,
+        )
+
     def finalize(self, status: str, summary: str) -> None:
         self.status = status
         self.summary = summary
@@ -217,6 +267,7 @@ class TaskRun:
             "traces": [entry.to_dict() for entry in self.traces],
             "artifacts": [entry.to_dict() for entry in self.artifacts],
             "audits": [entry.to_dict() for entry in self.audits],
+            "closeout": self.closeout.to_dict(),
         }
 
 

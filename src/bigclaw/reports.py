@@ -1343,6 +1343,16 @@ def render_task_run_report(run: TaskRun) -> str:
     else:
         lines.append("- None")
 
+    lines.extend(["", "## Closeout", ""])
+    lines.append(f"- Complete: {run.closeout.complete}")
+    lines.append(
+        "- Validation Evidence: "
+        + (", ".join(run.closeout.validation_evidence) if run.closeout.validation_evidence else "None")
+    )
+    lines.append(f"- Git Push Succeeded: {run.closeout.git_push_succeeded}")
+    lines.append(f"- Git Push Output: {run.closeout.git_push_output or 'None'}")
+    lines.append(f"- Git Log -1 --stat Output: {run.closeout.git_log_stat_output or 'None'}")
+
     return "\n".join(lines) + "\n"
 
 
@@ -1427,6 +1437,11 @@ def render_task_run_detail_page(run: TaskRun) -> str:
       <p>{escape(run.summary or 'No summary recorded.')}</p>
       <p class="meta">Task {escape(run.task_id)} from {escape(run.source)} started at {escape(run.started_at)} and ended at {escape(run.ended_at or 'n/a')}.</p>
     </section>
+    <section class="surface">
+      <h2>Closeout</h2>
+      <p>Validation evidence: {escape(', '.join(run.closeout.validation_evidence) if run.closeout.validation_evidence else 'None recorded.')}</p>
+      <p class="meta">git push succeeded={escape(str(run.closeout.git_push_succeeded))} | git log captured={escape(str(bool(run.closeout.git_log_stat_output.strip())))} | complete={escape(str(run.closeout.complete))}</p>
+    </section>
     """
 
     return render_run_detail_console(
@@ -1441,6 +1456,7 @@ def render_task_run_detail_page(run: TaskRun) -> str:
             RunDetailStat("Status", run.status, tone=status_tone),
             RunDetailStat("Artifacts", str(len(run.artifacts))),
             RunDetailStat("Reports", str(len(report_resources)), tone="accent" if report_resources else "default"),
+            RunDetailStat("Closeout", "complete" if run.closeout.complete else "pending", tone="accent" if run.closeout.complete else "warning"),
         ],
         tabs=[
             RunDetailTab("overview", "Overview", overview_html),

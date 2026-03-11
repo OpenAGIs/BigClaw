@@ -49,6 +49,9 @@ def test_workflow_engine_records_journal_and_accepts_complete_evidence(tmp_path:
         journal_path=str(tmp_path / "journals" / "run-wf-1.json"),
         validation_evidence=["pytest", "report-shared"],
         orchestration_report_path=str(tmp_path / "reports" / "run-wf-1-orchestration.md"),
+        git_push_succeeded=True,
+        git_push_output="main -> origin/main",
+        git_log_stat_output="commit 123abc\n 3 files changed, 12 insertions(+)",
     )
 
     assert result.execution.decision.medium == "browser"
@@ -58,8 +61,10 @@ def test_workflow_engine_records_journal_and_accepts_complete_evidence(tmp_path:
     assert result.orchestration_report_path is not None
 
     journal = json.loads(Path(result.journal_path).read_text())
-    assert [entry["step"] for entry in journal["entries"]] == ["intake", "execution", "orchestration", "acceptance"]
-    assert journal["entries"][-1]["status"] == "accepted"
+    assert [entry["step"] for entry in journal["entries"]] == ["intake", "execution", "orchestration", "acceptance", "closeout"]
+    assert journal["entries"][-2]["status"] == "accepted"
+    assert journal["entries"][-1]["status"] == "complete"
+    assert ledger.load()[0]["closeout"]["git_push_succeeded"] is True
 
 
 def test_workflow_engine_keeps_high_risk_task_pending_manual_approval(tmp_path: Path):
@@ -120,6 +125,9 @@ def test_workflow_engine_writes_pilot_scorecard_and_accepts_positive_roi(tmp_pat
         validation_evidence=["pytest", "report-shared", "pilot-scorecard"],
         pilot_scorecard=scorecard,
         pilot_report_path=str(tmp_path / "reports" / "pilot-scorecard.md"),
+        git_push_succeeded=True,
+        git_push_output="main -> origin/main",
+        git_log_stat_output="commit 456def\n 2 files changed, 9 insertions(+)",
     )
 
     assert result.acceptance.passed is True
@@ -128,7 +136,7 @@ def test_workflow_engine_writes_pilot_scorecard_and_accepts_positive_roi(tmp_pat
     assert Path(result.pilot_report_path).exists()
 
     journal = json.loads(Path(result.journal_path).read_text())
-    assert [entry["step"] for entry in journal["entries"]] == ["intake", "execution", "pilot-scorecard", "acceptance"]
+    assert [entry["step"] for entry in journal["entries"]] == ["intake", "execution", "pilot-scorecard", "acceptance", "closeout"]
     assert journal["entries"][2]["status"] == "go"
     assert "Annualized ROI" in Path(result.pilot_report_path).read_text()
 
@@ -189,6 +197,9 @@ def test_workflow_engine_writes_orchestration_report_without_duplicating_ledger_
         orchestration_report_path=str(tmp_path / "reports" / "run-wf-ope-66-orchestration.md"),
         orchestration_canvas_path=str(tmp_path / "reports" / "run-wf-ope-66-canvas.md"),
         validation_evidence=["pytest", "report-shared"],
+        git_push_succeeded=True,
+        git_push_output="main -> origin/main",
+        git_log_stat_output="commit 789fed\n 4 files changed, 16 insertions(+)",
     )
 
     assert result.orchestration_report_path is not None
@@ -210,3 +221,4 @@ def test_workflow_engine_writes_orchestration_report_without_duplicating_ledger_
 
     journal = json.loads(Path(result.journal_path).read_text())
     assert journal["entries"][2]["step"] == "orchestration"
+    assert journal["entries"][-1]["step"] == "closeout"

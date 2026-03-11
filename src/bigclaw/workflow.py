@@ -145,6 +145,9 @@ class WorkflowEngine:
         pilot_report_path: Optional[str] = None,
         orchestration_report_path: Optional[str] = None,
         orchestration_canvas_path: Optional[str] = None,
+        git_push_succeeded: bool = False,
+        git_push_output: str = "",
+        git_log_stat_output: str = "",
     ) -> WorkflowRunResult:
         journal = WorkpadJournal(task_id=task.task_id, run_id=run_id)
         journal.record("intake", "recorded", source=task.source)
@@ -244,6 +247,20 @@ class WorkflowEngine:
             passed=acceptance.passed,
             missing_acceptance_criteria=acceptance.missing_acceptance_criteria,
             missing_validation_steps=acceptance.missing_validation_steps,
+        )
+        execution.run.record_closeout(
+            validation_evidence=list(validation_evidence or []),
+            git_push_succeeded=git_push_succeeded,
+            git_push_output=git_push_output,
+            git_log_stat_output=git_log_stat_output,
+        )
+        ledger.upsert(execution.run)
+        journal.record(
+            "closeout",
+            "complete" if execution.run.closeout.complete else "pending",
+            validation_evidence=list(validation_evidence or []),
+            git_push_succeeded=git_push_succeeded,
+            git_log_stat_captured=bool(git_log_stat_output.strip()),
         )
 
         resolved_journal_path = None

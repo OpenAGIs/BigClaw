@@ -23,6 +23,12 @@ def test_task_run_captures_logs_trace_artifacts_and_audits(tmp_path: Path):
     run.trace("scheduler.decide", "ok", approved=True)
     run.register_artifact("validation-report", "report", str(artifact), environment="sandbox")
     run.audit("scheduler.approved", "system", "success", reason="default low risk path")
+    run.record_closeout(
+        validation_evidence=["pytest", "validation-report"],
+        git_push_succeeded=True,
+        git_push_output="Everything up-to-date",
+        git_log_stat_output="commit abc123\n 1 file changed, 2 insertions(+)",
+    )
     run.finalize("succeeded", "validation passed")
 
     ledger = ObservabilityLedger(str(tmp_path / "observability.json"))
@@ -35,6 +41,7 @@ def test_task_run_captures_logs_trace_artifacts_and_audits(tmp_path: Path):
     assert entries[0]["traces"][0]["attributes"]["approved"] is True
     assert entries[0]["artifacts"][0]["sha256"] == expected_digest
     assert entries[0]["audits"][0]["action"] == "scheduler.approved"
+    assert entries[0]["closeout"]["complete"] is True
 
 
 def test_render_task_run_report(tmp_path: Path):
@@ -47,6 +54,12 @@ def test_render_task_run_report(tmp_path: Path):
     run.trace("risk.review", "pending")
     run.register_artifact("approval-note", "note", str(artifact))
     run.audit("risk.review", "reviewer", "approved")
+    run.record_closeout(
+        validation_evidence=["pytest"],
+        git_push_succeeded=True,
+        git_push_output="main -> origin/main",
+        git_log_stat_output="commit def456\n 1 file changed, 3 insertions(+)",
+    )
     run.finalize("completed", "manual approval granted")
 
     report = render_task_run_report(run)
@@ -56,6 +69,8 @@ def test_render_task_run_report(tmp_path: Path):
     assert "## Trace" in report
     assert "## Artifacts" in report
     assert "## Audit" in report
+    assert "## Closeout" in report
+    assert "Git Push Succeeded: True" in report
 
 
 def test_render_task_run_detail_page(tmp_path: Path):
@@ -68,6 +83,12 @@ def test_render_task_run_detail_page(tmp_path: Path):
     run.trace("playback.render", "ok")
     run.register_artifact("approval-note", "note", str(artifact))
     run.audit("playback.render", "reviewer", "success")
+    run.record_closeout(
+        validation_evidence=["pytest", "playback-smoke"],
+        git_push_succeeded=True,
+        git_push_output="main -> origin/main",
+        git_log_stat_output="commit fedcba\n 1 file changed, 1 insertion(+)",
+    )
     run.finalize("approved", "detail page ready")
 
     page = render_task_run_detail_page(run)
@@ -80,6 +101,8 @@ def test_render_task_run_detail_page(tmp_path: Path):
     assert "playback.render" in page
     assert str(artifact) in page
     assert "detail page ready" in page
+    assert "Closeout" in page
+    assert "complete" in page
 
 
 def test_observability_ledger_load_runs_round_trips_entries(tmp_path: Path):
