@@ -33,6 +33,28 @@
 - BIG-EPIC-10: 跨部门 Agent Orchestration
 - BIG-EPIC-11: 产品化 UI 与控制台
 - BIG-EPIC-12: 计费、套餐与商业化控制
+- BIG-EPIC-16: v4.0 范围冻结与任务治理
+- BIG-EPIC-17: v4.0 UI Design Sprint
+- BIG-EPIC-18: v4.0 执行层技术契约
+- BIG-EPIC-19: v4.0 设计评审与决策
+- BIG-EPIC-20: v4.0 v3候选与进入条件
+
+### Epic 16: v4.0 范围冻结与任务治理 (`OPE-116`)
+
+#### Goal
+- Freeze the v4.0 scope around the validated v2.0 baseline, govern backlog entry through explicit exceptions, and require every execution slice to capture validation evidence plus repository closeout artifacts.
+
+#### Child issues
+- `OPE-116` / `BIG-EPIC-16`: v4.0 范围冻结与任务治理 — Step1, v2.0 freeze and backlog governance.
+- `OPE-117` / `BIG-EPIC-17`: v4.0 UI Design Sprint — Step2, key page design sprint.
+- `OPE-118` / `BIG-EPIC-18`: v4.0 执行层技术契约 — Step3, models/APIs/permissions/metrics/audit.
+- `OPE-119` / `BIG-EPIC-19`: v4.0 设计评审与决策 — Step4, cross-role review and decisions.
+- `OPE-120` / `BIG-EPIC-20`: v4.0 v3候选与进入条件 — Step5, v3 candidate backlog and gate.
+
+#### Delivery shape
+- Model scope freeze as an auditable board with explicit backlog ownership, phase sequencing, and approved exceptions for any post-freeze additions.
+- Require backlog items to define acceptance criteria, validation plans, and the run-closeout contract of validation evidence, `git push`, and `git log -1 --stat` capture before work can be considered governance-ready.
+- Keep v4.0 planning attached to the same evidence-first workflow as execution so downstream UI, contract, and review epics inherit a shared release gate.
 
 ### Epic-Milestone Mapping
 - BIG-EPIC-8: Phase 1 / M1 Foundation uplift / owner `engineering-platform`

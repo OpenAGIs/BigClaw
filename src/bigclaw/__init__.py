@@ -59,6 +59,14 @@ from .saved_views import (
     SavedViewLibrary,
     render_saved_view_report,
 )
+from .governance import (
+    FreezeException,
+    GovernanceBacklogItem,
+    ScopeFreezeAudit,
+    ScopeFreezeBoard,
+    ScopeFreezeGovernance,
+    render_scope_freeze_report,
+)
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
 from .mapping import map_source_issue_to_task
@@ -262,6 +270,12 @@ __all__ = [
     "SavedViewFilter",
     "SavedViewLibrary",
     "render_saved_view_report",
+    "FreezeException",
+    "GovernanceBacklogItem",
+    "ScopeFreezeAudit",
+    "ScopeFreezeBoard",
+    "ScopeFreezeGovernance",
+    "render_scope_freeze_report",
     "RiskFactor",
     "RiskScore",
     "RiskScorer",
