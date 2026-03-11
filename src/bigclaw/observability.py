@@ -3,8 +3,9 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
+from .collaboration import CollaborationComment, DecisionNote
 from .models import Task
 
 
@@ -231,6 +232,74 @@ class TaskRun:
 
     def audit(self, action: str, actor: str, outcome: str, **details: Any) -> None:
         self.audits.append(AuditEntry(action=action, actor=actor, outcome=outcome, details=details))
+
+    def add_comment(
+        self,
+        *,
+        author: str,
+        body: str,
+        mentions: Optional[List[str]] = None,
+        anchor: str = "",
+        status: str = "open",
+        comment_id: str = "",
+        surface: str = "run",
+    ) -> CollaborationComment:
+        resolved_id = comment_id or f"{self.run_id}-comment-{len([audit for audit in self.audits if audit.action == 'collaboration.comment']) + 1}"
+        comment = CollaborationComment(
+            comment_id=resolved_id,
+            author=author,
+            body=body,
+            mentions=list(mentions or []),
+            anchor=anchor,
+            status=status,
+        )
+        self.audit(
+            "collaboration.comment",
+            author,
+            "recorded",
+            surface=surface,
+            comment_id=comment.comment_id,
+            body=comment.body,
+            mentions=comment.mentions,
+            anchor=comment.anchor,
+            status=comment.status,
+        )
+        return comment
+
+    def add_decision_note(
+        self,
+        *,
+        author: str,
+        summary: str,
+        outcome: str,
+        mentions: Optional[List[str]] = None,
+        related_comment_ids: Optional[List[str]] = None,
+        follow_up: str = "",
+        decision_id: str = "",
+        surface: str = "run",
+    ) -> DecisionNote:
+        resolved_id = decision_id or f"{self.run_id}-decision-{len([audit for audit in self.audits if audit.action == 'collaboration.decision']) + 1}"
+        decision = DecisionNote(
+            decision_id=resolved_id,
+            author=author,
+            outcome=outcome,
+            summary=summary,
+            mentions=list(mentions or []),
+            related_comment_ids=list(related_comment_ids or []),
+            follow_up=follow_up,
+        )
+        self.audit(
+            "collaboration.decision",
+            author,
+            outcome,
+            surface=surface,
+            decision_id=decision.decision_id,
+            summary=decision.summary,
+            mentions=decision.mentions,
+            related_comment_ids=decision.related_comment_ids,
+            follow_up=decision.follow_up,
+        )
+        return decision
 
     def record_closeout(
         self,

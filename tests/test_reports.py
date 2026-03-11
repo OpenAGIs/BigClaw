@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List, Optional
 
+from bigclaw.collaboration import CollaborationComment, DecisionNote, build_collaboration_thread
 from bigclaw.reports import (
     ConsoleAction,
     BillingEntitlementsPage,
@@ -39,6 +40,7 @@ from bigclaw.reports import (
     render_report_studio_html,
     render_report_studio_plain_text,
     render_report_studio_report,
+    render_shared_view_context,
     render_takeover_queue_report,
     validation_report_exists,
     write_report,
@@ -357,6 +359,44 @@ def test_render_pilot_portfolio_report_summarizes_commercial_readiness():
     assert "Partner B: recommendation=iterate" in content
 
 
+def test_render_shared_view_context_includes_collaboration_annotations():
+    view = SharedViewContext(
+        filters=[SharedViewFilter(label="Team", value="ops")],
+        result_count=4,
+        collaboration=build_collaboration_thread(
+            "dashboard",
+            "ops-overview",
+            comments=[
+                CollaborationComment(
+                    comment_id="dashboard-comment-1",
+                    author="pm",
+                    body="Please review blocker copy with @ops and @eng.",
+                    mentions=["ops", "eng"],
+                    anchor="blockers",
+                )
+            ],
+            decisions=[
+                DecisionNote(
+                    decision_id="dashboard-decision-1",
+                    author="ops",
+                    outcome="approved",
+                    summary="Keep the blocker module visible for managers.",
+                    mentions=["pm"],
+                    follow_up="Recheck after next data refresh.",
+                )
+            ],
+        ),
+    )
+
+    lines = render_shared_view_context(view)
+    content = "\n".join(lines)
+
+    assert "## Collaboration" in content
+    assert "Surface: dashboard" in content
+    assert "Please review blocker copy with @ops and @eng." in content
+    assert "Keep the blocker module visible for managers." in content
+
+
 def test_auto_triage_center_prioritizes_failed_and_pending_runs():
     approval_task = Task(task_id="OPE-76-risk", source="linear", title="Prod approval", description="")
     approval_run = TaskRun.from_task(approval_task, run_id="run-risk", medium="vm")
@@ -613,6 +653,74 @@ def test_orchestration_canvas_summarizes_policy_and_handoff():
     assert "- Recommendation: resolve-entitlement-gap" in report
     assert "## Actions" in report
     assert "Escalate [escalate] state=enabled target=run-canvas" in report
+
+
+def test_orchestration_canvas_reconstructs_flow_collaboration_from_ledger():
+    entry = {
+        "run_id": "run-flow-1",
+        "task_id": "OPE-113",
+        "audits": [
+            {
+                "action": "orchestration.plan",
+                "actor": "scheduler",
+                "outcome": "enabled",
+                "timestamp": "2026-03-11T11:00:00Z",
+                "details": {
+                    "collaboration_mode": "cross-functional",
+                    "departments": ["operations", "engineering"],
+                    "approvals": [],
+                },
+            },
+            {
+                "action": "orchestration.policy",
+                "actor": "scheduler",
+                "outcome": "enabled",
+                "timestamp": "2026-03-11T11:01:00Z",
+                "details": {
+                    "tier": "premium",
+                    "entitlement_status": "included",
+                    "billing_model": "premium-included",
+                },
+            },
+            {
+                "action": "collaboration.comment",
+                "actor": "ops-lead",
+                "outcome": "recorded",
+                "timestamp": "2026-03-11T11:02:00Z",
+                "details": {
+                    "surface": "flow",
+                    "comment_id": "flow-comment-1",
+                    "body": "Route @eng once the dashboard note is resolved.",
+                    "mentions": ["eng"],
+                    "anchor": "handoff-lane",
+                    "status": "open",
+                },
+            },
+            {
+                "action": "collaboration.decision",
+                "actor": "eng-manager",
+                "outcome": "accepted",
+                "timestamp": "2026-03-11T11:03:00Z",
+                "details": {
+                    "surface": "flow",
+                    "decision_id": "flow-decision-1",
+                    "summary": "Engineering owns the next flow handoff.",
+                    "mentions": ["ops-lead"],
+                    "related_comment_ids": ["flow-comment-1"],
+                    "follow_up": "Post in the shared channel after deploy.",
+                },
+            },
+        ],
+    }
+
+    canvas = build_orchestration_canvas_from_ledger_entry(entry)
+    report = render_orchestration_canvas(canvas)
+
+    assert canvas.collaboration is not None
+    assert canvas.recommendation == "resolve-flow-comments"
+    assert "## Collaboration" in report
+    assert "Route @eng once the dashboard note is resolved." in report
+    assert "Engineering owns the next flow handoff." in report
 
 
 def test_orchestration_portfolio_rolls_up_canvas_and_takeover_state():

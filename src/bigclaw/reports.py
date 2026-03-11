@@ -5,6 +5,12 @@ from html import escape
 from pathlib import Path
 from typing import List, Optional
 
+from .collaboration import (
+    CollaborationThread,
+    build_collaboration_thread_from_audits,
+    render_collaboration_lines,
+    render_collaboration_panel_html,
+)
 from .observability import TaskRun
 from .orchestration import HandoffRequest, OrchestrationPlan, OrchestrationPolicyDecision
 from .run_detail import (
@@ -386,6 +392,7 @@ class SharedViewContext:
     partial_data: List[str] = field(default_factory=list)
     empty_message: str = "No records match the current filters."
     last_updated: str = ""
+    collaboration: Optional[CollaborationThread] = None
 
     @property
     def state(self) -> str:
@@ -434,9 +441,12 @@ class OrchestrationCanvas:
     overage_usage_units: int = 0
     overage_cost_usd: float = 0.0
     actions: List["ConsoleAction"] = field(default_factory=list)
+    collaboration: Optional[CollaborationThread] = None
 
     @property
     def recommendation(self) -> str:
+        if self.collaboration is not None and self.collaboration.open_comment_count:
+            return "resolve-flow-comments"
         if self.handoff_team == "security":
             return "review-security-takeover"
         if self.upgrade_required:
@@ -1060,6 +1070,7 @@ def render_shared_view_context(view: Optional[SharedViewContext]) -> List[str]:
         lines.extend(["", "## Partial Data", ""])
         lines.extend(f"- {message}" for message in view.partial_data)
 
+    lines.extend(render_collaboration_lines(view.collaboration))
     lines.append("")
     return lines
 
@@ -1234,11 +1245,17 @@ def render_orchestration_portfolio_report(
 
     if portfolio.canvases:
         for canvas in portfolio.canvases:
+            collaboration_summary = (
+                f"comments={len(canvas.collaboration.comments)} decisions={len(canvas.collaboration.decisions)}"
+                if canvas.collaboration is not None
+                else "comments=0 decisions=0"
+            )
             lines.append(
                 f"- {canvas.run_id}: mode={canvas.collaboration_mode} tier={canvas.tier} "
                 f"entitlement={canvas.entitlement_status} billing={canvas.billing_model} "
                 f"estimated_cost_usd={canvas.estimated_cost_usd:.2f} overage_cost_usd={canvas.overage_cost_usd:.2f} "
-                f"upgrade_required={canvas.upgrade_required} handoff={canvas.handoff_team} recommendation={canvas.recommendation} "
+                f"upgrade_required={canvas.upgrade_required} handoff={canvas.handoff_team} "
+                f"collaboration={collaboration_summary} recommendation={canvas.recommendation} "
                 f"actions={render_console_actions(canvas.actions)}"
             )
     else:
@@ -1296,7 +1313,6 @@ def render_billing_entitlements_report(
     return "\n".join(lines) + "\n"
 
 
-
 def render_orchestration_overview_page(portfolio: OrchestrationPortfolio) -> str:
     def render_items(items: List[str]) -> str:
         if not items:
@@ -1323,7 +1339,7 @@ def render_orchestration_overview_page(portfolio: OrchestrationPortfolio) -> str
     )
     runs = render_items(
         [
-            f"<strong>{escape(canvas.run_id)}</strong> · mode={escape(canvas.collaboration_mode)} · tier={escape(canvas.tier)} · entitlement={escape(canvas.entitlement_status)} · billing={escape(canvas.billing_model)} · cost=${canvas.estimated_cost_usd:.2f} · handoff={escape(canvas.handoff_team)} · recommendation={escape(canvas.recommendation)} · actions={escape(render_console_actions(canvas.actions or _default_canvas_actions(canvas)))}"
+            f"<strong>{escape(canvas.run_id)}</strong> · mode={escape(canvas.collaboration_mode)} · tier={escape(canvas.tier)} · entitlement={escape(canvas.entitlement_status)} · billing={escape(canvas.billing_model)} · cost=${canvas.estimated_cost_usd:.2f} · handoff={escape(canvas.handoff_team)} · comments={len(canvas.collaboration.comments) if canvas.collaboration is not None else 0} · decisions={len(canvas.collaboration.decisions) if canvas.collaboration is not None else 0} · recommendation={escape(canvas.recommendation)} · actions={escape(render_console_actions(canvas.actions or _default_canvas_actions(canvas)))}"
             for canvas in portfolio.canvases
         ]
     )
@@ -1566,6 +1582,7 @@ def build_orchestration_canvas_from_ledger_entry(entry: dict) -> OrchestrationCa
             allow_escalate=bool(policy_audit is not None and policy_audit.get("outcome") == "upgrade-required"),
             escalate_reason="" if policy_audit is not None and policy_audit.get("outcome") == "upgrade-required" else "escalate when policy requires an entitlement or approval upgrade",
         ),
+        collaboration=build_collaboration_thread_from_audits(audits, surface="flow", target_id=str(entry.get("run_id", ""))),
     )
 
 
@@ -1605,6 +1622,11 @@ def build_orchestration_canvas(
             allow_escalate=policy is not None and policy.upgrade_required,
             escalate_reason="" if policy is not None and policy.upgrade_required else "escalate when policy requires an entitlement or approval upgrade",
         ),
+        collaboration=build_collaboration_thread_from_audits(
+            [entry.to_dict() for entry in run.audits],
+            surface="flow",
+            target_id=run.run_id,
+        ),
     )
 
 
@@ -1639,6 +1661,7 @@ def render_orchestration_canvas(canvas: OrchestrationCanvas) -> str:
         "",
         f"- {render_console_actions(canvas.actions)}",
     ]
+    lines.extend(render_collaboration_lines(canvas.collaboration))
     return "\n".join(lines) + "\n"
 
 
@@ -1947,6 +1970,11 @@ def render_task_run_report(run: TaskRun) -> str:
         allow_pause=run.status not in {"failed", "completed", "approved"},
         pause_reason="" if run.status not in {"failed", "completed", "approved"} else "completed or failed runs cannot be paused",
     )
+    collaboration = build_collaboration_thread_from_audits(
+        [entry.to_dict() for entry in run.audits],
+        surface="run",
+        target_id=run.run_id,
+    )
     lines = [
         "# Task Run Report",
         "",
@@ -2007,6 +2035,7 @@ def render_task_run_report(run: TaskRun) -> str:
     lines.append(f"- Git Push Output: {run.closeout.git_push_output or 'None'}")
     lines.append(f"- Git Log -1 --stat Output: {run.closeout.git_log_stat_output or 'None'}")
     lines.extend(["", "## Actions", "", f"- {render_console_actions(actions)}"])
+    lines.extend(render_collaboration_lines(collaboration))
 
     return "\n".join(lines) + "\n"
 
@@ -2091,6 +2120,11 @@ def render_task_run_detail_page(run: TaskRun) -> str:
         for entry in run.artifacts
     ]
     report_resources = [resource for resource in artifacts if resource.kind == "report"]
+    collaboration = build_collaboration_thread_from_audits(
+        [entry.to_dict() for entry in run.audits],
+        surface="run",
+        target_id=run.run_id,
+    )
 
     overview_html = f"""
     <section class="surface">
@@ -2150,6 +2184,15 @@ def render_task_run_detail_page(run: TaskRun) -> str:
                     "Reports",
                     "Report artifacts emitted for this run, including markdown summaries and linked detail pages when present.",
                     report_resources,
+                ),
+            ),
+            RunDetailTab(
+                "collaboration",
+                "Collaboration",
+                render_collaboration_panel_html(
+                    "Collaboration",
+                    "Comments, mentions, and decision notes recorded against this run.",
+                    collaboration,
                 ),
             ),
         ],

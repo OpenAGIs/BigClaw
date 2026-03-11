@@ -43,6 +43,13 @@ from .console_ia import (
     SurfaceState,
     render_console_ia_report,
 )
+from .collaboration import (
+    CollaborationComment,
+    CollaborationThread,
+    DecisionNote,
+    build_collaboration_thread,
+    build_collaboration_thread_from_audits,
+)
 from .saved_views import (
     AlertDigestSubscription,
     SavedView,
@@ -230,6 +237,11 @@ __all__ = [
     "RiskFactor",
     "RiskScore",
     "RiskScorer",
+    "CollaborationComment",
+    "CollaborationThread",
+    "DecisionNote",
+    "build_collaboration_thread",
+    "build_collaboration_thread_from_audits",
     "WorkflowDefinition",
     "WorkflowStep",
     "map_source_issue_to_task",

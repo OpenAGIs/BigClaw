@@ -1,6 +1,7 @@
 import hashlib
 from pathlib import Path
 
+from bigclaw.collaboration import build_collaboration_thread_from_audits
 from bigclaw.models import Priority, Task
 from bigclaw.observability import ObservabilityLedger, TaskRun
 from bigclaw.reports import render_task_run_detail_page, render_task_run_report
@@ -54,6 +55,20 @@ def test_render_task_run_report(tmp_path: Path):
     run.trace("risk.review", "pending")
     run.register_artifact("approval-note", "note", str(artifact))
     run.audit("risk.review", "reviewer", "approved")
+    comment = run.add_comment(
+        author="ops-lead",
+        body="Need @security sign-off before we clear this run.",
+        mentions=["security"],
+        anchor="closeout",
+    )
+    run.add_decision_note(
+        author="security-reviewer",
+        summary="Approved release after manual review.",
+        outcome="approved",
+        mentions=["ops-lead"],
+        related_comment_ids=[comment.comment_id],
+        follow_up="Share decision in the weekly review.",
+    )
     run.record_closeout(
         validation_evidence=["pytest"],
         git_push_succeeded=True,
@@ -73,6 +88,9 @@ def test_render_task_run_report(tmp_path: Path):
     assert "Git Push Succeeded: True" in report
     assert "## Actions" in report
     assert "Retry [retry] state=disabled target=run-2 reason=retry is available for failed or approval-blocked runs" in report
+    assert "## Collaboration" in report
+    assert "Need @security sign-off before we clear this run." in report
+    assert "Approved release after manual review." in report
 
 
 def test_render_task_run_detail_page(tmp_path: Path):
@@ -85,6 +103,18 @@ def test_render_task_run_detail_page(tmp_path: Path):
     run.trace("playback.render", "ok")
     run.register_artifact("approval-note", "note", str(artifact))
     run.audit("playback.render", "reviewer", "success")
+    run.add_comment(
+        author="pm",
+        body="Loop in @design before we publish the replay.",
+        mentions=["design"],
+        anchor="overview",
+    )
+    run.add_decision_note(
+        author="design",
+        summary="Replay copy approved for external review.",
+        outcome="approved",
+        mentions=["pm"],
+    )
     run.record_closeout(
         validation_evidence=["pytest", "playback-smoke"],
         git_push_succeeded=True,
@@ -107,6 +137,9 @@ def test_render_task_run_detail_page(tmp_path: Path):
     assert "complete" in page
     assert "Actions" in page
     assert "Pause [pause] state=disabled target=run-3 reason=completed or failed runs cannot be paused" in page
+    assert "Collaboration" in page
+    assert "Loop in @design before we publish the replay." in page
+    assert "Replay copy approved for external review." in page
 
 
 def test_observability_ledger_load_runs_round_trips_entries(tmp_path: Path):
@@ -115,6 +148,12 @@ def test_observability_ledger_load_runs_round_trips_entries(tmp_path: Path):
     run.log("info", "persisted")
     run.trace("scheduler.decide", "ok")
     run.audit("scheduler.decision", "scheduler", "approved", reason="default low risk path")
+    run.add_comment(
+        author="ops",
+        body="Need @eng confirmation on the retry plan.",
+        mentions=["eng"],
+        anchor="timeline",
+    )
     run.finalize("approved", "default low risk path")
 
     ledger = ObservabilityLedger(str(tmp_path / "observability.json"))
@@ -127,3 +166,11 @@ def test_observability_ledger_load_runs_round_trips_entries(tmp_path: Path):
     assert loaded_runs[0].logs[0].message == "persisted"
     assert loaded_runs[0].traces[0].span == "scheduler.decide"
     assert loaded_runs[0].audits[0].details["reason"] == "default low risk path"
+    collaboration = build_collaboration_thread_from_audits(
+        [entry.to_dict() for entry in loaded_runs[0].audits],
+        surface="run",
+        target_id=loaded_runs[0].run_id,
+    )
+    assert collaboration is not None
+    assert collaboration.mention_count == 1
+    assert collaboration.comments[0].body == "Need @eng confirmation on the retry plan."
