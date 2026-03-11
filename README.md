@@ -15,7 +15,7 @@ BigClaw is a Symphony/Codex workflow project scaffolded from `workflow.md`.
   - workflow DSL plus workflow engine with workpad journal, orchestration artifacts/canvas, entitlement-aware policy, and acceptance gate
   - observability ledger with logs/trace/artifact/audit capture
   - queue-to-scheduler execution recording with audit reports
-  - auto triage center for failed, pending-approval, and replay-needed runs
+  - auto triage center for failed, pending-approval, and replay-needed runs, with inbox suggestions, similarity evidence, and reviewer feedback tracking
   - benchmark runner with replay, weighted scoring, and version comparison
   - report renderer, issue-close validation gate, pilot ROI scorecard/portfolio renderer, human takeover queue reporting, ledger-driven orchestration portfolio rollups, and HTML overview pages
   - v2 design-system token/component inventory with release-readiness audit reporting
