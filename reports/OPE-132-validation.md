@@ -14,10 +14,10 @@ Delivered an auditable execution role matrix for `BIG-4304` inside the existing 
 
 - Added `ExecutionRole` and role-aware `ExecutionPermissionMatrix` evaluation to `bigclaw.execution_contract`.
 - Extended execution-contract auditing to detect missing required roles, roles without permissions, undefined role permissions, permissions without role ownership, and APIs with no covering role.
-- Rendered role-matrix details in the execution-contract report and exported the new role type from the package root.
+- Rendered role-matrix details in the execution-contract report, exported the new role type from the package root, and aligned the operations API contract builder with the same required role coverage.
 - Updated `docs/issue-plan.md` with `OPE-132` traceability and added regression tests for role serialization, coverage audit, and role-based permission checks.
 
 ## Validation Evidence
 
-- `python3 -m pytest tests/test_execution_contract.py` -> `4 passed in 0.04s`
-- `python3 -m pytest` -> `128 passed in 0.13s`
+- `python3 -m pytest tests/test_execution_contract.py` -> `6 passed in 0.02s`
+- `python3 -m pytest` -> `151 passed in 0.18s`
