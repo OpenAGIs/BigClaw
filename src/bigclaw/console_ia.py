@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from .design_system import ConsoleChromeLibrary, ConsoleTopBar, ConsoleTopBarAudit
 
@@ -209,6 +209,180 @@ class ConsoleIA:
         )
 
 
+@dataclass(frozen=True)
+class SurfacePermissionRule:
+    allowed_roles: List[str] = field(default_factory=list)
+    denied_roles: List[str] = field(default_factory=list)
+    audit_event: str = ""
+
+    @property
+    def missing_coverage(self) -> List[str]:
+        missing: List[str] = []
+        if not self.allowed_roles:
+            missing.append("allowed-roles")
+        if not self.denied_roles:
+            missing.append("denied-roles")
+        if not self.audit_event.strip():
+            missing.append("audit-event")
+        return missing
+
+    @property
+    def complete(self) -> bool:
+        return not self.missing_coverage
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "allowed_roles": list(self.allowed_roles),
+            "denied_roles": list(self.denied_roles),
+            "audit_event": self.audit_event,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "SurfacePermissionRule":
+        return cls(
+            allowed_roles=[str(role) for role in data.get("allowed_roles", [])],
+            denied_roles=[str(role) for role in data.get("denied_roles", [])],
+            audit_event=str(data.get("audit_event", "")),
+        )
+
+
+@dataclass
+class SurfaceInteractionContract:
+    surface_name: str
+    required_action_ids: List[str] = field(default_factory=list)
+    requires_filters: bool = True
+    requires_batch_actions: bool = False
+    required_states: List[str] = field(default_factory=lambda: sorted(REQUIRED_SURFACE_STATES))
+    permission_rule: SurfacePermissionRule = field(default_factory=SurfacePermissionRule)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "surface_name": self.surface_name,
+            "required_action_ids": list(self.required_action_ids),
+            "requires_filters": self.requires_filters,
+            "requires_batch_actions": self.requires_batch_actions,
+            "required_states": list(self.required_states),
+            "permission_rule": self.permission_rule.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "SurfaceInteractionContract":
+        return cls(
+            surface_name=str(data["surface_name"]),
+            required_action_ids=[str(action_id) for action_id in data.get("required_action_ids", [])],
+            requires_filters=bool(data.get("requires_filters", True)),
+            requires_batch_actions=bool(data.get("requires_batch_actions", False)),
+            required_states=[str(state) for state in data.get("required_states", sorted(REQUIRED_SURFACE_STATES))],
+            permission_rule=SurfacePermissionRule.from_dict(dict(data.get("permission_rule", {}))),
+        )
+
+
+@dataclass
+class ConsoleInteractionDraft:
+    name: str
+    version: str
+    architecture: ConsoleIA
+    contracts: List[SurfaceInteractionContract] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "name": self.name,
+            "version": self.version,
+            "architecture": self.architecture.to_dict(),
+            "contracts": [contract.to_dict() for contract in self.contracts],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "ConsoleInteractionDraft":
+        return cls(
+            name=str(data["name"]),
+            version=str(data["version"]),
+            architecture=ConsoleIA.from_dict(dict(data["architecture"])),
+            contracts=[SurfaceInteractionContract.from_dict(item) for item in data.get("contracts", [])],
+        )
+
+
+@dataclass
+class ConsoleInteractionAudit:
+    name: str
+    version: str
+    contract_count: int
+    missing_surfaces: List[str] = field(default_factory=list)
+    surfaces_missing_filters: List[str] = field(default_factory=list)
+    surfaces_missing_actions: Dict[str, List[str]] = field(default_factory=dict)
+    surfaces_missing_batch_actions: List[str] = field(default_factory=list)
+    surfaces_missing_states: Dict[str, List[str]] = field(default_factory=dict)
+    permission_gaps: Dict[str, List[str]] = field(default_factory=dict)
+
+    @property
+    def readiness_score(self) -> float:
+        if self.contract_count == 0:
+            return 0.0
+        penalties = (
+            len(self.missing_surfaces)
+            + len(self.surfaces_missing_filters)
+            + len(self.surfaces_missing_actions)
+            + len(self.surfaces_missing_batch_actions)
+            + len(self.surfaces_missing_states)
+            + len(self.permission_gaps)
+        )
+        score = max(0.0, 100 - ((penalties * 100) / self.contract_count))
+        return round(score, 1)
+
+    @property
+    def release_ready(self) -> bool:
+        return (
+            not self.missing_surfaces
+            and not self.surfaces_missing_filters
+            and not self.surfaces_missing_actions
+            and not self.surfaces_missing_batch_actions
+            and not self.surfaces_missing_states
+            and not self.permission_gaps
+        )
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "name": self.name,
+            "version": self.version,
+            "contract_count": self.contract_count,
+            "missing_surfaces": list(self.missing_surfaces),
+            "surfaces_missing_filters": list(self.surfaces_missing_filters),
+            "surfaces_missing_actions": {
+                name: list(actions) for name, actions in self.surfaces_missing_actions.items()
+            },
+            "surfaces_missing_batch_actions": list(self.surfaces_missing_batch_actions),
+            "surfaces_missing_states": {
+                name: list(states) for name, states in self.surfaces_missing_states.items()
+            },
+            "permission_gaps": {name: list(gaps) for name, gaps in self.permission_gaps.items()},
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "ConsoleInteractionAudit":
+        return cls(
+            name=str(data["name"]),
+            version=str(data["version"]),
+            contract_count=int(data.get("contract_count", 0)),
+            missing_surfaces=[str(name) for name in data.get("missing_surfaces", [])],
+            surfaces_missing_filters=[str(name) for name in data.get("surfaces_missing_filters", [])],
+            surfaces_missing_actions={
+                str(name): [str(action_id) for action_id in actions]
+                for name, actions in dict(data.get("surfaces_missing_actions", {})).items()
+            },
+            surfaces_missing_batch_actions=[
+                str(name) for name in data.get("surfaces_missing_batch_actions", [])
+            ],
+            surfaces_missing_states={
+                str(name): [str(state) for state in states]
+                for name, states in dict(data.get("surfaces_missing_states", {})).items()
+            },
+            permission_gaps={
+                str(name): [str(gap) for gap in gaps]
+                for name, gaps in dict(data.get("permission_gaps", {})).items()
+            },
+        )
+
+
 @dataclass
 class ConsoleIAAudit:
     system_name: str
@@ -336,6 +510,64 @@ class ConsoleIAAuditor:
         )
 
 
+class ConsoleInteractionAuditor:
+    def audit(self, draft: ConsoleInteractionDraft) -> ConsoleInteractionAudit:
+        route_index = draft.architecture.route_index
+        missing_surfaces: List[str] = []
+        surfaces_missing_filters: List[str] = []
+        surfaces_missing_actions: Dict[str, List[str]] = {}
+        surfaces_missing_batch_actions: List[str] = []
+        surfaces_missing_states: Dict[str, List[str]] = {}
+        permission_gaps: Dict[str, List[str]] = {}
+
+        for contract in draft.contracts:
+            surface: Optional[ConsoleSurface] = route_index.get(contract.surface_name)
+            if surface is None:
+                surface = next(
+                    (candidate for candidate in draft.architecture.surfaces if candidate.name == contract.surface_name),
+                    None,
+                )
+            if surface is None:
+                missing_surfaces.append(contract.surface_name)
+                continue
+
+            if contract.requires_filters and not surface.filters:
+                surfaces_missing_filters.append(contract.surface_name)
+
+            available_action_ids = set(surface.action_ids)
+            missing_action_ids = sorted(
+                action_id for action_id in contract.required_action_ids if action_id not in available_action_ids
+            )
+            if missing_action_ids:
+                surfaces_missing_actions[contract.surface_name] = missing_action_ids
+
+            if contract.requires_batch_actions and not any(
+                action.requires_selection for action in surface.top_bar_actions
+            ):
+                surfaces_missing_batch_actions.append(contract.surface_name)
+
+            missing_state_ids = sorted(
+                state_name for state_name in contract.required_states if state_name not in surface.state_names
+            )
+            if missing_state_ids:
+                surfaces_missing_states[contract.surface_name] = missing_state_ids
+
+            if contract.permission_rule.missing_coverage:
+                permission_gaps[contract.surface_name] = contract.permission_rule.missing_coverage
+
+        return ConsoleInteractionAudit(
+            name=draft.name,
+            version=draft.version,
+            contract_count=len(draft.contracts),
+            missing_surfaces=sorted(missing_surfaces),
+            surfaces_missing_filters=sorted(surfaces_missing_filters),
+            surfaces_missing_actions=dict(sorted(surfaces_missing_actions.items())),
+            surfaces_missing_batch_actions=sorted(surfaces_missing_batch_actions),
+            surfaces_missing_states=dict(sorted(surfaces_missing_states.items())),
+            permission_gaps=dict(sorted(permission_gaps.items())),
+        )
+
+
 def render_console_ia_report(architecture: ConsoleIA, audit: ConsoleIAAudit) -> str:
     lines = [
         "# Console Information Architecture Report",
@@ -425,4 +657,82 @@ def render_console_ia_report(architecture: ConsoleIA, audit: ConsoleIAAudit) -> 
     lines.append(
         f"- Unnavigable surfaces: {', '.join(audit.unnavigable_surfaces) if audit.unnavigable_surfaces else 'none'}"
     )
+    return "\n".join(lines) + "\n"
+
+
+def render_console_interaction_report(
+    draft: ConsoleInteractionDraft,
+    audit: ConsoleInteractionAudit,
+) -> str:
+    route_index = draft.architecture.route_index
+    lines = [
+        "# Console Interaction Draft Report",
+        "",
+        f"- Name: {draft.name}",
+        f"- Version: {draft.version}",
+        f"- Critical Pages: {len(draft.contracts)}",
+        f"- Readiness Score: {audit.readiness_score:.1f}",
+        f"- Release Ready: {audit.release_ready}",
+        "",
+        "## Page Coverage",
+        "",
+    ]
+
+    if draft.contracts:
+        for contract in draft.contracts:
+            surface = route_index.get(contract.surface_name)
+            if surface is None:
+                surface = next(
+                    (candidate for candidate in draft.architecture.surfaces if candidate.name == contract.surface_name),
+                    None,
+                )
+            if surface is None:
+                lines.append(f"- {contract.surface_name}: missing surface definition")
+                continue
+
+            required_actions = ", ".join(contract.required_action_ids) or "none"
+            available_actions = ", ".join(surface.action_ids) or "none"
+            batch_mode = "required" if contract.requires_batch_actions else "optional"
+            permission_state = "complete" if contract.permission_rule.complete else "incomplete"
+            lines.append(
+                f"- {contract.surface_name}: route={surface.route} required_actions={required_actions} "
+                f"available_actions={available_actions} filters={len(surface.filters)} "
+                f"states={', '.join(surface.state_names) or 'none'} batch={batch_mode} "
+                f"permissions={permission_state}"
+            )
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Gaps", ""])
+    lines.append(
+        f"- Missing surfaces: {', '.join(audit.missing_surfaces) if audit.missing_surfaces else 'none'}"
+    )
+    lines.append(
+        f"- Pages missing filters: {', '.join(audit.surfaces_missing_filters) if audit.surfaces_missing_filters else 'none'}"
+    )
+    if audit.surfaces_missing_actions:
+        action_gap_text = "; ".join(
+            f"{name}={', '.join(actions)}" for name, actions in sorted(audit.surfaces_missing_actions.items())
+        )
+    else:
+        action_gap_text = "none"
+    lines.append(f"- Pages missing actions: {action_gap_text}")
+    lines.append(
+        "- Pages missing batch actions: "
+        f"{', '.join(audit.surfaces_missing_batch_actions) if audit.surfaces_missing_batch_actions else 'none'}"
+    )
+    if audit.surfaces_missing_states:
+        state_gap_text = "; ".join(
+            f"{name}={', '.join(states)}" for name, states in sorted(audit.surfaces_missing_states.items())
+        )
+    else:
+        state_gap_text = "none"
+    lines.append(f"- Pages missing states: {state_gap_text}")
+    if audit.permission_gaps:
+        permission_gap_text = "; ".join(
+            f"{name}={', '.join(gaps)}" for name, gaps in sorted(audit.permission_gaps.items())
+        )
+    else:
+        permission_gap_text = "none"
+    lines.append(f"- Permission gaps: {permission_gap_text}")
     return "\n".join(lines) + "\n"
