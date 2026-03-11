@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 
 FOUNDATION_CATEGORIES = ("color", "spacing", "typography", "motion", "radius")
@@ -183,6 +183,237 @@ class DesignSystemAudit:
             },
             token_orphans=[str(token) for token in data.get("token_orphans", [])],
         )
+
+
+def _normalize_route_path(path: str) -> str:
+    stripped = path.strip("/")
+    return f"/{stripped}" if stripped else "/"
+
+
+@dataclass(frozen=True)
+class NavigationRoute:
+    path: str
+    screen_id: str
+    title: str
+    nav_node_id: str = ""
+    layout: str = "workspace"
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "path", _normalize_route_path(self.path))
+
+    def to_dict(self) -> Dict[str, str]:
+        return {
+            "path": self.path,
+            "screen_id": self.screen_id,
+            "title": self.title,
+            "nav_node_id": self.nav_node_id,
+            "layout": self.layout,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, str]) -> "NavigationRoute":
+        return cls(
+            path=data["path"],
+            screen_id=data["screen_id"],
+            title=data["title"],
+            nav_node_id=data.get("nav_node_id", ""),
+            layout=data.get("layout", "workspace"),
+        )
+
+
+@dataclass
+class NavigationNode:
+    node_id: str
+    title: str
+    segment: str
+    screen_id: str = ""
+    children: List["NavigationNode"] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "node_id": self.node_id,
+            "title": self.title,
+            "segment": self.segment,
+            "screen_id": self.screen_id,
+            "children": [child.to_dict() for child in self.children],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "NavigationNode":
+        return cls(
+            node_id=str(data["node_id"]),
+            title=str(data["title"]),
+            segment=str(data.get("segment", "")),
+            screen_id=str(data.get("screen_id", "")),
+            children=[cls.from_dict(child) for child in data.get("children", [])],
+        )
+
+
+@dataclass(frozen=True)
+class NavigationEntry:
+    node_id: str
+    title: str
+    path: str
+    depth: int
+    parent_id: str = ""
+    screen_id: str = ""
+
+
+@dataclass
+class InformationArchitectureAudit:
+    total_navigation_nodes: int
+    total_routes: int
+    duplicate_routes: List[str] = field(default_factory=list)
+    missing_route_nodes: Dict[str, str] = field(default_factory=dict)
+    secondary_nav_gaps: Dict[str, List[str]] = field(default_factory=dict)
+    orphan_routes: List[str] = field(default_factory=list)
+
+    @property
+    def healthy(self) -> bool:
+        return not (
+            self.duplicate_routes
+            or self.missing_route_nodes
+            or self.secondary_nav_gaps
+            or self.orphan_routes
+        )
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "total_navigation_nodes": self.total_navigation_nodes,
+            "total_routes": self.total_routes,
+            "duplicate_routes": list(self.duplicate_routes),
+            "missing_route_nodes": dict(self.missing_route_nodes),
+            "secondary_nav_gaps": {
+                section: list(paths) for section, paths in self.secondary_nav_gaps.items()
+            },
+            "orphan_routes": list(self.orphan_routes),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "InformationArchitectureAudit":
+        return cls(
+            total_navigation_nodes=int(data.get("total_navigation_nodes", 0)),
+            total_routes=int(data.get("total_routes", 0)),
+            duplicate_routes=[str(path) for path in data.get("duplicate_routes", [])],
+            missing_route_nodes={
+                str(node_id): str(path) for node_id, path in dict(data.get("missing_route_nodes", {})).items()
+            },
+            secondary_nav_gaps={
+                str(section): [str(path) for path in paths]
+                for section, paths in dict(data.get("secondary_nav_gaps", {})).items()
+            },
+            orphan_routes=[str(path) for path in data.get("orphan_routes", [])],
+        )
+
+
+@dataclass
+class InformationArchitecture:
+    global_nav: List[NavigationNode] = field(default_factory=list)
+    routes: List[NavigationRoute] = field(default_factory=list)
+
+    @property
+    def route_index(self) -> Dict[str, NavigationRoute]:
+        index: Dict[str, NavigationRoute] = {}
+        for route in self.routes:
+            if route.path not in index:
+                index[route.path] = route
+        return index
+
+    @property
+    def navigation_entries(self) -> List[NavigationEntry]:
+        entries: List[NavigationEntry] = []
+        for node in self.global_nav:
+            entries.extend(self._flatten_node(node=node, parent_path="", depth=0, parent_id=""))
+        return entries
+
+    def resolve_route(self, path: str) -> Optional[NavigationRoute]:
+        return self.route_index.get(_normalize_route_path(path))
+
+    def audit(self) -> InformationArchitectureAudit:
+        entries = self.navigation_entries
+        route_counts: Dict[str, int] = {}
+        for route in self.routes:
+            route_counts[route.path] = route_counts.get(route.path, 0) + 1
+
+        duplicate_routes = sorted(path for path, count in route_counts.items() if count > 1)
+        route_index = self.route_index
+        missing_route_nodes = {
+            entry.node_id: entry.path
+            for entry in entries
+            if entry.path not in route_index
+        }
+
+        secondary_nav_gaps: Dict[str, List[str]] = {}
+        for root in self.global_nav:
+            gaps = sorted(self._missing_paths_for_descendants(root, parent_path=""))
+            if gaps:
+                secondary_nav_gaps[root.title] = gaps
+
+        nav_paths = {entry.path for entry in entries}
+        orphan_routes = sorted(route.path for route in self.routes if route.path not in nav_paths)
+
+        return InformationArchitectureAudit(
+            total_navigation_nodes=len(entries),
+            total_routes=len(self.routes),
+            duplicate_routes=duplicate_routes,
+            missing_route_nodes=missing_route_nodes,
+            secondary_nav_gaps=secondary_nav_gaps,
+            orphan_routes=orphan_routes,
+        )
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "global_nav": [node.to_dict() for node in self.global_nav],
+            "routes": [route.to_dict() for route in self.routes],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "InformationArchitecture":
+        return cls(
+            global_nav=[NavigationNode.from_dict(node) for node in data.get("global_nav", [])],
+            routes=[NavigationRoute.from_dict(route) for route in data.get("routes", [])],
+        )
+
+    def _flatten_node(
+        self,
+        node: NavigationNode,
+        parent_path: str,
+        depth: int,
+        parent_id: str,
+    ) -> List[NavigationEntry]:
+        path = self._join_path(parent_path, node.segment)
+        entries = [
+            NavigationEntry(
+                node_id=node.node_id,
+                title=node.title,
+                path=path,
+                depth=depth,
+                parent_id=parent_id,
+                screen_id=node.screen_id,
+            )
+        ]
+        for child in node.children:
+            entries.extend(self._flatten_node(child, parent_path=path, depth=depth + 1, parent_id=node.node_id))
+        return entries
+
+    def _missing_paths_for_descendants(self, node: NavigationNode, parent_path: str) -> List[str]:
+        path = self._join_path(parent_path, node.segment)
+        missing: List[str] = []
+        if node.children and path not in self.route_index:
+            missing.append(path)
+        for child in node.children:
+            missing.extend(self._missing_paths_for_descendants(child, parent_path=path))
+        return missing
+
+    @staticmethod
+    def _join_path(parent_path: str, segment: str) -> str:
+        base = _normalize_route_path(parent_path)
+        part = segment.strip("/")
+        if not part:
+            return base
+        if base == "/":
+            return f"/{part}"
+        return f"{base}/{part}"
 
 
 @dataclass
@@ -499,7 +730,6 @@ def render_design_system_report(system: DesignSystem, audit: DesignSystemAudit) 
     lines.append(f"- Orphan tokens: {', '.join(audit.token_orphans) if audit.token_orphans else 'none'}")
     return "\n".join(lines) + "\n"
 
-
 def render_console_top_bar_report(top_bar: ConsoleTopBar, audit: ConsoleTopBarAudit) -> str:
     lines = [
         "# Console Top Bar Report",
@@ -531,4 +761,52 @@ def render_console_top_bar_report(top_bar: ConsoleTopBar, audit: ConsoleTopBarAu
     lines.append(f"- Documentation complete: {audit.documentation_complete}")
     lines.append(f"- Accessibility complete: {audit.accessibility_complete}")
     lines.append(f"- Cmd/Ctrl+K supported: {audit.command_shortcut_supported}")
+
+
+def render_information_architecture_report(
+    architecture: InformationArchitecture,
+    audit: InformationArchitectureAudit,
+) -> str:
+    lines = [
+        "# Information Architecture Report",
+        "",
+        f"- Navigation Nodes: {audit.total_navigation_nodes}",
+        f"- Routes: {audit.total_routes}",
+        f"- Healthy: {audit.healthy}",
+        "",
+        "## Navigation Tree",
+        "",
+    ]
+
+    if architecture.navigation_entries:
+        for entry in architecture.navigation_entries:
+            indent = "  " * entry.depth
+            lines.append(f"- {indent}{entry.title} ({entry.path}) screen={entry.screen_id or 'none'}")
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Route Registry", ""])
+    if architecture.routes:
+        for route in architecture.routes:
+            lines.append(
+                f"- {route.path}: screen={route.screen_id} title={route.title} nav_node={route.nav_node_id or 'none'}"
+            )
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Audit", ""])
+    lines.append(f"- Duplicate routes: {', '.join(audit.duplicate_routes) if audit.duplicate_routes else 'none'}")
+    if audit.missing_route_nodes:
+        missing = ", ".join(f"{node_id}={path}" for node_id, path in sorted(audit.missing_route_nodes.items()))
+    else:
+        missing = "none"
+    lines.append(f"- Missing route nodes: {missing}")
+    if audit.secondary_nav_gaps:
+        gaps = "; ".join(
+            f"{section}={', '.join(paths)}" for section, paths in sorted(audit.secondary_nav_gaps.items())
+        )
+    else:
+        gaps = "none"
+    lines.append(f"- Secondary nav gaps: {gaps}")
+    lines.append(f"- Orphan routes: {', '.join(audit.orphan_routes) if audit.orphan_routes else 'none'}")
     return "\n".join(lines) + "\n"

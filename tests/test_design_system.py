@@ -10,8 +10,13 @@ from bigclaw.design_system import (
     DesignSystem,
     DesignSystemAudit,
     DesignToken,
+    InformationArchitecture,
+    InformationArchitectureAudit,
+    NavigationNode,
+    NavigationRoute,
     render_console_top_bar_report,
     render_design_system_report,
+    render_information_architecture_report,
 )
 
 
@@ -205,7 +210,6 @@ def test_render_design_system_report_summarizes_inventory_and_gaps():
     assert "- Undefined token refs: none" in report
     assert "- Orphan tokens: none" in report
 
-
 def test_console_top_bar_round_trip_preserves_command_entry_manifest():
     top_bar = ConsoleTopBar(
         name="BigClaw Global Header",
@@ -324,3 +328,163 @@ def test_render_console_top_bar_report_summarizes_global_header_and_shell():
     assert "- search-runs: Search runs [Navigate] shortcut=/" in report
     assert "- Missing capabilities: none" in report
     assert "- Cmd/Ctrl+K supported: True" in report
+
+
+def test_information_architecture_round_trip_and_route_resolution():
+    architecture = InformationArchitecture(
+        global_nav=[
+            NavigationNode(
+                node_id="ops",
+                title="Operations",
+                segment="operations",
+                screen_id="operations-overview",
+                children=[
+                    NavigationNode(
+                        node_id="ops-queue",
+                        title="Queue Control",
+                        segment="queue",
+                        screen_id="queue-control",
+                    ),
+                    NavigationNode(
+                        node_id="ops-triage",
+                        title="Triage Center",
+                        segment="triage",
+                        screen_id="triage-center",
+                    ),
+                ],
+            )
+        ],
+        routes=[
+            NavigationRoute(
+                path="/operations",
+                screen_id="operations-overview",
+                title="Operations",
+                nav_node_id="ops",
+            ),
+            NavigationRoute(
+                path="/operations/queue",
+                screen_id="queue-control",
+                title="Queue Control",
+                nav_node_id="ops-queue",
+            ),
+            NavigationRoute(
+                path="/operations/triage",
+                screen_id="triage-center",
+                title="Triage Center",
+                nav_node_id="ops-triage",
+            ),
+        ],
+    )
+
+    restored = InformationArchitecture.from_dict(architecture.to_dict())
+
+    assert restored == architecture
+    assert [entry.path for entry in architecture.navigation_entries] == [
+        "/operations",
+        "/operations/queue",
+        "/operations/triage",
+    ]
+    assert architecture.resolve_route("operations/queue") == NavigationRoute(
+        path="/operations/queue",
+        screen_id="queue-control",
+        title="Queue Control",
+        nav_node_id="ops-queue",
+    )
+
+
+def test_information_architecture_audit_flags_duplicates_secondary_gaps_and_orphans():
+    architecture = InformationArchitecture(
+        global_nav=[
+            NavigationNode(
+                node_id="workbench",
+                title="Workbench",
+                segment="workbench",
+                screen_id="workbench-home",
+                children=[
+                    NavigationNode(
+                        node_id="workbench-runs",
+                        title="Runs",
+                        segment="runs",
+                        screen_id="run-index",
+                    ),
+                    NavigationNode(
+                        node_id="workbench-replays",
+                        title="Replays",
+                        segment="replays",
+                        screen_id="replay-index",
+                    ),
+                ],
+            )
+        ],
+        routes=[
+            NavigationRoute(
+                path="/workbench/runs",
+                screen_id="run-index",
+                title="Runs",
+                nav_node_id="workbench-runs",
+            ),
+            NavigationRoute(
+                path="/workbench/runs",
+                screen_id="run-index-v2",
+                title="Runs V2",
+                nav_node_id="workbench-runs",
+            ),
+            NavigationRoute(
+                path="/settings",
+                screen_id="settings-home",
+                title="Settings",
+                nav_node_id="settings",
+            ),
+        ],
+    )
+
+    audit = architecture.audit()
+
+    assert audit.healthy is False
+    assert audit.duplicate_routes == ["/workbench/runs"]
+    assert audit.missing_route_nodes == {
+        "workbench": "/workbench",
+        "workbench-replays": "/workbench/replays",
+    }
+    assert audit.secondary_nav_gaps == {"Workbench": ["/workbench"]}
+    assert audit.orphan_routes == ["/settings"]
+
+
+def test_information_architecture_audit_round_trip_and_report():
+    audit = InformationArchitectureAudit(
+        total_navigation_nodes=3,
+        total_routes=2,
+        duplicate_routes=["/workbench/runs"],
+        missing_route_nodes={"workbench": "/workbench"},
+        secondary_nav_gaps={"Workbench": ["/workbench"]},
+        orphan_routes=["/settings"],
+    )
+
+    restored = InformationArchitectureAudit.from_dict(audit.to_dict())
+
+    assert restored == audit
+
+    architecture = InformationArchitecture(
+        global_nav=[
+            NavigationNode(node_id="workbench", title="Workbench", segment="workbench", screen_id="workbench-home")
+        ],
+        routes=[
+            NavigationRoute(
+                path="/settings",
+                screen_id="settings-home",
+                title="Settings",
+                nav_node_id="settings",
+            )
+        ],
+    )
+
+    report = render_information_architecture_report(architecture, audit)
+
+    assert "# Information Architecture Report" in report
+    assert "- Healthy: False" in report
+    assert "- Workbench (/workbench) screen=workbench-home" in report
+    assert "- /settings: screen=settings-home title=Settings nav_node=settings" in report
+    assert "- Duplicate routes: /workbench/runs" in report
+    assert "- Missing route nodes: workbench=/workbench" in report
+    assert "- Secondary nav gaps: Workbench=/workbench" in report
+    assert "- Orphan routes: /settings" in report
