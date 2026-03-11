@@ -185,6 +185,7 @@ class TriageFinding:
     status: str
     reason: str
     next_action: str
+    actions: List["ConsoleAction"] = field(default_factory=list)
 
 
 @dataclass
@@ -293,6 +294,7 @@ class TakeoverRequest:
     status: str
     reason: str
     required_approvals: List[str] = field(default_factory=list)
+    actions: List["ConsoleAction"] = field(default_factory=list)
 
 
 @dataclass
@@ -387,6 +389,7 @@ class OrchestrationCanvas:
     included_usage_units: int = 0
     overage_usage_units: int = 0
     overage_cost_usd: float = 0.0
+    actions: List["ConsoleAction"] = field(default_factory=list)
 
     @property
     def recommendation(self) -> str:
@@ -466,6 +469,19 @@ class OrchestrationPortfolio:
         if self.active_handoffs:
             return "manage-cross-team-flow"
         return "monitor"
+
+
+@dataclass(frozen=True)
+class ConsoleAction:
+    action_id: str
+    label: str
+    target: str
+    enabled: bool = True
+    reason: str = ""
+
+    @property
+    def state(self) -> str:
+        return "enabled" if self.enabled else "disabled"
 
 
 def render_issue_validation_report(issue_id: str, version: str, environment: str, summary: str) -> str:
@@ -637,6 +653,56 @@ def evaluate_issue_closure(
         report_path=resolved_path,
     )
 
+def build_console_actions(
+    target: str,
+    *,
+    allow_retry: bool = True,
+    retry_reason: str = "",
+    allow_pause: bool = True,
+    pause_reason: str = "",
+    allow_reassign: bool = True,
+    reassign_reason: str = "",
+    allow_escalate: bool = True,
+    escalate_reason: str = "",
+) -> List[ConsoleAction]:
+    return [
+        ConsoleAction("drill-down", "Drill Down", target),
+        ConsoleAction("export", "Export", target),
+        ConsoleAction("add-note", "Add Note", target),
+        ConsoleAction("escalate", "Escalate", target, enabled=allow_escalate, reason=escalate_reason),
+        ConsoleAction("retry", "Retry", target, enabled=allow_retry, reason=retry_reason),
+        ConsoleAction("pause", "Pause", target, enabled=allow_pause, reason=pause_reason),
+        ConsoleAction("reassign", "Reassign", target, enabled=allow_reassign, reason=reassign_reason),
+        ConsoleAction("audit", "Audit Trail", target),
+    ]
+
+
+def render_console_actions(actions: List[ConsoleAction]) -> str:
+    if not actions:
+        return "none"
+
+    rendered: List[str] = []
+    for action in actions:
+        detail = f"{action.label} [{action.action_id}] state={action.state} target={action.target}"
+        if action.reason:
+            detail += f" reason={action.reason}"
+        rendered.append(detail)
+    return "; ".join(rendered)
+
+
+def _default_canvas_actions(canvas: OrchestrationCanvas) -> List[ConsoleAction]:
+    return build_console_actions(
+        canvas.run_id,
+        allow_retry=canvas.handoff_status != "pending",
+        retry_reason="" if canvas.handoff_status != "pending" else "pending handoff must be resolved before retry",
+        allow_pause=canvas.handoff_status != "completed",
+        pause_reason="" if canvas.handoff_status != "completed" else "completed handoff runs cannot be paused",
+        allow_reassign=canvas.handoff_team != "none",
+        reassign_reason="" if canvas.handoff_team != "none" else "reassign is available after a handoff exists",
+        allow_escalate=canvas.upgrade_required,
+        escalate_reason="" if canvas.upgrade_required else "escalate when policy requires an entitlement or approval upgrade",
+    )
+
 
 def build_auto_triage_center(
     runs: List[TaskRun],
@@ -666,6 +732,15 @@ def build_auto_triage_center(
                 status=run.status,
                 reason=reason,
                 next_action=next_action,
+                actions=build_console_actions(
+                    run.run_id,
+                    allow_retry=severity == "critical" and owner != "security",
+                    retry_reason="" if severity == "critical" and owner != "security" else "retry available after owner review",
+                    allow_pause=run.status not in {"failed", "completed", "approved"},
+                    pause_reason="" if run.status not in {"failed", "completed", "approved"} else "completed or failed runs cannot be paused",
+                    allow_reassign=owner != "security",
+                    reassign_reason="" if owner != "security" else "security-owned findings stay with the security queue",
+                ),
             )
         )
         inbox.append(
@@ -751,7 +826,7 @@ def render_auto_triage_center_report(
         for finding in center.findings:
             lines.append(
                 f"- {finding.run_id}: severity={finding.severity} owner={finding.owner} status={finding.status} "
-                f"task={finding.task_id} reason={finding.reason} next={finding.next_action}"
+                f"task={finding.task_id} reason={finding.reason} next={finding.next_action} actions={render_console_actions(finding.actions)}"
             )
     else:
         lines.append("- None")
@@ -782,10 +857,36 @@ def build_orchestration_portfolio(
     period: str = "current",
     takeover_queue: Optional[TakeoverQueue] = None,
 ) -> OrchestrationPortfolio:
+    normalized_canvases = [
+        canvas
+        if canvas.actions
+        else OrchestrationCanvas(
+            task_id=canvas.task_id,
+            run_id=canvas.run_id,
+            collaboration_mode=canvas.collaboration_mode,
+            departments=canvas.departments,
+            required_approvals=canvas.required_approvals,
+            tier=canvas.tier,
+            upgrade_required=canvas.upgrade_required,
+            blocked_departments=canvas.blocked_departments,
+            handoff_team=canvas.handoff_team,
+            handoff_status=canvas.handoff_status,
+            handoff_reason=canvas.handoff_reason,
+            active_tools=canvas.active_tools,
+            entitlement_status=canvas.entitlement_status,
+            billing_model=canvas.billing_model,
+            estimated_cost_usd=canvas.estimated_cost_usd,
+            included_usage_units=canvas.included_usage_units,
+            overage_usage_units=canvas.overage_usage_units,
+            overage_cost_usd=canvas.overage_cost_usd,
+            actions=_default_canvas_actions(canvas),
+        )
+        for canvas in canvases
+    ]
     return OrchestrationPortfolio(
         name=name,
         period=period,
-        canvases=sorted(canvases, key=lambda canvas: canvas.run_id),
+        canvases=sorted(normalized_canvases, key=lambda canvas: canvas.run_id),
         takeover_queue=takeover_queue,
     )
 
@@ -839,7 +940,8 @@ def render_orchestration_portfolio_report(
                 f"- {canvas.run_id}: mode={canvas.collaboration_mode} tier={canvas.tier} "
                 f"entitlement={canvas.entitlement_status} billing={canvas.billing_model} "
                 f"estimated_cost_usd={canvas.estimated_cost_usd:.2f} overage_cost_usd={canvas.overage_cost_usd:.2f} "
-                f"upgrade_required={canvas.upgrade_required} handoff={canvas.handoff_team} recommendation={canvas.recommendation}"
+                f"upgrade_required={canvas.upgrade_required} handoff={canvas.handoff_team} recommendation={canvas.recommendation} "
+                f"actions={render_console_actions(canvas.actions)}"
             )
     else:
         lines.append("- None")
@@ -874,7 +976,7 @@ def render_orchestration_overview_page(portfolio: OrchestrationPortfolio) -> str
     )
     runs = render_items(
         [
-            f"<strong>{escape(canvas.run_id)}</strong> · mode={escape(canvas.collaboration_mode)} · tier={escape(canvas.tier)} · entitlement={escape(canvas.entitlement_status)} · billing={escape(canvas.billing_model)} · cost=${canvas.estimated_cost_usd:.2f} · handoff={escape(canvas.handoff_team)} · recommendation={escape(canvas.recommendation)}"
+            f"<strong>{escape(canvas.run_id)}</strong> · mode={escape(canvas.collaboration_mode)} · tier={escape(canvas.tier)} · entitlement={escape(canvas.entitlement_status)} · billing={escape(canvas.billing_model)} · cost=${canvas.estimated_cost_usd:.2f} · handoff={escape(canvas.handoff_team)} · recommendation={escape(canvas.recommendation)} · actions={escape(render_console_actions(canvas.actions or _default_canvas_actions(canvas)))}"
             for canvas in portfolio.canvases
         ]
     )
@@ -965,6 +1067,17 @@ def build_orchestration_canvas_from_ledger_entry(entry: dict) -> OrchestrationCa
         included_usage_units=int(policy_details.get("included_usage_units", 0) or 0),
         overage_usage_units=int(policy_details.get("overage_usage_units", 0) or 0),
         overage_cost_usd=float(policy_details.get("overage_cost_usd", 0.0) or 0.0),
+        actions=build_console_actions(
+            str(entry.get("run_id", "")),
+            allow_retry=bool(handoff_audit is None or handoff_audit.get("outcome") != "pending"),
+            retry_reason="" if handoff_audit is None or handoff_audit.get("outcome") != "pending" else "pending handoff must be resolved before retry",
+            allow_pause=bool(handoff_audit is None or handoff_audit.get("outcome") != "completed"),
+            pause_reason="" if handoff_audit is None or handoff_audit.get("outcome") != "completed" else "completed handoff runs cannot be paused",
+            allow_reassign=handoff_audit is not None,
+            reassign_reason="" if handoff_audit is not None else "reassign is available after a handoff exists",
+            allow_escalate=bool(policy_audit is not None and policy_audit.get("outcome") == "upgrade-required"),
+            escalate_reason="" if policy_audit is not None and policy_audit.get("outcome") == "upgrade-required" else "escalate when policy requires an entitlement or approval upgrade",
+        ),
     )
 
 
@@ -993,6 +1106,17 @@ def build_orchestration_canvas(
         included_usage_units=policy.included_usage_units if policy is not None else 0,
         overage_usage_units=policy.overage_usage_units if policy is not None else 0,
         overage_cost_usd=policy.overage_cost_usd if policy is not None else 0.0,
+        actions=build_console_actions(
+            run.run_id,
+            allow_retry=handoff_request is None or handoff_request.status != "pending",
+            retry_reason="" if handoff_request is None or handoff_request.status != "pending" else "pending handoff must be resolved before retry",
+            allow_pause=run.status not in {"failed", "completed", "approved"},
+            pause_reason="" if run.status not in {"failed", "completed", "approved"} else "completed or failed runs cannot be paused",
+            allow_reassign=handoff_request is not None,
+            reassign_reason="" if handoff_request is not None else "reassign is available after a handoff exists",
+            allow_escalate=policy is not None and policy.upgrade_required,
+            escalate_reason="" if policy is not None and policy.upgrade_required else "escalate when policy requires an entitlement or approval upgrade",
+        ),
     )
 
 
@@ -1022,6 +1146,10 @@ def render_orchestration_canvas(canvas: OrchestrationCanvas) -> str:
         f"- Overage Usage Units: {canvas.overage_usage_units}",
         f"- Overage Cost (USD): {canvas.overage_cost_usd:.2f}",
         f"- Handoff Reason: {canvas.handoff_reason or 'none'}",
+        "",
+        "## Actions",
+        "",
+        f"- {render_console_actions(canvas.actions)}",
     ]
     return "\n".join(lines) + "\n"
 
@@ -1066,6 +1194,16 @@ def build_takeover_queue_from_ledger(
                 status=str(handoff_audit.get("outcome", "pending")),
                 reason=str(details.get("reason", entry.get("summary", "handoff requested"))),
                 required_approvals=[str(value) for value in details.get("required_approvals", [])],
+                actions=build_console_actions(
+                    str(entry.get("run_id", "")),
+                    allow_retry=False,
+                    retry_reason="retry is blocked while takeover is pending",
+                    allow_pause=str(handoff_audit.get("outcome", "pending")) == "pending",
+                    pause_reason="" if str(handoff_audit.get("outcome", "pending")) == "pending" else "only pending takeovers can be paused",
+                    allow_reassign=True,
+                    allow_escalate=str(details.get("target_team", "")) != "security",
+                    escalate_reason="" if str(details.get("target_team", "")) != "security" else "security takeovers are already escalated",
+                ),
             )
         )
 
@@ -1101,7 +1239,7 @@ def render_takeover_queue_report(
             approvals = ",".join(request.required_approvals) if request.required_approvals else "none"
             lines.append(
                 f"- {request.run_id}: team={request.target_team} status={request.status} task={request.task_id} "
-                f"approvals={approvals} reason={request.reason}"
+                f"approvals={approvals} reason={request.reason} actions={render_console_actions(request.actions)}"
             )
     else:
         lines.append("- None")
@@ -1293,6 +1431,13 @@ def _similarity_reason(run: TaskRun, candidate: TaskRun) -> str:
 
 
 def render_task_run_report(run: TaskRun) -> str:
+    actions = build_console_actions(
+        run.run_id,
+        allow_retry=run.status in {"failed", "needs-approval"},
+        retry_reason="" if run.status in {"failed", "needs-approval"} else "retry is available for failed or approval-blocked runs",
+        allow_pause=run.status not in {"failed", "completed", "approved"},
+        pause_reason="" if run.status not in {"failed", "completed", "approved"} else "completed or failed runs cannot be paused",
+    )
     lines = [
         "# Task Run Report",
         "",
@@ -1352,6 +1497,7 @@ def render_task_run_report(run: TaskRun) -> str:
     lines.append(f"- Git Push Succeeded: {run.closeout.git_push_succeeded}")
     lines.append(f"- Git Push Output: {run.closeout.git_push_output or 'None'}")
     lines.append(f"- Git Log -1 --stat Output: {run.closeout.git_log_stat_output or 'None'}")
+    lines.extend(["", "## Actions", "", f"- {render_console_actions(actions)}"])
 
     return "\n".join(lines) + "\n"
 
@@ -1361,6 +1507,13 @@ def render_task_run_detail_page(run: TaskRun) -> str:
     if run.status in {"failed", "rejected"}:
         status_tone = "danger"
 
+    actions = build_console_actions(
+        run.run_id,
+        allow_retry=run.status in {"failed", "needs-approval"},
+        retry_reason="" if run.status in {"failed", "needs-approval"} else "retry is available for failed or approval-blocked runs",
+        allow_pause=run.status not in {"failed", "completed", "approved"},
+        pause_reason="" if run.status not in {"failed", "completed", "approved"} else "completed or failed runs cannot be paused",
+    )
     timeline_events = sorted(
         [
             *[
@@ -1418,7 +1571,6 @@ def render_task_run_detail_page(run: TaskRun) -> str:
         ],
         key=lambda event: event.timestamp,
     )
-
     artifacts = [
         RunDetailResource(
             name=entry.name,
@@ -1441,6 +1593,10 @@ def render_task_run_detail_page(run: TaskRun) -> str:
       <h2>Closeout</h2>
       <p>Validation evidence: {escape(', '.join(run.closeout.validation_evidence) if run.closeout.validation_evidence else 'None recorded.')}</p>
       <p class="meta">git push succeeded={escape(str(run.closeout.git_push_succeeded))} | git log captured={escape(str(bool(run.closeout.git_log_stat_output.strip())))} | complete={escape(str(run.closeout.complete))}</p>
+    </section>
+    <section class="surface">
+      <h2>Actions</h2>
+      <p>{escape(render_console_actions(actions))}</p>
     </section>
     """
 

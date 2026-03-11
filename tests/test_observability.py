@@ -71,6 +71,8 @@ def test_render_task_run_report(tmp_path: Path):
     assert "## Audit" in report
     assert "## Closeout" in report
     assert "Git Push Succeeded: True" in report
+    assert "## Actions" in report
+    assert "Retry [retry] state=disabled target=run-2 reason=retry is available for failed or approval-blocked runs" in report
 
 
 def test_render_task_run_detail_page(tmp_path: Path):
@@ -103,6 +105,8 @@ def test_render_task_run_detail_page(tmp_path: Path):
     assert "detail page ready" in page
     assert "Closeout" in page
     assert "complete" in page
+    assert "Actions" in page
+    assert "Pause [pause] state=disabled target=run-3 reason=completed or failed runs cannot be paused" in page
 
 
 def test_observability_ledger_load_runs_round_trips_entries(tmp_path: Path):

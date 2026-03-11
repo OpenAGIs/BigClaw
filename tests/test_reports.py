@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from bigclaw.reports import (
+    ConsoleAction,
     DocumentationArtifact,
     LaunchChecklistItem,
     OrchestrationCanvas,
@@ -65,6 +66,14 @@ def test_render_and_write_report(tmp_path: Path):
     text = out.read_text()
     assert "BIG-101" in text
     assert "pass" in text
+
+
+def test_console_action_state_reflects_enabled_flag():
+    enabled = ConsoleAction("retry", "Retry", "run-1")
+    disabled = ConsoleAction("pause", "Pause", "run-1", enabled=False, reason="already completed")
+
+    assert enabled.state == "enabled"
+    assert disabled.state == "disabled"
 
 
 def test_render_pilot_scorecard_includes_roi_and_recommendation():
@@ -322,12 +331,17 @@ def test_auto_triage_center_prioritizes_failed_and_pending_runs():
     assert center.inbox[0].suggestions[0].confidence >= 0.55
     assert center.findings[0].next_action == "replay run and inspect tool failures"
     assert center.findings[1].next_action == "request approval and queue security review"
+    assert center.findings[0].actions[4].enabled is True
+    assert center.findings[1].actions[4].enabled is False
+    assert center.findings[1].actions[6].enabled is False
     assert "Flagged Runs: 2" in report
     assert "Inbox Size: 2" in report
     assert "Severity Mix: critical=1 high=1 medium=0" in report
     assert "Feedback Loop: accepted=0 rejected=0 pending=2" in report
     assert "run-browser: severity=critical owner=engineering status=failed" in report
     assert "run-risk: severity=high owner=security status=needs-approval" in report
+    assert "actions=Drill Down [drill-down]" in report
+    assert "Retry [retry] state=disabled target=run-risk reason=retry available after owner review" in report
 
 def test_auto_triage_center_report_renders_shared_view_partial_state():
     task = Task(task_id="OPE-94-risk", source="linear", title="Prod approval", description="")
@@ -462,10 +476,13 @@ def test_takeover_queue_from_ledger_groups_pending_handoffs():
     assert queue.approval_count == 2
     assert queue.recommendation == "expedite-security-review"
     assert [request.run_id for request in queue.requests] == ["run-ops", "run-sec"]
+    assert queue.requests[0].actions[3].enabled is True
+    assert queue.requests[1].actions[3].enabled is False
     assert "Pending Requests: 2" in report
     assert "Team Mix: operations=1 security=1" in report
     assert "run-sec: team=security status=pending task=OPE-66-sec approvals=security-review" in report
     assert "run-ops: team=operations status=pending task=OPE-66-ops approvals=ops-manager" in report
+    assert "Escalate [escalate] state=disabled target=run-sec reason=security takeovers are already escalated" in report
 
 
 def test_takeover_queue_report_renders_shared_view_error_state():
@@ -517,6 +534,8 @@ def test_orchestration_canvas_summarizes_policy_and_handoff():
     assert isinstance(canvas, OrchestrationCanvas)
     assert canvas.recommendation == "resolve-entitlement-gap"
     assert canvas.active_tools == ["browser"]
+    assert canvas.actions[3].enabled is True
+    assert canvas.actions[4].enabled is False
     assert "# Orchestration Canvas" in report
     assert "- Tier: standard" in report
     assert "- Entitlement Status: upgrade-required" in report
@@ -524,6 +543,8 @@ def test_orchestration_canvas_summarizes_policy_and_handoff():
     assert "- Estimated Cost (USD): 7.00" in report
     assert "- Handoff Team: operations" in report
     assert "- Recommendation: resolve-entitlement-gap" in report
+    assert "## Actions" in report
+    assert "Escalate [escalate] state=enabled target=run-canvas" in report
 
 
 def test_orchestration_portfolio_rolls_up_canvas_and_takeover_state():
@@ -618,6 +639,7 @@ def test_orchestration_portfolio_rolls_up_canvas_and_takeover_state():
     assert "- Overage Cost (USD): 4.00" in report
     assert "- Takeover Queue: pending=2 recommendation=expedite-security-review" in report
     assert "- run-a: mode=cross-functional tier=premium entitlement=included billing=premium-included estimated_cost_usd=4.50 overage_cost_usd=0.00 upgrade_required=False handoff=security" in report
+    assert "actions=Drill Down [drill-down]" in report
 
 
 def test_orchestration_portfolio_report_renders_shared_view_empty_state():
@@ -678,6 +700,7 @@ def test_render_orchestration_overview_page():
     assert "premium-included" in page
     assert "pending=1 recommendation=expedite-security-review" in page
     assert "run-a" in page
+    assert "actions=Drill Down [drill-down]" in page
 
 
 def test_build_orchestration_canvas_from_ledger_entry_extracts_audit_state():
@@ -737,6 +760,8 @@ def test_build_orchestration_canvas_from_ledger_entry_extracts_audit_state():
     assert canvas.blocked_departments == ["security", "customer-success"]
     assert canvas.handoff_team == "operations"
     assert canvas.active_tools == ["browser"]
+    assert canvas.actions[3].enabled is True
+    assert canvas.actions[4].enabled is False
 
 
 def test_build_orchestration_portfolio_from_ledger_rolls_up_entries():

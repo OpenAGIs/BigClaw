@@ -47,9 +47,25 @@ def test_queue_control_center_summarizes_queue_and_execution_media(tmp_path: Pat
     assert center.waiting_approval_runs == 1
     assert center.blocked_tasks == ["BIG-802-1"]
     assert center.queued_tasks == ["BIG-802-1", "BIG-802-2", "BIG-802-3"]
+    assert [action.action_id for action in center.actions["BIG-802-1"]] == [
+        "drill-down",
+        "export",
+        "add-note",
+        "escalate",
+        "retry",
+        "pause",
+        "reassign",
+        "audit",
+    ]
+    assert center.actions["BIG-802-1"][3].enabled is True
+    assert center.actions["BIG-802-1"][4].enabled is True
+    assert center.actions["BIG-802-1"][5].enabled is False
     assert "# Queue Control Center" in report
     assert "- Waiting Approval Runs: 1" in report
     assert "- BIG-802-1" in report
+    assert "BIG-802-1: Drill Down [drill-down]" in report
+    assert "Escalate [escalate] state=enabled" in report
+    assert "Pause [pause] state=disabled target=BIG-802-1 reason=approval-blocked tasks should be escalated instead of paused" in report
 
 
 def test_queue_control_center_renders_shared_view_empty_state(tmp_path: Path) -> None:

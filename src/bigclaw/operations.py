@@ -7,7 +7,13 @@ from .models import Task
 from .queue import PersistentTaskQueue
 
 from .evaluation import BenchmarkSuiteResult
-from .reports import SharedViewContext, render_shared_view_context, write_report
+from .reports import (
+    SharedViewContext,
+    build_console_actions,
+    render_console_actions,
+    render_shared_view_context,
+    write_report,
+)
 
 
 STATUS_COMPLETE = {"approved", "accepted", "completed", "succeeded"}
@@ -88,6 +94,7 @@ class QueueControlCenter:
     waiting_approval_runs: int
     blocked_tasks: List[str] = field(default_factory=list)
     queued_tasks: List[str] = field(default_factory=list)
+    actions: Dict[str, List] = field(default_factory=dict)
 
 
 @dataclass
@@ -305,6 +312,18 @@ class OperationsAnalytics:
             waiting_approval_runs=waiting_approval_runs,
             blocked_tasks=blocked_tasks,
             queued_tasks=[task.task_id for task in queued_tasks],
+            actions={
+                task.task_id: build_console_actions(
+                    task.task_id,
+                    allow_retry=task.task_id in blocked_tasks,
+                    retry_reason="" if task.task_id in blocked_tasks else "retry is reserved for blocked queue items",
+                    allow_pause=task.task_id not in blocked_tasks,
+                    pause_reason="" if task.task_id not in blocked_tasks else "approval-blocked tasks should be escalated instead of paused",
+                    allow_escalate=task.task_id in blocked_tasks,
+                    escalate_reason="" if task.task_id in blocked_tasks else "escalate is reserved for blocked queue items",
+                )
+                for task in queued_tasks
+            },
         )
 
     def build_engineering_overview(
@@ -582,6 +601,14 @@ def render_queue_control_center(
     if center.blocked_tasks:
         for task_id in center.blocked_tasks:
             lines.append(f"- {task_id}")
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Actions", ""])
+    if center.actions:
+        for task_id in center.queued_tasks:
+            actions = center.actions.get(task_id, [])
+            lines.append(f"- {task_id}: {render_console_actions(actions)}")
     else:
         lines.append("- None")
 
