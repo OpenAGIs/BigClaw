@@ -17,6 +17,17 @@ from .design_system import (
     render_console_top_bar_report,
     render_design_system_report,
 )
+from .console_ia import (
+    ConsoleIA,
+    ConsoleIAAudit,
+    ConsoleIAAuditor,
+    ConsoleSurface,
+    FilterDefinition,
+    GlobalAction,
+    NavigationItem,
+    SurfaceState,
+    render_console_ia_report,
+)
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
 from .mapping import map_source_issue_to_task
@@ -124,6 +135,15 @@ __all__ = [
     "DesignToken",
     "render_console_top_bar_report",
     "render_design_system_report",
+    "ConsoleIA",
+    "ConsoleIAAudit",
+    "ConsoleIAAuditor",
+    "ConsoleSurface",
+    "FilterDefinition",
+    "GlobalAction",
+    "NavigationItem",
+    "SurfaceState",
+    "render_console_ia_report",
     "RiskFactor",
     "RiskScore",
     "RiskScorer",
