@@ -23,6 +23,7 @@ BigClaw is a Symphony/Codex workflow project scaffolded from `workflow.md`.
   - narrative report studio with section composing plus markdown, HTML, and plain-text export
   - v2 design-system token/component inventory with release-readiness audit reporting
   - v4 scope-freeze and backlog-governance board with auditable exceptions plus required run closeout evidence
+  - v3 candidate backlog planning with deterministic entry-gate scoring, classification, and protected v2 resource-lane isolation checks
 - `tests/`: unit tests
 
 ## Local test

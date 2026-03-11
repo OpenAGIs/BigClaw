@@ -280,6 +280,8 @@ from .planning import (
     EvidenceLink,
     EntryGate,
     EntryGateDecision,
+    ResourceIsolationDecision,
+    ResourceIsolationPolicy,
     render_candidate_backlog_report,
 )
 from .ui_review import (
@@ -556,6 +558,8 @@ __all__ = [
     "EvidenceLink",
     "EntryGate",
     "EntryGateDecision",
+    "ResourceIsolationDecision",
+    "ResourceIsolationPolicy",
     "render_candidate_backlog_report",
     "InteractionFlow",
     "OpenQuestion",

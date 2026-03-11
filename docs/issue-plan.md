@@ -45,6 +45,21 @@
 - Require role coverage to be audited against defined permissions and API requirements so missing personas or unowned permissions fail readiness deterministically.
 - Keep the role matrix serializable and renderable so downstream review artifacts can show who may approve, operate, and inspect execution flows.
 
+### Issue `OPE-141` / `BIG-4503`: v3 backlog草案与资源隔离
+
+#### Goal
+- Classify each v3 candidate explicitly and prevent draft work from consuming protected v2 resource lanes while the validated baseline remains in service.
+
+#### Resource isolation contract
+- Every candidate must declare a `classification` so the draft backlog can be reviewed by release role instead of only by theme or owner.
+- Every candidate must declare one or more `resource_lanes` so planning can detect when v3 work is borrowing protected v2 capacity.
+- The planner must reject unclassified candidates, disallowed classifications, and any candidate that touches a protected v2 lane unless that candidate is explicitly exception-listed.
+
+#### Delivery shape
+- Add a deterministic resource-isolation policy and audit to the planning module alongside the existing entry gate.
+- Render classification and resource-lane findings in the backlog report so the same artifact covers readiness and isolation review.
+- Keep the policy, tests, docs, and validation report aligned so `OPE-141` stays traceable in-repo.
+
 ## BigClaw PRD v2.0
 
 ### Epic

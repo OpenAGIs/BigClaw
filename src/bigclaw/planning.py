@@ -46,6 +46,8 @@ class CandidateEntry:
     evidence_links: List[EvidenceLink] = field(default_factory=list)
     dependencies: List[str] = field(default_factory=list)
     blockers: List[str] = field(default_factory=list)
+    classification: str = ""
+    resource_lanes: List[str] = field(default_factory=list)
 
     @property
     def readiness_score(self) -> int:
@@ -73,6 +75,8 @@ class CandidateEntry:
             "evidence_links": [link.to_dict() for link in self.evidence_links],
             "dependencies": list(self.dependencies),
             "blockers": list(self.blockers),
+            "classification": self.classification,
+            "resource_lanes": list(self.resource_lanes),
         }
 
     @classmethod
@@ -90,6 +94,8 @@ class CandidateEntry:
             evidence_links=[EvidenceLink.from_dict(item) for item in data.get("evidence_links", [])],
             dependencies=[str(item) for item in data.get("dependencies", [])],
             blockers=[str(item) for item in data.get("blockers", [])],
+            classification=str(data.get("classification", "")),
+            resource_lanes=[str(item) for item in data.get("resource_lanes", [])],
         )
 
 
@@ -210,6 +216,88 @@ class EntryGateDecision:
         )
 
 
+@dataclass(frozen=True)
+class ResourceIsolationPolicy:
+    policy_id: str
+    name: str
+    protected_v2_lanes: List[str] = field(default_factory=list)
+    allowed_classifications: List[str] = field(default_factory=list)
+    exception_candidate_ids: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "policy_id": self.policy_id,
+            "name": self.name,
+            "protected_v2_lanes": list(self.protected_v2_lanes),
+            "allowed_classifications": list(self.allowed_classifications),
+            "exception_candidate_ids": list(self.exception_candidate_ids),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "ResourceIsolationPolicy":
+        return cls(
+            policy_id=str(data["policy_id"]),
+            name=str(data["name"]),
+            protected_v2_lanes=[str(item) for item in data.get("protected_v2_lanes", [])],
+            allowed_classifications=[str(item) for item in data.get("allowed_classifications", [])],
+            exception_candidate_ids=[str(item) for item in data.get("exception_candidate_ids", [])],
+        )
+
+
+@dataclass
+class ResourceIsolationDecision:
+    policy_id: str
+    passed: bool
+    classified_candidate_ids: List[str] = field(default_factory=list)
+    unclassified_candidate_ids: List[str] = field(default_factory=list)
+    disallowed_classifications: Dict[str, str] = field(default_factory=dict)
+    conflicting_lanes: Dict[str, List[str]] = field(default_factory=dict)
+
+    @property
+    def conflicting_candidate_ids(self) -> List[str]:
+        return sorted(self.conflicting_lanes.keys())
+
+    @property
+    def summary(self) -> str:
+        status = "PASS" if self.passed else "HOLD"
+        return (
+            f"{status}: classified={len(self.classified_candidate_ids)} "
+            f"unclassified={len(self.unclassified_candidate_ids)} "
+            f"disallowed={len(self.disallowed_classifications)} "
+            f"conflicts={len(self.conflicting_lanes)}"
+        )
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "policy_id": self.policy_id,
+            "passed": self.passed,
+            "classified_candidate_ids": list(self.classified_candidate_ids),
+            "unclassified_candidate_ids": list(self.unclassified_candidate_ids),
+            "disallowed_classifications": dict(self.disallowed_classifications),
+            "conflicting_lanes": {
+                candidate_id: list(lanes)
+                for candidate_id, lanes in self.conflicting_lanes.items()
+            },
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "ResourceIsolationDecision":
+        return cls(
+            policy_id=str(data["policy_id"]),
+            passed=bool(data["passed"]),
+            classified_candidate_ids=[str(item) for item in data.get("classified_candidate_ids", [])],
+            unclassified_candidate_ids=[str(item) for item in data.get("unclassified_candidate_ids", [])],
+            disallowed_classifications={
+                str(candidate_id): str(classification)
+                for candidate_id, classification in dict(data.get("disallowed_classifications", {})).items()
+            },
+            conflicting_lanes={
+                str(candidate_id): [str(lane) for lane in lanes]
+                for candidate_id, lanes in dict(data.get("conflicting_lanes", {})).items()
+            },
+        )
+
+
 class CandidatePlanner:
     def evaluate_gate(
         self,
@@ -270,11 +358,53 @@ class CandidatePlanner:
             )
         return findings
 
+    def audit_resource_isolation(
+        self,
+        backlog: CandidateBacklog,
+        policy: ResourceIsolationPolicy,
+    ) -> ResourceIsolationDecision:
+        allowed_classifications = set(policy.allowed_classifications)
+        protected_lanes = set(policy.protected_v2_lanes)
+        exceptions = set(policy.exception_candidate_ids)
+
+        classified_candidate_ids: List[str] = []
+        unclassified_candidate_ids: List[str] = []
+        disallowed_classifications: Dict[str, str] = {}
+        conflicting_lanes: Dict[str, List[str]] = {}
+
+        for candidate in backlog.candidates:
+            classification = candidate.classification.strip()
+            if not classification:
+                unclassified_candidate_ids.append(candidate.candidate_id)
+            elif allowed_classifications and classification not in allowed_classifications:
+                disallowed_classifications[candidate.candidate_id] = classification
+            else:
+                classified_candidate_ids.append(candidate.candidate_id)
+
+            if candidate.candidate_id in exceptions:
+                continue
+
+            conflicts = [lane for lane in candidate.resource_lanes if lane in protected_lanes]
+            if conflicts:
+                conflicting_lanes[candidate.candidate_id] = conflicts
+
+        passed = not unclassified_candidate_ids and not disallowed_classifications and not conflicting_lanes
+        return ResourceIsolationDecision(
+            policy_id=policy.policy_id,
+            passed=passed,
+            classified_candidate_ids=classified_candidate_ids,
+            unclassified_candidate_ids=unclassified_candidate_ids,
+            disallowed_classifications=disallowed_classifications,
+            conflicting_lanes=conflicting_lanes,
+        )
+
 
 def render_candidate_backlog_report(
     backlog: CandidateBacklog,
     gate: EntryGate,
     decision: EntryGateDecision,
+    policy: ResourceIsolationPolicy = None,
+    isolation_decision: ResourceIsolationDecision = None,
 ) -> str:
     lines = [
         "# V3 Candidate Backlog Report",
@@ -298,7 +428,9 @@ def render_candidate_backlog_report(
             f"theme={candidate.theme} outcome={candidate.outcome} "
             f"capabilities={','.join(candidate.capabilities) or 'none'} "
             f"evidence={','.join(candidate.evidence) or 'none'} "
-            f"blockers={','.join(candidate.blockers) or 'none'}"
+            f"blockers={','.join(candidate.blockers) or 'none'} "
+            f"classification={candidate.classification or 'unclassified'} "
+            f"resource_lanes={','.join(candidate.resource_lanes) or 'none'}"
         )
         lines.append(f"  validation={candidate.validation_command}")
         if candidate.dependencies:
@@ -321,4 +453,33 @@ def render_candidate_backlog_report(
             f"- Baseline findings: {', '.join(decision.baseline_findings) or 'none'}",
         ]
     )
+    if policy is not None and isolation_decision is not None:
+        lines.extend(
+            [
+                "",
+                "## Resource Isolation",
+                f"- Policy: {policy.name}",
+                f"- Decision: {isolation_decision.summary}",
+                f"- Classified candidates: {', '.join(isolation_decision.classified_candidate_ids) or 'none'}",
+                f"- Unclassified candidates: {', '.join(isolation_decision.unclassified_candidate_ids) or 'none'}",
+                "- Disallowed classifications: "
+                + (
+                    ", ".join(
+                        f"{candidate_id}={classification}"
+                        for candidate_id, classification in sorted(isolation_decision.disallowed_classifications.items())
+                    )
+                    if isolation_decision.disallowed_classifications
+                    else "none"
+                ),
+                "- Protected lane conflicts: "
+                + (
+                    ", ".join(
+                        f"{candidate_id}={','.join(lanes)}"
+                        for candidate_id, lanes in sorted(isolation_decision.conflicting_lanes.items())
+                    )
+                    if isolation_decision.conflicting_lanes
+                    else "none"
+                ),
+            ]
+        )
     return "\n".join(lines)

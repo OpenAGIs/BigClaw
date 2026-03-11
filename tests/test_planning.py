@@ -5,6 +5,8 @@ from bigclaw.planning import (
     EvidenceLink,
     EntryGate,
     EntryGateDecision,
+    ResourceIsolationDecision,
+    ResourceIsolationPolicy,
     render_candidate_backlog_report,
 )
 from bigclaw.governance import ScopeFreezeAudit
@@ -34,6 +36,8 @@ def test_candidate_backlog_round_trip_preserves_manifest_shape() -> None:
                         note="role-permission and audit readiness coverage",
                     )
                 ],
+                classification="release-core",
+                resource_lanes=["v3-console-release"],
             )
         ],
     )
@@ -60,6 +64,8 @@ def test_candidate_backlog_ranks_ready_items_ahead_of_blocked_work() -> None:
                 capabilities=["runtime-hardening"],
                 evidence=["benchmark"],
                 blockers=["missing rollback plan"],
+                classification="platform-risk",
+                resource_lanes=["v2-runtime-core"],
             ),
             CandidateEntry(
                 candidate_id="candidate-ready",
@@ -71,6 +77,15 @@ def test_candidate_backlog_ranks_ready_items_ahead_of_blocked_work() -> None:
                 validation_command="python3 -m pytest tests/test_design_system.py -q",
                 capabilities=["release-gate", "reporting"],
                 evidence=["acceptance-suite", "validation-report"],
+                evidence_links=[
+                    EvidenceLink(
+                        label="ui-acceptance",
+                        target="tests/test_design_system.py",
+                        capability="release-gate",
+                    )
+                ],
+                classification="release-core",
+                resource_lanes=["v3-console-release"],
             ),
         ],
     )
@@ -96,6 +111,8 @@ def test_entry_gate_evaluation_requires_ready_candidates_capabilities_and_eviden
                 validation_command="python3 -m pytest tests/test_design_system.py -q",
                 capabilities=["release-gate", "reporting"],
                 evidence=["acceptance-suite", "validation-report"],
+                classification="release-core",
+                resource_lanes=["v3-console-release"],
             ),
             CandidateEntry(
                 candidate_id="candidate-ops-hardening",
@@ -107,6 +124,8 @@ def test_entry_gate_evaluation_requires_ready_candidates_capabilities_and_eviden
                 validation_command="python3 -m pytest tests/test_operations.py -q",
                 capabilities=["ops-control"],
                 evidence=["weekly-review"],
+                classification="operations-core",
+                resource_lanes=["v3-ops-control"],
             ),
             CandidateEntry(
                 candidate_id="candidate-orchestration",
@@ -118,6 +137,8 @@ def test_entry_gate_evaluation_requires_ready_candidates_capabilities_and_eviden
                 validation_command="python3 -m pytest tests/test_orchestration.py -q",
                 capabilities=["commercialization", "handoff"],
                 evidence=["pilot-evidence"],
+                classification="commercialization-core",
+                resource_lanes=["v3-orchestration-rollout"],
             ),
         ],
     )
@@ -237,6 +258,89 @@ def test_entry_gate_decision_round_trip_preserves_findings() -> None:
     assert restored == decision
 
 
+def test_resource_isolation_policy_and_decision_round_trip_preserve_findings() -> None:
+    policy = ResourceIsolationPolicy(
+        policy_id="policy-v3-isolation",
+        name="V3 Backlog Isolation",
+        protected_v2_lanes=["v2-runtime-core", "v2-console-ops"],
+        allowed_classifications=["release-core", "operations-core", "commercialization-core"],
+        exception_candidate_ids=["candidate-exception"],
+    )
+    decision = ResourceIsolationDecision(
+        policy_id="policy-v3-isolation",
+        passed=False,
+        classified_candidate_ids=["candidate-release-control"],
+        unclassified_candidate_ids=["candidate-unassigned"],
+        disallowed_classifications={"candidate-risk": "legacy"},
+        conflicting_lanes={"candidate-runtime": ["v2-runtime-core"]},
+    )
+
+    assert ResourceIsolationPolicy.from_dict(policy.to_dict()) == policy
+    assert ResourceIsolationDecision.from_dict(decision.to_dict()) == decision
+
+
+def test_resource_isolation_audit_flags_unclassified_and_v2_lane_conflicts() -> None:
+    backlog = CandidateBacklog(
+        epic_id="BIG-EPIC-20",
+        title="v4.0 v3候选与进入条件",
+        version="v4.0-v3",
+        candidates=[
+            CandidateEntry(
+                candidate_id="candidate-release-control",
+                title="Release control center",
+                theme="console-governance",
+                priority="P0",
+                owner="platform-ui",
+                outcome="Unify console release gates and promotion evidence.",
+                validation_command="python3 -m pytest tests/test_design_system.py -q",
+                capabilities=["release-gate"],
+                evidence=["validation-report"],
+                classification="release-core",
+                resource_lanes=["v3-console-release"],
+            ),
+            CandidateEntry(
+                candidate_id="candidate-runtime-borrow",
+                title="Borrow v2 runtime lane",
+                theme="runtime",
+                priority="P1",
+                owner="runtime",
+                outcome="Attempt shared rollout using protected runtime staff.",
+                validation_command="python3 -m pytest tests/test_runtime.py -q",
+                capabilities=["runtime-hardening"],
+                evidence=["benchmark"],
+                classification="operations-core",
+                resource_lanes=["v2-runtime-core"],
+            ),
+            CandidateEntry(
+                candidate_id="candidate-unassigned",
+                title="Unassigned backlog draft",
+                theme="planning",
+                priority="P2",
+                owner="pm",
+                outcome="Draft backlog slice without a final class.",
+                validation_command="python3 -m pytest tests/test_planning.py -q",
+                capabilities=["planning"],
+                evidence=["validation-report"],
+                resource_lanes=["v3-planning"],
+            ),
+        ],
+    )
+    policy = ResourceIsolationPolicy(
+        policy_id="policy-v3-isolation",
+        name="V3 Backlog Isolation",
+        protected_v2_lanes=["v2-runtime-core", "v2-console-ops"],
+        allowed_classifications=["release-core", "operations-core", "commercialization-core"],
+    )
+
+    decision = CandidatePlanner().audit_resource_isolation(backlog, policy)
+
+    assert decision.passed is False
+    assert decision.classified_candidate_ids == ["candidate-release-control", "candidate-runtime-borrow"]
+    assert decision.unclassified_candidate_ids == ["candidate-unassigned"]
+    assert decision.conflicting_candidate_ids == ["candidate-runtime-borrow"]
+    assert decision.conflicting_lanes == {"candidate-runtime-borrow": ["v2-runtime-core"]}
+
+
 def test_render_candidate_backlog_report_summarizes_backlog_and_gate_findings() -> None:
     backlog = CandidateBacklog(
         epic_id="BIG-EPIC-20",
@@ -260,6 +364,8 @@ def test_render_candidate_backlog_report_summarizes_backlog_and_gate_findings() 
                         capability="release-gate",
                     )
                 ],
+                classification="release-core",
+                resource_lanes=["v3-console-release"],
             )
         ],
     )
@@ -280,8 +386,15 @@ def test_render_candidate_backlog_report_summarizes_backlog_and_gate_findings() 
             total_items=5,
         ),
     )
+    policy = ResourceIsolationPolicy(
+        policy_id="policy-v3-isolation",
+        name="V3 Backlog Isolation",
+        protected_v2_lanes=["v2-runtime-core"],
+        allowed_classifications=["release-core"],
+    )
+    isolation_decision = CandidatePlanner().audit_resource_isolation(backlog, policy)
 
-    report = render_candidate_backlog_report(backlog, gate, decision)
+    report = render_candidate_backlog_report(backlog, gate, decision, policy, isolation_decision)
 
     assert "# V3 Candidate Backlog Report" in report
     assert "- Epic: BIG-EPIC-20 v4.0 v3候选与进入条件" in report
@@ -295,6 +408,9 @@ def test_render_candidate_backlog_report_summarizes_backlog_and_gate_findings() 
     assert "- Missing evidence: none" in report
     assert "- Baseline ready: True" in report
     assert "- Baseline findings: none" in report
+    assert "classification=release-core resource_lanes=v3-console-release" in report
+    assert "## Resource Isolation" in report
+    assert "- Protected lane conflicts: none" in report
 
 
 def test_candidate_entry_round_trip_preserves_evidence_links() -> None:
@@ -322,6 +438,8 @@ def test_candidate_entry_round_trip_preserves_evidence_links() -> None:
                 note="team saved views and digest evidence",
             ),
         ],
+        classification="operations-core",
+        resource_lanes=["v3-ops-control"],
     )
 
     restored = CandidateEntry.from_dict(candidate.to_dict())
