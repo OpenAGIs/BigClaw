@@ -3,12 +3,18 @@ from .queue import PersistentTaskQueue
 from .scheduler import Scheduler, SchedulerDecision, ExecutionRecord
 from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
 from .design_system import (
+    CommandAction,
     ComponentLibrary,
     ComponentSpec,
     ComponentVariant,
+    ConsoleChromeLibrary,
+    ConsoleCommandEntry,
+    ConsoleTopBar,
+    ConsoleTopBarAudit,
     DesignSystem,
     DesignSystemAudit,
     DesignToken,
+    render_console_top_bar_report,
     render_design_system_report,
 )
 from .risk import RiskFactor, RiskScore, RiskScorer
@@ -105,12 +111,18 @@ __all__ = [
     "GitHubConnector",
     "LinearConnector",
     "JiraConnector",
+    "CommandAction",
     "ComponentLibrary",
     "ComponentSpec",
     "ComponentVariant",
+    "ConsoleChromeLibrary",
+    "ConsoleCommandEntry",
+    "ConsoleTopBar",
+    "ConsoleTopBarAudit",
     "DesignSystem",
     "DesignSystemAudit",
     "DesignToken",
+    "render_console_top_bar_report",
     "render_design_system_report",
     "RiskFactor",
     "RiskScore",

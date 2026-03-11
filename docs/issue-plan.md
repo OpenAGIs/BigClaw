@@ -30,11 +30,13 @@
 
 #### Child issues
 - `OPE-86` / `BIG-1103`: 设计系统与组件库 — P1, v2 design system and component library foundation.
+- `OPE-93` / `BIG-1302`: 顶部全局区与命令入口 — P0, global header with search, context switching, alert entry, and command shell.
 
 #### Delivery shape
 - Treat design tokens as a platform asset rather than per-page styling so future console slices can audit consistency and release readiness.
 - Model component readiness around documentation, accessibility coverage, and interactive-state completeness to keep operational UI slices shippable.
 - Expose a renderer that can summarize inventory, gaps, and orphan tokens for design reviews and launch gates.
+- Add governed console-chrome slices for global navigation patterns so search, time/environment switching, alerts, and command entry can be audited before they reach product surfaces.
 
 ### Epic 9: 工程运营系统 (`OPE-65`)
 

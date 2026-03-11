@@ -1,10 +1,16 @@
 from bigclaw.design_system import (
+    CommandAction,
     ComponentLibrary,
     ComponentSpec,
     ComponentVariant,
+    ConsoleChromeLibrary,
+    ConsoleCommandEntry,
+    ConsoleTopBar,
+    ConsoleTopBarAudit,
     DesignSystem,
     DesignSystemAudit,
     DesignToken,
+    render_console_top_bar_report,
     render_design_system_report,
 )
 
@@ -198,3 +204,123 @@ def test_render_design_system_report_summarizes_inventory_and_gaps():
     assert "- Missing interaction states: none" in report
     assert "- Undefined token refs: none" in report
     assert "- Orphan tokens: none" in report
+
+
+def test_console_top_bar_round_trip_preserves_command_entry_manifest():
+    top_bar = ConsoleTopBar(
+        name="BigClaw Global Header",
+        search_placeholder="Search runs, issues, commands",
+        environment_options=["Production", "Staging"],
+        time_range_options=["24h", "7d", "30d"],
+        alert_channels=["approvals", "sla"],
+        documentation_complete=True,
+        accessibility_requirements=["keyboard-navigation", "screen-reader-label", "focus-visible"],
+        command_entry=ConsoleCommandEntry(
+            trigger_label="Command Menu",
+            placeholder="Type a command or jump to a run",
+            shortcut="Cmd+K / Ctrl+K",
+            recent_queries_enabled=True,
+            commands=[
+                CommandAction(id="search-runs", title="Search runs", section="Navigate", shortcut="/"),
+                CommandAction(id="open-alerts", title="Open alerts", section="Monitor"),
+            ],
+        ),
+    )
+
+    restored = ConsoleTopBar.from_dict(top_bar.to_dict())
+
+    assert restored == top_bar
+
+
+def test_console_top_bar_audit_checks_ticket_capabilities_and_shortcuts():
+    top_bar = ConsoleTopBar(
+        name="BigClaw Global Header",
+        search_placeholder="Search runs, issues, commands",
+        environment_options=["Production", "Staging"],
+        time_range_options=["24h", "7d", "30d"],
+        alert_channels=["approvals", "sla"],
+        documentation_complete=True,
+        accessibility_requirements=["keyboard-navigation", "screen-reader-label", "focus-visible"],
+        command_entry=ConsoleCommandEntry(
+            trigger_label="Command Menu",
+            placeholder="Type a command or jump to a run",
+            shortcut="Cmd+K / Ctrl+K",
+            commands=[
+                CommandAction(id="search-runs", title="Search runs", section="Navigate"),
+                CommandAction(id="switch-env", title="Switch environment", section="Context"),
+            ],
+        ),
+    )
+
+    audit = ConsoleChromeLibrary().audit_top_bar(top_bar)
+
+    assert audit == ConsoleTopBarAudit(
+        name="BigClaw Global Header",
+        missing_capabilities=[],
+        documentation_complete=True,
+        accessibility_complete=True,
+        command_shortcut_supported=True,
+        command_count=2,
+    )
+    assert audit.release_ready is True
+
+
+def test_console_top_bar_audit_flags_missing_global_entry_capabilities():
+    top_bar = ConsoleTopBar(
+        name="Incomplete Header",
+        search_placeholder="",
+        environment_options=["Production"],
+        time_range_options=["24h"],
+        command_entry=ConsoleCommandEntry(
+            trigger_label="",
+            placeholder="",
+            shortcut="Cmd+K",
+        ),
+        documentation_complete=False,
+        accessibility_requirements=["focus-visible"],
+    )
+
+    audit = ConsoleChromeLibrary().audit_top_bar(top_bar)
+
+    assert audit.missing_capabilities == [
+        "global-search",
+        "time-range-switch",
+        "environment-switch",
+        "alert-entry",
+        "command-shell",
+    ]
+    assert audit.documentation_complete is False
+    assert audit.accessibility_complete is False
+    assert audit.command_shortcut_supported is False
+    assert audit.release_ready is False
+
+
+def test_render_console_top_bar_report_summarizes_global_header_and_shell():
+    top_bar = ConsoleTopBar(
+        name="BigClaw Global Header",
+        search_placeholder="Search runs, issues, commands",
+        environment_options=["Production", "Staging"],
+        time_range_options=["24h", "7d", "30d"],
+        alert_channels=["approvals", "sla"],
+        documentation_complete=True,
+        accessibility_requirements=["keyboard-navigation", "screen-reader-label", "focus-visible"],
+        command_entry=ConsoleCommandEntry(
+            trigger_label="Command Menu",
+            placeholder="Type a command or jump to a run",
+            shortcut="Cmd+K / Ctrl+K",
+            commands=[
+                CommandAction(id="search-runs", title="Search runs", section="Navigate", shortcut="/"),
+                CommandAction(id="open-alerts", title="Open alerts", section="Monitor"),
+            ],
+        ),
+    )
+    audit = ConsoleChromeLibrary().audit_top_bar(top_bar)
+
+    report = render_console_top_bar_report(top_bar, audit)
+
+    assert "# Console Top Bar Report" in report
+    assert "- Command Shortcut: Cmd+K / Ctrl+K" in report
+    assert "- Release Ready: True" in report
+    assert "- search-runs: Search runs [Navigate] shortcut=/" in report
+    assert "- Missing capabilities: none" in report
+    assert "- Cmd/Ctrl+K supported: True" in report

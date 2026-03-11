@@ -186,6 +186,160 @@ class DesignSystemAudit:
 
 
 @dataclass
+class CommandAction:
+    id: str
+    title: str
+    section: str
+    shortcut: str = ""
+
+    def to_dict(self) -> Dict[str, str]:
+        return {
+            "id": self.id,
+            "title": self.title,
+            "section": self.section,
+            "shortcut": self.shortcut,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, str]) -> "CommandAction":
+        return cls(
+            id=data["id"],
+            title=data["title"],
+            section=data["section"],
+            shortcut=data.get("shortcut", ""),
+        )
+
+
+@dataclass
+class ConsoleCommandEntry:
+    trigger_label: str
+    placeholder: str
+    shortcut: str
+    commands: List[CommandAction] = field(default_factory=list)
+    recent_queries_enabled: bool = False
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "trigger_label": self.trigger_label,
+            "placeholder": self.placeholder,
+            "shortcut": self.shortcut,
+            "commands": [command.to_dict() for command in self.commands],
+            "recent_queries_enabled": self.recent_queries_enabled,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "ConsoleCommandEntry":
+        return cls(
+            trigger_label=str(data["trigger_label"]),
+            placeholder=str(data["placeholder"]),
+            shortcut=str(data["shortcut"]),
+            commands=[CommandAction.from_dict(command) for command in data.get("commands", [])],
+            recent_queries_enabled=bool(data.get("recent_queries_enabled", False)),
+        )
+
+
+@dataclass
+class ConsoleTopBar:
+    name: str
+    search_placeholder: str
+    environment_options: List[str] = field(default_factory=list)
+    time_range_options: List[str] = field(default_factory=list)
+    alert_channels: List[str] = field(default_factory=list)
+    command_entry: ConsoleCommandEntry = field(
+        default_factory=lambda: ConsoleCommandEntry(trigger_label="", placeholder="", shortcut="")
+    )
+    documentation_complete: bool = False
+    accessibility_requirements: List[str] = field(default_factory=list)
+
+    @property
+    def has_global_search(self) -> bool:
+        return bool(self.search_placeholder.strip())
+
+    @property
+    def has_environment_switch(self) -> bool:
+        return len(self.environment_options) >= 2
+
+    @property
+    def has_time_range_switch(self) -> bool:
+        return len(self.time_range_options) >= 2
+
+    @property
+    def has_alert_entry(self) -> bool:
+        return bool(self.alert_channels)
+
+    @property
+    def has_command_shell(self) -> bool:
+        return bool(self.command_entry.trigger_label.strip()) and bool(self.command_entry.commands)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "name": self.name,
+            "search_placeholder": self.search_placeholder,
+            "environment_options": list(self.environment_options),
+            "time_range_options": list(self.time_range_options),
+            "alert_channels": list(self.alert_channels),
+            "command_entry": self.command_entry.to_dict(),
+            "documentation_complete": self.documentation_complete,
+            "accessibility_requirements": list(self.accessibility_requirements),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "ConsoleTopBar":
+        return cls(
+            name=str(data["name"]),
+            search_placeholder=str(data.get("search_placeholder", "")),
+            environment_options=[str(option) for option in data.get("environment_options", [])],
+            time_range_options=[str(option) for option in data.get("time_range_options", [])],
+            alert_channels=[str(channel) for channel in data.get("alert_channels", [])],
+            command_entry=ConsoleCommandEntry.from_dict(dict(data.get("command_entry", {}))),
+            documentation_complete=bool(data.get("documentation_complete", False)),
+            accessibility_requirements=[
+                str(requirement) for requirement in data.get("accessibility_requirements", [])
+            ],
+        )
+
+
+@dataclass
+class ConsoleTopBarAudit:
+    name: str
+    missing_capabilities: List[str] = field(default_factory=list)
+    documentation_complete: bool = False
+    accessibility_complete: bool = False
+    command_shortcut_supported: bool = False
+    command_count: int = 0
+
+    @property
+    def release_ready(self) -> bool:
+        return (
+            not self.missing_capabilities
+            and self.documentation_complete
+            and self.accessibility_complete
+            and self.command_shortcut_supported
+        )
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "name": self.name,
+            "missing_capabilities": list(self.missing_capabilities),
+            "documentation_complete": self.documentation_complete,
+            "accessibility_complete": self.accessibility_complete,
+            "command_shortcut_supported": self.command_shortcut_supported,
+            "command_count": self.command_count,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "ConsoleTopBarAudit":
+        return cls(
+            name=str(data["name"]),
+            missing_capabilities=[str(item) for item in data.get("missing_capabilities", [])],
+            documentation_complete=bool(data.get("documentation_complete", False)),
+            accessibility_complete=bool(data.get("accessibility_complete", False)),
+            command_shortcut_supported=bool(data.get("command_shortcut_supported", False)),
+            command_count=int(data.get("command_count", 0)),
+        )
+
+
+@dataclass
 class DesignSystem:
     name: str
     version: str
@@ -260,6 +414,39 @@ class ComponentLibrary:
         )
 
 
+class ConsoleChromeLibrary:
+    REQUIRED_SHORTCUTS = {"cmd+k", "ctrl+k"}
+    REQUIRED_ACCESSIBILITY = {"keyboard-navigation", "screen-reader-label", "focus-visible"}
+
+    def audit_top_bar(self, top_bar: ConsoleTopBar) -> ConsoleTopBarAudit:
+        missing_capabilities: List[str] = []
+        if not top_bar.has_global_search:
+            missing_capabilities.append("global-search")
+        if not top_bar.has_time_range_switch:
+            missing_capabilities.append("time-range-switch")
+        if not top_bar.has_environment_switch:
+            missing_capabilities.append("environment-switch")
+        if not top_bar.has_alert_entry:
+            missing_capabilities.append("alert-entry")
+        if not top_bar.has_command_shell:
+            missing_capabilities.append("command-shell")
+
+        normalized_shortcuts = {
+            item.strip().lower().replace(" ", "")
+            for item in top_bar.command_entry.shortcut.split("/")
+            if item.strip()
+        }
+        accessibility_complete = self.REQUIRED_ACCESSIBILITY.issubset(set(top_bar.accessibility_requirements))
+        return ConsoleTopBarAudit(
+            name=top_bar.name,
+            missing_capabilities=missing_capabilities,
+            documentation_complete=top_bar.documentation_complete,
+            accessibility_complete=accessibility_complete,
+            command_shortcut_supported=self.REQUIRED_SHORTCUTS.issubset(normalized_shortcuts),
+            command_count=len(top_bar.command_entry.commands),
+        )
+
+
 def render_design_system_report(system: DesignSystem, audit: DesignSystemAudit) -> str:
     lines = [
         "# Design System Report",
@@ -310,4 +497,38 @@ def render_design_system_report(system: DesignSystem, audit: DesignSystemAudit) 
         undefined_refs = "none"
     lines.append(f"- Undefined token refs: {undefined_refs}")
     lines.append(f"- Orphan tokens: {', '.join(audit.token_orphans) if audit.token_orphans else 'none'}")
+    return "\n".join(lines) + "\n"
+
+
+def render_console_top_bar_report(top_bar: ConsoleTopBar, audit: ConsoleTopBarAudit) -> str:
+    lines = [
+        "# Console Top Bar Report",
+        "",
+        f"- Name: {top_bar.name}",
+        f"- Global Search: {top_bar.has_global_search}",
+        f"- Environment Switch: {', '.join(top_bar.environment_options) if top_bar.environment_options else 'none'}",
+        f"- Time Range Switch: {', '.join(top_bar.time_range_options) if top_bar.time_range_options else 'none'}",
+        f"- Alert Entry: {', '.join(top_bar.alert_channels) if top_bar.alert_channels else 'none'}",
+        f"- Command Trigger: {top_bar.command_entry.trigger_label or 'none'}",
+        f"- Command Shortcut: {top_bar.command_entry.shortcut or 'none'}",
+        f"- Command Count: {audit.command_count}",
+        f"- Release Ready: {audit.release_ready}",
+        "",
+        "## Command Palette",
+        "",
+    ]
+    if top_bar.command_entry.commands:
+        for command in top_bar.command_entry.commands:
+            shortcut = command.shortcut or "none"
+            lines.append(f"- {command.id}: {command.title} [{command.section}] shortcut={shortcut}")
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Gaps", ""])
+    lines.append(
+        f"- Missing capabilities: {', '.join(audit.missing_capabilities) if audit.missing_capabilities else 'none'}"
+    )
+    lines.append(f"- Documentation complete: {audit.documentation_complete}")
+    lines.append(f"- Accessibility complete: {audit.accessibility_complete}")
+    lines.append(f"- Cmd/Ctrl+K supported: {audit.command_shortcut_supported}")
     return "\n".join(lines) + "\n"
