@@ -138,6 +138,7 @@ class WeeklyOperationsArtifacts:
     root_dir: str
     weekly_report_path: str
     dashboard_path: str
+    metric_spec_path: Optional[str] = None
     regression_center_path: Optional[str] = None
     queue_control_path: Optional[str] = None
     version_center_path: Optional[str] = None
@@ -214,6 +215,40 @@ class EngineeringOverview:
     funnel: List[EngineeringFunnelStage] = field(default_factory=list)
     blockers: List[EngineeringOverviewBlocker] = field(default_factory=list)
     activities: List[EngineeringActivity] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class OperationsMetricDefinition:
+    metric_id: str
+    label: str
+    unit: str
+    direction: str
+    formula: str
+    description: str
+    source_fields: List[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class OperationsMetricValue:
+    metric_id: str
+    label: str
+    value: float
+    display_value: str
+    numerator: float
+    denominator: float
+    unit: str
+    evidence: List[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class OperationsMetricSpec:
+    name: str
+    generated_at: str
+    period_start: str
+    period_end: str
+    timezone_name: str
+    definitions: List[OperationsMetricDefinition] = field(default_factory=list)
+    values: List[OperationsMetricValue] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -419,6 +454,72 @@ class DashboardBuilderAudit:
 
 
 class OperationsAnalytics:
+    METRIC_DEFINITIONS = (
+        OperationsMetricDefinition(
+            metric_id="runs-today",
+            label="Runs Today",
+            unit="runs",
+            direction="up",
+            formula="count(run.started_at within [period_start, period_end])",
+            description="Number of runs that started inside the reporting day window.",
+            source_fields=["started_at"],
+        ),
+        OperationsMetricDefinition(
+            metric_id="avg-lead-time",
+            label="Avg Lead Time",
+            unit="m",
+            direction="down",
+            formula="sum(cycle_minutes for runs with started_at and ended_at) / measured_runs",
+            description="Average elapsed minutes from run start to run end for runs with complete timestamps.",
+            source_fields=["started_at", "ended_at"],
+        ),
+        OperationsMetricDefinition(
+            metric_id="intervention-rate",
+            label="Intervention Rate",
+            unit="%",
+            direction="down",
+            formula="100 * actionable_runs / total_runs",
+            description="Share of runs that require operator intervention because they ended in an actionable status.",
+            source_fields=["status"],
+        ),
+        OperationsMetricDefinition(
+            metric_id="sla",
+            label="SLA",
+            unit="%",
+            direction="up",
+            formula="100 * compliant_runs / measured_runs where compliant_runs have cycle_minutes <= sla_target_minutes",
+            description="Share of measured runs that met the SLA target.",
+            source_fields=["started_at", "ended_at"],
+        ),
+        OperationsMetricDefinition(
+            metric_id="regression",
+            label="Regression",
+            unit="cases",
+            direction="down",
+            formula="count(current.compare(baseline) deltas < 0 or pass->fail transitions)",
+            description="Number of benchmark cases that regressed against the provided baseline suite.",
+            source_fields=["benchmark.current", "benchmark.baseline"],
+        ),
+        OperationsMetricDefinition(
+            metric_id="risk",
+            label="Risk",
+            unit="score",
+            direction="down",
+            formula="sum(resolved_run_risk_score) / runs_with_risk where risk_score.total wins over risk_level mapping low=25, medium=60, high=90",
+            description="Average per-run risk score from explicit risk scores or normalized risk levels.",
+            source_fields=["risk_score.total", "risk_level"],
+        ),
+        OperationsMetricDefinition(
+            metric_id="spend",
+            label="Spend",
+            unit="USD",
+            direction="down",
+            formula="sum(first non-null of spend_usd, cost_usd, spend, cost across runs)",
+            description="Total reported run spend in USD over the reporting window.",
+            source_fields=["spend_usd", "cost_usd", "spend", "cost"],
+        ),
+    )
+
     def summarize_runs(
         self,
         runs: Sequence[dict],
@@ -461,6 +562,151 @@ class OperationsAnalytics:
             sla_breach_count=sla_breach_count,
             average_cycle_minutes=average_cycle_minutes,
             top_blockers=blockers,
+        )
+
+    def build_metric_spec(
+        self,
+        runs: Sequence[dict],
+        *,
+        period_start: str,
+        period_end: str,
+        timezone_name: str = "UTC",
+        generated_at: Optional[str] = None,
+        sla_target_minutes: int = 60,
+        current_suite: Optional[BenchmarkSuiteResult] = None,
+        baseline_suite: Optional[BenchmarkSuiteResult] = None,
+    ) -> OperationsMetricSpec:
+        period_start_dt = self._parse_ts(period_start)
+        period_end_dt = self._parse_ts(period_end)
+        if period_start_dt is None or period_end_dt is None or period_end_dt < period_start_dt:
+            raise ValueError("period_start and period_end must be valid ISO-8601 timestamps with period_end >= period_start")
+
+        runs_today = 0
+        lead_time_sum = 0.0
+        lead_time_count = 0
+        actionable_runs = 0
+        sla_compliant_runs = 0
+        risk_sum = 0.0
+        risk_count = 0
+        spend_total = 0.0
+
+        for run in runs:
+            started_at = self._parse_ts(str(run.get("started_at", "")))
+            if started_at is not None and period_start_dt <= started_at <= period_end_dt:
+                runs_today += 1
+
+            cycle_minutes = self._cycle_minutes(run)
+            if cycle_minutes is not None:
+                lead_time_sum += cycle_minutes
+                lead_time_count += 1
+                if cycle_minutes <= sla_target_minutes:
+                    sla_compliant_runs += 1
+
+            if str(run.get("status", "unknown")) in STATUS_ACTIONABLE:
+                actionable_runs += 1
+
+            risk_score = self._resolve_run_risk_score(run)
+            if risk_score is not None:
+                risk_sum += risk_score
+                risk_count += 1
+
+            spend_total += self._resolve_run_spend(run)
+
+        regression_findings = self.analyze_regressions(current_suite, baseline_suite) if current_suite is not None else []
+        total_runs = len(runs)
+        avg_lead = round(lead_time_sum / lead_time_count, 1) if lead_time_count else 0.0
+        intervention_rate = round((actionable_runs / total_runs) * 100, 1) if total_runs else 0.0
+        sla_value = round((sla_compliant_runs / lead_time_count) * 100, 1) if lead_time_count else 0.0
+        avg_risk = round(risk_sum / risk_count, 1) if risk_count else 0.0
+        spend_total = round(spend_total, 2)
+
+        values = [
+            OperationsMetricValue(
+                metric_id="runs-today",
+                label="Runs Today",
+                value=float(runs_today),
+                display_value=str(runs_today),
+                numerator=float(runs_today),
+                denominator=float(total_runs),
+                unit="runs",
+                evidence=[f"{runs_today} of {total_runs} runs started inside the reporting window."],
+            ),
+            OperationsMetricValue(
+                metric_id="avg-lead-time",
+                label="Avg Lead Time",
+                value=avg_lead,
+                display_value=f"{avg_lead:.1f}m",
+                numerator=round(lead_time_sum, 1),
+                denominator=float(lead_time_count),
+                unit="m",
+                evidence=[f"{lead_time_count} runs had valid start/end timestamps."],
+            ),
+            OperationsMetricValue(
+                metric_id="intervention-rate",
+                label="Intervention Rate",
+                value=intervention_rate,
+                display_value=f"{intervention_rate:.1f}%",
+                numerator=float(actionable_runs),
+                denominator=float(total_runs),
+                unit="%",
+                evidence=[f"Actionable statuses counted: {', '.join(sorted(STATUS_ACTIONABLE))}."],
+            ),
+            OperationsMetricValue(
+                metric_id="sla",
+                label="SLA",
+                value=sla_value,
+                display_value=f"{sla_value:.1f}%",
+                numerator=float(sla_compliant_runs),
+                denominator=float(lead_time_count),
+                unit="%",
+                evidence=[
+                    f"SLA target: {sla_target_minutes} minutes.",
+                    f"{sla_compliant_runs} of {lead_time_count} measured runs met target.",
+                ],
+            ),
+            OperationsMetricValue(
+                metric_id="regression",
+                label="Regression",
+                value=float(len(regression_findings)),
+                display_value=str(len(regression_findings)),
+                numerator=float(len(regression_findings)),
+                denominator=float(len(current_suite.results)) if current_suite is not None else 0.0,
+                unit="cases",
+                evidence=[
+                    f"Baseline provided: {baseline_suite is not None}.",
+                    f"Current suite provided: {current_suite is not None}.",
+                ],
+            ),
+            OperationsMetricValue(
+                metric_id="risk",
+                label="Risk",
+                value=avg_risk,
+                display_value=f"{avg_risk:.1f}",
+                numerator=round(risk_sum, 1),
+                denominator=float(risk_count),
+                unit="score",
+                evidence=["Risk score precedence: risk_score.total, then risk_level mapping low=25 medium=60 high=90."],
+            ),
+            OperationsMetricValue(
+                metric_id="spend",
+                label="Spend",
+                value=spend_total,
+                display_value=f"${spend_total:.2f}",
+                numerator=spend_total,
+                denominator=float(total_runs),
+                unit="USD",
+                evidence=["Spend field precedence: spend_usd, cost_usd, spend, cost."],
+            ),
+        ]
+
+        return OperationsMetricSpec(
+            name="Operations Metric Spec",
+            generated_at=generated_at or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            period_start=period_start,
+            period_end=period_end,
+            timezone_name=timezone_name,
+            definitions=list(self.METRIC_DEFINITIONS),
+            values=values,
         )
 
     def build_triage_clusters(self, runs: Sequence[dict]) -> List[TriageCluster]:
@@ -852,6 +1098,29 @@ class OperationsAnalytics:
         except ValueError:
             return None
 
+    def _resolve_run_risk_score(self, run: dict) -> Optional[float]:
+        risk_score = run.get("risk_score")
+        if isinstance(risk_score, dict) and risk_score.get("total") is not None:
+            try:
+                return float(risk_score["total"])
+            except (TypeError, ValueError):
+                return None
+
+        risk_level = str(run.get("risk_level", "")).strip().lower()
+        risk_by_level = {"low": 25.0, "medium": 60.0, "high": 90.0}
+        return risk_by_level.get(risk_level)
+
+    def _resolve_run_spend(self, run: dict) -> float:
+        for key in ("spend_usd", "cost_usd", "spend", "cost"):
+            value = run.get(key)
+            if value is None:
+                continue
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return 0.0
+        return 0.0
+
     def _summarize_version_change(
         self,
         previous: VersionedArtifact,
@@ -1019,6 +1288,46 @@ def render_weekly_operations_report(report: WeeklyOperationsReport) -> str:
             )
     else:
         lines.append("- None")
+
+    return "\n".join(lines) + "\n"
+
+
+def render_operations_metric_spec(spec: OperationsMetricSpec) -> str:
+    lines = [
+        "# Operations Metric Spec",
+        "",
+        f"- Name: {spec.name}",
+        f"- Generated At: {spec.generated_at}",
+        f"- Period Start: {spec.period_start}",
+        f"- Period End: {spec.period_end}",
+        f"- Timezone: {spec.timezone_name}",
+        "",
+        "## Definitions",
+        "",
+    ]
+
+    for definition in spec.definitions:
+        lines.extend(
+            [
+                f"### {definition.label}",
+                "",
+                f"- Metric ID: {definition.metric_id}",
+                f"- Unit: {definition.unit}",
+                f"- Direction: {definition.direction}",
+                f"- Formula: {definition.formula}",
+                f"- Description: {definition.description}",
+                f"- Source Fields: {', '.join(definition.source_fields)}",
+                "",
+            ]
+        )
+
+    lines.extend(["## Values", ""])
+    for value in spec.values:
+        evidence = " | ".join(value.evidence) if value.evidence else "none"
+        lines.append(
+            f"- {value.label}: value={value.display_value} numerator={value.numerator:.1f} "
+            f"denominator={value.denominator:.1f} unit={value.unit} evidence={evidence}"
+        )
 
     return "\n".join(lines) + "\n"
 
@@ -1251,6 +1560,7 @@ def write_dashboard_builder_bundle(
 def write_weekly_operations_bundle(
     root_dir: str,
     report: WeeklyOperationsReport,
+    metric_spec: Optional[OperationsMetricSpec] = None,
     regression_center: Optional[RegressionCenter] = None,
     queue_control_center: Optional[QueueControlCenter] = None,
     version_center: Optional[PolicyPromptVersionCenter] = None,
@@ -1262,6 +1572,11 @@ def write_weekly_operations_bundle(
     dashboard_path = str(base / "operations-dashboard.md")
     write_report(weekly_report_path, render_weekly_operations_report(report))
     write_report(dashboard_path, render_operations_dashboard(report.snapshot))
+
+    metric_spec_path = None
+    if metric_spec is not None:
+        metric_spec_path = str(base / "operations-metric-spec.md")
+        write_report(metric_spec_path, render_operations_metric_spec(metric_spec))
 
     regression_center_path = None
     if regression_center is not None:
@@ -1282,6 +1597,7 @@ def write_weekly_operations_bundle(
         root_dir=str(base),
         weekly_report_path=weekly_report_path,
         dashboard_path=dashboard_path,
+        metric_spec_path=metric_spec_path,
         regression_center_path=regression_center_path,
         queue_control_path=queue_control_path,
         version_center_path=version_center_path,

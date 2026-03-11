@@ -16,6 +16,7 @@ from bigclaw.operations import (
     DashboardWidgetPlacement,
     DashboardWidgetSpec,
     OperationsAnalytics,
+    render_operations_metric_spec,
     render_dashboard_builder_report,
     VersionedArtifact,
     render_engineering_overview,
@@ -136,6 +137,120 @@ def test_operations_snapshot_tracks_sla_and_success_rate() -> None:
     assert snapshot.approval_queue_depth == 1
     assert snapshot.sla_breach_count == 1
     assert snapshot.average_cycle_minutes == 51.7
+
+
+def test_operations_metric_spec_defines_and_computes_operational_metrics() -> None:
+    analytics = OperationsAnalytics()
+    runs = [
+        {
+            **make_run(
+                "run-1",
+                "BIG-4305-1",
+                "approved",
+                "2026-03-11T00:10:00Z",
+                "2026-03-11T00:40:00Z",
+                "ok",
+                "default low risk path",
+            ),
+            "risk_level": "low",
+            "spend_usd": 4.25,
+        },
+        {
+            **make_run(
+                "run-2",
+                "BIG-4305-2",
+                "needs-approval",
+                "2026-03-11T02:00:00Z",
+                "2026-03-11T03:30:00Z",
+                "manual",
+                "requires approval for production rollout",
+            ),
+            "risk_score": {"total": 88},
+            "cost_usd": 7.5,
+        },
+        {
+            **make_run(
+                "run-3",
+                "BIG-4305-3",
+                "approved",
+                "2026-03-10T23:30:00Z",
+                "2026-03-11T00:20:00Z",
+                "overnight",
+                "batch cleanup",
+            ),
+            "risk_level": "medium",
+            "spend": 3,
+        },
+    ]
+
+    baseline_suite = BenchmarkSuiteResult(version="v1.0.0", results=[make_result("case-1", 92, True), make_result("case-2", 88, True)])
+    current_suite = BenchmarkSuiteResult(version="v1.1.0", results=[make_result("case-1", 70, False), make_result("case-2", 90, True)])
+
+    spec = analytics.build_metric_spec(
+        runs,
+        period_start="2026-03-11T00:00:00Z",
+        period_end="2026-03-11T23:59:59Z",
+        timezone_name="UTC",
+        generated_at="2026-03-11T09:00:00Z",
+        sla_target_minutes=60,
+        current_suite=current_suite,
+        baseline_suite=baseline_suite,
+    )
+
+    values = {value.metric_id: value for value in spec.values}
+
+    assert [definition.metric_id for definition in spec.definitions] == [
+        "runs-today",
+        "avg-lead-time",
+        "intervention-rate",
+        "sla",
+        "regression",
+        "risk",
+        "spend",
+    ]
+    assert values["runs-today"].value == 2
+    assert values["avg-lead-time"].value == 56.7
+    assert values["intervention-rate"].value == 33.3
+    assert values["sla"].value == 66.7
+    assert values["regression"].value == 1
+    assert values["risk"].value == 57.7
+    assert values["spend"].value == 14.75
+
+
+def test_render_and_bundle_operations_metric_spec(tmp_path: Path) -> None:
+    analytics = OperationsAnalytics()
+    runs = [
+        {
+            **make_run(
+                "run-1",
+                "BIG-4305-1",
+                "approved",
+                "2026-03-11T00:10:00Z",
+                "2026-03-11T00:40:00Z",
+                "ok",
+                "default low risk path",
+            ),
+            "risk_level": "low",
+            "spend_usd": 4.25,
+        }
+    ]
+    report = analytics.build_weekly_report(name="Ops Weekly", period="2026-W11", runs=runs)
+    metric_spec = analytics.build_metric_spec(
+        runs,
+        period_start="2026-03-11T00:00:00Z",
+        period_end="2026-03-11T23:59:59Z",
+        generated_at="2026-03-11T09:00:00Z",
+    )
+
+    rendered = render_operations_metric_spec(metric_spec)
+    artifacts = write_weekly_operations_bundle(str(tmp_path), report, metric_spec=metric_spec)
+
+    assert "# Operations Metric Spec" in rendered
+    assert "### Runs Today" in rendered
+    assert "Spend" in rendered
+    assert artifacts.metric_spec_path is not None
+    assert Path(artifacts.metric_spec_path).exists()
+    assert "Intervention Rate" in Path(artifacts.metric_spec_path).read_text()
 
 
 def test_dashboard_builder_round_trip_preserves_manifest_shape() -> None:

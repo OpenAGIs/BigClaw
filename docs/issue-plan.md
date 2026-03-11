@@ -134,11 +134,13 @@
 - `OPE-76` / `BIG-903`: 自动 Triage Center — P0, auto triage center.
 - `OPE-77` / `BIG-904`: 回归分析中心 — P0, regression analytics center.
 - `OPE-78` / `BIG-905`: 工程运营周报自动生成 — P1, weekly operations report auto generation.
+- `OPE-133` / `BIG-4305`: 指标口径与可复算规范 — P0, reproducible metric definitions for runs, lead time, intervention, SLA, regression, risk, and spend.
 
 #### Delivery shape
 - Surface queue, run, replay, and audit data already emitted by the `Scheduler`, `WorkflowEngine`, `ObservabilityLedger`, and reporting modules.
 - Add operational dashboards and control loops in slices so each child issue can reuse the same execution ledger and validation-report workflow.
 - Treat entitlement, SLA, risk, triage, and regression analysis as orchestration/reporting layers over the existing execution core rather than parallel systems.
+- Keep metric definitions auditable in code with explicit formulas, source fields, and rendered evidence so operations reviews can recompute the same values without spreadsheet-only logic.
 
 ## BigClaw PRD v1.0
 
