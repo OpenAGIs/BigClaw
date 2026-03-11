@@ -34,6 +34,15 @@ from .console_ia import (
     SurfaceState,
     render_console_ia_report,
 )
+from .saved_views import (
+    AlertDigestSubscription,
+    SavedView,
+    SavedViewCatalog,
+    SavedViewCatalogAudit,
+    SavedViewFilter,
+    SavedViewLibrary,
+    render_saved_view_report,
+)
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
 from .mapping import map_source_issue_to_task
@@ -170,6 +179,13 @@ __all__ = [
     "NavigationItem",
     "SurfaceState",
     "render_console_ia_report",
+    "AlertDigestSubscription",
+    "SavedView",
+    "SavedViewCatalog",
+    "SavedViewCatalogAudit",
+    "SavedViewFilter",
+    "SavedViewLibrary",
+    "render_saved_view_report",
     "RiskFactor",
     "RiskScore",
     "RiskScorer",
