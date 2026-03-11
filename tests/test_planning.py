@@ -7,6 +7,7 @@ from bigclaw.planning import (
     EntryGateDecision,
     render_candidate_backlog_report,
 )
+from bigclaw.governance import ScopeFreezeAudit
 
 
 def test_candidate_backlog_round_trip_preserves_manifest_shape() -> None:
@@ -126,9 +127,15 @@ def test_entry_gate_evaluation_requires_ready_candidates_capabilities_and_eviden
         min_ready_candidates=3,
         required_capabilities=["release-gate", "ops-control", "commercialization"],
         required_evidence=["acceptance-suite", "pilot-evidence", "validation-report"],
+        required_baseline_version="v2.0",
+    )
+    baseline_audit = ScopeFreezeAudit(
+        board_name="BigClaw v2.0 Freeze",
+        version="v2.0",
+        total_items=5,
     )
 
-    decision = CandidatePlanner().evaluate_gate(backlog, gate)
+    decision = CandidatePlanner().evaluate_gate(backlog, gate, baseline_audit=baseline_audit)
 
     assert decision.passed is True
     assert set(decision.ready_candidate_ids) == {
@@ -138,6 +145,78 @@ def test_entry_gate_evaluation_requires_ready_candidates_capabilities_and_eviden
     }
     assert decision.missing_capabilities == []
     assert decision.missing_evidence == []
+    assert decision.baseline_ready is True
+    assert decision.baseline_findings == []
+
+
+def test_entry_gate_holds_when_v2_baseline_is_missing_or_not_ready() -> None:
+    backlog = CandidateBacklog(
+        epic_id="BIG-EPIC-20",
+        title="v4.0 v3候选与进入条件",
+        version="v4.0-v3",
+        candidates=[
+            CandidateEntry(
+                candidate_id="candidate-release-control",
+                title="Release control center",
+                theme="console-governance",
+                priority="P0",
+                owner="platform-ui",
+                outcome="Unify console release gates and promotion evidence.",
+                validation_command="python3 -m pytest tests/test_design_system.py -q",
+                capabilities=["release-gate"],
+                evidence=["acceptance-suite", "validation-report"],
+            ),
+            CandidateEntry(
+                candidate_id="candidate-ops-hardening",
+                title="Ops hardening",
+                theme="ops-command-center",
+                priority="P0",
+                owner="ops-platform",
+                outcome="Package the command-center rollout with weekly review evidence.",
+                validation_command="python3 -m pytest tests/test_operations.py -q",
+                capabilities=["ops-control"],
+                evidence=["weekly-review"],
+            ),
+            CandidateEntry(
+                candidate_id="candidate-orchestration",
+                title="Orchestration rollout",
+                theme="agent-orchestration",
+                priority="P1",
+                owner="orchestration",
+                outcome="Promote cross-team orchestration with commercialization visibility.",
+                validation_command="python3 -m pytest tests/test_orchestration.py -q",
+                capabilities=["commercialization"],
+                evidence=["pilot-evidence"],
+            ),
+        ],
+    )
+    gate = EntryGate(
+        gate_id="gate-v3-entry",
+        name="V3 Entry Gate",
+        min_ready_candidates=3,
+        required_capabilities=["release-gate", "ops-control", "commercialization"],
+        required_evidence=["acceptance-suite", "pilot-evidence", "validation-report"],
+        required_baseline_version="v2.0",
+    )
+
+    missing_baseline = CandidatePlanner().evaluate_gate(backlog, gate)
+    failed_baseline = CandidatePlanner().evaluate_gate(
+        backlog,
+        gate,
+        baseline_audit=ScopeFreezeAudit(
+            board_name="BigClaw v2.0 Freeze",
+            version="v2.0",
+            total_items=5,
+            missing_validation=["OPE-116"],
+        ),
+    )
+
+    assert missing_baseline.passed is False
+    assert missing_baseline.baseline_ready is False
+    assert missing_baseline.baseline_findings == ["missing baseline audit for v2.0"]
+    assert failed_baseline.passed is False
+    assert failed_baseline.baseline_ready is False
+    assert failed_baseline.baseline_findings == ["baseline v2.0 is not release ready (87.5)"]
 
 
 def test_entry_gate_decision_round_trip_preserves_findings() -> None:
@@ -148,6 +227,8 @@ def test_entry_gate_decision_round_trip_preserves_findings() -> None:
         blocked_candidate_ids=["candidate-runtime"],
         missing_capabilities=["commercialization"],
         missing_evidence=["pilot-evidence"],
+        baseline_ready=False,
+        baseline_findings=["baseline v2.0 is not release ready (87.5)"],
         blocker_count=1,
     )
 
@@ -188,14 +269,23 @@ def test_render_candidate_backlog_report_summarizes_backlog_and_gate_findings() 
         min_ready_candidates=1,
         required_capabilities=["release-gate"],
         required_evidence=["validation-report"],
+        required_baseline_version="v2.0",
     )
-    decision = CandidatePlanner().evaluate_gate(backlog, gate)
+    decision = CandidatePlanner().evaluate_gate(
+        backlog,
+        gate,
+        baseline_audit=ScopeFreezeAudit(
+            board_name="BigClaw v2.0 Freeze",
+            version="v2.0",
+            total_items=5,
+        ),
+    )
 
     report = render_candidate_backlog_report(backlog, gate, decision)
 
     assert "# V3 Candidate Backlog Report" in report
     assert "- Epic: BIG-EPIC-20 v4.0 v3候选与进入条件" in report
-    assert "- Decision: PASS: ready=1 blocked=0 missing_capabilities=0 missing_evidence=0" in report
+    assert "- Decision: PASS: ready=1 blocked=0 missing_capabilities=0 missing_evidence=0 baseline_findings=0" in report
     assert (
         "- candidate-release-control: Release control center "
         "priority=P0 owner=platform-ui score=100 ready=True"
@@ -203,6 +293,8 @@ def test_render_candidate_backlog_report_summarizes_backlog_and_gate_findings() 
     assert "validation=python3 -m pytest tests/test_design_system.py -q" in report
     assert "- ui-acceptance -> tests/test_design_system.py capability=release-gate" in report
     assert "- Missing evidence: none" in report
+    assert "- Baseline ready: True" in report
+    assert "- Baseline findings: none" in report
 
 
 def test_candidate_entry_round_trip_preserves_evidence_links() -> None:

@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
+
+from .governance import ScopeFreezeAudit
 
 
 PRIORITY_WEIGHTS = {"P0": 4, "P1": 3, "P2": 2, "P3": 1}
@@ -130,6 +132,7 @@ class EntryGate:
     min_ready_candidates: int
     required_capabilities: List[str] = field(default_factory=list)
     required_evidence: List[str] = field(default_factory=list)
+    required_baseline_version: str = ""
     max_blockers: int = 0
 
     def to_dict(self) -> Dict[str, object]:
@@ -139,6 +142,7 @@ class EntryGate:
             "min_ready_candidates": self.min_ready_candidates,
             "required_capabilities": list(self.required_capabilities),
             "required_evidence": list(self.required_evidence),
+            "required_baseline_version": self.required_baseline_version,
             "max_blockers": self.max_blockers,
         }
 
@@ -150,6 +154,7 @@ class EntryGate:
             min_ready_candidates=int(data["min_ready_candidates"]),
             required_capabilities=[str(item) for item in data.get("required_capabilities", [])],
             required_evidence=[str(item) for item in data.get("required_evidence", [])],
+            required_baseline_version=str(data.get("required_baseline_version", "")),
             max_blockers=int(data.get("max_blockers", 0)),
         )
 
@@ -162,6 +167,8 @@ class EntryGateDecision:
     blocked_candidate_ids: List[str] = field(default_factory=list)
     missing_capabilities: List[str] = field(default_factory=list)
     missing_evidence: List[str] = field(default_factory=list)
+    baseline_ready: bool = True
+    baseline_findings: List[str] = field(default_factory=list)
     blocker_count: int = 0
 
     @property
@@ -171,7 +178,8 @@ class EntryGateDecision:
             f"{status}: ready={len(self.ready_candidate_ids)} "
             f"blocked={self.blocker_count} "
             f"missing_capabilities={len(self.missing_capabilities)} "
-            f"missing_evidence={len(self.missing_evidence)}"
+            f"missing_evidence={len(self.missing_evidence)} "
+            f"baseline_findings={len(self.baseline_findings)}"
         )
 
     def to_dict(self) -> Dict[str, object]:
@@ -182,6 +190,8 @@ class EntryGateDecision:
             "blocked_candidate_ids": list(self.blocked_candidate_ids),
             "missing_capabilities": list(self.missing_capabilities),
             "missing_evidence": list(self.missing_evidence),
+            "baseline_ready": self.baseline_ready,
+            "baseline_findings": list(self.baseline_findings),
             "blocker_count": self.blocker_count,
         }
 
@@ -194,12 +204,19 @@ class EntryGateDecision:
             blocked_candidate_ids=[str(item) for item in data.get("blocked_candidate_ids", [])],
             missing_capabilities=[str(item) for item in data.get("missing_capabilities", [])],
             missing_evidence=[str(item) for item in data.get("missing_evidence", [])],
+            baseline_ready=bool(data.get("baseline_ready", True)),
+            baseline_findings=[str(item) for item in data.get("baseline_findings", [])],
             blocker_count=int(data.get("blocker_count", 0)),
         )
 
 
 class CandidatePlanner:
-    def evaluate_gate(self, backlog: CandidateBacklog, gate: EntryGate) -> EntryGateDecision:
+    def evaluate_gate(
+        self,
+        backlog: CandidateBacklog,
+        gate: EntryGate,
+        baseline_audit: Optional[ScopeFreezeAudit] = None,
+    ) -> EntryGateDecision:
         ready_candidates = [candidate for candidate in backlog.ranked_candidates if candidate.ready]
         blocked_candidates = [candidate for candidate in backlog.candidates if candidate.blockers]
         provided_capabilities = {capability for candidate in ready_candidates for capability in candidate.capabilities}
@@ -212,11 +229,14 @@ class CandidatePlanner:
         missing_evidence = [
             item for item in gate.required_evidence if item not in provided_evidence
         ]
+        baseline_findings = self._baseline_findings(gate, baseline_audit)
+        baseline_ready = not baseline_findings
         passed = (
             len(ready_candidates) >= gate.min_ready_candidates
             and len(blocked_candidates) <= gate.max_blockers
             and not missing_capabilities
             and not missing_evidence
+            and baseline_ready
         )
         return EntryGateDecision(
             gate_id=gate.gate_id,
@@ -225,8 +245,30 @@ class CandidatePlanner:
             blocked_candidate_ids=[candidate.candidate_id for candidate in blocked_candidates],
             missing_capabilities=missing_capabilities,
             missing_evidence=missing_evidence,
+            baseline_ready=baseline_ready,
+            baseline_findings=baseline_findings,
             blocker_count=len(blocked_candidates),
         )
+
+    def _baseline_findings(
+        self,
+        gate: EntryGate,
+        baseline_audit: Optional[ScopeFreezeAudit],
+    ) -> List[str]:
+        if not gate.required_baseline_version:
+            return []
+        if baseline_audit is None:
+            return [f"missing baseline audit for {gate.required_baseline_version}"]
+        findings: List[str] = []
+        if baseline_audit.version != gate.required_baseline_version:
+            findings.append(
+                f"baseline version mismatch: expected {gate.required_baseline_version}, got {baseline_audit.version}"
+            )
+        if not baseline_audit.release_ready:
+            findings.append(
+                f"baseline {baseline_audit.version} is not release ready ({baseline_audit.readiness_score:.1f})"
+            )
+        return findings
 
 
 def render_candidate_backlog_report(
@@ -275,6 +317,8 @@ def render_candidate_backlog_report(
             f"- Blocked candidates: {', '.join(decision.blocked_candidate_ids) or 'none'}",
             f"- Missing capabilities: {', '.join(decision.missing_capabilities) or 'none'}",
             f"- Missing evidence: {', '.join(decision.missing_evidence) or 'none'}",
+            f"- Baseline ready: {decision.baseline_ready}",
+            f"- Baseline findings: {', '.join(decision.baseline_findings) or 'none'}",
         ]
     )
     return "\n".join(lines)
