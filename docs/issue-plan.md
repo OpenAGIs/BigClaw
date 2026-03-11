@@ -89,6 +89,7 @@
 - `OPE-115` / `BIG-1701`: v3.0 UI 测试与验收体系 — P0, role-permission, data accuracy, performance, usability, and audit completeness acceptance gates.
 - `OPE-112` / `BIG-1607`: Report Studio (v3) — P1, narrative report composing and export.
 - `OPE-111` / `BIG-1606`: Policy/Prompt Version Center — P1, version diff/history/rollback across workflow, prompt, and policy assets.
+- `OPE-128` / `BIG-4204`: UI评审包输出 — P0, compile the review objectives, wireframes, interaction notes, and open questions into one auditable review pack.
 
 #### Delivery shape
 - Treat design tokens as a platform asset rather than per-page styling so future console slices can audit consistency and release readiness.
@@ -99,6 +100,23 @@
 - Add a UI acceptance suite that scores release readiness across role-permission coverage, data accuracy, performance budgets, usability journeys, and audit-trail completeness before v3.0 console slices ship.
 - Add a report-studio layer that composes narrative sections from operational evidence and exports the same report as markdown, plain text, and HTML for downstream sharing.
 - Surface version history, diff summaries, and rollback-ready targets for workflow, prompt, and policy assets as auditable control-center artifacts.
+- Package UI reviews as deterministic artifacts with explicit review objectives, frame inventory, interaction coverage, and unresolved decisions so design critique can happen against one canonical packet.
+
+### Issue `OPE-128` / `BIG-4204`: UI评审包输出
+
+#### Goal
+- Compile a review-ready packet for the `BIG-4204` console slice so reviewers can evaluate objectives, wireframes, interaction behavior, and unresolved decisions without reconstructing the scope from separate docs.
+
+#### Review pack contract
+- Capture review objectives with named personas, expected outcomes, success signals, and dependency callouts so kickoff alignment is explicit.
+- Capture each wireframe surface with entry point, device context, primary layout blocks, and review notes so frame-level discussion has one manifest.
+- Capture interaction flows with trigger, system response, required states, and exception paths so prototype-level feedback is not reduced to static screenshots.
+- Capture open questions with owner and impact so unresolved product decisions remain visible during review instead of being hidden in comments.
+
+#### Delivery shape
+- Store the review pack in code as a serializable artifact with a deterministic completeness audit.
+- Render the pack as a plain-text report so the same data can be reviewed in repo-native validation output and future exported docs.
+- Keep `docs/issue-plan.md` and the issue validation report aligned with the same review-pack structure so ticket intent and shipped artifact stay traceable.
 
 ### Epic 9: 工程运营系统 (`OPE-65`)
 

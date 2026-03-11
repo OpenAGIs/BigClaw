@@ -212,6 +212,16 @@ from .planning import (
     EntryGateDecision,
     render_candidate_backlog_report,
 )
+from .ui_review import (
+    InteractionFlow,
+    OpenQuestion,
+    ReviewObjective,
+    UIReviewPack,
+    UIReviewPackAudit,
+    UIReviewPackAuditor,
+    WireframeSurface,
+    render_ui_review_pack_report,
+)
 
 __all__ = [
     "Task",
@@ -423,4 +433,12 @@ __all__ = [
     "EntryGate",
     "EntryGateDecision",
     "render_candidate_backlog_report",
+    "InteractionFlow",
+    "OpenQuestion",
+    "ReviewObjective",
+    "UIReviewPack",
+    "UIReviewPackAudit",
+    "UIReviewPackAuditor",
+    "WireframeSurface",
+    "render_ui_review_pack_report",
 ]
