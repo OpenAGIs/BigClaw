@@ -2,6 +2,7 @@ from bigclaw.planning import (
     CandidateBacklog,
     CandidateEntry,
     CandidatePlanner,
+    EvidenceLink,
     EntryGate,
     EntryGateDecision,
     render_candidate_backlog_report,
@@ -24,6 +25,14 @@ def test_candidate_backlog_round_trip_preserves_manifest_shape() -> None:
                 validation_command="python3 -m pytest tests/test_design_system.py -q",
                 capabilities=["release-gate", "reporting"],
                 evidence=["acceptance-suite", "validation-report"],
+                evidence_links=[
+                    EvidenceLink(
+                        label="ui-acceptance",
+                        target="tests/test_design_system.py",
+                        capability="release-gate",
+                        note="role-permission and audit readiness coverage",
+                    )
+                ],
             )
         ],
     )
@@ -163,6 +172,13 @@ def test_render_candidate_backlog_report_summarizes_backlog_and_gate_findings() 
                 validation_command="python3 -m pytest tests/test_design_system.py -q",
                 capabilities=["release-gate", "reporting"],
                 evidence=["acceptance-suite", "validation-report"],
+                evidence_links=[
+                    EvidenceLink(
+                        label="ui-acceptance",
+                        target="tests/test_design_system.py",
+                        capability="release-gate",
+                    )
+                ],
             )
         ],
     )
@@ -184,4 +200,38 @@ def test_render_candidate_backlog_report_summarizes_backlog_and_gate_findings() 
         "- candidate-release-control: Release control center "
         "priority=P0 owner=platform-ui score=100 ready=True"
     ) in report
+    assert "validation=python3 -m pytest tests/test_design_system.py -q" in report
+    assert "- ui-acceptance -> tests/test_design_system.py capability=release-gate" in report
     assert "- Missing evidence: none" in report
+
+
+def test_candidate_entry_round_trip_preserves_evidence_links() -> None:
+    candidate = CandidateEntry(
+        candidate_id="candidate-ops-hardening",
+        title="Ops hardening",
+        theme="ops-command-center",
+        priority="P0",
+        owner="ops-platform",
+        outcome="Package command-center and approval surfaces with linked evidence.",
+        validation_command="python3 -m pytest tests/test_operations.py tests/test_saved_views.py -q",
+        capabilities=["ops-control", "saved-views"],
+        evidence=["weekly-review", "validation-report"],
+        evidence_links=[
+            EvidenceLink(
+                label="queue-control-center",
+                target="src/bigclaw/operations.py",
+                capability="ops-control",
+                note="queue and approval command center",
+            ),
+            EvidenceLink(
+                label="saved-view-report",
+                target="src/bigclaw/saved_views.py",
+                capability="saved-views",
+                note="team saved views and digest evidence",
+            ),
+        ],
+    )
+
+    restored = CandidateEntry.from_dict(candidate.to_dict())
+
+    assert restored == candidate

@@ -6,6 +6,31 @@ PRIORITY_WEIGHTS = {"P0": 4, "P1": 3, "P2": 2, "P3": 1}
 
 
 @dataclass(frozen=True)
+class EvidenceLink:
+    label: str
+    target: str
+    capability: str = ""
+    note: str = ""
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "label": self.label,
+            "target": self.target,
+            "capability": self.capability,
+            "note": self.note,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "EvidenceLink":
+        return cls(
+            label=str(data["label"]),
+            target=str(data["target"]),
+            capability=str(data.get("capability", "")),
+            note=str(data.get("note", "")),
+        )
+
+
+@dataclass(frozen=True)
 class CandidateEntry:
     candidate_id: str
     title: str
@@ -16,6 +41,7 @@ class CandidateEntry:
     validation_command: str
     capabilities: List[str] = field(default_factory=list)
     evidence: List[str] = field(default_factory=list)
+    evidence_links: List[EvidenceLink] = field(default_factory=list)
     dependencies: List[str] = field(default_factory=list)
     blockers: List[str] = field(default_factory=list)
 
@@ -42,6 +68,7 @@ class CandidateEntry:
             "validation_command": self.validation_command,
             "capabilities": list(self.capabilities),
             "evidence": list(self.evidence),
+            "evidence_links": [link.to_dict() for link in self.evidence_links],
             "dependencies": list(self.dependencies),
             "blockers": list(self.blockers),
         }
@@ -58,6 +85,7 @@ class CandidateEntry:
             validation_command=str(data["validation_command"]),
             capabilities=[str(item) for item in data.get("capabilities", [])],
             evidence=[str(item) for item in data.get("evidence", [])],
+            evidence_links=[EvidenceLink.from_dict(item) for item in data.get("evidence_links", [])],
             dependencies=[str(item) for item in data.get("dependencies", [])],
             blockers=[str(item) for item in data.get("blockers", [])],
         )
@@ -230,6 +258,15 @@ def render_candidate_backlog_report(
             f"evidence={','.join(candidate.evidence) or 'none'} "
             f"blockers={','.join(candidate.blockers) or 'none'}"
         )
+        lines.append(f"  validation={candidate.validation_command}")
+        if candidate.dependencies:
+            lines.append(f"  dependencies={','.join(candidate.dependencies)}")
+        if candidate.evidence_links:
+            lines.append("  evidence-links:")
+            for link in candidate.evidence_links:
+                qualifier = f" capability={link.capability}" if link.capability else ""
+                note = f" note={link.note}" if link.note else ""
+                lines.append(f"  - {link.label} -> {link.target}{qualifier}{note}")
     lines.extend(
         [
             "",

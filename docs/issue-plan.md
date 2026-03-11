@@ -15,6 +15,16 @@
 - Operations command-center hardening: promote queue, triage, regression, and weekly-review surfaces as one candidate with operator-facing validation and reporting coverage.
 - Agent orchestration rollout: carry entitlement-aware orchestration, handoff visibility, and commercialization evidence into a candidate that is ready for v3-level release review.
 
+#### Candidate traceability
+- Operations command-center hardening evidence should explicitly cover queue control center, approval queue handling, auto-triage, regression analysis, weekly operations reporting, dashboard builder output, saved views, and rollback simulation status so v3 planning reflects the actual operator journey.
+- Link evidence to repo-native artifacts instead of prose-only references; minimum trace set for `OPE-139`:
+  - command center: `src/bigclaw/operations.py`, `tests/test_control_center.py`, `tests/test_operations.py`
+  - approval: `src/bigclaw/execution_contract.py`, `src/bigclaw/workflow.py`, `tests/test_workflow.py`, `tests/test_execution_flow.py`
+  - saved views: `src/bigclaw/saved_views.py`, `tests/test_saved_views.py`
+  - dashboard builder: `src/bigclaw/operations.py`, `tests/test_operations.py`
+  - simulation / replay evidence: `src/bigclaw/evaluation.py`, `tests/test_evaluation.py`
+- Keep candidate artifacts rich enough to render both named evidence requirements and clickable evidence links in the backlog report so review can happen without reconstructing supporting files manually.
+
 #### Entry gate
 - At least 3 candidates must be ready with named owners, validation commands, and no unresolved launch blockers.
 - The ready set must cover `release-gate`, `ops-control`, and `commercialization` capabilities so the epic advances with both console and execution-plane scope.
