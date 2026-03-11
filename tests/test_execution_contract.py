@@ -9,6 +9,7 @@ from bigclaw.execution_contract import (
     ExecutionModel,
     ExecutionPermission,
     ExecutionPermissionMatrix,
+    ExecutionRole,
     MetricDefinition,
     render_execution_contract_report,
 )
@@ -57,7 +58,55 @@ def build_contract() -> ExecutionContract:
                 resource="execution-run",
                 actions=["create"],
                 scopes=["project", "workspace"],
-            )
+            ),
+            ExecutionPermission(
+                name="execution.run.approve",
+                resource="execution-run",
+                actions=["approve"],
+                scopes=["workspace"],
+            ),
+            ExecutionPermission(
+                name="execution.audit.read",
+                resource="execution-audit",
+                actions=["read"],
+                scopes=["workspace", "portfolio"],
+            ),
+            ExecutionPermission(
+                name="execution.orchestration.manage",
+                resource="orchestration-plan",
+                actions=["read", "update"],
+                scopes=["cross-team"],
+            ),
+        ],
+        roles=[
+            ExecutionRole(
+                name="eng-lead",
+                personas=["Eng Lead"],
+                granted_permissions=["execution.run.write", "execution.run.approve"],
+                scope_bindings=["project"],
+                escalation_target="vp-eng",
+            ),
+            ExecutionRole(
+                name="platform-admin",
+                personas=["Platform Admin"],
+                granted_permissions=["execution.run.write", "execution.audit.read"],
+                scope_bindings=["workspace"],
+                escalation_target="vp-eng",
+            ),
+            ExecutionRole(
+                name="vp-eng",
+                personas=["VP Eng"],
+                granted_permissions=["execution.run.approve", "execution.audit.read"],
+                scope_bindings=["portfolio", "workspace"],
+                escalation_target="none",
+            ),
+            ExecutionRole(
+                name="cross-team-operator",
+                personas=["Cross-Team Operator"],
+                granted_permissions=["execution.run.write", "execution.orchestration.manage"],
+                scope_bindings=["cross-team", "project"],
+                escalation_target="eng-lead",
+            ),
         ],
         metrics=[
             MetricDefinition("execution.request.count", "count", owner="runtime"),
@@ -115,6 +164,22 @@ def test_execution_contract_audit_surfaces_contract_gaps() -> None:
         retention_days=7,
         severity="info",
     )
+    contract.roles = [
+        ExecutionRole(
+            name="eng-lead",
+            personas=["Eng Lead"],
+            granted_permissions=[],
+            scope_bindings=["project"],
+            escalation_target="vp-eng",
+        ),
+        ExecutionRole(
+            name="platform-admin",
+            personas=["Platform Admin"],
+            granted_permissions=["execution.audit.override"],
+            scope_bindings=["workspace"],
+            escalation_target="vp-eng",
+        ),
+    ]
 
     audit = ExecutionContractLibrary().audit(contract)
 
@@ -122,7 +187,17 @@ def test_execution_contract_audit_surfaces_contract_gaps() -> None:
         "ExecutionRequest": ["actor", "requested_tools"]
     }
     assert audit.undefined_model_refs == {"start_execution": ["MissingResponse"]}
-    assert audit.undefined_permissions == {"start_execution": "execution.run.approve"}
+    assert audit.undefined_permissions == {}
+    assert audit.missing_roles == ["cross-team-operator", "vp-eng"]
+    assert audit.roles_missing_permissions == ["eng-lead"]
+    assert audit.undefined_role_permissions == {"platform-admin": ["execution.audit.override"]}
+    assert audit.apis_without_role_coverage == ["start_execution"]
+    assert audit.permissions_without_roles == [
+        "execution.audit.read",
+        "execution.orchestration.manage",
+        "execution.run.approve",
+        "execution.run.write",
+    ]
     assert audit.undefined_metrics == {"start_execution": ["execution.queue.depth"]}
     assert audit.undefined_audit_events == {"start_execution": ["execution.run.finished"]}
     assert audit.audit_policies_below_retention == ["execution.run.started"]
@@ -133,9 +208,14 @@ def test_execution_contract_round_trip_and_permission_matrix() -> None:
     contract = build_contract()
     audit = ExecutionContractAudit.from_dict(ExecutionContractLibrary().audit(contract).to_dict())
     restored = ExecutionContract.from_dict(contract.to_dict())
-    decision = ExecutionPermissionMatrix(restored.permissions).evaluate(
+    matrix = ExecutionPermissionMatrix(restored.permissions, restored.roles)
+    decision = matrix.evaluate(
         ["execution.run.write", "missing.permission"],
         ["execution.run.write", "unknown.permission"],
+    )
+    role_decision = matrix.evaluate_roles(
+        ["execution.run.write", "execution.orchestration.manage"],
+        ["cross-team-operator", "unknown-role"],
     )
 
     assert restored == contract
@@ -143,6 +223,20 @@ def test_execution_contract_round_trip_and_permission_matrix() -> None:
     assert decision.allowed is False
     assert decision.granted_permissions == ["execution.run.write"]
     assert decision.missing_permissions == ["missing.permission"]
+    assert role_decision.allowed is True
+    assert role_decision.granted_permissions == ["execution.orchestration.manage", "execution.run.write"]
+    assert role_decision.missing_permissions == []
+
+
+def test_render_execution_contract_report_includes_role_matrix() -> None:
+    contract = build_contract()
+
+    report = render_execution_contract_report(contract, ExecutionContractLibrary().audit(contract))
+
+    assert "- Roles: 4" in report
+    assert "## Roles" in report
+    assert "- eng-lead: personas=Eng Lead permissions=execution.run.write, execution.run.approve" in report
+    assert "- Missing roles: none" in report
 
 
 def test_operations_api_contract_draft_is_release_ready() -> None:

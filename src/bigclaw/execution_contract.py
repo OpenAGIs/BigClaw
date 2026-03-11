@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 
 @dataclass(frozen=True)
@@ -115,6 +115,34 @@ class ExecutionPermission:
         )
 
 
+@dataclass(frozen=True)
+class ExecutionRole:
+    name: str
+    personas: List[str] = field(default_factory=list)
+    granted_permissions: List[str] = field(default_factory=list)
+    scope_bindings: List[str] = field(default_factory=list)
+    escalation_target: str = ""
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "name": self.name,
+            "personas": list(self.personas),
+            "granted_permissions": list(self.granted_permissions),
+            "scope_bindings": list(self.scope_bindings),
+            "escalation_target": self.escalation_target,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "ExecutionRole":
+        return cls(
+            name=str(data["name"]),
+            personas=[str(item) for item in data.get("personas", [])],
+            granted_permissions=[str(item) for item in data.get("granted_permissions", [])],
+            scope_bindings=[str(item) for item in data.get("scope_bindings", [])],
+            escalation_target=str(data.get("escalation_target", "")),
+        )
+
+
 @dataclass
 class PermissionCheckResult:
     allowed: bool
@@ -130,8 +158,9 @@ class PermissionCheckResult:
 
 
 class ExecutionPermissionMatrix:
-    def __init__(self, permissions: List[ExecutionPermission]) -> None:
+    def __init__(self, permissions: List[ExecutionPermission], roles: Optional[List[ExecutionRole]] = None) -> None:
         self.permissions = {permission.name: permission for permission in permissions}
+        self.roles = {role.name: role for role in roles or []}
 
     def evaluate(self, required_permissions: List[str], granted_permissions: List[str]) -> PermissionCheckResult:
         granted_set = {permission for permission in granted_permissions if permission in self.permissions}
@@ -141,6 +170,15 @@ class ExecutionPermissionMatrix:
             granted_permissions=sorted(granted_set),
             missing_permissions=missing,
         )
+
+    def evaluate_roles(self, required_permissions: List[str], actor_roles: List[str]) -> PermissionCheckResult:
+        granted_permissions = {
+            permission
+            for role_name in actor_roles
+            for permission in self.roles.get(role_name, ExecutionRole(name=role_name)).granted_permissions
+            if permission in self.permissions
+        }
+        return self.evaluate(required_permissions=required_permissions, granted_permissions=sorted(granted_permissions))
 
 
 @dataclass(frozen=True)
@@ -200,6 +238,7 @@ class ExecutionContract:
     models: List[ExecutionModel] = field(default_factory=list)
     apis: List[ExecutionApiSpec] = field(default_factory=list)
     permissions: List[ExecutionPermission] = field(default_factory=list)
+    roles: List[ExecutionRole] = field(default_factory=list)
     metrics: List[MetricDefinition] = field(default_factory=list)
     audit_policies: List[AuditPolicy] = field(default_factory=list)
 
@@ -210,6 +249,7 @@ class ExecutionContract:
             "models": [model.to_dict() for model in self.models],
             "apis": [api.to_dict() for api in self.apis],
             "permissions": [permission.to_dict() for permission in self.permissions],
+            "roles": [role.to_dict() for role in self.roles],
             "metrics": [metric.to_dict() for metric in self.metrics],
             "audit_policies": [policy.to_dict() for policy in self.audit_policies],
         }
@@ -222,6 +262,7 @@ class ExecutionContract:
             models=[ExecutionModel.from_dict(model) for model in data.get("models", [])],
             apis=[ExecutionApiSpec.from_dict(api) for api in data.get("apis", [])],
             permissions=[ExecutionPermission.from_dict(permission) for permission in data.get("permissions", [])],
+            roles=[ExecutionRole.from_dict(role) for role in data.get("roles", [])],
             metrics=[MetricDefinition.from_dict(metric) for metric in data.get("metrics", [])],
             audit_policies=[AuditPolicy.from_dict(policy) for policy in data.get("audit_policies", [])],
         )
@@ -237,6 +278,11 @@ class ExecutionContractAudit:
     apis_missing_metrics: List[str] = field(default_factory=list)
     undefined_model_refs: Dict[str, List[str]] = field(default_factory=dict)
     undefined_permissions: Dict[str, str] = field(default_factory=dict)
+    missing_roles: List[str] = field(default_factory=list)
+    roles_missing_permissions: List[str] = field(default_factory=list)
+    undefined_role_permissions: Dict[str, List[str]] = field(default_factory=dict)
+    permissions_without_roles: List[str] = field(default_factory=list)
+    apis_without_role_coverage: List[str] = field(default_factory=list)
     undefined_metrics: Dict[str, List[str]] = field(default_factory=dict)
     undefined_audit_events: Dict[str, List[str]] = field(default_factory=dict)
     audit_policies_below_retention: List[str] = field(default_factory=list)
@@ -251,6 +297,11 @@ class ExecutionContractAudit:
             + len(self.apis_missing_metrics)
             + len(self.undefined_model_refs)
             + len(self.undefined_permissions)
+            + len(self.missing_roles)
+            + len(self.roles_missing_permissions)
+            + len(self.undefined_role_permissions)
+            + len(self.permissions_without_roles)
+            + len(self.apis_without_role_coverage)
             + len(self.undefined_metrics)
             + len(self.undefined_audit_events)
             + len(self.audit_policies_below_retention)
@@ -276,6 +327,11 @@ class ExecutionContractAudit:
             "apis_missing_metrics": list(self.apis_missing_metrics),
             "undefined_model_refs": {name: list(values) for name, values in self.undefined_model_refs.items()},
             "undefined_permissions": dict(self.undefined_permissions),
+            "missing_roles": list(self.missing_roles),
+            "roles_missing_permissions": list(self.roles_missing_permissions),
+            "undefined_role_permissions": {name: list(values) for name, values in self.undefined_role_permissions.items()},
+            "permissions_without_roles": list(self.permissions_without_roles),
+            "apis_without_role_coverage": list(self.apis_without_role_coverage),
             "undefined_metrics": {name: list(values) for name, values in self.undefined_metrics.items()},
             "undefined_audit_events": {name: list(values) for name, values in self.undefined_audit_events.items()},
             "audit_policies_below_retention": list(self.audit_policies_below_retention),
@@ -300,6 +356,14 @@ class ExecutionContractAudit:
                 for name, values in dict(data.get("undefined_model_refs", {})).items()
             },
             undefined_permissions={str(name): str(value) for name, value in dict(data.get("undefined_permissions", {})).items()},
+            missing_roles=[str(item) for item in data.get("missing_roles", [])],
+            roles_missing_permissions=[str(item) for item in data.get("roles_missing_permissions", [])],
+            undefined_role_permissions={
+                str(name): [str(value) for value in values]
+                for name, values in dict(data.get("undefined_role_permissions", {})).items()
+            },
+            permissions_without_roles=[str(item) for item in data.get("permissions_without_roles", [])],
+            apis_without_role_coverage=[str(item) for item in data.get("apis_without_role_coverage", [])],
             undefined_metrics={
                 str(name): [str(value) for value in values]
                 for name, values in dict(data.get("undefined_metrics", {})).items()
@@ -317,12 +381,14 @@ class ExecutionContractLibrary:
         "ExecutionRequest": ["task_id", "actor", "requested_tools"],
         "ExecutionResponse": ["run_id", "status", "sandbox_profile"],
     }
+    REQUIRED_ROLES = ["eng-lead", "platform-admin", "vp-eng", "cross-team-operator"]
 
     def audit(self, contract: ExecutionContract) -> ExecutionContractAudit:
         model_names = {model.name for model in contract.models}
         permission_names = {permission.name for permission in contract.permissions}
         metric_names = {metric.name for metric in contract.metrics}
         audit_events = {policy.event_type for policy in contract.audit_policies}
+        role_names = {role.name for role in contract.roles}
 
         models_missing_required_fields: Dict[str, List[str]] = {}
         for model in contract.models:
@@ -333,6 +399,11 @@ class ExecutionContractLibrary:
 
         undefined_model_refs: Dict[str, List[str]] = {}
         undefined_permissions: Dict[str, str] = {}
+        missing_roles = sorted(role for role in self.REQUIRED_ROLES if role not in role_names)
+        roles_missing_permissions: List[str] = []
+        undefined_role_permissions: Dict[str, List[str]] = {}
+        permissions_granted_by_roles: set[str] = set()
+        apis_without_role_coverage: List[str] = []
         undefined_metrics: Dict[str, List[str]] = {}
         undefined_audit_events: Dict[str, List[str]] = {}
         apis_missing_permissions: List[str] = []
@@ -367,6 +438,23 @@ class ExecutionContractLibrary:
                 if missing_metric_defs:
                     undefined_metrics[api.name] = missing_metric_defs
 
+        for role in contract.roles:
+            if not role.granted_permissions:
+                roles_missing_permissions.append(role.name)
+                continue
+            missing_permissions = [permission for permission in role.granted_permissions if permission not in permission_names]
+            if missing_permissions:
+                undefined_role_permissions[role.name] = missing_permissions
+            permissions_granted_by_roles.update(
+                permission for permission in role.granted_permissions if permission in permission_names
+            )
+
+        for api in contract.apis:
+            if api.required_permission and api.required_permission in permission_names and api.required_permission not in permissions_granted_by_roles:
+                apis_without_role_coverage.append(api.name)
+
+        permissions_without_roles = sorted(permission for permission in permission_names if permission not in permissions_granted_by_roles)
+
         audit_policies_below_retention = sorted(
             policy.event_type for policy in contract.audit_policies if policy.retention_days < 30
         )
@@ -380,6 +468,11 @@ class ExecutionContractLibrary:
             apis_missing_metrics=sorted(apis_missing_metrics),
             undefined_model_refs=undefined_model_refs,
             undefined_permissions=undefined_permissions,
+            missing_roles=missing_roles,
+            roles_missing_permissions=sorted(roles_missing_permissions),
+            undefined_role_permissions=undefined_role_permissions,
+            permissions_without_roles=permissions_without_roles,
+            apis_without_role_coverage=sorted(apis_without_role_coverage),
             undefined_metrics=undefined_metrics,
             undefined_audit_events=undefined_audit_events,
             audit_policies_below_retention=audit_policies_below_retention,
@@ -395,6 +488,7 @@ def render_execution_contract_report(contract: ExecutionContract, audit: Executi
         f"- Models: {len(contract.models)}",
         f"- APIs: {len(contract.apis)}",
         f"- Permissions: {len(contract.permissions)}",
+        f"- Roles: {len(contract.roles)}",
         f"- Metrics: {len(contract.metrics)}",
         f"- Audit Policies: {len(contract.audit_policies)}",
         f"- Readiness Score: {audit.readiness_score:.1f}",
@@ -416,6 +510,19 @@ def render_execution_contract_report(contract: ExecutionContract, audit: Executi
     else:
         lines.append("- APIs: none")
 
+    lines.extend(["", "## Roles", ""])
+    if contract.roles:
+        for role in contract.roles:
+            personas = ", ".join(role.personas) if role.personas else "none"
+            permissions = ", ".join(role.granted_permissions) if role.granted_permissions else "none"
+            scopes = ", ".join(role.scope_bindings) if role.scope_bindings else "none"
+            escalation_target = role.escalation_target or "none"
+            lines.append(
+                f"- {role.name}: personas={personas} permissions={permissions} scopes={scopes} escalation={escalation_target}"
+            )
+    else:
+        lines.append("- Roles: none")
+
     lines.extend(
         [
             "",
@@ -427,6 +534,11 @@ def render_execution_contract_report(contract: ExecutionContract, audit: Executi
             f"- APIs missing metrics: {', '.join(audit.apis_missing_metrics) if audit.apis_missing_metrics else 'none'}",
             f"- Undefined model refs: {', '.join(f'{name}={values}' for name, values in sorted(audit.undefined_model_refs.items())) if audit.undefined_model_refs else 'none'}",
             f"- Undefined permissions: {', '.join(f'{name}={value}' for name, value in sorted(audit.undefined_permissions.items())) if audit.undefined_permissions else 'none'}",
+            f"- Missing roles: {', '.join(audit.missing_roles) if audit.missing_roles else 'none'}",
+            f"- Roles missing permissions: {', '.join(audit.roles_missing_permissions) if audit.roles_missing_permissions else 'none'}",
+            f"- Undefined role permissions: {', '.join(f'{name}={values}' for name, values in sorted(audit.undefined_role_permissions.items())) if audit.undefined_role_permissions else 'none'}",
+            f"- Permissions without roles: {', '.join(audit.permissions_without_roles) if audit.permissions_without_roles else 'none'}",
+            f"- APIs without role coverage: {', '.join(audit.apis_without_role_coverage) if audit.apis_without_role_coverage else 'none'}",
             f"- Undefined metrics: {', '.join(f'{name}={values}' for name, values in sorted(audit.undefined_metrics.items())) if audit.undefined_metrics else 'none'}",
             f"- Undefined audit events: {', '.join(f'{name}={values}' for name, values in sorted(audit.undefined_audit_events.items())) if audit.undefined_audit_events else 'none'}",
             f"- Audit retention gaps: {', '.join(audit.audit_policies_below_retention) if audit.audit_policies_below_retention else 'none'}",
@@ -724,6 +836,69 @@ def build_operations_api_contract(contract_id: str = "OPE-131", version: str = "
             ExecutionPermission("operations.regression.read", "regression-center", actions=["read"], scopes=["team", "workspace"]),
             ExecutionPermission("operations.flow.read", "flow-canvas", actions=["read"], scopes=["team", "workspace"]),
             ExecutionPermission("operations.billing.read", "billing-entitlements", actions=["read"], scopes=["workspace"]),
+        ],
+        roles=[
+            ExecutionRole(
+                name="eng-lead",
+                personas=["Eng Lead"],
+                granted_permissions=[
+                    "operations.dashboard.read",
+                    "operations.run.read",
+                    "operations.queue.read",
+                    "operations.run.approve",
+                    "operations.risk.read",
+                    "operations.sla.read",
+                    "operations.regression.read",
+                ],
+                scope_bindings=["team", "workspace"],
+                escalation_target="vp-eng",
+            ),
+            ExecutionRole(
+                name="platform-admin",
+                personas=["Platform Admin"],
+                granted_permissions=[
+                    "operations.dashboard.read",
+                    "operations.run.read",
+                    "operations.queue.read",
+                    "operations.queue.act",
+                    "operations.risk.read",
+                    "operations.sla.read",
+                    "operations.regression.read",
+                    "operations.flow.read",
+                    "operations.billing.read",
+                ],
+                scope_bindings=["workspace"],
+                escalation_target="vp-eng",
+            ),
+            ExecutionRole(
+                name="vp-eng",
+                personas=["VP Eng"],
+                granted_permissions=[
+                    "operations.dashboard.read",
+                    "operations.run.read",
+                    "operations.run.approve",
+                    "operations.risk.read",
+                    "operations.sla.read",
+                    "operations.regression.read",
+                    "operations.billing.read",
+                ],
+                scope_bindings=["portfolio", "workspace"],
+                escalation_target="none",
+            ),
+            ExecutionRole(
+                name="cross-team-operator",
+                personas=["Cross-Team Operator"],
+                granted_permissions=[
+                    "operations.dashboard.read",
+                    "operations.run.read",
+                    "operations.queue.read",
+                    "operations.queue.act",
+                    "operations.flow.read",
+                    "operations.billing.read",
+                ],
+                scope_bindings=["cross-team", "team", "workspace"],
+                escalation_target="eng-lead",
+            ),
         ],
         metrics=[
             MetricDefinition("operations.dashboard.requests", "count", owner="operations"),

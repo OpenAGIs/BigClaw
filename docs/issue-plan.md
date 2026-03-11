@@ -25,6 +25,16 @@
 - Treat the entry gate as a deterministic evaluation over candidate capabilities, evidence, and blockers instead of a narrative-only milestone.
 - Keep repo traceability in `docs/issue-plan.md` and an issue validation report so the Linear ticket, planning artifact, and validation commands stay aligned.
 
+### Role Matrix: 权限矩阵与角色模型 (`OPE-132`)
+
+#### Goal
+- Define a v4.0 execution role model that maps `Eng Lead`, `Platform Admin`, `VP Eng`, and `Cross-Team Operator` personas to auditable permissions and scope bindings.
+
+#### Delivery shape
+- Extend the execution contract so role definitions live beside API permissions, audit policy, and metrics ownership rather than in a separate checklist.
+- Require role coverage to be audited against defined permissions and API requirements so missing personas or unowned permissions fail readiness deterministically.
+- Keep the role matrix serializable and renderable so downstream review artifacts can show who may approve, operate, and inspect execution flows.
+
 ## BigClaw PRD v2.0
 
 ### Epic
@@ -48,6 +58,7 @@
 - `OPE-116` / `BIG-EPIC-16`: v4.0 范围冻结与任务治理 — Step1, v2.0 freeze and backlog governance.
 - `OPE-117` / `BIG-EPIC-17`: v4.0 UI Design Sprint — Step2, key page design sprint.
 - `OPE-118` / `BIG-EPIC-18`: v4.0 执行层技术契约 — Step3, models/APIs/permissions/metrics/audit.
+- `OPE-132` / `BIG-4304`: 权限矩阵与角色模型 — Step3a, role-to-permission coverage for v4.0 execution governance.
 - `OPE-119` / `BIG-EPIC-19`: v4.0 设计评审与决策 — Step4, cross-role review and decisions.
 - `OPE-120` / `BIG-EPIC-20`: v4.0 v3候选与进入条件 — Step5, v3 candidate backlog and gate.
 
