@@ -11,9 +11,11 @@ from bigclaw.models import Task
 from bigclaw.observability import TaskRun
 from bigclaw.operations import (
     OperationsAnalytics,
+    render_engineering_overview,
     render_operations_dashboard,
     render_regression_center,
     render_weekly_operations_report,
+    write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
 from bigclaw.scheduler import ExecutionRecord, SchedulerDecision
@@ -198,3 +200,94 @@ def test_write_weekly_operations_bundle_emits_expected_reports(tmp_path: Path) -
     assert "# Weekly Operations Report" in Path(artifacts.weekly_report_path).read_text()
     assert "# Operations Dashboard" in Path(artifacts.dashboard_path).read_text()
     assert "# Regression Analysis Center" in Path(artifacts.regression_center_path).read_text()
+
+
+def test_build_engineering_overview_includes_kpis_funnel_blockers_and_activity() -> None:
+    analytics = OperationsAnalytics()
+    runs = [
+        make_run("run-1", "BIG-1401-1", "approved", "2026-03-10T09:00:00Z", "2026-03-10T09:20:00Z", "merged", "default low risk path"),
+        make_run("run-2", "BIG-1401-2", "running", "2026-03-10T10:00:00Z", "2026-03-10T10:30:00Z", "in flight", "long running implementation"),
+        make_run("run-3", "BIG-1401-3", "needs-approval", "2026-03-10T11:00:00Z", "2026-03-10T12:10:00Z", "approval", "requires approval for prod deploy"),
+        make_run("run-4", "BIG-1401-4", "failed", "2026-03-10T12:00:00Z", "2026-03-10T12:45:00Z", "regression", "security scan failed"),
+    ]
+
+    overview = analytics.build_engineering_overview(
+        name="Core Product",
+        period="2026-W11",
+        runs=runs,
+        viewer_role="engineering-manager",
+        sla_target_minutes=60,
+    )
+
+    assert overview.permissions.allowed_modules == ["kpis", "funnel", "blockers", "activity"]
+    assert [kpi.name for kpi in overview.kpis] == [
+        "success-rate",
+        "approval-queue-depth",
+        "sla-breaches",
+        "average-cycle-minutes",
+    ]
+    assert [(stage.name, stage.count) for stage in overview.funnel] == [
+        ("queued", 0),
+        ("in-progress", 1),
+        ("awaiting-approval", 1),
+        ("completed", 1),
+    ]
+    assert overview.blockers[0].owner == "operations"
+    assert overview.blockers[0].severity == "medium"
+    assert overview.blockers[1].owner == "security"
+    assert overview.blockers[1].severity == "high"
+    assert overview.activities[0].run_id == "run-4"
+
+
+def test_render_engineering_overview_hides_modules_without_permission() -> None:
+    analytics = OperationsAnalytics()
+    runs = [
+        make_run("run-1", "BIG-1401-1", "approved", "2026-03-10T09:00:00Z", "2026-03-10T09:20:00Z", "merged", "default low risk path"),
+        make_run("run-2", "BIG-1401-2", "needs-approval", "2026-03-10T10:00:00Z", "2026-03-10T10:25:00Z", "approval", "requires approval for prod deploy"),
+    ]
+
+    executive_view = analytics.build_engineering_overview(
+        name="Executive View",
+        period="2026-W11",
+        runs=runs,
+        viewer_role="executive",
+    )
+    contributor_view = analytics.build_engineering_overview(
+        name="Contributor View",
+        period="2026-W11",
+        runs=runs,
+        viewer_role="contributor",
+    )
+
+    executive_report = render_engineering_overview(executive_view)
+    contributor_report = render_engineering_overview(contributor_view)
+
+    assert "## KPI Modules" in executive_report
+    assert "## Funnel Modules" in executive_report
+    assert "## Blocker Modules" in executive_report
+    assert "## Activity Modules" not in executive_report
+    assert "## KPI Modules" in contributor_report
+    assert "## Activity Modules" in contributor_report
+    assert "## Funnel Modules" not in contributor_report
+    assert "## Blocker Modules" not in contributor_report
+
+
+def test_write_engineering_overview_bundle_emits_report(tmp_path: Path) -> None:
+    analytics = OperationsAnalytics()
+    overview = analytics.build_engineering_overview(
+        name="Core Product",
+        period="2026-W11",
+        runs=[
+            make_run("run-1", "BIG-1401-1", "approved", "2026-03-10T09:00:00Z", "2026-03-10T09:20:00Z", "merged", "default low risk path"),
+            make_run("run-2", "BIG-1401-2", "needs-approval", "2026-03-10T10:00:00Z", "2026-03-10T10:25:00Z", "approval", "requires approval for prod deploy"),
+        ],
+        viewer_role="operations",
+    )
+
+    output_path = write_engineering_overview_bundle(str(tmp_path / "overview"), overview)
+
+    assert Path(output_path).exists()
+    content = Path(output_path).read_text()
+    assert "# Engineering Overview" in content
+    assert "Viewer Role: operations" in content
+    assert "## Activity Modules" in content

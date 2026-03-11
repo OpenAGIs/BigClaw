@@ -90,6 +90,67 @@ class QueueControlCenter:
     queued_tasks: List[str] = field(default_factory=list)
 
 
+@dataclass
+class EngineeringOverviewKPI:
+    name: str
+    value: float
+    target: float
+    unit: str = ""
+    direction: str = "up"
+
+    @property
+    def healthy(self) -> bool:
+        if self.direction == "down":
+            return self.value <= self.target
+        return self.value >= self.target
+
+
+@dataclass
+class EngineeringFunnelStage:
+    name: str
+    count: int
+    share: float
+
+
+@dataclass
+class EngineeringOverviewBlocker:
+    summary: str
+    affected_runs: int
+    affected_tasks: List[str] = field(default_factory=list)
+    owner: str = "engineering"
+    severity: str = "medium"
+
+
+@dataclass
+class EngineeringActivity:
+    timestamp: str
+    run_id: str
+    task_id: str
+    status: str
+    summary: str
+
+
+@dataclass
+class EngineeringOverviewPermission:
+    viewer_role: str
+    allowed_modules: List[str] = field(default_factory=list)
+
+    def can_view(self, module: str) -> bool:
+        return module in self.allowed_modules
+
+
+@dataclass
+class EngineeringOverview:
+    name: str
+    period: str
+    snapshot: OperationsSnapshot
+    permissions: EngineeringOverviewPermission
+    kpis: List[EngineeringOverviewKPI] = field(default_factory=list)
+    funnel: List[EngineeringFunnelStage] = field(default_factory=list)
+    blockers: List[EngineeringOverviewBlocker] = field(default_factory=list)
+    activities: List[EngineeringActivity] = field(default_factory=list)
+
+
 class OperationsAnalytics:
     def summarize_runs(
         self,
@@ -246,6 +307,65 @@ class OperationsAnalytics:
             queued_tasks=[task.task_id for task in queued_tasks],
         )
 
+    def build_engineering_overview(
+        self,
+        name: str,
+        period: str,
+        runs: Sequence[dict],
+        viewer_role: str,
+        sla_target_minutes: int = 60,
+        top_n_blockers: int = 3,
+        recent_activity_limit: int = 5,
+    ) -> EngineeringOverview:
+        snapshot = self.summarize_runs(
+            runs,
+            sla_target_minutes=sla_target_minutes,
+            top_n_blockers=top_n_blockers,
+        )
+        permissions = self._permissions_for_role(viewer_role)
+        kpis = [
+            EngineeringOverviewKPI(name="success-rate", value=snapshot.success_rate, target=90.0, unit="%"),
+            EngineeringOverviewKPI(
+                name="approval-queue-depth",
+                value=float(snapshot.approval_queue_depth),
+                target=2.0,
+                direction="down",
+            ),
+            EngineeringOverviewKPI(
+                name="sla-breaches",
+                value=float(snapshot.sla_breach_count),
+                target=0.0,
+                direction="down",
+            ),
+            EngineeringOverviewKPI(
+                name="average-cycle-minutes",
+                value=snapshot.average_cycle_minutes,
+                target=float(sla_target_minutes),
+                unit="m",
+                direction="down",
+            ),
+        ]
+        blockers = [
+            EngineeringOverviewBlocker(
+                summary=cluster.reason,
+                affected_runs=cluster.occurrences,
+                affected_tasks=cluster.task_ids,
+                owner=self._owner_for_cluster(cluster),
+                severity=self._severity_for_cluster(cluster),
+            )
+            for cluster in snapshot.top_blockers
+        ]
+        return EngineeringOverview(
+            name=name,
+            period=period,
+            snapshot=snapshot,
+            permissions=permissions,
+            kpis=kpis,
+            funnel=self._build_funnel(snapshot.status_counts, snapshot.total_runs),
+            blockers=blockers,
+            activities=self._build_recent_activities(runs, recent_activity_limit),
+        )
+
     def build_weekly_report(
         self,
         name: str,
@@ -292,6 +412,69 @@ class OperationsAnalytics:
             return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(timezone.utc)
         except ValueError:
             return None
+
+    def _build_funnel(self, status_counts: Dict[str, int], total_runs: int) -> List[EngineeringFunnelStage]:
+        funnel_counts = [
+            ("queued", status_counts.get("queued", 0)),
+            ("in-progress", status_counts.get("running", 0) + status_counts.get("in-progress", 0)),
+            ("awaiting-approval", status_counts.get("needs-approval", 0)),
+            ("completed", sum(count for status, count in status_counts.items() if status in STATUS_COMPLETE)),
+        ]
+        return [
+            EngineeringFunnelStage(
+                name=name,
+                count=count,
+                share=round((count / total_runs) * 100, 1) if total_runs else 0.0,
+            )
+            for name, count in funnel_counts
+        ]
+
+    def _build_recent_activities(self, runs: Sequence[dict], limit: int) -> List[EngineeringActivity]:
+        dated_runs = []
+        for run in runs:
+            sort_key = self._parse_ts(str(run.get("ended_at", ""))) or self._parse_ts(str(run.get("started_at", "")))
+            if sort_key is None:
+                continue
+            dated_runs.append((sort_key, run))
+
+        activities: List[EngineeringActivity] = []
+        for _, run in sorted(dated_runs, key=lambda item: item[0], reverse=True)[:limit]:
+            activities.append(
+                EngineeringActivity(
+                    timestamp=str(run.get("ended_at") or run.get("started_at") or ""),
+                    run_id=str(run.get("run_id", "")),
+                    task_id=str(run.get("task_id", "")),
+                    status=str(run.get("status", "unknown")),
+                    summary=self._primary_reason(run),
+                )
+            )
+        return activities
+
+    def _permissions_for_role(self, viewer_role: str) -> EngineeringOverviewPermission:
+        role = viewer_role.strip().lower() or "contributor"
+        modules_by_role = {
+            "executive": ["kpis", "funnel", "blockers"],
+            "engineering-manager": ["kpis", "funnel", "blockers", "activity"],
+            "operations": ["kpis", "funnel", "blockers", "activity"],
+            "contributor": ["kpis", "activity"],
+        }
+        return EngineeringOverviewPermission(
+            viewer_role=role,
+            allowed_modules=modules_by_role.get(role, modules_by_role["contributor"]),
+        )
+
+    def _owner_for_cluster(self, cluster: TriageCluster) -> str:
+        details = " ".join([cluster.reason, " ".join(cluster.statuses)]).lower()
+        if "approval" in details:
+            return "operations"
+        if "security" in details:
+            return "security"
+        return "engineering"
+
+    def _severity_for_cluster(self, cluster: TriageCluster) -> str:
+        if cluster.occurrences >= 3 or "failed" in cluster.statuses:
+            return "high"
+        return "medium"
 
 
 def render_operations_dashboard(snapshot: OperationsSnapshot) -> str:
@@ -395,6 +578,61 @@ def render_queue_control_center(center: QueueControlCenter) -> str:
         lines.append("- None")
 
     return "\n".join(lines) + "\n"
+
+
+def render_engineering_overview(overview: EngineeringOverview) -> str:
+    lines = [
+        "# Engineering Overview",
+        "",
+        f"- Name: {overview.name}",
+        f"- Period: {overview.period}",
+        f"- Viewer Role: {overview.permissions.viewer_role}",
+        f"- Visible Modules: {', '.join(overview.permissions.allowed_modules)}",
+    ]
+
+    if overview.permissions.can_view("kpis"):
+        lines.extend(["", "## KPI Modules", ""])
+        for kpi in overview.kpis:
+            lines.append(
+                f"- {kpi.name}: value={kpi.value:.1f}{kpi.unit} target={kpi.target:.1f}{kpi.unit} healthy={kpi.healthy}"
+            )
+
+    if overview.permissions.can_view("funnel"):
+        lines.extend(["", "## Funnel Modules", ""])
+        for stage in overview.funnel:
+            lines.append(f"- {stage.name}: count={stage.count} share={stage.share:.1f}%")
+
+    if overview.permissions.can_view("blockers"):
+        lines.extend(["", "## Blocker Modules", ""])
+        if overview.blockers:
+            for blocker in overview.blockers:
+                lines.append(
+                    f"- {blocker.summary}: severity={blocker.severity} owner={blocker.owner} "
+                    f"affected_runs={blocker.affected_runs} tasks={', '.join(blocker.affected_tasks)}"
+                )
+        else:
+            lines.append("- None")
+
+    if overview.permissions.can_view("activity"):
+        lines.extend(["", "## Activity Modules", ""])
+        if overview.activities:
+            for activity in overview.activities:
+                lines.append(
+                    f"- {activity.timestamp}: {activity.run_id} task={activity.task_id} "
+                    f"status={activity.status} summary={activity.summary}"
+                )
+        else:
+            lines.append("- None")
+
+    return "\n".join(lines) + "\n"
+
+
+def write_engineering_overview_bundle(root_dir: str, overview: EngineeringOverview) -> str:
+    base = Path(root_dir)
+    base.mkdir(parents=True, exist_ok=True)
+    overview_path = str(base / "engineering-overview.md")
+    write_report(overview_path, render_engineering_overview(overview))
+    return overview_path
 
 
 
