@@ -7,6 +7,7 @@ from bigclaw.reports import (
     BillingEntitlementsPage,
     BillingRunCharge,
     DocumentationArtifact,
+    FinalDeliveryChecklist,
     LaunchChecklistItem,
     NarrativeSection,
     OrchestrationCanvas,
@@ -20,6 +21,7 @@ from bigclaw.reports import (
     build_auto_triage_center,
     build_billing_entitlements_page,
     build_billing_entitlements_page_from_ledger,
+    build_final_delivery_checklist,
     build_orchestration_canvas,
     build_orchestration_canvas_from_ledger_entry,
     build_orchestration_portfolio,
@@ -30,6 +32,7 @@ from bigclaw.reports import (
     render_auto_triage_center_report,
     render_billing_entitlements_page,
     render_billing_entitlements_report,
+    render_final_delivery_checklist_report,
     render_orchestration_canvas,
     render_orchestration_overview_page,
     render_orchestration_portfolio_report,
@@ -264,6 +267,44 @@ def test_launch_checklist_auto_links_documentation_status(tmp_path: Path):
     assert "Support handoff: completed=False evidence=faq" in report
 
 
+def test_final_delivery_checklist_tracks_required_outputs_and_recommended_docs(tmp_path: Path):
+    validation_bundle = tmp_path / "validation-bundle.md"
+    release_notes = tmp_path / "release-notes.md"
+    write_report(str(validation_bundle), "# Validation Bundle\n\nready")
+
+    checklist = build_final_delivery_checklist(
+        "BIG-4702",
+        required_outputs=[
+            DocumentationArtifact(name="validation-bundle", path=str(validation_bundle)),
+            DocumentationArtifact(name="release-notes", path=str(release_notes)),
+        ],
+        recommended_documentation=[
+            DocumentationArtifact(name="runbook", path=str(tmp_path / "runbook.md")),
+            DocumentationArtifact(name="faq", path=str(tmp_path / "faq.md")),
+        ],
+    )
+
+    report = render_final_delivery_checklist_report(checklist)
+
+    assert checklist.required_output_status == {
+        "validation-bundle": True,
+        "release-notes": False,
+    }
+    assert checklist.recommended_documentation_status == {
+        "runbook": False,
+        "faq": False,
+    }
+    assert checklist.generated_required_outputs == 1
+    assert checklist.generated_recommended_documentation == 0
+    assert checklist.missing_required_outputs == ["release-notes"]
+    assert checklist.missing_recommended_documentation == ["runbook", "faq"]
+    assert checklist.ready is False
+    assert "Required Outputs Generated: 1/2" in report
+    assert "Recommended Docs Generated: 0/2" in report
+    assert "release-notes: available=False" in report
+    assert "runbook: available=False" in report
+
+
 def test_issue_closure_blocks_incomplete_linked_launch_checklist(tmp_path: Path):
     report_path = tmp_path / "validation.md"
     runbook = tmp_path / "runbook.md"
@@ -288,6 +329,61 @@ def test_issue_closure_blocks_incomplete_linked_launch_checklist(tmp_path: Path)
 
     assert decision.allowed is False
     assert decision.reason == "launch checklist incomplete; linked documentation missing or empty"
+
+
+def test_issue_closure_blocks_missing_required_final_delivery_outputs(tmp_path: Path):
+    report_path = tmp_path / "validation.md"
+    write_report(str(report_path), render_issue_validation_report("BIG-4702", "v0.3", "staging", "pass"))
+
+    checklist = build_final_delivery_checklist(
+        "BIG-4702",
+        required_outputs=[
+            DocumentationArtifact(name="validation-bundle", path=str(tmp_path / "validation-bundle.md")),
+        ],
+        recommended_documentation=[
+            DocumentationArtifact(name="runbook", path=str(tmp_path / "runbook.md")),
+        ],
+    )
+
+    decision = evaluate_issue_closure(
+        "BIG-4702",
+        str(report_path),
+        validation_passed=True,
+        final_delivery_checklist=checklist,
+    )
+
+    assert decision.allowed is False
+    assert decision.reason == "final delivery checklist incomplete; required outputs missing"
+
+
+def test_issue_closure_allows_when_required_final_delivery_outputs_exist(tmp_path: Path):
+    report_path = tmp_path / "validation.md"
+    validation_bundle = tmp_path / "validation-bundle.md"
+    release_notes = tmp_path / "release-notes.md"
+    write_report(str(report_path), render_issue_validation_report("BIG-4702", "v0.3", "staging", "pass"))
+    write_report(str(validation_bundle), "# Validation Bundle\n\nready")
+    write_report(str(release_notes), "# Release Notes\n\nready")
+
+    checklist = build_final_delivery_checklist(
+        "BIG-4702",
+        required_outputs=[
+            DocumentationArtifact(name="validation-bundle", path=str(validation_bundle)),
+            DocumentationArtifact(name="release-notes", path=str(release_notes)),
+        ],
+        recommended_documentation=[
+            DocumentationArtifact(name="runbook", path=str(tmp_path / "runbook.md")),
+        ],
+    )
+
+    decision = evaluate_issue_closure(
+        "BIG-4702",
+        str(report_path),
+        validation_passed=True,
+        final_delivery_checklist=checklist,
+    )
+
+    assert decision.allowed is True
+    assert decision.reason == "validation report and final delivery checklist requirements satisfied; issue can be closed"
 
 
 def test_issue_closure_allows_when_linked_launch_checklist_is_ready(tmp_path: Path):

@@ -183,6 +183,41 @@ class LaunchChecklist:
 
 
 @dataclass
+class FinalDeliveryChecklist:
+    issue_id: str
+    required_outputs: List[DocumentationArtifact] = field(default_factory=list)
+    recommended_documentation: List[DocumentationArtifact] = field(default_factory=list)
+
+    @property
+    def required_output_status(self) -> dict[str, bool]:
+        return {artifact.name: artifact.available for artifact in self.required_outputs}
+
+    @property
+    def recommended_documentation_status(self) -> dict[str, bool]:
+        return {artifact.name: artifact.available for artifact in self.recommended_documentation}
+
+    @property
+    def generated_required_outputs(self) -> int:
+        return sum(1 for artifact in self.required_outputs if artifact.available)
+
+    @property
+    def generated_recommended_documentation(self) -> int:
+        return sum(1 for artifact in self.recommended_documentation if artifact.available)
+
+    @property
+    def missing_required_outputs(self) -> List[str]:
+        return [artifact.name for artifact in self.required_outputs if not artifact.available]
+
+    @property
+    def missing_recommended_documentation(self) -> List[str]:
+        return [artifact.name for artifact in self.recommended_documentation if not artifact.available]
+
+    @property
+    def ready(self) -> bool:
+        return not self.missing_required_outputs
+
+
+@dataclass
 class NarrativeSection:
     heading: str
     body: str
@@ -758,6 +793,18 @@ def build_launch_checklist(
     return LaunchChecklist(issue_id=issue_id, documentation=documentation, items=items)
 
 
+def build_final_delivery_checklist(
+    issue_id: str,
+    required_outputs: List[DocumentationArtifact],
+    recommended_documentation: List[DocumentationArtifact],
+) -> FinalDeliveryChecklist:
+    return FinalDeliveryChecklist(
+        issue_id=issue_id,
+        required_outputs=required_outputs,
+        recommended_documentation=recommended_documentation,
+    )
+
+
 def render_launch_checklist_report(checklist: LaunchChecklist) -> str:
     lines = [
         "# Launch Checklist",
@@ -785,6 +832,39 @@ def render_launch_checklist_report(checklist: LaunchChecklist) -> str:
             evidence = ", ".join(item.evidence) if item.evidence else "none"
             lines.append(
                 f"- {item.name}: completed={checklist.item_completed(item)} evidence={evidence}"
+            )
+    else:
+        lines.append("- None")
+
+    return "\n".join(lines) + "\n"
+
+
+def render_final_delivery_checklist_report(checklist: FinalDeliveryChecklist) -> str:
+    lines = [
+        "# Final Delivery Checklist",
+        "",
+        f"- Issue ID: {checklist.issue_id}",
+        f"- Required Outputs Generated: {checklist.generated_required_outputs}/{len(checklist.required_outputs)}",
+        f"- Recommended Docs Generated: {checklist.generated_recommended_documentation}/{len(checklist.recommended_documentation)}",
+        f"- Ready: {checklist.ready}",
+        "",
+        "## Required Outputs",
+        "",
+    ]
+
+    if checklist.required_outputs:
+        for artifact in checklist.required_outputs:
+            lines.append(
+                f"- {artifact.name}: available={artifact.available} path={artifact.path}"
+            )
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Recommended Documentation", ""])
+    if checklist.recommended_documentation:
+        for artifact in checklist.recommended_documentation:
+            lines.append(
+                f"- {artifact.name}: available={artifact.available} path={artifact.path}"
             )
     else:
         lines.append("- None")
@@ -898,6 +978,7 @@ def evaluate_issue_closure(
     report_path: Optional[str],
     validation_passed: bool = True,
     launch_checklist: Optional[LaunchChecklist] = None,
+    final_delivery_checklist: Optional[FinalDeliveryChecklist] = None,
 ) -> IssueClosureDecision:
     resolved_path = str(Path(report_path)) if report_path else ""
 
@@ -917,11 +998,27 @@ def evaluate_issue_closure(
             report_path=resolved_path,
         )
 
+    if final_delivery_checklist is not None and not final_delivery_checklist.ready:
+        return IssueClosureDecision(
+            issue_id=issue_id,
+            allowed=False,
+            reason="final delivery checklist incomplete; required outputs missing",
+            report_path=resolved_path,
+        )
+
     if launch_checklist is not None and not launch_checklist.ready:
         return IssueClosureDecision(
             issue_id=issue_id,
             allowed=False,
             reason="launch checklist incomplete; linked documentation missing or empty",
+            report_path=resolved_path,
+        )
+
+    if final_delivery_checklist is not None:
+        return IssueClosureDecision(
+            issue_id=issue_id,
+            allowed=True,
+            reason="validation report and final delivery checklist requirements satisfied; issue can be closed",
             report_path=resolved_path,
         )
 
