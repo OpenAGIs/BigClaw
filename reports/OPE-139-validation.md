@@ -21,5 +21,5 @@ Extended the `BIG-EPIC-20` planning artifact so v3 candidates can carry structur
 ## Validation Evidence
 
 - `python3 -m pytest tests/test_planning.py` -> `6 passed in 0.08s`
-- `python3 -m pytest` -> `149 passed in 0.16s`
+- `python3 -m pytest` -> `151 passed in 0.17s`
 - `git diff --stat` before adding this validation report -> `4 files changed, 99 insertions(+)`
