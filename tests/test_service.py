@@ -34,13 +34,20 @@ def test_server_entry_health_metrics(tmp_path: Path):
         assert "bigclaw_http_requests_total" in metrics_json
         assert "recent_requests" in metrics_json
         assert "rolling_5m" in metrics_json
+        assert "bigclaw_http_error_rate" in metrics_json
+        assert "health_summary" in metrics_json
+
+        alerts = json.loads(_get(f"http://{host}:{port}/alerts"))
+        assert alerts["level"] in {"ok", "warn", "critical"}
+        assert "error_rate" in alerts
 
         monitor_html = _get(f"http://{host}:{port}/monitor")
         assert "BigClaw Monitor" in monitor_html
         assert "Requests" in monitor_html
+        assert "Error Rate" in monitor_html
         assert "Auto refresh every 5s" in monitor_html
 
-        assert monitoring.request_total >= 5
+        assert monitoring.request_total >= 6
     finally:
         server.shutdown()
         server.server_close()

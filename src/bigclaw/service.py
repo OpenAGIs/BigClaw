@@ -59,13 +59,40 @@ class ServerMonitoring:
     def metrics_payload(self) -> Dict[str, object]:
         uptime = max(0.0, time.time() - self.start_time)
         with self._lock:
+            error_rate = (self.error_total / self.request_total) if self.request_total else 0.0
+            summary = "healthy"
+            if error_rate >= 0.2:
+                summary = "critical"
+            elif error_rate >= 0.05:
+                summary = "degraded"
             return {
                 "bigclaw_uptime_seconds": round(uptime, 3),
                 "bigclaw_http_requests_total": self.request_total,
                 "bigclaw_http_errors_total": self.error_total,
+                "bigclaw_http_error_rate": round(error_rate, 4),
+                "health_summary": summary,
                 "recent_requests": list(self.recent_requests),
                 "rolling_5m": self._rolling(),
             }
+
+    def alerts_payload(self) -> Dict[str, object]:
+        metrics = self.metrics_payload()
+        error_rate = float(metrics["bigclaw_http_error_rate"])
+        level = "ok"
+        message = "System healthy"
+        if error_rate >= 0.2:
+            level = "critical"
+            message = "High HTTP error rate detected"
+        elif error_rate >= 0.05:
+            level = "warn"
+            message = "Elevated HTTP error rate detected"
+        return {
+            "level": level,
+            "message": message,
+            "error_rate": error_rate,
+            "request_total": metrics["bigclaw_http_requests_total"],
+            "error_total": metrics["bigclaw_http_errors_total"],
+        }
 
     def metrics_text(self) -> str:
         uptime = max(0.0, time.time() - self.start_time)
@@ -130,6 +157,8 @@ def _monitor_page(stats: Dict[str, object]) -> str:
       <div class='card'><div class='label'>Uptime (s)</div><div class='value' id='uptime'>{stats['bigclaw_uptime_seconds']}</div></div>
       <div class='card'><div class='label'>Requests</div><div class='value' id='requests'>{stats['bigclaw_http_requests_total']}</div></div>
       <div class='card'><div class='label'>Errors</div><div class='value' id='errors'>{stats['bigclaw_http_errors_total']}</div></div>
+      <div class='card'><div class='label'>Error Rate</div><div class='value' id='error-rate'>{stats['bigclaw_http_error_rate']}</div></div>
+      <div class='card'><div class='label'>Health</div><div class='value' id='health-summary'>{stats['health_summary']}</div></div>
     </div>
 
     <section>
@@ -156,6 +185,8 @@ def _monitor_page(stats: Dict[str, object]) -> str:
         document.getElementById('uptime').textContent = data.bigclaw_uptime_seconds;
         document.getElementById('requests').textContent = data.bigclaw_http_requests_total;
         document.getElementById('errors').textContent = data.bigclaw_http_errors_total;
+        document.getElementById('error-rate').textContent = data.bigclaw_http_error_rate;
+        document.getElementById('health-summary').textContent = data.health_summary;
 
         const rollingBody = document.querySelector('#rolling-table tbody');
         rollingBody.innerHTML = (data.rolling_5m || []).map((b) =>
@@ -215,6 +246,15 @@ def _handler_factory(*, directory: str, monitoring: ServerMonitoring):
                 body = html.encode("utf-8")
                 self.send_response(HTTPStatus.OK)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+
+            if self.path == "/alerts":
+                body = json.dumps(monitoring.alerts_payload()).encode("utf-8")
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
