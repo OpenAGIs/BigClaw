@@ -158,6 +158,208 @@ class EngineeringOverview:
     activities: List[EngineeringActivity] = field(default_factory=list)
 
 
+@dataclass(frozen=True)
+class DashboardWidgetSpec:
+    widget_id: str
+    title: str
+    module: str
+    data_source: str
+    default_width: int = 4
+    default_height: int = 3
+    min_width: int = 2
+    max_width: int = 12
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "widget_id": self.widget_id,
+            "title": self.title,
+            "module": self.module,
+            "data_source": self.data_source,
+            "default_width": self.default_width,
+            "default_height": self.default_height,
+            "min_width": self.min_width,
+            "max_width": self.max_width,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "DashboardWidgetSpec":
+        return cls(
+            widget_id=str(data["widget_id"]),
+            title=str(data["title"]),
+            module=str(data["module"]),
+            data_source=str(data["data_source"]),
+            default_width=int(data.get("default_width", 4)),
+            default_height=int(data.get("default_height", 3)),
+            min_width=int(data.get("min_width", 2)),
+            max_width=int(data.get("max_width", 12)),
+        )
+
+
+@dataclass(frozen=True)
+class DashboardWidgetPlacement:
+    placement_id: str
+    widget_id: str
+    column: int
+    row: int
+    width: int
+    height: int
+    title_override: str = ""
+    filters: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "placement_id": self.placement_id,
+            "widget_id": self.widget_id,
+            "column": self.column,
+            "row": self.row,
+            "width": self.width,
+            "height": self.height,
+            "title_override": self.title_override,
+            "filters": list(self.filters),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "DashboardWidgetPlacement":
+        return cls(
+            placement_id=str(data["placement_id"]),
+            widget_id=str(data["widget_id"]),
+            column=int(data.get("column", 0)),
+            row=int(data.get("row", 0)),
+            width=int(data.get("width", 1)),
+            height=int(data.get("height", 1)),
+            title_override=str(data.get("title_override", "")),
+            filters=[str(item) for item in data.get("filters", [])],
+        )
+
+
+@dataclass
+class DashboardLayout:
+    layout_id: str
+    name: str
+    columns: int = 12
+    placements: List[DashboardWidgetPlacement] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "layout_id": self.layout_id,
+            "name": self.name,
+            "columns": self.columns,
+            "placements": [placement.to_dict() for placement in self.placements],
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "DashboardLayout":
+        return cls(
+            layout_id=str(data["layout_id"]),
+            name=str(data["name"]),
+            columns=int(data.get("columns", 12)),
+            placements=[DashboardWidgetPlacement.from_dict(item) for item in data.get("placements", [])],
+        )
+
+
+@dataclass
+class DashboardBuilder:
+    name: str
+    period: str
+    owner: str
+    permissions: EngineeringOverviewPermission
+    widgets: List[DashboardWidgetSpec] = field(default_factory=list)
+    layouts: List[DashboardLayout] = field(default_factory=list)
+    documentation_complete: bool = False
+
+    @property
+    def widget_index(self) -> Dict[str, DashboardWidgetSpec]:
+        return {widget.widget_id: widget for widget in self.widgets}
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "name": self.name,
+            "period": self.period,
+            "owner": self.owner,
+            "permissions": {
+                "viewer_role": self.permissions.viewer_role,
+                "allowed_modules": list(self.permissions.allowed_modules),
+            },
+            "widgets": [widget.to_dict() for widget in self.widgets],
+            "layouts": [layout.to_dict() for layout in self.layouts],
+            "documentation_complete": self.documentation_complete,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "DashboardBuilder":
+        permissions = dict(data.get("permissions", {}))
+        return cls(
+            name=str(data["name"]),
+            period=str(data["period"]),
+            owner=str(data["owner"]),
+            permissions=EngineeringOverviewPermission(
+                viewer_role=str(permissions.get("viewer_role", "contributor")),
+                allowed_modules=[str(item) for item in permissions.get("allowed_modules", [])],
+            ),
+            widgets=[DashboardWidgetSpec.from_dict(item) for item in data.get("widgets", [])],
+            layouts=[DashboardLayout.from_dict(item) for item in data.get("layouts", [])],
+            documentation_complete=bool(data.get("documentation_complete", False)),
+        )
+
+
+@dataclass
+class DashboardBuilderAudit:
+    name: str
+    total_widgets: int
+    layout_count: int
+    placed_widgets: int
+    duplicate_placement_ids: List[str] = field(default_factory=list)
+    missing_widget_defs: List[str] = field(default_factory=list)
+    inaccessible_widgets: List[str] = field(default_factory=list)
+    overlapping_placements: List[str] = field(default_factory=list)
+    out_of_bounds_placements: List[str] = field(default_factory=list)
+    empty_layouts: List[str] = field(default_factory=list)
+    documentation_complete: bool = False
+
+    @property
+    def release_ready(self) -> bool:
+        return not (
+            self.duplicate_placement_ids
+            or self.missing_widget_defs
+            or self.inaccessible_widgets
+            or self.overlapping_placements
+            or self.out_of_bounds_placements
+            or self.empty_layouts
+            or not self.documentation_complete
+        )
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "name": self.name,
+            "total_widgets": self.total_widgets,
+            "layout_count": self.layout_count,
+            "placed_widgets": self.placed_widgets,
+            "duplicate_placement_ids": list(self.duplicate_placement_ids),
+            "missing_widget_defs": list(self.missing_widget_defs),
+            "inaccessible_widgets": list(self.inaccessible_widgets),
+            "overlapping_placements": list(self.overlapping_placements),
+            "out_of_bounds_placements": list(self.out_of_bounds_placements),
+            "empty_layouts": list(self.empty_layouts),
+            "documentation_complete": self.documentation_complete,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "DashboardBuilderAudit":
+        return cls(
+            name=str(data["name"]),
+            total_widgets=int(data.get("total_widgets", 0)),
+            layout_count=int(data.get("layout_count", 0)),
+            placed_widgets=int(data.get("placed_widgets", 0)),
+            duplicate_placement_ids=[str(item) for item in data.get("duplicate_placement_ids", [])],
+            missing_widget_defs=[str(item) for item in data.get("missing_widget_defs", [])],
+            inaccessible_widgets=[str(item) for item in data.get("inaccessible_widgets", [])],
+            overlapping_placements=[str(item) for item in data.get("overlapping_placements", [])],
+            out_of_bounds_placements=[str(item) for item in data.get("out_of_bounds_placements", [])],
+            empty_layouts=[str(item) for item in data.get("empty_layouts", [])],
+            documentation_complete=bool(data.get("documentation_complete", False)),
+        )
+
+
 class OperationsAnalytics:
     def summarize_runs(
         self,
@@ -405,6 +607,114 @@ class OperationsAnalytics:
             regressions=regressions,
         )
 
+    def build_dashboard_builder(
+        self,
+        name: str,
+        period: str,
+        owner: str,
+        viewer_role: str,
+        widgets: Sequence[DashboardWidgetSpec],
+        layouts: Sequence[DashboardLayout],
+        documentation_complete: bool = False,
+    ) -> DashboardBuilder:
+        return DashboardBuilder(
+            name=name,
+            period=period,
+            owner=owner,
+            permissions=self._permissions_for_role(viewer_role),
+            widgets=list(widgets),
+            layouts=[self.normalize_dashboard_layout(layout, widgets) for layout in layouts],
+            documentation_complete=documentation_complete,
+        )
+
+    def normalize_dashboard_layout(
+        self,
+        layout: DashboardLayout,
+        widgets: Sequence[DashboardWidgetSpec],
+    ) -> DashboardLayout:
+        widget_index = {widget.widget_id: widget for widget in widgets}
+        normalized: List[DashboardWidgetPlacement] = []
+        column_count = max(1, layout.columns)
+        for placement in layout.placements:
+            spec = widget_index.get(placement.widget_id)
+            min_width = spec.min_width if spec is not None else 1
+            max_width = min(spec.max_width, column_count) if spec is not None else column_count
+            width = max(min_width, min(placement.width, max_width))
+            column = max(0, placement.column)
+            if column + width > column_count:
+                column = max(0, column_count - width)
+            normalized.append(
+                DashboardWidgetPlacement(
+                    placement_id=placement.placement_id,
+                    widget_id=placement.widget_id,
+                    column=column,
+                    row=max(0, placement.row),
+                    width=width,
+                    height=max(1, placement.height),
+                    title_override=placement.title_override,
+                    filters=list(placement.filters),
+                )
+            )
+
+        normalized.sort(key=lambda item: (item.row, item.column, item.placement_id))
+        return DashboardLayout(
+            layout_id=layout.layout_id,
+            name=layout.name,
+            columns=column_count,
+            placements=normalized,
+        )
+
+    def audit_dashboard_builder(self, dashboard: DashboardBuilder) -> DashboardBuilderAudit:
+        widget_index = dashboard.widget_index
+        placement_counts: Dict[str, int] = {}
+        missing_widget_defs: set[str] = set()
+        inaccessible_widgets: set[str] = set()
+        overlapping_placements: set[str] = set()
+        out_of_bounds_placements: set[str] = set()
+        empty_layouts: List[str] = []
+        placed_widgets = 0
+
+        for layout in dashboard.layouts:
+            if not layout.placements:
+                empty_layouts.append(layout.layout_id)
+                continue
+
+            placed_widgets += len(layout.placements)
+            for placement in layout.placements:
+                placement_counts[placement.placement_id] = placement_counts.get(placement.placement_id, 0) + 1
+                spec = widget_index.get(placement.widget_id)
+                if spec is None:
+                    missing_widget_defs.add(placement.widget_id)
+                else:
+                    if not dashboard.permissions.can_view(spec.module):
+                        inaccessible_widgets.add(placement.widget_id)
+                if placement.column + placement.width > layout.columns:
+                    out_of_bounds_placements.add(placement.placement_id)
+
+            for index, placement in enumerate(layout.placements):
+                for other in layout.placements[index + 1 :]:
+                    if self._placements_overlap(placement, other):
+                        overlapping_placements.add(
+                            f"{layout.layout_id}:{placement.placement_id}<->{other.placement_id}"
+                        )
+
+        duplicate_ids = sorted(
+            placement_id for placement_id, count in placement_counts.items() if count > 1
+        )
+        return DashboardBuilderAudit(
+            name=dashboard.name,
+            total_widgets=len(dashboard.widgets),
+            layout_count=len(dashboard.layouts),
+            placed_widgets=placed_widgets,
+            duplicate_placement_ids=duplicate_ids,
+            missing_widget_defs=sorted(missing_widget_defs),
+            inaccessible_widgets=sorted(inaccessible_widgets),
+            overlapping_placements=sorted(overlapping_placements),
+            out_of_bounds_placements=sorted(out_of_bounds_placements),
+            empty_layouts=sorted(empty_layouts),
+            documentation_complete=dashboard.documentation_complete,
+        )
+
     def _primary_reason(self, run: dict) -> str:
         for audit in run.get("audits", []):
             reason = audit.get("details", {}).get("reason")
@@ -494,6 +804,15 @@ class OperationsAnalytics:
         if cluster.occurrences >= 3 or "failed" in cluster.statuses:
             return "high"
         return "medium"
+
+    @staticmethod
+    def _placements_overlap(left: DashboardWidgetPlacement, right: DashboardWidgetPlacement) -> bool:
+        return not (
+            left.column + left.width <= right.column
+            or right.column + right.width <= left.column
+            or left.row + left.height <= right.row
+            or right.row + right.height <= left.row
+        )
 
 
 def render_operations_dashboard(
@@ -662,12 +981,73 @@ def render_engineering_overview(overview: EngineeringOverview) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_dashboard_builder_report(
+    dashboard: DashboardBuilder,
+    audit: DashboardBuilderAudit,
+    view: Optional[SharedViewContext] = None,
+) -> str:
+    lines = [
+        "# Dashboard Builder",
+        "",
+        f"- Name: {dashboard.name}",
+        f"- Period: {dashboard.period}",
+        f"- Owner: {dashboard.owner}",
+        f"- Viewer Role: {dashboard.permissions.viewer_role}",
+        f"- Available Widgets: {len(dashboard.widgets)}",
+        f"- Layouts: {len(dashboard.layouts)}",
+        f"- Release Ready: {audit.release_ready}",
+        "",
+        "## Governance",
+        "",
+        f"- Documentation Complete: {audit.documentation_complete}",
+        f"- Duplicate Placement IDs: {', '.join(audit.duplicate_placement_ids) if audit.duplicate_placement_ids else 'none'}",
+        f"- Missing Widget Definitions: {', '.join(audit.missing_widget_defs) if audit.missing_widget_defs else 'none'}",
+        f"- Inaccessible Widgets: {', '.join(audit.inaccessible_widgets) if audit.inaccessible_widgets else 'none'}",
+        f"- Overlaps: {', '.join(audit.overlapping_placements) if audit.overlapping_placements else 'none'}",
+        f"- Out Of Bounds: {', '.join(audit.out_of_bounds_placements) if audit.out_of_bounds_placements else 'none'}",
+        f"- Empty Layouts: {', '.join(audit.empty_layouts) if audit.empty_layouts else 'none'}",
+        "",
+        "## Layouts",
+        "",
+    ]
+    lines.extend(render_shared_view_context(view))
+
+    if dashboard.layouts:
+        for layout in dashboard.layouts:
+            lines.append(f"- {layout.layout_id}: name={layout.name} columns={layout.columns} placements={len(layout.placements)}")
+            for placement in layout.placements:
+                widget = dashboard.widget_index.get(placement.widget_id)
+                title = placement.title_override or (widget.title if widget is not None else placement.widget_id)
+                filters = ", ".join(placement.filters) if placement.filters else "none"
+                lines.append(
+                    f"- {placement.placement_id}: widget={placement.widget_id} title={title} "
+                    f"grid=({placement.column},{placement.row}) size={placement.width}x{placement.height} filters={filters}"
+                )
+    else:
+        lines.append("- None")
+
+    return "\n".join(lines) + "\n"
+
+
 def write_engineering_overview_bundle(root_dir: str, overview: EngineeringOverview) -> str:
     base = Path(root_dir)
     base.mkdir(parents=True, exist_ok=True)
     overview_path = str(base / "engineering-overview.md")
     write_report(overview_path, render_engineering_overview(overview))
     return overview_path
+
+
+def write_dashboard_builder_bundle(
+    root_dir: str,
+    dashboard: DashboardBuilder,
+    audit: DashboardBuilderAudit,
+    view: Optional[SharedViewContext] = None,
+) -> str:
+    base = Path(root_dir)
+    base.mkdir(parents=True, exist_ok=True)
+    dashboard_path = str(base / "dashboard-builder.md")
+    write_report(dashboard_path, render_dashboard_builder_report(dashboard, audit, view=view))
+    return dashboard_path
 
 
 

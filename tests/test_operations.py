@@ -11,11 +11,17 @@ from bigclaw.evaluation import (
 from bigclaw.models import Task
 from bigclaw.observability import TaskRun
 from bigclaw.operations import (
+    DashboardBuilder,
+    DashboardLayout,
+    DashboardWidgetPlacement,
+    DashboardWidgetSpec,
     OperationsAnalytics,
+    render_dashboard_builder_report,
     render_engineering_overview,
     render_operations_dashboard,
     render_regression_center,
     render_weekly_operations_report,
+    write_dashboard_builder_bundle,
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
@@ -105,6 +111,221 @@ def test_operations_snapshot_tracks_sla_and_success_rate() -> None:
     assert snapshot.approval_queue_depth == 1
     assert snapshot.sla_breach_count == 1
     assert snapshot.average_cycle_minutes == 51.7
+
+
+def test_dashboard_builder_round_trip_preserves_manifest_shape() -> None:
+    analytics = OperationsAnalytics()
+    builder = DashboardBuilder(
+        name="Exec Builder",
+        period="2026-W11",
+        owner="ops-lead",
+        permissions=analytics._permissions_for_role("engineering-manager"),
+        widgets=[
+            DashboardWidgetSpec(
+                widget_id="success-rate",
+                title="Success Rate",
+                module="kpis",
+                data_source="operations.snapshot",
+            )
+        ],
+        layouts=[
+            DashboardLayout(
+                layout_id="desktop",
+                name="Desktop",
+                placements=[
+                    DashboardWidgetPlacement(
+                        placement_id="success-rate-main",
+                        widget_id="success-rate",
+                        column=0,
+                        row=0,
+                        width=4,
+                        height=2,
+                    )
+                ],
+            )
+        ],
+        documentation_complete=True,
+    )
+
+    restored = DashboardBuilder.from_dict(builder.to_dict())
+
+    assert restored == builder
+
+
+def test_normalize_dashboard_layout_clamps_dimensions_and_sorts_placements() -> None:
+    analytics = OperationsAnalytics()
+    widgets = [
+        DashboardWidgetSpec(
+            widget_id="success-rate",
+            title="Success Rate",
+            module="kpis",
+            data_source="operations.snapshot",
+            min_width=3,
+            max_width=6,
+        )
+    ]
+    layout = DashboardLayout(
+        layout_id="desktop",
+        name="Desktop",
+        placements=[
+            DashboardWidgetPlacement(
+                placement_id="late",
+                widget_id="success-rate",
+                column=8,
+                row=4,
+                width=8,
+                height=0,
+            ),
+            DashboardWidgetPlacement(
+                placement_id="early",
+                widget_id="success-rate",
+                column=-2,
+                row=-1,
+                width=1,
+                height=2,
+            ),
+        ],
+    )
+
+    normalized = analytics.normalize_dashboard_layout(layout, widgets)
+
+    assert [placement.placement_id for placement in normalized.placements] == ["early", "late"]
+    assert normalized.placements[0].column == 0
+    assert normalized.placements[0].row == 0
+    assert normalized.placements[0].width == 3
+    assert normalized.placements[1].column == 6
+    assert normalized.placements[1].width == 6
+    assert normalized.placements[1].height == 1
+
+
+def test_dashboard_builder_audit_flags_governance_gaps() -> None:
+    analytics = OperationsAnalytics()
+    builder = DashboardBuilder(
+        name="Contributor Builder",
+        period="2026-W11",
+        owner="ic-user",
+        permissions=analytics._permissions_for_role("contributor"),
+        widgets=[
+            DashboardWidgetSpec(
+                widget_id="success-rate",
+                title="Success Rate",
+                module="kpis",
+                data_source="operations.snapshot",
+            ),
+            DashboardWidgetSpec(
+                widget_id="approval-queue",
+                title="Approval Queue",
+                module="blockers",
+                data_source="operations.snapshot",
+            ),
+        ],
+        layouts=[
+            DashboardLayout(
+                layout_id="desktop",
+                name="Desktop",
+                placements=[
+                    DashboardWidgetPlacement(
+                        placement_id="dup",
+                        widget_id="success-rate",
+                        column=0,
+                        row=0,
+                        width=4,
+                        height=2,
+                    ),
+                    DashboardWidgetPlacement(
+                        placement_id="dup",
+                        widget_id="approval-queue",
+                        column=2,
+                        row=1,
+                        width=4,
+                        height=2,
+                    ),
+                    DashboardWidgetPlacement(
+                        placement_id="ghost",
+                        widget_id="missing-widget",
+                        column=10,
+                        row=0,
+                        width=4,
+                        height=2,
+                    ),
+                ],
+            ),
+            DashboardLayout(layout_id="tablet", name="Tablet"),
+        ],
+        documentation_complete=False,
+    )
+
+    audit = analytics.audit_dashboard_builder(builder)
+
+    assert audit.duplicate_placement_ids == ["dup"]
+    assert audit.missing_widget_defs == ["missing-widget"]
+    assert audit.inaccessible_widgets == ["approval-queue"]
+    assert audit.overlapping_placements == ["desktop:dup<->dup"]
+    assert audit.out_of_bounds_placements == ["ghost"]
+    assert audit.empty_layouts == ["tablet"]
+    assert audit.release_ready is False
+
+
+def test_render_and_write_dashboard_builder_report(tmp_path: Path) -> None:
+    analytics = OperationsAnalytics()
+    builder = analytics.build_dashboard_builder(
+        name="Manager Builder",
+        period="2026-W11",
+        owner="manager",
+        viewer_role="engineering-manager",
+        widgets=[
+            DashboardWidgetSpec(
+                widget_id="success-rate",
+                title="Success Rate",
+                module="kpis",
+                data_source="operations.snapshot",
+            ),
+            DashboardWidgetSpec(
+                widget_id="recent-activity",
+                title="Recent Activity",
+                module="activity",
+                data_source="operations.runs",
+            ),
+        ],
+        layouts=[
+            DashboardLayout(
+                layout_id="desktop",
+                name="Desktop",
+                placements=[
+                    DashboardWidgetPlacement(
+                        placement_id="kpi-main",
+                        widget_id="success-rate",
+                        column=0,
+                        row=0,
+                        width=4,
+                        height=2,
+                    ),
+                    DashboardWidgetPlacement(
+                        placement_id="activity-main",
+                        widget_id="recent-activity",
+                        column=4,
+                        row=0,
+                        width=8,
+                        height=3,
+                        filters=["team=engineering"],
+                    ),
+                ],
+            )
+        ],
+        documentation_complete=True,
+    )
+    audit = analytics.audit_dashboard_builder(builder)
+
+    report = render_dashboard_builder_report(builder, audit, view=make_shared_view(2))
+    report_path = write_dashboard_builder_bundle(str(tmp_path / "dashboard"), builder, audit, view=make_shared_view(2))
+
+    assert audit.release_ready is True
+    assert "# Dashboard Builder" in report
+    assert "- Release Ready: True" in report
+    assert "- desktop: name=Desktop columns=12 placements=2" in report
+    assert "filters=team=engineering" in report
+    assert Path(report_path).exists()
+    assert "# Dashboard Builder" in Path(report_path).read_text()
 
 
 
