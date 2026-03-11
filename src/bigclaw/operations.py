@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from difflib import unified_diff
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
@@ -77,12 +78,69 @@ class RegressionCenter:
 
 
 @dataclass
+class VersionedArtifact:
+    artifact_type: str
+    artifact_id: str
+    version: str
+    updated_at: str
+    author: str
+    summary: str
+    content: str
+    change_ticket: Optional[str] = None
+
+
+@dataclass
+class VersionChangeSummary:
+    from_version: str
+    to_version: str
+    additions: int
+    deletions: int
+    changed_lines: int
+    preview: List[str] = field(default_factory=list)
+
+    @property
+    def has_changes(self) -> bool:
+        return self.changed_lines > 0
+
+
+@dataclass
+class VersionedArtifactHistory:
+    artifact_type: str
+    artifact_id: str
+    current_version: str
+    current_updated_at: str
+    current_author: str
+    current_summary: str
+    revision_count: int
+    revisions: List[VersionedArtifact] = field(default_factory=list)
+    rollback_version: Optional[str] = None
+    rollback_ready: bool = False
+    change_summary: Optional[VersionChangeSummary] = None
+
+
+@dataclass
+class PolicyPromptVersionCenter:
+    name: str
+    generated_at: str
+    histories: List[VersionedArtifactHistory] = field(default_factory=list)
+
+    @property
+    def artifact_count(self) -> int:
+        return len(self.histories)
+
+    @property
+    def rollback_ready_count(self) -> int:
+        return sum(1 for history in self.histories if history.rollback_ready)
+
+
+@dataclass
 class WeeklyOperationsArtifacts:
     root_dir: str
     weekly_report_path: str
     dashboard_path: str
     regression_center_path: Optional[str] = None
     queue_control_path: Optional[str] = None
+    version_center_path: Optional[str] = None
 
 
 @dataclass
@@ -528,6 +586,58 @@ class OperationsAnalytics:
             },
         )
 
+    def build_policy_prompt_version_center(
+        self,
+        artifacts: Sequence[VersionedArtifact],
+        name: str = "Policy/Prompt Version Center",
+        generated_at: Optional[str] = None,
+        diff_preview_lines: int = 8,
+    ) -> PolicyPromptVersionCenter:
+        grouped: Dict[tuple[str, str], List[VersionedArtifact]] = {}
+        for artifact in artifacts:
+            key = (artifact.artifact_type, artifact.artifact_id)
+            grouped.setdefault(key, []).append(artifact)
+
+        histories: List[VersionedArtifactHistory] = []
+        for artifact_type, artifact_id in sorted(grouped.keys()):
+            revisions = sorted(
+                grouped[(artifact_type, artifact_id)],
+                key=lambda artifact: self._parse_ts(artifact.updated_at) or datetime.min.replace(tzinfo=timezone.utc),
+                reverse=True,
+            )
+            current = revisions[0]
+            previous = revisions[1] if len(revisions) > 1 else None
+            change_summary = None
+            rollback_version = None
+            rollback_ready = False
+
+            if previous is not None:
+                change_summary = self._summarize_version_change(previous, current, preview_lines=diff_preview_lines)
+                rollback_version = previous.version
+                rollback_ready = bool(previous.content.strip())
+
+            histories.append(
+                VersionedArtifactHistory(
+                    artifact_type=artifact_type,
+                    artifact_id=artifact_id,
+                    current_version=current.version,
+                    current_updated_at=current.updated_at,
+                    current_author=current.author,
+                    current_summary=current.summary,
+                    revision_count=len(revisions),
+                    revisions=revisions,
+                    rollback_version=rollback_version,
+                    rollback_ready=rollback_ready,
+                    change_summary=change_summary,
+                )
+            )
+
+        return PolicyPromptVersionCenter(
+            name=name,
+            generated_at=generated_at or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            histories=histories,
+        )
+
     def build_engineering_overview(
         self,
         name: str,
@@ -742,6 +852,33 @@ class OperationsAnalytics:
         except ValueError:
             return None
 
+    def _summarize_version_change(
+        self,
+        previous: VersionedArtifact,
+        current: VersionedArtifact,
+        preview_lines: int,
+    ) -> VersionChangeSummary:
+        diff_lines = list(
+            unified_diff(
+                previous.content.splitlines(),
+                current.content.splitlines(),
+                fromfile=previous.version,
+                tofile=current.version,
+                lineterm="",
+            )
+        )
+        additions = sum(1 for line in diff_lines if line.startswith("+") and not line.startswith("+++"))
+        deletions = sum(1 for line in diff_lines if line.startswith("-") and not line.startswith("---"))
+        preview = [line for line in diff_lines if not line.startswith("@@")][:preview_lines]
+        return VersionChangeSummary(
+            from_version=previous.version,
+            to_version=current.version,
+            additions=additions,
+            deletions=deletions,
+            changed_lines=additions + deletions,
+            preview=preview,
+        )
+
     def _build_funnel(self, status_counts: Dict[str, int], total_runs: int) -> List[EngineeringFunnelStage]:
         funnel_counts = [
             ("queued", status_counts.get("queued", 0)),
@@ -934,6 +1071,65 @@ def render_queue_control_center(
     return "\n".join(lines) + "\n"
 
 
+def render_policy_prompt_version_center(
+    center: PolicyPromptVersionCenter,
+    view: Optional[SharedViewContext] = None,
+) -> str:
+    lines = [
+        "# Policy/Prompt Version Center",
+        "",
+        f"- Name: {center.name}",
+        f"- Generated At: {center.generated_at}",
+        f"- Versioned Artifacts: {center.artifact_count}",
+        f"- Rollback Ready Artifacts: {center.rollback_ready_count}",
+        "",
+        "## Artifact Histories",
+        "",
+    ]
+    lines.extend(render_shared_view_context(view))
+
+    if not center.histories:
+        lines.append("- None")
+        return "\n".join(lines) + "\n"
+
+    for history in center.histories:
+        lines.extend(
+            [
+                f"### {history.artifact_type} / {history.artifact_id}",
+                "",
+                f"- Current Version: {history.current_version}",
+                f"- Updated At: {history.current_updated_at}",
+                f"- Updated By: {history.current_author}",
+                f"- Summary: {history.current_summary}",
+                f"- Revision Count: {history.revision_count}",
+                f"- Rollback Version: {history.rollback_version or 'none'}",
+                f"- Rollback Ready: {history.rollback_ready}",
+            ]
+        )
+        if history.change_summary is not None:
+            lines.append(
+                f"- Diff Summary: {history.change_summary.additions} additions, "
+                f"{history.change_summary.deletions} deletions"
+            )
+        lines.extend(["", "#### Revision History", ""])
+        for revision in history.revisions:
+            ticket = revision.change_ticket or "none"
+            lines.append(
+                f"- {revision.version}: updated_at={revision.updated_at} author={revision.author} "
+                f"ticket={ticket} summary={revision.summary}"
+            )
+        lines.extend(["", "#### Diff Preview", ""])
+        if history.change_summary is not None and history.change_summary.preview:
+            lines.append("```diff")
+            lines.extend(history.change_summary.preview)
+            lines.append("```")
+        else:
+            lines.append("- None")
+        lines.append("")
+
+    return "\n".join(lines) + "\n"
+
+
 def render_engineering_overview(overview: EngineeringOverview) -> str:
     lines = [
         "# Engineering Overview",
@@ -1057,6 +1253,7 @@ def write_weekly_operations_bundle(
     report: WeeklyOperationsReport,
     regression_center: Optional[RegressionCenter] = None,
     queue_control_center: Optional[QueueControlCenter] = None,
+    version_center: Optional[PolicyPromptVersionCenter] = None,
 ) -> WeeklyOperationsArtifacts:
     base = Path(root_dir)
     base.mkdir(parents=True, exist_ok=True)
@@ -1076,12 +1273,18 @@ def write_weekly_operations_bundle(
         queue_control_path = str(base / "queue-control-center.md")
         write_report(queue_control_path, render_queue_control_center(queue_control_center))
 
+    version_center_path = None
+    if version_center is not None:
+        version_center_path = str(base / "policy-prompt-version-center.md")
+        write_report(version_center_path, render_policy_prompt_version_center(version_center))
+
     return WeeklyOperationsArtifacts(
         root_dir=str(base),
         weekly_report_path=weekly_report_path,
         dashboard_path=dashboard_path,
         regression_center_path=regression_center_path,
         queue_control_path=queue_control_path,
+        version_center_path=version_center_path,
     )
 
 
