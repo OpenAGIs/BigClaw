@@ -470,7 +470,6 @@ class OrchestrationPortfolio:
             return "manage-cross-team-flow"
         return "monitor"
 
-
 @dataclass(frozen=True)
 class ConsoleAction:
     action_id: str
@@ -482,6 +481,86 @@ class ConsoleAction:
     @property
     def state(self) -> str:
         return "enabled" if self.enabled else "disabled"
+
+
+@dataclass
+class BillingRunCharge:
+    run_id: str
+    task_id: str
+    billing_model: str
+    entitlement_status: str
+    estimated_cost_usd: float
+    included_usage_units: int = 0
+    overage_usage_units: int = 0
+    overage_cost_usd: float = 0.0
+    blocked_capabilities: List[str] = field(default_factory=list)
+    handoff_team: str = "none"
+    recommendation: str = "monitor"
+
+
+@dataclass
+class BillingEntitlementsPage:
+    workspace_name: str
+    plan_name: str
+    billing_period: str
+    charges: List[BillingRunCharge] = field(default_factory=list)
+
+    @property
+    def run_count(self) -> int:
+        return len(self.charges)
+
+    @property
+    def total_estimated_cost_usd(self) -> float:
+        return round(sum(charge.estimated_cost_usd for charge in self.charges), 2)
+
+    @property
+    def total_included_usage_units(self) -> int:
+        return sum(charge.included_usage_units for charge in self.charges)
+
+    @property
+    def total_overage_usage_units(self) -> int:
+        return sum(charge.overage_usage_units for charge in self.charges)
+
+    @property
+    def total_overage_cost_usd(self) -> float:
+        return round(sum(charge.overage_cost_usd for charge in self.charges), 2)
+
+    @property
+    def upgrade_required_count(self) -> int:
+        return sum(1 for charge in self.charges if charge.entitlement_status == "upgrade-required")
+
+    @property
+    def billing_model_counts(self) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for charge in self.charges:
+            counts[charge.billing_model] = counts.get(charge.billing_model, 0) + 1
+        return counts
+
+    @property
+    def entitlement_counts(self) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for charge in self.charges:
+            counts[charge.entitlement_status] = counts.get(charge.entitlement_status, 0) + 1
+        return counts
+
+    @property
+    def blocked_capabilities(self) -> List[str]:
+        capabilities: List[str] = []
+        for charge in self.charges:
+            for capability in charge.blocked_capabilities:
+                if capability not in capabilities:
+                    capabilities.append(capability)
+        return capabilities
+
+    @property
+    def recommendation(self) -> str:
+        if self.upgrade_required_count:
+            return "resolve-plan-gaps"
+        if self.total_overage_cost_usd > 0:
+            return "optimize-billed-usage"
+        if any(charge.handoff_team != "none" for charge in self.charges):
+            return "monitor-shared-capacity"
+        return "healthy"
 
 
 def render_issue_validation_report(issue_id: str, version: str, environment: str, summary: str) -> str:
@@ -891,6 +970,36 @@ def build_orchestration_portfolio(
     )
 
 
+def build_billing_entitlements_page(
+    portfolio: OrchestrationPortfolio,
+    *,
+    workspace_name: str = "BigClaw Cloud",
+    plan_name: str = "Standard",
+    billing_period: Optional[str] = None,
+) -> BillingEntitlementsPage:
+    return BillingEntitlementsPage(
+        workspace_name=workspace_name,
+        plan_name=plan_name,
+        billing_period=billing_period or portfolio.period,
+        charges=[
+            BillingRunCharge(
+                run_id=canvas.run_id,
+                task_id=canvas.task_id,
+                billing_model=canvas.billing_model,
+                entitlement_status=canvas.entitlement_status,
+                estimated_cost_usd=canvas.estimated_cost_usd,
+                included_usage_units=canvas.included_usage_units,
+                overage_usage_units=canvas.overage_usage_units,
+                overage_cost_usd=canvas.overage_cost_usd,
+                blocked_capabilities=list(canvas.blocked_departments),
+                handoff_team=canvas.handoff_team,
+                recommendation=canvas.recommendation,
+            )
+            for canvas in portfolio.canvases
+        ],
+    )
+
+
 def render_orchestration_portfolio_report(
     portfolio: OrchestrationPortfolio,
     view: Optional[SharedViewContext] = None,
@@ -942,6 +1051,55 @@ def render_orchestration_portfolio_report(
                 f"estimated_cost_usd={canvas.estimated_cost_usd:.2f} overage_cost_usd={canvas.overage_cost_usd:.2f} "
                 f"upgrade_required={canvas.upgrade_required} handoff={canvas.handoff_team} recommendation={canvas.recommendation} "
                 f"actions={render_console_actions(canvas.actions)}"
+            )
+    else:
+        lines.append("- None")
+
+    return "\n".join(lines) + "\n"
+
+
+def render_billing_entitlements_report(
+    page: BillingEntitlementsPage,
+    view: Optional[SharedViewContext] = None,
+) -> str:
+    entitlements = " ".join(
+        f"{status}={count}" for status, count in sorted(page.entitlement_counts.items())
+    ) or "none"
+    billing_models = " ".join(
+        f"{model}={count}" for model, count in sorted(page.billing_model_counts.items())
+    ) or "none"
+    blocked = ", ".join(page.blocked_capabilities) if page.blocked_capabilities else "none"
+    lines = [
+        "# Billing & Entitlements Report",
+        "",
+        f"- Workspace: {page.workspace_name}",
+        f"- Plan: {page.plan_name}",
+        f"- Billing Period: {page.billing_period}",
+        f"- Runs: {page.run_count}",
+        f"- Recommendation: {page.recommendation}",
+        f"- Entitlement Mix: {entitlements}",
+        f"- Billing Models: {billing_models}",
+        f"- Included Usage Units: {page.total_included_usage_units}",
+        f"- Overage Usage Units: {page.total_overage_usage_units}",
+        f"- Estimated Cost (USD): {page.total_estimated_cost_usd:.2f}",
+        f"- Overage Cost (USD): {page.total_overage_cost_usd:.2f}",
+        f"- Upgrade Required Count: {page.upgrade_required_count}",
+        f"- Blocked Capabilities: {blocked}",
+        "",
+        "## Charges",
+        "",
+    ]
+    lines.extend(render_shared_view_context(view))
+
+    if page.charges:
+        for charge in page.charges:
+            blocked_capabilities = ", ".join(charge.blocked_capabilities) if charge.blocked_capabilities else "none"
+            lines.append(
+                f"- {charge.run_id}: task={charge.task_id} entitlement={charge.entitlement_status} "
+                f"billing={charge.billing_model} included_units={charge.included_usage_units} "
+                f"overage_units={charge.overage_usage_units} estimated_cost_usd={charge.estimated_cost_usd:.2f} "
+                f"overage_cost_usd={charge.overage_cost_usd:.2f} blocked={blocked_capabilities} "
+                f"handoff={charge.handoff_team} recommendation={charge.recommendation}"
             )
     else:
         lines.append("- None")
@@ -1023,6 +1181,147 @@ def render_orchestration_overview_page(portfolio: OrchestrationPortfolio) -> str
   <ul>{billing_models}</ul>
   <h2>Runs</h2>
   <ul>{runs}</ul>
+</body>
+</html>
+"""
+
+
+def render_billing_entitlements_page(page: BillingEntitlementsPage) -> str:
+    def render_items(items: List[str]) -> str:
+        if not items:
+            return "<li>None</li>"
+        return "".join(f"<li>{item}</li>" for item in items)
+
+    entitlements = render_items(
+        [f"<strong>{escape(status)}</strong>: {count}" for status, count in sorted(page.entitlement_counts.items())]
+    )
+    billing_models = render_items(
+        [f"<strong>{escape(model)}</strong>: {count}" for model, count in sorted(page.billing_model_counts.items())]
+    )
+    blocked = render_items([escape(capability) for capability in page.blocked_capabilities])
+    charges = render_items(
+        [
+            f"<strong>{escape(charge.run_id)}</strong> · task={escape(charge.task_id)} · entitlement={escape(charge.entitlement_status)} · billing={escape(charge.billing_model)} · included={charge.included_usage_units} · overage={charge.overage_usage_units} · cost=${charge.estimated_cost_usd:.2f} · recommendation={escape(charge.recommendation)}"
+            for charge in page.charges
+        ]
+    )
+
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Billing & Entitlements · {escape(page.workspace_name)}</title>
+  <style>
+    :root {{
+      color-scheme: light;
+      --ink: #102033;
+      --muted: #5c6876;
+      --canvas: #f6f0e4;
+      --panel: rgba(255, 252, 246, 0.9);
+      --line: rgba(16, 32, 51, 0.12);
+      --accent: #b45309;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top right, rgba(22, 101, 52, 0.12), transparent 24%),
+        radial-gradient(circle at left center, rgba(180, 83, 9, 0.12), transparent 28%),
+        linear-gradient(180deg, #fffaf2 0%, var(--canvas) 100%);
+    }}
+    main {{ width: min(1180px, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 3rem; }}
+    .hero {{
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.82), rgba(255,247,237,0.94));
+      box-shadow: 0 20px 48px rgba(16, 32, 51, 0.08);
+      padding: 1.5rem;
+    }}
+    .eyebrow {{
+      display: inline-block;
+      font: 600 0.75rem/1.2 "SFMono-Regular", Consolas, monospace;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }}
+    h1, h2, p {{ margin: 0; }}
+    .hero p {{ color: var(--muted); line-height: 1.6; max-width: 70ch; margin-top: 0.55rem; }}
+    .metrics {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.85rem;
+      margin-top: 1.35rem;
+    }}
+    .card, .surface {{
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--panel);
+      padding: 1rem;
+    }}
+    .card strong {{ display: block; font-size: 1.2rem; margin-top: 0.35rem; }}
+    .card span {{
+      color: var(--muted);
+      font: 500 0.78rem/1.4 "SFMono-Regular", Consolas, monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }}
+    .layout {{
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
+      gap: 1rem;
+      margin-top: 1rem;
+    }}
+    .stack {{ display: grid; gap: 1rem; }}
+    ul {{ margin: 0; padding-left: 1.15rem; }}
+    li {{ margin: 0.35rem 0; }}
+    .section-title {{ margin-bottom: 0.7rem; }}
+    @media (max-width: 860px) {{
+      .layout {{ grid-template-columns: 1fr; }}
+    }}
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <span class="eyebrow">Billing & Entitlements</span>
+      <h1>{escape(page.workspace_name)}</h1>
+      <p>{escape(page.plan_name)} plan for {escape(page.billing_period)}. Recommendation: {escape(page.recommendation)}.</p>
+      <div class="metrics">
+        <article class="card"><span>Runs</span><strong>{page.run_count}</strong></article>
+        <article class="card"><span>Included Units</span><strong>{page.total_included_usage_units}</strong></article>
+        <article class="card"><span>Overage Units</span><strong>{page.total_overage_usage_units}</strong></article>
+        <article class="card"><span>Estimated Cost</span><strong>${page.total_estimated_cost_usd:.2f}</strong></article>
+        <article class="card"><span>Overage Cost</span><strong>${page.total_overage_cost_usd:.2f}</strong></article>
+        <article class="card"><span>Upgrade Required</span><strong>{page.upgrade_required_count}</strong></article>
+      </div>
+    </section>
+    <section class="layout">
+      <div class="stack">
+        <section class="surface">
+          <h2 class="section-title">Charge Feed</h2>
+          <ul>{charges}</ul>
+        </section>
+      </div>
+      <div class="stack">
+        <section class="surface">
+          <h2 class="section-title">Entitlement Mix</h2>
+          <ul>{entitlements}</ul>
+        </section>
+        <section class="surface">
+          <h2 class="section-title">Billing Models</h2>
+          <ul>{billing_models}</ul>
+        </section>
+        <section class="surface">
+          <h2 class="section-title">Blocked Capabilities</h2>
+          <ul>{blocked}</ul>
+        </section>
+      </div>
+    </section>
+  </main>
 </body>
 </html>
 """
@@ -1170,6 +1469,22 @@ def build_orchestration_portfolio_from_ledger(
         name=name,
         period=period,
         takeover_queue=takeover_queue,
+    )
+
+
+def build_billing_entitlements_page_from_ledger(
+    entries: List[dict],
+    *,
+    workspace_name: str = "BigClaw Cloud",
+    plan_name: str = "Standard",
+    billing_period: str = "current",
+) -> BillingEntitlementsPage:
+    portfolio = build_orchestration_portfolio_from_ledger(entries, name=workspace_name, period=billing_period)
+    return build_billing_entitlements_page(
+        portfolio,
+        workspace_name=workspace_name,
+        plan_name=plan_name,
+        billing_period=billing_period,
     )
 
 

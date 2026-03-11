@@ -3,6 +3,8 @@ from typing import List, Optional
 
 from bigclaw.reports import (
     ConsoleAction,
+    BillingEntitlementsPage,
+    BillingRunCharge,
     DocumentationArtifact,
     LaunchChecklistItem,
     OrchestrationCanvas,
@@ -13,6 +15,8 @@ from bigclaw.reports import (
     SharedViewContext,
     SharedViewFilter,
     build_auto_triage_center,
+    build_billing_entitlements_page,
+    build_billing_entitlements_page_from_ledger,
     build_orchestration_canvas,
     build_orchestration_canvas_from_ledger_entry,
     build_orchestration_portfolio,
@@ -21,6 +25,8 @@ from bigclaw.reports import (
     build_takeover_queue_from_ledger,
     evaluate_issue_closure,
     render_auto_triage_center_report,
+    render_billing_entitlements_page,
+    render_billing_entitlements_report,
     render_orchestration_canvas,
     render_orchestration_overview_page,
     render_orchestration_portfolio_report,
@@ -844,3 +850,170 @@ def test_build_orchestration_portfolio_from_ledger_rolls_up_entries():
     assert portfolio.takeover_queue is not None
     assert portfolio.takeover_queue.pending_requests == 2
     assert portfolio.recommendation == "stabilize-security-takeovers"
+
+
+def test_build_billing_entitlements_page_rolls_up_orchestration_costs():
+    portfolio = OrchestrationPortfolio(
+        name="Revenue Ops",
+        period="2026-03",
+        canvases=[
+            OrchestrationCanvas(
+                task_id="OPE-104-a",
+                run_id="run-billing-a",
+                collaboration_mode="cross-functional",
+                departments=["operations", "engineering", "security"],
+                tier="premium",
+                entitlement_status="included",
+                billing_model="premium-included",
+                estimated_cost_usd=4.5,
+                included_usage_units=3,
+                handoff_team="security",
+            ),
+            OrchestrationCanvas(
+                task_id="OPE-104-b",
+                run_id="run-billing-b",
+                collaboration_mode="tier-limited",
+                departments=["operations", "engineering"],
+                tier="standard",
+                upgrade_required=True,
+                entitlement_status="upgrade-required",
+                billing_model="standard-blocked",
+                estimated_cost_usd=7.0,
+                included_usage_units=2,
+                overage_usage_units=1,
+                overage_cost_usd=4.0,
+                blocked_departments=["customer-success"],
+                handoff_team="operations",
+            ),
+        ],
+    )
+
+    page = build_billing_entitlements_page(
+        portfolio,
+        workspace_name="OpenAGI Revenue Cloud",
+        plan_name="Standard",
+        billing_period="2026-03",
+    )
+    report = render_billing_entitlements_report(page)
+
+    assert isinstance(page, BillingEntitlementsPage)
+    assert page.run_count == 2
+    assert page.total_included_usage_units == 5
+    assert page.total_overage_usage_units == 1
+    assert page.total_estimated_cost_usd == 11.5
+    assert page.total_overage_cost_usd == 4.0
+    assert page.upgrade_required_count == 1
+    assert page.entitlement_counts == {"included": 1, "upgrade-required": 1}
+    assert page.billing_model_counts == {"premium-included": 1, "standard-blocked": 1}
+    assert page.blocked_capabilities == ["customer-success"]
+    assert page.recommendation == "resolve-plan-gaps"
+    assert "# Billing & Entitlements Report" in report
+    assert "- Workspace: OpenAGI Revenue Cloud" in report
+    assert "- Overage Cost (USD): 4.00" in report
+    assert "- run-billing-b: task=OPE-104-b entitlement=upgrade-required billing=standard-blocked" in report
+
+
+def test_render_billing_entitlements_page_outputs_html_dashboard():
+    page = BillingEntitlementsPage(
+        workspace_name="OpenAGI Revenue Cloud",
+        plan_name="Premium",
+        billing_period="2026-03",
+        charges=[
+            BillingRunCharge(
+                run_id="run-billing-a",
+                task_id="OPE-104-a",
+                entitlement_status="included",
+                billing_model="premium-included",
+                estimated_cost_usd=4.5,
+                included_usage_units=3,
+                recommendation="review-security-takeover",
+            )
+        ],
+    )
+
+    page_html = render_billing_entitlements_page(page)
+
+    assert "<title>Billing & Entitlements" in page_html
+    assert "OpenAGI Revenue Cloud" in page_html
+    assert "Premium plan for 2026-03" in page_html
+    assert "Charge Feed" in page_html
+    assert "premium-included" in page_html
+
+
+def test_build_billing_entitlements_page_from_ledger_extracts_upgrade_signals():
+    entries = [
+        {
+            "run_id": "run-ledger-a",
+            "task_id": "OPE-104-a",
+            "audits": [
+                {
+                    "action": "orchestration.plan",
+                    "outcome": "ready",
+                    "details": {
+                        "collaboration_mode": "cross-functional",
+                        "departments": ["operations", "engineering", "security"],
+                        "approvals": ["security-review"],
+                    },
+                },
+                {
+                    "action": "orchestration.policy",
+                    "outcome": "enabled",
+                    "details": {
+                        "tier": "premium",
+                        "entitlement_status": "included",
+                        "billing_model": "premium-included",
+                        "estimated_cost_usd": 4.5,
+                        "included_usage_units": 3,
+                        "blocked_departments": [],
+                    },
+                },
+            ],
+        },
+        {
+            "run_id": "run-ledger-b",
+            "task_id": "OPE-104-b",
+            "audits": [
+                {
+                    "action": "orchestration.plan",
+                    "outcome": "ready",
+                    "details": {
+                        "collaboration_mode": "tier-limited",
+                        "departments": ["operations", "engineering"],
+                        "approvals": [],
+                    },
+                },
+                {
+                    "action": "orchestration.policy",
+                    "outcome": "upgrade-required",
+                    "details": {
+                        "tier": "standard",
+                        "entitlement_status": "upgrade-required",
+                        "billing_model": "standard-blocked",
+                        "estimated_cost_usd": 7.0,
+                        "included_usage_units": 2,
+                        "overage_usage_units": 1,
+                        "overage_cost_usd": 4.0,
+                        "blocked_departments": ["customer-success"],
+                    },
+                },
+                {
+                    "action": "orchestration.handoff",
+                    "outcome": "pending",
+                    "details": {"target_team": "operations", "reason": "entitlement gap", "required_approvals": ["ops-manager"]},
+                },
+            ],
+        },
+    ]
+
+    page = build_billing_entitlements_page_from_ledger(
+        entries,
+        workspace_name="OpenAGI Revenue Cloud",
+        plan_name="Standard",
+        billing_period="2026-03",
+    )
+
+    assert page.run_count == 2
+    assert page.recommendation == "resolve-plan-gaps"
+    assert page.total_overage_cost_usd == 4.0
+    assert page.charges[1].blocked_capabilities == ["customer-success"]
+    assert page.charges[1].handoff_team == "operations"
