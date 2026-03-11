@@ -44,6 +44,16 @@ class ServerMonitoring:
                 "recent_requests": list(self.recent_requests),
             }
 
+    def metrics_payload(self) -> Dict[str, object]:
+        uptime = max(0.0, time.time() - self.start_time)
+        with self._lock:
+            return {
+                "bigclaw_uptime_seconds": round(uptime, 3),
+                "bigclaw_http_requests_total": self.request_total,
+                "bigclaw_http_errors_total": self.error_total,
+                "recent_requests": list(self.recent_requests),
+            }
+
     def metrics_text(self) -> str:
         uptime = max(0.0, time.time() - self.start_time)
         with self._lock:
@@ -80,6 +90,41 @@ def _handler_factory(*, directory: str, monitoring: ServerMonitoring):
                 body = monitoring.metrics_text().encode("utf-8")
                 self.send_response(HTTPStatus.OK)
                 self.send_header("Content-Type", "text/plain; version=0.0.4")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+
+            if self.path == "/metrics.json":
+                body = json.dumps(monitoring.metrics_payload()).encode("utf-8")
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+
+            if self.path == "/monitor":
+                stats = monitoring.metrics_payload()
+                recent_rows = "".join(
+                    f"<tr><td>{item['ts']}</td><td>{item['path']}</td><td>{item['status']}</td></tr>"
+                    for item in stats["recent_requests"]
+                ) or "<tr><td colspan='3'>No requests yet</td></tr>"
+                html = f"""<!doctype html><html><head><meta charset='utf-8'><title>BigClaw Monitor</title></head>
+<body><h1>BigClaw Monitor</h1>
+<ul>
+<li>uptime: {stats['bigclaw_uptime_seconds']}s</li>
+<li>requests: {stats['bigclaw_http_requests_total']}</li>
+<li>errors: {stats['bigclaw_http_errors_total']}</li>
+</ul>
+<table border='1' cellpadding='6' cellspacing='0'>
+<thead><tr><th>ts</th><th>path</th><th>status</th></tr></thead>
+<tbody>{recent_rows}</tbody>
+</table>
+</body></html>"""
+                body = html.encode("utf-8")
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)

@@ -29,7 +29,16 @@ def test_server_entry_health_metrics(tmp_path: Path):
         metrics = _get(f"http://{host}:{port}/metrics")
         assert "bigclaw_http_requests_total" in metrics
         assert "bigclaw_uptime_seconds" in metrics
-        assert monitoring.request_total >= 3
+
+        metrics_json = json.loads(_get(f"http://{host}:{port}/metrics.json"))
+        assert "bigclaw_http_requests_total" in metrics_json
+        assert "recent_requests" in metrics_json
+
+        monitor_html = _get(f"http://{host}:{port}/monitor")
+        assert "BigClaw Monitor" in monitor_html
+        assert "requests:" in monitor_html
+
+        assert monitoring.request_total >= 5
     finally:
         server.shutdown()
         server.server_close()
