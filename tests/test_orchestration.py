@@ -48,6 +48,12 @@ def test_standard_policy_limits_advanced_cross_department_routing() -> None:
     assert plan.collaboration_mode == "tier-limited"
     assert plan.departments == ["operations", "engineering"]
     assert policy.upgrade_required is True
+    assert policy.entitlement_status == "upgrade-required"
+    assert policy.billing_model == "standard-blocked"
+    assert policy.included_usage_units == 2
+    assert policy.overage_usage_units == 3
+    assert policy.overage_cost_usd == 12.0
+    assert policy.estimated_cost_usd == 15.0
     assert policy.blocked_departments == ["security", "data", "customer-success"]
 
 
@@ -68,6 +74,9 @@ def test_render_orchestration_plan_lists_handoffs_and_policy() -> None:
     assert "# Cross-Department Orchestration Plan" in content
     assert "- Departments: operations, engineering" in content
     assert "- Tier: standard" in content
+    assert "- Entitlement Status: upgrade-required" in content
+    assert "- Billing Model: standard-blocked" in content
+    assert "- Estimated Cost (USD): 11.00" in content
     assert "- Blocked Departments: data, customer-success" in content
     assert "- Human Handoff Team:" not in content
 
@@ -92,10 +101,16 @@ def test_scheduler_execution_records_orchestration_plan_and_policy(tmp_path: Pat
     assert record.orchestration_policy is not None
     assert record.orchestration_plan.departments == ["operations", "engineering"]
     assert record.orchestration_policy.upgrade_required is False
+    assert record.orchestration_policy.entitlement_status == "included"
+    assert record.orchestration_policy.billing_model == "standard-included"
+    assert record.orchestration_policy.estimated_cost_usd == 3.0
     assert any(trace["span"] == "orchestration.plan" for trace in entry["traces"])
     assert any(trace["span"] == "orchestration.policy" for trace in entry["traces"])
     assert any(audit["action"] == "orchestration.plan" for audit in entry["audits"])
     assert any(audit["action"] == "orchestration.policy" for audit in entry["audits"])
+    policy_audit = next(audit for audit in entry["audits"] if audit["action"] == "orchestration.policy")
+    assert policy_audit["details"]["entitlement_status"] == "included"
+    assert policy_audit["details"]["billing_model"] == "standard-included"
 
 
 def test_scheduler_creates_handoff_for_policy_or_approval_blockers(tmp_path: Path) -> None:

@@ -109,6 +109,12 @@ class Scheduler:
             "orchestration.policy",
             "upgrade-required" if policy_decision.upgrade_required else "ok",
             tier=policy_decision.tier,
+            entitlement_status=policy_decision.entitlement_status,
+            billing_model=policy_decision.billing_model,
+            estimated_cost_usd=policy_decision.estimated_cost_usd,
+            included_usage_units=policy_decision.included_usage_units,
+            overage_usage_units=policy_decision.overage_usage_units,
+            overage_cost_usd=policy_decision.overage_cost_usd,
             blocked_departments=policy_decision.blocked_departments,
         )
         run.audit("scheduler.decision", actor, "approved" if decision.approved else "pending", reason=decision.reason)
@@ -134,6 +140,12 @@ class Scheduler:
             "upgrade-required" if policy_decision.upgrade_required else "enabled",
             tier=policy_decision.tier,
             reason=policy_decision.reason,
+            entitlement_status=policy_decision.entitlement_status,
+            billing_model=policy_decision.billing_model,
+            estimated_cost_usd=policy_decision.estimated_cost_usd,
+            included_usage_units=policy_decision.included_usage_units,
+            overage_usage_units=policy_decision.overage_usage_units,
+            overage_cost_usd=policy_decision.overage_cost_usd,
             blocked_departments=policy_decision.blocked_departments,
         )
         if handoff_request is not None:

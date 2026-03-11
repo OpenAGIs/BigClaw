@@ -267,6 +267,12 @@ class OrchestrationCanvas:
     handoff_status: str = "none"
     handoff_reason: str = ""
     active_tools: List[str] = field(default_factory=list)
+    entitlement_status: str = "included"
+    billing_model: str = "standard-included"
+    estimated_cost_usd: float = 0.0
+    included_usage_units: int = 0
+    overage_usage_units: int = 0
+    overage_cost_usd: float = 0.0
 
     @property
     def recommendation(self) -> str:
@@ -274,6 +280,8 @@ class OrchestrationCanvas:
             return "review-security-takeover"
         if self.upgrade_required:
             return "resolve-entitlement-gap"
+        if self.overage_cost_usd > 0:
+            return "review-billing-overage"
         if len(self.departments) > 1:
             return "continue-cross-team-execution"
         return "monitor"
@@ -312,6 +320,28 @@ class OrchestrationPortfolio:
     @property
     def active_handoffs(self) -> int:
         return sum(1 for canvas in self.canvases if canvas.handoff_team != "none")
+
+    @property
+    def entitlement_counts(self) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for canvas in self.canvases:
+            counts[canvas.entitlement_status] = counts.get(canvas.entitlement_status, 0) + 1
+        return counts
+
+    @property
+    def billing_model_counts(self) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for canvas in self.canvases:
+            counts[canvas.billing_model] = counts.get(canvas.billing_model, 0) + 1
+        return counts
+
+    @property
+    def total_estimated_cost_usd(self) -> float:
+        return round(sum(canvas.estimated_cost_usd for canvas in self.canvases), 2)
+
+    @property
+    def total_overage_cost_usd(self) -> float:
+        return round(sum(canvas.overage_cost_usd for canvas in self.canvases), 2)
 
     @property
     def recommendation(self) -> str:
@@ -571,6 +601,12 @@ def render_orchestration_portfolio_report(portfolio: OrchestrationPortfolio) -> 
     tiers = " ".join(
         f"{tier}={count}" for tier, count in sorted(portfolio.tier_counts.items())
     ) or "none"
+    entitlements = " ".join(
+        f"{status}={count}" for status, count in sorted(portfolio.entitlement_counts.items())
+    ) or "none"
+    billing_models = " ".join(
+        f"{model}={count}" for model, count in sorted(portfolio.billing_model_counts.items())
+    ) or "none"
     takeover_summary = (
         f"pending={portfolio.takeover_queue.pending_requests} recommendation={portfolio.takeover_queue.recommendation}"
         if portfolio.takeover_queue is not None
@@ -585,7 +621,11 @@ def render_orchestration_portfolio_report(portfolio: OrchestrationPortfolio) -> 
         f"- Recommendation: {portfolio.recommendation}",
         f"- Collaboration Mix: {collaboration}",
         f"- Tier Mix: {tiers}",
+        f"- Entitlement Mix: {entitlements}",
+        f"- Billing Models: {billing_models}",
         f"- Upgrade Required Count: {portfolio.upgrade_required_count}",
+        f"- Estimated Cost (USD): {portfolio.total_estimated_cost_usd:.2f}",
+        f"- Overage Cost (USD): {portfolio.total_overage_cost_usd:.2f}",
         f"- Active Handoffs: {portfolio.active_handoffs}",
         f"- Takeover Queue: {takeover_summary}",
         "",
@@ -597,6 +637,8 @@ def render_orchestration_portfolio_report(portfolio: OrchestrationPortfolio) -> 
         for canvas in portfolio.canvases:
             lines.append(
                 f"- {canvas.run_id}: mode={canvas.collaboration_mode} tier={canvas.tier} "
+                f"entitlement={canvas.entitlement_status} billing={canvas.billing_model} "
+                f"estimated_cost_usd={canvas.estimated_cost_usd:.2f} overage_cost_usd={canvas.overage_cost_usd:.2f} "
                 f"upgrade_required={canvas.upgrade_required} handoff={canvas.handoff_team} recommendation={canvas.recommendation}"
             )
     else:
@@ -618,9 +660,21 @@ def render_orchestration_overview_page(portfolio: OrchestrationPortfolio) -> str
     tiers = render_items(
         [f"<strong>{escape(tier)}</strong>: {count}" for tier, count in sorted(portfolio.tier_counts.items())]
     )
+    entitlements = render_items(
+        [
+            f"<strong>{escape(status)}</strong>: {count}"
+            for status, count in sorted(portfolio.entitlement_counts.items())
+        ]
+    )
+    billing_models = render_items(
+        [
+            f"<strong>{escape(model)}</strong>: {count}"
+            for model, count in sorted(portfolio.billing_model_counts.items())
+        ]
+    )
     runs = render_items(
         [
-            f"<strong>{escape(canvas.run_id)}</strong> · mode={escape(canvas.collaboration_mode)} · tier={escape(canvas.tier)} · handoff={escape(canvas.handoff_team)} · recommendation={escape(canvas.recommendation)}"
+            f"<strong>{escape(canvas.run_id)}</strong> · mode={escape(canvas.collaboration_mode)} · tier={escape(canvas.tier)} · entitlement={escape(canvas.entitlement_status)} · billing={escape(canvas.billing_model)} · cost=${canvas.estimated_cost_usd:.2f} · handoff={escape(canvas.handoff_team)} · recommendation={escape(canvas.recommendation)}"
             for canvas in portfolio.canvases
         ]
     )
@@ -648,17 +702,23 @@ def render_orchestration_overview_page(portfolio: OrchestrationPortfolio) -> str
 <body>
   <h1>Orchestration Overview</h1>
   <p>{escape(portfolio.name)} · {escape(portfolio.period)}</p>
-  <div class="grid">
-    <div class="card"><strong>Total Runs</strong><br>{portfolio.total_runs}</div>
-    <div class="card"><strong>Recommendation</strong><br>{escape(portfolio.recommendation)}</div>
-    <div class="card"><strong>Upgrade Required</strong><br>{portfolio.upgrade_required_count}</div>
-    <div class="card"><strong>Active Handoffs</strong><br>{portfolio.active_handoffs}</div>
-    <div class="card"><strong>Takeover Queue</strong><br>{escape(takeover)}</div>
-  </div>
+    <div class="grid">
+      <div class="card"><strong>Total Runs</strong><br>{portfolio.total_runs}</div>
+      <div class="card"><strong>Recommendation</strong><br>{escape(portfolio.recommendation)}</div>
+      <div class="card"><strong>Upgrade Required</strong><br>{portfolio.upgrade_required_count}</div>
+      <div class="card"><strong>Estimated Cost</strong><br>${portfolio.total_estimated_cost_usd:.2f}</div>
+      <div class="card"><strong>Overage Cost</strong><br>${portfolio.total_overage_cost_usd:.2f}</div>
+      <div class="card"><strong>Active Handoffs</strong><br>{portfolio.active_handoffs}</div>
+      <div class="card"><strong>Takeover Queue</strong><br>{escape(takeover)}</div>
+    </div>
   <h2>Collaboration Mix</h2>
   <ul>{collaboration}</ul>
   <h2>Tier Mix</h2>
   <ul>{tiers}</ul>
+  <h2>Entitlement Mix</h2>
+  <ul>{entitlements}</ul>
+  <h2>Billing Models</h2>
+  <ul>{billing_models}</ul>
   <h2>Runs</h2>
   <ul>{runs}</ul>
 </body>
@@ -699,6 +759,12 @@ def build_orchestration_canvas_from_ledger_entry(entry: dict) -> OrchestrationCa
         handoff_status=str(handoff_audit.get("outcome", "none")) if handoff_audit is not None else "none",
         handoff_reason=str(handoff_details.get("reason", "")),
         active_tools=active_tools,
+        entitlement_status=str(policy_details.get("entitlement_status", "included")),
+        billing_model=str(policy_details.get("billing_model", "standard-included")),
+        estimated_cost_usd=float(policy_details.get("estimated_cost_usd", 0.0) or 0.0),
+        included_usage_units=int(policy_details.get("included_usage_units", 0) or 0),
+        overage_usage_units=int(policy_details.get("overage_usage_units", 0) or 0),
+        overage_cost_usd=float(policy_details.get("overage_cost_usd", 0.0) or 0.0),
     )
 
 
@@ -721,6 +787,12 @@ def build_orchestration_canvas(
         handoff_status=handoff_request.status if handoff_request is not None else "none",
         handoff_reason=handoff_request.reason if handoff_request is not None else "",
         active_tools=sorted({str(entry.details.get("tool", "")) for entry in run.audits if entry.action == "tool.invoke" and entry.details.get("tool")}),
+        entitlement_status=policy.entitlement_status if policy is not None else "included",
+        billing_model=policy.billing_model if policy is not None else "standard-included",
+        estimated_cost_usd=policy.estimated_cost_usd if policy is not None else 0.0,
+        included_usage_units=policy.included_usage_units if policy is not None else 0,
+        overage_usage_units=policy.overage_usage_units if policy is not None else 0,
+        overage_cost_usd=policy.overage_cost_usd if policy is not None else 0.0,
     )
 
 
@@ -735,6 +807,8 @@ def render_orchestration_canvas(canvas: OrchestrationCanvas) -> str:
         f"- Required Approvals: {', '.join(canvas.required_approvals) if canvas.required_approvals else 'none'}",
         f"- Tier: {canvas.tier}",
         f"- Upgrade Required: {canvas.upgrade_required}",
+        f"- Entitlement Status: {canvas.entitlement_status}",
+        f"- Billing Model: {canvas.billing_model}",
         f"- Blocked Departments: {', '.join(canvas.blocked_departments) if canvas.blocked_departments else 'none'}",
         f"- Handoff Team: {canvas.handoff_team}",
         f"- Handoff Status: {canvas.handoff_status}",
@@ -743,6 +817,10 @@ def render_orchestration_canvas(canvas: OrchestrationCanvas) -> str:
         "## Execution Context",
         "",
         f"- Active Tools: {', '.join(canvas.active_tools) if canvas.active_tools else 'none'}",
+        f"- Estimated Cost (USD): {canvas.estimated_cost_usd:.2f}",
+        f"- Included Usage Units: {canvas.included_usage_units}",
+        f"- Overage Usage Units: {canvas.overage_usage_units}",
+        f"- Overage Cost (USD): {canvas.overage_cost_usd:.2f}",
         f"- Handoff Reason: {canvas.handoff_reason or 'none'}",
     ]
     return "\n".join(lines) + "\n"

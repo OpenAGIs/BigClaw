@@ -381,6 +381,12 @@ def test_orchestration_canvas_summarizes_policy_and_handoff():
         upgrade_required=True,
         reason="premium tier required for advanced cross-department orchestration",
         blocked_departments=["customer-success"],
+        entitlement_status="upgrade-required",
+        billing_model="standard-blocked",
+        estimated_cost_usd=7.0,
+        included_usage_units=2,
+        overage_usage_units=1,
+        overage_cost_usd=4.0,
     )
     handoff = HandoffRequest(target_team="operations", reason=policy.reason, required_approvals=["ops-manager"])
 
@@ -392,6 +398,9 @@ def test_orchestration_canvas_summarizes_policy_and_handoff():
     assert canvas.active_tools == ["browser"]
     assert "# Orchestration Canvas" in report
     assert "- Tier: standard" in report
+    assert "- Entitlement Status: upgrade-required" in report
+    assert "- Billing Model: standard-blocked" in report
+    assert "- Estimated Cost (USD): 7.00" in report
     assert "- Handoff Team: operations" in report
     assert "- Recommendation: resolve-entitlement-gap" in report
 
@@ -404,6 +413,10 @@ def test_orchestration_portfolio_rolls_up_canvas_and_takeover_state():
             collaboration_mode="cross-functional",
             departments=["operations", "engineering", "security"],
             tier="premium",
+            entitlement_status="included",
+            billing_model="premium-included",
+            estimated_cost_usd=4.5,
+            included_usage_units=3,
             handoff_team="security",
             handoff_status="pending",
         ),
@@ -414,6 +427,12 @@ def test_orchestration_portfolio_rolls_up_canvas_and_takeover_state():
             departments=["operations", "engineering"],
             tier="standard",
             upgrade_required=True,
+            entitlement_status="upgrade-required",
+            billing_model="standard-blocked",
+            estimated_cost_usd=7.0,
+            included_usage_units=2,
+            overage_usage_units=1,
+            overage_cost_usd=4.0,
             blocked_departments=["customer-success"],
             handoff_team="operations",
             handoff_status="pending",
@@ -462,14 +481,22 @@ def test_orchestration_portfolio_rolls_up_canvas_and_takeover_state():
     assert portfolio.total_runs == 2
     assert portfolio.collaboration_modes == {"cross-functional": 1, "tier-limited": 1}
     assert portfolio.tier_counts == {"premium": 1, "standard": 1}
+    assert portfolio.entitlement_counts == {"included": 1, "upgrade-required": 1}
+    assert portfolio.billing_model_counts == {"premium-included": 1, "standard-blocked": 1}
+    assert portfolio.total_estimated_cost_usd == 11.5
+    assert portfolio.total_overage_cost_usd == 4.0
     assert portfolio.upgrade_required_count == 1
     assert portfolio.active_handoffs == 2
     assert portfolio.recommendation == "stabilize-security-takeovers"
     assert "# Orchestration Portfolio Report" in report
     assert "- Collaboration Mix: cross-functional=1 tier-limited=1" in report
     assert "- Tier Mix: premium=1 standard=1" in report
+    assert "- Entitlement Mix: included=1 upgrade-required=1" in report
+    assert "- Billing Models: premium-included=1 standard-blocked=1" in report
+    assert "- Estimated Cost (USD): 11.50" in report
+    assert "- Overage Cost (USD): 4.00" in report
     assert "- Takeover Queue: pending=2 recommendation=expedite-security-review" in report
-    assert "- run-a: mode=cross-functional tier=premium upgrade_required=False handoff=security" in report
+    assert "- run-a: mode=cross-functional tier=premium entitlement=included billing=premium-included estimated_cost_usd=4.50 overage_cost_usd=0.00 upgrade_required=False handoff=security" in report
 
 
 def test_render_orchestration_overview_page():
@@ -483,6 +510,9 @@ def test_render_orchestration_overview_page():
                 collaboration_mode="cross-functional",
                 departments=["operations", "engineering"],
                 tier="premium",
+                entitlement_status="included",
+                billing_model="premium-included",
+                estimated_cost_usd=3.0,
                 handoff_team="security",
             )
         ],
@@ -511,6 +541,8 @@ def test_render_orchestration_overview_page():
     assert "<title>Orchestration Overview" in page
     assert "Cross-Team Portfolio" in page
     assert "review-security-takeover" in page
+    assert "Estimated Cost" in page
+    assert "premium-included" in page
     assert "pending=1 recommendation=expedite-security-review" in page
     assert "run-a" in page
 
@@ -534,6 +566,12 @@ def test_build_orchestration_canvas_from_ledger_entry_extracts_audit_state():
                 "outcome": "upgrade-required",
                 "details": {
                     "tier": "standard",
+                    "entitlement_status": "upgrade-required",
+                    "billing_model": "standard-blocked",
+                    "estimated_cost_usd": 7.0,
+                    "included_usage_units": 2,
+                    "overage_usage_units": 1,
+                    "overage_cost_usd": 4.0,
                     "blocked_departments": ["security", "customer-success"],
                 },
             },
@@ -557,6 +595,12 @@ def test_build_orchestration_canvas_from_ledger_entry_extracts_audit_state():
     assert canvas.required_approvals == ["security-review"]
     assert canvas.tier == "standard"
     assert canvas.upgrade_required is True
+    assert canvas.entitlement_status == "upgrade-required"
+    assert canvas.billing_model == "standard-blocked"
+    assert canvas.estimated_cost_usd == 7.0
+    assert canvas.included_usage_units == 2
+    assert canvas.overage_usage_units == 1
+    assert canvas.overage_cost_usd == 4.0
     assert canvas.blocked_departments == ["security", "customer-success"]
     assert canvas.handoff_team == "operations"
     assert canvas.active_tools == ["browser"]
@@ -580,7 +624,14 @@ def test_build_orchestration_portfolio_from_ledger_rolls_up_entries():
                 {
                     "action": "orchestration.policy",
                     "outcome": "enabled",
-                    "details": {"tier": "premium", "blocked_departments": []},
+                    "details": {
+                        "tier": "premium",
+                        "entitlement_status": "included",
+                        "billing_model": "premium-included",
+                        "estimated_cost_usd": 4.5,
+                        "included_usage_units": 3,
+                        "blocked_departments": [],
+                    },
                 },
                 {
                     "action": "orchestration.handoff",
@@ -605,7 +656,16 @@ def test_build_orchestration_portfolio_from_ledger_rolls_up_entries():
                 {
                     "action": "orchestration.policy",
                     "outcome": "upgrade-required",
-                    "details": {"tier": "standard", "blocked_departments": ["customer-success"]},
+                    "details": {
+                        "tier": "standard",
+                        "entitlement_status": "upgrade-required",
+                        "billing_model": "standard-blocked",
+                        "estimated_cost_usd": 7.0,
+                        "included_usage_units": 2,
+                        "overage_usage_units": 1,
+                        "overage_cost_usd": 4.0,
+                        "blocked_departments": ["customer-success"],
+                    },
                 },
                 {
                     "action": "orchestration.handoff",
@@ -621,6 +681,8 @@ def test_build_orchestration_portfolio_from_ledger_rolls_up_entries():
     assert portfolio.total_runs == 2
     assert portfolio.collaboration_modes == {"cross-functional": 1, "tier-limited": 1}
     assert portfolio.tier_counts == {"premium": 1, "standard": 1}
+    assert portfolio.entitlement_counts == {"included": 1, "upgrade-required": 1}
+    assert portfolio.total_estimated_cost_usd == 11.5
     assert portfolio.takeover_queue is not None
     assert portfolio.takeover_queue.pending_requests == 2
     assert portfolio.recommendation == "stabilize-security-takeovers"

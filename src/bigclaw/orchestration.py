@@ -75,6 +75,12 @@ class OrchestrationPolicyDecision:
     upgrade_required: bool
     reason: str
     blocked_departments: List[str] = field(default_factory=list)
+    entitlement_status: str = "included"
+    billing_model: str = "standard-included"
+    estimated_cost_usd: float = 0.0
+    included_usage_units: int = 0
+    overage_usage_units: int = 0
+    overage_cost_usd: float = 0.0
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -82,6 +88,12 @@ class OrchestrationPolicyDecision:
             "upgrade_required": self.upgrade_required,
             "reason": self.reason,
             "blocked_departments": self.blocked_departments,
+            "entitlement_status": self.entitlement_status,
+            "billing_model": self.billing_model,
+            "estimated_cost_usd": self.estimated_cost_usd,
+            "included_usage_units": self.included_usage_units,
+            "overage_usage_units": self.overage_usage_units,
+            "overage_cost_usd": self.overage_cost_usd,
         }
 
 
@@ -166,13 +178,19 @@ class CrossDepartmentOrchestrator:
 
 class PremiumOrchestrationPolicy:
     def apply(self, task: Task, plan: OrchestrationPlan) -> Tuple[OrchestrationPlan, OrchestrationPolicyDecision]:
+        requested_units = max(1, plan.department_count)
         if self._is_premium(task):
+            estimated_cost = self._estimate_cost(requested_units)
             return (
                 plan,
                 OrchestrationPolicyDecision(
                     tier="premium",
                     upgrade_required=False,
                     reason="premium tier enables advanced cross-department orchestration",
+                    entitlement_status="included",
+                    billing_model="premium-included",
+                    estimated_cost_usd=estimated_cost,
+                    included_usage_units=requested_units,
                 ),
             )
 
@@ -180,12 +198,17 @@ class PremiumOrchestrationPolicy:
             department for department in plan.departments if department not in {"operations", "engineering"}
         ]
         if not blocked_departments:
+            estimated_cost = self._estimate_cost(requested_units)
             return (
                 plan,
                 OrchestrationPolicyDecision(
                     tier="standard",
                     upgrade_required=False,
                     reason="standard tier supports baseline orchestration",
+                    entitlement_status="included",
+                    billing_model="standard-included",
+                    estimated_cost_usd=estimated_cost,
+                    included_usage_units=requested_units,
                 ),
             )
 
@@ -197,6 +220,9 @@ class PremiumOrchestrationPolicy:
             collaboration_mode="tier-limited",
             handoffs=constrained_handoffs,
         )
+        included_units = max(1, constrained_plan.department_count)
+        overage_units = len(blocked_departments)
+        estimated_cost = self._estimate_cost(included_units) + self._estimate_overage_cost(overage_units)
         return (
             constrained_plan,
             OrchestrationPolicyDecision(
@@ -204,11 +230,23 @@ class PremiumOrchestrationPolicy:
                 upgrade_required=True,
                 reason="premium tier required for advanced cross-department orchestration",
                 blocked_departments=blocked_departments,
+                entitlement_status="upgrade-required",
+                billing_model="standard-blocked",
+                estimated_cost_usd=estimated_cost,
+                included_usage_units=included_units,
+                overage_usage_units=overage_units,
+                overage_cost_usd=self._estimate_overage_cost(overage_units),
             ),
         )
 
     def _is_premium(self, task: Task) -> bool:
         return any(label.lower() in {"premium", "enterprise"} for label in task.labels)
+
+    def _estimate_cost(self, usage_units: int) -> float:
+        return round(1.5 * max(1, usage_units), 2)
+
+    def _estimate_overage_cost(self, usage_units: int) -> float:
+        return round(4.0 * max(0, usage_units), 2)
 
 
 def render_orchestration_plan(
@@ -231,6 +269,12 @@ def render_orchestration_plan(
             [
                 f"- Tier: {policy_decision.tier}",
                 f"- Upgrade Required: {policy_decision.upgrade_required}",
+                f"- Entitlement Status: {policy_decision.entitlement_status}",
+                f"- Billing Model: {policy_decision.billing_model}",
+                f"- Estimated Cost (USD): {policy_decision.estimated_cost_usd:.2f}",
+                f"- Included Usage Units: {policy_decision.included_usage_units}",
+                f"- Overage Usage Units: {policy_decision.overage_usage_units}",
+                f"- Overage Cost (USD): {policy_decision.overage_cost_usd:.2f}",
                 f"- Policy Reason: {policy_decision.reason}",
                 f"- Blocked Departments: {blocked}",
             ]
