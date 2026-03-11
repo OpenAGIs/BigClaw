@@ -811,3 +811,472 @@ def render_information_architecture_report(
     lines.append(f"- Secondary nav gaps: {gaps}")
     lines.append(f"- Orphan routes: {', '.join(audit.orphan_routes) if audit.orphan_routes else 'none'}")
     return "\n".join(lines) + "\n"
+
+
+@dataclass(frozen=True)
+class RolePermissionScenario:
+    screen_id: str
+    allowed_roles: List[str] = field(default_factory=list)
+    denied_roles: List[str] = field(default_factory=list)
+    audit_event: str = ""
+
+    @property
+    def missing_coverage(self) -> List[str]:
+        missing: List[str] = []
+        if not self.allowed_roles:
+            missing.append("allowed-roles")
+        if not self.denied_roles:
+            missing.append("denied-roles")
+        if not self.audit_event.strip():
+            missing.append("audit-event")
+        return missing
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "screen_id": self.screen_id,
+            "allowed_roles": list(self.allowed_roles),
+            "denied_roles": list(self.denied_roles),
+            "audit_event": self.audit_event,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "RolePermissionScenario":
+        return cls(
+            screen_id=str(data["screen_id"]),
+            allowed_roles=[str(role) for role in data.get("allowed_roles", [])],
+            denied_roles=[str(role) for role in data.get("denied_roles", [])],
+            audit_event=str(data.get("audit_event", "")),
+        )
+
+
+@dataclass(frozen=True)
+class DataAccuracyCheck:
+    screen_id: str
+    metric_id: str
+    source_of_truth: str
+    rendered_value: str
+    tolerance: float = 0.0
+    observed_delta: float = 0.0
+    freshness_slo_seconds: int = 0
+    observed_freshness_seconds: int = 0
+
+    @property
+    def within_tolerance(self) -> bool:
+        return abs(self.observed_delta) <= self.tolerance
+
+    @property
+    def within_freshness_slo(self) -> bool:
+        if self.freshness_slo_seconds <= 0:
+            return True
+        return self.observed_freshness_seconds <= self.freshness_slo_seconds
+
+    @property
+    def passes(self) -> bool:
+        return self.within_tolerance and self.within_freshness_slo
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "screen_id": self.screen_id,
+            "metric_id": self.metric_id,
+            "source_of_truth": self.source_of_truth,
+            "rendered_value": self.rendered_value,
+            "tolerance": self.tolerance,
+            "observed_delta": self.observed_delta,
+            "freshness_slo_seconds": self.freshness_slo_seconds,
+            "observed_freshness_seconds": self.observed_freshness_seconds,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "DataAccuracyCheck":
+        return cls(
+            screen_id=str(data["screen_id"]),
+            metric_id=str(data["metric_id"]),
+            source_of_truth=str(data.get("source_of_truth", "")),
+            rendered_value=str(data.get("rendered_value", "")),
+            tolerance=float(data.get("tolerance", 0.0)),
+            observed_delta=float(data.get("observed_delta", 0.0)),
+            freshness_slo_seconds=int(data.get("freshness_slo_seconds", 0)),
+            observed_freshness_seconds=int(data.get("observed_freshness_seconds", 0)),
+        )
+
+
+@dataclass(frozen=True)
+class PerformanceBudget:
+    surface_id: str
+    interaction: str
+    target_p95_ms: int
+    observed_p95_ms: int
+    target_tti_ms: int = 0
+    observed_tti_ms: int = 0
+
+    @property
+    def within_budget(self) -> bool:
+        p95_ok = self.observed_p95_ms <= self.target_p95_ms
+        tti_ok = self.target_tti_ms <= 0 or self.observed_tti_ms <= self.target_tti_ms
+        return p95_ok and tti_ok
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "surface_id": self.surface_id,
+            "interaction": self.interaction,
+            "target_p95_ms": self.target_p95_ms,
+            "observed_p95_ms": self.observed_p95_ms,
+            "target_tti_ms": self.target_tti_ms,
+            "observed_tti_ms": self.observed_tti_ms,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "PerformanceBudget":
+        return cls(
+            surface_id=str(data["surface_id"]),
+            interaction=str(data["interaction"]),
+            target_p95_ms=int(data.get("target_p95_ms", 0)),
+            observed_p95_ms=int(data.get("observed_p95_ms", 0)),
+            target_tti_ms=int(data.get("target_tti_ms", 0)),
+            observed_tti_ms=int(data.get("observed_tti_ms", 0)),
+        )
+
+
+@dataclass(frozen=True)
+class UsabilityJourney:
+    journey_id: str
+    personas: List[str] = field(default_factory=list)
+    critical_steps: List[str] = field(default_factory=list)
+    expected_max_steps: int = 0
+    observed_steps: int = 0
+    keyboard_accessible: bool = False
+    empty_state_guidance: bool = False
+    recovery_support: bool = False
+
+    @property
+    def passes(self) -> bool:
+        return (
+            bool(self.personas)
+            and bool(self.critical_steps)
+            and self.expected_max_steps > 0
+            and self.observed_steps <= self.expected_max_steps
+            and self.keyboard_accessible
+            and self.empty_state_guidance
+            and self.recovery_support
+        )
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "journey_id": self.journey_id,
+            "personas": list(self.personas),
+            "critical_steps": list(self.critical_steps),
+            "expected_max_steps": self.expected_max_steps,
+            "observed_steps": self.observed_steps,
+            "keyboard_accessible": self.keyboard_accessible,
+            "empty_state_guidance": self.empty_state_guidance,
+            "recovery_support": self.recovery_support,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "UsabilityJourney":
+        return cls(
+            journey_id=str(data["journey_id"]),
+            personas=[str(persona) for persona in data.get("personas", [])],
+            critical_steps=[str(step) for step in data.get("critical_steps", [])],
+            expected_max_steps=int(data.get("expected_max_steps", 0)),
+            observed_steps=int(data.get("observed_steps", 0)),
+            keyboard_accessible=bool(data.get("keyboard_accessible", False)),
+            empty_state_guidance=bool(data.get("empty_state_guidance", False)),
+            recovery_support=bool(data.get("recovery_support", False)),
+        )
+
+
+@dataclass(frozen=True)
+class AuditRequirement:
+    event_type: str
+    required_fields: List[str] = field(default_factory=list)
+    emitted_fields: List[str] = field(default_factory=list)
+    retention_days: int = 0
+    observed_retention_days: int = 0
+
+    @property
+    def missing_fields(self) -> List[str]:
+        emitted = set(self.emitted_fields)
+        return sorted(field for field in self.required_fields if field not in emitted)
+
+    @property
+    def retention_met(self) -> bool:
+        if self.retention_days <= 0:
+            return True
+        return self.observed_retention_days >= self.retention_days
+
+    @property
+    def complete(self) -> bool:
+        return not self.missing_fields and self.retention_met
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "event_type": self.event_type,
+            "required_fields": list(self.required_fields),
+            "emitted_fields": list(self.emitted_fields),
+            "retention_days": self.retention_days,
+            "observed_retention_days": self.observed_retention_days,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "AuditRequirement":
+        return cls(
+            event_type=str(data["event_type"]),
+            required_fields=[str(field_name) for field_name in data.get("required_fields", [])],
+            emitted_fields=[str(field_name) for field_name in data.get("emitted_fields", [])],
+            retention_days=int(data.get("retention_days", 0)),
+            observed_retention_days=int(data.get("observed_retention_days", 0)),
+        )
+
+
+@dataclass
+class UIAcceptanceSuite:
+    name: str
+    version: str
+    role_permissions: List[RolePermissionScenario] = field(default_factory=list)
+    data_accuracy_checks: List[DataAccuracyCheck] = field(default_factory=list)
+    performance_budgets: List[PerformanceBudget] = field(default_factory=list)
+    usability_journeys: List[UsabilityJourney] = field(default_factory=list)
+    audit_requirements: List[AuditRequirement] = field(default_factory=list)
+    documentation_complete: bool = False
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "name": self.name,
+            "version": self.version,
+            "role_permissions": [scenario.to_dict() for scenario in self.role_permissions],
+            "data_accuracy_checks": [check.to_dict() for check in self.data_accuracy_checks],
+            "performance_budgets": [budget.to_dict() for budget in self.performance_budgets],
+            "usability_journeys": [journey.to_dict() for journey in self.usability_journeys],
+            "audit_requirements": [requirement.to_dict() for requirement in self.audit_requirements],
+            "documentation_complete": self.documentation_complete,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "UIAcceptanceSuite":
+        return cls(
+            name=str(data["name"]),
+            version=str(data["version"]),
+            role_permissions=[
+                RolePermissionScenario.from_dict(scenario) for scenario in data.get("role_permissions", [])
+            ],
+            data_accuracy_checks=[
+                DataAccuracyCheck.from_dict(check) for check in data.get("data_accuracy_checks", [])
+            ],
+            performance_budgets=[
+                PerformanceBudget.from_dict(budget) for budget in data.get("performance_budgets", [])
+            ],
+            usability_journeys=[
+                UsabilityJourney.from_dict(journey) for journey in data.get("usability_journeys", [])
+            ],
+            audit_requirements=[
+                AuditRequirement.from_dict(requirement) for requirement in data.get("audit_requirements", [])
+            ],
+            documentation_complete=bool(data.get("documentation_complete", False)),
+        )
+
+
+@dataclass
+class UIAcceptanceAudit:
+    name: str
+    version: str
+    permission_gaps: List[str] = field(default_factory=list)
+    failing_data_checks: List[str] = field(default_factory=list)
+    failing_performance_budgets: List[str] = field(default_factory=list)
+    failing_usability_journeys: List[str] = field(default_factory=list)
+    incomplete_audit_trails: List[str] = field(default_factory=list)
+    documentation_complete: bool = False
+
+    @property
+    def release_ready(self) -> bool:
+        return (
+            not self.permission_gaps
+            and not self.failing_data_checks
+            and not self.failing_performance_budgets
+            and not self.failing_usability_journeys
+            and not self.incomplete_audit_trails
+            and self.documentation_complete
+        )
+
+    @property
+    def readiness_score(self) -> float:
+        checks = [
+            not self.permission_gaps,
+            not self.failing_data_checks,
+            not self.failing_performance_budgets,
+            not self.failing_usability_journeys,
+            not self.incomplete_audit_trails,
+            self.documentation_complete,
+        ]
+        passed = sum(1 for item in checks if item)
+        return round((passed / len(checks)) * 100, 1)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "name": self.name,
+            "version": self.version,
+            "permission_gaps": list(self.permission_gaps),
+            "failing_data_checks": list(self.failing_data_checks),
+            "failing_performance_budgets": list(self.failing_performance_budgets),
+            "failing_usability_journeys": list(self.failing_usability_journeys),
+            "incomplete_audit_trails": list(self.incomplete_audit_trails),
+            "documentation_complete": self.documentation_complete,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "UIAcceptanceAudit":
+        return cls(
+            name=str(data["name"]),
+            version=str(data["version"]),
+            permission_gaps=[str(item) for item in data.get("permission_gaps", [])],
+            failing_data_checks=[str(item) for item in data.get("failing_data_checks", [])],
+            failing_performance_budgets=[str(item) for item in data.get("failing_performance_budgets", [])],
+            failing_usability_journeys=[str(item) for item in data.get("failing_usability_journeys", [])],
+            incomplete_audit_trails=[str(item) for item in data.get("incomplete_audit_trails", [])],
+            documentation_complete=bool(data.get("documentation_complete", False)),
+        )
+
+
+class UIAcceptanceLibrary:
+    def audit(self, suite: UIAcceptanceSuite) -> UIAcceptanceAudit:
+        permission_gaps = [
+            f"{scenario.screen_id}: missing={', '.join(scenario.missing_coverage)}"
+            for scenario in suite.role_permissions
+            if scenario.missing_coverage
+        ]
+        failing_data_checks = [
+            f"{check.screen_id}.{check.metric_id}: delta={check.observed_delta} freshness={check.observed_freshness_seconds}s"
+            for check in suite.data_accuracy_checks
+            if not check.passes
+        ]
+        failing_performance_budgets = [
+            f"{budget.surface_id}.{budget.interaction}: p95={budget.observed_p95_ms}ms"
+            + (
+                f" tti={budget.observed_tti_ms}ms"
+                if budget.target_tti_ms > 0
+                else ""
+            )
+            for budget in suite.performance_budgets
+            if not budget.within_budget
+        ]
+        failing_usability_journeys = [
+            f"{journey.journey_id}: steps={journey.observed_steps}/{journey.expected_max_steps}"
+            for journey in suite.usability_journeys
+            if not journey.passes
+        ]
+        incomplete_audit_trails = []
+        for requirement in suite.audit_requirements:
+            if requirement.complete:
+                continue
+            gaps = requirement.missing_fields
+            parts: List[str] = []
+            if gaps:
+                parts.append(f"missing_fields={', '.join(gaps)}")
+            if not requirement.retention_met:
+                parts.append(
+                    f"retention={requirement.observed_retention_days}/{requirement.retention_days}d"
+                )
+            incomplete_audit_trails.append(f"{requirement.event_type}: {' '.join(parts)}")
+
+        return UIAcceptanceAudit(
+            name=suite.name,
+            version=suite.version,
+            permission_gaps=permission_gaps,
+            failing_data_checks=failing_data_checks,
+            failing_performance_budgets=failing_performance_budgets,
+            failing_usability_journeys=failing_usability_journeys,
+            incomplete_audit_trails=incomplete_audit_trails,
+            documentation_complete=suite.documentation_complete,
+        )
+
+
+def render_ui_acceptance_report(suite: UIAcceptanceSuite, audit: UIAcceptanceAudit) -> str:
+    lines = [
+        "# UI Acceptance Report",
+        "",
+        f"- Name: {suite.name}",
+        f"- Version: {suite.version}",
+        f"- Role/Permission Scenarios: {len(suite.role_permissions)}",
+        f"- Data Accuracy Checks: {len(suite.data_accuracy_checks)}",
+        f"- Performance Budgets: {len(suite.performance_budgets)}",
+        f"- Usability Journeys: {len(suite.usability_journeys)}",
+        f"- Audit Requirements: {len(suite.audit_requirements)}",
+        f"- Readiness Score: {audit.readiness_score:.1f}",
+        f"- Release Ready: {audit.release_ready}",
+        "",
+        "## Coverage",
+        "",
+    ]
+
+    if suite.role_permissions:
+        for scenario in suite.role_permissions:
+            denied = ", ".join(scenario.denied_roles) or "none"
+            lines.append(
+                f"- Role/Permission {scenario.screen_id}: allow={', '.join(scenario.allowed_roles) or 'none'} "
+                f"deny={denied} audit_event={scenario.audit_event or 'none'}"
+            )
+    else:
+        lines.append("- Role/Permission: none")
+
+    if suite.data_accuracy_checks:
+        for check in suite.data_accuracy_checks:
+            lines.append(
+                f"- Data Accuracy {check.screen_id}.{check.metric_id}: delta={check.observed_delta} "
+                f"tolerance={check.tolerance} freshness={check.observed_freshness_seconds}/{check.freshness_slo_seconds}s"
+            )
+    else:
+        lines.append("- Data Accuracy: none")
+
+    if suite.performance_budgets:
+        for budget in suite.performance_budgets:
+            tti_text = (
+                f" tti={budget.observed_tti_ms}/{budget.target_tti_ms}ms"
+                if budget.target_tti_ms > 0
+                else ""
+            )
+            lines.append(
+                f"- Performance {budget.surface_id}.{budget.interaction}: "
+                f"p95={budget.observed_p95_ms}/{budget.target_p95_ms}ms{tti_text}"
+            )
+    else:
+        lines.append("- Performance: none")
+
+    if suite.usability_journeys:
+        for journey in suite.usability_journeys:
+            lines.append(
+                f"- Usability {journey.journey_id}: steps={journey.observed_steps}/{journey.expected_max_steps} "
+                f"keyboard={journey.keyboard_accessible} empty_state={journey.empty_state_guidance} "
+                f"recovery={journey.recovery_support}"
+            )
+    else:
+        lines.append("- Usability: none")
+
+    if suite.audit_requirements:
+        for requirement in suite.audit_requirements:
+            lines.append(
+                f"- Audit {requirement.event_type}: fields={len(requirement.emitted_fields)}/{len(requirement.required_fields)} "
+                f"retention={requirement.observed_retention_days}/{requirement.retention_days}d"
+            )
+    else:
+        lines.append("- Audit: none")
+
+    lines.extend(["", "## Gaps", ""])
+    lines.append(
+        f"- Role/Permission gaps: {', '.join(audit.permission_gaps) if audit.permission_gaps else 'none'}"
+    )
+    lines.append(
+        f"- Data accuracy failures: {', '.join(audit.failing_data_checks) if audit.failing_data_checks else 'none'}"
+    )
+    lines.append(
+        "- Performance budget failures: "
+        f"{', '.join(audit.failing_performance_budgets) if audit.failing_performance_budgets else 'none'}"
+    )
+    lines.append(
+        "- Usability journey failures: "
+        f"{', '.join(audit.failing_usability_journeys) if audit.failing_usability_journeys else 'none'}"
+    )
+    lines.append(
+        f"- Audit completeness gaps: {', '.join(audit.incomplete_audit_trails) if audit.incomplete_audit_trails else 'none'}"
+    )
+    lines.append(f"- Documentation complete: {audit.documentation_complete}")
+    return "\n".join(lines) + "\n"

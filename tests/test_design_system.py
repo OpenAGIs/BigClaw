@@ -1,4 +1,5 @@
 from bigclaw.design_system import (
+    AuditRequirement,
     CommandAction,
     ComponentLibrary,
     ComponentSpec,
@@ -7,6 +8,7 @@ from bigclaw.design_system import (
     ConsoleCommandEntry,
     ConsoleTopBar,
     ConsoleTopBarAudit,
+    DataAccuracyCheck,
     DesignSystem,
     DesignSystemAudit,
     DesignToken,
@@ -14,9 +16,16 @@ from bigclaw.design_system import (
     InformationArchitectureAudit,
     NavigationNode,
     NavigationRoute,
+    PerformanceBudget,
+    RolePermissionScenario,
+    UIAcceptanceAudit,
+    UIAcceptanceLibrary,
+    UIAcceptanceSuite,
+    UsabilityJourney,
     render_console_top_bar_report,
     render_design_system_report,
     render_information_architecture_report,
+    render_ui_acceptance_report,
 )
 
 
@@ -488,3 +497,211 @@ def test_information_architecture_audit_round_trip_and_report():
     assert "- Missing route nodes: workbench=/workbench" in report
     assert "- Secondary nav gaps: Workbench=/workbench" in report
     assert "- Orphan routes: /settings" in report
+
+
+def test_ui_acceptance_suite_round_trip_preserves_acceptance_manifest():
+    suite = UIAcceptanceSuite(
+        name="BIG-1701 v3.0 UI Acceptance",
+        version="v3.0",
+        role_permissions=[
+            RolePermissionScenario(
+                screen_id="run-detail",
+                allowed_roles=["admin", "operator"],
+                denied_roles=["viewer"],
+                audit_event="ui.access.denied",
+            )
+        ],
+        data_accuracy_checks=[
+            DataAccuracyCheck(
+                screen_id="sla-dashboard",
+                metric_id="breach-count",
+                source_of_truth="warehouse.sla_daily",
+                rendered_value="12",
+                tolerance=0.0,
+                observed_delta=0.0,
+                freshness_slo_seconds=300,
+                observed_freshness_seconds=120,
+            )
+        ],
+        performance_budgets=[
+            PerformanceBudget(
+                surface_id="triage-center",
+                interaction="initial-load",
+                target_p95_ms=1200,
+                observed_p95_ms=980,
+                target_tti_ms=1800,
+                observed_tti_ms=1400,
+            )
+        ],
+        usability_journeys=[
+            UsabilityJourney(
+                journey_id="approve-high-risk-run",
+                personas=["operator"],
+                critical_steps=["open queue", "inspect run", "approve"],
+                expected_max_steps=4,
+                observed_steps=3,
+                keyboard_accessible=True,
+                empty_state_guidance=True,
+                recovery_support=True,
+            )
+        ],
+        audit_requirements=[
+            AuditRequirement(
+                event_type="run.approval.changed",
+                required_fields=["run_id", "actor_role", "decision"],
+                emitted_fields=["run_id", "actor_role", "decision"],
+                retention_days=90,
+                observed_retention_days=120,
+            )
+        ],
+        documentation_complete=True,
+    )
+
+    restored = UIAcceptanceSuite.from_dict(suite.to_dict())
+
+    assert restored == suite
+
+
+def test_ui_acceptance_audit_detects_permission_accuracy_perf_usability_and_audit_gaps():
+    suite = UIAcceptanceSuite(
+        name="BIG-1701 v3.0 UI Acceptance",
+        version="v3.0",
+        role_permissions=[
+            RolePermissionScenario(
+                screen_id="operations-overview",
+                allowed_roles=["admin"],
+                denied_roles=[],
+                audit_event="",
+            )
+        ],
+        data_accuracy_checks=[
+            DataAccuracyCheck(
+                screen_id="sla-dashboard",
+                metric_id="breach-count",
+                source_of_truth="warehouse.sla_daily",
+                rendered_value="12",
+                tolerance=0.0,
+                observed_delta=2.0,
+                freshness_slo_seconds=300,
+                observed_freshness_seconds=901,
+            )
+        ],
+        performance_budgets=[
+            PerformanceBudget(
+                surface_id="triage-center",
+                interaction="initial-load",
+                target_p95_ms=1200,
+                observed_p95_ms=1480,
+                target_tti_ms=1800,
+                observed_tti_ms=2400,
+            )
+        ],
+        usability_journeys=[
+            UsabilityJourney(
+                journey_id="reassign-alert",
+                personas=["operator"],
+                critical_steps=["open alert", "assign owner", "save"],
+                expected_max_steps=3,
+                observed_steps=5,
+                keyboard_accessible=False,
+                empty_state_guidance=True,
+                recovery_support=False,
+            )
+        ],
+        audit_requirements=[
+            AuditRequirement(
+                event_type="permission.override.used",
+                required_fields=["actor_role", "screen_id", "reason_code"],
+                emitted_fields=["actor_role", "screen_id"],
+                retention_days=180,
+                observed_retention_days=30,
+            )
+        ],
+        documentation_complete=False,
+    )
+
+    audit = UIAcceptanceLibrary().audit(suite)
+
+    assert audit == UIAcceptanceAudit(
+        name="BIG-1701 v3.0 UI Acceptance",
+        version="v3.0",
+        permission_gaps=["operations-overview: missing=denied-roles, audit-event"],
+        failing_data_checks=["sla-dashboard.breach-count: delta=2.0 freshness=901s"],
+        failing_performance_budgets=["triage-center.initial-load: p95=1480ms tti=2400ms"],
+        failing_usability_journeys=["reassign-alert: steps=5/3"],
+        incomplete_audit_trails=["permission.override.used: missing_fields=reason_code retention=30/180d"],
+        documentation_complete=False,
+    )
+    assert audit.readiness_score == 0.0
+    assert audit.release_ready is False
+
+
+def test_render_ui_acceptance_report_summarizes_release_readiness():
+    suite = UIAcceptanceSuite(
+        name="BIG-1701 v3.0 UI Acceptance",
+        version="v3.0",
+        role_permissions=[
+            RolePermissionScenario(
+                screen_id="run-detail",
+                allowed_roles=["admin", "operator"],
+                denied_roles=["viewer"],
+                audit_event="ui.access.denied",
+            )
+        ],
+        data_accuracy_checks=[
+            DataAccuracyCheck(
+                screen_id="sla-dashboard",
+                metric_id="breach-count",
+                source_of_truth="warehouse.sla_daily",
+                rendered_value="12",
+                tolerance=0.0,
+                observed_delta=0.0,
+                freshness_slo_seconds=300,
+                observed_freshness_seconds=120,
+            )
+        ],
+        performance_budgets=[
+            PerformanceBudget(
+                surface_id="triage-center",
+                interaction="initial-load",
+                target_p95_ms=1200,
+                observed_p95_ms=980,
+                target_tti_ms=1800,
+                observed_tti_ms=1400,
+            )
+        ],
+        usability_journeys=[
+            UsabilityJourney(
+                journey_id="approve-high-risk-run",
+                personas=["operator"],
+                critical_steps=["open queue", "inspect run", "approve"],
+                expected_max_steps=4,
+                observed_steps=3,
+                keyboard_accessible=True,
+                empty_state_guidance=True,
+                recovery_support=True,
+            )
+        ],
+        audit_requirements=[
+            AuditRequirement(
+                event_type="run.approval.changed",
+                required_fields=["run_id", "actor_role", "decision"],
+                emitted_fields=["run_id", "actor_role", "decision"],
+                retention_days=90,
+                observed_retention_days=120,
+            )
+        ],
+        documentation_complete=True,
+    )
+
+    audit = UIAcceptanceLibrary().audit(suite)
+    report = render_ui_acceptance_report(suite, audit)
+
+    assert "# UI Acceptance Report" in report
+    assert "- Readiness Score: 100.0" in report
+    assert "- Release Ready: True" in report
+    assert "- Role/Permission run-detail: allow=admin, operator deny=viewer audit_event=ui.access.denied" in report
+    assert "- Data Accuracy sla-dashboard.breach-count: delta=0.0 tolerance=0.0 freshness=120/300s" in report
+    assert "- Performance triage-center.initial-load: p95=980/1200ms tti=1400/1800ms" in report
+    assert "- Usability approve-high-risk-run: steps=3/4 keyboard=True empty_state=True recovery=True" in report
+    assert "- Audit completeness gaps: none" in report
