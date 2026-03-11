@@ -77,6 +77,7 @@ def render_run_detail_console(
         }
         for event in timeline_events
     ]
+    timeline_json = json.dumps(event_payload).replace("</", "<\\/")
 
     return f"""<!doctype html>
 <html lang="en">
@@ -302,7 +303,7 @@ def render_run_detail_console(
       <div class="panel-stack">{tab_panels}</div>
     </section>
   </main>
-  <script id="timeline-data" type="application/json">{escape(json.dumps(event_payload))}</script>
+  <script id="timeline-data" type="application/json">{timeline_json}</script>
   <script>
     const tabs = Array.from(document.querySelectorAll(".tab-button"));
     const panels = Array.from(document.querySelectorAll(".tab-panel"));
