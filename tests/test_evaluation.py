@@ -138,6 +138,9 @@ def test_render_replay_detail_page_lists_mismatches():
     )
 
     assert "Replay Detail" in page
+    assert "Timeline / Log Sync" in page
+    assert "Split View" in page
+    assert "Reports" in page
     assert "medium expected docker got browser" in page
     assert "needs-approval" in page
 

@@ -283,38 +283,113 @@ def render_benchmark_suite_report(
 
 
 def render_replay_detail_page(expected: ReplayRecord, observed: ReplayRecord, mismatches: List[str]) -> str:
-    mismatch_items = "".join(f"<li>{escape(item)}</li>" for item in mismatches) or "<li>None</li>"
-    return f"""<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Replay Detail · {escape(expected.run_id)}</title>
-  <style>
-    :root {{ color-scheme: light dark; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif; }}
-    body {{ margin: 2rem auto; max-width: 880px; padding: 0 1rem 3rem; line-height: 1.5; }}
-    table {{ border-collapse: collapse; width: 100%; margin: 1rem 0 1.5rem; }}
-    th, td {{ border: 1px solid #cbd5e1; padding: 0.6rem; text-align: left; }}
-    th {{ background: rgba(148, 163, 184, 0.12); }}
-  </style>
-</head>
-<body>
-  <h1>Replay Detail</h1>
-  <p>Task <strong>{escape(expected.task.task_id)}</strong> · baseline run <code>{escape(expected.run_id)}</code></p>
-  <table>
-    <thead>
-      <tr><th>Field</th><th>Expected</th><th>Observed</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>Medium</td><td>{escape(expected.medium)}</td><td>{escape(observed.medium)}</td></tr>
-      <tr><td>Approved</td><td>{escape(str(expected.approved))}</td><td>{escape(str(observed.approved))}</td></tr>
-      <tr><td>Status</td><td>{escape(expected.status)}</td><td>{escape(observed.status)}</td></tr>
-    </tbody>
-  </table>
-  <h2>Mismatches</h2>
-  <ul>{mismatch_items}</ul>
-</body>
-</html>
-"""
+    tone = "accent" if not mismatches else "danger"
+    timeline_events = [
+        RunDetailEvent(
+            event_id="compare-medium",
+            lane="comparison",
+            title="Medium",
+            timestamp="compare-1",
+            status="matched" if expected.medium == observed.medium else "mismatch",
+            summary=f"expected {expected.medium} | observed {observed.medium}",
+            details=[f"expected={expected.medium}", f"observed={observed.medium}"],
+        ),
+        RunDetailEvent(
+            event_id="compare-approved",
+            lane="comparison",
+            title="Approval",
+            timestamp="compare-2",
+            status="matched" if expected.approved == observed.approved else "mismatch",
+            summary=f"expected {expected.approved} | observed {observed.approved}",
+            details=[f"expected={expected.approved}", f"observed={observed.approved}"],
+        ),
+        RunDetailEvent(
+            event_id="compare-status",
+            lane="comparison",
+            title="Status",
+            timestamp="compare-3",
+            status="matched" if expected.status == observed.status else "mismatch",
+            summary=f"expected {expected.status} | observed {observed.status}",
+            details=[f"expected={expected.status}", f"observed={observed.status}"],
+        ),
+        *[
+            RunDetailEvent(
+                event_id=f"mismatch-{index}",
+                lane="replay",
+                title=f"Mismatch {index + 1}",
+                timestamp=f"compare-{index + 4}",
+                status="mismatch",
+                summary=item,
+                details=[item],
+            )
+            for index, item in enumerate(mismatches)
+        ],
+    ]
+    comparison_html = f"""
+    <section class="surface">
+      <h2>Split Comparison</h2>
+      <p>Side-by-side replay comparison for task <strong>{escape(expected.task.task_id)}</strong> against baseline run <code>{escape(expected.run_id)}</code>.</p>
+      <div class="resource-grid">
+        <article class="resource-card">
+          <span class="kicker">Baseline</span>
+          <h3>Expected</h3>
+          <p><code>medium={escape(expected.medium)}</code></p>
+          <span class="resource-meta">approved={escape(str(expected.approved))} | status={escape(expected.status)}</span>
+        </article>
+        <article class="resource-card">
+          <span class="kicker">Replay</span>
+          <h3>Observed</h3>
+          <p><code>medium={escape(observed.medium)}</code></p>
+          <span class="resource-meta">approved={escape(str(observed.approved))} | status={escape(observed.status)}</span>
+        </article>
+      </div>
+    </section>
+    """
+    mismatch_html = f"""
+    <section class="surface">
+      <h2>Replay Mismatches</h2>
+      <p>Detailed mismatch list for the replay execution.</p>
+      <ul>{''.join(f'<li>{escape(item)}</li>' for item in mismatches) or '<li>None</li>'}</ul>
+    </section>
+    """
+    return render_run_detail_console(
+        page_title=f"Replay Detail · {expected.run_id}",
+        eyebrow="Replay Detail",
+        hero_title=f"Replay Detail · {expected.task.task_id}",
+        hero_summary="High-fidelity replay inspection with synced comparison timeline and split-view baseline versus observed execution state.",
+        stats=[
+            RunDetailStat("Run ID", expected.run_id),
+            RunDetailStat("Task ID", expected.task.task_id),
+            RunDetailStat("Expected Medium", expected.medium),
+            RunDetailStat("Observed Medium", observed.medium, tone=tone),
+            RunDetailStat("Replay", "matched" if not mismatches else "mismatch", tone=tone),
+            RunDetailStat("Mismatches", str(len(mismatches)), tone=tone),
+        ],
+        tabs=[
+            RunDetailTab("overview", "Overview", comparison_html),
+            RunDetailTab(
+                "timeline",
+                "Timeline / Log Sync",
+                render_timeline_panel(
+                    "Timeline / Log Sync",
+                    "Field-by-field replay comparison with a synced inspector for each expectation and mismatch.",
+                    timeline_events,
+                ),
+            ),
+            RunDetailTab("comparison", "Split View", comparison_html),
+            RunDetailTab("replay", "Replay", mismatch_html),
+            RunDetailTab(
+                "reports",
+                "Reports",
+                render_resource_grid(
+                    "Reports",
+                    "Replay detail pages do not emit standalone report files beyond the generated HTML page unless the caller persists additional artifacts.",
+                    [],
+                ),
+            ),
+        ],
+        timeline_events=timeline_events,
+    )
 
 
 def render_run_replay_index_page(
