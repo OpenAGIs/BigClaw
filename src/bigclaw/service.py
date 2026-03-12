@@ -290,3 +290,45 @@ def run_server(host: str = "127.0.0.1", port: int = 8008, directory: str = ".") 
         pass
     finally:
         server.server_close()
+
+
+@dataclass
+class RepoGovernancePolicy:
+    max_bundle_bytes: int = 50 * 1024 * 1024
+    max_push_per_hour: int = 20
+    max_diff_per_hour: int = 120
+    sidecar_required: bool = True
+
+
+@dataclass
+class RepoGovernanceResult:
+    allowed: bool
+    mode: str
+    reason: str = ""
+
+
+class RepoGovernanceEnforcer:
+    def __init__(self, policy: RepoGovernancePolicy):
+        self.policy = policy
+        self.push_count = 0
+        self.diff_count = 0
+
+    def evaluate(self, *, action: str, bundle_bytes: int = 0, sidecar_available: bool = True) -> RepoGovernanceResult:
+        if self.policy.sidecar_required and not sidecar_available:
+            return RepoGovernanceResult(allowed=False, mode="degraded", reason="repo sidecar unavailable")
+
+        if action == "push":
+            if bundle_bytes > self.policy.max_bundle_bytes:
+                return RepoGovernanceResult(allowed=False, mode="blocked", reason="bundle exceeds max size")
+            if self.push_count >= self.policy.max_push_per_hour:
+                return RepoGovernanceResult(allowed=False, mode="blocked", reason="push quota exceeded")
+            self.push_count += 1
+            return RepoGovernanceResult(allowed=True, mode="allow")
+
+        if action == "diff":
+            if self.diff_count >= self.policy.max_diff_per_hour:
+                return RepoGovernanceResult(allowed=False, mode="blocked", reason="diff quota exceeded")
+            self.diff_count += 1
+            return RepoGovernanceResult(allowed=True, mode="allow")
+
+        return RepoGovernanceResult(allowed=True, mode="allow")

@@ -3,12 +3,33 @@ import threading
 import urllib.request
 from pathlib import Path
 
-from bigclaw.service import create_server
+from bigclaw.service import RepoGovernanceEnforcer, RepoGovernancePolicy, create_server
 
 
 def _get(url: str) -> str:
     with urllib.request.urlopen(url, timeout=3) as resp:
         return resp.read().decode("utf-8")
+
+
+def test_repo_governance_enforcer_blocks_quota_and_sidecar_failures():
+    enforcer = RepoGovernanceEnforcer(
+        RepoGovernancePolicy(max_bundle_bytes=10, max_push_per_hour=1, max_diff_per_hour=1, sidecar_required=True)
+    )
+
+    ok = enforcer.evaluate(action="push", bundle_bytes=8, sidecar_available=True)
+    assert ok.allowed is True
+
+    too_large = enforcer.evaluate(action="push", bundle_bytes=12, sidecar_available=True)
+    assert too_large.allowed is False
+    assert too_large.mode == "blocked"
+
+    over_quota = enforcer.evaluate(action="push", bundle_bytes=8, sidecar_available=True)
+    assert over_quota.allowed is False
+    assert "quota" in over_quota.reason
+
+    degraded = enforcer.evaluate(action="diff", sidecar_available=False)
+    assert degraded.allowed is False
+    assert degraded.mode == "degraded"
 
 
 def test_server_entry_health_metrics(tmp_path: Path):

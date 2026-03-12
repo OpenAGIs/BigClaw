@@ -16,6 +16,7 @@ from bigclaw.operations import (
     DashboardWidgetPlacement,
     DashboardWidgetSpec,
     OperationsAnalytics,
+    build_repo_collaboration_metrics,
     render_operations_metric_spec,
     render_dashboard_builder_report,
     VersionedArtifact,
@@ -215,6 +216,36 @@ def test_operations_metric_spec_defines_and_computes_operational_metrics() -> No
     assert values["regression"].value == 1
     assert values["risk"].value == 57.7
     assert values["spend"].value == 14.75
+
+
+def test_build_repo_collaboration_metrics() -> None:
+    runs = [
+        {
+            "run_id": "r1",
+            "closeout": {
+                "run_commit_links": [{"role": "candidate"}],
+                "accepted_commit_hash": "abc123",
+            },
+            "repo_discussion_posts": 3,
+            "accepted_lineage_depth": 2,
+        },
+        {
+            "run_id": "r2",
+            "closeout": {
+                "run_commit_links": [],
+                "accepted_commit_hash": "",
+            },
+            "repo_discussion_posts": 1,
+            "accepted_lineage_depth": 4,
+        },
+    ]
+
+    metrics = build_repo_collaboration_metrics(runs)
+
+    assert metrics["repo_link_coverage"] == 50.0
+    assert metrics["accepted_commit_rate"] == 50.0
+    assert metrics["discussion_density"] == 2.0
+    assert metrics["accepted_lineage_depth_avg"] == 3.0
 
 
 def test_render_and_bundle_operations_metric_spec(tmp_path: Path) -> None:

@@ -1557,6 +1557,35 @@ def write_dashboard_builder_bundle(
 
 
 
+def build_repo_collaboration_metrics(runs: Sequence[dict]) -> Dict[str, float]:
+    total = len(runs)
+    linked = 0
+    accepted = 0
+    discussion_posts = 0
+    lineage_depth_sum = 0
+    lineage_depth_count = 0
+
+    for run in runs:
+        links = run.get("closeout", {}).get("run_commit_links", [])
+        if links:
+            linked += 1
+        if run.get("closeout", {}).get("accepted_commit_hash"):
+            accepted += 1
+        discussion_posts += int(run.get("repo_discussion_posts", 0))
+
+        depth = run.get("accepted_lineage_depth")
+        if depth is not None:
+            lineage_depth_sum += float(depth)
+            lineage_depth_count += 1
+
+    return {
+        "repo_link_coverage": round((linked / total) * 100, 1) if total else 0.0,
+        "accepted_commit_rate": round((accepted / total) * 100, 1) if total else 0.0,
+        "discussion_density": round(discussion_posts / total, 2) if total else 0.0,
+        "accepted_lineage_depth_avg": round(lineage_depth_sum / lineage_depth_count, 2) if lineage_depth_count else 0.0,
+    }
+
+
 def write_weekly_operations_bundle(
     root_dir: str,
     report: WeeklyOperationsReport,
