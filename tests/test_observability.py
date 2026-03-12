@@ -5,6 +5,7 @@ from bigclaw.collaboration import build_collaboration_thread_from_audits
 from bigclaw.models import Priority, Task
 from bigclaw.observability import ObservabilityLedger, TaskRun
 from bigclaw.reports import render_task_run_detail_page, render_task_run_report
+from bigclaw.repo_plane import RunCommitLink
 
 
 def test_task_run_captures_logs_trace_artifacts_and_audits(tmp_path: Path):
@@ -120,6 +121,10 @@ def test_render_task_run_detail_page(tmp_path: Path):
         git_push_succeeded=True,
         git_push_output="main -> origin/main",
         git_log_stat_output="commit fedcba\n 1 file changed, 1 insertion(+)",
+        run_commit_links=[
+            RunCommitLink(run_id="run-3", commit_hash="abc111", role="candidate", repo_space_id="space-1"),
+            RunCommitLink(run_id="run-3", commit_hash="fedcba", role="accepted", repo_space_id="space-1"),
+        ],
     )
     run.finalize("approved", "detail page ready")
 
@@ -135,6 +140,8 @@ def test_render_task_run_detail_page(tmp_path: Path):
     assert "detail page ready" in page
     assert "Closeout" in page
     assert "complete" in page
+    assert "Repo Evidence" in page
+    assert "fedcba" in page
     assert "Actions" in page
     assert "Pause [pause] state=disabled target=run-3 reason=completed or failed runs cannot be paused" in page
     assert "Collaboration" in page

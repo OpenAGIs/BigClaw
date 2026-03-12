@@ -148,6 +148,35 @@ def build_collaboration_thread(
     )
 
 
+def merge_collaboration_threads(
+    *,
+    target_id: str,
+    native_thread: Optional[CollaborationThread],
+    repo_thread: Optional[CollaborationThread],
+) -> Optional[CollaborationThread]:
+    if native_thread is None and repo_thread is None:
+        return None
+
+    merged_comments: List[CollaborationComment] = []
+    merged_decisions: List[DecisionNote] = []
+
+    for thread in [native_thread, repo_thread]:
+        if thread is None:
+            continue
+        merged_comments.extend(thread.comments)
+        merged_decisions.extend(thread.decisions)
+
+    merged_comments.sort(key=lambda item: item.created_at)
+    merged_decisions.sort(key=lambda item: item.recorded_at)
+
+    return CollaborationThread(
+        surface="merged",
+        target_id=target_id,
+        comments=merged_comments,
+        decisions=merged_decisions,
+    )
+
+
 def build_collaboration_thread_from_audits(
     audits: Sequence[Dict[str, Any]],
     *,

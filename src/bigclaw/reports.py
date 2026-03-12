@@ -2228,6 +2228,17 @@ def render_task_run_detail_page(run: TaskRun) -> str:
         target_id=run.run_id,
     )
 
+    repo_link_resources = [
+        RunDetailResource(
+            name=link.commit_hash,
+            kind=link.role,
+            path=f"repo:{link.repo_space_id}",
+            meta=[f"actor={link.actor or 'unknown'}", *[f"{key}={value}" for key, value in sorted(link.metadata.items())]],
+            tone="accent" if link.role == "accepted" else "default",
+        )
+        for link in run.closeout.run_commit_links
+    ]
+
     overview_html = f"""
     <section class="surface">
       <h2>Overview</h2>
@@ -2238,6 +2249,7 @@ def render_task_run_detail_page(run: TaskRun) -> str:
       <h2>Closeout</h2>
       <p>Validation evidence: {escape(', '.join(run.closeout.validation_evidence) if run.closeout.validation_evidence else 'None recorded.')}</p>
       <p class="meta">git push succeeded={escape(str(run.closeout.git_push_succeeded))} | git log captured={escape(str(bool(run.closeout.git_log_stat_output.strip())))} | complete={escape(str(run.closeout.complete))}</p>
+      <p class="meta">accepted_commit_hash={escape(run.closeout.accepted_commit_hash or 'none')} | commit_links={escape(str(len(run.closeout.run_commit_links)))}</p>
     </section>
     <section class="surface">
       <h2>Actions</h2>
@@ -2258,6 +2270,7 @@ def render_task_run_detail_page(run: TaskRun) -> str:
             RunDetailStat("Artifacts", str(len(run.artifacts))),
             RunDetailStat("Reports", str(len(report_resources)), tone="accent" if report_resources else "default"),
             RunDetailStat("Closeout", "complete" if run.closeout.complete else "pending", tone="accent" if run.closeout.complete else "warning"),
+            RunDetailStat("Repo Links", str(len(run.closeout.run_commit_links)), tone="accent" if run.closeout.run_commit_links else "default"),
         ],
         tabs=[
             RunDetailTab("overview", "Overview", overview_html),
@@ -2286,6 +2299,15 @@ def render_task_run_detail_page(run: TaskRun) -> str:
                     "Reports",
                     "Report artifacts emitted for this run, including markdown summaries and linked detail pages when present.",
                     report_resources,
+                ),
+            ),
+            RunDetailTab(
+                "repo-evidence",
+                "Repo Evidence",
+                render_resource_grid(
+                    "Repo Evidence",
+                    "Commit links, roles, and accepted lineage hints bound at closeout.",
+                    repo_link_resources,
                 ),
             ),
             RunDetailTab(
