@@ -633,6 +633,70 @@ def build_big_4701_execution_plan() -> FourWeekExecutionPlan:
     return plan
 
 
+def build_pilot_rollout_scorecard(
+    *,
+    adoption: float,
+    convergence_improvement: float,
+    review_efficiency: float,
+    governance_incidents: int,
+    evidence_completeness: float,
+) -> Dict[str, object]:
+    score = (
+        adoption * 0.25
+        + convergence_improvement * 0.25
+        + review_efficiency * 0.2
+        + evidence_completeness * 0.2
+        + max(0.0, 100.0 - (governance_incidents * 20.0)) * 0.1
+    )
+    passed = score >= 75 and governance_incidents <= 2 and evidence_completeness >= 70
+    return {
+        "adoption": round(adoption, 1),
+        "convergence_improvement": round(convergence_improvement, 1),
+        "review_efficiency": round(review_efficiency, 1),
+        "governance_incidents": int(governance_incidents),
+        "evidence_completeness": round(evidence_completeness, 1),
+        "rollout_score": round(score, 1),
+        "recommendation": "go" if passed else "hold",
+    }
+
+
+def evaluate_candidate_gate(
+    *,
+    gate_decision: EntryGateDecision,
+    rollout_scorecard: Dict[str, object],
+) -> Dict[str, object]:
+    readiness = bool(gate_decision.passed)
+    rollout_ready = rollout_scorecard.get("recommendation") == "go"
+    recommendation = "enable-by-default" if readiness and rollout_ready else "pilot-only"
+    findings: List[str] = []
+    if not readiness:
+        findings.append(gate_decision.summary)
+    if not rollout_ready:
+        findings.append(
+            "rollout score below threshold"
+            f" ({rollout_scorecard.get('rollout_score', 'n/a')})"
+        )
+    return {
+        "gate_passed": readiness,
+        "rollout_recommendation": str(rollout_scorecard.get("recommendation", "hold")),
+        "candidate_gate": recommendation,
+        "findings": findings,
+    }
+
+
+def render_pilot_rollout_gate_report(result: Dict[str, object]) -> str:
+    findings = result.get("findings") or []
+    lines = [
+        "# Pilot Rollout Candidate Gate",
+        "",
+        f"- Gate passed: {result.get('gate_passed')}",
+        f"- Rollout recommendation: {result.get('rollout_recommendation')}",
+        f"- Candidate gate: {result.get('candidate_gate')}",
+    ]
+    lines.append(f"- Findings: {', '.join(findings) if findings else 'none'}")
+    return "\n".join(lines)
+
+
 def render_four_week_execution_report(plan: FourWeekExecutionPlan) -> str:
     plan.validate()
     status_counts = plan.goal_status_counts()

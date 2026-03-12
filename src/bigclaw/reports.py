@@ -2322,3 +2322,45 @@ def render_task_run_detail_page(run: TaskRun) -> str:
         ],
         timeline_events=timeline_events,
     )
+
+
+def render_weekly_repo_evidence_section(
+    *,
+    experiment_volume: int,
+    converged_tasks: int,
+    accepted_commits: int,
+    hottest_threads: List[str],
+) -> str:
+    lines = [
+        "## Repo Evidence Summary",
+        f"- Experiment Volume: {experiment_volume}",
+        f"- Converged Tasks: {converged_tasks}",
+        f"- Accepted Commits: {accepted_commits}",
+        f"- Hottest Threads: {', '.join(hottest_threads) if hottest_threads else 'none'}",
+    ]
+    return "\n".join(lines)
+
+
+def render_repo_narrative_exports(
+    *,
+    experiment_volume: int,
+    converged_tasks: int,
+    accepted_commits: int,
+    hottest_threads: List[str],
+) -> dict:
+    markdown_text = render_weekly_repo_evidence_section(
+        experiment_volume=experiment_volume,
+        converged_tasks=converged_tasks,
+        accepted_commits=accepted_commits,
+        hottest_threads=hottest_threads,
+    )
+    plain_text = markdown_text.replace("## ", "")
+    html = (
+        "<section><h2>Repo Evidence Summary</h2>"
+        f"<p>Experiment Volume: {experiment_volume}</p>"
+        f"<p>Converged Tasks: {converged_tasks}</p>"
+        f"<p>Accepted Commits: {accepted_commits}</p>"
+        f"<p>Hottest Threads: {escape(', '.join(hottest_threads) if hottest_threads else 'none')}</p>"
+        "</section>"
+    )
+    return {"markdown": markdown_text, "text": plain_text, "html": html}
