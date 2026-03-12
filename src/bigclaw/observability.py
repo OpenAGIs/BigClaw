@@ -8,6 +8,8 @@ from typing import Any, Dict, List, Optional
 from .audit_events import missing_required_fields
 from .collaboration import CollaborationComment, DecisionNote
 from .models import Task
+from .repo_links import bind_run_commits
+from .repo_plane import RunCommitLink
 
 
 def utc_now() -> str:
@@ -141,6 +143,8 @@ class RunCloseout:
     git_push_succeeded: bool = False
     git_push_output: str = ""
     git_log_stat_output: str = ""
+    run_commit_links: List[RunCommitLink] = field(default_factory=list)
+    accepted_commit_hash: str = ""
     timestamp: str = field(default_factory=utc_now)
 
     @property
@@ -153,6 +157,8 @@ class RunCloseout:
             "git_push_succeeded": self.git_push_succeeded,
             "git_push_output": self.git_push_output,
             "git_log_stat_output": self.git_log_stat_output,
+            "run_commit_links": [link.to_dict() for link in self.run_commit_links],
+            "accepted_commit_hash": self.accepted_commit_hash,
             "timestamp": self.timestamp,
             "complete": self.complete,
         }
@@ -164,6 +170,8 @@ class RunCloseout:
             git_push_succeeded=data.get("git_push_succeeded", False),
             git_push_output=data.get("git_push_output", ""),
             git_log_stat_output=data.get("git_log_stat_output", ""),
+            run_commit_links=[RunCommitLink.from_dict(item) for item in data.get("run_commit_links", [])],
+            accepted_commit_hash=str(data.get("accepted_commit_hash", "")),
             timestamp=data.get("timestamp", utc_now()),
         )
 
@@ -316,12 +324,17 @@ class TaskRun:
         git_push_succeeded: bool,
         git_push_output: str = "",
         git_log_stat_output: str = "",
+        run_commit_links: Optional[List[RunCommitLink]] = None,
     ) -> None:
+        links = list(run_commit_links or [])
+        binding = bind_run_commits(links) if links else None
         self.closeout = RunCloseout(
             validation_evidence=list(validation_evidence),
             git_push_succeeded=git_push_succeeded,
             git_push_output=git_push_output,
             git_log_stat_output=git_log_stat_output,
+            run_commit_links=links,
+            accepted_commit_hash=binding.accepted_commit_hash if binding else "",
         )
 
     def finalize(self, status: str, summary: str) -> None:
