@@ -46,6 +46,18 @@ type dashboardBreakdown struct {
 	MergedPRs        int    `json:"merged_prs"`
 }
 
+type dashboardTrendPoint struct {
+	Start            time.Time `json:"start"`
+	End              time.Time `json:"end"`
+	Label            string    `json:"label"`
+	TotalTasks       int       `json:"total_tasks"`
+	ActiveRuns       int       `json:"active_runs"`
+	Blockers         int       `json:"blockers"`
+	PremiumRuns      int       `json:"premium_runs"`
+	SLARiskRuns      int       `json:"sla_risk_runs"`
+	BudgetCentsTotal int64     `json:"budget_cents_total"`
+}
+
 type dashboardDrilldown struct {
 	Run               string `json:"run"`
 	Events            string `json:"events"`
@@ -155,6 +167,11 @@ func (s *Server) handleV2EngineeringDashboard(w http.ResponseWriter, r *http.Req
 	}
 	authorization := parseControlAuthorization(r, "", "", "")
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	bucket, err := parseDashboardBucket(r.URL.Query().Get("bucket"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	team := strings.TrimSpace(r.URL.Query().Get("team"))
 	project := strings.TrimSpace(r.URL.Query().Get("project"))
 	tenantID := strings.TrimSpace(r.URL.Query().Get("tenant_id"))
@@ -174,6 +191,7 @@ func (s *Server) handleV2EngineeringDashboard(w http.ResponseWriter, r *http.Req
 	}
 
 	tasks := s.filteredTasks(team, project, tenantID, since, until)
+	bucket = normalizeDashboardBucket(bucket, since, until, tasks)
 	summary := dashboardSummary{StateDistribution: make(map[string]int)}
 	funnel := funnelSummary{}
 	overviews := make([]dashboardTaskOverview, 0, len(tasks))
@@ -232,15 +250,135 @@ func (s *Server) handleV2EngineeringDashboard(w http.ResponseWriter, r *http.Req
 			"since":       since,
 			"until":       until,
 			"limit":       limit,
+			"bucket":      bucket,
 		},
 		"summary":                summary,
 		"ticket_to_merge_funnel": funnel,
 		"project_breakdown":      sortedDashboardBreakdowns(projectBreakdown),
 		"team_breakdown":         sortedDashboardBreakdowns(teamBreakdown),
+		"trend":                  buildDashboardTrend(tasks, since, until, bucket),
 		"blocked_tasks":          limitDashboardTasks(blockedTasks, limit),
 		"high_risk_tasks":        limitDashboardTasks(highRiskTasks, limit),
 		"tasks":                  overviews,
 	})
+}
+
+func parseDashboardBucket(raw string) (string, error) {
+	raw = strings.ToLower(strings.TrimSpace(raw))
+	switch raw {
+	case "", "auto", "hour", "day":
+		return raw, nil
+	default:
+		return "", fmt.Errorf("invalid bucket value")
+	}
+}
+
+func normalizeDashboardBucket(bucket string, since, until time.Time, tasks []domain.Task) string {
+	if bucket != "" && bucket != "auto" {
+		return bucket
+	}
+	windowStart, windowEnd := dashboardWindowBounds(tasks, since, until)
+	if !windowStart.IsZero() && !windowEnd.IsZero() && windowEnd.Sub(windowStart) <= 72*time.Hour {
+		return "hour"
+	}
+	return "day"
+}
+
+func dashboardWindowBounds(tasks []domain.Task, since, until time.Time) (time.Time, time.Time) {
+	if !since.IsZero() && !until.IsZero() {
+		return since, until
+	}
+	var minAnchor time.Time
+	var maxAnchor time.Time
+	for _, task := range tasks {
+		anchor := taskAnchorTime(task)
+		if anchor.IsZero() {
+			continue
+		}
+		if minAnchor.IsZero() || anchor.Before(minAnchor) {
+			minAnchor = anchor
+		}
+		if maxAnchor.IsZero() || anchor.After(maxAnchor) {
+			maxAnchor = anchor
+		}
+	}
+	if since.IsZero() {
+		since = minAnchor
+	}
+	if until.IsZero() {
+		until = maxAnchor
+	}
+	return since, until
+}
+
+func buildDashboardTrend(tasks []domain.Task, since, until time.Time, bucket string) []dashboardTrendPoint {
+	windowStart, windowEnd := dashboardWindowBounds(tasks, since, until)
+	if windowStart.IsZero() || windowEnd.IsZero() {
+		return []dashboardTrendPoint{}
+	}
+	step := 24 * time.Hour
+	if bucket == "hour" {
+		step = time.Hour
+	}
+	windowStart = truncateDashboardTime(windowStart, bucket)
+	windowEnd = truncateDashboardTime(windowEnd, bucket)
+	if !windowEnd.After(windowStart) {
+		windowEnd = windowStart.Add(step)
+	} else {
+		windowEnd = windowEnd.Add(step)
+	}
+	points := make([]dashboardTrendPoint, 0)
+	index := make(map[time.Time]int)
+	for cursor := windowStart; cursor.Before(windowEnd); cursor = cursor.Add(step) {
+		point := dashboardTrendPoint{
+			Start: cursor,
+			End:   cursor.Add(step),
+			Label: formatDashboardTrendLabel(cursor, bucket),
+		}
+		index[cursor] = len(points)
+		points = append(points, point)
+	}
+	for _, task := range tasks {
+		anchor := truncateDashboardTime(taskAnchorTime(task), bucket)
+		position, ok := index[anchor]
+		if !ok {
+			continue
+		}
+		point := &points[position]
+		point.TotalTasks++
+		point.BudgetCentsTotal += task.BudgetCents
+		if domain.IsActiveTaskState(task.State) {
+			point.ActiveRuns++
+		}
+		if task.State == domain.TaskBlocked || strings.EqualFold(strings.TrimSpace(task.Metadata["blocked"]), "true") {
+			point.Blockers++
+		}
+		if isHighRiskTask(task) {
+			point.SLARiskRuns++
+		}
+		if policy.Resolve(task).Plan == "premium" {
+			point.PremiumRuns++
+		}
+	}
+	return points
+}
+
+func truncateDashboardTime(value time.Time, bucket string) time.Time {
+	if value.IsZero() {
+		return value
+	}
+	if bucket == "hour" {
+		return value.UTC().Truncate(time.Hour)
+	}
+	utc := value.UTC()
+	return time.Date(utc.Year(), utc.Month(), utc.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+func formatDashboardTrendLabel(value time.Time, bucket string) string {
+	if bucket == "hour" {
+		return value.UTC().Format(time.RFC3339)
+	}
+	return value.UTC().Format("2006-01-02")
 }
 
 func (s *Server) dashboardTaskOverview(task domain.Task, policySummary policy.Summary) dashboardTaskOverview {
@@ -677,10 +815,7 @@ func (s *Server) filteredTasks(team, project, tenantID string, since, until time
 		if tenantID != "" && !strings.EqualFold(strings.TrimSpace(task.TenantID), tenantID) {
 			continue
 		}
-		anchor := task.UpdatedAt
-		if anchor.IsZero() {
-			anchor = task.CreatedAt
-		}
+		anchor := taskAnchorTime(task)
 		if !since.IsZero() && anchor.Before(since) {
 			continue
 		}
@@ -696,6 +831,14 @@ func (s *Server) filteredTasks(team, project, tenantID string, since, until time
 		return filtered[i].UpdatedAt.After(filtered[j].UpdatedAt)
 	})
 	return filtered
+}
+
+func taskAnchorTime(task domain.Task) time.Time {
+	anchor := task.UpdatedAt
+	if anchor.IsZero() {
+		anchor = task.CreatedAt
+	}
+	return anchor
 }
 
 func (s *Server) taskSnapshot(taskID string) (domain.Task, bool) {

@@ -326,6 +326,17 @@ type dashboardResponse struct {
 		BudgetCentsTotal int64  `json:"budget_cents_total"`
 		MergedPRs        int    `json:"merged_prs"`
 	} `json:"team_breakdown"`
+	Trend []struct {
+		Start            time.Time `json:"start"`
+		End              time.Time `json:"end"`
+		Label            string    `json:"label"`
+		TotalTasks       int       `json:"total_tasks"`
+		ActiveRuns       int       `json:"active_runs"`
+		Blockers         int       `json:"blockers"`
+		PremiumRuns      int       `json:"premium_runs"`
+		SLARiskRuns      int       `json:"sla_risk_runs"`
+		BudgetCentsTotal int64     `json:"budget_cents_total"`
+	} `json:"trend"`
 	BlockedTasks []struct {
 		Task struct {
 			ID string `json:"id"`
@@ -358,14 +369,14 @@ type dashboardResponse struct {
 
 func TestV2DashboardAggregatesEngineeringMetrics(t *testing.T) {
 	recorder := observability.NewRecorder()
-	base := time.Unix(1700000000, 0)
+	base := time.Date(2023, 11, 14, 10, 0, 0, 0, time.UTC)
 	recorder.StoreTask(domain.Task{ID: "task-a", TraceID: "trace-a", Title: "A", State: domain.TaskRunning, BudgetCents: 1200, RiskLevel: domain.RiskHigh, Metadata: map[string]string{"team": "platform", "project": "alpha", "plan": "premium", "pr_status": "merged", "sla_risk": "true", "issue_key": "BIG-801", "issue_url": "https://linear.app/openagis/issue/BIG-801", "pr_url": "https://github.com/OpenAGIs/BigClaw/pull/36", "workpad": "https://docs.example.com/workpads/task-a"}, CreatedAt: base, UpdatedAt: base.Add(2 * time.Hour)})
 	recorder.StoreTask(domain.Task{ID: "task-b", TraceID: "trace-b", Title: "B", State: domain.TaskBlocked, BudgetCents: 500, Metadata: map[string]string{"team": "platform", "project": "alpha", "pr_status": "open", "blocked": "true", "issue_key": "BIG-802", "issue_url": "https://linear.app/openagis/issue/BIG-802"}, CreatedAt: base, UpdatedAt: base.Add(time.Hour)})
 	recorder.StoreTask(domain.Task{ID: "task-c", TraceID: "trace-c", Title: "C", State: domain.TaskSucceeded, BudgetCents: 300, Metadata: map[string]string{"team": "growth", "project": "beta", "issue_key": "BIG-999"}, CreatedAt: base, UpdatedAt: base.Add(3 * time.Hour)})
 	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return base.Add(4 * time.Hour) }}
 
 	response := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodGet, "/v2/dashboard/engineering?team=platform&project=alpha&limit=10", nil)
+	request := httptest.NewRequest(http.MethodGet, "/v2/dashboard/engineering?team=platform&project=alpha&limit=10&bucket=day", nil)
 	server.Handler().ServeHTTP(response, request)
 	if response.Code != http.StatusOK {
 		t.Fatalf("expected dashboard 200, got %d", response.Code)
@@ -400,6 +411,37 @@ func TestV2DashboardAggregatesEngineeringMetrics(t *testing.T) {
 	}
 	if len(decoded.HighRiskTasks) != 1 || decoded.HighRiskTasks[0].Task.ID != "task-a" {
 		t.Fatalf("unexpected high risk tasks payload: %+v", decoded.HighRiskTasks)
+	}
+	if len(decoded.Trend) != 1 || decoded.Trend[0].Label != "2023-11-14" || decoded.Trend[0].TotalTasks != 2 || decoded.Trend[0].Blockers != 1 || decoded.Trend[0].PremiumRuns != 1 {
+		t.Fatalf("unexpected dashboard trend payload: %+v", decoded.Trend)
+	}
+}
+
+func TestV2DashboardBuildsHourlyTrendSeries(t *testing.T) {
+	recorder := observability.NewRecorder()
+	base := time.Date(2023, 11, 14, 10, 0, 0, 0, time.UTC)
+	recorder.StoreTask(domain.Task{ID: "task-hour-1", TraceID: "trace-hour-1", Title: "Hour 1", State: domain.TaskRunning, BudgetCents: 100, Metadata: map[string]string{"team": "platform", "project": "alpha", "plan": "premium"}, CreatedAt: base, UpdatedAt: base.Add(15 * time.Minute)})
+	recorder.StoreTask(domain.Task{ID: "task-hour-2", TraceID: "trace-hour-2", Title: "Hour 2", State: domain.TaskBlocked, BudgetCents: 200, RiskLevel: domain.RiskHigh, Metadata: map[string]string{"team": "platform", "project": "alpha", "blocked": "true"}, CreatedAt: base, UpdatedAt: base.Add(75 * time.Minute)})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return base.Add(2 * time.Hour) }}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/dashboard/engineering?team=platform&project=alpha&since=2023-11-14T10:00:00Z&until=2023-11-14T11:59:00Z&bucket=hour", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected hourly dashboard 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded dashboardResponse
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode hourly dashboard: %v", err)
+	}
+	if len(decoded.Trend) != 2 {
+		t.Fatalf("expected 2 hourly trend points, got %+v", decoded.Trend)
+	}
+	if decoded.Trend[0].Label != "2023-11-14T10:00:00Z" || decoded.Trend[0].TotalTasks != 1 || decoded.Trend[0].PremiumRuns != 1 {
+		t.Fatalf("unexpected first hourly trend point: %+v", decoded.Trend[0])
+	}
+	if decoded.Trend[1].Label != "2023-11-14T11:00:00Z" || decoded.Trend[1].TotalTasks != 1 || decoded.Trend[1].Blockers != 1 || decoded.Trend[1].SLARiskRuns != 1 {
+		t.Fatalf("unexpected second hourly trend point: %+v", decoded.Trend[1])
 	}
 }
 
