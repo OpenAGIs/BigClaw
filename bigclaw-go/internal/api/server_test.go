@@ -310,6 +310,32 @@ type dashboardResponse struct {
 		PROpened  int `json:"prs_opened"`
 		MergedPRs int `json:"merged_prs"`
 	} `json:"ticket_to_merge_funnel"`
+	ProjectBreakdown []struct {
+		Key              string `json:"key"`
+		TotalTasks       int    `json:"total_tasks"`
+		ActiveRuns       int    `json:"active_runs"`
+		Blockers         int    `json:"blockers"`
+		BudgetCentsTotal int64  `json:"budget_cents_total"`
+		MergedPRs        int    `json:"merged_prs"`
+	} `json:"project_breakdown"`
+	TeamBreakdown []struct {
+		Key              string `json:"key"`
+		TotalTasks       int    `json:"total_tasks"`
+		ActiveRuns       int    `json:"active_runs"`
+		Blockers         int    `json:"blockers"`
+		BudgetCentsTotal int64  `json:"budget_cents_total"`
+		MergedPRs        int    `json:"merged_prs"`
+	} `json:"team_breakdown"`
+	BlockedTasks []struct {
+		Task struct {
+			ID string `json:"id"`
+		} `json:"task"`
+	} `json:"blocked_tasks"`
+	HighRiskTasks []struct {
+		Task struct {
+			ID string `json:"id"`
+		} `json:"task"`
+	} `json:"high_risk_tasks"`
 	Tasks []struct {
 		Task struct {
 			ID string `json:"id"`
@@ -317,15 +343,25 @@ type dashboardResponse struct {
 		Policy struct {
 			Plan string `json:"plan"`
 		} `json:"policy"`
+		Drilldown struct {
+			Run               string `json:"run"`
+			Events            string `json:"events"`
+			Replay            string `json:"replay"`
+			IssueKey          string `json:"issue_key"`
+			IssueURL          string `json:"issue_url"`
+			PullRequestURL    string `json:"pull_request_url"`
+			PullRequestStatus string `json:"pull_request_status"`
+			Workpad           string `json:"workpad"`
+		} `json:"drilldown"`
 	} `json:"tasks"`
 }
 
 func TestV2DashboardAggregatesEngineeringMetrics(t *testing.T) {
 	recorder := observability.NewRecorder()
 	base := time.Unix(1700000000, 0)
-	recorder.StoreTask(domain.Task{ID: "task-a", TraceID: "trace-a", Title: "A", State: domain.TaskRunning, BudgetCents: 1200, RiskLevel: domain.RiskHigh, Metadata: map[string]string{"team": "platform", "project": "alpha", "plan": "premium", "pr_status": "merged", "sla_risk": "true"}, CreatedAt: base, UpdatedAt: base.Add(2 * time.Hour)})
-	recorder.StoreTask(domain.Task{ID: "task-b", TraceID: "trace-b", Title: "B", State: domain.TaskBlocked, BudgetCents: 500, Metadata: map[string]string{"team": "platform", "project": "alpha", "pr_status": "open", "blocked": "true"}, CreatedAt: base, UpdatedAt: base.Add(time.Hour)})
-	recorder.StoreTask(domain.Task{ID: "task-c", TraceID: "trace-c", Title: "C", State: domain.TaskSucceeded, BudgetCents: 300, Metadata: map[string]string{"team": "growth", "project": "beta"}, CreatedAt: base, UpdatedAt: base.Add(3 * time.Hour)})
+	recorder.StoreTask(domain.Task{ID: "task-a", TraceID: "trace-a", Title: "A", State: domain.TaskRunning, BudgetCents: 1200, RiskLevel: domain.RiskHigh, Metadata: map[string]string{"team": "platform", "project": "alpha", "plan": "premium", "pr_status": "merged", "sla_risk": "true", "issue_key": "BIG-801", "issue_url": "https://linear.app/openagis/issue/BIG-801", "pr_url": "https://github.com/OpenAGIs/BigClaw/pull/36", "workpad": "https://docs.example.com/workpads/task-a"}, CreatedAt: base, UpdatedAt: base.Add(2 * time.Hour)})
+	recorder.StoreTask(domain.Task{ID: "task-b", TraceID: "trace-b", Title: "B", State: domain.TaskBlocked, BudgetCents: 500, Metadata: map[string]string{"team": "platform", "project": "alpha", "pr_status": "open", "blocked": "true", "issue_key": "BIG-802", "issue_url": "https://linear.app/openagis/issue/BIG-802"}, CreatedAt: base, UpdatedAt: base.Add(time.Hour)})
+	recorder.StoreTask(domain.Task{ID: "task-c", TraceID: "trace-c", Title: "C", State: domain.TaskSucceeded, BudgetCents: 300, Metadata: map[string]string{"team": "growth", "project": "beta", "issue_key": "BIG-999"}, CreatedAt: base, UpdatedAt: base.Add(3 * time.Hour)})
 	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return base.Add(4 * time.Hour) }}
 
 	response := httptest.NewRecorder()
@@ -349,6 +385,21 @@ func TestV2DashboardAggregatesEngineeringMetrics(t *testing.T) {
 	}
 	if len(decoded.Tasks) != 2 || decoded.Tasks[0].Task.ID != "task-a" || decoded.Tasks[0].Policy.Plan != "premium" {
 		t.Fatalf("unexpected dashboard task ordering: %+v", decoded.Tasks)
+	}
+	if decoded.Tasks[0].Drilldown.Run != "/v2/runs/task-a" || decoded.Tasks[0].Drilldown.IssueKey != "BIG-801" || decoded.Tasks[0].Drilldown.IssueURL == "" || decoded.Tasks[0].Drilldown.PullRequestURL == "" || decoded.Tasks[0].Drilldown.Workpad == "" {
+		t.Fatalf("expected drilldown links in dashboard payload, got %+v", decoded.Tasks[0].Drilldown)
+	}
+	if len(decoded.ProjectBreakdown) != 1 || decoded.ProjectBreakdown[0].Key != "alpha" || decoded.ProjectBreakdown[0].TotalTasks != 2 || decoded.ProjectBreakdown[0].MergedPRs != 1 {
+		t.Fatalf("unexpected project breakdown: %+v", decoded.ProjectBreakdown)
+	}
+	if len(decoded.TeamBreakdown) != 1 || decoded.TeamBreakdown[0].Key != "platform" || decoded.TeamBreakdown[0].TotalTasks != 2 {
+		t.Fatalf("unexpected team breakdown: %+v", decoded.TeamBreakdown)
+	}
+	if len(decoded.BlockedTasks) != 1 || decoded.BlockedTasks[0].Task.ID != "task-b" {
+		t.Fatalf("unexpected blocked tasks payload: %+v", decoded.BlockedTasks)
+	}
+	if len(decoded.HighRiskTasks) != 1 || decoded.HighRiskTasks[0].Task.ID != "task-a" {
+		t.Fatalf("unexpected high risk tasks payload: %+v", decoded.HighRiskTasks)
 	}
 }
 

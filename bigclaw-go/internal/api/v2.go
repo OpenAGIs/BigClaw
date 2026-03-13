@@ -35,6 +35,36 @@ type funnelSummary struct {
 	MergedPRs int `json:"merged_prs"`
 }
 
+type dashboardBreakdown struct {
+	Key              string `json:"key"`
+	TotalTasks       int    `json:"total_tasks"`
+	ActiveRuns       int    `json:"active_runs"`
+	Blockers         int    `json:"blockers"`
+	PremiumRuns      int    `json:"premium_runs"`
+	SLARiskRuns      int    `json:"sla_risk_runs"`
+	BudgetCentsTotal int64  `json:"budget_cents_total"`
+	MergedPRs        int    `json:"merged_prs"`
+}
+
+type dashboardDrilldown struct {
+	Run               string `json:"run"`
+	Events            string `json:"events"`
+	Replay            string `json:"replay"`
+	IssueKey          string `json:"issue_key,omitempty"`
+	IssueURL          string `json:"issue_url,omitempty"`
+	PullRequestURL    string `json:"pull_request_url,omitempty"`
+	PullRequestStatus string `json:"pull_request_status,omitempty"`
+	Workpad           string `json:"workpad,omitempty"`
+}
+
+type dashboardTaskOverview struct {
+	Task      domain.Task        `json:"task"`
+	Policy    policy.Summary     `json:"policy"`
+	Takeover  *control.Takeover  `json:"takeover,omitempty"`
+	Latest    *domain.Event      `json:"latest_event,omitempty"`
+	Drilldown dashboardDrilldown `json:"drilldown"`
+}
+
 type controlCenterSummary struct {
 	QueueDepth            int            `json:"queue_depth"`
 	LeasedRuns            int            `json:"leased_runs"`
@@ -146,7 +176,11 @@ func (s *Server) handleV2EngineeringDashboard(w http.ResponseWriter, r *http.Req
 	tasks := s.filteredTasks(team, project, tenantID, since, until)
 	summary := dashboardSummary{StateDistribution: make(map[string]int)}
 	funnel := funnelSummary{}
-	overviews := make([]taskOverview, 0, len(tasks))
+	overviews := make([]dashboardTaskOverview, 0, len(tasks))
+	projectBreakdown := make(map[string]*dashboardBreakdown)
+	teamBreakdown := make(map[string]*dashboardBreakdown)
+	blockedTasks := make([]dashboardTaskOverview, 0)
+	highRiskTasks := make([]dashboardTaskOverview, 0)
 	for _, task := range tasks {
 		summary.TotalTasks++
 		summary.BudgetCentsTotal += task.BudgetCents
@@ -173,16 +207,16 @@ func (s *Server) handleV2EngineeringDashboard(w http.ResponseWriter, r *http.Req
 		if merged {
 			funnel.MergedPRs++
 		}
-		overview := taskOverview{Task: task, Policy: policySummary}
-		if latest, ok := s.Recorder.LatestByTask(task.ID); ok {
-			copy := latest
-			overview.Latest = &copy
-		}
-		if takeover, ok := s.Control.TakeoverStatus(task.ID); ok {
-			copy := takeover
-			overview.Takeover = &copy
-		}
+		overview := s.dashboardTaskOverview(task, policySummary)
 		overviews = append(overviews, overview)
+		accumulateDashboardBreakdown(projectBreakdown, strings.TrimSpace(task.Metadata["project"]), task, policySummary)
+		accumulateDashboardBreakdown(teamBreakdown, strings.TrimSpace(task.Metadata["team"]), task, policySummary)
+		if task.State == domain.TaskBlocked || strings.EqualFold(strings.TrimSpace(task.Metadata["blocked"]), "true") {
+			blockedTasks = append(blockedTasks, overview)
+		}
+		if isHighRiskTask(task) {
+			highRiskTasks = append(highRiskTasks, overview)
+		}
 	}
 	if limit > 0 && len(overviews) > limit {
 		overviews = overviews[:limit]
@@ -201,8 +235,105 @@ func (s *Server) handleV2EngineeringDashboard(w http.ResponseWriter, r *http.Req
 		},
 		"summary":                summary,
 		"ticket_to_merge_funnel": funnel,
+		"project_breakdown":      sortedDashboardBreakdowns(projectBreakdown),
+		"team_breakdown":         sortedDashboardBreakdowns(teamBreakdown),
+		"blocked_tasks":          limitDashboardTasks(blockedTasks, limit),
+		"high_risk_tasks":        limitDashboardTasks(highRiskTasks, limit),
 		"tasks":                  overviews,
 	})
+}
+
+func (s *Server) dashboardTaskOverview(task domain.Task, policySummary policy.Summary) dashboardTaskOverview {
+	overview := dashboardTaskOverview{
+		Task:   task,
+		Policy: policySummary,
+		Drilldown: dashboardDrilldown{
+			Run:               fmt.Sprintf("/v2/runs/%s", task.ID),
+			Events:            fmt.Sprintf("/events?task_id=%s&limit=%d", task.ID, 200),
+			Replay:            fmt.Sprintf("/replay/%s", task.ID),
+			IssueKey:          firstNonEmpty(task.Metadata["issue_key"], task.Metadata["issue_id"], task.Metadata["ticket_id"], task.Metadata["linear_issue"], task.Metadata["jira_issue"]),
+			IssueURL:          firstNonEmpty(task.Metadata["issue_url"], task.Metadata["linear_url"], task.Metadata["jira_url"]),
+			PullRequestURL:    firstNonEmpty(task.Metadata["pr_url"], task.Metadata["pull_request_url"]),
+			PullRequestStatus: firstNonEmpty(task.Metadata["pr_status"], task.Metadata["pull_request_status"]),
+			Workpad:           task.Metadata["workpad"],
+		},
+	}
+	if latest, ok := s.Recorder.LatestByTask(task.ID); ok {
+		copy := latest
+		overview.Latest = &copy
+	}
+	if takeover, ok := s.Control.TakeoverStatus(task.ID); ok {
+		copy := takeover
+		overview.Takeover = &copy
+	}
+	return overview
+}
+
+func accumulateDashboardBreakdown(breakdowns map[string]*dashboardBreakdown, key string, task domain.Task, policySummary policy.Summary) {
+	key = strings.TrimSpace(key)
+	if key == "" {
+		key = "unassigned"
+	}
+	entry, ok := breakdowns[key]
+	if !ok {
+		entry = &dashboardBreakdown{Key: key}
+		breakdowns[key] = entry
+	}
+	entry.TotalTasks++
+	entry.BudgetCentsTotal += task.BudgetCents
+	if domain.IsActiveTaskState(task.State) {
+		entry.ActiveRuns++
+	}
+	if task.State == domain.TaskBlocked || strings.EqualFold(strings.TrimSpace(task.Metadata["blocked"]), "true") {
+		entry.Blockers++
+	}
+	if isHighRiskTask(task) {
+		entry.SLARiskRuns++
+	}
+	if policySummary.Plan == "premium" {
+		entry.PremiumRuns++
+	}
+	prStatus := strings.ToLower(strings.TrimSpace(task.Metadata["pr_status"]))
+	merged := strings.EqualFold(strings.TrimSpace(task.Metadata["merged"]), "true") || prStatus == "merged"
+	if merged {
+		entry.MergedPRs++
+	}
+}
+
+func sortedDashboardBreakdowns(breakdowns map[string]*dashboardBreakdown) []dashboardBreakdown {
+	out := make([]dashboardBreakdown, 0, len(breakdowns))
+	for _, entry := range breakdowns {
+		out = append(out, *entry)
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if out[i].Blockers == out[j].Blockers {
+			if out[i].ActiveRuns == out[j].ActiveRuns {
+				if out[i].BudgetCentsTotal == out[j].BudgetCentsTotal {
+					return out[i].Key < out[j].Key
+				}
+				return out[i].BudgetCentsTotal > out[j].BudgetCentsTotal
+			}
+			return out[i].ActiveRuns > out[j].ActiveRuns
+		}
+		return out[i].Blockers > out[j].Blockers
+	})
+	return out
+}
+
+func limitDashboardTasks(tasks []dashboardTaskOverview, limit int) []dashboardTaskOverview {
+	if limit <= 0 || len(tasks) <= limit {
+		return tasks
+	}
+	return tasks[:limit]
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if trimmed := strings.TrimSpace(value); trimmed != "" {
+			return trimmed
+		}
+	}
+	return ""
 }
 
 func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
