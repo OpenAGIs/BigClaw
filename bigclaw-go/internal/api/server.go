@@ -103,6 +103,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/v2/dashboard/engineering", s.handleV2EngineeringDashboard)
 	mux.HandleFunc("/v2/dashboard/operations", s.handleV2OperationsDashboard)
 	mux.HandleFunc("/v2/triage/center", s.handleV2TriageCenter)
+	mux.HandleFunc("/v2/regression/center", s.handleV2RegressionCenter)
 	mux.HandleFunc("/v2/control-center", s.handleV2ControlCenter)
 	mux.HandleFunc("/v2/control-center/audit", s.handleV2ControlCenterAudit)
 	mux.HandleFunc("/v2/control-center/actions", s.handleV2ControlCenterAction)

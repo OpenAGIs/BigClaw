@@ -16,6 +16,7 @@ import (
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/policy"
 	"bigclaw-go/internal/queue"
+	"bigclaw-go/internal/regression"
 	"bigclaw-go/internal/risk"
 	"bigclaw-go/internal/triage"
 	"bigclaw-go/internal/worker"
@@ -122,6 +123,45 @@ type triageFilters struct {
 	Project string
 	Source  string
 	Limit   int
+}
+
+type regressionFilters struct {
+	Team         string
+	Project      string
+	Workflow     string
+	Template     string
+	Service      string
+	Limit        int
+	Bucket       string
+	Since        time.Time
+	Until        time.Time
+	CompareSince time.Time
+	CompareUntil time.Time
+}
+
+type regressionCompareSummary struct {
+	Current                  regression.Summary `json:"current"`
+	Baseline                 regression.Summary `json:"baseline"`
+	DeltaRegressions         int                `json:"delta_regressions"`
+	DeltaAffectedTasks       int                `json:"delta_affected_tasks"`
+	DeltaCriticalRegressions int                `json:"delta_critical_regressions"`
+	DeltaReworkEvents        int                `json:"delta_rework_events"`
+}
+
+type regressionFindingResponse struct {
+	Task            domain.Task        `json:"task"`
+	Policy          policy.Summary     `json:"policy"`
+	Risk            risk.Score         `json:"risk_score"`
+	Workflow        string             `json:"workflow,omitempty"`
+	Team            string             `json:"team,omitempty"`
+	Template        string             `json:"template,omitempty"`
+	Service         string             `json:"service,omitempty"`
+	Severity        string             `json:"severity"`
+	RegressionCount int                `json:"regression_count"`
+	ReworkEvents    int                `json:"rework_events"`
+	Attribution     string             `json:"attribution"`
+	Summary         string             `json:"summary"`
+	Drilldown       dashboardDrilldown `json:"drilldown"`
 }
 
 type controlCenterSummary struct {
@@ -448,6 +488,159 @@ func parseTriageFilters(r *http.Request) triageFilters {
 		Source:  strings.TrimSpace(r.URL.Query().Get("source")),
 		Limit:   limit,
 	}
+}
+
+func (s *Server) handleV2RegressionCenter(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	authorization := parseControlAuthorization(r, "", "", "")
+	filters, err := parseRegressionFilters(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := enforceScopedTeamFilter(authorization, &filters.Team); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+	currentRecords := s.regressionRecordsForWindow(filters, authorization, filters.Since, filters.Until)
+	center := regression.Build(currentRecords)
+	findings := make([]regressionFindingResponse, 0, len(center.Findings))
+	for _, finding := range center.Findings {
+		task, ok := s.taskSnapshot(finding.TaskID)
+		if !ok {
+			continue
+		}
+		findings = append(findings, regressionFindingResponse{
+			Task:            task,
+			Policy:          policy.Resolve(task),
+			Risk:            finding.Risk,
+			Workflow:        finding.Workflow,
+			Team:            finding.Team,
+			Template:        finding.Template,
+			Service:         finding.Service,
+			Severity:        finding.Severity,
+			RegressionCount: finding.RegressionCount,
+			ReworkEvents:    finding.ReworkEvents,
+			Attribution:     finding.Attribution,
+			Summary:         finding.Summary,
+			Drilldown:       drilldownForTask(task),
+		})
+		if filters.Limit > 0 && len(findings) >= filters.Limit {
+			break
+		}
+	}
+	response := map[string]any{
+		"authorization": authorization,
+		"filters": map[string]any{
+			"team":          filters.Team,
+			"project":       filters.Project,
+			"workflow":      filters.Workflow,
+			"template":      filters.Template,
+			"service":       filters.Service,
+			"viewer_team":   authorization.ViewerTeam,
+			"since":         filters.Since,
+			"until":         filters.Until,
+			"compare_since": filters.CompareSince,
+			"compare_until": filters.CompareUntil,
+			"limit":         filters.Limit,
+			"bucket":        filters.Bucket,
+		},
+		"summary":               center.Summary,
+		"workflow_breakdown":    center.WorkflowBreakdown,
+		"team_breakdown":        center.TeamBreakdown,
+		"template_breakdown":    center.TemplateBreakdown,
+		"service_breakdown":     center.ServiceBreakdown,
+		"attribution_breakdown": center.AttributionBreakdown,
+		"hotspots":              center.Hotspots,
+		"trend":                 regression.Trend(center.Findings, filters.Since, filters.Until, filters.Bucket),
+		"findings":              findings,
+	}
+	if !filters.CompareSince.IsZero() || !filters.CompareUntil.IsZero() {
+		baseline := regression.Build(s.regressionRecordsForWindow(filters, authorization, filters.CompareSince, filters.CompareUntil))
+		response["compare_summary"] = regressionCompareSummary{
+			Current:                  center.Summary,
+			Baseline:                 baseline.Summary,
+			DeltaRegressions:         center.Summary.TotalRegressions - baseline.Summary.TotalRegressions,
+			DeltaAffectedTasks:       center.Summary.AffectedTasks - baseline.Summary.AffectedTasks,
+			DeltaCriticalRegressions: center.Summary.CriticalRegressions - baseline.Summary.CriticalRegressions,
+			DeltaReworkEvents:        center.Summary.ReworkEvents - baseline.Summary.ReworkEvents,
+		}
+	}
+	writeJSON(w, http.StatusOK, response)
+}
+
+func parseRegressionFilters(r *http.Request) (regressionFilters, error) {
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit <= 0 {
+		limit = 10
+	}
+	bucket, err := parseDashboardBucket(r.URL.Query().Get("bucket"))
+	if err != nil {
+		return regressionFilters{}, err
+	}
+	since, err := parseOptionalTime(r.URL.Query().Get("since"))
+	if err != nil {
+		return regressionFilters{}, fmt.Errorf("invalid since value, expected RFC3339")
+	}
+	until, err := parseOptionalTime(r.URL.Query().Get("until"))
+	if err != nil {
+		return regressionFilters{}, fmt.Errorf("invalid until value, expected RFC3339")
+	}
+	compareSince, err := parseOptionalTime(r.URL.Query().Get("compare_since"))
+	if err != nil {
+		return regressionFilters{}, fmt.Errorf("invalid compare_since value, expected RFC3339")
+	}
+	compareUntil, err := parseOptionalTime(r.URL.Query().Get("compare_until"))
+	if err != nil {
+		return regressionFilters{}, fmt.Errorf("invalid compare_until value, expected RFC3339")
+	}
+	if bucket == "" || bucket == "auto" {
+		bucket = "day"
+	}
+	return regressionFilters{
+		Team:         strings.TrimSpace(r.URL.Query().Get("team")),
+		Project:      strings.TrimSpace(r.URL.Query().Get("project")),
+		Workflow:     strings.TrimSpace(r.URL.Query().Get("workflow")),
+		Template:     strings.TrimSpace(r.URL.Query().Get("template")),
+		Service:      strings.TrimSpace(r.URL.Query().Get("service")),
+		Limit:        limit,
+		Bucket:       bucket,
+		Since:        since,
+		Until:        until,
+		CompareSince: compareSince,
+		CompareUntil: compareUntil,
+	}, nil
+}
+
+func (s *Server) regressionRecordsForWindow(filters regressionFilters, authorization ControlAuthorization, since, until time.Time) []regression.Record {
+	tasks := s.filteredTasks(filters.Team, filters.Project, "", since, until)
+	records := make([]regression.Record, 0, len(tasks))
+	for _, task := range tasks {
+		if !matchesRegressionFilters(task, filters) {
+			continue
+		}
+		if err := s.authorizeTaskAccess(authorization, task); err != nil {
+			continue
+		}
+		records = append(records, regression.Record{Task: task, Events: s.Recorder.EventsByTask(task.ID, 0)})
+	}
+	return records
+}
+
+func matchesRegressionFilters(task domain.Task, filters regressionFilters) bool {
+	if filters.Workflow != "" && !strings.EqualFold(strings.TrimSpace(task.Metadata["workflow"]), filters.Workflow) && !strings.EqualFold(strings.TrimSpace(task.Metadata["workflow_id"]), filters.Workflow) && !strings.EqualFold(strings.TrimSpace(task.Metadata["flow"]), filters.Workflow) {
+		return false
+	}
+	if filters.Template != "" && !strings.EqualFold(strings.TrimSpace(task.Metadata["template"]), filters.Template) && !strings.EqualFold(strings.TrimSpace(task.Metadata["template_id"]), filters.Template) && !strings.EqualFold(strings.TrimSpace(task.Metadata["prompt_template"]), filters.Template) {
+		return false
+	}
+	if filters.Service != "" && !strings.EqualFold(strings.TrimSpace(task.Metadata["service"]), filters.Service) && !strings.EqualFold(strings.TrimSpace(task.Metadata["service_name"]), filters.Service) && !strings.EqualFold(strings.TrimSpace(task.Metadata["system"]), filters.Service) {
+		return false
+	}
+	return true
 }
 
 func (s *Server) handleV2OperationsDashboard(w http.ResponseWriter, r *http.Request) {

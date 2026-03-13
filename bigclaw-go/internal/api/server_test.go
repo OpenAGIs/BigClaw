@@ -459,6 +459,104 @@ type triageCenterResponse struct {
 	} `json:"clusters"`
 }
 
+type regressionCenterResponse struct {
+	Authorization struct {
+		ViewerTeam string `json:"viewer_team"`
+	} `json:"authorization"`
+	Filters struct {
+		Team       string `json:"team"`
+		Project    string `json:"project"`
+		ViewerTeam string `json:"viewer_team"`
+		Limit      int    `json:"limit"`
+		Bucket     string `json:"bucket"`
+	} `json:"filters"`
+	Summary struct {
+		TotalRegressions    int    `json:"total_regressions"`
+		AffectedTasks       int    `json:"affected_tasks"`
+		CriticalRegressions int    `json:"critical_regressions"`
+		ReworkEvents        int    `json:"rework_events"`
+		TopSource           string `json:"top_source"`
+		TopWorkflow         string `json:"top_workflow"`
+	} `json:"summary"`
+	CompareSummary struct {
+		Current struct {
+			TotalRegressions    int `json:"total_regressions"`
+			AffectedTasks       int `json:"affected_tasks"`
+			CriticalRegressions int `json:"critical_regressions"`
+			ReworkEvents        int `json:"rework_events"`
+		} `json:"current"`
+		Baseline struct {
+			TotalRegressions    int `json:"total_regressions"`
+			AffectedTasks       int `json:"affected_tasks"`
+			CriticalRegressions int `json:"critical_regressions"`
+			ReworkEvents        int `json:"rework_events"`
+		} `json:"baseline"`
+		DeltaRegressions         int `json:"delta_regressions"`
+		DeltaAffectedTasks       int `json:"delta_affected_tasks"`
+		DeltaCriticalRegressions int `json:"delta_critical_regressions"`
+		DeltaReworkEvents        int `json:"delta_rework_events"`
+	} `json:"compare_summary"`
+	WorkflowBreakdown []struct {
+		Key              string `json:"key"`
+		TotalRegressions int    `json:"total_regressions"`
+	} `json:"workflow_breakdown"`
+	TeamBreakdown []struct {
+		Key              string `json:"key"`
+		TotalRegressions int    `json:"total_regressions"`
+	} `json:"team_breakdown"`
+	TemplateBreakdown []struct {
+		Key              string `json:"key"`
+		TotalRegressions int    `json:"total_regressions"`
+	} `json:"template_breakdown"`
+	ServiceBreakdown []struct {
+		Key              string `json:"key"`
+		TotalRegressions int    `json:"total_regressions"`
+	} `json:"service_breakdown"`
+	AttributionBreakdown []struct {
+		Key              string `json:"key"`
+		TotalRegressions int    `json:"total_regressions"`
+	} `json:"attribution_breakdown"`
+	Hotspots []struct {
+		Dimension        string `json:"dimension"`
+		Key              string `json:"key"`
+		TotalRegressions int    `json:"total_regressions"`
+	} `json:"hotspots"`
+	Trend []struct {
+		Label               string `json:"label"`
+		TotalRegressions    int    `json:"total_regressions"`
+		AffectedTasks       int    `json:"affected_tasks"`
+		CriticalRegressions int    `json:"critical_regressions"`
+		ReworkEvents        int    `json:"rework_events"`
+	} `json:"trend"`
+	Findings []struct {
+		Task struct {
+			ID string `json:"id"`
+		} `json:"task"`
+		Policy struct {
+			Plan         string `json:"plan"`
+			ApprovalFlow string `json:"approval_flow"`
+		} `json:"policy"`
+		Risk struct {
+			RequiresApproval bool `json:"requires_approval"`
+		} `json:"risk_score"`
+		Workflow        string `json:"workflow"`
+		Team            string `json:"team"`
+		Template        string `json:"template"`
+		Service         string `json:"service"`
+		Severity        string `json:"severity"`
+		RegressionCount int    `json:"regression_count"`
+		ReworkEvents    int    `json:"rework_events"`
+		Attribution     string `json:"attribution"`
+		Summary         string `json:"summary"`
+		Drilldown       struct {
+			Run      string `json:"run"`
+			Events   string `json:"events"`
+			Replay   string `json:"replay"`
+			IssueKey string `json:"issue_key"`
+		} `json:"drilldown"`
+	} `json:"findings"`
+}
+
 func TestV2DashboardAggregatesEngineeringMetrics(t *testing.T) {
 	recorder := observability.NewRecorder()
 	base := time.Date(2023, 11, 14, 10, 0, 0, 0, time.UTC)
@@ -623,6 +721,87 @@ func TestV2TriageCenterBuildsRecommendationsAndSimilarity(t *testing.T) {
 	}
 	if len(decoded.Clusters) < 2 {
 		t.Fatalf("expected clustered triage reasons, got %+v", decoded.Clusters)
+	}
+}
+
+func TestV2RegressionCenterBuildsBreakdownsTrendAndCompareSummary(t *testing.T) {
+	recorder := observability.NewRecorder()
+	base := time.Date(2026, 3, 10, 9, 0, 0, 0, time.UTC)
+	baseline := domain.Task{ID: "task-reg-baseline", TraceID: "trace-reg-baseline", Title: "Baseline regression", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "platform", "project": "alpha", "workflow": "deploy", "template": "release", "service": "api", "regression_count": "1", "regression_source": "legacy baseline", "issue_key": "BIG-899"}, CreatedAt: base, UpdatedAt: base.Add(2 * time.Hour)}
+	currentCritical := domain.Task{ID: "task-reg-current-1", TraceID: "trace-reg-current-1", Title: "Deploy regression", State: domain.TaskDeadLetter, Priority: 1, Labels: []string{"regression", "prod"}, RequiredTools: []string{"deploy"}, Metadata: map[string]string{"team": "platform", "project": "alpha", "workflow": "deploy", "template": "release", "service": "api", "plan": "premium", "issue_key": "BIG-904", "regression_count": "2", "regression_source": "security scan failed", "code_impact": "high"}, CreatedAt: base.Add(24 * time.Hour), UpdatedAt: base.Add(25 * time.Hour)}
+	currentHigh := domain.Task{ID: "task-reg-current-2", TraceID: "trace-reg-current-2", Title: "Prompt regression", State: domain.TaskBlocked, Labels: []string{"regression"}, Metadata: map[string]string{"team": "platform", "project": "alpha", "workflow": "prompt-tune", "template": "triage-system", "service": "assistant", "regression_count": "1", "regression_source": "prompt drift", "issue_key": "BIG-905"}, CreatedAt: base.Add(48 * time.Hour), UpdatedAt: base.Add(49 * time.Hour)}
+	currentMedium := domain.Task{ID: "task-reg-current-3", TraceID: "trace-reg-current-3", Title: "Migration regression", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "platform", "project": "alpha", "workflow": "migrate", "template": "schema", "service": "database", "regression": "true", "regression_cause": "migration rollback", "issue_key": "BIG-906"}, CreatedAt: base.Add(48 * time.Hour), UpdatedAt: base.Add(50 * time.Hour)}
+	ignored := domain.Task{ID: "task-reg-ignored", TraceID: "trace-reg-ignored", Title: "Out of scope regression", State: domain.TaskDeadLetter, Metadata: map[string]string{"team": "growth", "project": "beta", "workflow": "deploy", "template": "release", "service": "api", "regression_count": "4", "regression_source": "other team"}, CreatedAt: base.Add(48 * time.Hour), UpdatedAt: base.Add(49 * time.Hour)}
+	healthy := domain.Task{ID: "task-reg-healthy", TraceID: "trace-reg-healthy", Title: "Healthy run", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "platform", "project": "alpha", "workflow": "deploy", "template": "release", "service": "api"}, CreatedAt: base.Add(48 * time.Hour), UpdatedAt: base.Add(51 * time.Hour)}
+	for _, task := range []domain.Task{baseline, currentCritical, currentHigh, currentMedium, ignored, healthy} {
+		recorder.StoreTask(task)
+	}
+	recorder.Record(domain.Event{ID: "evt-reg-retry-1", Type: domain.EventTaskRetried, TaskID: currentCritical.ID, TraceID: currentCritical.TraceID, Timestamp: currentCritical.UpdatedAt.Add(-time.Minute), Payload: map[string]any{"reason": "retry deploy"}})
+	recorder.Record(domain.Event{ID: "evt-reg-dead-1", Type: domain.EventTaskDeadLetter, TaskID: currentCritical.ID, TraceID: currentCritical.TraceID, Timestamp: currentCritical.UpdatedAt, Payload: map[string]any{"message": "security scan failed"}})
+	recorder.Record(domain.Event{ID: "evt-reg-blocked-1", Type: domain.EventRunTakeover, TaskID: currentHigh.ID, TraceID: currentHigh.TraceID, Timestamp: currentHigh.UpdatedAt, Payload: map[string]any{"reason": "prompt drift"}})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return base.Add(72 * time.Hour) }}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/regression/center?team=platform&project=alpha&since=2026-03-11T00:00:00Z&until=2026-03-12T23:59:59Z&compare_since=2026-03-10T00:00:00Z&compare_until=2026-03-10T23:59:59Z&bucket=day&limit=2", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected regression center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded regressionCenterResponse
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode regression center: %v", err)
+	}
+	if decoded.Filters.Team != "platform" || decoded.Filters.Project != "alpha" || decoded.Filters.Limit != 2 || decoded.Filters.Bucket != "day" {
+		t.Fatalf("unexpected regression filters: %+v", decoded.Filters)
+	}
+	if decoded.Summary.TotalRegressions != 4 || decoded.Summary.AffectedTasks != 3 || decoded.Summary.CriticalRegressions != 1 || decoded.Summary.ReworkEvents != 1 {
+		t.Fatalf("unexpected regression summary: %+v", decoded.Summary)
+	}
+	if decoded.Summary.TopSource != "security scan failed" || decoded.Summary.TopWorkflow != "deploy" {
+		t.Fatalf("unexpected regression summary leaders: %+v", decoded.Summary)
+	}
+	if decoded.CompareSummary.Current.TotalRegressions != 4 || decoded.CompareSummary.Baseline.TotalRegressions != 1 || decoded.CompareSummary.DeltaRegressions != 3 || decoded.CompareSummary.DeltaAffectedTasks != 2 || decoded.CompareSummary.DeltaCriticalRegressions != 1 || decoded.CompareSummary.DeltaReworkEvents != 1 {
+		t.Fatalf("unexpected regression compare summary: %+v", decoded.CompareSummary)
+	}
+	if len(decoded.WorkflowBreakdown) != 3 || decoded.WorkflowBreakdown[0].Key != "deploy" || decoded.WorkflowBreakdown[0].TotalRegressions != 2 {
+		t.Fatalf("unexpected workflow breakdown: %+v", decoded.WorkflowBreakdown)
+	}
+	if len(decoded.TeamBreakdown) != 1 || decoded.TeamBreakdown[0].Key != "platform" || decoded.TeamBreakdown[0].TotalRegressions != 4 {
+		t.Fatalf("unexpected team breakdown: %+v", decoded.TeamBreakdown)
+	}
+	if len(decoded.TemplateBreakdown) != 3 || decoded.TemplateBreakdown[0].Key != "release" || decoded.TemplateBreakdown[0].TotalRegressions != 2 {
+		t.Fatalf("unexpected template breakdown: %+v", decoded.TemplateBreakdown)
+	}
+	if len(decoded.ServiceBreakdown) != 3 || decoded.ServiceBreakdown[0].Key != "api" || decoded.ServiceBreakdown[0].TotalRegressions != 2 {
+		t.Fatalf("unexpected service breakdown: %+v", decoded.ServiceBreakdown)
+	}
+	if len(decoded.AttributionBreakdown) != 3 || decoded.AttributionBreakdown[0].Key != "security scan failed" || decoded.AttributionBreakdown[0].TotalRegressions != 2 {
+		t.Fatalf("unexpected attribution breakdown: %+v", decoded.AttributionBreakdown)
+	}
+	if len(decoded.Hotspots) == 0 || decoded.Hotspots[0].Dimension != "team" || decoded.Hotspots[0].Key != "platform" || decoded.Hotspots[0].TotalRegressions != 4 {
+		t.Fatalf("unexpected regression hotspots: %+v", decoded.Hotspots)
+	}
+	if len(decoded.Trend) != 2 || decoded.Trend[0].Label != "2026-03-11" || decoded.Trend[0].TotalRegressions != 2 || decoded.Trend[0].AffectedTasks != 1 || decoded.Trend[0].CriticalRegressions != 1 || decoded.Trend[0].ReworkEvents != 1 {
+		t.Fatalf("unexpected first trend point: %+v", decoded.Trend)
+	}
+	if decoded.Trend[1].Label != "2026-03-12" || decoded.Trend[1].TotalRegressions != 2 || decoded.Trend[1].AffectedTasks != 2 || decoded.Trend[1].CriticalRegressions != 0 || decoded.Trend[1].ReworkEvents != 0 {
+		t.Fatalf("unexpected second trend point: %+v", decoded.Trend[1])
+	}
+	if len(decoded.Findings) != 2 || decoded.Findings[0].Task.ID != "task-reg-current-1" || decoded.Findings[1].Task.ID != "task-reg-current-2" {
+		t.Fatalf("unexpected regression findings ordering/limit: %+v", decoded.Findings)
+	}
+	if decoded.Findings[0].Policy.Plan != "premium" || decoded.Findings[0].Policy.ApprovalFlow != "risk-reviewed" || !decoded.Findings[0].Risk.RequiresApproval {
+		t.Fatalf("expected premium risk-reviewed first finding, got %+v", decoded.Findings[0])
+	}
+	if decoded.Findings[0].RegressionCount != 2 || decoded.Findings[0].ReworkEvents != 1 || decoded.Findings[0].Drilldown.Run != "/v2/runs/task-reg-current-1" || decoded.Findings[0].Drilldown.Events != "/events?task_id=task-reg-current-1&limit=200" || decoded.Findings[0].Drilldown.Replay != "/replay/task-reg-current-1" || decoded.Findings[0].Drilldown.IssueKey != "BIG-904" {
+		t.Fatalf("unexpected first regression drilldown payload: %+v", decoded.Findings[0])
+	}
+	if decoded.Findings[1].Workflow != "prompt-tune" || decoded.Findings[1].Team != "platform" || decoded.Findings[1].Template != "triage-system" || decoded.Findings[1].Service != "assistant" || decoded.Findings[1].Severity != "high" || decoded.Findings[1].Attribution != "prompt drift" {
+		t.Fatalf("unexpected second regression finding: %+v", decoded.Findings[1])
+	}
+	body := response.Body.String()
+	if strings.Contains(body, "task-reg-ignored") || strings.Contains(body, "task-reg-baseline") || strings.Contains(body, "task-reg-healthy") {
+		t.Fatalf("expected response to exclude ignored/baseline/healthy tasks, got %s", body)
 	}
 }
 
@@ -1030,8 +1209,8 @@ func TestV2ControlCenterAuthorizationEnforcedByRole(t *testing.T) {
 func TestV2DashboardAndRunDetailEnforceViewerTeamScope(t *testing.T) {
 	recorder := observability.NewRecorder()
 	base := time.Unix(1700005000, 0)
-	recorder.StoreTask(domain.Task{ID: "task-scope-1", TraceID: "trace-scope-1", Title: "Scoped", State: domain.TaskBlocked, Metadata: map[string]string{"team": "platform", "project": "alpha", "blocked_reason": "waiting for platform review"}, CreatedAt: base, UpdatedAt: base.Add(time.Hour)})
-	recorder.StoreTask(domain.Task{ID: "task-scope-2", TraceID: "trace-scope-2", Title: "Other", State: domain.TaskBlocked, Metadata: map[string]string{"team": "growth", "project": "beta"}, CreatedAt: base, UpdatedAt: base.Add(2 * time.Hour)})
+	recorder.StoreTask(domain.Task{ID: "task-scope-1", TraceID: "trace-scope-1", Title: "Scoped", State: domain.TaskBlocked, Metadata: map[string]string{"team": "platform", "project": "alpha", "blocked_reason": "waiting for platform review", "regression_count": "1", "workflow": "deploy", "template": "release", "service": "api"}, CreatedAt: base, UpdatedAt: base.Add(time.Hour)})
+	recorder.StoreTask(domain.Task{ID: "task-scope-2", TraceID: "trace-scope-2", Title: "Other", State: domain.TaskBlocked, Metadata: map[string]string{"team": "growth", "project": "beta", "regression_count": "1", "workflow": "prompt-tune", "template": "triage-system", "service": "assistant"}, CreatedAt: base, UpdatedAt: base.Add(2 * time.Hour)})
 	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return base.Add(3 * time.Hour) }}
 	handler := server.Handler()
 
@@ -1095,6 +1274,30 @@ func TestV2DashboardAndRunDetailEnforceViewerTeamScope(t *testing.T) {
 	handler.ServeHTTP(forbiddenTriageResponse, forbiddenTriageRequest)
 	if forbiddenTriageResponse.Code != http.StatusForbidden {
 		t.Fatalf("expected forbidden triage center for mismatched team, got %d %s", forbiddenTriageResponse.Code, forbiddenTriageResponse.Body.String())
+	}
+
+	regressionRequest := httptest.NewRequest(http.MethodGet, "/v2/regression/center?limit=10", nil)
+	regressionRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	regressionRequest.Header.Set("X-BigClaw-Actor", "lead-2")
+	regressionRequest.Header.Set("X-BigClaw-Team", "platform")
+	regressionResponse := httptest.NewRecorder()
+	handler.ServeHTTP(regressionResponse, regressionRequest)
+	if regressionResponse.Code != http.StatusOK {
+		t.Fatalf("expected scoped regression center 200, got %d %s", regressionResponse.Code, regressionResponse.Body.String())
+	}
+	regressionBody := regressionResponse.Body.String()
+	if !strings.Contains(regressionBody, "task-scope-1") || strings.Contains(regressionBody, "task-scope-2") {
+		t.Fatalf("expected regression center to be scoped to platform team, got %s", regressionBody)
+	}
+
+	forbiddenRegressionRequest := httptest.NewRequest(http.MethodGet, "/v2/regression/center?team=growth&limit=10", nil)
+	forbiddenRegressionRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	forbiddenRegressionRequest.Header.Set("X-BigClaw-Actor", "lead-2")
+	forbiddenRegressionRequest.Header.Set("X-BigClaw-Team", "platform")
+	forbiddenRegressionResponse := httptest.NewRecorder()
+	handler.ServeHTTP(forbiddenRegressionResponse, forbiddenRegressionRequest)
+	if forbiddenRegressionResponse.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden regression center for mismatched team, got %d %s", forbiddenRegressionResponse.Code, forbiddenRegressionResponse.Body.String())
 	}
 
 	runRequest := httptest.NewRequest(http.MethodGet, "/v2/runs/task-scope-2", nil)
