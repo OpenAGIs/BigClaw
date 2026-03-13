@@ -531,8 +531,8 @@ func TestV2ControlCenterShowsQueueTasksAndSupportsCancel(t *testing.T) {
 		t.Fatalf("expected control center 200, got %d", centerResponse.Code)
 	}
 	centerBody := centerResponse.Body.String()
-	if !strings.Contains(centerBody, "queue_task") || !strings.Contains(centerBody, "cancellable") || !strings.Contains(centerBody, "task-v2-cancel") {
-		t.Fatalf("expected queue task visibility in control center, got %s", centerBody)
+	if !strings.Contains(centerBody, "queue_task") || !strings.Contains(centerBody, "cancellable") || !strings.Contains(centerBody, "task-v2-cancel") || !strings.Contains(centerBody, "drilldown") || !strings.Contains(centerBody, "/v2/runs/task-v2-cancel") {
+		t.Fatalf("expected queue task visibility and drilldown in control center, got %s", centerBody)
 	}
 
 	cancelBody, _ := json.Marshal(map[string]any{"action": "cancel", "task_id": "task-v2-cancel", "actor": "ops", "role": "platform_admin", "reason": "duplicate request"})
@@ -611,7 +611,7 @@ func TestV2ControlCenterSummariesFiltersAndAudit(t *testing.T) {
 		t.Fatalf("expected control center 200, got %d", centerResponse.Code)
 	}
 	centerBody := centerResponse.Body.String()
-	for _, want := range []string{"queue_budget_cents_total", "600", "high_risk_runs", "premium_runs", "active_takeovers", "worker_pool", "idle_workers", "task-control-1", "effective_state", "blocked", "Manual validation required"} {
+	for _, want := range []string{"queue_budget_cents_total", "600", "high_risk_runs", "premium_runs", "active_takeovers", "worker_pool", "idle_workers", "task-control-1", "effective_state", "blocked", "Manual validation required", "queue_by_project", "queue_by_team", "alpha", "platform"} {
 		if !strings.Contains(centerBody, want) {
 			t.Fatalf("expected %q in control center payload, got %s", want, centerBody)
 		}

@@ -134,6 +134,7 @@ type queueTaskOverview struct {
 	EffectiveState domain.TaskState   `json:"effective_state"`
 	Policy         policy.Summary     `json:"policy"`
 	Takeover       *control.Takeover  `json:"takeover,omitempty"`
+	Drilldown      dashboardDrilldown `json:"drilldown"`
 }
 
 type runDetailResponse struct {
@@ -383,18 +384,9 @@ func formatDashboardTrendLabel(value time.Time, bucket string) string {
 
 func (s *Server) dashboardTaskOverview(task domain.Task, policySummary policy.Summary) dashboardTaskOverview {
 	overview := dashboardTaskOverview{
-		Task:   task,
-		Policy: policySummary,
-		Drilldown: dashboardDrilldown{
-			Run:               fmt.Sprintf("/v2/runs/%s", task.ID),
-			Events:            fmt.Sprintf("/events?task_id=%s&limit=%d", task.ID, 200),
-			Replay:            fmt.Sprintf("/replay/%s", task.ID),
-			IssueKey:          firstNonEmpty(task.Metadata["issue_key"], task.Metadata["issue_id"], task.Metadata["ticket_id"], task.Metadata["linear_issue"], task.Metadata["jira_issue"]),
-			IssueURL:          firstNonEmpty(task.Metadata["issue_url"], task.Metadata["linear_url"], task.Metadata["jira_url"]),
-			PullRequestURL:    firstNonEmpty(task.Metadata["pr_url"], task.Metadata["pull_request_url"]),
-			PullRequestStatus: firstNonEmpty(task.Metadata["pr_status"], task.Metadata["pull_request_status"]),
-			Workpad:           task.Metadata["workpad"],
-		},
+		Task:      task,
+		Policy:    policySummary,
+		Drilldown: drilldownForTask(task),
 	}
 	if latest, ok := s.Recorder.LatestByTask(task.ID); ok {
 		copy := latest
@@ -405,6 +397,27 @@ func (s *Server) dashboardTaskOverview(task domain.Task, policySummary policy.Su
 		overview.Takeover = &copy
 	}
 	return overview
+}
+
+func drilldownForTask(task domain.Task) dashboardDrilldown {
+	return dashboardDrilldown{
+		Run:               fmt.Sprintf("/v2/runs/%s", task.ID),
+		Events:            fmt.Sprintf("/events?task_id=%s&limit=%d", task.ID, 200),
+		Replay:            fmt.Sprintf("/replay/%s", task.ID),
+		IssueKey:          firstNonEmpty(task.Metadata["issue_key"], task.Metadata["issue_id"], task.Metadata["ticket_id"], task.Metadata["linear_issue"], task.Metadata["jira_issue"]),
+		IssueURL:          firstNonEmpty(task.Metadata["issue_url"], task.Metadata["linear_url"], task.Metadata["jira_url"]),
+		PullRequestURL:    firstNonEmpty(task.Metadata["pr_url"], task.Metadata["pull_request_url"]),
+		PullRequestStatus: firstNonEmpty(task.Metadata["pr_status"], task.Metadata["pull_request_status"]),
+		Workpad:           task.Metadata["workpad"],
+	}
+}
+
+func accumulateQueueBreakdown(breakdowns map[string]*dashboardBreakdown, item queueTaskOverview) {
+	accumulateDashboardBreakdown(breakdowns, item.QueueTask.Task.Metadata["project"], item.QueueTask.Task, item.Policy)
+}
+
+func accumulateQueueBreakdownByTeam(breakdowns map[string]*dashboardBreakdown, item queueTaskOverview) {
+	accumulateDashboardBreakdown(breakdowns, item.QueueTask.Task.Metadata["team"], item.QueueTask.Task, item.Policy)
 }
 
 func accumulateDashboardBreakdown(breakdowns map[string]*dashboardBreakdown, key string, task domain.Task, policySummary policy.Summary) {
@@ -521,6 +534,12 @@ func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 	if filters.Limit > 0 && len(returnedQueueTasks) > filters.Limit {
 		returnedQueueTasks = returnedQueueTasks[:filters.Limit]
 	}
+	queueByProject := make(map[string]*dashboardBreakdown)
+	queueByTeam := make(map[string]*dashboardBreakdown)
+	for _, item := range queueTasks {
+		accumulateQueueBreakdown(queueByProject, item)
+		accumulateQueueBreakdownByTeam(queueByTeam, item)
+	}
 	auditEntries := s.controlActionAuditEntries(filters.AuditLimit, filters.TaskID, filters.Action, filters.Actor, filters.Team, authorization)
 	response := map[string]any{
 		"authorization": authorization,
@@ -537,6 +556,8 @@ func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 		"control":          s.Control.Snapshot(),
 		"summary":          summarizeControlCenter(queueTasks, filteredDeadLetters),
 		"queue":            map[string]any{"size": s.Queue.Size(context.Background()), "filtered_size": len(queueTasks), "dead_letters": len(filteredDeadLetters), "tasks": returnedQueueTasks, "cancellable": supportsQueueCancel(s.Queue)},
+		"queue_by_project": sortedDashboardBreakdowns(queueByProject),
+		"queue_by_team":    sortedDashboardBreakdowns(queueByTeam),
 		"dead_letters":     limitTasks(filteredDeadLetters, filters.Limit),
 		"active_takeovers": s.filteredActiveTakeovers(filters),
 		"recent_tasks":     overviews,
@@ -986,7 +1007,7 @@ func (s *Server) filteredQueueTasks(ctx context.Context, filters controlCenterFi
 		if !matchesTaskFilters(snapshot.Task, effective, filters) {
 			continue
 		}
-		out = append(out, queueTaskOverview{QueueTask: snapshot, EffectiveState: effective, Policy: policy.Resolve(snapshot.Task), Takeover: takeover})
+		out = append(out, queueTaskOverview{QueueTask: snapshot, EffectiveState: effective, Policy: policy.Resolve(snapshot.Task), Takeover: takeover, Drilldown: drilldownForTask(snapshot.Task)})
 	}
 	sort.SliceStable(out, func(i, j int) bool {
 		if rankForControlState(out[i].EffectiveState) == rankForControlState(out[j].EffectiveState) {
