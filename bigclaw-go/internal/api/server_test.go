@@ -352,7 +352,15 @@ type dashboardResponse struct {
 			ID string `json:"id"`
 		} `json:"task"`
 		Policy struct {
-			Plan string `json:"plan"`
+			Plan         string `json:"plan"`
+			ApprovalFlow string `json:"approval_flow"`
+			ResourcePool string `json:"resource_pool"`
+			Quota        struct {
+				ConcurrentLimit int   `json:"concurrent_limit"`
+				QueueDepthLimit int   `json:"queue_depth_limit"`
+				BudgetCapCents  int64 `json:"budget_cap_cents"`
+				MaxAgents       int   `json:"max_agents"`
+			} `json:"quota"`
 		} `json:"policy"`
 		Drilldown struct {
 			Run               string `json:"run"`
@@ -437,6 +445,9 @@ func TestV2DashboardAggregatesEngineeringMetrics(t *testing.T) {
 	}
 	if len(decoded.Tasks) != 2 || decoded.Tasks[0].Task.ID != "task-a" || decoded.Tasks[0].Policy.Plan != "premium" {
 		t.Fatalf("unexpected dashboard task ordering: %+v", decoded.Tasks)
+	}
+	if decoded.Tasks[0].Policy.ApprovalFlow != "advanced" || decoded.Tasks[0].Policy.ResourcePool != "premium/platform" || decoded.Tasks[0].Policy.Quota.ConcurrentLimit != 32 || decoded.Tasks[0].Policy.Quota.MaxAgents != 8 {
+		t.Fatalf("expected premium policy boundary details, got %+v", decoded.Tasks[0].Policy)
 	}
 	if decoded.Tasks[0].Drilldown.Run != "/v2/runs/task-a" || decoded.Tasks[0].Drilldown.IssueKey != "BIG-801" || decoded.Tasks[0].Drilldown.IssueURL == "" || decoded.Tasks[0].Drilldown.PullRequestURL == "" || decoded.Tasks[0].Drilldown.Workpad == "" {
 		t.Fatalf("expected drilldown links in dashboard payload, got %+v", decoded.Tasks[0].Drilldown)
