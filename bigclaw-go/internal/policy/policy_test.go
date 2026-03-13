@@ -39,6 +39,21 @@ func TestResolveStandardPolicyDefaults(t *testing.T) {
 	}
 }
 
+func TestResolveRiskDrivenApprovalFlow(t *testing.T) {
+	summary := Resolve(domain.Task{
+		Priority:      1,
+		Labels:        []string{"security", "prod"},
+		RequiredTools: []string{"deploy"},
+		Metadata:      map[string]string{"team": "platform"},
+	})
+	if summary.Plan != "standard" {
+		t.Fatalf("expected standard plan for non-premium task, got %+v", summary)
+	}
+	if !summary.AdvancedApproval || summary.ApprovalFlow != "risk-reviewed" {
+		t.Fatalf("expected risk-driven approval defaults, got %+v", summary)
+	}
+}
+
 func TestResolvePolicyOverridesQuotaBoundaries(t *testing.T) {
 	summary := Resolve(domain.Task{
 		RequiredTools: []string{"browser"},

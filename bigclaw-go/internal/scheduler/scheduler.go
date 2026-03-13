@@ -5,6 +5,7 @@ import (
 
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/executor"
+	"bigclaw-go/internal/risk"
 )
 
 type QuotaSnapshot struct {
@@ -55,13 +56,14 @@ func routeExecutor(task domain.Task) domain.ExecutorKind {
 	if task.RequiredExecutor != "" {
 		return task.RequiredExecutor
 	}
+	score := risk.ScoreTask(task, nil)
 	if requiresTool(task, "gpu") {
 		return domain.ExecutorRay
 	}
 	if requiresTool(task, "browser") {
 		return domain.ExecutorKubernetes
 	}
-	if task.RiskLevel == domain.RiskHigh {
+	if score.Level == domain.RiskHigh {
 		return domain.ExecutorKubernetes
 	}
 	return domain.ExecutorLocal
@@ -71,14 +73,15 @@ func routeReason(task domain.Task) string {
 	if task.RequiredExecutor != "" {
 		return fmt.Sprintf("required executor=%s", task.RequiredExecutor)
 	}
+	score := risk.ScoreTask(task, nil)
 	if requiresTool(task, "gpu") {
 		return "gpu workloads default to ray executor"
 	}
 	if requiresTool(task, "browser") {
 		return "browser workloads default to kubernetes executor"
 	}
-	if task.RiskLevel == domain.RiskHigh {
-		return "high-risk tasks default to isolated executor"
+	if score.Level == domain.RiskHigh {
+		return fmt.Sprintf("risk score %d defaults task to isolated executor", score.Total)
 	}
 	return "default local executor for low/medium risk"
 }
@@ -97,5 +100,5 @@ func isPreemptible(task domain.Task) bool {
 }
 
 func isPriorityExempt(task domain.Task) bool {
-	return isPreemptible(task) || task.RiskLevel == domain.RiskHigh
+	return isPreemptible(task) || risk.ScoreTask(task, nil).Level == domain.RiskHigh
 }

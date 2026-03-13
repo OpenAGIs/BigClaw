@@ -25,6 +25,20 @@ func TestSchedulerRoutesHighRiskToKubernetes(t *testing.T) {
 	}
 }
 
+func TestSchedulerRoutesComputedHighRiskToKubernetes(t *testing.T) {
+	s := New()
+	decision := s.Decide(domain.Task{ID: "risk-1", Priority: 1, Labels: []string{"security", "prod"}, RequiredTools: []string{"deploy"}}, QuotaSnapshot{})
+	if !decision.Accepted {
+		t.Fatalf("expected accepted decision")
+	}
+	if decision.Assignment.Executor != domain.ExecutorKubernetes {
+		t.Fatalf("expected computed high-risk task to route to kubernetes, got %s", decision.Assignment.Executor)
+	}
+	if decision.Reason == "" {
+		t.Fatalf("expected populated risk-aware routing reason")
+	}
+}
+
 func TestSchedulerRoutesGPUToRay(t *testing.T) {
 	s := New()
 	decision := s.Decide(domain.Task{ID: "gpu-1", RequiredTools: []string{"gpu"}}, QuotaSnapshot{})

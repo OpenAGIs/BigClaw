@@ -16,6 +16,7 @@ import (
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/policy"
 	"bigclaw-go/internal/queue"
+	"bigclaw-go/internal/risk"
 	"bigclaw-go/internal/worker"
 )
 
@@ -72,6 +73,7 @@ type dashboardDrilldown struct {
 type dashboardTaskOverview struct {
 	Task      domain.Task        `json:"task"`
 	Policy    policy.Summary     `json:"policy"`
+	Risk      risk.Score         `json:"risk_score"`
 	Takeover  *control.Takeover  `json:"takeover,omitempty"`
 	Latest    *domain.Event      `json:"latest_event,omitempty"`
 	Drilldown dashboardDrilldown `json:"drilldown"`
@@ -153,6 +155,7 @@ type controlCenterFilters struct {
 type taskOverview struct {
 	Task          domain.Task               `json:"task"`
 	Policy        policy.Summary            `json:"policy"`
+	Risk          risk.Score                `json:"risk_score"`
 	Takeover      *control.Takeover         `json:"takeover,omitempty"`
 	Latest        *domain.Event             `json:"latest_event,omitempty"`
 	RecentActions []controlActionAuditEntry `json:"recent_actions,omitempty"`
@@ -162,6 +165,7 @@ type queueTaskOverview struct {
 	QueueTask      queue.TaskSnapshot        `json:"queue_task"`
 	EffectiveState domain.TaskState          `json:"effective_state"`
 	Policy         policy.Summary            `json:"policy"`
+	Risk           risk.Score                `json:"risk_score"`
 	Takeover       *control.Takeover         `json:"takeover,omitempty"`
 	Drilldown      dashboardDrilldown        `json:"drilldown"`
 	RecentActions  []controlActionAuditEntry `json:"recent_actions,omitempty"`
@@ -204,6 +208,7 @@ type runDetailResponse struct {
 	Task          domain.Task                 `json:"task"`
 	State         string                      `json:"state"`
 	Policy        policy.Summary              `json:"policy"`
+	Risk          risk.Score                  `json:"risk_score"`
 	Collaboration *control.Takeover           `json:"collaboration,omitempty"`
 	Trace         *observability.TraceSummary `json:"trace,omitempty"`
 	FailureReason string                      `json:"failure_reason,omitempty"`
@@ -575,6 +580,7 @@ func (s *Server) dashboardTaskOverview(task domain.Task, policySummary policy.Su
 	overview := dashboardTaskOverview{
 		Task:      task,
 		Policy:    policySummary,
+		Risk:      s.riskScore(task),
 		Drilldown: drilldownForTask(task),
 	}
 	if latest, ok := s.Recorder.LatestByTask(task.ID); ok {
@@ -702,7 +708,7 @@ func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 	recentTasks = limitTasks(recentTasks, filters.Limit)
 	overviews := make([]taskOverview, 0, len(recentTasks))
 	for _, task := range recentTasks {
-		overview := taskOverview{Task: task, Policy: policy.Resolve(task), RecentActions: s.recentControlActionsForTask(task.ID, 3, authorization)}
+		overview := taskOverview{Task: task, Policy: policy.Resolve(task), Risk: s.riskScore(task), RecentActions: s.recentControlActionsForTask(task.ID, 3, authorization)}
 		if latest, ok := s.Recorder.LatestByTask(task.ID); ok {
 			copy := latest
 			overview.Latest = &copy
@@ -1041,6 +1047,7 @@ func (s *Server) buildRunDetailResponse(task domain.Task, limit int, authorizati
 		Task:          task,
 		State:         string(task.State),
 		Policy:        policy.Resolve(task),
+		Risk:          s.riskScore(task),
 		Trace:         traceSummary,
 		FailureReason: runFailureReason(task, events),
 		Events:        events,
@@ -1465,6 +1472,10 @@ func (s *Server) taskProject(taskID string) string {
 	return strings.TrimSpace(task.Metadata["project"])
 }
 
+func (s *Server) riskScore(task domain.Task) risk.Score {
+	return risk.ScoreTask(task, s.Recorder.EventsByTask(task.ID, 0))
+}
+
 func parseOptionalTime(raw string) (time.Time, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -1562,7 +1573,7 @@ func (s *Server) filteredQueueTasks(ctx context.Context, filters controlCenterFi
 		if !matchesTaskFilters(snapshot.Task, effective, filters) {
 			continue
 		}
-		out = append(out, queueTaskOverview{QueueTask: snapshot, EffectiveState: effective, Policy: policy.Resolve(snapshot.Task), Takeover: takeover, Drilldown: drilldownForTask(snapshot.Task), RecentActions: s.recentControlActionsForTask(snapshot.Task.ID, 3, ControlAuthorization{})})
+		out = append(out, queueTaskOverview{QueueTask: snapshot, EffectiveState: effective, Policy: policy.Resolve(snapshot.Task), Risk: s.riskScore(snapshot.Task), Takeover: takeover, Drilldown: drilldownForTask(snapshot.Task), RecentActions: s.recentControlActionsForTask(snapshot.Task.ID, 3, ControlAuthorization{})})
 	}
 	sort.SliceStable(out, func(i, j int) bool {
 		if rankForControlState(out[i].EffectiveState) == rankForControlState(out[j].EffectiveState) {

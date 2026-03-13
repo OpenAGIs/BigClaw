@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"bigclaw-go/internal/domain"
+	"bigclaw-go/internal/risk"
 )
 
 type Quota struct {
@@ -35,13 +36,14 @@ type Summary struct {
 }
 
 func Resolve(task domain.Task) Summary {
+	riskScore := risk.ScoreTask(task, nil)
 	premium := false
 	reason := "default shared orchestration"
 	switch {
 	case metadataEquals(task, "plan", "premium"), metadataEquals(task, "tier", "premium"), metadataEquals(task, "orchestration", "premium"), hasLabel(task, "premium"):
 		premium = true
 		reason = "metadata requested premium orchestration"
-	case task.RiskLevel == domain.RiskHigh && (requiresTool(task, "browser") || requiresTool(task, "gpu") || requiresTool(task, "vm")):
+	case riskScore.Level == domain.RiskHigh && (requiresTool(task, "browser") || requiresTool(task, "gpu") || requiresTool(task, "vm")):
 		premium = true
 		reason = "high-risk tool workload promoted to premium lane"
 	}
@@ -49,6 +51,10 @@ func Resolve(task domain.Task) Summary {
 	if premium {
 		browserAccess := true
 		vmAccess := true
+		approvalFlowDefault := "advanced"
+		if riskScore.RequiresApproval {
+			approvalFlowDefault = "risk-reviewed"
+		}
 		return Summary{
 			Plan:                 "premium",
 			DedicatedQueue:       queueName(task, "premium"),
@@ -60,7 +66,7 @@ func Resolve(task domain.Task) Summary {
 			BrowserPoolAccess:    browserAccess,
 			VMPoolAccess:         vmAccess,
 			Isolation:            firstNonEmpty(metadataString(task, "policy_isolation"), "dedicated"),
-			ApprovalFlow:         firstNonEmpty(metadataString(task, "policy_approval_flow"), "advanced"),
+			ApprovalFlow:         firstNonEmpty(metadataString(task, "policy_approval_flow"), approvalFlowDefault),
 			ResourcePool:         firstNonEmpty(metadataString(task, "policy_resource_pool"), queueName(task, "premium")),
 			Reason:               reason,
 			Quota: quotaForPlan(task, planDefaults{
@@ -74,18 +80,23 @@ func Resolve(task domain.Task) Summary {
 		}
 	}
 
+	approvalFlowDefault := "standard"
+	if riskScore.RequiresApproval {
+		approvalFlowDefault = "risk-reviewed"
+		reason = firstNonEmpty(reason, "default shared orchestration") + "; risk score requires approval"
+	}
 	return Summary{
 		Plan:                 "standard",
 		DedicatedQueue:       queueName(task, "shared"),
 		ConcurrencyProfile:   firstNonEmpty(metadataString(task, "policy_concurrency_profile"), "shared"),
-		AdvancedApproval:     metadataBool(task, false, "policy_advanced_approval"),
+		AdvancedApproval:     metadataBool(task, riskScore.RequiresApproval, "policy_advanced_approval"),
 		MultiAgentGraph:      metadataBool(task, false, "policy_multi_agent_graph"),
 		DedicatedBrowserPool: false,
 		DedicatedVMPool:      false,
 		BrowserPoolAccess:    false,
 		VMPoolAccess:         false,
 		Isolation:            firstNonEmpty(metadataString(task, "policy_isolation"), "shared"),
-		ApprovalFlow:         firstNonEmpty(metadataString(task, "policy_approval_flow"), "standard"),
+		ApprovalFlow:         firstNonEmpty(metadataString(task, "policy_approval_flow"), approvalFlowDefault),
 		ResourcePool:         firstNonEmpty(metadataString(task, "policy_resource_pool"), queueName(task, "shared")),
 		Reason:               reason,
 		Quota: quotaForPlan(task, planDefaults{

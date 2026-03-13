@@ -446,7 +446,7 @@ func TestV2DashboardAggregatesEngineeringMetrics(t *testing.T) {
 	if len(decoded.Tasks) != 2 || decoded.Tasks[0].Task.ID != "task-a" || decoded.Tasks[0].Policy.Plan != "premium" {
 		t.Fatalf("unexpected dashboard task ordering: %+v", decoded.Tasks)
 	}
-	if decoded.Tasks[0].Policy.ApprovalFlow != "advanced" || decoded.Tasks[0].Policy.ResourcePool != "premium/platform" || decoded.Tasks[0].Policy.Quota.ConcurrentLimit != 32 || decoded.Tasks[0].Policy.Quota.MaxAgents != 8 {
+	if decoded.Tasks[0].Policy.ApprovalFlow != "risk-reviewed" || decoded.Tasks[0].Policy.ResourcePool != "premium/platform" || decoded.Tasks[0].Policy.Quota.ConcurrentLimit != 32 || decoded.Tasks[0].Policy.Quota.MaxAgents != 8 {
 		t.Fatalf("expected premium policy boundary details, got %+v", decoded.Tasks[0].Policy)
 	}
 	if decoded.Tasks[0].Drilldown.Run != "/v2/runs/task-a" || decoded.Tasks[0].Drilldown.IssueKey != "BIG-801" || decoded.Tasks[0].Drilldown.IssueURL == "" || decoded.Tasks[0].Drilldown.PullRequestURL == "" || decoded.Tasks[0].Drilldown.Workpad == "" {
@@ -605,6 +605,8 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 		Title:              "Replay me",
 		State:              domain.TaskDeadLetter,
 		BudgetCents:        900,
+		Priority:           1,
+		Labels:             []string{"prod"},
 		RequiredTools:      []string{"browser", "git"},
 		AcceptanceCriteria: []string{"ship report", "capture artifacts"},
 		ValidationPlan:     []string{"replay trace", "download report"},
@@ -637,6 +639,11 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 			Status string `json:"status"`
 			Checks int    `json:"checks"`
 		} `json:"validation"`
+		Risk struct {
+			Total            int    `json:"total"`
+			Summary          string `json:"summary"`
+			RequiresApproval bool   `json:"requires_approval"`
+		} `json:"risk_score"`
 		Artifacts    map[string]string `json:"artifacts"`
 		ArtifactRefs []struct {
 			Kind string `json:"kind"`
@@ -665,6 +672,9 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 	}
 	if decoded.Validation.Status != "failed" || decoded.Validation.Checks != 4 {
 		t.Fatalf("expected failed validation summary, got %+v", decoded.Validation)
+	}
+	if decoded.Risk.Total < 40 || decoded.Risk.Summary == "" || decoded.Risk.RequiresApproval {
+		t.Fatalf("expected explainable medium risk score, got %+v", decoded.Risk)
 	}
 	if decoded.Artifacts["report"] != "/v2/runs/task-run-report/report?limit=20" || decoded.Artifacts["audit"] != "/v2/runs/task-run-report/audit?limit=20" || decoded.Artifacts["trace"] == "" {
 		t.Fatalf("expected report/audit/trace links, got %+v", decoded.Artifacts)
