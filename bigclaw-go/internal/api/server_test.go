@@ -416,6 +416,49 @@ type operationsDashboardResponse struct {
 	} `json:"overdue_tasks"`
 }
 
+type triageCenterResponse struct {
+	Summary struct {
+		FlaggedRuns    int            `json:"flagged_runs"`
+		InboxSize      int            `json:"inbox_size"`
+		Recommendation string         `json:"recommendation"`
+		SeverityCounts map[string]int `json:"severity_counts"`
+		OwnerCounts    map[string]int `json:"owner_counts"`
+	} `json:"summary"`
+	Findings []struct {
+		Task struct {
+			ID string `json:"id"`
+		} `json:"task"`
+		Policy struct {
+			ApprovalFlow string `json:"approval_flow"`
+		} `json:"policy"`
+		Risk struct {
+			Total            int    `json:"total"`
+			RequiresApproval bool   `json:"requires_approval"`
+			Summary          string `json:"summary"`
+		} `json:"risk_score"`
+		Severity          string  `json:"severity"`
+		Owner             string  `json:"owner"`
+		Reason            string  `json:"reason"`
+		NextAction        string  `json:"next_action"`
+		SuggestedWorkflow string  `json:"suggested_workflow"`
+		SuggestedPriority string  `json:"suggested_priority"`
+		SuggestedOwner    string  `json:"suggested_owner"`
+		Confidence        float64 `json:"confidence"`
+		Drilldown         struct {
+			Run string `json:"run"`
+		} `json:"drilldown"`
+		SimilarCases []struct {
+			TaskID string  `json:"task_id"`
+			Score  float64 `json:"score"`
+		} `json:"similar_cases"`
+	} `json:"findings"`
+	Clusters []struct {
+		Reason   string `json:"reason"`
+		Count    int    `json:"count"`
+		Workflow string `json:"workflow"`
+	} `json:"clusters"`
+}
+
 func TestV2DashboardAggregatesEngineeringMetrics(t *testing.T) {
 	recorder := observability.NewRecorder()
 	base := time.Date(2023, 11, 14, 10, 0, 0, 0, time.UTC)
@@ -532,6 +575,54 @@ func TestV2OperationsDashboardAggregatesSLAMetrics(t *testing.T) {
 	}
 	if len(decoded.OverdueTasks) != 1 || decoded.OverdueTasks[0].Task.ID != "task-ops-1" {
 		t.Fatalf("unexpected overdue tasks payload: %+v", decoded.OverdueTasks)
+	}
+}
+
+func TestV2TriageCenterBuildsRecommendationsAndSimilarity(t *testing.T) {
+	recorder := observability.NewRecorder()
+	base := time.Unix(1700002800, 0)
+	failed := domain.Task{ID: "task-triage-browser", TraceID: "run-browser", Title: "Browser replay failure", State: domain.TaskDeadLetter, RequiredTools: []string{"browser"}, Metadata: map[string]string{"team": "platform", "project": "alpha", "source": "linear"}, CreatedAt: base, UpdatedAt: base.Add(2 * time.Minute)}
+	riskReview := domain.Task{ID: "task-triage-security", TraceID: "run-security", Title: "Security approval", State: domain.TaskBlocked, Priority: 1, Labels: []string{"security", "prod"}, RequiredTools: []string{"deploy"}, Metadata: map[string]string{"team": "platform", "project": "alpha", "source": "linear"}, CreatedAt: base, UpdatedAt: base.Add(3 * time.Minute)}
+	similar := domain.Task{ID: "task-triage-similar", TraceID: "run-browser-2", Title: "Browser replay failure", State: domain.TaskSucceeded, RequiredTools: []string{"browser"}, Metadata: map[string]string{"team": "platform", "project": "alpha", "source": "linear"}, CreatedAt: base, UpdatedAt: base.Add(4 * time.Minute)}
+	healthy := domain.Task{ID: "task-triage-healthy", TraceID: "run-healthy", Title: "Healthy run", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "platform", "project": "alpha", "source": "linear"}, CreatedAt: base, UpdatedAt: base.Add(5 * time.Minute)}
+	for _, task := range []domain.Task{failed, riskReview, similar, healthy} {
+		recorder.StoreTask(task)
+	}
+	recorder.Record(domain.Event{ID: "evt-browser-dead", Type: domain.EventTaskDeadLetter, TaskID: failed.ID, TraceID: failed.TraceID, Timestamp: base.Add(2 * time.Minute), Payload: map[string]any{"message": "browser session crashed"}})
+	recorder.Record(domain.Event{ID: "evt-security-blocked", Type: domain.EventRunTakeover, TaskID: riskReview.ID, TraceID: riskReview.TraceID, Timestamp: base.Add(3 * time.Minute), Payload: map[string]any{"reason": "requires approval for high-risk task"}})
+	recorder.Record(domain.Event{ID: "evt-browser-similar", Type: domain.EventTaskCompleted, TaskID: similar.ID, TraceID: similar.TraceID, Timestamp: base.Add(4 * time.Minute), Payload: map[string]any{"message": "browser session crashed"}})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return base.Add(6 * time.Minute) }}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/triage/center?team=platform&limit=10", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected triage center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded triageCenterResponse
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode triage center: %v", err)
+	}
+	if decoded.Summary.FlaggedRuns != 2 || decoded.Summary.InboxSize != 2 || decoded.Summary.Recommendation != "immediate-attention" {
+		t.Fatalf("unexpected triage summary: %+v", decoded.Summary)
+	}
+	if decoded.Summary.SeverityCounts["critical"] != 1 || decoded.Summary.SeverityCounts["high"] != 1 {
+		t.Fatalf("unexpected triage severity counts: %+v", decoded.Summary.SeverityCounts)
+	}
+	if len(decoded.Findings) != 2 || decoded.Findings[0].Task.ID != "task-triage-browser" || decoded.Findings[1].Task.ID != "task-triage-security" {
+		t.Fatalf("unexpected triage ordering: %+v", decoded.Findings)
+	}
+	if decoded.Findings[0].Owner != "engineering" || decoded.Findings[0].SuggestedWorkflow != "run-replay" || decoded.Findings[0].SuggestedPriority != "P0" || decoded.Findings[0].Drilldown.Run != "/v2/runs/task-triage-browser" {
+		t.Fatalf("expected browser triage recommendation, got %+v", decoded.Findings[0])
+	}
+	if len(decoded.Findings[0].SimilarCases) == 0 || decoded.Findings[0].SimilarCases[0].TaskID != "task-triage-similar" {
+		t.Fatalf("expected similarity evidence in triage payload, got %+v", decoded.Findings[0])
+	}
+	if decoded.Findings[1].Owner != "security" || decoded.Findings[1].SuggestedWorkflow != "security-review" || decoded.Findings[1].SuggestedPriority != "P1" || !decoded.Findings[1].Risk.RequiresApproval || decoded.Findings[1].Policy.ApprovalFlow != "risk-reviewed" {
+		t.Fatalf("expected risk review triage recommendation, got %+v", decoded.Findings[1])
+	}
+	if len(decoded.Clusters) < 2 {
+		t.Fatalf("expected clustered triage reasons, got %+v", decoded.Clusters)
 	}
 }
 
@@ -939,7 +1030,7 @@ func TestV2ControlCenterAuthorizationEnforcedByRole(t *testing.T) {
 func TestV2DashboardAndRunDetailEnforceViewerTeamScope(t *testing.T) {
 	recorder := observability.NewRecorder()
 	base := time.Unix(1700005000, 0)
-	recorder.StoreTask(domain.Task{ID: "task-scope-1", TraceID: "trace-scope-1", Title: "Scoped", State: domain.TaskRunning, Metadata: map[string]string{"team": "platform", "project": "alpha"}, CreatedAt: base, UpdatedAt: base.Add(time.Hour)})
+	recorder.StoreTask(domain.Task{ID: "task-scope-1", TraceID: "trace-scope-1", Title: "Scoped", State: domain.TaskBlocked, Metadata: map[string]string{"team": "platform", "project": "alpha", "blocked_reason": "waiting for platform review"}, CreatedAt: base, UpdatedAt: base.Add(time.Hour)})
 	recorder.StoreTask(domain.Task{ID: "task-scope-2", TraceID: "trace-scope-2", Title: "Other", State: domain.TaskBlocked, Metadata: map[string]string{"team": "growth", "project": "beta"}, CreatedAt: base, UpdatedAt: base.Add(2 * time.Hour)})
 	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return base.Add(3 * time.Hour) }}
 	handler := server.Handler()
@@ -972,6 +1063,20 @@ func TestV2DashboardAndRunDetailEnforceViewerTeamScope(t *testing.T) {
 		t.Fatalf("expected operations dashboard to be scoped to platform team, got %s", operationsBody)
 	}
 
+	triageRequest := httptest.NewRequest(http.MethodGet, "/v2/triage/center?limit=10", nil)
+	triageRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	triageRequest.Header.Set("X-BigClaw-Actor", "lead-2")
+	triageRequest.Header.Set("X-BigClaw-Team", "platform")
+	triageResponse := httptest.NewRecorder()
+	handler.ServeHTTP(triageResponse, triageRequest)
+	if triageResponse.Code != http.StatusOK {
+		t.Fatalf("expected scoped triage center 200, got %d %s", triageResponse.Code, triageResponse.Body.String())
+	}
+	triageBody := triageResponse.Body.String()
+	if !strings.Contains(triageBody, "task-scope-1") || strings.Contains(triageBody, "task-scope-2") {
+		t.Fatalf("expected triage center to be scoped to platform team, got %s", triageBody)
+	}
+
 	forbiddenDashboardRequest := httptest.NewRequest(http.MethodGet, "/v2/dashboard/engineering?team=growth&limit=10", nil)
 	forbiddenDashboardRequest.Header.Set("X-BigClaw-Role", "eng_lead")
 	forbiddenDashboardRequest.Header.Set("X-BigClaw-Actor", "lead-2")
@@ -980,6 +1085,16 @@ func TestV2DashboardAndRunDetailEnforceViewerTeamScope(t *testing.T) {
 	handler.ServeHTTP(forbiddenDashboardResponse, forbiddenDashboardRequest)
 	if forbiddenDashboardResponse.Code != http.StatusForbidden {
 		t.Fatalf("expected forbidden dashboard for mismatched team, got %d %s", forbiddenDashboardResponse.Code, forbiddenDashboardResponse.Body.String())
+	}
+
+	forbiddenTriageRequest := httptest.NewRequest(http.MethodGet, "/v2/triage/center?team=growth&limit=10", nil)
+	forbiddenTriageRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	forbiddenTriageRequest.Header.Set("X-BigClaw-Actor", "lead-2")
+	forbiddenTriageRequest.Header.Set("X-BigClaw-Team", "platform")
+	forbiddenTriageResponse := httptest.NewRecorder()
+	handler.ServeHTTP(forbiddenTriageResponse, forbiddenTriageRequest)
+	if forbiddenTriageResponse.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden triage center for mismatched team, got %d %s", forbiddenTriageResponse.Code, forbiddenTriageResponse.Body.String())
 	}
 
 	runRequest := httptest.NewRequest(http.MethodGet, "/v2/runs/task-scope-2", nil)

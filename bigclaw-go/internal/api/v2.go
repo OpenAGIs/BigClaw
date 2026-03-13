@@ -17,6 +17,7 @@ import (
 	"bigclaw-go/internal/policy"
 	"bigclaw-go/internal/queue"
 	"bigclaw-go/internal/risk"
+	"bigclaw-go/internal/triage"
 	"bigclaw-go/internal/worker"
 )
 
@@ -88,6 +89,39 @@ type operationsSummary struct {
 	BudgetCentsTotal  int64          `json:"budget_cents_total"`
 	StateDistribution map[string]int `json:"state_distribution"`
 	RiskDistribution  map[string]int `json:"risk_distribution"`
+}
+
+type triageSummary struct {
+	FlaggedRuns    int            `json:"flagged_runs"`
+	InboxSize      int            `json:"inbox_size"`
+	Recommendation string         `json:"recommendation"`
+	SeverityCounts map[string]int `json:"severity_counts"`
+	OwnerCounts    map[string]int `json:"owner_counts"`
+}
+
+type triageFindingResponse struct {
+	Task              domain.Task          `json:"task"`
+	Policy            policy.Summary       `json:"policy"`
+	Risk              risk.Score           `json:"risk_score"`
+	State             string               `json:"state"`
+	Severity          string               `json:"severity"`
+	Owner             string               `json:"owner"`
+	Reason            string               `json:"reason"`
+	NextAction        string               `json:"next_action"`
+	SuggestedWorkflow string               `json:"suggested_workflow"`
+	SuggestedPriority string               `json:"suggested_priority"`
+	SuggestedOwner    string               `json:"suggested_owner"`
+	SuggestedAction   string               `json:"suggested_action"`
+	Confidence        float64              `json:"confidence"`
+	SimilarCases      []triage.SimilarCase `json:"similar_cases,omitempty"`
+	Drilldown         dashboardDrilldown   `json:"drilldown"`
+}
+
+type triageFilters struct {
+	Team    string
+	Project string
+	Source  string
+	Limit   int
 }
 
 type controlCenterSummary struct {
@@ -337,6 +371,83 @@ func (s *Server) handleV2EngineeringDashboard(w http.ResponseWriter, r *http.Req
 		"high_risk_tasks":        limitDashboardTasks(highRiskTasks, limit),
 		"tasks":                  overviews,
 	})
+}
+
+func (s *Server) handleV2TriageCenter(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	authorization := parseControlAuthorization(r, "", "", "")
+	filters := parseTriageFilters(r)
+	if err := enforceScopedTeamFilter(authorization, &filters.Team); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+	tasks := s.filteredTasks(filters.Team, filters.Project, "", time.Time{}, time.Time{})
+	records := make([]triage.Record, 0, len(tasks))
+	for _, task := range tasks {
+		if filters.Source != "" && !strings.EqualFold(strings.TrimSpace(task.Source), filters.Source) && !strings.EqualFold(strings.TrimSpace(task.Metadata["source"]), filters.Source) {
+			continue
+		}
+		if err := s.authorizeTaskAccess(authorization, task); err != nil {
+			continue
+		}
+		records = append(records, triage.Record{Task: task, Events: s.Recorder.EventsByTask(task.ID, 0)})
+	}
+	center := triage.Build(records)
+	findings := make([]triageFindingResponse, 0, len(center.Findings))
+	for _, finding := range center.Findings {
+		task, ok := s.taskSnapshot(finding.TaskID)
+		if !ok {
+			continue
+		}
+		findings = append(findings, triageFindingResponse{
+			Task:              task,
+			Policy:            policy.Resolve(task),
+			Risk:              finding.Risk,
+			State:             finding.State,
+			Severity:          finding.Severity,
+			Owner:             finding.Owner,
+			Reason:            finding.Reason,
+			NextAction:        finding.NextAction,
+			SuggestedWorkflow: finding.SuggestedWorkflow,
+			SuggestedPriority: finding.SuggestedPriority,
+			SuggestedOwner:    finding.SuggestedOwner,
+			SuggestedAction:   finding.SuggestedAction,
+			Confidence:        finding.Confidence,
+			SimilarCases:      finding.SimilarCases,
+			Drilldown:         drilldownForTask(task),
+		})
+		if filters.Limit > 0 && len(findings) >= filters.Limit {
+			break
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"summary": triageSummary{
+			FlaggedRuns:    center.FlaggedRuns,
+			InboxSize:      center.InboxSize,
+			Recommendation: center.Recommendation,
+			SeverityCounts: center.SeverityCounts,
+			OwnerCounts:    center.OwnerCounts,
+		},
+		"findings": findings,
+		"inbox":    findings,
+		"clusters": center.Clusters,
+	})
+}
+
+func parseTriageFilters(r *http.Request) triageFilters {
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit <= 0 {
+		limit = 10
+	}
+	return triageFilters{
+		Team:    strings.TrimSpace(r.URL.Query().Get("team")),
+		Project: strings.TrimSpace(r.URL.Query().Get("project")),
+		Source:  strings.TrimSpace(r.URL.Query().Get("source")),
+		Limit:   limit,
+	}
 }
 
 func (s *Server) handleV2OperationsDashboard(w http.ResponseWriter, r *http.Request) {
