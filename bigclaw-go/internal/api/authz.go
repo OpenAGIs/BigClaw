@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -19,12 +20,13 @@ const (
 type ControlAuthorization struct {
 	Actor          string      `json:"actor,omitempty"`
 	Role           ControlRole `json:"role"`
+	ViewerTeam     string      `json:"viewer_team,omitempty"`
 	AllowedActions []string    `json:"allowed_actions"`
 	CanMutate      bool        `json:"can_mutate"`
 	CanViewAudit   bool        `json:"can_view_audit"`
 }
 
-func parseControlAuthorization(r *http.Request, actorHint string, roleHint string) ControlAuthorization {
+func parseControlAuthorization(r *http.Request, actorHint string, roleHint string, viewerTeamHint string) ControlAuthorization {
 	actor := strings.TrimSpace(actorHint)
 	if actor == "" {
 		actor = strings.TrimSpace(r.Header.Get("X-BigClaw-Actor"))
@@ -39,13 +41,30 @@ func parseControlAuthorization(r *http.Request, actorHint string, roleHint strin
 	if role == RoleViewer {
 		role = normalizeControlRole(r.URL.Query().Get("viewer_role"))
 	}
+	viewerTeam := normalizeViewerTeam(viewerTeamHint)
+	if viewerTeam == "" {
+		viewerTeam = normalizeViewerTeam(r.Header.Get("X-BigClaw-Team"))
+	}
+	if viewerTeam == "" {
+		viewerTeam = normalizeViewerTeam(r.URL.Query().Get("viewer_team"))
+	}
+	if viewerTeam == "" && requiresViewerTeam(role) {
+		viewerTeam = normalizeViewerTeam(r.URL.Query().Get("team"))
+	}
 	allowed := allowedControlActions(role)
+	canMutate := len(allowed) > 0
+	canViewAudit := true
+	if requiresViewerTeam(role) && viewerTeam == "" {
+		canMutate = false
+		canViewAudit = false
+	}
 	return ControlAuthorization{
 		Actor:          actor,
 		Role:           role,
+		ViewerTeam:     viewerTeam,
 		AllowedActions: allowed,
-		CanMutate:      len(allowed) > 0,
-		CanViewAudit:   true,
+		CanMutate:      canMutate,
+		CanViewAudit:   canViewAudit,
 	}
 }
 
@@ -99,4 +118,30 @@ func normalizeActionName(action string) string {
 	default:
 		return strings.ToLower(strings.TrimSpace(action))
 	}
+}
+
+func requiresViewerTeam(role ControlRole) bool {
+	return role == RoleEngLead
+}
+
+func normalizeViewerTeam(raw string) string {
+	return strings.TrimSpace(raw)
+}
+
+func (authorization ControlAuthorization) teamScoped() bool {
+	return requiresViewerTeam(authorization.Role)
+}
+
+func (authorization ControlAuthorization) validateScope() error {
+	if authorization.teamScoped() && authorization.ViewerTeam == "" {
+		return fmt.Errorf("forbidden: role %s requires viewer_team", authorization.Role)
+	}
+	return nil
+}
+
+func (authorization ControlAuthorization) permitsTeam(team string) bool {
+	if !authorization.teamScoped() {
+		return true
+	}
+	return strings.EqualFold(strings.TrimSpace(team), authorization.ViewerTeam)
 }

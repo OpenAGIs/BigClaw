@@ -108,13 +108,14 @@ type runDetailResponse struct {
 }
 
 type controlActionRequest struct {
-	Action   string `json:"action"`
-	TaskID   string `json:"task_id,omitempty"`
-	Actor    string `json:"actor,omitempty"`
-	Role     string `json:"role,omitempty"`
-	Reviewer string `json:"reviewer,omitempty"`
-	Reason   string `json:"reason,omitempty"`
-	Note     string `json:"note,omitempty"`
+	Action     string `json:"action"`
+	TaskID     string `json:"task_id,omitempty"`
+	Actor      string `json:"actor,omitempty"`
+	Role       string `json:"role,omitempty"`
+	ViewerTeam string `json:"viewer_team,omitempty"`
+	Reviewer   string `json:"reviewer,omitempty"`
+	Reason     string `json:"reason,omitempty"`
+	Note       string `json:"note,omitempty"`
 }
 
 func (s *Server) handleV2EngineeringDashboard(w http.ResponseWriter, r *http.Request) {
@@ -122,6 +123,7 @@ func (s *Server) handleV2EngineeringDashboard(w http.ResponseWriter, r *http.Req
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	authorization := parseControlAuthorization(r, "", "", "")
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	team := strings.TrimSpace(r.URL.Query().Get("team"))
 	project := strings.TrimSpace(r.URL.Query().Get("project"))
@@ -134,6 +136,10 @@ func (s *Server) handleV2EngineeringDashboard(w http.ResponseWriter, r *http.Req
 	until, err := parseOptionalTime(r.URL.Query().Get("until"))
 	if err != nil {
 		http.Error(w, "invalid until value, expected RFC3339", http.StatusBadRequest)
+		return
+	}
+	if err := enforceScopedTeamFilter(authorization, &team); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
 
@@ -183,13 +189,15 @@ func (s *Server) handleV2EngineeringDashboard(w http.ResponseWriter, r *http.Req
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
+		"authorization": authorization,
 		"filters": map[string]any{
-			"team":      team,
-			"project":   project,
-			"tenant_id": tenantID,
-			"since":     since,
-			"until":     until,
-			"limit":     limit,
+			"team":        team,
+			"project":     project,
+			"tenant_id":   tenantID,
+			"viewer_team": authorization.ViewerTeam,
+			"since":       since,
+			"until":       until,
+			"limit":       limit,
 		},
 		"summary":                summary,
 		"ticket_to_merge_funnel": funnel,
@@ -202,10 +210,14 @@ func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	authorization := parseControlAuthorization(r, "", "")
+	authorization := parseControlAuthorization(r, "", "", "")
 	filters, err := parseControlCenterFilters(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := enforceScopedTeamFilter(authorization, &filters.Team); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
 	deadLetters, err := s.Queue.ListDeadLetters(r.Context(), 0)
@@ -240,7 +252,7 @@ func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 	if filters.Limit > 0 && len(returnedQueueTasks) > filters.Limit {
 		returnedQueueTasks = returnedQueueTasks[:filters.Limit]
 	}
-	auditEntries := s.controlActionAuditEntries(filters.AuditLimit, filters.TaskID, filters.Action, filters.Actor)
+	auditEntries := s.controlActionAuditEntries(filters.AuditLimit, filters.TaskID, filters.Action, filters.Actor, filters.Team, authorization)
 	response := map[string]any{
 		"authorization": authorization,
 		"filters": map[string]any{
@@ -272,17 +284,22 @@ func (s *Server) handleV2ControlCenterAudit(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	authorization := parseControlAuthorization(r, "", "")
+	authorization := parseControlAuthorization(r, "", "", "")
 	filters, err := parseControlCenterFilters(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	entries := s.controlActionAuditEntries(filters.AuditLimit, filters.TaskID, filters.Action, filters.Actor)
+	if err := enforceScopedTeamFilter(authorization, &filters.Team); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+	entries := s.controlActionAuditEntries(filters.AuditLimit, filters.TaskID, filters.Action, filters.Actor, filters.Team, authorization)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"authorization": authorization,
 		"filters": map[string]any{
 			"task_id": filters.TaskID,
+			"team":    filters.Team,
 			"action":  filters.Action,
 			"actor":   filters.Actor,
 			"limit":   filters.AuditLimit,
@@ -302,7 +319,11 @@ func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	now := s.Now()
-	authorization := parseControlAuthorization(r, request.Actor, request.Role)
+	authorization := parseControlAuthorization(r, request.Actor, request.Role, request.ViewerTeam)
+	if err := authorization.validateScope(); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
 	actor := normalizedActor(authorization.Actor)
 	action := strings.ToLower(strings.TrimSpace(request.Action))
 	if !canPerformControlAction(authorization.Role, action) {
@@ -323,6 +344,10 @@ func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Requ
 			http.Error(w, "missing task_id", http.StatusBadRequest)
 			return
 		}
+		if err := s.authorizeTaskIDAccess(authorization, request.TaskID); err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
 		if err := s.Queue.ReplayDeadLetter(r.Context(), request.TaskID); err != nil {
 			http.Error(w, err.Error(), http.StatusConflict)
 			return
@@ -335,6 +360,10 @@ func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Requ
 	case "cancel":
 		if request.TaskID == "" {
 			http.Error(w, "missing task_id", http.StatusBadRequest)
+			return
+		}
+		if err := s.authorizeTaskIDAccess(authorization, request.TaskID); err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
 		controller, ok := s.Queue.(queue.TaskController)
@@ -362,6 +391,10 @@ func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Requ
 			http.Error(w, "missing task_id", http.StatusBadRequest)
 			return
 		}
+		if err := s.authorizeTaskIDAccess(authorization, request.TaskID); err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
 		note := strings.TrimSpace(request.Note)
 		if note == "" {
 			note = strings.TrimSpace(request.Reason)
@@ -376,6 +409,10 @@ func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Requ
 			http.Error(w, "missing task_id", http.StatusBadRequest)
 			return
 		}
+		if err := s.authorizeTaskIDAccess(authorization, request.TaskID); err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
 		takeover, ok := s.Control.Release(request.TaskID, actor, request.Note, now)
 		if !ok {
 			http.Error(w, "takeover not found", http.StatusNotFound)
@@ -388,6 +425,10 @@ func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Requ
 	case "annotate":
 		if request.TaskID == "" {
 			http.Error(w, "missing task_id", http.StatusBadRequest)
+			return
+		}
+		if err := s.authorizeTaskIDAccess(authorization, request.TaskID); err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
 		takeover := s.Control.Annotate(request.TaskID, actor, request.Note, now)
@@ -409,6 +450,7 @@ func (s *Server) handleV2RunDetail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "missing task id", http.StatusBadRequest)
 		return
 	}
+	authorization := parseControlAuthorization(r, "", "", "")
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	if limit <= 0 {
 		limit = 200
@@ -416,6 +458,10 @@ func (s *Server) handleV2RunDetail(w http.ResponseWriter, r *http.Request) {
 	task, ok := s.taskSnapshot(taskID)
 	if !ok {
 		http.Error(w, "task not found", http.StatusNotFound)
+		return
+	}
+	if err := s.authorizeTaskAccess(authorization, task); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
 	events := s.Recorder.EventsByTask(taskID, limit)
@@ -444,6 +490,47 @@ func (s *Server) handleV2RunDetail(w http.ResponseWriter, r *http.Request) {
 		response.Collaboration = &copy
 	}
 	writeJSON(w, http.StatusOK, response)
+}
+
+func enforceScopedTeamFilter(authorization ControlAuthorization, team *string) error {
+	if !authorization.teamScoped() {
+		return nil
+	}
+	if err := authorization.validateScope(); err != nil {
+		return err
+	}
+	requested := strings.TrimSpace(*team)
+	if requested == "" {
+		*team = authorization.ViewerTeam
+		return nil
+	}
+	if !authorization.permitsTeam(requested) {
+		return fmt.Errorf("forbidden: role %s cannot access team %s", authorization.Role, requested)
+	}
+	*team = authorization.ViewerTeam
+	return nil
+}
+
+func (s *Server) authorizeTaskAccess(authorization ControlAuthorization, task domain.Task) error {
+	if !authorization.teamScoped() {
+		return nil
+	}
+	if err := authorization.validateScope(); err != nil {
+		return err
+	}
+	team := strings.TrimSpace(task.Metadata["team"])
+	if !authorization.permitsTeam(team) {
+		return fmt.Errorf("forbidden: role %s cannot access team %s", authorization.Role, team)
+	}
+	return nil
+}
+
+func (s *Server) authorizeTaskIDAccess(authorization ControlAuthorization, taskID string) error {
+	task, ok := s.taskSnapshot(taskID)
+	if !ok {
+		return nil
+	}
+	return s.authorizeTaskAccess(authorization, task)
 }
 
 func (s *Server) filteredTasks(team, project, tenantID string, since, until time.Time) []domain.Task {
@@ -695,7 +782,7 @@ func (s *Server) filteredActiveTakeovers(filters controlCenterFilters) []control
 	return filtered
 }
 
-func (s *Server) controlActionAuditEntries(limit int, taskID string, action string, actor string) []controlActionAuditEntry {
+func (s *Server) controlActionAuditEntries(limit int, taskID string, action string, actor string, team string, authorization ControlAuthorization) []controlActionAuditEntry {
 	logs := s.Recorder.Logs()
 	out := make([]controlActionAuditEntry, 0)
 	for index := len(logs) - 1; index >= 0; index-- {
@@ -711,6 +798,21 @@ func (s *Server) controlActionAuditEntries(limit int, taskID string, action stri
 		}
 		if actor != "" && !strings.EqualFold(entry.Actor, actor) {
 			continue
+		}
+		if team != "" || authorization.teamScoped() {
+			if entry.TaskID == "" {
+				continue
+			}
+			task, ok := s.taskSnapshot(entry.TaskID)
+			if !ok {
+				continue
+			}
+			if team != "" && !strings.EqualFold(strings.TrimSpace(task.Metadata["team"]), team) {
+				continue
+			}
+			if err := s.authorizeTaskAccess(authorization, task); err != nil {
+				continue
+			}
 		}
 		out = append(out, entry)
 		if limit > 0 && len(out) >= limit {

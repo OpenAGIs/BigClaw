@@ -383,7 +383,7 @@ func TestV2ControlCenterActionsAndRunDetail(t *testing.T) {
 		t.Fatalf("expected pause action payload, got %d %s", pauseResponse.Code, pauseResponse.Body.String())
 	}
 
-	takeoverBody, _ := json.Marshal(map[string]any{"action": "takeover", "task_id": "task-v2-1", "actor": "alice", "role": "eng_lead", "reviewer": "bob", "note": "Investigating flaky validation"})
+	takeoverBody, _ := json.Marshal(map[string]any{"action": "takeover", "task_id": "task-v2-1", "actor": "alice", "role": "eng_lead", "viewer_team": "platform", "reviewer": "bob", "note": "Investigating flaky validation"})
 	takeoverResponse := httptest.NewRecorder()
 	handler.ServeHTTP(takeoverResponse, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(takeoverBody)))
 	if takeoverResponse.Code != http.StatusOK || !strings.Contains(takeoverResponse.Body.String(), "alice") {
@@ -504,7 +504,7 @@ func TestV2ControlCenterSummariesFiltersAndAudit(t *testing.T) {
 		}
 	}
 
-	takeoverBody, _ := json.Marshal(map[string]any{"action": "transfer_to_human", "task_id": "task-control-1", "actor": "alice", "role": "eng_lead", "reviewer": "bob", "note": "Manual validation required"})
+	takeoverBody, _ := json.Marshal(map[string]any{"action": "transfer_to_human", "task_id": "task-control-1", "actor": "alice", "role": "eng_lead", "viewer_team": "platform", "reviewer": "bob", "note": "Manual validation required"})
 	takeoverResponse := httptest.NewRecorder()
 	handler.ServeHTTP(takeoverResponse, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(takeoverBody)))
 	if takeoverResponse.Code != http.StatusOK {
@@ -550,22 +550,32 @@ func TestV2ControlCenterAuthorizationEnforcedByRole(t *testing.T) {
 	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, Control: controller, Now: func() time.Time { return time.Unix(1700004000, 0) }}
 	handler := server.Handler()
 
-	payload := map[string]any{
-		"id":       "task-authz-1",
-		"title":    "Authz target",
-		"priority": 1,
-		"metadata": map[string]any{"team": "platform", "project": "alpha"},
-	}
-	body, _ := json.Marshal(payload)
-	createResponse := httptest.NewRecorder()
-	handler.ServeHTTP(createResponse, httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewReader(body)))
-	if createResponse.Code != http.StatusAccepted {
-		t.Fatalf("expected task create 202, got %d", createResponse.Code)
+	for _, payload := range []map[string]any{
+		{
+			"id":       "task-authz-1",
+			"title":    "Authz target",
+			"priority": 1,
+			"metadata": map[string]any{"team": "platform", "project": "alpha"},
+		},
+		{
+			"id":       "task-authz-2",
+			"title":    "Other team target",
+			"priority": 2,
+			"metadata": map[string]any{"team": "growth", "project": "beta"},
+		},
+	} {
+		body, _ := json.Marshal(payload)
+		createResponse := httptest.NewRecorder()
+		handler.ServeHTTP(createResponse, httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewReader(body)))
+		if createResponse.Code != http.StatusAccepted {
+			t.Fatalf("expected task create 202, got %d", createResponse.Code)
+		}
 	}
 
 	centerRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5", nil)
 	centerRequest.Header.Set("X-BigClaw-Role", "eng_lead")
 	centerRequest.Header.Set("X-BigClaw-Actor", "lead-1")
+	centerRequest.Header.Set("X-BigClaw-Team", "platform")
 	centerResponse := httptest.NewRecorder()
 	handler.ServeHTTP(centerResponse, centerRequest)
 	if centerResponse.Code != http.StatusOK {
@@ -578,19 +588,29 @@ func TestV2ControlCenterAuthorizationEnforcedByRole(t *testing.T) {
 	if strings.Contains(centerBody, "\"cancel\"") {
 		t.Fatalf("expected eng_lead authorization to exclude cancel, got %s", centerBody)
 	}
+	if !strings.Contains(centerBody, "task-authz-1") || strings.Contains(centerBody, "task-authz-2") {
+		t.Fatalf("expected control center to be scoped to platform team, got %s", centerBody)
+	}
 
-	forbiddenBody, _ := json.Marshal(map[string]any{"action": "cancel", "task_id": "task-authz-1", "actor": "lead-1", "role": "eng_lead", "reason": "not allowed"})
+	forbiddenBody, _ := json.Marshal(map[string]any{"action": "cancel", "task_id": "task-authz-1", "actor": "lead-1", "role": "eng_lead", "viewer_team": "platform", "reason": "not allowed"})
 	forbiddenResponse := httptest.NewRecorder()
 	handler.ServeHTTP(forbiddenResponse, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(forbiddenBody)))
 	if forbiddenResponse.Code != http.StatusForbidden {
 		t.Fatalf("expected forbidden cancel for eng_lead, got %d %s", forbiddenResponse.Code, forbiddenResponse.Body.String())
 	}
 
-	allowedBody, _ := json.Marshal(map[string]any{"action": "takeover", "task_id": "task-authz-1", "actor": "lead-1", "role": "eng_lead", "note": "Escalating review"})
+	allowedBody, _ := json.Marshal(map[string]any{"action": "takeover", "task_id": "task-authz-1", "actor": "lead-1", "role": "eng_lead", "viewer_team": "platform", "note": "Escalating review"})
 	allowedResponse := httptest.NewRecorder()
 	handler.ServeHTTP(allowedResponse, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(allowedBody)))
 	if allowedResponse.Code != http.StatusOK {
 		t.Fatalf("expected allowed takeover for eng_lead, got %d %s", allowedResponse.Code, allowedResponse.Body.String())
+	}
+
+	outsideScopeBody, _ := json.Marshal(map[string]any{"action": "takeover", "task_id": "task-authz-2", "actor": "lead-1", "role": "eng_lead", "viewer_team": "platform", "note": "Should fail outside scope"})
+	outsideScopeResponse := httptest.NewRecorder()
+	handler.ServeHTTP(outsideScopeResponse, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(outsideScopeBody)))
+	if outsideScopeResponse.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden takeover for out-of-scope team, got %d %s", outsideScopeResponse.Code, outsideScopeResponse.Body.String())
 	}
 
 	auditResponse := httptest.NewRecorder()
@@ -604,5 +624,48 @@ func TestV2ControlCenterAuthorizationEnforcedByRole(t *testing.T) {
 	auditBody := auditResponse.Body.String()
 	if !strings.Contains(auditBody, "eng_lead") || !strings.Contains(auditBody, "takeover") || !strings.Contains(auditBody, "task-authz-1") {
 		t.Fatalf("expected role-tagged audit payload, got %s", auditBody)
+	}
+}
+
+func TestV2DashboardAndRunDetailEnforceViewerTeamScope(t *testing.T) {
+	recorder := observability.NewRecorder()
+	base := time.Unix(1700005000, 0)
+	recorder.StoreTask(domain.Task{ID: "task-scope-1", TraceID: "trace-scope-1", Title: "Scoped", State: domain.TaskRunning, Metadata: map[string]string{"team": "platform", "project": "alpha"}, CreatedAt: base, UpdatedAt: base.Add(time.Hour)})
+	recorder.StoreTask(domain.Task{ID: "task-scope-2", TraceID: "trace-scope-2", Title: "Other", State: domain.TaskBlocked, Metadata: map[string]string{"team": "growth", "project": "beta"}, CreatedAt: base, UpdatedAt: base.Add(2 * time.Hour)})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return base.Add(3 * time.Hour) }}
+	handler := server.Handler()
+
+	dashboardRequest := httptest.NewRequest(http.MethodGet, "/v2/dashboard/engineering?limit=10", nil)
+	dashboardRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	dashboardRequest.Header.Set("X-BigClaw-Actor", "lead-2")
+	dashboardRequest.Header.Set("X-BigClaw-Team", "platform")
+	dashboardResponse := httptest.NewRecorder()
+	handler.ServeHTTP(dashboardResponse, dashboardRequest)
+	if dashboardResponse.Code != http.StatusOK {
+		t.Fatalf("expected scoped dashboard 200, got %d %s", dashboardResponse.Code, dashboardResponse.Body.String())
+	}
+	dashboardBody := dashboardResponse.Body.String()
+	if !strings.Contains(dashboardBody, "task-scope-1") || strings.Contains(dashboardBody, "task-scope-2") {
+		t.Fatalf("expected dashboard to be scoped to platform team, got %s", dashboardBody)
+	}
+
+	forbiddenDashboardRequest := httptest.NewRequest(http.MethodGet, "/v2/dashboard/engineering?team=growth&limit=10", nil)
+	forbiddenDashboardRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	forbiddenDashboardRequest.Header.Set("X-BigClaw-Actor", "lead-2")
+	forbiddenDashboardRequest.Header.Set("X-BigClaw-Team", "platform")
+	forbiddenDashboardResponse := httptest.NewRecorder()
+	handler.ServeHTTP(forbiddenDashboardResponse, forbiddenDashboardRequest)
+	if forbiddenDashboardResponse.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden dashboard for mismatched team, got %d %s", forbiddenDashboardResponse.Code, forbiddenDashboardResponse.Body.String())
+	}
+
+	runRequest := httptest.NewRequest(http.MethodGet, "/v2/runs/task-scope-2", nil)
+	runRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	runRequest.Header.Set("X-BigClaw-Actor", "lead-2")
+	runRequest.Header.Set("X-BigClaw-Team", "platform")
+	runResponse := httptest.NewRecorder()
+	handler.ServeHTTP(runResponse, runRequest)
+	if runResponse.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden run detail for out-of-scope team, got %d %s", runResponse.Code, runResponse.Body.String())
 	}
 }
