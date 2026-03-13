@@ -1,0 +1,364 @@
+{
+  "generated_at": "2026-03-13T09:44:42Z",
+  "base_url": "http://127.0.0.1:50725",
+  "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-mixed-state-d5u42gs7",
+  "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-mixed-25saar3_.log",
+  "all_ok": true,
+  "tasks": [
+    {
+      "name": "local-default",
+      "task_id": "mixed-local-1773395066",
+      "trace_id": "mixed-local-1773395066",
+      "expected_executor": "local",
+      "routed_executor": "local",
+      "routed_reason": "default local executor for low/medium risk",
+      "final_state": "succeeded",
+      "latest_event_type": "task.completed",
+      "events": [
+        {
+          "id": "mixed-local-1773395066-queued",
+          "type": "task.queued",
+          "task_id": "mixed-local-1773395066",
+          "trace_id": "mixed-local-1773395066",
+          "timestamp": "2026-03-13T17:44:26.107696+08:00",
+          "payload": {
+            "executor": "",
+            "title": "Mixed workload local default"
+          }
+        },
+        {
+          "id": "mixed-local-1773395066-leased",
+          "type": "task.leased",
+          "task_id": "mixed-local-1773395066",
+          "trace_id": "mixed-local-1773395066",
+          "timestamp": "2026-03-13T17:44:26.195784+08:00"
+        },
+        {
+          "id": "mixed-local-1773395066-routed",
+          "type": "scheduler.routed",
+          "task_id": "mixed-local-1773395066",
+          "trace_id": "mixed-local-1773395066",
+          "timestamp": "2026-03-13T17:44:26.195926+08:00",
+          "payload": {
+            "executor": "local",
+            "quota": {
+              "TenantID": "",
+              "ConcurrentLimit": 32,
+              "CurrentRunning": 0,
+              "BudgetRemaining": 1000,
+              "QueueDepth": 0,
+              "MaxQueueDepth": 0,
+              "PreemptibleExecutions": 0
+            },
+            "reason": "default local executor for low/medium risk"
+          }
+        },
+        {
+          "id": "mixed-local-1773395066-started",
+          "type": "task.started",
+          "task_id": "mixed-local-1773395066",
+          "trace_id": "mixed-local-1773395066",
+          "timestamp": "2026-03-13T17:44:26.196124+08:00",
+          "payload": {
+            "executor": "local"
+          }
+        },
+        {
+          "id": "mixed-local-1773395066-completed",
+          "type": "task.completed",
+          "task_id": "mixed-local-1773395066",
+          "trace_id": "mixed-local-1773395066",
+          "timestamp": "2026-03-13T17:44:26.206918+08:00",
+          "payload": {
+            "message": "local execution completed"
+          }
+        }
+      ],
+      "ok": true
+    },
+    {
+      "name": "browser-auto",
+      "task_id": "mixed-browser-1773395066",
+      "trace_id": "mixed-browser-1773395066",
+      "expected_executor": "kubernetes",
+      "routed_executor": "kubernetes",
+      "routed_reason": "browser workloads default to kubernetes executor",
+      "final_state": "succeeded",
+      "latest_event_type": "task.completed",
+      "events": [
+        {
+          "id": "mixed-browser-1773395066-queued",
+          "type": "task.queued",
+          "task_id": "mixed-browser-1773395066",
+          "trace_id": "mixed-browser-1773395066",
+          "timestamp": "2026-03-13T17:44:26.670747+08:00",
+          "payload": {
+            "executor": "",
+            "title": "Mixed workload browser auto-route"
+          }
+        },
+        {
+          "id": "mixed-browser-1773395066-leased",
+          "type": "task.leased",
+          "task_id": "mixed-browser-1773395066",
+          "trace_id": "mixed-browser-1773395066",
+          "timestamp": "2026-03-13T17:44:26.695943+08:00"
+        },
+        {
+          "id": "mixed-browser-1773395066-routed",
+          "type": "scheduler.routed",
+          "task_id": "mixed-browser-1773395066",
+          "trace_id": "mixed-browser-1773395066",
+          "timestamp": "2026-03-13T17:44:26.696256+08:00",
+          "payload": {
+            "executor": "kubernetes",
+            "quota": {
+              "TenantID": "",
+              "ConcurrentLimit": 32,
+              "CurrentRunning": 0,
+              "BudgetRemaining": 1000,
+              "QueueDepth": 0,
+              "MaxQueueDepth": 0,
+              "PreemptibleExecutions": 0
+            },
+            "reason": "browser workloads default to kubernetes executor"
+          }
+        },
+        {
+          "id": "mixed-browser-1773395066-started",
+          "type": "task.started",
+          "task_id": "mixed-browser-1773395066",
+          "trace_id": "mixed-browser-1773395066",
+          "timestamp": "2026-03-13T17:44:26.696905+08:00",
+          "payload": {
+            "executor": "kubernetes"
+          }
+        },
+        {
+          "id": "mixed-browser-1773395066-completed",
+          "type": "task.completed",
+          "task_id": "mixed-browser-1773395066",
+          "trace_id": "mixed-browser-1773395066",
+          "timestamp": "2026-03-13T17:44:30.7642+08:00",
+          "payload": {
+            "message": "kubernetes job bigclaw-mixed-browser-1773395066-1773395066 succeeded: browser via kubernetes"
+          }
+        }
+      ],
+      "ok": true
+    },
+    {
+      "name": "gpu-auto",
+      "task_id": "mixed-gpu-1773395066",
+      "trace_id": "mixed-gpu-1773395066",
+      "expected_executor": "ray",
+      "routed_executor": "ray",
+      "routed_reason": "gpu workloads default to ray executor",
+      "final_state": "succeeded",
+      "latest_event_type": "task.completed",
+      "events": [
+        {
+          "id": "mixed-gpu-1773395066-queued",
+          "type": "task.queued",
+          "task_id": "mixed-gpu-1773395066",
+          "trace_id": "mixed-gpu-1773395066",
+          "timestamp": "2026-03-13T17:44:31.255676+08:00",
+          "payload": {
+            "executor": "",
+            "title": "Mixed workload gpu auto-route"
+          }
+        },
+        {
+          "id": "mixed-gpu-1773395066-leased",
+          "type": "task.leased",
+          "task_id": "mixed-gpu-1773395066",
+          "trace_id": "mixed-gpu-1773395066",
+          "timestamp": "2026-03-13T17:44:31.307189+08:00"
+        },
+        {
+          "id": "mixed-gpu-1773395066-routed",
+          "type": "scheduler.routed",
+          "task_id": "mixed-gpu-1773395066",
+          "trace_id": "mixed-gpu-1773395066",
+          "timestamp": "2026-03-13T17:44:31.307415+08:00",
+          "payload": {
+            "executor": "ray",
+            "quota": {
+              "TenantID": "",
+              "ConcurrentLimit": 32,
+              "CurrentRunning": 0,
+              "BudgetRemaining": 1000,
+              "QueueDepth": 0,
+              "MaxQueueDepth": 0,
+              "PreemptibleExecutions": 0
+            },
+            "reason": "gpu workloads default to ray executor"
+          }
+        },
+        {
+          "id": "mixed-gpu-1773395066-started",
+          "type": "task.started",
+          "task_id": "mixed-gpu-1773395066",
+          "trace_id": "mixed-gpu-1773395066",
+          "timestamp": "2026-03-13T17:44:31.307523+08:00",
+          "payload": {
+            "executor": "ray"
+          }
+        },
+        {
+          "id": "mixed-gpu-1773395066-completed",
+          "type": "task.completed",
+          "task_id": "mixed-gpu-1773395066",
+          "trace_id": "mixed-gpu-1773395066",
+          "timestamp": "2026-03-13T17:44:33.48013+08:00",
+          "payload": {
+            "message": "ray job bigclaw-mixed-gpu-1773395066 succeeded: 2026-03-13 02:44:31,429\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-mixed-gpu-1773395066: python -c \"print('gpu via ray')\"\ngpu via ray"
+          }
+        }
+      ],
+      "ok": true
+    },
+    {
+      "name": "high-risk-auto",
+      "task_id": "mixed-risk-1773395066",
+      "trace_id": "mixed-risk-1773395066",
+      "expected_executor": "kubernetes",
+      "routed_executor": "kubernetes",
+      "routed_reason": "high-risk tasks default to isolated executor",
+      "final_state": "succeeded",
+      "latest_event_type": "task.completed",
+      "events": [
+        {
+          "id": "mixed-risk-1773395066-queued",
+          "type": "task.queued",
+          "task_id": "mixed-risk-1773395066",
+          "trace_id": "mixed-risk-1773395066",
+          "timestamp": "2026-03-13T17:44:33.795195+08:00",
+          "payload": {
+            "executor": "",
+            "title": "Mixed workload high-risk auto-route"
+          }
+        },
+        {
+          "id": "mixed-risk-1773395066-leased",
+          "type": "task.leased",
+          "task_id": "mixed-risk-1773395066",
+          "trace_id": "mixed-risk-1773395066",
+          "timestamp": "2026-03-13T17:44:33.897042+08:00"
+        },
+        {
+          "id": "mixed-risk-1773395066-routed",
+          "type": "scheduler.routed",
+          "task_id": "mixed-risk-1773395066",
+          "trace_id": "mixed-risk-1773395066",
+          "timestamp": "2026-03-13T17:44:33.897337+08:00",
+          "payload": {
+            "executor": "kubernetes",
+            "quota": {
+              "TenantID": "",
+              "ConcurrentLimit": 32,
+              "CurrentRunning": 0,
+              "BudgetRemaining": 1000,
+              "QueueDepth": 0,
+              "MaxQueueDepth": 0,
+              "PreemptibleExecutions": 0
+            },
+            "reason": "high-risk tasks default to isolated executor"
+          }
+        },
+        {
+          "id": "mixed-risk-1773395066-started",
+          "type": "task.started",
+          "task_id": "mixed-risk-1773395066",
+          "trace_id": "mixed-risk-1773395066",
+          "timestamp": "2026-03-13T17:44:33.89743+08:00",
+          "payload": {
+            "executor": "kubernetes"
+          }
+        },
+        {
+          "id": "mixed-risk-1773395066-completed",
+          "type": "task.completed",
+          "task_id": "mixed-risk-1773395066",
+          "trace_id": "mixed-risk-1773395066",
+          "timestamp": "2026-03-13T17:44:37.941501+08:00",
+          "payload": {
+            "message": "kubernetes job bigclaw-mixed-risk-1773395066-1773395073 succeeded: high risk via kubernetes"
+          }
+        }
+      ],
+      "ok": true
+    },
+    {
+      "name": "required-ray",
+      "task_id": "mixed-required-ray-1773395066",
+      "trace_id": "mixed-required-ray-1773395066",
+      "expected_executor": "ray",
+      "routed_executor": "ray",
+      "routed_reason": "required executor=ray",
+      "final_state": "succeeded",
+      "latest_event_type": "task.completed",
+      "events": [
+        {
+          "id": "mixed-required-ray-1773395066-queued",
+          "type": "task.queued",
+          "task_id": "mixed-required-ray-1773395066",
+          "trace_id": "mixed-required-ray-1773395066",
+          "timestamp": "2026-03-13T17:44:38.348272+08:00",
+          "payload": {
+            "executor": "ray",
+            "title": "Mixed workload explicit ray"
+          }
+        },
+        {
+          "id": "mixed-required-ray-1773395066-leased",
+          "type": "task.leased",
+          "task_id": "mixed-required-ray-1773395066",
+          "trace_id": "mixed-required-ray-1773395066",
+          "timestamp": "2026-03-13T17:44:38.395069+08:00"
+        },
+        {
+          "id": "mixed-required-ray-1773395066-routed",
+          "type": "scheduler.routed",
+          "task_id": "mixed-required-ray-1773395066",
+          "trace_id": "mixed-required-ray-1773395066",
+          "timestamp": "2026-03-13T17:44:38.395165+08:00",
+          "payload": {
+            "executor": "ray",
+            "quota": {
+              "TenantID": "",
+              "ConcurrentLimit": 32,
+              "CurrentRunning": 0,
+              "BudgetRemaining": 1000,
+              "QueueDepth": 0,
+              "MaxQueueDepth": 0,
+              "PreemptibleExecutions": 0
+            },
+            "reason": "required executor=ray"
+          }
+        },
+        {
+          "id": "mixed-required-ray-1773395066-started",
+          "type": "task.started",
+          "task_id": "mixed-required-ray-1773395066",
+          "trace_id": "mixed-required-ray-1773395066",
+          "timestamp": "2026-03-13T17:44:38.39521+08:00",
+          "payload": {
+            "executor": "ray"
+          }
+        },
+        {
+          "id": "mixed-required-ray-1773395066-completed",
+          "type": "task.completed",
+          "task_id": "mixed-required-ray-1773395066",
+          "trace_id": "mixed-required-ray-1773395066",
+          "timestamp": "2026-03-13T17:44:42.458392+08:00",
+          "payload": {
+            "message": "ray job bigclaw-mixed-required-ray-1773395066 succeeded: 2026-03-13 02:44:38,415\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-mixed-required-ray-1773395066: python -c \"print('required ray')\"\nrequired ray"
+          }
+        }
+      ],
+      "ok": true
+    }
+  ]
+}

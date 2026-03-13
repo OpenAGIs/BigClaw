@@ -1,0 +1,608 @@
+package api
+
+import (
+	"bufio"
+	"bytes"
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"bigclaw-go/internal/control"
+	"bigclaw-go/internal/domain"
+	"bigclaw-go/internal/events"
+	"bigclaw-go/internal/observability"
+	"bigclaw-go/internal/queue"
+	"bigclaw-go/internal/worker"
+)
+
+type fakeWorkerStatus struct{}
+
+func (fakeWorkerStatus) Snapshot() worker.Status {
+	return worker.Status{WorkerID: "worker-a", State: "idle", SuccessfulRuns: 2, LeaseRenewals: 3, LastResult: "ok"}
+}
+
+func TestCreateTaskAndQueryStatus(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	server := &Server{
+		Recorder:  recorder,
+		Queue:     queue.NewMemoryQueue(),
+		Executors: []domain.ExecutorKind{domain.ExecutorLocal},
+		Bus:       bus,
+		Now:       func() time.Time { return time.Unix(1700000000, 0) },
+	}
+	handler := server.Handler()
+
+	payload := map[string]any{"id": "task-api-1", "title": "hello", "required_executor": "local", "entrypoint": "echo hello"}
+	body, _ := json.Marshal(payload)
+	request := httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewReader(body))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusAccepted {
+		t.Fatalf("expected 202, got %d", response.Code)
+	}
+
+	statusRequest := httptest.NewRequest(http.MethodGet, "/tasks/task-api-1", nil)
+	statusResponse := httptest.NewRecorder()
+	handler.ServeHTTP(statusResponse, statusRequest)
+	if statusResponse.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", statusResponse.Code)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(statusResponse.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode status: %v", err)
+	}
+	if got := decoded["state"]; got != string(domain.TaskQueued) {
+		t.Fatalf("expected queued state, got %v", got)
+	}
+	if got := decoded["trace_id"]; got != "task-api-1" {
+		t.Fatalf("expected generated trace_id to match task id, got %v", got)
+	}
+
+	eventsRequest := httptest.NewRequest(http.MethodGet, "/events?trace_id=task-api-1&limit=10", nil)
+	eventsResponse := httptest.NewRecorder()
+	handler.ServeHTTP(eventsResponse, eventsRequest)
+	if eventsResponse.Code != http.StatusOK {
+		t.Fatalf("expected events 200, got %d", eventsResponse.Code)
+	}
+	if !strings.Contains(eventsResponse.Body.String(), "task-api-1-queued") {
+		t.Fatalf("expected queued event via trace lookup, got %s", eventsResponse.Body.String())
+	}
+}
+
+func TestAuditAndReplayEndpoints(t *testing.T) {
+	recorder := observability.NewRecorder()
+	recorder.Record(domain.Event{ID: "evt-1", Type: domain.EventTaskQueued, TaskID: "task-1", Timestamp: time.Now()})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Now: time.Now}
+	handler := server.Handler()
+
+	auditRequest := httptest.NewRequest(http.MethodGet, "/audit?limit=10", nil)
+	auditResponse := httptest.NewRecorder()
+	handler.ServeHTTP(auditResponse, auditRequest)
+	if auditResponse.Code != http.StatusOK {
+		t.Fatalf("expected audit 200, got %d", auditResponse.Code)
+	}
+
+	replayRequest := httptest.NewRequest(http.MethodGet, "/replay/task-1", nil)
+	replayResponse := httptest.NewRecorder()
+	handler.ServeHTTP(replayResponse, replayRequest)
+	if replayResponse.Code != http.StatusOK {
+		t.Fatalf("expected replay 200, got %d", replayResponse.Code)
+	}
+}
+
+func TestDeadLetterEndpoints(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	q := queue.NewMemoryQueue()
+	ctx := context.Background()
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-dead", Title: "dead", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	_, lease, err := q.LeaseNext(ctx, "worker-a", time.Minute)
+	if err != nil || lease == nil {
+		t.Fatalf("lease: %v lease=%v", err, lease)
+	}
+	if err := q.DeadLetter(ctx, lease, "boom"); err != nil {
+		t.Fatalf("dead letter: %v", err)
+	}
+	server := &Server{Recorder: recorder, Queue: q, Bus: bus, Now: time.Now}
+	handler := server.Handler()
+
+	listRequest := httptest.NewRequest(http.MethodGet, "/deadletters?limit=10", nil)
+	listResponse := httptest.NewRecorder()
+	handler.ServeHTTP(listResponse, listRequest)
+	if listResponse.Code != http.StatusOK {
+		t.Fatalf("expected dead letter list 200, got %d", listResponse.Code)
+	}
+	if !strings.Contains(listResponse.Body.String(), "task-dead") {
+		t.Fatalf("expected dead letter task in response, got %s", listResponse.Body.String())
+	}
+
+	replayRequest := httptest.NewRequest(http.MethodPost, "/deadletters/task-dead/replay", nil)
+	replayResponse := httptest.NewRecorder()
+	handler.ServeHTTP(replayResponse, replayRequest)
+	if replayResponse.Code != http.StatusAccepted {
+		t.Fatalf("expected replay 202, got %d", replayResponse.Code)
+	}
+
+	listRequest = httptest.NewRequest(http.MethodGet, "/deadletters?limit=10", nil)
+	listResponse = httptest.NewRecorder()
+	handler.ServeHTTP(listResponse, listRequest)
+	if strings.Contains(listResponse.Body.String(), "task-dead") {
+		t.Fatalf("expected dead letter list to be empty after replay, got %s", listResponse.Body.String())
+	}
+
+	statusRequest := httptest.NewRequest(http.MethodGet, "/tasks/task-dead", nil)
+	statusResponse := httptest.NewRecorder()
+	handler.ServeHTTP(statusResponse, statusRequest)
+	if statusResponse.Code != http.StatusOK {
+		t.Fatalf("expected status 200 after replay event, got %d", statusResponse.Code)
+	}
+	if !strings.Contains(statusResponse.Body.String(), string(domain.TaskQueued)) {
+		t.Fatalf("expected queued state after replay, got %s", statusResponse.Body.String())
+	}
+}
+
+func TestStreamEventsEndpoint(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, Now: time.Now}
+	ts := httptest.NewServer(server.Handler())
+	defer ts.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, ts.URL+"/stream/events", nil)
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+
+	resultCh := make(chan string, 1)
+	go func() {
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			resultCh <- "ERROR: " + err.Error()
+			return
+		}
+		defer response.Body.Close()
+		reader := bufio.NewReader(response.Body)
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			resultCh <- "ERROR: " + err.Error()
+			return
+		}
+		resultCh <- strings.TrimSpace(line)
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+	bus.Publish(domain.Event{ID: "evt-stream-1", Type: domain.EventTaskQueued, TaskID: "task-stream-1", Timestamp: time.Now()})
+
+	select {
+	case line := <-resultCh:
+		if !strings.HasPrefix(line, "data: ") {
+			t.Fatalf("expected sse data line, got %q", line)
+		}
+		if !strings.Contains(line, "evt-stream-1") {
+			t.Fatalf("expected event id in stream, got %q", line)
+		}
+	case <-ctx.Done():
+		t.Fatal("timed out waiting for streamed event")
+	}
+}
+
+func TestStreamEventsSupportsReplayAndFiltersByTrace(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	bus.Publish(domain.Event{ID: "evt-old-1", Type: domain.EventTaskQueued, TaskID: "task-a", TraceID: "trace-a", Timestamp: time.Now()})
+	bus.Publish(domain.Event{ID: "evt-old-2", Type: domain.EventTaskQueued, TaskID: "task-b", TraceID: "trace-b", Timestamp: time.Now()})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, Now: time.Now}
+	ts := httptest.NewServer(server.Handler())
+	defer ts.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, ts.URL+"/stream/events?replay=1&limit=10&trace_id=trace-a", nil)
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+
+	resultCh := make(chan string, 1)
+	go func() {
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			resultCh <- "ERROR: " + err.Error()
+			return
+		}
+		defer response.Body.Close()
+		reader := bufio.NewReader(response.Body)
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			resultCh <- "ERROR: " + err.Error()
+			return
+		}
+		resultCh <- strings.TrimSpace(line)
+	}()
+
+	select {
+	case line := <-resultCh:
+		if !strings.Contains(line, "evt-old-1") {
+			t.Fatalf("expected replayed filtered event, got %q", line)
+		}
+		if strings.Contains(line, "evt-old-2") {
+			t.Fatalf("expected trace filter to exclude evt-old-2, got %q", line)
+		}
+	case <-ctx.Done():
+		t.Fatal("timed out waiting for replayed event")
+	}
+}
+
+func TestDebugStatusIncludesWorkerSnapshot(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, Worker: fakeWorkerStatus{}, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d", response.Code)
+	}
+	if !strings.Contains(response.Body.String(), "worker-a") || !strings.Contains(response.Body.String(), "successful_runs") {
+		t.Fatalf("expected worker snapshot in debug payload, got %s", response.Body.String())
+	}
+}
+
+func TestDebugTraceEndpointsExposeTraceSummary(t *testing.T) {
+	recorder := observability.NewRecorder()
+	base := time.Now()
+	recorder.Record(domain.Event{ID: "evt-1", Type: domain.EventTaskQueued, TaskID: "task-1", TraceID: "trace-1", Timestamp: base})
+	recorder.Record(domain.Event{ID: "evt-2", Type: domain.EventTaskCompleted, TaskID: "task-1", TraceID: "trace-1", Timestamp: base.Add(2 * time.Second)})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Now: time.Now}
+
+	listResponse := httptest.NewRecorder()
+	listRequest := httptest.NewRequest(http.MethodGet, "/debug/traces?limit=10", nil)
+	server.Handler().ServeHTTP(listResponse, listRequest)
+	if listResponse.Code != http.StatusOK {
+		t.Fatalf("expected trace list 200, got %d", listResponse.Code)
+	}
+	if !strings.Contains(listResponse.Body.String(), "trace-1") {
+		t.Fatalf("expected trace id in trace list, got %s", listResponse.Body.String())
+	}
+
+	detailResponse := httptest.NewRecorder()
+	detailRequest := httptest.NewRequest(http.MethodGet, "/debug/traces/trace-1?limit=10", nil)
+	server.Handler().ServeHTTP(detailResponse, detailRequest)
+	if detailResponse.Code != http.StatusOK {
+		t.Fatalf("expected trace detail 200, got %d", detailResponse.Code)
+	}
+	if !strings.Contains(detailResponse.Body.String(), "duration_seconds") || !strings.Contains(detailResponse.Body.String(), "evt-2") {
+		t.Fatalf("expected trace summary and events in detail payload, got %s", detailResponse.Body.String())
+	}
+
+	metricsResponse := httptest.NewRecorder()
+	metricsRequest := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	server.Handler().ServeHTTP(metricsResponse, metricsRequest)
+	if !strings.Contains(metricsResponse.Body.String(), "trace_count") {
+		t.Fatalf("expected trace_count in metrics payload, got %s", metricsResponse.Body.String())
+	}
+}
+
+type dashboardResponse struct {
+	Summary struct {
+		TotalTasks        int            `json:"total_tasks"`
+		ActiveRuns        int            `json:"active_runs"`
+		Blockers          int            `json:"blockers"`
+		PremiumRuns       int            `json:"premium_runs"`
+		SLARiskRuns       int            `json:"sla_risk_runs"`
+		BudgetCentsTotal  int64          `json:"budget_cents_total"`
+		StateDistribution map[string]int `json:"state_distribution"`
+	} `json:"summary"`
+	TicketToMergeFunnel struct {
+		Tickets   int `json:"tickets"`
+		PROpened  int `json:"prs_opened"`
+		MergedPRs int `json:"merged_prs"`
+	} `json:"ticket_to_merge_funnel"`
+	Tasks []struct {
+		Task struct {
+			ID string `json:"id"`
+		} `json:"task"`
+		Policy struct {
+			Plan string `json:"plan"`
+		} `json:"policy"`
+	} `json:"tasks"`
+}
+
+func TestV2DashboardAggregatesEngineeringMetrics(t *testing.T) {
+	recorder := observability.NewRecorder()
+	base := time.Unix(1700000000, 0)
+	recorder.StoreTask(domain.Task{ID: "task-a", TraceID: "trace-a", Title: "A", State: domain.TaskRunning, BudgetCents: 1200, RiskLevel: domain.RiskHigh, Metadata: map[string]string{"team": "platform", "project": "alpha", "plan": "premium", "pr_status": "merged", "sla_risk": "true"}, CreatedAt: base, UpdatedAt: base.Add(2 * time.Hour)})
+	recorder.StoreTask(domain.Task{ID: "task-b", TraceID: "trace-b", Title: "B", State: domain.TaskBlocked, BudgetCents: 500, Metadata: map[string]string{"team": "platform", "project": "alpha", "pr_status": "open", "blocked": "true"}, CreatedAt: base, UpdatedAt: base.Add(time.Hour)})
+	recorder.StoreTask(domain.Task{ID: "task-c", TraceID: "trace-c", Title: "C", State: domain.TaskSucceeded, BudgetCents: 300, Metadata: map[string]string{"team": "growth", "project": "beta"}, CreatedAt: base, UpdatedAt: base.Add(3 * time.Hour)})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return base.Add(4 * time.Hour) }}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/dashboard/engineering?team=platform&project=alpha&limit=10", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected dashboard 200, got %d", response.Code)
+	}
+	var decoded dashboardResponse
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode dashboard: %v", err)
+	}
+	if decoded.Summary.TotalTasks != 2 || decoded.Summary.ActiveRuns != 2 || decoded.Summary.Blockers != 1 {
+		t.Fatalf("unexpected dashboard summary: %+v", decoded.Summary)
+	}
+	if decoded.Summary.PremiumRuns != 1 || decoded.Summary.SLARiskRuns != 1 || decoded.Summary.BudgetCentsTotal != 1700 {
+		t.Fatalf("unexpected premium/sla/budget summary: %+v", decoded.Summary)
+	}
+	if decoded.TicketToMergeFunnel.Tickets != 2 || decoded.TicketToMergeFunnel.PROpened != 2 || decoded.TicketToMergeFunnel.MergedPRs != 1 {
+		t.Fatalf("unexpected funnel summary: %+v", decoded.TicketToMergeFunnel)
+	}
+	if len(decoded.Tasks) != 2 || decoded.Tasks[0].Task.ID != "task-a" || decoded.Tasks[0].Policy.Plan != "premium" {
+		t.Fatalf("unexpected dashboard task ordering: %+v", decoded.Tasks)
+	}
+}
+
+func TestV2ControlCenterActionsAndRunDetail(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	controller := control.New()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, Control: controller, Now: func() time.Time { return time.Unix(1700001000, 0) }}
+	handler := server.Handler()
+
+	payload := map[string]any{
+		"id":                  "task-v2-1",
+		"title":               "Premium run",
+		"budget_cents":        900,
+		"required_tools":      []string{"browser"},
+		"metadata":            map[string]any{"team": "platform", "project": "alpha", "plan": "premium", "workpad": "handoff ready"},
+		"acceptance_criteria": []string{"merge PR"},
+		"validation_plan":     []string{"run benchmark"},
+	}
+	body, _ := json.Marshal(payload)
+	createResponse := httptest.NewRecorder()
+	handler.ServeHTTP(createResponse, httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewReader(body)))
+	if createResponse.Code != http.StatusAccepted {
+		t.Fatalf("expected task create 202, got %d", createResponse.Code)
+	}
+
+	pauseBody, _ := json.Marshal(map[string]any{"action": "pause", "actor": "ops", "role": "platform_admin", "reason": "maintenance window"})
+	pauseResponse := httptest.NewRecorder()
+	handler.ServeHTTP(pauseResponse, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(pauseBody)))
+	if pauseResponse.Code != http.StatusOK || !strings.Contains(pauseResponse.Body.String(), "maintenance window") {
+		t.Fatalf("expected pause action payload, got %d %s", pauseResponse.Code, pauseResponse.Body.String())
+	}
+
+	takeoverBody, _ := json.Marshal(map[string]any{"action": "takeover", "task_id": "task-v2-1", "actor": "alice", "role": "eng_lead", "reviewer": "bob", "note": "Investigating flaky validation"})
+	takeoverResponse := httptest.NewRecorder()
+	handler.ServeHTTP(takeoverResponse, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(takeoverBody)))
+	if takeoverResponse.Code != http.StatusOK || !strings.Contains(takeoverResponse.Body.String(), "alice") {
+		t.Fatalf("expected takeover action payload, got %d %s", takeoverResponse.Code, takeoverResponse.Body.String())
+	}
+
+	centerResponse := httptest.NewRecorder()
+	handler.ServeHTTP(centerResponse, httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5", nil))
+	if centerResponse.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d", centerResponse.Code)
+	}
+	if !strings.Contains(centerResponse.Body.String(), "active_takeovers") || !strings.Contains(centerResponse.Body.String(), "task-v2-1") {
+		t.Fatalf("expected takeover in control center payload, got %s", centerResponse.Body.String())
+	}
+
+	runResponse := httptest.NewRecorder()
+	handler.ServeHTTP(runResponse, httptest.NewRequest(http.MethodGet, "/v2/runs/task-v2-1?limit=50", nil))
+	if runResponse.Code != http.StatusOK {
+		t.Fatalf("expected run detail 200, got %d", runResponse.Code)
+	}
+	bodyString := runResponse.Body.String()
+	if !strings.Contains(bodyString, "premium") || !strings.Contains(bodyString, "Investigating flaky validation") || !strings.Contains(bodyString, "merge PR") || !strings.Contains(bodyString, "handoff ready") {
+		t.Fatalf("expected premium policy, collaboration note, validation, and workpad in run detail, got %s", bodyString)
+	}
+}
+
+func TestV2ControlCenterShowsQueueTasksAndSupportsCancel(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	controller := control.New()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, Control: controller, Now: func() time.Time { return time.Unix(1700002000, 0) }}
+	handler := server.Handler()
+
+	payload := map[string]any{
+		"id":           "task-v2-cancel",
+		"title":        "Queued for cancel",
+		"priority":     1,
+		"budget_cents": 400,
+		"metadata":     map[string]any{"team": "platform", "project": "alpha"},
+	}
+	body, _ := json.Marshal(payload)
+	createResponse := httptest.NewRecorder()
+	handler.ServeHTTP(createResponse, httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewReader(body)))
+	if createResponse.Code != http.StatusAccepted {
+		t.Fatalf("expected task create 202, got %d", createResponse.Code)
+	}
+
+	centerResponse := httptest.NewRecorder()
+	handler.ServeHTTP(centerResponse, httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5", nil))
+	if centerResponse.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d", centerResponse.Code)
+	}
+	centerBody := centerResponse.Body.String()
+	if !strings.Contains(centerBody, "queue_task") || !strings.Contains(centerBody, "cancellable") || !strings.Contains(centerBody, "task-v2-cancel") {
+		t.Fatalf("expected queue task visibility in control center, got %s", centerBody)
+	}
+
+	cancelBody, _ := json.Marshal(map[string]any{"action": "cancel", "task_id": "task-v2-cancel", "actor": "ops", "role": "platform_admin", "reason": "duplicate request"})
+	cancelResponse := httptest.NewRecorder()
+	handler.ServeHTTP(cancelResponse, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(cancelBody)))
+	if cancelResponse.Code != http.StatusOK || !strings.Contains(cancelResponse.Body.String(), string(domain.TaskCancelled)) {
+		t.Fatalf("expected cancel action success, got %d %s", cancelResponse.Code, cancelResponse.Body.String())
+	}
+
+	statusResponse := httptest.NewRecorder()
+	handler.ServeHTTP(statusResponse, httptest.NewRequest(http.MethodGet, "/tasks/task-v2-cancel", nil))
+	if statusResponse.Code != http.StatusOK || !strings.Contains(statusResponse.Body.String(), string(domain.TaskCancelled)) {
+		t.Fatalf("expected cancelled task status, got %d %s", statusResponse.Code, statusResponse.Body.String())
+	}
+}
+
+func TestV2ControlCenterSummariesFiltersAndAudit(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	controller := control.New()
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      bus,
+		Control:  controller,
+		Worker:   fakeWorkerStatus{},
+		Now:      func() time.Time { return time.Unix(1700003000, 0) },
+	}
+	handler := server.Handler()
+
+	for _, payload := range []map[string]any{
+		{
+			"id":           "task-control-1",
+			"title":        "High risk premium",
+			"priority":     1,
+			"risk_level":   "high",
+			"budget_cents": 600,
+			"metadata": map[string]any{
+				"team":    "platform",
+				"project": "alpha",
+				"plan":    "premium",
+			},
+		},
+		{
+			"id":           "task-control-2",
+			"title":        "Low risk background",
+			"priority":     4,
+			"risk_level":   "low",
+			"budget_cents": 100,
+			"metadata": map[string]any{
+				"team":    "growth",
+				"project": "beta",
+			},
+		},
+	} {
+		body, _ := json.Marshal(payload)
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewReader(body)))
+		if response.Code != http.StatusAccepted {
+			t.Fatalf("expected task create 202, got %d body=%s", response.Code, response.Body.String())
+		}
+	}
+
+	takeoverBody, _ := json.Marshal(map[string]any{"action": "transfer_to_human", "task_id": "task-control-1", "actor": "alice", "role": "eng_lead", "reviewer": "bob", "note": "Manual validation required"})
+	takeoverResponse := httptest.NewRecorder()
+	handler.ServeHTTP(takeoverResponse, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(takeoverBody)))
+	if takeoverResponse.Code != http.StatusOK {
+		t.Fatalf("expected takeover action 200, got %d %s", takeoverResponse.Code, takeoverResponse.Body.String())
+	}
+
+	centerResponse := httptest.NewRecorder()
+	centerRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center?team=platform&risk_level=high&priority=1&state=blocked&limit=10&audit_limit=10", nil)
+	handler.ServeHTTP(centerResponse, centerRequest)
+	if centerResponse.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d", centerResponse.Code)
+	}
+	centerBody := centerResponse.Body.String()
+	for _, want := range []string{"queue_budget_cents_total", "600", "high_risk_runs", "premium_runs", "active_takeovers", "worker_pool", "idle_workers", "task-control-1", "effective_state", "blocked", "Manual validation required"} {
+		if !strings.Contains(centerBody, want) {
+			t.Fatalf("expected %q in control center payload, got %s", want, centerBody)
+		}
+	}
+	if strings.Contains(centerBody, "task-control-2") {
+		t.Fatalf("expected filters to exclude task-control-2, got %s", centerBody)
+	}
+
+	auditResponse := httptest.NewRecorder()
+	auditRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center/audit?action=takeover&task_id=task-control-1&actor=alice&audit_limit=10", nil)
+	handler.ServeHTTP(auditResponse, auditRequest)
+	if auditResponse.Code != http.StatusOK {
+		t.Fatalf("expected control center audit 200, got %d", auditResponse.Code)
+	}
+	auditBody := auditResponse.Body.String()
+	if !strings.Contains(auditBody, "takeover") || !strings.Contains(auditBody, "alice") || !strings.Contains(auditBody, "task-control-1") {
+		t.Fatalf("expected filtered audit payload, got %s", auditBody)
+	}
+	if strings.Contains(auditBody, "task-control-2") {
+		t.Fatalf("expected audit filter to exclude task-control-2, got %s", auditBody)
+	}
+}
+
+func TestV2ControlCenterAuthorizationEnforcedByRole(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	controller := control.New()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, Control: controller, Now: func() time.Time { return time.Unix(1700004000, 0) }}
+	handler := server.Handler()
+
+	payload := map[string]any{
+		"id":       "task-authz-1",
+		"title":    "Authz target",
+		"priority": 1,
+		"metadata": map[string]any{"team": "platform", "project": "alpha"},
+	}
+	body, _ := json.Marshal(payload)
+	createResponse := httptest.NewRecorder()
+	handler.ServeHTTP(createResponse, httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewReader(body)))
+	if createResponse.Code != http.StatusAccepted {
+		t.Fatalf("expected task create 202, got %d", createResponse.Code)
+	}
+
+	centerRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5", nil)
+	centerRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	centerRequest.Header.Set("X-BigClaw-Actor", "lead-1")
+	centerResponse := httptest.NewRecorder()
+	handler.ServeHTTP(centerResponse, centerRequest)
+	if centerResponse.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d", centerResponse.Code)
+	}
+	centerBody := centerResponse.Body.String()
+	if !strings.Contains(centerBody, "eng_lead") || !strings.Contains(centerBody, "allowed_actions") || !strings.Contains(centerBody, "takeover") {
+		t.Fatalf("expected authorization payload in control center response, got %s", centerBody)
+	}
+	if strings.Contains(centerBody, "\"cancel\"") {
+		t.Fatalf("expected eng_lead authorization to exclude cancel, got %s", centerBody)
+	}
+
+	forbiddenBody, _ := json.Marshal(map[string]any{"action": "cancel", "task_id": "task-authz-1", "actor": "lead-1", "role": "eng_lead", "reason": "not allowed"})
+	forbiddenResponse := httptest.NewRecorder()
+	handler.ServeHTTP(forbiddenResponse, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(forbiddenBody)))
+	if forbiddenResponse.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden cancel for eng_lead, got %d %s", forbiddenResponse.Code, forbiddenResponse.Body.String())
+	}
+
+	allowedBody, _ := json.Marshal(map[string]any{"action": "takeover", "task_id": "task-authz-1", "actor": "lead-1", "role": "eng_lead", "note": "Escalating review"})
+	allowedResponse := httptest.NewRecorder()
+	handler.ServeHTTP(allowedResponse, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(allowedBody)))
+	if allowedResponse.Code != http.StatusOK {
+		t.Fatalf("expected allowed takeover for eng_lead, got %d %s", allowedResponse.Code, allowedResponse.Body.String())
+	}
+
+	auditResponse := httptest.NewRecorder()
+	auditRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center/audit?action=takeover&task_id=task-authz-1&audit_limit=10", nil)
+	auditRequest.Header.Set("X-BigClaw-Role", "platform_admin")
+	auditRequest.Header.Set("X-BigClaw-Actor", "ops-1")
+	handler.ServeHTTP(auditResponse, auditRequest)
+	if auditResponse.Code != http.StatusOK {
+		t.Fatalf("expected control center audit 200, got %d", auditResponse.Code)
+	}
+	auditBody := auditResponse.Body.String()
+	if !strings.Contains(auditBody, "eng_lead") || !strings.Contains(auditBody, "takeover") || !strings.Contains(auditBody, "task-authz-1") {
+		t.Fatalf("expected role-tagged audit payload, got %s", auditBody)
+	}
+}

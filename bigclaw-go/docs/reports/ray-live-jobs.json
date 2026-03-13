@@ -1,0 +1,89 @@
+[
+  {
+    "type": "SUBMISSION",
+    "job_id": null,
+    "submission_id": "bigclaw-ray-smoke-1773381419",
+    "driver_info": null,
+    "status": "SUCCEEDED",
+    "entrypoint": "python -c \"print('hello from ray')\"",
+    "message": "Job finished successfully.",
+    "error_type": null,
+    "start_time": 1773381419798,
+    "end_time": 1773381421248,
+    "metadata": {
+      "executor": "ray",
+      "smoke_test": "true",
+      "task_id": "ray-smoke-1773381419",
+      "title": "Ray smoke test"
+    },
+    "runtime_env": null,
+    "driver_agent_http_address": "http://10.244.0.6:52365",
+    "driver_node_id": "9eb8af7c33cee4eaf72720874f3c7aa76f514d07824a0668e8372c23",
+    "driver_exit_code": 0
+  },
+  {
+    "type": "SUBMISSION",
+    "job_id": null,
+    "submission_id": "bigclaw-ray-smoke-1773372436",
+    "driver_info": null,
+    "status": "SUCCEEDED",
+    "entrypoint": "python -c \"print('hello from ray')\"",
+    "message": "Job finished successfully.",
+    "error_type": null,
+    "start_time": 1773372436943,
+    "end_time": 1773372441679,
+    "metadata": {
+      "executor": "ray",
+      "smoke_test": "true",
+      "task_id": "ray-smoke-1773372436",
+      "title": "Ray smoke test"
+    },
+    "runtime_env": null,
+    "driver_agent_http_address": "http://10.244.0.6:52365",
+    "driver_node_id": "9eb8af7c33cee4eaf72720874f3c7aa76f514d07824a0668e8372c23",
+    "driver_exit_code": 0
+  },
+  {
+    "type": "SUBMISSION",
+    "job_id": null,
+    "submission_id": "bigclaw-ray-smoke-1773382199",
+    "driver_info": null,
+    "status": "SUCCEEDED",
+    "entrypoint": "python -c \"print('hello from ray')\"",
+    "message": "Job finished successfully.",
+    "error_type": null,
+    "start_time": 1773382200361,
+    "end_time": 1773382202969,
+    "metadata": {
+      "executor": "ray",
+      "smoke_test": "true",
+      "task_id": "ray-smoke-1773382199",
+      "title": "Ray smoke test"
+    },
+    "runtime_env": null,
+    "driver_agent_http_address": "http://10.244.0.6:52365",
+    "driver_node_id": "9eb8af7c33cee4eaf72720874f3c7aa76f514d07824a0668e8372c23",
+    "driver_exit_code": 0
+  },
+  {
+    "type": "DRIVER",
+    "job_id": "01000000",
+    "submission_id": null,
+    "driver_info": {
+      "id": "01000000",
+      "node_ip_address": "10.244.0.6",
+      "pid": "4042"
+    },
+    "status": "SUCCEEDED",
+    "entrypoint": "python -c \"import ray; ray.init(address=\\\"auto\\\"); print(ray.cluster_resources())\"",
+    "message": null,
+    "error_type": null,
+    "start_time": 1773371783621,
+    "end_time": 1773371784213,
+    "metadata": {},
+    "runtime_env": {},
+    "driver_agent_http_address": null,
+    "driver_node_id": null,
+    "driver_exit_code": null
+  }
+]
