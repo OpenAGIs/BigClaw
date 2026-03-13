@@ -13,6 +13,7 @@ import (
 	"bigclaw-go/internal/control"
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/events"
+	"bigclaw-go/internal/flow"
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/queue"
 	"bigclaw-go/internal/worker"
@@ -30,6 +31,7 @@ type Server struct {
 	Now       func() time.Time
 	Worker    WorkerStatusProvider
 	Control   *control.Controller
+	FlowStore *flow.Store
 }
 
 func (s *Server) Handler() http.Handler {
@@ -38,6 +40,9 @@ func (s *Server) Handler() http.Handler {
 	}
 	if s.Control == nil {
 		s.Control = control.New()
+	}
+	if s.FlowStore == nil {
+		s.FlowStore = flow.NewStore()
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -107,6 +112,19 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/v2/control-center", s.handleV2ControlCenter)
 	mux.HandleFunc("/v2/control-center/audit", s.handleV2ControlCenterAudit)
 	mux.HandleFunc("/v2/control-center/actions", s.handleV2ControlCenterAction)
+	mux.HandleFunc("/v2/reports/weekly", s.handleV2WeeklyReport)
+	mux.HandleFunc("/v2/reports/weekly/export", s.handleV2WeeklyReportExport)
+	mux.HandleFunc("/v2/flows/templates", s.handleV2FlowTemplates)
+	mux.HandleFunc("/v2/flows/templates/", s.handleV2FlowTemplateAction)
+	mux.HandleFunc("/v2/flows/overview", s.handleV2FlowOverview)
+	mux.HandleFunc("/v2/prd/intake", s.handleV2PRDIntake)
+	mux.HandleFunc("/v2/launch/checklist", s.handleV2LaunchChecklist)
+	mux.HandleFunc("/v2/support/handoff", s.handleV2SupportHandoff)
+	mux.HandleFunc("/v2/navigation", s.handleV2Navigation)
+	mux.HandleFunc("/v2/home", s.handleV2Home)
+	mux.HandleFunc("/v2/design-system", s.handleV2DesignSystem)
+	mux.HandleFunc("/v2/billing/usage", s.handleV2BillingUsage)
+	mux.HandleFunc("/v2/billing/entitlements", s.handleV2BillingEntitlements)
 	mux.HandleFunc("/v2/runs/", s.handleV2RunDetail)
 	mux.HandleFunc("/tasks", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
