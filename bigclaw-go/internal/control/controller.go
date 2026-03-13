@@ -151,6 +151,30 @@ func (c *Controller) Annotate(taskID, actor, note string, at time.Time) Takeover
 	return cloneTakeover(takeover)
 }
 
+func (c *Controller) Reassign(taskID, owner, reviewer, actor, note string, at time.Time) (Takeover, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if at.IsZero() {
+		at = time.Now()
+	}
+	takeover, ok := c.takeovers[taskID]
+	if !ok || !takeover.Active {
+		return Takeover{}, false
+	}
+	takeover.UpdatedAt = at
+	if owner != "" {
+		takeover.Owner = owner
+	}
+	if reviewer != "" {
+		takeover.Reviewer = reviewer
+	}
+	if note != "" {
+		takeover.Notes = append(takeover.Notes, Note{Actor: actor, Message: note, Timestamp: at})
+	}
+	c.takeovers[taskID] = takeover
+	return cloneTakeover(takeover), true
+}
+
 func (c *Controller) TakeoverStatus(taskID string) (Takeover, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()

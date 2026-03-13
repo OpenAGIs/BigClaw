@@ -87,11 +87,11 @@ func allowedControlActions(role ControlRole) []string {
 	var actions []string
 	switch role {
 	case RolePlatformAdmin:
-		actions = []string{"annotate", "cancel", "pause", "release_takeover", "resume", "retry", "takeover", "transfer_to_human"}
+		actions = []string{"annotate", "assign_owner", "assign_reviewer", "cancel", "pause", "release_takeover", "resume", "retry", "takeover", "transfer_to_human"}
 	case RoleCrossTeamOperator:
-		actions = []string{"annotate", "release_takeover", "retry", "takeover", "transfer_to_human"}
+		actions = []string{"annotate", "assign_owner", "assign_reviewer", "release_takeover", "retry", "takeover", "transfer_to_human"}
 	case RoleEngLead:
-		actions = []string{"annotate", "release_takeover", "takeover", "transfer_to_human"}
+		actions = []string{"annotate", "assign_owner", "assign_reviewer", "release_takeover", "takeover", "transfer_to_human"}
 	default:
 		actions = []string{}
 	}
@@ -115,6 +115,8 @@ func normalizeActionName(action string) string {
 		return "retry"
 	case "transfer_to_human":
 		return "takeover"
+	case "release_to_automation":
+		return "release_takeover"
 	default:
 		return strings.ToLower(strings.TrimSpace(action))
 	}

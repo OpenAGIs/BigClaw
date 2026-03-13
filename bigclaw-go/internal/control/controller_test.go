@@ -24,6 +24,10 @@ func TestControllerPauseAndTakeoverLifecycle(t *testing.T) {
 	if len(annotated.Notes) != 2 {
 		t.Fatalf("expected accumulated notes, got %+v", annotated)
 	}
+	reassigned, ok := controller.Reassign("task-1", "carol", "dave", "alice", "handoff to release captain", now.Add(2500*time.Millisecond))
+	if !ok || reassigned.Owner != "carol" || reassigned.Reviewer != "dave" || len(reassigned.Notes) != 3 {
+		t.Fatalf("expected reassigned takeover with preserved notes, got %+v ok=%v", reassigned, ok)
+	}
 	active := controller.ActiveTakeovers()
 	if len(active) != 1 || active[0].TaskID != "task-1" {
 		t.Fatalf("expected active takeover list, got %+v", active)

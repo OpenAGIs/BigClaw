@@ -557,6 +557,48 @@ type regressionCenterResponse struct {
 	} `json:"findings"`
 }
 
+type controlCenterAuditResponse struct {
+	Filters struct {
+		TaskID   string `json:"task_id"`
+		Team     string `json:"team"`
+		Action   string `json:"action"`
+		Actor    string `json:"actor"`
+		Owner    string `json:"owner"`
+		Reviewer string `json:"reviewer"`
+		Scope    string `json:"scope"`
+		Limit    int    `json:"limit"`
+	} `json:"filters"`
+	AuditSummary struct {
+		Total      int `json:"total"`
+		NotesCount int `json:"notes_count"`
+		ByScope    []struct {
+			Key   string `json:"key"`
+			Count int    `json:"count"`
+		} `json:"by_scope"`
+		ByOwner []struct {
+			Key   string `json:"key"`
+			Count int    `json:"count"`
+		} `json:"by_owner"`
+		ByReviewer []struct {
+			Key   string `json:"key"`
+			Count int    `json:"count"`
+		} `json:"by_reviewer"`
+	} `json:"audit_summary"`
+	Audit []struct {
+		OperationID      string `json:"operation_id"`
+		Action           string `json:"action"`
+		Scope            string `json:"scope"`
+		TaskID           string `json:"task_id"`
+		TaskStateBefore  string `json:"task_state_before"`
+		TaskStateAfter   string `json:"task_state_after"`
+		PreviousOwner    string `json:"previous_owner"`
+		Owner            string `json:"owner"`
+		PreviousReviewer string `json:"previous_reviewer"`
+		Reviewer         string `json:"reviewer"`
+		Note             string `json:"note"`
+	} `json:"audit"`
+}
+
 func TestV2DashboardAggregatesEngineeringMetrics(t *testing.T) {
 	recorder := observability.NewRecorder()
 	base := time.Date(2023, 11, 14, 10, 0, 0, 0, time.UTC)
@@ -843,6 +885,57 @@ func TestV2ControlCenterActionsAndRunDetail(t *testing.T) {
 		t.Fatalf("expected takeover action payload, got %d %s", takeoverResponse.Code, takeoverResponse.Body.String())
 	}
 
+	assignOwnerBody, _ := json.Marshal(map[string]any{"action": "assign_owner", "task_id": "task-v2-1", "actor": "alice", "role": "eng_lead", "viewer_team": "platform", "owner": "carol", "note": "handoff owner"})
+	assignOwnerResponse := httptest.NewRecorder()
+	handler.ServeHTTP(assignOwnerResponse, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(assignOwnerBody)))
+	if assignOwnerResponse.Code != http.StatusOK {
+		t.Fatalf("expected assign owner action payload, got %d %s", assignOwnerResponse.Code, assignOwnerResponse.Body.String())
+	}
+	var assignOwnerDecoded struct {
+		Action   string `json:"action"`
+		Takeover struct {
+			Owner    string `json:"owner"`
+			Reviewer string `json:"reviewer"`
+		} `json:"takeover"`
+		Operation struct {
+			Scope         string `json:"scope"`
+			PreviousOwner string `json:"previous_owner"`
+			Owner         string `json:"owner"`
+		} `json:"operation"`
+	}
+	if err := json.Unmarshal(assignOwnerResponse.Body.Bytes(), &assignOwnerDecoded); err != nil {
+		t.Fatalf("decode assign owner action: %v", err)
+	}
+	if assignOwnerDecoded.Action != "assign_owner" || assignOwnerDecoded.Takeover.Owner != "carol" || assignOwnerDecoded.Takeover.Reviewer != "bob" || assignOwnerDecoded.Operation.Scope != "collaboration" || assignOwnerDecoded.Operation.PreviousOwner != "alice" || assignOwnerDecoded.Operation.Owner != "carol" {
+		t.Fatalf("unexpected assign owner payload: %+v", assignOwnerDecoded)
+	}
+
+	assignReviewerBody, _ := json.Marshal(map[string]any{"action": "assign_reviewer", "task_id": "task-v2-1", "actor": "alice", "role": "eng_lead", "viewer_team": "platform", "reviewer": "dave", "note": "peer review owner updated"})
+	assignReviewerResponse := httptest.NewRecorder()
+	handler.ServeHTTP(assignReviewerResponse, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(assignReviewerBody)))
+	if assignReviewerResponse.Code != http.StatusOK {
+		t.Fatalf("expected assign reviewer action payload, got %d %s", assignReviewerResponse.Code, assignReviewerResponse.Body.String())
+	}
+	var assignReviewerDecoded struct {
+		Action   string `json:"action"`
+		Takeover struct {
+			Owner    string `json:"owner"`
+			Reviewer string `json:"reviewer"`
+		} `json:"takeover"`
+		Operation struct {
+			PreviousReviewer string `json:"previous_reviewer"`
+			Reviewer         string `json:"reviewer"`
+			TaskStateBefore  string `json:"task_state_before"`
+			TaskStateAfter   string `json:"task_state_after"`
+		} `json:"operation"`
+	}
+	if err := json.Unmarshal(assignReviewerResponse.Body.Bytes(), &assignReviewerDecoded); err != nil {
+		t.Fatalf("decode assign reviewer action: %v", err)
+	}
+	if assignReviewerDecoded.Action != "assign_reviewer" || assignReviewerDecoded.Takeover.Owner != "carol" || assignReviewerDecoded.Takeover.Reviewer != "dave" || assignReviewerDecoded.Operation.PreviousReviewer != "bob" || assignReviewerDecoded.Operation.Reviewer != "dave" || assignReviewerDecoded.Operation.TaskStateBefore != string(domain.TaskBlocked) || assignReviewerDecoded.Operation.TaskStateAfter != string(domain.TaskBlocked) {
+		t.Fatalf("unexpected assign reviewer payload: %+v", assignReviewerDecoded)
+	}
+
 	centerResponse := httptest.NewRecorder()
 	handler.ServeHTTP(centerResponse, httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5", nil))
 	if centerResponse.Code != http.StatusOK {
@@ -858,8 +951,8 @@ func TestV2ControlCenterActionsAndRunDetail(t *testing.T) {
 		t.Fatalf("expected run detail 200, got %d", runResponse.Code)
 	}
 	bodyString := runResponse.Body.String()
-	if !strings.Contains(bodyString, "premium") || !strings.Contains(bodyString, "Investigating flaky validation") || !strings.Contains(bodyString, "merge PR") || !strings.Contains(bodyString, "handoff ready") {
-		t.Fatalf("expected premium policy, collaboration note, validation, and workpad in run detail, got %s", bodyString)
+	if !strings.Contains(bodyString, "premium") || !strings.Contains(bodyString, "Investigating flaky validation") || !strings.Contains(bodyString, "merge PR") || !strings.Contains(bodyString, "handoff ready") || !strings.Contains(bodyString, "carol") || !strings.Contains(bodyString, "dave") || !strings.Contains(bodyString, "assign_reviewer") {
+		t.Fatalf("expected premium policy, collaboration details, and action timeline in run detail, got %s", bodyString)
 	}
 }
 
@@ -1121,6 +1214,77 @@ func TestV2ControlCenterSummariesFiltersAndAudit(t *testing.T) {
 	}
 }
 
+func TestV2ControlCenterAuditFiltersOwnerReviewerAndScope(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	controller := control.New()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, Control: controller, Now: func() time.Time { return time.Unix(1700003500, 0) }}
+	handler := server.Handler()
+
+	body, _ := json.Marshal(map[string]any{"id": "task-audit-1", "title": "Audit target", "priority": 1, "metadata": map[string]any{"team": "platform", "project": "alpha"}})
+	createResponse := httptest.NewRecorder()
+	handler.ServeHTTP(createResponse, httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewReader(body)))
+	if createResponse.Code != http.StatusAccepted {
+		t.Fatalf("expected task create 202, got %d %s", createResponse.Code, createResponse.Body.String())
+	}
+
+	for _, actionBody := range [][]byte{
+		mustJSON(map[string]any{"action": "takeover", "task_id": "task-audit-1", "actor": "alice", "role": "eng_lead", "viewer_team": "platform", "reviewer": "bob", "note": "starting review"}),
+		mustJSON(map[string]any{"action": "assign_owner", "task_id": "task-audit-1", "actor": "alice", "role": "eng_lead", "viewer_team": "platform", "owner": "carol", "note": "handoff owner"}),
+		mustJSON(map[string]any{"action": "assign_reviewer", "task_id": "task-audit-1", "actor": "alice", "role": "eng_lead", "viewer_team": "platform", "reviewer": "dave", "note": "handoff reviewer"}),
+	} {
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(actionBody)))
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected collaboration action success, got %d %s", response.Code, response.Body.String())
+		}
+	}
+
+	auditResponse := httptest.NewRecorder()
+	auditRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center/audit?task_id=task-audit-1&action=assign_reviewer&owner=carol&reviewer=dave&scope=collaboration&audit_limit=10", nil)
+	auditRequest.Header.Set("X-BigClaw-Role", "platform_admin")
+	auditRequest.Header.Set("X-BigClaw-Actor", "ops-1")
+	handler.ServeHTTP(auditResponse, auditRequest)
+	if auditResponse.Code != http.StatusOK {
+		t.Fatalf("expected filtered control center audit 200, got %d %s", auditResponse.Code, auditResponse.Body.String())
+	}
+	var decoded controlCenterAuditResponse
+	if err := json.Unmarshal(auditResponse.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode filtered control center audit: %v", err)
+	}
+	if decoded.Filters.TaskID != "task-audit-1" || decoded.Filters.Action != "assign_reviewer" || decoded.Filters.Owner != "carol" || decoded.Filters.Reviewer != "dave" || decoded.Filters.Scope != "collaboration" {
+		t.Fatalf("unexpected filtered audit filters: %+v", decoded.Filters)
+	}
+	if decoded.AuditSummary.Total != 1 || decoded.AuditSummary.NotesCount != 1 {
+		t.Fatalf("unexpected filtered audit summary: %+v", decoded.AuditSummary)
+	}
+	if len(decoded.AuditSummary.ByScope) != 1 || decoded.AuditSummary.ByScope[0].Key != "collaboration" || decoded.AuditSummary.ByScope[0].Count != 1 {
+		t.Fatalf("unexpected by_scope summary: %+v", decoded.AuditSummary.ByScope)
+	}
+	if len(decoded.AuditSummary.ByOwner) != 1 || decoded.AuditSummary.ByOwner[0].Key != "carol" || decoded.AuditSummary.ByOwner[0].Count != 1 {
+		t.Fatalf("unexpected by_owner summary: %+v", decoded.AuditSummary.ByOwner)
+	}
+	if len(decoded.AuditSummary.ByReviewer) != 1 || decoded.AuditSummary.ByReviewer[0].Key != "dave" || decoded.AuditSummary.ByReviewer[0].Count != 1 {
+		t.Fatalf("unexpected by_reviewer summary: %+v", decoded.AuditSummary.ByReviewer)
+	}
+	if len(decoded.Audit) != 1 {
+		t.Fatalf("expected one filtered audit entry, got %+v", decoded.Audit)
+	}
+	entry := decoded.Audit[0]
+	if entry.Action != "assign_reviewer" || entry.Scope != "collaboration" || entry.TaskID != "task-audit-1" || entry.TaskStateBefore != string(domain.TaskBlocked) || entry.TaskStateAfter != string(domain.TaskBlocked) || entry.PreviousOwner != "carol" || entry.Owner != "carol" || entry.PreviousReviewer != "bob" || entry.Reviewer != "dave" || entry.Note != "handoff reviewer" || entry.OperationID == "" {
+		t.Fatalf("unexpected filtered audit entry: %+v", entry)
+	}
+}
+
+func mustJSON(value any) []byte {
+	body, err := json.Marshal(value)
+	if err != nil {
+		panic(err)
+	}
+	return body
+}
+
 func TestV2ControlCenterAuthorizationEnforcedByRole(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()
@@ -1161,7 +1325,7 @@ func TestV2ControlCenterAuthorizationEnforcedByRole(t *testing.T) {
 		t.Fatalf("expected control center 200, got %d", centerResponse.Code)
 	}
 	centerBody := centerResponse.Body.String()
-	if !strings.Contains(centerBody, "eng_lead") || !strings.Contains(centerBody, "allowed_actions") || !strings.Contains(centerBody, "takeover") {
+	if !strings.Contains(centerBody, "eng_lead") || !strings.Contains(centerBody, "allowed_actions") || !strings.Contains(centerBody, "takeover") || !strings.Contains(centerBody, "assign_owner") || !strings.Contains(centerBody, "assign_reviewer") {
 		t.Fatalf("expected authorization payload in control center response, got %s", centerBody)
 	}
 	if strings.Contains(centerBody, "\"cancel\"") {
