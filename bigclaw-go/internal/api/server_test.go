@@ -593,6 +593,122 @@ func TestV2ControlCenterActionsAndRunDetail(t *testing.T) {
 	}
 }
 
+func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
+	recorder := observability.NewRecorder()
+	controller := control.New()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Control: controller, Now: func() time.Time { return time.Unix(1700005000, 0) }}
+	handler := server.Handler()
+	base := time.Unix(1700005000, 0)
+	task := domain.Task{
+		ID:                 "task-run-report",
+		TraceID:            "trace-run-report",
+		Title:              "Replay me",
+		State:              domain.TaskDeadLetter,
+		BudgetCents:        900,
+		RequiredTools:      []string{"browser", "git"},
+		AcceptanceCriteria: []string{"ship report", "capture artifacts"},
+		ValidationPlan:     []string{"replay trace", "download report"},
+		Metadata: map[string]string{
+			"team":      "platform",
+			"project":   "alpha",
+			"plan":      "premium",
+			"workpad":   "https://docs.example.com/workpads/task-run-report",
+			"issue_url": "https://linear.app/openagi/issue/OPE-72/big-804-run-detail-与执行回放页",
+			"pr_url":    "https://github.com/OpenAGIs/BigClaw/pull/36",
+		},
+		CreatedAt: base,
+		UpdatedAt: base.Add(3 * time.Second),
+	}
+	recorder.StoreTask(task)
+	recorder.Record(domain.Event{ID: "evt-routed", Type: domain.EventSchedulerRouted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "reason": "browser workloads default to kubernetes executor"}})
+	recorder.Record(domain.Event{ID: "evt-started", Type: domain.EventTaskStarted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(2 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "required_tools": []string{"browser", "git"}}})
+	recorder.Record(domain.Event{ID: "evt-dead", Type: domain.EventTaskDeadLetter, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(3 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "message": "pod crashed during validation", "artifacts": []string{"k8s://jobs/bigclaw/run-report", "k8s://pods/bigclaw/run-report-0"}}})
+	controller.Takeover(task.ID, "alice", "bob", "Manual inspection required", base.Add(4*time.Second))
+	recorder.Record(domain.Event{ID: "evt-takeover", Type: domain.EventRunTakeover, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(4 * time.Second), Payload: map[string]any{"actor": "alice", "role": "eng_lead", "reviewer": "bob", "note": "Manual inspection required", "team": "platform", "project": "alpha"}})
+
+	runResponse := httptest.NewRecorder()
+	handler.ServeHTTP(runResponse, httptest.NewRequest(http.MethodGet, "/v2/runs/task-run-report?limit=20", nil))
+	if runResponse.Code != http.StatusOK {
+		t.Fatalf("expected run detail 200, got %d %s", runResponse.Code, runResponse.Body.String())
+	}
+	var decoded struct {
+		FailureReason string `json:"failure_reason"`
+		Validation    struct {
+			Status string `json:"status"`
+			Checks int    `json:"checks"`
+		} `json:"validation"`
+		Artifacts    map[string]string `json:"artifacts"`
+		ArtifactRefs []struct {
+			Kind string `json:"kind"`
+			URI  string `json:"uri"`
+		} `json:"artifact_refs"`
+		ToolTraces []struct {
+			Name     string `json:"name"`
+			Status   string `json:"status"`
+			Executor string `json:"executor"`
+		} `json:"tool_traces"`
+		AuditSummary struct {
+			Total      int `json:"total"`
+			NotesCount int `json:"notes_count"`
+		} `json:"audit_summary"`
+		Reports []struct {
+			URL      string `json:"url"`
+			Format   string `json:"format"`
+			Download bool   `json:"download"`
+		} `json:"reports"`
+	}
+	if err := json.Unmarshal(runResponse.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode run detail: %v", err)
+	}
+	if decoded.FailureReason != "pod crashed during validation" {
+		t.Fatalf("expected failure reason, got %+v", decoded)
+	}
+	if decoded.Validation.Status != "failed" || decoded.Validation.Checks != 4 {
+		t.Fatalf("expected failed validation summary, got %+v", decoded.Validation)
+	}
+	if decoded.Artifacts["report"] != "/v2/runs/task-run-report/report?limit=20" || decoded.Artifacts["audit"] != "/v2/runs/task-run-report/audit?limit=20" || decoded.Artifacts["trace"] == "" {
+		t.Fatalf("expected report/audit/trace links, got %+v", decoded.Artifacts)
+	}
+	if len(decoded.ArtifactRefs) < 4 {
+		t.Fatalf("expected artifact refs for executor, workpad, and linked records, got %+v", decoded.ArtifactRefs)
+	}
+	if len(decoded.ToolTraces) < 4 {
+		t.Fatalf("expected tool traces for declared tools and executor events, got %+v", decoded.ToolTraces)
+	}
+	if decoded.AuditSummary.Total != 1 || decoded.AuditSummary.NotesCount != 1 {
+		t.Fatalf("expected audit summary for takeover note, got %+v", decoded.AuditSummary)
+	}
+	if len(decoded.Reports) != 1 || decoded.Reports[0].Format != "markdown" || !decoded.Reports[0].Download {
+		t.Fatalf("expected downloadable markdown report, got %+v", decoded.Reports)
+	}
+
+	auditResponse := httptest.NewRecorder()
+	handler.ServeHTTP(auditResponse, httptest.NewRequest(http.MethodGet, "/v2/runs/task-run-report/audit?limit=20", nil))
+	if auditResponse.Code != http.StatusOK {
+		t.Fatalf("expected run audit 200, got %d %s", auditResponse.Code, auditResponse.Body.String())
+	}
+	if !strings.Contains(auditResponse.Body.String(), "Manual inspection required") || !strings.Contains(auditResponse.Body.String(), "audit_summary") {
+		t.Fatalf("expected audit view payload, got %s", auditResponse.Body.String())
+	}
+
+	reportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(reportResponse, httptest.NewRequest(http.MethodGet, "/v2/runs/task-run-report/report?limit=20", nil))
+	if reportResponse.Code != http.StatusOK {
+		t.Fatalf("expected run report 200, got %d %s", reportResponse.Code, reportResponse.Body.String())
+	}
+	if contentType := reportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected markdown report content type, got %q", contentType)
+	}
+	if disposition := reportResponse.Header().Get("Content-Disposition"); !strings.Contains(disposition, "task-run-report-run-report.md") {
+		t.Fatalf("expected attachment filename, got %q", disposition)
+	}
+	for _, want := range []string{"# BigClaw Run Report", "Task ID: task-run-report", "Failure Reason: pod crashed during validation", "k8s://jobs/bigclaw/run-report", "Manual inspection required"} {
+		if !strings.Contains(reportResponse.Body.String(), want) {
+			t.Fatalf("expected %q in run report, got %s", want, reportResponse.Body.String())
+		}
+	}
+}
+
 func TestV2ControlCenterShowsQueueTasksAndSupportsCancel(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()

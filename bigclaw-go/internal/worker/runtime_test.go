@@ -110,6 +110,52 @@ func TestRuntimeProcessesTask(t *testing.T) {
 	}
 }
 
+func TestRuntimePublishesExecutorArtifacts(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	if err := q.Enqueue(context.Background(), domain.Task{ID: "task-artifacts", TraceID: "trace-artifacts", Priority: 1, RequiredExecutor: domain.ExecutorLocal, RequiredTools: []string{"browser", "git"}, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+	runtime := Runtime{
+		WorkerID:    "worker-1",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorLocal, result: executor.Result{Success: true, Message: "ok", Artifacts: []string{"k8s://jobs/default/task-artifacts", "https://docs.example.com/reports/task-artifacts.md"}}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    200 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
+	if !processed {
+		t.Fatalf("expected task to be processed")
+	}
+	events := recorder.EventsByTask("task-artifacts", 10)
+	if len(events) != 4 {
+		t.Fatalf("expected 4 lifecycle events, got %d", len(events))
+	}
+	started := events[2]
+	if started.Type != domain.EventTaskStarted {
+		t.Fatalf("expected started event, got %+v", started)
+	}
+	tools, ok := started.Payload["required_tools"].([]string)
+	if !ok || len(tools) != 2 || tools[0] != "browser" || tools[1] != "git" {
+		t.Fatalf("expected required tools in started payload, got %+v", started.Payload)
+	}
+	completed := events[3]
+	if completed.Type != domain.EventTaskCompleted {
+		t.Fatalf("expected completed event, got %+v", completed)
+	}
+	artifacts, ok := completed.Payload["artifacts"].([]string)
+	if !ok || len(artifacts) != 2 {
+		t.Fatalf("expected artifact list in completed payload, got %+v", completed.Payload)
+	}
+	if completed.Payload["executor"] != domain.ExecutorLocal {
+		t.Fatalf("expected executor in completed payload, got %+v", completed.Payload)
+	}
+}
+
 func TestRuntimeRenewsLeaseDuringExecution(t *testing.T) {
 	baseQueue := queue.NewMemoryQueue()
 	if err := baseQueue.Enqueue(context.Background(), domain.Task{ID: "task-renew", Priority: 1, CreatedAt: time.Now()}); err != nil {

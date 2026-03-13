@@ -51,6 +51,8 @@ Primary issue alignment:
 - Added `GET /v2/control-center/audit`
 - Added `POST /v2/control-center/actions`
 - Added `GET /v2/runs/{task_id}`
+- Added `GET /v2/runs/{task_id}/audit`
+- Added `GET /v2/runs/{task_id}/report`
 - Added queue-backed task inspection in the control center for live priority / lease / worker visibility
 - Added filtered queue / risk / budget / priority summaries plus worker-pool packaging for the operations surface
 
@@ -106,13 +108,16 @@ Provides:
 ### `GET /v2/runs/{task_id}`
 Provides:
 - task snapshot
-- lifecycle state
+- lifecycle state and derived failure reason
 - policy summary
 - collaboration / takeover context
 - trace summary
 - timeline / events
-- validation plan and acceptance criteria
-- replay / event artifact links
+- validation status, acceptance criteria, and validation plan
+- tool traces across declared tools, scheduler routing, and executor lifecycle
+- artifact references covering executor outputs, workpad, issue, and PR links
+- run-scoped audit summary / notes timeline
+- downloadable markdown run report and replay / event / trace links
 - workpad metadata
 
 ## Validation

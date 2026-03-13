@@ -144,7 +144,7 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		r.finishStatus(string(domain.EventTaskDeadLetter), "executor not registered", func(status *Status) {
 			status.DeadLetterRuns++
 		})
-		r.publish(domain.Event{ID: eventID(task.ID, "deadletter"), Type: domain.EventTaskDeadLetter, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"message": "executor not registered"}})
+		r.publish(domain.Event{ID: eventID(task.ID, "deadletter"), Type: domain.EventTaskDeadLetter, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"message": "executor not registered", "executor": decision.Assignment.Executor}})
 		return true
 	}
 
@@ -158,7 +158,7 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		status.LastStartedAt = time.Now()
 		status.LastTransition = string(domain.EventTaskStarted)
 	})
-	r.publish(domain.Event{ID: eventID(task.ID, "started"), Type: domain.EventTaskStarted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"executor": runner.Kind()}})
+	r.publish(domain.Event{ID: eventID(task.ID, "started"), Type: domain.EventTaskStarted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"executor": runner.Kind(), "required_tools": task.RequiredTools}})
 
 	execCtx, cancel := context.WithTimeout(ctx, r.TaskTimeout)
 	defer cancel()
@@ -178,7 +178,7 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		r.finishStatus(string(domain.EventTaskCancelled), message, func(status *Status) {
 			status.CancelledRuns++
 		})
-		r.publish(domain.Event{ID: eventID(task.ID, "cancelled"), Type: domain.EventTaskCancelled, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"message": message}})
+		r.publish(domain.Event{ID: eventID(task.ID, "cancelled"), Type: domain.EventTaskCancelled, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"message": message, "executor": runner.Kind()}})
 		return true
 	}
 
@@ -188,13 +188,13 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		r.finishStatus(string(domain.EventTaskCompleted), result.Message, func(status *Status) {
 			status.SuccessfulRuns++
 		})
-		r.publish(domain.Event{ID: eventID(task.ID, "completed"), Type: domain.EventTaskCompleted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"message": result.Message}})
+		r.publish(domain.Event{ID: eventID(task.ID, "completed"), Type: domain.EventTaskCompleted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeResultPayload(runner.Kind(), result)})
 	case result.DeadLetter:
 		_ = r.Queue.DeadLetter(ctx, lease, result.Message)
 		r.finishStatus(string(domain.EventTaskDeadLetter), result.Message, func(status *Status) {
 			status.DeadLetterRuns++
 		})
-		r.publish(domain.Event{ID: eventID(task.ID, "deadletter"), Type: domain.EventTaskDeadLetter, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"message": result.Message}})
+		r.publish(domain.Event{ID: eventID(task.ID, "deadletter"), Type: domain.EventTaskDeadLetter, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeResultPayload(runner.Kind(), result)})
 	default:
 		_ = r.Queue.Requeue(ctx, lease, time.Now().Add(200*time.Millisecond))
 		transition := string(domain.EventTaskRetried)
@@ -208,7 +208,7 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 			}
 		}
 		r.finishStatus(transition, result.Message, extra)
-		r.publish(domain.Event{ID: eventID(task.ID, "retry"), Type: domain.EventTaskRetried, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"message": result.Message}})
+		r.publish(domain.Event{ID: eventID(task.ID, "retry"), Type: domain.EventTaskRetried, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeResultPayload(runner.Kind(), result)})
 	}
 	return true
 }
@@ -281,6 +281,17 @@ func (r *Runtime) cancelledSnapshot(ctx context.Context, taskID string) (queue.T
 		return queue.TaskSnapshot{}, false
 	}
 	return snapshot, snapshot.Task.State == domain.TaskCancelled
+}
+
+func runtimeResultPayload(executorKind domain.ExecutorKind, result executor.Result) map[string]any {
+	payload := map[string]any{"message": result.Message, "executor": executorKind}
+	if len(result.Artifacts) > 0 {
+		payload["artifacts"] = append([]string(nil), result.Artifacts...)
+	}
+	if !result.FinishedAt.IsZero() {
+		payload["finished_at"] = result.FinishedAt.UTC().Format(time.RFC3339)
+	}
+	return payload
 }
 
 func eventID(taskID, suffix string) string {

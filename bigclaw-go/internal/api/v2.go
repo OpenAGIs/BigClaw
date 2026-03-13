@@ -167,16 +167,56 @@ type queueTaskOverview struct {
 	RecentActions  []controlActionAuditEntry `json:"recent_actions,omitempty"`
 }
 
+type runValidationSummary struct {
+	AcceptanceCriteria []string `json:"acceptance_criteria"`
+	ValidationPlan     []string `json:"validation_plan"`
+	Status             string   `json:"status"`
+	Checks             int      `json:"checks"`
+}
+
+type runArtifactRef struct {
+	Name    string `json:"name"`
+	Kind    string `json:"kind"`
+	URI     string `json:"uri"`
+	Source  string `json:"source"`
+	EventID string `json:"event_id,omitempty"`
+}
+
+type runToolTrace struct {
+	Name      string    `json:"name"`
+	Source    string    `json:"source"`
+	Status    string    `json:"status,omitempty"`
+	Executor  string    `json:"executor,omitempty"`
+	Message   string    `json:"message,omitempty"`
+	Timestamp time.Time `json:"timestamp,omitempty"`
+	EventID   string    `json:"event_id,omitempty"`
+	Artifacts []string  `json:"artifacts,omitempty"`
+}
+
+type runReportLink struct {
+	Name     string `json:"name"`
+	URL      string `json:"url"`
+	Format   string `json:"format"`
+	Download bool   `json:"download"`
+}
+
 type runDetailResponse struct {
 	Task          domain.Task                 `json:"task"`
 	State         string                      `json:"state"`
 	Policy        policy.Summary              `json:"policy"`
 	Collaboration *control.Takeover           `json:"collaboration,omitempty"`
 	Trace         *observability.TraceSummary `json:"trace,omitempty"`
+	FailureReason string                      `json:"failure_reason,omitempty"`
 	Events        []domain.Event              `json:"events"`
 	Timeline      []domain.Event              `json:"timeline"`
-	Validation    map[string]any              `json:"validation"`
+	Validation    runValidationSummary        `json:"validation"`
 	Artifacts     map[string]string           `json:"artifacts"`
+	ArtifactRefs  []runArtifactRef            `json:"artifact_refs,omitempty"`
+	ToolTraces    []runToolTrace              `json:"tool_traces,omitempty"`
+	AuditSummary  controlAuditSummary         `json:"audit_summary"`
+	RecentActions []controlActionAuditEntry   `json:"recent_actions,omitempty"`
+	NotesTimeline []controlActionAuditEntry   `json:"notes_timeline,omitempty"`
+	Reports       []runReportLink             `json:"reports,omitempty"`
 	Workpad       string                      `json:"workpad,omitempty"`
 }
 
@@ -890,16 +930,22 @@ func (s *Server) handleV2RunDetail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	taskID := strings.TrimPrefix(r.URL.Path, "/v2/runs/")
-	if taskID == "" {
+	path := strings.Trim(strings.TrimPrefix(r.URL.Path, "/v2/runs/"), "/")
+	if path == "" {
 		http.Error(w, "missing task id", http.StatusBadRequest)
 		return
 	}
-	authorization := parseControlAuthorization(r, "", "", "")
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	if limit <= 0 {
-		limit = 200
+	switch {
+	case strings.HasSuffix(path, "/audit"):
+		s.handleV2RunAudit(w, r, strings.TrimSuffix(path, "/audit"))
+		return
+	case strings.HasSuffix(path, "/report"):
+		s.handleV2RunReport(w, r, strings.TrimSuffix(path, "/report"))
+		return
 	}
+	taskID := path
+	authorization := parseControlAuthorization(r, "", "", "")
+	limit := parseRunDetailLimit(r.URL.Query().Get("limit"))
 	task, ok := s.taskSnapshot(taskID)
 	if !ok {
 		http.Error(w, "task not found", http.StatusNotFound)
@@ -909,32 +955,370 @@ func (s *Server) handleV2RunDetail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
-	events := s.Recorder.EventsByTask(taskID, limit)
+	writeJSON(w, http.StatusOK, s.buildRunDetailResponse(task, limit, authorization))
+}
+
+func parseRunDetailLimit(raw string) int {
+	limit, _ := strconv.Atoi(raw)
+	if limit <= 0 {
+		return 200
+	}
+	return limit
+}
+
+func (s *Server) handleV2RunAudit(w http.ResponseWriter, r *http.Request, taskID string) {
+	taskID = strings.Trim(taskID, "/")
+	if taskID == "" {
+		http.Error(w, "missing task id", http.StatusBadRequest)
+		return
+	}
+	authorization := parseControlAuthorization(r, "", "", "")
+	limit := parseRunDetailLimit(r.URL.Query().Get("limit"))
+	task, ok := s.taskSnapshot(taskID)
+	if !ok {
+		http.Error(w, "task not found", http.StatusNotFound)
+		return
+	}
+	if err := s.authorizeTaskAccess(authorization, task); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+	entries := s.recentControlActionsForTask(taskID, limit, authorization)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"task_id":        taskID,
+		"recent_actions": entries,
+		"audit_summary":  summarizeControlAudit(entries),
+		"notes_timeline": auditNotesTimeline(entries, limit),
+	})
+}
+
+func (s *Server) handleV2RunReport(w http.ResponseWriter, r *http.Request, taskID string) {
+	taskID = strings.Trim(taskID, "/")
+	if taskID == "" {
+		http.Error(w, "missing task id", http.StatusBadRequest)
+		return
+	}
+	authorization := parseControlAuthorization(r, "", "", "")
+	limit := parseRunDetailLimit(r.URL.Query().Get("limit"))
+	task, ok := s.taskSnapshot(taskID)
+	if !ok {
+		http.Error(w, "task not found", http.StatusNotFound)
+		return
+	}
+	if err := s.authorizeTaskAccess(authorization, task); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+	response := s.buildRunDetailResponse(task, limit, authorization)
+	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", taskID+"-run-report.md"))
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(renderRunDetailMarkdown(response)))
+}
+
+func (s *Server) buildRunDetailResponse(task domain.Task, limit int, authorization ControlAuthorization) runDetailResponse {
+	events := s.Recorder.EventsByTask(task.ID, limit)
 	var traceSummary *observability.TraceSummary
 	if task.TraceID != "" {
 		if summary, ok := s.Recorder.TraceSummary(task.TraceID); ok {
 			traceSummary = &summary
 		}
 	}
+	auditEntries := s.recentControlActionsForTask(task.ID, limit, authorization)
+	artifacts := map[string]string{
+		"replay": fmt.Sprintf("/replay/%s", task.ID),
+		"events": fmt.Sprintf("/events?task_id=%s&limit=%d", task.ID, limit),
+		"audit":  fmt.Sprintf("/v2/runs/%s/audit?limit=%d", task.ID, limit),
+		"report": fmt.Sprintf("/v2/runs/%s/report?limit=%d", task.ID, limit),
+	}
+	if task.TraceID != "" {
+		artifacts["trace"] = fmt.Sprintf("/debug/traces/%s?limit=%d", task.TraceID, limit)
+	}
+	if workpad := strings.TrimSpace(task.Metadata["workpad"]); workpad != "" {
+		artifacts["workpad"] = workpad
+	}
 	response := runDetailResponse{
-		Task:       task,
-		State:      string(task.State),
-		Policy:     policy.Resolve(task),
-		Events:     events,
-		Timeline:   events,
-		Validation: map[string]any{"acceptance_criteria": task.AcceptanceCriteria, "validation_plan": task.ValidationPlan},
-		Artifacts: map[string]string{
-			"replay": fmt.Sprintf("/replay/%s", taskID),
-			"events": fmt.Sprintf("/events?task_id=%s&limit=%d", taskID, limit),
-		},
+		Task:          task,
+		State:         string(task.State),
+		Policy:        policy.Resolve(task),
+		Trace:         traceSummary,
+		FailureReason: runFailureReason(task, events),
+		Events:        events,
+		Timeline:      events,
+		Validation:    buildRunValidation(task),
+		Artifacts:     artifacts,
+		ArtifactRefs:  collectRunArtifactRefs(task, events),
+		ToolTraces:    collectRunToolTraces(task, events),
+		AuditSummary:  summarizeControlAudit(auditEntries),
+		RecentActions: auditEntries,
+		NotesTimeline: auditNotesTimeline(auditEntries, limit),
+		Reports: []runReportLink{{
+			Name:     "run_report",
+			URL:      fmt.Sprintf("/v2/runs/%s/report?limit=%d", task.ID, limit),
+			Format:   "markdown",
+			Download: true,
+		}},
 		Workpad: task.Metadata["workpad"],
-		Trace:   traceSummary,
 	}
-	if takeover, ok := s.Control.TakeoverStatus(taskID); ok {
-		copy := takeover
-		response.Collaboration = &copy
+	if s.Control != nil {
+		if takeover, ok := s.Control.TakeoverStatus(task.ID); ok {
+			copy := takeover
+			response.Collaboration = &copy
+		}
 	}
-	writeJSON(w, http.StatusOK, response)
+	return response
+}
+
+func buildRunValidation(task domain.Task) runValidationSummary {
+	return runValidationSummary{
+		AcceptanceCriteria: append([]string(nil), task.AcceptanceCriteria...),
+		ValidationPlan:     append([]string(nil), task.ValidationPlan...),
+		Status:             runValidationStatus(task.State),
+		Checks:             len(task.AcceptanceCriteria) + len(task.ValidationPlan),
+	}
+}
+
+func runValidationStatus(state domain.TaskState) string {
+	switch state {
+	case domain.TaskSucceeded:
+		return "passed"
+	case domain.TaskCancelled, domain.TaskFailed, domain.TaskDeadLetter:
+		return "failed"
+	case domain.TaskBlocked:
+		return "blocked"
+	case domain.TaskQueued, domain.TaskLeased, domain.TaskRunning, domain.TaskRetrying:
+		return "pending"
+	default:
+		return "unknown"
+	}
+}
+
+func runFailureReason(task domain.Task, events []domain.Event) string {
+	if task.State == domain.TaskSucceeded {
+		return ""
+	}
+	for index := len(events) - 1; index >= 0; index-- {
+		switch events[index].Type {
+		case domain.EventTaskCancelled, domain.EventTaskDeadLetter, domain.EventTaskRetried:
+			if message := runEventMessage(events[index]); message != "" {
+				return message
+			}
+		}
+	}
+	return firstNonEmpty(task.Metadata["failure_reason"], task.Metadata["blocked_reason"], task.Metadata["cancel_reason"])
+}
+
+func collectRunArtifactRefs(task domain.Task, events []domain.Event) []runArtifactRef {
+	refs := make([]runArtifactRef, 0)
+	seen := make(map[string]struct{})
+	appendRef := func(name, kind, uri, source, eventID string) {
+		uri = strings.TrimSpace(uri)
+		if uri == "" {
+			return
+		}
+		key := kind + "|" + uri
+		if _, ok := seen[key]; ok {
+			return
+		}
+		seen[key] = struct{}{}
+		refs = append(refs, runArtifactRef{Name: name, Kind: kind, URI: uri, Source: source, EventID: eventID})
+	}
+	for _, event := range events {
+		for index, uri := range stringSliceFromAny(event.Payload["artifacts"]) {
+			appendRef(fmt.Sprintf("artifact_%d", index+1), "executor_artifact", uri, string(event.Type), event.ID)
+		}
+	}
+	appendRef("workpad", "workpad", task.Metadata["workpad"], "task_metadata", "")
+	appendRef("issue", "issue", firstNonEmpty(task.Metadata["issue_url"], task.Metadata["linear_url"], task.Metadata["jira_url"]), "task_metadata", "")
+	appendRef("pull_request", "pull_request", firstNonEmpty(task.Metadata["pr_url"], task.Metadata["pull_request_url"]), "task_metadata", "")
+	return refs
+}
+
+func collectRunToolTraces(task domain.Task, events []domain.Event) []runToolTrace {
+	traces := make([]runToolTrace, 0, len(task.RequiredTools)+len(events))
+	seenDeclared := make(map[string]struct{})
+	for _, tool := range task.RequiredTools {
+		tool = strings.TrimSpace(tool)
+		if tool == "" {
+			continue
+		}
+		if _, ok := seenDeclared[tool]; ok {
+			continue
+		}
+		seenDeclared[tool] = struct{}{}
+		traces = append(traces, runToolTrace{Name: tool, Source: "declared", Status: "required"})
+	}
+	for _, event := range events {
+		status, ok := runToolTraceStatus(event.Type)
+		if !ok {
+			continue
+		}
+		executorName := eventStringValue(event.Payload, "executor")
+		name := firstNonEmpty(executorName, "executor")
+		if event.Type == domain.EventSchedulerRouted {
+			name = "scheduler"
+		}
+		traces = append(traces, runToolTrace{
+			Name:      name,
+			Source:    "event",
+			Status:    status,
+			Executor:  executorName,
+			Message:   runEventMessage(event),
+			Timestamp: event.Timestamp,
+			EventID:   event.ID,
+			Artifacts: stringSliceFromAny(event.Payload["artifacts"]),
+		})
+	}
+	return traces
+}
+
+func runToolTraceStatus(eventType domain.EventType) (string, bool) {
+	switch eventType {
+	case domain.EventSchedulerRouted:
+		return "routed", true
+	case domain.EventTaskStarted:
+		return "started", true
+	case domain.EventTaskCompleted:
+		return "completed", true
+	case domain.EventTaskDeadLetter:
+		return "dead_lettered", true
+	case domain.EventTaskRetried:
+		return "retried", true
+	case domain.EventTaskCancelled:
+		return "cancelled", true
+	default:
+		return "", false
+	}
+}
+
+func runEventMessage(event domain.Event) string {
+	return firstNonEmpty(
+		eventStringValue(event.Payload, "message"),
+		eventStringValue(event.Payload, "reason"),
+		eventStringValue(event.Payload, "note"),
+	)
+}
+
+func eventStringValue(payload map[string]any, key string) string {
+	if payload == nil {
+		return ""
+	}
+	return stringValue(payload[key])
+}
+
+func stringValue(value any) string {
+	switch typed := value.(type) {
+	case nil:
+		return ""
+	case string:
+		return strings.TrimSpace(typed)
+	case domain.ExecutorKind:
+		return strings.TrimSpace(string(typed))
+	case fmt.Stringer:
+		return strings.TrimSpace(typed.String())
+	default:
+		return strings.TrimSpace(fmt.Sprint(typed))
+	}
+}
+
+func stringSliceFromAny(value any) []string {
+	switch typed := value.(type) {
+	case nil:
+		return nil
+	case []string:
+		return append([]string(nil), typed...)
+	case []any:
+		out := make([]string, 0, len(typed))
+		for _, item := range typed {
+			if text := stringValue(item); text != "" {
+				out = append(out, text)
+			}
+		}
+		return out
+	default:
+		if text := stringValue(typed); text != "" {
+			return []string{text}
+		}
+		return nil
+	}
+}
+
+func renderRunDetailMarkdown(detail runDetailResponse) string {
+	var builder strings.Builder
+	builder.WriteString("# BigClaw Run Report\n\n")
+	fmt.Fprintf(&builder, "- Task ID: %s\n", detail.Task.ID)
+	fmt.Fprintf(&builder, "- Title: %s\n", firstNonEmpty(detail.Task.Title, detail.Task.ID))
+	fmt.Fprintf(&builder, "- State: %s\n", detail.State)
+	fmt.Fprintf(&builder, "- Trace ID: %s\n", detail.Task.TraceID)
+	fmt.Fprintf(&builder, "- Plan: %s\n", detail.Policy.Plan)
+	if detail.FailureReason != "" {
+		fmt.Fprintf(&builder, "- Failure Reason: %s\n", detail.FailureReason)
+	}
+	if detail.Workpad != "" {
+		fmt.Fprintf(&builder, "- Workpad: %s\n", detail.Workpad)
+	}
+	builder.WriteString("\n## Validation\n\n")
+	fmt.Fprintf(&builder, "- Status: %s\n", detail.Validation.Status)
+	fmt.Fprintf(&builder, "- Checks: %d\n", detail.Validation.Checks)
+	for _, item := range detail.Validation.AcceptanceCriteria {
+		fmt.Fprintf(&builder, "- Acceptance: %s\n", item)
+	}
+	for _, item := range detail.Validation.ValidationPlan {
+		fmt.Fprintf(&builder, "- Validation Step: %s\n", item)
+	}
+	builder.WriteString("\n## Tool Trace\n\n")
+	if len(detail.ToolTraces) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, trace := range detail.ToolTraces {
+			line := fmt.Sprintf("- %s [%s]", trace.Name, firstNonEmpty(trace.Status, "observed"))
+			if trace.Executor != "" && trace.Name != trace.Executor {
+				line += fmt.Sprintf(" via %s", trace.Executor)
+			}
+			if trace.Message != "" {
+				line += fmt.Sprintf(": %s", trace.Message)
+			}
+			if len(trace.Artifacts) > 0 {
+				line += fmt.Sprintf(" (artifacts=%d)", len(trace.Artifacts))
+			}
+			builder.WriteString(line + "\n")
+		}
+	}
+	builder.WriteString("\n## Artifacts\n\n")
+	if len(detail.ArtifactRefs) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, item := range detail.ArtifactRefs {
+			fmt.Fprintf(&builder, "- %s (%s): %s\n", item.Name, item.Kind, item.URI)
+		}
+	}
+	builder.WriteString("\n## Audit\n\n")
+	if len(detail.RecentActions) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, item := range detail.RecentActions {
+			line := fmt.Sprintf("- %s by %s", item.Action, firstNonEmpty(item.Actor, "system"))
+			if item.Note != "" {
+				line += fmt.Sprintf(": %s", item.Note)
+			} else if item.Reason != "" {
+				line += fmt.Sprintf(": %s", item.Reason)
+			}
+			builder.WriteString(line + "\n")
+		}
+	}
+	builder.WriteString("\n## Timeline\n\n")
+	if len(detail.Timeline) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, event := range detail.Timeline {
+			line := fmt.Sprintf("- %s %s", event.Timestamp.UTC().Format(time.RFC3339), event.Type)
+			if message := runEventMessage(event); message != "" {
+				line += fmt.Sprintf(": %s", message)
+			}
+			builder.WriteString(line + "\n")
+		}
+	}
+	return builder.String()
 }
 
 func enforceScopedTeamFilter(authorization ControlAuthorization, team *string) error {
