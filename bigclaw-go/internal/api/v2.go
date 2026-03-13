@@ -103,10 +103,27 @@ type controlActionAuditEntry struct {
 	Actor     string       `json:"actor,omitempty"`
 	Role      string       `json:"role,omitempty"`
 	TaskID    string       `json:"task_id,omitempty"`
+	Team      string       `json:"team,omitempty"`
+	Project   string       `json:"project,omitempty"`
 	Timestamp time.Time    `json:"timestamp"`
 	Reason    string       `json:"reason,omitempty"`
 	Note      string       `json:"note,omitempty"`
 	Event     domain.Event `json:"event"`
+}
+
+type auditFacetCount struct {
+	Key   string `json:"key"`
+	Count int    `json:"count"`
+}
+
+type controlAuditSummary struct {
+	Total      int               `json:"total"`
+	ByAction   []auditFacetCount `json:"by_action"`
+	ByActor    []auditFacetCount `json:"by_actor"`
+	ByRole     []auditFacetCount `json:"by_role"`
+	ByTeam     []auditFacetCount `json:"by_team"`
+	ByProject  []auditFacetCount `json:"by_project"`
+	NotesCount int               `json:"notes_count"`
 }
 
 type controlCenterFilters struct {
@@ -123,18 +140,20 @@ type controlCenterFilters struct {
 }
 
 type taskOverview struct {
-	Task     domain.Task       `json:"task"`
-	Policy   policy.Summary    `json:"policy"`
-	Takeover *control.Takeover `json:"takeover,omitempty"`
-	Latest   *domain.Event     `json:"latest_event,omitempty"`
+	Task          domain.Task               `json:"task"`
+	Policy        policy.Summary            `json:"policy"`
+	Takeover      *control.Takeover         `json:"takeover,omitempty"`
+	Latest        *domain.Event             `json:"latest_event,omitempty"`
+	RecentActions []controlActionAuditEntry `json:"recent_actions,omitempty"`
 }
 
 type queueTaskOverview struct {
-	QueueTask      queue.TaskSnapshot `json:"queue_task"`
-	EffectiveState domain.TaskState   `json:"effective_state"`
-	Policy         policy.Summary     `json:"policy"`
-	Takeover       *control.Takeover  `json:"takeover,omitempty"`
-	Drilldown      dashboardDrilldown `json:"drilldown"`
+	QueueTask      queue.TaskSnapshot        `json:"queue_task"`
+	EffectiveState domain.TaskState          `json:"effective_state"`
+	Policy         policy.Summary            `json:"policy"`
+	Takeover       *control.Takeover         `json:"takeover,omitempty"`
+	Drilldown      dashboardDrilldown        `json:"drilldown"`
+	RecentActions  []controlActionAuditEntry `json:"recent_actions,omitempty"`
 }
 
 type runDetailResponse struct {
@@ -513,7 +532,7 @@ func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 	recentTasks = limitTasks(recentTasks, filters.Limit)
 	overviews := make([]taskOverview, 0, len(recentTasks))
 	for _, task := range recentTasks {
-		overview := taskOverview{Task: task, Policy: policy.Resolve(task)}
+		overview := taskOverview{Task: task, Policy: policy.Resolve(task), RecentActions: s.recentControlActionsForTask(task.ID, 3, authorization)}
 		if latest, ok := s.Recorder.LatestByTask(task.ID); ok {
 			copy := latest
 			overview.Latest = &copy
@@ -541,6 +560,8 @@ func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 		accumulateQueueBreakdownByTeam(queueByTeam, item)
 	}
 	auditEntries := s.controlActionAuditEntries(filters.AuditLimit, filters.TaskID, filters.Action, filters.Actor, filters.Team, authorization)
+	auditSummary := summarizeControlAudit(auditEntries)
+	notesTimeline := auditNotesTimeline(auditEntries, filters.AuditLimit)
 	response := map[string]any{
 		"authorization": authorization,
 		"filters": map[string]any{
@@ -562,6 +583,8 @@ func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 		"active_takeovers": s.filteredActiveTakeovers(filters),
 		"recent_tasks":     overviews,
 		"audit":            auditEntries,
+		"audit_summary":    auditSummary,
+		"notes_timeline":   notesTimeline,
 	}
 	if pool := s.workerPoolSummary(); pool != nil {
 		response["worker_pool"] = pool
@@ -594,7 +617,9 @@ func (s *Server) handleV2ControlCenterAudit(w http.ResponseWriter, r *http.Reque
 			"actor":   filters.Actor,
 			"limit":   filters.AuditLimit,
 		},
-		"audit": entries,
+		"audit":          entries,
+		"audit_summary":  summarizeControlAudit(entries),
+		"notes_timeline": auditNotesTimeline(entries, filters.AuditLimit),
 	})
 }
 
@@ -623,7 +648,7 @@ func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Requ
 	switch action {
 	case "pause":
 		snapshot := s.Control.Pause(actor, request.Reason, now)
-		s.publish(domain.Event{ID: fmt.Sprintf("control-pause-%d", now.UnixNano()), Type: domain.EventControlPaused, Timestamp: now, Payload: map[string]any{"actor": actor, "role": string(authorization.Role), "reason": request.Reason}})
+		s.publish(domain.Event{ID: fmt.Sprintf("control-pause-%d", now.UnixNano()), Type: domain.EventControlPaused, Timestamp: now, Payload: map[string]any{"actor": actor, "role": string(authorization.Role), "reason": request.Reason, "team": s.taskTeam(request.TaskID), "project": s.taskProject(request.TaskID)}})
 		writeJSON(w, http.StatusOK, map[string]any{"action": "pause", "control": snapshot})
 	case "resume":
 		snapshot := s.Control.Resume(actor, now)
@@ -644,7 +669,7 @@ func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Requ
 		}
 		s.syncTaskState(request.TaskID, domain.TaskQueued, now)
 		traceID := s.traceIDForTask(request.TaskID)
-		s.publish(domain.Event{ID: fmt.Sprintf("%s-replayed-%d", request.TaskID, now.UnixNano()), Type: domain.EventTaskQueued, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: map[string]any{"actor": actor, "role": string(authorization.Role), "replayed": true}})
+		s.publish(domain.Event{ID: fmt.Sprintf("%s-replayed-%d", request.TaskID, now.UnixNano()), Type: domain.EventTaskQueued, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: map[string]any{"actor": actor, "role": string(authorization.Role), "replayed": true, "team": s.taskTeam(request.TaskID), "project": s.taskProject(request.TaskID)}})
 		task, _ := s.Recorder.Task(request.TaskID)
 		writeJSON(w, http.StatusOK, map[string]any{"action": "replay_deadletter", "task": task, "replayed": true})
 	case "cancel":
@@ -673,7 +698,7 @@ func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Requ
 		}
 		s.syncTaskState(request.TaskID, domain.TaskCancelled, now)
 		traceID := s.traceIDForTask(request.TaskID)
-		s.publish(domain.Event{ID: fmt.Sprintf("%s-cancel-%d", request.TaskID, now.UnixNano()), Type: domain.EventTaskCancelled, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: map[string]any{"actor": actor, "role": string(authorization.Role), "reason": request.Reason}})
+		s.publish(domain.Event{ID: fmt.Sprintf("%s-cancel-%d", request.TaskID, now.UnixNano()), Type: domain.EventTaskCancelled, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: map[string]any{"actor": actor, "role": string(authorization.Role), "reason": request.Reason, "team": s.taskTeam(request.TaskID), "project": s.taskProject(request.TaskID)}})
 		task, _ := s.Recorder.Task(request.TaskID)
 		writeJSON(w, http.StatusOK, map[string]any{"action": "cancel", "task": task, "queue_task": snapshot, "cancelled": true})
 	case "takeover", "transfer_to_human":
@@ -692,7 +717,7 @@ func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Requ
 		takeover := s.Control.Takeover(request.TaskID, actor, request.Reviewer, note, now)
 		s.syncTaskState(request.TaskID, domain.TaskBlocked, now)
 		traceID := s.traceIDForTask(request.TaskID)
-		s.publish(domain.Event{ID: fmt.Sprintf("%s-takeover-%d", request.TaskID, now.UnixNano()), Type: domain.EventRunTakeover, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: map[string]any{"actor": actor, "role": string(authorization.Role), "reviewer": request.Reviewer, "note": note}})
+		s.publish(domain.Event{ID: fmt.Sprintf("%s-takeover-%d", request.TaskID, now.UnixNano()), Type: domain.EventRunTakeover, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: map[string]any{"actor": actor, "role": string(authorization.Role), "reviewer": request.Reviewer, "note": note, "team": s.taskTeam(request.TaskID), "project": s.taskProject(request.TaskID)}})
 		writeJSON(w, http.StatusOK, map[string]any{"action": "takeover", "takeover": takeover})
 	case "release_takeover":
 		if request.TaskID == "" {
@@ -710,7 +735,7 @@ func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Requ
 		}
 		s.syncTaskState(request.TaskID, domain.TaskQueued, now)
 		traceID := s.traceIDForTask(request.TaskID)
-		s.publish(domain.Event{ID: fmt.Sprintf("%s-release-%d", request.TaskID, now.UnixNano()), Type: domain.EventRunReleased, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: map[string]any{"actor": actor, "role": string(authorization.Role), "note": request.Note}})
+		s.publish(domain.Event{ID: fmt.Sprintf("%s-release-%d", request.TaskID, now.UnixNano()), Type: domain.EventRunReleased, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: map[string]any{"actor": actor, "role": string(authorization.Role), "note": request.Note, "team": s.taskTeam(request.TaskID), "project": s.taskProject(request.TaskID)}})
 		writeJSON(w, http.StatusOK, map[string]any{"action": "release_takeover", "takeover": takeover})
 	case "annotate":
 		if request.TaskID == "" {
@@ -723,7 +748,7 @@ func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Requ
 		}
 		takeover := s.Control.Annotate(request.TaskID, actor, request.Note, now)
 		traceID := s.traceIDForTask(request.TaskID)
-		s.publish(domain.Event{ID: fmt.Sprintf("%s-annotate-%d", request.TaskID, now.UnixNano()), Type: domain.EventRunAnnotated, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: map[string]any{"actor": actor, "role": string(authorization.Role), "note": request.Note}})
+		s.publish(domain.Event{ID: fmt.Sprintf("%s-annotate-%d", request.TaskID, now.UnixNano()), Type: domain.EventRunAnnotated, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: map[string]any{"actor": actor, "role": string(authorization.Role), "note": request.Note, "team": s.taskTeam(request.TaskID), "project": s.taskProject(request.TaskID)}})
 		writeJSON(w, http.StatusOK, map[string]any{"action": "annotate", "takeover": takeover})
 	default:
 		http.Error(w, "unsupported action", http.StatusBadRequest)
@@ -910,6 +935,22 @@ func (s *Server) traceIDForTask(taskID string) string {
 	return taskID
 }
 
+func (s *Server) taskTeam(taskID string) string {
+	task, ok := s.taskSnapshot(taskID)
+	if !ok {
+		return ""
+	}
+	return strings.TrimSpace(task.Metadata["team"])
+}
+
+func (s *Server) taskProject(taskID string) string {
+	task, ok := s.taskSnapshot(taskID)
+	if !ok {
+		return ""
+	}
+	return strings.TrimSpace(task.Metadata["project"])
+}
+
 func parseOptionalTime(raw string) (time.Time, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -1007,7 +1048,7 @@ func (s *Server) filteredQueueTasks(ctx context.Context, filters controlCenterFi
 		if !matchesTaskFilters(snapshot.Task, effective, filters) {
 			continue
 		}
-		out = append(out, queueTaskOverview{QueueTask: snapshot, EffectiveState: effective, Policy: policy.Resolve(snapshot.Task), Takeover: takeover, Drilldown: drilldownForTask(snapshot.Task)})
+		out = append(out, queueTaskOverview{QueueTask: snapshot, EffectiveState: effective, Policy: policy.Resolve(snapshot.Task), Takeover: takeover, Drilldown: drilldownForTask(snapshot.Task), RecentActions: s.recentControlActionsForTask(snapshot.Task.ID, 3, ControlAuthorization{})})
 	}
 	sort.SliceStable(out, func(i, j int) bool {
 		if rankForControlState(out[i].EffectiveState) == rankForControlState(out[j].EffectiveState) {
@@ -1129,11 +1170,15 @@ func controlActionEntry(event domain.Event) (controlActionAuditEntry, bool) {
 	if note == "" {
 		note, _ = event.Payload["message"].(string)
 	}
+	team, _ := event.Payload["team"].(string)
+	project, _ := event.Payload["project"].(string)
 	return controlActionAuditEntry{
 		Action:    action,
 		Actor:     actor,
 		Role:      role,
 		TaskID:    event.TaskID,
+		Team:      team,
+		Project:   project,
 		Timestamp: event.Timestamp,
 		Reason:    reason,
 		Note:      note,
@@ -1169,6 +1214,79 @@ func controlActionName(event domain.Event) (string, bool) {
 	default:
 		return "", false
 	}
+}
+
+func (s *Server) recentControlActionsForTask(taskID string, limit int, authorization ControlAuthorization) []controlActionAuditEntry {
+	if limit <= 0 {
+		return nil
+	}
+	entries := s.controlActionAuditEntries(limit, taskID, "", "", "", authorization)
+	return entries
+}
+
+func summarizeControlAudit(entries []controlActionAuditEntry) controlAuditSummary {
+	summary := controlAuditSummary{
+		Total:    len(entries),
+		ByAction: summarizeAuditFacet(entries, func(entry controlActionAuditEntry) string { return entry.Action }),
+		ByActor:  summarizeAuditFacet(entries, func(entry controlActionAuditEntry) string { return entry.Actor }),
+		ByRole:   summarizeAuditFacet(entries, func(entry controlActionAuditEntry) string { return entry.Role }),
+		ByTeam: summarizeAuditFacet(entries, func(entry controlActionAuditEntry) string {
+			return firstNonEmpty(entry.Team, entry.EventStringField("team"), "unassigned")
+		}),
+		ByProject: summarizeAuditFacet(entries, func(entry controlActionAuditEntry) string {
+			return firstNonEmpty(entry.Project, entry.EventStringField("project"), "unassigned")
+		}),
+	}
+	for _, entry := range entries {
+		if strings.TrimSpace(entry.Note) != "" || strings.TrimSpace(entry.Reason) != "" {
+			summary.NotesCount++
+		}
+	}
+	return summary
+}
+
+func summarizeAuditFacet(entries []controlActionAuditEntry, keyFn func(controlActionAuditEntry) string) []auditFacetCount {
+	counts := make(map[string]int)
+	for _, entry := range entries {
+		key := strings.TrimSpace(keyFn(entry))
+		if key == "" {
+			key = "unknown"
+		}
+		counts[key]++
+	}
+	out := make([]auditFacetCount, 0, len(counts))
+	for key, count := range counts {
+		out = append(out, auditFacetCount{Key: key, Count: count})
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if out[i].Count == out[j].Count {
+			return out[i].Key < out[j].Key
+		}
+		return out[i].Count > out[j].Count
+	})
+	return out
+}
+
+func auditNotesTimeline(entries []controlActionAuditEntry, limit int) []controlActionAuditEntry {
+	out := make([]controlActionAuditEntry, 0)
+	for _, entry := range entries {
+		if strings.TrimSpace(entry.Note) == "" && strings.TrimSpace(entry.Reason) == "" {
+			continue
+		}
+		out = append(out, entry)
+		if limit > 0 && len(out) >= limit {
+			break
+		}
+	}
+	return out
+}
+
+func (entry controlActionAuditEntry) EventStringField(key string) string {
+	if entry.Event.Payload == nil {
+		return ""
+	}
+	value, _ := entry.Event.Payload[key].(string)
+	return value
 }
 
 func matchesTaskFilters(task domain.Task, effectiveState domain.TaskState, filters controlCenterFilters) bool {

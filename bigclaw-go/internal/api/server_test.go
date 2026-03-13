@@ -611,7 +611,7 @@ func TestV2ControlCenterSummariesFiltersAndAudit(t *testing.T) {
 		t.Fatalf("expected control center 200, got %d", centerResponse.Code)
 	}
 	centerBody := centerResponse.Body.String()
-	for _, want := range []string{"queue_budget_cents_total", "600", "high_risk_runs", "premium_runs", "active_takeovers", "worker_pool", "idle_workers", "task-control-1", "effective_state", "blocked", "Manual validation required", "queue_by_project", "queue_by_team", "alpha", "platform"} {
+	for _, want := range []string{"queue_budget_cents_total", "600", "high_risk_runs", "premium_runs", "active_takeovers", "worker_pool", "idle_workers", "task-control-1", "effective_state", "blocked", "Manual validation required", "queue_by_project", "queue_by_team", "alpha", "platform", "recent_actions", "audit_summary", "notes_timeline"} {
 		if !strings.Contains(centerBody, want) {
 			t.Fatalf("expected %q in control center payload, got %s", want, centerBody)
 		}
@@ -627,8 +627,8 @@ func TestV2ControlCenterSummariesFiltersAndAudit(t *testing.T) {
 		t.Fatalf("expected control center audit 200, got %d", auditResponse.Code)
 	}
 	auditBody := auditResponse.Body.String()
-	if !strings.Contains(auditBody, "takeover") || !strings.Contains(auditBody, "alice") || !strings.Contains(auditBody, "task-control-1") {
-		t.Fatalf("expected filtered audit payload, got %s", auditBody)
+	if !strings.Contains(auditBody, "takeover") || !strings.Contains(auditBody, "alice") || !strings.Contains(auditBody, "task-control-1") || !strings.Contains(auditBody, "audit_summary") || !strings.Contains(auditBody, "notes_timeline") || !strings.Contains(auditBody, "platform") || !strings.Contains(auditBody, "alpha") {
+		t.Fatalf("expected filtered audit payload with summary facets, got %s", auditBody)
 	}
 	if strings.Contains(auditBody, "task-control-2") {
 		t.Fatalf("expected audit filter to exclude task-control-2, got %s", auditBody)
