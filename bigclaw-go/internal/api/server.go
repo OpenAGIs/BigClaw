@@ -101,6 +101,7 @@ func (s *Server) Handler() http.Handler {
 		writeJSON(w, http.StatusOK, payload)
 	})
 	mux.HandleFunc("/v2/dashboard/engineering", s.handleV2EngineeringDashboard)
+	mux.HandleFunc("/v2/dashboard/operations", s.handleV2OperationsDashboard)
 	mux.HandleFunc("/v2/control-center", s.handleV2ControlCenter)
 	mux.HandleFunc("/v2/control-center/audit", s.handleV2ControlCenterAudit)
 	mux.HandleFunc("/v2/control-center/actions", s.handleV2ControlCenterAction)

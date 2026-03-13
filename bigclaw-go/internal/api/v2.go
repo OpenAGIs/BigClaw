@@ -77,6 +77,17 @@ type dashboardTaskOverview struct {
 	Drilldown dashboardDrilldown `json:"drilldown"`
 }
 
+type operationsSummary struct {
+	TotalRuns         int            `json:"total_runs"`
+	ActiveRuns        int            `json:"active_runs"`
+	BlockedRuns       int            `json:"blocked_runs"`
+	SLARiskRuns       int            `json:"sla_risk_runs"`
+	OverdueRuns       int            `json:"overdue_runs"`
+	BudgetCentsTotal  int64          `json:"budget_cents_total"`
+	StateDistribution map[string]int `json:"state_distribution"`
+	RiskDistribution  map[string]int `json:"risk_distribution"`
+}
+
 type controlCenterSummary struct {
 	QueueDepth            int            `json:"queue_depth"`
 	LeasedRuns            int            `json:"leased_runs"`
@@ -281,6 +292,125 @@ func (s *Server) handleV2EngineeringDashboard(w http.ResponseWriter, r *http.Req
 		"high_risk_tasks":        limitDashboardTasks(highRiskTasks, limit),
 		"tasks":                  overviews,
 	})
+}
+
+func (s *Server) handleV2OperationsDashboard(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	authorization := parseControlAuthorization(r, "", "", "")
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	bucket, err := parseDashboardBucket(r.URL.Query().Get("bucket"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	team := strings.TrimSpace(r.URL.Query().Get("team"))
+	project := strings.TrimSpace(r.URL.Query().Get("project"))
+	tenantID := strings.TrimSpace(r.URL.Query().Get("tenant_id"))
+	since, err := parseOptionalTime(r.URL.Query().Get("since"))
+	if err != nil {
+		http.Error(w, "invalid since value, expected RFC3339", http.StatusBadRequest)
+		return
+	}
+	until, err := parseOptionalTime(r.URL.Query().Get("until"))
+	if err != nil {
+		http.Error(w, "invalid until value, expected RFC3339", http.StatusBadRequest)
+		return
+	}
+	if err := enforceScopedTeamFilter(authorization, &team); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
+	tasks := s.filteredTasks(team, project, tenantID, since, until)
+	bucket = normalizeDashboardBucket(bucket, since, until, tasks)
+	summary := operationsSummary{StateDistribution: make(map[string]int), RiskDistribution: make(map[string]int)}
+	projectBreakdown := make(map[string]*dashboardBreakdown)
+	teamBreakdown := make(map[string]*dashboardBreakdown)
+	overviews := make([]dashboardTaskOverview, 0, len(tasks))
+	slaRiskTasks := make([]dashboardTaskOverview, 0)
+	overdueTasks := make([]dashboardTaskOverview, 0)
+	blockedTasks := make([]dashboardTaskOverview, 0)
+	now := s.Now()
+	for _, task := range tasks {
+		policySummary := policy.Resolve(task)
+		overview := s.dashboardTaskOverview(task, policySummary)
+		overviews = append(overviews, overview)
+		summary.TotalRuns++
+		summary.BudgetCentsTotal += task.BudgetCents
+		summary.StateDistribution[string(task.State)]++
+		risk := string(task.RiskLevel)
+		if risk == "" {
+			risk = "unspecified"
+		}
+		summary.RiskDistribution[risk]++
+		if domain.IsActiveTaskState(task.State) {
+			summary.ActiveRuns++
+		}
+		if task.State == domain.TaskBlocked || strings.EqualFold(strings.TrimSpace(task.Metadata["blocked"]), "true") {
+			summary.BlockedRuns++
+			blockedTasks = append(blockedTasks, overview)
+		}
+		if isHighRiskTask(task) {
+			summary.SLARiskRuns++
+			slaRiskTasks = append(slaRiskTasks, overview)
+		}
+		if isOverdueTask(task, now) {
+			summary.OverdueRuns++
+			overdueTasks = append(overdueTasks, overview)
+		}
+		accumulateDashboardBreakdown(projectBreakdown, strings.TrimSpace(task.Metadata["project"]), task, policySummary)
+		accumulateDashboardBreakdown(teamBreakdown, strings.TrimSpace(task.Metadata["team"]), task, policySummary)
+	}
+	if limit > 0 && len(overviews) > limit {
+		overviews = overviews[:limit]
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"authorization": authorization,
+		"filters": map[string]any{
+			"team":        team,
+			"project":     project,
+			"tenant_id":   tenantID,
+			"viewer_team": authorization.ViewerTeam,
+			"since":       since,
+			"until":       until,
+			"limit":       limit,
+			"bucket":      bucket,
+		},
+		"summary":           summary,
+		"project_breakdown": sortedDashboardBreakdowns(projectBreakdown),
+		"team_breakdown":    sortedDashboardBreakdowns(teamBreakdown),
+		"trend":             buildDashboardTrend(tasks, since, until, bucket),
+		"sla_risk_tasks":    limitDashboardTasks(slaRiskTasks, limit),
+		"overdue_tasks":     limitDashboardTasks(overdueTasks, limit),
+		"blocked_tasks":     limitDashboardTasks(blockedTasks, limit),
+		"tasks":             overviews,
+	})
+}
+
+func isOverdueTask(task domain.Task, now time.Time) bool {
+	if strings.EqualFold(strings.TrimSpace(task.Metadata["sla_breach"]), "true") {
+		return true
+	}
+	status := strings.ToLower(strings.TrimSpace(task.Metadata["sla_status"]))
+	if status == "breach" || status == "overdue" {
+		return true
+	}
+	dueAtRaw := firstNonEmpty(task.Metadata["sla_due_at"], task.Metadata["due_at"], task.Metadata["deadline_at"])
+	if dueAtRaw == "" {
+		return false
+	}
+	dueAt, err := time.Parse(time.RFC3339, dueAtRaw)
+	if err != nil {
+		return false
+	}
+	if task.State == domain.TaskSucceeded || task.State == domain.TaskCancelled {
+		return false
+	}
+	return dueAt.Before(now)
 }
 
 func parseDashboardBucket(raw string) (string, error) {

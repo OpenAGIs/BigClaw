@@ -367,6 +367,47 @@ type dashboardResponse struct {
 	} `json:"tasks"`
 }
 
+type operationsDashboardResponse struct {
+	Summary struct {
+		TotalRuns         int            `json:"total_runs"`
+		ActiveRuns        int            `json:"active_runs"`
+		BlockedRuns       int            `json:"blocked_runs"`
+		SLARiskRuns       int            `json:"sla_risk_runs"`
+		OverdueRuns       int            `json:"overdue_runs"`
+		BudgetCentsTotal  int64          `json:"budget_cents_total"`
+		StateDistribution map[string]int `json:"state_distribution"`
+		RiskDistribution  map[string]int `json:"risk_distribution"`
+	} `json:"summary"`
+	ProjectBreakdown []struct {
+		Key        string `json:"key"`
+		TotalTasks int    `json:"total_tasks"`
+	} `json:"project_breakdown"`
+	TeamBreakdown []struct {
+		Key        string `json:"key"`
+		TotalTasks int    `json:"total_tasks"`
+	} `json:"team_breakdown"`
+	Trend []struct {
+		Label       string `json:"label"`
+		TotalTasks  int    `json:"total_tasks"`
+		Blockers    int    `json:"blockers"`
+		SLARiskRuns int    `json:"sla_risk_runs"`
+	} `json:"trend"`
+	SLARiskTasks []struct {
+		Task struct {
+			ID string `json:"id"`
+		} `json:"task"`
+		Drilldown struct {
+			Run      string `json:"run"`
+			IssueKey string `json:"issue_key"`
+		} `json:"drilldown"`
+	} `json:"sla_risk_tasks"`
+	OverdueTasks []struct {
+		Task struct {
+			ID string `json:"id"`
+		} `json:"task"`
+	} `json:"overdue_tasks"`
+}
+
 func TestV2DashboardAggregatesEngineeringMetrics(t *testing.T) {
 	recorder := observability.NewRecorder()
 	base := time.Date(2023, 11, 14, 10, 0, 0, 0, time.UTC)
@@ -442,6 +483,44 @@ func TestV2DashboardBuildsHourlyTrendSeries(t *testing.T) {
 	}
 	if decoded.Trend[1].Label != "2023-11-14T11:00:00Z" || decoded.Trend[1].TotalTasks != 1 || decoded.Trend[1].Blockers != 1 || decoded.Trend[1].SLARiskRuns != 1 {
 		t.Fatalf("unexpected second hourly trend point: %+v", decoded.Trend[1])
+	}
+}
+
+func TestV2OperationsDashboardAggregatesSLAMetrics(t *testing.T) {
+	recorder := observability.NewRecorder()
+	base := time.Date(2023, 11, 16, 10, 0, 0, 0, time.UTC)
+	recorder.StoreTask(domain.Task{ID: "task-ops-1", TraceID: "trace-ops-1", Title: "Ops A", State: domain.TaskRunning, BudgetCents: 800, RiskLevel: domain.RiskHigh, Metadata: map[string]string{"team": "platform", "project": "alpha", "plan": "premium", "sla_risk": "true", "issue_key": "BIG-901", "issue_url": "https://linear.app/openagis/issue/BIG-901", "sla_due_at": base.Add(-time.Hour).Format(time.RFC3339)}, CreatedAt: base, UpdatedAt: base.Add(30 * time.Minute)})
+	recorder.StoreTask(domain.Task{ID: "task-ops-2", TraceID: "trace-ops-2", Title: "Ops B", State: domain.TaskBlocked, BudgetCents: 200, Metadata: map[string]string{"team": "platform", "project": "alpha", "blocked": "true", "issue_key": "BIG-902"}, CreatedAt: base, UpdatedAt: base.Add(40 * time.Minute)})
+	recorder.StoreTask(domain.Task{ID: "task-ops-3", TraceID: "trace-ops-3", Title: "Ops C", State: domain.TaskSucceeded, BudgetCents: 100, Metadata: map[string]string{"team": "growth", "project": "beta", "issue_key": "BIG-903", "sla_due_at": base.Add(2 * time.Hour).Format(time.RFC3339)}, CreatedAt: base, UpdatedAt: base.Add(50 * time.Minute)})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return base.Add(2 * time.Hour) }}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/dashboard/operations?limit=10&bucket=day", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected operations dashboard 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded operationsDashboardResponse
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode operations dashboard: %v", err)
+	}
+	if decoded.Summary.TotalRuns != 3 || decoded.Summary.ActiveRuns != 2 || decoded.Summary.BlockedRuns != 1 || decoded.Summary.SLARiskRuns != 1 || decoded.Summary.OverdueRuns != 1 || decoded.Summary.BudgetCentsTotal != 1100 {
+		t.Fatalf("unexpected operations summary: %+v", decoded.Summary)
+	}
+	if len(decoded.ProjectBreakdown) != 2 || decoded.ProjectBreakdown[0].Key != "alpha" {
+		t.Fatalf("unexpected project breakdown: %+v", decoded.ProjectBreakdown)
+	}
+	if len(decoded.TeamBreakdown) != 2 || decoded.TeamBreakdown[0].Key != "platform" {
+		t.Fatalf("unexpected team breakdown: %+v", decoded.TeamBreakdown)
+	}
+	if len(decoded.Trend) != 1 || decoded.Trend[0].TotalTasks != 3 || decoded.Trend[0].Blockers != 1 || decoded.Trend[0].SLARiskRuns != 1 {
+		t.Fatalf("unexpected operations trend: %+v", decoded.Trend)
+	}
+	if len(decoded.SLARiskTasks) != 1 || decoded.SLARiskTasks[0].Task.ID != "task-ops-1" || decoded.SLARiskTasks[0].Drilldown.Run != "/v2/runs/task-ops-1" || decoded.SLARiskTasks[0].Drilldown.IssueKey != "BIG-901" {
+		t.Fatalf("unexpected sla risk task drilldown payload: %+v", decoded.SLARiskTasks)
+	}
+	if len(decoded.OverdueTasks) != 1 || decoded.OverdueTasks[0].Task.ID != "task-ops-1" {
+		t.Fatalf("unexpected overdue tasks payload: %+v", decoded.OverdueTasks)
 	}
 }
 
@@ -740,6 +819,20 @@ func TestV2DashboardAndRunDetailEnforceViewerTeamScope(t *testing.T) {
 	dashboardBody := dashboardResponse.Body.String()
 	if !strings.Contains(dashboardBody, "task-scope-1") || strings.Contains(dashboardBody, "task-scope-2") {
 		t.Fatalf("expected dashboard to be scoped to platform team, got %s", dashboardBody)
+	}
+
+	operationsRequest := httptest.NewRequest(http.MethodGet, "/v2/dashboard/operations?limit=10", nil)
+	operationsRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	operationsRequest.Header.Set("X-BigClaw-Actor", "lead-2")
+	operationsRequest.Header.Set("X-BigClaw-Team", "platform")
+	operationsResponse := httptest.NewRecorder()
+	handler.ServeHTTP(operationsResponse, operationsRequest)
+	if operationsResponse.Code != http.StatusOK {
+		t.Fatalf("expected scoped operations dashboard 200, got %d %s", operationsResponse.Code, operationsResponse.Body.String())
+	}
+	operationsBody := operationsResponse.Body.String()
+	if !strings.Contains(operationsBody, "task-scope-1") || strings.Contains(operationsBody, "task-scope-2") {
+		t.Fatalf("expected operations dashboard to be scoped to platform team, got %s", operationsBody)
 	}
 
 	forbiddenDashboardRequest := httptest.NewRequest(http.MethodGet, "/v2/dashboard/engineering?team=growth&limit=10", nil)
