@@ -28,11 +28,14 @@ from bigclaw.ui_review import (
     render_ui_review_freeze_exception_board,
     render_ui_review_freeze_renewal_tracker,
     render_ui_review_handoff_ack_ledger,
+    render_ui_review_objective_coverage_board,
+    render_ui_review_open_question_tracker,
     render_ui_review_owner_escalation_digest,
     render_ui_review_owner_review_queue,
     render_ui_review_owner_workload_board,
     render_ui_review_reminder_cadence_board,
     render_ui_review_role_coverage_board,
+    render_ui_review_wireframe_readiness_board,
     render_ui_review_signoff_breach_board,
     render_ui_review_signoff_dependency_board,
     render_ui_review_signoff_reminder_queue,
@@ -193,8 +196,15 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert pack.requires_blocker_log is True
     assert pack.requires_blocker_timeline is True
     assert "obj-queue-governance" in report
+    assert "## Objective Coverage Board" in report
+    assert "- covered: 2" in report
+    assert "objcov-obj-run-detail-investigation: objective=obj-run-detail-investigation persona=Eng Lead priority=P0 coverage=blocked dependencies=3 surfaces=wf-run-detail" in report
     assert "wf-triage: Triage and handoff board" in report
+    assert "## Wireframe Readiness Board" in report
+    assert "wire-wf-run-detail: surface=wf-run-detail device=desktop readiness=blocked open_total=4 entry=/runs/detail" in report
     assert "flow-run-replay: Run replay with evidence audit" in report
+    assert "## Open Question Tracker" in report
+    assert "qtrack-oq-role-density: question=oq-role-density owner=product-experience theme=role-matrix status=open link_status=linked surfaces=wf-queue" in report
     assert "chk-queue-batch-approval: surface=wf-queue owner=Platform Admin status=ready" in report
     assert "dec-queue-vp-summary: surface=wf-queue owner=VP Eng status=proposed" in report
     assert "role-queue-platform-admin: surface=wf-queue role=Platform Admin status=ready" in report
@@ -678,6 +688,35 @@ def test_render_ui_review_freeze_approval_trail() -> None:
     assert "freeze-approval-blk-run-detail-copy-final: blocker=blk-run-detail-copy-final surface=wf-run-detail status=open owner=release-director approved_by=release-director approved_at=2026-03-14T08:30:00Z window=2026-03-18T18:00:00Z" in freeze_trail
 
 
+def test_render_ui_review_objective_wireframe_and_question_boards() -> None:
+    pack = build_big_4204_review_pack()
+
+    objective_coverage = render_ui_review_objective_coverage_board(pack)
+    wireframe_readiness = render_ui_review_wireframe_readiness_board(pack)
+    question_tracker = render_ui_review_open_question_tracker(pack)
+
+    assert "# UI Review Objective Coverage Board" in objective_coverage
+    assert "- Objectives: 4" in objective_coverage
+    assert "- Personas: 4" in objective_coverage
+    assert "- blocked: 1" in objective_coverage
+    assert "- covered: 2" in objective_coverage
+    assert "objcov-obj-run-detail-investigation: objective=obj-run-detail-investigation persona=Eng Lead priority=P0 coverage=blocked dependencies=3 surfaces=wf-run-detail" in objective_coverage
+    assert "dependency_ids=BIG-4203,OPE-72,OPE-73 assignments=role-run-detail-eng-lead checklist=chk-run-replay-context decisions=dec-run-detail-audit-rail signoffs=sig-run-detail-eng-lead blockers=blk-run-detail-copy-final" in objective_coverage
+    assert "# UI Review Wireframe Readiness Board" in wireframe_readiness
+    assert "- Wireframes: 4" in wireframe_readiness
+    assert "- Devices: 1" in wireframe_readiness
+    assert "- at-risk: 2" in wireframe_readiness
+    assert "- blocked: 1" in wireframe_readiness
+    assert "- ready: 1" in wireframe_readiness
+    assert "wire-wf-run-detail: surface=wf-run-detail device=desktop readiness=blocked open_total=4 entry=/runs/detail" in wireframe_readiness
+    assert "checklist_open=1 decisions_open=0 assignments_open=1 signoffs_open=1 blockers_open=1 signoffs=sig-run-detail-eng-lead blockers=blk-run-detail-copy-final blocks=4 notes=2" in wireframe_readiness
+    assert "# UI Review Open Question Tracker" in question_tracker
+    assert "- Questions: 3" in question_tracker
+    assert "- Owners: 3" in question_tracker
+    assert "qtrack-oq-role-density: question=oq-role-density owner=product-experience theme=role-matrix status=open link_status=linked surfaces=wf-queue" in question_tracker
+    assert "checklist=chk-queue-role-density flows=none impact=Changes denial-path copy, button placement, and review criteria for queue and triage pages." in question_tracker
+
+
 def test_render_ui_review_traceability_and_role_coverage_boards() -> None:
     pack = build_big_4204_review_pack()
 
@@ -829,6 +868,9 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     checklist_traceability = render_ui_review_checklist_traceability_board(pack)
     decision_log = render_ui_review_decision_log(pack)
     decision_followup = render_ui_review_decision_followup_tracker(pack)
+    objective_coverage = render_ui_review_objective_coverage_board(pack)
+    wireframe_readiness = render_ui_review_wireframe_readiness_board(pack)
+    question_tracker = render_ui_review_open_question_tracker(pack)
     role_matrix = render_ui_review_role_matrix(pack)
     role_coverage = render_ui_review_role_coverage_board(pack)
     signoff_dependency = render_ui_review_signoff_dependency_board(pack)
@@ -857,6 +899,9 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "<h2>Decision Log</h2>" in html
     assert "<h2>Checklist Traceability Board</h2>" in html
     assert "<h2>Decision Follow-up Tracker</h2>" in html
+    assert "<h2>Objective Coverage Board</h2>" in html
+    assert "<h2>Wireframe Readiness Board</h2>" in html
+    assert "<h2>Open Question Tracker</h2>" in html
     assert "<h2>Role Matrix</h2>" in html
     assert "<h2>Role Coverage Board</h2>" in html
     assert "<h2>Signoff Dependency Board</h2>" in html
@@ -887,6 +932,12 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "dec-run-detail-audit-rail" in decision_log
     assert "# UI Review Decision Follow-up Tracker" in decision_followup
     assert "follow-dec-queue-vp-summary: decision=dec-queue-vp-summary surface=wf-queue owner=VP Eng status=proposed linked_roles=Platform Admin,product-experience" in decision_followup
+    assert "# UI Review Objective Coverage Board" in objective_coverage
+    assert "objcov-obj-run-detail-investigation: objective=obj-run-detail-investigation persona=Eng Lead priority=P0 coverage=blocked dependencies=3 surfaces=wf-run-detail" in objective_coverage
+    assert "# UI Review Wireframe Readiness Board" in wireframe_readiness
+    assert "wire-wf-run-detail: surface=wf-run-detail device=desktop readiness=blocked open_total=4 entry=/runs/detail" in wireframe_readiness
+    assert "# UI Review Open Question Tracker" in question_tracker
+    assert "qtrack-oq-role-density: question=oq-role-density owner=product-experience theme=role-matrix status=open link_status=linked surfaces=wf-queue" in question_tracker
     assert "# UI Review Role Matrix" in role_matrix
     assert "role-triage-platform-admin" in role_matrix
     assert "# UI Review Role Coverage Board" in role_coverage
@@ -934,6 +985,9 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert Path(artifacts.markdown_path).exists()
     assert Path(artifacts.html_path).exists()
     assert Path(artifacts.decision_log_path).exists()
+    assert Path(artifacts.objective_coverage_board_path).exists()
+    assert Path(artifacts.wireframe_readiness_board_path).exists()
+    assert Path(artifacts.open_question_tracker_path).exists()
     assert Path(artifacts.checklist_traceability_board_path).exists()
     assert Path(artifacts.decision_followup_tracker_path).exists()
     assert Path(artifacts.role_matrix_path).exists()
@@ -962,6 +1016,9 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "Decision Log" in Path(artifacts.html_path).read_text()
     assert "Checklist Traceability Board" in Path(artifacts.html_path).read_text()
     assert "Decision Follow-up Tracker" in Path(artifacts.html_path).read_text()
+    assert "Objective Coverage Board" in Path(artifacts.html_path).read_text()
+    assert "Wireframe Readiness Board" in Path(artifacts.html_path).read_text()
+    assert "Open Question Tracker" in Path(artifacts.html_path).read_text()
     assert "Role Matrix" in Path(artifacts.html_path).read_text()
     assert "Role Coverage Board" in Path(artifacts.html_path).read_text()
     assert "Signoff Dependency Board" in Path(artifacts.html_path).read_text()
@@ -986,6 +1043,9 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "Owner Review Queue" in Path(artifacts.html_path).read_text()
     assert "Blocker Timeline Summary" in Path(artifacts.html_path).read_text()
     assert "dec-triage-handoff-density" in Path(artifacts.decision_log_path).read_text()
+    assert "objcov-obj-run-detail-investigation: objective=obj-run-detail-investigation persona=Eng Lead priority=P0 coverage=blocked dependencies=3 surfaces=wf-run-detail" in Path(artifacts.objective_coverage_board_path).read_text()
+    assert "wire-wf-run-detail: surface=wf-run-detail device=desktop readiness=blocked open_total=4 entry=/runs/detail" in Path(artifacts.wireframe_readiness_board_path).read_text()
+    assert "qtrack-oq-role-density: question=oq-role-density owner=product-experience theme=role-matrix status=open link_status=linked surfaces=wf-queue" in Path(artifacts.open_question_tracker_path).read_text()
     assert "trace-chk-queue-role-density: item=chk-queue-role-density surface=wf-queue owner=product-experience status=open linked_roles=product-experience" in Path(artifacts.checklist_traceability_board_path).read_text()
     assert "follow-dec-queue-vp-summary: decision=dec-queue-vp-summary surface=wf-queue owner=VP Eng status=proposed linked_roles=Platform Admin,product-experience" in Path(artifacts.decision_followup_tracker_path).read_text()
     assert "role-run-detail-eng-lead" in Path(artifacts.role_matrix_path).read_text()

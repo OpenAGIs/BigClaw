@@ -434,6 +434,9 @@ class UIReviewPackArtifacts:
     markdown_path: str
     html_path: str
     decision_log_path: str
+    objective_coverage_board_path: str
+    wireframe_readiness_board_path: str
+    open_question_tracker_path: str
     checklist_traceability_board_path: str
     decision_followup_tracker_path: str
     role_matrix_path: str
@@ -1579,6 +1582,205 @@ def _build_decision_followup_entries(pack: UIReviewPack) -> List[Dict[str, str]]
     return sorted(entries, key=lambda item: (item["status"], item["owner"], item["decision_id"]))
 
 
+def _build_objective_coverage_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
+    checklist_ready_statuses = {"ready", "approved", "accepted", "resolved", "done"}
+    decision_ready_statuses = {"accepted", "approved", "resolved", "waived"}
+    role_ready_statuses = {"ready", "approved", "accepted", "resolved"}
+    signoff_ready_statuses = {"approved", "accepted", "resolved", "waived", "deferred"}
+    assignments_by_role: Dict[str, List[ReviewRoleAssignment]] = {}
+    for assignment in pack.role_matrix:
+        assignments_by_role.setdefault(assignment.role, []).append(assignment)
+    signoff_by_assignment = {signoff.assignment_id: signoff for signoff in pack.signoff_log}
+    unresolved_blockers_by_signoff: Dict[str, List[ReviewBlocker]] = {}
+    for blocker in pack.blocker_log:
+        if blocker.status.lower() in {"resolved", "closed"}:
+            continue
+        unresolved_blockers_by_signoff.setdefault(blocker.signoff_id, []).append(blocker)
+    checklist_index = {item.item_id: item for item in pack.reviewer_checklist}
+    decision_index = {decision.decision_id: decision for decision in pack.decision_log}
+    status_priority = {"blocked": 0, "at-risk": 1, "covered": 2}
+    entries: List[Dict[str, str]] = []
+    for objective in pack.objectives:
+        assignments = assignments_by_role.get(objective.persona, [])
+        checklist_ids = sorted(
+            {item_id for assignment in assignments for item_id in assignment.checklist_item_ids}
+        )
+        decision_ids = sorted(
+            {decision_id for assignment in assignments for decision_id in assignment.decision_ids}
+        )
+        signoffs = [
+            signoff_by_assignment[assignment.assignment_id]
+            for assignment in assignments
+            if assignment.assignment_id in signoff_by_assignment
+        ]
+        blocker_ids = sorted(
+            {
+                blocker.blocker_id
+                for signoff in signoffs
+                for blocker in unresolved_blockers_by_signoff.get(signoff.signoff_id, [])
+            }
+        )
+        open_checklist = sum(
+            1
+            for item_id in checklist_ids
+            if checklist_index[item_id].status.lower() not in checklist_ready_statuses
+        )
+        open_decisions = sum(
+            1
+            for decision_id in decision_ids
+            if decision_index[decision_id].status.lower() not in decision_ready_statuses
+        )
+        open_assignments = sum(
+            1 for assignment in assignments if assignment.status.lower() not in role_ready_statuses
+        )
+        open_signoffs = sum(
+            1 for signoff in signoffs if signoff.status.lower() not in signoff_ready_statuses
+        )
+        coverage_status = (
+            "blocked"
+            if blocker_ids
+            else "at-risk"
+            if open_checklist or open_decisions or open_assignments or open_signoffs
+            else "covered"
+        )
+        entries.append(
+            {
+                "entry_id": f"objcov-{objective.objective_id}",
+                "objective_id": objective.objective_id,
+                "persona": objective.persona,
+                "priority": objective.priority,
+                "coverage_status": coverage_status,
+                "dependency_count": str(len(objective.dependencies)),
+                "dependency_ids": ",".join(objective.dependencies) or "none",
+                "surface_ids": ",".join(sorted({assignment.surface_id for assignment in assignments})) or "none",
+                "assignment_ids": ",".join(assignment.assignment_id for assignment in assignments) or "none",
+                "checklist_ids": ",".join(checklist_ids) or "none",
+                "decision_ids": ",".join(decision_ids) or "none",
+                "signoff_ids": ",".join(signoff.signoff_id for signoff in signoffs) or "none",
+                "blocker_ids": ",".join(blocker_ids) or "none",
+                "summary": objective.success_signal or objective.outcome,
+            }
+        )
+    return sorted(
+        entries,
+        key=lambda item: (status_priority[item["coverage_status"]], item["persona"], item["objective_id"]),
+    )
+
+
+def _build_wireframe_readiness_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
+    checklist_ready_statuses = {"ready", "approved", "accepted", "resolved", "done"}
+    decision_ready_statuses = {"accepted", "approved", "resolved", "waived"}
+    role_ready_statuses = {"ready", "approved", "accepted", "resolved"}
+    signoff_ready_statuses = {"approved", "accepted", "resolved", "waived", "deferred"}
+    blocker_done_statuses = {"resolved", "closed"}
+    checklist_by_surface: Dict[str, List[ReviewerChecklistItem]] = {}
+    for item in pack.reviewer_checklist:
+        checklist_by_surface.setdefault(item.surface_id, []).append(item)
+    decision_by_surface: Dict[str, List[ReviewDecision]] = {}
+    for decision in pack.decision_log:
+        decision_by_surface.setdefault(decision.surface_id, []).append(decision)
+    assignment_by_surface: Dict[str, List[ReviewRoleAssignment]] = {}
+    for assignment in pack.role_matrix:
+        assignment_by_surface.setdefault(assignment.surface_id, []).append(assignment)
+    signoff_by_surface: Dict[str, List[ReviewSignoff]] = {}
+    for signoff in pack.signoff_log:
+        signoff_by_surface.setdefault(signoff.surface_id, []).append(signoff)
+    blocker_by_surface: Dict[str, List[ReviewBlocker]] = {}
+    for blocker in pack.blocker_log:
+        blocker_by_surface.setdefault(blocker.surface_id, []).append(blocker)
+    status_priority = {"blocked": 0, "at-risk": 1, "ready": 2}
+    entries: List[Dict[str, str]] = []
+    for wireframe in pack.wireframes:
+        checklist_items = checklist_by_surface.get(wireframe.surface_id, [])
+        decisions = decision_by_surface.get(wireframe.surface_id, [])
+        assignments = assignment_by_surface.get(wireframe.surface_id, [])
+        signoffs = signoff_by_surface.get(wireframe.surface_id, [])
+        blockers = [
+            blocker
+            for blocker in blocker_by_surface.get(wireframe.surface_id, [])
+            if blocker.status.lower() not in blocker_done_statuses
+        ]
+        checklist_open = sum(
+            1 for item in checklist_items if item.status.lower() not in checklist_ready_statuses
+        )
+        decisions_open = sum(
+            1 for decision in decisions if decision.status.lower() not in decision_ready_statuses
+        )
+        assignments_open = sum(
+            1 for assignment in assignments if assignment.status.lower() not in role_ready_statuses
+        )
+        signoffs_open = sum(
+            1 for signoff in signoffs if signoff.status.lower() not in signoff_ready_statuses
+        )
+        blockers_open = len(blockers)
+        open_total = (
+            checklist_open + decisions_open + assignments_open + signoffs_open + blockers_open
+        )
+        readiness_status = (
+            "blocked"
+            if blockers_open
+            else "at-risk"
+            if checklist_open or decisions_open or assignments_open or signoffs_open
+            else "ready"
+        )
+        entries.append(
+            {
+                "entry_id": f"wire-{wireframe.surface_id}",
+                "surface_id": wireframe.surface_id,
+                "device": wireframe.device,
+                "entry_point": wireframe.entry_point,
+                "readiness_status": readiness_status,
+                "open_total": str(open_total),
+                "checklist_open": str(checklist_open),
+                "decisions_open": str(decisions_open),
+                "assignments_open": str(assignments_open),
+                "signoffs_open": str(signoffs_open),
+                "blockers_open": str(blockers_open),
+                "block_count": str(len(wireframe.primary_blocks)),
+                "note_count": str(len(wireframe.review_notes)),
+                "signoff_ids": ",".join(signoff.signoff_id for signoff in signoffs) or "none",
+                "blocker_ids": ",".join(blocker.blocker_id for blocker in blockers) or "none",
+                "summary": wireframe.name,
+            }
+        )
+    return sorted(
+        entries,
+        key=lambda item: (status_priority[item["readiness_status"]], item["surface_id"]),
+    )
+
+
+def _build_open_question_tracker_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
+    entries: List[Dict[str, str]] = []
+    for question in pack.open_questions:
+        linked_items = [
+            item for item in pack.reviewer_checklist if question.question_id in item.evidence_links
+        ]
+        flow_ids = sorted(
+            {
+                evidence_link
+                for item in linked_items
+                for evidence_link in item.evidence_links
+                if evidence_link.startswith("flow-")
+            }
+        )
+        entries.append(
+            {
+                "entry_id": f"qtrack-{question.question_id}",
+                "question_id": question.question_id,
+                "owner": question.owner,
+                "theme": question.theme,
+                "status": question.status,
+                "link_status": "linked" if linked_items else "orphan",
+                "surface_ids": ",".join(sorted({item.surface_id for item in linked_items})) or "none",
+                "checklist_ids": ",".join(item.item_id for item in linked_items) or "none",
+                "flow_ids": ",".join(flow_ids) or "none",
+                "summary": question.question,
+                "impact": question.impact,
+            }
+        )
+    return sorted(entries, key=lambda item: (item["status"], item["owner"], item["question_id"]))
+
+
 def _build_role_coverage_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
     signoffs_by_assignment = {signoff.assignment_id: signoff for signoff in pack.signoff_log}
     entries = [
@@ -1843,6 +2045,41 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
             f"outcome={objective.outcome} success_signal={objective.success_signal} dependencies={','.join(objective.dependencies) or 'none'}"
         )
 
+    objective_coverage_entries = _build_objective_coverage_entries(pack)
+    objective_persona_counts: Dict[str, int] = {}
+    objective_status_counts: Dict[str, int] = {}
+    for entry in objective_coverage_entries:
+        objective_persona_counts[entry['persona']] = objective_persona_counts.get(entry['persona'], 0) + 1
+        objective_status_counts[entry['coverage_status']] = objective_status_counts.get(entry['coverage_status'], 0) + 1
+
+    lines.append("")
+    lines.append("## Objective Coverage Board")
+    lines.append(f"- Objectives: {len(objective_coverage_entries)}")
+    lines.append(f"- Personas: {len(objective_persona_counts)}")
+    lines.append("")
+    lines.append("### By Coverage Status")
+    for status, count in sorted(objective_status_counts.items()):
+        lines.append(f"- {status}: {count}")
+    if not objective_status_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### By Persona")
+    for persona, count in sorted(objective_persona_counts.items()):
+        lines.append(f"- {persona}: {count}")
+    if not objective_persona_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### Entries")
+    for entry in objective_coverage_entries:
+        lines.append(
+            f"- {entry['entry_id']}: objective={entry['objective_id']} persona={entry['persona']} priority={entry['priority']} coverage={entry['coverage_status']} dependencies={entry['dependency_count']} surfaces={entry['surface_ids']}"
+        )
+        lines.append(
+            f"  dependency_ids={entry['dependency_ids']} assignments={entry['assignment_ids']} checklist={entry['checklist_ids']} decisions={entry['decision_ids']} signoffs={entry['signoff_ids']} blockers={entry['blocker_ids']} summary={entry['summary']}"
+        )
+    if not objective_coverage_entries:
+        lines.append("- none")
+
     lines.append("")
     lines.append("## Wireframes")
     for wireframe in pack.wireframes:
@@ -1854,6 +2091,41 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
             "  "
             f"blocks={','.join(wireframe.primary_blocks) or 'none'} review_notes={','.join(wireframe.review_notes) or 'none'}"
         )
+
+    wireframe_readiness_entries = _build_wireframe_readiness_entries(pack)
+    wireframe_readiness_counts: Dict[str, int] = {}
+    wireframe_device_counts: Dict[str, int] = {}
+    for entry in wireframe_readiness_entries:
+        wireframe_readiness_counts[entry['readiness_status']] = wireframe_readiness_counts.get(entry['readiness_status'], 0) + 1
+        wireframe_device_counts[entry['device']] = wireframe_device_counts.get(entry['device'], 0) + 1
+
+    lines.append("")
+    lines.append("## Wireframe Readiness Board")
+    lines.append(f"- Wireframes: {len(wireframe_readiness_entries)}")
+    lines.append(f"- Devices: {len(wireframe_device_counts)}")
+    lines.append("")
+    lines.append("### By Readiness")
+    for status, count in sorted(wireframe_readiness_counts.items()):
+        lines.append(f"- {status}: {count}")
+    if not wireframe_readiness_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### By Device")
+    for device, count in sorted(wireframe_device_counts.items()):
+        lines.append(f"- {device}: {count}")
+    if not wireframe_device_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### Entries")
+    for entry in wireframe_readiness_entries:
+        lines.append(
+            f"- {entry['entry_id']}: surface={entry['surface_id']} device={entry['device']} readiness={entry['readiness_status']} open_total={entry['open_total']} entry={entry['entry_point']}"
+        )
+        lines.append(
+            f"  checklist_open={entry['checklist_open']} decisions_open={entry['decisions_open']} assignments_open={entry['assignments_open']} signoffs_open={entry['signoffs_open']} blockers_open={entry['blockers_open']} signoffs={entry['signoff_ids']} blockers={entry['blocker_ids']} blocks={entry['block_count']} notes={entry['note_count']} summary={entry['summary']}"
+        )
+    if not wireframe_readiness_entries:
+        lines.append("- none")
 
     lines.append("")
     lines.append("## Interactions")
@@ -1875,6 +2147,41 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
             f"{question.question_id}: {question.theme} owner={question.owner} status={question.status}"
         )
         lines.append("  " f"question={question.question} impact={question.impact}")
+
+    open_question_entries = _build_open_question_tracker_entries(pack)
+    open_question_owner_counts: Dict[str, int] = {}
+    open_question_theme_counts: Dict[str, int] = {}
+    for entry in open_question_entries:
+        open_question_owner_counts[entry['owner']] = open_question_owner_counts.get(entry['owner'], 0) + 1
+        open_question_theme_counts[entry['theme']] = open_question_theme_counts.get(entry['theme'], 0) + 1
+
+    lines.append("")
+    lines.append("## Open Question Tracker")
+    lines.append(f"- Questions: {len(open_question_entries)}")
+    lines.append(f"- Owners: {len(open_question_owner_counts)}")
+    lines.append("")
+    lines.append("### By Owner")
+    for owner, count in sorted(open_question_owner_counts.items()):
+        lines.append(f"- {owner}: {count}")
+    if not open_question_owner_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### By Theme")
+    for theme, count in sorted(open_question_theme_counts.items()):
+        lines.append(f"- {theme}: {count}")
+    if not open_question_theme_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### Entries")
+    for entry in open_question_entries:
+        lines.append(
+            f"- {entry['entry_id']}: question={entry['question_id']} owner={entry['owner']} theme={entry['theme']} status={entry['status']} link_status={entry['link_status']} surfaces={entry['surface_ids']}"
+        )
+        lines.append(
+            f"  checklist={entry['checklist_ids']} flows={entry['flow_ids']} impact={entry['impact']} prompt={entry['summary']}"
+        )
+    if not open_question_entries:
+        lines.append("- none")
 
     lines.append("")
     lines.append("## Reviewer Checklist")
@@ -3240,6 +3547,129 @@ def render_ui_review_role_matrix(pack: UIReviewPack) -> str:
 
 
 
+def render_ui_review_objective_coverage_board(pack: UIReviewPack) -> str:
+    entries = _build_objective_coverage_entries(pack)
+    persona_counts: Dict[str, int] = {}
+    status_counts: Dict[str, int] = {}
+    for entry in entries:
+        persona_counts[entry['persona']] = persona_counts.get(entry['persona'], 0) + 1
+        status_counts[entry['coverage_status']] = status_counts.get(entry['coverage_status'], 0) + 1
+    lines = [
+        "# UI Review Objective Coverage Board",
+        "",
+        f"- Issue: {pack.issue_id} {pack.title}",
+        f"- Version: {pack.version}",
+        f"- Objectives: {len(entries)}",
+        f"- Personas: {len(persona_counts)}",
+        "",
+        "## By Coverage Status",
+    ]
+    for status, count in sorted(status_counts.items()):
+        lines.append(f"- {status}: {count}")
+    if not status_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## By Persona")
+    for persona, count in sorted(persona_counts.items()):
+        lines.append(f"- {persona}: {count}")
+    if not persona_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## Entries")
+    for entry in entries:
+        lines.append(
+            f"- {entry['entry_id']}: objective={entry['objective_id']} persona={entry['persona']} priority={entry['priority']} coverage={entry['coverage_status']} dependencies={entry['dependency_count']} surfaces={entry['surface_ids']}"
+        )
+        lines.append(
+            f"  dependency_ids={entry['dependency_ids']} assignments={entry['assignment_ids']} checklist={entry['checklist_ids']} decisions={entry['decision_ids']} signoffs={entry['signoff_ids']} blockers={entry['blocker_ids']} summary={entry['summary']}"
+        )
+    if not entries:
+        lines.append("- none")
+    return "\n".join(lines)
+
+
+def render_ui_review_wireframe_readiness_board(pack: UIReviewPack) -> str:
+    entries = _build_wireframe_readiness_entries(pack)
+    readiness_counts: Dict[str, int] = {}
+    device_counts: Dict[str, int] = {}
+    for entry in entries:
+        readiness_counts[entry['readiness_status']] = readiness_counts.get(entry['readiness_status'], 0) + 1
+        device_counts[entry['device']] = device_counts.get(entry['device'], 0) + 1
+    lines = [
+        "# UI Review Wireframe Readiness Board",
+        "",
+        f"- Issue: {pack.issue_id} {pack.title}",
+        f"- Version: {pack.version}",
+        f"- Wireframes: {len(entries)}",
+        f"- Devices: {len(device_counts)}",
+        "",
+        "## By Readiness",
+    ]
+    for status, count in sorted(readiness_counts.items()):
+        lines.append(f"- {status}: {count}")
+    if not readiness_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## By Device")
+    for device, count in sorted(device_counts.items()):
+        lines.append(f"- {device}: {count}")
+    if not device_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## Entries")
+    for entry in entries:
+        lines.append(
+            f"- {entry['entry_id']}: surface={entry['surface_id']} device={entry['device']} readiness={entry['readiness_status']} open_total={entry['open_total']} entry={entry['entry_point']}"
+        )
+        lines.append(
+            f"  checklist_open={entry['checklist_open']} decisions_open={entry['decisions_open']} assignments_open={entry['assignments_open']} signoffs_open={entry['signoffs_open']} blockers_open={entry['blockers_open']} signoffs={entry['signoff_ids']} blockers={entry['blocker_ids']} blocks={entry['block_count']} notes={entry['note_count']} summary={entry['summary']}"
+        )
+    if not entries:
+        lines.append("- none")
+    return "\n".join(lines)
+
+
+def render_ui_review_open_question_tracker(pack: UIReviewPack) -> str:
+    entries = _build_open_question_tracker_entries(pack)
+    owner_counts: Dict[str, int] = {}
+    theme_counts: Dict[str, int] = {}
+    for entry in entries:
+        owner_counts[entry['owner']] = owner_counts.get(entry['owner'], 0) + 1
+        theme_counts[entry['theme']] = theme_counts.get(entry['theme'], 0) + 1
+    lines = [
+        "# UI Review Open Question Tracker",
+        "",
+        f"- Issue: {pack.issue_id} {pack.title}",
+        f"- Version: {pack.version}",
+        f"- Questions: {len(entries)}",
+        f"- Owners: {len(owner_counts)}",
+        "",
+        "## By Owner",
+    ]
+    for owner, count in sorted(owner_counts.items()):
+        lines.append(f"- {owner}: {count}")
+    if not owner_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## By Theme")
+    for theme, count in sorted(theme_counts.items()):
+        lines.append(f"- {theme}: {count}")
+    if not theme_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## Entries")
+    for entry in entries:
+        lines.append(
+            f"- {entry['entry_id']}: question={entry['question_id']} owner={entry['owner']} theme={entry['theme']} status={entry['status']} link_status={entry['link_status']} surfaces={entry['surface_ids']}"
+        )
+        lines.append(
+            f"  checklist={entry['checklist_ids']} flows={entry['flow_ids']} impact={entry['impact']} prompt={entry['summary']}"
+        )
+    if not entries:
+        lines.append("- none")
+    return "\n".join(lines)
+
+
 def render_ui_review_checklist_traceability_board(pack: UIReviewPack) -> str:
     entries = _build_checklist_traceability_entries(pack)
     owner_counts: Dict[str, int] = {}
@@ -4219,6 +4649,60 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
         f"<li><strong>{escape(assignment.assignment_id)}</strong> · surface={escape(assignment.surface_id)} · role={escape(assignment.role)} · status={escape(assignment.status)}<br /><span>responsibilities={escape(', '.join(assignment.responsibilities) if assignment.responsibilities else 'none')}</span><br /><span>checklist={escape(', '.join(assignment.checklist_item_ids) if assignment.checklist_item_ids else 'none')} · decisions={escape(', '.join(assignment.decision_ids) if assignment.decision_ids else 'none')}</span></li>"
         for assignment in pack.role_matrix
     ) or "<li>none</li>"
+    objective_coverage_entries = _build_objective_coverage_entries(pack)
+    objective_coverage_status_counts: Dict[str, int] = {}
+    objective_coverage_persona_counts: Dict[str, int] = {}
+    for entry in objective_coverage_entries:
+        objective_coverage_status_counts[entry['coverage_status']] = objective_coverage_status_counts.get(entry['coverage_status'], 0) + 1
+        objective_coverage_persona_counts[entry['persona']] = objective_coverage_persona_counts.get(entry['persona'], 0) + 1
+    objective_coverage_status_html = "".join(
+        f"<li><strong>{escape(status)}</strong> · count={count}</li>"
+        for status, count in sorted(objective_coverage_status_counts.items())
+    ) or "<li>none</li>"
+    objective_coverage_persona_html = "".join(
+        f"<li><strong>{escape(persona)}</strong> · count={count}</li>"
+        for persona, count in sorted(objective_coverage_persona_counts.items())
+    ) or "<li>none</li>"
+    objective_coverage_item_html = "".join(
+        f"<li><strong>{escape(entry['entry_id'])}</strong> · objective={escape(entry['objective_id'])} · persona={escape(entry['persona'])} · priority={escape(entry['priority'])} · coverage={escape(entry['coverage_status'])}<br /><span>dependencies={escape(entry['dependency_count'])} · surfaces={escape(entry['surface_ids'])} · blockers={escape(entry['blocker_ids'])}</span><br /><span>assignments={escape(entry['assignment_ids'])} · checklist={escape(entry['checklist_ids'])} · decisions={escape(entry['decision_ids'])}</span><br /><span>signoffs={escape(entry['signoff_ids'])} · dependency_ids={escape(entry['dependency_ids'])}</span><br /><span>{escape(entry['summary'])}</span></li>"
+        for entry in objective_coverage_entries
+    ) or "<li>none</li>"
+    wireframe_readiness_entries = _build_wireframe_readiness_entries(pack)
+    wireframe_readiness_counts: Dict[str, int] = {}
+    wireframe_device_counts: Dict[str, int] = {}
+    for entry in wireframe_readiness_entries:
+        wireframe_readiness_counts[entry['readiness_status']] = wireframe_readiness_counts.get(entry['readiness_status'], 0) + 1
+        wireframe_device_counts[entry['device']] = wireframe_device_counts.get(entry['device'], 0) + 1
+    wireframe_readiness_status_html = "".join(
+        f"<li><strong>{escape(status)}</strong> · count={count}</li>"
+        for status, count in sorted(wireframe_readiness_counts.items())
+    ) or "<li>none</li>"
+    wireframe_device_html = "".join(
+        f"<li><strong>{escape(device)}</strong> · count={count}</li>"
+        for device, count in sorted(wireframe_device_counts.items())
+    ) or "<li>none</li>"
+    wireframe_readiness_item_html = "".join(
+        f"<li><strong>{escape(entry['entry_id'])}</strong> · surface={escape(entry['surface_id'])} · device={escape(entry['device'])} · readiness={escape(entry['readiness_status'])} · open_total={escape(entry['open_total'])}<br /><span>entry={escape(entry['entry_point'])} · signoffs={escape(entry['signoff_ids'])} · blockers={escape(entry['blocker_ids'])}</span><br /><span>checklist_open={escape(entry['checklist_open'])} · decisions_open={escape(entry['decisions_open'])} · assignments_open={escape(entry['assignments_open'])}</span><br /><span>signoffs_open={escape(entry['signoffs_open'])} · blockers_open={escape(entry['blockers_open'])} · blocks={escape(entry['block_count'])} · notes={escape(entry['note_count'])}</span><br /><span>{escape(entry['summary'])}</span></li>"
+        for entry in wireframe_readiness_entries
+    ) or "<li>none</li>"
+    open_question_entries = _build_open_question_tracker_entries(pack)
+    open_question_owner_counts: Dict[str, int] = {}
+    open_question_theme_counts: Dict[str, int] = {}
+    for entry in open_question_entries:
+        open_question_owner_counts[entry['owner']] = open_question_owner_counts.get(entry['owner'], 0) + 1
+        open_question_theme_counts[entry['theme']] = open_question_theme_counts.get(entry['theme'], 0) + 1
+    open_question_owner_html = "".join(
+        f"<li><strong>{escape(owner)}</strong> · count={count}</li>"
+        for owner, count in sorted(open_question_owner_counts.items())
+    ) or "<li>none</li>"
+    open_question_theme_html = "".join(
+        f"<li><strong>{escape(theme)}</strong> · count={count}</li>"
+        for theme, count in sorted(open_question_theme_counts.items())
+    ) or "<li>none</li>"
+    open_question_item_html = "".join(
+        f"<li><strong>{escape(entry['entry_id'])}</strong> · question={escape(entry['question_id'])} · owner={escape(entry['owner'])} · theme={escape(entry['theme'])} · status={escape(entry['status'])}<br /><span>link_status={escape(entry['link_status'])} · surfaces={escape(entry['surface_ids'])} · checklist={escape(entry['checklist_ids'])}</span><br /><span>flows={escape(entry['flow_ids'])}</span><br /><span>impact={escape(entry['impact'])}</span><br /><span>{escape(entry['summary'])}</span></li>"
+        for entry in open_question_entries
+    ) or "<li>none</li>"
     checklist_trace_entries = _build_checklist_traceability_entries(pack)
     checklist_trace_owner_counts: Dict[str, int] = {}
     checklist_trace_status_counts: Dict[str, int] = {}
@@ -4684,9 +5168,12 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
       <p>Unresolved required signoffs: {escape(', '.join(audit.unresolved_required_signoff_ids) if audit.unresolved_required_signoff_ids else 'none')}</p>
     </section>
     <section class="surface"><h2>Objectives</h2><ul>{objective_html}</ul></section>
+    <section class="surface"><h2>Objective Coverage Board</h2><h3>By Coverage Status</h3><ul>{objective_coverage_status_html}</ul><h3>By Persona</h3><ul>{objective_coverage_persona_html}</ul><h3>Entries</h3><ul>{objective_coverage_item_html}</ul></section>
     <section class="surface"><h2>Wireframes</h2><ul>{wireframe_html}</ul></section>
+    <section class="surface"><h2>Wireframe Readiness Board</h2><h3>By Readiness</h3><ul>{wireframe_readiness_status_html}</ul><h3>By Device</h3><ul>{wireframe_device_html}</ul><h3>Entries</h3><ul>{wireframe_readiness_item_html}</ul></section>
     <section class="surface"><h2>Interactions</h2><ul>{interaction_html}</ul></section>
     <section class="surface"><h2>Open Questions</h2><ul>{question_html}</ul></section>
+    <section class="surface"><h2>Open Question Tracker</h2><h3>By Owner</h3><ul>{open_question_owner_html}</ul><h3>By Theme</h3><ul>{open_question_theme_html}</ul><h3>Entries</h3><ul>{open_question_item_html}</ul></section>
     <section class="surface"><h2>Reviewer Checklist</h2><ul>{checklist_html}</ul></section>
     <section class="surface"><h2>Decision Log</h2><ul>{decision_html}</ul></section>
     <section class="surface"><h2>Role Matrix</h2><ul>{role_matrix_html}</ul></section>
@@ -4726,6 +5213,9 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
     markdown_path = str(base / f"{slug}-review-pack.md")
     html_path = str(base / f"{slug}-review-pack.html")
     decision_log_path = str(base / f"{slug}-decision-log.md")
+    objective_coverage_board_path = str(base / f"{slug}-objective-coverage-board.md")
+    wireframe_readiness_board_path = str(base / f"{slug}-wireframe-readiness-board.md")
+    open_question_tracker_path = str(base / f"{slug}-open-question-tracker.md")
     checklist_traceability_board_path = str(base / f"{slug}-checklist-traceability-board.md")
     decision_followup_tracker_path = str(base / f"{slug}-decision-followup-tracker.md")
     role_matrix_path = str(base / f"{slug}-role-matrix.md")
@@ -4755,6 +5245,9 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
     Path(markdown_path).write_text(render_ui_review_pack_report(pack, audit))
     Path(html_path).write_text(render_ui_review_pack_html(pack, audit))
     Path(decision_log_path).write_text(render_ui_review_decision_log(pack))
+    Path(objective_coverage_board_path).write_text(render_ui_review_objective_coverage_board(pack))
+    Path(wireframe_readiness_board_path).write_text(render_ui_review_wireframe_readiness_board(pack))
+    Path(open_question_tracker_path).write_text(render_ui_review_open_question_tracker(pack))
     Path(checklist_traceability_board_path).write_text(render_ui_review_checklist_traceability_board(pack))
     Path(decision_followup_tracker_path).write_text(render_ui_review_decision_followup_tracker(pack))
     Path(role_matrix_path).write_text(render_ui_review_role_matrix(pack))
@@ -4785,6 +5278,9 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
         markdown_path=markdown_path,
         html_path=html_path,
         decision_log_path=decision_log_path,
+        objective_coverage_board_path=objective_coverage_board_path,
+        wireframe_readiness_board_path=wireframe_readiness_board_path,
+        open_question_tracker_path=open_question_tracker_path,
         checklist_traceability_board_path=checklist_traceability_board_path,
         decision_followup_tracker_path=decision_followup_tracker_path,
         role_matrix_path=role_matrix_path,
