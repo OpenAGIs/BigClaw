@@ -296,6 +296,7 @@ from .ui_review import (
     ReviewDecision,
     ReviewObjective,
     ReviewRoleAssignment,
+    ReviewSignoff,
     ReviewerChecklistItem,
     UIReviewPack,
     UIReviewPackArtifacts,
@@ -306,6 +307,7 @@ from .ui_review import (
     render_ui_review_decision_log,
     render_ui_review_pack_html,
     render_ui_review_role_matrix,
+    render_ui_review_signoff_log,
     render_ui_review_pack_report,
     write_ui_review_pack_bundle,
 )
@@ -587,6 +589,7 @@ __all__ = [
     "ReviewDecision",
     "ReviewObjective",
     "ReviewRoleAssignment",
+    "ReviewSignoff",
     "ReviewerChecklistItem",
     "UIReviewPack",
     "UIReviewPackArtifacts",
@@ -597,6 +600,7 @@ __all__ = [
     "render_ui_review_decision_log",
     "render_ui_review_pack_html",
     "render_ui_review_role_matrix",
+    "render_ui_review_signoff_log",
     "render_ui_review_pack_report",
     "write_ui_review_pack_bundle",
 ]

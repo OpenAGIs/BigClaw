@@ -6,6 +6,7 @@ from bigclaw.ui_review import (
     ReviewDecision,
     ReviewObjective,
     ReviewRoleAssignment,
+    ReviewSignoff,
     ReviewerChecklistItem,
     UIReviewPack,
     UIReviewPackAuditor,
@@ -15,6 +16,7 @@ from bigclaw.ui_review import (
     render_ui_review_pack_html,
     render_ui_review_pack_report,
     render_ui_review_role_matrix,
+    render_ui_review_signoff_log,
     write_ui_review_pack_bundle,
 )
 
@@ -134,7 +136,7 @@ def test_render_ui_review_pack_report_summarizes_review_shape_and_findings() -> 
 
     assert "# UI Review Pack" in report
     assert "- Issue: BIG-4204 UI评审包输出" in report
-    assert "- Audit: READY: objectives=1 wireframes=1 interactions=1 open_questions=1 checklist=0 decisions=0 role_assignments=0" in report
+    assert "- Audit: READY: objectives=1 wireframes=1 interactions=1 open_questions=1 checklist=0 decisions=0 role_assignments=0 signoffs=0" in report
     assert (
         "- obj-alignment: Align reviewers on the release-control story "
         "persona=product-experience priority=P0"
@@ -156,19 +158,24 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert len(pack.reviewer_checklist) == 8
     assert len(pack.decision_log) == 4
     assert len(pack.role_matrix) == 8
+    assert len(pack.signoff_log) == 4
     assert pack.requires_reviewer_checklist is True
     assert pack.requires_decision_log is True
     assert pack.requires_role_matrix is True
+    assert pack.requires_signoff_log is True
     assert "obj-queue-governance" in report
     assert "wf-triage: Triage and handoff board" in report
     assert "flow-run-replay: Run replay with evidence audit" in report
     assert "chk-queue-batch-approval: surface=wf-queue owner=Platform Admin status=ready" in report
     assert "dec-queue-vp-summary: surface=wf-queue owner=VP Eng status=proposed" in report
     assert "role-queue-platform-admin: surface=wf-queue role=Platform Admin status=ready" in report
+    assert "sig-run-detail-eng-lead: surface=wf-run-detail role=Eng Lead assignment=role-run-detail-eng-lead status=pending" in report
     assert "- Wireframes missing checklist coverage: none" in report
     assert "- Wireframes missing decision coverage: none" in report
     assert "- Wireframes missing role assignments: none" in report
+    assert "- Wireframes missing signoff coverage: none" in report
     assert "- Unresolved decision ids: dec-queue-vp-summary" in report
+    assert "- Unresolved required signoff ids: sig-run-detail-eng-lead" in report
     assert "- Unresolved questions: oq-role-density, oq-alert-priority, oq-handoff-evidence" in report
 
 
@@ -238,6 +245,29 @@ def test_ui_review_pack_audit_flags_missing_role_matrix_coverage() -> None:
     assert audit.role_assignments_missing_decision_links == []
 
 
+def test_ui_review_pack_audit_flags_missing_signoff_coverage_and_assignment_links() -> None:
+    pack = build_big_4204_review_pack()
+    pack.signoff_log = [
+        ReviewSignoff(
+            signoff_id="sig-overview-vp-eng",
+            assignment_id="role-overview-missing",
+            surface_id="wf-overview",
+            role="VP Eng",
+            status="approved",
+            evidence_links=["chk-overview-kpi-scan"],
+        )
+    ]
+
+    audit = UIReviewPackAuditor().audit(pack)
+
+    assert audit.ready is False
+    assert audit.wireframes_missing_signoffs == ["wf-queue", "wf-run-detail", "wf-triage"]
+    assert audit.orphan_signoff_surfaces == []
+    assert audit.signoffs_missing_assignments == ["sig-overview-vp-eng"]
+    assert audit.signoffs_missing_evidence == []
+    assert audit.unresolved_required_signoff_ids == []
+
+
 def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     pack = build_big_4204_review_pack()
     audit = UIReviewPackAuditor().audit(pack)
@@ -245,20 +275,27 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     html = render_ui_review_pack_html(pack, audit)
     decision_log = render_ui_review_decision_log(pack)
     role_matrix = render_ui_review_role_matrix(pack)
+    signoff_log = render_ui_review_signoff_log(pack)
     artifacts = write_ui_review_pack_bundle(str(tmp_path), pack)
 
     assert "<h2>Decision Log</h2>" in html
     assert "<h2>Role Matrix</h2>" in html
+    assert "<h2>Sign-off Log</h2>" in html
     assert "dec-queue-vp-summary" in html
     assert "# UI Review Decision Log" in decision_log
     assert "dec-run-detail-audit-rail" in decision_log
     assert "# UI Review Role Matrix" in role_matrix
     assert "role-triage-platform-admin" in role_matrix
+    assert "# UI Review Sign-off Log" in signoff_log
+    assert "sig-run-detail-eng-lead" in signoff_log
     assert Path(artifacts.markdown_path).exists()
     assert Path(artifacts.html_path).exists()
     assert Path(artifacts.decision_log_path).exists()
     assert Path(artifacts.role_matrix_path).exists()
+    assert Path(artifacts.signoff_log_path).exists()
     assert "Decision Log" in Path(artifacts.html_path).read_text()
     assert "Role Matrix" in Path(artifacts.html_path).read_text()
+    assert "Sign-off Log" in Path(artifacts.html_path).read_text()
     assert "dec-triage-handoff-density" in Path(artifacts.decision_log_path).read_text()
     assert "role-run-detail-eng-lead" in Path(artifacts.role_matrix_path).read_text()
+    assert "sig-queue-platform-admin" in Path(artifacts.signoff_log_path).read_text()

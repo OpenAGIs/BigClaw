@@ -234,12 +234,50 @@ class ReviewRoleAssignment:
 
 
 @dataclass(frozen=True)
+class ReviewSignoff:
+    signoff_id: str
+    assignment_id: str
+    surface_id: str
+    role: str
+    status: str = "pending"
+    required: bool = True
+    evidence_links: List[str] = field(default_factory=list)
+    notes: str = ""
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "signoff_id": self.signoff_id,
+            "assignment_id": self.assignment_id,
+            "surface_id": self.surface_id,
+            "role": self.role,
+            "status": self.status,
+            "required": self.required,
+            "evidence_links": list(self.evidence_links),
+            "notes": self.notes,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "ReviewSignoff":
+        return cls(
+            signoff_id=str(data["signoff_id"]),
+            assignment_id=str(data["assignment_id"]),
+            surface_id=str(data["surface_id"]),
+            role=str(data["role"]),
+            status=str(data.get("status", "pending")),
+            required=bool(data.get("required", True)),
+            evidence_links=[str(item) for item in data.get("evidence_links", [])],
+            notes=str(data.get("notes", "")),
+        )
+
+
+@dataclass(frozen=True)
 class UIReviewPackArtifacts:
     root_dir: str
     markdown_path: str
     html_path: str
     decision_log_path: str
     role_matrix_path: str
+    signoff_log_path: str
 
 
 @dataclass
@@ -257,6 +295,8 @@ class UIReviewPack:
     requires_decision_log: bool = False
     role_matrix: List[ReviewRoleAssignment] = field(default_factory=list)
     requires_role_matrix: bool = False
+    signoff_log: List[ReviewSignoff] = field(default_factory=list)
+    requires_signoff_log: bool = False
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -273,6 +313,8 @@ class UIReviewPack:
             "requires_decision_log": self.requires_decision_log,
             "role_matrix": [assignment.to_dict() for assignment in self.role_matrix],
             "requires_role_matrix": self.requires_role_matrix,
+            "signoff_log": [signoff.to_dict() for signoff in self.signoff_log],
+            "requires_signoff_log": self.requires_signoff_log,
         }
 
     @classmethod
@@ -291,6 +333,8 @@ class UIReviewPack:
             requires_decision_log=bool(data.get("requires_decision_log", False)),
             role_matrix=[ReviewRoleAssignment.from_dict(item) for item in data.get("role_matrix", [])],
             requires_role_matrix=bool(data.get("requires_role_matrix", False)),
+            signoff_log=[ReviewSignoff.from_dict(item) for item in data.get("signoff_log", [])],
+            requires_signoff_log=bool(data.get("requires_signoff_log", False)),
         )
 
 
@@ -304,6 +348,7 @@ class UIReviewPackAudit:
     checklist_count: int = 0
     decision_count: int = 0
     role_assignment_count: int = 0
+    signoff_count: int = 0
     missing_sections: List[str] = field(default_factory=list)
     objectives_missing_signals: List[str] = field(default_factory=list)
     wireframes_missing_blocks: List[str] = field(default_factory=list)
@@ -320,6 +365,11 @@ class UIReviewPackAudit:
     role_assignments_missing_responsibilities: List[str] = field(default_factory=list)
     role_assignments_missing_checklist_links: List[str] = field(default_factory=list)
     role_assignments_missing_decision_links: List[str] = field(default_factory=list)
+    wireframes_missing_signoffs: List[str] = field(default_factory=list)
+    orphan_signoff_surfaces: List[str] = field(default_factory=list)
+    signoffs_missing_assignments: List[str] = field(default_factory=list)
+    signoffs_missing_evidence: List[str] = field(default_factory=list)
+    unresolved_required_signoff_ids: List[str] = field(default_factory=list)
 
     @property
     def summary(self) -> str:
@@ -331,7 +381,8 @@ class UIReviewPackAudit:
             f"open_questions={self.open_question_count} "
             f"checklist={self.checklist_count} "
             f"decisions={self.decision_count} "
-            f"role_assignments={self.role_assignment_count}"
+            f"role_assignments={self.role_assignment_count} "
+            f"signoffs={self.signoff_count}"
         )
 
 
@@ -404,6 +455,7 @@ class UIReviewPackAuditor:
             )
         checklist_item_ids = {item.item_id for item in pack.reviewer_checklist}
         decision_ids = {decision.decision_id for decision in pack.decision_log}
+        assignment_ids = {assignment.assignment_id for assignment in pack.role_matrix}
         role_assignments_by_surface: Dict[str, List[ReviewRoleAssignment]] = {}
         for assignment in pack.role_matrix:
             role_assignments_by_surface.setdefault(assignment.surface_id, []).append(assignment)
@@ -438,6 +490,35 @@ class UIReviewPackAuditor:
                 if not assignment.decision_ids
                 or any(decision_id not in decision_ids for decision_id in assignment.decision_ids)
             )
+        signoffs_by_surface: Dict[str, List[ReviewSignoff]] = {}
+        for signoff in pack.signoff_log:
+            signoffs_by_surface.setdefault(signoff.surface_id, []).append(signoff)
+        wireframes_missing_signoffs = []
+        orphan_signoff_surfaces = []
+        signoffs_missing_assignments = []
+        signoffs_missing_evidence = []
+        unresolved_required_signoff_ids = []
+        if pack.requires_signoff_log:
+            wireframes_missing_signoffs = sorted(
+                wireframe.surface_id for wireframe in pack.wireframes if wireframe.surface_id not in signoffs_by_surface
+            )
+            orphan_signoff_surfaces = sorted(
+                surface_id for surface_id in signoffs_by_surface if surface_id not in wireframe_ids
+            )
+            signoffs_missing_assignments = sorted(
+                signoff.signoff_id
+                for signoff in pack.signoff_log
+                if signoff.assignment_id not in assignment_ids
+            )
+            signoffs_missing_evidence = sorted(
+                signoff.signoff_id for signoff in pack.signoff_log if not signoff.evidence_links
+            )
+            unresolved_required_signoff_ids = sorted(
+                signoff.signoff_id
+                for signoff in pack.signoff_log
+                if signoff.required
+                and signoff.status.lower() not in {"approved", "accepted", "resolved", "waived", "deferred"}
+            )
         ready = not (
             missing_sections
             or objectives_missing_signals
@@ -453,6 +534,10 @@ class UIReviewPackAuditor:
             or role_assignments_missing_responsibilities
             or role_assignments_missing_checklist_links
             or role_assignments_missing_decision_links
+            or wireframes_missing_signoffs
+            or orphan_signoff_surfaces
+            or signoffs_missing_assignments
+            or signoffs_missing_evidence
         )
         return UIReviewPackAudit(
             ready=ready,
@@ -463,6 +548,7 @@ class UIReviewPackAuditor:
             checklist_count=len(pack.reviewer_checklist),
             decision_count=len(pack.decision_log),
             role_assignment_count=len(pack.role_matrix),
+            signoff_count=len(pack.signoff_log),
             missing_sections=missing_sections,
             objectives_missing_signals=objectives_missing_signals,
             wireframes_missing_blocks=wireframes_missing_blocks,
@@ -479,6 +565,11 @@ class UIReviewPackAuditor:
             role_assignments_missing_responsibilities=role_assignments_missing_responsibilities,
             role_assignments_missing_checklist_links=role_assignments_missing_checklist_links,
             role_assignments_missing_decision_links=role_assignments_missing_decision_links,
+            wireframes_missing_signoffs=wireframes_missing_signoffs,
+            orphan_signoff_surfaces=orphan_signoff_surfaces,
+            signoffs_missing_assignments=signoffs_missing_assignments,
+            signoffs_missing_evidence=signoffs_missing_evidence,
+            unresolved_required_signoff_ids=unresolved_required_signoff_ids,
         )
 
 
@@ -586,6 +677,20 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
     if not pack.role_matrix:
         lines.append("- none")
 
+    lines.append("")
+    lines.append("## Sign-off Log")
+    for signoff in pack.signoff_log:
+        lines.append(
+            "- "
+            f"{signoff.signoff_id}: surface={signoff.surface_id} role={signoff.role} assignment={signoff.assignment_id} status={signoff.status}"
+        )
+        lines.append(
+            "  "
+            f"required={'yes' if signoff.required else 'no'} evidence={','.join(signoff.evidence_links) or 'none'} notes={signoff.notes or 'none'}"
+        )
+    if not pack.signoff_log:
+        lines.append("- none")
+
     lines.extend(
         [
             "",
@@ -606,6 +711,11 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
             f"- Role assignments missing responsibilities: {', '.join(audit.role_assignments_missing_responsibilities) or 'none'}",
             f"- Role assignments missing checklist links: {', '.join(audit.role_assignments_missing_checklist_links) or 'none'}",
             f"- Role assignments missing decision links: {', '.join(audit.role_assignments_missing_decision_links) or 'none'}",
+            f"- Wireframes missing signoff coverage: {', '.join(audit.wireframes_missing_signoffs) or 'none'}",
+            f"- Orphan signoff surfaces: {', '.join(audit.orphan_signoff_surfaces) or 'none'}",
+            f"- Signoffs missing role assignments: {', '.join(audit.signoffs_missing_assignments) or 'none'}",
+            f"- Signoffs missing evidence: {', '.join(audit.signoffs_missing_evidence) or 'none'}",
+            f"- Unresolved required signoff ids: {', '.join(audit.unresolved_required_signoff_ids) or 'none'}",
         ]
     )
     return "\n".join(lines)
@@ -619,6 +729,7 @@ def build_big_4204_review_pack() -> UIReviewPack:
         requires_reviewer_checklist=True,
         requires_decision_log=True,
         requires_role_matrix=True,
+        requires_signoff_log=True,
         objectives=[
             ReviewObjective(
                 objective_id="obj-overview-decision",
@@ -924,6 +1035,44 @@ def build_big_4204_review_pack() -> UIReviewPack:
                 status="ready",
             ),
         ],
+        signoff_log=[
+            ReviewSignoff(
+                signoff_id="sig-overview-vp-eng",
+                assignment_id="role-overview-vp-eng",
+                surface_id="wf-overview",
+                role="VP Eng",
+                status="approved",
+                evidence_links=["chk-overview-kpi-scan", "dec-overview-alert-stack"],
+                notes="Overview narrative approved for design sprint review.",
+            ),
+            ReviewSignoff(
+                signoff_id="sig-queue-platform-admin",
+                assignment_id="role-queue-platform-admin",
+                surface_id="wf-queue",
+                role="Platform Admin",
+                status="approved",
+                evidence_links=["chk-queue-batch-approval", "dec-queue-vp-summary"],
+                notes="Queue control actions meet operator review criteria.",
+            ),
+            ReviewSignoff(
+                signoff_id="sig-run-detail-eng-lead",
+                assignment_id="role-run-detail-eng-lead",
+                surface_id="wf-run-detail",
+                role="Eng Lead",
+                status="pending",
+                evidence_links=["chk-run-replay-context", "dec-run-detail-audit-rail"],
+                notes="Waiting for final replay-state copy review.",
+            ),
+            ReviewSignoff(
+                signoff_id="sig-triage-cross-team-operator",
+                assignment_id="role-triage-cross-team-operator",
+                surface_id="wf-triage",
+                role="Cross-Team Operator",
+                status="approved",
+                evidence_links=["chk-triage-handoff-clarity", "dec-triage-handoff-density"],
+                notes="Cross-team handoff flow approved for prototype review.",
+            ),
+        ],
     )
 
 
@@ -981,6 +1130,31 @@ def render_ui_review_role_matrix(pack: UIReviewPack) -> str:
 
 
 
+def render_ui_review_signoff_log(pack: UIReviewPack) -> str:
+    lines = [
+        "# UI Review Sign-off Log",
+        "",
+        f"- Issue: {pack.issue_id} {pack.title}",
+        f"- Version: {pack.version}",
+        f"- Sign-offs: {len(pack.signoff_log)}",
+        "",
+        "## Sign-offs",
+    ]
+    for signoff in pack.signoff_log:
+        lines.append(
+            "- "
+            f"{signoff.signoff_id}: surface={signoff.surface_id} role={signoff.role} assignment={signoff.assignment_id} status={signoff.status}"
+        )
+        lines.append(
+            "  "
+            f"required={'yes' if signoff.required else 'no'} evidence={','.join(signoff.evidence_links) or 'none'} notes={signoff.notes or 'none'}"
+        )
+    if not pack.signoff_log:
+        lines.append("- none")
+    return "\n".join(lines)
+
+
+
 def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> str:
     objective_html = "".join(
         f"<li><strong>{escape(objective.objective_id)}</strong> · {escape(objective.title)} · persona={escape(objective.persona)} · priority={escape(objective.priority)}<br /><span>{escape(objective.success_signal)}</span></li>"
@@ -1010,6 +1184,10 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
         f"<li><strong>{escape(assignment.assignment_id)}</strong> · surface={escape(assignment.surface_id)} · role={escape(assignment.role)} · status={escape(assignment.status)}<br /><span>responsibilities={escape(', '.join(assignment.responsibilities) if assignment.responsibilities else 'none')}</span><br /><span>checklist={escape(', '.join(assignment.checklist_item_ids) if assignment.checklist_item_ids else 'none')} · decisions={escape(', '.join(assignment.decision_ids) if assignment.decision_ids else 'none')}</span></li>"
         for assignment in pack.role_matrix
     ) or "<li>none</li>"
+    signoff_html = "".join(
+        f"<li><strong>{escape(signoff.signoff_id)}</strong> · surface={escape(signoff.surface_id)} · role={escape(signoff.role)} · status={escape(signoff.status)}<br /><span>assignment={escape(signoff.assignment_id)} · required={escape('yes' if signoff.required else 'no')}</span><br /><span>evidence={escape(', '.join(signoff.evidence_links) if signoff.evidence_links else 'none')}</span></li>"
+        for signoff in pack.signoff_log
+    ) or "<li>none</li>"
     return f'''<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -1035,7 +1213,9 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
       <p>Missing checklist coverage: {escape(', '.join(audit.wireframes_missing_checklists) if audit.wireframes_missing_checklists else 'none')}</p>
       <p>Missing decision coverage: {escape(', '.join(audit.wireframes_missing_decisions) if audit.wireframes_missing_decisions else 'none')}</p>
       <p>Missing role assignments: {escape(', '.join(audit.wireframes_missing_role_assignments) if audit.wireframes_missing_role_assignments else 'none')}</p>
+      <p>Missing signoff coverage: {escape(', '.join(audit.wireframes_missing_signoffs) if audit.wireframes_missing_signoffs else 'none')}</p>
       <p>Unresolved decisions: {escape(', '.join(audit.unresolved_decision_ids) if audit.unresolved_decision_ids else 'none')}</p>
+      <p>Unresolved required signoffs: {escape(', '.join(audit.unresolved_required_signoff_ids) if audit.unresolved_required_signoff_ids else 'none')}</p>
     </section>
     <section class="surface"><h2>Objectives</h2><ul>{objective_html}</ul></section>
     <section class="surface"><h2>Wireframes</h2><ul>{wireframe_html}</ul></section>
@@ -1044,6 +1224,7 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
     <section class="surface"><h2>Reviewer Checklist</h2><ul>{checklist_html}</ul></section>
     <section class="surface"><h2>Decision Log</h2><ul>{decision_html}</ul></section>
     <section class="surface"><h2>Role Matrix</h2><ul>{role_matrix_html}</ul></section>
+    <section class="surface"><h2>Sign-off Log</h2><ul>{signoff_html}</ul></section>
   </body>
 </html>
 '''
@@ -1058,15 +1239,18 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
     html_path = str(base / f"{slug}-review-pack.html")
     decision_log_path = str(base / f"{slug}-decision-log.md")
     role_matrix_path = str(base / f"{slug}-role-matrix.md")
+    signoff_log_path = str(base / f"{slug}-signoff-log.md")
     audit = UIReviewPackAuditor().audit(pack)
     Path(markdown_path).write_text(render_ui_review_pack_report(pack, audit))
     Path(html_path).write_text(render_ui_review_pack_html(pack, audit))
     Path(decision_log_path).write_text(render_ui_review_decision_log(pack))
     Path(role_matrix_path).write_text(render_ui_review_role_matrix(pack))
+    Path(signoff_log_path).write_text(render_ui_review_signoff_log(pack))
     return UIReviewPackArtifacts(
         root_dir=str(base),
         markdown_path=markdown_path,
         html_path=html_path,
         decision_log_path=decision_log_path,
         role_matrix_path=role_matrix_path,
+        signoff_log_path=signoff_log_path,
     )
