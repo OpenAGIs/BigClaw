@@ -1,0 +1,156 @@
+{
+  "autostarted": true,
+  "base_url": "http://127.0.0.1:63302",
+  "task": {
+    "id": "local-smoke-1773394601",
+    "trace_id": "local-smoke-1773394601",
+    "title": "SQLite smoke",
+    "state": "queued",
+    "required_executor": "local",
+    "entrypoint": "echo hello from sqlite",
+    "metadata": {
+      "executor": "local",
+      "smoke_test": "true"
+    },
+    "execution_timeout_seconds": 180,
+    "created_at": "2026-03-13T17:36:41.49862+08:00",
+    "updated_at": "2026-03-13T17:36:41.49862+08:00"
+  },
+  "status": {
+    "events": [
+      {
+        "id": "local-smoke-1773394601-queued",
+        "type": "task.queued",
+        "task_id": "local-smoke-1773394601",
+        "trace_id": "local-smoke-1773394601",
+        "timestamp": "2026-03-13T17:36:41.49862+08:00",
+        "payload": {
+          "executor": "local",
+          "title": "SQLite smoke"
+        }
+      },
+      {
+        "id": "local-smoke-1773394601-leased",
+        "type": "task.leased",
+        "task_id": "local-smoke-1773394601",
+        "trace_id": "local-smoke-1773394601",
+        "timestamp": "2026-03-13T17:36:41.595554+08:00"
+      },
+      {
+        "id": "local-smoke-1773394601-routed",
+        "type": "scheduler.routed",
+        "task_id": "local-smoke-1773394601",
+        "trace_id": "local-smoke-1773394601",
+        "timestamp": "2026-03-13T17:36:41.595657+08:00",
+        "payload": {
+          "executor": "local",
+          "quota": {
+            "TenantID": "",
+            "ConcurrentLimit": 32,
+            "CurrentRunning": 0,
+            "BudgetRemaining": 1000,
+            "QueueDepth": 0,
+            "MaxQueueDepth": 0,
+            "PreemptibleExecutions": 0
+          },
+          "reason": "required executor=local"
+        }
+      },
+      {
+        "id": "local-smoke-1773394601-started",
+        "type": "task.started",
+        "task_id": "local-smoke-1773394601",
+        "trace_id": "local-smoke-1773394601",
+        "timestamp": "2026-03-13T17:36:41.595911+08:00",
+        "payload": {
+          "executor": "local"
+        }
+      },
+      {
+        "id": "local-smoke-1773394601-completed",
+        "type": "task.completed",
+        "task_id": "local-smoke-1773394601",
+        "trace_id": "local-smoke-1773394601",
+        "timestamp": "2026-03-13T17:36:41.606911+08:00",
+        "payload": {
+          "message": "local execution completed"
+        }
+      }
+    ],
+    "latest_event": {
+      "id": "local-smoke-1773394601-completed",
+      "type": "task.completed",
+      "task_id": "local-smoke-1773394601",
+      "trace_id": "local-smoke-1773394601",
+      "timestamp": "2026-03-13T17:36:41.606911+08:00",
+      "payload": {
+        "message": "local execution completed"
+      }
+    },
+    "state": "succeeded",
+    "task_id": "local-smoke-1773394601",
+    "trace_id": "local-smoke-1773394601"
+  },
+  "events": [
+    {
+      "id": "local-smoke-1773394601-queued",
+      "type": "task.queued",
+      "task_id": "local-smoke-1773394601",
+      "trace_id": "local-smoke-1773394601",
+      "timestamp": "2026-03-13T17:36:41.49862+08:00",
+      "payload": {
+        "executor": "local",
+        "title": "SQLite smoke"
+      }
+    },
+    {
+      "id": "local-smoke-1773394601-leased",
+      "type": "task.leased",
+      "task_id": "local-smoke-1773394601",
+      "trace_id": "local-smoke-1773394601",
+      "timestamp": "2026-03-13T17:36:41.595554+08:00"
+    },
+    {
+      "id": "local-smoke-1773394601-routed",
+      "type": "scheduler.routed",
+      "task_id": "local-smoke-1773394601",
+      "trace_id": "local-smoke-1773394601",
+      "timestamp": "2026-03-13T17:36:41.595657+08:00",
+      "payload": {
+        "executor": "local",
+        "quota": {
+          "TenantID": "",
+          "ConcurrentLimit": 32,
+          "CurrentRunning": 0,
+          "BudgetRemaining": 1000,
+          "QueueDepth": 0,
+          "MaxQueueDepth": 0,
+          "PreemptibleExecutions": 0
+        },
+        "reason": "required executor=local"
+      }
+    },
+    {
+      "id": "local-smoke-1773394601-started",
+      "type": "task.started",
+      "task_id": "local-smoke-1773394601",
+      "trace_id": "local-smoke-1773394601",
+      "timestamp": "2026-03-13T17:36:41.595911+08:00",
+      "payload": {
+        "executor": "local"
+      }
+    },
+    {
+      "id": "local-smoke-1773394601-completed",
+      "type": "task.completed",
+      "task_id": "local-smoke-1773394601",
+      "trace_id": "local-smoke-1773394601",
+      "timestamp": "2026-03-13T17:36:41.606911+08:00",
+      "payload": {
+        "message": "local execution completed"
+      }
+    }
+  ],
+  "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-lhysc0zt",
+  "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-e2e-bqn7idpm.log"
+}

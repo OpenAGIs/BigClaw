@@ -1,0 +1,6 @@
+NAME                                                       STATUS     COMPLETIONS   DURATION   AGE     CONTAINERS   IMAGES        SELECTOR
+job.batch/bigclaw-kubernetes-smoke-1773382199-1773382199   Complete   1/1           4s         3m33s   executor     alpine:3.20   batch.kubernetes.io/controller-uid=6d801124-c4a5-4657-850c-0f381829cb72
+
+NAME                                                       READY   STATUS      RESTARTS   AGE     IP            NODE                      NOMINATED NODE   READINESS GATES
+pod/bigclaw-kubernetes-smoke-1773382199-1773382199-6k4vx   0/1     Completed   0          3m32s   10.244.0.10   ray-local-control-plane   <none>           <none>
+pod/raycluster-local-head-s9c57                            1/1     Running     0          3h20m   10.244.0.6    ray-local-control-plane   <none>           <none>
