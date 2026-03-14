@@ -2,6 +2,7 @@ from bigclaw.ui_review import (
     InteractionFlow,
     OpenQuestion,
     ReviewObjective,
+    ReviewerChecklistItem,
     UIReviewPack,
     UIReviewPackAuditor,
     WireframeSurface,
@@ -144,7 +145,32 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert len(pack.wireframes) == 4
     assert len(pack.interactions) == 4
     assert len(pack.open_questions) == 3
+    assert len(pack.reviewer_checklist) == 8
+    assert pack.requires_reviewer_checklist is True
     assert "obj-queue-governance" in report
     assert "wf-triage: Triage and handoff board" in report
     assert "flow-run-replay: Run replay with evidence audit" in report
+    assert "chk-queue-batch-approval: surface=wf-queue owner=Platform Admin status=ready" in report
+    assert "- Wireframes missing checklist coverage: none" in report
     assert "- Unresolved questions: oq-role-density, oq-alert-priority, oq-handoff-evidence" in report
+
+
+def test_ui_review_pack_audit_flags_missing_checklist_coverage_and_evidence() -> None:
+    pack = build_big_4204_review_pack()
+    pack.reviewer_checklist = [
+        ReviewerChecklistItem(
+            item_id="chk-overview-kpi-scan",
+            surface_id="wf-overview",
+            prompt="Verify the KPI strip still supports one-screen executive scanning before drill-down.",
+            owner="VP Eng",
+            status="ready",
+            evidence_links=[],
+        )
+    ]
+
+    audit = UIReviewPackAuditor().audit(pack)
+
+    assert audit.ready is False
+    assert audit.wireframes_missing_checklists == ["wf-queue", "wf-run-detail", "wf-triage"]
+    assert audit.checklist_items_missing_evidence == ["chk-overview-kpi-scan"]
+    assert audit.orphan_checklist_surfaces == []

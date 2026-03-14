@@ -254,6 +254,10 @@ class SurfaceInteractionContract:
     requires_batch_actions: bool = False
     required_states: List[str] = field(default_factory=lambda: sorted(REQUIRED_SURFACE_STATES))
     permission_rule: SurfacePermissionRule = field(default_factory=SurfacePermissionRule)
+    primary_persona: str = ""
+    linked_wireframe_id: str = ""
+    review_focus_areas: List[str] = field(default_factory=list)
+    decision_prompts: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -263,6 +267,10 @@ class SurfaceInteractionContract:
             "requires_batch_actions": self.requires_batch_actions,
             "required_states": list(self.required_states),
             "permission_rule": self.permission_rule.to_dict(),
+            "primary_persona": self.primary_persona,
+            "linked_wireframe_id": self.linked_wireframe_id,
+            "review_focus_areas": list(self.review_focus_areas),
+            "decision_prompts": list(self.decision_prompts),
         }
 
     @classmethod
@@ -274,6 +282,10 @@ class SurfaceInteractionContract:
             requires_batch_actions=bool(data.get("requires_batch_actions", False)),
             required_states=[str(state) for state in data.get("required_states", sorted(REQUIRED_SURFACE_STATES))],
             permission_rule=SurfacePermissionRule.from_dict(dict(data.get("permission_rule", {}))),
+            primary_persona=str(data.get("primary_persona", "")),
+            linked_wireframe_id=str(data.get("linked_wireframe_id", "")),
+            review_focus_areas=[str(item) for item in data.get("review_focus_areas", [])],
+            decision_prompts=[str(item) for item in data.get("decision_prompts", [])],
         )
 
 
@@ -284,6 +296,7 @@ class ConsoleInteractionDraft:
     architecture: ConsoleIA
     contracts: List[SurfaceInteractionContract] = field(default_factory=list)
     required_roles: List[str] = field(default_factory=list)
+    requires_frame_contracts: bool = False
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -292,6 +305,7 @@ class ConsoleInteractionDraft:
             "architecture": self.architecture.to_dict(),
             "contracts": [contract.to_dict() for contract in self.contracts],
             "required_roles": list(self.required_roles),
+            "requires_frame_contracts": self.requires_frame_contracts,
         }
 
     @classmethod
@@ -302,6 +316,7 @@ class ConsoleInteractionDraft:
             architecture=ConsoleIA.from_dict(dict(data["architecture"])),
             contracts=[SurfaceInteractionContract.from_dict(item) for item in data.get("contracts", [])],
             required_roles=[str(role) for role in data.get("required_roles", [])],
+            requires_frame_contracts=bool(data.get("requires_frame_contracts", False)),
         )
 
 
@@ -317,6 +332,10 @@ class ConsoleInteractionAudit:
     surfaces_missing_states: Dict[str, List[str]] = field(default_factory=dict)
     permission_gaps: Dict[str, List[str]] = field(default_factory=dict)
     uncovered_roles: List[str] = field(default_factory=list)
+    surfaces_missing_primary_personas: List[str] = field(default_factory=list)
+    surfaces_missing_wireframe_links: List[str] = field(default_factory=list)
+    surfaces_missing_review_focus: List[str] = field(default_factory=list)
+    surfaces_missing_decision_prompts: List[str] = field(default_factory=list)
 
     @property
     def readiness_score(self) -> float:
@@ -330,6 +349,10 @@ class ConsoleInteractionAudit:
             + len(self.surfaces_missing_states)
             + len(self.permission_gaps)
             + len(self.uncovered_roles)
+            + len(self.surfaces_missing_primary_personas)
+            + len(self.surfaces_missing_wireframe_links)
+            + len(self.surfaces_missing_review_focus)
+            + len(self.surfaces_missing_decision_prompts)
         )
         score = max(0.0, 100 - ((penalties * 100) / self.contract_count))
         return round(score, 1)
@@ -344,6 +367,10 @@ class ConsoleInteractionAudit:
             and not self.surfaces_missing_states
             and not self.permission_gaps
             and not self.uncovered_roles
+            and not self.surfaces_missing_primary_personas
+            and not self.surfaces_missing_wireframe_links
+            and not self.surfaces_missing_review_focus
+            and not self.surfaces_missing_decision_prompts
         )
 
     def to_dict(self) -> Dict[str, object]:
@@ -362,6 +389,10 @@ class ConsoleInteractionAudit:
             },
             "permission_gaps": {name: list(gaps) for name, gaps in self.permission_gaps.items()},
             "uncovered_roles": list(self.uncovered_roles),
+            "surfaces_missing_primary_personas": list(self.surfaces_missing_primary_personas),
+            "surfaces_missing_wireframe_links": list(self.surfaces_missing_wireframe_links),
+            "surfaces_missing_review_focus": list(self.surfaces_missing_review_focus),
+            "surfaces_missing_decision_prompts": list(self.surfaces_missing_decision_prompts),
         }
 
     @classmethod
@@ -388,6 +419,10 @@ class ConsoleInteractionAudit:
                 for name, gaps in dict(data.get("permission_gaps", {})).items()
             },
             uncovered_roles=[str(role) for role in data.get("uncovered_roles", [])],
+            surfaces_missing_primary_personas=[str(name) for name in data.get("surfaces_missing_primary_personas", [])],
+            surfaces_missing_wireframe_links=[str(name) for name in data.get("surfaces_missing_wireframe_links", [])],
+            surfaces_missing_review_focus=[str(name) for name in data.get("surfaces_missing_review_focus", [])],
+            surfaces_missing_decision_prompts=[str(name) for name in data.get("surfaces_missing_decision_prompts", [])],
         )
 
 
@@ -528,6 +563,10 @@ class ConsoleInteractionAuditor:
         surfaces_missing_states: Dict[str, List[str]] = {}
         permission_gaps: Dict[str, List[str]] = {}
         referenced_roles = set()
+        surfaces_missing_primary_personas: List[str] = []
+        surfaces_missing_wireframe_links: List[str] = []
+        surfaces_missing_review_focus: List[str] = []
+        surfaces_missing_decision_prompts: List[str] = []
 
         for contract in draft.contracts:
             surface: Optional[ConsoleSurface] = route_index.get(contract.surface_name)
@@ -566,6 +605,16 @@ class ConsoleInteractionAuditor:
             if contract.permission_rule.missing_coverage:
                 permission_gaps[contract.surface_name] = contract.permission_rule.missing_coverage
 
+            if draft.requires_frame_contracts:
+                if not contract.primary_persona.strip():
+                    surfaces_missing_primary_personas.append(contract.surface_name)
+                if not contract.linked_wireframe_id.strip():
+                    surfaces_missing_wireframe_links.append(contract.surface_name)
+                if not contract.review_focus_areas:
+                    surfaces_missing_review_focus.append(contract.surface_name)
+                if not contract.decision_prompts:
+                    surfaces_missing_decision_prompts.append(contract.surface_name)
+
         uncovered_roles = sorted(
             role for role in draft.required_roles if role not in referenced_roles
         )
@@ -581,6 +630,10 @@ class ConsoleInteractionAuditor:
             surfaces_missing_states=dict(sorted(surfaces_missing_states.items())),
             permission_gaps=dict(sorted(permission_gaps.items())),
             uncovered_roles=uncovered_roles,
+            surfaces_missing_primary_personas=sorted(surfaces_missing_primary_personas),
+            surfaces_missing_wireframe_links=sorted(surfaces_missing_wireframe_links),
+            surfaces_missing_review_focus=sorted(surfaces_missing_review_focus),
+            surfaces_missing_decision_prompts=sorted(surfaces_missing_decision_prompts),
         )
 
 
@@ -717,6 +770,13 @@ def render_console_interaction_report(
                 f"states={', '.join(surface.state_names) or 'none'} batch={batch_mode} "
                 f"permissions={permission_state}"
             )
+            lines.append(
+                "  "
+                f"persona={contract.primary_persona or 'none'} "
+                f"wireframe={contract.linked_wireframe_id or 'none'} "
+                f"review_focus={','.join(contract.review_focus_areas) or 'none'} "
+                f"decision_prompts={','.join(contract.decision_prompts) or 'none'}"
+            )
     else:
         lines.append("- None")
 
@@ -755,6 +815,18 @@ def render_console_interaction_report(
     lines.append(
         f"- Uncovered roles: {', '.join(audit.uncovered_roles) if audit.uncovered_roles else 'none'}"
     )
+    lines.append(
+        f"- Pages missing personas: {', '.join(audit.surfaces_missing_primary_personas) if audit.surfaces_missing_primary_personas else 'none'}"
+    )
+    lines.append(
+        f"- Pages missing wireframe links: {', '.join(audit.surfaces_missing_wireframe_links) if audit.surfaces_missing_wireframe_links else 'none'}"
+    )
+    lines.append(
+        f"- Pages missing review focus: {', '.join(audit.surfaces_missing_review_focus) if audit.surfaces_missing_review_focus else 'none'}"
+    )
+    lines.append(
+        f"- Pages missing decision prompts: {', '.join(audit.surfaces_missing_decision_prompts) if audit.surfaces_missing_decision_prompts else 'none'}"
+    )
     return "\n".join(lines) + "\n"
 
 
@@ -763,6 +835,7 @@ def build_big_4203_console_interaction_draft() -> ConsoleInteractionDraft:
         name="BIG-4203 Four Critical Pages",
         version="v4.0-design-sprint",
         required_roles=["eng-lead", "platform-admin", "vp-eng", "cross-team-operator"],
+        requires_frame_contracts=True,
         architecture=ConsoleIA(
             name="BigClaw Console IA",
             version="v4.0-design-sprint",
@@ -887,6 +960,13 @@ def build_big_4203_console_interaction_draft() -> ConsoleInteractionDraft:
                     denied_roles=["guest"],
                     audit_event="overview.access.denied",
                 ),
+                primary_persona="VP Eng",
+                linked_wireframe_id="wf-overview",
+                review_focus_areas=["metric hierarchy", "drill-down posture", "alert prioritization"],
+                decision_prompts=[
+                    "Is the executive KPI density still scannable within one screen?",
+                    "Do risk and blocker cards point to the correct downstream investigation surface?",
+                ],
             ),
             SurfaceInteractionContract(
                 surface_name="Queue",
@@ -897,6 +977,13 @@ def build_big_4203_console_interaction_draft() -> ConsoleInteractionDraft:
                     denied_roles=["vp-eng", "guest"],
                     audit_event="queue.access.denied",
                 ),
+                primary_persona="Platform Admin",
+                linked_wireframe_id="wf-queue",
+                review_focus_areas=["batch approvals", "denied-role state", "audit rail"],
+                decision_prompts=[
+                    "Does the queue clearly separate selection, confirmation, and audit outcomes?",
+                    "Is the denied-role treatment explicit enough for VP Eng and guest personas?",
+                ],
             ),
             SurfaceInteractionContract(
                 surface_name="Run Detail",
@@ -906,6 +993,13 @@ def build_big_4203_console_interaction_draft() -> ConsoleInteractionDraft:
                     denied_roles=["guest"],
                     audit_event="run-detail.access.denied",
                 ),
+                primary_persona="Eng Lead",
+                linked_wireframe_id="wf-run-detail",
+                review_focus_areas=["replay context", "artifact evidence", "escalation path"],
+                decision_prompts=[
+                    "Can reviewers distinguish replay, compare, and escalated states without narration?",
+                    "Is the audit trail visible at the moment an escalation decision is made?",
+                ],
             ),
             SurfaceInteractionContract(
                 surface_name="Triage",
@@ -916,6 +1010,13 @@ def build_big_4203_console_interaction_draft() -> ConsoleInteractionDraft:
                     denied_roles=["vp-eng", "guest"],
                     audit_event="triage.access.denied",
                 ),
+                primary_persona="Cross-Team Operator",
+                linked_wireframe_id="wf-triage",
+                review_focus_areas=["handoff path", "bulk assignment", "ownership history"],
+                decision_prompts=[
+                    "Does the triage frame explain handoff consequences before ownership changes commit?",
+                    "Is bulk assignment discoverable without overpowering the audit context?",
+                ],
             ),
         ],
     )

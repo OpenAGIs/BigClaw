@@ -129,6 +129,40 @@ class OpenQuestion:
         )
 
 
+@dataclass(frozen=True)
+class ReviewerChecklistItem:
+    item_id: str
+    surface_id: str
+    prompt: str
+    owner: str
+    status: str = "todo"
+    evidence_links: List[str] = field(default_factory=list)
+    notes: str = ""
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "item_id": self.item_id,
+            "surface_id": self.surface_id,
+            "prompt": self.prompt,
+            "owner": self.owner,
+            "status": self.status,
+            "evidence_links": list(self.evidence_links),
+            "notes": self.notes,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "ReviewerChecklistItem":
+        return cls(
+            item_id=str(data["item_id"]),
+            surface_id=str(data["surface_id"]),
+            prompt=str(data["prompt"]),
+            owner=str(data["owner"]),
+            status=str(data.get("status", "todo")),
+            evidence_links=[str(item) for item in data.get("evidence_links", [])],
+            notes=str(data.get("notes", "")),
+        )
+
+
 @dataclass
 class UIReviewPack:
     issue_id: str
@@ -138,6 +172,8 @@ class UIReviewPack:
     wireframes: List[WireframeSurface] = field(default_factory=list)
     interactions: List[InteractionFlow] = field(default_factory=list)
     open_questions: List[OpenQuestion] = field(default_factory=list)
+    reviewer_checklist: List[ReviewerChecklistItem] = field(default_factory=list)
+    requires_reviewer_checklist: bool = False
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -148,6 +184,8 @@ class UIReviewPack:
             "wireframes": [wireframe.to_dict() for wireframe in self.wireframes],
             "interactions": [interaction.to_dict() for interaction in self.interactions],
             "open_questions": [question.to_dict() for question in self.open_questions],
+            "reviewer_checklist": [item.to_dict() for item in self.reviewer_checklist],
+            "requires_reviewer_checklist": self.requires_reviewer_checklist,
         }
 
     @classmethod
@@ -160,6 +198,8 @@ class UIReviewPack:
             wireframes=[WireframeSurface.from_dict(item) for item in data.get("wireframes", [])],
             interactions=[InteractionFlow.from_dict(item) for item in data.get("interactions", [])],
             open_questions=[OpenQuestion.from_dict(item) for item in data.get("open_questions", [])],
+            reviewer_checklist=[ReviewerChecklistItem.from_dict(item) for item in data.get("reviewer_checklist", [])],
+            requires_reviewer_checklist=bool(data.get("requires_reviewer_checklist", False)),
         )
 
 
@@ -170,11 +210,15 @@ class UIReviewPackAudit:
     wireframe_count: int
     interaction_count: int
     open_question_count: int
+    checklist_count: int = 0
     missing_sections: List[str] = field(default_factory=list)
     objectives_missing_signals: List[str] = field(default_factory=list)
     wireframes_missing_blocks: List[str] = field(default_factory=list)
     interactions_missing_states: List[str] = field(default_factory=list)
     unresolved_question_ids: List[str] = field(default_factory=list)
+    wireframes_missing_checklists: List[str] = field(default_factory=list)
+    orphan_checklist_surfaces: List[str] = field(default_factory=list)
+    checklist_items_missing_evidence: List[str] = field(default_factory=list)
 
     @property
     def summary(self) -> str:
@@ -219,11 +263,31 @@ class UIReviewPackAuditor:
             for question in pack.open_questions
             if question.status.lower() != "resolved"
         ]
+        wireframe_ids = {wireframe.surface_id for wireframe in pack.wireframes}
+        checklist_by_surface: Dict[str, List[ReviewerChecklistItem]] = {}
+        for item in pack.reviewer_checklist:
+            checklist_by_surface.setdefault(item.surface_id, []).append(item)
+        wireframes_missing_checklists = []
+        orphan_checklist_surfaces = []
+        checklist_items_missing_evidence = []
+        if pack.requires_reviewer_checklist:
+            wireframes_missing_checklists = sorted(
+                wireframe.surface_id for wireframe in pack.wireframes if wireframe.surface_id not in checklist_by_surface
+            )
+            orphan_checklist_surfaces = sorted(
+                surface_id for surface_id in checklist_by_surface if surface_id not in wireframe_ids
+            )
+            checklist_items_missing_evidence = sorted(
+                item.item_id for item in pack.reviewer_checklist if not item.evidence_links
+            )
         ready = not (
             missing_sections
             or objectives_missing_signals
             or wireframes_missing_blocks
             or interactions_missing_states
+            or wireframes_missing_checklists
+            or orphan_checklist_surfaces
+            or checklist_items_missing_evidence
         )
         return UIReviewPackAudit(
             ready=ready,
@@ -231,11 +295,15 @@ class UIReviewPackAuditor:
             wireframe_count=len(pack.wireframes),
             interaction_count=len(pack.interactions),
             open_question_count=len(pack.open_questions),
+            checklist_count=len(pack.reviewer_checklist),
             missing_sections=missing_sections,
             objectives_missing_signals=objectives_missing_signals,
             wireframes_missing_blocks=wireframes_missing_blocks,
             interactions_missing_states=interactions_missing_states,
             unresolved_question_ids=unresolved_question_ids,
+            wireframes_missing_checklists=wireframes_missing_checklists,
+            orphan_checklist_surfaces=orphan_checklist_surfaces,
+            checklist_items_missing_evidence=checklist_items_missing_evidence,
         )
 
 
@@ -299,6 +367,20 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
         )
         lines.append("  " f"question={question.question} impact={question.impact}")
 
+    lines.append("")
+    lines.append("## Reviewer Checklist")
+    for item in pack.reviewer_checklist:
+        lines.append(
+            "- "
+            f"{item.item_id}: surface={item.surface_id} owner={item.owner} status={item.status}"
+        )
+        lines.append(
+            "  "
+            f"prompt={item.prompt} evidence={','.join(item.evidence_links) or 'none'} notes={item.notes or 'none'}"
+        )
+    if not pack.reviewer_checklist:
+        lines.append("- none")
+
     lines.extend(
         [
             "",
@@ -308,6 +390,9 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
             f"- Wireframes missing blocks: {', '.join(audit.wireframes_missing_blocks) or 'none'}",
             f"- Interactions missing states: {', '.join(audit.interactions_missing_states) or 'none'}",
             f"- Unresolved questions: {', '.join(audit.unresolved_question_ids) or 'none'}",
+            f"- Wireframes missing checklist coverage: {', '.join(audit.wireframes_missing_checklists) or 'none'}",
+            f"- Orphan checklist surfaces: {', '.join(audit.orphan_checklist_surfaces) or 'none'}",
+            f"- Checklist items missing evidence: {', '.join(audit.checklist_items_missing_evidence) or 'none'}",
         ]
     )
     return "\n".join(lines)
@@ -318,6 +403,7 @@ def build_big_4204_review_pack() -> UIReviewPack:
         issue_id="BIG-4204",
         title="UI评审包输出",
         version="v4.0-design-sprint",
+        requires_reviewer_checklist=True,
         objectives=[
             ReviewObjective(
                 objective_id="obj-overview-decision",
@@ -445,6 +531,73 @@ def build_big_4204_review_pack() -> UIReviewPack:
                 question="How much ownership history must stay visible before the run-detail and triage pages collapse older audit entries?",
                 owner="orchestration-office",
                 impact="Shapes the default density of the audit rail and the threshold for the review-ready packet.",
+            ),
+        ],
+        reviewer_checklist=[
+            ReviewerChecklistItem(
+                item_id="chk-overview-kpi-scan",
+                surface_id="wf-overview",
+                prompt="Verify the KPI strip still supports one-screen executive scanning before drill-down.",
+                owner="VP Eng",
+                status="ready",
+                evidence_links=["wf-overview", "flow-overview-drilldown"],
+                notes="Use the overview card hierarchy as the primary decision frame.",
+            ),
+            ReviewerChecklistItem(
+                item_id="chk-overview-alert-hierarchy",
+                surface_id="wf-overview",
+                prompt="Confirm alert priority is readable when approvals and regressions compete for attention.",
+                owner="engineering-operations",
+                status="open",
+                evidence_links=["wf-overview", "oq-alert-priority"],
+            ),
+            ReviewerChecklistItem(
+                item_id="chk-queue-batch-approval",
+                surface_id="wf-queue",
+                prompt="Check that batch approval clearly communicates scope, denial paths, and audit consequences.",
+                owner="Platform Admin",
+                status="ready",
+                evidence_links=["wf-queue", "flow-queue-bulk-approval"],
+            ),
+            ReviewerChecklistItem(
+                item_id="chk-queue-role-density",
+                surface_id="wf-queue",
+                prompt="Validate whether VP Eng should get a summary-only queue variant instead of operator controls.",
+                owner="product-experience",
+                status="open",
+                evidence_links=["wf-queue", "oq-role-density"],
+            ),
+            ReviewerChecklistItem(
+                item_id="chk-run-replay-context",
+                surface_id="wf-run-detail",
+                prompt="Ensure replay, compare, and escalation states remain distinguishable without narration.",
+                owner="Eng Lead",
+                status="ready",
+                evidence_links=["wf-run-detail", "flow-run-replay"],
+            ),
+            ReviewerChecklistItem(
+                item_id="chk-run-audit-density",
+                surface_id="wf-run-detail",
+                prompt="Confirm the audit rail retains enough ownership history before collapsing older entries.",
+                owner="orchestration-office",
+                status="open",
+                evidence_links=["wf-run-detail", "oq-handoff-evidence"],
+            ),
+            ReviewerChecklistItem(
+                item_id="chk-triage-handoff-clarity",
+                surface_id="wf-triage",
+                prompt="Check that cross-team handoff consequences are explicit before ownership changes commit.",
+                owner="Cross-Team Operator",
+                status="ready",
+                evidence_links=["wf-triage", "flow-triage-handoff"],
+            ),
+            ReviewerChecklistItem(
+                item_id="chk-triage-bulk-assign",
+                surface_id="wf-triage",
+                prompt="Validate bulk assignment visibility without burying the audit context.",
+                owner="Platform Admin",
+                status="ready",
+                evidence_links=["wf-triage", "flow-triage-handoff"],
             ),
         ],
     )

@@ -613,10 +613,15 @@ def test_build_big_4203_console_interaction_draft_is_release_ready() -> None:
         "vp-eng",
         "cross-team-operator",
     ]
+    assert draft.requires_frame_contracts is True
     assert audit.release_ready is True
     assert audit.uncovered_roles == []
     assert "- Required Roles: eng-lead, platform-admin, vp-eng, cross-team-operator" in report
+    assert "persona=VP Eng wireframe=wf-overview" in report
+    assert "review_focus=metric hierarchy,drill-down posture,alert prioritization" in report
     assert "- Uncovered roles: none" in report
+    assert "- Pages missing personas: none" in report
+    assert "- Pages missing wireframe links: none" in report
 
 
 def test_console_interaction_audit_flags_uncovered_required_roles() -> None:
@@ -626,4 +631,20 @@ def test_console_interaction_audit_flags_uncovered_required_roles() -> None:
     audit = ConsoleInteractionAuditor().audit(draft)
 
     assert audit.uncovered_roles == ["finance-reviewer"]
+    assert audit.release_ready is False
+
+
+def test_console_interaction_audit_flags_missing_frame_contract_details() -> None:
+    draft = build_big_4203_console_interaction_draft()
+    draft.contracts[0].primary_persona = ""
+    draft.contracts[0].linked_wireframe_id = ""
+    draft.contracts[0].review_focus_areas = []
+    draft.contracts[0].decision_prompts = []
+
+    audit = ConsoleInteractionAuditor().audit(draft)
+
+    assert audit.surfaces_missing_primary_personas == ["Overview"]
+    assert audit.surfaces_missing_wireframe_links == ["Overview"]
+    assert audit.surfaces_missing_review_focus == ["Overview"]
+    assert audit.surfaces_missing_decision_prompts == ["Overview"]
     assert audit.release_ready is False
