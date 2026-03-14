@@ -4,6 +4,7 @@ from bigclaw.ui_review import (
     InteractionFlow,
     OpenQuestion,
     ReviewBlocker,
+    ReviewBlockerEvent,
     ReviewDecision,
     ReviewObjective,
     ReviewRoleAssignment,
@@ -14,6 +15,9 @@ from bigclaw.ui_review import (
     WireframeSurface,
     build_big_4204_review_pack,
     render_ui_review_blocker_log,
+    render_ui_review_blocker_timeline,
+    render_ui_review_blocker_timeline_summary,
+    render_ui_review_exception_log,
     render_ui_review_decision_log,
     render_ui_review_pack_html,
     render_ui_review_pack_report,
@@ -138,7 +142,7 @@ def test_render_ui_review_pack_report_summarizes_review_shape_and_findings() -> 
 
     assert "# UI Review Pack" in report
     assert "- Issue: BIG-4204 UI评审包输出" in report
-    assert "- Audit: READY: objectives=1 wireframes=1 interactions=1 open_questions=1 checklist=0 decisions=0 role_assignments=0 signoffs=0 blockers=0" in report
+    assert "- Audit: READY: objectives=1 wireframes=1 interactions=1 open_questions=1 checklist=0 decisions=0 role_assignments=0 signoffs=0 blockers=0 timeline_events=0" in report
     assert (
         "- obj-alignment: Align reviewers on the release-control story "
         "persona=product-experience priority=P0"
@@ -162,11 +166,13 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert len(pack.role_matrix) == 8
     assert len(pack.signoff_log) == 4
     assert len(pack.blocker_log) == 1
+    assert len(pack.blocker_timeline) == 2
     assert pack.requires_reviewer_checklist is True
     assert pack.requires_decision_log is True
     assert pack.requires_role_matrix is True
     assert pack.requires_signoff_log is True
     assert pack.requires_blocker_log is True
+    assert pack.requires_blocker_timeline is True
     assert "obj-queue-governance" in report
     assert "wf-triage: Triage and handoff board" in report
     assert "flow-run-replay: Run replay with evidence audit" in report
@@ -175,11 +181,19 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert "role-queue-platform-admin: surface=wf-queue role=Platform Admin status=ready" in report
     assert "sig-run-detail-eng-lead: surface=wf-run-detail role=Eng Lead assignment=role-run-detail-eng-lead status=pending" in report
     assert "blk-run-detail-copy-final: surface=wf-run-detail signoff=sig-run-detail-eng-lead owner=product-experience status=open severity=medium" in report
+    assert "evt-run-detail-copy-escalated: blocker=blk-run-detail-copy-final actor=design-program-manager status=escalated at=2026-03-14T09:30:00Z" in report
+    assert "## Review Exceptions" in report
+    assert "exc-blk-run-detail-copy-final: type=blocker source=blk-run-detail-copy-final surface=wf-run-detail owner=product-experience status=open severity=medium" in report
+    assert "## Blocker Timeline Summary" in report
+    assert "- escalated: 1" in report
     assert "- Wireframes missing checklist coverage: none" in report
     assert "- Wireframes missing decision coverage: none" in report
     assert "- Wireframes missing role assignments: none" in report
     assert "- Wireframes missing signoff coverage: none" in report
     assert "- Blockers missing signoff links: none" in report
+    assert "- Blockers missing timeline events: none" in report
+    assert "- Closed blockers missing resolution events: none" in report
+    assert "- Orphan blocker timeline blocker ids: none" in report
     assert "- Unresolved required signoffs without blockers: none" in report
     assert "- Unresolved decision ids: dec-queue-vp-summary" in report
     assert "- Unresolved required signoff ids: sig-run-detail-eng-lead" in report
@@ -289,6 +303,103 @@ def test_ui_review_pack_audit_flags_unresolved_signoff_without_blocker() -> None
     assert audit.blockers_missing_next_actions == []
 
 
+
+def test_ui_review_pack_audit_flags_waived_signoff_without_metadata() -> None:
+    pack = build_big_4204_review_pack()
+    pack.signoff_log[2] = ReviewSignoff(
+        signoff_id="sig-run-detail-eng-lead",
+        assignment_id="role-run-detail-eng-lead",
+        surface_id="wf-run-detail",
+        role="Eng Lead",
+        status="waived",
+        evidence_links=[],
+        notes="Design review accepted a temporary waiver pending copy cleanup.",
+    )
+    pack.blocker_log = []
+    pack.blocker_timeline = []
+
+    audit = UIReviewPackAuditor().audit(pack)
+
+    assert audit.ready is False
+    assert audit.waived_signoffs_missing_metadata == ["sig-run-detail-eng-lead"]
+    assert audit.signoffs_missing_evidence == []
+    assert audit.unresolved_required_signoff_ids == []
+
+
+
+def test_ui_review_pack_audit_flags_missing_or_invalid_blocker_timeline() -> None:
+    pack = build_big_4204_review_pack()
+    pack.blocker_timeline = []
+
+    audit = UIReviewPackAuditor().audit(pack)
+
+    assert audit.ready is False
+    assert audit.blockers_missing_timeline_events == ["blk-run-detail-copy-final"]
+    assert audit.closed_blockers_missing_resolution_events == []
+    assert audit.orphan_blocker_timeline_blocker_ids == []
+
+
+
+def test_ui_review_pack_audit_flags_closed_blocker_without_resolution_event_and_orphans() -> None:
+    pack = build_big_4204_review_pack()
+    pack.blocker_log[0] = ReviewBlocker(
+        blocker_id="blk-run-detail-copy-final",
+        surface_id="wf-run-detail",
+        signoff_id="sig-run-detail-eng-lead",
+        owner="product-experience",
+        summary="Replay-state copy review is closed pending audit trail confirmation.",
+        status="closed",
+        severity="medium",
+        escalation_owner="design-program-manager",
+        next_action="Archive the blocker after the final review sync.",
+    )
+    pack.blocker_timeline = [
+        ReviewBlockerEvent(
+            event_id="evt-run-detail-copy-opened",
+            blocker_id="blk-run-detail-copy-final",
+            actor="product-experience",
+            status="opened",
+            summary="Tracked the replay-state wording gap during review prep.",
+            timestamp="2026-03-13T10:00:00Z",
+            next_action="Review wording changes with Eng Lead.",
+        ),
+        ReviewBlockerEvent(
+            event_id="evt-orphan-blocker",
+            blocker_id="blk-missing",
+            actor="design-program-manager",
+            status="escalated",
+            summary="Unexpected timeline entry remained after blocker merge cleanup.",
+            timestamp="2026-03-14T11:00:00Z",
+            next_action="Remove orphaned timeline entry from the bundle.",
+        ),
+    ]
+
+    audit = UIReviewPackAuditor().audit(pack)
+
+    assert audit.ready is False
+    assert audit.blockers_missing_timeline_events == []
+    assert audit.closed_blockers_missing_resolution_events == ["blk-run-detail-copy-final"]
+    assert audit.orphan_blocker_timeline_blocker_ids == ["blk-missing"]
+
+
+def test_render_ui_review_exception_log_and_timeline_summary() -> None:
+    pack = build_big_4204_review_pack()
+
+    exception_log = render_ui_review_exception_log(pack)
+    timeline_summary = render_ui_review_blocker_timeline_summary(pack)
+
+    assert "# UI Review Exception Log" in exception_log
+    assert "- Exceptions: 1" in exception_log
+    assert "exc-blk-run-detail-copy-final" in exception_log
+    assert "evt-run-detail-copy-escalated/escalated/design-program-manager@2026-03-14T09:30:00Z" in exception_log
+    assert "# UI Review Blocker Timeline Summary" in timeline_summary
+    assert "- Events: 2" in timeline_summary
+    assert "- opened: 1" in timeline_summary
+    assert "- escalated: 1" in timeline_summary
+    assert "- design-program-manager: 1" in timeline_summary
+    assert "- blk-run-detail-copy-final: latest=evt-run-detail-copy-escalated actor=design-program-manager status=escalated at=2026-03-14T09:30:00Z" in timeline_summary
+
+
 def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     pack = build_big_4204_review_pack()
     audit = UIReviewPackAuditor().audit(pack)
@@ -298,12 +409,18 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     role_matrix = render_ui_review_role_matrix(pack)
     signoff_log = render_ui_review_signoff_log(pack)
     blocker_log = render_ui_review_blocker_log(pack)
+    blocker_timeline = render_ui_review_blocker_timeline(pack)
+    exception_log = render_ui_review_exception_log(pack)
+    timeline_summary = render_ui_review_blocker_timeline_summary(pack)
     artifacts = write_ui_review_pack_bundle(str(tmp_path), pack)
 
     assert "<h2>Decision Log</h2>" in html
     assert "<h2>Role Matrix</h2>" in html
     assert "<h2>Sign-off Log</h2>" in html
     assert "<h2>Blocker Log</h2>" in html
+    assert "<h2>Blocker Timeline</h2>" in html
+    assert "<h2>Review Exceptions</h2>" in html
+    assert "<h2>Blocker Timeline Summary</h2>" in html
     assert "dec-queue-vp-summary" in html
     assert "# UI Review Decision Log" in decision_log
     assert "dec-run-detail-audit-rail" in decision_log
@@ -313,17 +430,32 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "sig-run-detail-eng-lead" in signoff_log
     assert "# UI Review Blocker Log" in blocker_log
     assert "blk-run-detail-copy-final" in blocker_log
+    assert "# UI Review Blocker Timeline" in blocker_timeline
+    assert "evt-run-detail-copy-escalated" in blocker_timeline
+    assert "# UI Review Exception Log" in exception_log
+    assert "exc-blk-run-detail-copy-final" in exception_log
+    assert "# UI Review Blocker Timeline Summary" in timeline_summary
+    assert "- escalated: 1" in timeline_summary
     assert Path(artifacts.markdown_path).exists()
     assert Path(artifacts.html_path).exists()
     assert Path(artifacts.decision_log_path).exists()
     assert Path(artifacts.role_matrix_path).exists()
     assert Path(artifacts.signoff_log_path).exists()
     assert Path(artifacts.blocker_log_path).exists()
+    assert Path(artifacts.blocker_timeline_path).exists()
+    assert Path(artifacts.exception_log_path).exists()
+    assert Path(artifacts.blocker_timeline_summary_path).exists()
     assert "Decision Log" in Path(artifacts.html_path).read_text()
     assert "Role Matrix" in Path(artifacts.html_path).read_text()
     assert "Sign-off Log" in Path(artifacts.html_path).read_text()
     assert "Blocker Log" in Path(artifacts.html_path).read_text()
+    assert "Blocker Timeline" in Path(artifacts.html_path).read_text()
+    assert "Review Exceptions" in Path(artifacts.html_path).read_text()
+    assert "Blocker Timeline Summary" in Path(artifacts.html_path).read_text()
     assert "dec-triage-handoff-density" in Path(artifacts.decision_log_path).read_text()
     assert "role-run-detail-eng-lead" in Path(artifacts.role_matrix_path).read_text()
     assert "sig-queue-platform-admin" in Path(artifacts.signoff_log_path).read_text()
     assert "blk-run-detail-copy-final" in Path(artifacts.blocker_log_path).read_text()
+    assert "evt-run-detail-copy-opened" in Path(artifacts.blocker_timeline_path).read_text()
+    assert "exc-blk-run-detail-copy-final" in Path(artifacts.exception_log_path).read_text()
+    assert "- escalated: 1" in Path(artifacts.blocker_timeline_summary_path).read_text()
