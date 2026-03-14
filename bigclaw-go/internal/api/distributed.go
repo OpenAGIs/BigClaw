@@ -10,6 +10,7 @@ import (
 	"bigclaw-go/internal/control"
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/executor"
+	"bigclaw-go/internal/risk"
 )
 
 type distributedDiagnosticsSummary struct {
@@ -31,27 +32,37 @@ type routingReasonSummary struct {
 }
 
 type executorCapacityView struct {
-	Executor             string  `json:"executor"`
-	MaxConcurrency       int     `json:"max_concurrency"`
-	AvailableConcurrency int     `json:"available_concurrency"`
-	ActiveWorkers        int     `json:"active_workers"`
-	RoutedDecisions      int     `json:"routed_decisions"`
-	StartedRuns          int     `json:"started_runs"`
-	CompletedRuns        int     `json:"completed_runs"`
-	DeadLetters          int     `json:"dead_letters"`
-	SaturationPercent    float64 `json:"saturation_percent"`
-	SupportsGPU          bool    `json:"supports_gpu"`
-	SupportsBrowser      bool    `json:"supports_browser"`
-	SupportsShell        bool    `json:"supports_shell"`
-	Health               string  `json:"health"`
+	Executor             string                 `json:"executor"`
+	MaxConcurrency       int                    `json:"max_concurrency"`
+	AvailableConcurrency int                    `json:"available_concurrency"`
+	ActiveWorkers        int                    `json:"active_workers"`
+	QueuedTasks          int                    `json:"queued_tasks"`
+	ActiveTasks          int                    `json:"active_tasks"`
+	RoutedDecisions      int                    `json:"routed_decisions"`
+	StartedRuns          int                    `json:"started_runs"`
+	CompletedRuns        int                    `json:"completed_runs"`
+	DeadLetters          int                    `json:"dead_letters"`
+	SaturationPercent    float64                `json:"saturation_percent"`
+	SupportsGPU          bool                   `json:"supports_gpu"`
+	SupportsBrowser      bool                   `json:"supports_browser"`
+	SupportsShell        bool                   `json:"supports_shell"`
+	Health               string                 `json:"health"`
+	TeamBreakdown        []auditFacetCount      `json:"team_breakdown,omitempty"`
+	ProjectBreakdown     []auditFacetCount      `json:"project_breakdown,omitempty"`
+	TopRoutingReasons    []routingReasonSummary `json:"top_routing_reasons,omitempty"`
+	SampleTasks          []string               `json:"sample_tasks,omitempty"`
 }
 
 type clusterHealthRollup struct {
-	HealthyExecutors  int            `json:"healthy_executors"`
-	DegradedExecutors int            `json:"degraded_executors"`
-	IdleExecutors     int            `json:"idle_executors"`
-	WorkerStates      map[string]int `json:"worker_states"`
-	Notes             []string       `json:"notes"`
+	HealthyExecutors   int               `json:"healthy_executors"`
+	DegradedExecutors  int               `json:"degraded_executors"`
+	IdleExecutors      int               `json:"idle_executors"`
+	WorkerStates       map[string]int    `json:"worker_states"`
+	TeamBreakdown      []auditFacetCount `json:"team_breakdown,omitempty"`
+	ProjectBreakdown   []auditFacetCount `json:"project_breakdown,omitempty"`
+	TakeoverOwners     []auditFacetCount `json:"takeover_owners,omitempty"`
+	SaturatedExecutors []string          `json:"saturated_executors,omitempty"`
+	Notes              []string          `json:"notes"`
 }
 
 type distributedDiagnosticsReport struct {
@@ -74,6 +85,12 @@ type executorDiagnosticsCounters struct {
 	DeadLetter int
 }
 
+type distributedTaskAssignment struct {
+	Task           domain.Task
+	EffectiveState domain.TaskState
+	Executor       domain.ExecutorKind
+}
+
 func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -93,11 +110,13 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 	writeJSON(w, http.StatusOK, map[string]any{
 		"authorization": authorization,
 		"filters": map[string]any{
-			"team":     filters.Team,
-			"project":  filters.Project,
-			"task_id":  filters.TaskID,
-			"limit":    filters.Limit,
-			"priority": filters.Priority,
+			"team":       filters.Team,
+			"project":    filters.Project,
+			"task_id":    filters.TaskID,
+			"state":      filters.State,
+			"risk_level": filters.RiskLevel,
+			"limit":      filters.Limit,
+			"priority":   filters.Priority,
 		},
 		"summary":           diagnostics.Summary,
 		"routing_reasons":   diagnostics.RoutingReasons,
@@ -156,22 +175,38 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 	}
 
 	tasks := filterTasks(s.Recorder.Tasks(0), filters)
+	takeovers := s.filteredActiveTakeovers(filters)
+	takeoverByTask := make(map[string]*control.Takeover, len(takeovers))
+	for index := range takeovers {
+		copy := takeovers[index]
+		takeoverByTask[copy.TaskID] = &copy
+	}
+	assignments := make([]distributedTaskAssignment, 0, len(tasks))
+	assignmentByTask := make(map[string]distributedTaskAssignment, len(tasks))
+	tasksByExecutor := make(map[domain.ExecutorKind][]distributedTaskAssignment)
+	for _, task := range tasks {
+		assignment := distributedTaskAssignment{
+			Task:           task,
+			EffectiveState: effectiveTaskState(task.State, takeoverByTask[task.ID]),
+			Executor:       s.distributedTaskExecutor(task),
+		}
+		assignments = append(assignments, assignment)
+		assignmentByTask[task.ID] = assignment
+		tasksByExecutor[assignment.Executor] = append(tasksByExecutor[assignment.Executor], assignment)
+	}
+
 	countersByExecutor := make(map[domain.ExecutorKind]*executorDiagnosticsCounters)
 	routingIndex := make(map[string]*routingReasonSummary)
 	totalRouted := 0
 	for _, event := range s.Recorder.EventsByTask("", 0) {
-		if event.TaskID == "" {
-			continue
-		}
-		task, ok := s.taskSnapshot(event.TaskID)
+		assignment, ok := assignmentByTask[event.TaskID]
 		if !ok {
 			continue
 		}
-		takeover, hasTakeover := s.Control.TakeoverStatus(task.ID)
-		if !matchesTaskFilters(task, effectiveTaskState(task.State, takeoverOrNil(takeover, hasTakeover)), filters) {
-			continue
+		executorKind := eventExecutorKind(event, assignment.Task)
+		if executorKind == "" {
+			executorKind = assignment.Executor
 		}
-		executorKind := eventExecutorKind(event, task)
 		if executorKind == "" {
 			continue
 		}
@@ -220,7 +255,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 	degradedExecutors := 0
 	idleExecutors := 0
 	activeExecutors := 0
-	saturatedExecutors := 0
+	saturatedExecutors := make([]string, 0)
 	for _, capability := range capabilities {
 		counts := countersByExecutor[capability.Kind]
 		view := executorCapacityView{
@@ -237,6 +272,22 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 			view.CompletedRuns = counts.Completed
 			view.DeadLetters = counts.DeadLetter
 		}
+		for _, assignment := range tasksByExecutor[capability.Kind] {
+			if assignment.EffectiveState == domain.TaskQueued || assignment.EffectiveState == domain.TaskRetrying {
+				view.QueuedTasks++
+			}
+			if domain.IsActiveTaskState(assignment.EffectiveState) {
+				view.ActiveTasks++
+			}
+		}
+		view.TeamBreakdown = facetCountsFromAssignments(tasksByExecutor[capability.Kind], func(item distributedTaskAssignment) string {
+			return firstNonEmpty(strings.TrimSpace(item.Task.Metadata["team"]), "unassigned")
+		})
+		view.ProjectBreakdown = facetCountsFromAssignments(tasksByExecutor[capability.Kind], func(item distributedTaskAssignment) string {
+			return firstNonEmpty(strings.TrimSpace(item.Task.Metadata["project"]), "unassigned")
+		})
+		view.TopRoutingReasons = routingReasonsForExecutor(routingReasons, capability.Kind, 3)
+		view.SampleTasks = sampleTaskIDs(tasksByExecutor[capability.Kind], 3)
 		if capability.MaxConcurrency > 0 {
 			view.AvailableConcurrency = capability.MaxConcurrency - view.ActiveWorkers
 			if view.AvailableConcurrency < 0 {
@@ -248,8 +299,8 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		if view.Health != "idle" {
 			activeExecutors++
 		}
-		if view.SaturationPercent >= 80 || (view.MaxConcurrency > 0 && view.AvailableConcurrency == 0 && view.RoutedDecisions > 0) {
-			saturatedExecutors++
+		if executorIsSaturated(view) {
+			saturatedExecutors = append(saturatedExecutors, view.Executor)
 		}
 		switch view.Health {
 		case "healthy":
@@ -262,24 +313,33 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		executorCapacity = append(executorCapacity, view)
 	}
 	sort.SliceStable(executorCapacity, func(i, j int) bool { return executorCapacity[i].Executor < executorCapacity[j].Executor })
+	sort.Strings(saturatedExecutors)
 
 	summary := distributedDiagnosticsSummary{
 		RegisteredExecutors:  len(capabilities),
 		ActiveExecutors:      activeExecutors,
-		TotalTasks:           len(tasks),
-		ActiveRuns:           countActiveRuns(tasks),
+		TotalTasks:           len(assignments),
+		ActiveRuns:           countActiveAssignments(assignments),
 		TotalRoutedDecisions: totalRouted,
 		ActiveWorkers:        activeWorkers,
 		IdleWorkers:          idleWorkers,
-		SaturatedExecutors:   saturatedExecutors,
-		ActiveTakeovers:      len(s.filteredActiveTakeovers(filters)),
+		SaturatedExecutors:   len(saturatedExecutors),
+		ActiveTakeovers:      len(takeovers),
 	}
 	clusterHealth := clusterHealthRollup{
 		HealthyExecutors:  healthyExecutors,
 		DegradedExecutors: degradedExecutors,
 		IdleExecutors:     idleExecutors,
 		WorkerStates:      workerStates,
-		Notes:             diagnosticsNotes(summary, executorCapacity, s.Control.Snapshot()),
+		TeamBreakdown: facetCountsFromAssignments(assignments, func(item distributedTaskAssignment) string {
+			return firstNonEmpty(strings.TrimSpace(item.Task.Metadata["team"]), "unassigned")
+		}),
+		ProjectBreakdown: facetCountsFromAssignments(assignments, func(item distributedTaskAssignment) string {
+			return firstNonEmpty(strings.TrimSpace(item.Task.Metadata["project"]), "unassigned")
+		}),
+		TakeoverOwners:     facetCountsFromTakeovers(takeovers, func(item control.Takeover) string { return firstNonEmpty(strings.TrimSpace(item.Owner), "unassigned") }),
+		SaturatedExecutors: saturatedExecutors,
+		Notes:              diagnosticsNotes(summary, executorCapacity, s.Control.Snapshot()),
 	}
 	diagnostics := distributedDiagnostics{
 		Summary:          summary,
@@ -303,14 +363,52 @@ func (s *Server) executorCapabilities() []executor.Capability {
 	return out
 }
 
+func (s *Server) distributedTaskExecutor(task domain.Task) domain.ExecutorKind {
+	if latest, ok := s.Recorder.LatestByTask(task.ID); ok {
+		if executorKind := eventExecutorKind(latest, task); executorKind != "" {
+			return executorKind
+		}
+	}
+	events := s.Recorder.EventsByTask(task.ID, 0)
+	for index := len(events) - 1; index >= 0; index-- {
+		if executorKind := eventExecutorKind(events[index], task); executorKind != "" {
+			return executorKind
+		}
+	}
+	if task.RequiredExecutor != "" {
+		return task.RequiredExecutor
+	}
+	score := risk.ScoreTask(task, events)
+	if taskRequiresTool(task, "gpu") {
+		return domain.ExecutorRay
+	}
+	if taskRequiresTool(task, "browser") {
+		return domain.ExecutorKubernetes
+	}
+	if score.Level == domain.RiskHigh {
+		return domain.ExecutorKubernetes
+	}
+	return domain.ExecutorLocal
+}
+
 func diagnosticsHealth(view executorCapacityView) string {
 	if view.DeadLetters > 0 && view.CompletedRuns == 0 {
 		return "degraded"
 	}
-	if view.ActiveWorkers > 0 || view.RoutedDecisions > 0 || view.CompletedRuns > 0 {
+	if view.ActiveWorkers > 0 || view.ActiveTasks > 0 || view.RoutedDecisions > 0 || view.CompletedRuns > 0 {
 		return "healthy"
 	}
 	return "idle"
+}
+
+func executorIsSaturated(view executorCapacityView) bool {
+	if view.MaxConcurrency <= 0 {
+		return false
+	}
+	if view.SaturationPercent >= 80 {
+		return true
+	}
+	return view.AvailableConcurrency == 0 && (view.ActiveTasks > 0 || view.RoutedDecisions > 0)
 }
 
 func diagnosticsNotes(summary distributedDiagnosticsSummary, capacity []executorCapacityView, snapshot control.Snapshot) []string {
@@ -328,8 +426,11 @@ func diagnosticsNotes(summary distributedDiagnosticsSummary, capacity []executor
 		if item.Health == "degraded" {
 			notes = append(notes, fmt.Sprintf("%s executor shows dead-letter activity without offsetting completions", item.Executor))
 		}
-		if item.SaturationPercent >= 80 {
-			notes = append(notes, fmt.Sprintf("%s executor is above 80%% worker saturation", item.Executor))
+		if executorIsSaturated(item) {
+			notes = append(notes, fmt.Sprintf("%s executor is above 80%% worker saturation or has no spare capacity", item.Executor))
+		}
+		if item.QueuedTasks > item.ActiveWorkers && item.QueuedTasks > 0 {
+			notes = append(notes, fmt.Sprintf("%s executor has %d queued tasks waiting behind %d active workers", item.Executor, item.QueuedTasks, item.ActiveWorkers))
 		}
 	}
 	if len(notes) == 0 {
@@ -338,14 +439,83 @@ func diagnosticsNotes(summary distributedDiagnosticsSummary, capacity []executor
 	return notes
 }
 
-func countActiveRuns(tasks []domain.Task) int {
+func countActiveAssignments(assignments []distributedTaskAssignment) int {
 	count := 0
-	for _, task := range tasks {
-		if domain.IsActiveTaskState(task.State) {
+	for _, item := range assignments {
+		if domain.IsActiveTaskState(item.EffectiveState) {
 			count++
 		}
 	}
 	return count
+}
+
+func facetCountsFromAssignments(assignments []distributedTaskAssignment, valueFn func(distributedTaskAssignment) string) []auditFacetCount {
+	counts := make(map[string]int)
+	for _, item := range assignments {
+		key := firstNonEmpty(strings.TrimSpace(valueFn(item)), "unknown")
+		counts[key]++
+	}
+	return sortFacetCounts(counts)
+}
+
+func facetCountsFromTakeovers(takeovers []control.Takeover, valueFn func(control.Takeover) string) []auditFacetCount {
+	counts := make(map[string]int)
+	for _, item := range takeovers {
+		key := firstNonEmpty(strings.TrimSpace(valueFn(item)), "unknown")
+		counts[key]++
+	}
+	return sortFacetCounts(counts)
+}
+
+func sortFacetCounts(counts map[string]int) []auditFacetCount {
+	out := make([]auditFacetCount, 0, len(counts))
+	for key, count := range counts {
+		out = append(out, auditFacetCount{Key: key, Count: count})
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if out[i].Count == out[j].Count {
+			return out[i].Key < out[j].Key
+		}
+		return out[i].Count > out[j].Count
+	})
+	return out
+}
+
+func routingReasonsForExecutor(reasons []routingReasonSummary, executorKind domain.ExecutorKind, limit int) []routingReasonSummary {
+	out := make([]routingReasonSummary, 0)
+	for _, item := range reasons {
+		if item.Executor != string(executorKind) {
+			continue
+		}
+		out = append(out, item)
+		if limit > 0 && len(out) >= limit {
+			break
+		}
+	}
+	return out
+}
+
+func sampleTaskIDs(assignments []distributedTaskAssignment, limit int) []string {
+	if len(assignments) == 0 {
+		return nil
+	}
+	sorted := append([]distributedTaskAssignment(nil), assignments...)
+	sort.SliceStable(sorted, func(i, j int) bool {
+		left := sorted[i].Task.UpdatedAt
+		right := sorted[j].Task.UpdatedAt
+		if left.Equal(right) {
+			return sorted[i].Task.ID < sorted[j].Task.ID
+		}
+		return left.After(right)
+	})
+	if limit > 0 && len(sorted) > limit {
+		sorted = sorted[:limit]
+	}
+	out := make([]string, 0, len(sorted))
+	for _, item := range sorted {
+		out = append(out, item.Task.ID)
+	}
+	return out
 }
 
 func takeoverOrNil(takeover control.Takeover, ok bool) *control.Takeover {
@@ -366,6 +536,15 @@ func eventExecutorKind(event domain.Event, task domain.Task) domain.ExecutorKind
 	return ""
 }
 
+func taskRequiresTool(task domain.Task, tool string) bool {
+	for _, item := range task.RequiredTools {
+		if item == tool {
+			return true
+		}
+	}
+	return false
+}
+
 func distributedExportURL(filters controlCenterFilters) string {
 	values := url.Values{}
 	if filters.Team != "" {
@@ -376,6 +555,15 @@ func distributedExportURL(filters controlCenterFilters) string {
 	}
 	if filters.TaskID != "" {
 		values.Set("task_id", filters.TaskID)
+	}
+	if filters.State != "" {
+		values.Set("state", filters.State)
+	}
+	if filters.RiskLevel != "" {
+		values.Set("risk_level", filters.RiskLevel)
+	}
+	if filters.Priority != nil {
+		values.Set("priority", fmt.Sprintf("%d", *filters.Priority))
 	}
 	if filters.Limit > 0 {
 		values.Set("limit", fmt.Sprintf("%d", filters.Limit))
@@ -391,7 +579,7 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	lines := []string{
 		"# BigClaw Distributed Diagnostics Report",
 		"",
-		fmt.Sprintf("Filters: team=%s project=%s task_id=%s", firstNonEmpty(filters.Team, "all"), firstNonEmpty(filters.Project, "all"), firstNonEmpty(filters.TaskID, "all")),
+		fmt.Sprintf("Filters: team=%s project=%s task_id=%s state=%s risk_level=%s", firstNonEmpty(filters.Team, "all"), firstNonEmpty(filters.Project, "all"), firstNonEmpty(filters.TaskID, "all"), firstNonEmpty(filters.State, "all"), firstNonEmpty(filters.RiskLevel, "all")),
 		"",
 		"## Summary",
 		fmt.Sprintf("- Registered executors: %d", diagnostics.Summary.RegisteredExecutors),
@@ -401,6 +589,7 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 		fmt.Sprintf("- Routed decisions: %d", diagnostics.Summary.TotalRoutedDecisions),
 		fmt.Sprintf("- Active workers: %d", diagnostics.Summary.ActiveWorkers),
 		fmt.Sprintf("- Idle workers: %d", diagnostics.Summary.IdleWorkers),
+		fmt.Sprintf("- Saturated executors: %d", diagnostics.Summary.SaturatedExecutors),
 		fmt.Sprintf("- Active takeovers: %d", diagnostics.Summary.ActiveTakeovers),
 		"",
 		"## Routing Reasons",
@@ -414,7 +603,23 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	lines = append(lines, "", "## Executor Capacity")
 	for _, item := range diagnostics.ExecutorCapacity {
-		lines = append(lines, fmt.Sprintf("- %s: health=%s active_workers=%d max_concurrency=%d available=%d saturation=%.1f%% routed=%d completed=%d dead_letters=%d", item.Executor, item.Health, item.ActiveWorkers, item.MaxConcurrency, item.AvailableConcurrency, item.SaturationPercent, item.RoutedDecisions, item.CompletedRuns, item.DeadLetters))
+		lines = append(lines, fmt.Sprintf("- %s: health=%s active_workers=%d queued_tasks=%d active_tasks=%d max_concurrency=%d available=%d saturation=%.1f%% routed=%d completed=%d dead_letters=%d", item.Executor, item.Health, item.ActiveWorkers, item.QueuedTasks, item.ActiveTasks, item.MaxConcurrency, item.AvailableConcurrency, item.SaturationPercent, item.RoutedDecisions, item.CompletedRuns, item.DeadLetters))
+		if len(item.TeamBreakdown) > 0 {
+			lines = append(lines, "  - teams: "+formatFacetCounts(item.TeamBreakdown))
+		}
+		if len(item.ProjectBreakdown) > 0 {
+			lines = append(lines, "  - projects: "+formatFacetCounts(item.ProjectBreakdown))
+		}
+		if len(item.TopRoutingReasons) > 0 {
+			parts := make([]string, 0, len(item.TopRoutingReasons))
+			for _, reason := range item.TopRoutingReasons {
+				parts = append(parts, fmt.Sprintf("%s (%d)", reason.Reason, reason.Count))
+			}
+			lines = append(lines, "  - top routing reasons: "+strings.Join(parts, ", "))
+		}
+		if len(item.SampleTasks) > 0 {
+			lines = append(lines, "  - sample tasks: "+strings.Join(item.SampleTasks, ", "))
+		}
 	}
 	lines = append(lines,
 		"",
@@ -423,6 +628,9 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 		fmt.Sprintf("- Degraded executors: %d", diagnostics.ClusterHealth.DegradedExecutors),
 		fmt.Sprintf("- Idle executors: %d", diagnostics.ClusterHealth.IdleExecutors),
 	)
+	if len(diagnostics.ClusterHealth.SaturatedExecutors) > 0 {
+		lines = append(lines, "- Saturated executors: "+strings.Join(diagnostics.ClusterHealth.SaturatedExecutors, ", "))
+	}
 	if len(diagnostics.ClusterHealth.WorkerStates) > 0 {
 		stateKeys := make([]string, 0, len(diagnostics.ClusterHealth.WorkerStates))
 		for key := range diagnostics.ClusterHealth.WorkerStates {
@@ -435,12 +643,29 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 		}
 		lines = append(lines, "- Worker states: "+strings.Join(parts, ", "))
 	}
+	if len(diagnostics.ClusterHealth.TeamBreakdown) > 0 {
+		lines = append(lines, "- Team breakdown: "+formatFacetCounts(diagnostics.ClusterHealth.TeamBreakdown))
+	}
+	if len(diagnostics.ClusterHealth.ProjectBreakdown) > 0 {
+		lines = append(lines, "- Project breakdown: "+formatFacetCounts(diagnostics.ClusterHealth.ProjectBreakdown))
+	}
+	if len(diagnostics.ClusterHealth.TakeoverOwners) > 0 {
+		lines = append(lines, "- Takeover owners: "+formatFacetCounts(diagnostics.ClusterHealth.TakeoverOwners))
+	}
 	lines = append(lines, "", "## Notes")
 	for _, note := range diagnostics.ClusterHealth.Notes {
 		lines = append(lines, "- "+note)
 	}
 	lines = append(lines, "")
 	return strings.Join(lines, "\n")
+}
+
+func formatFacetCounts(items []auditFacetCount) string {
+	parts := make([]string, 0, len(items))
+	for _, item := range items {
+		parts = append(parts, fmt.Sprintf("%s=%d", item.Key, item.Count))
+	}
+	return strings.Join(parts, ", ")
 }
 
 func sanitizeReportName(value string) string {

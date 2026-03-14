@@ -1326,13 +1326,33 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 				Count    int    `json:"count"`
 			} `json:"routing_reasons"`
 			ExecutorCapacity []struct {
-				Executor       string `json:"executor"`
-				Health         string `json:"health"`
-				MaxConcurrency int    `json:"max_concurrency"`
+				Executor       string   `json:"executor"`
+				Health         string   `json:"health"`
+				MaxConcurrency int      `json:"max_concurrency"`
+				ActiveTasks    int      `json:"active_tasks"`
+				QueuedTasks    int      `json:"queued_tasks"`
+				SampleTasks    []string `json:"sample_tasks"`
+				TeamBreakdown  []struct {
+					Key   string `json:"key"`
+					Count int    `json:"count"`
+				} `json:"team_breakdown"`
+				TopRoutingReasons []struct {
+					Reason string `json:"reason"`
+					Count  int    `json:"count"`
+				} `json:"top_routing_reasons"`
 			} `json:"executor_capacity"`
 			ClusterHealth struct {
 				HealthyExecutors int            `json:"healthy_executors"`
 				WorkerStates     map[string]int `json:"worker_states"`
+				TeamBreakdown    []struct {
+					Key   string `json:"key"`
+					Count int    `json:"count"`
+				} `json:"team_breakdown"`
+				SaturatedExecutors []string `json:"saturated_executors"`
+				TakeoverOwners     []struct {
+					Key   string `json:"key"`
+					Count int    `json:"count"`
+				} `json:"takeover_owners"`
 			} `json:"cluster_health"`
 			RolloutReport struct {
 				Markdown  string `json:"markdown"`
@@ -1355,10 +1375,22 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	if len(decoded.Diagnostics.ExecutorCapacity) != 3 {
 		t.Fatalf("expected executor capacity for 3 executors, got %+v", decoded.Diagnostics.ExecutorCapacity)
 	}
+	if decoded.Diagnostics.ExecutorCapacity[0].Executor != "kubernetes" || decoded.Diagnostics.ExecutorCapacity[0].ActiveTasks != 1 || len(decoded.Diagnostics.ExecutorCapacity[0].TopRoutingReasons) == 0 {
+		t.Fatalf("unexpected kubernetes executor diagnostics: %+v", decoded.Diagnostics.ExecutorCapacity[0])
+	}
+	if len(decoded.Diagnostics.ExecutorCapacity[0].TeamBreakdown) == 0 || decoded.Diagnostics.ExecutorCapacity[0].TeamBreakdown[0].Key != "platform" {
+		t.Fatalf("expected team drilldown in executor diagnostics, got %+v", decoded.Diagnostics.ExecutorCapacity[0])
+	}
 	if decoded.Diagnostics.ClusterHealth.HealthyExecutors != 3 || decoded.Diagnostics.ClusterHealth.WorkerStates["running"] != 1 {
 		t.Fatalf("unexpected cluster health payload: %+v", decoded.Diagnostics.ClusterHealth)
 	}
-	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {
+	if len(decoded.Diagnostics.ClusterHealth.TeamBreakdown) == 0 || decoded.Diagnostics.ClusterHealth.TeamBreakdown[0].Key != "platform" {
+		t.Fatalf("expected cluster team breakdown, got %+v", decoded.Diagnostics.ClusterHealth)
+	}
+	if len(decoded.Diagnostics.ClusterHealth.TakeoverOwners) == 0 || decoded.Diagnostics.ClusterHealth.TakeoverOwners[0].Key != "alice" {
+		t.Fatalf("expected takeover owner rollup, got %+v", decoded.Diagnostics.ClusterHealth)
+	}
+	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") || !strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {
 		t.Fatalf("unexpected rollout report payload: %+v", decoded.Diagnostics.RolloutReport)
 	}
 }
