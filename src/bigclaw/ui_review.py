@@ -434,7 +434,10 @@ class UIReviewPackArtifacts:
     markdown_path: str
     html_path: str
     decision_log_path: str
+    checklist_traceability_board_path: str
+    decision_followup_tracker_path: str
     role_matrix_path: str
+    role_coverage_board_path: str
     signoff_log_path: str
     signoff_sla_dashboard_path: str
     signoff_reminder_queue_path: str
@@ -546,14 +549,17 @@ class UIReviewPackAudit:
     wireframes_missing_checklists: List[str] = field(default_factory=list)
     orphan_checklist_surfaces: List[str] = field(default_factory=list)
     checklist_items_missing_evidence: List[str] = field(default_factory=list)
+    checklist_items_missing_role_links: List[str] = field(default_factory=list)
     wireframes_missing_decisions: List[str] = field(default_factory=list)
     orphan_decision_surfaces: List[str] = field(default_factory=list)
     unresolved_decision_ids: List[str] = field(default_factory=list)
+    unresolved_decisions_missing_follow_ups: List[str] = field(default_factory=list)
     wireframes_missing_role_assignments: List[str] = field(default_factory=list)
     orphan_role_assignment_surfaces: List[str] = field(default_factory=list)
     role_assignments_missing_responsibilities: List[str] = field(default_factory=list)
     role_assignments_missing_checklist_links: List[str] = field(default_factory=list)
     role_assignments_missing_decision_links: List[str] = field(default_factory=list)
+    decisions_missing_role_links: List[str] = field(default_factory=list)
     wireframes_missing_signoffs: List[str] = field(default_factory=list)
     orphan_signoff_surfaces: List[str] = field(default_factory=list)
     signoffs_missing_assignments: List[str] = field(default_factory=list)
@@ -643,6 +649,7 @@ class UIReviewPackAuditor:
         wireframes_missing_checklists = []
         orphan_checklist_surfaces = []
         checklist_items_missing_evidence = []
+        checklist_items_missing_role_links = []
         if pack.requires_reviewer_checklist:
             wireframes_missing_checklists = sorted(
                 wireframe.surface_id
@@ -662,6 +669,7 @@ class UIReviewPackAuditor:
         wireframes_missing_decisions = []
         orphan_decision_surfaces = []
         unresolved_decision_ids = []
+        unresolved_decisions_missing_follow_ups = []
         if pack.requires_decision_log:
             wireframes_missing_decisions = sorted(
                 wireframe.surface_id
@@ -676,6 +684,12 @@ class UIReviewPackAuditor:
                 for decision in pack.decision_log
                 if decision.status.lower() not in {"accepted", "approved", "resolved", "waived"}
             )
+            unresolved_decisions_missing_follow_ups = sorted(
+                decision.decision_id
+                for decision in pack.decision_log
+                if decision.status.lower() not in {"accepted", "approved", "resolved", "waived"}
+                and not decision.follow_up.strip()
+            )
 
         checklist_item_ids = {item.item_id for item in pack.reviewer_checklist}
         decision_ids = {decision.decision_id for decision in pack.decision_log}
@@ -688,6 +702,7 @@ class UIReviewPackAuditor:
         role_assignments_missing_responsibilities = []
         role_assignments_missing_checklist_links = []
         role_assignments_missing_decision_links = []
+        decisions_missing_role_links = []
         if pack.requires_role_matrix:
             wireframes_missing_role_assignments = sorted(
                 wireframe.surface_id
@@ -715,6 +730,26 @@ class UIReviewPackAuditor:
                 for assignment in pack.role_matrix
                 if not assignment.decision_ids
                 or any(decision_id not in decision_ids for decision_id in assignment.decision_ids)
+            )
+            role_linked_checklist_ids = {
+                item_id
+                for assignment in pack.role_matrix
+                for item_id in assignment.checklist_item_ids
+            }
+            role_linked_decision_ids = {
+                decision_id
+                for assignment in pack.role_matrix
+                for decision_id in assignment.decision_ids
+            }
+            checklist_items_missing_role_links = sorted(
+                item.item_id
+                for item in pack.reviewer_checklist
+                if item.item_id not in role_linked_checklist_ids
+            )
+            decisions_missing_role_links = sorted(
+                decision.decision_id
+                for decision in pack.decision_log
+                if decision.decision_id not in role_linked_decision_ids
             )
 
         signoffs_by_surface: Dict[str, List[ReviewSignoff]] = {}
@@ -936,13 +971,16 @@ class UIReviewPackAuditor:
             or wireframes_missing_checklists
             or orphan_checklist_surfaces
             or checklist_items_missing_evidence
+            or checklist_items_missing_role_links
             or wireframes_missing_decisions
             or orphan_decision_surfaces
+            or unresolved_decisions_missing_follow_ups
             or wireframes_missing_role_assignments
             or orphan_role_assignment_surfaces
             or role_assignments_missing_responsibilities
             or role_assignments_missing_checklist_links
             or role_assignments_missing_decision_links
+            or decisions_missing_role_links
             or wireframes_missing_signoffs
             or orphan_signoff_surfaces
             or signoffs_missing_assignments
@@ -993,14 +1031,17 @@ class UIReviewPackAuditor:
             wireframes_missing_checklists=wireframes_missing_checklists,
             orphan_checklist_surfaces=orphan_checklist_surfaces,
             checklist_items_missing_evidence=checklist_items_missing_evidence,
+            checklist_items_missing_role_links=checklist_items_missing_role_links,
             wireframes_missing_decisions=wireframes_missing_decisions,
             orphan_decision_surfaces=orphan_decision_surfaces,
             unresolved_decision_ids=unresolved_decision_ids,
+            unresolved_decisions_missing_follow_ups=unresolved_decisions_missing_follow_ups,
             wireframes_missing_role_assignments=wireframes_missing_role_assignments,
             orphan_role_assignment_surfaces=orphan_role_assignment_surfaces,
             role_assignments_missing_responsibilities=role_assignments_missing_responsibilities,
             role_assignments_missing_checklist_links=role_assignments_missing_checklist_links,
             role_assignments_missing_decision_links=role_assignments_missing_decision_links,
+            decisions_missing_role_links=decisions_missing_role_links,
             wireframes_missing_signoffs=wireframes_missing_signoffs,
             orphan_signoff_surfaces=orphan_signoff_surfaces,
             signoffs_missing_assignments=signoffs_missing_assignments,
@@ -1479,6 +1520,83 @@ def _build_owner_review_queue_entries(pack: UIReviewPack) -> List[Dict[str, str]
     )
 
 
+def _build_checklist_traceability_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
+    assignments_by_item: Dict[str, List[ReviewRoleAssignment]] = {}
+    for assignment in pack.role_matrix:
+        for item_id in assignment.checklist_item_ids:
+            assignments_by_item.setdefault(item_id, []).append(assignment)
+    entries: List[Dict[str, str]] = []
+    for item in pack.reviewer_checklist:
+        linked_assignments = assignments_by_item.get(item.item_id, [])
+        linked_decisions = sorted(
+            {decision_id for assignment in linked_assignments for decision_id in assignment.decision_ids}
+        )
+        entries.append(
+            {
+                "entry_id": f"trace-{item.item_id}",
+                "item_id": item.item_id,
+                "surface_id": item.surface_id,
+                "owner": item.owner,
+                "status": item.status,
+                "linked_assignments": ",".join(assignment.assignment_id for assignment in linked_assignments) or "none",
+                "linked_roles": ",".join(assignment.role for assignment in linked_assignments) or "none",
+                "linked_decisions": ",".join(linked_decisions) or "none",
+                "evidence": ",".join(item.evidence_links) or "none",
+                "summary": item.notes or item.prompt,
+            }
+        )
+    return sorted(entries, key=lambda item: (item["status"], item["owner"], item["item_id"]))
+
+
+def _build_decision_followup_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
+    assignments_by_decision: Dict[str, List[ReviewRoleAssignment]] = {}
+    for assignment in pack.role_matrix:
+        for decision_id in assignment.decision_ids:
+            assignments_by_decision.setdefault(decision_id, []).append(assignment)
+    entries: List[Dict[str, str]] = []
+    for decision in pack.decision_log:
+        linked_assignments = assignments_by_decision.get(decision.decision_id, [])
+        linked_checklist_ids = sorted(
+            {item_id for assignment in linked_assignments for item_id in assignment.checklist_item_ids}
+        )
+        entries.append(
+            {
+                "entry_id": f"follow-{decision.decision_id}",
+                "decision_id": decision.decision_id,
+                "surface_id": decision.surface_id,
+                "owner": decision.owner,
+                "status": decision.status,
+                "linked_roles": ",".join(assignment.role for assignment in linked_assignments) or "none",
+                "linked_assignments": ",".join(assignment.assignment_id for assignment in linked_assignments) or "none",
+                "linked_checklists": ",".join(linked_checklist_ids) or "none",
+                "follow_up": decision.follow_up or "none",
+                "summary": decision.summary,
+            }
+        )
+    return sorted(entries, key=lambda item: (item["status"], item["owner"], item["decision_id"]))
+
+
+def _build_role_coverage_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
+    signoffs_by_assignment = {signoff.assignment_id: signoff for signoff in pack.signoff_log}
+    entries = [
+        {
+            "entry_id": f"cover-{assignment.assignment_id}",
+            "assignment_id": assignment.assignment_id,
+            "surface_id": assignment.surface_id,
+            "role": assignment.role,
+            "status": assignment.status,
+            "responsibility_count": str(len(assignment.responsibilities)),
+            "checklist_count": str(len(assignment.checklist_item_ids)),
+            "decision_count": str(len(assignment.decision_ids)),
+            "signoff_id": signoffs_by_assignment.get(assignment.assignment_id).signoff_id if assignment.assignment_id in signoffs_by_assignment else "none",
+            "signoff_status": signoffs_by_assignment.get(assignment.assignment_id).status if assignment.assignment_id in signoffs_by_assignment else "none",
+            "summary": ",".join(assignment.responsibilities) or "none",
+        }
+        for assignment in pack.role_matrix
+    ]
+    return sorted(entries, key=lambda item: (item["surface_id"], item["status"], item["assignment_id"]))
+
+
 def _build_signoff_sla_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
     entries = [
         {
@@ -1635,6 +1753,111 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
             f"responsibilities={','.join(assignment.responsibilities) or 'none'} checklist={','.join(assignment.checklist_item_ids) or 'none'} decisions={','.join(assignment.decision_ids) or 'none'}"
         )
     if not pack.role_matrix:
+        lines.append("- none")
+
+    checklist_trace_entries = _build_checklist_traceability_entries(pack)
+    checklist_trace_owner_counts: Dict[str, int] = {}
+    checklist_trace_status_counts: Dict[str, int] = {}
+    for entry in checklist_trace_entries:
+        checklist_trace_owner_counts[entry['owner']] = checklist_trace_owner_counts.get(entry['owner'], 0) + 1
+        checklist_trace_status_counts[entry['status']] = checklist_trace_status_counts.get(entry['status'], 0) + 1
+
+    lines.append("")
+    lines.append("## Checklist Traceability Board")
+    lines.append(f"- Checklist items: {len(checklist_trace_entries)}")
+    lines.append(f"- Owners: {len(checklist_trace_owner_counts)}")
+    lines.append("")
+    lines.append("### By Owner")
+    for owner, count in sorted(checklist_trace_owner_counts.items()):
+        lines.append(f"- {owner}: {count}")
+    if not checklist_trace_owner_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### By Status")
+    for status, count in sorted(checklist_trace_status_counts.items()):
+        lines.append(f"- {status}: {count}")
+    if not checklist_trace_status_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### Entries")
+    for entry in checklist_trace_entries:
+        lines.append(
+            f"- {entry['entry_id']}: item={entry['item_id']} surface={entry['surface_id']} owner={entry['owner']} status={entry['status']} linked_roles={entry['linked_roles']}"
+        )
+        lines.append(
+            f"  linked_assignments={entry['linked_assignments']} linked_decisions={entry['linked_decisions']} evidence={entry['evidence']} summary={entry['summary']}"
+        )
+    if not checklist_trace_entries:
+        lines.append("- none")
+
+    decision_followup_entries = _build_decision_followup_entries(pack)
+    decision_followup_owner_counts: Dict[str, int] = {}
+    decision_followup_status_counts: Dict[str, int] = {}
+    for entry in decision_followup_entries:
+        decision_followup_owner_counts[entry['owner']] = decision_followup_owner_counts.get(entry['owner'], 0) + 1
+        decision_followup_status_counts[entry['status']] = decision_followup_status_counts.get(entry['status'], 0) + 1
+
+    lines.append("")
+    lines.append("## Decision Follow-up Tracker")
+    lines.append(f"- Decisions: {len(decision_followup_entries)}")
+    lines.append(f"- Owners: {len(decision_followup_owner_counts)}")
+    lines.append("")
+    lines.append("### By Owner")
+    for owner, count in sorted(decision_followup_owner_counts.items()):
+        lines.append(f"- {owner}: {count}")
+    if not decision_followup_owner_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### By Status")
+    for status, count in sorted(decision_followup_status_counts.items()):
+        lines.append(f"- {status}: {count}")
+    if not decision_followup_status_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### Entries")
+    for entry in decision_followup_entries:
+        lines.append(
+            f"- {entry['entry_id']}: decision={entry['decision_id']} surface={entry['surface_id']} owner={entry['owner']} status={entry['status']} linked_roles={entry['linked_roles']}"
+        )
+        lines.append(
+            f"  linked_assignments={entry['linked_assignments']} linked_checklists={entry['linked_checklists']} follow_up={entry['follow_up']} summary={entry['summary']}"
+        )
+    if not decision_followup_entries:
+        lines.append("- none")
+
+    role_coverage_entries = _build_role_coverage_entries(pack)
+    role_coverage_surface_counts: Dict[str, int] = {}
+    role_coverage_status_counts: Dict[str, int] = {}
+    for entry in role_coverage_entries:
+        role_coverage_surface_counts[entry['surface_id']] = role_coverage_surface_counts.get(entry['surface_id'], 0) + 1
+        role_coverage_status_counts[entry['status']] = role_coverage_status_counts.get(entry['status'], 0) + 1
+
+    lines.append("")
+    lines.append("## Role Coverage Board")
+    lines.append(f"- Assignments: {len(role_coverage_entries)}")
+    lines.append(f"- Surfaces: {len(role_coverage_surface_counts)}")
+    lines.append("")
+    lines.append("### By Surface")
+    for surface_id, count in sorted(role_coverage_surface_counts.items()):
+        lines.append(f"- {surface_id}: {count}")
+    if not role_coverage_surface_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### By Status")
+    for status, count in sorted(role_coverage_status_counts.items()):
+        lines.append(f"- {status}: {count}")
+    if not role_coverage_status_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### Entries")
+    for entry in role_coverage_entries:
+        lines.append(
+            f"- {entry['entry_id']}: assignment={entry['assignment_id']} surface={entry['surface_id']} role={entry['role']} status={entry['status']} responsibilities={entry['responsibility_count']} checklist={entry['checklist_count']} decisions={entry['decision_count']}"
+        )
+        lines.append(
+            f"  signoff={entry['signoff_id']} signoff_status={entry['signoff_status']} summary={entry['summary']}"
+        )
+    if not role_coverage_entries:
         lines.append("- none")
 
     lines.append("")
@@ -2231,14 +2454,17 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
             f"- Wireframes missing checklist coverage: {', '.join(audit.wireframes_missing_checklists) or 'none'}",
             f"- Orphan checklist surfaces: {', '.join(audit.orphan_checklist_surfaces) or 'none'}",
             f"- Checklist items missing evidence: {', '.join(audit.checklist_items_missing_evidence) or 'none'}",
+            f"- Checklist items missing role links: {', '.join(audit.checklist_items_missing_role_links) or 'none'}",
             f"- Wireframes missing decision coverage: {', '.join(audit.wireframes_missing_decisions) or 'none'}",
             f"- Orphan decision surfaces: {', '.join(audit.orphan_decision_surfaces) or 'none'}",
             f"- Unresolved decision ids: {', '.join(audit.unresolved_decision_ids) or 'none'}",
+            f"- Unresolved decisions missing follow-ups: {', '.join(audit.unresolved_decisions_missing_follow_ups) or 'none'}",
             f"- Wireframes missing role assignments: {', '.join(audit.wireframes_missing_role_assignments) or 'none'}",
             f"- Orphan role assignment surfaces: {', '.join(audit.orphan_role_assignment_surfaces) or 'none'}",
             f"- Role assignments missing responsibilities: {', '.join(audit.role_assignments_missing_responsibilities) or 'none'}",
             f"- Role assignments missing checklist links: {', '.join(audit.role_assignments_missing_checklist_links) or 'none'}",
             f"- Role assignments missing decision links: {', '.join(audit.role_assignments_missing_decision_links) or 'none'}",
+            f"- Decisions missing role links: {', '.join(audit.decisions_missing_role_links) or 'none'}",
             f"- Wireframes missing signoff coverage: {', '.join(audit.wireframes_missing_signoffs) or 'none'}",
             f"- Orphan signoff surfaces: {', '.join(audit.orphan_signoff_surfaces) or 'none'}",
             f"- Signoffs missing role assignments: {', '.join(audit.signoffs_missing_assignments) or 'none'}",
@@ -2755,6 +2981,129 @@ def render_ui_review_role_matrix(pack: UIReviewPack) -> str:
         lines.append("- none")
     return "\n".join(lines)
 
+
+
+def render_ui_review_checklist_traceability_board(pack: UIReviewPack) -> str:
+    entries = _build_checklist_traceability_entries(pack)
+    owner_counts: Dict[str, int] = {}
+    status_counts: Dict[str, int] = {}
+    for entry in entries:
+        owner_counts[entry['owner']] = owner_counts.get(entry['owner'], 0) + 1
+        status_counts[entry['status']] = status_counts.get(entry['status'], 0) + 1
+    lines = [
+        "# UI Review Checklist Traceability Board",
+        "",
+        f"- Issue: {pack.issue_id} {pack.title}",
+        f"- Version: {pack.version}",
+        f"- Checklist items: {len(entries)}",
+        f"- Owners: {len(owner_counts)}",
+        "",
+        "## By Owner",
+    ]
+    for owner, count in sorted(owner_counts.items()):
+        lines.append(f"- {owner}: {count}")
+    if not owner_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## By Status")
+    for status, count in sorted(status_counts.items()):
+        lines.append(f"- {status}: {count}")
+    if not status_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## Entries")
+    for entry in entries:
+        lines.append(
+            f"- {entry['entry_id']}: item={entry['item_id']} surface={entry['surface_id']} owner={entry['owner']} status={entry['status']} linked_roles={entry['linked_roles']}"
+        )
+        lines.append(
+            f"  linked_assignments={entry['linked_assignments']} linked_decisions={entry['linked_decisions']} evidence={entry['evidence']} summary={entry['summary']}"
+        )
+    if not entries:
+        lines.append("- none")
+    return "\n".join(lines)
+
+
+def render_ui_review_decision_followup_tracker(pack: UIReviewPack) -> str:
+    entries = _build_decision_followup_entries(pack)
+    owner_counts: Dict[str, int] = {}
+    status_counts: Dict[str, int] = {}
+    for entry in entries:
+        owner_counts[entry['owner']] = owner_counts.get(entry['owner'], 0) + 1
+        status_counts[entry['status']] = status_counts.get(entry['status'], 0) + 1
+    lines = [
+        "# UI Review Decision Follow-up Tracker",
+        "",
+        f"- Issue: {pack.issue_id} {pack.title}",
+        f"- Version: {pack.version}",
+        f"- Decisions: {len(entries)}",
+        f"- Owners: {len(owner_counts)}",
+        "",
+        "## By Owner",
+    ]
+    for owner, count in sorted(owner_counts.items()):
+        lines.append(f"- {owner}: {count}")
+    if not owner_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## By Status")
+    for status, count in sorted(status_counts.items()):
+        lines.append(f"- {status}: {count}")
+    if not status_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## Entries")
+    for entry in entries:
+        lines.append(
+            f"- {entry['entry_id']}: decision={entry['decision_id']} surface={entry['surface_id']} owner={entry['owner']} status={entry['status']} linked_roles={entry['linked_roles']}"
+        )
+        lines.append(
+            f"  linked_assignments={entry['linked_assignments']} linked_checklists={entry['linked_checklists']} follow_up={entry['follow_up']} summary={entry['summary']}"
+        )
+    if not entries:
+        lines.append("- none")
+    return "\n".join(lines)
+
+
+def render_ui_review_role_coverage_board(pack: UIReviewPack) -> str:
+    entries = _build_role_coverage_entries(pack)
+    surface_counts: Dict[str, int] = {}
+    status_counts: Dict[str, int] = {}
+    for entry in entries:
+        surface_counts[entry['surface_id']] = surface_counts.get(entry['surface_id'], 0) + 1
+        status_counts[entry['status']] = status_counts.get(entry['status'], 0) + 1
+    lines = [
+        "# UI Review Role Coverage Board",
+        "",
+        f"- Issue: {pack.issue_id} {pack.title}",
+        f"- Version: {pack.version}",
+        f"- Assignments: {len(entries)}",
+        f"- Surfaces: {len(surface_counts)}",
+        "",
+        "## By Surface",
+    ]
+    for surface_id, count in sorted(surface_counts.items()):
+        lines.append(f"- {surface_id}: {count}")
+    if not surface_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## By Status")
+    for status, count in sorted(status_counts.items()):
+        lines.append(f"- {status}: {count}")
+    if not status_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## Entries")
+    for entry in entries:
+        lines.append(
+            f"- {entry['entry_id']}: assignment={entry['assignment_id']} surface={entry['surface_id']} role={entry['role']} status={entry['status']} responsibilities={entry['responsibility_count']} checklist={entry['checklist_count']} decisions={entry['decision_count']}"
+        )
+        lines.append(
+            f"  signoff={entry['signoff_id']} signoff_status={entry['signoff_status']} summary={entry['summary']}"
+        )
+    if not entries:
+        lines.append("- none")
+    return "\n".join(lines)
 
 
 def render_ui_review_signoff_log(pack: UIReviewPack) -> str:
@@ -3501,6 +3850,60 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
         f"<li><strong>{escape(assignment.assignment_id)}</strong> · surface={escape(assignment.surface_id)} · role={escape(assignment.role)} · status={escape(assignment.status)}<br /><span>responsibilities={escape(', '.join(assignment.responsibilities) if assignment.responsibilities else 'none')}</span><br /><span>checklist={escape(', '.join(assignment.checklist_item_ids) if assignment.checklist_item_ids else 'none')} · decisions={escape(', '.join(assignment.decision_ids) if assignment.decision_ids else 'none')}</span></li>"
         for assignment in pack.role_matrix
     ) or "<li>none</li>"
+    checklist_trace_entries = _build_checklist_traceability_entries(pack)
+    checklist_trace_owner_counts: Dict[str, int] = {}
+    checklist_trace_status_counts: Dict[str, int] = {}
+    for entry in checklist_trace_entries:
+        checklist_trace_owner_counts[entry['owner']] = checklist_trace_owner_counts.get(entry['owner'], 0) + 1
+        checklist_trace_status_counts[entry['status']] = checklist_trace_status_counts.get(entry['status'], 0) + 1
+    checklist_trace_owner_html = "".join(
+        f"<li><strong>{escape(owner)}</strong> · count={count}</li>"
+        for owner, count in sorted(checklist_trace_owner_counts.items())
+    ) or "<li>none</li>"
+    checklist_trace_status_html = "".join(
+        f"<li><strong>{escape(status)}</strong> · count={count}</li>"
+        for status, count in sorted(checklist_trace_status_counts.items())
+    ) or "<li>none</li>"
+    checklist_trace_item_html = "".join(
+        f"<li><strong>{escape(entry['entry_id'])}</strong> · item={escape(entry['item_id'])} · surface={escape(entry['surface_id'])} · owner={escape(entry['owner'])} · status={escape(entry['status'])}<br /><span>linked_roles={escape(entry['linked_roles'])} · linked_assignments={escape(entry['linked_assignments'])}</span><br /><span>linked_decisions={escape(entry['linked_decisions'])} · evidence={escape(entry['evidence'])}</span><br /><span>{escape(entry['summary'])}</span></li>"
+        for entry in checklist_trace_entries
+    ) or "<li>none</li>"
+    decision_followup_entries = _build_decision_followup_entries(pack)
+    decision_followup_owner_counts: Dict[str, int] = {}
+    decision_followup_status_counts: Dict[str, int] = {}
+    for entry in decision_followup_entries:
+        decision_followup_owner_counts[entry['owner']] = decision_followup_owner_counts.get(entry['owner'], 0) + 1
+        decision_followup_status_counts[entry['status']] = decision_followup_status_counts.get(entry['status'], 0) + 1
+    decision_followup_owner_html = "".join(
+        f"<li><strong>{escape(owner)}</strong> · count={count}</li>"
+        for owner, count in sorted(decision_followup_owner_counts.items())
+    ) or "<li>none</li>"
+    decision_followup_status_html = "".join(
+        f"<li><strong>{escape(status)}</strong> · count={count}</li>"
+        for status, count in sorted(decision_followup_status_counts.items())
+    ) or "<li>none</li>"
+    decision_followup_item_html = "".join(
+        f"<li><strong>{escape(entry['entry_id'])}</strong> · decision={escape(entry['decision_id'])} · surface={escape(entry['surface_id'])} · owner={escape(entry['owner'])} · status={escape(entry['status'])}<br /><span>linked_roles={escape(entry['linked_roles'])} · linked_assignments={escape(entry['linked_assignments'])}</span><br /><span>linked_checklists={escape(entry['linked_checklists'])} · follow_up={escape(entry['follow_up'])}</span><br /><span>{escape(entry['summary'])}</span></li>"
+        for entry in decision_followup_entries
+    ) or "<li>none</li>"
+    role_coverage_entries = _build_role_coverage_entries(pack)
+    role_coverage_surface_counts: Dict[str, int] = {}
+    role_coverage_status_counts: Dict[str, int] = {}
+    for entry in role_coverage_entries:
+        role_coverage_surface_counts[entry['surface_id']] = role_coverage_surface_counts.get(entry['surface_id'], 0) + 1
+        role_coverage_status_counts[entry['status']] = role_coverage_status_counts.get(entry['status'], 0) + 1
+    role_coverage_surface_html = "".join(
+        f"<li><strong>{escape(surface_id)}</strong> · count={count}</li>"
+        for surface_id, count in sorted(role_coverage_surface_counts.items())
+    ) or "<li>none</li>"
+    role_coverage_status_html = "".join(
+        f"<li><strong>{escape(status)}</strong> · count={count}</li>"
+        for status, count in sorted(role_coverage_status_counts.items())
+    ) or "<li>none</li>"
+    role_coverage_item_html = "".join(
+        f"<li><strong>{escape(entry['entry_id'])}</strong> · assignment={escape(entry['assignment_id'])} · surface={escape(entry['surface_id'])} · role={escape(entry['role'])} · status={escape(entry['status'])}<br /><span>responsibilities={escape(entry['responsibility_count'])} · checklist={escape(entry['checklist_count'])} · decisions={escape(entry['decision_count'])}</span><br /><span>signoff={escape(entry['signoff_id'])} · signoff_status={escape(entry['signoff_status'])}</span><br /><span>{escape(entry['summary'])}</span></li>"
+        for entry in role_coverage_entries
+    ) or "<li>none</li>"
     signoff_html = "".join(
         f"<li><strong>{escape(signoff.signoff_id)}</strong> · surface={escape(signoff.surface_id)} · role={escape(signoff.role)} · status={escape(signoff.status)}<br /><span>assignment={escape(signoff.assignment_id)} · required={escape('yes' if signoff.required else 'no')}</span><br /><span>evidence={escape(', '.join(signoff.evidence_links) if signoff.evidence_links else 'none')}</span><br /><span>waiver_owner={escape(signoff.waiver_owner or 'none')} · waiver_reason={escape(signoff.waiver_reason or 'none')}</span><br /><span>requested_at={escape(signoff.requested_at or 'none')} · due_at={escape(signoff.due_at or 'none')} · escalation_owner={escape(signoff.escalation_owner or 'none')} · sla_status={escape(signoff.sla_status)}</span></li>"
         for signoff in pack.signoff_log
@@ -3833,9 +4236,12 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
     <section class="summary">
       <h2>Readiness</h2>
       <p>Missing checklist coverage: {escape(', '.join(audit.wireframes_missing_checklists) if audit.wireframes_missing_checklists else 'none')}</p>
+      <p>Checklist items missing role links: {escape(', '.join(audit.checklist_items_missing_role_links) if audit.checklist_items_missing_role_links else 'none')}</p>
       <p>Missing decision coverage: {escape(', '.join(audit.wireframes_missing_decisions) if audit.wireframes_missing_decisions else 'none')}</p>
+      <p>Unresolved decisions missing follow-ups: {escape(', '.join(audit.unresolved_decisions_missing_follow_ups) if audit.unresolved_decisions_missing_follow_ups else 'none')}</p>
       <p>Missing role assignments: {escape(', '.join(audit.wireframes_missing_role_assignments) if audit.wireframes_missing_role_assignments else 'none')}</p>
       <p>Missing signoff coverage: {escape(', '.join(audit.wireframes_missing_signoffs) if audit.wireframes_missing_signoffs else 'none')}</p>
+      <p>Decisions missing role links: {escape(', '.join(audit.decisions_missing_role_links) if audit.decisions_missing_role_links else 'none')}</p>
       <p>Missing blocker coverage: {escape(', '.join(audit.unresolved_required_signoffs_without_blockers) if audit.unresolved_required_signoffs_without_blockers else 'none')}</p>
       <p>Missing signoff requested dates: {escape(', '.join(audit.signoffs_missing_requested_dates) if audit.signoffs_missing_requested_dates else 'none')}</p>
       <p>Missing signoff due dates: {escape(', '.join(audit.signoffs_missing_due_dates) if audit.signoffs_missing_due_dates else 'none')}</p>
@@ -3868,6 +4274,9 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
     <section class="surface"><h2>Reviewer Checklist</h2><ul>{checklist_html}</ul></section>
     <section class="surface"><h2>Decision Log</h2><ul>{decision_html}</ul></section>
     <section class="surface"><h2>Role Matrix</h2><ul>{role_matrix_html}</ul></section>
+    <section class="surface"><h2>Checklist Traceability Board</h2><h3>By Owner</h3><ul>{checklist_trace_owner_html}</ul><h3>By Status</h3><ul>{checklist_trace_status_html}</ul><h3>Entries</h3><ul>{checklist_trace_item_html}</ul></section>
+    <section class="surface"><h2>Decision Follow-up Tracker</h2><h3>By Owner</h3><ul>{decision_followup_owner_html}</ul><h3>By Status</h3><ul>{decision_followup_status_html}</ul><h3>Entries</h3><ul>{decision_followup_item_html}</ul></section>
+    <section class="surface"><h2>Role Coverage Board</h2><h3>By Surface</h3><ul>{role_coverage_surface_html}</ul><h3>By Status</h3><ul>{role_coverage_status_html}</ul><h3>Entries</h3><ul>{role_coverage_item_html}</ul></section>
     <section class="surface"><h2>Sign-off Log</h2><ul>{signoff_html}</ul></section>
     <section class="surface"><h2>Sign-off SLA Dashboard</h2><h3>SLA States</h3><ul>{signoff_sla_state_html}</ul><h3>Escalation Owners</h3><ul>{signoff_sla_owner_html}</ul><h3>Sign-offs</h3><ul>{signoff_sla_item_html}</ul></section>
     <section class="surface"><h2>Sign-off Reminder Queue</h2><h3>By Owner</h3><ul>{signoff_reminder_owner_html}</ul><h3>By Channel</h3><ul>{signoff_reminder_channel_html}</ul><h3>Items</h3><ul>{signoff_reminder_item_html}</ul></section>
@@ -3898,7 +4307,10 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
     markdown_path = str(base / f"{slug}-review-pack.md")
     html_path = str(base / f"{slug}-review-pack.html")
     decision_log_path = str(base / f"{slug}-decision-log.md")
+    checklist_traceability_board_path = str(base / f"{slug}-checklist-traceability-board.md")
+    decision_followup_tracker_path = str(base / f"{slug}-decision-followup-tracker.md")
     role_matrix_path = str(base / f"{slug}-role-matrix.md")
+    role_coverage_board_path = str(base / f"{slug}-role-coverage-board.md")
     signoff_log_path = str(base / f"{slug}-signoff-log.md")
     signoff_sla_dashboard_path = str(base / f"{slug}-signoff-sla-dashboard.md")
     signoff_reminder_queue_path = str(base / f"{slug}-signoff-reminder-queue.md")
@@ -3921,7 +4333,10 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
     Path(markdown_path).write_text(render_ui_review_pack_report(pack, audit))
     Path(html_path).write_text(render_ui_review_pack_html(pack, audit))
     Path(decision_log_path).write_text(render_ui_review_decision_log(pack))
+    Path(checklist_traceability_board_path).write_text(render_ui_review_checklist_traceability_board(pack))
+    Path(decision_followup_tracker_path).write_text(render_ui_review_decision_followup_tracker(pack))
     Path(role_matrix_path).write_text(render_ui_review_role_matrix(pack))
+    Path(role_coverage_board_path).write_text(render_ui_review_role_coverage_board(pack))
     Path(signoff_log_path).write_text(render_ui_review_signoff_log(pack))
     Path(signoff_sla_dashboard_path).write_text(render_ui_review_signoff_sla_dashboard(pack))
     Path(signoff_reminder_queue_path).write_text(render_ui_review_signoff_reminder_queue(pack))
@@ -3945,7 +4360,10 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
         markdown_path=markdown_path,
         html_path=html_path,
         decision_log_path=decision_log_path,
+        checklist_traceability_board_path=checklist_traceability_board_path,
+        decision_followup_tracker_path=decision_followup_tracker_path,
         role_matrix_path=role_matrix_path,
+        role_coverage_board_path=role_coverage_board_path,
         signoff_log_path=signoff_log_path,
         signoff_sla_dashboard_path=signoff_sla_dashboard_path,
         signoff_reminder_queue_path=signoff_reminder_queue_path,

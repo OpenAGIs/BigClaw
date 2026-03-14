@@ -17,6 +17,8 @@ from bigclaw.ui_review import (
     render_ui_review_blocker_log,
     render_ui_review_blocker_timeline,
     render_ui_review_blocker_timeline_summary,
+    render_ui_review_checklist_traceability_board,
+    render_ui_review_decision_followup_tracker,
     render_ui_review_escalation_dashboard,
     render_ui_review_escalation_handoff_ledger,
     render_ui_review_exception_log,
@@ -28,6 +30,7 @@ from bigclaw.ui_review import (
     render_ui_review_owner_escalation_digest,
     render_ui_review_owner_review_queue,
     render_ui_review_reminder_cadence_board,
+    render_ui_review_role_coverage_board,
     render_ui_review_signoff_breach_board,
     render_ui_review_signoff_reminder_queue,
     render_ui_review_signoff_sla_dashboard,
@@ -192,6 +195,12 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert "chk-queue-batch-approval: surface=wf-queue owner=Platform Admin status=ready" in report
     assert "dec-queue-vp-summary: surface=wf-queue owner=VP Eng status=proposed" in report
     assert "role-queue-platform-admin: surface=wf-queue role=Platform Admin status=ready" in report
+    assert "## Checklist Traceability Board" in report
+    assert "trace-chk-queue-role-density: item=chk-queue-role-density surface=wf-queue owner=product-experience status=open linked_roles=product-experience" in report
+    assert "## Decision Follow-up Tracker" in report
+    assert "follow-dec-queue-vp-summary: decision=dec-queue-vp-summary surface=wf-queue owner=VP Eng status=proposed linked_roles=Platform Admin,product-experience" in report
+    assert "## Role Coverage Board" in report
+    assert "cover-role-run-detail-eng-lead: assignment=role-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=ready responsibilities=2 checklist=1 decisions=1" in report
     assert "sig-run-detail-eng-lead: surface=wf-run-detail role=Eng Lead assignment=role-run-detail-eng-lead status=pending" in report
     assert "blk-run-detail-copy-final: surface=wf-run-detail signoff=sig-run-detail-eng-lead owner=product-experience status=open severity=medium" in report
     assert "evt-run-detail-copy-escalated: blocker=blk-run-detail-copy-final actor=design-program-manager status=escalated at=2026-03-14T09:30:00Z" in report
@@ -228,7 +237,9 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert "## Blocker Timeline Summary" in report
     assert "- escalated: 1" in report
     assert "- Wireframes missing checklist coverage: none" in report
+    assert "- Checklist items missing role links: none" in report
     assert "- Wireframes missing decision coverage: none" in report
+    assert "- Unresolved decisions missing follow-ups: none" in report
     assert "- Wireframes missing role assignments: none" in report
     assert "- Wireframes missing signoff coverage: none" in report
     assert "- Blockers missing signoff links: none" in report
@@ -247,6 +258,7 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert "- Handoff events missing ack dates: none" in report
     assert "- Unresolved required signoffs without blockers: none" in report
     assert "- Unresolved decision ids: dec-queue-vp-summary" in report
+    assert "- Decisions missing role links: none" in report
     assert "- Signoffs missing requested dates: none" in report
     assert "- Signoffs missing due dates: none" in report
     assert "- Signoffs missing escalation owners: none" in report
@@ -322,6 +334,20 @@ def test_ui_review_pack_audit_flags_missing_role_matrix_coverage() -> None:
     assert audit.role_assignments_missing_responsibilities == []
     assert audit.role_assignments_missing_checklist_links == []
     assert audit.role_assignments_missing_decision_links == []
+    assert audit.checklist_items_missing_role_links == [
+        "chk-overview-alert-hierarchy",
+        "chk-queue-batch-approval",
+        "chk-queue-role-density",
+        "chk-run-audit-density",
+        "chk-run-replay-context",
+        "chk-triage-bulk-assign",
+        "chk-triage-handoff-clarity",
+    ]
+    assert audit.decisions_missing_role_links == [
+        "dec-queue-vp-summary",
+        "dec-run-detail-audit-rail",
+        "dec-triage-handoff-density",
+    ]
 
 
 def test_ui_review_pack_audit_flags_missing_signoff_coverage_and_assignment_links() -> None:
@@ -377,6 +403,25 @@ def test_ui_review_pack_audit_flags_missing_signoff_sla_metadata() -> None:
     assert audit.signoffs_missing_next_reminders == ["sig-run-detail-eng-lead"]
     assert audit.signoffs_missing_reminder_cadence == ["sig-run-detail-eng-lead"]
     assert audit.signoffs_with_breached_sla == ["sig-run-detail-eng-lead"]
+
+
+def test_ui_review_pack_audit_flags_unresolved_decision_without_follow_up() -> None:
+    pack = build_big_4204_review_pack()
+    pack.decision_log[1] = ReviewDecision(
+        decision_id="dec-queue-vp-summary",
+        surface_id="wf-queue",
+        owner="VP Eng",
+        summary="Route VP Eng to a summary-first queue state instead of operator controls.",
+        rationale="The VP Eng persona needs queue visibility without accidental action affordances.",
+        status="proposed",
+        follow_up="",
+    )
+
+    audit = UIReviewPackAuditor().audit(pack)
+
+    assert audit.ready is False
+    assert audit.unresolved_decision_ids == ["dec-queue-vp-summary"]
+    assert audit.unresolved_decisions_missing_follow_ups == ["dec-queue-vp-summary"]
 
 
 def test_ui_review_pack_audit_flags_missing_freeze_and_handoff_metadata() -> None:
@@ -610,6 +655,29 @@ def test_render_ui_review_freeze_approval_trail() -> None:
     assert "freeze-approval-blk-run-detail-copy-final: blocker=blk-run-detail-copy-final surface=wf-run-detail status=open owner=release-director approved_by=release-director approved_at=2026-03-14T08:30:00Z window=2026-03-18T18:00:00Z" in freeze_trail
 
 
+def test_render_ui_review_traceability_and_role_coverage_boards() -> None:
+    pack = build_big_4204_review_pack()
+
+    checklist_traceability = render_ui_review_checklist_traceability_board(pack)
+    decision_followup = render_ui_review_decision_followup_tracker(pack)
+    role_coverage = render_ui_review_role_coverage_board(pack)
+
+    assert "# UI Review Checklist Traceability Board" in checklist_traceability
+    assert "- Checklist items: 8" in checklist_traceability
+    assert "- Owners: 7" in checklist_traceability
+    assert "trace-chk-queue-role-density: item=chk-queue-role-density surface=wf-queue owner=product-experience status=open linked_roles=product-experience" in checklist_traceability
+    assert "# UI Review Decision Follow-up Tracker" in decision_followup
+    assert "- Decisions: 4" in decision_followup
+    assert "- Owners: 4" in decision_followup
+    assert "follow-dec-queue-vp-summary: decision=dec-queue-vp-summary surface=wf-queue owner=VP Eng status=proposed linked_roles=Platform Admin,product-experience" in decision_followup
+    assert "linked_assignments=role-queue-platform-admin,role-queue-product-experience linked_checklists=chk-queue-batch-approval,chk-queue-role-density follow_up=Resolve after the next design critique with policy owners." in decision_followup
+    assert "# UI Review Role Coverage Board" in role_coverage
+    assert "- Assignments: 8" in role_coverage
+    assert "- Surfaces: 4" in role_coverage
+    assert "cover-role-run-detail-eng-lead: assignment=role-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=ready responsibilities=2 checklist=1 decisions=1" in role_coverage
+    assert "signoff=sig-run-detail-eng-lead signoff_status=pending" in role_coverage
+
+
 def test_render_ui_review_owner_review_queue_groups_actionable_items() -> None:
     pack = build_big_4204_review_pack()
 
@@ -632,7 +700,10 @@ def test_render_ui_review_exception_log_and_timeline_summary() -> None:
 
     signoff_sla = render_ui_review_signoff_sla_dashboard(pack)
     signoff_reminder = render_ui_review_signoff_reminder_queue(pack)
+    checklist_traceability = render_ui_review_checklist_traceability_board(pack)
+    decision_followup = render_ui_review_decision_followup_tracker(pack)
     reminder_cadence = render_ui_review_reminder_cadence_board(pack)
+    role_coverage = render_ui_review_role_coverage_board(pack)
     signoff_breach = render_ui_review_signoff_breach_board(pack)
     escalation_dashboard = render_ui_review_escalation_dashboard(pack)
     handoff_ledger = render_ui_review_escalation_handoff_ledger(pack)
@@ -650,6 +721,10 @@ def test_render_ui_review_exception_log_and_timeline_summary() -> None:
     assert "- at-risk: 1" in signoff_sla
     assert "# UI Review Sign-off Reminder Queue" in signoff_reminder
     assert "- Reminders: 1" in signoff_reminder
+    assert "# UI Review Checklist Traceability Board" in checklist_traceability
+    assert "trace-chk-queue-role-density: item=chk-queue-role-density surface=wf-queue owner=product-experience status=open linked_roles=product-experience" in checklist_traceability
+    assert "# UI Review Decision Follow-up Tracker" in decision_followup
+    assert "follow-dec-queue-vp-summary: decision=dec-queue-vp-summary surface=wf-queue owner=VP Eng status=proposed linked_roles=Platform Admin,product-experience" in decision_followup
     assert "# UI Review Reminder Cadence Board" in reminder_cadence
     assert "- Cadences: 1" in reminder_cadence
     assert "cad-rem-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead role=Eng Lead surface=wf-run-detail cadence=daily status=scheduled owner=design-program-manager" in reminder_cadence
@@ -664,6 +739,8 @@ def test_render_ui_review_exception_log_and_timeline_summary() -> None:
     assert "ack-evt-run-detail-copy-escalated: event=evt-run-detail-copy-escalated blocker=blk-run-detail-copy-final surface=wf-run-detail handoff_to=Eng Lead ack_owner=Eng Lead ack_status=acknowledged ack_at=2026-03-14T10:15:00Z" in handoff_ack
     assert "# UI Review Owner Escalation Digest" in owner_digest
     assert "- design-program-manager: blockers=1 signoffs=0 reminders=1 freezes=0 handoffs=0 total=2" in owner_digest
+    assert "# UI Review Role Coverage Board" in role_coverage
+    assert "cover-role-run-detail-eng-lead: assignment=role-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=ready responsibilities=2 checklist=1 decisions=1" in role_coverage
     assert "# UI Review Freeze Exception Board" in freeze_board
     assert "- release-director: blockers=1 signoffs=0 total=1" in freeze_board
     assert "# UI Review Freeze Approval Trail" in freeze_trail
@@ -692,8 +769,11 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     audit = UIReviewPackAuditor().audit(pack)
 
     html = render_ui_review_pack_html(pack, audit)
+    checklist_traceability = render_ui_review_checklist_traceability_board(pack)
     decision_log = render_ui_review_decision_log(pack)
+    decision_followup = render_ui_review_decision_followup_tracker(pack)
     role_matrix = render_ui_review_role_matrix(pack)
+    role_coverage = render_ui_review_role_coverage_board(pack)
     signoff_log = render_ui_review_signoff_log(pack)
     blocker_log = render_ui_review_blocker_log(pack)
     blocker_timeline = render_ui_review_blocker_timeline(pack)
@@ -715,7 +795,10 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     artifacts = write_ui_review_pack_bundle(str(tmp_path), pack)
 
     assert "<h2>Decision Log</h2>" in html
+    assert "<h2>Checklist Traceability Board</h2>" in html
+    assert "<h2>Decision Follow-up Tracker</h2>" in html
     assert "<h2>Role Matrix</h2>" in html
+    assert "<h2>Role Coverage Board</h2>" in html
     assert "<h2>Sign-off Log</h2>" in html
     assert "<h2>Sign-off SLA Dashboard</h2>" in html
     assert "<h2>Sign-off Reminder Queue</h2>" in html
@@ -735,10 +818,16 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "<h2>Owner Review Queue</h2>" in html
     assert "<h2>Blocker Timeline Summary</h2>" in html
     assert "dec-queue-vp-summary" in html
+    assert "# UI Review Checklist Traceability Board" in checklist_traceability
+    assert "trace-chk-queue-role-density: item=chk-queue-role-density surface=wf-queue owner=product-experience status=open linked_roles=product-experience" in checklist_traceability
     assert "# UI Review Decision Log" in decision_log
     assert "dec-run-detail-audit-rail" in decision_log
+    assert "# UI Review Decision Follow-up Tracker" in decision_followup
+    assert "follow-dec-queue-vp-summary: decision=dec-queue-vp-summary surface=wf-queue owner=VP Eng status=proposed linked_roles=Platform Admin,product-experience" in decision_followup
     assert "# UI Review Role Matrix" in role_matrix
     assert "role-triage-platform-admin" in role_matrix
+    assert "# UI Review Role Coverage Board" in role_coverage
+    assert "cover-role-run-detail-eng-lead: assignment=role-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=ready responsibilities=2 checklist=1 decisions=1" in role_coverage
     assert "# UI Review Sign-off Log" in signoff_log
     assert "sig-run-detail-eng-lead" in signoff_log
     assert "# UI Review Sign-off SLA Dashboard" in signoff_sla
@@ -778,7 +867,10 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert Path(artifacts.markdown_path).exists()
     assert Path(artifacts.html_path).exists()
     assert Path(artifacts.decision_log_path).exists()
+    assert Path(artifacts.checklist_traceability_board_path).exists()
+    assert Path(artifacts.decision_followup_tracker_path).exists()
     assert Path(artifacts.role_matrix_path).exists()
+    assert Path(artifacts.role_coverage_board_path).exists()
     assert Path(artifacts.signoff_log_path).exists()
     assert Path(artifacts.signoff_sla_dashboard_path).exists()
     assert Path(artifacts.signoff_reminder_queue_path).exists()
@@ -798,7 +890,10 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert Path(artifacts.owner_review_queue_path).exists()
     assert Path(artifacts.blocker_timeline_summary_path).exists()
     assert "Decision Log" in Path(artifacts.html_path).read_text()
+    assert "Checklist Traceability Board" in Path(artifacts.html_path).read_text()
+    assert "Decision Follow-up Tracker" in Path(artifacts.html_path).read_text()
     assert "Role Matrix" in Path(artifacts.html_path).read_text()
+    assert "Role Coverage Board" in Path(artifacts.html_path).read_text()
     assert "Sign-off Log" in Path(artifacts.html_path).read_text()
     assert "Sign-off SLA Dashboard" in Path(artifacts.html_path).read_text()
     assert "Sign-off Reminder Queue" in Path(artifacts.html_path).read_text()
@@ -818,7 +913,10 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "Owner Review Queue" in Path(artifacts.html_path).read_text()
     assert "Blocker Timeline Summary" in Path(artifacts.html_path).read_text()
     assert "dec-triage-handoff-density" in Path(artifacts.decision_log_path).read_text()
+    assert "trace-chk-queue-role-density: item=chk-queue-role-density surface=wf-queue owner=product-experience status=open linked_roles=product-experience" in Path(artifacts.checklist_traceability_board_path).read_text()
+    assert "follow-dec-queue-vp-summary: decision=dec-queue-vp-summary surface=wf-queue owner=VP Eng status=proposed linked_roles=Platform Admin,product-experience" in Path(artifacts.decision_followup_tracker_path).read_text()
     assert "role-run-detail-eng-lead" in Path(artifacts.role_matrix_path).read_text()
+    assert "cover-role-run-detail-eng-lead: assignment=role-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=ready responsibilities=2 checklist=1 decisions=1" in Path(artifacts.role_coverage_board_path).read_text()
     assert "sig-queue-platform-admin" in Path(artifacts.signoff_log_path).read_text()
     assert "- at-risk: 1" in Path(artifacts.signoff_sla_dashboard_path).read_text()
     assert "rem-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead role=Eng Lead surface=wf-run-detail status=pending sla=at-risk owner=design-program-manager channel=slack" in Path(artifacts.signoff_reminder_queue_path).read_text()
