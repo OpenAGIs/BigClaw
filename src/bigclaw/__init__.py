@@ -295,6 +295,7 @@ from .ui_review import (
     OpenQuestion,
     ReviewDecision,
     ReviewObjective,
+    ReviewRoleAssignment,
     ReviewerChecklistItem,
     UIReviewPack,
     UIReviewPackArtifacts,
@@ -304,6 +305,7 @@ from .ui_review import (
     build_big_4204_review_pack,
     render_ui_review_decision_log,
     render_ui_review_pack_html,
+    render_ui_review_role_matrix,
     render_ui_review_pack_report,
     write_ui_review_pack_bundle,
 )
@@ -584,6 +586,7 @@ __all__ = [
     "OpenQuestion",
     "ReviewDecision",
     "ReviewObjective",
+    "ReviewRoleAssignment",
     "ReviewerChecklistItem",
     "UIReviewPack",
     "UIReviewPackArtifacts",
@@ -593,6 +596,7 @@ __all__ = [
     "build_big_4204_review_pack",
     "render_ui_review_decision_log",
     "render_ui_review_pack_html",
+    "render_ui_review_role_matrix",
     "render_ui_review_pack_report",
     "write_ui_review_pack_bundle",
 ]

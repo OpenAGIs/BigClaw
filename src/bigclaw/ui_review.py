@@ -200,11 +200,46 @@ class ReviewDecision:
 
 
 @dataclass(frozen=True)
+class ReviewRoleAssignment:
+    assignment_id: str
+    surface_id: str
+    role: str
+    responsibilities: List[str] = field(default_factory=list)
+    checklist_item_ids: List[str] = field(default_factory=list)
+    decision_ids: List[str] = field(default_factory=list)
+    status: str = "planned"
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "assignment_id": self.assignment_id,
+            "surface_id": self.surface_id,
+            "role": self.role,
+            "responsibilities": list(self.responsibilities),
+            "checklist_item_ids": list(self.checklist_item_ids),
+            "decision_ids": list(self.decision_ids),
+            "status": self.status,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "ReviewRoleAssignment":
+        return cls(
+            assignment_id=str(data["assignment_id"]),
+            surface_id=str(data["surface_id"]),
+            role=str(data["role"]),
+            responsibilities=[str(item) for item in data.get("responsibilities", [])],
+            checklist_item_ids=[str(item) for item in data.get("checklist_item_ids", [])],
+            decision_ids=[str(item) for item in data.get("decision_ids", [])],
+            status=str(data.get("status", "planned")),
+        )
+
+
+@dataclass(frozen=True)
 class UIReviewPackArtifacts:
     root_dir: str
     markdown_path: str
     html_path: str
     decision_log_path: str
+    role_matrix_path: str
 
 
 @dataclass
@@ -220,6 +255,8 @@ class UIReviewPack:
     requires_reviewer_checklist: bool = False
     decision_log: List[ReviewDecision] = field(default_factory=list)
     requires_decision_log: bool = False
+    role_matrix: List[ReviewRoleAssignment] = field(default_factory=list)
+    requires_role_matrix: bool = False
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -234,6 +271,8 @@ class UIReviewPack:
             "requires_reviewer_checklist": self.requires_reviewer_checklist,
             "decision_log": [decision.to_dict() for decision in self.decision_log],
             "requires_decision_log": self.requires_decision_log,
+            "role_matrix": [assignment.to_dict() for assignment in self.role_matrix],
+            "requires_role_matrix": self.requires_role_matrix,
         }
 
     @classmethod
@@ -250,6 +289,8 @@ class UIReviewPack:
             requires_reviewer_checklist=bool(data.get("requires_reviewer_checklist", False)),
             decision_log=[ReviewDecision.from_dict(item) for item in data.get("decision_log", [])],
             requires_decision_log=bool(data.get("requires_decision_log", False)),
+            role_matrix=[ReviewRoleAssignment.from_dict(item) for item in data.get("role_matrix", [])],
+            requires_role_matrix=bool(data.get("requires_role_matrix", False)),
         )
 
 
@@ -262,6 +303,7 @@ class UIReviewPackAudit:
     open_question_count: int
     checklist_count: int = 0
     decision_count: int = 0
+    role_assignment_count: int = 0
     missing_sections: List[str] = field(default_factory=list)
     objectives_missing_signals: List[str] = field(default_factory=list)
     wireframes_missing_blocks: List[str] = field(default_factory=list)
@@ -273,6 +315,11 @@ class UIReviewPackAudit:
     wireframes_missing_decisions: List[str] = field(default_factory=list)
     orphan_decision_surfaces: List[str] = field(default_factory=list)
     unresolved_decision_ids: List[str] = field(default_factory=list)
+    wireframes_missing_role_assignments: List[str] = field(default_factory=list)
+    orphan_role_assignment_surfaces: List[str] = field(default_factory=list)
+    role_assignments_missing_responsibilities: List[str] = field(default_factory=list)
+    role_assignments_missing_checklist_links: List[str] = field(default_factory=list)
+    role_assignments_missing_decision_links: List[str] = field(default_factory=list)
 
     @property
     def summary(self) -> str:
@@ -283,7 +330,8 @@ class UIReviewPackAudit:
             f"interactions={self.interaction_count} "
             f"open_questions={self.open_question_count} "
             f"checklist={self.checklist_count} "
-            f"decisions={self.decision_count}"
+            f"decisions={self.decision_count} "
+            f"role_assignments={self.role_assignment_count}"
         )
 
 
@@ -354,6 +402,42 @@ class UIReviewPackAuditor:
                 for decision in pack.decision_log
                 if decision.status.lower() not in {"accepted", "approved", "resolved", "deferred"}
             )
+        checklist_item_ids = {item.item_id for item in pack.reviewer_checklist}
+        decision_ids = {decision.decision_id for decision in pack.decision_log}
+        role_assignments_by_surface: Dict[str, List[ReviewRoleAssignment]] = {}
+        for assignment in pack.role_matrix:
+            role_assignments_by_surface.setdefault(assignment.surface_id, []).append(assignment)
+        wireframes_missing_role_assignments = []
+        orphan_role_assignment_surfaces = []
+        role_assignments_missing_responsibilities = []
+        role_assignments_missing_checklist_links = []
+        role_assignments_missing_decision_links = []
+        if pack.requires_role_matrix:
+            wireframes_missing_role_assignments = sorted(
+                wireframe.surface_id
+                for wireframe in pack.wireframes
+                if wireframe.surface_id not in role_assignments_by_surface
+            )
+            orphan_role_assignment_surfaces = sorted(
+                surface_id for surface_id in role_assignments_by_surface if surface_id not in wireframe_ids
+            )
+            role_assignments_missing_responsibilities = sorted(
+                assignment.assignment_id
+                for assignment in pack.role_matrix
+                if not assignment.responsibilities
+            )
+            role_assignments_missing_checklist_links = sorted(
+                assignment.assignment_id
+                for assignment in pack.role_matrix
+                if not assignment.checklist_item_ids
+                or any(item_id not in checklist_item_ids for item_id in assignment.checklist_item_ids)
+            )
+            role_assignments_missing_decision_links = sorted(
+                assignment.assignment_id
+                for assignment in pack.role_matrix
+                if not assignment.decision_ids
+                or any(decision_id not in decision_ids for decision_id in assignment.decision_ids)
+            )
         ready = not (
             missing_sections
             or objectives_missing_signals
@@ -364,6 +448,11 @@ class UIReviewPackAuditor:
             or checklist_items_missing_evidence
             or wireframes_missing_decisions
             or orphan_decision_surfaces
+            or wireframes_missing_role_assignments
+            or orphan_role_assignment_surfaces
+            or role_assignments_missing_responsibilities
+            or role_assignments_missing_checklist_links
+            or role_assignments_missing_decision_links
         )
         return UIReviewPackAudit(
             ready=ready,
@@ -373,6 +462,7 @@ class UIReviewPackAuditor:
             open_question_count=len(pack.open_questions),
             checklist_count=len(pack.reviewer_checklist),
             decision_count=len(pack.decision_log),
+            role_assignment_count=len(pack.role_matrix),
             missing_sections=missing_sections,
             objectives_missing_signals=objectives_missing_signals,
             wireframes_missing_blocks=wireframes_missing_blocks,
@@ -384,6 +474,11 @@ class UIReviewPackAuditor:
             wireframes_missing_decisions=wireframes_missing_decisions,
             orphan_decision_surfaces=orphan_decision_surfaces,
             unresolved_decision_ids=unresolved_decision_ids,
+            wireframes_missing_role_assignments=wireframes_missing_role_assignments,
+            orphan_role_assignment_surfaces=orphan_role_assignment_surfaces,
+            role_assignments_missing_responsibilities=role_assignments_missing_responsibilities,
+            role_assignments_missing_checklist_links=role_assignments_missing_checklist_links,
+            role_assignments_missing_decision_links=role_assignments_missing_decision_links,
         )
 
 
@@ -475,6 +570,22 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
     if not pack.decision_log:
         lines.append("- none")
 
+    lines.append("")
+    lines.append("## Role Matrix")
+    for assignment in pack.role_matrix:
+        lines.append(
+            "- "
+            f"{assignment.assignment_id}: surface={assignment.surface_id} role={assignment.role} status={assignment.status}"
+        )
+        lines.append(
+            "  "
+            f"responsibilities={','.join(assignment.responsibilities) or 'none'} "
+            f"checklist={','.join(assignment.checklist_item_ids) or 'none'} "
+            f"decisions={','.join(assignment.decision_ids) or 'none'}"
+        )
+    if not pack.role_matrix:
+        lines.append("- none")
+
     lines.extend(
         [
             "",
@@ -490,6 +601,11 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
             f"- Wireframes missing decision coverage: {', '.join(audit.wireframes_missing_decisions) or 'none'}",
             f"- Orphan decision surfaces: {', '.join(audit.orphan_decision_surfaces) or 'none'}",
             f"- Unresolved decision ids: {', '.join(audit.unresolved_decision_ids) or 'none'}",
+            f"- Wireframes missing role assignments: {', '.join(audit.wireframes_missing_role_assignments) or 'none'}",
+            f"- Orphan role assignment surfaces: {', '.join(audit.orphan_role_assignment_surfaces) or 'none'}",
+            f"- Role assignments missing responsibilities: {', '.join(audit.role_assignments_missing_responsibilities) or 'none'}",
+            f"- Role assignments missing checklist links: {', '.join(audit.role_assignments_missing_checklist_links) or 'none'}",
+            f"- Role assignments missing decision links: {', '.join(audit.role_assignments_missing_decision_links) or 'none'}",
         ]
     )
     return "\n".join(lines)
@@ -502,6 +618,7 @@ def build_big_4204_review_pack() -> UIReviewPack:
         version="v4.0-design-sprint",
         requires_reviewer_checklist=True,
         requires_decision_log=True,
+        requires_role_matrix=True,
         objectives=[
             ReviewObjective(
                 objective_id="obj-overview-decision",
@@ -733,7 +850,82 @@ def build_big_4204_review_pack() -> UIReviewPack:
                 status="accepted",
             ),
         ],
+        role_matrix=[
+            ReviewRoleAssignment(
+                assignment_id="role-overview-vp-eng",
+                surface_id="wf-overview",
+                role="VP Eng",
+                responsibilities=["approve overview scan path", "validate KPI-to-drilldown narrative"],
+                checklist_item_ids=["chk-overview-kpi-scan"],
+                decision_ids=["dec-overview-alert-stack"],
+                status="ready",
+            ),
+            ReviewRoleAssignment(
+                assignment_id="role-overview-eng-ops",
+                surface_id="wf-overview",
+                role="engineering-operations",
+                responsibilities=["review alert priority posture"],
+                checklist_item_ids=["chk-overview-alert-hierarchy"],
+                decision_ids=["dec-overview-alert-stack"],
+                status="open",
+            ),
+            ReviewRoleAssignment(
+                assignment_id="role-queue-platform-admin",
+                surface_id="wf-queue",
+                role="Platform Admin",
+                responsibilities=["validate batch-approval copy", "confirm permission posture"],
+                checklist_item_ids=["chk-queue-batch-approval"],
+                decision_ids=["dec-queue-vp-summary"],
+                status="ready",
+            ),
+            ReviewRoleAssignment(
+                assignment_id="role-queue-product-experience",
+                surface_id="wf-queue",
+                role="product-experience",
+                responsibilities=["tune summary-only VP variant"],
+                checklist_item_ids=["chk-queue-role-density"],
+                decision_ids=["dec-queue-vp-summary"],
+                status="open",
+            ),
+            ReviewRoleAssignment(
+                assignment_id="role-run-detail-eng-lead",
+                surface_id="wf-run-detail",
+                role="Eng Lead",
+                responsibilities=["approve replay-state clarity", "confirm escalation adjacency"],
+                checklist_item_ids=["chk-run-replay-context"],
+                decision_ids=["dec-run-detail-audit-rail"],
+                status="ready",
+            ),
+            ReviewRoleAssignment(
+                assignment_id="role-run-detail-orchestration-office",
+                surface_id="wf-run-detail",
+                role="orchestration-office",
+                responsibilities=["review audit density threshold"],
+                checklist_item_ids=["chk-run-audit-density"],
+                decision_ids=["dec-run-detail-audit-rail"],
+                status="open",
+            ),
+            ReviewRoleAssignment(
+                assignment_id="role-triage-cross-team-operator",
+                surface_id="wf-triage",
+                role="Cross-Team Operator",
+                responsibilities=["approve handoff clarity", "validate ownership transition story"],
+                checklist_item_ids=["chk-triage-handoff-clarity"],
+                decision_ids=["dec-triage-handoff-density"],
+                status="ready",
+            ),
+            ReviewRoleAssignment(
+                assignment_id="role-triage-platform-admin",
+                surface_id="wf-triage",
+                role="Platform Admin",
+                responsibilities=["confirm bulk-assign audit visibility"],
+                checklist_item_ids=["chk-triage-bulk-assign"],
+                decision_ids=["dec-triage-handoff-density"],
+                status="ready",
+            ),
+        ],
     )
+
 
 
 
@@ -757,6 +949,33 @@ def render_ui_review_decision_log(pack: UIReviewPack) -> str:
             f"summary={decision.summary} rationale={decision.rationale} follow_up={decision.follow_up or 'none'}"
         )
     if not pack.decision_log:
+        lines.append("- none")
+    return "\n".join(lines)
+
+
+
+def render_ui_review_role_matrix(pack: UIReviewPack) -> str:
+    lines = [
+        "# UI Review Role Matrix",
+        "",
+        f"- Issue: {pack.issue_id} {pack.title}",
+        f"- Version: {pack.version}",
+        f"- Assignments: {len(pack.role_matrix)}",
+        "",
+        "## Assignments",
+    ]
+    for assignment in pack.role_matrix:
+        lines.append(
+            "- "
+            f"{assignment.assignment_id}: surface={assignment.surface_id} role={assignment.role} status={assignment.status}"
+        )
+        lines.append(
+            "  "
+            f"responsibilities={','.join(assignment.responsibilities) or 'none'} "
+            f"checklist={','.join(assignment.checklist_item_ids) or 'none'} "
+            f"decisions={','.join(assignment.decision_ids) or 'none'}"
+        )
+    if not pack.role_matrix:
         lines.append("- none")
     return "\n".join(lines)
 
@@ -787,7 +1006,11 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
         f"<li><strong>{escape(decision.decision_id)}</strong> · surface={escape(decision.surface_id)} · owner={escape(decision.owner)} · status={escape(decision.status)}<br /><span>{escape(decision.summary)}</span><br /><span>follow_up={escape(decision.follow_up or 'none')}</span></li>"
         for decision in pack.decision_log
     ) or "<li>none</li>"
-    return f"""<!DOCTYPE html>
+    role_matrix_html = "".join(
+        f"<li><strong>{escape(assignment.assignment_id)}</strong> · surface={escape(assignment.surface_id)} · role={escape(assignment.role)} · status={escape(assignment.status)}<br /><span>responsibilities={escape(', '.join(assignment.responsibilities) if assignment.responsibilities else 'none')}</span><br /><span>checklist={escape(', '.join(assignment.checklist_item_ids) if assignment.checklist_item_ids else 'none')} · decisions={escape(', '.join(assignment.decision_ids) if assignment.decision_ids else 'none')}</span></li>"
+        for assignment in pack.role_matrix
+    ) or "<li>none</li>"
+    return f'''<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -811,6 +1034,7 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
       <h2>Readiness</h2>
       <p>Missing checklist coverage: {escape(', '.join(audit.wireframes_missing_checklists) if audit.wireframes_missing_checklists else 'none')}</p>
       <p>Missing decision coverage: {escape(', '.join(audit.wireframes_missing_decisions) if audit.wireframes_missing_decisions else 'none')}</p>
+      <p>Missing role assignments: {escape(', '.join(audit.wireframes_missing_role_assignments) if audit.wireframes_missing_role_assignments else 'none')}</p>
       <p>Unresolved decisions: {escape(', '.join(audit.unresolved_decision_ids) if audit.unresolved_decision_ids else 'none')}</p>
     </section>
     <section class="surface"><h2>Objectives</h2><ul>{objective_html}</ul></section>
@@ -819,9 +1043,10 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
     <section class="surface"><h2>Open Questions</h2><ul>{question_html}</ul></section>
     <section class="surface"><h2>Reviewer Checklist</h2><ul>{checklist_html}</ul></section>
     <section class="surface"><h2>Decision Log</h2><ul>{decision_html}</ul></section>
+    <section class="surface"><h2>Role Matrix</h2><ul>{role_matrix_html}</ul></section>
   </body>
 </html>
-"""
+'''
 
 
 
@@ -832,13 +1057,16 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
     markdown_path = str(base / f"{slug}-review-pack.md")
     html_path = str(base / f"{slug}-review-pack.html")
     decision_log_path = str(base / f"{slug}-decision-log.md")
+    role_matrix_path = str(base / f"{slug}-role-matrix.md")
     audit = UIReviewPackAuditor().audit(pack)
     Path(markdown_path).write_text(render_ui_review_pack_report(pack, audit))
     Path(html_path).write_text(render_ui_review_pack_html(pack, audit))
     Path(decision_log_path).write_text(render_ui_review_decision_log(pack))
+    Path(role_matrix_path).write_text(render_ui_review_role_matrix(pack))
     return UIReviewPackArtifacts(
         root_dir=str(base),
         markdown_path=markdown_path,
         html_path=html_path,
         decision_log_path=decision_log_path,
+        role_matrix_path=role_matrix_path,
     )
