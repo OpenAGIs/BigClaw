@@ -23,6 +23,11 @@ type WorkerStatusProvider interface {
 	Snapshot() worker.Status
 }
 
+type WorkerPoolStatusProvider interface {
+	WorkerStatusProvider
+	Snapshots() []worker.Status
+}
+
 type Server struct {
 	Recorder  *observability.Recorder
 	Queue     queue.Queue
@@ -99,6 +104,9 @@ func (s *Server) Handler() http.Handler {
 		}
 		if s.Worker != nil {
 			payload["worker"] = s.Worker.Snapshot()
+		}
+		if pool := s.workerPoolSummary(); pool != nil {
+			payload["worker_pool"] = pool
 		}
 		if s.Control != nil {
 			payload["control"] = s.Control.Snapshot()

@@ -25,6 +25,20 @@ func (fakeWorkerStatus) Snapshot() worker.Status {
 	return worker.Status{WorkerID: "worker-a", State: "idle", SuccessfulRuns: 2, LeaseRenewals: 3, LastResult: "ok"}
 }
 
+type fakeWorkerPoolStatus struct{}
+
+func (fakeWorkerPoolStatus) Snapshot() worker.Status {
+	return worker.Status{WorkerID: "worker-a", State: "running", SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"}
+}
+
+func (fakeWorkerPoolStatus) Snapshots() []worker.Status {
+	return []worker.Status{
+		{WorkerID: "worker-a", State: "running", SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"},
+		{WorkerID: "worker-b", State: "leased", SuccessfulRuns: 3, LeaseRenewals: 2, LastResult: "warming"},
+		{WorkerID: "worker-c", State: "idle", SuccessfulRuns: 8, LeaseRenewals: 0, LastResult: "idle"},
+	}
+}
+
 func TestCreateTaskAndQueryStatus(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()
@@ -242,6 +256,25 @@ func TestStreamEventsSupportsReplayAndFiltersByTrace(t *testing.T) {
 		}
 	case <-ctx.Done():
 		t.Fatal("timed out waiting for replayed event")
+	}
+}
+
+func TestDebugStatusIncludesWorkerPoolSummary(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, Worker: fakeWorkerPoolStatus{}, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", response.Code)
+	}
+	body := response.Body.String()
+	for _, want := range []string{"worker_pool", "total_workers", "3", "active_workers", "2", "idle_workers", "1", "worker-b", "leased"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected %q in debug payload, got %s", want, body)
+		}
 	}
 }
 
@@ -1211,6 +1244,33 @@ func TestV2ControlCenterSummariesFiltersAndAudit(t *testing.T) {
 	}
 	if strings.Contains(auditBody, "task-control-2") {
 		t.Fatalf("expected audit filter to exclude task-control-2, got %s", auditBody)
+	}
+}
+
+func TestV2ControlCenterIncludesMultiWorkerPoolSummary(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, Worker: fakeWorkerPoolStatus{}, Control: control.New(), Now: func() time.Time { return time.Unix(1700003600, 0) }}
+	handler := server.Handler()
+
+	body, _ := json.Marshal(map[string]any{"id": "task-pool-1", "title": "Pool target", "priority": 1, "metadata": map[string]any{"team": "platform", "project": "alpha"}})
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewReader(body)))
+	if response.Code != http.StatusAccepted {
+		t.Fatalf("expected task create 202, got %d body=%s", response.Code, response.Body.String())
+	}
+
+	centerResponse := httptest.NewRecorder()
+	handler.ServeHTTP(centerResponse, httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=10&audit_limit=10", nil))
+	if centerResponse.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d", centerResponse.Code)
+	}
+	bodyText := centerResponse.Body.String()
+	for _, want := range []string{"worker_pool", "total_workers", "3", "active_workers", "2", "idle_workers", "1", "worker-c", "idle"} {
+		if !strings.Contains(bodyText, want) {
+			t.Fatalf("expected %q in control center payload, got %s", want, bodyText)
+		}
 	}
 }
 

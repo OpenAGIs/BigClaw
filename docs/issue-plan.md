@@ -209,3 +209,41 @@
 - BIG-202: 按风险/工具路由的调度策略最小实现
 - BIG-601: benchmark/replay/评分体系与版本对比最小实现
 - BIG-602: 测试与效果报告模板最小实现
+
+## BigClaw PRD v5.0
+
+### Epic
+- BIG-EPIC-21: 并行分布式执行平台
+
+### Epic 21: 并行分布式执行平台 (`OPE-vNext`)
+
+#### Goal
+- Build the next BigClaw mainline around parallel and distributed execution so
+  worker pools, shared queues, executor routing, and validation evidence can be
+  reasoned about as one auditable control plane.
+
+#### OpenClaw comparison
+- OpenClaw confirms the value of an always-on gateway / daemon boundary and a
+  productized control plane, but its consumer assistant scope is not the target
+  state for BigClaw.
+- For BigClaw, the reusable lessons are runtime durability, control-plane
+  observability, and stable long-lived service entrypoints rather than channel
+  integrations or end-user assistant UX.
+- See `docs/openclaw-parallel-gap-analysis.md` for the repo comparison and the
+  mergeable capability baseline.
+
+#### Delivery shape
+- Make multi-worker and multi-node state visible in debug and control-center
+  payloads so distributed behavior is inspectable without external dashboards.
+- Harden shared-queue coordination and lease behavior with explicit parallel
+  validation evidence for local, Kubernetes, and Ray execution.
+- Treat distributed scheduling diagnostics as first-class release artifacts so
+  capacity, executor routing, and recovery behavior can be reviewed in Linear
+  and GitHub without re-running the cluster manually.
+
+#### Initial issue slices
+- Multi-worker pool summary and node-aware control-center payloads.
+- Shared-queue coordination hardening and lease safety regression coverage.
+- Parallel live-validation matrix and cluster evidence bundle export.
+- Distributed scheduler / executor diagnostics and capacity reporting.
+
