@@ -271,6 +271,46 @@ class ReviewSignoff:
 
 
 @dataclass(frozen=True)
+class ReviewBlocker:
+    blocker_id: str
+    surface_id: str
+    signoff_id: str
+    owner: str
+    summary: str
+    status: str = "open"
+    severity: str = "medium"
+    escalation_owner: str = ""
+    next_action: str = ""
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "blocker_id": self.blocker_id,
+            "surface_id": self.surface_id,
+            "signoff_id": self.signoff_id,
+            "owner": self.owner,
+            "summary": self.summary,
+            "status": self.status,
+            "severity": self.severity,
+            "escalation_owner": self.escalation_owner,
+            "next_action": self.next_action,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "ReviewBlocker":
+        return cls(
+            blocker_id=str(data["blocker_id"]),
+            surface_id=str(data["surface_id"]),
+            signoff_id=str(data["signoff_id"]),
+            owner=str(data["owner"]),
+            summary=str(data["summary"]),
+            status=str(data.get("status", "open")),
+            severity=str(data.get("severity", "medium")),
+            escalation_owner=str(data.get("escalation_owner", "")),
+            next_action=str(data.get("next_action", "")),
+        )
+
+
+@dataclass(frozen=True)
 class UIReviewPackArtifacts:
     root_dir: str
     markdown_path: str
@@ -278,6 +318,7 @@ class UIReviewPackArtifacts:
     decision_log_path: str
     role_matrix_path: str
     signoff_log_path: str
+    blocker_log_path: str
 
 
 @dataclass
@@ -297,6 +338,8 @@ class UIReviewPack:
     requires_role_matrix: bool = False
     signoff_log: List[ReviewSignoff] = field(default_factory=list)
     requires_signoff_log: bool = False
+    blocker_log: List[ReviewBlocker] = field(default_factory=list)
+    requires_blocker_log: bool = False
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -315,6 +358,8 @@ class UIReviewPack:
             "requires_role_matrix": self.requires_role_matrix,
             "signoff_log": [signoff.to_dict() for signoff in self.signoff_log],
             "requires_signoff_log": self.requires_signoff_log,
+            "blocker_log": [blocker.to_dict() for blocker in self.blocker_log],
+            "requires_blocker_log": self.requires_blocker_log,
         }
 
     @classmethod
@@ -335,6 +380,8 @@ class UIReviewPack:
             requires_role_matrix=bool(data.get("requires_role_matrix", False)),
             signoff_log=[ReviewSignoff.from_dict(item) for item in data.get("signoff_log", [])],
             requires_signoff_log=bool(data.get("requires_signoff_log", False)),
+            blocker_log=[ReviewBlocker.from_dict(item) for item in data.get("blocker_log", [])],
+            requires_blocker_log=bool(data.get("requires_blocker_log", False)),
         )
 
 
@@ -349,6 +396,7 @@ class UIReviewPackAudit:
     decision_count: int = 0
     role_assignment_count: int = 0
     signoff_count: int = 0
+    blocker_count: int = 0
     missing_sections: List[str] = field(default_factory=list)
     objectives_missing_signals: List[str] = field(default_factory=list)
     wireframes_missing_blocks: List[str] = field(default_factory=list)
@@ -370,6 +418,11 @@ class UIReviewPackAudit:
     signoffs_missing_assignments: List[str] = field(default_factory=list)
     signoffs_missing_evidence: List[str] = field(default_factory=list)
     unresolved_required_signoff_ids: List[str] = field(default_factory=list)
+    blockers_missing_signoff_links: List[str] = field(default_factory=list)
+    blockers_missing_escalation_owners: List[str] = field(default_factory=list)
+    blockers_missing_next_actions: List[str] = field(default_factory=list)
+    orphan_blocker_surfaces: List[str] = field(default_factory=list)
+    unresolved_required_signoffs_without_blockers: List[str] = field(default_factory=list)
 
     @property
     def summary(self) -> str:
@@ -382,7 +435,8 @@ class UIReviewPackAudit:
             f"checklist={self.checklist_count} "
             f"decisions={self.decision_count} "
             f"role_assignments={self.role_assignment_count} "
-            f"signoffs={self.signoff_count}"
+            f"signoffs={self.signoff_count} "
+            f"blockers={self.blocker_count}"
         )
 
 
@@ -519,6 +573,35 @@ class UIReviewPackAuditor:
                 if signoff.required
                 and signoff.status.lower() not in {"approved", "accepted", "resolved", "waived", "deferred"}
             )
+        blocker_by_signoff: Dict[str, List[ReviewBlocker]] = {}
+        blocker_surfaces = set()
+        for blocker in pack.blocker_log:
+            blocker_surfaces.add(blocker.surface_id)
+            blocker_by_signoff.setdefault(blocker.signoff_id, []).append(blocker)
+        blockers_missing_signoff_links = []
+        blockers_missing_escalation_owners = []
+        blockers_missing_next_actions = []
+        orphan_blocker_surfaces = []
+        unresolved_required_signoffs_without_blockers = []
+        if pack.requires_blocker_log:
+            signoff_ids = {signoff.signoff_id for signoff in pack.signoff_log}
+            blockers_missing_signoff_links = sorted(
+                blocker.blocker_id for blocker in pack.blocker_log if blocker.signoff_id not in signoff_ids
+            )
+            blockers_missing_escalation_owners = sorted(
+                blocker.blocker_id for blocker in pack.blocker_log if not blocker.escalation_owner.strip()
+            )
+            blockers_missing_next_actions = sorted(
+                blocker.blocker_id for blocker in pack.blocker_log if not blocker.next_action.strip()
+            )
+            orphan_blocker_surfaces = sorted(
+                surface_id for surface_id in blocker_surfaces if surface_id not in wireframe_ids
+            )
+            unresolved_required_signoffs_without_blockers = sorted(
+                signoff_id
+                for signoff_id in unresolved_required_signoff_ids
+                if signoff_id not in blocker_by_signoff
+            )
         ready = not (
             missing_sections
             or objectives_missing_signals
@@ -538,6 +621,11 @@ class UIReviewPackAuditor:
             or orphan_signoff_surfaces
             or signoffs_missing_assignments
             or signoffs_missing_evidence
+            or blockers_missing_signoff_links
+            or blockers_missing_escalation_owners
+            or blockers_missing_next_actions
+            or orphan_blocker_surfaces
+            or unresolved_required_signoffs_without_blockers
         )
         return UIReviewPackAudit(
             ready=ready,
@@ -549,6 +637,7 @@ class UIReviewPackAuditor:
             decision_count=len(pack.decision_log),
             role_assignment_count=len(pack.role_matrix),
             signoff_count=len(pack.signoff_log),
+            blocker_count=len(pack.blocker_log),
             missing_sections=missing_sections,
             objectives_missing_signals=objectives_missing_signals,
             wireframes_missing_blocks=wireframes_missing_blocks,
@@ -570,6 +659,11 @@ class UIReviewPackAuditor:
             signoffs_missing_assignments=signoffs_missing_assignments,
             signoffs_missing_evidence=signoffs_missing_evidence,
             unresolved_required_signoff_ids=unresolved_required_signoff_ids,
+            blockers_missing_signoff_links=blockers_missing_signoff_links,
+            blockers_missing_escalation_owners=blockers_missing_escalation_owners,
+            blockers_missing_next_actions=blockers_missing_next_actions,
+            orphan_blocker_surfaces=orphan_blocker_surfaces,
+            unresolved_required_signoffs_without_blockers=unresolved_required_signoffs_without_blockers,
         )
 
 
@@ -691,6 +785,20 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
     if not pack.signoff_log:
         lines.append("- none")
 
+    lines.append("")
+    lines.append("## Blocker Log")
+    for blocker in pack.blocker_log:
+        lines.append(
+            "- "
+            f"{blocker.blocker_id}: surface={blocker.surface_id} signoff={blocker.signoff_id} owner={blocker.owner} status={blocker.status} severity={blocker.severity}"
+        )
+        lines.append(
+            "  "
+            f"summary={blocker.summary} escalation_owner={blocker.escalation_owner or 'none'} next_action={blocker.next_action or 'none'}"
+        )
+    if not pack.blocker_log:
+        lines.append("- none")
+
     lines.extend(
         [
             "",
@@ -716,6 +824,11 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
             f"- Signoffs missing role assignments: {', '.join(audit.signoffs_missing_assignments) or 'none'}",
             f"- Signoffs missing evidence: {', '.join(audit.signoffs_missing_evidence) or 'none'}",
             f"- Unresolved required signoff ids: {', '.join(audit.unresolved_required_signoff_ids) or 'none'}",
+            f"- Blockers missing signoff links: {', '.join(audit.blockers_missing_signoff_links) or 'none'}",
+            f"- Blockers missing escalation owners: {', '.join(audit.blockers_missing_escalation_owners) or 'none'}",
+            f"- Blockers missing next actions: {', '.join(audit.blockers_missing_next_actions) or 'none'}",
+            f"- Orphan blocker surfaces: {', '.join(audit.orphan_blocker_surfaces) or 'none'}",
+            f"- Unresolved required signoffs without blockers: {', '.join(audit.unresolved_required_signoffs_without_blockers) or 'none'}",
         ]
     )
     return "\n".join(lines)
@@ -730,6 +843,7 @@ def build_big_4204_review_pack() -> UIReviewPack:
         requires_decision_log=True,
         requires_role_matrix=True,
         requires_signoff_log=True,
+        requires_blocker_log=True,
         objectives=[
             ReviewObjective(
                 objective_id="obj-overview-decision",
@@ -1073,6 +1187,19 @@ def build_big_4204_review_pack() -> UIReviewPack:
                 notes="Cross-team handoff flow approved for prototype review.",
             ),
         ],
+        blocker_log=[
+            ReviewBlocker(
+                blocker_id="blk-run-detail-copy-final",
+                surface_id="wf-run-detail",
+                signoff_id="sig-run-detail-eng-lead",
+                owner="product-experience",
+                summary="Replay-state copy still needs final wording review before Eng Lead signoff can close.",
+                status="open",
+                severity="medium",
+                escalation_owner="design-program-manager",
+                next_action="Review replay-state copy with Eng Lead and update the run-detail frame in the next critique.",
+            ),
+        ],
     )
 
 
@@ -1155,6 +1282,31 @@ def render_ui_review_signoff_log(pack: UIReviewPack) -> str:
 
 
 
+def render_ui_review_blocker_log(pack: UIReviewPack) -> str:
+    lines = [
+        "# UI Review Blocker Log",
+        "",
+        f"- Issue: {pack.issue_id} {pack.title}",
+        f"- Version: {pack.version}",
+        f"- Blockers: {len(pack.blocker_log)}",
+        "",
+        "## Blockers",
+    ]
+    for blocker in pack.blocker_log:
+        lines.append(
+            "- "
+            f"{blocker.blocker_id}: surface={blocker.surface_id} signoff={blocker.signoff_id} owner={blocker.owner} status={blocker.status} severity={blocker.severity}"
+        )
+        lines.append(
+            "  "
+            f"summary={blocker.summary} escalation_owner={blocker.escalation_owner or 'none'} next_action={blocker.next_action or 'none'}"
+        )
+    if not pack.blocker_log:
+        lines.append("- none")
+    return "\n".join(lines)
+
+
+
 def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> str:
     objective_html = "".join(
         f"<li><strong>{escape(objective.objective_id)}</strong> · {escape(objective.title)} · persona={escape(objective.persona)} · priority={escape(objective.priority)}<br /><span>{escape(objective.success_signal)}</span></li>"
@@ -1188,6 +1340,10 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
         f"<li><strong>{escape(signoff.signoff_id)}</strong> · surface={escape(signoff.surface_id)} · role={escape(signoff.role)} · status={escape(signoff.status)}<br /><span>assignment={escape(signoff.assignment_id)} · required={escape('yes' if signoff.required else 'no')}</span><br /><span>evidence={escape(', '.join(signoff.evidence_links) if signoff.evidence_links else 'none')}</span></li>"
         for signoff in pack.signoff_log
     ) or "<li>none</li>"
+    blocker_html = "".join(
+        f"<li><strong>{escape(blocker.blocker_id)}</strong> · surface={escape(blocker.surface_id)} · signoff={escape(blocker.signoff_id)} · owner={escape(blocker.owner)} · status={escape(blocker.status)} · severity={escape(blocker.severity)}<br /><span>{escape(blocker.summary)}</span><br /><span>escalation_owner={escape(blocker.escalation_owner or 'none')} · next_action={escape(blocker.next_action or 'none')}</span></li>"
+        for blocker in pack.blocker_log
+    ) or "<li>none</li>"
     return f'''<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -1214,6 +1370,7 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
       <p>Missing decision coverage: {escape(', '.join(audit.wireframes_missing_decisions) if audit.wireframes_missing_decisions else 'none')}</p>
       <p>Missing role assignments: {escape(', '.join(audit.wireframes_missing_role_assignments) if audit.wireframes_missing_role_assignments else 'none')}</p>
       <p>Missing signoff coverage: {escape(', '.join(audit.wireframes_missing_signoffs) if audit.wireframes_missing_signoffs else 'none')}</p>
+      <p>Missing blocker coverage: {escape(', '.join(audit.unresolved_required_signoffs_without_blockers) if audit.unresolved_required_signoffs_without_blockers else 'none')}</p>
       <p>Unresolved decisions: {escape(', '.join(audit.unresolved_decision_ids) if audit.unresolved_decision_ids else 'none')}</p>
       <p>Unresolved required signoffs: {escape(', '.join(audit.unresolved_required_signoff_ids) if audit.unresolved_required_signoff_ids else 'none')}</p>
     </section>
@@ -1225,6 +1382,7 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
     <section class="surface"><h2>Decision Log</h2><ul>{decision_html}</ul></section>
     <section class="surface"><h2>Role Matrix</h2><ul>{role_matrix_html}</ul></section>
     <section class="surface"><h2>Sign-off Log</h2><ul>{signoff_html}</ul></section>
+    <section class="surface"><h2>Blocker Log</h2><ul>{blocker_html}</ul></section>
   </body>
 </html>
 '''
@@ -1240,12 +1398,14 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
     decision_log_path = str(base / f"{slug}-decision-log.md")
     role_matrix_path = str(base / f"{slug}-role-matrix.md")
     signoff_log_path = str(base / f"{slug}-signoff-log.md")
+    blocker_log_path = str(base / f"{slug}-blocker-log.md")
     audit = UIReviewPackAuditor().audit(pack)
     Path(markdown_path).write_text(render_ui_review_pack_report(pack, audit))
     Path(html_path).write_text(render_ui_review_pack_html(pack, audit))
     Path(decision_log_path).write_text(render_ui_review_decision_log(pack))
     Path(role_matrix_path).write_text(render_ui_review_role_matrix(pack))
     Path(signoff_log_path).write_text(render_ui_review_signoff_log(pack))
+    Path(blocker_log_path).write_text(render_ui_review_blocker_log(pack))
     return UIReviewPackArtifacts(
         root_dir=str(base),
         markdown_path=markdown_path,
@@ -1253,4 +1413,5 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
         decision_log_path=decision_log_path,
         role_matrix_path=role_matrix_path,
         signoff_log_path=signoff_log_path,
+        blocker_log_path=blocker_log_path,
     )
