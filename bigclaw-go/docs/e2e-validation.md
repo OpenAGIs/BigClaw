@@ -45,7 +45,7 @@ Use this to validate the control plane with a durable queue backend before touch
 
 ## One-shot full validation
 
-Use this to run the local SQLite smoke plus Kubernetes and Ray validation in one command.
+Use this to run the local SQLite smoke plus Kubernetes and Ray validation in one command. All enabled lanes now execute concurrently and export a timestamped repo-native evidence bundle.
 
 ```bash
 cd bigclaw-go
@@ -57,7 +57,7 @@ export BIGCLAW_QUEUE_BACKEND=sqlite
 ./scripts/e2e/run_all.sh
 ```
 
-The script writes a consolidated summary to `docs/reports/live-validation-summary.json` and refreshes the component reports for local, Kubernetes, and Ray validation.
+The script writes a consolidated summary to `docs/reports/live-validation-summary.json`, refreshes the canonical component reports for local, Kubernetes, and Ray validation, and creates a timestamped bundle plus index under `docs/reports/live-validation-runs/` and `docs/reports/live-validation-index.md`.
 
 ## Mixed workload matrix
 
@@ -172,7 +172,7 @@ export BIGCLAW_QUEUE_BACKEND=sqlite
 wait
 ```
 
-The latest report payloads include `base_url`, `state_dir`, and `service_log` so each autostarted run can be inspected independently.
+The latest report payloads include `base_url`, `state_dir`, and `service_log` so each autostarted run can be inspected independently. `run_all.sh` also copies stdout/stderr, service logs, and discovered audit logs into the timestamped bundle for workflow closeout.
 
 ## API-level validation commands
 
