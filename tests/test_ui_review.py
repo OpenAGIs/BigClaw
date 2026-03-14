@@ -1,13 +1,19 @@
+from pathlib import Path
+
 from bigclaw.ui_review import (
     InteractionFlow,
     OpenQuestion,
+    ReviewDecision,
     ReviewObjective,
     ReviewerChecklistItem,
     UIReviewPack,
     UIReviewPackAuditor,
     WireframeSurface,
     build_big_4204_review_pack,
+    render_ui_review_decision_log,
+    render_ui_review_pack_html,
     render_ui_review_pack_report,
+    write_ui_review_pack_bundle,
 )
 
 
@@ -146,12 +152,17 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert len(pack.interactions) == 4
     assert len(pack.open_questions) == 3
     assert len(pack.reviewer_checklist) == 8
+    assert len(pack.decision_log) == 4
     assert pack.requires_reviewer_checklist is True
+    assert pack.requires_decision_log is True
     assert "obj-queue-governance" in report
     assert "wf-triage: Triage and handoff board" in report
     assert "flow-run-replay: Run replay with evidence audit" in report
     assert "chk-queue-batch-approval: surface=wf-queue owner=Platform Admin status=ready" in report
+    assert "dec-queue-vp-summary: surface=wf-queue owner=VP Eng status=proposed" in report
     assert "- Wireframes missing checklist coverage: none" in report
+    assert "- Wireframes missing decision coverage: none" in report
+    assert "- Unresolved decision ids: dec-queue-vp-summary" in report
     assert "- Unresolved questions: oq-role-density, oq-alert-priority, oq-handoff-evidence" in report
 
 
@@ -174,3 +185,43 @@ def test_ui_review_pack_audit_flags_missing_checklist_coverage_and_evidence() ->
     assert audit.wireframes_missing_checklists == ["wf-queue", "wf-run-detail", "wf-triage"]
     assert audit.checklist_items_missing_evidence == ["chk-overview-kpi-scan"]
     assert audit.orphan_checklist_surfaces == []
+
+
+def test_ui_review_pack_audit_flags_missing_decision_coverage() -> None:
+    pack = build_big_4204_review_pack()
+    pack.decision_log = [
+        ReviewDecision(
+            decision_id="dec-overview-alert-stack",
+            surface_id="wf-overview",
+            owner="product-experience",
+            summary="Keep approval and regression alerts in one stacked priority rail.",
+            rationale="Reviewers need one comparison lane before jumping into queue or triage surfaces.",
+            status="accepted",
+        )
+    ]
+
+    audit = UIReviewPackAuditor().audit(pack)
+
+    assert audit.ready is False
+    assert audit.wireframes_missing_decisions == ["wf-queue", "wf-run-detail", "wf-triage"]
+    assert audit.orphan_decision_surfaces == []
+    assert audit.unresolved_decision_ids == []
+
+
+def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
+    pack = build_big_4204_review_pack()
+    audit = UIReviewPackAuditor().audit(pack)
+
+    html = render_ui_review_pack_html(pack, audit)
+    decision_log = render_ui_review_decision_log(pack)
+    artifacts = write_ui_review_pack_bundle(str(tmp_path), pack)
+
+    assert "<h2>Decision Log</h2>" in html
+    assert "dec-queue-vp-summary" in html
+    assert "# UI Review Decision Log" in decision_log
+    assert "dec-run-detail-audit-rail" in decision_log
+    assert Path(artifacts.markdown_path).exists()
+    assert Path(artifacts.html_path).exists()
+    assert Path(artifacts.decision_log_path).exists()
+    assert "Decision Log" in Path(artifacts.html_path).read_text()
+    assert "dec-triage-handoff-density" in Path(artifacts.decision_log_path).read_text()

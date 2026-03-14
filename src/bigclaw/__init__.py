@@ -293,14 +293,19 @@ from .planning import (
 from .ui_review import (
     InteractionFlow,
     OpenQuestion,
+    ReviewDecision,
     ReviewObjective,
     ReviewerChecklistItem,
     UIReviewPack,
+    UIReviewPackArtifacts,
     UIReviewPackAudit,
     UIReviewPackAuditor,
     WireframeSurface,
     build_big_4204_review_pack,
+    render_ui_review_decision_log,
+    render_ui_review_pack_html,
     render_ui_review_pack_report,
+    write_ui_review_pack_bundle,
 )
 
 __all__ = [
@@ -577,12 +582,17 @@ __all__ = [
     "render_four_week_execution_report",
     "InteractionFlow",
     "OpenQuestion",
+    "ReviewDecision",
     "ReviewObjective",
     "ReviewerChecklistItem",
     "UIReviewPack",
+    "UIReviewPackArtifacts",
     "UIReviewPackAudit",
     "UIReviewPackAuditor",
     "WireframeSurface",
     "build_big_4204_review_pack",
+    "render_ui_review_decision_log",
+    "render_ui_review_pack_html",
     "render_ui_review_pack_report",
+    "write_ui_review_pack_bundle",
 ]
