@@ -67,6 +67,7 @@ from .console_ia import (
     SurfaceInteractionContract,
     SurfacePermissionRule,
     SurfaceState,
+    build_big_4203_console_interaction_draft,
     render_console_interaction_report,
     render_console_ia_report,
 )
@@ -297,6 +298,7 @@ from .ui_review import (
     UIReviewPackAudit,
     UIReviewPackAuditor,
     WireframeSurface,
+    build_big_4204_review_pack,
     render_ui_review_pack_report,
 )
 
@@ -370,6 +372,7 @@ __all__ = [
     "SurfaceInteractionContract",
     "SurfacePermissionRule",
     "SurfaceState",
+    "build_big_4203_console_interaction_draft",
     "render_console_interaction_report",
     "render_console_ia_report",
     "AlertDigestSubscription",
@@ -578,5 +581,6 @@ __all__ = [
     "UIReviewPackAudit",
     "UIReviewPackAuditor",
     "WireframeSurface",
+    "build_big_4204_review_pack",
     "render_ui_review_pack_report",
 ]

@@ -12,6 +12,7 @@ from bigclaw.console_ia import (
     SurfaceInteractionContract,
     SurfacePermissionRule,
     SurfaceState,
+    build_big_4203_console_interaction_draft,
     render_console_interaction_report,
     render_console_ia_report,
 )
@@ -592,8 +593,37 @@ def test_render_console_interaction_report_summarizes_critical_page_contracts() 
 
     assert "# Console Interaction Draft Report" in report
     assert "- Critical Pages: 4" in report
+    assert "- Required Roles: none" in report
     assert "- Readiness Score: 100.0" in report
     assert "- Release Ready: True" in report
     assert "- Overview: route=/overview required_actions=drill-down, export, audit available_actions=drill-down, export, audit filters=1 states=default, loading, empty, error batch=optional permissions=complete" in report
     assert "- Queue: route=/queue required_actions=drill-down, export, audit available_actions=drill-down, export, audit, bulk-approve filters=1 states=default, loading, empty, error batch=required permissions=complete" in report
     assert "- Permission gaps: none" in report
+
+
+def test_build_big_4203_console_interaction_draft_is_release_ready() -> None:
+    draft = build_big_4203_console_interaction_draft()
+
+    audit = ConsoleInteractionAuditor().audit(draft)
+    report = render_console_interaction_report(draft, audit)
+
+    assert draft.required_roles == [
+        "eng-lead",
+        "platform-admin",
+        "vp-eng",
+        "cross-team-operator",
+    ]
+    assert audit.release_ready is True
+    assert audit.uncovered_roles == []
+    assert "- Required Roles: eng-lead, platform-admin, vp-eng, cross-team-operator" in report
+    assert "- Uncovered roles: none" in report
+
+
+def test_console_interaction_audit_flags_uncovered_required_roles() -> None:
+    draft = build_big_4203_console_interaction_draft()
+    draft.required_roles.append("finance-reviewer")
+
+    audit = ConsoleInteractionAuditor().audit(draft)
+
+    assert audit.uncovered_roles == ["finance-reviewer"]
+    assert audit.release_ready is False

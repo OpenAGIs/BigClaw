@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-from .design_system import ConsoleChromeLibrary, ConsoleTopBar, ConsoleTopBarAudit
+from .design_system import CommandAction, ConsoleChromeLibrary, ConsoleCommandEntry, ConsoleTopBar, ConsoleTopBarAudit
 
 
 REQUIRED_SURFACE_STATES = {"default", "loading", "empty", "error"}
@@ -283,6 +283,7 @@ class ConsoleInteractionDraft:
     version: str
     architecture: ConsoleIA
     contracts: List[SurfaceInteractionContract] = field(default_factory=list)
+    required_roles: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -290,6 +291,7 @@ class ConsoleInteractionDraft:
             "version": self.version,
             "architecture": self.architecture.to_dict(),
             "contracts": [contract.to_dict() for contract in self.contracts],
+            "required_roles": list(self.required_roles),
         }
 
     @classmethod
@@ -299,6 +301,7 @@ class ConsoleInteractionDraft:
             version=str(data["version"]),
             architecture=ConsoleIA.from_dict(dict(data["architecture"])),
             contracts=[SurfaceInteractionContract.from_dict(item) for item in data.get("contracts", [])],
+            required_roles=[str(role) for role in data.get("required_roles", [])],
         )
 
 
@@ -313,6 +316,7 @@ class ConsoleInteractionAudit:
     surfaces_missing_batch_actions: List[str] = field(default_factory=list)
     surfaces_missing_states: Dict[str, List[str]] = field(default_factory=dict)
     permission_gaps: Dict[str, List[str]] = field(default_factory=dict)
+    uncovered_roles: List[str] = field(default_factory=list)
 
     @property
     def readiness_score(self) -> float:
@@ -325,6 +329,7 @@ class ConsoleInteractionAudit:
             + len(self.surfaces_missing_batch_actions)
             + len(self.surfaces_missing_states)
             + len(self.permission_gaps)
+            + len(self.uncovered_roles)
         )
         score = max(0.0, 100 - ((penalties * 100) / self.contract_count))
         return round(score, 1)
@@ -338,6 +343,7 @@ class ConsoleInteractionAudit:
             and not self.surfaces_missing_batch_actions
             and not self.surfaces_missing_states
             and not self.permission_gaps
+            and not self.uncovered_roles
         )
 
     def to_dict(self) -> Dict[str, object]:
@@ -355,6 +361,7 @@ class ConsoleInteractionAudit:
                 name: list(states) for name, states in self.surfaces_missing_states.items()
             },
             "permission_gaps": {name: list(gaps) for name, gaps in self.permission_gaps.items()},
+            "uncovered_roles": list(self.uncovered_roles),
         }
 
     @classmethod
@@ -380,6 +387,7 @@ class ConsoleInteractionAudit:
                 str(name): [str(gap) for gap in gaps]
                 for name, gaps in dict(data.get("permission_gaps", {})).items()
             },
+            uncovered_roles=[str(role) for role in data.get("uncovered_roles", [])],
         )
 
 
@@ -519,6 +527,7 @@ class ConsoleInteractionAuditor:
         surfaces_missing_batch_actions: List[str] = []
         surfaces_missing_states: Dict[str, List[str]] = {}
         permission_gaps: Dict[str, List[str]] = {}
+        referenced_roles = set()
 
         for contract in draft.contracts:
             surface: Optional[ConsoleSurface] = route_index.get(contract.surface_name)
@@ -552,8 +561,14 @@ class ConsoleInteractionAuditor:
             if missing_state_ids:
                 surfaces_missing_states[contract.surface_name] = missing_state_ids
 
+            referenced_roles.update(contract.permission_rule.allowed_roles)
+            referenced_roles.update(contract.permission_rule.denied_roles)
             if contract.permission_rule.missing_coverage:
                 permission_gaps[contract.surface_name] = contract.permission_rule.missing_coverage
+
+        uncovered_roles = sorted(
+            role for role in draft.required_roles if role not in referenced_roles
+        )
 
         return ConsoleInteractionAudit(
             name=draft.name,
@@ -565,6 +580,7 @@ class ConsoleInteractionAuditor:
             surfaces_missing_batch_actions=sorted(surfaces_missing_batch_actions),
             surfaces_missing_states=dict(sorted(surfaces_missing_states.items())),
             permission_gaps=dict(sorted(permission_gaps.items())),
+            uncovered_roles=uncovered_roles,
         )
 
 
@@ -671,6 +687,7 @@ def render_console_interaction_report(
         f"- Name: {draft.name}",
         f"- Version: {draft.version}",
         f"- Critical Pages: {len(draft.contracts)}",
+        f"- Required Roles: {', '.join(draft.required_roles) if draft.required_roles else 'none'}",
         f"- Readiness Score: {audit.readiness_score:.1f}",
         f"- Release Ready: {audit.release_ready}",
         "",
@@ -735,4 +752,170 @@ def render_console_interaction_report(
     else:
         permission_gap_text = "none"
     lines.append(f"- Permission gaps: {permission_gap_text}")
+    lines.append(
+        f"- Uncovered roles: {', '.join(audit.uncovered_roles) if audit.uncovered_roles else 'none'}"
+    )
     return "\n".join(lines) + "\n"
+
+
+def build_big_4203_console_interaction_draft() -> ConsoleInteractionDraft:
+    return ConsoleInteractionDraft(
+        name="BIG-4203 Four Critical Pages",
+        version="v4.0-design-sprint",
+        required_roles=["eng-lead", "platform-admin", "vp-eng", "cross-team-operator"],
+        architecture=ConsoleIA(
+            name="BigClaw Console IA",
+            version="v4.0-design-sprint",
+            top_bar=ConsoleTopBar(
+                name="BigClaw Global Header",
+                search_placeholder="Search runs, queues, prompts, and commands",
+                environment_options=["Production", "Staging", "Shadow"],
+                time_range_options=["24h", "7d", "30d"],
+                alert_channels=["approvals", "sla", "regressions"],
+                documentation_complete=True,
+                accessibility_requirements=["keyboard-navigation", "screen-reader-label", "focus-visible"],
+                command_entry=ConsoleCommandEntry(
+                    trigger_label="Command Menu",
+                    placeholder="Jump to a run, queue, or release control action",
+                    shortcut="Cmd+K / Ctrl+K",
+                    commands=[
+                        CommandAction(id="search-runs", title="Search runs", section="Navigate", shortcut="/"),
+                        CommandAction(id="open-queue", title="Open queue control", section="Operate"),
+                        CommandAction(id="open-triage", title="Open triage center", section="Operate"),
+                    ],
+                ),
+            ),
+            navigation=[
+                NavigationItem(name="Overview", route="/overview", section="Operate", icon="dashboard"),
+                NavigationItem(name="Queue", route="/queue", section="Operate", icon="queue"),
+                NavigationItem(name="Run Detail", route="/runs/detail", section="Operate", icon="activity"),
+                NavigationItem(name="Triage", route="/triage", section="Operate", icon="alert"),
+            ],
+            surfaces=[
+                ConsoleSurface(
+                    name="Overview",
+                    route="/overview",
+                    navigation_section="Operate",
+                    top_bar_actions=[
+                        GlobalAction(action_id="drill-down", label="Drill Down", placement="topbar"),
+                        GlobalAction(action_id="export", label="Export", placement="topbar"),
+                        GlobalAction(action_id="audit", label="Audit Trail", placement="topbar"),
+                    ],
+                    filters=[
+                        FilterDefinition(name="Team", field="team", control="select", options=["all", "platform", "product"]),
+                        FilterDefinition(name="Time", field="time_range", control="segmented", options=["24h", "7d", "30d"], default_value="7d"),
+                    ],
+                    states=[
+                        SurfaceState(name="default"),
+                        SurfaceState(name="loading", allowed_actions=["export"]),
+                        SurfaceState(name="empty", allowed_actions=["drill-down"]),
+                        SurfaceState(name="error", allowed_actions=["audit"]),
+                    ],
+                ),
+                ConsoleSurface(
+                    name="Queue",
+                    route="/queue",
+                    navigation_section="Operate",
+                    top_bar_actions=[
+                        GlobalAction(action_id="drill-down", label="Drill Down", placement="topbar"),
+                        GlobalAction(action_id="export", label="Export", placement="topbar"),
+                        GlobalAction(action_id="audit", label="Audit Trail", placement="topbar"),
+                        GlobalAction(action_id="bulk-approve", label="Bulk Approve", placement="topbar", requires_selection=True),
+                    ],
+                    filters=[
+                        FilterDefinition(name="Status", field="status", control="select", options=["all", "queued", "approval"]),
+                        FilterDefinition(name="Owner", field="owner", control="search"),
+                    ],
+                    states=[
+                        SurfaceState(name="default"),
+                        SurfaceState(name="loading", allowed_actions=["export"]),
+                        SurfaceState(name="empty", allowed_actions=["audit"]),
+                        SurfaceState(name="error", allowed_actions=["audit"]),
+                    ],
+                    supports_bulk_actions=True,
+                ),
+                ConsoleSurface(
+                    name="Run Detail",
+                    route="/runs/detail",
+                    navigation_section="Operate",
+                    top_bar_actions=[
+                        GlobalAction(action_id="drill-down", label="Drill Down", placement="topbar"),
+                        GlobalAction(action_id="export", label="Export", placement="topbar"),
+                        GlobalAction(action_id="audit", label="Audit Trail", placement="topbar"),
+                    ],
+                    filters=[
+                        FilterDefinition(name="Run", field="run_id", control="search"),
+                        FilterDefinition(name="Replay Mode", field="replay_mode", control="select", options=["latest", "failure-only"]),
+                    ],
+                    states=[
+                        SurfaceState(name="default"),
+                        SurfaceState(name="loading", allowed_actions=["export"]),
+                        SurfaceState(name="empty", allowed_actions=["drill-down"]),
+                        SurfaceState(name="error", allowed_actions=["audit"]),
+                    ],
+                ),
+                ConsoleSurface(
+                    name="Triage",
+                    route="/triage",
+                    navigation_section="Operate",
+                    top_bar_actions=[
+                        GlobalAction(action_id="drill-down", label="Drill Down", placement="topbar"),
+                        GlobalAction(action_id="export", label="Export", placement="topbar"),
+                        GlobalAction(action_id="audit", label="Audit Trail", placement="topbar"),
+                        GlobalAction(action_id="bulk-assign", label="Bulk Assign", placement="topbar", requires_selection=True),
+                    ],
+                    filters=[
+                        FilterDefinition(name="Severity", field="severity", control="select", options=["all", "high", "critical"]),
+                        FilterDefinition(name="Workflow", field="workflow", control="select", options=["all", "triage", "handoff"]),
+                    ],
+                    states=[
+                        SurfaceState(name="default"),
+                        SurfaceState(name="loading", allowed_actions=["export"]),
+                        SurfaceState(name="empty", allowed_actions=["audit"]),
+                        SurfaceState(name="error", allowed_actions=["audit"]),
+                    ],
+                    supports_bulk_actions=True,
+                ),
+            ],
+        ),
+        contracts=[
+            SurfaceInteractionContract(
+                surface_name="Overview",
+                required_action_ids=["drill-down", "export", "audit"],
+                permission_rule=SurfacePermissionRule(
+                    allowed_roles=["eng-lead", "platform-admin", "vp-eng", "cross-team-operator"],
+                    denied_roles=["guest"],
+                    audit_event="overview.access.denied",
+                ),
+            ),
+            SurfaceInteractionContract(
+                surface_name="Queue",
+                required_action_ids=["drill-down", "export", "audit"],
+                requires_batch_actions=True,
+                permission_rule=SurfacePermissionRule(
+                    allowed_roles=["eng-lead", "platform-admin", "cross-team-operator"],
+                    denied_roles=["vp-eng", "guest"],
+                    audit_event="queue.access.denied",
+                ),
+            ),
+            SurfaceInteractionContract(
+                surface_name="Run Detail",
+                required_action_ids=["drill-down", "export", "audit"],
+                permission_rule=SurfacePermissionRule(
+                    allowed_roles=["eng-lead", "platform-admin", "vp-eng", "cross-team-operator"],
+                    denied_roles=["guest"],
+                    audit_event="run-detail.access.denied",
+                ),
+            ),
+            SurfaceInteractionContract(
+                surface_name="Triage",
+                required_action_ids=["drill-down", "export", "audit"],
+                requires_batch_actions=True,
+                permission_rule=SurfacePermissionRule(
+                    allowed_roles=["eng-lead", "platform-admin", "cross-team-operator"],
+                    denied_roles=["vp-eng", "guest"],
+                    audit_event="triage.access.denied",
+                ),
+            ),
+        ],
+    )

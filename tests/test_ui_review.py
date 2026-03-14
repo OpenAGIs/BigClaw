@@ -5,6 +5,7 @@ from bigclaw.ui_review import (
     UIReviewPack,
     UIReviewPackAuditor,
     WireframeSurface,
+    build_big_4204_review_pack,
     render_ui_review_pack_report,
 )
 
@@ -130,3 +131,20 @@ def test_render_ui_review_pack_report_summarizes_review_shape_and_findings() -> 
         "persona=product-experience priority=P0"
     ) in report
     assert "- Unresolved questions: oq-mobile-depth" in report
+
+
+def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
+    pack = build_big_4204_review_pack()
+
+    audit = UIReviewPackAuditor().audit(pack)
+    report = render_ui_review_pack_report(pack, audit)
+
+    assert audit.ready is True
+    assert len(pack.objectives) == 4
+    assert len(pack.wireframes) == 4
+    assert len(pack.interactions) == 4
+    assert len(pack.open_questions) == 3
+    assert "obj-queue-governance" in report
+    assert "wf-triage: Triage and handoff board" in report
+    assert "flow-run-replay: Run replay with evidence audit" in report
+    assert "- Unresolved questions: oq-role-density, oq-alert-priority, oq-handoff-evidence" in report

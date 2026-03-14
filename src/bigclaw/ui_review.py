@@ -311,3 +311,140 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
         ]
     )
     return "\n".join(lines)
+
+
+def build_big_4204_review_pack() -> UIReviewPack:
+    return UIReviewPack(
+        issue_id="BIG-4204",
+        title="UI评审包输出",
+        version="v4.0-design-sprint",
+        objectives=[
+            ReviewObjective(
+                objective_id="obj-overview-decision",
+                title="Validate the executive overview narrative and drill-down posture",
+                persona="VP Eng",
+                outcome="Leadership can confirm the overview page balances KPI density with investigation entry points.",
+                success_signal="Reviewers agree the overview supports release, risk, and queue drill-down without extra walkthroughs.",
+                priority="P0",
+                dependencies=["BIG-4203", "OPE-132"],
+            ),
+            ReviewObjective(
+                objective_id="obj-queue-governance",
+                title="Confirm queue control actions and approval posture",
+                persona="Platform Admin",
+                outcome="Operators can assess batch approvals, audit visibility, and denial paths from one frame.",
+                success_signal="The queue frame clearly shows allowed actions, denied roles, and audit expectations.",
+                priority="P0",
+                dependencies=["BIG-4203", "OPE-131", "OPE-132"],
+            ),
+            ReviewObjective(
+                objective_id="obj-run-detail-investigation",
+                title="Validate replay and audit investigation flow",
+                persona="Eng Lead",
+                outcome="Run detail reviewers can trace evidence, replay context, and escalation actions in one surface.",
+                success_signal="The run-detail frame makes failure replay and escalation decisions reviewable without hidden dependencies.",
+                priority="P0",
+                dependencies=["BIG-4203", "OPE-72", "OPE-73"],
+            ),
+            ReviewObjective(
+                objective_id="obj-triage-handoff",
+                title="Confirm triage and cross-team handoff readiness",
+                persona="Cross-Team Operator",
+                outcome="Reviewers can evaluate assignment, handoff, and queue-state transitions as one operator journey.",
+                success_signal="The triage frame exposes action states, owner switches, and handoff exceptions explicitly.",
+                priority="P0",
+                dependencies=["BIG-4203", "OPE-76", "OPE-79", "OPE-132"],
+            ),
+        ],
+        wireframes=[
+            WireframeSurface(
+                surface_id="wf-overview",
+                name="Overview command deck",
+                device="desktop",
+                entry_point="/overview",
+                primary_blocks=["top bar", "kpi strip", "risk panel", "drill-down table"],
+                review_notes=["Confirm metric density and executive scan path.", "Check alert prominence versus weekly summary card."],
+            ),
+            WireframeSurface(
+                surface_id="wf-queue",
+                name="Queue control center",
+                device="desktop",
+                entry_point="/queue",
+                primary_blocks=["approval queue", "selection toolbar", "filters", "audit rail"],
+                review_notes=["Validate batch-approve CTA hierarchy.", "Review denied-role behavior for non-operator personas."],
+            ),
+            WireframeSurface(
+                surface_id="wf-run-detail",
+                name="Run detail and replay",
+                device="desktop",
+                entry_point="/runs/detail",
+                primary_blocks=["timeline", "artifact drawer", "replay controls", "audit notes"],
+                review_notes=["Check replay mode discoverability.", "Ensure escalation path is visible next to audit evidence."],
+            ),
+            WireframeSurface(
+                surface_id="wf-triage",
+                name="Triage and handoff board",
+                device="desktop",
+                entry_point="/triage",
+                primary_blocks=["severity lanes", "bulk actions", "handoff panel", "ownership history"],
+                review_notes=["Validate cross-team operator workflow.", "Confirm exception path for denied escalation."],
+            ),
+        ],
+        interactions=[
+            InteractionFlow(
+                flow_id="flow-overview-drilldown",
+                name="Overview to investigation drill-down",
+                trigger="VP Eng selects a KPI card or blocker cluster on the overview page",
+                system_response="The console pivots into the matching queue or run-detail slice while preserving context filters.",
+                states=["default", "focus", "handoff-ready"],
+                exceptions=["Warn when the requested slice is permission-denied.", "Show fallback summary when no matching runs exist."],
+            ),
+            InteractionFlow(
+                flow_id="flow-queue-bulk-approval",
+                name="Queue batch approval review",
+                trigger="Platform Admin selects multiple tasks and opens the bulk approval toolbar",
+                system_response="The queue shows approval scope, audit consequence, and denied-role messaging before submit.",
+                states=["default", "selection", "confirming", "success"],
+                exceptions=["Disable submit when tasks cross unauthorized scopes.", "Route to audit timeline when approval policy changes mid-flow."],
+            ),
+            InteractionFlow(
+                flow_id="flow-run-replay",
+                name="Run replay with evidence audit",
+                trigger="Eng Lead switches replay mode on a failed run",
+                system_response="The page updates the timeline, artifacts, and escalation controls while keeping the audit trail visible.",
+                states=["default", "replay", "compare", "escalated"],
+                exceptions=["Show replay-unavailable state for incomplete artifacts.", "Require escalation reason before handoff."],
+            ),
+            InteractionFlow(
+                flow_id="flow-triage-handoff",
+                name="Triage ownership reassignment and handoff",
+                trigger="Cross-Team Operator bulk-assigns a finding set or opens the handoff panel",
+                system_response="The triage board updates owner, workflow, and handoff evidence in one acknowledgement step.",
+                states=["default", "selected", "handoff", "completed"],
+                exceptions=["Block handoff when reviewer coverage is incomplete.", "Record denied-role attempt in the audit summary."],
+            ),
+        ],
+        open_questions=[
+            OpenQuestion(
+                question_id="oq-role-density",
+                theme="role-matrix",
+                question="Should VP Eng see queue batch controls in read-only form or be routed to a summary-only state?",
+                owner="product-experience",
+                impact="Changes denial-path copy, button placement, and review criteria for queue and triage pages.",
+            ),
+            OpenQuestion(
+                question_id="oq-alert-priority",
+                theme="information-architecture",
+                question="Should regression alerts outrank approval alerts in the top bar for the design sprint prototype?",
+                owner="engineering-operations",
+                impact="Affects alert hierarchy and the scan path used in the overview and triage reviews.",
+            ),
+            OpenQuestion(
+                question_id="oq-handoff-evidence",
+                theme="handoff",
+                question="How much ownership history must stay visible before the run-detail and triage pages collapse older audit entries?",
+                owner="orchestration-office",
+                impact="Shapes the default density of the audit rail and the threshold for the review-ready packet.",
+            ),
+        ],
+    )
