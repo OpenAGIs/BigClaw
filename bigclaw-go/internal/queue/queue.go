@@ -9,6 +9,7 @@ import (
 )
 
 var ErrTaskNotFound = errors.New("task not found")
+var ErrLeaseNotOwned = errors.New("lease not owned by worker")
 
 type Lease struct {
 	TaskID     string
