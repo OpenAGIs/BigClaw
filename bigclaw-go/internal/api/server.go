@@ -53,14 +53,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 	})
-	mux.HandleFunc("/metrics", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, http.StatusOK, map[string]any{
-			"queue_size":           s.Queue.Size(context.Background()),
-			"events":               s.Recorder.Snapshot(),
-			"trace_count":          len(s.Recorder.TraceSummaries(0)),
-			"registered_executors": s.executorNames(),
-		})
-	})
+	mux.HandleFunc("/metrics", s.handleMetrics)
 	mux.HandleFunc("/events", func(w http.ResponseWriter, r *http.Request) {
 		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 		taskID := r.URL.Query().Get("task_id")

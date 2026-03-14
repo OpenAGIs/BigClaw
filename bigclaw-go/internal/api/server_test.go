@@ -328,6 +328,59 @@ func TestDebugTraceEndpointsExposeTraceSummary(t *testing.T) {
 	}
 }
 
+func TestMetricsSupportsPrometheusFormat(t *testing.T) {
+	recorder := observability.NewRecorder()
+	base := time.Now()
+	recorder.Record(domain.Event{ID: "evt-1", Type: domain.EventTaskQueued, TaskID: "task-1", TraceID: "trace-1", Timestamp: base})
+	controller := control.New()
+	controller.Pause("ops", "maintenance", base)
+	controller.Takeover("task-1", "alice", "bob", "investigating", base.Add(time.Second))
+	workQueue := queue.NewMemoryQueue()
+	if err := workQueue.Enqueue(context.Background(), domain.Task{ID: "queued-1", TraceID: "trace-queue", Title: "queued-1"}); err != nil {
+		t.Fatalf("enqueue task: %v", err)
+	}
+	server := &Server{
+		Recorder:  recorder,
+		Queue:     workQueue,
+		Bus:       events.NewBus(),
+		Worker:    fakeWorkerPoolStatus{},
+		Control:   controller,
+		Executors: []domain.ExecutorKind{domain.ExecutorLocal, domain.ExecutorKubernetes},
+		Now:       time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/metrics?format=prometheus", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected prometheus metrics 200, got %d", response.Code)
+	}
+	if contentType := response.Header().Get("Content-Type"); !strings.Contains(contentType, "text/plain") {
+		t.Fatalf("expected text/plain content type, got %q", contentType)
+	}
+	body := response.Body.String()
+	checks := []string{
+		"# HELP bigclaw_queue_size Current queue size.",
+		"bigclaw_queue_size 1",
+		"bigclaw_trace_count 1",
+		"bigclaw_events_total{event_type=\"task.queued\"} 1",
+		"bigclaw_executor_registered{executor=\"kubernetes\"} 1",
+		"bigclaw_worker_pool_total 3",
+		"bigclaw_worker_pool_active 2",
+		"bigclaw_worker_pool_idle 1",
+		"bigclaw_control_paused 1",
+		"bigclaw_control_active_takeovers 1",
+		"bigclaw_worker_status{current_executor=\"kubernetes\",state=\"leased\",worker_id=\"worker-b\"} 1",
+		"bigclaw_worker_successful_runs_total{worker_id=\"worker-a\"} 5",
+		"bigclaw_worker_lease_renewals_total{worker_id=\"worker-b\"} 2",
+	}
+	for _, check := range checks {
+		if !strings.Contains(body, check) {
+			t.Fatalf("expected %q in prometheus body, got %s", check, body)
+		}
+	}
+}
+
 type dashboardResponse struct {
 	Summary struct {
 		TotalTasks        int            `json:"total_tasks"`
