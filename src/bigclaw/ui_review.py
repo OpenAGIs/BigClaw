@@ -299,6 +299,10 @@ class ReviewBlocker:
     severity: str = "medium"
     escalation_owner: str = ""
     next_action: str = ""
+    freeze_exception: bool = False
+    freeze_owner: str = ""
+    freeze_until: str = ""
+    freeze_reason: str = ""
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -311,6 +315,10 @@ class ReviewBlocker:
             "severity": self.severity,
             "escalation_owner": self.escalation_owner,
             "next_action": self.next_action,
+            "freeze_exception": self.freeze_exception,
+            "freeze_owner": self.freeze_owner,
+            "freeze_until": self.freeze_until,
+            "freeze_reason": self.freeze_reason,
         }
 
     @classmethod
@@ -325,6 +333,10 @@ class ReviewBlocker:
             severity=str(data.get("severity", "medium")),
             escalation_owner=str(data.get("escalation_owner", "")),
             next_action=str(data.get("next_action", "")),
+            freeze_exception=bool(data.get("freeze_exception", False)),
+            freeze_owner=str(data.get("freeze_owner", "")),
+            freeze_until=str(data.get("freeze_until", "")),
+            freeze_reason=str(data.get("freeze_reason", "")),
         )
 
 
@@ -337,6 +349,10 @@ class ReviewBlockerEvent:
     summary: str
     timestamp: str
     next_action: str = ""
+    handoff_from: str = ""
+    handoff_to: str = ""
+    channel: str = ""
+    artifact_ref: str = ""
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -347,6 +363,10 @@ class ReviewBlockerEvent:
             "summary": self.summary,
             "timestamp": self.timestamp,
             "next_action": self.next_action,
+            "handoff_from": self.handoff_from,
+            "handoff_to": self.handoff_to,
+            "channel": self.channel,
+            "artifact_ref": self.artifact_ref,
         }
 
     @classmethod
@@ -359,6 +379,10 @@ class ReviewBlockerEvent:
             summary=str(data["summary"]),
             timestamp=str(data["timestamp"]),
             next_action=str(data.get("next_action", "")),
+            handoff_from=str(data.get("handoff_from", "")),
+            handoff_to=str(data.get("handoff_to", "")),
+            channel=str(data.get("channel", "")),
+            artifact_ref=str(data.get("artifact_ref", "")),
         )
 
 
@@ -371,9 +395,12 @@ class UIReviewPackArtifacts:
     role_matrix_path: str
     signoff_log_path: str
     signoff_sla_dashboard_path: str
+    signoff_breach_board_path: str
     escalation_dashboard_path: str
+    escalation_handoff_ledger_path: str
     blocker_log_path: str
     blocker_timeline_path: str
+    freeze_exception_board_path: str
     exception_log_path: str
     exception_matrix_path: str
     owner_review_queue_path: str
@@ -492,10 +519,14 @@ class UIReviewPackAudit:
     blockers_missing_signoff_links: List[str] = field(default_factory=list)
     blockers_missing_escalation_owners: List[str] = field(default_factory=list)
     blockers_missing_next_actions: List[str] = field(default_factory=list)
+    freeze_exceptions_missing_owners: List[str] = field(default_factory=list)
+    freeze_exceptions_missing_until: List[str] = field(default_factory=list)
     blockers_missing_timeline_events: List[str] = field(default_factory=list)
     closed_blockers_missing_resolution_events: List[str] = field(default_factory=list)
     orphan_blocker_surfaces: List[str] = field(default_factory=list)
     orphan_blocker_timeline_blocker_ids: List[str] = field(default_factory=list)
+    handoff_events_missing_targets: List[str] = field(default_factory=list)
+    handoff_events_missing_artifacts: List[str] = field(default_factory=list)
     unresolved_required_signoffs_without_blockers: List[str] = field(default_factory=list)
 
     @property
@@ -703,6 +734,8 @@ class UIReviewPackAuditor:
         blockers_missing_signoff_links = []
         blockers_missing_escalation_owners = []
         blockers_missing_next_actions = []
+        freeze_exceptions_missing_owners = []
+        freeze_exceptions_missing_until = []
         orphan_blocker_surfaces = []
         unresolved_required_signoffs_without_blockers = []
         if pack.requires_blocker_log:
@@ -715,6 +748,16 @@ class UIReviewPackAuditor:
             )
             blockers_missing_next_actions = sorted(
                 blocker.blocker_id for blocker in pack.blocker_log if not blocker.next_action.strip()
+            )
+            freeze_exceptions_missing_owners = sorted(
+                blocker.blocker_id
+                for blocker in pack.blocker_log
+                if blocker.freeze_exception and not blocker.freeze_owner.strip()
+            )
+            freeze_exceptions_missing_until = sorted(
+                blocker.blocker_id
+                for blocker in pack.blocker_log
+                if blocker.freeze_exception and not blocker.freeze_until.strip()
             )
             orphan_blocker_surfaces = sorted(
                 surface_id for surface_id in blocker_surfaces if surface_id not in wireframe_ids
@@ -731,6 +774,8 @@ class UIReviewPackAuditor:
         blockers_missing_timeline_events = []
         closed_blockers_missing_resolution_events = []
         orphan_blocker_timeline_blocker_ids = []
+        handoff_events_missing_targets = []
+        handoff_events_missing_artifacts = []
         if pack.requires_blocker_timeline:
             blocker_ids = {blocker.blocker_id for blocker in pack.blocker_log}
             orphan_blocker_timeline_blocker_ids = sorted(
@@ -752,6 +797,17 @@ class UIReviewPackAuditor:
                     event.status.lower() in {"resolved", "closed"}
                     for event in blocker_timeline_by_blocker.get(blocker.blocker_id, [])
                 )
+            )
+            handoff_statuses = {"escalated", "handoff", "reassigned"}
+            handoff_events_missing_targets = sorted(
+                event.event_id
+                for event in pack.blocker_timeline
+                if event.status.lower() in handoff_statuses and not event.handoff_to.strip()
+            )
+            handoff_events_missing_artifacts = sorted(
+                event.event_id
+                for event in pack.blocker_timeline
+                if event.status.lower() in handoff_statuses and not event.artifact_ref.strip()
             )
 
         ready = not (
@@ -780,10 +836,14 @@ class UIReviewPackAuditor:
             or blockers_missing_signoff_links
             or blockers_missing_escalation_owners
             or blockers_missing_next_actions
+            or freeze_exceptions_missing_owners
+            or freeze_exceptions_missing_until
             or blockers_missing_timeline_events
             or closed_blockers_missing_resolution_events
             or orphan_blocker_surfaces
             or orphan_blocker_timeline_blocker_ids
+            or handoff_events_missing_targets
+            or handoff_events_missing_artifacts
             or unresolved_required_signoffs_without_blockers
         )
         return UIReviewPackAudit(
@@ -827,10 +887,14 @@ class UIReviewPackAuditor:
             blockers_missing_signoff_links=blockers_missing_signoff_links,
             blockers_missing_escalation_owners=blockers_missing_escalation_owners,
             blockers_missing_next_actions=blockers_missing_next_actions,
+            freeze_exceptions_missing_owners=freeze_exceptions_missing_owners,
+            freeze_exceptions_missing_until=freeze_exceptions_missing_until,
             blockers_missing_timeline_events=blockers_missing_timeline_events,
             closed_blockers_missing_resolution_events=closed_blockers_missing_resolution_events,
             orphan_blocker_surfaces=orphan_blocker_surfaces,
             orphan_blocker_timeline_blocker_ids=orphan_blocker_timeline_blocker_ids,
+            handoff_events_missing_targets=handoff_events_missing_targets,
+            handoff_events_missing_artifacts=handoff_events_missing_artifacts,
             unresolved_required_signoffs_without_blockers=unresolved_required_signoffs_without_blockers,
         )
 
@@ -892,6 +956,114 @@ def _build_review_exception_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
         entries,
         key=lambda item: (item["owner"], item["surface_id"], item["category"], item["source_id"]),
     )
+
+
+def _build_freeze_exception_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
+    timeline_index = _build_blocker_timeline_index(pack)
+    entries: List[Dict[str, str]] = []
+    for signoff in pack.signoff_log:
+        if signoff.status.lower() not in {"waived", "deferred"}:
+            continue
+        entries.append(
+            {
+                "entry_id": f"freeze-{signoff.signoff_id}",
+                "item_type": "signoff",
+                "source_id": signoff.signoff_id,
+                "surface_id": signoff.surface_id,
+                "owner": signoff.waiver_owner or signoff.role,
+                "status": signoff.status,
+                "window": "none",
+                "summary": signoff.waiver_reason or signoff.notes or "none",
+                "evidence": ",".join(signoff.evidence_links) or "none",
+                "next_action": signoff.notes or signoff.waiver_reason or "none",
+            }
+        )
+    for blocker in pack.blocker_log:
+        if not blocker.freeze_exception:
+            continue
+        latest_events = timeline_index.get(blocker.blocker_id, [])
+        latest = latest_events[-1] if latest_events else None
+        latest_label = (
+            f"{latest.event_id}/{latest.status}/{latest.actor}@{latest.timestamp}"
+            if latest
+            else "none"
+        )
+        entries.append(
+            {
+                "entry_id": f"freeze-{blocker.blocker_id}",
+                "item_type": "blocker",
+                "source_id": blocker.blocker_id,
+                "surface_id": blocker.surface_id,
+                "owner": blocker.freeze_owner or blocker.owner,
+                "status": blocker.status,
+                "window": blocker.freeze_until or "none",
+                "summary": blocker.freeze_reason or blocker.summary,
+                "evidence": latest_label,
+                "next_action": blocker.next_action or "none",
+            }
+        )
+    return sorted(
+        entries,
+        key=lambda item: (item["owner"], item["surface_id"], item["item_type"], item["source_id"]),
+    )
+
+
+def _build_signoff_breach_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
+    blocker_index: Dict[str, List[str]] = {}
+    for blocker in pack.blocker_log:
+        if blocker.status.lower() in {"resolved", "closed"}:
+            continue
+        blocker_index.setdefault(blocker.signoff_id, []).append(blocker.blocker_id)
+    entries = [
+        {
+            "entry_id": f"breach-{signoff.signoff_id}",
+            "signoff_id": signoff.signoff_id,
+            "surface_id": signoff.surface_id,
+            "role": signoff.role,
+            "status": signoff.status,
+            "sla_status": signoff.sla_status,
+            "requested_at": signoff.requested_at or "none",
+            "due_at": signoff.due_at or "none",
+            "escalation_owner": signoff.escalation_owner or "none",
+            "linked_blockers": ",".join(sorted(blocker_index.get(signoff.signoff_id, []))) or "none",
+            "summary": signoff.notes or signoff.waiver_reason or signoff.role,
+        }
+        for signoff in pack.signoff_log
+        if signoff.sla_status.lower() in {"at-risk", "breached"}
+        and signoff.status.lower() not in {"approved", "accepted", "resolved", "waived", "deferred"}
+    ]
+    return sorted(
+        entries,
+        key=lambda item: (item["due_at"], item["sla_status"], item["escalation_owner"], item["signoff_id"]),
+    )
+
+
+def _build_escalation_handoff_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
+    blocker_index = {blocker.blocker_id: blocker for blocker in pack.blocker_log}
+    handoff_statuses = {"escalated", "handoff", "reassigned"}
+    entries: List[Dict[str, str]] = []
+    for event in pack.blocker_timeline:
+        if event.status.lower() not in handoff_statuses and not event.handoff_to.strip():
+            continue
+        blocker = blocker_index.get(event.blocker_id)
+        entries.append(
+            {
+                "ledger_id": f"handoff-{event.event_id}",
+                "event_id": event.event_id,
+                "blocker_id": event.blocker_id,
+                "surface_id": blocker.surface_id if blocker else "none",
+                "actor": event.actor,
+                "status": event.status,
+                "handoff_from": event.handoff_from or (blocker.owner if blocker else "none"),
+                "handoff_to": event.handoff_to or (blocker.escalation_owner if blocker else "none") or "none",
+                "channel": event.channel or "none",
+                "artifact_ref": event.artifact_ref or "none",
+                "timestamp": event.timestamp,
+                "summary": event.summary,
+                "next_action": event.next_action or "none",
+            }
+        )
+    return sorted(entries, key=lambda item: (item["timestamp"], item["event_id"]))
 
 
 def _build_owner_review_queue_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
@@ -1172,6 +1344,41 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
     if not signoff_sla_entries:
         lines.append("- none")
 
+    signoff_breach_entries = _build_signoff_breach_entries(pack)
+    breach_state_counts: Dict[str, int] = {}
+    breach_owner_counts: Dict[str, int] = {}
+    for entry in signoff_breach_entries:
+        breach_state_counts[entry['sla_status']] = breach_state_counts.get(entry['sla_status'], 0) + 1
+        breach_owner_counts[entry['escalation_owner']] = breach_owner_counts.get(entry['escalation_owner'], 0) + 1
+
+    lines.append("")
+    lines.append("## Sign-off Breach Board")
+    lines.append(f"- Breach items: {len(signoff_breach_entries)}")
+    lines.append(f"- Escalation owners: {len(breach_owner_counts)}")
+    lines.append("")
+    lines.append("### SLA States")
+    for sla_status, count in sorted(breach_state_counts.items()):
+        lines.append(f"- {sla_status}: {count}")
+    if not breach_state_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### Escalation Owners")
+    for owner, count in sorted(breach_owner_counts.items()):
+        lines.append(f"- {owner}: {count}")
+    if not breach_owner_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### Items")
+    for entry in signoff_breach_entries:
+        lines.append(
+            f"- {entry['entry_id']}: signoff={entry['signoff_id']} role={entry['role']} surface={entry['surface_id']} status={entry['status']} sla={entry['sla_status']} escalation_owner={entry['escalation_owner']}"
+        )
+        lines.append(
+            f"  requested_at={entry['requested_at']} due_at={entry['due_at']} linked_blockers={entry['linked_blockers']} summary={entry['summary']}"
+        )
+    if not signoff_breach_entries:
+        lines.append("- none")
+
     escalation_entries = _build_escalation_dashboard_entries(pack)
     escalation_owner_counts: Dict[str, Dict[str, int]] = {}
     escalation_status_counts: Dict[str, Dict[str, int]] = {}
@@ -1217,6 +1424,41 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
     if not escalation_entries:
         lines.append("- none")
 
+    escalation_handoff_entries = _build_escalation_handoff_entries(pack)
+    handoff_status_counts: Dict[str, int] = {}
+    handoff_channel_counts: Dict[str, int] = {}
+    for entry in escalation_handoff_entries:
+        handoff_status_counts[entry['status']] = handoff_status_counts.get(entry['status'], 0) + 1
+        handoff_channel_counts[entry['channel']] = handoff_channel_counts.get(entry['channel'], 0) + 1
+
+    lines.append("")
+    lines.append("## Escalation Handoff Ledger")
+    lines.append(f"- Handoffs: {len(escalation_handoff_entries)}")
+    lines.append(f"- Channels: {len(handoff_channel_counts)}")
+    lines.append("")
+    lines.append("### By Status")
+    for status, count in sorted(handoff_status_counts.items()):
+        lines.append(f"- {status}: {count}")
+    if not handoff_status_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### By Channel")
+    for channel, count in sorted(handoff_channel_counts.items()):
+        lines.append(f"- {channel}: {count}")
+    if not handoff_channel_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### Entries")
+    for entry in escalation_handoff_entries:
+        lines.append(
+            f"- {entry['ledger_id']}: event={entry['event_id']} blocker={entry['blocker_id']} surface={entry['surface_id']} actor={entry['actor']} status={entry['status']} at={entry['timestamp']}"
+        )
+        lines.append(
+            f"  from={entry['handoff_from']} to={entry['handoff_to']} channel={entry['channel']} artifact={entry['artifact_ref']} next_action={entry['next_action']}"
+        )
+    if not escalation_handoff_entries:
+        lines.append("- none")
+
     lines.append("")
     lines.append("## Blocker Log")
     for blocker in pack.blocker_log:
@@ -1258,6 +1500,53 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
             f"  summary={entry['summary']} evidence={entry['evidence']} latest_event={entry['latest_event']} next_action={entry['next_action']}"
         )
     if not exception_entries:
+        lines.append("- none")
+
+    freeze_entries = _build_freeze_exception_entries(pack)
+    freeze_owner_counts: Dict[str, Dict[str, int]] = {}
+    freeze_surface_counts: Dict[str, Dict[str, int]] = {}
+    for entry in freeze_entries:
+        owner_counts = freeze_owner_counts.setdefault(
+            entry["owner"], {"blocker": 0, "signoff": 0, "total": 0}
+        )
+        owner_counts[entry["item_type"]] += 1
+        owner_counts["total"] += 1
+        surface_counts = freeze_surface_counts.setdefault(
+            entry["surface_id"], {"blocker": 0, "signoff": 0, "total": 0}
+        )
+        surface_counts[entry["item_type"]] += 1
+        surface_counts["total"] += 1
+
+    lines.append("")
+    lines.append("## Review Freeze Exception Board")
+    lines.append(f"- Exceptions: {len(freeze_entries)}")
+    lines.append(f"- Owners: {len(freeze_owner_counts)}")
+    lines.append("")
+    lines.append("### By Owner")
+    for owner, counts in sorted(freeze_owner_counts.items()):
+        lines.append(
+            f"- {owner}: blockers={counts['blocker']} signoffs={counts['signoff']} total={counts['total']}"
+        )
+    if not freeze_owner_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### By Surface")
+    for surface_id, counts in sorted(freeze_surface_counts.items()):
+        lines.append(
+            f"- {surface_id}: blockers={counts['blocker']} signoffs={counts['signoff']} total={counts['total']}"
+        )
+    if not freeze_surface_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### Entries")
+    for entry in freeze_entries:
+        lines.append(
+            f"- {entry['entry_id']}: owner={entry['owner']} type={entry['item_type']} source={entry['source_id']} surface={entry['surface_id']} status={entry['status']} window={entry['window']}"
+        )
+        lines.append(
+            f"  summary={entry['summary']} evidence={entry['evidence']} next_action={entry['next_action']}"
+        )
+    if not freeze_entries:
         lines.append("- none")
 
     exception_owner_counts: Dict[str, Dict[str, int]] = {}
@@ -1416,10 +1705,14 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
             f"- Blockers missing signoff links: {', '.join(audit.blockers_missing_signoff_links) or 'none'}",
             f"- Blockers missing escalation owners: {', '.join(audit.blockers_missing_escalation_owners) or 'none'}",
             f"- Blockers missing next actions: {', '.join(audit.blockers_missing_next_actions) or 'none'}",
+            f"- Freeze exceptions missing owners: {', '.join(audit.freeze_exceptions_missing_owners) or 'none'}",
+            f"- Freeze exceptions missing windows: {', '.join(audit.freeze_exceptions_missing_until) or 'none'}",
             f"- Blockers missing timeline events: {', '.join(audit.blockers_missing_timeline_events) or 'none'}",
             f"- Closed blockers missing resolution events: {', '.join(audit.closed_blockers_missing_resolution_events) or 'none'}",
             f"- Orphan blocker surfaces: {', '.join(audit.orphan_blocker_surfaces) or 'none'}",
             f"- Orphan blocker timeline blocker ids: {', '.join(audit.orphan_blocker_timeline_blocker_ids) or 'none'}",
+            f"- Handoff events missing targets: {', '.join(audit.handoff_events_missing_targets) or 'none'}",
+            f"- Handoff events missing artifacts: {', '.join(audit.handoff_events_missing_artifacts) or 'none'}",
             f"- Unresolved required signoffs without blockers: {', '.join(audit.unresolved_required_signoffs_without_blockers) or 'none'}",
         ]
     )
@@ -1807,6 +2100,10 @@ def build_big_4204_review_pack() -> UIReviewPack:
                 severity="medium",
                 escalation_owner="design-program-manager",
                 next_action="Review replay-state copy with Eng Lead and update the run-detail frame in the next critique.",
+                freeze_exception=True,
+                freeze_owner="release-director",
+                freeze_until="2026-03-18T18:00:00Z",
+                freeze_reason="Allow the design sprint review pack to ship while tracked copy cleanup lands in the next critique.",
             ),
         ],
         blocker_timeline=[
@@ -1827,6 +2124,10 @@ def build_big_4204_review_pack() -> UIReviewPack:
                 summary="Scheduled a joint wording review with Eng Lead and product-experience to close the signoff blocker.",
                 timestamp="2026-03-14T09:30:00Z",
                 next_action="Refresh the run-detail frame annotations after the wording review completes.",
+                handoff_from="product-experience",
+                handoff_to="Eng Lead",
+                channel="design-critique",
+                artifact_ref="wf-run-detail#copy-v5",
             ),
         ],
     )
@@ -1995,6 +2296,137 @@ def render_ui_review_escalation_dashboard(pack: UIReviewPack) -> str:
             f"- {entry['escalation_id']}: owner={entry['escalation_owner']} type={entry['item_type']} source={entry['source_id']} surface={entry['surface_id']} status={entry['status']} priority={entry['priority']} current_owner={entry['current_owner']}"
         )
         lines.append(f"  summary={entry['summary']} due_at={entry['due_at']}")
+    if not entries:
+        lines.append("- none")
+    return "\n".join(lines)
+
+
+def render_ui_review_signoff_breach_board(pack: UIReviewPack) -> str:
+    entries = _build_signoff_breach_entries(pack)
+    state_counts: Dict[str, int] = {}
+    owner_counts: Dict[str, int] = {}
+    for entry in entries:
+        state_counts[entry['sla_status']] = state_counts.get(entry['sla_status'], 0) + 1
+        owner_counts[entry['escalation_owner']] = owner_counts.get(entry['escalation_owner'], 0) + 1
+    lines = [
+        "# UI Review Sign-off Breach Board",
+        "",
+        f"- Issue: {pack.issue_id} {pack.title}",
+        f"- Version: {pack.version}",
+        f"- Breach items: {len(entries)}",
+        f"- Escalation owners: {len(owner_counts)}",
+        "",
+        "## SLA States",
+    ]
+    for sla_status, count in sorted(state_counts.items()):
+        lines.append(f"- {sla_status}: {count}")
+    if not state_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## Escalation Owners")
+    for owner, count in sorted(owner_counts.items()):
+        lines.append(f"- {owner}: {count}")
+    if not owner_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## Items")
+    for entry in entries:
+        lines.append(
+            f"- {entry['entry_id']}: signoff={entry['signoff_id']} role={entry['role']} surface={entry['surface_id']} status={entry['status']} sla={entry['sla_status']} escalation_owner={entry['escalation_owner']}"
+        )
+        lines.append(
+            f"  requested_at={entry['requested_at']} due_at={entry['due_at']} linked_blockers={entry['linked_blockers']} summary={entry['summary']}"
+        )
+    if not entries:
+        lines.append("- none")
+    return "\n".join(lines)
+
+
+def render_ui_review_escalation_handoff_ledger(pack: UIReviewPack) -> str:
+    entries = _build_escalation_handoff_entries(pack)
+    channel_counts: Dict[str, int] = {}
+    status_counts: Dict[str, int] = {}
+    for entry in entries:
+        channel_counts[entry['channel']] = channel_counts.get(entry['channel'], 0) + 1
+        status_counts[entry['status']] = status_counts.get(entry['status'], 0) + 1
+    lines = [
+        "# UI Review Escalation Handoff Ledger",
+        "",
+        f"- Issue: {pack.issue_id} {pack.title}",
+        f"- Version: {pack.version}",
+        f"- Handoffs: {len(entries)}",
+        f"- Channels: {len(channel_counts)}",
+        "",
+        "## By Status",
+    ]
+    for status, count in sorted(status_counts.items()):
+        lines.append(f"- {status}: {count}")
+    if not status_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## By Channel")
+    for channel, count in sorted(channel_counts.items()):
+        lines.append(f"- {channel}: {count}")
+    if not channel_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## Entries")
+    for entry in entries:
+        lines.append(
+            f"- {entry['ledger_id']}: event={entry['event_id']} blocker={entry['blocker_id']} surface={entry['surface_id']} actor={entry['actor']} status={entry['status']} at={entry['timestamp']}"
+        )
+        lines.append(
+            f"  from={entry['handoff_from']} to={entry['handoff_to']} channel={entry['channel']} artifact={entry['artifact_ref']} next_action={entry['next_action']}"
+        )
+    if not entries:
+        lines.append("- none")
+    return "\n".join(lines)
+
+
+def render_ui_review_freeze_exception_board(pack: UIReviewPack) -> str:
+    entries = _build_freeze_exception_entries(pack)
+    owner_counts: Dict[str, Dict[str, int]] = {}
+    surface_counts: Dict[str, Dict[str, int]] = {}
+    for entry in entries:
+        owner_bucket = owner_counts.setdefault(entry['owner'], {'blocker': 0, 'signoff': 0, 'total': 0})
+        owner_bucket[entry['item_type']] += 1
+        owner_bucket['total'] += 1
+        surface_bucket = surface_counts.setdefault(entry['surface_id'], {'blocker': 0, 'signoff': 0, 'total': 0})
+        surface_bucket[entry['item_type']] += 1
+        surface_bucket['total'] += 1
+    lines = [
+        "# UI Review Freeze Exception Board",
+        "",
+        f"- Issue: {pack.issue_id} {pack.title}",
+        f"- Version: {pack.version}",
+        f"- Exceptions: {len(entries)}",
+        f"- Owners: {len(owner_counts)}",
+        "",
+        "## By Owner",
+    ]
+    for owner, counts in sorted(owner_counts.items()):
+        lines.append(
+            f"- {owner}: blockers={counts['blocker']} signoffs={counts['signoff']} total={counts['total']}"
+        )
+    if not owner_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## By Surface")
+    for surface_id, counts in sorted(surface_counts.items()):
+        lines.append(
+            f"- {surface_id}: blockers={counts['blocker']} signoffs={counts['signoff']} total={counts['total']}"
+        )
+    if not surface_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## Entries")
+    for entry in entries:
+        lines.append(
+            f"- {entry['entry_id']}: owner={entry['owner']} type={entry['item_type']} source={entry['source_id']} surface={entry['surface_id']} status={entry['status']} window={entry['window']}"
+        )
+        lines.append(
+            f"  summary={entry['summary']} evidence={entry['evidence']} next_action={entry['next_action']}"
+        )
     if not entries:
         lines.append("- none")
     return "\n".join(lines)
@@ -2278,6 +2710,24 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
         f"<li><strong>{escape(entry['signoff_id'])}</strong> · role={escape(entry['role'])} · surface={escape(entry['surface_id'])} · status={escape(entry['status'])} · sla={escape(entry['sla_status'])}<br /><span>requested_at={escape(entry['requested_at'])} · due_at={escape(entry['due_at'])} · escalation_owner={escape(entry['escalation_owner'])}</span><br /><span>required={escape(entry['required'])} · evidence={escape(entry['evidence'])}</span></li>"
         for entry in signoff_sla_entries
     ) or "<li>none</li>"
+    signoff_breach_entries = _build_signoff_breach_entries(pack)
+    signoff_breach_state_counts: Dict[str, int] = {}
+    signoff_breach_owner_counts: Dict[str, int] = {}
+    for entry in signoff_breach_entries:
+        signoff_breach_state_counts[entry['sla_status']] = signoff_breach_state_counts.get(entry['sla_status'], 0) + 1
+        signoff_breach_owner_counts[entry['escalation_owner']] = signoff_breach_owner_counts.get(entry['escalation_owner'], 0) + 1
+    signoff_breach_state_html = "".join(
+        f"<li><strong>{escape(sla_status)}</strong> · count={count}</li>"
+        for sla_status, count in sorted(signoff_breach_state_counts.items())
+    ) or "<li>none</li>"
+    signoff_breach_owner_html = "".join(
+        f"<li><strong>{escape(owner)}</strong> · count={count}</li>"
+        for owner, count in sorted(signoff_breach_owner_counts.items())
+    ) or "<li>none</li>"
+    signoff_breach_item_html = "".join(
+        f"<li><strong>{escape(entry['entry_id'])}</strong> · signoff={escape(entry['signoff_id'])} · role={escape(entry['role'])} · surface={escape(entry['surface_id'])} · status={escape(entry['status'])} · sla={escape(entry['sla_status'])}<br /><span>requested_at={escape(entry['requested_at'])} · due_at={escape(entry['due_at'])} · escalation_owner={escape(entry['escalation_owner'])}</span><br /><span>linked_blockers={escape(entry['linked_blockers'])} · summary={escape(entry['summary'])}</span></li>"
+        for entry in signoff_breach_entries
+    ) or "<li>none</li>"
     escalation_entries = _build_escalation_dashboard_entries(pack)
     escalation_owner_counts: Dict[str, Dict[str, int]] = {}
     escalation_status_counts: Dict[str, Dict[str, int]] = {}
@@ -2303,6 +2753,24 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
     escalation_item_html = "".join(
         f"<li><strong>{escape(entry['escalation_id'])}</strong> · owner={escape(entry['escalation_owner'])} · type={escape(entry['item_type'])} · source={escape(entry['source_id'])} · surface={escape(entry['surface_id'])} · status={escape(entry['status'])} · priority={escape(entry['priority'])}<br /><span>current_owner={escape(entry['current_owner'])} · due_at={escape(entry['due_at'])}</span><br /><span>{escape(entry['summary'])}</span></li>"
         for entry in escalation_entries
+    ) or "<li>none</li>"
+    escalation_handoff_entries = _build_escalation_handoff_entries(pack)
+    escalation_handoff_status_counts: Dict[str, int] = {}
+    escalation_handoff_channel_counts: Dict[str, int] = {}
+    for entry in escalation_handoff_entries:
+        escalation_handoff_status_counts[entry['status']] = escalation_handoff_status_counts.get(entry['status'], 0) + 1
+        escalation_handoff_channel_counts[entry['channel']] = escalation_handoff_channel_counts.get(entry['channel'], 0) + 1
+    escalation_handoff_status_html = "".join(
+        f"<li><strong>{escape(status)}</strong> · count={count}</li>"
+        for status, count in sorted(escalation_handoff_status_counts.items())
+    ) or "<li>none</li>"
+    escalation_handoff_channel_html = "".join(
+        f"<li><strong>{escape(channel)}</strong> · count={count}</li>"
+        for channel, count in sorted(escalation_handoff_channel_counts.items())
+    ) or "<li>none</li>"
+    escalation_handoff_item_html = "".join(
+        f"<li><strong>{escape(entry['ledger_id'])}</strong> · event={escape(entry['event_id'])} · blocker={escape(entry['blocker_id'])} · surface={escape(entry['surface_id'])} · actor={escape(entry['actor'])} · status={escape(entry['status'])}<br /><span>from={escape(entry['handoff_from'])} · to={escape(entry['handoff_to'])} · channel={escape(entry['channel'])}</span><br /><span>artifact={escape(entry['artifact_ref'])} · next_action={escape(entry['next_action'])} · at={escape(entry['timestamp'])}</span></li>"
+        for entry in escalation_handoff_entries
     ) or "<li>none</li>"
     blocker_html = "".join(
         f"<li><strong>{escape(blocker.blocker_id)}</strong> · surface={escape(blocker.surface_id)} · signoff={escape(blocker.signoff_id)} · owner={escape(blocker.owner)} · status={escape(blocker.status)} · severity={escape(blocker.severity)}<br /><span>{escape(blocker.summary)}</span><br /><span>escalation_owner={escape(blocker.escalation_owner or 'none')} · next_action={escape(blocker.next_action or 'none')}</span></li>"
@@ -2348,6 +2816,32 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
     exception_surface_html = "".join(
         f"<li><strong>{escape(surface_id)}</strong> · blockers={counts['blocker']} · signoffs={counts['signoff']} · total={counts['total']}</li>"
         for surface_id, counts in sorted(exception_surface_counts.items())
+    ) or "<li>none</li>"
+    freeze_entries = _build_freeze_exception_entries(pack)
+    freeze_owner_counts: Dict[str, Dict[str, int]] = {}
+    freeze_surface_counts: Dict[str, Dict[str, int]] = {}
+    for entry in freeze_entries:
+        owner_bucket = freeze_owner_counts.setdefault(
+            entry["owner"], {"blocker": 0, "signoff": 0, "total": 0}
+        )
+        owner_bucket[entry["item_type"]] += 1
+        owner_bucket["total"] += 1
+        surface_bucket = freeze_surface_counts.setdefault(
+            entry["surface_id"], {"blocker": 0, "signoff": 0, "total": 0}
+        )
+        surface_bucket[entry["item_type"]] += 1
+        surface_bucket["total"] += 1
+    freeze_owner_html = "".join(
+        f"<li><strong>{escape(owner)}</strong> · blockers={counts['blocker']} · signoffs={counts['signoff']} · total={counts['total']}</li>"
+        for owner, counts in sorted(freeze_owner_counts.items())
+    ) or "<li>none</li>"
+    freeze_surface_html = "".join(
+        f"<li><strong>{escape(surface_id)}</strong> · blockers={counts['blocker']} · signoffs={counts['signoff']} · total={counts['total']}</li>"
+        for surface_id, counts in sorted(freeze_surface_counts.items())
+    ) or "<li>none</li>"
+    freeze_item_html = "".join(
+        f"<li><strong>{escape(entry['entry_id'])}</strong> · owner={escape(entry['owner'])} · type={escape(entry['item_type'])} · source={escape(entry['source_id'])} · surface={escape(entry['surface_id'])} · status={escape(entry['status'])} · window={escape(entry['window'])}<br /><span>{escape(entry['summary'])}</span><br /><span>evidence={escape(entry['evidence'])} · next_action={escape(entry['next_action'])}</span></li>"
+        for entry in freeze_entries
     ) or "<li>none</li>"
     owner_review_queue = _build_owner_review_queue_entries(pack)
     owner_queue_counts: Dict[str, Dict[str, int]] = {}
@@ -2430,7 +2924,11 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
       <p>Missing waiver metadata: {escape(', '.join(audit.waived_signoffs_missing_metadata) if audit.waived_signoffs_missing_metadata else 'none')}</p>
       <p>Missing blocker timeline: {escape(', '.join(audit.blockers_missing_timeline_events) if audit.blockers_missing_timeline_events else 'none')}</p>
       <p>Closed blockers missing resolution events: {escape(', '.join(audit.closed_blockers_missing_resolution_events) if audit.closed_blockers_missing_resolution_events else 'none')}</p>
+      <p>Freeze exceptions missing owners: {escape(', '.join(audit.freeze_exceptions_missing_owners) if audit.freeze_exceptions_missing_owners else 'none')}</p>
+      <p>Freeze exceptions missing windows: {escape(', '.join(audit.freeze_exceptions_missing_until) if audit.freeze_exceptions_missing_until else 'none')}</p>
       <p>Orphan blocker timeline ids: {escape(', '.join(audit.orphan_blocker_timeline_blocker_ids) if audit.orphan_blocker_timeline_blocker_ids else 'none')}</p>
+      <p>Handoff events missing targets: {escape(', '.join(audit.handoff_events_missing_targets) if audit.handoff_events_missing_targets else 'none')}</p>
+      <p>Handoff events missing artifacts: {escape(', '.join(audit.handoff_events_missing_artifacts) if audit.handoff_events_missing_artifacts else 'none')}</p>
       <p>Unresolved decisions: {escape(', '.join(audit.unresolved_decision_ids) if audit.unresolved_decision_ids else 'none')}</p>
       <p>Unresolved required signoffs: {escape(', '.join(audit.unresolved_required_signoff_ids) if audit.unresolved_required_signoff_ids else 'none')}</p>
     </section>
@@ -2443,9 +2941,12 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
     <section class="surface"><h2>Role Matrix</h2><ul>{role_matrix_html}</ul></section>
     <section class="surface"><h2>Sign-off Log</h2><ul>{signoff_html}</ul></section>
     <section class="surface"><h2>Sign-off SLA Dashboard</h2><h3>SLA States</h3><ul>{signoff_sla_state_html}</ul><h3>Escalation Owners</h3><ul>{signoff_sla_owner_html}</ul><h3>Sign-offs</h3><ul>{signoff_sla_item_html}</ul></section>
+    <section class="surface"><h2>Sign-off Breach Board</h2><h3>SLA States</h3><ul>{signoff_breach_state_html}</ul><h3>Escalation Owners</h3><ul>{signoff_breach_owner_html}</ul><h3>Items</h3><ul>{signoff_breach_item_html}</ul></section>
     <section class="surface"><h2>Escalation Dashboard</h2><h3>By Escalation Owner</h3><ul>{escalation_owner_html}</ul><h3>By Status</h3><ul>{escalation_status_html}</ul><h3>Escalations</h3><ul>{escalation_item_html}</ul></section>
+    <section class="surface"><h2>Escalation Handoff Ledger</h2><h3>By Status</h3><ul>{escalation_handoff_status_html}</ul><h3>By Channel</h3><ul>{escalation_handoff_channel_html}</ul><h3>Entries</h3><ul>{escalation_handoff_item_html}</ul></section>
     <section class="surface"><h2>Blocker Log</h2><ul>{blocker_html}</ul></section>
     <section class="surface"><h2>Blocker Timeline</h2><ul>{blocker_timeline_html}</ul></section>
+    <section class="surface"><h2>Review Freeze Exception Board</h2><h3>By Owner</h3><ul>{freeze_owner_html}</ul><h3>By Surface</h3><ul>{freeze_surface_html}</ul><h3>Entries</h3><ul>{freeze_item_html}</ul></section>
     <section class="surface"><h2>Review Exceptions</h2><ul>{exception_html}</ul></section>
     <section class="surface"><h2>Review Exception Matrix</h2><h3>By Owner</h3><ul>{exception_owner_html}</ul><h3>By Status</h3><ul>{exception_status_html}</ul><h3>By Surface</h3><ul>{exception_surface_html}</ul></section>
     <section class="surface"><h2>Owner Review Queue</h2><h3>Owners</h3><ul>{owner_queue_owner_html}</ul><h3>Items</h3><ul>{owner_queue_item_html}</ul></section>
@@ -2465,9 +2966,12 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
     role_matrix_path = str(base / f"{slug}-role-matrix.md")
     signoff_log_path = str(base / f"{slug}-signoff-log.md")
     signoff_sla_dashboard_path = str(base / f"{slug}-signoff-sla-dashboard.md")
+    signoff_breach_board_path = str(base / f"{slug}-signoff-breach-board.md")
     escalation_dashboard_path = str(base / f"{slug}-escalation-dashboard.md")
+    escalation_handoff_ledger_path = str(base / f"{slug}-escalation-handoff-ledger.md")
     blocker_log_path = str(base / f"{slug}-blocker-log.md")
     blocker_timeline_path = str(base / f"{slug}-blocker-timeline.md")
+    freeze_exception_board_path = str(base / f"{slug}-freeze-exception-board.md")
     exception_log_path = str(base / f"{slug}-exception-log.md")
     exception_matrix_path = str(base / f"{slug}-exception-matrix.md")
     owner_review_queue_path = str(base / f"{slug}-owner-review-queue.md")
@@ -2479,9 +2983,12 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
     Path(role_matrix_path).write_text(render_ui_review_role_matrix(pack))
     Path(signoff_log_path).write_text(render_ui_review_signoff_log(pack))
     Path(signoff_sla_dashboard_path).write_text(render_ui_review_signoff_sla_dashboard(pack))
+    Path(signoff_breach_board_path).write_text(render_ui_review_signoff_breach_board(pack))
     Path(escalation_dashboard_path).write_text(render_ui_review_escalation_dashboard(pack))
+    Path(escalation_handoff_ledger_path).write_text(render_ui_review_escalation_handoff_ledger(pack))
     Path(blocker_log_path).write_text(render_ui_review_blocker_log(pack))
     Path(blocker_timeline_path).write_text(render_ui_review_blocker_timeline(pack))
+    Path(freeze_exception_board_path).write_text(render_ui_review_freeze_exception_board(pack))
     Path(exception_log_path).write_text(render_ui_review_exception_log(pack))
     Path(exception_matrix_path).write_text(render_ui_review_exception_matrix(pack))
     Path(owner_review_queue_path).write_text(render_ui_review_owner_review_queue(pack))
@@ -2494,9 +3001,12 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
         role_matrix_path=role_matrix_path,
         signoff_log_path=signoff_log_path,
         signoff_sla_dashboard_path=signoff_sla_dashboard_path,
+        signoff_breach_board_path=signoff_breach_board_path,
         escalation_dashboard_path=escalation_dashboard_path,
+        escalation_handoff_ledger_path=escalation_handoff_ledger_path,
         blocker_log_path=blocker_log_path,
         blocker_timeline_path=blocker_timeline_path,
+        freeze_exception_board_path=freeze_exception_board_path,
         exception_log_path=exception_log_path,
         exception_matrix_path=exception_matrix_path,
         owner_review_queue_path=owner_review_queue_path,

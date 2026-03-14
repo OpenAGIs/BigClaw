@@ -18,9 +18,12 @@ from bigclaw.ui_review import (
     render_ui_review_blocker_timeline,
     render_ui_review_blocker_timeline_summary,
     render_ui_review_escalation_dashboard,
+    render_ui_review_escalation_handoff_ledger,
     render_ui_review_exception_log,
     render_ui_review_exception_matrix,
+    render_ui_review_freeze_exception_board,
     render_ui_review_owner_review_queue,
+    render_ui_review_signoff_breach_board,
     render_ui_review_signoff_sla_dashboard,
     render_ui_review_decision_log,
     render_ui_review_pack_html,
@@ -191,9 +194,15 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert "## Sign-off SLA Dashboard" in report
     assert "- at-risk: 1" in report
     assert "sig-run-detail-eng-lead: role=Eng Lead surface=wf-run-detail status=pending sla=at-risk requested_at=2026-03-12T11:00:00Z due_at=2026-03-15T18:00:00Z escalation_owner=engineering-director" in report
+    assert "## Sign-off Breach Board" in report
+    assert "breach-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead role=Eng Lead surface=wf-run-detail status=pending sla=at-risk escalation_owner=engineering-director" in report
     assert "## Escalation Dashboard" in report
     assert "- engineering-director: blockers=0 signoffs=1 total=1" in report
     assert "esc-sig-run-detail-eng-lead: owner=engineering-director type=signoff source=sig-run-detail-eng-lead surface=wf-run-detail status=pending priority=at-risk current_owner=Eng Lead" in report
+    assert "## Escalation Handoff Ledger" in report
+    assert "handoff-evt-run-detail-copy-escalated: event=evt-run-detail-copy-escalated blocker=blk-run-detail-copy-final surface=wf-run-detail actor=design-program-manager status=escalated at=2026-03-14T09:30:00Z" in report
+    assert "## Review Freeze Exception Board" in report
+    assert "freeze-blk-run-detail-copy-final: owner=release-director type=blocker source=blk-run-detail-copy-final surface=wf-run-detail status=open window=2026-03-18T18:00:00Z" in report
     assert "## Review Exception Matrix" in report
     assert "- product-experience: blockers=1 signoffs=0 total=1" in report
     assert "## Owner Review Queue" in report
@@ -205,9 +214,13 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert "- Wireframes missing role assignments: none" in report
     assert "- Wireframes missing signoff coverage: none" in report
     assert "- Blockers missing signoff links: none" in report
+    assert "- Freeze exceptions missing owners: none" in report
+    assert "- Freeze exceptions missing windows: none" in report
     assert "- Blockers missing timeline events: none" in report
     assert "- Closed blockers missing resolution events: none" in report
     assert "- Orphan blocker timeline blocker ids: none" in report
+    assert "- Handoff events missing targets: none" in report
+    assert "- Handoff events missing artifacts: none" in report
     assert "- Unresolved required signoffs without blockers: none" in report
     assert "- Unresolved decision ids: dec-queue-vp-summary" in report
     assert "- Signoffs missing requested dates: none" in report
@@ -332,6 +345,46 @@ def test_ui_review_pack_audit_flags_missing_signoff_sla_metadata() -> None:
     assert audit.signoffs_with_breached_sla == ["sig-run-detail-eng-lead"]
 
 
+def test_ui_review_pack_audit_flags_missing_freeze_and_handoff_metadata() -> None:
+    pack = build_big_4204_review_pack()
+    pack.blocker_log[0] = ReviewBlocker(
+        blocker_id="blk-run-detail-copy-final",
+        surface_id="wf-run-detail",
+        signoff_id="sig-run-detail-eng-lead",
+        owner="product-experience",
+        summary="Replay-state copy still needs final wording review before Eng Lead signoff can close.",
+        status="open",
+        severity="medium",
+        escalation_owner="design-program-manager",
+        next_action="Review replay-state copy with Eng Lead and update the run-detail frame in the next critique.",
+        freeze_exception=True,
+        freeze_owner="",
+        freeze_until="",
+        freeze_reason="Allow the design sprint review pack to ship while tracked copy cleanup lands in the next critique.",
+    )
+    pack.blocker_timeline[1] = ReviewBlockerEvent(
+        event_id="evt-run-detail-copy-escalated",
+        blocker_id="blk-run-detail-copy-final",
+        actor="design-program-manager",
+        status="escalated",
+        summary="Scheduled a joint wording review with Eng Lead and product-experience to close the signoff blocker.",
+        timestamp="2026-03-14T09:30:00Z",
+        next_action="Refresh the run-detail frame annotations after the wording review completes.",
+        handoff_from="product-experience",
+        handoff_to="",
+        channel="design-critique",
+        artifact_ref="",
+    )
+
+    audit = UIReviewPackAuditor().audit(pack)
+
+    assert audit.ready is False
+    assert audit.freeze_exceptions_missing_owners == ["blk-run-detail-copy-final"]
+    assert audit.freeze_exceptions_missing_until == ["blk-run-detail-copy-final"]
+    assert audit.handoff_events_missing_targets == ["evt-run-detail-copy-escalated"]
+    assert audit.handoff_events_missing_artifacts == ["evt-run-detail-copy-escalated"]
+
+
 def test_ui_review_pack_audit_flags_unresolved_signoff_without_blocker() -> None:
     pack = build_big_4204_review_pack()
     pack.blocker_log = []
@@ -429,7 +482,9 @@ def test_render_ui_review_signoff_sla_and_escalation_dashboards() -> None:
     pack = build_big_4204_review_pack()
 
     signoff_sla = render_ui_review_signoff_sla_dashboard(pack)
+    signoff_breach = render_ui_review_signoff_breach_board(pack)
     escalation_dashboard = render_ui_review_escalation_dashboard(pack)
+    handoff_ledger = render_ui_review_escalation_handoff_ledger(pack)
 
     assert "# UI Review Sign-off SLA Dashboard" in signoff_sla
     assert "- Sign-offs: 4" in signoff_sla
@@ -437,11 +492,20 @@ def test_render_ui_review_signoff_sla_and_escalation_dashboards() -> None:
     assert "- at-risk: 1" in signoff_sla
     assert "- met: 3" in signoff_sla
     assert "sig-run-detail-eng-lead: role=Eng Lead surface=wf-run-detail status=pending sla=at-risk requested_at=2026-03-12T11:00:00Z due_at=2026-03-15T18:00:00Z escalation_owner=engineering-director" in signoff_sla
+    assert "# UI Review Sign-off Breach Board" in signoff_breach
+    assert "- Breach items: 1" in signoff_breach
+    assert "- engineering-director: 1" in signoff_breach
+    assert "breach-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead role=Eng Lead surface=wf-run-detail status=pending sla=at-risk escalation_owner=engineering-director" in signoff_breach
     assert "# UI Review Escalation Dashboard" in escalation_dashboard
     assert "- Items: 2" in escalation_dashboard
     assert "- design-program-manager: blockers=1 signoffs=0 total=1" in escalation_dashboard
     assert "- engineering-director: blockers=0 signoffs=1 total=1" in escalation_dashboard
     assert "esc-sig-run-detail-eng-lead: owner=engineering-director type=signoff source=sig-run-detail-eng-lead surface=wf-run-detail status=pending priority=at-risk current_owner=Eng Lead" in escalation_dashboard
+    assert "# UI Review Escalation Handoff Ledger" in handoff_ledger
+    assert "- Handoffs: 1" in handoff_ledger
+    assert "- design-critique: 1" in handoff_ledger
+    assert "handoff-evt-run-detail-copy-escalated: event=evt-run-detail-copy-escalated blocker=blk-run-detail-copy-final surface=wf-run-detail actor=design-program-manager status=escalated at=2026-03-14T09:30:00Z" in handoff_ledger
+    assert "from=product-experience to=Eng Lead channel=design-critique artifact=wf-run-detail#copy-v5" in handoff_ledger
 
 
 def test_render_ui_review_exception_matrix_includes_signoff_and_blocker_counts() -> None:
@@ -472,6 +536,18 @@ def test_render_ui_review_exception_matrix_includes_signoff_and_blocker_counts()
 
 
 
+def test_render_ui_review_freeze_exception_board() -> None:
+    pack = build_big_4204_review_pack()
+
+    freeze_board = render_ui_review_freeze_exception_board(pack)
+
+    assert "# UI Review Freeze Exception Board" in freeze_board
+    assert "- Exceptions: 1" in freeze_board
+    assert "- release-director: blockers=1 signoffs=0 total=1" in freeze_board
+    assert "- wf-run-detail: blockers=1 signoffs=0 total=1" in freeze_board
+    assert "freeze-blk-run-detail-copy-final: owner=release-director type=blocker source=blk-run-detail-copy-final surface=wf-run-detail status=open window=2026-03-18T18:00:00Z" in freeze_board
+
+
 def test_render_ui_review_owner_review_queue_groups_actionable_items() -> None:
     pack = build_big_4204_review_pack()
 
@@ -493,7 +569,10 @@ def test_render_ui_review_exception_log_and_timeline_summary() -> None:
     pack = build_big_4204_review_pack()
 
     signoff_sla = render_ui_review_signoff_sla_dashboard(pack)
+    signoff_breach = render_ui_review_signoff_breach_board(pack)
     escalation_dashboard = render_ui_review_escalation_dashboard(pack)
+    handoff_ledger = render_ui_review_escalation_handoff_ledger(pack)
+    freeze_board = render_ui_review_freeze_exception_board(pack)
     exception_log = render_ui_review_exception_log(pack)
     exception_matrix = render_ui_review_exception_matrix(pack)
     owner_review_queue = render_ui_review_owner_review_queue(pack)
@@ -501,8 +580,14 @@ def test_render_ui_review_exception_log_and_timeline_summary() -> None:
 
     assert "# UI Review Sign-off SLA Dashboard" in signoff_sla
     assert "- at-risk: 1" in signoff_sla
+    assert "# UI Review Sign-off Breach Board" in signoff_breach
+    assert "- Breach items: 1" in signoff_breach
     assert "# UI Review Escalation Dashboard" in escalation_dashboard
     assert "- engineering-director: blockers=0 signoffs=1 total=1" in escalation_dashboard
+    assert "# UI Review Escalation Handoff Ledger" in handoff_ledger
+    assert "- design-critique: 1" in handoff_ledger
+    assert "# UI Review Freeze Exception Board" in freeze_board
+    assert "- release-director: blockers=1 signoffs=0 total=1" in freeze_board
     assert "# UI Review Exception Log" in exception_log
     assert "- Exceptions: 1" in exception_log
     assert "exc-blk-run-detail-copy-final" in exception_log
@@ -530,7 +615,10 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     blocker_log = render_ui_review_blocker_log(pack)
     blocker_timeline = render_ui_review_blocker_timeline(pack)
     signoff_sla = render_ui_review_signoff_sla_dashboard(pack)
+    signoff_breach = render_ui_review_signoff_breach_board(pack)
     escalation_dashboard = render_ui_review_escalation_dashboard(pack)
+    handoff_ledger = render_ui_review_escalation_handoff_ledger(pack)
+    freeze_board = render_ui_review_freeze_exception_board(pack)
     exception_log = render_ui_review_exception_log(pack)
     exception_matrix = render_ui_review_exception_matrix(pack)
     owner_review_queue = render_ui_review_owner_review_queue(pack)
@@ -541,9 +629,12 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "<h2>Role Matrix</h2>" in html
     assert "<h2>Sign-off Log</h2>" in html
     assert "<h2>Sign-off SLA Dashboard</h2>" in html
+    assert "<h2>Sign-off Breach Board</h2>" in html
     assert "<h2>Escalation Dashboard</h2>" in html
+    assert "<h2>Escalation Handoff Ledger</h2>" in html
     assert "<h2>Blocker Log</h2>" in html
     assert "<h2>Blocker Timeline</h2>" in html
+    assert "<h2>Review Freeze Exception Board</h2>" in html
     assert "<h2>Review Exceptions</h2>" in html
     assert "<h2>Review Exception Matrix</h2>" in html
     assert "<h2>Owner Review Queue</h2>" in html
@@ -557,8 +648,14 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "sig-run-detail-eng-lead" in signoff_log
     assert "# UI Review Sign-off SLA Dashboard" in signoff_sla
     assert "sig-run-detail-eng-lead: role=Eng Lead surface=wf-run-detail status=pending sla=at-risk requested_at=2026-03-12T11:00:00Z due_at=2026-03-15T18:00:00Z escalation_owner=engineering-director" in signoff_sla
+    assert "# UI Review Sign-off Breach Board" in signoff_breach
+    assert "breach-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead role=Eng Lead surface=wf-run-detail status=pending sla=at-risk escalation_owner=engineering-director" in signoff_breach
     assert "# UI Review Escalation Dashboard" in escalation_dashboard
     assert "esc-sig-run-detail-eng-lead: owner=engineering-director type=signoff source=sig-run-detail-eng-lead surface=wf-run-detail status=pending priority=at-risk current_owner=Eng Lead" in escalation_dashboard
+    assert "# UI Review Escalation Handoff Ledger" in handoff_ledger
+    assert "handoff-evt-run-detail-copy-escalated: event=evt-run-detail-copy-escalated blocker=blk-run-detail-copy-final surface=wf-run-detail actor=design-program-manager status=escalated at=2026-03-14T09:30:00Z" in handoff_ledger
+    assert "# UI Review Freeze Exception Board" in freeze_board
+    assert "freeze-blk-run-detail-copy-final: owner=release-director type=blocker source=blk-run-detail-copy-final surface=wf-run-detail status=open window=2026-03-18T18:00:00Z" in freeze_board
     assert "# UI Review Blocker Log" in blocker_log
     assert "blk-run-detail-copy-final" in blocker_log
     assert "# UI Review Blocker Timeline" in blocker_timeline
@@ -577,9 +674,12 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert Path(artifacts.role_matrix_path).exists()
     assert Path(artifacts.signoff_log_path).exists()
     assert Path(artifacts.signoff_sla_dashboard_path).exists()
+    assert Path(artifacts.signoff_breach_board_path).exists()
     assert Path(artifacts.escalation_dashboard_path).exists()
+    assert Path(artifacts.escalation_handoff_ledger_path).exists()
     assert Path(artifacts.blocker_log_path).exists()
     assert Path(artifacts.blocker_timeline_path).exists()
+    assert Path(artifacts.freeze_exception_board_path).exists()
     assert Path(artifacts.exception_log_path).exists()
     assert Path(artifacts.exception_matrix_path).exists()
     assert Path(artifacts.owner_review_queue_path).exists()
@@ -588,9 +688,12 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "Role Matrix" in Path(artifacts.html_path).read_text()
     assert "Sign-off Log" in Path(artifacts.html_path).read_text()
     assert "Sign-off SLA Dashboard" in Path(artifacts.html_path).read_text()
+    assert "Sign-off Breach Board" in Path(artifacts.html_path).read_text()
     assert "Escalation Dashboard" in Path(artifacts.html_path).read_text()
+    assert "Escalation Handoff Ledger" in Path(artifacts.html_path).read_text()
     assert "Blocker Log" in Path(artifacts.html_path).read_text()
     assert "Blocker Timeline" in Path(artifacts.html_path).read_text()
+    assert "Review Freeze Exception Board" in Path(artifacts.html_path).read_text()
     assert "Review Exceptions" in Path(artifacts.html_path).read_text()
     assert "Review Exception Matrix" in Path(artifacts.html_path).read_text()
     assert "Owner Review Queue" in Path(artifacts.html_path).read_text()
@@ -599,9 +702,12 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "role-run-detail-eng-lead" in Path(artifacts.role_matrix_path).read_text()
     assert "sig-queue-platform-admin" in Path(artifacts.signoff_log_path).read_text()
     assert "- at-risk: 1" in Path(artifacts.signoff_sla_dashboard_path).read_text()
+    assert "breach-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead role=Eng Lead surface=wf-run-detail status=pending sla=at-risk escalation_owner=engineering-director" in Path(artifacts.signoff_breach_board_path).read_text()
     assert "esc-sig-run-detail-eng-lead: owner=engineering-director type=signoff source=sig-run-detail-eng-lead surface=wf-run-detail status=pending priority=at-risk current_owner=Eng Lead" in Path(artifacts.escalation_dashboard_path).read_text()
+    assert "handoff-evt-run-detail-copy-escalated: event=evt-run-detail-copy-escalated blocker=blk-run-detail-copy-final surface=wf-run-detail actor=design-program-manager status=escalated at=2026-03-14T09:30:00Z" in Path(artifacts.escalation_handoff_ledger_path).read_text()
     assert "blk-run-detail-copy-final" in Path(artifacts.blocker_log_path).read_text()
     assert "evt-run-detail-copy-opened" in Path(artifacts.blocker_timeline_path).read_text()
+    assert "freeze-blk-run-detail-copy-final: owner=release-director type=blocker source=blk-run-detail-copy-final surface=wf-run-detail status=open window=2026-03-18T18:00:00Z" in Path(artifacts.freeze_exception_board_path).read_text()
     assert "exc-blk-run-detail-copy-final" in Path(artifacts.exception_log_path).read_text()
     assert "- product-experience: blockers=1 signoffs=0 total=1" in Path(artifacts.exception_matrix_path).read_text()
     assert "- Queue items: 6" in Path(artifacts.owner_review_queue_path).read_text()
