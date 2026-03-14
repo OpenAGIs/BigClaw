@@ -17,6 +17,7 @@ from bigclaw.ui_review import (
     render_ui_review_blocker_log,
     render_ui_review_blocker_timeline,
     render_ui_review_blocker_timeline_summary,
+    render_ui_review_audit_density_board,
     render_ui_review_checklist_traceability_board,
     render_ui_review_decision_followup_tracker,
     render_ui_review_escalation_dashboard,
@@ -29,9 +30,11 @@ from bigclaw.ui_review import (
     render_ui_review_handoff_ack_ledger,
     render_ui_review_owner_escalation_digest,
     render_ui_review_owner_review_queue,
+    render_ui_review_owner_workload_board,
     render_ui_review_reminder_cadence_board,
     render_ui_review_role_coverage_board,
     render_ui_review_signoff_breach_board,
+    render_ui_review_signoff_dependency_board,
     render_ui_review_signoff_reminder_queue,
     render_ui_review_signoff_sla_dashboard,
     render_ui_review_decision_log,
@@ -201,6 +204,11 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert "follow-dec-queue-vp-summary: decision=dec-queue-vp-summary surface=wf-queue owner=VP Eng status=proposed linked_roles=Platform Admin,product-experience" in report
     assert "## Role Coverage Board" in report
     assert "cover-role-run-detail-eng-lead: assignment=role-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=ready responsibilities=2 checklist=1 decisions=1" in report
+    assert "## Signoff Dependency Board" in report
+    assert "- blocked: 1" in report
+    assert "- clear: 3" in report
+    assert "dep-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=pending dependency_status=blocked blockers=blk-run-detail-copy-final" in report
+    assert "assignment=role-run-detail-eng-lead checklist=chk-run-replay-context decisions=dec-run-detail-audit-rail latest_blocker_event=evt-run-detail-copy-escalated/escalated/design-program-manager@2026-03-14T09:30:00Z sla=at-risk due_at=2026-03-15T18:00:00Z cadence=daily" in report
     assert "sig-run-detail-eng-lead: surface=wf-run-detail role=Eng Lead assignment=role-run-detail-eng-lead status=pending" in report
     assert "blk-run-detail-copy-final: surface=wf-run-detail signoff=sig-run-detail-eng-lead owner=product-experience status=open severity=medium" in report
     assert "evt-run-detail-copy-escalated: blocker=blk-run-detail-copy-final actor=design-program-manager status=escalated at=2026-03-14T09:30:00Z" in report
@@ -224,6 +232,13 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert "ack-evt-run-detail-copy-escalated: event=evt-run-detail-copy-escalated blocker=blk-run-detail-copy-final surface=wf-run-detail handoff_to=Eng Lead ack_owner=Eng Lead ack_status=acknowledged ack_at=2026-03-14T10:15:00Z" in report
     assert "## Owner Escalation Digest" in report
     assert "- design-program-manager: blockers=1 signoffs=0 reminders=1 freezes=0 handoffs=0 total=2" in report
+    assert "## Owner Workload Board" in report
+    assert "- Owners: 7" in report
+    assert "- Items: 8" in report
+    assert "- product-experience: blockers=1 checklist=1 decisions=0 signoffs=0 reminders=0 renewals=0 total=2" in report
+    assert "load-queue-chk-queue-role-density: owner=product-experience type=checklist source=chk-queue-role-density surface=wf-queue status=open lane=queue" in report
+    assert "load-rem-sig-run-detail-eng-lead: owner=design-program-manager type=reminder source=sig-run-detail-eng-lead surface=wf-run-detail status=pending lane=reminder" in report
+    assert "load-renew-blk-run-detail-copy-final: owner=release-director type=renewal source=blk-run-detail-copy-final surface=wf-run-detail status=review-needed lane=renewal" in report
     assert "## Review Freeze Exception Board" in report
     assert "## Freeze Approval Trail" in report
     assert "freeze-approval-blk-run-detail-copy-final: blocker=blk-run-detail-copy-final surface=wf-run-detail status=open owner=release-director approved_by=release-director approved_at=2026-03-14T08:30:00Z window=2026-03-18T18:00:00Z" in report
@@ -232,6 +247,14 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert "freeze-blk-run-detail-copy-final: owner=release-director type=blocker source=blk-run-detail-copy-final surface=wf-run-detail status=open window=2026-03-18T18:00:00Z" in report
     assert "## Review Exception Matrix" in report
     assert "- product-experience: blockers=1 signoffs=0 total=1" in report
+    assert "## Audit Density Board" in report
+    assert "- Surfaces: 4" in report
+    assert "- Load bands: 3" in report
+    assert "- active: 2" in report
+    assert "- dense: 1" in report
+    assert "- light: 1" in report
+    assert "density-wf-run-detail: surface=wf-run-detail artifact_total=9 open_total=4 band=dense" in report
+    assert "checklist=2 decisions=1 assignments=2 signoffs=1 blockers=1 timeline=2 blocks=4 notes=2" in report
     assert "## Owner Review Queue" in report
     assert "queue-sig-run-detail-eng-lead: owner=Eng Lead type=signoff source=sig-run-detail-eng-lead surface=wf-run-detail status=pending" in report
     assert "## Blocker Timeline Summary" in report
@@ -678,6 +701,36 @@ def test_render_ui_review_traceability_and_role_coverage_boards() -> None:
     assert "signoff=sig-run-detail-eng-lead signoff_status=pending" in role_coverage
 
 
+def test_render_ui_review_dependency_workload_and_density_boards() -> None:
+    pack = build_big_4204_review_pack()
+
+    signoff_dependency = render_ui_review_signoff_dependency_board(pack)
+    owner_workload = render_ui_review_owner_workload_board(pack)
+    audit_density = render_ui_review_audit_density_board(pack)
+
+    assert "# UI Review Signoff Dependency Board" in signoff_dependency
+    assert "- Sign-offs: 4" in signoff_dependency
+    assert "- blocked: 1" in signoff_dependency
+    assert "- clear: 3" in signoff_dependency
+    assert "dep-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=pending dependency_status=blocked blockers=blk-run-detail-copy-final" in signoff_dependency
+    assert "assignment=role-run-detail-eng-lead checklist=chk-run-replay-context decisions=dec-run-detail-audit-rail latest_blocker_event=evt-run-detail-copy-escalated/escalated/design-program-manager@2026-03-14T09:30:00Z sla=at-risk due_at=2026-03-15T18:00:00Z cadence=daily" in signoff_dependency
+    assert "# UI Review Owner Workload Board" in owner_workload
+    assert "- Owners: 7" in owner_workload
+    assert "- Items: 8" in owner_workload
+    assert "- product-experience: blockers=1 checklist=1 decisions=0 signoffs=0 reminders=0 renewals=0 total=2" in owner_workload
+    assert "load-queue-chk-queue-role-density: owner=product-experience type=checklist source=chk-queue-role-density surface=wf-queue status=open lane=queue" in owner_workload
+    assert "load-rem-sig-run-detail-eng-lead: owner=design-program-manager type=reminder source=sig-run-detail-eng-lead surface=wf-run-detail status=pending lane=reminder" in owner_workload
+    assert "load-renew-blk-run-detail-copy-final: owner=release-director type=renewal source=blk-run-detail-copy-final surface=wf-run-detail status=review-needed lane=renewal" in owner_workload
+    assert "# UI Review Audit Density Board" in audit_density
+    assert "- Surfaces: 4" in audit_density
+    assert "- Load bands: 3" in audit_density
+    assert "- active: 2" in audit_density
+    assert "- dense: 1" in audit_density
+    assert "- light: 1" in audit_density
+    assert "density-wf-run-detail: surface=wf-run-detail artifact_total=9 open_total=4 band=dense" in audit_density
+    assert "checklist=2 decisions=1 assignments=2 signoffs=1 blockers=1 timeline=2 blocks=4 notes=2" in audit_density
+
+
 def test_render_ui_review_owner_review_queue_groups_actionable_items() -> None:
     pack = build_big_4204_review_pack()
 
@@ -709,11 +762,13 @@ def test_render_ui_review_exception_log_and_timeline_summary() -> None:
     handoff_ledger = render_ui_review_escalation_handoff_ledger(pack)
     handoff_ack = render_ui_review_handoff_ack_ledger(pack)
     owner_digest = render_ui_review_owner_escalation_digest(pack)
+    owner_workload = render_ui_review_owner_workload_board(pack)
     freeze_board = render_ui_review_freeze_exception_board(pack)
     freeze_trail = render_ui_review_freeze_approval_trail(pack)
     freeze_renewal = render_ui_review_freeze_renewal_tracker(pack)
     exception_log = render_ui_review_exception_log(pack)
     exception_matrix = render_ui_review_exception_matrix(pack)
+    audit_density = render_ui_review_audit_density_board(pack)
     owner_review_queue = render_ui_review_owner_review_queue(pack)
     timeline_summary = render_ui_review_blocker_timeline_summary(pack)
 
@@ -754,6 +809,8 @@ def test_render_ui_review_exception_log_and_timeline_summary() -> None:
     assert "evt-run-detail-copy-escalated/escalated/design-program-manager@2026-03-14T09:30:00Z" in exception_log
     assert "# UI Review Exception Matrix" in exception_matrix
     assert "- product-experience: blockers=1 signoffs=0 total=1" in exception_matrix
+    assert "# UI Review Audit Density Board" in audit_density
+    assert "density-wf-run-detail: surface=wf-run-detail artifact_total=9 open_total=4 band=dense" in audit_density
     assert "# UI Review Owner Review Queue" in owner_review_queue
     assert "- Queue items: 6" in owner_review_queue
     assert "# UI Review Blocker Timeline Summary" in timeline_summary
@@ -774,6 +831,7 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     decision_followup = render_ui_review_decision_followup_tracker(pack)
     role_matrix = render_ui_review_role_matrix(pack)
     role_coverage = render_ui_review_role_coverage_board(pack)
+    signoff_dependency = render_ui_review_signoff_dependency_board(pack)
     signoff_log = render_ui_review_signoff_log(pack)
     blocker_log = render_ui_review_blocker_log(pack)
     blocker_timeline = render_ui_review_blocker_timeline(pack)
@@ -785,11 +843,13 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     handoff_ledger = render_ui_review_escalation_handoff_ledger(pack)
     handoff_ack = render_ui_review_handoff_ack_ledger(pack)
     owner_digest = render_ui_review_owner_escalation_digest(pack)
+    owner_workload = render_ui_review_owner_workload_board(pack)
     freeze_board = render_ui_review_freeze_exception_board(pack)
     freeze_trail = render_ui_review_freeze_approval_trail(pack)
     freeze_renewal = render_ui_review_freeze_renewal_tracker(pack)
     exception_log = render_ui_review_exception_log(pack)
     exception_matrix = render_ui_review_exception_matrix(pack)
+    audit_density = render_ui_review_audit_density_board(pack)
     owner_review_queue = render_ui_review_owner_review_queue(pack)
     timeline_summary = render_ui_review_blocker_timeline_summary(pack)
     artifacts = write_ui_review_pack_bundle(str(tmp_path), pack)
@@ -799,6 +859,7 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "<h2>Decision Follow-up Tracker</h2>" in html
     assert "<h2>Role Matrix</h2>" in html
     assert "<h2>Role Coverage Board</h2>" in html
+    assert "<h2>Signoff Dependency Board</h2>" in html
     assert "<h2>Sign-off Log</h2>" in html
     assert "<h2>Sign-off SLA Dashboard</h2>" in html
     assert "<h2>Sign-off Reminder Queue</h2>" in html
@@ -808,6 +869,7 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "<h2>Escalation Handoff Ledger</h2>" in html
     assert "<h2>Handoff Ack Ledger</h2>" in html
     assert "<h2>Owner Escalation Digest</h2>" in html
+    assert "<h2>Owner Workload Board</h2>" in html
     assert "<h2>Blocker Log</h2>" in html
     assert "<h2>Blocker Timeline</h2>" in html
     assert "<h2>Review Freeze Exception Board</h2>" in html
@@ -815,6 +877,7 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "<h2>Freeze Renewal Tracker</h2>" in html
     assert "<h2>Review Exceptions</h2>" in html
     assert "<h2>Review Exception Matrix</h2>" in html
+    assert "<h2>Audit Density Board</h2>" in html
     assert "<h2>Owner Review Queue</h2>" in html
     assert "<h2>Blocker Timeline Summary</h2>" in html
     assert "dec-queue-vp-summary" in html
@@ -828,6 +891,8 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "role-triage-platform-admin" in role_matrix
     assert "# UI Review Role Coverage Board" in role_coverage
     assert "cover-role-run-detail-eng-lead: assignment=role-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=ready responsibilities=2 checklist=1 decisions=1" in role_coverage
+    assert "# UI Review Signoff Dependency Board" in signoff_dependency
+    assert "dep-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=pending dependency_status=blocked blockers=blk-run-detail-copy-final" in signoff_dependency
     assert "# UI Review Sign-off Log" in signoff_log
     assert "sig-run-detail-eng-lead" in signoff_log
     assert "# UI Review Sign-off SLA Dashboard" in signoff_sla
@@ -846,6 +911,8 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "ack-evt-run-detail-copy-escalated: event=evt-run-detail-copy-escalated blocker=blk-run-detail-copy-final surface=wf-run-detail handoff_to=Eng Lead ack_owner=Eng Lead ack_status=acknowledged ack_at=2026-03-14T10:15:00Z" in handoff_ack
     assert "# UI Review Owner Escalation Digest" in owner_digest
     assert "digest-rem-sig-run-detail-eng-lead: owner=design-program-manager type=reminder source=sig-run-detail-eng-lead surface=wf-run-detail status=pending" in owner_digest
+    assert "# UI Review Owner Workload Board" in owner_workload
+    assert "load-rem-sig-run-detail-eng-lead: owner=design-program-manager type=reminder source=sig-run-detail-eng-lead surface=wf-run-detail status=pending lane=reminder" in owner_workload
     assert "# UI Review Freeze Exception Board" in freeze_board
     assert "freeze-blk-run-detail-copy-final: owner=release-director type=blocker source=blk-run-detail-copy-final surface=wf-run-detail status=open window=2026-03-18T18:00:00Z" in freeze_board
     assert "# UI Review Freeze Approval Trail" in freeze_trail
@@ -871,6 +938,7 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert Path(artifacts.decision_followup_tracker_path).exists()
     assert Path(artifacts.role_matrix_path).exists()
     assert Path(artifacts.role_coverage_board_path).exists()
+    assert Path(artifacts.signoff_dependency_board_path).exists()
     assert Path(artifacts.signoff_log_path).exists()
     assert Path(artifacts.signoff_sla_dashboard_path).exists()
     assert Path(artifacts.signoff_reminder_queue_path).exists()
@@ -880,6 +948,7 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert Path(artifacts.escalation_handoff_ledger_path).exists()
     assert Path(artifacts.handoff_ack_ledger_path).exists()
     assert Path(artifacts.owner_escalation_digest_path).exists()
+    assert Path(artifacts.owner_workload_board_path).exists()
     assert Path(artifacts.blocker_log_path).exists()
     assert Path(artifacts.blocker_timeline_path).exists()
     assert Path(artifacts.freeze_exception_board_path).exists()
@@ -887,6 +956,7 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert Path(artifacts.freeze_renewal_tracker_path).exists()
     assert Path(artifacts.exception_log_path).exists()
     assert Path(artifacts.exception_matrix_path).exists()
+    assert Path(artifacts.audit_density_board_path).exists()
     assert Path(artifacts.owner_review_queue_path).exists()
     assert Path(artifacts.blocker_timeline_summary_path).exists()
     assert "Decision Log" in Path(artifacts.html_path).read_text()
@@ -894,6 +964,7 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "Decision Follow-up Tracker" in Path(artifacts.html_path).read_text()
     assert "Role Matrix" in Path(artifacts.html_path).read_text()
     assert "Role Coverage Board" in Path(artifacts.html_path).read_text()
+    assert "Signoff Dependency Board" in Path(artifacts.html_path).read_text()
     assert "Sign-off Log" in Path(artifacts.html_path).read_text()
     assert "Sign-off SLA Dashboard" in Path(artifacts.html_path).read_text()
     assert "Sign-off Reminder Queue" in Path(artifacts.html_path).read_text()
@@ -903,6 +974,7 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "Escalation Handoff Ledger" in Path(artifacts.html_path).read_text()
     assert "Handoff Ack Ledger" in Path(artifacts.html_path).read_text()
     assert "Owner Escalation Digest" in Path(artifacts.html_path).read_text()
+    assert "Owner Workload Board" in Path(artifacts.html_path).read_text()
     assert "Blocker Log" in Path(artifacts.html_path).read_text()
     assert "Blocker Timeline" in Path(artifacts.html_path).read_text()
     assert "Review Freeze Exception Board" in Path(artifacts.html_path).read_text()
@@ -910,6 +982,7 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "Freeze Renewal Tracker" in Path(artifacts.html_path).read_text()
     assert "Review Exceptions" in Path(artifacts.html_path).read_text()
     assert "Review Exception Matrix" in Path(artifacts.html_path).read_text()
+    assert "Audit Density Board" in Path(artifacts.html_path).read_text()
     assert "Owner Review Queue" in Path(artifacts.html_path).read_text()
     assert "Blocker Timeline Summary" in Path(artifacts.html_path).read_text()
     assert "dec-triage-handoff-density" in Path(artifacts.decision_log_path).read_text()
@@ -917,6 +990,7 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "follow-dec-queue-vp-summary: decision=dec-queue-vp-summary surface=wf-queue owner=VP Eng status=proposed linked_roles=Platform Admin,product-experience" in Path(artifacts.decision_followup_tracker_path).read_text()
     assert "role-run-detail-eng-lead" in Path(artifacts.role_matrix_path).read_text()
     assert "cover-role-run-detail-eng-lead: assignment=role-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=ready responsibilities=2 checklist=1 decisions=1" in Path(artifacts.role_coverage_board_path).read_text()
+    assert "dep-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead surface=wf-run-detail role=Eng Lead status=pending dependency_status=blocked blockers=blk-run-detail-copy-final" in Path(artifacts.signoff_dependency_board_path).read_text()
     assert "sig-queue-platform-admin" in Path(artifacts.signoff_log_path).read_text()
     assert "- at-risk: 1" in Path(artifacts.signoff_sla_dashboard_path).read_text()
     assert "rem-sig-run-detail-eng-lead: signoff=sig-run-detail-eng-lead role=Eng Lead surface=wf-run-detail status=pending sla=at-risk owner=design-program-manager channel=slack" in Path(artifacts.signoff_reminder_queue_path).read_text()
@@ -926,6 +1000,7 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "handoff-evt-run-detail-copy-escalated: event=evt-run-detail-copy-escalated blocker=blk-run-detail-copy-final surface=wf-run-detail actor=design-program-manager status=escalated at=2026-03-14T09:30:00Z" in Path(artifacts.escalation_handoff_ledger_path).read_text()
     assert "ack-evt-run-detail-copy-escalated: event=evt-run-detail-copy-escalated blocker=blk-run-detail-copy-final surface=wf-run-detail handoff_to=Eng Lead ack_owner=Eng Lead ack_status=acknowledged ack_at=2026-03-14T10:15:00Z" in Path(artifacts.handoff_ack_ledger_path).read_text()
     assert "digest-rem-sig-run-detail-eng-lead: owner=design-program-manager type=reminder source=sig-run-detail-eng-lead surface=wf-run-detail status=pending" in Path(artifacts.owner_escalation_digest_path).read_text()
+    assert "load-rem-sig-run-detail-eng-lead: owner=design-program-manager type=reminder source=sig-run-detail-eng-lead surface=wf-run-detail status=pending lane=reminder" in Path(artifacts.owner_workload_board_path).read_text()
     assert "blk-run-detail-copy-final" in Path(artifacts.blocker_log_path).read_text()
     assert "evt-run-detail-copy-opened" in Path(artifacts.blocker_timeline_path).read_text()
     assert "freeze-blk-run-detail-copy-final: owner=release-director type=blocker source=blk-run-detail-copy-final surface=wf-run-detail status=open window=2026-03-18T18:00:00Z" in Path(artifacts.freeze_exception_board_path).read_text()
@@ -933,5 +1008,6 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "renew-blk-run-detail-copy-final: blocker=blk-run-detail-copy-final surface=wf-run-detail status=open renewal_owner=release-director renewal_by=2026-03-17T12:00:00Z renewal_status=review-needed" in Path(artifacts.freeze_renewal_tracker_path).read_text()
     assert "exc-blk-run-detail-copy-final" in Path(artifacts.exception_log_path).read_text()
     assert "- product-experience: blockers=1 signoffs=0 total=1" in Path(artifacts.exception_matrix_path).read_text()
+    assert "density-wf-run-detail: surface=wf-run-detail artifact_total=9 open_total=4 band=dense" in Path(artifacts.audit_density_board_path).read_text()
     assert "- Queue items: 6" in Path(artifacts.owner_review_queue_path).read_text()
     assert "- escalated: 1" in Path(artifacts.blocker_timeline_summary_path).read_text()
