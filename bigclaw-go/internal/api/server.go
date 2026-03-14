@@ -122,6 +122,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/v2/control-center/actions", s.handleV2ControlCenterAction)
 	mux.HandleFunc("/v2/reports/weekly", s.handleV2WeeklyReport)
 	mux.HandleFunc("/v2/reports/weekly/export", s.handleV2WeeklyReportExport)
+	mux.HandleFunc("/v2/reports/distributed", s.handleV2DistributedReport)
+	mux.HandleFunc("/v2/reports/distributed/export", s.handleV2DistributedReportExport)
 	mux.HandleFunc("/v2/flows/templates", s.handleV2FlowTemplates)
 	mux.HandleFunc("/v2/flows/templates/", s.handleV2FlowTemplateAction)
 	mux.HandleFunc("/v2/flows/overview", s.handleV2FlowOverview)

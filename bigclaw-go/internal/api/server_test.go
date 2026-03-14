@@ -28,13 +28,13 @@ func (fakeWorkerStatus) Snapshot() worker.Status {
 type fakeWorkerPoolStatus struct{}
 
 func (fakeWorkerPoolStatus) Snapshot() worker.Status {
-	return worker.Status{WorkerID: "worker-a", State: "running", SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"}
+	return worker.Status{WorkerID: "worker-a", State: "running", CurrentExecutor: domain.ExecutorLocal, SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"}
 }
 
 func (fakeWorkerPoolStatus) Snapshots() []worker.Status {
 	return []worker.Status{
-		{WorkerID: "worker-a", State: "running", SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"},
-		{WorkerID: "worker-b", State: "leased", SuccessfulRuns: 3, LeaseRenewals: 2, LastResult: "warming"},
+		{WorkerID: "worker-a", State: "running", CurrentExecutor: domain.ExecutorLocal, SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"},
+		{WorkerID: "worker-b", State: "leased", CurrentExecutor: domain.ExecutorKubernetes, SuccessfulRuns: 3, LeaseRenewals: 2, LastResult: "warming"},
 		{WorkerID: "worker-c", State: "idle", SuccessfulRuns: 8, LeaseRenewals: 0, LastResult: "idle"},
 	}
 }
@@ -1271,6 +1271,95 @@ func TestV2ControlCenterIncludesMultiWorkerPoolSummary(t *testing.T) {
 		if !strings.Contains(bodyText, want) {
 			t.Fatalf("expected %q in control center payload, got %s", want, bodyText)
 		}
+	}
+}
+
+func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
+	recorder := observability.NewRecorder()
+	controller := control.New()
+	server := &Server{
+		Recorder:  recorder,
+		Queue:     queue.NewMemoryQueue(),
+		Executors: []domain.ExecutorKind{domain.ExecutorLocal, domain.ExecutorKubernetes, domain.ExecutorRay},
+		Control:   controller,
+		Worker:    fakeWorkerPoolStatus{},
+		Now:       func() time.Time { return time.Unix(1700007200, 0) },
+	}
+	handler := server.Handler()
+	base := time.Unix(1700000000, 0)
+	for _, task := range []domain.Task{
+		{ID: "diag-local", TraceID: "trace-local", Title: "Local diag", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "platform", "project": "alpha"}, UpdatedAt: base.Add(time.Minute)},
+		{ID: "diag-k8s", TraceID: "trace-k8s", Title: "K8s diag", State: domain.TaskSucceeded, RequiredTools: []string{"browser"}, Metadata: map[string]string{"team": "platform", "project": "alpha"}, UpdatedAt: base.Add(2 * time.Minute)},
+		{ID: "diag-ray", TraceID: "trace-ray", Title: "Ray diag", State: domain.TaskSucceeded, RequiredTools: []string{"gpu"}, Metadata: map[string]string{"team": "platform", "project": "alpha"}, UpdatedAt: base.Add(3 * time.Minute)},
+	} {
+		recorder.StoreTask(task)
+	}
+	controller.Takeover("diag-k8s", "alice", "bob", "monitor rollout", base.Add(4*time.Minute))
+	for _, event := range []domain.Event{
+		{ID: "evt-local-routed", Type: domain.EventSchedulerRouted, TaskID: "diag-local", TraceID: "trace-local", Timestamp: base.Add(time.Second), Payload: map[string]any{"executor": domain.ExecutorLocal, "reason": "default local executor for low/medium risk"}},
+		{ID: "evt-local-completed", Type: domain.EventTaskCompleted, TaskID: "diag-local", TraceID: "trace-local", Timestamp: base.Add(2 * time.Second), Payload: map[string]any{"executor": domain.ExecutorLocal}},
+		{ID: "evt-k8s-routed", Type: domain.EventSchedulerRouted, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(3 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "reason": "browser workloads default to kubernetes executor"}},
+		{ID: "evt-k8s-started", Type: domain.EventTaskStarted, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(4 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes}},
+		{ID: "evt-k8s-completed", Type: domain.EventTaskCompleted, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(5 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes}},
+		{ID: "evt-ray-routed", Type: domain.EventSchedulerRouted, TaskID: "diag-ray", TraceID: "trace-ray", Timestamp: base.Add(6 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay, "reason": "gpu workloads default to ray executor"}},
+		{ID: "evt-ray-completed", Type: domain.EventTaskCompleted, TaskID: "diag-ray", TraceID: "trace-ray", Timestamp: base.Add(7 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay}},
+	} {
+		recorder.Record(event)
+	}
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v2/control-center?team=platform&project=alpha&limit=10&audit_limit=10", nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Diagnostics struct {
+			Summary struct {
+				RegisteredExecutors  int `json:"registered_executors"`
+				TotalRoutedDecisions int `json:"total_routed_decisions"`
+				ActiveWorkers        int `json:"active_workers"`
+				ActiveTakeovers      int `json:"active_takeovers"`
+			} `json:"summary"`
+			RoutingReasons []struct {
+				Executor string `json:"executor"`
+				Reason   string `json:"reason"`
+				Count    int    `json:"count"`
+			} `json:"routing_reasons"`
+			ExecutorCapacity []struct {
+				Executor       string `json:"executor"`
+				Health         string `json:"health"`
+				MaxConcurrency int    `json:"max_concurrency"`
+			} `json:"executor_capacity"`
+			ClusterHealth struct {
+				HealthyExecutors int            `json:"healthy_executors"`
+				WorkerStates     map[string]int `json:"worker_states"`
+			} `json:"cluster_health"`
+			RolloutReport struct {
+				Markdown  string `json:"markdown"`
+				ExportURL string `json:"export_url"`
+			} `json:"rollout_report"`
+		} `json:"distributed_diagnostics"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed diagnostics: %v", err)
+	}
+	if decoded.Diagnostics.Summary.RegisteredExecutors != 3 || decoded.Diagnostics.Summary.TotalRoutedDecisions != 3 {
+		t.Fatalf("unexpected diagnostics summary: %+v", decoded.Diagnostics.Summary)
+	}
+	if decoded.Diagnostics.Summary.ActiveWorkers != 2 || decoded.Diagnostics.Summary.ActiveTakeovers != 1 {
+		t.Fatalf("unexpected worker/takeover summary: %+v", decoded.Diagnostics.Summary)
+	}
+	if len(decoded.Diagnostics.RoutingReasons) != 3 {
+		t.Fatalf("expected 3 routing reasons, got %+v", decoded.Diagnostics.RoutingReasons)
+	}
+	if len(decoded.Diagnostics.ExecutorCapacity) != 3 {
+		t.Fatalf("expected executor capacity for 3 executors, got %+v", decoded.Diagnostics.ExecutorCapacity)
+	}
+	if decoded.Diagnostics.ClusterHealth.HealthyExecutors != 3 || decoded.Diagnostics.ClusterHealth.WorkerStates["running"] != 1 {
+		t.Fatalf("unexpected cluster health payload: %+v", decoded.Diagnostics.ClusterHealth)
+	}
+	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {
+		t.Fatalf("unexpected rollout report payload: %+v", decoded.Diagnostics.RolloutReport)
 	}
 }
 

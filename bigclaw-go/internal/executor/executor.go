@@ -59,3 +59,16 @@ func (r *Registry) Kinds() []domain.ExecutorKind {
 	}
 	return kinds
 }
+
+func CapabilityForKind(kind domain.ExecutorKind) Capability {
+	switch kind {
+	case domain.ExecutorLocal:
+		return LocalRunner{}.Capability()
+	case domain.ExecutorKubernetes:
+		return (&KubernetesRunner{}).Capability()
+	case domain.ExecutorRay:
+		return (&RayRunner{}).Capability()
+	default:
+		return Capability{Kind: kind}
+	}
+}

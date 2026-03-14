@@ -1103,6 +1103,7 @@ func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 	if pool := s.workerPoolSummary(); pool != nil {
 		response["worker_pool"] = pool
 	}
+	response["distributed_diagnostics"] = s.buildDistributedDiagnostics(filters)
 	writeJSON(w, http.StatusOK, response)
 }
 
