@@ -18,6 +18,8 @@ from bigclaw.ui_review import (
     render_ui_review_blocker_timeline,
     render_ui_review_blocker_timeline_summary,
     render_ui_review_exception_log,
+    render_ui_review_exception_matrix,
+    render_ui_review_owner_review_queue,
     render_ui_review_decision_log,
     render_ui_review_pack_html,
     render_ui_review_pack_report,
@@ -184,6 +186,10 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert "evt-run-detail-copy-escalated: blocker=blk-run-detail-copy-final actor=design-program-manager status=escalated at=2026-03-14T09:30:00Z" in report
     assert "## Review Exceptions" in report
     assert "exc-blk-run-detail-copy-final: type=blocker source=blk-run-detail-copy-final surface=wf-run-detail owner=product-experience status=open severity=medium" in report
+    assert "## Review Exception Matrix" in report
+    assert "- product-experience: blockers=1 signoffs=0 total=1" in report
+    assert "## Owner Review Queue" in report
+    assert "queue-sig-run-detail-eng-lead: owner=Eng Lead type=signoff source=sig-run-detail-eng-lead surface=wf-run-detail status=pending" in report
     assert "## Blocker Timeline Summary" in report
     assert "- escalated: 1" in report
     assert "- Wireframes missing checklist coverage: none" in report
@@ -382,16 +388,67 @@ def test_ui_review_pack_audit_flags_closed_blocker_without_resolution_event_and_
     assert audit.orphan_blocker_timeline_blocker_ids == ["blk-missing"]
 
 
+def test_render_ui_review_exception_matrix_includes_signoff_and_blocker_counts() -> None:
+    pack = build_big_4204_review_pack()
+    pack.signoff_log[2] = ReviewSignoff(
+        signoff_id="sig-run-detail-eng-lead",
+        assignment_id="role-run-detail-eng-lead",
+        surface_id="wf-run-detail",
+        role="Eng Lead",
+        status="waived",
+        evidence_links=["chk-run-replay-context", "dec-run-detail-audit-rail"],
+        notes="Temporary waiver approved pending copy lock.",
+        waiver_owner="Eng Lead",
+        waiver_reason="Copy review is deferred to the next wording pass.",
+    )
+
+    exception_matrix = render_ui_review_exception_matrix(pack)
+
+    assert "# UI Review Exception Matrix" in exception_matrix
+    assert "- Exceptions: 2" in exception_matrix
+    assert "- Owners: 2" in exception_matrix
+    assert "- Surfaces: 1" in exception_matrix
+    assert "- Eng Lead: blockers=0 signoffs=1 total=1" in exception_matrix
+    assert "- product-experience: blockers=1 signoffs=0 total=1" in exception_matrix
+    assert "- open: blockers=1 signoffs=0 total=1" in exception_matrix
+    assert "- waived: blockers=0 signoffs=1 total=1" in exception_matrix
+    assert "- wf-run-detail: blockers=1 signoffs=1 total=2" in exception_matrix
+
+
+
+def test_render_ui_review_owner_review_queue_groups_actionable_items() -> None:
+    pack = build_big_4204_review_pack()
+
+    owner_queue = render_ui_review_owner_review_queue(pack)
+
+    assert "# UI Review Owner Review Queue" in owner_queue
+    assert "- Owners: 5" in owner_queue
+    assert "- Queue items: 6" in owner_queue
+    assert "- engineering-operations: blockers=0 checklist=1 decisions=0 signoffs=0 total=1" in owner_queue
+    assert "- product-experience: blockers=1 checklist=1 decisions=0 signoffs=0 total=2" in owner_queue
+    assert "- queue-chk-queue-role-density: owner=product-experience type=checklist source=chk-queue-role-density surface=wf-queue status=open" in owner_queue
+    assert "- queue-dec-queue-vp-summary: owner=VP Eng type=decision source=dec-queue-vp-summary surface=wf-queue status=proposed" in owner_queue
+    assert "- queue-sig-run-detail-eng-lead: owner=Eng Lead type=signoff source=sig-run-detail-eng-lead surface=wf-run-detail status=pending" in owner_queue
+    assert "- queue-blk-run-detail-copy-final: owner=product-experience type=blocker source=blk-run-detail-copy-final surface=wf-run-detail status=open" in owner_queue
+
+
+
 def test_render_ui_review_exception_log_and_timeline_summary() -> None:
     pack = build_big_4204_review_pack()
 
     exception_log = render_ui_review_exception_log(pack)
+    exception_matrix = render_ui_review_exception_matrix(pack)
+    owner_review_queue = render_ui_review_owner_review_queue(pack)
     timeline_summary = render_ui_review_blocker_timeline_summary(pack)
 
     assert "# UI Review Exception Log" in exception_log
     assert "- Exceptions: 1" in exception_log
     assert "exc-blk-run-detail-copy-final" in exception_log
     assert "evt-run-detail-copy-escalated/escalated/design-program-manager@2026-03-14T09:30:00Z" in exception_log
+    assert "# UI Review Exception Matrix" in exception_matrix
+    assert "- product-experience: blockers=1 signoffs=0 total=1" in exception_matrix
+    assert "# UI Review Owner Review Queue" in owner_review_queue
+    assert "- Queue items: 6" in owner_review_queue
     assert "# UI Review Blocker Timeline Summary" in timeline_summary
     assert "- Events: 2" in timeline_summary
     assert "- opened: 1" in timeline_summary
@@ -411,6 +468,8 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     blocker_log = render_ui_review_blocker_log(pack)
     blocker_timeline = render_ui_review_blocker_timeline(pack)
     exception_log = render_ui_review_exception_log(pack)
+    exception_matrix = render_ui_review_exception_matrix(pack)
+    owner_review_queue = render_ui_review_owner_review_queue(pack)
     timeline_summary = render_ui_review_blocker_timeline_summary(pack)
     artifacts = write_ui_review_pack_bundle(str(tmp_path), pack)
 
@@ -420,6 +479,8 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "<h2>Blocker Log</h2>" in html
     assert "<h2>Blocker Timeline</h2>" in html
     assert "<h2>Review Exceptions</h2>" in html
+    assert "<h2>Review Exception Matrix</h2>" in html
+    assert "<h2>Owner Review Queue</h2>" in html
     assert "<h2>Blocker Timeline Summary</h2>" in html
     assert "dec-queue-vp-summary" in html
     assert "# UI Review Decision Log" in decision_log
@@ -434,6 +495,10 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "evt-run-detail-copy-escalated" in blocker_timeline
     assert "# UI Review Exception Log" in exception_log
     assert "exc-blk-run-detail-copy-final" in exception_log
+    assert "# UI Review Exception Matrix" in exception_matrix
+    assert "- product-experience: blockers=1 signoffs=0 total=1" in exception_matrix
+    assert "# UI Review Owner Review Queue" in owner_review_queue
+    assert "- Queue items: 6" in owner_review_queue
     assert "# UI Review Blocker Timeline Summary" in timeline_summary
     assert "- escalated: 1" in timeline_summary
     assert Path(artifacts.markdown_path).exists()
@@ -444,6 +509,8 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert Path(artifacts.blocker_log_path).exists()
     assert Path(artifacts.blocker_timeline_path).exists()
     assert Path(artifacts.exception_log_path).exists()
+    assert Path(artifacts.exception_matrix_path).exists()
+    assert Path(artifacts.owner_review_queue_path).exists()
     assert Path(artifacts.blocker_timeline_summary_path).exists()
     assert "Decision Log" in Path(artifacts.html_path).read_text()
     assert "Role Matrix" in Path(artifacts.html_path).read_text()
@@ -451,6 +518,8 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "Blocker Log" in Path(artifacts.html_path).read_text()
     assert "Blocker Timeline" in Path(artifacts.html_path).read_text()
     assert "Review Exceptions" in Path(artifacts.html_path).read_text()
+    assert "Review Exception Matrix" in Path(artifacts.html_path).read_text()
+    assert "Owner Review Queue" in Path(artifacts.html_path).read_text()
     assert "Blocker Timeline Summary" in Path(artifacts.html_path).read_text()
     assert "dec-triage-handoff-density" in Path(artifacts.decision_log_path).read_text()
     assert "role-run-detail-eng-lead" in Path(artifacts.role_matrix_path).read_text()
@@ -458,4 +527,6 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "blk-run-detail-copy-final" in Path(artifacts.blocker_log_path).read_text()
     assert "evt-run-detail-copy-opened" in Path(artifacts.blocker_timeline_path).read_text()
     assert "exc-blk-run-detail-copy-final" in Path(artifacts.exception_log_path).read_text()
+    assert "- product-experience: blockers=1 signoffs=0 total=1" in Path(artifacts.exception_matrix_path).read_text()
+    assert "- Queue items: 6" in Path(artifacts.owner_review_queue_path).read_text()
     assert "- escalated: 1" in Path(artifacts.blocker_timeline_summary_path).read_text()

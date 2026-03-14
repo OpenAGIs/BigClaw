@@ -361,6 +361,8 @@ class UIReviewPackArtifacts:
     blocker_log_path: str
     blocker_timeline_path: str
     exception_log_path: str
+    exception_matrix_path: str
+    owner_review_queue_path: str
     blocker_timeline_summary_path: str
 
 
@@ -790,6 +792,131 @@ def _build_blocker_timeline_index(pack: UIReviewPack) -> Dict[str, List[ReviewBl
     return timeline_index
 
 
+def _build_review_exception_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
+    timeline_index = _build_blocker_timeline_index(pack)
+    entries: List[Dict[str, str]] = []
+    for signoff in pack.signoff_log:
+        if signoff.status.lower() not in {"waived", "deferred"}:
+            continue
+        entries.append(
+            {
+                "exception_id": f"exc-{signoff.signoff_id}",
+                "category": "signoff",
+                "source_id": signoff.signoff_id,
+                "surface_id": signoff.surface_id,
+                "owner": signoff.waiver_owner or signoff.role,
+                "status": signoff.status,
+                "severity": "none",
+                "summary": signoff.waiver_reason or signoff.notes or "none",
+                "evidence": ",".join(signoff.evidence_links) or "none",
+                "latest_event": "none",
+                "next_action": signoff.notes or signoff.waiver_reason or "none",
+            }
+        )
+    for blocker in pack.blocker_log:
+        if blocker.status.lower() in {"resolved", "closed"}:
+            continue
+        latest_events = timeline_index.get(blocker.blocker_id, [])
+        latest = latest_events[-1] if latest_events else None
+        latest_label = (
+            f"{latest.event_id}/{latest.status}/{latest.actor}@{latest.timestamp}"
+            if latest
+            else "none"
+        )
+        entries.append(
+            {
+                "exception_id": f"exc-{blocker.blocker_id}",
+                "category": "blocker",
+                "source_id": blocker.blocker_id,
+                "surface_id": blocker.surface_id,
+                "owner": blocker.owner,
+                "status": blocker.status,
+                "severity": blocker.severity,
+                "summary": blocker.summary,
+                "evidence": blocker.escalation_owner or "none",
+                "latest_event": latest_label,
+                "next_action": blocker.next_action or "none",
+            }
+        )
+    return sorted(
+        entries,
+        key=lambda item: (item["owner"], item["surface_id"], item["category"], item["source_id"]),
+    )
+
+
+def _build_owner_review_queue_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
+    entries: List[Dict[str, str]] = []
+    checklist_ready_statuses = {"ready", "approved", "accepted", "resolved", "done"}
+    decision_ready_statuses = {"accepted", "approved", "resolved", "waived"}
+    signoff_ready_statuses = {"approved", "accepted", "resolved"}
+    blocker_done_statuses = {"resolved", "closed"}
+
+    for item in pack.reviewer_checklist:
+        if item.status.lower() in checklist_ready_statuses:
+            continue
+        entries.append(
+            {
+                "queue_id": f"queue-{item.item_id}",
+                "owner": item.owner,
+                "item_type": "checklist",
+                "source_id": item.item_id,
+                "surface_id": item.surface_id,
+                "status": item.status,
+                "summary": item.prompt,
+                "next_action": item.notes or ",".join(item.evidence_links) or "none",
+            }
+        )
+    for decision in pack.decision_log:
+        if decision.status.lower() in decision_ready_statuses:
+            continue
+        entries.append(
+            {
+                "queue_id": f"queue-{decision.decision_id}",
+                "owner": decision.owner,
+                "item_type": "decision",
+                "source_id": decision.decision_id,
+                "surface_id": decision.surface_id,
+                "status": decision.status,
+                "summary": decision.summary,
+                "next_action": decision.follow_up or decision.rationale,
+            }
+        )
+    for signoff in pack.signoff_log:
+        if signoff.status.lower() in signoff_ready_statuses:
+            continue
+        entries.append(
+            {
+                "queue_id": f"queue-{signoff.signoff_id}",
+                "owner": signoff.waiver_owner or signoff.role,
+                "item_type": "signoff",
+                "source_id": signoff.signoff_id,
+                "surface_id": signoff.surface_id,
+                "status": signoff.status,
+                "summary": signoff.notes or signoff.waiver_reason or signoff.role,
+                "next_action": signoff.waiver_reason or signoff.notes or ",".join(signoff.evidence_links) or "none",
+            }
+        )
+    for blocker in pack.blocker_log:
+        if blocker.status.lower() in blocker_done_statuses:
+            continue
+        entries.append(
+            {
+                "queue_id": f"queue-{blocker.blocker_id}",
+                "owner": blocker.owner,
+                "item_type": "blocker",
+                "source_id": blocker.blocker_id,
+                "surface_id": blocker.surface_id,
+                "status": blocker.status,
+                "summary": blocker.summary,
+                "next_action": blocker.next_action or "none",
+            }
+        )
+    return sorted(
+        entries,
+        key=lambda item: (item["owner"], item["item_type"], item["surface_id"], item["source_id"]),
+    )
+
+
 def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -> str:
     lines = [
         "# UI Review Pack",
@@ -927,42 +1054,101 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
     if not pack.blocker_timeline:
         lines.append("- none")
 
-    exception_entries = []
+    exception_entries = _build_review_exception_entries(pack)
     timeline_index = _build_blocker_timeline_index(pack)
-    for signoff in pack.signoff_log:
-        if signoff.status.lower() not in {"waived", "deferred"}:
-            continue
-        exception_entries.append(
-            (
-                f"exc-{signoff.signoff_id}",
-                f"type=signoff source={signoff.signoff_id} surface={signoff.surface_id} owner={signoff.waiver_owner or signoff.role} status={signoff.status}",
-                f"reason={signoff.waiver_reason or 'none'} evidence={','.join(signoff.evidence_links) or 'none'} notes={signoff.notes or 'none'}",
-            )
-        )
-    for blocker in pack.blocker_log:
-        if blocker.status.lower() in {"resolved", "closed"}:
-            continue
-        latest_event = timeline_index.get(blocker.blocker_id, [])
-        latest = latest_event[-1] if latest_event else None
-        latest_label = (
-            f"{latest.event_id}/{latest.status}/{latest.actor}@{latest.timestamp}"
-            if latest
-            else "none"
-        )
-        exception_entries.append(
-            (
-                f"exc-{blocker.blocker_id}",
-                f"type=blocker source={blocker.blocker_id} surface={blocker.surface_id} owner={blocker.owner} status={blocker.status} severity={blocker.severity}",
-                f"summary={blocker.summary} latest_event={latest_label} escalation_owner={blocker.escalation_owner or 'none'} next_action={blocker.next_action or 'none'}",
-            )
-        )
 
     lines.append("")
     lines.append("## Review Exceptions")
-    for entry_id, headline, detail in exception_entries:
-        lines.append(f"- {entry_id}: {headline}")
-        lines.append(f"  {detail}")
+    for entry in exception_entries:
+        lines.append(
+            f"- {entry['exception_id']}: type={entry['category']} source={entry['source_id']} surface={entry['surface_id']} owner={entry['owner']} status={entry['status']} severity={entry['severity']}"
+        )
+        lines.append(
+            f"  summary={entry['summary']} evidence={entry['evidence']} latest_event={entry['latest_event']} next_action={entry['next_action']}"
+        )
     if not exception_entries:
+        lines.append("- none")
+
+    exception_owner_counts: Dict[str, Dict[str, int]] = {}
+    exception_status_counts: Dict[str, Dict[str, int]] = {}
+    exception_surface_counts: Dict[str, Dict[str, int]] = {}
+    for entry in exception_entries:
+        owner_counts = exception_owner_counts.setdefault(
+            entry["owner"], {"blocker": 0, "signoff": 0, "total": 0}
+        )
+        owner_counts[entry["category"]] += 1
+        owner_counts["total"] += 1
+        status_counts = exception_status_counts.setdefault(
+            entry["status"], {"blocker": 0, "signoff": 0, "total": 0}
+        )
+        status_counts[entry["category"]] += 1
+        status_counts["total"] += 1
+        surface_counts = exception_surface_counts.setdefault(
+            entry["surface_id"], {"blocker": 0, "signoff": 0, "total": 0}
+        )
+        surface_counts[entry["category"]] += 1
+        surface_counts["total"] += 1
+
+    lines.append("")
+    lines.append("## Review Exception Matrix")
+    lines.append(f"- Exceptions: {len(exception_entries)}")
+    lines.append(f"- Owners: {len(exception_owner_counts)}")
+    lines.append(f"- Surfaces: {len(exception_surface_counts)}")
+    lines.append("")
+    lines.append("### By Owner")
+    for owner, counts in sorted(exception_owner_counts.items()):
+        lines.append(
+            f"- {owner}: blockers={counts['blocker']} signoffs={counts['signoff']} total={counts['total']}"
+        )
+    if not exception_owner_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### By Status")
+    for status, counts in sorted(exception_status_counts.items()):
+        lines.append(
+            f"- {status}: blockers={counts['blocker']} signoffs={counts['signoff']} total={counts['total']}"
+        )
+    if not exception_status_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### By Surface")
+    for surface_id, counts in sorted(exception_surface_counts.items()):
+        lines.append(
+            f"- {surface_id}: blockers={counts['blocker']} signoffs={counts['signoff']} total={counts['total']}"
+        )
+    if not exception_surface_counts:
+        lines.append("- none")
+
+    owner_review_queue = _build_owner_review_queue_entries(pack)
+    owner_queue_counts: Dict[str, Dict[str, int]] = {}
+    for entry in owner_review_queue:
+        counts = owner_queue_counts.setdefault(
+            entry["owner"],
+            {"blocker": 0, "checklist": 0, "decision": 0, "signoff": 0, "total": 0},
+        )
+        counts[entry["item_type"]] += 1
+        counts["total"] += 1
+
+    lines.append("")
+    lines.append("## Owner Review Queue")
+    lines.append(f"- Owners: {len(owner_queue_counts)}")
+    lines.append(f"- Queue items: {len(owner_review_queue)}")
+    lines.append("")
+    lines.append("### Owners")
+    for owner, counts in sorted(owner_queue_counts.items()):
+        lines.append(
+            f"- {owner}: blockers={counts['blocker']} checklist={counts['checklist']} decisions={counts['decision']} signoffs={counts['signoff']} total={counts['total']}"
+        )
+    if not owner_queue_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### Items")
+    for entry in owner_review_queue:
+        lines.append(
+            f"- {entry['queue_id']}: owner={entry['owner']} type={entry['item_type']} source={entry['source_id']} surface={entry['surface_id']} status={entry['status']}"
+        )
+        lines.append(f"  summary={entry['summary']} next_action={entry['next_action']}")
+    if not owner_review_queue:
         lines.append("- none")
 
     status_counts: Dict[str, int] = {}
@@ -1538,50 +1724,133 @@ def render_ui_review_blocker_log(pack: UIReviewPack) -> str:
 
 
 def render_ui_review_exception_log(pack: UIReviewPack) -> str:
-    timeline_index = _build_blocker_timeline_index(pack)
+    exception_entries = _build_review_exception_entries(pack)
     lines = [
         "# UI Review Exception Log",
         "",
         f"- Issue: {pack.issue_id} {pack.title}",
         f"- Version: {pack.version}",
+        f"- Exceptions: {len(exception_entries)}",
         "",
         "## Exceptions",
     ]
-    exception_count = 0
-    for signoff in pack.signoff_log:
-        if signoff.status.lower() not in {"waived", "deferred"}:
-            continue
-        exception_count += 1
+    for entry in exception_entries:
         lines.append(
             "- "
-            f"exc-{signoff.signoff_id}: type=signoff source={signoff.signoff_id} surface={signoff.surface_id} owner={signoff.waiver_owner or signoff.role} status={signoff.status}"
+            f"{entry['exception_id']}: type={entry['category']} source={entry['source_id']} surface={entry['surface_id']} owner={entry['owner']} status={entry['status']} severity={entry['severity']}"
         )
         lines.append(
             "  "
-            f"reason={signoff.waiver_reason or 'none'} evidence={','.join(signoff.evidence_links) or 'none'} notes={signoff.notes or 'none'}"
+            f"summary={entry['summary']} evidence={entry['evidence']} latest_event={entry['latest_event']} next_action={entry['next_action']}"
         )
-    for blocker in pack.blocker_log:
-        if blocker.status.lower() in {"resolved", "closed"}:
-            continue
-        exception_count += 1
-        latest_events = timeline_index.get(blocker.blocker_id, [])
-        latest = latest_events[-1] if latest_events else None
-        latest_label = (
-            f"{latest.event_id}/{latest.status}/{latest.actor}@{latest.timestamp}"
-            if latest
-            else "none"
-        )
-        lines.append(
-            "- "
-            f"exc-{blocker.blocker_id}: type=blocker source={blocker.blocker_id} surface={blocker.surface_id} owner={blocker.owner} status={blocker.status} severity={blocker.severity}"
-        )
-        lines.append(
-            "  "
-            f"summary={blocker.summary} latest_event={latest_label} escalation_owner={blocker.escalation_owner or 'none'} next_action={blocker.next_action or 'none'}"
-        )
-    if exception_count == 0:
+    if not exception_entries:
         lines.append("- none")
-    lines.insert(4, f"- Exceptions: {exception_count}")
+    return "\n".join(lines)
+
+
+def render_ui_review_exception_matrix(pack: UIReviewPack) -> str:
+    exception_entries = _build_review_exception_entries(pack)
+    owner_counts: Dict[str, Dict[str, int]] = {}
+    status_counts: Dict[str, Dict[str, int]] = {}
+    surface_counts: Dict[str, Dict[str, int]] = {}
+    for entry in exception_entries:
+        owner_bucket = owner_counts.setdefault(
+            entry["owner"], {"blocker": 0, "signoff": 0, "total": 0}
+        )
+        owner_bucket[entry["category"]] += 1
+        owner_bucket["total"] += 1
+        status_bucket = status_counts.setdefault(
+            entry["status"], {"blocker": 0, "signoff": 0, "total": 0}
+        )
+        status_bucket[entry["category"]] += 1
+        status_bucket["total"] += 1
+        surface_bucket = surface_counts.setdefault(
+            entry["surface_id"], {"blocker": 0, "signoff": 0, "total": 0}
+        )
+        surface_bucket[entry["category"]] += 1
+        surface_bucket["total"] += 1
+    lines = [
+        "# UI Review Exception Matrix",
+        "",
+        f"- Issue: {pack.issue_id} {pack.title}",
+        f"- Version: {pack.version}",
+        f"- Exceptions: {len(exception_entries)}",
+        f"- Owners: {len(owner_counts)}",
+        f"- Surfaces: {len(surface_counts)}",
+        "",
+        "## By Owner",
+    ]
+    for owner, counts in sorted(owner_counts.items()):
+        lines.append(
+            f"- {owner}: blockers={counts['blocker']} signoffs={counts['signoff']} total={counts['total']}"
+        )
+    if not owner_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## By Status")
+    for status, counts in sorted(status_counts.items()):
+        lines.append(
+            f"- {status}: blockers={counts['blocker']} signoffs={counts['signoff']} total={counts['total']}"
+        )
+    if not status_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## By Surface")
+    for surface_id, counts in sorted(surface_counts.items()):
+        lines.append(
+            f"- {surface_id}: blockers={counts['blocker']} signoffs={counts['signoff']} total={counts['total']}"
+        )
+    if not surface_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## Entries")
+    for entry in exception_entries:
+        lines.append(
+            f"- {entry['exception_id']}: owner={entry['owner']} type={entry['category']} source={entry['source_id']} surface={entry['surface_id']} status={entry['status']} severity={entry['severity']}"
+        )
+        lines.append(
+            f"  summary={entry['summary']} latest_event={entry['latest_event']} next_action={entry['next_action']}"
+        )
+    if not exception_entries:
+        lines.append("- none")
+    return "\n".join(lines)
+
+
+def render_ui_review_owner_review_queue(pack: UIReviewPack) -> str:
+    queue_entries = _build_owner_review_queue_entries(pack)
+    owner_counts: Dict[str, Dict[str, int]] = {}
+    for entry in queue_entries:
+        counts = owner_counts.setdefault(
+            entry["owner"],
+            {"blocker": 0, "checklist": 0, "decision": 0, "signoff": 0, "total": 0},
+        )
+        counts[entry["item_type"]] += 1
+        counts["total"] += 1
+    lines = [
+        "# UI Review Owner Review Queue",
+        "",
+        f"- Issue: {pack.issue_id} {pack.title}",
+        f"- Version: {pack.version}",
+        f"- Owners: {len(owner_counts)}",
+        f"- Queue items: {len(queue_entries)}",
+        "",
+        "## Owners",
+    ]
+    for owner, counts in sorted(owner_counts.items()):
+        lines.append(
+            f"- {owner}: blockers={counts['blocker']} checklist={counts['checklist']} decisions={counts['decision']} signoffs={counts['signoff']} total={counts['total']}"
+        )
+    if not owner_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## Items")
+    for entry in queue_entries:
+        lines.append(
+            f"- {entry['queue_id']}: owner={entry['owner']} type={entry['item_type']} source={entry['source_id']} surface={entry['surface_id']} status={entry['status']}"
+        )
+        lines.append(f"  summary={entry['summary']} next_action={entry['next_action']}")
+    if not queue_entries:
+        lines.append("- none")
     return "\n".join(lines)
 
 
@@ -1699,27 +1968,59 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
         for event in pack.blocker_timeline
     ) or "<li>none</li>"
     timeline_index = _build_blocker_timeline_index(pack)
-    exception_items = []
-    for signoff in pack.signoff_log:
-        if signoff.status.lower() not in {"waived", "deferred"}:
-            continue
-        exception_items.append(
-            f"<li><strong>{escape('exc-' + signoff.signoff_id)}</strong> · type=signoff · source={escape(signoff.signoff_id)} · surface={escape(signoff.surface_id)} · owner={escape(signoff.waiver_owner or signoff.role)} · status={escape(signoff.status)}<br /><span>reason={escape(signoff.waiver_reason or 'none')} · evidence={escape(', '.join(signoff.evidence_links) if signoff.evidence_links else 'none')}</span><br /><span>notes={escape(signoff.notes or 'none')}</span></li>"
+    exception_entries = _build_review_exception_entries(pack)
+    exception_html = "".join(
+        f"<li><strong>{escape(entry['exception_id'])}</strong> · owner={escape(entry['owner'])} · type={escape(entry['category'])} · source={escape(entry['source_id'])} · surface={escape(entry['surface_id'])} · status={escape(entry['status'])} · severity={escape(entry['severity'])}<br /><span>{escape(entry['summary'])}</span><br /><span>latest_event={escape(entry['latest_event'])} · next_action={escape(entry['next_action'])}</span></li>"
+        for entry in exception_entries
+    ) or "<li>none</li>"
+    exception_owner_counts: Dict[str, Dict[str, int]] = {}
+    exception_status_counts: Dict[str, Dict[str, int]] = {}
+    exception_surface_counts: Dict[str, Dict[str, int]] = {}
+    for entry in exception_entries:
+        owner_bucket = exception_owner_counts.setdefault(
+            entry["owner"], {"blocker": 0, "signoff": 0, "total": 0}
         )
-    for blocker in pack.blocker_log:
-        if blocker.status.lower() in {"resolved", "closed"}:
-            continue
-        latest_events = timeline_index.get(blocker.blocker_id, [])
-        latest = latest_events[-1] if latest_events else None
-        latest_label = (
-            f"{latest.event_id}/{latest.status}/{latest.actor}@{latest.timestamp}"
-            if latest
-            else "none"
+        owner_bucket[entry["category"]] += 1
+        owner_bucket["total"] += 1
+        status_bucket = exception_status_counts.setdefault(
+            entry["status"], {"blocker": 0, "signoff": 0, "total": 0}
         )
-        exception_items.append(
-            f"<li><strong>{escape('exc-' + blocker.blocker_id)}</strong> · type=blocker · source={escape(blocker.blocker_id)} · surface={escape(blocker.surface_id)} · owner={escape(blocker.owner)} · status={escape(blocker.status)} · severity={escape(blocker.severity)}<br /><span>{escape(blocker.summary)}</span><br /><span>latest_event={escape(latest_label)} · next_action={escape(blocker.next_action or 'none')}</span></li>"
+        status_bucket[entry["category"]] += 1
+        status_bucket["total"] += 1
+        surface_bucket = exception_surface_counts.setdefault(
+            entry["surface_id"], {"blocker": 0, "signoff": 0, "total": 0}
         )
-    exception_html = "".join(exception_items) or "<li>none</li>"
+        surface_bucket[entry["category"]] += 1
+        surface_bucket["total"] += 1
+    exception_owner_html = "".join(
+        f"<li><strong>{escape(owner)}</strong> · blockers={counts['blocker']} · signoffs={counts['signoff']} · total={counts['total']}</li>"
+        for owner, counts in sorted(exception_owner_counts.items())
+    ) or "<li>none</li>"
+    exception_status_html = "".join(
+        f"<li><strong>{escape(status)}</strong> · blockers={counts['blocker']} · signoffs={counts['signoff']} · total={counts['total']}</li>"
+        for status, counts in sorted(exception_status_counts.items())
+    ) or "<li>none</li>"
+    exception_surface_html = "".join(
+        f"<li><strong>{escape(surface_id)}</strong> · blockers={counts['blocker']} · signoffs={counts['signoff']} · total={counts['total']}</li>"
+        for surface_id, counts in sorted(exception_surface_counts.items())
+    ) or "<li>none</li>"
+    owner_review_queue = _build_owner_review_queue_entries(pack)
+    owner_queue_counts: Dict[str, Dict[str, int]] = {}
+    for entry in owner_review_queue:
+        counts = owner_queue_counts.setdefault(
+            entry["owner"],
+            {"blocker": 0, "checklist": 0, "decision": 0, "signoff": 0, "total": 0},
+        )
+        counts[entry["item_type"]] += 1
+        counts["total"] += 1
+    owner_queue_owner_html = "".join(
+        f"<li><strong>{escape(owner)}</strong> · blockers={counts['blocker']} · checklist={counts['checklist']} · decisions={counts['decision']} · signoffs={counts['signoff']} · total={counts['total']}</li>"
+        for owner, counts in sorted(owner_queue_counts.items())
+    ) or "<li>none</li>"
+    owner_queue_item_html = "".join(
+        f"<li><strong>{escape(entry['queue_id'])}</strong> · owner={escape(entry['owner'])} · type={escape(entry['item_type'])} · source={escape(entry['source_id'])} · surface={escape(entry['surface_id'])} · status={escape(entry['status'])}<br /><span>{escape(entry['summary'])}</span><br /><span>next_action={escape(entry['next_action'])}</span></li>"
+        for entry in owner_review_queue
+    ) or "<li>none</li>"
     status_counts: Dict[str, int] = {}
     actor_counts: Dict[str, int] = {}
     for event in pack.blocker_timeline:
@@ -1795,6 +2096,8 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
     <section class="surface"><h2>Blocker Log</h2><ul>{blocker_html}</ul></section>
     <section class="surface"><h2>Blocker Timeline</h2><ul>{blocker_timeline_html}</ul></section>
     <section class="surface"><h2>Review Exceptions</h2><ul>{exception_html}</ul></section>
+    <section class="surface"><h2>Review Exception Matrix</h2><h3>By Owner</h3><ul>{exception_owner_html}</ul><h3>By Status</h3><ul>{exception_status_html}</ul><h3>By Surface</h3><ul>{exception_surface_html}</ul></section>
+    <section class="surface"><h2>Owner Review Queue</h2><h3>Owners</h3><ul>{owner_queue_owner_html}</ul><h3>Items</h3><ul>{owner_queue_item_html}</ul></section>
     <section class="surface"><h2>Blocker Timeline Summary</h2><h3>Events by Status</h3><ul>{status_summary_html}</ul><h3>Events by Actor</h3><ul>{actor_summary_html}</ul><h3>Latest Blocker Events</h3><ul>{latest_blocker_html}</ul><h3>Orphan Timeline Blockers</h3><ul>{orphan_timeline_html}</ul></section>
   </body>
 </html>
@@ -1813,6 +2116,8 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
     blocker_log_path = str(base / f"{slug}-blocker-log.md")
     blocker_timeline_path = str(base / f"{slug}-blocker-timeline.md")
     exception_log_path = str(base / f"{slug}-exception-log.md")
+    exception_matrix_path = str(base / f"{slug}-exception-matrix.md")
+    owner_review_queue_path = str(base / f"{slug}-owner-review-queue.md")
     blocker_timeline_summary_path = str(base / f"{slug}-blocker-timeline-summary.md")
     audit = UIReviewPackAuditor().audit(pack)
     Path(markdown_path).write_text(render_ui_review_pack_report(pack, audit))
@@ -1823,6 +2128,8 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
     Path(blocker_log_path).write_text(render_ui_review_blocker_log(pack))
     Path(blocker_timeline_path).write_text(render_ui_review_blocker_timeline(pack))
     Path(exception_log_path).write_text(render_ui_review_exception_log(pack))
+    Path(exception_matrix_path).write_text(render_ui_review_exception_matrix(pack))
+    Path(owner_review_queue_path).write_text(render_ui_review_owner_review_queue(pack))
     Path(blocker_timeline_summary_path).write_text(render_ui_review_blocker_timeline_summary(pack))
     return UIReviewPackArtifacts(
         root_dir=str(base),
@@ -1834,5 +2141,7 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
         blocker_log_path=blocker_log_path,
         blocker_timeline_path=blocker_timeline_path,
         exception_log_path=exception_log_path,
+        exception_matrix_path=exception_matrix_path,
+        owner_review_queue_path=owner_review_queue_path,
         blocker_timeline_summary_path=blocker_timeline_summary_path,
     )
