@@ -253,6 +253,8 @@ class ReviewSignoff:
     reminder_channel: str = ""
     last_reminder_at: str = ""
     next_reminder_at: str = ""
+    reminder_cadence: str = ""
+    reminder_status: str = "scheduled"
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -274,6 +276,8 @@ class ReviewSignoff:
             "reminder_channel": self.reminder_channel,
             "last_reminder_at": self.last_reminder_at,
             "next_reminder_at": self.next_reminder_at,
+            "reminder_cadence": self.reminder_cadence,
+            "reminder_status": self.reminder_status,
         }
 
     @classmethod
@@ -297,6 +301,8 @@ class ReviewSignoff:
             reminder_channel=str(data.get("reminder_channel", "")),
             last_reminder_at=str(data.get("last_reminder_at", "")),
             next_reminder_at=str(data.get("next_reminder_at", "")),
+            reminder_cadence=str(data.get("reminder_cadence", "")),
+            reminder_status=str(data.get("reminder_status", "scheduled")),
         )
 
 
@@ -317,6 +323,9 @@ class ReviewBlocker:
     freeze_reason: str = ""
     freeze_approved_by: str = ""
     freeze_approved_at: str = ""
+    freeze_renewal_owner: str = ""
+    freeze_renewal_by: str = ""
+    freeze_renewal_status: str = "not-needed"
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -335,6 +344,9 @@ class ReviewBlocker:
             "freeze_reason": self.freeze_reason,
             "freeze_approved_by": self.freeze_approved_by,
             "freeze_approved_at": self.freeze_approved_at,
+            "freeze_renewal_owner": self.freeze_renewal_owner,
+            "freeze_renewal_by": self.freeze_renewal_by,
+            "freeze_renewal_status": self.freeze_renewal_status,
         }
 
     @classmethod
@@ -355,6 +367,9 @@ class ReviewBlocker:
             freeze_reason=str(data.get("freeze_reason", "")),
             freeze_approved_by=str(data.get("freeze_approved_by", "")),
             freeze_approved_at=str(data.get("freeze_approved_at", "")),
+            freeze_renewal_owner=str(data.get("freeze_renewal_owner", "")),
+            freeze_renewal_by=str(data.get("freeze_renewal_by", "")),
+            freeze_renewal_status=str(data.get("freeze_renewal_status", "not-needed")),
         )
 
 
@@ -371,6 +386,9 @@ class ReviewBlockerEvent:
     handoff_to: str = ""
     channel: str = ""
     artifact_ref: str = ""
+    ack_owner: str = ""
+    ack_at: str = ""
+    ack_status: str = "pending"
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -385,6 +403,9 @@ class ReviewBlockerEvent:
             "handoff_to": self.handoff_to,
             "channel": self.channel,
             "artifact_ref": self.artifact_ref,
+            "ack_owner": self.ack_owner,
+            "ack_at": self.ack_at,
+            "ack_status": self.ack_status,
         }
 
     @classmethod
@@ -401,6 +422,9 @@ class ReviewBlockerEvent:
             handoff_to=str(data.get("handoff_to", "")),
             channel=str(data.get("channel", "")),
             artifact_ref=str(data.get("artifact_ref", "")),
+            ack_owner=str(data.get("ack_owner", "")),
+            ack_at=str(data.get("ack_at", "")),
+            ack_status=str(data.get("ack_status", "pending")),
         )
 
 
@@ -414,14 +438,17 @@ class UIReviewPackArtifacts:
     signoff_log_path: str
     signoff_sla_dashboard_path: str
     signoff_reminder_queue_path: str
+    reminder_cadence_board_path: str
     signoff_breach_board_path: str
     escalation_dashboard_path: str
     escalation_handoff_ledger_path: str
+    handoff_ack_ledger_path: str
     owner_escalation_digest_path: str
     blocker_log_path: str
     blocker_timeline_path: str
     freeze_exception_board_path: str
     freeze_approval_trail_path: str
+    freeze_renewal_tracker_path: str
     exception_log_path: str
     exception_matrix_path: str
     owner_review_queue_path: str
@@ -536,6 +563,7 @@ class UIReviewPackAudit:
     signoffs_missing_escalation_owners: List[str] = field(default_factory=list)
     signoffs_missing_reminder_owners: List[str] = field(default_factory=list)
     signoffs_missing_next_reminders: List[str] = field(default_factory=list)
+    signoffs_missing_reminder_cadence: List[str] = field(default_factory=list)
     signoffs_with_breached_sla: List[str] = field(default_factory=list)
     waived_signoffs_missing_metadata: List[str] = field(default_factory=list)
     unresolved_required_signoff_ids: List[str] = field(default_factory=list)
@@ -546,12 +574,16 @@ class UIReviewPackAudit:
     freeze_exceptions_missing_until: List[str] = field(default_factory=list)
     freeze_exceptions_missing_approvers: List[str] = field(default_factory=list)
     freeze_exceptions_missing_approval_dates: List[str] = field(default_factory=list)
+    freeze_exceptions_missing_renewal_owners: List[str] = field(default_factory=list)
+    freeze_exceptions_missing_renewal_dates: List[str] = field(default_factory=list)
     blockers_missing_timeline_events: List[str] = field(default_factory=list)
     closed_blockers_missing_resolution_events: List[str] = field(default_factory=list)
     orphan_blocker_surfaces: List[str] = field(default_factory=list)
     orphan_blocker_timeline_blocker_ids: List[str] = field(default_factory=list)
     handoff_events_missing_targets: List[str] = field(default_factory=list)
     handoff_events_missing_artifacts: List[str] = field(default_factory=list)
+    handoff_events_missing_ack_owners: List[str] = field(default_factory=list)
+    handoff_events_missing_ack_dates: List[str] = field(default_factory=list)
     unresolved_required_signoffs_without_blockers: List[str] = field(default_factory=list)
 
     @property
@@ -697,6 +729,7 @@ class UIReviewPackAuditor:
         signoffs_missing_escalation_owners = []
         signoffs_missing_reminder_owners = []
         signoffs_missing_next_reminders = []
+        signoffs_missing_reminder_cadence = []
         signoffs_with_breached_sla = []
         waived_signoffs_missing_metadata = []
         unresolved_required_signoff_ids = []
@@ -749,6 +782,13 @@ class UIReviewPackAuditor:
                 and signoff.status.lower() not in unresolved_statuses
                 and not signoff.next_reminder_at.strip()
             )
+            signoffs_missing_reminder_cadence = sorted(
+                signoff.signoff_id
+                for signoff in pack.signoff_log
+                if signoff.required
+                and signoff.status.lower() not in unresolved_statuses
+                and not signoff.reminder_cadence.strip()
+            )
             signoffs_with_breached_sla = sorted(
                 signoff.signoff_id
                 for signoff in pack.signoff_log
@@ -780,6 +820,8 @@ class UIReviewPackAuditor:
         freeze_exceptions_missing_until = []
         freeze_exceptions_missing_approvers = []
         freeze_exceptions_missing_approval_dates = []
+        freeze_exceptions_missing_renewal_owners = []
+        freeze_exceptions_missing_renewal_dates = []
         orphan_blocker_surfaces = []
         unresolved_required_signoffs_without_blockers = []
         if pack.requires_blocker_log:
@@ -813,6 +855,16 @@ class UIReviewPackAuditor:
                 for blocker in pack.blocker_log
                 if blocker.freeze_exception and not blocker.freeze_approved_at.strip()
             )
+            freeze_exceptions_missing_renewal_owners = sorted(
+                blocker.blocker_id
+                for blocker in pack.blocker_log
+                if blocker.freeze_exception and not blocker.freeze_renewal_owner.strip()
+            )
+            freeze_exceptions_missing_renewal_dates = sorted(
+                blocker.blocker_id
+                for blocker in pack.blocker_log
+                if blocker.freeze_exception and not blocker.freeze_renewal_by.strip()
+            )
             orphan_blocker_surfaces = sorted(
                 surface_id for surface_id in blocker_surfaces if surface_id not in wireframe_ids
             )
@@ -830,6 +882,8 @@ class UIReviewPackAuditor:
         orphan_blocker_timeline_blocker_ids = []
         handoff_events_missing_targets = []
         handoff_events_missing_artifacts = []
+        handoff_events_missing_ack_owners = []
+        handoff_events_missing_ack_dates = []
         if pack.requires_blocker_timeline:
             blocker_ids = {blocker.blocker_id for blocker in pack.blocker_log}
             orphan_blocker_timeline_blocker_ids = sorted(
@@ -863,6 +917,16 @@ class UIReviewPackAuditor:
                 for event in pack.blocker_timeline
                 if event.status.lower() in handoff_statuses and not event.artifact_ref.strip()
             )
+            handoff_events_missing_ack_owners = sorted(
+                event.event_id
+                for event in pack.blocker_timeline
+                if event.status.lower() in handoff_statuses and not event.ack_owner.strip()
+            )
+            handoff_events_missing_ack_dates = sorted(
+                event.event_id
+                for event in pack.blocker_timeline
+                if event.status.lower() in handoff_statuses and not event.ack_at.strip()
+            )
 
         ready = not (
             missing_sections
@@ -888,6 +952,7 @@ class UIReviewPackAuditor:
             or signoffs_missing_escalation_owners
             or signoffs_missing_reminder_owners
             or signoffs_missing_next_reminders
+            or signoffs_missing_reminder_cadence
             or waived_signoffs_missing_metadata
             or blockers_missing_signoff_links
             or blockers_missing_escalation_owners
@@ -896,12 +961,16 @@ class UIReviewPackAuditor:
             or freeze_exceptions_missing_until
             or freeze_exceptions_missing_approvers
             or freeze_exceptions_missing_approval_dates
+            or freeze_exceptions_missing_renewal_owners
+            or freeze_exceptions_missing_renewal_dates
             or blockers_missing_timeline_events
             or closed_blockers_missing_resolution_events
             or orphan_blocker_surfaces
             or orphan_blocker_timeline_blocker_ids
             or handoff_events_missing_targets
             or handoff_events_missing_artifacts
+            or handoff_events_missing_ack_owners
+            or handoff_events_missing_ack_dates
             or unresolved_required_signoffs_without_blockers
         )
         return UIReviewPackAudit(
@@ -941,6 +1010,7 @@ class UIReviewPackAuditor:
             signoffs_missing_escalation_owners=signoffs_missing_escalation_owners,
             signoffs_missing_reminder_owners=signoffs_missing_reminder_owners,
             signoffs_missing_next_reminders=signoffs_missing_next_reminders,
+            signoffs_missing_reminder_cadence=signoffs_missing_reminder_cadence,
             signoffs_with_breached_sla=signoffs_with_breached_sla,
             waived_signoffs_missing_metadata=waived_signoffs_missing_metadata,
             unresolved_required_signoff_ids=unresolved_required_signoff_ids,
@@ -951,12 +1021,16 @@ class UIReviewPackAuditor:
             freeze_exceptions_missing_until=freeze_exceptions_missing_until,
             freeze_exceptions_missing_approvers=freeze_exceptions_missing_approvers,
             freeze_exceptions_missing_approval_dates=freeze_exceptions_missing_approval_dates,
+            freeze_exceptions_missing_renewal_owners=freeze_exceptions_missing_renewal_owners,
+            freeze_exceptions_missing_renewal_dates=freeze_exceptions_missing_renewal_dates,
             blockers_missing_timeline_events=blockers_missing_timeline_events,
             closed_blockers_missing_resolution_events=closed_blockers_missing_resolution_events,
             orphan_blocker_surfaces=orphan_blocker_surfaces,
             orphan_blocker_timeline_blocker_ids=orphan_blocker_timeline_blocker_ids,
             handoff_events_missing_targets=handoff_events_missing_targets,
             handoff_events_missing_artifacts=handoff_events_missing_artifacts,
+            handoff_events_missing_ack_owners=handoff_events_missing_ack_owners,
+            handoff_events_missing_ack_dates=handoff_events_missing_ack_dates,
             unresolved_required_signoffs_without_blockers=unresolved_required_signoffs_without_blockers,
         )
 
@@ -1128,6 +1202,38 @@ def _build_escalation_handoff_entries(pack: UIReviewPack) -> List[Dict[str, str]
     return sorted(entries, key=lambda item: (item["timestamp"], item["event_id"]))
 
 
+def _build_handoff_ack_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
+    blocker_index = {blocker.blocker_id: blocker for blocker in pack.blocker_log}
+    handoff_statuses = {"escalated", "handoff", "reassigned"}
+    entries: List[Dict[str, str]] = []
+    for event in pack.blocker_timeline:
+        if event.status.lower() not in handoff_statuses and not event.handoff_to.strip():
+            continue
+        blocker = blocker_index.get(event.blocker_id)
+        fallback_owner = event.handoff_to or (blocker.escalation_owner if blocker else "none") or "none"
+        entries.append(
+            {
+                "entry_id": f"ack-{event.event_id}",
+                "event_id": event.event_id,
+                "blocker_id": event.blocker_id,
+                "surface_id": blocker.surface_id if blocker else "none",
+                "actor": event.actor,
+                "status": event.status,
+                "handoff_to": event.handoff_to or fallback_owner,
+                "ack_owner": event.ack_owner or fallback_owner,
+                "ack_status": event.ack_status or "pending",
+                "ack_at": event.ack_at or "none",
+                "channel": event.channel or "none",
+                "artifact_ref": event.artifact_ref or "none",
+                "summary": event.summary,
+            }
+        )
+    return sorted(
+        entries,
+        key=lambda item: (item["ack_status"], item["ack_owner"], item["event_id"]),
+    )
+
+
 def _build_signoff_reminder_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
     unresolved_statuses = {"approved", "accepted", "resolved", "waived", "deferred"}
     entries = [
@@ -1151,6 +1257,33 @@ def _build_signoff_reminder_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
     return sorted(
         entries,
         key=lambda item: (item["next_reminder_at"], item["reminder_owner"], item["signoff_id"]),
+    )
+
+
+def _build_reminder_cadence_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
+    unresolved_statuses = {"approved", "accepted", "resolved", "waived", "deferred"}
+    entries = [
+        {
+            "entry_id": f"cad-rem-{signoff.signoff_id}",
+            "signoff_id": signoff.signoff_id,
+            "surface_id": signoff.surface_id,
+            "role": signoff.role,
+            "status": signoff.status,
+            "sla_status": signoff.sla_status,
+            "reminder_owner": signoff.reminder_owner or "none",
+            "reminder_cadence": signoff.reminder_cadence or "none",
+            "reminder_status": signoff.reminder_status or "scheduled",
+            "last_reminder_at": signoff.last_reminder_at or "none",
+            "next_reminder_at": signoff.next_reminder_at or "none",
+            "due_at": signoff.due_at or "none",
+            "summary": signoff.notes or signoff.waiver_reason or signoff.role,
+        }
+        for signoff in pack.signoff_log
+        if signoff.required and signoff.status.lower() not in unresolved_statuses
+    ]
+    return sorted(
+        entries,
+        key=lambda item: (item["reminder_cadence"], item["reminder_status"], item["signoff_id"]),
     )
 
 
@@ -1185,6 +1318,31 @@ def _build_freeze_approval_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
     return sorted(
         entries,
         key=lambda item: (item["freeze_approved_at"], item["freeze_until"], item["blocker_id"]),
+    )
+
+
+def _build_freeze_renewal_entries(pack: UIReviewPack) -> List[Dict[str, str]]:
+    entries = [
+        {
+            "entry_id": f"renew-{blocker.blocker_id}",
+            "blocker_id": blocker.blocker_id,
+            "surface_id": blocker.surface_id,
+            "status": blocker.status,
+            "freeze_owner": blocker.freeze_owner or blocker.owner,
+            "freeze_until": blocker.freeze_until or "none",
+            "renewal_owner": blocker.freeze_renewal_owner or "none",
+            "renewal_by": blocker.freeze_renewal_by or "none",
+            "renewal_status": blocker.freeze_renewal_status or "not-needed",
+            "freeze_approved_by": blocker.freeze_approved_by or "none",
+            "summary": blocker.freeze_reason or blocker.summary,
+            "next_action": blocker.next_action or "none",
+        }
+        for blocker in pack.blocker_log
+        if blocker.freeze_exception
+    ]
+    return sorted(
+        entries,
+        key=lambda item: (item["renewal_by"], item["renewal_owner"], item["blocker_id"]),
     )
 
 
@@ -1561,6 +1719,41 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
     if not signoff_reminder_entries:
         lines.append("- none")
 
+    reminder_cadence_entries = _build_reminder_cadence_entries(pack)
+    reminder_cadence_counts: Dict[str, int] = {}
+    reminder_status_counts: Dict[str, int] = {}
+    for entry in reminder_cadence_entries:
+        reminder_cadence_counts[entry['reminder_cadence']] = reminder_cadence_counts.get(entry['reminder_cadence'], 0) + 1
+        reminder_status_counts[entry['reminder_status']] = reminder_status_counts.get(entry['reminder_status'], 0) + 1
+
+    lines.append("")
+    lines.append("## Reminder Cadence Board")
+    lines.append(f"- Items: {len(reminder_cadence_entries)}")
+    lines.append(f"- Cadences: {len(reminder_cadence_counts)}")
+    lines.append("")
+    lines.append("### By Cadence")
+    for cadence, count in sorted(reminder_cadence_counts.items()):
+        lines.append(f"- {cadence}: {count}")
+    if not reminder_cadence_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### By Status")
+    for status, count in sorted(reminder_status_counts.items()):
+        lines.append(f"- {status}: {count}")
+    if not reminder_status_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### Items")
+    for entry in reminder_cadence_entries:
+        lines.append(
+            f"- {entry['entry_id']}: signoff={entry['signoff_id']} role={entry['role']} surface={entry['surface_id']} cadence={entry['reminder_cadence']} status={entry['reminder_status']} owner={entry['reminder_owner']}"
+        )
+        lines.append(
+            f"  sla={entry['sla_status']} last_reminder_at={entry['last_reminder_at']} next_reminder_at={entry['next_reminder_at']} due_at={entry['due_at']} summary={entry['summary']}"
+        )
+    if not reminder_cadence_entries:
+        lines.append("- none")
+
     signoff_breach_entries = _build_signoff_breach_entries(pack)
     breach_state_counts: Dict[str, int] = {}
     breach_owner_counts: Dict[str, int] = {}
@@ -1674,6 +1867,41 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
             f"  from={entry['handoff_from']} to={entry['handoff_to']} channel={entry['channel']} artifact={entry['artifact_ref']} next_action={entry['next_action']}"
         )
     if not escalation_handoff_entries:
+        lines.append("- none")
+
+    handoff_ack_entries = _build_handoff_ack_entries(pack)
+    handoff_ack_owner_counts: Dict[str, int] = {}
+    handoff_ack_status_counts: Dict[str, int] = {}
+    for entry in handoff_ack_entries:
+        handoff_ack_owner_counts[entry['ack_owner']] = handoff_ack_owner_counts.get(entry['ack_owner'], 0) + 1
+        handoff_ack_status_counts[entry['ack_status']] = handoff_ack_status_counts.get(entry['ack_status'], 0) + 1
+
+    lines.append("")
+    lines.append("## Handoff Ack Ledger")
+    lines.append(f"- Ack items: {len(handoff_ack_entries)}")
+    lines.append(f"- Ack owners: {len(handoff_ack_owner_counts)}")
+    lines.append("")
+    lines.append("### By Ack Owner")
+    for owner, count in sorted(handoff_ack_owner_counts.items()):
+        lines.append(f"- {owner}: {count}")
+    if not handoff_ack_owner_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### By Ack Status")
+    for status, count in sorted(handoff_ack_status_counts.items()):
+        lines.append(f"- {status}: {count}")
+    if not handoff_ack_status_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### Entries")
+    for entry in handoff_ack_entries:
+        lines.append(
+            f"- {entry['entry_id']}: event={entry['event_id']} blocker={entry['blocker_id']} surface={entry['surface_id']} handoff_to={entry['handoff_to']} ack_owner={entry['ack_owner']} ack_status={entry['ack_status']} ack_at={entry['ack_at']}"
+        )
+        lines.append(
+            f"  actor={entry['actor']} status={entry['status']} channel={entry['channel']} artifact={entry['artifact_ref']} summary={entry['summary']}"
+        )
+    if not handoff_ack_entries:
         lines.append("- none")
 
     owner_digest_entries = _build_owner_escalation_digest_entries(pack)
@@ -1833,6 +2061,41 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
     if not freeze_approval_entries:
         lines.append("- none")
 
+    freeze_renewal_entries = _build_freeze_renewal_entries(pack)
+    freeze_renewal_owner_counts: Dict[str, int] = {}
+    freeze_renewal_status_counts: Dict[str, int] = {}
+    for entry in freeze_renewal_entries:
+        freeze_renewal_owner_counts[entry['renewal_owner']] = freeze_renewal_owner_counts.get(entry['renewal_owner'], 0) + 1
+        freeze_renewal_status_counts[entry['renewal_status']] = freeze_renewal_status_counts.get(entry['renewal_status'], 0) + 1
+
+    lines.append("")
+    lines.append("## Freeze Renewal Tracker")
+    lines.append(f"- Renewal items: {len(freeze_renewal_entries)}")
+    lines.append(f"- Renewal owners: {len(freeze_renewal_owner_counts)}")
+    lines.append("")
+    lines.append("### By Renewal Owner")
+    for owner, count in sorted(freeze_renewal_owner_counts.items()):
+        lines.append(f"- {owner}: {count}")
+    if not freeze_renewal_owner_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### By Renewal Status")
+    for status, count in sorted(freeze_renewal_status_counts.items()):
+        lines.append(f"- {status}: {count}")
+    if not freeze_renewal_status_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("### Entries")
+    for entry in freeze_renewal_entries:
+        lines.append(
+            f"- {entry['entry_id']}: blocker={entry['blocker_id']} surface={entry['surface_id']} status={entry['status']} renewal_owner={entry['renewal_owner']} renewal_by={entry['renewal_by']} renewal_status={entry['renewal_status']}"
+        )
+        lines.append(
+            f"  freeze_owner={entry['freeze_owner']} freeze_until={entry['freeze_until']} approved_by={entry['freeze_approved_by']} summary={entry['summary']} next_action={entry['next_action']}"
+        )
+    if not freeze_renewal_entries:
+        lines.append("- none")
+
     exception_owner_counts: Dict[str, Dict[str, int]] = {}
     exception_status_counts: Dict[str, Dict[str, int]] = {}
     exception_surface_counts: Dict[str, Dict[str, int]] = {}
@@ -1985,6 +2248,7 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
             f"- Signoffs missing escalation owners: {', '.join(audit.signoffs_missing_escalation_owners) or 'none'}",
             f"- Signoffs missing reminder owners: {', '.join(audit.signoffs_missing_reminder_owners) or 'none'}",
             f"- Signoffs missing next reminders: {', '.join(audit.signoffs_missing_next_reminders) or 'none'}",
+            f"- Signoffs missing reminder cadence: {', '.join(audit.signoffs_missing_reminder_cadence) or 'none'}",
             f"- Signoffs with breached SLA: {', '.join(audit.signoffs_with_breached_sla) or 'none'}",
             f"- Waived signoffs missing metadata: {', '.join(audit.waived_signoffs_missing_metadata) or 'none'}",
             f"- Unresolved required signoff ids: {', '.join(audit.unresolved_required_signoff_ids) or 'none'}",
@@ -1995,12 +2259,16 @@ def render_ui_review_pack_report(pack: UIReviewPack, audit: UIReviewPackAudit) -
             f"- Freeze exceptions missing windows: {', '.join(audit.freeze_exceptions_missing_until) or 'none'}",
             f"- Freeze exceptions missing approvers: {', '.join(audit.freeze_exceptions_missing_approvers) or 'none'}",
             f"- Freeze exceptions missing approval dates: {', '.join(audit.freeze_exceptions_missing_approval_dates) or 'none'}",
+            f"- Freeze exceptions missing renewal owners: {', '.join(audit.freeze_exceptions_missing_renewal_owners) or 'none'}",
+            f"- Freeze exceptions missing renewal dates: {', '.join(audit.freeze_exceptions_missing_renewal_dates) or 'none'}",
             f"- Blockers missing timeline events: {', '.join(audit.blockers_missing_timeline_events) or 'none'}",
             f"- Closed blockers missing resolution events: {', '.join(audit.closed_blockers_missing_resolution_events) or 'none'}",
             f"- Orphan blocker surfaces: {', '.join(audit.orphan_blocker_surfaces) or 'none'}",
             f"- Orphan blocker timeline blocker ids: {', '.join(audit.orphan_blocker_timeline_blocker_ids) or 'none'}",
             f"- Handoff events missing targets: {', '.join(audit.handoff_events_missing_targets) or 'none'}",
             f"- Handoff events missing artifacts: {', '.join(audit.handoff_events_missing_artifacts) or 'none'}",
+            f"- Handoff events missing ack owners: {', '.join(audit.handoff_events_missing_ack_owners) or 'none'}",
+            f"- Handoff events missing ack dates: {', '.join(audit.handoff_events_missing_ack_dates) or 'none'}",
             f"- Unresolved required signoffs without blockers: {', '.join(audit.unresolved_required_signoffs_without_blockers) or 'none'}",
         ]
     )
@@ -2366,6 +2634,8 @@ def build_big_4204_review_pack() -> UIReviewPack:
                 reminder_channel="slack",
                 last_reminder_at="2026-03-14T09:45:00Z",
                 next_reminder_at="2026-03-15T10:00:00Z",
+                reminder_cadence="daily",
+                reminder_status="scheduled",
             ),
             ReviewSignoff(
                 signoff_id="sig-triage-cross-team-operator",
@@ -2398,6 +2668,9 @@ def build_big_4204_review_pack() -> UIReviewPack:
                 freeze_reason="Allow the design sprint review pack to ship while tracked copy cleanup lands in the next critique.",
                 freeze_approved_by="release-director",
                 freeze_approved_at="2026-03-14T08:30:00Z",
+                freeze_renewal_owner="release-director",
+                freeze_renewal_by="2026-03-17T12:00:00Z",
+                freeze_renewal_status="review-needed",
             ),
         ],
         blocker_timeline=[
@@ -2422,6 +2695,9 @@ def build_big_4204_review_pack() -> UIReviewPack:
                 handoff_to="Eng Lead",
                 channel="design-critique",
                 artifact_ref="wf-run-detail#copy-v5",
+                ack_owner="Eng Lead",
+                ack_at="2026-03-14T10:15:00Z",
+                ack_status="acknowledged",
             ),
         ],
     )
@@ -2585,6 +2861,47 @@ def render_ui_review_signoff_reminder_queue(pack: UIReviewPack) -> str:
     return "\n".join(lines)
 
 
+def render_ui_review_reminder_cadence_board(pack: UIReviewPack) -> str:
+    entries = _build_reminder_cadence_entries(pack)
+    cadence_counts: Dict[str, int] = {}
+    status_counts: Dict[str, int] = {}
+    for entry in entries:
+        cadence_counts[entry["reminder_cadence"]] = cadence_counts.get(entry["reminder_cadence"], 0) + 1
+        status_counts[entry["reminder_status"]] = status_counts.get(entry["reminder_status"], 0) + 1
+    lines = [
+        "# UI Review Reminder Cadence Board",
+        "",
+        f"- Issue: {pack.issue_id} {pack.title}",
+        f"- Version: {pack.version}",
+        f"- Items: {len(entries)}",
+        f"- Cadences: {len(cadence_counts)}",
+        "",
+        "## By Cadence",
+    ]
+    for cadence, count in sorted(cadence_counts.items()):
+        lines.append(f"- {cadence}: {count}")
+    if not cadence_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## By Status")
+    for status, count in sorted(status_counts.items()):
+        lines.append(f"- {status}: {count}")
+    if not status_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## Items")
+    for entry in entries:
+        lines.append(
+            f"- {entry['entry_id']}: signoff={entry['signoff_id']} role={entry['role']} surface={entry['surface_id']} cadence={entry['reminder_cadence']} status={entry['reminder_status']} owner={entry['reminder_owner']}"
+        )
+        lines.append(
+            f"  sla={entry['sla_status']} last_reminder_at={entry['last_reminder_at']} next_reminder_at={entry['next_reminder_at']} due_at={entry['due_at']} summary={entry['summary']}"
+        )
+    if not entries:
+        lines.append("- none")
+    return "\n".join(lines)
+
+
 def render_ui_review_escalation_dashboard(pack: UIReviewPack) -> str:
     entries = _build_escalation_dashboard_entries(pack)
     owner_counts: Dict[str, Dict[str, int]] = {}
@@ -2718,6 +3035,47 @@ def render_ui_review_escalation_handoff_ledger(pack: UIReviewPack) -> str:
     return "\n".join(lines)
 
 
+def render_ui_review_handoff_ack_ledger(pack: UIReviewPack) -> str:
+    entries = _build_handoff_ack_entries(pack)
+    owner_counts: Dict[str, int] = {}
+    status_counts: Dict[str, int] = {}
+    for entry in entries:
+        owner_counts[entry['ack_owner']] = owner_counts.get(entry['ack_owner'], 0) + 1
+        status_counts[entry['ack_status']] = status_counts.get(entry['ack_status'], 0) + 1
+    lines = [
+        "# UI Review Handoff Ack Ledger",
+        "",
+        f"- Issue: {pack.issue_id} {pack.title}",
+        f"- Version: {pack.version}",
+        f"- Ack items: {len(entries)}",
+        f"- Ack owners: {len(owner_counts)}",
+        "",
+        "## By Ack Owner",
+    ]
+    for owner, count in sorted(owner_counts.items()):
+        lines.append(f"- {owner}: {count}")
+    if not owner_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## By Ack Status")
+    for status, count in sorted(status_counts.items()):
+        lines.append(f"- {status}: {count}")
+    if not status_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## Entries")
+    for entry in entries:
+        lines.append(
+            f"- {entry['entry_id']}: event={entry['event_id']} blocker={entry['blocker_id']} surface={entry['surface_id']} handoff_to={entry['handoff_to']} ack_owner={entry['ack_owner']} ack_status={entry['ack_status']} ack_at={entry['ack_at']}"
+        )
+        lines.append(
+            f"  actor={entry['actor']} status={entry['status']} channel={entry['channel']} artifact={entry['artifact_ref']} summary={entry['summary']}"
+        )
+    if not entries:
+        lines.append("- none")
+    return "\n".join(lines)
+
+
 def render_ui_review_freeze_approval_trail(pack: UIReviewPack) -> str:
     entries = _build_freeze_approval_entries(pack)
     approver_counts: Dict[str, int] = {}
@@ -2753,6 +3111,47 @@ def render_ui_review_freeze_approval_trail(pack: UIReviewPack) -> str:
         )
         lines.append(
             f"  summary={entry['summary']} latest_event={entry['latest_event']} next_action={entry['next_action']}"
+        )
+    if not entries:
+        lines.append("- none")
+    return "\n".join(lines)
+
+
+def render_ui_review_freeze_renewal_tracker(pack: UIReviewPack) -> str:
+    entries = _build_freeze_renewal_entries(pack)
+    owner_counts: Dict[str, int] = {}
+    status_counts: Dict[str, int] = {}
+    for entry in entries:
+        owner_counts[entry['renewal_owner']] = owner_counts.get(entry['renewal_owner'], 0) + 1
+        status_counts[entry['renewal_status']] = status_counts.get(entry['renewal_status'], 0) + 1
+    lines = [
+        "# UI Review Freeze Renewal Tracker",
+        "",
+        f"- Issue: {pack.issue_id} {pack.title}",
+        f"- Version: {pack.version}",
+        f"- Renewal items: {len(entries)}",
+        f"- Renewal owners: {len(owner_counts)}",
+        "",
+        "## By Renewal Owner",
+    ]
+    for owner, count in sorted(owner_counts.items()):
+        lines.append(f"- {owner}: {count}")
+    if not owner_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## By Renewal Status")
+    for status, count in sorted(status_counts.items()):
+        lines.append(f"- {status}: {count}")
+    if not status_counts:
+        lines.append("- none")
+    lines.append("")
+    lines.append("## Entries")
+    for entry in entries:
+        lines.append(
+            f"- {entry['entry_id']}: blocker={entry['blocker_id']} surface={entry['surface_id']} status={entry['status']} renewal_owner={entry['renewal_owner']} renewal_by={entry['renewal_by']} renewal_status={entry['renewal_status']}"
+        )
+        lines.append(
+            f"  freeze_owner={entry['freeze_owner']} freeze_until={entry['freeze_until']} approved_by={entry['freeze_approved_by']} summary={entry['summary']} next_action={entry['next_action']}"
         )
     if not entries:
         lines.append("- none")
@@ -3142,6 +3541,24 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
         f"<li><strong>{escape(entry['entry_id'])}</strong> · signoff={escape(entry['signoff_id'])} · role={escape(entry['role'])} · surface={escape(entry['surface_id'])} · status={escape(entry['status'])} · sla={escape(entry['sla_status'])}<br /><span>owner={escape(entry['reminder_owner'])} · channel={escape(entry['reminder_channel'])}</span><br /><span>last_reminder_at={escape(entry['last_reminder_at'])} · next_reminder_at={escape(entry['next_reminder_at'])} · due_at={escape(entry['due_at'])}</span><br /><span>{escape(entry['summary'])}</span></li>"
         for entry in signoff_reminder_entries
     ) or "<li>none</li>"
+    reminder_cadence_entries = _build_reminder_cadence_entries(pack)
+    reminder_cadence_counts: Dict[str, int] = {}
+    reminder_status_counts: Dict[str, int] = {}
+    for entry in reminder_cadence_entries:
+        reminder_cadence_counts[entry['reminder_cadence']] = reminder_cadence_counts.get(entry['reminder_cadence'], 0) + 1
+        reminder_status_counts[entry['reminder_status']] = reminder_status_counts.get(entry['reminder_status'], 0) + 1
+    reminder_cadence_owner_html = "".join(
+        f"<li><strong>{escape(cadence)}</strong> · count={count}</li>"
+        for cadence, count in sorted(reminder_cadence_counts.items())
+    ) or "<li>none</li>"
+    reminder_cadence_status_html = "".join(
+        f"<li><strong>{escape(status)}</strong> · count={count}</li>"
+        for status, count in sorted(reminder_status_counts.items())
+    ) or "<li>none</li>"
+    reminder_cadence_item_html = "".join(
+        f"<li><strong>{escape(entry['entry_id'])}</strong> · signoff={escape(entry['signoff_id'])} · role={escape(entry['role'])} · surface={escape(entry['surface_id'])} · cadence={escape(entry['reminder_cadence'])} · status={escape(entry['reminder_status'])}<br /><span>owner={escape(entry['reminder_owner'])} · sla={escape(entry['sla_status'])}</span><br /><span>last_reminder_at={escape(entry['last_reminder_at'])} · next_reminder_at={escape(entry['next_reminder_at'])} · due_at={escape(entry['due_at'])}</span><br /><span>{escape(entry['summary'])}</span></li>"
+        for entry in reminder_cadence_entries
+    ) or "<li>none</li>"
     signoff_breach_entries = _build_signoff_breach_entries(pack)
     signoff_breach_state_counts: Dict[str, int] = {}
     signoff_breach_owner_counts: Dict[str, int] = {}
@@ -3203,6 +3620,24 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
     escalation_handoff_item_html = "".join(
         f"<li><strong>{escape(entry['ledger_id'])}</strong> · event={escape(entry['event_id'])} · blocker={escape(entry['blocker_id'])} · surface={escape(entry['surface_id'])} · actor={escape(entry['actor'])} · status={escape(entry['status'])}<br /><span>from={escape(entry['handoff_from'])} · to={escape(entry['handoff_to'])} · channel={escape(entry['channel'])}</span><br /><span>artifact={escape(entry['artifact_ref'])} · next_action={escape(entry['next_action'])} · at={escape(entry['timestamp'])}</span></li>"
         for entry in escalation_handoff_entries
+    ) or "<li>none</li>"
+    handoff_ack_entries = _build_handoff_ack_entries(pack)
+    handoff_ack_owner_counts: Dict[str, int] = {}
+    handoff_ack_status_counts: Dict[str, int] = {}
+    for entry in handoff_ack_entries:
+        handoff_ack_owner_counts[entry['ack_owner']] = handoff_ack_owner_counts.get(entry['ack_owner'], 0) + 1
+        handoff_ack_status_counts[entry['ack_status']] = handoff_ack_status_counts.get(entry['ack_status'], 0) + 1
+    handoff_ack_owner_html = "".join(
+        f"<li><strong>{escape(owner)}</strong> · count={count}</li>"
+        for owner, count in sorted(handoff_ack_owner_counts.items())
+    ) or "<li>none</li>"
+    handoff_ack_status_html = "".join(
+        f"<li><strong>{escape(status)}</strong> · count={count}</li>"
+        for status, count in sorted(handoff_ack_status_counts.items())
+    ) or "<li>none</li>"
+    handoff_ack_item_html = "".join(
+        f"<li><strong>{escape(entry['entry_id'])}</strong> · event={escape(entry['event_id'])} · blocker={escape(entry['blocker_id'])} · surface={escape(entry['surface_id'])} · handoff_to={escape(entry['handoff_to'])}<br /><span>ack_owner={escape(entry['ack_owner'])} · ack_status={escape(entry['ack_status'])} · ack_at={escape(entry['ack_at'])}</span><br /><span>actor={escape(entry['actor'])} · channel={escape(entry['channel'])} · artifact={escape(entry['artifact_ref'])}</span><br /><span>{escape(entry['summary'])}</span></li>"
+        for entry in handoff_ack_entries
     ) or "<li>none</li>"
     owner_escalation_entries = _build_owner_escalation_digest_entries(pack)
     owner_escalation_counts: Dict[str, Dict[str, int]] = {}
@@ -3310,6 +3745,24 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
         f"<li><strong>{escape(entry['entry_id'])}</strong> · blocker={escape(entry['blocker_id'])} · surface={escape(entry['surface_id'])} · status={escape(entry['status'])}<br /><span>owner={escape(entry['freeze_owner'])} · approved_by={escape(entry['freeze_approved_by'])} · approved_at={escape(entry['freeze_approved_at'])} · window={escape(entry['freeze_until'])}</span><br /><span>{escape(entry['summary'])}</span><br /><span>latest_event={escape(entry['latest_event'])} · next_action={escape(entry['next_action'])}</span></li>"
         for entry in freeze_approval_entries
     ) or "<li>none</li>"
+    freeze_renewal_entries = _build_freeze_renewal_entries(pack)
+    freeze_renewal_owner_counts: Dict[str, int] = {}
+    freeze_renewal_status_counts: Dict[str, int] = {}
+    for entry in freeze_renewal_entries:
+        freeze_renewal_owner_counts[entry['renewal_owner']] = freeze_renewal_owner_counts.get(entry['renewal_owner'], 0) + 1
+        freeze_renewal_status_counts[entry['renewal_status']] = freeze_renewal_status_counts.get(entry['renewal_status'], 0) + 1
+    freeze_renewal_owner_html = "".join(
+        f"<li><strong>{escape(owner)}</strong> · count={count}</li>"
+        for owner, count in sorted(freeze_renewal_owner_counts.items())
+    ) or "<li>none</li>"
+    freeze_renewal_status_html = "".join(
+        f"<li><strong>{escape(status)}</strong> · count={count}</li>"
+        for status, count in sorted(freeze_renewal_status_counts.items())
+    ) or "<li>none</li>"
+    freeze_renewal_item_html = "".join(
+        f"<li><strong>{escape(entry['entry_id'])}</strong> · blocker={escape(entry['blocker_id'])} · surface={escape(entry['surface_id'])} · status={escape(entry['status'])}<br /><span>renewal_owner={escape(entry['renewal_owner'])} · renewal_by={escape(entry['renewal_by'])} · renewal_status={escape(entry['renewal_status'])}</span><br /><span>freeze_owner={escape(entry['freeze_owner'])} · freeze_until={escape(entry['freeze_until'])} · approved_by={escape(entry['freeze_approved_by'])}</span><br /><span>{escape(entry['summary'])} · next_action={escape(entry['next_action'])}</span></li>"
+        for entry in freeze_renewal_entries
+    ) or "<li>none</li>"
     owner_review_queue = _build_owner_review_queue_entries(pack)
     owner_queue_counts: Dict[str, Dict[str, int]] = {}
     for entry in owner_review_queue:
@@ -3389,6 +3842,7 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
       <p>Missing signoff escalation owners: {escape(', '.join(audit.signoffs_missing_escalation_owners) if audit.signoffs_missing_escalation_owners else 'none')}</p>
       <p>Missing signoff reminder owners: {escape(', '.join(audit.signoffs_missing_reminder_owners) if audit.signoffs_missing_reminder_owners else 'none')}</p>
       <p>Missing signoff next reminders: {escape(', '.join(audit.signoffs_missing_next_reminders) if audit.signoffs_missing_next_reminders else 'none')}</p>
+      <p>Missing signoff reminder cadence: {escape(', '.join(audit.signoffs_missing_reminder_cadence) if audit.signoffs_missing_reminder_cadence else 'none')}</p>
       <p>Breached signoff SLA: {escape(', '.join(audit.signoffs_with_breached_sla) if audit.signoffs_with_breached_sla else 'none')}</p>
       <p>Missing waiver metadata: {escape(', '.join(audit.waived_signoffs_missing_metadata) if audit.waived_signoffs_missing_metadata else 'none')}</p>
       <p>Missing blocker timeline: {escape(', '.join(audit.blockers_missing_timeline_events) if audit.blockers_missing_timeline_events else 'none')}</p>
@@ -3397,9 +3851,13 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
       <p>Freeze exceptions missing windows: {escape(', '.join(audit.freeze_exceptions_missing_until) if audit.freeze_exceptions_missing_until else 'none')}</p>
       <p>Freeze exceptions missing approvers: {escape(', '.join(audit.freeze_exceptions_missing_approvers) if audit.freeze_exceptions_missing_approvers else 'none')}</p>
       <p>Freeze exceptions missing approval dates: {escape(', '.join(audit.freeze_exceptions_missing_approval_dates) if audit.freeze_exceptions_missing_approval_dates else 'none')}</p>
+      <p>Freeze exceptions missing renewal owners: {escape(', '.join(audit.freeze_exceptions_missing_renewal_owners) if audit.freeze_exceptions_missing_renewal_owners else 'none')}</p>
+      <p>Freeze exceptions missing renewal dates: {escape(', '.join(audit.freeze_exceptions_missing_renewal_dates) if audit.freeze_exceptions_missing_renewal_dates else 'none')}</p>
       <p>Orphan blocker timeline ids: {escape(', '.join(audit.orphan_blocker_timeline_blocker_ids) if audit.orphan_blocker_timeline_blocker_ids else 'none')}</p>
       <p>Handoff events missing targets: {escape(', '.join(audit.handoff_events_missing_targets) if audit.handoff_events_missing_targets else 'none')}</p>
       <p>Handoff events missing artifacts: {escape(', '.join(audit.handoff_events_missing_artifacts) if audit.handoff_events_missing_artifacts else 'none')}</p>
+      <p>Handoff events missing ack owners: {escape(', '.join(audit.handoff_events_missing_ack_owners) if audit.handoff_events_missing_ack_owners else 'none')}</p>
+      <p>Handoff events missing ack dates: {escape(', '.join(audit.handoff_events_missing_ack_dates) if audit.handoff_events_missing_ack_dates else 'none')}</p>
       <p>Unresolved decisions: {escape(', '.join(audit.unresolved_decision_ids) if audit.unresolved_decision_ids else 'none')}</p>
       <p>Unresolved required signoffs: {escape(', '.join(audit.unresolved_required_signoff_ids) if audit.unresolved_required_signoff_ids else 'none')}</p>
     </section>
@@ -3413,14 +3871,17 @@ def render_ui_review_pack_html(pack: UIReviewPack, audit: UIReviewPackAudit) -> 
     <section class="surface"><h2>Sign-off Log</h2><ul>{signoff_html}</ul></section>
     <section class="surface"><h2>Sign-off SLA Dashboard</h2><h3>SLA States</h3><ul>{signoff_sla_state_html}</ul><h3>Escalation Owners</h3><ul>{signoff_sla_owner_html}</ul><h3>Sign-offs</h3><ul>{signoff_sla_item_html}</ul></section>
     <section class="surface"><h2>Sign-off Reminder Queue</h2><h3>By Owner</h3><ul>{signoff_reminder_owner_html}</ul><h3>By Channel</h3><ul>{signoff_reminder_channel_html}</ul><h3>Items</h3><ul>{signoff_reminder_item_html}</ul></section>
+    <section class="surface"><h2>Reminder Cadence Board</h2><h3>By Cadence</h3><ul>{reminder_cadence_owner_html}</ul><h3>By Status</h3><ul>{reminder_cadence_status_html}</ul><h3>Items</h3><ul>{reminder_cadence_item_html}</ul></section>
     <section class="surface"><h2>Sign-off Breach Board</h2><h3>SLA States</h3><ul>{signoff_breach_state_html}</ul><h3>Escalation Owners</h3><ul>{signoff_breach_owner_html}</ul><h3>Items</h3><ul>{signoff_breach_item_html}</ul></section>
     <section class="surface"><h2>Escalation Dashboard</h2><h3>By Escalation Owner</h3><ul>{escalation_owner_html}</ul><h3>By Status</h3><ul>{escalation_status_html}</ul><h3>Escalations</h3><ul>{escalation_item_html}</ul></section>
     <section class="surface"><h2>Escalation Handoff Ledger</h2><h3>By Status</h3><ul>{escalation_handoff_status_html}</ul><h3>By Channel</h3><ul>{escalation_handoff_channel_html}</ul><h3>Entries</h3><ul>{escalation_handoff_item_html}</ul></section>
+    <section class="surface"><h2>Handoff Ack Ledger</h2><h3>By Ack Owner</h3><ul>{handoff_ack_owner_html}</ul><h3>By Ack Status</h3><ul>{handoff_ack_status_html}</ul><h3>Entries</h3><ul>{handoff_ack_item_html}</ul></section>
     <section class="surface"><h2>Owner Escalation Digest</h2><h3>Owners</h3><ul>{owner_escalation_owner_html}</ul><h3>Items</h3><ul>{owner_escalation_item_html}</ul></section>
     <section class="surface"><h2>Blocker Log</h2><ul>{blocker_html}</ul></section>
     <section class="surface"><h2>Blocker Timeline</h2><ul>{blocker_timeline_html}</ul></section>
     <section class="surface"><h2>Review Freeze Exception Board</h2><h3>By Owner</h3><ul>{freeze_owner_html}</ul><h3>By Surface</h3><ul>{freeze_surface_html}</ul><h3>Entries</h3><ul>{freeze_item_html}</ul></section>
     <section class="surface"><h2>Freeze Approval Trail</h2><h3>By Approver</h3><ul>{freeze_approval_owner_html}</ul><h3>By Status</h3><ul>{freeze_approval_status_html}</ul><h3>Entries</h3><ul>{freeze_approval_item_html}</ul></section>
+    <section class="surface"><h2>Freeze Renewal Tracker</h2><h3>By Renewal Owner</h3><ul>{freeze_renewal_owner_html}</ul><h3>By Renewal Status</h3><ul>{freeze_renewal_status_html}</ul><h3>Entries</h3><ul>{freeze_renewal_item_html}</ul></section>
     <section class="surface"><h2>Review Exceptions</h2><ul>{exception_html}</ul></section>
     <section class="surface"><h2>Review Exception Matrix</h2><h3>By Owner</h3><ul>{exception_owner_html}</ul><h3>By Status</h3><ul>{exception_status_html}</ul><h3>By Surface</h3><ul>{exception_surface_html}</ul></section>
     <section class="surface"><h2>Owner Review Queue</h2><h3>Owners</h3><ul>{owner_queue_owner_html}</ul><h3>Items</h3><ul>{owner_queue_item_html}</ul></section>
@@ -3441,14 +3902,17 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
     signoff_log_path = str(base / f"{slug}-signoff-log.md")
     signoff_sla_dashboard_path = str(base / f"{slug}-signoff-sla-dashboard.md")
     signoff_reminder_queue_path = str(base / f"{slug}-signoff-reminder-queue.md")
+    reminder_cadence_board_path = str(base / f"{slug}-reminder-cadence-board.md")
     signoff_breach_board_path = str(base / f"{slug}-signoff-breach-board.md")
     escalation_dashboard_path = str(base / f"{slug}-escalation-dashboard.md")
     escalation_handoff_ledger_path = str(base / f"{slug}-escalation-handoff-ledger.md")
+    handoff_ack_ledger_path = str(base / f"{slug}-handoff-ack-ledger.md")
     owner_escalation_digest_path = str(base / f"{slug}-owner-escalation-digest.md")
     blocker_log_path = str(base / f"{slug}-blocker-log.md")
     blocker_timeline_path = str(base / f"{slug}-blocker-timeline.md")
     freeze_exception_board_path = str(base / f"{slug}-freeze-exception-board.md")
     freeze_approval_trail_path = str(base / f"{slug}-freeze-approval-trail.md")
+    freeze_renewal_tracker_path = str(base / f"{slug}-freeze-renewal-tracker.md")
     exception_log_path = str(base / f"{slug}-exception-log.md")
     exception_matrix_path = str(base / f"{slug}-exception-matrix.md")
     owner_review_queue_path = str(base / f"{slug}-owner-review-queue.md")
@@ -3461,14 +3925,17 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
     Path(signoff_log_path).write_text(render_ui_review_signoff_log(pack))
     Path(signoff_sla_dashboard_path).write_text(render_ui_review_signoff_sla_dashboard(pack))
     Path(signoff_reminder_queue_path).write_text(render_ui_review_signoff_reminder_queue(pack))
+    Path(reminder_cadence_board_path).write_text(render_ui_review_reminder_cadence_board(pack))
     Path(signoff_breach_board_path).write_text(render_ui_review_signoff_breach_board(pack))
     Path(escalation_dashboard_path).write_text(render_ui_review_escalation_dashboard(pack))
     Path(escalation_handoff_ledger_path).write_text(render_ui_review_escalation_handoff_ledger(pack))
+    Path(handoff_ack_ledger_path).write_text(render_ui_review_handoff_ack_ledger(pack))
     Path(owner_escalation_digest_path).write_text(render_ui_review_owner_escalation_digest(pack))
     Path(blocker_log_path).write_text(render_ui_review_blocker_log(pack))
     Path(blocker_timeline_path).write_text(render_ui_review_blocker_timeline(pack))
     Path(freeze_exception_board_path).write_text(render_ui_review_freeze_exception_board(pack))
     Path(freeze_approval_trail_path).write_text(render_ui_review_freeze_approval_trail(pack))
+    Path(freeze_renewal_tracker_path).write_text(render_ui_review_freeze_renewal_tracker(pack))
     Path(exception_log_path).write_text(render_ui_review_exception_log(pack))
     Path(exception_matrix_path).write_text(render_ui_review_exception_matrix(pack))
     Path(owner_review_queue_path).write_text(render_ui_review_owner_review_queue(pack))
@@ -3482,14 +3949,17 @@ def write_ui_review_pack_bundle(root_dir: str, pack: UIReviewPack) -> UIReviewPa
         signoff_log_path=signoff_log_path,
         signoff_sla_dashboard_path=signoff_sla_dashboard_path,
         signoff_reminder_queue_path=signoff_reminder_queue_path,
+        reminder_cadence_board_path=reminder_cadence_board_path,
         signoff_breach_board_path=signoff_breach_board_path,
         escalation_dashboard_path=escalation_dashboard_path,
         escalation_handoff_ledger_path=escalation_handoff_ledger_path,
+        handoff_ack_ledger_path=handoff_ack_ledger_path,
         owner_escalation_digest_path=owner_escalation_digest_path,
         blocker_log_path=blocker_log_path,
         blocker_timeline_path=blocker_timeline_path,
         freeze_exception_board_path=freeze_exception_board_path,
         freeze_approval_trail_path=freeze_approval_trail_path,
+        freeze_renewal_tracker_path=freeze_renewal_tracker_path,
         exception_log_path=exception_log_path,
         exception_matrix_path=exception_matrix_path,
         owner_review_queue_path=owner_review_queue_path,
