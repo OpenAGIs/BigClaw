@@ -284,6 +284,8 @@ from .planning import (
     WeeklyExecutionPlan,
     WeeklyGoal,
     build_big_4701_execution_plan,
+    build_v3_candidate_backlog,
+    build_v3_entry_gate,
     render_candidate_backlog_report,
     render_four_week_execution_report,
 )
@@ -565,6 +567,8 @@ __all__ = [
     "WeeklyExecutionPlan",
     "WeeklyGoal",
     "build_big_4701_execution_plan",
+    "build_v3_candidate_backlog",
+    "build_v3_entry_gate",
     "render_candidate_backlog_report",
     "render_four_week_execution_report",
     "InteractionFlow",

@@ -11,6 +11,8 @@ from bigclaw.planning import (
     WeeklyExecutionPlan,
     WeeklyGoal,
     build_big_4701_execution_plan,
+    build_v3_candidate_backlog,
+    build_v3_entry_gate,
     render_candidate_backlog_report,
     render_four_week_execution_report,
 )
@@ -419,3 +421,61 @@ def test_weekly_execution_plan_flags_at_risk_goal_ids() -> None:
     )
 
     assert week.at_risk_goal_ids == ["w2-blocked"]
+
+
+def test_build_v3_candidate_backlog_matches_issue_plan_traceability() -> None:
+    backlog = build_v3_candidate_backlog()
+
+    assert backlog.epic_id == "BIG-EPIC-20"
+    assert backlog.title == "v4.0 v3候选与进入条件"
+    assert [candidate.candidate_id for candidate in backlog.ranked_candidates] == [
+        "candidate-ops-hardening",
+        "candidate-orchestration-rollout",
+        "candidate-release-control",
+    ]
+    assert all(candidate.ready for candidate in backlog.candidates)
+
+    ops_candidate = next(
+        candidate for candidate in backlog.candidates if candidate.candidate_id == "candidate-ops-hardening"
+    )
+    assert {link.target for link in ops_candidate.evidence_links} >= {
+        "src/bigclaw/operations.py",
+        "tests/test_control_center.py",
+        "tests/test_operations.py",
+        "src/bigclaw/execution_contract.py",
+        "src/bigclaw/workflow.py",
+        "tests/test_workflow.py",
+        "tests/test_execution_flow.py",
+        "src/bigclaw/saved_views.py",
+        "tests/test_saved_views.py",
+        "src/bigclaw/evaluation.py",
+        "tests/test_evaluation.py",
+    }
+
+
+def test_build_v3_entry_gate_passes_built_candidate_backlog_against_v2_baseline() -> None:
+    backlog = build_v3_candidate_backlog()
+    gate = build_v3_entry_gate()
+
+    decision = CandidatePlanner().evaluate_gate(
+        backlog,
+        gate,
+        baseline_audit=ScopeFreezeAudit(
+            board_name="BigClaw v2.0 Freeze",
+            version="v2.0",
+            total_items=25,
+        ),
+    )
+    report = render_candidate_backlog_report(backlog, gate, decision)
+
+    assert decision.passed is True
+    assert decision.ready_candidate_ids == [
+        "candidate-ops-hardening",
+        "candidate-orchestration-rollout",
+        "candidate-release-control",
+    ]
+    assert decision.missing_capabilities == []
+    assert decision.missing_evidence == []
+    assert "candidate-ops-hardening: Operations command-center hardening" in report
+    assert "- command-center-src -> src/bigclaw/operations.py capability=ops-control" in report
+    assert "- report-studio-tests -> tests/test_reports.py capability=commercialization" in report
