@@ -28,9 +28,12 @@ from bigclaw.ui_review import (
     render_ui_review_freeze_exception_board,
     render_ui_review_freeze_renewal_tracker,
     render_ui_review_handoff_ack_ledger,
+    render_ui_review_interaction_coverage_board,
     render_ui_review_objective_coverage_board,
     render_ui_review_open_question_tracker,
     render_ui_review_owner_escalation_digest,
+    render_ui_review_persona_readiness_board,
+    render_ui_review_review_summary_board,
     render_ui_review_owner_review_queue,
     render_ui_review_owner_workload_board,
     render_ui_review_reminder_cadence_board,
@@ -196,13 +199,19 @@ def test_build_big_4204_review_pack_is_ready_for_design_sprint_review() -> None:
     assert pack.requires_blocker_log is True
     assert pack.requires_blocker_timeline is True
     assert "obj-queue-governance" in report
+    assert "## Review Summary Board" in report
+    assert "summary-objectives: category=objectives total=4 blocked=1 at-risk=1 covered=2" in report
     assert "## Objective Coverage Board" in report
     assert "- covered: 2" in report
     assert "objcov-obj-run-detail-investigation: objective=obj-run-detail-investigation persona=Eng Lead priority=P0 coverage=blocked dependencies=3 surfaces=wf-run-detail" in report
+    assert "## Persona Readiness Board" in report
+    assert "persona-eng-lead: persona=Eng Lead readiness=blocked objectives=1 assignments=1 signoffs=1 open_questions=0 queue_items=1 blockers=1" in report
     assert "wf-triage: Triage and handoff board" in report
     assert "## Wireframe Readiness Board" in report
     assert "wire-wf-run-detail: surface=wf-run-detail device=desktop readiness=blocked open_total=4 entry=/runs/detail" in report
     assert "flow-run-replay: Run replay with evidence audit" in report
+    assert "## Interaction Coverage Board" in report
+    assert "intcov-flow-triage-handoff: flow=flow-triage-handoff surfaces=wf-triage owners=Cross-Team Operator,Platform Admin coverage=covered states=4 exceptions=2" in report
     assert "## Open Question Tracker" in report
     assert "qtrack-oq-role-density: question=oq-role-density owner=product-experience theme=role-matrix status=open link_status=linked surfaces=wf-queue" in report
     assert "chk-queue-batch-approval: surface=wf-queue owner=Platform Admin status=ready" in report
@@ -688,6 +697,37 @@ def test_render_ui_review_freeze_approval_trail() -> None:
     assert "freeze-approval-blk-run-detail-copy-final: blocker=blk-run-detail-copy-final surface=wf-run-detail status=open owner=release-director approved_by=release-director approved_at=2026-03-14T08:30:00Z window=2026-03-18T18:00:00Z" in freeze_trail
 
 
+
+
+def test_render_ui_review_summary_persona_and_interaction_boards() -> None:
+    pack = build_big_4204_review_pack()
+
+    review_summary = render_ui_review_review_summary_board(pack)
+    persona_readiness = render_ui_review_persona_readiness_board(pack)
+    interaction_coverage = render_ui_review_interaction_coverage_board(pack)
+
+    assert "# UI Review Review Summary Board" in review_summary
+    assert "- Categories: 6" in review_summary
+    assert "summary-objectives: category=objectives total=4 blocked=1 at-risk=1 covered=2" in review_summary
+    assert "summary-personas: category=personas total=4 blocked=1 at-risk=1 ready=2" in review_summary
+    assert "summary-interactions: category=interactions total=4 covered=4 watch=0 missing=0" in review_summary
+    assert "summary-actions: category=actions total=8 queue=6 reminder=1 renewal=1" in review_summary
+    assert "# UI Review Persona Readiness Board" in persona_readiness
+    assert "- Personas: 4" in persona_readiness
+    assert "- Objectives: 4" in persona_readiness
+    assert "- blocked: 1" in persona_readiness
+    assert "- at-risk: 1" in persona_readiness
+    assert "- ready: 2" in persona_readiness
+    assert "persona-eng-lead: persona=Eng Lead readiness=blocked objectives=1 assignments=1 signoffs=1 open_questions=0 queue_items=1 blockers=1" in persona_readiness
+    assert "objective_ids=obj-run-detail-investigation surfaces=wf-run-detail queue_ids=queue-sig-run-detail-eng-lead blocker_ids=blk-run-detail-copy-final" in persona_readiness
+    assert "# UI Review Interaction Coverage Board" in interaction_coverage
+    assert "- Interactions: 4" in interaction_coverage
+    assert "- Surfaces: 4" in interaction_coverage
+    assert "- covered: 4" in interaction_coverage
+    assert "intcov-flow-triage-handoff: flow=flow-triage-handoff surfaces=wf-triage owners=Cross-Team Operator,Platform Admin coverage=covered states=4 exceptions=2" in interaction_coverage
+    assert "checklist=chk-triage-handoff-clarity,chk-triage-bulk-assign open_checklist=none trigger=Cross-Team Operator bulk-assigns a finding set or opens the handoff panel" in interaction_coverage
+
+
 def test_render_ui_review_objective_wireframe_and_question_boards() -> None:
     pack = build_big_4204_review_pack()
 
@@ -868,8 +908,11 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     checklist_traceability = render_ui_review_checklist_traceability_board(pack)
     decision_log = render_ui_review_decision_log(pack)
     decision_followup = render_ui_review_decision_followup_tracker(pack)
+    review_summary = render_ui_review_review_summary_board(pack)
     objective_coverage = render_ui_review_objective_coverage_board(pack)
+    persona_readiness = render_ui_review_persona_readiness_board(pack)
     wireframe_readiness = render_ui_review_wireframe_readiness_board(pack)
+    interaction_coverage = render_ui_review_interaction_coverage_board(pack)
     question_tracker = render_ui_review_open_question_tracker(pack)
     role_matrix = render_ui_review_role_matrix(pack)
     role_coverage = render_ui_review_role_coverage_board(pack)
@@ -899,8 +942,11 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "<h2>Decision Log</h2>" in html
     assert "<h2>Checklist Traceability Board</h2>" in html
     assert "<h2>Decision Follow-up Tracker</h2>" in html
+    assert "<h2>Review Summary Board</h2>" in html
     assert "<h2>Objective Coverage Board</h2>" in html
+    assert "<h2>Persona Readiness Board</h2>" in html
     assert "<h2>Wireframe Readiness Board</h2>" in html
+    assert "<h2>Interaction Coverage Board</h2>" in html
     assert "<h2>Open Question Tracker</h2>" in html
     assert "<h2>Role Matrix</h2>" in html
     assert "<h2>Role Coverage Board</h2>" in html
@@ -932,10 +978,16 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "dec-run-detail-audit-rail" in decision_log
     assert "# UI Review Decision Follow-up Tracker" in decision_followup
     assert "follow-dec-queue-vp-summary: decision=dec-queue-vp-summary surface=wf-queue owner=VP Eng status=proposed linked_roles=Platform Admin,product-experience" in decision_followup
+    assert "# UI Review Review Summary Board" in review_summary
+    assert "summary-personas: category=personas total=4 blocked=1 at-risk=1 ready=2" in review_summary
     assert "# UI Review Objective Coverage Board" in objective_coverage
     assert "objcov-obj-run-detail-investigation: objective=obj-run-detail-investigation persona=Eng Lead priority=P0 coverage=blocked dependencies=3 surfaces=wf-run-detail" in objective_coverage
+    assert "# UI Review Persona Readiness Board" in persona_readiness
+    assert "persona-eng-lead: persona=Eng Lead readiness=blocked objectives=1 assignments=1 signoffs=1 open_questions=0 queue_items=1 blockers=1" in persona_readiness
     assert "# UI Review Wireframe Readiness Board" in wireframe_readiness
     assert "wire-wf-run-detail: surface=wf-run-detail device=desktop readiness=blocked open_total=4 entry=/runs/detail" in wireframe_readiness
+    assert "# UI Review Interaction Coverage Board" in interaction_coverage
+    assert "intcov-flow-triage-handoff: flow=flow-triage-handoff surfaces=wf-triage owners=Cross-Team Operator,Platform Admin coverage=covered states=4 exceptions=2" in interaction_coverage
     assert "# UI Review Open Question Tracker" in question_tracker
     assert "qtrack-oq-role-density: question=oq-role-density owner=product-experience theme=role-matrix status=open link_status=linked surfaces=wf-queue" in question_tracker
     assert "# UI Review Role Matrix" in role_matrix
@@ -985,8 +1037,11 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert Path(artifacts.markdown_path).exists()
     assert Path(artifacts.html_path).exists()
     assert Path(artifacts.decision_log_path).exists()
+    assert Path(artifacts.review_summary_board_path).exists()
     assert Path(artifacts.objective_coverage_board_path).exists()
+    assert Path(artifacts.persona_readiness_board_path).exists()
     assert Path(artifacts.wireframe_readiness_board_path).exists()
+    assert Path(artifacts.interaction_coverage_board_path).exists()
     assert Path(artifacts.open_question_tracker_path).exists()
     assert Path(artifacts.checklist_traceability_board_path).exists()
     assert Path(artifacts.decision_followup_tracker_path).exists()
@@ -1016,10 +1071,16 @@ def test_render_ui_review_html_and_bundle_export(tmp_path) -> None:
     assert "Decision Log" in Path(artifacts.html_path).read_text()
     assert "Checklist Traceability Board" in Path(artifacts.html_path).read_text()
     assert "Decision Follow-up Tracker" in Path(artifacts.html_path).read_text()
+    assert "Review Summary Board" in Path(artifacts.html_path).read_text()
     assert "Objective Coverage Board" in Path(artifacts.html_path).read_text()
+    assert "Persona Readiness Board" in Path(artifacts.html_path).read_text()
     assert "Wireframe Readiness Board" in Path(artifacts.html_path).read_text()
+    assert "Interaction Coverage Board" in Path(artifacts.html_path).read_text()
     assert "Open Question Tracker" in Path(artifacts.html_path).read_text()
     assert "Role Matrix" in Path(artifacts.html_path).read_text()
+    assert "summary-objectives: category=objectives total=4 blocked=1 at-risk=1 covered=2" in Path(artifacts.review_summary_board_path).read_text()
+    assert "persona-eng-lead: persona=Eng Lead readiness=blocked objectives=1 assignments=1 signoffs=1 open_questions=0 queue_items=1 blockers=1" in Path(artifacts.persona_readiness_board_path).read_text()
+    assert "intcov-flow-triage-handoff: flow=flow-triage-handoff surfaces=wf-triage owners=Cross-Team Operator,Platform Admin coverage=covered states=4 exceptions=2" in Path(artifacts.interaction_coverage_board_path).read_text()
     assert "Role Coverage Board" in Path(artifacts.html_path).read_text()
     assert "Signoff Dependency Board" in Path(artifacts.html_path).read_text()
     assert "Sign-off Log" in Path(artifacts.html_path).read_text()
