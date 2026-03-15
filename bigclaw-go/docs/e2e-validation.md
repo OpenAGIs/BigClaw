@@ -81,10 +81,12 @@ cd bigclaw-go
 python3 scripts/e2e/multi_node_shared_queue.py \
   --count 200 \
   --submit-workers 8 \
+  --state-dir tmp/shared-queue-proof \
+  --bundle-dir docs/reports/shared-queue-takeover-evidence/latest \
   --report-path docs/reports/multi-node-shared-queue-report.json
 ```
 
-This starts two `bigclawd` processes against one SQLite queue and verifies there are no duplicate terminal completions across the two nodes.
+This starts two `bigclawd` processes against one SQLite queue, verifies there are no duplicate terminal completions across the two nodes, and copies the queue database plus per-node audit and service logs into `docs/reports/shared-queue-takeover-evidence/latest`.
 
 ## Broker failover and replay fault-injection pack
 
@@ -106,7 +108,7 @@ cd bigclaw-go
 python3 scripts/e2e/subscriber_takeover_fault_matrix.py --pretty
 ```
 
-This refreshes `docs/reports/multi-subscriber-takeover-validation-report.json` with the canonical scenario list, expected audit/checkpoint/replay assertions, and the minimum harness outputs the future lease-aware validation run must emit.
+This refreshes `docs/reports/multi-subscriber-takeover-validation-report.json` with the canonical scenario list, expected audit/checkpoint/replay assertions, and the minimum harness outputs the future lease-aware validation run must emit. Reviewers should pair that matrix with `docs/reports/shared-queue-takeover-evidence-pack.md`, which links the stable shared-queue bundle, lease-recovery evidence, and dead-letter replay references in one place.
 
 Optional toggles:
 

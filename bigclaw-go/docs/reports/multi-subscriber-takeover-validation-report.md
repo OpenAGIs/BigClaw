@@ -2,7 +2,7 @@
 
 ## Scope
 
-This report captures the planned fault-injection and evidence contract for `OPE-217` before lease-aware subscriber-group checkpoint coordination is implemented.
+This report captures the current takeover fault-injection contract and shows how it connects to the stable shared-queue review bundle refreshed by `OPE-235`.
 
 ## Current Evidence Inputs
 
@@ -10,8 +10,10 @@ This report captures the planned fault-injection and evidence contract for `OPE-
 - `internal/events/bus_test.go`
 - `docs/reports/event-bus-reliability-report.md`
 - `docs/reports/lease-recovery-report.md`
+- `docs/reports/queue-reliability-report.md`
 - `scripts/e2e/multi_node_shared_queue.py`
 - `docs/reports/multi-node-shared-queue-report.json`
+- `docs/reports/shared-queue-takeover-evidence-pack.md`
 
 ## Planned Fault Scenarios
 
@@ -57,5 +59,6 @@ The canonical generated matrix lives in `docs/reports/multi-subscriber-takeover-
 ## Current Result
 
 - The repo now has a generated, reviewable scenario matrix for takeover fault injection instead of an implied TODO.
-- Existing evidence is sufficient to define the report contract, but not yet to execute the takeover scenarios end to end.
+- The shared-queue proof exports a stable repo-native artifact bundle, so takeover reviews can inspect the queue database, audit logs, and service logs without relying on transient temp paths.
+- Existing evidence already covers lease recovery and dead-letter replay, but not subscriber-group ownership transfer or stale-writer rejection for checkpoints.
 - The next implementation slice should add lease-aware checkpoint ownership metadata and normalized audit events so the shared multi-node harness can execute this matrix directly.
