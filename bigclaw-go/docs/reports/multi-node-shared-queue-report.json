@@ -1,33 +1,52 @@
 {
-  "generated_at": "2026-03-13T09:45:19Z",
-  "root_state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-mm2mjimi",
-  "queue_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-mm2mjimi/shared-queue.db",
+  "generated_at": "2026-03-15T16:00:22Z",
+  "root_state_dir": "/Users/jxrt/code/symphony-workspaces/OPE-235/bigclaw-go/tmp/shared-queue-proof",
+  "queue_path": "/Users/jxrt/code/symphony-workspaces/OPE-235/bigclaw-go/tmp/shared-queue-proof/shared-queue.db",
+  "state_dir_source": "explicit",
   "count": 200,
   "submitted_by_node": {
     "node-a": 100,
     "node-b": 100
   },
   "completed_by_node": {
-    "node-a": 73,
-    "node-b": 127
+    "node-a": 99,
+    "node-b": 101
   },
-  "cross_node_completions": 99,
+  "cross_node_completions": 113,
   "duplicate_started_tasks": [],
   "duplicate_completed_tasks": [],
   "missing_completed_tasks": [],
   "all_ok": true,
+  "evidence_bundle": {
+    "bundle_dir": "/Users/jxrt/code/symphony-workspaces/OPE-235/bigclaw-go/docs/reports/shared-queue-takeover-evidence/latest",
+    "artifacts": {
+      "queue_path": "/Users/jxrt/code/symphony-workspaces/OPE-235/bigclaw-go/docs/reports/shared-queue-takeover-evidence/latest/shared-queue.db",
+      "nodes": [
+        {
+          "name": "node-a",
+          "audit_path": "/Users/jxrt/code/symphony-workspaces/OPE-235/bigclaw-go/docs/reports/shared-queue-takeover-evidence/latest/node-a-audit.jsonl",
+          "service_log": "/Users/jxrt/code/symphony-workspaces/OPE-235/bigclaw-go/docs/reports/shared-queue-takeover-evidence/latest/node-a.service.log"
+        },
+        {
+          "name": "node-b",
+          "audit_path": "/Users/jxrt/code/symphony-workspaces/OPE-235/bigclaw-go/docs/reports/shared-queue-takeover-evidence/latest/node-b-audit.jsonl",
+          "service_log": "/Users/jxrt/code/symphony-workspaces/OPE-235/bigclaw-go/docs/reports/shared-queue-takeover-evidence/latest/node-b.service.log"
+        }
+      ]
+    }
+  },
   "nodes": [
     {
       "name": "node-a",
-      "base_url": "http://127.0.0.1:55005",
-      "audit_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-mm2mjimi/node-a-audit.jsonl",
-      "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/node-a-1ww0l3ux.log"
+      "base_url": "http://127.0.0.1:50743",
+      "audit_path": "/Users/jxrt/code/symphony-workspaces/OPE-235/bigclaw-go/tmp/shared-queue-proof/node-a-audit.jsonl",
+      "service_log": "/Users/jxrt/code/symphony-workspaces/OPE-235/bigclaw-go/tmp/shared-queue-proof/node-a.service.log"
     },
     {
       "name": "node-b",
-      "base_url": "http://127.0.0.1:55006",
-      "audit_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-mm2mjimi/node-b-audit.jsonl",
-      "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/node-b-m8u1cact.log"
+      "base_url": "http://127.0.0.1:50744",
+      "audit_path": "/Users/jxrt/code/symphony-workspaces/OPE-235/bigclaw-go/tmp/shared-queue-proof/node-b-audit.jsonl",
+      "service_log": "/Users/jxrt/code/symphony-workspaces/OPE-235/bigclaw-go/tmp/shared-queue-proof/node-b.service.log"
     }
   ]
 }

@@ -4,6 +4,7 @@ import concurrent.futures
 import json
 import os
 import pathlib
+import shutil
 import socket
 import subprocess
 import sys
@@ -60,8 +61,8 @@ def build_node_envs(root_state_dir):
     return node_configs
 
 
-def start_bigclawd(go_root, env, prefix):
-    log_path = pathlib.Path(tempfile.mkstemp(prefix=prefix, suffix='.log')[1])
+def start_bigclawd(go_root, env, log_path):
+    log_path.parent.mkdir(parents=True, exist_ok=True)
     log_file = log_path.open('w')
     process = subprocess.Popen(['go', 'run', './cmd/bigclawd'], cwd=go_root, stdout=log_file, stderr=subprocess.STDOUT, env=env)
     return process, log_path
@@ -109,23 +110,67 @@ def summarize(tasks, events):
     return per_task
 
 
+def copy_artifact(source, destination):
+    if source.exists():
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+        return str(destination)
+    return None
+
+
+def materialize_bundle(go_root, bundle_dir, root_state_dir, node_configs):
+    if not bundle_dir:
+        return None
+
+    bundle_path = pathlib.Path(go_root) / bundle_dir
+    if bundle_path.exists():
+        shutil.rmtree(bundle_path)
+    bundle_path.mkdir(parents=True, exist_ok=True)
+
+    artifacts = {
+        'queue_path': copy_artifact(root_state_dir / 'shared-queue.db', bundle_path / 'shared-queue.db'),
+        'nodes': [],
+    }
+    for node in node_configs:
+        artifacts['nodes'].append({
+            'name': node['name'],
+            'audit_path': copy_artifact(node['audit_path'], bundle_path / f"{node['name']}-audit.jsonl"),
+            'service_log': copy_artifact(node['service_log'], bundle_path / f"{node['name']}.service.log"),
+        })
+    return {'bundle_dir': str(bundle_path), 'artifacts': artifacts}
+
+
 def main():
     parser = argparse.ArgumentParser(description='Run a two-node shared-queue coordination proof for BigClaw Go')
     parser.add_argument('--go-root', default=str(pathlib.Path(__file__).resolve().parents[2]))
     parser.add_argument('--report-path', default='docs/reports/multi-node-shared-queue-report.json')
+    parser.add_argument(
+        '--state-dir',
+        help='Optional state directory relative to the repo root. Defaults to a fresh temp directory.',
+    )
+    parser.add_argument(
+        '--bundle-dir',
+        default='docs/reports/shared-queue-takeover-evidence/latest',
+        help='Directory relative to the repo root where stable queue/audit/log artifacts are copied.',
+    )
     parser.add_argument('--count', type=int, default=200)
     parser.add_argument('--submit-workers', type=int, default=8)
     parser.add_argument('--timeout-seconds', type=int, default=180)
     args = parser.parse_args()
 
-    root_state_dir = pathlib.Path(tempfile.mkdtemp(prefix='bigclawd-multinode-'))
+    root_state_dir = (
+        pathlib.Path(args.go_root) / args.state_dir
+        if args.state_dir
+        else pathlib.Path(tempfile.mkdtemp(prefix='bigclawd-multinode-'))
+    )
+    root_state_dir.mkdir(parents=True, exist_ok=True)
     node_configs = build_node_envs(root_state_dir)
     processes = []
     timestamp = int(time.time())
     report = None
     try:
         for node in node_configs:
-            process, log_path = start_bigclawd(args.go_root, node['env'], f"{node['name']}-")
+            process, log_path = start_bigclawd(args.go_root, node['env'], root_state_dir / f"{node['name']}.service.log")
             node['process'] = process
             node['service_log'] = log_path
             processes.append(process)
@@ -177,10 +222,12 @@ def main():
                 if completion_node != submitted_by[task_id]:
                     cross_node_completions += 1
 
+        bundle = materialize_bundle(args.go_root, args.bundle_dir, root_state_dir, node_configs)
         report = {
             'generated_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
             'root_state_dir': str(root_state_dir),
             'queue_path': str(root_state_dir / 'shared-queue.db'),
+            'state_dir_source': 'explicit' if args.state_dir else 'temporary',
             'count': args.count,
             'submitted_by_node': {node['name']: sum(1 for name in submitted_by.values() if name == node['name']) for node in node_configs},
             'completed_by_node': completion_by_node,
@@ -189,6 +236,7 @@ def main():
             'duplicate_completed_tasks': duplicate_completed,
             'missing_completed_tasks': missing_completed,
             'all_ok': not duplicate_started and not duplicate_completed and not missing_completed and all(value > 0 for value in completion_by_node.values()),
+            'evidence_bundle': bundle,
             'nodes': [
                 {
                     'name': node['name'],
