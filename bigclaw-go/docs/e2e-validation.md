@@ -45,7 +45,7 @@ Use this to validate the control plane with a durable queue backend before touch
 
 ## One-shot full validation
 
-Use this to run the local SQLite smoke plus Kubernetes and Ray validation in one command. All enabled lanes now execute concurrently and export a timestamped repo-native evidence bundle.
+Use this to run the local SQLite smoke plus Kubernetes, Ray, and shared-queue validation in one command. All enabled lanes now execute concurrently and export a timestamped repo-native evidence bundle.
 
 ```bash
 cd bigclaw-go
@@ -57,7 +57,7 @@ export BIGCLAW_QUEUE_BACKEND=sqlite
 ./scripts/e2e/run_all.sh
 ```
 
-The script writes a consolidated summary to `docs/reports/live-validation-summary.json`, refreshes the canonical component reports for local, Kubernetes, and Ray validation, and creates a timestamped bundle plus index under `docs/reports/live-validation-runs/` and `docs/reports/live-validation-index.md`.
+The script writes a consolidated summary to `docs/reports/live-validation-summary.json`, refreshes the canonical component reports for local, Kubernetes, Ray, and shared-queue validation, and creates a timestamped bundle plus index under `docs/reports/live-validation-runs/` and `docs/reports/live-validation-index.md`. Each bundle also carries copies of the current replay-retention, replicated-durability, and takeover-planning reports so release review can inspect the latest supporting contract in one place.
 
 ## Mixed workload matrix
 
@@ -114,6 +114,7 @@ Optional toggles:
 export BIGCLAW_E2E_RUN_LOCAL=0
 export BIGCLAW_E2E_RUN_KUBERNETES=1
 export BIGCLAW_E2E_RUN_RAY=1
+export BIGCLAW_E2E_RUN_SHARED_QUEUE=1
 export BIGCLAW_E2E_SUMMARY_REPORT_PATH=docs/reports/live-validation-summary.json
 ./scripts/e2e/run_all.sh
 ```
@@ -194,7 +195,7 @@ export BIGCLAW_QUEUE_BACKEND=sqlite
 wait
 ```
 
-The latest report payloads include `base_url`, `state_dir`, and `service_log` so each autostarted run can be inspected independently. `run_all.sh` also copies stdout/stderr, service logs, and discovered audit logs into the timestamped bundle for workflow closeout.
+The latest report payloads include `base_url`, `state_dir`, and `service_log` so each autostarted run can be inspected independently. `run_all.sh` also copies stdout/stderr, service logs, discovered audit logs, and per-node shared-queue artifacts into the timestamped bundle for workflow closeout.
 
 ## API-level validation commands
 

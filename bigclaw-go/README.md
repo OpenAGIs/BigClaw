@@ -78,7 +78,7 @@ This bootstrap now covers an MVP slice for all current Go rewrite planning ticke
 
 ## End-to-end scripts
 
-- `scripts/e2e/run_all.sh` runs local SQLite, Kubernetes, and Ray validation concurrently, writes a timestamped bundle under `docs/reports/live-validation-runs/`, and refreshes `docs/reports/live-validation-summary.json` plus `docs/reports/live-validation-index.md`
+- `scripts/e2e/run_all.sh` runs local SQLite, Kubernetes, Ray, and shared-queue validation concurrently, writes a timestamped bundle under `docs/reports/live-validation-runs/`, and refreshes `docs/reports/live-validation-summary.json` plus `docs/reports/live-validation-index.md`
 - `scripts/e2e/kubernetes_smoke.sh` runs a real Kubernetes smoke task through BigClaw
 - `scripts/e2e/ray_smoke.sh` runs a real Ray Jobs API smoke task through BigClaw
 - `scripts/e2e/run_task_smoke.py` is the generic submit/poll helper used by all wrappers
@@ -99,7 +99,7 @@ curl localhost:8080/metrics
 
 ## One-shot validation
 
-Each `run_all.sh` invocation now creates a timestamped evidence bundle under `docs/reports/live-validation-runs/<run-id>/` so local, Kubernetes, and Ray logs stay isolated while the latest canonical reports remain easy to link in review notes.
+Each `run_all.sh` invocation now creates a timestamped evidence bundle under `docs/reports/live-validation-runs/<run-id>/` so local, Kubernetes, Ray, and shared-queue artifacts stay isolated while the latest canonical reports remain easy to link in review notes.
 
 ```bash
 cd bigclaw-go

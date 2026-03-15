@@ -11,7 +11,15 @@ LATEST_REPORTS = {
     'local': 'docs/reports/sqlite-smoke-report.json',
     'kubernetes': 'docs/reports/kubernetes-live-smoke-report.json',
     'ray': 'docs/reports/ray-live-smoke-report.json',
+    'shared_queue': 'docs/reports/multi-node-shared-queue-report.json',
 }
+
+SUPPORTING_REPORTS = [
+    'docs/reports/replay-retention-semantics-report.md',
+    'docs/reports/replicated-event-log-durability-rollout-contract.md',
+    'docs/reports/multi-subscriber-takeover-validation-report.md',
+    'docs/reports/multi-subscriber-takeover-validation-report.json',
+]
 
 
 def read_json(path: Path) -> Optional[Any]:
@@ -119,7 +127,44 @@ def build_component_section(
             service_copy = copy_text_artifact(Path(service_log), bundle_dir / f'{name}.service.log')
             if service_copy:
                 section['service_log_path'] = relpath(Path(service_copy), root)
+        nodes = report.get('nodes')
+        if isinstance(nodes, list):
+            copied_nodes: list[dict[str, Any]] = []
+            for index, node in enumerate(nodes):
+                if not isinstance(node, dict):
+                    continue
+                copied_node = dict(node)
+                audit_path = node.get('audit_path')
+                if isinstance(audit_path, str) and audit_path:
+                    audit_copy = copy_text_artifact(Path(audit_path), bundle_dir / f'{name}.node-{index + 1}.audit.jsonl')
+                    if audit_copy:
+                        copied_node['bundle_audit_path'] = relpath(Path(audit_copy), root)
+                service_log = node.get('service_log')
+                if isinstance(service_log, str) and service_log:
+                    service_copy = copy_text_artifact(Path(service_log), bundle_dir / f'{name}.node-{index + 1}.service.log')
+                    if service_copy:
+                        copied_node['bundle_service_log_path'] = relpath(Path(service_copy), root)
+                copied_nodes.append(copied_node)
+            if copied_nodes:
+                section['nodes'] = copied_nodes
     return section
+
+
+def supporting_report_inventory(root: Path, bundle_dir: Path) -> list[dict[str, str]]:
+    reports: list[dict[str, str]] = []
+    for relative in SUPPORTING_REPORTS:
+        source = root / relative
+        if not source.exists():
+            continue
+        destination = bundle_dir / Path(relative).name
+        copied = copy_text_artifact(source, destination)
+        reports.append(
+            {
+                'source_path': relative,
+                'bundle_path': relpath(Path(copied), root) if copied else '',
+            }
+        )
+    return reports
 
 
 def build_recent_runs(bundle_root: Path, root: Path, limit: int = 8) -> list[dict[str, Any]]:
@@ -162,7 +207,7 @@ def render_index(summary: dict[str, Any], recent_runs: list[dict[str, Any]]) -> 
         '## Latest bundle artifacts',
         '',
     ]
-    for name in ('local', 'kubernetes', 'ray'):
+    for name in ('local', 'kubernetes', 'ray', 'shared_queue'):
         section = summary[name]
         lines.append(f"### {name}")
         lines.append(f"- Enabled: `{section['enabled']}`")
@@ -179,7 +224,24 @@ def render_index(summary: dict[str, Any], recent_runs: list[dict[str, Any]]) -> 
             lines.append(f"- Audit log: `{section['audit_log_path']}`")
         if section.get('task_id'):
             lines.append(f"- Task ID: `{section['task_id']}`")
+        nodes = section.get('nodes')
+        if isinstance(nodes, list):
+            for node in nodes:
+                if not isinstance(node, dict):
+                    continue
+                name_hint = node.get('name', 'node')
+                if node.get('bundle_audit_path'):
+                    lines.append(f"- {name_hint} audit log: `{node['bundle_audit_path']}`")
+                if node.get('bundle_service_log_path'):
+                    lines.append(f"- {name_hint} service log: `{node['bundle_service_log_path']}`")
         lines.append('')
+
+    lines.extend(['## Supporting durability and takeover references', ''])
+    for report in summary.get('supporting_reports', []):
+        lines.append(f"- Source: `{report['source_path']}`")
+        if report.get('bundle_path'):
+            lines.append(f"- Bundle copy: `{report['bundle_path']}`")
+    lines.append('')
 
     lines.extend(['## Workflow closeout commands', ''])
     for command in summary['closeout_commands']:
@@ -208,6 +270,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--run-local', default='1')
     parser.add_argument('--run-kubernetes', default='1')
     parser.add_argument('--run-ray', default='1')
+    parser.add_argument('--run-shared-queue', default='1')
     parser.add_argument('--validation-status', default='0')
     parser.add_argument('--local-report-path', required=True)
     parser.add_argument('--local-stdout-path', required=True)
@@ -218,6 +281,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--ray-report-path', required=True)
     parser.add_argument('--ray-stdout-path', required=True)
     parser.add_argument('--ray-stderr-path', required=True)
+    parser.add_argument('--shared-queue-report-path', required=True)
+    parser.add_argument('--shared-queue-stdout-path', required=True)
+    parser.add_argument('--shared-queue-stderr-path', required=True)
     return parser.parse_args()
 
 
@@ -265,6 +331,16 @@ def main() -> int:
         stdout_path=Path(args.ray_stdout_path),
         stderr_path=Path(args.ray_stderr_path),
     )
+    summary['shared_queue'] = build_component_section(
+        name='shared_queue',
+        enabled=args.run_shared_queue == '1',
+        root=root,
+        bundle_dir=bundle_dir,
+        report_path=root / args.shared_queue_report_path,
+        stdout_path=Path(args.shared_queue_stdout_path),
+        stderr_path=Path(args.shared_queue_stderr_path),
+    )
+    summary['supporting_reports'] = supporting_report_inventory(root, bundle_dir)
 
     bundle_summary_path = bundle_dir / 'summary.json'
     canonical_summary_path = root / args.summary_path

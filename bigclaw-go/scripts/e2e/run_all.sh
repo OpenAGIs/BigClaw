@@ -10,12 +10,14 @@ BUNDLE_DIR_REL="${ARTIFACT_ROOT_REL}/${RUN_ID}"
 RUN_LOCAL="${BIGCLAW_E2E_RUN_LOCAL:-1}"
 RUN_KUBERNETES="${BIGCLAW_E2E_RUN_KUBERNETES:-1}"
 RUN_RAY="${BIGCLAW_E2E_RUN_RAY:-1}"
+RUN_SHARED_QUEUE="${BIGCLAW_E2E_RUN_SHARED_QUEUE:-1}"
 
 mkdir -p "$ROOT/$BUNDLE_DIR_REL"
 
 LOCAL_REPORT_REL="$BUNDLE_DIR_REL/sqlite-smoke-report.json"
 K8S_REPORT_REL="$BUNDLE_DIR_REL/kubernetes-live-smoke-report.json"
 RAY_REPORT_REL="$BUNDLE_DIR_REL/ray-live-smoke-report.json"
+SHARED_QUEUE_REPORT_REL="$BUNDLE_DIR_REL/multi-node-shared-queue-report.json"
 
 LOCAL_OUT="$(mktemp -t bigclaw-local-e2e-out.XXXXXX)"
 LOCAL_ERR="$(mktemp -t bigclaw-local-e2e-err.XXXXXX)"
@@ -23,7 +25,9 @@ K8S_OUT="$(mktemp -t bigclaw-k8s-e2e-out.XXXXXX)"
 K8S_ERR="$(mktemp -t bigclaw-k8s-e2e-err.XXXXXX)"
 RAY_OUT="$(mktemp -t bigclaw-ray-e2e-out.XXXXXX)"
 RAY_ERR="$(mktemp -t bigclaw-ray-e2e-err.XXXXXX)"
-trap 'rm -f "$LOCAL_OUT" "$LOCAL_ERR" "$K8S_OUT" "$K8S_ERR" "$RAY_OUT" "$RAY_ERR"' EXIT
+SHARED_QUEUE_OUT="$(mktemp -t bigclaw-shared-queue-e2e-out.XXXXXX)"
+SHARED_QUEUE_ERR="$(mktemp -t bigclaw-shared-queue-e2e-err.XXXXXX)"
+trap 'rm -f "$LOCAL_OUT" "$LOCAL_ERR" "$K8S_OUT" "$K8S_ERR" "$RAY_OUT" "$RAY_ERR" "$SHARED_QUEUE_OUT" "$SHARED_QUEUE_ERR"' EXIT
 
 status=0
 pids=()
@@ -54,6 +58,15 @@ if [[ "$RUN_RAY" == "1" ]]; then
   pids+=("$!")
 fi
 
+if [[ "$RUN_SHARED_QUEUE" == "1" ]]; then
+  (
+    python3 "$ROOT/scripts/e2e/multi_node_shared_queue.py" \
+      --go-root "$ROOT" \
+      --report-path "$SHARED_QUEUE_REPORT_REL"
+  ) >"$SHARED_QUEUE_OUT" 2>"$SHARED_QUEUE_ERR" &
+  pids+=("$!")
+fi
+
 if (( ${#pids[@]} > 0 )); then
   for pid in "${pids[@]}"; do
     if ! wait "$pid"; then
@@ -72,6 +85,7 @@ python3 "$ROOT/scripts/e2e/export_validation_bundle.py" \
   --run-local "$RUN_LOCAL" \
   --run-kubernetes "$RUN_KUBERNETES" \
   --run-ray "$RUN_RAY" \
+  --run-shared-queue "$RUN_SHARED_QUEUE" \
   --validation-status "$status" \
   --local-report-path "$LOCAL_REPORT_REL" \
   --local-stdout-path "$LOCAL_OUT" \
@@ -81,4 +95,7 @@ python3 "$ROOT/scripts/e2e/export_validation_bundle.py" \
   --kubernetes-stderr-path "$K8S_ERR" \
   --ray-report-path "$RAY_REPORT_REL" \
   --ray-stdout-path "$RAY_OUT" \
-  --ray-stderr-path "$RAY_ERR"
+  --ray-stderr-path "$RAY_ERR" \
+  --shared-queue-report-path "$SHARED_QUEUE_REPORT_REL" \
+  --shared-queue-stdout-path "$SHARED_QUEUE_OUT" \
+  --shared-queue-stderr-path "$SHARED_QUEUE_ERR"
