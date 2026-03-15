@@ -366,13 +366,28 @@ func (s *SQLiteEventLog) CheckpointResetHistory(subscriberID string, limit int) 
 	if s == nil || s.db == nil || subscriberID == "" {
 		return nil, nil
 	}
-	query := `SELECT subscriber_id, reason, checkpoint_event_id, checkpoint_event_seq, checkpoint_updated_at_ns, reset_at_ns, retention_backend, retention_policy, oldest_event_id, newest_event_id, oldest_sequence, newest_sequence, event_count, history_truncated, persisted_boundary, trimmed_through_event_id, trimmed_through_sequence, retention_window_seconds FROM checkpoint_reset_audit WHERE subscriber_id = ? ORDER BY reset_at_ns DESC`
-	args := []any{subscriberID}
+	return s.queryCheckpointResetAudits(`WHERE subscriber_id = ?`, []any{subscriberID}, limit)
+}
+
+func (s *SQLiteEventLog) RecentCheckpointResets(limit int) ([]CheckpointResetAudit, error) {
+	if s == nil || s.db == nil {
+		return nil, nil
+	}
+	return s.queryCheckpointResetAudits(``, nil, limit)
+}
+
+func (s *SQLiteEventLog) queryCheckpointResetAudits(whereClause string, args []any, limit int) ([]CheckpointResetAudit, error) {
+	query := `SELECT subscriber_id, reason, checkpoint_event_id, checkpoint_event_seq, checkpoint_updated_at_ns, reset_at_ns, retention_backend, retention_policy, oldest_event_id, newest_event_id, oldest_sequence, newest_sequence, event_count, history_truncated, persisted_boundary, trimmed_through_event_id, trimmed_through_sequence, retention_window_seconds FROM checkpoint_reset_audit `
+	if whereClause != "" {
+		query += whereClause + ` `
+	}
+	query += `ORDER BY reset_at_ns DESC`
+	params := append([]any(nil), args...)
 	if limit > 0 {
 		query += ` LIMIT ?`
-		args = append(args, limit)
+		params = append(params, limit)
 	}
-	rows, err := s.db.Query(query, args...)
+	rows, err := s.db.Query(query, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -631,6 +646,7 @@ func reverseEvents(events []domain.Event) {
 var _ EventLog = (*SQLiteEventLog)(nil)
 var _ CheckpointStore = (*SQLiteEventLog)(nil)
 var _ CheckpointResetHistoryProvider = (*SQLiteEventLog)(nil)
+var _ RecentCheckpointResetProvider = (*SQLiteEventLog)(nil)
 
 func IsNoEventLog(err error) bool {
 	return errors.Is(err, sql.ErrNoRows)

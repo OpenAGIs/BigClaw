@@ -154,6 +154,23 @@ func (s *HTTPEventLog) CheckpointResetHistory(subscriberID string, limit int) ([
 	return response.History, nil
 }
 
+func (s *HTTPEventLog) RecentCheckpointResets(limit int) ([]CheckpointResetAudit, error) {
+	params := url.Values{}
+	if limit > 0 {
+		params.Set("limit", strconv.Itoa(limit))
+	}
+	path := "/checkpoint-resets"
+	if encoded := params.Encode(); encoded != "" {
+		path += "?" + encoded
+	}
+	var response checkpointResetHistoryResponse
+	err := s.doJSON(context.Background(), http.MethodGet, path, nil, &response)
+	if err != nil {
+		return nil, mapRemoteEventLogError(err)
+	}
+	return response.History, nil
+}
+
 func (s *HTTPEventLog) RetentionWatermark() (RetentionWatermark, error) {
 	var response retentionWatermarkResponse
 	err := s.doJSON(context.Background(), http.MethodGet, "/watermark", nil, &response)

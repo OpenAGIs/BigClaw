@@ -1804,6 +1804,42 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	}
 }
 
+func TestV2ControlCenterAuditIncludesCheckpointResetSummary(t *testing.T) {
+	store, err := events.NewSQLiteEventLog(filepath.Join(t.TempDir(), "event-log.db"))
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	base := time.Now()
+	if err := store.Write(context.Background(), domain.Event{ID: "evt-cc-reset-1", Type: domain.EventTaskQueued, TaskID: "task-cc-reset", TraceID: "trace-cc-reset", Timestamp: base}); err != nil {
+		t.Fatalf("write control-center reset event: %v", err)
+	}
+	if _, err := store.Acknowledge("subscriber-cc-reset", "evt-cc-reset-1", base.Add(time.Second)); err != nil {
+		t.Fatalf("ack control-center reset checkpoint: %v", err)
+	}
+	if err := store.ResetCheckpoint("subscriber-cc-reset"); err != nil {
+		t.Fatalf("reset control-center checkpoint: %v", err)
+	}
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, EventLog: store, Control: control.New(), Now: time.Now}
+	handler := server.Handler()
+
+	auditResponse := httptest.NewRecorder()
+	auditRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center/audit?audit_limit=10", nil)
+	auditRequest.Header.Set("X-BigClaw-Role", "platform_admin")
+	auditRequest.Header.Set("X-BigClaw-Actor", "ops-1")
+	handler.ServeHTTP(auditResponse, auditRequest)
+	if auditResponse.Code != http.StatusOK {
+		t.Fatalf("expected control center audit 200, got %d %s", auditResponse.Code, auditResponse.Body.String())
+	}
+	body := auditResponse.Body.String()
+	if !strings.Contains(body, "checkpoint_resets") || !strings.Contains(body, "subscriber-cc-reset") || !strings.Contains(body, "operator_reset") {
+		t.Fatalf("expected checkpoint reset summary in control center audit payload, got %s", body)
+	}
+}
+
 func TestV2ControlCenterAuditFiltersOwnerReviewerAndScope(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()
@@ -2732,6 +2768,40 @@ func TestDebugStatusIncludesRetentionWatermark(t *testing.T) {
 	}
 	if !strings.Contains(response.Body.String(), "retention_watermark") || !strings.Contains(response.Body.String(), "evt-debug-watermark-1") || !strings.Contains(response.Body.String(), "evt-debug-watermark-2") {
 		t.Fatalf("expected retention watermark in debug payload, got %s", response.Body.String())
+	}
+}
+
+func TestDebugStatusIncludesCheckpointResetSummary(t *testing.T) {
+	store, err := events.NewSQLiteEventLog(filepath.Join(t.TempDir(), "event-log.db"))
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	base := time.Now()
+	for _, event := range []domain.Event{
+		{ID: "evt-debug-reset-1", Type: domain.EventTaskQueued, TaskID: "task-debug-reset", TraceID: "trace-debug-reset", Timestamp: base},
+		{ID: "evt-debug-reset-2", Type: domain.EventTaskStarted, TaskID: "task-debug-reset", TraceID: "trace-debug-reset", Timestamp: base.Add(time.Second)},
+	} {
+		if err := store.Write(context.Background(), event); err != nil {
+			t.Fatalf("write %s: %v", event.ID, err)
+		}
+	}
+	if _, err := store.Acknowledge("subscriber-debug-reset", "evt-debug-reset-1", base.Add(2*time.Second)); err != nil {
+		t.Fatalf("ack debug reset checkpoint: %v", err)
+	}
+	if err := store.ResetCheckpoint("subscriber-debug-reset"); err != nil {
+		t.Fatalf("reset debug checkpoint: %v", err)
+	}
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: store, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d", response.Code)
+	}
+	body := response.Body.String()
+	if !strings.Contains(body, "checkpoint_resets") || !strings.Contains(body, "subscriber-debug-reset") || !strings.Contains(body, "operator_reset") {
+		t.Fatalf("expected checkpoint reset summary in debug payload, got %s", body)
 	}
 }
 

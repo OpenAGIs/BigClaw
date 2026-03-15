@@ -29,3 +29,7 @@ type CheckpointResetter interface {
 type CheckpointResetHistoryProvider interface {
 	CheckpointResetHistory(subscriberID string, limit int) ([]CheckpointResetAudit, error)
 }
+
+type RecentCheckpointResetProvider interface {
+	RecentCheckpointResets(limit int) ([]CheckpointResetAudit, error)
+}

@@ -1104,6 +1104,9 @@ func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 	if pool := s.workerPoolSummary(); pool != nil {
 		response["worker_pool"] = pool
 	}
+	if checkpointResets := s.checkpointResetAuditSnapshot(filters.AuditLimit); checkpointResets != nil {
+		response["checkpoint_resets"] = checkpointResets
+	}
 	response["distributed_diagnostics"] = s.buildDistributedDiagnostics(filters)
 	writeJSON(w, http.StatusOK, response)
 }
@@ -1124,7 +1127,7 @@ func (s *Server) handleV2ControlCenterAudit(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	entries := s.controlActionAuditEntries(filters, authorization)
-	writeJSON(w, http.StatusOK, map[string]any{
+	response := map[string]any{
 		"authorization": authorization,
 		"filters": map[string]any{
 			"task_id":  filters.TaskID,
@@ -1139,7 +1142,11 @@ func (s *Server) handleV2ControlCenterAudit(w http.ResponseWriter, r *http.Reque
 		"audit":          entries,
 		"audit_summary":  summarizeControlAudit(entries),
 		"notes_timeline": auditNotesTimeline(entries, filters.AuditLimit),
-	})
+	}
+	if checkpointResets := s.checkpointResetAuditSnapshot(filters.AuditLimit); checkpointResets != nil {
+		response["checkpoint_resets"] = checkpointResets
+	}
+	writeJSON(w, http.StatusOK, response)
 }
 
 func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Request) {
