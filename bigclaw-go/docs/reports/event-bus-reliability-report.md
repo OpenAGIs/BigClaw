@@ -11,6 +11,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - Webhook sink integration for external fanout
 - SSE stream via `GET /stream/events`
 - Optional SSE replay and filtering via `replay=1`, `task_id`, and `trace_id`
+- Additive delivery metadata for replay-safe downstream consumption via `delivery.mode`, `delivery.replay`, and `delivery.idempotency_key`
 
 ## Validated behaviors
 
@@ -19,6 +20,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - Webhook sink receives serialized domain events.
 - SSE streaming can deliver live events.
 - SSE replay can filter to one trace without leaking unrelated events.
+- Replay and live deliveries preserve the original event id while exposing an explicit delivery mode and stable downstream idempotency key.
 
 ## Evidence
 
@@ -73,6 +75,7 @@ This report summarizes the current event bus reliability evidence and the next r
 
 ## Remaining gaps
 
-- No concrete external event-log implementation exists yet in this checkout; the new code only defines the plan and integration points.
+- No concrete durable external event log exists yet in this checkout; replay still depends on process-local history plus the newly documented integration plan.
 - No delivery acknowledgement protocol exists beyond sink-level best effort.
-- No partitioned topic model or broker-backed subscriber coordination exists yet.
+- No partitioned topic model or broker-backed cross-process subscriber coordination exists yet.
+- Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.
