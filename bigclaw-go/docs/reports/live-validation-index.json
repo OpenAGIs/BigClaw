@@ -1,9 +1,9 @@
 {
   "latest": {
-    "run_id": "20260315T111333Z",
-    "generated_at": "2026-03-15T11:13:51.358487+00:00",
+    "run_id": "20260315T142255Z",
+    "generated_at": "2026-03-15T14:23:14.639310+00:00",
     "status": "succeeded",
-    "bundle_path": "docs/reports/live-validation-runs/20260315T111333Z",
+    "bundle_path": "docs/reports/live-validation-runs/20260315T142255Z",
     "closeout_commands": [
       "cd bigclaw-go && ./scripts/e2e/run_all.sh",
       "cd bigclaw-go && go test ./...",
@@ -11,14 +11,14 @@
     ],
     "local": {
       "enabled": true,
-      "bundle_report_path": "docs/reports/live-validation-runs/20260315T111333Z/sqlite-smoke-report.json",
+      "bundle_report_path": "docs/reports/live-validation-runs/20260315T142255Z/sqlite-smoke-report.json",
       "canonical_report_path": "docs/reports/sqlite-smoke-report.json",
       "report": {
         "autostarted": true,
-        "base_url": "http://127.0.0.1:62700",
+        "base_url": "http://127.0.0.1:55671",
         "task": {
-          "id": "local-smoke-1773573221",
-          "trace_id": "local-smoke-1773573221",
+          "id": "local-smoke-1773584583",
+          "trace_id": "local-smoke-1773584583",
           "title": "SQLite smoke",
           "state": "queued",
           "required_executor": "local",
@@ -28,35 +28,35 @@
             "smoke_test": "true"
           },
           "execution_timeout_seconds": 180,
-          "created_at": "2026-03-15T19:13:41.371759+08:00",
-          "updated_at": "2026-03-15T19:13:41.371759+08:00"
+          "created_at": "2026-03-15T22:23:03.942833+08:00",
+          "updated_at": "2026-03-15T22:23:03.942833+08:00"
         },
         "status": {
           "events": [
             {
-              "id": "local-smoke-1773573221-queued",
+              "id": "local-smoke-1773584583-queued",
               "type": "task.queued",
-              "task_id": "local-smoke-1773573221",
-              "trace_id": "local-smoke-1773573221",
-              "timestamp": "2026-03-15T19:13:41.371759+08:00",
+              "task_id": "local-smoke-1773584583",
+              "trace_id": "local-smoke-1773584583",
+              "timestamp": "2026-03-15T22:23:03.942833+08:00",
               "payload": {
                 "executor": "local",
                 "title": "SQLite smoke"
               }
             },
             {
-              "id": "local-smoke-1773573221-leased",
+              "id": "local-smoke-1773584583-leased",
               "type": "task.leased",
-              "task_id": "local-smoke-1773573221",
-              "trace_id": "local-smoke-1773573221",
-              "timestamp": "2026-03-15T19:13:41.381847+08:00"
+              "task_id": "local-smoke-1773584583",
+              "trace_id": "local-smoke-1773584583",
+              "timestamp": "2026-03-15T22:23:04.036049+08:00"
             },
             {
-              "id": "local-smoke-1773573221-routed",
+              "id": "local-smoke-1773584583-routed",
               "type": "scheduler.routed",
-              "task_id": "local-smoke-1773573221",
-              "trace_id": "local-smoke-1773573221",
-              "timestamp": "2026-03-15T19:13:41.381971+08:00",
+              "task_id": "local-smoke-1773584583",
+              "trace_id": "local-smoke-1773584583",
+              "timestamp": "2026-03-15T22:23:04.03619+08:00",
               "payload": {
                 "executor": "local",
                 "quota": {
@@ -72,51 +72,51 @@
               }
             },
             {
-              "id": "local-smoke-1773573221-started",
+              "id": "local-smoke-1773584583-started",
               "type": "task.started",
-              "task_id": "local-smoke-1773573221",
-              "trace_id": "local-smoke-1773573221",
-              "timestamp": "2026-03-15T19:13:41.382342+08:00",
+              "task_id": "local-smoke-1773584583",
+              "trace_id": "local-smoke-1773584583",
+              "timestamp": "2026-03-15T22:23:04.036415+08:00",
               "payload": {
                 "executor": "local",
                 "required_tools": null
               }
             },
             {
-              "id": "local-smoke-1773573221-completed",
+              "id": "local-smoke-1773584583-completed",
               "type": "task.completed",
-              "task_id": "local-smoke-1773573221",
-              "trace_id": "local-smoke-1773573221",
-              "timestamp": "2026-03-15T19:13:41.393499+08:00",
+              "task_id": "local-smoke-1773584583",
+              "trace_id": "local-smoke-1773584583",
+              "timestamp": "2026-03-15T22:23:04.047238+08:00",
               "payload": {
                 "artifacts": [
                   "stdout.log"
                 ],
                 "executor": "local",
-                "finished_at": "2026-03-15T11:13:41Z",
+                "finished_at": "2026-03-15T14:23:04Z",
                 "message": "local execution completed"
               }
             }
           ],
           "latest_event": {
-            "id": "local-smoke-1773573221-completed",
+            "id": "local-smoke-1773584583-completed",
             "type": "task.completed",
-            "task_id": "local-smoke-1773573221",
-            "trace_id": "local-smoke-1773573221",
-            "timestamp": "2026-03-15T19:13:41.393499+08:00",
+            "task_id": "local-smoke-1773584583",
+            "trace_id": "local-smoke-1773584583",
+            "timestamp": "2026-03-15T22:23:04.047238+08:00",
             "payload": {
               "artifacts": [
                 "stdout.log"
               ],
               "executor": "local",
-              "finished_at": "2026-03-15T11:13:41Z",
+              "finished_at": "2026-03-15T14:23:04Z",
               "message": "local execution completed"
             }
           },
           "state": "succeeded",
           "task": {
-            "id": "local-smoke-1773573221",
-            "trace_id": "local-smoke-1773573221",
+            "id": "local-smoke-1773584583",
+            "trace_id": "local-smoke-1773584583",
             "title": "SQLite smoke",
             "state": "succeeded",
             "required_executor": "local",
@@ -126,19 +126,19 @@
               "smoke_test": "true"
             },
             "execution_timeout_seconds": 180,
-            "created_at": "2026-03-15T19:13:41.371759+08:00",
-            "updated_at": "2026-03-15T19:13:41.393499+08:00"
+            "created_at": "2026-03-15T22:23:03.942833+08:00",
+            "updated_at": "2026-03-15T22:23:04.047238+08:00"
           },
-          "task_id": "local-smoke-1773573221",
-          "trace_id": "local-smoke-1773573221"
+          "task_id": "local-smoke-1773584583",
+          "trace_id": "local-smoke-1773584583"
         },
         "events": [
           {
-            "id": "local-smoke-1773573221-queued",
+            "id": "local-smoke-1773584583-queued",
             "type": "task.queued",
-            "task_id": "local-smoke-1773573221",
-            "trace_id": "local-smoke-1773573221",
-            "timestamp": "2026-03-15T19:13:41.371759+08:00",
+            "task_id": "local-smoke-1773584583",
+            "trace_id": "local-smoke-1773584583",
+            "timestamp": "2026-03-15T22:23:03.942833+08:00",
             "payload": {
               "executor": "local",
               "title": "SQLite smoke"
@@ -146,27 +146,27 @@
             "delivery": {
               "mode": "replay",
               "replay": true,
-              "idempotency_key": "local-smoke-1773573221-queued"
+              "idempotency_key": "local-smoke-1773584583-queued"
             }
           },
           {
-            "id": "local-smoke-1773573221-leased",
+            "id": "local-smoke-1773584583-leased",
             "type": "task.leased",
-            "task_id": "local-smoke-1773573221",
-            "trace_id": "local-smoke-1773573221",
-            "timestamp": "2026-03-15T19:13:41.381847+08:00",
+            "task_id": "local-smoke-1773584583",
+            "trace_id": "local-smoke-1773584583",
+            "timestamp": "2026-03-15T22:23:04.036049+08:00",
             "delivery": {
               "mode": "replay",
               "replay": true,
-              "idempotency_key": "local-smoke-1773573221-leased"
+              "idempotency_key": "local-smoke-1773584583-leased"
             }
           },
           {
-            "id": "local-smoke-1773573221-routed",
+            "id": "local-smoke-1773584583-routed",
             "type": "scheduler.routed",
-            "task_id": "local-smoke-1773573221",
-            "trace_id": "local-smoke-1773573221",
-            "timestamp": "2026-03-15T19:13:41.381971+08:00",
+            "task_id": "local-smoke-1773584583",
+            "trace_id": "local-smoke-1773584583",
+            "timestamp": "2026-03-15T22:23:04.03619+08:00",
             "payload": {
               "executor": "local",
               "quota": {
@@ -183,15 +183,15 @@
             "delivery": {
               "mode": "replay",
               "replay": true,
-              "idempotency_key": "local-smoke-1773573221-routed"
+              "idempotency_key": "local-smoke-1773584583-routed"
             }
           },
           {
-            "id": "local-smoke-1773573221-started",
+            "id": "local-smoke-1773584583-started",
             "type": "task.started",
-            "task_id": "local-smoke-1773573221",
-            "trace_id": "local-smoke-1773573221",
-            "timestamp": "2026-03-15T19:13:41.382342+08:00",
+            "task_id": "local-smoke-1773584583",
+            "trace_id": "local-smoke-1773584583",
+            "timestamp": "2026-03-15T22:23:04.036415+08:00",
             "payload": {
               "executor": "local",
               "required_tools": null
@@ -199,52 +199,52 @@
             "delivery": {
               "mode": "replay",
               "replay": true,
-              "idempotency_key": "local-smoke-1773573221-started"
+              "idempotency_key": "local-smoke-1773584583-started"
             }
           },
           {
-            "id": "local-smoke-1773573221-completed",
+            "id": "local-smoke-1773584583-completed",
             "type": "task.completed",
-            "task_id": "local-smoke-1773573221",
-            "trace_id": "local-smoke-1773573221",
-            "timestamp": "2026-03-15T19:13:41.393499+08:00",
+            "task_id": "local-smoke-1773584583",
+            "trace_id": "local-smoke-1773584583",
+            "timestamp": "2026-03-15T22:23:04.047238+08:00",
             "payload": {
               "artifacts": [
                 "stdout.log"
               ],
               "executor": "local",
-              "finished_at": "2026-03-15T11:13:41Z",
+              "finished_at": "2026-03-15T14:23:04Z",
               "message": "local execution completed"
             },
             "delivery": {
               "mode": "replay",
               "replay": true,
-              "idempotency_key": "local-smoke-1773573221-completed"
+              "idempotency_key": "local-smoke-1773584583-completed"
             }
           }
         ],
-        "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-uui3n6nu",
-        "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-e2e-zf6zyqct.log"
+        "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-hdy5v6qt",
+        "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-e2e-xsbi44_i.log"
       },
       "status": "succeeded",
-      "stdout_path": "docs/reports/live-validation-runs/20260315T111333Z/local.stdout.log",
-      "stderr_path": "docs/reports/live-validation-runs/20260315T111333Z/local.stderr.log",
-      "task_id": "local-smoke-1773573221",
-      "base_url": "http://127.0.0.1:62700",
-      "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-uui3n6nu",
-      "audit_log_path": "docs/reports/live-validation-runs/20260315T111333Z/local.audit.jsonl",
-      "service_log_path": "docs/reports/live-validation-runs/20260315T111333Z/local.service.log"
+      "stdout_path": "docs/reports/live-validation-runs/20260315T142255Z/local.stdout.log",
+      "stderr_path": "docs/reports/live-validation-runs/20260315T142255Z/local.stderr.log",
+      "task_id": "local-smoke-1773584583",
+      "base_url": "http://127.0.0.1:55671",
+      "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-hdy5v6qt",
+      "audit_log_path": "docs/reports/live-validation-runs/20260315T142255Z/local.audit.jsonl",
+      "service_log_path": "docs/reports/live-validation-runs/20260315T142255Z/local.service.log"
     },
     "kubernetes": {
       "enabled": true,
-      "bundle_report_path": "docs/reports/live-validation-runs/20260315T111333Z/kubernetes-live-smoke-report.json",
+      "bundle_report_path": "docs/reports/live-validation-runs/20260315T142255Z/kubernetes-live-smoke-report.json",
       "canonical_report_path": "docs/reports/kubernetes-live-smoke-report.json",
       "report": {
         "autostarted": true,
-        "base_url": "http://127.0.0.1:62701",
+        "base_url": "http://127.0.0.1:55669",
         "task": {
-          "id": "kubernetes-smoke-1773573221",
-          "trace_id": "kubernetes-smoke-1773573221",
+          "id": "kubernetes-smoke-1773584584",
+          "trace_id": "kubernetes-smoke-1773584584",
           "title": "Kubernetes smoke test",
           "state": "queued",
           "required_executor": "kubernetes",
@@ -255,35 +255,35 @@
             "smoke_test": "true"
           },
           "execution_timeout_seconds": 180,
-          "created_at": "2026-03-15T19:13:41.350913+08:00",
-          "updated_at": "2026-03-15T19:13:41.350913+08:00"
+          "created_at": "2026-03-15T22:23:04.116998+08:00",
+          "updated_at": "2026-03-15T22:23:04.116998+08:00"
         },
         "status": {
           "events": [
             {
-              "id": "kubernetes-smoke-1773573221-queued",
+              "id": "kubernetes-smoke-1773584584-queued",
               "type": "task.queued",
-              "task_id": "kubernetes-smoke-1773573221",
-              "trace_id": "kubernetes-smoke-1773573221",
-              "timestamp": "2026-03-15T19:13:41.350913+08:00",
+              "task_id": "kubernetes-smoke-1773584584",
+              "trace_id": "kubernetes-smoke-1773584584",
+              "timestamp": "2026-03-15T22:23:04.116998+08:00",
               "payload": {
                 "executor": "kubernetes",
                 "title": "Kubernetes smoke test"
               }
             },
             {
-              "id": "kubernetes-smoke-1773573221-leased",
+              "id": "kubernetes-smoke-1773584584-leased",
               "type": "task.leased",
-              "task_id": "kubernetes-smoke-1773573221",
-              "trace_id": "kubernetes-smoke-1773573221",
-              "timestamp": "2026-03-15T19:13:41.392025+08:00"
+              "task_id": "kubernetes-smoke-1773584584",
+              "trace_id": "kubernetes-smoke-1773584584",
+              "timestamp": "2026-03-15T22:23:04.156036+08:00"
             },
             {
-              "id": "kubernetes-smoke-1773573221-routed",
+              "id": "kubernetes-smoke-1773584584-routed",
               "type": "scheduler.routed",
-              "task_id": "kubernetes-smoke-1773573221",
-              "trace_id": "kubernetes-smoke-1773573221",
-              "timestamp": "2026-03-15T19:13:41.392247+08:00",
+              "task_id": "kubernetes-smoke-1773584584",
+              "trace_id": "kubernetes-smoke-1773584584",
+              "timestamp": "2026-03-15T22:23:04.156151+08:00",
               "payload": {
                 "executor": "kubernetes",
                 "quota": {
@@ -299,53 +299,53 @@
               }
             },
             {
-              "id": "kubernetes-smoke-1773573221-started",
+              "id": "kubernetes-smoke-1773584584-started",
               "type": "task.started",
-              "task_id": "kubernetes-smoke-1773573221",
-              "trace_id": "kubernetes-smoke-1773573221",
-              "timestamp": "2026-03-15T19:13:41.392605+08:00",
+              "task_id": "kubernetes-smoke-1773584584",
+              "trace_id": "kubernetes-smoke-1773584584",
+              "timestamp": "2026-03-15T22:23:04.156554+08:00",
               "payload": {
                 "executor": "kubernetes",
                 "required_tools": null
               }
             },
             {
-              "id": "kubernetes-smoke-1773573221-completed",
+              "id": "kubernetes-smoke-1773584584-completed",
               "type": "task.completed",
-              "task_id": "kubernetes-smoke-1773573221",
-              "trace_id": "kubernetes-smoke-1773573221",
-              "timestamp": "2026-03-15T19:13:45.45553+08:00",
+              "task_id": "kubernetes-smoke-1773584584",
+              "trace_id": "kubernetes-smoke-1773584584",
+              "timestamp": "2026-03-15T22:23:08.377799+08:00",
               "payload": {
                 "artifacts": [
-                  "k8s://jobs/ray/bigclaw-kubernetes-smoke-1773573221-1773573221",
-                  "k8s://pods/ray/bigclaw-kubernetes-smoke-1773573221-1773573221-vlv7x"
+                  "k8s://jobs/default/bigclaw-kubernetes-smoke-1773584584-1773584584",
+                  "k8s://pods/default/bigclaw-kubernetes-smoke-1773584584-1773584584-2jzbq"
                 ],
                 "executor": "kubernetes",
-                "finished_at": "2026-03-15T11:13:45Z",
-                "message": "kubernetes job bigclaw-kubernetes-smoke-1773573221-1773573221 succeeded: hello from kubernetes"
+                "finished_at": "2026-03-15T14:23:08Z",
+                "message": "kubernetes job bigclaw-kubernetes-smoke-1773584584-1773584584 succeeded: hello from kubernetes"
               }
             }
           ],
           "latest_event": {
-            "id": "kubernetes-smoke-1773573221-completed",
+            "id": "kubernetes-smoke-1773584584-completed",
             "type": "task.completed",
-            "task_id": "kubernetes-smoke-1773573221",
-            "trace_id": "kubernetes-smoke-1773573221",
-            "timestamp": "2026-03-15T19:13:45.45553+08:00",
+            "task_id": "kubernetes-smoke-1773584584",
+            "trace_id": "kubernetes-smoke-1773584584",
+            "timestamp": "2026-03-15T22:23:08.377799+08:00",
             "payload": {
               "artifacts": [
-                "k8s://jobs/ray/bigclaw-kubernetes-smoke-1773573221-1773573221",
-                "k8s://pods/ray/bigclaw-kubernetes-smoke-1773573221-1773573221-vlv7x"
+                "k8s://jobs/default/bigclaw-kubernetes-smoke-1773584584-1773584584",
+                "k8s://pods/default/bigclaw-kubernetes-smoke-1773584584-1773584584-2jzbq"
               ],
               "executor": "kubernetes",
-              "finished_at": "2026-03-15T11:13:45Z",
-              "message": "kubernetes job bigclaw-kubernetes-smoke-1773573221-1773573221 succeeded: hello from kubernetes"
+              "finished_at": "2026-03-15T14:23:08Z",
+              "message": "kubernetes job bigclaw-kubernetes-smoke-1773584584-1773584584 succeeded: hello from kubernetes"
             }
           },
           "state": "succeeded",
           "task": {
-            "id": "kubernetes-smoke-1773573221",
-            "trace_id": "kubernetes-smoke-1773573221",
+            "id": "kubernetes-smoke-1773584584",
+            "trace_id": "kubernetes-smoke-1773584584",
             "title": "Kubernetes smoke test",
             "state": "succeeded",
             "required_executor": "kubernetes",
@@ -356,19 +356,19 @@
               "smoke_test": "true"
             },
             "execution_timeout_seconds": 180,
-            "created_at": "2026-03-15T19:13:41.350913+08:00",
-            "updated_at": "2026-03-15T19:13:45.45553+08:00"
+            "created_at": "2026-03-15T22:23:04.116998+08:00",
+            "updated_at": "2026-03-15T22:23:08.377799+08:00"
           },
-          "task_id": "kubernetes-smoke-1773573221",
-          "trace_id": "kubernetes-smoke-1773573221"
+          "task_id": "kubernetes-smoke-1773584584",
+          "trace_id": "kubernetes-smoke-1773584584"
         },
         "events": [
           {
-            "id": "kubernetes-smoke-1773573221-queued",
+            "id": "kubernetes-smoke-1773584584-queued",
             "type": "task.queued",
-            "task_id": "kubernetes-smoke-1773573221",
-            "trace_id": "kubernetes-smoke-1773573221",
-            "timestamp": "2026-03-15T19:13:41.350913+08:00",
+            "task_id": "kubernetes-smoke-1773584584",
+            "trace_id": "kubernetes-smoke-1773584584",
+            "timestamp": "2026-03-15T22:23:04.116998+08:00",
             "payload": {
               "executor": "kubernetes",
               "title": "Kubernetes smoke test"
@@ -376,27 +376,27 @@
             "delivery": {
               "mode": "replay",
               "replay": true,
-              "idempotency_key": "kubernetes-smoke-1773573221-queued"
+              "idempotency_key": "kubernetes-smoke-1773584584-queued"
             }
           },
           {
-            "id": "kubernetes-smoke-1773573221-leased",
+            "id": "kubernetes-smoke-1773584584-leased",
             "type": "task.leased",
-            "task_id": "kubernetes-smoke-1773573221",
-            "trace_id": "kubernetes-smoke-1773573221",
-            "timestamp": "2026-03-15T19:13:41.392025+08:00",
+            "task_id": "kubernetes-smoke-1773584584",
+            "trace_id": "kubernetes-smoke-1773584584",
+            "timestamp": "2026-03-15T22:23:04.156036+08:00",
             "delivery": {
               "mode": "replay",
               "replay": true,
-              "idempotency_key": "kubernetes-smoke-1773573221-leased"
+              "idempotency_key": "kubernetes-smoke-1773584584-leased"
             }
           },
           {
-            "id": "kubernetes-smoke-1773573221-routed",
+            "id": "kubernetes-smoke-1773584584-routed",
             "type": "scheduler.routed",
-            "task_id": "kubernetes-smoke-1773573221",
-            "trace_id": "kubernetes-smoke-1773573221",
-            "timestamp": "2026-03-15T19:13:41.392247+08:00",
+            "task_id": "kubernetes-smoke-1773584584",
+            "trace_id": "kubernetes-smoke-1773584584",
+            "timestamp": "2026-03-15T22:23:04.156151+08:00",
             "payload": {
               "executor": "kubernetes",
               "quota": {
@@ -413,15 +413,15 @@
             "delivery": {
               "mode": "replay",
               "replay": true,
-              "idempotency_key": "kubernetes-smoke-1773573221-routed"
+              "idempotency_key": "kubernetes-smoke-1773584584-routed"
             }
           },
           {
-            "id": "kubernetes-smoke-1773573221-started",
+            "id": "kubernetes-smoke-1773584584-started",
             "type": "task.started",
-            "task_id": "kubernetes-smoke-1773573221",
-            "trace_id": "kubernetes-smoke-1773573221",
-            "timestamp": "2026-03-15T19:13:41.392605+08:00",
+            "task_id": "kubernetes-smoke-1773584584",
+            "trace_id": "kubernetes-smoke-1773584584",
+            "timestamp": "2026-03-15T22:23:04.156554+08:00",
             "payload": {
               "executor": "kubernetes",
               "required_tools": null
@@ -429,67 +429,287 @@
             "delivery": {
               "mode": "replay",
               "replay": true,
-              "idempotency_key": "kubernetes-smoke-1773573221-started"
+              "idempotency_key": "kubernetes-smoke-1773584584-started"
             }
           },
           {
-            "id": "kubernetes-smoke-1773573221-completed",
+            "id": "kubernetes-smoke-1773584584-completed",
             "type": "task.completed",
-            "task_id": "kubernetes-smoke-1773573221",
-            "trace_id": "kubernetes-smoke-1773573221",
-            "timestamp": "2026-03-15T19:13:45.45553+08:00",
+            "task_id": "kubernetes-smoke-1773584584",
+            "trace_id": "kubernetes-smoke-1773584584",
+            "timestamp": "2026-03-15T22:23:08.377799+08:00",
             "payload": {
               "artifacts": [
-                "k8s://jobs/ray/bigclaw-kubernetes-smoke-1773573221-1773573221",
-                "k8s://pods/ray/bigclaw-kubernetes-smoke-1773573221-1773573221-vlv7x"
+                "k8s://jobs/default/bigclaw-kubernetes-smoke-1773584584-1773584584",
+                "k8s://pods/default/bigclaw-kubernetes-smoke-1773584584-1773584584-2jzbq"
               ],
               "executor": "kubernetes",
-              "finished_at": "2026-03-15T11:13:45Z",
-              "message": "kubernetes job bigclaw-kubernetes-smoke-1773573221-1773573221 succeeded: hello from kubernetes"
+              "finished_at": "2026-03-15T14:23:08Z",
+              "message": "kubernetes job bigclaw-kubernetes-smoke-1773584584-1773584584 succeeded: hello from kubernetes"
             },
             "delivery": {
               "mode": "replay",
               "replay": true,
-              "idempotency_key": "kubernetes-smoke-1773573221-completed"
+              "idempotency_key": "kubernetes-smoke-1773584584-completed"
             }
           }
         ],
-        "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-plj_a58f",
-        "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-e2e-ja4ylvtc.log"
+        "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-i5_b8c8b",
+        "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-e2e-6ogyvh7i.log"
       },
       "status": "succeeded",
-      "stdout_path": "docs/reports/live-validation-runs/20260315T111333Z/kubernetes.stdout.log",
-      "stderr_path": "docs/reports/live-validation-runs/20260315T111333Z/kubernetes.stderr.log",
-      "task_id": "kubernetes-smoke-1773573221",
-      "base_url": "http://127.0.0.1:62701",
-      "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-plj_a58f",
-      "audit_log_path": "docs/reports/live-validation-runs/20260315T111333Z/kubernetes.audit.jsonl",
-      "service_log_path": "docs/reports/live-validation-runs/20260315T111333Z/kubernetes.service.log"
+      "stdout_path": "docs/reports/live-validation-runs/20260315T142255Z/kubernetes.stdout.log",
+      "stderr_path": "docs/reports/live-validation-runs/20260315T142255Z/kubernetes.stderr.log",
+      "task_id": "kubernetes-smoke-1773584584",
+      "base_url": "http://127.0.0.1:55669",
+      "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-i5_b8c8b",
+      "audit_log_path": "docs/reports/live-validation-runs/20260315T142255Z/kubernetes.audit.jsonl",
+      "service_log_path": "docs/reports/live-validation-runs/20260315T142255Z/kubernetes.service.log"
     },
     "ray": {
-      "enabled": false,
-      "bundle_report_path": "docs/reports/live-validation-runs/20260315T111333Z/ray-live-smoke-report.json",
+      "enabled": true,
+      "bundle_report_path": "docs/reports/live-validation-runs/20260315T142255Z/ray-live-smoke-report.json",
       "canonical_report_path": "docs/reports/ray-live-smoke-report.json",
-      "status": "skipped"
+      "report": {
+        "autostarted": true,
+        "base_url": "http://127.0.0.1:55670",
+        "task": {
+          "id": "ray-smoke-1773584583",
+          "trace_id": "ray-smoke-1773584583",
+          "title": "Ray smoke test",
+          "state": "queued",
+          "required_executor": "ray",
+          "entrypoint": "python -c \"print('hello from ray')\"",
+          "metadata": {
+            "executor": "ray",
+            "smoke_test": "true"
+          },
+          "execution_timeout_seconds": 180,
+          "created_at": "2026-03-15T22:23:03.932422+08:00",
+          "updated_at": "2026-03-15T22:23:03.932422+08:00"
+        },
+        "status": {
+          "events": [
+            {
+              "id": "ray-smoke-1773584583-queued",
+              "type": "task.queued",
+              "task_id": "ray-smoke-1773584583",
+              "trace_id": "ray-smoke-1773584583",
+              "timestamp": "2026-03-15T22:23:03.932422+08:00",
+              "payload": {
+                "executor": "ray",
+                "title": "Ray smoke test"
+              }
+            },
+            {
+              "id": "ray-smoke-1773584583-leased",
+              "type": "task.leased",
+              "task_id": "ray-smoke-1773584583",
+              "trace_id": "ray-smoke-1773584583",
+              "timestamp": "2026-03-15T22:23:03.958962+08:00"
+            },
+            {
+              "id": "ray-smoke-1773584583-routed",
+              "type": "scheduler.routed",
+              "task_id": "ray-smoke-1773584583",
+              "trace_id": "ray-smoke-1773584583",
+              "timestamp": "2026-03-15T22:23:03.95909+08:00",
+              "payload": {
+                "executor": "ray",
+                "quota": {
+                  "TenantID": "",
+                  "ConcurrentLimit": 32,
+                  "CurrentRunning": 0,
+                  "BudgetRemaining": 1000,
+                  "QueueDepth": 0,
+                  "MaxQueueDepth": 0,
+                  "PreemptibleExecutions": 0
+                },
+                "reason": "required executor=ray"
+              }
+            },
+            {
+              "id": "ray-smoke-1773584583-started",
+              "type": "task.started",
+              "task_id": "ray-smoke-1773584583",
+              "trace_id": "ray-smoke-1773584583",
+              "timestamp": "2026-03-15T22:23:03.959376+08:00",
+              "payload": {
+                "executor": "ray",
+                "required_tools": null
+              }
+            },
+            {
+              "id": "ray-smoke-1773584583-completed",
+              "type": "task.completed",
+              "task_id": "ray-smoke-1773584583",
+              "trace_id": "ray-smoke-1773584583",
+              "timestamp": "2026-03-15T22:23:08.128325+08:00",
+              "payload": {
+                "artifacts": [
+                  "ray://jobs/bigclaw-ray-smoke-1773584583"
+                ],
+                "executor": "ray",
+                "finished_at": "2026-03-15T14:23:08Z",
+                "message": "ray job bigclaw-ray-smoke-1773584583 succeeded: 2026-03-15 07:23:03,776\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-ray-smoke-1773584583: python -c \"print('hello from ray')\"\nhello from ray"
+              }
+            }
+          ],
+          "latest_event": {
+            "id": "ray-smoke-1773584583-completed",
+            "type": "task.completed",
+            "task_id": "ray-smoke-1773584583",
+            "trace_id": "ray-smoke-1773584583",
+            "timestamp": "2026-03-15T22:23:08.128325+08:00",
+            "payload": {
+              "artifacts": [
+                "ray://jobs/bigclaw-ray-smoke-1773584583"
+              ],
+              "executor": "ray",
+              "finished_at": "2026-03-15T14:23:08Z",
+              "message": "ray job bigclaw-ray-smoke-1773584583 succeeded: 2026-03-15 07:23:03,776\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-ray-smoke-1773584583: python -c \"print('hello from ray')\"\nhello from ray"
+            }
+          },
+          "state": "succeeded",
+          "task": {
+            "id": "ray-smoke-1773584583",
+            "trace_id": "ray-smoke-1773584583",
+            "title": "Ray smoke test",
+            "state": "succeeded",
+            "required_executor": "ray",
+            "entrypoint": "python -c \"print('hello from ray')\"",
+            "metadata": {
+              "executor": "ray",
+              "smoke_test": "true"
+            },
+            "execution_timeout_seconds": 180,
+            "created_at": "2026-03-15T22:23:03.932422+08:00",
+            "updated_at": "2026-03-15T22:23:08.128325+08:00"
+          },
+          "task_id": "ray-smoke-1773584583",
+          "trace_id": "ray-smoke-1773584583"
+        },
+        "events": [
+          {
+            "id": "ray-smoke-1773584583-queued",
+            "type": "task.queued",
+            "task_id": "ray-smoke-1773584583",
+            "trace_id": "ray-smoke-1773584583",
+            "timestamp": "2026-03-15T22:23:03.932422+08:00",
+            "payload": {
+              "executor": "ray",
+              "title": "Ray smoke test"
+            },
+            "delivery": {
+              "mode": "replay",
+              "replay": true,
+              "idempotency_key": "ray-smoke-1773584583-queued"
+            }
+          },
+          {
+            "id": "ray-smoke-1773584583-leased",
+            "type": "task.leased",
+            "task_id": "ray-smoke-1773584583",
+            "trace_id": "ray-smoke-1773584583",
+            "timestamp": "2026-03-15T22:23:03.958962+08:00",
+            "delivery": {
+              "mode": "replay",
+              "replay": true,
+              "idempotency_key": "ray-smoke-1773584583-leased"
+            }
+          },
+          {
+            "id": "ray-smoke-1773584583-routed",
+            "type": "scheduler.routed",
+            "task_id": "ray-smoke-1773584583",
+            "trace_id": "ray-smoke-1773584583",
+            "timestamp": "2026-03-15T22:23:03.95909+08:00",
+            "payload": {
+              "executor": "ray",
+              "quota": {
+                "TenantID": "",
+                "ConcurrentLimit": 32,
+                "CurrentRunning": 0,
+                "BudgetRemaining": 1000,
+                "QueueDepth": 0,
+                "MaxQueueDepth": 0,
+                "PreemptibleExecutions": 0
+              },
+              "reason": "required executor=ray"
+            },
+            "delivery": {
+              "mode": "replay",
+              "replay": true,
+              "idempotency_key": "ray-smoke-1773584583-routed"
+            }
+          },
+          {
+            "id": "ray-smoke-1773584583-started",
+            "type": "task.started",
+            "task_id": "ray-smoke-1773584583",
+            "trace_id": "ray-smoke-1773584583",
+            "timestamp": "2026-03-15T22:23:03.959376+08:00",
+            "payload": {
+              "executor": "ray",
+              "required_tools": null
+            },
+            "delivery": {
+              "mode": "replay",
+              "replay": true,
+              "idempotency_key": "ray-smoke-1773584583-started"
+            }
+          },
+          {
+            "id": "ray-smoke-1773584583-completed",
+            "type": "task.completed",
+            "task_id": "ray-smoke-1773584583",
+            "trace_id": "ray-smoke-1773584583",
+            "timestamp": "2026-03-15T22:23:08.128325+08:00",
+            "payload": {
+              "artifacts": [
+                "ray://jobs/bigclaw-ray-smoke-1773584583"
+              ],
+              "executor": "ray",
+              "finished_at": "2026-03-15T14:23:08Z",
+              "message": "ray job bigclaw-ray-smoke-1773584583 succeeded: 2026-03-15 07:23:03,776\tINFO job_manager.py:579 -- Runtime env is setting up.\nRunning entrypoint for job bigclaw-ray-smoke-1773584583: python -c \"print('hello from ray')\"\nhello from ray"
+            },
+            "delivery": {
+              "mode": "replay",
+              "replay": true,
+              "idempotency_key": "ray-smoke-1773584583-completed"
+            }
+          }
+        ],
+        "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-3ue0nzo5",
+        "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-e2e-a1_o8z5l.log"
+      },
+      "status": "succeeded",
+      "stdout_path": "docs/reports/live-validation-runs/20260315T142255Z/ray.stdout.log",
+      "stderr_path": "docs/reports/live-validation-runs/20260315T142255Z/ray.stderr.log",
+      "task_id": "ray-smoke-1773584583",
+      "base_url": "http://127.0.0.1:55670",
+      "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-3ue0nzo5",
+      "audit_log_path": "docs/reports/live-validation-runs/20260315T142255Z/ray.audit.jsonl",
+      "service_log_path": "docs/reports/live-validation-runs/20260315T142255Z/ray.service.log"
     },
     "shared_queue": {
       "enabled": true,
-      "bundle_report_path": "docs/reports/live-validation-runs/20260315T111333Z/multi-node-shared-queue-report.json",
+      "bundle_report_path": "docs/reports/live-validation-runs/20260315T142255Z/multi-node-shared-queue-report.json",
       "canonical_report_path": "docs/reports/multi-node-shared-queue-report.json",
       "report": {
-        "generated_at": "2026-03-15T11:13:51Z",
-        "root_state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-vvicwyd6",
-        "queue_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-vvicwyd6/shared-queue.db",
+        "generated_at": "2026-03-15T14:23:14Z",
+        "root_state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-b3prka4_",
+        "queue_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-b3prka4_/shared-queue.db",
         "count": 200,
         "submitted_by_node": {
           "node-a": 100,
           "node-b": 100
         },
         "completed_by_node": {
-          "node-a": 101,
-          "node-b": 99
+          "node-a": 98,
+          "node-b": 102
         },
-        "cross_node_completions": 113,
+        "cross_node_completions": 112,
         "duplicate_started_tasks": [],
         "duplicate_completed_tasks": [],
         "missing_completed_tasks": [],
@@ -497,61 +717,68 @@
         "nodes": [
           {
             "name": "node-a",
-            "base_url": "http://127.0.0.1:62693",
-            "audit_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-vvicwyd6/node-a-audit.jsonl",
-            "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/node-a-fdo_qivn.log"
+            "base_url": "http://127.0.0.1:55660",
+            "audit_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-b3prka4_/node-a-audit.jsonl",
+            "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/node-a-q7modf6j.log"
           },
           {
             "name": "node-b",
-            "base_url": "http://127.0.0.1:62694",
-            "audit_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-vvicwyd6/node-b-audit.jsonl",
-            "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/node-b-5hrme8fh.log"
+            "base_url": "http://127.0.0.1:55661",
+            "audit_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-b3prka4_/node-b-audit.jsonl",
+            "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/node-b-06ilj5fr.log"
           }
         ]
       },
       "status": "succeeded",
-      "stdout_path": "docs/reports/live-validation-runs/20260315T111333Z/shared_queue.stdout.log",
-      "stderr_path": "docs/reports/live-validation-runs/20260315T111333Z/shared_queue.stderr.log",
+      "stdout_path": "docs/reports/live-validation-runs/20260315T142255Z/shared_queue.stdout.log",
+      "stderr_path": "docs/reports/live-validation-runs/20260315T142255Z/shared_queue.stderr.log",
       "nodes": [
         {
           "name": "node-a",
-          "base_url": "http://127.0.0.1:62693",
-          "audit_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-vvicwyd6/node-a-audit.jsonl",
-          "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/node-a-fdo_qivn.log",
-          "bundle_audit_path": "docs/reports/live-validation-runs/20260315T111333Z/shared_queue.node-1.audit.jsonl",
-          "bundle_service_log_path": "docs/reports/live-validation-runs/20260315T111333Z/shared_queue.node-1.service.log"
+          "base_url": "http://127.0.0.1:55660",
+          "audit_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-b3prka4_/node-a-audit.jsonl",
+          "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/node-a-q7modf6j.log",
+          "bundle_audit_path": "docs/reports/live-validation-runs/20260315T142255Z/shared_queue.node-1.audit.jsonl",
+          "bundle_service_log_path": "docs/reports/live-validation-runs/20260315T142255Z/shared_queue.node-1.service.log"
         },
         {
           "name": "node-b",
-          "base_url": "http://127.0.0.1:62694",
-          "audit_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-vvicwyd6/node-b-audit.jsonl",
-          "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/node-b-5hrme8fh.log",
-          "bundle_audit_path": "docs/reports/live-validation-runs/20260315T111333Z/shared_queue.node-2.audit.jsonl",
-          "bundle_service_log_path": "docs/reports/live-validation-runs/20260315T111333Z/shared_queue.node-2.service.log"
+          "base_url": "http://127.0.0.1:55661",
+          "audit_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-b3prka4_/node-b-audit.jsonl",
+          "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/node-b-06ilj5fr.log",
+          "bundle_audit_path": "docs/reports/live-validation-runs/20260315T142255Z/shared_queue.node-2.audit.jsonl",
+          "bundle_service_log_path": "docs/reports/live-validation-runs/20260315T142255Z/shared_queue.node-2.service.log"
         }
       ]
     },
     "supporting_reports": [
       {
         "source_path": "docs/reports/replay-retention-semantics-report.md",
-        "bundle_path": "docs/reports/live-validation-runs/20260315T111333Z/replay-retention-semantics-report.md"
+        "bundle_path": "docs/reports/live-validation-runs/20260315T142255Z/replay-retention-semantics-report.md"
       },
       {
         "source_path": "docs/reports/replicated-event-log-durability-rollout-contract.md",
-        "bundle_path": "docs/reports/live-validation-runs/20260315T111333Z/replicated-event-log-durability-rollout-contract.md"
+        "bundle_path": "docs/reports/live-validation-runs/20260315T142255Z/replicated-event-log-durability-rollout-contract.md"
       },
       {
         "source_path": "docs/reports/multi-subscriber-takeover-validation-report.md",
-        "bundle_path": "docs/reports/live-validation-runs/20260315T111333Z/multi-subscriber-takeover-validation-report.md"
+        "bundle_path": "docs/reports/live-validation-runs/20260315T142255Z/multi-subscriber-takeover-validation-report.md"
       },
       {
         "source_path": "docs/reports/multi-subscriber-takeover-validation-report.json",
-        "bundle_path": "docs/reports/live-validation-runs/20260315T111333Z/multi-subscriber-takeover-validation-report.json"
+        "bundle_path": "docs/reports/live-validation-runs/20260315T142255Z/multi-subscriber-takeover-validation-report.json"
       }
     ],
-    "summary_path": "docs/reports/live-validation-runs/20260315T111333Z/summary.json"
+    "summary_path": "docs/reports/live-validation-runs/20260315T142255Z/summary.json"
   },
   "recent_runs": [
+    {
+      "run_id": "20260315T142255Z",
+      "generated_at": "2026-03-15T14:23:14.639310+00:00",
+      "status": "succeeded",
+      "bundle_path": "docs/reports/live-validation-runs/20260315T142255Z",
+      "summary_path": "docs/reports/live-validation-runs/20260315T142255Z/summary.json"
+    },
     {
       "run_id": "20260315T111333Z",
       "generated_at": "2026-03-15T11:13:51.358487+00:00",
