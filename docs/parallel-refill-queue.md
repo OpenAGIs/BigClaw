@@ -33,14 +33,16 @@ manual operator can refill the next parallel-safe issues in a stable order.
   - `OPE-220` — retention watermark / replay horizon surface
   - `OPE-221` — durable consumer dedup store bootstrap
   - `OPE-222` — replicated event-log durability rollout contract
-- Active:
   - `OPE-223` — durable replay retention backend bootstrap
   - `OPE-224` — broker-backed event-log adapter bootstrap
-- Standby:
+- Active:
   - `OPE-225` — Kubernetes / Ray / shared-queue validation bundle refresh
+  - `OPE-226` — expired replay checkpoint diagnostics / reset surface
+- Standby:
+  - `OPE-227` — broker adapter dry-run capability probe
 
 ## Canonical refill order
 
-1. `OPE-223`
-2. `OPE-224`
-3. `OPE-225`
+1. `OPE-225`
+2. `OPE-226`
+3. `OPE-227`
