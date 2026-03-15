@@ -40,14 +40,17 @@ manual operator can refill the next parallel-safe issues in a stable order.
   - `OPE-227` — broker adapter dry-run capability probe
   - `OPE-228` — checkpoint reset audit trail and operator history
   - `OPE-229` — checkpoint reset review surface in debug / control-plane payloads
-- Active:
   - `OPE-230` — checkpoint reset validation bundle refresh
   - `OPE-231` — checkpoint reset distributed report / export integration
-- Standby:
   - `OPE-232` — checkpoint reset rollout evidence / review-pack refresh
+- Active:
+  - `OPE-233` — Ray executor live readiness rollup in distributed diagnostics
+  - `OPE-234` — replicated event-log rollout readiness summary
+- Standby:
+  - `OPE-235` — shared-queue takeover evidence bundle refresh
 
 ## Canonical refill order
 
-1. `OPE-230`
-2. `OPE-231`
-3. `OPE-232`
+1. `OPE-233`
+2. `OPE-234`
+3. `OPE-235`

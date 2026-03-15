@@ -33,38 +33,41 @@
       "OPE-226",
       "OPE-227",
       "OPE-228",
-      "OPE-229"
+      "OPE-229",
+      "OPE-230",
+      "OPE-231",
+      "OPE-232"
     ],
     "active": [
-      "OPE-230",
-      "OPE-231"
+      "OPE-233",
+      "OPE-234"
     ],
     "standby": [
-      "OPE-232"
+      "OPE-235"
     ]
   },
   "issue_order": [
-    "OPE-230",
-    "OPE-231",
-    "OPE-232"
+    "OPE-233",
+    "OPE-234",
+    "OPE-235"
   ],
   "issues": [
     {
-      "identifier": "OPE-230",
-      "title": "BIG-PAR-043 checkpoint reset validation bundle refresh",
-      "track": "Validation Bundle",
+      "identifier": "OPE-233",
+      "title": "BIG-PAR-046 Ray executor live readiness rollup in distributed diagnostics",
+      "track": "Distributed Diagnostics",
       "status": "In Progress"
     },
     {
-      "identifier": "OPE-231",
-      "title": "BIG-PAR-044 checkpoint reset distributed report / export integration",
-      "track": "Distributed Report",
+      "identifier": "OPE-234",
+      "title": "BIG-PAR-047 replicated event-log rollout readiness summary",
+      "track": "Durability Rollout",
       "status": "In Progress"
     },
     {
-      "identifier": "OPE-232",
-      "title": "BIG-PAR-045 checkpoint reset rollout evidence / review-pack refresh",
-      "track": "Review Pack",
+      "identifier": "OPE-235",
+      "title": "BIG-PAR-048 shared-queue takeover evidence bundle refresh",
+      "track": "Shared Queue Evidence",
       "status": "Todo"
     }
   ]

@@ -22,10 +22,10 @@ workspace:
 
 hooks:
   after_create: |
-    git clone https://$GITHUB_TOKEN@github.com/OpenAGIs/BigClaw.git .
+    git clone git@github.com:OpenAGIs/BigClaw.git .
     git config user.email "dcjcloud@gmail.com"
     git config user.name "native cloud"
-    git remote set-url origin https://$GITHUB_TOKEN@github.com/OpenAGIs/BigClaw.git
+    gh auth setup-git || true
     python3 scripts/ops/bigclaw_github_sync.py install
     python3 scripts/ops/bigclaw_github_sync.py status --json
   before_run: |
