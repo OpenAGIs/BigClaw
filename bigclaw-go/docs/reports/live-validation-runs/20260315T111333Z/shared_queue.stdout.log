@@ -1,0 +1,33 @@
+{
+  "generated_at": "2026-03-15T11:13:51Z",
+  "root_state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-vvicwyd6",
+  "queue_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-vvicwyd6/shared-queue.db",
+  "count": 200,
+  "submitted_by_node": {
+    "node-a": 100,
+    "node-b": 100
+  },
+  "completed_by_node": {
+    "node-a": 101,
+    "node-b": 99
+  },
+  "cross_node_completions": 113,
+  "duplicate_started_tasks": [],
+  "duplicate_completed_tasks": [],
+  "missing_completed_tasks": [],
+  "all_ok": true,
+  "nodes": [
+    {
+      "name": "node-a",
+      "base_url": "http://127.0.0.1:62693",
+      "audit_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-vvicwyd6/node-a-audit.jsonl",
+      "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/node-a-fdo_qivn.log"
+    },
+    {
+      "name": "node-b",
+      "base_url": "http://127.0.0.1:62694",
+      "audit_path": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-multinode-vvicwyd6/node-b-audit.jsonl",
+      "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/node-b-5hrme8fh.log"
+    }
+  ]
+}
