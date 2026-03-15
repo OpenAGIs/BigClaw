@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"bigclaw-go/internal/config"
 	"bigclaw-go/internal/control"
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/events"
@@ -279,13 +280,22 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	base := time.Date(2026, 3, 14, 9, 0, 0, 0, time.UTC)
 	recorder := observability.NewRecorder()
 	controller := control.New()
+	reportsDir := writeTestLiveValidationReports(t)
 	server := &Server{
-		Recorder:  recorder,
-		Queue:     queue.NewMemoryQueue(),
-		Executors: []domain.ExecutorKind{domain.ExecutorLocal, domain.ExecutorKubernetes, domain.ExecutorRay},
-		Control:   controller,
-		Worker:    fakeWorkerPoolStatus{},
-		Now:       func() time.Time { return base.Add(6 * time.Hour) },
+		Recorder:   recorder,
+		Queue:      queue.NewMemoryQueue(),
+		Executors:  []domain.ExecutorKind{domain.ExecutorLocal, domain.ExecutorKubernetes, domain.ExecutorRay},
+		Control:    controller,
+		Worker:     fakeWorkerPoolStatus{},
+		Now:        func() time.Time { return base.Add(6 * time.Hour) },
+		ReportsDir: reportsDir,
+		RuntimeConfig: config.Config{
+			KubernetesNamespace:      "ray",
+			KubernetesImage:          "alpine:3.20",
+			KubernetesServiceAccount: "bigclaw-smoke",
+			KubernetesKubeconfigPath: "/tmp/ray-kubeconfig",
+			RayAddress:               "ray://127.0.0.1:10001",
+		},
 	}
 	for _, task := range []domain.Task{
 		{ID: "report-local", TraceID: "trace-report-local", Title: "Local", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(time.Minute)},
@@ -345,6 +355,27 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 				Count int    `json:"count"`
 			} `json:"takeover_owners"`
 		} `json:"cluster_health"`
+		KubernetesReadiness struct {
+			Configured       bool     `json:"configured"`
+			Namespace        string   `json:"namespace"`
+			ValidationStatus string   `json:"validation_status"`
+			TaskID           string   `json:"task_id"`
+			JobArtifacts     []string `json:"job_artifacts"`
+			Evidence         struct {
+				SummaryPath         string `json:"summary_path"`
+				CanonicalReportPath string `json:"canonical_report_path"`
+			} `json:"evidence"`
+		} `json:"kubernetes_readiness"`
+		RayReadiness struct {
+			Configured       bool     `json:"configured"`
+			ValidationStatus string   `json:"validation_status"`
+			TaskID           string   `json:"task_id"`
+			JobArtifacts     []string `json:"job_artifacts"`
+			Evidence         struct {
+				SummaryPath         string `json:"summary_path"`
+				CanonicalReportPath string `json:"canonical_report_path"`
+			} `json:"evidence"`
+		} `json:"ray_readiness"`
 		Report struct {
 			Markdown  string `json:"markdown"`
 			ExportURL string `json:"export_url"`
@@ -368,7 +399,19 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if len(decoded.ClusterHealth.TakeoverOwners) == 0 || decoded.ClusterHealth.TakeoverOwners[0].Key != "alice" {
 		t.Fatalf("unexpected takeover owner breakdown: %+v", decoded.ClusterHealth)
 	}
-	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") {
+	if !decoded.KubernetesReadiness.Configured || decoded.KubernetesReadiness.Namespace != "ray" || decoded.KubernetesReadiness.ValidationStatus != "succeeded" || decoded.KubernetesReadiness.TaskID != "kubernetes-smoke-1773506812" || len(decoded.KubernetesReadiness.JobArtifacts) != 1 || decoded.KubernetesReadiness.JobArtifacts[0] != "job.log" {
+		t.Fatalf("unexpected kubernetes readiness payload: %+v", decoded.KubernetesReadiness)
+	}
+	if decoded.KubernetesReadiness.Evidence.SummaryPath != "docs/reports/live-validation-summary.json" || decoded.KubernetesReadiness.Evidence.CanonicalReportPath != "docs/reports/kubernetes-live-smoke-report.json" {
+		t.Fatalf("unexpected kubernetes readiness evidence: %+v", decoded.KubernetesReadiness.Evidence)
+	}
+	if !decoded.RayReadiness.Configured || decoded.RayReadiness.ValidationStatus != "succeeded" || decoded.RayReadiness.TaskID != "ray-smoke-1773506812" || len(decoded.RayReadiness.JobArtifacts) != 1 || decoded.RayReadiness.JobArtifacts[0] != "ray://jobs/bigclaw-ray-smoke-1773506812" {
+		t.Fatalf("unexpected ray readiness payload: %+v", decoded.RayReadiness)
+	}
+	if decoded.RayReadiness.Evidence.SummaryPath != "docs/reports/live-validation-summary.json" || decoded.RayReadiness.Evidence.CanonicalReportPath != "docs/reports/ray-live-smoke-report.json" {
+		t.Fatalf("unexpected ray readiness evidence: %+v", decoded.RayReadiness.Evidence)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Kubernetes Readiness") || !strings.Contains(decoded.Report.Markdown, "docs/reports/kubernetes-live-smoke-report.json") || !strings.Contains(decoded.Report.Markdown, "## Ray Readiness") || !strings.Contains(decoded.Report.Markdown, "docs/reports/ray-live-smoke-report.json") {
 		t.Fatalf("unexpected distributed markdown: %s", decoded.Report.Markdown)
 	}
 	if !strings.Contains(decoded.Report.ExportURL, "/v2/reports/distributed/export") {
@@ -383,7 +426,7 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 		t.Fatalf("expected markdown export content type, got %q", contentType)
 	}
-	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") {
+	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") || !strings.Contains(exportResponse.Body.String(), "Kubernetes Readiness") || !strings.Contains(exportResponse.Body.String(), "docs/reports/kubernetes-live-smoke-report.json") || !strings.Contains(exportResponse.Body.String(), "Ray Readiness") || !strings.Contains(exportResponse.Body.String(), "docs/reports/live-validation-summary.json") {
 		t.Fatalf("unexpected distributed export markdown: %s", exportResponse.Body.String())
 	}
 }

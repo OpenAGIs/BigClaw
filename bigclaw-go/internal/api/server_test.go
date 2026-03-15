@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"bigclaw-go/internal/config"
 	"bigclaw-go/internal/control"
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/events"
@@ -42,6 +43,122 @@ func (fakeWorkerPoolStatus) Snapshots() []worker.Status {
 		{WorkerID: "worker-b", State: "leased", CurrentExecutor: domain.ExecutorKubernetes, SuccessfulRuns: 3, LeaseRenewals: 2, LastResult: "warming", PreemptionActive: true, CurrentPreemptionTaskID: "task-low", CurrentPreemptionWorkerID: "worker-low", LastPreemptedTaskID: "task-low", LastPreemptionAt: time.Unix(1700000100, 0), LastPreemptionReason: "preempted by urgent task task-urgent (priority=1)", PreemptionsIssued: 1},
 		{WorkerID: "worker-c", State: "idle", SuccessfulRuns: 8, LeaseRenewals: 0, LastResult: "idle"},
 	}
+}
+
+func writeTestLiveValidationReports(t *testing.T) string {
+	t.Helper()
+	reportsDir := filepath.Join(t.TempDir(), "docs", "reports")
+	if err := os.MkdirAll(reportsDir, 0o755); err != nil {
+		t.Fatalf("mkdir reports dir: %v", err)
+	}
+	summary := `{
+  "run_id": "20260314T164647Z",
+  "generated_at": "2026-03-14T16:46:57.671520+00:00",
+  "status": "succeeded",
+  "bundle_path": "docs/reports/live-validation-runs/20260314T164647Z",
+  "local": {
+    "enabled": true,
+    "status": "succeeded",
+    "task_id": "local-smoke-1773506812",
+    "canonical_report_path": "docs/reports/sqlite-smoke-report.json",
+    "bundle_report_path": "docs/reports/live-validation-runs/20260314T164647Z/sqlite-smoke-report.json",
+    "service_log_path": "docs/reports/live-validation-runs/20260314T164647Z/local.service.log",
+    "audit_log_path": "docs/reports/live-validation-runs/20260314T164647Z/local.audit.jsonl",
+    "report": {
+      "status": {
+        "state": "succeeded",
+        "task_id": "local-smoke-1773506812",
+        "latest_event": {
+          "type": "task.completed",
+          "timestamp": "2026-03-15T00:46:52.591566+08:00",
+          "payload": {
+            "artifacts": ["stdout.log"]
+          }
+        }
+      }
+    }
+  },
+  "kubernetes": {
+    "enabled": true,
+    "status": "succeeded",
+    "task_id": "kubernetes-smoke-1773506812",
+    "canonical_report_path": "docs/reports/kubernetes-live-smoke-report.json",
+    "bundle_report_path": "docs/reports/live-validation-runs/20260314T164647Z/kubernetes-live-smoke-report.json",
+    "service_log_path": "docs/reports/live-validation-runs/20260314T164647Z/kubernetes.service.log",
+    "audit_log_path": "docs/reports/live-validation-runs/20260314T164647Z/kubernetes.audit.jsonl",
+    "report": {
+      "status": {
+        "state": "succeeded",
+        "task_id": "kubernetes-smoke-1773506812",
+        "latest_event": {
+          "type": "task.completed",
+          "timestamp": "2026-03-15T00:46:55.000000+08:00",
+          "payload": {
+            "artifacts": ["job.log"]
+          }
+        }
+      }
+    }
+  },
+  "ray": {
+    "enabled": true,
+    "status": "succeeded",
+    "task_id": "ray-smoke-1773506812",
+    "canonical_report_path": "docs/reports/ray-live-smoke-report.json",
+    "bundle_report_path": "docs/reports/live-validation-runs/20260314T164647Z/ray-live-smoke-report.json",
+    "service_log_path": "docs/reports/live-validation-runs/20260314T164647Z/ray.service.log",
+    "audit_log_path": "docs/reports/live-validation-runs/20260314T164647Z/ray.audit.jsonl",
+    "report": {
+      "status": {
+        "state": "succeeded",
+        "task_id": "ray-smoke-1773506812",
+        "latest_event": {
+          "type": "task.completed",
+          "timestamp": "2026-03-15T00:46:56.003827+08:00",
+          "payload": {
+            "artifacts": ["ray://jobs/bigclaw-ray-smoke-1773506812"]
+          }
+        }
+      }
+    }
+  }
+}`
+	kubernetesReport := `{
+  "status": {
+    "state": "succeeded",
+    "task_id": "kubernetes-smoke-1773506812",
+    "latest_event": {
+      "type": "task.completed",
+      "timestamp": "2026-03-15T00:46:55.000000+08:00",
+      "payload": {
+        "artifacts": ["k8s://jobs/ray/bigclaw-kubernetes-smoke-1773506812-1773506812"]
+      }
+    }
+  }
+}`
+	rayReport := `{
+  "status": {
+    "state": "succeeded",
+    "task_id": "ray-smoke-1773506812",
+    "latest_event": {
+      "type": "task.completed",
+      "timestamp": "2026-03-15T00:46:56.003827+08:00",
+      "payload": {
+        "artifacts": ["ray://jobs/bigclaw-ray-smoke-1773506812"]
+      }
+    }
+  }
+}`
+	if err := os.WriteFile(filepath.Join(reportsDir, "live-validation-summary.json"), []byte(summary), 0o644); err != nil {
+		t.Fatalf("write live validation summary: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(reportsDir, "kubernetes-live-smoke-report.json"), []byte(kubernetesReport), 0o644); err != nil {
+		t.Fatalf("write kubernetes validation report: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(reportsDir, "ray-live-smoke-report.json"), []byte(rayReport), 0o644); err != nil {
+		t.Fatalf("write ray validation report: %v", err)
+	}
+	return reportsDir
 }
 
 type blockingEventLog struct {
@@ -1686,13 +1803,22 @@ func TestV2ControlCenterIncludesMultiWorkerPoolSummary(t *testing.T) {
 func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	recorder := observability.NewRecorder()
 	controller := control.New()
+	reportsDir := writeTestLiveValidationReports(t)
 	server := &Server{
-		Recorder:  recorder,
-		Queue:     queue.NewMemoryQueue(),
-		Executors: []domain.ExecutorKind{domain.ExecutorLocal, domain.ExecutorKubernetes, domain.ExecutorRay},
-		Control:   controller,
-		Worker:    fakeWorkerPoolStatus{},
-		Now:       func() time.Time { return time.Unix(1700007200, 0) },
+		Recorder:   recorder,
+		Queue:      queue.NewMemoryQueue(),
+		Executors:  []domain.ExecutorKind{domain.ExecutorLocal, domain.ExecutorKubernetes, domain.ExecutorRay},
+		Control:    controller,
+		Worker:     fakeWorkerPoolStatus{},
+		Now:        func() time.Time { return time.Unix(1700007200, 0) },
+		ReportsDir: reportsDir,
+		RuntimeConfig: config.Config{
+			KubernetesNamespace:      "ray",
+			KubernetesImage:          "alpine:3.20",
+			KubernetesServiceAccount: "bigclaw-smoke",
+			KubernetesKubeconfigPath: "/tmp/ray-kubeconfig",
+			RayAddress:               "ray://127.0.0.1:10001",
+		},
 	}
 	handler := server.Handler()
 	base := time.Unix(1700000000, 0)
@@ -1763,6 +1889,39 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 					Count int    `json:"count"`
 				} `json:"takeover_owners"`
 			} `json:"cluster_health"`
+			KubernetesReadiness struct {
+				Configured            bool     `json:"configured"`
+				Namespace             string   `json:"namespace"`
+				Image                 string   `json:"image"`
+				ServiceAccount        string   `json:"service_account"`
+				KubeconfigPath        string   `json:"kubeconfig_path"`
+				ValidationStatus      string   `json:"validation_status"`
+				LocalValidationStatus string   `json:"local_validation_status"`
+				RayValidationStatus   string   `json:"ray_validation_status"`
+				LatestRunID           string   `json:"latest_run_id"`
+				TaskID                string   `json:"task_id"`
+				JobArtifacts          []string `json:"job_artifacts"`
+				Evidence              struct {
+					SummaryPath         string `json:"summary_path"`
+					CanonicalReportPath string `json:"canonical_report_path"`
+					BundleReportPath    string `json:"bundle_report_path"`
+				} `json:"evidence"`
+			} `json:"kubernetes_readiness"`
+			RayReadiness struct {
+				Configured                 bool     `json:"configured"`
+				Address                    string   `json:"address"`
+				ValidationStatus           string   `json:"validation_status"`
+				LocalValidationStatus      string   `json:"local_validation_status"`
+				KubernetesValidationStatus string   `json:"kubernetes_validation_status"`
+				LatestRunID                string   `json:"latest_run_id"`
+				TaskID                     string   `json:"task_id"`
+				JobArtifacts               []string `json:"job_artifacts"`
+				Evidence                   struct {
+					SummaryPath         string `json:"summary_path"`
+					CanonicalReportPath string `json:"canonical_report_path"`
+					BundleReportPath    string `json:"bundle_report_path"`
+				} `json:"evidence"`
+			} `json:"ray_readiness"`
 			RolloutReport struct {
 				Markdown  string `json:"markdown"`
 				ExportURL string `json:"export_url"`
@@ -1799,7 +1958,25 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	if len(decoded.Diagnostics.ClusterHealth.TakeoverOwners) == 0 || decoded.Diagnostics.ClusterHealth.TakeoverOwners[0].Key != "alice" {
 		t.Fatalf("expected takeover owner rollup, got %+v", decoded.Diagnostics.ClusterHealth)
 	}
-	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") || !strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {
+	if !decoded.Diagnostics.KubernetesReadiness.Configured || decoded.Diagnostics.KubernetesReadiness.Namespace != "ray" || decoded.Diagnostics.KubernetesReadiness.Image != "alpine:3.20" || decoded.Diagnostics.KubernetesReadiness.ServiceAccount != "bigclaw-smoke" || decoded.Diagnostics.KubernetesReadiness.KubeconfigPath != "/tmp/ray-kubeconfig" || decoded.Diagnostics.KubernetesReadiness.ValidationStatus != "succeeded" || decoded.Diagnostics.KubernetesReadiness.LocalValidationStatus != "succeeded" || decoded.Diagnostics.KubernetesReadiness.RayValidationStatus != "succeeded" || decoded.Diagnostics.KubernetesReadiness.LatestRunID != "20260314T164647Z" || decoded.Diagnostics.KubernetesReadiness.TaskID != "kubernetes-smoke-1773506812" {
+		t.Fatalf("unexpected kubernetes readiness payload: %+v", decoded.Diagnostics.KubernetesReadiness)
+	}
+	if len(decoded.Diagnostics.KubernetesReadiness.JobArtifacts) != 1 || decoded.Diagnostics.KubernetesReadiness.JobArtifacts[0] != "job.log" {
+		t.Fatalf("unexpected kubernetes readiness artifacts: %+v", decoded.Diagnostics.KubernetesReadiness.JobArtifacts)
+	}
+	if decoded.Diagnostics.KubernetesReadiness.Evidence.SummaryPath != "docs/reports/live-validation-summary.json" || decoded.Diagnostics.KubernetesReadiness.Evidence.CanonicalReportPath != "docs/reports/kubernetes-live-smoke-report.json" || decoded.Diagnostics.KubernetesReadiness.Evidence.BundleReportPath != "docs/reports/live-validation-runs/20260314T164647Z/kubernetes-live-smoke-report.json" {
+		t.Fatalf("unexpected kubernetes readiness evidence: %+v", decoded.Diagnostics.KubernetesReadiness.Evidence)
+	}
+	if !decoded.Diagnostics.RayReadiness.Configured || decoded.Diagnostics.RayReadiness.Address != "ray://127.0.0.1:10001" || decoded.Diagnostics.RayReadiness.ValidationStatus != "succeeded" || decoded.Diagnostics.RayReadiness.LocalValidationStatus != "succeeded" || decoded.Diagnostics.RayReadiness.KubernetesValidationStatus != "succeeded" || decoded.Diagnostics.RayReadiness.LatestRunID != "20260314T164647Z" || decoded.Diagnostics.RayReadiness.TaskID != "ray-smoke-1773506812" {
+		t.Fatalf("unexpected ray readiness payload: %+v", decoded.Diagnostics.RayReadiness)
+	}
+	if len(decoded.Diagnostics.RayReadiness.JobArtifacts) != 1 || decoded.Diagnostics.RayReadiness.JobArtifacts[0] != "ray://jobs/bigclaw-ray-smoke-1773506812" {
+		t.Fatalf("unexpected ray readiness artifacts: %+v", decoded.Diagnostics.RayReadiness.JobArtifacts)
+	}
+	if decoded.Diagnostics.RayReadiness.Evidence.SummaryPath != "docs/reports/live-validation-summary.json" || decoded.Diagnostics.RayReadiness.Evidence.CanonicalReportPath != "docs/reports/ray-live-smoke-report.json" || decoded.Diagnostics.RayReadiness.Evidence.BundleReportPath != "docs/reports/live-validation-runs/20260314T164647Z/ray-live-smoke-report.json" {
+		t.Fatalf("unexpected ray readiness evidence: %+v", decoded.Diagnostics.RayReadiness.Evidence)
+	}
+	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") || !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Kubernetes Readiness") || !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "alpine:3.20") || !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/kubernetes-live-smoke-report.json") || !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Ray Readiness") || !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/ray-live-smoke-report.json") || !strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {
 		t.Fatalf("unexpected rollout report payload: %+v", decoded.Diagnostics.RolloutReport)
 	}
 }

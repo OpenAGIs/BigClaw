@@ -1,9 +1,12 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -70,12 +73,58 @@ type distributedDiagnosticsReport struct {
 	ExportURL string `json:"export_url"`
 }
 
+type distributedValidationEvidence struct {
+	SummaryPath         string `json:"summary_path,omitempty"`
+	CanonicalReportPath string `json:"canonical_report_path,omitempty"`
+	BundleReportPath    string `json:"bundle_report_path,omitempty"`
+	BundlePath          string `json:"bundle_path,omitempty"`
+	ServiceLogPath      string `json:"service_log_path,omitempty"`
+	AuditLogPath        string `json:"audit_log_path,omitempty"`
+}
+
+type distributedKubernetesReadiness struct {
+	Configured            bool                          `json:"configured"`
+	Namespace             string                        `json:"namespace,omitempty"`
+	Image                 string                        `json:"image,omitempty"`
+	ServiceAccount        string                        `json:"service_account,omitempty"`
+	KubeconfigPath        string                        `json:"kubeconfig_path,omitempty"`
+	ValidationStatus      string                        `json:"validation_status,omitempty"`
+	LocalValidationStatus string                        `json:"local_validation_status,omitempty"`
+	RayValidationStatus   string                        `json:"ray_validation_status,omitempty"`
+	LatestRunID           string                        `json:"latest_run_id,omitempty"`
+	GeneratedAt           string                        `json:"generated_at,omitempty"`
+	TaskID                string                        `json:"task_id,omitempty"`
+	LatestEventType       string                        `json:"latest_event_type,omitempty"`
+	LatestEventAt         string                        `json:"latest_event_at,omitempty"`
+	JobArtifacts          []string                      `json:"job_artifacts,omitempty"`
+	Evidence              distributedValidationEvidence `json:"evidence,omitempty"`
+	Notes                 []string                      `json:"notes,omitempty"`
+}
+
+type distributedRayReadiness struct {
+	Configured                 bool                          `json:"configured"`
+	Address                    string                        `json:"address,omitempty"`
+	ValidationStatus           string                        `json:"validation_status,omitempty"`
+	LocalValidationStatus      string                        `json:"local_validation_status,omitempty"`
+	KubernetesValidationStatus string                        `json:"kubernetes_validation_status,omitempty"`
+	LatestRunID                string                        `json:"latest_run_id,omitempty"`
+	GeneratedAt                string                        `json:"generated_at,omitempty"`
+	TaskID                     string                        `json:"task_id,omitempty"`
+	LatestEventType            string                        `json:"latest_event_type,omitempty"`
+	LatestEventAt              string                        `json:"latest_event_at,omitempty"`
+	JobArtifacts               []string                      `json:"job_artifacts,omitempty"`
+	Evidence                   distributedValidationEvidence `json:"evidence,omitempty"`
+	Notes                      []string                      `json:"notes,omitempty"`
+}
+
 type distributedDiagnostics struct {
-	Summary          distributedDiagnosticsSummary `json:"summary"`
-	RoutingReasons   []routingReasonSummary        `json:"routing_reasons"`
-	ExecutorCapacity []executorCapacityView        `json:"executor_capacity"`
-	ClusterHealth    clusterHealthRollup           `json:"cluster_health"`
-	RolloutReport    distributedDiagnosticsReport  `json:"rollout_report"`
+	Summary             distributedDiagnosticsSummary  `json:"summary"`
+	RoutingReasons      []routingReasonSummary         `json:"routing_reasons"`
+	ExecutorCapacity    []executorCapacityView         `json:"executor_capacity"`
+	ClusterHealth       clusterHealthRollup            `json:"cluster_health"`
+	KubernetesReadiness distributedKubernetesReadiness `json:"kubernetes_readiness"`
+	RayReadiness        distributedRayReadiness        `json:"ray_readiness"`
+	RolloutReport       distributedDiagnosticsReport   `json:"rollout_report"`
 }
 
 type executorDiagnosticsCounters struct {
@@ -89,6 +138,48 @@ type distributedTaskAssignment struct {
 	Task           domain.Task
 	EffectiveState domain.TaskState
 	Executor       domain.ExecutorKind
+}
+
+type liveValidationArtifactSummary struct {
+	RunID       string                         `json:"run_id"`
+	GeneratedAt string                         `json:"generated_at"`
+	Status      string                         `json:"status"`
+	BundlePath  string                         `json:"bundle_path"`
+	Local       liveValidationComponentSummary `json:"local"`
+	Kubernetes  liveValidationComponentSummary `json:"kubernetes"`
+	Ray         liveValidationComponentSummary `json:"ray"`
+}
+
+type liveValidationComponentSummary struct {
+	Enabled             bool                     `json:"enabled"`
+	BundleReportPath    string                   `json:"bundle_report_path"`
+	CanonicalReportPath string                   `json:"canonical_report_path"`
+	Status              string                   `json:"status"`
+	TaskID              string                   `json:"task_id"`
+	ServiceLogPath      string                   `json:"service_log_path"`
+	AuditLogPath        string                   `json:"audit_log_path"`
+	Report              liveValidationReportBody `json:"report"`
+}
+
+type liveValidationReportBody struct {
+	Status liveValidationReportStatus `json:"status"`
+}
+
+type liveValidationReportStatus struct {
+	State       string                  `json:"state"`
+	TaskID      string                  `json:"task_id"`
+	LatestEvent liveValidationEvent     `json:"latest_event"`
+	Task        liveValidationTaskState `json:"task"`
+}
+
+type liveValidationTaskState struct {
+	ID string `json:"id"`
+}
+
+type liveValidationEvent struct {
+	Type      string         `json:"type"`
+	Timestamp string         `json:"timestamp"`
+	Payload   map[string]any `json:"payload"`
 }
 
 func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Request) {
@@ -118,11 +209,13 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 			"limit":      filters.Limit,
 			"priority":   filters.Priority,
 		},
-		"summary":           diagnostics.Summary,
-		"routing_reasons":   diagnostics.RoutingReasons,
-		"executor_capacity": diagnostics.ExecutorCapacity,
-		"cluster_health":    diagnostics.ClusterHealth,
-		"report":            diagnostics.RolloutReport,
+		"summary":              diagnostics.Summary,
+		"routing_reasons":      diagnostics.RoutingReasons,
+		"executor_capacity":    diagnostics.ExecutorCapacity,
+		"cluster_health":       diagnostics.ClusterHealth,
+		"kubernetes_readiness": diagnostics.KubernetesReadiness,
+		"ray_readiness":        diagnostics.RayReadiness,
+		"report":               diagnostics.RolloutReport,
 	})
 }
 
@@ -342,10 +435,12 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		Notes:              diagnosticsNotes(summary, executorCapacity, s.Control.Snapshot()),
 	}
 	diagnostics := distributedDiagnostics{
-		Summary:          summary,
-		RoutingReasons:   routingReasons,
-		ExecutorCapacity: executorCapacity,
-		ClusterHealth:    clusterHealth,
+		Summary:             summary,
+		RoutingReasons:      routingReasons,
+		ExecutorCapacity:    executorCapacity,
+		ClusterHealth:       clusterHealth,
+		KubernetesReadiness: s.buildKubernetesReadiness(),
+		RayReadiness:        s.buildRayReadiness(),
 	}
 	diagnostics.RolloutReport = distributedDiagnosticsReport{
 		Markdown:  renderDistributedDiagnosticsMarkdown(diagnostics, filters),
@@ -545,6 +640,196 @@ func taskRequiresTool(task domain.Task, tool string) bool {
 	return false
 }
 
+func (s *Server) buildRayReadiness() distributedRayReadiness {
+	readiness := distributedRayReadiness{
+		Configured: strings.TrimSpace(s.RuntimeConfig.RayAddress) != "",
+		Address:    strings.TrimSpace(s.RuntimeConfig.RayAddress),
+		Evidence: distributedValidationEvidence{
+			SummaryPath: "docs/reports/live-validation-summary.json",
+		},
+	}
+	if readiness.Configured {
+		readiness.Notes = append(readiness.Notes, fmt.Sprintf("ray executor configured for %s", readiness.Address))
+	} else {
+		readiness.Notes = append(readiness.Notes, "ray executor address is not configured")
+	}
+	summary, err := s.loadLiveValidationSummary()
+	if err != nil {
+		report, reportErr := s.loadRayValidationReport()
+		if reportErr != nil {
+			readiness.Notes = append(readiness.Notes, "ray live-validation artifacts not found")
+			return readiness
+		}
+		readiness.Evidence.CanonicalReportPath = "docs/reports/ray-live-smoke-report.json"
+		populateRayReadinessFromComponent(&readiness, liveValidationComponentSummary{
+			CanonicalReportPath: readiness.Evidence.CanonicalReportPath,
+			Report:              report,
+		})
+		readiness.Notes = append(readiness.Notes, "loaded ray readiness from canonical smoke report without live-validation summary")
+		return readiness
+	}
+	readiness.LatestRunID = summary.RunID
+	readiness.GeneratedAt = summary.GeneratedAt
+	readiness.LocalValidationStatus = firstNonEmpty(summary.Local.Status, summary.Local.Report.Status.State)
+	readiness.KubernetesValidationStatus = firstNonEmpty(summary.Kubernetes.Status, summary.Kubernetes.Report.Status.State)
+	readiness.Evidence.BundlePath = summary.BundlePath
+	populateRayReadinessFromComponent(&readiness, summary.Ray)
+	switch {
+	case readiness.ValidationStatus == "succeeded":
+		readiness.Notes = append(readiness.Notes, "latest Ray live-validation bundle succeeded")
+	case readiness.ValidationStatus != "":
+		readiness.Notes = append(readiness.Notes, fmt.Sprintf("latest Ray live-validation bundle status is %s", readiness.ValidationStatus))
+	default:
+		readiness.Notes = append(readiness.Notes, "Ray live-validation bundle does not include a status")
+	}
+	if readiness.LocalValidationStatus != "" || readiness.KubernetesValidationStatus != "" {
+		readiness.Notes = append(readiness.Notes, fmt.Sprintf("companion validation states local=%s kubernetes=%s", firstNonEmpty(readiness.LocalValidationStatus, "unknown"), firstNonEmpty(readiness.KubernetesValidationStatus, "unknown")))
+	}
+	return readiness
+}
+
+func (s *Server) buildKubernetesReadiness() distributedKubernetesReadiness {
+	readiness := distributedKubernetesReadiness{
+		Configured:     strings.TrimSpace(s.RuntimeConfig.KubernetesNamespace) != "" || strings.TrimSpace(s.RuntimeConfig.KubernetesImage) != "" || strings.TrimSpace(s.RuntimeConfig.KubernetesKubeconfigPath) != "",
+		Namespace:      strings.TrimSpace(s.RuntimeConfig.KubernetesNamespace),
+		Image:          strings.TrimSpace(s.RuntimeConfig.KubernetesImage),
+		ServiceAccount: strings.TrimSpace(s.RuntimeConfig.KubernetesServiceAccount),
+		KubeconfigPath: strings.TrimSpace(s.RuntimeConfig.KubernetesKubeconfigPath),
+		Evidence: distributedValidationEvidence{
+			SummaryPath: "docs/reports/live-validation-summary.json",
+		},
+	}
+	if readiness.Configured {
+		readiness.Notes = append(readiness.Notes, fmt.Sprintf("kubernetes executor configured for namespace=%s image=%s", firstNonEmpty(readiness.Namespace, "default"), firstNonEmpty(readiness.Image, "unspecified")))
+	} else {
+		readiness.Notes = append(readiness.Notes, "kubernetes executor configuration is not set")
+	}
+	summary, err := s.loadLiveValidationSummary()
+	if err != nil {
+		report, reportErr := s.loadKubernetesValidationReport()
+		if reportErr != nil {
+			readiness.Notes = append(readiness.Notes, "kubernetes live-validation artifacts not found")
+			return readiness
+		}
+		readiness.Evidence.CanonicalReportPath = "docs/reports/kubernetes-live-smoke-report.json"
+		populateKubernetesReadinessFromComponent(&readiness, liveValidationComponentSummary{
+			CanonicalReportPath: readiness.Evidence.CanonicalReportPath,
+			Report:              report,
+		})
+		readiness.Notes = append(readiness.Notes, "loaded kubernetes readiness from canonical smoke report without live-validation summary")
+		return readiness
+	}
+	readiness.LatestRunID = summary.RunID
+	readiness.GeneratedAt = summary.GeneratedAt
+	readiness.LocalValidationStatus = liveValidationComponentStatus(summary.Local)
+	readiness.RayValidationStatus = liveValidationComponentStatus(summary.Ray)
+	readiness.Evidence.BundlePath = summary.BundlePath
+	populateKubernetesReadinessFromComponent(&readiness, summary.Kubernetes)
+	switch {
+	case readiness.ValidationStatus == "succeeded":
+		readiness.Notes = append(readiness.Notes, "latest Kubernetes live-validation bundle succeeded")
+	case readiness.ValidationStatus != "":
+		readiness.Notes = append(readiness.Notes, fmt.Sprintf("latest Kubernetes live-validation bundle status is %s", readiness.ValidationStatus))
+	default:
+		readiness.Notes = append(readiness.Notes, "Kubernetes live-validation bundle does not include a status")
+	}
+	if readiness.LocalValidationStatus != "" || readiness.RayValidationStatus != "" {
+		readiness.Notes = append(readiness.Notes, fmt.Sprintf("companion validation states local=%s ray=%s", firstNonEmpty(readiness.LocalValidationStatus, "unknown"), firstNonEmpty(readiness.RayValidationStatus, "unknown")))
+	}
+	return readiness
+}
+
+func populateKubernetesReadinessFromComponent(readiness *distributedKubernetesReadiness, component liveValidationComponentSummary) {
+	readiness.ValidationStatus = liveValidationComponentStatus(component)
+	readiness.TaskID = liveValidationComponentTaskID(component)
+	readiness.LatestEventType = component.Report.Status.LatestEvent.Type
+	readiness.LatestEventAt = component.Report.Status.LatestEvent.Timestamp
+	readiness.JobArtifacts = stringSliceValue(component.Report.Status.LatestEvent.Payload["artifacts"])
+	populateValidationEvidence(&readiness.Evidence, component)
+}
+
+func populateRayReadinessFromComponent(readiness *distributedRayReadiness, component liveValidationComponentSummary) {
+	readiness.ValidationStatus = liveValidationComponentStatus(component)
+	readiness.TaskID = liveValidationComponentTaskID(component)
+	readiness.LatestEventType = component.Report.Status.LatestEvent.Type
+	readiness.LatestEventAt = component.Report.Status.LatestEvent.Timestamp
+	readiness.JobArtifacts = stringSliceValue(component.Report.Status.LatestEvent.Payload["artifacts"])
+	populateValidationEvidence(&readiness.Evidence, component)
+}
+
+func (s *Server) loadLiveValidationSummary() (liveValidationArtifactSummary, error) {
+	var summary liveValidationArtifactSummary
+	content, err := os.ReadFile(filepath.Join(s.reportsDir(), "live-validation-summary.json"))
+	if err != nil {
+		return summary, err
+	}
+	if err := json.Unmarshal(content, &summary); err != nil {
+		return summary, err
+	}
+	return summary, nil
+}
+
+func (s *Server) loadRayValidationReport() (liveValidationReportBody, error) {
+	var report liveValidationReportBody
+	content, err := os.ReadFile(filepath.Join(s.reportsDir(), "ray-live-smoke-report.json"))
+	if err != nil {
+		return report, err
+	}
+	if err := json.Unmarshal(content, &report); err != nil {
+		return report, err
+	}
+	return report, nil
+}
+
+func (s *Server) loadKubernetesValidationReport() (liveValidationReportBody, error) {
+	var report liveValidationReportBody
+	content, err := os.ReadFile(filepath.Join(s.reportsDir(), "kubernetes-live-smoke-report.json"))
+	if err != nil {
+		return report, err
+	}
+	if err := json.Unmarshal(content, &report); err != nil {
+		return report, err
+	}
+	return report, nil
+}
+
+func (s *Server) reportsDir() string {
+	if strings.TrimSpace(s.ReportsDir) != "" {
+		return s.ReportsDir
+	}
+	return filepath.Join("docs", "reports")
+}
+
+func stringSliceValue(value any) []string {
+	items, ok := value.([]any)
+	if !ok {
+		return nil
+	}
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		text, ok := item.(string)
+		if ok && strings.TrimSpace(text) != "" {
+			out = append(out, text)
+		}
+	}
+	return out
+}
+
+func liveValidationComponentStatus(component liveValidationComponentSummary) string {
+	return firstNonEmpty(component.Status, component.Report.Status.State)
+}
+
+func liveValidationComponentTaskID(component liveValidationComponentSummary) string {
+	return firstNonEmpty(component.TaskID, component.Report.Status.TaskID, component.Report.Status.Task.ID)
+}
+
+func populateValidationEvidence(evidence *distributedValidationEvidence, component liveValidationComponentSummary) {
+	evidence.CanonicalReportPath = firstNonEmpty(evidence.CanonicalReportPath, component.CanonicalReportPath)
+	evidence.BundleReportPath = component.BundleReportPath
+	evidence.ServiceLogPath = component.ServiceLogPath
+	evidence.AuditLogPath = component.AuditLogPath
+}
+
 func distributedExportURL(filters controlCenterFilters) string {
 	values := url.Values{}
 	if filters.Team != "" {
@@ -654,6 +939,109 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	lines = append(lines, "", "## Notes")
 	for _, note := range diagnostics.ClusterHealth.Notes {
+		lines = append(lines, "- "+note)
+	}
+	lines = append(lines, "", "## Kubernetes Readiness")
+	lines = append(lines, fmt.Sprintf("- Configured: %t", diagnostics.KubernetesReadiness.Configured))
+	if diagnostics.KubernetesReadiness.Namespace != "" {
+		lines = append(lines, "- Namespace: "+diagnostics.KubernetesReadiness.Namespace)
+	}
+	if diagnostics.KubernetesReadiness.Image != "" {
+		lines = append(lines, "- Image: "+diagnostics.KubernetesReadiness.Image)
+	}
+	if diagnostics.KubernetesReadiness.ServiceAccount != "" {
+		lines = append(lines, "- Service account: "+diagnostics.KubernetesReadiness.ServiceAccount)
+	}
+	if diagnostics.KubernetesReadiness.KubeconfigPath != "" {
+		lines = append(lines, "- Kubeconfig: "+diagnostics.KubernetesReadiness.KubeconfigPath)
+	}
+	if diagnostics.KubernetesReadiness.ValidationStatus != "" {
+		lines = append(lines, "- Validation status: "+diagnostics.KubernetesReadiness.ValidationStatus)
+	}
+	if diagnostics.KubernetesReadiness.LocalValidationStatus != "" || diagnostics.KubernetesReadiness.RayValidationStatus != "" {
+		lines = append(lines, fmt.Sprintf("- Companion validation: local=%s ray=%s", firstNonEmpty(diagnostics.KubernetesReadiness.LocalValidationStatus, "unknown"), firstNonEmpty(diagnostics.KubernetesReadiness.RayValidationStatus, "unknown")))
+	}
+	if diagnostics.KubernetesReadiness.LatestRunID != "" {
+		lines = append(lines, "- Latest run: "+diagnostics.KubernetesReadiness.LatestRunID)
+	}
+	if diagnostics.KubernetesReadiness.GeneratedAt != "" {
+		lines = append(lines, "- Generated at: "+diagnostics.KubernetesReadiness.GeneratedAt)
+	}
+	if diagnostics.KubernetesReadiness.TaskID != "" {
+		lines = append(lines, "- Task ID: "+diagnostics.KubernetesReadiness.TaskID)
+	}
+	if diagnostics.KubernetesReadiness.LatestEventType != "" {
+		lines = append(lines, fmt.Sprintf("- Latest event: %s @ %s", diagnostics.KubernetesReadiness.LatestEventType, firstNonEmpty(diagnostics.KubernetesReadiness.LatestEventAt, "unknown")))
+	}
+	if len(diagnostics.KubernetesReadiness.JobArtifacts) > 0 {
+		lines = append(lines, "- Job artifacts: "+strings.Join(diagnostics.KubernetesReadiness.JobArtifacts, ", "))
+	}
+	if diagnostics.KubernetesReadiness.Evidence.SummaryPath != "" {
+		lines = append(lines, "- Summary JSON: "+diagnostics.KubernetesReadiness.Evidence.SummaryPath)
+	}
+	if diagnostics.KubernetesReadiness.Evidence.CanonicalReportPath != "" {
+		lines = append(lines, "- Canonical report: "+diagnostics.KubernetesReadiness.Evidence.CanonicalReportPath)
+	}
+	if diagnostics.KubernetesReadiness.Evidence.BundleReportPath != "" {
+		lines = append(lines, "- Bundle report: "+diagnostics.KubernetesReadiness.Evidence.BundleReportPath)
+	}
+	if diagnostics.KubernetesReadiness.Evidence.BundlePath != "" {
+		lines = append(lines, "- Bundle path: "+diagnostics.KubernetesReadiness.Evidence.BundlePath)
+	}
+	if diagnostics.KubernetesReadiness.Evidence.ServiceLogPath != "" {
+		lines = append(lines, "- Service log: "+diagnostics.KubernetesReadiness.Evidence.ServiceLogPath)
+	}
+	if diagnostics.KubernetesReadiness.Evidence.AuditLogPath != "" {
+		lines = append(lines, "- Audit log: "+diagnostics.KubernetesReadiness.Evidence.AuditLogPath)
+	}
+	for _, note := range diagnostics.KubernetesReadiness.Notes {
+		lines = append(lines, "- "+note)
+	}
+	lines = append(lines, "", "## Ray Readiness")
+	lines = append(lines, fmt.Sprintf("- Configured: %t", diagnostics.RayReadiness.Configured))
+	if diagnostics.RayReadiness.Address != "" {
+		lines = append(lines, "- Address: "+diagnostics.RayReadiness.Address)
+	}
+	if diagnostics.RayReadiness.ValidationStatus != "" {
+		lines = append(lines, "- Validation status: "+diagnostics.RayReadiness.ValidationStatus)
+	}
+	if diagnostics.RayReadiness.LocalValidationStatus != "" || diagnostics.RayReadiness.KubernetesValidationStatus != "" {
+		lines = append(lines, fmt.Sprintf("- Companion validation: local=%s kubernetes=%s", firstNonEmpty(diagnostics.RayReadiness.LocalValidationStatus, "unknown"), firstNonEmpty(diagnostics.RayReadiness.KubernetesValidationStatus, "unknown")))
+	}
+	if diagnostics.RayReadiness.LatestRunID != "" {
+		lines = append(lines, "- Latest run: "+diagnostics.RayReadiness.LatestRunID)
+	}
+	if diagnostics.RayReadiness.GeneratedAt != "" {
+		lines = append(lines, "- Generated at: "+diagnostics.RayReadiness.GeneratedAt)
+	}
+	if diagnostics.RayReadiness.TaskID != "" {
+		lines = append(lines, "- Task ID: "+diagnostics.RayReadiness.TaskID)
+	}
+	if diagnostics.RayReadiness.LatestEventType != "" {
+		lines = append(lines, fmt.Sprintf("- Latest event: %s @ %s", diagnostics.RayReadiness.LatestEventType, firstNonEmpty(diagnostics.RayReadiness.LatestEventAt, "unknown")))
+	}
+	if len(diagnostics.RayReadiness.JobArtifacts) > 0 {
+		lines = append(lines, "- Job artifacts: "+strings.Join(diagnostics.RayReadiness.JobArtifacts, ", "))
+	}
+	if diagnostics.RayReadiness.Evidence.SummaryPath != "" {
+		lines = append(lines, "- Summary JSON: "+diagnostics.RayReadiness.Evidence.SummaryPath)
+	}
+	if diagnostics.RayReadiness.Evidence.CanonicalReportPath != "" {
+		lines = append(lines, "- Canonical report: "+diagnostics.RayReadiness.Evidence.CanonicalReportPath)
+	}
+	if diagnostics.RayReadiness.Evidence.BundleReportPath != "" {
+		lines = append(lines, "- Bundle report: "+diagnostics.RayReadiness.Evidence.BundleReportPath)
+	}
+	if diagnostics.RayReadiness.Evidence.BundlePath != "" {
+		lines = append(lines, "- Bundle path: "+diagnostics.RayReadiness.Evidence.BundlePath)
+	}
+	if diagnostics.RayReadiness.Evidence.ServiceLogPath != "" {
+		lines = append(lines, "- Service log: "+diagnostics.RayReadiness.Evidence.ServiceLogPath)
+	}
+	if diagnostics.RayReadiness.Evidence.AuditLogPath != "" {
+		lines = append(lines, "- Audit log: "+diagnostics.RayReadiness.Evidence.AuditLogPath)
+	}
+	for _, note := range diagnostics.RayReadiness.Notes {
 		lines = append(lines, "- "+note)
 	}
 	lines = append(lines, "")
