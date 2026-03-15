@@ -7,6 +7,7 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 ## Implemented surfaces
 
 - In-process publish/subscribe bus with replay history
+- Optional SQLite-backed durable event log for cross-process replay
 - Recorder sink integration for audit/debug persistence
 - Webhook sink integration for external fanout
 - SSE stream via `GET /stream/events`
@@ -19,6 +20,7 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 - Webhook sink receives serialized domain events.
 - SSE streaming can deliver live events.
 - SSE replay can filter to one trace without leaking unrelated events.
+- Durable event log replay can serve task/trace history across process restarts when the shared SQLite log is configured.
 
 ## Evidence
 
@@ -27,11 +29,12 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 - `internal/events/webhook.go`
 - `internal/events/webhook_test.go`
 - `internal/events/recorder_sink.go`
+- `internal/events/sqlite_log.go`
+- `internal/events/sqlite_log_test.go`
 - `internal/api/server.go`
 - `internal/api/server_test.go`
 
 ## Remaining gaps
 
-- No durable external event log yet; replay is process-local history.
 - No delivery acknowledgement protocol beyond sink-level best effort.
 - No partitioned topic model or cross-process subscriber coordination yet.

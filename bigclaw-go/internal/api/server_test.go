@@ -1864,3 +1864,88 @@ func TestV2ControlCenterPolicyEndpointShowsRemoteFairnessHealth(t *testing.T) {
 		}
 	}
 }
+
+func TestEventsEndpointUsesDurableEventLogAcrossInstances(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "event-log.db")
+	log1, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = log1.Close() }()
+	recorder1 := observability.NewRecorder()
+	bus1 := events.NewBus()
+	bus1.AddSink(events.RecorderSink{Recorder: recorder1})
+	bus1.AddSink(log1)
+	bus1.Publish(domain.Event{ID: "evt-durable-1", Type: domain.EventTaskQueued, TaskID: "task-durable", TraceID: "trace-durable", Timestamp: time.Now()})
+
+	log2, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("reopen sqlite event log: %v", err)
+	}
+	defer func() { _ = log2.Close() }()
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: log2, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/events?trace_id=trace-durable&limit=10", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected events 200, got %d %s", response.Code, response.Body.String())
+	}
+	body := response.Body.String()
+	for _, want := range []string{"evt-durable-1", `"backend":"sqlite"`, `"durable":true`} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected %q in durable events response, got %s", want, body)
+		}
+	}
+}
+
+func TestStreamEventsReplayCanUseDurableEventLog(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "event-log.db")
+	log1, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = log1.Close() }()
+	bus1 := events.NewBus()
+	bus1.AddSink(log1)
+	bus1.Publish(domain.Event{ID: "evt-durable-stream", Type: domain.EventTaskQueued, TaskID: "task-stream", TraceID: "trace-stream", Timestamp: time.Now()})
+
+	log2, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("reopen sqlite event log: %v", err)
+	}
+	defer func() { _ = log2.Close() }()
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: log2, Now: time.Now}
+	ts := httptest.NewServer(server.Handler())
+	defer ts.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, ts.URL+"/stream/events?replay=1&trace_id=trace-stream&limit=10", nil)
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+	resultCh := make(chan string, 1)
+	go func() {
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			resultCh <- "ERROR: " + err.Error()
+			return
+		}
+		defer response.Body.Close()
+		reader := bufio.NewReader(response.Body)
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			resultCh <- "ERROR: " + err.Error()
+			return
+		}
+		resultCh <- strings.TrimSpace(line)
+	}()
+	select {
+	case line := <-resultCh:
+		if !strings.Contains(line, "evt-durable-stream") {
+			t.Fatalf("expected durable replayed event in stream, got %q", line)
+		}
+	case <-ctx.Done():
+		t.Fatal("timed out waiting for durable replay stream event")
+	}
+}

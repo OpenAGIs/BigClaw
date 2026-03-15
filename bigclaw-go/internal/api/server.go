@@ -34,6 +34,7 @@ type Server struct {
 	Queue            queue.Queue
 	Executors        []domain.ExecutorKind
 	Bus              *events.Bus
+	EventLog         events.EventLog
 	Now              func() time.Time
 	Worker           WorkerStatusProvider
 	Control          *control.Controller
@@ -67,14 +68,12 @@ func (s *Server) Handler() http.Handler {
 		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 		taskID := r.URL.Query().Get("task_id")
 		traceID := r.URL.Query().Get("trace_id")
-		switch {
-		case taskID != "":
-			writeJSON(w, http.StatusOK, map[string]any{"events": s.Recorder.EventsByTask(taskID, limit)})
-		case traceID != "":
-			writeJSON(w, http.StatusOK, map[string]any{"events": s.Recorder.EventsByTrace(traceID, limit)})
-		default:
-			writeJSON(w, http.StatusOK, map[string]any{"events": s.Recorder.EventsByTask("", limit)})
+		events, backend, err := s.queryEvents(taskID, traceID, limit)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
+		writeJSON(w, http.StatusOK, map[string]any{"events": events, "backend": backend, "durable": s.EventLog != nil})
 	})
 	mux.HandleFunc("/stream/events", s.handleStreamEvents)
 	mux.HandleFunc("/audit", func(w http.ResponseWriter, r *http.Request) {
@@ -326,13 +325,19 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
-	var ch <-chan domain.Event
-	var cancel func()
 	if replay {
-		ch, cancel = s.Bus.SubscribeReplay(128, limit)
-	} else {
-		ch, cancel = s.Bus.Subscribe(128)
+		history, _, err := s.queryEvents(taskID, traceID, limit)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		for _, event := range history {
+			payload, _ := json.Marshal(event)
+			_, _ = fmt.Fprintf(w, "data: %s\n\n", payload)
+			flusher.Flush()
+		}
 	}
+	ch, cancel := s.Bus.Subscribe(128)
 	defer cancel()
 	for {
 		select {
@@ -349,6 +354,30 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 			_, _ = fmt.Fprintf(w, "data: %s\n\n", payload)
 			flusher.Flush()
 		}
+	}
+}
+
+func (s *Server) queryEvents(taskID, traceID string, limit int) ([]domain.Event, string, error) {
+	if s.EventLog != nil {
+		switch {
+		case taskID != "":
+			events, err := s.EventLog.EventsByTask(taskID, limit)
+			return events, "sqlite", err
+		case traceID != "":
+			events, err := s.EventLog.EventsByTrace(traceID, limit)
+			return events, "sqlite", err
+		default:
+			events, err := s.EventLog.Replay(limit)
+			return events, "sqlite", err
+		}
+	}
+	switch {
+	case taskID != "":
+		return s.Recorder.EventsByTask(taskID, limit), "memory", nil
+	case traceID != "":
+		return s.Recorder.EventsByTrace(traceID, limit), "memory", nil
+	default:
+		return s.Recorder.EventsByTask("", limit), "memory", nil
 	}
 }
 
