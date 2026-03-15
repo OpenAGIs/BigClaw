@@ -85,11 +85,12 @@ This report summarizes the current event bus reliability evidence and the next r
 
 ## Remaining gaps
 
-<<<<<<< HEAD
-- No concrete durable external event log exists yet in this checkout; replay still depends on process-local history plus the newly documented integration plan.
+- No concrete durable external event log exists yet in this checkout; replay still depends on process-local history plus the documented integration plan.
 - Dedup ledger semantics are defined, but there is no persistent ledger store or handler middleware enforcing them yet.
 - No delivery acknowledgement protocol exists beyond sink-level best effort.
+- Lease coordination is currently in-memory and single-process; shared multi-node subscriber groups still need a durable backend.
 - No partitioned topic model or broker-backed cross-process subscriber coordination exists yet.
+- No retention watermark or expired-cursor contract exists in the runtime yet; the target compaction semantics are defined in `docs/reports/replay-retention-semantics-report.md`.
 - Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.
 
 ## Next adapter boundary
@@ -97,9 +98,3 @@ This report summarizes the current event bus reliability evidence and the next r
 - `internal/events/log.go` now defines the provider-neutral event-log and checkpoint contract for future broker-backed adapters.
 - `internal/events/memory_log.go` provides the contract-compatible in-memory baseline while BigClaw remains on local fanout.
 - Broker-facing runtime knobs are reserved behind `BIGCLAW_EVENT_LOG_*` env vars so a first provider adapter can land without changing publish/replay/checkpoint callers.
-=======
-- No durable external event log yet; replay is process-local history.
-- No delivery acknowledgement protocol beyond sink-level best effort.
-- Lease coordination is currently in-memory and single-process; shared multi-node subscriber groups still need a durable backend.
-- No partitioned topic model yet.
->>>>>>> origin/dcjcloud/ope-210-big-par-023-subscriber-group-checkpoint-lease-协调语义
