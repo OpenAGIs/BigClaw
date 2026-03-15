@@ -68,6 +68,7 @@ func (s *SQLiteEventLog) Capabilities() BackendCapabilities {
 		Publish:    FeatureSupport{Supported: true, Mode: "append_only"},
 		Replay:     FeatureSupport{Supported: true, Mode: "durable"},
 		Checkpoint: FeatureSupport{Supported: true, Mode: "subscriber_ack"},
+		Dedup:      FeatureSupport{Supported: true, Mode: "sqlite", Detail: "Consumer dedup records persist across process restarts."},
 		Filtering:  FeatureSupport{Supported: true, Mode: "server_side"},
 		Retention:  FeatureSupport{Supported: true, Mode: "sqlite_wal"},
 	}

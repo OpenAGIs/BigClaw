@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"errors"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -10,7 +11,91 @@ import (
 )
 
 func TestMemoryConsumerDedupLedgerReserveAndApply(t *testing.T) {
-	ledger := NewMemoryConsumerDedupLedger()
+	assertConsumerDedupLedgerReserveAndApply(t, NewMemoryConsumerDedupLedger())
+}
+
+func TestMemoryConsumerDedupLedgerRejectsStorageKeyCollision(t *testing.T) {
+	assertConsumerDedupLedgerRejectsStorageKeyCollision(t, NewMemoryConsumerDedupLedger())
+}
+
+func TestMemoryConsumerDedupLedgerRejectsOverwritingAppliedResult(t *testing.T) {
+	assertConsumerDedupLedgerRejectsOverwritingAppliedResult(t, NewMemoryConsumerDedupLedger())
+}
+
+func TestSQLiteConsumerDedupLedgerReserveAndApply(t *testing.T) {
+	ledger := newSQLiteConsumerDedupLedgerForTest(t)
+	assertConsumerDedupLedgerReserveAndApply(t, ledger)
+}
+
+func TestSQLiteConsumerDedupLedgerRejectsStorageKeyCollision(t *testing.T) {
+	ledger := newSQLiteConsumerDedupLedgerForTest(t)
+	assertConsumerDedupLedgerRejectsStorageKeyCollision(t, ledger)
+}
+
+func TestSQLiteConsumerDedupLedgerRejectsOverwritingAppliedResult(t *testing.T) {
+	ledger := newSQLiteConsumerDedupLedgerForTest(t)
+	assertConsumerDedupLedgerRejectsOverwritingAppliedResult(t, ledger)
+}
+
+func TestSQLiteConsumerDedupLedgerPersistsAcrossReopen(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "consumer-dedup.db")
+	now := time.Unix(1700000000, 0).UTC()
+	key := domain.NewConsumerDedupKey("consumer-a", domain.Event{
+		ID:      "evt-1",
+		Type:    domain.EventTaskCompleted,
+		TaskID:  "task-1",
+		TraceID: "trace-1",
+		RunID:   "run-1",
+	})
+
+	first, err := NewSQLiteConsumerDedupLedger(path)
+	if err != nil {
+		t.Fatalf("new sqlite consumer dedup ledger: %v", err)
+	}
+	if _, outcome, err := first.MarkApplied(context.Background(), key, domain.ConsumerDedupResult{
+		Handler:           "projection",
+		AppliedAt:         now,
+		EffectID:          "effect-1",
+		EffectSequence:    7,
+		EffectFingerprint: "fp-1",
+		Summary:           "projection updated",
+	}, now); err != nil {
+		t.Fatalf("mark applied: %v", err)
+	} else if outcome != domain.ConsumerDedupOutcomeReserved {
+		t.Fatalf("expected reserved outcome, got %s", outcome)
+	}
+	if err := first.Close(); err != nil {
+		t.Fatalf("close first sqlite consumer dedup ledger: %v", err)
+	}
+
+	second, err := NewSQLiteConsumerDedupLedger(path)
+	if err != nil {
+		t.Fatalf("reopen sqlite consumer dedup ledger: %v", err)
+	}
+	defer func() {
+		if err := second.Close(); err != nil {
+			t.Fatalf("close reopened sqlite consumer dedup ledger: %v", err)
+		}
+	}()
+
+	record, ok, err := second.Get(context.Background(), key)
+	if err != nil {
+		t.Fatalf("get after reopen: %v", err)
+	}
+	if !ok {
+		t.Fatal("expected persisted dedup record after reopen")
+	}
+	if record.State != domain.ConsumerDedupStateApplied {
+		t.Fatalf("expected applied state after reopen, got %s", record.State)
+	}
+	if record.AppliedResult.EffectID != "effect-1" {
+		t.Fatalf("expected persisted effect id effect-1, got %s", record.AppliedResult.EffectID)
+	}
+}
+
+func assertConsumerDedupLedgerReserveAndApply(t *testing.T, ledger ConsumerDedupLedger) {
+	t.Helper()
+
 	key := domain.NewConsumerDedupKey("consumer-a", domain.Event{
 		ID:      "evt-1",
 		Type:    domain.EventTaskCompleted,
@@ -79,10 +164,10 @@ func TestMemoryConsumerDedupLedgerReserveAndApply(t *testing.T) {
 	}
 }
 
-func TestMemoryConsumerDedupLedgerRejectsStorageKeyCollision(t *testing.T) {
-	ledger := NewMemoryConsumerDedupLedger()
-	now := time.Unix(1700000000, 0).UTC()
+func assertConsumerDedupLedgerRejectsStorageKeyCollision(t *testing.T, ledger ConsumerDedupLedger) {
+	t.Helper()
 
+	now := time.Unix(1700000000, 0).UTC()
 	first := domain.ConsumerDedupKey{
 		ConsumerID: "consumer-a",
 		EventID:    "evt-1",
@@ -106,8 +191,9 @@ func TestMemoryConsumerDedupLedgerRejectsStorageKeyCollision(t *testing.T) {
 	}
 }
 
-func TestMemoryConsumerDedupLedgerRejectsOverwritingAppliedResult(t *testing.T) {
-	ledger := NewMemoryConsumerDedupLedger()
+func assertConsumerDedupLedgerRejectsOverwritingAppliedResult(t *testing.T, ledger ConsumerDedupLedger) {
+	t.Helper()
+
 	key := domain.NewConsumerDedupKey("consumer-a", domain.Event{
 		ID:      "evt-1",
 		Type:    domain.EventTaskCompleted,
@@ -137,4 +223,19 @@ func TestMemoryConsumerDedupLedgerRejectsOverwritingAppliedResult(t *testing.T) 
 	} else if outcome != domain.ConsumerDedupOutcomeConflict {
 		t.Fatalf("expected conflict outcome, got %s", outcome)
 	}
+}
+
+func newSQLiteConsumerDedupLedgerForTest(t *testing.T) *SQLiteConsumerDedupLedger {
+	t.Helper()
+
+	ledger, err := NewSQLiteConsumerDedupLedger(filepath.Join(t.TempDir(), "consumer-dedup.db"))
+	if err != nil {
+		t.Fatalf("new sqlite consumer dedup ledger: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := ledger.Close(); err != nil {
+			t.Fatalf("close sqlite consumer dedup ledger: %v", err)
+		}
+	})
+	return ledger
 }

@@ -65,6 +65,7 @@ func (s *HTTPEventLog) Capabilities() BackendCapabilities {
 		Publish:    FeatureSupport{Supported: true, Mode: "append_only"},
 		Replay:     FeatureSupport{Supported: true, Mode: "durable"},
 		Checkpoint: FeatureSupport{Supported: true, Mode: "subscriber_ack"},
+		Dedup:      FeatureSupport{Supported: true, Mode: "remote_service", Detail: "Consumer dedup records are expected to persist in the shared event service."},
 		Filtering:  FeatureSupport{Supported: true, Mode: "server_side"},
 		Retention:  FeatureSupport{Supported: true, Mode: "remote_service"},
 	}

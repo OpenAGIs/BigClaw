@@ -16,6 +16,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - Replay-safe consumer delivery metadata via `EventDelivery`, including additive `delivery.mode`, `delivery.replay`, and `delivery.idempotency_key` fields
 - Consumer dedup ledger/result contract covering duplicate, retryable-failure, and already-applied outcomes
 - Replay-safe consumer dedup ledger contract with stable storage key and result semantics
+- SQLite-backed durable consumer dedup ledger bootstrap for replay-safe side-effect persistence across restarts
 - Subscriber-group checkpoint lease coordination via `/subscriber-groups/leases` and `/subscriber-groups/checkpoints`
 - Event backend capability and config-validation contract via `internal/events/backend_contract.go`
 - Event-log backend capability probe surfaced through control/debug responses before replay-oriented dispatch
@@ -31,6 +32,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - Subscriber-group checkpoint commits are fenced by lease token + epoch, so stale writers cannot advance ownership after takeover.
 - Checkpoint offsets remain monotonic within a subscriber group and reject rollback writes.
 - Operators can inspect backend capability support before dispatching replay-oriented operations.
+- Operator-facing capability payloads now distinguish durable consumer dedup support from process-local replay/checkpoint support.
 
 ## Evidence
 
@@ -51,6 +53,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - `internal/events/backend_contract_test.go`
 - `internal/events/dedup_ledger.go`
 - `internal/events/dedup_ledger_test.go`
+- `internal/events/sqlite_log.go`
 - `internal/api/server.go`
 - `internal/api/server_test.go`
 - `cmd/bigclawd/main.go`
@@ -119,11 +122,13 @@ This report summarizes the current event bus reliability evidence and the next r
 - Reservation semantics distinguish first-writer `reserved`, repeated in-flight `duplicate`, and terminal `already_applied` outcomes.
 - Applied side effects persist `handler`, `applied_at`, `effect_id`, `effect_sequence`, `effect_fingerprint`, `summary`, and stable metadata so duplicate deliveries can return the prior applied result instead of replaying the side effect.
 - Once a record reaches `applied`, backends must treat a different result fingerprint as a conflict instead of silently overwriting the prior side effect evidence.
+- The first durable bootstrap is SQLite-backed, stores the full normalized dedup record as durable JSON, and indexes state/update timestamps so lifecycle cleanup can evolve without changing caller contracts.
+- Control-plane capability payloads expose `dedup` separately so operators can see whether replay-safe consumers are backed by durable dedup state or process memory only.
 
 ## Remaining gaps
 
 - No concrete durable external event log exists yet in this checkout; replay still depends on process-local history plus the documented integration plan.
-- No durable consumer dedup backend exists yet; only the abstraction, stable key layout, and reference in-memory semantics are implemented.
+- Only the SQLite durable consumer dedup backend exists yet; HTTP and broker-backed dedup persistence still need concrete implementations.
 - No delivery acknowledgement protocol exists beyond sink-level best effort.
 - Lease coordination is currently in-memory and single-process; shared multi-node subscriber groups still need a durable backend.
 - No partitioned topic model or broker-backed cross-process subscriber coordination exists yet.
