@@ -40,6 +40,21 @@ This note captures the implementation-ready boundary for `OPE-208` / `BIG-PAR-02
 - `BIGCLAW_EVENT_LOG_REPLAY_LIMIT` sets the default catch-up page size for replay-oriented consumers.
 - `BIGCLAW_EVENT_LOG_CHECKPOINT_INTERVAL` sets the default checkpoint flush cadence for streaming consumers.
 
+## Dry-run capability probe
+
+- `internal/events/durability.go` now exposes a `broker_probe` payload inside `event_durability` for replicated targets, even before a live broker adapter exists.
+- The probe is explicitly `mode=dry_run` and `implementation_state=planned_only` so operator tooling can distinguish contract validation from a shipped backend.
+- The payload mirrors configured driver / URLs / topic / consumer-group values, reports field-level validation errors, and advertises the provider-facing capability contract for:
+  - replicated publish acknowledgement;
+  - replay via portable `Position.Sequence` mapping;
+  - durable checkpoint monotonicity;
+  - derived task / trace filtering;
+  - visible retention boundaries.
+- The same probe also summarizes the current failure modes that a future provider implementation must satisfy before rollout:
+  - ambiguous publish outcomes during broker failover;
+  - checkpoint fencing gaps during consumer takeover;
+  - retention-boundary drift after compaction or expiry.
+
 ## First backend implementation path
 
 - Keep the existing in-process `Bus` for local fanout and SSE/live delivery.

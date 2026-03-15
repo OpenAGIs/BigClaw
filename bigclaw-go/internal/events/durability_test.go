@@ -54,4 +54,36 @@ func TestNewDurabilityPlanWithBrokerConfigIncludesBootstrapStatus(t *testing.T) 
 	if plan.BrokerBootstrap.ReplayLimit != 2048 || plan.BrokerBootstrap.CheckpointInterval != "15s" {
 		t.Fatalf("unexpected broker bootstrap timings: %+v", plan.BrokerBootstrap)
 	}
+	if plan.BrokerProbe == nil {
+		t.Fatal("expected broker dry-run probe")
+	}
+	if plan.BrokerProbe.Mode != "dry_run" || !plan.BrokerProbe.Ready {
+		t.Fatalf("expected ready dry-run probe, got %+v", plan.BrokerProbe)
+	}
+	if plan.BrokerProbe.Capabilities.Publish.Mode != "replicated_ack_required" {
+		t.Fatalf("unexpected broker publish capability: %+v", plan.BrokerProbe.Capabilities.Publish)
+	}
+	if len(plan.BrokerProbe.FailureModes) != 3 {
+		t.Fatalf("expected broker failure mode summaries, got %+v", plan.BrokerProbe.FailureModes)
+	}
+}
+
+func TestNewDurabilityPlanWithInvalidBrokerConfigSurfacesProbeErrors(t *testing.T) {
+	plan := NewDurabilityPlanWithBrokerConfig("memory", "broker_replicated", 3, BrokerRuntimeConfig{})
+
+	if plan.BrokerBootstrap == nil || plan.BrokerBootstrap.Ready {
+		t.Fatalf("expected bootstrap status to stay unready, got %+v", plan.BrokerBootstrap)
+	}
+	if len(plan.BrokerBootstrap.ValidationErrors) < 3 {
+		t.Fatalf("expected detailed bootstrap validation errors, got %+v", plan.BrokerBootstrap)
+	}
+	if plan.BrokerProbe == nil || plan.BrokerProbe.Ready {
+		t.Fatalf("expected dry-run probe to stay unready, got %+v", plan.BrokerProbe)
+	}
+	if len(plan.BrokerProbe.ValidationErrors) < 3 {
+		t.Fatalf("expected probe validation errors, got %+v", plan.BrokerProbe)
+	}
+	if plan.BrokerProbe.Capabilities.Replay.Mode != "portable_sequence_cursor" {
+		t.Fatalf("expected portable replay capability contract, got %+v", plan.BrokerProbe.Capabilities.Replay)
+	}
 }
