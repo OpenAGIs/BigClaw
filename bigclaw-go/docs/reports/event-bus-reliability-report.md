@@ -35,6 +35,8 @@ This report summarizes the current event bus reliability evidence and the next r
 - Checkpoint offsets remain monotonic within a subscriber group and reject rollback writes.
 - Operators can inspect backend capability support before dispatching replay-oriented operations.
 - Operator-facing capability payloads now distinguish durable consumer dedup support from process-local replay/checkpoint support.
+- Durable retention watermarks are exposed on both repo-facing and service-facing paths, including persisted trimmed boundaries after SQLite restart.
+- Expired checkpoint resumes return conflict diagnostics instead of silently skipping history, and operators can clear the stale cursor through the checkpoint reset API before replaying from the earliest retained event.
 
 ## Evidence
 
@@ -116,6 +118,35 @@ This report summarizes the current event bus reliability evidence and the next r
 - `BIGCLAW_EVENT_REQUIRE_REPLAY`, `BIGCLAW_EVENT_REQUIRE_CHECKPOINT`, and `BIGCLAW_EVENT_REQUIRE_FILTERING` express the runtime features operators expect from the selected backend.
 - Unsupported combinations fail fast with field-specific errors instead of silently downgrading runtime behavior.
 - Backends declared in the matrix but not yet wired into the bootstrap runtime are rejected explicitly so planning assumptions cannot masquerade as implemented support.
+
+## Checkpoint reset validation bundle
+
+### Local SQLite evidence
+
+- `go test ./internal/api ./internal/events` exercises:
+  - `TestDebugStatusIncludesRetentionWatermark`;
+  - `TestStreamEventCheckpointExpiredDiagnosticsAndReset`;
+  - `TestSQLiteEventLogRetentionWatermark`;
+  - `TestSQLiteEventLogRetentionBoundaryPersistsAcrossInstances`.
+- Review output should preserve:
+  - the expired-checkpoint conflict payload from `GET /events?subscriber_id=...`;
+  - the checkpoint diagnostics payload from `GET /stream/events/checkpoints/{subscriber_id}`;
+  - the successful reset response from `DELETE /stream/events/checkpoints/{subscriber_id}`;
+  - the retained replay result after reset.
+
+### Shared HTTP event-log evidence
+
+- The same validation run should also cover:
+  - `TestHTTPEventLogReadsRetentionWatermarkFromService`;
+  - `TestHTTPEventLogReadsPersistedRetentionBoundaryFromService`;
+  - `TestHTTPEventLogResetsCheckpointThroughService`;
+  - `TestEventsEndpointIncludesRetentionWatermarkForRemoteEventLog`.
+- Review output should retain the remote watermark payload plus checkpoint reset round-trip proof so shared-service operators can audit the flow without database access.
+
+### Future replicated evidence
+
+- A broker or quorum-backed backend should not be marked rollout-ready until it emits the same watermark, expired-checkpoint, and reset evidence while also proving failover-safe sequence continuity and stale-writer fencing.
+- The required replicated evidence remains aligned with `docs/reports/replicated-event-log-durability-rollout-contract.md` and the takeover/failover validation packs.
 
 ## Consumer dedup ledger contract
 

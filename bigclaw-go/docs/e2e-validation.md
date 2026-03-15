@@ -86,6 +86,38 @@ python3 scripts/e2e/multi_node_shared_queue.py \
 
 This starts two `bigclawd` processes against one SQLite queue and verifies there are no duplicate terminal completions across the two nodes.
 
+## Checkpoint reset audit/history validation
+
+Use this focused validation slice when review needs checkpoint-expiration, reset, and audit evidence without rerunning the full executor matrix.
+
+```bash
+cd bigclaw-go
+go test ./internal/api ./internal/events
+```
+
+That test set covers the repo-native checkpoint reset bundle:
+
+- local retention watermark exposure in `GET /events` and `GET /debug/status`
+- persisted trimmed replay boundaries across SQLite restart
+- expired checkpoint diagnostics and reset through `GET/DELETE /stream/events/checkpoints/{subscriber_id}`
+- remote/shared-service watermark and checkpoint reset round-trips through `GET /internal/events/log/watermark` and `GET/POST/DELETE /internal/events/log/checkpoints/{subscriber_id}`
+
+For closeout or review attachments, preserve these fields from the exercised payloads:
+
+- `retention_watermark.backend`
+- `retention_watermark.history_truncated`
+- `retention_watermark.persisted_boundary`
+- `retention_watermark.trimmed_through_event_id`
+- `checkpoint_diagnostics.code`
+- `checkpoint_diagnostics.suggested_recovery`
+- reset confirmation for the affected `subscriber_id`
+
+Backend-specific expectations:
+
+- Local SQLite: prove the stale checkpoint conflicts before reset and replay resumes from the earliest retained event after reset.
+- Shared HTTP/service backend: prove the same watermark and reset fields are available through the service boundary without direct SQLite access.
+- Future replicated backend: add failover-safe sequence continuity and stale-writer fencing evidence before claiming rollout readiness.
+
 ## Broker failover and replay fault-injection pack
 
 The current repo does not yet ship a broker-backed event log or live failover harness, but the implementation-ready validation matrix now lives in `docs/reports/broker-failover-fault-injection-validation-pack.md`.
