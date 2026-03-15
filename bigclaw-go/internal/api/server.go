@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"sort"
 	"strconv"
@@ -545,9 +546,36 @@ func (s *Server) handleStreamEventCheckpoint(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "checkpoint store unavailable", http.StatusServiceUnavailable)
 		return
 	}
-	subscriberID := strings.TrimPrefix(r.URL.Path, "/stream/events/checkpoints/")
+	path := strings.TrimPrefix(r.URL.Path, "/stream/events/checkpoints/")
+	historyRequest := strings.HasSuffix(path, "/history")
+	subscriberID := strings.TrimSuffix(path, "/history")
+	subscriberID = strings.TrimSuffix(subscriberID, "/")
 	if subscriberID == "" {
 		http.Error(w, "missing subscriber id", http.StatusBadRequest)
+		return
+	}
+	if historyRequest {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		historyProvider := s.checkpointResetHistoryProvider()
+		if historyProvider == nil {
+			http.Error(w, "checkpoint reset history unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+		history, err := historyProvider.CheckpointResetHistory(subscriberID, limit)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"subscriber_id": subscriberID,
+			"history":       history,
+			"backend":       s.eventLogBackend(),
+			"durable":       s.eventLogDurable(),
+		})
 		return
 	}
 	switch r.Method {
@@ -594,6 +622,41 @@ func (s *Server) handleStreamEventCheckpoint(w http.ResponseWriter, r *http.Requ
 			"durable":    s.eventLogDurable(),
 		})
 	case http.MethodDelete:
+		var request events.CheckpointResetRequest
+		if r.Body != nil {
+			if err := json.NewDecoder(r.Body).Decode(&request); err != nil && !errors.Is(err, io.EOF) {
+				http.Error(w, fmt.Sprintf("decode checkpoint reset: %v", err), http.StatusBadRequest)
+				return
+			}
+		}
+		request.RequestedBy = firstNonEmpty(request.RequestedBy, r.Header.Get("X-BigClaw-Operator"), r.Header.Get("X-Operator-ID"))
+		request.Source = firstNonEmpty(request.Source, "api:/stream/events/checkpoints")
+		if request.Reason == "" {
+			if checkpoint, err := store.Checkpoint(subscriberID); err == nil {
+				if diagnostics := s.checkpointDiagnosticsForCheckpoint(subscriberID, checkpoint); diagnostics != nil {
+					request.Reason = diagnostics.Reason
+				}
+			}
+		}
+		if manager := s.checkpointResetManager(); manager != nil {
+			record, err := manager.ResetCheckpointWithAudit(subscriberID, request)
+			if err != nil {
+				if events.IsNoEventLog(err) {
+					http.Error(w, "checkpoint not found", http.StatusNotFound)
+					return
+				}
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			writeJSON(w, http.StatusOK, map[string]any{
+				"subscriber_id": subscriberID,
+				"reset":         true,
+				"backend":       s.eventLogBackend(),
+				"durable":       s.eventLogDurable(),
+				"reset_audit":   record,
+			})
+			return
+		}
 		resetter := s.checkpointResetter()
 		if resetter == nil {
 			http.Error(w, "checkpoint reset unavailable", http.StatusServiceUnavailable)
@@ -817,6 +880,20 @@ func (s *Server) checkpointStore() events.CheckpointStore {
 func (s *Server) checkpointResetter() events.CheckpointResetter {
 	if resetter, ok := s.EventLog.(events.CheckpointResetter); ok {
 		return resetter
+	}
+	return nil
+}
+
+func (s *Server) checkpointResetManager() events.CheckpointResetManager {
+	if manager, ok := s.EventLog.(events.CheckpointResetManager); ok {
+		return manager
+	}
+	return nil
+}
+
+func (s *Server) checkpointResetHistoryProvider() events.CheckpointResetHistoryProvider {
+	if provider, ok := s.EventLog.(events.CheckpointResetHistoryProvider); ok {
+		return provider
 	}
 	return nil
 }

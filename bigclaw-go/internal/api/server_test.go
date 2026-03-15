@@ -2789,9 +2789,23 @@ func TestStreamEventCheckpointExpiredDiagnosticsAndReset(t *testing.T) {
 
 	resetResponse := httptest.NewRecorder()
 	resetRequest := httptest.NewRequest(http.MethodDelete, "/stream/events/checkpoints/subscriber-expired", nil)
+	resetRequest.Header.Set("X-BigClaw-Operator", "operator-api")
 	server.Handler().ServeHTTP(resetResponse, resetRequest)
 	if resetResponse.Code != http.StatusOK {
 		t.Fatalf("expected checkpoint reset 200, got %d %s", resetResponse.Code, resetResponse.Body.String())
+	}
+	if !strings.Contains(resetResponse.Body.String(), "\"reset_audit\"") || !strings.Contains(resetResponse.Body.String(), "\"requested_by\":\"operator-api\"") || !strings.Contains(resetResponse.Body.String(), "\"reason\":\"checkpoint_before_retention_boundary\"") {
+		t.Fatalf("expected reset audit payload, got %s", resetResponse.Body.String())
+	}
+
+	historyResponse := httptest.NewRecorder()
+	historyRequest := httptest.NewRequest(http.MethodGet, "/stream/events/checkpoints/subscriber-expired/history?limit=10", nil)
+	server.Handler().ServeHTTP(historyResponse, historyRequest)
+	if historyResponse.Code != http.StatusOK {
+		t.Fatalf("expected checkpoint history 200, got %d %s", historyResponse.Code, historyResponse.Body.String())
+	}
+	if !strings.Contains(historyResponse.Body.String(), "\"history\"") || !strings.Contains(historyResponse.Body.String(), "\"requested_by\":\"operator-api\"") || !strings.Contains(historyResponse.Body.String(), "\"trimmed_through_event_id\":\"evt-expired-1\"") {
+		t.Fatalf("expected reset history payload, got %s", historyResponse.Body.String())
 	}
 
 	recoveredResponse := httptest.NewRecorder()
@@ -2808,5 +2822,14 @@ func TestStreamEventCheckpointExpiredDiagnosticsAndReset(t *testing.T) {
 	}
 	if len(recovered.Events) != 1 || recovered.Events[0].ID != "evt-expired-2" {
 		t.Fatalf("expected replay from earliest retained event after reset, got %+v", recovered.Events)
+	}
+
+	historyAfterRecovery := httptest.NewRecorder()
+	server.Handler().ServeHTTP(historyAfterRecovery, historyRequest)
+	if historyAfterRecovery.Code != http.StatusOK {
+		t.Fatalf("expected checkpoint history after recovery 200, got %d %s", historyAfterRecovery.Code, historyAfterRecovery.Body.String())
+	}
+	if !strings.Contains(historyAfterRecovery.Body.String(), "\"previous_checkpoint\"") || !strings.Contains(historyAfterRecovery.Body.String(), "\"evt-expired-1\"") {
+		t.Fatalf("expected reset history to remain visible after recovery, got %s", historyAfterRecovery.Body.String())
 	}
 }

@@ -31,6 +31,14 @@ type checkpointResponse struct {
 	Checkpoint SubscriberCheckpoint `json:"checkpoint"`
 }
 
+type checkpointResetResponse struct {
+	ResetAudit CheckpointResetRecord `json:"reset_audit"`
+}
+
+type checkpointResetHistoryResponse struct {
+	History []CheckpointResetRecord `json:"history"`
+}
+
 type remoteEventsResponse struct {
 	Events []domain.Event `json:"events"`
 }
@@ -126,11 +134,34 @@ func (s *HTTPEventLog) Checkpoint(subscriberID string) (SubscriberCheckpoint, er
 }
 
 func (s *HTTPEventLog) ResetCheckpoint(subscriberID string) error {
-	err := s.doJSON(context.Background(), http.MethodDelete, "/checkpoints/"+url.PathEscape(strings.TrimSpace(subscriberID)), nil, nil)
-	if err != nil {
-		return mapRemoteEventLogError(err)
+	_, err := s.ResetCheckpointWithAudit(subscriberID, CheckpointResetRequest{})
+	return err
+}
+
+func (s *HTTPEventLog) ResetCheckpointWithAudit(subscriberID string, request CheckpointResetRequest) (CheckpointResetRecord, error) {
+	var response checkpointResetResponse
+	var body any
+	if request != (CheckpointResetRequest{}) {
+		body = request
 	}
-	return nil
+	err := s.doJSON(context.Background(), http.MethodDelete, "/checkpoints/"+url.PathEscape(strings.TrimSpace(subscriberID)), body, &response)
+	if err != nil {
+		return CheckpointResetRecord{}, mapRemoteEventLogError(err)
+	}
+	return response.ResetAudit, nil
+}
+
+func (s *HTTPEventLog) CheckpointResetHistory(subscriberID string, limit int) ([]CheckpointResetRecord, error) {
+	path := "/checkpoints/" + url.PathEscape(strings.TrimSpace(subscriberID)) + "/history"
+	if limit > 0 {
+		path += "?limit=" + strconv.Itoa(limit)
+	}
+	var response checkpointResetHistoryResponse
+	err := s.doJSON(context.Background(), http.MethodGet, path, nil, &response)
+	if err != nil {
+		return nil, mapRemoteEventLogError(err)
+	}
+	return response.History, nil
 }
 
 func (s *HTTPEventLog) RetentionWatermark() (RetentionWatermark, error) {
@@ -265,3 +296,5 @@ func (e statusError) Error() string {
 var _ EventLog = (*HTTPEventLog)(nil)
 var _ CheckpointStore = (*HTTPEventLog)(nil)
 var _ CheckpointResetter = (*HTTPEventLog)(nil)
+var _ CheckpointResetManager = (*HTTPEventLog)(nil)
+var _ CheckpointResetHistoryProvider = (*HTTPEventLog)(nil)

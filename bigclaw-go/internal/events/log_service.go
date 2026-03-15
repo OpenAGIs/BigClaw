@@ -2,6 +2,8 @@ package events
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -72,9 +74,31 @@ func NewEventLogServiceHandler(store LogServiceStore) http.Handler {
 		writeEventLogJSON(w, http.StatusOK, map[string]any{"events": history})
 	})
 	mux.HandleFunc("/checkpoints/", func(w http.ResponseWriter, r *http.Request) {
-		subscriberID := strings.TrimPrefix(r.URL.Path, "/checkpoints/")
+		path := strings.TrimPrefix(r.URL.Path, "/checkpoints/")
+		historyRequest := strings.HasSuffix(path, "/history")
+		subscriberID := strings.TrimSuffix(path, "/history")
+		subscriberID = strings.TrimSuffix(subscriberID, "/")
 		if subscriberID == "" {
 			http.Error(w, "missing subscriber id", http.StatusBadRequest)
+			return
+		}
+		if historyRequest {
+			if r.Method != http.MethodGet {
+				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+				return
+			}
+			historyProvider, ok := any(store).(CheckpointResetHistoryProvider)
+			if !ok {
+				http.Error(w, "checkpoint reset history unavailable", http.StatusServiceUnavailable)
+				return
+			}
+			limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+			history, err := historyProvider.CheckpointResetHistory(subscriberID, limit)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			writeEventLogJSON(w, http.StatusOK, map[string]any{"history": history})
 			return
 		}
 		switch r.Method {
@@ -109,6 +133,27 @@ func NewEventLogServiceHandler(store LogServiceStore) http.Handler {
 			}
 			writeEventLogJSON(w, http.StatusOK, map[string]any{"checkpoint": checkpoint})
 		case http.MethodDelete:
+			manager, ok := any(store).(CheckpointResetManager)
+			if ok {
+				var request CheckpointResetRequest
+				if r.Body != nil {
+					if err := json.NewDecoder(r.Body).Decode(&request); err != nil && !errors.Is(err, io.EOF) {
+						http.Error(w, err.Error(), http.StatusBadRequest)
+						return
+					}
+				}
+				record, err := manager.ResetCheckpointWithAudit(subscriberID, request)
+				if err != nil {
+					if IsNoEventLog(err) {
+						http.Error(w, "checkpoint not found", http.StatusNotFound)
+						return
+					}
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				writeEventLogJSON(w, http.StatusOK, map[string]any{"subscriber_id": subscriberID, "reset": true, "reset_audit": record})
+				return
+			}
 			resetter, ok := any(store).(CheckpointResetter)
 			if !ok {
 				http.Error(w, "checkpoint reset unavailable", http.StatusServiceUnavailable)

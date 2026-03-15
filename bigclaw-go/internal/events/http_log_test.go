@@ -150,4 +150,62 @@ func TestHTTPEventLogResetsCheckpointThroughService(t *testing.T) {
 	if _, err := client.Checkpoint("subscriber-reset"); !IsNoEventLog(err) {
 		t.Fatalf("expected checkpoint to be cleared, got %v", err)
 	}
+	history, err := client.CheckpointResetHistory("subscriber-reset", 10)
+	if err != nil {
+		t.Fatalf("checkpoint reset history: %v", err)
+	}
+	if len(history) != 1 || history[0].PreviousCheckpoint == nil || history[0].PreviousCheckpoint.EventID != "evt-reset-1" {
+		t.Fatalf("unexpected checkpoint reset history: %+v", history)
+	}
+}
+
+func TestHTTPEventLogResetsCheckpointWithAuditMetadata(t *testing.T) {
+	base := time.Unix(1_700_000_000, 0).UTC()
+	logPath := filepath.Join(t.TempDir(), "event-log.db")
+	store, err := NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	for _, event := range []domain.Event{
+		{ID: "evt-reset-audit-1", Type: domain.EventTaskQueued, TaskID: "task-reset-audit", TraceID: "trace-reset-audit", Timestamp: base},
+		{ID: "evt-reset-audit-2", Type: domain.EventTaskStarted, TaskID: "task-reset-audit", TraceID: "trace-reset-audit", Timestamp: base.Add(3 * time.Second)},
+	} {
+		if err := store.Write(context.Background(), event); err != nil {
+			t.Fatalf("write reset audit event %s: %v", event.ID, err)
+		}
+	}
+	if _, err := store.Acknowledge("subscriber-reset-audit", "evt-reset-audit-1", base.Add(time.Second)); err != nil {
+		t.Fatalf("ack checkpoint: %v", err)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatalf("close initial sqlite event log: %v", err)
+	}
+	store, err = NewSQLiteEventLogWithOptions(logPath, SQLiteEventLogOptions{
+		Retention: 2 * time.Second,
+		Now:       func() time.Time { return base.Add(4 * time.Second) },
+	})
+	if err != nil {
+		t.Fatalf("reopen sqlite event log with retention: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	server := httptest.NewServer(NewEventLogServiceHandler(store))
+	defer server.Close()
+	client, err := NewHTTPEventLog(server.URL, "")
+	if err != nil {
+		t.Fatalf("new http event log: %v", err)
+	}
+	record, err := client.ResetCheckpointWithAudit("subscriber-reset-audit", CheckpointResetRequest{
+		RequestedBy: "operator-http",
+		Reason:      "checkpoint_before_retention_boundary",
+		Source:      "api:/stream/events/checkpoints",
+	})
+	if err != nil {
+		t.Fatalf("reset checkpoint with audit: %v", err)
+	}
+	if record.RequestedBy != "operator-http" || record.PreviousCheckpoint == nil || record.PreviousCheckpoint.EventID != "evt-reset-audit-1" {
+		t.Fatalf("unexpected checkpoint reset audit record: %+v", record)
+	}
+	if record.RetentionWatermark == nil || record.RetentionWatermark.TrimmedThroughEventID != "evt-reset-audit-1" {
+		t.Fatalf("expected retention boundary in reset audit, got %+v", record.RetentionWatermark)
+	}
 }
