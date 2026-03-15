@@ -547,6 +547,9 @@ func TestEventsEndpointReturnsCursorFallbackMetadataWhenReplayWindowExpired(t *t
 	if !strings.Contains(response.Body.String(), "\"status\":\"expired\"") || !strings.Contains(response.Body.String(), "\"evt-old-2\"") {
 		t.Fatalf("expected cursor metadata and fallback events, got %s", response.Body.String())
 	}
+	if !strings.Contains(response.Body.String(), "\"retention_watermark\":{\"available\":true") || !strings.Contains(response.Body.String(), "\"oldest_event_id\":\"evt-old-2\"") || !strings.Contains(response.Body.String(), "\"newest_event_id\":\"evt-old-3\"") {
+		t.Fatalf("expected retention watermark in events payload, got %s", response.Body.String())
+	}
 }
 
 func TestStreamEventsUsesLastEventIDForExpiredCursorFallback(t *testing.T) {
@@ -636,6 +639,9 @@ func TestDebugStatusIncludesWorkerSnapshot(t *testing.T) {
 	}
 	if !strings.Contains(response.Body.String(), "worker-a") || !strings.Contains(response.Body.String(), "successful_runs") || !strings.Contains(response.Body.String(), "event_log") || !strings.Contains(response.Body.String(), "in_memory_history") || !strings.Contains(response.Body.String(), "checkpoint") {
 		t.Fatalf("expected worker snapshot in debug payload, got %s", response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), "\"retention_watermark\":{\"available\":false") {
+		t.Fatalf("expected retention watermark in debug payload, got %s", response.Body.String())
 	}
 }
 
@@ -2325,11 +2331,12 @@ func TestEventsEndpointSupportsAfterIDCursor(t *testing.T) {
 		t.Fatalf("expected events 200, got %d %s", response.Code, response.Body.String())
 	}
 	var decoded struct {
-		Events      []domain.Event `json:"events"`
-		AfterID     string         `json:"after_id"`
-		NextAfterID string         `json:"next_after_id"`
-		Backend     string         `json:"backend"`
-		Durable     bool           `json:"durable"`
+		Events             []domain.Event            `json:"events"`
+		AfterID            string                    `json:"after_id"`
+		NextAfterID        string                    `json:"next_after_id"`
+		Backend            string                    `json:"backend"`
+		Durable            bool                      `json:"durable"`
+		RetentionWatermark events.RetentionWatermark `json:"retention_watermark"`
 	}
 	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
 		t.Fatalf("decode cursor events response: %v", err)
@@ -2342,6 +2349,9 @@ func TestEventsEndpointSupportsAfterIDCursor(t *testing.T) {
 	}
 	if decoded.Backend != "sqlite" || !decoded.Durable {
 		t.Fatalf("unexpected durable metadata: %+v", decoded)
+	}
+	if !decoded.RetentionWatermark.Available || decoded.RetentionWatermark.OldestEventID != "evt-durable-1" || decoded.RetentionWatermark.NewestEventID != "evt-durable-3" {
+		t.Fatalf("unexpected durable retention watermark: %+v", decoded.RetentionWatermark)
 	}
 }
 

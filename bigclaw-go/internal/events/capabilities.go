@@ -8,18 +8,32 @@ type FeatureSupport struct {
 	Detail    string `json:"detail,omitempty"`
 }
 
+type RetentionWatermark struct {
+	Available            bool   `json:"available"`
+	OldestEventID        string `json:"oldest_event_id,omitempty"`
+	NewestEventID        string `json:"newest_event_id,omitempty"`
+	OldestEventTimestamp string `json:"oldest_event_timestamp,omitempty"`
+	NewestEventTimestamp string `json:"newest_event_timestamp,omitempty"`
+	RetainedEventCount   int    `json:"retained_event_count"`
+}
+
 type BackendCapabilities struct {
-	Backend    string         `json:"backend"`
-	Scope      string         `json:"scope,omitempty"`
-	Publish    FeatureSupport `json:"publish"`
-	Replay     FeatureSupport `json:"replay"`
-	Checkpoint FeatureSupport `json:"checkpoint"`
-	Filtering  FeatureSupport `json:"filtering"`
-	Retention  FeatureSupport `json:"retention"`
+	Backend            string             `json:"backend"`
+	Scope              string             `json:"scope,omitempty"`
+	Publish            FeatureSupport     `json:"publish"`
+	Replay             FeatureSupport     `json:"replay"`
+	Checkpoint         FeatureSupport     `json:"checkpoint"`
+	Filtering          FeatureSupport     `json:"filtering"`
+	Retention          FeatureSupport     `json:"retention"`
+	RetentionWatermark RetentionWatermark `json:"retention_watermark"`
 }
 
 type CapabilityProvider interface {
 	Capabilities(context.Context) BackendCapabilities
+}
+
+type RetentionWatermarkProvider interface {
+	RetentionWatermark(context.Context) RetentionWatermark
 }
 
 func defaultBusCapabilities() BackendCapabilities {

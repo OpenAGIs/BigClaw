@@ -10,7 +10,7 @@ The current Go runtime still uses in-process replay history in `internal/events/
 
 - `Bus.SubscribeReplay` replays the tail of the in-memory append history before switching the subscriber to live events.
 - `GET /events`, `GET /replay/{id}`, and `GET /stream/events?replay=1` expose replay-oriented views over recorder history.
-- No durable retention watermark, checkpoint expiration signal, or history compaction rule exists yet.
+- Runtime surfaces now expose a retention watermark for in-memory and shared event-log backends, but checkpoint expiration signaling and automated compaction policy are still pending.
 
 ## Retention model
 
@@ -63,7 +63,7 @@ The current Go runtime still uses in-process replay history in `internal/events/
 
 - `OPE-212` establishes the compaction and retention contract.
 - `OPE-216` can build the concrete API/error surface for expired replay cursors and truncated-history fallback.
-- Durable backends extending `internal/events` should expose retention watermarks before replay-aware checkpoint cleanup is implemented.
+- Durable backends extending `internal/events` now expose retention watermarks through API/debug and event-log service payloads; replay-aware checkpoint cleanup still remains to be implemented.
 
 ## Repo evidence
 

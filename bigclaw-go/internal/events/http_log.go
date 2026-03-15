@@ -32,7 +32,13 @@ type checkpointResponse struct {
 }
 
 type remoteEventsResponse struct {
-	Events []domain.Event `json:"events"`
+	Events             []domain.Event     `json:"events"`
+	RetentionWatermark RetentionWatermark `json:"retention_watermark"`
+}
+
+type remoteStatusResponse struct {
+	Backend      string              `json:"backend"`
+	Capabilities BackendCapabilities `json:"capabilities"`
 }
 
 func NewHTTPEventLog(endpoint, bearerToken string) (*HTTPEventLog, error) {
@@ -55,6 +61,10 @@ func (s *HTTPEventLog) Backend() string {
 }
 
 func (s *HTTPEventLog) Capabilities() BackendCapabilities {
+	status, err := s.status(context.Background())
+	if err == nil {
+		return status.Capabilities
+	}
 	return BackendCapabilities{
 		Backend:    "http",
 		Scope:      "remote_service",
@@ -64,6 +74,14 @@ func (s *HTTPEventLog) Capabilities() BackendCapabilities {
 		Filtering:  FeatureSupport{Supported: true, Mode: "server_side"},
 		Retention:  FeatureSupport{Supported: true, Mode: "remote_service"},
 	}
+}
+
+func (s *HTTPEventLog) RetentionWatermark(ctx context.Context) RetentionWatermark {
+	status, err := s.status(ctx)
+	if err != nil {
+		return RetentionWatermark{}
+	}
+	return status.Capabilities.RetentionWatermark
 }
 
 func (s *HTTPEventLog) Write(ctx context.Context, event domain.Event) error {
@@ -150,6 +168,14 @@ func (s *HTTPEventLog) queryEvents(params url.Values) ([]domain.Event, error) {
 	return response.Events, nil
 }
 
+func (s *HTTPEventLog) status(ctx context.Context) (remoteStatusResponse, error) {
+	var response remoteStatusResponse
+	if err := s.doJSON(ctx, http.MethodGet, "/status", nil, &response); err != nil {
+		return remoteStatusResponse{}, err
+	}
+	return response, nil
+}
+
 func (s *HTTPEventLog) doJSON(ctx context.Context, method, path string, body any, out any) error {
 	endpoint, err := s.endpoint(path)
 	if err != nil {
@@ -218,6 +244,8 @@ func mapRemoteEventLogError(err error) error {
 	}
 	return err
 }
+
+var _ RetentionWatermarkProvider = (*HTTPEventLog)(nil)
 
 func errorsAsStatus(err error, out *statusError) bool {
 	status, ok := err.(statusError)

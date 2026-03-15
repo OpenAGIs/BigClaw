@@ -122,6 +122,31 @@ func TestSQLiteEventLogCheckpointPersistsAcrossInstances(t *testing.T) {
 	}
 }
 
+func TestSQLiteEventLogReportsRetentionWatermark(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "event-log.db")
+	log, err := NewSQLiteEventLog(path)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = log.Close() }()
+	base := time.Unix(1700000100, 0).UTC()
+	for _, event := range []domain.Event{
+		{ID: "evt-watermark-1", Type: domain.EventTaskQueued, TaskID: "task-watermark", TraceID: "trace-watermark", Timestamp: base},
+		{ID: "evt-watermark-2", Type: domain.EventTaskCompleted, TaskID: "task-watermark", TraceID: "trace-watermark", Timestamp: base.Add(time.Second)},
+	} {
+		if err := log.Write(context.Background(), event); err != nil {
+			t.Fatalf("write %s: %v", event.ID, err)
+		}
+	}
+	watermark := log.RetentionWatermark(context.Background())
+	if !watermark.Available || watermark.OldestEventID != "evt-watermark-1" || watermark.NewestEventID != "evt-watermark-2" || watermark.RetainedEventCount != 2 {
+		t.Fatalf("unexpected retention watermark: %+v", watermark)
+	}
+	if capabilities := log.Capabilities(); capabilities.RetentionWatermark.NewestEventID != "evt-watermark-2" {
+		t.Fatalf("expected capabilities to include retention watermark, got %+v", capabilities.RetentionWatermark)
+	}
+}
+
 func TestSQLiteEventLogCheckpointAcknowledgeIsMonotonic(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "event-log.db")
 	log, err := NewSQLiteEventLog(path)

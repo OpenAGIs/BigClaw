@@ -2,6 +2,8 @@ package events
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"testing"
@@ -52,5 +54,45 @@ func TestHTTPEventLogRoundTripsThroughService(t *testing.T) {
 	}
 	if checkpoint.EventID != "evt-remote-2" || checkpoint.SubscriberID != "subscriber-remote" {
 		t.Fatalf("unexpected remote checkpoint payload: %+v", checkpoint)
+	}
+	watermark := client.RetentionWatermark(context.Background())
+	if !watermark.Available || watermark.OldestEventID != "evt-remote-1" || watermark.NewestEventID != "evt-remote-2" {
+		t.Fatalf("unexpected remote retention watermark: %+v", watermark)
+	}
+	if capabilities := client.Capabilities(); capabilities.RetentionWatermark.NewestEventID != "evt-remote-2" {
+		t.Fatalf("expected remote capabilities watermark, got %+v", capabilities.RetentionWatermark)
+	}
+}
+
+func TestEventLogServiceEventsResponseIncludesRetentionWatermark(t *testing.T) {
+	store, err := NewSQLiteEventLog(filepath.Join(t.TempDir(), "event-log.db"))
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	base := time.Unix(1700000200, 0).UTC()
+	for _, event := range []domain.Event{
+		{ID: "evt-service-1", Type: domain.EventTaskQueued, TaskID: "task-service", TraceID: "trace-service", Timestamp: base},
+		{ID: "evt-service-2", Type: domain.EventTaskStarted, TaskID: "task-service", TraceID: "trace-service", Timestamp: base.Add(time.Second)},
+	} {
+		if err := store.Write(context.Background(), event); err != nil {
+			t.Fatalf("write %s: %v", event.ID, err)
+		}
+	}
+	request := httptest.NewRequest(http.MethodGet, "/events?trace_id=trace-service&limit=10", nil)
+	response := httptest.NewRecorder()
+	NewEventLogServiceHandler(store).ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Events             []domain.Event     `json:"events"`
+		RetentionWatermark RetentionWatermark `json:"retention_watermark"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode event-log service response: %v", err)
+	}
+	if len(decoded.Events) != 2 || decoded.RetentionWatermark.OldestEventID != "evt-service-1" || decoded.RetentionWatermark.NewestEventID != "evt-service-2" {
+		t.Fatalf("unexpected service watermark payload: %+v", decoded)
 	}
 }

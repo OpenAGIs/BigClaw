@@ -67,12 +67,17 @@ func (p staticCapabilityProvider) Capabilities(context.Context) BackendCapabilit
 
 func TestBusCapabilitiesDefaultAndOverride(t *testing.T) {
 	bus := NewBus()
+	bus.Publish(domain.Event{ID: "evt-cap-1", Type: domain.EventTaskQueued, Timestamp: time.Unix(1700000000, 0).UTC()})
+	bus.Publish(domain.Event{ID: "evt-cap-2", Type: domain.EventTaskStarted, Timestamp: time.Unix(1700000001, 0).UTC()})
 	capability := bus.Capabilities(context.Background())
 	if capability.Backend != "in_memory_history" {
 		t.Fatalf("expected default backend in_memory_history, got %s", capability.Backend)
 	}
 	if !capability.Replay.Supported || capability.Checkpoint.Supported {
 		t.Fatalf("unexpected default capability set: %+v", capability)
+	}
+	if !capability.RetentionWatermark.Available || capability.RetentionWatermark.OldestEventID != "evt-cap-1" || capability.RetentionWatermark.NewestEventID != "evt-cap-2" || capability.RetentionWatermark.RetainedEventCount != 2 {
+		t.Fatalf("expected default retention watermark, got %+v", capability.RetentionWatermark)
 	}
 
 	override := BackendCapabilities{
@@ -88,7 +93,7 @@ func TestBusCapabilitiesDefaultAndOverride(t *testing.T) {
 		Retention: FeatureSupport{Supported: true, Mode: "ttl"},
 	}
 	bus.SetCapabilityProvider(staticCapabilityProvider{capability: override})
-	if got := bus.Capabilities(context.Background()); got.Backend != "broker_adapter" || !got.Checkpoint.Supported || got.Retention.Mode != "ttl" {
+	if got := bus.Capabilities(context.Background()); got.Backend != "broker_adapter" || !got.Checkpoint.Supported || got.Retention.Mode != "ttl" || got.RetentionWatermark.OldestEventID != "evt-cap-1" {
 		t.Fatalf("expected provider override, got %+v", got)
 	}
 }

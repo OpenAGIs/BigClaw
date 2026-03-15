@@ -20,6 +20,16 @@ func NewEventLogServiceHandler(store LogServiceStore) http.Handler {
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		writeEventLogJSON(w, http.StatusOK, map[string]any{"ok": true})
 	})
+	mux.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		writeEventLogJSON(w, http.StatusOK, map[string]any{
+			"backend":      store.Backend(),
+			"capabilities": store.Capabilities(),
+		})
+	})
 	mux.HandleFunc("/record", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -50,7 +60,11 @@ func NewEventLogServiceHandler(store LogServiceStore) http.Handler {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		writeEventLogJSON(w, http.StatusOK, map[string]any{"events": history})
+		payload := map[string]any{"events": history}
+		if provider, ok := store.(RetentionWatermarkProvider); ok {
+			payload["retention_watermark"] = provider.RetentionWatermark(r.Context())
+		}
+		writeEventLogJSON(w, http.StatusOK, payload)
 	})
 	mux.HandleFunc("/checkpoints/", func(w http.ResponseWriter, r *http.Request) {
 		subscriberID := strings.TrimPrefix(r.URL.Path, "/checkpoints/")

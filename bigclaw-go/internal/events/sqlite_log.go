@@ -63,13 +63,43 @@ func (s *SQLiteEventLog) Backend() string {
 
 func (s *SQLiteEventLog) Capabilities() BackendCapabilities {
 	return BackendCapabilities{
-		Backend:    "sqlite",
-		Scope:      "shared_node",
-		Publish:    FeatureSupport{Supported: true, Mode: "append_only"},
-		Replay:     FeatureSupport{Supported: true, Mode: "durable"},
-		Checkpoint: FeatureSupport{Supported: true, Mode: "subscriber_ack"},
-		Filtering:  FeatureSupport{Supported: true, Mode: "server_side"},
-		Retention:  FeatureSupport{Supported: true, Mode: "sqlite_wal"},
+		Backend:            "sqlite",
+		Scope:              "shared_node",
+		Publish:            FeatureSupport{Supported: true, Mode: "append_only"},
+		Replay:             FeatureSupport{Supported: true, Mode: "durable"},
+		Checkpoint:         FeatureSupport{Supported: true, Mode: "subscriber_ack"},
+		Filtering:          FeatureSupport{Supported: true, Mode: "server_side"},
+		Retention:          FeatureSupport{Supported: true, Mode: "sqlite_wal"},
+		RetentionWatermark: s.RetentionWatermark(context.Background()),
+	}
+}
+
+func (s *SQLiteEventLog) RetentionWatermark(_ context.Context) RetentionWatermark {
+	if s == nil || s.db == nil {
+		return RetentionWatermark{}
+	}
+	row := s.db.QueryRow(`
+		SELECT
+			COUNT(*),
+			COALESCE((SELECT event_id FROM event_log ORDER BY seq ASC LIMIT 1), ''),
+			COALESCE((SELECT timestamp_ns FROM event_log ORDER BY seq ASC LIMIT 1), 0),
+			COALESCE((SELECT event_id FROM event_log ORDER BY seq DESC LIMIT 1), ''),
+			COALESCE((SELECT timestamp_ns FROM event_log ORDER BY seq DESC LIMIT 1), 0)
+		FROM event_log
+	`)
+	var count int
+	var oldestID, newestID string
+	var oldestTS, newestTS int64
+	if err := row.Scan(&count, &oldestID, &oldestTS, &newestID, &newestTS); err != nil || count == 0 {
+		return RetentionWatermark{}
+	}
+	return RetentionWatermark{
+		Available:            true,
+		OldestEventID:        oldestID,
+		NewestEventID:        newestID,
+		OldestEventTimestamp: time.Unix(0, oldestTS).UTC().Format(time.RFC3339Nano),
+		NewestEventTimestamp: time.Unix(0, newestTS).UTC().Format(time.RFC3339Nano),
+		RetainedEventCount:   count,
 	}
 }
 
@@ -294,6 +324,7 @@ func reverseEvents(events []domain.Event) {
 
 var _ EventLog = (*SQLiteEventLog)(nil)
 var _ CheckpointStore = (*SQLiteEventLog)(nil)
+var _ RetentionWatermarkProvider = (*SQLiteEventLog)(nil)
 
 func IsNoEventLog(err error) bool {
 	return errors.Is(err, sql.ErrNoRows)

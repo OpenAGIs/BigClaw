@@ -89,14 +89,15 @@ func (s *Server) Handler() http.Handler {
 			history = limitQueriedEvents(filterEventsByType(history, eventTypes), afterID, limit)
 			writeReplayCursorHeaders(w, cursor)
 			writeJSON(w, http.StatusOK, map[string]any{
-				"events":        history,
-				"cursor":        cursor,
-				"subscriber_id": subscriberID,
-				"after_id":      afterID,
-				"next_after_id": nextAfterID(history, afterID),
-				"event_types":   eventTypes,
-				"backend":       "memory",
-				"durable":       false,
+				"events":              history,
+				"cursor":              cursor,
+				"subscriber_id":       subscriberID,
+				"after_id":            afterID,
+				"next_after_id":       nextAfterID(history, afterID),
+				"event_types":         eventTypes,
+				"backend":             "memory",
+				"durable":             false,
+				"retention_watermark": s.retentionWatermark(r.Context()),
 			})
 			return
 		}
@@ -109,13 +110,14 @@ func (s *Server) Handler() http.Handler {
 			history = events.WithDeliveryBatch(history, domain.EventDeliveryModeReplay)
 		}
 		writeJSON(w, http.StatusOK, map[string]any{
-			"events":        history,
-			"subscriber_id": subscriberID,
-			"after_id":      afterID,
-			"next_after_id": nextAfterID(history, afterID),
-			"event_types":   eventTypes,
-			"backend":       backend,
-			"durable":       s.eventLogDurable(),
+			"events":              history,
+			"subscriber_id":       subscriberID,
+			"after_id":            afterID,
+			"next_after_id":       nextAfterID(history, afterID),
+			"event_types":         eventTypes,
+			"backend":             backend,
+			"durable":             s.eventLogDurable(),
+			"retention_watermark": s.retentionWatermark(r.Context()),
 		})
 	})
 	mux.HandleFunc("/subscriber-groups/leases", s.handleSubscriberGroupLease)
@@ -154,7 +156,11 @@ func (s *Server) Handler() http.Handler {
 			"audit_events":     len(s.Recorder.Logs()),
 			"executors":        s.executorNames(),
 			"event_durability": s.EventPlan,
-			"event_log":        s.eventLogCapabilities(r.Context()),
+			"event_log": map[string]any{
+				"backend":             s.eventLogBackend(),
+				"capabilities":        s.eventLogCapabilities(r.Context()),
+				"retention_watermark": s.retentionWatermark(r.Context()),
+			},
 		}
 		if s.Worker != nil {
 			payload["worker"] = s.Worker.Snapshot()
@@ -164,12 +170,6 @@ func (s *Server) Handler() http.Handler {
 		}
 		if s.Control != nil {
 			payload["control"] = s.Control.Snapshot()
-		}
-		if s.EventLog != nil {
-			payload["event_log"] = map[string]any{
-				"backend":      s.EventLog.Backend(),
-				"capabilities": s.EventLog.Capabilities(),
-			}
 		}
 		writeJSON(w, http.StatusOK, payload)
 	})
@@ -713,10 +713,28 @@ func (s *Server) queryMemoryEvents(taskID, traceID, afterID string, limit int) [
 }
 
 func (s *Server) eventLogCapabilities(ctx context.Context) events.BackendCapabilities {
-	if s.Bus != nil {
-		return s.Bus.Capabilities(ctx)
+	var capability events.BackendCapabilities
+	if s.EventLog != nil {
+		capability = s.EventLog.Capabilities()
+	} else if s.Bus != nil {
+		capability = s.Bus.Capabilities(ctx)
+	} else {
+		capability = events.UnavailableCapabilities()
 	}
-	return events.UnavailableCapabilities()
+	capability.RetentionWatermark = events.RetentionWatermark{}
+	return capability
+}
+
+func (s *Server) retentionWatermark(ctx context.Context) events.RetentionWatermark {
+	if provider, ok := s.EventLog.(events.RetentionWatermarkProvider); ok {
+		return provider.RetentionWatermark(ctx)
+	}
+	if s.Bus != nil {
+		if provider, ok := any(s.Bus).(events.RetentionWatermarkProvider); ok {
+			return provider.RetentionWatermark(ctx)
+		}
+	}
+	return events.RetentionWatermark{}
 }
 
 func replayCursorFromRequest(r *http.Request) string {

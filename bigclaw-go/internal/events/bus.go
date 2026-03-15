@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"sync"
+	"time"
 
 	"bigclaw-go/internal/domain"
 )
@@ -95,9 +96,28 @@ func (b *Bus) Capabilities(ctx context.Context) BackendCapabilities {
 	capability := b.capability
 	b.mu.RUnlock()
 	if provider != nil {
-		return provider.Capabilities(ctx)
+		capability = provider.Capabilities(ctx)
 	}
+	capability.RetentionWatermark = b.RetentionWatermark(ctx)
 	return capability
+}
+
+func (b *Bus) RetentionWatermark(_ context.Context) RetentionWatermark {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	if len(b.history) == 0 {
+		return RetentionWatermark{}
+	}
+	oldest := b.history[0]
+	newest := b.history[len(b.history)-1]
+	return RetentionWatermark{
+		Available:            true,
+		OldestEventID:        oldest.ID,
+		NewestEventID:        newest.ID,
+		OldestEventTimestamp: oldest.Timestamp.UTC().Format(time.RFC3339Nano),
+		NewestEventTimestamp: newest.Timestamp.UTC().Format(time.RFC3339Nano),
+		RetainedEventCount:   len(b.history),
+	}
 }
 
 func (b *Bus) Publish(event domain.Event) {
