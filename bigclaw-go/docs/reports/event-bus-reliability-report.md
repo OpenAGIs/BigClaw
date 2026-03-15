@@ -14,6 +14,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - Replay cursor diagnostics via `X-Replay-*` headers and JSON `cursor` metadata on `GET /events`
 - Retention watermark / replay horizon visibility through API debug payloads and event-log service surfaces
 - Expired checkpoint diagnostics and checkpoint reset surface through `GET/DELETE /stream/events/checkpoints/{subscriber_id}` plus conflict payloads on resume attempts
+- Recent checkpoint reset history, prior checkpoint context, and retention-boundary snapshots surfaced through `GET /debug/status`, `GET /stream/events/checkpoints/{subscriber_id}`, and `GET /v2/control-center/audit`
 - SQLite retention bootstrap with persisted truncation boundaries that survive process restarts when a replay window is configured
 - Replay-safe consumer delivery metadata via `EventDelivery`, including additive `delivery.mode`, `delivery.replay`, and `delivery.idempotency_key` fields
 - Consumer dedup ledger/result contract covering duplicate, retryable-failure, and already-applied outcomes
@@ -35,6 +36,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - Checkpoint offsets remain monotonic within a subscriber group and reject rollback writes.
 - Operators can inspect backend capability support before dispatching replay-oriented operations.
 - Operator-facing capability payloads now distinguish durable consumer dedup support from process-local replay/checkpoint support.
+- Operators can review recent checkpoint resets and affected subscribers without direct database access, including the prior checkpoint and retention boundary captured at reset time.
 
 ## Evidence
 
@@ -65,6 +67,7 @@ This report summarizes the current event bus reliability evidence and the next r
 
 - Runtime publish/subscribe remains in-process.
 - Audit/debug persistence is recorder-backed, with optional JSONL sinking.
+- Durable event-log backends now persist checkpoint reset history with subscriber, prior-checkpoint, and retention-watermark context for later operator review.
 - The `events.DurabilityPlan` surface makes the active backend and the next replicated target explicit in bootstrap and `GET /debug/status`, including broker bootstrap readiness when a replicated target is configured.
 - Default plan is `memory -> broker_replicated` with replication factor `3`, and env overrides exist for:
   - `BIGCLAW_EVENT_LOG_BACKEND`
