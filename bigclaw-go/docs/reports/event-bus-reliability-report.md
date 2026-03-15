@@ -35,3 +35,4 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 - No durable external event log yet; replay is process-local history.
 - No delivery acknowledgement protocol beyond sink-level best effort.
 - No partitioned topic model or cross-process subscriber coordination yet.
+- No retention watermark or expired-cursor contract exists in the runtime yet; the target compaction semantics are defined in `docs/reports/replay-retention-semantics-report.md`.
