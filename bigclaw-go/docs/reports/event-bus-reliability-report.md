@@ -11,13 +11,11 @@ This report summarizes the current event bus reliability evidence and the next r
 - Webhook sink integration for external fanout
 - SSE stream via `GET /stream/events`
 - Optional SSE replay and filtering via `replay=1`, `task_id`, and `trace_id`
-<<<<<<< HEAD
 - Replay-safe consumer delivery metadata via `EventDelivery`, including additive `delivery.mode`, `delivery.replay`, and `delivery.idempotency_key` fields
 - Consumer dedup ledger/result contract covering duplicate, retryable-failure, and already-applied outcomes
+- Replay-safe consumer dedup ledger contract with stable storage key and result semantics
 - Subscriber-group checkpoint lease coordination via `/subscriber-groups/leases` and `/subscriber-groups/checkpoints`
-=======
 - Event backend capability and config-validation contract via `internal/events/backend_contract.go`
->>>>>>> origin/dcjcloud/ope-213-big-par-025-durability-capability-matrix-与后端配置校验
 
 ## Validated behaviors
 
@@ -33,12 +31,7 @@ This report summarizes the current event bus reliability evidence and the next r
 ## Evidence
 
 - `internal/events/bus.go`
-<<<<<<< HEAD
 - `internal/events/durability.go`
-=======
-- `internal/events/backend_contract.go`
-- `internal/events/backend_contract_test.go`
->>>>>>> origin/dcjcloud/ope-213-big-par-025-durability-capability-matrix-与后端配置校验
 - `internal/events/bus_test.go`
 - `internal/events/delivery.go`
 - `internal/events/delivery_test.go`
@@ -49,12 +42,15 @@ This report summarizes the current event bus reliability evidence and the next r
 - `internal/events/recorder_sink.go`
 - `internal/events/subscriber_leases.go`
 - `internal/events/subscriber_leases_test.go`
+- `internal/events/backend_contract.go`
+- `internal/events/backend_contract_test.go`
+- `internal/events/dedup_ledger.go`
+- `internal/events/dedup_ledger_test.go`
 - `internal/api/server.go`
 - `internal/api/server_test.go`
 - `cmd/bigclawd/main.go`
 - `internal/config/config.go`
 
-<<<<<<< HEAD
 ## Current durability shape
 
 - Runtime publish/subscribe remains in-process.
@@ -73,10 +69,10 @@ This report summarizes the current event bus reliability evidence and the next r
 
 ## Repo-native integration points
 
-- `cmd/bigclawd/main.go`: bootstrap backend selection, capability validation, and future broker client wiring.
+- `cmd/bigclawd/main.go`: bootstrap backend selection, capability validation, dedup ledger contract exposure, and future broker client wiring.
 - `internal/events/bus.go`: publish path remains the place to insert append/ack behavior ahead of live fanout.
 - `internal/api/server.go`: operational reporting for current and target durability mode.
-- Subscriber checkpoint persistence and replay endpoints: preserve resume semantics while moving state out of process-local memory.
+- Subscriber checkpoint persistence, replay endpoints, and dedup ledger surfaces preserve resume and idempotency semantics while moving state out of process-local memory.
 
 ## Migration and compatibility constraints
 
@@ -91,7 +87,7 @@ This report summarizes the current event bus reliability evidence and the next r
 2. Introduce a dual-write migration phase from the current publish path into the new event-log backend while keeping recorder/audit output unchanged.
 3. Add checkpoint-backed replay endpoints that read from the shared event log instead of recorder-only history.
 4. Add a broker-backed implementation with partition-key rules for `trace_id` and explicit publisher ack / durability error handling.
-5. Validate cutover with replay, checkpoint monotonicity, SSE handoff, and capability-matrix regression coverage under shared multi-node conditions.
+5. Validate cutover with replay, checkpoint monotonicity, SSE handoff, capability-matrix regression coverage, and dedup-ledger persistence coverage under shared multi-node conditions.
 
 ## Durability capability matrix
 
@@ -110,10 +106,18 @@ This report summarizes the current event bus reliability evidence and the next r
 - Unsupported combinations fail fast with field-specific errors instead of silently downgrading runtime behavior.
 - Backends declared in the matrix but not yet wired into the bootstrap runtime are rejected explicitly so planning assumptions cannot masquerade as implemented support.
 
+## Consumer dedup ledger contract
+
+- Stable storage keys use `v1/<consumer_id>/<event_id>` so durable backends can share one persistence layout while still rejecting conflicting event metadata for the same consumer/event tuple.
+- Collision protection uses a fingerprint over `consumer_id`, `event_id`, `event_type`, `task_id`, `trace_id`, and `run_id`; the same storage key cannot be reused for a different event payload shape.
+- Reservation semantics distinguish first-writer `reserved`, repeated in-flight `duplicate`, and terminal `already_applied` outcomes.
+- Applied side effects persist `handler`, `applied_at`, `effect_id`, `effect_sequence`, `effect_fingerprint`, `summary`, and stable metadata so duplicate deliveries can return the prior applied result instead of replaying the side effect.
+- Once a record reaches `applied`, backends must treat a different result fingerprint as a conflict instead of silently overwriting the prior side effect evidence.
+
 ## Remaining gaps
 
 - No concrete durable external event log exists yet in this checkout; replay still depends on process-local history plus the documented integration plan.
-- Dedup ledger semantics are defined, but there is no persistent ledger store or handler middleware enforcing them yet.
+- No durable consumer dedup backend exists yet; only the abstraction, stable key layout, and reference in-memory semantics are implemented.
 - No delivery acknowledgement protocol exists beyond sink-level best effort.
 - Lease coordination is currently in-memory and single-process; shared multi-node subscriber groups still need a durable backend.
 - No partitioned topic model or broker-backed cross-process subscriber coordination exists yet.

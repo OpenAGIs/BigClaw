@@ -1,0 +1,69 @@
+package domain
+
+import (
+	"testing"
+	"time"
+)
+
+func TestNewConsumerDedupKeyProducesStableStorageKeyAndFingerprint(t *testing.T) {
+	event := Event{
+		ID:        "evt-42",
+		Type:      EventTaskCompleted,
+		TaskID:    "task-1",
+		TraceID:   "trace-1",
+		RunID:     "run-1",
+		Timestamp: time.Unix(1700000000, 0).UTC(),
+	}
+
+	key := NewConsumerDedupKey(" consumer-a ", event)
+	if got, want := key.StorageKey(), "v1/consumer-a/evt-42"; got != want {
+		t.Fatalf("expected storage key %q, got %q", want, got)
+	}
+
+	if got := key.Fingerprint(); got == "" {
+		t.Fatalf("expected non-empty fingerprint")
+	}
+
+	normalized := ConsumerDedupKey{
+		ConsumerID: "consumer-a",
+		EventID:    "evt-42",
+		EventType:  EventTaskCompleted,
+		TaskID:     "task-1",
+		TraceID:    "trace-1",
+		RunID:      "run-1",
+	}
+	if got, want := key.Fingerprint(), normalized.Fingerprint(); got != want {
+		t.Fatalf("expected normalized fingerprint %q, got %q", want, got)
+	}
+}
+
+func TestConsumerDedupResultStableFingerprintIgnoresMetadataOrder(t *testing.T) {
+	first := ConsumerDedupResult{
+		Handler:           "audit-sink",
+		AppliedAt:         time.Unix(1700000100, 0).UTC(),
+		EffectID:          "effect-1",
+		EffectSequence:    2,
+		EffectFingerprint: "fp-1",
+		Summary:           "applied",
+		Metadata: map[string]string{
+			"tenant": "alpha",
+			"mode":   "replay",
+		},
+	}
+	second := ConsumerDedupResult{
+		Handler:           "audit-sink",
+		AppliedAt:         time.Unix(1700000100, 0).UTC(),
+		EffectID:          "effect-1",
+		EffectSequence:    2,
+		EffectFingerprint: "fp-1",
+		Summary:           "applied",
+		Metadata: map[string]string{
+			"mode":   "replay",
+			"tenant": "alpha",
+		},
+	}
+
+	if got, want := first.StableFingerprint(), second.StableFingerprint(); got != want {
+		t.Fatalf("expected equal stable fingerprints, got %q and %q", got, want)
+	}
+}
