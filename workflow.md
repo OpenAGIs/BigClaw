@@ -2,7 +2,7 @@
 tracker:
   kind: linear
   api_key: "$LINEAR_API_KEY"
-  project_slug: "bigclaw-v50-parallel-distributed-platform-8a198fec793e"
+  project_slug: "8a198fec793e"
   active_states:
     - Todo
     - In Progress
