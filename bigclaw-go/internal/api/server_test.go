@@ -5,8 +5,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -311,6 +313,103 @@ func TestStreamEventsSupportsReplayAndFiltersByTrace(t *testing.T) {
 		}
 	case <-ctx.Done():
 		t.Fatal("timed out waiting for replayed event")
+	}
+}
+
+func TestSubscriberGroupLeaseEndpointsFenceConflictsAndRollback(t *testing.T) {
+	recorder := observability.NewRecorder()
+	server := &Server{
+		Recorder:         recorder,
+		Queue:            queue.NewMemoryQueue(),
+		Bus:              events.NewBus(),
+		SubscriberLeases: events.NewSubscriberLeaseCoordinator(),
+		Now:              func() time.Time { return time.Unix(1700000000, 0) },
+	}
+	handler := server.Handler()
+
+	acquireBody := bytes.NewReader([]byte(`{"group_id":"group-a","subscriber_id":"sub-a","consumer_id":"consumer-a","ttl_seconds":30}`))
+	acquireRequest := httptest.NewRequest(http.MethodPost, "/subscriber-groups/leases", acquireBody)
+	acquireResponse := httptest.NewRecorder()
+	handler.ServeHTTP(acquireResponse, acquireRequest)
+	if acquireResponse.Code != http.StatusOK {
+		t.Fatalf("expected acquire 200, got %d with %s", acquireResponse.Code, acquireResponse.Body.String())
+	}
+
+	var acquired struct {
+		Lease events.SubscriberLease `json:"lease"`
+	}
+	if err := json.Unmarshal(acquireResponse.Body.Bytes(), &acquired); err != nil {
+		t.Fatalf("decode acquire response: %v", err)
+	}
+
+	conflictBody := bytes.NewReader([]byte(`{"group_id":"group-a","subscriber_id":"sub-a","consumer_id":"consumer-b","ttl_seconds":30}`))
+	conflictRequest := httptest.NewRequest(http.MethodPost, "/subscriber-groups/leases", conflictBody)
+	conflictResponse := httptest.NewRecorder()
+	handler.ServeHTTP(conflictResponse, conflictRequest)
+	if conflictResponse.Code != http.StatusConflict {
+		t.Fatalf("expected conflict 409, got %d with %s", conflictResponse.Code, conflictResponse.Body.String())
+	}
+	if !strings.Contains(conflictResponse.Body.String(), "consumer-a") {
+		t.Fatalf("expected current owner in conflict payload, got %s", conflictResponse.Body.String())
+	}
+
+	epoch := strconv.FormatInt(acquired.Lease.LeaseEpoch, 10)
+
+	commitBody := bytes.NewReader([]byte(`{"group_id":"group-a","subscriber_id":"sub-a","consumer_id":"consumer-a","lease_token":"` + acquired.Lease.LeaseToken + `","lease_epoch":` + epoch + `,"checkpoint_offset":7,"checkpoint_event_id":"evt-7"}`))
+	commitRequest := httptest.NewRequest(http.MethodPost, "/subscriber-groups/checkpoints", commitBody)
+	commitResponse := httptest.NewRecorder()
+	handler.ServeHTTP(commitResponse, commitRequest)
+	if commitResponse.Code != http.StatusOK {
+		t.Fatalf("expected checkpoint commit 200, got %d with %s", commitResponse.Code, commitResponse.Body.String())
+	}
+
+	rollbackBody := bytes.NewReader([]byte(`{"group_id":"group-a","subscriber_id":"sub-a","consumer_id":"consumer-a","lease_token":"` + acquired.Lease.LeaseToken + `","lease_epoch":` + epoch + `,"checkpoint_offset":6,"checkpoint_event_id":"evt-6"}`))
+	rollbackRequest := httptest.NewRequest(http.MethodPost, "/subscriber-groups/checkpoints", rollbackBody)
+	rollbackResponse := httptest.NewRecorder()
+	handler.ServeHTTP(rollbackResponse, rollbackRequest)
+	if rollbackResponse.Code != http.StatusPreconditionFailed {
+		t.Fatalf("expected rollback fence 412, got %d with %s", rollbackResponse.Code, rollbackResponse.Body.String())
+	}
+
+	statusRequest := httptest.NewRequest(http.MethodGet, "/subscriber-groups/group-a/subscribers/sub-a", nil)
+	statusResponse := httptest.NewRecorder()
+	handler.ServeHTTP(statusResponse, statusRequest)
+	if statusResponse.Code != http.StatusOK {
+		t.Fatalf("expected lease status 200, got %d with %s", statusResponse.Code, statusResponse.Body.String())
+	}
+	if !strings.Contains(statusResponse.Body.String(), "\"checkpoint_offset\":7") {
+		t.Fatalf("expected checkpoint offset in status payload, got %s", statusResponse.Body.String())
+	}
+}
+
+func TestSubscriberGroupLeaseReleaseFencesStaleToken(t *testing.T) {
+	coordinator := events.NewSubscriberLeaseCoordinator()
+	now := time.Unix(1700000000, 0)
+	lease, err := coordinator.Acquire(events.LeaseRequest{
+		GroupID:      "group-a",
+		SubscriberID: "sub-a",
+		ConsumerID:   "consumer-a",
+		TTL:          5 * time.Second,
+		Now:          now,
+	})
+	if err != nil {
+		t.Fatalf("acquire initial lease: %v", err)
+	}
+	takeover, err := coordinator.Acquire(events.LeaseRequest{
+		GroupID:      "group-a",
+		SubscriberID: "sub-a",
+		ConsumerID:   "consumer-b",
+		TTL:          5 * time.Second,
+		Now:          now.Add(6 * time.Second),
+	})
+	if err != nil {
+		t.Fatalf("acquire takeover lease: %v", err)
+	}
+	if err := coordinator.Release("group-a", "sub-a", "consumer-a", lease.LeaseToken, lease.LeaseEpoch); !errors.Is(err, events.ErrLeaseFence) {
+		t.Fatalf("expected stale release to be fenced, got %v", err)
+	}
+	if err := coordinator.Release("group-a", "sub-a", "consumer-b", takeover.LeaseToken, takeover.LeaseEpoch); err != nil {
+		t.Fatalf("release active lease: %v", err)
 	}
 }
 

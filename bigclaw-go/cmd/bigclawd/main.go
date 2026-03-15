@@ -48,6 +48,7 @@ func main() {
 	}
 	registry := buildRegistry(cfg)
 	controller := control.New()
+	subscriberLeases := events.NewSubscriberLeaseCoordinator()
 	runtime := &worker.Runtime{
 		WorkerID:    "bootstrap-worker",
 		Queue:       q,
@@ -70,9 +71,10 @@ func main() {
 		Executors: registry.Kinds(),
 		Bus:       bus,
 		EventPlan: events.NewDurabilityPlan(cfg.EventLogBackend, cfg.EventLogTargetBackend, cfg.EventLogReplicationFactor),
-		EventLog:  eventLog,
-		Worker:    runtime,
-		Control:   controller,
+		EventLog:         eventLog,
+		SubscriberLeases: subscriberLeases,
+		Worker:           runtime,
+		Control:          controller,
 	}
 	httpServer := &http.Server{Addr: cfg.HTTPAddr, Handler: server.Handler()}
 	go func() {
