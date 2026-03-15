@@ -42,6 +42,83 @@ func (fakeWorkerPoolStatus) Snapshots() []worker.Status {
 	}
 }
 
+type blockingEventLog struct {
+	history       []domain.Event
+	replayStarted chan struct{}
+	release       chan struct{}
+}
+
+func (l *blockingEventLog) Write(context.Context, domain.Event) error {
+	return nil
+}
+
+func (l *blockingEventLog) Replay(limit int) ([]domain.Event, error) {
+	return l.query("", "", "", limit), nil
+}
+
+func (l *blockingEventLog) ReplayAfter(afterID string, limit int) ([]domain.Event, error) {
+	return l.query("", "", afterID, limit), nil
+}
+
+func (l *blockingEventLog) EventsByTask(taskID string, limit int) ([]domain.Event, error) {
+	return l.query(taskID, "", "", limit), nil
+}
+
+func (l *blockingEventLog) EventsByTaskAfter(taskID string, afterID string, limit int) ([]domain.Event, error) {
+	return l.query(taskID, "", afterID, limit), nil
+}
+
+func (l *blockingEventLog) EventsByTrace(traceID string, limit int) ([]domain.Event, error) {
+	return l.query("", traceID, "", limit), nil
+}
+
+func (l *blockingEventLog) EventsByTraceAfter(traceID string, afterID string, limit int) ([]domain.Event, error) {
+	return l.query("", traceID, afterID, limit), nil
+}
+
+func (l *blockingEventLog) Path() string {
+	return "blocking"
+}
+
+func (l *blockingEventLog) Close() error {
+	return nil
+}
+
+func (l *blockingEventLog) query(taskID, traceID, afterID string, limit int) []domain.Event {
+	select {
+	case l.replayStarted <- struct{}{}:
+	default:
+	}
+	<-l.release
+	start := 0
+	if afterID != "" {
+		for index, event := range l.history {
+			if event.ID == afterID {
+				start = index + 1
+			}
+		}
+	}
+	filtered := make([]domain.Event, 0, len(l.history)-start)
+	for _, event := range l.history[start:] {
+		if taskID != "" && event.TaskID != taskID {
+			continue
+		}
+		if traceID != "" && event.TraceID != traceID {
+			continue
+		}
+		filtered = append(filtered, event)
+		if afterID != "" && limit > 0 && len(filtered) >= limit {
+			break
+		}
+	}
+	if afterID == "" && limit > 0 && len(filtered) > limit {
+		filtered = filtered[len(filtered)-limit:]
+	}
+	out := make([]domain.Event, len(filtered))
+	copy(out, filtered)
+	return out
+}
+
 func TestCreateTaskAndQueryStatus(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()
@@ -2070,5 +2147,77 @@ func TestStreamEventsResumeUsesLastEventID(t *testing.T) {
 		}
 	case <-ctx.Done():
 		t.Fatal("timed out waiting for resumed SSE event")
+	}
+}
+
+func TestStreamEventsReplayLiveHandoffDeduplicatesOverlap(t *testing.T) {
+	evt1 := domain.Event{ID: "evt-stream-1", Type: domain.EventTaskQueued, TaskID: "task-stream", TraceID: "trace-stream", Timestamp: time.Now()}
+	evt2 := domain.Event{ID: "evt-stream-2", Type: domain.EventTaskStarted, TaskID: "task-stream", TraceID: "trace-stream", Timestamp: time.Now().Add(time.Second)}
+	log := &blockingEventLog{
+		history:       []domain.Event{evt1, evt2},
+		replayStarted: make(chan struct{}, 1),
+		release:       make(chan struct{}),
+	}
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: log, Now: time.Now}
+	ts := httptest.NewServer(server.Handler())
+	defer ts.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, ts.URL+"/stream/events?trace_id=trace-stream&after_id=evt-before&limit=10", nil)
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+	type streamResult struct {
+		lines []string
+		err   string
+	}
+	resultCh := make(chan streamResult, 1)
+	go func() {
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			resultCh <- streamResult{err: err.Error()}
+			return
+		}
+		defer response.Body.Close()
+		reader := bufio.NewReader(response.Body)
+		lines := make([]string, 0)
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				resultCh <- streamResult{lines: lines, err: err.Error()}
+				return
+			}
+			line = strings.TrimSpace(line)
+			if line != "" {
+				lines = append(lines, line)
+			}
+		}
+	}()
+
+	select {
+	case <-log.replayStarted:
+	case <-ctx.Done():
+		t.Fatal("timed out waiting for replay to start")
+	}
+	server.Bus.Publish(evt2)
+	close(log.release)
+
+	select {
+	case result := <-resultCh:
+		if result.err == "" {
+			t.Fatal("expected request to end after context cancellation")
+		}
+		if len(result.lines) != 4 {
+			t.Fatalf("expected exactly two SSE events without duplicates, got %d lines: %+v", len(result.lines), result.lines)
+		}
+		if !strings.Contains(result.lines[0], "evt-stream-1") || result.lines[1] != "id: evt-stream-1" {
+			t.Fatalf("unexpected first replayed event lines: %+v", result.lines)
+		}
+		if !strings.Contains(result.lines[2], "evt-stream-2") || result.lines[3] != "id: evt-stream-2" {
+			t.Fatalf("unexpected second replayed event lines: %+v", result.lines)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for replay/live handoff result")
 	}
 }

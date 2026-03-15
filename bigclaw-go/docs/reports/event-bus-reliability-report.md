@@ -23,6 +23,7 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 - Durable event log replay can serve task/trace history across process restarts when the shared SQLite log is configured.
 - Cursor-based replay can resume `/events` and SSE consumers from a prior event id without replaying the full stream.
 - SSE reconnects can recover missed trace/task events by honoring `Last-Event-ID` against the durable event log.
+- SSE now subscribes before replay and deduplicates overlap so replay/live handoff stays gap-free across reconnect catch-up.
 
 ## Evidence
 
@@ -40,4 +41,3 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 
 - No delivery acknowledgement protocol beyond sink-level best effort.
 - No partitioned topic model or cross-process subscriber coordination yet.
-- A small catch-up gap still exists between replay completion and live subscription handoff for SSE clients.

@@ -336,6 +336,9 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
+	ch, cancel := s.Bus.Subscribe(128)
+	defer cancel()
+	delivered := make(map[string]struct{})
 	if replay {
 		history, _, err := s.queryEvents(taskID, traceID, afterID, limit)
 		if err != nil {
@@ -343,13 +346,14 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		for _, event := range history {
+			if !markStreamEventDelivered(delivered, event) {
+				continue
+			}
 			if err := writeSSEEvent(w, flusher, event); err != nil {
 				return
 			}
 		}
 	}
-	ch, cancel := s.Bus.Subscribe(128)
-	defer cancel()
 	for {
 		select {
 		case <-r.Context().Done():
@@ -359,6 +363,9 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			if !matchesEventStreamFilter(event, taskID, traceID) {
+				continue
+			}
+			if !markStreamEventDelivered(delivered, event) {
 				continue
 			}
 			if err := writeSSEEvent(w, flusher, event); err != nil {
@@ -444,6 +451,22 @@ func nextAfterID(events []domain.Event, fallback string) string {
 		}
 	}
 	return fallback
+}
+
+func markStreamEventDelivered(delivered map[string]struct{}, event domain.Event) bool {
+	key := streamEventKey(event)
+	if _, ok := delivered[key]; ok {
+		return false
+	}
+	delivered[key] = struct{}{}
+	return true
+}
+
+func streamEventKey(event domain.Event) string {
+	if event.ID != "" {
+		return "id:" + event.ID
+	}
+	return fmt.Sprintf("anon:%s:%s:%s:%s:%d", event.Type, event.TaskID, event.TraceID, event.RunID, event.Timestamp.UnixNano())
 }
 
 func writeSSEEvent(w http.ResponseWriter, flusher http.Flusher, event domain.Event) error {
