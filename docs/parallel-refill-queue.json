@@ -23,38 +23,41 @@
       "OPE-215",
       "OPE-216",
       "OPE-217",
-      "OPE-219"
+      "OPE-219",
+      "OPE-220",
+      "OPE-221",
+      "OPE-222"
     ],
     "active": [
-      "OPE-220",
-      "OPE-221"
+      "OPE-223",
+      "OPE-224"
     ],
     "standby": [
-      "OPE-222"
+      "OPE-225"
     ]
   },
   "issue_order": [
-    "OPE-220",
-    "OPE-221",
-    "OPE-222"
+    "OPE-223",
+    "OPE-224",
+    "OPE-225"
   ],
   "issues": [
     {
-      "identifier": "OPE-220",
-      "title": "BIG-PAR-033 retention watermark / replay horizon surface",
-      "track": "Replay Horizon",
+      "identifier": "OPE-223",
+      "title": "BIG-PAR-036 durable replay retention backend bootstrap",
+      "track": "Retention Backend",
       "status": "In Progress"
     },
     {
-      "identifier": "OPE-221",
-      "title": "BIG-PAR-034 durable consumer dedup store bootstrap",
-      "track": "Durable Dedup",
+      "identifier": "OPE-224",
+      "title": "BIG-PAR-037 broker-backed event-log adapter bootstrap",
+      "track": "Broker Adapter",
       "status": "In Progress"
     },
     {
-      "identifier": "OPE-222",
-      "title": "BIG-PAR-035 replicated event-log durability rollout contract",
-      "track": "Replicated Durability",
+      "identifier": "OPE-225",
+      "title": "BIG-PAR-038 Kubernetes / Ray / shared-queue validation bundle refresh",
+      "track": "Validation Bundle",
       "status": "Todo"
     }
   ]
