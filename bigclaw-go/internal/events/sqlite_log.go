@@ -7,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"time"
 
 	"bigclaw-go/internal/domain"
 	_ "modernc.org/sqlite"
@@ -77,6 +78,13 @@ func (s *SQLiteEventLog) init() error {
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_event_log_task ON event_log(task_id, seq);`,
 		`CREATE INDEX IF NOT EXISTS idx_event_log_trace ON event_log(trace_id, seq);`,
+		`CREATE INDEX IF NOT EXISTS idx_event_log_type ON event_log(event_type, seq);`,
+		`CREATE TABLE IF NOT EXISTS subscriber_checkpoint (
+			subscriber_id TEXT PRIMARY KEY,
+			event_id TEXT NOT NULL,
+			event_seq INTEGER NOT NULL,
+			updated_at_ns INTEGER NOT NULL
+		);`,
 	}
 	for _, stmt := range stmts {
 		if _, err := s.db.Exec(stmt); err != nil {
@@ -122,6 +130,51 @@ func (s *SQLiteEventLog) EventsByTraceAfter(traceID string, afterID string, limi
 	return s.queryAfter(`SELECT raw FROM event_log WHERE trace_id = ? AND seq > ? ORDER BY seq ASC`, []any{traceID}, afterID, limit)
 }
 
+func (s *SQLiteEventLog) Acknowledge(subscriberID string, eventID string, at time.Time) (SubscriberCheckpoint, error) {
+	if s == nil || s.db == nil {
+		return SubscriberCheckpoint{}, nil
+	}
+	if subscriberID == "" || eventID == "" {
+		return SubscriberCheckpoint{}, sql.ErrNoRows
+	}
+	seq, ok, err := s.lookupSequenceForEventID(eventID)
+	if err != nil {
+		return SubscriberCheckpoint{}, err
+	}
+	if !ok {
+		return SubscriberCheckpoint{}, sql.ErrNoRows
+	}
+	if at.IsZero() {
+		at = time.Now().UTC()
+	}
+	_, err = s.db.Exec(`
+		INSERT INTO subscriber_checkpoint(subscriber_id, event_id, event_seq, updated_at_ns)
+		VALUES(?, ?, ?, ?)
+		ON CONFLICT(subscriber_id) DO UPDATE SET
+			event_id = excluded.event_id,
+			event_seq = excluded.event_seq,
+			updated_at_ns = excluded.updated_at_ns
+	`, subscriberID, eventID, seq, at.UnixNano())
+	if err != nil {
+		return SubscriberCheckpoint{}, err
+	}
+	return s.Checkpoint(subscriberID)
+}
+
+func (s *SQLiteEventLog) Checkpoint(subscriberID string) (SubscriberCheckpoint, error) {
+	if s == nil || s.db == nil {
+		return SubscriberCheckpoint{}, sql.ErrNoRows
+	}
+	row := s.db.QueryRow(`SELECT subscriber_id, event_id, updated_at_ns FROM subscriber_checkpoint WHERE subscriber_id = ?`, subscriberID)
+	var checkpoint SubscriberCheckpoint
+	var updatedAtNS int64
+	if err := row.Scan(&checkpoint.SubscriberID, &checkpoint.EventID, &updatedAtNS); err != nil {
+		return SubscriberCheckpoint{}, err
+	}
+	checkpoint.UpdatedAt = time.Unix(0, updatedAtNS).UTC()
+	return checkpoint, nil
+}
+
 func (s *SQLiteEventLog) queryAfter(base string, args []any, afterID string, limit int) ([]domain.Event, error) {
 	if s == nil || s.db == nil {
 		return nil, nil
@@ -161,18 +214,23 @@ func (s *SQLiteEventLog) queryAfter(base string, args []any, afterID string, lim
 }
 
 func (s *SQLiteEventLog) sequenceForEventID(eventID string) (int64, error) {
+	seq, _, err := s.lookupSequenceForEventID(eventID)
+	return seq, err
+}
+
+func (s *SQLiteEventLog) lookupSequenceForEventID(eventID string) (int64, bool, error) {
 	if s == nil || s.db == nil || eventID == "" {
-		return 0, nil
+		return 0, false, nil
 	}
 	row := s.db.QueryRow(`SELECT seq FROM event_log WHERE event_id = ? ORDER BY seq DESC LIMIT 1`, eventID)
 	var seq int64
 	if err := row.Scan(&seq); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return 0, nil
+			return 0, false, nil
 		}
-		return 0, err
+		return 0, false, err
 	}
-	return seq, nil
+	return seq, true, nil
 }
 
 func (s *SQLiteEventLog) query(base string, args []any, limit int) ([]domain.Event, error) {
@@ -216,6 +274,7 @@ func reverseEvents(events []domain.Event) {
 }
 
 var _ EventLog = (*SQLiteEventLog)(nil)
+var _ CheckpointStore = (*SQLiteEventLog)(nil)
 
 func IsNoEventLog(err error) bool {
 	return errors.Is(err, sql.ErrNoRows)

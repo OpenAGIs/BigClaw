@@ -68,20 +68,29 @@ func (s *Server) Handler() http.Handler {
 		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 		taskID := r.URL.Query().Get("task_id")
 		traceID := r.URL.Query().Get("trace_id")
-		afterID := strings.TrimSpace(r.URL.Query().Get("after_id"))
-		events, backend, err := s.queryEvents(taskID, traceID, afterID, limit)
+		subscriberID := strings.TrimSpace(r.URL.Query().Get("subscriber_id"))
+		afterID, err := s.resolveAfterID(subscriberID, strings.TrimSpace(r.URL.Query().Get("after_id")))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		eventTypes := parseEventTypes(r.URL.Query()["event_type"])
+		events, backend, err := s.queryEvents(taskID, traceID, afterID, eventTypes, limit)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{
 			"events":        events,
+			"subscriber_id": subscriberID,
 			"after_id":      afterID,
 			"next_after_id": nextAfterID(events, afterID),
+			"event_types":   eventTypes,
 			"backend":       backend,
 			"durable":       s.EventLog != nil,
 		})
 	})
+	mux.HandleFunc("/stream/events/checkpoints/", s.handleStreamEventCheckpoint)
 	mux.HandleFunc("/stream/events", s.handleStreamEvents)
 	mux.HandleFunc("/audit", func(w http.ResponseWriter, r *http.Request) {
 		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -315,6 +324,60 @@ func (s *Server) handleDeadLetterAction(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusAccepted, map[string]any{"task_id": taskID, "state": string(domain.TaskQueued), "replayed": true})
 }
 
+func (s *Server) handleStreamEventCheckpoint(w http.ResponseWriter, r *http.Request) {
+	store := s.checkpointStore()
+	if store == nil {
+		http.Error(w, "checkpoint store unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	subscriberID := strings.TrimPrefix(r.URL.Path, "/stream/events/checkpoints/")
+	if subscriberID == "" {
+		http.Error(w, "missing subscriber id", http.StatusBadRequest)
+		return
+	}
+	switch r.Method {
+	case http.MethodGet:
+		checkpoint, err := store.Checkpoint(subscriberID)
+		if err != nil {
+			if events.IsNoEventLog(err) {
+				http.Error(w, "checkpoint not found", http.StatusNotFound)
+				return
+			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"checkpoint": checkpoint,
+			"backend":    "sqlite",
+			"durable":    s.EventLog != nil,
+		})
+	case http.MethodPost:
+		var payload struct {
+			EventID string `json:"event_id"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, fmt.Sprintf("decode checkpoint ack: %v", err), http.StatusBadRequest)
+			return
+		}
+		checkpoint, err := store.Acknowledge(subscriberID, strings.TrimSpace(payload.EventID), s.Now())
+		if err != nil {
+			if events.IsNoEventLog(err) {
+				http.Error(w, "event not found", http.StatusNotFound)
+				return
+			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"checkpoint": checkpoint,
+			"backend":    "sqlite",
+			"durable":    s.EventLog != nil,
+		})
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
 func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 	if s.Bus == nil {
 		http.Error(w, "event bus unavailable", http.StatusServiceUnavailable)
@@ -323,10 +386,18 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	taskID := r.URL.Query().Get("task_id")
 	traceID := r.URL.Query().Get("trace_id")
+	subscriberID := strings.TrimSpace(r.URL.Query().Get("subscriber_id"))
 	afterID := strings.TrimSpace(r.URL.Query().Get("after_id"))
 	if afterID == "" {
 		afterID = strings.TrimSpace(r.Header.Get("Last-Event-ID"))
 	}
+	afterID, err := s.resolveAfterID(subscriberID, afterID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	eventTypes := parseEventTypes(r.URL.Query()["event_type"])
+	eventTypeSet := toEventTypeSet(eventTypes)
 	replay := r.URL.Query().Get("replay") == "1" || afterID != ""
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -336,11 +407,11 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
-	ch, cancel := s.Bus.Subscribe(128)
+	ch, cancel := s.Bus.SubscribeTopic(128, events.SubscriptionFilter{TaskID: taskID, TraceID: traceID, EventTypes: eventTypeSet})
 	defer cancel()
 	delivered := make(map[string]struct{})
 	if replay {
-		history, _, err := s.queryEvents(taskID, traceID, afterID, limit)
+		history, _, err := s.queryEvents(taskID, traceID, afterID, eventTypes, limit)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -362,7 +433,7 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 			if !ok {
 				return
 			}
-			if !matchesEventStreamFilter(event, taskID, traceID) {
+			if !matchesEventStreamFilter(event, taskID, traceID, eventTypeSet) {
 				continue
 			}
 			if !markStreamEventDelivered(delivered, event) {
@@ -375,34 +446,40 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) queryEvents(taskID, traceID, afterID string, limit int) ([]domain.Event, string, error) {
+func (s *Server) queryEvents(taskID, traceID, afterID string, eventTypes []domain.EventType, limit int) ([]domain.Event, string, error) {
+	backendLimit := limit
+	if len(eventTypes) > 0 {
+		backendLimit = 0
+	}
 	if s.EventLog != nil {
+		var history []domain.Event
+		var err error
 		if afterID != "" {
 			switch {
 			case taskID != "":
-				events, err := s.EventLog.EventsByTaskAfter(taskID, afterID, limit)
-				return events, "sqlite", err
+				history, err = s.EventLog.EventsByTaskAfter(taskID, afterID, backendLimit)
 			case traceID != "":
-				events, err := s.EventLog.EventsByTraceAfter(traceID, afterID, limit)
-				return events, "sqlite", err
+				history, err = s.EventLog.EventsByTraceAfter(traceID, afterID, backendLimit)
 			default:
-				events, err := s.EventLog.ReplayAfter(afterID, limit)
-				return events, "sqlite", err
+				history, err = s.EventLog.ReplayAfter(afterID, backendLimit)
+			}
+		} else {
+			switch {
+			case taskID != "":
+				history, err = s.EventLog.EventsByTask(taskID, backendLimit)
+			case traceID != "":
+				history, err = s.EventLog.EventsByTrace(traceID, backendLimit)
+			default:
+				history, err = s.EventLog.Replay(backendLimit)
 			}
 		}
-		switch {
-		case taskID != "":
-			events, err := s.EventLog.EventsByTask(taskID, limit)
-			return events, "sqlite", err
-		case traceID != "":
-			events, err := s.EventLog.EventsByTrace(traceID, limit)
-			return events, "sqlite", err
-		default:
-			events, err := s.EventLog.Replay(limit)
-			return events, "sqlite", err
+		if err != nil {
+			return nil, "sqlite", err
 		}
+		return limitQueriedEvents(filterEventsByType(history, eventTypes), afterID, limit), "sqlite", nil
 	}
-	return s.queryMemoryEvents(taskID, traceID, afterID, limit), "memory", nil
+	history := s.queryMemoryEvents(taskID, traceID, afterID, backendLimit)
+	return limitQueriedEvents(filterEventsByType(history, eventTypes), afterID, limit), "memory", nil
 }
 
 func (s *Server) queryMemoryEvents(taskID, traceID, afterID string, limit int) []domain.Event {
@@ -413,7 +490,7 @@ func (s *Server) queryMemoryEvents(taskID, traceID, afterID string, limit int) [
 	if afterID == "" {
 		filtered := make([]domain.Event, 0, len(logs))
 		for _, event := range logs {
-			if !matchesEventStreamFilter(event, taskID, traceID) {
+			if !matchesEventStreamFilter(event, taskID, traceID, nil) {
 				continue
 			}
 			filtered = append(filtered, event)
@@ -433,7 +510,7 @@ func (s *Server) queryMemoryEvents(taskID, traceID, afterID string, limit int) [
 	}
 	filtered := make([]domain.Event, 0, len(logs)-start)
 	for _, event := range logs[start:] {
-		if !matchesEventStreamFilter(event, taskID, traceID) {
+		if !matchesEventStreamFilter(event, taskID, traceID, nil) {
 			continue
 		}
 		filtered = append(filtered, event)
@@ -442,6 +519,94 @@ func (s *Server) queryMemoryEvents(taskID, traceID, afterID string, limit int) [
 		}
 	}
 	return filtered
+}
+
+func (s *Server) checkpointStore() events.CheckpointStore {
+	if store, ok := s.EventLog.(events.CheckpointStore); ok {
+		return store
+	}
+	return nil
+}
+
+func (s *Server) resolveAfterID(subscriberID string, afterID string) (string, error) {
+	if afterID != "" || subscriberID == "" {
+		return afterID, nil
+	}
+	store := s.checkpointStore()
+	if store == nil {
+		return "", nil
+	}
+	checkpoint, err := store.Checkpoint(subscriberID)
+	if err != nil {
+		if events.IsNoEventLog(err) {
+			return "", nil
+		}
+		return "", err
+	}
+	return checkpoint.EventID, nil
+}
+
+func parseEventTypes(values []string) []domain.EventType {
+	seen := make(map[domain.EventType]struct{})
+	out := make([]domain.EventType, 0)
+	for _, value := range values {
+		for _, part := range strings.Split(value, ",") {
+			part = strings.TrimSpace(part)
+			if part == "" {
+				continue
+			}
+			eventType := domain.EventType(part)
+			if _, ok := seen[eventType]; ok {
+				continue
+			}
+			seen[eventType] = struct{}{}
+			out = append(out, eventType)
+		}
+	}
+	return out
+}
+
+func toEventTypeSet(eventTypes []domain.EventType) map[domain.EventType]struct{} {
+	if len(eventTypes) == 0 {
+		return nil
+	}
+	set := make(map[domain.EventType]struct{}, len(eventTypes))
+	for _, eventType := range eventTypes {
+		set[eventType] = struct{}{}
+	}
+	return set
+}
+
+func filterEventsByType(events []domain.Event, eventTypes []domain.EventType) []domain.Event {
+	if len(eventTypes) == 0 {
+		out := make([]domain.Event, len(events))
+		copy(out, events)
+		return out
+	}
+	allowed := toEventTypeSet(eventTypes)
+	filtered := make([]domain.Event, 0, len(events))
+	for _, event := range events {
+		if _, ok := allowed[event.Type]; ok {
+			filtered = append(filtered, event)
+		}
+	}
+	return filtered
+}
+
+func limitQueriedEvents(events []domain.Event, afterID string, limit int) []domain.Event {
+	if limit <= 0 || len(events) <= limit {
+		out := make([]domain.Event, len(events))
+		copy(out, events)
+		return out
+	}
+	if afterID != "" {
+		out := make([]domain.Event, limit)
+		copy(out, events[:limit])
+		return out
+	}
+	out := make([]domain.Event, limit)
+	copy(out, events[len(events)-limit:])
+	return out
 }
 
 func nextAfterID(events []domain.Event, fallback string) string {
@@ -489,12 +654,17 @@ func writeSSEEvent(w http.ResponseWriter, flusher http.Flusher, event domain.Eve
 	return nil
 }
 
-func matchesEventStreamFilter(event domain.Event, taskID string, traceID string) bool {
+func matchesEventStreamFilter(event domain.Event, taskID string, traceID string, eventTypes map[domain.EventType]struct{}) bool {
 	if taskID != "" && event.TaskID != taskID {
 		return false
 	}
 	if traceID != "" && event.TraceID != traceID {
 		return false
+	}
+	if len(eventTypes) > 0 {
+		if _, ok := eventTypes[event.Type]; !ok {
+			return false
+		}
 	}
 	return true
 }

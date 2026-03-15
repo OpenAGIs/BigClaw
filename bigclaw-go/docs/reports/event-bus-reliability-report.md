@@ -8,10 +8,12 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 
 - In-process publish/subscribe bus with replay history
 - Optional SQLite-backed durable event log for cross-process replay
+- Durable subscriber checkpoints for acknowledged consumer resume positions
 - Recorder sink integration for audit/debug persistence
 - Webhook sink integration for external fanout
 - SSE stream via `GET /stream/events`
-- Optional SSE replay and filtering via `replay=1`, `after_id`, `Last-Event-ID`, `task_id`, and `trace_id`
+- Optional SSE replay and filtering via `replay=1`, `after_id`, `Last-Event-ID`, `subscriber_id`, `task_id`, `trace_id`, and `event_type`
+- Topic-scoped in-process subscriptions via task / trace / event-type filters
 
 ## Validated behaviors
 
@@ -24,6 +26,8 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 - Cursor-based replay can resume `/events` and SSE consumers from a prior event id without replaying the full stream.
 - SSE reconnects can recover missed trace/task events by honoring `Last-Event-ID` against the durable event log.
 - SSE now subscribes before replay and deduplicates overlap so replay/live handoff stays gap-free across reconnect catch-up.
+- Subscriber checkpoints can be acknowledged explicitly and reused across process restarts to resume `/events` and SSE streams from shared durable state.
+- Topic-scoped subscriptions and `event_type` filters prevent unrelated events from being replayed or fanned out to filtered consumers.
 
 ## Evidence
 
@@ -39,5 +43,5 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 
 ## Remaining gaps
 
-- No delivery acknowledgement protocol beyond sink-level best effort.
-- No partitioned topic model or cross-process subscriber coordination yet.
+- Durable coordination still depends on a shared SQLite file rather than a replicated event broker or quorum-backed log.
+- Subscriber checkpoints track the last acknowledged event id, but they do not yet enforce exactly-once processing semantics for downstream handlers.

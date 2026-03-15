@@ -2221,3 +2221,128 @@ func TestStreamEventsReplayLiveHandoffDeduplicatesOverlap(t *testing.T) {
 		t.Fatal("timed out waiting for replay/live handoff result")
 	}
 }
+
+func TestEventsEndpointFiltersByEventType(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	base := time.Now()
+	bus.Publish(domain.Event{ID: "evt-filter-1", Type: domain.EventTaskQueued, TaskID: "task-filter", TraceID: "trace-filter", Timestamp: base})
+	bus.Publish(domain.Event{ID: "evt-filter-2", Type: domain.EventTaskStarted, TaskID: "task-filter", TraceID: "trace-filter", Timestamp: base.Add(time.Second)})
+	bus.Publish(domain.Event{ID: "evt-filter-3", Type: domain.EventTaskCompleted, TaskID: "task-filter", TraceID: "trace-filter", Timestamp: base.Add(2 * time.Second)})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/events?trace_id=trace-filter&event_type=task.started&limit=10", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected events 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Events     []domain.Event     `json:"events"`
+		EventTypes []domain.EventType `json:"event_types"`
+		Backend    string             `json:"backend"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode filtered events response: %v", err)
+	}
+	if len(decoded.Events) != 1 || decoded.Events[0].ID != "evt-filter-2" || decoded.Events[0].Type != domain.EventTaskStarted {
+		t.Fatalf("unexpected filtered events: %+v", decoded.Events)
+	}
+	if len(decoded.EventTypes) != 1 || decoded.EventTypes[0] != domain.EventTaskStarted || decoded.Backend != "memory" {
+		t.Fatalf("unexpected filter metadata: %+v", decoded)
+	}
+}
+
+func TestStreamEventCheckpointEndpointAndResume(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "event-log.db")
+	log1, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	base := time.Now()
+	for _, event := range []domain.Event{
+		{ID: "evt-check-1", Type: domain.EventTaskQueued, TaskID: "task-check", TraceID: "trace-check", Timestamp: base},
+		{ID: "evt-check-2", Type: domain.EventTaskStarted, TaskID: "task-check", TraceID: "trace-check", Timestamp: base.Add(time.Second)},
+	} {
+		if err := log1.Write(context.Background(), event); err != nil {
+			t.Fatalf("write checkpoint event %s: %v", event.ID, err)
+		}
+	}
+	server1 := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: log1, Now: time.Now}
+	ackBody := bytes.NewBufferString(`{"event_id":"evt-check-1"}`)
+	ackRequest := httptest.NewRequest(http.MethodPost, "/stream/events/checkpoints/subscriber-a", ackBody)
+	ackResponse := httptest.NewRecorder()
+	server1.Handler().ServeHTTP(ackResponse, ackRequest)
+	if ackResponse.Code != http.StatusOK {
+		t.Fatalf("expected checkpoint ack 200, got %d %s", ackResponse.Code, ackResponse.Body.String())
+	}
+	checkpointRequest := httptest.NewRequest(http.MethodGet, "/stream/events/checkpoints/subscriber-a", nil)
+	checkpointResponse := httptest.NewRecorder()
+	server1.Handler().ServeHTTP(checkpointResponse, checkpointRequest)
+	if checkpointResponse.Code != http.StatusOK {
+		t.Fatalf("expected checkpoint get 200, got %d %s", checkpointResponse.Code, checkpointResponse.Body.String())
+	}
+	var checkpointDecoded struct {
+		Checkpoint events.SubscriberCheckpoint `json:"checkpoint"`
+	}
+	if err := json.Unmarshal(checkpointResponse.Body.Bytes(), &checkpointDecoded); err != nil {
+		t.Fatalf("decode checkpoint response: %v", err)
+	}
+	if checkpointDecoded.Checkpoint.EventID != "evt-check-1" || checkpointDecoded.Checkpoint.SubscriberID != "subscriber-a" {
+		t.Fatalf("unexpected checkpoint payload: %+v", checkpointDecoded.Checkpoint)
+	}
+	if err := log1.Close(); err != nil {
+		t.Fatalf("close first sqlite event log: %v", err)
+	}
+
+	log2, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("reopen sqlite event log: %v", err)
+	}
+	defer func() { _ = log2.Close() }()
+	server2 := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: log2, Now: time.Now}
+	ts := httptest.NewServer(server2.Handler())
+	defer ts.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, ts.URL+"/stream/events?subscriber_id=subscriber-a&trace_id=trace-check&event_type=task.started&limit=10", nil)
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+	resultCh := make(chan [3]string, 1)
+	go func() {
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			resultCh <- [3]string{"ERROR", err.Error(), ""}
+			return
+		}
+		defer response.Body.Close()
+		reader := bufio.NewReader(response.Body)
+		line1, err := reader.ReadString('\n')
+		if err != nil {
+			resultCh <- [3]string{"ERROR", err.Error(), ""}
+			return
+		}
+		line2, err := reader.ReadString('\n')
+		if err != nil {
+			resultCh <- [3]string{"ERROR", err.Error(), ""}
+			return
+		}
+		resultCh <- [3]string{response.Status, strings.TrimSpace(line1), strings.TrimSpace(line2)}
+	}()
+	select {
+	case result := <-resultCh:
+		if result[0] == "ERROR" {
+			t.Fatalf("stream request failed: %s", result[1])
+		}
+		if !strings.Contains(result[1], "evt-check-2") || strings.Contains(result[1], "evt-check-1") {
+			t.Fatalf("expected resumed filtered event in first SSE line, got %q", result[1])
+		}
+		if result[2] != "id: evt-check-2" {
+			t.Fatalf("expected SSE id line for resumed event, got %q", result[2])
+		}
+	case <-ctx.Done():
+		t.Fatal("timed out waiting for checkpoint-resumed SSE event")
+	}
+}

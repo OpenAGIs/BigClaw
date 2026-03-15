@@ -86,3 +86,38 @@ func TestSQLiteEventLogReplayAfterCursor(t *testing.T) {
 		t.Fatalf("unexpected replay when cursor missing: %+v", missingCursor)
 	}
 }
+
+func TestSQLiteEventLogCheckpointPersistsAcrossInstances(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "event-log.db")
+	log1, err := NewSQLiteEventLog(path)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	base := time.Now()
+	if err := log1.Write(context.Background(), domain.Event{ID: "evt-check-1", Type: domain.EventTaskQueued, TaskID: "task-check", TraceID: "trace-check", Timestamp: base}); err != nil {
+		t.Fatalf("write event: %v", err)
+	}
+	checkpoint, err := log1.Acknowledge("subscriber-a", "evt-check-1", base.Add(time.Second))
+	if err != nil {
+		t.Fatalf("acknowledge checkpoint: %v", err)
+	}
+	if checkpoint.EventID != "evt-check-1" {
+		t.Fatalf("unexpected checkpoint after ack: %+v", checkpoint)
+	}
+	if err := log1.Close(); err != nil {
+		t.Fatalf("close first sqlite event log: %v", err)
+	}
+
+	log2, err := NewSQLiteEventLog(path)
+	if err != nil {
+		t.Fatalf("reopen sqlite event log: %v", err)
+	}
+	defer func() { _ = log2.Close() }()
+	checkpoint, err = log2.Checkpoint("subscriber-a")
+	if err != nil {
+		t.Fatalf("read checkpoint after reopen: %v", err)
+	}
+	if checkpoint.EventID != "evt-check-1" || checkpoint.SubscriberID != "subscriber-a" {
+		t.Fatalf("unexpected reopened checkpoint: %+v", checkpoint)
+	}
+}
