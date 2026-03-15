@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"bigclaw-go/internal/config"
 	"bigclaw-go/internal/control"
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/events"
@@ -44,6 +45,8 @@ type Server struct {
 	FlowStore        *flow.Store
 	SchedulerPolicy  *scheduler.PolicyStore
 	SchedulerRuntime *scheduler.Scheduler
+	RuntimeConfig    config.Config
+	ReportsDir       string
 }
 
 type checkpointDiagnostics struct {

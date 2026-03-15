@@ -112,6 +112,8 @@ func main() {
 		Control:          controller,
 		SchedulerPolicy:  policyStore,
 		SchedulerRuntime: schedulerRuntime,
+		RuntimeConfig:    cfg,
+		ReportsDir:       "docs/reports",
 	}
 	httpServer := &http.Server{Addr: cfg.HTTPAddr, Handler: server.Handler()}
 	go func() {
