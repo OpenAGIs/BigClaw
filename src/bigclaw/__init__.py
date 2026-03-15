@@ -116,7 +116,7 @@ from .audit_events import (
     get_audit_event_spec,
     missing_required_fields,
 )
-from .observability import ObservabilityLedger, RunCloseout, TaskRun
+from .observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, RunCloseout, TaskRun
 from .orchestration import (
     CrossDepartmentOrchestrator,
     DepartmentHandoff,
@@ -214,6 +214,7 @@ from .reports import (
     render_takeover_queue_report,
     render_pilot_portfolio_report,
     render_pilot_scorecard,
+    render_repo_sync_audit_report,
     render_task_run_detail_page,
     render_task_run_report,
     validation_report_exists,
@@ -407,6 +408,9 @@ __all__ = [
     "get_audit_event_spec",
     "missing_required_fields",
     "ObservabilityLedger",
+    "GitSyncTelemetry",
+    "PullRequestFreshness",
+    "RepoSyncAudit",
     "RunCloseout",
     "TaskRun",
     "CrossDepartmentOrchestrator",
@@ -497,6 +501,7 @@ __all__ = [
     "render_takeover_queue_report",
     "render_pilot_portfolio_report",
     "render_pilot_scorecard",
+    "render_repo_sync_audit_report",
     "render_task_run_detail_page",
     "render_task_run_report",
     "validation_report_exists",

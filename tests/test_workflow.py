@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from bigclaw.models import Priority, RiskLevel, Task
-from bigclaw.observability import ObservabilityLedger
+from bigclaw.observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit
 from bigclaw.reports import PilotMetric, PilotScorecard
 from bigclaw.workflow import AcceptanceGate, WorkflowEngine
 
@@ -222,3 +222,73 @@ def test_workflow_engine_writes_orchestration_report_without_duplicating_ledger_
     journal = json.loads(Path(result.journal_path).read_text())
     assert journal["entries"][2]["step"] == "orchestration"
     assert journal["entries"][-1]["step"] == "closeout"
+
+
+def test_workflow_engine_writes_repo_sync_audit_report_and_records_failure_categories(tmp_path: Path):
+    ledger = ObservabilityLedger(str(tmp_path / "ledger.json"))
+    task = Task(
+        task_id="OPE-219",
+        source="linear",
+        title="Audit repo sync",
+        description="capture sync failures and pr freshness",
+        priority=Priority.P1,
+        acceptance_criteria=["repo-sync-audit", "report-shared"],
+        validation_plan=["pytest"],
+    )
+    repo_sync_audit = RepoSyncAudit(
+        sync=GitSyncTelemetry(
+            status="failed",
+            failure_category="divergence",
+            summary="branch diverged from remote",
+            branch="dcjcloud/ope-219",
+            remote_ref="origin/dcjcloud/ope-219",
+            ahead_by=2,
+            behind_by=1,
+        ),
+        pull_request=PullRequestFreshness(
+            pr_number=219,
+            pr_url="https://github.com/OpenAGIs/BigClaw/pull/219",
+            branch_state="out-of-sync",
+            body_state="drifted",
+            branch_head_sha="abc123",
+            pr_head_sha="def456",
+            expected_body_digest="expected",
+            actual_body_digest="actual",
+        ),
+    )
+
+    result = WorkflowEngine().run(
+        task,
+        run_id="run-wf-ope-219",
+        ledger=ledger,
+        journal_path=str(tmp_path / "journals" / "run-wf-ope-219.json"),
+        validation_evidence=["pytest", "report-shared", "repo-sync-audit"],
+        repo_sync_audit=repo_sync_audit,
+        repo_sync_report_path=str(tmp_path / "reports" / "run-wf-ope-219-repo-sync.md"),
+        git_push_succeeded=True,
+        git_push_output="feature/OPE-219 -> origin/feature/OPE-219",
+        git_log_stat_output="commit abc123\n 3 files changed, 18 insertions(+)",
+    )
+
+    assert result.acceptance.passed is True
+    assert result.repo_sync_report_path is not None
+    assert Path(result.repo_sync_report_path).exists()
+    report = Path(result.repo_sync_report_path).read_text()
+    assert "Failure Category: divergence" in report
+    assert "Body State: drifted" in report
+
+    journal = json.loads(Path(result.journal_path).read_text())
+    assert [entry["step"] for entry in journal["entries"]] == [
+        "intake",
+        "execution",
+        "repo-sync",
+        "acceptance",
+        "closeout",
+    ]
+    assert journal["entries"][2]["details"]["failure_category"] == "divergence"
+    entries = ledger.load()
+    audit_actions = [entry["action"] for entry in entries[0]["audits"]]
+    assert "repo.sync" in audit_actions
+    assert "repo.pr-freshness" in audit_actions
+    assert entries[0]["artifacts"][0]["name"] == "repo-sync-audit"
+    assert entries[0]["closeout"]["repo_sync_audit"]["sync"]["failure_category"] == "divergence"

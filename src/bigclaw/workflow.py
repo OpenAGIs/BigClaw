@@ -6,9 +6,16 @@ from typing import Any, Dict, List, Optional, Sequence
 from .audit_events import APPROVAL_RECORDED_EVENT
 from .dsl import WorkflowDefinition
 from .models import RiskLevel, Task
-from .observability import ObservabilityLedger, utc_now
+from .observability import ObservabilityLedger, RepoSyncAudit, utc_now
 from .orchestration import render_orchestration_plan
-from .reports import build_orchestration_canvas, PilotScorecard, render_orchestration_canvas, render_pilot_scorecard, write_report
+from .reports import (
+    build_orchestration_canvas,
+    PilotScorecard,
+    render_orchestration_canvas,
+    render_pilot_scorecard,
+    render_repo_sync_audit_report,
+    write_report,
+)
 from .scheduler import ExecutionRecord, Scheduler
 
 
@@ -126,6 +133,7 @@ class WorkflowRunResult:
     orchestration_report_path: Optional[str] = None
     orchestration_canvas_path: Optional[str] = None
     pilot_report_path: Optional[str] = None
+    repo_sync_report_path: Optional[str] = None
 
 
 class WorkflowEngine:
@@ -146,6 +154,8 @@ class WorkflowEngine:
         pilot_report_path: Optional[str] = None,
         orchestration_report_path: Optional[str] = None,
         orchestration_canvas_path: Optional[str] = None,
+        repo_sync_audit: Optional[RepoSyncAudit] = None,
+        repo_sync_report_path: Optional[str] = None,
         git_push_succeeded: bool = False,
         git_push_output: str = "",
         git_log_stat_output: str = "",
@@ -235,6 +245,53 @@ class WorkflowEngine:
                 annualized_roi=round(pilot_scorecard.annualized_roi, 1),
             )
 
+        resolved_repo_sync_report_path = None
+        if repo_sync_audit is not None:
+            execution.run.audit(
+                "repo.sync",
+                "workflow-engine",
+                repo_sync_audit.sync.status,
+                failure_category=repo_sync_audit.sync.failure_category,
+                summary=repo_sync_audit.sync.summary,
+                branch=repo_sync_audit.sync.branch,
+                remote_ref=repo_sync_audit.sync.remote_ref,
+                ahead_by=repo_sync_audit.sync.ahead_by,
+                behind_by=repo_sync_audit.sync.behind_by,
+                dirty_paths=repo_sync_audit.sync.dirty_paths,
+                auth_target=repo_sync_audit.sync.auth_target,
+            )
+            execution.run.audit(
+                "repo.pr-freshness",
+                "workflow-engine",
+                "fresh" if repo_sync_audit.pull_request.fresh else "stale",
+                pr_number=repo_sync_audit.pull_request.pr_number,
+                pr_url=repo_sync_audit.pull_request.pr_url,
+                branch_state=repo_sync_audit.pull_request.branch_state,
+                body_state=repo_sync_audit.pull_request.body_state,
+                branch_head_sha=repo_sync_audit.pull_request.branch_head_sha,
+                pr_head_sha=repo_sync_audit.pull_request.pr_head_sha,
+            )
+            journal.record(
+                "repo-sync",
+                repo_sync_audit.sync.status,
+                failure_category=repo_sync_audit.sync.failure_category,
+                branch_state=repo_sync_audit.pull_request.branch_state,
+                body_state=repo_sync_audit.pull_request.body_state,
+            )
+            if repo_sync_report_path:
+                resolved_repo_sync_report_path = str(Path(repo_sync_report_path))
+                write_report(resolved_repo_sync_report_path, render_repo_sync_audit_report(repo_sync_audit))
+                execution.run.register_artifact(
+                    "repo-sync-audit",
+                    "report",
+                    resolved_repo_sync_report_path,
+                    format="markdown",
+                    sync_status=repo_sync_audit.sync.status,
+                    pr_branch_state=repo_sync_audit.pull_request.branch_state,
+                    pr_body_state=repo_sync_audit.pull_request.body_state,
+                )
+                ledger.upsert(execution.run)
+
         acceptance = self.gate.evaluate(
             task,
             execution,
@@ -265,6 +322,7 @@ class WorkflowEngine:
             git_push_succeeded=git_push_succeeded,
             git_push_output=git_push_output,
             git_log_stat_output=git_log_stat_output,
+            repo_sync_audit=repo_sync_audit,
         )
         ledger.upsert(execution.run)
         journal.record(
@@ -273,6 +331,8 @@ class WorkflowEngine:
             validation_evidence=list(validation_evidence or []),
             git_push_succeeded=git_push_succeeded,
             git_log_stat_captured=bool(git_log_stat_output.strip()),
+            repo_sync_status=repo_sync_audit.sync.status if repo_sync_audit else "none",
+            repo_sync_failure_category=repo_sync_audit.sync.failure_category if repo_sync_audit else "",
         )
 
         resolved_journal_path = None
@@ -287,6 +347,7 @@ class WorkflowEngine:
             orchestration_report_path=resolved_orchestration_report_path,
             orchestration_canvas_path=resolved_orchestration_canvas_path,
             pilot_report_path=resolved_pilot_report_path,
+            repo_sync_report_path=resolved_repo_sync_report_path,
         )
 
     def run_definition(
