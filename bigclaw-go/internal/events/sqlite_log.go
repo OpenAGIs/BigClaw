@@ -73,6 +73,26 @@ func (s *SQLiteEventLog) Capabilities() BackendCapabilities {
 	}
 }
 
+func (s *SQLiteEventLog) RetentionWatermark() (RetentionWatermark, error) {
+	watermark := RetentionWatermark{Backend: "sqlite"}
+	if s == nil || s.db == nil {
+		return watermark, nil
+	}
+	if err := s.db.QueryRow(`SELECT COUNT(*) FROM event_log`).Scan(&watermark.EventCount); err != nil {
+		return RetentionWatermark{}, err
+	}
+	if watermark.EventCount == 0 {
+		return watermark, nil
+	}
+	if err := s.db.QueryRow(`SELECT seq, event_id FROM event_log ORDER BY seq ASC LIMIT 1`).Scan(&watermark.OldestSequence, &watermark.OldestEventID); err != nil {
+		return RetentionWatermark{}, err
+	}
+	if err := s.db.QueryRow(`SELECT seq, event_id FROM event_log ORDER BY seq DESC LIMIT 1`).Scan(&watermark.NewestSequence, &watermark.NewestEventID); err != nil {
+		return RetentionWatermark{}, err
+	}
+	return watermark, nil
+}
+
 func (s *SQLiteEventLog) Path() string {
 	if s == nil {
 		return ""

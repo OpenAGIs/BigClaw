@@ -2657,3 +2657,70 @@ func TestEventsEndpointUsesRemoteEventLogBackend(t *testing.T) {
 		t.Fatalf("unexpected remote backend metadata: %+v", decoded)
 	}
 }
+
+func TestEventsEndpointIncludesRetentionWatermarkForRemoteEventLog(t *testing.T) {
+	store, err := events.NewSQLiteEventLog(filepath.Join(t.TempDir(), "event-log.db"))
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	serviceServer := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: store, Now: time.Now}
+	serviceTS := httptest.NewServer(serviceServer.Handler())
+	defer serviceTS.Close()
+	remoteLog, err := events.NewHTTPEventLog(serviceTS.URL+"/internal/events/log", "")
+	if err != nil {
+		t.Fatalf("new remote event log: %v", err)
+	}
+	base := time.Now()
+	for _, event := range []domain.Event{
+		{ID: "evt-http-watermark-1", Type: domain.EventTaskQueued, TaskID: "task-http-watermark", TraceID: "trace-http-watermark", Timestamp: base},
+		{ID: "evt-http-watermark-2", Type: domain.EventTaskStarted, TaskID: "task-http-watermark", TraceID: "trace-http-watermark", Timestamp: base.Add(time.Second)},
+	} {
+		if err := remoteLog.Write(context.Background(), event); err != nil {
+			t.Fatalf("write remote-backed event %s: %v", event.ID, err)
+		}
+	}
+	apiServer := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: remoteLog, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/events?trace_id=trace-http-watermark&limit=10", nil)
+	apiServer.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected remote events 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		RetentionWatermark events.RetentionWatermark `json:"retention_watermark"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode remote backend events response: %v", err)
+	}
+	if decoded.RetentionWatermark.Backend != "sqlite" || decoded.RetentionWatermark.EventCount != 2 || decoded.RetentionWatermark.OldestEventID != "evt-http-watermark-1" || decoded.RetentionWatermark.NewestEventID != "evt-http-watermark-2" {
+		t.Fatalf("unexpected retention watermark in events response: %+v", decoded.RetentionWatermark)
+	}
+}
+
+func TestDebugStatusIncludesRetentionWatermark(t *testing.T) {
+	store, err := events.NewSQLiteEventLog(filepath.Join(t.TempDir(), "event-log.db"))
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	base := time.Now()
+	for _, event := range []domain.Event{
+		{ID: "evt-debug-watermark-1", Type: domain.EventTaskQueued, TaskID: "task-debug-watermark", TraceID: "trace-debug-watermark", Timestamp: base},
+		{ID: "evt-debug-watermark-2", Type: domain.EventTaskStarted, TaskID: "task-debug-watermark", TraceID: "trace-debug-watermark", Timestamp: base.Add(time.Second)},
+	} {
+		if err := store.Write(context.Background(), event); err != nil {
+			t.Fatalf("write %s: %v", event.ID, err)
+		}
+	}
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: store, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d", response.Code)
+	}
+	if !strings.Contains(response.Body.String(), "retention_watermark") || !strings.Contains(response.Body.String(), "evt-debug-watermark-1") || !strings.Contains(response.Body.String(), "evt-debug-watermark-2") {
+		t.Fatalf("expected retention watermark in debug payload, got %s", response.Body.String())
+	}
+}

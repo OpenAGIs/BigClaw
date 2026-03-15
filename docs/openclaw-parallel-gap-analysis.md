@@ -33,7 +33,7 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
 
 ### Remaining gaps
 
-- Replay retention is still bounded primarily by in-process history when no external durable backend is configured.
+- Replay retention watermarks are now visible in runtime payloads, but effective retention is still bounded primarily by in-process history when no external durable backend is configured.
 - Service-style SQLite and HTTP-backed coordination improve sharing, but replicated broker or quorum-backed durability is still future work.
 - Downstream consumers still need idempotent handlers and durable dedupe stores; the system remains replay-safe, not globally exactly-once.
 - Parallel validation for Kubernetes, Ray, and shared-queue takeover should continue to be bundled as repo-native evidence.

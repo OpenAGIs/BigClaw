@@ -12,6 +12,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - SSE stream via `GET /stream/events`
 - Optional SSE replay and filtering via `replay=1`, `after_id`, `Last-Event-ID`, `task_id`, and `trace_id`
 - Replay cursor diagnostics via `X-Replay-*` headers and JSON `cursor` metadata on `GET /events`
+- Retention watermark / replay horizon visibility through API debug payloads and event-log service surfaces
 - Replay-safe consumer delivery metadata via `EventDelivery`, including additive `delivery.mode`, `delivery.replay`, and `delivery.idempotency_key` fields
 - Consumer dedup ledger/result contract covering duplicate, retryable-failure, and already-applied outcomes
 - Replay-safe consumer dedup ledger contract with stable storage key and result semantics
@@ -125,7 +126,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - No delivery acknowledgement protocol exists beyond sink-level best effort.
 - Lease coordination is currently in-memory and single-process; shared multi-node subscriber groups still need a durable backend.
 - No partitioned topic model or broker-backed cross-process subscriber coordination exists yet.
-- No durable retention watermark exists in the runtime yet; expired-cursor fallback is currently defined only against the in-process replay window, and the target compaction semantics are defined in `docs/reports/replay-retention-semantics-report.md`.
+- Retention watermarks are now exposed for in-memory and durable event-log backends, but expired-cursor fallback is still defined primarily against the current replay window and the target compaction semantics remain documented in `docs/reports/replay-retention-semantics-report.md`.
 - Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.
 - Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists.
 

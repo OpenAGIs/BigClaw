@@ -88,7 +88,7 @@ func (s *Server) Handler() http.Handler {
 			history, cursor := s.Bus.ReplayWindow(busLimit, afterID, taskID, traceID)
 			history = limitQueriedEvents(filterEventsByType(history, eventTypes), afterID, limit)
 			writeReplayCursorHeaders(w, cursor)
-			writeJSON(w, http.StatusOK, map[string]any{
+			payload := map[string]any{
 				"events":        history,
 				"cursor":        cursor,
 				"subscriber_id": subscriberID,
@@ -97,7 +97,11 @@ func (s *Server) Handler() http.Handler {
 				"event_types":   eventTypes,
 				"backend":       "memory",
 				"durable":       false,
-			})
+			}
+			if watermark := s.retentionWatermark(); watermark != nil {
+				payload["retention_watermark"] = watermark
+			}
+			writeJSON(w, http.StatusOK, payload)
 			return
 		}
 		history, backend, err := s.queryEvents(taskID, traceID, afterID, eventTypes, limit)
@@ -108,7 +112,7 @@ func (s *Server) Handler() http.Handler {
 		if backend == "memory" {
 			history = events.WithDeliveryBatch(history, domain.EventDeliveryModeReplay)
 		}
-		writeJSON(w, http.StatusOK, map[string]any{
+		payload := map[string]any{
 			"events":        history,
 			"subscriber_id": subscriberID,
 			"after_id":      afterID,
@@ -116,7 +120,11 @@ func (s *Server) Handler() http.Handler {
 			"event_types":   eventTypes,
 			"backend":       backend,
 			"durable":       s.eventLogDurable(),
-		})
+		}
+		if watermark := s.retentionWatermark(); watermark != nil {
+			payload["retention_watermark"] = watermark
+		}
+		writeJSON(w, http.StatusOK, payload)
 	})
 	mux.HandleFunc("/subscriber-groups/leases", s.handleSubscriberGroupLease)
 	mux.HandleFunc("/subscriber-groups/checkpoints", s.handleSubscriberGroupCheckpoint)
@@ -164,6 +172,9 @@ func (s *Server) Handler() http.Handler {
 		}
 		if s.Control != nil {
 			payload["control"] = s.Control.Snapshot()
+		}
+		if watermark := s.retentionWatermark(); watermark != nil {
+			payload["retention_watermark"] = watermark
 		}
 		if s.EventLog != nil {
 			payload["event_log"] = map[string]any{
@@ -770,6 +781,26 @@ func (s *Server) eventLogBackend() string {
 
 func (s *Server) eventLogDurable() bool {
 	return s.EventLog != nil
+}
+
+func (s *Server) retentionWatermark() any {
+	if s.EventLog != nil {
+		if provider, ok := s.EventLog.(events.RetentionWatermarkProvider); ok {
+			watermark, err := provider.RetentionWatermark()
+			if err == nil {
+				return watermark
+			}
+		}
+	}
+	if s.Bus != nil {
+		if provider, ok := any(s.Bus).(events.RetentionWatermarkProvider); ok {
+			watermark, err := provider.RetentionWatermark()
+			if err == nil {
+				return watermark
+			}
+		}
+	}
+	return nil
 }
 
 func (s *Server) resolveAfterID(subscriberID string, afterID string) (string, error) {

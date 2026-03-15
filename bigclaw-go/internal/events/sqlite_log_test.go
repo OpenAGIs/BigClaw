@@ -149,3 +149,30 @@ func TestSQLiteEventLogCheckpointAcknowledgeIsMonotonic(t *testing.T) {
 		t.Fatalf("expected monotonic checkpoint to stay on newer event, got %+v", checkpoint)
 	}
 }
+
+func TestSQLiteEventLogRetentionWatermark(t *testing.T) {
+	log, err := NewSQLiteEventLog(filepath.Join(t.TempDir(), "event-log.db"))
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = log.Close() }()
+	base := time.Now()
+	for _, event := range []domain.Event{
+		{ID: "evt-watermark-1", Type: domain.EventTaskQueued, TaskID: "task-watermark", TraceID: "trace-watermark", Timestamp: base},
+		{ID: "evt-watermark-2", Type: domain.EventTaskStarted, TaskID: "task-watermark", TraceID: "trace-watermark", Timestamp: base.Add(time.Second)},
+	} {
+		if err := log.Write(context.Background(), event); err != nil {
+			t.Fatalf("write %s: %v", event.ID, err)
+		}
+	}
+	watermark, err := log.RetentionWatermark()
+	if err != nil {
+		t.Fatalf("retention watermark: %v", err)
+	}
+	if watermark.Backend != "sqlite" || watermark.EventCount != 2 || watermark.OldestEventID != "evt-watermark-1" || watermark.NewestEventID != "evt-watermark-2" {
+		t.Fatalf("unexpected retention watermark: %+v", watermark)
+	}
+	if watermark.OldestSequence == 0 || watermark.NewestSequence == 0 || watermark.NewestSequence < watermark.OldestSequence {
+		t.Fatalf("expected ordered watermark sequences, got %+v", watermark)
+	}
+}
