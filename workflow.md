@@ -2,7 +2,7 @@
 tracker:
   kind: linear
   api_key: "$LINEAR_API_KEY"
-  project_slug: "95f17f5fe417"
+  project_slug: "bigclaw-v50-parallel-distributed-platform-8a198fec793e"
   active_states:
     - Todo
     - In Progress
@@ -15,7 +15,7 @@ tracker:
     - Done
 
 polling:
-  interval_ms: 60000
+  interval_ms: 15000
 
 workspace:
   root: ~/code/symphony-workspaces
@@ -36,6 +36,10 @@ hooks:
 
 agent:
   max_concurrent_agents: 10
+  max_concurrent_agents_by_state:
+    Todo: 4
+    In Progress: 6
+    In Review: 2
   max_turns: 20
 
 codex:
@@ -53,6 +57,7 @@ Primary operating mode:
 - Use Linear as the source of truth for planning, state transitions, and completion comments.
 - Use Symphony as the parallel orchestration layer whenever the current project has multiple independent slices that can advance concurrently.
 - Prefer 2-4 active child tickets in parallel when the work can be safely decomposed without merge conflicts.
+- Keep at least 2 tickets in `In Progress` whenever the project still has parallel-safe `Todo` slices available.
 - Keep each parallel slice small, code-backed, and independently verifiable.
 
 Execution protocol:
@@ -66,6 +71,7 @@ Execution protocol:
    - commit sha,
    - PR URL.
 6. When one slice is done, immediately pick or create the next parallel-safe slice and continue.
+7. If the dashboard shows fewer than 2 running slices while safe `Todo` work exists, move the next ticket(s) to `In Progress` and let Symphony refill capacity on the next polling cycle.
 
 GitHub verification is mandatory before completion:
 - Every run must prove that the latest local commit exists on the configured GitHub branch.
