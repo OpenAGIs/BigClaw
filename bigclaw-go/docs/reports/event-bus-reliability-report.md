@@ -149,6 +149,7 @@ This report summarizes the current event bus reliability evidence and the next r
 
 - `internal/events/log.go` now defines the provider-neutral event-log and checkpoint contract for future broker-backed adapters.
 - `internal/events/memory_log.go` provides the contract-compatible in-memory baseline while BigClaw remains on local fanout.
+- When `BIGCLAW_EVENT_LOG_BACKEND=broker` passes bootstrap validation, runtime and debug payloads now report `backend=broker` with `scope=broker_bootstrap` so operators can distinguish "validated config" from a live writable adapter.
 - Broker-facing runtime knobs are reserved behind `BIGCLAW_EVENT_LOG_*` env vars so a first provider adapter can land without changing publish/replay/checkpoint callers.
 - No durable external event log yet; replay is process-local history.
 - No delivery acknowledgement protocol beyond sink-level best effort.

@@ -1,6 +1,9 @@
 package events
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 type FeatureSupport struct {
 	Supported bool   `json:"supported"`
@@ -85,6 +88,46 @@ func UnavailableCapabilities() BackendCapabilities {
 		Retention: FeatureSupport{
 			Supported: false,
 			Detail:    "No event bus backend is configured.",
+		},
+	}
+}
+
+func BrokerBootstrapCapabilities(cfg BrokerRuntimeConfig) BackendCapabilities {
+	detail := "Broker adapter bootstrap config validated; live provider wiring is not implemented yet."
+	if cfg.Driver != "" || cfg.Topic != "" {
+		detail = fmt.Sprintf("Broker adapter bootstrap config validated for driver=%s topic=%s; live provider wiring is not implemented yet.", cfg.Driver, cfg.Topic)
+	}
+	return BackendCapabilities{
+		Backend: "broker",
+		Scope:   "broker_bootstrap",
+		Publish: FeatureSupport{
+			Supported: false,
+			Mode:      "contract_validated",
+			Detail:    detail,
+		},
+		Replay: FeatureSupport{
+			Supported: false,
+			Mode:      "contract_validated",
+			Detail:    "Replay contract and cursor expectations are reserved for the future broker adapter.",
+		},
+		Checkpoint: FeatureSupport{
+			Supported: false,
+			Mode:      "contract_validated",
+			Detail:    "Checkpoint semantics are defined, but no broker-backed checkpoint store is wired yet.",
+		},
+		Dedup: FeatureSupport{
+			Supported: false,
+			Detail:    "Durable consumer dedup remains a separate backend concern until a broker adapter lands.",
+		},
+		Filtering: FeatureSupport{
+			Supported: true,
+			Mode:      "provider_defined",
+			Detail:    "Broker adapters are expected to preserve task and trace filtering semantics.",
+		},
+		Retention: FeatureSupport{
+			Supported: true,
+			Mode:      "broker_managed",
+			Detail:    "Retention boundaries will be enforced by the chosen broker backend once implemented.",
 		},
 	}
 }

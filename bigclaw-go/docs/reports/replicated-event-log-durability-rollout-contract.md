@@ -10,6 +10,7 @@ It builds on the provider-neutral adapter boundary in `docs/reports/broker-event
 
 - `internal/events/durability.go` already declares `broker_replicated` as the target backend and surfaces the active durability plan through bootstrap and debug payloads.
 - `cmd/bigclawd/main.go` validates broker runtime config but intentionally stops before instantiating a live replicated adapter.
+- Runtime and debug payloads now expose that validated-but-unwired state explicitly as `event_log.backend=broker` with `scope=broker_bootstrap`.
 - `docs/reports/event-bus-reliability-report.md` and `docs/reports/broker-failover-fault-injection-validation-pack.md` describe the portability and validation direction, but prior to this slice the rollout gate itself was not captured as one explicit contract.
 
 ## Runtime contract

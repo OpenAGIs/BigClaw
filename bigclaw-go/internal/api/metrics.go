@@ -47,9 +47,6 @@ func (s *Server) buildMetricsSnapshot() metricsSnapshot {
 	if s.Control != nil {
 		snapshot.Control = s.Control.Snapshot()
 	}
-	if s.EventLog != nil {
-		snapshot.EventLog = map[string]any{"backend": s.EventLog.Backend(), "capabilities": s.EventLog.Capabilities()}
-	}
 	return snapshot
 }
 

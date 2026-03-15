@@ -34,25 +34,34 @@ func main() {
 	defer closeQueue(q)
 
 	var eventLog events.EventLog
+	var eventLogCapability *events.BackendCapabilities
 	switch {
 	case cfg.EventLogRemoteURL != "":
 		eventLog, err = events.NewHTTPEventLog(cfg.EventLogRemoteURL, cfg.EventLogRemoteBearer)
 		if err != nil {
 			panic(err)
 		}
+		capability := eventLog.Capabilities()
+		eventLogCapability = &capability
 	case cfg.EventLogSQLitePath != "":
 		eventLog, err = events.NewSQLiteEventLog(cfg.EventLogSQLitePath)
 		if err != nil {
 			panic(err)
 		}
+		capability := eventLog.Capabilities()
+		eventLogCapability = &capability
 		defer closeEventLog(eventLog)
 	default:
-		if _, err = buildEventLog(cfg); err != nil {
+		eventLogCapability, err = buildEventLogCapabilities(cfg)
+		if err != nil {
 			panic(err)
 		}
 	}
 
 	bus := events.NewBus()
+	if eventLogCapability != nil {
+		bus.SetCapabilities(*eventLogCapability)
+	}
 	if eventLog != nil {
 		bus.AddSink(eventLog)
 	}
@@ -128,10 +137,10 @@ func main() {
 	fmt.Printf("%s stopped events=%d\n", cfg.ServiceName, len(bus.Replay()))
 }
 
-func buildEventLog(cfg config.Config) (*events.MemoryLog, error) {
+func buildEventLogCapabilities(cfg config.Config) (*events.BackendCapabilities, error) {
 	switch cfg.EventLogBackend {
 	case "", string(events.EventLogBackendMemory):
-		return events.NewMemoryLog(), nil
+		return nil, nil
 	case string(events.EventLogBackendBroker):
 		broker := events.BrokerRuntimeConfig{
 			Driver:             cfg.EventLogBrokerDriver,
@@ -145,7 +154,8 @@ func buildEventLog(cfg config.Config) (*events.MemoryLog, error) {
 		if err := broker.Validate(); err != nil {
 			return nil, err
 		}
-		return nil, fmt.Errorf("event log backend %q is not implemented yet; driver=%s topic=%s contract validated for the future adapter", cfg.EventLogBackend, broker.Driver, broker.Topic)
+		capability := events.BrokerBootstrapCapabilities(broker)
+		return &capability, nil
 	default:
 		return nil, fmt.Errorf("unsupported event log backend: %s", cfg.EventLogBackend)
 	}

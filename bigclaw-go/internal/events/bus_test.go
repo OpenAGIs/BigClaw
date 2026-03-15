@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -91,6 +92,25 @@ func TestBusCapabilitiesDefaultAndOverride(t *testing.T) {
 	bus.SetCapabilityProvider(staticCapabilityProvider{capability: override})
 	if got := bus.Capabilities(context.Background()); got.Backend != "broker_adapter" || !got.Checkpoint.Supported || got.Retention.Mode != "ttl" {
 		t.Fatalf("expected provider override, got %+v", got)
+	}
+}
+
+func TestBrokerBootstrapCapabilitiesAdvertiseConfiguredReadiness(t *testing.T) {
+	capability := BrokerBootstrapCapabilities(BrokerRuntimeConfig{
+		Driver: "kafka",
+		Topic:  "bigclaw.events",
+	})
+	if capability.Backend != "broker" || capability.Scope != "broker_bootstrap" {
+		t.Fatalf("unexpected broker bootstrap capability identity: %+v", capability)
+	}
+	if capability.Publish.Supported || capability.Replay.Supported || capability.Checkpoint.Supported {
+		t.Fatalf("expected broker bootstrap to avoid claiming live support, got %+v", capability)
+	}
+	if capability.Filtering.Mode != "provider_defined" || capability.Retention.Mode != "broker_managed" {
+		t.Fatalf("expected broker bootstrap filtering/retention guidance, got %+v", capability)
+	}
+	if !strings.Contains(capability.Publish.Detail, "driver=kafka") || !strings.Contains(capability.Publish.Detail, "topic=bigclaw.events") {
+		t.Fatalf("expected broker bootstrap detail to include configured driver/topic, got %q", capability.Publish.Detail)
 	}
 }
 

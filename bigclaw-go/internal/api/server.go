@@ -176,12 +176,6 @@ func (s *Server) Handler() http.Handler {
 		if watermark := s.retentionWatermark(); watermark != nil {
 			payload["retention_watermark"] = watermark
 		}
-		if s.EventLog != nil {
-			payload["event_log"] = map[string]any{
-				"backend":      s.EventLog.Backend(),
-				"capabilities": s.EventLog.Capabilities(),
-			}
-		}
 		writeJSON(w, http.StatusOK, payload)
 	})
 	mux.HandleFunc("/v2/dashboard/engineering", s.handleV2EngineeringDashboard)
@@ -724,6 +718,9 @@ func (s *Server) queryMemoryEvents(taskID, traceID, afterID string, limit int) [
 }
 
 func (s *Server) eventLogCapabilities(ctx context.Context) events.BackendCapabilities {
+	if s.EventLog != nil {
+		return s.EventLog.Capabilities()
+	}
 	if s.Bus != nil {
 		return s.Bus.Capabilities(ctx)
 	}

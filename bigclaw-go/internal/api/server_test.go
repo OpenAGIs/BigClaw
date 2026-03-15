@@ -2734,3 +2734,17 @@ func TestDebugStatusIncludesRetentionWatermark(t *testing.T) {
 		t.Fatalf("expected retention watermark in debug payload, got %s", response.Body.String())
 	}
 }
+
+func TestEventLogCapabilitiesPreferConfiguredEventLog(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		EventLog: &blockingEventLog{},
+		Now:      time.Now,
+	}
+	capability := server.eventLogCapabilities(context.Background())
+	if capability.Scope != "test_double" || !capability.Checkpoint.Supported || capability.Retention.Mode != "test_memory" {
+		t.Fatalf("expected configured event log capabilities, got %+v", capability)
+	}
+}
