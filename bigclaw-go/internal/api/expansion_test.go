@@ -274,3 +274,116 @@ func TestV2ProductizationAndBillingEndpoints(t *testing.T) {
 		t.Fatalf("expected enterprise entitlements payload, got %s", entitlementsResponse.Body.String())
 	}
 }
+
+func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
+	base := time.Date(2026, 3, 14, 9, 0, 0, 0, time.UTC)
+	recorder := observability.NewRecorder()
+	controller := control.New()
+	server := &Server{
+		Recorder:  recorder,
+		Queue:     queue.NewMemoryQueue(),
+		Executors: []domain.ExecutorKind{domain.ExecutorLocal, domain.ExecutorKubernetes, domain.ExecutorRay},
+		Control:   controller,
+		Worker:    fakeWorkerPoolStatus{},
+		Now:       func() time.Time { return base.Add(6 * time.Hour) },
+	}
+	for _, task := range []domain.Task{
+		{ID: "report-local", TraceID: "trace-report-local", Title: "Local", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(time.Minute)},
+		{ID: "report-k8s", TraceID: "trace-report-k8s", Title: "K8s", State: domain.TaskSucceeded, RequiredTools: []string{"browser"}, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(2 * time.Minute)},
+		{ID: "report-ray", TraceID: "trace-report-ray", Title: "Ray", State: domain.TaskSucceeded, RequiredTools: []string{"gpu"}, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(3 * time.Minute)},
+	} {
+		recorder.StoreTask(task)
+	}
+	for _, event := range []domain.Event{
+		{ID: "report-local-routed", Type: domain.EventSchedulerRouted, TaskID: "report-local", TraceID: "trace-report-local", Timestamp: base.Add(time.Second), Payload: map[string]any{"executor": domain.ExecutorLocal, "reason": "default local executor for low/medium risk"}},
+		{ID: "report-local-completed", Type: domain.EventTaskCompleted, TaskID: "report-local", TraceID: "trace-report-local", Timestamp: base.Add(2 * time.Second), Payload: map[string]any{"executor": domain.ExecutorLocal}},
+		{ID: "report-k8s-routed", Type: domain.EventSchedulerRouted, TaskID: "report-k8s", TraceID: "trace-report-k8s", Timestamp: base.Add(3 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "reason": "browser workloads default to kubernetes executor"}},
+		{ID: "report-k8s-started", Type: domain.EventTaskStarted, TaskID: "report-k8s", TraceID: "trace-report-k8s", Timestamp: base.Add(4 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes}},
+		{ID: "report-ray-routed", Type: domain.EventSchedulerRouted, TaskID: "report-ray", TraceID: "trace-report-ray", Timestamp: base.Add(5 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay, "reason": "gpu workloads default to ray executor"}},
+		{ID: "report-ray-completed", Type: domain.EventTaskCompleted, TaskID: "report-ray", TraceID: "trace-report-ray", Timestamp: base.Add(6 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay}},
+	} {
+		recorder.Record(event)
+	}
+	controller.Takeover("report-k8s", "alice", "bob", "watch rollout", base.Add(7*time.Second))
+
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?team=platform&project=apollo&limit=10", nil)
+	response := httptest.NewRecorder()
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected distributed report 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Summary struct {
+			RegisteredExecutors  int `json:"registered_executors"`
+			TotalRoutedDecisions int `json:"total_routed_decisions"`
+		} `json:"summary"`
+		RoutingReasons []struct {
+			Executor string `json:"executor"`
+			Reason   string `json:"reason"`
+		} `json:"routing_reasons"`
+		ExecutorCapacity []struct {
+			Executor      string `json:"executor"`
+			Health        string `json:"health"`
+			QueuedTasks   int    `json:"queued_tasks"`
+			ActiveTasks   int    `json:"active_tasks"`
+			TeamBreakdown []struct {
+				Key   string `json:"key"`
+				Count int    `json:"count"`
+			} `json:"team_breakdown"`
+			TopRoutingReasons []struct {
+				Reason string `json:"reason"`
+				Count  int    `json:"count"`
+			} `json:"top_routing_reasons"`
+		} `json:"executor_capacity"`
+		ClusterHealth struct {
+			TeamBreakdown []struct {
+				Key   string `json:"key"`
+				Count int    `json:"count"`
+			} `json:"team_breakdown"`
+			TakeoverOwners []struct {
+				Key   string `json:"key"`
+				Count int    `json:"count"`
+			} `json:"takeover_owners"`
+		} `json:"cluster_health"`
+		Report struct {
+			Markdown  string `json:"markdown"`
+			ExportURL string `json:"export_url"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed report: %v", err)
+	}
+	if decoded.Summary.RegisteredExecutors != 3 || decoded.Summary.TotalRoutedDecisions != 3 {
+		t.Fatalf("unexpected distributed report summary: %+v", decoded.Summary)
+	}
+	if len(decoded.RoutingReasons) != 3 || len(decoded.ExecutorCapacity) != 3 {
+		t.Fatalf("unexpected distributed report payload: %+v", decoded)
+	}
+	if decoded.ExecutorCapacity[0].Executor != "kubernetes" || decoded.ExecutorCapacity[0].ActiveTasks != 1 || len(decoded.ExecutorCapacity[0].TopRoutingReasons) == 0 {
+		t.Fatalf("unexpected executor detail payload: %+v", decoded.ExecutorCapacity[0])
+	}
+	if len(decoded.ClusterHealth.TeamBreakdown) == 0 || decoded.ClusterHealth.TeamBreakdown[0].Key != "platform" {
+		t.Fatalf("unexpected cluster team breakdown: %+v", decoded.ClusterHealth)
+	}
+	if len(decoded.ClusterHealth.TakeoverOwners) == 0 || decoded.ClusterHealth.TakeoverOwners[0].Key != "alice" {
+		t.Fatalf("unexpected takeover owner breakdown: %+v", decoded.ClusterHealth)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") {
+		t.Fatalf("unexpected distributed markdown: %s", decoded.Report.Markdown)
+	}
+	if !strings.Contains(decoded.Report.ExportURL, "/v2/reports/distributed/export") {
+		t.Fatalf("unexpected distributed export url: %s", decoded.Report.ExportURL)
+	}
+
+	exportResponse := httptest.NewRecorder()
+	server.Handler().ServeHTTP(exportResponse, httptest.NewRequest(http.MethodGet, decoded.Report.ExportURL, nil))
+	if exportResponse.Code != http.StatusOK {
+		t.Fatalf("expected distributed export 200, got %d %s", exportResponse.Code, exportResponse.Body.String())
+	}
+	if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected markdown export content type, got %q", contentType)
+	}
+	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") {
+		t.Fatalf("unexpected distributed export markdown: %s", exportResponse.Body.String())
+	}
+}

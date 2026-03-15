@@ -1,34 +1,46 @@
-# OpenClaw Parallel Gap Analysis
+# OpenClaw Comparison and Parallel Gap Analysis
+
+## Context
+
+- Comparison date: 2026-03-14
+- Compared repo: `openclaw/openclaw`
+- Local repo: `OpenAGIs/BigClaw`
+
+## What BigClaw should borrow from OpenClaw
+
+- Treat the control plane as a durable, always-on service boundary rather than a single-process demo harness.
+- Make multi-worker and multi-node visibility first-class API payloads so UI and operational review surfaces can reason about distributed state directly.
+- Keep validation artifacts isolated per run so concurrent live verification does not collapse into shared-state ambiguity.
+- Package cluster and executor health as repo-native evidence that planning, review, and Linear execution slices can reference directly.
+
+## What BigClaw should not borrow
+
+- End-user messaging channel product scope.
+- Consumer assistant UX assumptions.
+- Personal workspace and device-pairing abstractions that do not map to the execution control plane.
 
 ## Replay and checkpoint durability track
 
-The current BigClaw Go event plane has replay-capable APIs, but the implementation remains process-local and does not yet define how replay history ages out without breaking subscriber recovery.
+The current BigClaw Go event plane now has replay-capable APIs, subscriber-group fencing, scheduler coordination, and service-style event-log integration points, but the execution path still needs a stronger distributed durability contract.
 
 ### Closed baseline
 
-- `OPE-199` introduced a durable-event-log direction, but the current checkout still exposes replay primarily through recorder history and in-memory bus subscriptions.
-- `OPE-203` added subscriber checkpoint and resume semantics at the issue-planning level, while `OPE-205` tightened monotonic checkpoint expectations.
-- `OPE-210` defined subscriber-group lease coordination so stale writers cannot move shared progress backward.
+- `OPE-199` introduced the durable-event-log direction and backend capability framing.
+- `OPE-203` added subscriber checkpoint and resume semantics.
+- `OPE-205` tightened monotonic checkpoint expectations.
+- `OPE-210` introduced subscriber-group lease coordination so stale writers cannot move shared progress backward.
+- `OPE-212` through `OPE-217` defined replay compaction, capability probing, dedup semantics, expired-cursor fallback, and takeover validation evidence.
 
-### Active gap closed by `OPE-212`
+### Remaining gaps
 
-- Replay history needs a retention contract that preserves a contiguous replay window.
-- Subscriber checkpoints need an explicit validity rule once older history is compacted away.
-- Resume failures caused by aged-out checkpoints must produce diagnostics instead of silently fast-forwarding consumers.
+- Replay retention is still bounded primarily by in-process history when no external durable backend is configured.
+- Service-style SQLite and HTTP-backed coordination improve sharing, but replicated broker or quorum-backed durability is still future work.
+- Downstream consumers still need idempotent handlers and durable dedupe stores; the system remains replay-safe, not globally exactly-once.
+- Parallel validation for Kubernetes, Ray, and shared-queue takeover should continue to be bundled as repo-native evidence.
 
-### Remaining follow-on slices
+## Recommended BigClaw parallel mainline
 
-- `OPE-213`: define backend capability matrix and config validation for durable event-log providers.
-- `OPE-214`: expose backend capability probe and operator-facing retention support visibility.
-- `OPE-215`: define dedup-ledger backend/key semantics for replay-safe consumers.
-- `OPE-216`: define the concrete expired-cursor and truncated-history fallback surface.
-- `OPE-217`: define multi-subscriber takeover fault-injection and audit evidence.
-
-## Outcome
-
-`OPE-212` should be treated as the contract slice that prevents future durable backends from inventing incompatible compaction behavior. The implementation bar for later slices is now:
-
-- compact only on prefix boundaries,
-- reject expired checkpoints explicitly,
-- keep checkpoint cleanup separate from history retention,
-- surface retention watermarks for operators and future automation.
+1. Multi-worker and multi-node control-plane observability.
+2. Shared-queue coordination and lease-safety hardening.
+3. Parallel validation matrix and evidence bundling for local, Kubernetes, and Ray execution.
+4. Distributed scheduler and executor diagnostics for capacity, routing, and recovery visibility.

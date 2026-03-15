@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -30,21 +31,35 @@ type Runtime struct {
 }
 
 type Status struct {
-	WorkerID        string              `json:"worker_id"`
-	State           string              `json:"state"`
-	CurrentTaskID   string              `json:"current_task_id,omitempty"`
-	CurrentTraceID  string              `json:"current_trace_id,omitempty"`
-	CurrentExecutor domain.ExecutorKind `json:"current_executor,omitempty"`
-	LastHeartbeatAt time.Time           `json:"last_heartbeat_at,omitempty"`
-	LastStartedAt   time.Time           `json:"last_started_at,omitempty"`
-	LastFinishedAt  time.Time           `json:"last_finished_at,omitempty"`
-	LastResult      string              `json:"last_result,omitempty"`
-	LeaseRenewals   int                 `json:"lease_renewals"`
-	SuccessfulRuns  int                 `json:"successful_runs"`
-	RetriedRuns     int                 `json:"retried_runs"`
-	DeadLetterRuns  int                 `json:"dead_letter_runs"`
-	CancelledRuns   int                 `json:"cancelled_runs"`
-	LastTransition  string              `json:"last_transition,omitempty"`
+	WorkerID                  string              `json:"worker_id"`
+	State                     string              `json:"state"`
+	CurrentTaskID             string              `json:"current_task_id,omitempty"`
+	CurrentTraceID            string              `json:"current_trace_id,omitempty"`
+	CurrentExecutor           domain.ExecutorKind `json:"current_executor,omitempty"`
+	LastHeartbeatAt           time.Time           `json:"last_heartbeat_at,omitempty"`
+	LastStartedAt             time.Time           `json:"last_started_at,omitempty"`
+	LastFinishedAt            time.Time           `json:"last_finished_at,omitempty"`
+	LastResult                string              `json:"last_result,omitempty"`
+	LeaseRenewals             int                 `json:"lease_renewals"`
+	SuccessfulRuns            int                 `json:"successful_runs"`
+	RetriedRuns               int                 `json:"retried_runs"`
+	DeadLetterRuns            int                 `json:"dead_letter_runs"`
+	CancelledRuns             int                 `json:"cancelled_runs"`
+	PreemptionActive          bool                `json:"preemption_active,omitempty"`
+	CurrentPreemptionTaskID   string              `json:"current_preemption_task_id,omitempty"`
+	CurrentPreemptionWorkerID string              `json:"current_preemption_worker_id,omitempty"`
+	LastPreemptedTaskID       string              `json:"last_preempted_task_id,omitempty"`
+	LastPreemptionAt          time.Time           `json:"last_preemption_at,omitempty"`
+	LastPreemptionReason      string              `json:"last_preemption_reason,omitempty"`
+	PreemptionsIssued         int                 `json:"preemptions_issued,omitempty"`
+	LastTransition            string              `json:"last_transition,omitempty"`
+}
+
+type cancellationWatcher struct {
+	done      chan struct{}
+	mu        sync.Mutex
+	snapshot  queue.TaskSnapshot
+	cancelled bool
 }
 
 func (r *Runtime) Snapshot() Status {
@@ -136,7 +151,11 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		status.CurrentExecutor = decision.Assignment.Executor
 		status.LastTransition = string(domain.EventSchedulerRouted)
 	})
-	r.publish(domain.Event{ID: eventID(task.ID, "routed"), Type: domain.EventSchedulerRouted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"executor": decision.Assignment.Executor, "reason": decision.Reason, "quota": quota}})
+	routedPayload := map[string]any{"executor": decision.Assignment.Executor, "reason": decision.Reason, "quota": quota}
+	if decision.Preemption.Required {
+		routedPayload["preemption"] = decision.Preemption
+	}
+	r.publish(domain.Event{ID: eventID(task.ID, "routed"), Type: domain.EventSchedulerRouted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: routedPayload})
 
 	runner, ok := r.Registry.Get(decision.Assignment.Executor)
 	if !ok {
@@ -145,6 +164,16 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 			status.DeadLetterRuns++
 		})
 		r.publish(domain.Event{ID: eventID(task.ID, "deadletter"), Type: domain.EventTaskDeadLetter, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"message": "executor not registered", "executor": decision.Assignment.Executor}})
+		return true
+	}
+
+	preemptedSnapshot, err := r.dispatchPreemption(ctx, *task, decision)
+	if err != nil {
+		_ = r.Queue.Requeue(ctx, lease, time.Now().Add(100*time.Millisecond))
+		r.finishStatus(string(domain.EventTaskRetried), err.Error(), func(status *Status) {
+			status.RetriedRuns++
+		})
+		r.publish(domain.Event{ID: eventID(task.ID, "preemption-requeued"), Type: domain.EventTaskRetried, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"reason": err.Error()}})
 		return true
 	}
 
@@ -158,14 +187,36 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		status.LastStartedAt = time.Now()
 		status.LastTransition = string(domain.EventTaskStarted)
 	})
-	r.publish(domain.Event{ID: eventID(task.ID, "started"), Type: domain.EventTaskStarted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"executor": runner.Kind(), "required_tools": task.RequiredTools}})
+	startedPayload := map[string]any{"executor": runner.Kind(), "required_tools": task.RequiredTools}
+	if preemptedSnapshot != nil {
+		startedPayload["preempted_task_id"] = preemptedSnapshot.Task.ID
+		startedPayload["preempted_worker_id"] = preemptedSnapshot.LeaseWorker
+		startedPayload["preemption_reason"] = preemptionReason(*task, preemptedSnapshot.Task)
+	}
+	r.publish(domain.Event{ID: eventID(task.ID, "started"), Type: domain.EventTaskStarted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: startedPayload})
 
 	execCtx, cancel := context.WithTimeout(ctx, r.TaskTimeout)
-	defer cancel()
 	stopHeartbeat := r.startHeartbeat(execCtx, lease)
+	watcher := r.startCancellationWatcher(execCtx, task.ID, cancel)
 	result := runner.Execute(execCtx, *task)
 	stopHeartbeat()
+	cancel()
 
+	if cancelled, ok := watcher.Snapshot(); ok {
+		_ = r.Queue.Ack(ctx, lease)
+		message := cancelled.Task.Metadata["cancel_reason"]
+		if message == "" {
+			message = "task cancelled by control center"
+		}
+		if r.Recorder != nil {
+			r.Recorder.StoreTask(cancelled.Task)
+		}
+		r.finishStatus(string(domain.EventTaskCancelled), message, func(status *Status) {
+			status.CancelledRuns++
+		})
+		r.publish(domain.Event{ID: eventID(task.ID, "cancelled"), Type: domain.EventTaskCancelled, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"message": message, "executor": runner.Kind()}})
+		return true
+	}
 	if cancelled, ok := r.cancelledSnapshot(ctx, task.ID); ok {
 		_ = r.Queue.Ack(ctx, lease)
 		message := cancelled.Task.Metadata["cancel_reason"]
@@ -213,6 +264,101 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	return true
 }
 
+func (r *Runtime) dispatchPreemption(ctx context.Context, task domain.Task, decision scheduler.Decision) (*queue.TaskSnapshot, error) {
+	if !decision.Preemption.Required {
+		return nil, nil
+	}
+	inspector, ok := r.Queue.(queue.TaskInspector)
+	if !ok {
+		return nil, fmt.Errorf("preemptible capacity requires queue task inspection")
+	}
+	controller, ok := r.Queue.(queue.TaskController)
+	if !ok {
+		return nil, fmt.Errorf("preemptible capacity requires queue task cancellation")
+	}
+	snapshots, err := inspector.ListTasks(ctx, 0)
+	if err != nil {
+		return nil, fmt.Errorf("list active tasks for preemption: %w", err)
+	}
+	candidates := preemptionCandidates(task, snapshots)
+	if len(candidates) == 0 {
+		return nil, fmt.Errorf("no lower-priority active task available for live preemption")
+	}
+	var lastErr error
+	for _, candidate := range candidates {
+		reason := preemptionReason(task, candidate.Task)
+		snapshot, err := controller.CancelTask(ctx, candidate.Task.ID, reason)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		if snapshot.Task.TraceID == "" {
+			snapshot.Task.TraceID = snapshot.Task.ID
+		}
+		if r.Recorder != nil {
+			r.Recorder.StoreTask(snapshot.Task)
+		}
+		now := time.Now()
+		r.updateStatus(func(status *Status) {
+			status.PreemptionActive = true
+			status.CurrentPreemptionTaskID = snapshot.Task.ID
+			status.CurrentPreemptionWorkerID = snapshot.LeaseWorker
+			status.LastPreemptedTaskID = snapshot.Task.ID
+			status.LastPreemptionAt = now
+			status.LastPreemptionReason = reason
+			status.PreemptionsIssued++
+		})
+		payload := map[string]any{
+			"message":                reason,
+			"preempted_by_task_id":   task.ID,
+			"preempted_by_priority":  task.Priority,
+			"preempted_by_worker_id": r.WorkerID,
+			"target_priority":        snapshot.Task.Priority,
+			"target_worker_id":       snapshot.LeaseWorker,
+			"target_executor":        decision.Assignment.Executor,
+		}
+		if decision.Preemption.Reason != "" {
+			payload["scheduler_reason"] = decision.Preemption.Reason
+		}
+		r.publish(domain.Event{ID: eventID(snapshot.Task.ID, "preempted"), Type: domain.EventTaskPreempted, TaskID: snapshot.Task.ID, TraceID: snapshot.Task.TraceID, Timestamp: now, Payload: payload})
+		return &snapshot, nil
+	}
+	if lastErr != nil {
+		return nil, fmt.Errorf("cancel lower-priority task for preemption: %w", lastErr)
+	}
+	return nil, fmt.Errorf("no lower-priority active task available for live preemption")
+}
+
+func preemptionCandidates(task domain.Task, snapshots []queue.TaskSnapshot) []queue.TaskSnapshot {
+	candidates := make([]queue.TaskSnapshot, 0)
+	for _, snapshot := range snapshots {
+		if snapshot.Task.ID == task.ID || !snapshot.Leased {
+			continue
+		}
+		if snapshot.Task.State == domain.TaskCancelled || snapshot.Task.State == domain.TaskDeadLetter {
+			continue
+		}
+		if snapshot.Task.Priority <= task.Priority {
+			continue
+		}
+		candidates = append(candidates, snapshot)
+	}
+	sort.SliceStable(candidates, func(i, j int) bool {
+		if candidates[i].Task.Priority == candidates[j].Task.Priority {
+			if candidates[i].Task.UpdatedAt.Equal(candidates[j].Task.UpdatedAt) {
+				return candidates[i].Task.ID < candidates[j].Task.ID
+			}
+			return candidates[i].Task.UpdatedAt.After(candidates[j].Task.UpdatedAt)
+		}
+		return candidates[i].Task.Priority > candidates[j].Task.Priority
+	})
+	return candidates
+}
+
+func preemptionReason(task domain.Task, _ domain.Task) string {
+	return fmt.Sprintf("preempted by urgent task %s (priority=%d)", task.ID, task.Priority)
+}
+
 func (r *Runtime) startHeartbeat(ctx context.Context, lease *queue.Lease) func() {
 	childCtx, cancel := context.WithCancel(ctx)
 	go func() {
@@ -234,12 +380,72 @@ func (r *Runtime) startHeartbeat(ctx context.Context, lease *queue.Lease) func()
 	return cancel
 }
 
+func (r *Runtime) startCancellationWatcher(ctx context.Context, taskID string, cancel context.CancelFunc) *cancellationWatcher {
+	watcher := &cancellationWatcher{done: make(chan struct{})}
+	if _, ok := r.Queue.(queue.TaskInspector); !ok {
+		close(watcher.done)
+		return watcher
+	}
+	interval := cancellationPollInterval(r.LeaseTTL)
+	go func() {
+		defer close(watcher.done)
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				snapshot, ok := r.cancelledSnapshot(context.Background(), taskID)
+				if !ok {
+					continue
+				}
+				watcher.record(snapshot)
+				cancel()
+				return
+			}
+		}
+	}()
+	return watcher
+}
+
+func cancellationPollInterval(leaseTTL time.Duration) time.Duration {
+	if leaseTTL <= 0 {
+		return 25 * time.Millisecond
+	}
+	interval := leaseTTL / 4
+	if interval < 25*time.Millisecond {
+		interval = 25 * time.Millisecond
+	}
+	if interval > 100*time.Millisecond {
+		interval = 100 * time.Millisecond
+	}
+	return interval
+}
+
+func (w *cancellationWatcher) record(snapshot queue.TaskSnapshot) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.snapshot = snapshot
+	w.cancelled = true
+}
+
+func (w *cancellationWatcher) Snapshot() (queue.TaskSnapshot, bool) {
+	<-w.done
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.snapshot, w.cancelled
+}
+
 func (r *Runtime) finishStatus(transition, result string, extra func(*Status)) {
 	r.updateStatus(func(status *Status) {
 		status.State = "idle"
 		status.CurrentTaskID = ""
 		status.CurrentTraceID = ""
 		status.CurrentExecutor = ""
+		status.PreemptionActive = false
+		status.CurrentPreemptionTaskID = ""
+		status.CurrentPreemptionWorkerID = ""
 		status.LastFinishedAt = time.Now()
 		status.LastResult = result
 		status.LastTransition = transition

@@ -1,0 +1,122 @@
+{
+  "project": {
+    "name": "BigClaw v5.0 Parallel Distributed Platform",
+    "slug_id": "8a198fec793e",
+    "team": "OpenAGI",
+    "team_key": "OPE",
+    "epic": "OPE-187"
+  },
+  "policy": {
+    "target_in_progress": 2,
+    "activate_state_name": "In Progress",
+    "activate_state_id": "bd8aafe7-4d8b-41aa-a85b-13e76d49ead7",
+    "refill_states": [
+      "Backlog",
+      "Todo"
+    ]
+  },
+  "recent_batches": {
+    "completed": [
+      "OPE-206",
+      "OPE-207",
+      "OPE-208",
+      "OPE-209",
+      "OPE-210",
+      "OPE-211"
+    ],
+    "active": [
+      "OPE-212",
+      "OPE-213"
+    ],
+    "standby": [
+      "OPE-214",
+      "OPE-215",
+      "OPE-216",
+      "OPE-217"
+    ]
+  },
+  "issue_order": [
+    "OPE-210",
+    "OPE-211",
+    "OPE-212",
+    "OPE-213",
+    "OPE-214",
+    "OPE-215",
+    "OPE-216",
+    "OPE-217"
+  ],
+  "issues": [
+    {
+      "identifier": "OPE-206",
+      "title": "BIG-PAR-019 replicated event store / broker-backed durability 预研与接入计划",
+      "track": "Durability Planning",
+      "status": "Done"
+    },
+    {
+      "identifier": "OPE-207",
+      "title": "BIG-PAR-020 downstream idempotency / replay-safe consumer contract",
+      "track": "Consumer Contract",
+      "status": "Done"
+    },
+    {
+      "identifier": "OPE-208",
+      "title": "BIG-PAR-021 broker-backed event-log adapter contract 与配置面",
+      "track": "Broker Adapter",
+      "status": "Done"
+    },
+    {
+      "identifier": "OPE-209",
+      "title": "BIG-PAR-022 replay-safe consumer dedup ledger 与处理结果语义",
+      "track": "Consumer Dedup",
+      "status": "Done"
+    },
+    {
+      "identifier": "OPE-210",
+      "title": "BIG-PAR-023 subscriber group checkpoint lease 协调语义",
+      "track": "Checkpoint Coordination",
+      "status": "Done"
+    },
+    {
+      "identifier": "OPE-211",
+      "title": "BIG-PAR-024 broker failover / replay fault-injection validation 包",
+      "track": "Failover Validation",
+      "status": "Done"
+    },
+    {
+      "identifier": "OPE-212",
+      "title": "BIG-PAR-026 replay checkpoint compaction / retention 语义",
+      "track": "Retention Lifecycle",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-213",
+      "title": "BIG-PAR-025 durability capability matrix 与后端配置校验",
+      "track": "Capability Matrix",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-214",
+      "title": "BIG-PAR-027 event-log backend capability probe 与控制台暴露",
+      "track": "Capability Probe",
+      "status": "Backlog"
+    },
+    {
+      "identifier": "OPE-215",
+      "title": "BIG-PAR-028 consumer dedup ledger backend 抽象与持久化键模型",
+      "track": "Dedup Persistence",
+      "status": "Backlog"
+    },
+    {
+      "identifier": "OPE-216",
+      "title": "BIG-PAR-029 replay cursor 过期 / 截断历史 fallback 语义",
+      "track": "Cursor Expiry",
+      "status": "Backlog"
+    },
+    {
+      "identifier": "OPE-217",
+      "title": "BIG-PAR-030 multi-subscriber takeover fault-injection 与审计证据",
+      "track": "Takeover Audit",
+      "status": "Backlog"
+    }
+  ]
+}

@@ -55,7 +55,7 @@ type Checkpoint struct {
 	Metadata  map[string]string `json:"metadata,omitempty"`
 }
 
-type EventLog interface {
+type DurableEventLog interface {
 	Backend() EventLogBackend
 	Capabilities() Capabilities
 	Publish(context.Context, domain.Event) (Record, error)
@@ -63,7 +63,7 @@ type EventLog interface {
 	Subscribe(context.Context, SubscriptionRequest) (<-chan Record, func(), error)
 }
 
-type CheckpointStore interface {
+type DurableCheckpointStore interface {
 	GetCheckpoint(context.Context, string) (Checkpoint, bool, error)
 	SaveCheckpoint(context.Context, Checkpoint) error
 }

@@ -279,6 +279,9 @@ class ExecutionContractAudit:
     undefined_model_refs: Dict[str, List[str]] = field(default_factory=dict)
     undefined_permissions: Dict[str, str] = field(default_factory=dict)
     missing_roles: List[str] = field(default_factory=list)
+    roles_missing_personas: List[str] = field(default_factory=list)
+    roles_missing_scope_bindings: List[str] = field(default_factory=list)
+    roles_missing_escalation_targets: List[str] = field(default_factory=list)
     roles_missing_permissions: List[str] = field(default_factory=list)
     undefined_role_permissions: Dict[str, List[str]] = field(default_factory=dict)
     permissions_without_roles: List[str] = field(default_factory=list)
@@ -298,6 +301,9 @@ class ExecutionContractAudit:
             + len(self.undefined_model_refs)
             + len(self.undefined_permissions)
             + len(self.missing_roles)
+            + len(self.roles_missing_personas)
+            + len(self.roles_missing_scope_bindings)
+            + len(self.roles_missing_escalation_targets)
             + len(self.roles_missing_permissions)
             + len(self.undefined_role_permissions)
             + len(self.permissions_without_roles)
@@ -328,6 +334,9 @@ class ExecutionContractAudit:
             "undefined_model_refs": {name: list(values) for name, values in self.undefined_model_refs.items()},
             "undefined_permissions": dict(self.undefined_permissions),
             "missing_roles": list(self.missing_roles),
+            "roles_missing_personas": list(self.roles_missing_personas),
+            "roles_missing_scope_bindings": list(self.roles_missing_scope_bindings),
+            "roles_missing_escalation_targets": list(self.roles_missing_escalation_targets),
             "roles_missing_permissions": list(self.roles_missing_permissions),
             "undefined_role_permissions": {name: list(values) for name, values in self.undefined_role_permissions.items()},
             "permissions_without_roles": list(self.permissions_without_roles),
@@ -357,6 +366,9 @@ class ExecutionContractAudit:
             },
             undefined_permissions={str(name): str(value) for name, value in dict(data.get("undefined_permissions", {})).items()},
             missing_roles=[str(item) for item in data.get("missing_roles", [])],
+            roles_missing_personas=[str(item) for item in data.get("roles_missing_personas", [])],
+            roles_missing_scope_bindings=[str(item) for item in data.get("roles_missing_scope_bindings", [])],
+            roles_missing_escalation_targets=[str(item) for item in data.get("roles_missing_escalation_targets", [])],
             roles_missing_permissions=[str(item) for item in data.get("roles_missing_permissions", [])],
             undefined_role_permissions={
                 str(name): [str(value) for value in values]
@@ -400,6 +412,9 @@ class ExecutionContractLibrary:
         undefined_model_refs: Dict[str, List[str]] = {}
         undefined_permissions: Dict[str, str] = {}
         missing_roles = sorted(role for role in self.REQUIRED_ROLES if role not in role_names)
+        roles_missing_personas: List[str] = []
+        roles_missing_scope_bindings: List[str] = []
+        roles_missing_escalation_targets: List[str] = []
         roles_missing_permissions: List[str] = []
         undefined_role_permissions: Dict[str, List[str]] = {}
         permissions_granted_by_roles: set[str] = set()
@@ -439,6 +454,12 @@ class ExecutionContractLibrary:
                     undefined_metrics[api.name] = missing_metric_defs
 
         for role in contract.roles:
+            if not role.personas:
+                roles_missing_personas.append(role.name)
+            if not role.scope_bindings:
+                roles_missing_scope_bindings.append(role.name)
+            if not role.escalation_target.strip():
+                roles_missing_escalation_targets.append(role.name)
             if not role.granted_permissions:
                 roles_missing_permissions.append(role.name)
                 continue
@@ -469,6 +490,9 @@ class ExecutionContractLibrary:
             undefined_model_refs=undefined_model_refs,
             undefined_permissions=undefined_permissions,
             missing_roles=missing_roles,
+            roles_missing_personas=sorted(roles_missing_personas),
+            roles_missing_scope_bindings=sorted(roles_missing_scope_bindings),
+            roles_missing_escalation_targets=sorted(roles_missing_escalation_targets),
             roles_missing_permissions=sorted(roles_missing_permissions),
             undefined_role_permissions=undefined_role_permissions,
             permissions_without_roles=permissions_without_roles,
@@ -535,6 +559,9 @@ def render_execution_contract_report(contract: ExecutionContract, audit: Executi
             f"- Undefined model refs: {', '.join(f'{name}={values}' for name, values in sorted(audit.undefined_model_refs.items())) if audit.undefined_model_refs else 'none'}",
             f"- Undefined permissions: {', '.join(f'{name}={value}' for name, value in sorted(audit.undefined_permissions.items())) if audit.undefined_permissions else 'none'}",
             f"- Missing roles: {', '.join(audit.missing_roles) if audit.missing_roles else 'none'}",
+            f"- Roles missing personas: {', '.join(audit.roles_missing_personas) if audit.roles_missing_personas else 'none'}",
+            f"- Roles missing scope bindings: {', '.join(audit.roles_missing_scope_bindings) if audit.roles_missing_scope_bindings else 'none'}",
+            f"- Roles missing escalation targets: {', '.join(audit.roles_missing_escalation_targets) if audit.roles_missing_escalation_targets else 'none'}",
             f"- Roles missing permissions: {', '.join(audit.roles_missing_permissions) if audit.roles_missing_permissions else 'none'}",
             f"- Undefined role permissions: {', '.join(f'{name}={values}' for name, values in sorted(audit.undefined_role_permissions.items())) if audit.undefined_role_permissions else 'none'}",
             f"- Permissions without roles: {', '.join(audit.permissions_without_roles) if audit.permissions_without_roles else 'none'}",

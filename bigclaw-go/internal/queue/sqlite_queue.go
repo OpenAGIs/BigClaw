@@ -141,26 +141,32 @@ func (q *SQLiteQueue) LeaseNext(_ context.Context, workerID string, ttl time.Dur
 
 func (q *SQLiteQueue) RenewLease(_ context.Context, lease *Lease, ttl time.Duration) error {
 	expiresAt := time.Now().Add(ttl)
-	result, err := q.db.Exec(`UPDATE tasks SET lease_expires_ns=? WHERE task_id=? AND leased=1 AND lease_worker=?`, expiresAt.UnixNano(), lease.TaskID, lease.WorkerID)
+	result, err := q.db.Exec(`UPDATE tasks SET lease_expires_ns=? WHERE task_id=? AND leased=1 AND lease_worker=? AND attempt=?`, expiresAt.UnixNano(), lease.TaskID, lease.WorkerID, lease.Attempt)
 	if err != nil {
 		return err
 	}
 	rows, _ := result.RowsAffected()
 	if rows != 1 {
-		return errors.New("lease not owned by worker")
+		return ErrLeaseNotOwned
 	}
 	lease.ExpiresAt = expiresAt
 	return nil
 }
 
 func (q *SQLiteQueue) Ack(_ context.Context, lease *Lease) error {
-	result, err := q.db.Exec(`DELETE FROM tasks WHERE task_id=?`, lease.TaskID)
+	result, err := q.db.Exec(`DELETE FROM tasks WHERE task_id=? AND leased=1 AND lease_worker=? AND attempt=?`, lease.TaskID, lease.WorkerID, lease.Attempt)
 	if err != nil {
 		return err
 	}
 	rows, _ := result.RowsAffected()
 	if rows != 1 {
-		return ErrTaskNotFound
+		if _, err := q.GetTask(context.Background(), lease.TaskID); err != nil {
+			if errors.Is(err, ErrTaskNotFound) {
+				return ErrTaskNotFound
+			}
+			return err
+		}
+		return ErrLeaseNotOwned
 	}
 	return nil
 }
@@ -316,8 +322,21 @@ func (q *SQLiteQueue) updateStateAfterLease(lease *Lease, state domain.TaskState
 	if err != nil {
 		return err
 	}
-	_, err = q.db.Exec(`UPDATE tasks SET payload=?, state=?, available_at_ns=?, leased=0, lease_worker='', lease_expires_ns=0 WHERE task_id=?`, updatedPayload, string(state), availableAt.UnixNano(), lease.TaskID)
-	return err
+	result, err := q.db.Exec(`UPDATE tasks SET payload=?, state=?, available_at_ns=?, leased=0, lease_worker='', lease_expires_ns=0 WHERE task_id=? AND leased=1 AND lease_worker=? AND attempt=?`, updatedPayload, string(state), availableAt.UnixNano(), lease.TaskID, lease.WorkerID, lease.Attempt)
+	if err != nil {
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows != 1 {
+		if _, err := q.GetTask(context.Background(), lease.TaskID); err != nil {
+			if errors.Is(err, ErrTaskNotFound) {
+				return ErrTaskNotFound
+			}
+			return err
+		}
+		return ErrLeaseNotOwned
+	}
+	return nil
 }
 
 func (q *SQLiteQueue) Size(_ context.Context) int {

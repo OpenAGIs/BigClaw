@@ -331,6 +331,202 @@ def render_candidate_backlog_report(
     return "\n".join(lines)
 
 
+def build_v3_candidate_backlog() -> CandidateBacklog:
+    return CandidateBacklog(
+        epic_id="BIG-EPIC-20",
+        title="v4.0 v3候选与进入条件",
+        version="v4.0-v3",
+        candidates=[
+            CandidateEntry(
+                candidate_id="candidate-release-control",
+                title="Console release control center",
+                theme="console-governance",
+                priority="P0",
+                owner="product-experience",
+                outcome="Converge console shell governance, UI acceptance, and review-pack evidence into one release-control candidate.",
+                validation_command=(
+                    "PYTHONPATH=src python3 -m pytest tests/test_design_system.py "
+                    "tests/test_console_ia.py tests/test_ui_review.py -q"
+                ),
+                capabilities=["release-gate", "console-shell", "reporting"],
+                evidence=["acceptance-suite", "validation-report"],
+                evidence_links=[
+                    EvidenceLink(
+                        label="design-system-audit",
+                        target="src/bigclaw/design_system.py",
+                        capability="release-gate",
+                        note="component inventory, accessibility, and UI acceptance coverage",
+                    ),
+                    EvidenceLink(
+                        label="console-ia-contract",
+                        target="src/bigclaw/console_ia.py",
+                        capability="release-gate",
+                        note="global navigation, top bar, filters, and state contracts",
+                    ),
+                    EvidenceLink(
+                        label="ui-review-pack",
+                        target="src/bigclaw/ui_review.py",
+                        capability="release-gate",
+                        note="review objectives, wireframes, interaction coverage, and open questions",
+                    ),
+                    EvidenceLink(
+                        label="ui-acceptance-tests",
+                        target="tests/test_design_system.py",
+                        capability="release-gate",
+                        note="role-permission, data accuracy, and performance audits",
+                    ),
+                    EvidenceLink(
+                        label="console-shell-tests",
+                        target="tests/test_console_ia.py",
+                        capability="release-gate",
+                        note="console shell and interaction draft release readiness",
+                    ),
+                    EvidenceLink(
+                        label="review-pack-tests",
+                        target="tests/test_ui_review.py",
+                        capability="release-gate",
+                        note="deterministic review packet validation",
+                    ),
+                ],
+            ),
+            CandidateEntry(
+                candidate_id="candidate-ops-hardening",
+                title="Operations command-center hardening",
+                theme="ops-command-center",
+                priority="P0",
+                owner="engineering-operations",
+                outcome="Promote queue control, approval handling, saved views, dashboard builder output, and replay evidence as one operator-ready command center.",
+                validation_command=(
+                    "PYTHONPATH=src python3 -m pytest tests/test_control_center.py tests/test_operations.py "
+                    "tests/test_saved_views.py tests/test_workflow.py tests/test_execution_flow.py "
+                    "tests/test_evaluation.py -q"
+                ),
+                capabilities=["ops-control", "saved-views", "rollback-simulation"],
+                evidence=["weekly-review", "validation-report"],
+                evidence_links=[
+                    EvidenceLink(
+                        label="command-center-src",
+                        target="src/bigclaw/operations.py",
+                        capability="ops-control",
+                        note="queue control center, dashboard builder, weekly review, and regression surfaces",
+                    ),
+                    EvidenceLink(
+                        label="command-center-tests",
+                        target="tests/test_control_center.py",
+                        capability="ops-control",
+                        note="queue control center validation",
+                    ),
+                    EvidenceLink(
+                        label="operations-tests",
+                        target="tests/test_operations.py",
+                        capability="ops-control",
+                        note="dashboard, weekly report, regression, and version-center coverage",
+                    ),
+                    EvidenceLink(
+                        label="approval-contract",
+                        target="src/bigclaw/execution_contract.py",
+                        capability="ops-control",
+                        note="approval permission and API role coverage contract",
+                    ),
+                    EvidenceLink(
+                        label="approval-workflow",
+                        target="src/bigclaw/workflow.py",
+                        capability="ops-control",
+                        note="approval workflow and closeout flow wiring",
+                    ),
+                    EvidenceLink(
+                        label="workflow-tests",
+                        target="tests/test_workflow.py",
+                        capability="ops-control",
+                        note="approval flow validation",
+                    ),
+                    EvidenceLink(
+                        label="execution-flow-tests",
+                        target="tests/test_execution_flow.py",
+                        capability="ops-control",
+                        note="approval and execution handoff evidence",
+                    ),
+                    EvidenceLink(
+                        label="saved-views-src",
+                        target="src/bigclaw/saved_views.py",
+                        capability="saved-views",
+                        note="saved views, digest subscriptions, and governed filters",
+                    ),
+                    EvidenceLink(
+                        label="saved-views-tests",
+                        target="tests/test_saved_views.py",
+                        capability="saved-views",
+                        note="saved-view audit coverage",
+                    ),
+                    EvidenceLink(
+                        label="simulation-src",
+                        target="src/bigclaw/evaluation.py",
+                        capability="rollback-simulation",
+                        note="simulation, replay, and comparison evidence",
+                    ),
+                    EvidenceLink(
+                        label="simulation-tests",
+                        target="tests/test_evaluation.py",
+                        capability="rollback-simulation",
+                        note="replay and benchmark validation",
+                    ),
+                ],
+            ),
+            CandidateEntry(
+                candidate_id="candidate-orchestration-rollout",
+                title="Agent orchestration rollout",
+                theme="agent-orchestration",
+                priority="P0",
+                owner="orchestration-office",
+                outcome="Carry entitlement-aware orchestration, handoff visibility, and commercialization proof into a candidate ready for release review.",
+                validation_command=(
+                    "PYTHONPATH=src python3 -m pytest tests/test_orchestration.py tests/test_reports.py -q"
+                ),
+                capabilities=["commercialization", "handoff", "pilot-rollout"],
+                evidence=["pilot-evidence", "validation-report"],
+                evidence_links=[
+                    EvidenceLink(
+                        label="orchestration-plan-src",
+                        target="src/bigclaw/orchestration.py",
+                        capability="commercialization",
+                        note="cross-team orchestration, entitlement-aware policy, and handoff decisions",
+                    ),
+                    EvidenceLink(
+                        label="orchestration-report-src",
+                        target="src/bigclaw/reports.py",
+                        capability="commercialization",
+                        note="orchestration canvas, portfolio rollups, and narrative exports",
+                    ),
+                    EvidenceLink(
+                        label="orchestration-tests",
+                        target="tests/test_orchestration.py",
+                        capability="commercialization",
+                        note="handoff and policy decision validation",
+                    ),
+                    EvidenceLink(
+                        label="report-studio-tests",
+                        target="tests/test_reports.py",
+                        capability="commercialization",
+                        note="report exports and downstream evidence sharing",
+                    ),
+                ],
+            ),
+        ],
+    )
+
+
+def build_v3_entry_gate() -> EntryGate:
+    return EntryGate(
+        gate_id="gate-v3-entry",
+        name="V3 Entry Gate",
+        min_ready_candidates=3,
+        required_capabilities=["release-gate", "ops-control", "commercialization"],
+        required_evidence=["acceptance-suite", "pilot-evidence", "validation-report"],
+        required_baseline_version="v2.0",
+        max_blockers=0,
+    )
+
+
 @dataclass(frozen=True)
 class WeeklyGoal:
     goal_id: str

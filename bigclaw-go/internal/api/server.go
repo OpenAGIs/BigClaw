@@ -16,11 +16,17 @@ import (
 	"bigclaw-go/internal/flow"
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/queue"
+	"bigclaw-go/internal/scheduler"
 	"bigclaw-go/internal/worker"
 )
 
 type WorkerStatusProvider interface {
 	Snapshot() worker.Status
+}
+
+type WorkerPoolStatusProvider interface {
+	WorkerStatusProvider
+	Snapshots() []worker.Status
 }
 
 type Server struct {
@@ -35,6 +41,8 @@ type Server struct {
 	Worker           WorkerStatusProvider
 	Control          *control.Controller
 	FlowStore        *flow.Store
+	SchedulerPolicy  *scheduler.PolicyStore
+	SchedulerRuntime *scheduler.Scheduler
 }
 
 func (s *Server) Handler() http.Handler {
@@ -47,49 +55,73 @@ func (s *Server) Handler() http.Handler {
 	if s.FlowStore == nil {
 		s.FlowStore = flow.NewStore()
 	}
+	if s.SchedulerPolicy == nil {
+		s.SchedulerPolicy = scheduler.NewDefaultPolicyStore()
+	}
+	if s.SchedulerRuntime == nil {
+		s.SchedulerRuntime = scheduler.NewWithStores(s.SchedulerPolicy, nil)
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 	})
-	mux.HandleFunc("/metrics", func(w http.ResponseWriter, _ *http.Request) {
-		payload := map[string]any{
-			"queue_size":           s.Queue.Size(context.Background()),
-			"events":               s.Recorder.Snapshot(),
-			"event_durability":     s.EventPlan,
-			"trace_count":          len(s.Recorder.TraceSummaries(0)),
-			"registered_executors": s.executorNames(),
-		}
-		if s.EventLog != nil {
-			payload["event_log"] = map[string]any{
-				"backend":      s.EventLog.Backend(),
-				"capabilities": s.EventLog.Capabilities(),
-			}
-		}
-		writeJSON(w, http.StatusOK, payload)
-	})
+	mux.HandleFunc("/metrics", s.handleMetrics)
+	if store := s.logServiceStore(); store != nil {
+		mux.Handle("/internal/events/log/", http.StripPrefix("/internal/events/log", events.NewEventLogServiceHandler(store)))
+	}
 	mux.HandleFunc("/events", func(w http.ResponseWriter, r *http.Request) {
 		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-		afterID := replayCursorFromRequest(r)
 		taskID := r.URL.Query().Get("task_id")
 		traceID := r.URL.Query().Get("trace_id")
-		if s.Bus != nil {
-			replay, cursor := s.Bus.ReplayWindow(limit, afterID, taskID, traceID)
-			writeReplayCursorHeaders(w, cursor)
-			writeJSON(w, http.StatusOK, map[string]any{"events": replay, "cursor": cursor})
+		subscriberID := strings.TrimSpace(r.URL.Query().Get("subscriber_id"))
+		afterID, err := s.resolveAfterID(subscriberID, replayCursorFromRequest(r))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		switch {
-		case taskID != "":
-			writeJSON(w, http.StatusOK, replayEventResponse("task", taskID, s.Recorder.EventsByTask(taskID, limit)))
-		case traceID != "":
-			writeJSON(w, http.StatusOK, replayEventResponse("trace", traceID, s.Recorder.EventsByTrace(traceID, limit)))
-		default:
-			writeJSON(w, http.StatusOK, replayEventResponse("all", "", s.Recorder.EventsByTask("", limit)))
+		eventTypes := parseEventTypes(r.URL.Query()["event_type"])
+		if s.EventLog == nil && s.Bus != nil {
+			busLimit := limit
+			if len(eventTypes) > 0 {
+				busLimit = 0
+			}
+			history, cursor := s.Bus.ReplayWindow(busLimit, afterID, taskID, traceID)
+			history = limitQueriedEvents(filterEventsByType(history, eventTypes), afterID, limit)
+			writeReplayCursorHeaders(w, cursor)
+			writeJSON(w, http.StatusOK, map[string]any{
+				"events":        history,
+				"cursor":        cursor,
+				"subscriber_id": subscriberID,
+				"after_id":      afterID,
+				"next_after_id": nextAfterID(history, afterID),
+				"event_types":   eventTypes,
+				"backend":       "memory",
+				"durable":       false,
+			})
+			return
 		}
+		history, backend, err := s.queryEvents(taskID, traceID, afterID, eventTypes, limit)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if backend == "memory" {
+			history = events.WithDeliveryBatch(history, domain.EventDeliveryModeReplay)
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"events":        history,
+			"subscriber_id": subscriberID,
+			"after_id":      afterID,
+			"next_after_id": nextAfterID(history, afterID),
+			"event_types":   eventTypes,
+			"backend":       backend,
+			"durable":       s.eventLogDurable(),
+		})
 	})
 	mux.HandleFunc("/subscriber-groups/leases", s.handleSubscriberGroupLease)
 	mux.HandleFunc("/subscriber-groups/checkpoints", s.handleSubscriberGroupCheckpoint)
 	mux.HandleFunc("/subscriber-groups/", s.handleSubscriberGroupLeaseStatus)
+	mux.HandleFunc("/stream/events/checkpoints/", s.handleStreamEventCheckpoint)
 	mux.HandleFunc("/stream/events", s.handleStreamEvents)
 	mux.HandleFunc("/audit", func(w http.ResponseWriter, r *http.Request) {
 		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -127,6 +159,9 @@ func (s *Server) Handler() http.Handler {
 		if s.Worker != nil {
 			payload["worker"] = s.Worker.Snapshot()
 		}
+		if pool := s.workerPoolSummary(); pool != nil {
+			payload["worker_pool"] = pool
+		}
 		if s.Control != nil {
 			payload["control"] = s.Control.Snapshot()
 		}
@@ -145,8 +180,13 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/v2/control-center", s.handleV2ControlCenter)
 	mux.HandleFunc("/v2/control-center/audit", s.handleV2ControlCenterAudit)
 	mux.HandleFunc("/v2/control-center/actions", s.handleV2ControlCenterAction)
+	mux.HandleFunc("/v2/control-center/policy", s.handleV2ControlCenterPolicy)
+	mux.HandleFunc("/v2/control-center/policy/reload", s.handleV2ControlCenterPolicyReload)
+	mux.Handle("/internal/scheduler/fairness/", http.StripPrefix("/internal/scheduler/fairness", s.schedulerRuntime().FairnessServiceHandler()))
 	mux.HandleFunc("/v2/reports/weekly", s.handleV2WeeklyReport)
 	mux.HandleFunc("/v2/reports/weekly/export", s.handleV2WeeklyReportExport)
+	mux.HandleFunc("/v2/reports/distributed", s.handleV2DistributedReport)
+	mux.HandleFunc("/v2/reports/distributed/export", s.handleV2DistributedReportExport)
 	mux.HandleFunc("/v2/flows/templates", s.handleV2FlowTemplates)
 	mux.HandleFunc("/v2/flows/templates/", s.handleV2FlowTemplateAction)
 	mux.HandleFunc("/v2/flows/overview", s.handleV2FlowOverview)
@@ -171,20 +211,6 @@ func (s *Server) Handler() http.Handler {
 	})
 	mux.HandleFunc("/tasks/", s.handleTaskStatus)
 	return mux
-}
-
-func replayEventResponse(scope string, value string, recorded []domain.Event) map[string]any {
-	response := map[string]any{
-		"events":            events.WithDeliveryBatch(recorded, domain.EventDeliveryModeReplay),
-		"consumer_contract": replayConsumerContract(),
-	}
-	switch scope {
-	case "task":
-		response["task_id"] = value
-	case "trace":
-		response["trace_id"] = value
-	}
-	return response
 }
 
 func replayConsumerContract() map[string]any {
@@ -213,6 +239,116 @@ type checkpointRequestPayload struct {
 	LeaseEpoch       int64  `json:"lease_epoch"`
 	CheckpointOffset uint64 `json:"checkpoint_offset"`
 	CheckpointEvent  string `json:"checkpoint_event_id"`
+}
+
+func (s *Server) handleSubscriberGroupLease(w http.ResponseWriter, r *http.Request) {
+	if s.SubscriberLeases == nil {
+		http.Error(w, "subscriber lease coordinator unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	switch r.Method {
+	case http.MethodPost:
+		var payload leaseRequestPayload
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, fmt.Sprintf("decode lease request: %v", err), http.StatusBadRequest)
+			return
+		}
+		lease, err := s.SubscriberLeases.Acquire(events.LeaseRequest{
+			GroupID:      payload.GroupID,
+			SubscriberID: payload.SubscriberID,
+			ConsumerID:   payload.ConsumerID,
+			TTL:          time.Duration(payload.TTLSeconds) * time.Second,
+			Now:          s.Now(),
+		})
+		if err != nil {
+			status := http.StatusBadRequest
+			if err == events.ErrLeaseHeld {
+				status = http.StatusConflict
+			}
+			writeJSON(w, status, map[string]any{"error": err.Error(), "lease": lease})
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"lease": lease})
+	case http.MethodDelete:
+		var payload checkpointRequestPayload
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, fmt.Sprintf("decode lease release: %v", err), http.StatusBadRequest)
+			return
+		}
+		err := s.SubscriberLeases.Release(payload.GroupID, payload.SubscriberID, payload.ConsumerID, payload.LeaseToken, payload.LeaseEpoch)
+		if err != nil {
+			status := http.StatusConflict
+			if err == events.ErrLeaseExpired {
+				status = http.StatusGone
+			}
+			writeJSON(w, status, map[string]any{"error": err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"released": true})
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *Server) handleSubscriberGroupCheckpoint(w http.ResponseWriter, r *http.Request) {
+	if s.SubscriberLeases == nil {
+		http.Error(w, "subscriber lease coordinator unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var payload checkpointRequestPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, fmt.Sprintf("decode checkpoint commit: %v", err), http.StatusBadRequest)
+		return
+	}
+	lease, err := s.SubscriberLeases.Commit(events.CheckpointCommit{
+		GroupID:          payload.GroupID,
+		SubscriberID:     payload.SubscriberID,
+		ConsumerID:       payload.ConsumerID,
+		LeaseToken:       payload.LeaseToken,
+		LeaseEpoch:       payload.LeaseEpoch,
+		CheckpointOffset: payload.CheckpointOffset,
+		CheckpointEvent:  payload.CheckpointEvent,
+		Now:              s.Now(),
+	})
+	if err != nil {
+		status := http.StatusConflict
+		switch err {
+		case events.ErrCheckpointRollback:
+			status = http.StatusPreconditionFailed
+		case events.ErrLeaseExpired:
+			status = http.StatusGone
+		}
+		writeJSON(w, status, map[string]any{"error": err.Error(), "lease": lease})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"lease": lease})
+}
+
+func (s *Server) handleSubscriberGroupLeaseStatus(w http.ResponseWriter, r *http.Request) {
+	if s.SubscriberLeases == nil {
+		http.Error(w, "subscriber lease coordinator unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	path := strings.TrimPrefix(r.URL.Path, "/subscriber-groups/")
+	parts := strings.Split(path, "/")
+	if len(parts) != 3 || parts[1] != "subscribers" || parts[0] == "" || parts[2] == "" {
+		http.Error(w, "expected /subscriber-groups/{group_id}/subscribers/{subscriber_id}", http.StatusBadRequest)
+		return
+	}
+	lease, ok := s.SubscriberLeases.Get(parts[0], parts[2])
+	if !ok {
+		http.Error(w, "subscriber lease not found", http.StatusNotFound)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"lease": lease})
 }
 
 func (s *Server) handleDebugTraces(w http.ResponseWriter, r *http.Request) {
@@ -369,114 +505,58 @@ func (s *Server) handleDeadLetterAction(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusAccepted, map[string]any{"task_id": taskID, "state": string(domain.TaskQueued), "replayed": true})
 }
 
-func (s *Server) handleSubscriberGroupLease(w http.ResponseWriter, r *http.Request) {
-	if s.SubscriberLeases == nil {
-		http.Error(w, "subscriber lease coordinator unavailable", http.StatusServiceUnavailable)
+func (s *Server) handleStreamEventCheckpoint(w http.ResponseWriter, r *http.Request) {
+	store := s.checkpointStore()
+	if store == nil {
+		http.Error(w, "checkpoint store unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	subscriberID := strings.TrimPrefix(r.URL.Path, "/stream/events/checkpoints/")
+	if subscriberID == "" {
+		http.Error(w, "missing subscriber id", http.StatusBadRequest)
 		return
 	}
 	switch r.Method {
-	case http.MethodPost:
-		var payload leaseRequestPayload
-		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-			http.Error(w, fmt.Sprintf("decode lease request: %v", err), http.StatusBadRequest)
+	case http.MethodGet:
+		checkpoint, err := store.Checkpoint(subscriberID)
+		if err != nil {
+			if events.IsNoEventLog(err) {
+				http.Error(w, "checkpoint not found", http.StatusNotFound)
+				return
+			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		lease, err := s.SubscriberLeases.Acquire(events.LeaseRequest{
-			GroupID:      payload.GroupID,
-			SubscriberID: payload.SubscriberID,
-			ConsumerID:   payload.ConsumerID,
-			TTL:          time.Duration(payload.TTLSeconds) * time.Second,
-			Now:          s.Now(),
+		writeJSON(w, http.StatusOK, map[string]any{
+			"checkpoint": checkpoint,
+			"backend":    s.eventLogBackend(),
+			"durable":    s.eventLogDurable(),
 		})
-		if err != nil {
-			status := http.StatusBadRequest
-			if err == events.ErrLeaseHeld {
-				status = http.StatusConflict
-			}
-			writeJSON(w, status, map[string]any{"error": err.Error(), "lease": lease})
-			return
+	case http.MethodPost:
+		var payload struct {
+			EventID string `json:"event_id"`
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"lease": lease})
-	case http.MethodDelete:
-		var payload checkpointRequestPayload
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-			http.Error(w, fmt.Sprintf("decode lease release: %v", err), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("decode checkpoint ack: %v", err), http.StatusBadRequest)
 			return
 		}
-		err := s.SubscriberLeases.Release(payload.GroupID, payload.SubscriberID, payload.ConsumerID, payload.LeaseToken, payload.LeaseEpoch)
+		checkpoint, err := store.Acknowledge(subscriberID, strings.TrimSpace(payload.EventID), s.Now())
 		if err != nil {
-			status := http.StatusConflict
-			if err == events.ErrLeaseExpired {
-				status = http.StatusGone
+			if events.IsNoEventLog(err) {
+				http.Error(w, "event not found", http.StatusNotFound)
+				return
 			}
-			writeJSON(w, status, map[string]any{"error": err.Error()})
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"released": true})
+		writeJSON(w, http.StatusOK, map[string]any{
+			"checkpoint": checkpoint,
+			"backend":    s.eventLogBackend(),
+			"durable":    s.eventLogDurable(),
+		})
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
-}
-
-func (s *Server) handleSubscriberGroupCheckpoint(w http.ResponseWriter, r *http.Request) {
-	if s.SubscriberLeases == nil {
-		http.Error(w, "subscriber lease coordinator unavailable", http.StatusServiceUnavailable)
-		return
-	}
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	var payload checkpointRequestPayload
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		http.Error(w, fmt.Sprintf("decode checkpoint commit: %v", err), http.StatusBadRequest)
-		return
-	}
-	lease, err := s.SubscriberLeases.Commit(events.CheckpointCommit{
-		GroupID:          payload.GroupID,
-		SubscriberID:     payload.SubscriberID,
-		ConsumerID:       payload.ConsumerID,
-		LeaseToken:       payload.LeaseToken,
-		LeaseEpoch:       payload.LeaseEpoch,
-		CheckpointOffset: payload.CheckpointOffset,
-		CheckpointEvent:  payload.CheckpointEvent,
-		Now:              s.Now(),
-	})
-	if err != nil {
-		status := http.StatusConflict
-		switch err {
-		case events.ErrCheckpointRollback:
-			status = http.StatusPreconditionFailed
-		case events.ErrLeaseExpired:
-			status = http.StatusGone
-		}
-		writeJSON(w, status, map[string]any{"error": err.Error(), "lease": lease})
-		return
-	}
-	writeJSON(w, http.StatusOK, map[string]any{"lease": lease})
-}
-
-func (s *Server) handleSubscriberGroupLeaseStatus(w http.ResponseWriter, r *http.Request) {
-	if s.SubscriberLeases == nil {
-		http.Error(w, "subscriber lease coordinator unavailable", http.StatusServiceUnavailable)
-		return
-	}
-	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	path := strings.TrimPrefix(r.URL.Path, "/subscriber-groups/")
-	parts := strings.Split(path, "/")
-	if len(parts) != 3 || parts[1] != "subscribers" || parts[0] == "" || parts[2] == "" {
-		http.Error(w, "expected /subscriber-groups/{group_id}/subscribers/{subscriber_id}", http.StatusBadRequest)
-		return
-	}
-	lease, ok := s.SubscriberLeases.Get(parts[0], parts[2])
-	if !ok {
-		http.Error(w, "subscriber lease not found", http.StatusNotFound)
-		return
-	}
-	writeJSON(w, http.StatusOK, map[string]any{"lease": lease})
 }
 
 func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
@@ -485,10 +565,17 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	afterID := replayCursorFromRequest(r)
-	replay := r.URL.Query().Get("replay") == "1" || afterID != ""
 	taskID := r.URL.Query().Get("task_id")
 	traceID := r.URL.Query().Get("trace_id")
+	subscriberID := strings.TrimSpace(r.URL.Query().Get("subscriber_id"))
+	afterID, err := s.resolveAfterID(subscriberID, replayCursorFromRequest(r))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	eventTypes := parseEventTypes(r.URL.Query()["event_type"])
+	eventTypeSet := toEventTypeSet(eventTypes)
+	replay := r.URL.Query().Get("replay") == "1" || afterID != ""
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
@@ -497,16 +584,38 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
-	var ch <-chan domain.Event
-	var cancel func()
-	if replay {
-		replayWindow, cursor := s.Bus.ReplayWindow(limit, afterID, taskID, traceID)
-		writeReplayCursorHeaders(w, cursor)
-		ch, cancel = s.Bus.SubscribeReplayWindow(128, replayWindow)
-	} else {
-		ch, cancel = s.Bus.Subscribe(128)
-	}
+	ch, cancel := s.Bus.SubscribeTopic(128, events.SubscriptionFilter{TaskID: taskID, TraceID: traceID, EventTypes: eventTypeSet})
 	defer cancel()
+	delivered := make(map[string]struct{})
+	if replay {
+		var history []domain.Event
+		if s.EventLog == nil {
+			busLimit := limit
+			if len(eventTypes) > 0 {
+				busLimit = 0
+			}
+			var cursor events.ReplayCursorStatus
+			history, cursor = s.Bus.ReplayWindow(busLimit, afterID, taskID, traceID)
+			history = limitQueriedEvents(filterEventsByType(history, eventTypes), afterID, limit)
+			writeReplayCursorHeaders(w, cursor)
+		} else {
+			var err error
+			history, _, err = s.queryEvents(taskID, traceID, afterID, eventTypes, limit)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			history = events.WithDeliveryBatch(history, domain.EventDeliveryModeReplay)
+		}
+		for _, event := range history {
+			if !markStreamEventDelivered(delivered, event) {
+				continue
+			}
+			if err := writeSSEEvent(w, flusher, event); err != nil {
+				return
+			}
+		}
+	}
 	for {
 		select {
 		case <-r.Context().Done():
@@ -515,24 +624,92 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 			if !ok {
 				return
 			}
-			if !matchesEventStreamFilter(event, taskID, traceID) {
+			if !matchesEventStreamFilter(event, taskID, traceID, eventTypeSet) {
 				continue
 			}
-			payload, _ := json.Marshal(event)
-			_, _ = fmt.Fprintf(w, "data: %s\n\n", payload)
-			flusher.Flush()
+			if !markStreamEventDelivered(delivered, event) {
+				continue
+			}
+			if err := writeSSEEvent(w, flusher, event); err != nil {
+				return
+			}
 		}
 	}
 }
 
-func matchesEventStreamFilter(event domain.Event, taskID string, traceID string) bool {
-	if taskID != "" && event.TaskID != taskID {
-		return false
+func (s *Server) queryEvents(taskID, traceID, afterID string, eventTypes []domain.EventType, limit int) ([]domain.Event, string, error) {
+	backendLimit := limit
+	if len(eventTypes) > 0 {
+		backendLimit = 0
 	}
-	if traceID != "" && event.TraceID != traceID {
-		return false
+	if s.EventLog != nil {
+		var history []domain.Event
+		var err error
+		if afterID != "" {
+			switch {
+			case taskID != "":
+				history, err = s.EventLog.EventsByTaskAfter(taskID, afterID, backendLimit)
+			case traceID != "":
+				history, err = s.EventLog.EventsByTraceAfter(traceID, afterID, backendLimit)
+			default:
+				history, err = s.EventLog.ReplayAfter(afterID, backendLimit)
+			}
+		} else {
+			switch {
+			case taskID != "":
+				history, err = s.EventLog.EventsByTask(taskID, backendLimit)
+			case traceID != "":
+				history, err = s.EventLog.EventsByTrace(traceID, backendLimit)
+			default:
+				history, err = s.EventLog.Replay(backendLimit)
+			}
+		}
+		if err != nil {
+			return nil, "sqlite", err
+		}
+		return limitQueriedEvents(filterEventsByType(history, eventTypes), afterID, limit), s.eventLogBackend(), nil
 	}
-	return true
+	history := s.queryMemoryEvents(taskID, traceID, afterID, backendLimit)
+	return limitQueriedEvents(filterEventsByType(history, eventTypes), afterID, limit), "memory", nil
+}
+
+func (s *Server) queryMemoryEvents(taskID, traceID, afterID string, limit int) []domain.Event {
+	if s.Recorder == nil {
+		return nil
+	}
+	logs := s.Recorder.Logs()
+	if afterID == "" {
+		filtered := make([]domain.Event, 0, len(logs))
+		for _, event := range logs {
+			if !matchesEventStreamFilter(event, taskID, traceID, nil) {
+				continue
+			}
+			filtered = append(filtered, event)
+		}
+		if limit > 0 && len(filtered) > limit {
+			filtered = filtered[len(filtered)-limit:]
+		}
+		out := make([]domain.Event, len(filtered))
+		copy(out, filtered)
+		return out
+	}
+	start := 0
+	for index, event := range logs {
+		if event.ID == afterID {
+			start = index + 1
+		}
+	}
+	filtered := make([]domain.Event, 0, len(logs)-start)
+	for _, event := range logs[start:] {
+		if !matchesEventStreamFilter(event, taskID, traceID, nil) {
+			continue
+		}
+		filtered = append(filtered, event)
+		if limit > 0 && len(filtered) >= limit {
+			break
+		}
+	}
+	return filtered
 }
 
 func (s *Server) eventLogCapabilities(ctx context.Context) events.BackendCapabilities {
@@ -564,6 +741,176 @@ func writeReplayCursorHeaders(w http.ResponseWriter, status events.ReplayCursorS
 	if status.HistoryTruncated {
 		w.Header().Set("X-Replay-History-Truncated", "true")
 	}
+}
+
+func (s *Server) checkpointStore() events.CheckpointStore {
+	if store, ok := s.EventLog.(events.CheckpointStore); ok {
+		return store
+	}
+	return nil
+}
+
+func (s *Server) logServiceStore() events.LogServiceStore {
+	if store, ok := s.EventLog.(events.LogServiceStore); ok {
+		return store
+	}
+	return nil
+}
+
+func (s *Server) eventLogBackend() string {
+	type backendInfo interface{ Backend() string }
+	if store, ok := s.EventLog.(backendInfo); ok {
+		return store.Backend()
+	}
+	if s.EventLog != nil {
+		return "sqlite"
+	}
+	return "memory"
+}
+
+func (s *Server) eventLogDurable() bool {
+	return s.EventLog != nil
+}
+
+func (s *Server) resolveAfterID(subscriberID string, afterID string) (string, error) {
+	if afterID != "" || subscriberID == "" {
+		return afterID, nil
+	}
+	store := s.checkpointStore()
+	if store == nil {
+		return "", nil
+	}
+	checkpoint, err := store.Checkpoint(subscriberID)
+	if err != nil {
+		if events.IsNoEventLog(err) {
+			return "", nil
+		}
+		return "", err
+	}
+	return checkpoint.EventID, nil
+}
+
+func parseEventTypes(values []string) []domain.EventType {
+	seen := make(map[domain.EventType]struct{})
+	out := make([]domain.EventType, 0)
+	for _, value := range values {
+		for _, part := range strings.Split(value, ",") {
+			part = strings.TrimSpace(part)
+			if part == "" {
+				continue
+			}
+			eventType := domain.EventType(part)
+			if _, ok := seen[eventType]; ok {
+				continue
+			}
+			seen[eventType] = struct{}{}
+			out = append(out, eventType)
+		}
+	}
+	return out
+}
+
+func toEventTypeSet(eventTypes []domain.EventType) map[domain.EventType]struct{} {
+	if len(eventTypes) == 0 {
+		return nil
+	}
+	set := make(map[domain.EventType]struct{}, len(eventTypes))
+	for _, eventType := range eventTypes {
+		set[eventType] = struct{}{}
+	}
+	return set
+}
+
+func filterEventsByType(events []domain.Event, eventTypes []domain.EventType) []domain.Event {
+	if len(eventTypes) == 0 {
+		out := make([]domain.Event, len(events))
+		copy(out, events)
+		return out
+	}
+	allowed := toEventTypeSet(eventTypes)
+	filtered := make([]domain.Event, 0, len(events))
+	for _, event := range events {
+		if _, ok := allowed[event.Type]; ok {
+			filtered = append(filtered, event)
+		}
+	}
+	return filtered
+}
+
+func limitQueriedEvents(events []domain.Event, afterID string, limit int) []domain.Event {
+	if limit <= 0 || len(events) <= limit {
+		out := make([]domain.Event, len(events))
+		copy(out, events)
+		return out
+	}
+	if afterID != "" {
+		out := make([]domain.Event, limit)
+		copy(out, events[:limit])
+		return out
+	}
+	out := make([]domain.Event, limit)
+	copy(out, events[len(events)-limit:])
+	return out
+}
+
+func nextAfterID(events []domain.Event, fallback string) string {
+	for index := len(events) - 1; index >= 0; index-- {
+		if events[index].ID != "" {
+			return events[index].ID
+		}
+	}
+	return fallback
+}
+
+func markStreamEventDelivered(delivered map[string]struct{}, event domain.Event) bool {
+	key := streamEventKey(event)
+	if _, ok := delivered[key]; ok {
+		return false
+	}
+	delivered[key] = struct{}{}
+	return true
+}
+
+func streamEventKey(event domain.Event) string {
+	if event.ID != "" {
+		return "id:" + event.ID
+	}
+	return fmt.Sprintf("anon:%s:%s:%s:%s:%d", event.Type, event.TaskID, event.TraceID, event.RunID, event.Timestamp.UnixNano())
+}
+
+func writeSSEEvent(w http.ResponseWriter, flusher http.Flusher, event domain.Event) error {
+	payload, err := json.Marshal(event)
+	if err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "data: %s\n", payload); err != nil {
+		return err
+	}
+	if event.ID != "" {
+		if _, err := fmt.Fprintf(w, "id: %s\n", event.ID); err != nil {
+			return err
+		}
+	}
+	if _, err := fmt.Fprint(w, "\n"); err != nil {
+		return err
+	}
+	flusher.Flush()
+	return nil
+}
+
+func matchesEventStreamFilter(event domain.Event, taskID string, traceID string, eventTypes map[domain.EventType]struct{}) bool {
+	if taskID != "" && event.TaskID != taskID {
+		return false
+	}
+	if traceID != "" && event.TraceID != traceID {
+		return false
+	}
+	if len(eventTypes) > 0 {
+		if _, ok := eventTypes[event.Type]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 func (s *Server) publish(event domain.Event) {

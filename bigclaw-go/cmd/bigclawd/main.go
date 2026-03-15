@@ -32,10 +32,26 @@ func main() {
 		panic(err)
 	}
 	defer closeQueue(q)
-	eventLog, err := buildEventLog(cfg)
-	if err != nil {
-		panic(err)
+
+	var eventLog events.EventLog
+	switch {
+	case cfg.EventLogRemoteURL != "":
+		eventLog, err = events.NewHTTPEventLog(cfg.EventLogRemoteURL, cfg.EventLogRemoteBearer)
+		if err != nil {
+			panic(err)
+		}
+	case cfg.EventLogSQLitePath != "":
+		eventLog, err = events.NewSQLiteEventLog(cfg.EventLogSQLitePath)
+		if err != nil {
+			panic(err)
+		}
+		defer closeEventLog(eventLog)
+	default:
+		if _, err = buildEventLog(cfg); err != nil {
+			panic(err)
+		}
 	}
+
 	bus := events.NewBus()
 	if eventLog != nil {
 		bus.AddSink(eventLog)
@@ -49,13 +65,26 @@ func main() {
 			Timeout:     cfg.EventWebhookTimeout,
 		}))
 	}
+
 	registry := buildRegistry(cfg)
+	policyStore, err := scheduler.NewPolicyStoreWithSQLite(cfg.SchedulerPolicyPath, cfg.SchedulerPolicySQLitePath)
+	if err != nil {
+		panic(err)
+	}
+	defer closePolicyStore(policyStore)
+	fairnessStore, err := scheduler.NewFairnessStoreWithRemote(cfg.SchedulerFairnessSQLitePath, cfg.SchedulerFairnessRemoteURL, cfg.SchedulerFairnessRemoteBearer)
+	if err != nil {
+		panic(err)
+	}
+	defer closeFairnessStore(fairnessStore)
+
 	controller := control.New()
 	subscriberLeases := events.NewSubscriberLeaseCoordinator()
+	schedulerRuntime := scheduler.NewWithStores(policyStore, fairnessStore)
 	runtime := &worker.Runtime{
 		WorkerID:    "bootstrap-worker",
 		Queue:       q,
-		Scheduler:   scheduler.New(),
+		Scheduler:   schedulerRuntime,
 		Registry:    registry,
 		Bus:         bus,
 		Recorder:    recorder,
@@ -69,15 +98,17 @@ func main() {
 		seed(context.Background(), q)
 	}
 	server := &api.Server{
-		Recorder:  recorder,
-		Queue:     q,
-		Executors: registry.Kinds(),
-		Bus:       bus,
-		EventPlan: events.NewDurabilityPlan(cfg.EventLogBackend, cfg.EventLogTargetBackend, cfg.EventLogReplicationFactor),
+		Recorder:         recorder,
+		Queue:            q,
+		Executors:        registry.Kinds(),
+		Bus:              bus,
+		EventPlan:        events.NewDurabilityPlan(cfg.EventLogBackend, cfg.EventLogTargetBackend, cfg.EventLogReplicationFactor),
 		EventLog:         eventLog,
 		SubscriberLeases: subscriberLeases,
 		Worker:           runtime,
 		Control:          controller,
+		SchedulerPolicy:  policyStore,
+		SchedulerRuntime: schedulerRuntime,
 	}
 	httpServer := &http.Server{Addr: cfg.HTTPAddr, Handler: server.Handler()}
 	go func() {
@@ -135,6 +166,25 @@ func closeQueue(q queue.Queue) {
 	type closer interface{ Close() error }
 	if closerQueue, ok := q.(closer); ok {
 		_ = closerQueue.Close()
+	}
+}
+
+func closeEventLog(store events.EventLog) {
+	if store != nil {
+		_ = store.Close()
+	}
+}
+
+func closePolicyStore(store *scheduler.PolicyStore) {
+	if store != nil {
+		_ = store.Close()
+	}
+}
+
+func closeFairnessStore(store scheduler.FairnessStore) {
+	type closer interface{ Close() error }
+	if closable, ok := store.(closer); ok {
+		_ = closable.Close()
 	}
 }
 

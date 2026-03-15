@@ -8,6 +8,8 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -18,6 +20,7 @@ import (
 	"bigclaw-go/internal/events"
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/queue"
+	"bigclaw-go/internal/scheduler"
 	"bigclaw-go/internal/worker"
 )
 
@@ -25,6 +28,113 @@ type fakeWorkerStatus struct{}
 
 func (fakeWorkerStatus) Snapshot() worker.Status {
 	return worker.Status{WorkerID: "worker-a", State: "idle", SuccessfulRuns: 2, LeaseRenewals: 3, LastResult: "ok"}
+}
+
+type fakeWorkerPoolStatus struct{}
+
+func (fakeWorkerPoolStatus) Snapshot() worker.Status {
+	return worker.Status{WorkerID: "worker-a", State: "running", CurrentExecutor: domain.ExecutorLocal, SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"}
+}
+
+func (fakeWorkerPoolStatus) Snapshots() []worker.Status {
+	return []worker.Status{
+		{WorkerID: "worker-a", State: "running", CurrentExecutor: domain.ExecutorLocal, SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"},
+		{WorkerID: "worker-b", State: "leased", CurrentExecutor: domain.ExecutorKubernetes, SuccessfulRuns: 3, LeaseRenewals: 2, LastResult: "warming", PreemptionActive: true, CurrentPreemptionTaskID: "task-low", CurrentPreemptionWorkerID: "worker-low", LastPreemptedTaskID: "task-low", LastPreemptionAt: time.Unix(1700000100, 0), LastPreemptionReason: "preempted by urgent task task-urgent (priority=1)", PreemptionsIssued: 1},
+		{WorkerID: "worker-c", State: "idle", SuccessfulRuns: 8, LeaseRenewals: 0, LastResult: "idle"},
+	}
+}
+
+type blockingEventLog struct {
+	history       []domain.Event
+	replayStarted chan struct{}
+	release       chan struct{}
+}
+
+func (l *blockingEventLog) Write(context.Context, domain.Event) error {
+	return nil
+}
+
+func (l *blockingEventLog) Replay(limit int) ([]domain.Event, error) {
+	return l.query("", "", "", limit), nil
+}
+
+func (l *blockingEventLog) ReplayAfter(afterID string, limit int) ([]domain.Event, error) {
+	return l.query("", "", afterID, limit), nil
+}
+
+func (l *blockingEventLog) EventsByTask(taskID string, limit int) ([]domain.Event, error) {
+	return l.query(taskID, "", "", limit), nil
+}
+
+func (l *blockingEventLog) EventsByTaskAfter(taskID string, afterID string, limit int) ([]domain.Event, error) {
+	return l.query(taskID, "", afterID, limit), nil
+}
+
+func (l *blockingEventLog) EventsByTrace(traceID string, limit int) ([]domain.Event, error) {
+	return l.query("", traceID, "", limit), nil
+}
+
+func (l *blockingEventLog) EventsByTraceAfter(traceID string, afterID string, limit int) ([]domain.Event, error) {
+	return l.query("", traceID, afterID, limit), nil
+}
+
+func (l *blockingEventLog) Backend() string {
+	return "memory"
+}
+
+func (l *blockingEventLog) Capabilities() events.BackendCapabilities {
+	return events.BackendCapabilities{
+		Backend:    "memory",
+		Scope:      "test_double",
+		Publish:    events.FeatureSupport{Supported: true, Mode: "append_only"},
+		Replay:     events.FeatureSupport{Supported: true, Mode: "durable"},
+		Checkpoint: events.FeatureSupport{Supported: true, Mode: "subscriber_ack"},
+		Filtering:  events.FeatureSupport{Supported: true, Mode: "server_side"},
+		Retention:  events.FeatureSupport{Supported: true, Mode: "test_memory"},
+	}
+}
+
+func (l *blockingEventLog) Path() string {
+	return "blocking"
+}
+
+func (l *blockingEventLog) Close() error {
+	return nil
+}
+
+func (l *blockingEventLog) query(taskID, traceID, afterID string, limit int) []domain.Event {
+	select {
+	case l.replayStarted <- struct{}{}:
+	default:
+	}
+	<-l.release
+	start := 0
+	if afterID != "" {
+		for index, event := range l.history {
+			if event.ID == afterID {
+				start = index + 1
+			}
+		}
+	}
+	filtered := make([]domain.Event, 0, len(l.history)-start)
+	for _, event := range l.history[start:] {
+		if taskID != "" && event.TaskID != taskID {
+			continue
+		}
+		if traceID != "" && event.TraceID != traceID {
+			continue
+		}
+		filtered = append(filtered, event)
+		if afterID != "" && limit > 0 && len(filtered) >= limit {
+			break
+		}
+	}
+	if afterID == "" && limit > 0 && len(filtered) > limit {
+		filtered = filtered[len(filtered)-limit:]
+	}
+	out := make([]domain.Event, len(filtered))
+	copy(out, filtered)
+	return out
 }
 
 func TestCreateTaskAndQueryStatus(t *testing.T) {
@@ -495,6 +605,25 @@ func TestStreamEventsUsesLastEventIDForExpiredCursorFallback(t *testing.T) {
 	}
 }
 
+func TestDebugStatusIncludesWorkerPoolSummary(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, Worker: fakeWorkerPoolStatus{}, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", response.Code)
+	}
+	body := response.Body.String()
+	for _, want := range []string{"worker_pool", "total_workers", "3", "active_workers", "2", "idle_workers", "1", "worker-b", "leased", "preemption_active", "last_preempted_task_id", "task-low"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected %q in debug payload, got %s", want, body)
+		}
+	}
+}
+
 func TestDebugStatusIncludesWorkerSnapshot(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()
@@ -542,6 +671,59 @@ func TestDebugTraceEndpointsExposeTraceSummary(t *testing.T) {
 	server.Handler().ServeHTTP(metricsResponse, metricsRequest)
 	if !strings.Contains(metricsResponse.Body.String(), "trace_count") {
 		t.Fatalf("expected trace_count in metrics payload, got %s", metricsResponse.Body.String())
+	}
+}
+
+func TestMetricsSupportsPrometheusFormat(t *testing.T) {
+	recorder := observability.NewRecorder()
+	base := time.Now()
+	recorder.Record(domain.Event{ID: "evt-1", Type: domain.EventTaskQueued, TaskID: "task-1", TraceID: "trace-1", Timestamp: base})
+	controller := control.New()
+	controller.Pause("ops", "maintenance", base)
+	controller.Takeover("task-1", "alice", "bob", "investigating", base.Add(time.Second))
+	workQueue := queue.NewMemoryQueue()
+	if err := workQueue.Enqueue(context.Background(), domain.Task{ID: "queued-1", TraceID: "trace-queue", Title: "queued-1"}); err != nil {
+		t.Fatalf("enqueue task: %v", err)
+	}
+	server := &Server{
+		Recorder:  recorder,
+		Queue:     workQueue,
+		Bus:       events.NewBus(),
+		Worker:    fakeWorkerPoolStatus{},
+		Control:   controller,
+		Executors: []domain.ExecutorKind{domain.ExecutorLocal, domain.ExecutorKubernetes},
+		Now:       time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/metrics?format=prometheus", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected prometheus metrics 200, got %d", response.Code)
+	}
+	if contentType := response.Header().Get("Content-Type"); !strings.Contains(contentType, "text/plain") {
+		t.Fatalf("expected text/plain content type, got %q", contentType)
+	}
+	body := response.Body.String()
+	checks := []string{
+		"# HELP bigclaw_queue_size Current queue size.",
+		"bigclaw_queue_size 1",
+		"bigclaw_trace_count 1",
+		"bigclaw_events_total{event_type=\"task.queued\"} 1",
+		"bigclaw_executor_registered{executor=\"kubernetes\"} 1",
+		"bigclaw_worker_pool_total 3",
+		"bigclaw_worker_pool_active 2",
+		"bigclaw_worker_pool_idle 1",
+		"bigclaw_control_paused 1",
+		"bigclaw_control_active_takeovers 1",
+		"bigclaw_worker_status{current_executor=\"kubernetes\",state=\"leased\",worker_id=\"worker-b\"} 1",
+		"bigclaw_worker_successful_runs_total{worker_id=\"worker-a\"} 5",
+		"bigclaw_worker_lease_renewals_total{worker_id=\"worker-b\"} 2",
+	}
+	for _, check := range checks {
+		if !strings.Contains(body, check) {
+			t.Fatalf("expected %q in prometheus body, got %s", check, body)
+		}
 	}
 }
 
@@ -1464,6 +1646,154 @@ func TestV2ControlCenterSummariesFiltersAndAudit(t *testing.T) {
 	}
 }
 
+func TestV2ControlCenterIncludesMultiWorkerPoolSummary(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, Worker: fakeWorkerPoolStatus{}, Control: control.New(), Now: func() time.Time { return time.Unix(1700003600, 0) }}
+	handler := server.Handler()
+
+	body, _ := json.Marshal(map[string]any{"id": "task-pool-1", "title": "Pool target", "priority": 1, "metadata": map[string]any{"team": "platform", "project": "alpha"}})
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewReader(body)))
+	if response.Code != http.StatusAccepted {
+		t.Fatalf("expected task create 202, got %d body=%s", response.Code, response.Body.String())
+	}
+
+	centerResponse := httptest.NewRecorder()
+	handler.ServeHTTP(centerResponse, httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=10&audit_limit=10", nil))
+	if centerResponse.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d", centerResponse.Code)
+	}
+	bodyText := centerResponse.Body.String()
+	for _, want := range []string{"worker_pool", "total_workers", "3", "active_workers", "2", "idle_workers", "1", "worker-c", "idle", "preemption_active", "task-low"} {
+		if !strings.Contains(bodyText, want) {
+			t.Fatalf("expected %q in control center payload, got %s", want, bodyText)
+		}
+	}
+}
+
+func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
+	recorder := observability.NewRecorder()
+	controller := control.New()
+	server := &Server{
+		Recorder:  recorder,
+		Queue:     queue.NewMemoryQueue(),
+		Executors: []domain.ExecutorKind{domain.ExecutorLocal, domain.ExecutorKubernetes, domain.ExecutorRay},
+		Control:   controller,
+		Worker:    fakeWorkerPoolStatus{},
+		Now:       func() time.Time { return time.Unix(1700007200, 0) },
+	}
+	handler := server.Handler()
+	base := time.Unix(1700000000, 0)
+	for _, task := range []domain.Task{
+		{ID: "diag-local", TraceID: "trace-local", Title: "Local diag", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "platform", "project": "alpha"}, UpdatedAt: base.Add(time.Minute)},
+		{ID: "diag-k8s", TraceID: "trace-k8s", Title: "K8s diag", State: domain.TaskSucceeded, RequiredTools: []string{"browser"}, Metadata: map[string]string{"team": "platform", "project": "alpha"}, UpdatedAt: base.Add(2 * time.Minute)},
+		{ID: "diag-ray", TraceID: "trace-ray", Title: "Ray diag", State: domain.TaskSucceeded, RequiredTools: []string{"gpu"}, Metadata: map[string]string{"team": "platform", "project": "alpha"}, UpdatedAt: base.Add(3 * time.Minute)},
+	} {
+		recorder.StoreTask(task)
+	}
+	controller.Takeover("diag-k8s", "alice", "bob", "monitor rollout", base.Add(4*time.Minute))
+	for _, event := range []domain.Event{
+		{ID: "evt-local-routed", Type: domain.EventSchedulerRouted, TaskID: "diag-local", TraceID: "trace-local", Timestamp: base.Add(time.Second), Payload: map[string]any{"executor": domain.ExecutorLocal, "reason": "default local executor for low/medium risk"}},
+		{ID: "evt-local-completed", Type: domain.EventTaskCompleted, TaskID: "diag-local", TraceID: "trace-local", Timestamp: base.Add(2 * time.Second), Payload: map[string]any{"executor": domain.ExecutorLocal}},
+		{ID: "evt-k8s-routed", Type: domain.EventSchedulerRouted, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(3 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "reason": "browser workloads default to kubernetes executor"}},
+		{ID: "evt-k8s-started", Type: domain.EventTaskStarted, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(4 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes}},
+		{ID: "evt-k8s-completed", Type: domain.EventTaskCompleted, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(5 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes}},
+		{ID: "evt-ray-routed", Type: domain.EventSchedulerRouted, TaskID: "diag-ray", TraceID: "trace-ray", Timestamp: base.Add(6 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay, "reason": "gpu workloads default to ray executor"}},
+		{ID: "evt-ray-completed", Type: domain.EventTaskCompleted, TaskID: "diag-ray", TraceID: "trace-ray", Timestamp: base.Add(7 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay}},
+	} {
+		recorder.Record(event)
+	}
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v2/control-center?team=platform&project=alpha&limit=10&audit_limit=10", nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Diagnostics struct {
+			Summary struct {
+				RegisteredExecutors  int `json:"registered_executors"`
+				TotalRoutedDecisions int `json:"total_routed_decisions"`
+				ActiveWorkers        int `json:"active_workers"`
+				ActiveTakeovers      int `json:"active_takeovers"`
+			} `json:"summary"`
+			RoutingReasons []struct {
+				Executor string `json:"executor"`
+				Reason   string `json:"reason"`
+				Count    int    `json:"count"`
+			} `json:"routing_reasons"`
+			ExecutorCapacity []struct {
+				Executor       string   `json:"executor"`
+				Health         string   `json:"health"`
+				MaxConcurrency int      `json:"max_concurrency"`
+				ActiveTasks    int      `json:"active_tasks"`
+				QueuedTasks    int      `json:"queued_tasks"`
+				SampleTasks    []string `json:"sample_tasks"`
+				TeamBreakdown  []struct {
+					Key   string `json:"key"`
+					Count int    `json:"count"`
+				} `json:"team_breakdown"`
+				TopRoutingReasons []struct {
+					Reason string `json:"reason"`
+					Count  int    `json:"count"`
+				} `json:"top_routing_reasons"`
+			} `json:"executor_capacity"`
+			ClusterHealth struct {
+				HealthyExecutors int            `json:"healthy_executors"`
+				WorkerStates     map[string]int `json:"worker_states"`
+				TeamBreakdown    []struct {
+					Key   string `json:"key"`
+					Count int    `json:"count"`
+				} `json:"team_breakdown"`
+				SaturatedExecutors []string `json:"saturated_executors"`
+				TakeoverOwners     []struct {
+					Key   string `json:"key"`
+					Count int    `json:"count"`
+				} `json:"takeover_owners"`
+			} `json:"cluster_health"`
+			RolloutReport struct {
+				Markdown  string `json:"markdown"`
+				ExportURL string `json:"export_url"`
+			} `json:"rollout_report"`
+		} `json:"distributed_diagnostics"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed diagnostics: %v", err)
+	}
+	if decoded.Diagnostics.Summary.RegisteredExecutors != 3 || decoded.Diagnostics.Summary.TotalRoutedDecisions != 3 {
+		t.Fatalf("unexpected diagnostics summary: %+v", decoded.Diagnostics.Summary)
+	}
+	if decoded.Diagnostics.Summary.ActiveWorkers != 2 || decoded.Diagnostics.Summary.ActiveTakeovers != 1 {
+		t.Fatalf("unexpected worker/takeover summary: %+v", decoded.Diagnostics.Summary)
+	}
+	if len(decoded.Diagnostics.RoutingReasons) != 3 {
+		t.Fatalf("expected 3 routing reasons, got %+v", decoded.Diagnostics.RoutingReasons)
+	}
+	if len(decoded.Diagnostics.ExecutorCapacity) != 3 {
+		t.Fatalf("expected executor capacity for 3 executors, got %+v", decoded.Diagnostics.ExecutorCapacity)
+	}
+	if decoded.Diagnostics.ExecutorCapacity[0].Executor != "kubernetes" || decoded.Diagnostics.ExecutorCapacity[0].ActiveTasks != 1 || len(decoded.Diagnostics.ExecutorCapacity[0].TopRoutingReasons) == 0 {
+		t.Fatalf("unexpected kubernetes executor diagnostics: %+v", decoded.Diagnostics.ExecutorCapacity[0])
+	}
+	if len(decoded.Diagnostics.ExecutorCapacity[0].TeamBreakdown) == 0 || decoded.Diagnostics.ExecutorCapacity[0].TeamBreakdown[0].Key != "platform" {
+		t.Fatalf("expected team drilldown in executor diagnostics, got %+v", decoded.Diagnostics.ExecutorCapacity[0])
+	}
+	if decoded.Diagnostics.ClusterHealth.HealthyExecutors != 3 || decoded.Diagnostics.ClusterHealth.WorkerStates["running"] != 1 {
+		t.Fatalf("unexpected cluster health payload: %+v", decoded.Diagnostics.ClusterHealth)
+	}
+	if len(decoded.Diagnostics.ClusterHealth.TeamBreakdown) == 0 || decoded.Diagnostics.ClusterHealth.TeamBreakdown[0].Key != "platform" {
+		t.Fatalf("expected cluster team breakdown, got %+v", decoded.Diagnostics.ClusterHealth)
+	}
+	if len(decoded.Diagnostics.ClusterHealth.TakeoverOwners) == 0 || decoded.Diagnostics.ClusterHealth.TakeoverOwners[0].Key != "alice" {
+		t.Fatalf("expected takeover owner rollup, got %+v", decoded.Diagnostics.ClusterHealth)
+	}
+	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") || !strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {
+		t.Fatalf("unexpected rollout report payload: %+v", decoded.Diagnostics.RolloutReport)
+	}
+}
+
 func TestV2ControlCenterAuditFiltersOwnerReviewerAndScope(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()
@@ -1524,6 +1854,106 @@ func TestV2ControlCenterAuditFiltersOwnerReviewerAndScope(t *testing.T) {
 	entry := decoded.Audit[0]
 	if entry.Action != "assign_reviewer" || entry.Scope != "collaboration" || entry.TaskID != "task-audit-1" || entry.TaskStateBefore != string(domain.TaskBlocked) || entry.TaskStateAfter != string(domain.TaskBlocked) || entry.PreviousOwner != "carol" || entry.Owner != "carol" || entry.PreviousReviewer != "bob" || entry.Reviewer != "dave" || entry.Note != "handoff reviewer" || entry.OperationID == "" {
 		t.Fatalf("unexpected filtered audit entry: %+v", entry)
+	}
+}
+
+func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
+	dir := t.TempDir()
+	policyPath := filepath.Join(dir, "scheduler-policy.json")
+	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"ray","tool_executors":{"browser":"ray"},"urgent_priority_threshold":2,"fairness":{"window_seconds":30,"max_recent_decisions_per_tenant":1}}`), 0o644); err != nil {
+		t.Fatalf("write policy file: %v", err)
+	}
+	policySQLitePath := filepath.Join(dir, "scheduler-policy.db")
+	store, err := scheduler.NewPolicyStoreWithSQLite(policyPath, policySQLitePath)
+	if err != nil {
+		t.Fatalf("new policy store: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	fairnessPath := filepath.Join(dir, "fairness.db")
+	fairnessStore, err := scheduler.NewFairnessStore(fairnessPath)
+	if err != nil {
+		t.Fatalf("new fairness store: %v", err)
+	}
+	if closable, ok := fairnessStore.(interface{ Close() error }); ok {
+		defer func() { _ = closable.Close() }()
+	}
+	schedulerRuntime := scheduler.NewWithStores(store, fairnessStore)
+	schedulerRuntime.Decide(domain.Task{ID: "fair-1", TenantID: "tenant-a", Priority: 3}, scheduler.QuotaSnapshot{})
+	schedulerRuntime.Decide(domain.Task{ID: "fair-2", TenantID: "tenant-b", Priority: 3}, scheduler.QuotaSnapshot{})
+	recorder := observability.NewRecorder()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), SchedulerPolicy: store, SchedulerRuntime: schedulerRuntime, Now: time.Now}
+	handler := server.Handler()
+
+	policyResponse := httptest.NewRecorder()
+	policyRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center/policy", nil)
+	policyRequest.Header.Set("X-BigClaw-Role", "platform_admin")
+	handler.ServeHTTP(policyResponse, policyRequest)
+	if policyResponse.Code != http.StatusOK {
+		t.Fatalf("expected scheduler policy 200, got %d %s", policyResponse.Code, policyResponse.Body.String())
+	}
+	var policyDecoded struct {
+		Backend          string `json:"backend"`
+		Shared           bool   `json:"shared"`
+		SourcePath       string `json:"source_path"`
+		SharedPath       string `json:"shared_path"`
+		ReloadSupported  bool   `json:"reload_supported"`
+		ReloadAuthorized bool   `json:"reload_authorized"`
+		Policy           struct {
+			DefaultExecutor         string            `json:"default_executor"`
+			UrgentPriorityThreshold int               `json:"urgent_priority_threshold"`
+			ToolExecutors           map[string]string `json:"tool_executors"`
+			Fairness                struct {
+				WindowSeconds               int `json:"window_seconds"`
+				MaxRecentDecisionsPerTenant int `json:"max_recent_decisions_per_tenant"`
+			} `json:"fairness"`
+		} `json:"policy"`
+		Fairness struct {
+			Enabled                     bool   `json:"enabled"`
+			Shared                      bool   `json:"shared"`
+			Backend                     string `json:"backend"`
+			WindowSeconds               int    `json:"window_seconds"`
+			MaxRecentDecisionsPerTenant int    `json:"max_recent_decisions_per_tenant"`
+			ActiveTenants               int    `json:"active_tenants"`
+			Tenants                     []struct {
+				TenantID            string `json:"tenant_id"`
+				RecentAcceptedCount int    `json:"recent_accepted_count"`
+			} `json:"tenants"`
+		} `json:"fairness"`
+	}
+	if err := json.Unmarshal(policyResponse.Body.Bytes(), &policyDecoded); err != nil {
+		t.Fatalf("decode scheduler policy response: %v", err)
+	}
+	if policyDecoded.Backend != "sqlite" || !policyDecoded.Shared || policyDecoded.SourcePath != policyPath || policyDecoded.SharedPath != policySQLitePath || !policyDecoded.ReloadSupported || !policyDecoded.ReloadAuthorized || policyDecoded.Policy.DefaultExecutor != string(domain.ExecutorRay) || policyDecoded.Policy.ToolExecutors["browser"] != string(domain.ExecutorRay) || policyDecoded.Policy.UrgentPriorityThreshold != 2 || policyDecoded.Policy.Fairness.WindowSeconds != 30 || policyDecoded.Policy.Fairness.MaxRecentDecisionsPerTenant != 1 {
+		t.Fatalf("unexpected scheduler policy payload: %+v", policyDecoded)
+	}
+	if !policyDecoded.Fairness.Enabled || !policyDecoded.Fairness.Shared || policyDecoded.Fairness.Backend != "sqlite" || policyDecoded.Fairness.ActiveTenants != 2 || len(policyDecoded.Fairness.Tenants) != 2 {
+		t.Fatalf("unexpected fairness runtime payload: %+v", policyDecoded.Fairness)
+	}
+
+	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"kubernetes","high_risk_executor":"ray","fairness":{"window_seconds":10,"max_recent_decisions_per_tenant":2}}`), 0o644); err != nil {
+		t.Fatalf("rewrite policy file: %v", err)
+	}
+	reloadResponse := httptest.NewRecorder()
+	reloadRequest := httptest.NewRequest(http.MethodPost, "/v2/control-center/policy/reload", nil)
+	reloadRequest.Header.Set("X-BigClaw-Role", "platform_admin")
+	handler.ServeHTTP(reloadResponse, reloadRequest)
+	if reloadResponse.Code != http.StatusOK || !strings.Contains(reloadResponse.Body.String(), `"reloaded":true`) {
+		t.Fatalf("expected reload response, got %d %s", reloadResponse.Code, reloadResponse.Body.String())
+	}
+
+	policyResponse = httptest.NewRecorder()
+	handler.ServeHTTP(policyResponse, policyRequest)
+	if !strings.Contains(policyResponse.Body.String(), `"default_executor":"kubernetes"`) || !strings.Contains(policyResponse.Body.String(), `"high_risk_executor":"ray"`) || !strings.Contains(policyResponse.Body.String(), `"window_seconds":10`) {
+		t.Fatalf("expected reloaded policy in get response, got %s", policyResponse.Body.String())
+	}
+
+	forbiddenResponse := httptest.NewRecorder()
+	forbiddenRequest := httptest.NewRequest(http.MethodPost, "/v2/control-center/policy/reload", nil)
+	forbiddenRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	forbiddenRequest.Header.Set("X-BigClaw-Team", "platform")
+	handler.ServeHTTP(forbiddenResponse, forbiddenRequest)
+	if forbiddenResponse.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden reload for eng lead, got %d %s", forbiddenResponse.Code, forbiddenResponse.Body.String())
 	}
 }
 
@@ -1722,5 +2152,508 @@ func TestV2DashboardAndRunDetailEnforceViewerTeamScope(t *testing.T) {
 	handler.ServeHTTP(runResponse, runRequest)
 	if runResponse.Code != http.StatusForbidden {
 		t.Fatalf("expected forbidden run detail for out-of-scope team, got %d %s", runResponse.Code, runResponse.Body.String())
+	}
+}
+
+func TestV2ControlCenterPolicyEndpointShowsRemoteFairnessHealth(t *testing.T) {
+	dir := t.TempDir()
+	policyPath := filepath.Join(dir, "scheduler-policy.json")
+	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"ray","fairness":{"window_seconds":30,"max_recent_decisions_per_tenant":1}}`), 0o644); err != nil {
+		t.Fatalf("write policy file: %v", err)
+	}
+	store, err := scheduler.NewPolicyStore(policyPath)
+	if err != nil {
+		t.Fatalf("new policy store: %v", err)
+	}
+	serviceStore, err := scheduler.NewFairnessStore("")
+	if err != nil {
+		t.Fatalf("new service fairness store: %v", err)
+	}
+	service := httptest.NewServer(scheduler.NewFairnessServiceHandler(serviceStore))
+	defer service.Close()
+	remoteFairness, err := scheduler.NewFairnessStoreWithRemote("", service.URL, "")
+	if err != nil {
+		t.Fatalf("new remote fairness store: %v", err)
+	}
+	schedulerRuntime := scheduler.NewWithStores(store, remoteFairness)
+	schedulerRuntime.Decide(domain.Task{ID: "remote-fair-1", TenantID: "tenant-a", Priority: 3}, scheduler.QuotaSnapshot{})
+	schedulerRuntime.Decide(domain.Task{ID: "remote-fair-2", TenantID: "tenant-b", Priority: 3}, scheduler.QuotaSnapshot{})
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), SchedulerPolicy: store, SchedulerRuntime: schedulerRuntime, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center/policy", nil)
+	request.Header.Set("X-BigClaw-Role", "platform_admin")
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected scheduler policy 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Fairness struct {
+			Backend       string `json:"backend"`
+			Healthy       bool   `json:"healthy"`
+			Endpoint      string `json:"endpoint"`
+			ActiveTenants int    `json:"active_tenants"`
+		} `json:"fairness"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode remote fairness policy response: %v", err)
+	}
+	if decoded.Fairness.Backend != "http" || !decoded.Fairness.Healthy || decoded.Fairness.Endpoint != service.URL || decoded.Fairness.ActiveTenants != 2 {
+		t.Fatalf("unexpected remote fairness metadata: %+v", decoded.Fairness)
+	}
+	body := response.Body.String()
+	for _, want := range []string{"tenant-a", "tenant-b"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected %q in remote fairness policy payload, got %s", want, body)
+		}
+	}
+}
+
+func TestEventsEndpointUsesDurableEventLogAcrossInstances(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "event-log.db")
+	log1, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = log1.Close() }()
+	recorder1 := observability.NewRecorder()
+	bus1 := events.NewBus()
+	bus1.AddSink(events.RecorderSink{Recorder: recorder1})
+	bus1.AddSink(log1)
+	bus1.Publish(domain.Event{ID: "evt-durable-1", Type: domain.EventTaskQueued, TaskID: "task-durable", TraceID: "trace-durable", Timestamp: time.Now()})
+
+	log2, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("reopen sqlite event log: %v", err)
+	}
+	defer func() { _ = log2.Close() }()
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: log2, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/events?trace_id=trace-durable&limit=10", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected events 200, got %d %s", response.Code, response.Body.String())
+	}
+	body := response.Body.String()
+	for _, want := range []string{"evt-durable-1", `"backend":"sqlite"`, `"durable":true`} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected %q in durable events response, got %s", want, body)
+		}
+	}
+}
+
+func TestStreamEventsReplayCanUseDurableEventLog(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "event-log.db")
+	log1, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = log1.Close() }()
+	bus1 := events.NewBus()
+	bus1.AddSink(log1)
+	bus1.Publish(domain.Event{ID: "evt-durable-stream", Type: domain.EventTaskQueued, TaskID: "task-stream", TraceID: "trace-stream", Timestamp: time.Now()})
+
+	log2, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("reopen sqlite event log: %v", err)
+	}
+	defer func() { _ = log2.Close() }()
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: log2, Now: time.Now}
+	ts := httptest.NewServer(server.Handler())
+	defer ts.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, ts.URL+"/stream/events?replay=1&trace_id=trace-stream&limit=10", nil)
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+	resultCh := make(chan string, 1)
+	go func() {
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			resultCh <- "ERROR: " + err.Error()
+			return
+		}
+		defer response.Body.Close()
+		reader := bufio.NewReader(response.Body)
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			resultCh <- "ERROR: " + err.Error()
+			return
+		}
+		resultCh <- strings.TrimSpace(line)
+	}()
+	select {
+	case line := <-resultCh:
+		if !strings.Contains(line, "evt-durable-stream") {
+			t.Fatalf("expected durable replayed event in stream, got %q", line)
+		}
+	case <-ctx.Done():
+		t.Fatal("timed out waiting for durable replay stream event")
+	}
+}
+
+func TestEventsEndpointSupportsAfterIDCursor(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "event-log.db")
+	log1, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	base := time.Now()
+	for index, event := range []domain.Event{
+		{ID: "evt-durable-1", Type: domain.EventTaskQueued, TaskID: "task-durable", TraceID: "trace-durable", Timestamp: base},
+		{ID: "evt-durable-2", Type: domain.EventTaskStarted, TaskID: "task-durable", TraceID: "trace-durable", Timestamp: base.Add(time.Second)},
+		{ID: "evt-durable-3", Type: domain.EventTaskCompleted, TaskID: "task-durable", TraceID: "trace-durable", Timestamp: base.Add(2 * time.Second)},
+	} {
+		if err := log1.Write(context.Background(), event); err != nil {
+			t.Fatalf("write durable event %d: %v", index, err)
+		}
+	}
+	if err := log1.Close(); err != nil {
+		t.Fatalf("close first sqlite event log: %v", err)
+	}
+	log2, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("reopen sqlite event log: %v", err)
+	}
+	defer func() { _ = log2.Close() }()
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: log2, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/events?trace_id=trace-durable&after_id=evt-durable-1&limit=10", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected events 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Events      []domain.Event `json:"events"`
+		AfterID     string         `json:"after_id"`
+		NextAfterID string         `json:"next_after_id"`
+		Backend     string         `json:"backend"`
+		Durable     bool           `json:"durable"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode cursor events response: %v", err)
+	}
+	if len(decoded.Events) != 2 || decoded.Events[0].ID != "evt-durable-2" || decoded.Events[1].ID != "evt-durable-3" {
+		t.Fatalf("unexpected cursor events: %+v", decoded.Events)
+	}
+	if decoded.AfterID != "evt-durable-1" || decoded.NextAfterID != "evt-durable-3" {
+		t.Fatalf("unexpected cursor metadata: after=%q next=%q", decoded.AfterID, decoded.NextAfterID)
+	}
+	if decoded.Backend != "sqlite" || !decoded.Durable {
+		t.Fatalf("unexpected durable metadata: %+v", decoded)
+	}
+}
+
+func TestStreamEventsResumeUsesLastEventID(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "event-log.db")
+	log1, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	base := time.Now()
+	for _, event := range []domain.Event{
+		{ID: "evt-stream-1", Type: domain.EventTaskQueued, TaskID: "task-stream", TraceID: "trace-stream", Timestamp: base},
+		{ID: "evt-stream-2", Type: domain.EventTaskStarted, TaskID: "task-stream", TraceID: "trace-stream", Timestamp: base.Add(time.Second)},
+	} {
+		if err := log1.Write(context.Background(), event); err != nil {
+			t.Fatalf("write stream event %s: %v", event.ID, err)
+		}
+	}
+	if err := log1.Close(); err != nil {
+		t.Fatalf("close first sqlite event log: %v", err)
+	}
+	log2, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("reopen sqlite event log: %v", err)
+	}
+	defer func() { _ = log2.Close() }()
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: log2, Now: time.Now}
+	ts := httptest.NewServer(server.Handler())
+	defer ts.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, ts.URL+"/stream/events?trace_id=trace-stream&limit=10", nil)
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+	request.Header.Set("Last-Event-ID", "evt-stream-1")
+	resultCh := make(chan [3]string, 1)
+	go func() {
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			resultCh <- [3]string{"ERROR", err.Error(), ""}
+			return
+		}
+		defer response.Body.Close()
+		reader := bufio.NewReader(response.Body)
+		line1, err := reader.ReadString('\n')
+		if err != nil {
+			resultCh <- [3]string{"ERROR", err.Error(), ""}
+			return
+		}
+		line2, err := reader.ReadString('\n')
+		if err != nil {
+			resultCh <- [3]string{"ERROR", err.Error(), ""}
+			return
+		}
+		resultCh <- [3]string{response.Status, strings.TrimSpace(line1), strings.TrimSpace(line2)}
+	}()
+	select {
+	case result := <-resultCh:
+		if result[0] == "ERROR" {
+			t.Fatalf("stream request failed: %s", result[1])
+		}
+		if !strings.Contains(result[1], "evt-stream-2") || strings.Contains(result[1], "evt-stream-1") {
+			t.Fatalf("expected replayed cursor event in first SSE line, got %q", result[1])
+		}
+		if result[2] != "id: evt-stream-2" {
+			t.Fatalf("expected SSE id line for resumed event, got %q", result[2])
+		}
+	case <-ctx.Done():
+		t.Fatal("timed out waiting for resumed SSE event")
+	}
+}
+
+func TestStreamEventsReplayLiveHandoffDeduplicatesOverlap(t *testing.T) {
+	evt1 := domain.Event{ID: "evt-stream-1", Type: domain.EventTaskQueued, TaskID: "task-stream", TraceID: "trace-stream", Timestamp: time.Now()}
+	evt2 := domain.Event{ID: "evt-stream-2", Type: domain.EventTaskStarted, TaskID: "task-stream", TraceID: "trace-stream", Timestamp: time.Now().Add(time.Second)}
+	log := &blockingEventLog{
+		history:       []domain.Event{evt1, evt2},
+		replayStarted: make(chan struct{}, 1),
+		release:       make(chan struct{}),
+	}
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: log, Now: time.Now}
+	ts := httptest.NewServer(server.Handler())
+	defer ts.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, ts.URL+"/stream/events?trace_id=trace-stream&after_id=evt-before&limit=10", nil)
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+	type streamResult struct {
+		lines []string
+		err   string
+	}
+	resultCh := make(chan streamResult, 1)
+	go func() {
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			resultCh <- streamResult{err: err.Error()}
+			return
+		}
+		defer response.Body.Close()
+		reader := bufio.NewReader(response.Body)
+		lines := make([]string, 0)
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				resultCh <- streamResult{lines: lines, err: err.Error()}
+				return
+			}
+			line = strings.TrimSpace(line)
+			if line != "" {
+				lines = append(lines, line)
+			}
+		}
+	}()
+
+	select {
+	case <-log.replayStarted:
+	case <-ctx.Done():
+		t.Fatal("timed out waiting for replay to start")
+	}
+	server.Bus.Publish(evt2)
+	close(log.release)
+
+	select {
+	case result := <-resultCh:
+		if result.err == "" {
+			t.Fatal("expected request to end after context cancellation")
+		}
+		if len(result.lines) != 4 {
+			t.Fatalf("expected exactly two SSE events without duplicates, got %d lines: %+v", len(result.lines), result.lines)
+		}
+		if !strings.Contains(result.lines[0], "evt-stream-1") || result.lines[1] != "id: evt-stream-1" {
+			t.Fatalf("unexpected first replayed event lines: %+v", result.lines)
+		}
+		if !strings.Contains(result.lines[2], "evt-stream-2") || result.lines[3] != "id: evt-stream-2" {
+			t.Fatalf("unexpected second replayed event lines: %+v", result.lines)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for replay/live handoff result")
+	}
+}
+
+func TestEventsEndpointFiltersByEventType(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	base := time.Now()
+	bus.Publish(domain.Event{ID: "evt-filter-1", Type: domain.EventTaskQueued, TaskID: "task-filter", TraceID: "trace-filter", Timestamp: base})
+	bus.Publish(domain.Event{ID: "evt-filter-2", Type: domain.EventTaskStarted, TaskID: "task-filter", TraceID: "trace-filter", Timestamp: base.Add(time.Second)})
+	bus.Publish(domain.Event{ID: "evt-filter-3", Type: domain.EventTaskCompleted, TaskID: "task-filter", TraceID: "trace-filter", Timestamp: base.Add(2 * time.Second)})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/events?trace_id=trace-filter&event_type=task.started&limit=10", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected events 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Events     []domain.Event     `json:"events"`
+		EventTypes []domain.EventType `json:"event_types"`
+		Backend    string             `json:"backend"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode filtered events response: %v", err)
+	}
+	if len(decoded.Events) != 1 || decoded.Events[0].ID != "evt-filter-2" || decoded.Events[0].Type != domain.EventTaskStarted {
+		t.Fatalf("unexpected filtered events: %+v", decoded.Events)
+	}
+	if len(decoded.EventTypes) != 1 || decoded.EventTypes[0] != domain.EventTaskStarted || decoded.Backend != "memory" {
+		t.Fatalf("unexpected filter metadata: %+v", decoded)
+	}
+}
+
+func TestStreamEventCheckpointEndpointAndResume(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "event-log.db")
+	log1, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	base := time.Now()
+	for _, event := range []domain.Event{
+		{ID: "evt-check-1", Type: domain.EventTaskQueued, TaskID: "task-check", TraceID: "trace-check", Timestamp: base},
+		{ID: "evt-check-2", Type: domain.EventTaskStarted, TaskID: "task-check", TraceID: "trace-check", Timestamp: base.Add(time.Second)},
+	} {
+		if err := log1.Write(context.Background(), event); err != nil {
+			t.Fatalf("write checkpoint event %s: %v", event.ID, err)
+		}
+	}
+	server1 := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: log1, Now: time.Now}
+	ackBody := bytes.NewBufferString(`{"event_id":"evt-check-1"}`)
+	ackRequest := httptest.NewRequest(http.MethodPost, "/stream/events/checkpoints/subscriber-a", ackBody)
+	ackResponse := httptest.NewRecorder()
+	server1.Handler().ServeHTTP(ackResponse, ackRequest)
+	if ackResponse.Code != http.StatusOK {
+		t.Fatalf("expected checkpoint ack 200, got %d %s", ackResponse.Code, ackResponse.Body.String())
+	}
+	checkpointRequest := httptest.NewRequest(http.MethodGet, "/stream/events/checkpoints/subscriber-a", nil)
+	checkpointResponse := httptest.NewRecorder()
+	server1.Handler().ServeHTTP(checkpointResponse, checkpointRequest)
+	if checkpointResponse.Code != http.StatusOK {
+		t.Fatalf("expected checkpoint get 200, got %d %s", checkpointResponse.Code, checkpointResponse.Body.String())
+	}
+	var checkpointDecoded struct {
+		Checkpoint events.SubscriberCheckpoint `json:"checkpoint"`
+	}
+	if err := json.Unmarshal(checkpointResponse.Body.Bytes(), &checkpointDecoded); err != nil {
+		t.Fatalf("decode checkpoint response: %v", err)
+	}
+	if checkpointDecoded.Checkpoint.EventID != "evt-check-1" || checkpointDecoded.Checkpoint.SubscriberID != "subscriber-a" {
+		t.Fatalf("unexpected checkpoint payload: %+v", checkpointDecoded.Checkpoint)
+	}
+	if err := log1.Close(); err != nil {
+		t.Fatalf("close first sqlite event log: %v", err)
+	}
+
+	log2, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("reopen sqlite event log: %v", err)
+	}
+	defer func() { _ = log2.Close() }()
+	server2 := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: log2, Now: time.Now}
+	ts := httptest.NewServer(server2.Handler())
+	defer ts.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, ts.URL+"/stream/events?subscriber_id=subscriber-a&trace_id=trace-check&event_type=task.started&limit=10", nil)
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+	resultCh := make(chan [3]string, 1)
+	go func() {
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			resultCh <- [3]string{"ERROR", err.Error(), ""}
+			return
+		}
+		defer response.Body.Close()
+		reader := bufio.NewReader(response.Body)
+		line1, err := reader.ReadString('\n')
+		if err != nil {
+			resultCh <- [3]string{"ERROR", err.Error(), ""}
+			return
+		}
+		line2, err := reader.ReadString('\n')
+		if err != nil {
+			resultCh <- [3]string{"ERROR", err.Error(), ""}
+			return
+		}
+		resultCh <- [3]string{response.Status, strings.TrimSpace(line1), strings.TrimSpace(line2)}
+	}()
+	select {
+	case result := <-resultCh:
+		if result[0] == "ERROR" {
+			t.Fatalf("stream request failed: %s", result[1])
+		}
+		if !strings.Contains(result[1], "evt-check-2") || strings.Contains(result[1], "evt-check-1") {
+			t.Fatalf("expected resumed filtered event in first SSE line, got %q", result[1])
+		}
+		if result[2] != "id: evt-check-2" {
+			t.Fatalf("expected SSE id line for resumed event, got %q", result[2])
+		}
+	case <-ctx.Done():
+		t.Fatal("timed out waiting for checkpoint-resumed SSE event")
+	}
+}
+
+func TestEventsEndpointUsesRemoteEventLogBackend(t *testing.T) {
+	store, err := events.NewSQLiteEventLog(filepath.Join(t.TempDir(), "event-log.db"))
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	serviceServer := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: store, Now: time.Now}
+	serviceTS := httptest.NewServer(serviceServer.Handler())
+	defer serviceTS.Close()
+	remoteLog, err := events.NewHTTPEventLog(serviceTS.URL+"/internal/events/log", "")
+	if err != nil {
+		t.Fatalf("new remote event log: %v", err)
+	}
+	base := time.Now()
+	for _, event := range []domain.Event{
+		{ID: "evt-http-1", Type: domain.EventTaskQueued, TaskID: "task-http", TraceID: "trace-http", Timestamp: base},
+		{ID: "evt-http-2", Type: domain.EventTaskStarted, TaskID: "task-http", TraceID: "trace-http", Timestamp: base.Add(time.Second)},
+	} {
+		if err := remoteLog.Write(context.Background(), event); err != nil {
+			t.Fatalf("write remote-backed event %s: %v", event.ID, err)
+		}
+	}
+	apiServer := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: remoteLog, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/events?trace_id=trace-http&after_id=evt-http-1&limit=10", nil)
+	apiServer.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected remote events 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Events  []domain.Event `json:"events"`
+		Backend string         `json:"backend"`
+		Durable bool           `json:"durable"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode remote backend events response: %v", err)
+	}
+	if len(decoded.Events) != 1 || decoded.Events[0].ID != "evt-http-2" {
+		t.Fatalf("unexpected remote backend events: %+v", decoded.Events)
+	}
+	if decoded.Backend != "http" || !decoded.Durable {
+		t.Fatalf("unexpected remote backend metadata: %+v", decoded)
 	}
 }

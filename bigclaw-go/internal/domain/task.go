@@ -82,6 +82,7 @@ const (
 	EventTaskStarted     EventType = "task.started"
 	EventTaskCompleted   EventType = "task.completed"
 	EventTaskRetried     EventType = "task.retried"
+	EventTaskPreempted   EventType = "task.preempted"
 	EventTaskCancelled   EventType = "task.cancelled"
 	EventTaskDeadLetter  EventType = "task.dead_lettered"
 	EventSchedulerRouted EventType = "scheduler.routed"
@@ -128,7 +129,7 @@ func TaskStateFromEventType(eventType EventType) (TaskState, bool) {
 		return TaskRetrying, true
 	case EventTaskCompleted:
 		return TaskSucceeded, true
-	case EventTaskCancelled:
+	case EventTaskPreempted, EventTaskCancelled:
 		return TaskCancelled, true
 	case EventTaskDeadLetter:
 		return TaskDeadLetter, true

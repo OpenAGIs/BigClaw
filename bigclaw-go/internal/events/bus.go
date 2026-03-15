@@ -11,10 +11,36 @@ type Sink interface {
 	Write(context.Context, domain.Event) error
 }
 
+type SubscriptionFilter struct {
+	TaskID     string
+	TraceID    string
+	EventTypes map[domain.EventType]struct{}
+}
+
+func (f SubscriptionFilter) Match(event domain.Event) bool {
+	if f.TaskID != "" && event.TaskID != f.TaskID {
+		return false
+	}
+	if f.TraceID != "" && event.TraceID != f.TraceID {
+		return false
+	}
+	if len(f.EventTypes) > 0 {
+		if _, ok := f.EventTypes[event.Type]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+type subscriber struct {
+	ch     chan domain.Event
+	filter SubscriptionFilter
+}
+
 type Bus struct {
 	mu             sync.RWMutex
 	history        []domain.Event
-	subscribers    map[int]chan domain.Event
+	subscribers    map[int]subscriber
 	sinks          []Sink
 	nextID         int
 	provider       CapabilityProvider
@@ -29,7 +55,7 @@ func NewBus() *Bus {
 
 func NewBusWithHistoryLimit(limit int) *Bus {
 	return &Bus{
-		subscribers:  make(map[int]chan domain.Event),
+		subscribers:  make(map[int]subscriber),
 		capability:   defaultBusCapabilities(),
 		historyLimit: limit,
 	}
@@ -82,16 +108,19 @@ func (b *Bus) Publish(event domain.Event) {
 		b.history = append([]domain.Event(nil), b.history[drop:]...)
 		b.historyDropped = true
 	}
-	subs := make([]chan domain.Event, 0, len(b.subscribers))
-	for _, ch := range b.subscribers {
-		subs = append(subs, ch)
+	subs := make([]subscriber, 0, len(b.subscribers))
+	for _, sub := range b.subscribers {
+		subs = append(subs, sub)
 	}
 	sinks := append([]Sink(nil), b.sinks...)
 	b.mu.Unlock()
 
-	for _, ch := range subs {
+	for _, sub := range subs {
+		if !sub.filter.Match(event) {
+			continue
+		}
 		select {
-		case ch <- WithDelivery(event, domain.EventDeliveryModeLive):
+		case sub.ch <- WithDelivery(event, domain.EventDeliveryModeLive):
 		default:
 		}
 	}
@@ -101,19 +130,29 @@ func (b *Bus) Publish(event domain.Event) {
 }
 
 func (b *Bus) Subscribe(buffer int) (<-chan domain.Event, func()) {
-	return b.subscribe(buffer, nil)
+	return b.subscribe(buffer, nil, SubscriptionFilter{})
+}
+
+func (b *Bus) SubscribeTopic(buffer int, filter SubscriptionFilter) (<-chan domain.Event, func()) {
+	return b.subscribe(buffer, nil, filter)
 }
 
 func (b *Bus) SubscribeReplay(buffer int, limit int) (<-chan domain.Event, func()) {
 	replay, _ := b.ReplayWindow(limit, "", "", "")
-	return b.subscribe(buffer, replay)
+	return b.subscribe(buffer, replay, SubscriptionFilter{})
+}
+
+func (b *Bus) SubscribeReplayTopic(buffer int, limit int, filter SubscriptionFilter) (<-chan domain.Event, func()) {
+	replay, _ := b.ReplayWindow(0, "", filter.TaskID, filter.TraceID)
+	replay = lastEvents(filterEvents(replay, filter), limit)
+	return b.subscribe(buffer, replay, filter)
 }
 
 func (b *Bus) SubscribeReplayWindow(buffer int, replay []domain.Event) (<-chan domain.Event, func()) {
-	return b.subscribe(buffer, replay)
+	return b.subscribe(buffer, replay, SubscriptionFilter{})
 }
 
-func (b *Bus) subscribe(buffer int, replay []domain.Event) (<-chan domain.Event, func()) {
+func (b *Bus) subscribe(buffer int, replay []domain.Event, filter SubscriptionFilter) (<-chan domain.Event, func()) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	id := b.nextID
@@ -129,12 +168,12 @@ func (b *Bus) subscribe(buffer int, replay []domain.Event) (<-chan domain.Event,
 	for _, event := range replay {
 		ch <- WithDelivery(event, domain.EventDeliveryModeReplay)
 	}
-	b.subscribers[id] = ch
+	b.subscribers[id] = subscriber{ch: ch, filter: filter}
 	return ch, func() {
 		b.mu.Lock()
 		defer b.mu.Unlock()
 		if current, ok := b.subscribers[id]; ok {
-			close(current)
+			close(current.ch)
 			delete(b.subscribers, id)
 		}
 	}
@@ -161,6 +200,21 @@ func leadingEvents(events []domain.Event, limit int) []domain.Event {
 	out := make([]domain.Event, limit)
 	copy(out, events[:limit])
 	return out
+}
+
+func filterEvents(events []domain.Event, filter SubscriptionFilter) []domain.Event {
+	if filter.TaskID == "" && filter.TraceID == "" && len(filter.EventTypes) == 0 {
+		out := make([]domain.Event, len(events))
+		copy(out, events)
+		return out
+	}
+	filtered := make([]domain.Event, 0, len(events))
+	for _, event := range events {
+		if filter.Match(event) {
+			filtered = append(filtered, event)
+		}
+	}
+	return filtered
 }
 
 func (b *Bus) ReplayWindow(limit int, afterID string, taskID string, traceID string) ([]domain.Event, ReplayCursorStatus) {

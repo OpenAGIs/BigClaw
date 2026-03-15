@@ -12,7 +12,7 @@ from .collaboration import (
     render_collaboration_lines,
     render_collaboration_panel_html,
 )
-from .observability import TaskRun
+from .observability import RepoSyncAudit, TaskRun
 from .orchestration import HandoffRequest, OrchestrationPlan, OrchestrationPolicyDecision
 from .run_detail import (
     RunDetailEvent,
@@ -2064,6 +2064,43 @@ def _similarity_reason(run: TaskRun, candidate: TaskRun) -> str:
     return ", ".join(reasons) or "similar execution trail"
 
 
+def render_repo_sync_audit_report(audit: RepoSyncAudit) -> str:
+    lines = [
+        "# Repo Sync Audit",
+        "",
+        "## Sync Status",
+        "",
+        f"- Status: {audit.sync.status}",
+        f"- Failure Category: {audit.sync.failure_category or 'none'}",
+        f"- Summary: {audit.sync.summary or 'none'}",
+        f"- Branch: {audit.sync.branch or 'unknown'}",
+        f"- Remote: {audit.sync.remote}",
+        f"- Remote Ref: {audit.sync.remote_ref or 'unknown'}",
+        f"- Ahead By: {audit.sync.ahead_by}",
+        f"- Behind By: {audit.sync.behind_by}",
+        f"- Dirty Paths: {', '.join(audit.sync.dirty_paths) if audit.sync.dirty_paths else 'none'}",
+        f"- Auth Target: {audit.sync.auth_target or 'none'}",
+        f"- Checked At: {audit.sync.timestamp}",
+        "",
+        "## Pull Request Freshness",
+        "",
+        f"- PR Number: {audit.pull_request.pr_number if audit.pull_request.pr_number is not None else 'unknown'}",
+        f"- PR URL: {audit.pull_request.pr_url or 'none'}",
+        f"- Branch State: {audit.pull_request.branch_state}",
+        f"- Body State: {audit.pull_request.body_state}",
+        f"- Branch Head SHA: {audit.pull_request.branch_head_sha or 'unknown'}",
+        f"- PR Head SHA: {audit.pull_request.pr_head_sha or 'unknown'}",
+        f"- Expected Body Digest: {audit.pull_request.expected_body_digest or 'unknown'}",
+        f"- Actual Body Digest: {audit.pull_request.actual_body_digest or 'unknown'}",
+        f"- Checked At: {audit.pull_request.checked_at}",
+        "",
+        "## Summary",
+        "",
+        f"- {audit.summary}",
+    ]
+    return "\n".join(lines) + "\n"
+
+
 def render_task_run_report(run: TaskRun) -> str:
     actions = build_console_actions(
         run.run_id,
@@ -2136,6 +2173,14 @@ def render_task_run_report(run: TaskRun) -> str:
     lines.append(f"- Git Push Succeeded: {run.closeout.git_push_succeeded}")
     lines.append(f"- Git Push Output: {run.closeout.git_push_output or 'None'}")
     lines.append(f"- Git Log -1 --stat Output: {run.closeout.git_log_stat_output or 'None'}")
+    if run.closeout.repo_sync_audit is not None:
+        lines.append(f"- Repo Sync Status: {run.closeout.repo_sync_audit.sync.status}")
+        lines.append(
+            "- Repo Sync Failure Category: "
+            + (run.closeout.repo_sync_audit.sync.failure_category or "none")
+        )
+        lines.append(f"- PR Branch State: {run.closeout.repo_sync_audit.pull_request.branch_state}")
+        lines.append(f"- PR Body State: {run.closeout.repo_sync_audit.pull_request.body_state}")
     lines.extend(["", "## Actions", "", f"- {render_console_actions(actions)}"])
     lines.extend(render_collaboration_lines(collaboration))
 
