@@ -17,16 +17,44 @@ type Bus struct {
 	subscribers map[int]chan domain.Event
 	sinks       []Sink
 	nextID      int
+	provider    CapabilityProvider
+	capability  BackendCapabilities
 }
 
 func NewBus() *Bus {
-	return &Bus{subscribers: make(map[int]chan domain.Event)}
+	return &Bus{
+		subscribers: make(map[int]chan domain.Event),
+		capability:  defaultBusCapabilities(),
+	}
 }
 
 func (b *Bus) AddSink(sink Sink) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.sinks = append(b.sinks, sink)
+}
+
+func (b *Bus) SetCapabilityProvider(provider CapabilityProvider) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.provider = provider
+}
+
+func (b *Bus) SetCapabilities(capability BackendCapabilities) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.capability = capability
+}
+
+func (b *Bus) Capabilities(ctx context.Context) BackendCapabilities {
+	b.mu.RLock()
+	provider := b.provider
+	capability := b.capability
+	b.mu.RUnlock()
+	if provider != nil {
+		return provider.Capabilities(ctx)
+	}
+	return capability
 }
 
 func (b *Bus) Publish(event domain.Event) {

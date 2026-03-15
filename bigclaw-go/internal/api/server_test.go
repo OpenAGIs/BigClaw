@@ -255,7 +255,7 @@ func TestDebugStatusIncludesWorkerSnapshot(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Fatalf("expected debug status 200, got %d", response.Code)
 	}
-	if !strings.Contains(response.Body.String(), "worker-a") || !strings.Contains(response.Body.String(), "successful_runs") {
+	if !strings.Contains(response.Body.String(), "worker-a") || !strings.Contains(response.Body.String(), "successful_runs") || !strings.Contains(response.Body.String(), "event_log") || !strings.Contains(response.Body.String(), "in_memory_history") || !strings.Contains(response.Body.String(), "checkpoint") {
 		t.Fatalf("expected worker snapshot in debug payload, got %s", response.Body.String())
 	}
 }
@@ -1190,7 +1190,7 @@ func TestV2ControlCenterSummariesFiltersAndAudit(t *testing.T) {
 		t.Fatalf("expected control center 200, got %d", centerResponse.Code)
 	}
 	centerBody := centerResponse.Body.String()
-	for _, want := range []string{"queue_budget_cents_total", "600", "high_risk_runs", "premium_runs", "active_takeovers", "worker_pool", "idle_workers", "task-control-1", "effective_state", "blocked", "Manual validation required", "queue_by_project", "queue_by_team", "alpha", "platform", "recent_actions", "audit_summary", "notes_timeline"} {
+	for _, want := range []string{"queue_budget_cents_total", "600", "high_risk_runs", "premium_runs", "active_takeovers", "worker_pool", "idle_workers", "task-control-1", "effective_state", "blocked", "Manual validation required", "queue_by_project", "queue_by_team", "alpha", "platform", "recent_actions", "audit_summary", "notes_timeline", "event_log", "in_memory_history", "process_local", "\"checkpoint\":{\"supported\":false", "\"filtering\":{\"supported\":true"} {
 		if !strings.Contains(centerBody, want) {
 			t.Fatalf("expected %q in control center payload, got %s", want, centerBody)
 		}

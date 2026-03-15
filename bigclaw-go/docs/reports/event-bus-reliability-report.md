@@ -11,6 +11,8 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 - Webhook sink integration for external fanout
 - SSE stream via `GET /stream/events`
 - Optional SSE replay and filtering via `replay=1`, `task_id`, and `trace_id`
+- Runtime capability probe for event-log backend publish/replay/checkpoint/filtering/retention support
+- Control-center and debug payload exposure for the active event-log backend capability set
 
 ## Validated behaviors
 
@@ -19,6 +21,7 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 - Webhook sink receives serialized domain events.
 - SSE streaming can deliver live events.
 - SSE replay can filter to one trace without leaking unrelated events.
+- Operators can inspect backend capability support before dispatching replay-oriented operations.
 
 ## Evidence
 
@@ -27,6 +30,7 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 - `internal/events/webhook.go`
 - `internal/events/webhook_test.go`
 - `internal/events/recorder_sink.go`
+- `internal/events/capabilities.go`
 - `internal/api/server.go`
 - `internal/api/server_test.go`
 
