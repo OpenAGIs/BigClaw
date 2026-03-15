@@ -13,7 +13,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - Optional SSE replay and filtering via `replay=1`, `after_id`, `Last-Event-ID`, `task_id`, and `trace_id`
 - Replay cursor diagnostics via `X-Replay-*` headers and JSON `cursor` metadata on `GET /events`
 - Retention watermark / replay horizon visibility through API debug payloads and event-log service surfaces
-- Expired checkpoint diagnostics and checkpoint reset surface through `GET/DELETE /stream/events/checkpoints/{subscriber_id}` plus conflict payloads on resume attempts
+- Expired checkpoint diagnostics, checkpoint reset surface, and persisted operator history through `GET/DELETE /stream/events/checkpoints/{subscriber_id}` plus `GET /stream/events/checkpoints/{subscriber_id}/history` and conflict payloads on resume attempts
 - SQLite retention bootstrap with persisted truncation boundaries that survive process restarts when a replay window is configured
 - Replay-safe consumer delivery metadata via `EventDelivery`, including additive `delivery.mode`, `delivery.replay`, and `delivery.idempotency_key` fields
 - Consumer dedup ledger/result contract covering duplicate, retryable-failure, and already-applied outcomes

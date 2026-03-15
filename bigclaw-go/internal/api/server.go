@@ -545,9 +545,38 @@ func (s *Server) handleStreamEventCheckpoint(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "checkpoint store unavailable", http.StatusServiceUnavailable)
 		return
 	}
-	subscriberID := strings.TrimPrefix(r.URL.Path, "/stream/events/checkpoints/")
+	path := strings.TrimPrefix(r.URL.Path, "/stream/events/checkpoints/")
+	historyRequest := false
+	if strings.HasSuffix(path, "/history") {
+		historyRequest = true
+		path = strings.TrimSuffix(path, "/history")
+	}
+	subscriberID := strings.Trim(path, "/")
 	if subscriberID == "" {
 		http.Error(w, "missing subscriber id", http.StatusBadRequest)
+		return
+	}
+	if historyRequest {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		historyProvider := s.checkpointResetHistoryProvider()
+		if historyProvider == nil {
+			http.Error(w, "checkpoint reset history unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+		history, err := historyProvider.CheckpointResetHistory(subscriberID, limit)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"history": history,
+			"backend": s.eventLogBackend(),
+			"durable": s.eventLogDurable(),
+		})
 		return
 	}
 	switch r.Method {
@@ -607,12 +636,23 @@ func (s *Server) handleStreamEventCheckpoint(w http.ResponseWriter, r *http.Requ
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{
+		payload := map[string]any{
 			"subscriber_id": subscriberID,
 			"reset":         true,
 			"backend":       s.eventLogBackend(),
 			"durable":       s.eventLogDurable(),
-		})
+		}
+		if historyProvider := s.checkpointResetHistoryProvider(); historyProvider != nil {
+			history, err := historyProvider.CheckpointResetHistory(subscriberID, 1)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if len(history) > 0 {
+				payload["reset_audit"] = history[0]
+			}
+		}
+		writeJSON(w, http.StatusOK, payload)
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -817,6 +857,13 @@ func (s *Server) checkpointStore() events.CheckpointStore {
 func (s *Server) checkpointResetter() events.CheckpointResetter {
 	if resetter, ok := s.EventLog.(events.CheckpointResetter); ok {
 		return resetter
+	}
+	return nil
+}
+
+func (s *Server) checkpointResetHistoryProvider() events.CheckpointResetHistoryProvider {
+	if provider, ok := s.EventLog.(events.CheckpointResetHistoryProvider); ok {
+		return provider
 	}
 	return nil
 }

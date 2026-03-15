@@ -158,6 +158,28 @@ func (s *SQLiteEventLog) init() error {
 			event_seq INTEGER NOT NULL,
 			updated_at_ns INTEGER NOT NULL
 		);`,
+		`CREATE TABLE IF NOT EXISTS checkpoint_reset_audit (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			subscriber_id TEXT NOT NULL,
+			reason TEXT NOT NULL,
+			checkpoint_event_id TEXT NOT NULL,
+			checkpoint_event_seq INTEGER NOT NULL,
+			checkpoint_updated_at_ns INTEGER NOT NULL,
+			reset_at_ns INTEGER NOT NULL,
+			retention_backend TEXT NOT NULL,
+			retention_policy TEXT NOT NULL,
+			oldest_event_id TEXT NOT NULL,
+			newest_event_id TEXT NOT NULL,
+			oldest_sequence INTEGER NOT NULL,
+			newest_sequence INTEGER NOT NULL,
+			event_count INTEGER NOT NULL,
+			history_truncated INTEGER NOT NULL,
+			persisted_boundary INTEGER NOT NULL,
+			trimmed_through_event_id TEXT NOT NULL,
+			trimmed_through_sequence INTEGER NOT NULL,
+			retention_window_seconds INTEGER NOT NULL
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_checkpoint_reset_audit_subscriber ON checkpoint_reset_audit(subscriber_id, reset_at_ns DESC);`,
 		`CREATE TABLE IF NOT EXISTS event_log_retention_state (
 			singleton INTEGER PRIMARY KEY CHECK(singleton = 1),
 			policy TEXT NOT NULL,
@@ -276,7 +298,25 @@ func (s *SQLiteEventLog) ResetCheckpoint(subscriberID string) error {
 	if s == nil || s.db == nil || subscriberID == "" {
 		return sql.ErrNoRows
 	}
-	result, err := s.db.Exec(`DELETE FROM subscriber_checkpoint WHERE subscriber_id = ?`, subscriberID)
+	checkpoint, err := s.Checkpoint(subscriberID)
+	if err != nil {
+		return err
+	}
+	watermark, err := s.RetentionWatermark()
+	if err != nil {
+		return err
+	}
+	now := s.nowUTC()
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+	result, err := tx.Exec(`DELETE FROM subscriber_checkpoint WHERE subscriber_id = ?`, subscriberID)
 	if err != nil {
 		return err
 	}
@@ -287,7 +327,100 @@ func (s *SQLiteEventLog) ResetCheckpoint(subscriberID string) error {
 	if rowsAffected == 0 {
 		return sql.ErrNoRows
 	}
-	return nil
+	_, err = tx.Exec(`
+		INSERT INTO checkpoint_reset_audit(
+			subscriber_id, reason, checkpoint_event_id, checkpoint_event_seq,
+			checkpoint_updated_at_ns, reset_at_ns, retention_backend, retention_policy,
+			oldest_event_id, newest_event_id, oldest_sequence, newest_sequence,
+			event_count, history_truncated, persisted_boundary, trimmed_through_event_id,
+			trimmed_through_sequence, retention_window_seconds
+		) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`,
+		subscriberID,
+		"operator_reset",
+		checkpoint.EventID,
+		checkpoint.EventSequence,
+		checkpoint.UpdatedAt.UnixNano(),
+		now.UnixNano(),
+		watermark.Backend,
+		watermark.Policy,
+		watermark.OldestEventID,
+		watermark.NewestEventID,
+		watermark.OldestSequence,
+		watermark.NewestSequence,
+		watermark.EventCount,
+		boolToSQLiteInt(watermark.HistoryTruncated),
+		boolToSQLiteInt(watermark.PersistedBoundary),
+		watermark.TrimmedThroughEventID,
+		watermark.TrimmedThroughSequence,
+		watermark.RetentionWindowSeconds,
+	)
+	if err != nil {
+		return err
+	}
+	err = tx.Commit()
+	return err
+}
+
+func (s *SQLiteEventLog) CheckpointResetHistory(subscriberID string, limit int) ([]CheckpointResetAudit, error) {
+	if s == nil || s.db == nil || subscriberID == "" {
+		return nil, nil
+	}
+	query := `SELECT subscriber_id, reason, checkpoint_event_id, checkpoint_event_seq, checkpoint_updated_at_ns, reset_at_ns, retention_backend, retention_policy, oldest_event_id, newest_event_id, oldest_sequence, newest_sequence, event_count, history_truncated, persisted_boundary, trimmed_through_event_id, trimmed_through_sequence, retention_window_seconds FROM checkpoint_reset_audit WHERE subscriber_id = ? ORDER BY reset_at_ns DESC`
+	args := []any{subscriberID}
+	if limit > 0 {
+		query += ` LIMIT ?`
+		args = append(args, limit)
+	}
+	rows, err := s.db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make([]CheckpointResetAudit, 0)
+	for rows.Next() {
+		var audit CheckpointResetAudit
+		var previous SubscriberCheckpoint
+		var watermark RetentionWatermark
+		var checkpointUpdatedAtNS int64
+		var resetAtNS int64
+		var historyTruncated int64
+		var persistedBoundary int64
+		if err := rows.Scan(
+			&audit.SubscriberID,
+			&audit.Reason,
+			&previous.EventID,
+			&previous.EventSequence,
+			&checkpointUpdatedAtNS,
+			&resetAtNS,
+			&watermark.Backend,
+			&watermark.Policy,
+			&watermark.OldestEventID,
+			&watermark.NewestEventID,
+			&watermark.OldestSequence,
+			&watermark.NewestSequence,
+			&watermark.EventCount,
+			&historyTruncated,
+			&persistedBoundary,
+			&watermark.TrimmedThroughEventID,
+			&watermark.TrimmedThroughSequence,
+			&watermark.RetentionWindowSeconds,
+		); err != nil {
+			return nil, err
+		}
+		previous.SubscriberID = audit.SubscriberID
+		previous.UpdatedAt = time.Unix(0, checkpointUpdatedAtNS).UTC()
+		audit.ResetAt = time.Unix(0, resetAtNS).UTC()
+		watermark.HistoryTruncated = sqliteIntToBool(historyTruncated)
+		watermark.PersistedBoundary = sqliteIntToBool(persistedBoundary)
+		audit.PreviousCheckpoint = &previous
+		audit.RetentionWatermark = &watermark
+		out = append(out, audit)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (s *SQLiteEventLog) queryAfter(base string, args []any, afterID string, limit int) ([]domain.Event, error) {
@@ -478,6 +611,17 @@ func (s *SQLiteEventLog) applyRetention(now time.Time) error {
 	return tx.Commit()
 }
 
+func boolToSQLiteInt(value bool) int {
+	if value {
+		return 1
+	}
+	return 0
+}
+
+func sqliteIntToBool(value int64) bool {
+	return value != 0
+}
+
 func reverseEvents(events []domain.Event) {
 	for left, right := 0, len(events)-1; left < right; left, right = left+1, right-1 {
 		events[left], events[right] = events[right], events[left]
@@ -486,6 +630,7 @@ func reverseEvents(events []domain.Event) {
 
 var _ EventLog = (*SQLiteEventLog)(nil)
 var _ CheckpointStore = (*SQLiteEventLog)(nil)
+var _ CheckpointResetHistoryProvider = (*SQLiteEventLog)(nil)
 
 func IsNoEventLog(err error) bool {
 	return errors.Is(err, sql.ErrNoRows)

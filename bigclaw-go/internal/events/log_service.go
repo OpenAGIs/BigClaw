@@ -72,9 +72,34 @@ func NewEventLogServiceHandler(store LogServiceStore) http.Handler {
 		writeEventLogJSON(w, http.StatusOK, map[string]any{"events": history})
 	})
 	mux.HandleFunc("/checkpoints/", func(w http.ResponseWriter, r *http.Request) {
-		subscriberID := strings.TrimPrefix(r.URL.Path, "/checkpoints/")
+		path := strings.TrimPrefix(r.URL.Path, "/checkpoints/")
+		historyRequest := false
+		if strings.HasSuffix(path, "/history") {
+			historyRequest = true
+			path = strings.TrimSuffix(path, "/history")
+		}
+		subscriberID := strings.Trim(path, "/")
 		if subscriberID == "" {
 			http.Error(w, "missing subscriber id", http.StatusBadRequest)
+			return
+		}
+		if historyRequest {
+			if r.Method != http.MethodGet {
+				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+				return
+			}
+			historyProvider, ok := any(store).(CheckpointResetHistoryProvider)
+			if !ok {
+				http.Error(w, "checkpoint reset history unavailable", http.StatusServiceUnavailable)
+				return
+			}
+			limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+			history, err := historyProvider.CheckpointResetHistory(subscriberID, limit)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			writeEventLogJSON(w, http.StatusOK, map[string]any{"history": history})
 			return
 		}
 		switch r.Method {
@@ -122,7 +147,18 @@ func NewEventLogServiceHandler(store LogServiceStore) http.Handler {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			writeEventLogJSON(w, http.StatusOK, map[string]any{"subscriber_id": subscriberID, "reset": true})
+			payload := map[string]any{"subscriber_id": subscriberID, "reset": true}
+			if historyProvider, ok := any(store).(CheckpointResetHistoryProvider); ok {
+				history, err := historyProvider.CheckpointResetHistory(subscriberID, 1)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				if len(history) > 0 {
+					payload["reset_audit"] = history[0]
+				}
+			}
+			writeEventLogJSON(w, http.StatusOK, payload)
 		default:
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}

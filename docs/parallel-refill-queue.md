@@ -35,14 +35,17 @@ manual operator can refill the next parallel-safe issues in a stable order.
   - `OPE-222` — replicated event-log durability rollout contract
   - `OPE-223` — durable replay retention backend bootstrap
   - `OPE-224` — broker-backed event-log adapter bootstrap
-- Active:
   - `OPE-225` — Kubernetes / Ray / shared-queue validation bundle refresh
   - `OPE-226` — expired replay checkpoint diagnostics / reset surface
-- Standby:
   - `OPE-227` — broker adapter dry-run capability probe
+- Active:
+  - `OPE-228` — checkpoint reset audit trail and operator history
+  - `OPE-229` — checkpoint reset review surface in debug / control-plane payloads
+- Standby:
+  - `OPE-230` — checkpoint reset validation bundle refresh
 
 ## Canonical refill order
 
-1. `OPE-225`
-2. `OPE-226`
-3. `OPE-227`
+1. `OPE-228`
+2. `OPE-229`
+3. `OPE-230`

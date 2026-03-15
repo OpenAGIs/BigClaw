@@ -37,7 +37,7 @@ The current Go runtime still uses in-process replay history in `internal/events/
 ## Expired cursor fallback contract
 
 - Resume requests against aged-out checkpoints must surface an explicit expired-cursor result.
-- The current API surface now returns checkpoint diagnostics plus a reset path through `GET/DELETE /stream/events/checkpoints/{subscriber_id}` when a saved cursor falls behind the retained boundary.
+- The current API surface now returns checkpoint diagnostics plus a reset path through `GET/DELETE /stream/events/checkpoints/{subscriber_id}` and a persisted review trail through `GET /stream/events/checkpoints/{subscriber_id}/history` when a saved cursor falls behind the retained boundary.
 - The result should include the subscriber or lease identity, the requested checkpoint cursor, and the oldest/newest retained cursors that were available at evaluation time.
 - Operator-facing diagnostics should describe whether recovery can restart from the earliest retained event, from the latest live edge, or requires manual checkpoint reset.
 - Automatic fallback must be policy-driven. The default safe behavior is fail-closed with diagnostics rather than silently skipping truncated history.
@@ -63,7 +63,7 @@ The current Go runtime still uses in-process replay history in `internal/events/
 ## Forward path
 
 - `OPE-212` establishes the compaction and retention contract.
-- `OPE-216` established the expired replay cursor semantics, and `OPE-226` now adds the concrete checkpoint diagnostics / reset surface for durable checkpoint resumes.
+- `OPE-216` established the expired replay cursor semantics, `OPE-226` added the concrete checkpoint diagnostics / reset surface for durable checkpoint resumes, and `OPE-228` extends that flow with persisted reset audit history.
 - Durable backends extending `internal/events` should expose retention watermarks before replay-aware checkpoint cleanup is implemented.
 - SQLite-backed durable logs now persist trimmed replay boundaries across restarts when a retention window is configured, giving operators a stable replay horizon even after reboot.
 

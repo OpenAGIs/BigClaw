@@ -28,38 +28,41 @@
       "OPE-221",
       "OPE-222",
       "OPE-223",
-      "OPE-224"
+      "OPE-224",
+      "OPE-225",
+      "OPE-226",
+      "OPE-227"
     ],
     "active": [
-      "OPE-225",
-      "OPE-226"
+      "OPE-228",
+      "OPE-229"
     ],
     "standby": [
-      "OPE-227"
+      "OPE-230"
     ]
   },
   "issue_order": [
-    "OPE-225",
-    "OPE-226",
-    "OPE-227"
+    "OPE-228",
+    "OPE-229",
+    "OPE-230"
   ],
   "issues": [
     {
-      "identifier": "OPE-225",
-      "title": "BIG-PAR-038 Kubernetes / Ray / shared-queue validation bundle refresh",
+      "identifier": "OPE-228",
+      "title": "BIG-PAR-041 checkpoint reset audit trail and operator history",
+      "track": "Reset Audit",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-229",
+      "title": "BIG-PAR-042 checkpoint reset review surface in debug / control-plane payloads",
+      "track": "Control Plane Review",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-230",
+      "title": "BIG-PAR-043 checkpoint reset validation bundle refresh",
       "track": "Validation Bundle",
-      "status": "In Progress"
-    },
-    {
-      "identifier": "OPE-226",
-      "title": "BIG-PAR-039 expired replay checkpoint diagnostics / reset surface",
-      "track": "Checkpoint Reset",
-      "status": "In Progress"
-    },
-    {
-      "identifier": "OPE-227",
-      "title": "BIG-PAR-040 broker adapter dry-run capability probe",
-      "track": "Broker Dry Run",
       "status": "Todo"
     }
   ]

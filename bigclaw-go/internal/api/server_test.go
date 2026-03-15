@@ -2793,6 +2793,19 @@ func TestStreamEventCheckpointExpiredDiagnosticsAndReset(t *testing.T) {
 	if resetResponse.Code != http.StatusOK {
 		t.Fatalf("expected checkpoint reset 200, got %d %s", resetResponse.Code, resetResponse.Body.String())
 	}
+	if !strings.Contains(resetResponse.Body.String(), "reset_audit") || !strings.Contains(resetResponse.Body.String(), "evt-expired-1") {
+		t.Fatalf("expected reset audit payload, got %s", resetResponse.Body.String())
+	}
+
+	historyResponse := httptest.NewRecorder()
+	historyRequest := httptest.NewRequest(http.MethodGet, "/stream/events/checkpoints/subscriber-expired/history?limit=10", nil)
+	server.Handler().ServeHTTP(historyResponse, historyRequest)
+	if historyResponse.Code != http.StatusOK {
+		t.Fatalf("expected checkpoint history 200, got %d %s", historyResponse.Code, historyResponse.Body.String())
+	}
+	if !strings.Contains(historyResponse.Body.String(), "operator_reset") || !strings.Contains(historyResponse.Body.String(), "trimmed_through_event_id") || !strings.Contains(historyResponse.Body.String(), "evt-expired-1") {
+		t.Fatalf("expected checkpoint reset history payload, got %s", historyResponse.Body.String())
+	}
 
 	recoveredResponse := httptest.NewRecorder()
 	recoveredRequest := httptest.NewRequest(http.MethodGet, "/events?subscriber_id=subscriber-expired&trace_id=trace-expired&limit=10", nil)
@@ -2808,5 +2821,22 @@ func TestStreamEventCheckpointExpiredDiagnosticsAndReset(t *testing.T) {
 	}
 	if len(recovered.Events) != 1 || recovered.Events[0].ID != "evt-expired-2" {
 		t.Fatalf("expected replay from earliest retained event after reset, got %+v", recovered.Events)
+	}
+
+	reackResponse := httptest.NewRecorder()
+	reackRequest := httptest.NewRequest(http.MethodPost, "/stream/events/checkpoints/subscriber-expired", strings.NewReader(`{"event_id":"evt-expired-2"}`))
+	server.Handler().ServeHTTP(reackResponse, reackRequest)
+	if reackResponse.Code != http.StatusOK {
+		t.Fatalf("expected checkpoint re-ack 200, got %d %s", reackResponse.Code, reackResponse.Body.String())
+	}
+
+	historyAfterResume := httptest.NewRecorder()
+	historyAfterResumeRequest := httptest.NewRequest(http.MethodGet, "/stream/events/checkpoints/subscriber-expired/history?limit=10", nil)
+	server.Handler().ServeHTTP(historyAfterResume, historyAfterResumeRequest)
+	if historyAfterResume.Code != http.StatusOK {
+		t.Fatalf("expected checkpoint history after resume 200, got %d %s", historyAfterResume.Code, historyAfterResume.Body.String())
+	}
+	if !strings.Contains(historyAfterResume.Body.String(), "evt-expired-1") || !strings.Contains(historyAfterResume.Body.String(), "operator_reset") {
+		t.Fatalf("expected checkpoint reset history to remain visible, got %s", historyAfterResume.Body.String())
 	}
 }

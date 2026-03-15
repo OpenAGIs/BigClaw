@@ -31,6 +31,10 @@ type checkpointResponse struct {
 	Checkpoint SubscriberCheckpoint `json:"checkpoint"`
 }
 
+type checkpointResetHistoryResponse struct {
+	History []CheckpointResetAudit `json:"history"`
+}
+
 type remoteEventsResponse struct {
 	Events []domain.Event `json:"events"`
 }
@@ -131,6 +135,23 @@ func (s *HTTPEventLog) ResetCheckpoint(subscriberID string) error {
 		return mapRemoteEventLogError(err)
 	}
 	return nil
+}
+
+func (s *HTTPEventLog) CheckpointResetHistory(subscriberID string, limit int) ([]CheckpointResetAudit, error) {
+	params := url.Values{}
+	if limit > 0 {
+		params.Set("limit", strconv.Itoa(limit))
+	}
+	path := "/checkpoints/" + url.PathEscape(strings.TrimSpace(subscriberID)) + "/history"
+	if encoded := params.Encode(); encoded != "" {
+		path += "?" + encoded
+	}
+	var response checkpointResetHistoryResponse
+	err := s.doJSON(context.Background(), http.MethodGet, path, nil, &response)
+	if err != nil {
+		return nil, mapRemoteEventLogError(err)
+	}
+	return response.History, nil
 }
 
 func (s *HTTPEventLog) RetentionWatermark() (RetentionWatermark, error) {
