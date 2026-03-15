@@ -58,8 +58,15 @@ func (s *Server) Handler() http.Handler {
 	})
 	mux.HandleFunc("/events", func(w http.ResponseWriter, r *http.Request) {
 		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+		afterID := replayCursorFromRequest(r)
 		taskID := r.URL.Query().Get("task_id")
 		traceID := r.URL.Query().Get("trace_id")
+		if s.Bus != nil {
+			replay, cursor := s.Bus.ReplayWindow(limit, afterID, taskID, traceID)
+			writeReplayCursorHeaders(w, cursor)
+			writeJSON(w, http.StatusOK, map[string]any{"events": replay, "cursor": cursor})
+			return
+		}
 		switch {
 		case taskID != "":
 			writeJSON(w, http.StatusOK, map[string]any{"events": s.Recorder.EventsByTask(taskID, limit)})
@@ -300,7 +307,8 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	replay := r.URL.Query().Get("replay") == "1"
+	afterID := replayCursorFromRequest(r)
+	replay := r.URL.Query().Get("replay") == "1" || afterID != ""
 	taskID := r.URL.Query().Get("task_id")
 	traceID := r.URL.Query().Get("trace_id")
 	flusher, ok := w.(http.Flusher)
@@ -314,7 +322,9 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 	var ch <-chan domain.Event
 	var cancel func()
 	if replay {
-		ch, cancel = s.Bus.SubscribeReplay(128, limit)
+		replayWindow, cursor := s.Bus.ReplayWindow(limit, afterID, taskID, traceID)
+		writeReplayCursorHeaders(w, cursor)
+		ch, cancel = s.Bus.SubscribeReplayWindow(128, replayWindow)
 	} else {
 		ch, cancel = s.Bus.Subscribe(128)
 	}
@@ -345,6 +355,30 @@ func matchesEventStreamFilter(event domain.Event, taskID string, traceID string)
 		return false
 	}
 	return true
+}
+
+func replayCursorFromRequest(r *http.Request) string {
+	if afterID := strings.TrimSpace(r.URL.Query().Get("after_id")); afterID != "" {
+		return afterID
+	}
+	return strings.TrimSpace(r.Header.Get("Last-Event-ID"))
+}
+
+func writeReplayCursorHeaders(w http.ResponseWriter, status events.ReplayCursorStatus) {
+	w.Header().Set("X-Replay-Cursor-Status", status.Status)
+	w.Header().Set("X-Replay-Fallback", status.Fallback)
+	if status.RequestedAfterID != "" {
+		w.Header().Set("X-Replay-Requested-After-ID", status.RequestedAfterID)
+	}
+	if status.OldestEventID != "" {
+		w.Header().Set("X-Replay-Oldest-Event-ID", status.OldestEventID)
+	}
+	if status.NewestEventID != "" {
+		w.Header().Set("X-Replay-Newest-Event-ID", status.NewestEventID)
+	}
+	if status.HistoryTruncated {
+		w.Header().Set("X-Replay-History-Truncated", "true")
+	}
 }
 
 func (s *Server) publish(event domain.Event) {
