@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"bigclaw-go/internal/domain"
@@ -158,6 +159,17 @@ func (s *SQLiteEventLog) init() error {
 			event_seq INTEGER NOT NULL,
 			updated_at_ns INTEGER NOT NULL
 		);`,
+		`CREATE TABLE IF NOT EXISTS checkpoint_reset_audit (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			subscriber_id TEXT NOT NULL,
+			reset_at_ns INTEGER NOT NULL,
+			requested_by TEXT NOT NULL,
+			reason TEXT NOT NULL,
+			source TEXT NOT NULL,
+			previous_checkpoint_json BLOB,
+			retention_watermark_json BLOB
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_checkpoint_reset_audit_subscriber ON checkpoint_reset_audit(subscriber_id, reset_at_ns DESC, id DESC);`,
 		`CREATE TABLE IF NOT EXISTS event_log_retention_state (
 			singleton INTEGER PRIMARY KEY CHECK(singleton = 1),
 			policy TEXT NOT NULL,
@@ -273,21 +285,142 @@ func (s *SQLiteEventLog) Checkpoint(subscriberID string) (SubscriberCheckpoint, 
 }
 
 func (s *SQLiteEventLog) ResetCheckpoint(subscriberID string) error {
+	_, err := s.ResetCheckpointWithAudit(subscriberID, CheckpointResetRequest{})
+	return err
+}
+
+func (s *SQLiteEventLog) ResetCheckpointWithAudit(subscriberID string, request CheckpointResetRequest) (CheckpointResetRecord, error) {
 	if s == nil || s.db == nil || subscriberID == "" {
-		return sql.ErrNoRows
+		return CheckpointResetRecord{}, sql.ErrNoRows
 	}
-	result, err := s.db.Exec(`DELETE FROM subscriber_checkpoint WHERE subscriber_id = ?`, subscriberID)
+	checkpoint, err := s.Checkpoint(subscriberID)
 	if err != nil {
-		return err
+		return CheckpointResetRecord{}, err
+	}
+	record := CheckpointResetRecord{
+		SubscriberID:       subscriberID,
+		ResetAt:            s.nowUTC(),
+		RequestedBy:        strings.TrimSpace(request.RequestedBy),
+		Reason:             strings.TrimSpace(request.Reason),
+		Source:             strings.TrimSpace(request.Source),
+		PreviousCheckpoint: &checkpoint,
+	}
+	if record.RequestedBy == "" {
+		record.RequestedBy = "unknown"
+	}
+	if record.Reason == "" {
+		record.Reason = "operator_requested_reset"
+	}
+	if record.Source == "" {
+		record.Source = "sqlite_event_log"
+	}
+	if watermark, err := s.RetentionWatermark(); err == nil {
+		record.RetentionWatermark = &watermark
+	}
+	previousCheckpointJSON, err := json.Marshal(record.PreviousCheckpoint)
+	if err != nil {
+		return CheckpointResetRecord{}, err
+	}
+	var retentionWatermarkJSON []byte
+	if record.RetentionWatermark != nil {
+		retentionWatermarkJSON, err = json.Marshal(record.RetentionWatermark)
+		if err != nil {
+			return CheckpointResetRecord{}, err
+		}
+	}
+	tx, err := s.db.Begin()
+	if err != nil {
+		return CheckpointResetRecord{}, err
+	}
+	defer func() { _ = tx.Rollback() }()
+	result, err := tx.Exec(`DELETE FROM subscriber_checkpoint WHERE subscriber_id = ?`, subscriberID)
+	if err != nil {
+		return CheckpointResetRecord{}, err
 	}
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return err
+		return CheckpointResetRecord{}, err
 	}
 	if rowsAffected == 0 {
-		return sql.ErrNoRows
+		return CheckpointResetRecord{}, sql.ErrNoRows
 	}
-	return nil
+	if _, err := tx.Exec(`
+		INSERT INTO checkpoint_reset_audit(
+			subscriber_id,
+			reset_at_ns,
+			requested_by,
+			reason,
+			source,
+			previous_checkpoint_json,
+			retention_watermark_json
+		) VALUES(?, ?, ?, ?, ?, ?, ?)
+	`, record.SubscriberID, record.ResetAt.UnixNano(), record.RequestedBy, record.Reason, record.Source, previousCheckpointJSON, retentionWatermarkJSON); err != nil {
+		return CheckpointResetRecord{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return CheckpointResetRecord{}, err
+	}
+	return record, nil
+}
+
+func (s *SQLiteEventLog) CheckpointResetHistory(subscriberID string, limit int) ([]CheckpointResetRecord, error) {
+	if s == nil || s.db == nil || subscriberID == "" {
+		return nil, nil
+	}
+	query := `
+		SELECT reset_at_ns, requested_by, reason, source, previous_checkpoint_json, retention_watermark_json
+		FROM checkpoint_reset_audit
+		WHERE subscriber_id = ?
+		ORDER BY reset_at_ns DESC, id DESC
+	`
+	args := []any{subscriberID}
+	if limit > 0 {
+		query += ` LIMIT ?`
+		args = append(args, limit)
+	}
+	rows, err := s.db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	history := make([]CheckpointResetRecord, 0)
+	for rows.Next() {
+		var resetAtNS int64
+		var requestedBy string
+		var reason string
+		var source string
+		var previousCheckpointJSON []byte
+		var retentionWatermarkJSON []byte
+		if err := rows.Scan(&resetAtNS, &requestedBy, &reason, &source, &previousCheckpointJSON, &retentionWatermarkJSON); err != nil {
+			return nil, err
+		}
+		record := CheckpointResetRecord{
+			SubscriberID: subscriberID,
+			ResetAt:      time.Unix(0, resetAtNS).UTC(),
+			RequestedBy:  requestedBy,
+			Reason:       reason,
+			Source:       source,
+		}
+		if len(previousCheckpointJSON) > 0 {
+			var checkpoint SubscriberCheckpoint
+			if err := json.Unmarshal(previousCheckpointJSON, &checkpoint); err != nil {
+				return nil, err
+			}
+			record.PreviousCheckpoint = &checkpoint
+		}
+		if len(retentionWatermarkJSON) > 0 {
+			var watermark RetentionWatermark
+			if err := json.Unmarshal(retentionWatermarkJSON, &watermark); err != nil {
+				return nil, err
+			}
+			record.RetentionWatermark = &watermark
+		}
+		history = append(history, record)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return history, nil
 }
 
 func (s *SQLiteEventLog) queryAfter(base string, args []any, afterID string, limit int) ([]domain.Event, error) {
@@ -486,6 +619,9 @@ func reverseEvents(events []domain.Event) {
 
 var _ EventLog = (*SQLiteEventLog)(nil)
 var _ CheckpointStore = (*SQLiteEventLog)(nil)
+var _ CheckpointResetter = (*SQLiteEventLog)(nil)
+var _ CheckpointResetManager = (*SQLiteEventLog)(nil)
+var _ CheckpointResetHistoryProvider = (*SQLiteEventLog)(nil)
 
 func IsNoEventLog(err error) bool {
 	return errors.Is(err, sql.ErrNoRows)

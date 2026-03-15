@@ -13,7 +13,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - Optional SSE replay and filtering via `replay=1`, `after_id`, `Last-Event-ID`, `task_id`, and `trace_id`
 - Replay cursor diagnostics via `X-Replay-*` headers and JSON `cursor` metadata on `GET /events`
 - Retention watermark / replay horizon visibility through API debug payloads and event-log service surfaces
-- Expired checkpoint diagnostics and checkpoint reset surface through `GET/DELETE /stream/events/checkpoints/{subscriber_id}` plus conflict payloads on resume attempts
+- Expired checkpoint diagnostics, checkpoint reset, and operator-facing reset history through `GET/DELETE /stream/events/checkpoints/{subscriber_id}` and `GET /stream/events/checkpoints/{subscriber_id}/history`
 - SQLite retention bootstrap with persisted truncation boundaries that survive process restarts when a replay window is configured
 - Replay-safe consumer delivery metadata via `EventDelivery`, including additive `delivery.mode`, `delivery.replay`, and `delivery.idempotency_key` fields
 - Consumer dedup ledger/result contract covering duplicate, retryable-failure, and already-applied outcomes
@@ -134,7 +134,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - No delivery acknowledgement protocol exists beyond sink-level best effort.
 - Lease coordination is currently in-memory and single-process; shared multi-node subscriber groups still need a durable backend.
 - No partitioned topic model or broker-backed cross-process subscriber coordination exists yet.
-- Retention watermarks are now exposed for in-memory and durable event-log backends, SQLite-backed logs persist trimmed replay boundaries across restarts, and expired checkpoint resumes now fail closed with explicit reset guidance; the broader compaction semantics remain documented in `docs/reports/replay-retention-semantics-report.md`.
+- Retention watermarks are now exposed for in-memory and durable event-log backends, SQLite-backed logs persist trimmed replay boundaries across restarts, expired checkpoint resumes fail closed with explicit reset guidance, and reset history now preserves prior checkpoint plus replay-boundary context for later audit; the broader compaction semantics remain documented in `docs/reports/replay-retention-semantics-report.md`.
 - Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.
 - Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists.
 
