@@ -57,7 +57,15 @@ func main() {
 	if cfg.BootstrapTasks {
 		seed(context.Background(), q)
 	}
-	server := &api.Server{Recorder: recorder, Queue: q, Executors: registry.Kinds(), Bus: bus, Worker: runtime, Control: controller}
+	server := &api.Server{
+		Recorder:  recorder,
+		Queue:     q,
+		Executors: registry.Kinds(),
+		Bus:       bus,
+		EventPlan: events.NewDurabilityPlan(cfg.EventLogBackend, cfg.EventLogTargetBackend, cfg.EventLogReplicationFactor),
+		Worker:    runtime,
+		Control:   controller,
+	}
 	httpServer := &http.Server{Addr: cfg.HTTPAddr, Handler: server.Handler()}
 	go func() {
 		_ = httpServer.ListenAndServe()

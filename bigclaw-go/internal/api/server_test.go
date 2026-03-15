@@ -78,7 +78,12 @@ func TestCreateTaskAndQueryStatus(t *testing.T) {
 func TestAuditAndReplayEndpoints(t *testing.T) {
 	recorder := observability.NewRecorder()
 	recorder.Record(domain.Event{ID: "evt-1", Type: domain.EventTaskQueued, TaskID: "task-1", Timestamp: time.Now()})
-	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Now: time.Now}
+	server := &Server{
+		Recorder:  recorder,
+		Queue:     queue.NewMemoryQueue(),
+		EventPlan: events.NewDurabilityPlan("http", "broker_replicated", 3),
+		Now:       time.Now,
+	}
 	handler := server.Handler()
 
 	auditRequest := httptest.NewRequest(http.MethodGet, "/audit?limit=10", nil)
@@ -93,6 +98,32 @@ func TestAuditAndReplayEndpoints(t *testing.T) {
 	handler.ServeHTTP(replayResponse, replayRequest)
 	if replayResponse.Code != http.StatusOK {
 		t.Fatalf("expected replay 200, got %d", replayResponse.Code)
+	}
+}
+
+func TestDebugStatusIncludesEventDurabilityPlan(t *testing.T) {
+	recorder := observability.NewRecorder()
+	server := &Server{
+		Recorder:  recorder,
+		Queue:     queue.NewMemoryQueue(),
+		EventPlan: events.NewDurabilityPlan("http", "broker_replicated", 5),
+		Now:       time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	if !strings.Contains(response.Body.String(), "\"backend\":\"http\"") {
+		t.Fatalf("expected current backend in payload, got %s", response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), "\"backend\":\"broker_replicated\"") {
+		t.Fatalf("expected target backend in payload, got %s", response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), "\"replication_factor\":5") {
+		t.Fatalf("expected replication factor in payload, got %s", response.Body.String())
 	}
 }
 

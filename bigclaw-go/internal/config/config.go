@@ -9,6 +9,9 @@ import (
 
 type Config struct {
 	QueueBackend                  string
+	EventLogBackend               string
+	EventLogTargetBackend         string
+	EventLogReplicationFactor     int
 	EventWebhookURLs              []string
 	EventWebhookBearerToken       string
 	EventWebhookTimeout           time.Duration
@@ -42,6 +45,9 @@ type Config struct {
 func Default() Config {
 	return Config{
 		QueueBackend:                  "file",
+		EventLogBackend:               "memory",
+		EventLogTargetBackend:         "broker_replicated",
+		EventLogReplicationFactor:     3,
 		EventWebhookTimeout:           5 * time.Second,
 		QueueSQLitePath:               "./state/queue.db",
 		AuditLogPath:                  "./state/audit.jsonl",
@@ -71,6 +77,9 @@ func Default() Config {
 func LoadFromEnv() Config {
 	cfg := Default()
 	cfg.QueueBackend = getString("BIGCLAW_QUEUE_BACKEND", cfg.QueueBackend)
+	cfg.EventLogBackend = getString("BIGCLAW_EVENT_LOG_BACKEND", cfg.EventLogBackend)
+	cfg.EventLogTargetBackend = getString("BIGCLAW_EVENT_LOG_TARGET_BACKEND", cfg.EventLogTargetBackend)
+	cfg.EventLogReplicationFactor = getInt("BIGCLAW_EVENT_LOG_REPLICATION_FACTOR", cfg.EventLogReplicationFactor)
 	cfg.EventWebhookURLs = splitCSV(getString("BIGCLAW_EVENT_WEBHOOK_URLS", ""))
 	cfg.EventWebhookBearerToken = getString("BIGCLAW_EVENT_WEBHOOK_BEARER_TOKEN", cfg.EventWebhookBearerToken)
 	cfg.EventWebhookTimeout = getDuration("BIGCLAW_EVENT_WEBHOOK_TIMEOUT", cfg.EventWebhookTimeout)
