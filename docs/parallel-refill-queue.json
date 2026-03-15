@@ -41,20 +41,18 @@
     "active": [
       "OPE-233",
       "OPE-234",
-      "OPE-235"
+      "OPE-237"
     ],
     "standby": [
       "OPE-236",
-      "OPE-237",
       "OPE-238"
     ]
   },
   "issue_order": [
     "OPE-233",
     "OPE-234",
-    "OPE-235",
-    "OPE-236",
     "OPE-237",
+    "OPE-236",
     "OPE-238"
   ],
   "issues": [
@@ -71,21 +69,15 @@
       "status": "In Progress"
     },
     {
-      "identifier": "OPE-235",
-      "title": "BIG-PAR-048 shared-queue takeover evidence bundle refresh",
-      "track": "Shared Queue Evidence",
+      "identifier": "OPE-237",
+      "title": "BIG-PAR-050 normalize live-validation evidence bundle index",
+      "track": "Validation Matrix",
       "status": "In Progress"
     },
     {
       "identifier": "OPE-236",
       "title": "BIG-PAR-049 kubernetes executor live readiness rollup in distributed diagnostics",
       "track": "Distributed Diagnostics",
-      "status": "Todo"
-    },
-    {
-      "identifier": "OPE-237",
-      "title": "BIG-PAR-050 normalize live-validation evidence bundle index",
-      "track": "Validation Matrix",
       "status": "Todo"
     },
     {
