@@ -36,7 +36,11 @@ func (s *Server) handleV2ControlCenterPolicy(w http.ResponseWriter, r *http.Requ
 		"authorization":     authorization,
 		"policy":            store.Snapshot(),
 		"fairness":          s.schedulerRuntime().FairnessSnapshot(),
+		"backend":           store.Backend(),
+		"shared":            store.Shared(),
 		"source_path":       store.SourcePath(),
+		"shared_path":       store.SharedPath(),
+		"updated_at":        store.UpdatedAt(),
 		"reload_supported":  store.HasSource(),
 		"reload_authorized": canReloadSchedulerPolicy(authorization.Role),
 		"reload_url":        "/v2/control-center/policy/reload",
@@ -71,7 +75,11 @@ func (s *Server) handleV2ControlCenterPolicyReload(w http.ResponseWriter, r *htt
 		"reloaded":      true,
 		"policy":        store.Snapshot(),
 		"fairness":      s.schedulerRuntime().FairnessSnapshot(),
+		"backend":       store.Backend(),
+		"shared":        store.Shared(),
 		"source_path":   store.SourcePath(),
+		"shared_path":   store.SharedPath(),
+		"updated_at":    store.UpdatedAt(),
 	})
 }
 

@@ -1520,10 +1520,12 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"ray","tool_executors":{"browser":"ray"},"urgent_priority_threshold":2,"fairness":{"window_seconds":30,"max_recent_decisions_per_tenant":1}}`), 0o644); err != nil {
 		t.Fatalf("write policy file: %v", err)
 	}
-	store, err := scheduler.NewPolicyStore(policyPath)
+	policySQLitePath := filepath.Join(dir, "scheduler-policy.db")
+	store, err := scheduler.NewPolicyStoreWithSQLite(policyPath, policySQLitePath)
 	if err != nil {
 		t.Fatalf("new policy store: %v", err)
 	}
+	defer func() { _ = store.Close() }()
 	fairnessPath := filepath.Join(dir, "fairness.db")
 	fairnessStore, err := scheduler.NewFairnessStore(fairnessPath)
 	if err != nil {
@@ -1547,7 +1549,10 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 		t.Fatalf("expected scheduler policy 200, got %d %s", policyResponse.Code, policyResponse.Body.String())
 	}
 	var policyDecoded struct {
+		Backend          string `json:"backend"`
+		Shared           bool   `json:"shared"`
 		SourcePath       string `json:"source_path"`
+		SharedPath       string `json:"shared_path"`
 		ReloadSupported  bool   `json:"reload_supported"`
 		ReloadAuthorized bool   `json:"reload_authorized"`
 		Policy           struct {
@@ -1575,7 +1580,7 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	if err := json.Unmarshal(policyResponse.Body.Bytes(), &policyDecoded); err != nil {
 		t.Fatalf("decode scheduler policy response: %v", err)
 	}
-	if policyDecoded.SourcePath != policyPath || !policyDecoded.ReloadSupported || !policyDecoded.ReloadAuthorized || policyDecoded.Policy.DefaultExecutor != string(domain.ExecutorRay) || policyDecoded.Policy.ToolExecutors["browser"] != string(domain.ExecutorRay) || policyDecoded.Policy.UrgentPriorityThreshold != 2 || policyDecoded.Policy.Fairness.WindowSeconds != 30 || policyDecoded.Policy.Fairness.MaxRecentDecisionsPerTenant != 1 {
+	if policyDecoded.Backend != "sqlite" || !policyDecoded.Shared || policyDecoded.SourcePath != policyPath || policyDecoded.SharedPath != policySQLitePath || !policyDecoded.ReloadSupported || !policyDecoded.ReloadAuthorized || policyDecoded.Policy.DefaultExecutor != string(domain.ExecutorRay) || policyDecoded.Policy.ToolExecutors["browser"] != string(domain.ExecutorRay) || policyDecoded.Policy.UrgentPriorityThreshold != 2 || policyDecoded.Policy.Fairness.WindowSeconds != 30 || policyDecoded.Policy.Fairness.MaxRecentDecisionsPerTenant != 1 {
 		t.Fatalf("unexpected scheduler policy payload: %+v", policyDecoded)
 	}
 	if !policyDecoded.Fairness.Enabled || !policyDecoded.Fairness.Shared || policyDecoded.Fairness.Backend != "sqlite" || policyDecoded.Fairness.ActiveTenants != 2 || len(policyDecoded.Fairness.Tenants) != 2 {

@@ -40,10 +40,11 @@ func main() {
 		}))
 	}
 	registry := buildRegistry(cfg)
-	policyStore, err := scheduler.NewPolicyStore(cfg.SchedulerPolicyPath)
+	policyStore, err := scheduler.NewPolicyStoreWithSQLite(cfg.SchedulerPolicyPath, cfg.SchedulerPolicySQLitePath)
 	if err != nil {
 		panic(err)
 	}
+	defer closePolicyStore(policyStore)
 	fairnessStore, err := scheduler.NewFairnessStore(cfg.SchedulerFairnessSQLitePath)
 	if err != nil {
 		panic(err)
@@ -101,6 +102,12 @@ func closeQueue(q queue.Queue) {
 	type closer interface{ Close() error }
 	if closerQueue, ok := q.(closer); ok {
 		_ = closerQueue.Close()
+	}
+}
+
+func closePolicyStore(store *scheduler.PolicyStore) {
+	if store != nil {
+		_ = store.Close()
 	}
 }
 

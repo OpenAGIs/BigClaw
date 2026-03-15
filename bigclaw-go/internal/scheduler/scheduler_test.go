@@ -139,6 +139,52 @@ func TestSchedulerPolicyStoreRejectsInvalidExecutor(t *testing.T) {
 	}
 }
 
+func TestSchedulerPolicyStoreCanShareSQLiteState(t *testing.T) {
+	dir := t.TempDir()
+	policyPath := filepath.Join(dir, "scheduler-policy.json")
+	sharedPath := filepath.Join(dir, "scheduler-policy.db")
+	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"ray","urgent_priority_threshold":2}`), 0o644); err != nil {
+		t.Fatalf("write initial policy file: %v", err)
+	}
+	updater, err := NewPolicyStoreWithSQLite(policyPath, sharedPath)
+	if err != nil {
+		t.Fatalf("new updater policy store: %v", err)
+	}
+	t.Cleanup(func() { _ = updater.Close() })
+	follower, err := NewPolicyStoreWithSQLite("", sharedPath)
+	if err != nil {
+		t.Fatalf("new follower policy store: %v", err)
+	}
+	t.Cleanup(func() { _ = follower.Close() })
+	if updater.Backend() != "sqlite" || !updater.Shared() || follower.SharedPath() != sharedPath {
+		t.Fatalf("expected shared sqlite policy metadata, got updater=%s follower=%s", updater.Backend(), follower.SharedPath())
+	}
+	s1 := NewWithPolicyStore(updater)
+	s2 := NewWithPolicyStore(follower)
+	if decision := s1.Decide(domain.Task{ID: "shared-policy-1"}, QuotaSnapshot{}); !decision.Accepted || decision.Assignment.Executor != domain.ExecutorRay {
+		t.Fatalf("expected updater to use initial shared policy, got %+v", decision)
+	}
+	if decision := s2.Decide(domain.Task{ID: "shared-policy-2"}, QuotaSnapshot{}); !decision.Accepted || decision.Assignment.Executor != domain.ExecutorRay {
+		t.Fatalf("expected follower to read initial shared policy, got %+v", decision)
+	}
+	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"kubernetes","urgent_priority_threshold":3}`), 0o644); err != nil {
+		t.Fatalf("rewrite shared policy file: %v", err)
+	}
+	if err := updater.Reload(); err != nil {
+		t.Fatalf("reload updater policy store: %v", err)
+	}
+	if err := follower.Reload(); err != nil {
+		t.Fatalf("reload follower policy store: %v", err)
+	}
+	if decision := s2.Decide(domain.Task{ID: "shared-policy-3"}, QuotaSnapshot{}); !decision.Accepted || decision.Assignment.Executor != domain.ExecutorKubernetes {
+		t.Fatalf("expected follower to observe shared sqlite policy update, got %+v", decision)
+	}
+	decision := s2.Decide(domain.Task{ID: "shared-preempt-3", Priority: 3}, QuotaSnapshot{ConcurrentLimit: 1, CurrentRunning: 1, PreemptibleExecutions: 1})
+	if !decision.Accepted || !decision.Preemption.Required {
+		t.Fatalf("expected shared policy urgent threshold update to affect follower decisions, got %+v", decision)
+	}
+}
+
 func TestSchedulerFairnessWindowThrottlesDominantTenant(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "scheduler-policy.json")

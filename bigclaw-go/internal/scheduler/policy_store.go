@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"bigclaw-go/internal/domain"
 )
@@ -19,9 +20,11 @@ type RoutingRules struct {
 }
 
 type PolicyStore struct {
-	mu    sync.RWMutex
-	path  string
-	rules RoutingRules
+	mu        sync.RWMutex
+	path      string
+	shared    *SQLitePolicyStore
+	rules     RoutingRules
+	updatedAt time.Time
 }
 
 type routingRulesFile struct {
@@ -51,8 +54,24 @@ func NewDefaultPolicyStore() *PolicyStore {
 }
 
 func NewPolicyStore(path string) (*PolicyStore, error) {
+	return NewPolicyStoreWithSQLite(path, "")
+}
+
+func NewPolicyStoreWithSQLite(path string, sqlitePath string) (*PolicyStore, error) {
 	store := NewDefaultPolicyStore()
 	store.path = strings.TrimSpace(path)
+	if strings.TrimSpace(sqlitePath) != "" {
+		shared, err := NewSQLitePolicyStore(sqlitePath)
+		if err != nil {
+			return nil, err
+		}
+		store.shared = shared
+		if err := store.bootstrapSharedState(); err != nil {
+			_ = shared.Close()
+			return nil, err
+		}
+		return store, nil
+	}
 	if store.path == "" {
 		return store, nil
 	}
@@ -60,6 +79,13 @@ func NewPolicyStore(path string) (*PolicyStore, error) {
 		return nil, err
 	}
 	return store, nil
+}
+
+func (s *PolicyStore) Close() error {
+	if s == nil || s.shared == nil {
+		return nil
+	}
+	return s.shared.Close()
 }
 
 func (s *PolicyStore) Snapshot() RoutingRules {
@@ -74,23 +100,119 @@ func (s *PolicyStore) SourcePath() string {
 	return s.path
 }
 
+func (s *PolicyStore) SharedPath() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.shared == nil {
+		return ""
+	}
+	return s.shared.Path()
+}
+
+func (s *PolicyStore) Backend() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	switch {
+	case s.shared != nil:
+		return "sqlite"
+	case s.path != "":
+		return "file"
+	default:
+		return "memory"
+	}
+}
+
+func (s *PolicyStore) Shared() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.shared != nil
+}
+
+func (s *PolicyStore) UpdatedAt() time.Time {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.updatedAt
+}
+
 func (s *PolicyStore) HasSource() bool {
-	return strings.TrimSpace(s.SourcePath()) != ""
+	return strings.TrimSpace(s.SourcePath()) != "" || strings.TrimSpace(s.SharedPath()) != ""
 }
 
 func (s *PolicyStore) Reload() error {
-	path := s.SourcePath()
-	if path == "" {
+	sourcePath := s.SourcePath()
+	sharedPath := s.SharedPath()
+	switch {
+	case sharedPath != "" && sourcePath != "":
+		rules, err := LoadRoutingRulesFile(sourcePath)
+		if err != nil {
+			return err
+		}
+		updatedAt, err := s.shared.Save(rules, "file:"+sourcePath)
+		if err != nil {
+			return err
+		}
+		s.setRules(rules, updatedAt)
+		return nil
+	case sharedPath != "":
+		rules, updatedAt, ok, err := s.shared.Load()
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return fmt.Errorf("shared scheduler policy store is empty")
+		}
+		s.setRules(rules, updatedAt)
+		return nil
+	case sourcePath != "":
+		rules, err := LoadRoutingRulesFile(sourcePath)
+		if err != nil {
+			return err
+		}
+		s.setRules(rules, time.Now())
+		return nil
+	default:
 		return fmt.Errorf("scheduler policy path not configured")
 	}
-	rules, err := LoadRoutingRulesFile(path)
+}
+
+func (s *PolicyStore) bootstrapSharedState() error {
+	rules, updatedAt, ok, err := s.shared.Load()
 	if err != nil {
 		return err
 	}
-	s.mu.Lock()
-	s.rules = rules
-	s.mu.Unlock()
+	if ok {
+		s.setRules(rules, updatedAt)
+		return nil
+	}
+	if strings.TrimSpace(s.path) != "" {
+		rules, err = LoadRoutingRulesFile(s.path)
+		if err != nil {
+			return err
+		}
+	} else {
+		rules = DefaultRoutingRules()
+	}
+	updatedAt, err = s.shared.Save(rules, sharedPolicySource(s.path))
+	if err != nil {
+		return err
+	}
+	s.setRules(rules, updatedAt)
 	return nil
+}
+
+func (s *PolicyStore) setRules(rules RoutingRules, updatedAt time.Time) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.rules = cloneRoutingRules(rules)
+	s.updatedAt = updatedAt
+}
+
+func sharedPolicySource(path string) string {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return "default"
+	}
+	return "file:" + path
 }
 
 func LoadRoutingRulesFile(path string) (RoutingRules, error) {
@@ -98,6 +220,10 @@ func LoadRoutingRulesFile(path string) (RoutingRules, error) {
 	if err != nil {
 		return RoutingRules{}, fmt.Errorf("read scheduler policy: %w", err)
 	}
+	return LoadRoutingRulesJSON(content)
+}
+
+func LoadRoutingRulesJSON(content []byte) (RoutingRules, error) {
 	var raw routingRulesFile
 	if err := json.Unmarshal(content, &raw); err != nil {
 		return RoutingRules{}, fmt.Errorf("decode scheduler policy: %w", err)
