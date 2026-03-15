@@ -122,6 +122,58 @@ func TestSQLiteEventLogCheckpointPersistsAcrossInstances(t *testing.T) {
 	}
 }
 
+func TestSQLiteEventLogCheckpointResetHistoryPersistsAcrossInstances(t *testing.T) {
+	base := time.Unix(1_700_000_000, 0).UTC()
+	path := filepath.Join(t.TempDir(), "event-log.db")
+	log1, err := NewSQLiteEventLogWithOptions(path, SQLiteEventLogOptions{
+		Retention: 2 * time.Second,
+		Now:       func() time.Time { return base.Add(4 * time.Second) },
+	})
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	for _, event := range []domain.Event{
+		{ID: "evt-reset-history-1", Type: domain.EventTaskQueued, TaskID: "task-reset-history", TraceID: "trace-reset-history", Timestamp: base},
+		{ID: "evt-reset-history-2", Type: domain.EventTaskStarted, TaskID: "task-reset-history", TraceID: "trace-reset-history", Timestamp: base.Add(3 * time.Second)},
+	} {
+		if err := log1.Write(context.Background(), event); err != nil {
+			t.Fatalf("write %s: %v", event.ID, err)
+		}
+	}
+	if _, err := log1.Acknowledge("subscriber-reset-history", "evt-reset-history-2", base.Add(3500*time.Millisecond)); err != nil {
+		t.Fatalf("ack checkpoint: %v", err)
+	}
+	if err := log1.ResetCheckpoint("subscriber-reset-history"); err != nil {
+		t.Fatalf("reset checkpoint: %v", err)
+	}
+	if err := log1.Close(); err != nil {
+		t.Fatalf("close first sqlite event log: %v", err)
+	}
+
+	log2, err := NewSQLiteEventLogWithOptions(path, SQLiteEventLogOptions{
+		Retention: 2 * time.Second,
+		Now:       func() time.Time { return base.Add(5 * time.Second) },
+	})
+	if err != nil {
+		t.Fatalf("reopen sqlite event log: %v", err)
+	}
+	defer func() { _ = log2.Close() }()
+	history, err := log2.CheckpointResetHistory("subscriber-reset-history", 10)
+	if err != nil {
+		t.Fatalf("checkpoint reset history: %v", err)
+	}
+	if len(history) != 1 {
+		t.Fatalf("expected one reset record, got %+v", history)
+	}
+	record := history[0]
+	if record.SubscriberID != "subscriber-reset-history" || record.PriorCheckpoint == nil || record.PriorCheckpoint.EventID != "evt-reset-history-2" {
+		t.Fatalf("unexpected reset record: %+v", record)
+	}
+	if record.RetentionWatermark == nil || !record.RetentionWatermark.HistoryTruncated || record.RetentionWatermark.TrimmedThroughEventID != "evt-reset-history-1" {
+		t.Fatalf("expected reset history to preserve retention context, got %+v", record.RetentionWatermark)
+	}
+}
+
 func TestSQLiteEventLogCheckpointAcknowledgeIsMonotonic(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "event-log.db")
 	log, err := NewSQLiteEventLog(path)

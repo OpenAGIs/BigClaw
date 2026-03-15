@@ -147,6 +147,13 @@ func TestHTTPEventLogResetsCheckpointThroughService(t *testing.T) {
 	if err := client.ResetCheckpoint("subscriber-reset"); err != nil {
 		t.Fatalf("reset checkpoint: %v", err)
 	}
+	history, err := client.CheckpointResetHistory("subscriber-reset", 10)
+	if err != nil {
+		t.Fatalf("checkpoint reset history: %v", err)
+	}
+	if len(history) != 1 || history[0].SubscriberID != "subscriber-reset" || history[0].PriorCheckpoint == nil || history[0].PriorCheckpoint.EventID != "evt-reset-1" {
+		t.Fatalf("unexpected checkpoint reset history: %+v", history)
+	}
 	if _, err := client.Checkpoint("subscriber-reset"); !IsNoEventLog(err) {
 		t.Fatalf("expected checkpoint to be cleared, got %v", err)
 	}

@@ -39,6 +39,10 @@ type retentionWatermarkResponse struct {
 	RetentionWatermark RetentionWatermark `json:"retention_watermark"`
 }
 
+type checkpointResetHistoryResponse struct {
+	CheckpointResets []CheckpointResetRecord `json:"checkpoint_resets"`
+}
+
 func NewHTTPEventLog(endpoint, bearerToken string) (*HTTPEventLog, error) {
 	parsed, err := url.Parse(strings.TrimSpace(endpoint))
 	if err != nil {
@@ -140,6 +144,26 @@ func (s *HTTPEventLog) RetentionWatermark() (RetentionWatermark, error) {
 		return RetentionWatermark{}, mapRemoteEventLogError(err)
 	}
 	return response.RetentionWatermark, nil
+}
+
+func (s *HTTPEventLog) CheckpointResetHistory(subscriberID string, limit int) ([]CheckpointResetRecord, error) {
+	params := url.Values{}
+	if subscriberID = strings.TrimSpace(subscriberID); subscriberID != "" {
+		params.Set("subscriber_id", subscriberID)
+	}
+	if limit > 0 {
+		params.Set("limit", strconv.Itoa(limit))
+	}
+	path := "/checkpoint-resets"
+	if encoded := params.Encode(); encoded != "" {
+		path += "?" + encoded
+	}
+	var response checkpointResetHistoryResponse
+	err := s.doJSON(context.Background(), http.MethodGet, path, nil, &response)
+	if err != nil {
+		return nil, mapRemoteEventLogError(err)
+	}
+	return response.CheckpointResets, nil
 }
 
 func (s *HTTPEventLog) Path() string {

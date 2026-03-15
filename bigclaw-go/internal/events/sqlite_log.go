@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"bigclaw-go/internal/domain"
@@ -158,6 +159,16 @@ func (s *SQLiteEventLog) init() error {
 			event_seq INTEGER NOT NULL,
 			updated_at_ns INTEGER NOT NULL
 		);`,
+		`CREATE TABLE IF NOT EXISTS checkpoint_reset_history (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			subscriber_id TEXT NOT NULL,
+			reset_at_ns INTEGER NOT NULL,
+			prior_event_id TEXT,
+			prior_event_seq INTEGER,
+			prior_updated_at_ns INTEGER,
+			retention_watermark_json BLOB NOT NULL
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_checkpoint_reset_history_subscriber ON checkpoint_reset_history(subscriber_id, reset_at_ns DESC, id DESC);`,
 		`CREATE TABLE IF NOT EXISTS event_log_retention_state (
 			singleton INTEGER PRIMARY KEY CHECK(singleton = 1),
 			policy TEXT NOT NULL,
@@ -276,7 +287,31 @@ func (s *SQLiteEventLog) ResetCheckpoint(subscriberID string) error {
 	if s == nil || s.db == nil || subscriberID == "" {
 		return sql.ErrNoRows
 	}
-	result, err := s.db.Exec(`DELETE FROM subscriber_checkpoint WHERE subscriber_id = ?`, subscriberID)
+	checkpoint, err := s.Checkpoint(subscriberID)
+	if err != nil {
+		return err
+	}
+	watermark, err := s.RetentionWatermark()
+	if err != nil {
+		return err
+	}
+	retentionWatermarkJSON, err := json.Marshal(watermark)
+	if err != nil {
+		return err
+	}
+	resetAt := s.nowUTC()
+	tx, err := s.db.BeginTx(context.Background(), nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+	if _, err := tx.Exec(`
+		INSERT INTO checkpoint_reset_history(subscriber_id, reset_at_ns, prior_event_id, prior_event_seq, prior_updated_at_ns, retention_watermark_json)
+		VALUES(?, ?, ?, ?, ?, ?)
+	`, subscriberID, resetAt.UnixNano(), checkpoint.EventID, checkpoint.EventSequence, checkpoint.UpdatedAt.UnixNano(), retentionWatermarkJSON); err != nil {
+		return err
+	}
+	result, err := tx.Exec(`DELETE FROM subscriber_checkpoint WHERE subscriber_id = ?`, subscriberID)
 	if err != nil {
 		return err
 	}
@@ -287,7 +322,72 @@ func (s *SQLiteEventLog) ResetCheckpoint(subscriberID string) error {
 	if rowsAffected == 0 {
 		return sql.ErrNoRows
 	}
-	return nil
+	return tx.Commit()
+}
+
+func (s *SQLiteEventLog) CheckpointResetHistory(subscriberID string, limit int) ([]CheckpointResetRecord, error) {
+	if s == nil || s.db == nil {
+		return nil, nil
+	}
+	query := `
+		SELECT subscriber_id, reset_at_ns, prior_event_id, prior_event_seq, prior_updated_at_ns, retention_watermark_json
+		FROM checkpoint_reset_history
+	`
+	args := make([]any, 0, 2)
+	if subscriberID = strings.TrimSpace(subscriberID); subscriberID != "" {
+		query += ` WHERE subscriber_id = ?`
+		args = append(args, subscriberID)
+	}
+	query += ` ORDER BY reset_at_ns DESC, id DESC`
+	if limit > 0 {
+		query += ` LIMIT ?`
+		args = append(args, limit)
+	}
+	rows, err := s.db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make([]CheckpointResetRecord, 0)
+	for rows.Next() {
+		var (
+			record                CheckpointResetRecord
+			resetAtNS             int64
+			priorEventID          sql.NullString
+			priorEventSeq         sql.NullInt64
+			priorUpdatedAtNS      sql.NullInt64
+			retentionWatermarkRaw []byte
+		)
+		if err := rows.Scan(&record.SubscriberID, &resetAtNS, &priorEventID, &priorEventSeq, &priorUpdatedAtNS, &retentionWatermarkRaw); err != nil {
+			return nil, err
+		}
+		record.ResetAt = time.Unix(0, resetAtNS).UTC()
+		if priorEventID.Valid || priorEventSeq.Valid || priorUpdatedAtNS.Valid {
+			priorCheckpoint := &SubscriberCheckpoint{SubscriberID: record.SubscriberID}
+			if priorEventID.Valid {
+				priorCheckpoint.EventID = priorEventID.String
+			}
+			if priorEventSeq.Valid {
+				priorCheckpoint.EventSequence = priorEventSeq.Int64
+			}
+			if priorUpdatedAtNS.Valid {
+				priorCheckpoint.UpdatedAt = time.Unix(0, priorUpdatedAtNS.Int64).UTC()
+			}
+			record.PriorCheckpoint = priorCheckpoint
+		}
+		if len(retentionWatermarkRaw) > 0 {
+			watermark := &RetentionWatermark{}
+			if err := json.Unmarshal(retentionWatermarkRaw, watermark); err != nil {
+				return nil, err
+			}
+			record.RetentionWatermark = watermark
+		}
+		out = append(out, record)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (s *SQLiteEventLog) queryAfter(base string, args []any, afterID string, limit int) ([]domain.Event, error) {

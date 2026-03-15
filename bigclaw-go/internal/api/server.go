@@ -205,6 +205,9 @@ func (s *Server) Handler() http.Handler {
 				"capabilities": s.EventLog.Capabilities(),
 			}
 		}
+		if history := s.checkpointResetHistory("", 10); len(history) > 0 {
+			payload["checkpoint_reset_history"] = history
+		}
 		writeJSON(w, http.StatusOK, payload)
 	})
 	mux.HandleFunc("/v2/dashboard/engineering", s.handleV2EngineeringDashboard)
@@ -567,6 +570,9 @@ func (s *Server) handleStreamEventCheckpoint(w http.ResponseWriter, r *http.Requ
 			"backend":    s.eventLogBackend(),
 			"durable":    s.eventLogDurable(),
 		}
+		if history := s.checkpointResetHistory(subscriberID, 5); len(history) > 0 {
+			payload["checkpoint_reset_history"] = history
+		}
 		if diagnostics != nil {
 			payload["checkpoint_diagnostics"] = diagnostics
 		}
@@ -608,10 +614,11 @@ func (s *Server) handleStreamEventCheckpoint(w http.ResponseWriter, r *http.Requ
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{
-			"subscriber_id": subscriberID,
-			"reset":         true,
-			"backend":       s.eventLogBackend(),
-			"durable":       s.eventLogDurable(),
+			"subscriber_id":    subscriberID,
+			"reset":            true,
+			"backend":          s.eventLogBackend(),
+			"durable":          s.eventLogDurable(),
+			"checkpoint_reset": firstCheckpointReset(s.checkpointResetHistory(subscriberID, 1)),
 		})
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -912,6 +919,23 @@ func (s *Server) typedRetentionWatermark() *events.RetentionWatermark {
 		return nil
 	}
 	return &watermark
+}
+
+func (s *Server) checkpointResetHistory(subscriberID string, limit int) []events.CheckpointResetRecord {
+	if provider, ok := s.EventLog.(events.CheckpointResetHistoryProvider); ok {
+		history, err := provider.CheckpointResetHistory(subscriberID, limit)
+		if err == nil {
+			return history
+		}
+	}
+	return nil
+}
+
+func firstCheckpointReset(history []events.CheckpointResetRecord) *events.CheckpointResetRecord {
+	if len(history) == 0 {
+		return nil
+	}
+	return &history[0]
 }
 
 func parseEventTypes(values []string) []domain.EventType {

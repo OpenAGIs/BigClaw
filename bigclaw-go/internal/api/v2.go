@@ -1136,9 +1136,10 @@ func (s *Server) handleV2ControlCenterAudit(w http.ResponseWriter, r *http.Reque
 			"scope":    filters.Scope,
 			"limit":    filters.AuditLimit,
 		},
-		"audit":          entries,
-		"audit_summary":  summarizeControlAudit(entries),
-		"notes_timeline": auditNotesTimeline(entries, filters.AuditLimit),
+		"audit":             entries,
+		"audit_summary":     summarizeControlAudit(entries),
+		"notes_timeline":    auditNotesTimeline(entries, filters.AuditLimit),
+		"checkpoint_resets": s.checkpointResetHistory("", filters.AuditLimit),
 	})
 }
 

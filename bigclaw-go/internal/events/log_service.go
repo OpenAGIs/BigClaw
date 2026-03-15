@@ -127,6 +127,25 @@ func NewEventLogServiceHandler(store LogServiceStore) http.Handler {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
+	mux.HandleFunc("/checkpoint-resets", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		provider, ok := any(store).(CheckpointResetHistoryProvider)
+		if !ok {
+			http.Error(w, "checkpoint reset history unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+		subscriberID := strings.TrimSpace(r.URL.Query().Get("subscriber_id"))
+		history, err := provider.CheckpointResetHistory(subscriberID, limit)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		writeEventLogJSON(w, http.StatusOK, map[string]any{"checkpoint_resets": history})
+	})
 	return mux
 }
 
