@@ -266,6 +266,21 @@ func (b *Bus) ReplayWindow(limit int, afterID string, taskID string, traceID str
 	return WithDeliveryBatch(leadingEvents(filtered, limit), domain.EventDeliveryModeReplay), status
 }
 
+func (b *Bus) RetentionWatermark() (RetentionWatermark, error) {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	watermark := RetentionWatermark{
+		Backend:          "in_memory_history",
+		EventCount:       len(b.history),
+		HistoryTruncated: b.historyDropped,
+	}
+	if len(b.history) > 0 {
+		watermark.OldestEventID = b.history[0].ID
+		watermark.NewestEventID = b.history[len(b.history)-1].ID
+	}
+	return watermark, nil
+}
+
 func (b *Bus) Replay() []domain.Event {
 	b.mu.RLock()
 	defer b.mu.RUnlock()

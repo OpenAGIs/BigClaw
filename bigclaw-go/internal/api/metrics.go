@@ -20,6 +20,7 @@ type metricsSnapshot struct {
 	Control             control.Snapshot
 	EventDurability     any
 	EventLog            any
+	RetentionWatermark  any
 }
 
 func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
@@ -41,6 +42,7 @@ func (s *Server) buildMetricsSnapshot() metricsSnapshot {
 		WorkerPool:          s.workerPoolSummary(),
 		EventDurability:     s.EventPlan,
 		EventLog:            s.eventLogCapabilities(context.Background()),
+		RetentionWatermark:  s.retentionWatermark(),
 	}
 	if s.Control != nil {
 		snapshot.Control = s.Control.Snapshot()
@@ -59,6 +61,7 @@ func metricsJSONPayload(snapshot metricsSnapshot) map[string]any {
 		"registered_executors": snapshot.RegisteredExecutors,
 		"event_durability":     snapshot.EventDurability,
 		"event_log":            snapshot.EventLog,
+		"retention_watermark":  snapshot.RetentionWatermark,
 	}
 }
 

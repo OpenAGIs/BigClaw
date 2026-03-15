@@ -35,6 +35,10 @@ type remoteEventsResponse struct {
 	Events []domain.Event `json:"events"`
 }
 
+type retentionWatermarkResponse struct {
+	RetentionWatermark RetentionWatermark `json:"retention_watermark"`
+}
+
 func NewHTTPEventLog(endpoint, bearerToken string) (*HTTPEventLog, error) {
 	parsed, err := url.Parse(strings.TrimSpace(endpoint))
 	if err != nil {
@@ -119,6 +123,15 @@ func (s *HTTPEventLog) Checkpoint(subscriberID string) (SubscriberCheckpoint, er
 		return SubscriberCheckpoint{}, mapRemoteEventLogError(err)
 	}
 	return response.Checkpoint, nil
+}
+
+func (s *HTTPEventLog) RetentionWatermark() (RetentionWatermark, error) {
+	var response retentionWatermarkResponse
+	err := s.doJSON(context.Background(), http.MethodGet, "/watermark", nil, &response)
+	if err != nil {
+		return RetentionWatermark{}, mapRemoteEventLogError(err)
+	}
+	return response.RetentionWatermark, nil
 }
 
 func (s *HTTPEventLog) Path() string {

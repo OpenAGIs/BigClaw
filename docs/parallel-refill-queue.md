@@ -23,28 +23,21 @@ manual operator can refill the next parallel-safe issues in a stable order.
 ## Recent batches
 
 - Completed:
-  - `OPE-206` — replicated event store / broker-backed durability planning
-  - `OPE-207` — replay-safe downstream consumer contract
-  - `OPE-208` — broker-backed event-log adapter contract
-  - `OPE-209` — replay-safe consumer dedup ledger semantics
-  - `OPE-210` — subscriber group checkpoint lease coordination
-  - `OPE-211` — broker failover / replay fault-injection validation
-- Active:
   - `OPE-212` — replay checkpoint compaction / retention semantics
   - `OPE-213` — durability capability matrix / backend config validation
-- Standby:
   - `OPE-214` — event-log backend capability probe / control-center exposure
-  - `OPE-215` — consumer dedup ledger backend abstraction / persistence key model
+  - `OPE-215` — consumer dedup ledger backend contract
   - `OPE-216` — replay cursor expiry / truncated history fallback semantics
   - `OPE-217` — multi-subscriber takeover fault injection / audit evidence
+  - `OPE-219` — auto-sync failure telemetry / PR freshness audit
+- Active:
+  - `OPE-220` — retention watermark / replay horizon surface
+  - `OPE-221` — durable consumer dedup store bootstrap
+- Standby:
+  - `OPE-222` — replicated event-log durability rollout contract
 
 ## Canonical refill order
 
-1. `OPE-210`
-2. `OPE-211`
-3. `OPE-212`
-4. `OPE-213`
-5. `OPE-214`
-6. `OPE-215`
-7. `OPE-216`
-8. `OPE-217`
+1. `OPE-220`
+2. `OPE-221`
+3. `OPE-222`
