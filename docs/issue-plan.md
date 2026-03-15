@@ -108,6 +108,17 @@
 - Record orchestration policy, handoff requests, and execution traces in the observability ledger so every cross-team run can be replayed and audited.
 - Render orchestration plans, per-run canvases, portfolio rollups, and overview pages from ledger-backed artifacts rather than maintaining a separate reporting store.
 
+### Issue `OPE-209` / `BIG-PAR-022`: replay-safe consumer dedup ledger 与处理结果语义
+
+#### Goal
+- Define the minimum persisted contract that lets downstream consumers recognize replayed or duplicated events without claiming global exactly-once execution.
+
+#### Delivery shape
+- Persist a dedup ledger key built from consumer scope plus event idempotency metadata so duplicate deliveries can be classified deterministically.
+- Persist enough event metadata to correlate replays and retries across `event_id`, `event_type`, `task_id`, `trace_id`, `run_id`, and delivery mode.
+- Persist handler result semantics that distinguish `applied`, `duplicate`, `already_applied`, `retryable_failure`, and `terminal_failure` so implementation can retry safely without hiding already-materialized side effects.
+- Keep the contract code-backed in `bigclaw-go/internal/domain` and `bigclaw-go/internal/events` so future middleware/storage work can attach to one stable shape.
+
 ### Epic 11: 产品化 UI 与控制台 (`OPE-86`)
 
 #### Goal

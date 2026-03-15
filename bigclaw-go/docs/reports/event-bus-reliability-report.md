@@ -11,7 +11,8 @@ This report summarizes the current event bus reliability evidence and the next r
 - Webhook sink integration for external fanout
 - SSE stream via `GET /stream/events`
 - Optional SSE replay and filtering via `replay=1`, `task_id`, and `trace_id`
-- Additive delivery metadata for replay-safe downstream consumption via `delivery.mode`, `delivery.replay`, and `delivery.idempotency_key`
+- Replay-safe consumer delivery metadata via `EventDelivery`, including additive `delivery.mode`, `delivery.replay`, and `delivery.idempotency_key` fields
+- Consumer dedup ledger/result contract covering duplicate, retryable-failure, and already-applied outcomes
 
 ## Validated behaviors
 
@@ -27,6 +28,10 @@ This report summarizes the current event bus reliability evidence and the next r
 - `internal/events/bus.go`
 - `internal/events/durability.go`
 - `internal/events/bus_test.go`
+- `internal/events/delivery.go`
+- `internal/events/delivery_test.go`
+- `internal/domain/consumer_dedup.go`
+- `internal/domain/consumer_dedup_test.go`
 - `internal/events/webhook.go`
 - `internal/events/webhook_test.go`
 - `internal/events/recorder_sink.go`
@@ -76,6 +81,7 @@ This report summarizes the current event bus reliability evidence and the next r
 ## Remaining gaps
 
 - No concrete durable external event log exists yet in this checkout; replay still depends on process-local history plus the newly documented integration plan.
+- Dedup ledger semantics are defined, but there is no persistent ledger store or handler middleware enforcing them yet.
 - No delivery acknowledgement protocol exists beyond sink-level best effort.
 - No partitioned topic model or broker-backed cross-process subscriber coordination exists yet.
 - Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.

@@ -7,7 +7,7 @@ func WithDelivery(event domain.Event, mode domain.EventDeliveryMode) domain.Even
 	annotated.Delivery = &domain.EventDelivery{
 		Mode:           mode,
 		Replay:         mode == domain.EventDeliveryModeReplay,
-		IdempotencyKey: event.ID,
+		IdempotencyKey: domain.EventIdempotencyKey(event),
 	}
 	return annotated
 }
