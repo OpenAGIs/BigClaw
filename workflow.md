@@ -59,6 +59,7 @@ Primary operating mode:
 - Prefer 2-4 active child tickets in parallel when the work can be safely decomposed without merge conflicts.
 - Keep at least 2 tickets in `In Progress` whenever the project still has parallel-safe `Todo` slices available.
 - Keep each parallel slice small, code-backed, and independently verifiable.
+- Use `docs/parallel-refill-queue.json` as the canonical refill order and `scripts/ops/bigclaw_refill_queue.py` as the reusable manual/automated refill entrypoint.
 
 Execution protocol:
 1. Start by checking whether the current project or epic still has open child tickets in `Todo` / `In Progress`.
@@ -72,6 +73,7 @@ Execution protocol:
    - PR URL.
 6. When one slice is done, immediately pick or create the next parallel-safe slice and continue.
 7. If the dashboard shows fewer than 2 running slices while safe `Todo` work exists, move the next ticket(s) to `In Progress` and let Symphony refill capacity on the next polling cycle.
+8. When manual or unattended refill is needed, prefer `python3 scripts/ops/bigclaw_refill_queue.py --apply --watch` so queue activation follows the recorded issue order.
 
 GitHub verification is mandatory before completion:
 - Every run must prove that the latest local commit exists on the configured GitHub branch.
