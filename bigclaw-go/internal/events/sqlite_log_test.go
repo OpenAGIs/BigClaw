@@ -228,3 +228,41 @@ func TestSQLiteEventLogRetentionBoundaryPersistsAcrossInstances(t *testing.T) {
 		t.Fatalf("expected retained replay window after reopen, got %+v", replayed)
 	}
 }
+
+func TestSQLiteEventLogCheckpointDiagnosticExpiresTrimmedCheckpoint(t *testing.T) {
+	base := time.Unix(1_700_000_000, 0).UTC()
+	log, err := NewSQLiteEventLogWithOptions(filepath.Join(t.TempDir(), "event-log.db"), SQLiteEventLogOptions{
+		Retention: 2 * time.Second,
+		Now:       func() time.Time { return base },
+	})
+	if err != nil {
+		t.Fatalf("new sqlite event log with retention: %v", err)
+	}
+	defer func() { _ = log.Close() }()
+	if err := log.Write(context.Background(), domain.Event{ID: "evt-diagnostic-old", Type: domain.EventTaskQueued, TaskID: "task-diagnostic", TraceID: "trace-diagnostic", Timestamp: base}); err != nil {
+		t.Fatalf("write old event: %v", err)
+	}
+	if _, err := log.Acknowledge("subscriber-diagnostic", "evt-diagnostic-old", base.Add(500*time.Millisecond)); err != nil {
+		t.Fatalf("acknowledge old event: %v", err)
+	}
+	log.now = func() time.Time { return base.Add(4 * time.Second) }
+	if err := log.Write(context.Background(), domain.Event{ID: "evt-diagnostic-new", Type: domain.EventTaskStarted, TaskID: "task-diagnostic", TraceID: "trace-diagnostic", Timestamp: base.Add(4 * time.Second)}); err != nil {
+		t.Fatalf("write new event: %v", err)
+	}
+	diagnostic, err := log.CheckpointDiagnostic("subscriber-diagnostic")
+	if err != nil {
+		t.Fatalf("checkpoint diagnostic: %v", err)
+	}
+	if diagnostic.Status != "expired" || diagnostic.Reason != "checkpoint_expired" {
+		t.Fatalf("expected expired checkpoint diagnostic, got %+v", diagnostic)
+	}
+	if diagnostic.Checkpoint == nil || diagnostic.Checkpoint.EventID != "evt-diagnostic-old" || diagnostic.Checkpoint.EventSequence == 0 {
+		t.Fatalf("expected checkpoint metadata in diagnostic, got %+v", diagnostic.Checkpoint)
+	}
+	if diagnostic.RetentionWatermark == nil || diagnostic.RetentionWatermark.OldestEventID != "evt-diagnostic-new" {
+		t.Fatalf("expected retained watermark context, got %+v", diagnostic.RetentionWatermark)
+	}
+	if diagnostic.ResetAction == nil || diagnostic.ResetAction.Action != "reset_checkpoint" || diagnostic.ResetAction.EarliestRetainedEventID != "evt-diagnostic-new" {
+		t.Fatalf("expected reset guidance in diagnostic, got %+v", diagnostic.ResetAction)
+	}
+}
