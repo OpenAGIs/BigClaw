@@ -11,7 +11,7 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 - Recorder sink integration for audit/debug persistence
 - Webhook sink integration for external fanout
 - SSE stream via `GET /stream/events`
-- Optional SSE replay and filtering via `replay=1`, `task_id`, and `trace_id`
+- Optional SSE replay and filtering via `replay=1`, `after_id`, `Last-Event-ID`, `task_id`, and `trace_id`
 
 ## Validated behaviors
 
@@ -21,6 +21,8 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 - SSE streaming can deliver live events.
 - SSE replay can filter to one trace without leaking unrelated events.
 - Durable event log replay can serve task/trace history across process restarts when the shared SQLite log is configured.
+- Cursor-based replay can resume `/events` and SSE consumers from a prior event id without replaying the full stream.
+- SSE reconnects can recover missed trace/task events by honoring `Last-Event-ID` against the durable event log.
 
 ## Evidence
 
@@ -38,3 +40,4 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 
 - No delivery acknowledgement protocol beyond sink-level best effort.
 - No partitioned topic model or cross-process subscriber coordination yet.
+- A small catch-up gap still exists between replay completion and live subscription handoff for SSE clients.

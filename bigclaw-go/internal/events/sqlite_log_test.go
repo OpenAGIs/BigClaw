@@ -45,3 +45,44 @@ func TestSQLiteEventLogPersistsReplayAcrossInstances(t *testing.T) {
 		t.Fatalf("expected 2 trace events, got %+v", byTrace)
 	}
 }
+
+func TestSQLiteEventLogReplayAfterCursor(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "event-log.db")
+	log, err := NewSQLiteEventLog(path)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = log.Close() }()
+	base := time.Now()
+	eventsToWrite := []domain.Event{
+		{ID: "evt-1", Type: domain.EventTaskQueued, TaskID: "task-1", TraceID: "trace-1", Timestamp: base},
+		{ID: "evt-2", Type: domain.EventTaskStarted, TaskID: "task-1", TraceID: "trace-1", Timestamp: base.Add(time.Second)},
+		{ID: "evt-3", Type: domain.EventTaskCompleted, TaskID: "task-2", TraceID: "trace-2", Timestamp: base.Add(2 * time.Second)},
+	}
+	for _, event := range eventsToWrite {
+		if err := log.Write(context.Background(), event); err != nil {
+			t.Fatalf("write %s: %v", event.ID, err)
+		}
+	}
+	replayed, err := log.ReplayAfter("evt-1", 10)
+	if err != nil {
+		t.Fatalf("replay after: %v", err)
+	}
+	if len(replayed) != 2 || replayed[0].ID != "evt-2" || replayed[1].ID != "evt-3" {
+		t.Fatalf("unexpected replay-after events: %+v", replayed)
+	}
+	byTask, err := log.EventsByTaskAfter("task-1", "evt-1", 10)
+	if err != nil {
+		t.Fatalf("events by task after: %v", err)
+	}
+	if len(byTask) != 1 || byTask[0].ID != "evt-2" {
+		t.Fatalf("unexpected task replay-after events: %+v", byTask)
+	}
+	missingCursor, err := log.ReplayAfter("missing-event", 2)
+	if err != nil {
+		t.Fatalf("replay missing cursor: %v", err)
+	}
+	if len(missingCursor) != 2 || missingCursor[0].ID != "evt-1" || missingCursor[1].ID != "evt-2" {
+		t.Fatalf("unexpected replay when cursor missing: %+v", missingCursor)
+	}
+}

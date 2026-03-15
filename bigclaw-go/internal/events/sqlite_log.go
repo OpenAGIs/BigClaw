@@ -15,8 +15,11 @@ import (
 type EventLog interface {
 	Sink
 	Replay(limit int) ([]domain.Event, error)
+	ReplayAfter(afterID string, limit int) ([]domain.Event, error)
 	EventsByTask(taskID string, limit int) ([]domain.Event, error)
+	EventsByTaskAfter(taskID string, afterID string, limit int) ([]domain.Event, error)
 	EventsByTrace(traceID string, limit int) ([]domain.Event, error)
+	EventsByTraceAfter(traceID string, afterID string, limit int) ([]domain.Event, error)
 	Path() string
 	Close() error
 }
@@ -99,12 +102,77 @@ func (s *SQLiteEventLog) Replay(limit int) ([]domain.Event, error) {
 	return s.query(`SELECT raw FROM event_log ORDER BY seq DESC`, nil, limit)
 }
 
+func (s *SQLiteEventLog) ReplayAfter(afterID string, limit int) ([]domain.Event, error) {
+	return s.queryAfter(`SELECT raw FROM event_log WHERE seq > ? ORDER BY seq ASC`, nil, afterID, limit)
+}
+
 func (s *SQLiteEventLog) EventsByTask(taskID string, limit int) ([]domain.Event, error) {
 	return s.query(`SELECT raw FROM event_log WHERE task_id = ? ORDER BY seq DESC`, []any{taskID}, limit)
 }
 
+func (s *SQLiteEventLog) EventsByTaskAfter(taskID string, afterID string, limit int) ([]domain.Event, error) {
+	return s.queryAfter(`SELECT raw FROM event_log WHERE task_id = ? AND seq > ? ORDER BY seq ASC`, []any{taskID}, afterID, limit)
+}
+
 func (s *SQLiteEventLog) EventsByTrace(traceID string, limit int) ([]domain.Event, error) {
 	return s.query(`SELECT raw FROM event_log WHERE trace_id = ? ORDER BY seq DESC`, []any{traceID}, limit)
+}
+
+func (s *SQLiteEventLog) EventsByTraceAfter(traceID string, afterID string, limit int) ([]domain.Event, error) {
+	return s.queryAfter(`SELECT raw FROM event_log WHERE trace_id = ? AND seq > ? ORDER BY seq ASC`, []any{traceID}, afterID, limit)
+}
+
+func (s *SQLiteEventLog) queryAfter(base string, args []any, afterID string, limit int) ([]domain.Event, error) {
+	if s == nil || s.db == nil {
+		return nil, nil
+	}
+	afterSeq, err := s.sequenceForEventID(afterID)
+	if err != nil {
+		return nil, err
+	}
+	params := append([]any(nil), args...)
+	params = append(params, afterSeq)
+	query := base
+	if limit > 0 {
+		query += ` LIMIT ?`
+		params = append(params, limit)
+	}
+	rows, err := s.db.Query(query, params...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make([]domain.Event, 0)
+	for rows.Next() {
+		var raw []byte
+		if err := rows.Scan(&raw); err != nil {
+			return nil, err
+		}
+		var event domain.Event
+		if err := json.Unmarshal(raw, &event); err != nil {
+			return nil, err
+		}
+		out = append(out, event)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (s *SQLiteEventLog) sequenceForEventID(eventID string) (int64, error) {
+	if s == nil || s.db == nil || eventID == "" {
+		return 0, nil
+	}
+	row := s.db.QueryRow(`SELECT seq FROM event_log WHERE event_id = ? ORDER BY seq DESC LIMIT 1`, eventID)
+	var seq int64
+	if err := row.Scan(&seq); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, nil
+		}
+		return 0, err
+	}
+	return seq, nil
 }
 
 func (s *SQLiteEventLog) query(base string, args []any, limit int) ([]domain.Event, error) {

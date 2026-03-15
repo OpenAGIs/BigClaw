@@ -1949,3 +1949,126 @@ func TestStreamEventsReplayCanUseDurableEventLog(t *testing.T) {
 		t.Fatal("timed out waiting for durable replay stream event")
 	}
 }
+
+func TestEventsEndpointSupportsAfterIDCursor(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "event-log.db")
+	log1, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	base := time.Now()
+	for index, event := range []domain.Event{
+		{ID: "evt-durable-1", Type: domain.EventTaskQueued, TaskID: "task-durable", TraceID: "trace-durable", Timestamp: base},
+		{ID: "evt-durable-2", Type: domain.EventTaskStarted, TaskID: "task-durable", TraceID: "trace-durable", Timestamp: base.Add(time.Second)},
+		{ID: "evt-durable-3", Type: domain.EventTaskCompleted, TaskID: "task-durable", TraceID: "trace-durable", Timestamp: base.Add(2 * time.Second)},
+	} {
+		if err := log1.Write(context.Background(), event); err != nil {
+			t.Fatalf("write durable event %d: %v", index, err)
+		}
+	}
+	if err := log1.Close(); err != nil {
+		t.Fatalf("close first sqlite event log: %v", err)
+	}
+	log2, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("reopen sqlite event log: %v", err)
+	}
+	defer func() { _ = log2.Close() }()
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: log2, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/events?trace_id=trace-durable&after_id=evt-durable-1&limit=10", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected events 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Events      []domain.Event `json:"events"`
+		AfterID     string         `json:"after_id"`
+		NextAfterID string         `json:"next_after_id"`
+		Backend     string         `json:"backend"`
+		Durable     bool           `json:"durable"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode cursor events response: %v", err)
+	}
+	if len(decoded.Events) != 2 || decoded.Events[0].ID != "evt-durable-2" || decoded.Events[1].ID != "evt-durable-3" {
+		t.Fatalf("unexpected cursor events: %+v", decoded.Events)
+	}
+	if decoded.AfterID != "evt-durable-1" || decoded.NextAfterID != "evt-durable-3" {
+		t.Fatalf("unexpected cursor metadata: after=%q next=%q", decoded.AfterID, decoded.NextAfterID)
+	}
+	if decoded.Backend != "sqlite" || !decoded.Durable {
+		t.Fatalf("unexpected durable metadata: %+v", decoded)
+	}
+}
+
+func TestStreamEventsResumeUsesLastEventID(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "event-log.db")
+	log1, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	base := time.Now()
+	for _, event := range []domain.Event{
+		{ID: "evt-stream-1", Type: domain.EventTaskQueued, TaskID: "task-stream", TraceID: "trace-stream", Timestamp: base},
+		{ID: "evt-stream-2", Type: domain.EventTaskStarted, TaskID: "task-stream", TraceID: "trace-stream", Timestamp: base.Add(time.Second)},
+	} {
+		if err := log1.Write(context.Background(), event); err != nil {
+			t.Fatalf("write stream event %s: %v", event.ID, err)
+		}
+	}
+	if err := log1.Close(); err != nil {
+		t.Fatalf("close first sqlite event log: %v", err)
+	}
+	log2, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("reopen sqlite event log: %v", err)
+	}
+	defer func() { _ = log2.Close() }()
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: log2, Now: time.Now}
+	ts := httptest.NewServer(server.Handler())
+	defer ts.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, ts.URL+"/stream/events?trace_id=trace-stream&limit=10", nil)
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+	request.Header.Set("Last-Event-ID", "evt-stream-1")
+	resultCh := make(chan [3]string, 1)
+	go func() {
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			resultCh <- [3]string{"ERROR", err.Error(), ""}
+			return
+		}
+		defer response.Body.Close()
+		reader := bufio.NewReader(response.Body)
+		line1, err := reader.ReadString('\n')
+		if err != nil {
+			resultCh <- [3]string{"ERROR", err.Error(), ""}
+			return
+		}
+		line2, err := reader.ReadString('\n')
+		if err != nil {
+			resultCh <- [3]string{"ERROR", err.Error(), ""}
+			return
+		}
+		resultCh <- [3]string{response.Status, strings.TrimSpace(line1), strings.TrimSpace(line2)}
+	}()
+	select {
+	case result := <-resultCh:
+		if result[0] == "ERROR" {
+			t.Fatalf("stream request failed: %s", result[1])
+		}
+		if !strings.Contains(result[1], "evt-stream-2") || strings.Contains(result[1], "evt-stream-1") {
+			t.Fatalf("expected replayed cursor event in first SSE line, got %q", result[1])
+		}
+		if result[2] != "id: evt-stream-2" {
+			t.Fatalf("expected SSE id line for resumed event, got %q", result[2])
+		}
+	case <-ctx.Done():
+		t.Fatal("timed out waiting for resumed SSE event")
+	}
+}

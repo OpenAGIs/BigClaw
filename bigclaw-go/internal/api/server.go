@@ -68,12 +68,19 @@ func (s *Server) Handler() http.Handler {
 		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 		taskID := r.URL.Query().Get("task_id")
 		traceID := r.URL.Query().Get("trace_id")
-		events, backend, err := s.queryEvents(taskID, traceID, limit)
+		afterID := strings.TrimSpace(r.URL.Query().Get("after_id"))
+		events, backend, err := s.queryEvents(taskID, traceID, afterID, limit)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"events": events, "backend": backend, "durable": s.EventLog != nil})
+		writeJSON(w, http.StatusOK, map[string]any{
+			"events":        events,
+			"after_id":      afterID,
+			"next_after_id": nextAfterID(events, afterID),
+			"backend":       backend,
+			"durable":       s.EventLog != nil,
+		})
 	})
 	mux.HandleFunc("/stream/events", s.handleStreamEvents)
 	mux.HandleFunc("/audit", func(w http.ResponseWriter, r *http.Request) {
@@ -314,9 +321,13 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	replay := r.URL.Query().Get("replay") == "1"
 	taskID := r.URL.Query().Get("task_id")
 	traceID := r.URL.Query().Get("trace_id")
+	afterID := strings.TrimSpace(r.URL.Query().Get("after_id"))
+	if afterID == "" {
+		afterID = strings.TrimSpace(r.Header.Get("Last-Event-ID"))
+	}
+	replay := r.URL.Query().Get("replay") == "1" || afterID != ""
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
@@ -326,15 +337,15 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 	if replay {
-		history, _, err := s.queryEvents(taskID, traceID, limit)
+		history, _, err := s.queryEvents(taskID, traceID, afterID, limit)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		for _, event := range history {
-			payload, _ := json.Marshal(event)
-			_, _ = fmt.Fprintf(w, "data: %s\n\n", payload)
-			flusher.Flush()
+			if err := writeSSEEvent(w, flusher, event); err != nil {
+				return
+			}
 		}
 	}
 	ch, cancel := s.Bus.Subscribe(128)
@@ -350,15 +361,28 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 			if !matchesEventStreamFilter(event, taskID, traceID) {
 				continue
 			}
-			payload, _ := json.Marshal(event)
-			_, _ = fmt.Fprintf(w, "data: %s\n\n", payload)
-			flusher.Flush()
+			if err := writeSSEEvent(w, flusher, event); err != nil {
+				return
+			}
 		}
 	}
 }
 
-func (s *Server) queryEvents(taskID, traceID string, limit int) ([]domain.Event, string, error) {
+func (s *Server) queryEvents(taskID, traceID, afterID string, limit int) ([]domain.Event, string, error) {
 	if s.EventLog != nil {
+		if afterID != "" {
+			switch {
+			case taskID != "":
+				events, err := s.EventLog.EventsByTaskAfter(taskID, afterID, limit)
+				return events, "sqlite", err
+			case traceID != "":
+				events, err := s.EventLog.EventsByTraceAfter(traceID, afterID, limit)
+				return events, "sqlite", err
+			default:
+				events, err := s.EventLog.ReplayAfter(afterID, limit)
+				return events, "sqlite", err
+			}
+		}
 		switch {
 		case taskID != "":
 			events, err := s.EventLog.EventsByTask(taskID, limit)
@@ -371,14 +395,75 @@ func (s *Server) queryEvents(taskID, traceID string, limit int) ([]domain.Event,
 			return events, "sqlite", err
 		}
 	}
-	switch {
-	case taskID != "":
-		return s.Recorder.EventsByTask(taskID, limit), "memory", nil
-	case traceID != "":
-		return s.Recorder.EventsByTrace(traceID, limit), "memory", nil
-	default:
-		return s.Recorder.EventsByTask("", limit), "memory", nil
+	return s.queryMemoryEvents(taskID, traceID, afterID, limit), "memory", nil
+}
+
+func (s *Server) queryMemoryEvents(taskID, traceID, afterID string, limit int) []domain.Event {
+	if s.Recorder == nil {
+		return nil
 	}
+	logs := s.Recorder.Logs()
+	if afterID == "" {
+		filtered := make([]domain.Event, 0, len(logs))
+		for _, event := range logs {
+			if !matchesEventStreamFilter(event, taskID, traceID) {
+				continue
+			}
+			filtered = append(filtered, event)
+		}
+		if limit > 0 && len(filtered) > limit {
+			filtered = filtered[len(filtered)-limit:]
+		}
+		out := make([]domain.Event, len(filtered))
+		copy(out, filtered)
+		return out
+	}
+	start := 0
+	for index, event := range logs {
+		if event.ID == afterID {
+			start = index + 1
+		}
+	}
+	filtered := make([]domain.Event, 0, len(logs)-start)
+	for _, event := range logs[start:] {
+		if !matchesEventStreamFilter(event, taskID, traceID) {
+			continue
+		}
+		filtered = append(filtered, event)
+		if limit > 0 && len(filtered) >= limit {
+			break
+		}
+	}
+	return filtered
+}
+
+func nextAfterID(events []domain.Event, fallback string) string {
+	for index := len(events) - 1; index >= 0; index-- {
+		if events[index].ID != "" {
+			return events[index].ID
+		}
+	}
+	return fallback
+}
+
+func writeSSEEvent(w http.ResponseWriter, flusher http.Flusher, event domain.Event) error {
+	payload, err := json.Marshal(event)
+	if err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "data: %s\n", payload); err != nil {
+		return err
+	}
+	if event.ID != "" {
+		if _, err := fmt.Fprintf(w, "id: %s\n", event.ID); err != nil {
+			return err
+		}
+	}
+	if _, err := fmt.Fprint(w, "\n"); err != nil {
+		return err
+	}
+	flusher.Flush()
+	return nil
 }
 
 func matchesEventStreamFilter(event domain.Event, taskID string, traceID string) bool {
