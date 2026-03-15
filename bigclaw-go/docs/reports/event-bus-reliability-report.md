@@ -85,3 +85,9 @@ This report summarizes the current event bus reliability evidence and the next r
 - No delivery acknowledgement protocol exists beyond sink-level best effort.
 - No partitioned topic model or broker-backed cross-process subscriber coordination exists yet.
 - Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.
+
+## Next adapter boundary
+
+- `internal/events/log.go` now defines the provider-neutral event-log and checkpoint contract for future broker-backed adapters.
+- `internal/events/memory_log.go` provides the contract-compatible in-memory baseline while BigClaw remains on local fanout.
+- Broker-facing runtime knobs are reserved behind `BIGCLAW_EVENT_LOG_*` env vars so a first provider adapter can land without changing publish/replay/checkpoint callers.

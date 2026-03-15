@@ -12,6 +12,13 @@ type Config struct {
 	EventLogBackend               string
 	EventLogTargetBackend         string
 	EventLogReplicationFactor     int
+	EventLogBrokerDriver          string
+	EventLogBrokerURLs            []string
+	EventLogBrokerTopic           string
+	EventLogConsumerGroup         string
+	EventLogPublishTimeout        time.Duration
+	EventLogReplayLimit           int
+	EventLogCheckpointInterval    time.Duration
 	EventWebhookURLs              []string
 	EventWebhookBearerToken       string
 	EventWebhookTimeout           time.Duration
@@ -48,6 +55,9 @@ func Default() Config {
 		EventLogBackend:               "memory",
 		EventLogTargetBackend:         "broker_replicated",
 		EventLogReplicationFactor:     3,
+		EventLogPublishTimeout:        5 * time.Second,
+		EventLogReplayLimit:           500,
+		EventLogCheckpointInterval:    5 * time.Second,
 		EventWebhookTimeout:           5 * time.Second,
 		QueueSQLitePath:               "./state/queue.db",
 		AuditLogPath:                  "./state/audit.jsonl",
@@ -80,6 +90,13 @@ func LoadFromEnv() Config {
 	cfg.EventLogBackend = getString("BIGCLAW_EVENT_LOG_BACKEND", cfg.EventLogBackend)
 	cfg.EventLogTargetBackend = getString("BIGCLAW_EVENT_LOG_TARGET_BACKEND", cfg.EventLogTargetBackend)
 	cfg.EventLogReplicationFactor = getInt("BIGCLAW_EVENT_LOG_REPLICATION_FACTOR", cfg.EventLogReplicationFactor)
+	cfg.EventLogBrokerDriver = getString("BIGCLAW_EVENT_LOG_BROKER_DRIVER", cfg.EventLogBrokerDriver)
+	cfg.EventLogBrokerURLs = splitCSV(getString("BIGCLAW_EVENT_LOG_BROKER_URLS", ""))
+	cfg.EventLogBrokerTopic = getString("BIGCLAW_EVENT_LOG_BROKER_TOPIC", cfg.EventLogBrokerTopic)
+	cfg.EventLogConsumerGroup = getString("BIGCLAW_EVENT_LOG_CONSUMER_GROUP", cfg.EventLogConsumerGroup)
+	cfg.EventLogPublishTimeout = getDuration("BIGCLAW_EVENT_LOG_PUBLISH_TIMEOUT", cfg.EventLogPublishTimeout)
+	cfg.EventLogReplayLimit = getInt("BIGCLAW_EVENT_LOG_REPLAY_LIMIT", cfg.EventLogReplayLimit)
+	cfg.EventLogCheckpointInterval = getDuration("BIGCLAW_EVENT_LOG_CHECKPOINT_INTERVAL", cfg.EventLogCheckpointInterval)
 	cfg.EventWebhookURLs = splitCSV(getString("BIGCLAW_EVENT_WEBHOOK_URLS", ""))
 	cfg.EventWebhookBearerToken = getString("BIGCLAW_EVENT_WEBHOOK_BEARER_TOKEN", cfg.EventWebhookBearerToken)
 	cfg.EventWebhookTimeout = getDuration("BIGCLAW_EVENT_WEBHOOK_TIMEOUT", cfg.EventWebhookTimeout)

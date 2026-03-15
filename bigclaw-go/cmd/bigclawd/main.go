@@ -29,7 +29,14 @@ func main() {
 		panic(err)
 	}
 	defer closeQueue(q)
+	eventLog, err := buildEventLog(cfg)
+	if err != nil {
+		panic(err)
+	}
 	bus := events.NewBus()
+	if eventLog != nil {
+		bus.AddSink(eventLog)
+	}
 	recorder := buildRecorder(cfg)
 	bus.AddSink(events.RecorderSink{Recorder: recorder})
 	if len(cfg.EventWebhookURLs) > 0 {
@@ -63,6 +70,7 @@ func main() {
 		Executors: registry.Kinds(),
 		Bus:       bus,
 		EventPlan: events.NewDurabilityPlan(cfg.EventLogBackend, cfg.EventLogTargetBackend, cfg.EventLogReplicationFactor),
+		EventLog:  eventLog,
 		Worker:    runtime,
 		Control:   controller,
 	}
@@ -82,6 +90,29 @@ func main() {
 	defer cancel()
 	_ = httpServer.Shutdown(shutdownCtx)
 	fmt.Printf("%s stopped events=%d\n", cfg.ServiceName, len(bus.Replay()))
+}
+
+func buildEventLog(cfg config.Config) (*events.MemoryLog, error) {
+	switch cfg.EventLogBackend {
+	case "", string(events.EventLogBackendMemory):
+		return events.NewMemoryLog(), nil
+	case string(events.EventLogBackendBroker):
+		broker := events.BrokerRuntimeConfig{
+			Driver:             cfg.EventLogBrokerDriver,
+			URLs:               cfg.EventLogBrokerURLs,
+			Topic:              cfg.EventLogBrokerTopic,
+			ConsumerGroup:      cfg.EventLogConsumerGroup,
+			PublishTimeout:     cfg.EventLogPublishTimeout,
+			ReplayLimit:        cfg.EventLogReplayLimit,
+			CheckpointInterval: cfg.EventLogCheckpointInterval,
+		}
+		if err := broker.Validate(); err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("event log backend %q is not implemented yet; driver=%s topic=%s contract validated for the future adapter", cfg.EventLogBackend, broker.Driver, broker.Topic)
+	default:
+		return nil, fmt.Errorf("unsupported event log backend: %s", cfg.EventLogBackend)
+	}
 }
 
 func buildQueue(cfg config.Config) (queue.Queue, error) {

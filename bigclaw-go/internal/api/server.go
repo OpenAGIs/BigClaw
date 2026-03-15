@@ -29,6 +29,7 @@ type Server struct {
 	Executors []domain.ExecutorKind
 	Bus       *events.Bus
 	EventPlan events.DurabilityPlan
+	EventLog  events.EventLog
 	Now       func() time.Time
 	Worker    WorkerStatusProvider
 	Control   *control.Controller
@@ -50,13 +51,20 @@ func (s *Server) Handler() http.Handler {
 		writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 	})
 	mux.HandleFunc("/metrics", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, http.StatusOK, map[string]any{
+		payload := map[string]any{
 			"queue_size":           s.Queue.Size(context.Background()),
 			"events":               s.Recorder.Snapshot(),
 			"event_durability":     s.EventPlan,
 			"trace_count":          len(s.Recorder.TraceSummaries(0)),
 			"registered_executors": s.executorNames(),
-		})
+		}
+		if s.EventLog != nil {
+			payload["event_log"] = map[string]any{
+				"backend":      s.EventLog.Backend(),
+				"capabilities": s.EventLog.Capabilities(),
+			}
+		}
+		writeJSON(w, http.StatusOK, payload)
 	})
 	mux.HandleFunc("/events", func(w http.ResponseWriter, r *http.Request) {
 		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -109,6 +117,12 @@ func (s *Server) Handler() http.Handler {
 		}
 		if s.Control != nil {
 			payload["control"] = s.Control.Snapshot()
+		}
+		if s.EventLog != nil {
+			payload["event_log"] = map[string]any{
+				"backend":      s.EventLog.Backend(),
+				"capabilities": s.EventLog.Capabilities(),
+			}
 		}
 		writeJSON(w, http.StatusOK, payload)
 	})
