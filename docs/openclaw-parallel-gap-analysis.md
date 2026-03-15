@@ -38,6 +38,12 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
 - Downstream consumers still need idempotent handlers and durable dedupe stores; the system remains replay-safe, not globally exactly-once.
 - Parallel validation for Kubernetes, Ray, and shared-queue takeover should continue to be bundled as repo-native evidence.
 
+### Current rollout gate
+
+- `OPE-222` now makes the replicated durability rollout contract explicit in repo-native form:
+  - rollout metadata lives in `bigclaw-go/internal/events/durability.go` so debug/control-plane payloads can advertise checks, failure domains, and evidence links;
+  - `bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md` defines the minimum publish-ack, replay/checkpoint, retention-boundary, and failover expectations before a replicated adapter can be called rollout-ready.
+
 ## Recommended BigClaw parallel mainline
 
 1. Multi-worker and multi-node control-plane observability.
