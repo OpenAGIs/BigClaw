@@ -86,6 +86,17 @@ python3 scripts/e2e/multi_node_shared_queue.py \
 
 This starts two `bigclawd` processes against one SQLite queue and verifies there are no duplicate terminal completions across the two nodes.
 
+## Broker failover and replay fault-injection pack
+
+The current repo does not yet ship a broker-backed event log or live failover harness, but the implementation-ready validation matrix now lives in `docs/reports/broker-failover-fault-injection-validation-pack.md`.
+
+Use that pack as the source of truth for:
+
+- broker leader or replica failover scenarios
+- replay resume and duplicate-delivery assertions
+- checkpoint fencing and stale-writer recovery rules
+- the minimum machine-readable report schema required before future broker durability work can be closed honestly
+
 Optional toggles:
 
 ```bash
