@@ -86,6 +86,17 @@ python3 scripts/e2e/multi_node_shared_queue.py \
 
 This starts two `bigclawd` processes against one SQLite queue and verifies there are no duplicate terminal completions across the two nodes.
 
+## Multi-subscriber takeover validation matrix
+
+Use this to regenerate the planning artifact for takeover fault injection before lease-aware subscriber-group checkpoints are implemented.
+
+```bash
+cd bigclaw-go
+python3 scripts/e2e/subscriber_takeover_fault_matrix.py --pretty
+```
+
+This refreshes `docs/reports/multi-subscriber-takeover-validation-report.json` with the canonical scenario list, expected audit/checkpoint/replay assertions, and the minimum harness outputs the future lease-aware validation run must emit.
+
 Optional toggles:
 
 ```bash
