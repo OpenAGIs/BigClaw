@@ -167,10 +167,10 @@ def test_execution_contract_audit_surfaces_contract_gaps() -> None:
     contract.roles = [
         ExecutionRole(
             name="eng-lead",
-            personas=["Eng Lead"],
+            personas=[],
             granted_permissions=[],
-            scope_bindings=["project"],
-            escalation_target="vp-eng",
+            scope_bindings=[],
+            escalation_target="",
         ),
         ExecutionRole(
             name="platform-admin",
@@ -189,6 +189,9 @@ def test_execution_contract_audit_surfaces_contract_gaps() -> None:
     assert audit.undefined_model_refs == {"start_execution": ["MissingResponse"]}
     assert audit.undefined_permissions == {}
     assert audit.missing_roles == ["cross-team-operator", "vp-eng"]
+    assert audit.roles_missing_personas == ["eng-lead"]
+    assert audit.roles_missing_scope_bindings == ["eng-lead"]
+    assert audit.roles_missing_escalation_targets == ["eng-lead"]
     assert audit.roles_missing_permissions == ["eng-lead"]
     assert audit.undefined_role_permissions == {"platform-admin": ["execution.audit.override"]}
     assert audit.apis_without_role_coverage == ["start_execution"]
@@ -237,6 +240,9 @@ def test_render_execution_contract_report_includes_role_matrix() -> None:
     assert "## Roles" in report
     assert "- eng-lead: personas=Eng Lead permissions=execution.run.write, execution.run.approve" in report
     assert "- Missing roles: none" in report
+    assert "- Roles missing personas: none" in report
+    assert "- Roles missing scope bindings: none" in report
+    assert "- Roles missing escalation targets: none" in report
 
 
 def test_operations_api_contract_draft_is_release_ready() -> None:
@@ -274,3 +280,21 @@ def test_operations_api_contract_permissions_cover_read_and_action_paths() -> No
     assert viewer.allowed is True
     assert operator.allowed is False
     assert operator.missing_permissions == ["operations.run.approve"]
+
+
+def test_execution_contract_audit_requires_persona_scope_and_escalation_metadata() -> None:
+    contract = build_contract()
+    contract.roles[0] = ExecutionRole(
+        name="eng-lead",
+        personas=[],
+        granted_permissions=["execution.run.write"],
+        scope_bindings=[],
+        escalation_target="",
+    )
+
+    audit = ExecutionContractLibrary().audit(contract)
+
+    assert audit.roles_missing_personas == ["eng-lead"]
+    assert audit.roles_missing_scope_bindings == ["eng-lead"]
+    assert audit.roles_missing_escalation_targets == ["eng-lead"]
+    assert audit.release_ready is False

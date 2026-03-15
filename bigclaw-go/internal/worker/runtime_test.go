@@ -397,10 +397,10 @@ func TestRuntimeCompletesCancelledInFlightTaskAsCancelled(t *testing.T) {
 		WorkerID:    "worker-1",
 		Queue:       q,
 		Scheduler:   scheduler.New(),
-		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorLocal, delay: 120 * time.Millisecond, result: executor.Result{Success: true, Message: "ok"}}),
+		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorLocal, blockUntilContext: true}),
 		Bus:         bus,
 		Recorder:    recorder,
-		LeaseTTL:    200 * time.Millisecond,
+		LeaseTTL:    80 * time.Millisecond,
 		TaskTimeout: time.Second,
 	}
 
@@ -409,9 +409,18 @@ func TestRuntimeCompletesCancelledInFlightTaskAsCancelled(t *testing.T) {
 		_, _ = q.CancelTask(context.Background(), "task-live-cancel", "manual stop")
 	}()
 
-	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
-	if !processed {
-		t.Fatal("expected task to be processed")
+	done := make(chan bool, 1)
+	go func() {
+		done <- runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
+	}()
+
+	select {
+	case processed := <-done:
+		if !processed {
+			t.Fatal("expected task to be processed")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("expected in-flight cancel to interrupt the running task")
 	}
 	if got := q.Size(context.Background()); got != 0 {
 		t.Fatalf("expected queue size 0 after in-flight cancel, got %d", got)
@@ -423,5 +432,94 @@ func TestRuntimeCompletesCancelledInFlightTaskAsCancelled(t *testing.T) {
 	snapshot := runtime.Snapshot()
 	if snapshot.CancelledRuns != 1 || snapshot.LastTransition != string(domain.EventTaskCancelled) {
 		t.Fatalf("expected cancelled runtime snapshot, got %+v", snapshot)
+	}
+}
+
+func TestRuntimeUrgentTaskPreemptsLowerPriorityRun(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	base := time.Now()
+	if err := q.Enqueue(context.Background(), domain.Task{ID: "task-low", TraceID: "trace-low", Priority: 5, CreatedAt: base}); err != nil {
+		t.Fatalf("enqueue low priority: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+	lowRuntime := Runtime{
+		WorkerID:    "worker-low",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorLocal, blockUntilContext: true}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    80 * time.Millisecond,
+		TaskTimeout: 2 * time.Second,
+	}
+	urgentRuntime := Runtime{
+		WorkerID:    "worker-urgent",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorLocal, result: executor.Result{Success: true, Message: "urgent ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    80 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+
+	lowDone := make(chan bool, 1)
+	go func() {
+		lowDone <- lowRuntime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 1, BudgetRemaining: 1000})
+	}()
+
+	deadline := time.Now().Add(time.Second)
+	for {
+		if state := lowRuntime.Snapshot().State; state == "running" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("expected low-priority runtime to start running")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	if err := q.Enqueue(context.Background(), domain.Task{ID: "task-urgent", TraceID: "trace-urgent", Priority: 1, CreatedAt: base.Add(time.Second)}); err != nil {
+		t.Fatalf("enqueue urgent task: %v", err)
+	}
+	processed := urgentRuntime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 1, CurrentRunning: 1, BudgetRemaining: 1000, PreemptibleExecutions: 1})
+	if !processed {
+		t.Fatal("expected urgent runtime to process task")
+	}
+
+	select {
+	case processed := <-lowDone:
+		if !processed {
+			t.Fatal("expected low-priority runtime to finish after preemption")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("expected low-priority runtime to be cancelled by preemption")
+	}
+
+	if got := q.Size(context.Background()); got != 0 {
+		t.Fatalf("expected queue size 0 after urgent preemption, got %d", got)
+	}
+	lowEvents := recorder.EventsByTask("task-low", 10)
+	foundPreempted := false
+	for _, event := range lowEvents {
+		if event.Type == domain.EventTaskPreempted {
+			foundPreempted = true
+			break
+		}
+	}
+	if !foundPreempted {
+		t.Fatalf("expected preemption event for low-priority task, got %+v", lowEvents)
+	}
+	lowLatest, ok := recorder.LatestByTask("task-low")
+	if !ok || lowLatest.Type != domain.EventTaskCancelled {
+		t.Fatalf("expected low-priority task latest event to be cancelled, got %+v", lowLatest)
+	}
+	urgentLatest, ok := recorder.LatestByTask("task-urgent")
+	if !ok || urgentLatest.Type != domain.EventTaskCompleted {
+		t.Fatalf("expected urgent task to complete, got %+v", urgentLatest)
+	}
+	snapshot := urgentRuntime.Snapshot()
+	if snapshot.PreemptionsIssued != 1 || snapshot.LastPreemptedTaskID != "task-low" || snapshot.LastPreemptionReason == "" {
+		t.Fatalf("expected urgent runtime preemption status, got %+v", snapshot)
 	}
 }

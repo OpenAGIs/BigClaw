@@ -1,0 +1,96 @@
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+
+def write_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+
+def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: Path):
+    root = tmp_path / 'repo'
+    bundle = root / 'docs' / 'reports' / 'live-validation-runs' / '20260315T120000Z'
+    state_dir = tmp_path / 'state-local'
+    state_dir.mkdir(parents=True)
+    (state_dir / 'audit.jsonl').write_text('{"event":"ok"}\n', encoding='utf-8')
+    service_log = tmp_path / 'local-service.log'
+    service_log.write_text('local service ready\n', encoding='utf-8')
+
+    local_report = {
+        'base_url': 'http://127.0.0.1:19090',
+        'task': {'id': 'local-1'},
+        'status': {'state': 'succeeded'},
+        'state_dir': str(state_dir),
+        'service_log': str(service_log),
+    }
+    write_json(bundle / 'sqlite-smoke-report.json', local_report)
+    write_json(bundle / 'kubernetes-live-smoke-report.json', {'task': {'id': 'k8s-1'}, 'status': {'state': 'succeeded'}})
+    write_json(bundle / 'ray-live-smoke-report.json', {'task': {'id': 'ray-1'}, 'status': {'state': 'succeeded'}})
+
+    local_stdout = tmp_path / 'local.stdout'
+    local_stderr = tmp_path / 'local.stderr'
+    k8s_stdout = tmp_path / 'k8s.stdout'
+    k8s_stderr = tmp_path / 'k8s.stderr'
+    ray_stdout = tmp_path / 'ray.stdout'
+    ray_stderr = tmp_path / 'ray.stderr'
+    for path, content in [
+        (local_stdout, 'local ok\n'),
+        (local_stderr, ''),
+        (k8s_stdout, 'k8s ok\n'),
+        (k8s_stderr, ''),
+        (ray_stdout, 'ray ok\n'),
+        (ray_stderr, ''),
+    ]:
+        path.write_text(content, encoding='utf-8')
+
+    script = Path(__file__).resolve().parents[1] / 'bigclaw-go' / 'scripts' / 'e2e' / 'export_validation_bundle.py'
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            '--go-root', str(root),
+            '--run-id', '20260315T120000Z',
+            '--bundle-dir', 'docs/reports/live-validation-runs/20260315T120000Z',
+            '--summary-path', 'docs/reports/live-validation-summary.json',
+            '--index-path', 'docs/reports/live-validation-index.md',
+            '--manifest-path', 'docs/reports/live-validation-index.json',
+            '--run-local', '1',
+            '--run-kubernetes', '1',
+            '--run-ray', '1',
+            '--validation-status', '0',
+            '--local-report-path', 'docs/reports/live-validation-runs/20260315T120000Z/sqlite-smoke-report.json',
+            '--local-stdout-path', str(local_stdout),
+            '--local-stderr-path', str(local_stderr),
+            '--kubernetes-report-path', 'docs/reports/live-validation-runs/20260315T120000Z/kubernetes-live-smoke-report.json',
+            '--kubernetes-stdout-path', str(k8s_stdout),
+            '--kubernetes-stderr-path', str(k8s_stderr),
+            '--ray-report-path', 'docs/reports/live-validation-runs/20260315T120000Z/ray-live-smoke-report.json',
+            '--ray-stdout-path', str(ray_stdout),
+            '--ray-stderr-path', str(ray_stderr),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+    summary = json.loads((root / 'docs' / 'reports' / 'live-validation-summary.json').read_text(encoding='utf-8'))
+    assert summary['status'] == 'succeeded'
+    assert summary['local']['canonical_report_path'] == 'docs/reports/sqlite-smoke-report.json'
+    assert summary['local']['audit_log_path'].endswith('local.audit.jsonl')
+    assert summary['local']['service_log_path'].endswith('local.service.log')
+
+    latest_local = json.loads((root / 'docs' / 'reports' / 'sqlite-smoke-report.json').read_text(encoding='utf-8'))
+    assert latest_local['task']['id'] == 'local-1'
+
+    index_text = (root / 'docs' / 'reports' / 'live-validation-index.md').read_text(encoding='utf-8')
+    assert 'Live Validation Index' in index_text
+    assert '20260315T120000Z' in index_text
+    assert 'docs/reports/live-validation-runs/20260315T120000Z' in index_text
+
+    manifest = json.loads((root / 'docs' / 'reports' / 'live-validation-index.json').read_text(encoding='utf-8'))
+    assert manifest['latest']['run_id'] == '20260315T120000Z'
+    assert manifest['recent_runs'][0]['run_id'] == '20260315T120000Z'

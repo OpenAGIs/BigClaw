@@ -12,6 +12,9 @@ type Config struct {
 	EventWebhookURLs              []string
 	EventWebhookBearerToken       string
 	EventWebhookTimeout           time.Duration
+	EventLogSQLitePath            string
+	EventLogRemoteURL             string
+	EventLogRemoteBearer          string
 	QueueSQLitePath               string
 	AuditLogPath                  string
 	ServiceName                   string
@@ -37,12 +40,20 @@ type Config struct {
 	RayPollInterval               time.Duration
 	RayHTTPTimeout                time.Duration
 	RayBearerToken                string
+	SchedulerPolicyPath           string
+	SchedulerPolicySQLitePath     string
+	SchedulerFairnessSQLitePath   string
+	SchedulerFairnessRemoteURL    string
+	SchedulerFairnessRemoteBearer string
 }
 
 func Default() Config {
 	return Config{
 		QueueBackend:                  "file",
 		EventWebhookTimeout:           5 * time.Second,
+		EventLogSQLitePath:            "",
+		EventLogRemoteURL:             "",
+		EventLogRemoteBearer:          "",
 		QueueSQLitePath:               "./state/queue.db",
 		AuditLogPath:                  "./state/audit.jsonl",
 		ServiceName:                   "bigclawd",
@@ -65,6 +76,11 @@ func Default() Config {
 		RayAddress:                    "http://127.0.0.1:8265",
 		RayPollInterval:               time.Second,
 		RayHTTPTimeout:                10 * time.Second,
+		SchedulerPolicyPath:           "",
+		SchedulerPolicySQLitePath:     "",
+		SchedulerFairnessSQLitePath:   "",
+		SchedulerFairnessRemoteURL:    "",
+		SchedulerFairnessRemoteBearer: "",
 	}
 }
 
@@ -74,6 +90,9 @@ func LoadFromEnv() Config {
 	cfg.EventWebhookURLs = splitCSV(getString("BIGCLAW_EVENT_WEBHOOK_URLS", ""))
 	cfg.EventWebhookBearerToken = getString("BIGCLAW_EVENT_WEBHOOK_BEARER_TOKEN", cfg.EventWebhookBearerToken)
 	cfg.EventWebhookTimeout = getDuration("BIGCLAW_EVENT_WEBHOOK_TIMEOUT", cfg.EventWebhookTimeout)
+	cfg.EventLogSQLitePath = getString("BIGCLAW_EVENT_LOG_SQLITE_PATH", cfg.EventLogSQLitePath)
+	cfg.EventLogRemoteURL = getString("BIGCLAW_EVENT_LOG_REMOTE_URL", cfg.EventLogRemoteURL)
+	cfg.EventLogRemoteBearer = getString("BIGCLAW_EVENT_LOG_REMOTE_BEARER_TOKEN", cfg.EventLogRemoteBearer)
 	cfg.QueueSQLitePath = getString("BIGCLAW_QUEUE_SQLITE_PATH", cfg.QueueSQLitePath)
 	cfg.AuditLogPath = getString("BIGCLAW_AUDIT_LOG_PATH", cfg.AuditLogPath)
 	cfg.ServiceName = getString("BIGCLAW_SERVICE_NAME", cfg.ServiceName)
@@ -86,6 +105,11 @@ func LoadFromEnv() Config {
 	cfg.KubernetesKubeconfigPath = getString("BIGCLAW_KUBECONFIG", getString("KUBECONFIG", cfg.KubernetesKubeconfigPath))
 	cfg.RayAddress = getString("BIGCLAW_RAY_ADDRESS", getString("RAY_ADDRESS", cfg.RayAddress))
 	cfg.RayBearerToken = getString("BIGCLAW_RAY_BEARER_TOKEN", cfg.RayBearerToken)
+	cfg.SchedulerPolicyPath = getString("BIGCLAW_SCHEDULER_POLICY_PATH", cfg.SchedulerPolicyPath)
+	cfg.SchedulerPolicySQLitePath = getString("BIGCLAW_SCHEDULER_POLICY_SQLITE_PATH", cfg.SchedulerPolicySQLitePath)
+	cfg.SchedulerFairnessSQLitePath = getString("BIGCLAW_SCHEDULER_FAIRNESS_SQLITE_PATH", cfg.SchedulerFairnessSQLitePath)
+	cfg.SchedulerFairnessRemoteURL = getString("BIGCLAW_SCHEDULER_FAIRNESS_REMOTE_URL", cfg.SchedulerFairnessRemoteURL)
+	cfg.SchedulerFairnessRemoteBearer = getString("BIGCLAW_SCHEDULER_FAIRNESS_REMOTE_BEARER_TOKEN", cfg.SchedulerFairnessRemoteBearer)
 	cfg.LeaseTTL = getDuration("BIGCLAW_LEASE_TTL", cfg.LeaseTTL)
 	cfg.TaskTimeout = getDuration("BIGCLAW_TASK_TIMEOUT", cfg.TaskTimeout)
 	cfg.PollInterval = getDuration("BIGCLAW_POLL_INTERVAL", cfg.PollInterval)

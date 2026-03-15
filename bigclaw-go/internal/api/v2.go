@@ -1103,6 +1103,7 @@ func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 	if pool := s.workerPoolSummary(); pool != nil {
 		response["worker_pool"] = pool
 	}
+	response["distributed_diagnostics"] = s.buildDistributedDiagnostics(filters)
 	writeJSON(w, http.StatusOK, response)
 }
 
@@ -2427,19 +2428,33 @@ func (s *Server) workerPoolSummary() *workerPoolSummary {
 	if s.Worker == nil {
 		return nil
 	}
-	snapshot := s.Worker.Snapshot()
-	active := 0
-	if snapshot.State == "leased" || snapshot.State == "running" {
-		active = 1
+	snapshots := []worker.Status{s.Worker.Snapshot()}
+	if pool, ok := s.Worker.(WorkerPoolStatusProvider); ok {
+		poolSnapshots := pool.Snapshots()
+		if len(poolSnapshots) > 0 {
+			snapshots = poolSnapshots
+		}
 	}
-	idle := 1
-	if active == 1 {
+	active := 0
+	for index := range snapshots {
+		if snapshots[index].WorkerID == "" {
+			snapshots[index].WorkerID = fmt.Sprintf("worker-%d", index+1)
+		}
+		if snapshots[index].State == "" {
+			snapshots[index].State = "idle"
+		}
+		if snapshots[index].State == "leased" || snapshots[index].State == "running" {
+			active++
+		}
+	}
+	idle := len(snapshots) - active
+	if idle < 0 {
 		idle = 0
 	}
 	return &workerPoolSummary{
-		TotalWorkers:  1,
+		TotalWorkers:  len(snapshots),
 		ActiveWorkers: active,
 		IdleWorkers:   idle,
-		Workers:       []worker.Status{snapshot},
+		Workers:       snapshots,
 	}
 }

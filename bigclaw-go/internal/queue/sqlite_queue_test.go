@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"sync"
@@ -246,5 +247,48 @@ func TestSQLiteQueueCancelAndInspect(t *testing.T) {
 	}
 	if len(snapshots) != 1 || snapshots[0].Task.ID != "task-2" {
 		t.Fatalf("expected only leased cancelled task to remain, got %+v", snapshots)
+	}
+}
+
+func TestSQLiteQueueRejectsStaleLeaseAfterReacquire(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.db")
+	q, err := NewSQLiteQueue(path)
+	if err != nil {
+		t.Fatalf("new sqlite queue: %v", err)
+	}
+	defer q.Close()
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-stale", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	_, firstLease, err := q.LeaseNext(ctx, "worker-a", 50*time.Millisecond)
+	if err != nil || firstLease == nil {
+		t.Fatalf("first lease: %v lease=%v", err, firstLease)
+	}
+	time.Sleep(80 * time.Millisecond)
+	_, secondLease, err := q.LeaseNext(ctx, "worker-b", time.Minute)
+	if err != nil || secondLease == nil {
+		t.Fatalf("second lease: %v lease=%v", err, secondLease)
+	}
+	if firstLease.Attempt == secondLease.Attempt {
+		t.Fatalf("expected attempt to advance across reacquire, got first=%d second=%d", firstLease.Attempt, secondLease.Attempt)
+	}
+	if err := q.Ack(ctx, firstLease); !errors.Is(err, ErrLeaseNotOwned) {
+		t.Fatalf("expected stale ack to fail with ErrLeaseNotOwned, got %v", err)
+	}
+	if err := q.Requeue(ctx, firstLease, time.Now()); !errors.Is(err, ErrLeaseNotOwned) {
+		t.Fatalf("expected stale requeue to fail with ErrLeaseNotOwned, got %v", err)
+	}
+	if err := q.DeadLetter(ctx, firstLease, "stale"); !errors.Is(err, ErrLeaseNotOwned) {
+		t.Fatalf("expected stale dead letter to fail with ErrLeaseNotOwned, got %v", err)
+	}
+	if err := q.RenewLease(ctx, firstLease, time.Minute); !errors.Is(err, ErrLeaseNotOwned) {
+		t.Fatalf("expected stale renew to fail with ErrLeaseNotOwned, got %v", err)
+	}
+	if err := q.Ack(ctx, secondLease); err != nil {
+		t.Fatalf("ack second lease: %v", err)
+	}
+	if got := q.Size(ctx); got != 0 {
+		t.Fatalf("expected queue size 0 after ack, got %d", got)
 	}
 }

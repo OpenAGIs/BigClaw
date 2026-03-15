@@ -6,7 +6,7 @@ This report summarizes the current observability/debug evidence for `OPE-184` / 
 
 ## Implemented surfaces
 
-- Event counters and queue-size metrics via `GET /metrics`
+- Event counters and queue-size metrics via `GET /metrics` JSON plus Prometheus-style text exposition via `GET /metrics?format=prometheus`
 - Task timeline lookup via `GET /events?task_id=...`
 - Trace timeline lookup via `GET /events?trace_id=...`
 - Trace summary listing via `GET /debug/traces`
@@ -19,7 +19,7 @@ This report summarizes the current observability/debug evidence for `OPE-184` / 
 - Task and trace timelines are queryable from the recorder.
 - Recent traces can be summarized with first/last timestamps, duration, event counts, and task ids.
 - Debug status exposes the current worker snapshot and aggregate counters.
-- Metrics surface includes `trace_count` in addition to queue/event counters.
+- Metrics surface keeps `trace_count` JSON visibility and now exposes scrape-friendly queue, event, executor, worker-pool, and control-plane gauges.
 - Audit sink writes JSONL event records for later inspection.
 
 ## Evidence
@@ -35,5 +35,5 @@ This report summarizes the current observability/debug evidence for `OPE-184` / 
 ## Remaining gaps
 
 - No external tracing backend or span propagation beyond in-memory `trace_id` grouping.
-- Metrics remain JSON debug output rather than Prometheus/OpenTelemetry-native exposition.
+- Prometheus-style text exposition is now available, but there is still no full OpenTelemetry-native metrics/tracing pipeline.
 - No sampling policy or high-cardinality controls beyond lightweight in-memory usage.

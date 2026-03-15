@@ -40,11 +40,38 @@ func main() {
 		}))
 	}
 	registry := buildRegistry(cfg)
+	var eventLog events.EventLog
+	switch {
+	case cfg.EventLogRemoteURL != "":
+		eventLog, err = events.NewHTTPEventLog(cfg.EventLogRemoteURL, cfg.EventLogRemoteBearer)
+		if err != nil {
+			panic(err)
+		}
+		bus.AddSink(eventLog)
+	case cfg.EventLogSQLitePath != "":
+		eventLog, err = events.NewSQLiteEventLog(cfg.EventLogSQLitePath)
+		if err != nil {
+			panic(err)
+		}
+		defer closeEventLog(eventLog)
+		bus.AddSink(eventLog)
+	}
+	policyStore, err := scheduler.NewPolicyStoreWithSQLite(cfg.SchedulerPolicyPath, cfg.SchedulerPolicySQLitePath)
+	if err != nil {
+		panic(err)
+	}
+	defer closePolicyStore(policyStore)
+	fairnessStore, err := scheduler.NewFairnessStoreWithRemote(cfg.SchedulerFairnessSQLitePath, cfg.SchedulerFairnessRemoteURL, cfg.SchedulerFairnessRemoteBearer)
+	if err != nil {
+		panic(err)
+	}
+	defer closeFairnessStore(fairnessStore)
 	controller := control.New()
+	schedulerRuntime := scheduler.NewWithStores(policyStore, fairnessStore)
 	runtime := &worker.Runtime{
 		WorkerID:    "bootstrap-worker",
 		Queue:       q,
-		Scheduler:   scheduler.New(),
+		Scheduler:   schedulerRuntime,
 		Registry:    registry,
 		Bus:         bus,
 		Recorder:    recorder,
@@ -57,7 +84,7 @@ func main() {
 	if cfg.BootstrapTasks {
 		seed(context.Background(), q)
 	}
-	server := &api.Server{Recorder: recorder, Queue: q, Executors: registry.Kinds(), Bus: bus, Worker: runtime, Control: controller}
+	server := &api.Server{Recorder: recorder, Queue: q, Executors: registry.Kinds(), Bus: bus, EventLog: eventLog, Worker: runtime, Control: controller, SchedulerPolicy: policyStore, SchedulerRuntime: schedulerRuntime}
 	httpServer := &http.Server{Addr: cfg.HTTPAddr, Handler: server.Handler()}
 	go func() {
 		_ = httpServer.ListenAndServe()
@@ -91,6 +118,25 @@ func closeQueue(q queue.Queue) {
 	type closer interface{ Close() error }
 	if closerQueue, ok := q.(closer); ok {
 		_ = closerQueue.Close()
+	}
+}
+
+func closeEventLog(store events.EventLog) {
+	if store != nil {
+		_ = store.Close()
+	}
+}
+
+func closePolicyStore(store *scheduler.PolicyStore) {
+	if store != nil {
+		_ = store.Close()
+	}
+}
+
+func closeFairnessStore(store scheduler.FairnessStore) {
+	type closer interface{ Close() error }
+	if closable, ok := store.(closer); ok {
+		_ = closable.Close()
 	}
 }
 
