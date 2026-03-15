@@ -64,6 +64,9 @@ func (s *Server) Handler() http.Handler {
 		writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 	})
 	mux.HandleFunc("/metrics", s.handleMetrics)
+	if store := s.logServiceStore(); store != nil {
+		mux.Handle("/internal/events/log/", http.StripPrefix("/internal/events/log", events.NewEventLogServiceHandler(store)))
+	}
 	mux.HandleFunc("/events", func(w http.ResponseWriter, r *http.Request) {
 		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 		taskID := r.URL.Query().Get("task_id")
@@ -87,7 +90,7 @@ func (s *Server) Handler() http.Handler {
 			"next_after_id": nextAfterID(events, afterID),
 			"event_types":   eventTypes,
 			"backend":       backend,
-			"durable":       s.EventLog != nil,
+			"durable":       s.eventLogDurable(),
 		})
 	})
 	mux.HandleFunc("/stream/events/checkpoints/", s.handleStreamEventCheckpoint)
@@ -348,8 +351,8 @@ func (s *Server) handleStreamEventCheckpoint(w http.ResponseWriter, r *http.Requ
 		}
 		writeJSON(w, http.StatusOK, map[string]any{
 			"checkpoint": checkpoint,
-			"backend":    "sqlite",
-			"durable":    s.EventLog != nil,
+			"backend":    s.eventLogBackend(),
+			"durable":    s.eventLogDurable(),
 		})
 	case http.MethodPost:
 		var payload struct {
@@ -370,8 +373,8 @@ func (s *Server) handleStreamEventCheckpoint(w http.ResponseWriter, r *http.Requ
 		}
 		writeJSON(w, http.StatusOK, map[string]any{
 			"checkpoint": checkpoint,
-			"backend":    "sqlite",
-			"durable":    s.EventLog != nil,
+			"backend":    s.eventLogBackend(),
+			"durable":    s.eventLogDurable(),
 		})
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -476,7 +479,7 @@ func (s *Server) queryEvents(taskID, traceID, afterID string, eventTypes []domai
 		if err != nil {
 			return nil, "sqlite", err
 		}
-		return limitQueriedEvents(filterEventsByType(history, eventTypes), afterID, limit), "sqlite", nil
+		return limitQueriedEvents(filterEventsByType(history, eventTypes), afterID, limit), s.eventLogBackend(), nil
 	}
 	history := s.queryMemoryEvents(taskID, traceID, afterID, backendLimit)
 	return limitQueriedEvents(filterEventsByType(history, eventTypes), afterID, limit), "memory", nil
@@ -526,6 +529,28 @@ func (s *Server) checkpointStore() events.CheckpointStore {
 		return store
 	}
 	return nil
+}
+
+func (s *Server) logServiceStore() events.LogServiceStore {
+	if store, ok := s.EventLog.(events.LogServiceStore); ok {
+		return store
+	}
+	return nil
+}
+
+func (s *Server) eventLogBackend() string {
+	type backendInfo interface{ Backend() string }
+	if store, ok := s.EventLog.(backendInfo); ok {
+		return store.Backend()
+	}
+	if s.EventLog != nil {
+		return "sqlite"
+	}
+	return "memory"
+}
+
+func (s *Server) eventLogDurable() bool {
+	return s.EventLog != nil
 }
 
 func (s *Server) resolveAfterID(subscriberID string, afterID string) (string, error) {

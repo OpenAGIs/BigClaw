@@ -121,3 +121,31 @@ func TestSQLiteEventLogCheckpointPersistsAcrossInstances(t *testing.T) {
 		t.Fatalf("unexpected reopened checkpoint: %+v", checkpoint)
 	}
 }
+
+func TestSQLiteEventLogCheckpointAcknowledgeIsMonotonic(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "event-log.db")
+	log, err := NewSQLiteEventLog(path)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = log.Close() }()
+	base := time.Now()
+	for _, event := range []domain.Event{
+		{ID: "evt-monotonic-1", Type: domain.EventTaskQueued, TaskID: "task-monotonic", TraceID: "trace-monotonic", Timestamp: base},
+		{ID: "evt-monotonic-2", Type: domain.EventTaskStarted, TaskID: "task-monotonic", TraceID: "trace-monotonic", Timestamp: base.Add(time.Second)},
+	} {
+		if err := log.Write(context.Background(), event); err != nil {
+			t.Fatalf("write %s: %v", event.ID, err)
+		}
+	}
+	if _, err := log.Acknowledge("subscriber-monotonic", "evt-monotonic-2", base.Add(2*time.Second)); err != nil {
+		t.Fatalf("ack latest event: %v", err)
+	}
+	checkpoint, err := log.Acknowledge("subscriber-monotonic", "evt-monotonic-1", base.Add(3*time.Second))
+	if err != nil {
+		t.Fatalf("ack stale event: %v", err)
+	}
+	if checkpoint.EventID != "evt-monotonic-2" {
+		t.Fatalf("expected monotonic checkpoint to stay on newer event, got %+v", checkpoint)
+	}
+}

@@ -2346,3 +2346,48 @@ func TestStreamEventCheckpointEndpointAndResume(t *testing.T) {
 		t.Fatal("timed out waiting for checkpoint-resumed SSE event")
 	}
 }
+
+func TestEventsEndpointUsesRemoteEventLogBackend(t *testing.T) {
+	store, err := events.NewSQLiteEventLog(filepath.Join(t.TempDir(), "event-log.db"))
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	serviceServer := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: store, Now: time.Now}
+	serviceTS := httptest.NewServer(serviceServer.Handler())
+	defer serviceTS.Close()
+	remoteLog, err := events.NewHTTPEventLog(serviceTS.URL+"/internal/events/log", "")
+	if err != nil {
+		t.Fatalf("new remote event log: %v", err)
+	}
+	base := time.Now()
+	for _, event := range []domain.Event{
+		{ID: "evt-http-1", Type: domain.EventTaskQueued, TaskID: "task-http", TraceID: "trace-http", Timestamp: base},
+		{ID: "evt-http-2", Type: domain.EventTaskStarted, TaskID: "task-http", TraceID: "trace-http", Timestamp: base.Add(time.Second)},
+	} {
+		if err := remoteLog.Write(context.Background(), event); err != nil {
+			t.Fatalf("write remote-backed event %s: %v", event.ID, err)
+		}
+	}
+	apiServer := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: remoteLog, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/events?trace_id=trace-http&after_id=evt-http-1&limit=10", nil)
+	apiServer.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected remote events 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Events  []domain.Event `json:"events"`
+		Backend string         `json:"backend"`
+		Durable bool           `json:"durable"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode remote backend events response: %v", err)
+	}
+	if len(decoded.Events) != 1 || decoded.Events[0].ID != "evt-http-2" {
+		t.Fatalf("unexpected remote backend events: %+v", decoded.Events)
+	}
+	if decoded.Backend != "http" || !decoded.Durable {
+		t.Fatalf("unexpected remote backend metadata: %+v", decoded)
+	}
+}

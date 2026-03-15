@@ -13,6 +13,8 @@ type Config struct {
 	EventWebhookBearerToken       string
 	EventWebhookTimeout           time.Duration
 	EventLogSQLitePath            string
+	EventLogRemoteURL             string
+	EventLogRemoteBearer          string
 	QueueSQLitePath               string
 	AuditLogPath                  string
 	ServiceName                   string
@@ -50,6 +52,8 @@ func Default() Config {
 		QueueBackend:                  "file",
 		EventWebhookTimeout:           5 * time.Second,
 		EventLogSQLitePath:            "",
+		EventLogRemoteURL:             "",
+		EventLogRemoteBearer:          "",
 		QueueSQLitePath:               "./state/queue.db",
 		AuditLogPath:                  "./state/audit.jsonl",
 		ServiceName:                   "bigclawd",
@@ -87,6 +91,8 @@ func LoadFromEnv() Config {
 	cfg.EventWebhookBearerToken = getString("BIGCLAW_EVENT_WEBHOOK_BEARER_TOKEN", cfg.EventWebhookBearerToken)
 	cfg.EventWebhookTimeout = getDuration("BIGCLAW_EVENT_WEBHOOK_TIMEOUT", cfg.EventWebhookTimeout)
 	cfg.EventLogSQLitePath = getString("BIGCLAW_EVENT_LOG_SQLITE_PATH", cfg.EventLogSQLitePath)
+	cfg.EventLogRemoteURL = getString("BIGCLAW_EVENT_LOG_REMOTE_URL", cfg.EventLogRemoteURL)
+	cfg.EventLogRemoteBearer = getString("BIGCLAW_EVENT_LOG_REMOTE_BEARER_TOKEN", cfg.EventLogRemoteBearer)
 	cfg.QueueSQLitePath = getString("BIGCLAW_QUEUE_SQLITE_PATH", cfg.QueueSQLitePath)
 	cfg.AuditLogPath = getString("BIGCLAW_AUDIT_LOG_PATH", cfg.AuditLogPath)
 	cfg.ServiceName = getString("BIGCLAW_SERVICE_NAME", cfg.ServiceName)

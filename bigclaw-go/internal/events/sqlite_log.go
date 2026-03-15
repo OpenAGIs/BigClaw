@@ -55,6 +55,10 @@ func (s *SQLiteEventLog) Close() error {
 	return s.db.Close()
 }
 
+func (s *SQLiteEventLog) Backend() string {
+	return "sqlite"
+}
+
 func (s *SQLiteEventLog) Path() string {
 	if s == nil {
 		return ""
@@ -154,6 +158,7 @@ func (s *SQLiteEventLog) Acknowledge(subscriberID string, eventID string, at tim
 			event_id = excluded.event_id,
 			event_seq = excluded.event_seq,
 			updated_at_ns = excluded.updated_at_ns
+		WHERE excluded.event_seq >= subscriber_checkpoint.event_seq
 	`, subscriberID, eventID, seq, at.UnixNano())
 	if err != nil {
 		return SubscriberCheckpoint{}, err

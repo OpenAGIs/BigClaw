@@ -8,6 +8,7 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 
 - In-process publish/subscribe bus with replay history
 - Optional SQLite-backed durable event log for cross-process replay
+- Optional HTTP-backed remote event log service/client for cross-node event durability and replay coordination
 - Durable subscriber checkpoints for acknowledged consumer resume positions
 - Recorder sink integration for audit/debug persistence
 - Webhook sink integration for external fanout
@@ -27,6 +28,8 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 - SSE reconnects can recover missed trace/task events by honoring `Last-Event-ID` against the durable event log.
 - SSE now subscribes before replay and deduplicates overlap so replay/live handoff stays gap-free across reconnect catch-up.
 - Subscriber checkpoints can be acknowledged explicitly and reused across process restarts to resume `/events` and SSE streams from shared durable state.
+- Remote event-log clients can publish, replay, and checkpoint through a shared HTTP service instead of depending on a shared local SQLite path on every node.
+- Checkpoint acknowledgements are monotonic by event sequence so stale or duplicate acknowledgements cannot move consumer progress backwards.
 - Topic-scoped subscriptions and `event_type` filters prevent unrelated events from being replayed or fanned out to filtered consumers.
 
 ## Evidence
@@ -43,5 +46,5 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 
 ## Remaining gaps
 
-- Durable coordination still depends on a shared SQLite file rather than a replicated event broker or quorum-backed log.
-- Subscriber checkpoints track the last acknowledged event id, but they do not yet enforce exactly-once processing semantics for downstream handlers.
+- Remote coordination is now service-style, but durability still ultimately depends on a single SQLite-backed log rather than a replicated broker or quorum-backed event store.
+- Monotonic checkpoints prevent regressions, but downstream consumers still need idempotent handlers because the system remains replay-capable rather than globally exactly-once.

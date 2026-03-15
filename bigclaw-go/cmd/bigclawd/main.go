@@ -41,7 +41,14 @@ func main() {
 	}
 	registry := buildRegistry(cfg)
 	var eventLog events.EventLog
-	if cfg.EventLogSQLitePath != "" {
+	switch {
+	case cfg.EventLogRemoteURL != "":
+		eventLog, err = events.NewHTTPEventLog(cfg.EventLogRemoteURL, cfg.EventLogRemoteBearer)
+		if err != nil {
+			panic(err)
+		}
+		bus.AddSink(eventLog)
+	case cfg.EventLogSQLitePath != "":
 		eventLog, err = events.NewSQLiteEventLog(cfg.EventLogSQLitePath)
 		if err != nil {
 			panic(err)
