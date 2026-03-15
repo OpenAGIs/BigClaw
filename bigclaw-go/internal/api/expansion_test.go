@@ -283,9 +283,18 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 		Recorder:  recorder,
 		Queue:     queue.NewMemoryQueue(),
 		Executors: []domain.ExecutorKind{domain.ExecutorLocal, domain.ExecutorKubernetes, domain.ExecutorRay},
-		Control:   controller,
-		Worker:    fakeWorkerPoolStatus{},
-		Now:       func() time.Time { return base.Add(6 * time.Hour) },
+		EventPlan: events.NewDurabilityPlanWithBrokerConfig("http", "broker_replicated", 5, events.BrokerRuntimeConfig{
+			Driver:             "kafka",
+			URLs:               []string{"kafka-1:9092", "kafka-2:9092"},
+			Topic:              "bigclaw.events",
+			ConsumerGroup:      "bigclaw-consumers",
+			PublishTimeout:     5 * time.Second,
+			ReplayLimit:        2048,
+			CheckpointInterval: 15 * time.Second,
+		}),
+		Control: controller,
+		Worker:  fakeWorkerPoolStatus{},
+		Now:     func() time.Time { return base.Add(6 * time.Hour) },
 	}
 	for _, task := range []domain.Task{
 		{ID: "report-local", TraceID: "trace-report-local", Title: "Local", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(time.Minute)},
@@ -345,6 +354,9 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 				Count int    `json:"count"`
 			} `json:"takeover_owners"`
 		} `json:"cluster_health"`
+		EventLogRollout struct {
+			Status string `json:"status"`
+		} `json:"event_log_rollout"`
 		Report struct {
 			Markdown  string `json:"markdown"`
 			ExportURL string `json:"export_url"`
@@ -368,7 +380,10 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if len(decoded.ClusterHealth.TakeoverOwners) == 0 || decoded.ClusterHealth.TakeoverOwners[0].Key != "alice" {
 		t.Fatalf("unexpected takeover owner breakdown: %+v", decoded.ClusterHealth)
 	}
-	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") {
+	if decoded.EventLogRollout.Status != "contract_ready" {
+		t.Fatalf("unexpected event-log rollout payload: %+v", decoded.EventLogRollout)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Event-Log Rollout Readiness") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") {
 		t.Fatalf("unexpected distributed markdown: %s", decoded.Report.Markdown)
 	}
 	if !strings.Contains(decoded.Report.ExportURL, "/v2/reports/distributed/export") {
@@ -383,7 +398,7 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 		t.Fatalf("expected markdown export content type, got %q", contentType)
 	}
-	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") {
+	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Event-Log Rollout Readiness") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") {
 		t.Fatalf("unexpected distributed export markdown: %s", exportResponse.Body.String())
 	}
 }

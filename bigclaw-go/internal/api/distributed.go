@@ -9,6 +9,7 @@ import (
 
 	"bigclaw-go/internal/control"
 	"bigclaw-go/internal/domain"
+	"bigclaw-go/internal/events"
 	"bigclaw-go/internal/executor"
 	"bigclaw-go/internal/risk"
 )
@@ -75,6 +76,7 @@ type distributedDiagnostics struct {
 	RoutingReasons   []routingReasonSummary        `json:"routing_reasons"`
 	ExecutorCapacity []executorCapacityView        `json:"executor_capacity"`
 	ClusterHealth    clusterHealthRollup           `json:"cluster_health"`
+	EventLogRollout  events.RolloutReadiness       `json:"event_log_rollout"`
 	RolloutReport    distributedDiagnosticsReport  `json:"rollout_report"`
 }
 
@@ -122,6 +124,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"routing_reasons":   diagnostics.RoutingReasons,
 		"executor_capacity": diagnostics.ExecutorCapacity,
 		"cluster_health":    diagnostics.ClusterHealth,
+		"event_log_rollout": diagnostics.EventLogRollout,
 		"report":            diagnostics.RolloutReport,
 	})
 }
@@ -346,6 +349,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		RoutingReasons:   routingReasons,
 		ExecutorCapacity: executorCapacity,
 		ClusterHealth:    clusterHealth,
+		EventLogRollout:  s.EventPlan.RolloutReadiness,
 	}
 	diagnostics.RolloutReport = distributedDiagnosticsReport{
 		Markdown:  renderDistributedDiagnosticsMarkdown(diagnostics, filters),
@@ -591,9 +595,40 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 		fmt.Sprintf("- Idle workers: %d", diagnostics.Summary.IdleWorkers),
 		fmt.Sprintf("- Saturated executors: %d", diagnostics.Summary.SaturatedExecutors),
 		fmt.Sprintf("- Active takeovers: %d", diagnostics.Summary.ActiveTakeovers),
-		"",
-		"## Routing Reasons",
 	}
+	if diagnostics.EventLogRollout.Summary != "" {
+		lines = append(lines,
+			"",
+			"## Event-Log Rollout Readiness",
+			fmt.Sprintf("- Phase: %s", diagnostics.EventLogRollout.Phase),
+			fmt.Sprintf("- Status: %s", diagnostics.EventLogRollout.Status),
+			fmt.Sprintf("- Summary: %s", diagnostics.EventLogRollout.Summary),
+			fmt.Sprintf("- Current capability probe: publish=%s replay=%s checkpoint=%s filtering=%s retention=%s", diagnostics.EventLogRollout.CurrentProbe.Publish, diagnostics.EventLogRollout.CurrentProbe.Replay, diagnostics.EventLogRollout.CurrentProbe.Checkpoint, diagnostics.EventLogRollout.CurrentProbe.Filtering, diagnostics.EventLogRollout.CurrentProbe.Retention),
+			fmt.Sprintf("- Target capability probe: publish=%s replay=%s checkpoint=%s filtering=%s retention=%s", diagnostics.EventLogRollout.TargetProbe.Publish, diagnostics.EventLogRollout.TargetProbe.Replay, diagnostics.EventLogRollout.TargetProbe.Checkpoint, diagnostics.EventLogRollout.TargetProbe.Filtering, diagnostics.EventLogRollout.TargetProbe.Retention),
+		)
+		if broker := diagnostics.EventLogRollout.BrokerRuntime; broker != nil {
+			lines = append(lines, fmt.Sprintf("- Broker runtime: ready=%t driver=%s topic=%s consumer_group=%s replay_limit=%d", broker.Ready, firstNonEmpty(broker.Driver, "unset"), firstNonEmpty(broker.Topic, "unset"), firstNonEmpty(broker.ConsumerGroup, "unset"), broker.ReplayLimit))
+			if len(broker.URLs) > 0 {
+				lines = append(lines, "- Broker URLs: "+strings.Join(broker.URLs, ", "))
+			}
+		}
+		if len(diagnostics.EventLogRollout.ReadinessNotes) > 0 {
+			lines = append(lines, "- Readiness notes:")
+			for _, note := range diagnostics.EventLogRollout.ReadinessNotes {
+				lines = append(lines, "  - "+note)
+			}
+		}
+		if len(diagnostics.EventLogRollout.RemainingChecks) > 0 {
+			lines = append(lines, "- Remaining checks:")
+			for _, check := range diagnostics.EventLogRollout.RemainingChecks {
+				lines = append(lines, "  - "+check)
+			}
+		}
+		if len(diagnostics.EventLogRollout.EvidenceArtifacts) > 0 {
+			lines = append(lines, "- Evidence artifacts: "+strings.Join(diagnostics.EventLogRollout.EvidenceArtifacts, ", "))
+		}
+	}
+	lines = append(lines, "", "## Routing Reasons")
 	if len(diagnostics.RoutingReasons) == 0 {
 		lines = append(lines, "- No routing decisions captured")
 	} else {
