@@ -10,7 +10,8 @@ This report summarizes the current event bus reliability evidence and the next r
 - Recorder sink integration for audit/debug persistence
 - Webhook sink integration for external fanout
 - SSE stream via `GET /stream/events`
-- Optional SSE replay and filtering via `replay=1`, `task_id`, and `trace_id`
+- Optional SSE replay and filtering via `replay=1`, `after_id`, `Last-Event-ID`, `task_id`, and `trace_id`
+- Replay cursor diagnostics via `X-Replay-*` headers and JSON `cursor` metadata on `GET /events`
 - Replay-safe consumer delivery metadata via `EventDelivery`, including additive `delivery.mode`, `delivery.replay`, and `delivery.idempotency_key` fields
 - Consumer dedup ledger/result contract covering duplicate, retryable-failure, and already-applied outcomes
 - Replay-safe consumer dedup ledger contract with stable storage key and result semantics
@@ -124,7 +125,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - No delivery acknowledgement protocol exists beyond sink-level best effort.
 - Lease coordination is currently in-memory and single-process; shared multi-node subscriber groups still need a durable backend.
 - No partitioned topic model or broker-backed cross-process subscriber coordination exists yet.
-- No retention watermark or expired-cursor contract exists in the runtime yet; the target compaction semantics are defined in `docs/reports/replay-retention-semantics-report.md`.
+- No durable retention watermark exists in the runtime yet; expired-cursor fallback is currently defined only against the in-process replay window, and the target compaction semantics are defined in `docs/reports/replay-retention-semantics-report.md`.
 - Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.
 - Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists.
 

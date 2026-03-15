@@ -413,6 +413,88 @@ func TestSubscriberGroupLeaseReleaseFencesStaleToken(t *testing.T) {
 	}
 }
 
+func TestEventsEndpointReturnsCursorFallbackMetadataWhenReplayWindowExpired(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBusWithHistoryLimit(2)
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	bus.Publish(domain.Event{ID: "evt-old-1", Type: domain.EventTaskQueued, TaskID: "task-a", TraceID: "trace-a", Timestamp: time.Now()})
+	bus.Publish(domain.Event{ID: "evt-old-2", Type: domain.EventTaskStarted, TaskID: "task-a", TraceID: "trace-a", Timestamp: time.Now()})
+	bus.Publish(domain.Event{ID: "evt-old-3", Type: domain.EventTaskCompleted, TaskID: "task-a", TraceID: "trace-a", Timestamp: time.Now()})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, Now: time.Now}
+
+	request := httptest.NewRequest(http.MethodGet, "/events?task_id=task-a&after_id=evt-old-1&limit=10", nil)
+	response := httptest.NewRecorder()
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	if got := response.Header().Get("X-Replay-Cursor-Status"); got != "expired" {
+		t.Fatalf("expected expired cursor header, got %q", got)
+	}
+	if got := response.Header().Get("X-Replay-Fallback"); got != "resume_from_oldest" {
+		t.Fatalf("expected fallback header, got %q", got)
+	}
+	if !strings.Contains(response.Body.String(), "\"status\":\"expired\"") || !strings.Contains(response.Body.String(), "\"evt-old-2\"") {
+		t.Fatalf("expected cursor metadata and fallback events, got %s", response.Body.String())
+	}
+}
+
+func TestStreamEventsUsesLastEventIDForExpiredCursorFallback(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBusWithHistoryLimit(2)
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	bus.Publish(domain.Event{ID: "evt-old-1", Type: domain.EventTaskQueued, TaskID: "task-a", TraceID: "trace-a", Timestamp: time.Now()})
+	bus.Publish(domain.Event{ID: "evt-old-2", Type: domain.EventTaskStarted, TaskID: "task-a", TraceID: "trace-a", Timestamp: time.Now()})
+	bus.Publish(domain.Event{ID: "evt-old-3", Type: domain.EventTaskCompleted, TaskID: "task-a", TraceID: "trace-a", Timestamp: time.Now()})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, Now: time.Now}
+	ts := httptest.NewServer(server.Handler())
+	defer ts.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, ts.URL+"/stream/events?limit=10&task_id=task-a", nil)
+	if err != nil {
+		t.Fatalf("new request: %v", err)
+	}
+	request.Header.Set("Last-Event-ID", "evt-old-1")
+
+	type streamResult struct {
+		line   string
+		header http.Header
+		err    error
+	}
+	resultCh := make(chan streamResult, 1)
+	go func() {
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			resultCh <- streamResult{err: err}
+			return
+		}
+		defer response.Body.Close()
+		reader := bufio.NewReader(response.Body)
+		line, err := reader.ReadString('\n')
+		resultCh <- streamResult{line: strings.TrimSpace(line), header: response.Header.Clone(), err: err}
+	}()
+
+	select {
+	case result := <-resultCh:
+		if result.err != nil {
+			t.Fatalf("stream read: %v", result.err)
+		}
+		if got := result.header.Get("X-Replay-Cursor-Status"); got != "expired" {
+			t.Fatalf("expected expired cursor header, got %q", got)
+		}
+		if got := result.header.Get("X-Replay-Fallback"); got != "resume_from_oldest" {
+			t.Fatalf("expected fallback header, got %q", got)
+		}
+		if !strings.Contains(result.line, "evt-old-2") {
+			t.Fatalf("expected fallback replay to start at oldest available event, got %q", result.line)
+		}
+	case <-ctx.Done():
+		t.Fatal("timed out waiting for replayed event")
+	}
+}
+
 func TestDebugStatusIncludesWorkerSnapshot(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()
