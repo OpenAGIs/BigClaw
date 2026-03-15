@@ -14,6 +14,7 @@ type BackendCapabilities struct {
 	Publish    FeatureSupport `json:"publish"`
 	Replay     FeatureSupport `json:"replay"`
 	Checkpoint FeatureSupport `json:"checkpoint"`
+	Dedup      FeatureSupport `json:"dedup"`
 	Filtering  FeatureSupport `json:"filtering"`
 	Retention  FeatureSupport `json:"retention"`
 }
@@ -39,6 +40,10 @@ func defaultBusCapabilities() BackendCapabilities {
 		Checkpoint: FeatureSupport{
 			Supported: false,
 			Detail:    "No durable subscriber checkpoint backend is configured.",
+		},
+		Dedup: FeatureSupport{
+			Supported: false,
+			Detail:    "Consumer dedup state is process-local and resets on restart.",
 		},
 		Filtering: FeatureSupport{
 			Supported: true,
@@ -66,6 +71,10 @@ func UnavailableCapabilities() BackendCapabilities {
 			Detail:    "Replay requires an active event bus backend.",
 		},
 		Checkpoint: FeatureSupport{
+			Supported: false,
+			Detail:    "No event bus backend is configured.",
+		},
+		Dedup: FeatureSupport{
 			Supported: false,
 			Detail:    "No event bus backend is configured.",
 		},

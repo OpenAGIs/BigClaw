@@ -84,6 +84,7 @@ func TestBusCapabilitiesDefaultAndOverride(t *testing.T) {
 			Supported: true,
 			Mode:      "lease_aware",
 		},
+		Dedup:     FeatureSupport{Supported: true, Mode: "shared_store"},
 		Filtering: FeatureSupport{Supported: true, Mode: "server_side"},
 		Retention: FeatureSupport{Supported: true, Mode: "ttl"},
 	}
