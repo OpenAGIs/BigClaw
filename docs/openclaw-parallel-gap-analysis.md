@@ -34,7 +34,7 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
 
 ### Remaining gaps
 
-- Replay retention watermarks are now visible in runtime payloads, SQLite-backed logs now persist trimmed replay boundaries across restarts, and expired durable checkpoints now fail closed with reset guidance; memory-only deployments are still bounded by in-process history and broker/quorum retention remains future work.
+- Replay retention watermarks are now visible in runtime payloads, SQLite-backed logs now persist trimmed replay boundaries across restarts, expired durable checkpoints now fail closed with reset guidance, and checkpoint resets now leave a persisted operator history trail; memory-only deployments are still bounded by in-process history and broker/quorum retention remains future work.
 - Service-style SQLite and HTTP-backed coordination improve sharing, but replicated broker or quorum-backed durability is still future work.
 - Downstream consumers still need idempotent handlers and durable dedupe stores; the system remains replay-safe, not globally exactly-once.
 - Parallel validation for Kubernetes, Ray, and shared-queue takeover should continue to be bundled as repo-native evidence.
@@ -45,7 +45,7 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
 - `OPE-222` now makes the replicated durability rollout contract explicit in repo-native form:
   - rollout metadata lives in `bigclaw-go/internal/events/durability.go` so debug/control-plane payloads can advertise checks, failure domains, evidence links, and broker bootstrap readiness;
   - `bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md` defines the minimum publish-ack, replay/checkpoint, retention-boundary, and failover expectations before a replicated adapter can be called rollout-ready.
-- `OPE-230` refreshes the validation/reference bundle so the checkpoint reset surfaces from `OPE-226` through `OPE-229` can be attached directly to that rollout gate rather than treated as ad hoc operator knowledge.
+- `OPE-230` refreshes the validation/reference bundle so the checkpoint reset surfaces from `OPE-226` through `OPE-229`, including persisted reset history and control-plane `checkpoint_resets` summaries, can be attached directly to that rollout gate rather than treated as ad hoc operator knowledge.
 
 ## Recommended BigClaw parallel mainline
 

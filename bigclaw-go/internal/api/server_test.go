@@ -1804,6 +1804,42 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	}
 }
 
+func TestV2ControlCenterAuditIncludesCheckpointResetSummary(t *testing.T) {
+	store, err := events.NewSQLiteEventLog(filepath.Join(t.TempDir(), "event-log.db"))
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	base := time.Now()
+	if err := store.Write(context.Background(), domain.Event{ID: "evt-cc-reset-1", Type: domain.EventTaskQueued, TaskID: "task-cc-reset", TraceID: "trace-cc-reset", Timestamp: base}); err != nil {
+		t.Fatalf("write control-center reset event: %v", err)
+	}
+	if _, err := store.Acknowledge("subscriber-cc-reset", "evt-cc-reset-1", base.Add(time.Second)); err != nil {
+		t.Fatalf("ack control-center reset checkpoint: %v", err)
+	}
+	if err := store.ResetCheckpoint("subscriber-cc-reset"); err != nil {
+		t.Fatalf("reset control-center checkpoint: %v", err)
+	}
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: bus, EventLog: store, Control: control.New(), Now: time.Now}
+	handler := server.Handler()
+
+	auditResponse := httptest.NewRecorder()
+	auditRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center/audit?audit_limit=10", nil)
+	auditRequest.Header.Set("X-BigClaw-Role", "platform_admin")
+	auditRequest.Header.Set("X-BigClaw-Actor", "ops-1")
+	handler.ServeHTTP(auditResponse, auditRequest)
+	if auditResponse.Code != http.StatusOK {
+		t.Fatalf("expected control center audit 200, got %d %s", auditResponse.Code, auditResponse.Body.String())
+	}
+	body := auditResponse.Body.String()
+	if !strings.Contains(body, "checkpoint_resets") || !strings.Contains(body, "subscriber-cc-reset") || !strings.Contains(body, "operator_reset") {
+		t.Fatalf("expected checkpoint reset summary in control center audit payload, got %s", body)
+	}
+}
+
 func TestV2ControlCenterAuditFiltersOwnerReviewerAndScope(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()
@@ -2735,6 +2771,40 @@ func TestDebugStatusIncludesRetentionWatermark(t *testing.T) {
 	}
 }
 
+func TestDebugStatusIncludesCheckpointResetSummary(t *testing.T) {
+	store, err := events.NewSQLiteEventLog(filepath.Join(t.TempDir(), "event-log.db"))
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	base := time.Now()
+	for _, event := range []domain.Event{
+		{ID: "evt-debug-reset-1", Type: domain.EventTaskQueued, TaskID: "task-debug-reset", TraceID: "trace-debug-reset", Timestamp: base},
+		{ID: "evt-debug-reset-2", Type: domain.EventTaskStarted, TaskID: "task-debug-reset", TraceID: "trace-debug-reset", Timestamp: base.Add(time.Second)},
+	} {
+		if err := store.Write(context.Background(), event); err != nil {
+			t.Fatalf("write %s: %v", event.ID, err)
+		}
+	}
+	if _, err := store.Acknowledge("subscriber-debug-reset", "evt-debug-reset-1", base.Add(2*time.Second)); err != nil {
+		t.Fatalf("ack debug reset checkpoint: %v", err)
+	}
+	if err := store.ResetCheckpoint("subscriber-debug-reset"); err != nil {
+		t.Fatalf("reset debug checkpoint: %v", err)
+	}
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: store, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d", response.Code)
+	}
+	body := response.Body.String()
+	if !strings.Contains(body, "checkpoint_resets") || !strings.Contains(body, "subscriber-debug-reset") || !strings.Contains(body, "operator_reset") {
+		t.Fatalf("expected checkpoint reset summary in debug payload, got %s", body)
+	}
+}
+
 func TestStreamEventCheckpointExpiredDiagnosticsAndReset(t *testing.T) {
 	logPath := filepath.Join(t.TempDir(), "event-log.db")
 	base := time.Unix(1_700_000_000, 0).UTC()
@@ -2793,6 +2863,19 @@ func TestStreamEventCheckpointExpiredDiagnosticsAndReset(t *testing.T) {
 	if resetResponse.Code != http.StatusOK {
 		t.Fatalf("expected checkpoint reset 200, got %d %s", resetResponse.Code, resetResponse.Body.String())
 	}
+	if !strings.Contains(resetResponse.Body.String(), "reset_audit") || !strings.Contains(resetResponse.Body.String(), "evt-expired-1") {
+		t.Fatalf("expected reset audit payload, got %s", resetResponse.Body.String())
+	}
+
+	historyResponse := httptest.NewRecorder()
+	historyRequest := httptest.NewRequest(http.MethodGet, "/stream/events/checkpoints/subscriber-expired/history?limit=10", nil)
+	server.Handler().ServeHTTP(historyResponse, historyRequest)
+	if historyResponse.Code != http.StatusOK {
+		t.Fatalf("expected checkpoint history 200, got %d %s", historyResponse.Code, historyResponse.Body.String())
+	}
+	if !strings.Contains(historyResponse.Body.String(), "operator_reset") || !strings.Contains(historyResponse.Body.String(), "trimmed_through_event_id") || !strings.Contains(historyResponse.Body.String(), "evt-expired-1") {
+		t.Fatalf("expected checkpoint reset history payload, got %s", historyResponse.Body.String())
+	}
 
 	recoveredResponse := httptest.NewRecorder()
 	recoveredRequest := httptest.NewRequest(http.MethodGet, "/events?subscriber_id=subscriber-expired&trace_id=trace-expired&limit=10", nil)
@@ -2808,5 +2891,22 @@ func TestStreamEventCheckpointExpiredDiagnosticsAndReset(t *testing.T) {
 	}
 	if len(recovered.Events) != 1 || recovered.Events[0].ID != "evt-expired-2" {
 		t.Fatalf("expected replay from earliest retained event after reset, got %+v", recovered.Events)
+	}
+
+	reackResponse := httptest.NewRecorder()
+	reackRequest := httptest.NewRequest(http.MethodPost, "/stream/events/checkpoints/subscriber-expired", strings.NewReader(`{"event_id":"evt-expired-2"}`))
+	server.Handler().ServeHTTP(reackResponse, reackRequest)
+	if reackResponse.Code != http.StatusOK {
+		t.Fatalf("expected checkpoint re-ack 200, got %d %s", reackResponse.Code, reackResponse.Body.String())
+	}
+
+	historyAfterResume := httptest.NewRecorder()
+	historyAfterResumeRequest := httptest.NewRequest(http.MethodGet, "/stream/events/checkpoints/subscriber-expired/history?limit=10", nil)
+	server.Handler().ServeHTTP(historyAfterResume, historyAfterResumeRequest)
+	if historyAfterResume.Code != http.StatusOK {
+		t.Fatalf("expected checkpoint history after resume 200, got %d %s", historyAfterResume.Code, historyAfterResume.Body.String())
+	}
+	if !strings.Contains(historyAfterResume.Body.String(), "evt-expired-1") || !strings.Contains(historyAfterResume.Body.String(), "operator_reset") {
+		t.Fatalf("expected checkpoint reset history to remain visible, got %s", historyAfterResume.Body.String())
 	}
 }

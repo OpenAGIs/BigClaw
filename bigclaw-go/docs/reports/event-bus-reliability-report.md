@@ -13,7 +13,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - Optional SSE replay and filtering via `replay=1`, `after_id`, `Last-Event-ID`, `task_id`, and `trace_id`
 - Replay cursor diagnostics via `X-Replay-*` headers and JSON `cursor` metadata on `GET /events`
 - Retention watermark / replay horizon visibility through API debug payloads and event-log service surfaces
-- Expired checkpoint diagnostics and checkpoint reset surface through `GET/DELETE /stream/events/checkpoints/{subscriber_id}` plus conflict payloads on resume attempts
+- Expired checkpoint diagnostics, checkpoint reset surface, and persisted operator history through `GET/DELETE /stream/events/checkpoints/{subscriber_id}` plus `GET /stream/events/checkpoints/{subscriber_id}/history` and conflict payloads on resume attempts
 - SQLite retention bootstrap with persisted truncation boundaries that survive process restarts when a replay window is configured
 - Replay-safe consumer delivery metadata via `EventDelivery`, including additive `delivery.mode`, `delivery.replay`, and `delivery.idempotency_key` fields
 - Consumer dedup ledger/result contract covering duplicate, retryable-failure, and already-applied outcomes
@@ -131,7 +131,9 @@ This report summarizes the current event bus reliability evidence and the next r
 - Review output should preserve:
   - the expired-checkpoint conflict payload from `GET /events?subscriber_id=...`;
   - the checkpoint diagnostics payload from `GET /stream/events/checkpoints/{subscriber_id}`;
-  - the successful reset response from `DELETE /stream/events/checkpoints/{subscriber_id}`;
+  - the successful reset response from `DELETE /stream/events/checkpoints/{subscriber_id}`, including `reset_audit`;
+  - the persisted review trail from `GET /stream/events/checkpoints/{subscriber_id}/history`;
+  - the control-plane review summary exposed as `checkpoint_resets`;
   - the retained replay result after reset.
 
 ### Shared HTTP event-log evidence
@@ -140,12 +142,14 @@ This report summarizes the current event bus reliability evidence and the next r
   - `TestHTTPEventLogReadsRetentionWatermarkFromService`;
   - `TestHTTPEventLogReadsPersistedRetentionBoundaryFromService`;
   - `TestHTTPEventLogResetsCheckpointThroughService`;
+  - `TestHTTPEventLogReadsCheckpointResetHistoryThroughService`;
+  - `TestHTTPEventLogReadsRecentCheckpointResetsThroughService`;
   - `TestEventsEndpointIncludesRetentionWatermarkForRemoteEventLog`.
-- Review output should retain the remote watermark payload plus checkpoint reset round-trip proof so shared-service operators can audit the flow without database access.
+- Review output should retain the remote watermark payload plus checkpoint reset, reset-history, and recent-reset summary proof so shared-service operators can audit the flow without database access.
 
 ### Future replicated evidence
 
-- A broker or quorum-backed backend should not be marked rollout-ready until it emits the same watermark, expired-checkpoint, and reset evidence while also proving failover-safe sequence continuity and stale-writer fencing.
+- A broker or quorum-backed backend should not be marked rollout-ready until it emits the same watermark, expired-checkpoint, reset, reset-history, and control-plane review evidence while also proving failover-safe sequence continuity and stale-writer fencing.
 - The required replicated evidence remains aligned with `docs/reports/replicated-event-log-durability-rollout-contract.md` and the takeover/failover validation packs.
 
 ## Consumer dedup ledger contract

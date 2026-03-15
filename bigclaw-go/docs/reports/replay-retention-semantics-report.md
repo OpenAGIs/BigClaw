@@ -38,7 +38,7 @@ The current Go runtime still uses in-process replay history in `internal/events/
 ## Expired cursor fallback contract
 
 - Resume requests against aged-out checkpoints must surface an explicit expired-cursor result.
-- The current API surface now returns checkpoint diagnostics plus a reset path through `GET/DELETE /stream/events/checkpoints/{subscriber_id}` when a saved cursor falls behind the retained boundary.
+- The current API surface now returns checkpoint diagnostics plus a reset path through `GET/DELETE /stream/events/checkpoints/{subscriber_id}` and a persisted review trail through `GET /stream/events/checkpoints/{subscriber_id}/history` when a saved cursor falls behind the retained boundary.
 - The result should include the subscriber or lease identity, the requested checkpoint cursor, and the oldest/newest retained cursors that were available at evaluation time.
 - Operator-facing diagnostics should describe whether recovery can restart from the earliest retained event, from the latest live edge, or requires manual checkpoint reset.
 - Automatic fallback must be policy-driven. The default safe behavior is fail-closed with diagnostics rather than silently skipping truncated history.
@@ -68,27 +68,30 @@ The current Go runtime still uses in-process replay history in `internal/events/
 - `go test ./internal/api ./internal/events` must cover:
   - retention watermark exposure on `GET /events` and `GET /debug/status`;
   - persisted trimmed-boundary behavior across SQLite restarts;
-  - expired checkpoint diagnostics plus successful `DELETE /stream/events/checkpoints/{subscriber_id}` recovery.
-- Review evidence should capture the checkpoint diagnostics payload, the post-reset replay result, and the trimmed boundary metadata (`history_truncated`, trimmed event id/sequence, oldest/newest retained event ids).
+  - expired checkpoint diagnostics plus successful `DELETE /stream/events/checkpoints/{subscriber_id}` recovery;
+  - persisted reset-audit visibility through `GET /stream/events/checkpoints/{subscriber_id}/history`;
+  - control-plane review summaries that surface recent reset activity through `checkpoint_resets`.
+- Review evidence should capture the checkpoint diagnostics payload, the immediate `reset_audit` response, the persisted reset-history payload, the post-reset replay result, and the trimmed boundary metadata (`history_truncated`, trimmed event id/sequence, oldest/newest retained event ids).
 
 ### Shared-service backend
 
 - `go test ./internal/api ./internal/events` must also cover the HTTP-backed log path:
   - `GET /internal/events/log/watermark`;
   - `GET/POST/DELETE /internal/events/log/checkpoints/{subscriber_id}`;
-  - remote retention watermark reads and checkpoint reset round-trips through `events.HTTPEventLog`.
-- Review evidence should retain the same watermark and reset fields as the local backend, but prove they survive the service boundary without direct SQLite access.
+  - `GET /internal/events/log/checkpoints/{subscriber_id}/history`;
+  - remote retention watermark reads, checkpoint reset round-trips, and persisted reset-history reads through `events.HTTPEventLog`.
+- Review evidence should retain the same watermark, reset, and history fields as the local backend, but prove they survive the service boundary without direct SQLite access.
 
 ### Future replicated backend
 
-- A replicated adapter may only claim rollout-ready replay recovery once it emits the same expired-checkpoint diagnostics and reset semantics while preserving one durable sequence space across failover.
+- A replicated adapter may only claim rollout-ready replay recovery once it emits the same expired-checkpoint diagnostics, reset semantics, persisted reset history, and control-plane review summaries while preserving one durable sequence space across failover.
 - Review packs should include failover-aware retention-boundary evidence, stale-writer/takeover evidence, and proof that reset guidance remains operator-visible without falling back to provider-native consoles.
 
 ## Forward path
 
 - `OPE-212` establishes the compaction and retention contract.
-- `OPE-216` established the expired replay cursor semantics, and `OPE-226` now adds the concrete checkpoint diagnostics / reset surface for durable checkpoint resumes.
-- `OPE-228` adds the operator audit trail for checkpoint reset history, and `OPE-230` refreshes the validation bundle so those reset surfaces can be attached directly to rollout and release review.
+- `OPE-216` established the expired replay cursor semantics, `OPE-226` added the concrete checkpoint diagnostics / reset surface for durable checkpoint resumes, and `OPE-228` extends that flow with persisted reset audit history.
+- `OPE-229` surfaces recent reset activity through control-plane review payloads, and `OPE-230` refreshes the validation bundle so those reset surfaces can be attached directly to rollout and release review.
 - Durable backends extending `internal/events` should expose retention watermarks before replay-aware checkpoint cleanup is implemented.
 - SQLite-backed durable logs now persist trimmed replay boundaries across restarts when a retention window is configured, giving operators a stable replay horizon even after reboot.
 

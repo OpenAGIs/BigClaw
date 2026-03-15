@@ -55,6 +55,18 @@ type checkpointDiagnostics struct {
 	RetentionWatermark *events.RetentionWatermark   `json:"retention_watermark,omitempty"`
 }
 
+type checkpointResetFacetCount struct {
+	Key   string `json:"key"`
+	Count int    `json:"count"`
+}
+
+type checkpointResetSnapshot struct {
+	RecentCount  int                           `json:"recent_count"`
+	BySubscriber []checkpointResetFacetCount   `json:"by_subscriber"`
+	ByReason     []checkpointResetFacetCount   `json:"by_reason"`
+	Recent       []events.CheckpointResetAudit `json:"recent"`
+}
+
 type checkpointExpiredError struct {
 	Diagnostics checkpointDiagnostics
 }
@@ -204,6 +216,9 @@ func (s *Server) Handler() http.Handler {
 				"backend":      s.EventLog.Backend(),
 				"capabilities": s.EventLog.Capabilities(),
 			}
+		}
+		if checkpointResets := s.checkpointResetAuditSnapshot(5); checkpointResets != nil {
+			payload["checkpoint_resets"] = checkpointResets
 		}
 		writeJSON(w, http.StatusOK, payload)
 	})
@@ -545,9 +560,38 @@ func (s *Server) handleStreamEventCheckpoint(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "checkpoint store unavailable", http.StatusServiceUnavailable)
 		return
 	}
-	subscriberID := strings.TrimPrefix(r.URL.Path, "/stream/events/checkpoints/")
+	path := strings.TrimPrefix(r.URL.Path, "/stream/events/checkpoints/")
+	historyRequest := false
+	if strings.HasSuffix(path, "/history") {
+		historyRequest = true
+		path = strings.TrimSuffix(path, "/history")
+	}
+	subscriberID := strings.Trim(path, "/")
 	if subscriberID == "" {
 		http.Error(w, "missing subscriber id", http.StatusBadRequest)
+		return
+	}
+	if historyRequest {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		historyProvider := s.checkpointResetHistoryProvider()
+		if historyProvider == nil {
+			http.Error(w, "checkpoint reset history unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+		history, err := historyProvider.CheckpointResetHistory(subscriberID, limit)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"history": history,
+			"backend": s.eventLogBackend(),
+			"durable": s.eventLogDurable(),
+		})
 		return
 	}
 	switch r.Method {
@@ -607,12 +651,23 @@ func (s *Server) handleStreamEventCheckpoint(w http.ResponseWriter, r *http.Requ
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{
+		payload := map[string]any{
 			"subscriber_id": subscriberID,
 			"reset":         true,
 			"backend":       s.eventLogBackend(),
 			"durable":       s.eventLogDurable(),
-		})
+		}
+		if historyProvider := s.checkpointResetHistoryProvider(); historyProvider != nil {
+			history, err := historyProvider.CheckpointResetHistory(subscriberID, 1)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if len(history) > 0 {
+				payload["reset_audit"] = history[0]
+			}
+		}
+		writeJSON(w, http.StatusOK, payload)
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -821,6 +876,20 @@ func (s *Server) checkpointResetter() events.CheckpointResetter {
 	return nil
 }
 
+func (s *Server) checkpointResetHistoryProvider() events.CheckpointResetHistoryProvider {
+	if provider, ok := s.EventLog.(events.CheckpointResetHistoryProvider); ok {
+		return provider
+	}
+	return nil
+}
+
+func (s *Server) checkpointResetRecentProvider() events.RecentCheckpointResetProvider {
+	if provider, ok := s.EventLog.(events.RecentCheckpointResetProvider); ok {
+		return provider
+	}
+	return nil
+}
+
 func (s *Server) logServiceStore() events.LogServiceStore {
 	if store, ok := s.EventLog.(events.LogServiceStore); ok {
 		return store
@@ -912,6 +981,48 @@ func (s *Server) typedRetentionWatermark() *events.RetentionWatermark {
 		return nil
 	}
 	return &watermark
+}
+
+func (s *Server) checkpointResetAuditSnapshot(limit int) *checkpointResetSnapshot {
+	provider := s.checkpointResetRecentProvider()
+	if provider == nil {
+		return nil
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+	recent, err := provider.RecentCheckpointResets(limit)
+	if err != nil {
+		return nil
+	}
+	return &checkpointResetSnapshot{
+		RecentCount:  len(recent),
+		BySubscriber: summarizeCheckpointResetFacet(recent, func(entry events.CheckpointResetAudit) string { return entry.SubscriberID }),
+		ByReason:     summarizeCheckpointResetFacet(recent, func(entry events.CheckpointResetAudit) string { return entry.Reason }),
+		Recent:       recent,
+	}
+}
+
+func summarizeCheckpointResetFacet(entries []events.CheckpointResetAudit, keyFn func(events.CheckpointResetAudit) string) []checkpointResetFacetCount {
+	counts := make(map[string]int)
+	for _, entry := range entries {
+		key := strings.TrimSpace(keyFn(entry))
+		if key == "" {
+			key = "unknown"
+		}
+		counts[key]++
+	}
+	out := make([]checkpointResetFacetCount, 0, len(counts))
+	for key, count := range counts {
+		out = append(out, checkpointResetFacetCount{Key: key, Count: count})
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if out[i].Count == out[j].Count {
+			return out[i].Key < out[j].Key
+		}
+		return out[i].Count > out[j].Count
+	})
+	return out
 }
 
 func parseEventTypes(values []string) []domain.EventType {

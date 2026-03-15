@@ -99,8 +99,9 @@ That test set covers the repo-native checkpoint reset bundle:
 
 - local retention watermark exposure in `GET /events` and `GET /debug/status`
 - persisted trimmed replay boundaries across SQLite restart
-- expired checkpoint diagnostics and reset through `GET/DELETE /stream/events/checkpoints/{subscriber_id}`
-- remote/shared-service watermark and checkpoint reset round-trips through `GET /internal/events/log/watermark` and `GET/POST/DELETE /internal/events/log/checkpoints/{subscriber_id}`
+- expired checkpoint diagnostics, immediate reset audit payloads, and persisted reset history through `GET/DELETE /stream/events/checkpoints/{subscriber_id}` and `GET /stream/events/checkpoints/{subscriber_id}/history`
+- remote/shared-service watermark, checkpoint reset, and reset-history round-trips through `GET /internal/events/log/watermark`, `GET/POST/DELETE /internal/events/log/checkpoints/{subscriber_id}`, and `GET /internal/events/log/checkpoints/{subscriber_id}/history`
+- control-plane review payloads that surface recent reset activity as `checkpoint_resets`
 
 For closeout or review attachments, preserve these fields from the exercised payloads:
 
@@ -110,13 +111,17 @@ For closeout or review attachments, preserve these fields from the exercised pay
 - `retention_watermark.trimmed_through_event_id`
 - `checkpoint_diagnostics.code`
 - `checkpoint_diagnostics.suggested_recovery`
+- `reset_audit.previous_checkpoint`
+- `history[].reason`
+- `history[].retention_watermark.trimmed_through_event_id`
+- `checkpoint_resets[].subscriber_id`
 - reset confirmation for the affected `subscriber_id`
 
 Backend-specific expectations:
 
-- Local SQLite: prove the stale checkpoint conflicts before reset and replay resumes from the earliest retained event after reset.
-- Shared HTTP/service backend: prove the same watermark and reset fields are available through the service boundary without direct SQLite access.
-- Future replicated backend: add failover-safe sequence continuity and stale-writer fencing evidence before claiming rollout readiness.
+- Local SQLite: prove the stale checkpoint conflicts before reset, the reset audit/history remain visible after replay resumes, and replay restarts from the earliest retained event after reset.
+- Shared HTTP/service backend: prove the same watermark, reset, and history fields are available through the service boundary without direct SQLite access.
+- Future replicated backend: add failover-safe sequence continuity, stale-writer fencing, and replicated `checkpoint_resets` review evidence before claiming rollout readiness.
 
 ## Broker failover and replay fault-injection pack
 

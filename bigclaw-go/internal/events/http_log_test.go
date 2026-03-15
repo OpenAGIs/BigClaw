@@ -151,3 +151,84 @@ func TestHTTPEventLogResetsCheckpointThroughService(t *testing.T) {
 		t.Fatalf("expected checkpoint to be cleared, got %v", err)
 	}
 }
+
+func TestHTTPEventLogReadsCheckpointResetHistoryThroughService(t *testing.T) {
+	store, err := NewSQLiteEventLog(filepath.Join(t.TempDir(), "event-log.db"))
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	server := httptest.NewServer(NewEventLogServiceHandler(store))
+	defer server.Close()
+	client, err := NewHTTPEventLog(server.URL, "")
+	if err != nil {
+		t.Fatalf("new http event log: %v", err)
+	}
+	base := time.Now()
+	if err := client.Write(context.Background(), domain.Event{ID: "evt-history-1", Type: domain.EventTaskQueued, TaskID: "task-history", TraceID: "trace-history", Timestamp: base}); err != nil {
+		t.Fatalf("write history event: %v", err)
+	}
+	if _, err := client.Acknowledge("subscriber-history", "evt-history-1", base.Add(time.Second)); err != nil {
+		t.Fatalf("ack history checkpoint: %v", err)
+	}
+	if err := client.ResetCheckpoint("subscriber-history"); err != nil {
+		t.Fatalf("reset history checkpoint: %v", err)
+	}
+	if err := client.Write(context.Background(), domain.Event{ID: "evt-history-2", Type: domain.EventTaskStarted, TaskID: "task-history", TraceID: "trace-history", Timestamp: base.Add(2 * time.Second)}); err != nil {
+		t.Fatalf("write second history event: %v", err)
+	}
+	if _, err := client.Acknowledge("subscriber-history", "evt-history-2", base.Add(3*time.Second)); err != nil {
+		t.Fatalf("re-ack history checkpoint: %v", err)
+	}
+	history, err := client.CheckpointResetHistory("subscriber-history", 10)
+	if err != nil {
+		t.Fatalf("checkpoint reset history: %v", err)
+	}
+	if len(history) != 1 {
+		t.Fatalf("expected one reset history entry, got %+v", history)
+	}
+	entry := history[0]
+	if entry.PreviousCheckpoint == nil || entry.PreviousCheckpoint.EventID != "evt-history-1" {
+		t.Fatalf("expected previous checkpoint payload, got %+v", entry)
+	}
+	if entry.RetentionWatermark == nil || entry.RetentionWatermark.Backend != "sqlite" {
+		t.Fatalf("expected retention watermark snapshot, got %+v", entry)
+	}
+	if entry.Reason != "operator_reset" {
+		t.Fatalf("expected operator reset reason, got %+v", entry)
+	}
+}
+
+func TestHTTPEventLogReadsRecentCheckpointResetsThroughService(t *testing.T) {
+	store, err := NewSQLiteEventLog(filepath.Join(t.TempDir(), "event-log.db"))
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	server := httptest.NewServer(NewEventLogServiceHandler(store))
+	defer server.Close()
+	client, err := NewHTTPEventLog(server.URL, "")
+	if err != nil {
+		t.Fatalf("new http event log: %v", err)
+	}
+	base := time.Now()
+	if err := client.Write(context.Background(), domain.Event{ID: "evt-recent-reset-1", Type: domain.EventTaskQueued, TaskID: "task-recent-reset", TraceID: "trace-recent-reset", Timestamp: base}); err != nil {
+		t.Fatalf("write recent reset event: %v", err)
+	}
+	if _, err := client.Acknowledge("subscriber-recent-reset", "evt-recent-reset-1", base.Add(time.Second)); err != nil {
+		t.Fatalf("ack recent reset checkpoint: %v", err)
+	}
+	if err := client.ResetCheckpoint("subscriber-recent-reset"); err != nil {
+		t.Fatalf("reset recent checkpoint: %v", err)
+	}
+	recent, err := client.RecentCheckpointResets(10)
+	if err != nil {
+		t.Fatalf("recent checkpoint resets: %v", err)
+	}
+	if len(recent) == 0 {
+		t.Fatalf("expected recent checkpoint resets, got %+v", recent)
+	}
+	if recent[0].SubscriberID != "subscriber-recent-reset" || recent[0].Reason != "operator_reset" {
+		t.Fatalf("unexpected recent checkpoint reset entry: %+v", recent[0])
+	}
+}
