@@ -38,6 +38,18 @@ type VerificationEvidence struct {
 	Artifacts []string `json:"artifacts"`
 }
 
+type BrokerBootstrapStatus struct {
+	Driver             string   `json:"driver,omitempty"`
+	URLs               []string `json:"urls,omitempty"`
+	Topic              string   `json:"topic,omitempty"`
+	ConsumerGroup      string   `json:"consumer_group,omitempty"`
+	PublishTimeout     string   `json:"publish_timeout,omitempty"`
+	ReplayLimit        int      `json:"replay_limit,omitempty"`
+	CheckpointInterval string   `json:"checkpoint_interval,omitempty"`
+	Ready              bool     `json:"ready"`
+	ValidationErrors   []string `json:"validation_errors,omitempty"`
+}
+
 type DurabilityPlan struct {
 	Current              DurabilityProfile      `json:"current"`
 	Target               DurabilityProfile      `json:"target"`
@@ -48,6 +60,7 @@ type DurabilityPlan struct {
 	RolloutChecks        []RolloutCheck         `json:"rollout_checks"`
 	FailureDomains       []FailureDomain        `json:"failure_domains"`
 	VerificationEvidence []VerificationEvidence `json:"verification_evidence"`
+	BrokerBootstrap      *BrokerBootstrapStatus `json:"broker_bootstrap,omitempty"`
 }
 
 func NormalizeDurabilityBackend(value string) DurabilityBackend {
@@ -104,12 +117,16 @@ func DurabilityProfileForBackend(backend DurabilityBackend) DurabilityProfile {
 }
 
 func NewDurabilityPlan(currentBackend, targetBackend string, replicationFactor int) DurabilityPlan {
+	return NewDurabilityPlanWithBrokerConfig(currentBackend, targetBackend, replicationFactor, BrokerRuntimeConfig{})
+}
+
+func NewDurabilityPlanWithBrokerConfig(currentBackend, targetBackend string, replicationFactor int, broker BrokerRuntimeConfig) DurabilityPlan {
 	if replicationFactor <= 0 {
 		replicationFactor = 3
 	}
 	current := DurabilityProfileForBackend(NormalizeDurabilityBackend(currentBackend))
 	target := DurabilityProfileForBackend(NormalizeDurabilityBackend(targetBackend))
-	return DurabilityPlan{
+	plan := DurabilityPlan{
 		Current:              current,
 		Target:               target,
 		ReplicationFactor:    replicationFactor,
@@ -198,4 +215,26 @@ func NewDurabilityPlan(currentBackend, targetBackend string, replicationFactor i
 			},
 		},
 	}
+	if current.Replicated || target.Replicated {
+		plan.BrokerBootstrap = BrokerBootstrapStatusFromConfig(broker)
+	}
+	return plan
+}
+
+func BrokerBootstrapStatusFromConfig(cfg BrokerRuntimeConfig) *BrokerBootstrapStatus {
+	status := &BrokerBootstrapStatus{
+		Driver:             strings.TrimSpace(cfg.Driver),
+		URLs:               append([]string(nil), cfg.URLs...),
+		Topic:              strings.TrimSpace(cfg.Topic),
+		ConsumerGroup:      strings.TrimSpace(cfg.ConsumerGroup),
+		PublishTimeout:     cfg.PublishTimeout.String(),
+		ReplayLimit:        cfg.ReplayLimit,
+		CheckpointInterval: cfg.CheckpointInterval.String(),
+	}
+	if err := cfg.Validate(); err != nil {
+		status.ValidationErrors = []string{err.Error()}
+		return status
+	}
+	status.Ready = true
+	return status
 }

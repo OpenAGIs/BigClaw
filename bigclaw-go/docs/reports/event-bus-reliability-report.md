@@ -13,6 +13,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - Optional SSE replay and filtering via `replay=1`, `after_id`, `Last-Event-ID`, `task_id`, and `trace_id`
 - Replay cursor diagnostics via `X-Replay-*` headers and JSON `cursor` metadata on `GET /events`
 - Retention watermark / replay horizon visibility through API debug payloads and event-log service surfaces
+- SQLite retention bootstrap with persisted truncation boundaries that survive process restarts when a replay window is configured
 - Replay-safe consumer delivery metadata via `EventDelivery`, including additive `delivery.mode`, `delivery.replay`, and `delivery.idempotency_key` fields
 - Consumer dedup ledger/result contract covering duplicate, retryable-failure, and already-applied outcomes
 - Replay-safe consumer dedup ledger contract with stable storage key and result semantics
@@ -63,7 +64,7 @@ This report summarizes the current event bus reliability evidence and the next r
 
 - Runtime publish/subscribe remains in-process.
 - Audit/debug persistence is recorder-backed, with optional JSONL sinking.
-- The `events.DurabilityPlan` surface makes the active backend and the next replicated target explicit in bootstrap and `GET /debug/status`.
+- The `events.DurabilityPlan` surface makes the active backend and the next replicated target explicit in bootstrap and `GET /debug/status`, including broker bootstrap readiness when a replicated target is configured.
 - Default plan is `memory -> broker_replicated` with replication factor `3`, and env overrides exist for:
   - `BIGCLAW_EVENT_LOG_BACKEND`
   - `BIGCLAW_EVENT_LOG_TARGET_BACKEND`
@@ -132,13 +133,13 @@ This report summarizes the current event bus reliability evidence and the next r
 - No delivery acknowledgement protocol exists beyond sink-level best effort.
 - Lease coordination is currently in-memory and single-process; shared multi-node subscriber groups still need a durable backend.
 - No partitioned topic model or broker-backed cross-process subscriber coordination exists yet.
-- Retention watermarks are now exposed for in-memory and durable event-log backends, but expired-cursor fallback is still defined primarily against the current replay window and the target compaction semantics remain documented in `docs/reports/replay-retention-semantics-report.md`.
+- Retention watermarks are now exposed for in-memory and durable event-log backends, and SQLite-backed logs persist trimmed replay boundaries across restarts; expired-cursor fallback is still defined primarily against the current replay window and the target compaction semantics remain documented in `docs/reports/replay-retention-semantics-report.md`.
 - Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.
 - Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists.
 
 ## Replicated rollout contract
 
-- `docs/reports/replicated-event-log-durability-rollout-contract.md` now captures the minimum rollout gates for a broker-backed or quorum-backed adapter:
+- `docs/reports/replicated-event-log-durability-rollout-contract.md` now captures the minimum rollout gates for a broker-backed or quorum-backed adapter, and `event_durability` now includes broker bootstrap readiness for those targets:
   - replicated publish acknowledgements must distinguish committed, rejected, and ambiguous outcomes;
   - replay and checkpoint state must share the same durable sequence domain across failover;
   - retention boundaries must be operator-visible before resumable recovery is claimed;

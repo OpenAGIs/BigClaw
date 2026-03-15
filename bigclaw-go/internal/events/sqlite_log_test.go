@@ -176,3 +176,55 @@ func TestSQLiteEventLogRetentionWatermark(t *testing.T) {
 		t.Fatalf("expected ordered watermark sequences, got %+v", watermark)
 	}
 }
+
+func TestSQLiteEventLogRetentionBoundaryPersistsAcrossInstances(t *testing.T) {
+	base := time.Unix(1_700_000_000, 0).UTC()
+	path := filepath.Join(t.TempDir(), "event-log.db")
+	log1, err := NewSQLiteEventLogWithOptions(path, SQLiteEventLogOptions{
+		Retention: 2 * time.Second,
+		Now:       func() time.Time { return base.Add(4 * time.Second) },
+	})
+	if err != nil {
+		t.Fatalf("new sqlite event log with retention: %v", err)
+	}
+	for _, event := range []domain.Event{
+		{ID: "evt-retention-old", Type: domain.EventTaskQueued, TaskID: "task-retention", TraceID: "trace-retention", Timestamp: base},
+		{ID: "evt-retention-new", Type: domain.EventTaskStarted, TaskID: "task-retention", TraceID: "trace-retention", Timestamp: base.Add(3 * time.Second)},
+	} {
+		if err := log1.Write(context.Background(), event); err != nil {
+			t.Fatalf("write %s: %v", event.ID, err)
+		}
+	}
+	watermark, err := log1.RetentionWatermark()
+	if err != nil {
+		t.Fatalf("retention watermark after trim: %v", err)
+	}
+	if !watermark.HistoryTruncated || !watermark.PersistedBoundary || watermark.TrimmedThroughEventID != "evt-retention-old" {
+		t.Fatalf("expected persisted trimmed boundary, got %+v", watermark)
+	}
+	if watermark.OldestEventID != "evt-retention-new" || watermark.EventCount != 1 {
+		t.Fatalf("expected only retained event to remain, got %+v", watermark)
+	}
+	if err := log1.Close(); err != nil {
+		t.Fatalf("close first sqlite event log: %v", err)
+	}
+	log2, err := NewSQLiteEventLogWithOptions(path, SQLiteEventLogOptions{Retention: 2 * time.Second, Now: func() time.Time { return base.Add(4 * time.Second) }})
+	if err != nil {
+		t.Fatalf("reopen sqlite event log with retention: %v", err)
+	}
+	defer func() { _ = log2.Close() }()
+	watermark, err = log2.RetentionWatermark()
+	if err != nil {
+		t.Fatalf("retention watermark after reopen: %v", err)
+	}
+	if !watermark.HistoryTruncated || watermark.TrimmedThroughSequence == 0 || watermark.TrimmedThroughEventID != "evt-retention-old" {
+		t.Fatalf("expected persisted boundary after reopen, got %+v", watermark)
+	}
+	replayed, err := log2.Replay(10)
+	if err != nil {
+		t.Fatalf("replay retained events: %v", err)
+	}
+	if len(replayed) != 1 || replayed[0].ID != "evt-retention-new" {
+		t.Fatalf("expected retained replay window after reopen, got %+v", replayed)
+	}
+}

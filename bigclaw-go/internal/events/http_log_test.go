@@ -84,3 +84,39 @@ func TestHTTPEventLogReadsRetentionWatermarkFromService(t *testing.T) {
 		t.Fatalf("unexpected remote watermark: %+v", watermark)
 	}
 }
+
+func TestHTTPEventLogReadsPersistedRetentionBoundaryFromService(t *testing.T) {
+	base := time.Unix(1_700_000_000, 0).UTC()
+	store, err := NewSQLiteEventLogWithOptions(filepath.Join(t.TempDir(), "event-log.db"), SQLiteEventLogOptions{
+		Retention: 2 * time.Second,
+		Now:       func() time.Time { return base.Add(4 * time.Second) },
+	})
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	server := httptest.NewServer(NewEventLogServiceHandler(store))
+	defer server.Close()
+	client, err := NewHTTPEventLog(server.URL, "")
+	if err != nil {
+		t.Fatalf("new http event log: %v", err)
+	}
+	for _, event := range []domain.Event{
+		{ID: "evt-http-retention-old", Type: domain.EventTaskQueued, TaskID: "task-http-retention", TraceID: "trace-http-retention", Timestamp: base},
+		{ID: "evt-http-retention-new", Type: domain.EventTaskStarted, TaskID: "task-http-retention", TraceID: "trace-http-retention", Timestamp: base.Add(3 * time.Second)},
+	} {
+		if err := client.Write(context.Background(), event); err != nil {
+			t.Fatalf("write remote event %s: %v", event.ID, err)
+		}
+	}
+	watermark, err := client.RetentionWatermark()
+	if err != nil {
+		t.Fatalf("read remote retention watermark: %v", err)
+	}
+	if !watermark.HistoryTruncated || !watermark.PersistedBoundary || watermark.TrimmedThroughEventID != "evt-http-retention-old" {
+		t.Fatalf("expected persisted remote retention boundary, got %+v", watermark)
+	}
+	if watermark.EventCount != 1 || watermark.OldestEventID != "evt-http-retention-new" {
+		t.Fatalf("expected retained remote event window, got %+v", watermark)
+	}
+}

@@ -8,7 +8,7 @@ It builds on the provider-neutral adapter boundary in `docs/reports/broker-event
 
 ## Current baseline
 
-- `internal/events/durability.go` already declares `broker_replicated` as the target backend and surfaces the active durability plan through bootstrap and debug payloads.
+- `internal/events/durability.go` already declares `broker_replicated` as the target backend and surfaces the active durability plan through bootstrap and debug payloads, including broker bootstrap readiness derived from configured driver / URLs / topic settings.
 - `cmd/bigclawd/main.go` validates broker runtime config but intentionally stops before instantiating a live replicated adapter.
 - `docs/reports/event-bus-reliability-report.md` and `docs/reports/broker-failover-fault-injection-validation-pack.md` describe the portability and validation direction, but prior to this slice the rollout gate itself was not captured as one explicit contract.
 
@@ -71,7 +71,7 @@ The current repo-native source for these signals is the `event_durability` paylo
 
 ## Validation evidence required before a live adapter lands
 
-- debug/control-plane payload proving the active runtime advertises the replicated rollout contract
+- debug/control-plane payload proving the active runtime advertises the replicated rollout contract and broker bootstrap readiness state
 - failover validation artifacts matching the scenario matrix in `docs/reports/broker-failover-fault-injection-validation-pack.md`
 - replay retention diagnostics proving expired checkpoints are surfaced explicitly
 - checkpoint takeover evidence proving stale writers cannot regress durable progress

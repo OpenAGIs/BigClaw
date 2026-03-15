@@ -34,14 +34,17 @@ func main() {
 	defer closeQueue(q)
 
 	var eventLog events.EventLog
+	eventPlanBackend := cfg.EventLogBackend
 	switch {
 	case cfg.EventLogRemoteURL != "":
+		eventPlanBackend = "http"
 		eventLog, err = events.NewHTTPEventLog(cfg.EventLogRemoteURL, cfg.EventLogRemoteBearer)
 		if err != nil {
 			panic(err)
 		}
 	case cfg.EventLogSQLitePath != "":
-		eventLog, err = events.NewSQLiteEventLog(cfg.EventLogSQLitePath)
+		eventPlanBackend = "sqlite"
+		eventLog, err = events.NewSQLiteEventLogWithOptions(cfg.EventLogSQLitePath, events.SQLiteEventLogOptions{Retention: cfg.EventRetention})
 		if err != nil {
 			panic(err)
 		}
@@ -102,7 +105,7 @@ func main() {
 		Queue:            q,
 		Executors:        registry.Kinds(),
 		Bus:              bus,
-		EventPlan:        events.NewDurabilityPlan(cfg.EventLogBackend, cfg.EventLogTargetBackend, cfg.EventLogReplicationFactor),
+		EventPlan:        events.NewDurabilityPlanWithBrokerConfig(eventPlanBackend, cfg.EventLogTargetBackend, cfg.EventLogReplicationFactor, brokerRuntimeConfig(cfg)),
 		EventLog:         eventLog,
 		SubscriberLeases: subscriberLeases,
 		Worker:           runtime,
@@ -133,21 +136,25 @@ func buildEventLog(cfg config.Config) (*events.MemoryLog, error) {
 	case "", string(events.EventLogBackendMemory):
 		return events.NewMemoryLog(), nil
 	case string(events.EventLogBackendBroker):
-		broker := events.BrokerRuntimeConfig{
-			Driver:             cfg.EventLogBrokerDriver,
-			URLs:               cfg.EventLogBrokerURLs,
-			Topic:              cfg.EventLogBrokerTopic,
-			ConsumerGroup:      cfg.EventLogConsumerGroup,
-			PublishTimeout:     cfg.EventLogPublishTimeout,
-			ReplayLimit:        cfg.EventLogReplayLimit,
-			CheckpointInterval: cfg.EventLogCheckpointInterval,
-		}
+		broker := brokerRuntimeConfig(cfg)
 		if err := broker.Validate(); err != nil {
 			return nil, err
 		}
 		return nil, fmt.Errorf("event log backend %q is not implemented yet; driver=%s topic=%s contract validated for the future adapter", cfg.EventLogBackend, broker.Driver, broker.Topic)
 	default:
 		return nil, fmt.Errorf("unsupported event log backend: %s", cfg.EventLogBackend)
+	}
+}
+
+func brokerRuntimeConfig(cfg config.Config) events.BrokerRuntimeConfig {
+	return events.BrokerRuntimeConfig{
+		Driver:             cfg.EventLogBrokerDriver,
+		URLs:               cfg.EventLogBrokerURLs,
+		Topic:              cfg.EventLogBrokerTopic,
+		ConsumerGroup:      cfg.EventLogConsumerGroup,
+		PublishTimeout:     cfg.EventLogPublishTimeout,
+		ReplayLimit:        cfg.EventLogReplayLimit,
+		CheckpointInterval: cfg.EventLogCheckpointInterval,
 	}
 }
 

@@ -33,7 +33,7 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
 
 ### Remaining gaps
 
-- Replay retention watermarks are now visible in runtime payloads, but effective retention is still bounded primarily by in-process history when no external durable backend is configured.
+- Replay retention watermarks are now visible in runtime payloads, and SQLite-backed logs now persist trimmed replay boundaries across restarts; memory-only deployments are still bounded by in-process history and broker/quorum retention remains future work.
 - Service-style SQLite and HTTP-backed coordination improve sharing, but replicated broker or quorum-backed durability is still future work.
 - Downstream consumers still need idempotent handlers and durable dedupe stores; the system remains replay-safe, not globally exactly-once.
 - Parallel validation for Kubernetes, Ray, and shared-queue takeover should continue to be bundled as repo-native evidence.
@@ -41,7 +41,7 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
 ### Current rollout gate
 
 - `OPE-222` now makes the replicated durability rollout contract explicit in repo-native form:
-  - rollout metadata lives in `bigclaw-go/internal/events/durability.go` so debug/control-plane payloads can advertise checks, failure domains, and evidence links;
+  - rollout metadata lives in `bigclaw-go/internal/events/durability.go` so debug/control-plane payloads can advertise checks, failure domains, evidence links, and broker bootstrap readiness;
   - `bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md` defines the minimum publish-ack, replay/checkpoint, retention-boundary, and failover expectations before a replicated adapter can be called rollout-ready.
 
 ## Recommended BigClaw parallel mainline

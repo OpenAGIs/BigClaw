@@ -64,6 +64,7 @@ The current Go runtime still uses in-process replay history in `internal/events/
 - `OPE-212` establishes the compaction and retention contract.
 - `OPE-216` can build the concrete API/error surface for expired replay cursors and truncated-history fallback.
 - Durable backends extending `internal/events` should expose retention watermarks before replay-aware checkpoint cleanup is implemented.
+- SQLite-backed durable logs now persist trimmed replay boundaries across restarts when a retention window is configured, giving operators a stable replay horizon even after reboot.
 
 ## Repo evidence
 

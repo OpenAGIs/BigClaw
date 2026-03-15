@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -27,12 +28,23 @@ type EventLog interface {
 	Close() error
 }
 
+type SQLiteEventLogOptions struct {
+	Retention time.Duration
+	Now       func() time.Time
+}
+
 type SQLiteEventLog struct {
-	db   *sql.DB
-	path string
+	db              *sql.DB
+	path            string
+	retentionWindow time.Duration
+	now             func() time.Time
 }
 
 func NewSQLiteEventLog(path string) (*SQLiteEventLog, error) {
+	return NewSQLiteEventLogWithOptions(path, SQLiteEventLogOptions{})
+}
+
+func NewSQLiteEventLogWithOptions(path string, options SQLiteEventLogOptions) (*SQLiteEventLog, error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return nil, err
 	}
@@ -42,7 +54,10 @@ func NewSQLiteEventLog(path string) (*SQLiteEventLog, error) {
 	}
 	db.SetMaxOpenConns(1)
 	db.SetMaxIdleConns(1)
-	store := &SQLiteEventLog{db: db, path: path}
+	store := &SQLiteEventLog{db: db, path: path, retentionWindow: options.Retention, now: options.Now}
+	if store.now == nil {
+		store.now = time.Now
+	}
 	if err := store.init(); err != nil {
 		_ = db.Close()
 		return nil, err
@@ -62,6 +77,11 @@ func (s *SQLiteEventLog) Backend() string {
 }
 
 func (s *SQLiteEventLog) Capabilities() BackendCapabilities {
+	retention := FeatureSupport{Supported: true, Mode: "sqlite_wal", Detail: "Replay history persists in SQLite and survives process restarts."}
+	if s != nil && s.retentionWindow > 0 {
+		retention.Mode = "sqlite_retention_window"
+		retention.Detail = fmt.Sprintf("Retention boundaries persist across restarts with a configured %s replay window.", s.retentionWindow)
+	}
 	return BackendCapabilities{
 		Backend:    "sqlite",
 		Scope:      "shared_node",
@@ -70,7 +90,7 @@ func (s *SQLiteEventLog) Capabilities() BackendCapabilities {
 		Checkpoint: FeatureSupport{Supported: true, Mode: "subscriber_ack"},
 		Dedup:      FeatureSupport{Supported: true, Mode: "sqlite", Detail: "Consumer dedup records persist across process restarts."},
 		Filtering:  FeatureSupport{Supported: true, Mode: "server_side"},
-		Retention:  FeatureSupport{Supported: true, Mode: "sqlite_wal"},
+		Retention:  retention,
 	}
 }
 
@@ -78,6 +98,20 @@ func (s *SQLiteEventLog) RetentionWatermark() (RetentionWatermark, error) {
 	watermark := RetentionWatermark{Backend: "sqlite"}
 	if s == nil || s.db == nil {
 		return watermark, nil
+	}
+	state, err := s.readRetentionState()
+	if err != nil {
+		return RetentionWatermark{}, err
+	}
+	watermark.Policy = state.Policy
+	if state.RetentionWindow > 0 {
+		watermark.RetentionWindowSeconds = int64(state.RetentionWindow / time.Second)
+	}
+	if state.TrimmedThroughSequence > 0 {
+		watermark.HistoryTruncated = true
+		watermark.PersistedBoundary = true
+		watermark.TrimmedThroughSequence = state.TrimmedThroughSequence
+		watermark.TrimmedThroughEventID = state.TrimmedThroughEventID
 	}
 	if err := s.db.QueryRow(`SELECT COUNT(*) FROM event_log`).Scan(&watermark.EventCount); err != nil {
 		return RetentionWatermark{}, err
@@ -124,25 +158,48 @@ func (s *SQLiteEventLog) init() error {
 			event_seq INTEGER NOT NULL,
 			updated_at_ns INTEGER NOT NULL
 		);`,
+		`CREATE TABLE IF NOT EXISTS event_log_retention_state (
+			singleton INTEGER PRIMARY KEY CHECK(singleton = 1),
+			policy TEXT NOT NULL,
+			retention_window_ns INTEGER NOT NULL,
+			trimmed_through_seq INTEGER NOT NULL,
+			trimmed_through_event_id TEXT NOT NULL,
+			updated_at_ns INTEGER NOT NULL
+		);`,
 	}
 	for _, stmt := range stmts {
 		if _, err := s.db.Exec(stmt); err != nil {
 			return err
 		}
 	}
-	return nil
+	if _, err := s.db.Exec(`
+		INSERT OR IGNORE INTO event_log_retention_state(singleton, policy, retention_window_ns, trimmed_through_seq, trimmed_through_event_id, updated_at_ns)
+		VALUES(1, 'disabled', 0, 0, '', 0)
+	`); err != nil {
+		return err
+	}
+	if err := s.updateRetentionConfig(); err != nil {
+		return err
+	}
+	return s.applyRetention(s.nowUTC())
 }
 
 func (s *SQLiteEventLog) Write(_ context.Context, event domain.Event) error {
 	if s == nil || s.db == nil {
 		return nil
 	}
+	if event.Timestamp.IsZero() {
+		event.Timestamp = s.nowUTC()
+	}
 	raw, err := json.Marshal(event)
 	if err != nil {
 		return err
 	}
 	_, err = s.db.Exec(`INSERT INTO event_log(event_id, event_type, task_id, trace_id, run_id, timestamp_ns, raw) VALUES(?, ?, ?, ?, ?, ?, ?)`, event.ID, string(event.Type), event.TaskID, event.TraceID, event.RunID, event.Timestamp.UnixNano(), raw)
-	return err
+	if err != nil {
+		return err
+	}
+	return s.applyRetention(s.nowUTC())
 }
 
 func (s *SQLiteEventLog) Replay(limit int) ([]domain.Event, error) {
@@ -184,7 +241,7 @@ func (s *SQLiteEventLog) Acknowledge(subscriberID string, eventID string, at tim
 		return SubscriberCheckpoint{}, sql.ErrNoRows
 	}
 	if at.IsZero() {
-		at = time.Now().UTC()
+		at = s.nowUTC()
 	}
 	_, err = s.db.Exec(`
 		INSERT INTO subscriber_checkpoint(subscriber_id, event_id, event_seq, updated_at_ns)
@@ -305,6 +362,102 @@ func (s *SQLiteEventLog) query(base string, args []any, limit int) ([]domain.Eve
 	}
 	reverseEvents(out)
 	return out, nil
+}
+
+func (s *SQLiteEventLog) nowUTC() time.Time {
+	if s == nil || s.now == nil {
+		return time.Now().UTC()
+	}
+	return s.now().UTC()
+}
+
+type retentionState struct {
+	Policy                 string
+	RetentionWindow        time.Duration
+	TrimmedThroughSequence int64
+	TrimmedThroughEventID  string
+}
+
+func (s *SQLiteEventLog) readRetentionState() (retentionState, error) {
+	if s == nil || s.db == nil {
+		return retentionState{}, nil
+	}
+	row := s.db.QueryRow(`SELECT policy, retention_window_ns, trimmed_through_seq, trimmed_through_event_id FROM event_log_retention_state WHERE singleton = 1`)
+	var state retentionState
+	var retentionWindowNS int64
+	if err := row.Scan(&state.Policy, &retentionWindowNS, &state.TrimmedThroughSequence, &state.TrimmedThroughEventID); err != nil {
+		return retentionState{}, err
+	}
+	state.RetentionWindow = time.Duration(retentionWindowNS)
+	return state, nil
+}
+
+func (s *SQLiteEventLog) updateRetentionConfig() error {
+	if s == nil || s.db == nil {
+		return nil
+	}
+	policy := "disabled"
+	retentionWindowNS := int64(0)
+	if s.retentionWindow > 0 {
+		policy = "time_window"
+		retentionWindowNS = s.retentionWindow.Nanoseconds()
+	}
+	_, err := s.db.Exec(`UPDATE event_log_retention_state SET policy = ?, retention_window_ns = ? WHERE singleton = 1`, policy, retentionWindowNS)
+	return err
+}
+
+func (s *SQLiteEventLog) applyRetention(now time.Time) error {
+	if s == nil || s.db == nil || s.retentionWindow <= 0 {
+		return nil
+	}
+	cutoff := now.Add(-s.retentionWindow).UnixNano()
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+	var trimmedSeq int64
+	var trimmedEventID string
+	scanErr := tx.QueryRow(`SELECT seq, event_id FROM event_log WHERE timestamp_ns < ? ORDER BY seq DESC LIMIT 1`, cutoff).Scan(&trimmedSeq, &trimmedEventID)
+	if scanErr != nil {
+		if errors.Is(scanErr, sql.ErrNoRows) {
+			return tx.Commit()
+		}
+		err = scanErr
+		return err
+	}
+	result, execErr := tx.Exec(`DELETE FROM event_log WHERE timestamp_ns < ?`, cutoff)
+	if execErr != nil {
+		err = execErr
+		return err
+	}
+	rowsAffected, rowsErr := result.RowsAffected()
+	if rowsErr != nil {
+		err = rowsErr
+		return err
+	}
+	if rowsAffected == 0 {
+		return tx.Commit()
+	}
+	var existingSeq int64
+	if err = tx.QueryRow(`SELECT trimmed_through_seq FROM event_log_retention_state WHERE singleton = 1`).Scan(&existingSeq); err != nil {
+		return err
+	}
+	if trimmedSeq > existingSeq {
+		_, err = tx.Exec(`
+			UPDATE event_log_retention_state
+			SET trimmed_through_seq = ?, trimmed_through_event_id = ?, updated_at_ns = ?
+			WHERE singleton = 1
+		`, trimmedSeq, trimmedEventID, now.UnixNano())
+		if err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 func reverseEvents(events []domain.Event) {
