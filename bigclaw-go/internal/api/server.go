@@ -28,6 +28,7 @@ type Server struct {
 	Queue     queue.Queue
 	Executors []domain.ExecutorKind
 	Bus       *events.Bus
+	EventPlan events.DurabilityPlan
 	Now       func() time.Time
 	Worker    WorkerStatusProvider
 	Control   *control.Controller
@@ -52,6 +53,7 @@ func (s *Server) Handler() http.Handler {
 		writeJSON(w, http.StatusOK, map[string]any{
 			"queue_size":           s.Queue.Size(context.Background()),
 			"events":               s.Recorder.Snapshot(),
+			"event_durability":     s.EventPlan,
 			"trace_count":          len(s.Recorder.TraceSummaries(0)),
 			"registered_executors": s.executorNames(),
 		})
@@ -93,9 +95,10 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/debug/traces/", s.handleDebugTrace)
 	mux.HandleFunc("/debug/status", func(w http.ResponseWriter, r *http.Request) {
 		payload := map[string]any{
-			"queue_size":   s.Queue.Size(context.Background()),
-			"audit_events": len(s.Recorder.Logs()),
-			"executors":    s.executorNames(),
+			"queue_size":       s.Queue.Size(context.Background()),
+			"audit_events":     len(s.Recorder.Logs()),
+			"executors":        s.executorNames(),
+			"event_durability": s.EventPlan,
 		}
 		if s.Worker != nil {
 			payload["worker"] = s.Worker.Snapshot()
