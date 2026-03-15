@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -33,24 +34,11 @@ func main() {
 	}
 	defer closeQueue(q)
 
-	var eventLog events.EventLog
-	switch {
-	case cfg.EventLogRemoteURL != "":
-		eventLog, err = events.NewHTTPEventLog(cfg.EventLogRemoteURL, cfg.EventLogRemoteBearer)
-		if err != nil {
-			panic(err)
-		}
-	case cfg.EventLogSQLitePath != "":
-		eventLog, err = events.NewSQLiteEventLog(cfg.EventLogSQLitePath)
-		if err != nil {
-			panic(err)
-		}
-		defer closeEventLog(eventLog)
-	default:
-		if _, err = buildEventLog(cfg); err != nil {
-			panic(err)
-		}
+	eventLog, err := buildConfiguredEventLog(cfg)
+	if err != nil {
+		panic(err)
 	}
+	defer closeEventLog(eventLog)
 
 	bus := events.NewBus()
 	if eventLog != nil {
@@ -128,6 +116,32 @@ func main() {
 	fmt.Printf("%s stopped events=%d\n", cfg.ServiceName, len(bus.Replay()))
 }
 
+func buildConfiguredEventLog(cfg config.Config) (events.EventLog, error) {
+	switch backend := effectiveEventBackend(cfg); backend {
+	case "":
+		return nil, nil
+	case string(events.BackendSQLite):
+		path := strings.TrimSpace(cfg.EventLogSQLitePath)
+		if path == "" {
+			path = sqlitePathFromDSN(cfg.EventLogDSN)
+		}
+		return events.NewSQLiteEventLog(path)
+	case string(events.BackendHTTP):
+		endpoint := strings.TrimSpace(cfg.EventLogRemoteURL)
+		if endpoint == "" {
+			endpoint = strings.TrimSpace(cfg.EventLogDSN)
+		}
+		return events.NewHTTPEventLog(endpoint, cfg.EventLogRemoteBearer)
+	case string(events.BackendMemory):
+		return nil, nil
+	default:
+		if _, err := buildEventLog(cfg); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	}
+}
+
 func buildEventLog(cfg config.Config) (*events.MemoryLog, error) {
 	switch cfg.EventLogBackend {
 	case "", string(events.EventLogBackendMemory):
@@ -149,6 +163,36 @@ func buildEventLog(cfg config.Config) (*events.MemoryLog, error) {
 	default:
 		return nil, fmt.Errorf("unsupported event log backend: %s", cfg.EventLogBackend)
 	}
+}
+
+func effectiveEventBackend(cfg config.Config) string {
+	backend := strings.ToLower(strings.TrimSpace(cfg.EventBackend))
+	switch backend {
+	case "", string(events.BackendMemory):
+		switch {
+		case strings.TrimSpace(cfg.EventLogRemoteURL) != "":
+			return string(events.BackendHTTP)
+		case strings.TrimSpace(cfg.EventLogSQLitePath) != "":
+			return string(events.BackendSQLite)
+		default:
+			return backend
+		}
+	default:
+		return backend
+	}
+}
+
+func sqlitePathFromDSN(dsn string) string {
+	trimmed := strings.TrimSpace(dsn)
+	if after, ok := strings.CutPrefix(trimmed, "file:"); ok {
+		if path, _, hasQuery := strings.Cut(after, "?"); hasQuery {
+			return path
+		}
+		if after != "" {
+			return after
+		}
+	}
+	return trimmed
 }
 
 func buildQueue(cfg config.Config) (queue.Queue, error) {

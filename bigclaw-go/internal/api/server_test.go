@@ -2734,3 +2734,24 @@ func TestDebugStatusIncludesRetentionWatermark(t *testing.T) {
 		t.Fatalf("expected retention watermark in debug payload, got %s", response.Body.String())
 	}
 }
+
+func TestDebugStatusIncludesRetentionBootstrap(t *testing.T) {
+	store, err := events.NewSQLiteEventLog(filepath.Join(t.TempDir(), "event-log.db"))
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: store, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d", response.Code)
+	}
+	body := response.Body.String()
+	for _, want := range []string{"retention_bootstrap", "\"backend\":\"sqlite\"", "\"retention_mode\":\"durable_oldest_newest_watermark\""} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected %q in debug payload, got %s", want, body)
+		}
+	}
+}

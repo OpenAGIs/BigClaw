@@ -32,7 +32,7 @@ func TestValidateBackendConfigRejectsCheckpointOnMemory(t *testing.T) {
 	}
 }
 
-func TestValidateBackendConfigRejectsUnwiredDurableBackend(t *testing.T) {
+func TestValidateBackendConfigAcceptsSQLiteDurableBackend(t *testing.T) {
 	report := ValidateBackendConfig(BackendConfig{
 		Backend:           BackendSQLite,
 		LogDSN:            "file:events.db",
@@ -42,11 +42,23 @@ func TestValidateBackendConfigRejectsUnwiredDurableBackend(t *testing.T) {
 		RequireFiltering:  true,
 		RequireCheckpoint: true,
 	})
-	if !report.HasErrors() {
-		t.Fatal("expected unwired sqlite backend to fail")
+	if report.HasErrors() {
+		t.Fatalf("expected sqlite backend validation to pass, got %+v", report.Issues)
 	}
-	if err := report.Error(); err == nil || !strings.Contains(err.Error(), "not wired into the bootstrap runtime") {
-		t.Fatalf("expected bootstrap runtime validation error, got %v", err)
+}
+
+func TestValidateBackendConfigAcceptsHTTPDurableBackend(t *testing.T) {
+	report := ValidateBackendConfig(BackendConfig{
+		Backend:           BackendHTTP,
+		LogDSN:            "http://127.0.0.1:8080/internal/events/log",
+		CheckpointDSN:     "http://127.0.0.1:8080/internal/events/log",
+		Retention:         time.Hour,
+		RequireReplay:     true,
+		RequireFiltering:  true,
+		RequireCheckpoint: true,
+	})
+	if report.HasErrors() {
+		t.Fatalf("expected http backend validation to pass, got %+v", report.Issues)
 	}
 }
 

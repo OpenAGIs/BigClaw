@@ -134,6 +134,18 @@ func (s *HTTPEventLog) RetentionWatermark() (RetentionWatermark, error) {
 	return response.RetentionWatermark, nil
 }
 
+func (s *HTTPEventLog) RetentionBootstrap() RetentionBootstrap {
+	return RetentionBootstrap{
+		Backend:       "http",
+		Durable:       true,
+		Shared:        true,
+		LogDSN:        s.Path(),
+		CheckpointDSN: s.Path(),
+		RetentionMode: "remote_service_watermark",
+		Detail:        "Retention boundaries are delegated to the shared event-log service and remain available across client restarts as long as the backing durable store is preserved.",
+	}
+}
+
 func (s *HTTPEventLog) Path() string {
 	if s == nil || s.baseURL == nil {
 		return ""

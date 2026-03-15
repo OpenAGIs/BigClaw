@@ -176,3 +176,37 @@ func TestSQLiteEventLogRetentionWatermark(t *testing.T) {
 		t.Fatalf("expected ordered watermark sequences, got %+v", watermark)
 	}
 }
+
+func TestSQLiteEventLogRetentionWatermarkPersistsAcrossInstances(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "event-log.db")
+	log1, err := NewSQLiteEventLog(path)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	base := time.Now()
+	for _, event := range []domain.Event{
+		{ID: "evt-watermark-persist-1", Type: domain.EventTaskQueued, TaskID: "task-watermark", TraceID: "trace-watermark", Timestamp: base},
+		{ID: "evt-watermark-persist-2", Type: domain.EventTaskStarted, TaskID: "task-watermark", TraceID: "trace-watermark", Timestamp: base.Add(time.Second)},
+	} {
+		if err := log1.Write(context.Background(), event); err != nil {
+			t.Fatalf("write %s: %v", event.ID, err)
+		}
+	}
+	if err := log1.Close(); err != nil {
+		t.Fatalf("close first sqlite event log: %v", err)
+	}
+
+	log2, err := NewSQLiteEventLog(path)
+	if err != nil {
+		t.Fatalf("reopen sqlite event log: %v", err)
+	}
+	defer func() { _ = log2.Close() }()
+
+	watermark, err := log2.RetentionWatermark()
+	if err != nil {
+		t.Fatalf("retention watermark after reopen: %v", err)
+	}
+	if watermark.Backend != "sqlite" || watermark.EventCount != 2 || watermark.OldestEventID != "evt-watermark-persist-1" || watermark.NewestEventID != "evt-watermark-persist-2" {
+		t.Fatalf("unexpected reopened retention watermark: %+v", watermark)
+	}
+}

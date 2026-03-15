@@ -94,6 +94,17 @@ func (s *SQLiteEventLog) RetentionWatermark() (RetentionWatermark, error) {
 	return watermark, nil
 }
 
+func (s *SQLiteEventLog) RetentionBootstrap() RetentionBootstrap {
+	return RetentionBootstrap{
+		Backend:       "sqlite",
+		Durable:       true,
+		LogDSN:        s.Path(),
+		CheckpointDSN: s.Path(),
+		RetentionMode: "durable_oldest_newest_watermark",
+		Detail:        "Retention boundaries are derived from the durable SQLite append log and survive process restarts on the same shared file.",
+	}
+}
+
 func (s *SQLiteEventLog) Path() string {
 	if s == nil {
 		return ""

@@ -75,7 +75,7 @@ func Catalog() map[BackendKind]BackendProfile {
 		},
 		BackendSQLite: {
 			Backend:               BackendSQLite,
-			Implemented:           false,
+			Implemented:           true,
 			Durable:               true,
 			RequiresLogDSN:        true,
 			RequiresCheckpointDSN: true,
@@ -88,7 +88,7 @@ func Catalog() map[BackendKind]BackendProfile {
 		},
 		BackendHTTP: {
 			Backend:               BackendHTTP,
-			Implemented:           false,
+			Implemented:           true,
 			Durable:               true,
 			RequiresLogDSN:        true,
 			RequiresCheckpointDSN: true,

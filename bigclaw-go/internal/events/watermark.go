@@ -13,3 +13,17 @@ type RetentionWatermark struct {
 type RetentionWatermarkProvider interface {
 	RetentionWatermark() (RetentionWatermark, error)
 }
+
+type RetentionBootstrap struct {
+	Backend       string `json:"backend,omitempty"`
+	Durable       bool   `json:"durable"`
+	Shared        bool   `json:"shared,omitempty"`
+	LogDSN        string `json:"log_dsn,omitempty"`
+	CheckpointDSN string `json:"checkpoint_dsn,omitempty"`
+	RetentionMode string `json:"retention_mode,omitempty"`
+	Detail        string `json:"detail,omitempty"`
+}
+
+type RetentionBootstrapProvider interface {
+	RetentionBootstrap() RetentionBootstrap
+}

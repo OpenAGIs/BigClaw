@@ -84,3 +84,49 @@ func TestHTTPEventLogReadsRetentionWatermarkFromService(t *testing.T) {
 		t.Fatalf("unexpected remote watermark: %+v", watermark)
 	}
 }
+
+func TestHTTPEventLogRetentionWatermarkSurvivesServiceRestart(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "event-log.db")
+	store1, err := NewSQLiteEventLog(path)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	server1 := httptest.NewServer(NewEventLogServiceHandler(store1))
+	client, err := NewHTTPEventLog(server1.URL, "")
+	if err != nil {
+		t.Fatalf("new http event log: %v", err)
+	}
+	base := time.Now()
+	for _, event := range []domain.Event{
+		{ID: "evt-http-restart-1", Type: domain.EventTaskQueued, TaskID: "task-http-restart", TraceID: "trace-http-restart", Timestamp: base},
+		{ID: "evt-http-restart-2", Type: domain.EventTaskStarted, TaskID: "task-http-restart", TraceID: "trace-http-restart", Timestamp: base.Add(time.Second)},
+	} {
+		if err := client.Write(context.Background(), event); err != nil {
+			t.Fatalf("write remote event %s: %v", event.ID, err)
+		}
+	}
+	server1.Close()
+	if err := store1.Close(); err != nil {
+		t.Fatalf("close first sqlite event log: %v", err)
+	}
+
+	store2, err := NewSQLiteEventLog(path)
+	if err != nil {
+		t.Fatalf("reopen sqlite event log: %v", err)
+	}
+	defer func() { _ = store2.Close() }()
+	server2 := httptest.NewServer(NewEventLogServiceHandler(store2))
+	defer server2.Close()
+	client, err = NewHTTPEventLog(server2.URL, "")
+	if err != nil {
+		t.Fatalf("new restarted http event log: %v", err)
+	}
+
+	watermark, err := client.RetentionWatermark()
+	if err != nil {
+		t.Fatalf("read retention watermark after service restart: %v", err)
+	}
+	if watermark.Backend != "sqlite" || watermark.EventCount != 2 || watermark.OldestEventID != "evt-http-restart-1" || watermark.NewestEventID != "evt-http-restart-2" {
+		t.Fatalf("unexpected remote watermark after restart: %+v", watermark)
+	}
+}

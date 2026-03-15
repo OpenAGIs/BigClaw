@@ -103,13 +103,14 @@ This report summarizes the current event bus reliability evidence and the next r
 | Backend | Implemented in bootstrap | Durable history | Publish | Replay | Checkpoint | Filtering | Required config |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `memory` | yes | no | native | native | unsupported | native | none |
-| `sqlite` | no | yes | native | native | native | derived | `BIGCLAW_EVENT_LOG_DSN`, `BIGCLAW_EVENT_CHECKPOINT_DSN`, `BIGCLAW_EVENT_RETENTION` |
-| `http` | no | yes | native | native | native | derived | `BIGCLAW_EVENT_LOG_DSN`, `BIGCLAW_EVENT_CHECKPOINT_DSN`, `BIGCLAW_EVENT_RETENTION` |
+| `sqlite` | yes | yes | native | native | native | derived | `BIGCLAW_EVENT_LOG_DSN`, `BIGCLAW_EVENT_CHECKPOINT_DSN`, `BIGCLAW_EVENT_RETENTION` |
+| `http` | yes | yes | native | native | native | derived | `BIGCLAW_EVENT_LOG_DSN`, `BIGCLAW_EVENT_CHECKPOINT_DSN`, `BIGCLAW_EVENT_RETENTION` |
 | `broker` | no | yes | native | native | native | derived | `BIGCLAW_EVENT_LOG_DSN`, `BIGCLAW_EVENT_CHECKPOINT_DSN`, `BIGCLAW_EVENT_RETENTION` |
 
 ## Validation contract
 
 - Startup validates `BIGCLAW_EVENT_BACKEND` against the backend catalog before queue/bootstrap wiring begins.
+- The same `BIGCLAW_EVENT_BACKEND` / `BIGCLAW_EVENT_LOG_DSN` contract now bootstraps the concrete SQLite and HTTP durable event-log implementations instead of serving only as a validation-only planning surface.
 - Durable backends must provide explicit event-log DSN, checkpoint DSN, and positive retention.
 - `BIGCLAW_EVENT_REQUIRE_REPLAY`, `BIGCLAW_EVENT_REQUIRE_CHECKPOINT`, and `BIGCLAW_EVENT_REQUIRE_FILTERING` express the runtime features operators expect from the selected backend.
 - Unsupported combinations fail fast with field-specific errors instead of silently downgrading runtime behavior.
@@ -133,6 +134,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - Lease coordination is currently in-memory and single-process; shared multi-node subscriber groups still need a durable backend.
 - No partitioned topic model or broker-backed cross-process subscriber coordination exists yet.
 - Retention watermarks are now exposed for in-memory and durable event-log backends, but expired-cursor fallback is still defined primarily against the current replay window and the target compaction semantics remain documented in `docs/reports/replay-retention-semantics-report.md`.
+- Debug and metrics payloads now include backend-specific `retention_bootstrap` metadata so operators can distinguish local SQLite retention from shared HTTP-backed retention when reviewing replay durability.
 - Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.
 - Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists.
 

@@ -178,8 +178,9 @@ func (s *Server) Handler() http.Handler {
 		}
 		if s.EventLog != nil {
 			payload["event_log"] = map[string]any{
-				"backend":      s.EventLog.Backend(),
-				"capabilities": s.EventLog.Capabilities(),
+				"backend":             s.EventLog.Backend(),
+				"capabilities":        s.EventLog.Capabilities(),
+				"retention_bootstrap": s.retentionBootstrap(),
 			}
 		}
 		writeJSON(w, http.StatusOK, payload)
@@ -799,6 +800,16 @@ func (s *Server) retentionWatermark() any {
 				return watermark
 			}
 		}
+	}
+	return nil
+}
+
+func (s *Server) retentionBootstrap() any {
+	if s.EventLog == nil {
+		return nil
+	}
+	if provider, ok := s.EventLog.(events.RetentionBootstrapProvider); ok {
+		return provider.RetentionBootstrap()
 	}
 	return nil
 }
