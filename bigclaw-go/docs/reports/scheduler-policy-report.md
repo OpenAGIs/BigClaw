@@ -17,9 +17,10 @@ This report summarizes the current Go scheduler policy surface for `OPE-179` / `
 
 ## Evidence
 
-- Policy implementation: `internal/scheduler/scheduler.go`
+- Policy implementation: `internal/scheduler/scheduler.go` and `internal/scheduler/policy_store.go`
 - Unit coverage: `internal/scheduler/scheduler_test.go`
 - Runtime emission of `scheduler.routed`: `internal/worker/runtime.go`
+- File-backed scheduler policy inspection and reload: `GET /v2/control-center/policy` and `POST /v2/control-center/policy/reload`
 - Local benchmark: `docs/reports/benchmark-report.md`
 
 ## Fresh benchmark snapshot
@@ -30,4 +31,4 @@ This report summarizes the current Go scheduler policy surface for `OPE-179` / `
 
 - No real multi-tenant fairness window beyond instantaneous quota snapshot.
 - No active task eviction or live preemption mechanism yet; `preemptible_executions` is a scheduling allowance, not forced runtime cancellation.
-- No externalized policy store or hot-reloadable rule engine yet.
+- File-backed policy reload is now available, but there is still no distributed/shared external policy backend beyond per-service file reload.

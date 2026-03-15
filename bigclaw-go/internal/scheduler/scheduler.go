@@ -24,25 +24,39 @@ type Decision struct {
 	Reason     string
 }
 
-type Scheduler struct{}
+type Scheduler struct {
+	policyStore *PolicyStore
+}
 
 func New() *Scheduler {
-	return &Scheduler{}
+	return NewWithPolicyStore(nil)
+}
+
+func NewWithPolicyStore(store *PolicyStore) *Scheduler {
+	if store == nil {
+		store = NewDefaultPolicyStore()
+	}
+	return &Scheduler{policyStore: store}
+}
+
+func (s *Scheduler) Rules() RoutingRules {
+	if s == nil || s.policyStore == nil {
+		return DefaultRoutingRules()
+	}
+	return s.policyStore.Snapshot()
 }
 
 func (s *Scheduler) Decide(task domain.Task, quota QuotaSnapshot) Decision {
+	rules := s.Rules()
 	if quota.BudgetRemaining > 0 && task.BudgetCents > quota.BudgetRemaining {
 		return Decision{Accepted: false, Reason: "budget exceeded"}
 	}
-	if quota.MaxQueueDepth > 0 && quota.QueueDepth >= quota.MaxQueueDepth && !isPriorityExempt(task) {
+	if quota.MaxQueueDepth > 0 && quota.QueueDepth >= quota.MaxQueueDepth && !isPriorityExempt(task, rules) {
 		return Decision{Accepted: false, Reason: "backpressure activated: queue depth limit exceeded"}
 	}
-	assignment := executor.Assignment{
-		Executor: routeExecutor(task),
-		Reason:   routeReason(task),
-	}
+	assignment := assignmentForTask(task, rules)
 	if quota.ConcurrentLimit > 0 && quota.CurrentRunning >= quota.ConcurrentLimit {
-		if isPreemptible(task) && quota.PreemptibleExecutions > 0 {
+		if isPreemptible(task, rules) && quota.PreemptibleExecutions > 0 {
 			assignment.Reason = assignment.Reason + "; using preemptible capacity"
 			return Decision{Accepted: true, Assignment: assignment, Reason: assignment.Reason}
 		}
@@ -52,38 +66,69 @@ func (s *Scheduler) Decide(task domain.Task, quota QuotaSnapshot) Decision {
 	return Decision{Accepted: true, Assignment: assignment, Reason: assignment.Reason}
 }
 
-func routeExecutor(task domain.Task) domain.ExecutorKind {
-	if task.RequiredExecutor != "" {
-		return task.RequiredExecutor
-	}
-	score := risk.ScoreTask(task, nil)
-	if requiresTool(task, "gpu") {
-		return domain.ExecutorRay
-	}
-	if requiresTool(task, "browser") {
-		return domain.ExecutorKubernetes
-	}
-	if score.Level == domain.RiskHigh {
-		return domain.ExecutorKubernetes
-	}
-	return domain.ExecutorLocal
+func assignmentForTask(task domain.Task, rules RoutingRules) executor.Assignment {
+	executorKind, reason := routeExecutorAndReason(task, rules)
+	return executor.Assignment{Executor: executorKind, Reason: reason}
 }
 
-func routeReason(task domain.Task) string {
+func routeExecutorAndReason(task domain.Task, rules RoutingRules) (domain.ExecutorKind, string) {
 	if task.RequiredExecutor != "" {
-		return fmt.Sprintf("required executor=%s", task.RequiredExecutor)
+		return task.RequiredExecutor, fmt.Sprintf("required executor=%s", task.RequiredExecutor)
+	}
+	if tool, executorKind, ok := routeToolExecutor(task, rules); ok {
+		return executorKind, toolRouteReason(tool, executorKind)
 	}
 	score := risk.ScoreTask(task, nil)
-	if requiresTool(task, "gpu") {
-		return "gpu workloads default to ray executor"
-	}
-	if requiresTool(task, "browser") {
-		return "browser workloads default to kubernetes executor"
-	}
 	if score.Level == domain.RiskHigh {
-		return fmt.Sprintf("risk score %d defaults task to isolated executor", score.Total)
+		return rules.HighRiskExecutor, highRiskRouteReason(score.Total, rules.HighRiskExecutor)
 	}
-	return "default local executor for low/medium risk"
+	return rules.DefaultExecutor, defaultRouteReason(rules.DefaultExecutor)
+}
+
+func routeToolExecutor(task domain.Task, rules RoutingRules) (string, domain.ExecutorKind, bool) {
+	for _, tool := range []string{"gpu", "browser"} {
+		if !requiresTool(task, tool) {
+			continue
+		}
+		if executorKind, ok := rules.ToolExecutors[tool]; ok {
+			return tool, executorKind, true
+		}
+	}
+	for _, tool := range task.RequiredTools {
+		normalizedTool := normalizeToolName(tool)
+		if normalizedTool == "" || normalizedTool == "gpu" || normalizedTool == "browser" {
+			continue
+		}
+		if executorKind, ok := rules.ToolExecutors[normalizedTool]; ok {
+			return normalizedTool, executorKind, true
+		}
+	}
+	return "", "", false
+}
+
+func toolRouteReason(tool string, executorKind domain.ExecutorKind) string {
+	switch {
+	case tool == "gpu" && executorKind == domain.ExecutorRay:
+		return "gpu workloads default to ray executor"
+	case tool == "browser" && executorKind == domain.ExecutorKubernetes:
+		return "browser workloads default to kubernetes executor"
+	default:
+		return fmt.Sprintf("%s workloads default to %s executor", tool, executorKind)
+	}
+}
+
+func highRiskRouteReason(score int, executorKind domain.ExecutorKind) string {
+	if executorKind == domain.ExecutorKubernetes {
+		return fmt.Sprintf("risk score %d defaults task to isolated executor", score)
+	}
+	return fmt.Sprintf("risk score %d defaults task to %s executor", score, executorKind)
+}
+
+func defaultRouteReason(executorKind domain.ExecutorKind) string {
+	if executorKind == domain.ExecutorLocal {
+		return "default local executor for low/medium risk"
+	}
+	return fmt.Sprintf("default executor=%s for low/medium risk", executorKind)
 }
 
 func requiresTool(task domain.Task, tool string) bool {
@@ -95,10 +140,10 @@ func requiresTool(task domain.Task, tool string) bool {
 	return false
 }
 
-func isPreemptible(task domain.Task) bool {
-	return task.Priority > 0 && task.Priority <= 1
+func isPreemptible(task domain.Task, rules RoutingRules) bool {
+	return task.Priority > 0 && task.Priority <= rules.UrgentPriorityThreshold
 }
 
-func isPriorityExempt(task domain.Task) bool {
-	return isPreemptible(task) || risk.ScoreTask(task, nil).Level == domain.RiskHigh
+func isPriorityExempt(task domain.Task, rules RoutingRules) bool {
+	return isPreemptible(task, rules) || risk.ScoreTask(task, nil).Level == domain.RiskHigh
 }

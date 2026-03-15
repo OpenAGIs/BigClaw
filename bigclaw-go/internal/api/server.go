@@ -16,6 +16,7 @@ import (
 	"bigclaw-go/internal/flow"
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/queue"
+	"bigclaw-go/internal/scheduler"
 	"bigclaw-go/internal/worker"
 )
 
@@ -29,14 +30,15 @@ type WorkerPoolStatusProvider interface {
 }
 
 type Server struct {
-	Recorder  *observability.Recorder
-	Queue     queue.Queue
-	Executors []domain.ExecutorKind
-	Bus       *events.Bus
-	Now       func() time.Time
-	Worker    WorkerStatusProvider
-	Control   *control.Controller
-	FlowStore *flow.Store
+	Recorder        *observability.Recorder
+	Queue           queue.Queue
+	Executors       []domain.ExecutorKind
+	Bus             *events.Bus
+	Now             func() time.Time
+	Worker          WorkerStatusProvider
+	Control         *control.Controller
+	FlowStore       *flow.Store
+	SchedulerPolicy *scheduler.PolicyStore
 }
 
 func (s *Server) Handler() http.Handler {
@@ -48,6 +50,9 @@ func (s *Server) Handler() http.Handler {
 	}
 	if s.FlowStore == nil {
 		s.FlowStore = flow.NewStore()
+	}
+	if s.SchedulerPolicy == nil {
+		s.SchedulerPolicy = scheduler.NewDefaultPolicyStore()
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -113,6 +118,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/v2/control-center", s.handleV2ControlCenter)
 	mux.HandleFunc("/v2/control-center/audit", s.handleV2ControlCenterAudit)
 	mux.HandleFunc("/v2/control-center/actions", s.handleV2ControlCenterAction)
+	mux.HandleFunc("/v2/control-center/policy", s.handleV2ControlCenterPolicy)
+	mux.HandleFunc("/v2/control-center/policy/reload", s.handleV2ControlCenterPolicyReload)
 	mux.HandleFunc("/v2/reports/weekly", s.handleV2WeeklyReport)
 	mux.HandleFunc("/v2/reports/weekly/export", s.handleV2WeeklyReportExport)
 	mux.HandleFunc("/v2/reports/distributed", s.handleV2DistributedReport)

@@ -40,11 +40,15 @@ func main() {
 		}))
 	}
 	registry := buildRegistry(cfg)
+	policyStore, err := scheduler.NewPolicyStore(cfg.SchedulerPolicyPath)
+	if err != nil {
+		panic(err)
+	}
 	controller := control.New()
 	runtime := &worker.Runtime{
 		WorkerID:    "bootstrap-worker",
 		Queue:       q,
-		Scheduler:   scheduler.New(),
+		Scheduler:   scheduler.NewWithPolicyStore(policyStore),
 		Registry:    registry,
 		Bus:         bus,
 		Recorder:    recorder,
@@ -57,7 +61,7 @@ func main() {
 	if cfg.BootstrapTasks {
 		seed(context.Background(), q)
 	}
-	server := &api.Server{Recorder: recorder, Queue: q, Executors: registry.Kinds(), Bus: bus, Worker: runtime, Control: controller}
+	server := &api.Server{Recorder: recorder, Queue: q, Executors: registry.Kinds(), Bus: bus, Worker: runtime, Control: controller, SchedulerPolicy: policyStore}
 	httpServer := &http.Server{Addr: cfg.HTTPAddr, Handler: server.Handler()}
 	go func() {
 		_ = httpServer.ListenAndServe()

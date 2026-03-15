@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -16,6 +18,7 @@ import (
 	"bigclaw-go/internal/events"
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/queue"
+	"bigclaw-go/internal/scheduler"
 	"bigclaw-go/internal/worker"
 )
 
@@ -1508,6 +1511,71 @@ func TestV2ControlCenterAuditFiltersOwnerReviewerAndScope(t *testing.T) {
 	entry := decoded.Audit[0]
 	if entry.Action != "assign_reviewer" || entry.Scope != "collaboration" || entry.TaskID != "task-audit-1" || entry.TaskStateBefore != string(domain.TaskBlocked) || entry.TaskStateAfter != string(domain.TaskBlocked) || entry.PreviousOwner != "carol" || entry.Owner != "carol" || entry.PreviousReviewer != "bob" || entry.Reviewer != "dave" || entry.Note != "handoff reviewer" || entry.OperationID == "" {
 		t.Fatalf("unexpected filtered audit entry: %+v", entry)
+	}
+}
+
+func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
+	dir := t.TempDir()
+	policyPath := filepath.Join(dir, "scheduler-policy.json")
+	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"ray","tool_executors":{"browser":"ray"},"urgent_priority_threshold":2}`), 0o644); err != nil {
+		t.Fatalf("write policy file: %v", err)
+	}
+	store, err := scheduler.NewPolicyStore(policyPath)
+	if err != nil {
+		t.Fatalf("new policy store: %v", err)
+	}
+	recorder := observability.NewRecorder()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), SchedulerPolicy: store, Now: time.Now}
+	handler := server.Handler()
+
+	policyResponse := httptest.NewRecorder()
+	policyRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center/policy", nil)
+	policyRequest.Header.Set("X-BigClaw-Role", "platform_admin")
+	handler.ServeHTTP(policyResponse, policyRequest)
+	if policyResponse.Code != http.StatusOK {
+		t.Fatalf("expected scheduler policy 200, got %d %s", policyResponse.Code, policyResponse.Body.String())
+	}
+	var policyDecoded struct {
+		SourcePath       string `json:"source_path"`
+		ReloadSupported  bool   `json:"reload_supported"`
+		ReloadAuthorized bool   `json:"reload_authorized"`
+		Policy           struct {
+			DefaultExecutor         string            `json:"default_executor"`
+			UrgentPriorityThreshold int               `json:"urgent_priority_threshold"`
+			ToolExecutors           map[string]string `json:"tool_executors"`
+		} `json:"policy"`
+	}
+	if err := json.Unmarshal(policyResponse.Body.Bytes(), &policyDecoded); err != nil {
+		t.Fatalf("decode scheduler policy response: %v", err)
+	}
+	if policyDecoded.SourcePath != policyPath || !policyDecoded.ReloadSupported || !policyDecoded.ReloadAuthorized || policyDecoded.Policy.DefaultExecutor != string(domain.ExecutorRay) || policyDecoded.Policy.ToolExecutors["browser"] != string(domain.ExecutorRay) || policyDecoded.Policy.UrgentPriorityThreshold != 2 {
+		t.Fatalf("unexpected scheduler policy payload: %+v", policyDecoded)
+	}
+
+	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"kubernetes","high_risk_executor":"ray"}`), 0o644); err != nil {
+		t.Fatalf("rewrite policy file: %v", err)
+	}
+	reloadResponse := httptest.NewRecorder()
+	reloadRequest := httptest.NewRequest(http.MethodPost, "/v2/control-center/policy/reload", nil)
+	reloadRequest.Header.Set("X-BigClaw-Role", "platform_admin")
+	handler.ServeHTTP(reloadResponse, reloadRequest)
+	if reloadResponse.Code != http.StatusOK || !strings.Contains(reloadResponse.Body.String(), `"reloaded":true`) {
+		t.Fatalf("expected reload response, got %d %s", reloadResponse.Code, reloadResponse.Body.String())
+	}
+
+	policyResponse = httptest.NewRecorder()
+	handler.ServeHTTP(policyResponse, policyRequest)
+	if !strings.Contains(policyResponse.Body.String(), `"default_executor":"kubernetes"`) || !strings.Contains(policyResponse.Body.String(), `"high_risk_executor":"ray"`) {
+		t.Fatalf("expected reloaded policy in get response, got %s", policyResponse.Body.String())
+	}
+
+	forbiddenResponse := httptest.NewRecorder()
+	forbiddenRequest := httptest.NewRequest(http.MethodPost, "/v2/control-center/policy/reload", nil)
+	forbiddenRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	forbiddenRequest.Header.Set("X-BigClaw-Team", "platform")
+	handler.ServeHTTP(forbiddenResponse, forbiddenRequest)
+	if forbiddenResponse.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden reload for eng lead, got %d %s", forbiddenResponse.Code, forbiddenResponse.Body.String())
 	}
 }
 

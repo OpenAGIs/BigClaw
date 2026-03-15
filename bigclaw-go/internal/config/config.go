@@ -37,6 +37,7 @@ type Config struct {
 	RayPollInterval               time.Duration
 	RayHTTPTimeout                time.Duration
 	RayBearerToken                string
+	SchedulerPolicyPath           string
 }
 
 func Default() Config {
@@ -65,6 +66,7 @@ func Default() Config {
 		RayAddress:                    "http://127.0.0.1:8265",
 		RayPollInterval:               time.Second,
 		RayHTTPTimeout:                10 * time.Second,
+		SchedulerPolicyPath:           "",
 	}
 }
 
@@ -86,6 +88,7 @@ func LoadFromEnv() Config {
 	cfg.KubernetesKubeconfigPath = getString("BIGCLAW_KUBECONFIG", getString("KUBECONFIG", cfg.KubernetesKubeconfigPath))
 	cfg.RayAddress = getString("BIGCLAW_RAY_ADDRESS", getString("RAY_ADDRESS", cfg.RayAddress))
 	cfg.RayBearerToken = getString("BIGCLAW_RAY_BEARER_TOKEN", cfg.RayBearerToken)
+	cfg.SchedulerPolicyPath = getString("BIGCLAW_SCHEDULER_POLICY_PATH", cfg.SchedulerPolicyPath)
 	cfg.LeaseTTL = getDuration("BIGCLAW_LEASE_TTL", cfg.LeaseTTL)
 	cfg.TaskTimeout = getDuration("BIGCLAW_TASK_TIMEOUT", cfg.TaskTimeout)
 	cfg.PollInterval = getDuration("BIGCLAW_POLL_INTERVAL", cfg.PollInterval)

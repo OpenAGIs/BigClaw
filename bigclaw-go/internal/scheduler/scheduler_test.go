@@ -1,6 +1,8 @@
 package scheduler
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"bigclaw-go/internal/domain"
@@ -85,5 +87,52 @@ func TestSchedulerUsesPreemptibleCapacityForUrgentTask(t *testing.T) {
 	}
 	if decision.Reason == "" || decision.Assignment.Executor == "" {
 		t.Fatalf("expected populated preemptive routing decision: %+v", decision)
+	}
+}
+
+func TestSchedulerUsesFileBackedPolicyOverrides(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "scheduler-policy.json")
+	content := []byte(`{"default_executor":"ray","high_risk_executor":"local","tool_executors":{"browser":"ray","deploy":"kubernetes"},"urgent_priority_threshold":2}`)
+	if err := os.WriteFile(path, content, 0o644); err != nil {
+		t.Fatalf("write policy file: %v", err)
+	}
+	store, err := NewPolicyStore(path)
+	if err != nil {
+		t.Fatalf("new policy store: %v", err)
+	}
+	s := NewWithPolicyStore(store)
+	decision := s.Decide(domain.Task{ID: "browser-1", RequiredTools: []string{"browser"}}, QuotaSnapshot{})
+	if !decision.Accepted || decision.Assignment.Executor != domain.ExecutorRay {
+		t.Fatalf("expected browser override to route to ray, got %+v", decision)
+	}
+	decision = s.Decide(domain.Task{ID: "default-1"}, QuotaSnapshot{})
+	if !decision.Accepted || decision.Assignment.Executor != domain.ExecutorRay {
+		t.Fatalf("expected default executor override to route to ray, got %+v", decision)
+	}
+	decision = s.Decide(domain.Task{ID: "preempt-2", Priority: 2}, QuotaSnapshot{ConcurrentLimit: 1, CurrentRunning: 1, PreemptibleExecutions: 1})
+	if !decision.Accepted {
+		t.Fatalf("expected priority 2 task to use configured urgent threshold, got %+v", decision)
+	}
+	if err := os.WriteFile(path, []byte(`{"default_executor":"kubernetes"}`), 0o644); err != nil {
+		t.Fatalf("rewrite policy file: %v", err)
+	}
+	if err := store.Reload(); err != nil {
+		t.Fatalf("reload policy store: %v", err)
+	}
+	reloaded := s.Decide(domain.Task{ID: "default-2"}, QuotaSnapshot{})
+	if !reloaded.Accepted || reloaded.Assignment.Executor != domain.ExecutorKubernetes {
+		t.Fatalf("expected reloaded default executor override to route to kubernetes, got %+v", reloaded)
+	}
+}
+
+func TestSchedulerPolicyStoreRejectsInvalidExecutor(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "scheduler-policy.json")
+	if err := os.WriteFile(path, []byte(`{"default_executor":"invalid"}`), 0o644); err != nil {
+		t.Fatalf("write invalid policy file: %v", err)
+	}
+	if _, err := NewPolicyStore(path); err == nil {
+		t.Fatal("expected invalid executor error")
 	}
 }
