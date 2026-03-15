@@ -120,3 +120,41 @@ func TestHTTPEventLogReadsPersistedRetentionBoundaryFromService(t *testing.T) {
 		t.Fatalf("expected retained remote event window, got %+v", watermark)
 	}
 }
+
+func TestHTTPEventLogReadsExpiredCheckpointDiagnosticFromService(t *testing.T) {
+	base := time.Unix(1_700_000_000, 0).UTC()
+	store, err := NewSQLiteEventLogWithOptions(filepath.Join(t.TempDir(), "event-log.db"), SQLiteEventLogOptions{
+		Retention: 2 * time.Second,
+		Now:       func() time.Time { return base },
+	})
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	server := httptest.NewServer(NewEventLogServiceHandler(store))
+	defer server.Close()
+	client, err := NewHTTPEventLog(server.URL, "")
+	if err != nil {
+		t.Fatalf("new http event log: %v", err)
+	}
+	if err := client.Write(context.Background(), domain.Event{ID: "evt-http-diagnostic-old", Type: domain.EventTaskQueued, TaskID: "task-http-diagnostic", TraceID: "trace-http-diagnostic", Timestamp: base}); err != nil {
+		t.Fatalf("write old remote event: %v", err)
+	}
+	if _, err := client.Acknowledge("subscriber-http-diagnostic", "evt-http-diagnostic-old", base.Add(time.Second)); err != nil {
+		t.Fatalf("ack remote checkpoint: %v", err)
+	}
+	store.now = func() time.Time { return base.Add(4 * time.Second) }
+	if err := client.Write(context.Background(), domain.Event{ID: "evt-http-diagnostic-new", Type: domain.EventTaskStarted, TaskID: "task-http-diagnostic", TraceID: "trace-http-diagnostic", Timestamp: base.Add(4 * time.Second)}); err != nil {
+		t.Fatalf("write new remote event: %v", err)
+	}
+	diagnostic, err := client.CheckpointDiagnostic("subscriber-http-diagnostic")
+	if err != nil {
+		t.Fatalf("read remote checkpoint diagnostic: %v", err)
+	}
+	if diagnostic.Status != "expired" || diagnostic.Reason != "checkpoint_expired" {
+		t.Fatalf("expected expired checkpoint diagnostic, got %+v", diagnostic)
+	}
+	if diagnostic.ResetAction == nil || diagnostic.ResetAction.EarliestRetainedEventID != "evt-http-diagnostic-new" {
+		t.Fatalf("expected reset action in remote diagnostic, got %+v", diagnostic.ResetAction)
+	}
+}

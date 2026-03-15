@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sort"
@@ -76,7 +77,7 @@ func (s *Server) Handler() http.Handler {
 		subscriberID := strings.TrimSpace(r.URL.Query().Get("subscriber_id"))
 		afterID, err := s.resolveAfterID(subscriberID, replayCursorFromRequest(r))
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			writeCheckpointDiagnosticError(w, err)
 			return
 		}
 		eventTypes := parseEventTypes(r.URL.Query()["event_type"])
@@ -538,11 +539,15 @@ func (s *Server) handleStreamEventCheckpoint(w http.ResponseWriter, r *http.Requ
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{
+		response := map[string]any{
 			"checkpoint": checkpoint,
 			"backend":    s.eventLogBackend(),
 			"durable":    s.eventLogDurable(),
-		})
+		}
+		if diagnostic := s.checkpointDiagnostic(subscriberID); diagnostic != nil {
+			response["diagnostic"] = diagnostic
+		}
+		writeJSON(w, http.StatusOK, response)
 	case http.MethodPost:
 		var payload struct {
 			EventID string `json:"event_id"`
@@ -560,11 +565,15 @@ func (s *Server) handleStreamEventCheckpoint(w http.ResponseWriter, r *http.Requ
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{
+		response := map[string]any{
 			"checkpoint": checkpoint,
 			"backend":    s.eventLogBackend(),
 			"durable":    s.eventLogDurable(),
-		})
+		}
+		if diagnostic := s.checkpointDiagnostic(subscriberID); diagnostic != nil {
+			response["diagnostic"] = diagnostic
+		}
+		writeJSON(w, http.StatusOK, response)
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -581,7 +590,7 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 	subscriberID := strings.TrimSpace(r.URL.Query().Get("subscriber_id"))
 	afterID, err := s.resolveAfterID(subscriberID, replayCursorFromRequest(r))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeCheckpointDiagnosticError(w, err)
 		return
 	}
 	eventTypes := parseEventTypes(r.URL.Query()["event_type"])
@@ -818,7 +827,51 @@ func (s *Server) resolveAfterID(subscriberID string, afterID string) (string, er
 		}
 		return "", err
 	}
+	if provider, ok := any(store).(events.CheckpointDiagnosticProvider); ok {
+		diagnostic, err := provider.CheckpointDiagnostic(subscriberID)
+		if err != nil {
+			if events.IsNoEventLog(err) {
+				return "", nil
+			}
+			return "", err
+		}
+		if diagnostic.Status != "" && diagnostic.Status != "ok" {
+			return "", &events.CheckpointDiagnosticError{Diagnostic: diagnostic}
+		}
+	}
 	return checkpoint.EventID, nil
+}
+
+func (s *Server) checkpointDiagnostic(subscriberID string) any {
+	store := s.checkpointStore()
+	if store == nil {
+		return nil
+	}
+	provider, ok := any(store).(events.CheckpointDiagnosticProvider)
+	if !ok {
+		return nil
+	}
+	diagnostic, err := provider.CheckpointDiagnostic(subscriberID)
+	if err != nil {
+		return nil
+	}
+	return diagnostic
+}
+
+func writeCheckpointDiagnosticError(w http.ResponseWriter, err error) {
+	var diagnosticErr *events.CheckpointDiagnosticError
+	if !errors.As(err, &diagnosticErr) {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	status := http.StatusConflict
+	if diagnosticErr.Diagnostic.Status == "expired" {
+		status = http.StatusGone
+	}
+	writeJSON(w, status, map[string]any{
+		"error":      err.Error(),
+		"diagnostic": diagnosticErr.Diagnostic,
+	})
 }
 
 func parseEventTypes(values []string) []domain.EventType {

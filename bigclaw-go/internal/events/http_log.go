@@ -31,6 +31,10 @@ type checkpointResponse struct {
 	Checkpoint SubscriberCheckpoint `json:"checkpoint"`
 }
 
+type checkpointDiagnosticResponse struct {
+	Diagnostic CheckpointDiagnostic `json:"diagnostic"`
+}
+
 type remoteEventsResponse struct {
 	Events []domain.Event `json:"events"`
 }
@@ -123,6 +127,15 @@ func (s *HTTPEventLog) Checkpoint(subscriberID string) (SubscriberCheckpoint, er
 		return SubscriberCheckpoint{}, mapRemoteEventLogError(err)
 	}
 	return response.Checkpoint, nil
+}
+
+func (s *HTTPEventLog) CheckpointDiagnostic(subscriberID string) (CheckpointDiagnostic, error) {
+	var response checkpointDiagnosticResponse
+	err := s.doJSON(context.Background(), http.MethodGet, "/checkpoints/"+url.PathEscape(strings.TrimSpace(subscriberID))+"/diagnostic", nil, &response)
+	if err != nil {
+		return CheckpointDiagnostic{}, mapRemoteEventLogError(err)
+	}
+	return response.Diagnostic, nil
 }
 
 func (s *HTTPEventLog) RetentionWatermark() (RetentionWatermark, error) {

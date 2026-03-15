@@ -72,7 +72,52 @@ func NewEventLogServiceHandler(store LogServiceStore) http.Handler {
 		writeEventLogJSON(w, http.StatusOK, map[string]any{"events": history})
 	})
 	mux.HandleFunc("/checkpoints/", func(w http.ResponseWriter, r *http.Request) {
-		subscriberID := strings.TrimPrefix(r.URL.Path, "/checkpoints/")
+		subscriberPath := strings.TrimPrefix(r.URL.Path, "/checkpoints/")
+		if strings.HasSuffix(subscriberPath, "/diagnostic") {
+			subscriberID := strings.TrimSuffix(subscriberPath, "/diagnostic")
+			subscriberID = strings.TrimSuffix(subscriberID, "/")
+			if subscriberID == "" {
+				http.Error(w, "missing subscriber id", http.StatusBadRequest)
+				return
+			}
+			if r.Method != http.MethodGet {
+				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+				return
+			}
+			provider, ok := any(store).(CheckpointDiagnosticProvider)
+			if !ok {
+				checkpoint, err := store.Checkpoint(subscriberID)
+				if err != nil {
+					if IsNoEventLog(err) {
+						http.Error(w, "checkpoint not found", http.StatusNotFound)
+						return
+					}
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				writeEventLogJSON(w, http.StatusOK, map[string]any{
+					"diagnostic": CheckpointDiagnostic{
+						SubscriberID: subscriberID,
+						Status:       "ok",
+						Reason:       "checkpoint_retained",
+						Checkpoint:   &checkpoint,
+					},
+				})
+				return
+			}
+			diagnostic, err := provider.CheckpointDiagnostic(subscriberID)
+			if err != nil {
+				if IsNoEventLog(err) {
+					http.Error(w, "checkpoint not found", http.StatusNotFound)
+					return
+				}
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			writeEventLogJSON(w, http.StatusOK, map[string]any{"diagnostic": diagnostic})
+			return
+		}
+		subscriberID := subscriberPath
 		if subscriberID == "" {
 			http.Error(w, "missing subscriber id", http.StatusBadRequest)
 			return
@@ -107,7 +152,14 @@ func NewEventLogServiceHandler(store LogServiceStore) http.Handler {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			writeEventLogJSON(w, http.StatusOK, map[string]any{"checkpoint": checkpoint})
+			response := map[string]any{"checkpoint": checkpoint}
+			if provider, ok := any(store).(CheckpointDiagnosticProvider); ok {
+				diagnostic, diagErr := provider.CheckpointDiagnostic(subscriberID)
+				if diagErr == nil {
+					response["diagnostic"] = diagnostic
+				}
+			}
+			writeEventLogJSON(w, http.StatusOK, response)
 		default:
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}

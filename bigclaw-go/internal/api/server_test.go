@@ -2560,12 +2560,16 @@ func TestStreamEventCheckpointEndpointAndResume(t *testing.T) {
 	}
 	var checkpointDecoded struct {
 		Checkpoint events.SubscriberCheckpoint `json:"checkpoint"`
+		Diagnostic events.CheckpointDiagnostic `json:"diagnostic"`
 	}
 	if err := json.Unmarshal(checkpointResponse.Body.Bytes(), &checkpointDecoded); err != nil {
 		t.Fatalf("decode checkpoint response: %v", err)
 	}
 	if checkpointDecoded.Checkpoint.EventID != "evt-check-1" || checkpointDecoded.Checkpoint.SubscriberID != "subscriber-a" {
 		t.Fatalf("unexpected checkpoint payload: %+v", checkpointDecoded.Checkpoint)
+	}
+	if checkpointDecoded.Diagnostic.Status != "ok" || checkpointDecoded.Diagnostic.Reason != "checkpoint_retained" {
+		t.Fatalf("expected retained checkpoint diagnostic, got %+v", checkpointDecoded.Diagnostic)
 	}
 	if err := log1.Close(); err != nil {
 		t.Fatalf("close first sqlite event log: %v", err)
@@ -2620,6 +2624,103 @@ func TestStreamEventCheckpointEndpointAndResume(t *testing.T) {
 		}
 	case <-ctx.Done():
 		t.Fatal("timed out waiting for checkpoint-resumed SSE event")
+	}
+}
+
+func TestEventsEndpointReturnsExpiredCheckpointDiagnosticForSubscriberResume(t *testing.T) {
+	base := time.Unix(1_700_000_000, 0).UTC()
+	logPath := filepath.Join(t.TempDir(), "event-log.db")
+	store, err := events.NewSQLiteEventLogWithOptions(logPath, events.SQLiteEventLogOptions{
+		Retention: 2 * time.Second,
+		Now:       func() time.Time { return base },
+	})
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	if err := store.Write(context.Background(), domain.Event{ID: "evt-expired-old", Type: domain.EventTaskQueued, TaskID: "task-expired", TraceID: "trace-expired", Timestamp: base}); err != nil {
+		t.Fatalf("write old event: %v", err)
+	}
+	if _, err := store.Acknowledge("subscriber-expired", "evt-expired-old", base.Add(time.Second)); err != nil {
+		t.Fatalf("acknowledge expired checkpoint: %v", err)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatalf("close initial sqlite event log: %v", err)
+	}
+	storeNow := base.Add(4 * time.Second)
+	storeNowFn := func() time.Time { return storeNow }
+	store, err = events.NewSQLiteEventLogWithOptions(logPath, events.SQLiteEventLogOptions{
+		Retention: 2 * time.Second,
+		Now:       storeNowFn,
+	})
+	if err != nil {
+		t.Fatalf("reopen sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	if err := store.Write(context.Background(), domain.Event{ID: "evt-expired-new", Type: domain.EventTaskStarted, TaskID: "task-expired", TraceID: "trace-expired", Timestamp: storeNow}); err != nil {
+		t.Fatalf("write retained event: %v", err)
+	}
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: store, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/events?subscriber_id=subscriber-expired&trace_id=trace-expired&limit=10", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusGone {
+		t.Fatalf("expected expired checkpoint to return 410, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Error      string                      `json:"error"`
+		Diagnostic events.CheckpointDiagnostic `json:"diagnostic"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode expired checkpoint response: %v", err)
+	}
+	if decoded.Diagnostic.Status != "expired" || decoded.Diagnostic.Reason != "checkpoint_expired" {
+		t.Fatalf("expected expired diagnostic payload, got %+v", decoded.Diagnostic)
+	}
+	if decoded.Diagnostic.ResetAction == nil || decoded.Diagnostic.ResetAction.EarliestRetainedEventID != "evt-expired-new" {
+		t.Fatalf("expected reset guidance in expired response, got %+v", decoded.Diagnostic.ResetAction)
+	}
+}
+
+func TestStreamEventsReturnsExpiredCheckpointDiagnosticForSubscriberResume(t *testing.T) {
+	base := time.Unix(1_700_000_000, 0).UTC()
+	logPath := filepath.Join(t.TempDir(), "event-log.db")
+	store, err := events.NewSQLiteEventLogWithOptions(logPath, events.SQLiteEventLogOptions{
+		Retention: 2 * time.Second,
+		Now:       func() time.Time { return base },
+	})
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	if err := store.Write(context.Background(), domain.Event{ID: "evt-stream-expired-old", Type: domain.EventTaskQueued, TaskID: "task-stream-expired", TraceID: "trace-stream-expired", Timestamp: base}); err != nil {
+		t.Fatalf("write old event: %v", err)
+	}
+	if _, err := store.Acknowledge("subscriber-stream-expired", "evt-stream-expired-old", base.Add(time.Second)); err != nil {
+		t.Fatalf("ack old event: %v", err)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatalf("close initial sqlite event log: %v", err)
+	}
+	store, err = events.NewSQLiteEventLogWithOptions(logPath, events.SQLiteEventLogOptions{
+		Retention: 2 * time.Second,
+		Now:       func() time.Time { return base.Add(4 * time.Second) },
+	})
+	if err != nil {
+		t.Fatalf("reopen sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	if err := store.Write(context.Background(), domain.Event{ID: "evt-stream-expired-new", Type: domain.EventTaskStarted, TaskID: "task-stream-expired", TraceID: "trace-stream-expired", Timestamp: base.Add(4 * time.Second)}); err != nil {
+		t.Fatalf("write retained event: %v", err)
+	}
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: store, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/stream/events?subscriber_id=subscriber-stream-expired&trace_id=trace-stream-expired&limit=10", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusGone {
+		t.Fatalf("expected expired stream checkpoint to return 410, got %d %s", response.Code, response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), "\"status\":\"expired\"") || !strings.Contains(response.Body.String(), "\"reset_action\"") {
+		t.Fatalf("expected expired stream diagnostic payload, got %s", response.Body.String())
 	}
 }
 

@@ -262,14 +262,50 @@ func (s *SQLiteEventLog) Checkpoint(subscriberID string) (SubscriberCheckpoint, 
 	if s == nil || s.db == nil {
 		return SubscriberCheckpoint{}, sql.ErrNoRows
 	}
-	row := s.db.QueryRow(`SELECT subscriber_id, event_id, updated_at_ns FROM subscriber_checkpoint WHERE subscriber_id = ?`, subscriberID)
+	row := s.db.QueryRow(`SELECT subscriber_id, event_id, event_seq, updated_at_ns FROM subscriber_checkpoint WHERE subscriber_id = ?`, subscriberID)
 	var checkpoint SubscriberCheckpoint
 	var updatedAtNS int64
-	if err := row.Scan(&checkpoint.SubscriberID, &checkpoint.EventID, &updatedAtNS); err != nil {
+	if err := row.Scan(&checkpoint.SubscriberID, &checkpoint.EventID, &checkpoint.EventSequence, &updatedAtNS); err != nil {
 		return SubscriberCheckpoint{}, err
 	}
 	checkpoint.UpdatedAt = time.Unix(0, updatedAtNS).UTC()
 	return checkpoint, nil
+}
+
+func (s *SQLiteEventLog) CheckpointDiagnostic(subscriberID string) (CheckpointDiagnostic, error) {
+	checkpoint, err := s.Checkpoint(subscriberID)
+	if err != nil {
+		return CheckpointDiagnostic{}, err
+	}
+	watermark, err := s.RetentionWatermark()
+	if err != nil {
+		return CheckpointDiagnostic{}, err
+	}
+	diagnostic := CheckpointDiagnostic{
+		SubscriberID:       subscriberID,
+		Backend:            s.Backend(),
+		Status:             "ok",
+		Reason:             "checkpoint_retained",
+		Checkpoint:         &checkpoint,
+		RetentionWatermark: &watermark,
+	}
+	_, ok, err := s.lookupSequenceForEventID(checkpoint.EventID)
+	if err != nil {
+		return CheckpointDiagnostic{}, err
+	}
+	if ok {
+		return diagnostic, nil
+	}
+	if checkpoint.EventSequence > 0 && watermark.TrimmedThroughSequence >= checkpoint.EventSequence {
+		diagnostic.Status = "expired"
+		diagnostic.Reason = "checkpoint_expired"
+		diagnostic.ResetAction = checkpointResetAction(watermark)
+		return diagnostic, nil
+	}
+	diagnostic.Status = "missing"
+	diagnostic.Reason = "checkpoint_event_missing"
+	diagnostic.ResetAction = checkpointResetAction(watermark)
+	return diagnostic, nil
 }
 
 func (s *SQLiteEventLog) queryAfter(base string, args []any, afterID string, limit int) ([]domain.Event, error) {
@@ -468,7 +504,18 @@ func reverseEvents(events []domain.Event) {
 
 var _ EventLog = (*SQLiteEventLog)(nil)
 var _ CheckpointStore = (*SQLiteEventLog)(nil)
+var _ CheckpointDiagnosticProvider = (*SQLiteEventLog)(nil)
 
 func IsNoEventLog(err error) bool {
 	return errors.Is(err, sql.ErrNoRows)
+}
+
+func checkpointResetAction(watermark RetentionWatermark) *CheckpointResetAction {
+	return &CheckpointResetAction{
+		Action:                  "reset_checkpoint",
+		Scope:                   "subscriber",
+		EarliestRetainedEventID: watermark.OldestEventID,
+		LatestRetainedEventID:   watermark.NewestEventID,
+		Message:                 "Reset the subscriber checkpoint to a retained event or clear it before retrying replay.",
+	}
 }
