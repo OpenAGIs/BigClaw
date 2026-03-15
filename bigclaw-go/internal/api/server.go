@@ -115,6 +115,7 @@ func (s *Server) Handler() http.Handler {
 			"audit_events":     len(s.Recorder.Logs()),
 			"executors":        s.executorNames(),
 			"event_durability": s.EventPlan,
+			"event_log":        s.eventLogCapabilities(r.Context()),
 		}
 		if s.Worker != nil {
 			payload["worker"] = s.Worker.Snapshot()
@@ -522,6 +523,13 @@ func matchesEventStreamFilter(event domain.Event, taskID string, traceID string)
 		return false
 	}
 	return true
+}
+
+func (s *Server) eventLogCapabilities(ctx context.Context) events.BackendCapabilities {
+	if s.Bus != nil {
+		return s.Bus.Capabilities(ctx)
+	}
+	return events.UnavailableCapabilities()
 }
 
 func (s *Server) publish(event domain.Event) {

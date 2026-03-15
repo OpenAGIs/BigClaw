@@ -16,6 +16,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - Replay-safe consumer dedup ledger contract with stable storage key and result semantics
 - Subscriber-group checkpoint lease coordination via `/subscriber-groups/leases` and `/subscriber-groups/checkpoints`
 - Event backend capability and config-validation contract via `internal/events/backend_contract.go`
+- Event-log backend capability probe surfaced through control/debug responses before replay-oriented dispatch
 
 ## Validated behaviors
 
@@ -27,12 +28,14 @@ This report summarizes the current event bus reliability evidence and the next r
 - Replay and live deliveries preserve the original event id while exposing an explicit delivery mode and stable downstream idempotency key.
 - Subscriber-group checkpoint commits are fenced by lease token + epoch, so stale writers cannot advance ownership after takeover.
 - Checkpoint offsets remain monotonic within a subscriber group and reject rollback writes.
+- Operators can inspect backend capability support before dispatching replay-oriented operations.
 
 ## Evidence
 
 - `internal/events/bus.go`
-- `internal/events/durability.go`
 - `internal/events/bus_test.go`
+- `internal/events/capabilities.go`
+- `internal/events/durability.go`
 - `internal/events/delivery.go`
 - `internal/events/delivery_test.go`
 - `internal/domain/consumer_dedup.go`
@@ -71,7 +74,7 @@ This report summarizes the current event bus reliability evidence and the next r
 
 - `cmd/bigclawd/main.go`: bootstrap backend selection, capability validation, dedup ledger contract exposure, and future broker client wiring.
 - `internal/events/bus.go`: publish path remains the place to insert append/ack behavior ahead of live fanout.
-- `internal/api/server.go`: operational reporting for current and target durability mode.
+- `internal/api/server.go`: operational reporting for current and target durability mode plus runtime capability probes.
 - Subscriber checkpoint persistence, replay endpoints, and dedup ledger surfaces preserve resume and idempotency semantics while moving state out of process-local memory.
 
 ## Migration and compatibility constraints
@@ -87,7 +90,7 @@ This report summarizes the current event bus reliability evidence and the next r
 2. Introduce a dual-write migration phase from the current publish path into the new event-log backend while keeping recorder/audit output unchanged.
 3. Add checkpoint-backed replay endpoints that read from the shared event log instead of recorder-only history.
 4. Add a broker-backed implementation with partition-key rules for `trace_id` and explicit publisher ack / durability error handling.
-5. Validate cutover with replay, checkpoint monotonicity, SSE handoff, capability-matrix regression coverage, and dedup-ledger persistence coverage under shared multi-node conditions.
+5. Validate cutover with replay, checkpoint monotonicity, SSE handoff, capability-matrix regression coverage, dedup-ledger persistence coverage, and backend-capability probe validation under shared multi-node conditions.
 
 ## Durability capability matrix
 

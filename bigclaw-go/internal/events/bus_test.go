@@ -1,6 +1,7 @@
 package events
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -53,5 +54,41 @@ func TestBusSubscribeReplayReturnsHistoryAndLiveEvents(t *testing.T) {
 	}
 	if live.Delivery == nil || live.Delivery.Mode != domain.EventDeliveryModeLive || live.Delivery.IdempotencyKey != third.ID {
 		t.Fatalf("expected live delivery metadata after replay handoff, got %+v", live.Delivery)
+	}
+}
+
+type staticCapabilityProvider struct {
+	capability BackendCapabilities
+}
+
+func (p staticCapabilityProvider) Capabilities(context.Context) BackendCapabilities {
+	return p.capability
+}
+
+func TestBusCapabilitiesDefaultAndOverride(t *testing.T) {
+	bus := NewBus()
+	capability := bus.Capabilities(context.Background())
+	if capability.Backend != "in_memory_history" {
+		t.Fatalf("expected default backend in_memory_history, got %s", capability.Backend)
+	}
+	if !capability.Replay.Supported || capability.Checkpoint.Supported {
+		t.Fatalf("unexpected default capability set: %+v", capability)
+	}
+
+	override := BackendCapabilities{
+		Backend: "broker_adapter",
+		Scope:   "shared_cluster",
+		Publish: FeatureSupport{Supported: true, Mode: "replicated"},
+		Replay:  FeatureSupport{Supported: true, Mode: "durable"},
+		Checkpoint: FeatureSupport{
+			Supported: true,
+			Mode:      "lease_aware",
+		},
+		Filtering: FeatureSupport{Supported: true, Mode: "server_side"},
+		Retention: FeatureSupport{Supported: true, Mode: "ttl"},
+	}
+	bus.SetCapabilityProvider(staticCapabilityProvider{capability: override})
+	if got := bus.Capabilities(context.Background()); got.Backend != "broker_adapter" || !got.Checkpoint.Supported || got.Retention.Mode != "ttl" {
+		t.Fatalf("expected provider override, got %+v", got)
 	}
 }
