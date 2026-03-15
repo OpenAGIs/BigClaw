@@ -35,3 +35,9 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 - No durable external event log yet; replay is process-local history.
 - No delivery acknowledgement protocol beyond sink-level best effort.
 - No partitioned topic model or cross-process subscriber coordination yet.
+
+## Next adapter boundary
+
+- `internal/events/log.go` now defines the provider-neutral event-log and checkpoint contract for future broker-backed adapters.
+- `internal/events/memory_log.go` provides the contract-compatible in-memory baseline while BigClaw remains on local fanout.
+- Broker-facing runtime knobs are reserved behind `BIGCLAW_EVENT_LOG_*` env vars so a first provider adapter can land without changing publish/replay/checkpoint callers.
