@@ -65,20 +65,24 @@ Execution protocol:
 1. Start by checking whether the current project or epic still has open child tickets in `Todo` / `In Progress`.
 2. If no suitable child ticket exists, create the next smallest high-value Linear issue before coding.
 3. Claim work explicitly in Linear by moving the ticket to `In Progress` before implementation.
-4. Complete code, tests, GitHub push verification, and PR/body refresh before marking the ticket `Done`.
-5. Add a Linear comment with:
+4. After every substantive code, doc, config, or test update, immediately `git add` + `git commit` + `git push` the current issue branch, verify local/remote SHA equality, and refresh the PR so GitHub stays current throughout execution rather than only at issue closeout.
+5. Never end a coding turn with uncommitted or unpushed substantive changes unless blocked by a true external failure; if blocked, record the exact blocker and keep the issue active.
+6. Complete code, tests, GitHub push verification, and PR/body refresh before marking the ticket `Done`.
+7. Add a Linear comment with:
    - what changed,
    - validation commands/results,
    - commit sha,
    - PR URL.
-6. When one slice is done, immediately pick or create the next parallel-safe slice and continue.
-7. If the dashboard shows fewer than 2 running slices while safe `Todo` work exists, move the next ticket(s) to `In Progress` and let Symphony refill capacity on the next polling cycle.
-8. When manual or unattended refill is needed, prefer `python3 scripts/ops/bigclaw_refill_queue.py --apply --watch` so queue activation follows the recorded issue order.
+8. When one slice is done, immediately pick or create the next parallel-safe slice and continue.
+9. If the dashboard shows fewer than 2 running slices while safe `Todo` work exists, move the next ticket(s) to `In Progress` and let Symphony refill capacity on the next polling cycle.
+10. When manual or unattended refill is needed, prefer `python3 scripts/ops/bigclaw_refill_queue.py --apply --watch` so queue activation follows the recorded issue order.
 
-GitHub verification is mandatory before completion:
+GitHub verification is mandatory before and during execution:
+- Every substantive code update must be pushed to the configured GitHub branch instead of waiting until final completion.
 - Every run must prove that the latest local commit exists on the configured GitHub branch.
 - Do not treat `git push` success alone as sufficient; compare local and remote branch SHAs.
 - Keep the active PR title/body aligned with the total branch scope after each push.
+- If a workspace branch does not yet exist on origin, create it with the first push before continuing implementation.
 
 Follow the same execution quality bar as the root workflow, and ensure every run ends with:
 1) validation evidence,

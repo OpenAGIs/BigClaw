@@ -18,7 +18,7 @@ manual operator can refill the next parallel-safe issues in a stable order.
 - Keep at least `2` issues in `In Progress`.
 - Promote only issues currently in `Backlog` or `Todo`.
 - Use the queue order below as the single source of truth for refill priority.
-- Every code-bearing issue must finish with GitHub push plus local/remote SHA equality verification.
+- Every substantive code-bearing update must be committed and pushed to GitHub immediately, with local/remote SHA equality verification after each push.
 
 ## Recent batches
 
