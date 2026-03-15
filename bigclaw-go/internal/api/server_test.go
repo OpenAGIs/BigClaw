@@ -1686,11 +1686,17 @@ func TestV2ControlCenterIncludesMultiWorkerPoolSummary(t *testing.T) {
 func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	recorder := observability.NewRecorder()
 	controller := control.New()
+	store, err := events.NewSQLiteEventLog(filepath.Join(t.TempDir(), "distributed-diagnostics-event-log.db"))
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
 	server := &Server{
 		Recorder:  recorder,
 		Queue:     queue.NewMemoryQueue(),
 		Executors: []domain.ExecutorKind{domain.ExecutorLocal, domain.ExecutorKubernetes, domain.ExecutorRay},
 		Control:   controller,
+		EventLog:  store,
 		Worker:    fakeWorkerPoolStatus{},
 		Now:       func() time.Time { return time.Unix(1700007200, 0) },
 	}
@@ -1714,6 +1720,15 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		{ID: "evt-ray-completed", Type: domain.EventTaskCompleted, TaskID: "diag-ray", TraceID: "trace-ray", Timestamp: base.Add(7 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay}},
 	} {
 		recorder.Record(event)
+	}
+	if err := store.Write(context.Background(), domain.Event{ID: "evt-diag-reset-1", Type: domain.EventTaskQueued, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(8 * time.Second)}); err != nil {
+		t.Fatalf("write distributed reset event: %v", err)
+	}
+	if _, err := store.Acknowledge("subscriber-dist-reset", "evt-diag-reset-1", base.Add(9*time.Second)); err != nil {
+		t.Fatalf("ack distributed reset checkpoint: %v", err)
+	}
+	if err := store.ResetCheckpoint("subscriber-dist-reset"); err != nil {
+		t.Fatalf("reset distributed checkpoint: %v", err)
 	}
 
 	response := httptest.NewRecorder()
@@ -1763,6 +1778,21 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 					Count int    `json:"count"`
 				} `json:"takeover_owners"`
 			} `json:"cluster_health"`
+			CheckpointResets struct {
+				RecentCount  int `json:"recent_count"`
+				BySubscriber []struct {
+					Key   string `json:"key"`
+					Count int    `json:"count"`
+				} `json:"by_subscriber"`
+				ByReason []struct {
+					Key   string `json:"key"`
+					Count int    `json:"count"`
+				} `json:"by_reason"`
+				Recent []struct {
+					SubscriberID string `json:"subscriber_id"`
+					Reason       string `json:"reason"`
+				} `json:"recent"`
+			} `json:"checkpoint_resets"`
 			RolloutReport struct {
 				Markdown  string `json:"markdown"`
 				ExportURL string `json:"export_url"`
@@ -1799,8 +1829,32 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	if len(decoded.Diagnostics.ClusterHealth.TakeoverOwners) == 0 || decoded.Diagnostics.ClusterHealth.TakeoverOwners[0].Key != "alice" {
 		t.Fatalf("expected takeover owner rollup, got %+v", decoded.Diagnostics.ClusterHealth)
 	}
-	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") || !strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {
+	if decoded.Diagnostics.CheckpointResets.RecentCount != 1 || len(decoded.Diagnostics.CheckpointResets.BySubscriber) != 1 || decoded.Diagnostics.CheckpointResets.BySubscriber[0].Key != "subscriber-dist-reset" {
+		t.Fatalf("expected checkpoint reset summary in distributed diagnostics, got %+v", decoded.Diagnostics.CheckpointResets)
+	}
+	if len(decoded.Diagnostics.CheckpointResets.ByReason) != 1 || decoded.Diagnostics.CheckpointResets.ByReason[0].Key != "operator_reset" {
+		t.Fatalf("expected checkpoint reset reason facet, got %+v", decoded.Diagnostics.CheckpointResets)
+	}
+	if len(decoded.Diagnostics.CheckpointResets.Recent) != 1 || decoded.Diagnostics.CheckpointResets.Recent[0].SubscriberID != "subscriber-dist-reset" {
+		t.Fatalf("expected recent checkpoint reset entry, got %+v", decoded.Diagnostics.CheckpointResets)
+	}
+	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") || !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Checkpoint Resets") || !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "subscriber-dist-reset") || !strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") || !strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "audit_limit=10") {
 		t.Fatalf("unexpected rollout report payload: %+v", decoded.Diagnostics.RolloutReport)
+	}
+
+	exportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(exportResponse, httptest.NewRequest(http.MethodGet, "/v2/reports/distributed/export?team=platform&project=alpha&limit=10&audit_limit=10", nil))
+	if exportResponse.Code != http.StatusOK {
+		t.Fatalf("expected distributed export 200, got %d %s", exportResponse.Code, exportResponse.Body.String())
+	}
+	if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected markdown export content type, got %q", contentType)
+	}
+	if disposition := exportResponse.Header().Get("Content-Disposition"); !strings.Contains(disposition, "bigclaw-distributed-diagnostics-platform.md") {
+		t.Fatalf("expected export attachment filename, got %q", disposition)
+	}
+	if !strings.Contains(exportResponse.Body.String(), "Checkpoint Resets") || !strings.Contains(exportResponse.Body.String(), "subscriber-dist-reset") || !strings.Contains(exportResponse.Body.String(), "operator_reset") {
+		t.Fatalf("expected checkpoint reset summary in distributed export, got %s", exportResponse.Body.String())
 	}
 }
 

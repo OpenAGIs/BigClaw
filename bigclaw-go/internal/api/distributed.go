@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+	"time"
 
 	"bigclaw-go/internal/control"
 	"bigclaw-go/internal/domain"
@@ -75,6 +76,7 @@ type distributedDiagnostics struct {
 	RoutingReasons   []routingReasonSummary        `json:"routing_reasons"`
 	ExecutorCapacity []executorCapacityView        `json:"executor_capacity"`
 	ClusterHealth    clusterHealthRollup           `json:"cluster_health"`
+	CheckpointResets *checkpointResetSnapshot      `json:"checkpoint_resets,omitempty"`
 	RolloutReport    distributedDiagnosticsReport  `json:"rollout_report"`
 }
 
@@ -346,6 +348,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		RoutingReasons:   routingReasons,
 		ExecutorCapacity: executorCapacity,
 		ClusterHealth:    clusterHealth,
+		CheckpointResets: s.checkpointResetAuditSnapshot(filters.AuditLimit),
 	}
 	diagnostics.RolloutReport = distributedDiagnosticsReport{
 		Markdown:  renderDistributedDiagnosticsMarkdown(diagnostics, filters),
@@ -568,6 +571,9 @@ func distributedExportURL(filters controlCenterFilters) string {
 	if filters.Limit > 0 {
 		values.Set("limit", fmt.Sprintf("%d", filters.Limit))
 	}
+	if filters.AuditLimit > 0 {
+		values.Set("audit_limit", fmt.Sprintf("%d", filters.AuditLimit))
+	}
 	encoded := values.Encode()
 	if encoded == "" {
 		return "/v2/reports/distributed/export"
@@ -652,6 +658,33 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	if len(diagnostics.ClusterHealth.TakeoverOwners) > 0 {
 		lines = append(lines, "- Takeover owners: "+formatFacetCounts(diagnostics.ClusterHealth.TakeoverOwners))
 	}
+	lines = append(lines, "", "## Checkpoint Resets")
+	if diagnostics.CheckpointResets == nil || diagnostics.CheckpointResets.RecentCount == 0 {
+		lines = append(lines, "- No recent checkpoint resets captured")
+	} else {
+		lines = append(lines, fmt.Sprintf("- Recent checkpoint resets: %d", diagnostics.CheckpointResets.RecentCount))
+		if len(diagnostics.CheckpointResets.BySubscriber) > 0 {
+			lines = append(lines, "- By subscriber: "+formatCheckpointResetFacetCounts(diagnostics.CheckpointResets.BySubscriber))
+		}
+		if len(diagnostics.CheckpointResets.ByReason) > 0 {
+			lines = append(lines, "- By reason: "+formatCheckpointResetFacetCounts(diagnostics.CheckpointResets.ByReason))
+		}
+		for _, item := range diagnostics.CheckpointResets.Recent {
+			checkpointEventID := "none"
+			trimmedThroughEventID := "none"
+			oldestEventID := "none"
+			retentionWindowSeconds := int64(0)
+			if item.PreviousCheckpoint != nil {
+				checkpointEventID = firstNonEmpty(strings.TrimSpace(item.PreviousCheckpoint.EventID), "none")
+			}
+			if item.RetentionWatermark != nil {
+				trimmedThroughEventID = firstNonEmpty(strings.TrimSpace(item.RetentionWatermark.TrimmedThroughEventID), "none")
+				oldestEventID = firstNonEmpty(strings.TrimSpace(item.RetentionWatermark.OldestEventID), "none")
+				retentionWindowSeconds = item.RetentionWatermark.RetentionWindowSeconds
+			}
+			lines = append(lines, fmt.Sprintf("- %s: subscriber=%s reason=%s checkpoint=%s trimmed_through=%s oldest_retained=%s window_seconds=%d", item.ResetAt.Format(time.RFC3339), firstNonEmpty(strings.TrimSpace(item.SubscriberID), "unknown"), firstNonEmpty(strings.TrimSpace(item.Reason), "unknown"), checkpointEventID, trimmedThroughEventID, oldestEventID, retentionWindowSeconds))
+		}
+	}
 	lines = append(lines, "", "## Notes")
 	for _, note := range diagnostics.ClusterHealth.Notes {
 		lines = append(lines, "- "+note)
@@ -661,6 +694,14 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 }
 
 func formatFacetCounts(items []auditFacetCount) string {
+	parts := make([]string, 0, len(items))
+	for _, item := range items {
+		parts = append(parts, fmt.Sprintf("%s=%d", item.Key, item.Count))
+	}
+	return strings.Join(parts, ", ")
+}
+
+func formatCheckpointResetFacetCounts(items []checkpointResetFacetCount) string {
 	parts := make([]string, 0, len(items))
 	for _, item := range items {
 		parts = append(parts, fmt.Sprintf("%s=%d", item.Key, item.Count))
