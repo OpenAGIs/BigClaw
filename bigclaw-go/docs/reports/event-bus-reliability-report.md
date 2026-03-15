@@ -90,7 +90,7 @@ This report summarizes the current event bus reliability evidence and the next r
 2. Introduce a dual-write migration phase from the current publish path into the new event-log backend while keeping recorder/audit output unchanged.
 3. Add checkpoint-backed replay endpoints that read from the shared event log instead of recorder-only history.
 4. Add a broker-backed implementation with partition-key rules for `trace_id` and explicit publisher ack / durability error handling.
-5. Validate cutover with replay, checkpoint monotonicity, SSE handoff, capability-matrix regression coverage, dedup-ledger persistence coverage, and backend-capability probe validation under shared multi-node conditions.
+5. Validate cutover with replay, checkpoint monotonicity, SSE handoff, capability-matrix regression coverage, dedup-ledger persistence coverage, backend-capability probe validation, and multi-subscriber takeover fault-injection evidence under shared multi-node conditions.
 
 ## Durability capability matrix
 
@@ -126,9 +126,14 @@ This report summarizes the current event bus reliability evidence and the next r
 - No partitioned topic model or broker-backed cross-process subscriber coordination exists yet.
 - No retention watermark or expired-cursor contract exists in the runtime yet; the target compaction semantics are defined in `docs/reports/replay-retention-semantics-report.md`.
 - Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.
+- Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists.
 
 ## Next adapter boundary
 
 - `internal/events/log.go` now defines the provider-neutral event-log and checkpoint contract for future broker-backed adapters.
 - `internal/events/memory_log.go` provides the contract-compatible in-memory baseline while BigClaw remains on local fanout.
 - Broker-facing runtime knobs are reserved behind `BIGCLAW_EVENT_LOG_*` env vars so a first provider adapter can land without changing publish/replay/checkpoint callers.
+- No durable external event log yet; replay is process-local history.
+- No delivery acknowledgement protocol beyond sink-level best effort.
+- No partitioned topic model or cross-process subscriber coordination yet.
+- Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists.

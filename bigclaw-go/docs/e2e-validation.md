@@ -97,6 +97,17 @@ Use that pack as the source of truth for:
 - checkpoint fencing and stale-writer recovery rules
 - the minimum machine-readable report schema required before future broker durability work can be closed honestly
 
+## Multi-subscriber takeover validation matrix
+
+Use this to regenerate the planning artifact for takeover fault injection before lease-aware subscriber-group checkpoints are implemented.
+
+```bash
+cd bigclaw-go
+python3 scripts/e2e/subscriber_takeover_fault_matrix.py --pretty
+```
+
+This refreshes `docs/reports/multi-subscriber-takeover-validation-report.json` with the canonical scenario list, expected audit/checkpoint/replay assertions, and the minimum harness outputs the future lease-aware validation run must emit.
+
 Optional toggles:
 
 ```bash
