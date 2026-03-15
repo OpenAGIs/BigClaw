@@ -57,7 +57,16 @@ export BIGCLAW_QUEUE_BACKEND=sqlite
 ./scripts/e2e/run_all.sh
 ```
 
-The script writes a consolidated summary to `docs/reports/live-validation-summary.json`, refreshes the canonical component reports for local, Kubernetes, and Ray validation, and creates a timestamped bundle plus index under `docs/reports/live-validation-runs/` and `docs/reports/live-validation-index.md`.
+The script writes a versioned bundle contract to `docs/reports/live-validation-summary.json`, refreshes the canonical component reports for local, Kubernetes, and Ray validation, and creates a timestamped bundle plus index under `docs/reports/live-validation-runs/` and `docs/reports/live-validation-index.md`.
+
+The canonical summary/index contract now stays stable around:
+- `schema_version`
+- `bundle.run_id`, `bundle.path`, `bundle.summary_path`, and `bundle.readme_path`
+- `components.<lane>.status`
+- `components.<lane>.artifacts.*` for bundle-local and canonical report/log paths
+- `components.<lane>.task`, `components.<lane>.report_summary`, and `components.<lane>.execution_artifacts`
+
+Raw executor-specific report bodies remain in the per-lane JSON artifacts inside the bundle instead of being embedded into the canonical summary.
 
 ## Mixed workload matrix
 
