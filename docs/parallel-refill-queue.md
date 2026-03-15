@@ -46,11 +46,17 @@ manual operator can refill the next parallel-safe issues in a stable order.
 - Active:
   - `OPE-233` — Ray executor live readiness rollup in distributed diagnostics
   - `OPE-234` — replicated event-log rollout readiness summary
-- Standby:
   - `OPE-235` — shared-queue takeover evidence bundle refresh
+- Standby:
+  - `OPE-236` — kubernetes executor live readiness rollup in distributed diagnostics
+  - `OPE-237` — normalize live-validation evidence bundle index
+  - `OPE-238` — distributed rollout review-pack refresh
 
 ## Canonical refill order
 
 1. `OPE-233`
 2. `OPE-234`
 3. `OPE-235`
+4. `OPE-236`
+5. `OPE-237`
+6. `OPE-238`
