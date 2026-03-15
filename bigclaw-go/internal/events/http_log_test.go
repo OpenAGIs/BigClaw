@@ -120,3 +120,34 @@ func TestHTTPEventLogReadsPersistedRetentionBoundaryFromService(t *testing.T) {
 		t.Fatalf("expected retained remote event window, got %+v", watermark)
 	}
 }
+
+func TestHTTPEventLogResetsCheckpointThroughService(t *testing.T) {
+	store, err := NewSQLiteEventLog(filepath.Join(t.TempDir(), "event-log.db"))
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	defer func() { _ = store.Close() }()
+	server := httptest.NewServer(NewEventLogServiceHandler(store))
+	defer server.Close()
+	client, err := NewHTTPEventLog(server.URL, "")
+	if err != nil {
+		t.Fatalf("new http event log: %v", err)
+	}
+	base := time.Now()
+	if err := client.Write(context.Background(), domain.Event{ID: "evt-reset-1", Type: domain.EventTaskQueued, TaskID: "task-reset", TraceID: "trace-reset", Timestamp: base}); err != nil {
+		t.Fatalf("write reset event: %v", err)
+	}
+	checkpoint, err := client.Acknowledge("subscriber-reset", "evt-reset-1", base.Add(time.Second))
+	if err != nil {
+		t.Fatalf("ack checkpoint: %v", err)
+	}
+	if checkpoint.EventSequence == 0 {
+		t.Fatalf("expected checkpoint sequence, got %+v", checkpoint)
+	}
+	if err := client.ResetCheckpoint("subscriber-reset"); err != nil {
+		t.Fatalf("reset checkpoint: %v", err)
+	}
+	if _, err := client.Checkpoint("subscriber-reset"); !IsNoEventLog(err) {
+		t.Fatalf("expected checkpoint to be cleared, got %v", err)
+	}
+}

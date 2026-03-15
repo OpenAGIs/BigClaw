@@ -2734,3 +2734,79 @@ func TestDebugStatusIncludesRetentionWatermark(t *testing.T) {
 		t.Fatalf("expected retention watermark in debug payload, got %s", response.Body.String())
 	}
 }
+
+func TestStreamEventCheckpointExpiredDiagnosticsAndReset(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "event-log.db")
+	base := time.Unix(1_700_000_000, 0).UTC()
+	log1, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	for _, event := range []domain.Event{
+		{ID: "evt-expired-1", Type: domain.EventTaskQueued, TaskID: "task-expired", TraceID: "trace-expired", Timestamp: base},
+		{ID: "evt-expired-2", Type: domain.EventTaskStarted, TaskID: "task-expired", TraceID: "trace-expired", Timestamp: base.Add(3 * time.Second)},
+	} {
+		if err := log1.Write(context.Background(), event); err != nil {
+			t.Fatalf("write checkpoint event %s: %v", event.ID, err)
+		}
+	}
+	if _, err := log1.Acknowledge("subscriber-expired", "evt-expired-1", base.Add(time.Second)); err != nil {
+		t.Fatalf("ack expired checkpoint: %v", err)
+	}
+	if err := log1.Close(); err != nil {
+		t.Fatalf("close first sqlite event log: %v", err)
+	}
+
+	log2, err := events.NewSQLiteEventLogWithOptions(logPath, events.SQLiteEventLogOptions{
+		Retention: 2 * time.Second,
+		Now:       func() time.Time { return base.Add(4 * time.Second) },
+	})
+	if err != nil {
+		t.Fatalf("reopen sqlite event log with retention: %v", err)
+	}
+	defer func() { _ = log2.Close() }()
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: log2, Now: func() time.Time { return base.Add(4 * time.Second) }}
+
+	checkpointResponse := httptest.NewRecorder()
+	checkpointRequest := httptest.NewRequest(http.MethodGet, "/stream/events/checkpoints/subscriber-expired", nil)
+	server.Handler().ServeHTTP(checkpointResponse, checkpointRequest)
+	if checkpointResponse.Code != http.StatusOK {
+		t.Fatalf("expected checkpoint diagnostics 200, got %d %s", checkpointResponse.Code, checkpointResponse.Body.String())
+	}
+	if !strings.Contains(checkpointResponse.Body.String(), "\"status\":\"expired\"") || !strings.Contains(checkpointResponse.Body.String(), "checkpoint_before_retention_boundary") || !strings.Contains(checkpointResponse.Body.String(), "evt-expired-1") {
+		t.Fatalf("expected expired checkpoint diagnostics, got %s", checkpointResponse.Body.String())
+	}
+
+	eventsResponse := httptest.NewRecorder()
+	eventsRequest := httptest.NewRequest(http.MethodGet, "/events?subscriber_id=subscriber-expired&trace_id=trace-expired&limit=10", nil)
+	server.Handler().ServeHTTP(eventsResponse, eventsRequest)
+	if eventsResponse.Code != http.StatusConflict {
+		t.Fatalf("expected expired checkpoint conflict, got %d %s", eventsResponse.Code, eventsResponse.Body.String())
+	}
+	if !strings.Contains(eventsResponse.Body.String(), "checkpoint_expired") || !strings.Contains(eventsResponse.Body.String(), "DELETE /stream/events/checkpoints/{subscriber_id}") {
+		t.Fatalf("expected checkpoint expired payload, got %s", eventsResponse.Body.String())
+	}
+
+	resetResponse := httptest.NewRecorder()
+	resetRequest := httptest.NewRequest(http.MethodDelete, "/stream/events/checkpoints/subscriber-expired", nil)
+	server.Handler().ServeHTTP(resetResponse, resetRequest)
+	if resetResponse.Code != http.StatusOK {
+		t.Fatalf("expected checkpoint reset 200, got %d %s", resetResponse.Code, resetResponse.Body.String())
+	}
+
+	recoveredResponse := httptest.NewRecorder()
+	recoveredRequest := httptest.NewRequest(http.MethodGet, "/events?subscriber_id=subscriber-expired&trace_id=trace-expired&limit=10", nil)
+	server.Handler().ServeHTTP(recoveredResponse, recoveredRequest)
+	if recoveredResponse.Code != http.StatusOK {
+		t.Fatalf("expected events after reset 200, got %d %s", recoveredResponse.Code, recoveredResponse.Body.String())
+	}
+	var recovered struct {
+		Events []domain.Event `json:"events"`
+	}
+	if err := json.Unmarshal(recoveredResponse.Body.Bytes(), &recovered); err != nil {
+		t.Fatalf("decode recovered events: %v", err)
+	}
+	if len(recovered.Events) != 1 || recovered.Events[0].ID != "evt-expired-2" {
+		t.Fatalf("expected replay from earliest retained event after reset, got %+v", recovered.Events)
+	}
+}

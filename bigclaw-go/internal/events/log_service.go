@@ -108,6 +108,21 @@ func NewEventLogServiceHandler(store LogServiceStore) http.Handler {
 				return
 			}
 			writeEventLogJSON(w, http.StatusOK, map[string]any{"checkpoint": checkpoint})
+		case http.MethodDelete:
+			resetter, ok := any(store).(CheckpointResetter)
+			if !ok {
+				http.Error(w, "checkpoint reset unavailable", http.StatusServiceUnavailable)
+				return
+			}
+			if err := resetter.ResetCheckpoint(subscriberID); err != nil {
+				if IsNoEventLog(err) {
+					http.Error(w, "checkpoint not found", http.StatusNotFound)
+					return
+				}
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			writeEventLogJSON(w, http.StatusOK, map[string]any{"subscriber_id": subscriberID, "reset": true})
 		default:
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}

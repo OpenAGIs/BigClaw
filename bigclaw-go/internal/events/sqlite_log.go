@@ -262,14 +262,32 @@ func (s *SQLiteEventLog) Checkpoint(subscriberID string) (SubscriberCheckpoint, 
 	if s == nil || s.db == nil {
 		return SubscriberCheckpoint{}, sql.ErrNoRows
 	}
-	row := s.db.QueryRow(`SELECT subscriber_id, event_id, updated_at_ns FROM subscriber_checkpoint WHERE subscriber_id = ?`, subscriberID)
+	row := s.db.QueryRow(`SELECT subscriber_id, event_id, event_seq, updated_at_ns FROM subscriber_checkpoint WHERE subscriber_id = ?`, subscriberID)
 	var checkpoint SubscriberCheckpoint
 	var updatedAtNS int64
-	if err := row.Scan(&checkpoint.SubscriberID, &checkpoint.EventID, &updatedAtNS); err != nil {
+	if err := row.Scan(&checkpoint.SubscriberID, &checkpoint.EventID, &checkpoint.EventSequence, &updatedAtNS); err != nil {
 		return SubscriberCheckpoint{}, err
 	}
 	checkpoint.UpdatedAt = time.Unix(0, updatedAtNS).UTC()
 	return checkpoint, nil
+}
+
+func (s *SQLiteEventLog) ResetCheckpoint(subscriberID string) error {
+	if s == nil || s.db == nil || subscriberID == "" {
+		return sql.ErrNoRows
+	}
+	result, err := s.db.Exec(`DELETE FROM subscriber_checkpoint WHERE subscriber_id = ?`, subscriberID)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
 func (s *SQLiteEventLog) queryAfter(base string, args []any, afterID string, limit int) ([]domain.Event, error) {

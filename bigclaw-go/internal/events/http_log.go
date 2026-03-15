@@ -125,6 +125,14 @@ func (s *HTTPEventLog) Checkpoint(subscriberID string) (SubscriberCheckpoint, er
 	return response.Checkpoint, nil
 }
 
+func (s *HTTPEventLog) ResetCheckpoint(subscriberID string) error {
+	err := s.doJSON(context.Background(), http.MethodDelete, "/checkpoints/"+url.PathEscape(strings.TrimSpace(subscriberID)), nil, nil)
+	if err != nil {
+		return mapRemoteEventLogError(err)
+	}
+	return nil
+}
+
 func (s *HTTPEventLog) RetentionWatermark() (RetentionWatermark, error) {
 	var response retentionWatermarkResponse
 	err := s.doJSON(context.Background(), http.MethodGet, "/watermark", nil, &response)
@@ -256,3 +264,4 @@ func (e statusError) Error() string {
 
 var _ EventLog = (*HTTPEventLog)(nil)
 var _ CheckpointStore = (*HTTPEventLog)(nil)
+var _ CheckpointResetter = (*HTTPEventLog)(nil)

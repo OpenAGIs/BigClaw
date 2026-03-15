@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sort"
@@ -45,6 +46,23 @@ type Server struct {
 	SchedulerRuntime *scheduler.Scheduler
 }
 
+type checkpointDiagnostics struct {
+	SubscriberID       string                       `json:"subscriber_id"`
+	Status             string                       `json:"status"`
+	Reason             string                       `json:"reason,omitempty"`
+	SuggestedAction    string                       `json:"suggested_action,omitempty"`
+	Checkpoint         *events.SubscriberCheckpoint `json:"checkpoint,omitempty"`
+	RetentionWatermark *events.RetentionWatermark   `json:"retention_watermark,omitempty"`
+}
+
+type checkpointExpiredError struct {
+	Diagnostics checkpointDiagnostics
+}
+
+func (e checkpointExpiredError) Error() string {
+	return fmt.Sprintf("checkpoint for subscriber %s expired: %s", e.Diagnostics.SubscriberID, e.Diagnostics.SuggestedAction)
+}
+
 func (s *Server) Handler() http.Handler {
 	if s.Now == nil {
 		s.Now = time.Now
@@ -76,6 +94,11 @@ func (s *Server) Handler() http.Handler {
 		subscriberID := strings.TrimSpace(r.URL.Query().Get("subscriber_id"))
 		afterID, err := s.resolveAfterID(subscriberID, replayCursorFromRequest(r))
 		if err != nil {
+			var expired checkpointExpiredError
+			if errors.As(err, &expired) {
+				writeJSON(w, http.StatusConflict, map[string]any{"code": "checkpoint_expired", "error": "checkpoint expired", "checkpoint_diagnostics": expired.Diagnostics})
+				return
+			}
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -538,11 +561,16 @@ func (s *Server) handleStreamEventCheckpoint(w http.ResponseWriter, r *http.Requ
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{
+		diagnostics := s.checkpointDiagnosticsForCheckpoint(subscriberID, checkpoint)
+		payload := map[string]any{
 			"checkpoint": checkpoint,
 			"backend":    s.eventLogBackend(),
 			"durable":    s.eventLogDurable(),
-		})
+		}
+		if diagnostics != nil {
+			payload["checkpoint_diagnostics"] = diagnostics
+		}
+		writeJSON(w, http.StatusOK, payload)
 	case http.MethodPost:
 		var payload struct {
 			EventID string `json:"event_id"`
@@ -565,6 +593,26 @@ func (s *Server) handleStreamEventCheckpoint(w http.ResponseWriter, r *http.Requ
 			"backend":    s.eventLogBackend(),
 			"durable":    s.eventLogDurable(),
 		})
+	case http.MethodDelete:
+		resetter := s.checkpointResetter()
+		if resetter == nil {
+			http.Error(w, "checkpoint reset unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		if err := resetter.ResetCheckpoint(subscriberID); err != nil {
+			if events.IsNoEventLog(err) {
+				http.Error(w, "checkpoint not found", http.StatusNotFound)
+				return
+			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"subscriber_id": subscriberID,
+			"reset":         true,
+			"backend":       s.eventLogBackend(),
+			"durable":       s.eventLogDurable(),
+		})
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -581,6 +629,11 @@ func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
 	subscriberID := strings.TrimSpace(r.URL.Query().Get("subscriber_id"))
 	afterID, err := s.resolveAfterID(subscriberID, replayCursorFromRequest(r))
 	if err != nil {
+		var expired checkpointExpiredError
+		if errors.As(err, &expired) {
+			writeJSON(w, http.StatusConflict, map[string]any{"code": "checkpoint_expired", "error": "checkpoint expired", "checkpoint_diagnostics": expired.Diagnostics})
+			return
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -761,6 +814,13 @@ func (s *Server) checkpointStore() events.CheckpointStore {
 	return nil
 }
 
+func (s *Server) checkpointResetter() events.CheckpointResetter {
+	if resetter, ok := s.EventLog.(events.CheckpointResetter); ok {
+		return resetter
+	}
+	return nil
+}
+
 func (s *Server) logServiceStore() events.LogServiceStore {
 	if store, ok := s.EventLog.(events.LogServiceStore); ok {
 		return store
@@ -818,7 +878,40 @@ func (s *Server) resolveAfterID(subscriberID string, afterID string) (string, er
 		}
 		return "", err
 	}
+	if diagnostics := s.checkpointDiagnosticsForCheckpoint(subscriberID, checkpoint); diagnostics != nil && diagnostics.Status == "expired" {
+		return "", checkpointExpiredError{Diagnostics: *diagnostics}
+	}
 	return checkpoint.EventID, nil
+}
+
+func (s *Server) checkpointDiagnosticsForCheckpoint(subscriberID string, checkpoint events.SubscriberCheckpoint) *checkpointDiagnostics {
+	diagnostics := &checkpointDiagnostics{
+		SubscriberID:    subscriberID,
+		Status:          "ok",
+		Checkpoint:      &checkpoint,
+		SuggestedAction: "resume replay using the saved checkpoint",
+	}
+	if watermark := s.typedRetentionWatermark(); watermark != nil {
+		diagnostics.RetentionWatermark = watermark
+		if watermark.TrimmedThroughSequence > 0 && checkpoint.EventSequence > 0 && checkpoint.EventSequence <= watermark.TrimmedThroughSequence {
+			diagnostics.Status = "expired"
+			diagnostics.Reason = "checkpoint_before_retention_boundary"
+			diagnostics.SuggestedAction = "DELETE /stream/events/checkpoints/{subscriber_id} and resume from the earliest retained event"
+		}
+	}
+	return diagnostics
+}
+
+func (s *Server) typedRetentionWatermark() *events.RetentionWatermark {
+	value := s.retentionWatermark()
+	if value == nil {
+		return nil
+	}
+	watermark, ok := value.(events.RetentionWatermark)
+	if !ok {
+		return nil
+	}
+	return &watermark
 }
 
 func parseEventTypes(values []string) []domain.EventType {
