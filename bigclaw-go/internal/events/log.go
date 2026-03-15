@@ -78,28 +78,33 @@ type BrokerRuntimeConfig struct {
 	CheckpointInterval time.Duration
 }
 
-func (cfg BrokerRuntimeConfig) Validate() error {
-	missing := make([]string, 0, 3)
+func (cfg BrokerRuntimeConfig) ValidationErrors() []string {
+	var issues []string
 	if strings.TrimSpace(cfg.Driver) == "" {
-		missing = append(missing, "driver")
+		issues = append(issues, "broker event log config missing driver")
 	}
 	if len(cfg.URLs) == 0 {
-		missing = append(missing, "urls")
+		issues = append(issues, "broker event log config missing urls")
 	}
 	if strings.TrimSpace(cfg.Topic) == "" {
-		missing = append(missing, "topic")
-	}
-	if len(missing) > 0 {
-		return fmt.Errorf("broker event log config missing %s", strings.Join(missing, ", "))
+		issues = append(issues, "broker event log config missing topic")
 	}
 	if cfg.PublishTimeout <= 0 {
-		return fmt.Errorf("broker event log publish timeout must be positive")
+		issues = append(issues, "broker event log publish timeout must be positive")
 	}
 	if cfg.ReplayLimit <= 0 {
-		return fmt.Errorf("broker event log replay limit must be positive")
+		issues = append(issues, "broker event log replay limit must be positive")
 	}
 	if cfg.CheckpointInterval <= 0 {
-		return fmt.Errorf("broker event log checkpoint interval must be positive")
+		issues = append(issues, "broker event log checkpoint interval must be positive")
+	}
+	return issues
+}
+
+func (cfg BrokerRuntimeConfig) Validate() error {
+	issues := cfg.ValidationErrors()
+	if len(issues) > 0 {
+		return fmt.Errorf(strings.Join(issues, "; "))
 	}
 	return nil
 }

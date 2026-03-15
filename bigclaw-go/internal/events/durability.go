@@ -50,6 +50,31 @@ type BrokerBootstrapStatus struct {
 	ValidationErrors   []string `json:"validation_errors,omitempty"`
 }
 
+type BrokerFailureModeSummary struct {
+	Name       string `json:"name"`
+	Summary    string `json:"summary"`
+	Mitigation string `json:"mitigation"`
+}
+
+type BrokerAdapterDryRun struct {
+	Mode                  string                     `json:"mode"`
+	ImplementationState   string                     `json:"implementation_state"`
+	Driver                string                     `json:"driver,omitempty"`
+	URLs                  []string                   `json:"urls,omitempty"`
+	Topic                 string                     `json:"topic,omitempty"`
+	ConsumerGroup         string                     `json:"consumer_group,omitempty"`
+	PublishTimeout        string                     `json:"publish_timeout,omitempty"`
+	ReplayLimit           int                        `json:"replay_limit,omitempty"`
+	CheckpointInterval    string                     `json:"checkpoint_interval,omitempty"`
+	Ready                 bool                       `json:"ready"`
+	ValidationErrors      []string                   `json:"validation_errors,omitempty"`
+	Capabilities          BackendCapabilities        `json:"capabilities"`
+	OrderingScope         string                     `json:"ordering_scope"`
+	PortablePositionKeys  []string                   `json:"portable_position_keys"`
+	FailureModes          []BrokerFailureModeSummary `json:"failure_modes"`
+	VerificationArtifacts []string                   `json:"verification_artifacts"`
+}
+
 type DurabilityPlan struct {
 	Current              DurabilityProfile      `json:"current"`
 	Target               DurabilityProfile      `json:"target"`
@@ -61,6 +86,7 @@ type DurabilityPlan struct {
 	FailureDomains       []FailureDomain        `json:"failure_domains"`
 	VerificationEvidence []VerificationEvidence `json:"verification_evidence"`
 	BrokerBootstrap      *BrokerBootstrapStatus `json:"broker_bootstrap,omitempty"`
+	BrokerProbe          *BrokerAdapterDryRun   `json:"broker_probe,omitempty"`
 }
 
 func NormalizeDurabilityBackend(value string) DurabilityBackend {
@@ -217,6 +243,7 @@ func NewDurabilityPlanWithBrokerConfig(currentBackend, targetBackend string, rep
 	}
 	if current.Replicated || target.Replicated {
 		plan.BrokerBootstrap = BrokerBootstrapStatusFromConfig(broker)
+		plan.BrokerProbe = BrokerAdapterDryRunFromConfig(broker)
 	}
 	return plan
 }
@@ -231,10 +258,87 @@ func BrokerBootstrapStatusFromConfig(cfg BrokerRuntimeConfig) *BrokerBootstrapSt
 		ReplayLimit:        cfg.ReplayLimit,
 		CheckpointInterval: cfg.CheckpointInterval.String(),
 	}
-	if err := cfg.Validate(); err != nil {
-		status.ValidationErrors = []string{err.Error()}
+	if issues := cfg.ValidationErrors(); len(issues) > 0 {
+		status.ValidationErrors = issues
 		return status
 	}
 	status.Ready = true
 	return status
+}
+
+func BrokerAdapterDryRunFromConfig(cfg BrokerRuntimeConfig) *BrokerAdapterDryRun {
+	probe := &BrokerAdapterDryRun{
+		Mode:                "dry_run",
+		ImplementationState: "planned_only",
+		Driver:              strings.TrimSpace(cfg.Driver),
+		URLs:                append([]string(nil), cfg.URLs...),
+		Topic:               strings.TrimSpace(cfg.Topic),
+		ConsumerGroup:       strings.TrimSpace(cfg.ConsumerGroup),
+		PublishTimeout:      cfg.PublishTimeout.String(),
+		ReplayLimit:         cfg.ReplayLimit,
+		CheckpointInterval:  cfg.CheckpointInterval.String(),
+		Capabilities: BackendCapabilities{
+			Backend: "broker_adapter",
+			Scope:   "provider_contract",
+			Publish: FeatureSupport{
+				Supported: true,
+				Mode:      "replicated_ack_required",
+				Detail:    "Success is expected to mean replicated commit acknowledgement rather than leader-local enqueue.",
+			},
+			Replay: FeatureSupport{
+				Supported: true,
+				Mode:      "portable_sequence_cursor",
+				Detail:    "Replay is expected to map provider offsets back to Position.Sequence for resume safety.",
+			},
+			Checkpoint: FeatureSupport{
+				Supported: true,
+				Mode:      "durable_consumer_progress",
+				Detail:    "Checkpoint writes must stay monotonic in the durable sequence space across failover.",
+			},
+			Dedup: FeatureSupport{
+				Supported: false,
+				Detail:    "Consumer dedup persistence remains a separate contract from the broker event-log adapter.",
+			},
+			Filtering: FeatureSupport{
+				Supported: true,
+				Mode:      "derived_task_trace_filters",
+				Detail:    "Task and trace filtering must remain stable across replay even if the provider exposes different native selectors.",
+			},
+			Retention: FeatureSupport{
+				Supported: true,
+				Mode:      "retention_boundary_visible",
+				Detail:    "The adapter must expose oldest/newest retained replay boundaries before resumable recovery is claimed.",
+			},
+		},
+		OrderingScope:        "partition or quorum log order",
+		PortablePositionKeys: []string{"sequence", "partition", "offset"},
+		FailureModes: []BrokerFailureModeSummary{
+			{
+				Name:       "ambiguous_publish_outcome",
+				Summary:    "A leader crash or timeout can leave publish outcome unknown without replay-visible reconciliation.",
+				Mitigation: "Require replicated acknowledgements and surface unknown-commit outcomes explicitly.",
+			},
+			{
+				Name:       "checkpoint_fencing_gap",
+				Summary:    "Consumer takeover can regress durable progress if stale writers are not fenced.",
+				Mitigation: "Persist checkpoint sequence with lease or epoch metadata and reject stale writes.",
+			},
+			{
+				Name:       "retention_boundary_drift",
+				Summary:    "Expired checkpoints can appear structurally valid after compaction even when the log window moved forward.",
+				Mitigation: "Expose retention boundaries and fail closed until an operator chooses a reset action.",
+			},
+		},
+		VerificationArtifacts: []string{
+			"docs/reports/broker-event-log-adapter-contract.md",
+			"docs/reports/replicated-event-log-durability-rollout-contract.md",
+			"docs/reports/broker-failover-fault-injection-validation-pack.md",
+		},
+	}
+	if issues := cfg.ValidationErrors(); len(issues) > 0 {
+		probe.ValidationErrors = issues
+		return probe
+	}
+	probe.Ready = true
+	return probe
 }

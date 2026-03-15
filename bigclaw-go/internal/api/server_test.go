@@ -248,10 +248,18 @@ func TestAuditAndReplayEndpoints(t *testing.T) {
 func TestDebugStatusIncludesEventDurabilityPlan(t *testing.T) {
 	recorder := observability.NewRecorder()
 	server := &Server{
-		Recorder:  recorder,
-		Queue:     queue.NewMemoryQueue(),
-		EventPlan: events.NewDurabilityPlan("http", "broker_replicated", 5),
-		Now:       time.Now,
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		EventPlan: events.NewDurabilityPlanWithBrokerConfig("http", "broker_replicated", 5, events.BrokerRuntimeConfig{
+			Driver:             "kafka",
+			URLs:               []string{"kafka-1:9092", "kafka-2:9092"},
+			Topic:              "bigclaw.events",
+			ConsumerGroup:      "bigclaw-consumers",
+			PublishTimeout:     7 * time.Second,
+			ReplayLimit:        2048,
+			CheckpointInterval: 15 * time.Second,
+		}),
+		Now: time.Now,
 	}
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
@@ -277,6 +285,12 @@ func TestDebugStatusIncludesEventDurabilityPlan(t *testing.T) {
 	}
 	if !strings.Contains(response.Body.String(), "\"verification_evidence\"") {
 		t.Fatalf("expected verification evidence in payload, got %s", response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), "\"broker_probe\"") || !strings.Contains(response.Body.String(), "\"mode\":\"dry_run\"") {
+		t.Fatalf("expected broker dry-run probe in payload, got %s", response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), "\"implementation_state\":\"planned_only\"") || !strings.Contains(response.Body.String(), "\"backend\":\"broker_adapter\"") {
+		t.Fatalf("expected broker capability contract in payload, got %s", response.Body.String())
 	}
 }
 
