@@ -62,11 +62,11 @@ func (s *Server) Handler() http.Handler {
 		traceID := r.URL.Query().Get("trace_id")
 		switch {
 		case taskID != "":
-			writeJSON(w, http.StatusOK, map[string]any{"events": s.Recorder.EventsByTask(taskID, limit)})
+			writeJSON(w, http.StatusOK, replayEventResponse("task", taskID, s.Recorder.EventsByTask(taskID, limit)))
 		case traceID != "":
-			writeJSON(w, http.StatusOK, map[string]any{"events": s.Recorder.EventsByTrace(traceID, limit)})
+			writeJSON(w, http.StatusOK, replayEventResponse("trace", traceID, s.Recorder.EventsByTrace(traceID, limit)))
 		default:
-			writeJSON(w, http.StatusOK, map[string]any{"events": s.Recorder.EventsByTask("", limit)})
+			writeJSON(w, http.StatusOK, replayEventResponse("all", "", s.Recorder.EventsByTask("", limit)))
 		}
 	})
 	mux.HandleFunc("/stream/events", s.handleStreamEvents)
@@ -84,8 +84,12 @@ func (s *Server) Handler() http.Handler {
 			http.Error(w, "missing task id", http.StatusBadRequest)
 			return
 		}
-		events := s.Recorder.EventsByTask(taskID, 1000)
-		writeJSON(w, http.StatusOK, map[string]any{"task_id": taskID, "timeline": events})
+		recorded := s.Recorder.EventsByTask(taskID, 1000)
+		writeJSON(w, http.StatusOK, map[string]any{
+			"task_id":           taskID,
+			"timeline":          events.WithDeliveryBatch(recorded, domain.EventDeliveryModeReplay),
+			"consumer_contract": replayConsumerContract(),
+		})
 	})
 	mux.HandleFunc("/deadletters", s.handleDeadLetters)
 	mux.HandleFunc("/deadletters/", s.handleDeadLetterAction)
@@ -138,6 +142,31 @@ func (s *Server) Handler() http.Handler {
 	})
 	mux.HandleFunc("/tasks/", s.handleTaskStatus)
 	return mux
+}
+
+func replayEventResponse(scope string, value string, recorded []domain.Event) map[string]any {
+	response := map[string]any{
+		"events":            events.WithDeliveryBatch(recorded, domain.EventDeliveryModeReplay),
+		"consumer_contract": replayConsumerContract(),
+	}
+	switch scope {
+	case "task":
+		response["task_id"] = value
+	case "trace":
+		response["trace_id"] = value
+	}
+	return response
+}
+
+func replayConsumerContract() map[string]any {
+	return map[string]any{
+		"event_id_field":         "id",
+		"idempotency_key_field":  "delivery.idempotency_key",
+		"replay_indicator_field": "delivery.replay",
+		"delivery_mode_field":    "delivery.mode",
+		"replay_mode":            string(domain.EventDeliveryModeReplay),
+		"live_mode":              string(domain.EventDeliveryModeLive),
+	}
 }
 
 func (s *Server) handleDebugTraces(w http.ResponseWriter, r *http.Request) {

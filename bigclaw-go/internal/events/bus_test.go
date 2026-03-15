@@ -19,6 +19,9 @@ func TestBusReplayAndSubscribe(t *testing.T) {
 	if got.ID != event.ID {
 		t.Fatalf("expected %s, got %s", event.ID, got.ID)
 	}
+	if got.Delivery == nil || got.Delivery.Mode != domain.EventDeliveryModeLive || got.Delivery.IdempotencyKey != event.ID {
+		t.Fatalf("expected live delivery metadata with stable idempotency key, got %+v", got.Delivery)
+	}
 	if len(bus.Replay()) != 1 {
 		t.Fatalf("expected 1 event in replay")
 	}
@@ -38,11 +41,17 @@ func TestBusSubscribeReplayReturnsHistoryAndLiveEvents(t *testing.T) {
 	if replayed.ID != second.ID {
 		t.Fatalf("expected replayed event %s, got %s", second.ID, replayed.ID)
 	}
+	if replayed.Delivery == nil || replayed.Delivery.Mode != domain.EventDeliveryModeReplay || !replayed.Delivery.Replay || replayed.Delivery.IdempotencyKey != second.ID {
+		t.Fatalf("expected replay delivery metadata with stable idempotency key, got %+v", replayed.Delivery)
+	}
 
 	third := domain.Event{ID: "evt-3", Type: domain.EventTaskCompleted, TaskID: "task-1", TraceID: "trace-1", Timestamp: time.Now()}
 	bus.Publish(third)
 	live := <-ch
 	if live.ID != third.ID {
 		t.Fatalf("expected live event %s, got %s", third.ID, live.ID)
+	}
+	if live.Delivery == nil || live.Delivery.Mode != domain.EventDeliveryModeLive || live.Delivery.IdempotencyKey != third.ID {
+		t.Fatalf("expected live delivery metadata after replay handoff, got %+v", live.Delivery)
 	}
 }

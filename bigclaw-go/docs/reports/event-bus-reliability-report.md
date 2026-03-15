@@ -11,6 +11,7 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 - Webhook sink integration for external fanout
 - SSE stream via `GET /stream/events`
 - Optional SSE replay and filtering via `replay=1`, `task_id`, and `trace_id`
+- Additive delivery metadata for replay-safe downstream consumption via `delivery.mode`, `delivery.replay`, and `delivery.idempotency_key`
 
 ## Validated behaviors
 
@@ -19,6 +20,7 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 - Webhook sink receives serialized domain events.
 - SSE streaming can deliver live events.
 - SSE replay can filter to one trace without leaking unrelated events.
+- Replay and live deliveries preserve the original event id while exposing an explicit delivery mode and stable downstream idempotency key.
 
 ## Evidence
 
@@ -35,3 +37,4 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 - No durable external event log yet; replay is process-local history.
 - No delivery acknowledgement protocol beyond sink-level best effort.
 - No partitioned topic model or cross-process subscriber coordination yet.
+- Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.

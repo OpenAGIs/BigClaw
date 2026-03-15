@@ -41,7 +41,7 @@ func (b *Bus) Publish(event domain.Event) {
 
 	for _, ch := range subs {
 		select {
-		case ch <- event:
+		case ch <- WithDelivery(event, domain.EventDeliveryModeLive):
 		default:
 		}
 	}
@@ -75,7 +75,7 @@ func (b *Bus) subscribe(buffer int, replay []domain.Event) (<-chan domain.Event,
 	}
 	ch := make(chan domain.Event, capacity)
 	for _, event := range replay {
-		ch <- event
+		ch <- WithDelivery(event, domain.EventDeliveryModeReplay)
 	}
 	b.subscribers[id] = ch
 	return ch, func() {

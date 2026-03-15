@@ -73,6 +73,15 @@ func TestCreateTaskAndQueryStatus(t *testing.T) {
 	if !strings.Contains(eventsResponse.Body.String(), "task-api-1-queued") {
 		t.Fatalf("expected queued event via trace lookup, got %s", eventsResponse.Body.String())
 	}
+	var eventsDecoded struct {
+		Events []domain.Event `json:"events"`
+	}
+	if err := json.Unmarshal(eventsResponse.Body.Bytes(), &eventsDecoded); err != nil {
+		t.Fatalf("decode events response: %v", err)
+	}
+	if len(eventsDecoded.Events) != 1 || eventsDecoded.Events[0].Delivery == nil || eventsDecoded.Events[0].Delivery.Mode != domain.EventDeliveryModeReplay || eventsDecoded.Events[0].Delivery.IdempotencyKey != "task-api-1-queued" {
+		t.Fatalf("expected replay-safe event metadata on history endpoint, got %+v", eventsDecoded.Events)
+	}
 }
 
 func TestAuditAndReplayEndpoints(t *testing.T) {
@@ -93,6 +102,28 @@ func TestAuditAndReplayEndpoints(t *testing.T) {
 	handler.ServeHTTP(replayResponse, replayRequest)
 	if replayResponse.Code != http.StatusOK {
 		t.Fatalf("expected replay 200, got %d", replayResponse.Code)
+	}
+	var replayDecoded struct {
+		TaskID           string         `json:"task_id"`
+		Timeline         []domain.Event `json:"timeline"`
+		ConsumerContract struct {
+			EventIDField         string `json:"event_id_field"`
+			IdempotencyKeyField  string `json:"idempotency_key_field"`
+			ReplayIndicatorField string `json:"replay_indicator_field"`
+			DeliveryModeField    string `json:"delivery_mode_field"`
+		} `json:"consumer_contract"`
+	}
+	if err := json.Unmarshal(replayResponse.Body.Bytes(), &replayDecoded); err != nil {
+		t.Fatalf("decode replay response: %v", err)
+	}
+	if replayDecoded.TaskID != "task-1" || len(replayDecoded.Timeline) != 1 {
+		t.Fatalf("expected replay timeline for task-1, got %+v", replayDecoded)
+	}
+	if replayDecoded.Timeline[0].Delivery == nil || replayDecoded.Timeline[0].Delivery.Mode != domain.EventDeliveryModeReplay || replayDecoded.Timeline[0].Delivery.IdempotencyKey != "evt-1" {
+		t.Fatalf("expected replay delivery metadata, got %+v", replayDecoded.Timeline[0].Delivery)
+	}
+	if replayDecoded.ConsumerContract.IdempotencyKeyField != "delivery.idempotency_key" || replayDecoded.ConsumerContract.ReplayIndicatorField != "delivery.replay" || replayDecoded.ConsumerContract.DeliveryModeField != "delivery.mode" || replayDecoded.ConsumerContract.EventIDField != "id" {
+		t.Fatalf("unexpected consumer contract: %+v", replayDecoded.ConsumerContract)
 	}
 }
 
@@ -239,6 +270,13 @@ func TestStreamEventsSupportsReplayAndFiltersByTrace(t *testing.T) {
 		}
 		if strings.Contains(line, "evt-old-2") {
 			t.Fatalf("expected trace filter to exclude evt-old-2, got %q", line)
+		}
+		var envelope domain.Event
+		if err := json.Unmarshal([]byte(strings.TrimPrefix(line, "data: ")), &envelope); err != nil {
+			t.Fatalf("decode replayed stream event: %v", err)
+		}
+		if envelope.Delivery == nil || envelope.Delivery.Mode != domain.EventDeliveryModeReplay || !envelope.Delivery.Replay || envelope.Delivery.IdempotencyKey != "evt-old-1" {
+			t.Fatalf("expected replay delivery contract in stream event, got %+v", envelope.Delivery)
 		}
 	case <-ctx.Done():
 		t.Fatal("timed out waiting for replayed event")
