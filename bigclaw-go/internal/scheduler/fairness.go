@@ -8,6 +8,12 @@ import (
 	"time"
 )
 
+type FairnessStore interface {
+	ShouldThrottle(now time.Time, tenantID string, rules RoutingRules) bool
+	RecordAccepted(now time.Time, tenantID string, rules RoutingRules)
+	Snapshot(now time.Time, rules RoutingRules) FairnessSnapshot
+}
+
 type FairnessRules struct {
 	WindowSeconds               int `json:"window_seconds"`
 	MaxRecentDecisionsPerTenant int `json:"max_recent_decisions_per_tenant"`
@@ -22,6 +28,8 @@ type FairnessTenantSnapshot struct {
 
 type FairnessSnapshot struct {
 	Enabled                     bool                     `json:"enabled"`
+	Shared                      bool                     `json:"shared"`
+	Backend                     string                   `json:"backend"`
 	WindowSeconds               int                      `json:"window_seconds"`
 	MaxRecentDecisionsPerTenant int                      `json:"max_recent_decisions_per_tenant"`
 	ActiveTenants               int                      `json:"active_tenants"`
@@ -33,6 +41,13 @@ type fairnessTracker struct {
 	history map[string][]time.Time
 }
 
+func NewFairnessStore(path string) (FairnessStore, error) {
+	if strings.TrimSpace(path) == "" {
+		return newFairnessTracker(), nil
+	}
+	return NewSQLiteFairnessStore(path)
+}
+
 func newFairnessTracker() *fairnessTracker {
 	return &fairnessTracker{history: make(map[string][]time.Time)}
 }
@@ -41,7 +56,7 @@ func fairnessEnabled(rules RoutingRules) bool {
 	return rules.Fairness.WindowSeconds > 0 && rules.Fairness.MaxRecentDecisionsPerTenant > 0
 }
 
-func (t *fairnessTracker) shouldThrottle(now time.Time, tenantID string, rules RoutingRules) bool {
+func (t *fairnessTracker) ShouldThrottle(now time.Time, tenantID string, rules RoutingRules) bool {
 	if t == nil || !fairnessEnabled(rules) {
 		return false
 	}
@@ -65,7 +80,7 @@ func (t *fairnessTracker) shouldThrottle(now time.Time, tenantID string, rules R
 	return false
 }
 
-func (t *fairnessTracker) recordAccepted(now time.Time, tenantID string, rules RoutingRules) {
+func (t *fairnessTracker) RecordAccepted(now time.Time, tenantID string, rules RoutingRules) {
 	if t == nil || !fairnessEnabled(rules) {
 		return
 	}
@@ -79,9 +94,11 @@ func (t *fairnessTracker) recordAccepted(now time.Time, tenantID string, rules R
 	t.history[tenantID] = append(t.history[tenantID], now)
 }
 
-func (t *fairnessTracker) snapshot(now time.Time, rules RoutingRules) FairnessSnapshot {
+func (t *fairnessTracker) Snapshot(now time.Time, rules RoutingRules) FairnessSnapshot {
 	snapshot := FairnessSnapshot{
 		Enabled:                     fairnessEnabled(rules),
+		Shared:                      false,
+		Backend:                     "memory",
 		WindowSeconds:               rules.Fairness.WindowSeconds,
 		MaxRecentDecisionsPerTenant: rules.Fairness.MaxRecentDecisionsPerTenant,
 	}

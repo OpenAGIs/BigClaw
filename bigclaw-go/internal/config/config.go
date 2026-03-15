@@ -38,6 +38,7 @@ type Config struct {
 	RayHTTPTimeout                time.Duration
 	RayBearerToken                string
 	SchedulerPolicyPath           string
+	SchedulerFairnessSQLitePath   string
 }
 
 func Default() Config {
@@ -67,6 +68,7 @@ func Default() Config {
 		RayPollInterval:               time.Second,
 		RayHTTPTimeout:                10 * time.Second,
 		SchedulerPolicyPath:           "",
+		SchedulerFairnessSQLitePath:   "",
 	}
 }
 
@@ -89,6 +91,7 @@ func LoadFromEnv() Config {
 	cfg.RayAddress = getString("BIGCLAW_RAY_ADDRESS", getString("RAY_ADDRESS", cfg.RayAddress))
 	cfg.RayBearerToken = getString("BIGCLAW_RAY_BEARER_TOKEN", cfg.RayBearerToken)
 	cfg.SchedulerPolicyPath = getString("BIGCLAW_SCHEDULER_POLICY_PATH", cfg.SchedulerPolicyPath)
+	cfg.SchedulerFairnessSQLitePath = getString("BIGCLAW_SCHEDULER_FAIRNESS_SQLITE_PATH", cfg.SchedulerFairnessSQLitePath)
 	cfg.LeaseTTL = getDuration("BIGCLAW_LEASE_TTL", cfg.LeaseTTL)
 	cfg.TaskTimeout = getDuration("BIGCLAW_TASK_TIMEOUT", cfg.TaskTimeout)
 	cfg.PollInterval = getDuration("BIGCLAW_POLL_INTERVAL", cfg.PollInterval)

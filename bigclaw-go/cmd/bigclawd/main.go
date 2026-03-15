@@ -44,8 +44,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	fairnessStore, err := scheduler.NewFairnessStore(cfg.SchedulerFairnessSQLitePath)
+	if err != nil {
+		panic(err)
+	}
+	defer closeFairnessStore(fairnessStore)
 	controller := control.New()
-	schedulerRuntime := scheduler.NewWithPolicyStore(policyStore)
+	schedulerRuntime := scheduler.NewWithStores(policyStore, fairnessStore)
 	runtime := &worker.Runtime{
 		WorkerID:    "bootstrap-worker",
 		Queue:       q,
@@ -96,6 +101,13 @@ func closeQueue(q queue.Queue) {
 	type closer interface{ Close() error }
 	if closerQueue, ok := q.(closer); ok {
 		_ = closerQueue.Close()
+	}
+}
+
+func closeFairnessStore(store scheduler.FairnessStore) {
+	type closer interface{ Close() error }
+	if closable, ok := store.(closer); ok {
+		_ = closable.Close()
 	}
 }
 

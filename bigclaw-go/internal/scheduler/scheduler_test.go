@@ -178,3 +178,52 @@ func TestSchedulerFairnessWindowThrottlesDominantTenant(t *testing.T) {
 		t.Fatalf("expected tenant-a accepted after fairness window expiry, got %+v", decision)
 	}
 }
+
+func TestSchedulerFairnessWindowCanUseSharedSQLiteState(t *testing.T) {
+	dir := t.TempDir()
+	policyPath := filepath.Join(dir, "scheduler-policy.json")
+	fairnessPath := filepath.Join(dir, "fairness.db")
+	content := []byte(`{"fairness":{"window_seconds":30,"max_recent_decisions_per_tenant":1}}`)
+	if err := os.WriteFile(policyPath, content, 0o644); err != nil {
+		t.Fatalf("write fairness policy file: %v", err)
+	}
+	store, err := NewPolicyStore(policyPath)
+	if err != nil {
+		t.Fatalf("new policy store: %v", err)
+	}
+	fairnessA, err := NewFairnessStore(fairnessPath)
+	if err != nil {
+		t.Fatalf("new shared fairness store A: %v", err)
+	}
+	fairnessB, err := NewFairnessStore(fairnessPath)
+	if err != nil {
+		t.Fatalf("new shared fairness store B: %v", err)
+	}
+	if closable, ok := fairnessA.(interface{ Close() error }); ok {
+		t.Cleanup(func() { _ = closable.Close() })
+	}
+	if closable, ok := fairnessB.(interface{ Close() error }); ok {
+		t.Cleanup(func() { _ = closable.Close() })
+	}
+	s1 := NewWithStores(store, fairnessA)
+	s2 := NewWithStores(store, fairnessB)
+	now := time.Unix(1700001000, 0)
+	s1.now = func() time.Time { return now }
+	s2.now = func() time.Time { return now }
+	if decision := s1.Decide(domain.Task{ID: "shared-a-1", TenantID: "tenant-a", Priority: 3}, QuotaSnapshot{}); !decision.Accepted {
+		t.Fatalf("expected shared tenant-a task accepted, got %+v", decision)
+	}
+	now = now.Add(time.Second)
+	if decision := s2.Decide(domain.Task{ID: "shared-b-1", TenantID: "tenant-b", Priority: 3}, QuotaSnapshot{}); !decision.Accepted {
+		t.Fatalf("expected shared tenant-b task accepted, got %+v", decision)
+	}
+	now = now.Add(time.Second)
+	throttled := s1.Decide(domain.Task{ID: "shared-a-2", TenantID: "tenant-a", Priority: 3}, QuotaSnapshot{})
+	if throttled.Accepted || !strings.Contains(throttled.Reason, "fairness window throttled tenant tenant-a") {
+		t.Fatalf("expected tenant-a throttled via shared fairness state, got %+v", throttled)
+	}
+	snapshot := s2.FairnessSnapshot()
+	if !snapshot.Shared || snapshot.Backend != "sqlite" || snapshot.ActiveTenants != 2 {
+		t.Fatalf("unexpected shared fairness snapshot: %+v", snapshot)
+	}
+}

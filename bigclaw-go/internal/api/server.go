@@ -56,7 +56,7 @@ func (s *Server) Handler() http.Handler {
 		s.SchedulerPolicy = scheduler.NewDefaultPolicyStore()
 	}
 	if s.SchedulerRuntime == nil {
-		s.SchedulerRuntime = scheduler.NewWithPolicyStore(s.SchedulerPolicy)
+		s.SchedulerRuntime = scheduler.NewWithStores(s.SchedulerPolicy, nil)
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {

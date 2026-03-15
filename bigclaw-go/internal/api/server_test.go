@@ -1524,7 +1524,15 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	if err != nil {
 		t.Fatalf("new policy store: %v", err)
 	}
-	schedulerRuntime := scheduler.NewWithPolicyStore(store)
+	fairnessPath := filepath.Join(dir, "fairness.db")
+	fairnessStore, err := scheduler.NewFairnessStore(fairnessPath)
+	if err != nil {
+		t.Fatalf("new fairness store: %v", err)
+	}
+	if closable, ok := fairnessStore.(interface{ Close() error }); ok {
+		defer func() { _ = closable.Close() }()
+	}
+	schedulerRuntime := scheduler.NewWithStores(store, fairnessStore)
 	schedulerRuntime.Decide(domain.Task{ID: "fair-1", TenantID: "tenant-a", Priority: 3}, scheduler.QuotaSnapshot{})
 	schedulerRuntime.Decide(domain.Task{ID: "fair-2", TenantID: "tenant-b", Priority: 3}, scheduler.QuotaSnapshot{})
 	recorder := observability.NewRecorder()
@@ -1552,10 +1560,12 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 			} `json:"fairness"`
 		} `json:"policy"`
 		Fairness struct {
-			Enabled                     bool `json:"enabled"`
-			WindowSeconds               int  `json:"window_seconds"`
-			MaxRecentDecisionsPerTenant int  `json:"max_recent_decisions_per_tenant"`
-			ActiveTenants               int  `json:"active_tenants"`
+			Enabled                     bool   `json:"enabled"`
+			Shared                      bool   `json:"shared"`
+			Backend                     string `json:"backend"`
+			WindowSeconds               int    `json:"window_seconds"`
+			MaxRecentDecisionsPerTenant int    `json:"max_recent_decisions_per_tenant"`
+			ActiveTenants               int    `json:"active_tenants"`
 			Tenants                     []struct {
 				TenantID            string `json:"tenant_id"`
 				RecentAcceptedCount int    `json:"recent_accepted_count"`
@@ -1568,7 +1578,7 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	if policyDecoded.SourcePath != policyPath || !policyDecoded.ReloadSupported || !policyDecoded.ReloadAuthorized || policyDecoded.Policy.DefaultExecutor != string(domain.ExecutorRay) || policyDecoded.Policy.ToolExecutors["browser"] != string(domain.ExecutorRay) || policyDecoded.Policy.UrgentPriorityThreshold != 2 || policyDecoded.Policy.Fairness.WindowSeconds != 30 || policyDecoded.Policy.Fairness.MaxRecentDecisionsPerTenant != 1 {
 		t.Fatalf("unexpected scheduler policy payload: %+v", policyDecoded)
 	}
-	if !policyDecoded.Fairness.Enabled || policyDecoded.Fairness.ActiveTenants != 2 || len(policyDecoded.Fairness.Tenants) != 2 {
+	if !policyDecoded.Fairness.Enabled || !policyDecoded.Fairness.Shared || policyDecoded.Fairness.Backend != "sqlite" || policyDecoded.Fairness.ActiveTenants != 2 || len(policyDecoded.Fairness.Tenants) != 2 {
 		t.Fatalf("unexpected fairness runtime payload: %+v", policyDecoded.Fairness)
 	}
 

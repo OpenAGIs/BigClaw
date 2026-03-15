@@ -28,19 +28,26 @@ type Decision struct {
 
 type Scheduler struct {
 	policyStore *PolicyStore
-	fairness    *fairnessTracker
+	fairness    FairnessStore
 	now         func() time.Time
 }
 
 func New() *Scheduler {
-	return NewWithPolicyStore(nil)
+	return NewWithStores(nil, nil)
 }
 
 func NewWithPolicyStore(store *PolicyStore) *Scheduler {
+	return NewWithStores(store, nil)
+}
+
+func NewWithStores(store *PolicyStore, fairness FairnessStore) *Scheduler {
 	if store == nil {
 		store = NewDefaultPolicyStore()
 	}
-	return &Scheduler{policyStore: store, fairness: newFairnessTracker(), now: time.Now}
+	if fairness == nil {
+		fairness = newFairnessTracker()
+	}
+	return &Scheduler{policyStore: store, fairness: fairness, now: time.Now}
 }
 
 func (s *Scheduler) Rules() RoutingRules {
@@ -54,7 +61,7 @@ func (s *Scheduler) FairnessSnapshot() FairnessSnapshot {
 	if s == nil {
 		return FairnessSnapshot{}
 	}
-	return s.fairness.snapshot(s.currentTime(), s.Rules())
+	return s.fairness.Snapshot(s.currentTime(), s.Rules())
 }
 
 func (s *Scheduler) currentTime() time.Time {
@@ -73,20 +80,20 @@ func (s *Scheduler) Decide(task domain.Task, quota QuotaSnapshot) Decision {
 	if quota.MaxQueueDepth > 0 && quota.QueueDepth >= quota.MaxQueueDepth && !isPriorityExempt(task, rules) {
 		return Decision{Accepted: false, Reason: "backpressure activated: queue depth limit exceeded"}
 	}
-	if shouldThrottleForFairness(task, rules) && s.fairness.shouldThrottle(now, strings.TrimSpace(task.TenantID), rules) {
+	if shouldThrottleForFairness(task, rules) && s.fairness.ShouldThrottle(now, strings.TrimSpace(task.TenantID), rules) {
 		return Decision{Accepted: false, Reason: fairnessThrottleReason(strings.TrimSpace(task.TenantID), rules)}
 	}
 	assignment := assignmentForTask(task, rules)
 	if quota.ConcurrentLimit > 0 && quota.CurrentRunning >= quota.ConcurrentLimit {
 		if isPreemptible(task, rules) && quota.PreemptibleExecutions > 0 {
 			assignment.Reason = assignment.Reason + "; using preemptible capacity"
-			s.fairness.recordAccepted(now, strings.TrimSpace(task.TenantID), rules)
+			s.fairness.RecordAccepted(now, strings.TrimSpace(task.TenantID), rules)
 			return Decision{Accepted: true, Assignment: assignment, Reason: assignment.Reason}
 		}
 		return Decision{Accepted: false, Reason: "tenant concurrency quota exceeded"}
 	}
 
-	s.fairness.recordAccepted(now, strings.TrimSpace(task.TenantID), rules)
+	s.fairness.RecordAccepted(now, strings.TrimSpace(task.TenantID), rules)
 	return Decision{Accepted: true, Assignment: assignment, Reason: assignment.Reason}
 }
 
