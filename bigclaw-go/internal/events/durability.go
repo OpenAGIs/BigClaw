@@ -50,6 +50,26 @@ type BrokerBootstrapStatus struct {
 	ValidationErrors   []string `json:"validation_errors,omitempty"`
 }
 
+type CapabilityProbeSummary struct {
+	Publish    string `json:"publish"`
+	Replay     string `json:"replay"`
+	Checkpoint string `json:"checkpoint"`
+	Filtering  string `json:"filtering"`
+	Retention  string `json:"retention"`
+}
+
+type RolloutReadiness struct {
+	Phase             string                 `json:"phase"`
+	Status            string                 `json:"status"`
+	Summary           string                 `json:"summary"`
+	ReadinessNotes    []string               `json:"readiness_notes"`
+	RemainingChecks   []string               `json:"remaining_checks,omitempty"`
+	CurrentProbe      CapabilityProbeSummary `json:"current_probe"`
+	TargetProbe       CapabilityProbeSummary `json:"target_probe"`
+	BrokerRuntime     *BrokerBootstrapStatus `json:"broker_runtime,omitempty"`
+	EvidenceArtifacts []string               `json:"evidence_artifacts,omitempty"`
+}
+
 type DurabilityPlan struct {
 	Current              DurabilityProfile      `json:"current"`
 	Target               DurabilityProfile      `json:"target"`
@@ -61,6 +81,7 @@ type DurabilityPlan struct {
 	FailureDomains       []FailureDomain        `json:"failure_domains"`
 	VerificationEvidence []VerificationEvidence `json:"verification_evidence"`
 	BrokerBootstrap      *BrokerBootstrapStatus `json:"broker_bootstrap,omitempty"`
+	RolloutReadiness     RolloutReadiness       `json:"rollout_readiness"`
 }
 
 func NormalizeDurabilityBackend(value string) DurabilityBackend {
@@ -218,6 +239,7 @@ func NewDurabilityPlanWithBrokerConfig(currentBackend, targetBackend string, rep
 	if current.Replicated || target.Replicated {
 		plan.BrokerBootstrap = BrokerBootstrapStatusFromConfig(broker)
 	}
+	plan.RolloutReadiness = buildRolloutReadiness(plan)
 	return plan
 }
 
@@ -237,4 +259,98 @@ func BrokerBootstrapStatusFromConfig(cfg BrokerRuntimeConfig) *BrokerBootstrapSt
 	}
 	status.Ready = true
 	return status
+}
+
+func buildRolloutReadiness(plan DurabilityPlan) RolloutReadiness {
+	readiness := RolloutReadiness{
+		CurrentProbe:      capabilityProbeSummary(plan.Current.Backend),
+		TargetProbe:       capabilityProbeSummary(plan.Target.Backend),
+		BrokerRuntime:     plan.BrokerBootstrap,
+		EvidenceArtifacts: readinessArtifacts(plan.VerificationEvidence),
+	}
+	if !plan.Target.Replicated {
+		readiness.Phase = "current_backend"
+		readiness.Status = "current_backend_active"
+		readiness.Summary = "Current event-log backend is active; replicated durability rollout is not configured."
+		readiness.ReadinessNotes = []string{
+			"Current runtime exposes its active backend profile directly through event_durability for operator review.",
+			"Replicated publish acknowledgements and broker failover checks are not required until a broker_replicated target is selected.",
+		}
+		return readiness
+	}
+
+	readiness.Phase = "contract"
+	readiness.RemainingChecks = remainingCheckRequirements(plan.RolloutChecks)
+	readiness.ReadinessNotes = []string{
+		"Replicated durability remains in the contract-validation phase until a live broker adapter satisfies publish, replay, checkpoint, and retention checks.",
+		"Operator payloads should review broker bootstrap readiness together with rollout checks before claiming replicated durability.",
+	}
+	if plan.BrokerBootstrap == nil || !plan.BrokerBootstrap.Ready {
+		readiness.Status = "blocked"
+		readiness.Summary = "Replicated target is configured, but broker bootstrap validation is still blocking rollout readiness."
+		if plan.BrokerBootstrap != nil && len(plan.BrokerBootstrap.ValidationErrors) > 0 {
+			readiness.ReadinessNotes = append(readiness.ReadinessNotes, plan.BrokerBootstrap.ValidationErrors...)
+		}
+		return readiness
+	}
+
+	readiness.Status = "contract_ready"
+	readiness.Summary = "Replicated target metadata is configured and validated, but rollout remains gated on the documented failover and checkpoint evidence."
+	readiness.ReadinessNotes = append(readiness.ReadinessNotes,
+		"Broker runtime metadata is present so release/export payloads can attach target driver, topic, and consumer-group expectations.",
+	)
+	return readiness
+}
+
+func capabilityProbeSummary(backend DurabilityBackend) CapabilityProbeSummary {
+	switch backend {
+	case DurabilityBackendSQLite:
+		return CapabilityProbeSummary{
+			Publish:    "native",
+			Replay:     "native",
+			Checkpoint: "native",
+			Filtering:  "derived",
+			Retention:  "durable_single_node",
+		}
+	case DurabilityBackendHTTP:
+		return CapabilityProbeSummary{
+			Publish:    "native",
+			Replay:     "native",
+			Checkpoint: "native",
+			Filtering:  "derived",
+			Retention:  "durable_shared_service",
+		}
+	case DurabilityBackendBrokerReplicated:
+		return CapabilityProbeSummary{
+			Publish:    "native",
+			Replay:     "native",
+			Checkpoint: "native",
+			Filtering:  "derived",
+			Retention:  "replicated_log",
+		}
+	default:
+		return CapabilityProbeSummary{
+			Publish:    "native",
+			Replay:     "native",
+			Checkpoint: "unsupported",
+			Filtering:  "native",
+			Retention:  "process_memory",
+		}
+	}
+}
+
+func remainingCheckRequirements(checks []RolloutCheck) []string {
+	out := make([]string, 0, len(checks))
+	for _, check := range checks {
+		out = append(out, check.Requirement)
+	}
+	return out
+}
+
+func readinessArtifacts(entries []VerificationEvidence) []string {
+	out := make([]string, 0)
+	for _, entry := range entries {
+		out = append(out, entry.Artifacts...)
+	}
+	return out
 }

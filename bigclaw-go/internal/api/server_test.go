@@ -248,10 +248,18 @@ func TestAuditAndReplayEndpoints(t *testing.T) {
 func TestDebugStatusIncludesEventDurabilityPlan(t *testing.T) {
 	recorder := observability.NewRecorder()
 	server := &Server{
-		Recorder:  recorder,
-		Queue:     queue.NewMemoryQueue(),
-		EventPlan: events.NewDurabilityPlan("http", "broker_replicated", 5),
-		Now:       time.Now,
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		EventPlan: events.NewDurabilityPlanWithBrokerConfig("http", "broker_replicated", 5, events.BrokerRuntimeConfig{
+			Driver:             "kafka",
+			URLs:               []string{"kafka-1:9092", "kafka-2:9092"},
+			Topic:              "bigclaw.events",
+			ConsumerGroup:      "bigclaw-consumers",
+			PublishTimeout:     5 * time.Second,
+			ReplayLimit:        2048,
+			CheckpointInterval: 15 * time.Second,
+		}),
+		Now: time.Now,
 	}
 	response := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
@@ -271,6 +279,9 @@ func TestDebugStatusIncludesEventDurabilityPlan(t *testing.T) {
 	}
 	if !strings.Contains(response.Body.String(), "\"rollout_checks\"") {
 		t.Fatalf("expected rollout checks in payload, got %s", response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), "\"rollout_readiness\"") || !strings.Contains(response.Body.String(), "\"status\":\"contract_ready\"") {
+		t.Fatalf("expected rollout readiness summary in payload, got %s", response.Body.String())
 	}
 	if !strings.Contains(response.Body.String(), "\"failure_domains\"") {
 		t.Fatalf("expected failure domains in payload, got %s", response.Body.String())
@@ -1690,9 +1701,18 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		Recorder:  recorder,
 		Queue:     queue.NewMemoryQueue(),
 		Executors: []domain.ExecutorKind{domain.ExecutorLocal, domain.ExecutorKubernetes, domain.ExecutorRay},
-		Control:   controller,
-		Worker:    fakeWorkerPoolStatus{},
-		Now:       func() time.Time { return time.Unix(1700007200, 0) },
+		EventPlan: events.NewDurabilityPlanWithBrokerConfig("http", "broker_replicated", 5, events.BrokerRuntimeConfig{
+			Driver:             "kafka",
+			URLs:               []string{"kafka-1:9092", "kafka-2:9092"},
+			Topic:              "bigclaw.events",
+			ConsumerGroup:      "bigclaw-consumers",
+			PublishTimeout:     5 * time.Second,
+			ReplayLimit:        2048,
+			CheckpointInterval: 15 * time.Second,
+		}),
+		Control: controller,
+		Worker:  fakeWorkerPoolStatus{},
+		Now:     func() time.Time { return time.Unix(1700007200, 0) },
 	}
 	handler := server.Handler()
 	base := time.Unix(1700000000, 0)
@@ -1763,6 +1783,10 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 					Count int    `json:"count"`
 				} `json:"takeover_owners"`
 			} `json:"cluster_health"`
+			EventLogRollout struct {
+				Status  string `json:"status"`
+				Summary string `json:"summary"`
+			} `json:"event_log_rollout"`
 			RolloutReport struct {
 				Markdown  string `json:"markdown"`
 				ExportURL string `json:"export_url"`
@@ -1799,7 +1823,10 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	if len(decoded.Diagnostics.ClusterHealth.TakeoverOwners) == 0 || decoded.Diagnostics.ClusterHealth.TakeoverOwners[0].Key != "alice" {
 		t.Fatalf("expected takeover owner rollup, got %+v", decoded.Diagnostics.ClusterHealth)
 	}
-	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") || !strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {
+	if decoded.Diagnostics.EventLogRollout.Status != "contract_ready" || !strings.Contains(decoded.Diagnostics.EventLogRollout.Summary, "Replicated target metadata is configured") {
+		t.Fatalf("expected event-log rollout summary in diagnostics, got %+v", decoded.Diagnostics.EventLogRollout)
+	}
+	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Event-Log Rollout Readiness") || !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") || !strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {
 		t.Fatalf("unexpected rollout report payload: %+v", decoded.Diagnostics.RolloutReport)
 	}
 }
