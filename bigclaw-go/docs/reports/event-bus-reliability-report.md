@@ -14,6 +14,8 @@ This report summarizes the current event bus reliability evidence and the next r
 - Replay cursor diagnostics via `X-Replay-*` headers and JSON `cursor` metadata on `GET /events`
 - Retention watermark / replay horizon visibility through API debug payloads and event-log service surfaces
 - Expired checkpoint diagnostics, checkpoint reset surface, and persisted operator history through `GET/DELETE /stream/events/checkpoints/{subscriber_id}` plus `GET /stream/events/checkpoints/{subscriber_id}/history` and conflict payloads on resume attempts
+- Recent checkpoint reset review summaries through `GET /debug/status`, `GET /v2/control-center/audit`, `GET /v2/reports/distributed`, and `GET /v2/reports/distributed/export`
+- Shared-service reset review parity through `/checkpoint-resets` and `/checkpoints/{subscriber_id}/history` on the event-log service handler
 - SQLite retention bootstrap with persisted truncation boundaries that survive process restarts when a replay window is configured
 - Replay-safe consumer delivery metadata via `EventDelivery`, including additive `delivery.mode`, `delivery.replay`, and `delivery.idempotency_key` fields
 - Consumer dedup ledger/result contract covering duplicate, retryable-failure, and already-applied outcomes
@@ -35,6 +37,8 @@ This report summarizes the current event bus reliability evidence and the next r
 - Checkpoint offsets remain monotonic within a subscriber group and reject rollback writes.
 - Operators can inspect backend capability support before dispatching replay-oriented operations.
 - Operator-facing capability payloads now distinguish durable consumer dedup support from process-local replay/checkpoint support.
+- Local debug, control-center audit, and distributed rollout reports all surface the same recent checkpoint reset summary so release review does not depend on raw SQLite inspection.
+- Shared SQLite and HTTP-backed event-log deployments can expose the same reset audit/history trail over service endpoints, keeping review artifacts stable when operators are not colocated with the process.
 
 ## Evidence
 
@@ -56,10 +60,51 @@ This report summarizes the current event bus reliability evidence and the next r
 - `internal/events/dedup_ledger.go`
 - `internal/events/dedup_ledger_test.go`
 - `internal/events/sqlite_log.go`
+- `internal/events/log_service.go`
+- `internal/events/http_log_test.go`
 - `internal/api/server.go`
 - `internal/api/server_test.go`
+- `internal/api/expansion.go`
+- `internal/api/expansion_test.go`
 - `cmd/bigclawd/main.go`
 - `internal/config/config.go`
+
+## Checkpoint reset review pack
+
+The current checkpoint reset evidence pack is intentionally redundant across operator surfaces so release, reliability, and distributed-platform review can all attach the same reset narrative without drilling into raw storage:
+
+- Primary review endpoints:
+  - `GET /stream/events/checkpoints/{subscriber_id}`
+  - `GET /stream/events/checkpoints/{subscriber_id}/history`
+  - `GET /debug/status`
+  - `GET /v2/control-center/audit`
+  - `GET /v2/reports/distributed`
+  - `GET /v2/reports/distributed/export`
+- Shared-service parity endpoints:
+  - `GET /checkpoint-resets`
+  - `GET /checkpoints/{subscriber_id}/history`
+- Summary fields expected across those views:
+  - subscriber identity
+  - reset reason such as `operator_reset`
+  - previous checkpoint event id / sequence
+  - retention watermark and trimmed boundary context
+  - reset timestamp and backend identity
+
+## Review artifact set by backend
+
+- Local single-process or SQLite-backed review:
+  - attach `GET /stream/events/checkpoints/{subscriber_id}/history`
+  - attach `GET /debug/status`
+  - attach `GET /v2/control-center/audit`
+  - attach `GET /v2/reports/distributed/export`
+- Shared-service or remote event-log review:
+  - attach `GET /checkpoints/{subscriber_id}/history`
+  - attach `GET /checkpoint-resets`
+  - attach `GET /v2/control-center/audit`
+  - attach `GET /v2/reports/distributed/export`
+- Future replicated backend review:
+  - preserve the same checkpoint-history, recent-reset, control-center, and distributed-export artifacts
+  - add replicated backend identity and failover domain details from the durability rollout contract before claiming rollout readiness
 
 ## Current durability shape
 

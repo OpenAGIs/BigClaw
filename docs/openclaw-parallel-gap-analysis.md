@@ -33,10 +33,20 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
 
 ### Remaining gaps
 
-- Replay retention watermarks are now visible in runtime payloads, SQLite-backed logs now persist trimmed replay boundaries across restarts, expired durable checkpoints now fail closed with reset guidance, and checkpoint resets now leave a persisted operator history trail; memory-only deployments are still bounded by in-process history and broker/quorum retention remains future work.
+- Replay retention watermarks are now visible in runtime payloads, SQLite-backed logs now persist trimmed replay boundaries across restarts, expired durable checkpoints now fail closed with reset guidance, checkpoint resets leave a persisted operator history trail, and reset summaries now flow through debug, control-center, and distributed report/export payloads; memory-only deployments are still bounded by in-process history and broker/quorum retention remains future work.
 - Service-style SQLite and HTTP-backed coordination improve sharing, but replicated broker or quorum-backed durability is still future work.
 - Downstream consumers still need idempotent handlers and durable dedupe stores; the system remains replay-safe, not globally exactly-once.
 - Parallel validation for Kubernetes, Ray, and shared-queue takeover should continue to be bundled as repo-native evidence.
+
+### Current review-pack contract
+
+- Local rollout review should be able to attach one stable checkpoint reset pack from:
+  - `GET /stream/events/checkpoints/{subscriber_id}/history`
+  - `GET /debug/status`
+  - `GET /v2/control-center/audit`
+  - `GET /v2/reports/distributed/export`
+- Shared-service review should use the same control-center and distributed export artifacts plus event-log service history from `/checkpoints/{subscriber_id}/history` and `/checkpoint-resets`.
+- Future replicated backends should preserve the same artifact names and add backend/failover evidence from the replicated durability rollout contract instead of inventing a separate review bundle.
 
 ### Current rollout gate
 

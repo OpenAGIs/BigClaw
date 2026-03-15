@@ -10,7 +10,8 @@ The current Go runtime still uses in-process replay history in `internal/events/
 
 - `Bus.SubscribeReplay` replays the tail of the in-memory append history before switching the subscriber to live events.
 - `GET /events`, `GET /replay/{id}`, and `GET /stream/events?replay=1` expose replay-oriented views over recorder history.
-- No durable retention watermark, checkpoint expiration signal, or history compaction rule exists yet.
+- Durable event-log backends now expose retention watermark context, expired checkpoint diagnostics, checkpoint reset actions, and persisted reset history through `GET/DELETE /stream/events/checkpoints/{subscriber_id}` plus `GET /stream/events/checkpoints/{subscriber_id}/history`.
+- Operator-facing review surfaces now mirror the same reset evidence through `GET /debug/status`, `GET /v2/control-center/audit`, and distributed report/export payloads.
 
 ## Retention model
 
@@ -60,10 +61,24 @@ The current Go runtime still uses in-process replay history in `internal/events/
 - Resume failure reason: expired cursor, unknown subscriber, or backend mismatch
 - Suggested recovery action: restart from earliest retained, reset checkpoint, or investigate backend corruption
 
+## Review artifact set
+
+- Local or SQLite-backed review should capture:
+  - `GET /stream/events/checkpoints/{subscriber_id}`
+  - `GET /stream/events/checkpoints/{subscriber_id}/history`
+  - `GET /debug/status`
+  - `GET /v2/control-center/audit`
+- Shared-service review should capture:
+  - `GET /checkpoints/{subscriber_id}/history`
+  - `GET /checkpoint-resets`
+  - `GET /v2/control-center/audit`
+  - `GET /v2/reports/distributed/export`
+- Future replicated backends should preserve the same artifact set while adding replicated durability-plan metadata and failover evidence links.
+
 ## Forward path
 
 - `OPE-212` establishes the compaction and retention contract.
-- `OPE-216` established the expired replay cursor semantics, `OPE-226` added the concrete checkpoint diagnostics / reset surface for durable checkpoint resumes, and `OPE-228` extends that flow with persisted reset audit history.
+- `OPE-216` established the expired replay cursor semantics, `OPE-226` added the concrete checkpoint diagnostics / reset surface for durable checkpoint resumes, `OPE-228` extended that flow with persisted reset audit history, `OPE-229` surfaced recent reset summaries in debug and control-plane views, and `OPE-231` carried the same summary into distributed report/export payloads.
 - Durable backends extending `internal/events` should expose retention watermarks before replay-aware checkpoint cleanup is implemented.
 - SQLite-backed durable logs now persist trimmed replay boundaries across restarts when a retention window is configured, giving operators a stable replay horizon even after reboot.
 
@@ -73,4 +88,7 @@ The current Go runtime still uses in-process replay history in `internal/events/
 - `internal/events/bus_test.go`
 - `internal/api/server.go`
 - `internal/api/server_test.go`
+- `internal/api/expansion.go`
+- `internal/api/expansion_test.go`
+- `internal/events/log_service.go`
 - `docs/reports/event-bus-reliability-report.md`
