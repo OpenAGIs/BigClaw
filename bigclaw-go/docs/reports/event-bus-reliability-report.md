@@ -11,6 +11,8 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 - Webhook sink integration for external fanout
 - SSE stream via `GET /stream/events`
 - Optional SSE replay and filtering via `replay=1`, `task_id`, and `trace_id`
+- Replay-safe consumer delivery metadata via `EventDelivery`
+- Consumer dedup ledger/result contract covering duplicate, retryable-failure, and already-applied outcomes
 
 ## Validated behaviors
 
@@ -24,6 +26,10 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 
 - `internal/events/bus.go`
 - `internal/events/bus_test.go`
+- `internal/events/delivery.go`
+- `internal/events/delivery_test.go`
+- `internal/domain/consumer_dedup.go`
+- `internal/domain/consumer_dedup_test.go`
 - `internal/events/webhook.go`
 - `internal/events/webhook_test.go`
 - `internal/events/recorder_sink.go`
@@ -33,5 +39,6 @@ This report summarizes the current event bus reliability evidence for `OPE-183` 
 ## Remaining gaps
 
 - No durable external event log yet; replay is process-local history.
+- Dedup ledger semantics are defined, but there is no persistent ledger store or handler middleware enforcing them yet.
 - No delivery acknowledgement protocol beyond sink-level best effort.
 - No partitioned topic model or cross-process subscriber coordination yet.

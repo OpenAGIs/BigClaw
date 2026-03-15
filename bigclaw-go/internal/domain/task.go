@@ -100,6 +100,20 @@ type Event struct {
 	RunID     string         `json:"run_id,omitempty"`
 	Timestamp time.Time      `json:"timestamp"`
 	Payload   map[string]any `json:"payload,omitempty"`
+	Delivery  *EventDelivery `json:"delivery,omitempty"`
+}
+
+type EventDeliveryMode string
+
+const (
+	EventDeliveryModeLive   EventDeliveryMode = "live"
+	EventDeliveryModeReplay EventDeliveryMode = "replay"
+)
+
+type EventDelivery struct {
+	Mode           EventDeliveryMode `json:"mode,omitempty"`
+	Replay         bool              `json:"replay,omitempty"`
+	IdempotencyKey string            `json:"idempotency_key,omitempty"`
 }
 
 func TaskStateFromEventType(eventType EventType) (TaskState, bool) {
