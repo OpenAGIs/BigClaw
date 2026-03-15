@@ -100,6 +100,8 @@ func renderPrometheusMetrics(snapshot metricsSnapshot) string {
 		writePrometheusHeader(&builder, "bigclaw_worker_retried_runs_total", "counter", "Retried runs per worker.")
 		writePrometheusHeader(&builder, "bigclaw_worker_dead_letter_runs_total", "counter", "Dead-letter runs per worker.")
 		writePrometheusHeader(&builder, "bigclaw_worker_cancelled_runs_total", "counter", "Cancelled runs per worker.")
+		writePrometheusHeader(&builder, "bigclaw_worker_preemptions_total", "counter", "Preemptions issued per worker.")
+		writePrometheusHeader(&builder, "bigclaw_worker_preemption_active", "gauge", "Whether the worker currently has an active preemption context.")
 		for _, status := range snapshot.WorkerPool.Workers {
 			executor := string(status.CurrentExecutor)
 			if executor == "" {
@@ -121,6 +123,8 @@ func renderPrometheusMetrics(snapshot metricsSnapshot) string {
 			builder.WriteString(prometheusSample("bigclaw_worker_retried_runs_total", workerLabels, float64(status.RetriedRuns)))
 			builder.WriteString(prometheusSample("bigclaw_worker_dead_letter_runs_total", workerLabels, float64(status.DeadLetterRuns)))
 			builder.WriteString(prometheusSample("bigclaw_worker_cancelled_runs_total", workerLabels, float64(status.CancelledRuns)))
+			builder.WriteString(prometheusSample("bigclaw_worker_preemptions_total", workerLabels, float64(status.PreemptionsIssued)))
+			builder.WriteString(prometheusSample("bigclaw_worker_preemption_active", workerLabels, boolGauge(status.PreemptionActive)))
 		}
 	}
 

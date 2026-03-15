@@ -87,8 +87,8 @@ func TestSchedulerUsesPreemptibleCapacityForUrgentTask(t *testing.T) {
 	if !decision.Accepted {
 		t.Fatalf("expected urgent task to use preemptible capacity")
 	}
-	if decision.Reason == "" || decision.Assignment.Executor == "" {
-		t.Fatalf("expected populated preemptive routing decision: %+v", decision)
+	if decision.Reason == "" || decision.Assignment.Executor == "" || !decision.Preemption.Required {
+		t.Fatalf("expected populated live-preemptive routing decision: %+v", decision)
 	}
 }
 
@@ -113,8 +113,8 @@ func TestSchedulerUsesFileBackedPolicyOverrides(t *testing.T) {
 		t.Fatalf("expected default executor override to route to ray, got %+v", decision)
 	}
 	decision = s.Decide(domain.Task{ID: "preempt-2", Priority: 2}, QuotaSnapshot{ConcurrentLimit: 1, CurrentRunning: 1, PreemptibleExecutions: 1})
-	if !decision.Accepted {
-		t.Fatalf("expected priority 2 task to use configured urgent threshold, got %+v", decision)
+	if !decision.Accepted || !decision.Preemption.Required {
+		t.Fatalf("expected priority 2 task to use configured urgent threshold with live preemption, got %+v", decision)
 	}
 	if err := os.WriteFile(path, []byte(`{"default_executor":"kubernetes"}`), 0o644); err != nil {
 		t.Fatalf("rewrite policy file: %v", err)

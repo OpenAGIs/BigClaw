@@ -37,7 +37,7 @@ func (fakeWorkerPoolStatus) Snapshot() worker.Status {
 func (fakeWorkerPoolStatus) Snapshots() []worker.Status {
 	return []worker.Status{
 		{WorkerID: "worker-a", State: "running", CurrentExecutor: domain.ExecutorLocal, SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"},
-		{WorkerID: "worker-b", State: "leased", CurrentExecutor: domain.ExecutorKubernetes, SuccessfulRuns: 3, LeaseRenewals: 2, LastResult: "warming"},
+		{WorkerID: "worker-b", State: "leased", CurrentExecutor: domain.ExecutorKubernetes, SuccessfulRuns: 3, LeaseRenewals: 2, LastResult: "warming", PreemptionActive: true, CurrentPreemptionTaskID: "task-low", CurrentPreemptionWorkerID: "worker-low", LastPreemptedTaskID: "task-low", LastPreemptionAt: time.Unix(1700000100, 0), LastPreemptionReason: "preempted by urgent task task-urgent (priority=1)", PreemptionsIssued: 1},
 		{WorkerID: "worker-c", State: "idle", SuccessfulRuns: 8, LeaseRenewals: 0, LastResult: "idle"},
 	}
 }
@@ -274,7 +274,7 @@ func TestDebugStatusIncludesWorkerPoolSummary(t *testing.T) {
 		t.Fatalf("expected status 200, got %d", response.Code)
 	}
 	body := response.Body.String()
-	for _, want := range []string{"worker_pool", "total_workers", "3", "active_workers", "2", "idle_workers", "1", "worker-b", "leased"} {
+	for _, want := range []string{"worker_pool", "total_workers", "3", "active_workers", "2", "idle_workers", "1", "worker-b", "leased", "preemption_active", "last_preempted_task_id", "task-low"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("expected %q in debug payload, got %s", want, body)
 		}
@@ -1323,7 +1323,7 @@ func TestV2ControlCenterIncludesMultiWorkerPoolSummary(t *testing.T) {
 		t.Fatalf("expected control center 200, got %d", centerResponse.Code)
 	}
 	bodyText := centerResponse.Body.String()
-	for _, want := range []string{"worker_pool", "total_workers", "3", "active_workers", "2", "idle_workers", "1", "worker-c", "idle"} {
+	for _, want := range []string{"worker_pool", "total_workers", "3", "active_workers", "2", "idle_workers", "1", "worker-c", "idle", "preemption_active", "task-low"} {
 		if !strings.Contains(bodyText, want) {
 			t.Fatalf("expected %q in control center payload, got %s", want, bodyText)
 		}

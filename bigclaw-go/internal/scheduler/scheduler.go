@@ -20,10 +20,16 @@ type QuotaSnapshot struct {
 	PreemptibleExecutions int
 }
 
+type PreemptionPlan struct {
+	Required bool   `json:"required,omitempty"`
+	Reason   string `json:"reason,omitempty"`
+}
+
 type Decision struct {
 	Assignment executor.Assignment
 	Accepted   bool
 	Reason     string
+	Preemption PreemptionPlan
 }
 
 type Scheduler struct {
@@ -88,7 +94,12 @@ func (s *Scheduler) Decide(task domain.Task, quota QuotaSnapshot) Decision {
 		if isPreemptible(task, rules) && quota.PreemptibleExecutions > 0 {
 			assignment.Reason = assignment.Reason + "; using preemptible capacity"
 			s.fairness.RecordAccepted(now, strings.TrimSpace(task.TenantID), rules)
-			return Decision{Accepted: true, Assignment: assignment, Reason: assignment.Reason}
+			return Decision{
+				Accepted:   true,
+				Assignment: assignment,
+				Reason:     assignment.Reason,
+				Preemption: PreemptionPlan{Required: true, Reason: "urgent task may reclaim lower-priority active capacity"},
+			}
 		}
 		return Decision{Accepted: false, Reason: "tenant concurrency quota exceeded"}
 	}
