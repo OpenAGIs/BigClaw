@@ -9,6 +9,13 @@ import (
 
 type Config struct {
 	QueueBackend                  string
+	EventBackend                  string
+	EventLogDSN                   string
+	EventCheckpointDSN            string
+	EventRetention                time.Duration
+	EventRequireReplay            bool
+	EventRequireCheckpoint        bool
+	EventRequireFiltering         bool
 	EventWebhookURLs              []string
 	EventWebhookBearerToken       string
 	EventWebhookTimeout           time.Duration
@@ -42,6 +49,11 @@ type Config struct {
 func Default() Config {
 	return Config{
 		QueueBackend:                  "file",
+		EventBackend:                  "memory",
+		EventRetention:                0,
+		EventRequireReplay:            true,
+		EventRequireCheckpoint:        false,
+		EventRequireFiltering:         true,
 		EventWebhookTimeout:           5 * time.Second,
 		QueueSQLitePath:               "./state/queue.db",
 		AuditLogPath:                  "./state/audit.jsonl",
@@ -71,6 +83,13 @@ func Default() Config {
 func LoadFromEnv() Config {
 	cfg := Default()
 	cfg.QueueBackend = getString("BIGCLAW_QUEUE_BACKEND", cfg.QueueBackend)
+	cfg.EventBackend = getString("BIGCLAW_EVENT_BACKEND", cfg.EventBackend)
+	cfg.EventLogDSN = getString("BIGCLAW_EVENT_LOG_DSN", cfg.EventLogDSN)
+	cfg.EventCheckpointDSN = getString("BIGCLAW_EVENT_CHECKPOINT_DSN", cfg.EventCheckpointDSN)
+	cfg.EventRetention = getDuration("BIGCLAW_EVENT_RETENTION", cfg.EventRetention)
+	cfg.EventRequireReplay = getBool("BIGCLAW_EVENT_REQUIRE_REPLAY", cfg.EventRequireReplay)
+	cfg.EventRequireCheckpoint = getBool("BIGCLAW_EVENT_REQUIRE_CHECKPOINT", cfg.EventRequireCheckpoint)
+	cfg.EventRequireFiltering = getBool("BIGCLAW_EVENT_REQUIRE_FILTERING", cfg.EventRequireFiltering)
 	cfg.EventWebhookURLs = splitCSV(getString("BIGCLAW_EVENT_WEBHOOK_URLS", ""))
 	cfg.EventWebhookBearerToken = getString("BIGCLAW_EVENT_WEBHOOK_BEARER_TOKEN", cfg.EventWebhookBearerToken)
 	cfg.EventWebhookTimeout = getDuration("BIGCLAW_EVENT_WEBHOOK_TIMEOUT", cfg.EventWebhookTimeout)

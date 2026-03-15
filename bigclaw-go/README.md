@@ -36,6 +36,16 @@ This bootstrap now covers an MVP slice for all current Go rewrite planning ticke
 
 ## Real integration configuration
 
+### Event durability contract
+
+- `BIGCLAW_EVENT_BACKEND` with `memory`, `sqlite`, `http`, or `broker`
+- `BIGCLAW_EVENT_LOG_DSN` for durable event-log backends
+- `BIGCLAW_EVENT_CHECKPOINT_DSN` when checkpoint support is required
+- `BIGCLAW_EVENT_RETENTION` for durable replay history retention
+- `BIGCLAW_EVENT_REQUIRE_REPLAY`
+- `BIGCLAW_EVENT_REQUIRE_CHECKPOINT`
+- `BIGCLAW_EVENT_REQUIRE_FILTERING`
+
 ### Kubernetes
 
 - `BIGCLAW_KUBECONFIG` or `KUBECONFIG`
