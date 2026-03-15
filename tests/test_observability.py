@@ -3,8 +3,8 @@ from pathlib import Path
 
 from bigclaw.collaboration import build_collaboration_thread_from_audits
 from bigclaw.models import Priority, Task
-from bigclaw.observability import ObservabilityLedger, TaskRun
-from bigclaw.reports import render_task_run_detail_page, render_task_run_report
+from bigclaw.observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit, TaskRun
+from bigclaw.reports import render_repo_sync_audit_report, render_task_run_detail_page, render_task_run_report
 from bigclaw.repo_plane import RunCommitLink
 
 
@@ -44,6 +44,46 @@ def test_task_run_captures_logs_trace_artifacts_and_audits(tmp_path: Path):
     assert entries[0]["artifacts"][0]["sha256"] == expected_digest
     assert entries[0]["audits"][0]["action"] == "scheduler.approved"
     assert entries[0]["closeout"]["complete"] is True
+
+
+def test_task_run_closeout_serializes_repo_sync_audit(tmp_path: Path):
+    task = Task(task_id="BIG-sync", source="linear", title="Repo sync closeout", description="")
+    run = TaskRun.from_task(task, run_id="run-sync", medium="docker")
+    repo_sync_audit = RepoSyncAudit(
+        sync=GitSyncTelemetry(
+            status="failed",
+            failure_category="dirty",
+            summary="worktree has local changes",
+            branch="feature/OPE-219",
+            remote_ref="origin/feature/OPE-219",
+            dirty_paths=["src/bigclaw/workflow.py"],
+        ),
+        pull_request=PullRequestFreshness(
+            pr_number=219,
+            pr_url="https://github.com/OpenAGIs/BigClaw/pull/219",
+            branch_state="out-of-sync",
+            body_state="drifted",
+            branch_head_sha="abc123",
+            pr_head_sha="def456",
+            expected_body_digest="body-expected",
+            actual_body_digest="body-actual",
+        ),
+    )
+    run.record_closeout(
+        validation_evidence=["pytest"],
+        git_push_succeeded=False,
+        git_push_output="push rejected",
+        git_log_stat_output="commit abc123\n 1 file changed, 2 insertions(+)",
+        repo_sync_audit=repo_sync_audit,
+    )
+
+    ledger = ObservabilityLedger(str(tmp_path / "observability.json"))
+    ledger.append(run)
+    loaded_run = ledger.load_runs()[0]
+
+    assert loaded_run.closeout.repo_sync_audit is not None
+    assert loaded_run.closeout.repo_sync_audit.sync.failure_category == "dirty"
+    assert loaded_run.closeout.repo_sync_audit.pull_request.body_state == "drifted"
 
 
 def test_render_task_run_report(tmp_path: Path):
@@ -92,6 +132,37 @@ def test_render_task_run_report(tmp_path: Path):
     assert "## Collaboration" in report
     assert "Need @security sign-off before we clear this run." in report
     assert "Approved release after manual review." in report
+
+
+def test_render_repo_sync_audit_report():
+    audit = RepoSyncAudit(
+        sync=GitSyncTelemetry(
+            status="failed",
+            failure_category="auth",
+            summary="github token expired",
+            branch="dcjcloud/ope-219",
+            remote_ref="origin/dcjcloud/ope-219",
+            auth_target="github.com/OpenAGIs/BigClaw.git",
+        ),
+        pull_request=PullRequestFreshness(
+            pr_number=219,
+            pr_url="https://github.com/OpenAGIs/BigClaw/pull/219",
+            branch_state="in-sync",
+            body_state="drifted",
+            branch_head_sha="abc123",
+            pr_head_sha="abc123",
+            expected_body_digest="expected",
+            actual_body_digest="actual",
+        ),
+    )
+
+    report = render_repo_sync_audit_report(audit)
+
+    assert "# Repo Sync Audit" in report
+    assert "Failure Category: auth" in report
+    assert "Branch State: in-sync" in report
+    assert "Body State: drifted" in report
+    assert "sync=failed, failure=auth, pr-branch=in-sync, pr-body=drifted" in report
 
 
 def test_render_task_run_detail_page(tmp_path: Path):

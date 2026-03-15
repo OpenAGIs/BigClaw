@@ -138,11 +138,138 @@ class AuditEntry:
 
 
 @dataclass
+class GitSyncTelemetry:
+    status: str = "unknown"
+    failure_category: str = ""
+    summary: str = ""
+    branch: str = ""
+    remote: str = "origin"
+    remote_ref: str = ""
+    ahead_by: int = 0
+    behind_by: int = 0
+    dirty_paths: List[str] = field(default_factory=list)
+    auth_target: str = ""
+    timestamp: str = field(default_factory=utc_now)
+
+    @property
+    def ok(self) -> bool:
+        return self.status == "synced"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "status": self.status,
+            "failure_category": self.failure_category,
+            "summary": self.summary,
+            "branch": self.branch,
+            "remote": self.remote,
+            "remote_ref": self.remote_ref,
+            "ahead_by": self.ahead_by,
+            "behind_by": self.behind_by,
+            "dirty_paths": list(self.dirty_paths),
+            "auth_target": self.auth_target,
+            "timestamp": self.timestamp,
+            "ok": self.ok,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "GitSyncTelemetry":
+        return cls(
+            status=str(data.get("status", "unknown")),
+            failure_category=str(data.get("failure_category", "")),
+            summary=str(data.get("summary", "")),
+            branch=str(data.get("branch", "")),
+            remote=str(data.get("remote", "origin")),
+            remote_ref=str(data.get("remote_ref", "")),
+            ahead_by=int(data.get("ahead_by", 0)),
+            behind_by=int(data.get("behind_by", 0)),
+            dirty_paths=[str(item) for item in data.get("dirty_paths", [])],
+            auth_target=str(data.get("auth_target", "")),
+            timestamp=data.get("timestamp", utc_now()),
+        )
+
+
+@dataclass
+class PullRequestFreshness:
+    pr_number: Optional[int] = None
+    pr_url: str = ""
+    branch_state: str = "unknown"
+    body_state: str = "unknown"
+    branch_head_sha: str = ""
+    pr_head_sha: str = ""
+    expected_body_digest: str = ""
+    actual_body_digest: str = ""
+    checked_at: str = field(default_factory=utc_now)
+
+    @property
+    def fresh(self) -> bool:
+        return self.branch_state == "in-sync" and self.body_state == "fresh"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "pr_number": self.pr_number,
+            "pr_url": self.pr_url,
+            "branch_state": self.branch_state,
+            "body_state": self.body_state,
+            "branch_head_sha": self.branch_head_sha,
+            "pr_head_sha": self.pr_head_sha,
+            "expected_body_digest": self.expected_body_digest,
+            "actual_body_digest": self.actual_body_digest,
+            "checked_at": self.checked_at,
+            "fresh": self.fresh,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "PullRequestFreshness":
+        pr_number = data.get("pr_number")
+        return cls(
+            pr_number=int(pr_number) if pr_number is not None else None,
+            pr_url=str(data.get("pr_url", "")),
+            branch_state=str(data.get("branch_state", "unknown")),
+            body_state=str(data.get("body_state", "unknown")),
+            branch_head_sha=str(data.get("branch_head_sha", "")),
+            pr_head_sha=str(data.get("pr_head_sha", "")),
+            expected_body_digest=str(data.get("expected_body_digest", "")),
+            actual_body_digest=str(data.get("actual_body_digest", "")),
+            checked_at=data.get("checked_at", utc_now()),
+        )
+
+
+@dataclass
+class RepoSyncAudit:
+    sync: GitSyncTelemetry = field(default_factory=GitSyncTelemetry)
+    pull_request: PullRequestFreshness = field(default_factory=PullRequestFreshness)
+
+    @property
+    def summary(self) -> str:
+        parts = [f"sync={self.sync.status}"]
+        if self.sync.failure_category:
+            parts.append(f"failure={self.sync.failure_category}")
+        parts.append(f"pr-branch={self.pull_request.branch_state}")
+        parts.append(f"pr-body={self.pull_request.body_state}")
+        return ", ".join(parts)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "sync": self.sync.to_dict(),
+            "pull_request": self.pull_request.to_dict(),
+            "summary": self.summary,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "RepoSyncAudit":
+        return cls(
+            sync=GitSyncTelemetry.from_dict(data.get("sync", {})),
+            pull_request=PullRequestFreshness.from_dict(data.get("pull_request", {})),
+        )
+
+
+@dataclass
 class RunCloseout:
     validation_evidence: List[str] = field(default_factory=list)
     git_push_succeeded: bool = False
     git_push_output: str = ""
     git_log_stat_output: str = ""
+    repo_sync_audit: Optional[RepoSyncAudit] = None
     run_commit_links: List[RunCommitLink] = field(default_factory=list)
     accepted_commit_hash: str = ""
     timestamp: str = field(default_factory=utc_now)
@@ -157,6 +284,7 @@ class RunCloseout:
             "git_push_succeeded": self.git_push_succeeded,
             "git_push_output": self.git_push_output,
             "git_log_stat_output": self.git_log_stat_output,
+            "repo_sync_audit": self.repo_sync_audit.to_dict() if self.repo_sync_audit else None,
             "run_commit_links": [link.to_dict() for link in self.run_commit_links],
             "accepted_commit_hash": self.accepted_commit_hash,
             "timestamp": self.timestamp,
@@ -170,6 +298,7 @@ class RunCloseout:
             git_push_succeeded=data.get("git_push_succeeded", False),
             git_push_output=data.get("git_push_output", ""),
             git_log_stat_output=data.get("git_log_stat_output", ""),
+            repo_sync_audit=RepoSyncAudit.from_dict(data["repo_sync_audit"]) if data.get("repo_sync_audit") else None,
             run_commit_links=[RunCommitLink.from_dict(item) for item in data.get("run_commit_links", [])],
             accepted_commit_hash=str(data.get("accepted_commit_hash", "")),
             timestamp=data.get("timestamp", utc_now()),
@@ -324,6 +453,7 @@ class TaskRun:
         git_push_succeeded: bool,
         git_push_output: str = "",
         git_log_stat_output: str = "",
+        repo_sync_audit: Optional[RepoSyncAudit] = None,
         run_commit_links: Optional[List[RunCommitLink]] = None,
     ) -> None:
         links = list(run_commit_links or [])
@@ -333,6 +463,7 @@ class TaskRun:
             git_push_succeeded=git_push_succeeded,
             git_push_output=git_push_output,
             git_log_stat_output=git_log_stat_output,
+            repo_sync_audit=repo_sync_audit,
             run_commit_links=links,
             accepted_commit_hash=binding.accepted_commit_hash if binding else "",
         )
