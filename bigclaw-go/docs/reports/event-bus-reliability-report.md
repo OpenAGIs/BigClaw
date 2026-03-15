@@ -77,6 +77,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - `internal/events/bus.go`: publish path remains the place to insert append/ack behavior ahead of live fanout.
 - `internal/api/server.go`: operational reporting for current and target durability mode plus runtime capability probes.
 - Subscriber checkpoint persistence, replay endpoints, and dedup ledger surfaces preserve resume and idempotency semantics while moving state out of process-local memory.
+- `internal/events/durability.go`: rollout-facing contract for replicated durability phases, failure domains, and required verification evidence.
 
 ## Migration and compatibility constraints
 
@@ -128,6 +129,15 @@ This report summarizes the current event bus reliability evidence and the next r
 - No durable retention watermark exists in the runtime yet; expired-cursor fallback is currently defined only against the in-process replay window, and the target compaction semantics are defined in `docs/reports/replay-retention-semantics-report.md`.
 - Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.
 - Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists.
+
+## Replicated rollout contract
+
+- `docs/reports/replicated-event-log-durability-rollout-contract.md` now captures the minimum rollout gates for a broker-backed or quorum-backed adapter:
+  - replicated publish acknowledgements must distinguish committed, rejected, and ambiguous outcomes;
+  - replay and checkpoint state must share the same durable sequence domain across failover;
+  - retention boundaries must be operator-visible before resumable recovery is claimed;
+  - live fanout must remain isolated from broker catch-up lag.
+- The same contract is surfaced in `events.DurabilityPlan`, so debug/control-plane payloads can show rollout checks, failure domains, and supporting evidence links before a live adapter exists.
 
 ## Next adapter boundary
 

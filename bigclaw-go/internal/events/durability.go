@@ -21,13 +21,33 @@ type DurabilityProfile struct {
 	OrderingScope       string            `json:"ordering_scope"`
 }
 
+type RolloutCheck struct {
+	Name        string `json:"name"`
+	Requirement string `json:"requirement"`
+	FailureMode string `json:"failure_mode"`
+}
+
+type FailureDomain struct {
+	Name      string   `json:"name"`
+	Impact    string   `json:"impact"`
+	Mitigates []string `json:"mitigates"`
+}
+
+type VerificationEvidence struct {
+	Name      string   `json:"name"`
+	Artifacts []string `json:"artifacts"`
+}
+
 type DurabilityPlan struct {
-	Current              DurabilityProfile `json:"current"`
-	Target               DurabilityProfile `json:"target"`
-	ReplicationFactor    int               `json:"replication_factor"`
-	RequiresPublisherAck bool              `json:"requires_publisher_ack"`
-	MigrationConstraints []string          `json:"migration_constraints"`
-	IntegrationPoints    []string          `json:"integration_points"`
+	Current              DurabilityProfile      `json:"current"`
+	Target               DurabilityProfile      `json:"target"`
+	ReplicationFactor    int                    `json:"replication_factor"`
+	RequiresPublisherAck bool                   `json:"requires_publisher_ack"`
+	MigrationConstraints []string               `json:"migration_constraints"`
+	IntegrationPoints    []string               `json:"integration_points"`
+	RolloutChecks        []RolloutCheck         `json:"rollout_checks"`
+	FailureDomains       []FailureDomain        `json:"failure_domains"`
+	VerificationEvidence []VerificationEvidence `json:"verification_evidence"`
 }
 
 func NormalizeDurabilityBackend(value string) DurabilityBackend {
@@ -105,6 +125,77 @@ func NewDurabilityPlan(currentBackend, targetBackend string, replicationFactor i
 			"internal/api/server.go debug and control-plane reporting",
 			"internal/events bus publish/subscribe path",
 			"subscriber checkpoint persistence and replay endpoints",
+		},
+		RolloutChecks: []RolloutCheck{
+			{
+				Name:        "durable_publish_ack",
+				Requirement: "publish success must represent replicated commit acknowledgement rather than leader-local enqueue",
+				FailureMode: "ambiguous client timeout or leader crash can leave operators unable to classify whether an event committed",
+			},
+			{
+				Name:        "replay_checkpoint_alignment",
+				Requirement: "replay cursors and subscriber checkpoints must resolve to the same durable sequence domain across failover",
+				FailureMode: "consumer recovery can skip or duplicate committed events after broker election or reconnect",
+			},
+			{
+				Name:        "retention_boundary_visibility",
+				Requirement: "the backend must expose oldest/newest retained replay boundaries before rollout claims resumable recovery",
+				FailureMode: "aged-out checkpoints can silently start from an unsafe later point instead of surfacing truncation",
+			},
+			{
+				Name:        "live_fanout_isolation",
+				Requirement: "SSE and in-process live subscribers must stay decoupled from broker catch-up lag and replay backfill",
+				FailureMode: "replay recovery or broker lag can stall live delivery and blur the source of operator-visible latency",
+			},
+		},
+		FailureDomains: []FailureDomain{
+			{
+				Name:   "broker_leader_or_quorum_loss",
+				Impact: "publish acknowledgements and replay visibility may diverge until leadership or quorum is re-established",
+				Mitigates: []string{
+					"require replicated publish acknowledgements",
+					"record ambiguous publish outcomes for replay reconciliation",
+				},
+			},
+			{
+				Name:   "checkpoint_store_failover",
+				Impact: "stale writers can regress subscriber progress if checkpoint ownership is not fenced by durable sequence and lease epoch",
+				Mitigates: []string{
+					"persist monotonic checkpoint sequence with ownership metadata",
+					"reject stale checkpoint writes after takeover",
+				},
+			},
+			{
+				Name:   "retention_or_compaction_drift",
+				Impact: "resume requests can point outside the retained log window even when the cursor shape is valid",
+				Mitigates: []string{
+					"surface retention watermarks in operator diagnostics",
+					"fail closed on expired checkpoints until an explicit reset policy is chosen",
+				},
+			},
+		},
+		VerificationEvidence: []VerificationEvidence{
+			{
+				Name: "debug_and_control_plane_surface",
+				Artifacts: []string{
+					"GET /debug/status event_durability payload",
+					"control-plane snapshots carrying backend and rollout metadata",
+				},
+			},
+			{
+				Name: "replay_and_failover_validation",
+				Artifacts: []string{
+					"docs/reports/broker-failover-fault-injection-validation-pack.md",
+					"future broker-failover-<backend>-report.json scenario outputs",
+				},
+			},
+			{
+				Name: "operator_rollout_contract",
+				Artifacts: []string{
+					"docs/reports/event-bus-reliability-report.md",
+					"docs/reports/replicated-event-log-durability-rollout-contract.md",
+				},
+			},
 		},
 	}
 }

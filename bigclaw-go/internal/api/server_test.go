@@ -268,6 +268,15 @@ func TestDebugStatusIncludesEventDurabilityPlan(t *testing.T) {
 	if !strings.Contains(response.Body.String(), "\"replication_factor\":5") {
 		t.Fatalf("expected replication factor in payload, got %s", response.Body.String())
 	}
+	if !strings.Contains(response.Body.String(), "\"rollout_checks\"") {
+		t.Fatalf("expected rollout checks in payload, got %s", response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), "\"failure_domains\"") {
+		t.Fatalf("expected failure domains in payload, got %s", response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), "\"verification_evidence\"") {
+		t.Fatalf("expected verification evidence in payload, got %s", response.Body.String())
+	}
 }
 
 func TestDeadLetterEndpoints(t *testing.T) {
