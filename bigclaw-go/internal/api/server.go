@@ -24,14 +24,15 @@ type WorkerStatusProvider interface {
 }
 
 type Server struct {
-	Recorder  *observability.Recorder
-	Queue     queue.Queue
-	Executors []domain.ExecutorKind
-	Bus       *events.Bus
-	Now       func() time.Time
-	Worker    WorkerStatusProvider
-	Control   *control.Controller
-	FlowStore *flow.Store
+	Recorder         *observability.Recorder
+	Queue            queue.Queue
+	Executors        []domain.ExecutorKind
+	Bus              *events.Bus
+	SubscriberLeases *events.SubscriberLeaseCoordinator
+	Now              func() time.Time
+	Worker           WorkerStatusProvider
+	Control          *control.Controller
+	FlowStore        *flow.Store
 }
 
 func (s *Server) Handler() http.Handler {
@@ -69,6 +70,9 @@ func (s *Server) Handler() http.Handler {
 			writeJSON(w, http.StatusOK, map[string]any{"events": s.Recorder.EventsByTask("", limit)})
 		}
 	})
+	mux.HandleFunc("/subscriber-groups/leases", s.handleSubscriberGroupLease)
+	mux.HandleFunc("/subscriber-groups/checkpoints", s.handleSubscriberGroupCheckpoint)
+	mux.HandleFunc("/subscriber-groups/", s.handleSubscriberGroupLeaseStatus)
 	mux.HandleFunc("/stream/events", s.handleStreamEvents)
 	mux.HandleFunc("/audit", func(w http.ResponseWriter, r *http.Request) {
 		limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -138,6 +142,23 @@ func (s *Server) Handler() http.Handler {
 	})
 	mux.HandleFunc("/tasks/", s.handleTaskStatus)
 	return mux
+}
+
+type leaseRequestPayload struct {
+	GroupID      string `json:"group_id"`
+	SubscriberID string `json:"subscriber_id"`
+	ConsumerID   string `json:"consumer_id"`
+	TTLSeconds   int64  `json:"ttl_seconds"`
+}
+
+type checkpointRequestPayload struct {
+	GroupID          string `json:"group_id"`
+	SubscriberID     string `json:"subscriber_id"`
+	ConsumerID       string `json:"consumer_id"`
+	LeaseToken       string `json:"lease_token"`
+	LeaseEpoch       int64  `json:"lease_epoch"`
+	CheckpointOffset uint64 `json:"checkpoint_offset"`
+	CheckpointEvent  string `json:"checkpoint_event_id"`
 }
 
 func (s *Server) handleDebugTraces(w http.ResponseWriter, r *http.Request) {
@@ -292,6 +313,116 @@ func (s *Server) handleDeadLetterAction(w http.ResponseWriter, r *http.Request) 
 	traceID := s.traceIDForTask(taskID)
 	s.publish(domain.Event{ID: taskID + "-replayed", Type: domain.EventTaskQueued, TaskID: taskID, TraceID: traceID, Timestamp: now, Payload: map[string]any{"replayed": true}})
 	writeJSON(w, http.StatusAccepted, map[string]any{"task_id": taskID, "state": string(domain.TaskQueued), "replayed": true})
+}
+
+func (s *Server) handleSubscriberGroupLease(w http.ResponseWriter, r *http.Request) {
+	if s.SubscriberLeases == nil {
+		http.Error(w, "subscriber lease coordinator unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	switch r.Method {
+	case http.MethodPost:
+		var payload leaseRequestPayload
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, fmt.Sprintf("decode lease request: %v", err), http.StatusBadRequest)
+			return
+		}
+		lease, err := s.SubscriberLeases.Acquire(events.LeaseRequest{
+			GroupID:      payload.GroupID,
+			SubscriberID: payload.SubscriberID,
+			ConsumerID:   payload.ConsumerID,
+			TTL:          time.Duration(payload.TTLSeconds) * time.Second,
+			Now:          s.Now(),
+		})
+		if err != nil {
+			status := http.StatusBadRequest
+			if err == events.ErrLeaseHeld {
+				status = http.StatusConflict
+			}
+			writeJSON(w, status, map[string]any{"error": err.Error(), "lease": lease})
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"lease": lease})
+	case http.MethodDelete:
+		var payload checkpointRequestPayload
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, fmt.Sprintf("decode lease release: %v", err), http.StatusBadRequest)
+			return
+		}
+		err := s.SubscriberLeases.Release(payload.GroupID, payload.SubscriberID, payload.ConsumerID, payload.LeaseToken, payload.LeaseEpoch)
+		if err != nil {
+			status := http.StatusConflict
+			if err == events.ErrLeaseExpired {
+				status = http.StatusGone
+			}
+			writeJSON(w, status, map[string]any{"error": err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"released": true})
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *Server) handleSubscriberGroupCheckpoint(w http.ResponseWriter, r *http.Request) {
+	if s.SubscriberLeases == nil {
+		http.Error(w, "subscriber lease coordinator unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var payload checkpointRequestPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, fmt.Sprintf("decode checkpoint commit: %v", err), http.StatusBadRequest)
+		return
+	}
+	lease, err := s.SubscriberLeases.Commit(events.CheckpointCommit{
+		GroupID:          payload.GroupID,
+		SubscriberID:     payload.SubscriberID,
+		ConsumerID:       payload.ConsumerID,
+		LeaseToken:       payload.LeaseToken,
+		LeaseEpoch:       payload.LeaseEpoch,
+		CheckpointOffset: payload.CheckpointOffset,
+		CheckpointEvent:  payload.CheckpointEvent,
+		Now:              s.Now(),
+	})
+	if err != nil {
+		status := http.StatusConflict
+		switch err {
+		case events.ErrCheckpointRollback:
+			status = http.StatusPreconditionFailed
+		case events.ErrLeaseExpired:
+			status = http.StatusGone
+		}
+		writeJSON(w, status, map[string]any{"error": err.Error(), "lease": lease})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"lease": lease})
+}
+
+func (s *Server) handleSubscriberGroupLeaseStatus(w http.ResponseWriter, r *http.Request) {
+	if s.SubscriberLeases == nil {
+		http.Error(w, "subscriber lease coordinator unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	path := strings.TrimPrefix(r.URL.Path, "/subscriber-groups/")
+	parts := strings.Split(path, "/")
+	if len(parts) != 3 || parts[1] != "subscribers" || parts[0] == "" || parts[2] == "" {
+		http.Error(w, "expected /subscriber-groups/{group_id}/subscribers/{subscriber_id}", http.StatusBadRequest)
+		return
+	}
+	lease, ok := s.SubscriberLeases.Get(parts[0], parts[2])
+	if !ok {
+		http.Error(w, "subscriber lease not found", http.StatusNotFound)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"lease": lease})
 }
 
 func (s *Server) handleStreamEvents(w http.ResponseWriter, r *http.Request) {
