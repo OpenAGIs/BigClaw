@@ -3,7 +3,9 @@ package scheduler
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"bigclaw-go/internal/domain"
 )
@@ -134,5 +136,45 @@ func TestSchedulerPolicyStoreRejectsInvalidExecutor(t *testing.T) {
 	}
 	if _, err := NewPolicyStore(path); err == nil {
 		t.Fatal("expected invalid executor error")
+	}
+}
+
+func TestSchedulerFairnessWindowThrottlesDominantTenant(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "scheduler-policy.json")
+	content := []byte(`{"fairness":{"window_seconds":30,"max_recent_decisions_per_tenant":1}}`)
+	if err := os.WriteFile(path, content, 0o644); err != nil {
+		t.Fatalf("write fairness policy file: %v", err)
+	}
+	store, err := NewPolicyStore(path)
+	if err != nil {
+		t.Fatalf("new policy store: %v", err)
+	}
+	s := NewWithPolicyStore(store)
+	now := time.Unix(1700000000, 0)
+	s.now = func() time.Time { return now }
+	if decision := s.Decide(domain.Task{ID: "tenant-a-1", TenantID: "tenant-a", Priority: 3}, QuotaSnapshot{}); !decision.Accepted {
+		t.Fatalf("expected first tenant-a task accepted, got %+v", decision)
+	}
+	now = now.Add(time.Second)
+	if decision := s.Decide(domain.Task{ID: "tenant-b-1", TenantID: "tenant-b", Priority: 3}, QuotaSnapshot{}); !decision.Accepted {
+		t.Fatalf("expected tenant-b task accepted, got %+v", decision)
+	}
+	now = now.Add(time.Second)
+	throttled := s.Decide(domain.Task{ID: "tenant-a-2", TenantID: "tenant-a", Priority: 3}, QuotaSnapshot{})
+	if throttled.Accepted || !strings.Contains(throttled.Reason, "fairness window throttled tenant tenant-a") {
+		t.Fatalf("expected tenant-a throttled by fairness window, got %+v", throttled)
+	}
+	urgent := s.Decide(domain.Task{ID: "tenant-a-urgent", TenantID: "tenant-a", Priority: 1}, QuotaSnapshot{})
+	if !urgent.Accepted {
+		t.Fatalf("expected urgent tenant-a task to bypass fairness throttle, got %+v", urgent)
+	}
+	snapshot := s.FairnessSnapshot()
+	if !snapshot.Enabled || snapshot.ActiveTenants != 2 || len(snapshot.Tenants) != 2 || snapshot.Tenants[0].TenantID != "tenant-a" || snapshot.Tenants[0].RecentAcceptedCount != 2 {
+		t.Fatalf("unexpected fairness snapshot: %+v", snapshot)
+	}
+	now = now.Add(31 * time.Second)
+	if decision := s.Decide(domain.Task{ID: "tenant-a-3", TenantID: "tenant-a", Priority: 3}, QuotaSnapshot{}); !decision.Accepted {
+		t.Fatalf("expected tenant-a accepted after fairness window expiry, got %+v", decision)
 	}
 }

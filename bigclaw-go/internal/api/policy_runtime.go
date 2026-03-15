@@ -14,6 +14,13 @@ func (s *Server) schedulerPolicyStore() *scheduler.PolicyStore {
 	return s.SchedulerPolicy
 }
 
+func (s *Server) schedulerRuntime() *scheduler.Scheduler {
+	if s.SchedulerRuntime == nil {
+		s.SchedulerRuntime = scheduler.NewWithPolicyStore(s.schedulerPolicyStore())
+	}
+	return s.SchedulerRuntime
+}
+
 func (s *Server) handleV2ControlCenterPolicy(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -28,6 +35,7 @@ func (s *Server) handleV2ControlCenterPolicy(w http.ResponseWriter, r *http.Requ
 	writeJSON(w, http.StatusOK, map[string]any{
 		"authorization":     authorization,
 		"policy":            store.Snapshot(),
+		"fairness":          s.schedulerRuntime().FairnessSnapshot(),
 		"source_path":       store.SourcePath(),
 		"reload_supported":  store.HasSource(),
 		"reload_authorized": canReloadSchedulerPolicy(authorization.Role),
@@ -62,6 +70,7 @@ func (s *Server) handleV2ControlCenterPolicyReload(w http.ResponseWriter, r *htt
 		"authorization": authorization,
 		"reloaded":      true,
 		"policy":        store.Snapshot(),
+		"fairness":      s.schedulerRuntime().FairnessSnapshot(),
 		"source_path":   store.SourcePath(),
 	})
 }

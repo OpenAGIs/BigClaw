@@ -30,15 +30,16 @@ type WorkerPoolStatusProvider interface {
 }
 
 type Server struct {
-	Recorder        *observability.Recorder
-	Queue           queue.Queue
-	Executors       []domain.ExecutorKind
-	Bus             *events.Bus
-	Now             func() time.Time
-	Worker          WorkerStatusProvider
-	Control         *control.Controller
-	FlowStore       *flow.Store
-	SchedulerPolicy *scheduler.PolicyStore
+	Recorder         *observability.Recorder
+	Queue            queue.Queue
+	Executors        []domain.ExecutorKind
+	Bus              *events.Bus
+	Now              func() time.Time
+	Worker           WorkerStatusProvider
+	Control          *control.Controller
+	FlowStore        *flow.Store
+	SchedulerPolicy  *scheduler.PolicyStore
+	SchedulerRuntime *scheduler.Scheduler
 }
 
 func (s *Server) Handler() http.Handler {
@@ -53,6 +54,9 @@ func (s *Server) Handler() http.Handler {
 	}
 	if s.SchedulerPolicy == nil {
 		s.SchedulerPolicy = scheduler.NewDefaultPolicyStore()
+	}
+	if s.SchedulerRuntime == nil {
+		s.SchedulerRuntime = scheduler.NewWithPolicyStore(s.SchedulerPolicy)
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {

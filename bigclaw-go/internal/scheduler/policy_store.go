@@ -15,6 +15,7 @@ type RoutingRules struct {
 	HighRiskExecutor        domain.ExecutorKind            `json:"high_risk_executor"`
 	ToolExecutors           map[string]domain.ExecutorKind `json:"tool_executors"`
 	UrgentPriorityThreshold int                            `json:"urgent_priority_threshold"`
+	Fairness                FairnessRules                  `json:"fairness"`
 }
 
 type PolicyStore struct {
@@ -24,10 +25,16 @@ type PolicyStore struct {
 }
 
 type routingRulesFile struct {
-	DefaultExecutor         string            `json:"default_executor,omitempty"`
-	HighRiskExecutor        string            `json:"high_risk_executor,omitempty"`
-	ToolExecutors           map[string]string `json:"tool_executors,omitempty"`
-	UrgentPriorityThreshold *int              `json:"urgent_priority_threshold,omitempty"`
+	DefaultExecutor         string             `json:"default_executor,omitempty"`
+	HighRiskExecutor        string             `json:"high_risk_executor,omitempty"`
+	ToolExecutors           map[string]string  `json:"tool_executors,omitempty"`
+	UrgentPriorityThreshold *int               `json:"urgent_priority_threshold,omitempty"`
+	Fairness                *fairnessRulesFile `json:"fairness,omitempty"`
+}
+
+type fairnessRulesFile struct {
+	WindowSeconds               *int `json:"window_seconds,omitempty"`
+	MaxRecentDecisionsPerTenant *int `json:"max_recent_decisions_per_tenant,omitempty"`
 }
 
 func DefaultRoutingRules() RoutingRules {
@@ -136,6 +143,20 @@ func (raw routingRulesFile) normalize() (RoutingRules, error) {
 			return RoutingRules{}, fmt.Errorf("urgent_priority_threshold must be greater than zero")
 		}
 		rules.UrgentPriorityThreshold = *raw.UrgentPriorityThreshold
+	}
+	if raw.Fairness != nil {
+		if raw.Fairness.WindowSeconds != nil {
+			if *raw.Fairness.WindowSeconds < 0 {
+				return RoutingRules{}, fmt.Errorf("fairness.window_seconds must be zero or greater")
+			}
+			rules.Fairness.WindowSeconds = *raw.Fairness.WindowSeconds
+		}
+		if raw.Fairness.MaxRecentDecisionsPerTenant != nil {
+			if *raw.Fairness.MaxRecentDecisionsPerTenant < 0 {
+				return RoutingRules{}, fmt.Errorf("fairness.max_recent_decisions_per_tenant must be zero or greater")
+			}
+			rules.Fairness.MaxRecentDecisionsPerTenant = *raw.Fairness.MaxRecentDecisionsPerTenant
+		}
 	}
 	return rules, nil
 }

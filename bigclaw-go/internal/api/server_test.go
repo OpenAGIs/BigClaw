@@ -1517,15 +1517,18 @@ func TestV2ControlCenterAuditFiltersOwnerReviewerAndScope(t *testing.T) {
 func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	dir := t.TempDir()
 	policyPath := filepath.Join(dir, "scheduler-policy.json")
-	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"ray","tool_executors":{"browser":"ray"},"urgent_priority_threshold":2}`), 0o644); err != nil {
+	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"ray","tool_executors":{"browser":"ray"},"urgent_priority_threshold":2,"fairness":{"window_seconds":30,"max_recent_decisions_per_tenant":1}}`), 0o644); err != nil {
 		t.Fatalf("write policy file: %v", err)
 	}
 	store, err := scheduler.NewPolicyStore(policyPath)
 	if err != nil {
 		t.Fatalf("new policy store: %v", err)
 	}
+	schedulerRuntime := scheduler.NewWithPolicyStore(store)
+	schedulerRuntime.Decide(domain.Task{ID: "fair-1", TenantID: "tenant-a", Priority: 3}, scheduler.QuotaSnapshot{})
+	schedulerRuntime.Decide(domain.Task{ID: "fair-2", TenantID: "tenant-b", Priority: 3}, scheduler.QuotaSnapshot{})
 	recorder := observability.NewRecorder()
-	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), SchedulerPolicy: store, Now: time.Now}
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), SchedulerPolicy: store, SchedulerRuntime: schedulerRuntime, Now: time.Now}
 	handler := server.Handler()
 
 	policyResponse := httptest.NewRecorder()
@@ -1543,16 +1546,33 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 			DefaultExecutor         string            `json:"default_executor"`
 			UrgentPriorityThreshold int               `json:"urgent_priority_threshold"`
 			ToolExecutors           map[string]string `json:"tool_executors"`
+			Fairness                struct {
+				WindowSeconds               int `json:"window_seconds"`
+				MaxRecentDecisionsPerTenant int `json:"max_recent_decisions_per_tenant"`
+			} `json:"fairness"`
 		} `json:"policy"`
+		Fairness struct {
+			Enabled                     bool `json:"enabled"`
+			WindowSeconds               int  `json:"window_seconds"`
+			MaxRecentDecisionsPerTenant int  `json:"max_recent_decisions_per_tenant"`
+			ActiveTenants               int  `json:"active_tenants"`
+			Tenants                     []struct {
+				TenantID            string `json:"tenant_id"`
+				RecentAcceptedCount int    `json:"recent_accepted_count"`
+			} `json:"tenants"`
+		} `json:"fairness"`
 	}
 	if err := json.Unmarshal(policyResponse.Body.Bytes(), &policyDecoded); err != nil {
 		t.Fatalf("decode scheduler policy response: %v", err)
 	}
-	if policyDecoded.SourcePath != policyPath || !policyDecoded.ReloadSupported || !policyDecoded.ReloadAuthorized || policyDecoded.Policy.DefaultExecutor != string(domain.ExecutorRay) || policyDecoded.Policy.ToolExecutors["browser"] != string(domain.ExecutorRay) || policyDecoded.Policy.UrgentPriorityThreshold != 2 {
+	if policyDecoded.SourcePath != policyPath || !policyDecoded.ReloadSupported || !policyDecoded.ReloadAuthorized || policyDecoded.Policy.DefaultExecutor != string(domain.ExecutorRay) || policyDecoded.Policy.ToolExecutors["browser"] != string(domain.ExecutorRay) || policyDecoded.Policy.UrgentPriorityThreshold != 2 || policyDecoded.Policy.Fairness.WindowSeconds != 30 || policyDecoded.Policy.Fairness.MaxRecentDecisionsPerTenant != 1 {
 		t.Fatalf("unexpected scheduler policy payload: %+v", policyDecoded)
 	}
+	if !policyDecoded.Fairness.Enabled || policyDecoded.Fairness.ActiveTenants != 2 || len(policyDecoded.Fairness.Tenants) != 2 {
+		t.Fatalf("unexpected fairness runtime payload: %+v", policyDecoded.Fairness)
+	}
 
-	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"kubernetes","high_risk_executor":"ray"}`), 0o644); err != nil {
+	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"kubernetes","high_risk_executor":"ray","fairness":{"window_seconds":10,"max_recent_decisions_per_tenant":2}}`), 0o644); err != nil {
 		t.Fatalf("rewrite policy file: %v", err)
 	}
 	reloadResponse := httptest.NewRecorder()
@@ -1565,7 +1585,7 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 
 	policyResponse = httptest.NewRecorder()
 	handler.ServeHTTP(policyResponse, policyRequest)
-	if !strings.Contains(policyResponse.Body.String(), `"default_executor":"kubernetes"`) || !strings.Contains(policyResponse.Body.String(), `"high_risk_executor":"ray"`) {
+	if !strings.Contains(policyResponse.Body.String(), `"default_executor":"kubernetes"`) || !strings.Contains(policyResponse.Body.String(), `"high_risk_executor":"ray"`) || !strings.Contains(policyResponse.Body.String(), `"window_seconds":10`) {
 		t.Fatalf("expected reloaded policy in get response, got %s", policyResponse.Body.String())
 	}
 

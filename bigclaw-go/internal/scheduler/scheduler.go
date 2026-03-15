@@ -2,6 +2,8 @@ package scheduler
 
 import (
 	"fmt"
+	"strings"
+	"time"
 
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/executor"
@@ -26,6 +28,8 @@ type Decision struct {
 
 type Scheduler struct {
 	policyStore *PolicyStore
+	fairness    *fairnessTracker
+	now         func() time.Time
 }
 
 func New() *Scheduler {
@@ -36,7 +40,7 @@ func NewWithPolicyStore(store *PolicyStore) *Scheduler {
 	if store == nil {
 		store = NewDefaultPolicyStore()
 	}
-	return &Scheduler{policyStore: store}
+	return &Scheduler{policyStore: store, fairness: newFairnessTracker(), now: time.Now}
 }
 
 func (s *Scheduler) Rules() RoutingRules {
@@ -46,23 +50,43 @@ func (s *Scheduler) Rules() RoutingRules {
 	return s.policyStore.Snapshot()
 }
 
+func (s *Scheduler) FairnessSnapshot() FairnessSnapshot {
+	if s == nil {
+		return FairnessSnapshot{}
+	}
+	return s.fairness.snapshot(s.currentTime(), s.Rules())
+}
+
+func (s *Scheduler) currentTime() time.Time {
+	if s == nil || s.now == nil {
+		return time.Now()
+	}
+	return s.now()
+}
+
 func (s *Scheduler) Decide(task domain.Task, quota QuotaSnapshot) Decision {
 	rules := s.Rules()
+	now := s.currentTime()
 	if quota.BudgetRemaining > 0 && task.BudgetCents > quota.BudgetRemaining {
 		return Decision{Accepted: false, Reason: "budget exceeded"}
 	}
 	if quota.MaxQueueDepth > 0 && quota.QueueDepth >= quota.MaxQueueDepth && !isPriorityExempt(task, rules) {
 		return Decision{Accepted: false, Reason: "backpressure activated: queue depth limit exceeded"}
 	}
+	if shouldThrottleForFairness(task, rules) && s.fairness.shouldThrottle(now, strings.TrimSpace(task.TenantID), rules) {
+		return Decision{Accepted: false, Reason: fairnessThrottleReason(strings.TrimSpace(task.TenantID), rules)}
+	}
 	assignment := assignmentForTask(task, rules)
 	if quota.ConcurrentLimit > 0 && quota.CurrentRunning >= quota.ConcurrentLimit {
 		if isPreemptible(task, rules) && quota.PreemptibleExecutions > 0 {
 			assignment.Reason = assignment.Reason + "; using preemptible capacity"
+			s.fairness.recordAccepted(now, strings.TrimSpace(task.TenantID), rules)
 			return Decision{Accepted: true, Assignment: assignment, Reason: assignment.Reason}
 		}
 		return Decision{Accepted: false, Reason: "tenant concurrency quota exceeded"}
 	}
 
+	s.fairness.recordAccepted(now, strings.TrimSpace(task.TenantID), rules)
 	return Decision{Accepted: true, Assignment: assignment, Reason: assignment.Reason}
 }
 
@@ -146,4 +170,14 @@ func isPreemptible(task domain.Task, rules RoutingRules) bool {
 
 func isPriorityExempt(task domain.Task, rules RoutingRules) bool {
 	return isPreemptible(task, rules) || risk.ScoreTask(task, nil).Level == domain.RiskHigh
+}
+
+func shouldThrottleForFairness(task domain.Task, rules RoutingRules) bool {
+	if !fairnessEnabled(rules) {
+		return false
+	}
+	if strings.TrimSpace(task.TenantID) == "" {
+		return false
+	}
+	return !isPriorityExempt(task, rules)
 }
