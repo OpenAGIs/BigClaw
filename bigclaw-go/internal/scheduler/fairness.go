@@ -30,6 +30,9 @@ type FairnessSnapshot struct {
 	Enabled                     bool                     `json:"enabled"`
 	Shared                      bool                     `json:"shared"`
 	Backend                     string                   `json:"backend"`
+	Healthy                     bool                     `json:"healthy,omitempty"`
+	Endpoint                    string                   `json:"endpoint,omitempty"`
+	LastError                   string                   `json:"last_error,omitempty"`
 	WindowSeconds               int                      `json:"window_seconds"`
 	MaxRecentDecisionsPerTenant int                      `json:"max_recent_decisions_per_tenant"`
 	ActiveTenants               int                      `json:"active_tenants"`
@@ -42,6 +45,13 @@ type fairnessTracker struct {
 }
 
 func NewFairnessStore(path string) (FairnessStore, error) {
+	return NewFairnessStoreWithRemote(path, "", "")
+}
+
+func NewFairnessStoreWithRemote(path, remoteURL, bearerToken string) (FairnessStore, error) {
+	if strings.TrimSpace(remoteURL) != "" {
+		return NewHTTPFairnessStore(remoteURL, bearerToken)
+	}
 	if strings.TrimSpace(path) == "" {
 		return newFairnessTracker(), nil
 	}
@@ -54,6 +64,17 @@ func newFairnessTracker() *fairnessTracker {
 
 func fairnessEnabled(rules RoutingRules) bool {
 	return rules.Fairness.WindowSeconds > 0 && rules.Fairness.MaxRecentDecisionsPerTenant > 0
+}
+
+func fairnessBaseSnapshot(rules RoutingRules, backend string, shared bool) FairnessSnapshot {
+	return FairnessSnapshot{
+		Enabled:                     fairnessEnabled(rules),
+		Shared:                      shared,
+		Backend:                     backend,
+		Healthy:                     true,
+		WindowSeconds:               rules.Fairness.WindowSeconds,
+		MaxRecentDecisionsPerTenant: rules.Fairness.MaxRecentDecisionsPerTenant,
+	}
 }
 
 func (t *fairnessTracker) ShouldThrottle(now time.Time, tenantID string, rules RoutingRules) bool {
@@ -95,13 +116,7 @@ func (t *fairnessTracker) RecordAccepted(now time.Time, tenantID string, rules R
 }
 
 func (t *fairnessTracker) Snapshot(now time.Time, rules RoutingRules) FairnessSnapshot {
-	snapshot := FairnessSnapshot{
-		Enabled:                     fairnessEnabled(rules),
-		Shared:                      false,
-		Backend:                     "memory",
-		WindowSeconds:               rules.Fairness.WindowSeconds,
-		MaxRecentDecisionsPerTenant: rules.Fairness.MaxRecentDecisionsPerTenant,
-	}
+	snapshot := fairnessBaseSnapshot(rules, "memory", false)
 	if t == nil {
 		return snapshot
 	}

@@ -103,13 +103,7 @@ func (s *SQLiteFairnessStore) RecordAccepted(now time.Time, tenantID string, rul
 }
 
 func (s *SQLiteFairnessStore) Snapshot(now time.Time, rules RoutingRules) FairnessSnapshot {
-	snapshot := FairnessSnapshot{
-		Enabled:                     fairnessEnabled(rules),
-		Shared:                      true,
-		Backend:                     "sqlite",
-		WindowSeconds:               rules.Fairness.WindowSeconds,
-		MaxRecentDecisionsPerTenant: rules.Fairness.MaxRecentDecisionsPerTenant,
-	}
+	snapshot := fairnessBaseSnapshot(rules, "sqlite", true)
 	if s == nil {
 		return snapshot
 	}

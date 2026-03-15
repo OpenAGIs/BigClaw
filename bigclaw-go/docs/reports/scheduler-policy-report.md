@@ -8,7 +8,7 @@ This report summarizes the current Go scheduler policy surface for `OPE-179` / `
 
 - Budget guardrail rejects tasks whose `budget_cents` exceed remaining budget.
 - Concurrency quota rejects new work when tenant concurrency is exhausted.
-- Multi-tenant fairness windows can throttle dominant tenant low-priority work when peer tenants are also active, with optional shared SQLite-backed coordination across scheduler processes.
+- Multi-tenant fairness windows can throttle dominant tenant low-priority work when peer tenants are also active, with optional shared SQLite-backed coordination or a remote HTTP fairness service across scheduler processes.
 - Preemptible capacity now supports live preemption: urgent tasks can cancel a lower-priority leased/running task to reclaim capacity when `preemptible_executions` is available.
 - Backpressure rejects low-priority tasks when queue depth exceeds `max_queue_depth`.
 - High-risk tasks default to `kubernetes`.
@@ -30,4 +30,4 @@ This report summarizes the current Go scheduler policy surface for `OPE-179` / `
 
 ## Remaining gaps
 
-- Shared fairness coordination is now available through an optional SQLite-backed store, but there is still no remote/distributed fairness service beyond shared local SQLite state.
+- No open fairness-distribution gaps remain in the current scheduler policy scope; fairness can now coordinate through memory, shared SQLite, or a remote HTTP service backend.

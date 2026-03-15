@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -68,6 +69,13 @@ func (s *Scheduler) FairnessSnapshot() FairnessSnapshot {
 		return FairnessSnapshot{}
 	}
 	return s.fairness.Snapshot(s.currentTime(), s.Rules())
+}
+
+func (s *Scheduler) FairnessServiceHandler() http.Handler {
+	if s == nil {
+		return NewFairnessServiceHandler(newFairnessTracker())
+	}
+	return NewFairnessServiceHandler(s.fairness)
 }
 
 func (s *Scheduler) currentTime() time.Time {

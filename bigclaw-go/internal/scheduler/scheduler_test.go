@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -271,5 +272,53 @@ func TestSchedulerFairnessWindowCanUseSharedSQLiteState(t *testing.T) {
 	snapshot := s2.FairnessSnapshot()
 	if !snapshot.Shared || snapshot.Backend != "sqlite" || snapshot.ActiveTenants != 2 {
 		t.Fatalf("unexpected shared fairness snapshot: %+v", snapshot)
+	}
+}
+
+func TestSchedulerFairnessWindowCanUseRemoteHTTPState(t *testing.T) {
+	dir := t.TempDir()
+	policyPath := filepath.Join(dir, "scheduler-policy.json")
+	content := []byte(`{"fairness":{"window_seconds":30,"max_recent_decisions_per_tenant":1}}`)
+	if err := os.WriteFile(policyPath, content, 0o644); err != nil {
+		t.Fatalf("write fairness policy file: %v", err)
+	}
+	store, err := NewPolicyStore(policyPath)
+	if err != nil {
+		t.Fatalf("new policy store: %v", err)
+	}
+	serviceStore, err := NewFairnessStore("")
+	if err != nil {
+		t.Fatalf("new service fairness store: %v", err)
+	}
+	server := httptest.NewServer(NewFairnessServiceHandler(serviceStore))
+	defer server.Close()
+	fairnessA, err := NewFairnessStoreWithRemote("", server.URL, "")
+	if err != nil {
+		t.Fatalf("new remote fairness store A: %v", err)
+	}
+	fairnessB, err := NewFairnessStoreWithRemote("", server.URL, "")
+	if err != nil {
+		t.Fatalf("new remote fairness store B: %v", err)
+	}
+	s1 := NewWithStores(store, fairnessA)
+	s2 := NewWithStores(store, fairnessB)
+	now := time.Unix(1700002000, 0)
+	s1.now = func() time.Time { return now }
+	s2.now = func() time.Time { return now }
+	if decision := s1.Decide(domain.Task{ID: "remote-a-1", TenantID: "tenant-a", Priority: 3}, QuotaSnapshot{}); !decision.Accepted {
+		t.Fatalf("expected remote tenant-a task accepted, got %+v", decision)
+	}
+	now = now.Add(time.Second)
+	if decision := s2.Decide(domain.Task{ID: "remote-b-1", TenantID: "tenant-b", Priority: 3}, QuotaSnapshot{}); !decision.Accepted {
+		t.Fatalf("expected remote tenant-b task accepted, got %+v", decision)
+	}
+	now = now.Add(time.Second)
+	throttled := s1.Decide(domain.Task{ID: "remote-a-2", TenantID: "tenant-a", Priority: 3}, QuotaSnapshot{})
+	if throttled.Accepted || !strings.Contains(throttled.Reason, "fairness window throttled tenant tenant-a") {
+		t.Fatalf("expected tenant-a throttled via remote fairness state, got %+v", throttled)
+	}
+	snapshot := s2.FairnessSnapshot()
+	if !snapshot.Shared || snapshot.Backend != "http" || !snapshot.Healthy || snapshot.Endpoint != server.URL || snapshot.ActiveTenants != 2 {
+		t.Fatalf("unexpected remote fairness snapshot: %+v", snapshot)
 	}
 }

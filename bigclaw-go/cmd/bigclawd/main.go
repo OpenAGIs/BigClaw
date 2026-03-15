@@ -45,7 +45,7 @@ func main() {
 		panic(err)
 	}
 	defer closePolicyStore(policyStore)
-	fairnessStore, err := scheduler.NewFairnessStore(cfg.SchedulerFairnessSQLitePath)
+	fairnessStore, err := scheduler.NewFairnessStoreWithRemote(cfg.SchedulerFairnessSQLitePath, cfg.SchedulerFairnessRemoteURL, cfg.SchedulerFairnessRemoteBearer)
 	if err != nil {
 		panic(err)
 	}

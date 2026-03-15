@@ -40,6 +40,8 @@ type Config struct {
 	SchedulerPolicyPath           string
 	SchedulerPolicySQLitePath     string
 	SchedulerFairnessSQLitePath   string
+	SchedulerFairnessRemoteURL    string
+	SchedulerFairnessRemoteBearer string
 }
 
 func Default() Config {
@@ -71,6 +73,8 @@ func Default() Config {
 		SchedulerPolicyPath:           "",
 		SchedulerPolicySQLitePath:     "",
 		SchedulerFairnessSQLitePath:   "",
+		SchedulerFairnessRemoteURL:    "",
+		SchedulerFairnessRemoteBearer: "",
 	}
 }
 
@@ -95,6 +99,8 @@ func LoadFromEnv() Config {
 	cfg.SchedulerPolicyPath = getString("BIGCLAW_SCHEDULER_POLICY_PATH", cfg.SchedulerPolicyPath)
 	cfg.SchedulerPolicySQLitePath = getString("BIGCLAW_SCHEDULER_POLICY_SQLITE_PATH", cfg.SchedulerPolicySQLitePath)
 	cfg.SchedulerFairnessSQLitePath = getString("BIGCLAW_SCHEDULER_FAIRNESS_SQLITE_PATH", cfg.SchedulerFairnessSQLitePath)
+	cfg.SchedulerFairnessRemoteURL = getString("BIGCLAW_SCHEDULER_FAIRNESS_REMOTE_URL", cfg.SchedulerFairnessRemoteURL)
+	cfg.SchedulerFairnessRemoteBearer = getString("BIGCLAW_SCHEDULER_FAIRNESS_REMOTE_BEARER_TOKEN", cfg.SchedulerFairnessRemoteBearer)
 	cfg.LeaseTTL = getDuration("BIGCLAW_LEASE_TTL", cfg.LeaseTTL)
 	cfg.TaskTimeout = getDuration("BIGCLAW_TASK_TIMEOUT", cfg.TaskTimeout)
 	cfg.PollInterval = getDuration("BIGCLAW_POLL_INTERVAL", cfg.PollInterval)

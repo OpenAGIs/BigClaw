@@ -1811,3 +1811,56 @@ func TestV2DashboardAndRunDetailEnforceViewerTeamScope(t *testing.T) {
 		t.Fatalf("expected forbidden run detail for out-of-scope team, got %d %s", runResponse.Code, runResponse.Body.String())
 	}
 }
+
+func TestV2ControlCenterPolicyEndpointShowsRemoteFairnessHealth(t *testing.T) {
+	dir := t.TempDir()
+	policyPath := filepath.Join(dir, "scheduler-policy.json")
+	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"ray","fairness":{"window_seconds":30,"max_recent_decisions_per_tenant":1}}`), 0o644); err != nil {
+		t.Fatalf("write policy file: %v", err)
+	}
+	store, err := scheduler.NewPolicyStore(policyPath)
+	if err != nil {
+		t.Fatalf("new policy store: %v", err)
+	}
+	serviceStore, err := scheduler.NewFairnessStore("")
+	if err != nil {
+		t.Fatalf("new service fairness store: %v", err)
+	}
+	service := httptest.NewServer(scheduler.NewFairnessServiceHandler(serviceStore))
+	defer service.Close()
+	remoteFairness, err := scheduler.NewFairnessStoreWithRemote("", service.URL, "")
+	if err != nil {
+		t.Fatalf("new remote fairness store: %v", err)
+	}
+	schedulerRuntime := scheduler.NewWithStores(store, remoteFairness)
+	schedulerRuntime.Decide(domain.Task{ID: "remote-fair-1", TenantID: "tenant-a", Priority: 3}, scheduler.QuotaSnapshot{})
+	schedulerRuntime.Decide(domain.Task{ID: "remote-fair-2", TenantID: "tenant-b", Priority: 3}, scheduler.QuotaSnapshot{})
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), SchedulerPolicy: store, SchedulerRuntime: schedulerRuntime, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center/policy", nil)
+	request.Header.Set("X-BigClaw-Role", "platform_admin")
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected scheduler policy 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Fairness struct {
+			Backend       string `json:"backend"`
+			Healthy       bool   `json:"healthy"`
+			Endpoint      string `json:"endpoint"`
+			ActiveTenants int    `json:"active_tenants"`
+		} `json:"fairness"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode remote fairness policy response: %v", err)
+	}
+	if decoded.Fairness.Backend != "http" || !decoded.Fairness.Healthy || decoded.Fairness.Endpoint != service.URL || decoded.Fairness.ActiveTenants != 2 {
+		t.Fatalf("unexpected remote fairness metadata: %+v", decoded.Fairness)
+	}
+	body := response.Body.String()
+	for _, want := range []string{"tenant-a", "tenant-b"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected %q in remote fairness policy payload, got %s", want, body)
+		}
+	}
+}
