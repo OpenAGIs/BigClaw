@@ -11,9 +11,13 @@ This report summarizes the current event bus reliability evidence and the next r
 - Webhook sink integration for external fanout
 - SSE stream via `GET /stream/events`
 - Optional SSE replay and filtering via `replay=1`, `task_id`, and `trace_id`
+<<<<<<< HEAD
 - Replay-safe consumer delivery metadata via `EventDelivery`, including additive `delivery.mode`, `delivery.replay`, and `delivery.idempotency_key` fields
 - Consumer dedup ledger/result contract covering duplicate, retryable-failure, and already-applied outcomes
 - Subscriber-group checkpoint lease coordination via `/subscriber-groups/leases` and `/subscriber-groups/checkpoints`
+=======
+- Event backend capability and config-validation contract via `internal/events/backend_contract.go`
+>>>>>>> origin/dcjcloud/ope-213-big-par-025-durability-capability-matrix-与后端配置校验
 
 ## Validated behaviors
 
@@ -29,7 +33,12 @@ This report summarizes the current event bus reliability evidence and the next r
 ## Evidence
 
 - `internal/events/bus.go`
+<<<<<<< HEAD
 - `internal/events/durability.go`
+=======
+- `internal/events/backend_contract.go`
+- `internal/events/backend_contract_test.go`
+>>>>>>> origin/dcjcloud/ope-213-big-par-025-durability-capability-matrix-与后端配置校验
 - `internal/events/bus_test.go`
 - `internal/events/delivery.go`
 - `internal/events/delivery_test.go`
@@ -45,12 +54,13 @@ This report summarizes the current event bus reliability evidence and the next r
 - `cmd/bigclawd/main.go`
 - `internal/config/config.go`
 
+<<<<<<< HEAD
 ## Current durability shape
 
 - Runtime publish/subscribe remains in-process.
 - Audit/debug persistence is recorder-backed, with optional JSONL sinking.
-- The new `events.DurabilityPlan` surface makes the active backend and the next replicated target explicit in bootstrap and `GET /debug/status`.
-- Default plan is `memory -> broker_replicated` with replication factor `3`, and env overrides now exist for:
+- The `events.DurabilityPlan` surface makes the active backend and the next replicated target explicit in bootstrap and `GET /debug/status`.
+- Default plan is `memory -> broker_replicated` with replication factor `3`, and env overrides exist for:
   - `BIGCLAW_EVENT_LOG_BACKEND`
   - `BIGCLAW_EVENT_LOG_TARGET_BACKEND`
   - `BIGCLAW_EVENT_LOG_REPLICATION_FACTOR`
@@ -63,7 +73,7 @@ This report summarizes the current event bus reliability evidence and the next r
 
 ## Repo-native integration points
 
-- `cmd/bigclawd/main.go`: bootstrap backend selection and future broker client wiring.
+- `cmd/bigclawd/main.go`: bootstrap backend selection, capability validation, and future broker client wiring.
 - `internal/events/bus.go`: publish path remains the place to insert append/ack behavior ahead of live fanout.
 - `internal/api/server.go`: operational reporting for current and target durability mode.
 - Subscriber checkpoint persistence and replay endpoints: preserve resume semantics while moving state out of process-local memory.
@@ -81,7 +91,24 @@ This report summarizes the current event bus reliability evidence and the next r
 2. Introduce a dual-write migration phase from the current publish path into the new event-log backend while keeping recorder/audit output unchanged.
 3. Add checkpoint-backed replay endpoints that read from the shared event log instead of recorder-only history.
 4. Add a broker-backed implementation with partition-key rules for `trace_id` and explicit publisher ack / durability error handling.
-5. Validate cutover with replay, checkpoint monotonicity, and SSE handoff regression coverage under shared multi-node conditions.
+5. Validate cutover with replay, checkpoint monotonicity, SSE handoff, and capability-matrix regression coverage under shared multi-node conditions.
+
+## Durability capability matrix
+
+| Backend | Implemented in bootstrap | Durable history | Publish | Replay | Checkpoint | Filtering | Required config |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `memory` | yes | no | native | native | unsupported | native | none |
+| `sqlite` | no | yes | native | native | native | derived | `BIGCLAW_EVENT_LOG_DSN`, `BIGCLAW_EVENT_CHECKPOINT_DSN`, `BIGCLAW_EVENT_RETENTION` |
+| `http` | no | yes | native | native | native | derived | `BIGCLAW_EVENT_LOG_DSN`, `BIGCLAW_EVENT_CHECKPOINT_DSN`, `BIGCLAW_EVENT_RETENTION` |
+| `broker` | no | yes | native | native | native | derived | `BIGCLAW_EVENT_LOG_DSN`, `BIGCLAW_EVENT_CHECKPOINT_DSN`, `BIGCLAW_EVENT_RETENTION` |
+
+## Validation contract
+
+- Startup validates `BIGCLAW_EVENT_BACKEND` against the backend catalog before queue/bootstrap wiring begins.
+- Durable backends must provide explicit event-log DSN, checkpoint DSN, and positive retention.
+- `BIGCLAW_EVENT_REQUIRE_REPLAY`, `BIGCLAW_EVENT_REQUIRE_CHECKPOINT`, and `BIGCLAW_EVENT_REQUIRE_FILTERING` express the runtime features operators expect from the selected backend.
+- Unsupported combinations fail fast with field-specific errors instead of silently downgrading runtime behavior.
+- Backends declared in the matrix but not yet wired into the bootstrap runtime are rejected explicitly so planning assumptions cannot masquerade as implemented support.
 
 ## Remaining gaps
 

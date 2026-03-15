@@ -24,6 +24,9 @@ import (
 
 func main() {
 	cfg := config.LoadFromEnv()
+	if err := validateEventBackend(cfg); err != nil {
+		panic(err)
+	}
 	q, err := buildQueue(cfg)
 	if err != nil {
 		panic(err)
@@ -181,4 +184,17 @@ func buildRegistry(cfg config.Config) *executor.Registry {
 
 func seed(ctx context.Context, q queue.Queue) {
 	_ = q.Enqueue(ctx, domain.Task{ID: "bootstrap-local", Title: "bootstrap local task", Priority: 1, RiskLevel: domain.RiskLow, BudgetCents: 100, Entrypoint: "echo hello from local", CreatedAt: time.Now(), UpdatedAt: time.Now()})
+}
+
+func validateEventBackend(cfg config.Config) error {
+	report := events.ValidateBackendConfig(events.BackendConfig{
+		Backend:           events.BackendKind(cfg.EventBackend),
+		LogDSN:            cfg.EventLogDSN,
+		CheckpointDSN:     cfg.EventCheckpointDSN,
+		Retention:         cfg.EventRetention,
+		RequireReplay:     cfg.EventRequireReplay,
+		RequireCheckpoint: cfg.EventRequireCheckpoint,
+		RequireFiltering:  cfg.EventRequireFiltering,
+	})
+	return report.Error()
 }
