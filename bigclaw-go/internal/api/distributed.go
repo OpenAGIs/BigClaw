@@ -10,6 +10,7 @@ import (
 	"bigclaw-go/internal/control"
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/executor"
+	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/risk"
 )
 
@@ -70,11 +71,33 @@ type distributedDiagnosticsReport struct {
 	ExportURL string `json:"export_url"`
 }
 
+type traceExportBundleSummary struct {
+	TotalTraces             int                      `json:"total_traces"`
+	TracesWithTerminalState int                      `json:"traces_with_terminal_state"`
+	RecentTraces            []traceExportBundleTrace `json:"recent_traces,omitempty"`
+	ValidationArtifacts     []string                 `json:"validation_artifacts,omitempty"`
+	ReviewerNavigation      []string                 `json:"reviewer_navigation,omitempty"`
+	BackendLimitations      []string                 `json:"backend_limitations,omitempty"`
+}
+
+type traceExportBundleTrace struct {
+	TraceID         string           `json:"trace_id"`
+	TaskID          string           `json:"task_id"`
+	Executor        string           `json:"executor"`
+	State           string           `json:"state"`
+	EventCount      int              `json:"event_count"`
+	LatestEventType domain.EventType `json:"latest_event_type"`
+	DurationSeconds float64          `json:"duration_seconds"`
+	TraceURL        string           `json:"trace_url"`
+	EventURL        string           `json:"event_url"`
+}
+
 type distributedDiagnostics struct {
 	Summary          distributedDiagnosticsSummary `json:"summary"`
 	RoutingReasons   []routingReasonSummary        `json:"routing_reasons"`
 	ExecutorCapacity []executorCapacityView        `json:"executor_capacity"`
 	ClusterHealth    clusterHealthRollup           `json:"cluster_health"`
+	TraceBundle      traceExportBundleSummary      `json:"trace_export_bundle"`
 	RolloutReport    distributedDiagnosticsReport  `json:"rollout_report"`
 }
 
@@ -118,11 +141,12 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 			"limit":      filters.Limit,
 			"priority":   filters.Priority,
 		},
-		"summary":           diagnostics.Summary,
-		"routing_reasons":   diagnostics.RoutingReasons,
-		"executor_capacity": diagnostics.ExecutorCapacity,
-		"cluster_health":    diagnostics.ClusterHealth,
-		"report":            diagnostics.RolloutReport,
+		"summary":             diagnostics.Summary,
+		"routing_reasons":     diagnostics.RoutingReasons,
+		"executor_capacity":   diagnostics.ExecutorCapacity,
+		"cluster_health":      diagnostics.ClusterHealth,
+		"trace_export_bundle": diagnostics.TraceBundle,
+		"report":              diagnostics.RolloutReport,
 	})
 }
 
@@ -346,6 +370,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		RoutingReasons:   routingReasons,
 		ExecutorCapacity: executorCapacity,
 		ClusterHealth:    clusterHealth,
+		TraceBundle:      buildTraceExportBundle(assignments, s.Recorder.TraceSummaries(5)),
 	}
 	diagnostics.RolloutReport = distributedDiagnosticsReport{
 		Markdown:  renderDistributedDiagnosticsMarkdown(diagnostics, filters),
@@ -652,6 +677,28 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	if len(diagnostics.ClusterHealth.TakeoverOwners) > 0 {
 		lines = append(lines, "- Takeover owners: "+formatFacetCounts(diagnostics.ClusterHealth.TakeoverOwners))
 	}
+	lines = append(lines,
+		"",
+		"## Trace Export Bundle",
+		fmt.Sprintf("- Total traces: %d", diagnostics.TraceBundle.TotalTraces),
+		fmt.Sprintf("- Traces with terminal state: %d", diagnostics.TraceBundle.TracesWithTerminalState),
+	)
+	if len(diagnostics.TraceBundle.RecentTraces) == 0 {
+		lines = append(lines, "- No trace summaries captured")
+	} else {
+		for _, item := range diagnostics.TraceBundle.RecentTraces {
+			lines = append(lines, fmt.Sprintf("- %s: task=%s executor=%s state=%s events=%d latest=%s duration=%.3fs trace=%s events=%s", item.TraceID, item.TaskID, firstNonEmpty(item.Executor, "unknown"), firstNonEmpty(item.State, "unknown"), item.EventCount, firstNonEmpty(string(item.LatestEventType), "unknown"), item.DurationSeconds, item.TraceURL, item.EventURL))
+		}
+	}
+	if len(diagnostics.TraceBundle.ValidationArtifacts) > 0 {
+		lines = append(lines, "- Validation artifacts: "+strings.Join(diagnostics.TraceBundle.ValidationArtifacts, ", "))
+	}
+	if len(diagnostics.TraceBundle.ReviewerNavigation) > 0 {
+		lines = append(lines, "- Reviewer navigation: "+strings.Join(diagnostics.TraceBundle.ReviewerNavigation, ", "))
+	}
+	if len(diagnostics.TraceBundle.BackendLimitations) > 0 {
+		lines = append(lines, "- Backend limitations: "+strings.Join(diagnostics.TraceBundle.BackendLimitations, "; "))
+	}
 	lines = append(lines, "", "## Notes")
 	for _, note := range diagnostics.ClusterHealth.Notes {
 		lines = append(lines, "- "+note)
@@ -675,4 +722,66 @@ func sanitizeReportName(value string) string {
 		return "all"
 	}
 	return value
+}
+
+func buildTraceExportBundle(assignments []distributedTaskAssignment, summaries []observability.TraceSummary) traceExportBundleSummary {
+	assignmentByTrace := make(map[string]distributedTaskAssignment, len(assignments))
+	tracesWithTerminalState := 0
+	for _, assignment := range assignments {
+		if assignment.Task.TraceID == "" {
+			continue
+		}
+		assignmentByTrace[assignment.Task.TraceID] = assignment
+		if isTerminalState(assignment.EffectiveState) {
+			tracesWithTerminalState++
+		}
+	}
+	recent := make([]traceExportBundleTrace, 0, len(summaries))
+	for _, summary := range summaries {
+		assignment, ok := assignmentByTrace[summary.TraceID]
+		if !ok {
+			continue
+		}
+		recent = append(recent, traceExportBundleTrace{
+			TraceID:         summary.TraceID,
+			TaskID:          assignment.Task.ID,
+			Executor:        string(assignment.Executor),
+			State:           string(assignment.EffectiveState),
+			EventCount:      summary.EventCount,
+			LatestEventType: summary.LatestEventType,
+			DurationSeconds: summary.DurationSeconds,
+			TraceURL:        fmt.Sprintf("/debug/traces/%s?limit=%d", summary.TraceID, 200),
+			EventURL:        fmt.Sprintf("/events?trace_id=%s&limit=%d", summary.TraceID, 200),
+		})
+	}
+	return traceExportBundleSummary{
+		TotalTraces:             len(assignmentByTrace),
+		TracesWithTerminalState: tracesWithTerminalState,
+		RecentTraces:            recent,
+		ValidationArtifacts: []string{
+			"docs/reports/live-validation-index.md",
+			"docs/reports/live-validation-summary.json",
+			"docs/reports/go-control-plane-observability-report.md",
+		},
+		ReviewerNavigation: []string{
+			"/v2/reports/distributed/export",
+			"/debug/traces",
+			"/events?trace_id=<trace_id>&limit=200",
+			"docs/reports/review-readiness.md",
+		},
+		BackendLimitations: []string{
+			"no external tracing backend or OTLP/Jaeger/Tempo/Zipkin export path",
+			"no cross-process span propagation beyond in-memory trace_id grouping",
+			"validation evidence is workflow-exported and repo-native, not a continuously indexed trace service",
+		},
+	}
+}
+
+func isTerminalState(state domain.TaskState) bool {
+	switch state {
+	case domain.TaskSucceeded, domain.TaskFailed, domain.TaskCancelled, domain.TaskDeadLetter:
+		return true
+	default:
+		return false
+	}
 }
