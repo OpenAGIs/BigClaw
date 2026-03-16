@@ -1,0 +1,106 @@
+{
+  "generated_at": "2026-03-16T14:50:50.300410+00:00",
+  "history_window": 3,
+  "stale_after_hours": 24.0,
+  "required_components": [
+    "local",
+    "kubernetes",
+    "ray"
+  ],
+  "latest_run_id": "20260314T164647Z",
+  "latest_bundle_policy": {
+    "run_id": "20260314T164647Z",
+    "generated_at": "2026-03-14T16:46:57.671520+00:00",
+    "status": "succeeded",
+    "bundle_path": "docs/reports/live-validation-runs/20260314T164647Z",
+    "summary_path": "docs/reports/live-validation-runs/20260314T164647Z/summary.json",
+    "age_hours": 46.065,
+    "components": {
+      "local": {
+        "enabled": true,
+        "status": "succeeded"
+      },
+      "kubernetes": {
+        "enabled": true,
+        "status": "succeeded"
+      },
+      "ray": {
+        "enabled": true,
+        "status": "succeeded"
+      }
+    },
+    "missing_components": [],
+    "failing_components": [],
+    "disabled_components": [],
+    "stale_bundle": true,
+    "stale_reasons": [
+      "bundle_age_exceeds_threshold"
+    ],
+    "ready_for_closeout": false
+  },
+  "window_runs": [
+    {
+      "run_id": "20260314T164647Z",
+      "generated_at": "2026-03-14T16:46:57.671520+00:00",
+      "status": "succeeded",
+      "bundle_path": "docs/reports/live-validation-runs/20260314T164647Z",
+      "summary_path": "docs/reports/live-validation-runs/20260314T164647Z/summary.json",
+      "age_hours": 46.065,
+      "components": {
+        "local": {
+          "enabled": true,
+          "status": "succeeded"
+        },
+        "kubernetes": {
+          "enabled": true,
+          "status": "succeeded"
+        },
+        "ray": {
+          "enabled": true,
+          "status": "succeeded"
+        }
+      },
+      "missing_components": [],
+      "failing_components": [],
+      "disabled_components": [],
+      "stale_bundle": true,
+      "stale_reasons": [
+        "bundle_age_exceeds_threshold"
+      ],
+      "ready_for_closeout": false
+    },
+    {
+      "run_id": "20260314T163430Z",
+      "generated_at": "2026-03-14T16:34:42.080370+00:00",
+      "status": "succeeded",
+      "bundle_path": "docs/reports/live-validation-runs/20260314T163430Z",
+      "summary_path": "docs/reports/live-validation-runs/20260314T163430Z/summary.json",
+      "age_hours": 46.269,
+      "components": {
+        "local": {
+          "enabled": true,
+          "status": "succeeded"
+        },
+        "kubernetes": {
+          "enabled": true,
+          "status": "succeeded"
+        },
+        "ray": {
+          "enabled": false,
+          "status": "skipped"
+        }
+      },
+      "missing_components": [],
+      "failing_components": [],
+      "disabled_components": [
+        "ray"
+      ],
+      "stale_bundle": true,
+      "stale_reasons": [
+        "bundle_age_exceeds_threshold",
+        "component_disabled:ray"
+      ],
+      "ready_for_closeout": false
+    }
+  ]
+}

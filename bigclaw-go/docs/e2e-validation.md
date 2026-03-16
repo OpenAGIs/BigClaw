@@ -57,7 +57,22 @@ export BIGCLAW_QUEUE_BACKEND=sqlite
 ./scripts/e2e/run_all.sh
 ```
 
-The script writes a consolidated summary to `docs/reports/live-validation-summary.json`, refreshes the canonical component reports for local, Kubernetes, and Ray validation, and creates a timestamped bundle plus index under `docs/reports/live-validation-runs/` and `docs/reports/live-validation-index.md`.
+The script writes a consolidated summary to `docs/reports/live-validation-summary.json`, refreshes the canonical component reports for local, Kubernetes, and Ray validation, creates a timestamped bundle plus index under `docs/reports/live-validation-runs/` and `docs/reports/live-validation-index.md`, and regenerates `docs/reports/validation-bundle-continuation-scorecard.json`.
+
+The continuation scorecard is the closeout policy surface:
+
+- `history_window` bounds how many recent bundles are considered when reviewing continuation evidence.
+- `stale_after_hours` marks aged evidence as stale even if the latest run succeeded.
+- `stale_bundle=true` means the latest bundle is too old, failed, or incomplete for at least one enabled lane.
+- `ready_for_closeout=true` means the latest bundle is both fresh enough and complete enough for workflow closeout.
+
+You can tune the policy window without editing code:
+
+```bash
+export BIGCLAW_E2E_CONTINUATION_HISTORY_WINDOW=5
+export BIGCLAW_E2E_CONTINUATION_STALE_AFTER_HOURS=12
+./scripts/e2e/run_all.sh
+```
 
 ## Mixed workload matrix
 

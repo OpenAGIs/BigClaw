@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
+from validation_bundle_continuation_scorecard import build_scorecard, write_json as write_scorecard_json
+
 
 LATEST_REPORTS = {
     'local': 'docs/reports/sqlite-smoke-report.json',
@@ -35,6 +37,8 @@ def relpath(path: Path, root: Path) -> str:
 def copy_text_artifact(source: Path, destination: Path) -> str:
     if not source.exists():
         return ''
+    if source.resolve() == destination.resolve():
+        return str(destination)
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, destination)
     return str(destination)
@@ -43,6 +47,8 @@ def copy_text_artifact(source: Path, destination: Path) -> str:
 def copy_json_artifact(source: Path, destination: Path) -> str:
     if not source.exists():
         return ''
+    if source.resolve() == destination.resolve():
+        return str(destination)
     payload = read_json(source)
     if payload is None:
         return ''
@@ -181,6 +187,19 @@ def render_index(summary: dict[str, Any], recent_runs: list[dict[str, Any]]) -> 
             lines.append(f"- Task ID: `{section['task_id']}`")
         lines.append('')
 
+    continuation = summary.get('continuation_policy')
+    if isinstance(continuation, dict):
+        lines.extend(['## Continuation policy', ''])
+        lines.append(f"- Scorecard: `{continuation.get('scorecard_path', '')}`")
+        lines.append(f"- History window: `{continuation.get('history_window', '')}`")
+        lines.append(f"- Stale after hours: `{continuation.get('stale_after_hours', '')}`")
+        lines.append(f"- Latest bundle stale: `{continuation.get('stale_bundle', '')}`")
+        lines.append(f"- Ready for closeout: `{continuation.get('ready_for_closeout', '')}`")
+        stale_reasons = continuation.get('stale_reasons') or []
+        if stale_reasons:
+            lines.append(f"- Stale reasons: `{', '.join(stale_reasons)}`")
+        lines.append('')
+
     lines.extend(['## Workflow closeout commands', ''])
     for command in summary['closeout_commands']:
         lines.append(f'- `{command}`')
@@ -208,6 +227,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--run-local', default='1')
     parser.add_argument('--run-kubernetes', default='1')
     parser.add_argument('--run-ray', default='1')
+    parser.add_argument('--continuation-history-window', type=int, default=3)
+    parser.add_argument('--continuation-stale-after-hours', type=float, default=24.0)
+    parser.add_argument(
+        '--continuation-scorecard-path',
+        default='docs/reports/validation-bundle-continuation-scorecard.json',
+    )
     parser.add_argument('--validation-status', default='0')
     parser.add_argument('--local-report-path', required=True)
     parser.add_argument('--local-stdout-path', required=True)
@@ -226,10 +251,14 @@ def main() -> int:
     root = Path(args.go_root).resolve()
     bundle_dir = (root / args.bundle_dir).resolve()
     bundle_dir.mkdir(parents=True, exist_ok=True)
+    existing_bundle_summary = read_json(bundle_dir / 'summary.json')
+    existing_generated_at = None
+    if isinstance(existing_bundle_summary, dict) and existing_bundle_summary.get('run_id') == args.run_id:
+        existing_generated_at = existing_bundle_summary.get('generated_at')
 
     summary = {
         'run_id': args.run_id,
-        'generated_at': datetime.now(timezone.utc).isoformat(),
+        'generated_at': existing_generated_at or datetime.now(timezone.utc).isoformat(),
         'status': 'succeeded' if args.validation_status == '0' else 'failed',
         'bundle_path': relpath(bundle_dir, root),
         'closeout_commands': [
@@ -274,6 +303,25 @@ def main() -> int:
 
     bundle_root = bundle_dir.parent
     recent_runs = build_recent_runs(bundle_root, root)
+    scorecard = build_scorecard(
+        root=root,
+        bundle_root=bundle_root,
+        history_window=max(args.continuation_history_window, 1),
+        stale_after_hours=max(args.continuation_stale_after_hours, 0.0),
+        required_components=('local', 'kubernetes', 'ray'),
+    )
+    write_scorecard_json(root / args.continuation_scorecard_path, scorecard)
+    latest_policy = scorecard['latest_bundle_policy']
+    summary['continuation_policy'] = {
+        'scorecard_path': args.continuation_scorecard_path,
+        'history_window': scorecard['history_window'],
+        'stale_after_hours': scorecard['stale_after_hours'],
+        'stale_bundle': latest_policy['stale_bundle'],
+        'stale_reasons': latest_policy['stale_reasons'],
+        'ready_for_closeout': latest_policy['ready_for_closeout'],
+    }
+    write_json(bundle_summary_path, summary)
+    write_json(canonical_summary_path, summary)
     manifest = {'latest': summary, 'recent_runs': recent_runs}
     write_json(root / args.manifest_path, manifest)
 

@@ -10,6 +10,8 @@ BUNDLE_DIR_REL="${ARTIFACT_ROOT_REL}/${RUN_ID}"
 RUN_LOCAL="${BIGCLAW_E2E_RUN_LOCAL:-1}"
 RUN_KUBERNETES="${BIGCLAW_E2E_RUN_KUBERNETES:-1}"
 RUN_RAY="${BIGCLAW_E2E_RUN_RAY:-1}"
+CONTINUATION_HISTORY_WINDOW="${BIGCLAW_E2E_CONTINUATION_HISTORY_WINDOW:-3}"
+CONTINUATION_STALE_AFTER_HOURS="${BIGCLAW_E2E_CONTINUATION_STALE_AFTER_HOURS:-24}"
 
 mkdir -p "$ROOT/$BUNDLE_DIR_REL"
 
@@ -72,6 +74,8 @@ python3 "$ROOT/scripts/e2e/export_validation_bundle.py" \
   --run-local "$RUN_LOCAL" \
   --run-kubernetes "$RUN_KUBERNETES" \
   --run-ray "$RUN_RAY" \
+  --continuation-history-window "$CONTINUATION_HISTORY_WINDOW" \
+  --continuation-stale-after-hours "$CONTINUATION_STALE_AFTER_HOURS" \
   --validation-status "$status" \
   --local-report-path "$LOCAL_REPORT_REL" \
   --local-stdout-path "$LOCAL_OUT" \

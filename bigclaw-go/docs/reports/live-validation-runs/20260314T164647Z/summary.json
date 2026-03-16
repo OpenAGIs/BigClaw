@@ -616,5 +616,15 @@
     "audit_log_path": "docs/reports/live-validation-runs/20260314T164647Z/ray.audit.jsonl",
     "service_log_path": "docs/reports/live-validation-runs/20260314T164647Z/ray.service.log"
   },
-  "summary_path": "docs/reports/live-validation-runs/20260314T164647Z/summary.json"
+  "summary_path": "docs/reports/live-validation-runs/20260314T164647Z/summary.json",
+  "continuation_policy": {
+    "scorecard_path": "docs/reports/validation-bundle-continuation-scorecard.json",
+    "history_window": 3,
+    "stale_after_hours": 24.0,
+    "stale_bundle": true,
+    "stale_reasons": [
+      "bundle_age_exceeds_threshold"
+    ],
+    "ready_for_closeout": false
+  }
 }

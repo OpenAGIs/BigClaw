@@ -41,6 +41,15 @@
 - Audit log: `docs/reports/live-validation-runs/20260314T164647Z/ray.audit.jsonl`
 - Task ID: `ray-smoke-1773506812`
 
+## Continuation policy
+
+- Scorecard: `docs/reports/validation-bundle-continuation-scorecard.json`
+- History window: `3`
+- Stale after hours: `24.0`
+- Latest bundle stale: `True`
+- Ready for closeout: `False`
+- Stale reasons: `bundle_age_exceeds_threshold`
+
 ## Workflow closeout commands
 
 - `cd bigclaw-go && ./scripts/e2e/run_all.sh`
