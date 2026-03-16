@@ -43,4 +43,4 @@ This report summarizes the current observability/debug evidence for `OPE-184` / 
 ## Parallel follow-up digests
 
 - `OPE-264` / `BIG-PAR-075` — `docs/reports/tracing-backend-follow-up-digest.md`
-- `OPE-265` / `BIG-PAR-095` — `docs/reports/telemetry-pipeline-controls-follow-up-digest.md` and `docs/reports/telemetry-sampling-cardinality-evidence-pack.json`
+- `OPE-265` / `BIG-PAR-076` — `docs/reports/telemetry-pipeline-controls-follow-up-digest.md` and `docs/reports/telemetry-sampling-cardinality-evidence-pack.json`

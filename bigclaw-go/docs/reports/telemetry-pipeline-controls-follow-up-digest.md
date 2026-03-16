@@ -2,7 +2,7 @@
 
 ## Scope
 
-This digest consolidates the remaining telemetry-pipeline hardening caveats for `OPE-265` / `BIG-PAR-095`.
+This digest consolidates the remaining telemetry-pipeline hardening caveats for `OPE-265` / `BIG-PAR-076`.
 
 ## Current Repo-Backed Evidence
 

@@ -105,6 +105,7 @@ def build_report(
     latest_summary = load_json(resolve_repo_path(repo_root, summary_path))
     shared_queue = load_json(resolve_repo_path(repo_root, shared_queue_report_path))
     bundle_root = resolve_repo_path(repo_root, bundle_root_path)
+    bundled_shared_queue = latest_summary.get('shared_queue_companion', {}) if isinstance(latest_summary, dict) else {}
 
     lane_scorecards = [build_lane_scorecard(recent_runs, lane) for lane in EXECUTOR_LANES]
     latest_generated_at = parse_time(latest['generated_at'])
@@ -144,8 +145,8 @@ def build_report(
         ),
         check(
             'shared_queue_companion_proof_available',
-            bool(shared_queue.get('all_ok')),
-            f"cross_node_completions={shared_queue.get('cross_node_completions')}",
+            bool(bundled_shared_queue.get('available', shared_queue.get('all_ok'))),
+            f"cross_node_completions={bundled_shared_queue.get('cross_node_completions', shared_queue.get('cross_node_completions'))}",
         ),
         check(
             'continuation_surface_is_workflow_triggered',
@@ -155,17 +156,24 @@ def build_report(
     ]
 
     shared_queue_companion = {
-        'available': bool(shared_queue.get('all_ok')),
-        'report_path': shared_queue_report_path,
-        'cross_node_completions': shared_queue.get('cross_node_completions', 0),
-        'duplicate_completed_tasks': len(shared_queue.get('duplicate_completed_tasks', [])),
-        'duplicate_started_tasks': len(shared_queue.get('duplicate_started_tasks', [])),
-        'mode': 'standalone-proof',
+        'available': bool(bundled_shared_queue.get('available', shared_queue.get('all_ok'))),
+        'report_path': bundled_shared_queue.get('canonical_report_path', shared_queue_report_path),
+        'summary_path': bundled_shared_queue.get('canonical_summary_path', 'bigclaw-go/docs/reports/shared-queue-companion-summary.json'),
+        'bundle_report_path': bundled_shared_queue.get('bundle_report_path'),
+        'bundle_summary_path': bundled_shared_queue.get('bundle_summary_path'),
+        'cross_node_completions': bundled_shared_queue.get('cross_node_completions', shared_queue.get('cross_node_completions', 0)),
+        'duplicate_completed_tasks': bundled_shared_queue.get(
+            'duplicate_completed_tasks', len(shared_queue.get('duplicate_completed_tasks', []))
+        ),
+        'duplicate_started_tasks': bundled_shared_queue.get(
+            'duplicate_started_tasks', len(shared_queue.get('duplicate_started_tasks', []))
+        ),
+        'mode': 'bundle-companion-summary' if bundled_shared_queue else 'standalone-proof',
     }
 
     current_ceiling = [
         'continuation across future validation bundles remains workflow-triggered',
-        'shared-queue coordination proof still lives outside the canonical live validation bundle',
+        'shared-queue coordination proof now ships as adjacent bundle metadata rather than an executor-native lane',
         'recent history is bounded to the exported bundle index and not an always-on service',
     ]
     if not repeated_lane_coverage:
@@ -173,7 +181,7 @@ def build_report(
 
     next_runtime_hooks = [
         'enable BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1 in workflow closeout when continuation holds should fail the run',
-        'fold shared-queue coordination proof into the same bundle lineage or adjacent bundle metadata',
+        'decide whether shared-queue coordination should stay as adjacent bundle metadata or gain its own executor-native validation lane',
         'extend the automatic continuation refresh beyond run_all.sh into broader workflow orchestrators',
         'extend the scorecard beyond the latest recent_runs window when more longitudinal evidence exists',
     ]

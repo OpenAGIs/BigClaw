@@ -48,7 +48,7 @@ func TestTelemetrySamplingCardinalityEvidencePack(t *testing.T) {
 		t.Fatalf("decode telemetry evidence pack: %v", err)
 	}
 
-	if report.Ticket != "OPE-265" || report.Track != "BIG-PAR-095" || report.Status != "repo-evidence-pack" {
+	if report.Ticket != "OPE-265" || report.Track != "BIG-PAR-076" || report.Status != "repo-evidence-pack" {
 		t.Fatalf("unexpected report identity: %+v", report)
 	}
 	if report.CurrentControls.SamplingPolicy.State != "implicit_full_capture" {
@@ -105,7 +105,7 @@ func TestTelemetrySamplingCardinalityEvidencePack(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read follow-up digest: %v", err)
 	}
-	if !strings.Contains(string(digestBody), "BIG-PAR-095") {
+	if !strings.Contains(string(digestBody), "BIG-PAR-076") {
 		t.Fatalf("expected follow-up digest to use the current Linear track id, got %s", string(digestBody))
 	}
 }
