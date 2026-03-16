@@ -1,5 +1,40 @@
 # Linear Project Sync Summary
 
+## BigClaw v5.0 Parallel Distributed Platform
+
+- Project status: `Planned`
+- Start date: `2026-03-14`
+- Project target date: `2026-04-11`
+- Linear project id: `20b45595-d6ac-47c3-8896-7f6fe77ccf88`
+- Parent epic: `OPE-187`
+- Scope summary: the distributed-platform implementation baseline is landed, three milestones are fully closed, and the remaining open work is concentrated in rollout/report refresh slices for the final milestone.
+
+### Milestones
+
+- `Control Plane & Worker Pool`: `100%`, target `2026-03-21`
+- `Parallel Validation Matrix`: `100%`, target `2026-04-04`
+- `Shared Queue & Coordination`: `100%`, target `2026-03-28`
+- `Distributed Diagnostics & Rollout`: `81%`, target `2026-04-11`
+
+### Current slices
+
+- `In Progress`: `OPE-247` / `BIG-PAR-060` migration readiness review pack refresh
+- `In Progress`: `OPE-250` / `BIG-PAR-061` issue coverage and project sync evidence refresh
+- `Backlog`: `OPE-251` / `BIG-PAR-062` epic concurrency and reliability closeout refresh
+
+### Recent completed slices
+
+- `OPE-243` normalized mixed-workload validation drilldowns around `docs/reports/mixed-workload-validation-report.md`
+- `OPE-244` normalized benchmark matrix and soak evidence around `docs/reports/benchmark-readiness-report.md`
+- `OPE-245` normalized shadow comparison artifacts around `docs/reports/shadow-compare-report.json` and `docs/reports/shadow-matrix-report.json`
+- `OPE-246` refreshed lease/takeover readiness evidence around `docs/reports/lease-recovery-report.md`, `docs/reports/multi-node-coordination-report.md`, and `docs/reports/multi-subscriber-takeover-validation-report.md`
+
+### Notes
+
+- `OPE-187` is closed in Linear, but the v5.0 project remains open because milestone-level follow-on reporting slices are still active.
+- The repo-side refill order is tracked in `../../../docs/parallel-refill-queue.json` and `../../../docs/parallel-refill-queue.md`; it now matches the current active pair plus the next standby slice.
+- `docs/reports/issue-coverage.md` is the repo-native coverage map for the rewrite baseline plus the current distributed follow-on pack.
+
 ## BigClaw v4.0 Execution Pack
 
 - Project status: `Completed`
@@ -82,4 +117,3 @@
 
 - All v1.0 issues remain `Done` after milestone backfill.
 - A project update has been posted in Linear to capture the completed historical structure.
-

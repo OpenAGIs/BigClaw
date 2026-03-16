@@ -34,6 +34,14 @@ The three previously open closure items are now covered by fresh same-day eviden
 
 This does not magically turn the system into production-grade distributed infrastructure, but it does make the current rewrite epic complete enough to close in Linear. Remaining work is now follow-up hardening, not missing baseline evidence.
 
+## Follow-On Reporting Refresh
+
+- `2026-03-16` follow-on reporting work now treats this closure report as the baseline proof for `OPE-187`, not the complete project-sync surface for the newer distributed slices.
+- Recently completed refresh slices `OPE-243`, `OPE-244`, `OPE-245`, and `OPE-246` normalized mixed-workload, benchmark, shadow, and lease/takeover evidence so later closeout notes can cite stable artifact paths.
+- Active refresh slices are `OPE-247` for migration review-pack alignment and `OPE-250` for issue-coverage plus project-sync alignment.
+- The next standby slice is `OPE-251`, which will consolidate epic concurrency, queue, and event-bus closeout reporting after the active reporting work lands.
+- Project-level state and active-slice tracking now live in `docs/reports/linear-project-sync-summary.md`.
+
 ## Artifacts
 
 - `docs/reports/benchmark-readiness-report.md`
