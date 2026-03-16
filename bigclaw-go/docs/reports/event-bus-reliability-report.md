@@ -136,7 +136,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - No partitioned topic model or broker-backed cross-process subscriber coordination exists yet; see `docs/reports/cross-process-coordination-boundary-digest.md`.
 - Retention watermarks are now exposed for in-memory and durable event-log backends, SQLite-backed logs persist trimmed replay boundaries across restarts, and expired checkpoint resumes now fail closed with explicit reset guidance; the broader compaction semantics remain documented in `docs/reports/replay-retention-semantics-report.md`.
 - Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.
-- Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists; see `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
+- Multi-subscriber takeover validation now has a deterministic local harness in `docs/reports/multi-subscriber-takeover-validation-report.md` / `docs/reports/multi-subscriber-takeover-validation-report.json`, but it is not yet a live multi-node subscriber takeover proof; see `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
 
 ## Replicated rollout contract
 
@@ -155,7 +155,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - No durable external event log yet; replay is process-local history.
 - No delivery acknowledgement protocol beyond sink-level best effort.
 - No partitioned topic model or cross-process subscriber coordination yet; see `docs/reports/cross-process-coordination-boundary-digest.md`.
-- Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists; see `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
+- Multi-subscriber takeover validation now has a deterministic local harness in `docs/reports/multi-subscriber-takeover-validation-report.md` / `docs/reports/multi-subscriber-takeover-validation-report.json`, but it is not yet a live multi-node subscriber takeover proof; see `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
 
 ## Parallel follow-up digests
 

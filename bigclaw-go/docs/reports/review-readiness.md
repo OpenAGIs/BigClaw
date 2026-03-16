@@ -24,7 +24,7 @@
 - `OPE-183`
   - Event bus evidence includes replay-first subscriptions, webhook fanout, recorder sink coverage, and SSE replay/filter behavior by task or trace.
   - Supporting report: `docs/reports/event-bus-reliability-report.md`.
-  - Follow-up digest captures the remaining subscriber takeover executability caveats in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
+  - Follow-up digest captures the deterministic local harness and the remaining live multi-node subscriber takeover caveats in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
 - `OPE-184`
   - Audit and debug surfaces include trace summary endpoints, trace timeline lookup, worker lifecycle snapshots, and `trace_count` metrics visibility.
   - Supporting report: `docs/reports/go-control-plane-observability-report.md`.

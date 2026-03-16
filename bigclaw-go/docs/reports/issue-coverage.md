@@ -22,7 +22,7 @@ This document maps the current local MVP implementation to the Linear rewrite is
   - Covered by `internal/executor/ray.go`, `internal/executor/ray_test.go`, `scripts/e2e/ray_smoke.sh`, `docs/e2e-validation.md`, and `docs/reports/ray-live-smoke-report.json`
 - `OPE-183` / `BIG-GO-008`
   - Covered by `internal/events/bus.go`, `internal/events/recorder_sink.go`, `internal/events/webhook.go`, `internal/events/bus_test.go`, `internal/events/webhook_test.go`, `internal/api/server.go`, `internal/api/server_test.go`, and `docs/reports/event-bus-reliability-report.md`
-  - Follow-up takeover executability caveats are tracked in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`
+  - Follow-up takeover caveats are tracked in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`, which now captures the deterministic local harness and the remaining live multi-node gap
 - `OPE-184` / `BIG-GO-009`
   - Covered by `internal/observability/recorder.go`, `internal/observability/recorder_test.go`, `internal/observability/audit.go`, `internal/observability/audit_test.go`, `internal/api/server.go`, `internal/api/server_test.go`, `internal/worker/runtime.go`, `docs/reports/go-control-plane-observability-report.md`, `scripts/e2e/run_task_smoke.py`, `scripts/e2e/run_all.sh`, and isolated autostart live-validation reports in `docs/reports/*.json`
   - Follow-up caveats for external tracing backends, span propagation, telemetry pipeline controls, sampling policy, and high-cardinality handling are tracked in `docs/reports/tracing-backend-follow-up-digest.md` and `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`
@@ -49,7 +49,7 @@ This document maps the current local MVP implementation to the Linear rewrite is
 - Real `Ray Jobs` REST integration path is implemented and has passed live smoke validation against `ray://127.0.0.1:10001` via the live dashboard Jobs API on `127.0.0.1:8265`.
 - SQLite-backed durable queue support is implemented; higher-scale external store validation is still pending.
 - No dedicated leader-election layer exists yet; current evidence is limited to a local two-node shared-SQLite coordination proof captured in `docs/reports/multi-node-coordination-report.md`.
-- Multi-subscriber takeover validation is planned in `docs/reports/multi-subscriber-takeover-validation-report.md`, but the underlying lease-aware subscriber-group checkpoint coordination is still pending.
+- Multi-subscriber takeover validation now has a deterministic local harness in `docs/reports/multi-subscriber-takeover-validation-report.md`, but a live multi-node subscriber takeover proof is still pending.
 - Benchmark output is local bootstrap evidence, not production-grade capacity certification.
 - When running multiple local smoke processes with the SQLite backend, use separate `BIGCLAW_QUEUE_SQLITE_PATH` and `BIGCLAW_AUDIT_LOG_PATH` values to avoid local file-lock contention.
 - Replay retention, compaction, and aged-out checkpoint semantics for the follow-on parallel durability track are documented in `docs/reports/replay-retention-semantics-report.md` and `docs/openclaw-parallel-gap-analysis.md`.

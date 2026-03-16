@@ -118,14 +118,16 @@ DIGESTS = {
         "title": "BIG-PAR-080",
         "links": [
             "docs/reports/multi-subscriber-takeover-validation-report.md",
+            "docs/reports/multi-subscriber-takeover-validation-report.json",
+            "scripts/e2e/subscriber_takeover_fault_matrix.py",
             "docs/reports/event-bus-reliability-report.md",
             "docs/reports/issue-coverage.md",
             "docs/reports/review-readiness.md",
             "docs/openclaw-parallel-gap-analysis.md",
         ],
         "phrases": [
-            "planned matrix only",
-            "not yet executable until lease-aware checkpoint ownership exists",
+            "deterministic local harness only",
+            "not yet a live multi-node subscriber takeover proof",
         ],
         "indexes": [
             Path("bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.md"),

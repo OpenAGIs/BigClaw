@@ -99,14 +99,14 @@ Use that pack as the source of truth for:
 
 ## Multi-subscriber takeover validation matrix
 
-Use this to regenerate the planning artifact for takeover fault injection before lease-aware subscriber-group checkpoints are implemented.
+Use this to regenerate the executable local takeover harness report for lease-aware subscriber-group checkpoint ownership.
 
 ```bash
 cd bigclaw-go
 python3 scripts/e2e/subscriber_takeover_fault_matrix.py --pretty
 ```
 
-This refreshes `docs/reports/multi-subscriber-takeover-validation-report.json` with the canonical scenario list, expected audit/checkpoint/replay assertions, and the minimum harness outputs the future lease-aware validation run must emit. The remaining executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
+This refreshes `docs/reports/multi-subscriber-takeover-validation-report.json` with three deterministic local takeover scenarios, owner timelines, checkpoint transitions, duplicate replay accounting, and stale-writer rejection counts. The remaining live multi-node executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
 
 Optional toggles:
 
