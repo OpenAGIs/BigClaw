@@ -1,5 +1,24 @@
 # Linear Project Sync Summary
 
+## BigClaw v5.0 Parallel Distributed Platform
+
+- Project status: `In Progress`
+- Linear project id: `20b45595-d6ac-47c3-8896-7f6fe77ccf88`
+- Scope summary: distributed-platform closeout is being kept reviewable through repo-native reports that map directly to the active and most recently completed parallel slices.
+
+### Active / latest slices
+
+- `OPE-254` / `BIG-PAR-065`: benchmark and soak closeout refreshed in `docs/reports/benchmark-readiness-report.md` and `docs/reports/long-duration-soak-report.md`
+- `OPE-255` / `BIG-PAR-066`: operations foundation evidence aligned in `docs/reports/v2-phase1-operations-foundation-report.md`
+- `OPE-256` / `BIG-PAR-067`: scheduler policy and routing closeout anchored in `docs/reports/scheduler-policy-report.md`
+- `OPE-257` / `BIG-PAR-068`: review matrix and closeout navigation refreshed through `docs/reports/review-readiness.md` and `docs/reports/epic-closure-readiness-report.md`
+
+### Notes
+
+- Reviewer navigation starts from `docs/reports/review-readiness.md`.
+- Epic-closeout navigation stays centered on `docs/reports/epic-closure-readiness-report.md`.
+- The parallel refill queue currently targets `2` active issues and records the next standby slice in `docs/parallel-refill-queue.json`.
+
 ## BigClaw v4.0 Execution Pack
 
 - Project status: `Completed`
@@ -82,4 +101,3 @@
 
 - All v1.0 issues remain `Done` after milestone backfill.
 - A project update has been posted in Linear to capture the completed historical structure.
-

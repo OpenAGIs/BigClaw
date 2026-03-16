@@ -1,5 +1,20 @@
 # Review Readiness Matrix
 
+## Current Distributed Platform Refresh Pack
+
+- `OPE-254`
+  - Long-duration soak and benchmark closeout has been refreshed around the canonical benchmark pack.
+  - Primary reports: `docs/reports/benchmark-readiness-report.md`, `docs/reports/long-duration-soak-report.md`, and `docs/reports/epic-closure-readiness-report.md`.
+- `OPE-255`
+  - Operations foundation evidence now rolls up control-center, run-detail, policy, and collaboration surfaces through one repo-native summary.
+  - Primary reports: `docs/reports/v2-phase1-operations-foundation-report.md` and `docs/reports/linear-project-sync-summary.md`.
+- `OPE-256`
+  - Scheduler policy closeout references now live with the latest routing, fairness, and preemption evidence instead of older review notes.
+  - Primary reports: `docs/reports/scheduler-policy-report.md` and `docs/reports/epic-closure-readiness-report.md`.
+- `OPE-257`
+  - Review and closeout navigation now links the latest distributed-platform refresh set from this matrix and the epic closure report.
+  - Primary reports: `docs/reports/review-readiness.md`, `docs/reports/epic-closure-readiness-report.md`, and `docs/reports/linear-project-sync-summary.md`.
+
 ## Done
 
 - `OPE-176`
@@ -36,6 +51,14 @@
 - `OPE-175`
   - Epic-level evidence includes longer-duration soak (`2000x24`), mixed workload validation across `local` / `kubernetes` / `ray`, and a concrete two-node shared-queue coordination proof.
   - Supporting report: `docs/reports/epic-closure-readiness-report.md`.
+
+## Reviewer Navigation
+
+- Start with `docs/reports/review-readiness.md` for the current refresh matrix.
+- Use `docs/reports/epic-closure-readiness-report.md` for the benchmark, mixed-workload, and multi-node closeout spine.
+- Use `docs/reports/v2-phase1-operations-foundation-report.md` for operations foundation and control-center evidence.
+- Use `docs/reports/scheduler-policy-report.md` for scheduler fairness, routing, and preemption evidence.
+- Use `docs/reports/linear-project-sync-summary.md` for the Linear project and issue crosswalk.
 
 ## Follow-up Hardening
 

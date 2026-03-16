@@ -4,6 +4,14 @@
 
 - Run date: 2026-03-13
 - Goal: close the three remaining epic hardening items with same-day evidence for sustained soak, production-like workload mix, and multi-node coordination.
+- Current review entrypoint: `docs/reports/review-readiness.md`
+
+## Current Closeout Navigation
+
+- `OPE-254` benchmark closeout: `docs/reports/benchmark-readiness-report.md` and `docs/reports/long-duration-soak-report.md`
+- `OPE-255` operations foundation alignment: `docs/reports/v2-phase1-operations-foundation-report.md`
+- `OPE-256` scheduler policy and routing closeout: `docs/reports/scheduler-policy-report.md`
+- `OPE-257` review matrix and project sync navigation: `docs/reports/review-readiness.md` and `docs/reports/linear-project-sync-summary.md`
 
 ## Long-Duration Soak
 
@@ -33,6 +41,13 @@ The three previously open closure items are now covered by fresh same-day eviden
 - concrete two-node shared-queue coordination proof
 
 This does not magically turn the system into production-grade distributed infrastructure, but it does make the current rewrite epic complete enough to close in Linear. Remaining work is now follow-up hardening, not missing baseline evidence.
+
+The latest distributed-platform refresh slices add reviewer-friendly navigation on top of that baseline:
+
+- benchmark and soak evidence remain anchored here and in `docs/reports/benchmark-readiness-report.md`
+- operations foundation evidence is consolidated in `docs/reports/v2-phase1-operations-foundation-report.md`
+- scheduler policy closeout stays anchored in `docs/reports/scheduler-policy-report.md`
+- Linear issue and project crosswalks stay anchored in `docs/reports/linear-project-sync-summary.md`
 
 ## Artifacts
 
