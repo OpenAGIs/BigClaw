@@ -28,8 +28,8 @@
   - Audit and debug surfaces include trace summary endpoints, trace timeline lookup, worker lifecycle snapshots, and `trace_count` metrics visibility.
   - Supporting report: `docs/reports/go-control-plane-observability-report.md`.
 - `OPE-185`
-  - Migration evidence includes a shadow matrix across multiple sample tasks with matched terminal states and matched event sequences.
-  - Supporting report: `docs/reports/migration-readiness-report.md`.
+  - Migration evidence includes a stable review pack that links matched shadow sample output, a `3/3` matched shadow matrix, current migration review notes, and the latest live-validation bundle index.
+  - Supporting reports: `docs/reports/migration-readiness-report.md`, `docs/reports/migration-plan-review-notes.md`, and `docs/reports/live-validation-index.md`.
 - `OPE-186`
   - Benchmark evidence includes a repeatable matrix runner plus `50x8`, `100x12`, `1000x24`, and `2000x24` soak runs with zero failures.
   - Supporting reports: `docs/reports/benchmark-readiness-report.md`, `docs/reports/benchmark-matrix-report.json`, and `docs/reports/long-duration-soak-report.md`.

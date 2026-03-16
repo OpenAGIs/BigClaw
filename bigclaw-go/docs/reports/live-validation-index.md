@@ -45,7 +45,13 @@
 
 - `cd bigclaw-go && ./scripts/e2e/run_all.sh`
 - `cd bigclaw-go && go test ./...`
+- `cd bigclaw-go && python3 scripts/migration/check_review_pack.py`
 - `git push origin <branch> && git log -1 --stat`
+
+## Migration review-pack consumers
+
+- `docs/reports/migration-readiness-report.md` uses this index as the stable live-validation reference for migration closeout review.
+- `docs/reports/migration-plan-review-notes.md` uses this index to anchor rollout and rollback notes to the latest stored validation bundle.
 
 ## Recent bundles
 

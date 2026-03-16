@@ -2,30 +2,49 @@
 
 ## Scope
 
-This report summarizes the current migration-readiness evidence for `OPE-185` / `BIG-GO-010`.
+This report summarizes the current repo-native migration review pack for `OPE-185` / `BIG-GO-010`.
+It keeps the latest shadow-comparison evidence, live-validation bundle, and review notes in one stable reviewer-facing surface.
 
-## Implemented surfaces
+## Stable review pack
 
-- Shadow comparison for one task via `scripts/migration/shadow_compare.py`
-- Shadow comparison matrix across multiple task fixtures via `scripts/migration/shadow_matrix.py`
-- Shared `trace_id` correlation across primary/shadow runs
-- JSON reports for single-run and matrix outcomes
+- Shadow comparison sample generated via `scripts/migration/shadow_compare.py` and persisted in `docs/reports/shadow-compare-report.json`
+- Shadow comparison matrix generated via `scripts/migration/shadow_matrix.py` and persisted in `docs/reports/shadow-matrix-report.json`
+- Latest live-validation bundle indexed in `docs/reports/live-validation-index.md`
+- Migration closeout notes captured in `docs/reports/migration-plan-review-notes.md`
 
-## Evidence
+## Current evidence snapshot
 
-- `docs/migration.md`
-- `docs/migration-shadow.md`
-- `scripts/migration/shadow_compare.py`
-- `scripts/migration/shadow_matrix.py`
-- `docs/reports/shadow-compare-report.json`
-- `docs/reports/shadow-matrix-report.json`
+- Shadow compare sample: `docs/reports/shadow-compare-report.json`
+  - Sample trace: `shadow-compare-sample`
+  - Terminal states: primary `succeeded`, shadow `succeeded`
+  - Event-type sequence match: `true`
+  - Sample event window: `2026-03-13T15:53:21.384193+08:00` to `2026-03-13T15:53:21.403765+08:00`
+- Shadow matrix bundle: `docs/reports/shadow-matrix-report.json`
+  - Matrix size: `3` sample task fixtures
+  - Matched results: `3`
+  - Mismatched results: `0`
+  - Latest matrix event date: `2026-03-13`
+- Live validation index: `docs/reports/live-validation-index.md`
+  - Latest run id: `20260314T164647Z`
+  - Generated at: `2026-03-14T16:46:57.671520+00:00`
+  - Latest bundle: `docs/reports/live-validation-runs/20260314T164647Z`
+  - Status: `succeeded`
 
-## Validation target
+## Review-pack links
 
-- Matrix should report matched terminal states and matched event-type sequences for all sample tasks before a wider cutover.
+- Migration plan: `docs/migration.md`
+- Shadow-comparison instructions: `docs/migration-shadow.md`
+- Migration review notes: `docs/reports/migration-plan-review-notes.md`
+- Review readiness matrix entry: `docs/reports/review-readiness.md`
 
-## Remaining gaps
+## Validation posture
 
-- Still no live legacy-vs-Go production traffic comparison.
-- No tenant-scoped automated rollback trigger yet.
-- Matrix currently uses local fixture tasks rather than a production issue/task corpus.
+- Shadow evidence currently demonstrates matched terminal states and matched event-type sequences across the stored sample fixtures.
+- Live validation currently demonstrates succeeded local, Kubernetes, and Ray smoke runs in the latest indexed bundle.
+- The review pack is suitable for migration closeout review because it links concrete repo-native artifacts rather than relying on ad-hoc rollout prose.
+
+## Remaining rollout limits
+
+- The shadow reports compare controlled sample tasks, not mirrored production traffic.
+- The current evidence pack does not prove tenant-scoped automatic rollback behavior.
+- Rollout approval should remain gated on the stored shadow and live-validation artifacts above rather than on aspirational cutover claims.
