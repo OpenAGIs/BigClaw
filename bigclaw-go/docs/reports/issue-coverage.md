@@ -33,9 +33,9 @@ This document maps the current local MVP implementation to the Linear rewrite is
 
 - Real `Kubernetes` API integration path is implemented and has passed live smoke validation against `kind-ray-local` using `KUBECONFIG=/Users/jxrt/.kube/ray-local-config`.
 - Real `Ray Jobs` REST integration path is implemented and has passed live smoke validation against `ray://127.0.0.1:10001` via the live dashboard Jobs API on `127.0.0.1:8265`.
-- SQLite-backed durable queue support is implemented; higher-scale external store validation is still pending.
+- SQLite-backed durable queue support is implemented; higher-scale external-store validation remains follow-up hardening beyond the current SQLite-backed proof.
 - No dedicated leader-election layer exists yet; current evidence is limited to a local two-node shared-SQLite coordination proof captured in `docs/reports/multi-node-coordination-report.md`.
-- Multi-subscriber takeover validation is planned in `docs/reports/multi-subscriber-takeover-validation-report.md`, but the underlying lease-aware subscriber-group checkpoint coordination is still pending.
-- Benchmark output is local bootstrap evidence, not production-grade capacity certification.
+- Lease-aware subscriber-group checkpoint coordination is implemented for the current in-process event bus, but durable shared multi-node subscriber-group coordination and executable takeover validation remain follow-up work in `docs/reports/multi-subscriber-takeover-validation-report.md`.
+- Benchmark output is local bootstrap evidence; production-grade capacity certification remains follow-up hardening beyond the current rewrite closure.
 - When running multiple local smoke processes with the SQLite backend, use separate `BIGCLAW_QUEUE_SQLITE_PATH` and `BIGCLAW_AUDIT_LOG_PATH` values to avoid local file-lock contention.
 - Replay retention, compaction, and aged-out checkpoint semantics for the follow-on parallel durability track are documented in `docs/reports/replay-retention-semantics-report.md` and `docs/openclaw-parallel-gap-analysis.md`.

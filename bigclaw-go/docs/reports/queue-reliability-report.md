@@ -25,4 +25,8 @@ This report summarizes the current reliability evidence for the Go queue layer a
 - Queue implementations now support dead-letter retrieval and replay instead of only marking terminal failure.
 - Lease recovery and replay paths are directly testable and inspectable through the API.
 - The queue layer is materially closer to the original reliability target and is ready for another review pass.
-- A larger `10k` reliability matrix is still a reasonable next follow-up if stricter closure criteria are desired.
+
+## Follow-up hardening register
+
+- A larger `10k` reliability matrix remains a reasonable next follow-up if stricter closure criteria are desired.
+- Higher-scale external-store validation remains follow-up hardening beyond the current SQLite-backed proof.

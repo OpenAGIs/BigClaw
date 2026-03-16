@@ -39,6 +39,7 @@
 
 ## Follow-up Hardening
 
-- Production-grade capacity certification can remain a follow-up track beyond the current rewrite closure.
+- Production-grade capacity certification remains follow-up hardening beyond the current rewrite closure.
 - No dedicated leader-election layer exists yet; current evidence is limited to a local two-node shared-SQLite coordination proof.
-- Higher-scale external-store validation is still pending beyond the current SQLite-backed scope.
+- Higher-scale external-store validation remains follow-up hardening beyond the current SQLite-backed proof.
+- Lease-aware checkpoint coordination is implemented for the current in-process event bus, but durable shared multi-node subscriber-group coordination and executable takeover fault injection remain follow-up work.

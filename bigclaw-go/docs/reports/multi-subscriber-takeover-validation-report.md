@@ -2,7 +2,7 @@
 
 ## Scope
 
-This report captures the planned fault-injection and evidence contract for `OPE-217` before lease-aware subscriber-group checkpoint coordination is implemented.
+This report captures the remaining fault-injection and evidence contract for `OPE-217` after lease-aware subscriber-group checkpoint coordination landed for the in-process event bus, but before a durable shared multi-node coordination backend exists.
 
 ## Current Evidence Inputs
 
@@ -57,5 +57,5 @@ The canonical generated matrix lives in `docs/reports/multi-subscriber-takeover-
 ## Current Result
 
 - The repo now has a generated, reviewable scenario matrix for takeover fault injection instead of an implied TODO.
-- Existing evidence is sufficient to define the report contract, but not yet to execute the takeover scenarios end to end.
-- The next implementation slice should add lease-aware checkpoint ownership metadata and normalized audit events so the shared multi-node harness can execute this matrix directly.
+- Existing evidence is sufficient to define the report contract, but not yet to execute the takeover scenarios end to end under shared multi-node conditions.
+- The next implementation slice should carry the existing lease ownership and normalized audit semantics into a durable shared multi-node backend so the harness can execute this matrix directly.
