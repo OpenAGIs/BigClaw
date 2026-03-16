@@ -38,4 +38,4 @@ This document maps the current local MVP implementation to the Linear rewrite is
 - Multi-subscriber takeover validation is planned in `docs/reports/multi-subscriber-takeover-validation-report.md`, but the underlying lease-aware subscriber-group checkpoint coordination is still pending.
 - Benchmark output is local bootstrap evidence, not production-grade capacity certification.
 - When running multiple local smoke processes with the SQLite backend, use separate `BIGCLAW_QUEUE_SQLITE_PATH` and `BIGCLAW_AUDIT_LOG_PATH` values to avoid local file-lock contention.
-- Replay retention, compaction, and aged-out checkpoint semantics for the follow-on parallel durability track are documented in `docs/reports/replay-retention-semantics-report.md` and `docs/openclaw-parallel-gap-analysis.md`.
+- Replay retention, compaction, aged-out checkpoint semantics, and the current SQLite-versus-replicated external-store boundary for the follow-on durability track are consolidated in `docs/reports/retention-external-store-follow-up-digest.md`, with deeper detail in `docs/reports/replay-retention-semantics-report.md` and `docs/openclaw-parallel-gap-analysis.md`.

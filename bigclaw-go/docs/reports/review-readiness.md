@@ -41,4 +41,4 @@
 
 - Production-grade capacity certification can remain a follow-up track beyond the current rewrite closure.
 - No dedicated leader-election layer exists yet; current evidence is limited to a local two-node shared-SQLite coordination proof.
-- Higher-scale external-store validation is still pending beyond the current SQLite-backed scope.
+- Higher-scale external-store validation is still pending beyond the current SQLite-backed scope; the consolidated retention and durability caveats live in `docs/reports/retention-external-store-follow-up-digest.md`.

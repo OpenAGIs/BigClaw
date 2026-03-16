@@ -66,6 +66,7 @@ The current Go runtime still uses in-process replay history in `internal/events/
 - `OPE-216` established the expired replay cursor semantics, `OPE-226` added the concrete checkpoint diagnostics / reset surface for durable checkpoint resumes, and `OPE-228` extends that flow with persisted reset audit history.
 - Durable backends extending `internal/events` should expose retention watermarks before replay-aware checkpoint cleanup is implemented.
 - SQLite-backed durable logs now persist trimmed replay boundaries across restarts when a retention window is configured, giving operators a stable replay horizon even after reboot.
+- `docs/reports/retention-external-store-follow-up-digest.md` is the reviewer-facing summary for how retention semantics line up with SQLite-backed durability evidence and the remaining broker/quorum follow-up path.
 
 ## Repo evidence
 

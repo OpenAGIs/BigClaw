@@ -37,6 +37,7 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
 - Service-style SQLite and HTTP-backed coordination improve sharing, but replicated broker or quorum-backed durability is still future work.
 - Downstream consumers still need idempotent handlers and durable dedupe stores; the system remains replay-safe, not globally exactly-once.
 - Parallel validation for Kubernetes, Ray, and shared-queue takeover should continue to be bundled as repo-native evidence.
+- `bigclaw-go/docs/reports/retention-external-store-follow-up-digest.md` consolidates the current retention and external-store boundary so reviewers can audit the SQLite-backed evidence and remaining broker/quorum work from one repo-native entrypoint.
 
 ### Current rollout gate
 
