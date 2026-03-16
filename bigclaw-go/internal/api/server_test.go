@@ -1683,6 +1683,79 @@ func TestV2ControlCenterIncludesMultiWorkerPoolSummary(t *testing.T) {
 	}
 }
 
+func TestV2ControlCenterIncludesTakeoverHistoryForActiveAndReleasedHandoffs(t *testing.T) {
+	recorder := observability.NewRecorder()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return time.Unix(1700004100, 0) }}
+	handler := server.Handler()
+
+	for _, payload := range []map[string]any{
+		{"id": "task-history-1", "title": "History one", "priority": 1, "metadata": map[string]any{"team": "platform", "project": "alpha"}},
+		{"id": "task-history-2", "title": "History two", "priority": 1, "metadata": map[string]any{"team": "platform", "project": "alpha"}},
+		{"id": "task-history-3", "title": "History three", "priority": 1, "metadata": map[string]any{"team": "growth", "project": "beta"}},
+	} {
+		body, _ := json.Marshal(payload)
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewReader(body)))
+		if response.Code != http.StatusAccepted {
+			t.Fatalf("expected task create 202, got %d body=%s", response.Code, response.Body.String())
+		}
+	}
+
+	for _, requestBody := range [][]byte{
+		mustJSON(map[string]any{"action": "takeover", "task_id": "task-history-1", "actor": "alice", "role": "eng_lead", "viewer_team": "platform", "reviewer": "bob", "note": "started review"}),
+		mustJSON(map[string]any{"action": "takeover", "task_id": "task-history-2", "actor": "carol", "role": "eng_lead", "viewer_team": "platform", "reviewer": "dave", "note": "active handoff"}),
+		mustJSON(map[string]any{"action": "takeover", "task_id": "task-history-3", "actor": "erin", "role": "eng_lead", "viewer_team": "growth", "reviewer": "frank", "note": "other team"}),
+		mustJSON(map[string]any{"action": "release_takeover", "task_id": "task-history-1", "actor": "alice", "role": "eng_lead", "viewer_team": "platform", "note": "handoff complete"}),
+	} {
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(requestBody)))
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected control action 200, got %d body=%s", response.Code, response.Body.String())
+		}
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?team=platform&project=alpha&limit=10&audit_limit=10", nil)
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d body=%s", response.Code, response.Body.String())
+	}
+
+	var decoded struct {
+		ActiveTakeovers []struct {
+			TaskID string `json:"task_id"`
+		} `json:"active_takeovers"`
+		TakeoverHistory []struct {
+			TaskID     string `json:"task_id"`
+			Active     bool   `json:"active"`
+			Owner      string `json:"owner"`
+			Reviewer   string `json:"reviewer"`
+			ReleasedAt string `json:"released_at"`
+			Notes      []struct {
+				Message string `json:"message"`
+			} `json:"notes"`
+		} `json:"takeover_history"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center history: %v", err)
+	}
+	if len(decoded.ActiveTakeovers) != 1 || decoded.ActiveTakeovers[0].TaskID != "task-history-2" {
+		t.Fatalf("expected one filtered active takeover, got %+v", decoded.ActiveTakeovers)
+	}
+	if len(decoded.TakeoverHistory) != 2 {
+		t.Fatalf("expected two filtered history entries, got %+v", decoded.TakeoverHistory)
+	}
+	if decoded.TakeoverHistory[0].TaskID != "task-history-1" || decoded.TakeoverHistory[1].TaskID != "task-history-2" {
+		t.Fatalf("expected released takeover first by recency, got %+v", decoded.TakeoverHistory)
+	}
+	if decoded.TakeoverHistory[0].Active || decoded.TakeoverHistory[0].ReleasedAt == "" || decoded.TakeoverHistory[0].Owner != "alice" || decoded.TakeoverHistory[0].Reviewer != "bob" {
+		t.Fatalf("expected released takeover closeout semantics preserved, got %+v", decoded.TakeoverHistory[0])
+	}
+	if len(decoded.TakeoverHistory[0].Notes) != 2 || decoded.TakeoverHistory[0].Notes[1].Message != "handoff complete" {
+		t.Fatalf("expected release note in takeover history, got %+v", decoded.TakeoverHistory[0].Notes)
+	}
+}
+
 func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	recorder := observability.NewRecorder()
 	controller := control.New()
