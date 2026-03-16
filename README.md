@@ -5,6 +5,7 @@ BigClaw is a Symphony/Codex workflow project scaffolded from `workflow.md`.
 ## What is included
 
 - `workflow.md`: Linear-driven unattended workflow configuration
+- `docs/symphony-repo-bootstrap-template.md`: repo-agnostic shared mirror + worktree bootstrap template
 - `docs/issue-plan.md`: Epic/Issue decomposition from BigClaw PRD v1.0
 - `src/bigclaw`: v0.1 foundation modules
   - engineering operations analytics for dashboards, triage, regressions, and weekly reports
@@ -74,3 +75,10 @@ git push origin main
 ```
 
 Repository: https://github.com/OpenAGIs/BigClaw
+## Repo-agnostic bootstrap template
+
+Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-managed repo to
+reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
+The generic entrypoint is `scripts/ops/symphony_workspace_bootstrap.py`; BigClaw keeps
+`bigclaw_workspace_bootstrap.py` only as a compatibility wrapper.
+

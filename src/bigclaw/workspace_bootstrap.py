@@ -6,6 +6,7 @@ import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Sequence
+from urllib.parse import urlparse
 
 
 class WorkspaceBootstrapError(RuntimeError):
@@ -34,6 +35,7 @@ class CommandResult:
 
 CACHE_REMOTE = "cache"
 BOOTSTRAP_BRANCH_PREFIX = "symphony"
+DEFAULT_CACHE_BASE = Path("~/.cache/symphony/repos")
 
 
 def _run(command: Sequence[str], cwd: Path) -> CommandResult:
@@ -72,10 +74,56 @@ def bootstrap_branch_name(identifier: str | None) -> str:
     return f"{BOOTSTRAP_BRANCH_PREFIX}/{sanitize_issue_identifier(identifier)}"
 
 
-def default_cache_root(path: str | Path | None = None) -> Path:
+def default_cache_base(path: str | Path | None = None) -> Path:
     if path is None:
-        return (Path.home() / ".cache" / "symphony" / "bigclaw").expanduser().resolve()
+        return DEFAULT_CACHE_BASE.expanduser().resolve()
     return Path(path).expanduser().resolve()
+
+
+def normalize_repo_locator(repo_url: str) -> str:
+    raw = repo_url.strip()
+
+    if "://" in raw:
+        parsed = urlparse(raw)
+        locator = f"{parsed.netloc}{parsed.path}"
+    elif ":" in raw and "@" in raw.split(":", 1)[0]:
+        user_host, repo_path = raw.split(":", 1)
+        host = user_host.split("@", 1)[-1]
+        locator = f"{host}/{repo_path}"
+    else:
+        locator = raw
+
+    return locator.strip().rstrip("/").removesuffix(".git")
+
+
+def repo_cache_key(repo_url: str, cache_key: str | None = None) -> str:
+    raw = (cache_key or normalize_repo_locator(repo_url)).strip().lower()
+    sanitized = "".join(character if character.isalnum() or character in ".-_" else "-" for character in raw)
+    compact = "-".join(segment for segment in sanitized.split("-") if segment)
+    return compact or "repo"
+
+
+def cache_root_for_repo(
+    repo_url: str,
+    cache_base: str | Path | None = None,
+    cache_key: str | None = None,
+) -> Path:
+    return default_cache_base(cache_base) / repo_cache_key(repo_url, cache_key)
+
+
+def resolve_cache_root(
+    repo_url: str,
+    cache_root: str | Path | None = None,
+    cache_base: str | Path | None = None,
+    cache_key: str | None = None,
+) -> Path:
+    if cache_root is not None:
+        return Path(cache_root).expanduser().resolve()
+    return cache_root_for_repo(repo_url, cache_base=cache_base, cache_key=cache_key)
+
+
+def default_cache_root(path: str | Path | None = None) -> Path:
+    return default_cache_base(path)
 
 
 def _remove_path(path: Path) -> None:
@@ -85,8 +133,13 @@ def _remove_path(path: Path) -> None:
         path.unlink()
 
 
-def ensure_mirror(repo_url: str, cache_root: str | Path | None = None) -> Path:
-    cache_path = default_cache_root(cache_root)
+def ensure_mirror(
+    repo_url: str,
+    cache_root: str | Path | None = None,
+    cache_base: str | Path | None = None,
+    cache_key: str | None = None,
+) -> Path:
+    cache_path = resolve_cache_root(repo_url, cache_root=cache_root, cache_base=cache_base, cache_key=cache_key)
     mirror_path = cache_path / "mirror.git"
     mirror_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -109,9 +162,15 @@ def ensure_mirror(repo_url: str, cache_root: str | Path | None = None) -> Path:
     return mirror_path
 
 
-def ensure_seed(repo_url: str, default_branch: str, cache_root: str | Path | None = None) -> Path:
-    cache_path = default_cache_root(cache_root)
-    mirror_path = ensure_mirror(repo_url, cache_path)
+def ensure_seed(
+    repo_url: str,
+    default_branch: str,
+    cache_root: str | Path | None = None,
+    cache_base: str | Path | None = None,
+    cache_key: str | None = None,
+) -> Path:
+    cache_path = resolve_cache_root(repo_url, cache_root=cache_root, cache_base=cache_base, cache_key=cache_key)
+    mirror_path = ensure_mirror(repo_url, cache_root=cache_path)
     seed_path = cache_path / "seed"
 
     if not (seed_path / ".git").exists():
@@ -163,10 +222,13 @@ def bootstrap_workspace(
     repo_url: str,
     default_branch: str = "main",
     cache_root: str | Path | None = None,
+    cache_base: str | Path | None = None,
+    cache_key: str | None = None,
 ) -> WorkspaceBootstrapStatus:
     workspace_path = Path(workspace).expanduser().resolve()
-    seed_path = ensure_seed(repo_url, default_branch, cache_root)
-    mirror_path = default_cache_root(cache_root) / "mirror.git"
+    repo_cache_root = resolve_cache_root(repo_url, cache_root=cache_root, cache_base=cache_base, cache_key=cache_key)
+    seed_path = ensure_seed(repo_url, default_branch, cache_root=repo_cache_root)
+    mirror_path = repo_cache_root / "mirror.git"
     branch = bootstrap_branch_name(issue_identifier or workspace_path.name)
 
     git_dir = workspace_path / ".git"
@@ -203,11 +265,13 @@ def cleanup_workspace(
     repo_url: str,
     default_branch: str = "main",
     cache_root: str | Path | None = None,
+    cache_base: str | Path | None = None,
+    cache_key: str | None = None,
 ) -> WorkspaceBootstrapStatus:
     workspace_path = Path(workspace).expanduser().resolve()
-    cache_path = default_cache_root(cache_root)
-    mirror_path = cache_path / "mirror.git"
-    seed_path = cache_path / "seed"
+    repo_cache_root = resolve_cache_root(repo_url, cache_root=cache_root, cache_base=cache_base, cache_key=cache_key)
+    mirror_path = repo_cache_root / "mirror.git"
+    seed_path = repo_cache_root / "seed"
     branch = bootstrap_branch_name(issue_identifier or workspace_path.name)
 
     if not (seed_path / ".git").exists() or not workspace_path.exists():
