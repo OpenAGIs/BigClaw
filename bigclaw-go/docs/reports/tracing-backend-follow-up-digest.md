@@ -2,7 +2,7 @@
 
 ## Scope
 
-This digest consolidates the remaining external tracing-backend and span-propagation caveats for `OPE-264` / `BIG-PAR-094`, alongside the repo-native distributed trace export bundle.
+This digest consolidates the remaining external tracing-backend and span-propagation caveats for `OPE-264` / `BIG-PAR-075`, alongside the repo-native distributed trace export bundle.
 
 ## Current Repo-Backed Evidence
 

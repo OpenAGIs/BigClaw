@@ -44,5 +44,5 @@ This report summarizes the current observability/debug evidence for `OPE-184` / 
 
 ## Parallel follow-up digests
 
-- `OPE-264` / `BIG-PAR-094` — distributed trace export bundle caveats remain consolidated in `docs/reports/tracing-backend-follow-up-digest.md`, while the reviewer-facing export path now ships through `GET /v2/reports/distributed/export`.
+- `OPE-264` / `BIG-PAR-075` — distributed trace export bundle caveats remain consolidated in `docs/reports/tracing-backend-follow-up-digest.md`, while the reviewer-facing export path now ships through `GET /v2/reports/distributed/export`.
 - `OPE-265` / `BIG-PAR-076` — `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`

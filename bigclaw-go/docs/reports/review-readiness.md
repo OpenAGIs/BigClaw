@@ -50,7 +50,7 @@
 
 ## Parallel follow-up digests
 
-- `OPE-264` / `BIG-PAR-094` — external tracing backend and span-propagation caveats are consolidated in `docs/reports/tracing-backend-follow-up-digest.md`, while the current reviewer bundle lives in `GET /v2/reports/distributed/export`.
+- `OPE-264` / `BIG-PAR-075` — external tracing backend and span-propagation caveats are consolidated in `docs/reports/tracing-backend-follow-up-digest.md`, while the current reviewer bundle lives in `GET /v2/reports/distributed/export`.
 - `OPE-265` / `BIG-PAR-076` — telemetry pipeline, sampling policy, and high-cardinality caveats are consolidated in `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.
 - `OPE-266` / `BIG-PAR-077` — live shadow traffic comparison caveats are consolidated in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
 - `OPE-267` / `BIG-PAR-078` — rollback safeguard caveats are consolidated in `docs/reports/rollback-safeguard-follow-up-digest.md`.
