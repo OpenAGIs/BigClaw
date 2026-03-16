@@ -17,6 +17,12 @@
 
 This run adds a same-day longer-duration local soak to the existing benchmark package. It is still local evidence rather than production certification, but it materially reduces the remaining closure gap around sustained control-plane stability.
 
+## Closeout Linkage
+
+- Summary pack: `docs/reports/benchmark-readiness-report.md`
+- Baseline benchmark reference: `docs/reports/benchmark-report.md`
+- Consistency check: `python3 scripts/benchmark/validate_closeout.py`
+
 ## Artifact
 
 - `docs/reports/soak-local-2000x24.json`

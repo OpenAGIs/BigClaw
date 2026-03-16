@@ -47,3 +47,10 @@ python3 scripts/benchmark/soak_local.py \
   --timeout-seconds 480 \
   --report-path docs/reports/soak-local-2000x24.json
 ```
+
+## Closeout validator
+
+```bash
+cd bigclaw-go
+python3 scripts/benchmark/validate_closeout.py
+```

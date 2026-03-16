@@ -1,14 +1,14 @@
 goos: darwin
 goarch: arm64
 pkg: bigclaw-go/internal/queue
-BenchmarkMemoryQueueEnqueueLease-8   	   19989	     58938 ns/op
-BenchmarkFileQueueEnqueueLease-8     	      37	  68003796 ns/op
-BenchmarkSQLiteQueueEnqueueLease-8   	      57	  30264842 ns/op
+BenchmarkMemoryQueueEnqueueLease-8   	   21180	     66075 ns/op
+BenchmarkFileQueueEnqueueLease-8     	      32	  31627767 ns/op
+BenchmarkSQLiteQueueEnqueueLease-8   	      66	  18057898 ns/op
 PASS
-ok  	bigclaw-go/internal/queue	7.843s
+ok  	bigclaw-go/internal/queue	5.622s
 goos: darwin
 goarch: arm64
 pkg: bigclaw-go/internal/scheduler
-BenchmarkSchedulerDecide-8   	30962115	        51.08 ns/op
+BenchmarkSchedulerDecide-8   	16466796	        73.98 ns/op
 PASS
-ok  	bigclaw-go/internal/scheduler	1.647s
+ok  	bigclaw-go/internal/scheduler	1.310s

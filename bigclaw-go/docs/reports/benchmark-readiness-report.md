@@ -6,7 +6,16 @@
 - Commands:
   - `python3 scripts/benchmark/run_matrix.py --scenario 50:8 --scenario 100:12 --report-path docs/reports/benchmark-matrix-report.json`
   - `python3 scripts/benchmark/soak_local.py --autostart --count 2000 --workers 24 --timeout-seconds 480 --report-path docs/reports/soak-local-2000x24.json`
-- Goal: refresh `OPE-186` with a repeatable local benchmark matrix plus concurrent and longer-duration soak evidence.
+- Goal: use `OPE-254` to collapse the local benchmark baseline, soak snapshots, and long-duration proof into one reviewer-facing closeout surface.
+
+## Closeout Surface
+
+- Canonical reviewer summary: `docs/reports/benchmark-readiness-report.md`
+- Baseline microbenchmark source: `docs/reports/benchmark-report.md`
+- Long-duration soak source: `docs/reports/long-duration-soak-report.md`
+- Consistency check: `python3 scripts/benchmark/validate_closeout.py`
+
+This closeout stays intentionally local. It consolidates current repo-native benchmark and soak evidence into one auditable pack without claiming production capacity certification.
 
 ## Benchmark Snapshot
 
@@ -36,7 +45,8 @@ Every sampled task reached `task.completed`, preserved `trace_id`, and emitted `
 - `docs/reports/long-duration-soak-report.md`
 - `docs/reports/benchmark-report.md`
 - `scripts/benchmark/run_matrix.py`
+- `scripts/benchmark/validate_closeout.py`
 
 ## Readiness
 
-`OPE-186` now has a reproducible local matrix runner, refreshed queue/scheduler benchmark output, and four soak proof points with zero failures, including a `1k+` burst and a longer `2000x24` run. This is enough to close the current benchmark scope in Linear, while production-grade capacity certification can remain follow-up hardening work.
+`OPE-254` now has a reproducible local matrix runner, refreshed queue/scheduler benchmark output, four soak proof points with zero failures, and a repo-native validator that checks the markdown closeout against the underlying JSON and benchmark stdout artifacts. That is enough to close the current benchmark scope in Linear while leaving production-grade capacity certification as explicit follow-up hardening work.
