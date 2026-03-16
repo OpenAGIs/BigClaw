@@ -18,6 +18,13 @@
 - Explicit executor pinning to `ray` also succeeded.
 - Supporting report: `docs/reports/mixed-workload-validation-report.md`
 
+## Distributed Review Surfaces
+
+- The latest bundled live-validation artifact is `docs/reports/live-validation-runs/20260314T164647Z`, generated on `2026-03-14T16:46:57.671520+00:00`.
+- `docs/reports/live-validation-index.md` exposes the canonical bundle path, per-executor logs, and closeout commands for local, Kubernetes, and Ray validation.
+- `docs/reports/review-readiness.md` now acts as the repo-native closeout scorecard for executor readiness, validation bundles, closure evidence, and durability rollout posture.
+- `docs/reports/event-bus-reliability-report.md` and `docs/reports/replicated-event-log-durability-rollout-contract.md` provide the operator-facing durability rollout evidence linked from the same scorecard.
+
 ## Multi-Node Coordination
 
 - Two `bigclawd` processes shared one SQLite queue and completed `200` tasks with `0` duplicate starts and `0` duplicate completions.
@@ -36,10 +43,12 @@ This does not magically turn the system into production-grade distributed infras
 
 ## Artifacts
 
+- `docs/reports/review-readiness.md`
 - `docs/reports/benchmark-readiness-report.md`
 - `docs/reports/long-duration-soak-report.md`
 - `docs/reports/mixed-workload-validation-report.md`
 - `docs/reports/multi-node-coordination-report.md`
+- `docs/reports/live-validation-index.md`
 - `docs/reports/soak-local-1000x24.json`
 - `docs/reports/soak-local-2000x24.json`
 - `docs/reports/mixed-workload-matrix-report.json`
