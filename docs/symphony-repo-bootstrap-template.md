@@ -53,6 +53,17 @@ hooks:
 - Every issue workspace is then created as a lightweight `git worktree` from that seed repo.
 - Terminal issue cleanup removes the worktree metadata, but preserves the shared mirror and seed.
 
+## Observable result fields
+
+Bootstrap JSON output includes `cache_root`, `cache_key`, `cache_reused`, `clone_suppressed`,
+`mirror_created`, `seed_created`, and `workspace_mode` so operators can tell whether a run warmed
+the cache or reused it.
+
+## Validation workflow
+
+Use `scripts/ops/symphony_workspace_validate.py` plus a 3-issue sample to confirm a repo warms one
+mirror/seed cache and then suppresses repeated remote clones for later workspaces.
+
 ## BigClaw example
 
 BigClaw uses the same template with defaults baked in:

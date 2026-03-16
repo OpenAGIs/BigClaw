@@ -14,12 +14,32 @@ class WorkspaceBootstrapError(RuntimeError):
 
 
 @dataclass
+class CacheBootstrapState:
+    cache_root: str
+    cache_key: str
+    mirror_path: str
+    seed_path: str
+    mirror_created: bool
+    seed_created: bool
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
 class WorkspaceBootstrapStatus:
     workspace: str
     branch: str
+    cache_root: str
+    cache_key: str
     mirror_path: str
     seed_path: str
     reused: bool
+    cache_reused: bool
+    clone_suppressed: bool
+    mirror_created: bool = False
+    seed_created: bool = False
+    workspace_mode: str = "worktree_created"
     removed: bool = False
 
     def to_dict(self) -> dict[str, Any]:
@@ -133,15 +153,34 @@ def _remove_path(path: Path) -> None:
         path.unlink()
 
 
+def _cache_state(
+    repo_url: str,
+    repo_cache_root: Path,
+    cache_key: str | None = None,
+    *,
+    mirror_created: bool = False,
+    seed_created: bool = False,
+) -> CacheBootstrapState:
+    return CacheBootstrapState(
+        cache_root=str(repo_cache_root),
+        cache_key=repo_cache_key(repo_url, cache_key),
+        mirror_path=str(repo_cache_root / "mirror.git"),
+        seed_path=str(repo_cache_root / "seed"),
+        mirror_created=mirror_created,
+        seed_created=seed_created,
+    )
+
+
 def ensure_mirror(
     repo_url: str,
     cache_root: str | Path | None = None,
     cache_base: str | Path | None = None,
     cache_key: str | None = None,
-) -> Path:
-    cache_path = resolve_cache_root(repo_url, cache_root=cache_root, cache_base=cache_base, cache_key=cache_key)
-    mirror_path = cache_path / "mirror.git"
+) -> CacheBootstrapState:
+    repo_cache_root = resolve_cache_root(repo_url, cache_root=cache_root, cache_base=cache_base, cache_key=cache_key)
+    mirror_path = repo_cache_root / "mirror.git"
     mirror_path.parent.mkdir(parents=True, exist_ok=True)
+    mirror_created = False
 
     if not (mirror_path / "HEAD").exists():
         if mirror_path.exists():
@@ -155,11 +194,12 @@ def ensure_mirror(
         if result.returncode != 0:
             detail = result.stderr.strip() or result.stdout.strip() or "git clone --mirror failed"
             raise WorkspaceBootstrapError(detail)
+        mirror_created = True
     else:
         _require_git(mirror_path, "remote", "set-url", "origin", repo_url)
         _require_git(mirror_path, "fetch", "--prune", "origin")
 
-    return mirror_path
+    return _cache_state(repo_url, repo_cache_root, cache_key, mirror_created=mirror_created)
 
 
 def ensure_seed(
@@ -168,16 +208,21 @@ def ensure_seed(
     cache_root: str | Path | None = None,
     cache_base: str | Path | None = None,
     cache_key: str | None = None,
-) -> Path:
-    cache_path = resolve_cache_root(repo_url, cache_root=cache_root, cache_base=cache_base, cache_key=cache_key)
-    mirror_path = ensure_mirror(repo_url, cache_root=cache_path)
-    seed_path = cache_path / "seed"
+) -> CacheBootstrapState:
+    cache_state = ensure_mirror(
+        repo_url,
+        cache_root=cache_root,
+        cache_base=cache_base,
+        cache_key=cache_key,
+    )
+    seed_path = Path(cache_state.seed_path)
+    seed_created = False
 
     if not (seed_path / ".git").exists():
         if seed_path.exists():
             _remove_path(seed_path)
         result = subprocess.run(
-            ["git", "clone", str(mirror_path), str(seed_path)],
+            ["git", "clone", cache_state.mirror_path, str(seed_path)],
             text=True,
             capture_output=True,
             check=False,
@@ -185,12 +230,19 @@ def ensure_seed(
         if result.returncode != 0:
             detail = result.stderr.strip() or result.stdout.strip() or "git clone seed failed"
             raise WorkspaceBootstrapError(detail)
+        seed_created = True
 
-    configure_seed_remotes(seed_path, repo_url, mirror_path)
+    configure_seed_remotes(seed_path, repo_url, Path(cache_state.mirror_path))
     _require_git(seed_path, "fetch", "--prune", CACHE_REMOTE)
     _require_git(seed_path, "worktree", "prune")
     _require_git(seed_path, "checkout", "-B", default_branch, f"{CACHE_REMOTE}/{default_branch}")
-    return seed_path
+    return _cache_state(
+        repo_url,
+        Path(cache_state.cache_root),
+        cache_key,
+        mirror_created=cache_state.mirror_created,
+        seed_created=seed_created,
+    )
 
 
 def configure_seed_remotes(seed_path: Path, repo_url: str, mirror_path: Path) -> None:
@@ -226,10 +278,17 @@ def bootstrap_workspace(
     cache_key: str | None = None,
 ) -> WorkspaceBootstrapStatus:
     workspace_path = Path(workspace).expanduser().resolve()
-    repo_cache_root = resolve_cache_root(repo_url, cache_root=cache_root, cache_base=cache_base, cache_key=cache_key)
-    seed_path = ensure_seed(repo_url, default_branch, cache_root=repo_cache_root)
-    mirror_path = repo_cache_root / "mirror.git"
+    cache_state = ensure_seed(
+        repo_url,
+        default_branch,
+        cache_root=cache_root,
+        cache_base=cache_base,
+        cache_key=cache_key,
+    )
+    seed_path = Path(cache_state.seed_path)
     branch = bootstrap_branch_name(issue_identifier or workspace_path.name)
+    cache_reused = not cache_state.mirror_created and not cache_state.seed_created
+    clone_suppressed = not cache_state.mirror_created
 
     git_dir = workspace_path / ".git"
     if git_dir.exists():
@@ -237,9 +296,16 @@ def bootstrap_workspace(
         return WorkspaceBootstrapStatus(
             workspace=str(workspace_path),
             branch=current_branch or branch,
-            mirror_path=str(mirror_path),
-            seed_path=str(seed_path),
+            cache_root=cache_state.cache_root,
+            cache_key=cache_state.cache_key,
+            mirror_path=cache_state.mirror_path,
+            seed_path=cache_state.seed_path,
             reused=True,
+            cache_reused=cache_reused,
+            clone_suppressed=clone_suppressed,
+            mirror_created=cache_state.mirror_created,
+            seed_created=cache_state.seed_created,
+            workspace_mode="workspace_reused",
         )
 
     parent = workspace_path.parent
@@ -253,9 +319,16 @@ def bootstrap_workspace(
     return WorkspaceBootstrapStatus(
         workspace=str(workspace_path),
         branch=branch,
-        mirror_path=str(mirror_path),
-        seed_path=str(seed_path),
+        cache_root=cache_state.cache_root,
+        cache_key=cache_state.cache_key,
+        mirror_path=cache_state.mirror_path,
+        seed_path=cache_state.seed_path,
         reused=False,
+        cache_reused=cache_reused,
+        clone_suppressed=clone_suppressed,
+        mirror_created=cache_state.mirror_created,
+        seed_created=cache_state.seed_created,
+        workspace_mode="worktree_created",
     )
 
 
@@ -270,17 +343,23 @@ def cleanup_workspace(
 ) -> WorkspaceBootstrapStatus:
     workspace_path = Path(workspace).expanduser().resolve()
     repo_cache_root = resolve_cache_root(repo_url, cache_root=cache_root, cache_base=cache_base, cache_key=cache_key)
-    mirror_path = repo_cache_root / "mirror.git"
-    seed_path = repo_cache_root / "seed"
+    cache_state = _cache_state(repo_url, repo_cache_root, cache_key)
+    seed_path = Path(cache_state.seed_path)
+    mirror_path = Path(cache_state.mirror_path)
     branch = bootstrap_branch_name(issue_identifier or workspace_path.name)
 
     if not (seed_path / ".git").exists() or not workspace_path.exists():
         return WorkspaceBootstrapStatus(
             workspace=str(workspace_path),
             branch=branch,
-            mirror_path=str(mirror_path),
-            seed_path=str(seed_path),
+            cache_root=cache_state.cache_root,
+            cache_key=cache_state.cache_key,
+            mirror_path=cache_state.mirror_path,
+            seed_path=cache_state.seed_path,
             reused=False,
+            cache_reused=seed_path.exists() or mirror_path.exists(),
+            clone_suppressed=True,
+            workspace_mode="cleanup",
             removed=False,
         )
 
@@ -304,9 +383,14 @@ def cleanup_workspace(
     return WorkspaceBootstrapStatus(
         workspace=str(workspace_path),
         branch=branch,
-        mirror_path=str(mirror_path),
-        seed_path=str(seed_path),
+        cache_root=cache_state.cache_root,
+        cache_key=cache_state.cache_key,
+        mirror_path=cache_state.mirror_path,
+        seed_path=cache_state.seed_path,
         reused=False,
+        cache_reused=True,
+        clone_suppressed=True,
+        workspace_mode="cleanup",
         removed=registered,
     )
 

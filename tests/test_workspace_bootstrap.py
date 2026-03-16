@@ -7,6 +7,7 @@ from bigclaw.workspace_bootstrap import (
     cleanup_workspace,
     repo_cache_key,
 )
+from bigclaw.workspace_bootstrap_validation import build_validation_report
 
 
 def git(repo: Path, *args: str) -> str:
@@ -76,6 +77,12 @@ def test_bootstrap_workspace_creates_shared_worktree_from_local_seed(tmp_path: P
     expected_cache_root = cache_root_for_repo(str(remote), cache_base=cache_base)
     assert status.reused is False
     assert status.branch == "symphony/OPE-321"
+    assert status.workspace_mode == "worktree_created"
+    assert status.cache_reused is False
+    assert status.clone_suppressed is False
+    assert status.mirror_created is True
+    assert status.seed_created is True
+    assert Path(status.cache_root) == expected_cache_root
     assert (expected_cache_root / "mirror.git" / "HEAD").exists()
     assert (expected_cache_root / "seed" / ".git").exists()
     assert workspace.exists()
@@ -87,29 +94,111 @@ def test_bootstrap_workspace_creates_shared_worktree_from_local_seed(tmp_path: P
     assert git(expected_cache_root / "seed", "remote", "get-url", "cache") == str((expected_cache_root / "mirror.git").resolve())
 
 
+def test_second_workspace_reuses_warm_cache_without_full_clone(tmp_path: Path) -> None:
+    remote = init_remote_with_main(tmp_path)
+    cache_base = tmp_path / "repos"
+
+    first = bootstrap_workspace(tmp_path / "workspaces" / "OPE-322", "OPE-322", str(remote), cache_base=cache_base)
+    second = bootstrap_workspace(tmp_path / "workspaces" / "OPE-323", "OPE-323", str(remote), cache_base=cache_base)
+
+    assert first.cache_root == second.cache_root
+    assert second.cache_reused is True
+    assert second.clone_suppressed is True
+    assert second.mirror_created is False
+    assert second.seed_created is False
+    assert second.workspace_mode == "worktree_created"
+
+
 def test_bootstrap_workspace_reuses_existing_issue_worktree(tmp_path: Path) -> None:
     remote = init_remote_with_main(tmp_path)
     cache_base = tmp_path / "repos"
-    workspace = tmp_path / "workspaces" / "OPE-322"
+    workspace = tmp_path / "workspaces" / "OPE-324"
 
-    first = bootstrap_workspace(workspace, "OPE-322", str(remote), cache_base=cache_base)
-    second = bootstrap_workspace(workspace, "OPE-322", str(remote), cache_base=cache_base)
+    first = bootstrap_workspace(workspace, "OPE-324", str(remote), cache_base=cache_base)
+    second = bootstrap_workspace(workspace, "OPE-324", str(remote), cache_base=cache_base)
 
     assert first.reused is False
     assert second.reused is True
-    assert second.branch == "symphony/OPE-322"
+    assert second.workspace_mode == "workspace_reused"
+    assert second.cache_reused is True
+    assert second.clone_suppressed is True
+    assert second.branch == "symphony/OPE-324"
+
+
+def test_cleanup_workspace_preserves_shared_cache_for_future_reuse(tmp_path: Path) -> None:
+    remote = init_remote_with_main(tmp_path)
+    cache_base = tmp_path / "repos"
+    cache_root = cache_root_for_repo(str(remote), cache_base=cache_base)
+    workspace = tmp_path / "workspaces" / "OPE-325"
+
+    bootstrap_workspace(workspace, "OPE-325", str(remote), cache_base=cache_base)
+    status = cleanup_workspace(workspace, "OPE-325", str(remote), cache_base=cache_base)
+    follow_up = bootstrap_workspace(tmp_path / "workspaces" / "OPE-326", "OPE-326", str(remote), cache_base=cache_base)
+
+    assert status.removed is True
+    assert not workspace.exists()
+    assert (cache_root / "mirror.git" / "HEAD").exists()
+    assert (cache_root / "seed" / ".git").exists()
+    assert follow_up.cache_reused is True
+    assert follow_up.clone_suppressed is True
+    assert follow_up.mirror_created is False
+    assert follow_up.seed_created is False
+
+
+def test_bootstrap_recovers_from_stale_seed_directory_without_remote_reclone(tmp_path: Path) -> None:
+    remote = init_remote_with_main(tmp_path)
+    cache_base = tmp_path / "repos"
+    first = bootstrap_workspace(tmp_path / "workspaces" / "OPE-327", "OPE-327", str(remote), cache_base=cache_base)
+    cache_root = Path(first.cache_root)
+
+    cleanup_workspace(tmp_path / "workspaces" / "OPE-327", "OPE-327", str(remote), cache_base=cache_base)
+    seed_path = cache_root / "seed"
+    if seed_path.exists():
+        subprocess.run(["rm", "-rf", str(seed_path)], check=True)
+    seed_path.mkdir(parents=True, exist_ok=True)
+    (seed_path / "stale.txt").write_text("stale\n")
+
+    recovered = bootstrap_workspace(tmp_path / "workspaces" / "OPE-328", "OPE-328", str(remote), cache_base=cache_base)
+
+    assert recovered.cache_reused is False
+    assert recovered.clone_suppressed is True
+    assert recovered.mirror_created is False
+    assert recovered.seed_created is True
+    assert (cache_root / "mirror.git" / "HEAD").exists()
+    assert (cache_root / "seed" / ".git").exists()
 
 
 def test_cleanup_workspace_prunes_worktree_and_bootstrap_branch(tmp_path: Path) -> None:
     remote = init_remote_with_main(tmp_path)
     cache_base = tmp_path / "repos"
-    workspace = tmp_path / "workspaces" / "OPE-323"
+    workspace = tmp_path / "workspaces" / "OPE-329"
     cache_root = cache_root_for_repo(str(remote), cache_base=cache_base)
 
-    bootstrap_workspace(workspace, "OPE-323", str(remote), cache_base=cache_base)
-    status = cleanup_workspace(workspace, "OPE-323", str(remote), cache_base=cache_base)
+    bootstrap_workspace(workspace, "OPE-329", str(remote), cache_base=cache_base)
+    status = cleanup_workspace(workspace, "OPE-329", str(remote), cache_base=cache_base)
 
     assert status.removed is True
     assert not workspace.exists()
-    assert "symphony/OPE-323" not in git(cache_root / "seed", "branch", "--format", "%(refname:short)").splitlines()
+    assert "symphony/OPE-329" not in git(cache_root / "seed", "branch", "--format", "%(refname:short)").splitlines()
     assert str(workspace.resolve()) not in git(cache_root / "seed", "worktree", "list", "--porcelain")
+
+
+def test_validation_report_covers_three_workspaces_with_one_cache(tmp_path: Path) -> None:
+    remote = init_remote_with_main(tmp_path)
+    report = build_validation_report(
+        repo_url=str(remote),
+        workspace_root=tmp_path / "validation-workspaces",
+        issue_identifiers=["OPE-272", "OPE-273", "OPE-274"],
+        cache_base=tmp_path / "repos",
+        cleanup=True,
+    )
+
+    assert report["summary"]["workspace_count"] == 3
+    assert report["summary"]["single_cache_root_reused"] is True
+    assert report["summary"]["single_mirror_reused"] is True
+    assert report["summary"]["single_seed_reused"] is True
+    assert report["summary"]["mirror_creations"] == 1
+    assert report["summary"]["seed_creations"] == 1
+    assert report["summary"]["clone_suppressed_after_first"] is True
+    assert report["summary"]["cache_reused_after_first"] is True
+    assert report["summary"]["cleanup_preserved_cache"] is True
