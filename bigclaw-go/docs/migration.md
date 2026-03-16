@@ -22,6 +22,7 @@
 - Stop new leases from the Go control plane
 - Hand back eligible tasks to legacy scheduler
 - Keep audit trail and replay logs for every shadow run
+- Treat the tenant-scoped trigger surface in `docs/reports/rollback-safeguard-follow-up-digest.md` as the minimum rollback review gate before any tenant cutover expands
 - Current rollback remains operator-driven until the safeguards in `docs/reports/rollback-safeguard-follow-up-digest.md` are implemented
 
 ## Parallel follow-up digests

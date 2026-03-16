@@ -29,11 +29,11 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 ## Remaining gaps
 
 - Still no live legacy-vs-Go production traffic comparison; see `docs/reports/live-shadow-comparison-follow-up-digest.md`.
-- No tenant-scoped automated rollback trigger yet; see `docs/reports/rollback-safeguard-follow-up-digest.md`.
+- No tenant-scoped automated rollback trigger yet; the current trigger surface and manual rollback guardrails are documented in `docs/reports/rollback-safeguard-follow-up-digest.md`.
 - Matrix now accepts anonymized corpus manifests, but the checked-in sample still defaults to local fixture tasks and requires operator-supplied corpus slices for real production-weighted evidence; see `docs/reports/production-corpus-migration-coverage-digest.md`.
 
 ## Parallel follow-up digests
 
 - `OPE-266` / `BIG-PAR-077` — `docs/reports/live-shadow-comparison-follow-up-digest.md`
-- `OPE-267` / `BIG-PAR-078` — `docs/reports/rollback-safeguard-follow-up-digest.md`
+- `OPE-267` / `BIG-PAR-093` — `docs/reports/rollback-safeguard-follow-up-digest.md`
 - `OPE-268` / `BIG-PAR-079` — `docs/reports/production-corpus-migration-coverage-digest.md`
