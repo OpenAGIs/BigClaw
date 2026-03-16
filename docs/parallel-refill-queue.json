@@ -40,41 +40,34 @@
       "OPE-233",
       "OPE-234",
       "OPE-236",
-      "OPE-237"
-    ],
-    "active": [
+      "OPE-237",
       "OPE-238"
     ],
-    "standby": [
+    "active": [
       "OPE-239",
-      "OPE-240",
+      "OPE-240"
+    ],
+    "standby": [
       "OPE-241"
     ]
   },
   "issue_order": [
-    "OPE-238",
     "OPE-239",
     "OPE-240",
     "OPE-241"
   ],
   "issues": [
     {
-      "identifier": "OPE-238",
-      "title": "BIG-PAR-051 distributed rollout review-pack refresh",
-      "track": "Review Pack",
-      "status": "In Progress"
-    },
-    {
       "identifier": "OPE-239",
       "title": "BIG-PAR-052 broker failover evidence bundle export normalization",
       "track": "Validation Matrix",
-      "status": "Todo"
+      "status": "In Progress"
     },
     {
       "identifier": "OPE-240",
       "title": "BIG-PAR-053 durability backend comparison readiness report refresh",
       "track": "Durability Readiness",
-      "status": "Todo"
+      "status": "In Progress"
     },
     {
       "identifier": "OPE-241",
