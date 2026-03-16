@@ -58,4 +58,6 @@ The canonical generated matrix lives in `docs/reports/multi-subscriber-takeover-
 
 - The repo now has a generated, reviewable scenario matrix for takeover fault injection instead of an implied TODO.
 - Existing evidence is sufficient to define the report contract, but not yet to execute the takeover scenarios end to end.
+- The current queue-level cross-node proof remains `docs/reports/multi-node-coordination-report.md`; it does not claim durable subscriber-group ownership or leader election.
+- The current shared multi-node coordination gap is summarized in `docs/reports/event-bus-reliability-report.md` and mirrored in the reviewer-facing digests `docs/reports/review-readiness.md` and `docs/reports/issue-coverage.md`.
 - The next implementation slice should add lease-aware checkpoint ownership metadata and normalized audit events so the shared multi-node harness can execute this matrix directly.

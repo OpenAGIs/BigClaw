@@ -40,5 +40,7 @@
 ## Follow-up Hardening
 
 - Production-grade capacity certification can remain a follow-up track beyond the current rewrite closure.
-- No dedicated leader-election layer exists yet; current evidence is limited to a local two-node shared-SQLite coordination proof.
+- No dedicated leader-election layer exists yet; current evidence is limited to the local two-node shared-SQLite coordination proof in `docs/reports/multi-node-coordination-report.md`.
+- Shared multi-node subscriber-group checkpoint coordination still needs a durable backend; the current event-bus boundary is tracked in `docs/reports/event-bus-reliability-report.md`.
+- Multi-subscriber takeover fault injection remains planning-only in `docs/reports/multi-subscriber-takeover-validation-report.md` until lease-aware checkpoint ownership exists.
 - Higher-scale external-store validation is still pending beyond the current SQLite-backed scope.

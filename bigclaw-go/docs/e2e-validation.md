@@ -108,6 +108,13 @@ python3 scripts/e2e/subscriber_takeover_fault_matrix.py --pretty
 
 This refreshes `docs/reports/multi-subscriber-takeover-validation-report.json` with the canonical scenario list, expected audit/checkpoint/replay assertions, and the minimum harness outputs the future lease-aware validation run must emit.
 
+To verify the coordination digest still points at the same future-work surfaces, run:
+
+```bash
+cd bigclaw-go
+python3 scripts/e2e/check_coordination_digest.py
+```
+
 Optional toggles:
 
 ```bash

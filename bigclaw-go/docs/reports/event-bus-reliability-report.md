@@ -132,11 +132,11 @@ This report summarizes the current event bus reliability evidence and the next r
 - No concrete durable external event log exists yet in this checkout; replay still depends on process-local history plus the documented integration plan.
 - Only the SQLite durable consumer dedup backend exists yet; HTTP and broker-backed dedup persistence still need concrete implementations.
 - No delivery acknowledgement protocol exists beyond sink-level best effort.
-- Lease coordination is currently in-memory and single-process; shared multi-node subscriber groups still need a durable backend.
+- Lease coordination is currently in-memory and single-process; shared multi-node subscriber groups still need a durable backend, which is why `docs/reports/multi-node-coordination-report.md` remains a queue-level proof instead of a subscriber-group takeover proof.
 - No partitioned topic model or broker-backed cross-process subscriber coordination exists yet.
 - Retention watermarks are now exposed for in-memory and durable event-log backends, SQLite-backed logs persist trimmed replay boundaries across restarts, and expired checkpoint resumes now fail closed with explicit reset guidance; the broader compaction semantics remain documented in `docs/reports/replay-retention-semantics-report.md`.
 - Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.
-- Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists.
+- Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and generated JSON in `docs/reports/multi-subscriber-takeover-validation-report.json`; it is not executable until lease-aware checkpoint ownership exists.
 
 ## Replicated rollout contract
 
@@ -155,4 +155,4 @@ This report summarizes the current event bus reliability evidence and the next r
 - No durable external event log yet; replay is process-local history.
 - No delivery acknowledgement protocol beyond sink-level best effort.
 - No partitioned topic model or cross-process subscriber coordination yet.
-- Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists.
+- Shared multi-node subscriber groups still need a durable lease/checkpoint backend before takeover validation can move beyond the current plan in `docs/reports/multi-subscriber-takeover-validation-report.md`.
