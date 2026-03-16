@@ -69,9 +69,10 @@ manual operator can refill the next parallel-safe issues in a stable order.
   - `OPE-256` — scheduler policy and routing closeout refresh
   - `OPE-257` — review matrix and closeout navigation refresh
 - Standby:
-  - None currently; create the next standby slice after one active item closes.
+  - `OPE-258` — remaining hardening gap register refresh
 
 ## Canonical refill order
 
 1. `OPE-256`
 2. `OPE-257`
+3. `OPE-258`

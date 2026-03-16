@@ -63,11 +63,14 @@
       "OPE-256",
       "OPE-257"
     ],
-    "standby": []
+    "standby": [
+      "OPE-258"
+    ]
   },
   "issue_order": [
     "OPE-256",
-    "OPE-257"
+    "OPE-257",
+    "OPE-258"
   ],
   "issues": [
     {
@@ -93,6 +96,12 @@
       "title": "BIG-PAR-068 review matrix and closeout navigation refresh",
       "track": "Review & Closeout Navigation",
       "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-258",
+      "title": "BIG-PAR-069 remaining hardening gap register refresh",
+      "track": "Hardening Gap Register",
+      "status": "Backlog"
     }
   ]
 }
