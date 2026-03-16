@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import json
-import pathlib
 import sys
 
 import shadow_compare
@@ -25,6 +24,7 @@ def main():
     parser.add_argument('--timeout-seconds', type=int, default=180)
     parser.add_argument('--health-timeout-seconds', type=int, default=60)
     parser.add_argument('--report-path')
+    parser.add_argument('--bundle-dir')
     args = parser.parse_args()
 
     tasks = load_tasks(args.task_file)
@@ -36,19 +36,20 @@ def main():
         result['source_file'] = task['_source_file']
         results.append(result)
 
-    matched = sum(1 for item in results if item['diff']['state_equal'] and item['diff']['event_types_equal'])
-    report = {
-        'total': len(results),
-        'matched': matched,
-        'mismatched': len(results) - matched,
-        'results': results,
-    }
+    report = shadow_compare.build_bundle_report(
+        report_kind='shadow_matrix',
+        comparisons=results,
+        task_sources=[task['_source_file'] for task in tasks],
+    )
     if args.report_path:
-        path = pathlib.Path(args.report_path)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
+        shadow_compare.write_bundle_artifacts(
+            report,
+            report_path=args.report_path,
+            bundle_dir=args.bundle_dir,
+            bundle_summary_name='shadow-matrix-summary.json',
+        )
     print(json.dumps(report, ensure_ascii=False, indent=2))
-    return 0 if matched == len(results) else 1
+    return 0 if report['comparison_totals']['mismatched'] == 0 else 1
 
 
 if __name__ == '__main__':

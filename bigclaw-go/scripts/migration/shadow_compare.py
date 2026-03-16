@@ -2,6 +2,7 @@
 import argparse
 import datetime
 import json
+import pathlib
 import sys
 import time
 import urllib.request
@@ -57,6 +58,117 @@ def timeline_seconds(events):
     return max((end_ts - start_ts).total_seconds(), 0)
 
 
+def write_json(path, payload):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+
+def relpath(path, root):
+    try:
+        return str(path.relative_to(root))
+    except ValueError:
+        return str(path)
+
+
+def comparison_matched(comparison):
+    diff = comparison.get('diff', {})
+    return diff.get('state_equal') and diff.get('event_types_equal')
+
+
+def comparison_summary(comparison):
+    diff = comparison.get('diff', {})
+    primary = comparison.get('primary', {})
+    shadow = comparison.get('shadow', {})
+    primary_status = primary.get('status', {})
+    shadow_status = shadow.get('status', {})
+    return {
+        'trace_id': comparison.get('trace_id', ''),
+        'primary_task_id': primary.get('task_id', ''),
+        'shadow_task_id': shadow.get('task_id', ''),
+        'primary_state': primary_status.get('state', 'unknown'),
+        'shadow_state': shadow_status.get('state', 'unknown'),
+        'primary_event_count': len(primary.get('events', [])),
+        'shadow_event_count': len(shadow.get('events', [])),
+        'event_count_delta': diff.get('event_count_delta', 0),
+        'event_types_equal': bool(diff.get('event_types_equal')),
+        'state_equal': bool(diff.get('state_equal')),
+        'matched': comparison_matched(comparison),
+    }
+
+
+def build_bundle_report(*, report_kind, comparisons, task_sources=None, closeout_commands=None, legacy_single_result=None):
+    matched = sum(1 for comparison in comparisons if comparison_matched(comparison))
+    report = {
+        'artifact_type': report_kind,
+        'generated_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        'status': 'matched' if matched == len(comparisons) else 'mismatched',
+        'bundle_path': '',
+        'summary_path': '',
+        'report_path': '',
+        'bundle_report_path': '',
+        'comparison_totals': {
+            'total': len(comparisons),
+            'matched': matched,
+            'mismatched': len(comparisons) - matched,
+        },
+        'task_sources': list(task_sources or []),
+        'closeout_commands': list(
+            closeout_commands
+            or [
+                'cd bigclaw-go && python3 -m unittest scripts.migration.test_shadow_reports',
+                'cd bigclaw-go && python3 scripts/migration/shadow_compare.py --primary <url> --shadow <url> --task-file <task.json> --report-path docs/reports/shadow-compare-report.json',
+                'cd bigclaw-go && python3 scripts/migration/shadow_matrix.py --primary <url> --shadow <url> --task-file <task.json> --report-path docs/reports/shadow-matrix-report.json',
+            ]
+        ),
+        'comparison_summaries': [comparison_summary(comparison) for comparison in comparisons],
+        'comparisons': comparisons,
+    }
+    if legacy_single_result is not None:
+        report['comparison'] = legacy_single_result
+        report.update(legacy_single_result)
+    return report
+
+
+def build_bundle_summary(report):
+    return {
+        'artifact_type': report['artifact_type'],
+        'generated_at': report['generated_at'],
+        'status': report['status'],
+        'bundle_path': report['bundle_path'],
+        'summary_path': report['summary_path'],
+        'report_path': report['report_path'],
+        'bundle_report_path': report['bundle_report_path'],
+        'comparison_totals': report['comparison_totals'],
+        'task_sources': report['task_sources'],
+        'closeout_commands': report['closeout_commands'],
+        'comparison_summaries': report['comparison_summaries'],
+    }
+
+
+def write_bundle_artifacts(report, *, report_path, bundle_dir=None, bundle_summary_name=None):
+    root = pathlib.Path(__file__).resolve().parents[2].resolve()
+    canonical_report_path = pathlib.Path(report_path)
+    if not canonical_report_path.is_absolute():
+        canonical_report_path = root / canonical_report_path
+    canonical_report_path = canonical_report_path.resolve()
+    resolved_bundle_dir = pathlib.Path(bundle_dir) if bundle_dir else canonical_report_path.parent / 'migration-shadow-bundle'
+    if not resolved_bundle_dir.is_absolute():
+        resolved_bundle_dir = root / resolved_bundle_dir
+    resolved_bundle_dir = resolved_bundle_dir.resolve()
+    summary_name = bundle_summary_name or f"{report['artifact_type']}-summary.json"
+    bundle_report_path = resolved_bundle_dir / canonical_report_path.name
+    bundle_summary_path = resolved_bundle_dir / summary_name
+
+    report['bundle_path'] = relpath(resolved_bundle_dir, root)
+    report['summary_path'] = relpath(bundle_summary_path, root)
+    report['report_path'] = relpath(canonical_report_path, root)
+    report['bundle_report_path'] = relpath(bundle_report_path, root)
+
+    write_json(bundle_report_path, report)
+    write_json(canonical_report_path, report)
+    write_json(bundle_summary_path, build_bundle_summary(report))
+
+
 def compare_task(primary_base_url, shadow_base_url, task, timeout_seconds, health_timeout_seconds):
     wait_health(primary_base_url, health_timeout_seconds)
     wait_health(shadow_base_url, health_timeout_seconds)
@@ -102,15 +214,26 @@ def main():
     parser.add_argument('--timeout-seconds', type=int, default=180)
     parser.add_argument('--health-timeout-seconds', type=int, default=60)
     parser.add_argument('--report-path')
+    parser.add_argument('--bundle-dir')
     args = parser.parse_args()
 
     task = json.load(open(args.task_file))
-    report = compare_task(args.primary, args.shadow, task, args.timeout_seconds, args.health_timeout_seconds)
+    comparison = compare_task(args.primary, args.shadow, task, args.timeout_seconds, args.health_timeout_seconds)
+    report = build_bundle_report(
+        report_kind='shadow_compare',
+        comparisons=[comparison],
+        task_sources=[args.task_file],
+        legacy_single_result=comparison,
+    )
     if args.report_path:
-        with open(args.report_path, 'w', encoding='utf-8') as fh:
-            json.dump(report, fh, ensure_ascii=False, indent=2)
+        write_bundle_artifacts(
+            report,
+            report_path=args.report_path,
+            bundle_dir=args.bundle_dir,
+            bundle_summary_name='shadow-compare-summary.json',
+        )
     print(json.dumps(report, ensure_ascii=False, indent=2))
-    return 0 if report['diff']['state_equal'] and report['diff']['event_types_equal'] else 1
+    return 0 if report['comparison_totals']['mismatched'] == 0 else 1
 
 
 if __name__ == '__main__':

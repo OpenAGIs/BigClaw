@@ -1,0 +1,37 @@
+{
+  "artifact_type": "shadow_compare",
+  "generated_at": "2026-03-16T02:20:00+00:00",
+  "status": "matched",
+  "bundle_path": "docs/reports/migration-shadow-bundle",
+  "summary_path": "docs/reports/migration-shadow-bundle/shadow-compare-summary.json",
+  "report_path": "docs/reports/shadow-compare-report.json",
+  "bundle_report_path": "docs/reports/migration-shadow-bundle/shadow-compare-report.json",
+  "comparison_totals": {
+    "total": 1,
+    "matched": 1,
+    "mismatched": 0
+  },
+  "task_sources": [
+    "examples/shadow-task.json"
+  ],
+  "closeout_commands": [
+    "cd bigclaw-go && python3 -m unittest scripts.migration.test_shadow_reports",
+    "cd bigclaw-go && python3 scripts/migration/shadow_compare.py --primary <url> --shadow <url> --task-file <task.json> --report-path docs/reports/shadow-compare-report.json",
+    "cd bigclaw-go && python3 scripts/migration/shadow_matrix.py --primary <url> --shadow <url> --task-file <task.json> --report-path docs/reports/shadow-matrix-report.json"
+  ],
+  "comparison_summaries": [
+    {
+      "trace_id": "shadow-compare-sample",
+      "primary_task_id": "shadow-compare-sample-primary",
+      "shadow_task_id": "shadow-compare-sample-shadow",
+      "primary_state": "succeeded",
+      "shadow_state": "succeeded",
+      "primary_event_count": 3,
+      "shadow_event_count": 3,
+      "event_count_delta": 0,
+      "event_types_equal": true,
+      "state_equal": true,
+      "matched": true
+    }
+  ]
+}

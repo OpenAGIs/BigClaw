@@ -1,0 +1,65 @@
+{
+  "artifact_type": "shadow_matrix",
+  "generated_at": "2026-03-16T02:21:00+00:00",
+  "status": "matched",
+  "bundle_path": "docs/reports/migration-shadow-bundle",
+  "summary_path": "docs/reports/migration-shadow-bundle/shadow-matrix-summary.json",
+  "report_path": "docs/reports/shadow-matrix-report.json",
+  "bundle_report_path": "docs/reports/migration-shadow-bundle/shadow-matrix-report.json",
+  "comparison_totals": {
+    "total": 3,
+    "matched": 3,
+    "mismatched": 0
+  },
+  "task_sources": [
+    "examples/shadow-task.json",
+    "examples/shadow-task-budget.json",
+    "examples/shadow-task-validation.json"
+  ],
+  "closeout_commands": [
+    "cd bigclaw-go && python3 -m unittest scripts.migration.test_shadow_reports",
+    "cd bigclaw-go && python3 scripts/migration/shadow_compare.py --primary <url> --shadow <url> --task-file <task.json> --report-path docs/reports/shadow-compare-report.json",
+    "cd bigclaw-go && python3 scripts/migration/shadow_matrix.py --primary <url> --shadow <url> --task-file <task.json> --report-path docs/reports/shadow-matrix-report.json"
+  ],
+  "comparison_summaries": [
+    {
+      "trace_id": "shadow-compare-sample-m1",
+      "primary_task_id": "shadow-compare-sample-m1-primary",
+      "shadow_task_id": "shadow-compare-sample-m1-shadow",
+      "primary_state": "succeeded",
+      "shadow_state": "succeeded",
+      "primary_event_count": 3,
+      "shadow_event_count": 3,
+      "event_count_delta": 0,
+      "event_types_equal": true,
+      "state_equal": true,
+      "matched": true
+    },
+    {
+      "trace_id": "shadow-budget-sample-m2",
+      "primary_task_id": "shadow-budget-sample-m2-primary",
+      "shadow_task_id": "shadow-budget-sample-m2-shadow",
+      "primary_state": "succeeded",
+      "shadow_state": "succeeded",
+      "primary_event_count": 3,
+      "shadow_event_count": 3,
+      "event_count_delta": 0,
+      "event_types_equal": true,
+      "state_equal": true,
+      "matched": true
+    },
+    {
+      "trace_id": "shadow-validation-sample-m3",
+      "primary_task_id": "shadow-validation-sample-m3-primary",
+      "shadow_task_id": "shadow-validation-sample-m3-shadow",
+      "primary_state": "succeeded",
+      "shadow_state": "succeeded",
+      "primary_event_count": 4,
+      "shadow_event_count": 4,
+      "event_count_delta": 0,
+      "event_types_equal": true,
+      "state_equal": true,
+      "matched": true
+    }
+  ]
+}
