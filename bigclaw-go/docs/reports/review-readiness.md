@@ -28,7 +28,7 @@
 - `OPE-184`
   - Audit and debug surfaces include trace summary endpoints, trace timeline lookup, worker lifecycle snapshots, and `trace_count` metrics visibility.
   - Supporting report: `docs/reports/go-control-plane-observability-report.md`.
-  - Follow-up digests capture the remaining tracing-backend and telemetry-pipeline caveats in `docs/reports/tracing-backend-follow-up-digest.md` and `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.
+  - Follow-up evidence captures the remaining tracing-backend and telemetry-pipeline caveats in `docs/reports/tracing-backend-follow-up-digest.md`, `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`, and the machine-checkable `docs/reports/telemetry-sampling-cardinality-evidence-pack.json`.
 - `OPE-185`
   - Migration evidence includes a shadow matrix across multiple sample tasks with matched terminal states, matched event sequences, and an anonymized corpus coverage scorecard.
   - Supporting report: `docs/reports/migration-readiness-report.md`.
@@ -50,7 +50,7 @@
 ## Parallel follow-up digests
 
 - `OPE-264` / `BIG-PAR-075` — external tracing backend and span-propagation caveats are consolidated in `docs/reports/tracing-backend-follow-up-digest.md`.
-- `OPE-265` / `BIG-PAR-076` — telemetry pipeline, sampling policy, and high-cardinality caveats are consolidated in `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.
+- `OPE-265` / `BIG-PAR-095` — telemetry pipeline, sampling policy, and high-cardinality caveats are consolidated in `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`, with the current review surface summarized in `docs/reports/telemetry-sampling-cardinality-evidence-pack.json`.
 - `OPE-266` / `BIG-PAR-077` — live shadow traffic comparison caveats are consolidated in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
 - `OPE-267` / `BIG-PAR-078` — rollback safeguard caveats are consolidated in `docs/reports/rollback-safeguard-follow-up-digest.md`.
 - `OPE-268` / `BIG-PAR-079` — production corpus coverage caveats are consolidated in `docs/reports/production-corpus-migration-coverage-digest.md`.

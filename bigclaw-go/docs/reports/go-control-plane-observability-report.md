@@ -29,16 +29,18 @@ This report summarizes the current observability/debug evidence for `OPE-184` / 
 - `internal/observability/audit.go`
 - `internal/observability/audit_test.go`
 - `internal/api/server.go`
+- `internal/api/metrics.go`
 - `internal/api/server_test.go`
 - `internal/worker/runtime.go`
+- `docs/reports/telemetry-sampling-cardinality-evidence-pack.json`
 
 ## Remaining gaps
 
 - No external tracing backend or span propagation beyond in-memory `trace_id` grouping; see `docs/reports/tracing-backend-follow-up-digest.md`.
 - Prometheus-style text exposition is now available, but there is still no full OpenTelemetry-native metrics / tracing pipeline; see `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.
-- No configurable sampling policy or high-cardinality controls exist beyond lightweight in-memory usage; see `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.
+- No configurable sampling policy or production-grade high-cardinality controls exist beyond lightweight in-memory usage; the current repo-native evidence pack is `docs/reports/telemetry-sampling-cardinality-evidence-pack.json` and the follow-up digest remains `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.
 
 ## Parallel follow-up digests
 
 - `OPE-264` / `BIG-PAR-075` — `docs/reports/tracing-backend-follow-up-digest.md`
-- `OPE-265` / `BIG-PAR-076` — `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`
+- `OPE-265` / `BIG-PAR-095` — `docs/reports/telemetry-pipeline-controls-follow-up-digest.md` and `docs/reports/telemetry-sampling-cardinality-evidence-pack.json`
