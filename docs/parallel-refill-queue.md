@@ -19,6 +19,7 @@ manual operator can refill the next parallel-safe issues in a stable order.
 - Promote only issues currently in `Backlog` or `Todo`.
 - Use the queue order below as the single source of truth for refill priority.
 - Every substantive code-bearing update must be committed and pushed to GitHub immediately, with local/remote SHA equality verification after each push.
+- Use `Backlog` for future standby slices; Symphony actively tracks `Todo` as runnable work.
 
 ## Recent batches
 
@@ -49,13 +50,16 @@ manual operator can refill the next parallel-safe issues in a stable order.
   - `OPE-236` — kubernetes executor live readiness rollup in distributed diagnostics
   - `OPE-237` — normalize live-validation evidence bundle index
   - `OPE-238` — distributed rollout review-pack refresh
-- Active:
   - `OPE-239` — broker failover evidence bundle export normalization
   - `OPE-240` — durability backend comparison readiness report refresh
   - `OPE-241` — distributed closure readiness scorecard refresh
+- Active:
+  - `OPE-242` — control-center takeover history digest
+  - `OPE-243` — mixed workload validation drilldown normalization
+  - `OPE-244` — benchmark matrix artifact normalization
 
 ## Canonical refill order
 
-1. `OPE-239`
-2. `OPE-240`
-3. `OPE-241`
+1. `OPE-242`
+2. `OPE-243`
+3. `OPE-244`

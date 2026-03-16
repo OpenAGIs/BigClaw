@@ -59,6 +59,7 @@ Primary operating mode:
 - Use Symphony as the parallel orchestration layer whenever the current project has multiple independent slices that can advance concurrently.
 - Prefer 2-4 active child tickets in parallel when the work can be safely decomposed without merge conflicts.
 - Keep at least 2 tickets in `In Progress` whenever the project still has parallel-safe `Todo` slices available.
+- Use `Backlog` rather than `Todo` for standby slices that should not be picked up immediately; Symphony treats `Todo` as runnable work.
 - Keep each parallel slice small, code-backed, and independently verifiable.
 - Use `docs/parallel-refill-queue.json` as the canonical refill order and `scripts/ops/bigclaw_refill_queue.py` as the reusable manual/automated refill entrypoint.
 - Mirror `elixir/WORKFLOW.md`'s unattended posture: keep ticket state current, keep GitHub current throughout execution, and avoid leaving active work without a synced branch state.

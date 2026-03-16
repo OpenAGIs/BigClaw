@@ -39,39 +39,43 @@
       "OPE-232",
       "OPE-233",
       "OPE-234",
+      "OPE-235",
       "OPE-236",
       "OPE-237",
-      "OPE-238"
-    ],
-    "active": [
+      "OPE-238",
       "OPE-239",
       "OPE-240",
       "OPE-241"
     ],
+    "active": [
+      "OPE-242",
+      "OPE-243",
+      "OPE-244"
+    ],
     "standby": []
   },
   "issue_order": [
-    "OPE-239",
-    "OPE-240",
-    "OPE-241"
+    "OPE-242",
+    "OPE-243",
+    "OPE-244"
   ],
   "issues": [
     {
-      "identifier": "OPE-239",
-      "title": "BIG-PAR-052 broker failover evidence bundle export normalization",
-      "track": "Validation Matrix",
+      "identifier": "OPE-242",
+      "title": "BIG-PAR-055 control-center takeover history digest",
+      "track": "Takeover Visibility",
       "status": "In Progress"
     },
     {
-      "identifier": "OPE-240",
-      "title": "BIG-PAR-053 durability backend comparison readiness report refresh",
-      "track": "Durability Readiness",
+      "identifier": "OPE-243",
+      "title": "BIG-PAR-056 mixed workload validation drilldown normalization",
+      "track": "Mixed Workload Drilldown",
       "status": "In Progress"
     },
     {
-      "identifier": "OPE-241",
-      "title": "BIG-PAR-054 distributed closure readiness scorecard refresh",
-      "track": "Closure Scorecard",
+      "identifier": "OPE-244",
+      "title": "BIG-PAR-057 benchmark matrix artifact normalization",
+      "track": "Benchmark Artifact Flow",
       "status": "In Progress"
     }
   ]
