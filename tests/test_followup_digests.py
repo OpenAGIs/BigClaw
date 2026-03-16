@@ -168,6 +168,7 @@ DIGESTS = {
         "links": [
             "docs/reports/live-validation-index.md",
             "docs/reports/live-validation-summary.json",
+            "docs/reports/shared-queue-companion-summary.json",
             "docs/reports/validation-bundle-continuation-scorecard.json",
             "scripts/e2e/validation_bundle_continuation_scorecard.py",
             "docs/reports/validation-bundle-continuation-policy-gate.json",
