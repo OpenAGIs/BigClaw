@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from difflib import SequenceMatcher
 from html import escape
 from pathlib import Path
@@ -23,6 +23,10 @@ from .run_detail import (
     render_run_detail_console,
     render_timeline_panel,
 )
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 @dataclass
@@ -312,7 +316,7 @@ class TriageFeedbackRecord:
     decision: str
     actor: str
     notes: str = ""
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
+    timestamp: str = field(default_factory=_utc_now_iso)
 
 
 @dataclass
@@ -654,7 +658,7 @@ class BillingEntitlementsPage:
 
 
 def render_issue_validation_report(issue_id: str, version: str, environment: str, summary: str) -> str:
-    return f"""# Issue Validation Report\n\n- Issue ID: {issue_id}\n- 版本号: {version}\n- 测试环境: {environment}\n- 生成时间: {datetime.utcnow().isoformat()}Z\n\n## 结论\n\n{summary}\n"""
+    return f"""# Issue Validation Report\n\n- Issue ID: {issue_id}\n- 版本号: {version}\n- 测试环境: {environment}\n- 生成时间: {_utc_now_iso()}\n\n## 结论\n\n{summary}\n"""
 
 
 def render_report_studio_report(studio: ReportStudio) -> str:

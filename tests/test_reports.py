@@ -1283,3 +1283,23 @@ def test_build_billing_entitlements_page_from_ledger_extracts_upgrade_signals():
     assert page.total_overage_cost_usd == 4.0
     assert page.charges[1].blocked_capabilities == ["customer-success"]
     assert page.charges[1].handoff_team == "operations"
+
+
+def test_triage_feedback_record_uses_timezone_aware_utc_timestamp():
+    record = TriageFeedbackRecord(run_id="run-1", action="classify", decision="accepted", actor="ops")
+
+    assert record.timestamp.endswith("Z")
+    parsed = __import__("datetime").datetime.fromisoformat(record.timestamp.replace("Z", "+00:00"))
+    assert parsed.tzinfo is not None
+    assert parsed.utcoffset().total_seconds() == 0
+
+
+def test_issue_validation_report_uses_timezone_aware_utc_timestamp():
+    content = render_issue_validation_report("BIG-900", "v1", "repo", "pass")
+
+    timestamp_line = next(line for line in content.splitlines() if line.startswith("- 生成时间:"))
+    timestamp_value = timestamp_line.split(": ", 1)[1]
+    assert timestamp_value.endswith("Z")
+    parsed = __import__("datetime").datetime.fromisoformat(timestamp_value.replace("Z", "+00:00"))
+    assert parsed.tzinfo is not None
+    assert parsed.utcoffset().total_seconds() == 0

@@ -7,13 +7,14 @@
     "epic": "OPE-187"
   },
   "policy": {
-    "target_in_progress": 0,
+    "target_in_progress": 1,
     "activate_state_name": "In Progress",
     "activate_state_id": "bd8aafe7-4d8b-41aa-a85b-13e76d49ead7",
     "refill_states": [
       "Backlog",
       "Todo"
-    ]
+    ],
+    "blocked_reason": "Linear workspace issue quota currently blocks creating the remaining planned slices"
   },
   "recent_batches": {
     "completed": [
@@ -75,127 +76,20 @@
       "OPE-270",
       "OPE-271"
     ],
-    "active": [],
+    "active": [
+      "OPE-275"
+    ],
     "standby": []
   },
   "issue_order": [
-    "OPE-264",
-    "OPE-265",
-    "OPE-266",
-    "OPE-267",
-    "OPE-268",
-    "OPE-269",
-    "OPE-270",
-    "OPE-271"
+    "OPE-275"
   ],
   "issues": [
     {
-      "identifier": "OPE-254",
-      "title": "BIG-PAR-065 long-duration soak and benchmark closeout refresh",
-      "track": "Soak & Benchmark Closeout",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-255",
-      "title": "BIG-PAR-066 operations foundation evidence alignment refresh",
-      "track": "Operations Foundation",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-256",
-      "title": "BIG-PAR-067 scheduler policy and routing closeout refresh",
-      "track": "Scheduler Policy Closeout",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-257",
-      "title": "BIG-PAR-068 review matrix and closeout navigation refresh",
-      "track": "Review & Closeout Navigation",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-258",
-      "title": "BIG-PAR-069 remaining hardening gap register refresh",
-      "track": "Hardening Gap Register",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-259",
-      "title": "BIG-PAR-070 follow-up roadmap and gap-analysis refresh",
-      "track": "Roadmap & Gap Analysis",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-260",
-      "title": "BIG-PAR-071 scale validation follow-up digest",
-      "track": "Scale Validation Follow-up",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-261",
-      "title": "BIG-PAR-072 distributed coordination hardening digest",
-      "track": "Coordination Hardening",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-262",
-      "title": "BIG-PAR-073 event delivery semantics follow-up digest",
-      "track": "Delivery Semantics Follow-up",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-263",
-      "title": "BIG-PAR-074 retention and external-store follow-up digest",
-      "track": "Retention & External Store",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-264",
-      "title": "BIG-PAR-075 observability tracing backend follow-up digest",
-      "track": "Tracing Backend Follow-up",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-265",
-      "title": "BIG-PAR-076 telemetry pipeline controls follow-up digest",
-      "track": "Telemetry Controls Follow-up",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-266",
-      "title": "BIG-PAR-077 live shadow traffic comparison follow-up digest",
-      "track": "Live Shadow Comparison",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-267",
-      "title": "BIG-PAR-078 rollback safeguard follow-up digest",
-      "track": "Rollback Safeguards",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-268",
-      "title": "BIG-PAR-079 production corpus migration coverage digest",
-      "track": "Production Corpus Coverage",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-269",
-      "title": "BIG-PAR-080 subscriber takeover executability follow-up digest",
-      "track": "Takeover Executability",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-270",
-      "title": "BIG-PAR-081 cross-process coordination boundary digest",
-      "track": "Cross-process Coordination",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-271",
-      "title": "BIG-PAR-082 validation bundle continuation digest",
-      "track": "Validation Bundle Continuation",
-      "status": "Done"
+      "identifier": "OPE-275",
+      "title": "BIG-PAR-083 production corpus replay pack and migration coverage scorecard",
+      "track": "Production Corpus Coverage Implementation",
+      "status": "In Progress"
     }
   ]
 }
