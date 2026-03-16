@@ -99,6 +99,7 @@ DIGESTS = {
             "docs/reports/shadow-compare-report.json",
             "docs/migration-shadow.md",
             "docs/reports/issue-coverage.md",
+            "examples/shadow-corpus-manifest.json",
         ],
         "phrases": [
             "fixture-backed evidence only",

@@ -30,7 +30,7 @@
   - Supporting report: `docs/reports/go-control-plane-observability-report.md`.
   - Follow-up digests capture the remaining tracing-backend and telemetry-pipeline caveats in `docs/reports/tracing-backend-follow-up-digest.md` and `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.
 - `OPE-185`
-  - Migration evidence includes a shadow matrix across multiple sample tasks with matched terminal states and matched event sequences.
+  - Migration evidence includes a shadow matrix across multiple sample tasks with matched terminal states, matched event sequences, and an anonymized corpus coverage scorecard.
   - Supporting report: `docs/reports/migration-readiness-report.md`.
   - Follow-up digests capture the remaining live shadow comparison, rollback safeguard, and production corpus coverage caveats in `docs/reports/live-shadow-comparison-follow-up-digest.md`, `docs/reports/rollback-safeguard-follow-up-digest.md`, and `docs/reports/production-corpus-migration-coverage-digest.md`.
 - `OPE-186`

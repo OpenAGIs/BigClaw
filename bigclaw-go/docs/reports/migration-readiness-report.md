@@ -8,6 +8,7 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 
 - Shadow comparison for one task via `scripts/migration/shadow_compare.py`
 - Shadow comparison matrix across multiple task fixtures via `scripts/migration/shadow_matrix.py`
+- An anonymized corpus-manifest scorecard path via `examples/shadow-corpus-manifest.json`
 - Shared `trace_id` correlation across primary/shadow runs
 - JSON reports for single-run and matrix outcomes
 
@@ -19,6 +20,7 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 - `scripts/migration/shadow_matrix.py`
 - `docs/reports/shadow-compare-report.json`
 - `docs/reports/shadow-matrix-report.json`
+- `examples/shadow-corpus-manifest.json`
 
 ## Validation target
 
@@ -28,7 +30,7 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 
 - Still no live legacy-vs-Go production traffic comparison; see `docs/reports/live-shadow-comparison-follow-up-digest.md`.
 - No tenant-scoped automated rollback trigger yet; see `docs/reports/rollback-safeguard-follow-up-digest.md`.
-- Matrix currently uses local fixture tasks rather than a production issue/task corpus; see `docs/reports/production-corpus-migration-coverage-digest.md`.
+- Matrix now accepts anonymized corpus manifests, but the checked-in sample still defaults to local fixture tasks and requires operator-supplied corpus slices for real production-weighted evidence; see `docs/reports/production-corpus-migration-coverage-digest.md`.
 
 ## Parallel follow-up digests
 

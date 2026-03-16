@@ -2,6 +2,11 @@
   "total": 3,
   "matched": 3,
   "mismatched": 0,
+  "inputs": {
+    "fixture_task_count": 3,
+    "corpus_slice_count": 4,
+    "manifest_name": "anonymized-production-corpus-v1"
+  },
   "results": [
     {
       "trace_id": "shadow-compare-sample-m1",
@@ -906,5 +911,98 @@
       },
       "source_file": "./examples/shadow-task-validation.json"
     }
-  ]
+  ],
+  "corpus_coverage": {
+    "manifest_name": "anonymized-production-corpus-v1",
+    "manifest_source_file": "bigclaw-go/examples/shadow-corpus-manifest.json",
+    "generated_at": "2026-03-16T10:00:00Z",
+    "fixture_task_count": 3,
+    "corpus_slice_count": 4,
+    "corpus_replayable_slice_count": 3,
+    "covered_corpus_slice_count": 3,
+    "uncovered_corpus_slice_count": 1,
+    "shape_scorecard": [
+      {
+        "task_shape": "executor:local",
+        "fixture_task_count": 1,
+        "fixture_sources": [
+          "bigclaw-go/examples/shadow-task.json"
+        ],
+        "corpus_slice_count": 1,
+        "replayable_slice_count": 1,
+        "corpus_weight": 57,
+        "corpus_slice_ids": [
+          "baseline-local"
+        ],
+        "corpus_titles": [
+          "Baseline local executor tasks"
+        ],
+        "covered_by_fixture": true
+      },
+      {
+        "task_shape": "executor:local|labels:budget,shadow|budgeted|scenario:budget",
+        "fixture_task_count": 1,
+        "fixture_sources": [
+          "bigclaw-go/examples/shadow-task-budget.json"
+        ],
+        "corpus_slice_count": 1,
+        "replayable_slice_count": 1,
+        "corpus_weight": 23,
+        "corpus_slice_ids": [
+          "budget-heavy"
+        ],
+        "corpus_titles": [
+          "Budget-constrained tasks"
+        ],
+        "covered_by_fixture": true
+      },
+      {
+        "task_shape": "executor:local|acceptance|validation-plan|scenario:validation",
+        "fixture_task_count": 1,
+        "fixture_sources": [
+          "bigclaw-go/examples/shadow-task-validation.json"
+        ],
+        "corpus_slice_count": 1,
+        "replayable_slice_count": 1,
+        "corpus_weight": 11,
+        "corpus_slice_ids": [
+          "validation-long-tail"
+        ],
+        "corpus_titles": [
+          "Validation-heavy long-tail tasks"
+        ],
+        "covered_by_fixture": true
+      },
+      {
+        "task_shape": "executor:browser|labels:browser,human-review|scenario:browser-review",
+        "fixture_task_count": 0,
+        "fixture_sources": [],
+        "corpus_slice_count": 1,
+        "replayable_slice_count": 0,
+        "corpus_weight": 4,
+        "corpus_slice_ids": [
+          "browser-human-review"
+        ],
+        "corpus_titles": [
+          "Browser plus human-review exception path"
+        ],
+        "covered_by_fixture": false
+      }
+    ],
+    "uncovered_slices": [
+      {
+        "slice_id": "browser-human-review",
+        "title": "Browser plus human-review exception path",
+        "task_shape": "executor:browser|labels:browser,human-review|scenario:browser-review",
+        "weight": 4,
+        "replayable": false,
+        "source_file": null,
+        "tags": [
+          "browser",
+          "human-review"
+        ],
+        "notes": "Coverage-only slice until an anonymized replay payload is approved for local shadow runs"
+      }
+    ]
+  }
 }

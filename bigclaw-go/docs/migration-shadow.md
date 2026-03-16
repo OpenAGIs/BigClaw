@@ -26,12 +26,20 @@ python3 scripts/migration/shadow_matrix.py \
   --task-file ./examples/shadow-task.json \
   --task-file ./examples/shadow-task-budget.json \
   --task-file ./examples/shadow-task-validation.json \
+  --corpus-manifest ./examples/shadow-corpus-manifest.json \
   --report-path ./docs/reports/shadow-matrix-report.json
 ```
 
 This matrix helper runs multiple shadow comparisons back to back and aggregates the
-matched vs mismatched outcomes into one report. It remains fixture-backed evidence rather
-than a live legacy-vs-Go production traffic comparison; see `docs/reports/live-shadow-comparison-follow-up-digest.md`.
+matched vs mismatched outcomes into one report. `--task-file` inputs remain the explicit
+fixture-backed shadow submissions, while `--corpus-manifest` overlays an anonymized
+corpus scorecard so reviewers can compare fixture coverage against corpus slices and
+inspect any uncovered task shapes. It remains offline evidence rather than a live
+legacy-vs-Go production traffic comparison; see `docs/reports/live-shadow-comparison-follow-up-digest.md`.
+
+When a manifest contains approved replay payloads, add `--replay-corpus-slices` to
+submit those corpus-backed slices through the same shadow matrix run. Slices without a
+payload still contribute to the `corpus_coverage` scorecard and uncovered-slice summary.
 
 ## Expected output
 
@@ -41,6 +49,8 @@ than a live legacy-vs-Go production traffic comparison; see `docs/reports/live-s
 - Shared `trace_id` for both runs
 - Event type sequence diff and simple timeline duration comparison
 - A simple diff summary indicating whether end states matched
+- `corpus_coverage.shape_scorecard` comparing fixture task shapes vs anonymized corpus slices
+- `corpus_coverage.uncovered_slices` listing corpus shapes that still lack fixture coverage
 
 ## Parallel follow-up digests
 
