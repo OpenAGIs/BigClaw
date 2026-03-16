@@ -1,11 +1,12 @@
 {
-  "generated_at": "2026-03-16T10:47:43.795092Z",
+  "generated_at": "2026-03-16T16:01:21.665043Z",
   "ticket": "BIG-PAR-085-local-prework",
   "title": "Cross-process coordination capability surface",
   "status": "local-capability-surface",
   "evidence_inputs": {
     "shared_queue_report": "bigclaw-go/docs/reports/multi-node-shared-queue-report.json",
     "takeover_harness_report": "bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json",
+    "live_takeover_report": "bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-report.json",
     "supporting_docs": [
       "bigclaw-go/docs/reports/event-bus-reliability-report.md",
       "bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md",
@@ -14,13 +15,16 @@
   },
   "summary": {
     "shared_queue_total_tasks": 200,
-    "shared_queue_cross_node_completions": 99,
+    "shared_queue_cross_node_completions": 91,
     "shared_queue_duplicate_completed_tasks": 0,
     "shared_queue_duplicate_started_tasks": 0,
     "takeover_scenario_count": 3,
     "takeover_passing_scenarios": 3,
     "takeover_duplicate_delivery_count": 4,
-    "takeover_stale_write_rejections": 2
+    "takeover_stale_write_rejections": 2,
+    "live_takeover_scenario_count": 3,
+    "live_takeover_passing_scenarios": 3,
+    "live_takeover_stale_write_rejections": 3
   },
   "capabilities": [
     {
@@ -36,13 +40,13 @@
     },
     {
       "capability": "subscriber_takeover_semantics",
-      "current_state": "local_executable_only",
-      "live_local_proof": false,
+      "current_state": "implemented_with_process_local_boundary",
+      "live_local_proof": true,
       "deterministic_local_harness": true,
       "contract_defined_target": true,
       "notes": [
-        "Lease handoff, stale-writer fencing, and duplicate replay accounting are covered by a deterministic local harness.",
-        "The same schema is not yet emitted by a live multi-node run."
+        "Lease handoff, stale-writer fencing, and duplicate replay accounting are covered by both the deterministic harness and the live two-node companion proof.",
+        "The live proof still routes lease coordination through one node per scenario because subscriber ownership is not yet backed by a shared durable store."
       ]
     },
     {
@@ -58,13 +62,13 @@
     },
     {
       "capability": "stale_writer_fencing",
-      "current_state": "local_executable_only",
-      "live_local_proof": false,
+      "current_state": "implemented_with_process_local_boundary",
+      "live_local_proof": true,
       "deterministic_local_harness": true,
       "contract_defined_target": true,
       "notes": [
-        "The local takeover harness proves stale checkpoint writers are rejected after ownership transfer.",
-        "A live multi-process subscriber group still needs to emit the same rejection evidence."
+        "The local takeover harness and the live two-node companion proof both show stale checkpoint writers being fenced after ownership transfer.",
+        "Shared durable subscriber ownership is still missing, so the live proof remains bounded to process-local lease coordination on one node per scenario."
       ]
     },
     {
@@ -104,12 +108,11 @@
   "current_ceiling": [
     "no partitioned topic model",
     "no broker-backed cross-process subscriber coordination",
-    "no live multi-node subscriber takeover proof"
+    "no shared durable subscriber ownership backend"
   ],
   "next_runtime_hooks": [
-    "wire the takeover harness schema into scripts/e2e/multi_node_shared_queue.py output",
-    "attach real per-node audit artifacts to live multi-process takeover runs",
     "back subscriber ownership with a shared durable backend instead of process-local lease state",
+    "emit native takeover transition audit events from the runtime instead of harness-authored artifacts",
     "validate broker-backed replay and ownership semantics against the same report schema"
   ]
 }

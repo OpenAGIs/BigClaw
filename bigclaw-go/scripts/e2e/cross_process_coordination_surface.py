@@ -43,10 +43,12 @@ def capability_row(
 def build_report(
     multi_node_report_path='bigclaw-go/docs/reports/multi-node-shared-queue-report.json',
     takeover_report_path='bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json',
+    live_takeover_report_path='bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-report.json',
 ):
     repo_root = pathlib.Path(__file__).resolve().parents[3]
     multi_node = load_json(resolve_repo_path(repo_root, multi_node_report_path))
     takeover = load_json(resolve_repo_path(repo_root, takeover_report_path))
+    live_takeover = load_json(resolve_repo_path(repo_root, live_takeover_report_path))
 
     summary = {
         'shared_queue_total_tasks': multi_node['count'],
@@ -57,6 +59,9 @@ def build_report(
         'takeover_passing_scenarios': takeover['summary']['passing_scenarios'],
         'takeover_duplicate_delivery_count': takeover['summary']['duplicate_delivery_count'],
         'takeover_stale_write_rejections': takeover['summary']['stale_write_rejections'],
+        'live_takeover_scenario_count': live_takeover['summary']['scenario_count'],
+        'live_takeover_passing_scenarios': live_takeover['summary']['passing_scenarios'],
+        'live_takeover_stale_write_rejections': live_takeover['summary']['stale_write_rejections'],
     }
 
     capabilities = [
@@ -73,13 +78,13 @@ def build_report(
         ),
         capability_row(
             capability='subscriber_takeover_semantics',
-            current_state='local_executable_only',
-            live_local_proof=False,
+            current_state='implemented_with_process_local_boundary',
+            live_local_proof=True,
             deterministic_local_harness=True,
             contract_defined_target=True,
             notes=[
-                'Lease handoff, stale-writer fencing, and duplicate replay accounting are covered by a deterministic local harness.',
-                'The same schema is not yet emitted by a live multi-node run.',
+                'Lease handoff, stale-writer fencing, and duplicate replay accounting are covered by both the deterministic harness and the live two-node companion proof.',
+                'The live proof still routes lease coordination through one node per scenario because subscriber ownership is not yet backed by a shared durable store.',
             ],
         ),
         capability_row(
@@ -95,13 +100,13 @@ def build_report(
         ),
         capability_row(
             capability='stale_writer_fencing',
-            current_state='local_executable_only',
-            live_local_proof=False,
+            current_state='implemented_with_process_local_boundary',
+            live_local_proof=True,
             deterministic_local_harness=True,
             contract_defined_target=True,
             notes=[
-                'The local takeover harness proves stale checkpoint writers are rejected after ownership transfer.',
-                'A live multi-process subscriber group still needs to emit the same rejection evidence.',
+                'The local takeover harness and the live two-node companion proof both show stale checkpoint writers being fenced after ownership transfer.',
+                'Shared durable subscriber ownership is still missing, so the live proof remains bounded to process-local lease coordination on one node per scenario.',
             ],
         ),
         capability_row(
@@ -142,13 +147,12 @@ def build_report(
     current_ceiling = [
         'no partitioned topic model',
         'no broker-backed cross-process subscriber coordination',
-        'no live multi-node subscriber takeover proof',
+        'no shared durable subscriber ownership backend',
     ]
 
     next_hooks = [
-        'wire the takeover harness schema into scripts/e2e/multi_node_shared_queue.py output',
-        'attach real per-node audit artifacts to live multi-process takeover runs',
         'back subscriber ownership with a shared durable backend instead of process-local lease state',
+        'emit native takeover transition audit events from the runtime instead of harness-authored artifacts',
         'validate broker-backed replay and ownership semantics against the same report schema',
     ]
 
@@ -160,6 +164,7 @@ def build_report(
         'evidence_inputs': {
             'shared_queue_report': multi_node_report_path,
             'takeover_harness_report': takeover_report_path,
+            'live_takeover_report': live_takeover_report_path,
             'supporting_docs': [
                 'bigclaw-go/docs/reports/event-bus-reliability-report.md',
                 'bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md',
