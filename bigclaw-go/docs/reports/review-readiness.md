@@ -36,6 +36,9 @@
 - `OPE-175`
   - Epic-level evidence includes longer-duration soak (`2000x24`), mixed workload validation across `local` / `kubernetes` / `ray`, and a concrete two-node shared-queue coordination proof.
   - Supporting report: `docs/reports/epic-closure-readiness-report.md`.
+- `OPE-255`
+  - Operations-foundation evidence is refreshed around the current v5 control-plane reviewer surfaces for dashboards, control-center policy/audit, and run-detail collaboration.
+  - Supporting reports: `docs/reports/v2-phase1-operations-foundation-report.md` and `docs/reports/go-control-plane-observability-report.md`.
 
 ## Follow-up Hardening
 

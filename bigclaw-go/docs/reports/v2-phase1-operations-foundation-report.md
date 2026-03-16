@@ -1,137 +1,78 @@
-# BigClaw v2.0 Phase 1 Operations Foundation Report
+# BigClaw v5.0 Operations Foundation Evidence Pack
 
-Date: 2026-03-13
+Date: 2026-03-16
 
 ## Scope
 
-This change set establishes a backend-facing Phase 1 foundation for BigClaw v2.0 planned work inside `bigclaw-go`.
+This report refreshes the legacy operations-foundation summary into a current v5.0 evidence pack for the distributed control plane implemented in `bigclaw-go`.
 
-Primary issue alignment:
-- `OPE-69` / `BIG-801`: engineering dashboard aggregation
-- `OPE-70` / `BIG-802`: queue and control-center operations
-- `OPE-71` / `BIG-803`: premium orchestration policy surface
-- `OPE-72` / `BIG-804`: run detail and replay-oriented data plane
-- Partial `OPE-73` / `BIG-805`: human takeover and collaboration notes
+The pack is intentionally limited to repo-native surfaces that are implemented and testable today:
+- control-center operations and audit
+- scheduler policy inspection and reload
+- run detail, audit, and report drilldowns
+- engineering, operations, triage, and regression review dashboards
+- collaboration and takeover context carried through control-center and run-detail responses
 
-## Delivered backend surfaces
+## Reviewer-facing control-plane surfaces
 
-### Control foundation
-- Added `internal/control/controller.go`
-- Supports:
-  - global pause / resume state
-  - per-task human takeover records
-  - reviewer / owner tracking
-  - collaboration notes timeline
-  - active takeover listing for operational views
-  - transfer-to-human alias handling in the control-center action surface
+### Dashboard and review surfaces
+- `GET /v2/dashboard/engineering`
+  - Engineering summary with team, project, tenant, and time-window filters
+  - Ticket-to-merge funnel, blocker counts, premium usage, budget totals, and per-task drilldowns
+- `GET /v2/dashboard/operations`
+  - Operations summary with active, blocked, overdue, and SLA-risk run visibility
+  - Project/team breakdowns plus hourly or daily trend views
+- `GET /v2/triage/center`
+  - Risk-ranked triage inbox with suggested next actions, owners, workflows, and similar-case context
+- `GET /v2/regression/center`
+  - Regression hotspot view with workflow, template, service, and compare-window summaries
 
-### Premium policy surface
-- Added `internal/policy/policy.go`
-- Resolves per-task orchestration plans into:
-  - `standard` vs `premium`
-  - dedicated queue lane
-  - concurrency profile
-  - advanced approval flag
-  - multi-agent graph eligibility
-  - dedicated browser / VM pool flags
-  - isolation mode and routing reason
+### Control-center and collaboration surfaces
+- `GET /v2/control-center`
+  - Control-plane pause state, event-log capability summary, queue inventory, dead letters, worker-pool packaging, distributed diagnostics, and recent task snapshots
+  - Queue breakdowns by team/project plus active takeovers, recent control actions, notes timeline, and optional checkpoint reset audit visibility
+- `GET /v2/control-center/audit`
+  - Filterable control-action history by task, actor, owner, reviewer, team, project, action, and scope
+  - Aggregated audit facets and a reviewer-facing notes timeline
+- `POST /v2/control-center/actions`
+  - Operational actions for `pause`, `resume`, `retry`, `cancel`, `takeover`, `transfer_to_human`, `release_takeover`, `annotate`, `assign_owner`, and `assign_reviewer`
+  - Role-aware authorization and normalized operation payloads for audit/event reuse
 
-### Task snapshot persistence
-- Extended `internal/observability/recorder.go`
-- Recorder now keeps durable in-memory task snapshots alongside event history
-- Task snapshots survive queue `Ack` and power:
-  - dashboard aggregation
-  - run detail retrieval
-  - control-center recent task views
-  - task lifecycle recovery after replay / takeover actions
+### Scheduler policy surfaces
+- `GET /v2/control-center/policy`
+  - Current scheduler policy snapshot, fairness state, storage backend metadata, and reload capability
+- `POST /v2/control-center/policy/reload`
+  - Source-backed scheduler policy reload for authorized roles with updated fairness/policy payloads
 
-### v2 API endpoints
-- Added `GET /v2/dashboard/engineering`
-- Added `GET /v2/control-center`
-- Added `GET /v2/control-center/audit`
-- Added `POST /v2/control-center/actions`
-- Added `GET /v2/runs/{task_id}`
-- Added `GET /v2/runs/{task_id}/audit`
-- Added `GET /v2/runs/{task_id}/report`
-- Added queue-backed task inspection in the control center for live priority / lease / worker visibility
-- Added filtered queue / risk / budget / priority summaries plus worker-pool packaging for the operations surface
+### Run detail surfaces
+- `GET /v2/runs/{task_id}`
+  - Task snapshot, policy and risk summary, collaboration context, trace summary, lifecycle timeline, validation status, tool traces, artifact refs, workpad metadata, and report links
+- `GET /v2/runs/{task_id}/audit`
+  - Run-scoped control-action audit stream with the same normalized entry shape used by control-center audit
+- `GET /v2/runs/{task_id}/report`
+  - Markdown-ready run report summarizing task state, policy, collaboration notes, validation, artifacts, and recent actions
 
-### Worker runtime control integration
-- Extended `internal/worker/runtime.go`
-- Runtime now:
-  - skips leasing when the control plane is paused
-  - requeues tasks under active human takeover
-  - records takeover deferral in audit history
+## Supporting evidence and terminology alignment
 
-## API intent summary
+- Observability and debug evidence for metrics, traces, worker status, and JSONL audit persistence lives in `docs/reports/go-control-plane-observability-report.md`.
+- Review-pack coverage across the rewrite baseline and follow-up hardening lives in `docs/reports/review-readiness.md`.
+- The current API registration for the control-plane surfaces above lives in `internal/api/server.go`.
+- Handler implementations for the dashboard, control-center, and run-detail payloads live in `internal/api/v2.go`.
+- Scheduler policy inspection and reload handlers live in `internal/api/policy_runtime.go`.
+- Collaboration/takeover state is backed by `internal/control/controller.go`.
+- Task snapshots, traces, and audit data are recorder-backed via `internal/observability/recorder.go` and `internal/observability/audit.go`.
 
-### `GET /v2/dashboard/engineering`
-Provides:
-- team / project / tenant / time-window filtering
-- active runs
-- blockers
-- budget totals
-- SLA-risk counts
-- premium plan counts
-- ticket → PR → merge funnel
-- recent task overviews with policy context
+## Current posture and non-goals
 
-### `GET /v2/control-center`
-Provides:
-- control-plane pause state
-- queue depth and filtered queue views
-- budget / risk / priority summaries for the live queue
-- dead-letter inventory
-- active takeovers
-- recent task list
-- worker-pool summary when available
-- recent control-action audit entries
-- authorization envelope with the caller role and allowed mutating actions
-
-### `POST /v2/control-center/actions`
-Supports:
-- `pause`
-- `resume`
-- `replay_deadletter` / `retry`
-- `cancel`
-- `takeover` / `transfer_to_human`
-- `release_takeover`
-- `annotate`
-
-### `GET /v2/control-center/audit`
-Provides:
-- filtered action audit retrieval by task, actor, or action type
-- normalized action names for pause / resume / retry / cancel / takeover flows
-- role-tagged action history for downstream operational review
-- direct payload reuse from recorded audit events
-
-### `GET /v2/runs/{task_id}`
-Provides:
-- task snapshot
-- lifecycle state and derived failure reason
-- policy summary
-- collaboration / takeover context
-- trace summary
-- timeline / events
-- validation status, acceptance criteria, and validation plan
-- tool traces across declared tools, scheduler routing, and executor lifecycle
-- artifact references covering executor outputs, workpad, issue, and PR links
-- run-scoped audit summary / notes timeline
-- downloadable markdown run report and replay / event / trace links
-- workpad metadata
+- This pack reflects the current repo-native v5.0 distributed-platform control plane. It does not claim external telemetry backends, production leader election, or higher-scale external-store certification.
+- Event-log and distributed diagnostics surfaces are implementation-facing summaries for operator review, not a claim of production-grade multi-region rollout.
+- Collaboration coverage is limited to implemented takeover, ownership, reviewer, and note timelines already exposed through the control-center and run-detail APIs.
 
 ## Validation
 
-Command run:
-- `go test ./...`
+Commands run:
+- `go test ./internal/api`
 
-Result:
-- all packages passed on 2026-03-13
-
-## Key implementation references
-- `internal/api/server.go`
-- `internal/api/v2.go`
-- `internal/control/controller.go`
-- `internal/policy/policy.go`
-- `internal/observability/recorder.go`
-- `internal/worker/runtime.go`
+Results:
+- `ok  	bigclaw-go/internal/api`
+- Report consistency coverage verifies that the evidence pack references currently registered control-plane endpoints and that `docs/reports/review-readiness.md` links back to this refreshed report.
