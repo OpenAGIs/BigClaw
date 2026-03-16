@@ -48,38 +48,40 @@
       "OPE-241",
       "OPE-242",
       "OPE-243",
-      "OPE-244"
-    ],
-    "active": [
+      "OPE-244",
       "OPE-245",
       "OPE-246"
     ],
+    "active": [
+      "OPE-247",
+      "OPE-250"
+    ],
     "standby": [
-      "OPE-247"
+      "OPE-251"
     ]
   },
   "issue_order": [
-    "OPE-245",
-    "OPE-246",
-    "OPE-247"
+    "OPE-247",
+    "OPE-250",
+    "OPE-251"
   ],
   "issues": [
-    {
-      "identifier": "OPE-245",
-      "title": "BIG-PAR-058 shadow comparison artifact bundle normalization",
-      "track": "Shadow Artifact Bundle",
-      "status": "In Progress"
-    },
-    {
-      "identifier": "OPE-246",
-      "title": "BIG-PAR-059 lease recovery and takeover readiness digest refresh",
-      "track": "Lease Recovery Digest",
-      "status": "In Progress"
-    },
     {
       "identifier": "OPE-247",
       "title": "BIG-PAR-060 migration readiness review pack refresh",
       "track": "Migration Review Pack",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-250",
+      "title": "BIG-PAR-061 issue coverage and project sync evidence refresh",
+      "track": "Coverage & Sync Evidence",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-251",
+      "title": "BIG-PAR-062 epic concurrency and reliability closeout refresh",
+      "track": "Concurrency Closeout",
       "status": "Backlog"
     }
   ]
