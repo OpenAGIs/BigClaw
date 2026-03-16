@@ -51,6 +51,19 @@ The scorecard stays offline and repo-native. It summarizes parity drift and evid
 freshness across the checked-in shadow artifacts, but it is still not a live legacy-vs-Go
 production traffic comparison; see `docs/reports/live-shadow-comparison-follow-up-digest.md`.
 
+To package the checked-in shadow artifacts into a repeatable reviewer bundle and refresh
+the parity drift rollup, export the live shadow bundle/index:
+
+```bash
+cd bigclaw-go
+python3 scripts/migration/export_live_shadow_bundle.py
+```
+
+This exporter copies the latest compare, matrix, and scorecard artifacts into
+`docs/reports/live-shadow-runs/<run-id>/`, refreshes `docs/reports/live-shadow-summary.json`,
+and updates `docs/reports/live-shadow-index.md`, `docs/reports/live-shadow-index.json`, and
+`docs/reports/live-shadow-drift-rollup.json` for reviewer navigation.
+
 When a manifest contains approved replay payloads, add `--replay-corpus-slices` to
 submit those corpus-backed slices through the same shadow matrix run. Slices without a
 payload still contribute to the `corpus_coverage` scorecard and uncovered-slice summary.
@@ -66,6 +79,8 @@ payload still contribute to the `corpus_coverage` scorecard and uncovered-slice 
 - `corpus_coverage.shape_scorecard` comparing fixture task shapes vs anonymized corpus slices
 - `corpus_coverage.uncovered_slices` listing corpus shapes that still lack fixture coverage
 - `live-shadow-mirror-scorecard.json` can summarize parity drift status and evidence freshness across both checked-in reports
+- `live-shadow-index.md` can summarize the latest bundled shadow artifacts and reviewer navigation paths
+- `live-shadow-drift-rollup.json` can summarize freshness and mismatch severity across recent bundled shadow runs
 
 ## Parallel follow-up digests
 

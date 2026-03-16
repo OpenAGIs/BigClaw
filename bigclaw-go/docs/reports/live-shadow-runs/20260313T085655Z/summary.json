@@ -1,0 +1,80 @@
+{
+  "run_id": "20260313T085655Z",
+  "generated_at": "2026-03-16T15:54:36.830980Z",
+  "status": "parity-ok",
+  "severity": "none",
+  "bundle_path": "docs/reports/live-shadow-runs/20260313T085655Z",
+  "summary_path": "docs/reports/live-shadow-runs/20260313T085655Z/summary.json",
+  "artifacts": {
+    "shadow_compare_report_path": "docs/reports/live-shadow-runs/20260313T085655Z/shadow-compare-report.json",
+    "shadow_matrix_report_path": "docs/reports/live-shadow-runs/20260313T085655Z/shadow-matrix-report.json",
+    "live_shadow_scorecard_path": "docs/reports/live-shadow-runs/20260313T085655Z/live-shadow-mirror-scorecard.json"
+  },
+  "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",
+  "freshness": [
+    {
+      "name": "shadow-compare-report",
+      "report_path": "bigclaw-go/docs/reports/shadow-compare-report.json",
+      "latest_evidence_timestamp": "2026-03-13T15:53:21.403765+08:00",
+      "age_hours": 80.02,
+      "freshness_slo_hours": 168,
+      "status": "fresh"
+    },
+    {
+      "name": "shadow-matrix-report",
+      "report_path": "bigclaw-go/docs/reports/shadow-matrix-report.json",
+      "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",
+      "age_hours": 78.96,
+      "freshness_slo_hours": 168,
+      "status": "fresh"
+    }
+  ],
+  "summary": {
+    "total_evidence_runs": 4,
+    "parity_ok_count": 4,
+    "drift_detected_count": 0,
+    "matrix_total": 3,
+    "matrix_mismatched": 0,
+    "stale_inputs": 0,
+    "fresh_inputs": 2
+  },
+  "compare_trace_id": "shadow-compare-sample",
+  "matrix_trace_ids": [
+    "shadow-compare-sample-m1",
+    "shadow-budget-sample-m2",
+    "shadow-validation-sample-m3"
+  ],
+  "cutover_checkpoints": [
+    {
+      "name": "single_compare_matches_terminal_state_and_event_sequence",
+      "passed": true,
+      "detail": "trace_id=shadow-compare-sample"
+    },
+    {
+      "name": "matrix_reports_no_state_or_event_sequence_mismatches",
+      "passed": true,
+      "detail": "matched=3 mismatched=0"
+    },
+    {
+      "name": "scorecard_detects_no_parity_drift",
+      "passed": true,
+      "detail": "parity_ok=4 drift_detected=0"
+    },
+    {
+      "name": "checked_in_evidence_is_fresh_enough_for_review",
+      "passed": true,
+      "detail": "freshness_statuses=['fresh', 'fresh']"
+    },
+    {
+      "name": "matrix_includes_corpus_coverage_overlay",
+      "passed": true,
+      "detail": "corpus_slice_count=4"
+    }
+  ],
+  "closeout_commands": [
+    "cd bigclaw-go && python3 scripts/migration/live_shadow_scorecard.py --pretty",
+    "cd bigclaw-go && python3 scripts/migration/export_live_shadow_bundle.py",
+    "pytest tests/test_live_shadow_scorecard.py tests/test_live_shadow_bundle.py",
+    "git push origin <branch> && git log -1 --stat"
+  ]
+}
