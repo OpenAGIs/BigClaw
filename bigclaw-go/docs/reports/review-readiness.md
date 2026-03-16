@@ -10,7 +10,7 @@
   - Supporting reports exist in `docs/reports/task-protocol-spec.md` and `docs/reports/state-machine-validation-report.md`.
 - `OPE-178`
   - Queue reliability evidence includes dead-letter replay, lease expiry recovery, API replay endpoints, and a `1k` no-duplicate-consumption test.
-  - Supporting reports exist in `docs/reports/queue-reliability-report.md` and `docs/reports/lease-recovery-report.md`.
+  - Supporting reports exist in `docs/reports/queue-reliability-report.md`, `docs/reports/lease-recovery-report.md`, and `docs/reports/lease-takeover-readiness-digest.md`.
 - `OPE-179`
   - Scheduler policy coverage includes budget guardrails, backpressure, preemptible concurrency, and tool-aware routing for GPU/browser workloads.
   - Supporting report: `docs/reports/scheduler-policy-report.md`.

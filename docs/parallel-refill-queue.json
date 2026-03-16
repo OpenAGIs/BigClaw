@@ -49,27 +49,34 @@
       "OPE-242"
     ],
     "active": [
-      "OPE-243",
-      "OPE-244"
+      "OPE-245",
+      "OPE-246"
     ],
     "standby": []
   },
   "issue_order": [
-    "OPE-243",
-    "OPE-244"
+    "OPE-245",
+    "OPE-246",
+    "OPE-247"
   ],
   "issues": [
     {
-      "identifier": "OPE-243",
-      "title": "BIG-PAR-056 mixed workload validation drilldown normalization",
-      "track": "Mixed Workload Drilldown",
+      "identifier": "OPE-245",
+      "title": "BIG-PAR-058 shadow comparison artifact bundle normalization",
+      "track": "Migration Artifact Bundle",
       "status": "In Progress"
     },
     {
-      "identifier": "OPE-244",
-      "title": "BIG-PAR-057 benchmark matrix artifact normalization",
-      "track": "Benchmark Artifact Flow",
+      "identifier": "OPE-246",
+      "title": "BIG-PAR-059 lease recovery and takeover readiness digest refresh",
+      "track": "Lease And Takeover Readiness",
       "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-247",
+      "title": "BIG-PAR-060 migration readiness review pack refresh",
+      "track": "Migration Review Pack",
+      "status": "Backlog"
     }
   ]
 }
