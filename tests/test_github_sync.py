@@ -78,3 +78,30 @@ def test_inspect_repo_sync_marks_dirty_worktree(tmp_path: Path) -> None:
 
     assert status.dirty is True
     assert status.synced is True
+
+
+def test_ensure_repo_sync_fast_forwards_clean_branch_before_push(tmp_path: Path) -> None:
+    remote = tmp_path / "remote.git"
+    subprocess.run(["git", "init", "--bare", str(remote)], check=True, capture_output=True, text=True)
+
+    seed = tmp_path / "seed"
+    seed.mkdir()
+    init_repo(seed)
+    git(seed, "branch", "-M", "main")
+    git(seed, "remote", "add", "origin", str(remote))
+    git(seed, "config", "core.hooksPath", "/dev/null")
+    commit_file(seed, "README.md", "seed\n", "seed")
+    git(seed, "push", "-u", "origin", "main")
+
+    stale = tmp_path / "stale"
+    subprocess.run(["git", "clone", "-b", "main", str(remote), str(stale)], check=True, capture_output=True, text=True)
+
+    commit_file(seed, "README.md", "seed\nnext\n", "next")
+    git(seed, "push", "origin", "main")
+
+    status = ensure_repo_sync(stale)
+
+    assert status.synced is True
+    assert status.local_sha == status.remote_sha
+    assert status.pushed is False
+    assert git(stale, "rev-parse", "HEAD") == git(stale, "rev-parse", "origin/main")

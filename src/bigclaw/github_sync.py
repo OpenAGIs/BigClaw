@@ -119,6 +119,18 @@ def ensure_repo_sync(
             return status
         raise GitSyncError("Working tree is dirty; commit or stash changes before syncing")
 
+    if status.remote_exists and not status.synced:
+        fetch_result = _git(repo_path, "fetch", remote, status.branch)
+        if fetch_result.returncode != 0:
+            detail = fetch_result.stderr or fetch_result.stdout or f"git fetch {remote} {status.branch} failed"
+            raise GitSyncError(detail)
+
+        ff_result = _git(repo_path, "pull", "--ff-only", remote, status.branch)
+        if ff_result.returncode != 0:
+            detail = ff_result.stderr or ff_result.stdout or f"git pull --ff-only {remote} {status.branch} failed"
+            raise GitSyncError(detail)
+        status = inspect_repo_sync(repo_path, remote=remote)
+
     if not auto_push or status.synced:
         return status
 
