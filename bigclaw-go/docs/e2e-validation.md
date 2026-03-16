@@ -88,14 +88,19 @@ This starts two `bigclawd` processes against one SQLite queue and verifies there
 
 ## Broker failover and replay fault-injection pack
 
-The current repo does not yet ship a broker-backed event log or live failover harness, but the implementation-ready validation matrix now lives in `docs/reports/broker-failover-fault-injection-validation-pack.md`.
+The current repo does not yet ship a broker-backed event log or live failover harness, but the canonical planning bundle now lives in:
 
-Use that pack as the source of truth for:
+- `docs/reports/broker-failover-evidence-bundle.md`
+- `docs/reports/broker-failover-evidence-bundle.json`
+
+Use that bundle as the source of truth for:
 
 - broker leader or replica failover scenarios
 - replay resume and duplicate-delivery assertions
 - checkpoint fencing and stale-writer recovery rules
 - the minimum machine-readable report schema required before future broker durability work can be closed honestly
+
+Use `docs/reports/broker-failover-fault-injection-validation-pack.md` when you need the full scenario-by-scenario assertions behind the normalized bundle.
 
 ## Multi-subscriber takeover validation matrix
 

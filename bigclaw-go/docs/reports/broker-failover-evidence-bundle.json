@@ -1,0 +1,99 @@
+{
+  "generated_at": "2026-03-16T01:45:00Z",
+  "ticket": "OPE-239",
+  "title": "Broker failover and replay fault-injection evidence bundle",
+  "bundle_id": "broker-failover-fault-injection",
+  "status": "planning-ready",
+  "summary_path": "docs/reports/broker-failover-evidence-bundle.md",
+  "validation_pack_path": "docs/reports/broker-failover-fault-injection-validation-pack.md",
+  "rollout_contract_path": "docs/reports/replicated-event-log-durability-rollout-contract.md",
+  "supporting_reports": [
+    "docs/reports/event-bus-reliability-report.md",
+    "docs/reports/replay-retention-semantics-report.md",
+    "docs/reports/queue-reliability-report.md",
+    "docs/reports/lease-recovery-report.md"
+  ],
+  "review_surfaces": [
+    "docs/e2e-validation.md",
+    "docs/reports/live-validation-index.md",
+    "docs/reports/review-readiness.md"
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "BF-01",
+      "title": "active broker leader restarts during publish burst",
+      "readiness": "planned"
+    },
+    {
+      "scenario_id": "BF-02",
+      "title": "broker follower or replica loss during publish and replay",
+      "readiness": "planned"
+    },
+    {
+      "scenario_id": "BF-03",
+      "title": "consumer process crashes after handling an event but before checkpoint write is confirmed",
+      "readiness": "planned"
+    },
+    {
+      "scenario_id": "BF-04",
+      "title": "checkpoint store leader changes while two consumers contend for one subscriber group",
+      "readiness": "planned"
+    },
+    {
+      "scenario_id": "BF-05",
+      "title": "producer timeout after broker commit ambiguity",
+      "readiness": "planned"
+    },
+    {
+      "scenario_id": "BF-06",
+      "title": "replay client disconnects during catch-up and reconnects to a new broker node",
+      "readiness": "planned"
+    },
+    {
+      "scenario_id": "BF-07",
+      "title": "retention or compaction boundary intersects a stale checkpoint",
+      "readiness": "planned"
+    },
+    {
+      "scenario_id": "BF-08",
+      "title": "split-brain style duplicate delivery window during failover",
+      "readiness": "planned"
+    }
+  ],
+  "minimum_report_schema": [
+    "scenario_id",
+    "backend",
+    "topology",
+    "fault_window",
+    "published_count",
+    "committed_count",
+    "replayed_count",
+    "duplicate_count",
+    "missing_event_ids",
+    "checkpoint_before_fault",
+    "checkpoint_after_recovery",
+    "lease_transitions",
+    "publish_outcomes",
+    "replay_resume_cursor",
+    "artifacts",
+    "result"
+  ],
+  "required_raw_artifacts": [
+    "publish attempt ledger with event id, trace id, attempt number, and client outcome",
+    "replay capture with durable sequence, event id, replay/live flag, and source node",
+    "checkpoint transition log with owner id, lease id, prior sequence, next sequence, and fence reason",
+    "fault timeline with exact injected action and node target",
+    "backend health snapshot before and after recovery"
+  ],
+  "future_bundle_contract": {
+    "bundle_root": "docs/reports/broker-failover-runs/<run_id>/",
+    "canonical_manifest_path": "docs/reports/broker-failover-evidence-bundle.json",
+    "canonical_index_path": "docs/reports/broker-failover-evidence-bundle.md",
+    "per_backend_report_pattern": "docs/reports/broker-failover-<backend>-report.json"
+  },
+  "notes": [
+    "This bundle is the canonical review-pack export surface for broker failover planning evidence.",
+    "No broker-backed event log, provider adapter, or executable failover harness ships in the current repo state.",
+    "Review surfaces may cite this bundle as planning-ready evidence, but must not claim live broker validation has passed."
+  ]
+}

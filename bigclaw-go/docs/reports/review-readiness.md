@@ -42,3 +42,4 @@
 - Production-grade capacity certification can remain a follow-up track beyond the current rewrite closure.
 - No dedicated leader-election layer exists yet; current evidence is limited to a local two-node shared-SQLite coordination proof.
 - Higher-scale external-store validation is still pending beyond the current SQLite-backed scope.
+- Broker-backed failover validation is still unimplemented, but the normalized planning bundle now lives at `docs/reports/broker-failover-evidence-bundle.md` and `docs/reports/broker-failover-evidence-bundle.json` so review packs can reference one stable artifact set without overstating runtime support.

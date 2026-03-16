@@ -4,13 +4,13 @@
 
 This report defines the rollout contract for `OPE-222` / `BIG-PAR-035`: the minimum runtime, operator, and validation expectations BigClaw must satisfy before claiming a replicated broker-backed or quorum-backed event log.
 
-It builds on the provider-neutral adapter boundary in `docs/reports/broker-event-log-adapter-contract.md`, the retention semantics in `docs/reports/replay-retention-semantics-report.md`, and the failover scenarios in `docs/reports/broker-failover-fault-injection-validation-pack.md`.
+It builds on the provider-neutral adapter boundary in `docs/reports/broker-event-log-adapter-contract.md`, the retention semantics in `docs/reports/replay-retention-semantics-report.md`, and the canonical broker failover evidence bundle at `docs/reports/broker-failover-evidence-bundle.md`.
 
 ## Current baseline
 
 - `internal/events/durability.go` already declares `broker_replicated` as the target backend and surfaces the active durability plan through bootstrap and debug payloads, including broker bootstrap readiness derived from configured driver / URLs / topic settings.
 - `cmd/bigclawd/main.go` validates broker runtime config but intentionally stops before instantiating a live replicated adapter.
-- `docs/reports/event-bus-reliability-report.md` and `docs/reports/broker-failover-fault-injection-validation-pack.md` describe the portability and validation direction, but prior to this slice the rollout gate itself was not captured as one explicit contract.
+- `docs/reports/event-bus-reliability-report.md` and the broker failover bundle (`docs/reports/broker-failover-evidence-bundle.md`, `docs/reports/broker-failover-evidence-bundle.json`) describe the portability and validation direction, but prior to this slice the rollout gate itself was not captured as one explicit contract.
 
 ## Runtime contract
 
@@ -37,7 +37,7 @@ It builds on the provider-neutral adapter boundary in `docs/reports/broker-event
 | Phase | Goal | Exit condition |
 | --- | --- | --- |
 | `contract` | keep provider-neutral append/replay/checkpoint expectations stable | runtime plan and docs expose rollout checks, failure domains, and verification evidence |
-| `stubbed_validation` | prove failover and checkpoint accounting with deterministic harnesses | scenario runner can emit the report shape in `broker-failover-fault-injection-validation-pack.md` |
+| `stubbed_validation` | prove failover and checkpoint accounting with deterministic harnesses | scenario runner can emit the report shape anchored by `docs/reports/broker-failover-evidence-bundle.json` |
 | `single_backend_trial` | wire one replicated adapter without changing callers | one provider backend can publish, replay, and checkpoint behind the existing event-log contract |
 | `rollout_ready` | claim operator-safe replicated durability | pass failover, retention-boundary, and checkpoint-fencing evidence for the chosen provider |
 
@@ -72,7 +72,7 @@ The current repo-native source for these signals is the `event_durability` paylo
 ## Validation evidence required before a live adapter lands
 
 - debug/control-plane payload proving the active runtime advertises the replicated rollout contract and broker bootstrap readiness state
-- failover validation artifacts matching the scenario matrix in `docs/reports/broker-failover-fault-injection-validation-pack.md`
+- failover validation artifacts matching the normalized bundle contract in `docs/reports/broker-failover-evidence-bundle.json`
 - replay retention diagnostics proving expired checkpoints are surfaced explicitly
 - checkpoint takeover evidence proving stale writers cannot regress durable progress
 
@@ -83,5 +83,6 @@ The current repo-native source for these signals is the `event_durability` paylo
 - `internal/api/server_test.go`
 - `cmd/bigclawd/main.go`
 - `docs/reports/event-bus-reliability-report.md`
-- `docs/reports/broker-failover-fault-injection-validation-pack.md`
+- `docs/reports/broker-failover-evidence-bundle.md`
+- `docs/reports/broker-failover-evidence-bundle.json`
 - `docs/reports/replay-retention-semantics-report.md`
