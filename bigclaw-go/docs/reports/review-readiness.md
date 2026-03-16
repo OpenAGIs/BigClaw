@@ -1,6 +1,31 @@
 # Review Readiness Matrix
 
-## Done
+## Distributed Closure Scorecard
+
+This document is the stable closeout scorecard for the distributed readiness slices completed through `2026-03-14`. It links the operator-facing artifact set needed for release, reliability, and milestone review without requiring Linear comments to restate the evidence by hand.
+
+| Surface | Status | Latest evidence | Review-ready meaning |
+| --- | --- | --- | --- |
+| Executor readiness | ready | `docs/reports/kubernetes-live-smoke-report.json`, `docs/reports/ray-live-smoke-report.json`, `docs/reports/mixed-workload-validation-report.md` | Real Kubernetes and Ray smoke runs passed, and mixed-workload routing proved local / Kubernetes / Ray selection in one control-plane matrix. |
+| Validation bundle | ready | `docs/reports/live-validation-index.md`, `docs/reports/live-validation-summary.json`, `docs/reports/live-validation-runs/20260314T164647Z/summary.json` | The latest repo-native bundle (`20260314T164647Z`, generated `2026-03-14T16:46:57.671520+00:00`) exposes canonical bundle paths, per-executor logs, and closeout commands. |
+| Closure and coordination | ready | `docs/reports/epic-closure-readiness-report.md`, `docs/reports/multi-node-coordination-report.md`, `docs/reports/long-duration-soak-report.md` | Same-day closure evidence covers longer local soak, mixed workload execution, and concrete two-node shared-queue coordination. |
+| Event bus durability rollout | contract_ready | `docs/reports/event-bus-reliability-report.md`, `docs/reports/replicated-event-log-durability-rollout-contract.md`, `docs/reports/broker-failover-fault-injection-validation-pack.md` | The current runtime exposes the replicated durability plan and rollout checks, while the failover pack defines the validation required before any live broker-backed durability claim is made. |
+| Review-pack artifact stability | ready | `docs/reports/review-readiness.md`, `docs/reports/epic-closure-readiness-report.md`, `docs/reports/event-bus-reliability-report.md`, `docs/reports/live-validation-index.md` | Distributed closeout can point to one repo-native artifact set instead of ad-hoc summary prose. |
+
+## Stable Artifact Set
+
+- `docs/reports/review-readiness.md`
+- `docs/reports/epic-closure-readiness-report.md`
+- `docs/reports/live-validation-index.md`
+- `docs/reports/live-validation-summary.json`
+- `docs/reports/event-bus-reliability-report.md`
+- `docs/reports/replicated-event-log-durability-rollout-contract.md`
+- `docs/reports/broker-failover-fault-injection-validation-pack.md`
+- `docs/reports/mixed-workload-validation-report.md`
+- `docs/reports/kubernetes-live-smoke-report.json`
+- `docs/reports/ray-live-smoke-report.json`
+
+## Baseline Coverage
 
 - `OPE-176`
   - ADR and migration boundary docs exist.
@@ -42,3 +67,4 @@
 - Production-grade capacity certification can remain a follow-up track beyond the current rewrite closure.
 - No dedicated leader-election layer exists yet; current evidence is limited to a local two-node shared-SQLite coordination proof.
 - Higher-scale external-store validation is still pending beyond the current SQLite-backed scope.
+- Replicated broker-backed durability remains intentionally pre-rollout until the failover and checkpoint-fencing pack is backed by a live adapter.

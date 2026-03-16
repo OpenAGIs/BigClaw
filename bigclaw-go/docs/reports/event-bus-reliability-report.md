@@ -156,3 +156,9 @@ This report summarizes the current event bus reliability evidence and the next r
 - No delivery acknowledgement protocol beyond sink-level best effort.
 - No partitioned topic model or cross-process subscriber coordination yet.
 - Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists.
+
+## Review-pack alignment
+
+- `docs/reports/review-readiness.md` treats this report as the canonical durability-readiness input for distributed closeout.
+- `docs/reports/live-validation-index.md` covers the current executor validation bundle, while this report and `docs/reports/replicated-event-log-durability-rollout-contract.md` cover the broker-target durability posture that is intentionally still pre-rollout.
+- `docs/reports/broker-failover-fault-injection-validation-pack.md` remains the required follow-on evidence pack before any operator-facing claim can move from `contract_ready` to live replicated durability readiness.

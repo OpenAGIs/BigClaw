@@ -47,6 +47,12 @@
 - `cd bigclaw-go && go test ./...`
 - `git push origin <branch> && git log -1 --stat`
 
+## Review Readiness Links
+
+- `docs/reports/review-readiness.md` uses this index as the canonical validation-bundle reference for distributed closeout.
+- `docs/reports/epic-closure-readiness-report.md` summarizes how this bundle complements soak, mixed-workload, and multi-node coordination evidence.
+- `docs/reports/event-bus-reliability-report.md` and `docs/reports/replicated-event-log-durability-rollout-contract.md` cover the durability-rollout side of the same review pack.
+
 ## Recent bundles
 
 - `20260314T164647Z` · `succeeded` · `2026-03-14T16:46:57.671520+00:00` · `docs/reports/live-validation-runs/20260314T164647Z`
