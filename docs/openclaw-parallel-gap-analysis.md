@@ -58,7 +58,7 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
 
 ## Migration follow-up digests
 
-- `OPE-266` / `BIG-PAR-077` tracks the remaining live shadow traffic comparison caveats in `bigclaw-go/docs/reports/live-shadow-comparison-follow-up-digest.md`.
+- `OPE-266` / `BIG-PAR-092` tracks the repo-native live shadow mirror parity drift scorecard and the remaining live shadow traffic comparison caveats in `bigclaw-go/docs/reports/live-shadow-comparison-follow-up-digest.md`.
 - `OPE-267` / `BIG-PAR-078` tracks the remaining rollback safeguard caveats in `bigclaw-go/docs/reports/rollback-safeguard-follow-up-digest.md`.
 - `OPE-268` / `BIG-PAR-079` tracks the remaining production corpus migration coverage caveats in `bigclaw-go/docs/reports/production-corpus-migration-coverage-digest.md`.
 - `OPE-269` / `BIG-PAR-080` tracks the remaining subscriber takeover executability caveats in `bigclaw-go/docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
