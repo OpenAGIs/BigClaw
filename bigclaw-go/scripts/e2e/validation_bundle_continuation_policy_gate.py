@@ -85,13 +85,13 @@ def build_report(
 
     return {
         'generated_at': utc_iso(),
-        'ticket': 'BIG-PAR-087-local-prework',
-        'title': 'Validation bundle continuation policy gate',
+        'ticket': 'OPE-271',
+        'title': 'Workflow-enforced continuation gate for closeout',
         'status': 'policy-go' if recommendation == 'go' else 'policy-hold',
         'recommendation': recommendation,
         'evidence_inputs': {
             'scorecard_path': scorecard_path,
-            'generator_script': 'bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py',
+            'generator_script': 'scripts/e2e/validation_bundle_continuation_policy_gate.py',
         },
         'policy_inputs': {
             'max_latest_age_hours': float(max_latest_age_hours),
@@ -111,6 +111,10 @@ def build_report(
         },
         'policy_checks': checks,
         'failing_checks': failing_checks,
+        'reviewer_path': {
+            'index_path': 'docs/reports/live-validation-index.md',
+            'digest_path': 'docs/reports/validation-bundle-continuation-digest.md',
+        },
         'shared_queue_companion': shared_queue,
         'next_actions': next_actions,
     }
