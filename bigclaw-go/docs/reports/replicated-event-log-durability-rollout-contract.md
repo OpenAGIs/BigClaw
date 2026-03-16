@@ -9,8 +9,20 @@ It builds on the provider-neutral adapter boundary in `docs/reports/broker-event
 ## Current baseline
 
 - `internal/events/durability.go` already declares `broker_replicated` as the target backend and surfaces the active durability plan through bootstrap and debug payloads, including broker bootstrap readiness derived from configured driver / URLs / topic settings.
+- The same payload now exposes a normalized `comparison` matrix so `memory`, `sqlite`, `http`, and `broker_replicated` can be reviewed with one set of readiness, probe, config, and evidence fields.
 - `cmd/bigclawd/main.go` validates broker runtime config but intentionally stops before instantiating a live replicated adapter.
 - `docs/reports/event-bus-reliability-report.md` and `docs/reports/broker-failover-fault-injection-validation-pack.md` describe the portability and validation direction, but prior to this slice the rollout gate itself was not captured as one explicit contract.
+
+## Comparison-row expectations
+
+The `broker_replicated` row in `event_durability.comparison` is the operator-facing summary for this contract. It must keep these fields stable:
+
+- `readiness`: `target_contract` until a real bootstrap implementation exists.
+- `capability_probe_backend`: `broker`, matching the backend capability catalog.
+- `capability_probe_status`: `contract_validated`, meaning config and rollout language are wired even though bootstrap support is not.
+- `runtime_selectors`: target/runtime selectors for `BIGCLAW_EVENT_LOG_TARGET_BACKEND=broker_replicated` and future `BIGCLAW_EVENT_LOG_BACKEND=broker`.
+- `required_config`: replication factor plus broker driver, URLs, topic, consumer group, publish timeout, replay limit, checkpoint interval, and catalog DSN/retention requirements.
+- `evidence`: repo-native rollout and fault-injection reports.
 
 ## Runtime contract
 
@@ -63,6 +75,7 @@ It builds on the provider-neutral adapter boundary in `docs/reports/broker-event
 - active backend and target backend
 - replication factor or quorum expectation
 - whether publisher acknowledgement is required before success is reported
+- normalized backend comparison rows showing readiness, probe language, runtime selectors, and required config
 - rollout checks and their failure modes
 - failure-domain summaries
 - references to the supporting validation pack and rollout contract documents

@@ -65,17 +65,29 @@ This report summarizes the current event bus reliability evidence and the next r
 
 - Runtime publish/subscribe remains in-process.
 - Audit/debug persistence is recorder-backed, with optional JSONL sinking.
-- The `events.DurabilityPlan` surface makes the active backend and the next replicated target explicit in bootstrap and `GET /debug/status`, including broker bootstrap readiness when a replicated target is configured.
+- The `events.DurabilityPlan` surface makes the active backend and the next replicated target explicit in bootstrap and `GET /debug/status`, including a code-backed `comparison` matrix covering `memory`, `sqlite`, `http`, and `broker_replicated`.
 - Default plan is `memory -> broker_replicated` with replication factor `3`, and env overrides exist for:
   - `BIGCLAW_EVENT_LOG_BACKEND`
   - `BIGCLAW_EVENT_LOG_TARGET_BACKEND`
   - `BIGCLAW_EVENT_LOG_REPLICATION_FACTOR`
 
-## Next backend targets
+## Normalized readiness matrix
 
-- `sqlite`: durable single-node append log with monotonic checkpoints but no replica quorum.
-- `http`: shared service-backed append log with single-writer ordering and shared subscriber state.
-- `broker_replicated`: quorum or partition-backed log with shared replay, replicated durability, and publisher ack requirements.
+The runtime `event_durability.comparison` payload is now the canonical comparison surface for operator-facing backend readiness. Each row carries:
+
+- `readiness`: whether the backend is the current runtime, a comparison candidate, or the declared target contract.
+- `capability_probe_backend` / `capability_probe_status`: the backend name and readiness language used by the backend capability catalog.
+- `runtime_selectors` and `required_config`: the bootstrap env selectors and config expected for that backend.
+- shared/replicated/replay/checkpoint/order semantics plus repo evidence links.
+
+| Backend | Readiness | Bootstrap | Probe language | Shared / replicated | Replay / checkpoints | Ordering scope |
+| --- | --- | --- | --- | --- | --- | --- |
+| `memory` | `current_runtime` or comparison candidate | implemented | `memory` / `implemented` | process-local / no | replay yes / checkpoints no | process-local publish order |
+| `sqlite` | comparison candidate | catalog-defined only | `sqlite` / `catalog_defined` | shared no / replicated no | replay yes / checkpoints yes | single-node append order |
+| `http` | comparison candidate or current runtime | catalog-defined only | `http` / `catalog_defined` | shared yes / replicated no | replay yes / checkpoints yes | single-writer service order |
+| `broker_replicated` | `target_contract` when selected | contract-only target | `broker` / `contract_validated` | shared yes / replicated yes | replay yes / checkpoints yes | partition or quorum log order |
+
+The matrix exists to keep rollout notes, review packs, and debug/control-plane payloads on one vocabulary instead of mixing runtime selector names with capability-probe names.
 
 ## Repo-native integration points
 
@@ -100,22 +112,13 @@ This report summarizes the current event bus reliability evidence and the next r
 4. Add a broker-backed implementation with partition-key rules for `trace_id` and explicit publisher ack / durability error handling.
 5. Validate cutover with replay, checkpoint monotonicity, SSE handoff, capability-matrix regression coverage, dedup-ledger persistence coverage, backend-capability probe validation, and multi-subscriber takeover fault-injection evidence under shared multi-node conditions.
 
-## Durability capability matrix
-
-| Backend | Implemented in bootstrap | Durable history | Publish | Replay | Checkpoint | Filtering | Required config |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `memory` | yes | no | native | native | unsupported | native | none |
-| `sqlite` | no | yes | native | native | native | derived | `BIGCLAW_EVENT_LOG_DSN`, `BIGCLAW_EVENT_CHECKPOINT_DSN`, `BIGCLAW_EVENT_RETENTION` |
-| `http` | no | yes | native | native | native | derived | `BIGCLAW_EVENT_LOG_DSN`, `BIGCLAW_EVENT_CHECKPOINT_DSN`, `BIGCLAW_EVENT_RETENTION` |
-| `broker` | no | yes | native | native | native | derived | `BIGCLAW_EVENT_LOG_DSN`, `BIGCLAW_EVENT_CHECKPOINT_DSN`, `BIGCLAW_EVENT_RETENTION` |
-
 ## Validation contract
 
 - Startup validates `BIGCLAW_EVENT_BACKEND` against the backend catalog before queue/bootstrap wiring begins.
 - Durable backends must provide explicit event-log DSN, checkpoint DSN, and positive retention.
 - `BIGCLAW_EVENT_REQUIRE_REPLAY`, `BIGCLAW_EVENT_REQUIRE_CHECKPOINT`, and `BIGCLAW_EVENT_REQUIRE_FILTERING` express the runtime features operators expect from the selected backend.
 - Unsupported combinations fail fast with field-specific errors instead of silently downgrading runtime behavior.
-- Backends declared in the matrix but not yet wired into the bootstrap runtime are rejected explicitly so planning assumptions cannot masquerade as implemented support.
+- Backends declared in the comparison matrix but not yet wired into the bootstrap runtime are rejected explicitly so planning assumptions cannot masquerade as implemented support.
 
 ## Consumer dedup ledger contract
 
@@ -140,12 +143,12 @@ This report summarizes the current event bus reliability evidence and the next r
 
 ## Replicated rollout contract
 
-- `docs/reports/replicated-event-log-durability-rollout-contract.md` now captures the minimum rollout gates for a broker-backed or quorum-backed adapter, and `event_durability` now includes broker bootstrap readiness for those targets:
+- `docs/reports/replicated-event-log-durability-rollout-contract.md` now captures the minimum rollout gates for a broker-backed or quorum-backed adapter, and `event_durability` now includes broker bootstrap readiness plus the normalized comparison row for that target:
   - replicated publish acknowledgements must distinguish committed, rejected, and ambiguous outcomes;
   - replay and checkpoint state must share the same durable sequence domain across failover;
   - retention boundaries must be operator-visible before resumable recovery is claimed;
   - live fanout must remain isolated from broker catch-up lag.
-- The same contract is surfaced in `events.DurabilityPlan`, so debug/control-plane payloads can show rollout checks, failure domains, and supporting evidence links before a live adapter exists.
+- The same contract is surfaced in `events.DurabilityPlan`, so debug/control-plane payloads can show rollout checks, failure domains, supporting evidence links, and the current-vs-target matrix before a live adapter exists.
 
 ## Next adapter boundary
 

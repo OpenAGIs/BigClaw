@@ -21,6 +21,25 @@ type DurabilityProfile struct {
 	OrderingScope       string            `json:"ordering_scope"`
 }
 
+type DurabilityComparisonRow struct {
+	Backend                DurabilityBackend `json:"backend"`
+	Readiness              string            `json:"readiness"`
+	SelectedCurrent        bool              `json:"selected_current"`
+	SelectedTarget         bool              `json:"selected_target"`
+	ImplementedInBootstrap bool              `json:"implemented_in_bootstrap"`
+	CapabilityProbeBackend string            `json:"capability_probe_backend"`
+	CapabilityProbeStatus  string            `json:"capability_probe_status"`
+	RuntimeSelectors       []string          `json:"runtime_selectors"`
+	RequiredConfig         []string          `json:"required_config"`
+	OrderingScope          string            `json:"ordering_scope"`
+	Shared                 bool              `json:"shared"`
+	Replicated             bool              `json:"replicated"`
+	Replay                 bool              `json:"replay"`
+	SubscriberState        bool              `json:"subscriber_state"`
+	MonotonicCheckpoint    bool              `json:"monotonic_checkpoint"`
+	Evidence               []string          `json:"evidence"`
+}
+
 type RolloutCheck struct {
 	Name        string `json:"name"`
 	Requirement string `json:"requirement"`
@@ -51,16 +70,17 @@ type BrokerBootstrapStatus struct {
 }
 
 type DurabilityPlan struct {
-	Current              DurabilityProfile      `json:"current"`
-	Target               DurabilityProfile      `json:"target"`
-	ReplicationFactor    int                    `json:"replication_factor"`
-	RequiresPublisherAck bool                   `json:"requires_publisher_ack"`
-	MigrationConstraints []string               `json:"migration_constraints"`
-	IntegrationPoints    []string               `json:"integration_points"`
-	RolloutChecks        []RolloutCheck         `json:"rollout_checks"`
-	FailureDomains       []FailureDomain        `json:"failure_domains"`
-	VerificationEvidence []VerificationEvidence `json:"verification_evidence"`
-	BrokerBootstrap      *BrokerBootstrapStatus `json:"broker_bootstrap,omitempty"`
+	Current              DurabilityProfile         `json:"current"`
+	Target               DurabilityProfile         `json:"target"`
+	Comparison           []DurabilityComparisonRow `json:"comparison"`
+	ReplicationFactor    int                       `json:"replication_factor"`
+	RequiresPublisherAck bool                      `json:"requires_publisher_ack"`
+	MigrationConstraints []string                  `json:"migration_constraints"`
+	IntegrationPoints    []string                  `json:"integration_points"`
+	RolloutChecks        []RolloutCheck            `json:"rollout_checks"`
+	FailureDomains       []FailureDomain           `json:"failure_domains"`
+	VerificationEvidence []VerificationEvidence    `json:"verification_evidence"`
+	BrokerBootstrap      *BrokerBootstrapStatus    `json:"broker_bootstrap,omitempty"`
 }
 
 func NormalizeDurabilityBackend(value string) DurabilityBackend {
@@ -129,6 +149,7 @@ func NewDurabilityPlanWithBrokerConfig(currentBackend, targetBackend string, rep
 	plan := DurabilityPlan{
 		Current:              current,
 		Target:               target,
+		Comparison:           durabilityComparison(current.Backend, target.Backend),
 		ReplicationFactor:    replicationFactor,
 		RequiresPublisherAck: target.Replicated,
 		MigrationConstraints: []string{
@@ -219,6 +240,158 @@ func NewDurabilityPlanWithBrokerConfig(currentBackend, targetBackend string, rep
 		plan.BrokerBootstrap = BrokerBootstrapStatusFromConfig(broker)
 	}
 	return plan
+}
+
+func durabilityComparison(current, target DurabilityBackend) []DurabilityComparisonRow {
+	backends := []DurabilityBackend{
+		DurabilityBackendMemory,
+		DurabilityBackendSQLite,
+		DurabilityBackendHTTP,
+		DurabilityBackendBrokerReplicated,
+	}
+	rows := make([]DurabilityComparisonRow, 0, len(backends))
+	for _, backend := range backends {
+		rows = append(rows, durabilityComparisonRow(backend, current, target))
+	}
+	return rows
+}
+
+func durabilityComparisonRow(backend, current, target DurabilityBackend) DurabilityComparisonRow {
+	profile := DurabilityProfileForBackend(backend)
+	row := DurabilityComparisonRow{
+		Backend:                backend,
+		SelectedCurrent:        backend == current,
+		SelectedTarget:         backend == target,
+		OrderingScope:          profile.OrderingScope,
+		Shared:                 profile.Shared,
+		Replicated:             profile.Replicated,
+		Replay:                 profile.Replay,
+		SubscriberState:        profile.SubscriberState,
+		MonotonicCheckpoint:    profile.MonotonicCheckpoint,
+		CapabilityProbeBackend: durabilityProbeBackend(backend),
+		CapabilityProbeStatus:  durabilityProbeStatus(backend),
+		RuntimeSelectors:       durabilityRuntimeSelectors(backend),
+		RequiredConfig:         durabilityRequiredConfig(backend),
+		Evidence:               durabilityEvidence(backend),
+	}
+
+	if backend == current {
+		row.Readiness = "current_runtime"
+	} else if backend == target {
+		row.Readiness = "target_contract"
+	} else {
+		row.Readiness = "comparison_candidate"
+	}
+
+	if catalog, ok := Catalog()[BackendKind(row.CapabilityProbeBackend)]; ok {
+		row.ImplementedInBootstrap = catalog.Implemented
+	}
+	return row
+}
+
+func durabilityProbeBackend(backend DurabilityBackend) string {
+	switch backend {
+	case DurabilityBackendBrokerReplicated:
+		return string(BackendBroker)
+	case DurabilityBackendSQLite:
+		return string(BackendSQLite)
+	case DurabilityBackendHTTP:
+		return string(BackendHTTP)
+	default:
+		return string(BackendMemory)
+	}
+}
+
+func durabilityProbeStatus(backend DurabilityBackend) string {
+	switch backend {
+	case DurabilityBackendBrokerReplicated:
+		return "contract_validated"
+	case DurabilityBackendSQLite, DurabilityBackendHTTP:
+		return "catalog_defined"
+	default:
+		return "implemented"
+	}
+}
+
+func durabilityRuntimeSelectors(backend DurabilityBackend) []string {
+	switch backend {
+	case DurabilityBackendSQLite:
+		return []string{
+			"BIGCLAW_EVENT_LOG_SQLITE_PATH",
+			"BIGCLAW_EVENT_LOG_BACKEND=sqlite",
+		}
+	case DurabilityBackendHTTP:
+		return []string{
+			"BIGCLAW_EVENT_LOG_REMOTE_URL",
+			"BIGCLAW_EVENT_LOG_BACKEND=http",
+		}
+	case DurabilityBackendBrokerReplicated:
+		return []string{
+			"BIGCLAW_EVENT_LOG_TARGET_BACKEND=broker_replicated",
+			"BIGCLAW_EVENT_LOG_BACKEND=broker",
+		}
+	default:
+		return []string{"BIGCLAW_EVENT_LOG_BACKEND=memory"}
+	}
+}
+
+func durabilityRequiredConfig(backend DurabilityBackend) []string {
+	switch backend {
+	case DurabilityBackendSQLite:
+		return []string{
+			"BIGCLAW_EVENT_LOG_SQLITE_PATH",
+			"BIGCLAW_EVENT_RETENTION",
+			"BIGCLAW_EVENT_BACKEND=sqlite",
+			"BIGCLAW_EVENT_LOG_DSN",
+			"BIGCLAW_EVENT_CHECKPOINT_DSN",
+		}
+	case DurabilityBackendHTTP:
+		return []string{
+			"BIGCLAW_EVENT_LOG_REMOTE_URL",
+			"BIGCLAW_EVENT_RETENTION",
+			"BIGCLAW_EVENT_BACKEND=http",
+			"BIGCLAW_EVENT_LOG_DSN",
+			"BIGCLAW_EVENT_CHECKPOINT_DSN",
+		}
+	case DurabilityBackendBrokerReplicated:
+		return []string{
+			"BIGCLAW_EVENT_LOG_TARGET_BACKEND=broker_replicated",
+			"BIGCLAW_EVENT_LOG_REPLICATION_FACTOR",
+			"BIGCLAW_EVENT_LOG_BROKER_DRIVER",
+			"BIGCLAW_EVENT_LOG_BROKER_URLS",
+			"BIGCLAW_EVENT_LOG_BROKER_TOPIC",
+			"BIGCLAW_EVENT_LOG_CONSUMER_GROUP",
+			"BIGCLAW_EVENT_LOG_PUBLISH_TIMEOUT",
+			"BIGCLAW_EVENT_LOG_REPLAY_LIMIT",
+			"BIGCLAW_EVENT_LOG_CHECKPOINT_INTERVAL",
+			"BIGCLAW_EVENT_BACKEND=broker",
+			"BIGCLAW_EVENT_LOG_DSN",
+			"BIGCLAW_EVENT_CHECKPOINT_DSN",
+			"BIGCLAW_EVENT_RETENTION",
+		}
+	default:
+		return []string{"BIGCLAW_EVENT_BACKEND=memory"}
+	}
+}
+
+func durabilityEvidence(backend DurabilityBackend) []string {
+	switch backend {
+	case DurabilityBackendBrokerReplicated:
+		return []string{
+			"docs/reports/replicated-event-log-durability-rollout-contract.md",
+			"docs/reports/broker-failover-fault-injection-validation-pack.md",
+		}
+	case DurabilityBackendSQLite, DurabilityBackendHTTP:
+		return []string{
+			"internal/events/backend_contract.go",
+			"docs/reports/event-bus-reliability-report.md",
+		}
+	default:
+		return []string{
+			"internal/events/memory_log.go",
+			"docs/reports/event-bus-reliability-report.md",
+		}
+	}
 }
 
 func BrokerBootstrapStatusFromConfig(cfg BrokerRuntimeConfig) *BrokerBootstrapStatus {
