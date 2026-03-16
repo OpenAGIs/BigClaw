@@ -1,12 +1,12 @@
 {
   "generated_at": "2026-03-16T14:52:25.403377Z",
-  "ticket": "BIG-PAR-087-local-prework",
-  "title": "Validation bundle continuation policy gate",
+  "ticket": "OPE-271",
+  "title": "Workflow-enforced continuation gate for closeout",
   "status": "policy-go",
   "recommendation": "go",
   "evidence_inputs": {
     "scorecard_path": "bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json",
-    "generator_script": "bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py"
+    "generator_script": "scripts/e2e/validation_bundle_continuation_policy_gate.py"
   },
   "policy_inputs": {
     "max_latest_age_hours": 72.0,
@@ -70,5 +70,9 @@
   },
   "next_actions": [
     "enable BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1 when workflow closeout should fail on continuation regressions"
-  ]
+  ],
+  "reviewer_path": {
+    "index_path": "docs/reports/live-validation-index.md",
+    "digest_path": "docs/reports/validation-bundle-continuation-digest.md"
+  }
 }

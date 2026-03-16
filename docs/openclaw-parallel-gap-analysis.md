@@ -53,7 +53,7 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
 
 ## Distributed diagnostics follow-up digests
 
-- `OPE-264` / `BIG-PAR-075` tracks the remaining external tracing backend and span-propagation caveats in `bigclaw-go/docs/reports/tracing-backend-follow-up-digest.md`.
+- `OPE-264` / `BIG-PAR-075` tracks the distributed trace export bundle path in `bigclaw-go/internal/api/distributed.go` and the remaining external tracing backend and span-propagation caveats in `bigclaw-go/docs/reports/tracing-backend-follow-up-digest.md`.
 - `OPE-265` / `BIG-PAR-076` tracks the remaining telemetry pipeline, sampling policy, and high-cardinality caveats in `bigclaw-go/docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.
 
 ## Migration follow-up digests

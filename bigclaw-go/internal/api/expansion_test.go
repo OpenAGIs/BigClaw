@@ -317,6 +317,20 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 			RegisteredExecutors  int `json:"registered_executors"`
 			TotalRoutedDecisions int `json:"total_routed_decisions"`
 		} `json:"summary"`
+		TraceBundle struct {
+			TotalTraces             int `json:"total_traces"`
+			TracesWithTerminalState int `json:"traces_with_terminal_state"`
+			RecentTraces            []struct {
+				TraceID  string `json:"trace_id"`
+				Executor string `json:"executor"`
+				State    string `json:"state"`
+				TraceURL string `json:"trace_url"`
+				EventURL string `json:"event_url"`
+			} `json:"recent_traces"`
+			ValidationArtifacts []string `json:"validation_artifacts"`
+			ReviewerNavigation  []string `json:"reviewer_navigation"`
+			BackendLimitations  []string `json:"backend_limitations"`
+		} `json:"trace_export_bundle"`
 		RoutingReasons []struct {
 			Executor string `json:"executor"`
 			Reason   string `json:"reason"`
@@ -368,7 +382,16 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if len(decoded.ClusterHealth.TakeoverOwners) == 0 || decoded.ClusterHealth.TakeoverOwners[0].Key != "alice" {
 		t.Fatalf("unexpected takeover owner breakdown: %+v", decoded.ClusterHealth)
 	}
-	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") {
+	if decoded.TraceBundle.TotalTraces != 3 || decoded.TraceBundle.TracesWithTerminalState != 2 || len(decoded.TraceBundle.RecentTraces) != 3 {
+		t.Fatalf("unexpected trace export bundle summary: %+v", decoded.TraceBundle)
+	}
+	if decoded.TraceBundle.RecentTraces[0].TraceURL == "" || decoded.TraceBundle.RecentTraces[0].EventURL == "" {
+		t.Fatalf("expected trace bundle navigation urls, got %+v", decoded.TraceBundle.RecentTraces[0])
+	}
+	if len(decoded.TraceBundle.ValidationArtifacts) == 0 || len(decoded.TraceBundle.ReviewerNavigation) == 0 || len(decoded.TraceBundle.BackendLimitations) == 0 {
+		t.Fatalf("expected trace bundle reviewer metadata, got %+v", decoded.TraceBundle)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") {
 		t.Fatalf("unexpected distributed markdown: %s", decoded.Report.Markdown)
 	}
 	if !strings.Contains(decoded.Report.ExportURL, "/v2/reports/distributed/export") {
@@ -383,7 +406,7 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 		t.Fatalf("expected markdown export content type, got %q", contentType)
 	}
-	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") {
+	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") || !strings.Contains(exportResponse.Body.String(), "Validation artifacts: docs/reports/live-validation-index.md") || !strings.Contains(exportResponse.Body.String(), "Backend limitations: no external tracing backend") {
 		t.Fatalf("unexpected distributed export markdown: %s", exportResponse.Body.String())
 	}
 }
