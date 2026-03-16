@@ -737,6 +737,31 @@ func TestMetricsSupportsPrometheusFormat(t *testing.T) {
 	}
 }
 
+func TestObservabilityReportMentionsCurrentSurfaces(t *testing.T) {
+	reportPath := filepath.Join("..", "..", "docs", "reports", "go-control-plane-observability-report.md")
+	content, err := os.ReadFile(reportPath)
+	if err != nil {
+		t.Fatalf("read observability report: %v", err)
+	}
+	report := string(content)
+	checks := []string{
+		"GET /metrics",
+		"GET /metrics?format=prometheus",
+		"`retention_watermark`",
+		"`GET /debug/status`",
+		"`GET /debug/traces`",
+		"`GET /debug/traces/{trace_id}`",
+		"`/stream/events/checkpoints/{subscriber_id}`",
+		"checkpoint reset summaries",
+		"`internal/api/metrics.go`",
+	}
+	for _, check := range checks {
+		if !strings.Contains(report, check) {
+			t.Fatalf("expected %q in observability report, got %s", check, report)
+		}
+	}
+}
+
 type dashboardResponse struct {
 	Summary struct {
 		TotalTasks        int            `json:"total_tasks"`
