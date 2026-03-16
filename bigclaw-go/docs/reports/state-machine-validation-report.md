@@ -2,27 +2,44 @@
 
 ## Objective
 
-Validate that the unified Go task state machine accepts legal transitions and rejects illegal transitions.
+Validate the task-state transition contract summarized in `docs/reports/worker-runtime-closeout-digest.md`.
 
 ## Evidence
 
 Primary automated coverage lives in:
 
 - `internal/domain/state_machine_test.go`
+- `internal/domain/state_machine.go`
+- `internal/domain/task.go`
 - `internal/api/server_test.go`
 - `internal/worker/runtime_test.go`
 
 ## Verified Behaviors
 
 - `queued -> leased` is accepted
+- `queued -> cancelled` is accepted
 - `leased -> running` is accepted
+- `leased -> retrying` is accepted
+- `leased -> cancelled` is accepted
 - `running -> succeeded` is accepted
+- `running -> failed` is accepted
+- `running -> blocked` is accepted
+- `running -> retrying` is accepted
+- `running -> cancelled` is accepted
+- `running -> dead_letter` is accepted
+- `blocked -> retrying` is accepted
+- `blocked -> cancelled` is accepted
+- `retrying -> queued` is accepted
+- `retrying -> dead_letter` is accepted
+- `retrying -> cancelled` is accepted
+- `failed -> retrying` is accepted
+- `failed -> dead_letter` is accepted
 - illegal jumps such as `queued -> succeeded` are rejected
-- API status responses translate event types back into externally visible task states
+- API status and replay responses translate event types back into externally visible task states
 - worker runtime emits lifecycle events in queue -> lease -> start -> terminal order
 
 ## Result
 
 - The current task-state contract is stable enough for scheduler, worker, API, recorder, and executor integration.
 - Illegal transition rejection is covered by automated tests.
-- Event-driven status projection matches the internal state model.
+- Event-driven status projection matches the internal state model summarized in the closeout digest.
