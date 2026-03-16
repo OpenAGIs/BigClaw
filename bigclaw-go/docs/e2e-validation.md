@@ -57,7 +57,7 @@ export BIGCLAW_QUEUE_BACKEND=sqlite
 ./scripts/e2e/run_all.sh
 ```
 
-The script writes a consolidated summary to `docs/reports/live-validation-summary.json`, refreshes the canonical component reports for local, Kubernetes, and Ray validation, and creates a timestamped bundle plus index under `docs/reports/live-validation-runs/` and `docs/reports/live-validation-index.md`.
+The script writes a consolidated summary to `docs/reports/live-validation-summary.json`, refreshes the canonical component reports for local, Kubernetes, and Ray validation, exports a machine-readable shared-queue companion summary to `docs/reports/shared-queue-companion-summary.json`, and creates a timestamped bundle plus index under `docs/reports/live-validation-runs/` and `docs/reports/live-validation-index.md`.
 
 You can then refresh the rolling continuation overlay from the checked-in bundle evidence:
 
@@ -66,7 +66,7 @@ cd bigclaw-go
 python3 scripts/e2e/validation_bundle_continuation_scorecard.py --pretty
 ```
 
-This writes `docs/reports/validation-bundle-continuation-scorecard.json`, summarizing the recent bundle lineage plus the current shared-queue companion proof. `run_all.sh` now refreshes the scorecard automatically during closeout, but the continuation surface is still workflow-triggered rather than always-on.
+This writes `docs/reports/validation-bundle-continuation-scorecard.json`, summarizing the recent bundle lineage plus the current shared-queue companion proof exported with the live validation bundle. `run_all.sh` now refreshes the scorecard automatically during closeout, but the continuation surface is still workflow-triggered rather than always-on.
 
 You can evaluate the checked-in continuation policy gate as a follow-up:
 

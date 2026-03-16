@@ -25,6 +25,8 @@ This run proves that two independent `bigclawd` processes can share the same SQL
 ## Artifact
 
 - `docs/reports/multi-node-shared-queue-report.json`
+- `docs/reports/shared-queue-companion-summary.json`
+- `docs/reports/live-validation-index.md`
 
 ## Parallel follow-up digests
 

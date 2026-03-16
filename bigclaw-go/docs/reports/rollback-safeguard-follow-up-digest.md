@@ -2,7 +2,7 @@
 
 ## Scope
 
-This digest consolidates the repo-native rollback guardrail and tenant-scoped trigger surface for `OPE-267` / `BIG-PAR-093`.
+This digest consolidates the repo-native rollback guardrail and tenant-scoped trigger surface for `OPE-267` / `BIG-PAR-078`.
 
 ## Current Repo-Backed Evidence
 

@@ -39,5 +39,5 @@ This note captures the review outcome for the Go rewrite boundary and migration 
 
 ## Parallel follow-up digests
 
-- `OPE-266` / `BIG-PAR-077` tracks the remaining live shadow traffic comparison caveats in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
-- `OPE-267` / `BIG-PAR-093` tracks the remaining rollback safeguard caveats in `docs/reports/rollback-safeguard-follow-up-digest.md`.
+- `OPE-266` / `BIG-PAR-092` tracks the repo-native live shadow mirror parity drift scorecard and the remaining live shadow traffic comparison caveats in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
+- `OPE-267` / `BIG-PAR-078` tracks the remaining rollback safeguard trigger-surface caveats in `docs/reports/rollback-safeguard-follow-up-digest.md`.

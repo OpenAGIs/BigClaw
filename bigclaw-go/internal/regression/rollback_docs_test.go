@@ -17,7 +17,7 @@ func TestRollbackDocsStayAligned(t *testing.T) {
 		{
 			path: "docs/reports/rollback-safeguard-follow-up-digest.md",
 			substrings: []string{
-				"OPE-267` / `BIG-PAR-093",
+				"OPE-267` / `BIG-PAR-078",
 				"## Tenant-Scoped Trigger Surface",
 				"Pause the tenant rollout segment",
 				"manual, evidence-backed operator action",
@@ -35,28 +35,28 @@ func TestRollbackDocsStayAligned(t *testing.T) {
 			path: "docs/reports/migration-plan-review-notes.md",
 			substrings: []string{
 				"tenant-scoped trigger surface",
-				"OPE-267` / `BIG-PAR-093",
+				"OPE-267` / `BIG-PAR-078",
 			},
 		},
 		{
 			path: "docs/reports/migration-readiness-report.md",
 			substrings: []string{
 				"current trigger surface and manual rollback guardrails",
-				"OPE-267` / `BIG-PAR-093",
+				"OPE-267` / `BIG-PAR-078",
 			},
 		},
 		{
 			path: "docs/reports/review-readiness.md",
 			substrings: []string{
 				"rollback safeguard trigger surface",
-				"OPE-267` / `BIG-PAR-093",
+				"OPE-267` / `BIG-PAR-078",
 			},
 		},
 		{
 			path: "docs/reports/issue-coverage.md",
 			substrings: []string{
 				"rollback safeguard trigger surfaces",
-				"OPE-267` / `BIG-PAR-093",
+				"OPE-267` / `BIG-PAR-078",
 			},
 		},
 	}
