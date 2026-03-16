@@ -1,7 +1,7 @@
 # Live Shadow Mirror Index
 
 - Latest run: `20260313T085655Z`
-- Generated at: `2026-03-16T15:54:36.830980Z`
+- Generated at: `2026-03-16T16:00:09.495311Z`
 - Status: `parity-ok`
 - Severity: `none`
 - Bundle: `docs/reports/live-shadow-runs/20260313T085655Z`
@@ -42,7 +42,7 @@
 
 ## Recent bundles
 
-- `20260313T085655Z` · `parity-ok` · `none` · `2026-03-16T15:54:36.830980Z` · `docs/reports/live-shadow-runs/20260313T085655Z`
+- `20260313T085655Z` · `parity-ok` · `none` · `2026-03-16T16:00:09.495311Z` · `docs/reports/live-shadow-runs/20260313T085655Z`
 
 ## Linked migration docs
 

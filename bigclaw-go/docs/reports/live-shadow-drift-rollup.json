@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-16T15:54:36.833723Z",
+  "generated_at": "2026-03-16T16:00:09.498303Z",
   "status": "parity-ok",
   "window_size": 5,
   "summary": {
@@ -16,7 +16,7 @@
   "recent_runs": [
     {
       "run_id": "20260313T085655Z",
-      "generated_at": "2026-03-16T15:54:36.830980Z",
+      "generated_at": "2026-03-16T16:00:09.495311Z",
       "status": "parity-ok",
       "severity": "none",
       "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",

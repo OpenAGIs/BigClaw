@@ -1,7 +1,7 @@
 {
   "latest": {
     "run_id": "20260313T085655Z",
-    "generated_at": "2026-03-16T15:54:36.830980Z",
+    "generated_at": "2026-03-16T16:00:09.495311Z",
     "status": "parity-ok",
     "severity": "none",
     "bundle_path": "docs/reports/live-shadow-runs/20260313T085655Z",
@@ -17,7 +17,7 @@
         "name": "shadow-compare-report",
         "report_path": "bigclaw-go/docs/reports/shadow-compare-report.json",
         "latest_evidence_timestamp": "2026-03-13T15:53:21.403765+08:00",
-        "age_hours": 80.02,
+        "age_hours": 80.08,
         "freshness_slo_hours": 168,
         "status": "fresh"
       },
@@ -25,7 +25,7 @@
         "name": "shadow-matrix-report",
         "report_path": "bigclaw-go/docs/reports/shadow-matrix-report.json",
         "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",
-        "age_hours": 78.96,
+        "age_hours": 79.02,
         "freshness_slo_hours": 168,
         "status": "fresh"
       }
@@ -82,7 +82,7 @@
   "recent_runs": [
     {
       "run_id": "20260313T085655Z",
-      "generated_at": "2026-03-16T15:54:36.830980Z",
+      "generated_at": "2026-03-16T16:00:09.495311Z",
       "status": "parity-ok",
       "severity": "none",
       "bundle_path": "docs/reports/live-shadow-runs/20260313T085655Z",
@@ -90,7 +90,7 @@
     }
   ],
   "drift_rollup": {
-    "generated_at": "2026-03-16T15:54:36.833723Z",
+    "generated_at": "2026-03-16T16:00:09.498303Z",
     "status": "parity-ok",
     "window_size": 5,
     "summary": {
@@ -107,7 +107,7 @@
     "recent_runs": [
       {
         "run_id": "20260313T085655Z",
-        "generated_at": "2026-03-16T15:54:36.830980Z",
+        "generated_at": "2026-03-16T16:00:09.495311Z",
         "status": "parity-ok",
         "severity": "none",
         "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",

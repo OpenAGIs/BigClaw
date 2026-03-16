@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-16T15:54:36.801631Z",
+  "generated_at": "2026-03-16T15:58:21.282621Z",
   "ticket": "BIG-PAR-092",
   "title": "Live shadow mirror parity drift scorecard",
   "status": "repo-native-live-shadow-scorecard",
@@ -26,7 +26,7 @@
       "name": "shadow-compare-report",
       "report_path": "bigclaw-go/docs/reports/shadow-compare-report.json",
       "latest_evidence_timestamp": "2026-03-13T15:53:21.403765+08:00",
-      "age_hours": 80.02,
+      "age_hours": 80.08,
       "freshness_slo_hours": 168,
       "status": "fresh"
     },
@@ -34,7 +34,7 @@
       "name": "shadow-matrix-report",
       "report_path": "bigclaw-go/docs/reports/shadow-matrix-report.json",
       "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",
-      "age_hours": 78.96,
+      "age_hours": 79.02,
       "freshness_slo_hours": 168,
       "status": "fresh"
     }

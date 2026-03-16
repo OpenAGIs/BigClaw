@@ -133,6 +133,85 @@ def test_export_live_shadow_bundle_generates_index_and_rollup(tmp_path: Path) ->
     assert 'Parity drift rollup' in bundle_readme
 
 
+def test_export_live_shadow_bundle_supports_documented_bigclaw_go_cwd(tmp_path: Path) -> None:
+    root = tmp_path / 'bigclaw-go'
+    reports = root / 'docs' / 'reports'
+    reports.mkdir(parents=True, exist_ok=True)
+    (root / 'docs' / 'migration-shadow.md').write_text('# shadow\n', encoding='utf-8')
+    (reports / 'migration-readiness-report.md').write_text('# readiness\n', encoding='utf-8')
+    (reports / 'migration-plan-review-notes.md').write_text('# review\n', encoding='utf-8')
+    (reports / 'live-shadow-comparison-follow-up-digest.md').write_text('# digest\n', encoding='utf-8')
+
+    write_json(
+        reports / 'shadow-compare-report.json',
+        {
+            'trace_id': 'compare-cwd',
+            'primary': {'task_id': 'primary-cwd', 'events': [{'timestamp': '2026-03-10T10:00:00Z'}]},
+            'shadow': {'task_id': 'shadow-cwd', 'events': [{'timestamp': '2026-03-10T10:00:01Z'}]},
+            'diff': {
+                'state_equal': True,
+                'event_types_equal': True,
+                'event_count_delta': 0,
+                'primary_timeline_seconds': 0.1,
+                'shadow_timeline_seconds': 0.15,
+            },
+        },
+    )
+    write_json(
+        reports / 'shadow-matrix-report.json',
+        {
+            'total': 1,
+            'matched': 1,
+            'mismatched': 0,
+            'results': [
+                {
+                    'trace_id': 'matrix-cwd',
+                    'primary': {'task_id': 'matrix-primary-cwd', 'events': [{'timestamp': '2026-03-10T10:05:00Z'}]},
+                    'shadow': {'task_id': 'matrix-shadow-cwd', 'events': [{'timestamp': '2026-03-10T10:05:01Z'}]},
+                    'diff': {
+                        'state_equal': True,
+                        'event_types_equal': True,
+                        'event_count_delta': 0,
+                        'primary_timeline_seconds': 0.2,
+                        'shadow_timeline_seconds': 0.22,
+                    },
+                }
+            ],
+        },
+    )
+    write_json(
+        reports / 'live-shadow-mirror-scorecard.json',
+        {
+            'summary': {
+                'latest_evidence_timestamp': '2026-03-10T10:05:01Z',
+                'total_evidence_runs': 2,
+                'parity_ok_count': 2,
+                'drift_detected_count': 0,
+                'matrix_total': 1,
+                'matrix_mismatched': 0,
+                'fresh_inputs': 2,
+                'stale_inputs': 0,
+            },
+            'freshness': [{'status': 'fresh'}, {'status': 'fresh'}],
+            'cutover_checkpoints': [{'name': 'ok', 'passed': True}],
+        },
+    )
+
+    script = Path(__file__).resolve().parents[1] / 'bigclaw-go' / 'scripts' / 'migration' / 'export_live_shadow_bundle.py'
+    result = subprocess.run(
+        [sys.executable, str(script), '--run-id', '20260310T100501Z'],
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    summary = json.loads((reports / 'live-shadow-summary.json').read_text(encoding='utf-8'))
+    assert summary['run_id'] == '20260310T100501Z'
+    assert summary['artifacts']['shadow_compare_report_path'].endswith('shadow-compare-report.json')
+
+
 def test_checked_in_live_shadow_bundle_matches_expected_shape() -> None:
     manifest = json.loads(Path('bigclaw-go/docs/reports/live-shadow-index.json').read_text(encoding='utf-8'))
     latest = manifest['latest']

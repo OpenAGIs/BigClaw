@@ -59,6 +59,22 @@ def copy_text_artifact(source: Path, destination: Path) -> str:
     return str(destination)
 
 
+def resolve_go_root(value: str) -> Path:
+    requested = Path(value)
+    if requested.is_absolute():
+        return requested
+
+    candidate = requested.resolve()
+    if candidate.exists():
+        return candidate
+
+    cwd = Path.cwd().resolve()
+    if cwd.name == requested.name and (cwd / 'docs').exists():
+        return cwd
+
+    return candidate
+
+
 def severity_rank(value: str) -> int:
     order = {
         'critical': 4,
@@ -296,7 +312,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    root = Path(args.go_root).resolve()
+    root = resolve_go_root(args.go_root)
     compare_report = read_json(root / args.shadow_compare_report)
     matrix_report = read_json(root / args.shadow_matrix_report)
     scorecard_report = read_json(root / args.scorecard_report)
