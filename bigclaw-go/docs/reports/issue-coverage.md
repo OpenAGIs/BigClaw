@@ -24,10 +24,16 @@ This document maps the current local MVP implementation to the Linear rewrite is
   - Covered by `internal/events/bus.go`, `internal/events/recorder_sink.go`, `internal/events/webhook.go`, `internal/events/bus_test.go`, `internal/events/webhook_test.go`, `internal/api/server.go`, `internal/api/server_test.go`, and `docs/reports/event-bus-reliability-report.md`
 - `OPE-184` / `BIG-GO-009`
   - Covered by `internal/observability/recorder.go`, `internal/observability/recorder_test.go`, `internal/observability/audit.go`, `internal/observability/audit_test.go`, `internal/api/server.go`, `internal/api/server_test.go`, `internal/worker/runtime.go`, `docs/reports/go-control-plane-observability-report.md`, `scripts/e2e/run_task_smoke.py`, `scripts/e2e/run_all.sh`, and isolated autostart live-validation reports in `docs/reports/*.json`
+  - Follow-up caveats for external tracing backends, span propagation, telemetry pipeline controls, sampling policy, and high-cardinality handling are tracked in `docs/reports/tracing-backend-follow-up-digest.md` and `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`
 - `OPE-185` / `BIG-GO-010`
   - Covered by `docs/migration.md`, `docs/migration-shadow.md`, `scripts/migration/shadow_compare.py`, `scripts/migration/shadow_matrix.py`, `docs/reports/migration-readiness-report.md`, `docs/reports/shadow-compare-report.json`, and `docs/reports/shadow-matrix-report.json`
 - `OPE-186` / `BIG-GO-011`
   - Covered by `internal/queue/benchmark_test.go`, `internal/scheduler/benchmark_test.go`, `docs/benchmark-plan.md`, `docs/reports/benchmark-report.md`, `docs/reports/benchmark-readiness-report.md`, `docs/reports/benchmark-matrix-report.json`, `docs/reports/long-duration-soak-report.md`, `docs/reports/soak-local-report.json`, `docs/reports/soak-local-50x8.json`, `docs/reports/soak-local-100x12.json`, `docs/reports/soak-local-1000x24.json`, `docs/reports/soak-local-2000x24.json`, `docs/reports/live-validation-summary.json`, `scripts/benchmark/run_suite.sh`, `scripts/benchmark/run_matrix.py`, `scripts/benchmark/soak_local.py`, and `scripts/e2e/run_all.sh`
+
+## Parallel follow-up digests
+
+- `OPE-264` / `BIG-PAR-075` — tracing backend and span-propagation caveats are consolidated in `docs/reports/tracing-backend-follow-up-digest.md`.
+- `OPE-265` / `BIG-PAR-076` — telemetry pipeline, sampling policy, and high-cardinality caveats are consolidated in `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.
 
 ## Remaining Gaps Before Honest Closure
 

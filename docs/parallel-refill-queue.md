@@ -73,16 +73,17 @@ manual operator can refill the next parallel-safe issues in a stable order.
   - `OPE-261` — distributed coordination hardening digest
   - `OPE-262` — event delivery semantics follow-up digest
   - `OPE-263` — retention and external-store follow-up digest
-- Active:
   - `OPE-264` — observability tracing backend follow-up digest
   - `OPE-265` — telemetry pipeline controls follow-up digest
+- Active:
   - `OPE-266` — live shadow traffic comparison follow-up digest
   - `OPE-267` — rollback safeguard follow-up digest
   - `OPE-268` — production corpus migration coverage digest
   - `OPE-269` — subscriber takeover executability follow-up digest
-- Standby:
   - `OPE-270` — cross-process coordination boundary digest
   - `OPE-271` — validation bundle continuation digest
+- Standby:
+  - none
 
 ## Canonical refill order
 

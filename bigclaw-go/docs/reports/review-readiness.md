@@ -27,6 +27,7 @@
 - `OPE-184`
   - Audit and debug surfaces include trace summary endpoints, trace timeline lookup, worker lifecycle snapshots, and `trace_count` metrics visibility.
   - Supporting report: `docs/reports/go-control-plane-observability-report.md`.
+  - Follow-up digests capture the remaining tracing-backend and telemetry-pipeline caveats in `docs/reports/tracing-backend-follow-up-digest.md` and `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.
 - `OPE-185`
   - Migration evidence includes a shadow matrix across multiple sample tasks with matched terminal states and matched event sequences.
   - Supporting report: `docs/reports/migration-readiness-report.md`.
@@ -42,3 +43,8 @@
 - Production-grade capacity certification can remain a follow-up track beyond the current rewrite closure.
 - No dedicated leader-election layer exists yet; current evidence is limited to a local two-node shared-SQLite coordination proof.
 - Higher-scale external-store validation is still pending beyond the current SQLite-backed scope.
+
+## Parallel follow-up digests
+
+- `OPE-264` / `BIG-PAR-075` — external tracing backend and span-propagation caveats are consolidated in `docs/reports/tracing-backend-follow-up-digest.md`.
+- `OPE-265` / `BIG-PAR-076` — telemetry pipeline, sampling policy, and high-cardinality caveats are consolidated in `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.

@@ -34,6 +34,11 @@ This report summarizes the current observability/debug evidence for `OPE-184` / 
 
 ## Remaining gaps
 
-- No external tracing backend or span propagation beyond in-memory `trace_id` grouping.
-- Prometheus-style text exposition is now available, but there is still no full OpenTelemetry-native metrics/tracing pipeline.
-- No sampling policy or high-cardinality controls beyond lightweight in-memory usage.
+- No external tracing backend or span propagation beyond in-memory `trace_id` grouping; see `docs/reports/tracing-backend-follow-up-digest.md`.
+- Prometheus-style text exposition is now available, but there is still no full OpenTelemetry-native metrics / tracing pipeline; see `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.
+- No configurable sampling policy or high-cardinality controls exist beyond lightweight in-memory usage; see `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.
+
+## Parallel follow-up digests
+
+- `OPE-264` / `BIG-PAR-075` — `docs/reports/tracing-backend-follow-up-digest.md`
+- `OPE-265` / `BIG-PAR-076` — `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`
