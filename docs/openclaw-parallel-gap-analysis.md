@@ -44,6 +44,20 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
   - rollout metadata lives in `bigclaw-go/internal/events/durability.go` so debug/control-plane payloads can advertise checks, failure domains, evidence links, and broker bootstrap readiness;
   - `bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md` defines the minimum publish-ack, replay/checkpoint, retention-boundary, and failover expectations before a replicated adapter can be called rollout-ready.
 
+## Follow-up roadmap contract
+
+- `src/bigclaw/roadmap.py` is now the canonical repo-native sequence for post-closeout hardening.
+- `Closed Baseline`
+  - `BIG-EPIC-21` is review-complete through the current closeout and navigation refreshes, so new work should extend the existing distributed-platform evidence rather than reopen the closed baseline.
+- `Phase 1`
+  - Promote the `OPE-222` replicated-durability contract from rollout metadata into a provider-backed implementation and validation path.
+- `Phase 2`
+  - Close the remaining hardening register around leader election, takeover coordination, and operator-facing gap reporting.
+- `Phase 3`
+  - Validate the control plane against higher-scale external or shared stores so the remaining scope is no longer limited to local SQLite-backed proofs.
+- `Phase 4`
+  - Turn the current local soak and benchmark artifacts into production-grade capacity certification gates.
+
 ## Recommended BigClaw parallel mainline
 
 1. Multi-worker and multi-node control-plane observability.

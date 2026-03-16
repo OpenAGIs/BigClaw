@@ -31,6 +31,7 @@ This document maps the current local MVP implementation to the Linear rewrite is
 
 ## Remaining Gaps Before Honest Closure
 
+- The canonical post-closeout hardening roadmap now lives in `src/bigclaw/roadmap.py` and treats the current distributed-platform review pack as the closed baseline.
 - Real `Kubernetes` API integration path is implemented and has passed live smoke validation against `kind-ray-local` using `KUBECONFIG=/Users/jxrt/.kube/ray-local-config`.
 - Real `Ray Jobs` REST integration path is implemented and has passed live smoke validation against `ray://127.0.0.1:10001` via the live dashboard Jobs API on `127.0.0.1:8265`.
 - SQLite-backed durable queue support is implemented; higher-scale external store validation is still pending.
@@ -38,4 +39,4 @@ This document maps the current local MVP implementation to the Linear rewrite is
 - Multi-subscriber takeover validation is planned in `docs/reports/multi-subscriber-takeover-validation-report.md`, but the underlying lease-aware subscriber-group checkpoint coordination is still pending.
 - Benchmark output is local bootstrap evidence, not production-grade capacity certification.
 - When running multiple local smoke processes with the SQLite backend, use separate `BIGCLAW_QUEUE_SQLITE_PATH` and `BIGCLAW_AUDIT_LOG_PATH` values to avoid local file-lock contention.
-- Replay retention, compaction, and aged-out checkpoint semantics for the follow-on parallel durability track are documented in `docs/reports/replay-retention-semantics-report.md` and `docs/openclaw-parallel-gap-analysis.md`.
+- Replay retention, compaction, aged-out checkpoint semantics, and the follow-up phase ordering for the parallel durability track are documented in `docs/reports/replay-retention-semantics-report.md`, `docs/openclaw-parallel-gap-analysis.md`, and `src/bigclaw/roadmap.py`.

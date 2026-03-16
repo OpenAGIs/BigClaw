@@ -6,35 +6,37 @@ from bigclaw import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_ro
 def test_build_execution_pack_roadmap_maps_epics_to_phases():
     roadmap = build_execution_pack_roadmap()
 
-    assert roadmap.name == "BigClaw v4.0 Execution Pack"
-    assert roadmap.epic_map()["BIG-EPIC-8"].phase == "Phase 1"
-    assert roadmap.epic_map()["BIG-EPIC-9"].phase == "Phase 2"
-    assert roadmap.epic_map()["BIG-EPIC-10"].phase == "Phase 3"
-    assert roadmap.epic_map()["BIG-EPIC-11"].phase == "Phase 4"
-    assert roadmap.epic_map()["BIG-EPIC-12"].phase == "Phase 5"
-    assert roadmap.phase_map()["Phase 3"][0].milestone == "M3 Cross-team orchestration"
+    assert roadmap.name == "BigClaw v5.0 Parallel Distributed Platform Follow-up"
+    assert roadmap.epic_map()["BIG-EPIC-21"].phase == "Closed Baseline"
+    assert roadmap.epic_map()["BIG-PAR-FU-1"].phase == "Phase 1"
+    assert roadmap.epic_map()["BIG-PAR-FU-2"].phase == "Phase 2"
+    assert roadmap.epic_map()["BIG-PAR-FU-3"].phase == "Phase 3"
+    assert roadmap.epic_map()["BIG-PAR-FU-4"].phase == "Phase 4"
+    assert roadmap.phase_map()["Phase 3"][0].milestone == (
+        "M3 Prove the control plane beyond SQLite with higher-scale shared backends"
+    )
 
 
 def test_execution_pack_roadmap_rejects_duplicate_owners():
     roadmap = ExecutionPackRoadmap(
-        name="BigClaw v4.0 Execution Pack",
+        name="BigClaw v5.0 Parallel Distributed Platform Follow-up",
         epics=[
             EpicMilestone(
-                epic_id="BIG-EPIC-8",
-                title="研发自治执行平台增强",
+                epic_id="BIG-PAR-FU-1",
+                title="Replicated event durability rollout",
                 phase="Phase 1",
-                owner="engineering-platform",
-                milestone="M1 Foundation uplift",
+                owner="event-durability",
+                milestone="M1 Promote the OPE-222 durability contract into a provider-backed rollout path",
             ),
             EpicMilestone(
-                epic_id="BIG-EPIC-9",
-                title="工程运营系统",
+                epic_id="BIG-PAR-FU-2",
+                title="Remaining hardening gap closure",
                 phase="Phase 2",
-                owner="engineering-platform",
-                milestone="M2 Operations control plane",
+                owner="event-durability",
+                milestone="M2 Close leader election, takeover, and operator-facing hardening gaps",
             ),
         ],
     )
 
-    with pytest.raises(ValueError, match="Owner 'engineering-platform' is assigned to both BIG-EPIC-8 and BIG-EPIC-9"):
+    with pytest.raises(ValueError, match="Owner 'event-durability' is assigned to both BIG-PAR-FU-1 and BIG-PAR-FU-2"):
         roadmap.validate_unique_owners()

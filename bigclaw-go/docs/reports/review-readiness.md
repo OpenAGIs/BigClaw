@@ -39,6 +39,8 @@
 
 ## Follow-up Hardening
 
-- Production-grade capacity certification can remain a follow-up track beyond the current rewrite closure.
-- No dedicated leader-election layer exists yet; current evidence is limited to a local two-node shared-SQLite coordination proof.
-- Higher-scale external-store validation is still pending beyond the current SQLite-backed scope.
+- The canonical follow-up sequence now lives in `src/bigclaw/roadmap.py` and starts from the already-closed `BIG-EPIC-21` distributed-platform baseline.
+- `Phase 1`: promote the `OPE-222` replicated-durability rollout contract into a provider-backed implementation and validation path.
+- `Phase 2`: add a dedicated leader-election and takeover-hardening layer beyond the current two-node shared-SQLite coordination proof.
+- `Phase 3`: run higher-scale external-store validation beyond the current SQLite-backed scope.
+- `Phase 4`: graduate local soak evidence into production-grade capacity certification.
