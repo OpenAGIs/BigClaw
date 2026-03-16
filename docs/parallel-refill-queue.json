@@ -50,38 +50,41 @@
       "OPE-243",
       "OPE-244",
       "OPE-245",
-      "OPE-246"
+      "OPE-246",
+      "OPE-247",
+      "OPE-250",
+      "OPE-251"
     ],
     "active": [
-      "OPE-247",
-      "OPE-250"
+      "OPE-252",
+      "OPE-253"
     ],
     "standby": [
-      "OPE-251"
+      "OPE-254"
     ]
   },
   "issue_order": [
-    "OPE-247",
-    "OPE-250",
-    "OPE-251"
+    "OPE-252",
+    "OPE-253",
+    "OPE-254"
   ],
   "issues": [
     {
-      "identifier": "OPE-247",
-      "title": "BIG-PAR-060 migration readiness review pack refresh",
-      "track": "Migration Review Pack",
+      "identifier": "OPE-252",
+      "title": "BIG-PAR-063 worker lifecycle and state-machine closeout digest refresh",
+      "track": "Lifecycle Closeout",
       "status": "In Progress"
     },
     {
-      "identifier": "OPE-250",
-      "title": "BIG-PAR-061 issue coverage and project sync evidence refresh",
-      "track": "Coverage & Sync Evidence",
+      "identifier": "OPE-253",
+      "title": "BIG-PAR-064 control-plane observability evidence refresh",
+      "track": "Observability Evidence",
       "status": "In Progress"
     },
     {
-      "identifier": "OPE-251",
-      "title": "BIG-PAR-062 epic concurrency and reliability closeout refresh",
-      "track": "Concurrency Closeout",
+      "identifier": "OPE-254",
+      "title": "BIG-PAR-065 long-duration soak and benchmark closeout refresh",
+      "track": "Soak & Benchmark Closeout",
       "status": "Backlog"
     }
   ]

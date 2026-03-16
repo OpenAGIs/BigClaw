@@ -58,14 +58,17 @@ manual operator can refill the next parallel-safe issues in a stable order.
   - `OPE-244` — benchmark matrix artifact normalization
   - `OPE-245` — shadow comparison artifact bundle normalization
   - `OPE-246` — lease recovery and takeover readiness digest refresh
-- Active:
   - `OPE-247` — migration readiness review pack refresh
   - `OPE-250` — issue coverage and project sync evidence refresh
-- Standby:
   - `OPE-251` — epic concurrency and reliability closeout refresh
+- Active:
+  - `OPE-252` — worker lifecycle and state-machine closeout digest refresh
+  - `OPE-253` — control-plane observability evidence refresh
+- Standby:
+  - `OPE-254` — long-duration soak and benchmark closeout refresh
 
 ## Canonical refill order
 
-1. `OPE-247`
-2. `OPE-250`
-3. `OPE-251`
+1. `OPE-252`
+2. `OPE-253`
+3. `OPE-254`
