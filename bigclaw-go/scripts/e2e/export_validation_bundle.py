@@ -12,6 +12,8 @@ LATEST_REPORTS = {
     'kubernetes': 'docs/reports/kubernetes-live-smoke-report.json',
     'ray': 'docs/reports/ray-live-smoke-report.json',
 }
+SHARED_QUEUE_REPORT = 'docs/reports/multi-node-shared-queue-report.json'
+SHARED_QUEUE_SUMMARY = 'docs/reports/shared-queue-companion-summary.json'
 
 CONTINUATION_ARTIFACTS = [
     (
@@ -104,6 +106,47 @@ def component_status(report: Optional[dict[str, Any]]) -> str:
     if report.get('all_ok') is False:
         return 'failed'
     return 'unknown'
+
+
+def build_shared_queue_companion(root: Path, bundle_dir: Path) -> dict[str, Any]:
+    canonical_report_path = root / SHARED_QUEUE_REPORT
+    canonical_summary_path = root / SHARED_QUEUE_SUMMARY
+    bundle_report_path = bundle_dir / 'multi-node-shared-queue-report.json'
+    bundle_summary_path = bundle_dir / 'shared-queue-companion-summary.json'
+    report = read_json(canonical_report_path)
+
+    summary: dict[str, Any] = {
+        'available': isinstance(report, dict),
+        'canonical_report_path': SHARED_QUEUE_REPORT,
+        'canonical_summary_path': SHARED_QUEUE_SUMMARY,
+        'bundle_report_path': relpath(bundle_report_path, root),
+        'bundle_summary_path': relpath(bundle_summary_path, root),
+    }
+    if not isinstance(report, dict):
+        summary['status'] = 'missing_report'
+        return summary
+
+    copied_report = copy_json_artifact(canonical_report_path, bundle_report_path)
+    if copied_report:
+        summary['bundle_report_path'] = relpath(Path(copied_report), root)
+
+    summary.update(
+        {
+            'status': 'succeeded' if report.get('all_ok') else 'failed',
+            'generated_at': report.get('generated_at'),
+            'count': report.get('count'),
+            'cross_node_completions': report.get('cross_node_completions'),
+            'duplicate_started_tasks': len(report.get('duplicate_started_tasks') or []),
+            'duplicate_completed_tasks': len(report.get('duplicate_completed_tasks') or []),
+            'missing_completed_tasks': len(report.get('missing_completed_tasks') or []),
+            'submitted_by_node': report.get('submitted_by_node', {}),
+            'completed_by_node': report.get('completed_by_node', {}),
+            'nodes': [node.get('name') for node in report.get('nodes', []) if isinstance(node, dict) and node.get('name')],
+        }
+    )
+    write_json(bundle_summary_path, summary)
+    write_json(canonical_summary_path, summary)
+    return summary
 
 
 def build_component_section(
@@ -244,6 +287,25 @@ def render_index(
             lines.append(f"- Task ID: `{section['task_id']}`")
         lines.append('')
 
+    shared_queue = summary.get('shared_queue_companion')
+    if isinstance(shared_queue, dict):
+        lines.append('### shared-queue companion')
+        lines.append(f"- Available: `{shared_queue['available']}`")
+        lines.append(f"- Status: `{shared_queue['status']}`")
+        lines.append(f"- Bundle summary: `{shared_queue['bundle_summary_path']}`")
+        lines.append(f"- Canonical summary: `{shared_queue['canonical_summary_path']}`")
+        lines.append(f"- Bundle report: `{shared_queue['bundle_report_path']}`")
+        lines.append(f"- Canonical report: `{shared_queue['canonical_report_path']}`")
+        if shared_queue.get('cross_node_completions') is not None:
+            lines.append(f"- Cross-node completions: `{shared_queue['cross_node_completions']}`")
+        if shared_queue.get('duplicate_started_tasks') is not None:
+            lines.append(f"- Duplicate `task.started`: `{shared_queue['duplicate_started_tasks']}`")
+        if shared_queue.get('duplicate_completed_tasks') is not None:
+            lines.append(f"- Duplicate `task.completed`: `{shared_queue['duplicate_completed_tasks']}`")
+        if shared_queue.get('missing_completed_tasks') is not None:
+            lines.append(f"- Missing terminal completions: `{shared_queue['missing_completed_tasks']}`")
+        lines.append('')
+
     lines.extend(['## Workflow closeout commands', ''])
     for command in summary['closeout_commands']:
         lines.append(f'- `{command}`')
@@ -356,6 +418,7 @@ def main() -> int:
         stdout_path=Path(args.ray_stdout_path),
         stderr_path=Path(args.ray_stderr_path),
     )
+    summary['shared_queue_companion'] = build_shared_queue_companion(root, bundle_dir)
 
     bundle_summary_path = bundle_dir / 'summary.json'
     canonical_summary_path = root / args.summary_path

@@ -27,6 +27,8 @@ def test_continuation_scorecard_summarizes_recent_bundle_chain() -> None:
     assert report['summary']['recent_bundle_chain_has_no_failures'] is True
     assert report['summary']['all_executor_tracks_have_repeated_recent_coverage'] is True
     assert report['shared_queue_companion']['cross_node_completions'] == 99
+    assert report['shared_queue_companion']['mode'] == 'bundle-companion-summary'
+    assert report['shared_queue_companion']['summary_path'] == 'docs/reports/shared-queue-companion-summary.json'
 
 
 def test_continuation_scorecard_marks_lane_success_and_manual_boundary() -> None:
@@ -56,4 +58,5 @@ def test_checked_in_continuation_scorecard_matches_expected_shape() -> None:
     assert report['summary']['all_executor_tracks_have_repeated_recent_coverage'] is True
     assert report['shared_queue_companion']['cross_node_completions'] == 99
     assert report['shared_queue_companion']['duplicate_completed_tasks'] == 0
+    assert report['shared_queue_companion']['mode'] == 'bundle-companion-summary'
     assert report['executor_lanes'][0]['lane'] == 'local'

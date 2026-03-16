@@ -46,17 +46,18 @@ DIGESTS = {
     },
     "OPE-266": {
         "path": Path("bigclaw-go/docs/reports/live-shadow-comparison-follow-up-digest.md"),
-        "title": "BIG-PAR-077",
+        "title": "BIG-PAR-092",
         "links": [
             "docs/reports/migration-readiness-report.md",
             "docs/migration-shadow.md",
             "docs/reports/shadow-compare-report.json",
             "docs/reports/shadow-matrix-report.json",
+            "docs/reports/live-shadow-mirror-scorecard.json",
             "docs/reports/migration-plan-review-notes.md",
         ],
         "phrases": [
+            "repo-native live shadow mirror scorecard",
             "no live legacy-vs-Go production traffic comparison",
-            "fixture-backed",
         ],
         "indexes": [
             Path("bigclaw-go/docs/reports/migration-readiness-report.md"),
@@ -168,6 +169,7 @@ DIGESTS = {
         "links": [
             "docs/reports/live-validation-index.md",
             "docs/reports/live-validation-summary.json",
+            "docs/reports/shared-queue-companion-summary.json",
             "docs/reports/validation-bundle-continuation-scorecard.json",
             "scripts/e2e/validation_bundle_continuation_scorecard.py",
             "docs/reports/validation-bundle-continuation-policy-gate.json",

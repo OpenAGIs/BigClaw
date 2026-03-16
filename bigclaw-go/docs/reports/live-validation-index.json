@@ -1,7 +1,7 @@
 {
   "latest": {
     "run_id": "20260316T140138Z",
-    "generated_at": "2026-03-16T14:48:44.661296+00:00",
+    "generated_at": "2026-03-16T14:48:42.581505+00:00",
     "status": "succeeded",
     "bundle_path": "docs/reports/live-validation-runs/20260316T140138Z",
     "closeout_commands": [
@@ -692,12 +692,38 @@
       "audit_log_path": "docs/reports/live-validation-runs/20260316T140138Z/ray.audit.jsonl",
       "service_log_path": "docs/reports/live-validation-runs/20260316T140138Z/ray.service.log"
     },
+    "shared_queue_companion": {
+      "available": true,
+      "canonical_report_path": "docs/reports/multi-node-shared-queue-report.json",
+      "canonical_summary_path": "docs/reports/shared-queue-companion-summary.json",
+      "bundle_report_path": "docs/reports/live-validation-runs/20260316T140138Z/multi-node-shared-queue-report.json",
+      "bundle_summary_path": "docs/reports/live-validation-runs/20260316T140138Z/shared-queue-companion-summary.json",
+      "status": "succeeded",
+      "generated_at": "2026-03-13T09:45:19Z",
+      "count": 200,
+      "cross_node_completions": 99,
+      "duplicate_started_tasks": 0,
+      "duplicate_completed_tasks": 0,
+      "missing_completed_tasks": 0,
+      "submitted_by_node": {
+        "node-a": 100,
+        "node-b": 100
+      },
+      "completed_by_node": {
+        "node-a": 73,
+        "node-b": 127
+      },
+      "nodes": [
+        "node-a",
+        "node-b"
+      ]
+    },
     "summary_path": "docs/reports/live-validation-runs/20260316T140138Z/summary.json"
   },
   "recent_runs": [
     {
       "run_id": "20260316T140138Z",
-      "generated_at": "2026-03-16T14:48:44.661296+00:00",
+      "generated_at": "2026-03-16T14:48:42.581505+00:00",
       "status": "succeeded",
       "bundle_path": "docs/reports/live-validation-runs/20260316T140138Z",
       "summary_path": "docs/reports/live-validation-runs/20260316T140138Z/summary.json"
@@ -724,7 +750,7 @@
     "failing_checks": [],
     "summary": {
       "latest_run_id": "20260316T140138Z",
-      "latest_bundle_age_hours": 0.16,
+      "latest_bundle_age_hours": 0.06,
       "recent_bundle_count": 3,
       "latest_all_executor_tracks_succeeded": true,
       "recent_bundle_chain_has_no_failures": true,

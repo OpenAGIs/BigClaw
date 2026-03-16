@@ -1,7 +1,7 @@
 # Live Validation Index
 
 - Latest run: `20260316T140138Z`
-- Generated at: `2026-03-16T14:48:44.661296+00:00`
+- Generated at: `2026-03-16T14:48:42.581505+00:00`
 - Status: `succeeded`
 - Bundle: `docs/reports/live-validation-runs/20260316T140138Z`
 - Summary JSON: `docs/reports/live-validation-runs/20260316T140138Z/summary.json`
@@ -41,6 +41,18 @@
 - Audit log: `docs/reports/live-validation-runs/20260316T140138Z/ray.audit.jsonl`
 - Task ID: `ray-smoke-1773669703`
 
+### shared-queue companion
+- Available: `True`
+- Status: `succeeded`
+- Bundle summary: `docs/reports/live-validation-runs/20260316T140138Z/shared-queue-companion-summary.json`
+- Canonical summary: `docs/reports/shared-queue-companion-summary.json`
+- Bundle report: `docs/reports/live-validation-runs/20260316T140138Z/multi-node-shared-queue-report.json`
+- Canonical report: `docs/reports/multi-node-shared-queue-report.json`
+- Cross-node completions: `99`
+- Duplicate `task.started`: `0`
+- Duplicate `task.completed`: `0`
+- Missing terminal completions: `0`
+
 ## Workflow closeout commands
 
 - `cd bigclaw-go && ./scripts/e2e/run_all.sh`
@@ -49,9 +61,10 @@
 
 ## Recent bundles
 
-- `20260316T140138Z` · `succeeded` · `2026-03-16T14:48:44.661296+00:00` · `docs/reports/live-validation-runs/20260316T140138Z`
+- `20260316T140138Z` · `succeeded` · `2026-03-16T14:48:42.581505+00:00` · `docs/reports/live-validation-runs/20260316T140138Z`
 - `20260314T164647Z` · `succeeded` · `2026-03-14T16:46:57.671520+00:00` · `docs/reports/live-validation-runs/20260314T164647Z`
 - `20260314T163430Z` · `succeeded` · `2026-03-14T16:34:42.080370+00:00` · `docs/reports/live-validation-runs/20260314T163430Z`
+
 
 ## Continuation gate
 
