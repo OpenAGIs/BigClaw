@@ -33,7 +33,7 @@
 - `OPE-185`
   - Migration evidence includes a shadow matrix across multiple sample tasks with matched terminal states, matched event sequences, an anonymized corpus coverage scorecard, and a repo-native live shadow mirror scorecard that summarizes parity drift and evidence freshness across the checked-in compare and matrix artifacts.
   - Supporting report: `docs/reports/migration-readiness-report.md`.
-  - Follow-up digests capture the remaining live shadow comparison, rollback safeguard, and production corpus coverage caveats in `docs/reports/live-shadow-comparison-follow-up-digest.md`, `docs/reports/rollback-safeguard-follow-up-digest.md`, and `docs/reports/production-corpus-migration-coverage-digest.md`.
+  - Follow-up digests capture the remaining live shadow comparison, rollback safeguard trigger surface, and production corpus coverage caveats in `docs/reports/live-shadow-comparison-follow-up-digest.md`, `docs/reports/rollback-safeguard-follow-up-digest.md`, and `docs/reports/production-corpus-migration-coverage-digest.md`.
 - `OPE-186`
   - Benchmark evidence includes a repeatable matrix runner plus `50x8`, `100x12`, `1000x24`, and `2000x24` soak runs with zero failures.
   - Supporting reports: `docs/reports/benchmark-readiness-report.md`, `docs/reports/benchmark-matrix-report.json`, and `docs/reports/long-duration-soak-report.md`.
@@ -53,7 +53,7 @@
 - `OPE-264` / `BIG-PAR-075` — external tracing backend and span-propagation caveats are consolidated in `docs/reports/tracing-backend-follow-up-digest.md`, while the current reviewer bundle lives in `GET /v2/reports/distributed/export`.
 - `OPE-265` / `BIG-PAR-076` — telemetry pipeline, sampling policy, and high-cardinality caveats are consolidated in `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.
 - `OPE-266` / `BIG-PAR-092` — repo-native live shadow mirror scorecard and remaining live shadow traffic comparison caveats are consolidated in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
-- `OPE-267` / `BIG-PAR-078` — rollback safeguard caveats are consolidated in `docs/reports/rollback-safeguard-follow-up-digest.md`.
+- `OPE-267` / `BIG-PAR-078` — rollback safeguard trigger-surface caveats are consolidated in `docs/reports/rollback-safeguard-follow-up-digest.md`.
 - `OPE-268` / `BIG-PAR-079` — production corpus coverage caveats are consolidated in `docs/reports/production-corpus-migration-coverage-digest.md`.
 - `OPE-269` / `BIG-PAR-080` — subscriber takeover executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
 - `OPE-270` / `BIG-PAR-081` — cross-process coordination caveats are consolidated in `docs/reports/cross-process-coordination-boundary-digest.md`, with the current surface summarized in `docs/reports/cross-process-coordination-capability-surface.json`.
