@@ -1,7 +1,7 @@
 {
   "latest": {
     "run_id": "20260316T140138Z",
-    "generated_at": "2026-03-16T14:01:48.665631+00:00",
+    "generated_at": "2026-03-16T14:48:44.661296+00:00",
     "status": "succeeded",
     "bundle_path": "docs/reports/live-validation-runs/20260316T140138Z",
     "closeout_commands": [
@@ -697,7 +697,7 @@
   "recent_runs": [
     {
       "run_id": "20260316T140138Z",
-      "generated_at": "2026-03-16T14:01:48.665631+00:00",
+      "generated_at": "2026-03-16T14:48:44.661296+00:00",
       "status": "succeeded",
       "bundle_path": "docs/reports/live-validation-runs/20260316T140138Z",
       "summary_path": "docs/reports/live-validation-runs/20260316T140138Z/summary.json"
@@ -716,5 +716,29 @@
       "bundle_path": "docs/reports/live-validation-runs/20260314T163430Z",
       "summary_path": "docs/reports/live-validation-runs/20260314T163430Z/summary.json"
     }
-  ]
+  ],
+  "continuation_gate": {
+    "path": "docs/reports/validation-bundle-continuation-policy-gate.json",
+    "status": "policy-go",
+    "recommendation": "go",
+    "failing_checks": [],
+    "summary": {
+      "latest_run_id": "20260316T140138Z",
+      "latest_bundle_age_hours": 0.16,
+      "recent_bundle_count": 3,
+      "latest_all_executor_tracks_succeeded": true,
+      "recent_bundle_chain_has_no_failures": true,
+      "all_executor_tracks_have_repeated_recent_coverage": true,
+      "recommendation": "go",
+      "passing_check_count": 6,
+      "failing_check_count": 0
+    },
+    "reviewer_path": {
+      "index_path": "docs/reports/live-validation-index.md",
+      "digest_path": "docs/reports/validation-bundle-continuation-digest.md"
+    },
+    "next_actions": [
+      "enable BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1 when workflow closeout should fail on continuation regressions"
+    ]
+  }
 }

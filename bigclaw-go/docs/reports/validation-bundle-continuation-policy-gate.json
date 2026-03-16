@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-03-16T14:11:48.848722Z",
-  "ticket": "BIG-PAR-087-local-prework",
-  "title": "Validation bundle continuation policy gate",
+  "generated_at": "2026-03-16T14:47:31.528961Z",
+  "ticket": "OPE-271",
+  "title": "Workflow-enforced continuation gate for closeout",
   "status": "policy-go",
   "recommendation": "go",
   "evidence_inputs": {
     "scorecard_path": "bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json",
-    "generator_script": "bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py"
+    "generator_script": "scripts/e2e/validation_bundle_continuation_policy_gate.py"
   },
   "policy_inputs": {
     "max_latest_age_hours": 72.0,
@@ -57,6 +57,10 @@
     }
   ],
   "failing_checks": [],
+  "reviewer_path": {
+    "index_path": "docs/reports/live-validation-index.md",
+    "digest_path": "docs/reports/validation-bundle-continuation-digest.md"
+  },
   "shared_queue_companion": {
     "available": true,
     "report_path": "bigclaw-go/docs/reports/multi-node-shared-queue-report.json",

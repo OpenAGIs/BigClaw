@@ -32,6 +32,25 @@ FOLLOWUP_DIGESTS = [
 ]
 
 
+def build_continuation_gate_summary(root: Path) -> Optional[dict[str, Any]]:
+    gate_path = root / 'docs/reports/validation-bundle-continuation-policy-gate.json'
+    gate = read_json(gate_path)
+    if not isinstance(gate, dict):
+        return None
+    summary = gate.get('summary')
+    reviewer_path = gate.get('reviewer_path')
+    next_actions = gate.get('next_actions')
+    return {
+        'path': relpath(gate_path, root),
+        'status': gate.get('status', 'unknown'),
+        'recommendation': gate.get('recommendation', 'unknown'),
+        'failing_checks': gate.get('failing_checks', []),
+        'summary': summary if isinstance(summary, dict) else {},
+        'reviewer_path': reviewer_path if isinstance(reviewer_path, dict) else {},
+        'next_actions': next_actions if isinstance(next_actions, list) else [],
+    }
+
+
 def read_json(path: Path) -> Optional[Any]:
     if not path.exists() or path.stat().st_size == 0:
         return None
@@ -53,6 +72,8 @@ def relpath(path: Path, root: Path) -> str:
 def copy_text_artifact(source: Path, destination: Path) -> str:
     if not source.exists():
         return ''
+    if source.resolve() == destination.resolve():
+        return str(destination)
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, destination)
     return str(destination)
@@ -61,6 +82,8 @@ def copy_text_artifact(source: Path, destination: Path) -> str:
 def copy_json_artifact(source: Path, destination: Path) -> str:
     if not source.exists():
         return ''
+    if source.resolve() == destination.resolve():
+        return str(destination)
     payload = read_json(source)
     if payload is None:
         return ''
@@ -186,6 +209,7 @@ def build_followup_digests(root: Path) -> list[tuple[str, str]]:
 def render_index(
     summary: dict[str, Any],
     recent_runs: list[dict[str, Any]],
+    continuation_gate: dict[str, Any] | None = None,
     continuation_artifacts: list[tuple[str, str]] | None = None,
     followup_digests: list[tuple[str, str]] | None = None,
 ) -> str:
@@ -233,6 +257,24 @@ def render_index(
                 f"- `{run['run_id']}` · `{run['status']}` · `{run['generated_at']}` · `{run['bundle_path']}`"
             )
     lines.append('')
+    if continuation_gate:
+        lines.extend(['## Continuation gate', ''])
+        lines.append(f"- Status: `{continuation_gate['status']}`")
+        lines.append(f"- Recommendation: `{continuation_gate['recommendation']}`")
+        lines.append(f"- Report: `{continuation_gate['path']}`")
+        gate_summary = continuation_gate.get('summary', {})
+        if gate_summary.get('latest_run_id'):
+            lines.append(f"- Latest reviewed run: `{gate_summary['latest_run_id']}`")
+        if 'failing_check_count' in gate_summary:
+            lines.append(f"- Failing checks: `{gate_summary['failing_check_count']}`")
+        reviewer_path = continuation_gate.get('reviewer_path', {})
+        if reviewer_path.get('digest_path'):
+            lines.append(f"- Reviewer digest: `{reviewer_path['digest_path']}`")
+        if reviewer_path.get('index_path'):
+            lines.append(f"- Reviewer index: `{reviewer_path['index_path']}`")
+        for action in continuation_gate.get('next_actions', []):
+            lines.append(f"- Next action: `{action}`")
+        lines.append('')
     if continuation_artifacts:
         lines.extend(['## Continuation artifacts', ''])
         for artifact_path, description in continuation_artifacts:
@@ -323,12 +365,15 @@ def main() -> int:
 
     bundle_root = bundle_dir.parent
     recent_runs = build_recent_runs(bundle_root, root)
+    continuation_gate = build_continuation_gate_summary(root)
     manifest = {'latest': summary, 'recent_runs': recent_runs}
+    if continuation_gate:
+        manifest['continuation_gate'] = continuation_gate
     write_json(root / args.manifest_path, manifest)
 
     continuation_artifacts = build_continuation_artifacts(root)
     followup_digests = build_followup_digests(root)
-    index_text = render_index(summary, recent_runs, continuation_artifacts, followup_digests)
+    index_text = render_index(summary, recent_runs, continuation_gate, continuation_artifacts, followup_digests)
     (root / args.index_path).parent.mkdir(parents=True, exist_ok=True)
     (root / args.index_path).write_text(index_text, encoding='utf-8')
     (bundle_dir / 'README.md').write_text(index_text, encoding='utf-8')
