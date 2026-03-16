@@ -69,13 +69,15 @@ manual operator can refill the next parallel-safe issues in a stable order.
   - `OPE-257` — review matrix and closeout navigation refresh
   - `OPE-258` — remaining hardening gap register refresh
   - `OPE-259` — follow-up roadmap and gap-analysis refresh
-- Active:
   - `OPE-260` — scale validation follow-up digest
   - `OPE-261` — distributed coordination hardening digest
+- Active:
+  - `OPE-262` — event delivery semantics follow-up digest
+  - `OPE-263` — retention and external-store follow-up digest
 - Standby:
   - None currently; create the next standby slice after one active item closes.
 
 ## Canonical refill order
 
-1. `OPE-260`
-2. `OPE-261`
+1. `OPE-262`
+2. `OPE-263`

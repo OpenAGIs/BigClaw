@@ -61,17 +61,19 @@
       "OPE-256",
       "OPE-257",
       "OPE-258",
-      "OPE-259"
-    ],
-    "active": [
+      "OPE-259",
       "OPE-260",
       "OPE-261"
+    ],
+    "active": [
+      "OPE-262",
+      "OPE-263"
     ],
     "standby": []
   },
   "issue_order": [
-    "OPE-260",
-    "OPE-261"
+    "OPE-262",
+    "OPE-263"
   ],
   "issues": [
     {
@@ -114,12 +116,24 @@
       "identifier": "OPE-260",
       "title": "BIG-PAR-071 scale validation follow-up digest",
       "track": "Scale Validation Follow-up",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-261",
       "title": "BIG-PAR-072 distributed coordination hardening digest",
       "track": "Coordination Hardening",
+      "status": "Done"
+    },
+    {
+      "identifier": "OPE-262",
+      "title": "BIG-PAR-073 event delivery semantics follow-up digest",
+      "track": "Delivery Semantics Follow-up",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-263",
+      "title": "BIG-PAR-074 retention and external-store follow-up digest",
+      "track": "Retention & External Store",
       "status": "In Progress"
     }
   ]
