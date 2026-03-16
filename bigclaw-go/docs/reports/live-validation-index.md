@@ -47,6 +47,14 @@
 - `cd bigclaw-go && go test ./...`
 - `git push origin <branch> && git log -1 --stat`
 
+## Broker failover planning bundle
+
+- Status: `planning-ready`
+- Canonical bundle: `docs/reports/broker-failover-evidence-bundle.md`
+- Manifest: `docs/reports/broker-failover-evidence-bundle.json`
+- Detailed scenario pack: `docs/reports/broker-failover-fault-injection-validation-pack.md`
+- Note: this is a normalized planning artifact set only; no live broker-backed validation run is recorded in this index yet
+
 ## Recent bundles
 
 - `20260314T164647Z` · `succeeded` · `2026-03-14T16:46:57.671520+00:00` · `docs/reports/live-validation-runs/20260314T164647Z`

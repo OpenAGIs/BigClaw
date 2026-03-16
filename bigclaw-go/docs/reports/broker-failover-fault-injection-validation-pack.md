@@ -1,5 +1,11 @@
 # Broker Failover And Replay Fault-Injection Validation Pack
 
+## Canonical Evidence Bundle
+
+Use `docs/reports/broker-failover-evidence-bundle.md` and `docs/reports/broker-failover-evidence-bundle.json` as the stable review-pack export surface for this validation work.
+
+This document remains the detailed scenario matrix behind that bundle and should not be referenced as the only broker-failover artifact set anymore.
+
 ## Scope
 
 This pack defines the minimum provider-neutral validation required before BigClaw claims broker-backed durability beyond the current local SQLite coordination proof.
@@ -120,8 +126,9 @@ Each scenario report should include at least:
 
 - add `scripts/e2e/broker_failover_validation.py` or equivalent once a broker-backed event log exists
 - write reports to `docs/reports/broker-failover-<backend>-report.json`
-- keep one markdown summary that rolls up the latest scenario outcomes across backends
-- link the live report from `docs/e2e-validation.md` beside the current SQLite and multi-node validation commands
+- refresh `docs/reports/broker-failover-evidence-bundle.json` as the canonical machine-readable manifest
+- keep `docs/reports/broker-failover-evidence-bundle.md` as the stable markdown summary across backends
+- link the canonical bundle from `docs/e2e-validation.md` beside the current SQLite and multi-node validation commands
 
 ## Exit Criteria For Future Implementation Ticket
 
