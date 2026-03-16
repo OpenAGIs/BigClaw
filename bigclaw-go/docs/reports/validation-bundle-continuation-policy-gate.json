@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-16T14:06:11.631809Z",
+  "generated_at": "2026-03-16T14:11:48.848722Z",
   "ticket": "BIG-PAR-087-local-prework",
   "title": "Validation bundle continuation policy gate",
   "status": "policy-go",
@@ -15,7 +15,7 @@
   },
   "summary": {
     "latest_run_id": "20260316T140138Z",
-    "latest_bundle_age_hours": 0.0,
+    "latest_bundle_age_hours": 0.16,
     "recent_bundle_count": 3,
     "latest_all_executor_tracks_succeeded": true,
     "recent_bundle_chain_has_no_failures": true,
@@ -28,7 +28,7 @@
     {
       "name": "latest_bundle_age_within_threshold",
       "passed": true,
-      "detail": "latest_bundle_age_hours=0.0 threshold=72.0"
+      "detail": "latest_bundle_age_hours=0.16 threshold=72.0"
     },
     {
       "name": "recent_bundle_count_meets_floor",
@@ -66,6 +66,6 @@
     "mode": "standalone-proof"
   },
   "next_actions": [
-    "wire this gate into workflow closeout so continuation evidence is checked automatically"
+    "enable BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1 when workflow closeout should fail on continuation regressions"
   ]
 }

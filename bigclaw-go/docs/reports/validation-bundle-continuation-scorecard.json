@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-16T14:01:58.947345Z",
+  "generated_at": "2026-03-16T14:11:10.170300Z",
   "ticket": "BIG-PAR-086-local-prework",
   "title": "Validation bundle continuation scorecard",
   "status": "local-continuation-scorecard",
@@ -19,7 +19,7 @@
     "recent_bundle_count": 3,
     "latest_run_id": "20260316T140138Z",
     "latest_status": "succeeded",
-    "latest_bundle_age_hours": 0.0,
+    "latest_bundle_age_hours": 0.16,
     "latest_all_executor_tracks_succeeded": true,
     "recent_bundle_chain_has_no_failures": true,
     "all_executor_tracks_have_repeated_recent_coverage": true,
@@ -105,20 +105,20 @@
       "detail": "cross_node_completions=99"
     },
     {
-      "name": "continuation_surface_is_manual",
+      "name": "continuation_surface_is_workflow_triggered",
       "passed": true,
-      "detail": "bundle export and scorecard refresh still require manual or workflow-triggered execution"
+      "detail": "run_all closeout now refreshes the scorecard and gate automatically, but continuation still depends on explicit workflow execution instead of an always-on service"
     }
   ],
   "current_ceiling": [
-    "continuation across future validation bundles remains manual",
+    "continuation across future validation bundles remains workflow-triggered",
     "shared-queue coordination proof still lives outside the canonical live validation bundle",
     "recent history is bounded to the exported bundle index and not an always-on service"
   ],
   "next_runtime_hooks": [
-    "refresh the continuation scorecard automatically at the end of scripts/e2e/run_all.sh",
+    "enable BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1 in workflow closeout when continuation holds should fail the run",
     "fold shared-queue coordination proof into the same bundle lineage or adjacent bundle metadata",
-    "wire the continuation policy gate into workflow closeout or scripts/e2e/run_all.sh so it runs automatically",
+    "extend the automatic continuation refresh beyond run_all.sh into broader workflow orchestrators",
     "extend the scorecard beyond the latest recent_runs window when more longitudinal evidence exists"
   ]
 }

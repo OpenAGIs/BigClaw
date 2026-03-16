@@ -32,7 +32,7 @@ def test_continuation_scorecard_summarizes_recent_bundle_chain() -> None:
 def test_continuation_scorecard_marks_lane_success_and_manual_boundary() -> None:
     report = continuation.build_report()
     lanes = {item['lane']: item for item in report['executor_lanes']}
-    manual_boundary = next(item for item in report['continuation_checks'] if item['name'] == 'continuation_surface_is_manual')
+    manual_boundary = next(item for item in report['continuation_checks'] if item['name'] == 'continuation_surface_is_workflow_triggered')
     repeated_coverage = next(item for item in report['continuation_checks'] if item['name'] == 'all_executor_tracks_have_repeated_recent_coverage')
 
     assert set(lanes) == {'local', 'kubernetes', 'ray'}
@@ -45,7 +45,7 @@ def test_continuation_scorecard_marks_lane_success_and_manual_boundary() -> None
     assert repeated_coverage['passed'] is True
     assert "'ray': 2" in repeated_coverage['detail']
     assert manual_boundary['passed'] is True
-    assert 'manual' in manual_boundary['detail']
+    assert 'workflow execution' in manual_boundary['detail']
 
 
 def test_checked_in_continuation_scorecard_matches_expected_shape() -> None:

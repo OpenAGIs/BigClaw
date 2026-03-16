@@ -148,9 +148,9 @@ def build_report(
             f"cross_node_completions={shared_queue.get('cross_node_completions')}",
         ),
         check(
-            'continuation_surface_is_manual',
+            'continuation_surface_is_workflow_triggered',
             True,
-            'bundle export and scorecard refresh still require manual or workflow-triggered execution',
+            'run_all closeout now refreshes the scorecard and gate automatically, but continuation still depends on explicit workflow execution instead of an always-on service',
         ),
     ]
 
@@ -164,7 +164,7 @@ def build_report(
     }
 
     current_ceiling = [
-        'continuation across future validation bundles remains manual',
+        'continuation across future validation bundles remains workflow-triggered',
         'shared-queue coordination proof still lives outside the canonical live validation bundle',
         'recent history is bounded to the exported bundle index and not an always-on service',
     ]
@@ -172,9 +172,9 @@ def build_report(
         current_ceiling.append('not every executor lane is enabled across every indexed bundle in the current recent window')
 
     next_runtime_hooks = [
-        'refresh the continuation scorecard automatically at the end of scripts/e2e/run_all.sh',
+        'enable BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1 in workflow closeout when continuation holds should fail the run',
         'fold shared-queue coordination proof into the same bundle lineage or adjacent bundle metadata',
-        'wire the continuation policy gate into workflow closeout or scripts/e2e/run_all.sh so it runs automatically',
+        'extend the automatic continuation refresh beyond run_all.sh into broader workflow orchestrators',
         'extend the scorecard beyond the latest recent_runs window when more longitudinal evidence exists',
     ]
 

@@ -20,15 +20,15 @@ This digest consolidates the remaining validation-bundle continuation caveats fo
 
 - The repo now has a rolling continuation scorecard plus a policy gate that makes bundle freshness, shared-queue companion proof, and repeated lane coverage reviewable in machine-readable form.
 - The checked-in continuation window now includes repeated `local`, `kubernetes`, and `ray` coverage across recent indexed bundles, so the current policy gate returns `go`.
-- Validation continuation across future validation bundles remains manual because bundle export, scorecard refresh, and policy-gate execution still require operator or workflow execution.
+- Validation continuation across future validation bundles remains workflow-triggered because `run_all.sh` now refreshes the scorecard and policy gate automatically, but the overall surface still depends on explicit workflow execution rather than an always-on service.
 - The continuation surface is therefore a repo-native longitudinal readiness overlay, not yet an always-on validation service.
 
 ## Current Blockers
 
-- The repo-native policy gate exists, but ordinary development workflows do not run it automatically yet.
+- The repo-native policy gate now refreshes automatically during `run_all.sh` closeout, but enforcement is not enabled by default across ordinary workflows.
 - Shared-queue coordination evidence is still maintained as a separate proof instead of living inside the same bundle contract.
 - Longitudinal history is bounded to the exported bundle index window and not a continuously retained validation service.
-- The current gate only reflects checked-in bundle history, so future regressions still depend on rerunning the bundle export and continuation scripts.
+- The current gate only reflects checked-in bundle history, so future regressions still depend on rerunning a workflow like `run_all.sh` or an equivalent orchestrated refresh.
 
 ## Lightweight Consistency Check
 

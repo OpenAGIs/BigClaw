@@ -178,7 +178,7 @@ DIGESTS = {
         ],
         "phrases": [
             "rolling continuation scorecard",
-            "continuation across future validation bundles remains manual",
+            "continuation across future validation bundles remains workflow-triggered",
         ],
         "indexes": [
             Path("bigclaw-go/docs/reports/live-validation-index.md"),

@@ -29,6 +29,11 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
     write_json(bundle / 'kubernetes-live-smoke-report.json', {'task': {'id': 'k8s-1'}, 'status': {'state': 'succeeded'}})
     write_json(bundle / 'ray-live-smoke-report.json', {'task': {'id': 'ray-1'}, 'status': {'state': 'succeeded'}})
 
+    (root / 'docs' / 'reports').mkdir(parents=True, exist_ok=True)
+    (root / 'docs' / 'reports' / 'validation-bundle-continuation-scorecard.json').write_text('{}\n', encoding='utf-8')
+    (root / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json').write_text('{}\n', encoding='utf-8')
+    (root / 'docs' / 'reports' / 'validation-bundle-continuation-digest.md').write_text('# digest\n', encoding='utf-8')
+
     local_stdout = tmp_path / 'local.stdout'
     local_stderr = tmp_path / 'local.stderr'
     k8s_stdout = tmp_path / 'k8s.stdout'
@@ -90,6 +95,9 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
     assert 'Live Validation Index' in index_text
     assert '20260315T120000Z' in index_text
     assert 'docs/reports/live-validation-runs/20260315T120000Z' in index_text
+    assert 'docs/reports/validation-bundle-continuation-scorecard.json' in index_text
+    assert 'docs/reports/validation-bundle-continuation-policy-gate.json' in index_text
+    assert 'docs/reports/validation-bundle-continuation-digest.md' in index_text
 
     manifest = json.loads((root / 'docs' / 'reports' / 'live-validation-index.json').read_text(encoding='utf-8'))
     assert manifest['latest']['run_id'] == '20260315T120000Z'

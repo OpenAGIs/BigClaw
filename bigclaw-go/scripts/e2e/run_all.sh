@@ -10,6 +10,10 @@ BUNDLE_DIR_REL="${ARTIFACT_ROOT_REL}/${RUN_ID}"
 RUN_LOCAL="${BIGCLAW_E2E_RUN_LOCAL:-1}"
 RUN_KUBERNETES="${BIGCLAW_E2E_RUN_KUBERNETES:-1}"
 RUN_RAY="${BIGCLAW_E2E_RUN_RAY:-1}"
+REFRESH_CONTINUATION="${BIGCLAW_E2E_REFRESH_CONTINUATION:-1}"
+ENFORCE_CONTINUATION_GATE="${BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE:-0}"
+CONTINUATION_SCORECARD_PATH="${BIGCLAW_E2E_CONTINUATION_SCORECARD_PATH:-docs/reports/validation-bundle-continuation-scorecard.json}"
+CONTINUATION_POLICY_GATE_PATH="${BIGCLAW_E2E_CONTINUATION_POLICY_GATE_PATH:-docs/reports/validation-bundle-continuation-policy-gate.json}"
 
 mkdir -p "$ROOT/$BUNDLE_DIR_REL"
 
@@ -62,7 +66,8 @@ if (( ${#pids[@]} > 0 )); then
   done
 fi
 
-python3 "$ROOT/scripts/e2e/export_validation_bundle.py" \
+export_status=0
+if ! python3 "$ROOT/scripts/e2e/export_validation_bundle.py" \
   --go-root "$ROOT" \
   --run-id "$RUN_ID" \
   --bundle-dir "$BUNDLE_DIR_REL" \
@@ -81,4 +86,24 @@ python3 "$ROOT/scripts/e2e/export_validation_bundle.py" \
   --kubernetes-stderr-path "$K8S_ERR" \
   --ray-report-path "$RAY_REPORT_REL" \
   --ray-stdout-path "$RAY_OUT" \
-  --ray-stderr-path "$RAY_ERR"
+  --ray-stderr-path "$RAY_ERR"; then
+  export_status=$?
+fi
+
+if [[ "$REFRESH_CONTINUATION" == "1" ]]; then
+  python3 "$ROOT/scripts/e2e/validation_bundle_continuation_scorecard.py" \
+    --output "$CONTINUATION_SCORECARD_PATH"
+
+  gate_status=0
+  if ! python3 "$ROOT/scripts/e2e/validation_bundle_continuation_policy_gate.py" \
+    --scorecard "$CONTINUATION_SCORECARD_PATH" \
+    --output "$CONTINUATION_POLICY_GATE_PATH"; then
+    gate_status=$?
+  fi
+
+  if [[ "$gate_status" -ne 0 && "$ENFORCE_CONTINUATION_GATE" == "1" ]]; then
+    exit "$gate_status"
+  fi
+fi
+
+exit "$export_status"
