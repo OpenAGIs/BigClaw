@@ -59,17 +59,19 @@
       "OPE-254",
       "OPE-255",
       "OPE-256",
-      "OPE-257"
-    ],
-    "active": [
+      "OPE-257",
       "OPE-258",
       "OPE-259"
+    ],
+    "active": [
+      "OPE-260",
+      "OPE-261"
     ],
     "standby": []
   },
   "issue_order": [
-    "OPE-258",
-    "OPE-259"
+    "OPE-260",
+    "OPE-261"
   ],
   "issues": [
     {
@@ -100,12 +102,24 @@
       "identifier": "OPE-258",
       "title": "BIG-PAR-069 remaining hardening gap register refresh",
       "track": "Hardening Gap Register",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-259",
       "title": "BIG-PAR-070 follow-up roadmap and gap-analysis refresh",
       "track": "Roadmap & Gap Analysis",
+      "status": "Done"
+    },
+    {
+      "identifier": "OPE-260",
+      "title": "BIG-PAR-071 scale validation follow-up digest",
+      "track": "Scale Validation Follow-up",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-261",
+      "title": "BIG-PAR-072 distributed coordination hardening digest",
+      "track": "Coordination Hardening",
       "status": "In Progress"
     }
   ]

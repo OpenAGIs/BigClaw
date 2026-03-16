@@ -67,13 +67,15 @@ manual operator can refill the next parallel-safe issues in a stable order.
   - `OPE-255` — operations foundation evidence alignment refresh
   - `OPE-256` — scheduler policy and routing closeout refresh
   - `OPE-257` — review matrix and closeout navigation refresh
-- Active:
   - `OPE-258` — remaining hardening gap register refresh
   - `OPE-259` — follow-up roadmap and gap-analysis refresh
+- Active:
+  - `OPE-260` — scale validation follow-up digest
+  - `OPE-261` — distributed coordination hardening digest
 - Standby:
   - None currently; create the next standby slice after one active item closes.
 
 ## Canonical refill order
 
-1. `OPE-258`
-2. `OPE-259`
+1. `OPE-260`
+2. `OPE-261`
