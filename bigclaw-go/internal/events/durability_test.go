@@ -29,6 +29,18 @@ func TestNewDurabilityPlanForReplicatedTargetIncludesRolloutContract(t *testing.
 	if plan.VerificationEvidence[2].Artifacts[1] != "docs/reports/replicated-event-log-durability-rollout-contract.md" {
 		t.Fatalf("expected rollout contract artifact, got %+v", plan.VerificationEvidence[2])
 	}
+	if len(plan.Comparison) != 4 {
+		t.Fatalf("expected four comparison backends, got %+v", plan.Comparison)
+	}
+	if plan.Comparison[1].Backend != DurabilityBackendSQLite || plan.Comparison[1].Readiness != "comparison_candidate" {
+		t.Fatalf("unexpected sqlite comparison row: %+v", plan.Comparison[1])
+	}
+	if !plan.Comparison[2].SelectedCurrent || plan.Comparison[2].CapabilityProbeBackend != "http" {
+		t.Fatalf("expected http row to be current backend, got %+v", plan.Comparison[2])
+	}
+	if !plan.Comparison[3].SelectedTarget || !plan.Comparison[3].Replicated || plan.Comparison[3].CapabilityProbeStatus != "contract_validated" {
+		t.Fatalf("expected broker row to describe replicated target, got %+v", plan.Comparison[3])
+	}
 }
 
 func TestNewDurabilityPlanWithBrokerConfigIncludesBootstrapStatus(t *testing.T) {

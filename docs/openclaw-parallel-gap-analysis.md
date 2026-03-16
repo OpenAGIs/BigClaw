@@ -42,6 +42,7 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
 
 - `OPE-222` now makes the replicated durability rollout contract explicit in repo-native form:
   - rollout metadata lives in `bigclaw-go/internal/events/durability.go` so debug/control-plane payloads can advertise checks, failure domains, evidence links, and broker bootstrap readiness;
+  - the same file now emits a normalized comparison matrix covering `memory`, `sqlite`, `http`, and `broker_replicated`, so reports and closeout notes can compare current-vs-target durability without rewording backend capability names by hand;
   - `bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md` defines the minimum publish-ack, replay/checkpoint, retention-boundary, and failover expectations before a replicated adapter can be called rollout-ready.
 
 ## Recommended BigClaw parallel mainline

@@ -272,6 +272,12 @@ func TestDebugStatusIncludesEventDurabilityPlan(t *testing.T) {
 	if !strings.Contains(response.Body.String(), "\"rollout_checks\"") {
 		t.Fatalf("expected rollout checks in payload, got %s", response.Body.String())
 	}
+	if !strings.Contains(response.Body.String(), "\"comparison\"") {
+		t.Fatalf("expected comparison matrix in payload, got %s", response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), "\"capability_probe_backend\":\"broker\"") {
+		t.Fatalf("expected broker probe language in payload, got %s", response.Body.String())
+	}
 	if !strings.Contains(response.Body.String(), "\"failure_domains\"") {
 		t.Fatalf("expected failure domains in payload, got %s", response.Body.String())
 	}
