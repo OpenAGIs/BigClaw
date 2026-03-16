@@ -57,5 +57,5 @@ The canonical generated matrix lives in `docs/reports/multi-subscriber-takeover-
 ## Current Result
 
 - The repo now has a generated, reviewable scenario matrix for takeover fault injection instead of an implied TODO.
-- Existing evidence is sufficient to define the report contract, but not yet to execute the takeover scenarios end to end.
+- Existing evidence is sufficient to define the report contract, but not yet to execute the takeover scenarios end to end; see `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
 - The next implementation slice should add lease-aware checkpoint ownership metadata and normalized audit events so the shared multi-node harness can execute this matrix directly.

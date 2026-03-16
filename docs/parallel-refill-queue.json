@@ -7,7 +7,7 @@
     "epic": "OPE-187"
   },
   "policy": {
-    "target_in_progress": 4,
+    "target_in_progress": 0,
     "activate_state_name": "In Progress",
     "activate_state_id": "bd8aafe7-4d8b-41aa-a85b-13e76d49ead7",
     "refill_states": [
@@ -69,14 +69,13 @@
       "OPE-264",
       "OPE-265",
       "OPE-266",
-      "OPE-267"
-    ],
-    "active": [
+      "OPE-267",
       "OPE-268",
       "OPE-269",
       "OPE-270",
       "OPE-271"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -178,25 +177,25 @@
       "identifier": "OPE-268",
       "title": "BIG-PAR-079 production corpus migration coverage digest",
       "track": "Production Corpus Coverage",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-269",
       "title": "BIG-PAR-080 subscriber takeover executability follow-up digest",
       "track": "Takeover Executability",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-270",
       "title": "BIG-PAR-081 cross-process coordination boundary digest",
       "track": "Cross-process Coordination",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-271",
       "title": "BIG-PAR-082 validation bundle continuation digest",
       "track": "Validation Bundle Continuation",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

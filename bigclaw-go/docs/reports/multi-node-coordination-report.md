@@ -25,3 +25,8 @@ This run proves that two independent `bigclawd` processes can share the same SQL
 ## Artifact
 
 - `docs/reports/multi-node-shared-queue-report.json`
+
+## Parallel follow-up digests
+
+- Cross-process coordination caveats are consolidated in `docs/reports/cross-process-coordination-boundary-digest.md`.
+- Validation bundle continuation caveats are consolidated in `docs/reports/validation-bundle-continuation-digest.md`.

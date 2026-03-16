@@ -45,3 +45,4 @@ than a live legacy-vs-Go production traffic comparison; see `docs/reports/live-s
 ## Parallel follow-up digests
 
 - Live shadow traffic comparison caveats are consolidated in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
+- Production corpus coverage caveats are consolidated in `docs/reports/production-corpus-migration-coverage-digest.md`.

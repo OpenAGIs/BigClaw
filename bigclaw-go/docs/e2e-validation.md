@@ -106,7 +106,7 @@ cd bigclaw-go
 python3 scripts/e2e/subscriber_takeover_fault_matrix.py --pretty
 ```
 
-This refreshes `docs/reports/multi-subscriber-takeover-validation-report.json` with the canonical scenario list, expected audit/checkpoint/replay assertions, and the minimum harness outputs the future lease-aware validation run must emit.
+This refreshes `docs/reports/multi-subscriber-takeover-validation-report.json` with the canonical scenario list, expected audit/checkpoint/replay assertions, and the minimum harness outputs the future lease-aware validation run must emit. The remaining executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
 
 Optional toggles:
 

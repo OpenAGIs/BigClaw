@@ -1,0 +1,33 @@
+# Cross-Process Coordination Boundary Digest
+
+## Scope
+
+This digest consolidates the remaining cross-process coordination caveats for `OPE-270` / `BIG-PAR-081`.
+
+## Current Repo-Backed Evidence
+
+- `docs/reports/event-bus-reliability-report.md` captures the current event-bus durability shape and remaining coordination gaps.
+- `docs/reports/multi-node-coordination-report.md` provides the concrete two-node shared-queue proof currently available in-repo.
+- `docs/reports/review-readiness.md` records which distributed coordination claims are already safe to treat as closure-ready.
+- `docs/reports/issue-coverage.md` records the current event-bus and migration evidence plus the remaining follow-up digests.
+- `docs/openclaw-parallel-gap-analysis.md` captures the remaining distributed mainline gaps after the current BigClaw evidence set.
+
+## Reviewer Digest
+
+- The repo has a concrete shared-queue coordination proof, but it does not yet define a broker-backed or partitioned-topic cross-process coordination model.
+- Current coordination evidence is local SQLite-backed sharing, not a durable cross-process subscriber coordination contract.
+- There is no partitioned topic routing model, no broker-backed subscriber ownership model, and no provider-neutral proof for cross-process replay coordination.
+- Cross-process coordination is therefore bounded by the current local proof and roadmap documentation, not by a completed runtime contract.
+
+## Current Blockers
+
+- No partitioned topic model exists yet.
+- No broker-backed cross-process subscriber coordination contract exists yet.
+- No durable backend currently carries subscriber ownership across independent processes or nodes beyond the shared local SQLite proof.
+- No executable evidence bundle yet proves the same coordination guarantees under a replicated transport.
+
+## Lightweight Consistency Check
+
+- Keep this digest aligned with `docs/reports/event-bus-reliability-report.md` and `docs/reports/multi-node-coordination-report.md`.
+- Repeat the `no partitioned topic model` and `no broker-backed cross-process subscriber coordination` caveats anywhere distributed coordination is summarized.
+- When cross-process coordination becomes runtime-complete, update this digest, `docs/reports/review-readiness.md`, and `docs/reports/issue-coverage.md` together.

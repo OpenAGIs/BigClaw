@@ -90,6 +90,94 @@ DIGESTS = {
             Path("docs/openclaw-parallel-gap-analysis.md"),
         ],
     },
+    "OPE-268": {
+        "path": Path("bigclaw-go/docs/reports/production-corpus-migration-coverage-digest.md"),
+        "title": "BIG-PAR-079",
+        "links": [
+            "docs/reports/migration-readiness-report.md",
+            "docs/reports/shadow-matrix-report.json",
+            "docs/reports/shadow-compare-report.json",
+            "docs/migration-shadow.md",
+            "docs/reports/issue-coverage.md",
+        ],
+        "phrases": [
+            "fixture-backed evidence only",
+            "no real production issue/task corpus coverage",
+        ],
+        "indexes": [
+            Path("bigclaw-go/docs/reports/migration-readiness-report.md"),
+            Path("bigclaw-go/docs/migration-shadow.md"),
+            Path("bigclaw-go/docs/reports/review-readiness.md"),
+            Path("bigclaw-go/docs/reports/issue-coverage.md"),
+            Path("docs/openclaw-parallel-gap-analysis.md"),
+        ],
+    },
+    "OPE-269": {
+        "path": Path("bigclaw-go/docs/reports/subscriber-takeover-executability-follow-up-digest.md"),
+        "title": "BIG-PAR-080",
+        "links": [
+            "docs/reports/multi-subscriber-takeover-validation-report.md",
+            "docs/reports/event-bus-reliability-report.md",
+            "docs/reports/issue-coverage.md",
+            "docs/reports/review-readiness.md",
+            "docs/openclaw-parallel-gap-analysis.md",
+        ],
+        "phrases": [
+            "planned matrix only",
+            "not yet executable until lease-aware checkpoint ownership exists",
+        ],
+        "indexes": [
+            Path("bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.md"),
+            Path("bigclaw-go/docs/reports/event-bus-reliability-report.md"),
+            Path("bigclaw-go/docs/reports/review-readiness.md"),
+            Path("bigclaw-go/docs/reports/issue-coverage.md"),
+            Path("docs/openclaw-parallel-gap-analysis.md"),
+            Path("bigclaw-go/docs/e2e-validation.md"),
+        ],
+    },
+    "OPE-270": {
+        "path": Path("bigclaw-go/docs/reports/cross-process-coordination-boundary-digest.md"),
+        "title": "BIG-PAR-081",
+        "links": [
+            "docs/reports/event-bus-reliability-report.md",
+            "docs/reports/multi-node-coordination-report.md",
+            "docs/reports/review-readiness.md",
+            "docs/reports/issue-coverage.md",
+            "docs/openclaw-parallel-gap-analysis.md",
+        ],
+        "phrases": [
+            "no partitioned topic model",
+            "no broker-backed cross-process subscriber coordination",
+        ],
+        "indexes": [
+            Path("bigclaw-go/docs/reports/event-bus-reliability-report.md"),
+            Path("bigclaw-go/docs/reports/multi-node-coordination-report.md"),
+            Path("bigclaw-go/docs/reports/review-readiness.md"),
+            Path("bigclaw-go/docs/reports/issue-coverage.md"),
+            Path("docs/openclaw-parallel-gap-analysis.md"),
+        ],
+    },
+    "OPE-271": {
+        "path": Path("bigclaw-go/docs/reports/validation-bundle-continuation-digest.md"),
+        "title": "BIG-PAR-082",
+        "links": [
+            "docs/reports/live-validation-index.md",
+            "docs/reports/live-validation-summary.json",
+            "docs/reports/multi-node-coordination-report.md",
+            "docs/reports/review-readiness.md",
+            "docs/openclaw-parallel-gap-analysis.md",
+        ],
+        "phrases": [
+            "point-in-time validation bundle only",
+            "continuation across future validation bundles remains manual",
+        ],
+        "indexes": [
+            Path("bigclaw-go/docs/reports/live-validation-index.md"),
+            Path("bigclaw-go/docs/reports/multi-node-coordination-report.md"),
+            Path("bigclaw-go/docs/reports/review-readiness.md"),
+            Path("docs/openclaw-parallel-gap-analysis.md"),
+        ],
+    },
 }
 
 

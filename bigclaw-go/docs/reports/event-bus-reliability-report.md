@@ -133,10 +133,10 @@ This report summarizes the current event bus reliability evidence and the next r
 - Only the SQLite durable consumer dedup backend exists yet; HTTP and broker-backed dedup persistence still need concrete implementations.
 - No delivery acknowledgement protocol exists beyond sink-level best effort.
 - Lease coordination is currently in-memory and single-process; shared multi-node subscriber groups still need a durable backend.
-- No partitioned topic model or broker-backed cross-process subscriber coordination exists yet.
+- No partitioned topic model or broker-backed cross-process subscriber coordination exists yet; see `docs/reports/cross-process-coordination-boundary-digest.md`.
 - Retention watermarks are now exposed for in-memory and durable event-log backends, SQLite-backed logs persist trimmed replay boundaries across restarts, and expired checkpoint resumes now fail closed with explicit reset guidance; the broader compaction semantics remain documented in `docs/reports/replay-retention-semantics-report.md`.
 - Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.
-- Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists.
+- Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists; see `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
 
 ## Replicated rollout contract
 
@@ -154,5 +154,10 @@ This report summarizes the current event bus reliability evidence and the next r
 - Broker-facing runtime knobs are reserved behind `BIGCLAW_EVENT_LOG_*` env vars so a first provider adapter can land without changing publish/replay/checkpoint callers.
 - No durable external event log yet; replay is process-local history.
 - No delivery acknowledgement protocol beyond sink-level best effort.
-- No partitioned topic model or cross-process subscriber coordination yet.
-- Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists.
+- No partitioned topic model or cross-process subscriber coordination yet; see `docs/reports/cross-process-coordination-boundary-digest.md`.
+- Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists; see `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
+
+## Parallel follow-up digests
+
+- `OPE-269` / `BIG-PAR-080` — takeover executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
+- `OPE-270` / `BIG-PAR-081` — cross-process coordination caveats are consolidated in `docs/reports/cross-process-coordination-boundary-digest.md`.
