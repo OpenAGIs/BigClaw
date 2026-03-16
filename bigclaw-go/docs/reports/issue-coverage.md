@@ -39,3 +39,4 @@ This document maps the current local MVP implementation to the Linear rewrite is
 - Benchmark output is local bootstrap evidence, not production-grade capacity certification.
 - When running multiple local smoke processes with the SQLite backend, use separate `BIGCLAW_QUEUE_SQLITE_PATH` and `BIGCLAW_AUDIT_LOG_PATH` values to avoid local file-lock contention.
 - Replay retention, compaction, and aged-out checkpoint semantics for the follow-on parallel durability track are documented in `docs/reports/replay-retention-semantics-report.md` and `docs/openclaw-parallel-gap-analysis.md`.
+- Event-delivery semantics follow-up for durable dedupe, acknowledgement boundaries, and exactly-once caveats is consolidated in `docs/reports/event-delivery-semantics-follow-up-digest.md`.

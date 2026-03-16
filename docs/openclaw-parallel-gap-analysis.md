@@ -35,6 +35,7 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
 
 - Replay retention watermarks are now visible in runtime payloads, SQLite-backed logs now persist trimmed replay boundaries across restarts, expired durable checkpoints now fail closed with reset guidance, and checkpoint resets now leave a persisted operator history trail; memory-only deployments are still bounded by in-process history and broker/quorum retention remains future work.
 - Service-style SQLite and HTTP-backed coordination improve sharing, but replicated broker or quorum-backed durability is still future work.
+- `bigclaw-go/docs/reports/event-delivery-semantics-follow-up-digest.md` is the canonical reviewer-facing digest for durable dedupe, acknowledgement boundaries, and the exactly-once caveat.
 - Downstream consumers still need idempotent handlers and durable dedupe stores; the system remains replay-safe, not globally exactly-once.
 - Parallel validation for Kubernetes, Ray, and shared-queue takeover should continue to be bundled as repo-native evidence.
 

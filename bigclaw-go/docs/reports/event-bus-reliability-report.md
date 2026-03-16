@@ -127,15 +127,22 @@ This report summarizes the current event bus reliability evidence and the next r
 - The first durable bootstrap is SQLite-backed, stores the full normalized dedup record as durable JSON, and indexes state/update timestamps so lifecycle cleanup can evolve without changing caller contracts.
 - Control-plane capability payloads expose `dedup` separately so operators can see whether replay-safe consumers are backed by durable dedup state or process memory only.
 
+## Event delivery follow-up digest
+
+- `docs/reports/event-delivery-semantics-follow-up-digest.md` is the canonical reviewer-facing summary for durable dedupe, delivery acknowledgement boundaries, and the current exactly-once limitations.
+- Replay-safe consumers still need a durable dedupe store keyed by `delivery.idempotency_key` before distributed retries or takeovers can avoid reapplying side effects.
+- No end-to-end delivery acknowledgement protocol exists beyond sink-level best-effort delivery.
+- BigClaw remains replay-safe, not globally exactly-once.
+
 ## Remaining gaps
 
 - No concrete durable external event log exists yet in this checkout; replay still depends on process-local history plus the documented integration plan.
 - Only the SQLite durable consumer dedup backend exists yet; HTTP and broker-backed dedup persistence still need concrete implementations.
-- No delivery acknowledgement protocol exists beyond sink-level best effort.
+- No end-to-end delivery acknowledgement protocol exists beyond sink-level best-effort delivery.
 - Lease coordination is currently in-memory and single-process; shared multi-node subscriber groups still need a durable backend.
 - No partitioned topic model or broker-backed cross-process subscriber coordination exists yet.
 - Retention watermarks are now exposed for in-memory and durable event-log backends, SQLite-backed logs persist trimmed replay boundaries across restarts, and expired checkpoint resumes now fail closed with explicit reset guidance; the broader compaction semantics remain documented in `docs/reports/replay-retention-semantics-report.md`.
-- Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.
+- Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; BigClaw remains replay-safe, not globally exactly-once.
 - Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists.
 
 ## Replicated rollout contract
@@ -153,6 +160,6 @@ This report summarizes the current event bus reliability evidence and the next r
 - `internal/events/memory_log.go` provides the contract-compatible in-memory baseline while BigClaw remains on local fanout.
 - Broker-facing runtime knobs are reserved behind `BIGCLAW_EVENT_LOG_*` env vars so a first provider adapter can land without changing publish/replay/checkpoint callers.
 - No durable external event log yet; replay is process-local history.
-- No delivery acknowledgement protocol beyond sink-level best effort.
+- See `docs/reports/event-delivery-semantics-follow-up-digest.md` for the canonical dedupe, acknowledgement, and exactly-once caveats that still constrain the next adapter.
 - No partitioned topic model or cross-process subscriber coordination yet.
 - Multi-subscriber takeover fault injection is defined only as a planned validation matrix in `docs/reports/multi-subscriber-takeover-validation-report.md` and is not executable until lease-aware checkpoint ownership exists.

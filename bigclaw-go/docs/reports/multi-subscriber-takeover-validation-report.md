@@ -9,6 +9,7 @@ This report captures the planned fault-injection and evidence contract for `OPE-
 - `internal/events/bus.go`
 - `internal/events/bus_test.go`
 - `docs/reports/event-bus-reliability-report.md`
+- `docs/reports/event-delivery-semantics-follow-up-digest.md`
 - `docs/reports/lease-recovery-report.md`
 - `scripts/e2e/multi_node_shared_queue.py`
 - `docs/reports/multi-node-shared-queue-report.json`
@@ -57,5 +58,6 @@ The canonical generated matrix lives in `docs/reports/multi-subscriber-takeover-
 ## Current Result
 
 - The repo now has a generated, reviewable scenario matrix for takeover fault injection instead of an implied TODO.
+- The delivery acknowledgement and exactly-once caveats that constrain takeover interpretation are summarized in `docs/reports/event-delivery-semantics-follow-up-digest.md`.
 - Existing evidence is sufficient to define the report contract, but not yet to execute the takeover scenarios end to end.
 - The next implementation slice should add lease-aware checkpoint ownership metadata and normalized audit events so the shared multi-node harness can execute this matrix directly.
