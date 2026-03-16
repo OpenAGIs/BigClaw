@@ -57,20 +57,19 @@
       "OPE-252",
       "OPE-253",
       "OPE-254",
-      "OPE-255"
-    ],
-    "active": [
+      "OPE-255",
       "OPE-256",
       "OPE-257"
     ],
-    "standby": [
-      "OPE-258"
-    ]
+    "active": [
+      "OPE-258",
+      "OPE-259"
+    ],
+    "standby": []
   },
   "issue_order": [
-    "OPE-256",
-    "OPE-257",
-    "OPE-258"
+    "OPE-258",
+    "OPE-259"
   ],
   "issues": [
     {
@@ -89,19 +88,25 @@
       "identifier": "OPE-256",
       "title": "BIG-PAR-067 scheduler policy and routing closeout refresh",
       "track": "Scheduler Policy Closeout",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-257",
       "title": "BIG-PAR-068 review matrix and closeout navigation refresh",
       "track": "Review & Closeout Navigation",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-258",
       "title": "BIG-PAR-069 remaining hardening gap register refresh",
       "track": "Hardening Gap Register",
-      "status": "Backlog"
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-259",
+      "title": "BIG-PAR-070 follow-up roadmap and gap-analysis refresh",
+      "track": "Roadmap & Gap Analysis",
+      "status": "In Progress"
     }
   ]
 }
