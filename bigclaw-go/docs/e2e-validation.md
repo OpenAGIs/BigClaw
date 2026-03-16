@@ -75,7 +75,7 @@ cd bigclaw-go
 python3 scripts/e2e/validation_bundle_continuation_policy_gate.py --pretty
 ```
 
-This writes `docs/reports/validation-bundle-continuation-policy-gate.json` and currently returns a `hold` because the latest indexed window still lacks repeated `ray` coverage across multiple bundles.
+This writes `docs/reports/validation-bundle-continuation-policy-gate.json` and currently returns `go` for the checked-in evidence window because the latest indexed bundles now include repeated `ray` coverage across multiple runs.
 
 ## Mixed workload matrix
 

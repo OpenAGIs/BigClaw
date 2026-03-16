@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-16T11:15:02.628930Z",
+  "generated_at": "2026-03-16T14:01:58.947345Z",
   "ticket": "BIG-PAR-086-local-prework",
   "title": "Validation bundle continuation scorecard",
   "status": "local-continuation-scorecard",
@@ -8,6 +8,7 @@
     "latest_summary_path": "bigclaw-go/docs/reports/live-validation-summary.json",
     "bundle_root": "bigclaw-go/docs/reports/live-validation-runs",
     "recent_run_summaries": [
+      "bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/summary.json",
       "bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/summary.json",
       "bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/summary.json"
     ],
@@ -15,14 +16,14 @@
     "generator_script": "bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py"
   },
   "summary": {
-    "recent_bundle_count": 2,
-    "latest_run_id": "20260314T164647Z",
+    "recent_bundle_count": 3,
+    "latest_run_id": "20260316T140138Z",
     "latest_status": "succeeded",
-    "latest_bundle_age_hours": 42.47,
+    "latest_bundle_age_hours": 0.0,
     "latest_all_executor_tracks_succeeded": true,
     "recent_bundle_chain_has_no_failures": true,
-    "all_executor_tracks_have_repeated_recent_coverage": false,
-    "bundle_gap_minutes": 12.26,
+    "all_executor_tracks_have_repeated_recent_coverage": true,
+    "bundle_gap_minutes": 2714.85,
     "bundle_root_exists": true
   },
   "executor_lanes": [
@@ -32,11 +33,12 @@
       "latest_status": "succeeded",
       "recent_statuses": [
         "succeeded",
+        "succeeded",
         "succeeded"
       ],
-      "enabled_runs": 2,
-      "succeeded_runs": 2,
-      "consecutive_successes": 2,
+      "enabled_runs": 3,
+      "succeeded_runs": 3,
+      "consecutive_successes": 3,
       "all_recent_runs_succeeded": true
     },
     {
@@ -45,11 +47,12 @@
       "latest_status": "succeeded",
       "recent_statuses": [
         "succeeded",
+        "succeeded",
         "succeeded"
       ],
-      "enabled_runs": 2,
-      "succeeded_runs": 2,
-      "consecutive_successes": 2,
+      "enabled_runs": 3,
+      "succeeded_runs": 3,
+      "consecutive_successes": 3,
       "all_recent_runs_succeeded": true
     },
     {
@@ -58,11 +61,12 @@
       "latest_status": "succeeded",
       "recent_statuses": [
         "succeeded",
+        "succeeded",
         "disabled"
       ],
-      "enabled_runs": 1,
-      "succeeded_runs": 1,
-      "consecutive_successes": 1,
+      "enabled_runs": 2,
+      "succeeded_runs": 2,
+      "consecutive_successes": 2,
       "all_recent_runs_succeeded": true
     }
   ],
@@ -83,17 +87,17 @@
     {
       "name": "recent_bundle_chain_has_multiple_runs",
       "passed": true,
-      "detail": "recent bundle count=2"
+      "detail": "recent bundle count=3"
     },
     {
       "name": "recent_bundle_chain_has_no_failures",
       "passed": true,
-      "detail": "recent bundle statuses=['succeeded', 'succeeded']"
+      "detail": "recent bundle statuses=['succeeded', 'succeeded', 'succeeded']"
     },
     {
       "name": "all_executor_tracks_have_repeated_recent_coverage",
-      "passed": false,
-      "detail": "enabled_runs_by_lane={'local': 2, 'kubernetes': 2, 'ray': 1}"
+      "passed": true,
+      "detail": "enabled_runs_by_lane={'local': 3, 'kubernetes': 3, 'ray': 2}"
     },
     {
       "name": "shared_queue_companion_proof_available",
@@ -109,8 +113,7 @@
   "current_ceiling": [
     "continuation across future validation bundles remains manual",
     "shared-queue coordination proof still lives outside the canonical live validation bundle",
-    "recent history is bounded to the exported bundle index and not an always-on service",
-    "not every executor lane is enabled across every indexed bundle in the current recent window"
+    "recent history is bounded to the exported bundle index and not an always-on service"
   ],
   "next_runtime_hooks": [
     "refresh the continuation scorecard automatically at the end of scripts/e2e/run_all.sh",

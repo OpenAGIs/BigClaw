@@ -18,8 +18,29 @@ def load_gate_module():
 gate = load_gate_module()
 
 
-def test_policy_gate_holds_when_repeated_lane_coverage_is_missing() -> None:
-    report = gate.build_report()
+def test_policy_gate_holds_for_partial_lane_history(tmp_path: Path) -> None:
+    scorecard = {
+        'summary': {
+            'latest_run_id': 'synthetic-run',
+            'latest_bundle_age_hours': 1.5,
+            'recent_bundle_count': 2,
+            'latest_all_executor_tracks_succeeded': True,
+            'recent_bundle_chain_has_no_failures': True,
+            'all_executor_tracks_have_repeated_recent_coverage': False,
+        },
+        'shared_queue_companion': {
+            'available': True,
+            'cross_node_completions': 99,
+            'duplicate_completed_tasks': 0,
+            'duplicate_started_tasks': 0,
+            'mode': 'standalone-proof',
+            'report_path': 'bigclaw-go/docs/reports/multi-node-shared-queue-report.json',
+        },
+    }
+    scorecard_path = tmp_path / 'scorecard.json'
+    scorecard_path.write_text(json.dumps(scorecard), encoding='utf-8')
+
+    report = gate.build_report(scorecard_path=str(scorecard_path))
 
     assert report['status'] == 'policy-hold'
     assert report['recommendation'] == 'hold'
@@ -27,8 +48,29 @@ def test_policy_gate_holds_when_repeated_lane_coverage_is_missing() -> None:
     assert report['summary']['failing_check_count'] == 1
 
 
-def test_policy_gate_can_allow_partial_lane_history() -> None:
-    report = gate.build_report(require_repeated_lane_coverage=False)
+def test_policy_gate_can_allow_partial_lane_history(tmp_path: Path) -> None:
+    scorecard = {
+        'summary': {
+            'latest_run_id': 'synthetic-run',
+            'latest_bundle_age_hours': 1.5,
+            'recent_bundle_count': 2,
+            'latest_all_executor_tracks_succeeded': True,
+            'recent_bundle_chain_has_no_failures': True,
+            'all_executor_tracks_have_repeated_recent_coverage': False,
+        },
+        'shared_queue_companion': {
+            'available': True,
+            'cross_node_completions': 99,
+            'duplicate_completed_tasks': 0,
+            'duplicate_started_tasks': 0,
+            'mode': 'standalone-proof',
+            'report_path': 'bigclaw-go/docs/reports/multi-node-shared-queue-report.json',
+        },
+    }
+    scorecard_path = tmp_path / 'scorecard.json'
+    scorecard_path.write_text(json.dumps(scorecard), encoding='utf-8')
+
+    report = gate.build_report(scorecard_path=str(scorecard_path), require_repeated_lane_coverage=False)
 
     assert report['status'] == 'policy-go'
     assert report['recommendation'] == 'go'
@@ -38,14 +80,14 @@ def test_policy_gate_can_allow_partial_lane_history() -> None:
 def test_checked_in_policy_gate_matches_expected_shape() -> None:
     report = json.loads(Path('bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json').read_text())
 
-    assert report['status'] == 'policy-hold'
-    assert report['recommendation'] == 'hold'
-    assert report['summary']['latest_run_id'] == '20260314T164647Z'
-    assert 'repeated_lane_coverage_meets_policy' in report['failing_checks']
+    assert report['status'] == 'policy-go'
+    assert report['recommendation'] == 'go'
+    assert report['summary']['latest_run_id'] == '20260316T140138Z'
+    assert report['failing_checks'] == []
 
 
-def test_policy_gate_cli_returns_nonzero_for_hold() -> None:
+def test_policy_gate_cli_returns_zero_for_checked_in_go() -> None:
     script = Path('bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py')
     result = subprocess.run([sys.executable, str(script)], check=False, capture_output=True, text=True)
 
-    assert result.returncode == 1
+    assert result.returncode == 0

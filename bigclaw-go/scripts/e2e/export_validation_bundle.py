@@ -24,6 +24,13 @@ CONTINUATION_ARTIFACTS = [
     ),
 ]
 
+FOLLOWUP_DIGESTS = [
+    (
+        'docs/reports/validation-bundle-continuation-digest.md',
+        'Validation bundle continuation caveats are consolidated here.',
+    ),
+]
+
 
 def read_json(path: Path) -> Optional[Any]:
     if not path.exists() or path.stat().st_size == 0:
@@ -168,7 +175,20 @@ def build_continuation_artifacts(root: Path) -> list[tuple[str, str]]:
     return items
 
 
-def render_index(summary: dict[str, Any], recent_runs: list[dict[str, Any]], continuation_artifacts: list[tuple[str, str]] | None = None) -> str:
+def build_followup_digests(root: Path) -> list[tuple[str, str]]:
+    items: list[tuple[str, str]] = []
+    for relpath_value, description in FOLLOWUP_DIGESTS:
+        if (root / relpath_value).exists():
+            items.append((relpath_value, description))
+    return items
+
+
+def render_index(
+    summary: dict[str, Any],
+    recent_runs: list[dict[str, Any]],
+    continuation_artifacts: list[tuple[str, str]] | None = None,
+    followup_digests: list[tuple[str, str]] | None = None,
+) -> str:
     lines = [
         '# Live Validation Index',
         '',
@@ -217,6 +237,11 @@ def render_index(summary: dict[str, Any], recent_runs: list[dict[str, Any]], con
         lines.extend(['## Continuation artifacts', ''])
         for artifact_path, description in continuation_artifacts:
             lines.append(f'- `{artifact_path}` {description}')
+        lines.append('')
+    if followup_digests:
+        lines.extend(['## Parallel follow-up digests', ''])
+        for digest_path, description in followup_digests:
+            lines.append(f'- `{digest_path}` {description}')
         lines.append('')
     return '\n'.join(lines)
 
@@ -301,7 +326,9 @@ def main() -> int:
     manifest = {'latest': summary, 'recent_runs': recent_runs}
     write_json(root / args.manifest_path, manifest)
 
-    index_text = render_index(summary, recent_runs)
+    continuation_artifacts = build_continuation_artifacts(root)
+    followup_digests = build_followup_digests(root)
+    index_text = render_index(summary, recent_runs, continuation_artifacts, followup_digests)
     (root / args.index_path).parent.mkdir(parents=True, exist_ok=True)
     (root / args.index_path).write_text(index_text, encoding='utf-8')
     (bundle_dir / 'README.md').write_text(index_text, encoding='utf-8')
