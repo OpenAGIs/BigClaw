@@ -30,7 +30,8 @@ python3 scripts/migration/shadow_matrix.py \
 ```
 
 This matrix helper runs multiple shadow comparisons back to back and aggregates the
-matched vs mismatched outcomes into one report.
+matched vs mismatched outcomes into one report. It remains fixture-backed evidence rather
+than a live legacy-vs-Go production traffic comparison; see `docs/reports/live-shadow-comparison-follow-up-digest.md`.
 
 ## Expected output
 
@@ -40,3 +41,7 @@ matched vs mismatched outcomes into one report.
 - Shared `trace_id` for both runs
 - Event type sequence diff and simple timeline duration comparison
 - A simple diff summary indicating whether end states matched
+
+## Parallel follow-up digests
+
+- Live shadow traffic comparison caveats are consolidated in `docs/reports/live-shadow-comparison-follow-up-digest.md`.

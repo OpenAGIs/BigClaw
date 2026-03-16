@@ -35,3 +35,8 @@ This note captures the review outcome for the Go rewrite boundary and migration 
 - Migration plan supports shadow validation before cutover.
 - Rollback path is documented and operationally simple.
 - This issue is considered ready for closure from a design-governance perspective.
+
+## Parallel follow-up digests
+
+- `OPE-266` / `BIG-PAR-077` tracks the remaining live shadow traffic comparison caveats in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
+- `OPE-267` / `BIG-PAR-078` tracks the remaining rollback safeguard caveats in `docs/reports/rollback-safeguard-follow-up-digest.md`.

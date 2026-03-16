@@ -26,6 +26,11 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 
 ## Remaining gaps
 
-- Still no live legacy-vs-Go production traffic comparison.
-- No tenant-scoped automated rollback trigger yet.
+- Still no live legacy-vs-Go production traffic comparison; see `docs/reports/live-shadow-comparison-follow-up-digest.md`.
+- No tenant-scoped automated rollback trigger yet; see `docs/reports/rollback-safeguard-follow-up-digest.md`.
 - Matrix currently uses local fixture tasks rather than a production issue/task corpus.
+
+## Parallel follow-up digests
+
+- `OPE-266` / `BIG-PAR-077` — `docs/reports/live-shadow-comparison-follow-up-digest.md`
+- `OPE-267` / `BIG-PAR-078` — `docs/reports/rollback-safeguard-follow-up-digest.md`

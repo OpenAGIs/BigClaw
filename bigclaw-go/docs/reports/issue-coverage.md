@@ -27,6 +27,7 @@ This document maps the current local MVP implementation to the Linear rewrite is
   - Follow-up caveats for external tracing backends, span propagation, telemetry pipeline controls, sampling policy, and high-cardinality handling are tracked in `docs/reports/tracing-backend-follow-up-digest.md` and `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`
 - `OPE-185` / `BIG-GO-010`
   - Covered by `docs/migration.md`, `docs/migration-shadow.md`, `scripts/migration/shadow_compare.py`, `scripts/migration/shadow_matrix.py`, `docs/reports/migration-readiness-report.md`, `docs/reports/shadow-compare-report.json`, and `docs/reports/shadow-matrix-report.json`
+  - Follow-up caveats for live shadow traffic comparison and rollback safeguards are tracked in `docs/reports/live-shadow-comparison-follow-up-digest.md` and `docs/reports/rollback-safeguard-follow-up-digest.md`
 - `OPE-186` / `BIG-GO-011`
   - Covered by `internal/queue/benchmark_test.go`, `internal/scheduler/benchmark_test.go`, `docs/benchmark-plan.md`, `docs/reports/benchmark-report.md`, `docs/reports/benchmark-readiness-report.md`, `docs/reports/benchmark-matrix-report.json`, `docs/reports/long-duration-soak-report.md`, `docs/reports/soak-local-report.json`, `docs/reports/soak-local-50x8.json`, `docs/reports/soak-local-100x12.json`, `docs/reports/soak-local-1000x24.json`, `docs/reports/soak-local-2000x24.json`, `docs/reports/live-validation-summary.json`, `scripts/benchmark/run_suite.sh`, `scripts/benchmark/run_matrix.py`, `scripts/benchmark/soak_local.py`, and `scripts/e2e/run_all.sh`
 
@@ -34,6 +35,8 @@ This document maps the current local MVP implementation to the Linear rewrite is
 
 - `OPE-264` / `BIG-PAR-075` — tracing backend and span-propagation caveats are consolidated in `docs/reports/tracing-backend-follow-up-digest.md`.
 - `OPE-265` / `BIG-PAR-076` — telemetry pipeline, sampling policy, and high-cardinality caveats are consolidated in `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.
+- `OPE-266` / `BIG-PAR-077` — live shadow traffic comparison caveats are consolidated in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
+- `OPE-267` / `BIG-PAR-078` — rollback safeguard caveats are consolidated in `docs/reports/rollback-safeguard-follow-up-digest.md`.
 
 ## Remaining Gaps Before Honest Closure
 

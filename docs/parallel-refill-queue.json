@@ -7,7 +7,7 @@
     "epic": "OPE-187"
   },
   "policy": {
-    "target_in_progress": 6,
+    "target_in_progress": 4,
     "activate_state_name": "In Progress",
     "activate_state_id": "bd8aafe7-4d8b-41aa-a85b-13e76d49ead7",
     "refill_states": [
@@ -67,11 +67,11 @@
       "OPE-262",
       "OPE-263",
       "OPE-264",
-      "OPE-265"
+      "OPE-265",
+      "OPE-266",
+      "OPE-267"
     ],
     "active": [
-      "OPE-266",
-      "OPE-267",
       "OPE-268",
       "OPE-269",
       "OPE-270",
@@ -166,13 +166,13 @@
       "identifier": "OPE-266",
       "title": "BIG-PAR-077 live shadow traffic comparison follow-up digest",
       "track": "Live Shadow Comparison",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-267",
       "title": "BIG-PAR-078 rollback safeguard follow-up digest",
       "track": "Rollback Safeguards",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-268",

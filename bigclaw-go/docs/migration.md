@@ -22,3 +22,9 @@
 - Stop new leases from the Go control plane
 - Hand back eligible tasks to legacy scheduler
 - Keep audit trail and replay logs for every shadow run
+- Current rollback remains operator-driven until the safeguards in `docs/reports/rollback-safeguard-follow-up-digest.md` are implemented
+
+## Parallel follow-up digests
+
+- Live shadow traffic comparison caveats are consolidated in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
+- Rollback safeguard caveats are consolidated in `docs/reports/rollback-safeguard-follow-up-digest.md`.

@@ -31,6 +31,7 @@
 - `OPE-185`
   - Migration evidence includes a shadow matrix across multiple sample tasks with matched terminal states and matched event sequences.
   - Supporting report: `docs/reports/migration-readiness-report.md`.
+  - Follow-up digests capture the remaining live shadow comparison and rollback safeguard caveats in `docs/reports/live-shadow-comparison-follow-up-digest.md` and `docs/reports/rollback-safeguard-follow-up-digest.md`.
 - `OPE-186`
   - Benchmark evidence includes a repeatable matrix runner plus `50x8`, `100x12`, `1000x24`, and `2000x24` soak runs with zero failures.
   - Supporting reports: `docs/reports/benchmark-readiness-report.md`, `docs/reports/benchmark-matrix-report.json`, and `docs/reports/long-duration-soak-report.md`.
@@ -48,3 +49,5 @@
 
 - `OPE-264` / `BIG-PAR-075` — external tracing backend and span-propagation caveats are consolidated in `docs/reports/tracing-backend-follow-up-digest.md`.
 - `OPE-265` / `BIG-PAR-076` — telemetry pipeline, sampling policy, and high-cardinality caveats are consolidated in `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.
+- `OPE-266` / `BIG-PAR-077` — live shadow traffic comparison caveats are consolidated in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
+- `OPE-267` / `BIG-PAR-078` — rollback safeguard caveats are consolidated in `docs/reports/rollback-safeguard-follow-up-digest.md`.
