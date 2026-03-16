@@ -174,7 +174,7 @@ def build_report(
     next_runtime_hooks = [
         'refresh the continuation scorecard automatically at the end of scripts/e2e/run_all.sh',
         'fold shared-queue coordination proof into the same bundle lineage or adjacent bundle metadata',
-        'flag stale bundles and missing executor lanes through workflow-visible policy checks',
+        'wire the continuation policy gate into workflow closeout or scripts/e2e/run_all.sh so it runs automatically',
         'extend the scorecard beyond the latest recent_runs window when more longitudinal evidence exists',
     ]
 

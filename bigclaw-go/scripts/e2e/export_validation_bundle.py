@@ -13,6 +13,17 @@ LATEST_REPORTS = {
     'ray': 'docs/reports/ray-live-smoke-report.json',
 }
 
+CONTINUATION_ARTIFACTS = [
+    (
+        'docs/reports/validation-bundle-continuation-scorecard.json',
+        'summarizes the rolling readiness view across recent bundled local, Kubernetes, and Ray runs plus the shared-queue companion proof.',
+    ),
+    (
+        'docs/reports/validation-bundle-continuation-policy-gate.json',
+        'records the current policy decision for bundle freshness, repeated lane coverage, and shared-queue companion availability.',
+    ),
+]
+
 
 def read_json(path: Path) -> Optional[Any]:
     if not path.exists() or path.stat().st_size == 0:
@@ -149,7 +160,15 @@ def build_recent_runs(bundle_root: Path, root: Path, limit: int = 8) -> list[dic
     return items
 
 
-def render_index(summary: dict[str, Any], recent_runs: list[dict[str, Any]]) -> str:
+def build_continuation_artifacts(root: Path) -> list[tuple[str, str]]:
+    items: list[tuple[str, str]] = []
+    for relpath_value, description in CONTINUATION_ARTIFACTS:
+        if (root / relpath_value).exists():
+            items.append((relpath_value, description))
+    return items
+
+
+def render_index(summary: dict[str, Any], recent_runs: list[dict[str, Any]], continuation_artifacts: list[tuple[str, str]] | None = None) -> str:
     lines = [
         '# Live Validation Index',
         '',
@@ -194,6 +213,11 @@ def render_index(summary: dict[str, Any], recent_runs: list[dict[str, Any]]) -> 
                 f"- `{run['run_id']}` · `{run['status']}` · `{run['generated_at']}` · `{run['bundle_path']}`"
             )
     lines.append('')
+    if continuation_artifacts:
+        lines.extend(['## Continuation artifacts', ''])
+        for artifact_path, description in continuation_artifacts:
+            lines.append(f'- `{artifact_path}` {description}')
+        lines.append('')
     return '\n'.join(lines)
 
 

@@ -39,7 +39,7 @@
 - `OPE-175`
   - Epic-level evidence includes longer-duration soak (`2000x24`), mixed workload validation across `local` / `kubernetes` / `ray`, and a concrete two-node shared-queue coordination proof.
   - Supporting report: `docs/reports/epic-closure-readiness-report.md`.
-  - Follow-up digests capture the remaining cross-process coordination and validation bundle continuation caveats in `docs/reports/cross-process-coordination-boundary-digest.md` and `docs/reports/validation-bundle-continuation-digest.md`, with the current multi-bundle lineage summarized in `docs/reports/validation-bundle-continuation-scorecard.json`.
+  - Follow-up digests capture the remaining cross-process coordination and validation bundle continuation caveats in `docs/reports/cross-process-coordination-boundary-digest.md` and `docs/reports/validation-bundle-continuation-digest.md`, with the current multi-bundle lineage summarized in `docs/reports/validation-bundle-continuation-scorecard.json` and the current gate result captured in `docs/reports/validation-bundle-continuation-policy-gate.json`.
 
 ## Follow-up Hardening
 
@@ -56,4 +56,4 @@
 - `OPE-268` / `BIG-PAR-079` — production corpus coverage caveats are consolidated in `docs/reports/production-corpus-migration-coverage-digest.md`.
 - `OPE-269` / `BIG-PAR-080` — subscriber takeover executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
 - `OPE-270` / `BIG-PAR-081` — cross-process coordination caveats are consolidated in `docs/reports/cross-process-coordination-boundary-digest.md`, with the current surface summarized in `docs/reports/cross-process-coordination-capability-surface.json`.
-- `OPE-271` / `BIG-PAR-082` — validation bundle continuation caveats are consolidated in `docs/reports/validation-bundle-continuation-digest.md`, with the latest multi-bundle lineage summarized in `docs/reports/validation-bundle-continuation-scorecard.json`.
+- `OPE-271` / `BIG-PAR-082` — validation bundle continuation caveats are consolidated in `docs/reports/validation-bundle-continuation-digest.md`, with the latest multi-bundle lineage summarized in `docs/reports/validation-bundle-continuation-scorecard.json` and the latest gate result captured in `docs/reports/validation-bundle-continuation-policy-gate.json`.

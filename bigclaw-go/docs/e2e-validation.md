@@ -68,6 +68,15 @@ python3 scripts/e2e/validation_bundle_continuation_scorecard.py --pretty
 
 This writes `docs/reports/validation-bundle-continuation-scorecard.json`, summarizing the recent bundle lineage plus the current shared-queue companion proof. The scorecard is still manual or workflow-triggered rather than always-on.
 
+You can evaluate the checked-in continuation policy gate as a follow-up:
+
+```bash
+cd bigclaw-go
+python3 scripts/e2e/validation_bundle_continuation_policy_gate.py --pretty
+```
+
+This writes `docs/reports/validation-bundle-continuation-policy-gate.json` and currently returns a `hold` because the latest indexed window still lacks repeated `ray` coverage across multiple bundles.
+
 ## Mixed workload matrix
 
 ```bash

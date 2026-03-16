@@ -41,7 +41,7 @@ This document maps the current local MVP implementation to the Linear rewrite is
 - `OPE-268` / `BIG-PAR-079` — production corpus coverage caveats are consolidated in `docs/reports/production-corpus-migration-coverage-digest.md`.
 - `OPE-269` / `BIG-PAR-080` — subscriber takeover executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
 - `OPE-270` / `BIG-PAR-081` — cross-process coordination caveats are consolidated in `docs/reports/cross-process-coordination-boundary-digest.md`, with the current machine-readable surface in `docs/reports/cross-process-coordination-capability-surface.json`.
-- `OPE-271` / `BIG-PAR-082` — validation bundle continuation caveats are consolidated in `docs/reports/validation-bundle-continuation-digest.md`, with the current multi-bundle lineage summarized in `docs/reports/validation-bundle-continuation-scorecard.json`.
+- `OPE-271` / `BIG-PAR-082` — validation bundle continuation caveats are consolidated in `docs/reports/validation-bundle-continuation-digest.md`, with the current multi-bundle lineage summarized in `docs/reports/validation-bundle-continuation-scorecard.json` and the current gate result captured in `docs/reports/validation-bundle-continuation-policy-gate.json`.
 
 ## Remaining Gaps Before Honest Closure
 
@@ -49,7 +49,7 @@ This document maps the current local MVP implementation to the Linear rewrite is
 - Real `Ray Jobs` REST integration path is implemented and has passed live smoke validation against `ray://127.0.0.1:10001` via the live dashboard Jobs API on `127.0.0.1:8265`.
 - SQLite-backed durable queue support is implemented; higher-scale external store validation is still pending.
 - No dedicated leader-election layer exists yet; current evidence is limited to a local two-node shared-SQLite coordination proof captured in `docs/reports/multi-node-coordination-report.md` plus the repo-native surface summary in `docs/reports/cross-process-coordination-capability-surface.json`.
-- Validation bundle continuation now has a repo-native rolling scorecard in `docs/reports/validation-bundle-continuation-scorecard.json`, but refresh across future bundle generations remains manual.
+- Validation bundle continuation now has a repo-native rolling scorecard in `docs/reports/validation-bundle-continuation-scorecard.json` plus a checked-in policy gate in `docs/reports/validation-bundle-continuation-policy-gate.json`, but refresh and policy execution across future bundle generations remain manual.
 - Multi-subscriber takeover validation now has a deterministic local harness in `docs/reports/multi-subscriber-takeover-validation-report.md`, but a live multi-node subscriber takeover proof is still pending.
 - Benchmark output is local bootstrap evidence, not production-grade capacity certification.
 - When running multiple local smoke processes with the SQLite backend, use separate `BIGCLAW_QUEUE_SQLITE_PATH` and `BIGCLAW_AUDIT_LOG_PATH` values to avoid local file-lock contention.

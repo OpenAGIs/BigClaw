@@ -170,6 +170,8 @@ DIGESTS = {
             "docs/reports/live-validation-summary.json",
             "docs/reports/validation-bundle-continuation-scorecard.json",
             "scripts/e2e/validation_bundle_continuation_scorecard.py",
+            "docs/reports/validation-bundle-continuation-policy-gate.json",
+            "scripts/e2e/validation_bundle_continuation_policy_gate.py",
             "docs/reports/multi-node-coordination-report.md",
             "docs/reports/review-readiness.md",
             "docs/openclaw-parallel-gap-analysis.md",

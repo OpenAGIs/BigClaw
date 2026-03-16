@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-16T11:07:35.871871Z",
+  "generated_at": "2026-03-16T11:15:02.628930Z",
   "ticket": "BIG-PAR-086-local-prework",
   "title": "Validation bundle continuation scorecard",
   "status": "local-continuation-scorecard",
@@ -18,7 +18,7 @@
     "recent_bundle_count": 2,
     "latest_run_id": "20260314T164647Z",
     "latest_status": "succeeded",
-    "latest_bundle_age_hours": 42.34,
+    "latest_bundle_age_hours": 42.47,
     "latest_all_executor_tracks_succeeded": true,
     "recent_bundle_chain_has_no_failures": true,
     "all_executor_tracks_have_repeated_recent_coverage": false,
@@ -115,7 +115,7 @@
   "next_runtime_hooks": [
     "refresh the continuation scorecard automatically at the end of scripts/e2e/run_all.sh",
     "fold shared-queue coordination proof into the same bundle lineage or adjacent bundle metadata",
-    "flag stale bundles and missing executor lanes through workflow-visible policy checks",
+    "wire the continuation policy gate into workflow closeout or scripts/e2e/run_all.sh so it runs automatically",
     "extend the scorecard beyond the latest recent_runs window when more longitudinal evidence exists"
   ]
 }
