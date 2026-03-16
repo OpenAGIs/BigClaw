@@ -53,20 +53,21 @@
       "OPE-246",
       "OPE-247",
       "OPE-250",
-      "OPE-251"
+      "OPE-251",
+      "OPE-253"
     ],
     "active": [
       "OPE-252",
-      "OPE-253"
+      "OPE-254"
     ],
     "standby": [
-      "OPE-254"
+      "OPE-255"
     ]
   },
   "issue_order": [
     "OPE-252",
-    "OPE-253",
-    "OPE-254"
+    "OPE-254",
+    "OPE-255"
   ],
   "issues": [
     {
@@ -76,15 +77,15 @@
       "status": "In Progress"
     },
     {
-      "identifier": "OPE-253",
-      "title": "BIG-PAR-064 control-plane observability evidence refresh",
-      "track": "Observability Evidence",
-      "status": "In Progress"
-    },
-    {
       "identifier": "OPE-254",
       "title": "BIG-PAR-065 long-duration soak and benchmark closeout refresh",
       "track": "Soak & Benchmark Closeout",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-255",
+      "title": "BIG-PAR-066 operations foundation evidence alignment refresh",
+      "track": "Operations Foundation",
       "status": "Backlog"
     }
   ]
