@@ -1,37 +1,37 @@
 {
   "count": 50,
   "workers": 8,
-  "elapsed_seconds": 8.232192993164062,
-  "throughput_tasks_per_sec": 6.0737157208923,
+  "elapsed_seconds": 11.14274001121521,
+  "throughput_tasks_per_sec": 4.4872266560715595,
   "succeeded": 50,
   "failed": 0,
   "sample_status": [
     {
       "events": [
         {
-          "id": "soak-0-1773392442-queued",
+          "id": "soak-0-1773625645-queued",
           "type": "task.queued",
-          "task_id": "soak-0-1773392442",
-          "trace_id": "soak-0-1773392442",
-          "timestamp": "2026-03-13T17:00:45.342539+08:00",
+          "task_id": "soak-0-1773625645",
+          "trace_id": "soak-0-1773625645",
+          "timestamp": "2026-03-16T09:47:31.369827+08:00",
           "payload": {
             "executor": "local",
             "title": "soak task 0"
           }
         },
         {
-          "id": "soak-0-1773392442-leased",
+          "id": "soak-0-1773625645-leased",
           "type": "task.leased",
-          "task_id": "soak-0-1773392442",
-          "trace_id": "soak-0-1773392442",
-          "timestamp": "2026-03-13T17:00:45.487932+08:00"
+          "task_id": "soak-0-1773625645",
+          "trace_id": "soak-0-1773625645",
+          "timestamp": "2026-03-16T09:47:31.387737+08:00"
         },
         {
-          "id": "soak-0-1773392442-routed",
+          "id": "soak-0-1773625645-routed",
           "type": "scheduler.routed",
-          "task_id": "soak-0-1773392442",
-          "trace_id": "soak-0-1773392442",
-          "timestamp": "2026-03-13T17:00:45.487985+08:00",
+          "task_id": "soak-0-1773625645",
+          "trace_id": "soak-0-1773625645",
+          "timestamp": "2026-03-16T09:47:31.388331+08:00",
           "payload": {
             "executor": "local",
             "quota": {
@@ -47,66 +47,88 @@
           }
         },
         {
-          "id": "soak-0-1773392442-started",
+          "id": "soak-0-1773625645-started",
           "type": "task.started",
-          "task_id": "soak-0-1773392442",
-          "trace_id": "soak-0-1773392442",
-          "timestamp": "2026-03-13T17:00:45.488025+08:00",
+          "task_id": "soak-0-1773625645",
+          "trace_id": "soak-0-1773625645",
+          "timestamp": "2026-03-16T09:47:31.388728+08:00",
           "payload": {
-            "executor": "local"
+            "executor": "local",
+            "required_tools": null
           }
         },
         {
-          "id": "soak-0-1773392442-completed",
+          "id": "soak-0-1773625645-completed",
           "type": "task.completed",
-          "task_id": "soak-0-1773392442",
-          "trace_id": "soak-0-1773392442",
-          "timestamp": "2026-03-13T17:00:45.499624+08:00",
+          "task_id": "soak-0-1773625645",
+          "trace_id": "soak-0-1773625645",
+          "timestamp": "2026-03-16T09:47:31.409692+08:00",
           "payload": {
+            "artifacts": [
+              "stdout.log"
+            ],
+            "executor": "local",
+            "finished_at": "2026-03-16T01:47:31Z",
             "message": "local execution completed"
           }
         }
       ],
       "latest_event": {
-        "id": "soak-0-1773392442-completed",
+        "id": "soak-0-1773625645-completed",
         "type": "task.completed",
-        "task_id": "soak-0-1773392442",
-        "trace_id": "soak-0-1773392442",
-        "timestamp": "2026-03-13T17:00:45.499624+08:00",
+        "task_id": "soak-0-1773625645",
+        "trace_id": "soak-0-1773625645",
+        "timestamp": "2026-03-16T09:47:31.409692+08:00",
         "payload": {
+          "artifacts": [
+            "stdout.log"
+          ],
+          "executor": "local",
+          "finished_at": "2026-03-16T01:47:31Z",
           "message": "local execution completed"
         }
       },
       "state": "succeeded",
-      "task_id": "soak-0-1773392442",
-      "trace_id": "soak-0-1773392442"
+      "task": {
+        "id": "soak-0-1773625645",
+        "trace_id": "soak-0-1773625645",
+        "title": "soak task 0",
+        "state": "succeeded",
+        "required_executor": "local",
+        "entrypoint": "echo soak 0",
+        "execution_timeout_seconds": 180,
+        "created_at": "2026-03-16T09:47:31.369827+08:00",
+        "updated_at": "2026-03-16T09:47:31.409692+08:00"
+      },
+      "task_id": "soak-0-1773625645",
+      "trace_id": "soak-0-1773625645"
     },
     {
       "events": [
         {
-          "id": "soak-1-1773392442-queued",
+          "id": "soak-1-1773625645-queued",
           "type": "task.queued",
-          "task_id": "soak-1-1773392442",
-          "trace_id": "soak-1-1773392442",
-          "timestamp": "2026-03-13T17:00:45.343833+08:00",
+          "task_id": "soak-1-1773625645",
+          "trace_id": "soak-1-1773625645",
+          "timestamp": "2026-03-16T09:47:31.369962+08:00",
           "payload": {
             "executor": "local",
             "title": "soak task 1"
           }
         },
         {
-          "id": "soak-1-1773392442-leased",
+          "id": "soak-1-1773625645-leased",
           "type": "task.leased",
-          "task_id": "soak-1-1773392442",
-          "trace_id": "soak-1-1773392442",
-          "timestamp": "2026-03-13T17:00:45.587684+08:00"
+          "task_id": "soak-1-1773625645",
+          "trace_id": "soak-1-1773625645",
+          "timestamp": "2026-03-16T09:47:31.48971+08:00"
         },
         {
-          "id": "soak-1-1773392442-routed",
+          "id": "soak-1-1773625645-routed",
           "type": "scheduler.routed",
-          "task_id": "soak-1-1773392442",
-          "trace_id": "soak-1-1773392442",
-          "timestamp": "2026-03-13T17:00:45.587746+08:00",
+          "task_id": "soak-1-1773625645",
+          "trace_id": "soak-1-1773625645",
+          "timestamp": "2026-03-16T09:47:31.49001+08:00",
           "payload": {
             "executor": "local",
             "quota": {
@@ -122,66 +144,88 @@
           }
         },
         {
-          "id": "soak-1-1773392442-started",
+          "id": "soak-1-1773625645-started",
           "type": "task.started",
-          "task_id": "soak-1-1773392442",
-          "trace_id": "soak-1-1773392442",
-          "timestamp": "2026-03-13T17:00:45.587906+08:00",
+          "task_id": "soak-1-1773625645",
+          "trace_id": "soak-1-1773625645",
+          "timestamp": "2026-03-16T09:47:31.490401+08:00",
           "payload": {
-            "executor": "local"
+            "executor": "local",
+            "required_tools": null
           }
         },
         {
-          "id": "soak-1-1773392442-completed",
+          "id": "soak-1-1773625645-completed",
           "type": "task.completed",
-          "task_id": "soak-1-1773392442",
-          "trace_id": "soak-1-1773392442",
-          "timestamp": "2026-03-13T17:00:45.600043+08:00",
+          "task_id": "soak-1-1773625645",
+          "trace_id": "soak-1-1773625645",
+          "timestamp": "2026-03-16T09:47:31.504516+08:00",
           "payload": {
+            "artifacts": [
+              "stdout.log"
+            ],
+            "executor": "local",
+            "finished_at": "2026-03-16T01:47:31Z",
             "message": "local execution completed"
           }
         }
       ],
       "latest_event": {
-        "id": "soak-1-1773392442-completed",
+        "id": "soak-1-1773625645-completed",
         "type": "task.completed",
-        "task_id": "soak-1-1773392442",
-        "trace_id": "soak-1-1773392442",
-        "timestamp": "2026-03-13T17:00:45.600043+08:00",
+        "task_id": "soak-1-1773625645",
+        "trace_id": "soak-1-1773625645",
+        "timestamp": "2026-03-16T09:47:31.504516+08:00",
         "payload": {
+          "artifacts": [
+            "stdout.log"
+          ],
+          "executor": "local",
+          "finished_at": "2026-03-16T01:47:31Z",
           "message": "local execution completed"
         }
       },
       "state": "succeeded",
-      "task_id": "soak-1-1773392442",
-      "trace_id": "soak-1-1773392442"
+      "task": {
+        "id": "soak-1-1773625645",
+        "trace_id": "soak-1-1773625645",
+        "title": "soak task 1",
+        "state": "succeeded",
+        "required_executor": "local",
+        "entrypoint": "echo soak 1",
+        "execution_timeout_seconds": 180,
+        "created_at": "2026-03-16T09:47:31.369962+08:00",
+        "updated_at": "2026-03-16T09:47:31.504516+08:00"
+      },
+      "task_id": "soak-1-1773625645",
+      "trace_id": "soak-1-1773625645"
     },
     {
       "events": [
         {
-          "id": "soak-2-1773392442-queued",
+          "id": "soak-2-1773625645-queued",
           "type": "task.queued",
-          "task_id": "soak-2-1773392442",
-          "trace_id": "soak-2-1773392442",
-          "timestamp": "2026-03-13T17:00:45.342365+08:00",
+          "task_id": "soak-2-1773625645",
+          "trace_id": "soak-2-1773625645",
+          "timestamp": "2026-03-16T09:47:31.370114+08:00",
           "payload": {
             "executor": "local",
             "title": "soak task 2"
           }
         },
         {
-          "id": "soak-2-1773392442-leased",
+          "id": "soak-2-1773625645-leased",
           "type": "task.leased",
-          "task_id": "soak-2-1773392442",
-          "trace_id": "soak-2-1773392442",
-          "timestamp": "2026-03-13T17:00:45.387886+08:00"
+          "task_id": "soak-2-1773625645",
+          "trace_id": "soak-2-1773625645",
+          "timestamp": "2026-03-16T09:47:31.588449+08:00"
         },
         {
-          "id": "soak-2-1773392442-routed",
+          "id": "soak-2-1773625645-routed",
           "type": "scheduler.routed",
-          "task_id": "soak-2-1773392442",
-          "trace_id": "soak-2-1773392442",
-          "timestamp": "2026-03-13T17:00:45.387974+08:00",
+          "task_id": "soak-2-1773625645",
+          "trace_id": "soak-2-1773625645",
+          "timestamp": "2026-03-16T09:47:31.588514+08:00",
           "payload": {
             "executor": "local",
             "quota": {
@@ -197,39 +241,61 @@
           }
         },
         {
-          "id": "soak-2-1773392442-started",
+          "id": "soak-2-1773625645-started",
           "type": "task.started",
-          "task_id": "soak-2-1773392442",
-          "trace_id": "soak-2-1773392442",
-          "timestamp": "2026-03-13T17:00:45.388025+08:00",
+          "task_id": "soak-2-1773625645",
+          "trace_id": "soak-2-1773625645",
+          "timestamp": "2026-03-16T09:47:31.588549+08:00",
           "payload": {
-            "executor": "local"
+            "executor": "local",
+            "required_tools": null
           }
         },
         {
-          "id": "soak-2-1773392442-completed",
+          "id": "soak-2-1773625645-completed",
           "type": "task.completed",
-          "task_id": "soak-2-1773392442",
-          "trace_id": "soak-2-1773392442",
-          "timestamp": "2026-03-13T17:00:45.39999+08:00",
+          "task_id": "soak-2-1773625645",
+          "trace_id": "soak-2-1773625645",
+          "timestamp": "2026-03-16T09:47:31.600477+08:00",
           "payload": {
+            "artifacts": [
+              "stdout.log"
+            ],
+            "executor": "local",
+            "finished_at": "2026-03-16T01:47:31Z",
             "message": "local execution completed"
           }
         }
       ],
       "latest_event": {
-        "id": "soak-2-1773392442-completed",
+        "id": "soak-2-1773625645-completed",
         "type": "task.completed",
-        "task_id": "soak-2-1773392442",
-        "trace_id": "soak-2-1773392442",
-        "timestamp": "2026-03-13T17:00:45.39999+08:00",
+        "task_id": "soak-2-1773625645",
+        "trace_id": "soak-2-1773625645",
+        "timestamp": "2026-03-16T09:47:31.600477+08:00",
         "payload": {
+          "artifacts": [
+            "stdout.log"
+          ],
+          "executor": "local",
+          "finished_at": "2026-03-16T01:47:31Z",
           "message": "local execution completed"
         }
       },
       "state": "succeeded",
-      "task_id": "soak-2-1773392442",
-      "trace_id": "soak-2-1773392442"
+      "task": {
+        "id": "soak-2-1773625645",
+        "trace_id": "soak-2-1773625645",
+        "title": "soak task 2",
+        "state": "succeeded",
+        "required_executor": "local",
+        "entrypoint": "echo soak 2",
+        "execution_timeout_seconds": 180,
+        "created_at": "2026-03-16T09:47:31.370114+08:00",
+        "updated_at": "2026-03-16T09:47:31.600477+08:00"
+      },
+      "task_id": "soak-2-1773625645",
+      "trace_id": "soak-2-1773625645"
     }
   ]
 }
