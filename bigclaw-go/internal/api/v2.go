@@ -1096,6 +1096,7 @@ func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 		"queue_by_team":    sortedDashboardBreakdowns(queueByTeam),
 		"dead_letters":     limitTasks(filteredDeadLetters, filters.Limit),
 		"active_takeovers": s.filteredActiveTakeovers(filters),
+		"takeover_history": s.filteredTakeoverHistory(filters),
 		"recent_tasks":     overviews,
 		"audit":            auditEntries,
 		"audit_summary":    auditSummary,
@@ -2159,6 +2160,9 @@ func summarizeControlCenter(queueTasks []queueTaskOverview, deadLetters []domain
 }
 
 func (s *Server) filteredActiveTakeovers(filters controlCenterFilters) []control.Takeover {
+	if s.Control == nil {
+		return nil
+	}
 	takeovers := s.Control.ActiveTakeovers()
 	if filters.Team == "" && filters.Project == "" && filters.TaskID == "" && filters.State == "" && filters.RiskLevel == "" && filters.Priority == nil {
 		return takeovers
@@ -2175,6 +2179,35 @@ func (s *Server) filteredActiveTakeovers(filters controlCenterFilters) []control
 		filtered = append(filtered, takeover)
 	}
 	return filtered
+}
+
+func (s *Server) filteredTakeoverHistory(filters controlCenterFilters) []control.Takeover {
+	if s.Control == nil {
+		return nil
+	}
+	takeovers := s.Control.TakeoverHistory()
+	if filters.Team == "" && filters.Project == "" && filters.TaskID == "" && filters.State == "" && filters.RiskLevel == "" && filters.Priority == nil {
+		return limitTakeovers(takeovers, filters.Limit)
+	}
+	filtered := make([]control.Takeover, 0, len(takeovers))
+	for _, takeover := range takeovers {
+		task, ok := s.taskSnapshot(takeover.TaskID)
+		if !ok {
+			continue
+		}
+		if !matchesTaskFilters(task, effectiveTaskState(task.State, &takeover), filters) {
+			continue
+		}
+		filtered = append(filtered, takeover)
+	}
+	return limitTakeovers(filtered, filters.Limit)
+}
+
+func limitTakeovers(takeovers []control.Takeover, limit int) []control.Takeover {
+	if limit <= 0 || len(takeovers) <= limit {
+		return takeovers
+	}
+	return takeovers[:limit]
 }
 
 func (s *Server) controlActionAuditEntries(filters controlCenterFilters, authorization ControlAuthorization) []controlActionAuditEntry {

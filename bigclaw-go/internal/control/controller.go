@@ -194,12 +194,21 @@ func (c *Controller) ActiveTakeovers() []Takeover {
 			out = append(out, cloneTakeover(takeover))
 		}
 	}
-	sort.SliceStable(out, func(i, j int) bool {
-		if out[i].UpdatedAt.Equal(out[j].UpdatedAt) {
-			return out[i].TaskID < out[j].TaskID
+	sortTakeovers(out)
+	return out
+}
+
+func (c *Controller) TakeoverHistory() []Takeover {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	out := make([]Takeover, 0, len(c.takeovers))
+	for _, takeover := range c.takeovers {
+		if !takeover.Active && takeover.StartedAt.IsZero() && takeover.ReleasedAt.IsZero() {
+			continue
 		}
-		return out[i].UpdatedAt.After(out[j].UpdatedAt)
-	})
+		out = append(out, cloneTakeover(takeover))
+	}
+	sortTakeovers(out)
 	return out
 }
 
@@ -225,4 +234,13 @@ func cloneTakeover(takeover Takeover) Takeover {
 		clone.Notes = append([]Note(nil), takeover.Notes...)
 	}
 	return clone
+}
+
+func sortTakeovers(takeovers []Takeover) {
+	sort.SliceStable(takeovers, func(i, j int) bool {
+		if takeovers[i].UpdatedAt.Equal(takeovers[j].UpdatedAt) {
+			return takeovers[i].TaskID < takeovers[j].TaskID
+		}
+		return takeovers[i].UpdatedAt.After(takeovers[j].UpdatedAt)
+	})
 }
