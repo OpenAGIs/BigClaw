@@ -52,7 +52,6 @@ manual operator can refill the next parallel-safe issues in a stable order.
 - Active:
   - `OPE-239` — broker failover evidence bundle export normalization
   - `OPE-240` — durability backend comparison readiness report refresh
-- Standby:
   - `OPE-241` — distributed closure readiness scorecard refresh
 
 ## Canonical refill order

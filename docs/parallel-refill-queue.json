@@ -45,11 +45,10 @@
     ],
     "active": [
       "OPE-239",
-      "OPE-240"
-    ],
-    "standby": [
+      "OPE-240",
       "OPE-241"
-    ]
+    ],
+    "standby": []
   },
   "issue_order": [
     "OPE-239",
@@ -73,7 +72,7 @@
       "identifier": "OPE-241",
       "title": "BIG-PAR-054 distributed closure readiness scorecard refresh",
       "track": "Closure Scorecard",
-      "status": "Todo"
+      "status": "In Progress"
     }
   ]
 }
