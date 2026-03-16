@@ -77,6 +77,14 @@ python3 scripts/e2e/validation_bundle_continuation_policy_gate.py --pretty
 
 This writes `docs/reports/validation-bundle-continuation-policy-gate.json` and currently returns `go` for the checked-in evidence window because the latest indexed bundles now include repeated `ray` coverage across multiple runs. `run_all.sh` refreshes the gate automatically during closeout; set `BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1` if you want a `hold` result to fail the command.
 
+For workflow behavior, prefer `BIGCLAW_E2E_CONTINUATION_GATE_MODE`:
+
+- `review` keeps the gate reviewer-visible but does not fail the workflow on `hold`
+- `hold` exits with code `2` when the evidence is stale or incomplete
+- `fail` exits with code `1` when the evidence is stale or incomplete
+
+`BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1` remains as a compatibility alias for `BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail`. `run_all.sh` now rerenders the bundle README and `docs/reports/live-validation-index.md` after the gate refresh so the exported reviewer surface always reflects the latest gate mode and outcome from the same run.
+
 ## Mixed workload matrix
 
 ```bash

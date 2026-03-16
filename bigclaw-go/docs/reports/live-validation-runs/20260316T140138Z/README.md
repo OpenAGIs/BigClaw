@@ -1,7 +1,7 @@
 # Live Validation Index
 
 - Latest run: `20260316T140138Z`
-- Generated at: `2026-03-16T14:48:42.581505+00:00`
+- Generated at: `2026-03-16T15:54:25.340839+00:00`
 - Status: `succeeded`
 - Bundle: `docs/reports/live-validation-runs/20260316T140138Z`
 - Summary JSON: `docs/reports/live-validation-runs/20260316T140138Z/summary.json`
@@ -61,21 +61,23 @@
 
 ## Recent bundles
 
-- `20260316T140138Z` · `succeeded` · `2026-03-16T14:48:42.581505+00:00` · `docs/reports/live-validation-runs/20260316T140138Z`
+- `20260316T140138Z` · `succeeded` · `2026-03-16T15:54:25.340839+00:00` · `docs/reports/live-validation-runs/20260316T140138Z`
 - `20260314T164647Z` · `succeeded` · `2026-03-14T16:46:57.671520+00:00` · `docs/reports/live-validation-runs/20260314T164647Z`
 - `20260314T163430Z` · `succeeded` · `2026-03-14T16:34:42.080370+00:00` · `docs/reports/live-validation-runs/20260314T163430Z`
-
 
 ## Continuation gate
 
 - Status: `policy-go`
 - Recommendation: `go`
 - Report: `docs/reports/validation-bundle-continuation-policy-gate.json`
+- Workflow mode: `review`
+- Workflow outcome: `pass`
 - Latest reviewed run: `20260316T140138Z`
 - Failing checks: `0`
+- Workflow exit code on current evidence: `0`
 - Reviewer digest: `docs/reports/validation-bundle-continuation-digest.md`
 - Reviewer index: `docs/reports/live-validation-index.md`
-- Next action: `enable BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1 when workflow closeout should fail on continuation regressions`
+- Next action: `set BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail when workflow closeout should stop on continuation regressions`
 
 ## Continuation artifacts
 

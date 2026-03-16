@@ -39,6 +39,7 @@ def build_continuation_gate_summary(root: Path) -> Optional[dict[str, Any]]:
     gate = read_json(gate_path)
     if not isinstance(gate, dict):
         return None
+    enforcement = gate.get('enforcement')
     summary = gate.get('summary')
     reviewer_path = gate.get('reviewer_path')
     next_actions = gate.get('next_actions')
@@ -47,6 +48,7 @@ def build_continuation_gate_summary(root: Path) -> Optional[dict[str, Any]]:
         'status': gate.get('status', 'unknown'),
         'recommendation': gate.get('recommendation', 'unknown'),
         'failing_checks': gate.get('failing_checks', []),
+        'enforcement': enforcement if isinstance(enforcement, dict) else {},
         'summary': summary if isinstance(summary, dict) else {},
         'reviewer_path': reviewer_path if isinstance(reviewer_path, dict) else {},
         'next_actions': next_actions if isinstance(next_actions, list) else [],
@@ -324,11 +326,18 @@ def render_index(
         lines.append(f"- Status: `{continuation_gate['status']}`")
         lines.append(f"- Recommendation: `{continuation_gate['recommendation']}`")
         lines.append(f"- Report: `{continuation_gate['path']}`")
+        enforcement = continuation_gate.get('enforcement', {})
+        if enforcement.get('mode'):
+            lines.append(f"- Workflow mode: `{enforcement['mode']}`")
+        if enforcement.get('outcome'):
+            lines.append(f"- Workflow outcome: `{enforcement['outcome']}`")
         gate_summary = continuation_gate.get('summary', {})
         if gate_summary.get('latest_run_id'):
             lines.append(f"- Latest reviewed run: `{gate_summary['latest_run_id']}`")
         if 'failing_check_count' in gate_summary:
             lines.append(f"- Failing checks: `{gate_summary['failing_check_count']}`")
+        if 'workflow_exit_code' in gate_summary:
+            lines.append(f"- Workflow exit code on current evidence: `{gate_summary['workflow_exit_code']}`")
         reviewer_path = continuation_gate.get('reviewer_path', {})
         if reviewer_path.get('digest_path'):
             lines.append(f"- Reviewer digest: `{reviewer_path['digest_path']}`")
