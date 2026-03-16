@@ -30,6 +30,21 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
     write_json(bundle / 'ray-live-smoke-report.json', {'task': {'id': 'ray-1'}, 'status': {'state': 'succeeded'}})
 
     (root / 'docs' / 'reports').mkdir(parents=True, exist_ok=True)
+    write_json(
+        root / 'docs' / 'reports' / 'multi-node-shared-queue-report.json',
+        {
+            'generated_at': '2026-03-15T11:55:00Z',
+            'count': 12,
+            'submitted_by_node': {'node-a': 6, 'node-b': 6},
+            'completed_by_node': {'node-a': 5, 'node-b': 7},
+            'cross_node_completions': 4,
+            'duplicate_started_tasks': [],
+            'duplicate_completed_tasks': [],
+            'missing_completed_tasks': [],
+            'all_ok': True,
+            'nodes': [{'name': 'node-a'}, {'name': 'node-b'}],
+        },
+    )
     (root / 'docs' / 'reports' / 'validation-bundle-continuation-scorecard.json').write_text('{}\n', encoding='utf-8')
     (root / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json').write_text('{}\n', encoding='utf-8')
     (root / 'docs' / 'reports' / 'validation-bundle-continuation-digest.md').write_text('# digest\n', encoding='utf-8')
@@ -87,18 +102,31 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
     assert summary['local']['canonical_report_path'] == 'docs/reports/sqlite-smoke-report.json'
     assert summary['local']['audit_log_path'].endswith('local.audit.jsonl')
     assert summary['local']['service_log_path'].endswith('local.service.log')
+    assert summary['shared_queue_companion']['status'] == 'succeeded'
+    assert summary['shared_queue_companion']['cross_node_completions'] == 4
+    assert summary['shared_queue_companion']['canonical_summary_path'] == 'docs/reports/shared-queue-companion-summary.json'
+    assert summary['shared_queue_companion']['bundle_summary_path'].endswith('shared-queue-companion-summary.json')
 
     latest_local = json.loads((root / 'docs' / 'reports' / 'sqlite-smoke-report.json').read_text(encoding='utf-8'))
     assert latest_local['task']['id'] == 'local-1'
+    shared_queue_summary = json.loads(
+        (root / 'docs' / 'reports' / 'shared-queue-companion-summary.json').read_text(encoding='utf-8')
+    )
+    assert shared_queue_summary['nodes'] == ['node-a', 'node-b']
+    assert shared_queue_summary['bundle_report_path'].endswith('multi-node-shared-queue-report.json')
 
     index_text = (root / 'docs' / 'reports' / 'live-validation-index.md').read_text(encoding='utf-8')
     assert 'Live Validation Index' in index_text
     assert '20260315T120000Z' in index_text
     assert 'docs/reports/live-validation-runs/20260315T120000Z' in index_text
+    assert 'shared-queue companion' in index_text
+    assert 'docs/reports/shared-queue-companion-summary.json' in index_text
+    assert 'docs/reports/multi-node-shared-queue-report.json' in index_text
     assert 'docs/reports/validation-bundle-continuation-scorecard.json' in index_text
     assert 'docs/reports/validation-bundle-continuation-policy-gate.json' in index_text
     assert 'docs/reports/validation-bundle-continuation-digest.md' in index_text
 
     manifest = json.loads((root / 'docs' / 'reports' / 'live-validation-index.json').read_text(encoding='utf-8'))
     assert manifest['latest']['run_id'] == '20260315T120000Z'
+    assert manifest['latest']['shared_queue_companion']['nodes'] == ['node-a', 'node-b']
     assert manifest['recent_runs'][0]['run_id'] == '20260315T120000Z'
