@@ -74,6 +74,8 @@ python3 scripts/e2e/mixed_workload_matrix.py \
 
 This validates one control-plane instance against a more production-like mix of `local`, tool-routed `kubernetes`, tool-routed `ray`, and high-risk isolation scenarios.
 
+The command refreshes the latest summary at `docs/reports/mixed-workload-matrix-report.json` and writes a timestamped evidence bundle under `docs/reports/mixed-workload-runs/<run-id>/` with per-scenario drilldowns, a bundle README, and copied service or audit artifacts when autostart is used.
+
 ## Multi-node shared queue proof
 
 ```bash
