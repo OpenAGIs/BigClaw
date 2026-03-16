@@ -15,7 +15,7 @@ manual operator can refill the next parallel-safe issues in a stable order.
 
 ## Policy
 
-- Keep at least `2` issues in `In Progress`.
+- Keep at least `6` issues in `In Progress` for the current high-throughput batch.
 - Promote only issues currently in `Backlog` or `Todo`.
 - Use the queue order below as the single source of truth for refill priority.
 - Every substantive code-bearing update must be committed and pushed to GitHub immediately, with local/remote SHA equality verification after each push.
@@ -71,13 +71,26 @@ manual operator can refill the next parallel-safe issues in a stable order.
   - `OPE-259` — follow-up roadmap and gap-analysis refresh
   - `OPE-260` — scale validation follow-up digest
   - `OPE-261` — distributed coordination hardening digest
-- Active:
   - `OPE-262` — event delivery semantics follow-up digest
   - `OPE-263` — retention and external-store follow-up digest
+- Active:
+  - `OPE-264` — observability tracing backend follow-up digest
+  - `OPE-265` — telemetry pipeline controls follow-up digest
+  - `OPE-266` — live shadow traffic comparison follow-up digest
+  - `OPE-267` — rollback safeguard follow-up digest
+  - `OPE-268` — production corpus migration coverage digest
+  - `OPE-269` — subscriber takeover executability follow-up digest
 - Standby:
-  - None currently; create the next standby slice after one active item closes.
+  - `OPE-270` — cross-process coordination boundary digest
+  - `OPE-271` — validation bundle continuation digest
 
 ## Canonical refill order
 
-1. `OPE-262`
-2. `OPE-263`
+1. `OPE-264`
+2. `OPE-265`
+3. `OPE-266`
+4. `OPE-267`
+5. `OPE-268`
+6. `OPE-269`
+7. `OPE-270`
+8. `OPE-271`

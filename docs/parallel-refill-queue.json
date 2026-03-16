@@ -7,7 +7,7 @@
     "epic": "OPE-187"
   },
   "policy": {
-    "target_in_progress": 2,
+    "target_in_progress": 6,
     "activate_state_name": "In Progress",
     "activate_state_id": "bd8aafe7-4d8b-41aa-a85b-13e76d49ead7",
     "refill_states": [
@@ -63,17 +63,32 @@
       "OPE-258",
       "OPE-259",
       "OPE-260",
-      "OPE-261"
-    ],
-    "active": [
+      "OPE-261",
       "OPE-262",
       "OPE-263"
     ],
-    "standby": []
+    "active": [
+      "OPE-264",
+      "OPE-265",
+      "OPE-266",
+      "OPE-267",
+      "OPE-268",
+      "OPE-269"
+    ],
+    "standby": [
+      "OPE-270",
+      "OPE-271"
+    ]
   },
   "issue_order": [
-    "OPE-262",
-    "OPE-263"
+    "OPE-264",
+    "OPE-265",
+    "OPE-266",
+    "OPE-267",
+    "OPE-268",
+    "OPE-269",
+    "OPE-270",
+    "OPE-271"
   ],
   "issues": [
     {
@@ -128,13 +143,61 @@
       "identifier": "OPE-262",
       "title": "BIG-PAR-073 event delivery semantics follow-up digest",
       "track": "Delivery Semantics Follow-up",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-263",
       "title": "BIG-PAR-074 retention and external-store follow-up digest",
       "track": "Retention & External Store",
+      "status": "Done"
+    },
+    {
+      "identifier": "OPE-264",
+      "title": "BIG-PAR-075 observability tracing backend follow-up digest",
+      "track": "Tracing Backend Follow-up",
       "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-265",
+      "title": "BIG-PAR-076 telemetry pipeline controls follow-up digest",
+      "track": "Telemetry Controls Follow-up",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-266",
+      "title": "BIG-PAR-077 live shadow traffic comparison follow-up digest",
+      "track": "Live Shadow Comparison",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-267",
+      "title": "BIG-PAR-078 rollback safeguard follow-up digest",
+      "track": "Rollback Safeguards",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-268",
+      "title": "BIG-PAR-079 production corpus migration coverage digest",
+      "track": "Production Corpus Coverage",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-269",
+      "title": "BIG-PAR-080 subscriber takeover executability follow-up digest",
+      "track": "Takeover Executability",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-270",
+      "title": "BIG-PAR-081 cross-process coordination boundary digest",
+      "track": "Cross-process Coordination",
+      "status": "Backlog"
+    },
+    {
+      "identifier": "OPE-271",
+      "title": "BIG-PAR-082 validation bundle continuation digest",
+      "track": "Validation Bundle Continuation",
+      "status": "Backlog"
     }
   ]
 }
