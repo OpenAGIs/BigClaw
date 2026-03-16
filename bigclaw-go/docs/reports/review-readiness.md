@@ -32,13 +32,13 @@
   - Supporting report: `docs/reports/migration-readiness-report.md`.
 - `OPE-186`
   - Benchmark evidence includes a repeatable matrix runner plus `50x8`, `100x12`, `1000x24`, and `2000x24` soak runs with zero failures.
-  - Supporting reports: `docs/reports/benchmark-readiness-report.md`, `docs/reports/benchmark-matrix-report.json`, and `docs/reports/long-duration-soak-report.md`.
+  - Supporting reports: `docs/reports/benchmark-readiness-report.md`, `docs/reports/benchmark-matrix-report.json`, `docs/reports/long-duration-soak-report.md`, and `docs/reports/scale-validation-follow-up-digest.md`.
 - `OPE-175`
   - Epic-level evidence includes longer-duration soak (`2000x24`), mixed workload validation across `local` / `kubernetes` / `ray`, and a concrete two-node shared-queue coordination proof.
   - Supporting report: `docs/reports/epic-closure-readiness-report.md`.
 
 ## Follow-up Hardening
 
-- Production-grade capacity certification can remain a follow-up track beyond the current rewrite closure.
+- `docs/reports/scale-validation-follow-up-digest.md` consolidates the remaining scale follow-up, including the `10k` queue matrix expansion path, the local `2000x24` soak context, and the production-grade capacity certification caveat.
 - No dedicated leader-election layer exists yet; current evidence is limited to a local two-node shared-SQLite coordination proof.
 - Higher-scale external-store validation is still pending beyond the current SQLite-backed scope.

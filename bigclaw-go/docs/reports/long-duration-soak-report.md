@@ -20,3 +20,7 @@ This run adds a same-day longer-duration local soak to the existing benchmark pa
 ## Artifact
 
 - `docs/reports/soak-local-2000x24.json`
+
+## Follow-Up Digest
+
+- `docs/reports/scale-validation-follow-up-digest.md` consolidates this local `2000x24` soak proof with the remaining queue and capacity-certification follow-up caveats.

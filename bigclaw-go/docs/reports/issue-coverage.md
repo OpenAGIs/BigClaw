@@ -34,6 +34,7 @@ This document maps the current local MVP implementation to the Linear rewrite is
 - Real `Kubernetes` API integration path is implemented and has passed live smoke validation against `kind-ray-local` using `KUBECONFIG=/Users/jxrt/.kube/ray-local-config`.
 - Real `Ray Jobs` REST integration path is implemented and has passed live smoke validation against `ray://127.0.0.1:10001` via the live dashboard Jobs API on `127.0.0.1:8265`.
 - SQLite-backed durable queue support is implemented; higher-scale external store validation is still pending.
+- `docs/reports/scale-validation-follow-up-digest.md` consolidates the remaining scale-validation caveats across the `10k` queue matrix follow-up, the local `2000x24` soak proof, and the production-grade capacity certification gap.
 - No dedicated leader-election layer exists yet; current evidence is limited to a local two-node shared-SQLite coordination proof captured in `docs/reports/multi-node-coordination-report.md`.
 - Multi-subscriber takeover validation is planned in `docs/reports/multi-subscriber-takeover-validation-report.md`, but the underlying lease-aware subscriber-group checkpoint coordination is still pending.
 - Benchmark output is local bootstrap evidence, not production-grade capacity certification.

@@ -40,3 +40,7 @@ Every sampled task reached `task.completed`, preserved `trace_id`, and emitted `
 ## Readiness
 
 `OPE-186` now has a reproducible local matrix runner, refreshed queue/scheduler benchmark output, and four soak proof points with zero failures, including a `1k+` burst and a longer `2000x24` run. This is enough to close the current benchmark scope in Linear, while production-grade capacity certification can remain follow-up hardening work.
+
+## Follow-Up Digest
+
+- `docs/reports/scale-validation-follow-up-digest.md` consolidates the remaining queue matrix expansion, capacity-certification caveat, and longer-duration soak reviewer path.

@@ -26,3 +26,7 @@ This report summarizes the current reliability evidence for the Go queue layer a
 - Lease recovery and replay paths are directly testable and inspectable through the API.
 - The queue layer is materially closer to the original reliability target and is ready for another review pass.
 - A larger `10k` reliability matrix is still a reasonable next follow-up if stricter closure criteria are desired.
+
+## Follow-Up Digest
+
+- `docs/reports/scale-validation-follow-up-digest.md` consolidates the remaining queue scale follow-up with the benchmark and longer-duration soak caveats.
