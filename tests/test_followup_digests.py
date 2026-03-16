@@ -168,18 +168,21 @@ DIGESTS = {
         "links": [
             "docs/reports/live-validation-index.md",
             "docs/reports/live-validation-summary.json",
+            "docs/reports/validation-bundle-continuation-scorecard.json",
+            "scripts/e2e/validation_bundle_continuation_scorecard.py",
             "docs/reports/multi-node-coordination-report.md",
             "docs/reports/review-readiness.md",
             "docs/openclaw-parallel-gap-analysis.md",
         ],
         "phrases": [
-            "point-in-time validation bundle only",
+            "rolling continuation scorecard",
             "continuation across future validation bundles remains manual",
         ],
         "indexes": [
             Path("bigclaw-go/docs/reports/live-validation-index.md"),
             Path("bigclaw-go/docs/reports/multi-node-coordination-report.md"),
             Path("bigclaw-go/docs/reports/review-readiness.md"),
+            Path("bigclaw-go/docs/reports/issue-coverage.md"),
             Path("docs/openclaw-parallel-gap-analysis.md"),
         ],
     },

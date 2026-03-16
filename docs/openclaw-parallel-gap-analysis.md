@@ -63,4 +63,4 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
 - `OPE-268` / `BIG-PAR-079` tracks the remaining production corpus migration coverage caveats in `bigclaw-go/docs/reports/production-corpus-migration-coverage-digest.md`.
 - `OPE-269` / `BIG-PAR-080` tracks the remaining subscriber takeover executability caveats in `bigclaw-go/docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
 - `OPE-270` / `BIG-PAR-081` tracks the remaining cross-process coordination caveats in `bigclaw-go/docs/reports/cross-process-coordination-boundary-digest.md`.
-- `OPE-271` / `BIG-PAR-082` tracks the remaining validation bundle continuation caveats in `bigclaw-go/docs/reports/validation-bundle-continuation-digest.md`.
+- `OPE-271` / `BIG-PAR-082` tracks the remaining validation bundle continuation caveats in `bigclaw-go/docs/reports/validation-bundle-continuation-digest.md`, with the current local lineage overlay summarized in `bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json`.

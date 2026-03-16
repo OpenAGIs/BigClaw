@@ -52,6 +52,10 @@
 - `20260314T164647Z` · `succeeded` · `2026-03-14T16:46:57.671520+00:00` · `docs/reports/live-validation-runs/20260314T164647Z`
 - `20260314T163430Z` · `succeeded` · `2026-03-14T16:34:42.080370+00:00` · `docs/reports/live-validation-runs/20260314T163430Z`
 
+## Continuation scorecard
+
+- `docs/reports/validation-bundle-continuation-scorecard.json` summarizes the rolling readiness view across recent bundled local, Kubernetes, and Ray runs plus the shared-queue companion proof.
+
 ## Parallel follow-up digests
 
 - Validation bundle continuation caveats are consolidated in `docs/reports/validation-bundle-continuation-digest.md`.

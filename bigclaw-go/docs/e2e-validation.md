@@ -59,6 +59,15 @@ export BIGCLAW_QUEUE_BACKEND=sqlite
 
 The script writes a consolidated summary to `docs/reports/live-validation-summary.json`, refreshes the canonical component reports for local, Kubernetes, and Ray validation, and creates a timestamped bundle plus index under `docs/reports/live-validation-runs/` and `docs/reports/live-validation-index.md`.
 
+You can then refresh the rolling continuation overlay from the checked-in bundle evidence:
+
+```bash
+cd bigclaw-go
+python3 scripts/e2e/validation_bundle_continuation_scorecard.py --pretty
+```
+
+This writes `docs/reports/validation-bundle-continuation-scorecard.json`, summarizing the recent bundle lineage plus the current shared-queue companion proof. The scorecard is still manual or workflow-triggered rather than always-on.
+
 ## Mixed workload matrix
 
 ```bash

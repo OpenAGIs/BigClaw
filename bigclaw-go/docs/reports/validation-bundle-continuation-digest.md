@@ -2,32 +2,34 @@
 
 ## Scope
 
-This digest consolidates the remaining validation-bundle continuation caveats for `OPE-271` / `BIG-PAR-082`.
+This digest consolidates the remaining validation-bundle continuation caveats for `OPE-271` / `BIG-PAR-082`, with the current local scorecard prework captured under `BIG-PAR-086`.
 
 ## Current Repo-Backed Evidence
 
 - `docs/reports/live-validation-index.md` records the latest bundled local, Kubernetes, and Ray validation artifacts.
 - `docs/reports/live-validation-summary.json` captures the latest bundle summary and closeout commands.
+- `docs/reports/validation-bundle-continuation-scorecard.json` adds a rolling continuation scorecard across recent bundle generations plus the shared-queue companion proof.
+- `scripts/e2e/validation_bundle_continuation_scorecard.py` regenerates the scorecard from checked-in bundle summaries and shared-queue evidence.
 - `docs/reports/multi-node-coordination-report.md` captures the current shared-queue coordination proof that complements the validation bundle.
 - `docs/reports/review-readiness.md` records which validation claims are already closure-safe.
 - `docs/openclaw-parallel-gap-analysis.md` captures the remaining mainline gap between current evidence and future distributed validation continuation.
 
 ## Reviewer Digest
 
-- The repo has a point-in-time validation bundle, but continuation across future local, Kubernetes, Ray, and shared-queue evidence runs is still manual.
-- The current live validation index shows the latest successful bundle, but it does not provide an ongoing continuation scorecard across multiple bundle generations.
-- Shared-queue coordination evidence exists as a separate proof and is not yet folded into one continuing validation bundle contract.
-- Validation continuation is therefore reviewable as a documented bundle pattern, not yet as an always-on longitudinal evidence surface.
+- The repo now has a rolling continuation scorecard that compares the most recent bundled local, Kubernetes, and Ray validation runs and carries forward the current shared-queue companion proof.
+- The current continuation window is still partial: the latest bundle exercises all three executor lanes, but not every indexed bundle carries every executor lane yet.
+- Validation continuation across future validation bundles remains manual because bundle export and scorecard refresh still require operator or workflow execution.
+- The continuation scorecard is therefore a repo-native longitudinal readiness overlay, not yet an always-on validation service.
 
 ## Current Blockers
 
-- No single continuation digest yet aggregates successive validation bundles over time.
-- No unified bundle scorecard ties local, Kubernetes, Ray, and shared-queue evidence into one rolling readiness view.
-- No automated policy currently flags stale bundle generations or missing executor tracks.
-- No repo-native continuation report yet captures how the latest bundle compares against prior distributed validation runs.
+- Not every executor lane is enabled across every currently indexed bundle, so the scorecard distinguishes latest-success proof from repeated multi-bundle lane continuity.
+- No automatic policy currently flags stale bundles or missing executor lanes during ordinary development workflows.
+- Shared-queue coordination evidence is still maintained as a separate proof instead of living inside the same bundle contract.
+- Longitudinal history is bounded to the exported bundle index window and not a continuously retained validation service.
 
 ## Lightweight Consistency Check
 
-- Keep this digest aligned with `docs/reports/live-validation-index.md`, `docs/reports/live-validation-summary.json`, and `docs/reports/multi-node-coordination-report.md`.
-- Repeat the `point-in-time validation bundle only` and `continuation across future validation bundles remains manual` caveats anywhere distributed validation is summarized.
-- When a rolling validation continuation surface lands, update this digest, `docs/reports/review-readiness.md`, and `docs/openclaw-parallel-gap-analysis.md` together.
+- Keep this digest aligned with `docs/reports/live-validation-index.md`, `docs/reports/live-validation-summary.json`, `docs/reports/validation-bundle-continuation-scorecard.json`, and `docs/reports/multi-node-coordination-report.md`.
+- Repeat the `rolling continuation scorecard` and `continuation across future validation bundles remains manual` caveats anywhere distributed validation is summarized.
+- When an always-on continuation surface lands, update this digest, `docs/reports/review-readiness.md`, and `docs/openclaw-parallel-gap-analysis.md` together.
