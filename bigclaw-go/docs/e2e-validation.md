@@ -108,6 +108,17 @@ python3 scripts/e2e/subscriber_takeover_fault_matrix.py --pretty
 
 This refreshes `docs/reports/multi-subscriber-takeover-validation-report.json` with three deterministic local takeover scenarios, owner timelines, checkpoint transitions, duplicate replay accounting, and stale-writer rejection counts. The remaining live multi-node executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
 
+## Cross-process coordination capability surface
+
+Use this to regenerate the machine-readable coordination surface that ties together the current shared-queue proof, the deterministic takeover harness, and the contract-defined broker-backed target.
+
+```bash
+cd bigclaw-go
+python3 scripts/e2e/cross_process_coordination_surface.py --pretty
+```
+
+This refreshes `docs/reports/cross-process-coordination-capability-surface.json` with the current live local proof metrics, takeover harness summary, capability-by-capability state, and the next runtime hooks for a real distributed coordination proof.
+
 Optional toggles:
 
 ```bash

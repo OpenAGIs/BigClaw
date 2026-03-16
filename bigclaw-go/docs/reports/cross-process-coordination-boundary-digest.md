@@ -8,15 +8,17 @@ This digest consolidates the remaining cross-process coordination caveats for `O
 
 - `docs/reports/event-bus-reliability-report.md` captures the current event-bus durability shape and remaining coordination gaps.
 - `docs/reports/multi-node-coordination-report.md` provides the concrete two-node shared-queue proof currently available in-repo.
+- `docs/reports/cross-process-coordination-capability-surface.json` adds a machine-readable capability surface tying together live local proof, deterministic local harnesses, and contract-defined targets.
 - `docs/reports/review-readiness.md` records which distributed coordination claims are already safe to treat as closure-ready.
 - `docs/reports/issue-coverage.md` records the current event-bus and migration evidence plus the remaining follow-up digests.
 - `docs/openclaw-parallel-gap-analysis.md` captures the remaining distributed mainline gaps after the current BigClaw evidence set.
 
 ## Reviewer Digest
 
+- The repo now has a machine-readable coordination capability surface that distinguishes what is implemented as live local proof, what is executable only in deterministic local harnesses, and what remains contract-defined for future rollout.
 - The repo has a concrete shared-queue coordination proof, but it does not yet define a broker-backed or partitioned-topic cross-process coordination model.
-- Current coordination evidence is local SQLite-backed sharing, not a durable cross-process subscriber coordination contract.
-- There is no partitioned topic routing model, no broker-backed subscriber ownership model, and no provider-neutral proof for cross-process replay coordination.
+- Current coordination evidence is still bounded by local SQLite-backed sharing plus deterministic local takeover harnesses, not a durable broker-backed cross-process subscriber coordination contract.
+- There is no partitioned topic routing model, no broker-backed subscriber ownership model, and no provider-neutral live proof for cross-process replay coordination.
 - Cross-process coordination is therefore bounded by the current local proof and roadmap documentation, not by a completed runtime contract.
 
 ## Current Blockers
@@ -28,6 +30,6 @@ This digest consolidates the remaining cross-process coordination caveats for `O
 
 ## Lightweight Consistency Check
 
-- Keep this digest aligned with `docs/reports/event-bus-reliability-report.md` and `docs/reports/multi-node-coordination-report.md`.
+- Keep this digest aligned with `docs/reports/event-bus-reliability-report.md`, `docs/reports/multi-node-coordination-report.md`, `docs/reports/cross-process-coordination-capability-surface.json`, and `scripts/e2e/cross_process_coordination_surface.py`.
 - Repeat the `no partitioned topic model` and `no broker-backed cross-process subscriber coordination` caveats anywhere distributed coordination is summarized.
 - When cross-process coordination becomes runtime-complete, update this digest, `docs/reports/review-readiness.md`, and `docs/reports/issue-coverage.md` together.

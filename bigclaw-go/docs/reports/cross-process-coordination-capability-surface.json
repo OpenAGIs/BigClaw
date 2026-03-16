@@ -1,0 +1,115 @@
+{
+  "generated_at": "2026-03-16T10:47:43.795092Z",
+  "ticket": "BIG-PAR-085-local-prework",
+  "title": "Cross-process coordination capability surface",
+  "status": "local-capability-surface",
+  "evidence_inputs": {
+    "shared_queue_report": "bigclaw-go/docs/reports/multi-node-shared-queue-report.json",
+    "takeover_harness_report": "bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json",
+    "supporting_docs": [
+      "bigclaw-go/docs/reports/event-bus-reliability-report.md",
+      "bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md",
+      "bigclaw-go/docs/reports/broker-event-log-adapter-contract.md"
+    ]
+  },
+  "summary": {
+    "shared_queue_total_tasks": 200,
+    "shared_queue_cross_node_completions": 99,
+    "shared_queue_duplicate_completed_tasks": 0,
+    "shared_queue_duplicate_started_tasks": 0,
+    "takeover_scenario_count": 3,
+    "takeover_passing_scenarios": 3,
+    "takeover_duplicate_delivery_count": 4,
+    "takeover_stale_write_rejections": 2
+  },
+  "capabilities": [
+    {
+      "capability": "shared_queue_task_coordination",
+      "current_state": "implemented",
+      "live_local_proof": true,
+      "deterministic_local_harness": false,
+      "contract_defined_target": true,
+      "notes": [
+        "Two independent bigclawd processes share one SQLite-backed queue without duplicate terminal execution.",
+        "Current proof is local and SQLite-backed rather than broker-backed or replicated."
+      ]
+    },
+    {
+      "capability": "subscriber_takeover_semantics",
+      "current_state": "local_executable_only",
+      "live_local_proof": false,
+      "deterministic_local_harness": true,
+      "contract_defined_target": true,
+      "notes": [
+        "Lease handoff, stale-writer fencing, and duplicate replay accounting are covered by a deterministic local harness.",
+        "The same schema is not yet emitted by a live multi-node run."
+      ]
+    },
+    {
+      "capability": "cross_process_replay_coordination",
+      "current_state": "contract_defined",
+      "live_local_proof": false,
+      "deterministic_local_harness": true,
+      "contract_defined_target": true,
+      "notes": [
+        "Replay cursor and checkpoint expectations are codified across the local takeover harness and durability rollout contract.",
+        "No broker-backed or partitioned live replay proof exists yet."
+      ]
+    },
+    {
+      "capability": "stale_writer_fencing",
+      "current_state": "local_executable_only",
+      "live_local_proof": false,
+      "deterministic_local_harness": true,
+      "contract_defined_target": true,
+      "notes": [
+        "The local takeover harness proves stale checkpoint writers are rejected after ownership transfer.",
+        "A live multi-process subscriber group still needs to emit the same rejection evidence."
+      ]
+    },
+    {
+      "capability": "partitioned_topic_routing",
+      "current_state": "not_available",
+      "live_local_proof": false,
+      "deterministic_local_harness": false,
+      "contract_defined_target": true,
+      "notes": [
+        "No partitioned topic model exists yet in the runtime.",
+        "Broker-backed target docs reserve partition or quorum log ordering as the future coordination scope."
+      ]
+    },
+    {
+      "capability": "broker_backed_subscriber_ownership",
+      "current_state": "not_available",
+      "live_local_proof": false,
+      "deterministic_local_harness": false,
+      "contract_defined_target": true,
+      "notes": [
+        "No broker-backed cross-process subscriber ownership model exists yet.",
+        "The durability rollout contract defines the expected checkpoint fencing and failover guarantees before rollout-safe claims."
+      ]
+    },
+    {
+      "capability": "operator_capability_surface",
+      "current_state": "implemented",
+      "live_local_proof": false,
+      "deterministic_local_harness": false,
+      "contract_defined_target": true,
+      "notes": [
+        "The repo exposes provider-neutral durability and rollout metadata through docs and runtime-facing event_durability surfaces.",
+        "This report adds a coordination-specific surface tying together live local proof, deterministic local harnesses, and future targets."
+      ]
+    }
+  ],
+  "current_ceiling": [
+    "no partitioned topic model",
+    "no broker-backed cross-process subscriber coordination",
+    "no live multi-node subscriber takeover proof"
+  ],
+  "next_runtime_hooks": [
+    "wire the takeover harness schema into scripts/e2e/multi_node_shared_queue.py output",
+    "attach real per-node audit artifacts to live multi-process takeover runs",
+    "back subscriber ownership with a shared durable backend instead of process-local lease state",
+    "validate broker-backed replay and ownership semantics against the same report schema"
+  ]
+}

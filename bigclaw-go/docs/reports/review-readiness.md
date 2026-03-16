@@ -55,5 +55,5 @@
 - `OPE-267` / `BIG-PAR-078` — rollback safeguard caveats are consolidated in `docs/reports/rollback-safeguard-follow-up-digest.md`.
 - `OPE-268` / `BIG-PAR-079` — production corpus coverage caveats are consolidated in `docs/reports/production-corpus-migration-coverage-digest.md`.
 - `OPE-269` / `BIG-PAR-080` — subscriber takeover executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
-- `OPE-270` / `BIG-PAR-081` — cross-process coordination caveats are consolidated in `docs/reports/cross-process-coordination-boundary-digest.md`.
+- `OPE-270` / `BIG-PAR-081` — cross-process coordination caveats are consolidated in `docs/reports/cross-process-coordination-boundary-digest.md`, with the current surface summarized in `docs/reports/cross-process-coordination-capability-surface.json`.
 - `OPE-271` / `BIG-PAR-082` — validation bundle continuation caveats are consolidated in `docs/reports/validation-bundle-continuation-digest.md`.

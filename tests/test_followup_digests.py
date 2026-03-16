@@ -144,6 +144,8 @@ DIGESTS = {
         "links": [
             "docs/reports/event-bus-reliability-report.md",
             "docs/reports/multi-node-coordination-report.md",
+            "docs/reports/cross-process-coordination-capability-surface.json",
+            "scripts/e2e/cross_process_coordination_surface.py",
             "docs/reports/review-readiness.md",
             "docs/reports/issue-coverage.md",
             "docs/openclaw-parallel-gap-analysis.md",
