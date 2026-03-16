@@ -54,28 +54,23 @@
       "OPE-247",
       "OPE-250",
       "OPE-251",
+      "OPE-252",
       "OPE-253"
     ],
     "active": [
-      "OPE-252",
-      "OPE-254"
+      "OPE-254",
+      "OPE-255"
     ],
     "standby": [
-      "OPE-255"
+      "OPE-256"
     ]
   },
   "issue_order": [
-    "OPE-252",
     "OPE-254",
-    "OPE-255"
+    "OPE-255",
+    "OPE-256"
   ],
   "issues": [
-    {
-      "identifier": "OPE-252",
-      "title": "BIG-PAR-063 worker lifecycle and state-machine closeout digest refresh",
-      "track": "Lifecycle Closeout",
-      "status": "In Progress"
-    },
     {
       "identifier": "OPE-254",
       "title": "BIG-PAR-065 long-duration soak and benchmark closeout refresh",
@@ -86,6 +81,12 @@
       "identifier": "OPE-255",
       "title": "BIG-PAR-066 operations foundation evidence alignment refresh",
       "track": "Operations Foundation",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-256",
+      "title": "BIG-PAR-067 scheduler policy and routing closeout refresh",
+      "track": "Scheduler Policy Closeout",
       "status": "Backlog"
     }
   ]

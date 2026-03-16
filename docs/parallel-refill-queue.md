@@ -61,15 +61,16 @@ manual operator can refill the next parallel-safe issues in a stable order.
   - `OPE-247` — migration readiness review pack refresh
   - `OPE-250` — issue coverage and project sync evidence refresh
   - `OPE-251` — epic concurrency and reliability closeout refresh
+  - `OPE-252` — worker lifecycle and state-machine closeout digest refresh
   - `OPE-253` — control-plane observability evidence refresh
 - Active:
-  - `OPE-252` — worker lifecycle and state-machine closeout digest refresh
   - `OPE-254` — long-duration soak and benchmark closeout refresh
-- Standby:
   - `OPE-255` — operations foundation evidence alignment refresh
+- Standby:
+  - `OPE-256` — scheduler policy and routing closeout refresh
 
 ## Canonical refill order
 
-1. `OPE-252`
-2. `OPE-254`
-3. `OPE-255`
+1. `OPE-254`
+2. `OPE-255`
+3. `OPE-256`
