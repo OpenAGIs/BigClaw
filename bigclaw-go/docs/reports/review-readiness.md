@@ -24,6 +24,21 @@
 - `OPE-183`
   - Event bus evidence includes replay-first subscriptions, webhook fanout, recorder sink coverage, and SSE replay/filter behavior by task or trace.
   - Supporting report: `docs/reports/event-bus-reliability-report.md`.
+- `OPE-233`
+  - Distributed diagnostics now include Ray executor readiness and latest live-validation references without sending reviewers back to raw run logs first.
+  - Supporting reports: `docs/reports/ray-live-smoke-report.json` and `docs/reports/live-validation-index.md`.
+- `OPE-234`
+  - Replicated event-log rollout readiness is captured as an operator-facing contract with explicit failure domains, rollout phases, and validation gates.
+  - Supporting reports: `docs/reports/replicated-event-log-durability-rollout-contract.md` and `docs/reports/event-bus-reliability-report.md`.
+- `OPE-236`
+  - Distributed diagnostics now include Kubernetes executor readiness and the latest bundled live-validation evidence.
+  - Supporting reports: `docs/reports/kubernetes-live-smoke-report.json` and `docs/reports/live-validation-index.md`.
+- `OPE-237`
+  - Live validation now exposes one normalized, timestamped evidence bundle with stable per-executor canonical report paths and isolated per-run logs.
+  - Supporting reports: `docs/reports/live-validation-index.md` and `docs/reports/live-validation-runs/20260314T164647Z/README.md`.
+- `OPE-238`
+  - The distributed rollout review pack now tells reviewers exactly which local, service-backed, and future replicated-durability artifacts belong in Linear closeout comments and GitHub review attachments.
+  - Supporting reports: `docs/reports/review-readiness.md`, `docs/reports/live-validation-index.md`, `docs/reports/event-bus-reliability-report.md`, and `docs/openclaw-parallel-gap-analysis.md`.
 - `OPE-184`
   - Audit and debug surfaces include trace summary endpoints, trace timeline lookup, worker lifecycle snapshots, and `trace_count` metrics visibility.
   - Supporting report: `docs/reports/go-control-plane-observability-report.md`.
@@ -42,3 +57,4 @@
 - Production-grade capacity certification can remain a follow-up track beyond the current rewrite closure.
 - No dedicated leader-election layer exists yet; current evidence is limited to a local two-node shared-SQLite coordination proof.
 - Higher-scale external-store validation is still pending beyond the current SQLite-backed scope.
+- The replicated durability track is still contract-first; until a live broker-backed adapter exists, reviewers should treat the normalized validation bundle plus the replicated rollout contract as the release-ready evidence set.

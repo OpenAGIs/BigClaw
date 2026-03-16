@@ -44,6 +44,12 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
   - rollout metadata lives in `bigclaw-go/internal/events/durability.go` so debug/control-plane payloads can advertise checks, failure domains, evidence links, and broker bootstrap readiness;
   - `bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md` defines the minimum publish-ack, replay/checkpoint, retention-boundary, and failover expectations before a replicated adapter can be called rollout-ready.
 
+### Current review-pack baseline
+
+- `OPE-233`, `OPE-236`, and `OPE-237` now leave one normalized live-validation bundle rooted at `bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z`, with per-executor canonical reports kept stable for Ray, Kubernetes, and local validation.
+- `OPE-234` keeps replicated durability readiness in repo-native form through `bigclaw-go/docs/reports/event-bus-reliability-report.md` and `bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md`.
+- `OPE-238` turns those inputs into one review-pack contract so release review, Linear closeout, and GitHub PR review can all point at the same isolated artifact set instead of mixing raw logs from multiple runs.
+
 ## Recommended BigClaw parallel mainline
 
 1. Multi-worker and multi-node control-plane observability.

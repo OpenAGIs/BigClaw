@@ -38,15 +38,14 @@
       "OPE-231",
       "OPE-232",
       "OPE-233",
-      "OPE-234"
-    ],
-    "active": [
+      "OPE-234",
       "OPE-236",
       "OPE-237"
     ],
-    "standby": [
+    "active": [
       "OPE-238"
-    ]
+    ],
+    "standby": []
   },
   "issue_order": [
     "OPE-236",
@@ -58,19 +57,19 @@
       "identifier": "OPE-236",
       "title": "BIG-PAR-049 kubernetes executor live readiness rollup in distributed diagnostics",
       "track": "Distributed Diagnostics",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-237",
       "title": "BIG-PAR-050 normalize live-validation evidence bundle index",
       "track": "Validation Matrix",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-238",
       "title": "BIG-PAR-051 distributed rollout review-pack refresh",
       "track": "Review Pack",
-      "status": "Todo"
+      "status": "In Progress"
     }
   ]
 }

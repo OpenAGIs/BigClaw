@@ -147,6 +147,13 @@ This report summarizes the current event bus reliability evidence and the next r
   - live fanout must remain isolated from broker catch-up lag.
 - The same contract is surfaced in `events.DurabilityPlan`, so debug/control-plane payloads can show rollout checks, failure domains, and supporting evidence links before a live adapter exists.
 
+## Review-pack artifact contract
+
+- Local validation evidence should attach the normalized bundle manifest (`docs/reports/live-validation-runs/20260314T164647Z/README.md`), summary (`docs/reports/live-validation-runs/20260314T164647Z/summary.json`), and local bundle artifacts (`sqlite-smoke-report.json`, stdout/stderr, service log, audit log).
+- Service-backed executor evidence should attach the same bundle root plus the Kubernetes and Ray bundle reports and logs so reviewers can inspect executor-specific readiness without breaking per-run isolation.
+- Future replicated-durability review should attach this report, `docs/reports/replicated-event-log-durability-rollout-contract.md`, and `docs/reports/multi-subscriber-takeover-validation-report.md` beside the normalized live-validation bundle until a replicated backend emits its own timestamped validation pack.
+- This keeps Linear closeout comments and GitHub review artifacts stable: one timestamped validation directory for run evidence, plus a small fixed set of repo-native contract reports for durability and takeover readiness.
+
 ## Next adapter boundary
 
 - `internal/events/log.go` now defines the provider-neutral event-log and checkpoint contract for future broker-backed adapters.
