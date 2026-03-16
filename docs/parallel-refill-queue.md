@@ -15,11 +15,12 @@ manual operator can refill the next parallel-safe issues in a stable order.
 
 ## Policy
 
-- Keep at least `2` issues in `In Progress`.
+- Keep at least `4` issues in `In Progress` for the current continuation batch.
 - Promote only issues currently in `Backlog` or `Todo`.
 - Use the queue order below as the single source of truth for refill priority.
 - Every substantive code-bearing update must be committed and pushed to GitHub immediately, with local/remote SHA equality verification after each push.
 - Use `Backlog` for future standby slices; Symphony actively tracks `Todo` as runnable work.
+- Shared mirror / seed bootstrap remains mandatory for Symphony workspace creation so continuation slices reuse one local clone cache instead of re-downloading the repository per issue.
 
 ## Recent batches
 
@@ -71,13 +72,24 @@ manual operator can refill the next parallel-safe issues in a stable order.
   - `OPE-259` — follow-up roadmap and gap-analysis refresh
   - `OPE-260` — scale validation follow-up digest
   - `OPE-261` — distributed coordination hardening digest
-- Active:
   - `OPE-262` — event delivery semantics follow-up digest
   - `OPE-263` — retention and external-store follow-up digest
+  - `OPE-264` — observability tracing backend follow-up digest
+  - `OPE-265` — telemetry pipeline controls follow-up digest
+  - `OPE-266` — live shadow traffic comparison follow-up digest
+  - `OPE-267` — rollback safeguard follow-up digest
+  - `OPE-275` — production corpus replay pack and migration coverage scorecard
+- Active:
+  - `OPE-271` — workflow-enforced continuation gate for closeout
+  - `OPE-270` — shared-queue companion summary in validation bundles
+  - `OPE-269` — continuation history window and stale-bundle policy controls
+  - `OPE-268` — Symphony refill queue expansion for parallel continuation slices
 - Standby:
   - None currently; create the next standby slice after one active item closes.
 
 ## Canonical refill order
 
-1. `OPE-262`
-2. `OPE-263`
+1. `OPE-271`
+2. `OPE-270`
+3. `OPE-269`
+4. `OPE-268`

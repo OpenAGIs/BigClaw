@@ -63,12 +63,14 @@ Primary operating mode:
 - Keep each parallel slice small, code-backed, and independently verifiable.
 - Use `docs/parallel-refill-queue.json` as the canonical refill order and `scripts/ops/bigclaw_refill_queue.py` as the reusable manual/automated refill entrypoint.
 - Mirror `elixir/WORKFLOW.md`'s unattended posture: keep ticket state current, keep GitHub current throughout execution, and avoid leaving active work without a synced branch state.
+- Treat the shared mirror / seed bootstrap path as mandatory for Symphony workspaces so continuation slices reuse one local clone cache instead of fetching the repository repeatedly.
 
 Hook-backed GitHub sync:
-- Workspace `after_create` installs repository Git hooks immediately after clone.
+- Workspace `after_create` uses the repo-agnostic `scripts/ops/symphony_workspace_bootstrap.py` template, with repo URL, branch, and cache location supplied through `SYMPHONY_BOOTSTRAP_*` env vars.
 - Workspace `before_run` re-applies `core.hooksPath=.githooks` and auto-pushes any clean unsynced branch head at the start of every turn.
 - Repository `.githooks/post-commit` and `.githooks/post-rewrite` automatically push the active branch and verify local/remote SHA equality after each commit or amend.
 - Workspace `after_run` emits a final sync audit and flags dirty or unsynced workspaces in Symphony logs.
+- Workspace `before_remove` prunes the issue worktree from the shared seed repo so issue cleanup does not leave behind worktree metadata.
 - Use `BIGCLAW_SKIP_AUTO_SYNC=1` only for exceptional local recovery flows; normal issue execution must leave auto-sync enabled.
 
 Execution protocol:
