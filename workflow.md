@@ -22,7 +22,7 @@ workspace:
 
 hooks:
   after_create: |
-    git clone git@github.com:OpenAGIs/BigClaw.git .
+    python3 "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclaw_workspace_bootstrap.py" bootstrap --workspace "$SYMPHONY_WORKSPACE" --issue "$SYMPHONY_ISSUE_IDENTIFIER" --repo-url git@github.com:OpenAGIs/BigClaw.git --default-branch main --cache-root "${BIGCLAW_CACHE_ROOT:-$HOME/.cache/symphony/bigclaw}" --json
     git config user.email "dcjcloud@gmail.com"
     git config user.name "native cloud"
     gh auth setup-git || true
@@ -33,6 +33,8 @@ hooks:
     python3 scripts/ops/bigclaw_github_sync.py sync --allow-dirty --json
   after_run: |
     python3 scripts/ops/bigclaw_github_sync.py status --json --require-clean --require-synced || true
+  before_remove: |
+    python3 "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclaw_workspace_bootstrap.py" cleanup --workspace "$SYMPHONY_WORKSPACE" --issue "$SYMPHONY_ISSUE_IDENTIFIER" --repo-url git@github.com:OpenAGIs/BigClaw.git --default-branch main --cache-root "${BIGCLAW_CACHE_ROOT:-$HOME/.cache/symphony/bigclaw}" --json || true
   timeout_ms: 120000
 
 agent:
@@ -65,10 +67,11 @@ Primary operating mode:
 - Mirror `elixir/WORKFLOW.md`'s unattended posture: keep ticket state current, keep GitHub current throughout execution, and avoid leaving active work without a synced branch state.
 
 Hook-backed GitHub sync:
-- Workspace `after_create` installs repository Git hooks immediately after clone.
+- Workspace `after_create` bootstraps from a shared local mirror + seed repo, then installs repository Git hooks inside the per-issue worktree.
 - Workspace `before_run` re-applies `core.hooksPath=.githooks` and auto-pushes any clean unsynced branch head at the start of every turn.
 - Repository `.githooks/post-commit` and `.githooks/post-rewrite` automatically push the active branch and verify local/remote SHA equality after each commit or amend.
 - Workspace `after_run` emits a final sync audit and flags dirty or unsynced workspaces in Symphony logs.
+- Workspace `before_remove` prunes the issue worktree from the shared seed repo so terminal issue cleanup does not leak worktree metadata.
 - Use `BIGCLAW_SKIP_AUTO_SYNC=1` only for exceptional local recovery flows; normal issue execution must leave auto-sync enabled.
 
 Execution protocol:

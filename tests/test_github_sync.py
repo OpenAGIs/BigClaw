@@ -105,3 +105,36 @@ def test_ensure_repo_sync_fast_forwards_clean_branch_before_push(tmp_path: Path)
     assert status.local_sha == status.remote_sha
     assert status.pushed is False
     assert git(stale, "rev-parse", "HEAD") == git(stale, "rev-parse", "origin/main")
+
+
+def test_ensure_repo_sync_skips_pushing_clean_branch_at_origin_default_head(tmp_path: Path) -> None:
+    remote = tmp_path / "remote.git"
+    subprocess.run(
+        ["git", "init", "--bare", "--initial-branch=main", str(remote)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    seed = tmp_path / "seed"
+    seed.mkdir()
+    init_repo(seed)
+    git(seed, "branch", "-M", "main")
+    git(seed, "remote", "add", "origin", str(remote))
+    commit_file(seed, "README.md", "seed\n", "seed")
+    git(seed, "push", "-u", "origin", "main")
+
+    repo = tmp_path / "repo"
+    subprocess.run(["git", "clone", "-b", "main", str(remote), str(repo)], check=True, capture_output=True, text=True)
+    git(repo, "checkout", "-b", "symphony/OPE-321")
+
+    inspected = inspect_repo_sync(repo)
+    status = ensure_repo_sync(repo)
+
+    assert inspected.remote_exists is False
+    assert inspected.synced is True
+    assert status.remote_exists is False
+    assert status.synced is True
+    assert status.pushed is False
+    assert git(repo, "ls-remote", "--heads", "origin", "symphony/OPE-321") == ""
+    assert git(repo, "rev-parse", "HEAD") == git(repo, "rev-parse", "origin/main")

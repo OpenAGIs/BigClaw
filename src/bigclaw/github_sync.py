@@ -66,6 +66,51 @@ def _dirty(repo: Path) -> bool:
     return bool(_require_git(repo, "status", "--porcelain"))
 
 
+def _remote_default_branch(repo: Path, remote: str) -> str:
+    symbolic_ref = _git(repo, "symbolic-ref", "--quiet", f"refs/remotes/{remote}/HEAD")
+    if symbolic_ref.returncode == 0 and symbolic_ref.stdout:
+        prefix = f"refs/remotes/{remote}/"
+        if symbolic_ref.stdout.startswith(prefix):
+            return symbolic_ref.stdout[len(prefix) :]
+
+    symref_result = _git(repo, "ls-remote", "--symref", remote, "HEAD")
+    if symref_result.returncode != 0:
+        detail = symref_result.stderr or symref_result.stdout or f"git ls-remote --symref failed for {remote}/HEAD"
+        raise GitSyncError(detail)
+
+    for line in symref_result.stdout.splitlines():
+        if line.startswith("ref: ") and line.endswith("\tHEAD"):
+            ref = line.split()[1]
+            prefix = "refs/heads/"
+            if ref.startswith(prefix):
+                return ref[len(prefix) :]
+
+    raise GitSyncError(f"Could not determine default branch for remote {remote}")
+
+
+def _remote_branch_sha(repo: Path, remote: str, branch: str) -> str:
+    local_ref = _git(repo, "rev-parse", f"refs/remotes/{remote}/{branch}")
+    if local_ref.returncode == 0 and local_ref.stdout:
+        return local_ref.stdout
+
+    remote_result = _git(repo, "ls-remote", "--heads", remote, branch)
+    if remote_result.returncode != 0:
+        detail = remote_result.stderr or remote_result.stdout or f"git ls-remote failed for {remote}/{branch}"
+        raise GitSyncError(detail)
+
+    return remote_result.stdout.split()[0] if remote_result.stdout else ""
+
+
+def _matches_remote_default_branch(repo: Path, remote: str, local_sha: str) -> bool:
+    try:
+        default_branch = _remote_default_branch(repo, remote)
+        default_sha = _remote_branch_sha(repo, remote, default_branch)
+    except GitSyncError:
+        return False
+
+    return bool(default_sha) and local_sha == default_sha
+
+
 def inspect_repo_sync(repo: Path | str, remote: str = "origin") -> RepoSyncStatus:
     repo_path = Path(repo).resolve()
     branch = _require_git(repo_path, "branch", "--show-current")
@@ -82,6 +127,10 @@ def inspect_repo_sync(repo: Path | str, remote: str = "origin") -> RepoSyncStatu
     dirty = _dirty(repo_path)
     remote_exists = bool(remote_sha)
     synced = remote_exists and local_sha == remote_sha
+
+    if not remote_exists and _matches_remote_default_branch(repo_path, remote, local_sha):
+        synced = True
+
     return RepoSyncStatus(
         branch=branch,
         local_sha=local_sha,
@@ -90,6 +139,7 @@ def inspect_repo_sync(repo: Path | str, remote: str = "origin") -> RepoSyncStatu
         remote_exists=remote_exists,
         synced=synced,
     )
+
 
 
 def install_git_hooks(repo: Path | str, hooks_path: str = ".githooks") -> Path:
@@ -103,6 +153,7 @@ def install_git_hooks(repo: Path | str, hooks_path: str = ".githooks") -> Path:
         if hook.is_file():
             hook.chmod(hook.stat().st_mode | EXECUTABLE_BITS)
     return hooks_dir
+
 
 
 def ensure_repo_sync(
