@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-17T02:41:12.272936Z",
+  "generated_at": "2026-03-17T02:53:30.823671Z",
   "ticket": "BIG-PAR-085-local-prework",
   "title": "Cross-process coordination capability surface",
   "status": "local-capability-surface",
@@ -21,7 +21,7 @@
   },
   "summary": {
     "shared_queue_total_tasks": 200,
-    "shared_queue_cross_node_completions": 110,
+    "shared_queue_cross_node_completions": 99,
     "shared_queue_duplicate_completed_tasks": 0,
     "shared_queue_duplicate_started_tasks": 0,
     "takeover_scenario_count": 3,

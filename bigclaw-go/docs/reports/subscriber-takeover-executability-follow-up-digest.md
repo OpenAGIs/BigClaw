@@ -21,6 +21,7 @@ This digest consolidates the remaining takeover coordination caveats after the l
 - Current checkpoint fencing proves stale writers cannot advance ownership after takeover in both paths and exposes stale-write rejection counts directly in the generated reports.
 - The live proof is intentionally scoped: it exercises real `bigclawd` processes and the real lease/checkpoint API on both nodes, backed by one shared SQLite lease store.
 - Takeover readiness is therefore reviewable as live evidence for schema parity, operational transitions, and a shared durable scaffold, but not yet as broker-backed or replicated distributed ownership evidence.
+- In short, `live schema parity exists but shared durable ownership does not` beyond the current SQLite-backed prototype.
 
 ## Current Blockers
 
