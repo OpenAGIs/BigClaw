@@ -112,6 +112,8 @@ python3 scripts/e2e/multi_node_shared_queue.py \
 
 This starts two `bigclawd` processes against one SQLite queue and verifies there are no duplicate terminal completions across the two nodes.
 
+The same command now also refreshes `docs/reports/live-multi-node-subscriber-takeover-report.json` plus per-scenario audit artifacts under `docs/reports/live-multi-node-subscriber-takeover-artifacts/`, so the shared-queue proof and the live takeover proof stay generated from one two-node run.
+
 ## Broker failover and replay fault-injection pack
 
 The current repo does not yet ship a broker-backed event log or live failover harness, but the implementation-ready validation matrix now lives in `docs/reports/broker-failover-fault-injection-validation-pack.md`.
@@ -133,6 +135,19 @@ python3 scripts/e2e/subscriber_takeover_fault_matrix.py --pretty
 ```
 
 This refreshes `docs/reports/multi-subscriber-takeover-validation-report.json` with three deterministic local takeover scenarios, owner timelines, checkpoint transitions, duplicate replay accounting, and stale-writer rejection counts. The remaining live multi-node executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
+
+For the live proof path, run the shared-queue harness:
+
+```bash
+cd bigclaw-go
+python3 scripts/e2e/multi_node_shared_queue.py \
+  --count 200 \
+  --submit-workers 8 \
+  --report-path docs/reports/multi-node-shared-queue-report.json \
+  --takeover-report-path docs/reports/live-multi-node-subscriber-takeover-report.json
+```
+
+This starts the same two-node cluster, drives live lease acquisition and checkpoint takeover through the subscriber-group API, and emits the deterministic harness's core schema plus per-node takeover audit artifacts. The live proof is still explicit about its boundary: subscriber lease coordination remains process-local and is routed through one node per scenario until a shared durable lease backend exists.
 
 ## Cross-process coordination capability surface
 
