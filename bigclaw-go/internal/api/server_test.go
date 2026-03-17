@@ -439,6 +439,83 @@ func TestDebugStatusIncludesBrokerStubFanoutIsolationEvidencePack(t *testing.T) 
 	}
 }
 
+func TestDebugStatusIncludesLiveShadowMirrorScorecard(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		LiveShadow struct {
+			ReportPath           string   `json:"report_path"`
+			CanonicalSummaryPath string   `json:"canonical_summary_path"`
+			Status               string   `json:"status"`
+			Severity             string   `json:"severity"`
+			BundlePath           string   `json:"bundle_path"`
+			SummaryPath          string   `json:"summary_path"`
+			ReviewerLinks        []string `json:"reviewer_links"`
+			Summary              struct {
+				TotalEvidenceRuns  int `json:"total_evidence_runs"`
+				ParityOKCount      int `json:"parity_ok_count"`
+				DriftDetectedCount int `json:"drift_detected_count"`
+				MatrixMismatched   int `json:"matrix_mismatched"`
+				FreshInputs        int `json:"fresh_inputs"`
+				StaleInputs        int `json:"stale_inputs"`
+			} `json:"summary"`
+			CutoverCheckpoints []struct {
+				Name   string `json:"name"`
+				Passed bool   `json:"passed"`
+			} `json:"cutover_checkpoints"`
+			RollbackTriggerSurface struct {
+				Status                   string `json:"status"`
+				AutomationBoundary       string `json:"automation_boundary"`
+				AutomatedRollbackTrigger bool   `json:"automated_rollback_trigger"`
+				SummaryPath              string `json:"summary_path"`
+			} `json:"rollback_trigger_surface"`
+			Limitations []string `json:"limitations"`
+			FutureWork  []string `json:"future_work"`
+		} `json:"live_shadow_mirror_scorecard"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug status: %v", err)
+	}
+	if decoded.LiveShadow.ReportPath != liveShadowMirrorScorecardPath || decoded.LiveShadow.CanonicalSummaryPath != liveShadowSummaryPath {
+		t.Fatalf("unexpected live shadow report paths: %+v", decoded.LiveShadow)
+	}
+	if decoded.LiveShadow.Status != "parity-ok" || decoded.LiveShadow.Severity != "none" {
+		t.Fatalf("unexpected live shadow status: %+v", decoded.LiveShadow)
+	}
+	if decoded.LiveShadow.BundlePath != "docs/reports/live-shadow-runs/20260313T085655Z" || decoded.LiveShadow.SummaryPath != "docs/reports/live-shadow-runs/20260313T085655Z/summary.json" {
+		t.Fatalf("unexpected live shadow bundle payload: %+v", decoded.LiveShadow)
+	}
+	if decoded.LiveShadow.Summary.TotalEvidenceRuns != 4 || decoded.LiveShadow.Summary.ParityOKCount != 4 || decoded.LiveShadow.Summary.DriftDetectedCount != 0 || decoded.LiveShadow.Summary.MatrixMismatched != 0 || decoded.LiveShadow.Summary.FreshInputs != 2 || decoded.LiveShadow.Summary.StaleInputs != 0 {
+		t.Fatalf("unexpected live shadow summary payload: %+v", decoded.LiveShadow.Summary)
+	}
+	if len(decoded.LiveShadow.CutoverCheckpoints) != 5 || !decoded.LiveShadow.CutoverCheckpoints[0].Passed {
+		t.Fatalf("unexpected cutover checkpoint payload: %+v", decoded.LiveShadow.CutoverCheckpoints)
+	}
+	if decoded.LiveShadow.RollbackTriggerSurface.Status != "manual-review-required" || decoded.LiveShadow.RollbackTriggerSurface.AutomationBoundary != "manual_only" || decoded.LiveShadow.RollbackTriggerSurface.AutomatedRollbackTrigger || decoded.LiveShadow.RollbackTriggerSurface.SummaryPath != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected rollback trigger surface payload: %+v", decoded.LiveShadow.RollbackTriggerSurface)
+	}
+	if len(decoded.LiveShadow.ReviewerLinks) == 0 || decoded.LiveShadow.ReviewerLinks[0] != liveShadowSummaryPath || decoded.LiveShadow.ReviewerLinks[len(decoded.LiveShadow.ReviewerLinks)-1] != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected reviewer links: %+v", decoded.LiveShadow.ReviewerLinks)
+	}
+	if len(decoded.LiveShadow.Limitations) == 0 || len(decoded.LiveShadow.FutureWork) == 0 {
+		t.Fatalf("expected scorecard caveats and future work, got %+v", decoded.LiveShadow)
+	}
+	if !strings.Contains(response.Body.String(), "\"live_shadow_mirror_scorecard\"") || !strings.Contains(response.Body.String(), "\"canonical_summary_path\":\"docs/reports/live-shadow-summary.json\"") {
+		t.Fatalf("expected live shadow payload in response, got %s", response.Body.String())
+	}
+}
+
 func TestDebugStatusIncludesDeliveryAckReadinessSurface(t *testing.T) {
 	server := &Server{
 		Recorder: observability.NewRecorder(),
@@ -2103,6 +2180,22 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 					Count int    `json:"count"`
 				} `json:"takeover_owners"`
 			} `json:"cluster_health"`
+			LiveShadowMirror struct {
+				ReportPath           string   `json:"report_path"`
+				CanonicalSummaryPath string   `json:"canonical_summary_path"`
+				SummaryPath          string   `json:"summary_path"`
+				Status               string   `json:"status"`
+				Severity             string   `json:"severity"`
+				ReviewerLinks        []string `json:"reviewer_links"`
+				Summary              struct {
+					ParityOKCount      int `json:"parity_ok_count"`
+					DriftDetectedCount int `json:"drift_detected_count"`
+					FreshInputs        int `json:"fresh_inputs"`
+				} `json:"summary"`
+				RollbackTriggerSurface struct {
+					Status string `json:"status"`
+				} `json:"rollback_trigger_surface"`
+			} `json:"live_shadow_mirror_scorecard"`
 			BrokerReviewPack struct {
 				Status             string   `json:"status"`
 				SummaryPath        string   `json:"summary_path"`
@@ -2111,6 +2204,31 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 				ArtifactDirectory  string   `json:"artifact_directory"`
 				ReviewerLinks      []string `json:"reviewer_links"`
 			} `json:"broker_review_pack"`
+			MigrationReviewPack struct {
+				Status                    string   `json:"status"`
+				ReadinessReportPath       string   `json:"readiness_report_path"`
+				ScorecardPath             string   `json:"scorecard_path"`
+				CanonicalSummaryPath      string   `json:"canonical_summary_path"`
+				SummaryPath               string   `json:"summary_path"`
+				IndexPath                 string   `json:"index_path"`
+				FollowUpDigestPath        string   `json:"follow_up_digest_path"`
+				RollbackTriggerPath       string   `json:"rollback_trigger_path"`
+				ReviewerLinks             []string `json:"reviewer_links"`
+				LiveShadowMirrorScorecard struct {
+					ReportPath           string `json:"report_path"`
+					CanonicalSummaryPath string `json:"canonical_summary_path"`
+					Summary              struct {
+						ParityOKCount         int  `json:"parity_ok_count"`
+						DriftDetectedCount    int  `json:"drift_detected_count"`
+						MatrixMismatched      int  `json:"matrix_mismatched"`
+						CorpusCoveragePresent bool `json:"corpus_coverage_present"`
+					} `json:"summary"`
+					RollbackTriggerSurface struct {
+						AutomationBoundary string `json:"automation_boundary"`
+						SummaryPath        string `json:"summary_path"`
+					} `json:"rollback_trigger_surface"`
+				} `json:"live_shadow_mirror_scorecard"`
+			} `json:"migration_review_pack"`
 			BrokerStubFanoutIsolation struct {
 				ReportPath string `json:"report_path"`
 				Summary    struct {
@@ -2182,6 +2300,20 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	if len(decoded.Diagnostics.ClusterHealth.TakeoverOwners) == 0 || decoded.Diagnostics.ClusterHealth.TakeoverOwners[0].Key != "alice" {
 		t.Fatalf("expected takeover owner rollup, got %+v", decoded.Diagnostics.ClusterHealth)
 	}
+	if decoded.Diagnostics.LiveShadowMirror.ReportPath != liveShadowMirrorScorecardPath ||
+		decoded.Diagnostics.LiveShadowMirror.CanonicalSummaryPath != liveShadowSummaryPath ||
+		decoded.Diagnostics.LiveShadowMirror.SummaryPath != "docs/reports/live-shadow-runs/20260313T085655Z/summary.json" ||
+		decoded.Diagnostics.LiveShadowMirror.Status != "parity-ok" ||
+		decoded.Diagnostics.LiveShadowMirror.Severity != "none" ||
+		decoded.Diagnostics.LiveShadowMirror.Summary.ParityOKCount != 4 ||
+		decoded.Diagnostics.LiveShadowMirror.Summary.DriftDetectedCount != 0 ||
+		decoded.Diagnostics.LiveShadowMirror.Summary.FreshInputs != 2 ||
+		decoded.Diagnostics.LiveShadowMirror.RollbackTriggerSurface.Status != "manual-review-required" {
+		t.Fatalf("unexpected live shadow diagnostics payload: %+v", decoded.Diagnostics.LiveShadowMirror)
+	}
+	if len(decoded.Diagnostics.LiveShadowMirror.ReviewerLinks) == 0 {
+		t.Fatalf("expected live shadow reviewer links, got %+v", decoded.Diagnostics.LiveShadowMirror)
+	}
 	if decoded.Diagnostics.BrokerReviewPack.Status != "checked_in_stub_evidence" ||
 		decoded.Diagnostics.BrokerReviewPack.SummaryPath != "docs/reports/broker-validation-summary.json" ||
 		decoded.Diagnostics.BrokerReviewPack.ReportPath != "docs/reports/broker-failover-stub-report.json" ||
@@ -2193,6 +2325,31 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		decoded.Diagnostics.BrokerReviewPack.ReviewerLinks[0] != "docs/reports/live-validation-index.json" ||
 		decoded.Diagnostics.BrokerReviewPack.ReviewerLinks[1] != "docs/reports/review-readiness.md" {
 		t.Fatalf("unexpected broker review pack reviewer links: %+v", decoded.Diagnostics.BrokerReviewPack.ReviewerLinks)
+	}
+	if decoded.Diagnostics.MigrationReviewPack.Status != "parity-ok" ||
+		decoded.Diagnostics.MigrationReviewPack.ReadinessReportPath != migrationReadinessReportPath ||
+		decoded.Diagnostics.MigrationReviewPack.ScorecardPath != liveShadowMirrorScorecardPath ||
+		decoded.Diagnostics.MigrationReviewPack.CanonicalSummaryPath != liveShadowSummaryPath ||
+		decoded.Diagnostics.MigrationReviewPack.SummaryPath != "docs/reports/live-shadow-runs/20260313T085655Z/summary.json" ||
+		decoded.Diagnostics.MigrationReviewPack.IndexPath != liveShadowIndexPath ||
+		decoded.Diagnostics.MigrationReviewPack.FollowUpDigestPath != liveShadowComparisonFollowUpDigestPath ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerPath != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected migration review pack payload: %+v", decoded.Diagnostics.MigrationReviewPack)
+	}
+	if decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.ReportPath != liveShadowMirrorScorecardPath ||
+		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.CanonicalSummaryPath != liveShadowSummaryPath ||
+		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.ParityOKCount != 4 ||
+		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.DriftDetectedCount != 0 ||
+		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.MatrixMismatched != 0 ||
+		!decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.CorpusCoveragePresent ||
+		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.RollbackTriggerSurface.AutomationBoundary != "manual_only" ||
+		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.RollbackTriggerSurface.SummaryPath != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected migration live shadow scorecard payload: %+v", decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard)
+	}
+	if len(decoded.Diagnostics.MigrationReviewPack.ReviewerLinks) == 0 ||
+		decoded.Diagnostics.MigrationReviewPack.ReviewerLinks[0] != liveShadowSummaryPath ||
+		decoded.Diagnostics.MigrationReviewPack.ReviewerLinks[len(decoded.Diagnostics.MigrationReviewPack.ReviewerLinks)-1] != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected migration review links: %+v", decoded.Diagnostics.MigrationReviewPack.ReviewerLinks)
 	}
 	if decoded.Diagnostics.BrokerStubFanoutIsolation.ReportPath != brokerStubFanoutIsolationEvidencePackPath ||
 		decoded.Diagnostics.BrokerStubFanoutIsolation.Summary.ScenarioCount != 1 ||
@@ -2224,9 +2381,16 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	}
 	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Live Shadow Mirror Scorecard") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Failover Review Pack") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Migration Readiness Review Pack") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Stub Live Fanout Isolation") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Delivery Acknowledgement Readiness") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, liveShadowSummaryPath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, liveShadowMirrorScorecardPath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, migrationReadinessReportPath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, liveShadowComparisonFollowUpDigestPath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, rollbackTriggerSurfacePath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-validation-summary.json") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, brokerStubFanoutIsolationEvidencePackPath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, deliveryAckReadinessSurfacePath) ||
