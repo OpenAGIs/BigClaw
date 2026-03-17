@@ -322,6 +322,67 @@ func TestDebugStatusIncludesEventDurabilityPlan(t *testing.T) {
 	}
 }
 
+func TestDebugStatusIncludesCoordinationCapabilitySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		Coordination struct {
+			ReportPath string `json:"report_path"`
+			Status     string `json:"status"`
+			Summary    struct {
+				CapabilityCount        int            `json:"capability_count"`
+				ContractOnlyCount      int            `json:"contract_only_count"`
+				HarnessProvenCount     int            `json:"harness_proven_count"`
+				LiveProvenCount        int            `json:"live_proven_count"`
+				CurrentStateCounts     map[string]int `json:"current_state_counts"`
+				RuntimeReadinessCounts map[string]int `json:"runtime_readiness_counts"`
+			} `json:"summary"`
+			Capabilities []struct {
+				Name              string   `json:"name"`
+				CurrentState      string   `json:"current_state"`
+				RuntimeReadiness  string   `json:"runtime_readiness"`
+				ContractOnly      bool     `json:"contract_only"`
+				HarnessProven     bool     `json:"harness_proven"`
+				LiveProven        bool     `json:"live_proven"`
+				SourceReportLinks []string `json:"source_report_links"`
+			} `json:"capabilities"`
+		} `json:"coordination_capability_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug coordination payload: %v", err)
+	}
+	if decoded.Coordination.ReportPath != coordinationCapabilitySurfacePath || decoded.Coordination.Status != "local-capability-surface" {
+		t.Fatalf("unexpected coordination report metadata: %+v", decoded.Coordination)
+	}
+	if decoded.Coordination.Summary.CapabilityCount != 7 || decoded.Coordination.Summary.ContractOnlyCount != 2 || decoded.Coordination.Summary.HarnessProvenCount != 1 || decoded.Coordination.Summary.LiveProvenCount != 3 {
+		t.Fatalf("unexpected coordination summary: %+v", decoded.Coordination.Summary)
+	}
+	if decoded.Coordination.Summary.CurrentStateCounts["contract_defined"] != 1 || decoded.Coordination.Summary.CurrentStateCounts["not_available"] != 2 {
+		t.Fatalf("unexpected coordination state counts: %+v", decoded.Coordination.Summary.CurrentStateCounts)
+	}
+	if decoded.Coordination.Summary.RuntimeReadinessCounts["supporting_surface"] != 1 || decoded.Coordination.Summary.RuntimeReadinessCounts["live_proven"] != 3 {
+		t.Fatalf("unexpected coordination readiness counts: %+v", decoded.Coordination.Summary.RuntimeReadinessCounts)
+	}
+	if len(decoded.Coordination.Capabilities) == 0 {
+		t.Fatalf("expected capability entries in debug status payload")
+	}
+	first := decoded.Coordination.Capabilities[0]
+	if first.Name != "shared_queue_task_coordination" || first.CurrentState != "implemented" || first.RuntimeReadiness != "live_proven" || first.ContractOnly || !first.LiveProven || len(first.SourceReportLinks) == 0 {
+		t.Fatalf("unexpected first capability payload: %+v", first)
+	}
+}
+
 func TestDeadLetterEndpoints(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()
@@ -1995,6 +2056,61 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-failover-stub-artifacts") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {
 		t.Fatalf("unexpected rollout report payload: %+v", decoded.Diagnostics.RolloutReport)
+	}
+}
+
+func TestV2ControlCenterIncludesCoordinationCapabilitySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Coordination struct {
+			Ticket           string   `json:"ticket"`
+			CurrentCeiling   []string `json:"current_ceiling"`
+			NextRuntimeHooks []string `json:"next_runtime_hooks"`
+			EvidenceSources  struct {
+				SharedQueueReport     string   `json:"shared_queue_report"`
+				TakeoverHarnessReport string   `json:"takeover_harness_report"`
+				SupportingDocs        []string `json:"supporting_docs"`
+			} `json:"evidence_sources"`
+			Capabilities []struct {
+				Name              string   `json:"name"`
+				ContractOnly      bool     `json:"contract_only"`
+				HarnessProven     bool     `json:"harness_proven"`
+				LiveProven        bool     `json:"live_proven"`
+				SourceReportLinks []string `json:"source_report_links"`
+			} `json:"capabilities"`
+		} `json:"coordination_capability_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center coordination payload: %v", err)
+	}
+	if decoded.Coordination.Ticket != "BIG-PAR-085-local-prework" {
+		t.Fatalf("unexpected coordination ticket payload: %+v", decoded.Coordination)
+	}
+	if decoded.Coordination.EvidenceSources.SharedQueueReport == "" || decoded.Coordination.EvidenceSources.TakeoverHarnessReport == "" || len(decoded.Coordination.EvidenceSources.SupportingDocs) != 3 {
+		t.Fatalf("unexpected coordination evidence sources: %+v", decoded.Coordination.EvidenceSources)
+	}
+	if len(decoded.Coordination.CurrentCeiling) != 3 || len(decoded.Coordination.NextRuntimeHooks) != 3 {
+		t.Fatalf("unexpected coordination summary detail: %+v", decoded.Coordination)
+	}
+	if len(decoded.Coordination.Capabilities) < 3 {
+		t.Fatalf("expected capability surface in control center payload, got %+v", decoded.Coordination)
+	}
+	contractOnly := decoded.Coordination.Capabilities[4]
+	if contractOnly.Name != "partitioned_topic_routing" || !contractOnly.ContractOnly || contractOnly.LiveProven || len(contractOnly.SourceReportLinks) == 0 {
+		t.Fatalf("unexpected contract-only coordination entry: %+v", contractOnly)
 	}
 }
 
