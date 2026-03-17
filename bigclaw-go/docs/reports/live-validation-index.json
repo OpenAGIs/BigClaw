@@ -1,7 +1,7 @@
 {
   "latest": {
     "run_id": "20260316T140138Z",
-    "generated_at": "2026-03-16T15:54:25.340839+00:00",
+    "generated_at": "2026-03-17T04:32:13.251910+00:00",
     "status": "succeeded",
     "bundle_path": "docs/reports/live-validation-runs/20260316T140138Z",
     "closeout_commands": [
@@ -692,6 +692,16 @@
       "audit_log_path": "docs/reports/live-validation-runs/20260316T140138Z/ray.audit.jsonl",
       "service_log_path": "docs/reports/live-validation-runs/20260316T140138Z/ray.service.log"
     },
+    "broker": {
+      "enabled": false,
+      "backend": null,
+      "bundle_summary_path": "docs/reports/live-validation-runs/20260316T140138Z/broker-validation-summary.json",
+      "canonical_summary_path": "docs/reports/broker-validation-summary.json",
+      "validation_pack_path": "docs/reports/broker-failover-fault-injection-validation-pack.md",
+      "configuration_state": "not_configured",
+      "status": "skipped",
+      "reason": "not_configured"
+    },
     "shared_queue_companion": {
       "available": true,
       "canonical_report_path": "docs/reports/multi-node-shared-queue-report.json",
@@ -723,7 +733,7 @@
   "recent_runs": [
     {
       "run_id": "20260316T140138Z",
-      "generated_at": "2026-03-16T15:54:25.340839+00:00",
+      "generated_at": "2026-03-17T04:32:13.251910+00:00",
       "status": "succeeded",
       "bundle_path": "docs/reports/live-validation-runs/20260316T140138Z",
       "summary_path": "docs/reports/live-validation-runs/20260316T140138Z/summary.json"

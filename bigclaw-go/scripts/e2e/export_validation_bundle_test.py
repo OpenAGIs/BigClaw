@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import importlib.util
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -39,6 +40,16 @@ class ExportValidationBundleTest(unittest.TestCase):
                 'bundle_report_path': 'docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json',
                 'canonical_report_path': 'docs/reports/ray-live-smoke-report.json',
             },
+            'broker': {
+                'enabled': False,
+                'status': 'skipped',
+                'configuration_state': 'not_configured',
+                'reason': 'not_configured',
+                'bundle_summary_path': 'docs/reports/live-validation-runs/20260316T140138Z/broker-validation-summary.json',
+                'canonical_summary_path': 'docs/reports/broker-validation-summary.json',
+                'validation_pack_path': 'docs/reports/broker-failover-fault-injection-validation-pack.md',
+                'backend': None,
+            },
         }
         continuation_gate = {
             'path': 'docs/reports/validation-bundle-continuation-policy-gate.json',
@@ -55,6 +66,33 @@ class ExportValidationBundleTest(unittest.TestCase):
         self.assertIn('- Workflow mode: `hold`', index_text)
         self.assertIn('- Workflow outcome: `hold`', index_text)
         self.assertIn('- Workflow exit code on current evidence: `2`', index_text)
+        self.assertIn('### broker', index_text)
+        self.assertIn('- Configuration state: `not_configured`', index_text)
+        self.assertIn('- Reason: `not_configured`', index_text)
+
+    def test_build_broker_section_writes_not_configured_summary_when_disabled(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_root = Path(tmpdir)
+            bundle_dir = tmp_root / 'docs' / 'reports' / 'live-validation-runs' / 'run-1'
+            bundle_dir.mkdir(parents=True, exist_ok=True)
+
+            section = MODULE.build_broker_section(
+                enabled=False,
+                backend='',
+                root=tmp_root,
+                bundle_dir=bundle_dir,
+                report_path=None,
+            )
+
+            self.assertEqual(section['status'], 'skipped')
+            self.assertEqual(section['configuration_state'], 'not_configured')
+            self.assertEqual(section['reason'], 'not_configured')
+            self.assertEqual(
+                section['bundle_summary_path'],
+                'docs/reports/live-validation-runs/run-1/broker-validation-summary.json',
+            )
+            self.assertTrue((bundle_dir / 'broker-validation-summary.json').exists())
+            self.assertTrue((tmp_root / 'docs/reports/broker-validation-summary.json').exists())
 
 
 if __name__ == '__main__':
