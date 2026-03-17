@@ -34,6 +34,10 @@ type Config struct {
 	EventLogRemoteBearer          string
 	QueueSQLitePath               string
 	SubscriberLeaseSQLitePath     string
+	CoordinatorLeaseSQLitePath    string
+	CoordinatorScope              string
+	CoordinatorID                 string
+	CoordinatorLeaseTTL           time.Duration
 	AuditLogPath                  string
 	ServiceName                   string
 	LeaseTTL                      time.Duration
@@ -85,6 +89,10 @@ func Default() Config {
 		EventLogRemoteBearer:          "",
 		QueueSQLitePath:               "./state/queue.db",
 		SubscriberLeaseSQLitePath:     "",
+		CoordinatorLeaseSQLitePath:    "",
+		CoordinatorScope:              "scheduler",
+		CoordinatorID:                 "",
+		CoordinatorLeaseTTL:           5 * time.Second,
 		AuditLogPath:                  "./state/audit.jsonl",
 		ServiceName:                   "bigclawd",
 		LeaseTTL:                      2 * time.Minute,
@@ -142,6 +150,9 @@ func LoadFromEnv() Config {
 	cfg.EventLogRemoteBearer = getString("BIGCLAW_EVENT_LOG_REMOTE_BEARER_TOKEN", cfg.EventLogRemoteBearer)
 	cfg.QueueSQLitePath = getString("BIGCLAW_QUEUE_SQLITE_PATH", cfg.QueueSQLitePath)
 	cfg.SubscriberLeaseSQLitePath = getString("BIGCLAW_SUBSCRIBER_LEASE_SQLITE_PATH", cfg.SubscriberLeaseSQLitePath)
+	cfg.CoordinatorLeaseSQLitePath = getString("BIGCLAW_COORDINATOR_LEASE_SQLITE_PATH", cfg.CoordinatorLeaseSQLitePath)
+	cfg.CoordinatorScope = getString("BIGCLAW_COORDINATOR_SCOPE", cfg.CoordinatorScope)
+	cfg.CoordinatorID = getString("BIGCLAW_COORDINATOR_ID", cfg.CoordinatorID)
 	cfg.AuditLogPath = getString("BIGCLAW_AUDIT_LOG_PATH", cfg.AuditLogPath)
 	cfg.ServiceName = getString("BIGCLAW_SERVICE_NAME", cfg.ServiceName)
 	cfg.QueueFilePath = getString("BIGCLAW_QUEUE_FILE", cfg.QueueFilePath)
@@ -164,6 +175,7 @@ func LoadFromEnv() Config {
 	cfg.KubernetesPollInterval = getDuration("BIGCLAW_KUBERNETES_POLL_INTERVAL", cfg.KubernetesPollInterval)
 	cfg.RayPollInterval = getDuration("BIGCLAW_RAY_POLL_INTERVAL", cfg.RayPollInterval)
 	cfg.RayHTTPTimeout = getDuration("BIGCLAW_RAY_HTTP_TIMEOUT", cfg.RayHTTPTimeout)
+	cfg.CoordinatorLeaseTTL = getDuration("BIGCLAW_COORDINATOR_LEASE_TTL", cfg.CoordinatorLeaseTTL)
 	cfg.MaxConcurrentRuns = getInt("BIGCLAW_MAX_CONCURRENT_RUNS", cfg.MaxConcurrentRuns)
 	cfg.DefaultBudgetCents = getInt64("BIGCLAW_DEFAULT_BUDGET_CENTS", cfg.DefaultBudgetCents)
 	cfg.KubernetesCleanupFinishedJobs = getBool("BIGCLAW_KUBERNETES_CLEANUP", cfg.KubernetesCleanupFinishedJobs)

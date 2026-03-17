@@ -6,12 +6,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"bigclaw-go/internal/api"
 	"bigclaw-go/internal/config"
 	"bigclaw-go/internal/control"
+	"bigclaw-go/internal/coordination"
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/events"
 	"bigclaw-go/internal/executor"
@@ -92,6 +94,12 @@ func main() {
 		panic(err)
 	}
 	defer closeSubscriberLeaseStore(subscriberLeases)
+	leaderElection, err := buildCoordinatorLeaderElection(cfg)
+	if err != nil {
+		panic(err)
+	}
+	defer closeCoordinatorLeaderElection(leaderElection)
+	coordinatorID := coordinatorID(cfg)
 	schedulerRuntime := scheduler.NewWithStores(policyStore, fairnessStore)
 	runtime := &worker.Runtime{
 		WorkerID:    "bootstrap-worker",
@@ -104,23 +112,34 @@ func main() {
 		LeaseTTL:    cfg.LeaseTTL,
 		TaskTimeout: cfg.TaskTimeout,
 	}
-	loop := &orchestrator.Loop{Runtime: runtime, Quota: scheduler.QuotaSnapshot{ConcurrentLimit: cfg.MaxConcurrentRuns, BudgetRemaining: cfg.DefaultBudgetCents}, PollInterval: cfg.PollInterval}
+	loop := &orchestrator.Loop{
+		Runtime:         runtime,
+		Quota:           scheduler.QuotaSnapshot{ConcurrentLimit: cfg.MaxConcurrentRuns, BudgetRemaining: cfg.DefaultBudgetCents},
+		PollInterval:    cfg.PollInterval,
+		LeaderElection:  leaderElection,
+		LeaderScope:     cfg.CoordinatorScope,
+		LeaderCandidate: coordinatorID,
+		LeaderTTL:       cfg.CoordinatorLeaseTTL,
+	}
 
 	if cfg.BootstrapTasks {
 		seed(context.Background(), q)
 	}
 	server := &api.Server{
-		Recorder:         recorder,
-		Queue:            q,
-		Executors:        registry.Kinds(),
-		Bus:              bus,
-		EventPlan:        events.NewDurabilityPlanWithBrokerConfig(eventPlanBackend, cfg.EventLogTargetBackend, cfg.EventLogReplicationFactor, brokerRuntimeConfig(cfg)),
-		EventLog:         eventLog,
-		SubscriberLeases: subscriberLeases,
-		Worker:           runtime,
-		Control:          controller,
-		SchedulerPolicy:  policyStore,
-		SchedulerRuntime: schedulerRuntime,
+		Recorder:          recorder,
+		Queue:             q,
+		Executors:         registry.Kinds(),
+		Bus:               bus,
+		EventPlan:         events.NewDurabilityPlanWithBrokerConfig(eventPlanBackend, cfg.EventLogTargetBackend, cfg.EventLogReplicationFactor, brokerRuntimeConfig(cfg)),
+		EventLog:          eventLog,
+		SubscriberLeases:  subscriberLeases,
+		CoordinatorLeases: leaderElection,
+		CoordinatorScope:  cfg.CoordinatorScope,
+		CoordinatorID:     coordinatorID,
+		Worker:            runtime,
+		Control:           controller,
+		SchedulerPolicy:   policyStore,
+		SchedulerRuntime:  schedulerRuntime,
 	}
 	httpServer := &http.Server{Addr: cfg.HTTPAddr, Handler: server.Handler()}
 	go func() {
@@ -145,6 +164,31 @@ func buildSubscriberLeaseStore(cfg config.Config) (events.SubscriberLeaseStore, 
 		return events.NewSubscriberLeaseCoordinator(), nil
 	}
 	return events.NewSQLiteSubscriberLeaseStore(cfg.SubscriberLeaseSQLitePath)
+}
+
+func buildCoordinatorLeaderElection(cfg config.Config) (coordination.LeaderElection, error) {
+	if cfg.CoordinatorLeaseSQLitePath == "" {
+		return coordination.NewLeaderElection(), nil
+	}
+	return coordination.NewSQLiteLeaderElection(cfg.CoordinatorLeaseSQLitePath)
+}
+
+func closeCoordinatorLeaderElection(store coordination.LeaderElection) {
+	type closer interface{ Close() error }
+	if closable, ok := store.(closer); ok {
+		_ = closable.Close()
+	}
+}
+
+func coordinatorID(cfg config.Config) string {
+	if strings.TrimSpace(cfg.CoordinatorID) != "" {
+		return strings.TrimSpace(cfg.CoordinatorID)
+	}
+	host, err := os.Hostname()
+	if err != nil || strings.TrimSpace(host) == "" {
+		host = "unknown-host"
+	}
+	return fmt.Sprintf("%s@%s", cfg.ServiceName, host)
 }
 
 func closeSubscriberLeaseStore(store events.SubscriberLeaseStore) {

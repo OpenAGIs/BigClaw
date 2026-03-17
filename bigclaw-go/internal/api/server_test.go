@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"bigclaw-go/internal/control"
+	"bigclaw-go/internal/coordination"
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/events"
 	"bigclaw-go/internal/observability"
@@ -380,6 +381,59 @@ func TestDebugStatusIncludesCoordinationCapabilitySurface(t *testing.T) {
 	first := decoded.Coordination.Capabilities[0]
 	if first.Name != "shared_queue_task_coordination" || first.CurrentState != "implemented" || first.RuntimeReadiness != "live_proven" || first.ContractOnly || !first.LiveProven || len(first.SourceReportLinks) == 0 {
 		t.Fatalf("unexpected first capability payload: %+v", first)
+	}
+}
+
+func TestDebugStatusIncludesCoordinatorLeadership(t *testing.T) {
+	now := time.Unix(1_700_000_000, 0).UTC()
+	election := coordination.NewLeaderElection()
+	lease, err := election.Campaign(coordination.CampaignRequest{
+		Scope:     "scheduler",
+		Candidate: "node-a",
+		TTL:       5 * time.Second,
+		Now:       now,
+	})
+	if err != nil {
+		t.Fatalf("seed coordinator leadership: %v", err)
+	}
+	server := &Server{
+		Recorder:          observability.NewRecorder(),
+		Queue:             queue.NewMemoryQueue(),
+		Bus:               events.NewBus(),
+		CoordinatorLeases: election,
+		CoordinatorScope:  "scheduler",
+		CoordinatorID:     "node-a",
+		Now:               func() time.Time { return now.Add(time.Second) },
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		Leadership struct {
+			Scope       string `json:"scope"`
+			CandidateID string `json:"candidate_id"`
+			HasLeader   bool   `json:"has_leader"`
+			IsLeader    bool   `json:"is_leader"`
+			Authority   string `json:"authority"`
+			Lease       struct {
+				LeaderID   string `json:"leader_id"`
+				LeaseToken string `json:"lease_token"`
+				LeaseEpoch int64  `json:"lease_epoch"`
+			} `json:"lease"`
+		} `json:"coordinator_leadership"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug coordinator leadership payload: %v", err)
+	}
+	if decoded.Leadership.Scope != "scheduler" || decoded.Leadership.CandidateID != "node-a" || !decoded.Leadership.HasLeader || !decoded.Leadership.IsLeader || decoded.Leadership.Authority != "leader" {
+		t.Fatalf("unexpected coordinator leadership status: %+v", decoded.Leadership)
+	}
+	if decoded.Leadership.Lease.LeaderID != "node-a" || decoded.Leadership.Lease.LeaseToken != lease.LeaseToken || decoded.Leadership.Lease.LeaseEpoch != lease.LeaseEpoch {
+		t.Fatalf("unexpected coordinator leadership lease payload: %+v", decoded.Leadership.Lease)
 	}
 }
 
@@ -2159,6 +2213,7 @@ func TestV2ControlCenterIncludesMultiWorkerPoolSummary(t *testing.T) {
 func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	recorder := observability.NewRecorder()
 	controller := control.New()
+	election := coordination.NewLeaderElection()
 	server := &Server{
 		Recorder:  recorder,
 		Queue:     queue.NewMemoryQueue(),
@@ -2172,12 +2227,23 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 			ReplayLimit:        1024,
 			CheckpointInterval: 10 * time.Second,
 		}),
-		Control: controller,
-		Worker:  fakeWorkerPoolStatus{},
-		Now:     func() time.Time { return time.Unix(1700007200, 0) },
+		CoordinatorLeases: election,
+		CoordinatorScope:  "scheduler",
+		CoordinatorID:     "node-a",
+		Control:           controller,
+		Worker:            fakeWorkerPoolStatus{},
+		Now:               func() time.Time { return time.Unix(1700007200, 0) },
 	}
 	handler := server.Handler()
 	base := time.Unix(1700000000, 0)
+	if _, err := election.Campaign(coordination.CampaignRequest{
+		Scope:     "scheduler",
+		Candidate: "node-a",
+		TTL:       24 * time.Hour,
+		Now:       server.Now(),
+	}); err != nil {
+		t.Fatalf("seed coordinator lease: %v", err)
+	}
 	for _, task := range []domain.Task{
 		{ID: "diag-local", TraceID: "trace-local", Title: "Local diag", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "platform", "project": "alpha"}, UpdatedAt: base.Add(time.Minute)},
 		{ID: "diag-k8s", TraceID: "trace-k8s", Title: "K8s diag", State: domain.TaskSucceeded, RequiredTools: []string{"browser"}, Metadata: map[string]string{"team": "platform", "project": "alpha"}, UpdatedAt: base.Add(2 * time.Minute)},
@@ -2216,6 +2282,17 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 				ActiveWorkers        int `json:"active_workers"`
 				ActiveTakeovers      int `json:"active_takeovers"`
 			} `json:"summary"`
+			CoordinatorLeadership struct {
+				Scope       string `json:"scope"`
+				CandidateID string `json:"candidate_id"`
+				HasLeader   bool   `json:"has_leader"`
+				IsLeader    bool   `json:"is_leader"`
+				Authority   string `json:"authority"`
+				Lease       struct {
+					LeaderID   string `json:"leader_id"`
+					LeaseToken string `json:"lease_token"`
+				} `json:"lease"`
+			} `json:"coordinator_leadership"`
 			RoutingReasons []struct {
 				Executor string `json:"executor"`
 				Reason   string `json:"reason"`
@@ -2367,6 +2444,12 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	}
 	if decoded.Diagnostics.Summary.ActiveWorkers != 2 || decoded.Diagnostics.Summary.ActiveTakeovers != 1 {
 		t.Fatalf("unexpected worker/takeover summary: %+v", decoded.Diagnostics.Summary)
+	}
+	if decoded.Diagnostics.CoordinatorLeadership.Scope != "scheduler" || decoded.Diagnostics.CoordinatorLeadership.CandidateID != "node-a" || !decoded.Diagnostics.CoordinatorLeadership.HasLeader || !decoded.Diagnostics.CoordinatorLeadership.IsLeader || decoded.Diagnostics.CoordinatorLeadership.Authority != "leader" {
+		t.Fatalf("unexpected coordinator leadership payload: %+v", decoded.Diagnostics.CoordinatorLeadership)
+	}
+	if decoded.Diagnostics.CoordinatorLeadership.Lease.LeaderID != "node-a" || decoded.Diagnostics.CoordinatorLeadership.Lease.LeaseToken == "" {
+		t.Fatalf("expected active coordinator lease metadata, got %+v", decoded.Diagnostics.CoordinatorLeadership.Lease)
 	}
 	if len(decoded.Diagnostics.RoutingReasons) != 3 {
 		t.Fatalf("expected 3 routing reasons, got %+v", decoded.Diagnostics.RoutingReasons)

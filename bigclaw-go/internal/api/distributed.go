@@ -103,6 +103,7 @@ type traceExportBundleTrace struct {
 
 type distributedDiagnostics struct {
 	Summary               distributedDiagnosticsSummary         `json:"summary"`
+	CoordinatorLeadership coordinatorLeadershipStatus           `json:"coordinator_leadership"`
 	RoutingReasons        []routingReasonSummary                `json:"routing_reasons"`
 	ExecutorCapacity      []executorCapacityView                `json:"executor_capacity"`
 	ClusterHealth         clusterHealthRollup                   `json:"cluster_health"`
@@ -157,6 +158,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		},
 		"event_durability":             s.EventPlan,
 		"summary":                      diagnostics.Summary,
+		"coordinator_leadership":       diagnostics.CoordinatorLeadership,
 		"routing_reasons":              diagnostics.RoutingReasons,
 		"executor_capacity":            diagnostics.ExecutorCapacity,
 		"cluster_health":               diagnostics.ClusterHealth,
@@ -385,6 +387,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 	}
 	diagnostics := distributedDiagnostics{
 		Summary:               summary,
+		CoordinatorLeadership: s.coordinatorLeadershipStatus(),
 		RoutingReasons:        routingReasons,
 		ExecutorCapacity:      executorCapacity,
 		ClusterHealth:         clusterHealth,

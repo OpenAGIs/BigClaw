@@ -101,6 +101,8 @@ func TestCrossProcessCoordinationReadinessDocsStayAligned(t *testing.T) {
 			substrings: []string{
 				"runtime capability matrix",
 				"`live_proven` shared-queue proof",
+				"dedicated coordinator leader-election lease",
+				"`lease_token`",
 			},
 		},
 		{

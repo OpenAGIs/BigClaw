@@ -20,9 +20,13 @@
 
 ## Meaning
 
-This run proves that two independent `bigclawd` processes can share the same SQLite-backed queue and coordinate task consumption without duplicate terminal execution in the current local topology. It is not a full leader-election system, but it gives the epic a concrete multi-node coordination proof instead of relying only on single-process evidence.
+This run proves that two independent `bigclawd` processes can share the same SQLite-backed queue and coordinate task consumption without duplicate terminal execution in the current local topology. It is not a full distributed durability proof, but it gives the epic a concrete multi-node coordination baseline instead of relying only on single-process evidence.
 
-In the runtime capability matrix, this shared-queue result is the current `live_proven` shared-queue proof. Subscriber takeover, stale-writer fencing, and replay coordination remain `harness_proven` or `contract_only` until the same semantics are emitted by a live multi-node run.
+In the runtime capability matrix, this shared-queue result is the current `live_proven` shared-queue proof. Subscriber takeover, stale-writer fencing, and replay coordination remain `harness_proven` or `contract_only` until the same semantics are emitted by a live multi-node run. The runtime now carries a dedicated coordinator leader-election lease for scheduler authority and failover visibility, but that lease still uses the same local SQLite durability boundary as the rest of the current proof.
+
+## Leader Election Boundary
+
+The coordinator lease makes scheduler ownership explicit through `scope`, `leader_id`, `lease_token`, `lease_epoch`, and expiry metadata surfaced in `/debug/status` and `/v2/reports/distributed`. That hardens failover and stale-owner fencing beyond implicit writer behavior, while still remaining a local SQLite-backed coordination mechanism rather than a broker-backed or quorum-backed control plane.
 
 ## Artifact
 

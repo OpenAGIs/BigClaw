@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"bigclaw-go/internal/control"
+	"bigclaw-go/internal/coordination"
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/events"
 	"bigclaw-go/internal/flow"
@@ -31,19 +32,22 @@ type WorkerPoolStatusProvider interface {
 }
 
 type Server struct {
-	Recorder         *observability.Recorder
-	Queue            queue.Queue
-	Executors        []domain.ExecutorKind
-	Bus              *events.Bus
-	EventPlan        events.DurabilityPlan
-	EventLog         events.EventLog
-	SubscriberLeases events.SubscriberLeaseStore
-	Now              func() time.Time
-	Worker           WorkerStatusProvider
-	Control          *control.Controller
-	FlowStore        *flow.Store
-	SchedulerPolicy  *scheduler.PolicyStore
-	SchedulerRuntime *scheduler.Scheduler
+	Recorder          *observability.Recorder
+	Queue             queue.Queue
+	Executors         []domain.ExecutorKind
+	Bus               *events.Bus
+	EventPlan         events.DurabilityPlan
+	EventLog          events.EventLog
+	SubscriberLeases  events.SubscriberLeaseStore
+	CoordinatorLeases coordination.LeaderElection
+	CoordinatorScope  string
+	CoordinatorID     string
+	Now               func() time.Time
+	Worker            WorkerStatusProvider
+	Control           *control.Controller
+	FlowStore         *flow.Store
+	SchedulerPolicy   *scheduler.PolicyStore
+	SchedulerRuntime  *scheduler.Scheduler
 }
 
 type checkpointDiagnostics struct {
@@ -69,6 +73,16 @@ type checkpointResetSnapshot struct {
 
 type checkpointExpiredError struct {
 	Diagnostics checkpointDiagnostics
+}
+
+type coordinatorLeadershipStatus struct {
+	Scope        string                    `json:"scope"`
+	CandidateID  string                    `json:"candidate_id,omitempty"`
+	HasLeader    bool                      `json:"has_leader"`
+	IsLeader     bool                      `json:"is_leader"`
+	Authority    string                    `json:"authority"`
+	LeaseBackend string                    `json:"lease_backend"`
+	Lease        *coordination.LeaderLease `json:"lease,omitempty"`
 }
 
 func (e checkpointExpiredError) Error() string {
@@ -201,6 +215,7 @@ func (s *Server) Handler() http.Handler {
 			"event_durability_rollout":        rolloutScorecard,
 			"event_log":                       s.eventLogCapabilities(r.Context()),
 			"coordination_capability_surface": coordinationCapabilitySurfacePayload(),
+			"coordinator_leadership":          s.coordinatorLeadershipStatus(),
 			"delivery_ack_readiness":          deliveryAckReadinessPayload(),
 			"live_shadow_mirror_scorecard":    liveShadowMirrorPayload(),
 			"rollback_trigger_surface":        rollbackTriggerSurfacePayload(),
@@ -320,6 +335,47 @@ func (s *Server) publishSubscriberLeaseEvent(eventType domain.EventType, now tim
 		Timestamp: now,
 		Payload:   payload,
 	})
+}
+
+func (s *Server) coordinatorLeadershipStatus() coordinatorLeadershipStatus {
+	scope := strings.TrimSpace(s.CoordinatorScope)
+	if scope == "" {
+		scope = "scheduler"
+	}
+	status := coordinatorLeadershipStatus{
+		Scope:        scope,
+		CandidateID:  strings.TrimSpace(s.CoordinatorID),
+		HasLeader:    false,
+		IsLeader:     false,
+		Authority:    "implicit_single_node",
+		LeaseBackend: "memory",
+	}
+	if s.CoordinatorLeases == nil {
+		return status
+	}
+	status.Authority = "standby"
+	type stringer interface{ String() string }
+	if named, ok := s.CoordinatorLeases.(stringer); ok {
+		status.LeaseBackend = named.String()
+	}
+	now := s.Now().UTC()
+	lease, ok := s.CoordinatorLeases.Get(scope)
+	if !ok {
+		return status
+	}
+	status.Lease = &lease
+	status.HasLeader = coordination.IsLeaderActive(lease, now)
+	if !status.HasLeader {
+		status.Authority = "expired"
+		return status
+	}
+	if lease.LeaderID == status.CandidateID {
+		status.IsLeader = true
+		status.Authority = "leader"
+		return status
+	}
+	status.Authority = "follower"
+	return status
 }
 
 func subscriberLeaseEventKeyPart(groupID string, subscriberID string) string {

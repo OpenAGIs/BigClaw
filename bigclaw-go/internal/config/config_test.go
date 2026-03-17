@@ -1,6 +1,9 @@
 package config
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestLoadFromEnvIncludesEventLogBrokerSettings(t *testing.T) {
 	t.Setenv("BIGCLAW_EVENT_LOG_BACKEND", "broker")
@@ -41,9 +44,19 @@ func TestLoadFromEnvIncludesEventLogBrokerSettings(t *testing.T) {
 
 func TestLoadFromEnvIncludesSubscriberLeaseSQLitePath(t *testing.T) {
 	t.Setenv("BIGCLAW_SUBSCRIBER_LEASE_SQLITE_PATH", "/tmp/shared-subscriber-leases.db")
+	t.Setenv("BIGCLAW_COORDINATOR_LEASE_SQLITE_PATH", "/tmp/shared-coordinator-leases.db")
+	t.Setenv("BIGCLAW_COORDINATOR_SCOPE", "scheduler")
+	t.Setenv("BIGCLAW_COORDINATOR_ID", "node-a")
+	t.Setenv("BIGCLAW_COORDINATOR_LEASE_TTL", "9s")
 
 	cfg := LoadFromEnv()
 	if cfg.SubscriberLeaseSQLitePath != "/tmp/shared-subscriber-leases.db" {
 		t.Fatalf("expected subscriber lease sqlite path, got %q", cfg.SubscriberLeaseSQLitePath)
+	}
+	if cfg.CoordinatorLeaseSQLitePath != "/tmp/shared-coordinator-leases.db" {
+		t.Fatalf("expected coordinator lease sqlite path, got %q", cfg.CoordinatorLeaseSQLitePath)
+	}
+	if cfg.CoordinatorScope != "scheduler" || cfg.CoordinatorID != "node-a" || cfg.CoordinatorLeaseTTL != 9*time.Second {
+		t.Fatalf("unexpected coordinator lease config: %+v", cfg)
 	}
 }
