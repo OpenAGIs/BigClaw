@@ -64,6 +64,11 @@ This exporter copies the latest compare, matrix, scorecard, and rollback trigger
 and updates `docs/reports/live-shadow-index.md`, `docs/reports/live-shadow-index.json`, and
 `docs/reports/live-shadow-drift-rollup.json` for reviewer navigation.
 
+The checked-in bundle summary is also exposed through `GET /debug/status` as
+`live_shadow_mirror_scorecard` and through `GET /v2/control-center` as
+`distributed_diagnostics.live_shadow_mirror_scorecard`, so reviewers can inspect parity drift,
+freshness, and report links without reopening the standalone migration bundle first.
+
 When a manifest contains approved replay payloads, add `--replay-corpus-slices` to
 submit those corpus-backed slices through the same shadow matrix run. Slices without a
 payload still contribute to the `corpus_coverage` scorecard and uncovered-slice summary.
