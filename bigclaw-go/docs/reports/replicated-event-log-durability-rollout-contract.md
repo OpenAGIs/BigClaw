@@ -28,7 +28,7 @@ It builds on the provider-neutral adapter boundary in `docs/reports/broker-event
 ### Replay and live handoff
 
 - Replay order must be monotonic within the provider's durable ordering scope and mapped back to the portable `Position.Sequence`.
-- Live fanout must remain decoupled from broker catch-up lag so replay recovery does not stall process-local subscribers or SSE clients.
+- Live fanout must remain decoupled from broker catch-up lag so replay recovery does not stall process-local subscribers or SSE clients. The current checked-in provider-backed proof for that requirement is `docs/reports/provider-live-handoff-isolation-evidence-pack.json`, which validates the repo-native `http_remote_service` adapter lane before a native broker-backed adapter exists.
 - Replay resume and checkpoint acknowledgement must reference the same durable sequence space after failover, reconnect, or consumer takeover.
 
 ### Checkpoints

@@ -112,6 +112,18 @@ func (l *blockingEventLog) Close() error {
 	return nil
 }
 
+type blockingRemoteServiceLog struct {
+	*blockingEventLog
+}
+
+func (l *blockingRemoteServiceLog) Acknowledge(string, string, time.Time) (events.SubscriberCheckpoint, error) {
+	return events.SubscriberCheckpoint{}, errors.New("checkpoint ack unavailable in blocking replay test double")
+}
+
+func (l *blockingRemoteServiceLog) Checkpoint(string) (events.SubscriberCheckpoint, error) {
+	return events.SubscriberCheckpoint{}, errors.New("checkpoint unavailable in blocking replay test double")
+}
+
 func (l *blockingEventLog) query(taskID, traceID, afterID string, limit int) []domain.Event {
 	select {
 	case l.replayStarted <- struct{}{}:
@@ -4516,5 +4528,254 @@ func TestRemoteEventLogExpiredCheckpointFailsClosedWithRetentionGuidance(t *test
 	body := eventsResponse.Body.String()
 	if !strings.Contains(body, "checkpoint_expired") || !strings.Contains(body, "DELETE /stream/events/checkpoints/{subscriber_id}") || !strings.Contains(body, "trimmed_through_sequence") {
 		t.Fatalf("expected remote checkpoint expired payload with retention guidance, got %s", body)
+	}
+}
+
+func TestDebugStatusIncludesProviderLiveHandoffIsolationSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		ProviderLiveHandoff struct {
+			ReportPath     string `json:"report_path"`
+			Ticket         string `json:"ticket"`
+			Track          string `json:"track"`
+			Backend        string `json:"backend"`
+			ValidationLane string `json:"validation_lane"`
+			Summary        struct {
+				ScenarioCount          int  `json:"scenario_count"`
+				IsolatedScenarios      int  `json:"isolated_scenarios"`
+				StalledScenarios       int  `json:"stalled_scenarios"`
+				ReplayBacklogEvents    int  `json:"replay_backlog_events"`
+				LiveDeliveryDeadlineMS int  `json:"live_delivery_deadline_ms"`
+				IsolationMaintained    bool `json:"isolation_maintained"`
+			} `json:"summary"`
+			Scenarios []struct {
+				Name                  string `json:"name"`
+				Status                string `json:"status"`
+				ReplayDrainsAfterLive bool   `json:"replay_drains_after_live"`
+			} `json:"scenarios"`
+		} `json:"provider_live_handoff_isolation"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode provider handoff payload: %v", err)
+	}
+	if decoded.ProviderLiveHandoff.ReportPath != providerLiveHandoffIsolationEvidencePackPath || decoded.ProviderLiveHandoff.Ticket != "OPE-225" || decoded.ProviderLiveHandoff.Track != "BIG-DUR-104" {
+		t.Fatalf("unexpected provider handoff metadata: %+v", decoded.ProviderLiveHandoff)
+	}
+	if decoded.ProviderLiveHandoff.Backend != "http_remote_service" || decoded.ProviderLiveHandoff.ValidationLane != "external_store_validation" {
+		t.Fatalf("unexpected provider handoff backend posture: %+v", decoded.ProviderLiveHandoff)
+	}
+	if decoded.ProviderLiveHandoff.Summary.ScenarioCount != 1 || decoded.ProviderLiveHandoff.Summary.IsolatedScenarios != 1 || decoded.ProviderLiveHandoff.Summary.StalledScenarios != 0 || decoded.ProviderLiveHandoff.Summary.ReplayBacklogEvents != 4 || decoded.ProviderLiveHandoff.Summary.LiveDeliveryDeadlineMS != 200 || !decoded.ProviderLiveHandoff.Summary.IsolationMaintained {
+		t.Fatalf("unexpected provider handoff summary: %+v", decoded.ProviderLiveHandoff.Summary)
+	}
+	if len(decoded.ProviderLiveHandoff.Scenarios) != 1 || decoded.ProviderLiveHandoff.Scenarios[0].Name != "http_remote_service_replay_handoff_keeps_live_lane_unblocked" || decoded.ProviderLiveHandoff.Scenarios[0].Status != "isolated" || !decoded.ProviderLiveHandoff.Scenarios[0].ReplayDrainsAfterLive {
+		t.Fatalf("unexpected provider handoff scenarios: %+v", decoded.ProviderLiveHandoff.Scenarios)
+	}
+}
+
+func TestV2ControlCenterIncludesProviderLiveHandoffIsolationSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5&audit_limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ProviderLiveHandoff struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				IsolatedScenarios int `json:"isolated_scenarios"`
+			} `json:"summary"`
+		} `json:"provider_live_handoff_isolation"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center provider handoff payload: %v", err)
+	}
+	if decoded.ProviderLiveHandoff.ReportPath != providerLiveHandoffIsolationEvidencePackPath || decoded.ProviderLiveHandoff.Summary.IsolatedScenarios != 1 {
+		t.Fatalf("unexpected control center provider handoff payload: %+v", decoded.ProviderLiveHandoff)
+	}
+}
+
+func TestV2DistributedReportIncludesProviderLiveHandoffIsolationSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ProviderLiveHandoff struct {
+			ReportPath string `json:"report_path"`
+			Backend    string `json:"backend"`
+			Summary    struct {
+				IsolatedScenarios      int `json:"isolated_scenarios"`
+				LiveDeliveryDeadlineMS int `json:"live_delivery_deadline_ms"`
+			} `json:"summary"`
+		} `json:"provider_live_handoff_isolation"`
+		Report struct {
+			Markdown string `json:"markdown"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed provider handoff payload: %v", err)
+	}
+	if decoded.ProviderLiveHandoff.ReportPath != providerLiveHandoffIsolationEvidencePackPath || decoded.ProviderLiveHandoff.Backend != "http_remote_service" || decoded.ProviderLiveHandoff.Summary.IsolatedScenarios != 1 || decoded.ProviderLiveHandoff.Summary.LiveDeliveryDeadlineMS != 200 {
+		t.Fatalf("unexpected distributed provider handoff payload: %+v", decoded.ProviderLiveHandoff)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "## Provider-backed Live Handoff Isolation") || !strings.Contains(decoded.Report.Markdown, "Backend: http_remote_service") {
+		t.Fatalf("expected provider handoff markdown section, got %s", decoded.Report.Markdown)
+	}
+}
+
+func TestProviderBackedRemoteEventLogLiveHandoffIsolation(t *testing.T) {
+	base := time.Unix(1_700_200_000, 0).UTC()
+	backlog := []domain.Event{
+		{ID: "evt-provider-backlog-1", Type: domain.EventTaskQueued, TaskID: "task-provider", TraceID: "trace-provider", Timestamp: base},
+		{ID: "evt-provider-backlog-2", Type: domain.EventTaskStarted, TaskID: "task-provider", TraceID: "trace-provider", Timestamp: base.Add(time.Second)},
+		{ID: "evt-provider-backlog-3", Type: domain.EventTaskCompleted, TaskID: "task-provider", TraceID: "trace-provider", Timestamp: base.Add(2 * time.Second)},
+		{ID: "evt-provider-backlog-4", Type: domain.EventTaskQueued, TaskID: "task-provider", TraceID: "trace-provider", Timestamp: base.Add(3 * time.Second)},
+	}
+	liveEvent := domain.Event{ID: "evt-provider-live", Type: domain.EventTaskStarted, TaskID: "task-provider", TraceID: "trace-provider", Timestamp: base.Add(4 * time.Second)}
+	handoffEvent := domain.Event{ID: "evt-provider-handoff", Type: domain.EventTaskCompleted, TaskID: "task-provider", TraceID: "trace-provider", Timestamp: base.Add(5 * time.Second)}
+	remoteStore := &blockingRemoteServiceLog{blockingEventLog: &blockingEventLog{
+		history:       backlog,
+		replayStarted: make(chan struct{}, 1),
+		release:       make(chan struct{}),
+	}}
+	remoteService := httptest.NewServer(events.NewEventLogServiceHandler(remoteStore))
+	defer remoteService.Close()
+	remoteLog, err := events.NewHTTPEventLog(remoteService.URL, "")
+	if err != nil {
+		t.Fatalf("new remote event log: %v", err)
+	}
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: remoteLog, Now: time.Now}
+	ts := httptest.NewServer(server.Handler())
+	defer ts.Close()
+
+	type sseResult struct {
+		lines []string
+		err   string
+	}
+	liveCtx, liveCancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer liveCancel()
+	liveReq, err := http.NewRequestWithContext(liveCtx, http.MethodGet, ts.URL+"/stream/events?trace_id=trace-provider&limit=10", nil)
+	if err != nil {
+		t.Fatalf("new live request: %v", err)
+	}
+	liveCh := make(chan sseResult, 1)
+	go func() {
+		response, err := http.DefaultClient.Do(liveReq)
+		if err != nil {
+			liveCh <- sseResult{err: err.Error()}
+			return
+		}
+		defer response.Body.Close()
+		reader := bufio.NewReader(response.Body)
+		line1, err := reader.ReadString('\n')
+		if err != nil {
+			liveCh <- sseResult{err: err.Error()}
+			return
+		}
+		line2, err := reader.ReadString('\n')
+		if err != nil {
+			liveCh <- sseResult{err: err.Error()}
+			return
+		}
+		liveCh <- sseResult{lines: []string{strings.TrimSpace(line1), strings.TrimSpace(line2)}}
+	}()
+
+	replayCtx, replayCancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer replayCancel()
+	replayReq, err := http.NewRequestWithContext(replayCtx, http.MethodGet, ts.URL+"/stream/events?trace_id=trace-provider&after_id=evt-before&limit=10", nil)
+	if err != nil {
+		t.Fatalf("new replay request: %v", err)
+	}
+	replayCh := make(chan sseResult, 1)
+	go func() {
+		response, err := http.DefaultClient.Do(replayReq)
+		if err != nil {
+			replayCh <- sseResult{err: err.Error()}
+			return
+		}
+		defer response.Body.Close()
+		reader := bufio.NewReader(response.Body)
+		lines := make([]string, 0, 16)
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				replayCh <- sseResult{lines: lines, err: err.Error()}
+				return
+			}
+			line = strings.TrimSpace(line)
+			if line != "" {
+				lines = append(lines, line)
+			}
+		}
+	}()
+
+	select {
+	case <-remoteStore.replayStarted:
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for provider-backed replay to start")
+	}
+
+	publishStarted := time.Now()
+	server.Bus.Publish(liveEvent)
+	select {
+	case result := <-liveCh:
+		if result.err != "" {
+			t.Fatalf("live subscriber failed: %s", result.err)
+		}
+		if time.Since(publishStarted) > 200*time.Millisecond {
+			t.Fatalf("expected live subscriber delivery within 200ms while replay was blocked, took %s", time.Since(publishStarted))
+		}
+		if len(result.lines) != 2 || !strings.Contains(result.lines[0], "evt-provider-live") || result.lines[1] != "id: evt-provider-live" {
+			t.Fatalf("unexpected live subscriber lines: %+v", result.lines)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for live-only subscriber while replay was blocked")
+	}
+
+	close(remoteStore.release)
+	server.Bus.Publish(handoffEvent)
+	time.Sleep(150 * time.Millisecond)
+	replayCancel()
+
+	result := <-replayCh
+	if len(result.lines) == 0 {
+		t.Fatalf("expected replay subscriber lines, got err=%q", result.err)
+	}
+	body := strings.Join(result.lines, "\n")
+	for _, want := range []string{"evt-provider-backlog-1", "evt-provider-backlog-2", "evt-provider-backlog-3", "evt-provider-backlog-4", "evt-provider-live", "evt-provider-handoff"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected replay/live handoff body to include %s, got %s", want, body)
+		}
 	}
 }

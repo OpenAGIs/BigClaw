@@ -110,7 +110,7 @@ python3 scripts/e2e/external_store_validation.py \
 
 This lane starts one repo-native SQLite-backed event-log service node plus two client `bigclawd` nodes configured with `BIGCLAW_EVENT_LOG_REMOTE_URL`. It validates that replay, checkpoint reset history, persisted retention boundaries, and lease-backed takeover behavior remain reviewable when the event log moves behind a remote HTTP service boundary.
 
-The checked-in output lives at `docs/reports/external-store-validation-report.json`. Its `backend_matrix` now makes the backend posture machine-readable instead of leaving it in prose alone: `http_remote_service` is `live_validated`, `broker_replicated` is a deterministic `not_configured` placeholder, and `quorum_replicated` is a `contract_only` placeholder. Replay and checkpoint state are remote-service-backed, while takeover still relies on the shared durable lease store.
+The checked-in output lives at `docs/reports/external-store-validation-report.json`. Its `backend_matrix` now makes the backend posture machine-readable instead of leaving it in prose alone: `http_remote_service` is `live_validated`, `broker_replicated` is a deterministic `not_configured` placeholder, and `quorum_replicated` is a `contract_only` placeholder. Replay and checkpoint state are remote-service-backed, while takeover still relies on the shared durable lease store. Replay-to-live handoff isolation for that same provider-backed lane is summarized separately in `docs/reports/provider-live-handoff-isolation-evidence-pack.json` so reviewers can inspect the no-stall contract without opening the full lane output.
 
 ## Multi-node shared queue proof
 

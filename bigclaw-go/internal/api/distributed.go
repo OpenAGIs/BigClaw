@@ -110,21 +110,22 @@ type traceExportBundleTrace struct {
 }
 
 type distributedDiagnostics struct {
-	Summary               distributedDiagnosticsSummary           `json:"summary"`
-	RoutingReasons        []routingReasonSummary                  `json:"routing_reasons"`
-	ExecutorCapacity      []executorCapacityView                  `json:"executor_capacity"`
-	ClusterHealth         clusterHealthRollup                     `json:"cluster_health"`
-	LiveShadowMirror      liveShadowMirrorSurface                 `json:"live_shadow_mirror_scorecard"`
-	BrokerReviewPack      brokerReviewPack                        `json:"broker_review_pack"`
-	MigrationReviewPack   migrationReviewPack                     `json:"migration_review_pack"`
-	BrokerFanoutIsolation brokerStubFanoutIsolationEvidencePack   `json:"broker_stub_fanout_isolation"`
-	DeliveryAckReadiness  deliveryAckReadinessSurface             `json:"delivery_ack_readiness"`
-	PublishAckOutcomes    publishAckOutcomeSurface                `json:"publish_ack_outcomes"`
-	SequenceBridge        sequenceBridgeSurface                   `json:"sequence_bridge_surface"`
-	RetentionExpiry       retentionExpirySurface                  `json:"retention_expiry_surface"`
-	ContinuationGate      validationBundleContinuationGateSurface `json:"validation_bundle_continuation"`
-	TraceBundle           traceExportBundleSummary                `json:"trace_export_bundle"`
-	RolloutReport         distributedDiagnosticsReport            `json:"rollout_report"`
+	Summary               distributedDiagnosticsSummary            `json:"summary"`
+	RoutingReasons        []routingReasonSummary                   `json:"routing_reasons"`
+	ExecutorCapacity      []executorCapacityView                   `json:"executor_capacity"`
+	ClusterHealth         clusterHealthRollup                      `json:"cluster_health"`
+	LiveShadowMirror      liveShadowMirrorSurface                  `json:"live_shadow_mirror_scorecard"`
+	BrokerReviewPack      brokerReviewPack                         `json:"broker_review_pack"`
+	MigrationReviewPack   migrationReviewPack                      `json:"migration_review_pack"`
+	BrokerFanoutIsolation brokerStubFanoutIsolationEvidencePack    `json:"broker_stub_fanout_isolation"`
+	ProviderLiveHandoff   providerLiveHandoffIsolationEvidencePack `json:"provider_live_handoff_isolation"`
+	DeliveryAckReadiness  deliveryAckReadinessSurface              `json:"delivery_ack_readiness"`
+	PublishAckOutcomes    publishAckOutcomeSurface                 `json:"publish_ack_outcomes"`
+	SequenceBridge        sequenceBridgeSurface                    `json:"sequence_bridge_surface"`
+	RetentionExpiry       retentionExpirySurface                   `json:"retention_expiry_surface"`
+	ContinuationGate      validationBundleContinuationGateSurface  `json:"validation_bundle_continuation"`
+	TraceBundle           traceExportBundleSummary                 `json:"trace_export_bundle"`
+	RolloutReport         distributedDiagnosticsReport             `json:"rollout_report"`
 }
 
 type executorDiagnosticsCounters struct {
@@ -167,22 +168,23 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 			"limit":      filters.Limit,
 			"priority":   filters.Priority,
 		},
-		"event_durability":               s.EventPlan,
-		"summary":                        diagnostics.Summary,
-		"routing_reasons":                diagnostics.RoutingReasons,
-		"executor_capacity":              diagnostics.ExecutorCapacity,
-		"cluster_health":                 diagnostics.ClusterHealth,
-		"live_shadow_mirror_scorecard":   diagnostics.LiveShadowMirror,
-		"broker_review_pack":             diagnostics.BrokerReviewPack,
-		"broker_stub_fanout_isolation":   diagnostics.BrokerFanoutIsolation,
-		"trace_export_bundle":            diagnostics.TraceBundle,
-		"migration_review_pack":          diagnostics.MigrationReviewPack,
-		"delivery_ack_readiness":         diagnostics.DeliveryAckReadiness,
-		"publish_ack_outcomes":           diagnostics.PublishAckOutcomes,
-		"sequence_bridge_surface":        diagnostics.SequenceBridge,
-		"retention_expiry_surface":       diagnostics.RetentionExpiry,
-		"validation_bundle_continuation": diagnostics.ContinuationGate,
-		"report":                         diagnostics.RolloutReport,
+		"event_durability":                s.EventPlan,
+		"summary":                         diagnostics.Summary,
+		"routing_reasons":                 diagnostics.RoutingReasons,
+		"executor_capacity":               diagnostics.ExecutorCapacity,
+		"cluster_health":                  diagnostics.ClusterHealth,
+		"live_shadow_mirror_scorecard":    diagnostics.LiveShadowMirror,
+		"broker_review_pack":              diagnostics.BrokerReviewPack,
+		"broker_stub_fanout_isolation":    diagnostics.BrokerFanoutIsolation,
+		"provider_live_handoff_isolation": diagnostics.ProviderLiveHandoff,
+		"trace_export_bundle":             diagnostics.TraceBundle,
+		"migration_review_pack":           diagnostics.MigrationReviewPack,
+		"delivery_ack_readiness":          diagnostics.DeliveryAckReadiness,
+		"publish_ack_outcomes":            diagnostics.PublishAckOutcomes,
+		"sequence_bridge_surface":         diagnostics.SequenceBridge,
+		"retention_expiry_surface":        diagnostics.RetentionExpiry,
+		"validation_bundle_continuation":  diagnostics.ContinuationGate,
+		"report":                          diagnostics.RolloutReport,
 	})
 }
 
@@ -410,6 +412,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		BrokerReviewPack:      buildBrokerReviewPack(),
 		MigrationReviewPack:   buildMigrationReviewPack(),
 		BrokerFanoutIsolation: brokerStubFanoutIsolationPayload(),
+		ProviderLiveHandoff:   providerLiveHandoffIsolationPayload(),
 		DeliveryAckReadiness:  deliveryAckReadinessPayload(),
 		PublishAckOutcomes:    publishAckOutcomeSurfacePayload(),
 		SequenceBridge:        sequenceBridgeSurfacePayload(),
@@ -938,6 +941,32 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.RetentionExpiry.ReviewerLinks) > 0 {
 		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.RetentionExpiry.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Provider-backed Live Handoff Isolation",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.ProviderLiveHandoff.ReportPath),
+		fmt.Sprintf("- Backend: %s", firstNonEmpty(diagnostics.ProviderLiveHandoff.Backend, "unknown")),
+		fmt.Sprintf("- Validation lane: %s", firstNonEmpty(diagnostics.ProviderLiveHandoff.ValidationLane, "unknown")),
+		fmt.Sprintf("- Isolated scenarios: %d", diagnostics.ProviderLiveHandoff.Summary.IsolatedScenarios),
+		fmt.Sprintf("- Stalled scenarios: %d", diagnostics.ProviderLiveHandoff.Summary.StalledScenarios),
+		fmt.Sprintf("- Replay backlog events: %d", diagnostics.ProviderLiveHandoff.Summary.ReplayBacklogEvents),
+		fmt.Sprintf("- Live delivery deadline: %dms", diagnostics.ProviderLiveHandoff.Summary.LiveDeliveryDeadlineMS),
+	)
+	for _, scenario := range diagnostics.ProviderLiveHandoff.Scenarios {
+		lines = append(lines, fmt.Sprintf("- %s: status=%s replay_drains_after_live=%t", scenario.Name, scenario.Status, scenario.ReplayDrainsAfterLive))
+		if scenario.ReplayPath != "" {
+			lines = append(lines, "  - replay path: "+scenario.ReplayPath)
+		}
+		if scenario.LivePath != "" {
+			lines = append(lines, "  - live path: "+scenario.LivePath)
+		}
+	}
+	if len(diagnostics.ProviderLiveHandoff.Limitations) > 0 {
+		lines = append(lines, "- Limitations: "+strings.Join(diagnostics.ProviderLiveHandoff.Limitations, "; "))
+	}
+	if len(diagnostics.ProviderLiveHandoff.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.ProviderLiveHandoff.ReviewerLinks, ", "))
 	}
 	lines = append(lines,
 		"",
