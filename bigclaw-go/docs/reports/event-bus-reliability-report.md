@@ -84,6 +84,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - `internal/api/server.go`: operational reporting for current and target durability mode plus runtime capability probes.
 - Subscriber checkpoint persistence, replay endpoints, and dedup ledger surfaces preserve resume and idempotency semantics while moving state out of process-local memory.
 - `internal/events/durability.go`: rollout-facing contract for replicated durability phases, failure domains, and required verification evidence.
+- `docs/reports/broker-durability-rollout-scorecard.json`: checked-in machine-readable rollout scorecard for reviewer-facing readiness, blockers, and missing evidence.
 - `internal/events/log.go`: provider-neutral `PartitionRoute` and `SubscriberOwnershipContract` fields now reserve the future partitioned-routing and broker-backed ownership contract surface without claiming runtime support yet.
 
 ## Migration and compatibility constraints
@@ -143,6 +144,7 @@ This report summarizes the current event bus reliability evidence and the next r
 ## Replicated rollout contract
 
 - `docs/reports/replicated-event-log-durability-rollout-contract.md` now captures the minimum rollout gates for a broker-backed or quorum-backed adapter, and `event_durability` now includes broker bootstrap readiness for those targets:
+- `docs/reports/broker-durability-rollout-scorecard.json` mirrors the runtime contract in one checked-in JSON scorecard so reviewers can inspect readiness, blockers, and missing evidence without reconstructing them from prose.
   - replicated publish acknowledgements must distinguish committed, rejected, and ambiguous outcomes;
   - replay and checkpoint state must share the same durable sequence domain across failover;
   - retention boundaries must be operator-visible before resumable recovery is claimed;

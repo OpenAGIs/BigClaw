@@ -38,6 +38,59 @@ type VerificationEvidence struct {
 	Artifacts []string `json:"artifacts"`
 }
 
+type RolloutScorecard struct {
+	Status          string                     `json:"status"`
+	Ready           bool                       `json:"ready"`
+	TargetPhase     string                     `json:"target_phase"`
+	Summary         string                     `json:"summary"`
+	Blockers        []RolloutBlocker           `json:"blockers,omitempty"`
+	MissingEvidence []RolloutMissingEvidence   `json:"missing_evidence,omitempty"`
+	Checks          []RolloutCheckStatus       `json:"checks"`
+	Verification    []RolloutEvidenceStatus    `json:"verification"`
+	BrokerBootstrap *RolloutBootstrapReadiness `json:"broker_bootstrap,omitempty"`
+}
+
+type RolloutBlocker struct {
+	Code    string `json:"code"`
+	Source  string `json:"source"`
+	Message string `json:"message"`
+}
+
+type RolloutMissingEvidence struct {
+	Code     string `json:"code"`
+	Evidence string `json:"evidence"`
+	Artifact string `json:"artifact"`
+	Reason   string `json:"reason"`
+}
+
+type RolloutCheckStatus struct {
+	Name        string `json:"name"`
+	Status      string `json:"status"`
+	Blocking    bool   `json:"blocking"`
+	Requirement string `json:"requirement"`
+	FailureMode string `json:"failure_mode"`
+	Reason      string `json:"reason"`
+}
+
+type RolloutEvidenceStatus struct {
+	Name               string   `json:"name"`
+	Status             string   `json:"status"`
+	Reason             string   `json:"reason"`
+	Artifacts          []string `json:"artifacts,omitempty"`
+	AvailableArtifacts []string `json:"available_artifacts,omitempty"`
+	MissingArtifacts   []string `json:"missing_artifacts,omitempty"`
+}
+
+type RolloutBootstrapReadiness struct {
+	Ready            bool     `json:"ready"`
+	Status           string   `json:"status"`
+	Driver           string   `json:"driver,omitempty"`
+	URLs             []string `json:"urls,omitempty"`
+	Topic            string   `json:"topic,omitempty"`
+	ConsumerGroup    string   `json:"consumer_group,omitempty"`
+	ValidationErrors []string `json:"validation_errors,omitempty"`
+}
+
 type BrokerBootstrapStatus struct {
 	Driver             string   `json:"driver,omitempty"`
 	URLs               []string `json:"urls,omitempty"`
@@ -61,6 +114,7 @@ type DurabilityPlan struct {
 	FailureDomains       []FailureDomain        `json:"failure_domains"`
 	VerificationEvidence []VerificationEvidence `json:"verification_evidence"`
 	BrokerBootstrap      *BrokerBootstrapStatus `json:"broker_bootstrap,omitempty"`
+	RolloutScorecard     RolloutScorecard       `json:"rollout_scorecard"`
 }
 
 func NormalizeDurabilityBackend(value string) DurabilityBackend {
@@ -211,6 +265,7 @@ func NewDurabilityPlanWithBrokerConfig(currentBackend, targetBackend string, rep
 				Artifacts: []string{
 					"docs/reports/event-bus-reliability-report.md",
 					"docs/reports/replicated-event-log-durability-rollout-contract.md",
+					"docs/reports/broker-durability-rollout-scorecard.json",
 				},
 			},
 		},
@@ -218,6 +273,7 @@ func NewDurabilityPlanWithBrokerConfig(currentBackend, targetBackend string, rep
 	if current.Replicated || target.Replicated {
 		plan.BrokerBootstrap = BrokerBootstrapStatusFromConfig(broker)
 	}
+	plan.RolloutScorecard = BuildRolloutScorecard(plan)
 	return plan
 }
 
@@ -237,4 +293,132 @@ func BrokerBootstrapStatusFromConfig(cfg BrokerRuntimeConfig) *BrokerBootstrapSt
 	}
 	status.Ready = true
 	return status
+}
+
+func BuildRolloutScorecard(plan DurabilityPlan) RolloutScorecard {
+	scorecard := RolloutScorecard{
+		Status:       "ready",
+		Ready:        true,
+		TargetPhase:  rolloutTargetPhase(plan),
+		Checks:       make([]RolloutCheckStatus, 0, len(plan.RolloutChecks)),
+		Verification: make([]RolloutEvidenceStatus, 0, len(plan.VerificationEvidence)),
+	}
+
+	for _, check := range plan.RolloutChecks {
+		scorecard.Checks = append(scorecard.Checks, RolloutCheckStatus{
+			Name:        check.Name,
+			Status:      "pending_validation",
+			Blocking:    true,
+			Requirement: check.Requirement,
+			FailureMode: check.FailureMode,
+			Reason:      "replicated durability contract is defined, but repo-native validation is still incomplete",
+		})
+	}
+
+	for _, evidence := range plan.VerificationEvidence {
+		status := classifyVerificationEvidence(evidence)
+		scorecard.Verification = append(scorecard.Verification, status)
+		for _, artifact := range status.MissingArtifacts {
+			scorecard.MissingEvidence = append(scorecard.MissingEvidence, RolloutMissingEvidence{
+				Code:     "missing_verification_artifact",
+				Evidence: evidence.Name,
+				Artifact: artifact,
+				Reason:   status.Reason,
+			})
+		}
+		if status.Status != "available" {
+			scorecard.Blockers = append(scorecard.Blockers, RolloutBlocker{
+				Code:    "verification_evidence_incomplete",
+				Source:  evidence.Name,
+				Message: status.Reason,
+			})
+		}
+	}
+
+	if plan.BrokerBootstrap != nil {
+		scorecard.BrokerBootstrap = &RolloutBootstrapReadiness{
+			Ready:            plan.BrokerBootstrap.Ready,
+			Status:           "ready",
+			Driver:           plan.BrokerBootstrap.Driver,
+			URLs:             append([]string(nil), plan.BrokerBootstrap.URLs...),
+			Topic:            plan.BrokerBootstrap.Topic,
+			ConsumerGroup:    plan.BrokerBootstrap.ConsumerGroup,
+			ValidationErrors: append([]string(nil), plan.BrokerBootstrap.ValidationErrors...),
+		}
+		if !plan.BrokerBootstrap.Ready {
+			scorecard.BrokerBootstrap.Status = "blocked"
+			scorecard.Blockers = append(scorecard.Blockers, RolloutBlocker{
+				Code:    "broker_bootstrap_not_ready",
+				Source:  "broker_bootstrap",
+				Message: firstNonEmpty(plan.BrokerBootstrap.ValidationErrors...),
+			})
+		}
+	}
+
+	if len(scorecard.Blockers) > 0 {
+		scorecard.Status = "blocked"
+		scorecard.Ready = false
+	}
+	scorecard.Summary = rolloutSummary(plan, scorecard)
+	return scorecard
+}
+
+func rolloutTargetPhase(plan DurabilityPlan) string {
+	if !plan.Target.Replicated {
+		return "single_backend_trial"
+	}
+	return "rollout_ready"
+}
+
+func classifyVerificationEvidence(evidence VerificationEvidence) RolloutEvidenceStatus {
+	status := RolloutEvidenceStatus{
+		Name:      evidence.Name,
+		Artifacts: append([]string(nil), evidence.Artifacts...),
+	}
+	for _, artifact := range evidence.Artifacts {
+		if artifactAvailableForRollout(artifact) {
+			status.AvailableArtifacts = append(status.AvailableArtifacts, artifact)
+			continue
+		}
+		status.MissingArtifacts = append(status.MissingArtifacts, artifact)
+	}
+	switch {
+	case len(status.MissingArtifacts) == 0:
+		status.Status = "available"
+		status.Reason = "all declared artifacts are available in the current contract"
+	case len(status.AvailableArtifacts) == 0:
+		status.Status = "missing"
+		status.Reason = "all evidence for this gate is still pending implementation or validation"
+	default:
+		status.Status = "partial"
+		status.Reason = "some evidence is declared, but rollout still depends on pending artifacts"
+	}
+	return status
+}
+
+func artifactAvailableForRollout(artifact string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(artifact))
+	if strings.HasPrefix(normalized, "future ") {
+		return false
+	}
+	return normalized != ""
+}
+
+func rolloutSummary(plan DurabilityPlan, scorecard RolloutScorecard) string {
+	if scorecard.Ready {
+		return "replicated durability rollout contract is fully satisfied"
+	}
+	if plan.BrokerBootstrap != nil && !plan.BrokerBootstrap.Ready {
+		return "replicated durability is blocked by broker bootstrap readiness and incomplete validation evidence"
+	}
+	return "replicated durability is blocked until the remaining verification evidence is available"
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if trimmed := strings.TrimSpace(value); trimmed != "" {
+			return trimmed
+		}
+	}
+	return "missing readiness detail"
 }

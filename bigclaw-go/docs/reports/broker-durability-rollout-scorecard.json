@@ -1,0 +1,88 @@
+{
+  "generated_at": "2026-03-17T05:10:00Z",
+  "ticket": "OPE-273",
+  "title": "Broker durability rollout scorecard",
+  "status": "blocked",
+  "summary": "replicated durability is blocked by broker bootstrap readiness and incomplete validation evidence",
+  "source": {
+    "code_path": "bigclaw-go/internal/events/durability.go",
+    "debug_payload": "GET /debug/status",
+    "control_plane_payloads": [
+      "GET /v2/control-center",
+      "GET /v2/reports/distributed"
+    ]
+  },
+  "plan": {
+    "current_backend": "memory",
+    "target_backend": "broker_replicated",
+    "replication_factor": 3,
+    "requires_publisher_ack": true,
+    "target_phase": "rollout_ready"
+  },
+  "broker_bootstrap": {
+    "ready": false,
+    "status": "blocked",
+    "validation_errors": [
+      "broker event log config missing driver, urls, topic"
+    ]
+  },
+  "blockers": [
+    {
+      "code": "verification_evidence_incomplete",
+      "source": "replay_and_failover_validation",
+      "message": "some evidence is declared, but rollout still depends on pending artifacts"
+    },
+    {
+      "code": "broker_bootstrap_not_ready",
+      "source": "broker_bootstrap",
+      "message": "broker event log config missing driver, urls, topic"
+    }
+  ],
+  "missing_evidence": [
+    {
+      "code": "missing_verification_artifact",
+      "evidence": "replay_and_failover_validation",
+      "artifact": "future broker-failover-<backend>-report.json scenario outputs",
+      "reason": "some evidence is declared, but rollout still depends on pending artifacts"
+    }
+  ],
+  "checks": [
+    {
+      "name": "durable_publish_ack",
+      "status": "pending_validation",
+      "blocking": true
+    },
+    {
+      "name": "replay_checkpoint_alignment",
+      "status": "pending_validation",
+      "blocking": true
+    },
+    {
+      "name": "retention_boundary_visibility",
+      "status": "pending_validation",
+      "blocking": true
+    },
+    {
+      "name": "live_fanout_isolation",
+      "status": "pending_validation",
+      "blocking": true
+    }
+  ],
+  "verification": [
+    {
+      "name": "debug_and_control_plane_surface",
+      "status": "available"
+    },
+    {
+      "name": "replay_and_failover_validation",
+      "status": "partial",
+      "missing_artifacts": [
+        "future broker-failover-<backend>-report.json scenario outputs"
+      ]
+    },
+    {
+      "name": "operator_rollout_contract",
+      "status": "available"
+    }
+  ]
+}

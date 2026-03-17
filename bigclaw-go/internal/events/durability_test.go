@@ -55,3 +55,26 @@ func TestNewDurabilityPlanWithBrokerConfigIncludesBootstrapStatus(t *testing.T) 
 		t.Fatalf("unexpected broker bootstrap timings: %+v", plan.BrokerBootstrap)
 	}
 }
+
+func TestNewDurabilityPlanIncludesRolloutScorecard(t *testing.T) {
+	plan := NewDurabilityPlan("http", "broker_replicated", 3)
+
+	if plan.RolloutScorecard.Status != "blocked" || plan.RolloutScorecard.Ready {
+		t.Fatalf("expected blocked rollout scorecard, got %+v", plan.RolloutScorecard)
+	}
+	if plan.RolloutScorecard.TargetPhase != "rollout_ready" {
+		t.Fatalf("expected rollout_ready target phase, got %+v", plan.RolloutScorecard)
+	}
+	if plan.RolloutScorecard.BrokerBootstrap == nil || plan.RolloutScorecard.BrokerBootstrap.Status != "blocked" {
+		t.Fatalf("expected blocked broker bootstrap readiness, got %+v", plan.RolloutScorecard.BrokerBootstrap)
+	}
+	if len(plan.RolloutScorecard.Blockers) < 2 {
+		t.Fatalf("expected rollout blockers, got %+v", plan.RolloutScorecard.Blockers)
+	}
+	if len(plan.RolloutScorecard.MissingEvidence) == 0 {
+		t.Fatalf("expected missing evidence classification, got %+v", plan.RolloutScorecard)
+	}
+	if plan.RolloutScorecard.MissingEvidence[0].Code != "missing_verification_artifact" {
+		t.Fatalf("unexpected missing evidence code: %+v", plan.RolloutScorecard.MissingEvidence[0])
+	}
+}
