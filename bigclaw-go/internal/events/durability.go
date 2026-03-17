@@ -94,6 +94,7 @@ type DurabilityPlan struct {
 	FailureDomains       []FailureDomain        `json:"failure_domains"`
 	VerificationEvidence []VerificationEvidence `json:"verification_evidence"`
 	BrokerBootstrap      *BrokerBootstrapStatus `json:"broker_bootstrap,omitempty"`
+	RolloutScorecard     RolloutScorecard       `json:"rollout_scorecard"`
 }
 
 func NormalizeDurabilityBackend(value string) DurabilityBackend {
@@ -244,6 +245,8 @@ func NewDurabilityPlanWithBrokerConfig(currentBackend, targetBackend string, rep
 				Artifacts: []string{
 					"docs/reports/event-bus-reliability-report.md",
 					"docs/reports/replicated-event-log-durability-rollout-contract.md",
+					"docs/reports/broker-durability-rollout-scorecard.json",
+					"docs/reports/durability-rollout-scorecard.json",
 				},
 			},
 		},
@@ -251,22 +254,23 @@ func NewDurabilityPlanWithBrokerConfig(currentBackend, targetBackend string, rep
 	if current.Replicated || target.Replicated {
 		plan.BrokerBootstrap = BrokerBootstrapStatusFromConfig(broker)
 	}
+	plan.RolloutScorecard = BuildRolloutScorecard(plan)
 	return plan
 }
 
-func (p DurabilityPlan) RolloutScorecard() RolloutScorecard {
+func BuildRolloutScorecard(plan DurabilityPlan) RolloutScorecard {
 	scorecard := RolloutScorecard{
-		CurrentBackend:    p.Current.Backend,
-		TargetBackend:     p.Target.Backend,
-		ReplicationFactor: p.ReplicationFactor,
+		CurrentBackend:    plan.Current.Backend,
+		TargetBackend:     plan.Target.Backend,
+		ReplicationFactor: plan.ReplicationFactor,
 	}
-	if !p.Target.Replicated {
+	if !plan.Target.Replicated {
 		scorecard.Status = "not_applicable"
 		scorecard.NextActions = []string{"configure a replicated target backend before using the durability rollout scorecard"}
 		return scorecard
 	}
 
-	evidence := p.rolloutEvidenceStatuses()
+	evidence := buildRolloutEvidenceStatuses(plan)
 	scorecard.Evidence = evidence
 	for _, item := range evidence {
 		switch item.Status {
@@ -279,12 +283,12 @@ func (p DurabilityPlan) RolloutScorecard() RolloutScorecard {
 		}
 	}
 
-	blockers := p.rolloutBlockers(evidence)
+	blockers := buildRolloutBlockers(plan, evidence)
 	scorecard.Blockers = blockers
-	scorecard.NextActions = p.rolloutNextActions(evidence)
+	scorecard.NextActions = buildRolloutNextActions(plan, evidence)
 	ready := len(blockers) == 0
-	checks := make([]RolloutScorecardCheck, 0, len(p.RolloutChecks))
-	for _, check := range p.RolloutChecks {
+	checks := make([]RolloutScorecardCheck, 0, len(plan.RolloutChecks))
+	for _, check := range plan.RolloutChecks {
 		entry := RolloutScorecardCheck{
 			Name:               check.Name,
 			Status:             "blocked",
@@ -312,9 +316,9 @@ func (p DurabilityPlan) RolloutScorecard() RolloutScorecard {
 	return scorecard
 }
 
-func (p DurabilityPlan) rolloutEvidenceStatuses() []RolloutEvidenceStatus {
-	evidence := make([]RolloutEvidenceStatus, 0, len(p.VerificationEvidence)+1)
-	for _, item := range p.VerificationEvidence {
+func buildRolloutEvidenceStatuses(plan DurabilityPlan) []RolloutEvidenceStatus {
+	evidence := make([]RolloutEvidenceStatus, 0, len(plan.VerificationEvidence)+1)
+	for _, item := range plan.VerificationEvidence {
 		status := "ready"
 		detail := "repo advertises concrete supporting artifacts for reviewer inspection"
 		switch {
@@ -332,19 +336,19 @@ func (p DurabilityPlan) rolloutEvidenceStatuses() []RolloutEvidenceStatus {
 			Detail:    detail,
 		})
 	}
-	if p.Current.Replicated || p.Target.Replicated {
+	if plan.Current.Replicated || plan.Target.Replicated {
 		status := RolloutEvidenceStatus{
 			Name:   "broker_bootstrap_config",
 			Status: "blocked",
 			Detail: "broker runtime configuration is not yet valid for a replicated backend",
 		}
-		if p.BrokerBootstrap != nil {
-			status.Artifacts = []string{brokerBootstrapArtifactLabel(p.BrokerBootstrap)}
-			if p.BrokerBootstrap.Ready {
+		if plan.BrokerBootstrap != nil {
+			status.Artifacts = []string{brokerBootstrapArtifactLabel(plan.BrokerBootstrap)}
+			if plan.BrokerBootstrap.Ready {
 				status.Status = "ready"
 				status.Detail = "broker runtime configuration validates for replicated publish and replay setup"
-			} else if len(p.BrokerBootstrap.ValidationErrors) > 0 {
-				status.Detail = strings.Join(p.BrokerBootstrap.ValidationErrors, "; ")
+			} else if len(plan.BrokerBootstrap.ValidationErrors) > 0 {
+				status.Detail = strings.Join(plan.BrokerBootstrap.ValidationErrors, "; ")
 			}
 		}
 		evidence = append(evidence, status)
@@ -352,17 +356,17 @@ func (p DurabilityPlan) rolloutEvidenceStatuses() []RolloutEvidenceStatus {
 	return evidence
 }
 
-func (p DurabilityPlan) rolloutBlockers(evidence []RolloutEvidenceStatus) []string {
+func buildRolloutBlockers(plan DurabilityPlan, evidence []RolloutEvidenceStatus) []string {
 	blockers := make([]string, 0, 3)
-	if p.Current.Backend != p.Target.Backend || !p.Current.Replicated {
-		blockers = append(blockers, "current backend "+string(p.Current.Backend)+" does not yet match the replicated target "+string(p.Target.Backend))
+	if plan.Current.Backend != plan.Target.Backend || !plan.Current.Replicated {
+		blockers = append(blockers, "current backend "+string(plan.Current.Backend)+" does not yet match the replicated target "+string(plan.Target.Backend))
 	}
-	if p.BrokerBootstrap == nil {
+	if plan.BrokerBootstrap == nil {
 		blockers = append(blockers, "broker bootstrap status is missing for the replicated target")
-	} else if !p.BrokerBootstrap.Ready {
+	} else if !plan.BrokerBootstrap.Ready {
 		message := "broker bootstrap configuration is not ready"
-		if len(p.BrokerBootstrap.ValidationErrors) > 0 {
-			message += ": " + strings.Join(p.BrokerBootstrap.ValidationErrors, "; ")
+		if len(plan.BrokerBootstrap.ValidationErrors) > 0 {
+			message += ": " + strings.Join(plan.BrokerBootstrap.ValidationErrors, "; ")
 		}
 		blockers = append(blockers, message)
 	}
@@ -375,12 +379,12 @@ func (p DurabilityPlan) rolloutBlockers(evidence []RolloutEvidenceStatus) []stri
 	return blockers
 }
 
-func (p DurabilityPlan) rolloutNextActions(evidence []RolloutEvidenceStatus) []string {
+func buildRolloutNextActions(plan DurabilityPlan, evidence []RolloutEvidenceStatus) []string {
 	actions := make([]string, 0, 3)
-	if p.Current.Backend != p.Target.Backend || !p.Current.Replicated {
-		actions = append(actions, "switch BIGCLAW_EVENT_LOG_BACKEND to "+string(p.Target.Backend)+" after the replicated adapter is wired into runtime paths")
+	if plan.Current.Backend != plan.Target.Backend || !plan.Current.Replicated {
+		actions = append(actions, "switch BIGCLAW_EVENT_LOG_BACKEND to "+string(plan.Target.Backend)+" after the replicated adapter is wired into runtime paths")
 	}
-	if p.BrokerBootstrap == nil || !p.BrokerBootstrap.Ready {
+	if plan.BrokerBootstrap == nil || !plan.BrokerBootstrap.Ready {
 		actions = append(actions, "set BIGCLAW_EVENT_LOG_BROKER_DRIVER, BIGCLAW_EVENT_LOG_BROKER_URLS, and BIGCLAW_EVENT_LOG_BROKER_TOPIC so broker bootstrap becomes ready")
 	}
 	for _, item := range evidence {

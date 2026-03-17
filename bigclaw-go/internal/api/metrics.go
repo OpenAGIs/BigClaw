@@ -42,7 +42,7 @@ func (s *Server) buildMetricsSnapshot() metricsSnapshot {
 		RegisteredExecutors:    s.executorNames(),
 		WorkerPool:             s.workerPoolSummary(),
 		EventDurability:        s.EventPlan,
-		EventDurabilityRollout: s.EventPlan.RolloutScorecard(),
+		EventDurabilityRollout: s.EventPlan.RolloutScorecard,
 		EventLog:               s.eventLogCapabilities(context.Background()),
 		RetentionWatermark:     s.retentionWatermark(),
 	}

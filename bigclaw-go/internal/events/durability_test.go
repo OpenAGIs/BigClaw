@@ -29,6 +29,12 @@ func TestNewDurabilityPlanForReplicatedTargetIncludesRolloutContract(t *testing.
 	if plan.VerificationEvidence[2].Artifacts[1] != "docs/reports/replicated-event-log-durability-rollout-contract.md" {
 		t.Fatalf("expected rollout contract artifact, got %+v", plan.VerificationEvidence[2])
 	}
+	if plan.VerificationEvidence[2].Artifacts[2] != "docs/reports/broker-durability-rollout-scorecard.json" {
+		t.Fatalf("expected broker rollout scorecard artifact, got %+v", plan.VerificationEvidence[2])
+	}
+	if plan.VerificationEvidence[2].Artifacts[3] != "docs/reports/durability-rollout-scorecard.json" {
+		t.Fatalf("expected generic rollout scorecard artifact, got %+v", plan.VerificationEvidence[2])
+	}
 }
 
 func TestNewDurabilityPlanWithBrokerConfigIncludesBootstrapStatus(t *testing.T) {
@@ -56,9 +62,23 @@ func TestNewDurabilityPlanWithBrokerConfigIncludesBootstrapStatus(t *testing.T) 
 	}
 }
 
+func TestNewDurabilityPlanIncludesRolloutScorecard(t *testing.T) {
+	plan := NewDurabilityPlan("http", "broker_replicated", 3)
+
+	if plan.RolloutScorecard.Status != "blocked" || plan.RolloutScorecard.RolloutReady {
+		t.Fatalf("expected blocked rollout scorecard, got %+v", plan.RolloutScorecard)
+	}
+	if plan.RolloutScorecard.CurrentBackend != "http" || plan.RolloutScorecard.TargetBackend != "broker_replicated" {
+		t.Fatalf("unexpected rollout scorecard backends: %+v", plan.RolloutScorecard)
+	}
+	if plan.RolloutScorecard.BlockedChecks != len(plan.RolloutChecks) {
+		t.Fatalf("expected all rollout checks blocked, got %+v", plan.RolloutScorecard)
+	}
+}
+
 func TestDurabilityPlanRolloutScorecardFlagsRuntimeGaps(t *testing.T) {
 	plan := NewDurabilityPlan("http", "broker_replicated", 5)
-	scorecard := plan.RolloutScorecard()
+	scorecard := plan.RolloutScorecard
 
 	if scorecard.Status != "blocked" || scorecard.RolloutReady {
 		t.Fatalf("expected blocked rollout scorecard, got %+v", scorecard)
@@ -95,7 +115,7 @@ func TestDurabilityPlanRolloutScorecardKeepsFailoverGateVisibleWhenBootstrapRead
 		ReplayLimit:        2048,
 		CheckpointInterval: 15 * time.Second,
 	})
-	scorecard := plan.RolloutScorecard()
+	scorecard := plan.RolloutScorecard
 
 	if scorecard.Status != "blocked" || scorecard.RolloutReady {
 		t.Fatalf("expected failover evidence to keep rollout blocked, got %+v", scorecard)

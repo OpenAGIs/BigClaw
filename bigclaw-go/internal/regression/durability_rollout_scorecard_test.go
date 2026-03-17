@@ -12,10 +12,10 @@ import (
 
 func TestDurabilityRolloutScorecardReportStaysAligned(t *testing.T) {
 	repoRoot := repoRoot(t)
-	reportPath := filepath.Join(repoRoot, "docs", "reports", "durability-rollout-scorecard.json")
-
-	var report events.RolloutScorecard
-	readJSONFile(t, reportPath, &report)
+	reportPaths := []string{
+		filepath.Join(repoRoot, "docs", "reports", "broker-durability-rollout-scorecard.json"),
+		filepath.Join(repoRoot, "docs", "reports", "durability-rollout-scorecard.json"),
+	}
 
 	cfg := config.Default()
 	plan := events.NewDurabilityPlanWithBrokerConfig(
@@ -32,9 +32,13 @@ func TestDurabilityRolloutScorecardReportStaysAligned(t *testing.T) {
 			CheckpointInterval: cfg.EventLogCheckpointInterval,
 		},
 	)
-	want := plan.RolloutScorecard()
-	if !reflect.DeepEqual(report, want) {
-		t.Fatalf("durability rollout scorecard drifted\nreport=%+v\nwant=%+v", report, want)
+	want := plan.RolloutScorecard
+	for _, reportPath := range reportPaths {
+		var report events.RolloutScorecard
+		readJSONFile(t, reportPath, &report)
+		if !reflect.DeepEqual(report, want) {
+			t.Fatalf("durability rollout scorecard drifted for %s\nreport=%+v\nwant=%+v", reportPath, report, want)
+		}
 	}
 
 	cases := []struct {
@@ -45,6 +49,7 @@ func TestDurabilityRolloutScorecardReportStaysAligned(t *testing.T) {
 			path: "docs/reports/event-bus-reliability-report.md",
 			substrings: []string{
 				"event_durability_rollout",
+				"broker-durability-rollout-scorecard.json",
 				"durability-rollout-scorecard.json",
 			},
 		},
@@ -52,6 +57,7 @@ func TestDurabilityRolloutScorecardReportStaysAligned(t *testing.T) {
 			path: "docs/reports/replicated-event-log-durability-rollout-contract.md",
 			substrings: []string{
 				"event_durability_rollout",
+				"broker-durability-rollout-scorecard.json",
 				"durability-rollout-scorecard.json",
 			},
 		},

@@ -84,6 +84,8 @@ This report summarizes the current event bus reliability evidence and the next r
 - `internal/api/server.go`: operational reporting for current and target durability mode plus runtime capability probes.
 - Subscriber checkpoint persistence, replay endpoints, and dedup ledger surfaces preserve resume and idempotency semantics while moving state out of process-local memory.
 - `internal/events/durability.go`: rollout-facing contract for replicated durability phases, failure domains, and required verification evidence.
+- `docs/reports/broker-durability-rollout-scorecard.json`: checked-in reviewer-facing rollout scorecard for readiness, blockers, and missing evidence.
+- `docs/reports/durability-rollout-scorecard.json`: generic mirror of the same rollout scorecard payload for bootstrap and automation workflows.
 - `internal/events/log.go`: provider-neutral `PartitionRoute` and `SubscriberOwnershipContract` fields now reserve the future partitioned-routing and broker-backed ownership contract surface without claiming runtime support yet.
 
 ## Migration and compatibility constraints
@@ -143,11 +145,13 @@ This report summarizes the current event bus reliability evidence and the next r
 ## Replicated rollout contract
 
 - `docs/reports/replicated-event-log-durability-rollout-contract.md` now captures the minimum rollout gates for a broker-backed or quorum-backed adapter, and `event_durability` now includes broker bootstrap readiness for those targets:
+- `docs/reports/broker-durability-rollout-scorecard.json` mirrors the runtime contract in one checked-in JSON scorecard so reviewers can inspect readiness, blockers, and missing evidence without reconstructing them from prose.
+- `docs/reports/durability-rollout-scorecard.json` keeps the same payload under a repo-agnostic filename for queue bootstrap and automation flows.
   - replicated publish acknowledgements must distinguish committed, rejected, and ambiguous outcomes;
   - replay and checkpoint state must share the same durable sequence domain across failover;
   - retention boundaries must be operator-visible before resumable recovery is claimed;
   - live fanout must remain isolated from broker catch-up lag.
-- The same contract is surfaced in `events.DurabilityPlan`, and `event_durability_rollout` now publishes a derived scorecard through `GET /debug/status`, `/metrics`, and `docs/reports/durability-rollout-scorecard.json` so operators can see which rollout gates are still blocked before a live adapter exists.
+- The same contract is surfaced in `events.DurabilityPlan`; the nested `rollout_scorecard` field and top-level `event_durability_rollout` alias now publish the derived status through `GET /debug/status` and `/metrics`, with matching checked-in artifacts at `docs/reports/broker-durability-rollout-scorecard.json` and `docs/reports/durability-rollout-scorecard.json`.
 
 ## Next adapter boundary
 

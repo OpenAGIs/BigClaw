@@ -9,6 +9,7 @@ It builds on the provider-neutral adapter boundary in `docs/reports/broker-event
 ## Current baseline
 
 - `internal/events/durability.go` already declares `broker_replicated` as the target backend and surfaces the active durability plan through bootstrap and debug payloads, including broker bootstrap readiness derived from configured driver / URLs / topic settings.
+- `docs/reports/broker-durability-rollout-scorecard.json` now captures the same rollout posture as one checked-in machine-readable scorecard, including blockers, missing evidence, and broker bootstrap readiness.
 - `cmd/bigclawd/main.go` validates broker runtime config but intentionally stops before instantiating a live replicated adapter.
 - `docs/reports/event-bus-reliability-report.md` and `docs/reports/broker-failover-fault-injection-validation-pack.md` describe the portability and validation direction, but prior to this slice the rollout gate itself was not captured as one explicit contract.
 
@@ -67,7 +68,8 @@ It builds on the provider-neutral adapter boundary in `docs/reports/broker-event
 - failure-domain summaries
 - references to the supporting validation pack and rollout contract documents
 
-The current repo-native sources for these signals are the `event_durability` payload plus the derived `event_durability_rollout` scorecard exposed through `GET /debug/status`, `/metrics`, and the checked-in `docs/reports/durability-rollout-scorecard.json` artifact.
+The current repo-native sources for these signals are the `event_durability` payload and its nested `rollout_scorecard`, plus the top-level `event_durability_rollout` alias exposed through `GET /debug/status` and `/metrics`. Checked-in reviewer artifacts live at `docs/reports/broker-durability-rollout-scorecard.json` and `docs/reports/durability-rollout-scorecard.json`.
+
 
 ## Validation evidence required before a live adapter lands
 

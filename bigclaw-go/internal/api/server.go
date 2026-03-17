@@ -192,7 +192,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/debug/traces", s.handleDebugTraces)
 	mux.HandleFunc("/debug/traces/", s.handleDebugTrace)
 	mux.HandleFunc("/debug/status", func(w http.ResponseWriter, r *http.Request) {
-		rolloutScorecard := s.EventPlan.RolloutScorecard()
+		rolloutScorecard := s.EventPlan.RolloutScorecard
 		payload := map[string]any{
 			"queue_size":               s.Queue.Size(context.Background()),
 			"audit_events":             len(s.Recorder.Logs()),
