@@ -137,7 +137,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - Retention watermarks are now exposed for in-memory and durable event-log backends, SQLite-backed logs persist trimmed replay boundaries across restarts, and expired checkpoint resumes now fail closed with explicit reset guidance; the broader compaction semantics remain documented in `docs/reports/replay-retention-semantics-report.md`.
 - Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.
 - Multi-subscriber takeover validation now has a deterministic local harness in `docs/reports/multi-subscriber-takeover-validation-report.md` / `docs/reports/multi-subscriber-takeover-validation-report.json`, but it is not yet a live multi-node subscriber takeover proof; see `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
-- `docs/reports/cross-process-coordination-capability-surface.json` now summarizes which coordination guarantees are implemented as live local proof, which are only deterministic local harnesses, and which remain contract-defined targets.
+- `docs/reports/cross-process-coordination-capability-surface.json` now acts as the runtime capability matrix, summarizing which coordination guarantees are `live_proven`, which are `harness_proven`, and which remain `contract_only`.
 
 ## Replicated rollout contract
 
@@ -157,7 +157,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - No delivery acknowledgement protocol beyond sink-level best effort.
 - No partitioned topic model or cross-process subscriber coordination yet; see `docs/reports/cross-process-coordination-boundary-digest.md`.
 - Multi-subscriber takeover validation now has a deterministic local harness in `docs/reports/multi-subscriber-takeover-validation-report.md` / `docs/reports/multi-subscriber-takeover-validation-report.json`, but it is not yet a live multi-node subscriber takeover proof; see `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
-- `docs/reports/cross-process-coordination-capability-surface.json` now summarizes which coordination guarantees are implemented as live local proof, which are only deterministic local harnesses, and which remain contract-defined targets.
+- `docs/reports/cross-process-coordination-capability-surface.json` now acts as the runtime capability matrix, summarizing which coordination guarantees are `live_proven`, which are `harness_proven`, and which remain `contract_only`.
 
 ## Parallel follow-up digests
 
