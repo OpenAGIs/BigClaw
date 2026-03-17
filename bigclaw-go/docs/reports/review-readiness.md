@@ -47,7 +47,7 @@
 
 - Production-grade capacity certification can remain a follow-up track beyond the current rewrite closure.
 - A repo-native leader-election scaffold now exists through the subscriber-lease-backed `/coordination/leader` surface plus matching debug/control-center payloads, while the underlying proof remains local/shared-store scoped rather than broker-backed or quorum-backed.
-- Higher-scale external-store validation is still pending beyond the current SQLite-backed scope.
+- A repo-native external-store validation lane now exists in `docs/reports/external-store-validation-report.json`, proving replay, checkpoint reset history, persisted retention boundaries, and shared-lease takeover behavior through the remote HTTP event-log service boundary. Broker-backed or quorum-backed durability validation is still pending beyond that first external-store lane.
 
 ## Parallel follow-up digests
 

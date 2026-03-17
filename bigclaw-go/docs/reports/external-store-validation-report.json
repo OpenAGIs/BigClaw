@@ -1,0 +1,70 @@
+{
+  "generated_at": "2026-03-17T10:42:54.890497Z",
+  "ticket": "BIG-PAR-097",
+  "title": "External-store validation lane for remote event-log service",
+  "status": "validated",
+  "lane": {
+    "service_backend": "sqlite_event_log_service",
+    "runtime_event_log_backend": "http_remote_service",
+    "queue_backend": "sqlite",
+    "subscriber_lease_backend": "sqlite_shared",
+    "retention": "2s",
+    "node_count": 3
+  },
+  "summary": {
+    "task_succeeded": true,
+    "remote_replay_backend": "http",
+    "replay_event_count": 5,
+    "checkpoint_acknowledged": true,
+    "checkpoint_reset_recorded": true,
+    "retention_boundary_visible": true,
+    "retained_event_count": 1,
+    "takeover_conflict_rejected": true,
+    "takeover_after_expiry": true,
+    "stale_writer_rejected": true
+  },
+  "replay_validation": {
+    "task_id": "external-store-smoke-task",
+    "trace_id": "external-store-smoke-trace",
+    "backend": "http",
+    "durable": true,
+    "latest_event_id": "external-store-smoke-task-completed",
+    "latest_event_type": "task.completed"
+  },
+  "checkpoint_validation": {
+    "subscriber_id": "subscriber-external-store",
+    "acked_event_id": "external-store-smoke-task-completed",
+    "checkpoint_event_id": "external-store-smoke-task-completed",
+    "reset_history_entries": 1
+  },
+  "retention_validation": {
+    "trace_id": "external-store-retention-trace",
+    "history_truncated": true,
+    "persisted_boundary": true,
+    "trimmed_through_event_id": "evt-external-retention-old",
+    "oldest_event_id": "external-store-smoke-task-queued",
+    "newest_event_id": "evt-external-retention-new"
+  },
+  "takeover_validation": {
+    "group_id": "group-external-store",
+    "subscriber_id": "subscriber-external-store",
+    "initial_consumer": "node-a",
+    "initial_epoch": 1,
+    "initial_checkpoint_offset": 11,
+    "conflict_status": 409,
+    "takeover_consumer": "node-b",
+    "takeover_epoch": 2,
+    "stale_writer_status": 409,
+    "final_checkpoint_offset": 15,
+    "final_lease_consumer": "node-b"
+  },
+  "artifacts": {
+    "e2e_doc": "docs/e2e-validation.md",
+    "retention_report": "docs/reports/replay-retention-semantics-report.md",
+    "epic_report": "docs/reports/epic-closure-readiness-report.md"
+  },
+  "limitations": [
+    "Event replay and checkpoint storage are validated through the remote HTTP event-log service, while shared-queue coordination and takeover still rely on the current shared SQLite lease store.",
+    "This lane validates a repo-native external-store boundary but does not yet prove a broker-backed or quorum-backed durability adapter."
+  ]
+}

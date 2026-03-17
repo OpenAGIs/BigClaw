@@ -100,6 +100,18 @@ python3 scripts/e2e/mixed_workload_matrix.py \
 
 This validates one control-plane instance against a more production-like mix of `local`, tool-routed `kubernetes`, tool-routed `ray`, and high-risk isolation scenarios.
 
+## External-store remote event-log validation lane
+
+```bash
+cd bigclaw-go
+python3 scripts/e2e/external_store_validation.py \
+  --report-path docs/reports/external-store-validation-report.json
+```
+
+This lane starts one repo-native SQLite-backed event-log service node plus two client `bigclawd` nodes configured with `BIGCLAW_EVENT_LOG_REMOTE_URL`. It validates that replay, checkpoint reset history, persisted retention boundaries, and lease-backed takeover behavior remain reviewable when the event log moves behind a remote HTTP service boundary.
+
+The checked-in output lives at `docs/reports/external-store-validation-report.json`. It intentionally distinguishes the external event-log boundary from the current shared-SQLite lease scaffold: replay and checkpoint state are remote-service-backed, while takeover still relies on the shared durable lease store.
+
 ## Multi-node shared queue proof
 
 ```bash
