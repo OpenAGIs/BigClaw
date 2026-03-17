@@ -147,6 +147,8 @@ This report summarizes the current event bus reliability evidence and the next r
 - `docs/reports/replicated-event-log-durability-rollout-contract.md` now captures the minimum rollout gates for a broker-backed or quorum-backed adapter, and `event_durability` now includes broker bootstrap readiness for those targets:
 - `docs/reports/broker-durability-rollout-scorecard.json` mirrors the runtime contract in one checked-in JSON scorecard so reviewers can inspect readiness, blockers, and missing evidence without reconstructing them from prose.
 - `docs/reports/durability-rollout-scorecard.json` keeps the same payload under a repo-agnostic filename for queue bootstrap and automation flows.
+- `docs/reports/broker-checkpoint-fencing-proof-summary.json` isolates the stub-matrix scenarios that prove replay/checkpoint sequence monotonicity and stale-writer fencing during takeover.
+- `docs/reports/broker-retention-boundary-proof-summary.json` isolates the retention-expiry scenario that proves aged-out checkpoints fail closed until an explicit reset is recorded.
   - replicated publish acknowledgements must distinguish committed, rejected, and ambiguous outcomes;
   - replay and checkpoint state must share the same durable sequence domain across failover;
   - retention boundaries must be operator-visible before resumable recovery is claimed;

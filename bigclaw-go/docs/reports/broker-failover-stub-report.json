@@ -613,5 +613,9 @@
     "failing_scenarios": 0,
     "duplicate_count": 1,
     "missing_event_count": 0
+  },
+  "proof_artifacts": {
+    "checkpoint_fencing_summary": "bigclaw-go/docs/reports/broker-checkpoint-fencing-proof-summary.json",
+    "retention_boundary_summary": "bigclaw-go/docs/reports/broker-retention-boundary-proof-summary.json"
   }
 }

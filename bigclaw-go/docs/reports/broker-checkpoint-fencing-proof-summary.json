@@ -1,0 +1,117 @@
+{
+  "generated_at": "2026-03-17T12:00:00Z",
+  "ticket": "OPE-230",
+  "title": "Checkpoint fencing proof summary from broker failover stub matrix",
+  "source_report": "bigclaw-go/docs/reports/broker-failover-stub-report.json",
+  "summary_schema_version": "2026-03-17",
+  "proof_family": "checkpoint_fencing",
+  "status": "passed",
+  "rollout_gate_statuses": [
+    {
+      "name": "durable_publish_ack",
+      "status": "unknown",
+      "detail": "Checkpoint-fencing scenarios do not independently prove replicated publish acknowledgements.",
+      "scenario_ids": []
+    },
+    {
+      "name": "replay_checkpoint_alignment",
+      "status": "passed",
+      "detail": "Replay resume cursors and checkpoint commits stay in one durable sequence domain across crash, takeover, and duplicate-delivery windows.",
+      "scenario_ids": [
+        "BF-03",
+        "BF-04",
+        "BF-08"
+      ]
+    },
+    {
+      "name": "retention_boundary_visibility",
+      "status": "unknown",
+      "detail": "Retention-boundary handling is summarized separately in the retention proof summary.",
+      "scenario_ids": []
+    },
+    {
+      "name": "live_fanout_isolation",
+      "status": "unknown",
+      "detail": "These deterministic scenarios do not exercise live SSE or in-process fanout isolation.",
+      "scenario_ids": []
+    }
+  ],
+  "focus_scenarios": [
+    {
+      "scenario_id": "BF-03",
+      "fault": "consumer_crash_before_checkpoint_commit",
+      "status": "passed",
+      "checkpoint_before_fault": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-1",
+        "lease_epoch": 1,
+        "durable_sequence": 2
+      },
+      "checkpoint_after_recovery": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-1",
+        "lease_epoch": 1,
+        "durable_sequence": 4
+      },
+      "stale_write_rejections": 0,
+      "duplicate_count": 0,
+      "artifacts": {
+        "replay_capture": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-03/replay-capture.json",
+        "checkpoint_transition_log": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-03/checkpoint-transition-log.json"
+      }
+    },
+    {
+      "scenario_id": "BF-04",
+      "fault": "checkpoint_leader_change_with_contention",
+      "status": "passed",
+      "checkpoint_before_fault": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-1",
+        "lease_epoch": 1,
+        "durable_sequence": 2
+      },
+      "checkpoint_after_recovery": {
+        "owner_id": "consumer-b",
+        "lease_id": "lease-2",
+        "lease_epoch": 2,
+        "durable_sequence": 3
+      },
+      "stale_write_rejections": 1,
+      "duplicate_count": 0,
+      "artifacts": {
+        "replay_capture": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-04/replay-capture.json",
+        "checkpoint_transition_log": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-04/checkpoint-transition-log.json"
+      }
+    },
+    {
+      "scenario_id": "BF-08",
+      "fault": "split_brain_duplicate_delivery_window",
+      "status": "passed",
+      "checkpoint_before_fault": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-1",
+        "lease_epoch": 1,
+        "durable_sequence": 2
+      },
+      "checkpoint_after_recovery": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-1",
+        "lease_epoch": 1,
+        "durable_sequence": 4
+      },
+      "stale_write_rejections": 0,
+      "duplicate_count": 1,
+      "artifacts": {
+        "replay_capture": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-08/replay-capture.json",
+        "checkpoint_transition_log": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-08/checkpoint-transition-log.json"
+      }
+    }
+  ],
+  "summary": {
+    "scenario_count": 3,
+    "passing_scenarios": 3,
+    "failing_scenarios": 0,
+    "stale_write_rejections": 1,
+    "duplicate_replay_windows": 1
+  }
+}
