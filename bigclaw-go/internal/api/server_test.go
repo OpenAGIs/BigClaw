@@ -438,12 +438,19 @@ func TestStreamEventsSupportsReplayAndFiltersByTrace(t *testing.T) {
 
 func TestSubscriberGroupLeaseEndpointsFenceConflictsAndRollback(t *testing.T) {
 	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	now := time.Unix(1700000000, 0)
 	server := &Server{
 		Recorder:         recorder,
 		Queue:            queue.NewMemoryQueue(),
-		Bus:              events.NewBus(),
+		Bus:              bus,
 		SubscriberLeases: events.NewSubscriberLeaseCoordinator(),
-		Now:              func() time.Time { return time.Unix(1700000000, 0) },
+		Now: func() time.Time {
+			current := now
+			now = now.Add(time.Second)
+			return current
+		},
 	}
 	handler := server.Handler()
 
@@ -499,6 +506,84 @@ func TestSubscriberGroupLeaseEndpointsFenceConflictsAndRollback(t *testing.T) {
 	}
 	if !strings.Contains(statusResponse.Body.String(), "\"checkpoint_offset\":7") {
 		t.Fatalf("expected checkpoint offset in status payload, got %s", statusResponse.Body.String())
+	}
+	now = now.Add(30 * time.Second)
+
+	takeoverBody := bytes.NewReader([]byte(`{"group_id":"group-a","subscriber_id":"sub-a","consumer_id":"consumer-b","ttl_seconds":30}`))
+	takeoverRequest := httptest.NewRequest(http.MethodPost, "/subscriber-groups/leases", takeoverBody)
+	takeoverResponse := httptest.NewRecorder()
+	handler.ServeHTTP(takeoverResponse, takeoverRequest)
+	if takeoverResponse.Code != http.StatusOK {
+		t.Fatalf("expected takeover acquire 200, got %d with %s", takeoverResponse.Code, takeoverResponse.Body.String())
+	}
+
+	var takeover struct {
+		Lease events.SubscriberLease `json:"lease"`
+	}
+	if err := json.Unmarshal(takeoverResponse.Body.Bytes(), &takeover); err != nil {
+		t.Fatalf("decode takeover response: %v", err)
+	}
+
+	staleBody := bytes.NewReader([]byte(`{"group_id":"group-a","subscriber_id":"sub-a","consumer_id":"consumer-a","lease_token":"` + acquired.Lease.LeaseToken + `","lease_epoch":` + epoch + `,"checkpoint_offset":8,"checkpoint_event_id":"evt-8"}`))
+	staleRequest := httptest.NewRequest(http.MethodPost, "/subscriber-groups/checkpoints", staleBody)
+	staleResponse := httptest.NewRecorder()
+	handler.ServeHTTP(staleResponse, staleRequest)
+	if staleResponse.Code != http.StatusConflict {
+		t.Fatalf("expected stale writer conflict 409, got %d with %s", staleResponse.Code, staleResponse.Body.String())
+	}
+
+	takeoverEpoch := strconv.FormatInt(takeover.Lease.LeaseEpoch, 10)
+	takeoverCommitBody := bytes.NewReader([]byte(`{"group_id":"group-a","subscriber_id":"sub-a","consumer_id":"consumer-b","lease_token":"` + takeover.Lease.LeaseToken + `","lease_epoch":` + takeoverEpoch + `,"checkpoint_offset":9,"checkpoint_event_id":"evt-9"}`))
+	takeoverCommitRequest := httptest.NewRequest(http.MethodPost, "/subscriber-groups/checkpoints", takeoverCommitBody)
+	takeoverCommitResponse := httptest.NewRecorder()
+	handler.ServeHTTP(takeoverCommitResponse, takeoverCommitRequest)
+	if takeoverCommitResponse.Code != http.StatusOK {
+		t.Fatalf("expected takeover checkpoint commit 200, got %d with %s", takeoverCommitResponse.Code, takeoverCommitResponse.Body.String())
+	}
+
+	auditEvents := recorder.EventsByTask("", 0)
+	wantTypes := []domain.EventType{
+		domain.EventSubscriberLeaseAcquired,
+		domain.EventSubscriberLeaseRejected,
+		domain.EventSubscriberCheckpointCommitted,
+		domain.EventSubscriberCheckpointRejected,
+		domain.EventSubscriberLeaseExpired,
+		domain.EventSubscriberTakeoverSucceeded,
+		domain.EventSubscriberCheckpointRejected,
+		domain.EventSubscriberCheckpointCommitted,
+	}
+	filtered := make([]domain.Event, 0, len(wantTypes))
+	for _, event := range auditEvents {
+		switch event.Type {
+		case domain.EventSubscriberLeaseAcquired,
+			domain.EventSubscriberLeaseRejected,
+			domain.EventSubscriberCheckpointCommitted,
+			domain.EventSubscriberCheckpointRejected,
+			domain.EventSubscriberLeaseExpired,
+			domain.EventSubscriberTakeoverSucceeded:
+			filtered = append(filtered, event)
+		}
+	}
+	if len(filtered) != len(wantTypes) {
+		t.Fatalf("expected %d subscriber audit events, got %d: %+v", len(wantTypes), len(filtered), filtered)
+	}
+	for i, want := range wantTypes {
+		if filtered[i].Type != want {
+			t.Fatalf("expected subscriber event %d to be %s, got %+v", i, want, filtered)
+		}
+	}
+	takeoverEvent := filtered[5]
+	for _, key := range []string{"group_id", "subscriber_id", "consumer_id", "previous_consumer_id", "lease_token", "lease_epoch", "checkpoint_offset"} {
+		if _, ok := takeoverEvent.Payload[key]; !ok {
+			t.Fatalf("expected takeover payload field %q in %+v", key, takeoverEvent.Payload)
+		}
+	}
+	if takeoverEvent.Payload["consumer_id"] != "consumer-b" || takeoverEvent.Payload["previous_consumer_id"] != "consumer-a" {
+		t.Fatalf("unexpected takeover payload: %+v", takeoverEvent.Payload)
+	}
+	rejected := filtered[6]
+	if rejected.Payload["reason"] != events.ErrLeaseFence.Error() {
+		t.Fatalf("expected fenced checkpoint rejection payload, got %+v", rejected.Payload)
 	}
 }
 
