@@ -1930,13 +1930,25 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 				} `json:"takeover_owners"`
 			} `json:"cluster_health"`
 			BrokerReviewPack struct {
-				Status             string   `json:"status"`
-				SummaryPath        string   `json:"summary_path"`
-				ReportPath         string   `json:"report_path"`
-				ValidationPackPath string   `json:"validation_pack_path"`
-				ArtifactDirectory  string   `json:"artifact_directory"`
-				ReviewerLinks      []string `json:"reviewer_links"`
+				Status                string   `json:"status"`
+				SummaryPath           string   `json:"summary_path"`
+				ReportPath            string   `json:"report_path"`
+				ValidationPackPath    string   `json:"validation_pack_path"`
+				ArtifactDirectory     string   `json:"artifact_directory"`
+				ReviewerLinks         []string `json:"reviewer_links"`
+				AmbiguousPublishProof struct {
+					Path       string   `json:"path"`
+					ScenarioID string   `json:"scenario_id"`
+					Outcomes   []string `json:"outcomes"`
+				} `json:"ambiguous_publish_proof"`
 			} `json:"broker_review_pack"`
+			TraceBundle struct {
+				AmbiguousPublishProof struct {
+					Path       string   `json:"path"`
+					ScenarioID string   `json:"scenario_id"`
+					Outcomes   []string `json:"outcomes"`
+				} `json:"ambiguous_publish_proof"`
+			} `json:"trace_export_bundle"`
 			RolloutReport struct {
 				Markdown  string `json:"markdown"`
 				ExportURL string `json:"export_url"`
@@ -1988,10 +2000,21 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		decoded.Diagnostics.BrokerReviewPack.ReviewerLinks[1] != "docs/reports/review-readiness.md" {
 		t.Fatalf("unexpected broker review pack reviewer links: %+v", decoded.Diagnostics.BrokerReviewPack.ReviewerLinks)
 	}
+	if decoded.Diagnostics.BrokerReviewPack.AmbiguousPublishProof.Path != "docs/reports/ambiguous-publish-outcome-proof-summary.json" ||
+		decoded.Diagnostics.BrokerReviewPack.AmbiguousPublishProof.ScenarioID != "BF-05" ||
+		len(decoded.Diagnostics.BrokerReviewPack.AmbiguousPublishProof.Outcomes) != 3 {
+		t.Fatalf("unexpected broker review pack ambiguous publish proof: %+v", decoded.Diagnostics.BrokerReviewPack.AmbiguousPublishProof)
+	}
+	if decoded.Diagnostics.TraceBundle.AmbiguousPublishProof.Path != "docs/reports/ambiguous-publish-outcome-proof-summary.json" ||
+		decoded.Diagnostics.TraceBundle.AmbiguousPublishProof.ScenarioID != "BF-05" ||
+		len(decoded.Diagnostics.TraceBundle.AmbiguousPublishProof.Outcomes) != 3 {
+		t.Fatalf("unexpected trace bundle ambiguous publish proof: %+v", decoded.Diagnostics.TraceBundle.AmbiguousPublishProof)
+	}
 	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Failover Review Pack") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-validation-summary.json") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/ambiguous-publish-outcome-proof-summary.json") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-failover-stub-artifacts") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {
 		t.Fatalf("unexpected rollout report payload: %+v", decoded.Diagnostics.RolloutReport)

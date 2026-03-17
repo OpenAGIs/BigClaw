@@ -327,10 +327,22 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 				TraceURL string `json:"trace_url"`
 				EventURL string `json:"event_url"`
 			} `json:"recent_traces"`
-			ValidationArtifacts []string `json:"validation_artifacts"`
-			ReviewerNavigation  []string `json:"reviewer_navigation"`
-			BackendLimitations  []string `json:"backend_limitations"`
+			ValidationArtifacts   []string `json:"validation_artifacts"`
+			ReviewerNavigation    []string `json:"reviewer_navigation"`
+			BackendLimitations    []string `json:"backend_limitations"`
+			AmbiguousPublishProof struct {
+				Path       string   `json:"path"`
+				ScenarioID string   `json:"scenario_id"`
+				Outcomes   []string `json:"outcomes"`
+			} `json:"ambiguous_publish_proof"`
 		} `json:"trace_export_bundle"`
+		BrokerReviewPack struct {
+			AmbiguousPublishProof struct {
+				Path       string   `json:"path"`
+				ScenarioID string   `json:"scenario_id"`
+				Outcomes   []string `json:"outcomes"`
+			} `json:"ambiguous_publish_proof"`
+		} `json:"broker_review_pack"`
 		RoutingReasons []struct {
 			Executor string `json:"executor"`
 			Reason   string `json:"reason"`
@@ -391,6 +403,12 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if len(decoded.TraceBundle.ValidationArtifacts) == 0 || len(decoded.TraceBundle.ReviewerNavigation) == 0 || len(decoded.TraceBundle.BackendLimitations) == 0 {
 		t.Fatalf("expected trace bundle reviewer metadata, got %+v", decoded.TraceBundle)
 	}
+	if decoded.TraceBundle.AmbiguousPublishProof.Path != "docs/reports/ambiguous-publish-outcome-proof-summary.json" || decoded.TraceBundle.AmbiguousPublishProof.ScenarioID != "BF-05" || len(decoded.TraceBundle.AmbiguousPublishProof.Outcomes) != 3 {
+		t.Fatalf("expected trace bundle ambiguous publish proof reference, got %+v", decoded.TraceBundle.AmbiguousPublishProof)
+	}
+	if decoded.BrokerReviewPack.AmbiguousPublishProof.Path != "docs/reports/ambiguous-publish-outcome-proof-summary.json" || decoded.BrokerReviewPack.AmbiguousPublishProof.ScenarioID != "BF-05" || len(decoded.BrokerReviewPack.AmbiguousPublishProof.Outcomes) != 3 {
+		t.Fatalf("expected broker review pack ambiguous publish proof reference, got %+v", decoded.BrokerReviewPack.AmbiguousPublishProof)
+	}
 	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") {
 		t.Fatalf("unexpected distributed markdown: %s", decoded.Report.Markdown)
 	}
@@ -406,7 +424,7 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 		t.Fatalf("expected markdown export content type, got %q", contentType)
 	}
-	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") || !strings.Contains(exportResponse.Body.String(), "Validation artifacts: docs/reports/live-validation-index.md") || !strings.Contains(exportResponse.Body.String(), "Backend limitations: no external tracing backend") {
+	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") || !strings.Contains(exportResponse.Body.String(), "Validation artifacts: docs/reports/live-validation-index.md") || !strings.Contains(exportResponse.Body.String(), "Ambiguous publish proof: docs/reports/ambiguous-publish-outcome-proof-summary.json (BF-05: committed, rejected, unknown_commit)") || !strings.Contains(exportResponse.Body.String(), "Backend limitations: no external tracing backend") {
 		t.Fatalf("unexpected distributed export markdown: %s", exportResponse.Body.String())
 	}
 }

@@ -71,13 +71,20 @@ type distributedDiagnosticsReport struct {
 	ExportURL string `json:"export_url"`
 }
 
+type brokerProofReference struct {
+	Path       string   `json:"path"`
+	ScenarioID string   `json:"scenario_id"`
+	Outcomes   []string `json:"outcomes,omitempty"`
+}
+
 type brokerReviewPack struct {
-	Status             string   `json:"status"`
-	SummaryPath        string   `json:"summary_path"`
-	ReportPath         string   `json:"report_path"`
-	ValidationPackPath string   `json:"validation_pack_path"`
-	ArtifactDirectory  string   `json:"artifact_directory"`
-	ReviewerLinks      []string `json:"reviewer_links,omitempty"`
+	Status                string               `json:"status"`
+	SummaryPath           string               `json:"summary_path"`
+	ReportPath            string               `json:"report_path"`
+	ValidationPackPath    string               `json:"validation_pack_path"`
+	ArtifactDirectory     string               `json:"artifact_directory"`
+	ReviewerLinks         []string             `json:"reviewer_links,omitempty"`
+	AmbiguousPublishProof brokerProofReference `json:"ambiguous_publish_proof"`
 }
 
 type traceExportBundleSummary struct {
@@ -87,6 +94,7 @@ type traceExportBundleSummary struct {
 	ValidationArtifacts     []string                 `json:"validation_artifacts,omitempty"`
 	ReviewerNavigation      []string                 `json:"reviewer_navigation,omitempty"`
 	BackendLimitations      []string                 `json:"backend_limitations,omitempty"`
+	AmbiguousPublishProof   brokerProofReference     `json:"ambiguous_publish_proof"`
 }
 
 type traceExportBundleTrace struct {
@@ -156,6 +164,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"routing_reasons":     diagnostics.RoutingReasons,
 		"executor_capacity":   diagnostics.ExecutorCapacity,
 		"cluster_health":      diagnostics.ClusterHealth,
+		"broker_review_pack":  diagnostics.BrokerReviewPack,
 		"trace_export_bundle": diagnostics.TraceBundle,
 		"report":              diagnostics.RolloutReport,
 	})
@@ -705,6 +714,9 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	if len(diagnostics.TraceBundle.ValidationArtifacts) > 0 {
 		lines = append(lines, "- Validation artifacts: "+strings.Join(diagnostics.TraceBundle.ValidationArtifacts, ", "))
 	}
+	if diagnostics.TraceBundle.AmbiguousPublishProof.Path != "" {
+		lines = append(lines, fmt.Sprintf("- Ambiguous publish proof: %s (%s: %s)", diagnostics.TraceBundle.AmbiguousPublishProof.Path, diagnostics.TraceBundle.AmbiguousPublishProof.ScenarioID, strings.Join(diagnostics.TraceBundle.AmbiguousPublishProof.Outcomes, ", ")))
+	}
 	if len(diagnostics.TraceBundle.ReviewerNavigation) > 0 {
 		lines = append(lines, "- Reviewer navigation: "+strings.Join(diagnostics.TraceBundle.ReviewerNavigation, ", "))
 	}
@@ -720,6 +732,9 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 		fmt.Sprintf("- Validation pack: %s", diagnostics.BrokerReviewPack.ValidationPackPath),
 		fmt.Sprintf("- Artifact directory: %s", diagnostics.BrokerReviewPack.ArtifactDirectory),
 	)
+	if diagnostics.BrokerReviewPack.AmbiguousPublishProof.Path != "" {
+		lines = append(lines, fmt.Sprintf("- Ambiguous publish proof: %s (%s: %s)", diagnostics.BrokerReviewPack.AmbiguousPublishProof.Path, diagnostics.BrokerReviewPack.AmbiguousPublishProof.ScenarioID, strings.Join(diagnostics.BrokerReviewPack.AmbiguousPublishProof.Outcomes, ", ")))
+	}
 	if len(diagnostics.BrokerReviewPack.ReviewerLinks) > 0 {
 		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.BrokerReviewPack.ReviewerLinks, ", "))
 	}
@@ -749,6 +764,7 @@ func sanitizeReportName(value string) string {
 }
 
 func buildTraceExportBundle(assignments []distributedTaskAssignment, summaries []observability.TraceSummary) traceExportBundleSummary {
+	ambiguousPublishProof := buildAmbiguousPublishProofReference()
 	assignmentByTrace := make(map[string]distributedTaskAssignment, len(assignments))
 	tracesWithTerminalState := 0
 	for _, assignment := range assignments {
@@ -789,6 +805,7 @@ func buildTraceExportBundle(assignments []distributedTaskAssignment, summaries [
 			"docs/reports/broker-validation-summary.json",
 			"docs/reports/broker-failover-stub-report.json",
 			"docs/reports/broker-failover-stub-artifacts",
+			ambiguousPublishProof.Path,
 		},
 		ReviewerNavigation: []string{
 			"/v2/reports/distributed/export",
@@ -796,12 +813,14 @@ func buildTraceExportBundle(assignments []distributedTaskAssignment, summaries [
 			"/events?trace_id=<trace_id>&limit=200",
 			"docs/reports/review-readiness.md",
 			"docs/reports/broker-failover-fault-injection-validation-pack.md",
+			ambiguousPublishProof.Path,
 		},
 		BackendLimitations: []string{
 			"no external tracing backend or OTLP/Jaeger/Tempo/Zipkin export path",
 			"no cross-process span propagation beyond in-memory trace_id grouping",
 			"validation evidence is workflow-exported and repo-native, not a continuously indexed trace service",
 		},
+		AmbiguousPublishProof: ambiguousPublishProof,
 	}
 }
 
@@ -816,6 +835,15 @@ func buildBrokerReviewPack() brokerReviewPack {
 			"docs/reports/live-validation-index.json",
 			"docs/reports/review-readiness.md",
 		},
+		AmbiguousPublishProof: buildAmbiguousPublishProofReference(),
+	}
+}
+
+func buildAmbiguousPublishProofReference() brokerProofReference {
+	return brokerProofReference{
+		Path:       "docs/reports/ambiguous-publish-outcome-proof-summary.json",
+		ScenarioID: "BF-05",
+		Outcomes:   []string{"committed", "rejected", "unknown_commit"},
 	}
 }
 
