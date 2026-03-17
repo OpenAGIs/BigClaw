@@ -162,4 +162,4 @@ This report summarizes the current event bus reliability evidence and the next r
 ## Parallel follow-up digests
 
 - `OPE-269` / `BIG-PAR-080` — takeover executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
-- `OPE-270` / `BIG-PAR-081` — cross-process coordination caveats are consolidated in `docs/reports/cross-process-coordination-boundary-digest.md`.
+- `OPE-261` / `BIG-PAR-085` — cross-process coordination caveats are consolidated in `docs/reports/cross-process-coordination-boundary-digest.md`.
