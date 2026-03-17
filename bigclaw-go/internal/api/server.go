@@ -191,6 +191,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/deadletters/", s.handleDeadLetterAction)
 	mux.HandleFunc("/debug/traces", s.handleDebugTraces)
 	mux.HandleFunc("/debug/traces/", s.handleDebugTrace)
+	mux.HandleFunc(coordinationLeaderEndpoint, s.handleCoordinationLeader)
 	mux.HandleFunc("/debug/status", func(w http.ResponseWriter, r *http.Request) {
 		rolloutScorecard := s.EventPlan.RolloutScorecard
 		payload := map[string]any{
@@ -201,6 +202,7 @@ func (s *Server) Handler() http.Handler {
 			"event_durability_rollout":        rolloutScorecard,
 			"event_log":                       s.eventLogCapabilities(r.Context()),
 			"coordination_capability_surface": coordinationCapabilitySurfacePayload(),
+			"coordination_leader_election":    s.coordinationLeaderElectionPayload(),
 			"delivery_ack_readiness":          deliveryAckReadinessPayload(),
 			"live_shadow_mirror_scorecard":    liveShadowMirrorPayload(),
 			"rollback_trigger_surface":        rollbackTriggerSurfacePayload(),

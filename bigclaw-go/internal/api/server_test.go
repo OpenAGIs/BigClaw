@@ -383,6 +383,42 @@ func TestDebugStatusIncludesCoordinationCapabilitySurface(t *testing.T) {
 	}
 }
 
+func TestDebugStatusIncludesCoordinationLeaderElectionSurface(t *testing.T) {
+	server := &Server{
+		Recorder:         observability.NewRecorder(),
+		Queue:            queue.NewMemoryQueue(),
+		Bus:              events.NewBus(),
+		SubscriberLeases: events.NewSubscriberLeaseCoordinator(),
+		Now:              time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		Leader struct {
+			Endpoint      string `json:"endpoint"`
+			GroupID       string `json:"group_id"`
+			SubscriberID  string `json:"subscriber_id"`
+			ElectionModel string `json:"election_model"`
+			Status        string `json:"status"`
+			LeaderPresent bool   `json:"leader_present"`
+		} `json:"coordination_leader_election"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug leader surface: %v", err)
+	}
+	if decoded.Leader.Endpoint != coordinationLeaderEndpoint || decoded.Leader.GroupID != coordinationLeaderGroupID || decoded.Leader.SubscriberID != coordinationLeaderSubscriberID {
+		t.Fatalf("unexpected leader election identity: %+v", decoded.Leader)
+	}
+	if decoded.Leader.ElectionModel != "subscriber_lease" || decoded.Leader.Status != "idle" || decoded.Leader.LeaderPresent {
+		t.Fatalf("unexpected leader election surface: %+v", decoded.Leader)
+	}
+}
+
 func TestDebugStatusIncludesBrokerStubFanoutIsolationEvidencePack(t *testing.T) {
 	server := &Server{
 		Recorder: observability.NewRecorder(),
@@ -2558,6 +2594,140 @@ func TestV2ControlCenterIncludesCoordinationCapabilitySurface(t *testing.T) {
 	contractOnly := decoded.Coordination.Capabilities[4]
 	if contractOnly.Name != "partitioned_topic_routing" || !contractOnly.ContractOnly || contractOnly.LiveProven || len(contractOnly.SourceReportLinks) == 0 {
 		t.Fatalf("unexpected contract-only coordination entry: %+v", contractOnly)
+	}
+}
+
+func TestV2ControlCenterIncludesCoordinationLeaderElectionSurface(t *testing.T) {
+	now := time.Unix(1700000000, 0)
+	coordinator := events.NewSubscriberLeaseCoordinator()
+	lease, err := coordinator.Acquire(events.LeaseRequest{
+		GroupID:      coordinationLeaderGroupID,
+		SubscriberID: coordinationLeaderSubscriberID,
+		ConsumerID:   "node-a",
+		TTL:          30 * time.Second,
+		Now:          now,
+	})
+	if err != nil {
+		t.Fatalf("seed leader lease: %v", err)
+	}
+	server := &Server{
+		Recorder:         observability.NewRecorder(),
+		Queue:            queue.NewMemoryQueue(),
+		Bus:              events.NewBus(),
+		Control:          control.New(),
+		SubscriberLeases: coordinator,
+		Now:              func() time.Time { return now.Add(5 * time.Second) },
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Leader struct {
+			Endpoint            string `json:"endpoint"`
+			Status              string `json:"status"`
+			LeaderPresent       bool   `json:"leader_present"`
+			RemainingTTLSeconds int64  `json:"remaining_ttl_seconds"`
+			Lease               struct {
+				ConsumerID string `json:"consumer_id"`
+				LeaseToken string `json:"lease_token"`
+				LeaseEpoch int64  `json:"lease_epoch"`
+			} `json:"lease"`
+		} `json:"coordination_leader_election"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center leader surface: %v", err)
+	}
+	if decoded.Leader.Endpoint != coordinationLeaderEndpoint || decoded.Leader.Status != "active" || !decoded.Leader.LeaderPresent {
+		t.Fatalf("unexpected leader surface: %+v", decoded.Leader)
+	}
+	if decoded.Leader.Lease.ConsumerID != "node-a" || decoded.Leader.Lease.LeaseToken != lease.LeaseToken || decoded.Leader.Lease.LeaseEpoch != lease.LeaseEpoch {
+		t.Fatalf("unexpected leader lease payload: %+v", decoded.Leader)
+	}
+	if decoded.Leader.RemainingTTLSeconds <= 0 {
+		t.Fatalf("expected positive ttl remaining, got %+v", decoded.Leader)
+	}
+}
+
+func TestCoordinationLeaderEndpointsAcquireStatusAndTakeover(t *testing.T) {
+	now := time.Unix(1700000000, 0)
+	current := now
+	server := &Server{
+		Recorder:         observability.NewRecorder(),
+		Queue:            queue.NewMemoryQueue(),
+		Bus:              events.NewBus(),
+		SubscriberLeases: events.NewSubscriberLeaseCoordinator(),
+		Now:              func() time.Time { return current },
+	}
+	handler := server.Handler()
+
+	acquire := httptest.NewRecorder()
+	handler.ServeHTTP(acquire, httptest.NewRequest(http.MethodPost, coordinationLeaderEndpoint, strings.NewReader(`{"consumer_id":"node-a","ttl_seconds":30}`)))
+	if acquire.Code != http.StatusOK {
+		t.Fatalf("expected first acquire 200, got %d %s", acquire.Code, acquire.Body.String())
+	}
+	var acquired struct {
+		Lease struct {
+			ConsumerID string `json:"consumer_id"`
+			LeaseToken string `json:"lease_token"`
+			LeaseEpoch int64  `json:"lease_epoch"`
+		} `json:"lease"`
+	}
+	if err := json.Unmarshal(acquire.Body.Bytes(), &acquired); err != nil {
+		t.Fatalf("decode acquire response: %v", err)
+	}
+	if acquired.Lease.ConsumerID != "node-a" || acquired.Lease.LeaseToken == "" || acquired.Lease.LeaseEpoch != 1 {
+		t.Fatalf("unexpected acquired lease: %+v", acquired.Lease)
+	}
+
+	status := httptest.NewRecorder()
+	handler.ServeHTTP(status, httptest.NewRequest(http.MethodGet, coordinationLeaderEndpoint, nil))
+	if status.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d %s", status.Code, status.Body.String())
+	}
+	var statusDecoded struct {
+		Leader struct {
+			Status        string `json:"status"`
+			LeaderPresent bool   `json:"leader_present"`
+			Lease         struct {
+				ConsumerID string `json:"consumer_id"`
+			} `json:"lease"`
+		} `json:"leader"`
+	}
+	if err := json.Unmarshal(status.Body.Bytes(), &statusDecoded); err != nil {
+		t.Fatalf("decode status response: %v", err)
+	}
+	if statusDecoded.Leader.Status != "active" || !statusDecoded.Leader.LeaderPresent || statusDecoded.Leader.Lease.ConsumerID != "node-a" {
+		t.Fatalf("unexpected leader status payload: %+v", statusDecoded.Leader)
+	}
+
+	current = now.Add(10 * time.Second)
+	conflict := httptest.NewRecorder()
+	handler.ServeHTTP(conflict, httptest.NewRequest(http.MethodPost, coordinationLeaderEndpoint, strings.NewReader(`{"consumer_id":"node-b","ttl_seconds":30}`)))
+	if conflict.Code != http.StatusConflict {
+		t.Fatalf("expected conflicting acquire 409, got %d %s", conflict.Code, conflict.Body.String())
+	}
+
+	current = now.Add(31 * time.Second)
+	takeover := httptest.NewRecorder()
+	handler.ServeHTTP(takeover, httptest.NewRequest(http.MethodPost, coordinationLeaderEndpoint, strings.NewReader(`{"consumer_id":"node-b","ttl_seconds":30}`)))
+	if takeover.Code != http.StatusOK {
+		t.Fatalf("expected takeover acquire 200, got %d %s", takeover.Code, takeover.Body.String())
+	}
+	var takeoverDecoded struct {
+		Lease struct {
+			ConsumerID string `json:"consumer_id"`
+			LeaseEpoch int64  `json:"lease_epoch"`
+		} `json:"lease"`
+	}
+	if err := json.Unmarshal(takeover.Body.Bytes(), &takeoverDecoded); err != nil {
+		t.Fatalf("decode takeover response: %v", err)
+	}
+	if takeoverDecoded.Lease.ConsumerID != "node-b" || takeoverDecoded.Lease.LeaseEpoch != 2 {
+		t.Fatalf("unexpected takeover lease: %+v", takeoverDecoded.Lease)
 	}
 }
 

@@ -245,6 +245,7 @@ func NewDurabilityPlanWithBrokerConfig(currentBackend, targetBackend string, rep
 				Artifacts: []string{
 					"docs/reports/event-bus-reliability-report.md",
 					"docs/reports/replicated-event-log-durability-rollout-contract.md",
+					"docs/reports/replicated-broker-durability-rollout-spike.md",
 					"docs/reports/broker-durability-rollout-scorecard.json",
 					"docs/reports/durability-rollout-scorecard.json",
 				},

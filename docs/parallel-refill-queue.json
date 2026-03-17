@@ -80,39 +80,42 @@
       "OPE-273",
       "OPE-274"
     ],
-    "active": [],
+    "active": [
+      "OPE-3",
+      "OPE-4"
+    ],
     "standby": []
   },
   "issue_order": [
-    "OPE-266",
-    "OPE-267",
-    "OPE-269",
-    "OPE-268"
+    "OPE-1",
+    "OPE-2",
+    "OPE-3",
+    "OPE-4"
   ],
   "issues": [
     {
-      "identifier": "OPE-266",
-      "title": "BIG-PAR-110 live shadow mirror scorecard surface in debug and migration review payloads",
-      "track": "Distributed Diagnostics & Rollout",
+      "identifier": "OPE-1",
+      "title": "BIG-PAR-096 dedicated leader-election layer for multi-node coordination",
+      "track": "Shared Queue & Coordination",
       "status": "Done"
     },
     {
-      "identifier": "OPE-267",
-      "title": "BIG-PAR-111 rollback trigger surface in debug and migration review payloads",
-      "track": "Distributed Diagnostics & Rollout",
+      "identifier": "OPE-2",
+      "title": "BIG-PAR-097 higher-scale external-store validation for replay and shared queues",
+      "track": "Shared Queue & Coordination",
       "status": "Done"
     },
     {
-      "identifier": "OPE-269",
-      "title": "BIG-PAR-112 validation bundle continuation gate surface in debug and distributed diagnostics",
-      "track": "Distributed Diagnostics & Rollout",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-268",
-      "title": "BIG-PAR-113 enable continuation-gate enforcement by default in unattended workflow closeout",
+      "identifier": "OPE-3",
+      "title": "BIG-PAR-098 production-grade capacity certification matrix",
       "track": "Parallel Validation Matrix",
-      "status": "Done"
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-4",
+      "title": "BIG-PAR-099 replicated broker durability rollout spike",
+      "track": "Distributed Diagnostics & Rollout",
+      "status": "In Progress"
     }
   ]
 }

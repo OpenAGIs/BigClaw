@@ -42,12 +42,13 @@
   - Supporting report: `docs/reports/epic-closure-readiness-report.md`.
   - Follow-up digests capture the remaining cross-process coordination and validation bundle continuation caveats in `docs/reports/cross-process-coordination-boundary-digest.md` and `docs/reports/validation-bundle-continuation-digest.md`, with the current multi-bundle lineage summarized in `docs/reports/validation-bundle-continuation-scorecard.json` and the current gate result captured in `docs/reports/validation-bundle-continuation-policy-gate.json`.
   - The coordination runtime capability matrix in `docs/reports/cross-process-coordination-capability-surface.json` makes the remaining coordination claims explicit as `live_proven`, `harness_proven`, and `contract_only` instead of treating all cross-process semantics as equally shipped.
+  - Replicated broker durability remains a follow-up track with an explicit rollout spike in `docs/reports/replicated-broker-durability-rollout-spike.md`, the governing contract in `docs/reports/replicated-event-log-durability-rollout-contract.md`, and the current readiness posture in `docs/reports/broker-durability-rollout-scorecard.json`.
 
 ## Follow-up Hardening
 
 - The capacity certification matrix is now repo-native and reviewer-facing, but it remains a single-instance evidence slice rather than a multi-tenant production admission control policy.
-- No dedicated leader-election layer exists yet; current evidence is limited to a local two-node shared-SQLite coordination proof.
-- Higher-scale external-store validation is still pending beyond the current SQLite-backed scope.
+- A repo-native leader-election scaffold now exists through the subscriber-lease-backed `/coordination/leader` surface plus matching debug/control-center payloads, while the underlying proof remains local/shared-store scoped rather than broker-backed or quorum-backed.
+- A repo-native external-store validation lane now exists in `docs/reports/external-store-validation-report.json`, proving replay, checkpoint reset history, persisted retention boundaries, and shared-lease takeover behavior through the remote HTTP event-log service boundary. Broker-backed or quorum-backed durability validation is still pending beyond that first external-store lane.
 
 ## Parallel follow-up digests
 
