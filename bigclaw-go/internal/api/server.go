@@ -209,6 +209,7 @@ func (s *Server) Handler() http.Handler {
 			"live_shadow_mirror_scorecard":    liveShadowMirrorPayload(),
 			"rollback_trigger_surface":        rollbackTriggerSurfacePayload(),
 			"broker_stub_fanout_isolation":    brokerStubFanoutIsolationPayload(),
+			"validation_bundle_continuation":  validationBundleContinuationGatePayload(),
 		}
 		if s.Worker != nil {
 			payload["worker"] = s.Worker.Snapshot()

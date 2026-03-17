@@ -102,17 +102,18 @@ type traceExportBundleTrace struct {
 }
 
 type distributedDiagnostics struct {
-	Summary               distributedDiagnosticsSummary         `json:"summary"`
-	RoutingReasons        []routingReasonSummary                `json:"routing_reasons"`
-	ExecutorCapacity      []executorCapacityView                `json:"executor_capacity"`
-	ClusterHealth         clusterHealthRollup                   `json:"cluster_health"`
-	LiveShadowMirror      liveShadowMirrorSurface               `json:"live_shadow_mirror_scorecard"`
-	BrokerReviewPack      brokerReviewPack                      `json:"broker_review_pack"`
-	MigrationReviewPack   migrationReviewPack                   `json:"migration_review_pack"`
-	BrokerFanoutIsolation brokerStubFanoutIsolationEvidencePack `json:"broker_stub_fanout_isolation"`
-	DeliveryAckReadiness  deliveryAckReadinessSurface           `json:"delivery_ack_readiness"`
-	TraceBundle           traceExportBundleSummary              `json:"trace_export_bundle"`
-	RolloutReport         distributedDiagnosticsReport          `json:"rollout_report"`
+	Summary               distributedDiagnosticsSummary           `json:"summary"`
+	RoutingReasons        []routingReasonSummary                  `json:"routing_reasons"`
+	ExecutorCapacity      []executorCapacityView                  `json:"executor_capacity"`
+	ClusterHealth         clusterHealthRollup                     `json:"cluster_health"`
+	LiveShadowMirror      liveShadowMirrorSurface                 `json:"live_shadow_mirror_scorecard"`
+	BrokerReviewPack      brokerReviewPack                        `json:"broker_review_pack"`
+	MigrationReviewPack   migrationReviewPack                     `json:"migration_review_pack"`
+	BrokerFanoutIsolation brokerStubFanoutIsolationEvidencePack   `json:"broker_stub_fanout_isolation"`
+	DeliveryAckReadiness  deliveryAckReadinessSurface             `json:"delivery_ack_readiness"`
+	ContinuationGate      validationBundleContinuationGateSurface `json:"validation_bundle_continuation"`
+	TraceBundle           traceExportBundleSummary                `json:"trace_export_bundle"`
+	RolloutReport         distributedDiagnosticsReport            `json:"rollout_report"`
 }
 
 type executorDiagnosticsCounters struct {
@@ -155,16 +156,17 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 			"limit":      filters.Limit,
 			"priority":   filters.Priority,
 		},
-		"event_durability":             s.EventPlan,
-		"summary":                      diagnostics.Summary,
-		"routing_reasons":              diagnostics.RoutingReasons,
-		"executor_capacity":            diagnostics.ExecutorCapacity,
-		"cluster_health":               diagnostics.ClusterHealth,
-		"live_shadow_mirror_scorecard": diagnostics.LiveShadowMirror,
-		"trace_export_bundle":          diagnostics.TraceBundle,
-		"migration_review_pack":        diagnostics.MigrationReviewPack,
-		"delivery_ack_readiness":       diagnostics.DeliveryAckReadiness,
-		"report":                       diagnostics.RolloutReport,
+		"event_durability":               s.EventPlan,
+		"summary":                        diagnostics.Summary,
+		"routing_reasons":                diagnostics.RoutingReasons,
+		"executor_capacity":              diagnostics.ExecutorCapacity,
+		"cluster_health":                 diagnostics.ClusterHealth,
+		"live_shadow_mirror_scorecard":   diagnostics.LiveShadowMirror,
+		"trace_export_bundle":            diagnostics.TraceBundle,
+		"migration_review_pack":          diagnostics.MigrationReviewPack,
+		"delivery_ack_readiness":         diagnostics.DeliveryAckReadiness,
+		"validation_bundle_continuation": diagnostics.ContinuationGate,
+		"report":                         diagnostics.RolloutReport,
 	})
 }
 
@@ -393,6 +395,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		MigrationReviewPack:   buildMigrationReviewPack(),
 		BrokerFanoutIsolation: brokerStubFanoutIsolationPayload(),
 		DeliveryAckReadiness:  deliveryAckReadinessPayload(),
+		ContinuationGate:      validationBundleContinuationGatePayload(),
 		TraceBundle:           buildTraceExportBundle(assignments, s.Recorder.TraceSummaries(5)),
 	}
 	diagnostics.RolloutReport = distributedDiagnosticsReport{
@@ -828,6 +831,35 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.DeliveryAckReadiness.ReviewerLinks) > 0 {
 		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.DeliveryAckReadiness.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Validation Bundle Continuation Gate",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.ContinuationGate.ReportPath),
+		fmt.Sprintf("- Scorecard: %s", diagnostics.ContinuationGate.ScorecardPath),
+		fmt.Sprintf("- Recommendation: %s", diagnostics.ContinuationGate.Recommendation),
+		fmt.Sprintf("- Status: %s", diagnostics.ContinuationGate.Status),
+		fmt.Sprintf("- Latest run: %s", firstNonEmpty(diagnostics.ContinuationGate.Summary.LatestRunID, "unknown")),
+		fmt.Sprintf("- Latest bundle age: %.2f hours", diagnostics.ContinuationGate.Summary.LatestBundleAgeHours),
+		fmt.Sprintf("- Recent bundle count: %d", diagnostics.ContinuationGate.Summary.RecentBundleCount),
+		fmt.Sprintf("- Repeated executor coverage: %t", diagnostics.ContinuationGate.Summary.AllExecutorTracksHaveRepeatedRecentCoverage),
+		fmt.Sprintf("- Shared queue companion available: %t", diagnostics.ContinuationGate.Summary.SharedQueueCompanionAvailable),
+		fmt.Sprintf("- Cross-node completions: %d", diagnostics.ContinuationGate.Summary.CrossNodeCompletions),
+	)
+	if diagnostics.ContinuationGate.DigestPath != "" {
+		lines = append(lines, "- Reviewer digest: "+diagnostics.ContinuationGate.DigestPath)
+	}
+	for _, check := range diagnostics.ContinuationGate.PolicyChecks {
+		lines = append(lines, fmt.Sprintf("- Policy check %s: passed=%t detail=%s", check.Name, check.Passed, firstNonEmpty(check.Detail, "n/a")))
+	}
+	if len(diagnostics.ContinuationGate.CurrentCeiling) > 0 {
+		lines = append(lines, "- Current ceiling: "+strings.Join(diagnostics.ContinuationGate.CurrentCeiling, "; "))
+	}
+	if len(diagnostics.ContinuationGate.NextActions) > 0 {
+		lines = append(lines, "- Next actions: "+strings.Join(diagnostics.ContinuationGate.NextActions, "; "))
+	}
+	if len(diagnostics.ContinuationGate.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.ContinuationGate.ReviewerLinks, ", "))
 	}
 	lines = append(lines, "", "## Notes")
 	for _, note := range diagnostics.ClusterHealth.Notes {
