@@ -44,6 +44,15 @@ func (fakeWorkerPoolStatus) Snapshots() []worker.Status {
 	}
 }
 
+func containsString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
+}
+
 type blockingEventLog struct {
 	history       []domain.Event
 	replayStarted chan struct{}
@@ -322,6 +331,96 @@ func TestDebugStatusIncludesEventDurabilityPlan(t *testing.T) {
 	}
 }
 
+func TestDebugStatusIncludesAdmissionPolicySummary(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		AdmissionPolicy struct {
+			ReportPath string `json:"report_path"`
+			MatrixPath string `json:"matrix_path"`
+			Ticket     string `json:"ticket"`
+			Status     string `json:"status"`
+			PolicyMode string `json:"policy_mode"`
+			Enforced   bool   `json:"enforced"`
+			Summary    struct {
+				OverallStatus                string `json:"overall_status"`
+				PassedLanes                  int    `json:"passed_lanes"`
+				TotalLanes                   int    `json:"total_lanes"`
+				RecommendedSustainedEnvelope string `json:"recommended_sustained_envelope"`
+				CeilingEnvelope              string `json:"ceiling_envelope"`
+				AdvisoryNote                 string `json:"advisory_note"`
+			} `json:"summary"`
+			RecommendedLanes []struct {
+				Name                  string   `json:"name"`
+				Lane                  string   `json:"lane"`
+				MaxQueuedTasks        int      `json:"max_queued_tasks"`
+				SubmitWorkers         int      `json:"submit_workers"`
+				ObservedThroughputTPS float64  `json:"observed_throughput_tasks_per_sec"`
+				EvidenceLanes         []string `json:"evidence_lanes"`
+				DefaultRecommendation bool     `json:"default_recommendation"`
+				CeilingOnly           bool     `json:"ceiling_only"`
+			} `json:"recommended_lanes"`
+			SupportingEvidence []struct {
+				Name   string `json:"name"`
+				Status string `json:"status"`
+			} `json:"supporting_evidence"`
+			Saturation struct {
+				BaselineLane      string  `json:"baseline_lane"`
+				CeilingLane       string  `json:"ceiling_lane"`
+				ThroughputDropPct float64 `json:"throughput_drop_pct"`
+				Status            string  `json:"status"`
+			} `json:"saturation"`
+		} `json:"admission_policy_summary"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug admission policy payload: %v", err)
+	}
+	if decoded.AdmissionPolicy.ReportPath != capacityCertificationReportPath || decoded.AdmissionPolicy.MatrixPath != capacityCertificationMatrixPath {
+		t.Fatalf("unexpected admission policy report metadata: %+v", decoded.AdmissionPolicy)
+	}
+	if decoded.AdmissionPolicy.Ticket != "BIG-PAR-098" || decoded.AdmissionPolicy.Status != "repo-native-capacity-certification" {
+		t.Fatalf("unexpected admission policy status metadata: %+v", decoded.AdmissionPolicy)
+	}
+	if decoded.AdmissionPolicy.PolicyMode != "advisory_only" || decoded.AdmissionPolicy.Enforced {
+		t.Fatalf("expected advisory-only non-enforced admission policy, got %+v", decoded.AdmissionPolicy)
+	}
+	if decoded.AdmissionPolicy.Summary.OverallStatus != "pass" || decoded.AdmissionPolicy.Summary.PassedLanes != 9 || decoded.AdmissionPolicy.Summary.TotalLanes != 9 {
+		t.Fatalf("unexpected admission policy summary counts: %+v", decoded.AdmissionPolicy.Summary)
+	}
+	if decoded.AdmissionPolicy.Summary.RecommendedSustainedEnvelope != "<=1000 tasks with 24 submit workers" || decoded.AdmissionPolicy.Summary.CeilingEnvelope != "<=2000 tasks with 24 submit workers" {
+		t.Fatalf("unexpected admission policy envelope summary: %+v", decoded.AdmissionPolicy.Summary)
+	}
+	if !strings.Contains(decoded.AdmissionPolicy.Summary.AdvisoryNote, "not an automated runtime admission policy") {
+		t.Fatalf("expected advisory note in admission policy summary, got %+v", decoded.AdmissionPolicy.Summary)
+	}
+	if len(decoded.AdmissionPolicy.RecommendedLanes) != 2 {
+		t.Fatalf("expected 2 recommended lanes, got %+v", decoded.AdmissionPolicy.RecommendedLanes)
+	}
+	if decoded.AdmissionPolicy.RecommendedLanes[0].Name != "recommended-local-sustained" || decoded.AdmissionPolicy.RecommendedLanes[0].Lane != "1000x24" || decoded.AdmissionPolicy.RecommendedLanes[0].MaxQueuedTasks != 1000 || decoded.AdmissionPolicy.RecommendedLanes[0].SubmitWorkers != 24 || !decoded.AdmissionPolicy.RecommendedLanes[0].DefaultRecommendation || decoded.AdmissionPolicy.RecommendedLanes[0].CeilingOnly {
+		t.Fatalf("unexpected default admission lane: %+v", decoded.AdmissionPolicy.RecommendedLanes[0])
+	}
+	if decoded.AdmissionPolicy.RecommendedLanes[1].Name != "recommended-local-ceiling" || decoded.AdmissionPolicy.RecommendedLanes[1].Lane != "2000x24" || decoded.AdmissionPolicy.RecommendedLanes[1].MaxQueuedTasks != 2000 || !decoded.AdmissionPolicy.RecommendedLanes[1].CeilingOnly {
+		t.Fatalf("unexpected ceiling admission lane: %+v", decoded.AdmissionPolicy.RecommendedLanes[1])
+	}
+	if len(decoded.AdmissionPolicy.SupportingEvidence) != 1 || decoded.AdmissionPolicy.SupportingEvidence[0].Name != "mixed-workload-routing" || decoded.AdmissionPolicy.SupportingEvidence[0].Status != "pass" {
+		t.Fatalf("unexpected supporting admission evidence: %+v", decoded.AdmissionPolicy.SupportingEvidence)
+	}
+	if decoded.AdmissionPolicy.Saturation.BaselineLane != "1000x24" || decoded.AdmissionPolicy.Saturation.CeilingLane != "2000x24" || decoded.AdmissionPolicy.Saturation.ThroughputDropPct != 5.02 || decoded.AdmissionPolicy.Saturation.Status != "pass" {
+		t.Fatalf("unexpected admission policy saturation summary: %+v", decoded.AdmissionPolicy.Saturation)
+	}
+}
+
 func TestDebugStatusIncludesCoordinationCapabilitySurface(t *testing.T) {
 	server := &Server{
 		Recorder: observability.NewRecorder(),
@@ -383,6 +482,52 @@ func TestDebugStatusIncludesCoordinationCapabilitySurface(t *testing.T) {
 	}
 }
 
+func TestDebugStatusIncludesCoordinationLeaderElectionSurface(t *testing.T) {
+	server := &Server{
+		Recorder:         observability.NewRecorder(),
+		Queue:            queue.NewMemoryQueue(),
+		Bus:              events.NewBus(),
+		SubscriberLeases: events.NewSubscriberLeaseCoordinator(),
+		Now:              time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		Leader struct {
+			Endpoint      string `json:"endpoint"`
+			GroupID       string `json:"group_id"`
+			SubscriberID  string `json:"subscriber_id"`
+			ElectionModel string `json:"election_model"`
+			Status        string `json:"status"`
+			LeaderPresent bool   `json:"leader_present"`
+		} `json:"coordination_leader_election"`
+		LeaderElectionCapability struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				BackendCount        int    `json:"backend_count"`
+				CurrentProofBackend string `json:"current_proof_backend"`
+			} `json:"summary"`
+		} `json:"leader_election_capability"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug leader surface: %v", err)
+	}
+	if decoded.Leader.Endpoint != coordinationLeaderEndpoint || decoded.Leader.GroupID != coordinationLeaderGroupID || decoded.Leader.SubscriberID != coordinationLeaderSubscriberID {
+		t.Fatalf("unexpected leader election identity: %+v", decoded.Leader)
+	}
+	if decoded.Leader.ElectionModel != "subscriber_lease" || decoded.Leader.Status != "idle" || decoded.Leader.LeaderPresent {
+		t.Fatalf("unexpected leader election surface: %+v", decoded.Leader)
+	}
+	if decoded.LeaderElectionCapability.ReportPath != leaderElectionCapabilitySurfacePath || decoded.LeaderElectionCapability.Summary.BackendCount != 4 || decoded.LeaderElectionCapability.Summary.CurrentProofBackend != "shared_sqlite_subscriber_lease" {
+		t.Fatalf("unexpected leader election capability payload: %+v", decoded.LeaderElectionCapability)
+	}
+}
+
 func TestDebugStatusIncludesBrokerStubFanoutIsolationEvidencePack(t *testing.T) {
 	server := &Server{
 		Recorder: observability.NewRecorder(),
@@ -436,6 +581,153 @@ func TestDebugStatusIncludesBrokerStubFanoutIsolationEvidencePack(t *testing.T) 
 	}
 	if decoded.BrokerStubFanoutIsolation.Scenarios[0].Name != "replay_catchup_does_not_block_live_publish" || decoded.BrokerStubFanoutIsolation.Scenarios[0].Status != "isolated" || decoded.BrokerStubFanoutIsolation.Scenarios[0].ReplayBacklogEvents != 4 || decoded.BrokerStubFanoutIsolation.Scenarios[0].ReplayStepDelayMS != 30 || decoded.BrokerStubFanoutIsolation.Scenarios[0].ReplayWindowMS != 120 || decoded.BrokerStubFanoutIsolation.Scenarios[0].LiveDeliveryDeadlineMS != 50 || !decoded.BrokerStubFanoutIsolation.Scenarios[0].ReplayDrainsAfterLive {
 		t.Fatalf("unexpected broker fanout scenario: %+v", decoded.BrokerStubFanoutIsolation.Scenarios[0])
+	}
+}
+
+func TestDebugStatusIncludesLiveShadowMirrorScorecard(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		LiveShadow struct {
+			ReportPath           string   `json:"report_path"`
+			CanonicalSummaryPath string   `json:"canonical_summary_path"`
+			Status               string   `json:"status"`
+			Severity             string   `json:"severity"`
+			BundlePath           string   `json:"bundle_path"`
+			SummaryPath          string   `json:"summary_path"`
+			ReviewerLinks        []string `json:"reviewer_links"`
+			Summary              struct {
+				TotalEvidenceRuns  int `json:"total_evidence_runs"`
+				ParityOKCount      int `json:"parity_ok_count"`
+				DriftDetectedCount int `json:"drift_detected_count"`
+				MatrixMismatched   int `json:"matrix_mismatched"`
+				FreshInputs        int `json:"fresh_inputs"`
+				StaleInputs        int `json:"stale_inputs"`
+			} `json:"summary"`
+			CutoverCheckpoints []struct {
+				Name   string `json:"name"`
+				Passed bool   `json:"passed"`
+			} `json:"cutover_checkpoints"`
+			RollbackTriggerSurface struct {
+				Status                   string `json:"status"`
+				AutomationBoundary       string `json:"automation_boundary"`
+				AutomatedRollbackTrigger bool   `json:"automated_rollback_trigger"`
+				SummaryPath              string `json:"summary_path"`
+			} `json:"rollback_trigger_surface"`
+			Limitations []string `json:"limitations"`
+			FutureWork  []string `json:"future_work"`
+		} `json:"live_shadow_mirror_scorecard"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug status: %v", err)
+	}
+	if decoded.LiveShadow.ReportPath != liveShadowMirrorScorecardPath || decoded.LiveShadow.CanonicalSummaryPath != liveShadowSummaryPath {
+		t.Fatalf("unexpected live shadow report paths: %+v", decoded.LiveShadow)
+	}
+	if decoded.LiveShadow.Status != "parity-ok" || decoded.LiveShadow.Severity != "none" {
+		t.Fatalf("unexpected live shadow status: %+v", decoded.LiveShadow)
+	}
+	if decoded.LiveShadow.BundlePath != "docs/reports/live-shadow-runs/20260313T085655Z" || decoded.LiveShadow.SummaryPath != "docs/reports/live-shadow-runs/20260313T085655Z/summary.json" {
+		t.Fatalf("unexpected live shadow bundle payload: %+v", decoded.LiveShadow)
+	}
+	if decoded.LiveShadow.Summary.TotalEvidenceRuns != 4 || decoded.LiveShadow.Summary.ParityOKCount != 4 || decoded.LiveShadow.Summary.DriftDetectedCount != 0 || decoded.LiveShadow.Summary.MatrixMismatched != 0 || decoded.LiveShadow.Summary.FreshInputs != 2 || decoded.LiveShadow.Summary.StaleInputs != 0 {
+		t.Fatalf("unexpected live shadow summary payload: %+v", decoded.LiveShadow.Summary)
+	}
+	if len(decoded.LiveShadow.CutoverCheckpoints) != 5 || !decoded.LiveShadow.CutoverCheckpoints[0].Passed {
+		t.Fatalf("unexpected cutover checkpoint payload: %+v", decoded.LiveShadow.CutoverCheckpoints)
+	}
+	if decoded.LiveShadow.RollbackTriggerSurface.Status != "manual-review-required" || decoded.LiveShadow.RollbackTriggerSurface.AutomationBoundary != "manual_only" || decoded.LiveShadow.RollbackTriggerSurface.AutomatedRollbackTrigger || decoded.LiveShadow.RollbackTriggerSurface.SummaryPath != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected rollback trigger surface payload: %+v", decoded.LiveShadow.RollbackTriggerSurface)
+	}
+	if len(decoded.LiveShadow.ReviewerLinks) == 0 || decoded.LiveShadow.ReviewerLinks[0] != liveShadowSummaryPath || decoded.LiveShadow.ReviewerLinks[len(decoded.LiveShadow.ReviewerLinks)-1] != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected reviewer links: %+v", decoded.LiveShadow.ReviewerLinks)
+	}
+	if len(decoded.LiveShadow.Limitations) == 0 || len(decoded.LiveShadow.FutureWork) == 0 {
+		t.Fatalf("expected scorecard caveats and future work, got %+v", decoded.LiveShadow)
+	}
+	if !strings.Contains(response.Body.String(), "\"live_shadow_mirror_scorecard\"") || !strings.Contains(response.Body.String(), "\"canonical_summary_path\":\"docs/reports/live-shadow-summary.json\"") {
+		t.Fatalf("expected live shadow payload in response, got %s", response.Body.String())
+	}
+}
+
+func TestDebugStatusIncludesRollbackTriggerSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		RollbackTrigger struct {
+			ReportPath string `json:"report_path"`
+			Issue      struct {
+				ID   string `json:"id"`
+				Slug string `json:"slug"`
+			} `json:"issue"`
+			Summary struct {
+				Status                   string `json:"status"`
+				AutomationBoundary       string `json:"automation_boundary"`
+				AutomatedRollbackTrigger bool   `json:"automated_rollback_trigger"`
+				CutoverGate              string `json:"cutover_gate"`
+				Distinctions             struct {
+					Blockers        int `json:"blockers"`
+					Warnings        int `json:"warnings"`
+					ManualOnlyPaths int `json:"manual_only_paths"`
+				} `json:"distinctions"`
+			} `json:"summary"`
+			SharedGuardrailSummary struct {
+				DigestPath             string `json:"digest_path"`
+				MigrationReadinessPath string `json:"migration_readiness_path"`
+				LiveShadowIndexPath    string `json:"live_shadow_index_path"`
+				LiveShadowRollupPath   string `json:"live_shadow_rollup_path"`
+			} `json:"shared_guardrail_summary"`
+			Warnings        []map[string]any `json:"warnings"`
+			Blockers        []map[string]any `json:"blockers"`
+			ManualOnlyPaths []map[string]any `json:"manual_only_paths"`
+			ReviewerLinks   []string         `json:"reviewer_links"`
+		} `json:"rollback_trigger_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug rollback payload: %v", err)
+	}
+	if decoded.RollbackTrigger.ReportPath != rollbackTriggerSurfacePath || decoded.RollbackTrigger.Issue.ID != "OPE-254" || decoded.RollbackTrigger.Issue.Slug != "BIG-PAR-088" {
+		t.Fatalf("unexpected rollback trigger metadata: %+v", decoded.RollbackTrigger)
+	}
+	if decoded.RollbackTrigger.Summary.Status != "manual-review-required" || decoded.RollbackTrigger.Summary.AutomationBoundary != "manual_only" || decoded.RollbackTrigger.Summary.AutomatedRollbackTrigger || decoded.RollbackTrigger.Summary.CutoverGate != "reviewer_enforced" {
+		t.Fatalf("unexpected rollback trigger summary: %+v", decoded.RollbackTrigger.Summary)
+	}
+	if decoded.RollbackTrigger.Summary.Distinctions.Blockers != 3 || decoded.RollbackTrigger.Summary.Distinctions.Warnings != 1 || decoded.RollbackTrigger.Summary.Distinctions.ManualOnlyPaths != 2 {
+		t.Fatalf("unexpected rollback distinctions: %+v", decoded.RollbackTrigger.Summary.Distinctions)
+	}
+	if decoded.RollbackTrigger.SharedGuardrailSummary.DigestPath != "docs/reports/rollback-safeguard-follow-up-digest.md" || decoded.RollbackTrigger.SharedGuardrailSummary.MigrationReadinessPath != migrationReadinessReportPath || decoded.RollbackTrigger.SharedGuardrailSummary.LiveShadowIndexPath != liveShadowIndexPath || decoded.RollbackTrigger.SharedGuardrailSummary.LiveShadowRollupPath != "docs/reports/live-shadow-drift-rollup.json" {
+		t.Fatalf("unexpected rollback guardrail summary: %+v", decoded.RollbackTrigger.SharedGuardrailSummary)
+	}
+	if len(decoded.RollbackTrigger.Warnings) != 1 || len(decoded.RollbackTrigger.Blockers) != 3 || len(decoded.RollbackTrigger.ManualOnlyPaths) != 2 {
+		t.Fatalf("unexpected rollback collections: %+v", decoded.RollbackTrigger)
+	}
+	if len(decoded.RollbackTrigger.ReviewerLinks) == 0 || decoded.RollbackTrigger.ReviewerLinks[0] != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected rollback reviewer links: %+v", decoded.RollbackTrigger.ReviewerLinks)
+	}
+	if !strings.Contains(response.Body.String(), "\"rollback_trigger_surface\"") || !strings.Contains(response.Body.String(), "\"cutover_gate\":\"reviewer_enforced\"") {
+		t.Fatalf("expected rollback trigger payload in response, got %s", response.Body.String())
 	}
 }
 
@@ -2180,6 +2472,22 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 					Count int    `json:"count"`
 				} `json:"takeover_owners"`
 			} `json:"cluster_health"`
+			LiveShadowMirror struct {
+				ReportPath           string   `json:"report_path"`
+				CanonicalSummaryPath string   `json:"canonical_summary_path"`
+				SummaryPath          string   `json:"summary_path"`
+				Status               string   `json:"status"`
+				Severity             string   `json:"severity"`
+				ReviewerLinks        []string `json:"reviewer_links"`
+				Summary              struct {
+					ParityOKCount      int `json:"parity_ok_count"`
+					DriftDetectedCount int `json:"drift_detected_count"`
+					FreshInputs        int `json:"fresh_inputs"`
+				} `json:"summary"`
+				RollbackTriggerSurface struct {
+					Status string `json:"status"`
+				} `json:"rollback_trigger_surface"`
+			} `json:"live_shadow_mirror_scorecard"`
 			BrokerReviewPack struct {
 				Status             string   `json:"status"`
 				SummaryPath        string   `json:"summary_path"`
@@ -2188,6 +2496,50 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 				ArtifactDirectory  string   `json:"artifact_directory"`
 				ReviewerLinks      []string `json:"reviewer_links"`
 			} `json:"broker_review_pack"`
+			MigrationReviewPack struct {
+				Status                 string   `json:"status"`
+				ReadinessReportPath    string   `json:"readiness_report_path"`
+				ScorecardPath          string   `json:"scorecard_path"`
+				CanonicalSummaryPath   string   `json:"canonical_summary_path"`
+				SummaryPath            string   `json:"summary_path"`
+				IndexPath              string   `json:"index_path"`
+				FollowUpDigestPath     string   `json:"follow_up_digest_path"`
+				RollbackTriggerPath    string   `json:"rollback_trigger_path"`
+				ReviewerLinks          []string `json:"reviewer_links"`
+				RollbackTriggerSurface struct {
+					ReportPath string `json:"report_path"`
+					Issue      struct {
+						ID   string `json:"id"`
+						Slug string `json:"slug"`
+					} `json:"issue"`
+					Summary struct {
+						Status                   string `json:"status"`
+						AutomationBoundary       string `json:"automation_boundary"`
+						AutomatedRollbackTrigger bool   `json:"automated_rollback_trigger"`
+						CutoverGate              string `json:"cutover_gate"`
+						Distinctions             struct {
+							Blockers        int `json:"blockers"`
+							Warnings        int `json:"warnings"`
+							ManualOnlyPaths int `json:"manual_only_paths"`
+						} `json:"distinctions"`
+					} `json:"summary"`
+					ReviewerLinks []string `json:"reviewer_links"`
+				} `json:"rollback_trigger_surface"`
+				LiveShadowMirrorScorecard struct {
+					ReportPath           string `json:"report_path"`
+					CanonicalSummaryPath string `json:"canonical_summary_path"`
+					Summary              struct {
+						ParityOKCount         int  `json:"parity_ok_count"`
+						DriftDetectedCount    int  `json:"drift_detected_count"`
+						MatrixMismatched      int  `json:"matrix_mismatched"`
+						CorpusCoveragePresent bool `json:"corpus_coverage_present"`
+					} `json:"summary"`
+					RollbackTriggerSurface struct {
+						AutomationBoundary string `json:"automation_boundary"`
+						SummaryPath        string `json:"summary_path"`
+					} `json:"rollback_trigger_surface"`
+				} `json:"live_shadow_mirror_scorecard"`
+			} `json:"migration_review_pack"`
 			BrokerStubFanoutIsolation struct {
 				ReportPath string `json:"report_path"`
 				Summary    struct {
@@ -2273,6 +2625,20 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	if len(decoded.Diagnostics.ClusterHealth.TakeoverOwners) == 0 || decoded.Diagnostics.ClusterHealth.TakeoverOwners[0].Key != "alice" {
 		t.Fatalf("expected takeover owner rollup, got %+v", decoded.Diagnostics.ClusterHealth)
 	}
+	if decoded.Diagnostics.LiveShadowMirror.ReportPath != liveShadowMirrorScorecardPath ||
+		decoded.Diagnostics.LiveShadowMirror.CanonicalSummaryPath != liveShadowSummaryPath ||
+		decoded.Diagnostics.LiveShadowMirror.SummaryPath != "docs/reports/live-shadow-runs/20260313T085655Z/summary.json" ||
+		decoded.Diagnostics.LiveShadowMirror.Status != "parity-ok" ||
+		decoded.Diagnostics.LiveShadowMirror.Severity != "none" ||
+		decoded.Diagnostics.LiveShadowMirror.Summary.ParityOKCount != 4 ||
+		decoded.Diagnostics.LiveShadowMirror.Summary.DriftDetectedCount != 0 ||
+		decoded.Diagnostics.LiveShadowMirror.Summary.FreshInputs != 2 ||
+		decoded.Diagnostics.LiveShadowMirror.RollbackTriggerSurface.Status != "manual-review-required" {
+		t.Fatalf("unexpected live shadow diagnostics payload: %+v", decoded.Diagnostics.LiveShadowMirror)
+	}
+	if len(decoded.Diagnostics.LiveShadowMirror.ReviewerLinks) == 0 {
+		t.Fatalf("expected live shadow reviewer links, got %+v", decoded.Diagnostics.LiveShadowMirror)
+	}
 	if decoded.Diagnostics.BrokerReviewPack.Status != "checked_in_stub_evidence" ||
 		decoded.Diagnostics.BrokerReviewPack.SummaryPath != "docs/reports/broker-validation-summary.json" ||
 		decoded.Diagnostics.BrokerReviewPack.ReportPath != "docs/reports/broker-failover-stub-report.json" ||
@@ -2284,6 +2650,46 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		decoded.Diagnostics.BrokerReviewPack.ReviewerLinks[0] != "docs/reports/live-validation-index.json" ||
 		decoded.Diagnostics.BrokerReviewPack.ReviewerLinks[1] != "docs/reports/review-readiness.md" {
 		t.Fatalf("unexpected broker review pack reviewer links: %+v", decoded.Diagnostics.BrokerReviewPack.ReviewerLinks)
+	}
+	if decoded.Diagnostics.MigrationReviewPack.Status != "parity-ok" ||
+		decoded.Diagnostics.MigrationReviewPack.ReadinessReportPath != migrationReadinessReportPath ||
+		decoded.Diagnostics.MigrationReviewPack.ScorecardPath != liveShadowMirrorScorecardPath ||
+		decoded.Diagnostics.MigrationReviewPack.CanonicalSummaryPath != liveShadowSummaryPath ||
+		decoded.Diagnostics.MigrationReviewPack.SummaryPath != "docs/reports/live-shadow-runs/20260313T085655Z/summary.json" ||
+		decoded.Diagnostics.MigrationReviewPack.IndexPath != liveShadowIndexPath ||
+		decoded.Diagnostics.MigrationReviewPack.FollowUpDigestPath != liveShadowComparisonFollowUpDigestPath ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerPath != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected migration review pack payload: %+v", decoded.Diagnostics.MigrationReviewPack)
+	}
+	if decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReportPath != rollbackTriggerSurfacePath ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Issue.ID != "OPE-254" ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Issue.Slug != "BIG-PAR-088" ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Status != "manual-review-required" ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.AutomationBoundary != "manual_only" ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.AutomatedRollbackTrigger ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.CutoverGate != "reviewer_enforced" ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Distinctions.Blockers != 3 ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Distinctions.Warnings != 1 ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Distinctions.ManualOnlyPaths != 2 {
+		t.Fatalf("unexpected migration rollback trigger payload: %+v", decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface)
+	}
+	if len(decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReviewerLinks) == 0 || decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReviewerLinks[0] != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected migration rollback reviewer links: %+v", decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReviewerLinks)
+	}
+	if decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.ReportPath != liveShadowMirrorScorecardPath ||
+		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.CanonicalSummaryPath != liveShadowSummaryPath ||
+		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.ParityOKCount != 4 ||
+		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.DriftDetectedCount != 0 ||
+		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.MatrixMismatched != 0 ||
+		!decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.CorpusCoveragePresent ||
+		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.RollbackTriggerSurface.AutomationBoundary != "manual_only" ||
+		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.RollbackTriggerSurface.SummaryPath != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected migration live shadow scorecard payload: %+v", decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard)
+	}
+	if len(decoded.Diagnostics.MigrationReviewPack.ReviewerLinks) == 0 ||
+		decoded.Diagnostics.MigrationReviewPack.ReviewerLinks[0] != liveShadowSummaryPath ||
+		decoded.Diagnostics.MigrationReviewPack.ReviewerLinks[len(decoded.Diagnostics.MigrationReviewPack.ReviewerLinks)-1] != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected migration review links: %+v", decoded.Diagnostics.MigrationReviewPack.ReviewerLinks)
 	}
 	if decoded.Diagnostics.BrokerStubFanoutIsolation.ReportPath != brokerStubFanoutIsolationEvidencePackPath ||
 		decoded.Diagnostics.BrokerStubFanoutIsolation.Summary.ScenarioCount != 1 ||
@@ -2334,10 +2740,19 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	}
 	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Live Shadow Mirror Scorecard") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Failover Review Pack") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Migration Readiness Review Pack") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Rollback Trigger Surface") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Stub Live Fanout Isolation") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Delivery Acknowledgement Readiness") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Validation Bundle Continuation Gate") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, liveShadowSummaryPath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, liveShadowMirrorScorecardPath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, migrationReadinessReportPath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, liveShadowComparisonFollowUpDigestPath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, rollbackTriggerSurfacePath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "reviewer_enforced") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-validation-summary.json") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, brokerStubFanoutIsolationEvidencePackPath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, deliveryAckReadinessSurfacePath) ||
@@ -2402,6 +2817,216 @@ func TestV2ControlCenterIncludesCoordinationCapabilitySurface(t *testing.T) {
 	contractOnly := decoded.Coordination.Capabilities[4]
 	if contractOnly.Name != "partitioned_topic_routing" || !contractOnly.ContractOnly || contractOnly.LiveProven || len(contractOnly.SourceReportLinks) == 0 {
 		t.Fatalf("unexpected contract-only coordination entry: %+v", contractOnly)
+	}
+}
+
+func TestV2ControlCenterIncludesAdmissionPolicySummary(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		AdmissionPolicy struct {
+			PolicyMode       string   `json:"policy_mode"`
+			Enforced         bool     `json:"enforced"`
+			EvidenceSources  []string `json:"evidence_sources"`
+			RecommendedLanes []struct {
+				Name                  string  `json:"name"`
+				MaxQueuedTasks        int     `json:"max_queued_tasks"`
+				SubmitWorkers         int     `json:"submit_workers"`
+				ObservedThroughputTPS float64 `json:"observed_throughput_tasks_per_sec"`
+			} `json:"recommended_lanes"`
+		} `json:"admission_policy_summary"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center admission policy payload: %v", err)
+	}
+	if decoded.AdmissionPolicy.PolicyMode != "advisory_only" || decoded.AdmissionPolicy.Enforced {
+		t.Fatalf("expected advisory-only admission policy in control center payload, got %+v", decoded.AdmissionPolicy)
+	}
+	if len(decoded.AdmissionPolicy.EvidenceSources) < 4 ||
+		!containsString(decoded.AdmissionPolicy.EvidenceSources, capacityCertificationMatrixPath) ||
+		!containsString(decoded.AdmissionPolicy.EvidenceSources, capacityCertificationReportPath) {
+		t.Fatalf("unexpected admission policy evidence sources: %+v", decoded.AdmissionPolicy.EvidenceSources)
+	}
+	if len(decoded.AdmissionPolicy.RecommendedLanes) != 2 {
+		t.Fatalf("expected recommended admission lanes in control center payload, got %+v", decoded.AdmissionPolicy.RecommendedLanes)
+	}
+	if decoded.AdmissionPolicy.RecommendedLanes[0].Name != "recommended-local-sustained" || decoded.AdmissionPolicy.RecommendedLanes[0].MaxQueuedTasks != 1000 || decoded.AdmissionPolicy.RecommendedLanes[0].SubmitWorkers != 24 || decoded.AdmissionPolicy.RecommendedLanes[0].ObservedThroughputTPS != 9.607 {
+		t.Fatalf("unexpected sustained admission lane in control center payload: %+v", decoded.AdmissionPolicy.RecommendedLanes[0])
+	}
+}
+
+func TestV2ControlCenterIncludesCoordinationLeaderElectionSurface(t *testing.T) {
+	now := time.Unix(1700000000, 0)
+	coordinator := events.NewSubscriberLeaseCoordinator()
+	lease, err := coordinator.Acquire(events.LeaseRequest{
+		GroupID:      coordinationLeaderGroupID,
+		SubscriberID: coordinationLeaderSubscriberID,
+		ConsumerID:   "node-a",
+		TTL:          30 * time.Second,
+		Now:          now,
+	})
+	if err != nil {
+		t.Fatalf("seed leader lease: %v", err)
+	}
+	server := &Server{
+		Recorder:         observability.NewRecorder(),
+		Queue:            queue.NewMemoryQueue(),
+		Bus:              events.NewBus(),
+		Control:          control.New(),
+		SubscriberLeases: coordinator,
+		Now:              func() time.Time { return now.Add(5 * time.Second) },
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Leader struct {
+			Endpoint            string `json:"endpoint"`
+			Status              string `json:"status"`
+			LeaderPresent       bool   `json:"leader_present"`
+			RemainingTTLSeconds int64  `json:"remaining_ttl_seconds"`
+			Lease               struct {
+				ConsumerID string `json:"consumer_id"`
+				LeaseToken string `json:"lease_token"`
+				LeaseEpoch int64  `json:"lease_epoch"`
+			} `json:"lease"`
+		} `json:"coordination_leader_election"`
+		LeaderElectionCapability struct {
+			Summary struct {
+				BackendCount          int `json:"backend_count"`
+				LiveProvenBackends    int `json:"live_proven_backends"`
+				HarnessProvenBackends int `json:"harness_proven_backends"`
+				ContractOnlyBackends  int `json:"contract_only_backends"`
+			} `json:"summary"`
+		} `json:"leader_election_capability"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center leader surface: %v", err)
+	}
+	if decoded.Leader.Endpoint != coordinationLeaderEndpoint || decoded.Leader.Status != "active" || !decoded.Leader.LeaderPresent {
+		t.Fatalf("unexpected leader surface: %+v", decoded.Leader)
+	}
+	if decoded.Leader.Lease.ConsumerID != "node-a" || decoded.Leader.Lease.LeaseToken != lease.LeaseToken || decoded.Leader.Lease.LeaseEpoch != lease.LeaseEpoch {
+		t.Fatalf("unexpected leader lease payload: %+v", decoded.Leader)
+	}
+	if decoded.Leader.RemainingTTLSeconds <= 0 {
+		t.Fatalf("expected positive ttl remaining, got %+v", decoded.Leader)
+	}
+	if decoded.LeaderElectionCapability.Summary.BackendCount != 4 || decoded.LeaderElectionCapability.Summary.LiveProvenBackends != 1 || decoded.LeaderElectionCapability.Summary.HarnessProvenBackends != 1 || decoded.LeaderElectionCapability.Summary.ContractOnlyBackends != 2 {
+		t.Fatalf("unexpected control center leader election capability summary: %+v", decoded.LeaderElectionCapability.Summary)
+	}
+}
+
+func TestCoordinationLeaderEndpointsAcquireStatusAndTakeover(t *testing.T) {
+	now := time.Unix(1700000000, 0)
+	current := now
+	server := &Server{
+		Recorder:         observability.NewRecorder(),
+		Queue:            queue.NewMemoryQueue(),
+		Bus:              events.NewBus(),
+		SubscriberLeases: events.NewSubscriberLeaseCoordinator(),
+		Now:              func() time.Time { return current },
+	}
+	handler := server.Handler()
+
+	acquire := httptest.NewRecorder()
+	handler.ServeHTTP(acquire, httptest.NewRequest(http.MethodPost, coordinationLeaderEndpoint, strings.NewReader(`{"consumer_id":"node-a","ttl_seconds":30}`)))
+	if acquire.Code != http.StatusOK {
+		t.Fatalf("expected first acquire 200, got %d %s", acquire.Code, acquire.Body.String())
+	}
+	var acquired struct {
+		Lease struct {
+			ConsumerID string `json:"consumer_id"`
+			LeaseToken string `json:"lease_token"`
+			LeaseEpoch int64  `json:"lease_epoch"`
+		} `json:"lease"`
+		LeaderElectionCapability struct {
+			Summary struct {
+				CurrentProofBackend string `json:"current_proof_backend"`
+			} `json:"summary"`
+		} `json:"leader_election_capability"`
+	}
+	if err := json.Unmarshal(acquire.Body.Bytes(), &acquired); err != nil {
+		t.Fatalf("decode acquire response: %v", err)
+	}
+	if acquired.Lease.ConsumerID != "node-a" || acquired.Lease.LeaseToken == "" || acquired.Lease.LeaseEpoch != 1 {
+		t.Fatalf("unexpected acquired lease: %+v", acquired.Lease)
+	}
+	if acquired.LeaderElectionCapability.Summary.CurrentProofBackend != "shared_sqlite_subscriber_lease" {
+		t.Fatalf("unexpected leader election capability on acquire: %+v", acquired.LeaderElectionCapability)
+	}
+
+	status := httptest.NewRecorder()
+	handler.ServeHTTP(status, httptest.NewRequest(http.MethodGet, coordinationLeaderEndpoint, nil))
+	if status.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d %s", status.Code, status.Body.String())
+	}
+	var statusDecoded struct {
+		Leader struct {
+			Status        string `json:"status"`
+			LeaderPresent bool   `json:"leader_present"`
+			Lease         struct {
+				ConsumerID string `json:"consumer_id"`
+			} `json:"lease"`
+		} `json:"leader"`
+		LeaderElectionCapability struct {
+			ReportPath string `json:"report_path"`
+			Backends   []struct {
+				Name             string `json:"name"`
+				RuntimeReadiness string `json:"runtime_readiness"`
+			} `json:"backends"`
+		} `json:"leader_election_capability"`
+	}
+	if err := json.Unmarshal(status.Body.Bytes(), &statusDecoded); err != nil {
+		t.Fatalf("decode status response: %v", err)
+	}
+	if statusDecoded.Leader.Status != "active" || !statusDecoded.Leader.LeaderPresent || statusDecoded.Leader.Lease.ConsumerID != "node-a" {
+		t.Fatalf("unexpected leader status payload: %+v", statusDecoded.Leader)
+	}
+	if statusDecoded.LeaderElectionCapability.ReportPath != leaderElectionCapabilitySurfacePath || len(statusDecoded.LeaderElectionCapability.Backends) != 4 || statusDecoded.LeaderElectionCapability.Backends[0].Name != "shared_sqlite_subscriber_lease" {
+		t.Fatalf("unexpected leader capability status payload: %+v", statusDecoded.LeaderElectionCapability)
+	}
+
+	current = now.Add(10 * time.Second)
+	conflict := httptest.NewRecorder()
+	handler.ServeHTTP(conflict, httptest.NewRequest(http.MethodPost, coordinationLeaderEndpoint, strings.NewReader(`{"consumer_id":"node-b","ttl_seconds":30}`)))
+	if conflict.Code != http.StatusConflict {
+		t.Fatalf("expected conflicting acquire 409, got %d %s", conflict.Code, conflict.Body.String())
+	}
+
+	current = now.Add(31 * time.Second)
+	takeover := httptest.NewRecorder()
+	handler.ServeHTTP(takeover, httptest.NewRequest(http.MethodPost, coordinationLeaderEndpoint, strings.NewReader(`{"consumer_id":"node-b","ttl_seconds":30}`)))
+	if takeover.Code != http.StatusOK {
+		t.Fatalf("expected takeover acquire 200, got %d %s", takeover.Code, takeover.Body.String())
+	}
+	var takeoverDecoded struct {
+		Lease struct {
+			ConsumerID string `json:"consumer_id"`
+			LeaseEpoch int64  `json:"lease_epoch"`
+		} `json:"lease"`
+	}
+	if err := json.Unmarshal(takeover.Body.Bytes(), &takeoverDecoded); err != nil {
+		t.Fatalf("decode takeover response: %v", err)
+	}
+	if takeoverDecoded.Lease.ConsumerID != "node-b" || takeoverDecoded.Lease.LeaseEpoch != 2 {
+		t.Fatalf("unexpected takeover lease: %+v", takeoverDecoded.Lease)
 	}
 }
 

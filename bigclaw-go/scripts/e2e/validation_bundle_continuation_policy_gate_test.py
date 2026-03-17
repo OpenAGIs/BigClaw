@@ -70,10 +70,14 @@ class ValidationBundleContinuationPolicyGateTest(unittest.TestCase):
         self.assertEqual(report['ticket'], 'OPE-262')
         self.assertEqual(report['status'], 'policy-go')
         self.assertEqual(report['recommendation'], 'go')
-        self.assertEqual(report['enforcement']['mode'], 'review')
+        self.assertEqual(report['enforcement']['mode'], 'hold')
         self.assertEqual(report['enforcement']['outcome'], 'pass')
         self.assertEqual(report['failing_checks'], [])
         self.assertEqual(report['reviewer_path']['index_path'], 'docs/reports/live-validation-index.md')
+        self.assertIn(
+            'BIGCLAW_E2E_CONTINUATION_GATE_MODE=review',
+            report['next_actions'][0],
+        )
 
     def test_build_report_returns_policy_hold_with_actionable_failures(self) -> None:
         self.write_scorecard(

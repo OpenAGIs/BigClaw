@@ -90,7 +90,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - `internal/events/durability.go`: rollout-facing contract for replicated durability phases, failure domains, and required verification evidence.
 - `docs/reports/broker-durability-rollout-scorecard.json`: checked-in reviewer-facing rollout scorecard for readiness, blockers, and missing evidence.
 - `docs/reports/durability-rollout-scorecard.json`: generic mirror of the same rollout scorecard payload for bootstrap and automation workflows.
-- `internal/events/log.go`: provider-neutral `PartitionRoute` and `SubscriberOwnershipContract` fields now reserve the future partitioned-routing and broker-backed ownership contract surface without claiming runtime support yet.
+- `internal/events/log.go`: provider-neutral `PartitionRoute` and `SubscriberOwnershipContract` fields now reserve the future partitioned-routing and broker-backed ownership contract surface, and current local runtimes reject those requests explicitly at subscribe time instead of silently ignoring them.
 
 ## Migration and compatibility constraints
 
@@ -140,7 +140,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - Only the SQLite durable consumer dedup backend exists yet; HTTP and broker-backed dedup persistence still need concrete implementations.
 - Memory bus delivery acknowledgements remain sink-level best effort; explicit commit acknowledgements exist for SQLite, the remote HTTP event-log service, and the local broker stub, while replicated broker acknowledgements remain contract-only.
 - Lease coordination now has a shared durable SQLite-backed scaffold for shared multi-node subscriber groups, but broker-backed and replicated ownership semantics still need a durable backend beyond SQLite.
-- No runtime partitioned topic model or broker-backed cross-process subscriber coordination exists yet; only the contract-only `PartitionRoute` and `SubscriberOwnershipContract` targets are defined today. See `docs/reports/cross-process-coordination-boundary-digest.md`.
+- No runtime partitioned topic model or broker-backed cross-process subscriber coordination exists yet; `PartitionRoute` and `SubscriberOwnershipContract` remain future-facing contracts, and current local subscription runtimes fail closed when callers request them. See `docs/reports/cross-process-coordination-boundary-digest.md`.
 - Retention watermarks are now exposed for in-memory and durable event-log backends, SQLite-backed logs persist trimmed replay boundaries across restarts, and expired checkpoint resumes now fail closed with explicit reset guidance; the broader compaction semantics remain documented in `docs/reports/replay-retention-semantics-report.md`.
 - Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.
 - Multi-subscriber takeover validation now has both a deterministic local harness in `docs/reports/multi-subscriber-takeover-validation-report.md` / `docs/reports/multi-subscriber-takeover-validation-report.json` and a live two-node companion proof in `docs/reports/live-multi-node-subscriber-takeover-report.json`; see `docs/reports/subscriber-takeover-executability-follow-up-digest.md` for the remaining broker-backed and native-audit caveats.
@@ -150,6 +150,7 @@ This report summarizes the current event bus reliability evidence and the next r
 ## Replicated rollout contract
 
 - `docs/reports/replicated-event-log-durability-rollout-contract.md` now captures the minimum rollout gates for a broker-backed or quorum-backed adapter, and `event_durability` now includes broker bootstrap readiness for those targets:
+- `docs/reports/replicated-broker-durability-rollout-spike.md` is the ticket-specific spike artifact that separates the current SQLite/process-local proof boundary from future replicated-backend claims and names the next smallest implementation slices.
 - `docs/reports/broker-durability-rollout-scorecard.json` mirrors the runtime contract in one checked-in JSON scorecard so reviewers can inspect readiness, blockers, and missing evidence without reconstructing them from prose.
 - `docs/reports/durability-rollout-scorecard.json` keeps the same payload under a repo-agnostic filename for queue bootstrap and automation flows.
 - `docs/reports/broker-checkpoint-fencing-proof-summary.json` isolates the stub-matrix scenarios that prove replay/checkpoint sequence monotonicity and stale-writer fencing during takeover.
@@ -163,12 +164,12 @@ This report summarizes the current event bus reliability evidence and the next r
 ## Next adapter boundary
 
 - `internal/events/log.go` now defines the provider-neutral event-log and checkpoint contract for future broker-backed adapters.
-- `internal/events/log.go` also defines the contract-only `PartitionRoute` and `SubscriberOwnershipContract` target surface for future partitioned topic routing and broker-backed subscriber ownership.
+- `internal/events/log.go` also defines the future-facing `PartitionRoute` and `SubscriberOwnershipContract` surface for partitioned topic routing and broker-backed subscriber ownership while rejecting those requests in current local subscription runtimes.
 - `internal/events/memory_log.go` provides the contract-compatible in-memory baseline while BigClaw remains on local fanout.
 - Broker-facing runtime knobs are reserved behind `BIGCLAW_EVENT_LOG_*` env vars so a first provider adapter can land without changing publish/replay/checkpoint callers.
 - No durable external event log yet; replay is process-local history.
 - No delivery acknowledgement protocol beyond sink-level best effort.
-- No runtime partitioned topic model or cross-process subscriber coordination yet; only the contract-only `PartitionRoute` and `SubscriberOwnershipContract` targets exist today. See `docs/reports/cross-process-coordination-boundary-digest.md`.
+- No runtime partitioned topic model or cross-process subscriber coordination yet; `PartitionRoute` and `SubscriberOwnershipContract` still target future backends, and current local subscription runtimes reject them explicitly. See `docs/reports/cross-process-coordination-boundary-digest.md`.
 - Multi-subscriber takeover validation now has both a deterministic local harness in `docs/reports/multi-subscriber-takeover-validation-report.md` / `docs/reports/multi-subscriber-takeover-validation-report.json` and a live two-node companion proof in `docs/reports/live-multi-node-subscriber-takeover-report.json`; see `docs/reports/subscriber-takeover-executability-follow-up-digest.md` for the remaining shared-durable and broker-backed ownership caveats.
 - `docs/reports/cross-process-coordination-capability-surface.json` now acts as the runtime capability matrix, summarizing which coordination guarantees are `live_proven`, which are `harness_proven`, and which remain `contract_only`.
 

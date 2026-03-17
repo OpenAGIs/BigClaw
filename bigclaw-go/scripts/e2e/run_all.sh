@@ -13,6 +13,7 @@ RUN_RAY="${BIGCLAW_E2E_RUN_RAY:-1}"
 RUN_BROKER="${BIGCLAW_E2E_RUN_BROKER:-0}"
 BROKER_BACKEND="${BIGCLAW_E2E_BROKER_BACKEND:-}"
 BROKER_REPORT_PATH="${BIGCLAW_E2E_BROKER_REPORT_PATH:-}"
+BROKER_BOOTSTRAP_SUMMARY_PATH="${BIGCLAW_E2E_BROKER_BOOTSTRAP_SUMMARY_PATH:-docs/reports/broker-bootstrap-review-summary.json}"
 REFRESH_CONTINUATION="${BIGCLAW_E2E_REFRESH_CONTINUATION:-1}"
 ENFORCE_CONTINUATION_GATE="${BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE:-0}"
 CONTINUATION_GATE_MODE="${BIGCLAW_E2E_CONTINUATION_GATE_MODE:-}"
@@ -23,7 +24,7 @@ if [[ -z "$CONTINUATION_GATE_MODE" ]]; then
   if [[ "$ENFORCE_CONTINUATION_GATE" == "1" ]]; then
     CONTINUATION_GATE_MODE="fail"
   else
-    CONTINUATION_GATE_MODE="review"
+    CONTINUATION_GATE_MODE="hold"
   fi
 fi
 
@@ -79,6 +80,8 @@ if (( ${#pids[@]} > 0 )); then
 fi
 
 export_bundle() {
+  go run "$ROOT/scripts/e2e/broker_bootstrap_summary.go" \
+    --output "$ROOT/$BROKER_BOOTSTRAP_SUMMARY_PATH"
   python3 "$ROOT/scripts/e2e/export_validation_bundle.py" \
     --go-root "$ROOT" \
     --run-id "$RUN_ID" \
@@ -92,6 +95,7 @@ export_bundle() {
     --run-broker "$RUN_BROKER" \
     --broker-backend "$BROKER_BACKEND" \
     --broker-report-path "$BROKER_REPORT_PATH" \
+    --broker-bootstrap-summary-path "$BROKER_BOOTSTRAP_SUMMARY_PATH" \
     --validation-status "$status" \
     --local-report-path "$LOCAL_REPORT_REL" \
     --local-stdout-path "$LOCAL_OUT" \

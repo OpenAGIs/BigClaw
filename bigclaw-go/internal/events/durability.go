@@ -50,6 +50,25 @@ type BrokerBootstrapStatus struct {
 	ValidationErrors   []string `json:"validation_errors,omitempty"`
 }
 
+type BrokerBootstrapCompleteness struct {
+	Driver        bool `json:"driver"`
+	URLs          bool `json:"urls"`
+	Topic         bool `json:"topic"`
+	ConsumerGroup bool `json:"consumer_group"`
+}
+
+type BrokerBootstrapReviewSummary struct {
+	EventLogBackend        DurabilityBackend           `json:"event_log_backend"`
+	TargetBackend          DurabilityBackend           `json:"target_backend"`
+	Ready                  bool                        `json:"ready"`
+	RuntimePosture         string                      `json:"runtime_posture"`
+	LiveAdapterImplemented bool                        `json:"live_adapter_implemented"`
+	ProofBoundary          string                      `json:"proof_boundary"`
+	ConfigCompleteness     BrokerBootstrapCompleteness `json:"config_completeness"`
+	BrokerBootstrap        *BrokerBootstrapStatus      `json:"broker_bootstrap,omitempty"`
+	ValidationErrors       []string                    `json:"validation_errors,omitempty"`
+}
+
 type RolloutEvidenceStatus struct {
 	Name      string   `json:"name"`
 	Status    string   `json:"status"`
@@ -245,6 +264,7 @@ func NewDurabilityPlanWithBrokerConfig(currentBackend, targetBackend string, rep
 				Artifacts: []string{
 					"docs/reports/event-bus-reliability-report.md",
 					"docs/reports/replicated-event-log-durability-rollout-contract.md",
+					"docs/reports/replicated-broker-durability-rollout-spike.md",
 					"docs/reports/broker-durability-rollout-scorecard.json",
 					"docs/reports/durability-rollout-scorecard.json",
 				},
@@ -456,4 +476,40 @@ func BrokerBootstrapStatusFromConfig(cfg BrokerRuntimeConfig) *BrokerBootstrapSt
 	}
 	status.Ready = true
 	return status
+}
+
+func BrokerBootstrapReviewSummaryFromConfig(eventBackend, targetBackend string, cfg BrokerRuntimeConfig) BrokerBootstrapReviewSummary {
+	current := NormalizeDurabilityBackend(eventBackend)
+	target := NormalizeDurabilityBackend(targetBackend)
+	bootstrap := BrokerBootstrapStatusFromConfig(cfg)
+	summary := BrokerBootstrapReviewSummary{
+		EventLogBackend:        current,
+		TargetBackend:          target,
+		Ready:                  bootstrap.Ready,
+		LiveAdapterImplemented: false,
+		ProofBoundary:          "broker bootstrap readiness is a pre-adapter contract surface, not live broker durability proof",
+		ConfigCompleteness: BrokerBootstrapCompleteness{
+			Driver:        strings.TrimSpace(cfg.Driver) != "",
+			URLs:          len(cfg.URLs) > 0,
+			Topic:         strings.TrimSpace(cfg.Topic) != "",
+			ConsumerGroup: strings.TrimSpace(cfg.ConsumerGroup) != "",
+		},
+		BrokerBootstrap: bootstrap,
+	}
+	if len(bootstrap.ValidationErrors) > 0 {
+		summary.ValidationErrors = append([]string(nil), bootstrap.ValidationErrors...)
+	}
+	switch {
+	case current == DurabilityBackendBrokerReplicated && strings.EqualFold(strings.TrimSpace(cfg.Driver), BrokerDriverStub):
+		summary.RuntimePosture = "stub_driver_only"
+		summary.ProofBoundary = "runtime can exercise the local stub driver, but that path remains deterministic scaffolding rather than a live broker adapter"
+	case current == DurabilityBackendBrokerReplicated:
+		summary.RuntimePosture = "fail_closed_until_adapter_exists"
+		summary.ProofBoundary = "runtime validates broker bootstrap config and then fails closed instead of claiming a live broker adapter"
+	case target == DurabilityBackendBrokerReplicated:
+		summary.RuntimePosture = "contract_only"
+	default:
+		summary.RuntimePosture = "not_requested"
+	}
+	return summary
 }

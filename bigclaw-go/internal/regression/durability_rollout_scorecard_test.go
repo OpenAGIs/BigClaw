@@ -51,6 +51,7 @@ func TestDurabilityRolloutScorecardReportStaysAligned(t *testing.T) {
 				"event_durability_rollout",
 				"broker-durability-rollout-scorecard.json",
 				"durability-rollout-scorecard.json",
+				"replicated-broker-durability-rollout-spike.md",
 			},
 		},
 		{
@@ -59,6 +60,16 @@ func TestDurabilityRolloutScorecardReportStaysAligned(t *testing.T) {
 				"event_durability_rollout",
 				"broker-durability-rollout-scorecard.json",
 				"durability-rollout-scorecard.json",
+				"replicated-broker-durability-rollout-spike.md",
+			},
+		},
+		{
+			path: "docs/reports/replicated-broker-durability-rollout-spike.md",
+			substrings: []string{
+				"SQLite",
+				"contract_only",
+				"harness_proven",
+				"follow-on implementation slices",
 			},
 		},
 	}
