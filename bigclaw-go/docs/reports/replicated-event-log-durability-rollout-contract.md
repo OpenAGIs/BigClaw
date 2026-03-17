@@ -9,6 +9,7 @@ It builds on the provider-neutral adapter boundary in `docs/reports/broker-event
 ## Current baseline
 
 - `internal/events/durability.go` already declares `broker_replicated` as the target backend and surfaces the active durability plan through bootstrap and debug payloads, including broker bootstrap readiness derived from configured driver / URLs / topic settings.
+- `docs/reports/broker-validation-summary.json` now exports the same broker bootstrap review summary into the validation bundle path, including driver / URL / topic / consumer-group completeness, validation errors, and whether the runtime posture is `contract_only`, `stub_driver_only`, or `fail_closed_until_adapter_exists`.
 - `docs/reports/broker-durability-rollout-scorecard.json` now captures the same rollout posture as one checked-in machine-readable scorecard, including blockers, missing evidence, and broker bootstrap readiness.
 - `cmd/bigclawd/main.go` validates broker runtime config but intentionally stops before instantiating a live replicated adapter.
 - `docs/reports/event-bus-reliability-report.md` and `docs/reports/broker-failover-fault-injection-validation-pack.md` describe the portability and validation direction, but prior to this slice the rollout gate itself was not captured as one explicit contract.
@@ -71,6 +72,8 @@ It builds on the provider-neutral adapter boundary in `docs/reports/broker-event
 - references to the supporting validation pack and rollout contract documents
 
 The current repo-native sources for these signals are the `event_durability` payload and its nested `rollout_scorecard`, plus the top-level `event_durability_rollout` alias exposed through `GET /debug/status` and `/metrics`. Checked-in reviewer artifacts live at `docs/reports/broker-durability-rollout-scorecard.json`, `docs/reports/durability-rollout-scorecard.json`, `docs/reports/broker-checkpoint-fencing-proof-summary.json`, and `docs/reports/broker-retention-boundary-proof-summary.json`.
+
+`docs/reports/broker-validation-summary.json` is a reviewer-facing readiness surface, not evidence of a live broker adapter. A `ready` bootstrap summary only means the configured driver / URLs / topic / consumer group satisfy the pre-adapter contract; it does not prove replicated publish durability, live replay correctness, or a non-stub broker implementation.
 
 
 ## Validation evidence required before a live adapter lands

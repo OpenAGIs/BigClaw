@@ -48,6 +48,25 @@ class RunAllTest(unittest.TestCase):
             executable=True,
         )
         self.write_file(
+            'scripts/e2e/broker_bootstrap_summary.go',
+            """\
+            package main
+
+            import (
+                "flag"
+                "os"
+            )
+
+            func main() {
+                output := flag.String("output", "", "output")
+                flag.Parse()
+                if err := os.WriteFile(*output, []byte("{\\"ready\\":false,\\"runtime_posture\\":\\"contract_only\\",\\"live_adapter_implemented\\":false}\\n"), 0o644); err != nil {
+                    panic(err)
+                }
+            }
+            """,
+        )
+        self.write_file(
             'scripts/e2e/export_validation_bundle.py',
             """\
             #!/usr/bin/env python3
@@ -66,6 +85,7 @@ class RunAllTest(unittest.TestCase):
                 'run_broker': args[args.index('--run-broker') + 1],
                 'broker_backend': args[args.index('--broker-backend') + 1],
                 'broker_report_path': args[args.index('--broker-report-path') + 1],
+                'broker_bootstrap_summary_path': args[args.index('--broker-bootstrap-summary-path') + 1],
             }
             with calls_path.open('a', encoding='utf-8') as handle:
                 handle.write(json.dumps(payload) + '\\n')
@@ -140,6 +160,7 @@ class RunAllTest(unittest.TestCase):
         self.assertEqual(calls[0]['run_broker'], '1')
         self.assertEqual(calls[0]['broker_backend'], 'stub')
         self.assertEqual(calls[0]['broker_report_path'], 'docs/reports/broker-failover-stub-report.json')
+        self.assertEqual(calls[0]['broker_bootstrap_summary_path'], 'docs/reports/broker-bootstrap-review-summary.json')
 
 
 if __name__ == '__main__':
