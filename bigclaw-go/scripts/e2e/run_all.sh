@@ -24,7 +24,7 @@ if [[ -z "$CONTINUATION_GATE_MODE" ]]; then
   if [[ "$ENFORCE_CONTINUATION_GATE" == "1" ]]; then
     CONTINUATION_GATE_MODE="fail"
   else
-    CONTINUATION_GATE_MODE="review"
+    CONTINUATION_GATE_MODE="hold"
   fi
 fi
 
