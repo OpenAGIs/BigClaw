@@ -37,7 +37,7 @@ def test_coordination_surface_marks_partitioned_and_broker_models_unavailable() 
     assert by_capability['broker_backed_subscriber_ownership']['runtime_readiness'] == 'contract_only'
     assert by_capability['shared_queue_task_coordination']['runtime_readiness'] == 'live_proven'
     assert by_capability['subscriber_takeover_semantics']['deterministic_local_harness'] is True
-    assert by_capability['subscriber_takeover_semantics']['runtime_readiness'] == 'harness_proven'
+    assert by_capability['subscriber_takeover_semantics']['runtime_readiness'] == 'live_proven'
 
 
 def test_checked_in_coordination_surface_matches_expected_shape() -> None:
