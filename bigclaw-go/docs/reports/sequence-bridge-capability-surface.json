@@ -1,0 +1,121 @@
+{
+  "generated_at": "2026-03-17T22:30:00Z",
+  "ticket": "OPE-12",
+  "track": "BIG-DUR-102",
+  "title": "Durable sequence bridge capability surface",
+  "status": "checked_in_surface",
+  "evidence_sources": {
+    "durability_spike": "bigclaw-go/docs/reports/replicated-broker-durability-rollout-spike.md",
+    "checkpoint_fencing_proof": "bigclaw-go/docs/reports/broker-checkpoint-fencing-proof-summary.json",
+    "coordination_report": "bigclaw-go/docs/reports/multi-node-coordination-report.md",
+    "supporting_docs": [
+      "bigclaw-go/internal/events/log.go",
+      "bigclaw-go/internal/events/checkpoints.go",
+      "bigclaw-go/internal/events/subscriber_leases.go",
+      "bigclaw-go/internal/events/sqlite_log.go",
+      "bigclaw-go/internal/events/http_log.go",
+      "bigclaw-go/internal/events/broker_stub_log.go"
+    ]
+  },
+  "summary": {
+    "backend_count": 5,
+    "live_proven_backends": 3,
+    "harness_proven_backends": 1,
+    "contract_only_backends": 1,
+    "one_to_one_mappings": 2,
+    "provider_epoch_bridged_backends": 3
+  },
+  "backends": [
+    {
+      "backend": "memory",
+      "runtime_readiness": "live_proven",
+      "portable_sequence_source": "Position.Sequence in process-local append order",
+      "provider_offset_source": "no separate provider offset; portable sequence is the only ordering domain",
+      "ownership_epoch_source": "not_applicable",
+      "mapping_contract": "direct portable sequence only",
+      "source_report_links": [
+        "bigclaw-go/internal/events/memory_log.go"
+      ],
+      "notes": [
+        "Replay and checkpoints use the same in-process sequence counter.",
+        "No external provider epoch exists for memory-only history."
+      ]
+    },
+    {
+      "backend": "sqlite",
+      "runtime_readiness": "live_proven",
+      "portable_sequence_source": "event_log.seq and subscriber_checkpoint.event_seq",
+      "provider_offset_source": "subscriber_group_lease.checkpoint_offset stores the same durable integer domain",
+      "ownership_epoch_source": "subscriber_group_lease.lease_epoch",
+      "mapping_contract": "1:1 durable integer bridge",
+      "source_report_links": [
+        "bigclaw-go/internal/events/sqlite_log.go",
+        "bigclaw-go/internal/events/sqlite_subscriber_leases.go",
+        "bigclaw-go/docs/reports/broker-checkpoint-fencing-proof-summary.json"
+      ],
+      "notes": [
+        "Checkpoint monotonicity is enforced against the same durable integer sequence used for replay.",
+        "Lease epoch fencing prevents stale writers from regressing the shared checkpoint domain."
+      ]
+    },
+    {
+      "backend": "http",
+      "runtime_readiness": "live_proven",
+      "portable_sequence_source": "remote subscriber checkpoint event_sequence returned by the HTTP event-log service",
+      "provider_offset_source": "remote durable integer sequence mirrored into checkpoint_offset by the shared lease coordinator",
+      "ownership_epoch_source": "subscriber_group_lease.lease_epoch",
+      "mapping_contract": "service-backed durable integer bridge",
+      "source_report_links": [
+        "bigclaw-go/internal/events/http_log.go",
+        "bigclaw-go/docs/e2e-validation.md",
+        "bigclaw-go/docs/reports/external-store-validation-report.json"
+      ],
+      "notes": [
+        "The HTTP lane preserves the same portable sequence semantics while moving the log behind a shared service boundary.",
+        "Ownership fencing still relies on the shared lease epoch domain."
+      ]
+    },
+    {
+      "backend": "broker_stub",
+      "runtime_readiness": "harness_proven",
+      "portable_sequence_source": "local stub sequence counter exposed as Position.Sequence",
+      "provider_offset_source": "stub-N publish offset resolves back to the same numeric checkpoint_offset domain",
+      "ownership_epoch_source": "subscriber_group_lease.lease_epoch",
+      "mapping_contract": "provider offset string resolves to one local integer sequence domain",
+      "source_report_links": [
+        "bigclaw-go/internal/events/broker_stub_log.go",
+        "bigclaw-go/docs/reports/ambiguous-publish-outcome-proof-summary.json",
+        "bigclaw-go/docs/reports/broker-checkpoint-fencing-proof-summary.json"
+      ],
+      "notes": [
+        "The stub proves the mapping contract deterministically before a real replicated adapter exists.",
+        "Ownership and stale-writer fencing are still evaluated through the shared lease epoch path."
+      ]
+    },
+    {
+      "backend": "broker_replicated",
+      "runtime_readiness": "contract_only",
+      "portable_sequence_source": "future provider offset or quorum position mapped into Position.Sequence",
+      "provider_offset_source": "future broker-native offset domain",
+      "ownership_epoch_source": "future provider-backed ownership epoch plus subscriber lease fencing",
+      "mapping_contract": "portable monotonic sequence bridge required before rollout-ready claims",
+      "source_report_links": [
+        "bigclaw-go/docs/reports/replicated-broker-durability-rollout-spike.md",
+        "bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md"
+      ],
+      "notes": [
+        "No live provider-backed adapter is wired yet.",
+        "A real adapter must preserve monotonic replay/checkpoint semantics across failover using one portable sequence contract."
+      ]
+    }
+  ],
+  "current_ceiling": [
+    "SQLite and HTTP paths already share one durable integer sequence domain, but broker-backed mapping remains future work.",
+    "Subscriber ownership fencing is shared-lease-backed rather than provider-native."
+  ],
+  "next_runtime_hooks": [
+    "Expose sequence bridge posture in runtime diagnostics and reviewer payloads.",
+    "Thread sequence bridge metadata through subscriber lease status and checkpoint rejection events.",
+    "Keep broker_replicated marked contract_only until a real provider-backed adapter proves the mapping against failover."
+  ]
+}

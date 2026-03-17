@@ -120,6 +120,7 @@ type distributedDiagnostics struct {
 	BrokerFanoutIsolation brokerStubFanoutIsolationEvidencePack   `json:"broker_stub_fanout_isolation"`
 	DeliveryAckReadiness  deliveryAckReadinessSurface             `json:"delivery_ack_readiness"`
 	PublishAckOutcomes    publishAckOutcomeSurface                `json:"publish_ack_outcomes"`
+	SequenceBridge        sequenceBridgeSurface                   `json:"sequence_bridge_surface"`
 	ContinuationGate      validationBundleContinuationGateSurface `json:"validation_bundle_continuation"`
 	TraceBundle           traceExportBundleSummary                `json:"trace_export_bundle"`
 	RolloutReport         distributedDiagnosticsReport            `json:"rollout_report"`
@@ -177,6 +178,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"migration_review_pack":          diagnostics.MigrationReviewPack,
 		"delivery_ack_readiness":         diagnostics.DeliveryAckReadiness,
 		"publish_ack_outcomes":           diagnostics.PublishAckOutcomes,
+		"sequence_bridge_surface":        diagnostics.SequenceBridge,
 		"validation_bundle_continuation": diagnostics.ContinuationGate,
 		"report":                         diagnostics.RolloutReport,
 	})
@@ -408,6 +410,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		BrokerFanoutIsolation: brokerStubFanoutIsolationPayload(),
 		DeliveryAckReadiness:  deliveryAckReadinessPayload(),
 		PublishAckOutcomes:    publishAckOutcomeSurfacePayload(),
+		SequenceBridge:        sequenceBridgeSurfacePayload(),
 		ContinuationGate:      validationBundleContinuationGatePayload(),
 		TraceBundle:           buildTraceExportBundle(assignments, s.Recorder.TraceSummaries(5)),
 	}
@@ -876,6 +879,35 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.PublishAckOutcomes.ReviewerLinks) > 0 {
 		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.PublishAckOutcomes.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Durable Sequence Bridge",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.SequenceBridge.ReportPath),
+		fmt.Sprintf("- Backends: %d", diagnostics.SequenceBridge.Summary.BackendCount),
+		fmt.Sprintf("- Live-proven backends: %d", diagnostics.SequenceBridge.Summary.LiveProvenBackends),
+		fmt.Sprintf("- Harness-proven backends: %d", diagnostics.SequenceBridge.Summary.HarnessProvenBackends),
+		fmt.Sprintf("- Contract-only backends: %d", diagnostics.SequenceBridge.Summary.ContractOnlyBackends),
+		fmt.Sprintf("- One-to-one mappings: %d", diagnostics.SequenceBridge.Summary.OneToOneMappings),
+		fmt.Sprintf("- Epoch-bridged backends: %d", diagnostics.SequenceBridge.Summary.ProviderEpochBridgedBackends),
+	)
+	for _, backend := range diagnostics.SequenceBridge.Backends {
+		lines = append(lines, fmt.Sprintf("- %s: readiness=%s contract=%s", backend.Backend, backend.RuntimeReadiness, firstNonEmpty(backend.MappingContract, "n/a")))
+		if backend.PortableSequenceSource != "" {
+			lines = append(lines, "  - portable sequence: "+backend.PortableSequenceSource)
+		}
+		if backend.ProviderOffsetSource != "" {
+			lines = append(lines, "  - provider offset: "+backend.ProviderOffsetSource)
+		}
+		if backend.OwnershipEpochSource != "" {
+			lines = append(lines, "  - ownership epoch: "+backend.OwnershipEpochSource)
+		}
+	}
+	if len(diagnostics.SequenceBridge.CurrentCeiling) > 0 {
+		lines = append(lines, "- Current ceiling: "+strings.Join(diagnostics.SequenceBridge.CurrentCeiling, "; "))
+	}
+	if len(diagnostics.SequenceBridge.NextRuntimeHooks) > 0 {
+		lines = append(lines, "- Next runtime hooks: "+strings.Join(diagnostics.SequenceBridge.NextRuntimeHooks, "; "))
 	}
 	lines = append(lines,
 		"",

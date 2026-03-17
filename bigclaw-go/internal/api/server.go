@@ -207,6 +207,7 @@ func (s *Server) Handler() http.Handler {
 			"leader_election_capability":      leaderElectionCapabilitySurfacePayload(),
 			"delivery_ack_readiness":          deliveryAckReadinessPayload(),
 			"publish_ack_outcomes":            publishAckOutcomeSurfacePayload(),
+			"sequence_bridge_surface":         sequenceBridgeSurfacePayload(),
 			"live_shadow_mirror_scorecard":    liveShadowMirrorPayload(),
 			"rollback_trigger_surface":        rollbackTriggerSurfacePayload(),
 			"broker_stub_fanout_isolation":    brokerStubFanoutIsolationPayload(),
@@ -303,6 +304,25 @@ type checkpointRequestPayload struct {
 	CheckpointEvent  string `json:"checkpoint_event_id"`
 }
 
+func subscriberLeaseSequenceBridgePayload(lease events.SubscriberLease) map[string]any {
+	return map[string]any{
+		"portable_sequence": uint64(lease.CheckpointOffset),
+		"provider_offset":   uint64(lease.CheckpointOffset),
+		"ownership_epoch":   lease.LeaseEpoch,
+		"offset_domain":     "lease_checkpoint_offset",
+		"mapping_status":    "lease_checkpoint_offset_mirrors_portable_sequence",
+	}
+}
+
+func checkpointSequenceBridgePayload(checkpoint events.SubscriberCheckpoint) map[string]any {
+	return map[string]any{
+		"portable_sequence": checkpoint.EventSequence,
+		"provider_offset":   checkpoint.EventSequence,
+		"offset_domain":     "event_sequence",
+		"mapping_status":    "checkpoint_event_sequence_is_portable_sequence",
+	}
+}
+
 func (s *Server) publishSubscriberLeaseEvent(eventType domain.EventType, now time.Time, lease events.SubscriberLease, payload map[string]any) {
 	if payload == nil {
 		payload = make(map[string]any)
@@ -314,6 +334,7 @@ func (s *Server) publishSubscriberLeaseEvent(eventType domain.EventType, now tim
 	payload["lease_epoch"] = lease.LeaseEpoch
 	payload["checkpoint_offset"] = lease.CheckpointOffset
 	payload["checkpoint_event_id"] = lease.CheckpointEvent
+	payload["sequence_bridge"] = subscriberLeaseSequenceBridgePayload(lease)
 	if !lease.ExpiresAt.IsZero() {
 		payload["expires_at"] = lease.ExpiresAt.UTC()
 	}
@@ -372,7 +393,7 @@ func (s *Server) handleSubscriberGroupLease(w http.ResponseWriter, r *http.Reque
 					"reason":                err.Error(),
 				})
 			}
-			writeJSON(w, status, map[string]any{"error": err.Error(), "lease": lease})
+			writeJSON(w, status, map[string]any{"error": err.Error(), "lease": lease, "sequence_bridge": subscriberLeaseSequenceBridgePayload(lease)})
 			return
 		}
 		expiredTakeover := hadPrevious && previous.ConsumerID != "" && previous.ConsumerID != lease.ConsumerID && !previous.ExpiresAt.IsZero() && !now.Before(previous.ExpiresAt)
@@ -393,7 +414,7 @@ func (s *Server) handleSubscriberGroupLease(w http.ResponseWriter, r *http.Reque
 				"requested_ttl_seconds": payload.TTLSeconds,
 			})
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"lease": lease})
+		writeJSON(w, http.StatusOK, map[string]any{"lease": lease, "sequence_bridge": subscriberLeaseSequenceBridgePayload(lease)})
 	case http.MethodDelete:
 		var payload checkpointRequestPayload
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -456,13 +477,13 @@ func (s *Server) handleSubscriberGroupCheckpoint(w http.ResponseWriter, r *http.
 			"attempted_checkpoint_event_id": payload.CheckpointEvent,
 			"reason":                        err.Error(),
 		})
-		writeJSON(w, status, map[string]any{"error": err.Error(), "lease": lease})
+		writeJSON(w, status, map[string]any{"error": err.Error(), "lease": lease, "sequence_bridge": subscriberLeaseSequenceBridgePayload(lease)})
 		return
 	}
 	s.publishSubscriberLeaseEvent(domain.EventSubscriberCheckpointCommitted, now, lease, map[string]any{
 		"committed_by": payload.ConsumerID,
 	})
-	writeJSON(w, http.StatusOK, map[string]any{"lease": lease})
+	writeJSON(w, http.StatusOK, map[string]any{"lease": lease, "sequence_bridge": subscriberLeaseSequenceBridgePayload(lease)})
 }
 
 func (s *Server) handleSubscriberGroupLeaseStatus(w http.ResponseWriter, r *http.Request) {
@@ -485,7 +506,7 @@ func (s *Server) handleSubscriberGroupLeaseStatus(w http.ResponseWriter, r *http
 		http.Error(w, "subscriber lease not found", http.StatusNotFound)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"lease": lease})
+	writeJSON(w, http.StatusOK, map[string]any{"lease": lease, "sequence_bridge": subscriberLeaseSequenceBridgePayload(lease)})
 }
 
 func (s *Server) handleDebugTraces(w http.ResponseWriter, r *http.Request) {
@@ -695,9 +716,10 @@ func (s *Server) handleStreamEventCheckpoint(w http.ResponseWriter, r *http.Requ
 		}
 		diagnostics := s.checkpointDiagnosticsForCheckpoint(subscriberID, checkpoint)
 		payload := map[string]any{
-			"checkpoint": checkpoint,
-			"backend":    s.eventLogBackend(),
-			"durable":    s.eventLogDurable(),
+			"checkpoint":      checkpoint,
+			"sequence_bridge": checkpointSequenceBridgePayload(checkpoint),
+			"backend":         s.eventLogBackend(),
+			"durable":         s.eventLogDurable(),
 		}
 		if diagnostics != nil {
 			payload["checkpoint_diagnostics"] = diagnostics
@@ -721,9 +743,10 @@ func (s *Server) handleStreamEventCheckpoint(w http.ResponseWriter, r *http.Requ
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{
-			"checkpoint": checkpoint,
-			"backend":    s.eventLogBackend(),
-			"durable":    s.eventLogDurable(),
+			"checkpoint":      checkpoint,
+			"sequence_bridge": checkpointSequenceBridgePayload(checkpoint),
+			"backend":         s.eventLogBackend(),
+			"durable":         s.eventLogDurable(),
 		})
 	case http.MethodDelete:
 		resetter := s.checkpointResetter()

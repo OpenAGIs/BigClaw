@@ -352,6 +352,17 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 				UnknownCommitCount int    `json:"unknown_commit_count"`
 			} `json:"summary"`
 		} `json:"publish_ack_outcomes"`
+		SequenceBridge struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				BackendCount                 int `json:"backend_count"`
+				LiveProvenBackends           int `json:"live_proven_backends"`
+				HarnessProvenBackends        int `json:"harness_proven_backends"`
+				ContractOnlyBackends         int `json:"contract_only_backends"`
+				OneToOneMappings             int `json:"one_to_one_mappings"`
+				ProviderEpochBridgedBackends int `json:"provider_epoch_bridged_backends"`
+			} `json:"summary"`
+		} `json:"sequence_bridge_surface"`
 		RoutingReasons []struct {
 			Executor string `json:"executor"`
 			Reason   string `json:"reason"`
@@ -421,7 +432,10 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if decoded.PublishAckOutcomes.ReportPath != publishAckOutcomeSurfacePath || decoded.PublishAckOutcomes.Summary.ScenarioID != "BF-05" || decoded.PublishAckOutcomes.Summary.CommittedCount != 1 || decoded.PublishAckOutcomes.Summary.RejectedCount != 1 || decoded.PublishAckOutcomes.Summary.UnknownCommitCount != 1 {
 		t.Fatalf("expected publish ack outcome surface, got %+v", decoded.PublishAckOutcomes)
 	}
-	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") {
+	if decoded.SequenceBridge.ReportPath != sequenceBridgeSurfacePath || decoded.SequenceBridge.Summary.BackendCount != 5 || decoded.SequenceBridge.Summary.LiveProvenBackends != 3 || decoded.SequenceBridge.Summary.HarnessProvenBackends != 1 || decoded.SequenceBridge.Summary.ContractOnlyBackends != 1 || decoded.SequenceBridge.Summary.OneToOneMappings != 2 || decoded.SequenceBridge.Summary.ProviderEpochBridgedBackends != 3 {
+		t.Fatalf("expected sequence bridge surface, got %+v", decoded.SequenceBridge)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") || !strings.Contains(decoded.Report.Markdown, "## Durable Sequence Bridge") {
 		t.Fatalf("unexpected distributed markdown: %s", decoded.Report.Markdown)
 	}
 	if !strings.Contains(decoded.Report.ExportURL, "/v2/reports/distributed/export") {

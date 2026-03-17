@@ -731,6 +731,53 @@ func TestDebugStatusIncludesRollbackTriggerSurface(t *testing.T) {
 	}
 }
 
+func TestDebugStatusIncludesSequenceBridgeSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		SequenceBridge struct {
+			ReportPath string `json:"report_path"`
+			Ticket     string `json:"ticket"`
+			Track      string `json:"track"`
+			Summary    struct {
+				BackendCount                 int `json:"backend_count"`
+				LiveProvenBackends           int `json:"live_proven_backends"`
+				HarnessProvenBackends        int `json:"harness_proven_backends"`
+				ContractOnlyBackends         int `json:"contract_only_backends"`
+				OneToOneMappings             int `json:"one_to_one_mappings"`
+				ProviderEpochBridgedBackends int `json:"provider_epoch_bridged_backends"`
+			} `json:"summary"`
+			Backends []struct {
+				Backend          string `json:"backend"`
+				RuntimeReadiness string `json:"runtime_readiness"`
+			} `json:"backends"`
+		} `json:"sequence_bridge_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode sequence bridge payload: %v", err)
+	}
+	if decoded.SequenceBridge.ReportPath != sequenceBridgeSurfacePath || decoded.SequenceBridge.Ticket != "OPE-12" || decoded.SequenceBridge.Track != "BIG-DUR-102" {
+		t.Fatalf("unexpected sequence bridge metadata: %+v", decoded.SequenceBridge)
+	}
+	if decoded.SequenceBridge.Summary.BackendCount != 5 || decoded.SequenceBridge.Summary.LiveProvenBackends != 3 || decoded.SequenceBridge.Summary.HarnessProvenBackends != 1 || decoded.SequenceBridge.Summary.ContractOnlyBackends != 1 || decoded.SequenceBridge.Summary.OneToOneMappings != 2 || decoded.SequenceBridge.Summary.ProviderEpochBridgedBackends != 3 {
+		t.Fatalf("unexpected sequence bridge summary: %+v", decoded.SequenceBridge.Summary)
+	}
+	if len(decoded.SequenceBridge.Backends) != 5 || decoded.SequenceBridge.Backends[0].Backend != "memory" || decoded.SequenceBridge.Backends[4].RuntimeReadiness != "contract_only" {
+		t.Fatalf("unexpected sequence bridge backends: %+v", decoded.SequenceBridge.Backends)
+	}
+}
+
 func TestDebugStatusIncludesPublishAckOutcomeSurface(t *testing.T) {
 	server := &Server{
 		Recorder: observability.NewRecorder(),
@@ -1138,8 +1185,8 @@ func TestSubscriberGroupLeaseEndpointsFenceConflictsAndRollback(t *testing.T) {
 	if statusResponse.Code != http.StatusOK {
 		t.Fatalf("expected lease status 200, got %d with %s", statusResponse.Code, statusResponse.Body.String())
 	}
-	if !strings.Contains(statusResponse.Body.String(), "\"checkpoint_offset\":7") {
-		t.Fatalf("expected checkpoint offset in status payload, got %s", statusResponse.Body.String())
+	if !strings.Contains(statusResponse.Body.String(), "\"checkpoint_offset\":7") || !strings.Contains(statusResponse.Body.String(), "\"sequence_bridge\"") {
+		t.Fatalf("expected sequence bridge in status payload, got %s", statusResponse.Body.String())
 	}
 	now = now.Add(30 * time.Second)
 
@@ -1207,7 +1254,7 @@ func TestSubscriberGroupLeaseEndpointsFenceConflictsAndRollback(t *testing.T) {
 		}
 	}
 	takeoverEvent := filtered[5]
-	for _, key := range []string{"group_id", "subscriber_id", "consumer_id", "previous_consumer_id", "lease_token", "lease_epoch", "checkpoint_offset"} {
+	for _, key := range []string{"group_id", "subscriber_id", "consumer_id", "previous_consumer_id", "lease_token", "lease_epoch", "checkpoint_offset", "sequence_bridge"} {
 		if _, ok := takeoverEvent.Payload[key]; !ok {
 			t.Fatalf("expected takeover payload field %q in %+v", key, takeoverEvent.Payload)
 		}
@@ -1218,6 +1265,10 @@ func TestSubscriberGroupLeaseEndpointsFenceConflictsAndRollback(t *testing.T) {
 	rejected := filtered[6]
 	if rejected.Payload["reason"] != events.ErrLeaseFence.Error() {
 		t.Fatalf("expected fenced checkpoint rejection payload, got %+v", rejected.Payload)
+	}
+	bridge, ok := rejected.Payload["sequence_bridge"].(map[string]any)
+	if !ok || bridge["mapping_status"] != "lease_checkpoint_offset_mirrors_portable_sequence" || bridge["ownership_epoch"] == nil {
+		t.Fatalf("expected sequence bridge metadata in rejection payload, got %+v", rejected.Payload["sequence_bridge"])
 	}
 }
 
@@ -2645,6 +2696,21 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 					Outcome string `json:"outcome"`
 				} `json:"outcomes"`
 			} `json:"publish_ack_outcomes"`
+			SequenceBridge struct {
+				ReportPath string `json:"report_path"`
+				Summary    struct {
+					BackendCount                 int `json:"backend_count"`
+					LiveProvenBackends           int `json:"live_proven_backends"`
+					HarnessProvenBackends        int `json:"harness_proven_backends"`
+					ContractOnlyBackends         int `json:"contract_only_backends"`
+					OneToOneMappings             int `json:"one_to_one_mappings"`
+					ProviderEpochBridgedBackends int `json:"provider_epoch_bridged_backends"`
+				} `json:"summary"`
+				Backends []struct {
+					Backend          string `json:"backend"`
+					RuntimeReadiness string `json:"runtime_readiness"`
+				} `json:"backends"`
+			} `json:"sequence_bridge_surface"`
 			ValidationBundleContinuation struct {
 				ReportPath     string   `json:"report_path"`
 				ScorecardPath  string   `json:"scorecard_path"`
@@ -2810,6 +2876,16 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		len(decoded.Diagnostics.PublishAckOutcomes.Outcomes) != 3 {
 		t.Fatalf("unexpected publish ack outcomes payload: %+v", decoded.Diagnostics.PublishAckOutcomes)
 	}
+	if decoded.Diagnostics.SequenceBridge.ReportPath != sequenceBridgeSurfacePath ||
+		decoded.Diagnostics.SequenceBridge.Summary.BackendCount != 5 ||
+		decoded.Diagnostics.SequenceBridge.Summary.LiveProvenBackends != 3 ||
+		decoded.Diagnostics.SequenceBridge.Summary.HarnessProvenBackends != 1 ||
+		decoded.Diagnostics.SequenceBridge.Summary.ContractOnlyBackends != 1 ||
+		decoded.Diagnostics.SequenceBridge.Summary.OneToOneMappings != 2 ||
+		decoded.Diagnostics.SequenceBridge.Summary.ProviderEpochBridgedBackends != 3 ||
+		len(decoded.Diagnostics.SequenceBridge.Backends) != 5 {
+		t.Fatalf("unexpected sequence bridge payload: %+v", decoded.Diagnostics.SequenceBridge)
+	}
 	if decoded.Diagnostics.ValidationBundleContinuation.ReportPath != validationBundleContinuationGatePath ||
 		decoded.Diagnostics.ValidationBundleContinuation.ScorecardPath != validationBundleContinuationScorecardPath ||
 		decoded.Diagnostics.ValidationBundleContinuation.DigestPath != "docs/reports/validation-bundle-continuation-digest.md" ||
@@ -2838,6 +2914,7 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Stub Live Fanout Isolation") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Delivery Acknowledgement Readiness") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Publish Acknowledgement Outcome Ledger") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Durable Sequence Bridge") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Validation Bundle Continuation Gate") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, liveShadowSummaryPath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, liveShadowMirrorScorecardPath) ||
@@ -2850,6 +2927,7 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, brokerStubFanoutIsolationEvidencePackPath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, deliveryAckReadinessSurfacePath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, publishAckOutcomeSurfacePath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, sequenceBridgeSurfacePath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, validationBundleContinuationGatePath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, validationBundleContinuationScorecardPath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/validation-bundle-continuation-digest.md") ||
