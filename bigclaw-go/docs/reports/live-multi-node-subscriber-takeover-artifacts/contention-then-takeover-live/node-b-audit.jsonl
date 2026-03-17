@@ -1,0 +1,4 @@
+{"timestamp": "2026-03-16T15:59:48Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-b", "action": "lease_acquired", "details": {"lease_epoch": 1, "coordination_node": "node-b"}}
+{"timestamp": "2026-03-16T15:59:48Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-b", "action": "checkpoint_committed", "details": {"offset": 120, "event_id": "evt-120"}}
+{"timestamp": "2026-03-16T15:59:49Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-b", "action": "lease_expired", "details": {"last_offset": 120}}
+{"timestamp": "2026-03-16T15:59:49Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-b", "action": "lease_fenced", "details": {"attempted_offset": 121, "attempted_event_id": "evt-121", "accepted_owner": "node-a"}}

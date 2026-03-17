@@ -11,13 +11,16 @@ This digest consolidates the remaining live shadow-traffic comparison caveats fo
 - `docs/reports/shadow-compare-report.json` captures one shared-`trace_id` comparison sample.
 - `docs/reports/shadow-matrix-report.json` captures the multi-fixture comparison matrix.
 - `docs/reports/live-shadow-mirror-scorecard.json` connects the checked-in compare and matrix artifacts into one repo-native parity drift and freshness scorecard.
+- `docs/reports/live-shadow-index.md` packages the latest compare, matrix, and scorecard artifacts into one reviewer-facing bundle index.
+- `docs/reports/live-shadow-drift-rollup.json` summarizes freshness and mismatch severity across recent bundled shadow snapshots.
 - `docs/reports/migration-plan-review-notes.md` records the current shadow-before-cutover design boundary.
 
 ## Reviewer Digest
 
-- The repo-native live shadow mirror scorecard now summarizes parity drift and evidence freshness across the checked-in compare and matrix artifacts.
+- The repo-native live shadow mirror scorecard and bundle index now summarize parity drift, evidence freshness, and reviewer navigation across the checked-in compare and matrix artifacts.
 - Current shadow evidence is still fixture-backed and repo-local; there is no live legacy-vs-Go production traffic comparison.
 - The existing compare, matrix, and scorecard surfaces prove timeline / terminal-state parity on sample tasks, not on mirrored production requests.
+- The drift rollup tracks bundled snapshots over time, but those snapshots still reflect checked-in evidence rather than continuously mirrored traffic.
 - Shared `trace_id` correlation makes local audit review easier, but it is not the same as a real shadow ingress or traffic duplication path.
 - Current cutover confidence therefore comes from controlled samples and live smoke evidence, not from continuous shadow traffic.
 

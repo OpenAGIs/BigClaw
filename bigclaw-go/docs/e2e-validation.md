@@ -77,6 +77,14 @@ python3 scripts/e2e/validation_bundle_continuation_policy_gate.py --pretty
 
 This writes `docs/reports/validation-bundle-continuation-policy-gate.json` and currently returns `go` for the checked-in evidence window because the latest indexed bundles now include repeated `ray` coverage across multiple runs. `run_all.sh` refreshes the gate automatically during closeout; set `BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1` if you want a `hold` result to fail the command.
 
+For workflow behavior, prefer `BIGCLAW_E2E_CONTINUATION_GATE_MODE`:
+
+- `review` keeps the gate reviewer-visible but does not fail the workflow on `hold`
+- `hold` exits with code `2` when the evidence is stale or incomplete
+- `fail` exits with code `1` when the evidence is stale or incomplete
+
+`BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1` remains as a compatibility alias for `BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail`. `run_all.sh` now rerenders the bundle README and `docs/reports/live-validation-index.md` after the gate refresh so the exported reviewer surface always reflects the latest gate mode and outcome from the same run.
+
 ## Mixed workload matrix
 
 ```bash
@@ -104,6 +112,8 @@ python3 scripts/e2e/multi_node_shared_queue.py \
 
 This starts two `bigclawd` processes against one SQLite queue and verifies there are no duplicate terminal completions across the two nodes.
 
+The same command now also refreshes `docs/reports/live-multi-node-subscriber-takeover-report.json` plus per-scenario audit artifacts under `docs/reports/live-multi-node-subscriber-takeover-artifacts/`, so the shared-queue proof and the live takeover proof stay generated from one two-node run.
+
 ## Broker failover and replay fault-injection pack
 
 The current repo does not yet ship a broker-backed event log or live failover harness, but the implementation-ready validation matrix now lives in `docs/reports/broker-failover-fault-injection-validation-pack.md`.
@@ -125,6 +135,19 @@ python3 scripts/e2e/subscriber_takeover_fault_matrix.py --pretty
 ```
 
 This refreshes `docs/reports/multi-subscriber-takeover-validation-report.json` with three deterministic local takeover scenarios, owner timelines, checkpoint transitions, duplicate replay accounting, and stale-writer rejection counts. The remaining live multi-node executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
+
+For the live proof path, run the shared-queue harness:
+
+```bash
+cd bigclaw-go
+python3 scripts/e2e/multi_node_shared_queue.py \
+  --count 200 \
+  --submit-workers 8 \
+  --report-path docs/reports/multi-node-shared-queue-report.json \
+  --takeover-report-path docs/reports/live-multi-node-subscriber-takeover-report.json
+```
+
+This starts the same two-node cluster, drives live lease acquisition and checkpoint takeover through the subscriber-group API, and emits the deterministic harness's core schema plus per-node takeover audit artifacts. The live proof is still explicit about its boundary: subscriber lease coordination remains process-local and is routed through one node per scenario until a shared durable lease backend exists.
 
 ## Cross-process coordination capability surface
 

@@ -28,6 +28,7 @@ This note captures the review outcome for the Go rewrite boundary and migration 
 - The Go validation path is isolated enough to be disabled without deleting existing queue or audit reports.
 - Live validation reports persist enough metadata (`base_url`, `state_dir`, `service_log`) to reconstruct a failed rollout attempt.
 - Shadow compare output provides a low-risk read-only verification step before cutover.
+- The live shadow bundle index and drift rollup package that verification evidence into a stable reviewer path under `docs/reports/live-shadow-index.md`.
 - The tenant-scoped trigger surface in `docs/reports/rollback-safeguard-follow-up-digest.md` defines when reviewers should pause rollout and redirect traffic back to the incumbent plane.
 
 ## Review Outcome
