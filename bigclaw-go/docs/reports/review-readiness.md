@@ -36,7 +36,7 @@
   - Follow-up digests capture the remaining live shadow comparison, rollback safeguard trigger surface, and production corpus coverage caveats in `docs/reports/live-shadow-comparison-follow-up-digest.md`, `docs/reports/rollback-safeguard-follow-up-digest.md`, `docs/reports/rollback-trigger-surface.json`, and `docs/reports/production-corpus-migration-coverage-digest.md`.
 - `OPE-186`
   - Benchmark evidence includes a repeatable matrix runner plus `50x8`, `100x12`, `1000x24`, and `2000x24` soak runs with zero failures.
-  - Supporting reports: `docs/reports/benchmark-readiness-report.md`, `docs/reports/benchmark-matrix-report.json`, and `docs/reports/long-duration-soak-report.md`.
+  - Supporting reports: `docs/reports/benchmark-readiness-report.md`, `docs/reports/benchmark-matrix-report.json`, `docs/reports/long-duration-soak-report.md`, `docs/reports/capacity-certification-report.md`, and `docs/reports/capacity-certification-matrix.json`.
 - `OPE-175`
   - Epic-level evidence includes longer-duration soak (`2000x24`), mixed workload validation across `local` / `kubernetes` / `ray`, and a concrete two-node shared-queue coordination proof.
   - Supporting report: `docs/reports/epic-closure-readiness-report.md`.
@@ -45,7 +45,7 @@
 
 ## Follow-up Hardening
 
-- Production-grade capacity certification can remain a follow-up track beyond the current rewrite closure.
+- The capacity certification matrix is now repo-native and reviewer-facing, but it remains a single-instance evidence slice rather than a multi-tenant production admission control policy.
 - No dedicated leader-election layer exists yet; current evidence is limited to a local two-node shared-SQLite coordination proof.
 - Higher-scale external-store validation is still pending beyond the current SQLite-backed scope.
 
