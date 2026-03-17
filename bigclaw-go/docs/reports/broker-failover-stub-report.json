@@ -1,0 +1,617 @@
+{
+  "generated_at": "2026-03-17T12:00:00Z",
+  "ticket": "OPE-272",
+  "title": "Deterministic broker failover stub validation report",
+  "backend": "stub_broker",
+  "status": "deterministic-harness",
+  "source_validation_pack": "bigclaw-go/docs/reports/broker-failover-fault-injection-validation-pack.md",
+  "report_schema_version": "2026-03-17",
+  "scenarios": [
+    {
+      "scenario_id": "BF-01",
+      "backend": "stub_broker",
+      "topology": {
+        "nodes": [
+          "broker-a",
+          "broker-b",
+          "broker-c"
+        ],
+        "leader_before": "broker-a",
+        "leader_after": "broker-b"
+      },
+      "fault_window": {
+        "start": "2026-03-17T12:00:05Z",
+        "end": "2026-03-17T12:00:07Z",
+        "fault": "leader_restart_during_publish"
+      },
+      "published_count": 5,
+      "committed_count": 5,
+      "replayed_count": 5,
+      "duplicate_count": 0,
+      "missing_event_ids": [],
+      "checkpoint_before_fault": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-none",
+        "lease_epoch": 0,
+        "durable_sequence": 0
+      },
+      "checkpoint_after_recovery": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-none",
+        "lease_epoch": 0,
+        "durable_sequence": 0
+      },
+      "lease_transitions": [],
+      "publish_outcomes": {
+        "committed": 5,
+        "rejected": 0,
+        "unknown_commit": 0
+      },
+      "replay_resume_cursor": {
+        "after_sequence": 0,
+        "resumed_from_node": "broker-b"
+      },
+      "artifacts": {
+        "publish_attempt_ledger": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-01/publish-attempt-ledger.json",
+        "replay_capture": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-01/replay-capture.json",
+        "checkpoint_transition_log": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-01/checkpoint-transition-log.json",
+        "fault_timeline": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-01/fault-timeline.json",
+        "backend_health_snapshot": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-01/backend-health.json"
+      },
+      "result": "passed",
+      "assertions": [
+        {
+          "label": "all committed events remain replayable after recovery",
+          "passed": true
+        },
+        {
+          "label": "checkpoint sequence stays monotonic across recovery",
+          "passed": true
+        },
+        {
+          "label": "stale writers are fenced instead of regressing the checkpoint",
+          "passed": true
+        },
+        {
+          "label": "ambiguous publish outcomes resolve from replay evidence",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scenario_id": "BF-02",
+      "backend": "stub_broker",
+      "topology": {
+        "nodes": [
+          "broker-a",
+          "broker-b",
+          "broker-c"
+        ],
+        "replication_factor": 3,
+        "replica_lost": "broker-c"
+      },
+      "fault_window": {
+        "start": "2026-03-17T12:00:04Z",
+        "end": "2026-03-17T12:00:05Z",
+        "fault": "follower_loss_during_publish_and_replay"
+      },
+      "published_count": 4,
+      "committed_count": 2,
+      "replayed_count": 2,
+      "duplicate_count": 0,
+      "missing_event_ids": [],
+      "checkpoint_before_fault": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-none",
+        "lease_epoch": 0,
+        "durable_sequence": 2
+      },
+      "checkpoint_after_recovery": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-none",
+        "lease_epoch": 0,
+        "durable_sequence": 4
+      },
+      "lease_transitions": [],
+      "publish_outcomes": {
+        "committed": 4,
+        "rejected": 0,
+        "unknown_commit": 0
+      },
+      "replay_resume_cursor": {
+        "after_sequence": 2,
+        "resumed_from_node": "broker-a",
+        "publish_latency_spike_ms": 180
+      },
+      "artifacts": {
+        "publish_attempt_ledger": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-02/publish-attempt-ledger.json",
+        "replay_capture": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-02/replay-capture.json",
+        "checkpoint_transition_log": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-02/checkpoint-transition-log.json",
+        "fault_timeline": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-02/fault-timeline.json",
+        "backend_health_snapshot": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-02/backend-health.json"
+      },
+      "result": "passed",
+      "assertions": [
+        {
+          "label": "all committed events remain replayable after recovery",
+          "passed": true
+        },
+        {
+          "label": "checkpoint sequence stays monotonic across recovery",
+          "passed": true
+        },
+        {
+          "label": "stale writers are fenced instead of regressing the checkpoint",
+          "passed": true
+        },
+        {
+          "label": "ambiguous publish outcomes resolve from replay evidence",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scenario_id": "BF-03",
+      "backend": "stub_broker",
+      "topology": {
+        "nodes": [
+          "broker-a",
+          "broker-b",
+          "broker-c"
+        ],
+        "consumer_group": "group-a"
+      },
+      "fault_window": {
+        "start": "2026-03-17T12:00:04Z",
+        "end": "2026-03-17T12:00:05Z",
+        "fault": "consumer_crash_before_checkpoint_commit"
+      },
+      "published_count": 4,
+      "committed_count": 2,
+      "replayed_count": 2,
+      "duplicate_count": 0,
+      "missing_event_ids": [],
+      "checkpoint_before_fault": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-1",
+        "lease_epoch": 1,
+        "durable_sequence": 2
+      },
+      "checkpoint_after_recovery": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-1",
+        "lease_epoch": 1,
+        "durable_sequence": 4
+      },
+      "lease_transitions": [
+        {
+          "owner_id": "consumer-a",
+          "lease_id": "lease-1",
+          "lease_epoch": 1
+        }
+      ],
+      "publish_outcomes": {
+        "committed": 4,
+        "rejected": 0,
+        "unknown_commit": 0
+      },
+      "replay_resume_cursor": {
+        "after_sequence": 2,
+        "resumed_from_node": "broker-a"
+      },
+      "artifacts": {
+        "publish_attempt_ledger": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-03/publish-attempt-ledger.json",
+        "replay_capture": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-03/replay-capture.json",
+        "checkpoint_transition_log": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-03/checkpoint-transition-log.json",
+        "fault_timeline": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-03/fault-timeline.json",
+        "backend_health_snapshot": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-03/backend-health.json"
+      },
+      "result": "passed",
+      "assertions": [
+        {
+          "label": "all committed events remain replayable after recovery",
+          "passed": true
+        },
+        {
+          "label": "checkpoint sequence stays monotonic across recovery",
+          "passed": true
+        },
+        {
+          "label": "stale writers are fenced instead of regressing the checkpoint",
+          "passed": true
+        },
+        {
+          "label": "ambiguous publish outcomes resolve from replay evidence",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scenario_id": "BF-04",
+      "backend": "stub_broker",
+      "topology": {
+        "nodes": [
+          "broker-a",
+          "broker-b",
+          "broker-c"
+        ],
+        "consumer_group": "group-a",
+        "contenders": [
+          "consumer-a",
+          "consumer-b"
+        ]
+      },
+      "fault_window": {
+        "start": "2026-03-17T12:00:03Z",
+        "end": "2026-03-17T12:00:04Z",
+        "fault": "checkpoint_leader_change_with_contention"
+      },
+      "published_count": 3,
+      "committed_count": 1,
+      "replayed_count": 1,
+      "duplicate_count": 0,
+      "missing_event_ids": [],
+      "checkpoint_before_fault": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-1",
+        "lease_epoch": 1,
+        "durable_sequence": 2
+      },
+      "checkpoint_after_recovery": {
+        "owner_id": "consumer-b",
+        "lease_id": "lease-2",
+        "lease_epoch": 2,
+        "durable_sequence": 3
+      },
+      "lease_transitions": [
+        {
+          "owner_id": "consumer-a",
+          "lease_id": "lease-1",
+          "lease_epoch": 1
+        },
+        {
+          "owner_id": "consumer-b",
+          "lease_id": "lease-2",
+          "lease_epoch": 2
+        }
+      ],
+      "publish_outcomes": {
+        "committed": 3,
+        "rejected": 0,
+        "unknown_commit": 0
+      },
+      "replay_resume_cursor": {
+        "after_sequence": 2,
+        "resumed_from_node": "broker-b"
+      },
+      "artifacts": {
+        "publish_attempt_ledger": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-04/publish-attempt-ledger.json",
+        "replay_capture": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-04/replay-capture.json",
+        "checkpoint_transition_log": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-04/checkpoint-transition-log.json",
+        "fault_timeline": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-04/fault-timeline.json",
+        "backend_health_snapshot": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-04/backend-health.json"
+      },
+      "result": "passed",
+      "assertions": [
+        {
+          "label": "all committed events remain replayable after recovery",
+          "passed": true
+        },
+        {
+          "label": "checkpoint sequence stays monotonic across recovery",
+          "passed": true
+        },
+        {
+          "label": "stale writers are fenced instead of regressing the checkpoint",
+          "passed": true
+        },
+        {
+          "label": "ambiguous publish outcomes resolve from replay evidence",
+          "passed": true
+        }
+      ],
+      "stale_write_rejections": 1
+    },
+    {
+      "scenario_id": "BF-05",
+      "backend": "stub_broker",
+      "topology": {
+        "nodes": [
+          "broker-a",
+          "broker-b",
+          "broker-c"
+        ],
+        "producer": "producer-a"
+      },
+      "fault_window": {
+        "start": "2026-03-17T12:00:01Z",
+        "end": "2026-03-17T12:00:02Z",
+        "fault": "producer_timeout_after_commit_ambiguity"
+      },
+      "published_count": 3,
+      "committed_count": 2,
+      "replayed_count": 2,
+      "duplicate_count": 0,
+      "missing_event_ids": [],
+      "checkpoint_before_fault": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-none",
+        "lease_epoch": 0,
+        "durable_sequence": 0
+      },
+      "checkpoint_after_recovery": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-none",
+        "lease_epoch": 0,
+        "durable_sequence": 0
+      },
+      "lease_transitions": [],
+      "publish_outcomes": {
+        "committed": 1,
+        "rejected": 1,
+        "unknown_commit": 1
+      },
+      "replay_resume_cursor": {
+        "after_sequence": 0,
+        "resumed_from_node": "broker-a"
+      },
+      "artifacts": {
+        "publish_attempt_ledger": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/publish-attempt-ledger.json",
+        "replay_capture": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/replay-capture.json",
+        "checkpoint_transition_log": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/checkpoint-transition-log.json",
+        "fault_timeline": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/fault-timeline.json",
+        "backend_health_snapshot": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-05/backend-health.json"
+      },
+      "result": "passed",
+      "assertions": [
+        {
+          "label": "all committed events remain replayable after recovery",
+          "passed": true
+        },
+        {
+          "label": "checkpoint sequence stays monotonic across recovery",
+          "passed": true
+        },
+        {
+          "label": "stale writers are fenced instead of regressing the checkpoint",
+          "passed": true
+        },
+        {
+          "label": "ambiguous publish outcomes resolve from replay evidence",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scenario_id": "BF-06",
+      "backend": "stub_broker",
+      "topology": {
+        "nodes": [
+          "broker-a",
+          "broker-b",
+          "broker-c"
+        ],
+        "replay_client": "consumer-a"
+      },
+      "fault_window": {
+        "start": "2026-03-17T12:00:05Z",
+        "end": "2026-03-17T12:00:06Z",
+        "fault": "replay_client_disconnect_and_reconnect"
+      },
+      "published_count": 5,
+      "committed_count": 2,
+      "replayed_count": 7,
+      "duplicate_count": 0,
+      "missing_event_ids": [],
+      "checkpoint_before_fault": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-none",
+        "lease_epoch": 0,
+        "durable_sequence": 3
+      },
+      "checkpoint_after_recovery": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-none",
+        "lease_epoch": 0,
+        "durable_sequence": 5
+      },
+      "lease_transitions": [],
+      "publish_outcomes": {
+        "committed": 5,
+        "rejected": 0,
+        "unknown_commit": 0
+      },
+      "replay_resume_cursor": {
+        "after_sequence": 3,
+        "resumed_from_node": "broker-b"
+      },
+      "artifacts": {
+        "publish_attempt_ledger": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-06/publish-attempt-ledger.json",
+        "replay_capture": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-06/replay-capture.json",
+        "checkpoint_transition_log": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-06/checkpoint-transition-log.json",
+        "fault_timeline": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-06/fault-timeline.json",
+        "backend_health_snapshot": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-06/backend-health.json"
+      },
+      "result": "passed",
+      "assertions": [
+        {
+          "label": "all committed events remain replayable after recovery",
+          "passed": true
+        },
+        {
+          "label": "checkpoint sequence stays monotonic across recovery",
+          "passed": true
+        },
+        {
+          "label": "stale writers are fenced instead of regressing the checkpoint",
+          "passed": true
+        },
+        {
+          "label": "ambiguous publish outcomes resolve from replay evidence",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "scenario_id": "BF-07",
+      "backend": "stub_broker",
+      "topology": {
+        "nodes": [
+          "broker-a",
+          "broker-b",
+          "broker-c"
+        ],
+        "retention_floor": 3
+      },
+      "fault_window": {
+        "start": "2026-03-17T12:00:05Z",
+        "end": "2026-03-17T12:00:05Z",
+        "fault": "retention_boundary_intersects_stale_checkpoint"
+      },
+      "published_count": 5,
+      "committed_count": 3,
+      "replayed_count": 3,
+      "duplicate_count": 0,
+      "missing_event_ids": [],
+      "checkpoint_before_fault": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-1",
+        "lease_epoch": 1,
+        "durable_sequence": 1
+      },
+      "checkpoint_after_recovery": {
+        "owner_id": "operator-reset",
+        "lease_id": "manual-reset",
+        "lease_epoch": 2,
+        "durable_sequence": 3
+      },
+      "lease_transitions": [
+        {
+          "owner_id": "consumer-a",
+          "lease_id": "lease-1",
+          "lease_epoch": 1
+        }
+      ],
+      "publish_outcomes": {
+        "committed": 5,
+        "rejected": 0,
+        "unknown_commit": 0
+      },
+      "replay_resume_cursor": {
+        "after_sequence": 2,
+        "resumed_from_node": "broker-a",
+        "reset_required": true
+      },
+      "artifacts": {
+        "publish_attempt_ledger": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-07/publish-attempt-ledger.json",
+        "replay_capture": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-07/replay-capture.json",
+        "checkpoint_transition_log": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-07/checkpoint-transition-log.json",
+        "fault_timeline": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-07/fault-timeline.json",
+        "backend_health_snapshot": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-07/backend-health.json"
+      },
+      "result": "passed",
+      "assertions": [
+        {
+          "label": "all committed events remain replayable after recovery",
+          "passed": true
+        },
+        {
+          "label": "checkpoint sequence stays monotonic across recovery",
+          "passed": true
+        },
+        {
+          "label": "stale writers are fenced instead of regressing the checkpoint",
+          "passed": true
+        },
+        {
+          "label": "ambiguous publish outcomes resolve from replay evidence",
+          "passed": true
+        }
+      ],
+      "operator_guidance": "checkpoint expired behind retention floor; explicit reset to sequence 3 required"
+    },
+    {
+      "scenario_id": "BF-08",
+      "backend": "stub_broker",
+      "topology": {
+        "nodes": [
+          "broker-a",
+          "broker-b",
+          "broker-c"
+        ],
+        "duplicate_window": true
+      },
+      "fault_window": {
+        "start": "2026-03-17T12:00:04Z",
+        "end": "2026-03-17T12:00:04Z",
+        "fault": "split_brain_duplicate_delivery_window"
+      },
+      "published_count": 4,
+      "committed_count": 2,
+      "replayed_count": 3,
+      "duplicate_count": 1,
+      "missing_event_ids": [],
+      "checkpoint_before_fault": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-1",
+        "lease_epoch": 1,
+        "durable_sequence": 2
+      },
+      "checkpoint_after_recovery": {
+        "owner_id": "consumer-a",
+        "lease_id": "lease-1",
+        "lease_epoch": 1,
+        "durable_sequence": 4
+      },
+      "lease_transitions": [
+        {
+          "owner_id": "consumer-a",
+          "lease_id": "lease-1",
+          "lease_epoch": 1
+        }
+      ],
+      "publish_outcomes": {
+        "committed": 4,
+        "rejected": 0,
+        "unknown_commit": 0
+      },
+      "replay_resume_cursor": {
+        "after_sequence": 2,
+        "resumed_from_node": "broker-b"
+      },
+      "artifacts": {
+        "publish_attempt_ledger": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-08/publish-attempt-ledger.json",
+        "replay_capture": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-08/replay-capture.json",
+        "checkpoint_transition_log": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-08/checkpoint-transition-log.json",
+        "fault_timeline": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-08/fault-timeline.json",
+        "backend_health_snapshot": "bigclaw-go/docs/reports/broker-failover-stub-artifacts/BF-08/backend-health.json"
+      },
+      "result": "passed",
+      "assertions": [
+        {
+          "label": "all committed events remain replayable after recovery",
+          "passed": true
+        },
+        {
+          "label": "checkpoint sequence stays monotonic across recovery",
+          "passed": true
+        },
+        {
+          "label": "stale writers are fenced instead of regressing the checkpoint",
+          "passed": true
+        },
+        {
+          "label": "ambiguous publish outcomes resolve from replay evidence",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "scenario_count": 8,
+    "passing_scenarios": 8,
+    "failing_scenarios": 0,
+    "duplicate_count": 1,
+    "missing_event_count": 0
+  }
+}

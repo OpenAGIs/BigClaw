@@ -1,0 +1,38 @@
+[
+  {
+    "timestamp": "2026-03-17T12:00:00Z",
+    "group_id": "group-a",
+    "subscriber_id": "subscriber-a",
+    "owner_id": "consumer-a",
+    "lease_id": "lease-1",
+    "lease_epoch": 1,
+    "prior_sequence": 0,
+    "next_sequence": 0,
+    "transition": "leased",
+    "fence_reason": ""
+  },
+  {
+    "timestamp": "2026-03-17T12:00:04Z",
+    "group_id": "group-a",
+    "subscriber_id": "subscriber-a",
+    "owner_id": "consumer-a",
+    "lease_id": "lease-1",
+    "lease_epoch": 1,
+    "prior_sequence": 0,
+    "next_sequence": 2,
+    "transition": "committed",
+    "fence_reason": ""
+  },
+  {
+    "timestamp": "2026-03-17T12:00:05Z",
+    "group_id": "group-a",
+    "subscriber_id": "subscriber-a",
+    "owner_id": "consumer-a",
+    "lease_id": "lease-1",
+    "lease_epoch": 1,
+    "prior_sequence": 2,
+    "next_sequence": 4,
+    "transition": "replayed",
+    "fence_reason": ""
+  }
+]
