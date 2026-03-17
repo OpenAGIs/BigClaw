@@ -506,6 +506,13 @@ func TestDebugStatusIncludesCoordinationLeaderElectionSurface(t *testing.T) {
 			Status        string `json:"status"`
 			LeaderPresent bool   `json:"leader_present"`
 		} `json:"coordination_leader_election"`
+		LeaderElectionCapability struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				BackendCount        int    `json:"backend_count"`
+				CurrentProofBackend string `json:"current_proof_backend"`
+			} `json:"summary"`
+		} `json:"leader_election_capability"`
 	}
 	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
 		t.Fatalf("decode debug leader surface: %v", err)
@@ -515,6 +522,9 @@ func TestDebugStatusIncludesCoordinationLeaderElectionSurface(t *testing.T) {
 	}
 	if decoded.Leader.ElectionModel != "subscriber_lease" || decoded.Leader.Status != "idle" || decoded.Leader.LeaderPresent {
 		t.Fatalf("unexpected leader election surface: %+v", decoded.Leader)
+	}
+	if decoded.LeaderElectionCapability.ReportPath != leaderElectionCapabilitySurfacePath || decoded.LeaderElectionCapability.Summary.BackendCount != 4 || decoded.LeaderElectionCapability.Summary.CurrentProofBackend != "shared_sqlite_subscriber_lease" {
+		t.Fatalf("unexpected leader election capability payload: %+v", decoded.LeaderElectionCapability)
 	}
 }
 
@@ -2783,6 +2793,14 @@ func TestV2ControlCenterIncludesCoordinationLeaderElectionSurface(t *testing.T) 
 				LeaseEpoch int64  `json:"lease_epoch"`
 			} `json:"lease"`
 		} `json:"coordination_leader_election"`
+		LeaderElectionCapability struct {
+			Summary struct {
+				BackendCount          int `json:"backend_count"`
+				LiveProvenBackends    int `json:"live_proven_backends"`
+				HarnessProvenBackends int `json:"harness_proven_backends"`
+				ContractOnlyBackends  int `json:"contract_only_backends"`
+			} `json:"summary"`
+		} `json:"leader_election_capability"`
 	}
 	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
 		t.Fatalf("decode control center leader surface: %v", err)
@@ -2795,6 +2813,9 @@ func TestV2ControlCenterIncludesCoordinationLeaderElectionSurface(t *testing.T) 
 	}
 	if decoded.Leader.RemainingTTLSeconds <= 0 {
 		t.Fatalf("expected positive ttl remaining, got %+v", decoded.Leader)
+	}
+	if decoded.LeaderElectionCapability.Summary.BackendCount != 4 || decoded.LeaderElectionCapability.Summary.LiveProvenBackends != 1 || decoded.LeaderElectionCapability.Summary.HarnessProvenBackends != 1 || decoded.LeaderElectionCapability.Summary.ContractOnlyBackends != 2 {
+		t.Fatalf("unexpected control center leader election capability summary: %+v", decoded.LeaderElectionCapability.Summary)
 	}
 }
 
@@ -2821,12 +2842,20 @@ func TestCoordinationLeaderEndpointsAcquireStatusAndTakeover(t *testing.T) {
 			LeaseToken string `json:"lease_token"`
 			LeaseEpoch int64  `json:"lease_epoch"`
 		} `json:"lease"`
+		LeaderElectionCapability struct {
+			Summary struct {
+				CurrentProofBackend string `json:"current_proof_backend"`
+			} `json:"summary"`
+		} `json:"leader_election_capability"`
 	}
 	if err := json.Unmarshal(acquire.Body.Bytes(), &acquired); err != nil {
 		t.Fatalf("decode acquire response: %v", err)
 	}
 	if acquired.Lease.ConsumerID != "node-a" || acquired.Lease.LeaseToken == "" || acquired.Lease.LeaseEpoch != 1 {
 		t.Fatalf("unexpected acquired lease: %+v", acquired.Lease)
+	}
+	if acquired.LeaderElectionCapability.Summary.CurrentProofBackend != "shared_sqlite_subscriber_lease" {
+		t.Fatalf("unexpected leader election capability on acquire: %+v", acquired.LeaderElectionCapability)
 	}
 
 	status := httptest.NewRecorder()
@@ -2842,12 +2871,22 @@ func TestCoordinationLeaderEndpointsAcquireStatusAndTakeover(t *testing.T) {
 				ConsumerID string `json:"consumer_id"`
 			} `json:"lease"`
 		} `json:"leader"`
+		LeaderElectionCapability struct {
+			ReportPath string `json:"report_path"`
+			Backends   []struct {
+				Name             string `json:"name"`
+				RuntimeReadiness string `json:"runtime_readiness"`
+			} `json:"backends"`
+		} `json:"leader_election_capability"`
 	}
 	if err := json.Unmarshal(status.Body.Bytes(), &statusDecoded); err != nil {
 		t.Fatalf("decode status response: %v", err)
 	}
 	if statusDecoded.Leader.Status != "active" || !statusDecoded.Leader.LeaderPresent || statusDecoded.Leader.Lease.ConsumerID != "node-a" {
 		t.Fatalf("unexpected leader status payload: %+v", statusDecoded.Leader)
+	}
+	if statusDecoded.LeaderElectionCapability.ReportPath != leaderElectionCapabilitySurfacePath || len(statusDecoded.LeaderElectionCapability.Backends) != 4 || statusDecoded.LeaderElectionCapability.Backends[0].Name != "shared_sqlite_subscriber_lease" {
+		t.Fatalf("unexpected leader capability status payload: %+v", statusDecoded.LeaderElectionCapability)
 	}
 
 	current = now.Add(10 * time.Second)

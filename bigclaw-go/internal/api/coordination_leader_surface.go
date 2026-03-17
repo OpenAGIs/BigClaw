@@ -47,6 +47,7 @@ func (s *Server) coordinationLeaderElectionPayload() any {
 		Notes: []string{
 			"Uses the subscriber lease store as the current repo-native leader-election scaffold.",
 			"Current hardening remains local/shared-store scoped rather than broker-backed or quorum-backed.",
+			"Leader-election backend posture is also summarized in the leader_election_capability surface.",
 		},
 	}
 	if s.SubscriberLeases == nil {
@@ -91,7 +92,7 @@ func (s *Server) handleCoordinationLeader(w http.ResponseWriter, r *http.Request
 	}
 	switch r.Method {
 	case http.MethodGet:
-		writeJSON(w, http.StatusOK, map[string]any{"leader": s.coordinationLeaderElectionPayload()})
+		writeJSON(w, http.StatusOK, map[string]any{"leader": s.coordinationLeaderElectionPayload(), "leader_election_capability": leaderElectionCapabilitySurfacePayload()})
 	case http.MethodPost:
 		var payload coordinationLeaderAcquirePayload
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -118,7 +119,7 @@ func (s *Server) handleCoordinationLeader(w http.ResponseWriter, r *http.Request
 					"coordination_role":     "leader",
 				})
 			}
-			writeJSON(w, status, map[string]any{"error": err.Error(), "lease": lease, "leader": s.coordinationLeaderElectionPayload()})
+			writeJSON(w, status, map[string]any{"error": err.Error(), "lease": lease, "leader": s.coordinationLeaderElectionPayload(), "leader_election_capability": leaderElectionCapabilitySurfacePayload()})
 			return
 		}
 		expiredTakeover := hadPrevious && previous.ConsumerID != "" && previous.ConsumerID != lease.ConsumerID && !previous.ExpiresAt.IsZero() && !now.Before(previous.ExpiresAt)
@@ -140,7 +141,7 @@ func (s *Server) handleCoordinationLeader(w http.ResponseWriter, r *http.Request
 				"coordination_role":     "leader",
 			})
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"lease": lease, "leader": s.coordinationLeaderElectionPayload()})
+		writeJSON(w, http.StatusOK, map[string]any{"lease": lease, "leader": s.coordinationLeaderElectionPayload(), "leader_election_capability": leaderElectionCapabilitySurfacePayload()})
 	case http.MethodDelete:
 		var payload checkpointRequestPayload
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -153,10 +154,10 @@ func (s *Server) handleCoordinationLeader(w http.ResponseWriter, r *http.Request
 			if err == events.ErrLeaseExpired {
 				status = http.StatusGone
 			}
-			writeJSON(w, status, map[string]any{"error": err.Error(), "leader": s.coordinationLeaderElectionPayload()})
+			writeJSON(w, status, map[string]any{"error": err.Error(), "leader": s.coordinationLeaderElectionPayload(), "leader_election_capability": leaderElectionCapabilitySurfacePayload()})
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"released": true, "leader": s.coordinationLeaderElectionPayload()})
+		writeJSON(w, http.StatusOK, map[string]any{"released": true, "leader": s.coordinationLeaderElectionPayload(), "leader_election_capability": leaderElectionCapabilitySurfacePayload()})
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}

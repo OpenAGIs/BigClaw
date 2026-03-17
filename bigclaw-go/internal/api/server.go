@@ -204,6 +204,7 @@ func (s *Server) Handler() http.Handler {
 			"admission_policy_summary":        admissionPolicySummaryPayload(),
 			"coordination_capability_surface": coordinationCapabilitySurfacePayload(),
 			"coordination_leader_election":    s.coordinationLeaderElectionPayload(),
+			"leader_election_capability":      leaderElectionCapabilitySurfacePayload(),
 			"delivery_ack_readiness":          deliveryAckReadinessPayload(),
 			"live_shadow_mirror_scorecard":    liveShadowMirrorPayload(),
 			"rollback_trigger_surface":        rollbackTriggerSurfacePayload(),
