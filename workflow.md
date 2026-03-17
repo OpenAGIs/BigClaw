@@ -2,7 +2,7 @@
 tracker:
   kind: linear
   api_key: "$LINEAR_API_KEY"
-  project_slug: "8a198fec793e"
+  project_slug: "d592dac9bc43"
   active_states:
     - Todo
     - In Progress

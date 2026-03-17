@@ -119,6 +119,7 @@ type distributedDiagnostics struct {
 	MigrationReviewPack   migrationReviewPack                     `json:"migration_review_pack"`
 	BrokerFanoutIsolation brokerStubFanoutIsolationEvidencePack   `json:"broker_stub_fanout_isolation"`
 	DeliveryAckReadiness  deliveryAckReadinessSurface             `json:"delivery_ack_readiness"`
+	PublishAckOutcomes    publishAckOutcomeSurface                `json:"publish_ack_outcomes"`
 	ContinuationGate      validationBundleContinuationGateSurface `json:"validation_bundle_continuation"`
 	TraceBundle           traceExportBundleSummary                `json:"trace_export_bundle"`
 	RolloutReport         distributedDiagnosticsReport            `json:"rollout_report"`
@@ -175,6 +176,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"trace_export_bundle":            diagnostics.TraceBundle,
 		"migration_review_pack":          diagnostics.MigrationReviewPack,
 		"delivery_ack_readiness":         diagnostics.DeliveryAckReadiness,
+		"publish_ack_outcomes":           diagnostics.PublishAckOutcomes,
 		"validation_bundle_continuation": diagnostics.ContinuationGate,
 		"report":                         diagnostics.RolloutReport,
 	})
@@ -405,6 +407,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		MigrationReviewPack:   buildMigrationReviewPack(),
 		BrokerFanoutIsolation: brokerStubFanoutIsolationPayload(),
 		DeliveryAckReadiness:  deliveryAckReadinessPayload(),
+		PublishAckOutcomes:    publishAckOutcomeSurfacePayload(),
 		ContinuationGate:      validationBundleContinuationGatePayload(),
 		TraceBundle:           buildTraceExportBundle(assignments, s.Recorder.TraceSummaries(5)),
 	}
@@ -847,6 +850,32 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.DeliveryAckReadiness.ReviewerLinks) > 0 {
 		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.DeliveryAckReadiness.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Publish Acknowledgement Outcome Ledger",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.PublishAckOutcomes.ReportPath),
+		fmt.Sprintf("- Scenario: %s", firstNonEmpty(diagnostics.PublishAckOutcomes.Summary.ScenarioID, "unknown")),
+		fmt.Sprintf("- Proof status: %s", firstNonEmpty(diagnostics.PublishAckOutcomes.Summary.ProofStatus, "unknown")),
+		fmt.Sprintf("- committed=%d rejected=%d unknown_commit=%d", diagnostics.PublishAckOutcomes.Summary.CommittedCount, diagnostics.PublishAckOutcomes.Summary.RejectedCount, diagnostics.PublishAckOutcomes.Summary.UnknownCommitCount),
+	)
+	if len(diagnostics.PublishAckOutcomes.Summary.RequiredOutcomes) > 0 {
+		lines = append(lines, "- Required outcomes: "+strings.Join(diagnostics.PublishAckOutcomes.Summary.RequiredOutcomes, ", "))
+	}
+	for _, outcome := range diagnostics.PublishAckOutcomes.Outcomes {
+		lines = append(lines, fmt.Sprintf("- %s: %s", outcome.Outcome, firstNonEmpty(outcome.ProofRule, "n/a")))
+		if len(outcome.RequiredEvidence) > 0 {
+			lines = append(lines, "  - evidence: "+strings.Join(outcome.RequiredEvidence, ", "))
+		}
+		if outcome.OperatorAction != "" {
+			lines = append(lines, "  - operator action: "+outcome.OperatorAction)
+		}
+	}
+	if len(diagnostics.PublishAckOutcomes.Limitations) > 0 {
+		lines = append(lines, "- Limitations: "+strings.Join(diagnostics.PublishAckOutcomes.Limitations, "; "))
+	}
+	if len(diagnostics.PublishAckOutcomes.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.PublishAckOutcomes.ReviewerLinks, ", "))
 	}
 	lines = append(lines,
 		"",

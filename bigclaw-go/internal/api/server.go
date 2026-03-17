@@ -206,6 +206,7 @@ func (s *Server) Handler() http.Handler {
 			"coordination_leader_election":    s.coordinationLeaderElectionPayload(),
 			"leader_election_capability":      leaderElectionCapabilitySurfacePayload(),
 			"delivery_ack_readiness":          deliveryAckReadinessPayload(),
+			"publish_ack_outcomes":            publishAckOutcomeSurfacePayload(),
 			"live_shadow_mirror_scorecard":    liveShadowMirrorPayload(),
 			"rollback_trigger_surface":        rollbackTriggerSurfacePayload(),
 			"broker_stub_fanout_isolation":    brokerStubFanoutIsolationPayload(),

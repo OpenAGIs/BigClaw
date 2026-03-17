@@ -731,6 +731,55 @@ func TestDebugStatusIncludesRollbackTriggerSurface(t *testing.T) {
 	}
 }
 
+func TestDebugStatusIncludesPublishAckOutcomeSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		PublishAckOutcomes struct {
+			ReportPath string `json:"report_path"`
+			Ticket     string `json:"ticket"`
+			Track      string `json:"track"`
+			Summary    struct {
+				ScenarioID         string   `json:"scenario_id"`
+				ProofStatus        string   `json:"proof_status"`
+				RequiredOutcomes   []string `json:"required_outcomes"`
+				CommittedCount     int      `json:"committed_count"`
+				RejectedCount      int      `json:"rejected_count"`
+				UnknownCommitCount int      `json:"unknown_commit_count"`
+			} `json:"summary"`
+			Outcomes []struct {
+				Outcome string `json:"outcome"`
+			} `json:"outcomes"`
+		} `json:"publish_ack_outcomes"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode publish ack surface payload: %v", err)
+	}
+	if decoded.PublishAckOutcomes.ReportPath != publishAckOutcomeSurfacePath || decoded.PublishAckOutcomes.Ticket != "OPE-5" || decoded.PublishAckOutcomes.Track != "BIG-DUR-101" {
+		t.Fatalf("unexpected publish ack report metadata: %+v", decoded.PublishAckOutcomes)
+	}
+	if decoded.PublishAckOutcomes.Summary.ScenarioID != "BF-05" || decoded.PublishAckOutcomes.Summary.ProofStatus != "repo-proof-summary" {
+		t.Fatalf("unexpected publish ack summary metadata: %+v", decoded.PublishAckOutcomes.Summary)
+	}
+	if decoded.PublishAckOutcomes.Summary.CommittedCount != 1 || decoded.PublishAckOutcomes.Summary.RejectedCount != 1 || decoded.PublishAckOutcomes.Summary.UnknownCommitCount != 1 {
+		t.Fatalf("unexpected publish ack counts: %+v", decoded.PublishAckOutcomes.Summary)
+	}
+	if len(decoded.PublishAckOutcomes.Summary.RequiredOutcomes) != 3 || len(decoded.PublishAckOutcomes.Outcomes) != 3 {
+		t.Fatalf("unexpected publish ack outcomes payload: %+v", decoded.PublishAckOutcomes)
+	}
+}
+
 func TestDebugStatusIncludesDeliveryAckReadinessSurface(t *testing.T) {
 	server := &Server{
 		Recorder: observability.NewRecorder(),
@@ -2584,6 +2633,18 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 					AcknowledgementClass string `json:"acknowledgement_class"`
 				} `json:"backends"`
 			} `json:"delivery_ack_readiness"`
+			PublishAckOutcomes struct {
+				ReportPath string `json:"report_path"`
+				Summary    struct {
+					ScenarioID         string `json:"scenario_id"`
+					CommittedCount     int    `json:"committed_count"`
+					RejectedCount      int    `json:"rejected_count"`
+					UnknownCommitCount int    `json:"unknown_commit_count"`
+				} `json:"summary"`
+				Outcomes []struct {
+					Outcome string `json:"outcome"`
+				} `json:"outcomes"`
+			} `json:"publish_ack_outcomes"`
 			ValidationBundleContinuation struct {
 				ReportPath     string   `json:"report_path"`
 				ScorecardPath  string   `json:"scorecard_path"`
@@ -2741,6 +2802,14 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		decoded.Diagnostics.DeliveryAckReadiness.Backends[0].AcknowledgementClass != "best_effort_only" {
 		t.Fatalf("unexpected delivery ack readiness backend detail: %+v", decoded.Diagnostics.DeliveryAckReadiness.Backends)
 	}
+	if decoded.Diagnostics.PublishAckOutcomes.ReportPath != publishAckOutcomeSurfacePath ||
+		decoded.Diagnostics.PublishAckOutcomes.Summary.ScenarioID != "BF-05" ||
+		decoded.Diagnostics.PublishAckOutcomes.Summary.CommittedCount != 1 ||
+		decoded.Diagnostics.PublishAckOutcomes.Summary.RejectedCount != 1 ||
+		decoded.Diagnostics.PublishAckOutcomes.Summary.UnknownCommitCount != 1 ||
+		len(decoded.Diagnostics.PublishAckOutcomes.Outcomes) != 3 {
+		t.Fatalf("unexpected publish ack outcomes payload: %+v", decoded.Diagnostics.PublishAckOutcomes)
+	}
 	if decoded.Diagnostics.ValidationBundleContinuation.ReportPath != validationBundleContinuationGatePath ||
 		decoded.Diagnostics.ValidationBundleContinuation.ScorecardPath != validationBundleContinuationScorecardPath ||
 		decoded.Diagnostics.ValidationBundleContinuation.DigestPath != "docs/reports/validation-bundle-continuation-digest.md" ||
@@ -2768,6 +2837,7 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Rollback Trigger Surface") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Stub Live Fanout Isolation") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Delivery Acknowledgement Readiness") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Publish Acknowledgement Outcome Ledger") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Validation Bundle Continuation Gate") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, liveShadowSummaryPath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, liveShadowMirrorScorecardPath) ||
@@ -2779,6 +2849,7 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/ambiguous-publish-outcome-proof-summary.json") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, brokerStubFanoutIsolationEvidencePackPath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, deliveryAckReadinessSurfacePath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, publishAckOutcomeSurfacePath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, validationBundleContinuationGatePath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, validationBundleContinuationScorecardPath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/validation-bundle-continuation-digest.md") ||

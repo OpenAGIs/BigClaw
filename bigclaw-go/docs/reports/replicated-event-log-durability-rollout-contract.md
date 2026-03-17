@@ -15,6 +15,7 @@ It builds on the provider-neutral adapter boundary in `docs/reports/broker-event
 - `docs/reports/event-bus-reliability-report.md` and `docs/reports/broker-failover-fault-injection-validation-pack.md` describe the portability and validation direction, but prior to this slice the rollout gate itself was not captured as one explicit contract.
 - `docs/reports/replicated-broker-durability-rollout-spike.md` now makes the current proof boundary explicit so SQLite and process-local evidence do not get overstated as replicated durability evidence.
 - `docs/reports/broker-checkpoint-fencing-proof-summary.json`, `docs/reports/broker-retention-boundary-proof-summary.json`, and `docs/reports/ambiguous-publish-outcome-proof-summary.json` now split the deterministic stub matrix into reviewable rollout-gate proofs for checkpoint fencing, retention expiry handling, and ambiguous publish classification.
+- `docs/reports/publish-ack-outcome-surface.json` now republishes the same `committed` / `rejected` / `unknown_commit` contract as a runtime-facing surface consumed by `/debug/status`, `/v2/control-center`, and `/v2/reports/distributed`.
 
 ## Runtime contract
 

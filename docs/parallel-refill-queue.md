@@ -1,7 +1,7 @@
-# BigClaw v5.0 Parallel Refill Queue
+# BigClaw v5.1 Replicated Durability Refill Queue
 
 This file is the human-readable companion to `docs/parallel-refill-queue.json`.
-It records the current BigClaw v5.0 distributed backlog slices so Symphony or a
+It records the current BigClaw v5.1 replicated-durability slices so Symphony or a
 manual operator can refill the next parallel-safe issues in a stable order.
 
 ## Trigger
@@ -20,21 +20,21 @@ manual operator can refill the next parallel-safe issues in a stable order.
 - Use the queue order below as the single source of truth for refill priority.
 - Every substantive code-bearing update must be committed and pushed to GitHub immediately, with local/remote SHA equality verification after each push.
 - Shared mirror bootstrap remains mandatory so multiple Symphony issues reuse one local mirror/seed cache instead of re-downloading the repo.
-- Linear free issue quota still blocks net-new issues, so the active batch uses recycled existing issue slots.
+- Linear free issue quota still blocks net-new issues, so the active batch uses recycled completed issue slots.
 
 ## Current batch
 
 - Active:
-  - `OPE-5` — `BIG-PAR-100` admission-policy summary from capacity certification
-  - `OPE-6` — `BIG-PAR-101` leader-election capability matrix and backend posture
-  - `OPE-12` — `BIG-PAR-102` external-store validation backend matrix and broker placeholders
-  - `OPE-21` — `BIG-PAR-103` broker bootstrap readiness summary in validation exports
+  - `OPE-5` — `BIG-DUR-101` publish acknowledgement outcome ledger
+  - `OPE-12` — `BIG-DUR-102` durable sequence bridge for provider offsets
+  - `OPE-21` — `BIG-DUR-103` provider-backed retention watermark and expiry surface
+  - `OPE-225` — `BIG-DUR-104` provider-backed live handoff isolation proof
 - Ready to promote:
   - _None; the recycled batch is already fully active._
 
 ## Canonical refill order
 
 1. `OPE-5`
-2. `OPE-6`
-3. `OPE-12`
-4. `OPE-21`
+2. `OPE-12`
+3. `OPE-21`
+4. `OPE-225`

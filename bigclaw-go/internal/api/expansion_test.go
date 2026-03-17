@@ -343,6 +343,15 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 				Outcomes   []string `json:"outcomes"`
 			} `json:"ambiguous_publish_proof"`
 		} `json:"broker_review_pack"`
+		PublishAckOutcomes struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				ScenarioID         string `json:"scenario_id"`
+				CommittedCount     int    `json:"committed_count"`
+				RejectedCount      int    `json:"rejected_count"`
+				UnknownCommitCount int    `json:"unknown_commit_count"`
+			} `json:"summary"`
+		} `json:"publish_ack_outcomes"`
 		RoutingReasons []struct {
 			Executor string `json:"executor"`
 			Reason   string `json:"reason"`
@@ -408,6 +417,9 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	}
 	if decoded.BrokerReviewPack.AmbiguousPublishProof.Path != "docs/reports/ambiguous-publish-outcome-proof-summary.json" || decoded.BrokerReviewPack.AmbiguousPublishProof.ScenarioID != "BF-05" || len(decoded.BrokerReviewPack.AmbiguousPublishProof.Outcomes) != 3 {
 		t.Fatalf("expected broker review pack ambiguous publish proof reference, got %+v", decoded.BrokerReviewPack.AmbiguousPublishProof)
+	}
+	if decoded.PublishAckOutcomes.ReportPath != publishAckOutcomeSurfacePath || decoded.PublishAckOutcomes.Summary.ScenarioID != "BF-05" || decoded.PublishAckOutcomes.Summary.CommittedCount != 1 || decoded.PublishAckOutcomes.Summary.RejectedCount != 1 || decoded.PublishAckOutcomes.Summary.UnknownCommitCount != 1 {
+		t.Fatalf("expected publish ack outcome surface, got %+v", decoded.PublishAckOutcomes)
 	}
 	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") {
 		t.Fatalf("unexpected distributed markdown: %s", decoded.Report.Markdown)

@@ -1,10 +1,10 @@
 {
   "project": {
-    "name": "BigClaw v5.0 Parallel Distributed Platform",
-    "slug_id": "8a198fec793e",
+    "name": "BigClaw v5.1 Replicated Durability Rollout",
+    "slug_id": "d592dac9bc43",
     "team": "OpenAGI",
     "team_key": "OPE",
-    "epic": "OPE-187"
+    "epic": null
   },
   "policy": {
     "target_in_progress": 4,
@@ -14,54 +14,13 @@
       "Backlog",
       "Todo"
     ],
-    "blocked_reason": "Linear free issue quota still blocks net-new issues, so the active batch uses recycled done issue slots."
+    "blocked_reason": "Linear free issue quota still blocks net-new issues, so the active batch uses recycled completed issue slots."
   },
   "recent_batches": {
     "completed": [
-      "OPE-212",
-      "OPE-213",
-      "OPE-214",
-      "OPE-215",
-      "OPE-216",
-      "OPE-217",
-      "OPE-219",
-      "OPE-220",
-      "OPE-221",
-      "OPE-222",
-      "OPE-223",
-      "OPE-224",
-      "OPE-225",
-      "OPE-226",
-      "OPE-227",
-      "OPE-228",
-      "OPE-229",
-      "OPE-230",
-      "OPE-231",
-      "OPE-232",
-      "OPE-233",
-      "OPE-234",
-      "OPE-235",
-      "OPE-236",
-      "OPE-237",
-      "OPE-238",
-      "OPE-239",
-      "OPE-240",
-      "OPE-241",
-      "OPE-242",
-      "OPE-243",
-      "OPE-244",
-      "OPE-245",
-      "OPE-246",
-      "OPE-247",
-      "OPE-250",
-      "OPE-251",
-      "OPE-252",
-      "OPE-253",
-      "OPE-258",
-      "OPE-259",
+      "OPE-6",
       "OPE-260",
       "OPE-261",
-      "OPE-262",
       "OPE-263",
       "OPE-264",
       "OPE-265",
@@ -71,56 +30,48 @@
       "OPE-269",
       "OPE-270",
       "OPE-271",
-      "OPE-275",
-      "OPE-254",
-      "OPE-255",
-      "OPE-256",
-      "OPE-257",
       "OPE-272",
       "OPE-273",
       "OPE-274",
-      "OPE-1",
-      "OPE-2",
-      "OPE-3",
-      "OPE-4"
+      "OPE-275"
     ],
     "active": [
       "OPE-5",
-      "OPE-6",
       "OPE-12",
-      "OPE-21"
+      "OPE-21",
+      "OPE-225"
     ],
     "standby": []
   },
   "issue_order": [
     "OPE-5",
-    "OPE-6",
     "OPE-12",
-    "OPE-21"
+    "OPE-21",
+    "OPE-225"
   ],
   "issues": [
     {
       "identifier": "OPE-5",
-      "title": "BIG-PAR-100 admission-policy summary from capacity certification",
-      "track": "Parallel Validation Matrix",
-      "status": "In Progress"
-    },
-    {
-      "identifier": "OPE-6",
-      "title": "BIG-PAR-101 leader-election capability matrix and backend posture",
-      "track": "Shared Queue & Coordination",
+      "title": "BIG-DUR-101 publish acknowledgement outcome ledger",
+      "track": "Publish Ack Outcome Ledger",
       "status": "In Progress"
     },
     {
       "identifier": "OPE-12",
-      "title": "BIG-PAR-102 external-store validation backend matrix and broker placeholders",
-      "track": "Shared Queue & Coordination",
+      "title": "BIG-DUR-102 durable sequence bridge for provider offsets",
+      "track": "Durable Sequence Bridge",
       "status": "In Progress"
     },
     {
       "identifier": "OPE-21",
-      "title": "BIG-PAR-103 broker bootstrap readiness summary in validation exports",
-      "track": "Distributed Diagnostics & Rollout",
+      "title": "BIG-DUR-103 provider-backed retention watermark and expiry surface",
+      "track": "Retention Watermark & Expiry",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-225",
+      "title": "BIG-DUR-104 provider-backed live handoff isolation proof",
+      "track": "Provider-backed Live Handoff Proof",
       "status": "In Progress"
     }
   ]
