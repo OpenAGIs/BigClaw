@@ -32,10 +32,13 @@ func TestNewDurabilityPlanForReplicatedTargetIncludesRolloutContract(t *testing.
 	if plan.VerificationEvidence[2].Artifacts[1] != "docs/reports/replicated-event-log-durability-rollout-contract.md" {
 		t.Fatalf("expected rollout contract artifact, got %+v", plan.VerificationEvidence[2])
 	}
-	if plan.VerificationEvidence[2].Artifacts[2] != "docs/reports/broker-durability-rollout-scorecard.json" {
+	if plan.VerificationEvidence[2].Artifacts[2] != "docs/reports/replicated-broker-durability-rollout-spike.md" {
+		t.Fatalf("expected rollout spike artifact, got %+v", plan.VerificationEvidence[2])
+	}
+	if plan.VerificationEvidence[2].Artifacts[3] != "docs/reports/broker-durability-rollout-scorecard.json" {
 		t.Fatalf("expected broker rollout scorecard artifact, got %+v", plan.VerificationEvidence[2])
 	}
-	if plan.VerificationEvidence[2].Artifacts[3] != "docs/reports/durability-rollout-scorecard.json" {
+	if plan.VerificationEvidence[2].Artifacts[4] != "docs/reports/durability-rollout-scorecard.json" {
 		t.Fatalf("expected generic rollout scorecard artifact, got %+v", plan.VerificationEvidence[2])
 	}
 }

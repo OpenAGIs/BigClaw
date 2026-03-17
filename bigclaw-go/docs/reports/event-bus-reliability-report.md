@@ -150,6 +150,7 @@ This report summarizes the current event bus reliability evidence and the next r
 ## Replicated rollout contract
 
 - `docs/reports/replicated-event-log-durability-rollout-contract.md` now captures the minimum rollout gates for a broker-backed or quorum-backed adapter, and `event_durability` now includes broker bootstrap readiness for those targets:
+- `docs/reports/replicated-broker-durability-rollout-spike.md` is the ticket-specific spike artifact that separates the current SQLite/process-local proof boundary from future replicated-backend claims and names the next smallest implementation slices.
 - `docs/reports/broker-durability-rollout-scorecard.json` mirrors the runtime contract in one checked-in JSON scorecard so reviewers can inspect readiness, blockers, and missing evidence without reconstructing them from prose.
 - `docs/reports/durability-rollout-scorecard.json` keeps the same payload under a repo-agnostic filename for queue bootstrap and automation flows.
 - `docs/reports/broker-checkpoint-fencing-proof-summary.json` isolates the stub-matrix scenarios that prove replay/checkpoint sequence monotonicity and stale-writer fencing during takeover.
