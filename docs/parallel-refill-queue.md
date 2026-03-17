@@ -25,15 +25,16 @@ manual operator can refill the next parallel-safe issues in a stable order.
 ## Current batch
 
 - Active:
-  - `OPE-264` — `BIG-BRK-204` broker review bundle unification
+  - _None; the recycled v5.2 broker-bootstrap batch is fully complete._
 - Ready to promote:
-  - _None; the recycled v5.2 queue is now on its last active slice._
+  - _None; wait for the next recycled batch or quota recovery before refilling._
 
 ## Completed in this batch
 
 - `OPE-260` — `BIG-BRK-201` broker bootstrap readiness surface
 - `OPE-261` — `BIG-BRK-202` broker config completeness diagnostics
 - `OPE-263` — `BIG-BRK-203` broker runtime gate and fail-closed posture
+- `OPE-264` — `BIG-BRK-204` broker review bundle unification
 
 ## Previous completed batch
 

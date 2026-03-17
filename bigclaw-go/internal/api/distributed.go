@@ -116,6 +116,7 @@ type distributedDiagnostics struct {
 	ClusterHealth         clusterHealthRollup                      `json:"cluster_health"`
 	LiveShadowMirror      liveShadowMirrorSurface                  `json:"live_shadow_mirror_scorecard"`
 	BrokerReviewPack      brokerReviewPack                         `json:"broker_review_pack"`
+	BrokerReviewBundle    brokerReviewBundleSurface                `json:"broker_review_bundle"`
 	MigrationReviewPack   migrationReviewPack                      `json:"migration_review_pack"`
 	BrokerFanoutIsolation brokerStubFanoutIsolationEvidencePack    `json:"broker_stub_fanout_isolation"`
 	ProviderLiveHandoff   providerLiveHandoffIsolationEvidencePack `json:"provider_live_handoff_isolation"`
@@ -176,6 +177,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"cluster_health":                  diagnostics.ClusterHealth,
 		"live_shadow_mirror_scorecard":    diagnostics.LiveShadowMirror,
 		"broker_review_pack":              diagnostics.BrokerReviewPack,
+		"broker_review_bundle":            diagnostics.BrokerReviewBundle,
 		"broker_stub_fanout_isolation":    diagnostics.BrokerFanoutIsolation,
 		"provider_live_handoff_isolation": diagnostics.ProviderLiveHandoff,
 		"broker_bootstrap_surface":        diagnostics.BrokerBootstrap,
@@ -412,6 +414,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		ClusterHealth:         clusterHealth,
 		LiveShadowMirror:      liveShadowMirrorPayload(),
 		BrokerReviewPack:      buildBrokerReviewPack(),
+		BrokerReviewBundle:    brokerReviewBundleSurfacePayload(),
 		MigrationReviewPack:   buildMigrationReviewPack(),
 		BrokerFanoutIsolation: brokerStubFanoutIsolationPayload(),
 		ProviderLiveHandoff:   providerLiveHandoffIsolationPayload(),
@@ -788,6 +791,30 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.BrokerReviewPack.ReviewerLinks) > 0 {
 		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.BrokerReviewPack.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Broker Review Bundle",
+		fmt.Sprintf("- Canonical summary: %s", diagnostics.BrokerReviewBundle.CanonicalSummaryPath),
+		fmt.Sprintf("- Canonical bootstrap summary: %s", diagnostics.BrokerReviewBundle.CanonicalBootstrapSummaryPath),
+		fmt.Sprintf("- Validation pack: %s", diagnostics.BrokerReviewBundle.ValidationPackPath),
+		fmt.Sprintf("- Stub report: %s", diagnostics.BrokerReviewBundle.StubReportPath),
+		fmt.Sprintf("- Artifact directory: %s", diagnostics.BrokerReviewBundle.ArtifactDirectory),
+		fmt.Sprintf("- Review readiness: %s", diagnostics.BrokerReviewBundle.ReviewReadinessPath),
+		fmt.Sprintf("- Live validation index: %s", diagnostics.BrokerReviewBundle.LiveValidationIndexPath),
+		fmt.Sprintf("- Operator guide: %s", diagnostics.BrokerReviewBundle.OperatorGuidePath),
+		fmt.Sprintf("- Runtime posture: %s", firstNonEmpty(diagnostics.BrokerReviewBundle.RuntimePosture, "unknown")),
+		fmt.Sprintf("- Bootstrap ready: %t", diagnostics.BrokerReviewBundle.BootstrapReady),
+		fmt.Sprintf("- Live adapter implemented: %t", diagnostics.BrokerReviewBundle.LiveAdapterImplemented),
+	)
+	if diagnostics.BrokerReviewBundle.ProofBoundary != "" {
+		lines = append(lines, "- Proof boundary: "+diagnostics.BrokerReviewBundle.ProofBoundary)
+	}
+	if len(diagnostics.BrokerReviewBundle.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer bundle links: "+strings.Join(diagnostics.BrokerReviewBundle.ReviewerLinks, ", "))
+	}
+	if diagnostics.BrokerReviewBundle.AmbiguousPublishProof.Path != "" {
+		lines = append(lines, fmt.Sprintf("- Ambiguous publish proof: %s (%s: %s)", diagnostics.BrokerReviewBundle.AmbiguousPublishProof.Path, diagnostics.BrokerReviewBundle.AmbiguousPublishProof.ScenarioID, strings.Join(diagnostics.BrokerReviewBundle.AmbiguousPublishProof.Outcomes, ", ")))
 	}
 	lines = append(lines,
 		"",

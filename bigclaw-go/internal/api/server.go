@@ -214,6 +214,7 @@ func (s *Server) Handler() http.Handler {
 			"broker_stub_fanout_isolation":    brokerStubFanoutIsolationPayload(),
 			"provider_live_handoff_isolation": providerLiveHandoffIsolationPayload(),
 			"broker_bootstrap_surface":        brokerBootstrapSurfacePayload(),
+			"broker_review_bundle":            brokerReviewBundleSurfacePayload(),
 			"validation_bundle_continuation":  validationBundleContinuationGatePayload(),
 		}
 		if s.Worker != nil {

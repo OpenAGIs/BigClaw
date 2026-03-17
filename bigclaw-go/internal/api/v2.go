@@ -1099,6 +1099,7 @@ func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 		"retention_expiry_surface":        retentionExpirySurfacePayload(),
 		"provider_live_handoff_isolation": providerLiveHandoffIsolationPayload(),
 		"broker_bootstrap_surface":        brokerBootstrapSurfacePayload(),
+		"broker_review_bundle":            brokerReviewBundleSurfacePayload(),
 		"summary":                         summarizeControlCenter(queueTasks, filteredDeadLetters),
 		"queue":                           map[string]any{"size": s.Queue.Size(context.Background()), "filtered_size": len(queueTasks), "dead_letters": len(filteredDeadLetters), "tasks": returnedQueueTasks, "cancellable": supportsQueueCancel(s.Queue)},
 		"queue_by_project":                sortedDashboardBreakdowns(queueByProject),

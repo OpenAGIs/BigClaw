@@ -4941,3 +4941,84 @@ func TestV2DistributedReportIncludesBrokerBootstrapSurface(t *testing.T) {
 		t.Fatalf("expected broker bootstrap markdown section, got %s", decoded.Report.Markdown)
 	}
 }
+
+func TestDebugStatusIncludesBrokerReviewBundle(t *testing.T) {
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		BrokerReviewBundle struct {
+			CanonicalSummaryPath          string   `json:"canonical_summary_path"`
+			CanonicalBootstrapSummaryPath string   `json:"canonical_bootstrap_summary_path"`
+			ValidationPackPath            string   `json:"validation_pack_path"`
+			ReviewReadinessPath           string   `json:"review_readiness_path"`
+			OperatorGuidePath             string   `json:"operator_guide_path"`
+			RuntimePosture                string   `json:"runtime_posture"`
+			ReviewerLinks                 []string `json:"reviewer_links"`
+		} `json:"broker_review_bundle"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode broker review bundle payload: %v", err)
+	}
+	if decoded.BrokerReviewBundle.CanonicalSummaryPath != "docs/reports/broker-validation-summary.json" || decoded.BrokerReviewBundle.CanonicalBootstrapSummaryPath != "docs/reports/broker-bootstrap-review-summary.json" || decoded.BrokerReviewBundle.ValidationPackPath != "docs/reports/broker-failover-fault-injection-validation-pack.md" || decoded.BrokerReviewBundle.ReviewReadinessPath != "docs/reports/review-readiness.md" || decoded.BrokerReviewBundle.OperatorGuidePath != "docs/reports/broker-event-log-adapter-contract.md" || decoded.BrokerReviewBundle.RuntimePosture != "contract_only" {
+		t.Fatalf("unexpected broker review bundle payload: %+v", decoded.BrokerReviewBundle)
+	}
+	if !strings.Contains(strings.Join(decoded.BrokerReviewBundle.ReviewerLinks, " | "), "docs/reports/review-readiness.md") {
+		t.Fatalf("expected bundle reviewer links, got %+v", decoded.BrokerReviewBundle.ReviewerLinks)
+	}
+}
+
+func TestV2ControlCenterIncludesBrokerReviewBundle(t *testing.T) {
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5&audit_limit=5", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		BrokerReviewBundle struct {
+			LiveValidationIndexPath string `json:"live_validation_index_path"`
+			ReviewReadinessPath     string `json:"review_readiness_path"`
+			RuntimePosture          string `json:"runtime_posture"`
+		} `json:"broker_review_bundle"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center broker review bundle payload: %v", err)
+	}
+	if decoded.BrokerReviewBundle.LiveValidationIndexPath != "docs/reports/live-validation-index.json" || decoded.BrokerReviewBundle.ReviewReadinessPath != "docs/reports/review-readiness.md" || decoded.BrokerReviewBundle.RuntimePosture != "contract_only" {
+		t.Fatalf("unexpected control center broker review bundle payload: %+v", decoded.BrokerReviewBundle)
+	}
+}
+
+func TestV2DistributedReportIncludesBrokerReviewBundle(t *testing.T) {
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?limit=5", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		BrokerReviewBundle struct {
+			CanonicalSummaryPath string `json:"canonical_summary_path"`
+			StubReportPath       string `json:"stub_report_path"`
+		} `json:"broker_review_bundle"`
+		Report struct {
+			Markdown string `json:"markdown"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed broker review bundle payload: %v", err)
+	}
+	if decoded.BrokerReviewBundle.CanonicalSummaryPath != "docs/reports/broker-validation-summary.json" || decoded.BrokerReviewBundle.StubReportPath != "docs/reports/broker-failover-stub-report.json" {
+		t.Fatalf("unexpected distributed broker review bundle payload: %+v", decoded.BrokerReviewBundle)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "## Broker Review Bundle") || !strings.Contains(decoded.Report.Markdown, "Review readiness: docs/reports/review-readiness.md") || !strings.Contains(decoded.Report.Markdown, "Operator guide: docs/reports/broker-event-log-adapter-contract.md") || !strings.Contains(decoded.Report.Markdown, "Reviewer bundle links: docs/reports/broker-validation-summary.json") {
+		t.Fatalf("expected broker review bundle markdown section, got %s", decoded.Report.Markdown)
+	}
+}

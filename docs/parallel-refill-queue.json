@@ -24,11 +24,10 @@
       "OPE-225",
       "OPE-260",
       "OPE-261",
-      "OPE-263"
-    ],
-    "active": [
+      "OPE-263",
       "OPE-264"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -60,7 +59,7 @@
       "identifier": "OPE-264",
       "title": "BIG-BRK-204 broker review bundle unification",
       "track": "Review Bundle",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
