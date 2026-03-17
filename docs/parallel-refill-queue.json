@@ -78,42 +78,48 @@
       "OPE-257",
       "OPE-272",
       "OPE-273",
-      "OPE-274"
-    ],
-    "active": [
+      "OPE-274",
+      "OPE-1",
+      "OPE-2",
       "OPE-3",
       "OPE-4"
+    ],
+    "active": [
+      "OPE-5",
+      "OPE-6",
+      "OPE-12",
+      "OPE-21"
     ],
     "standby": []
   },
   "issue_order": [
-    "OPE-1",
-    "OPE-2",
-    "OPE-3",
-    "OPE-4"
+    "OPE-5",
+    "OPE-6",
+    "OPE-12",
+    "OPE-21"
   ],
   "issues": [
     {
-      "identifier": "OPE-1",
-      "title": "BIG-PAR-096 dedicated leader-election layer for multi-node coordination",
-      "track": "Shared Queue & Coordination",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-2",
-      "title": "BIG-PAR-097 higher-scale external-store validation for replay and shared queues",
-      "track": "Shared Queue & Coordination",
-      "status": "Done"
-    },
-    {
-      "identifier": "OPE-3",
-      "title": "BIG-PAR-098 production-grade capacity certification matrix",
+      "identifier": "OPE-5",
+      "title": "BIG-PAR-100 admission-policy summary from capacity certification",
       "track": "Parallel Validation Matrix",
       "status": "In Progress"
     },
     {
-      "identifier": "OPE-4",
-      "title": "BIG-PAR-099 replicated broker durability rollout spike",
+      "identifier": "OPE-6",
+      "title": "BIG-PAR-101 leader-election capability matrix and backend posture",
+      "track": "Shared Queue & Coordination",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-12",
+      "title": "BIG-PAR-102 external-store validation backend matrix and broker placeholders",
+      "track": "Shared Queue & Coordination",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-21",
+      "title": "BIG-PAR-103 broker bootstrap readiness summary in validation exports",
       "track": "Distributed Diagnostics & Rollout",
       "status": "In Progress"
     }

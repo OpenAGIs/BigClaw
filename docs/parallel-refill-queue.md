@@ -25,14 +25,16 @@ manual operator can refill the next parallel-safe issues in a stable order.
 ## Current batch
 
 - Active:
-  - `OPE-3` — `BIG-PAR-098` production-grade capacity certification matrix
-  - `OPE-4` — `BIG-PAR-099` replicated broker durability rollout spike
+  - `OPE-5` — `BIG-PAR-100` admission-policy summary from capacity certification
+  - `OPE-6` — `BIG-PAR-101` leader-election capability matrix and backend posture
+  - `OPE-12` — `BIG-PAR-102` external-store validation backend matrix and broker placeholders
+  - `OPE-21` — `BIG-PAR-103` broker bootstrap readiness summary in validation exports
 - Ready to promote:
-  - _None; the current recycled batch is fully active._
+  - _None; the recycled batch is already fully active._
 
 ## Canonical refill order
 
-1. `OPE-1`
-2. `OPE-2`
-3. `OPE-3`
-4. `OPE-4`
+1. `OPE-5`
+2. `OPE-6`
+3. `OPE-12`
+4. `OPE-21`
