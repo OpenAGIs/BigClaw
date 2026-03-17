@@ -14,7 +14,7 @@
       "Backlog",
       "Todo"
     ],
-    "blocked_reason": "As of March 17, 2026, the tracked BigClaw v5.0 batch is fully done; add a new recycled issue set before automatic refill resumes."
+    "blocked_reason": "Linear free issue quota still blocks net-new issues, so the active batch uses recycled done issue slots."
   },
   "recent_batches": {
     "completed": [
@@ -80,9 +80,44 @@
       "OPE-273",
       "OPE-274"
     ],
-    "active": [],
+    "active": [
+      "OPE-234",
+      "OPE-231",
+      "OPE-227",
+      "OPE-230"
+    ],
     "standby": []
   },
-  "issue_order": [],
-  "issues": []
+  "issue_order": [
+    "OPE-234",
+    "OPE-231",
+    "OPE-227",
+    "OPE-230"
+  ],
+  "issues": [
+    {
+      "identifier": "OPE-234",
+      "title": "BIG-PAR-100 replace durability rollout placeholder with stub failover evidence",
+      "track": "Distributed Diagnostics & Rollout",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-231",
+      "title": "BIG-PAR-101 broker failover review pack links in distributed export and control center",
+      "track": "Distributed Diagnostics & Rollout",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-227",
+      "title": "BIG-PAR-102 local stub broker event-log backend path in bootstrap",
+      "track": "Parallel Validation Matrix",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-230",
+      "title": "BIG-PAR-103 checkpoint fencing and retention proof summary from broker stub matrix",
+      "track": "Parallel Validation Matrix",
+      "status": "In Progress"
+    }
+  ]
 }
