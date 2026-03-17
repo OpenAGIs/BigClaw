@@ -81,42 +81,42 @@
       "OPE-274"
     ],
     "active": [
-      "OPE-234",
-      "OPE-231",
-      "OPE-227",
-      "OPE-230"
+      "OPE-260",
+      "OPE-261",
+      "OPE-262",
+      "OPE-263"
     ],
     "standby": []
   },
   "issue_order": [
-    "OPE-234",
-    "OPE-231",
-    "OPE-227",
-    "OPE-230"
+    "OPE-260",
+    "OPE-261",
+    "OPE-262",
+    "OPE-263"
   ],
   "issues": [
     {
-      "identifier": "OPE-234",
-      "title": "BIG-PAR-100 replace durability rollout placeholder with stub failover evidence",
+      "identifier": "OPE-260",
+      "title": "BIG-PAR-104 ambiguous publish outcome proof summary from broker stub matrix",
       "track": "Distributed Diagnostics & Rollout",
       "status": "In Progress"
     },
     {
-      "identifier": "OPE-231",
-      "title": "BIG-PAR-101 broker failover review pack links in distributed export and control center",
+      "identifier": "OPE-261",
+      "title": "BIG-PAR-105 broker stub live fanout isolation evidence pack",
+      "track": "Parallel Validation Matrix",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-262",
+      "title": "BIG-PAR-106 cross-process coordination capability surface in debug and control center",
+      "track": "Shared Queue & Coordination",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-263",
+      "title": "BIG-PAR-107 durable dedupe readiness scorecard for HTTP and broker event logs",
       "track": "Distributed Diagnostics & Rollout",
-      "status": "In Progress"
-    },
-    {
-      "identifier": "OPE-227",
-      "title": "BIG-PAR-102 local stub broker event-log backend path in bootstrap",
-      "track": "Parallel Validation Matrix",
-      "status": "In Progress"
-    },
-    {
-      "identifier": "OPE-230",
-      "title": "BIG-PAR-103 checkpoint fencing and retention proof summary from broker stub matrix",
-      "track": "Parallel Validation Matrix",
       "status": "In Progress"
     }
   ]
