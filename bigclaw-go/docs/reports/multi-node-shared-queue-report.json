@@ -8,10 +8,10 @@
     "node-b": 100
   },
   "completed_by_node": {
-    "node-a": 51,
-    "node-b": 149
+    "node-a": 73,
+    "node-b": 127
   },
-  "cross_node_completions": 91,
+  "cross_node_completions": 99,
   "duplicate_started_tasks": [],
   "duplicate_completed_tasks": [],
   "missing_completed_tasks": [],

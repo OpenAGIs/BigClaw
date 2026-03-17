@@ -127,8 +127,8 @@ DIGESTS = {
             "docs/openclaw-parallel-gap-analysis.md",
         ],
         "phrases": [
-            "deterministic local harness only",
-            "not yet a live multi-node subscriber takeover proof",
+            "live two-node shared-queue proof",
+            "live schema parity exists but shared durable ownership does not",
         ],
         "indexes": [
             Path("bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.md"),
