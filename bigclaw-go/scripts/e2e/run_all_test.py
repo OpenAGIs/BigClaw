@@ -61,7 +61,12 @@ class RunAllTest(unittest.TestCase):
             bundle_dir.mkdir(parents=True, exist_ok=True)
             calls_path = root / 'calls.jsonl'
             gate_path = root / 'docs/reports/validation-bundle-continuation-policy-gate.json'
-            payload = {'gate_exists': gate_path.exists()}
+            payload = {
+                'gate_exists': gate_path.exists(),
+                'run_broker': args[args.index('--run-broker') + 1],
+                'broker_backend': args[args.index('--broker-backend') + 1],
+                'broker_report_path': args[args.index('--broker-report-path') + 1],
+            }
             with calls_path.open('a', encoding='utf-8') as handle:
                 handle.write(json.dumps(payload) + '\\n')
             """,
@@ -107,6 +112,9 @@ class RunAllTest(unittest.TestCase):
                 'BIGCLAW_E2E_RUN_KUBERNETES': '0',
                 'BIGCLAW_E2E_RUN_RAY': '0',
                 'BIGCLAW_E2E_RUN_LOCAL': '1',
+                'BIGCLAW_E2E_RUN_BROKER': '1',
+                'BIGCLAW_E2E_BROKER_BACKEND': 'stub',
+                'BIGCLAW_E2E_BROKER_REPORT_PATH': 'docs/reports/broker-failover-stub-report.json',
                 'BIGCLAW_E2E_CONTINUATION_GATE_MODE': 'review',
             }
         )
@@ -129,6 +137,9 @@ class RunAllTest(unittest.TestCase):
         self.assertEqual(len(calls), 2)
         self.assertFalse(calls[0]['gate_exists'])
         self.assertTrue(calls[1]['gate_exists'])
+        self.assertEqual(calls[0]['run_broker'], '1')
+        self.assertEqual(calls[0]['broker_backend'], 'stub')
+        self.assertEqual(calls[0]['broker_report_path'], 'docs/reports/broker-failover-stub-report.json')
 
 
 if __name__ == '__main__':

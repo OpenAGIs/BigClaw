@@ -12,6 +12,8 @@ LATEST_REPORTS = {
     'kubernetes': 'docs/reports/kubernetes-live-smoke-report.json',
     'ray': 'docs/reports/ray-live-smoke-report.json',
 }
+BROKER_SUMMARY = 'docs/reports/broker-validation-summary.json'
+BROKER_VALIDATION_PACK = 'docs/reports/broker-failover-fault-injection-validation-pack.md'
 SHARED_QUEUE_REPORT = 'docs/reports/multi-node-shared-queue-report.json'
 SHARED_QUEUE_SUMMARY = 'docs/reports/shared-queue-companion-summary.json'
 
@@ -208,6 +210,60 @@ def build_component_section(
     return section
 
 
+def build_broker_section(
+    *,
+    enabled: bool,
+    backend: str,
+    root: Path,
+    bundle_dir: Path,
+    report_path: Path | None,
+) -> dict[str, Any]:
+    bundle_summary_path = bundle_dir / 'broker-validation-summary.json'
+    section: dict[str, Any] = {
+        'enabled': enabled,
+        'backend': backend or None,
+        'bundle_summary_path': relpath(bundle_summary_path, root),
+        'canonical_summary_path': BROKER_SUMMARY,
+        'validation_pack_path': BROKER_VALIDATION_PACK,
+    }
+    configuration_state = 'configured' if enabled and backend else 'not_configured'
+    section['configuration_state'] = configuration_state
+
+    if not enabled or not backend:
+        section['status'] = 'skipped'
+        section['reason'] = 'not_configured'
+        write_json(bundle_summary_path, section)
+        write_json(root / BROKER_SUMMARY, section)
+        return section
+
+    if report_path is None:
+        section['status'] = 'skipped'
+        section['reason'] = 'missing_report_path'
+        write_json(bundle_summary_path, section)
+        write_json(root / BROKER_SUMMARY, section)
+        return section
+
+    report = read_json(report_path)
+    report_relpath = relpath(report_path, root)
+    section['canonical_report_path'] = report_relpath
+    section['bundle_report_path'] = relpath(bundle_dir / report_path.name, root)
+    if not isinstance(report, dict):
+        section['status'] = 'skipped'
+        section['reason'] = 'not_configured'
+        write_json(bundle_summary_path, section)
+        write_json(root / BROKER_SUMMARY, section)
+        return section
+
+    copied_report = copy_json_artifact(report_path, bundle_dir / report_path.name)
+    if copied_report:
+        section['bundle_report_path'] = relpath(Path(copied_report), root)
+    section['report'] = report
+    section['status'] = component_status(report)
+    write_json(bundle_summary_path, section)
+    write_json(root / BROKER_SUMMARY, section)
+    return section
+
+
 def build_recent_runs(bundle_root: Path, root: Path, limit: int = 8) -> list[dict[str, Any]]:
     runs: list[tuple[str, dict[str, Any]]] = []
     if not bundle_root.exists():
@@ -287,6 +343,25 @@ def render_index(
             lines.append(f"- Audit log: `{section['audit_log_path']}`")
         if section.get('task_id'):
             lines.append(f"- Task ID: `{section['task_id']}`")
+        lines.append('')
+
+    broker = summary.get('broker')
+    if isinstance(broker, dict):
+        lines.append('### broker')
+        lines.append(f"- Enabled: `{broker['enabled']}`")
+        lines.append(f"- Status: `{broker['status']}`")
+        lines.append(f"- Configuration state: `{broker['configuration_state']}`")
+        lines.append(f"- Bundle summary: `{broker['bundle_summary_path']}`")
+        lines.append(f"- Canonical summary: `{broker['canonical_summary_path']}`")
+        lines.append(f"- Validation pack: `{broker['validation_pack_path']}`")
+        if broker.get('backend'):
+            lines.append(f"- Backend: `{broker['backend']}`")
+        if broker.get('bundle_report_path'):
+            lines.append(f"- Bundle report: `{broker['bundle_report_path']}`")
+        if broker.get('canonical_report_path'):
+            lines.append(f"- Canonical report: `{broker['canonical_report_path']}`")
+        if broker.get('reason'):
+            lines.append(f"- Reason: `{broker['reason']}`")
         lines.append('')
 
     shared_queue = summary.get('shared_queue_companion')
@@ -371,6 +446,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--run-kubernetes', default='1')
     parser.add_argument('--run-ray', default='1')
     parser.add_argument('--validation-status', default='0')
+    parser.add_argument('--run-broker', default='0')
+    parser.add_argument('--broker-backend', default='')
+    parser.add_argument('--broker-report-path', default='')
     parser.add_argument('--local-report-path', required=True)
     parser.add_argument('--local-stdout-path', required=True)
     parser.add_argument('--local-stderr-path', required=True)
@@ -426,6 +504,13 @@ def main() -> int:
         report_path=root / args.ray_report_path,
         stdout_path=Path(args.ray_stdout_path),
         stderr_path=Path(args.ray_stderr_path),
+    )
+    summary['broker'] = build_broker_section(
+        enabled=args.run_broker == '1',
+        backend=args.broker_backend.strip(),
+        root=root,
+        bundle_dir=bundle_dir,
+        report_path=(root / args.broker_report_path) if args.broker_report_path else None,
     )
     summary['shared_queue_companion'] = build_shared_queue_companion(root, bundle_dir)
 
