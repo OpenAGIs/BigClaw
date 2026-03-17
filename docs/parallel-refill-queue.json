@@ -83,16 +83,16 @@
     "active": [
       "OPE-260",
       "OPE-261",
-      "OPE-262",
-      "OPE-263"
+      "OPE-263",
+      "OPE-264"
     ],
     "standby": []
   },
   "issue_order": [
     "OPE-260",
     "OPE-261",
-    "OPE-262",
-    "OPE-263"
+    "OPE-263",
+    "OPE-264"
   ],
   "issues": [
     {
@@ -108,14 +108,14 @@
       "status": "In Progress"
     },
     {
-      "identifier": "OPE-262",
-      "title": "BIG-PAR-106 cross-process coordination capability surface in debug and control center",
-      "track": "Shared Queue & Coordination",
+      "identifier": "OPE-263",
+      "title": "BIG-PAR-107 durable dedupe readiness scorecard for HTTP and broker event logs",
+      "track": "Distributed Diagnostics & Rollout",
       "status": "In Progress"
     },
     {
-      "identifier": "OPE-263",
-      "title": "BIG-PAR-107 durable dedupe readiness scorecard for HTTP and broker event logs",
+      "identifier": "OPE-264",
+      "title": "BIG-PAR-108 delivery acknowledgement readiness surface for event log backends",
       "track": "Distributed Diagnostics & Rollout",
       "status": "In Progress"
     }
