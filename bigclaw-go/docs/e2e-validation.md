@@ -125,6 +125,15 @@ Use that pack as the source of truth for:
 - checkpoint fencing and stale-writer recovery rules
 - the minimum machine-readable report schema required before future broker durability work can be closed honestly
 
+Use this deterministic local harness to exercise the same scenario ids without a live broker:
+
+```bash
+cd bigclaw-go
+python3 scripts/e2e/broker_failover_stub_matrix.py --pretty
+```
+
+This refreshes `docs/reports/broker-failover-stub-report.json` plus per-scenario raw artifacts under `docs/reports/broker-failover-stub-artifacts/`. The stub backend is provider-neutral and deterministic, so sequence accounting, replay resume behavior, ambiguous publish resolution, and checkpoint fencing can be validated before a live Kafka / NATS / Redis adapter exists.
+
 ## Multi-subscriber takeover validation matrix
 
 Use this to regenerate the executable local takeover harness report for lease-aware subscriber-group checkpoint ownership.
