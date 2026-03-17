@@ -25,11 +25,10 @@ manual operator can refill the next parallel-safe issues in a stable order.
 ## Current batch
 
 - Active:
-  - `OPE-1` — `BIG-PAR-096` dedicated leader-election layer for multi-node coordination
-  - `OPE-2` — `BIG-PAR-097` higher-scale external-store validation for replay and shared queues
-- Ready to promote:
   - `OPE-3` — `BIG-PAR-098` production-grade capacity certification matrix
   - `OPE-4` — `BIG-PAR-099` replicated broker durability rollout spike
+- Ready to promote:
+  - _None; the current recycled batch is fully active._
 
 ## Canonical refill order
 

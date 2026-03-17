@@ -81,13 +81,10 @@
       "OPE-274"
     ],
     "active": [
-      "OPE-1",
-      "OPE-2"
-    ],
-    "standby": [
       "OPE-3",
       "OPE-4"
-    ]
+    ],
+    "standby": []
   },
   "issue_order": [
     "OPE-1",
@@ -100,25 +97,25 @@
       "identifier": "OPE-1",
       "title": "BIG-PAR-096 dedicated leader-election layer for multi-node coordination",
       "track": "Shared Queue & Coordination",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-2",
       "title": "BIG-PAR-097 higher-scale external-store validation for replay and shared queues",
       "track": "Shared Queue & Coordination",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-3",
       "title": "BIG-PAR-098 production-grade capacity certification matrix",
       "track": "Parallel Validation Matrix",
-      "status": "Todo"
+      "status": "In Progress"
     },
     {
       "identifier": "OPE-4",
       "title": "BIG-PAR-099 replicated broker durability rollout spike",
       "track": "Distributed Diagnostics & Rollout",
-      "status": "Todo"
+      "status": "In Progress"
     }
   ]
 }
