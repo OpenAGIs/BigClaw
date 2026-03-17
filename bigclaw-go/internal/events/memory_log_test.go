@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -43,6 +44,41 @@ func TestMemoryLogReplayAndLiveSubscribe(t *testing.T) {
 	live := <-ch
 	if live.Event.ID != third.Event.ID {
 		t.Fatalf("expected live %s, got %s", third.Event.ID, live.Event.ID)
+	}
+}
+
+func TestMemoryLogSubscribeRejectsUnsupportedPartitionRoute(t *testing.T) {
+	log := NewMemoryLog()
+
+	_, cancel, err := log.Subscribe(context.Background(), SubscriptionRequest{
+		PartitionRoute: &PartitionRoute{
+			Topic:        "tasks",
+			PartitionKey: PartitionKeyTaskID,
+		},
+	})
+	if cancel != nil {
+		t.Fatal("expected no cancel function on validation failure")
+	}
+	if !errors.Is(err, ErrUnsupportedSubscriptionPartitionRoute) {
+		t.Fatalf("expected unsupported partition route error, got %v", err)
+	}
+}
+
+func TestMemoryLogSubscribeRejectsUnsupportedOwnershipContract(t *testing.T) {
+	log := NewMemoryLog()
+
+	_, cancel, err := log.Subscribe(context.Background(), SubscriptionRequest{
+		OwnershipContract: &SubscriberOwnershipContract{
+			SubscriberGroup: "workers",
+			Consumer:        "consumer-a",
+			Mode:            OwnershipModeExclusive,
+		},
+	})
+	if cancel != nil {
+		t.Fatal("expected no cancel function on validation failure")
+	}
+	if !errors.Is(err, ErrUnsupportedSubscriptionOwnershipContract) {
+		t.Fatalf("expected unsupported ownership contract error, got %v", err)
 	}
 }
 
