@@ -20,21 +20,21 @@ manual operator can refill the next parallel-safe issues in a stable order.
 - Use the queue order below as the single source of truth for refill priority.
 - Every substantive code-bearing update must be committed and pushed to GitHub immediately, with local/remote SHA equality verification after each push.
 - Shared mirror bootstrap remains mandatory so multiple Symphony issues reuse one local mirror/seed cache instead of re-downloading the repo.
-- Linear free issue quota still blocks net-new issues, so the active batch uses recycled done issue slots.
+- Linear free issue quota still blocks net-new issues, so the active batch uses recycled existing issue slots.
 
 ## Current batch
 
 - Active:
-  - `OPE-260` — `BIG-PAR-104` ambiguous publish outcome proof summary from broker stub matrix
-  - `OPE-261` — `BIG-PAR-105` broker stub live fanout isolation evidence pack
-  - `OPE-262` — `BIG-PAR-106` cross-process coordination capability surface in debug and control center
-  - `OPE-263` — `BIG-PAR-107` durable dedupe readiness scorecard for HTTP and broker event logs
+  - `OPE-5` — `BIG-PAR-100` admission-policy summary from capacity certification
+  - `OPE-6` — `BIG-PAR-101` leader-election capability matrix and backend posture
+  - `OPE-12` — `BIG-PAR-102` external-store validation backend matrix and broker placeholders
+  - `OPE-21` — `BIG-PAR-103` broker bootstrap readiness summary in validation exports
 - Ready to promote:
-  - none; current batch is already fully active
+  - _None; the recycled batch is already fully active._
 
 ## Canonical refill order
 
-1. `OPE-260`
-2. `OPE-261`
-3. `OPE-262`
-4. `OPE-263`
+1. `OPE-5`
+2. `OPE-6`
+3. `OPE-12`
+4. `OPE-21`

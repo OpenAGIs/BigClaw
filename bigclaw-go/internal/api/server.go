@@ -191,15 +191,25 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/deadletters/", s.handleDeadLetterAction)
 	mux.HandleFunc("/debug/traces", s.handleDebugTraces)
 	mux.HandleFunc("/debug/traces/", s.handleDebugTrace)
+	mux.HandleFunc(coordinationLeaderEndpoint, s.handleCoordinationLeader)
 	mux.HandleFunc("/debug/status", func(w http.ResponseWriter, r *http.Request) {
 		rolloutScorecard := s.EventPlan.RolloutScorecard
 		payload := map[string]any{
-			"queue_size":               s.Queue.Size(context.Background()),
-			"audit_events":             len(s.Recorder.Logs()),
-			"executors":                s.executorNames(),
-			"event_durability":         s.EventPlan,
-			"event_durability_rollout": rolloutScorecard,
-			"event_log":                s.eventLogCapabilities(r.Context()),
+			"queue_size":                      s.Queue.Size(context.Background()),
+			"audit_events":                    len(s.Recorder.Logs()),
+			"executors":                       s.executorNames(),
+			"event_durability":                s.EventPlan,
+			"event_durability_rollout":        rolloutScorecard,
+			"event_log":                       s.eventLogCapabilities(r.Context()),
+			"admission_policy_summary":        admissionPolicySummaryPayload(),
+			"coordination_capability_surface": coordinationCapabilitySurfacePayload(),
+			"coordination_leader_election":    s.coordinationLeaderElectionPayload(),
+			"leader_election_capability":      leaderElectionCapabilitySurfacePayload(),
+			"delivery_ack_readiness":          deliveryAckReadinessPayload(),
+			"live_shadow_mirror_scorecard":    liveShadowMirrorPayload(),
+			"rollback_trigger_surface":        rollbackTriggerSurfacePayload(),
+			"broker_stub_fanout_isolation":    brokerStubFanoutIsolationPayload(),
+			"validation_bundle_continuation":  validationBundleContinuationGatePayload(),
 		}
 		if s.Worker != nil {
 			payload["worker"] = s.Worker.Snapshot()

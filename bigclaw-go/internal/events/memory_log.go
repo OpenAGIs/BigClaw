@@ -81,6 +81,9 @@ func (l *MemoryLog) Replay(_ context.Context, request ReplayRequest) ([]Record, 
 
 func (l *MemoryLog) Subscribe(ctx context.Context, request SubscriptionRequest) (<-chan Record, func(), error) {
 	_ = ctx
+	if err := validateSubscriptionRequest(l.Backend(), request); err != nil {
+		return nil, nil, err
+	}
 
 	l.mu.Lock()
 	defer l.mu.Unlock()

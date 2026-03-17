@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -102,6 +103,21 @@ type DurableEventLog interface {
 type DurableCheckpointStore interface {
 	GetCheckpoint(context.Context, string) (Checkpoint, bool, error)
 	SaveCheckpoint(context.Context, Checkpoint) error
+}
+
+var (
+	ErrUnsupportedSubscriptionPartitionRoute    = errors.New("subscription partition routing unsupported")
+	ErrUnsupportedSubscriptionOwnershipContract = errors.New("subscription ownership contract unsupported")
+)
+
+func validateSubscriptionRequest(backend EventLogBackend, request SubscriptionRequest) error {
+	if request.PartitionRoute != nil {
+		return fmt.Errorf("%w for backend %q; feature remains contract-only", ErrUnsupportedSubscriptionPartitionRoute, backend)
+	}
+	if request.OwnershipContract != nil {
+		return fmt.Errorf("%w for backend %q; feature remains contract-only", ErrUnsupportedSubscriptionOwnershipContract, backend)
+	}
+	return nil
 }
 
 type BrokerRuntimeConfig struct {

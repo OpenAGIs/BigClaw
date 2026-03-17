@@ -110,13 +110,18 @@ type traceExportBundleTrace struct {
 }
 
 type distributedDiagnostics struct {
-	Summary          distributedDiagnosticsSummary `json:"summary"`
-	RoutingReasons   []routingReasonSummary        `json:"routing_reasons"`
-	ExecutorCapacity []executorCapacityView        `json:"executor_capacity"`
-	ClusterHealth    clusterHealthRollup           `json:"cluster_health"`
-	BrokerReviewPack brokerReviewPack              `json:"broker_review_pack"`
-	TraceBundle      traceExportBundleSummary      `json:"trace_export_bundle"`
-	RolloutReport    distributedDiagnosticsReport  `json:"rollout_report"`
+	Summary               distributedDiagnosticsSummary           `json:"summary"`
+	RoutingReasons        []routingReasonSummary                  `json:"routing_reasons"`
+	ExecutorCapacity      []executorCapacityView                  `json:"executor_capacity"`
+	ClusterHealth         clusterHealthRollup                     `json:"cluster_health"`
+	LiveShadowMirror      liveShadowMirrorSurface                 `json:"live_shadow_mirror_scorecard"`
+	BrokerReviewPack      brokerReviewPack                        `json:"broker_review_pack"`
+	MigrationReviewPack   migrationReviewPack                     `json:"migration_review_pack"`
+	BrokerFanoutIsolation brokerStubFanoutIsolationEvidencePack   `json:"broker_stub_fanout_isolation"`
+	DeliveryAckReadiness  deliveryAckReadinessSurface             `json:"delivery_ack_readiness"`
+	ContinuationGate      validationBundleContinuationGateSurface `json:"validation_bundle_continuation"`
+	TraceBundle           traceExportBundleSummary                `json:"trace_export_bundle"`
+	RolloutReport         distributedDiagnosticsReport            `json:"rollout_report"`
 }
 
 type executorDiagnosticsCounters struct {
@@ -159,14 +164,19 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 			"limit":      filters.Limit,
 			"priority":   filters.Priority,
 		},
-		"event_durability":    s.EventPlan,
-		"summary":             diagnostics.Summary,
-		"routing_reasons":     diagnostics.RoutingReasons,
-		"executor_capacity":   diagnostics.ExecutorCapacity,
-		"cluster_health":      diagnostics.ClusterHealth,
-		"broker_review_pack":  diagnostics.BrokerReviewPack,
-		"trace_export_bundle": diagnostics.TraceBundle,
-		"report":              diagnostics.RolloutReport,
+		"event_durability":               s.EventPlan,
+		"summary":                        diagnostics.Summary,
+		"routing_reasons":                diagnostics.RoutingReasons,
+		"executor_capacity":              diagnostics.ExecutorCapacity,
+		"cluster_health":                 diagnostics.ClusterHealth,
+		"live_shadow_mirror_scorecard":   diagnostics.LiveShadowMirror,
+		"broker_review_pack":             diagnostics.BrokerReviewPack,
+		"broker_stub_fanout_isolation":   diagnostics.BrokerFanoutIsolation,
+		"trace_export_bundle":            diagnostics.TraceBundle,
+		"migration_review_pack":          diagnostics.MigrationReviewPack,
+		"delivery_ack_readiness":         diagnostics.DeliveryAckReadiness,
+		"validation_bundle_continuation": diagnostics.ContinuationGate,
+		"report":                         diagnostics.RolloutReport,
 	})
 }
 
@@ -386,12 +396,17 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		Notes:              diagnosticsNotes(summary, executorCapacity, s.Control.Snapshot()),
 	}
 	diagnostics := distributedDiagnostics{
-		Summary:          summary,
-		RoutingReasons:   routingReasons,
-		ExecutorCapacity: executorCapacity,
-		ClusterHealth:    clusterHealth,
-		BrokerReviewPack: buildBrokerReviewPack(),
-		TraceBundle:      buildTraceExportBundle(assignments, s.Recorder.TraceSummaries(5)),
+		Summary:               summary,
+		RoutingReasons:        routingReasons,
+		ExecutorCapacity:      executorCapacity,
+		ClusterHealth:         clusterHealth,
+		LiveShadowMirror:      liveShadowMirrorPayload(),
+		BrokerReviewPack:      buildBrokerReviewPack(),
+		MigrationReviewPack:   buildMigrationReviewPack(),
+		BrokerFanoutIsolation: brokerStubFanoutIsolationPayload(),
+		DeliveryAckReadiness:  deliveryAckReadinessPayload(),
+		ContinuationGate:      validationBundleContinuationGatePayload(),
+		TraceBundle:           buildTraceExportBundle(assignments, s.Recorder.TraceSummaries(5)),
 	}
 	diagnostics.RolloutReport = distributedDiagnosticsReport{
 		Markdown:  renderDistributedDiagnosticsMarkdown(diagnostics, filters),
@@ -725,6 +740,27 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	lines = append(lines,
 		"",
+		"## Live Shadow Mirror Scorecard",
+		fmt.Sprintf("- Canonical summary: %s", diagnostics.LiveShadowMirror.CanonicalSummaryPath),
+		fmt.Sprintf("- Scorecard report: %s", diagnostics.LiveShadowMirror.ReportPath),
+		fmt.Sprintf("- Status: %s", diagnostics.LiveShadowMirror.Status),
+		fmt.Sprintf("- Severity: %s", firstNonEmpty(diagnostics.LiveShadowMirror.Severity, "none")),
+		fmt.Sprintf("- Latest evidence timestamp: %s", firstNonEmpty(diagnostics.LiveShadowMirror.LatestEvidenceTimestamp, "unknown")),
+		fmt.Sprintf("- Evidence runs: %d", diagnostics.LiveShadowMirror.Summary.TotalEvidenceRuns),
+		fmt.Sprintf("- Parity OK: %d", diagnostics.LiveShadowMirror.Summary.ParityOKCount),
+		fmt.Sprintf("- Drift detected: %d", diagnostics.LiveShadowMirror.Summary.DriftDetectedCount),
+		fmt.Sprintf("- Matrix mismatched: %d", diagnostics.LiveShadowMirror.Summary.MatrixMismatched),
+		fmt.Sprintf("- Fresh inputs: %d", diagnostics.LiveShadowMirror.Summary.FreshInputs),
+		fmt.Sprintf("- Stale inputs: %d", diagnostics.LiveShadowMirror.Summary.StaleInputs),
+	)
+	if len(diagnostics.LiveShadowMirror.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.LiveShadowMirror.ReviewerLinks, ", "))
+	}
+	for _, checkpoint := range diagnostics.LiveShadowMirror.CutoverCheckpoints {
+		lines = append(lines, fmt.Sprintf("- Cutover check %s: passed=%t detail=%s", checkpoint.Name, checkpoint.Passed, firstNonEmpty(checkpoint.Detail, "n/a")))
+	}
+	lines = append(lines,
+		"",
 		"## Broker Failover Review Pack",
 		fmt.Sprintf("- Status: %s", diagnostics.BrokerReviewPack.Status),
 		fmt.Sprintf("- Canonical summary: %s", diagnostics.BrokerReviewPack.SummaryPath),
@@ -737,6 +773,109 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.BrokerReviewPack.ReviewerLinks) > 0 {
 		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.BrokerReviewPack.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Migration Readiness Review Pack",
+		fmt.Sprintf("- Status: %s", diagnostics.MigrationReviewPack.Status),
+		fmt.Sprintf("- Readiness report: %s", diagnostics.MigrationReviewPack.ReadinessReportPath),
+		fmt.Sprintf("- Live shadow scorecard: %s", diagnostics.MigrationReviewPack.ScorecardPath),
+		fmt.Sprintf("- Canonical summary: %s", diagnostics.MigrationReviewPack.CanonicalSummaryPath),
+		fmt.Sprintf("- Run summary: %s", diagnostics.MigrationReviewPack.SummaryPath),
+		fmt.Sprintf("- Live shadow index: %s", diagnostics.MigrationReviewPack.IndexPath),
+		fmt.Sprintf("- Follow-up digest: %s", diagnostics.MigrationReviewPack.FollowUpDigestPath),
+		fmt.Sprintf("- Rollback trigger surface: %s", diagnostics.MigrationReviewPack.RollbackTriggerPath),
+		fmt.Sprintf("- Parity OK runs: %d", diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.ParityOKCount),
+		fmt.Sprintf("- Drift detected runs: %d", diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.DriftDetectedCount),
+		fmt.Sprintf("- Matrix mismatches: %d", diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.MatrixMismatched),
+		fmt.Sprintf("- Corpus coverage present: %t", diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.CorpusCoveragePresent),
+		fmt.Sprintf("- Rollback automation boundary: %s", diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.RollbackTriggerSurface.AutomationBoundary),
+	)
+	if len(diagnostics.MigrationReviewPack.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.MigrationReviewPack.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Rollback Trigger Surface",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReportPath),
+		fmt.Sprintf("- Issue: %s / %s", firstNonEmpty(diagnostics.MigrationReviewPack.RollbackTriggerSurface.Issue.ID, "unknown"), firstNonEmpty(diagnostics.MigrationReviewPack.RollbackTriggerSurface.Issue.Slug, "unknown")),
+		fmt.Sprintf("- Status: %s", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Status),
+		fmt.Sprintf("- Automation boundary: %s", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.AutomationBoundary),
+		fmt.Sprintf("- Automated rollback trigger: %t", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.AutomatedRollbackTrigger),
+		fmt.Sprintf("- Cutover gate: %s", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.CutoverGate),
+		fmt.Sprintf("- Blockers: %d", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Distinctions.Blockers),
+		fmt.Sprintf("- Warnings: %d", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Distinctions.Warnings),
+		fmt.Sprintf("- Manual-only paths: %d", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Distinctions.ManualOnlyPaths),
+	)
+	if len(diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Broker Stub Live Fanout Isolation",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.BrokerFanoutIsolation.ReportPath),
+		fmt.Sprintf("- Scenario count: %d", diagnostics.BrokerFanoutIsolation.Summary.ScenarioCount),
+		fmt.Sprintf("- Isolated scenarios: %d", diagnostics.BrokerFanoutIsolation.Summary.IsolatedScenarios),
+		fmt.Sprintf("- Stalled scenarios: %d", diagnostics.BrokerFanoutIsolation.Summary.StalledScenarios),
+		fmt.Sprintf("- Replay backlog: %d events", diagnostics.BrokerFanoutIsolation.Summary.ReplayBacklogEvents),
+		fmt.Sprintf("- Replay step delay: %dms", diagnostics.BrokerFanoutIsolation.Summary.ReplayStepDelayMS),
+		fmt.Sprintf("- Live delivery deadline: %dms", diagnostics.BrokerFanoutIsolation.Summary.LiveDeliveryDeadlineMS),
+	)
+	for _, scenario := range diagnostics.BrokerFanoutIsolation.Scenarios {
+		lines = append(lines, fmt.Sprintf("- %s: status=%s replay=%s live=%s backlog=%d replay_delay=%dms live_deadline=%dms replay_after_live=%t", scenario.Name, scenario.Status, firstNonEmpty(scenario.ReplayPath, "unknown"), firstNonEmpty(scenario.LivePath, "unknown"), scenario.ReplayBacklogEvents, scenario.ReplayStepDelayMS, scenario.LiveDeliveryDeadlineMS, scenario.ReplayDrainsAfterLive))
+		if len(scenario.SourceTests) > 0 {
+			lines = append(lines, "  - source tests: "+strings.Join(scenario.SourceTests, ", "))
+		}
+	}
+	if len(diagnostics.BrokerFanoutIsolation.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.BrokerFanoutIsolation.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Delivery Acknowledgement Readiness",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.DeliveryAckReadiness.ReportPath),
+		fmt.Sprintf("- Explicit ACK backends: %d", diagnostics.DeliveryAckReadiness.Summary.ExplicitAckBackends),
+		fmt.Sprintf("- Durable ACK backends: %d", diagnostics.DeliveryAckReadiness.Summary.DurableAckBackends),
+		fmt.Sprintf("- Best-effort backends: %d", diagnostics.DeliveryAckReadiness.Summary.BestEffortBackends),
+		fmt.Sprintf("- Contract-only backends: %d", diagnostics.DeliveryAckReadiness.Summary.ContractOnlyBackends),
+	)
+	for _, backend := range diagnostics.DeliveryAckReadiness.Backends {
+		lines = append(lines, fmt.Sprintf("- %s: class=%s explicit_ack=%t durable_ack=%t readiness=%s", backend.Backend, backend.AcknowledgementClass, backend.ExplicitAcknowledgement, backend.DurableAcknowledgement, backend.RuntimeReadiness))
+		if len(backend.SourceReportLinks) > 0 {
+			lines = append(lines, "  - sources: "+strings.Join(backend.SourceReportLinks, ", "))
+		}
+	}
+	if len(diagnostics.DeliveryAckReadiness.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.DeliveryAckReadiness.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Validation Bundle Continuation Gate",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.ContinuationGate.ReportPath),
+		fmt.Sprintf("- Scorecard: %s", diagnostics.ContinuationGate.ScorecardPath),
+		fmt.Sprintf("- Recommendation: %s", diagnostics.ContinuationGate.Recommendation),
+		fmt.Sprintf("- Status: %s", diagnostics.ContinuationGate.Status),
+		fmt.Sprintf("- Latest run: %s", firstNonEmpty(diagnostics.ContinuationGate.Summary.LatestRunID, "unknown")),
+		fmt.Sprintf("- Latest bundle age: %.2f hours", diagnostics.ContinuationGate.Summary.LatestBundleAgeHours),
+		fmt.Sprintf("- Recent bundle count: %d", diagnostics.ContinuationGate.Summary.RecentBundleCount),
+		fmt.Sprintf("- Repeated executor coverage: %t", diagnostics.ContinuationGate.Summary.AllExecutorTracksHaveRepeatedRecentCoverage),
+		fmt.Sprintf("- Shared queue companion available: %t", diagnostics.ContinuationGate.Summary.SharedQueueCompanionAvailable),
+		fmt.Sprintf("- Cross-node completions: %d", diagnostics.ContinuationGate.Summary.CrossNodeCompletions),
+	)
+	if diagnostics.ContinuationGate.DigestPath != "" {
+		lines = append(lines, "- Reviewer digest: "+diagnostics.ContinuationGate.DigestPath)
+	}
+	for _, check := range diagnostics.ContinuationGate.PolicyChecks {
+		lines = append(lines, fmt.Sprintf("- Policy check %s: passed=%t detail=%s", check.Name, check.Passed, firstNonEmpty(check.Detail, "n/a")))
+	}
+	if len(diagnostics.ContinuationGate.CurrentCeiling) > 0 {
+		lines = append(lines, "- Current ceiling: "+strings.Join(diagnostics.ContinuationGate.CurrentCeiling, "; "))
+	}
+	if len(diagnostics.ContinuationGate.NextActions) > 0 {
+		lines = append(lines, "- Next actions: "+strings.Join(diagnostics.ContinuationGate.NextActions, "; "))
+	}
+	if len(diagnostics.ContinuationGate.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.ContinuationGate.ReviewerLinks, ", "))
 	}
 	lines = append(lines, "", "## Notes")
 	for _, note := range diagnostics.ClusterHealth.Notes {

@@ -66,7 +66,7 @@ cd bigclaw-go
 python3 scripts/e2e/validation_bundle_continuation_scorecard.py --pretty
 ```
 
-This writes `docs/reports/validation-bundle-continuation-scorecard.json`, summarizing the recent bundle lineage plus the current shared-queue companion proof exported with the live validation bundle. `run_all.sh` now refreshes the scorecard automatically during closeout, but the continuation surface is still workflow-triggered rather than always-on.
+This writes `docs/reports/validation-bundle-continuation-scorecard.json`, summarizing the recent bundle lineage plus the current shared-queue companion proof exported with the live validation bundle. `run_all.sh` refreshes the scorecard automatically during closeout.
 
 You can evaluate the checked-in continuation policy gate as a follow-up:
 
@@ -75,15 +75,15 @@ cd bigclaw-go
 python3 scripts/e2e/validation_bundle_continuation_policy_gate.py --pretty
 ```
 
-This writes `docs/reports/validation-bundle-continuation-policy-gate.json` and currently returns `go` for the checked-in evidence window because the latest indexed bundles now include repeated `ray` coverage across multiple runs. `run_all.sh` refreshes the gate automatically during closeout; set `BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1` if you want a `hold` result to fail the command.
+This writes `docs/reports/validation-bundle-continuation-policy-gate.json` and currently returns `go` for the checked-in evidence window because the latest indexed bundles now include repeated `ray` coverage across multiple runs. `run_all.sh` refreshes the gate automatically during closeout and now defaults unattended runs to `BIGCLAW_E2E_CONTINUATION_GATE_MODE=hold`, so stale or incomplete evidence exits with code `2`.
 
 For workflow behavior, prefer `BIGCLAW_E2E_CONTINUATION_GATE_MODE`:
 
-- `review` keeps the gate reviewer-visible but does not fail the workflow on `hold`
+- `review` keeps the gate reviewer-visible but does not fail the workflow on `hold`; use this for local debugging or evidence inspection
 - `hold` exits with code `2` when the evidence is stale or incomplete
 - `fail` exits with code `1` when the evidence is stale or incomplete
 
-`BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1` remains as a compatibility alias for `BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail`. `run_all.sh` now rerenders the bundle README and `docs/reports/live-validation-index.md` after the gate refresh so the exported reviewer surface always reflects the latest gate mode and outcome from the same run.
+`BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1` remains as a compatibility alias for `BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail`. Set `BIGCLAW_E2E_CONTINUATION_GATE_MODE=review` when you explicitly want a review-only local run. `run_all.sh` rerenders the bundle README and `docs/reports/live-validation-index.md` after the gate refresh so the exported reviewer surface always reflects the latest gate mode and outcome from the same run.
 
 ## Mixed workload matrix
 
@@ -99,6 +99,18 @@ python3 scripts/e2e/mixed_workload_matrix.py \
 ```
 
 This validates one control-plane instance against a more production-like mix of `local`, tool-routed `kubernetes`, tool-routed `ray`, and high-risk isolation scenarios.
+
+## External-store remote event-log validation lane
+
+```bash
+cd bigclaw-go
+python3 scripts/e2e/external_store_validation.py \
+  --report-path docs/reports/external-store-validation-report.json
+```
+
+This lane starts one repo-native SQLite-backed event-log service node plus two client `bigclawd` nodes configured with `BIGCLAW_EVENT_LOG_REMOTE_URL`. It validates that replay, checkpoint reset history, persisted retention boundaries, and lease-backed takeover behavior remain reviewable when the event log moves behind a remote HTTP service boundary.
+
+The checked-in output lives at `docs/reports/external-store-validation-report.json`. Its `backend_matrix` now makes the backend posture machine-readable instead of leaving it in prose alone: `http_remote_service` is `live_validated`, `broker_replicated` is a deterministic `not_configured` placeholder, and `quorum_replicated` is a `contract_only` placeholder. Replay and checkpoint state are remote-service-backed, while takeover still relies on the shared durable lease store.
 
 ## Multi-node shared queue proof
 

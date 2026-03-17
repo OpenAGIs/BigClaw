@@ -78,44 +78,48 @@
       "OPE-257",
       "OPE-272",
       "OPE-273",
-      "OPE-274"
+      "OPE-274",
+      "OPE-1",
+      "OPE-2",
+      "OPE-3",
+      "OPE-4"
     ],
     "active": [
-      "OPE-260",
-      "OPE-261",
-      "OPE-262",
-      "OPE-263"
+      "OPE-5",
+      "OPE-6",
+      "OPE-12",
+      "OPE-21"
     ],
     "standby": []
   },
   "issue_order": [
-    "OPE-260",
-    "OPE-261",
-    "OPE-262",
-    "OPE-263"
+    "OPE-5",
+    "OPE-6",
+    "OPE-12",
+    "OPE-21"
   ],
   "issues": [
     {
-      "identifier": "OPE-260",
-      "title": "BIG-PAR-104 ambiguous publish outcome proof summary from broker stub matrix",
-      "track": "Distributed Diagnostics & Rollout",
-      "status": "In Progress"
-    },
-    {
-      "identifier": "OPE-261",
-      "title": "BIG-PAR-105 broker stub live fanout isolation evidence pack",
+      "identifier": "OPE-5",
+      "title": "BIG-PAR-100 admission-policy summary from capacity certification",
       "track": "Parallel Validation Matrix",
       "status": "In Progress"
     },
     {
-      "identifier": "OPE-262",
-      "title": "BIG-PAR-106 cross-process coordination capability surface in debug and control center",
+      "identifier": "OPE-6",
+      "title": "BIG-PAR-101 leader-election capability matrix and backend posture",
       "track": "Shared Queue & Coordination",
       "status": "In Progress"
     },
     {
-      "identifier": "OPE-263",
-      "title": "BIG-PAR-107 durable dedupe readiness scorecard for HTTP and broker event logs",
+      "identifier": "OPE-12",
+      "title": "BIG-PAR-102 external-store validation backend matrix and broker placeholders",
+      "track": "Shared Queue & Coordination",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-21",
+      "title": "BIG-PAR-103 broker bootstrap readiness summary in validation exports",
       "track": "Distributed Diagnostics & Rollout",
       "status": "In Progress"
     }

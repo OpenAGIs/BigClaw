@@ -13,6 +13,7 @@ LATEST_REPORTS = {
     'ray': 'docs/reports/ray-live-smoke-report.json',
 }
 BROKER_SUMMARY = 'docs/reports/broker-validation-summary.json'
+BROKER_BOOTSTRAP_SUMMARY = 'docs/reports/broker-bootstrap-review-summary.json'
 BROKER_VALIDATION_PACK = 'docs/reports/broker-failover-fault-injection-validation-pack.md'
 SHARED_QUEUE_REPORT = 'docs/reports/multi-node-shared-queue-report.json'
 SHARED_QUEUE_SUMMARY = 'docs/reports/shared-queue-companion-summary.json'
@@ -216,18 +217,41 @@ def build_broker_section(
     backend: str,
     root: Path,
     bundle_dir: Path,
+    bootstrap_summary_path: Path | None,
     report_path: Path | None,
 ) -> dict[str, Any]:
     bundle_summary_path = bundle_dir / 'broker-validation-summary.json'
+    bundle_bootstrap_summary_path = bundle_dir / 'broker-bootstrap-review-summary.json'
     section: dict[str, Any] = {
         'enabled': enabled,
         'backend': backend or None,
         'bundle_summary_path': relpath(bundle_summary_path, root),
         'canonical_summary_path': BROKER_SUMMARY,
+        'bundle_bootstrap_summary_path': relpath(bundle_bootstrap_summary_path, root),
+        'canonical_bootstrap_summary_path': BROKER_BOOTSTRAP_SUMMARY,
         'validation_pack_path': BROKER_VALIDATION_PACK,
     }
     configuration_state = 'configured' if enabled and backend else 'not_configured'
     section['configuration_state'] = configuration_state
+    bootstrap_summary = read_json(bootstrap_summary_path) if bootstrap_summary_path else None
+    if isinstance(bootstrap_summary, dict):
+        copied_bootstrap = copy_json_artifact(bootstrap_summary_path, bundle_bootstrap_summary_path)
+        if copied_bootstrap:
+            section['bundle_bootstrap_summary_path'] = relpath(Path(copied_bootstrap), root)
+        canonical_bootstrap = copy_json_artifact(bootstrap_summary_path, root / BROKER_BOOTSTRAP_SUMMARY)
+        if canonical_bootstrap:
+            section['canonical_bootstrap_summary_path'] = relpath(Path(canonical_bootstrap), root)
+        section['bootstrap_summary'] = bootstrap_summary
+        section['bootstrap_ready'] = bool(bootstrap_summary.get('ready'))
+        section['runtime_posture'] = bootstrap_summary.get('runtime_posture')
+        section['live_adapter_implemented'] = bool(bootstrap_summary.get('live_adapter_implemented'))
+        section['proof_boundary'] = bootstrap_summary.get('proof_boundary')
+        validation_errors = bootstrap_summary.get('validation_errors')
+        if isinstance(validation_errors, list):
+            section['validation_errors'] = validation_errors
+        completeness = bootstrap_summary.get('config_completeness')
+        if isinstance(completeness, dict):
+            section['config_completeness'] = completeness
 
     if not enabled or not backend:
         section['status'] = 'skipped'
@@ -353,9 +377,30 @@ def render_index(
         lines.append(f"- Configuration state: `{broker['configuration_state']}`")
         lines.append(f"- Bundle summary: `{broker['bundle_summary_path']}`")
         lines.append(f"- Canonical summary: `{broker['canonical_summary_path']}`")
+        lines.append(f"- Bundle bootstrap summary: `{broker['bundle_bootstrap_summary_path']}`")
+        lines.append(f"- Canonical bootstrap summary: `{broker['canonical_bootstrap_summary_path']}`")
         lines.append(f"- Validation pack: `{broker['validation_pack_path']}`")
         if broker.get('backend'):
             lines.append(f"- Backend: `{broker['backend']}`")
+        if broker.get('bootstrap_ready') is not None:
+            lines.append(f"- Bootstrap ready: `{broker['bootstrap_ready']}`")
+        if broker.get('runtime_posture'):
+            lines.append(f"- Runtime posture: `{broker['runtime_posture']}`")
+        if broker.get('live_adapter_implemented') is not None:
+            lines.append(f"- Live adapter implemented: `{broker['live_adapter_implemented']}`")
+        completeness = broker.get('config_completeness')
+        if isinstance(completeness, dict):
+            lines.append(
+                "- Config completeness: "
+                f"driver=`{completeness.get('driver', False)}` "
+                f"urls=`{completeness.get('urls', False)}` "
+                f"topic=`{completeness.get('topic', False)}` "
+                f"consumer_group=`{completeness.get('consumer_group', False)}`"
+            )
+        if broker.get('proof_boundary'):
+            lines.append(f"- Proof boundary: `{broker['proof_boundary']}`")
+        for error in broker.get('validation_errors', []):
+            lines.append(f"- Validation error: `{error}`")
         if broker.get('bundle_report_path'):
             lines.append(f"- Bundle report: `{broker['bundle_report_path']}`")
         if broker.get('canonical_report_path'):
@@ -449,6 +494,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--run-broker', default='0')
     parser.add_argument('--broker-backend', default='')
     parser.add_argument('--broker-report-path', default='')
+    parser.add_argument('--broker-bootstrap-summary-path', default='')
     parser.add_argument('--local-report-path', required=True)
     parser.add_argument('--local-stdout-path', required=True)
     parser.add_argument('--local-stderr-path', required=True)
@@ -510,6 +556,7 @@ def main() -> int:
         backend=args.broker_backend.strip(),
         root=root,
         bundle_dir=bundle_dir,
+        bootstrap_summary_path=(root / args.broker_bootstrap_summary_path) if args.broker_bootstrap_summary_path else None,
         report_path=(root / args.broker_report_path) if args.broker_report_path else None,
     )
     summary['shared_queue_companion'] = build_shared_queue_companion(root, bundle_dir)
