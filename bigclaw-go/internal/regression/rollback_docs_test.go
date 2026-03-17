@@ -48,6 +48,10 @@ func TestRollbackDocsStayAligned(t *testing.T) {
 				"current trigger surface and manual rollback guardrails",
 				"rollback-trigger-surface.json",
 				"OPE-254` / `BIG-PAR-088",
+				"GET /debug/status` rollback trigger payload",
+				"GET /v2/control-center` migration review rollback trigger payload",
+				"`rollback_trigger_surface`",
+				"`distributed_diagnostics.migration_review_pack.rollback_trigger_surface`",
 			},
 		},
 		{
@@ -56,6 +60,8 @@ func TestRollbackDocsStayAligned(t *testing.T) {
 				"rollback safeguard trigger surface",
 				"rollback-trigger-surface.json",
 				"OPE-254` / `BIG-PAR-088",
+				"GET /debug/status",
+				"distributed_diagnostics.migration_review_pack.rollback_trigger_surface",
 			},
 		},
 		{

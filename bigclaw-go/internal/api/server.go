@@ -203,6 +203,7 @@ func (s *Server) Handler() http.Handler {
 			"coordination_capability_surface": coordinationCapabilitySurfacePayload(),
 			"delivery_ack_readiness":          deliveryAckReadinessPayload(),
 			"live_shadow_mirror_scorecard":    liveShadowMirrorPayload(),
+			"rollback_trigger_surface":        rollbackTriggerSurfacePayload(),
 			"broker_stub_fanout_isolation":    brokerStubFanoutIsolationPayload(),
 		}
 		if s.Worker != nil {

@@ -516,6 +516,76 @@ func TestDebugStatusIncludesLiveShadowMirrorScorecard(t *testing.T) {
 	}
 }
 
+func TestDebugStatusIncludesRollbackTriggerSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		RollbackTrigger struct {
+			ReportPath string `json:"report_path"`
+			Issue      struct {
+				ID   string `json:"id"`
+				Slug string `json:"slug"`
+			} `json:"issue"`
+			Summary struct {
+				Status                   string `json:"status"`
+				AutomationBoundary       string `json:"automation_boundary"`
+				AutomatedRollbackTrigger bool   `json:"automated_rollback_trigger"`
+				CutoverGate              string `json:"cutover_gate"`
+				Distinctions             struct {
+					Blockers        int `json:"blockers"`
+					Warnings        int `json:"warnings"`
+					ManualOnlyPaths int `json:"manual_only_paths"`
+				} `json:"distinctions"`
+			} `json:"summary"`
+			SharedGuardrailSummary struct {
+				DigestPath             string `json:"digest_path"`
+				MigrationReadinessPath string `json:"migration_readiness_path"`
+				LiveShadowIndexPath    string `json:"live_shadow_index_path"`
+				LiveShadowRollupPath   string `json:"live_shadow_rollup_path"`
+			} `json:"shared_guardrail_summary"`
+			Warnings        []map[string]any `json:"warnings"`
+			Blockers        []map[string]any `json:"blockers"`
+			ManualOnlyPaths []map[string]any `json:"manual_only_paths"`
+			ReviewerLinks   []string         `json:"reviewer_links"`
+		} `json:"rollback_trigger_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug rollback payload: %v", err)
+	}
+	if decoded.RollbackTrigger.ReportPath != rollbackTriggerSurfacePath || decoded.RollbackTrigger.Issue.ID != "OPE-254" || decoded.RollbackTrigger.Issue.Slug != "BIG-PAR-088" {
+		t.Fatalf("unexpected rollback trigger metadata: %+v", decoded.RollbackTrigger)
+	}
+	if decoded.RollbackTrigger.Summary.Status != "manual-review-required" || decoded.RollbackTrigger.Summary.AutomationBoundary != "manual_only" || decoded.RollbackTrigger.Summary.AutomatedRollbackTrigger || decoded.RollbackTrigger.Summary.CutoverGate != "reviewer_enforced" {
+		t.Fatalf("unexpected rollback trigger summary: %+v", decoded.RollbackTrigger.Summary)
+	}
+	if decoded.RollbackTrigger.Summary.Distinctions.Blockers != 3 || decoded.RollbackTrigger.Summary.Distinctions.Warnings != 1 || decoded.RollbackTrigger.Summary.Distinctions.ManualOnlyPaths != 2 {
+		t.Fatalf("unexpected rollback distinctions: %+v", decoded.RollbackTrigger.Summary.Distinctions)
+	}
+	if decoded.RollbackTrigger.SharedGuardrailSummary.DigestPath != "docs/reports/rollback-safeguard-follow-up-digest.md" || decoded.RollbackTrigger.SharedGuardrailSummary.MigrationReadinessPath != migrationReadinessReportPath || decoded.RollbackTrigger.SharedGuardrailSummary.LiveShadowIndexPath != liveShadowIndexPath || decoded.RollbackTrigger.SharedGuardrailSummary.LiveShadowRollupPath != "docs/reports/live-shadow-drift-rollup.json" {
+		t.Fatalf("unexpected rollback guardrail summary: %+v", decoded.RollbackTrigger.SharedGuardrailSummary)
+	}
+	if len(decoded.RollbackTrigger.Warnings) != 1 || len(decoded.RollbackTrigger.Blockers) != 3 || len(decoded.RollbackTrigger.ManualOnlyPaths) != 2 {
+		t.Fatalf("unexpected rollback collections: %+v", decoded.RollbackTrigger)
+	}
+	if len(decoded.RollbackTrigger.ReviewerLinks) == 0 || decoded.RollbackTrigger.ReviewerLinks[0] != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected rollback reviewer links: %+v", decoded.RollbackTrigger.ReviewerLinks)
+	}
+	if !strings.Contains(response.Body.String(), "\"rollback_trigger_surface\"") || !strings.Contains(response.Body.String(), "\"cutover_gate\":\"reviewer_enforced\"") {
+		t.Fatalf("expected rollback trigger payload in response, got %s", response.Body.String())
+	}
+}
+
 func TestDebugStatusIncludesDeliveryAckReadinessSurface(t *testing.T) {
 	server := &Server{
 		Recorder: observability.NewRecorder(),
@@ -2205,15 +2275,34 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 				ReviewerLinks      []string `json:"reviewer_links"`
 			} `json:"broker_review_pack"`
 			MigrationReviewPack struct {
-				Status                    string   `json:"status"`
-				ReadinessReportPath       string   `json:"readiness_report_path"`
-				ScorecardPath             string   `json:"scorecard_path"`
-				CanonicalSummaryPath      string   `json:"canonical_summary_path"`
-				SummaryPath               string   `json:"summary_path"`
-				IndexPath                 string   `json:"index_path"`
-				FollowUpDigestPath        string   `json:"follow_up_digest_path"`
-				RollbackTriggerPath       string   `json:"rollback_trigger_path"`
-				ReviewerLinks             []string `json:"reviewer_links"`
+				Status                 string   `json:"status"`
+				ReadinessReportPath    string   `json:"readiness_report_path"`
+				ScorecardPath          string   `json:"scorecard_path"`
+				CanonicalSummaryPath   string   `json:"canonical_summary_path"`
+				SummaryPath            string   `json:"summary_path"`
+				IndexPath              string   `json:"index_path"`
+				FollowUpDigestPath     string   `json:"follow_up_digest_path"`
+				RollbackTriggerPath    string   `json:"rollback_trigger_path"`
+				ReviewerLinks          []string `json:"reviewer_links"`
+				RollbackTriggerSurface struct {
+					ReportPath string `json:"report_path"`
+					Issue      struct {
+						ID   string `json:"id"`
+						Slug string `json:"slug"`
+					} `json:"issue"`
+					Summary struct {
+						Status                   string `json:"status"`
+						AutomationBoundary       string `json:"automation_boundary"`
+						AutomatedRollbackTrigger bool   `json:"automated_rollback_trigger"`
+						CutoverGate              string `json:"cutover_gate"`
+						Distinctions             struct {
+							Blockers        int `json:"blockers"`
+							Warnings        int `json:"warnings"`
+							ManualOnlyPaths int `json:"manual_only_paths"`
+						} `json:"distinctions"`
+					} `json:"summary"`
+					ReviewerLinks []string `json:"reviewer_links"`
+				} `json:"rollback_trigger_surface"`
 				LiveShadowMirrorScorecard struct {
 					ReportPath           string `json:"report_path"`
 					CanonicalSummaryPath string `json:"canonical_summary_path"`
@@ -2336,6 +2425,21 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerPath != rollbackTriggerSurfacePath {
 		t.Fatalf("unexpected migration review pack payload: %+v", decoded.Diagnostics.MigrationReviewPack)
 	}
+	if decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReportPath != rollbackTriggerSurfacePath ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Issue.ID != "OPE-254" ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Issue.Slug != "BIG-PAR-088" ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Status != "manual-review-required" ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.AutomationBoundary != "manual_only" ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.AutomatedRollbackTrigger ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.CutoverGate != "reviewer_enforced" ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Distinctions.Blockers != 3 ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Distinctions.Warnings != 1 ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Distinctions.ManualOnlyPaths != 2 {
+		t.Fatalf("unexpected migration rollback trigger payload: %+v", decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface)
+	}
+	if len(decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReviewerLinks) == 0 || decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReviewerLinks[0] != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected migration rollback reviewer links: %+v", decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReviewerLinks)
+	}
 	if decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.ReportPath != liveShadowMirrorScorecardPath ||
 		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.CanonicalSummaryPath != liveShadowSummaryPath ||
 		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.ParityOKCount != 4 ||
@@ -2384,6 +2488,7 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Live Shadow Mirror Scorecard") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Failover Review Pack") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Migration Readiness Review Pack") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Rollback Trigger Surface") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Stub Live Fanout Isolation") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Delivery Acknowledgement Readiness") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, liveShadowSummaryPath) ||
@@ -2391,6 +2496,7 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, migrationReadinessReportPath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, liveShadowComparisonFollowUpDigestPath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, rollbackTriggerSurfacePath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "reviewer_enforced") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-validation-summary.json") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, brokerStubFanoutIsolationEvidencePackPath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, deliveryAckReadinessSurfacePath) ||
