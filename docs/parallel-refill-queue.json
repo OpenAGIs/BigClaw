@@ -14,7 +14,7 @@
       "Backlog",
       "Todo"
     ],
-    "blocked_reason": "Linear workspace issue quota still blocks net-new issues, so the active batch uses recycled done issue slots"
+    "blocked_reason": "As of March 17, 2026, the tracked BigClaw v5.0 batch is fully done; add a new recycled issue set before automatic refill resumes."
   },
   "recent_batches": {
     "completed": [
@@ -75,46 +75,14 @@
       "OPE-254",
       "OPE-255",
       "OPE-256",
-      "OPE-257"
-    ],
-    "active": [
+      "OPE-257",
       "OPE-272",
       "OPE-273",
-      "OPE-274",
-      "OPE-271"
+      "OPE-274"
     ],
+    "active": [],
     "standby": []
   },
-  "issue_order": [
-    "OPE-272",
-    "OPE-273",
-    "OPE-274",
-    "OPE-271"
-  ],
-  "issues": [
-    {
-      "identifier": "OPE-272",
-      "title": "BIG-PAR-096 deterministic broker failover scenario runner and stub backend",
-      "track": "Parallel Validation Matrix",
-      "status": "In Progress"
-    },
-    {
-      "identifier": "OPE-273",
-      "title": "BIG-PAR-097 broker durability rollout scorecard and debug summary",
-      "track": "Distributed Diagnostics & Rollout",
-      "status": "In Progress"
-    },
-    {
-      "identifier": "OPE-274",
-      "title": "BIG-PAR-098 broker validation lane scaffold in live bundle export",
-      "track": "Parallel Validation Matrix",
-      "status": "In Progress"
-    },
-    {
-      "identifier": "OPE-271",
-      "title": "BIG-PAR-099 rollout rollback policy gate across local Kubernetes and Ray",
-      "track": "Distributed Diagnostics & Rollout",
-      "status": "In Progress"
-    }
-  ]
+  "issue_order": [],
+  "issues": []
 }

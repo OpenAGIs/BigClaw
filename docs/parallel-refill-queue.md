@@ -20,21 +20,15 @@ manual operator can refill the next parallel-safe issues in a stable order.
 - Use the queue order below as the single source of truth for refill priority.
 - Every substantive code-bearing update must be committed and pushed to GitHub immediately, with local/remote SHA equality verification after each push.
 - Shared mirror bootstrap remains mandatory so multiple Symphony issues reuse one local mirror/seed cache instead of re-downloading the repo.
-- Linear workspace issue quota still blocks net-new issues, so this batch uses recycled done issue slots.
+- As of March 17, 2026, the tracked BigClaw v5.0 batch is fully done; add a new recycled issue set before automatic refill resumes.
 
 ## Current batch
 
 - Active:
-  - `OPE-272` — `BIG-PAR-096` deterministic broker failover scenario runner and stub backend
-  - `OPE-273` — `BIG-PAR-097` broker durability rollout scorecard and debug summary
-  - `OPE-274` — `BIG-PAR-098` broker validation lane scaffold in live bundle export
-  - `OPE-271` — `BIG-PAR-099` rollout rollback policy gate across local Kubernetes and Ray
+  - none; `OPE-271`, `OPE-272`, `OPE-273`, and `OPE-274` are now done
 - Ready to promote:
-  - none; current batch is already fully active
+  - none; no `Backlog` or `Todo` issues remain in the current project
 
 ## Canonical refill order
 
-1. `OPE-272`
-2. `OPE-273`
-3. `OPE-274`
-4. `OPE-271`
+- none; refresh this queue after the next recycled issue batch is selected
