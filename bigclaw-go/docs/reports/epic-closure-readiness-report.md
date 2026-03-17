@@ -32,7 +32,7 @@ The three previously open closure items are now covered by fresh same-day eviden
 - more production-like mixed workload routing and execution
 - concrete two-node shared-queue coordination proof
 
-This does not magically turn the system into production-grade distributed infrastructure, but it does make the current rewrite epic complete enough to close in Linear. Remaining work is now follow-up hardening, not missing baseline evidence. One of those hardening lanes now has a concrete repo-native external-store proof in `docs/reports/external-store-validation-report.json`, which validates remote HTTP event-log replay, checkpoint, retention-boundary, and shared-lease takeover behavior beyond the single-process embedded-log path.
+This does not magically turn the system into production-grade distributed infrastructure, but it does make the current rewrite epic complete enough to close in Linear. Remaining work is now follow-up hardening, not missing baseline evidence. One of those hardening lanes now has a concrete repo-native external-store proof in `docs/reports/external-store-validation-report.json`, which validates remote HTTP event-log replay, checkpoint, retention-boundary, and shared-lease takeover behavior beyond the single-process embedded-log path. The report's backend matrix also keeps the remaining follow-up honest by marking `broker_replicated` as `not_configured` and `quorum_replicated` as `contract_only`.
 
 ## Artifacts
 

@@ -48,7 +48,7 @@
 
 - The capacity certification matrix is now repo-native and reviewer-facing, but it remains a single-instance evidence slice rather than a multi-tenant production admission control policy.
 - A repo-native leader-election scaffold now exists through the subscriber-lease-backed `/coordination/leader` surface plus matching debug/control-center payloads, while the underlying proof remains local/shared-store scoped rather than broker-backed or quorum-backed.
-- A repo-native external-store validation lane now exists in `docs/reports/external-store-validation-report.json`, proving replay, checkpoint reset history, persisted retention boundaries, and shared-lease takeover behavior through the remote HTTP event-log service boundary. Broker-backed or quorum-backed durability validation is still pending beyond that first external-store lane.
+- A repo-native external-store validation lane now exists in `docs/reports/external-store-validation-report.json`, proving replay, checkpoint reset history, persisted retention boundaries, and shared-lease takeover behavior through the remote HTTP event-log service boundary. Its backend matrix now makes the remaining posture explicit as `http_remote_service=live_validated`, `broker_replicated=not_configured`, and `quorum_replicated=contract_only` instead of leaving broker-backed or quorum-backed durability as prose-only caveats.
 
 ## Parallel follow-up digests
 

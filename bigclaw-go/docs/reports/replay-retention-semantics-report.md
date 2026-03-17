@@ -68,6 +68,7 @@ The current Go runtime still uses in-process replay history in `internal/events/
 - Durable backends extending `internal/events` should expose retention watermarks before replay-aware checkpoint cleanup is implemented.
 - SQLite-backed durable logs now persist trimmed replay boundaries across restarts when a retention window is configured, giving operators a stable replay horizon even after reboot.
 - The remote HTTP event-log validation lane in `docs/reports/external-store-validation-report.json` now proves that the same persisted retention-boundary metadata stays visible through a repo-native external-store service boundary, not only when the log is embedded locally.
+- That report's backend matrix keeps the lane split explicit: `http_remote_service` is the checked-in proof, while `broker_replicated` remains `not_configured` and `quorum_replicated` remains `contract_only`.
 
 ## Repo evidence
 
