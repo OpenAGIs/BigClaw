@@ -69,6 +69,17 @@ def test_export_live_shadow_bundle_generates_index_and_rollup(tmp_path: Path) ->
         },
     )
     write_json(
+        reports / 'rollback-trigger-surface.json',
+        {
+            'summary': {
+                'status': 'manual-only',
+                'automation_boundary': 'manual',
+                'automated_rollback_trigger': False,
+                'distinctions': {},
+            },
+        },
+    )
+    write_json(
         reports / 'live-shadow-mirror-scorecard.json',
         {
             'summary': {
@@ -177,6 +188,17 @@ def test_export_live_shadow_bundle_supports_documented_bigclaw_go_cwd(tmp_path: 
                     },
                 }
             ],
+        },
+    )
+    write_json(
+        reports / 'rollback-trigger-surface.json',
+        {
+            'summary': {
+                'status': 'manual-only',
+                'automation_boundary': 'manual',
+                'automated_rollback_trigger': False,
+                'distinctions': {},
+            },
         },
     )
     write_json(
