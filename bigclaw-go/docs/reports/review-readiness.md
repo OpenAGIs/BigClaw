@@ -46,7 +46,7 @@
 ## Follow-up Hardening
 
 - Production-grade capacity certification can remain a follow-up track beyond the current rewrite closure.
-- No dedicated leader-election layer exists yet; current evidence is limited to a local two-node shared-SQLite coordination proof.
+- A repo-native leader-election scaffold now exists through the subscriber-lease-backed `/coordination/leader` surface plus matching debug/control-center payloads, while the underlying proof remains local/shared-store scoped rather than broker-backed or quorum-backed.
 - Higher-scale external-store validation is still pending beyond the current SQLite-backed scope.
 
 ## Parallel follow-up digests

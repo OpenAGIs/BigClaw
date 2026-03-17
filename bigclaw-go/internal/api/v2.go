@@ -1092,6 +1092,7 @@ func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 		"event_durability":                s.EventPlan,
 		"event_log":                       s.eventLogCapabilities(r.Context()),
 		"coordination_capability_surface": coordinationCapabilitySurfacePayload(),
+		"coordination_leader_election":    s.coordinationLeaderElectionPayload(),
 		"summary":                         summarizeControlCenter(queueTasks, filteredDeadLetters),
 		"queue":                           map[string]any{"size": s.Queue.Size(context.Background()), "filtered_size": len(queueTasks), "dead_letters": len(filteredDeadLetters), "tasks": returnedQueueTasks, "cancellable": supportsQueueCancel(s.Queue)},
 		"queue_by_project":                sortedDashboardBreakdowns(queueByProject),
