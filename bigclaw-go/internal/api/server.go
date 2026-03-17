@@ -208,6 +208,7 @@ func (s *Server) Handler() http.Handler {
 			"delivery_ack_readiness":          deliveryAckReadinessPayload(),
 			"publish_ack_outcomes":            publishAckOutcomeSurfacePayload(),
 			"sequence_bridge_surface":         sequenceBridgeSurfacePayload(),
+			"retention_expiry_surface":        retentionExpirySurfacePayload(),
 			"live_shadow_mirror_scorecard":    liveShadowMirrorPayload(),
 			"rollback_trigger_surface":        rollbackTriggerSurfacePayload(),
 			"broker_stub_fanout_isolation":    brokerStubFanoutIsolationPayload(),

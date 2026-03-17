@@ -121,6 +121,7 @@ type distributedDiagnostics struct {
 	DeliveryAckReadiness  deliveryAckReadinessSurface             `json:"delivery_ack_readiness"`
 	PublishAckOutcomes    publishAckOutcomeSurface                `json:"publish_ack_outcomes"`
 	SequenceBridge        sequenceBridgeSurface                   `json:"sequence_bridge_surface"`
+	RetentionExpiry       retentionExpirySurface                  `json:"retention_expiry_surface"`
 	ContinuationGate      validationBundleContinuationGateSurface `json:"validation_bundle_continuation"`
 	TraceBundle           traceExportBundleSummary                `json:"trace_export_bundle"`
 	RolloutReport         distributedDiagnosticsReport            `json:"rollout_report"`
@@ -179,6 +180,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"delivery_ack_readiness":         diagnostics.DeliveryAckReadiness,
 		"publish_ack_outcomes":           diagnostics.PublishAckOutcomes,
 		"sequence_bridge_surface":        diagnostics.SequenceBridge,
+		"retention_expiry_surface":       diagnostics.RetentionExpiry,
 		"validation_bundle_continuation": diagnostics.ContinuationGate,
 		"report":                         diagnostics.RolloutReport,
 	})
@@ -411,6 +413,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		DeliveryAckReadiness:  deliveryAckReadinessPayload(),
 		PublishAckOutcomes:    publishAckOutcomeSurfacePayload(),
 		SequenceBridge:        sequenceBridgeSurfacePayload(),
+		RetentionExpiry:       retentionExpirySurfacePayload(),
 		ContinuationGate:      validationBundleContinuationGatePayload(),
 		TraceBundle:           buildTraceExportBundle(assignments, s.Recorder.TraceSummaries(5)),
 	}
@@ -908,6 +911,33 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.SequenceBridge.NextRuntimeHooks) > 0 {
 		lines = append(lines, "- Next runtime hooks: "+strings.Join(diagnostics.SequenceBridge.NextRuntimeHooks, "; "))
+	}
+	lines = append(lines,
+		"",
+		"## Retention Watermark & Expiry",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.RetentionExpiry.ReportPath),
+		fmt.Sprintf("- Runtime-visible backends: %d", diagnostics.RetentionExpiry.Summary.RuntimeVisibleBackends),
+		fmt.Sprintf("- Persisted-boundary backends: %d", diagnostics.RetentionExpiry.Summary.PersistedBoundaryBackends),
+		fmt.Sprintf("- Fail-closed expiry backends: %d", diagnostics.RetentionExpiry.Summary.FailClosedExpiryBackends),
+		fmt.Sprintf("- Contract-only backends: %d", diagnostics.RetentionExpiry.Summary.ContractOnlyBackends),
+	)
+	for _, backend := range diagnostics.RetentionExpiry.Backends {
+		lines = append(lines, fmt.Sprintf("- %s: readiness=%s visible=%t persisted=%t fail_closed=%t", backend.Backend, backend.RuntimeReadiness, backend.RetainedBoundaryVisible, backend.PersistedBoundaries, backend.FailClosedExpiry))
+		if backend.ReplayBoundarySource != "" {
+			lines = append(lines, "  - replay boundary: "+backend.ReplayBoundarySource)
+		}
+		if backend.CheckpointExpiryHandling != "" {
+			lines = append(lines, "  - expiry handling: "+backend.CheckpointExpiryHandling)
+		}
+		if backend.CheckpointCleanupPolicy != "" {
+			lines = append(lines, "  - checkpoint cleanup: "+backend.CheckpointCleanupPolicy)
+		}
+	}
+	if len(diagnostics.RetentionExpiry.PolicySplit) > 0 {
+		lines = append(lines, "- Policy split: "+strings.Join(diagnostics.RetentionExpiry.PolicySplit, "; "))
+	}
+	if len(diagnostics.RetentionExpiry.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.RetentionExpiry.ReviewerLinks, ", "))
 	}
 	lines = append(lines,
 		"",

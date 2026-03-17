@@ -4334,3 +4334,187 @@ func TestStreamEventCheckpointExpiredDiagnosticsAndReset(t *testing.T) {
 		t.Fatalf("expected checkpoint reset history to remain visible, got %s", historyAfterResume.Body.String())
 	}
 }
+
+func TestDebugStatusIncludesRetentionExpirySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		RetentionExpiry struct {
+			ReportPath string `json:"report_path"`
+			Ticket     string `json:"ticket"`
+			Track      string `json:"track"`
+			Summary    struct {
+				BackendCount              int `json:"backend_count"`
+				RuntimeVisibleBackends    int `json:"runtime_visible_backends"`
+				PersistedBoundaryBackends int `json:"persisted_boundary_backends"`
+				FailClosedExpiryBackends  int `json:"fail_closed_expiry_backends"`
+				ContractOnlyBackends      int `json:"contract_only_backends"`
+			} `json:"summary"`
+			Backends []struct {
+				Backend                 string `json:"backend"`
+				RuntimeReadiness        string `json:"runtime_readiness"`
+				RetainedBoundaryVisible bool   `json:"retained_boundary_visible"`
+				PersistedBoundaries     bool   `json:"persisted_boundaries"`
+				FailClosedExpiry        bool   `json:"fail_closed_expiry"`
+			} `json:"backends"`
+			PolicySplit []string `json:"policy_split"`
+		} `json:"retention_expiry_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode retention expiry payload: %v", err)
+	}
+	if decoded.RetentionExpiry.ReportPath != retentionExpirySurfacePath || decoded.RetentionExpiry.Ticket != "OPE-21" || decoded.RetentionExpiry.Track != "BIG-DUR-103" {
+		t.Fatalf("unexpected retention expiry metadata: %+v", decoded.RetentionExpiry)
+	}
+	if decoded.RetentionExpiry.Summary.BackendCount != 5 || decoded.RetentionExpiry.Summary.RuntimeVisibleBackends != 4 || decoded.RetentionExpiry.Summary.PersistedBoundaryBackends != 2 || decoded.RetentionExpiry.Summary.FailClosedExpiryBackends != 3 || decoded.RetentionExpiry.Summary.ContractOnlyBackends != 1 {
+		t.Fatalf("unexpected retention expiry summary: %+v", decoded.RetentionExpiry.Summary)
+	}
+	if len(decoded.RetentionExpiry.Backends) != 5 || decoded.RetentionExpiry.Backends[1].Backend != "sqlite" || !decoded.RetentionExpiry.Backends[1].PersistedBoundaries || !decoded.RetentionExpiry.Backends[2].FailClosedExpiry {
+		t.Fatalf("unexpected retention expiry backends: %+v", decoded.RetentionExpiry.Backends)
+	}
+	if len(decoded.RetentionExpiry.PolicySplit) != 3 {
+		t.Fatalf("expected retention policy split guidance, got %+v", decoded.RetentionExpiry.PolicySplit)
+	}
+}
+
+func TestV2ControlCenterIncludesRetentionExpirySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5&audit_limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		RetentionExpiry struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				PersistedBoundaryBackends int `json:"persisted_boundary_backends"`
+			} `json:"summary"`
+		} `json:"retention_expiry_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center retention expiry payload: %v", err)
+	}
+	if decoded.RetentionExpiry.ReportPath != retentionExpirySurfacePath || decoded.RetentionExpiry.Summary.PersistedBoundaryBackends != 2 {
+		t.Fatalf("unexpected control center retention expiry payload: %+v", decoded.RetentionExpiry)
+	}
+}
+
+func TestV2DistributedReportIncludesRetentionExpirySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		RetentionExpiry struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				RuntimeVisibleBackends   int `json:"runtime_visible_backends"`
+				FailClosedExpiryBackends int `json:"fail_closed_expiry_backends"`
+			} `json:"summary"`
+		} `json:"retention_expiry_surface"`
+		Report struct {
+			Markdown string `json:"markdown"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed retention expiry payload: %v", err)
+	}
+	if decoded.RetentionExpiry.ReportPath != retentionExpirySurfacePath || decoded.RetentionExpiry.Summary.RuntimeVisibleBackends != 4 || decoded.RetentionExpiry.Summary.FailClosedExpiryBackends != 3 {
+		t.Fatalf("unexpected distributed retention expiry payload: %+v", decoded.RetentionExpiry)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "## Retention Watermark & Expiry") || !strings.Contains(decoded.Report.Markdown, "Fail-closed expiry backends: 3") {
+		t.Fatalf("expected retention expiry markdown section, got %s", decoded.Report.Markdown)
+	}
+}
+
+func TestRemoteEventLogExpiredCheckpointFailsClosedWithRetentionGuidance(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "event-log-remote.db")
+	base := time.Unix(1_700_100_000, 0).UTC()
+	log1, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	for _, event := range []domain.Event{
+		{ID: "evt-remote-expired-1", Type: domain.EventTaskQueued, TaskID: "task-remote-expired", TraceID: "trace-remote-expired", Timestamp: base},
+		{ID: "evt-remote-expired-2", Type: domain.EventTaskStarted, TaskID: "task-remote-expired", TraceID: "trace-remote-expired", Timestamp: base.Add(3 * time.Second)},
+	} {
+		if err := log1.Write(context.Background(), event); err != nil {
+			t.Fatalf("write remote checkpoint event %s: %v", event.ID, err)
+		}
+	}
+	if _, err := log1.Acknowledge("subscriber-remote-expired", "evt-remote-expired-1", base.Add(time.Second)); err != nil {
+		t.Fatalf("ack remote expired checkpoint: %v", err)
+	}
+	if err := log1.Close(); err != nil {
+		t.Fatalf("close first sqlite event log: %v", err)
+	}
+
+	log2, err := events.NewSQLiteEventLogWithOptions(logPath, events.SQLiteEventLogOptions{
+		Retention: 2 * time.Second,
+		Now:       func() time.Time { return base.Add(4 * time.Second) },
+	})
+	if err != nil {
+		t.Fatalf("reopen sqlite event log with retention: %v", err)
+	}
+	defer func() { _ = log2.Close() }()
+	serviceServer := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: log2, Now: func() time.Time { return base.Add(4 * time.Second) }}
+	serviceTS := httptest.NewServer(serviceServer.Handler())
+	defer serviceTS.Close()
+
+	remoteLog, err := events.NewHTTPEventLog(serviceTS.URL+"/internal/events/log", "")
+	if err != nil {
+		t.Fatalf("new remote event log: %v", err)
+	}
+	apiServer := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: remoteLog, Now: func() time.Time { return base.Add(4 * time.Second) }}
+
+	checkpointResponse := httptest.NewRecorder()
+	checkpointRequest := httptest.NewRequest(http.MethodGet, "/stream/events/checkpoints/subscriber-remote-expired", nil)
+	apiServer.Handler().ServeHTTP(checkpointResponse, checkpointRequest)
+	if checkpointResponse.Code != http.StatusOK {
+		t.Fatalf("expected remote checkpoint diagnostics 200, got %d %s", checkpointResponse.Code, checkpointResponse.Body.String())
+	}
+	if !strings.Contains(checkpointResponse.Body.String(), "\"status\":\"expired\"") || !strings.Contains(checkpointResponse.Body.String(), "trimmed_through_sequence") || !strings.Contains(checkpointResponse.Body.String(), "evt-remote-expired-1") {
+		t.Fatalf("expected remote expired checkpoint diagnostics, got %s", checkpointResponse.Body.String())
+	}
+
+	eventsResponse := httptest.NewRecorder()
+	eventsRequest := httptest.NewRequest(http.MethodGet, "/events?subscriber_id=subscriber-remote-expired&trace_id=trace-remote-expired&limit=10", nil)
+	apiServer.Handler().ServeHTTP(eventsResponse, eventsRequest)
+	if eventsResponse.Code != http.StatusConflict {
+		t.Fatalf("expected remote expired checkpoint conflict, got %d %s", eventsResponse.Code, eventsResponse.Body.String())
+	}
+	body := eventsResponse.Body.String()
+	if !strings.Contains(body, "checkpoint_expired") || !strings.Contains(body, "DELETE /stream/events/checkpoints/{subscriber_id}") || !strings.Contains(body, "trimmed_through_sequence") {
+		t.Fatalf("expected remote checkpoint expired payload with retention guidance, got %s", body)
+	}
+}
