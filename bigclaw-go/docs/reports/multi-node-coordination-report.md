@@ -22,6 +22,8 @@
 
 This run proves that two independent `bigclawd` processes can share the same SQLite-backed queue and coordinate task consumption without duplicate terminal execution in the current local topology. The repo now also exposes an explicit leader-election scaffold through `/coordination/leader`, `/debug/status` (`coordination_leader_election`), and `/v2/control-center` (`coordination_leader_election`) so coordinator ownership is modeled directly instead of being inferred only from queue behavior. The hardening remains SQLite-backed and local/shared-store scoped rather than a broker-backed or quorum-backed leader-election system.
 
+The dedicated leader-election capability matrix in `docs/reports/leader-election-capability-surface.json` now makes the backend posture explicit: the shared SQLite subscriber-lease backend is `live_proven`, shared-store takeover hardening is `harness_proven`, and broker-backed or quorum-backed ownership remains `contract_only`.
+
 In the runtime capability matrix, this shared-queue result is the current `live_proven` shared-queue proof. Subscriber takeover, stale-writer fencing, and replay coordination remain `harness_proven` or `contract_only` until the same semantics are emitted by a live multi-node run.
 
 ## Artifact
@@ -30,6 +32,7 @@ In the runtime capability matrix, this shared-queue result is the current `live_
 - `docs/reports/shared-queue-companion-summary.json`
 - `docs/reports/live-validation-index.md`
 - `docs/reports/cross-process-coordination-capability-surface.json`
+- `docs/reports/leader-election-capability-surface.json`
 
 ## Parallel follow-up digests
 
