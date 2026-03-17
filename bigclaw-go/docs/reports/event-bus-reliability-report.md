@@ -22,6 +22,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - Subscriber-group checkpoint lease coordination via `/subscriber-groups/leases` and `/subscriber-groups/checkpoints`
 - Event backend capability and config-validation contract via `internal/events/backend_contract.go`
 - Event-log backend capability probe surfaced through control/debug responses before replay-oriented dispatch
+- Delivery acknowledgement readiness surface via `docs/reports/delivery-ack-readiness-surface.json` and reviewer-facing debug/distributed diagnostics
 
 ## Validated behaviors
 
@@ -60,6 +61,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - `internal/api/server_test.go`
 - `cmd/bigclawd/main.go`
 - `internal/config/config.go`
+- `docs/reports/delivery-ack-readiness-surface.json`
 
 ## Current durability shape
 
@@ -134,7 +136,7 @@ This report summarizes the current event bus reliability evidence and the next r
 
 - No concrete durable external event log exists yet in this checkout; replay still depends on process-local history plus the documented integration plan.
 - Only the SQLite durable consumer dedup backend exists yet; HTTP and broker-backed dedup persistence still need concrete implementations.
-- No delivery acknowledgement protocol exists beyond sink-level best effort.
+- Memory bus delivery acknowledgements remain sink-level best effort; explicit commit acknowledgements exist for SQLite, the remote HTTP event-log service, and the local broker stub, while replicated broker acknowledgements remain contract-only.
 - Lease coordination now has a shared durable SQLite-backed scaffold for shared multi-node subscriber groups, but broker-backed and replicated ownership semantics still need a durable backend beyond SQLite.
 - No runtime partitioned topic model or broker-backed cross-process subscriber coordination exists yet; only the contract-only `PartitionRoute` and `SubscriberOwnershipContract` targets are defined today. See `docs/reports/cross-process-coordination-boundary-digest.md`.
 - Retention watermarks are now exposed for in-memory and durable event-log backends, SQLite-backed logs persist trimmed replay boundaries across restarts, and expired checkpoint resumes now fail closed with explicit reset guidance; the broader compaction semantics remain documented in `docs/reports/replay-retention-semantics-report.md`.
