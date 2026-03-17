@@ -36,6 +36,21 @@ type Capabilities struct {
 	BrokerBacked        bool `json:"broker_backed"`
 }
 
+type PartitionKeyKind string
+
+const (
+	PartitionKeyTraceID   PartitionKeyKind = "trace_id"
+	PartitionKeyTaskID    PartitionKeyKind = "task_id"
+	PartitionKeyEventType PartitionKeyKind = "event_type"
+)
+
+type PartitionRoute struct {
+	Topic         string           `json:"topic"`
+	PartitionKey  PartitionKeyKind `json:"partition_key"`
+	OrderingScope string           `json:"ordering_scope,omitempty"`
+	Description   string           `json:"description,omitempty"`
+}
+
 type ReplayRequest struct {
 	After   Position `json:"after,omitempty"`
 	Limit   int      `json:"limit,omitempty"`
@@ -43,9 +58,28 @@ type ReplayRequest struct {
 	TraceID string   `json:"trace_id,omitempty"`
 }
 
+type OwnershipMode string
+
+const (
+	OwnershipModeExclusive OwnershipMode = "exclusive"
+	OwnershipModeShared    OwnershipMode = "shared"
+)
+
+type SubscriberOwnershipContract struct {
+	SubscriberGroup string            `json:"subscriber_group"`
+	Consumer        string            `json:"consumer"`
+	Mode            OwnershipMode     `json:"mode"`
+	Epoch           int64             `json:"epoch,omitempty"`
+	LeaseToken      string            `json:"lease_token,omitempty"`
+	PartitionHints  []string          `json:"partition_hints,omitempty"`
+	Metadata        map[string]string `json:"metadata,omitempty"`
+}
+
 type SubscriptionRequest struct {
-	Replay ReplayRequest `json:"replay"`
-	Buffer int           `json:"buffer,omitempty"`
+	Replay            ReplayRequest                `json:"replay"`
+	Buffer            int                          `json:"buffer,omitempty"`
+	PartitionRoute    *PartitionRoute              `json:"partition_route,omitempty"`
+	OwnershipContract *SubscriberOwnershipContract `json:"ownership_contract,omitempty"`
 }
 
 type Checkpoint struct {

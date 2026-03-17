@@ -84,6 +84,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - `internal/api/server.go`: operational reporting for current and target durability mode plus runtime capability probes.
 - Subscriber checkpoint persistence, replay endpoints, and dedup ledger surfaces preserve resume and idempotency semantics while moving state out of process-local memory.
 - `internal/events/durability.go`: rollout-facing contract for replicated durability phases, failure domains, and required verification evidence.
+- `internal/events/log.go`: provider-neutral `PartitionRoute` and `SubscriberOwnershipContract` fields now reserve the future partitioned-routing and broker-backed ownership contract surface without claiming runtime support yet.
 
 ## Migration and compatibility constraints
 
@@ -133,7 +134,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - Only the SQLite durable consumer dedup backend exists yet; HTTP and broker-backed dedup persistence still need concrete implementations.
 - No delivery acknowledgement protocol exists beyond sink-level best effort.
 - Lease coordination is currently in-memory and single-process; shared multi-node subscriber groups still need a durable backend.
-- No partitioned topic model or broker-backed cross-process subscriber coordination exists yet; see `docs/reports/cross-process-coordination-boundary-digest.md`.
+- No runtime partitioned topic model or broker-backed cross-process subscriber coordination exists yet; only the contract-only `PartitionRoute` and `SubscriberOwnershipContract` targets are defined today. See `docs/reports/cross-process-coordination-boundary-digest.md`.
 - Retention watermarks are now exposed for in-memory and durable event-log backends, SQLite-backed logs persist trimmed replay boundaries across restarts, and expired checkpoint resumes now fail closed with explicit reset guidance; the broader compaction semantics remain documented in `docs/reports/replay-retention-semantics-report.md`.
 - Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.
 - Multi-subscriber takeover validation now has both a deterministic local harness in `docs/reports/multi-subscriber-takeover-validation-report.md` / `docs/reports/multi-subscriber-takeover-validation-report.json` and a live two-node companion proof in `docs/reports/live-multi-node-subscriber-takeover-report.json`; see `docs/reports/subscriber-takeover-executability-follow-up-digest.md` for the remaining process-local ownership caveat.
@@ -151,11 +152,12 @@ This report summarizes the current event bus reliability evidence and the next r
 ## Next adapter boundary
 
 - `internal/events/log.go` now defines the provider-neutral event-log and checkpoint contract for future broker-backed adapters.
+- `internal/events/log.go` also defines the contract-only `PartitionRoute` and `SubscriberOwnershipContract` target surface for future partitioned topic routing and broker-backed subscriber ownership.
 - `internal/events/memory_log.go` provides the contract-compatible in-memory baseline while BigClaw remains on local fanout.
 - Broker-facing runtime knobs are reserved behind `BIGCLAW_EVENT_LOG_*` env vars so a first provider adapter can land without changing publish/replay/checkpoint callers.
 - No durable external event log yet; replay is process-local history.
 - No delivery acknowledgement protocol beyond sink-level best effort.
-- No partitioned topic model or cross-process subscriber coordination yet; see `docs/reports/cross-process-coordination-boundary-digest.md`.
+- No runtime partitioned topic model or cross-process subscriber coordination yet; only the contract-only `PartitionRoute` and `SubscriberOwnershipContract` targets exist today. See `docs/reports/cross-process-coordination-boundary-digest.md`.
 - Multi-subscriber takeover validation now has both a deterministic local harness in `docs/reports/multi-subscriber-takeover-validation-report.md` / `docs/reports/multi-subscriber-takeover-validation-report.json` and a live two-node companion proof in `docs/reports/live-multi-node-subscriber-takeover-report.json`; see `docs/reports/subscriber-takeover-executability-follow-up-digest.md` for the remaining process-local ownership caveat.
 - `docs/reports/cross-process-coordination-capability-surface.json` now acts as the runtime capability matrix, summarizing which coordination guarantees are `live_proven`, which are `harness_proven`, and which remain `contract_only`.
 
