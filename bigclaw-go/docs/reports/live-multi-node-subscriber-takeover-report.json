@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-16T15:59:51Z",
+  "generated_at": "2026-03-17T02:40:24Z",
   "ticket": "OPE-260",
   "title": "Live multi-node subscriber takeover proof",
   "status": "live-multi-node-proof",
@@ -32,9 +32,9 @@
   ],
   "implementation_path": [
     "run a real two-node bigclawd cluster against one shared SQLite queue",
-    "drive lease acquisition, expiry, fencing, and checkpoint takeover through the live subscriber-group API",
+    "drive lease acquisition, expiry, fencing, and checkpoint takeover through the live subscriber-group API on both nodes against one shared SQLite lease backend",
     "emit canonical per-node takeover audit artifacts beside the checked-in report",
-    "keep broker-backed and replicated subscriber ownership caveats explicit until a shared durable lease backend exists"
+    "keep broker-backed and replicated subscriber ownership caveats explicit until a broker-native lease backend exists"
   ],
   "summary": {
     "scenario_count": 3,
@@ -50,7 +50,7 @@
       "subscriber_group": "live-lease-expiry-stale-writer-rejected-live",
       "primary_subscriber": "node-a",
       "takeover_subscriber": "node-b",
-      "task_or_trace_id": "lease-expiry-stale-writer-rejected-live-task-1-1773676785",
+      "task_or_trace_id": "lease-expiry-stale-writer-rejected-live-task-1-1773715219",
       "audit_assertions": [
         "Per-node audit artifacts record acquisition, expiry, rejection, and takeover transitions for the live API flow.",
         "The live report binds takeover actions to a real shared-queue task trace ID for the same two-node cluster run.",
@@ -68,7 +68,7 @@
       ],
       "lease_owner_timeline": [
         {
-          "timestamp": "2026-03-16T15:59:46Z",
+          "timestamp": "2026-03-17T02:40:20Z",
           "owner": "node-a",
           "event": "lease_acquired",
           "lease_epoch": 1,
@@ -76,7 +76,7 @@
           "checkpoint_event_id": ""
         },
         {
-          "timestamp": "2026-03-16T15:59:47Z",
+          "timestamp": "2026-03-17T02:40:21Z",
           "owner": "node-b",
           "event": "takeover_acquired",
           "lease_epoch": 2,
@@ -90,7 +90,7 @@
         "lease_token": "lease-1",
         "offset": 80,
         "event_id": "evt-80",
-        "updated_at": "2026-03-16T15:59:46.247887Z"
+        "updated_at": "2026-03-17T02:40:20.100724Z"
       },
       "checkpoint_after": {
         "owner": "node-b",
@@ -98,7 +98,7 @@
         "lease_token": "lease-2",
         "offset": 81,
         "event_id": "evt-81",
-        "updated_at": "2026-03-16T15:59:47.568600Z"
+        "updated_at": "2026-03-17T02:40:21.411479Z"
       },
       "replay_start_cursor": {
         "offset": 80,
@@ -119,42 +119,42 @@
       ],
       "event_log_excerpt": [
         {
-          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1773676785-queued",
+          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1773715219-queued",
           "delivered_by": [
             "node-a"
           ],
           "delivery_kind": "task.queued"
         },
         {
-          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1773676785-leased",
+          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1773715219-leased",
           "delivered_by": [
             "node-b"
           ],
           "delivery_kind": "task.leased"
         },
         {
-          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1773676785-routed",
+          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1773715219-routed",
           "delivered_by": [
             "node-b"
           ],
           "delivery_kind": "scheduler.routed"
         },
         {
-          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1773676785-started",
+          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1773715219-started",
           "delivered_by": [
             "node-b"
           ],
           "delivery_kind": "task.started"
         },
         {
-          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1773676785-completed",
+          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1773715219-completed",
           "delivered_by": [
             "node-b"
           ],
           "delivery_kind": "task.completed"
         },
         {
-          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1773676785-cross-node",
+          "event_id": "lease-expiry-stale-writer-rejected-live-task-1-1773715219-cross-node",
           "delivered_by": [
             "node-b"
           ],
@@ -163,16 +163,16 @@
       ],
       "audit_timeline": [
         {
-          "timestamp": "2026-03-16T15:59:46Z",
+          "timestamp": "2026-03-17T02:40:20Z",
           "subscriber": "node-a",
           "action": "lease_acquired",
           "details": {
             "lease_epoch": 1,
-            "coordination_node": "node-a"
+            "api_node": "node-a"
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:46Z",
+          "timestamp": "2026-03-17T02:40:20Z",
           "subscriber": "node-a",
           "action": "checkpoint_committed",
           "details": {
@@ -181,7 +181,7 @@
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:47Z",
+          "timestamp": "2026-03-17T02:40:21Z",
           "subscriber": "node-a",
           "action": "lease_expired",
           "details": {
@@ -189,26 +189,28 @@
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:47Z",
+          "timestamp": "2026-03-17T02:40:21Z",
           "subscriber": "node-b",
           "action": "lease_acquired",
           "details": {
             "lease_epoch": 2,
-            "takeover": true
+            "takeover": true,
+            "api_node": "node-b"
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:47Z",
+          "timestamp": "2026-03-17T02:40:21Z",
           "subscriber": "node-a",
           "action": "lease_fenced",
           "details": {
             "attempted_offset": 81,
             "attempted_event_id": "evt-81",
-            "accepted_owner": "node-b"
+            "accepted_owner": "node-b",
+            "api_node": "node-a"
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:47Z",
+          "timestamp": "2026-03-17T02:40:21Z",
           "subscriber": "node-b",
           "action": "replay_started",
           "details": {
@@ -217,7 +219,7 @@
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:47Z",
+          "timestamp": "2026-03-17T02:40:21Z",
           "subscriber": "node-b",
           "action": "checkpoint_committed",
           "details": {
@@ -273,9 +275,9 @@
       },
       "all_assertions_passed": true,
       "local_limitations": [
-        "The live proof runs against a real two-node shared-queue cluster, but subscriber lease coordination is still process-local and routed through one node per scenario.",
+        "The live proof runs against a real two-node shared-queue cluster and a shared SQLite-backed subscriber lease store rather than one process-local coordinator.",
         "Per-node takeover audit artifacts are emitted by the harness from live API interactions; runtime task audit JSONL remains limited to task lifecycle events.",
-        "This proof closes the schema parity gap for live runs without claiming broker-backed or replicated subscriber ownership."
+        "This proof upgrades ownership to a shared durable scaffold without claiming broker-backed or replicated subscriber ownership."
       ]
     },
     {
@@ -284,7 +286,7 @@
       "subscriber_group": "live-contention-then-takeover-live",
       "primary_subscriber": "node-b",
       "takeover_subscriber": "node-a",
-      "task_or_trace_id": "contention-then-takeover-live-task-2-1773676787",
+      "task_or_trace_id": "contention-then-takeover-live-task-2-1773715221",
       "audit_assertions": [
         "Per-node audit artifacts record acquisition, expiry, rejection, and takeover transitions for the live API flow.",
         "The live report binds takeover actions to a real shared-queue task trace ID for the same two-node cluster run.",
@@ -302,7 +304,7 @@
       ],
       "lease_owner_timeline": [
         {
-          "timestamp": "2026-03-16T15:59:48Z",
+          "timestamp": "2026-03-17T02:40:21Z",
           "owner": "node-b",
           "event": "lease_acquired",
           "lease_epoch": 1,
@@ -310,7 +312,7 @@
           "checkpoint_event_id": ""
         },
         {
-          "timestamp": "2026-03-16T15:59:49Z",
+          "timestamp": "2026-03-17T02:40:23Z",
           "owner": "node-a",
           "event": "takeover_acquired",
           "lease_epoch": 2,
@@ -321,18 +323,18 @@
       "checkpoint_before": {
         "owner": "node-b",
         "lease_epoch": 1,
-        "lease_token": "lease-1",
+        "lease_token": "lease-3",
         "offset": 120,
         "event_id": "evt-120",
-        "updated_at": "2026-03-16T15:59:48.011378Z"
+        "updated_at": "2026-03-17T02:40:21.847826Z"
       },
       "checkpoint_after": {
         "owner": "node-a",
         "lease_epoch": 2,
-        "lease_token": "lease-2",
+        "lease_token": "lease-4",
         "offset": 122,
         "event_id": "evt-122",
-        "updated_at": "2026-03-16T15:59:49.318842Z"
+        "updated_at": "2026-03-17T02:40:23.166944Z"
       },
       "replay_start_cursor": {
         "offset": 120,
@@ -354,35 +356,35 @@
       ],
       "event_log_excerpt": [
         {
-          "event_id": "contention-then-takeover-live-task-2-1773676787-queued",
+          "event_id": "contention-then-takeover-live-task-2-1773715221-queued",
           "delivered_by": [
             "node-b"
           ],
           "delivery_kind": "task.queued"
         },
         {
-          "event_id": "contention-then-takeover-live-task-2-1773676787-leased",
+          "event_id": "contention-then-takeover-live-task-2-1773715221-leased",
           "delivered_by": [
             "node-b"
           ],
           "delivery_kind": "task.leased"
         },
         {
-          "event_id": "contention-then-takeover-live-task-2-1773676787-routed",
+          "event_id": "contention-then-takeover-live-task-2-1773715221-routed",
           "delivered_by": [
             "node-b"
           ],
           "delivery_kind": "scheduler.routed"
         },
         {
-          "event_id": "contention-then-takeover-live-task-2-1773676787-started",
+          "event_id": "contention-then-takeover-live-task-2-1773715221-started",
           "delivered_by": [
             "node-b"
           ],
           "delivery_kind": "task.started"
         },
         {
-          "event_id": "contention-then-takeover-live-task-2-1773676787-completed",
+          "event_id": "contention-then-takeover-live-task-2-1773715221-completed",
           "delivered_by": [
             "node-b"
           ],
@@ -391,26 +393,27 @@
       ],
       "audit_timeline": [
         {
-          "timestamp": "2026-03-16T15:59:48Z",
+          "timestamp": "2026-03-17T02:40:21Z",
           "subscriber": "node-b",
           "action": "lease_acquired",
           "details": {
             "lease_epoch": 1,
-            "coordination_node": "node-b"
+            "api_node": "node-b"
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:48Z",
+          "timestamp": "2026-03-17T02:40:21Z",
           "subscriber": "node-a",
           "action": "lease_rejected",
           "details": {
             "attempted_owner": "node-a",
             "accepted_owner": "node-b",
-            "lease_epoch": 1
+            "lease_epoch": 1,
+            "api_node": "node-a"
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:48Z",
+          "timestamp": "2026-03-17T02:40:21Z",
           "subscriber": "node-b",
           "action": "checkpoint_committed",
           "details": {
@@ -419,7 +422,7 @@
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:49Z",
+          "timestamp": "2026-03-17T02:40:23Z",
           "subscriber": "node-b",
           "action": "lease_expired",
           "details": {
@@ -427,26 +430,28 @@
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:49Z",
+          "timestamp": "2026-03-17T02:40:23Z",
           "subscriber": "node-a",
           "action": "lease_acquired",
           "details": {
             "lease_epoch": 2,
-            "takeover": true
+            "takeover": true,
+            "api_node": "node-a"
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:49Z",
+          "timestamp": "2026-03-17T02:40:23Z",
           "subscriber": "node-b",
           "action": "lease_fenced",
           "details": {
             "attempted_offset": 121,
             "attempted_event_id": "evt-121",
-            "accepted_owner": "node-a"
+            "accepted_owner": "node-a",
+            "api_node": "node-b"
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:49Z",
+          "timestamp": "2026-03-17T02:40:23Z",
           "subscriber": "node-a",
           "action": "replay_started",
           "details": {
@@ -455,7 +460,7 @@
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:49Z",
+          "timestamp": "2026-03-17T02:40:23Z",
           "subscriber": "node-a",
           "action": "checkpoint_committed",
           "details": {
@@ -511,9 +516,9 @@
       },
       "all_assertions_passed": true,
       "local_limitations": [
-        "The live proof runs against a real two-node shared-queue cluster, but subscriber lease coordination is still process-local and routed through one node per scenario.",
+        "The live proof runs against a real two-node shared-queue cluster and a shared SQLite-backed subscriber lease store rather than one process-local coordinator.",
         "Per-node takeover audit artifacts are emitted by the harness from live API interactions; runtime task audit JSONL remains limited to task lifecycle events.",
-        "This proof closes the schema parity gap for live runs without claiming broker-backed or replicated subscriber ownership."
+        "This proof upgrades ownership to a shared durable scaffold without claiming broker-backed or replicated subscriber ownership."
       ]
     },
     {
@@ -522,7 +527,7 @@
       "subscriber_group": "live-idle-primary-takeover-live",
       "primary_subscriber": "node-b",
       "takeover_subscriber": "node-a",
-      "task_or_trace_id": "idle-primary-takeover-live-task-3-1773676789",
+      "task_or_trace_id": "idle-primary-takeover-live-task-3-1773715223",
       "audit_assertions": [
         "Per-node audit artifacts record acquisition, expiry, rejection, and takeover transitions for the live API flow.",
         "The live report binds takeover actions to a real shared-queue task trace ID for the same two-node cluster run.",
@@ -540,7 +545,7 @@
       ],
       "lease_owner_timeline": [
         {
-          "timestamp": "2026-03-16T15:59:49Z",
+          "timestamp": "2026-03-17T02:40:23Z",
           "owner": "node-b",
           "event": "lease_acquired",
           "lease_epoch": 1,
@@ -548,7 +553,7 @@
           "checkpoint_event_id": ""
         },
         {
-          "timestamp": "2026-03-16T15:59:51Z",
+          "timestamp": "2026-03-17T02:40:24Z",
           "owner": "node-a",
           "event": "takeover_acquired",
           "lease_epoch": 2,
@@ -559,18 +564,18 @@
       "checkpoint_before": {
         "owner": "node-b",
         "lease_epoch": 1,
-        "lease_token": "lease-3",
+        "lease_token": "lease-5",
         "offset": 40,
         "event_id": "evt-40",
-        "updated_at": "2026-03-16T15:59:49.765049Z"
+        "updated_at": "2026-03-17T02:40:23.602274Z"
       },
       "checkpoint_after": {
         "owner": "node-a",
         "lease_epoch": 2,
-        "lease_token": "lease-4",
+        "lease_token": "lease-6",
         "offset": 41,
         "event_id": "evt-41",
-        "updated_at": "2026-03-16T15:59:51.084072Z"
+        "updated_at": "2026-03-17T02:40:24.931822Z"
       },
       "replay_start_cursor": {
         "offset": 40,
@@ -591,35 +596,35 @@
       ],
       "event_log_excerpt": [
         {
-          "event_id": "idle-primary-takeover-live-task-3-1773676789-queued",
+          "event_id": "idle-primary-takeover-live-task-3-1773715223-queued",
           "delivered_by": [
             "node-b"
           ],
           "delivery_kind": "task.queued"
         },
         {
-          "event_id": "idle-primary-takeover-live-task-3-1773676789-leased",
+          "event_id": "idle-primary-takeover-live-task-3-1773715223-leased",
           "delivered_by": [
             "node-b"
           ],
           "delivery_kind": "task.leased"
         },
         {
-          "event_id": "idle-primary-takeover-live-task-3-1773676789-routed",
+          "event_id": "idle-primary-takeover-live-task-3-1773715223-routed",
           "delivered_by": [
             "node-b"
           ],
           "delivery_kind": "scheduler.routed"
         },
         {
-          "event_id": "idle-primary-takeover-live-task-3-1773676789-started",
+          "event_id": "idle-primary-takeover-live-task-3-1773715223-started",
           "delivered_by": [
             "node-b"
           ],
           "delivery_kind": "task.started"
         },
         {
-          "event_id": "idle-primary-takeover-live-task-3-1773676789-completed",
+          "event_id": "idle-primary-takeover-live-task-3-1773715223-completed",
           "delivered_by": [
             "node-b"
           ],
@@ -628,16 +633,16 @@
       ],
       "audit_timeline": [
         {
-          "timestamp": "2026-03-16T15:59:49Z",
+          "timestamp": "2026-03-17T02:40:23Z",
           "subscriber": "node-b",
           "action": "lease_acquired",
           "details": {
             "lease_epoch": 1,
-            "coordination_node": "node-a"
+            "api_node": "node-b"
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:49Z",
+          "timestamp": "2026-03-17T02:40:23Z",
           "subscriber": "node-b",
           "action": "checkpoint_committed",
           "details": {
@@ -646,7 +651,7 @@
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:49Z",
+          "timestamp": "2026-03-17T02:40:23Z",
           "subscriber": "node-b",
           "action": "primary_idle",
           "details": {
@@ -654,7 +659,7 @@
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:51Z",
+          "timestamp": "2026-03-17T02:40:24Z",
           "subscriber": "node-b",
           "action": "lease_expired",
           "details": {
@@ -662,26 +667,28 @@
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:51Z",
+          "timestamp": "2026-03-17T02:40:24Z",
           "subscriber": "node-a",
           "action": "lease_acquired",
           "details": {
             "lease_epoch": 2,
-            "takeover": true
+            "takeover": true,
+            "api_node": "node-a"
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:51Z",
+          "timestamp": "2026-03-17T02:40:24Z",
           "subscriber": "node-b",
           "action": "lease_fenced",
           "details": {
             "attempted_offset": 41,
             "attempted_event_id": "evt-41",
-            "accepted_owner": "node-a"
+            "accepted_owner": "node-a",
+            "api_node": "node-b"
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:51Z",
+          "timestamp": "2026-03-17T02:40:24Z",
           "subscriber": "node-a",
           "action": "replay_started",
           "details": {
@@ -690,7 +697,7 @@
           }
         },
         {
-          "timestamp": "2026-03-16T15:59:51Z",
+          "timestamp": "2026-03-17T02:40:24Z",
           "subscriber": "node-a",
           "action": "checkpoint_committed",
           "details": {
@@ -746,14 +753,14 @@
       },
       "all_assertions_passed": true,
       "local_limitations": [
-        "The live proof runs against a real two-node shared-queue cluster, but subscriber lease coordination is still process-local and routed through one node per scenario.",
+        "The live proof runs against a real two-node shared-queue cluster and a shared SQLite-backed subscriber lease store rather than one process-local coordinator.",
         "Per-node takeover audit artifacts are emitted by the harness from live API interactions; runtime task audit JSONL remains limited to task lifecycle events.",
-        "This proof closes the schema parity gap for live runs without claiming broker-backed or replicated subscriber ownership."
+        "This proof upgrades ownership to a shared durable scaffold without claiming broker-backed or replicated subscriber ownership."
       ]
     }
   ],
   "remaining_gaps": [
-    "Subscriber ownership is still coordinated through a process-local lease store rather than a shared durable backend.",
+    "Subscriber ownership now uses a shared durable SQLite scaffold, but it is not yet broker-backed or replicated.",
     "The live proof reuses real shared-queue nodes but does not yet validate broker-backed or replicated subscriber ownership.",
     "Task audit logs are runtime-emitted, while takeover transition audit artifacts are harness-emitted until the server exposes native takeover audit events."
   ]

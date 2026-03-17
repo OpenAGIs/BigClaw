@@ -69,6 +69,7 @@ def reserve_local_base_url():
 
 def build_node_envs(root_state_dir):
     queue_path = root_state_dir / 'shared-queue.db'
+    subscriber_lease_path = root_state_dir / 'shared-subscriber-leases.db'
     node_configs = []
     for node_name in ['node-a', 'node-b']:
         env = os.environ.copy()
@@ -77,6 +78,7 @@ def build_node_envs(root_state_dir):
         env['BIGCLAW_SERVICE_NAME'] = node_name
         env['BIGCLAW_QUEUE_BACKEND'] = 'sqlite'
         env['BIGCLAW_QUEUE_SQLITE_PATH'] = str(queue_path)
+        env['BIGCLAW_SUBSCRIBER_LEASE_SQLITE_PATH'] = str(subscriber_lease_path)
         env['BIGCLAW_AUDIT_LOG_PATH'] = str(root_state_dir / f'{node_name}-audit.jsonl')
         env['BIGCLAW_POLL_INTERVAL'] = env.get('BIGCLAW_POLL_INTERVAL', '100ms')
         node_configs.append({
@@ -346,7 +348,6 @@ def live_scenario_result(
 
 def execute_takeover_scenario(
     *,
-    coordination_node,
     primary_node,
     takeover_node,
     scenario_id,
@@ -374,7 +375,7 @@ def execute_takeover_scenario(
     repo_root = artifact_root.parent.parent.parent
 
     lease = http_json(
-        coordination_node['base_url'] + '/subscriber-groups/leases',
+        primary_node['base_url'] + '/subscriber-groups/leases',
         method='POST',
         payload={
             'group_id': subscriber_group,
@@ -388,7 +389,7 @@ def execute_takeover_scenario(
             'timestamp': utc_iso(),
             'subscriber': primary_node['name'],
             'action': 'lease_acquired',
-            'details': {'lease_epoch': lease['lease_epoch'], 'coordination_node': coordination_node['name']},
+            'details': {'lease_epoch': lease['lease_epoch'], 'api_node': primary_node['name']},
         }
     )
     append_takeover_audit(
@@ -397,15 +398,15 @@ def execute_takeover_scenario(
         primary_node['name'],
         primary_node['name'],
         'lease_acquired',
-        {'lease_epoch': lease['lease_epoch'], 'coordination_node': coordination_node['name']},
-        coordination_node['name'],
+        {'lease_epoch': lease['lease_epoch'], 'api_node': primary_node['name']},
+        primary_node['name'],
     )
     lease_owner_timeline.append(owner_timeline_entry(primary_node['name'], 'lease_acquired', lease))
 
     if include_conflict_probe:
         try:
             http_json(
-                coordination_node['base_url'] + '/subscriber-groups/leases',
+                takeover_node['base_url'] + '/subscriber-groups/leases',
                 method='POST',
                 payload={
                     'group_id': subscriber_group,
@@ -428,7 +429,7 @@ def execute_takeover_scenario(
                     'timestamp': utc_iso(),
                     'subscriber': takeover_node['name'],
                     'action': 'lease_rejected',
-                    'details': details,
+                    'details': {**details, 'api_node': takeover_node['name']},
                 }
             )
             append_takeover_audit(
@@ -437,12 +438,12 @@ def execute_takeover_scenario(
                 takeover_node['name'],
                 takeover_node['name'],
                 'lease_rejected',
-                details,
-                coordination_node['name'],
+                {**details, 'api_node': takeover_node['name']},
+                takeover_node['name'],
             )
 
     lease = http_json(
-        coordination_node['base_url'] + '/subscriber-groups/checkpoints',
+        primary_node['base_url'] + '/subscriber-groups/checkpoints',
         method='POST',
         payload={
             'group_id': subscriber_group,
@@ -469,8 +470,8 @@ def execute_takeover_scenario(
         primary_node['name'],
         primary_node['name'],
         'checkpoint_committed',
-        {'offset': offset_base, 'event_id': f'evt-{offset_base}'},
-        coordination_node['name'],
+        {'offset': offset_base, 'event_id': f'evt-{offset_base}', 'api_node': primary_node['name']},
+        primary_node['name'],
     )
 
     if include_idle_gap:
@@ -488,8 +489,8 @@ def execute_takeover_scenario(
             primary_node['name'],
             primary_node['name'],
             'primary_idle',
-            {'reason': 'subscriber stopped checkpointing before takeover'},
-            coordination_node['name'],
+            {'reason': 'subscriber stopped checkpointing before takeover', 'api_node': primary_node['name']},
+            primary_node['name'],
         )
 
     time.sleep(ttl_seconds + 0.3)
@@ -507,12 +508,12 @@ def execute_takeover_scenario(
         primary_node['name'],
         primary_node['name'],
         'lease_expired',
-        {'last_offset': offset_base},
-        coordination_node['name'],
+        {'last_offset': offset_base, 'api_node': primary_node['name']},
+        primary_node['name'],
     )
 
     takeover_lease = http_json(
-        coordination_node['base_url'] + '/subscriber-groups/leases',
+        takeover_node['base_url'] + '/subscriber-groups/leases',
         method='POST',
         payload={
             'group_id': subscriber_group,
@@ -526,7 +527,7 @@ def execute_takeover_scenario(
             'timestamp': utc_iso(),
             'subscriber': takeover_node['name'],
             'action': 'lease_acquired',
-            'details': {'lease_epoch': takeover_lease['lease_epoch'], 'takeover': True},
+            'details': {'lease_epoch': takeover_lease['lease_epoch'], 'takeover': True, 'api_node': takeover_node['name']},
         }
     )
     append_takeover_audit(
@@ -535,8 +536,8 @@ def execute_takeover_scenario(
         takeover_node['name'],
         takeover_node['name'],
         'lease_acquired',
-        {'lease_epoch': takeover_lease['lease_epoch'], 'takeover': True},
-        coordination_node['name'],
+        {'lease_epoch': takeover_lease['lease_epoch'], 'takeover': True, 'api_node': takeover_node['name']},
+        takeover_node['name'],
     )
     lease_owner_timeline.append(owner_timeline_entry(takeover_node['name'], 'takeover_acquired', takeover_lease))
 
@@ -544,7 +545,7 @@ def execute_takeover_scenario(
     attempted_offset = offset_base + 1
     try:
         http_json(
-            coordination_node['base_url'] + '/subscriber-groups/checkpoints',
+            primary_node['base_url'] + '/subscriber-groups/checkpoints',
             method='POST',
             payload={
                 'group_id': subscriber_group,
@@ -570,7 +571,7 @@ def execute_takeover_scenario(
                 'timestamp': utc_iso(),
                 'subscriber': primary_node['name'],
                 'action': 'lease_fenced',
-                'details': details,
+                'details': {**details, 'api_node': primary_node['name']},
             }
         )
         append_takeover_audit(
@@ -579,8 +580,8 @@ def execute_takeover_scenario(
             primary_node['name'],
             primary_node['name'],
             'lease_fenced',
-            details,
-            coordination_node['name'],
+            {**details, 'api_node': primary_node['name']},
+            primary_node['name'],
         )
 
     audit_timeline.append(
@@ -597,13 +598,13 @@ def execute_takeover_scenario(
         takeover_node['name'],
         takeover_node['name'],
         'replay_started',
-        {'from_offset': offset_base, 'from_event_id': f'evt-{offset_base}'},
-        coordination_node['name'],
+        {'from_offset': offset_base, 'from_event_id': f'evt-{offset_base}', 'api_node': takeover_node['name']},
+        takeover_node['name'],
     )
 
     final_offset = offset_base + len(duplicate_events)
     takeover_lease = http_json(
-        coordination_node['base_url'] + '/subscriber-groups/checkpoints',
+        takeover_node['base_url'] + '/subscriber-groups/checkpoints',
         method='POST',
         payload={
             'group_id': subscriber_group,
@@ -630,8 +631,8 @@ def execute_takeover_scenario(
         takeover_node['name'],
         takeover_node['name'],
         'checkpoint_committed',
-        {'offset': final_offset, 'event_id': f'evt-{final_offset}', 'replayed_tail': True},
-        coordination_node['name'],
+        {'offset': final_offset, 'event_id': f'evt-{final_offset}', 'replayed_tail': True, 'api_node': takeover_node['name']},
+        takeover_node['name'],
     )
 
     if task_summary['completed'] and task_summary['completed'][0] != primary_node['name']:
@@ -675,9 +676,9 @@ def execute_takeover_scenario(
         audit_timeline=audit_timeline,
         event_log_excerpt=task_events,
         local_limitations=[
-            'The live proof runs against a real two-node shared-queue cluster, but subscriber lease coordination is still process-local and routed through one node per scenario.',
+            'The live proof runs against a real two-node shared-queue cluster and a shared SQLite-backed subscriber lease store rather than one process-local coordinator.',
             'Per-node takeover audit artifacts are emitted by the harness from live API interactions; runtime task audit JSONL remains limited to task lifecycle events.',
-            'This proof closes the schema parity gap for live runs without claiming broker-backed or replicated subscriber ownership.',
+            'This proof upgrades ownership to a shared durable scaffold without claiming broker-backed or replicated subscriber ownership.',
         ],
         audit_log_paths=sorted(
             {
@@ -724,9 +725,9 @@ def build_live_takeover_report(scenarios, shared_queue_report_path):
         ],
         'implementation_path': [
             'run a real two-node bigclawd cluster against one shared SQLite queue',
-            'drive lease acquisition, expiry, fencing, and checkpoint takeover through the live subscriber-group API',
+            'drive lease acquisition, expiry, fencing, and checkpoint takeover through the live subscriber-group API on both nodes against one shared SQLite lease backend',
             'emit canonical per-node takeover audit artifacts beside the checked-in report',
-            'keep broker-backed and replicated subscriber ownership caveats explicit until a shared durable lease backend exists',
+            'keep broker-backed and replicated subscriber ownership caveats explicit until a broker-native lease backend exists',
         ],
         'summary': {
             'scenario_count': len(scenarios),
@@ -737,7 +738,7 @@ def build_live_takeover_report(scenarios, shared_queue_report_path):
         },
         'scenarios': scenarios,
         'remaining_gaps': [
-            'Subscriber ownership is still coordinated through a process-local lease store rather than a shared durable backend.',
+            'Subscriber ownership now uses a shared durable SQLite scaffold, but it is not yet broker-backed or replicated.',
             'The live proof reuses real shared-queue nodes but does not yet validate broker-backed or replicated subscriber ownership.',
             'Task audit logs are runtime-emitted, while takeover transition audit artifacts are harness-emitted until the server exposes native takeover audit events.',
         ],
@@ -849,7 +850,6 @@ def main():
 
         live_scenarios = [
             execute_takeover_scenario(
-                coordination_node=node_configs[0],
                 primary_node=node_configs[0],
                 takeover_node=node_configs[1],
                 scenario_id='lease-expiry-stale-writer-rejected-live',
@@ -865,7 +865,6 @@ def main():
                 include_idle_gap=False,
             ),
             execute_takeover_scenario(
-                coordination_node=node_configs[1],
                 primary_node=node_configs[1],
                 takeover_node=node_configs[0],
                 scenario_id='contention-then-takeover-live',
@@ -881,7 +880,6 @@ def main():
                 include_idle_gap=False,
             ),
             execute_takeover_scenario(
-                coordination_node=node_configs[0],
                 primary_node=node_configs[1],
                 takeover_node=node_configs[0],
                 scenario_id='idle-primary-takeover-live',

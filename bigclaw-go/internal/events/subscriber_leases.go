@@ -50,19 +50,57 @@ type CheckpointCommit struct {
 	Now              time.Time
 }
 
+type SubscriberLeaseStore interface {
+	Acquire(request LeaseRequest) (SubscriberLease, error)
+	Commit(request CheckpointCommit) (SubscriberLease, error)
+	Get(groupID string, subscriberID string) (SubscriberLease, bool)
+	Release(groupID string, subscriberID string, consumerID string, leaseToken string, leaseEpoch int64) error
+}
+
 type SubscriberLeaseCoordinator struct {
+	store SubscriberLeaseStore
+}
+
+func NewSubscriberLeaseCoordinator() *SubscriberLeaseCoordinator {
+	return NewSubscriberLeaseCoordinatorWithStore(newMemorySubscriberLeaseStore())
+}
+
+func NewSubscriberLeaseCoordinatorWithStore(store SubscriberLeaseStore) *SubscriberLeaseCoordinator {
+	if store == nil {
+		store = newMemorySubscriberLeaseStore()
+	}
+	return &SubscriberLeaseCoordinator{store: store}
+}
+
+func (c *SubscriberLeaseCoordinator) Acquire(request LeaseRequest) (SubscriberLease, error) {
+	return c.store.Acquire(request)
+}
+
+func (c *SubscriberLeaseCoordinator) Commit(request CheckpointCommit) (SubscriberLease, error) {
+	return c.store.Commit(request)
+}
+
+func (c *SubscriberLeaseCoordinator) Get(groupID string, subscriberID string) (SubscriberLease, bool) {
+	return c.store.Get(groupID, subscriberID)
+}
+
+func (c *SubscriberLeaseCoordinator) Release(groupID string, subscriberID string, consumerID string, leaseToken string, leaseEpoch int64) error {
+	return c.store.Release(groupID, subscriberID, consumerID, leaseToken, leaseEpoch)
+}
+
+type memorySubscriberLeaseStore struct {
 	mu      sync.Mutex
 	leases  map[SubscriberLeaseKey]SubscriberLease
 	counter uint64
 }
 
-func NewSubscriberLeaseCoordinator() *SubscriberLeaseCoordinator {
-	return &SubscriberLeaseCoordinator{
+func newMemorySubscriberLeaseStore() *memorySubscriberLeaseStore {
+	return &memorySubscriberLeaseStore{
 		leases: make(map[SubscriberLeaseKey]SubscriberLease),
 	}
 }
 
-func (c *SubscriberLeaseCoordinator) Acquire(request LeaseRequest) (SubscriberLease, error) {
+func (c *memorySubscriberLeaseStore) Acquire(request LeaseRequest) (SubscriberLease, error) {
 	if request.GroupID == "" || request.SubscriberID == "" || request.ConsumerID == "" {
 		return SubscriberLease{}, fmt.Errorf("group_id, subscriber_id, and consumer_id are required")
 	}
@@ -108,7 +146,7 @@ func (c *SubscriberLeaseCoordinator) Acquire(request LeaseRequest) (SubscriberLe
 	return next, nil
 }
 
-func (c *SubscriberLeaseCoordinator) Commit(request CheckpointCommit) (SubscriberLease, error) {
+func (c *memorySubscriberLeaseStore) Commit(request CheckpointCommit) (SubscriberLease, error) {
 	if request.Now.IsZero() {
 		request.Now = time.Now()
 	}
@@ -138,7 +176,7 @@ func (c *SubscriberLeaseCoordinator) Commit(request CheckpointCommit) (Subscribe
 	return current, nil
 }
 
-func (c *SubscriberLeaseCoordinator) Get(groupID string, subscriberID string) (SubscriberLease, bool) {
+func (c *memorySubscriberLeaseStore) Get(groupID string, subscriberID string) (SubscriberLease, bool) {
 	key := SubscriberLeaseKey{GroupID: groupID, SubscriberID: subscriberID}
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -146,7 +184,7 @@ func (c *SubscriberLeaseCoordinator) Get(groupID string, subscriberID string) (S
 	return lease, ok
 }
 
-func (c *SubscriberLeaseCoordinator) Release(groupID string, subscriberID string, consumerID string, leaseToken string, leaseEpoch int64) error {
+func (c *memorySubscriberLeaseStore) Release(groupID string, subscriberID string, consumerID string, leaseToken string, leaseEpoch int64) error {
 	key := SubscriberLeaseKey{GroupID: groupID, SubscriberID: subscriberID}
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -161,7 +199,7 @@ func (c *SubscriberLeaseCoordinator) Release(groupID string, subscriberID string
 	return nil
 }
 
-func (c *SubscriberLeaseCoordinator) nextToken() string {
+func (c *memorySubscriberLeaseStore) nextToken() string {
 	c.counter++
 	return fmt.Sprintf("lease-%d", c.counter)
 }

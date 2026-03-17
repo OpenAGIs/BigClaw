@@ -82,7 +82,11 @@ func main() {
 	defer closeFairnessStore(fairnessStore)
 
 	controller := control.New()
-	subscriberLeases := events.NewSubscriberLeaseCoordinator()
+	subscriberLeases, err := buildSubscriberLeaseStore(cfg)
+	if err != nil {
+		panic(err)
+	}
+	defer closeSubscriberLeaseStore(subscriberLeases)
 	schedulerRuntime := scheduler.NewWithStores(policyStore, fairnessStore)
 	runtime := &worker.Runtime{
 		WorkerID:    "bootstrap-worker",
@@ -129,6 +133,20 @@ func main() {
 	defer cancel()
 	_ = httpServer.Shutdown(shutdownCtx)
 	fmt.Printf("%s stopped events=%d\n", cfg.ServiceName, len(bus.Replay()))
+}
+
+func buildSubscriberLeaseStore(cfg config.Config) (events.SubscriberLeaseStore, error) {
+	if cfg.SubscriberLeaseSQLitePath == "" {
+		return events.NewSubscriberLeaseCoordinator(), nil
+	}
+	return events.NewSQLiteSubscriberLeaseStore(cfg.SubscriberLeaseSQLitePath)
+}
+
+func closeSubscriberLeaseStore(store events.SubscriberLeaseStore) {
+	type closer interface{ Close() error }
+	if closable, ok := store.(closer); ok {
+		_ = closable.Close()
+	}
 }
 
 func buildEventLog(cfg config.Config) (*events.MemoryLog, error) {

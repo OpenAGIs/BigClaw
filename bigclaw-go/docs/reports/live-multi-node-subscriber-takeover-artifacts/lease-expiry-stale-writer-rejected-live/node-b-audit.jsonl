@@ -1,3 +1,3 @@
-{"timestamp": "2026-03-16T15:59:47Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-a", "action": "lease_acquired", "details": {"lease_epoch": 2, "takeover": true}}
-{"timestamp": "2026-03-16T15:59:47Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-a", "action": "replay_started", "details": {"from_offset": 80, "from_event_id": "evt-80"}}
-{"timestamp": "2026-03-16T15:59:47Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-a", "action": "checkpoint_committed", "details": {"offset": 81, "event_id": "evt-81", "replayed_tail": true}}
+{"timestamp": "2026-03-17T02:40:21Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-b", "action": "lease_acquired", "details": {"lease_epoch": 2, "takeover": true, "api_node": "node-b"}}
+{"timestamp": "2026-03-17T02:40:21Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-b", "action": "replay_started", "details": {"from_offset": 80, "from_event_id": "evt-80", "api_node": "node-b"}}
+{"timestamp": "2026-03-17T02:40:21Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-b", "action": "checkpoint_committed", "details": {"offset": 81, "event_id": "evt-81", "replayed_tail": true, "api_node": "node-b"}}

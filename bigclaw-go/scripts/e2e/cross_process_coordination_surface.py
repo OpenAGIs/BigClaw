@@ -81,14 +81,14 @@ def build_report(
         ),
         capability_row(
             capability='subscriber_takeover_semantics',
-            current_state='implemented_with_process_local_boundary',
+            current_state='implemented_with_shared_durable_scaffold',
             runtime_readiness='live_proven',
             live_local_proof=True,
             deterministic_local_harness=True,
             contract_defined_target=True,
             notes=[
                 'Lease handoff, stale-writer fencing, and duplicate replay accounting are covered by both the deterministic harness and the live two-node companion proof.',
-                'The live proof still routes lease coordination through one node per scenario because subscriber ownership is not yet backed by a shared durable store.',
+                'The live proof now drives both nodes against one shared SQLite lease backend, but broker-backed or replicated ownership is still not implemented.',
             ],
         ),
         capability_row(
@@ -105,14 +105,14 @@ def build_report(
         ),
         capability_row(
             capability='stale_writer_fencing',
-            current_state='implemented_with_process_local_boundary',
+            current_state='implemented_with_shared_durable_scaffold',
             runtime_readiness='live_proven',
             live_local_proof=True,
             deterministic_local_harness=True,
             contract_defined_target=True,
             notes=[
                 'The local takeover harness and the live two-node companion proof both show stale checkpoint writers being fenced after ownership transfer.',
-                'Shared durable subscriber ownership is still missing, so the live proof remains bounded to process-local lease coordination on one node per scenario.',
+                'The shared durable scaffold is SQLite-backed today, so broker-native failover and replication semantics still remain future work.',
             ],
         ),
         capability_row(
@@ -156,13 +156,13 @@ def build_report(
     current_ceiling = [
         'no partitioned topic model',
         'no broker-backed cross-process subscriber coordination',
-        'no shared durable subscriber ownership backend',
+        'no broker-backed or replicated subscriber ownership backend',
     ]
 
     next_hooks = [
-        'back subscriber ownership with a shared durable backend instead of process-local lease state',
         'emit native takeover transition audit events from the runtime instead of harness-authored artifacts',
         'validate broker-backed replay and ownership semantics against the same report schema',
+        'replace the SQLite shared durable scaffold with a broker-backed or replicated ownership backend',
     ]
 
     return {

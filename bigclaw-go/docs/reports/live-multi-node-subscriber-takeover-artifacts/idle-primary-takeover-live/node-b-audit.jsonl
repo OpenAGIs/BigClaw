@@ -1,5 +1,5 @@
-{"timestamp": "2026-03-16T15:59:49Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-a", "action": "lease_acquired", "details": {"lease_epoch": 1, "coordination_node": "node-a"}}
-{"timestamp": "2026-03-16T15:59:49Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-a", "action": "checkpoint_committed", "details": {"offset": 40, "event_id": "evt-40"}}
-{"timestamp": "2026-03-16T15:59:49Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-a", "action": "primary_idle", "details": {"reason": "subscriber stopped checkpointing before takeover"}}
-{"timestamp": "2026-03-16T15:59:51Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-a", "action": "lease_expired", "details": {"last_offset": 40}}
-{"timestamp": "2026-03-16T15:59:51Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-a", "action": "lease_fenced", "details": {"attempted_offset": 41, "attempted_event_id": "evt-41", "accepted_owner": "node-a"}}
+{"timestamp": "2026-03-17T02:40:23Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-b", "action": "lease_acquired", "details": {"lease_epoch": 1, "api_node": "node-b"}}
+{"timestamp": "2026-03-17T02:40:23Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-b", "action": "checkpoint_committed", "details": {"offset": 40, "event_id": "evt-40", "api_node": "node-b"}}
+{"timestamp": "2026-03-17T02:40:23Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-b", "action": "primary_idle", "details": {"reason": "subscriber stopped checkpointing before takeover", "api_node": "node-b"}}
+{"timestamp": "2026-03-17T02:40:24Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-b", "action": "lease_expired", "details": {"last_offset": 40, "api_node": "node-b"}}
+{"timestamp": "2026-03-17T02:40:24Z", "subscriber": "node-b", "node": "node-b", "coordination_node": "node-b", "action": "lease_fenced", "details": {"attempted_offset": 41, "attempted_event_id": "evt-41", "accepted_owner": "node-a", "api_node": "node-b"}}
