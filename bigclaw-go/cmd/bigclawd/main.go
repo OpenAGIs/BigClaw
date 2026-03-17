@@ -50,14 +50,19 @@ func main() {
 		}
 		defer closeEventLog(eventLog)
 	default:
-		if _, err = buildEventLog(cfg); err != nil {
+		eventLog, err = buildEventLog(cfg)
+		if err != nil {
 			panic(err)
+		}
+		if eventLog != nil {
+			eventPlanBackend = eventLog.Backend()
 		}
 	}
 
 	bus := events.NewBus()
 	if eventLog != nil {
 		bus.AddSink(eventLog)
+		bus.SetCapabilities(eventLog.Capabilities())
 	}
 	recorder := buildRecorder(cfg)
 	bus.AddSink(events.RecorderSink{Recorder: recorder})
@@ -149,14 +154,17 @@ func closeSubscriberLeaseStore(store events.SubscriberLeaseStore) {
 	}
 }
 
-func buildEventLog(cfg config.Config) (*events.MemoryLog, error) {
+func buildEventLog(cfg config.Config) (events.EventLog, error) {
 	switch cfg.EventLogBackend {
 	case "", string(events.EventLogBackendMemory):
-		return events.NewMemoryLog(), nil
+		return nil, nil
 	case string(events.EventLogBackendBroker):
 		broker := brokerRuntimeConfig(cfg)
 		if err := broker.Validate(); err != nil {
 			return nil, err
+		}
+		if broker.Driver == events.BrokerDriverStub {
+			return events.NewBrokerStubEventLog(), nil
 		}
 		return nil, fmt.Errorf("event log backend %q is not implemented yet; driver=%s topic=%s contract validated for the future adapter", cfg.EventLogBackend, broker.Driver, broker.Topic)
 	default:

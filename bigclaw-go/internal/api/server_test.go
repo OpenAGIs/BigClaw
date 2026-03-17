@@ -2974,6 +2974,32 @@ func TestDebugStatusIncludesCheckpointResetSummary(t *testing.T) {
 	}
 }
 
+func TestDebugStatusDistinguishesBrokerStubEventLog(t *testing.T) {
+	store := events.NewBrokerStubEventLog()
+	if err := store.Write(context.Background(), domain.Event{
+		ID:        "evt-broker-stub-debug-1",
+		Type:      domain.EventTaskQueued,
+		TaskID:    "task-broker-stub-debug",
+		TraceID:   "trace-broker-stub-debug",
+		Timestamp: time.Now().UTC(),
+	}); err != nil {
+		t.Fatalf("write broker stub event: %v", err)
+	}
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: store, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d", response.Code)
+	}
+	body := response.Body.String()
+	for _, want := range []string{"broker_stub", "process_local_stub", "append_only_stub", "process_memory_stub"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected %q in broker stub debug payload, got %s", want, body)
+		}
+	}
+}
+
 func TestStreamEventCheckpointExpiredDiagnosticsAndReset(t *testing.T) {
 	logPath := filepath.Join(t.TempDir(), "event-log.db")
 	base := time.Unix(1_700_000_000, 0).UTC()

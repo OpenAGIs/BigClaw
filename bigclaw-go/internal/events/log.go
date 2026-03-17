@@ -14,6 +14,8 @@ type EventLogBackend string
 const (
 	EventLogBackendMemory EventLogBackend = "memory"
 	EventLogBackendBroker EventLogBackend = "broker"
+
+	BrokerDriverStub = "stub"
 )
 
 type Position struct {
