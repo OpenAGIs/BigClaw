@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-16T14:52:25.376397Z",
+  "generated_at": "2026-03-16T15:54:25.278091Z",
   "ticket": "BIG-PAR-086-local-prework",
   "title": "Validation bundle continuation scorecard",
   "status": "local-continuation-scorecard",
@@ -19,11 +19,11 @@
     "recent_bundle_count": 3,
     "latest_run_id": "20260316T140138Z",
     "latest_status": "succeeded",
-    "latest_bundle_age_hours": 0.06,
+    "latest_bundle_age_hours": 0.01,
     "latest_all_executor_tracks_succeeded": true,
     "recent_bundle_chain_has_no_failures": true,
     "all_executor_tracks_have_repeated_recent_coverage": true,
-    "bundle_gap_minutes": 2761.75,
+    "bundle_gap_minutes": 2826.67,
     "bundle_root_exists": true
   },
   "executor_lanes": [
@@ -119,7 +119,7 @@
     "recent history is bounded to the exported bundle index and not an always-on service"
   ],
   "next_runtime_hooks": [
-    "enable BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1 in workflow closeout when continuation holds should fail the run",
+    "set BIGCLAW_E2E_CONTINUATION_GATE_MODE=hold or fail in workflow closeout when continuation holds should block or fail the run",
     "decide whether shared-queue coordination should stay as adjacent bundle metadata or gain its own executor-native validation lane",
     "extend the automatic continuation refresh beyond run_all.sh into broader workflow orchestrators",
     "extend the scorecard beyond the latest recent_runs window when more longitudinal evidence exists"

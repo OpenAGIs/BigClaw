@@ -67,9 +67,11 @@ class ValidationBundleContinuationPolicyGateTest(unittest.TestCase):
 
         report = self.build_report()
 
-        self.assertEqual(report['ticket'], 'OPE-271')
+        self.assertEqual(report['ticket'], 'OPE-262')
         self.assertEqual(report['status'], 'policy-go')
         self.assertEqual(report['recommendation'], 'go')
+        self.assertEqual(report['enforcement']['mode'], 'review')
+        self.assertEqual(report['enforcement']['outcome'], 'pass')
         self.assertEqual(report['failing_checks'], [])
         self.assertEqual(report['reviewer_path']['index_path'], 'docs/reports/live-validation-index.md')
 
@@ -92,6 +94,39 @@ class ValidationBundleContinuationPolicyGateTest(unittest.TestCase):
         self.assertTrue(
             any('./scripts/e2e/run_all.sh' in action for action in report['next_actions'])
         )
+
+    def test_build_report_supports_hold_mode_without_failing_generation(self) -> None:
+        self.write_scorecard(recent_bundle_count=1)
+
+        fake_script_path = self.repo_root / 'bigclaw-go' / 'scripts' / 'e2e' / 'validation_bundle_continuation_policy_gate.py'
+        fake_script_path.parent.mkdir(parents=True, exist_ok=True)
+        fake_script_path.write_text('# test shim\n', encoding='utf-8')
+        with unittest.mock.patch.object(MODULE, '__file__', str(fake_script_path)):
+            report = MODULE.build_report(
+                scorecard_path='docs/reports/validation-bundle-continuation-scorecard.json',
+                enforcement_mode='hold',
+            )
+
+        self.assertEqual(report['recommendation'], 'hold')
+        self.assertEqual(report['enforcement']['mode'], 'hold')
+        self.assertEqual(report['enforcement']['outcome'], 'hold')
+        self.assertEqual(report['enforcement']['exit_code'], 2)
+
+    def test_legacy_enforce_flag_maps_to_fail_mode(self) -> None:
+        self.write_scorecard(recent_bundle_count=1)
+
+        fake_script_path = self.repo_root / 'bigclaw-go' / 'scripts' / 'e2e' / 'validation_bundle_continuation_policy_gate.py'
+        fake_script_path.parent.mkdir(parents=True, exist_ok=True)
+        fake_script_path.write_text('# test shim\n', encoding='utf-8')
+        with unittest.mock.patch.object(MODULE, '__file__', str(fake_script_path)):
+            report = MODULE.build_report(
+                scorecard_path='docs/reports/validation-bundle-continuation-scorecard.json',
+                legacy_enforce_continuation_gate=True,
+            )
+
+        self.assertEqual(report['enforcement']['mode'], 'fail')
+        self.assertEqual(report['enforcement']['outcome'], 'fail')
+        self.assertEqual(report['enforcement']['exit_code'], 1)
 
 
 if __name__ == '__main__':

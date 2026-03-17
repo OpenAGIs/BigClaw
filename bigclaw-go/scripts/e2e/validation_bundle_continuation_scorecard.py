@@ -180,7 +180,7 @@ def build_report(
         current_ceiling.append('not every executor lane is enabled across every indexed bundle in the current recent window')
 
     next_runtime_hooks = [
-        'enable BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1 in workflow closeout when continuation holds should fail the run',
+        'set BIGCLAW_E2E_CONTINUATION_GATE_MODE=hold or fail in workflow closeout when continuation holds should block or fail the run',
         'decide whether shared-queue coordination should stay as adjacent bundle metadata or gain its own executor-native validation lane',
         'extend the automatic continuation refresh beyond run_all.sh into broader workflow orchestrators',
         'extend the scorecard beyond the latest recent_runs window when more longitudinal evidence exists',

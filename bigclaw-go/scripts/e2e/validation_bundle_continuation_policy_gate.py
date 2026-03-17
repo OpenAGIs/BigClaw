@@ -25,16 +25,43 @@ def build_check(name, passed, detail):
     return {'name': name, 'passed': passed, 'detail': detail}
 
 
+def normalize_enforcement_mode(enforcement_mode, legacy_enforce_continuation_gate=False):
+    mode = str(enforcement_mode or '').strip().lower()
+    if not mode:
+        mode = 'fail' if legacy_enforce_continuation_gate else 'review'
+    if mode not in {'review', 'hold', 'fail'}:
+        raise ValueError(
+            f"unsupported enforcement mode {enforcement_mode!r}; expected one of review, hold, fail"
+        )
+    return mode
+
+
+def build_enforcement_summary(recommendation, enforcement_mode):
+    if recommendation == 'go':
+        return {'mode': enforcement_mode, 'outcome': 'pass', 'exit_code': 0}
+    if enforcement_mode == 'review':
+        return {'mode': enforcement_mode, 'outcome': 'review-only', 'exit_code': 0}
+    if enforcement_mode == 'hold':
+        return {'mode': enforcement_mode, 'outcome': 'hold', 'exit_code': 2}
+    return {'mode': enforcement_mode, 'outcome': 'fail', 'exit_code': 1}
+
+
 def build_report(
     scorecard_path='bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json',
     max_latest_age_hours=72.0,
     min_recent_bundles=2,
     require_repeated_lane_coverage=True,
+    enforcement_mode=None,
+    legacy_enforce_continuation_gate=False,
 ):
     repo_root = pathlib.Path(__file__).resolve().parents[3]
     scorecard = load_json(resolve_repo_path(repo_root, scorecard_path))
     summary = scorecard['summary']
     shared_queue = scorecard['shared_queue_companion']
+    normalized_mode = normalize_enforcement_mode(
+        enforcement_mode,
+        legacy_enforce_continuation_gate=legacy_enforce_continuation_gate,
+    )
 
     checks = [
         build_check(
@@ -71,6 +98,7 @@ def build_report(
 
     failing_checks = [item['name'] for item in checks if not item['passed']]
     recommendation = 'go' if not failing_checks else 'hold'
+    enforcement = build_enforcement_summary(recommendation, normalized_mode)
     next_actions = []
     if 'latest_bundle_age_within_threshold' in failing_checks:
         next_actions.append('rerun `cd bigclaw-go && ./scripts/e2e/run_all.sh` to refresh the latest validation bundle')
@@ -81,12 +109,12 @@ def build_report(
     if 'repeated_lane_coverage_meets_policy' in failing_checks:
         next_actions.append('refresh another full validation bundle with `ray` enabled so each executor lane has repeated indexed coverage')
     if not next_actions:
-        next_actions.append('enable BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1 when workflow closeout should fail on continuation regressions')
+        next_actions.append('set BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail when workflow closeout should stop on continuation regressions')
 
     return {
         'generated_at': utc_iso(),
-        'ticket': 'OPE-271',
-        'title': 'Workflow-enforced continuation gate for closeout',
+        'ticket': 'OPE-262',
+        'title': 'Validation workflow continuation gate',
         'status': 'policy-go' if recommendation == 'go' else 'policy-hold',
         'recommendation': recommendation,
         'evidence_inputs': {
@@ -98,6 +126,7 @@ def build_report(
             'min_recent_bundles': int(min_recent_bundles),
             'require_repeated_lane_coverage': bool(require_repeated_lane_coverage),
         },
+        'enforcement': enforcement,
         'summary': {
             'latest_run_id': summary.get('latest_run_id'),
             'latest_bundle_age_hours': summary.get('latest_bundle_age_hours'),
@@ -106,6 +135,9 @@ def build_report(
             'recent_bundle_chain_has_no_failures': summary.get('recent_bundle_chain_has_no_failures'),
             'all_executor_tracks_have_repeated_recent_coverage': summary.get('all_executor_tracks_have_repeated_recent_coverage'),
             'recommendation': recommendation,
+            'enforcement_mode': enforcement['mode'],
+            'workflow_outcome': enforcement['outcome'],
+            'workflow_exit_code': enforcement['exit_code'],
             'passing_check_count': len([item for item in checks if item['passed']]),
             'failing_check_count': len(failing_checks),
         },
@@ -128,6 +160,8 @@ def main():
     parser.add_argument('--min-recent-bundles', type=int, default=2)
     parser.add_argument('--require-repeated-lane-coverage', action='store_true', default=True)
     parser.add_argument('--allow-partial-lane-history', action='store_true')
+    parser.add_argument('--enforcement-mode', choices=('review', 'hold', 'fail'))
+    parser.add_argument('--enforce', action='store_true')
     parser.add_argument('--pretty', action='store_true')
     args = parser.parse_args()
 
@@ -137,13 +171,15 @@ def main():
         max_latest_age_hours=args.max_latest_age_hours,
         min_recent_bundles=args.min_recent_bundles,
         require_repeated_lane_coverage=not args.allow_partial_lane_history,
+        enforcement_mode=args.enforcement_mode,
+        legacy_enforce_continuation_gate=args.enforce,
     )
     output_path = resolve_repo_path(repo_root, args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     if args.pretty:
         print(json.dumps(report, indent=2))
-    return 0 if report['recommendation'] == 'go' else 1
+    return int(report['enforcement']['exit_code'])
 
 
 if __name__ == '__main__':
