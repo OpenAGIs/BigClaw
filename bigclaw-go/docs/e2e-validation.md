@@ -57,7 +57,7 @@ export BIGCLAW_QUEUE_BACKEND=sqlite
 ./scripts/e2e/run_all.sh
 ```
 
-The script writes a consolidated summary to `docs/reports/live-validation-summary.json`, refreshes the canonical component reports for local, Kubernetes, and Ray validation, exports a machine-readable shared-queue companion summary to `docs/reports/shared-queue-companion-summary.json`, writes a broker-lane summary to `docs/reports/broker-validation-summary.json`, and creates a timestamped bundle plus index under `docs/reports/live-validation-runs/` and `docs/reports/live-validation-index.md`.
+The script writes a consolidated summary to `docs/reports/live-validation-summary.json`, refreshes the canonical component reports for local, Kubernetes, and Ray validation, exports a machine-readable shared-queue companion summary to `docs/reports/shared-queue-companion-summary.json`, refreshes the deterministic broker stub lane at `docs/reports/broker-failover-stub-report.json`, writes a broker-lane summary to `docs/reports/broker-validation-summary.json`, and creates a timestamped bundle plus index under `docs/reports/live-validation-runs/` and `docs/reports/live-validation-index.md`.
 
 You can then refresh the rolling continuation overlay from the checked-in bundle evidence:
 
@@ -182,7 +182,7 @@ export BIGCLAW_E2E_SUMMARY_REPORT_PATH=docs/reports/live-validation-summary.json
 ./scripts/e2e/run_all.sh
 ```
 
-Leave `BIGCLAW_E2E_RUN_BROKER=0` when no live broker backend is available. The exported bundle will keep a reviewer-visible `broker` section with `status: skipped` and `configuration_state: not_configured` so the closeout surface stays explicit without requiring broker infrastructure.
+The default broker lane uses `BIGCLAW_E2E_BROKER_BACKEND=stub`, which keeps the bundle reviewer-visible without pretending a live broker backend exists. Set `BIGCLAW_E2E_RUN_BROKER=0` only when you intentionally want to skip the deterministic external-store proof. For future live adapters, override both `BIGCLAW_E2E_BROKER_BACKEND` and `BIGCLAW_E2E_BROKER_REPORT_PATH` so the bundle points at the backend-specific report instead of the stub output.
 
 ```bash
 cd bigclaw-go

@@ -11,7 +11,9 @@ It turns the current durability planning work into an implementation-ready check
 - `docs/e2e-validation.md` covers local SQLite smoke, mixed workload runs, and two-node shared queue proof.
 - `docs/reports/event-bus-reliability-report.md` proves replay only for the in-process event bus.
 - `docs/reports/queue-reliability-report.md` and `docs/reports/lease-recovery-report.md` prove lease recovery and dead-letter replay for local queue backends.
-- No broker-backed event log, provider failover harness, or cross-backend checkpoint recovery report exists yet.
+- No live broker-backed event log exists yet.
+- The repo now ships a deterministic provider-neutral failover harness in `scripts/e2e/broker_failover_stub_matrix.py` with reports at `docs/reports/broker-failover-stub-report.json`, `docs/reports/broker-checkpoint-fencing-proof-summary.json`, and `docs/reports/broker-retention-boundary-proof-summary.json`.
+- Cross-backend checkpoint recovery is still validated through the deterministic harness rather than a live provider adapter.
 
 ## Validation Objectives
 
@@ -111,10 +113,10 @@ Each scenario report should include at least:
 
 ## Implementation Order
 
-1. Add a provider-neutral scenario runner that can emit the report schema above against a fake broker or deterministic stub.
+1. Keep the provider-neutral stub scenario runner aligned with the report schema above so future adapters inherit the same scenario ids and artifacts.
 2. Reuse the existing replay and checkpoint semantics already documented in `docs/e2e-validation.md`, `docs/reports/queue-reliability-report.md`, and `docs/reports/lease-recovery-report.md`.
 3. Introduce one backend adapter at a time behind the same scenario ids so result diffs stay comparable.
-4. Promote the pack into live broker validation only after the stubbed harness can prove sequence accounting and checkpoint fencing deterministically.
+4. Promote the pack into live broker validation only after the stubbed harness keeps proving sequence accounting, checkpoint fencing, and retention-boundary reset behavior deterministically.
 
 ## Live Validation Follow-On Path
 

@@ -10,9 +10,9 @@ BUNDLE_DIR_REL="${ARTIFACT_ROOT_REL}/${RUN_ID}"
 RUN_LOCAL="${BIGCLAW_E2E_RUN_LOCAL:-1}"
 RUN_KUBERNETES="${BIGCLAW_E2E_RUN_KUBERNETES:-1}"
 RUN_RAY="${BIGCLAW_E2E_RUN_RAY:-1}"
-RUN_BROKER="${BIGCLAW_E2E_RUN_BROKER:-0}"
-BROKER_BACKEND="${BIGCLAW_E2E_BROKER_BACKEND:-}"
-BROKER_REPORT_PATH="${BIGCLAW_E2E_BROKER_REPORT_PATH:-}"
+RUN_BROKER="${BIGCLAW_E2E_RUN_BROKER:-1}"
+BROKER_BACKEND="${BIGCLAW_E2E_BROKER_BACKEND:-stub}"
+BROKER_REPORT_PATH="${BIGCLAW_E2E_BROKER_REPORT_PATH:-docs/reports/broker-failover-stub-report.json}"
 REFRESH_CONTINUATION="${BIGCLAW_E2E_REFRESH_CONTINUATION:-1}"
 ENFORCE_CONTINUATION_GATE="${BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE:-0}"
 CONTINUATION_GATE_MODE="${BIGCLAW_E2E_CONTINUATION_GATE_MODE:-}"
@@ -39,7 +39,9 @@ K8S_OUT="$(mktemp -t bigclaw-k8s-e2e-out.XXXXXX)"
 K8S_ERR="$(mktemp -t bigclaw-k8s-e2e-err.XXXXXX)"
 RAY_OUT="$(mktemp -t bigclaw-ray-e2e-out.XXXXXX)"
 RAY_ERR="$(mktemp -t bigclaw-ray-e2e-err.XXXXXX)"
-trap 'rm -f "$LOCAL_OUT" "$LOCAL_ERR" "$K8S_OUT" "$K8S_ERR" "$RAY_OUT" "$RAY_ERR"' EXIT
+BROKER_OUT="$(mktemp -t bigclaw-broker-e2e-out.XXXXXX)"
+BROKER_ERR="$(mktemp -t bigclaw-broker-e2e-err.XXXXXX)"
+trap 'rm -f "$LOCAL_OUT" "$LOCAL_ERR" "$K8S_OUT" "$K8S_ERR" "$RAY_OUT" "$RAY_ERR" "$BROKER_OUT" "$BROKER_ERR"' EXIT
 
 status=0
 pids=()
@@ -68,6 +70,20 @@ if [[ "$RUN_RAY" == "1" ]]; then
   BIGCLAW_RAY_SMOKE_REPORT_PATH="$RAY_REPORT_REL" \
     "$ROOT/scripts/e2e/ray_smoke.sh" >"$RAY_OUT" 2>"$RAY_ERR" &
   pids+=("$!")
+fi
+
+if [[ "$RUN_BROKER" == "1" ]]; then
+  if [[ "$BROKER_BACKEND" == "stub" ]]; then
+    (
+      python3 "$ROOT/scripts/e2e/broker_failover_stub_matrix.py" \
+        --output "$BROKER_REPORT_PATH" \
+        --pretty
+    ) >"$BROKER_OUT" 2>"$BROKER_ERR" &
+    pids+=("$!")
+  elif [[ -z "$BROKER_REPORT_PATH" ]]; then
+    printf 'BIGCLAW_E2E_RUN_BROKER=1 requires BIGCLAW_E2E_BROKER_REPORT_PATH when BIGCLAW_E2E_BROKER_BACKEND=%s\n' "$BROKER_BACKEND" >&2
+    status=1
+  fi
 fi
 
 if (( ${#pids[@]} > 0 )); then

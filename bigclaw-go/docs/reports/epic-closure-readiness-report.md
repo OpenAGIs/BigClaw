@@ -24,6 +24,11 @@
 - Completion distribution was `73` on `node-a` and `127` on `node-b`, with `99` cross-node completions.
 - Supporting report: `docs/reports/multi-node-coordination-report.md`
 
+## External-Store Replay Boundary
+
+- A deterministic provider-neutral broker harness now covers replay continuity, checkpoint fencing, retention-boundary reset behavior, and duplicate-delivery accounting outside the SQLite-only proof.
+- Supporting reports: `docs/reports/broker-failover-stub-report.json`, `docs/reports/broker-checkpoint-fencing-proof-summary.json`, and `docs/reports/broker-retention-boundary-proof-summary.json`
+
 ## Meaning
 
 The three previously open closure items are now covered by fresh same-day evidence:

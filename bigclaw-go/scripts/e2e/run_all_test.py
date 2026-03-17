@@ -73,6 +73,21 @@ class RunAllTest(unittest.TestCase):
             executable=True,
         )
         self.write_file(
+            'scripts/e2e/broker_failover_stub_matrix.py',
+            """\
+            #!/usr/bin/env python3
+            import json
+            import pathlib
+            import sys
+
+            args = sys.argv[1:]
+            output = pathlib.Path(args[args.index('--output') + 1])
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(json.dumps({'status': 'deterministic-harness'}), encoding='utf-8')
+            """,
+            executable=True,
+        )
+        self.write_file(
             'scripts/e2e/validation_bundle_continuation_scorecard.py',
             """\
             #!/usr/bin/env python3
@@ -137,6 +152,36 @@ class RunAllTest(unittest.TestCase):
         self.assertEqual(len(calls), 2)
         self.assertFalse(calls[0]['gate_exists'])
         self.assertTrue(calls[1]['gate_exists'])
+        self.assertEqual(calls[0]['run_broker'], '1')
+        self.assertEqual(calls[0]['broker_backend'], 'stub')
+        self.assertEqual(calls[0]['broker_report_path'], 'docs/reports/broker-failover-stub-report.json')
+
+    def test_run_all_defaults_enable_stub_broker_lane(self) -> None:
+        self.install_stubs()
+        env = os.environ.copy()
+        env.update(
+            {
+                'BIGCLAW_E2E_RUN_KUBERNETES': '0',
+                'BIGCLAW_E2E_RUN_RAY': '0',
+                'BIGCLAW_E2E_RUN_LOCAL': '0',
+            }
+        )
+
+        result = subprocess.run(
+            [str(self.root / 'scripts' / 'e2e' / 'run_all.sh')],
+            cwd=self.root,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        calls = [
+            json.loads(line)
+            for line in (self.root / 'calls.jsonl').read_text(encoding='utf-8').splitlines()
+            if line.strip()
+        ]
         self.assertEqual(calls[0]['run_broker'], '1')
         self.assertEqual(calls[0]['broker_backend'], 'stub')
         self.assertEqual(calls[0]['broker_report_path'], 'docs/reports/broker-failover-stub-report.json')

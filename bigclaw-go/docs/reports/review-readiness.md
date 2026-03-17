@@ -47,7 +47,8 @@
 
 - Production-grade capacity certification can remain a follow-up track beyond the current rewrite closure.
 - No dedicated leader-election layer exists yet; current evidence is limited to a local two-node shared-SQLite coordination proof.
-- Higher-scale external-store validation is still pending beyond the current SQLite-backed scope.
+- Higher-scale external-store validation now has a deterministic provider-neutral harness in `docs/reports/broker-failover-stub-report.json` plus focused checkpoint and retention summaries in `docs/reports/broker-checkpoint-fencing-proof-summary.json` and `docs/reports/broker-retention-boundary-proof-summary.json`.
+- Live broker-backed durability remains pending; current external-store proof is harness-backed rather than a production service rollout.
 
 ## Parallel follow-up digests
 
