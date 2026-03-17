@@ -22,6 +22,8 @@ class CapacityCertificationTest(unittest.TestCase):
         self.assertEqual(report['mixed_workload']['status'], 'pass')
         self.assertIn('1000x24', [lane['lane'] for lane in report['soak_matrix']])
         self.assertEqual(report['generated_at'], '2026-03-13T09:44:42.458392Z')
+        self.assertIn('## Admission Policy Summary', report['markdown'])
+        self.assertIn('Runtime enforcement: `none`', report['markdown'])
 
 
 if __name__ == '__main__':

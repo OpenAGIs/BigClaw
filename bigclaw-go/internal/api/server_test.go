@@ -44,6 +44,15 @@ func (fakeWorkerPoolStatus) Snapshots() []worker.Status {
 	}
 }
 
+func containsString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
+}
+
 type blockingEventLog struct {
 	history       []domain.Event
 	replayStarted chan struct{}
@@ -319,6 +328,96 @@ func TestDebugStatusIncludesEventDurabilityPlan(t *testing.T) {
 	}
 	if !strings.Contains(response.Body.String(), "\"rollout_ready\":false") {
 		t.Fatalf("expected rollout readiness flag in payload, got %s", response.Body.String())
+	}
+}
+
+func TestDebugStatusIncludesAdmissionPolicySummary(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		AdmissionPolicy struct {
+			ReportPath string `json:"report_path"`
+			MatrixPath string `json:"matrix_path"`
+			Ticket     string `json:"ticket"`
+			Status     string `json:"status"`
+			PolicyMode string `json:"policy_mode"`
+			Enforced   bool   `json:"enforced"`
+			Summary    struct {
+				OverallStatus                string `json:"overall_status"`
+				PassedLanes                  int    `json:"passed_lanes"`
+				TotalLanes                   int    `json:"total_lanes"`
+				RecommendedSustainedEnvelope string `json:"recommended_sustained_envelope"`
+				CeilingEnvelope              string `json:"ceiling_envelope"`
+				AdvisoryNote                 string `json:"advisory_note"`
+			} `json:"summary"`
+			RecommendedLanes []struct {
+				Name                  string   `json:"name"`
+				Lane                  string   `json:"lane"`
+				MaxQueuedTasks        int      `json:"max_queued_tasks"`
+				SubmitWorkers         int      `json:"submit_workers"`
+				ObservedThroughputTPS float64  `json:"observed_throughput_tasks_per_sec"`
+				EvidenceLanes         []string `json:"evidence_lanes"`
+				DefaultRecommendation bool     `json:"default_recommendation"`
+				CeilingOnly           bool     `json:"ceiling_only"`
+			} `json:"recommended_lanes"`
+			SupportingEvidence []struct {
+				Name   string `json:"name"`
+				Status string `json:"status"`
+			} `json:"supporting_evidence"`
+			Saturation struct {
+				BaselineLane      string  `json:"baseline_lane"`
+				CeilingLane       string  `json:"ceiling_lane"`
+				ThroughputDropPct float64 `json:"throughput_drop_pct"`
+				Status            string  `json:"status"`
+			} `json:"saturation"`
+		} `json:"admission_policy_summary"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug admission policy payload: %v", err)
+	}
+	if decoded.AdmissionPolicy.ReportPath != capacityCertificationReportPath || decoded.AdmissionPolicy.MatrixPath != capacityCertificationMatrixPath {
+		t.Fatalf("unexpected admission policy report metadata: %+v", decoded.AdmissionPolicy)
+	}
+	if decoded.AdmissionPolicy.Ticket != "BIG-PAR-098" || decoded.AdmissionPolicy.Status != "repo-native-capacity-certification" {
+		t.Fatalf("unexpected admission policy status metadata: %+v", decoded.AdmissionPolicy)
+	}
+	if decoded.AdmissionPolicy.PolicyMode != "advisory_only" || decoded.AdmissionPolicy.Enforced {
+		t.Fatalf("expected advisory-only non-enforced admission policy, got %+v", decoded.AdmissionPolicy)
+	}
+	if decoded.AdmissionPolicy.Summary.OverallStatus != "pass" || decoded.AdmissionPolicy.Summary.PassedLanes != 9 || decoded.AdmissionPolicy.Summary.TotalLanes != 9 {
+		t.Fatalf("unexpected admission policy summary counts: %+v", decoded.AdmissionPolicy.Summary)
+	}
+	if decoded.AdmissionPolicy.Summary.RecommendedSustainedEnvelope != "<=1000 tasks with 24 submit workers" || decoded.AdmissionPolicy.Summary.CeilingEnvelope != "<=2000 tasks with 24 submit workers" {
+		t.Fatalf("unexpected admission policy envelope summary: %+v", decoded.AdmissionPolicy.Summary)
+	}
+	if !strings.Contains(decoded.AdmissionPolicy.Summary.AdvisoryNote, "not an automated runtime admission policy") {
+		t.Fatalf("expected advisory note in admission policy summary, got %+v", decoded.AdmissionPolicy.Summary)
+	}
+	if len(decoded.AdmissionPolicy.RecommendedLanes) != 2 {
+		t.Fatalf("expected 2 recommended lanes, got %+v", decoded.AdmissionPolicy.RecommendedLanes)
+	}
+	if decoded.AdmissionPolicy.RecommendedLanes[0].Name != "recommended-local-sustained" || decoded.AdmissionPolicy.RecommendedLanes[0].Lane != "1000x24" || decoded.AdmissionPolicy.RecommendedLanes[0].MaxQueuedTasks != 1000 || decoded.AdmissionPolicy.RecommendedLanes[0].SubmitWorkers != 24 || !decoded.AdmissionPolicy.RecommendedLanes[0].DefaultRecommendation || decoded.AdmissionPolicy.RecommendedLanes[0].CeilingOnly {
+		t.Fatalf("unexpected default admission lane: %+v", decoded.AdmissionPolicy.RecommendedLanes[0])
+	}
+	if decoded.AdmissionPolicy.RecommendedLanes[1].Name != "recommended-local-ceiling" || decoded.AdmissionPolicy.RecommendedLanes[1].Lane != "2000x24" || decoded.AdmissionPolicy.RecommendedLanes[1].MaxQueuedTasks != 2000 || !decoded.AdmissionPolicy.RecommendedLanes[1].CeilingOnly {
+		t.Fatalf("unexpected ceiling admission lane: %+v", decoded.AdmissionPolicy.RecommendedLanes[1])
+	}
+	if len(decoded.AdmissionPolicy.SupportingEvidence) != 1 || decoded.AdmissionPolicy.SupportingEvidence[0].Name != "mixed-workload-routing" || decoded.AdmissionPolicy.SupportingEvidence[0].Status != "pass" {
+		t.Fatalf("unexpected supporting admission evidence: %+v", decoded.AdmissionPolicy.SupportingEvidence)
+	}
+	if decoded.AdmissionPolicy.Saturation.BaselineLane != "1000x24" || decoded.AdmissionPolicy.Saturation.CeilingLane != "2000x24" || decoded.AdmissionPolicy.Saturation.ThroughputDropPct != 5.02 || decoded.AdmissionPolicy.Saturation.Status != "pass" {
+		t.Fatalf("unexpected admission policy saturation summary: %+v", decoded.AdmissionPolicy.Saturation)
 	}
 }
 
@@ -2594,6 +2693,53 @@ func TestV2ControlCenterIncludesCoordinationCapabilitySurface(t *testing.T) {
 	contractOnly := decoded.Coordination.Capabilities[4]
 	if contractOnly.Name != "partitioned_topic_routing" || !contractOnly.ContractOnly || contractOnly.LiveProven || len(contractOnly.SourceReportLinks) == 0 {
 		t.Fatalf("unexpected contract-only coordination entry: %+v", contractOnly)
+	}
+}
+
+func TestV2ControlCenterIncludesAdmissionPolicySummary(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		AdmissionPolicy struct {
+			PolicyMode       string   `json:"policy_mode"`
+			Enforced         bool     `json:"enforced"`
+			EvidenceSources  []string `json:"evidence_sources"`
+			RecommendedLanes []struct {
+				Name                  string  `json:"name"`
+				MaxQueuedTasks        int     `json:"max_queued_tasks"`
+				SubmitWorkers         int     `json:"submit_workers"`
+				ObservedThroughputTPS float64 `json:"observed_throughput_tasks_per_sec"`
+			} `json:"recommended_lanes"`
+		} `json:"admission_policy_summary"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center admission policy payload: %v", err)
+	}
+	if decoded.AdmissionPolicy.PolicyMode != "advisory_only" || decoded.AdmissionPolicy.Enforced {
+		t.Fatalf("expected advisory-only admission policy in control center payload, got %+v", decoded.AdmissionPolicy)
+	}
+	if len(decoded.AdmissionPolicy.EvidenceSources) < 4 ||
+		!containsString(decoded.AdmissionPolicy.EvidenceSources, capacityCertificationMatrixPath) ||
+		!containsString(decoded.AdmissionPolicy.EvidenceSources, capacityCertificationReportPath) {
+		t.Fatalf("unexpected admission policy evidence sources: %+v", decoded.AdmissionPolicy.EvidenceSources)
+	}
+	if len(decoded.AdmissionPolicy.RecommendedLanes) != 2 {
+		t.Fatalf("expected recommended admission lanes in control center payload, got %+v", decoded.AdmissionPolicy.RecommendedLanes)
+	}
+	if decoded.AdmissionPolicy.RecommendedLanes[0].Name != "recommended-local-sustained" || decoded.AdmissionPolicy.RecommendedLanes[0].MaxQueuedTasks != 1000 || decoded.AdmissionPolicy.RecommendedLanes[0].SubmitWorkers != 24 || decoded.AdmissionPolicy.RecommendedLanes[0].ObservedThroughputTPS != 9.607 {
+		t.Fatalf("unexpected sustained admission lane in control center payload: %+v", decoded.AdmissionPolicy.RecommendedLanes[0])
 	}
 }
 

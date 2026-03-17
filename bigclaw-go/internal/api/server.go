@@ -201,6 +201,7 @@ func (s *Server) Handler() http.Handler {
 			"event_durability":                s.EventPlan,
 			"event_durability_rollout":        rolloutScorecard,
 			"event_log":                       s.eventLogCapabilities(r.Context()),
+			"admission_policy_summary":        admissionPolicySummaryPayload(),
 			"coordination_capability_surface": coordinationCapabilitySurfacePayload(),
 			"coordination_leader_election":    s.coordinationLeaderElectionPayload(),
 			"delivery_ack_readiness":          deliveryAckReadinessPayload(),
