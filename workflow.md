@@ -104,3 +104,9 @@ Follow the same execution quality bar as the root workflow, and ensure every run
 2) successful `git push`,
 3) local/remote SHA equality confirmation,
 4) `git log -1 --stat` output capture.
+
+Validation closeout contract:
+- `cd bigclaw-go && ./scripts/e2e/run_all.sh` is the default unattended closeout path.
+- Continuation-gate enforcement defaults to `BIGCLAW_E2E_CONTINUATION_GATE_MODE=hold`, so stale or incomplete evidence fails closeout with exit code `2`.
+- Use `BIGCLAW_E2E_CONTINUATION_GATE_MODE=review` only for explicit local debugging or reviewer-only inspection.
+- `BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1` remains a compatibility alias for `BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail`.

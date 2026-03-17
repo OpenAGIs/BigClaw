@@ -115,7 +115,6 @@ class RunAllTest(unittest.TestCase):
                 'BIGCLAW_E2E_RUN_BROKER': '1',
                 'BIGCLAW_E2E_BROKER_BACKEND': 'stub',
                 'BIGCLAW_E2E_BROKER_REPORT_PATH': 'docs/reports/broker-failover-stub-report.json',
-                'BIGCLAW_E2E_CONTINUATION_GATE_MODE': 'review',
             }
         )
 
@@ -140,6 +139,97 @@ class RunAllTest(unittest.TestCase):
         self.assertEqual(calls[0]['run_broker'], '1')
         self.assertEqual(calls[0]['broker_backend'], 'stub')
         self.assertEqual(calls[0]['broker_report_path'], 'docs/reports/broker-failover-stub-report.json')
+
+    def test_run_all_defaults_to_hold_mode(self) -> None:
+        self.install_stubs()
+        self.write_file(
+            'scripts/e2e/validation_bundle_continuation_policy_gate.py',
+            """\
+            #!/usr/bin/env python3
+            import json
+            import pathlib
+            import sys
+
+            args = sys.argv[1:]
+            mode = args[args.index('--enforcement-mode') + 1]
+            output = pathlib.Path(args[args.index('--output') + 1])
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
+            """,
+            executable=True,
+        )
+
+        env = os.environ.copy()
+        env.update(
+            {
+                'BIGCLAW_E2E_RUN_KUBERNETES': '0',
+                'BIGCLAW_E2E_RUN_RAY': '0',
+                'BIGCLAW_E2E_RUN_LOCAL': '1',
+            }
+        )
+
+        result = subprocess.run(
+            [str(self.root / 'scripts' / 'e2e' / 'run_all.sh')],
+            cwd=self.root,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        gate = json.loads(
+            (self.root / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json').read_text(
+                encoding='utf-8'
+            )
+        )
+        self.assertEqual(gate['enforcement']['mode'], 'hold')
+
+    def test_legacy_enforce_alias_still_maps_to_fail_mode(self) -> None:
+        self.install_stubs()
+        self.write_file(
+            'scripts/e2e/validation_bundle_continuation_policy_gate.py',
+            """\
+            #!/usr/bin/env python3
+            import json
+            import pathlib
+            import sys
+
+            args = sys.argv[1:]
+            mode = args[args.index('--enforcement-mode') + 1]
+            output = pathlib.Path(args[args.index('--output') + 1])
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
+            """,
+            executable=True,
+        )
+
+        env = os.environ.copy()
+        env.update(
+            {
+                'BIGCLAW_E2E_RUN_KUBERNETES': '0',
+                'BIGCLAW_E2E_RUN_RAY': '0',
+                'BIGCLAW_E2E_RUN_LOCAL': '1',
+                'BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE': '1',
+            }
+        )
+
+        result = subprocess.run(
+            [str(self.root / 'scripts' / 'e2e' / 'run_all.sh')],
+            cwd=self.root,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        gate = json.loads(
+            (self.root / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json').read_text(
+                encoding='utf-8'
+            )
+        )
+        self.assertEqual(gate['enforcement']['mode'], 'fail')
 
 
 if __name__ == '__main__':

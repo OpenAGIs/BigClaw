@@ -28,7 +28,7 @@ def build_check(name, passed, detail):
 def normalize_enforcement_mode(enforcement_mode, legacy_enforce_continuation_gate=False):
     mode = str(enforcement_mode or '').strip().lower()
     if not mode:
-        mode = 'fail' if legacy_enforce_continuation_gate else 'review'
+        mode = 'fail' if legacy_enforce_continuation_gate else 'hold'
     if mode not in {'review', 'hold', 'fail'}:
         raise ValueError(
             f"unsupported enforcement mode {enforcement_mode!r}; expected one of review, hold, fail"
@@ -109,7 +109,7 @@ def build_report(
     if 'repeated_lane_coverage_meets_policy' in failing_checks:
         next_actions.append('refresh another full validation bundle with `ray` enabled so each executor lane has repeated indexed coverage')
     if not next_actions:
-        next_actions.append('set BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail when workflow closeout should stop on continuation regressions')
+        next_actions.append('set BIGCLAW_E2E_CONTINUATION_GATE_MODE=review for local debugging when continuation holds should stay reviewer-visible')
 
     return {
         'generated_at': utc_iso(),
