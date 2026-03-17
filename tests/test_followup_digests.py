@@ -68,9 +68,9 @@ DIGESTS = {
             Path("docs/openclaw-parallel-gap-analysis.md"),
         ],
     },
-    "OPE-267": {
+    "OPE-254": {
         "path": Path("bigclaw-go/docs/reports/rollback-safeguard-follow-up-digest.md"),
-        "title": "BIG-PAR-078",
+        "title": "BIG-PAR-088",
         "links": [
             "docs/reports/migration-readiness-report.md",
             "docs/migration.md",

@@ -15,32 +15,25 @@ manual operator can refill the next parallel-safe issues in a stable order.
 
 ## Policy
 
-- Temporary target: keep `1` issue in `In Progress` until the Linear workspace issue quota is raised.
+- Current target: keep `4` issues in `In Progress` while the current batch is parallel-safe.
 - Promote only issues currently in `Backlog` or `Todo`.
 - Use the queue order below as the single source of truth for refill priority.
 - Every substantive code-bearing update must be committed and pushed to GitHub immediately, with local/remote SHA equality verification after each push.
 - Shared mirror bootstrap remains mandatory so multiple Symphony issues reuse one local mirror/seed cache instead of re-downloading the repo.
-
-## Repo Validation
-
-- Latest repo-wide validation report: `reports/repo-wide-validation-2026-03-16.md`
-- Latest mainline CI after landing `#102` / `#103` / `#104` / `#105`:
-  - `256 passed` in the Python suite
-  - queue / coordination / live takeover follow-up regressions passed
+- Linear workspace issue quota still blocks net-new issues, so this batch uses recycled done issue slots.
 
 ## Current batch
 
 - Active:
-  - none; the recycled `BIG-PAR-084` / `085` / `086` / `087` batch has landed on `main`
-- Recently completed:
-  - `OPE-260` — `BIG-PAR-084` live multi-node subscriber takeover proof with lease-aware checkpoints
-  - `OPE-261` — `BIG-PAR-085` runtime cross-process coordination capability matrix
-  - `OPE-262` — `BIG-PAR-086` enforce continuation gate in repeatable validation workflows
-  - `OPE-263` — `BIG-PAR-087` live shadow mirror bundle index and parity drift rollup
-  - `OPE-275` — `BIG-PAR-083` production corpus replay pack and migration coverage scorecard
-- Standby:
-  - no recycled slot is assigned yet; `BIG-PAR-088` remains blocked by the Linear issue quota
+  - `OPE-255` — `BIG-PAR-093` shared durable subscriber ownership backend scaffold
+  - `OPE-256` — `BIG-PAR-094` native takeover transition audit events
+- Ready to promote:
+  - `OPE-257` — `BIG-PAR-095` broker-backed and partitioned coordination target contract surface
+  - `OPE-254` — `BIG-PAR-088` tenant-scoped rollback guardrails and trigger surface
 
 ## Canonical refill order
 
-- none until the next recyclable Linear slot is assigned or the workspace quota is restored
+1. `OPE-255`
+2. `OPE-256`
+3. `OPE-257`
+4. `OPE-254`

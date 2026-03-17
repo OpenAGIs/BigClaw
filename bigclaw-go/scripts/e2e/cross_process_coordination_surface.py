@@ -42,6 +42,25 @@ def capability_row(
     }
 
 
+def target_contract_row(
+    *,
+    capability,
+    contract_anchor,
+    runtime_status,
+    partitioning=None,
+    ownership=None,
+    guarantees=None,
+):
+    return {
+        'capability': capability,
+        'contract_anchor': contract_anchor,
+        'runtime_status': runtime_status,
+        'partitioning': partitioning or {},
+        'ownership': ownership or {},
+        'guarantees': guarantees or [],
+    }
+
+
 def build_report(
     multi_node_report_path='bigclaw-go/docs/reports/multi-node-shared-queue-report.json',
     takeover_report_path='bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json',
@@ -66,6 +85,41 @@ def build_report(
         'live_takeover_stale_write_rejections': live_takeover['summary']['stale_write_rejections'],
     }
 
+    target_contracts = [
+        target_contract_row(
+            capability='partitioned_topic_routing',
+            contract_anchor='events.SubscriptionRequest.PartitionRoute',
+            runtime_status='contract_only',
+            partitioning={
+                'topic': 'provider-defined shared event stream',
+                'supported_partition_keys': ['trace_id', 'task_id', 'event_type'],
+                'ordering_scope': 'sequence remains portable within the selected partition route',
+                'filter_alignment': 'ReplayRequest task_id/trace_id filters must remain valid when a backend introduces partition routing.',
+            },
+            guarantees=[
+                'Partition keys are provider-neutral and map to existing trace/task/event_type selectors.',
+                'Partition metadata may vary by backend, but portable replay ordering still uses Position.Sequence.',
+                'No runtime implementation is shipped yet; this row defines the future adapter contract only.',
+            ],
+        ),
+        target_contract_row(
+            capability='broker_backed_subscriber_ownership',
+            contract_anchor='events.SubscriptionRequest.OwnershipContract',
+            runtime_status='contract_only',
+            ownership={
+                'subscriber_group': 'shared durable consumer identity',
+                'mode': 'exclusive',
+                'lease_fields': ['epoch', 'lease_token'],
+                'partition_hints': 'optional partition affinity for future broker-backed consumers',
+            },
+            guarantees=[
+                'Checkpoint commits remain fenced by epoch plus lease token after ownership transfer.',
+                'Ownership metadata travels through the neutral subscription contract instead of provider-specific APIs.',
+                'No broker-backed runtime implementation is shipped yet; this row defines the future ownership contract only.',
+            ],
+        ),
+    ]
+
     capabilities = [
         capability_row(
             capability='shared_queue_task_coordination',
@@ -88,7 +142,7 @@ def build_report(
             contract_defined_target=True,
             notes=[
                 'Lease handoff, stale-writer fencing, and duplicate replay accounting are covered by both the deterministic harness and the live two-node companion proof.',
-                'The live proof now drives both nodes against one shared SQLite lease backend, but broker-backed or replicated ownership is still not implemented.',
+                'The live proof now drives both nodes against one shared SQLite lease backend, but the provider-neutral broker-backed ownership contract is still not runtime-proven.',
             ],
         ),
         capability_row(
@@ -112,7 +166,7 @@ def build_report(
             contract_defined_target=True,
             notes=[
                 'The local takeover harness and the live two-node companion proof both show stale checkpoint writers being fenced after ownership transfer.',
-                'The shared durable scaffold is SQLite-backed today, so broker-native failover and replication semantics still remain future work.',
+                'The shared durable scaffold is SQLite-backed today, so the broker-backed ownership contract remains future work beyond the current local proof.',
             ],
         ),
         capability_row(
@@ -170,6 +224,7 @@ def build_report(
         'ticket': 'BIG-PAR-085-local-prework',
         'title': 'Cross-process coordination capability surface',
         'status': 'local-capability-surface',
+        'target_contract_surface_version': '2026-03-17',
         'runtime_readiness_levels': {
             'live_proven': 'Shipped runtime behavior with checked-in live cross-process proof.',
             'harness_proven': 'Deterministic executable harness coverage exists, but no live multi-node proof is checked in.',
@@ -186,6 +241,7 @@ def build_report(
                 'bigclaw-go/docs/reports/broker-event-log-adapter-contract.md',
             ],
         },
+        'target_contracts': target_contracts,
         'summary': summary,
         'capabilities': capabilities,
         'current_ceiling': current_ceiling,

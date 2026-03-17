@@ -59,7 +59,7 @@ cd bigclaw-go
 python3 scripts/migration/export_live_shadow_bundle.py
 ```
 
-This exporter copies the latest compare, matrix, and scorecard artifacts into
+This exporter copies the latest compare, matrix, scorecard, and rollback trigger summary artifacts into
 `docs/reports/live-shadow-runs/<run-id>/`, refreshes `docs/reports/live-shadow-summary.json`,
 and updates `docs/reports/live-shadow-index.md`, `docs/reports/live-shadow-index.json`, and
 `docs/reports/live-shadow-drift-rollup.json` for reviewer navigation.
@@ -81,6 +81,7 @@ payload still contribute to the `corpus_coverage` scorecard and uncovered-slice 
 - `live-shadow-mirror-scorecard.json` can summarize parity drift status and evidence freshness across both checked-in reports
 - `live-shadow-index.md` can summarize the latest bundled shadow artifacts and reviewer navigation paths
 - `live-shadow-drift-rollup.json` can summarize freshness and mismatch severity across recent bundled shadow runs
+- `rollback-trigger-surface.json` can distinguish tenant-scoped blockers, warnings, and manual-only rollback paths without claiming automated rollback execution
 
 ## Parallel follow-up digests
 

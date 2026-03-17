@@ -2,10 +2,11 @@
 
 ## Scope
 
-This digest consolidates the repo-native rollback guardrail and tenant-scoped trigger surface for `OPE-267` / `BIG-PAR-078`.
+This digest consolidates the repo-native rollback guardrail and tenant-scoped trigger surface for `OPE-254` / `BIG-PAR-088`.
 
 ## Current Repo-Backed Evidence
 
+- `docs/reports/rollback-trigger-surface.json` is the machine-readable rollback summary shared by migration readiness and live shadow reviewer outputs.
 - `docs/reports/migration-readiness-report.md` records rollback as a current migration gap rather than a completed runtime capability.
 - `docs/migration.md` captures the current rollback plan and operator steps.
 - `docs/reports/migration-plan-review-notes.md` records that rollback is intentionally simple and operator-driven in the current phase.
@@ -24,6 +25,7 @@ This digest consolidates the repo-native rollback guardrail and tenant-scoped tr
 ## Reviewer Digest
 
 - Rollback is currently a manual, evidence-backed operator action, not an automated tenant-scoped safeguard.
+- `docs/reports/rollback-trigger-surface.json` distinguishes tenant-scoped blockers, warnings, and manual-only paths without claiming automated rollback execution.
 - The documented rollback path remains configuration- and routing-driven: disable Go dispatch, stop new leases, and redirect eligible traffic back to the incumbent plane.
 - Current cutover protection relies on preserving audit trails, shadow evidence, and live validation artifacts for review instead of on an automatic rollback trigger.
 - This is sufficient for phased rollout planning, but it is not yet a policy-enforced rollback control plane.
@@ -44,6 +46,6 @@ This digest consolidates the repo-native rollback guardrail and tenant-scoped tr
 
 ## Lightweight Consistency Check
 
-- Keep this digest aligned with `docs/reports/migration-readiness-report.md`, `docs/migration.md`, and `docs/reports/migration-plan-review-notes.md`.
+- Keep this digest aligned with `docs/reports/rollback-trigger-surface.json`, `docs/reports/migration-readiness-report.md`, `docs/migration.md`, and `docs/reports/migration-plan-review-notes.md`.
 - Repeat the `rollback remains operator-driven`, `manual, evidence-backed operator action`, and `no tenant-scoped automated rollback trigger` caveats anywhere migration safety is summarized.
 - When rollback safeguards become policy-driven, update this digest, `docs/reports/review-readiness.md`, and `docs/reports/issue-coverage.md` together.
