@@ -192,12 +192,14 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/debug/traces", s.handleDebugTraces)
 	mux.HandleFunc("/debug/traces/", s.handleDebugTrace)
 	mux.HandleFunc("/debug/status", func(w http.ResponseWriter, r *http.Request) {
+		rolloutScorecard := s.EventPlan.RolloutScorecard
 		payload := map[string]any{
-			"queue_size":       s.Queue.Size(context.Background()),
-			"audit_events":     len(s.Recorder.Logs()),
-			"executors":        s.executorNames(),
-			"event_durability": s.EventPlan,
-			"event_log":        s.eventLogCapabilities(r.Context()),
+			"queue_size":               s.Queue.Size(context.Background()),
+			"audit_events":             len(s.Recorder.Logs()),
+			"executors":                s.executorNames(),
+			"event_durability":         s.EventPlan,
+			"event_durability_rollout": rolloutScorecard,
+			"event_log":                s.eventLogCapabilities(r.Context()),
 		}
 		if s.Worker != nil {
 			payload["worker"] = s.Worker.Snapshot()

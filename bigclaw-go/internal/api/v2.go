@@ -1089,6 +1089,7 @@ func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 			"audit_limit": filters.AuditLimit,
 		},
 		"control":          s.Control.Snapshot(),
+		"event_durability": s.EventPlan,
 		"event_log":        s.eventLogCapabilities(r.Context()),
 		"summary":          summarizeControlCenter(queueTasks, filteredDeadLetters),
 		"queue":            map[string]any{"size": s.Queue.Size(context.Background()), "filtered_size": len(queueTasks), "dead_letters": len(filteredDeadLetters), "tasks": returnedQueueTasks, "cancellable": supportsQueueCancel(s.Queue)},

@@ -260,23 +260,65 @@ func TestDebugStatusIncludesEventDurabilityPlan(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", response.Code)
 	}
-	if !strings.Contains(response.Body.String(), "\"backend\":\"http\"") {
-		t.Fatalf("expected current backend in payload, got %s", response.Body.String())
+	var decoded struct {
+		EventDurability struct {
+			Current struct {
+				Backend string `json:"backend"`
+			} `json:"current"`
+			Target struct {
+				Backend string `json:"backend"`
+			} `json:"target"`
+			ReplicationFactor int `json:"replication_factor"`
+			RolloutChecks     []struct {
+				Name string `json:"name"`
+			} `json:"rollout_checks"`
+			FailureDomains []struct {
+				Name string `json:"name"`
+			} `json:"failure_domains"`
+			VerificationEvidence []struct {
+				Name string `json:"name"`
+			} `json:"verification_evidence"`
+			RolloutScorecard struct {
+				Status          string   `json:"status"`
+				RolloutReady    bool     `json:"rollout_ready"`
+				CurrentBackend  string   `json:"current_backend"`
+				TargetBackend   string   `json:"target_backend"`
+				ReadyEvidence   int      `json:"ready_evidence"`
+				PartialEvidence int      `json:"partial_evidence"`
+				BlockedEvidence int      `json:"blocked_evidence"`
+				Blockers        []string `json:"blockers"`
+			} `json:"rollout_scorecard"`
+		} `json:"event_durability"`
 	}
-	if !strings.Contains(response.Body.String(), "\"backend\":\"broker_replicated\"") {
-		t.Fatalf("expected target backend in payload, got %s", response.Body.String())
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug status: %v", err)
 	}
-	if !strings.Contains(response.Body.String(), "\"replication_factor\":5") {
-		t.Fatalf("expected replication factor in payload, got %s", response.Body.String())
+	if decoded.EventDurability.Current.Backend != "http" || decoded.EventDurability.Target.Backend != "broker_replicated" {
+		t.Fatalf("unexpected event durability backends: %+v", decoded.EventDurability)
 	}
-	if !strings.Contains(response.Body.String(), "\"rollout_checks\"") {
-		t.Fatalf("expected rollout checks in payload, got %s", response.Body.String())
+	if decoded.EventDurability.ReplicationFactor != 5 {
+		t.Fatalf("expected replication factor 5, got %+v", decoded.EventDurability)
 	}
-	if !strings.Contains(response.Body.String(), "\"failure_domains\"") {
-		t.Fatalf("expected failure domains in payload, got %s", response.Body.String())
+	if len(decoded.EventDurability.RolloutChecks) == 0 || len(decoded.EventDurability.FailureDomains) == 0 || len(decoded.EventDurability.VerificationEvidence) == 0 {
+		t.Fatalf("expected rollout contract details in payload, got %+v", decoded.EventDurability)
 	}
-	if !strings.Contains(response.Body.String(), "\"verification_evidence\"") {
-		t.Fatalf("expected verification evidence in payload, got %s", response.Body.String())
+	if decoded.EventDurability.RolloutScorecard.Status != "blocked" || decoded.EventDurability.RolloutScorecard.RolloutReady {
+		t.Fatalf("expected blocked rollout scorecard, got %+v", decoded.EventDurability.RolloutScorecard)
+	}
+	if decoded.EventDurability.RolloutScorecard.CurrentBackend != "http" || decoded.EventDurability.RolloutScorecard.TargetBackend != "broker_replicated" {
+		t.Fatalf("unexpected rollout scorecard backend payload: %+v", decoded.EventDurability.RolloutScorecard)
+	}
+	if decoded.EventDurability.RolloutScorecard.ReadyEvidence != 2 || decoded.EventDurability.RolloutScorecard.PartialEvidence != 1 || decoded.EventDurability.RolloutScorecard.BlockedEvidence != 1 {
+		t.Fatalf("unexpected rollout scorecard evidence counts: %+v", decoded.EventDurability.RolloutScorecard)
+	}
+	if len(decoded.EventDurability.RolloutScorecard.Blockers) != 3 {
+		t.Fatalf("expected rollout blockers, got %+v", decoded.EventDurability.RolloutScorecard)
+	}
+	if !strings.Contains(response.Body.String(), "\"event_durability_rollout\"") {
+		t.Fatalf("expected rollout scorecard in payload, got %s", response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), "\"rollout_ready\":false") {
+		t.Fatalf("expected rollout readiness flag in payload, got %s", response.Body.String())
 	}
 }
 
@@ -766,6 +808,31 @@ func TestDebugTraceEndpointsExposeTraceSummary(t *testing.T) {
 	server.Handler().ServeHTTP(metricsResponse, metricsRequest)
 	if !strings.Contains(metricsResponse.Body.String(), "trace_count") {
 		t.Fatalf("expected trace_count in metrics payload, got %s", metricsResponse.Body.String())
+	}
+}
+
+func TestMetricsJSONIncludesDurabilityRolloutScorecard(t *testing.T) {
+	recorder := observability.NewRecorder()
+	server := &Server{
+		Recorder:  recorder,
+		Queue:     queue.NewMemoryQueue(),
+		Bus:       events.NewBus(),
+		EventPlan: events.NewDurabilityPlan("memory", "broker_replicated", 3),
+		Now:       time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected metrics 200, got %d", response.Code)
+	}
+	body := response.Body.String()
+	if !strings.Contains(body, "\"event_durability_rollout\"") {
+		t.Fatalf("expected durability rollout scorecard in metrics payload, got %s", body)
+	}
+	if !strings.Contains(body, "\"rollout_ready\":false") {
+		t.Fatalf("expected rollout readiness flag in metrics payload, got %s", body)
 	}
 }
 
@@ -1775,9 +1842,18 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		Recorder:  recorder,
 		Queue:     queue.NewMemoryQueue(),
 		Executors: []domain.ExecutorKind{domain.ExecutorLocal, domain.ExecutorKubernetes, domain.ExecutorRay},
-		Control:   controller,
-		Worker:    fakeWorkerPoolStatus{},
-		Now:       func() time.Time { return time.Unix(1700007200, 0) },
+		EventPlan: events.NewDurabilityPlanWithBrokerConfig("http", "broker_replicated", 3, events.BrokerRuntimeConfig{
+			Driver:             "kafka",
+			URLs:               []string{"kafka-1:9092"},
+			Topic:              "bigclaw.events",
+			ConsumerGroup:      "bigclaw-reviewers",
+			PublishTimeout:     5 * time.Second,
+			ReplayLimit:        1024,
+			CheckpointInterval: 10 * time.Second,
+		}),
+		Control: controller,
+		Worker:  fakeWorkerPoolStatus{},
+		Now:     func() time.Time { return time.Unix(1700007200, 0) },
 	}
 	handler := server.Handler()
 	base := time.Unix(1700000000, 0)
@@ -1807,6 +1883,11 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
 	}
 	var decoded struct {
+		EventDurability struct {
+			RolloutScorecard struct {
+				Status string `json:"status"`
+			} `json:"rollout_scorecard"`
+		} `json:"event_durability"`
 		Diagnostics struct {
 			Summary struct {
 				RegisteredExecutors  int `json:"registered_executors"`
@@ -1856,6 +1937,9 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	}
 	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
 		t.Fatalf("decode distributed diagnostics: %v", err)
+	}
+	if decoded.EventDurability.RolloutScorecard.Status != "blocked" {
+		t.Fatalf("expected control center event durability scorecard, got %+v", decoded.EventDurability)
 	}
 	if decoded.Diagnostics.Summary.RegisteredExecutors != 3 || decoded.Diagnostics.Summary.TotalRoutedDecisions != 3 {
 		t.Fatalf("unexpected diagnostics summary: %+v", decoded.Diagnostics.Summary)

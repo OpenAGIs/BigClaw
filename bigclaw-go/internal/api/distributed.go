@@ -141,6 +141,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 			"limit":      filters.Limit,
 			"priority":   filters.Priority,
 		},
+		"event_durability":    s.EventPlan,
 		"summary":             diagnostics.Summary,
 		"routing_reasons":     diagnostics.RoutingReasons,
 		"executor_capacity":   diagnostics.ExecutorCapacity,
