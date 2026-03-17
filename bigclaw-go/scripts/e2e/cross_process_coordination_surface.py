@@ -25,6 +25,7 @@ def capability_row(
     *,
     capability,
     current_state,
+    runtime_readiness,
     live_local_proof,
     deterministic_local_harness,
     contract_defined_target,
@@ -33,6 +34,7 @@ def capability_row(
     return {
         'capability': capability,
         'current_state': current_state,
+        'runtime_readiness': runtime_readiness,
         'live_local_proof': live_local_proof,
         'deterministic_local_harness': deterministic_local_harness,
         'contract_defined_target': contract_defined_target,
@@ -68,6 +70,7 @@ def build_report(
         capability_row(
             capability='shared_queue_task_coordination',
             current_state='implemented',
+            runtime_readiness='live_proven',
             live_local_proof=True,
             deterministic_local_harness=False,
             contract_defined_target=True,
@@ -79,6 +82,7 @@ def build_report(
         capability_row(
             capability='subscriber_takeover_semantics',
             current_state='implemented_with_process_local_boundary',
+            runtime_readiness='live_proven',
             live_local_proof=True,
             deterministic_local_harness=True,
             contract_defined_target=True,
@@ -90,6 +94,7 @@ def build_report(
         capability_row(
             capability='cross_process_replay_coordination',
             current_state='contract_defined',
+            runtime_readiness='harness_proven',
             live_local_proof=False,
             deterministic_local_harness=True,
             contract_defined_target=True,
@@ -101,6 +106,7 @@ def build_report(
         capability_row(
             capability='stale_writer_fencing',
             current_state='implemented_with_process_local_boundary',
+            runtime_readiness='live_proven',
             live_local_proof=True,
             deterministic_local_harness=True,
             contract_defined_target=True,
@@ -112,6 +118,7 @@ def build_report(
         capability_row(
             capability='partitioned_topic_routing',
             current_state='not_available',
+            runtime_readiness='contract_only',
             live_local_proof=False,
             deterministic_local_harness=False,
             contract_defined_target=True,
@@ -123,6 +130,7 @@ def build_report(
         capability_row(
             capability='broker_backed_subscriber_ownership',
             current_state='not_available',
+            runtime_readiness='contract_only',
             live_local_proof=False,
             deterministic_local_harness=False,
             contract_defined_target=True,
@@ -134,6 +142,7 @@ def build_report(
         capability_row(
             capability='operator_capability_surface',
             current_state='implemented',
+            runtime_readiness='supporting_surface',
             live_local_proof=False,
             deterministic_local_harness=False,
             contract_defined_target=True,
@@ -161,6 +170,12 @@ def build_report(
         'ticket': 'BIG-PAR-085-local-prework',
         'title': 'Cross-process coordination capability surface',
         'status': 'local-capability-surface',
+        'runtime_readiness_levels': {
+            'live_proven': 'Shipped runtime behavior with checked-in live cross-process proof.',
+            'harness_proven': 'Deterministic executable harness coverage exists, but no live multi-node proof is checked in.',
+            'contract_only': 'Only target contracts or rollout docs define the expected semantics today.',
+            'supporting_surface': 'The repo exposes reporting or metadata surfaces that describe runtime readiness without proving the coordination behavior itself.',
+        },
         'evidence_inputs': {
             'shared_queue_report': multi_node_report_path,
             'takeover_harness_report': takeover_report_path,

@@ -2,20 +2,20 @@
 
 ## Scope
 
-This digest consolidates the remaining cross-process coordination caveats for `OPE-270` / `BIG-PAR-081`.
+This digest consolidates the remaining cross-process coordination caveats for `OPE-261` / `BIG-PAR-085`.
 
 ## Current Repo-Backed Evidence
 
 - `docs/reports/event-bus-reliability-report.md` captures the current event-bus durability shape and remaining coordination gaps.
 - `docs/reports/multi-node-coordination-report.md` provides the concrete two-node shared-queue proof currently available in-repo.
-- `docs/reports/cross-process-coordination-capability-surface.json` adds a machine-readable capability surface tying together live local proof, deterministic local harnesses, and contract-defined targets.
+- `docs/reports/cross-process-coordination-capability-surface.json` adds a machine-readable runtime capability matrix tying together `live_proven`, `harness_proven`, `contract_only`, and supporting-surface readiness.
 - `docs/reports/review-readiness.md` records which distributed coordination claims are already safe to treat as closure-ready.
 - `docs/reports/issue-coverage.md` records the current event-bus and migration evidence plus the remaining follow-up digests.
 - `docs/openclaw-parallel-gap-analysis.md` captures the remaining distributed mainline gaps after the current BigClaw evidence set.
 
 ## Reviewer Digest
 
-- The repo now has a machine-readable coordination capability surface that distinguishes what is implemented as live local proof, what is executable only in deterministic local harnesses, and what remains contract-defined for future rollout.
+- The repo now has a machine-readable runtime capability matrix that distinguishes `live_proven`, `harness_proven`, and `contract_only` coordination semantics, plus the supporting metadata surface that reports those boundaries.
 - The repo has a concrete shared-queue coordination proof, but it does not yet define a broker-backed or partitioned-topic cross-process coordination model.
 - Current coordination evidence is still bounded by local SQLite-backed sharing plus deterministic local takeover harnesses, not a durable broker-backed cross-process subscriber coordination contract.
 - There is no partitioned topic routing model, no broker-backed subscriber ownership model, and no provider-neutral live proof for cross-process replay coordination.

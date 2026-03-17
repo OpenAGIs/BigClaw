@@ -22,11 +22,14 @@
 
 This run proves that two independent `bigclawd` processes can share the same SQLite-backed queue and coordinate task consumption without duplicate terminal execution in the current local topology. It is not a full leader-election system, but it gives the epic a concrete multi-node coordination proof instead of relying only on single-process evidence.
 
+In the runtime capability matrix, this shared-queue result is the current `live_proven` shared-queue proof. Subscriber takeover, stale-writer fencing, and replay coordination remain `harness_proven` or `contract_only` until the same semantics are emitted by a live multi-node run.
+
 ## Artifact
 
 - `docs/reports/multi-node-shared-queue-report.json`
 - `docs/reports/shared-queue-companion-summary.json`
 - `docs/reports/live-validation-index.md`
+- `docs/reports/cross-process-coordination-capability-surface.json`
 
 ## Parallel follow-up digests
 

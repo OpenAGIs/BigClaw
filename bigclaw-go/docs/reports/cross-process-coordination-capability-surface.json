@@ -1,8 +1,14 @@
 {
-  "generated_at": "2026-03-17T00:29:18.415416Z",
+  "generated_at": "2026-03-17T02:03:29.877655Z",
   "ticket": "BIG-PAR-085-local-prework",
   "title": "Cross-process coordination capability surface",
   "status": "local-capability-surface",
+  "runtime_readiness_levels": {
+    "live_proven": "Shipped runtime behavior with checked-in live cross-process proof.",
+    "harness_proven": "Deterministic executable harness coverage exists, but no live multi-node proof is checked in.",
+    "contract_only": "Only target contracts or rollout docs define the expected semantics today.",
+    "supporting_surface": "The repo exposes reporting or metadata surfaces that describe runtime readiness without proving the coordination behavior itself."
+  },
   "evidence_inputs": {
     "shared_queue_report": "bigclaw-go/docs/reports/multi-node-shared-queue-report.json",
     "takeover_harness_report": "bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json",
@@ -30,6 +36,7 @@
     {
       "capability": "shared_queue_task_coordination",
       "current_state": "implemented",
+      "runtime_readiness": "live_proven",
       "live_local_proof": true,
       "deterministic_local_harness": false,
       "contract_defined_target": true,
@@ -41,6 +48,7 @@
     {
       "capability": "subscriber_takeover_semantics",
       "current_state": "implemented_with_process_local_boundary",
+      "runtime_readiness": "live_proven",
       "live_local_proof": true,
       "deterministic_local_harness": true,
       "contract_defined_target": true,
@@ -52,6 +60,7 @@
     {
       "capability": "cross_process_replay_coordination",
       "current_state": "contract_defined",
+      "runtime_readiness": "harness_proven",
       "live_local_proof": false,
       "deterministic_local_harness": true,
       "contract_defined_target": true,
@@ -63,6 +72,7 @@
     {
       "capability": "stale_writer_fencing",
       "current_state": "implemented_with_process_local_boundary",
+      "runtime_readiness": "live_proven",
       "live_local_proof": true,
       "deterministic_local_harness": true,
       "contract_defined_target": true,
@@ -74,6 +84,7 @@
     {
       "capability": "partitioned_topic_routing",
       "current_state": "not_available",
+      "runtime_readiness": "contract_only",
       "live_local_proof": false,
       "deterministic_local_harness": false,
       "contract_defined_target": true,
@@ -85,6 +96,7 @@
     {
       "capability": "broker_backed_subscriber_ownership",
       "current_state": "not_available",
+      "runtime_readiness": "contract_only",
       "live_local_proof": false,
       "deterministic_local_harness": false,
       "contract_defined_target": true,
@@ -96,6 +108,7 @@
     {
       "capability": "operator_capability_surface",
       "current_state": "implemented",
+      "runtime_readiness": "supporting_surface",
       "live_local_proof": false,
       "deterministic_local_harness": false,
       "contract_defined_target": true,

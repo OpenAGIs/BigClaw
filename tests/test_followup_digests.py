@@ -139,9 +139,9 @@ DIGESTS = {
             Path("bigclaw-go/docs/e2e-validation.md"),
         ],
     },
-    "OPE-270": {
+    "OPE-261": {
         "path": Path("bigclaw-go/docs/reports/cross-process-coordination-boundary-digest.md"),
-        "title": "BIG-PAR-081",
+        "title": "BIG-PAR-085",
         "links": [
             "docs/reports/event-bus-reliability-report.md",
             "docs/reports/multi-node-coordination-report.md",
