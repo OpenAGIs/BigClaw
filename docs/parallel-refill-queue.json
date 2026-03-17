@@ -18,6 +18,10 @@
   },
   "recent_batches": {
     "completed": [
+      "OPE-5",
+      "OPE-12",
+      "OPE-21",
+      "OPE-225",
       "OPE-6",
       "OPE-260",
       "OPE-261",
@@ -35,12 +39,7 @@
       "OPE-274",
       "OPE-275"
     ],
-    "active": [
-      "OPE-5",
-      "OPE-12",
-      "OPE-21",
-      "OPE-225"
-    ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -54,25 +53,25 @@
       "identifier": "OPE-5",
       "title": "BIG-DUR-101 publish acknowledgement outcome ledger",
       "track": "Publish Ack Outcome Ledger",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-12",
       "title": "BIG-DUR-102 durable sequence bridge for provider offsets",
       "track": "Durable Sequence Bridge",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-21",
       "title": "BIG-DUR-103 provider-backed retention watermark and expiry surface",
       "track": "Retention Watermark & Expiry",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-225",
       "title": "BIG-DUR-104 provider-backed live handoff isolation proof",
       "track": "Provider-backed Live Handoff Proof",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

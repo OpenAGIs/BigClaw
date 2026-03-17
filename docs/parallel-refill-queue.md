@@ -25,12 +25,16 @@ manual operator can refill the next parallel-safe issues in a stable order.
 ## Current batch
 
 - Active:
-  - `OPE-5` — `BIG-DUR-101` publish acknowledgement outcome ledger
-  - `OPE-12` — `BIG-DUR-102` durable sequence bridge for provider offsets
-  - `OPE-21` — `BIG-DUR-103` provider-backed retention watermark and expiry surface
-  - `OPE-225` — `BIG-DUR-104` provider-backed live handoff isolation proof
+  - _None; the v5.1 recycled durability batch is fully complete._
 - Ready to promote:
-  - _None; the recycled batch is already fully active._
+  - _None; wait for the next recycled batch or a quota recovery event before refilling._
+
+## Completed in this batch
+
+- `OPE-5` — `BIG-DUR-101` publish acknowledgement outcome ledger
+- `OPE-12` — `BIG-DUR-102` durable sequence bridge for provider offsets
+- `OPE-21` — `BIG-DUR-103` provider-backed retention watermark and expiry surface
+- `OPE-225` — `BIG-DUR-104` provider-backed live handoff isolation proof
 
 ## Canonical refill order
 
