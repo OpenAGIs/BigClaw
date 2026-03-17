@@ -383,6 +383,63 @@ func TestDebugStatusIncludesCoordinationCapabilitySurface(t *testing.T) {
 	}
 }
 
+func TestDebugStatusIncludesDeliveryAckReadinessSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		DeliveryAckReadiness struct {
+			ReportPath string `json:"report_path"`
+			Ticket     string `json:"ticket"`
+			Summary    struct {
+				BackendCount         int `json:"backend_count"`
+				ExplicitAckBackends  int `json:"explicit_ack_backends"`
+				DurableAckBackends   int `json:"durable_ack_backends"`
+				BestEffortBackends   int `json:"best_effort_backends"`
+				ContractOnlyBackends int `json:"contract_only_backends"`
+			} `json:"summary"`
+			Backends []struct {
+				Backend                 string `json:"backend"`
+				AcknowledgementClass    string `json:"acknowledgement_class"`
+				ExplicitAcknowledgement bool   `json:"explicit_acknowledgement"`
+				DurableAcknowledgement  bool   `json:"durable_acknowledgement"`
+				RuntimeReadiness        string `json:"runtime_readiness"`
+			} `json:"backends"`
+		} `json:"delivery_ack_readiness"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug ack readiness payload: %v", err)
+	}
+	if decoded.DeliveryAckReadiness.ReportPath != deliveryAckReadinessSurfacePath || decoded.DeliveryAckReadiness.Ticket != "OPE-264" {
+		t.Fatalf("unexpected delivery ack report metadata: %+v", decoded.DeliveryAckReadiness)
+	}
+	if decoded.DeliveryAckReadiness.Summary.BackendCount != 5 || decoded.DeliveryAckReadiness.Summary.ExplicitAckBackends != 3 || decoded.DeliveryAckReadiness.Summary.DurableAckBackends != 2 || decoded.DeliveryAckReadiness.Summary.BestEffortBackends != 1 || decoded.DeliveryAckReadiness.Summary.ContractOnlyBackends != 1 {
+		t.Fatalf("unexpected delivery ack summary: %+v", decoded.DeliveryAckReadiness.Summary)
+	}
+	if len(decoded.DeliveryAckReadiness.Backends) != 5 {
+		t.Fatalf("expected 5 ack readiness backends, got %+v", decoded.DeliveryAckReadiness.Backends)
+	}
+	if decoded.DeliveryAckReadiness.Backends[0].Backend != "memory" || decoded.DeliveryAckReadiness.Backends[0].AcknowledgementClass != "best_effort_only" || decoded.DeliveryAckReadiness.Backends[0].ExplicitAcknowledgement || decoded.DeliveryAckReadiness.Backends[0].DurableAcknowledgement {
+		t.Fatalf("unexpected memory ack readiness payload: %+v", decoded.DeliveryAckReadiness.Backends[0])
+	}
+	if decoded.DeliveryAckReadiness.Backends[1].Backend != "sqlite" || !decoded.DeliveryAckReadiness.Backends[1].ExplicitAcknowledgement || !decoded.DeliveryAckReadiness.Backends[1].DurableAcknowledgement {
+		t.Fatalf("unexpected sqlite ack readiness payload: %+v", decoded.DeliveryAckReadiness.Backends[1])
+	}
+	if decoded.DeliveryAckReadiness.Backends[4].Backend != "broker_replicated" || decoded.DeliveryAckReadiness.Backends[4].RuntimeReadiness != "contract_only" {
+		t.Fatalf("unexpected broker replicated ack readiness payload: %+v", decoded.DeliveryAckReadiness.Backends[4])
+	}
+}
+
 func TestDeadLetterEndpoints(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()
@@ -1998,6 +2055,19 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 				ArtifactDirectory  string   `json:"artifact_directory"`
 				ReviewerLinks      []string `json:"reviewer_links"`
 			} `json:"broker_review_pack"`
+			DeliveryAckReadiness struct {
+				ReportPath string `json:"report_path"`
+				Summary    struct {
+					ExplicitAckBackends  int `json:"explicit_ack_backends"`
+					DurableAckBackends   int `json:"durable_ack_backends"`
+					BestEffortBackends   int `json:"best_effort_backends"`
+					ContractOnlyBackends int `json:"contract_only_backends"`
+				} `json:"summary"`
+				Backends []struct {
+					Backend              string `json:"backend"`
+					AcknowledgementClass string `json:"acknowledgement_class"`
+				} `json:"backends"`
+			} `json:"delivery_ack_readiness"`
 			RolloutReport struct {
 				Markdown  string `json:"markdown"`
 				ExportURL string `json:"export_url"`
@@ -2049,10 +2119,24 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		decoded.Diagnostics.BrokerReviewPack.ReviewerLinks[1] != "docs/reports/review-readiness.md" {
 		t.Fatalf("unexpected broker review pack reviewer links: %+v", decoded.Diagnostics.BrokerReviewPack.ReviewerLinks)
 	}
+	if decoded.Diagnostics.DeliveryAckReadiness.ReportPath != deliveryAckReadinessSurfacePath ||
+		decoded.Diagnostics.DeliveryAckReadiness.Summary.ExplicitAckBackends != 3 ||
+		decoded.Diagnostics.DeliveryAckReadiness.Summary.DurableAckBackends != 2 ||
+		decoded.Diagnostics.DeliveryAckReadiness.Summary.BestEffortBackends != 1 ||
+		decoded.Diagnostics.DeliveryAckReadiness.Summary.ContractOnlyBackends != 1 {
+		t.Fatalf("unexpected delivery ack readiness payload: %+v", decoded.Diagnostics.DeliveryAckReadiness)
+	}
+	if len(decoded.Diagnostics.DeliveryAckReadiness.Backends) != 5 ||
+		decoded.Diagnostics.DeliveryAckReadiness.Backends[0].Backend != "memory" ||
+		decoded.Diagnostics.DeliveryAckReadiness.Backends[0].AcknowledgementClass != "best_effort_only" {
+		t.Fatalf("unexpected delivery ack readiness backend detail: %+v", decoded.Diagnostics.DeliveryAckReadiness.Backends)
+	}
 	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Failover Review Pack") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Delivery Acknowledgement Readiness") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-validation-summary.json") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, deliveryAckReadinessSurfacePath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-failover-stub-artifacts") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {
 		t.Fatalf("unexpected rollout report payload: %+v", decoded.Diagnostics.RolloutReport)

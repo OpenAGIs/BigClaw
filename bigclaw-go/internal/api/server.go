@@ -201,6 +201,7 @@ func (s *Server) Handler() http.Handler {
 			"event_durability_rollout":        rolloutScorecard,
 			"event_log":                       s.eventLogCapabilities(r.Context()),
 			"coordination_capability_surface": coordinationCapabilitySurfacePayload(),
+			"delivery_ack_readiness":          deliveryAckReadinessPayload(),
 		}
 		if s.Worker != nil {
 			payload["worker"] = s.Worker.Snapshot()

@@ -102,13 +102,14 @@ type traceExportBundleTrace struct {
 }
 
 type distributedDiagnostics struct {
-	Summary          distributedDiagnosticsSummary `json:"summary"`
-	RoutingReasons   []routingReasonSummary        `json:"routing_reasons"`
-	ExecutorCapacity []executorCapacityView        `json:"executor_capacity"`
-	ClusterHealth    clusterHealthRollup           `json:"cluster_health"`
-	BrokerReviewPack brokerReviewPack              `json:"broker_review_pack"`
-	TraceBundle      traceExportBundleSummary      `json:"trace_export_bundle"`
-	RolloutReport    distributedDiagnosticsReport  `json:"rollout_report"`
+	Summary              distributedDiagnosticsSummary `json:"summary"`
+	RoutingReasons       []routingReasonSummary        `json:"routing_reasons"`
+	ExecutorCapacity     []executorCapacityView        `json:"executor_capacity"`
+	ClusterHealth        clusterHealthRollup           `json:"cluster_health"`
+	BrokerReviewPack     brokerReviewPack              `json:"broker_review_pack"`
+	DeliveryAckReadiness deliveryAckReadinessSurface   `json:"delivery_ack_readiness"`
+	TraceBundle          traceExportBundleSummary      `json:"trace_export_bundle"`
+	RolloutReport        distributedDiagnosticsReport  `json:"rollout_report"`
 }
 
 type executorDiagnosticsCounters struct {
@@ -151,13 +152,14 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 			"limit":      filters.Limit,
 			"priority":   filters.Priority,
 		},
-		"event_durability":    s.EventPlan,
-		"summary":             diagnostics.Summary,
-		"routing_reasons":     diagnostics.RoutingReasons,
-		"executor_capacity":   diagnostics.ExecutorCapacity,
-		"cluster_health":      diagnostics.ClusterHealth,
-		"trace_export_bundle": diagnostics.TraceBundle,
-		"report":              diagnostics.RolloutReport,
+		"event_durability":       s.EventPlan,
+		"summary":                diagnostics.Summary,
+		"routing_reasons":        diagnostics.RoutingReasons,
+		"executor_capacity":      diagnostics.ExecutorCapacity,
+		"cluster_health":         diagnostics.ClusterHealth,
+		"trace_export_bundle":    diagnostics.TraceBundle,
+		"delivery_ack_readiness": diagnostics.DeliveryAckReadiness,
+		"report":                 diagnostics.RolloutReport,
 	})
 }
 
@@ -377,12 +379,13 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		Notes:              diagnosticsNotes(summary, executorCapacity, s.Control.Snapshot()),
 	}
 	diagnostics := distributedDiagnostics{
-		Summary:          summary,
-		RoutingReasons:   routingReasons,
-		ExecutorCapacity: executorCapacity,
-		ClusterHealth:    clusterHealth,
-		BrokerReviewPack: buildBrokerReviewPack(),
-		TraceBundle:      buildTraceExportBundle(assignments, s.Recorder.TraceSummaries(5)),
+		Summary:              summary,
+		RoutingReasons:       routingReasons,
+		ExecutorCapacity:     executorCapacity,
+		ClusterHealth:        clusterHealth,
+		BrokerReviewPack:     buildBrokerReviewPack(),
+		DeliveryAckReadiness: deliveryAckReadinessPayload(),
+		TraceBundle:          buildTraceExportBundle(assignments, s.Recorder.TraceSummaries(5)),
 	}
 	diagnostics.RolloutReport = distributedDiagnosticsReport{
 		Markdown:  renderDistributedDiagnosticsMarkdown(diagnostics, filters),
@@ -722,6 +725,24 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	)
 	if len(diagnostics.BrokerReviewPack.ReviewerLinks) > 0 {
 		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.BrokerReviewPack.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Delivery Acknowledgement Readiness",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.DeliveryAckReadiness.ReportPath),
+		fmt.Sprintf("- Explicit ACK backends: %d", diagnostics.DeliveryAckReadiness.Summary.ExplicitAckBackends),
+		fmt.Sprintf("- Durable ACK backends: %d", diagnostics.DeliveryAckReadiness.Summary.DurableAckBackends),
+		fmt.Sprintf("- Best-effort backends: %d", diagnostics.DeliveryAckReadiness.Summary.BestEffortBackends),
+		fmt.Sprintf("- Contract-only backends: %d", diagnostics.DeliveryAckReadiness.Summary.ContractOnlyBackends),
+	)
+	for _, backend := range diagnostics.DeliveryAckReadiness.Backends {
+		lines = append(lines, fmt.Sprintf("- %s: class=%s explicit_ack=%t durable_ack=%t readiness=%s", backend.Backend, backend.AcknowledgementClass, backend.ExplicitAcknowledgement, backend.DurableAcknowledgement, backend.RuntimeReadiness))
+		if len(backend.SourceReportLinks) > 0 {
+			lines = append(lines, "  - sources: "+strings.Join(backend.SourceReportLinks, ", "))
+		}
+	}
+	if len(diagnostics.DeliveryAckReadiness.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.DeliveryAckReadiness.ReviewerLinks, ", "))
 	}
 	lines = append(lines, "", "## Notes")
 	for _, note := range diagnostics.ClusterHealth.Notes {

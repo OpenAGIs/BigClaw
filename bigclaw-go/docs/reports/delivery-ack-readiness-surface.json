@@ -1,0 +1,113 @@
+{
+  "generated_at": "2026-03-17T15:40:00Z",
+  "ticket": "OPE-264",
+  "title": "Delivery acknowledgement readiness surface for event log backends",
+  "status": "checked_in_surface",
+  "evidence_sources": [
+    "bigclaw-go/internal/events/capabilities.go",
+    "bigclaw-go/internal/events/sqlite_log.go",
+    "bigclaw-go/internal/events/http_log.go",
+    "bigclaw-go/internal/events/broker_stub_log.go",
+    "bigclaw-go/docs/reports/event-bus-reliability-report.md",
+    "bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md"
+  ],
+  "reviewer_links": [
+    "/debug/status",
+    "/v2/control-center",
+    "/v2/reports/distributed/export",
+    "docs/reports/event-bus-reliability-report.md",
+    "docs/reports/replicated-event-log-durability-rollout-contract.md"
+  ],
+  "summary": {
+    "backend_count": 5,
+    "explicit_ack_backends": 3,
+    "durable_ack_backends": 2,
+    "best_effort_backends": 1,
+    "contract_only_backends": 1
+  },
+  "backends": [
+    {
+      "backend": "memory",
+      "scope": "process_local",
+      "publish_mode": "live_fanout",
+      "acknowledgement_class": "best_effort_only",
+      "explicit_acknowledgement": false,
+      "durable_acknowledgement": false,
+      "runtime_readiness": "best_effort",
+      "source_report_links": [
+        "docs/reports/event-bus-reliability-report.md"
+      ],
+      "notes": [
+        "In-process publish succeeds without a durable commit boundary.",
+        "Sink write failures are not promoted into a backend-level delivery acknowledgement contract."
+      ]
+    },
+    {
+      "backend": "sqlite",
+      "scope": "shared_node",
+      "publish_mode": "append_only",
+      "acknowledgement_class": "explicit_durable_commit",
+      "explicit_acknowledgement": true,
+      "durable_acknowledgement": true,
+      "runtime_readiness": "implemented",
+      "source_report_links": [
+        "docs/reports/event-bus-reliability-report.md"
+      ],
+      "notes": [
+        "Publish returns after the SQLite append succeeds.",
+        "This is a durable single-node acknowledgement, not a replicated quorum guarantee."
+      ]
+    },
+    {
+      "backend": "http",
+      "scope": "remote_service",
+      "publish_mode": "append_only",
+      "acknowledgement_class": "explicit_service_commit",
+      "explicit_acknowledgement": true,
+      "durable_acknowledgement": true,
+      "runtime_readiness": "implemented",
+      "source_report_links": [
+        "docs/reports/event-bus-reliability-report.md"
+      ],
+      "notes": [
+        "Publish success is delegated to the remote event-log service response.",
+        "Durability depends on the shared service implementation rather than local process memory."
+      ]
+    },
+    {
+      "backend": "broker_stub",
+      "scope": "process_local_stub",
+      "publish_mode": "append_only_stub",
+      "acknowledgement_class": "explicit_stub_commit",
+      "explicit_acknowledgement": true,
+      "durable_acknowledgement": false,
+      "runtime_readiness": "stub_validation_only",
+      "source_report_links": [
+        "docs/reports/event-bus-reliability-report.md",
+        "docs/reports/broker-failover-stub-report.json"
+      ],
+      "notes": [
+        "Publish returns after the local deterministic stub append succeeds.",
+        "The acknowledgement is explicit for contract validation, but the history remains process-local and non-durable."
+      ]
+    },
+    {
+      "backend": "broker_replicated",
+      "scope": "provider_defined_replicated_log",
+      "publish_mode": "contract_only",
+      "acknowledgement_class": "contract_only",
+      "explicit_acknowledgement": false,
+      "durable_acknowledgement": false,
+      "runtime_readiness": "contract_only",
+      "source_report_links": [
+        "docs/reports/event-bus-reliability-report.md",
+        "docs/reports/replicated-event-log-durability-rollout-contract.md",
+        "docs/reports/durability-rollout-scorecard.json"
+      ],
+      "notes": [
+        "The rollout contract requires explicit durable publish acknowledgement before success is reported.",
+        "No concrete replicated broker backend is shipped in this checkout yet."
+      ]
+    }
+  ]
+}
