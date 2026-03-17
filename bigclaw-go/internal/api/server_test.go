@@ -1929,6 +1929,14 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 					Count int    `json:"count"`
 				} `json:"takeover_owners"`
 			} `json:"cluster_health"`
+			BrokerReviewPack struct {
+				Status             string   `json:"status"`
+				SummaryPath        string   `json:"summary_path"`
+				ReportPath         string   `json:"report_path"`
+				ValidationPackPath string   `json:"validation_pack_path"`
+				ArtifactDirectory  string   `json:"artifact_directory"`
+				ReviewerLinks      []string `json:"reviewer_links"`
+			} `json:"broker_review_pack"`
 			RolloutReport struct {
 				Markdown  string `json:"markdown"`
 				ExportURL string `json:"export_url"`
@@ -1968,7 +1976,24 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	if len(decoded.Diagnostics.ClusterHealth.TakeoverOwners) == 0 || decoded.Diagnostics.ClusterHealth.TakeoverOwners[0].Key != "alice" {
 		t.Fatalf("expected takeover owner rollup, got %+v", decoded.Diagnostics.ClusterHealth)
 	}
-	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") || !strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {
+	if decoded.Diagnostics.BrokerReviewPack.Status != "checked_in_stub_evidence" ||
+		decoded.Diagnostics.BrokerReviewPack.SummaryPath != "docs/reports/broker-validation-summary.json" ||
+		decoded.Diagnostics.BrokerReviewPack.ReportPath != "docs/reports/broker-failover-stub-report.json" ||
+		decoded.Diagnostics.BrokerReviewPack.ValidationPackPath != "docs/reports/broker-failover-fault-injection-validation-pack.md" ||
+		decoded.Diagnostics.BrokerReviewPack.ArtifactDirectory != "docs/reports/broker-failover-stub-artifacts" {
+		t.Fatalf("unexpected broker review pack payload: %+v", decoded.Diagnostics.BrokerReviewPack)
+	}
+	if len(decoded.Diagnostics.BrokerReviewPack.ReviewerLinks) != 2 ||
+		decoded.Diagnostics.BrokerReviewPack.ReviewerLinks[0] != "docs/reports/live-validation-index.json" ||
+		decoded.Diagnostics.BrokerReviewPack.ReviewerLinks[1] != "docs/reports/review-readiness.md" {
+		t.Fatalf("unexpected broker review pack reviewer links: %+v", decoded.Diagnostics.BrokerReviewPack.ReviewerLinks)
+	}
+	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Failover Review Pack") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-validation-summary.json") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-failover-stub-artifacts") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {
 		t.Fatalf("unexpected rollout report payload: %+v", decoded.Diagnostics.RolloutReport)
 	}
 }
