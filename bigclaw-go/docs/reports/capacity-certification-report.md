@@ -15,6 +15,14 @@
 - Local ceiling envelope: `<=2000 tasks with 24 submit workers`
 - Saturation signal: `throughput remains in the same single-instance local band at the 2000-task ceiling`
 
+## Admission Policy Summary
+
+- Policy mode: `advisory-only reviewer guidance`
+- Runtime enforcement: `none`
+- Default reviewer envelope: `<=1000 tasks with 24 submit workers`
+- Ceiling reviewer envelope: `<=2000 tasks with 24 submit workers`
+- Scheduler note: recommended envelopes guide reviewer admission decisions and are not scheduler-enforced runtime limits.
+
 ## Microbenchmark Thresholds
 
 - `BenchmarkMemoryQueueEnqueueLease-8`: `66075.00 ns/op` vs limit `100000` -> `pass`
