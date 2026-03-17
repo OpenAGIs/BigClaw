@@ -67,7 +67,7 @@ It builds on the provider-neutral adapter boundary in `docs/reports/broker-event
 - failure-domain summaries
 - references to the supporting validation pack and rollout contract documents
 
-The current repo-native source for these signals is the `event_durability` payload exposed through `GET /debug/status`.
+The current repo-native sources for these signals are the `event_durability` payload plus the derived `event_durability_rollout` scorecard exposed through `GET /debug/status`, `/metrics`, and the checked-in `docs/reports/durability-rollout-scorecard.json` artifact.
 
 ## Validation evidence required before a live adapter lands
 

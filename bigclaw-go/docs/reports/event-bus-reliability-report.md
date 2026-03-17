@@ -147,7 +147,7 @@ This report summarizes the current event bus reliability evidence and the next r
   - replay and checkpoint state must share the same durable sequence domain across failover;
   - retention boundaries must be operator-visible before resumable recovery is claimed;
   - live fanout must remain isolated from broker catch-up lag.
-- The same contract is surfaced in `events.DurabilityPlan`, so debug/control-plane payloads can show rollout checks, failure domains, and supporting evidence links before a live adapter exists.
+- The same contract is surfaced in `events.DurabilityPlan`, and `event_durability_rollout` now publishes a derived scorecard through `GET /debug/status`, `/metrics`, and `docs/reports/durability-rollout-scorecard.json` so operators can see which rollout gates are still blocked before a live adapter exists.
 
 ## Next adapter boundary
 

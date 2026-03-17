@@ -12,15 +12,16 @@ import (
 )
 
 type metricsSnapshot struct {
-	QueueSize           int
-	Events              map[domain.EventType]int
-	TraceCount          int
-	RegisteredExecutors []string
-	WorkerPool          *workerPoolSummary
-	Control             control.Snapshot
-	EventDurability     any
-	EventLog            any
-	RetentionWatermark  any
+	QueueSize              int
+	Events                 map[domain.EventType]int
+	TraceCount             int
+	RegisteredExecutors    []string
+	WorkerPool             *workerPoolSummary
+	Control                control.Snapshot
+	EventDurability        any
+	EventDurabilityRollout any
+	EventLog               any
+	RetentionWatermark     any
 }
 
 func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
@@ -35,14 +36,15 @@ func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) buildMetricsSnapshot() metricsSnapshot {
 	snapshot := metricsSnapshot{
-		QueueSize:           s.Queue.Size(context.Background()),
-		Events:              s.Recorder.Snapshot(),
-		TraceCount:          len(s.Recorder.TraceSummaries(0)),
-		RegisteredExecutors: s.executorNames(),
-		WorkerPool:          s.workerPoolSummary(),
-		EventDurability:     s.EventPlan,
-		EventLog:            s.eventLogCapabilities(context.Background()),
-		RetentionWatermark:  s.retentionWatermark(),
+		QueueSize:              s.Queue.Size(context.Background()),
+		Events:                 s.Recorder.Snapshot(),
+		TraceCount:             len(s.Recorder.TraceSummaries(0)),
+		RegisteredExecutors:    s.executorNames(),
+		WorkerPool:             s.workerPoolSummary(),
+		EventDurability:        s.EventPlan,
+		EventDurabilityRollout: s.EventPlan.RolloutScorecard(),
+		EventLog:               s.eventLogCapabilities(context.Background()),
+		RetentionWatermark:     s.retentionWatermark(),
 	}
 	if s.Control != nil {
 		snapshot.Control = s.Control.Snapshot()
@@ -55,13 +57,14 @@ func (s *Server) buildMetricsSnapshot() metricsSnapshot {
 
 func metricsJSONPayload(snapshot metricsSnapshot) map[string]any {
 	return map[string]any{
-		"queue_size":           snapshot.QueueSize,
-		"events":               snapshot.Events,
-		"trace_count":          snapshot.TraceCount,
-		"registered_executors": snapshot.RegisteredExecutors,
-		"event_durability":     snapshot.EventDurability,
-		"event_log":            snapshot.EventLog,
-		"retention_watermark":  snapshot.RetentionWatermark,
+		"queue_size":               snapshot.QueueSize,
+		"events":                   snapshot.Events,
+		"trace_count":              snapshot.TraceCount,
+		"registered_executors":     snapshot.RegisteredExecutors,
+		"event_durability":         snapshot.EventDurability,
+		"event_durability_rollout": snapshot.EventDurabilityRollout,
+		"event_log":                snapshot.EventLog,
+		"retention_watermark":      snapshot.RetentionWatermark,
 	}
 }
 

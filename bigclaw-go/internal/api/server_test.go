@@ -278,6 +278,12 @@ func TestDebugStatusIncludesEventDurabilityPlan(t *testing.T) {
 	if !strings.Contains(response.Body.String(), "\"verification_evidence\"") {
 		t.Fatalf("expected verification evidence in payload, got %s", response.Body.String())
 	}
+	if !strings.Contains(response.Body.String(), "\"event_durability_rollout\"") {
+		t.Fatalf("expected rollout scorecard in payload, got %s", response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), "\"rollout_ready\":false") {
+		t.Fatalf("expected rollout readiness flag in payload, got %s", response.Body.String())
+	}
 }
 
 func TestDeadLetterEndpoints(t *testing.T) {
@@ -766,6 +772,31 @@ func TestDebugTraceEndpointsExposeTraceSummary(t *testing.T) {
 	server.Handler().ServeHTTP(metricsResponse, metricsRequest)
 	if !strings.Contains(metricsResponse.Body.String(), "trace_count") {
 		t.Fatalf("expected trace_count in metrics payload, got %s", metricsResponse.Body.String())
+	}
+}
+
+func TestMetricsJSONIncludesDurabilityRolloutScorecard(t *testing.T) {
+	recorder := observability.NewRecorder()
+	server := &Server{
+		Recorder:  recorder,
+		Queue:     queue.NewMemoryQueue(),
+		Bus:       events.NewBus(),
+		EventPlan: events.NewDurabilityPlan("memory", "broker_replicated", 3),
+		Now:       time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected metrics 200, got %d", response.Code)
+	}
+	body := response.Body.String()
+	if !strings.Contains(body, "\"event_durability_rollout\"") {
+		t.Fatalf("expected durability rollout scorecard in metrics payload, got %s", body)
+	}
+	if !strings.Contains(body, "\"rollout_ready\":false") {
+		t.Fatalf("expected rollout readiness flag in metrics payload, got %s", body)
 	}
 }
 
