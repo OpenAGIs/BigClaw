@@ -25,10 +25,15 @@ manual operator can refill the next parallel-safe issues in a stable order.
 ## Current batch
 
 - Active:
-  - none; the BigClaw v5.0 parallel batch is fully drained and all tracked issues are `Done`
+  - `OPE-266` — `BIG-PAR-110` live shadow mirror scorecard surface in debug and migration review payloads
+  - `OPE-267` — `BIG-PAR-111` rollback trigger surface in debug and migration review payloads
 - Ready to promote:
-  - none; Linear currently shows no `Backlog`, `Todo`, or `In Progress` issues for this project
+  - `OPE-269` — `BIG-PAR-112` validation bundle continuation gate surface in debug and distributed diagnostics
+  - `OPE-268` — `BIG-PAR-113` enable continuation-gate enforcement by default in unattended workflow closeout
 
 ## Canonical refill order
 
-- none; wait for the next recycled or newly created project issues before refilling Symphony
+1. `OPE-266`
+2. `OPE-267`
+3. `OPE-269`
+4. `OPE-268`
