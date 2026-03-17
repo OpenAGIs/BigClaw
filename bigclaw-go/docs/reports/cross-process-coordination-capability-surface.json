@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-17T02:34:44.945195Z",
+  "generated_at": "2026-03-17T02:48:01.798600Z",
   "ticket": "BIG-PAR-085-local-prework",
   "title": "Cross-process coordination capability surface",
   "status": "local-capability-surface",
@@ -92,7 +92,7 @@
     {
       "capability": "subscriber_takeover_semantics",
       "current_state": "implemented_with_process_local_boundary",
-      "runtime_readiness": "harness_proven",
+      "runtime_readiness": "live_proven",
       "live_local_proof": true,
       "deterministic_local_harness": true,
       "contract_defined_target": true,
@@ -116,7 +116,7 @@
     {
       "capability": "stale_writer_fencing",
       "current_state": "implemented_with_process_local_boundary",
-      "runtime_readiness": "harness_proven",
+      "runtime_readiness": "live_proven",
       "live_local_proof": true,
       "deterministic_local_harness": true,
       "contract_defined_target": true,

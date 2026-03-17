@@ -136,7 +136,7 @@ def build_report(
         capability_row(
             capability='subscriber_takeover_semantics',
             current_state='implemented_with_process_local_boundary',
-            runtime_readiness='harness_proven',
+            runtime_readiness='live_proven',
             live_local_proof=True,
             deterministic_local_harness=True,
             contract_defined_target=True,
@@ -160,7 +160,7 @@ def build_report(
         capability_row(
             capability='stale_writer_fencing',
             current_state='implemented_with_process_local_boundary',
-            runtime_readiness='harness_proven',
+            runtime_readiness='live_proven',
             live_local_proof=True,
             deterministic_local_harness=True,
             contract_defined_target=True,

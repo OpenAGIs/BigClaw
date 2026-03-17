@@ -21,6 +21,7 @@ This digest consolidates the remaining cross-process coordination caveats for `O
 - Current coordination evidence is still bounded by local SQLite-backed sharing plus deterministic local takeover harnesses, not a durable broker-backed cross-process subscriber coordination contract.
 - There is no shipped partitioned topic routing model, no shipped broker-backed subscriber ownership model, and no provider-neutral live proof for cross-process replay coordination.
 - Cross-process coordination is therefore bounded by the current local proof and roadmap documentation, not by a completed runtime contract.
+- The current ceiling still includes `no partitioned topic model` and `no broker-backed cross-process subscriber coordination` even after adding the target contract surface.
 
 ## Current Blockers
 
