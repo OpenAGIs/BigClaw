@@ -37,7 +37,7 @@ type Server struct {
 	Bus              *events.Bus
 	EventPlan        events.DurabilityPlan
 	EventLog         events.EventLog
-	SubscriberLeases *events.SubscriberLeaseCoordinator
+	SubscriberLeases events.SubscriberLeaseStore
 	Now              func() time.Time
 	Worker           WorkerStatusProvider
 	Control          *control.Controller

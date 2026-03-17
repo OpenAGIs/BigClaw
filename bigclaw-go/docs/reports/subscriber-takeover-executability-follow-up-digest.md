@@ -19,18 +19,18 @@ This digest consolidates the remaining takeover coordination caveats after the l
 
 - The repo now has both a deterministic local harness and a live two-node shared-queue proof that emits the same core takeover schema plus per-node audit artifacts sourced from runtime audit events.
 - Current checkpoint fencing proves stale writers cannot advance ownership after takeover in both paths and exposes stale-write rejection counts directly in the generated reports.
-- The live proof is intentionally scoped: it exercises real `bigclawd` processes and the real lease/checkpoint API, but subscriber ownership is still coordinated through a process-local lease store on one node per scenario.
-- Takeover readiness is therefore reviewable as live evidence for schema parity and operational transitions, but not yet as broker-backed or shared-durable distributed ownership evidence.
+- The live proof is intentionally scoped: it exercises real `bigclawd` processes and the real lease/checkpoint API on both nodes, backed by one shared SQLite lease store.
+- Takeover readiness is therefore reviewable as live evidence for schema parity, operational transitions, and a shared durable scaffold, but not yet as broker-backed or replicated distributed ownership evidence.
+- In short, `live schema parity exists but shared durable ownership does not` beyond the current SQLite-backed prototype.
 
 ## Current Blockers
 
-- No shared durable subscriber-group coordination proof yet closes the gap between the live API-driven proof and true cross-process ownership.
-- No broker-backed or replicated transport yet carries subscriber ownership across independent processes or nodes.
-- Runtime audit logs now emit native takeover transition events, but ownership remains process-local until a shared durable backend exists.
+- No broker-backed or replicated transport yet carries subscriber ownership across independent processes or nodes beyond the shared durable SQLite scaffold.
+- Runtime audit logs now emit native takeover transition events, but ownership remains bounded to the current SQLite-backed scaffold until a broker-backed or replicated backend exists.
 - Duplicate replay candidates are still derived from checkpoint overlap windows rather than a broker-backed replay stream.
 
 ## Lightweight Consistency Check
 
 - Keep this digest aligned with `docs/reports/multi-subscriber-takeover-validation-report.md`, `docs/reports/multi-subscriber-takeover-validation-report.json`, `scripts/e2e/subscriber_takeover_fault_matrix.py`, and `docs/reports/event-bus-reliability-report.md`.
 - Keep the live companion proof references aligned with `docs/reports/live-multi-node-subscriber-takeover-report.json`, `docs/reports/live-multi-node-subscriber-takeover-artifacts/`, and `scripts/e2e/multi_node_shared_queue.py`.
-- Repeat the `live schema parity exists but shared durable ownership does not` caveat anywhere takeover readiness is summarized.
+- Repeat the `shared durable SQLite scaffold exists but broker-backed ownership does not` caveat anywhere takeover readiness is summarized.

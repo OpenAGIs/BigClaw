@@ -147,7 +147,7 @@ python3 scripts/e2e/multi_node_shared_queue.py \
   --takeover-report-path docs/reports/live-multi-node-subscriber-takeover-report.json
 ```
 
-This starts the same two-node cluster, drives live lease acquisition and checkpoint takeover through the subscriber-group API, and exports runtime-emitted subscriber transition events into per-scenario takeover audit artifacts. The live proof is still explicit about its boundary: subscriber lease coordination remains process-local and is routed through one node per scenario until a shared durable lease backend exists.
+This starts the same two-node cluster, drives live lease acquisition and checkpoint takeover through the subscriber-group API on both nodes against one shared SQLite-backed lease store, and exports runtime-emitted subscriber transition events into per-scenario takeover audit artifacts. The live proof upgrades ownership to a shared durable scaffold while keeping broker-backed and replicated ownership caveats explicit.
 
 ## Cross-process coordination capability surface
 

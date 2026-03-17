@@ -38,9 +38,9 @@ func TestCrossProcessCoordinationReadinessDocsStayAligned(t *testing.T) {
 
 	expectedCapabilities := map[string]string{
 		"shared_queue_task_coordination":     "live_proven",
-		"subscriber_takeover_semantics":      "harness_proven",
+		"subscriber_takeover_semantics":      "live_proven",
 		"cross_process_replay_coordination":  "harness_proven",
-		"stale_writer_fencing":               "harness_proven",
+		"stale_writer_fencing":               "live_proven",
 		"partitioned_topic_routing":          "contract_only",
 		"broker_backed_subscriber_ownership": "contract_only",
 		"operator_capability_surface":        "supporting_surface",
