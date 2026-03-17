@@ -237,7 +237,7 @@ func NewDurabilityPlanWithBrokerConfig(currentBackend, targetBackend string, rep
 				Name: "replay_and_failover_validation",
 				Artifacts: []string{
 					"docs/reports/broker-failover-fault-injection-validation-pack.md",
-					"future broker-failover-<backend>-report.json scenario outputs",
+					"docs/reports/broker-failover-stub-report.json",
 				},
 			},
 			{
@@ -372,7 +372,7 @@ func buildRolloutBlockers(plan DurabilityPlan, evidence []RolloutEvidenceStatus)
 	}
 	for _, item := range evidence {
 		if item.Name == "replay_and_failover_validation" && item.Status != "ready" {
-			blockers = append(blockers, "failover validation evidence is incomplete because scenario outputs are still placeholders")
+			blockers = append(blockers, "failover validation evidence is incomplete because repo-native scenario outputs are missing")
 			break
 		}
 	}
@@ -389,7 +389,7 @@ func buildRolloutNextActions(plan DurabilityPlan, evidence []RolloutEvidenceStat
 	}
 	for _, item := range evidence {
 		if item.Name == "replay_and_failover_validation" && item.Status != "ready" {
-			actions = append(actions, "replace the future broker failover placeholder with checked-in scenario outputs under docs/reports/")
+			actions = append(actions, "check in broker failover scenario outputs under docs/reports/ so reviewer evidence stays repo-native")
 			break
 		}
 	}

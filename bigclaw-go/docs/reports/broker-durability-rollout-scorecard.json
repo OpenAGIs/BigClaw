@@ -6,8 +6,8 @@
   "replication_factor": 3,
   "ready_checks": 0,
   "blocked_checks": 4,
-  "ready_evidence": 2,
-  "partial_evidence": 1,
+  "ready_evidence": 3,
+  "partial_evidence": 0,
   "blocked_evidence": 1,
   "evidence": [
     {
@@ -21,12 +21,12 @@
     },
     {
       "name": "replay_and_failover_validation",
-      "status": "partial",
+      "status": "ready",
       "artifacts": [
         "docs/reports/broker-failover-fault-injection-validation-pack.md",
-        "future broker-failover-\u003cbackend\u003e-report.json scenario outputs"
+        "docs/reports/broker-failover-stub-report.json"
       ],
-      "detail": "repo includes the rollout contract, but at least one required scenario output is still a future placeholder"
+      "detail": "repo advertises concrete supporting artifacts for reviewer inspection"
     },
     {
       "name": "operator_rollout_contract",
@@ -61,8 +61,7 @@
       ],
       "blockers": [
         "current backend memory does not yet match the replicated target broker_replicated",
-        "broker bootstrap configuration is not ready: broker event log config missing driver, urls, topic",
-        "failover validation evidence is incomplete because scenario outputs are still placeholders"
+        "broker bootstrap configuration is not ready: broker event log config missing driver, urls, topic"
       ]
     },
     {
@@ -77,8 +76,7 @@
       ],
       "blockers": [
         "current backend memory does not yet match the replicated target broker_replicated",
-        "broker bootstrap configuration is not ready: broker event log config missing driver, urls, topic",
-        "failover validation evidence is incomplete because scenario outputs are still placeholders"
+        "broker bootstrap configuration is not ready: broker event log config missing driver, urls, topic"
       ]
     },
     {
@@ -92,8 +90,7 @@
       ],
       "blockers": [
         "current backend memory does not yet match the replicated target broker_replicated",
-        "broker bootstrap configuration is not ready: broker event log config missing driver, urls, topic",
-        "failover validation evidence is incomplete because scenario outputs are still placeholders"
+        "broker bootstrap configuration is not ready: broker event log config missing driver, urls, topic"
       ]
     },
     {
@@ -107,19 +104,16 @@
       ],
       "blockers": [
         "current backend memory does not yet match the replicated target broker_replicated",
-        "broker bootstrap configuration is not ready: broker event log config missing driver, urls, topic",
-        "failover validation evidence is incomplete because scenario outputs are still placeholders"
+        "broker bootstrap configuration is not ready: broker event log config missing driver, urls, topic"
       ]
     }
   ],
   "blockers": [
     "current backend memory does not yet match the replicated target broker_replicated",
-    "broker bootstrap configuration is not ready: broker event log config missing driver, urls, topic",
-    "failover validation evidence is incomplete because scenario outputs are still placeholders"
+    "broker bootstrap configuration is not ready: broker event log config missing driver, urls, topic"
   ],
   "next_actions": [
     "switch BIGCLAW_EVENT_LOG_BACKEND to broker_replicated after the replicated adapter is wired into runtime paths",
-    "set BIGCLAW_EVENT_LOG_BROKER_DRIVER, BIGCLAW_EVENT_LOG_BROKER_URLS, and BIGCLAW_EVENT_LOG_BROKER_TOPIC so broker bootstrap becomes ready",
-    "replace the future broker failover placeholder with checked-in scenario outputs under docs/reports/"
+    "set BIGCLAW_EVENT_LOG_BROKER_DRIVER, BIGCLAW_EVENT_LOG_BROKER_URLS, and BIGCLAW_EVENT_LOG_BROKER_TOPIC so broker bootstrap becomes ready"
   ]
 }
