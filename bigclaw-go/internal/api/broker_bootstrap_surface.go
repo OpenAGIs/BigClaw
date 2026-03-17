@@ -24,6 +24,26 @@ type brokerBootstrapConfigDiagnostics struct {
 	ReferenceDocs      []string                        `json:"reference_docs,omitempty"`
 }
 
+type brokerBootstrapRuntimeGate struct {
+	Status                 string                                  `json:"status,omitempty"`
+	Requested              bool                                    `json:"requested"`
+	FailClosed             bool                                    `json:"fail_closed"`
+	ContractOnly           bool                                    `json:"contract_only"`
+	StubDriverOnly         bool                                    `json:"stub_driver_only"`
+	LiveAdapterImplemented bool                                    `json:"live_adapter_implemented"`
+	BootstrapReady         bool                                    `json:"bootstrap_ready"`
+	SafeForLiveTraffic     bool                                    `json:"safe_for_live_traffic"`
+	ProofBoundary          string                                  `json:"proof_boundary,omitempty"`
+	OperatorMessage        string                                  `json:"operator_message,omitempty"`
+	TransitionGuide        []brokerBootstrapPostureTransitionGuide `json:"transition_guide,omitempty"`
+}
+
+type brokerBootstrapPostureTransitionGuide struct {
+	Posture string `json:"posture"`
+	Trigger string `json:"trigger"`
+	Meaning string `json:"meaning"`
+}
+
 type brokerBootstrapRuntimeKnobs struct {
 	PublishTimeout     string `json:"publish_timeout,omitempty"`
 	ReplayLimit        int    `json:"replay_limit,omitempty"`
@@ -57,6 +77,7 @@ type brokerBootstrapSurface struct {
 	ValidationErrors              []string                            `json:"validation_errors,omitempty"`
 	ConfigCompleteness            events.BrokerBootstrapCompleteness  `json:"config_completeness"`
 	ConfigDiagnostics             brokerBootstrapConfigDiagnostics    `json:"config_diagnostics"`
+	RuntimeGate                   brokerBootstrapRuntimeGate          `json:"runtime_gate"`
 	Status                        string                              `json:"status,omitempty"`
 	Reason                        string                              `json:"reason,omitempty"`
 	Error                         string                              `json:"error,omitempty"`
@@ -83,6 +104,7 @@ func brokerBootstrapSurfacePayload() brokerBootstrapSurface {
 	}
 	surface.ReportPath = brokerBootstrapSurfacePath
 	surface.ConfigDiagnostics = buildBrokerBootstrapConfigDiagnostics(surface)
+	surface.RuntimeGate = buildBrokerBootstrapRuntimeGate(surface)
 	return surface
 }
 
@@ -199,4 +221,50 @@ func buildBrokerBootstrapConfigDiagnostics(surface brokerBootstrapSurface) broke
 		)
 	}
 	return diagnostics
+}
+
+func buildBrokerBootstrapRuntimeGate(surface brokerBootstrapSurface) brokerBootstrapRuntimeGate {
+	currentBackend := string(surface.BootstrapSummary.EventLogBackend)
+	targetBackend := string(surface.BootstrapSummary.TargetBackend)
+	gate := brokerBootstrapRuntimeGate{
+		Status:                 surface.RuntimePosture,
+		Requested:              currentBackend == string(events.DurabilityBackendBrokerReplicated) || targetBackend == string(events.DurabilityBackendBrokerReplicated),
+		FailClosed:             surface.RuntimePosture == "fail_closed_until_adapter_exists",
+		ContractOnly:           surface.RuntimePosture == "contract_only",
+		StubDriverOnly:         surface.RuntimePosture == "stub_driver_only",
+		LiveAdapterImplemented: surface.LiveAdapterImplemented,
+		BootstrapReady:         surface.BootstrapReady,
+		SafeForLiveTraffic:     surface.LiveAdapterImplemented && surface.BootstrapReady && surface.RuntimePosture != "contract_only" && surface.RuntimePosture != "stub_driver_only" && surface.RuntimePosture != "fail_closed_until_adapter_exists",
+		ProofBoundary:          surface.ProofBoundary,
+		TransitionGuide: []brokerBootstrapPostureTransitionGuide{
+			{
+				Posture: "contract_only",
+				Trigger: "target backend is broker_replicated while the current runtime stays on a non-broker backend",
+				Meaning: "runtime exposes only the pre-adapter contract surface and must not be treated as live broker durability proof",
+			},
+			{
+				Posture: "stub_driver_only",
+				Trigger: "current backend is broker_replicated and the configured driver is the deterministic stub",
+				Meaning: "runtime can exercise local broker scaffolding but still does not prove a native broker adapter",
+			},
+			{
+				Posture: "fail_closed_until_adapter_exists",
+				Trigger: "current backend is broker_replicated with non-stub config before a native adapter ships",
+				Meaning: "runtime validates bootstrap config and then fails closed instead of claiming live broker support",
+			},
+		},
+	}
+	switch surface.RuntimePosture {
+	case "contract_only":
+		gate.OperatorMessage = "Broker durability remains a contract-only target: bootstrap evidence is reviewer-visible, but the runtime is not executing a native broker adapter."
+	case "stub_driver_only":
+		gate.OperatorMessage = "Broker runtime is using the deterministic stub driver only: this path is scaffolding and cannot be treated as live broker durability proof."
+	case "fail_closed_until_adapter_exists":
+		gate.OperatorMessage = "Broker runtime validates the configured bootstrap settings and then fails closed until a native broker adapter exists."
+	case "not_requested":
+		gate.OperatorMessage = "Broker replicated durability is not requested by the current runtime plan."
+	default:
+		gate.OperatorMessage = "Broker runtime posture is explicit, but still must be checked against proof boundary and live-adapter state before rollout claims."
+	}
+	return gate
 }

@@ -4820,6 +4820,16 @@ func TestDebugStatusIncludesBrokerBootstrapSurface(t *testing.T) {
 					ConsumerGroup      string `json:"consumer_group"`
 				} `json:"runtime_knobs"`
 			} `json:"config_diagnostics"`
+			RuntimeGate struct {
+				Status             string `json:"status"`
+				Requested          bool   `json:"requested"`
+				FailClosed         bool   `json:"fail_closed"`
+				ContractOnly       bool   `json:"contract_only"`
+				StubDriverOnly     bool   `json:"stub_driver_only"`
+				SafeForLiveTraffic bool   `json:"safe_for_live_traffic"`
+				OperatorMessage    string `json:"operator_message"`
+				ProofBoundary      string `json:"proof_boundary"`
+			} `json:"runtime_gate"`
 			ValidationErrors []string `json:"validation_errors"`
 		} `json:"broker_bootstrap_surface"`
 	}
@@ -4856,6 +4866,12 @@ func TestDebugStatusIncludesBrokerBootstrapSurface(t *testing.T) {
 	if !strings.Contains(strings.Join(decoded.BrokerBootstrap.ConfigDiagnostics.ReferenceDocs, " | "), "docs/reports/broker-event-log-adapter-contract.md") {
 		t.Fatalf("expected broker operator guide reference, got %+v", decoded.BrokerBootstrap.ConfigDiagnostics.ReferenceDocs)
 	}
+	if decoded.BrokerBootstrap.RuntimeGate.Status != "contract_only" || !decoded.BrokerBootstrap.RuntimeGate.Requested || decoded.BrokerBootstrap.RuntimeGate.FailClosed || !decoded.BrokerBootstrap.RuntimeGate.ContractOnly || decoded.BrokerBootstrap.RuntimeGate.StubDriverOnly || decoded.BrokerBootstrap.RuntimeGate.SafeForLiveTraffic {
+		t.Fatalf("unexpected broker runtime gate: %+v", decoded.BrokerBootstrap.RuntimeGate)
+	}
+	if !strings.Contains(decoded.BrokerBootstrap.RuntimeGate.OperatorMessage, "contract-only") || decoded.BrokerBootstrap.RuntimeGate.ProofBoundary == "" {
+		t.Fatalf("expected runtime gate messaging, got %+v", decoded.BrokerBootstrap.RuntimeGate)
+	}
 }
 
 func TestV2ControlCenterIncludesBrokerBootstrapSurface(t *testing.T) {
@@ -4874,6 +4890,12 @@ func TestV2ControlCenterIncludesBrokerBootstrapSurface(t *testing.T) {
 			ConfigDiagnostics  struct {
 				MissingRequiredEnv []string `json:"missing_required_env"`
 			} `json:"config_diagnostics"`
+			RuntimeGate struct {
+				Status        string `json:"status"`
+				Requested     bool   `json:"requested"`
+				FailClosed    bool   `json:"fail_closed"`
+				ProofBoundary string `json:"proof_boundary"`
+			} `json:"runtime_gate"`
 		} `json:"broker_bootstrap_surface"`
 	}
 	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
@@ -4884,6 +4906,9 @@ func TestV2ControlCenterIncludesBrokerBootstrapSurface(t *testing.T) {
 	}
 	if strings.Join(decoded.BrokerBootstrap.ConfigDiagnostics.MissingRequiredEnv, ",") != "BIGCLAW_EVENT_LOG_BROKER_DRIVER,BIGCLAW_EVENT_LOG_BROKER_URLS,BIGCLAW_EVENT_LOG_BROKER_TOPIC" {
 		t.Fatalf("unexpected control center config diagnostics: %+v", decoded.BrokerBootstrap.ConfigDiagnostics)
+	}
+	if decoded.BrokerBootstrap.RuntimeGate.Status != "contract_only" || !decoded.BrokerBootstrap.RuntimeGate.Requested || decoded.BrokerBootstrap.RuntimeGate.FailClosed || decoded.BrokerBootstrap.RuntimeGate.ProofBoundary == "" {
+		t.Fatalf("unexpected control center runtime gate: %+v", decoded.BrokerBootstrap.RuntimeGate)
 	}
 }
 
@@ -4912,7 +4937,7 @@ func TestV2DistributedReportIncludesBrokerBootstrapSurface(t *testing.T) {
 	if decoded.BrokerBootstrap.ReportPath != brokerBootstrapSurfacePath || decoded.BrokerBootstrap.ConfigurationState != "not_configured" || decoded.BrokerBootstrap.RuntimePosture != "contract_only" || decoded.BrokerBootstrap.BootstrapReady {
 		t.Fatalf("unexpected distributed broker bootstrap payload: %+v", decoded.BrokerBootstrap)
 	}
-	if !strings.Contains(decoded.Report.Markdown, "## Broker Bootstrap Readiness") || !strings.Contains(decoded.Report.Markdown, "Configuration state: not_configured") || !strings.Contains(decoded.Report.Markdown, "Runtime posture: contract_only") || !strings.Contains(decoded.Report.Markdown, "Missing required env: BIGCLAW_EVENT_LOG_BROKER_DRIVER, BIGCLAW_EVENT_LOG_BROKER_URLS, BIGCLAW_EVENT_LOG_BROKER_TOPIC") || !strings.Contains(decoded.Report.Markdown, "Reference docs: docs/reports/broker-event-log-adapter-contract.md") {
+	if !strings.Contains(decoded.Report.Markdown, "## Broker Bootstrap Readiness") || !strings.Contains(decoded.Report.Markdown, "Configuration state: not_configured") || !strings.Contains(decoded.Report.Markdown, "Runtime posture: contract_only") || !strings.Contains(decoded.Report.Markdown, "Runtime gate: requested=true fail_closed=false contract_only=true stub_driver_only=false safe_for_live_traffic=false") || !strings.Contains(decoded.Report.Markdown, "Runtime gate message: Broker durability remains a contract-only target") || !strings.Contains(decoded.Report.Markdown, "Missing required env: BIGCLAW_EVENT_LOG_BROKER_DRIVER, BIGCLAW_EVENT_LOG_BROKER_URLS, BIGCLAW_EVENT_LOG_BROKER_TOPIC") || !strings.Contains(decoded.Report.Markdown, "Reference docs: docs/reports/broker-event-log-adapter-contract.md") {
 		t.Fatalf("expected broker bootstrap markdown section, got %s", decoded.Report.Markdown)
 	}
 }

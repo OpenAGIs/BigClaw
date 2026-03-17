@@ -798,11 +798,15 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 		fmt.Sprintf("- Validation pack: %s", diagnostics.BrokerBootstrap.ValidationPackPath),
 		fmt.Sprintf("- Configuration state: %s", firstNonEmpty(diagnostics.BrokerBootstrap.ConfigurationState, "unknown")),
 		fmt.Sprintf("- Runtime posture: %s", firstNonEmpty(diagnostics.BrokerBootstrap.RuntimePosture, "unknown")),
+		fmt.Sprintf("- Runtime gate: requested=%t fail_closed=%t contract_only=%t stub_driver_only=%t safe_for_live_traffic=%t", diagnostics.BrokerBootstrap.RuntimeGate.Requested, diagnostics.BrokerBootstrap.RuntimeGate.FailClosed, diagnostics.BrokerBootstrap.RuntimeGate.ContractOnly, diagnostics.BrokerBootstrap.RuntimeGate.StubDriverOnly, diagnostics.BrokerBootstrap.RuntimeGate.SafeForLiveTraffic),
 		fmt.Sprintf("- Bootstrap ready: %t", diagnostics.BrokerBootstrap.BootstrapReady),
 		fmt.Sprintf("- Live adapter implemented: %t", diagnostics.BrokerBootstrap.LiveAdapterImplemented),
 	)
 	if diagnostics.BrokerBootstrap.ProofBoundary != "" {
 		lines = append(lines, "- Proof boundary: "+diagnostics.BrokerBootstrap.ProofBoundary)
+	}
+	if diagnostics.BrokerBootstrap.RuntimeGate.OperatorMessage != "" {
+		lines = append(lines, "- Runtime gate message: "+diagnostics.BrokerBootstrap.RuntimeGate.OperatorMessage)
 	}
 	lines = append(lines, fmt.Sprintf("- Config completeness: driver=%t urls=%t topic=%t consumer_group=%t", diagnostics.BrokerBootstrap.ConfigCompleteness.Driver, diagnostics.BrokerBootstrap.ConfigCompleteness.URLs, diagnostics.BrokerBootstrap.ConfigCompleteness.Topic, diagnostics.BrokerBootstrap.ConfigCompleteness.ConsumerGroup))
 	if len(diagnostics.BrokerBootstrap.ConfigDiagnostics.MissingFields) > 0 {

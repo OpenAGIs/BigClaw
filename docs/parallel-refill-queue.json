@@ -23,10 +23,10 @@
       "OPE-21",
       "OPE-225",
       "OPE-260",
-      "OPE-261"
+      "OPE-261",
+      "OPE-263"
     ],
     "active": [
-      "OPE-263",
       "OPE-264"
     ],
     "standby": []
@@ -54,7 +54,7 @@
       "identifier": "OPE-263",
       "title": "BIG-BRK-203 broker runtime gate and fail-closed posture",
       "track": "Runtime Gate",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-264",
