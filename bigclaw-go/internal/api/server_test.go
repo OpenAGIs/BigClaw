@@ -2489,13 +2489,25 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 				} `json:"rollback_trigger_surface"`
 			} `json:"live_shadow_mirror_scorecard"`
 			BrokerReviewPack struct {
-				Status             string   `json:"status"`
-				SummaryPath        string   `json:"summary_path"`
-				ReportPath         string   `json:"report_path"`
-				ValidationPackPath string   `json:"validation_pack_path"`
-				ArtifactDirectory  string   `json:"artifact_directory"`
-				ReviewerLinks      []string `json:"reviewer_links"`
+				Status                string   `json:"status"`
+				SummaryPath           string   `json:"summary_path"`
+				ReportPath            string   `json:"report_path"`
+				ValidationPackPath    string   `json:"validation_pack_path"`
+				ArtifactDirectory     string   `json:"artifact_directory"`
+				ReviewerLinks         []string `json:"reviewer_links"`
+				AmbiguousPublishProof struct {
+					Path       string   `json:"path"`
+					ScenarioID string   `json:"scenario_id"`
+					Outcomes   []string `json:"outcomes"`
+				} `json:"ambiguous_publish_proof"`
 			} `json:"broker_review_pack"`
+			TraceBundle struct {
+				AmbiguousPublishProof struct {
+					Path       string   `json:"path"`
+					ScenarioID string   `json:"scenario_id"`
+					Outcomes   []string `json:"outcomes"`
+				} `json:"ambiguous_publish_proof"`
+			} `json:"trace_export_bundle"`
 			MigrationReviewPack struct {
 				Status                 string   `json:"status"`
 				ReadinessReportPath    string   `json:"readiness_report_path"`
@@ -2651,6 +2663,16 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		decoded.Diagnostics.BrokerReviewPack.ReviewerLinks[1] != "docs/reports/review-readiness.md" {
 		t.Fatalf("unexpected broker review pack reviewer links: %+v", decoded.Diagnostics.BrokerReviewPack.ReviewerLinks)
 	}
+	if decoded.Diagnostics.BrokerReviewPack.AmbiguousPublishProof.Path != "docs/reports/ambiguous-publish-outcome-proof-summary.json" ||
+		decoded.Diagnostics.BrokerReviewPack.AmbiguousPublishProof.ScenarioID != "BF-05" ||
+		len(decoded.Diagnostics.BrokerReviewPack.AmbiguousPublishProof.Outcomes) != 3 {
+		t.Fatalf("unexpected broker review pack ambiguous publish proof: %+v", decoded.Diagnostics.BrokerReviewPack.AmbiguousPublishProof)
+	}
+	if decoded.Diagnostics.TraceBundle.AmbiguousPublishProof.Path != "docs/reports/ambiguous-publish-outcome-proof-summary.json" ||
+		decoded.Diagnostics.TraceBundle.AmbiguousPublishProof.ScenarioID != "BF-05" ||
+		len(decoded.Diagnostics.TraceBundle.AmbiguousPublishProof.Outcomes) != 3 {
+		t.Fatalf("unexpected trace bundle ambiguous publish proof: %+v", decoded.Diagnostics.TraceBundle.AmbiguousPublishProof)
+	}
 	if decoded.Diagnostics.MigrationReviewPack.Status != "parity-ok" ||
 		decoded.Diagnostics.MigrationReviewPack.ReadinessReportPath != migrationReadinessReportPath ||
 		decoded.Diagnostics.MigrationReviewPack.ScorecardPath != liveShadowMirrorScorecardPath ||
@@ -2754,6 +2776,7 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, rollbackTriggerSurfacePath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "reviewer_enforced") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-validation-summary.json") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/ambiguous-publish-outcome-proof-summary.json") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, brokerStubFanoutIsolationEvidencePackPath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, deliveryAckReadinessSurfacePath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, validationBundleContinuationGatePath) ||

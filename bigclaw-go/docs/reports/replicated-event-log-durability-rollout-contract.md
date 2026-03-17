@@ -4,7 +4,7 @@
 
 This report defines the rollout contract for `OPE-222` / `BIG-PAR-035`: the minimum runtime, operator, and validation expectations BigClaw must satisfy before claiming a replicated broker-backed or quorum-backed event log.
 
-It builds on the provider-neutral adapter boundary in `docs/reports/broker-event-log-adapter-contract.md`, the retention semantics in `docs/reports/replay-retention-semantics-report.md`, the failover scenarios in `docs/reports/broker-failover-fault-injection-validation-pack.md`, and the planning-oriented rollout spike at `docs/reports/replicated-broker-durability-rollout-spike.md`.
+It builds on the provider-neutral adapter boundary in `docs/reports/broker-event-log-adapter-contract.md`, the retention semantics in `docs/reports/replay-retention-semantics-report.md`, the failover scenarios in `docs/reports/broker-failover-fault-injection-validation-pack.md`, the reviewer-facing `BF-05` proof in `docs/reports/ambiguous-publish-outcome-proof-summary.json`, and the planning-oriented rollout spike at `docs/reports/replicated-broker-durability-rollout-spike.md`.
 
 ## Current baseline
 
@@ -14,7 +14,7 @@ It builds on the provider-neutral adapter boundary in `docs/reports/broker-event
 - `cmd/bigclawd/main.go` validates broker runtime config but intentionally stops before instantiating a live replicated adapter.
 - `docs/reports/event-bus-reliability-report.md` and `docs/reports/broker-failover-fault-injection-validation-pack.md` describe the portability and validation direction, but prior to this slice the rollout gate itself was not captured as one explicit contract.
 - `docs/reports/replicated-broker-durability-rollout-spike.md` now makes the current proof boundary explicit so SQLite and process-local evidence do not get overstated as replicated durability evidence.
-- `docs/reports/broker-checkpoint-fencing-proof-summary.json` and `docs/reports/broker-retention-boundary-proof-summary.json` now split the deterministic stub matrix into reviewable rollout-gate proofs for checkpoint fencing and retention expiry handling.
+- `docs/reports/broker-checkpoint-fencing-proof-summary.json`, `docs/reports/broker-retention-boundary-proof-summary.json`, and `docs/reports/ambiguous-publish-outcome-proof-summary.json` now split the deterministic stub matrix into reviewable rollout-gate proofs for checkpoint fencing, retention expiry handling, and ambiguous publish classification.
 
 ## Runtime contract
 
@@ -80,6 +80,7 @@ The current repo-native sources for these signals are the `event_durability` pay
 
 - debug/control-plane payload proving the active runtime advertises the replicated rollout contract and broker bootstrap readiness state
 - failover validation artifacts matching the scenario matrix in `docs/reports/broker-failover-fault-injection-validation-pack.md`
+- ambiguous-publish proof summary at `docs/reports/ambiguous-publish-outcome-proof-summary.json`
 - checkpoint-fencing proof summary at `docs/reports/broker-checkpoint-fencing-proof-summary.json`
 - retention-boundary proof summary at `docs/reports/broker-retention-boundary-proof-summary.json`
 - replay retention diagnostics proving expired checkpoints are surfaced explicitly
@@ -92,6 +93,7 @@ The current repo-native sources for these signals are the `event_durability` pay
 - `internal/api/server_test.go`
 - `cmd/bigclawd/main.go`
 - `docs/reports/event-bus-reliability-report.md`
+- `docs/reports/ambiguous-publish-outcome-proof-summary.json`
 - `docs/reports/replicated-broker-durability-rollout-spike.md`
 - `docs/reports/broker-checkpoint-fencing-proof-summary.json`
 - `docs/reports/broker-retention-boundary-proof-summary.json`
