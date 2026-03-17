@@ -28,8 +28,8 @@ This note captures the review outcome for the Go rewrite boundary and migration 
 - The Go validation path is isolated enough to be disabled without deleting existing queue or audit reports.
 - Live validation reports persist enough metadata (`base_url`, `state_dir`, `service_log`) to reconstruct a failed rollout attempt.
 - Shadow compare output provides a low-risk read-only verification step before cutover.
-- The live shadow bundle index and drift rollup package that verification evidence into a stable reviewer path under `docs/reports/live-shadow-index.md`.
-- The tenant-scoped trigger surface in `docs/reports/rollback-safeguard-follow-up-digest.md` defines when reviewers should pause rollout and redirect traffic back to the incumbent plane.
+- The live shadow bundle index and drift rollup package that verification evidence into a stable reviewer path under `docs/reports/live-shadow-index.md`, and they link the same machine-readable rollback summary in `docs/reports/rollback-trigger-surface.json`.
+- The tenant-scoped trigger surface in `docs/reports/rollback-safeguard-follow-up-digest.md` and `docs/reports/rollback-trigger-surface.json` defines when reviewers should pause rollout and redirect traffic back to the incumbent plane.
 
 ## Review Outcome
 
@@ -41,4 +41,4 @@ This note captures the review outcome for the Go rewrite boundary and migration 
 ## Parallel follow-up digests
 
 - `OPE-266` / `BIG-PAR-092` tracks the repo-native live shadow mirror parity drift scorecard and the remaining live shadow traffic comparison caveats in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
-- `OPE-267` / `BIG-PAR-078` tracks the remaining rollback safeguard trigger-surface caveats in `docs/reports/rollback-safeguard-follow-up-digest.md`.
+- `OPE-254` / `BIG-PAR-088` tracks the remaining rollback safeguard trigger-surface caveats in `docs/reports/rollback-safeguard-follow-up-digest.md` and `docs/reports/rollback-trigger-surface.json`.
