@@ -71,47 +71,50 @@
       "OPE-269",
       "OPE-270",
       "OPE-271",
-      "OPE-275"
+      "OPE-275",
+      "OPE-254",
+      "OPE-255",
+      "OPE-256",
+      "OPE-257"
     ],
     "active": [
-      "OPE-255",
-      "OPE-256"
+      "OPE-272",
+      "OPE-273",
+      "OPE-274",
+      "OPE-271"
     ],
-    "standby": [
-      "OPE-257",
-      "OPE-254"
-    ]
+    "standby": []
   },
   "issue_order": [
-    "OPE-255",
-    "OPE-256",
-    "OPE-257",
-    "OPE-254"
+    "OPE-272",
+    "OPE-273",
+    "OPE-274",
+    "OPE-271"
   ],
   "issues": [
     {
-      "identifier": "OPE-255",
-      "title": "BIG-PAR-093 shared durable subscriber ownership backend scaffold",
-      "track": "Shared Queue & Coordination",
+      "identifier": "OPE-272",
+      "title": "BIG-PAR-096 deterministic broker failover scenario runner and stub backend",
+      "track": "Parallel Validation Matrix",
       "status": "In Progress"
     },
     {
-      "identifier": "OPE-256",
-      "title": "BIG-PAR-094 native takeover transition audit events",
-      "track": "Shared Queue & Coordination",
-      "status": "In Progress"
-    },
-    {
-      "identifier": "OPE-257",
-      "title": "BIG-PAR-095 broker-backed and partitioned coordination target contract surface",
-      "track": "Shared Queue & Coordination",
-      "status": "Todo"
-    },
-    {
-      "identifier": "OPE-254",
-      "title": "BIG-PAR-088 tenant-scoped rollback guardrails and trigger surface",
+      "identifier": "OPE-273",
+      "title": "BIG-PAR-097 broker durability rollout scorecard and debug summary",
       "track": "Distributed Diagnostics & Rollout",
-      "status": "Todo"
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-274",
+      "title": "BIG-PAR-098 broker validation lane scaffold in live bundle export",
+      "track": "Parallel Validation Matrix",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-271",
+      "title": "BIG-PAR-099 rollout rollback policy gate across local Kubernetes and Ray",
+      "track": "Distributed Diagnostics & Rollout",
+      "status": "In Progress"
     }
   ]
 }

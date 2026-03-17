@@ -6,21 +6,21 @@ def test_parallel_refill_queue_tracks_the_current_parallel_batch() -> None:
 
     assert queue.project_slug() == "8a198fec793e"
     assert queue.target_in_progress() == 4
-    assert queue.issue_identifiers() == ["OPE-255", "OPE-256", "OPE-257", "OPE-254"]
-    assert queue.issue_order() == ["OPE-255", "OPE-256", "OPE-257", "OPE-254"]
+    assert queue.issue_identifiers() == ["OPE-272", "OPE-273", "OPE-274", "OPE-271"]
+    assert queue.issue_order() == ["OPE-272", "OPE-273", "OPE-274", "OPE-271"]
 
 
 def test_parallel_refill_queue_promotes_remaining_todo_slots() -> None:
     queue = ParallelIssueQueue("docs/parallel-refill-queue.json")
     issue_states = issue_state_map(
         [
-            {"identifier": "OPE-255", "state": {"name": "In Progress"}},
-            {"identifier": "OPE-256", "state": {"name": "In Progress"}},
-            {"identifier": "OPE-257", "state": {"name": "Todo"}},
-            {"identifier": "OPE-254", "state": {"name": "Todo"}},
+            {"identifier": "OPE-272", "state": {"name": "In Progress"}},
+            {"identifier": "OPE-273", "state": {"name": "In Progress"}},
+            {"identifier": "OPE-274", "state": {"name": "Todo"}},
+            {"identifier": "OPE-271", "state": {"name": "Todo"}},
         ]
     )
 
-    candidates = queue.select_candidates({"OPE-255", "OPE-256"}, issue_states)
+    candidates = queue.select_candidates({"OPE-272", "OPE-273"}, issue_states)
 
-    assert candidates == ["OPE-257", "OPE-254"]
+    assert candidates == ["OPE-274", "OPE-271"]

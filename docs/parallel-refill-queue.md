@@ -25,15 +25,16 @@ manual operator can refill the next parallel-safe issues in a stable order.
 ## Current batch
 
 - Active:
-  - `OPE-255` — `BIG-PAR-093` shared durable subscriber ownership backend scaffold
-  - `OPE-256` — `BIG-PAR-094` native takeover transition audit events
+  - `OPE-272` — `BIG-PAR-096` deterministic broker failover scenario runner and stub backend
+  - `OPE-273` — `BIG-PAR-097` broker durability rollout scorecard and debug summary
+  - `OPE-274` — `BIG-PAR-098` broker validation lane scaffold in live bundle export
+  - `OPE-271` — `BIG-PAR-099` rollout rollback policy gate across local Kubernetes and Ray
 - Ready to promote:
-  - `OPE-257` — `BIG-PAR-095` broker-backed and partitioned coordination target contract surface
-  - `OPE-254` — `BIG-PAR-088` tenant-scoped rollback guardrails and trigger surface
+  - none; current batch is already fully active
 
 ## Canonical refill order
 
-1. `OPE-255`
-2. `OPE-256`
-3. `OPE-257`
-4. `OPE-254`
+1. `OPE-272`
+2. `OPE-273`
+3. `OPE-274`
+4. `OPE-271`
