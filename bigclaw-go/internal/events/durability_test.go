@@ -130,3 +130,52 @@ func TestDurabilityPlanRolloutScorecardKeepsFailoverGateVisibleWhenBootstrapRead
 		t.Fatalf("expected no blockers with ready bootstrap and repo-native failover evidence, got %+v", scorecard.Blockers)
 	}
 }
+
+func TestBrokerBootstrapReviewSummaryFlagsContractOnlyReadiness(t *testing.T) {
+	summary := BrokerBootstrapReviewSummaryFromConfig("memory", "broker_replicated", BrokerRuntimeConfig{
+		PublishTimeout:     5 * time.Second,
+		ReplayLimit:        500,
+		CheckpointInterval: 5 * time.Second,
+	})
+
+	if summary.RuntimePosture != "contract_only" {
+		t.Fatalf("expected contract_only posture, got %+v", summary)
+	}
+	if summary.LiveAdapterImplemented {
+		t.Fatalf("expected no live adapter claim, got %+v", summary)
+	}
+	if summary.Ready {
+		t.Fatalf("expected bootstrap summary to stay not ready, got %+v", summary)
+	}
+	if summary.ConfigCompleteness.ConsumerGroup {
+		t.Fatalf("consumer group should not be marked complete when unset, got %+v", summary.ConfigCompleteness)
+	}
+	if len(summary.ValidationErrors) != 1 || summary.ValidationErrors[0] != "broker event log config missing driver, urls, topic" {
+		t.Fatalf("unexpected validation errors: %+v", summary.ValidationErrors)
+	}
+}
+
+func TestBrokerBootstrapReviewSummaryFlagsStubDriverAsScaffolding(t *testing.T) {
+	summary := BrokerBootstrapReviewSummaryFromConfig("broker", "broker_replicated", BrokerRuntimeConfig{
+		Driver:             BrokerDriverStub,
+		URLs:               []string{"stub://broker"},
+		Topic:              "bigclaw.events",
+		ConsumerGroup:      "bigclaw-consumers",
+		PublishTimeout:     7 * time.Second,
+		ReplayLimit:        2048,
+		CheckpointInterval: 15 * time.Second,
+	})
+
+	if summary.RuntimePosture != "stub_driver_only" {
+		t.Fatalf("expected stub posture, got %+v", summary)
+	}
+	if !summary.Ready {
+		t.Fatalf("expected ready bootstrap summary for configured stub driver, got %+v", summary)
+	}
+	if summary.LiveAdapterImplemented {
+		t.Fatalf("stub driver must not claim a live adapter, got %+v", summary)
+	}
+	if !summary.ConfigCompleteness.ConsumerGroup {
+		t.Fatalf("expected consumer group completeness, got %+v", summary.ConfigCompleteness)
+	}
+}
