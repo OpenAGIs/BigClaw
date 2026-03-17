@@ -10,6 +10,8 @@ from typing import Dict, List, Optional, Tuple
 
 REPORT_PATH = 'bigclaw-go/docs/reports/broker-failover-stub-report.json'
 ARTIFACT_ROOT = 'bigclaw-go/docs/reports/broker-failover-stub-artifacts'
+CHECKPOINT_FENCING_SUMMARY_PATH = 'bigclaw-go/docs/reports/broker-checkpoint-fencing-proof-summary.json'
+RETENTION_BOUNDARY_SUMMARY_PATH = 'bigclaw-go/docs/reports/broker-retention-boundary-proof-summary.json'
 
 
 def utc_iso(value: datetime) -> str:
@@ -268,6 +270,154 @@ def required_artifacts(artifact_root: str) -> dict:
         'checkpoint_transition_log': f'{artifact_root}/checkpoint-transition-log.json',
         'fault_timeline': f'{artifact_root}/fault-timeline.json',
         'backend_health_snapshot': f'{artifact_root}/backend-health.json',
+    }
+
+
+def proof_artifact_paths() -> dict:
+    return {
+        'checkpoint_fencing_summary': CHECKPOINT_FENCING_SUMMARY_PATH,
+        'retention_boundary_summary': RETENTION_BOUNDARY_SUMMARY_PATH,
+    }
+
+
+def _proof_gate(name: str, status: str, detail: str, scenarios: List[str]) -> dict:
+    return {
+        'name': name,
+        'status': status,
+        'detail': detail,
+        'scenario_ids': scenarios,
+    }
+
+
+def build_checkpoint_fencing_summary(report: dict) -> dict:
+    scenarios = {scenario['scenario_id']: scenario for scenario in report['scenarios']}
+    focus_ids = ['BF-03', 'BF-04', 'BF-08']
+    focus = [scenarios[scenario_id] for scenario_id in focus_ids]
+    stale_write_rejections = sum(scenario.get('stale_write_rejections', 0) for scenario in focus)
+    duplicate_replay_windows = sum(scenario.get('duplicate_count', 0) for scenario in focus)
+    return {
+        'generated_at': report['generated_at'],
+        'ticket': 'OPE-230',
+        'title': 'Checkpoint fencing proof summary from broker failover stub matrix',
+        'source_report': REPORT_PATH,
+        'summary_schema_version': '2026-03-17',
+        'proof_family': 'checkpoint_fencing',
+        'status': 'passed' if all(scenario['result'] == 'passed' for scenario in focus) else 'failed',
+        'rollout_gate_statuses': [
+            _proof_gate(
+                'durable_publish_ack',
+                'unknown',
+                'Checkpoint-fencing scenarios do not independently prove replicated publish acknowledgements.',
+                [],
+            ),
+            _proof_gate(
+                'replay_checkpoint_alignment',
+                'passed',
+                'Replay resume cursors and checkpoint commits stay in one durable sequence domain across crash, takeover, and duplicate-delivery windows.',
+                focus_ids,
+            ),
+            _proof_gate(
+                'retention_boundary_visibility',
+                'unknown',
+                'Retention-boundary handling is summarized separately in the retention proof summary.',
+                [],
+            ),
+            _proof_gate(
+                'live_fanout_isolation',
+                'unknown',
+                'These deterministic scenarios do not exercise live SSE or in-process fanout isolation.',
+                [],
+            ),
+        ],
+        'focus_scenarios': [
+            {
+                'scenario_id': scenario['scenario_id'],
+                'fault': scenario['fault_window']['fault'],
+                'status': scenario['result'],
+                'checkpoint_before_fault': scenario['checkpoint_before_fault'],
+                'checkpoint_after_recovery': scenario['checkpoint_after_recovery'],
+                'stale_write_rejections': scenario.get('stale_write_rejections', 0),
+                'duplicate_count': scenario['duplicate_count'],
+                'artifacts': {
+                    'replay_capture': scenario['artifacts']['replay_capture'],
+                    'checkpoint_transition_log': scenario['artifacts']['checkpoint_transition_log'],
+                },
+            }
+            for scenario in focus
+        ],
+        'summary': {
+            'scenario_count': len(focus),
+            'passing_scenarios': sum(1 for scenario in focus if scenario['result'] == 'passed'),
+            'failing_scenarios': sum(1 for scenario in focus if scenario['result'] != 'passed'),
+            'stale_write_rejections': stale_write_rejections,
+            'duplicate_replay_windows': duplicate_replay_windows,
+        },
+    }
+
+
+def build_retention_boundary_summary(report: dict) -> dict:
+    scenario = next(scenario for scenario in report['scenarios'] if scenario['scenario_id'] == 'BF-07')
+    retention_floor = scenario['topology']['retention_floor']
+    reset_target = scenario['checkpoint_after_recovery']['durable_sequence']
+    return {
+        'generated_at': report['generated_at'],
+        'ticket': 'OPE-230',
+        'title': 'Retention boundary proof summary from broker failover stub matrix',
+        'source_report': REPORT_PATH,
+        'summary_schema_version': '2026-03-17',
+        'proof_family': 'retention_boundary',
+        'status': scenario['result'],
+        'rollout_gate_statuses': [
+            _proof_gate(
+                'durable_publish_ack',
+                'unknown',
+                'Retention-boundary evidence does not independently classify replicated publish acknowledgements.',
+                [],
+            ),
+            _proof_gate(
+                'replay_checkpoint_alignment',
+                'passed',
+                'Expired checkpoints fail closed and require an explicit reset before replay resumes from the retained sequence domain.',
+                ['BF-07'],
+            ),
+            _proof_gate(
+                'retention_boundary_visibility',
+                'passed',
+                'The scenario surfaces the retention floor, marks the stale checkpoint as expired, and requires an explicit operator reset.',
+                ['BF-07'],
+            ),
+            _proof_gate(
+                'live_fanout_isolation',
+                'unknown',
+                'Retention-boundary validation does not measure live fanout lag isolation.',
+                [],
+            ),
+        ],
+        'focus_scenarios': [
+            {
+                'scenario_id': scenario['scenario_id'],
+                'fault': scenario['fault_window']['fault'],
+                'status': scenario['result'],
+                'checkpoint_before_fault': scenario['checkpoint_before_fault'],
+                'checkpoint_after_recovery': scenario['checkpoint_after_recovery'],
+                'retention_floor': retention_floor,
+                'reset_required': bool(scenario['replay_resume_cursor'].get('reset_required')),
+                'operator_guidance': scenario.get('operator_guidance', ''),
+                'artifacts': {
+                    'fault_timeline': scenario['artifacts']['fault_timeline'],
+                    'backend_health_snapshot': scenario['artifacts']['backend_health_snapshot'],
+                    'checkpoint_transition_log': scenario['artifacts']['checkpoint_transition_log'],
+                },
+            }
+        ],
+        'summary': {
+            'scenario_count': 1,
+            'passing_scenarios': 1 if scenario['result'] == 'passed' else 0,
+            'failing_scenarios': 0 if scenario['result'] == 'passed' else 1,
+            'retention_floor': retention_floor,
+            'expired_checkpoint_sequence': scenario['checkpoint_before_fault']['durable_sequence'],
+            'reset_target_sequence': reset_target,
+        },
     }
 
 
@@ -764,14 +914,33 @@ def build_report() -> dict:
             scenario['scenario_id']: scenario['raw_artifacts']
             for scenario in scenarios
         },
+        'proof_artifacts': proof_artifact_paths(),
     }
 
 
-def write_report(report: dict, *, output: pathlib.Path, artifact_root: pathlib.Path, pretty: bool) -> None:
+def write_report(
+    report: dict,
+    *,
+    output: pathlib.Path,
+    artifact_root: pathlib.Path,
+    checkpoint_fencing_summary_output: pathlib.Path,
+    retention_boundary_summary_output: pathlib.Path,
+    pretty: bool,
+) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     artifact_root.mkdir(parents=True, exist_ok=True)
+    checkpoint_fencing_summary_output.parent.mkdir(parents=True, exist_ok=True)
+    retention_boundary_summary_output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(
         json.dumps({key: value for key, value in report.items() if key != 'raw_artifacts'}, indent=2 if pretty else None) + '\n',
+        encoding='utf-8',
+    )
+    checkpoint_fencing_summary_output.write_text(
+        json.dumps(build_checkpoint_fencing_summary(report), indent=2 if pretty else None) + '\n',
+        encoding='utf-8',
+    )
+    retention_boundary_summary_output.write_text(
+        json.dumps(build_retention_boundary_summary(report), indent=2 if pretty else None) + '\n',
         encoding='utf-8',
     )
     for scenario_id, artifact_payloads in report['raw_artifacts'].items():
@@ -794,6 +963,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description='Generate deterministic broker failover stub validation artifacts')
     parser.add_argument('--output', default=REPORT_PATH)
     parser.add_argument('--artifact-root', default=ARTIFACT_ROOT)
+    parser.add_argument('--checkpoint-fencing-summary-output', default=CHECKPOINT_FENCING_SUMMARY_PATH)
+    parser.add_argument('--retention-boundary-summary-output', default=RETENTION_BOUNDARY_SUMMARY_PATH)
     parser.add_argument('--pretty', action='store_true')
     args = parser.parse_args()
 
@@ -803,6 +974,8 @@ def main() -> None:
         report,
         output=repo_root / args.output,
         artifact_root=repo_root / args.artifact_root,
+        checkpoint_fencing_summary_output=repo_root / args.checkpoint_fencing_summary_output,
+        retention_boundary_summary_output=repo_root / args.retention_boundary_summary_output,
         pretty=args.pretty,
     )
 

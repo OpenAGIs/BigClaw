@@ -64,6 +64,7 @@ The current Go runtime still uses in-process replay history in `internal/events/
 
 - `OPE-212` establishes the compaction and retention contract.
 - `OPE-216` established the expired replay cursor semantics, `OPE-226` added the concrete checkpoint diagnostics / reset surface for durable checkpoint resumes, and `OPE-228` extends that flow with persisted reset audit history.
+- `docs/reports/broker-retention-boundary-proof-summary.json` now captures the deterministic broker-stub scenario where a stale checkpoint falls behind the retention floor and must be reset explicitly.
 - Durable backends extending `internal/events` should expose retention watermarks before replay-aware checkpoint cleanup is implemented.
 - SQLite-backed durable logs now persist trimmed replay boundaries across restarts when a retention window is configured, giving operators a stable replay horizon even after reboot.
 
@@ -74,3 +75,4 @@ The current Go runtime still uses in-process replay history in `internal/events/
 - `internal/api/server.go`
 - `internal/api/server_test.go`
 - `docs/reports/event-bus-reliability-report.md`
+- `docs/reports/broker-retention-boundary-proof-summary.json`

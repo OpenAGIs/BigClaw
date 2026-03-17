@@ -43,6 +43,13 @@ class BrokerFailoverStubMatrixTest(unittest.TestCase):
         for scenario in report['scenarios']:
             self.assertTrue(required_keys.issubset(scenario.keys()))
             self.assertEqual(scenario['result'], 'passed')
+        self.assertEqual(
+            report['proof_artifacts'],
+            {
+                'checkpoint_fencing_summary': 'bigclaw-go/docs/reports/broker-checkpoint-fencing-proof-summary.json',
+                'retention_boundary_summary': 'bigclaw-go/docs/reports/broker-retention-boundary-proof-summary.json',
+            },
+        )
 
     def test_checkpoint_and_durable_sequence_assertions_hold_for_fencing_scenarios(self) -> None:
         report = MODULE.build_report()
@@ -63,6 +70,25 @@ class BrokerFailoverStubMatrixTest(unittest.TestCase):
         bf08 = scenarios['BF-08']
         self.assertEqual(bf08['duplicate_count'], 1)
         self.assertEqual(bf08['missing_event_ids'], [])
+
+    def test_proof_summaries_project_scenario_evidence_into_rollout_gate_statuses(self) -> None:
+        report = MODULE.build_report()
+
+        checkpoint = MODULE.build_checkpoint_fencing_summary(report)
+        self.assertEqual(checkpoint['ticket'], 'OPE-230')
+        self.assertEqual(checkpoint['proof_family'], 'checkpoint_fencing')
+        checkpoint_gates = {gate['name']: gate for gate in checkpoint['rollout_gate_statuses']}
+        self.assertEqual(checkpoint_gates['replay_checkpoint_alignment']['status'], 'passed')
+        self.assertEqual(checkpoint_gates['retention_boundary_visibility']['status'], 'unknown')
+        self.assertEqual(checkpoint['summary']['stale_write_rejections'], 1)
+
+        retention = MODULE.build_retention_boundary_summary(report)
+        self.assertEqual(retention['ticket'], 'OPE-230')
+        self.assertEqual(retention['proof_family'], 'retention_boundary')
+        retention_gates = {gate['name']: gate for gate in retention['rollout_gate_statuses']}
+        self.assertEqual(retention_gates['retention_boundary_visibility']['status'], 'passed')
+        self.assertTrue(retention['focus_scenarios'][0]['reset_required'])
+        self.assertEqual(retention['summary']['retention_floor'], 3)
 
 
 if __name__ == '__main__':

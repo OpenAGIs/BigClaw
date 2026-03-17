@@ -12,6 +12,7 @@ It builds on the provider-neutral adapter boundary in `docs/reports/broker-event
 - `docs/reports/broker-durability-rollout-scorecard.json` now captures the same rollout posture as one checked-in machine-readable scorecard, including blockers, missing evidence, and broker bootstrap readiness.
 - `cmd/bigclawd/main.go` validates broker runtime config but intentionally stops before instantiating a live replicated adapter.
 - `docs/reports/event-bus-reliability-report.md` and `docs/reports/broker-failover-fault-injection-validation-pack.md` describe the portability and validation direction, but prior to this slice the rollout gate itself was not captured as one explicit contract.
+- `docs/reports/broker-checkpoint-fencing-proof-summary.json` and `docs/reports/broker-retention-boundary-proof-summary.json` now split the deterministic stub matrix into reviewable rollout-gate proofs for checkpoint fencing and retention expiry handling.
 
 ## Runtime contract
 
@@ -68,13 +69,15 @@ It builds on the provider-neutral adapter boundary in `docs/reports/broker-event
 - failure-domain summaries
 - references to the supporting validation pack and rollout contract documents
 
-The current repo-native sources for these signals are the `event_durability` payload and its nested `rollout_scorecard`, plus the top-level `event_durability_rollout` alias exposed through `GET /debug/status` and `/metrics`. Checked-in reviewer artifacts live at `docs/reports/broker-durability-rollout-scorecard.json` and `docs/reports/durability-rollout-scorecard.json`.
+The current repo-native sources for these signals are the `event_durability` payload and its nested `rollout_scorecard`, plus the top-level `event_durability_rollout` alias exposed through `GET /debug/status` and `/metrics`. Checked-in reviewer artifacts live at `docs/reports/broker-durability-rollout-scorecard.json`, `docs/reports/durability-rollout-scorecard.json`, `docs/reports/broker-checkpoint-fencing-proof-summary.json`, and `docs/reports/broker-retention-boundary-proof-summary.json`.
 
 
 ## Validation evidence required before a live adapter lands
 
 - debug/control-plane payload proving the active runtime advertises the replicated rollout contract and broker bootstrap readiness state
 - failover validation artifacts matching the scenario matrix in `docs/reports/broker-failover-fault-injection-validation-pack.md`
+- checkpoint-fencing proof summary at `docs/reports/broker-checkpoint-fencing-proof-summary.json`
+- retention-boundary proof summary at `docs/reports/broker-retention-boundary-proof-summary.json`
 - replay retention diagnostics proving expired checkpoints are surfaced explicitly
 - checkpoint takeover evidence proving stale writers cannot regress durable progress
 
@@ -85,5 +88,7 @@ The current repo-native sources for these signals are the `event_durability` pay
 - `internal/api/server_test.go`
 - `cmd/bigclawd/main.go`
 - `docs/reports/event-bus-reliability-report.md`
+- `docs/reports/broker-checkpoint-fencing-proof-summary.json`
+- `docs/reports/broker-retention-boundary-proof-summary.json`
 - `docs/reports/broker-failover-fault-injection-validation-pack.md`
 - `docs/reports/replay-retention-semantics-report.md`
