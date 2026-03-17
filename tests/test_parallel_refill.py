@@ -15,12 +15,12 @@ def test_parallel_refill_queue_has_no_remaining_recycled_candidates() -> None:
     issue_states = issue_state_map(
         [
             {"identifier": "OPE-266", "state": {"name": "Done"}},
-            {"identifier": "OPE-267", "state": {"name": "In Progress"}},
+            {"identifier": "OPE-267", "state": {"name": "Done"}},
             {"identifier": "OPE-269", "state": {"name": "Done"}},
             {"identifier": "OPE-268", "state": {"name": "Done"}},
         ]
     )
 
-    candidates = queue.select_candidates({"OPE-267"}, issue_states)
+    candidates = queue.select_candidates(set(), issue_states)
 
     assert candidates == []

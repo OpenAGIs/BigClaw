@@ -25,9 +25,9 @@ manual operator can refill the next parallel-safe issues in a stable order.
 ## Current batch
 
 - Active:
-  - `OPE-267` — `BIG-PAR-111` rollback trigger surface in debug and migration review payloads
+  - _None; the recycled batch is fully drained after `OPE-267` landed._
 - Ready to promote:
-  - _None in the recycled batch; `OPE-266`, `OPE-268`, and `OPE-269` are already complete._
+  - _None in the recycled batch; `OPE-266`, `OPE-267`, `OPE-268`, and `OPE-269` are complete._
 
 ## Canonical refill order
 

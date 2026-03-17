@@ -80,9 +80,7 @@
       "OPE-273",
       "OPE-274"
     ],
-    "active": [
-      "OPE-267"
-    ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -102,7 +100,7 @@
       "identifier": "OPE-267",
       "title": "BIG-PAR-111 rollback trigger surface in debug and migration review payloads",
       "track": "Distributed Diagnostics & Rollout",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-269",
