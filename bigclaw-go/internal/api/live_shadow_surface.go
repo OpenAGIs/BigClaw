@@ -117,16 +117,17 @@ type liveShadowScorecardDocument struct {
 }
 
 type migrationReviewPack struct {
-	Status                    string                  `json:"status"`
-	ReadinessReportPath       string                  `json:"readiness_report_path"`
-	ScorecardPath             string                  `json:"scorecard_path"`
-	CanonicalSummaryPath      string                  `json:"canonical_summary_path"`
-	SummaryPath               string                  `json:"summary_path"`
-	IndexPath                 string                  `json:"index_path"`
-	FollowUpDigestPath        string                  `json:"follow_up_digest_path"`
-	RollbackTriggerPath       string                  `json:"rollback_trigger_path"`
-	ReviewerLinks             []string                `json:"reviewer_links,omitempty"`
-	LiveShadowMirrorScorecard liveShadowMirrorSurface `json:"live_shadow_mirror_scorecard"`
+	Status                    string                        `json:"status"`
+	ReadinessReportPath       string                        `json:"readiness_report_path"`
+	ScorecardPath             string                        `json:"scorecard_path"`
+	CanonicalSummaryPath      string                        `json:"canonical_summary_path"`
+	SummaryPath               string                        `json:"summary_path"`
+	IndexPath                 string                        `json:"index_path"`
+	FollowUpDigestPath        string                        `json:"follow_up_digest_path"`
+	RollbackTriggerPath       string                        `json:"rollback_trigger_path"`
+	ReviewerLinks             []string                      `json:"reviewer_links,omitempty"`
+	LiveShadowMirrorScorecard liveShadowMirrorSurface       `json:"live_shadow_mirror_scorecard"`
+	RollbackTriggerSurface    rollbackTriggerRuntimeSurface `json:"rollback_trigger_surface"`
 }
 
 func liveShadowMirrorPayload() liveShadowMirrorSurface {
@@ -221,17 +222,19 @@ func liveShadowMirrorPayload() liveShadowMirrorSurface {
 
 func buildMigrationReviewPack() migrationReviewPack {
 	surface := liveShadowMirrorPayload()
+	rollbackSurface := rollbackTriggerSurfacePayload()
 	return migrationReviewPack{
-		Status:                    firstNonEmpty(surface.Status, "unavailable"),
+		Status:                    firstNonEmpty(surface.Status, rollbackSurface.Summary.Status, "unavailable"),
 		ReadinessReportPath:       migrationReadinessReportPath,
 		ScorecardPath:             surface.ReportPath,
 		CanonicalSummaryPath:      surface.CanonicalSummaryPath,
 		SummaryPath:               surface.SummaryPath,
 		IndexPath:                 liveShadowIndexPath,
 		FollowUpDigestPath:        liveShadowComparisonFollowUpDigestPath,
-		RollbackTriggerPath:       firstNonEmpty(surface.RollbackTriggerSurface.SummaryPath, rollbackTriggerSurfacePath),
+		RollbackTriggerPath:       firstNonEmpty(rollbackSurface.ReportPath, surface.RollbackTriggerSurface.SummaryPath, rollbackTriggerSurfacePath),
 		ReviewerLinks:             append([]string(nil), surface.ReviewerLinks...),
 		LiveShadowMirrorScorecard: surface,
+		RollbackTriggerSurface:    rollbackSurface,
 	}
 }
 

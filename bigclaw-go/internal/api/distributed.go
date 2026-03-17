@@ -777,6 +777,22 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	lines = append(lines,
 		"",
+		"## Rollback Trigger Surface",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReportPath),
+		fmt.Sprintf("- Issue: %s / %s", firstNonEmpty(diagnostics.MigrationReviewPack.RollbackTriggerSurface.Issue.ID, "unknown"), firstNonEmpty(diagnostics.MigrationReviewPack.RollbackTriggerSurface.Issue.Slug, "unknown")),
+		fmt.Sprintf("- Status: %s", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Status),
+		fmt.Sprintf("- Automation boundary: %s", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.AutomationBoundary),
+		fmt.Sprintf("- Automated rollback trigger: %t", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.AutomatedRollbackTrigger),
+		fmt.Sprintf("- Cutover gate: %s", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.CutoverGate),
+		fmt.Sprintf("- Blockers: %d", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Distinctions.Blockers),
+		fmt.Sprintf("- Warnings: %d", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Distinctions.Warnings),
+		fmt.Sprintf("- Manual-only paths: %d", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Distinctions.ManualOnlyPaths),
+	)
+	if len(diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
 		"## Broker Stub Live Fanout Isolation",
 		fmt.Sprintf("- Canonical report: %s", diagnostics.BrokerFanoutIsolation.ReportPath),
 		fmt.Sprintf("- Scenario count: %d", diagnostics.BrokerFanoutIsolation.Summary.ScenarioCount),
