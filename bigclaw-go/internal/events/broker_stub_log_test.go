@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -58,6 +59,93 @@ func TestBrokerStubEventLogSupportsReplayAndCheckpoints(t *testing.T) {
 	}
 	if watermark.Backend != "broker_stub" || watermark.EventCount != 3 || watermark.NewestSequence != 3 {
 		t.Fatalf("unexpected watermark: %+v", watermark)
+	}
+}
+
+func TestBrokerStubLiveFanoutStaysIsolatedFromReplayCatchUp(t *testing.T) {
+	log := NewBrokerStubEventLog()
+	bus := NewBus()
+	ctx := context.Background()
+	base := time.Unix(1_700_000_100, 0).UTC()
+	for index := 0; index < 4; index++ {
+		event := domain.Event{
+			ID:        fmt.Sprintf("evt-broker-backlog-%d", index+1),
+			Type:      domain.EventTaskQueued,
+			TaskID:    "task-broker-fanout",
+			TraceID:   "trace-broker-fanout",
+			Timestamp: base.Add(time.Duration(index) * time.Second),
+		}
+		if err := log.Write(ctx, event); err != nil {
+			t.Fatalf("seed backlog %s: %v", event.ID, err)
+		}
+	}
+
+	replayed, err := log.Replay(10)
+	if err != nil {
+		t.Fatalf("replay backlog: %v", err)
+	}
+	if len(replayed) != 4 {
+		t.Fatalf("expected 4 replay backlog events, got %+v", replayed)
+	}
+
+	liveCh, cancel := bus.Subscribe(1)
+	defer cancel()
+
+	replayDone := make(chan struct{})
+	go func() {
+		defer close(replayDone)
+		for range replayed {
+			time.Sleep(30 * time.Millisecond)
+		}
+	}()
+
+	time.Sleep(10 * time.Millisecond)
+	select {
+	case <-replayDone:
+		t.Fatal("replay catch-up finished before live publish drill began")
+	default:
+	}
+
+	liveEvent := domain.Event{
+		ID:        "evt-broker-live",
+		Type:      domain.EventTaskStarted,
+		TaskID:    "task-broker-fanout",
+		TraceID:   "trace-broker-fanout",
+		Timestamp: base.Add(5 * time.Second),
+	}
+	if err := log.Write(ctx, liveEvent); err != nil {
+		t.Fatalf("write live event: %v", err)
+	}
+	publishedAt := time.Now()
+	bus.Publish(liveEvent)
+
+	select {
+	case got := <-liveCh:
+		if got.ID != liveEvent.ID {
+			t.Fatalf("expected live event %s, got %+v", liveEvent.ID, got)
+		}
+		if got.Delivery == nil || got.Delivery.Mode != domain.EventDeliveryModeLive {
+			t.Fatalf("expected live delivery metadata, got %+v", got.Delivery)
+		}
+		if elapsed := time.Since(publishedAt); elapsed > 50*time.Millisecond {
+			t.Fatalf("live fanout delivery exceeded deadline: %s", elapsed)
+		}
+		select {
+		case <-replayDone:
+			t.Fatal("replay catch-up drained before live delivery; isolation drill no longer proves separation")
+		default:
+		}
+	case <-time.After(50 * time.Millisecond):
+		t.Fatal("timed out waiting for live publish while replay catch-up was active")
+	}
+
+	<-replayDone
+	watermark, err := log.RetentionWatermark()
+	if err != nil {
+		t.Fatalf("retention watermark: %v", err)
+	}
+	if watermark.EventCount != 5 || watermark.NewestEventID != liveEvent.ID {
+		t.Fatalf("unexpected watermark after live fanout drill: %+v", watermark)
 	}
 }
 
