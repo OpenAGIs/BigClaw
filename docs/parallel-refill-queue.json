@@ -7,14 +7,14 @@
     "epic": "OPE-187"
   },
   "policy": {
-    "target_in_progress": 1,
+    "target_in_progress": 4,
     "activate_state_name": "In Progress",
     "activate_state_id": "bd8aafe7-4d8b-41aa-a85b-13e76d49ead7",
     "refill_states": [
       "Backlog",
       "Todo"
     ],
-    "blocked_reason": "Linear workspace issue quota currently blocks creating the remaining planned slices"
+    "blocked_reason": "Linear workspace issue quota still blocks net-new issues, so the active batch uses recycled done issue slots"
   },
   "recent_batches": {
     "completed": [
@@ -57,10 +57,6 @@
       "OPE-251",
       "OPE-252",
       "OPE-253",
-      "OPE-254",
-      "OPE-255",
-      "OPE-256",
-      "OPE-257",
       "OPE-258",
       "OPE-259",
       "OPE-260",
@@ -77,9 +73,45 @@
       "OPE-271",
       "OPE-275"
     ],
-    "active": [],
-    "standby": []
+    "active": [
+      "OPE-255",
+      "OPE-256"
+    ],
+    "standby": [
+      "OPE-257",
+      "OPE-254"
+    ]
   },
-  "issue_order": [],
-  "issues": []
+  "issue_order": [
+    "OPE-255",
+    "OPE-256",
+    "OPE-257",
+    "OPE-254"
+  ],
+  "issues": [
+    {
+      "identifier": "OPE-255",
+      "title": "BIG-PAR-093 shared durable subscriber ownership backend scaffold",
+      "track": "Shared Queue & Coordination",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-256",
+      "title": "BIG-PAR-094 native takeover transition audit events",
+      "track": "Shared Queue & Coordination",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "OPE-257",
+      "title": "BIG-PAR-095 broker-backed and partitioned coordination target contract surface",
+      "track": "Shared Queue & Coordination",
+      "status": "Todo"
+    },
+    {
+      "identifier": "OPE-254",
+      "title": "BIG-PAR-088 tenant-scoped rollback guardrails and trigger surface",
+      "track": "Distributed Diagnostics & Rollout",
+      "status": "Todo"
+    }
+  ]
 }
