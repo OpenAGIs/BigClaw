@@ -25,11 +25,9 @@ manual operator can refill the next parallel-safe issues in a stable order.
 ## Current batch
 
 - Active:
-  - `OPE-266` — `BIG-PAR-110` live shadow mirror scorecard surface in debug and migration review payloads
   - `OPE-267` — `BIG-PAR-111` rollback trigger surface in debug and migration review payloads
 - Ready to promote:
-  - `OPE-269` — `BIG-PAR-112` validation bundle continuation gate surface in debug and distributed diagnostics
-  - `OPE-268` — `BIG-PAR-113` enable continuation-gate enforcement by default in unattended workflow closeout
+  - _None in the recycled batch; `OPE-266`, `OPE-268`, and `OPE-269` are already complete._
 
 ## Canonical refill order
 

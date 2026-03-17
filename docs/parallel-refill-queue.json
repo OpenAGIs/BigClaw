@@ -81,13 +81,9 @@
       "OPE-274"
     ],
     "active": [
-      "OPE-266",
       "OPE-267"
     ],
-    "standby": [
-      "OPE-269",
-      "OPE-268"
-    ]
+    "standby": []
   },
   "issue_order": [
     "OPE-266",
@@ -100,7 +96,7 @@
       "identifier": "OPE-266",
       "title": "BIG-PAR-110 live shadow mirror scorecard surface in debug and migration review payloads",
       "track": "Distributed Diagnostics & Rollout",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-267",
@@ -112,13 +108,13 @@
       "identifier": "OPE-269",
       "title": "BIG-PAR-112 validation bundle continuation gate surface in debug and distributed diagnostics",
       "track": "Distributed Diagnostics & Rollout",
-      "status": "Todo"
+      "status": "Done"
     },
     {
       "identifier": "OPE-268",
       "title": "BIG-PAR-113 enable continuation-gate enforcement by default in unattended workflow closeout",
       "track": "Parallel Validation Matrix",
-      "status": "Todo"
+      "status": "Done"
     }
   ]
 }
