@@ -74,22 +74,12 @@
       "OPE-268",
       "OPE-269",
       "OPE-270",
-      "OPE-271"
-    ],
-    "active": [
+      "OPE-271",
       "OPE-275"
     ],
+    "active": [],
     "standby": []
   },
-  "issue_order": [
-    "OPE-275"
-  ],
-  "issues": [
-    {
-      "identifier": "OPE-275",
-      "title": "BIG-PAR-083 production corpus replay pack and migration coverage scorecard",
-      "track": "Production Corpus Coverage Implementation",
-      "status": "In Progress"
-    }
-  ]
+  "issue_order": [],
+  "issues": []
 }
