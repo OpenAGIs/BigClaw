@@ -71,6 +71,15 @@ type distributedDiagnosticsReport struct {
 	ExportURL string `json:"export_url"`
 }
 
+type brokerReviewPack struct {
+	Status             string   `json:"status"`
+	SummaryPath        string   `json:"summary_path"`
+	ReportPath         string   `json:"report_path"`
+	ValidationPackPath string   `json:"validation_pack_path"`
+	ArtifactDirectory  string   `json:"artifact_directory"`
+	ReviewerLinks      []string `json:"reviewer_links,omitempty"`
+}
+
 type traceExportBundleSummary struct {
 	TotalTraces             int                      `json:"total_traces"`
 	TracesWithTerminalState int                      `json:"traces_with_terminal_state"`
@@ -97,6 +106,7 @@ type distributedDiagnostics struct {
 	RoutingReasons   []routingReasonSummary        `json:"routing_reasons"`
 	ExecutorCapacity []executorCapacityView        `json:"executor_capacity"`
 	ClusterHealth    clusterHealthRollup           `json:"cluster_health"`
+	BrokerReviewPack brokerReviewPack              `json:"broker_review_pack"`
 	TraceBundle      traceExportBundleSummary      `json:"trace_export_bundle"`
 	RolloutReport    distributedDiagnosticsReport  `json:"rollout_report"`
 }
@@ -371,6 +381,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		RoutingReasons:   routingReasons,
 		ExecutorCapacity: executorCapacity,
 		ClusterHealth:    clusterHealth,
+		BrokerReviewPack: buildBrokerReviewPack(),
 		TraceBundle:      buildTraceExportBundle(assignments, s.Recorder.TraceSummaries(5)),
 	}
 	diagnostics.RolloutReport = distributedDiagnosticsReport{
@@ -700,6 +711,18 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	if len(diagnostics.TraceBundle.BackendLimitations) > 0 {
 		lines = append(lines, "- Backend limitations: "+strings.Join(diagnostics.TraceBundle.BackendLimitations, "; "))
 	}
+	lines = append(lines,
+		"",
+		"## Broker Failover Review Pack",
+		fmt.Sprintf("- Status: %s", diagnostics.BrokerReviewPack.Status),
+		fmt.Sprintf("- Canonical summary: %s", diagnostics.BrokerReviewPack.SummaryPath),
+		fmt.Sprintf("- Stub report: %s", diagnostics.BrokerReviewPack.ReportPath),
+		fmt.Sprintf("- Validation pack: %s", diagnostics.BrokerReviewPack.ValidationPackPath),
+		fmt.Sprintf("- Artifact directory: %s", diagnostics.BrokerReviewPack.ArtifactDirectory),
+	)
+	if len(diagnostics.BrokerReviewPack.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.BrokerReviewPack.ReviewerLinks, ", "))
+	}
 	lines = append(lines, "", "## Notes")
 	for _, note := range diagnostics.ClusterHealth.Notes {
 		lines = append(lines, "- "+note)
@@ -763,17 +786,35 @@ func buildTraceExportBundle(assignments []distributedTaskAssignment, summaries [
 			"docs/reports/live-validation-index.md",
 			"docs/reports/live-validation-summary.json",
 			"docs/reports/go-control-plane-observability-report.md",
+			"docs/reports/broker-validation-summary.json",
+			"docs/reports/broker-failover-stub-report.json",
+			"docs/reports/broker-failover-stub-artifacts",
 		},
 		ReviewerNavigation: []string{
 			"/v2/reports/distributed/export",
 			"/debug/traces",
 			"/events?trace_id=<trace_id>&limit=200",
 			"docs/reports/review-readiness.md",
+			"docs/reports/broker-failover-fault-injection-validation-pack.md",
 		},
 		BackendLimitations: []string{
 			"no external tracing backend or OTLP/Jaeger/Tempo/Zipkin export path",
 			"no cross-process span propagation beyond in-memory trace_id grouping",
 			"validation evidence is workflow-exported and repo-native, not a continuously indexed trace service",
+		},
+	}
+}
+
+func buildBrokerReviewPack() brokerReviewPack {
+	return brokerReviewPack{
+		Status:             "checked_in_stub_evidence",
+		SummaryPath:        "docs/reports/broker-validation-summary.json",
+		ReportPath:         "docs/reports/broker-failover-stub-report.json",
+		ValidationPackPath: "docs/reports/broker-failover-fault-injection-validation-pack.md",
+		ArtifactDirectory:  "docs/reports/broker-failover-stub-artifacts",
+		ReviewerLinks: []string{
+			"docs/reports/live-validation-index.json",
+			"docs/reports/review-readiness.md",
 		},
 	}
 }
