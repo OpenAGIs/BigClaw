@@ -10,16 +10,22 @@ from typing import Any
 SHADOW_COMPARE_REPORT = 'docs/reports/shadow-compare-report.json'
 SHADOW_MATRIX_REPORT = 'docs/reports/shadow-matrix-report.json'
 SHADOW_SCORECARD_REPORT = 'docs/reports/live-shadow-mirror-scorecard.json'
+ROLLBACK_TRIGGER_REPORT = 'docs/reports/rollback-trigger-surface.json'
 FOLLOWUP_DIGESTS = [
     (
         'docs/reports/live-shadow-comparison-follow-up-digest.md',
         'Live shadow traffic comparison caveats are consolidated here.',
+    ),
+    (
+        'docs/reports/rollback-safeguard-follow-up-digest.md',
+        'Rollback remains operator-driven; this digest explains the guardrail visibility and trigger caveats.',
     ),
 ]
 DOC_LINKS = [
     ('docs/migration-shadow.md', 'Shadow helper workflow and bundle generation steps.'),
     ('docs/reports/migration-readiness-report.md', 'Migration readiness summary linked to the shadow bundle.'),
     ('docs/reports/migration-plan-review-notes.md', 'Review notes tied to the shadow bundle index.'),
+    ('docs/reports/rollback-trigger-surface.json', 'Machine-readable rollback blockers, warnings, and manual-only paths linked from the shadow bundle.'),
 ]
 
 
@@ -110,6 +116,8 @@ def build_run_summary(
     compare_bundle_path = Path(copy_json_artifact(root / SHADOW_COMPARE_REPORT, bundle_dir / 'shadow-compare-report.json'))
     matrix_bundle_path = Path(copy_json_artifact(root / SHADOW_MATRIX_REPORT, bundle_dir / 'shadow-matrix-report.json'))
     scorecard_bundle_path = Path(copy_json_artifact(root / SHADOW_SCORECARD_REPORT, bundle_dir / 'live-shadow-mirror-scorecard.json'))
+    rollback_bundle_path = Path(copy_json_artifact(root / ROLLBACK_TRIGGER_REPORT, bundle_dir / 'rollback-trigger-surface.json'))
+    rollback_report = read_json(root / ROLLBACK_TRIGGER_REPORT)
 
     scorecard_summary = scorecard_report.get('summary', {})
     freshness = scorecard_report.get('freshness', [])
@@ -129,6 +137,7 @@ def build_run_summary(
             'shadow_compare_report_path': relpath(compare_bundle_path, root),
             'shadow_matrix_report_path': relpath(matrix_bundle_path, root),
             'live_shadow_scorecard_path': relpath(scorecard_bundle_path, root),
+            'rollback_trigger_surface_path': relpath(rollback_bundle_path, root),
         },
         'latest_evidence_timestamp': scorecard_summary.get('latest_evidence_timestamp'),
         'freshness': freshness,
@@ -141,13 +150,20 @@ def build_run_summary(
             'stale_inputs': stale_inputs,
             'fresh_inputs': int(scorecard_summary.get('fresh_inputs', 0) or 0),
         },
+        'rollback_trigger_surface': {
+            'status': rollback_report.get('summary', {}).get('status'),
+            'automation_boundary': rollback_report.get('summary', {}).get('automation_boundary'),
+            'automated_rollback_trigger': bool(rollback_report.get('summary', {}).get('automated_rollback_trigger', False)),
+            'distinctions': rollback_report.get('summary', {}).get('distinctions', {}),
+            'summary_path': relpath(root / ROLLBACK_TRIGGER_REPORT, root),
+        },
         'compare_trace_id': compare_report.get('trace_id'),
         'matrix_trace_ids': [item.get('trace_id') for item in matrix_report.get('results', []) if item.get('trace_id')],
         'cutover_checkpoints': scorecard_report.get('cutover_checkpoints', []),
         'closeout_commands': [
             'cd bigclaw-go && python3 scripts/migration/live_shadow_scorecard.py --pretty',
             'cd bigclaw-go && python3 scripts/migration/export_live_shadow_bundle.py',
-            'pytest tests/test_live_shadow_scorecard.py tests/test_live_shadow_bundle.py',
+            'cd bigclaw-go && go test ./internal/regression -run TestRollbackDocsStayAligned',
             'git push origin <branch> && git log -1 --stat',
         ],
     }
@@ -242,6 +258,7 @@ def render_index(
         ('shadow_compare_report_path', 'Shadow compare report'),
         ('shadow_matrix_report_path', 'Shadow matrix report'),
         ('live_shadow_scorecard_path', 'Parity scorecard'),
+        ('rollback_trigger_surface_path', 'Rollback trigger surface'),
     ]:
         lines.append(f"- {label}: `{latest['artifacts'][key]}`")
     lines.append('')
@@ -258,6 +275,11 @@ def render_index(
         ('stale_inputs', 'Stale inputs'),
     ]:
         lines.append(f"- {label}: `{latest['summary'][key]}`")
+    lines.append(f"- Rollback trigger surface status: `{latest['rollback_trigger_surface']['status']}`")
+    lines.append(f"- Rollback automation boundary: `{latest['rollback_trigger_surface']['automation_boundary']}`")
+    lines.append(
+        f"- Rollback trigger distinctions: `{latest['rollback_trigger_surface']['distinctions']}`"
+    )
     lines.append('')
     lines.extend(['## Parity drift rollup', ''])
     lines.append(f"- Status: `{rollup['status']}`")

@@ -1,0 +1,107 @@
+{
+  "issue": {
+    "id": "OPE-254",
+    "slug": "BIG-PAR-088",
+    "title": "tenant-scoped rollback guardrails and trigger surface"
+  },
+  "summary": {
+    "status": "manual-review-required",
+    "automation_boundary": "manual_only",
+    "automated_rollback_trigger": false,
+    "cutover_gate": "reviewer_enforced",
+    "distinctions": {
+      "blockers": 3,
+      "warnings": 1,
+      "manual_only_paths": 2
+    }
+  },
+  "shared_guardrail_summary": {
+    "digest_path": "docs/reports/rollback-safeguard-follow-up-digest.md",
+    "migration_readiness_path": "docs/reports/migration-readiness-report.md",
+    "live_shadow_index_path": "docs/reports/live-shadow-index.md",
+    "live_shadow_manifest_path": "docs/reports/live-shadow-index.json",
+    "live_shadow_rollup_path": "docs/reports/live-shadow-drift-rollup.json"
+  },
+  "warnings": [
+    {
+      "key": "shadow_parity_drift",
+      "condition": "Shadow parity drift for the tenant or task slice under rollout",
+      "evidence_paths": [
+        "docs/reports/shadow-compare-report.json",
+        "docs/reports/shadow-matrix-report.json",
+        "docs/reports/migration-readiness-report.md"
+      ],
+      "operator_response": [
+        "Pause the tenant rollout segment",
+        "Stop assigning new Go-owned work for the affected slice",
+        "Redirect eligible submissions back to the incumbent plane while the diff is reviewed"
+      ],
+      "automation_boundary": "Detection is evidence-backed, but the stop/redirect action is still manual"
+    }
+  ],
+  "blockers": [
+    {
+      "key": "live_validation_failure",
+      "condition": "Live validation or smoke evidence shows tenant-impacting failures during cutover rehearsal",
+      "evidence_paths": [
+        "docs/reports/live-validation-summary.json",
+        "docs/reports/live-validation-runs/*"
+      ],
+      "operator_response": [
+        "Hold further tenant expansion",
+        "Preserve the failed run artifacts",
+        "Revert the rollout slice to the incumbent plane before widening exposure"
+      ],
+      "automation_boundary": "No automatic cutover gate consumes these artifacts yet"
+    },
+    {
+      "key": "queue_replay_audit_anomaly",
+      "condition": "Queue lease, replay, or event-sequence anomalies make the tenant outcome unauditable",
+      "evidence_paths": [
+        "docs/reports/queue-reliability-report.md",
+        "docs/reports/lease-recovery-report.md",
+        "docs/reports/event-bus-reliability-report.md"
+      ],
+      "operator_response": [
+        "Treat the tenant as rollback-eligible",
+        "Stop new leases in the Go control plane",
+        "Review replay and audit evidence before resuming any cutover step"
+      ],
+      "automation_boundary": "The repo documents the threshold class, but no runtime policy engine enforces it"
+    },
+    {
+      "key": "missing_checkpoint_evidence",
+      "condition": "Audit trail or migration evidence is missing for a tenant-scoped rollout checkpoint",
+      "evidence_paths": [
+        "docs/migration.md",
+        "docs/reports/migration-plan-review-notes.md",
+        "docs/reports/rollback-safeguard-follow-up-digest.md"
+      ],
+      "operator_response": [
+        "Do not advance the tenant cutover checkpoint",
+        "Restore traffic to the incumbent plane if the missing evidence blocks safe review"
+      ],
+      "automation_boundary": "Evidence completeness is a reviewer requirement, not a machine-enforced admission check"
+    }
+  ],
+  "manual_only_paths": [
+    {
+      "key": "tenant_scoped_rollback_execution",
+      "path": [
+        "Disable Go dispatch for the affected tenant slice",
+        "Stop new leases",
+        "Redirect eligible traffic back to the incumbent plane"
+      ],
+      "current_state": "manual, evidence-backed operator action"
+    },
+    {
+      "key": "cutover_checkpoint_promotion",
+      "path": [
+        "Review shadow, live-validation, and audit artifacts",
+        "Confirm rollback blockers and warnings are addressed",
+        "Advance rollout only after reviewer signoff"
+      ],
+      "current_state": "rollback remains operator-driven"
+    }
+  ]
+}
