@@ -102,14 +102,15 @@ type traceExportBundleTrace struct {
 }
 
 type distributedDiagnostics struct {
-	Summary              distributedDiagnosticsSummary `json:"summary"`
-	RoutingReasons       []routingReasonSummary        `json:"routing_reasons"`
-	ExecutorCapacity     []executorCapacityView        `json:"executor_capacity"`
-	ClusterHealth        clusterHealthRollup           `json:"cluster_health"`
-	BrokerReviewPack     brokerReviewPack              `json:"broker_review_pack"`
-	DeliveryAckReadiness deliveryAckReadinessSurface   `json:"delivery_ack_readiness"`
-	TraceBundle          traceExportBundleSummary      `json:"trace_export_bundle"`
-	RolloutReport        distributedDiagnosticsReport  `json:"rollout_report"`
+	Summary               distributedDiagnosticsSummary         `json:"summary"`
+	RoutingReasons        []routingReasonSummary                `json:"routing_reasons"`
+	ExecutorCapacity      []executorCapacityView                `json:"executor_capacity"`
+	ClusterHealth         clusterHealthRollup                   `json:"cluster_health"`
+	BrokerReviewPack      brokerReviewPack                      `json:"broker_review_pack"`
+	BrokerFanoutIsolation brokerStubFanoutIsolationEvidencePack `json:"broker_stub_fanout_isolation"`
+	DeliveryAckReadiness  deliveryAckReadinessSurface           `json:"delivery_ack_readiness"`
+	TraceBundle           traceExportBundleSummary              `json:"trace_export_bundle"`
+	RolloutReport         distributedDiagnosticsReport          `json:"rollout_report"`
 }
 
 type executorDiagnosticsCounters struct {
@@ -379,13 +380,14 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		Notes:              diagnosticsNotes(summary, executorCapacity, s.Control.Snapshot()),
 	}
 	diagnostics := distributedDiagnostics{
-		Summary:              summary,
-		RoutingReasons:       routingReasons,
-		ExecutorCapacity:     executorCapacity,
-		ClusterHealth:        clusterHealth,
-		BrokerReviewPack:     buildBrokerReviewPack(),
-		DeliveryAckReadiness: deliveryAckReadinessPayload(),
-		TraceBundle:          buildTraceExportBundle(assignments, s.Recorder.TraceSummaries(5)),
+		Summary:               summary,
+		RoutingReasons:        routingReasons,
+		ExecutorCapacity:      executorCapacity,
+		ClusterHealth:         clusterHealth,
+		BrokerReviewPack:      buildBrokerReviewPack(),
+		BrokerFanoutIsolation: brokerStubFanoutIsolationPayload(),
+		DeliveryAckReadiness:  deliveryAckReadinessPayload(),
+		TraceBundle:           buildTraceExportBundle(assignments, s.Recorder.TraceSummaries(5)),
 	}
 	diagnostics.RolloutReport = distributedDiagnosticsReport{
 		Markdown:  renderDistributedDiagnosticsMarkdown(diagnostics, filters),
@@ -725,6 +727,26 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	)
 	if len(diagnostics.BrokerReviewPack.ReviewerLinks) > 0 {
 		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.BrokerReviewPack.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Broker Stub Live Fanout Isolation",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.BrokerFanoutIsolation.ReportPath),
+		fmt.Sprintf("- Scenario count: %d", diagnostics.BrokerFanoutIsolation.Summary.ScenarioCount),
+		fmt.Sprintf("- Isolated scenarios: %d", diagnostics.BrokerFanoutIsolation.Summary.IsolatedScenarios),
+		fmt.Sprintf("- Stalled scenarios: %d", diagnostics.BrokerFanoutIsolation.Summary.StalledScenarios),
+		fmt.Sprintf("- Replay backlog: %d events", diagnostics.BrokerFanoutIsolation.Summary.ReplayBacklogEvents),
+		fmt.Sprintf("- Replay step delay: %dms", diagnostics.BrokerFanoutIsolation.Summary.ReplayStepDelayMS),
+		fmt.Sprintf("- Live delivery deadline: %dms", diagnostics.BrokerFanoutIsolation.Summary.LiveDeliveryDeadlineMS),
+	)
+	for _, scenario := range diagnostics.BrokerFanoutIsolation.Scenarios {
+		lines = append(lines, fmt.Sprintf("- %s: status=%s replay=%s live=%s backlog=%d replay_delay=%dms live_deadline=%dms replay_after_live=%t", scenario.Name, scenario.Status, firstNonEmpty(scenario.ReplayPath, "unknown"), firstNonEmpty(scenario.LivePath, "unknown"), scenario.ReplayBacklogEvents, scenario.ReplayStepDelayMS, scenario.LiveDeliveryDeadlineMS, scenario.ReplayDrainsAfterLive))
+		if len(scenario.SourceTests) > 0 {
+			lines = append(lines, "  - source tests: "+strings.Join(scenario.SourceTests, ", "))
+		}
+	}
+	if len(diagnostics.BrokerFanoutIsolation.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.BrokerFanoutIsolation.ReviewerLinks, ", "))
 	}
 	lines = append(lines,
 		"",

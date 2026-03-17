@@ -383,6 +383,62 @@ func TestDebugStatusIncludesCoordinationCapabilitySurface(t *testing.T) {
 	}
 }
 
+func TestDebugStatusIncludesBrokerStubFanoutIsolationEvidencePack(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		BrokerStubFanoutIsolation struct {
+			ReportPath string `json:"report_path"`
+			Ticket     string `json:"ticket"`
+			Summary    struct {
+				ScenarioCount          int  `json:"scenario_count"`
+				IsolatedScenarios      int  `json:"isolated_scenarios"`
+				StalledScenarios       int  `json:"stalled_scenarios"`
+				ReplayBacklogEvents    int  `json:"replay_backlog_events"`
+				ReplayStepDelayMS      int  `json:"replay_step_delay_ms"`
+				ReplayWindowMS         int  `json:"replay_window_ms"`
+				LiveDeliveryDeadlineMS int  `json:"live_delivery_deadline_ms"`
+				IsolationMaintained    bool `json:"isolation_maintained"`
+			} `json:"summary"`
+			Scenarios []struct {
+				Name                   string `json:"name"`
+				Status                 string `json:"status"`
+				ReplayBacklogEvents    int    `json:"replay_backlog_events"`
+				ReplayStepDelayMS      int    `json:"replay_step_delay_ms"`
+				ReplayWindowMS         int    `json:"replay_window_ms"`
+				LiveDeliveryDeadlineMS int    `json:"live_delivery_deadline_ms"`
+				ReplayDrainsAfterLive  bool   `json:"replay_drains_after_live"`
+			} `json:"scenarios"`
+		} `json:"broker_stub_fanout_isolation"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug broker fanout payload: %v", err)
+	}
+	if decoded.BrokerStubFanoutIsolation.ReportPath != brokerStubFanoutIsolationEvidencePackPath || decoded.BrokerStubFanoutIsolation.Ticket != "OPE-261" {
+		t.Fatalf("unexpected broker fanout report metadata: %+v", decoded.BrokerStubFanoutIsolation)
+	}
+	if decoded.BrokerStubFanoutIsolation.Summary.ScenarioCount != 1 || decoded.BrokerStubFanoutIsolation.Summary.IsolatedScenarios != 1 || decoded.BrokerStubFanoutIsolation.Summary.StalledScenarios != 0 || decoded.BrokerStubFanoutIsolation.Summary.ReplayBacklogEvents != 4 || decoded.BrokerStubFanoutIsolation.Summary.ReplayStepDelayMS != 30 || decoded.BrokerStubFanoutIsolation.Summary.ReplayWindowMS != 120 || decoded.BrokerStubFanoutIsolation.Summary.LiveDeliveryDeadlineMS != 50 || !decoded.BrokerStubFanoutIsolation.Summary.IsolationMaintained {
+		t.Fatalf("unexpected broker fanout summary: %+v", decoded.BrokerStubFanoutIsolation.Summary)
+	}
+	if len(decoded.BrokerStubFanoutIsolation.Scenarios) != 1 {
+		t.Fatalf("expected 1 broker fanout scenario, got %+v", decoded.BrokerStubFanoutIsolation.Scenarios)
+	}
+	if decoded.BrokerStubFanoutIsolation.Scenarios[0].Name != "replay_catchup_does_not_block_live_publish" || decoded.BrokerStubFanoutIsolation.Scenarios[0].Status != "isolated" || decoded.BrokerStubFanoutIsolation.Scenarios[0].ReplayBacklogEvents != 4 || decoded.BrokerStubFanoutIsolation.Scenarios[0].ReplayStepDelayMS != 30 || decoded.BrokerStubFanoutIsolation.Scenarios[0].ReplayWindowMS != 120 || decoded.BrokerStubFanoutIsolation.Scenarios[0].LiveDeliveryDeadlineMS != 50 || !decoded.BrokerStubFanoutIsolation.Scenarios[0].ReplayDrainsAfterLive {
+		t.Fatalf("unexpected broker fanout scenario: %+v", decoded.BrokerStubFanoutIsolation.Scenarios[0])
+	}
+}
+
 func TestDebugStatusIncludesDeliveryAckReadinessSurface(t *testing.T) {
 	server := &Server{
 		Recorder: observability.NewRecorder(),
@@ -2055,6 +2111,25 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 				ArtifactDirectory  string   `json:"artifact_directory"`
 				ReviewerLinks      []string `json:"reviewer_links"`
 			} `json:"broker_review_pack"`
+			BrokerStubFanoutIsolation struct {
+				ReportPath string `json:"report_path"`
+				Summary    struct {
+					ScenarioCount          int  `json:"scenario_count"`
+					IsolatedScenarios      int  `json:"isolated_scenarios"`
+					StalledScenarios       int  `json:"stalled_scenarios"`
+					ReplayBacklogEvents    int  `json:"replay_backlog_events"`
+					ReplayStepDelayMS      int  `json:"replay_step_delay_ms"`
+					LiveDeliveryDeadlineMS int  `json:"live_delivery_deadline_ms"`
+					IsolationMaintained    bool `json:"isolation_maintained"`
+				} `json:"summary"`
+				Scenarios []struct {
+					Name                  string `json:"name"`
+					Status                string `json:"status"`
+					ReplayBacklogEvents   int    `json:"replay_backlog_events"`
+					ReplayStepDelayMS     int    `json:"replay_step_delay_ms"`
+					ReplayDrainsAfterLive bool   `json:"replay_drains_after_live"`
+				} `json:"scenarios"`
+			} `json:"broker_stub_fanout_isolation"`
 			DeliveryAckReadiness struct {
 				ReportPath string `json:"report_path"`
 				Summary    struct {
@@ -2119,6 +2194,22 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		decoded.Diagnostics.BrokerReviewPack.ReviewerLinks[1] != "docs/reports/review-readiness.md" {
 		t.Fatalf("unexpected broker review pack reviewer links: %+v", decoded.Diagnostics.BrokerReviewPack.ReviewerLinks)
 	}
+	if decoded.Diagnostics.BrokerStubFanoutIsolation.ReportPath != brokerStubFanoutIsolationEvidencePackPath ||
+		decoded.Diagnostics.BrokerStubFanoutIsolation.Summary.ScenarioCount != 1 ||
+		decoded.Diagnostics.BrokerStubFanoutIsolation.Summary.IsolatedScenarios != 1 ||
+		decoded.Diagnostics.BrokerStubFanoutIsolation.Summary.StalledScenarios != 0 ||
+		decoded.Diagnostics.BrokerStubFanoutIsolation.Summary.ReplayBacklogEvents != 4 ||
+		decoded.Diagnostics.BrokerStubFanoutIsolation.Summary.ReplayStepDelayMS != 30 ||
+		decoded.Diagnostics.BrokerStubFanoutIsolation.Summary.LiveDeliveryDeadlineMS != 50 ||
+		!decoded.Diagnostics.BrokerStubFanoutIsolation.Summary.IsolationMaintained {
+		t.Fatalf("unexpected broker fanout isolation payload: %+v", decoded.Diagnostics.BrokerStubFanoutIsolation)
+	}
+	if len(decoded.Diagnostics.BrokerStubFanoutIsolation.Scenarios) != 1 ||
+		decoded.Diagnostics.BrokerStubFanoutIsolation.Scenarios[0].Name != "replay_catchup_does_not_block_live_publish" ||
+		decoded.Diagnostics.BrokerStubFanoutIsolation.Scenarios[0].Status != "isolated" ||
+		!decoded.Diagnostics.BrokerStubFanoutIsolation.Scenarios[0].ReplayDrainsAfterLive {
+		t.Fatalf("unexpected broker fanout isolation backend detail: %+v", decoded.Diagnostics.BrokerStubFanoutIsolation.Scenarios)
+	}
 	if decoded.Diagnostics.DeliveryAckReadiness.ReportPath != deliveryAckReadinessSurfacePath ||
 		decoded.Diagnostics.DeliveryAckReadiness.Summary.ExplicitAckBackends != 3 ||
 		decoded.Diagnostics.DeliveryAckReadiness.Summary.DurableAckBackends != 2 ||
@@ -2134,8 +2225,10 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Failover Review Pack") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Stub Live Fanout Isolation") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Delivery Acknowledgement Readiness") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-validation-summary.json") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, brokerStubFanoutIsolationEvidencePackPath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, deliveryAckReadinessSurfacePath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-failover-stub-artifacts") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {

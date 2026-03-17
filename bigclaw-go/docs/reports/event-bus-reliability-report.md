@@ -23,6 +23,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - Event backend capability and config-validation contract via `internal/events/backend_contract.go`
 - Event-log backend capability probe surfaced through control/debug responses before replay-oriented dispatch
 - Delivery acknowledgement readiness surface via `docs/reports/delivery-ack-readiness-surface.json` and reviewer-facing debug/distributed diagnostics
+- Broker stub live fanout isolation evidence pack via `docs/reports/broker-stub-live-fanout-isolation-evidence-pack.json` and reviewer-facing debug/distributed diagnostics
 
 ## Validated behaviors
 
@@ -62,6 +63,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - `cmd/bigclawd/main.go`
 - `internal/config/config.go`
 - `docs/reports/delivery-ack-readiness-surface.json`
+- `docs/reports/broker-stub-live-fanout-isolation-evidence-pack.json`
 
 ## Current durability shape
 
@@ -142,6 +144,7 @@ This report summarizes the current event bus reliability evidence and the next r
 - Retention watermarks are now exposed for in-memory and durable event-log backends, SQLite-backed logs persist trimmed replay boundaries across restarts, and expired checkpoint resumes now fail closed with explicit reset guidance; the broader compaction semantics remain documented in `docs/reports/replay-retention-semantics-report.md`.
 - Consumers still need their own dedupe store keyed by `delivery.idempotency_key`; this change does not introduce exactly-once execution.
 - Multi-subscriber takeover validation now has both a deterministic local harness in `docs/reports/multi-subscriber-takeover-validation-report.md` / `docs/reports/multi-subscriber-takeover-validation-report.json` and a live two-node companion proof in `docs/reports/live-multi-node-subscriber-takeover-report.json`; see `docs/reports/subscriber-takeover-executability-follow-up-digest.md` for the remaining broker-backed and native-audit caveats.
+- `docs/reports/broker-stub-live-fanout-isolation-evidence-pack.json` now captures live fanout isolation for the local broker stub: replay catch-up is deliberately slowed while a live-only subscriber still receives the next publish inside the 50ms drill window, proving the live lane stays separate from replay drain in the process-local path.
 - `docs/reports/cross-process-coordination-capability-surface.json` now acts as the runtime capability matrix, summarizing which coordination guarantees are `live_proven`, which are `harness_proven`, and which remain `contract_only`.
 
 ## Replicated rollout contract
@@ -154,7 +157,7 @@ This report summarizes the current event bus reliability evidence and the next r
   - replicated publish acknowledgements must distinguish committed, rejected, and ambiguous outcomes;
   - replay and checkpoint state must share the same durable sequence domain across failover;
   - retention boundaries must be operator-visible before resumable recovery is claimed;
-  - live fanout must remain isolated from broker catch-up lag.
+  - live fanout must remain isolated from broker catch-up lag; `docs/reports/broker-stub-live-fanout-isolation-evidence-pack.json` now captures the repo-native local proof for the broker stub path.
 - The same contract is surfaced in `events.DurabilityPlan`; the nested `rollout_scorecard` field and top-level `event_durability_rollout` alias now publish the derived status through `GET /debug/status` and `/metrics`, with matching checked-in artifacts at `docs/reports/broker-durability-rollout-scorecard.json` and `docs/reports/durability-rollout-scorecard.json`.
 
 ## Next adapter boundary
