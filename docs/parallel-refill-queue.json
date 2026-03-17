@@ -80,44 +80,9 @@
       "OPE-273",
       "OPE-274"
     ],
-    "active": [
-      "OPE-260",
-      "OPE-261",
-      "OPE-263",
-      "OPE-264"
-    ],
+    "active": [],
     "standby": []
   },
-  "issue_order": [
-    "OPE-260",
-    "OPE-261",
-    "OPE-263",
-    "OPE-264"
-  ],
-  "issues": [
-    {
-      "identifier": "OPE-260",
-      "title": "BIG-PAR-104 ambiguous publish outcome proof summary from broker stub matrix",
-      "track": "Distributed Diagnostics & Rollout",
-      "status": "In Progress"
-    },
-    {
-      "identifier": "OPE-261",
-      "title": "BIG-PAR-105 broker stub live fanout isolation evidence pack",
-      "track": "Parallel Validation Matrix",
-      "status": "In Progress"
-    },
-    {
-      "identifier": "OPE-263",
-      "title": "BIG-PAR-107 durable dedupe readiness scorecard for HTTP and broker event logs",
-      "track": "Distributed Diagnostics & Rollout",
-      "status": "In Progress"
-    },
-    {
-      "identifier": "OPE-264",
-      "title": "BIG-PAR-108 delivery acknowledgement readiness surface for event log backends",
-      "track": "Distributed Diagnostics & Rollout",
-      "status": "In Progress"
-    }
-  ]
+  "issue_order": [],
+  "issues": []
 }
