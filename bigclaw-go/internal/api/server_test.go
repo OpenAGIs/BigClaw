@@ -496,6 +496,83 @@ func TestDebugStatusIncludesDeliveryAckReadinessSurface(t *testing.T) {
 	}
 }
 
+func TestDebugStatusIncludesValidationBundleContinuationGate(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		ValidationBundleContinuation struct {
+			ReportPath     string   `json:"report_path"`
+			ScorecardPath  string   `json:"scorecard_path"`
+			DigestPath     string   `json:"digest_path"`
+			Ticket         string   `json:"ticket"`
+			Status         string   `json:"status"`
+			Recommendation string   `json:"recommendation"`
+			ReviewerLinks  []string `json:"reviewer_links"`
+			Summary        struct {
+				LatestRunID                                 string  `json:"latest_run_id"`
+				LatestBundleAgeHours                        float64 `json:"latest_bundle_age_hours"`
+				RecentBundleCount                           int     `json:"recent_bundle_count"`
+				AllExecutorTracksHaveRepeatedRecentCoverage bool    `json:"all_executor_tracks_have_repeated_recent_coverage"`
+				SharedQueueCompanionAvailable               bool    `json:"shared_queue_companion_available"`
+				CrossNodeCompletions                        int     `json:"cross_node_completions"`
+				PassingCheckCount                           int     `json:"passing_check_count"`
+				FailingCheckCount                           int     `json:"failing_check_count"`
+			} `json:"summary"`
+			PolicyChecks []struct {
+				Name   string `json:"name"`
+				Passed bool   `json:"passed"`
+			} `json:"policy_checks"`
+			NextActions []string `json:"next_actions"`
+		} `json:"validation_bundle_continuation"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode continuation gate payload: %v", err)
+	}
+	if decoded.ValidationBundleContinuation.ReportPath != validationBundleContinuationGatePath ||
+		decoded.ValidationBundleContinuation.ScorecardPath != validationBundleContinuationScorecardPath ||
+		decoded.ValidationBundleContinuation.DigestPath != "docs/reports/validation-bundle-continuation-digest.md" ||
+		decoded.ValidationBundleContinuation.Ticket != "OPE-262" ||
+		decoded.ValidationBundleContinuation.Status != "policy-go" ||
+		decoded.ValidationBundleContinuation.Recommendation != "go" {
+		t.Fatalf("unexpected continuation gate metadata: %+v", decoded.ValidationBundleContinuation)
+	}
+	if len(decoded.ValidationBundleContinuation.ReviewerLinks) != 3 ||
+		decoded.ValidationBundleContinuation.ReviewerLinks[0] != "docs/reports/live-validation-index.md" ||
+		decoded.ValidationBundleContinuation.ReviewerLinks[1] != "docs/reports/validation-bundle-continuation-digest.md" ||
+		decoded.ValidationBundleContinuation.ReviewerLinks[2] != validationBundleContinuationScorecardPath {
+		t.Fatalf("unexpected continuation gate reviewer links: %+v", decoded.ValidationBundleContinuation.ReviewerLinks)
+	}
+	if decoded.ValidationBundleContinuation.Summary.LatestRunID != "20260316T140138Z" ||
+		decoded.ValidationBundleContinuation.Summary.RecentBundleCount != 3 ||
+		!decoded.ValidationBundleContinuation.Summary.AllExecutorTracksHaveRepeatedRecentCoverage ||
+		!decoded.ValidationBundleContinuation.Summary.SharedQueueCompanionAvailable ||
+		decoded.ValidationBundleContinuation.Summary.CrossNodeCompletions != 99 ||
+		decoded.ValidationBundleContinuation.Summary.PassingCheckCount != 6 ||
+		decoded.ValidationBundleContinuation.Summary.FailingCheckCount != 0 {
+		t.Fatalf("unexpected continuation gate summary: %+v", decoded.ValidationBundleContinuation.Summary)
+	}
+	if len(decoded.ValidationBundleContinuation.PolicyChecks) != 6 ||
+		decoded.ValidationBundleContinuation.PolicyChecks[0].Name != "latest_bundle_age_within_threshold" ||
+		!decoded.ValidationBundleContinuation.PolicyChecks[0].Passed {
+		t.Fatalf("unexpected continuation gate policy checks: %+v", decoded.ValidationBundleContinuation.PolicyChecks)
+	}
+	if len(decoded.ValidationBundleContinuation.NextActions) < 4 ||
+		decoded.ValidationBundleContinuation.NextActions[0] != "set BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail when workflow closeout should stop on continuation regressions" {
+		t.Fatalf("unexpected continuation gate next actions: %+v", decoded.ValidationBundleContinuation.NextActions)
+	}
+}
+
 func TestDeadLetterEndpoints(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()
@@ -2143,6 +2220,20 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 					AcknowledgementClass string `json:"acknowledgement_class"`
 				} `json:"backends"`
 			} `json:"delivery_ack_readiness"`
+			ValidationBundleContinuation struct {
+				ReportPath     string   `json:"report_path"`
+				ScorecardPath  string   `json:"scorecard_path"`
+				DigestPath     string   `json:"digest_path"`
+				Recommendation string   `json:"recommendation"`
+				ReviewerLinks  []string `json:"reviewer_links"`
+				Summary        struct {
+					RecentBundleCount                           int  `json:"recent_bundle_count"`
+					AllExecutorTracksHaveRepeatedRecentCoverage bool `json:"all_executor_tracks_have_repeated_recent_coverage"`
+					SharedQueueCompanionAvailable               bool `json:"shared_queue_companion_available"`
+					CrossNodeCompletions                        int  `json:"cross_node_completions"`
+				} `json:"summary"`
+				NextActions []string `json:"next_actions"`
+			} `json:"validation_bundle_continuation"`
 			RolloutReport struct {
 				Markdown  string `json:"markdown"`
 				ExportURL string `json:"export_url"`
@@ -2222,14 +2313,37 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		decoded.Diagnostics.DeliveryAckReadiness.Backends[0].AcknowledgementClass != "best_effort_only" {
 		t.Fatalf("unexpected delivery ack readiness backend detail: %+v", decoded.Diagnostics.DeliveryAckReadiness.Backends)
 	}
+	if decoded.Diagnostics.ValidationBundleContinuation.ReportPath != validationBundleContinuationGatePath ||
+		decoded.Diagnostics.ValidationBundleContinuation.ScorecardPath != validationBundleContinuationScorecardPath ||
+		decoded.Diagnostics.ValidationBundleContinuation.DigestPath != "docs/reports/validation-bundle-continuation-digest.md" ||
+		decoded.Diagnostics.ValidationBundleContinuation.Recommendation != "go" {
+		t.Fatalf("unexpected continuation gate payload: %+v", decoded.Diagnostics.ValidationBundleContinuation)
+	}
+	if decoded.Diagnostics.ValidationBundleContinuation.Summary.RecentBundleCount != 3 ||
+		!decoded.Diagnostics.ValidationBundleContinuation.Summary.AllExecutorTracksHaveRepeatedRecentCoverage ||
+		!decoded.Diagnostics.ValidationBundleContinuation.Summary.SharedQueueCompanionAvailable ||
+		decoded.Diagnostics.ValidationBundleContinuation.Summary.CrossNodeCompletions != 99 {
+		t.Fatalf("unexpected continuation gate summary: %+v", decoded.Diagnostics.ValidationBundleContinuation.Summary)
+	}
+	if len(decoded.Diagnostics.ValidationBundleContinuation.ReviewerLinks) != 3 ||
+		decoded.Diagnostics.ValidationBundleContinuation.ReviewerLinks[0] != "docs/reports/live-validation-index.md" {
+		t.Fatalf("unexpected continuation gate reviewer links: %+v", decoded.Diagnostics.ValidationBundleContinuation.ReviewerLinks)
+	}
+	if len(decoded.Diagnostics.ValidationBundleContinuation.NextActions) < 4 {
+		t.Fatalf("expected merged continuation next actions, got %+v", decoded.Diagnostics.ValidationBundleContinuation.NextActions)
+	}
 	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Failover Review Pack") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Stub Live Fanout Isolation") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Delivery Acknowledgement Readiness") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Validation Bundle Continuation Gate") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-validation-summary.json") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, brokerStubFanoutIsolationEvidencePackPath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, deliveryAckReadinessSurfacePath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, validationBundleContinuationGatePath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, validationBundleContinuationScorecardPath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/validation-bundle-continuation-digest.md") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-failover-stub-artifacts") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {
 		t.Fatalf("unexpected rollout report payload: %+v", decoded.Diagnostics.RolloutReport)

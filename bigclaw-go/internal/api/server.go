@@ -203,6 +203,7 @@ func (s *Server) Handler() http.Handler {
 			"coordination_capability_surface": coordinationCapabilitySurfacePayload(),
 			"delivery_ack_readiness":          deliveryAckReadinessPayload(),
 			"broker_stub_fanout_isolation":    brokerStubFanoutIsolationPayload(),
+			"validation_bundle_continuation":  validationBundleContinuationGatePayload(),
 		}
 		if s.Worker != nil {
 			payload["worker"] = s.Worker.Snapshot()
