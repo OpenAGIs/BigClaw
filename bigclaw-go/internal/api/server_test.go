@@ -4779,3 +4779,101 @@ func TestProviderBackedRemoteEventLogLiveHandoffIsolation(t *testing.T) {
 		}
 	}
 }
+
+func TestDebugStatusIncludesBrokerBootstrapSurface(t *testing.T) {
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		BrokerBootstrap struct {
+			ReportPath                    string `json:"report_path"`
+			CanonicalSummaryPath          string `json:"canonical_summary_path"`
+			CanonicalBootstrapSummaryPath string `json:"canonical_bootstrap_summary_path"`
+			ValidationPackPath            string `json:"validation_pack_path"`
+			ConfigurationState            string `json:"configuration_state"`
+			BootstrapReady                bool   `json:"bootstrap_ready"`
+			RuntimePosture                string `json:"runtime_posture"`
+			LiveAdapterImplemented        bool   `json:"live_adapter_implemented"`
+			ProofBoundary                 string `json:"proof_boundary"`
+			ConfigCompleteness            struct {
+				Driver        bool `json:"driver"`
+				URLs          bool `json:"urls"`
+				Topic         bool `json:"topic"`
+				ConsumerGroup bool `json:"consumer_group"`
+			} `json:"config_completeness"`
+			ValidationErrors []string `json:"validation_errors"`
+		} `json:"broker_bootstrap_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode broker bootstrap payload: %v", err)
+	}
+	if decoded.BrokerBootstrap.ReportPath != brokerBootstrapSurfacePath || decoded.BrokerBootstrap.CanonicalSummaryPath != "docs/reports/broker-validation-summary.json" || decoded.BrokerBootstrap.CanonicalBootstrapSummaryPath != "docs/reports/broker-bootstrap-review-summary.json" || decoded.BrokerBootstrap.ValidationPackPath != "docs/reports/broker-failover-fault-injection-validation-pack.md" {
+		t.Fatalf("unexpected broker bootstrap paths: %+v", decoded.BrokerBootstrap)
+	}
+	if decoded.BrokerBootstrap.ConfigurationState != "not_configured" || decoded.BrokerBootstrap.BootstrapReady || decoded.BrokerBootstrap.RuntimePosture != "contract_only" || decoded.BrokerBootstrap.LiveAdapterImplemented {
+		t.Fatalf("unexpected broker bootstrap posture: %+v", decoded.BrokerBootstrap)
+	}
+	if decoded.BrokerBootstrap.ProofBoundary == "" || len(decoded.BrokerBootstrap.ValidationErrors) == 0 {
+		t.Fatalf("expected broker bootstrap boundary/errors, got %+v", decoded.BrokerBootstrap)
+	}
+	if decoded.BrokerBootstrap.ConfigCompleteness.Driver || decoded.BrokerBootstrap.ConfigCompleteness.URLs || decoded.BrokerBootstrap.ConfigCompleteness.Topic || decoded.BrokerBootstrap.ConfigCompleteness.ConsumerGroup {
+		t.Fatalf("expected missing broker config completeness, got %+v", decoded.BrokerBootstrap.ConfigCompleteness)
+	}
+}
+
+func TestV2ControlCenterIncludesBrokerBootstrapSurface(t *testing.T) {
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5&audit_limit=5", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		BrokerBootstrap struct {
+			ReportPath         string `json:"report_path"`
+			ConfigurationState string `json:"configuration_state"`
+			RuntimePosture     string `json:"runtime_posture"`
+		} `json:"broker_bootstrap_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center broker bootstrap payload: %v", err)
+	}
+	if decoded.BrokerBootstrap.ReportPath != brokerBootstrapSurfacePath || decoded.BrokerBootstrap.ConfigurationState != "not_configured" || decoded.BrokerBootstrap.RuntimePosture != "contract_only" {
+		t.Fatalf("unexpected control center broker bootstrap payload: %+v", decoded.BrokerBootstrap)
+	}
+}
+
+func TestV2DistributedReportIncludesBrokerBootstrapSurface(t *testing.T) {
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?limit=5", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		BrokerBootstrap struct {
+			ReportPath         string `json:"report_path"`
+			ConfigurationState string `json:"configuration_state"`
+			RuntimePosture     string `json:"runtime_posture"`
+			BootstrapReady     bool   `json:"bootstrap_ready"`
+		} `json:"broker_bootstrap_surface"`
+		Report struct {
+			Markdown string `json:"markdown"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed broker bootstrap payload: %v", err)
+	}
+	if decoded.BrokerBootstrap.ReportPath != brokerBootstrapSurfacePath || decoded.BrokerBootstrap.ConfigurationState != "not_configured" || decoded.BrokerBootstrap.RuntimePosture != "contract_only" || decoded.BrokerBootstrap.BootstrapReady {
+		t.Fatalf("unexpected distributed broker bootstrap payload: %+v", decoded.BrokerBootstrap)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "## Broker Bootstrap Readiness") || !strings.Contains(decoded.Report.Markdown, "Configuration state: not_configured") || !strings.Contains(decoded.Report.Markdown, "Runtime posture: contract_only") {
+		t.Fatalf("expected broker bootstrap markdown section, got %s", decoded.Report.Markdown)
+	}
+}

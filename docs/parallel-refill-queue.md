@@ -1,7 +1,7 @@
-# BigClaw v5.1 Replicated Durability Refill Queue
+# BigClaw v5.2 Broker Adapter Bootstrap Refill Queue
 
 This file is the human-readable companion to `docs/parallel-refill-queue.json`.
-It records the current BigClaw v5.1 replicated-durability slices so Symphony or a
+It records the current BigClaw v5.2 broker-bootstrap slices so Symphony or a
 manual operator can refill the next parallel-safe issues in a stable order.
 
 ## Trigger
@@ -25,11 +25,13 @@ manual operator can refill the next parallel-safe issues in a stable order.
 ## Current batch
 
 - Active:
-  - _None; the v5.1 recycled durability batch is fully complete._
+  - `OPE-260` — `BIG-BRK-201` broker bootstrap readiness surface
+  - `OPE-261` — `BIG-BRK-202` broker config completeness diagnostics
 - Ready to promote:
-  - _None; wait for the next recycled batch or a quota recovery event before refilling._
+  - `OPE-263` — `BIG-BRK-203` broker runtime gate and fail-closed posture
+  - `OPE-264` — `BIG-BRK-204` broker review bundle unification
 
-## Completed in this batch
+## Previous completed batch
 
 - `OPE-5` — `BIG-DUR-101` publish acknowledgement outcome ledger
 - `OPE-12` — `BIG-DUR-102` durable sequence bridge for provider offsets
@@ -38,7 +40,7 @@ manual operator can refill the next parallel-safe issues in a stable order.
 
 ## Canonical refill order
 
-1. `OPE-5`
-2. `OPE-12`
-3. `OPE-21`
-4. `OPE-225`
+1. `OPE-260`
+2. `OPE-261`
+3. `OPE-263`
+4. `OPE-264`

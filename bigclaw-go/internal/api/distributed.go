@@ -119,6 +119,7 @@ type distributedDiagnostics struct {
 	MigrationReviewPack   migrationReviewPack                      `json:"migration_review_pack"`
 	BrokerFanoutIsolation brokerStubFanoutIsolationEvidencePack    `json:"broker_stub_fanout_isolation"`
 	ProviderLiveHandoff   providerLiveHandoffIsolationEvidencePack `json:"provider_live_handoff_isolation"`
+	BrokerBootstrap       brokerBootstrapSurface                   `json:"broker_bootstrap_surface"`
 	DeliveryAckReadiness  deliveryAckReadinessSurface              `json:"delivery_ack_readiness"`
 	PublishAckOutcomes    publishAckOutcomeSurface                 `json:"publish_ack_outcomes"`
 	SequenceBridge        sequenceBridgeSurface                    `json:"sequence_bridge_surface"`
@@ -177,6 +178,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"broker_review_pack":              diagnostics.BrokerReviewPack,
 		"broker_stub_fanout_isolation":    diagnostics.BrokerFanoutIsolation,
 		"provider_live_handoff_isolation": diagnostics.ProviderLiveHandoff,
+		"broker_bootstrap_surface":        diagnostics.BrokerBootstrap,
 		"trace_export_bundle":             diagnostics.TraceBundle,
 		"migration_review_pack":           diagnostics.MigrationReviewPack,
 		"delivery_ack_readiness":          diagnostics.DeliveryAckReadiness,
@@ -413,6 +415,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		MigrationReviewPack:   buildMigrationReviewPack(),
 		BrokerFanoutIsolation: brokerStubFanoutIsolationPayload(),
 		ProviderLiveHandoff:   providerLiveHandoffIsolationPayload(),
+		BrokerBootstrap:       brokerBootstrapSurfacePayload(),
 		DeliveryAckReadiness:  deliveryAckReadinessPayload(),
 		PublishAckOutcomes:    publishAckOutcomeSurfacePayload(),
 		SequenceBridge:        sequenceBridgeSurfacePayload(),
@@ -785,6 +788,29 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.BrokerReviewPack.ReviewerLinks) > 0 {
 		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.BrokerReviewPack.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Broker Bootstrap Readiness",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.BrokerBootstrap.ReportPath),
+		fmt.Sprintf("- Canonical summary: %s", diagnostics.BrokerBootstrap.CanonicalSummaryPath),
+		fmt.Sprintf("- Canonical bootstrap summary: %s", diagnostics.BrokerBootstrap.CanonicalBootstrapSummaryPath),
+		fmt.Sprintf("- Validation pack: %s", diagnostics.BrokerBootstrap.ValidationPackPath),
+		fmt.Sprintf("- Configuration state: %s", firstNonEmpty(diagnostics.BrokerBootstrap.ConfigurationState, "unknown")),
+		fmt.Sprintf("- Runtime posture: %s", firstNonEmpty(diagnostics.BrokerBootstrap.RuntimePosture, "unknown")),
+		fmt.Sprintf("- Bootstrap ready: %t", diagnostics.BrokerBootstrap.BootstrapReady),
+		fmt.Sprintf("- Live adapter implemented: %t", diagnostics.BrokerBootstrap.LiveAdapterImplemented),
+	)
+	if diagnostics.BrokerBootstrap.ProofBoundary != "" {
+		lines = append(lines, "- Proof boundary: "+diagnostics.BrokerBootstrap.ProofBoundary)
+	}
+	lines = append(lines, fmt.Sprintf("- Config completeness: driver=%t urls=%t topic=%t consumer_group=%t", diagnostics.BrokerBootstrap.ConfigCompleteness.Driver, diagnostics.BrokerBootstrap.ConfigCompleteness.URLs, diagnostics.BrokerBootstrap.ConfigCompleteness.Topic, diagnostics.BrokerBootstrap.ConfigCompleteness.ConsumerGroup))
+	if len(diagnostics.BrokerBootstrap.ValidationErrors) > 0 {
+		lines = append(lines, "- Validation errors: "+strings.Join(diagnostics.BrokerBootstrap.ValidationErrors, "; "))
+	}
+	if diagnostics.BrokerBootstrap.BootstrapSummary.BrokerBootstrap != nil {
+		bootstrap := diagnostics.BrokerBootstrap.BootstrapSummary.BrokerBootstrap
+		lines = append(lines, fmt.Sprintf("- Broker timing knobs: publish_timeout=%s replay_limit=%d checkpoint_interval=%s", bootstrap.PublishTimeout, bootstrap.ReplayLimit, bootstrap.CheckpointInterval))
 	}
 	lines = append(lines,
 		"",
