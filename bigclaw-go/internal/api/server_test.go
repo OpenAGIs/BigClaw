@@ -4805,6 +4805,21 @@ func TestDebugStatusIncludesBrokerBootstrapSurface(t *testing.T) {
 				Topic         bool `json:"topic"`
 				ConsumerGroup bool `json:"consumer_group"`
 			} `json:"config_completeness"`
+			ConfigDiagnostics struct {
+				MissingFields      []string `json:"missing_fields"`
+				RequiredEnv        []string `json:"required_env"`
+				MissingRequiredEnv []string `json:"missing_required_env"`
+				AdvisoryEnv        []string `json:"advisory_env"`
+				MissingAdvisoryEnv []string `json:"missing_advisory_env"`
+				NextActions        []string `json:"next_actions"`
+				ReferenceDocs      []string `json:"reference_docs"`
+				RuntimeKnobs       struct {
+					PublishTimeout     string `json:"publish_timeout"`
+					ReplayLimit        int    `json:"replay_limit"`
+					CheckpointInterval string `json:"checkpoint_interval"`
+					ConsumerGroup      string `json:"consumer_group"`
+				} `json:"runtime_knobs"`
+			} `json:"config_diagnostics"`
 			ValidationErrors []string `json:"validation_errors"`
 		} `json:"broker_bootstrap_surface"`
 	}
@@ -4823,6 +4838,24 @@ func TestDebugStatusIncludesBrokerBootstrapSurface(t *testing.T) {
 	if decoded.BrokerBootstrap.ConfigCompleteness.Driver || decoded.BrokerBootstrap.ConfigCompleteness.URLs || decoded.BrokerBootstrap.ConfigCompleteness.Topic || decoded.BrokerBootstrap.ConfigCompleteness.ConsumerGroup {
 		t.Fatalf("expected missing broker config completeness, got %+v", decoded.BrokerBootstrap.ConfigCompleteness)
 	}
+	if strings.Join(decoded.BrokerBootstrap.ConfigDiagnostics.MissingFields, ",") != "driver,urls,topic" {
+		t.Fatalf("unexpected missing fields: %+v", decoded.BrokerBootstrap.ConfigDiagnostics)
+	}
+	if strings.Join(decoded.BrokerBootstrap.ConfigDiagnostics.MissingRequiredEnv, ",") != "BIGCLAW_EVENT_LOG_BROKER_DRIVER,BIGCLAW_EVENT_LOG_BROKER_URLS,BIGCLAW_EVENT_LOG_BROKER_TOPIC" {
+		t.Fatalf("unexpected missing required env: %+v", decoded.BrokerBootstrap.ConfigDiagnostics)
+	}
+	if strings.Join(decoded.BrokerBootstrap.ConfigDiagnostics.MissingAdvisoryEnv, ",") != "BIGCLAW_EVENT_LOG_CONSUMER_GROUP" {
+		t.Fatalf("unexpected missing advisory env: %+v", decoded.BrokerBootstrap.ConfigDiagnostics)
+	}
+	if decoded.BrokerBootstrap.ConfigDiagnostics.RuntimeKnobs.PublishTimeout != "5s" || decoded.BrokerBootstrap.ConfigDiagnostics.RuntimeKnobs.ReplayLimit != 500 || decoded.BrokerBootstrap.ConfigDiagnostics.RuntimeKnobs.CheckpointInterval != "5s" {
+		t.Fatalf("unexpected runtime knobs: %+v", decoded.BrokerBootstrap.ConfigDiagnostics.RuntimeKnobs)
+	}
+	if len(decoded.BrokerBootstrap.ConfigDiagnostics.NextActions) == 0 || !strings.Contains(strings.Join(decoded.BrokerBootstrap.ConfigDiagnostics.NextActions, " | "), "BIGCLAW_EVENT_LOG_BROKER_DRIVER") {
+		t.Fatalf("expected operator next actions, got %+v", decoded.BrokerBootstrap.ConfigDiagnostics.NextActions)
+	}
+	if !strings.Contains(strings.Join(decoded.BrokerBootstrap.ConfigDiagnostics.ReferenceDocs, " | "), "docs/reports/broker-event-log-adapter-contract.md") {
+		t.Fatalf("expected broker operator guide reference, got %+v", decoded.BrokerBootstrap.ConfigDiagnostics.ReferenceDocs)
+	}
 }
 
 func TestV2ControlCenterIncludesBrokerBootstrapSurface(t *testing.T) {
@@ -4838,6 +4871,9 @@ func TestV2ControlCenterIncludesBrokerBootstrapSurface(t *testing.T) {
 			ReportPath         string `json:"report_path"`
 			ConfigurationState string `json:"configuration_state"`
 			RuntimePosture     string `json:"runtime_posture"`
+			ConfigDiagnostics  struct {
+				MissingRequiredEnv []string `json:"missing_required_env"`
+			} `json:"config_diagnostics"`
 		} `json:"broker_bootstrap_surface"`
 	}
 	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
@@ -4845,6 +4881,9 @@ func TestV2ControlCenterIncludesBrokerBootstrapSurface(t *testing.T) {
 	}
 	if decoded.BrokerBootstrap.ReportPath != brokerBootstrapSurfacePath || decoded.BrokerBootstrap.ConfigurationState != "not_configured" || decoded.BrokerBootstrap.RuntimePosture != "contract_only" {
 		t.Fatalf("unexpected control center broker bootstrap payload: %+v", decoded.BrokerBootstrap)
+	}
+	if strings.Join(decoded.BrokerBootstrap.ConfigDiagnostics.MissingRequiredEnv, ",") != "BIGCLAW_EVENT_LOG_BROKER_DRIVER,BIGCLAW_EVENT_LOG_BROKER_URLS,BIGCLAW_EVENT_LOG_BROKER_TOPIC" {
+		t.Fatalf("unexpected control center config diagnostics: %+v", decoded.BrokerBootstrap.ConfigDiagnostics)
 	}
 }
 
@@ -4873,7 +4912,7 @@ func TestV2DistributedReportIncludesBrokerBootstrapSurface(t *testing.T) {
 	if decoded.BrokerBootstrap.ReportPath != brokerBootstrapSurfacePath || decoded.BrokerBootstrap.ConfigurationState != "not_configured" || decoded.BrokerBootstrap.RuntimePosture != "contract_only" || decoded.BrokerBootstrap.BootstrapReady {
 		t.Fatalf("unexpected distributed broker bootstrap payload: %+v", decoded.BrokerBootstrap)
 	}
-	if !strings.Contains(decoded.Report.Markdown, "## Broker Bootstrap Readiness") || !strings.Contains(decoded.Report.Markdown, "Configuration state: not_configured") || !strings.Contains(decoded.Report.Markdown, "Runtime posture: contract_only") {
+	if !strings.Contains(decoded.Report.Markdown, "## Broker Bootstrap Readiness") || !strings.Contains(decoded.Report.Markdown, "Configuration state: not_configured") || !strings.Contains(decoded.Report.Markdown, "Runtime posture: contract_only") || !strings.Contains(decoded.Report.Markdown, "Missing required env: BIGCLAW_EVENT_LOG_BROKER_DRIVER, BIGCLAW_EVENT_LOG_BROKER_URLS, BIGCLAW_EVENT_LOG_BROKER_TOPIC") || !strings.Contains(decoded.Report.Markdown, "Reference docs: docs/reports/broker-event-log-adapter-contract.md") {
 		t.Fatalf("expected broker bootstrap markdown section, got %s", decoded.Report.Markdown)
 	}
 }

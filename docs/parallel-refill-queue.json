@@ -21,16 +21,15 @@
       "OPE-5",
       "OPE-12",
       "OPE-21",
-      "OPE-225"
-    ],
-    "active": [
+      "OPE-225",
       "OPE-260",
       "OPE-261"
     ],
-    "standby": [
+    "active": [
       "OPE-263",
       "OPE-264"
-    ]
+    ],
+    "standby": []
   },
   "issue_order": [
     "OPE-260",
@@ -43,25 +42,25 @@
       "identifier": "OPE-260",
       "title": "BIG-BRK-201 broker bootstrap readiness surface",
       "track": "Bootstrap Surface",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-261",
       "title": "BIG-BRK-202 broker config completeness diagnostics",
       "track": "Config Readiness",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "OPE-263",
       "title": "BIG-BRK-203 broker runtime gate and fail-closed posture",
       "track": "Runtime Gate",
-      "status": "Todo"
+      "status": "In Progress"
     },
     {
       "identifier": "OPE-264",
       "title": "BIG-BRK-204 broker review bundle unification",
       "track": "Review Bundle",
-      "status": "Todo"
+      "status": "In Progress"
     }
   ]
 }

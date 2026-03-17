@@ -805,12 +805,27 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 		lines = append(lines, "- Proof boundary: "+diagnostics.BrokerBootstrap.ProofBoundary)
 	}
 	lines = append(lines, fmt.Sprintf("- Config completeness: driver=%t urls=%t topic=%t consumer_group=%t", diagnostics.BrokerBootstrap.ConfigCompleteness.Driver, diagnostics.BrokerBootstrap.ConfigCompleteness.URLs, diagnostics.BrokerBootstrap.ConfigCompleteness.Topic, diagnostics.BrokerBootstrap.ConfigCompleteness.ConsumerGroup))
+	if len(diagnostics.BrokerBootstrap.ConfigDiagnostics.MissingFields) > 0 {
+		lines = append(lines, "- Missing fields: "+strings.Join(diagnostics.BrokerBootstrap.ConfigDiagnostics.MissingFields, ", "))
+	}
+	if len(diagnostics.BrokerBootstrap.ConfigDiagnostics.MissingRequiredEnv) > 0 {
+		lines = append(lines, "- Missing required env: "+strings.Join(diagnostics.BrokerBootstrap.ConfigDiagnostics.MissingRequiredEnv, ", "))
+	}
+	if len(diagnostics.BrokerBootstrap.ConfigDiagnostics.MissingAdvisoryEnv) > 0 {
+		lines = append(lines, "- Missing advisory env: "+strings.Join(diagnostics.BrokerBootstrap.ConfigDiagnostics.MissingAdvisoryEnv, ", "))
+	}
 	if len(diagnostics.BrokerBootstrap.ValidationErrors) > 0 {
 		lines = append(lines, "- Validation errors: "+strings.Join(diagnostics.BrokerBootstrap.ValidationErrors, "; "))
 	}
 	if diagnostics.BrokerBootstrap.BootstrapSummary.BrokerBootstrap != nil {
 		bootstrap := diagnostics.BrokerBootstrap.BootstrapSummary.BrokerBootstrap
 		lines = append(lines, fmt.Sprintf("- Broker timing knobs: publish_timeout=%s replay_limit=%d checkpoint_interval=%s", bootstrap.PublishTimeout, bootstrap.ReplayLimit, bootstrap.CheckpointInterval))
+	}
+	if len(diagnostics.BrokerBootstrap.ConfigDiagnostics.NextActions) > 0 {
+		lines = append(lines, "- Next actions: "+strings.Join(diagnostics.BrokerBootstrap.ConfigDiagnostics.NextActions, " ; "))
+	}
+	if len(diagnostics.BrokerBootstrap.ConfigDiagnostics.ReferenceDocs) > 0 {
+		lines = append(lines, "- Reference docs: "+strings.Join(diagnostics.BrokerBootstrap.ConfigDiagnostics.ReferenceDocs, ", "))
 	}
 	lines = append(lines,
 		"",

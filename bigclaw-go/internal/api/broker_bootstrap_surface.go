@@ -4,11 +4,40 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"bigclaw-go/internal/events"
 )
 
 const brokerBootstrapSurfacePath = "docs/reports/broker-validation-summary.json"
+const brokerBootstrapOperatorGuidePath = "docs/reports/broker-event-log-adapter-contract.md"
+
+type brokerBootstrapConfigDiagnostics struct {
+	MissingFields      []string                        `json:"missing_fields,omitempty"`
+	RequiredEnv        []string                        `json:"required_env,omitempty"`
+	MissingRequiredEnv []string                        `json:"missing_required_env,omitempty"`
+	AdvisoryEnv        []string                        `json:"advisory_env,omitempty"`
+	MissingAdvisoryEnv []string                        `json:"missing_advisory_env,omitempty"`
+	RuntimeKnobs       brokerBootstrapRuntimeKnobs     `json:"runtime_knobs"`
+	EnvGuidance        []brokerBootstrapEnvExpectation `json:"env_guidance,omitempty"`
+	NextActions        []string                        `json:"next_actions,omitempty"`
+	ReferenceDocs      []string                        `json:"reference_docs,omitempty"`
+}
+
+type brokerBootstrapRuntimeKnobs struct {
+	PublishTimeout     string `json:"publish_timeout,omitempty"`
+	ReplayLimit        int    `json:"replay_limit,omitempty"`
+	CheckpointInterval string `json:"checkpoint_interval,omitempty"`
+	ConsumerGroup      string `json:"consumer_group,omitempty"`
+}
+
+type brokerBootstrapEnvExpectation struct {
+	Name      string `json:"name"`
+	Field     string `json:"field"`
+	Required  bool   `json:"required"`
+	Satisfied bool   `json:"satisfied"`
+	Purpose   string `json:"purpose"`
+}
 
 type brokerBootstrapSurface struct {
 	ReportPath                    string                              `json:"report_path"`
@@ -27,6 +56,7 @@ type brokerBootstrapSurface struct {
 	ProofBoundary                 string                              `json:"proof_boundary,omitempty"`
 	ValidationErrors              []string                            `json:"validation_errors,omitempty"`
 	ConfigCompleteness            events.BrokerBootstrapCompleteness  `json:"config_completeness"`
+	ConfigDiagnostics             brokerBootstrapConfigDiagnostics    `json:"config_diagnostics"`
 	Status                        string                              `json:"status,omitempty"`
 	Reason                        string                              `json:"reason,omitempty"`
 	Error                         string                              `json:"error,omitempty"`
@@ -52,5 +82,121 @@ func brokerBootstrapSurfacePayload() brokerBootstrapSurface {
 		return surface
 	}
 	surface.ReportPath = brokerBootstrapSurfacePath
+	surface.ConfigDiagnostics = buildBrokerBootstrapConfigDiagnostics(surface)
 	return surface
+}
+
+func buildBrokerBootstrapConfigDiagnostics(surface brokerBootstrapSurface) brokerBootstrapConfigDiagnostics {
+	diagnostics := brokerBootstrapConfigDiagnostics{
+		RequiredEnv: []string{
+			"BIGCLAW_EVENT_LOG_BROKER_DRIVER",
+			"BIGCLAW_EVENT_LOG_BROKER_URLS",
+			"BIGCLAW_EVENT_LOG_BROKER_TOPIC",
+		},
+		AdvisoryEnv: []string{
+			"BIGCLAW_EVENT_LOG_CONSUMER_GROUP",
+			"BIGCLAW_EVENT_LOG_PUBLISH_TIMEOUT",
+			"BIGCLAW_EVENT_LOG_REPLAY_LIMIT",
+			"BIGCLAW_EVENT_LOG_CHECKPOINT_INTERVAL",
+		},
+		RuntimeKnobs: brokerBootstrapRuntimeKnobs{},
+		ReferenceDocs: []string{
+			brokerBootstrapOperatorGuidePath,
+			brokerBootstrapSurfacePath,
+		},
+	}
+	if surface.ValidationPackPath != "" {
+		diagnostics.ReferenceDocs = append(diagnostics.ReferenceDocs, surface.ValidationPackPath)
+	}
+	bootstrap := surface.BootstrapSummary.BrokerBootstrap
+	if bootstrap != nil {
+		diagnostics.RuntimeKnobs.PublishTimeout = bootstrap.PublishTimeout
+		diagnostics.RuntimeKnobs.ReplayLimit = bootstrap.ReplayLimit
+		diagnostics.RuntimeKnobs.CheckpointInterval = bootstrap.CheckpointInterval
+		diagnostics.RuntimeKnobs.ConsumerGroup = strings.TrimSpace(bootstrap.ConsumerGroup)
+	}
+	if !surface.ConfigCompleteness.Driver {
+		diagnostics.MissingFields = append(diagnostics.MissingFields, "driver")
+		diagnostics.MissingRequiredEnv = append(diagnostics.MissingRequiredEnv, "BIGCLAW_EVENT_LOG_BROKER_DRIVER")
+	}
+	if !surface.ConfigCompleteness.URLs {
+		diagnostics.MissingFields = append(diagnostics.MissingFields, "urls")
+		diagnostics.MissingRequiredEnv = append(diagnostics.MissingRequiredEnv, "BIGCLAW_EVENT_LOG_BROKER_URLS")
+	}
+	if !surface.ConfigCompleteness.Topic {
+		diagnostics.MissingFields = append(diagnostics.MissingFields, "topic")
+		diagnostics.MissingRequiredEnv = append(diagnostics.MissingRequiredEnv, "BIGCLAW_EVENT_LOG_BROKER_TOPIC")
+	}
+	if !surface.ConfigCompleteness.ConsumerGroup {
+		diagnostics.MissingAdvisoryEnv = append(diagnostics.MissingAdvisoryEnv, "BIGCLAW_EVENT_LOG_CONSUMER_GROUP")
+	}
+	diagnostics.EnvGuidance = []brokerBootstrapEnvExpectation{
+		{
+			Name:      "BIGCLAW_EVENT_LOG_BROKER_DRIVER",
+			Field:     "driver",
+			Required:  true,
+			Satisfied: surface.ConfigCompleteness.Driver,
+			Purpose:   "select the broker adapter implementation such as kafka or nats-jetstream",
+		},
+		{
+			Name:      "BIGCLAW_EVENT_LOG_BROKER_URLS",
+			Field:     "urls",
+			Required:  true,
+			Satisfied: surface.ConfigCompleteness.URLs,
+			Purpose:   "declare the broker bootstrap endpoints as a comma-separated list",
+		},
+		{
+			Name:      "BIGCLAW_EVENT_LOG_BROKER_TOPIC",
+			Field:     "topic",
+			Required:  true,
+			Satisfied: surface.ConfigCompleteness.Topic,
+			Purpose:   "pin the shared event stream, topic, or subject family",
+		},
+		{
+			Name:      "BIGCLAW_EVENT_LOG_CONSUMER_GROUP",
+			Field:     "consumer_group",
+			Required:  false,
+			Satisfied: surface.ConfigCompleteness.ConsumerGroup,
+			Purpose:   "stabilize replay and checkpoint ownership for reviewer or rollout lanes",
+		},
+		{
+			Name:      "BIGCLAW_EVENT_LOG_PUBLISH_TIMEOUT",
+			Field:     "publish_timeout",
+			Required:  false,
+			Satisfied: diagnostics.RuntimeKnobs.PublishTimeout != "",
+			Purpose:   "bound broker publish latency before fail-closed fallback engages",
+		},
+		{
+			Name:      "BIGCLAW_EVENT_LOG_REPLAY_LIMIT",
+			Field:     "replay_limit",
+			Required:  false,
+			Satisfied: diagnostics.RuntimeKnobs.ReplayLimit > 0,
+			Purpose:   "cap replay catch-up batch size during bootstrap and recovery",
+		},
+		{
+			Name:      "BIGCLAW_EVENT_LOG_CHECKPOINT_INTERVAL",
+			Field:     "checkpoint_interval",
+			Required:  false,
+			Satisfied: diagnostics.RuntimeKnobs.CheckpointInterval != "",
+			Purpose:   "control checkpoint cadence for replicated consumers",
+		},
+	}
+	if len(diagnostics.MissingRequiredEnv) > 0 {
+		diagnostics.NextActions = append(diagnostics.NextActions,
+			"Set BIGCLAW_EVENT_LOG_BROKER_DRIVER to the broker adapter key (for example kafka or nats-jetstream).",
+			"Set BIGCLAW_EVENT_LOG_BROKER_URLS to the broker bootstrap endpoints as a comma-separated list.",
+			"Set BIGCLAW_EVENT_LOG_BROKER_TOPIC to the shared event stream, topic, or subject family.",
+		)
+	}
+	if len(diagnostics.MissingAdvisoryEnv) > 0 {
+		diagnostics.NextActions = append(diagnostics.NextActions,
+			"Optionally set BIGCLAW_EVENT_LOG_CONSUMER_GROUP to pin replay/checkpoint identity for reviewer runs.",
+		)
+	}
+	if diagnostics.RuntimeKnobs.PublishTimeout != "" || diagnostics.RuntimeKnobs.ReplayLimit > 0 || diagnostics.RuntimeKnobs.CheckpointInterval != "" {
+		diagnostics.NextActions = append(diagnostics.NextActions,
+			fmt.Sprintf("Review BIGCLAW_EVENT_LOG_PUBLISH_TIMEOUT, BIGCLAW_EVENT_LOG_REPLAY_LIMIT, and BIGCLAW_EVENT_LOG_CHECKPOINT_INTERVAL; resolved runtime knobs are publish_timeout=%s replay_limit=%d checkpoint_interval=%s.", firstNonEmpty(diagnostics.RuntimeKnobs.PublishTimeout, "unknown"), diagnostics.RuntimeKnobs.ReplayLimit, firstNonEmpty(diagnostics.RuntimeKnobs.CheckpointInterval, "unknown")),
+		)
+	}
+	return diagnostics
 }
