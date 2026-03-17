@@ -27,6 +27,39 @@ def utc_iso(moment=None):
     return value.isoformat().replace('+00:00', 'Z')
 
 
+def parse_timestamp(value):
+    if not isinstance(value, str):
+        return None
+    candidate = value.replace('Z', '+00:00')
+    try:
+        parsed = datetime.fromisoformat(candidate)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def iter_timestamps(payload):
+    if isinstance(payload, dict):
+        for key, value in payload.items():
+            if key in {'generated_at', 'timestamp', 'created_at', 'completed_at', 'started_at'}:
+                parsed = parse_timestamp(value)
+                if parsed is not None:
+                    yield parsed
+            yield from iter_timestamps(value)
+    elif isinstance(payload, list):
+        for item in payload:
+            yield from iter_timestamps(item)
+
+
+def derive_generated_at(*payloads):
+    timestamps = []
+    for payload in payloads:
+        timestamps.extend(iter_timestamps(payload))
+    return utc_iso(max(timestamps)) if timestamps else utc_iso()
+
+
 def load_json(path):
     return json.loads(path.read_text(encoding='utf-8'))
 
@@ -230,8 +263,10 @@ def build_report(
         soak_results_by_label[label] = result
         soak_inputs.append(repo_relative_path(repo_root, entry.get('report_path')))
 
+    supplemental_soak_reports = []
     for soak_path in supplemental_soak_report_paths:
         result = load_json(resolve_repo_path(repo_root, soak_path))
+        supplemental_soak_reports.append(result)
         label = f"{result.get('count')}x{result.get('workers')}"
         soak_results_by_label[label] = result
         soak_inputs.append(repo_relative_path(repo_root, soak_path))
@@ -272,7 +307,7 @@ def build_report(
     ]
 
     report = {
-        'generated_at': utc_iso(),
+        'generated_at': derive_generated_at(benchmark_report, mixed_workload_report, supplemental_soak_reports),
         'ticket': 'BIG-PAR-098',
         'title': 'Production-grade capacity certification matrix',
         'status': 'repo-native-capacity-certification',

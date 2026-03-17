@@ -2,7 +2,7 @@
 
 ## Scope
 
-- Generated at: `2026-03-17T10:11:29.233614Z`
+- Generated at: `2026-03-13T09:44:42.458392Z`
 - Ticket: `BIG-PAR-098`
 - Goal: convert checked-in benchmark, soak, and mixed-workload evidence into a repo-native certification matrix with explicit thresholds and operating envelopes.
 - Boundary: this is a single-instance repo-native certification slice, not a live multi-tenant production attestation.
