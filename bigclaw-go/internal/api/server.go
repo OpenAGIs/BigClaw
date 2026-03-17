@@ -290,6 +290,44 @@ type checkpointRequestPayload struct {
 	CheckpointEvent  string `json:"checkpoint_event_id"`
 }
 
+func (s *Server) publishSubscriberLeaseEvent(eventType domain.EventType, now time.Time, lease events.SubscriberLease, payload map[string]any) {
+	if payload == nil {
+		payload = make(map[string]any)
+	}
+	payload["group_id"] = lease.GroupID
+	payload["subscriber_id"] = lease.SubscriberID
+	payload["consumer_id"] = lease.ConsumerID
+	payload["lease_token"] = lease.LeaseToken
+	payload["lease_epoch"] = lease.LeaseEpoch
+	payload["checkpoint_offset"] = lease.CheckpointOffset
+	payload["checkpoint_event_id"] = lease.CheckpointEvent
+	if !lease.ExpiresAt.IsZero() {
+		payload["expires_at"] = lease.ExpiresAt.UTC()
+	}
+	if !lease.UpdatedAt.IsZero() {
+		payload["updated_at"] = lease.UpdatedAt.UTC()
+	}
+	s.publish(domain.Event{
+		ID:        fmt.Sprintf("subscriber-%s-%s-%d", strings.ReplaceAll(string(eventType), ".", "-"), subscriberLeaseEventKeyPart(lease.GroupID, lease.SubscriberID), now.UnixNano()),
+		Type:      eventType,
+		Timestamp: now,
+		Payload:   payload,
+	})
+}
+
+func subscriberLeaseEventKeyPart(groupID string, subscriberID string) string {
+	replacer := strings.NewReplacer("/", "-", " ", "-", ":", "-", ".", "-")
+	group := replacer.Replace(strings.TrimSpace(groupID))
+	subscriber := replacer.Replace(strings.TrimSpace(subscriberID))
+	if group == "" {
+		group = "group"
+	}
+	if subscriber == "" {
+		subscriber = "subscriber"
+	}
+	return group + "-" + subscriber
+}
+
 func (s *Server) handleSubscriberGroupLease(w http.ResponseWriter, r *http.Request) {
 	if s.SubscriberLeases == nil {
 		http.Error(w, "subscriber lease coordinator unavailable", http.StatusServiceUnavailable)
@@ -302,20 +340,45 @@ func (s *Server) handleSubscriberGroupLease(w http.ResponseWriter, r *http.Reque
 			http.Error(w, fmt.Sprintf("decode lease request: %v", err), http.StatusBadRequest)
 			return
 		}
+		now := s.Now()
+		previous, hadPrevious := s.SubscriberLeases.Get(payload.GroupID, payload.SubscriberID)
 		lease, err := s.SubscriberLeases.Acquire(events.LeaseRequest{
 			GroupID:      payload.GroupID,
 			SubscriberID: payload.SubscriberID,
 			ConsumerID:   payload.ConsumerID,
 			TTL:          time.Duration(payload.TTLSeconds) * time.Second,
-			Now:          s.Now(),
+			Now:          now,
 		})
 		if err != nil {
 			status := http.StatusBadRequest
 			if err == events.ErrLeaseHeld {
 				status = http.StatusConflict
+				s.publishSubscriberLeaseEvent(domain.EventSubscriberLeaseRejected, now, lease, map[string]any{
+					"attempted_consumer_id": payload.ConsumerID,
+					"requested_ttl_seconds": payload.TTLSeconds,
+					"reason":                err.Error(),
+				})
 			}
 			writeJSON(w, status, map[string]any{"error": err.Error(), "lease": lease})
 			return
+		}
+		expiredTakeover := hadPrevious && previous.ConsumerID != "" && previous.ConsumerID != lease.ConsumerID && !previous.ExpiresAt.IsZero() && !now.Before(previous.ExpiresAt)
+		if expiredTakeover {
+			s.publishSubscriberLeaseEvent(domain.EventSubscriberLeaseExpired, now, previous, map[string]any{
+				"expired_consumer_id":   previous.ConsumerID,
+				"takeover_consumer_id":  lease.ConsumerID,
+				"expired_checkpoint_at": previous.CheckpointOffset,
+			})
+			s.publishSubscriberLeaseEvent(domain.EventSubscriberTakeoverSucceeded, now, lease, map[string]any{
+				"previous_consumer_id":  previous.ConsumerID,
+				"takeover":              true,
+				"requested_ttl_seconds": payload.TTLSeconds,
+			})
+		} else {
+			s.publishSubscriberLeaseEvent(domain.EventSubscriberLeaseAcquired, now, lease, map[string]any{
+				"renewal":               hadPrevious && previous.ConsumerID == lease.ConsumerID,
+				"requested_ttl_seconds": payload.TTLSeconds,
+			})
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"lease": lease})
 	case http.MethodDelete:
@@ -353,6 +416,7 @@ func (s *Server) handleSubscriberGroupCheckpoint(w http.ResponseWriter, r *http.
 		http.Error(w, fmt.Sprintf("decode checkpoint commit: %v", err), http.StatusBadRequest)
 		return
 	}
+	now := s.Now()
 	lease, err := s.SubscriberLeases.Commit(events.CheckpointCommit{
 		GroupID:          payload.GroupID,
 		SubscriberID:     payload.SubscriberID,
@@ -361,7 +425,7 @@ func (s *Server) handleSubscriberGroupCheckpoint(w http.ResponseWriter, r *http.
 		LeaseEpoch:       payload.LeaseEpoch,
 		CheckpointOffset: payload.CheckpointOffset,
 		CheckpointEvent:  payload.CheckpointEvent,
-		Now:              s.Now(),
+		Now:              now,
 	})
 	if err != nil {
 		status := http.StatusConflict
@@ -371,9 +435,20 @@ func (s *Server) handleSubscriberGroupCheckpoint(w http.ResponseWriter, r *http.
 		case events.ErrLeaseExpired:
 			status = http.StatusGone
 		}
+		s.publishSubscriberLeaseEvent(domain.EventSubscriberCheckpointRejected, now, lease, map[string]any{
+			"attempted_consumer_id":         payload.ConsumerID,
+			"attempted_lease_token":         payload.LeaseToken,
+			"attempted_lease_epoch":         payload.LeaseEpoch,
+			"attempted_checkpoint_offset":   payload.CheckpointOffset,
+			"attempted_checkpoint_event_id": payload.CheckpointEvent,
+			"reason":                        err.Error(),
+		})
 		writeJSON(w, status, map[string]any{"error": err.Error(), "lease": lease})
 		return
 	}
+	s.publishSubscriberLeaseEvent(domain.EventSubscriberCheckpointCommitted, now, lease, map[string]any{
+		"committed_by": payload.ConsumerID,
+	})
 	writeJSON(w, http.StatusOK, map[string]any{"lease": lease})
 }
 

@@ -17,7 +17,7 @@ This digest consolidates the remaining takeover coordination caveats after the l
 
 ## Reviewer Digest
 
-- The repo now has both a deterministic local harness and a live two-node shared-queue proof that emits the same core takeover schema plus per-node audit artifacts.
+- The repo now has both a deterministic local harness and a live two-node shared-queue proof that emits the same core takeover schema plus per-node audit artifacts sourced from runtime audit events.
 - Current checkpoint fencing proves stale writers cannot advance ownership after takeover in both paths and exposes stale-write rejection counts directly in the generated reports.
 - The live proof is intentionally scoped: it exercises real `bigclawd` processes and the real lease/checkpoint API, but subscriber ownership is still coordinated through a process-local lease store on one node per scenario.
 - Takeover readiness is therefore reviewable as live evidence for schema parity and operational transitions, but not yet as broker-backed or shared-durable distributed ownership evidence.
@@ -26,7 +26,7 @@ This digest consolidates the remaining takeover coordination caveats after the l
 
 - No shared durable subscriber-group coordination proof yet closes the gap between the live API-driven proof and true cross-process ownership.
 - No broker-backed or replicated transport yet carries subscriber ownership across independent processes or nodes.
-- Runtime task audit logs still do not emit native takeover transition events; the live proof writes per-node takeover artifacts from the harness.
+- Runtime audit logs now emit native takeover transition events, but ownership remains process-local until a shared durable backend exists.
 - Duplicate replay candidates are still derived from checkpoint overlap windows rather than a broker-backed replay stream.
 
 ## Lightweight Consistency Check
