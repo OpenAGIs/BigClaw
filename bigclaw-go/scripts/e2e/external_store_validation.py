@@ -161,6 +161,66 @@ def write_report(go_root: pathlib.Path, report_path: str, payload: dict):
     output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def build_backend_matrix(*, replay_backend: str, retention_boundary_visible: bool):
+    return {
+        "status_definitions": {
+            "live_validated": "This checked-in repo-native lane executed the backend path and captured evidence.",
+            "not_configured": "The backend lane is intentionally not configured in the current runtime proof and remains a placeholder.",
+            "contract_only": "Only the rollout contract defines the expected backend semantics today.",
+        },
+        "summary": {
+            "live_validated_lanes": 1,
+            "not_configured_lanes": 1,
+            "contract_only_lanes": 1,
+        },
+        "lanes": [
+            {
+                "backend": "http_remote_service",
+                "role": "runtime_event_log",
+                "validation_status": "live_validated",
+                "configuration_state": "configured",
+                "proof_kind": "repo_native_e2e",
+                "replay_backend": replay_backend,
+                "checkpoint_backend": "http_remote_service",
+                "retention_boundary_visible": retention_boundary_visible,
+                "takeover_backend": "sqlite_shared_lease",
+                "report_links": [
+                    "docs/e2e-validation.md",
+                    "docs/reports/replay-retention-semantics-report.md",
+                    "docs/reports/epic-closure-readiness-report.md",
+                ],
+                "notes": "Replay, checkpoint state, and retention-boundary visibility are validated through the remote HTTP event-log service boundary.",
+            },
+            {
+                "backend": "broker_replicated",
+                "role": "runtime_event_log",
+                "validation_status": "not_configured",
+                "configuration_state": "not_configured",
+                "proof_kind": "placeholder",
+                "reason": "not_configured",
+                "report_links": [
+                    "docs/reports/broker-failover-fault-injection-validation-pack.md",
+                    "docs/reports/broker-failover-stub-report.json",
+                ],
+                "notes": "The checked-in repo-native external-store lane does not start a live broker-backed event-log adapter yet.",
+            },
+            {
+                "backend": "quorum_replicated",
+                "role": "runtime_event_log",
+                "validation_status": "contract_only",
+                "configuration_state": "contract_documented",
+                "proof_kind": "placeholder",
+                "reason": "contract_only",
+                "report_links": [
+                    "docs/reports/replicated-event-log-durability-rollout-contract.md",
+                    "docs/reports/replicated-broker-durability-rollout-spike.md",
+                ],
+                "notes": "Quorum-backed durability expectations are documented, but no executable quorum lane or adapter is checked in.",
+            },
+        ],
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate the remote external-store event-log lane")
     parser.add_argument("--go-root", default=str(pathlib.Path(__file__).resolve().parents[2]))
@@ -367,8 +427,8 @@ def main() -> int:
 
         report = {
             "generated_at": to_rfc3339(utc_now()),
-            "ticket": "BIG-PAR-097",
-            "title": "External-store validation lane for remote event-log service",
+            "ticket": "BIG-PAR-102",
+            "title": "External-store validation backend matrix and broker placeholders",
             "status": "validated",
             "lane": {
                 "service_backend": "sqlite_event_log_service",
@@ -390,6 +450,10 @@ def main() -> int:
                 "takeover_after_expiry": lease_b["lease"]["lease_epoch"] == 2,
                 "stale_writer_rejected": stale_status == 409,
             },
+            "backend_matrix": build_backend_matrix(
+                replay_backend=replay_payload.get("backend"),
+                retention_boundary_visible=retention_watermark.get("history_truncated", False),
+            ),
             "replay_validation": {
                 "task_id": submitted["id"],
                 "trace_id": submitted["trace_id"],
@@ -431,8 +495,8 @@ def main() -> int:
                 "epic_report": "docs/reports/epic-closure-readiness-report.md",
             },
             "limitations": [
+                "The backend matrix marks the HTTP remote-service lane as live validated, while broker-backed and quorum-backed durability remain explicit placeholders.",
                 "Event replay and checkpoint storage are validated through the remote HTTP event-log service, while shared-queue coordination and takeover still rely on the current shared SQLite lease store.",
-                "This lane validates a repo-native external-store boundary but does not yet prove a broker-backed or quorum-backed durability adapter.",
             ],
         }
         write_report(go_root, args.report_path, report)
