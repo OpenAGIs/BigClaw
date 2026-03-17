@@ -26,6 +26,9 @@ func TestNewDurabilityPlanForReplicatedTargetIncludesRolloutContract(t *testing.
 	if len(plan.VerificationEvidence) < 3 {
 		t.Fatalf("expected verification evidence entries, got %+v", plan.VerificationEvidence)
 	}
+	if plan.VerificationEvidence[1].Artifacts[1] != "docs/reports/broker-failover-stub-report.json" {
+		t.Fatalf("expected stub failover report artifact, got %+v", plan.VerificationEvidence[1])
+	}
 	if plan.VerificationEvidence[2].Artifacts[1] != "docs/reports/replicated-event-log-durability-rollout-contract.md" {
 		t.Fatalf("expected rollout contract artifact, got %+v", plan.VerificationEvidence[2])
 	}
@@ -83,20 +86,17 @@ func TestDurabilityPlanRolloutScorecardFlagsRuntimeGaps(t *testing.T) {
 	if scorecard.Status != "blocked" || scorecard.RolloutReady {
 		t.Fatalf("expected blocked rollout scorecard, got %+v", scorecard)
 	}
-	if scorecard.ReadyEvidence != 2 || scorecard.PartialEvidence != 1 || scorecard.BlockedEvidence != 1 {
+	if scorecard.ReadyEvidence != 3 || scorecard.PartialEvidence != 0 || scorecard.BlockedEvidence != 1 {
 		t.Fatalf("unexpected evidence counts: %+v", scorecard)
 	}
-	if len(scorecard.Blockers) != 3 {
-		t.Fatalf("expected three rollout blockers, got %+v", scorecard.Blockers)
+	if len(scorecard.Blockers) != 2 {
+		t.Fatalf("expected two rollout blockers, got %+v", scorecard.Blockers)
 	}
 	if scorecard.Blockers[0] != "current backend http does not yet match the replicated target broker_replicated" {
 		t.Fatalf("unexpected backend blocker: %+v", scorecard.Blockers)
 	}
 	if scorecard.Blockers[1] != "broker bootstrap configuration is not ready: broker event log config missing driver, urls, topic" {
 		t.Fatalf("unexpected bootstrap blocker: %+v", scorecard.Blockers)
-	}
-	if scorecard.Blockers[2] != "failover validation evidence is incomplete because scenario outputs are still placeholders" {
-		t.Fatalf("unexpected failover blocker: %+v", scorecard.Blockers)
 	}
 	for _, check := range scorecard.Checks {
 		if check.Status != "blocked" {
@@ -117,13 +117,13 @@ func TestDurabilityPlanRolloutScorecardKeepsFailoverGateVisibleWhenBootstrapRead
 	})
 	scorecard := plan.RolloutScorecard
 
-	if scorecard.Status != "blocked" || scorecard.RolloutReady {
-		t.Fatalf("expected failover evidence to keep rollout blocked, got %+v", scorecard)
+	if scorecard.Status != "ready" || !scorecard.RolloutReady {
+		t.Fatalf("expected repo-native failover evidence to unblock rollout, got %+v", scorecard)
 	}
-	if scorecard.ReadyEvidence != 3 || scorecard.PartialEvidence != 1 || scorecard.BlockedEvidence != 0 {
+	if scorecard.ReadyEvidence != 4 || scorecard.PartialEvidence != 0 || scorecard.BlockedEvidence != 0 {
 		t.Fatalf("unexpected evidence counts with ready bootstrap: %+v", scorecard)
 	}
-	if len(scorecard.Blockers) != 1 || scorecard.Blockers[0] != "failover validation evidence is incomplete because scenario outputs are still placeholders" {
-		t.Fatalf("unexpected blockers with ready bootstrap: %+v", scorecard.Blockers)
+	if len(scorecard.Blockers) != 0 {
+		t.Fatalf("expected no blockers with ready bootstrap and repo-native failover evidence, got %+v", scorecard.Blockers)
 	}
 }

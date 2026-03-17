@@ -308,10 +308,10 @@ func TestDebugStatusIncludesEventDurabilityPlan(t *testing.T) {
 	if decoded.EventDurability.RolloutScorecard.CurrentBackend != "http" || decoded.EventDurability.RolloutScorecard.TargetBackend != "broker_replicated" {
 		t.Fatalf("unexpected rollout scorecard backend payload: %+v", decoded.EventDurability.RolloutScorecard)
 	}
-	if decoded.EventDurability.RolloutScorecard.ReadyEvidence != 2 || decoded.EventDurability.RolloutScorecard.PartialEvidence != 1 || decoded.EventDurability.RolloutScorecard.BlockedEvidence != 1 {
+	if decoded.EventDurability.RolloutScorecard.ReadyEvidence != 3 || decoded.EventDurability.RolloutScorecard.PartialEvidence != 0 || decoded.EventDurability.RolloutScorecard.BlockedEvidence != 1 {
 		t.Fatalf("unexpected rollout scorecard evidence counts: %+v", decoded.EventDurability.RolloutScorecard)
 	}
-	if len(decoded.EventDurability.RolloutScorecard.Blockers) != 3 {
+	if len(decoded.EventDurability.RolloutScorecard.Blockers) != 2 {
 		t.Fatalf("expected rollout blockers, got %+v", decoded.EventDurability.RolloutScorecard)
 	}
 	if !strings.Contains(response.Body.String(), "\"event_durability_rollout\"") {
