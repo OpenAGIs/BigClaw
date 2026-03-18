@@ -3,7 +3,7 @@ package refill
 import "testing"
 
 func TestIssueStateMapRecordsIdentifiers(t *testing.T) {
-	issues := []LinearIssue{
+	issues := []TrackedIssue{
 		{Identifier: "BIG-GOM-301", StateName: "Todo"},
 		{Identifier: "BIG-GOM-302", StateName: "Todo"},
 	}

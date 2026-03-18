@@ -94,7 +94,7 @@ type promoteResponse struct {
 
 type refillClient interface {
 	backend() string
-	fetchIssueStates(projectSlug string, stateNames []string) ([]refill.LinearIssue, error)
+	fetchIssueStates(projectSlug string, stateNames []string) ([]refill.TrackedIssue, error)
 	promoteIssue(issueID string, stateID string, stateName string) (bool, string, error)
 }
 
@@ -325,8 +325,8 @@ func (c *linearClient) graphql(query string, variables map[string]any, target an
 	return nil
 }
 
-func (c *linearClient) fetchIssueStates(projectSlug string, stateNames []string) ([]refill.LinearIssue, error) {
-	issues := []refill.LinearIssue{}
+func (c *linearClient) fetchIssueStates(projectSlug string, stateNames []string) ([]refill.TrackedIssue, error) {
+	issues := []refill.TrackedIssue{}
 	cursor := ""
 	for {
 		response := refillResponse{}
@@ -346,7 +346,7 @@ func (c *linearClient) fetchIssueStates(projectSlug string, stateNames []string)
 			return nil, fmt.Errorf("%v", response.Errors)
 		}
 		for _, node := range response.Data.Issues.Nodes {
-			issues = append(issues, refill.LinearIssue{ID: node.ID, Identifier: node.Identifier, StateName: node.State.Name})
+			issues = append(issues, refill.TrackedIssue{ID: node.ID, Identifier: node.Identifier, StateName: node.State.Name})
 		}
 		if !response.Data.Issues.PageInfo.HasNextPage {
 			return issues, nil
@@ -375,7 +375,7 @@ func (c *localIssueClient) backend() string {
 	return "local"
 }
 
-func (c *localIssueClient) fetchIssueStates(_ string, stateNames []string) ([]refill.LinearIssue, error) {
+func (c *localIssueClient) fetchIssueStates(_ string, stateNames []string) ([]refill.TrackedIssue, error) {
 	return c.store.IssueStates(stateNames), nil
 }
 

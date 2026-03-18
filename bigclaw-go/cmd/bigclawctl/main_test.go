@@ -15,7 +15,7 @@ import (
 	"bigclaw-go/internal/refill"
 )
 
-func TestLinearClientFetchIssueStatesPreservesLinearIDs(t *testing.T) {
+func TestLinearClientFetchIssueStatesPreservesTrackerIDs(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var request graphqlRequest
 		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
