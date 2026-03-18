@@ -296,7 +296,10 @@ func EnsureRepoSync(repo string, remote string, autoPush bool, allowDirty bool) 
 			return RepoSyncStatus{}, err
 		}
 	}
-	if !autoPush || status.Synced {
+	if !autoPush {
+		return status, nil
+	}
+	if status.Synced && status.RemoteExists {
 		return status, nil
 	}
 	pushArgs := []string{"push", remote, "HEAD"}

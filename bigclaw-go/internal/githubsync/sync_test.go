@@ -116,6 +116,64 @@ func TestEnsureRepoSyncPushesHeadToOrigin(t *testing.T) {
 	}
 }
 
+func TestEnsureRepoSyncPublishesMissingIssueBranchEvenWhenHeadMatchesRemoteDefault(t *testing.T) {
+	tmp := t.TempDir()
+	remote := filepath.Join(tmp, "remote.git")
+	if output, err := exec.Command("git", "init", "--bare", "--initial-branch=main", remote).CombinedOutput(); err != nil {
+		t.Fatalf("git init --bare failed: %v (%s)", err, string(output))
+	}
+
+	source := filepath.Join(tmp, "source")
+	if err := os.MkdirAll(source, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initRepo(t, source)
+	if output, err := exec.Command("git", "-C", source, "branch", "-M", "main").CombinedOutput(); err != nil {
+		t.Fatalf("git branch -M failed: %v (%s)", err, string(output))
+	}
+	cmd := exec.Command("git", "remote", "add", "origin", remote)
+	cmd.Dir = source
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git remote add failed: %v (%s)", err, string(output))
+	}
+	localSHA := commitFile(t, source, "README.md", "hello\n", "initial commit")
+	cmd = exec.Command("git", "push", "-u", "origin", "main")
+	cmd.Dir = source
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git push main failed: %v (%s)", err, string(output))
+	}
+
+	workspace := filepath.Join(tmp, "workspace")
+	if output, err := exec.Command("git", "clone", remote, workspace).CombinedOutput(); err != nil {
+		t.Fatalf("git clone failed: %v (%s)", err, string(output))
+	}
+	if output, err := exec.Command("git", "-C", workspace, "checkout", "-b", "symphony/BIG-GOM-307").CombinedOutput(); err != nil {
+		t.Fatalf("git checkout -b failed: %v (%s)", err, string(output))
+	}
+
+	status, err := InspectRepoSync(workspace, "origin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status.RemoteExists {
+		t.Fatalf("expected issue branch to be missing before sync, got %+v", status)
+	}
+	if !status.Synced {
+		t.Fatalf("expected pre-push status to detect matching default branch SHA, got %+v", status)
+	}
+
+	status, err = EnsureRepoSync(workspace, "origin", true, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !status.Pushed || !status.RemoteExists || !status.Synced {
+		t.Fatalf("expected missing issue branch to be published and synced, got %+v", status)
+	}
+	if status.LocalSHA != localSHA || status.RemoteSHA != localSHA {
+		t.Fatalf("expected published branch SHA %s, got %+v", localSHA, status)
+	}
+}
+
 func TestInspectRepoSyncMarksDirtyWorktree(t *testing.T) {
 	tmp := t.TempDir()
 	remote := filepath.Join(tmp, "remote.git")
