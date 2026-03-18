@@ -2,6 +2,8 @@ package reporting
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -38,6 +40,44 @@ type Weekly struct {
 	Highlights    []string        `json:"highlights"`
 	Actions       []string        `json:"actions"`
 	Markdown      string          `json:"markdown"`
+}
+
+type OperationsMetricDefinition struct {
+	MetricID     string   `json:"metric_id"`
+	Label        string   `json:"label"`
+	Unit         string   `json:"unit"`
+	Direction    string   `json:"direction"`
+	Formula      string   `json:"formula"`
+	Description  string   `json:"description"`
+	SourceFields []string `json:"source_fields,omitempty"`
+}
+
+type OperationsMetricValue struct {
+	MetricID     string   `json:"metric_id"`
+	Label        string   `json:"label"`
+	Value        float64  `json:"value"`
+	DisplayValue string   `json:"display_value"`
+	Numerator    float64  `json:"numerator"`
+	Denominator  float64  `json:"denominator"`
+	Unit         string   `json:"unit"`
+	Evidence     []string `json:"evidence,omitempty"`
+}
+
+type OperationsMetricSpec struct {
+	Name         string                       `json:"name"`
+	GeneratedAt  time.Time                    `json:"generated_at"`
+	PeriodStart  time.Time                    `json:"period_start"`
+	PeriodEnd    time.Time                    `json:"period_end"`
+	TimezoneName string                       `json:"timezone_name"`
+	Definitions  []OperationsMetricDefinition `json:"definitions,omitempty"`
+	Values       []OperationsMetricValue      `json:"values,omitempty"`
+}
+
+type WeeklyArtifacts struct {
+	RootDir          string `json:"root_dir"`
+	WeeklyReportPath string `json:"weekly_report_path"`
+	DashboardPath    string `json:"dashboard_path"`
+	MetricSpecPath   string `json:"metric_spec_path,omitempty"`
 }
 
 func Build(tasks []domain.Task, events []domain.Event, weekStart, weekEnd time.Time) Weekly {
@@ -105,14 +145,122 @@ func RenderMarkdown(weekly Weekly) string {
 	builder.WriteString(fmt.Sprintf("- Total runs: %d\n", weekly.Summary.TotalRuns))
 	builder.WriteString(fmt.Sprintf("- Completed runs: %d\n", weekly.Summary.CompletedRuns))
 	builder.WriteString(fmt.Sprintf("- Blocked runs: %d\n", weekly.Summary.BlockedRuns))
+	builder.WriteString(fmt.Sprintf("- High risk runs: %d\n", weekly.Summary.HighRiskRuns))
 	builder.WriteString(fmt.Sprintf("- Human interventions: %d\n", weekly.Summary.HumanInterventions))
 	builder.WriteString(fmt.Sprintf("- Regressions: %d\n", weekly.Summary.RegressionFindings))
+	builder.WriteString(fmt.Sprintf("- Premium runs: %d\n", weekly.Summary.PremiumRuns))
 	builder.WriteString(fmt.Sprintf("- Budget cents: %d\n\n", weekly.Summary.BudgetCentsTotal))
+	builder.WriteString("## Team Breakdown\n")
+	if len(weekly.TeamBreakdown) == 0 {
+		builder.WriteString("- None\n\n")
+	} else {
+		for _, team := range weekly.TeamBreakdown {
+			builder.WriteString(fmt.Sprintf("- %s: total=%d completed=%d blocked=%d budget_cents=%d interventions=%d\n", team.Key, team.TotalRuns, team.CompletedRuns, team.BlockedRuns, team.BudgetCentsTotal, team.HumanInterventions))
+		}
+		builder.WriteString("\n")
+	}
+	builder.WriteString("## Highlights\n")
+	for _, highlight := range weekly.Highlights {
+		builder.WriteString("- " + highlight + "\n")
+	}
+	builder.WriteString("\n")
 	builder.WriteString("## Actions\n")
 	for _, action := range weekly.Actions {
 		builder.WriteString("- " + action + "\n")
 	}
 	return builder.String()
+}
+
+func RenderOperationsDashboard(weekly Weekly) string {
+	builder := strings.Builder{}
+	builder.WriteString("# Operations Dashboard\n\n")
+	builder.WriteString(fmt.Sprintf("- Window: %s -> %s\n", weekly.WeekStart.Format("2006-01-02"), weekly.WeekEnd.Format("2006-01-02")))
+	builder.WriteString(fmt.Sprintf("- Total Runs: %d\n", weekly.Summary.TotalRuns))
+	builder.WriteString(fmt.Sprintf("- Completed Runs: %d\n", weekly.Summary.CompletedRuns))
+	builder.WriteString(fmt.Sprintf("- Blocked Runs: %d\n", weekly.Summary.BlockedRuns))
+	builder.WriteString(fmt.Sprintf("- High Risk Runs: %d\n", weekly.Summary.HighRiskRuns))
+	builder.WriteString(fmt.Sprintf("- Premium Runs: %d\n", weekly.Summary.PremiumRuns))
+	builder.WriteString(fmt.Sprintf("- Human Interventions: %d\n", weekly.Summary.HumanInterventions))
+	builder.WriteString(fmt.Sprintf("- Regression Findings: %d\n", weekly.Summary.RegressionFindings))
+	builder.WriteString(fmt.Sprintf("- Budget Cents Total: %d\n\n", weekly.Summary.BudgetCentsTotal))
+	builder.WriteString("## Team Lanes\n")
+	if len(weekly.TeamBreakdown) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, team := range weekly.TeamBreakdown {
+			builder.WriteString(fmt.Sprintf("- %s: total=%d completed=%d blocked=%d interventions=%d\n", team.Key, team.TotalRuns, team.CompletedRuns, team.BlockedRuns, team.HumanInterventions))
+		}
+	}
+	return builder.String() + "\n"
+}
+
+func RenderOperationsMetricSpec(spec OperationsMetricSpec) string {
+	builder := strings.Builder{}
+	builder.WriteString("# Operations Metric Spec\n\n")
+	builder.WriteString(fmt.Sprintf("- Name: %s\n", strings.TrimSpace(spec.Name)))
+	builder.WriteString(fmt.Sprintf("- Generated At: %s\n", spec.GeneratedAt.UTC().Format(time.RFC3339)))
+	builder.WriteString(fmt.Sprintf("- Period Start: %s\n", spec.PeriodStart.UTC().Format(time.RFC3339)))
+	builder.WriteString(fmt.Sprintf("- Period End: %s\n", spec.PeriodEnd.UTC().Format(time.RFC3339)))
+	builder.WriteString(fmt.Sprintf("- Timezone: %s\n\n", firstNonEmpty(spec.TimezoneName, "UTC")))
+	builder.WriteString("## Definitions\n\n")
+	if len(spec.Definitions) == 0 {
+		builder.WriteString("- None\n\n")
+	} else {
+		for _, definition := range spec.Definitions {
+			builder.WriteString(fmt.Sprintf("### %s\n\n", firstNonEmpty(definition.Label, definition.MetricID)))
+			builder.WriteString(fmt.Sprintf("- Metric ID: %s\n", definition.MetricID))
+			builder.WriteString(fmt.Sprintf("- Unit: %s\n", definition.Unit))
+			builder.WriteString(fmt.Sprintf("- Direction: %s\n", definition.Direction))
+			builder.WriteString(fmt.Sprintf("- Formula: %s\n", definition.Formula))
+			builder.WriteString(fmt.Sprintf("- Description: %s\n", definition.Description))
+			builder.WriteString(fmt.Sprintf("- Source Fields: %s\n\n", strings.Join(definition.SourceFields, ", ")))
+		}
+	}
+	builder.WriteString("## Values\n")
+	if len(spec.Values) == 0 {
+		builder.WriteString("\n- None\n")
+		return builder.String()
+	}
+	builder.WriteString("\n")
+	for _, value := range spec.Values {
+		evidence := "none"
+		if len(value.Evidence) > 0 {
+			evidence = strings.Join(value.Evidence, " | ")
+		}
+		builder.WriteString(fmt.Sprintf("- %s: value=%s numerator=%.1f denominator=%.1f unit=%s evidence=%s\n", firstNonEmpty(value.Label, value.MetricID), firstNonEmpty(value.DisplayValue, formatMetricValue(value.Value)), value.Numerator, value.Denominator, value.Unit, evidence))
+	}
+	return builder.String()
+}
+
+func WriteReport(path string, content string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(content), 0o644)
+}
+
+func WriteWeeklyOperationsBundle(rootDir string, weekly Weekly, metricSpec *OperationsMetricSpec) (WeeklyArtifacts, error) {
+	if err := os.MkdirAll(rootDir, 0o755); err != nil {
+		return WeeklyArtifacts{}, err
+	}
+	artifacts := WeeklyArtifacts{
+		RootDir:          rootDir,
+		WeeklyReportPath: filepath.Join(rootDir, "weekly-operations.md"),
+		DashboardPath:    filepath.Join(rootDir, "operations-dashboard.md"),
+	}
+	if err := WriteReport(artifacts.WeeklyReportPath, RenderMarkdown(weekly)); err != nil {
+		return WeeklyArtifacts{}, err
+	}
+	if err := WriteReport(artifacts.DashboardPath, RenderOperationsDashboard(weekly)); err != nil {
+		return WeeklyArtifacts{}, err
+	}
+	if metricSpec != nil {
+		artifacts.MetricSpecPath = filepath.Join(rootDir, "operations-metric-spec.md")
+		if err := WriteReport(artifacts.MetricSpecPath, RenderOperationsMetricSpec(*metricSpec)); err != nil {
+			return WeeklyArtifacts{}, err
+		}
+	}
+	return artifacts, nil
 }
 
 func buildHighlights(weekly Weekly) []string {
@@ -190,4 +338,11 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
+}
+
+func formatMetricValue(value float64) string {
+	if value == float64(int64(value)) {
+		return strconv.FormatInt(int64(value), 10)
+	}
+	return strconv.FormatFloat(value, 'f', 1, 64)
 }

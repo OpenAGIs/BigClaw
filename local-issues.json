@@ -30,7 +30,7 @@
       "title": "Workflow orchestration and scheduler loop migration",
       "description": "Close the Go execution loop with workflow-aware orchestration, journal state, and runtime closeout so active development no longer needs the Python workflow engine.",
       "priority": 1,
-      "state": "Todo",
+      "state": "In Progress",
       "labels": ["go-mainline", "migration", "workflow", "runtime"],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
