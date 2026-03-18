@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+repo_root=$(cd -- "$script_dir/../.." && pwd)
+workflow="$repo_root/workflow.md"
+ack="--i-understand-that-this-will-be-running-without-the-usual-guardrails"
+
+if [ -x "$repo_root/../elixir/bin/symphony" ]; then
+  exec "$repo_root/../elixir/bin/symphony" "$ack" --port 4000 "$workflow" "$@"
+fi
+
+if command -v symphony >/dev/null 2>&1; then
+  exec symphony "$ack" --port 4000 "$workflow" "$@"
+fi
+
+echo "symphony CLI not found. Install Symphony or run from a checkout that contains ../elixir/bin/symphony." >&2
+exit 1

@@ -1,46 +1,74 @@
-# BigClaw v5.0 Parallel Refill Queue
+# BigClaw v5.3 Go Mainline Refill Queue
 
 This file is the human-readable companion to `docs/parallel-refill-queue.json`.
-It records the current BigClaw v5.0 distributed backlog slices so Symphony or a
-manual operator can refill the next parallel-safe issues in a stable order.
+It records the current Go-mainline cutover backlog slices and the refill order
+used by the repo-native local tracker in `local-issues.json`.
+
+Linear issue creation is still blocked by workspace issue limits, but BigClaw no
+longer waits on Linear to keep issue execution moving.
 
 ## Trigger
 
 - Manual one-shot refill:
-  - `python3 scripts/ops/bigclaw_refill_queue.py --apply`
+  - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json`
 - Continuous refill watcher:
-  - `python3 scripts/ops/bigclaw_refill_queue.py --apply --watch`
+  - `bash scripts/ops/bigclawctl refill --apply --watch --local-issues local-issues.json`
 - Optional dashboard refresh after promotion:
-  - `python3 scripts/ops/bigclaw_refill_queue.py --apply --watch --refresh-url http://127.0.0.1:4000/api/v1/refresh`
+  - `bash scripts/ops/bigclawctl refill --apply --watch --local-issues local-issues.json --refresh-url http://127.0.0.1:4000/api/v1/refresh`
+- Local issue CLI:
+  - `bash scripts/ops/bigclaw-issue list`
+  - `bash scripts/ops/bigclaw-issue state BIG-GOM-303 "In Progress"`
+- Local dashboard/orchestrator:
+  - `bash scripts/ops/bigclaw-symphony`
+  - `bash scripts/ops/bigclaw-panel`
 
 ## Policy
 
-- Temporary target: keep `1` issue in `In Progress` until the Linear workspace issue quota is raised.
+- Target: keep `2` issues in `In Progress` when issue capacity is available again.
+- Target: keep `2` issues in `In Progress` in the local tracker unless a higher
+  parallelism cap is explicitly chosen for a branch-safe batch.
 - Promote only issues currently in `Backlog` or `Todo`.
 - Use the queue order below as the single source of truth for refill priority.
 - Every substantive code-bearing update must be committed and pushed to GitHub immediately, with local/remote SHA equality verification after each push.
 - Shared mirror bootstrap remains mandatory so multiple Symphony issues reuse one local mirror/seed cache instead of re-downloading the repo.
+- `local-issues.json` is the authoritative issue state backend for ongoing work.
+- Use `docs/go-mainline-cutover-issue-pack.md` as the detailed project brief behind this queue.
 
 ## Repo Validation
 
-- Latest repo-wide validation report: `reports/repo-wide-validation-2026-03-16.md`
-- Latest findings:
-  - `233 passed` in the Python suite
-  - `ruff check` passed
-  - `go test ./...` passed in `bigclaw-go`
-  - deprecated `datetime.utcnow()` usage was cleaned up in `src/bigclaw/reports.py`
+- Current mainline expectation:
+  - new implementation work lands in `bigclaw-go`
+  - Python paths are migration-only unless explicitly marked otherwise
+- Current tracker expectation:
+  - issue state lives in `local-issues.json`
+  - queue promotion is handled by `bigclawctl refill`
+- Repo-native cutover plan:
+  - `docs/go-mainline-cutover-issue-pack.md`
 
 ## Current batch
 
-- Active:
-  - `OPE-275` — production corpus replay pack and migration coverage scorecard
-- Standby (planned but blocked by Linear issue quota):
-  - `BIG-PAR-084` — executable subscriber takeover harness with lease-aware checkpoints
-  - `BIG-PAR-085` — cross-process coordination capability surface
-  - `BIG-PAR-086` — rolling validation bundle continuation scorecard
-  - `BIG-PAR-087` — live shadow traffic mirror and parity drift scorecard
-  - `BIG-PAR-088` — tenant-scoped rollback guardrails and trigger surface
+- Active repo tranche:
+  - `BIG-GOM-301` — unified domain model and intake contract migration
+  - `BIG-GOM-302` — risk, policy, and approval semantics migration
+  - `BIG-GOM-307` — workflow, bootstrap, and GitHub sync toolchain migration
+- Runnable first batch once issue creation is available:
+  - `BIG-GOM-301` — unified domain model and intake contract migration
+  - `BIG-GOM-302` — risk, policy, and approval semantics migration
+  - `BIG-GOM-303` — workflow orchestration and scheduler loop migration
+  - `BIG-GOM-304` — observability, reporting, and weekly operations surface migration
+- Standby:
+  - `BIG-GOM-305` — control center, triage, and operations view migration
+  - `BIG-GOM-306` — repo collaboration and lineage surface migration
+  - `BIG-GOM-307` — workflow, bootstrap, and GitHub sync toolchain migration
+  - `BIG-GOM-308` — Python deprecation and Go-only mainline switch
 
 ## Canonical refill order
 
-1. `OPE-275`
+1. `BIG-GOM-301`
+2. `BIG-GOM-302`
+3. `BIG-GOM-303`
+4. `BIG-GOM-304`
+5. `BIG-GOM-305`
+6. `BIG-GOM-306`
+7. `BIG-GOM-307`
+8. `BIG-GOM-308`

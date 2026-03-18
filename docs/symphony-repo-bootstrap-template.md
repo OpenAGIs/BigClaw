@@ -8,18 +8,18 @@ issue.
 
 Copy these files into the target repository:
 
-- `scripts/ops/symphony_workspace_bootstrap.py`
+- `scripts/ops/bigclawctl`
 - `src/<your_package>/workspace_bootstrap.py`
 - `src/<your_package>/workspace_bootstrap_cli.py`
 
-The script path is intentionally generic; only the Python package path is repo-specific.
+The shell entrypoint is generic; only the Python compatibility package path is repo-specific while a repo is still mid-migration.
 
 ## Workflow hook template
 
 ```yaml
 hooks:
   after_create: |
-    python3 "$SYMPHONY_WORKFLOW_DIR/scripts/ops/symphony_workspace_bootstrap.py" bootstrap \
+    bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" workspace bootstrap \
       --workspace "$SYMPHONY_WORKSPACE" \
       --issue "$SYMPHONY_ISSUE_IDENTIFIER" \
       --repo-url "${SYMPHONY_BOOTSTRAP_REPO_URL}" \
@@ -28,7 +28,7 @@ hooks:
       --cache-key "${SYMPHONY_BOOTSTRAP_CACHE_KEY:-}" \
       --json
   before_remove: |
-    python3 "$SYMPHONY_WORKFLOW_DIR/scripts/ops/symphony_workspace_bootstrap.py" cleanup \
+    bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" workspace cleanup \
       --workspace "$SYMPHONY_WORKSPACE" \
       --issue "$SYMPHONY_ISSUE_IDENTIFIER" \
       --repo-url "${SYMPHONY_BOOTSTRAP_REPO_URL}" \
@@ -61,7 +61,7 @@ the cache or reused it.
 
 ## Validation workflow
 
-Use `scripts/ops/symphony_workspace_validate.py` plus a 3-issue sample to confirm a repo warms one
+Use `bash scripts/ops/bigclawctl workspace validate` plus a 3-issue sample to confirm a repo warms one
 mirror/seed cache and then suppresses repeated remote clones for later workspaces.
 
 ## BigClaw example

@@ -13,9 +13,11 @@ import (
 	"bigclaw-go/internal/billing"
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/flow"
+	"bigclaw-go/internal/intake"
 	"bigclaw-go/internal/prd"
 	"bigclaw-go/internal/product"
 	"bigclaw-go/internal/reporting"
+	"bigclaw-go/internal/workflow"
 )
 
 type flowTemplateRequest struct {
@@ -36,6 +38,12 @@ type prdIntakeRequest struct {
 	Title              string   `json:"title"`
 	Body               string   `json:"body"`
 	AcceptanceCriteria []string `json:"acceptance_criteria,omitempty"`
+}
+
+type workflowDefinitionRenderRequest struct {
+	Definition workflow.Definition `json:"definition"`
+	Task       domain.Task         `json:"task"`
+	RunID      string              `json:"run_id"`
 }
 
 func (s *Server) handleV2WeeklyReport(w http.ResponseWriter, r *http.Request) {
@@ -171,6 +179,75 @@ func (s *Server) handleV2PRDIntake(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, result)
 }
 
+func (s *Server) handleV2IntakeConnectorIssues(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	path := strings.Trim(strings.TrimPrefix(r.URL.Path, "/v2/intake/connectors/"), "/")
+	if !strings.HasSuffix(path, "/issues") {
+		http.Error(w, "unsupported intake route", http.StatusNotFound)
+		return
+	}
+	name := strings.TrimSuffix(path, "/issues")
+	name = strings.TrimSuffix(name, "/")
+	connector, ok := intake.ConnectorByName(name)
+	if !ok {
+		http.Error(w, "connector not found", http.StatusNotFound)
+		return
+	}
+	project := strings.TrimSpace(r.URL.Query().Get("project"))
+	if project == "" {
+		http.Error(w, "missing project", http.StatusBadRequest)
+		return
+	}
+	states := splitCSV(r.URL.Query().Get("states"))
+	issues, err := connector.FetchIssues(project, states)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("fetch connector issues: %v", err), http.StatusInternalServerError)
+		return
+	}
+	mapped := make([]domain.Task, 0, len(issues))
+	for _, issue := range issues {
+		mapped = append(mapped, intake.MapSourceIssueToTask(issue))
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"connector":    connector.Name(),
+		"project":      project,
+		"states":       states,
+		"issues":       issues,
+		"mapped_tasks": mapped,
+	})
+}
+
+func splitCSV(value string) []string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil
+	}
+	parts := strings.Split(value, ",")
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return out
+}
+
+func (s *Server) handleV2IntakeIssueMap(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var issue intake.SourceIssue
+	if err := json.NewDecoder(r.Body).Decode(&issue); err != nil {
+		http.Error(w, fmt.Sprintf("decode intake issue: %v", err), http.StatusBadRequest)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"task": intake.MapSourceIssueToTask(issue)})
+}
+
 func (s *Server) handleV2LaunchChecklist(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -197,6 +274,37 @@ func (s *Server) handleV2SupportHandoff(w http.ResponseWriter, r *http.Request) 
 	}
 	handoff := flow.BuildSupportHandoff(s.Recorder.Tasks(0), flowID)
 	writeJSON(w, http.StatusOK, handoff)
+}
+
+func (s *Server) handleV2WorkflowDefinitionRender(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var request workflowDefinitionRenderRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, fmt.Sprintf("decode workflow definition render request: %v", err), http.StatusBadRequest)
+		return
+	}
+	if strings.TrimSpace(request.Definition.Name) == "" {
+		http.Error(w, "missing definition.name", http.StatusBadRequest)
+		return
+	}
+	if strings.TrimSpace(request.Task.ID) == "" {
+		http.Error(w, "missing task.id", http.StatusBadRequest)
+		return
+	}
+	if strings.TrimSpace(request.RunID) == "" {
+		http.Error(w, "missing run_id", http.StatusBadRequest)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"definition": request.Definition,
+		"rendered": map[string]any{
+			"report_path":  request.Definition.RenderReportPath(request.Task, request.RunID),
+			"journal_path": request.Definition.RenderJournalPath(request.Task, request.RunID),
+		},
+	})
 }
 
 func (s *Server) handleV2Navigation(w http.ResponseWriter, r *http.Request) {

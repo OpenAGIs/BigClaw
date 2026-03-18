@@ -275,6 +275,99 @@ func TestV2ProductizationAndBillingEndpoints(t *testing.T) {
 	}
 }
 
+func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
+	recorder := observability.NewRecorder()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return time.Date(2026, 3, 18, 12, 0, 0, 0, time.UTC) }}
+	handler := server.Handler()
+
+	connectorResponse := httptest.NewRecorder()
+	handler.ServeHTTP(connectorResponse, httptest.NewRequest(http.MethodGet, "/v2/intake/connectors/github/issues?project=OpenAGIs/BigClaw&states=Todo,In%20Progress", nil))
+	if connectorResponse.Code != http.StatusOK {
+		t.Fatalf("expected intake connector 200, got %d %s", connectorResponse.Code, connectorResponse.Body.String())
+	}
+	var connectorDecoded struct {
+		Connector string `json:"connector"`
+		Issues    []struct {
+			Source string `json:"source"`
+			Title  string `json:"title"`
+		} `json:"issues"`
+		MappedTasks []struct {
+			ID    string `json:"id"`
+			State string `json:"state"`
+		} `json:"mapped_tasks"`
+	}
+	if err := json.Unmarshal(connectorResponse.Body.Bytes(), &connectorDecoded); err != nil {
+		t.Fatalf("decode intake connector response: %v", err)
+	}
+	if connectorDecoded.Connector != "github" || len(connectorDecoded.Issues) != 1 || len(connectorDecoded.MappedTasks) != 1 {
+		t.Fatalf("unexpected intake connector payload: %+v", connectorDecoded)
+	}
+	if connectorDecoded.Issues[0].Source != "github" || connectorDecoded.MappedTasks[0].ID == "" || connectorDecoded.MappedTasks[0].State != "queued" {
+		t.Fatalf("unexpected mapped issue payload: %+v", connectorDecoded)
+	}
+
+	mapBody, _ := json.Marshal(map[string]any{
+		"source":      "linear",
+		"source_id":   "BIG-102",
+		"title":       "Implement prod model",
+		"description": "desc",
+		"labels":      []string{"p0"},
+		"priority":    "P0",
+		"state":       "Todo",
+		"links":       map[string]string{"issue": "https://linear.app/openagi/issue/BIG-102"},
+	})
+	mapResponse := httptest.NewRecorder()
+	handler.ServeHTTP(mapResponse, httptest.NewRequest(http.MethodPost, "/v2/intake/issues/map", bytes.NewReader(mapBody)))
+	if mapResponse.Code != http.StatusOK {
+		t.Fatalf("expected intake map 200, got %d %s", mapResponse.Code, mapResponse.Body.String())
+	}
+	var mappedDecoded struct {
+		Task struct {
+			ID        string `json:"id"`
+			Priority  int    `json:"priority"`
+			RiskLevel string `json:"risk_level"`
+		} `json:"task"`
+	}
+	if err := json.Unmarshal(mapResponse.Body.Bytes(), &mappedDecoded); err != nil {
+		t.Fatalf("decode intake map response: %v", err)
+	}
+	if mappedDecoded.Task.ID != "BIG-102" || mappedDecoded.Task.Priority != 0 || mappedDecoded.Task.RiskLevel != "high" {
+		t.Fatalf("unexpected mapped task payload: %+v", mappedDecoded.Task)
+	}
+
+	renderBody, _ := json.Marshal(map[string]any{
+		"definition": map[string]any{
+			"name":                  "release-closeout",
+			"steps":                 []map[string]any{{"name": "execute", "kind": "scheduler"}},
+			"report_path_template":  "reports/{task_id}/{run_id}.md",
+			"journal_path_template": "journals/{workflow}/{run_id}.json",
+		},
+		"task": map[string]any{
+			"id":     "BIG-401",
+			"source": "linear",
+			"title":  "DSL",
+		},
+		"run_id": "run-1",
+	})
+	renderResponse := httptest.NewRecorder()
+	handler.ServeHTTP(renderResponse, httptest.NewRequest(http.MethodPost, "/v2/workflows/definitions/render", bytes.NewReader(renderBody)))
+	if renderResponse.Code != http.StatusOK {
+		t.Fatalf("expected workflow definition render 200, got %d %s", renderResponse.Code, renderResponse.Body.String())
+	}
+	var renderDecoded struct {
+		Rendered struct {
+			ReportPath  string `json:"report_path"`
+			JournalPath string `json:"journal_path"`
+		} `json:"rendered"`
+	}
+	if err := json.Unmarshal(renderResponse.Body.Bytes(), &renderDecoded); err != nil {
+		t.Fatalf("decode workflow definition render response: %v", err)
+	}
+	if renderDecoded.Rendered.ReportPath != "reports/BIG-401/run-1.md" || renderDecoded.Rendered.JournalPath != "journals/release-closeout/run-1.json" {
+		t.Fatalf("unexpected rendered workflow paths: %+v", renderDecoded.Rendered)
+	}
+}
+
 func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	base := time.Date(2026, 3, 14, 9, 0, 0, 0, time.UTC)
 	recorder := observability.NewRecorder()

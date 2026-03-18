@@ -1,95 +1,94 @@
 {
   "project": {
-    "name": "BigClaw v5.0 Parallel Distributed Platform",
-    "slug_id": "8a198fec793e",
+    "name": "BigClaw v5.3 Go Mainline Consolidation",
+    "slug_id": "53e33900c67e",
     "team": "OpenAGI",
     "team_key": "OPE",
-    "epic": "OPE-187"
+    "epic": "[Epic] BigClaw Go Mainline Cutover and Python Migration (draft blocked by issue quota)"
   },
   "policy": {
-    "target_in_progress": 1,
+    "target_in_progress": 2,
     "activate_state_name": "In Progress",
     "activate_state_id": "bd8aafe7-4d8b-41aa-a85b-13e76d49ead7",
     "refill_states": [
       "Backlog",
       "Todo"
     ],
-    "blocked_reason": "Linear workspace issue quota currently blocks creating the remaining planned slices"
+    "blocked_reason": "Linear workspace issue quota still blocks new Linear issues, but the active BigClaw tracker now runs from local-issues.json and this queue remains the refill source of truth"
   },
   "recent_batches": {
-    "completed": [
-      "OPE-212",
-      "OPE-213",
-      "OPE-214",
-      "OPE-215",
-      "OPE-216",
-      "OPE-217",
-      "OPE-219",
-      "OPE-220",
-      "OPE-221",
-      "OPE-222",
-      "OPE-223",
-      "OPE-224",
-      "OPE-225",
-      "OPE-226",
-      "OPE-227",
-      "OPE-228",
-      "OPE-229",
-      "OPE-230",
-      "OPE-231",
-      "OPE-232",
-      "OPE-233",
-      "OPE-234",
-      "OPE-235",
-      "OPE-236",
-      "OPE-237",
-      "OPE-238",
-      "OPE-239",
-      "OPE-240",
-      "OPE-241",
-      "OPE-242",
-      "OPE-243",
-      "OPE-244",
-      "OPE-245",
-      "OPE-246",
-      "OPE-247",
-      "OPE-250",
-      "OPE-251",
-      "OPE-252",
-      "OPE-253",
-      "OPE-254",
-      "OPE-255",
-      "OPE-256",
-      "OPE-257",
-      "OPE-258",
-      "OPE-259",
-      "OPE-260",
-      "OPE-261",
-      "OPE-262",
-      "OPE-263",
-      "OPE-264",
-      "OPE-265",
-      "OPE-266",
-      "OPE-267",
-      "OPE-268",
-      "OPE-269",
-      "OPE-270",
-      "OPE-271"
-    ],
+    "completed": [],
     "active": [
-      "OPE-275"
+      "BIG-GOM-301",
+      "BIG-GOM-302",
+      "BIG-GOM-307"
     ],
-    "standby": []
+    "standby": [
+      "BIG-GOM-303",
+      "BIG-GOM-304",
+      "BIG-GOM-305",
+      "BIG-GOM-306",
+      "BIG-GOM-308"
+    ]
   },
   "issue_order": [
-    "OPE-275"
+    "BIG-GOM-301",
+    "BIG-GOM-302",
+    "BIG-GOM-303",
+    "BIG-GOM-304",
+    "BIG-GOM-305",
+    "BIG-GOM-306",
+    "BIG-GOM-307",
+    "BIG-GOM-308"
   ],
   "issues": [
     {
-      "identifier": "OPE-275",
-      "title": "BIG-PAR-083 production corpus replay pack and migration coverage scorecard",
-      "track": "Production Corpus Coverage Implementation",
+      "identifier": "BIG-GOM-301",
+      "title": "Unified domain model and intake contract migration",
+      "track": "Control/Workflow Surface Migration",
       "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-GOM-302",
+      "title": "Risk, policy, and approval semantics migration",
+      "track": "Control/Workflow Surface Migration",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-GOM-303",
+      "title": "Workflow orchestration and scheduler loop migration",
+      "track": "Control/Workflow Surface Migration",
+      "status": "Todo"
+    },
+    {
+      "identifier": "BIG-GOM-304",
+      "title": "Observability, reporting, and weekly operations surface migration",
+      "track": "Governance/Reporting Surface Migration",
+      "status": "Todo"
+    },
+    {
+      "identifier": "BIG-GOM-305",
+      "title": "Control center, triage, and operations view migration",
+      "track": "Governance/Reporting Surface Migration",
+      "status": "Backlog"
+    },
+    {
+      "identifier": "BIG-GOM-306",
+      "title": "Repo collaboration and lineage surface migration",
+      "track": "Governance/Reporting Surface Migration",
+      "status": "Backlog"
+    },
+    {
+      "identifier": "BIG-GOM-307",
+      "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
+      "track": "Python Retirement & Cutover Validation",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-GOM-308",
+      "title": "Python deprecation and Go-only mainline switch",
+      "track": "Python Retirement & Cutover Validation",
+      "status": "Backlog"
     }
   ]
 }

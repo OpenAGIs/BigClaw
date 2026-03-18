@@ -10,11 +10,11 @@ fi
 
 export PYTHONDONTWRITEBYTECODE=1
 
-if [ ! -f "scripts/ops/bigclaw_github_sync.py" ]; then
+if [ ! -f "scripts/ops/bigclawctl" ]; then
   exit 0
 fi
 
-python3 scripts/ops/bigclaw_github_sync.py sync --json || {
+bash scripts/ops/bigclawctl github-sync sync --json || {
   echo "[bigclaw-sync] post-rewrite auto-sync failed; inspect branch sync state." >&2
   exit 0
 }
