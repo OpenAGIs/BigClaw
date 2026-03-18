@@ -152,3 +152,128 @@ func TestWriteWeeklyOperationsBundle(t *testing.T) {
 		}
 	}
 }
+
+func TestAuditDashboardBuilderFlagsGovernanceGaps(t *testing.T) {
+	dashboard := DashboardBuilder{
+		Name:   "Ops Console",
+		Period: "2026-W11",
+		Owner:  "operations",
+		Permissions: EngineeringOverviewPermission{
+			ViewerRole:     "operator",
+			AllowedModules: []string{"operations"},
+		},
+		Widgets: []DashboardWidgetSpec{
+			{WidgetID: "ops-summary", Title: "Ops Summary", Module: "operations", DataSource: "/v2/reports/weekly", DefaultWidth: 4, DefaultHeight: 3, MinWidth: 2, MaxWidth: 12},
+			{WidgetID: "audit-feed", Title: "Audit Feed", Module: "audit", DataSource: "/v2/audit", DefaultWidth: 4, DefaultHeight: 3, MinWidth: 2, MaxWidth: 12},
+		},
+		Layouts: []DashboardLayout{
+			{
+				LayoutID: "primary",
+				Name:     "Primary",
+				Columns:  12,
+				Placements: []DashboardWidgetPlacement{
+					{PlacementID: "placement-1", WidgetID: "ops-summary", Column: 0, Row: 0, Width: 6, Height: 2},
+					{PlacementID: "placement-1", WidgetID: "missing-widget", Column: 5, Row: 0, Width: 8, Height: 2},
+					{PlacementID: "placement-3", WidgetID: "audit-feed", Column: 2, Row: 1, Width: 4, Height: 2},
+				},
+			},
+			{
+				LayoutID:   "empty-layout",
+				Name:       "Empty",
+				Columns:    12,
+				Placements: nil,
+			},
+		},
+		DocumentationComplete: false,
+	}
+
+	audit := AuditDashboardBuilder(dashboard)
+	if audit.TotalWidgets != 2 || audit.LayoutCount != 2 || audit.PlacedWidgets != 3 {
+		t.Fatalf("unexpected audit counts: %+v", audit)
+	}
+	if audit.ReleaseReady() {
+		t.Fatalf("expected audit to block release, got %+v", audit)
+	}
+	for _, expected := range []string{"placement-1"} {
+		if !strings.Contains(strings.Join(audit.DuplicatePlacementIDs, ","), expected) {
+			t.Fatalf("expected duplicate placement %q in %+v", expected, audit.DuplicatePlacementIDs)
+		}
+	}
+	if len(audit.MissingWidgetDefs) != 1 || audit.MissingWidgetDefs[0] != "missing-widget" {
+		t.Fatalf("unexpected missing widget defs: %+v", audit.MissingWidgetDefs)
+	}
+	if len(audit.InaccessibleWidgets) != 1 || audit.InaccessibleWidgets[0] != "audit-feed" {
+		t.Fatalf("unexpected inaccessible widgets: %+v", audit.InaccessibleWidgets)
+	}
+	if len(audit.OutOfBoundsPlacements) != 1 || audit.OutOfBoundsPlacements[0] != "placement-1" {
+		t.Fatalf("unexpected out of bounds placements: %+v", audit.OutOfBoundsPlacements)
+	}
+	if len(audit.OverlappingPlacements) != 2 {
+		t.Fatalf("expected overlapping placements, got %+v", audit.OverlappingPlacements)
+	}
+	if len(audit.EmptyLayouts) != 1 || audit.EmptyLayouts[0] != "empty-layout" {
+		t.Fatalf("unexpected empty layouts: %+v", audit.EmptyLayouts)
+	}
+}
+
+func TestRenderAndWriteDashboardBuilderBundle(t *testing.T) {
+	dashboard := DashboardBuilder{
+		Name:   "Ops Console",
+		Period: "2026-W11",
+		Owner:  "operations",
+		Permissions: EngineeringOverviewPermission{
+			ViewerRole:     "operator",
+			AllowedModules: []string{"operations", "audit"},
+		},
+		Widgets: []DashboardWidgetSpec{
+			{WidgetID: "ops-summary", Title: "Ops Summary", Module: "operations", DataSource: "/v2/reports/weekly", DefaultWidth: 4, DefaultHeight: 3, MinWidth: 2, MaxWidth: 12},
+			{WidgetID: "audit-feed", Title: "Audit Feed", Module: "audit", DataSource: "/v2/audit", DefaultWidth: 4, DefaultHeight: 3, MinWidth: 2, MaxWidth: 12},
+		},
+		Layouts: []DashboardLayout{
+			{
+				LayoutID: "primary",
+				Name:     "Primary",
+				Columns:  12,
+				Placements: []DashboardWidgetPlacement{
+					{PlacementID: "placement-1", WidgetID: "ops-summary", Column: 0, Row: 0, Width: 6, Height: 2, Filters: []string{"team=platform"}},
+					{PlacementID: "placement-2", WidgetID: "audit-feed", Column: 6, Row: 0, Width: 6, Height: 2, TitleOverride: "Live Audit"},
+				},
+			},
+		},
+		DocumentationComplete: true,
+	}
+
+	audit := AuditDashboardBuilder(dashboard)
+	if !audit.ReleaseReady() {
+		t.Fatalf("expected release-ready dashboard, got %+v", audit)
+	}
+
+	rendered := RenderDashboardBuilderReport(dashboard, audit)
+	for _, fragment := range []string{
+		"# Dashboard Builder",
+		"- Release Ready: true",
+		"- Duplicate Placement IDs: none",
+		"- primary: name=Primary columns=12 placements=2",
+		"- placement-2: widget=audit-feed title=Live Audit grid=(6,0) size=6x2 filters=none",
+	} {
+		if !strings.Contains(rendered, fragment) {
+			t.Fatalf("expected %q in rendered report, got %s", fragment, rendered)
+		}
+	}
+
+	outputDir := t.TempDir()
+	path, err := WriteDashboardBuilderBundle(outputDir, dashboard, audit)
+	if err != nil {
+		t.Fatalf("write dashboard builder bundle: %v", err)
+	}
+	if path != filepath.Join(outputDir, "dashboard-builder.md") {
+		t.Fatalf("unexpected dashboard bundle path: %s", path)
+	}
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read dashboard builder bundle: %v", err)
+	}
+	if !strings.Contains(string(body), "team=platform") || !strings.Contains(string(body), "Live Audit") {
+		t.Fatalf("unexpected dashboard builder bundle content: %s", string(body))
+	}
+}

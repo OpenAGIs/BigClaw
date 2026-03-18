@@ -80,6 +80,92 @@ type WeeklyArtifacts struct {
 	MetricSpecPath   string `json:"metric_spec_path,omitempty"`
 }
 
+type EngineeringOverviewPermission struct {
+	ViewerRole     string   `json:"viewer_role"`
+	AllowedModules []string `json:"allowed_modules,omitempty"`
+}
+
+func (p EngineeringOverviewPermission) CanView(module string) bool {
+	module = strings.TrimSpace(module)
+	for _, allowed := range p.AllowedModules {
+		if strings.EqualFold(strings.TrimSpace(allowed), module) {
+			return true
+		}
+	}
+	return false
+}
+
+type DashboardWidgetSpec struct {
+	WidgetID      string `json:"widget_id"`
+	Title         string `json:"title"`
+	Module        string `json:"module"`
+	DataSource    string `json:"data_source"`
+	DefaultWidth  int    `json:"default_width"`
+	DefaultHeight int    `json:"default_height"`
+	MinWidth      int    `json:"min_width"`
+	MaxWidth      int    `json:"max_width"`
+}
+
+type DashboardWidgetPlacement struct {
+	PlacementID   string   `json:"placement_id"`
+	WidgetID      string   `json:"widget_id"`
+	Column        int      `json:"column"`
+	Row           int      `json:"row"`
+	Width         int      `json:"width"`
+	Height        int      `json:"height"`
+	TitleOverride string   `json:"title_override,omitempty"`
+	Filters       []string `json:"filters,omitempty"`
+}
+
+type DashboardLayout struct {
+	LayoutID   string                     `json:"layout_id"`
+	Name       string                     `json:"name"`
+	Columns    int                        `json:"columns"`
+	Placements []DashboardWidgetPlacement `json:"placements,omitempty"`
+}
+
+type DashboardBuilder struct {
+	Name                  string                        `json:"name"`
+	Period                string                        `json:"period"`
+	Owner                 string                        `json:"owner"`
+	Permissions           EngineeringOverviewPermission `json:"permissions"`
+	Widgets               []DashboardWidgetSpec         `json:"widgets,omitempty"`
+	Layouts               []DashboardLayout             `json:"layouts,omitempty"`
+	DocumentationComplete bool                          `json:"documentation_complete"`
+}
+
+func (b DashboardBuilder) WidgetIndex() map[string]DashboardWidgetSpec {
+	out := make(map[string]DashboardWidgetSpec, len(b.Widgets))
+	for _, widget := range b.Widgets {
+		out[widget.WidgetID] = widget
+	}
+	return out
+}
+
+type DashboardBuilderAudit struct {
+	Name                  string   `json:"name"`
+	TotalWidgets          int      `json:"total_widgets"`
+	LayoutCount           int      `json:"layout_count"`
+	PlacedWidgets         int      `json:"placed_widgets"`
+	DuplicatePlacementIDs []string `json:"duplicate_placement_ids,omitempty"`
+	MissingWidgetDefs     []string `json:"missing_widget_defs,omitempty"`
+	InaccessibleWidgets   []string `json:"inaccessible_widgets,omitempty"`
+	OverlappingPlacements []string `json:"overlapping_placements,omitempty"`
+	OutOfBoundsPlacements []string `json:"out_of_bounds_placements,omitempty"`
+	EmptyLayouts          []string `json:"empty_layouts,omitempty"`
+	DocumentationComplete bool     `json:"documentation_complete"`
+}
+
+func (a DashboardBuilderAudit) ReleaseReady() bool {
+	return len(a.DuplicatePlacementIDs) == 0 &&
+		len(a.MissingWidgetDefs) == 0 &&
+		len(a.InaccessibleWidgets) == 0 &&
+		len(a.OverlappingPlacements) == 0 &&
+		len(a.OutOfBoundsPlacements) == 0 &&
+		len(a.EmptyLayouts) == 0 &&
+		a.DocumentationComplete
+}
+
 func Build(tasks []domain.Task, events []domain.Event, weekStart, weekEnd time.Time) Weekly {
 	weekly := Weekly{WeekStart: weekStart, WeekEnd: weekEnd}
 	byTeam := make(map[string]*TeamBreakdown)
@@ -263,6 +349,123 @@ func WriteWeeklyOperationsBundle(rootDir string, weekly Weekly, metricSpec *Oper
 	return artifacts, nil
 }
 
+func AuditDashboardBuilder(dashboard DashboardBuilder) DashboardBuilderAudit {
+	widgetIndex := dashboard.WidgetIndex()
+	placementCounts := make(map[string]int)
+	missingWidgetDefs := make(map[string]struct{})
+	inaccessibleWidgets := make(map[string]struct{})
+	overlappingPlacements := make(map[string]struct{})
+	outOfBoundsPlacements := make(map[string]struct{})
+	emptyLayouts := make([]string, 0)
+	placedWidgets := 0
+
+	for _, layout := range dashboard.Layouts {
+		if len(layout.Placements) == 0 {
+			emptyLayouts = append(emptyLayouts, layout.LayoutID)
+			continue
+		}
+
+		placedWidgets += len(layout.Placements)
+		for _, placement := range layout.Placements {
+			placementCounts[placement.PlacementID]++
+			spec, ok := widgetIndex[placement.WidgetID]
+			if !ok {
+				missingWidgetDefs[placement.WidgetID] = struct{}{}
+			} else if !dashboard.Permissions.CanView(spec.Module) {
+				inaccessibleWidgets[placement.WidgetID] = struct{}{}
+			}
+			if placement.Column+placement.Width > layout.Columns {
+				outOfBoundsPlacements[placement.PlacementID] = struct{}{}
+			}
+		}
+
+		for index, placement := range layout.Placements {
+			for _, other := range layout.Placements[index+1:] {
+				if placementsOverlap(placement, other) {
+					key := fmt.Sprintf("%s:%s<->%s", layout.LayoutID, placement.PlacementID, other.PlacementID)
+					overlappingPlacements[key] = struct{}{}
+				}
+			}
+		}
+	}
+
+	duplicateIDs := make([]string, 0)
+	for placementID, count := range placementCounts {
+		if count > 1 {
+			duplicateIDs = append(duplicateIDs, placementID)
+		}
+	}
+	sort.Strings(duplicateIDs)
+	sort.Strings(emptyLayouts)
+
+	return DashboardBuilderAudit{
+		Name:                  dashboard.Name,
+		TotalWidgets:          len(dashboard.Widgets),
+		LayoutCount:           len(dashboard.Layouts),
+		PlacedWidgets:         placedWidgets,
+		DuplicatePlacementIDs: duplicateIDs,
+		MissingWidgetDefs:     sortedKeys(missingWidgetDefs),
+		InaccessibleWidgets:   sortedKeys(inaccessibleWidgets),
+		OverlappingPlacements: sortedKeys(overlappingPlacements),
+		OutOfBoundsPlacements: sortedKeys(outOfBoundsPlacements),
+		EmptyLayouts:          emptyLayouts,
+		DocumentationComplete: dashboard.DocumentationComplete,
+	}
+}
+
+func RenderDashboardBuilderReport(dashboard DashboardBuilder, audit DashboardBuilderAudit) string {
+	builder := strings.Builder{}
+	builder.WriteString("# Dashboard Builder\n\n")
+	builder.WriteString(fmt.Sprintf("- Name: %s\n", dashboard.Name))
+	builder.WriteString(fmt.Sprintf("- Period: %s\n", dashboard.Period))
+	builder.WriteString(fmt.Sprintf("- Owner: %s\n", dashboard.Owner))
+	builder.WriteString(fmt.Sprintf("- Viewer Role: %s\n", dashboard.Permissions.ViewerRole))
+	builder.WriteString(fmt.Sprintf("- Available Widgets: %d\n", len(dashboard.Widgets)))
+	builder.WriteString(fmt.Sprintf("- Layouts: %d\n", len(dashboard.Layouts)))
+	builder.WriteString(fmt.Sprintf("- Release Ready: %t\n\n", audit.ReleaseReady()))
+	builder.WriteString("## Governance\n\n")
+	builder.WriteString(fmt.Sprintf("- Documentation Complete: %t\n", audit.DocumentationComplete))
+	builder.WriteString(fmt.Sprintf("- Duplicate Placement IDs: %s\n", joinOrNone(audit.DuplicatePlacementIDs)))
+	builder.WriteString(fmt.Sprintf("- Missing Widget Definitions: %s\n", joinOrNone(audit.MissingWidgetDefs)))
+	builder.WriteString(fmt.Sprintf("- Inaccessible Widgets: %s\n", joinOrNone(audit.InaccessibleWidgets)))
+	builder.WriteString(fmt.Sprintf("- Overlaps: %s\n", joinOrNone(audit.OverlappingPlacements)))
+	builder.WriteString(fmt.Sprintf("- Out Of Bounds: %s\n", joinOrNone(audit.OutOfBoundsPlacements)))
+	builder.WriteString(fmt.Sprintf("- Empty Layouts: %s\n\n", joinOrNone(audit.EmptyLayouts)))
+	builder.WriteString("## Layouts\n\n")
+
+	widgetIndex := dashboard.WidgetIndex()
+	if len(dashboard.Layouts) == 0 {
+		builder.WriteString("- None\n")
+		return builder.String()
+	}
+	for _, layout := range dashboard.Layouts {
+		builder.WriteString(fmt.Sprintf("- %s: name=%s columns=%d placements=%d\n", layout.LayoutID, layout.Name, layout.Columns, len(layout.Placements)))
+		for _, placement := range layout.Placements {
+			title := placement.TitleOverride
+			if strings.TrimSpace(title) == "" {
+				if widget, ok := widgetIndex[placement.WidgetID]; ok {
+					title = widget.Title
+				} else {
+					title = placement.WidgetID
+				}
+			}
+			builder.WriteString(fmt.Sprintf("- %s: widget=%s title=%s grid=(%d,%d) size=%dx%d filters=%s\n", placement.PlacementID, placement.WidgetID, title, placement.Column, placement.Row, placement.Width, placement.Height, joinOrNone(placement.Filters)))
+		}
+	}
+	return builder.String()
+}
+
+func WriteDashboardBuilderBundle(rootDir string, dashboard DashboardBuilder, audit DashboardBuilderAudit) (string, error) {
+	if err := os.MkdirAll(rootDir, 0o755); err != nil {
+		return "", err
+	}
+	path := filepath.Join(rootDir, "dashboard-builder.md")
+	if err := WriteReport(path, RenderDashboardBuilderReport(dashboard, audit)); err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
 func buildHighlights(weekly Weekly) []string {
 	highlights := []string{
 		fmt.Sprintf("Completed %d / %d runs this week.", weekly.Summary.CompletedRuns, weekly.Summary.TotalRuns),
@@ -345,4 +548,32 @@ func formatMetricValue(value float64) string {
 		return strconv.FormatInt(int64(value), 10)
 	}
 	return strconv.FormatFloat(value, 'f', 1, 64)
+}
+
+func joinOrNone(values []string) string {
+	if len(values) == 0 {
+		return "none"
+	}
+	return strings.Join(values, ", ")
+}
+
+func sortedKeys(values map[string]struct{}) []string {
+	out := make([]string, 0, len(values))
+	for key := range values {
+		out = append(out, key)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func placementsOverlap(left DashboardWidgetPlacement, right DashboardWidgetPlacement) bool {
+	leftRight := left.Column + left.Width
+	rightRight := right.Column + right.Width
+	leftBottom := left.Row + left.Height
+	rightBottom := right.Row + right.Height
+
+	return left.Column < rightRight &&
+		leftRight > right.Column &&
+		left.Row < rightBottom &&
+		leftBottom > right.Row
 }
