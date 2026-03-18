@@ -91,8 +91,14 @@
       "state": "In Progress",
       "labels": ["go-mainline", "migration", "tooling", "orchestration"],
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "body": "Progressed BIG-GOM-307 by wiring an optional canonical GitHub remote through the Go bootstrap path. Changed: `bigclaw-go/internal/bootstrap/bootstrap.go` now configures a `github` remote when `github_url` is supplied while preserving `origin` as the push-default mirror remote; `bigclaw-go/cmd/bigclawctl/main.go` now accepts `--github-url` for `workspace bootstrap`, `workspace cleanup`, and `workspace validate`; workflow/docs/launcher defaults now pass `SYMPHONY_BOOTSTRAP_GITHUB_URL` so fresh workspaces keep PR tooling available without manual remote surgery. Validation: `cd bigclaw-go && go test ./internal/bootstrap ./cmd/bigclawctl` -> ok; `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `b2de09347a5d2141fa0333aa2f460305bc8d1ed3`. PR URL: `https://github.com/OpenAGIs/BigClaw/pull/137`.",
+          "created_at": "2026-03-18T15:56:30Z"
+        }
+      ],
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-18T09:00:00Z"
+      "updated_at": "2026-03-18T15:56:30Z"
     },
     {
       "id": "big-gom-308",
