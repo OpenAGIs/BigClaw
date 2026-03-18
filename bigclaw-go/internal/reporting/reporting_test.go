@@ -407,3 +407,127 @@ func TestRenderAndWriteEngineeringOverviewBundle(t *testing.T) {
 		t.Fatalf("unexpected overview bundle content: %s", string(body))
 	}
 }
+
+func TestBuildPolicyPromptVersionCenter(t *testing.T) {
+	artifacts := []VersionedArtifact{
+		{
+			ArtifactType: "policy",
+			ArtifactID:   "approval-gate",
+			Version:      "v1",
+			UpdatedAt:    "2026-03-18T09:00:00Z",
+			Author:       "alice",
+			Summary:      "Initial rollout policy",
+			Content:      "allow: low\nnotify: ops\n",
+			ChangeTicket: "BIG-100",
+		},
+		{
+			ArtifactType: "policy",
+			ArtifactID:   "approval-gate",
+			Version:      "v2",
+			UpdatedAt:    "2026-03-18T10:00:00Z",
+			Author:       "bob",
+			Summary:      "Require approval for high risk",
+			Content:      "allow: low\nnotify: ops\napproval: high-risk\n",
+			ChangeTicket: "BIG-101",
+		},
+		{
+			ArtifactType: "prompt",
+			ArtifactID:   "triage-summary",
+			Version:      "v5",
+			UpdatedAt:    "2026-03-18T11:00:00Z",
+			Author:       "carol",
+			Summary:      "Current prompt",
+			Content:      "Summarize the issue and propose owner.\n",
+		},
+	}
+
+	center := BuildPolicyPromptVersionCenter("Policy Center", artifacts, time.Date(2026, 3, 18, 12, 0, 0, 0, time.UTC), 6)
+	if center.Name != "Policy Center" || center.GeneratedAt != "2026-03-18T12:00:00Z" {
+		t.Fatalf("unexpected center metadata: %+v", center)
+	}
+	if center.ArtifactCount() != 2 || center.RollbackReadyCount() != 1 {
+		t.Fatalf("unexpected center counts: %+v", center)
+	}
+	if len(center.Histories) != 2 {
+		t.Fatalf("expected 2 histories, got %+v", center.Histories)
+	}
+
+	policyHistory := center.Histories[0]
+	if policyHistory.ArtifactID != "approval-gate" || policyHistory.CurrentVersion != "v2" || policyHistory.RollbackVersion != "v1" || !policyHistory.RollbackReady {
+		t.Fatalf("unexpected policy history: %+v", policyHistory)
+	}
+	if policyHistory.ChangeSummary == nil || !policyHistory.ChangeSummary.HasChanges() {
+		t.Fatalf("expected change summary, got %+v", policyHistory.ChangeSummary)
+	}
+	if policyHistory.ChangeSummary.Additions == 0 || len(policyHistory.ChangeSummary.Preview) == 0 {
+		t.Fatalf("expected diff preview, got %+v", policyHistory.ChangeSummary)
+	}
+
+	promptHistory := center.Histories[1]
+	if promptHistory.ArtifactID != "triage-summary" || promptHistory.RollbackReady || promptHistory.ChangeSummary != nil {
+		t.Fatalf("unexpected prompt history: %+v", promptHistory)
+	}
+}
+
+func TestRenderAndWritePolicyPromptVersionCenterBundle(t *testing.T) {
+	center := PolicyPromptVersionCenter{
+		Name:        "Policy Center",
+		GeneratedAt: "2026-03-18T12:00:00Z",
+		Histories: []VersionedArtifactHistory{
+			{
+				ArtifactType:     "policy",
+				ArtifactID:       "approval-gate",
+				CurrentVersion:   "v2",
+				CurrentUpdatedAt: "2026-03-18T10:00:00Z",
+				CurrentAuthor:    "bob",
+				CurrentSummary:   "Require approval for high risk",
+				RevisionCount:    2,
+				Revisions: []VersionedArtifact{
+					{Version: "v2", UpdatedAt: "2026-03-18T10:00:00Z", Author: "bob", Summary: "Require approval for high risk", ChangeTicket: "BIG-101"},
+					{Version: "v1", UpdatedAt: "2026-03-18T09:00:00Z", Author: "alice", Summary: "Initial rollout policy", ChangeTicket: "BIG-100"},
+				},
+				RollbackVersion: "v1",
+				RollbackReady:   true,
+				ChangeSummary: &VersionChangeSummary{
+					FromVersion:  "v1",
+					ToVersion:    "v2",
+					Additions:    1,
+					Deletions:    0,
+					ChangedLines: 1,
+					Preview:      []string{"--- v1", "+++ v2", "+approval: high-risk"},
+				},
+			},
+		},
+	}
+
+	rendered := RenderPolicyPromptVersionCenter(center)
+	for _, fragment := range []string{
+		"# Policy/Prompt Version Center",
+		"- Versioned Artifacts: 1",
+		"- Rollback Ready Artifacts: 1",
+		"### policy / approval-gate",
+		"- Diff Summary: 1 additions, 0 deletions",
+		"```diff",
+		"+approval: high-risk",
+	} {
+		if !strings.Contains(rendered, fragment) {
+			t.Fatalf("expected %q in rendered version center, got %s", fragment, rendered)
+		}
+	}
+
+	outputDir := t.TempDir()
+	path, err := WritePolicyPromptVersionCenterBundle(outputDir, center)
+	if err != nil {
+		t.Fatalf("write policy prompt version center bundle: %v", err)
+	}
+	if path != filepath.Join(outputDir, "policy-prompt-version-center.md") {
+		t.Fatalf("unexpected version center path: %s", path)
+	}
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read version center bundle: %v", err)
+	}
+	if !strings.Contains(string(body), "Rollback Ready: true") || !strings.Contains(string(body), "BIG-101") {
+		t.Fatalf("unexpected version center bundle content: %s", string(body))
+	}
+}

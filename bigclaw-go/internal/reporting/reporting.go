@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"bigclaw-go/internal/domain"
+	"github.com/pmezard/go-difflib/difflib"
 )
 
 type Summary struct {
@@ -212,6 +213,64 @@ type EngineeringOverview struct {
 	Funnel      []EngineeringFunnelStage      `json:"funnel,omitempty"`
 	Blockers    []EngineeringOverviewBlocker  `json:"blockers,omitempty"`
 	Activities  []EngineeringActivity         `json:"activities,omitempty"`
+}
+
+type VersionedArtifact struct {
+	ArtifactType string `json:"artifact_type"`
+	ArtifactID   string `json:"artifact_id"`
+	Version      string `json:"version"`
+	UpdatedAt    string `json:"updated_at"`
+	Author       string `json:"author"`
+	Summary      string `json:"summary"`
+	Content      string `json:"content"`
+	ChangeTicket string `json:"change_ticket,omitempty"`
+}
+
+type VersionChangeSummary struct {
+	FromVersion  string   `json:"from_version"`
+	ToVersion    string   `json:"to_version"`
+	Additions    int      `json:"additions"`
+	Deletions    int      `json:"deletions"`
+	ChangedLines int      `json:"changed_lines"`
+	Preview      []string `json:"preview,omitempty"`
+}
+
+func (s VersionChangeSummary) HasChanges() bool {
+	return s.ChangedLines > 0
+}
+
+type VersionedArtifactHistory struct {
+	ArtifactType     string                `json:"artifact_type"`
+	ArtifactID       string                `json:"artifact_id"`
+	CurrentVersion   string                `json:"current_version"`
+	CurrentUpdatedAt string                `json:"current_updated_at"`
+	CurrentAuthor    string                `json:"current_author"`
+	CurrentSummary   string                `json:"current_summary"`
+	RevisionCount    int                   `json:"revision_count"`
+	Revisions        []VersionedArtifact   `json:"revisions,omitempty"`
+	RollbackVersion  string                `json:"rollback_version,omitempty"`
+	RollbackReady    bool                  `json:"rollback_ready"`
+	ChangeSummary    *VersionChangeSummary `json:"change_summary,omitempty"`
+}
+
+type PolicyPromptVersionCenter struct {
+	Name        string                     `json:"name"`
+	GeneratedAt string                     `json:"generated_at"`
+	Histories   []VersionedArtifactHistory `json:"histories,omitempty"`
+}
+
+func (c PolicyPromptVersionCenter) ArtifactCount() int {
+	return len(c.Histories)
+}
+
+func (c PolicyPromptVersionCenter) RollbackReadyCount() int {
+	count := 0
+	for _, history := range c.Histories {
+		if history.RollbackReady {
+			count++
+		}
+	}
+	return count
 }
 
 func Build(tasks []domain.Task, events []domain.Event, weekStart, weekEnd time.Time) Weekly {
@@ -660,6 +719,127 @@ func WriteEngineeringOverviewBundle(rootDir string, overview EngineeringOverview
 	return path, nil
 }
 
+func BuildPolicyPromptVersionCenter(name string, artifacts []VersionedArtifact, generatedAt time.Time, diffPreviewLines int) PolicyPromptVersionCenter {
+	if strings.TrimSpace(name) == "" {
+		name = "Policy/Prompt Version Center"
+	}
+	if generatedAt.IsZero() {
+		generatedAt = time.Now().UTC()
+	}
+	if diffPreviewLines <= 0 {
+		diffPreviewLines = 8
+	}
+
+	grouped := make(map[string][]VersionedArtifact)
+	for _, artifact := range artifacts {
+		key := artifact.ArtifactType + "\x00" + artifact.ArtifactID
+		grouped[key] = append(grouped[key], artifact)
+	}
+
+	keys := make([]string, 0, len(grouped))
+	for key := range grouped {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	histories := make([]VersionedArtifactHistory, 0, len(keys))
+	for _, key := range keys {
+		revisions := append([]VersionedArtifact(nil), grouped[key]...)
+		sort.SliceStable(revisions, func(i, j int) bool {
+			left := parseRFC3339ish(revisions[i].UpdatedAt)
+			right := parseRFC3339ish(revisions[j].UpdatedAt)
+			if left.Equal(right) {
+				return revisions[i].Version > revisions[j].Version
+			}
+			return left.After(right)
+		})
+		current := revisions[0]
+		var changeSummary *VersionChangeSummary
+		rollbackVersion := ""
+		rollbackReady := false
+		if len(revisions) > 1 {
+			previous := revisions[1]
+			summary := summarizeVersionChange(previous, current, diffPreviewLines)
+			changeSummary = &summary
+			rollbackVersion = previous.Version
+			rollbackReady = strings.TrimSpace(previous.Content) != ""
+		}
+		histories = append(histories, VersionedArtifactHistory{
+			ArtifactType:     current.ArtifactType,
+			ArtifactID:       current.ArtifactID,
+			CurrentVersion:   current.Version,
+			CurrentUpdatedAt: current.UpdatedAt,
+			CurrentAuthor:    current.Author,
+			CurrentSummary:   current.Summary,
+			RevisionCount:    len(revisions),
+			Revisions:        revisions,
+			RollbackVersion:  rollbackVersion,
+			RollbackReady:    rollbackReady,
+			ChangeSummary:    changeSummary,
+		})
+	}
+
+	return PolicyPromptVersionCenter{
+		Name:        name,
+		GeneratedAt: generatedAt.UTC().Format(time.RFC3339),
+		Histories:   histories,
+	}
+}
+
+func RenderPolicyPromptVersionCenter(center PolicyPromptVersionCenter) string {
+	builder := strings.Builder{}
+	builder.WriteString("# Policy/Prompt Version Center\n\n")
+	builder.WriteString(fmt.Sprintf("- Name: %s\n", center.Name))
+	builder.WriteString(fmt.Sprintf("- Generated At: %s\n", center.GeneratedAt))
+	builder.WriteString(fmt.Sprintf("- Versioned Artifacts: %d\n", center.ArtifactCount()))
+	builder.WriteString(fmt.Sprintf("- Rollback Ready Artifacts: %d\n\n", center.RollbackReadyCount()))
+	builder.WriteString("## Artifact Histories\n\n")
+	if len(center.Histories) == 0 {
+		builder.WriteString("- None\n")
+		return builder.String()
+	}
+	for _, history := range center.Histories {
+		builder.WriteString(fmt.Sprintf("### %s / %s\n\n", history.ArtifactType, history.ArtifactID))
+		builder.WriteString(fmt.Sprintf("- Current Version: %s\n", history.CurrentVersion))
+		builder.WriteString(fmt.Sprintf("- Updated At: %s\n", history.CurrentUpdatedAt))
+		builder.WriteString(fmt.Sprintf("- Updated By: %s\n", history.CurrentAuthor))
+		builder.WriteString(fmt.Sprintf("- Summary: %s\n", history.CurrentSummary))
+		builder.WriteString(fmt.Sprintf("- Revision Count: %d\n", history.RevisionCount))
+		builder.WriteString(fmt.Sprintf("- Rollback Version: %s\n", firstNonEmpty(history.RollbackVersion, "none")))
+		builder.WriteString(fmt.Sprintf("- Rollback Ready: %t\n", history.RollbackReady))
+		if history.ChangeSummary != nil {
+			builder.WriteString(fmt.Sprintf("- Diff Summary: %d additions, %d deletions\n", history.ChangeSummary.Additions, history.ChangeSummary.Deletions))
+		}
+		builder.WriteString("\n#### Revision History\n\n")
+		for _, revision := range history.Revisions {
+			builder.WriteString(fmt.Sprintf("- %s: updated_at=%s author=%s ticket=%s summary=%s\n", revision.Version, revision.UpdatedAt, revision.Author, firstNonEmpty(revision.ChangeTicket, "none"), revision.Summary))
+		}
+		builder.WriteString("\n#### Diff Preview\n\n")
+		if history.ChangeSummary != nil && len(history.ChangeSummary.Preview) > 0 {
+			builder.WriteString("```diff\n")
+			for _, line := range history.ChangeSummary.Preview {
+				builder.WriteString(line + "\n")
+			}
+			builder.WriteString("```\n")
+		} else {
+			builder.WriteString("- None\n")
+		}
+		builder.WriteString("\n")
+	}
+	return builder.String()
+}
+
+func WritePolicyPromptVersionCenterBundle(rootDir string, center PolicyPromptVersionCenter) (string, error) {
+	if err := os.MkdirAll(rootDir, 0o755); err != nil {
+		return "", err
+	}
+	path := filepath.Join(rootDir, "policy-prompt-version-center.md")
+	if err := WriteReport(path, RenderPolicyPromptVersionCenter(center)); err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
 func buildHighlights(weekly Weekly) []string {
 	highlights := []string{
 		fmt.Sprintf("Completed %d / %d runs this week.", weekly.Summary.CompletedRuns, weekly.Summary.TotalRuns),
@@ -926,4 +1106,53 @@ func buildRecentActivities(tasks []domain.Task, latest map[string]domain.Event, 
 
 func roundTenth(value float64) float64 {
 	return math.Round(value*10) / 10
+}
+
+func parseRFC3339ish(value string) time.Time {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return time.Time{}
+	}
+	parsed, err := time.Parse(time.RFC3339, value)
+	if err == nil {
+		return parsed.UTC()
+	}
+	return time.Time{}
+}
+
+func summarizeVersionChange(previous, current VersionedArtifact, previewLines int) VersionChangeSummary {
+	diff := difflib.UnifiedDiff{
+		A:        difflib.SplitLines(previous.Content),
+		B:        difflib.SplitLines(current.Content),
+		FromFile: previous.Version,
+		ToFile:   current.Version,
+		Context:  1,
+	}
+	text, _ := difflib.GetUnifiedDiffString(diff)
+	lines := strings.Split(strings.TrimSuffix(text, "\n"), "\n")
+	additions := 0
+	deletions := 0
+	preview := make([]string, 0, previewLines)
+	for _, line := range lines {
+		if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "+++") {
+			additions++
+		}
+		if strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "---") {
+			deletions++
+		}
+		if strings.HasPrefix(line, "@@") {
+			continue
+		}
+		if len(preview) < previewLines {
+			preview = append(preview, line)
+		}
+	}
+	return VersionChangeSummary{
+		FromVersion:  previous.Version,
+		ToVersion:    current.Version,
+		Additions:    additions,
+		Deletions:    deletions,
+		ChangedLines: additions + deletions,
+		Preview:      preview,
+	}
 }
