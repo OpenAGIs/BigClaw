@@ -2,6 +2,7 @@ package reporting
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -164,6 +165,53 @@ func (a DashboardBuilderAudit) ReleaseReady() bool {
 		len(a.OutOfBoundsPlacements) == 0 &&
 		len(a.EmptyLayouts) == 0 &&
 		a.DocumentationComplete
+}
+
+type EngineeringOverviewKPI struct {
+	Name      string  `json:"name"`
+	Value     float64 `json:"value"`
+	Target    float64 `json:"target"`
+	Unit      string  `json:"unit,omitempty"`
+	Direction string  `json:"direction,omitempty"`
+}
+
+func (k EngineeringOverviewKPI) Healthy() bool {
+	if strings.EqualFold(strings.TrimSpace(k.Direction), "down") {
+		return k.Value <= k.Target
+	}
+	return k.Value >= k.Target
+}
+
+type EngineeringFunnelStage struct {
+	Name  string  `json:"name"`
+	Count int     `json:"count"`
+	Share float64 `json:"share"`
+}
+
+type EngineeringOverviewBlocker struct {
+	Summary       string   `json:"summary"`
+	AffectedRuns  int      `json:"affected_runs"`
+	AffectedTasks []string `json:"affected_tasks,omitempty"`
+	Owner         string   `json:"owner,omitempty"`
+	Severity      string   `json:"severity,omitempty"`
+}
+
+type EngineeringActivity struct {
+	Timestamp string `json:"timestamp"`
+	RunID     string `json:"run_id,omitempty"`
+	TaskID    string `json:"task_id,omitempty"`
+	Status    string `json:"status"`
+	Summary   string `json:"summary"`
+}
+
+type EngineeringOverview struct {
+	Name        string                        `json:"name"`
+	Period      string                        `json:"period"`
+	Permissions EngineeringOverviewPermission `json:"permissions"`
+	KPIs        []EngineeringOverviewKPI      `json:"kpis,omitempty"`
+	Funnel      []EngineeringFunnelStage      `json:"funnel,omitempty"`
+	Blockers    []EngineeringOverviewBlocker  `json:"blockers,omitempty"`
+	Activities  []EngineeringActivity         `json:"activities,omitempty"`
 }
 
 func Build(tasks []domain.Task, events []domain.Event, weekStart, weekEnd time.Time) Weekly {
@@ -466,6 +514,152 @@ func WriteDashboardBuilderBundle(rootDir string, dashboard DashboardBuilder, aud
 	return path, nil
 }
 
+func BuildEngineeringOverview(name, period, viewerRole string, tasks []domain.Task, events []domain.Event, slaTargetMinutes, topNBlockers, recentActivityLimit int) EngineeringOverview {
+	if slaTargetMinutes <= 0 {
+		slaTargetMinutes = 60
+	}
+	if topNBlockers <= 0 {
+		topNBlockers = 3
+	}
+	if recentActivityLimit <= 0 {
+		recentActivityLimit = 5
+	}
+
+	statusCounts := make(map[domain.TaskState]int)
+	completed := 0
+	approvalQueueDepth := 0
+	slaBreachCount := 0
+	totalCycleMinutes := 0.0
+	cycleCount := 0
+	blockerGroups := make(map[string]*EngineeringOverviewBlocker)
+	recentEvents := latestEventsByTask(events)
+
+	for _, task := range tasks {
+		statusCounts[task.State]++
+		if task.State == domain.TaskSucceeded {
+			completed++
+		}
+		if strings.EqualFold(task.Metadata["approval_status"], "needs-approval") {
+			approvalQueueDepth++
+		}
+		if minutes, ok := cycleMinutes(task); ok {
+			totalCycleMinutes += minutes
+			cycleCount++
+			if minutes > float64(slaTargetMinutes) {
+				slaBreachCount++
+			}
+		}
+		if blockerReason, blocked := blockerReason(task, recentEvents[task.ID]); blocked {
+			entry := blockerGroups[blockerReason]
+			if entry == nil {
+				entry = &EngineeringOverviewBlocker{
+					Summary:  blockerReason,
+					Owner:    blockerOwner(blockerReason),
+					Severity: blockerSeverity(task.State),
+				}
+				blockerGroups[blockerReason] = entry
+			}
+			entry.AffectedRuns++
+			entry.AffectedTasks = append(entry.AffectedTasks, task.ID)
+			if blockerSeverity(task.State) == "high" {
+				entry.Severity = "high"
+			}
+		}
+	}
+
+	totalRuns := len(tasks)
+	successRate := 0.0
+	if totalRuns > 0 {
+		successRate = roundTenth((float64(completed) / float64(totalRuns)) * 100)
+	}
+	averageCycleMinutes := 0.0
+	if cycleCount > 0 {
+		averageCycleMinutes = roundTenth(totalCycleMinutes / float64(cycleCount))
+	}
+
+	overview := EngineeringOverview{
+		Name:        name,
+		Period:      period,
+		Permissions: permissionsForRole(viewerRole),
+		KPIs: []EngineeringOverviewKPI{
+			{Name: "success-rate", Value: successRate, Target: 90.0, Unit: "%", Direction: "up"},
+			{Name: "approval-queue-depth", Value: float64(approvalQueueDepth), Target: 2.0, Direction: "down"},
+			{Name: "sla-breaches", Value: float64(slaBreachCount), Target: 0.0, Direction: "down"},
+			{Name: "average-cycle-minutes", Value: averageCycleMinutes, Target: float64(slaTargetMinutes), Unit: "m", Direction: "down"},
+		},
+		Funnel:     buildEngineeringFunnel(statusCounts, totalRuns),
+		Blockers:   topBlockers(blockerGroups, topNBlockers),
+		Activities: buildRecentActivities(tasks, recentEvents, recentActivityLimit),
+	}
+	return overview
+}
+
+func RenderEngineeringOverview(overview EngineeringOverview) string {
+	builder := strings.Builder{}
+	builder.WriteString("# Engineering Overview\n\n")
+	builder.WriteString(fmt.Sprintf("- Name: %s\n", overview.Name))
+	builder.WriteString(fmt.Sprintf("- Period: %s\n", overview.Period))
+	builder.WriteString(fmt.Sprintf("- Viewer Role: %s\n", overview.Permissions.ViewerRole))
+	builder.WriteString(fmt.Sprintf("- Visible Modules: %s\n", joinOrNone(overview.Permissions.AllowedModules)))
+
+	if overview.Permissions.CanView("kpis") {
+		builder.WriteString("\n## KPI Modules\n\n")
+		if len(overview.KPIs) == 0 {
+			builder.WriteString("- None\n")
+		} else {
+			for _, kpi := range overview.KPIs {
+				builder.WriteString(fmt.Sprintf("- %s: value=%.1f%s target=%.1f%s healthy=%t\n", kpi.Name, kpi.Value, kpi.Unit, kpi.Target, kpi.Unit, kpi.Healthy()))
+			}
+		}
+	}
+
+	if overview.Permissions.CanView("funnel") {
+		builder.WriteString("\n## Funnel Modules\n\n")
+		if len(overview.Funnel) == 0 {
+			builder.WriteString("- None\n")
+		} else {
+			for _, stage := range overview.Funnel {
+				builder.WriteString(fmt.Sprintf("- %s: count=%d share=%.1f%%\n", stage.Name, stage.Count, stage.Share))
+			}
+		}
+	}
+
+	if overview.Permissions.CanView("blockers") {
+		builder.WriteString("\n## Blocker Modules\n\n")
+		if len(overview.Blockers) == 0 {
+			builder.WriteString("- None\n")
+		} else {
+			for _, blocker := range overview.Blockers {
+				builder.WriteString(fmt.Sprintf("- %s: severity=%s owner=%s affected_runs=%d tasks=%s\n", blocker.Summary, blocker.Severity, blocker.Owner, blocker.AffectedRuns, joinOrNone(blocker.AffectedTasks)))
+			}
+		}
+	}
+
+	if overview.Permissions.CanView("activity") {
+		builder.WriteString("\n## Activity Modules\n\n")
+		if len(overview.Activities) == 0 {
+			builder.WriteString("- None\n")
+		} else {
+			for _, activity := range overview.Activities {
+				builder.WriteString(fmt.Sprintf("- %s: %s task=%s status=%s summary=%s\n", activity.Timestamp, firstNonEmpty(activity.RunID, "n/a"), firstNonEmpty(activity.TaskID, "n/a"), activity.Status, activity.Summary))
+			}
+		}
+	}
+
+	return builder.String()
+}
+
+func WriteEngineeringOverviewBundle(rootDir string, overview EngineeringOverview) (string, error) {
+	if err := os.MkdirAll(rootDir, 0o755); err != nil {
+		return "", err
+	}
+	path := filepath.Join(rootDir, "engineering-overview.md")
+	if err := WriteReport(path, RenderEngineeringOverview(overview)); err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
 func buildHighlights(weekly Weekly) []string {
 	highlights := []string{
 		fmt.Sprintf("Completed %d / %d runs this week.", weekly.Summary.CompletedRuns, weekly.Summary.TotalRuns),
@@ -576,4 +770,160 @@ func placementsOverlap(left DashboardWidgetPlacement, right DashboardWidgetPlace
 		leftRight > right.Column &&
 		left.Row < rightBottom &&
 		leftBottom > right.Row
+}
+
+func permissionsForRole(viewerRole string) EngineeringOverviewPermission {
+	role := strings.ToLower(strings.TrimSpace(viewerRole))
+	if role == "" {
+		role = "contributor"
+	}
+	modulesByRole := map[string][]string{
+		"executive":           {"kpis", "funnel", "blockers"},
+		"engineering-manager": {"kpis", "funnel", "blockers", "activity"},
+		"operations":          {"kpis", "funnel", "blockers", "activity"},
+		"contributor":         {"kpis", "activity"},
+	}
+	modules, ok := modulesByRole[role]
+	if !ok {
+		modules = modulesByRole["contributor"]
+	}
+	return EngineeringOverviewPermission{
+		ViewerRole:     role,
+		AllowedModules: append([]string(nil), modules...),
+	}
+}
+
+func buildEngineeringFunnel(statusCounts map[domain.TaskState]int, totalRuns int) []EngineeringFunnelStage {
+	stages := []EngineeringFunnelStage{
+		{Name: "queued", Count: statusCounts[domain.TaskQueued]},
+		{Name: "in-progress", Count: statusCounts[domain.TaskRunning] + statusCounts[domain.TaskLeased] + statusCounts[domain.TaskRetrying]},
+		{Name: "awaiting-approval", Count: statusCounts[domain.TaskBlocked]},
+		{Name: "completed", Count: statusCounts[domain.TaskSucceeded]},
+	}
+	for index := range stages {
+		if totalRuns > 0 {
+			stages[index].Share = roundTenth((float64(stages[index].Count) / float64(totalRuns)) * 100)
+		}
+	}
+	return stages
+}
+
+func latestEventsByTask(events []domain.Event) map[string]domain.Event {
+	out := make(map[string]domain.Event)
+	for _, event := range events {
+		if event.TaskID == "" {
+			continue
+		}
+		existing, ok := out[event.TaskID]
+		if !ok || event.Timestamp.After(existing.Timestamp) {
+			out[event.TaskID] = event
+		}
+	}
+	return out
+}
+
+func cycleMinutes(task domain.Task) (float64, bool) {
+	if task.CreatedAt.IsZero() || task.UpdatedAt.IsZero() || task.UpdatedAt.Before(task.CreatedAt) {
+		return 0, false
+	}
+	return roundTenth(task.UpdatedAt.Sub(task.CreatedAt).Minutes()), true
+}
+
+func blockerReason(task domain.Task, event domain.Event) (string, bool) {
+	switch task.State {
+	case domain.TaskBlocked, domain.TaskFailed, domain.TaskDeadLetter, domain.TaskCancelled:
+	default:
+		return "", false
+	}
+	if reason := firstNonEmpty(task.Metadata["blocked_reason"], task.Metadata["failure_reason"], task.Metadata["summary"]); reason != "" {
+		return reason, true
+	}
+	if event.Payload != nil {
+		if reason, ok := event.Payload["reason"].(string); ok && strings.TrimSpace(reason) != "" {
+			return strings.TrimSpace(reason), true
+		}
+	}
+	if strings.TrimSpace(task.Title) != "" {
+		return task.Title, true
+	}
+	return string(task.State), true
+}
+
+func blockerOwner(reason string) string {
+	details := strings.ToLower(reason)
+	switch {
+	case strings.Contains(details, "approval"):
+		return "operations"
+	case strings.Contains(details, "security"):
+		return "security"
+	default:
+		return "engineering"
+	}
+}
+
+func blockerSeverity(state domain.TaskState) string {
+	switch state {
+	case domain.TaskFailed, domain.TaskDeadLetter, domain.TaskCancelled:
+		return "high"
+	default:
+		return "medium"
+	}
+}
+
+func topBlockers(groups map[string]*EngineeringOverviewBlocker, limit int) []EngineeringOverviewBlocker {
+	out := make([]EngineeringOverviewBlocker, 0, len(groups))
+	for _, blocker := range groups {
+		sort.Strings(blocker.AffectedTasks)
+		out = append(out, *blocker)
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if out[i].AffectedRuns == out[j].AffectedRuns {
+			return out[i].Summary < out[j].Summary
+		}
+		return out[i].AffectedRuns > out[j].AffectedRuns
+	})
+	if limit > 0 && len(out) > limit {
+		out = out[:limit]
+	}
+	return out
+}
+
+func buildRecentActivities(tasks []domain.Task, latest map[string]domain.Event, limit int) []EngineeringActivity {
+	sortedTasks := append([]domain.Task(nil), tasks...)
+	sort.SliceStable(sortedTasks, func(i, j int) bool {
+		if sortedTasks[i].UpdatedAt.Equal(sortedTasks[j].UpdatedAt) {
+			return sortedTasks[i].ID < sortedTasks[j].ID
+		}
+		return sortedTasks[i].UpdatedAt.After(sortedTasks[j].UpdatedAt)
+	})
+	if limit > 0 && len(sortedTasks) > limit {
+		sortedTasks = sortedTasks[:limit]
+	}
+	out := make([]EngineeringActivity, 0, len(sortedTasks))
+	for _, task := range sortedTasks {
+		runID := task.Metadata["run_id"]
+		if event, ok := latest[task.ID]; ok && strings.TrimSpace(runID) == "" {
+			runID = event.RunID
+		}
+		summary := firstNonEmpty(task.Metadata["summary"], task.Metadata["blocked_reason"], task.Title)
+		if event, ok := latest[task.ID]; ok {
+			if summary == "" {
+				if reason, ok := event.Payload["reason"].(string); ok {
+					summary = strings.TrimSpace(reason)
+				}
+			}
+		}
+		out = append(out, EngineeringActivity{
+			Timestamp: task.UpdatedAt.UTC().Format(time.RFC3339),
+			RunID:     runID,
+			TaskID:    task.ID,
+			Status:    string(task.State),
+			Summary:   firstNonEmpty(summary, string(task.State)),
+		})
+	}
+	return out
+}
+
+func roundTenth(value float64) float64 {
+	return math.Round(value*10) / 10
 }

@@ -277,3 +277,133 @@ func TestRenderAndWriteDashboardBuilderBundle(t *testing.T) {
 		t.Fatalf("unexpected dashboard builder bundle content: %s", string(body))
 	}
 }
+
+func TestBuildEngineeringOverviewFromTasksAndEvents(t *testing.T) {
+	base := time.Date(2026, 3, 18, 9, 0, 0, 0, time.UTC)
+	tasks := []domain.Task{
+		{
+			ID:        "task-success",
+			Title:     "Ship release",
+			State:     domain.TaskSucceeded,
+			CreatedAt: base,
+			UpdatedAt: base.Add(30 * time.Minute),
+			Metadata: map[string]string{
+				"run_id":   "run-success",
+				"summary":  "release shipped",
+				"team":     "platform",
+				"priority": "1",
+			},
+		},
+		{
+			ID:        "task-approval",
+			Title:     "Approve rollout",
+			State:     domain.TaskBlocked,
+			CreatedAt: base,
+			UpdatedAt: base.Add(90 * time.Minute),
+			Metadata: map[string]string{
+				"run_id":          "run-approval",
+				"approval_status": "needs-approval",
+				"blocked_reason":  "approval pending for prod rollout",
+				"summary":         "awaiting prod approval",
+				"team":            "operations",
+			},
+		},
+		{
+			ID:        "task-failed",
+			Title:     "Fix security regression",
+			State:     domain.TaskFailed,
+			CreatedAt: base,
+			UpdatedAt: base.Add(2 * time.Hour),
+			Metadata: map[string]string{
+				"run_id":         "run-failed",
+				"failure_reason": "security review blocked deploy",
+				"team":           "security",
+			},
+		},
+	}
+	events := []domain.Event{
+		{ID: "evt-approval", Type: domain.EventRunAnnotated, TaskID: "task-approval", RunID: "run-approval", Timestamp: base.Add(90 * time.Minute), Payload: map[string]any{"reason": "approval pending for prod rollout"}},
+		{ID: "evt-failed", Type: domain.EventTaskDeadLetter, TaskID: "task-failed", RunID: "run-failed", Timestamp: base.Add(2 * time.Hour), Payload: map[string]any{"reason": "security review blocked deploy"}},
+	}
+
+	overview := BuildEngineeringOverview("Engineering Pulse", "2026-W12", "engineering-manager", tasks, events, 60, 3, 5)
+	if overview.Permissions.ViewerRole != "engineering-manager" || !overview.Permissions.CanView("funnel") || !overview.Permissions.CanView("activity") {
+		t.Fatalf("unexpected permissions: %+v", overview.Permissions)
+	}
+	if len(overview.KPIs) != 4 {
+		t.Fatalf("expected 4 KPIs, got %+v", overview.KPIs)
+	}
+	if overview.KPIs[0].Value != 33.3 {
+		t.Fatalf("expected success rate 33.3, got %+v", overview.KPIs[0])
+	}
+	if overview.KPIs[1].Value != 1 || overview.KPIs[2].Value != 2 || overview.KPIs[3].Value != 80 {
+		t.Fatalf("unexpected operational KPIs: %+v", overview.KPIs)
+	}
+	if len(overview.Funnel) != 4 || overview.Funnel[0].Count != 0 || overview.Funnel[2].Count != 1 || overview.Funnel[3].Count != 1 {
+		t.Fatalf("unexpected funnel: %+v", overview.Funnel)
+	}
+	if len(overview.Blockers) != 2 || overview.Blockers[0].Owner != "operations" || overview.Blockers[1].Owner != "security" {
+		t.Fatalf("unexpected blockers: %+v", overview.Blockers)
+	}
+	if overview.Blockers[1].Severity != "high" {
+		t.Fatalf("expected failed task blocker severity high, got %+v", overview.Blockers[1])
+	}
+	if len(overview.Activities) != 3 || overview.Activities[0].TaskID != "task-failed" || overview.Activities[0].RunID != "run-failed" {
+		t.Fatalf("unexpected activities: %+v", overview.Activities)
+	}
+}
+
+func TestRenderAndWriteEngineeringOverviewBundle(t *testing.T) {
+	overview := EngineeringOverview{
+		Name:   "Engineering Pulse",
+		Period: "2026-W12",
+		Permissions: EngineeringOverviewPermission{
+			ViewerRole:     "operations",
+			AllowedModules: []string{"kpis", "funnel", "blockers", "activity"},
+		},
+		KPIs: []EngineeringOverviewKPI{
+			{Name: "success-rate", Value: 95, Target: 90, Unit: "%", Direction: "up"},
+			{Name: "sla-breaches", Value: 1, Target: 0, Direction: "down"},
+		},
+		Funnel: []EngineeringFunnelStage{
+			{Name: "queued", Count: 2, Share: 20},
+			{Name: "completed", Count: 8, Share: 80},
+		},
+		Blockers: []EngineeringOverviewBlocker{
+			{Summary: "approval pending for prod rollout", AffectedRuns: 2, AffectedTasks: []string{"BIG-1", "BIG-2"}, Owner: "operations", Severity: "medium"},
+		},
+		Activities: []EngineeringActivity{
+			{Timestamp: "2026-03-18T09:30:00Z", RunID: "run-1", TaskID: "BIG-1", Status: "blocked", Summary: "approval pending for prod rollout"},
+		},
+	}
+
+	rendered := RenderEngineeringOverview(overview)
+	for _, fragment := range []string{
+		"# Engineering Overview",
+		"- Viewer Role: operations",
+		"- success-rate: value=95.0% target=90.0% healthy=true",
+		"- completed: count=8 share=80.0%",
+		"- approval pending for prod rollout: severity=medium owner=operations affected_runs=2 tasks=BIG-1, BIG-2",
+		"- 2026-03-18T09:30:00Z: run-1 task=BIG-1 status=blocked summary=approval pending for prod rollout",
+	} {
+		if !strings.Contains(rendered, fragment) {
+			t.Fatalf("expected %q in rendered overview, got %s", fragment, rendered)
+		}
+	}
+
+	outputDir := t.TempDir()
+	path, err := WriteEngineeringOverviewBundle(outputDir, overview)
+	if err != nil {
+		t.Fatalf("write engineering overview bundle: %v", err)
+	}
+	if path != filepath.Join(outputDir, "engineering-overview.md") {
+		t.Fatalf("unexpected overview path: %s", path)
+	}
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read engineering overview bundle: %v", err)
+	}
+	if !strings.Contains(string(body), "## Activity Modules") || !strings.Contains(string(body), "approval pending for prod rollout") {
+		t.Fatalf("unexpected overview bundle content: %s", string(body))
+	}
+}
