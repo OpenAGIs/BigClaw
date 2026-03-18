@@ -8,6 +8,7 @@ ack="--i-understand-that-this-will-be-running-without-the-usual-guardrails"
 current_branch=$(git -C "$repo_root" branch --show-current 2>/dev/null || echo main)
 
 export SYMPHONY_BOOTSTRAP_REPO_URL="${SYMPHONY_BOOTSTRAP_REPO_URL:-$repo_root}"
+export SYMPHONY_BOOTSTRAP_GITHUB_URL="${SYMPHONY_BOOTSTRAP_GITHUB_URL:-git@github.com:OpenAGIs/BigClaw.git}"
 export SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH="${SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH:-$current_branch}"
 
 if [ -x "$repo_root/../elixir/bin/symphony" ]; then

@@ -23,6 +23,7 @@ hooks:
       --workspace "$SYMPHONY_WORKSPACE" \
       --issue "$SYMPHONY_ISSUE_IDENTIFIER" \
       --repo-url "${SYMPHONY_BOOTSTRAP_REPO_URL}" \
+      --github-url "${SYMPHONY_BOOTSTRAP_GITHUB_URL:-}" \
       --default-branch "${SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH:-main}" \
       --cache-base "${SYMPHONY_BOOTSTRAP_CACHE_BASE:-$HOME/.cache/symphony/repos}" \
       --cache-key "${SYMPHONY_BOOTSTRAP_CACHE_KEY:-}" \
@@ -32,6 +33,7 @@ hooks:
       --workspace "$SYMPHONY_WORKSPACE" \
       --issue "$SYMPHONY_ISSUE_IDENTIFIER" \
       --repo-url "${SYMPHONY_BOOTSTRAP_REPO_URL}" \
+      --github-url "${SYMPHONY_BOOTSTRAP_GITHUB_URL:-}" \
       --default-branch "${SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH:-main}" \
       --cache-base "${SYMPHONY_BOOTSTRAP_CACHE_BASE:-$HOME/.cache/symphony/repos}" \
       --cache-key "${SYMPHONY_BOOTSTRAP_CACHE_KEY:-}" \
@@ -41,6 +43,7 @@ hooks:
 ## Environment contract
 
 - `SYMPHONY_BOOTSTRAP_REPO_URL`: required canonical Git remote for the repo.
+- `SYMPHONY_BOOTSTRAP_GITHUB_URL`: optional canonical GitHub remote used for PR operations when `repo-url` points at a local mirror or seed checkout.
 - `SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH`: optional, defaults to `main`.
 - `SYMPHONY_BOOTSTRAP_CACHE_BASE`: optional shared cache root for all mirrored repos.
 - `SYMPHONY_BOOTSTRAP_CACHE_KEY`: optional stable cache key. Leave empty to derive it from the

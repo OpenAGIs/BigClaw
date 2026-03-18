@@ -288,7 +288,21 @@ func EnsureMirror(repoURL string, cacheRoot string, cacheBase string, cacheKey s
 	return state, err
 }
 
-func ConfigureSeedRemotes(seedPath string, repoURL string, mirrorPath string) error {
+func configureOptionalRemote(repoPath string, remotes map[string]struct{}, name string, remoteURL string) error {
+	if trim(remoteURL) == "" {
+		return nil
+	}
+	if _, ok := remotes[name]; !ok {
+		if _, err := requireGit(repoPath, "remote", "add", name, remoteURL); err != nil {
+			return err
+		}
+		return nil
+	}
+	_, err := requireGit(repoPath, "remote", "set-url", name, remoteURL)
+	return err
+}
+
+func ConfigureSeedRemotes(seedPath string, repoURL string, mirrorPath string, githubURL string) error {
 	remotesOutput, err := requireGit(seedPath, "remote")
 	if err != nil {
 		return err
@@ -337,11 +351,19 @@ func ConfigureSeedRemotes(seedPath string, repoURL string, mirrorPath string) er
 			return err
 		}
 	}
+	remotesOutput, err = requireGit(seedPath, "remote")
+	if err != nil {
+		return err
+	}
+	remotes = toSet(splitLines(remotesOutput))
+	if err := configureOptionalRemote(seedPath, remotes, "github", githubURL); err != nil {
+		return err
+	}
 	_, err = requireGit(seedPath, "config", "remote.pushDefault", "origin")
 	return err
 }
 
-func ensureSeedUnlocked(repoURL string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string) (CacheBootstrapState, error) {
+func ensureSeedUnlocked(repoURL string, githubURL string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string) (CacheBootstrapState, error) {
 	state, err := ensureMirrorUnlocked(repoURL, cacheRoot, cacheBase, cacheKey)
 	if err != nil {
 		return CacheBootstrapState{}, err
@@ -367,7 +389,7 @@ func ensureSeedUnlocked(repoURL string, defaultBranch string, cacheRoot string, 
 		}
 		seedCreated = true
 	}
-	if err := ConfigureSeedRemotes(seedPath, repoURL, state.MirrorPath); err != nil {
+	if err := ConfigureSeedRemotes(seedPath, repoURL, state.MirrorPath, githubURL); err != nil {
 		return CacheBootstrapState{}, err
 	}
 	for _, args := range [][]string{
@@ -382,23 +404,23 @@ func ensureSeedUnlocked(repoURL string, defaultBranch string, cacheRoot string, 
 	return cacheState(repoURL, state.CacheRoot, cacheKey, state.MirrorCreated, seedCreated), nil
 }
 
-func EnsureSeed(repoURL string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string) (CacheBootstrapState, error) {
+func EnsureSeed(repoURL string, githubURL string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string) (CacheBootstrapState, error) {
 	repoCacheRoot := resolveCacheRoot(repoURL, cacheRoot, cacheBase, cacheKey)
 	var state CacheBootstrapState
 	err := withCacheLock(repoCacheRoot, func() error {
 		var innerErr error
-		state, innerErr = ensureSeedUnlocked(repoURL, defaultBranch, cacheRoot, cacheBase, cacheKey)
+		state, innerErr = ensureSeedUnlocked(repoURL, githubURL, defaultBranch, cacheRoot, cacheBase, cacheKey)
 		return innerErr
 	})
 	return state, err
 }
 
-func BootstrapWorkspace(workspace string, issueIdentifier string, repoURL string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string) (WorkspaceBootstrapStatus, error) {
+func BootstrapWorkspace(workspace string, issueIdentifier string, repoURL string, githubURL string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string) (WorkspaceBootstrapStatus, error) {
 	workspacePath := absExpand(workspace)
 	repoCacheRoot := resolveCacheRoot(repoURL, cacheRoot, cacheBase, cacheKey)
 	var status WorkspaceBootstrapStatus
 	err := withCacheLock(repoCacheRoot, func() error {
-		state, err := ensureSeedUnlocked(repoURL, defaultBranch, cacheRoot, cacheBase, cacheKey)
+		state, err := ensureSeedUnlocked(repoURL, githubURL, defaultBranch, cacheRoot, cacheBase, cacheKey)
 		if err != nil {
 			return err
 		}
@@ -461,7 +483,7 @@ func BootstrapWorkspace(workspace string, issueIdentifier string, repoURL string
 	return status, err
 }
 
-func CleanupWorkspace(workspace string, issueIdentifier string, repoURL string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string) (WorkspaceBootstrapStatus, error) {
+func CleanupWorkspace(workspace string, issueIdentifier string, repoURL string, githubURL string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string) (WorkspaceBootstrapStatus, error) {
 	workspacePath := absExpand(workspace)
 	repoCacheRoot := resolveCacheRoot(repoURL, cacheRoot, cacheBase, cacheKey)
 	var status WorkspaceBootstrapStatus
@@ -500,7 +522,7 @@ func CleanupWorkspace(workspace string, issueIdentifier string, repoURL string, 
 			}
 			return nil
 		}
-		if err := ConfigureSeedRemotes(seedPath, repoURL, mirrorPath); err != nil {
+		if err := ConfigureSeedRemotes(seedPath, repoURL, mirrorPath, githubURL); err != nil {
 			return err
 		}
 		if git(workspacePath, "rev-parse", "--git-dir").returnCode == 0 {
@@ -560,7 +582,7 @@ func CleanupWorkspace(workspace string, issueIdentifier string, repoURL string, 
 	return status, err
 }
 
-func BuildValidationReport(repoURL string, workspaceRoot string, issueIdentifiers []string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string, cleanup bool) (ValidationReport, error) {
+func BuildValidationReport(repoURL string, githubURL string, workspaceRoot string, issueIdentifiers []string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string, cleanup bool) (ValidationReport, error) {
 	workspaceRootPath := absExpand(workspaceRoot)
 	if err := os.MkdirAll(workspaceRootPath, 0o755); err != nil {
 		return ValidationReport{}, err
@@ -568,7 +590,7 @@ func BuildValidationReport(repoURL string, workspaceRoot string, issueIdentifier
 	bootstrapResults := make([]WorkspaceBootstrapStatus, 0, len(issueIdentifiers))
 	for _, issueIdentifier := range issueIdentifiers {
 		workspacePath := filepath.Join(workspaceRootPath, issueIdentifier)
-		status, err := BootstrapWorkspace(workspacePath, issueIdentifier, repoURL, defaultBranch, cacheRoot, cacheBase, cacheKey)
+		status, err := BootstrapWorkspace(workspacePath, issueIdentifier, repoURL, githubURL, defaultBranch, cacheRoot, cacheBase, cacheKey)
 		if err != nil {
 			return ValidationReport{}, err
 		}
@@ -599,7 +621,7 @@ func BuildValidationReport(repoURL string, workspaceRoot string, issueIdentifier
 	if cleanup {
 		for _, issueIdentifier := range issueIdentifiers {
 			workspacePath := filepath.Join(workspaceRootPath, issueIdentifier)
-			status, err := CleanupWorkspace(workspacePath, issueIdentifier, repoURL, defaultBranch, cacheRoot, cacheBase, cacheKey)
+			status, err := CleanupWorkspace(workspacePath, issueIdentifier, repoURL, githubURL, defaultBranch, cacheRoot, cacheBase, cacheKey)
 			if err != nil {
 				return ValidationReport{}, err
 			}

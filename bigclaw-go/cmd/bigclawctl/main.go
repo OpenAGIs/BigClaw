@@ -186,6 +186,7 @@ func runWorkspace(args []string) error {
 	workspaceRoot := flags.String("workspace-root", ".", "workspace root")
 	issue := flags.String("issue", "", "issue identifier")
 	repoURL := flags.String("repo-url", "", "repo url")
+	githubURL := flags.String("github-url", "", "canonical github repo url")
 	defaultBranch := flags.String("default-branch", "main", "default branch")
 	cacheRoot := flags.String("cache-root", "", "cache root")
 	cacheBase := flags.String("cache-base", "~/.cache/symphony/repos", "cache base")
@@ -199,20 +200,20 @@ func runWorkspace(args []string) error {
 	}
 	switch command {
 	case "bootstrap":
-		status, err := bootstrap.BootstrapWorkspace(*workspace, *issue, *repoURL, *defaultBranch, *cacheRoot, *cacheBase, *cacheKey)
+		status, err := bootstrap.BootstrapWorkspace(*workspace, *issue, *repoURL, *githubURL, *defaultBranch, *cacheRoot, *cacheBase, *cacheKey)
 		if err != nil {
 			return emit(map[string]any{"status": "error", "workspace": absPath(*workspace), "error": err.Error()}, *asJSON, 1)
 		}
 		return emit(mergeMap(map[string]any{"status": "ok"}, structToMap(status)), *asJSON, 0)
 	case "cleanup":
-		status, err := bootstrap.CleanupWorkspace(*workspace, *issue, *repoURL, *defaultBranch, *cacheRoot, *cacheBase, *cacheKey)
+		status, err := bootstrap.CleanupWorkspace(*workspace, *issue, *repoURL, *githubURL, *defaultBranch, *cacheRoot, *cacheBase, *cacheKey)
 		if err != nil {
 			return emit(map[string]any{"status": "error", "workspace": absPath(*workspace), "error": err.Error()}, *asJSON, 1)
 		}
 		return emit(mergeMap(map[string]any{"status": "ok"}, structToMap(status)), *asJSON, 0)
 	case "validate":
 		issues := splitCSV(*issuesCSV)
-		report, err := bootstrap.BuildValidationReport(*repoURL, *workspaceRoot, issues, *defaultBranch, *cacheRoot, *cacheBase, *cacheKey, *cleanup)
+		report, err := bootstrap.BuildValidationReport(*repoURL, *githubURL, *workspaceRoot, issues, *defaultBranch, *cacheRoot, *cacheBase, *cacheKey, *cleanup)
 		if err != nil {
 			return err
 		}

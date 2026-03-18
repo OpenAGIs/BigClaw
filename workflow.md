@@ -28,7 +28,7 @@ server:
 hooks:
   after_create: |
     set -eu
-    bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" workspace bootstrap --workspace "$SYMPHONY_WORKSPACE" --issue "$SYMPHONY_ISSUE_IDENTIFIER" --repo-url "${SYMPHONY_BOOTSTRAP_REPO_URL:-git@github.com:OpenAGIs/BigClaw.git}" --default-branch "${SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH:-main}" --cache-base "${SYMPHONY_BOOTSTRAP_CACHE_BASE:-$HOME/.cache/symphony/repos}" --cache-key "${SYMPHONY_BOOTSTRAP_CACHE_KEY:-openagis-bigclaw}" --json
+    bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" workspace bootstrap --workspace "$SYMPHONY_WORKSPACE" --issue "$SYMPHONY_ISSUE_IDENTIFIER" --repo-url "${SYMPHONY_BOOTSTRAP_REPO_URL:-git@github.com:OpenAGIs/BigClaw.git}" --github-url "${SYMPHONY_BOOTSTRAP_GITHUB_URL:-git@github.com:OpenAGIs/BigClaw.git}" --default-branch "${SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH:-main}" --cache-base "${SYMPHONY_BOOTSTRAP_CACHE_BASE:-$HOME/.cache/symphony/repos}" --cache-key "${SYMPHONY_BOOTSTRAP_CACHE_KEY:-openagis-bigclaw}" --json
     git config user.email "dcjcloud@gmail.com"
     git config user.name "native cloud"
     gh auth setup-git || true
@@ -43,7 +43,7 @@ hooks:
     bash scripts/ops/bigclawctl github-sync status --json --require-clean --require-synced || true
   before_remove: |
     set -eu
-    bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" workspace cleanup --workspace "$SYMPHONY_WORKSPACE" --issue "$SYMPHONY_ISSUE_IDENTIFIER" --repo-url "${SYMPHONY_BOOTSTRAP_REPO_URL:-git@github.com:OpenAGIs/BigClaw.git}" --default-branch "${SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH:-main}" --cache-base "${SYMPHONY_BOOTSTRAP_CACHE_BASE:-$HOME/.cache/symphony/repos}" --cache-key "${SYMPHONY_BOOTSTRAP_CACHE_KEY:-openagis-bigclaw}" --json || true
+    bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" workspace cleanup --workspace "$SYMPHONY_WORKSPACE" --issue "$SYMPHONY_ISSUE_IDENTIFIER" --repo-url "${SYMPHONY_BOOTSTRAP_REPO_URL:-git@github.com:OpenAGIs/BigClaw.git}" --github-url "${SYMPHONY_BOOTSTRAP_GITHUB_URL:-git@github.com:OpenAGIs/BigClaw.git}" --default-branch "${SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH:-main}" --cache-base "${SYMPHONY_BOOTSTRAP_CACHE_BASE:-$HOME/.cache/symphony/repos}" --cache-key "${SYMPHONY_BOOTSTRAP_CACHE_KEY:-openagis-bigclaw}" --json || true
   timeout_ms: 120000
 
 agent:

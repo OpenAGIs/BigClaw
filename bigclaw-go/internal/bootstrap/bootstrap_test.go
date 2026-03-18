@@ -92,8 +92,9 @@ func TestBootstrapWorkspaceCreatesSharedWorktreeFromLocalSeed(t *testing.T) {
 	remote := initRemoteWithMain(t, root)
 	cacheBase := filepath.Join(root, "repos")
 	workspace := filepath.Join(root, "workspaces", "OPE-321")
+	githubURL := "git@github.com:OpenAGIs/BigClaw.git"
 
-	status, err := BootstrapWorkspace(workspace, "OPE-321", remote, "main", "", cacheBase, "")
+	status, err := BootstrapWorkspace(workspace, "OPE-321", remote, githubURL, "main", "", cacheBase, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,6 +121,12 @@ func TestBootstrapWorkspaceCreatesSharedWorktreeFromLocalSeed(t *testing.T) {
 	if got := gitOut(t, workspace, "branch", "--show-current"); got != "symphony/OPE-321" {
 		t.Fatalf("unexpected workspace branch %s", got)
 	}
+	if got := gitOut(t, workspace, "remote", "get-url", "github"); got != githubURL {
+		t.Fatalf("expected github remote %s, got %s", githubURL, got)
+	}
+	if got := gitOut(t, workspace, "config", "--get", "remote.pushDefault"); got != "origin" {
+		t.Fatalf("expected remote.pushDefault=origin, got %s", got)
+	}
 	if body, err := os.ReadFile(filepath.Join(workspace, "README.md")); err != nil || string(body) != "hello\n" {
 		t.Fatalf("unexpected workspace README: %v %q", err, string(body))
 	}
@@ -131,11 +138,12 @@ func TestCleanupWorkspacePrunesWorktreeAndBootstrapBranch(t *testing.T) {
 	cacheBase := filepath.Join(root, "repos")
 	workspace := filepath.Join(root, "workspaces", "OPE-329")
 	cacheRoot := CacheRootForRepo(remote, cacheBase, "")
+	githubURL := "git@github.com:OpenAGIs/BigClaw.git"
 
-	if _, err := BootstrapWorkspace(workspace, "OPE-329", remote, "main", "", cacheBase, ""); err != nil {
+	if _, err := BootstrapWorkspace(workspace, "OPE-329", remote, githubURL, "main", "", cacheBase, ""); err != nil {
 		t.Fatal(err)
 	}
-	status, err := CleanupWorkspace(workspace, "OPE-329", remote, "main", "", cacheBase, "")
+	status, err := CleanupWorkspace(workspace, "OPE-329", remote, githubURL, "main", "", cacheBase, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,6 +162,9 @@ func TestCleanupWorkspacePrunesWorktreeAndBootstrapBranch(t *testing.T) {
 	worktreeList := gitOut(t, filepath.Join(cacheRoot, "seed"), "worktree", "list", "--porcelain")
 	if strings.Contains(worktreeList, filepath.Clean(workspace)) {
 		t.Fatalf("unexpected lingering worktree registration")
+	}
+	if got := gitOut(t, filepath.Join(cacheRoot, "seed"), "remote", "get-url", "github"); got != githubURL {
+		t.Fatalf("expected github remote to persist on seed, got %s", got)
 	}
 }
 
