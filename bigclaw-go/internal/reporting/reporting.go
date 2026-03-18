@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"bigclaw-go/internal/domain"
+	"bigclaw-go/internal/regression"
 	"github.com/pmezard/go-difflib/difflib"
 )
 
@@ -76,10 +77,11 @@ type OperationsMetricSpec struct {
 }
 
 type WeeklyArtifacts struct {
-	RootDir          string `json:"root_dir"`
-	WeeklyReportPath string `json:"weekly_report_path"`
-	DashboardPath    string `json:"dashboard_path"`
-	MetricSpecPath   string `json:"metric_spec_path,omitempty"`
+	RootDir           string `json:"root_dir"`
+	WeeklyReportPath  string `json:"weekly_report_path"`
+	DashboardPath     string `json:"dashboard_path"`
+	MetricSpecPath    string `json:"metric_spec_path,omitempty"`
+	VersionCenterPath string `json:"version_center_path,omitempty"`
 }
 
 type EngineeringOverviewPermission struct {
@@ -719,29 +721,17 @@ func WriteEngineeringOverviewBundle(rootDir string, overview EngineeringOverview
 	return path, nil
 }
 
-func BuildPolicyPromptVersionCenter(name string, artifacts []VersionedArtifact, generatedAt time.Time, diffPreviewLines int) PolicyPromptVersionCenter {
-	if strings.TrimSpace(name) == "" {
-		name = "Policy/Prompt Version Center"
-	}
-	if generatedAt.IsZero() {
-		generatedAt = time.Now().UTC()
-	}
-	if diffPreviewLines <= 0 {
-		diffPreviewLines = 8
-	}
-
+func BuildPolicyPromptVersionCenter(name string, generatedAt time.Time, artifacts []VersionedArtifact, diffPreviewLines int) PolicyPromptVersionCenter {
 	grouped := make(map[string][]VersionedArtifact)
 	for _, artifact := range artifacts {
 		key := artifact.ArtifactType + "\x00" + artifact.ArtifactID
 		grouped[key] = append(grouped[key], artifact)
 	}
-
 	keys := make([]string, 0, len(grouped))
 	for key := range grouped {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
-
 	histories := make([]VersionedArtifactHistory, 0, len(keys))
 	for _, key := range keys {
 		revisions := append([]VersionedArtifact(nil), grouped[key]...)
@@ -749,22 +739,15 @@ func BuildPolicyPromptVersionCenter(name string, artifacts []VersionedArtifact, 
 			left := parseRFC3339ish(revisions[i].UpdatedAt)
 			right := parseRFC3339ish(revisions[j].UpdatedAt)
 			if left.Equal(right) {
+				if revisions[i].Version == revisions[j].Version {
+					return revisions[i].Summary < revisions[j].Summary
+				}
 				return revisions[i].Version > revisions[j].Version
 			}
 			return left.After(right)
 		})
 		current := revisions[0]
-		var changeSummary *VersionChangeSummary
-		rollbackVersion := ""
-		rollbackReady := false
-		if len(revisions) > 1 {
-			previous := revisions[1]
-			summary := summarizeVersionChange(previous, current, diffPreviewLines)
-			changeSummary = &summary
-			rollbackVersion = previous.Version
-			rollbackReady = strings.TrimSpace(previous.Content) != ""
-		}
-		histories = append(histories, VersionedArtifactHistory{
+		history := VersionedArtifactHistory{
 			ArtifactType:     current.ArtifactType,
 			ArtifactID:       current.ArtifactID,
 			CurrentVersion:   current.Version,
@@ -773,12 +756,18 @@ func BuildPolicyPromptVersionCenter(name string, artifacts []VersionedArtifact, 
 			CurrentSummary:   current.Summary,
 			RevisionCount:    len(revisions),
 			Revisions:        revisions,
-			RollbackVersion:  rollbackVersion,
-			RollbackReady:    rollbackReady,
-			ChangeSummary:    changeSummary,
-		})
+		}
+		if len(revisions) > 1 {
+			previous := revisions[1]
+			history.RollbackVersion = previous.Version
+			history.RollbackReady = strings.TrimSpace(previous.Content) != ""
+			history.ChangeSummary = pointerToChangeSummary(summarizeVersionChange(previous, current, diffPreviewLines))
+		}
+		histories = append(histories, history)
 	}
-
+	if generatedAt.IsZero() {
+		generatedAt = time.Now().UTC()
+	}
 	return PolicyPromptVersionCenter{
 		Name:        name,
 		GeneratedAt: generatedAt.UTC().Format(time.RFC3339),
@@ -820,11 +809,10 @@ func RenderPolicyPromptVersionCenter(center PolicyPromptVersionCenter) string {
 			for _, line := range history.ChangeSummary.Preview {
 				builder.WriteString(line + "\n")
 			}
-			builder.WriteString("```\n")
-		} else {
-			builder.WriteString("- None\n")
+			builder.WriteString("```\n\n")
+			continue
 		}
-		builder.WriteString("\n")
+		builder.WriteString("- None\n\n")
 	}
 	return builder.String()
 }
@@ -835,6 +823,62 @@ func WritePolicyPromptVersionCenterBundle(rootDir string, center PolicyPromptVer
 	}
 	path := filepath.Join(rootDir, "policy-prompt-version-center.md")
 	if err := WriteReport(path, RenderPolicyPromptVersionCenter(center)); err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
+func RenderRegressionCenter(name string, center regression.Center) string {
+	if strings.TrimSpace(name) == "" {
+		name = "Regression Analysis Center"
+	}
+	builder := strings.Builder{}
+	builder.WriteString("# Regression Analysis Center\n\n")
+	builder.WriteString(fmt.Sprintf("- Name: %s\n", name))
+	builder.WriteString(fmt.Sprintf("- Regressions: %d\n", len(center.Findings)))
+	builder.WriteString(fmt.Sprintf("- Total Regressions: %d\n", center.Summary.TotalRegressions))
+	builder.WriteString(fmt.Sprintf("- Affected Tasks: %d\n", center.Summary.AffectedTasks))
+	builder.WriteString(fmt.Sprintf("- Critical Regressions: %d\n", center.Summary.CriticalRegressions))
+	builder.WriteString(fmt.Sprintf("- Rework Events: %d\n", center.Summary.ReworkEvents))
+	builder.WriteString(fmt.Sprintf("- Top Source: %s\n", firstNonEmpty(center.Summary.TopSource, "none")))
+	builder.WriteString(fmt.Sprintf("- Top Workflow: %s\n\n", firstNonEmpty(center.Summary.TopWorkflow, "none")))
+
+	builder.WriteString("## Findings\n\n")
+	if len(center.Findings) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, finding := range center.Findings {
+			builder.WriteString(fmt.Sprintf("- %s: severity=%s regressions=%d rework=%d workflow=%s team=%s summary=%s\n", finding.TaskID, finding.Severity, finding.RegressionCount, finding.ReworkEvents, finding.Workflow, finding.Team, finding.Summary))
+		}
+	}
+
+	builder.WriteString("\n## Hotspots\n\n")
+	if len(center.Hotspots) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, hotspot := range center.Hotspots {
+			builder.WriteString(fmt.Sprintf("- %s/%s: regressions=%d critical=%d rework=%d\n", hotspot.Dimension, hotspot.Key, hotspot.TotalRegressions, hotspot.CriticalRegressions, hotspot.ReworkEvents))
+		}
+	}
+
+	builder.WriteString("\n## Workflow Breakdown\n\n")
+	if len(center.WorkflowBreakdown) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, item := range center.WorkflowBreakdown {
+			builder.WriteString(fmt.Sprintf("- %s: regressions=%d affected_tasks=%d critical=%d rework=%d\n", item.Key, item.TotalRegressions, item.AffectedTasks, item.CriticalRegressions, item.ReworkEvents))
+		}
+	}
+
+	return builder.String()
+}
+
+func WriteRegressionCenterBundle(rootDir, name string, center regression.Center) (string, error) {
+	if err := os.MkdirAll(rootDir, 0o755); err != nil {
+		return "", err
+	}
+	path := filepath.Join(rootDir, "regression-center.md")
+	if err := WriteReport(path, RenderRegressionCenter(name, center)); err != nil {
 		return "", err
 	}
 	return path, nil
@@ -1155,4 +1199,8 @@ func summarizeVersionChange(previous, current VersionedArtifact, previewLines in
 		ChangedLines: additions + deletions,
 		Preview:      preview,
 	}
+}
+
+func pointerToChangeSummary(summary VersionChangeSummary) *VersionChangeSummary {
+	return &summary
 }

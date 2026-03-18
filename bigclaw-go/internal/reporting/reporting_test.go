@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"bigclaw-go/internal/domain"
+	"bigclaw-go/internal/regression"
 )
 
 func TestBuildWeeklyReportRendersExpandedMarkdown(t *testing.T) {
@@ -408,117 +409,108 @@ func TestRenderAndWriteEngineeringOverviewBundle(t *testing.T) {
 	}
 }
 
-func TestBuildPolicyPromptVersionCenter(t *testing.T) {
-	artifacts := []VersionedArtifact{
-		{
-			ArtifactType: "policy",
-			ArtifactID:   "approval-gate",
-			Version:      "v1",
-			UpdatedAt:    "2026-03-18T09:00:00Z",
-			Author:       "alice",
-			Summary:      "Initial rollout policy",
-			Content:      "allow: low\nnotify: ops\n",
-			ChangeTicket: "BIG-100",
+func TestBuildPolicyPromptVersionCenterSummarizesRevisionDiffs(t *testing.T) {
+	center := BuildPolicyPromptVersionCenter(
+		"Policy/Prompt Version Center",
+		time.Date(2026, 3, 18, 15, 50, 0, 0, time.UTC),
+		[]VersionedArtifact{
+			{
+				ArtifactType: "policy",
+				ArtifactID:   "approval-gate",
+				Version:      "v1",
+				UpdatedAt:    "2026-03-18T14:00:00Z",
+				Author:       "alice",
+				Summary:      "initial gate",
+				Content:      "allow=team-a\nthreshold=2\n",
+			},
+			{
+				ArtifactType: "policy",
+				ArtifactID:   "approval-gate",
+				Version:      "v2",
+				UpdatedAt:    "2026-03-18T15:00:00Z",
+				Author:       "bob",
+				Summary:      "tighten threshold",
+				Content:      "allow=team-a\nthreshold=3\nnotify=ops\n",
+				ChangeTicket: "BIG-GOM-304",
+			},
+			{
+				ArtifactType: "prompt",
+				ArtifactID:   "rollout-review",
+				Version:      "v1",
+				UpdatedAt:    "2026-03-18T13:00:00Z",
+				Author:       "carol",
+				Summary:      "seed prompt",
+				Content:      "Summarize rollout blockers.\n",
+			},
 		},
-		{
-			ArtifactType: "policy",
-			ArtifactID:   "approval-gate",
-			Version:      "v2",
-			UpdatedAt:    "2026-03-18T10:00:00Z",
-			Author:       "bob",
-			Summary:      "Require approval for high risk",
-			Content:      "allow: low\nnotify: ops\napproval: high-risk\n",
-			ChangeTicket: "BIG-101",
-		},
-		{
-			ArtifactType: "prompt",
-			ArtifactID:   "triage-summary",
-			Version:      "v5",
-			UpdatedAt:    "2026-03-18T11:00:00Z",
-			Author:       "carol",
-			Summary:      "Current prompt",
-			Content:      "Summarize the issue and propose owner.\n",
-		},
-	}
-
-	center := BuildPolicyPromptVersionCenter("Policy Center", artifacts, time.Date(2026, 3, 18, 12, 0, 0, 0, time.UTC), 6)
-	if center.Name != "Policy Center" || center.GeneratedAt != "2026-03-18T12:00:00Z" {
-		t.Fatalf("unexpected center metadata: %+v", center)
-	}
+		6,
+	)
 	if center.ArtifactCount() != 2 || center.RollbackReadyCount() != 1 {
 		t.Fatalf("unexpected center counts: %+v", center)
 	}
-	if len(center.Histories) != 2 {
-		t.Fatalf("expected 2 histories, got %+v", center.Histories)
+	history := center.Histories[0]
+	if history.ArtifactType != "policy" || history.ArtifactID != "approval-gate" || history.CurrentVersion != "v2" {
+		t.Fatalf("unexpected sorted history: %+v", history)
 	}
-
-	policyHistory := center.Histories[0]
-	if policyHistory.ArtifactID != "approval-gate" || policyHistory.CurrentVersion != "v2" || policyHistory.RollbackVersion != "v1" || !policyHistory.RollbackReady {
-		t.Fatalf("unexpected policy history: %+v", policyHistory)
+	if !history.RollbackReady || history.RollbackVersion != "v1" || history.ChangeSummary == nil || !history.ChangeSummary.HasChanges() {
+		t.Fatalf("expected rollback-ready diff summary, got %+v", history)
 	}
-	if policyHistory.ChangeSummary == nil || !policyHistory.ChangeSummary.HasChanges() {
-		t.Fatalf("expected change summary, got %+v", policyHistory.ChangeSummary)
+	if history.ChangeSummary.Additions != 2 || history.ChangeSummary.Deletions != 1 {
+		t.Fatalf("unexpected change summary counts: %+v", history.ChangeSummary)
 	}
-	if policyHistory.ChangeSummary.Additions == 0 || len(policyHistory.ChangeSummary.Preview) == 0 {
-		t.Fatalf("expected diff preview, got %+v", policyHistory.ChangeSummary)
-	}
-
-	promptHistory := center.Histories[1]
-	if promptHistory.ArtifactID != "triage-summary" || promptHistory.RollbackReady || promptHistory.ChangeSummary != nil {
-		t.Fatalf("unexpected prompt history: %+v", promptHistory)
+	if len(history.ChangeSummary.Preview) == 0 || history.ChangeSummary.Preview[0] != "--- v1" {
+		t.Fatalf("unexpected diff preview: %+v", history.ChangeSummary.Preview)
 	}
 }
 
 func TestRenderAndWritePolicyPromptVersionCenterBundle(t *testing.T) {
 	center := PolicyPromptVersionCenter{
-		Name:        "Policy Center",
-		GeneratedAt: "2026-03-18T12:00:00Z",
+		Name:        "Policy/Prompt Version Center",
+		GeneratedAt: "2026-03-18T15:50:00Z",
 		Histories: []VersionedArtifactHistory{
 			{
 				ArtifactType:     "policy",
 				ArtifactID:       "approval-gate",
 				CurrentVersion:   "v2",
-				CurrentUpdatedAt: "2026-03-18T10:00:00Z",
+				CurrentUpdatedAt: "2026-03-18T15:00:00Z",
 				CurrentAuthor:    "bob",
-				CurrentSummary:   "Require approval for high risk",
+				CurrentSummary:   "tighten threshold",
 				RevisionCount:    2,
 				Revisions: []VersionedArtifact{
-					{Version: "v2", UpdatedAt: "2026-03-18T10:00:00Z", Author: "bob", Summary: "Require approval for high risk", ChangeTicket: "BIG-101"},
-					{Version: "v1", UpdatedAt: "2026-03-18T09:00:00Z", Author: "alice", Summary: "Initial rollout policy", ChangeTicket: "BIG-100"},
+					{Version: "v2", UpdatedAt: "2026-03-18T15:00:00Z", Author: "bob", Summary: "tighten threshold", ChangeTicket: "BIG-GOM-304"},
+					{Version: "v1", UpdatedAt: "2026-03-18T14:00:00Z", Author: "alice", Summary: "initial gate"},
 				},
 				RollbackVersion: "v1",
 				RollbackReady:   true,
 				ChangeSummary: &VersionChangeSummary{
 					FromVersion:  "v1",
 					ToVersion:    "v2",
-					Additions:    1,
-					Deletions:    0,
-					ChangedLines: 1,
-					Preview:      []string{"--- v1", "+++ v2", "+approval: high-risk"},
+					Additions:    2,
+					Deletions:    1,
+					ChangedLines: 3,
+					Preview:      []string{"--- v1", "+++ v2", "-threshold=2", "+threshold=3"},
 				},
 			},
 		},
 	}
-
 	rendered := RenderPolicyPromptVersionCenter(center)
 	for _, fragment := range []string{
 		"# Policy/Prompt Version Center",
 		"- Versioned Artifacts: 1",
 		"- Rollback Ready Artifacts: 1",
 		"### policy / approval-gate",
-		"- Diff Summary: 1 additions, 0 deletions",
+		"- Diff Summary: 2 additions, 1 deletions",
 		"```diff",
-		"+approval: high-risk",
+		"+threshold=3",
 	} {
 		if !strings.Contains(rendered, fragment) {
 			t.Fatalf("expected %q in rendered version center, got %s", fragment, rendered)
 		}
 	}
-
 	outputDir := t.TempDir()
 	path, err := WritePolicyPromptVersionCenterBundle(outputDir, center)
 	if err != nil {
-		t.Fatalf("write policy prompt version center bundle: %v", err)
+		t.Fatalf("write version center bundle: %v", err)
 	}
 	if path != filepath.Join(outputDir, "policy-prompt-version-center.md") {
 		t.Fatalf("unexpected version center path: %s", path)
@@ -527,7 +519,60 @@ func TestRenderAndWritePolicyPromptVersionCenterBundle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read version center bundle: %v", err)
 	}
-	if !strings.Contains(string(body), "Rollback Ready: true") || !strings.Contains(string(body), "BIG-101") {
+	if !strings.Contains(string(body), "approval-gate") || !strings.Contains(string(body), "BIG-GOM-304") {
 		t.Fatalf("unexpected version center bundle content: %s", string(body))
+	}
+}
+
+func TestRenderAndWriteRegressionCenterBundle(t *testing.T) {
+	center := regression.Center{
+		Summary: regression.Summary{
+			TotalRegressions:    3,
+			AffectedTasks:       2,
+			CriticalRegressions: 1,
+			ReworkEvents:        2,
+			TopSource:           "security review blocked deploy",
+			TopWorkflow:         "deploy",
+		},
+		WorkflowBreakdown: []regression.Breakdown{
+			{Key: "deploy", TotalRegressions: 3, AffectedTasks: 2, CriticalRegressions: 1, ReworkEvents: 2},
+		},
+		Hotspots: []regression.Hotspot{
+			{Dimension: "workflow", Key: "deploy", TotalRegressions: 3, CriticalRegressions: 1, ReworkEvents: 2},
+		},
+		Findings: []regression.Finding{
+			{TaskID: "BIG-401", Workflow: "deploy", Team: "platform", Severity: "critical", RegressionCount: 2, ReworkEvents: 1, Summary: "security review blocked deploy"},
+			{TaskID: "BIG-402", Workflow: "deploy", Team: "platform", Severity: "medium", RegressionCount: 1, ReworkEvents: 1, Summary: "rollback playbook drift"},
+		},
+	}
+
+	rendered := RenderRegressionCenter("Regression Console", center)
+	for _, fragment := range []string{
+		"# Regression Analysis Center",
+		"- Name: Regression Console",
+		"- Regressions: 2",
+		"- Top Workflow: deploy",
+		"- BIG-401: severity=critical regressions=2 rework=1 workflow=deploy team=platform summary=security review blocked deploy",
+		"- workflow/deploy: regressions=3 critical=1 rework=2",
+	} {
+		if !strings.Contains(rendered, fragment) {
+			t.Fatalf("expected %q in rendered regression center, got %s", fragment, rendered)
+		}
+	}
+
+	outputDir := t.TempDir()
+	path, err := WriteRegressionCenterBundle(outputDir, "Regression Console", center)
+	if err != nil {
+		t.Fatalf("write regression center bundle: %v", err)
+	}
+	if path != filepath.Join(outputDir, "regression-center.md") {
+		t.Fatalf("unexpected regression center path: %s", path)
+	}
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read regression center bundle: %v", err)
+	}
+	if !strings.Contains(string(body), "## Findings") || !strings.Contains(string(body), "rollback playbook drift") {
+		t.Fatalf("unexpected regression center bundle content: %s", string(body))
 	}
 }
