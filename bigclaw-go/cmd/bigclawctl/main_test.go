@@ -278,3 +278,68 @@ func TestRunLocalIssueCloseoutMarksDoneAndAppendsComment(t *testing.T) {
 		t.Fatalf("expected commit sha metadata, got %s", text)
 	}
 }
+
+func TestRunLocalIssueUpdateTransitionsStateAndAppendsComment(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-303",
+      "identifier": "BIG-GOM-303",
+      "title": "Workflow orchestration and scheduler loop migration",
+      "state": "Todo",
+      "comments": []
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runLocalIssue([]string{
+		"update",
+		"--local-issues", storePath,
+		"--issue", "BIG-GOM-303",
+		"--state", "In Progress",
+		"--comment", "Claimed the workflow-loop migration slice for Go implementation.",
+		"--commit", "feedface",
+		"--pr-url", "https://github.com/OpenAGIs/BigClaw/pull/303",
+		"--json",
+	})
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("run local issue update: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"state": "In Progress"`)) {
+		t.Fatalf("expected in-progress state in output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"commented": true`)) {
+		t.Fatalf("expected commented=true in output, got %s", string(output))
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"state": "In Progress"`) {
+		t.Fatalf("expected in-progress state, got %s", text)
+	}
+	if !strings.Contains(text, `Claimed the workflow-loop migration slice for Go implementation.`) {
+		t.Fatalf("expected progress comment, got %s", text)
+	}
+	if !strings.Contains(text, `"commit_sha": "feedface"`) {
+		t.Fatalf("expected commit metadata, got %s", text)
+	}
+}

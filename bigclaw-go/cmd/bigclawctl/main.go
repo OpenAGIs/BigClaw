@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"bigclaw-go/internal/bootstrap"
@@ -179,7 +180,7 @@ func runGitHubSync(args []string) error {
 
 func runLocalIssue(args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: bigclawctl local-issue <closeout> [flags]")
+		return errors.New("usage: bigclawctl local-issue <update|closeout> [flags]")
 	}
 	command := args[0]
 	flags := flag.NewFlagSet("local-issue "+command, flag.ContinueOnError)
@@ -187,6 +188,7 @@ func runLocalIssue(args []string) error {
 	localIssuesPath := flags.String("local-issues", "", "local issue store path")
 	issueRef := flags.String("issue", "", "issue identifier or id")
 	stateName := flags.String("state", "Done", "state name")
+	commentText := flags.String("comment", "", "progress comment")
 	summary := flags.String("summary", "", "what changed")
 	validation := flags.String("validation", "", "validation commands/results")
 	commitSHA := flags.String("commit", "", "commit SHA")
@@ -196,6 +198,45 @@ func runLocalIssue(args []string) error {
 		return err
 	}
 	switch command {
+	case "update":
+		if trim(*issueRef) == "" {
+			return errors.New("local-issue update requires --issue")
+		}
+		storePath := resolvedLocalIssueStorePath(*localIssuesPath)
+		if storePath == "" {
+			return errors.New("local issue store not found")
+		}
+		store, err := refill.LoadLocalIssueStore(storePath)
+		if err != nil {
+			return err
+		}
+		now := time.Now().UTC()
+		comment := refill.LocalIssueComment{
+			Body:      trim(*commentText),
+			CreatedAt: now,
+			Metadata: map[string]any{
+				"commit_sha": trim(*commitSHA),
+				"pr_url":     trim(*prURL),
+			},
+		}
+		nextState := trim(*stateName)
+		if !hasCLIFlag(args[1:], "--state") {
+			nextState = ""
+		}
+		updatedState, err := store.UpdateIssue(*issueRef, nextState, comment, now)
+		if err != nil {
+			return err
+		}
+		return emit(map[string]any{
+			"status":       "ok",
+			"backend":      "local",
+			"issue":        trim(*issueRef),
+			"state":        updatedState,
+			"local_issues": absPath(storePath),
+			"commented":    trim(*commentText) != "",
+			"commit_sha":   trim(*commitSHA),
+			"pr_url":       trim(*prURL),
+		}, *asJSON, 0)
 	case "closeout":
 		if trim(*issueRef) == "" {
 			return errors.New("local-issue closeout requires --issue")
@@ -493,6 +534,15 @@ func resolveRepoRelativePath(path string) string {
 		}
 	}
 	return path
+}
+
+func hasCLIFlag(args []string, name string) bool {
+	for _, arg := range args {
+		if arg == name || strings.HasPrefix(arg, name+"=") {
+			return true
+		}
+	}
+	return false
 }
 
 func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply bool, refreshURL string, targetOverride *int) error {

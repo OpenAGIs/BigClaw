@@ -138,3 +138,54 @@ func TestLocalIssueStoreCloseIssueAppendsCommentMetadata(t *testing.T) {
 		t.Fatalf("expected PR metadata, got %s", text)
 	}
 }
+
+func TestLocalIssueStoreUpdateIssueAppendsCommentWithoutStateChange(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "title": "Toolchain migration",
+      "state": "In Progress",
+      "comments": []
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	updatedState, err := store.UpdateIssue("BIG-GOM-307", "", LocalIssueComment{
+		Body:      "Validated branch sync after the latest automation patch.",
+		CreatedAt: time.Date(2026, 3, 18, 17, 0, 0, 0, time.UTC),
+		Metadata: map[string]any{
+			"commit_sha": "1234abcd",
+		},
+	}, time.Date(2026, 3, 18, 17, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("update issue: %v", err)
+	}
+	if updatedState != "In Progress" {
+		t.Fatalf("expected state to remain In Progress, got %q", updatedState)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"state": "In Progress"`) {
+		t.Fatalf("expected state to be preserved, got %s", text)
+	}
+	if !strings.Contains(text, `Validated branch sync after the latest automation patch.`) {
+		t.Fatalf("expected appended comment, got %s", text)
+	}
+	if !strings.Contains(text, `"updated_at": "2026-03-18T17:00:00Z"`) {
+		t.Fatalf("expected updated_at refresh, got %s", text)
+	}
+}

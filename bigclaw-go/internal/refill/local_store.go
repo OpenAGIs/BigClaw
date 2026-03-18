@@ -119,6 +119,33 @@ func (s *LocalIssueStore) UpdateIssueState(ref string, stateName string, now tim
 	return "", ErrLocalIssueNotFound
 }
 
+func (s *LocalIssueStore) UpdateIssue(ref string, stateName string, comment LocalIssueComment, now time.Time) (string, error) {
+	nextState := strings.TrimSpace(stateName)
+	commentBody := strings.TrimSpace(comment.Body)
+	if nextState == "" && commentBody == "" {
+		return "", errors.New("local issue update requires state or comment")
+	}
+	for _, issue := range s.issueMap {
+		if !issueMatchesRef(issue, ref) {
+			continue
+		}
+		if nextState != "" {
+			updateIssueFields(issue, nextState, now)
+		}
+		if commentBody != "" {
+			appendIssueComment(issue, comment)
+			if nextState == "" {
+				issue["updated_at"] = now.UTC().Truncate(time.Second).Format(time.RFC3339)
+			}
+		}
+		if err := s.Save(); err != nil {
+			return "", err
+		}
+		return mapString(issue, "state"), nil
+	}
+	return "", ErrLocalIssueNotFound
+}
+
 func (s *LocalIssueStore) CloseIssue(ref string, stateName string, comment LocalIssueComment, now time.Time) (string, error) {
 	for _, issue := range s.issueMap {
 		if !issueMatchesRef(issue, ref) {
