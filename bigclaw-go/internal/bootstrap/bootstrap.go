@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 )
 
 const (
@@ -221,7 +222,26 @@ func removePath(path string) error {
 	return os.RemoveAll(path)
 }
 
-func EnsureMirror(repoURL string, cacheRoot string, cacheBase string, cacheKey string) (CacheBootstrapState, error) {
+func withCacheLock(cacheRoot string, fn func() error) error {
+	if err := os.MkdirAll(cacheRoot, 0o755); err != nil {
+		return err
+	}
+	lockPath := filepath.Join(cacheRoot, ".bootstrap.lock")
+	lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0o644)
+	if err != nil {
+		return err
+	}
+	defer lockFile.Close()
+	if err := syscall.Flock(int(lockFile.Fd()), syscall.LOCK_EX); err != nil {
+		return err
+	}
+	defer func() {
+		_ = syscall.Flock(int(lockFile.Fd()), syscall.LOCK_UN)
+	}()
+	return fn()
+}
+
+func ensureMirrorUnlocked(repoURL string, cacheRoot string, cacheBase string, cacheKey string) (CacheBootstrapState, error) {
 	repoCacheRoot := resolveCacheRoot(repoURL, cacheRoot, cacheBase, cacheKey)
 	mirrorPath := filepath.Join(repoCacheRoot, "mirror.git")
 	if err := os.MkdirAll(filepath.Dir(mirrorPath), 0o755); err != nil {
@@ -255,6 +275,17 @@ func EnsureMirror(repoURL string, cacheRoot string, cacheBase string, cacheKey s
 		}
 	}
 	return cacheState(repoURL, repoCacheRoot, cacheKey, mirrorCreated, false), nil
+}
+
+func EnsureMirror(repoURL string, cacheRoot string, cacheBase string, cacheKey string) (CacheBootstrapState, error) {
+	repoCacheRoot := resolveCacheRoot(repoURL, cacheRoot, cacheBase, cacheKey)
+	var state CacheBootstrapState
+	err := withCacheLock(repoCacheRoot, func() error {
+		var innerErr error
+		state, innerErr = ensureMirrorUnlocked(repoURL, cacheRoot, cacheBase, cacheKey)
+		return innerErr
+	})
+	return state, err
 }
 
 func ConfigureSeedRemotes(seedPath string, repoURL string, mirrorPath string) error {
@@ -310,8 +341,8 @@ func ConfigureSeedRemotes(seedPath string, repoURL string, mirrorPath string) er
 	return err
 }
 
-func EnsureSeed(repoURL string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string) (CacheBootstrapState, error) {
-	state, err := EnsureMirror(repoURL, cacheRoot, cacheBase, cacheKey)
+func ensureSeedUnlocked(repoURL string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string) (CacheBootstrapState, error) {
+	state, err := ensureMirrorUnlocked(repoURL, cacheRoot, cacheBase, cacheKey)
 	if err != nil {
 		return CacheBootstrapState{}, err
 	}
@@ -351,90 +382,168 @@ func EnsureSeed(repoURL string, defaultBranch string, cacheRoot string, cacheBas
 	return cacheState(repoURL, state.CacheRoot, cacheKey, state.MirrorCreated, seedCreated), nil
 }
 
-func BootstrapWorkspace(workspace string, issueIdentifier string, repoURL string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string) (WorkspaceBootstrapStatus, error) {
-	workspacePath := absExpand(workspace)
-	state, err := EnsureSeed(repoURL, defaultBranch, cacheRoot, cacheBase, cacheKey)
-	if err != nil {
-		return WorkspaceBootstrapStatus{}, err
-	}
-	seedPath := state.SeedPath
-	branch := BootstrapBranchName(firstNonEmpty(issueIdentifier, filepath.Base(workspacePath)))
-	cacheReused := !state.MirrorCreated && !state.SeedCreated
-	cloneSuppressed := !state.MirrorCreated
-	if _, err := os.Stat(filepath.Join(workspacePath, ".git")); err == nil {
-		currentBranch, err := requireGit(workspacePath, "branch", "--show-current")
-		if err != nil {
-			return WorkspaceBootstrapStatus{}, err
-		}
-		return WorkspaceBootstrapStatus{
-			Workspace:       workspacePath,
-			Branch:          firstNonEmpty(currentBranch, branch),
-			CacheRoot:       state.CacheRoot,
-			CacheKey:        state.CacheKey,
-			MirrorPath:      state.MirrorPath,
-			SeedPath:        state.SeedPath,
-			Reused:          true,
-			CacheReused:     cacheReused,
-			CloneSuppressed: cloneSuppressed,
-			MirrorCreated:   state.MirrorCreated,
-			SeedCreated:     state.SeedCreated,
-			WorkspaceMode:   "workspace_reused",
-		}, nil
-	}
-	if err := os.MkdirAll(filepath.Dir(workspacePath), 0o755); err != nil {
-		return WorkspaceBootstrapStatus{}, err
-	}
-	if info, err := os.Stat(workspacePath); err == nil && info.IsDir() {
-		entries, err := os.ReadDir(workspacePath)
-		if err != nil {
-			return WorkspaceBootstrapStatus{}, err
-		}
-		if len(entries) > 0 {
-			return WorkspaceBootstrapStatus{}, fmt.Errorf("workspace is not empty: %s", workspacePath)
-		}
-	}
-	if _, err := requireGit(seedPath, "worktree", "add", "--force", "-B", branch, workspacePath, fmt.Sprintf("%s/%s", cacheRemote, defaultBranch)); err != nil {
-		return WorkspaceBootstrapStatus{}, err
-	}
-	return WorkspaceBootstrapStatus{
-		Workspace:       workspacePath,
-		Branch:          branch,
-		CacheRoot:       state.CacheRoot,
-		CacheKey:        state.CacheKey,
-		MirrorPath:      state.MirrorPath,
-		SeedPath:        state.SeedPath,
-		Reused:          false,
-		CacheReused:     cacheReused,
-		CloneSuppressed: cloneSuppressed,
-		MirrorCreated:   state.MirrorCreated,
-		SeedCreated:     state.SeedCreated,
-		WorkspaceMode:   "worktree_created",
-	}, nil
+func EnsureSeed(repoURL string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string) (CacheBootstrapState, error) {
+	repoCacheRoot := resolveCacheRoot(repoURL, cacheRoot, cacheBase, cacheKey)
+	var state CacheBootstrapState
+	err := withCacheLock(repoCacheRoot, func() error {
+		var innerErr error
+		state, innerErr = ensureSeedUnlocked(repoURL, defaultBranch, cacheRoot, cacheBase, cacheKey)
+		return innerErr
+	})
+	return state, err
 }
 
-func CleanupWorkspace(workspace string, issueIdentifier string, repoURL string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string) (WorkspaceBootstrapStatus, error) {
+func BootstrapWorkspace(workspace string, issueIdentifier string, repoURL string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string) (WorkspaceBootstrapStatus, error) {
 	workspacePath := absExpand(workspace)
 	repoCacheRoot := resolveCacheRoot(repoURL, cacheRoot, cacheBase, cacheKey)
-	state := cacheState(repoURL, repoCacheRoot, cacheKey, false, false)
-	seedPath := state.SeedPath
-	mirrorPath := state.MirrorPath
-	branch := BootstrapBranchName(firstNonEmpty(issueIdentifier, filepath.Base(workspacePath)))
-	if _, err := os.Stat(filepath.Join(seedPath, ".git")); err != nil {
-		return WorkspaceBootstrapStatus{
+	var status WorkspaceBootstrapStatus
+	err := withCacheLock(repoCacheRoot, func() error {
+		state, err := ensureSeedUnlocked(repoURL, defaultBranch, cacheRoot, cacheBase, cacheKey)
+		if err != nil {
+			return err
+		}
+		seedPath := state.SeedPath
+		branch := BootstrapBranchName(firstNonEmpty(issueIdentifier, filepath.Base(workspacePath)))
+		cacheReused := !state.MirrorCreated && !state.SeedCreated
+		cloneSuppressed := !state.MirrorCreated
+		if _, err := os.Stat(filepath.Join(workspacePath, ".git")); err == nil {
+			currentBranch, err := requireGit(workspacePath, "branch", "--show-current")
+			if err != nil {
+				return err
+			}
+			status = WorkspaceBootstrapStatus{
+				Workspace:       workspacePath,
+				Branch:          firstNonEmpty(currentBranch, branch),
+				CacheRoot:       state.CacheRoot,
+				CacheKey:        state.CacheKey,
+				MirrorPath:      state.MirrorPath,
+				SeedPath:        state.SeedPath,
+				Reused:          true,
+				CacheReused:     cacheReused,
+				CloneSuppressed: cloneSuppressed,
+				MirrorCreated:   state.MirrorCreated,
+				SeedCreated:     state.SeedCreated,
+				WorkspaceMode:   "workspace_reused",
+			}
+			return nil
+		}
+		if err := os.MkdirAll(filepath.Dir(workspacePath), 0o755); err != nil {
+			return err
+		}
+		if info, err := os.Stat(workspacePath); err == nil && info.IsDir() {
+			entries, err := os.ReadDir(workspacePath)
+			if err != nil {
+				return err
+			}
+			if len(entries) > 0 {
+				return fmt.Errorf("workspace is not empty: %s", workspacePath)
+			}
+		}
+		if _, err := requireGit(seedPath, "worktree", "add", "--force", "-B", branch, workspacePath, fmt.Sprintf("%s/%s", cacheRemote, defaultBranch)); err != nil {
+			return err
+		}
+		status = WorkspaceBootstrapStatus{
 			Workspace:       workspacePath,
 			Branch:          branch,
 			CacheRoot:       state.CacheRoot,
 			CacheKey:        state.CacheKey,
 			MirrorPath:      state.MirrorPath,
 			SeedPath:        state.SeedPath,
-			CacheReused:     pathExists(seedPath) || pathExists(mirrorPath),
-			CloneSuppressed: true,
-			WorkspaceMode:   "cleanup",
-			Removed:         false,
-		}, nil
-	}
-	if _, err := os.Stat(workspacePath); err != nil {
-		return WorkspaceBootstrapStatus{
+			Reused:          false,
+			CacheReused:     cacheReused,
+			CloneSuppressed: cloneSuppressed,
+			MirrorCreated:   state.MirrorCreated,
+			SeedCreated:     state.SeedCreated,
+			WorkspaceMode:   "worktree_created",
+		}
+		return nil
+	})
+	return status, err
+}
+
+func CleanupWorkspace(workspace string, issueIdentifier string, repoURL string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string) (WorkspaceBootstrapStatus, error) {
+	workspacePath := absExpand(workspace)
+	repoCacheRoot := resolveCacheRoot(repoURL, cacheRoot, cacheBase, cacheKey)
+	var status WorkspaceBootstrapStatus
+	err := withCacheLock(repoCacheRoot, func() error {
+		state := cacheState(repoURL, repoCacheRoot, cacheKey, false, false)
+		seedPath := state.SeedPath
+		mirrorPath := state.MirrorPath
+		branch := BootstrapBranchName(firstNonEmpty(issueIdentifier, filepath.Base(workspacePath)))
+		if _, err := os.Stat(filepath.Join(seedPath, ".git")); err != nil {
+			status = WorkspaceBootstrapStatus{
+				Workspace:       workspacePath,
+				Branch:          branch,
+				CacheRoot:       state.CacheRoot,
+				CacheKey:        state.CacheKey,
+				MirrorPath:      state.MirrorPath,
+				SeedPath:        state.SeedPath,
+				CacheReused:     pathExists(seedPath) || pathExists(mirrorPath),
+				CloneSuppressed: true,
+				WorkspaceMode:   "cleanup",
+				Removed:         false,
+			}
+			return nil
+		}
+		if _, err := os.Stat(workspacePath); err != nil {
+			status = WorkspaceBootstrapStatus{
+				Workspace:       workspacePath,
+				Branch:          branch,
+				CacheRoot:       state.CacheRoot,
+				CacheKey:        state.CacheKey,
+				MirrorPath:      state.MirrorPath,
+				SeedPath:        state.SeedPath,
+				CacheReused:     true,
+				CloneSuppressed: true,
+				WorkspaceMode:   "cleanup",
+				Removed:         false,
+			}
+			return nil
+		}
+		if err := ConfigureSeedRemotes(seedPath, repoURL, mirrorPath); err != nil {
+			return err
+		}
+		if git(workspacePath, "rev-parse", "--git-dir").returnCode == 0 {
+			currentBranch, err := requireGit(workspacePath, "branch", "--show-current")
+			if err == nil && currentBranch != "" {
+				branch = currentBranch
+			}
+		}
+		worktreeList, err := requireGit(seedPath, "worktree", "list", "--porcelain")
+		if err != nil {
+			return err
+		}
+		registered := hasSubstring(worktreeList, "worktree "+workspacePath)
+		if !registered {
+			if resolved, err := filepath.EvalSymlinks(workspacePath); err == nil {
+				registered = hasSubstring(worktreeList, "worktree "+resolved)
+			}
+		}
+		if registered {
+			_, _ = requireGit(workspacePath, "switch", "--detach")
+			if _, err := requireGit(seedPath, "worktree", "remove", "--force", workspacePath); err != nil {
+				return err
+			}
+			if _, err := requireGit(seedPath, "worktree", "prune"); err != nil {
+				return err
+			}
+		}
+		localBranchesOutput, err := requireGit(seedPath, "branch", "--format", "%(refname:short)")
+		if err != nil {
+			return err
+		}
+		localBranches := toSet(splitLines(localBranchesOutput))
+		if hasPrefix(branch, bootstrapBranchPrefix+"/") {
+			if _, ok := localBranches[branch]; ok {
+				if _, err := requireGit(seedPath, "branch", "-D", branch); err != nil {
+					return err
+				}
+			}
+		}
+		if _, err := requireGit(seedPath, "checkout", "-B", defaultBranch, fmt.Sprintf("%s/%s", cacheRemote, defaultBranch)); err != nil {
+			return err
+		}
+		status = WorkspaceBootstrapStatus{
 			Workspace:       workspacePath,
 			Branch:          branch,
 			CacheRoot:       state.CacheRoot,
@@ -444,66 +553,11 @@ func CleanupWorkspace(workspace string, issueIdentifier string, repoURL string, 
 			CacheReused:     true,
 			CloneSuppressed: true,
 			WorkspaceMode:   "cleanup",
-			Removed:         false,
-		}, nil
-	}
-	if err := ConfigureSeedRemotes(seedPath, repoURL, mirrorPath); err != nil {
-		return WorkspaceBootstrapStatus{}, err
-	}
-	if git(workspacePath, "rev-parse", "--git-dir").returnCode == 0 {
-		currentBranch, err := requireGit(workspacePath, "branch", "--show-current")
-		if err == nil && currentBranch != "" {
-			branch = currentBranch
+			Removed:         registered,
 		}
-	}
-	worktreeList, err := requireGit(seedPath, "worktree", "list", "--porcelain")
-	if err != nil {
-		return WorkspaceBootstrapStatus{}, err
-	}
-	registered := hasSubstring(worktreeList, "worktree "+workspacePath)
-	if !registered {
-		if resolved, err := filepath.EvalSymlinks(workspacePath); err == nil {
-			registered = hasSubstring(worktreeList, "worktree "+resolved)
-		}
-	}
-	if registered {
-		// Detach HEAD in the issue worktree before removal so the bootstrap branch
-		// is not still considered checked out when we delete it from the seed repo.
-		_, _ = requireGit(workspacePath, "switch", "--detach")
-		if _, err := requireGit(seedPath, "worktree", "remove", "--force", workspacePath); err != nil {
-			return WorkspaceBootstrapStatus{}, err
-		}
-		if _, err := requireGit(seedPath, "worktree", "prune"); err != nil {
-			return WorkspaceBootstrapStatus{}, err
-		}
-	}
-	localBranchesOutput, err := requireGit(seedPath, "branch", "--format", "%(refname:short)")
-	if err != nil {
-		return WorkspaceBootstrapStatus{}, err
-	}
-	localBranches := toSet(splitLines(localBranchesOutput))
-	if hasPrefix(branch, bootstrapBranchPrefix+"/") {
-		if _, ok := localBranches[branch]; ok {
-			if _, err := requireGit(seedPath, "branch", "-D", branch); err != nil {
-				return WorkspaceBootstrapStatus{}, err
-			}
-		}
-	}
-	if _, err := requireGit(seedPath, "checkout", "-B", defaultBranch, fmt.Sprintf("%s/%s", cacheRemote, defaultBranch)); err != nil {
-		return WorkspaceBootstrapStatus{}, err
-	}
-	return WorkspaceBootstrapStatus{
-		Workspace:       workspacePath,
-		Branch:          branch,
-		CacheRoot:       state.CacheRoot,
-		CacheKey:        state.CacheKey,
-		MirrorPath:      state.MirrorPath,
-		SeedPath:        state.SeedPath,
-		CacheReused:     true,
-		CloneSuppressed: true,
-		WorkspaceMode:   "cleanup",
-		Removed:         registered,
-	}, nil
+		return nil
+	})
+	return status, err
 }
 
 func BuildValidationReport(repoURL string, workspaceRoot string, issueIdentifiers []string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string, cleanup bool) (ValidationReport, error) {

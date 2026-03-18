@@ -5,6 +5,10 @@ script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 repo_root=$(cd -- "$script_dir/../.." && pwd)
 workflow="$repo_root/workflow.md"
 ack="--i-understand-that-this-will-be-running-without-the-usual-guardrails"
+current_branch=$(git -C "$repo_root" branch --show-current 2>/dev/null || echo main)
+
+export SYMPHONY_BOOTSTRAP_REPO_URL="${SYMPHONY_BOOTSTRAP_REPO_URL:-$repo_root}"
+export SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH="${SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH:-$current_branch}"
 
 if [ -x "$repo_root/../elixir/bin/symphony" ]; then
   exec "$repo_root/../elixir/bin/symphony" "$ack" --port 4000 "$workflow" "$@"

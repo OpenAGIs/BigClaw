@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func gitOut(t *testing.T, repo string, args ...string) string {
@@ -153,5 +154,89 @@ func TestCleanupWorkspacePrunesWorktreeAndBootstrapBranch(t *testing.T) {
 	worktreeList := gitOut(t, filepath.Join(cacheRoot, "seed"), "worktree", "list", "--porcelain")
 	if strings.Contains(worktreeList, filepath.Clean(workspace)) {
 		t.Fatalf("unexpected lingering worktree registration")
+	}
+}
+
+func TestWithCacheLockSerializesAcrossProcesses(t *testing.T) {
+	if os.Getenv("BOOTSTRAP_LOCK_HELPER") == "1" {
+		lockRoot := os.Getenv("BOOTSTRAP_LOCK_ROOT")
+		releaseFile := os.Getenv("BOOTSTRAP_LOCK_RELEASE")
+		heldFile := os.Getenv("BOOTSTRAP_LOCK_HELD")
+		if err := withCacheLock(lockRoot, func() error {
+			if err := os.WriteFile(heldFile, []byte("held"), 0o644); err != nil {
+				return err
+			}
+			for {
+				if _, err := os.Stat(releaseFile); err == nil {
+					return nil
+				}
+				time.Sleep(25 * time.Millisecond)
+			}
+		}); err != nil {
+			t.Fatal(err)
+		}
+		return
+	}
+
+	root := t.TempDir()
+	lockRoot := filepath.Join(root, "cache")
+	releaseFile := filepath.Join(root, "release")
+	heldFile := filepath.Join(root, "held")
+
+	holder := exec.Command(os.Args[0], "-test.run=TestWithCacheLockSerializesAcrossProcesses")
+	holder.Env = append(
+		os.Environ(),
+		"BOOTSTRAP_LOCK_HELPER=1",
+		"BOOTSTRAP_LOCK_ROOT="+lockRoot,
+		"BOOTSTRAP_LOCK_RELEASE="+releaseFile,
+		"BOOTSTRAP_LOCK_HELD="+heldFile,
+	)
+	if err := holder.Start(); err != nil {
+		t.Fatalf("failed starting lock holder: %v", err)
+	}
+	defer holder.Process.Kill()
+
+	deadline := time.Now().Add(3 * time.Second)
+	for {
+		if _, err := os.Stat(heldFile); err == nil {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("timed out waiting for holder to acquire cache lock")
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
+
+	waitStartedAt := time.Now()
+	done := make(chan error, 1)
+	go func() {
+		done <- withCacheLock(lockRoot, func() error { return nil })
+	}()
+
+	select {
+	case err := <-done:
+		t.Fatalf("lock should block while holder is active, got %v", err)
+	case <-time.After(150 * time.Millisecond):
+	}
+
+	if err := os.WriteFile(releaseFile, []byte("ok"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for cache lock release")
+	}
+
+	if err := holder.Wait(); err != nil {
+		t.Fatalf("holder process failed: %v", err)
+	}
+
+	if time.Since(waitStartedAt) < 150*time.Millisecond {
+		t.Fatalf("expected cache lock acquisition to wait for holder")
 	}
 }
