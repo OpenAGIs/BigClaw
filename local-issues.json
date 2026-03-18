@@ -110,6 +110,12 @@
           "commit_sha": "c67e61114b801b0d60e0ad919b28c22926ea0fe3",
           "created_at": "2026-03-18T15:19:04Z",
           "pr_url": "unavailable (origin is /Users/jxrt/Desktop/symphony-main/BigClaw; gh cannot resolve a GitHub host)"
+        },
+        {
+          "body": "What changed:\nAdded a general Go-native local tracker update path in bigclawctl so local issues can be moved between states and annotated with progress comments without manual JSON edits. The local issue store now supports state-only updates, comment-only updates, or combined mutations while preserving existing tracker fields.\n\nValidation:\ncd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl ./internal/refill\npassed\n\nCommit SHA: d89f6e671bd0956d997c93223d112faea9334c45\nPR URL: unavailable (origin is /Users/jxrt/Desktop/symphony-main/BigClaw; gh cannot resolve a GitHub host)",
+          "commit_sha": "d89f6e671bd0956d997c93223d112faea9334c45",
+          "created_at": "2026-03-18T15:30:20Z",
+          "pr_url": "unavailable (origin is /Users/jxrt/Desktop/symphony-main/BigClaw; gh cannot resolve a GitHub host)"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -125,7 +131,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
-      "updated_at": "2026-03-18T15:19:04Z"
+      "updated_at": "2026-03-18T15:30:20Z"
     },
     {
       "assigned_to_worker": true,
