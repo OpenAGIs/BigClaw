@@ -50,10 +50,15 @@
           "author": "codex",
           "created_at": "2026-03-18T15:19:00Z",
           "body": "Added Go-owned weekly reporting bundle exports in bigclaw-go/internal/reporting so the observability/reporting slice now writes weekly report, operations dashboard, and operations metric spec artifacts with direct package coverage. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./internal/api -run 'TestV2Weekly|TestOperationsDashboard'` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `8efa15865264dd3e729a61daba9ca800853aa858`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so `gh pr view` cannot resolve a GitHub host."
+        },
+        {
+          "author": "codex",
+          "created_at": "2026-03-18T15:31:00Z",
+          "body": "Added Go-owned dashboard builder reporting surfaces in `bigclaw-go/internal/reporting`, including widget/layout specs, release-readiness audit checks for duplicate or overlapping placements, missing/inaccessible widgets, out-of-bounds placements, and markdown bundle export coverage. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `0b82af85f5bab85e069412340488c02c2461c43e`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured."
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-18T15:19:00Z"
+      "updated_at": "2026-03-18T15:31:00Z"
     },
     {
       "id": "big-gom-305",
