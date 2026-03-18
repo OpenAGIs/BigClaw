@@ -48,12 +48,11 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Active repo tranche:
-  - `BIG-GOM-301` — unified domain model and intake contract migration
   - `BIG-GOM-302` — risk, policy, and approval semantics migration
   - `BIG-GOM-307` — workflow, bootstrap, and GitHub sync toolchain migration
-- Runnable first batch once issue creation is available:
+- Recently completed:
   - `BIG-GOM-301` — unified domain model and intake contract migration
-  - `BIG-GOM-302` — risk, policy, and approval semantics migration
+- Runnable next batch when dependency and capacity gates open:
   - `BIG-GOM-303` — workflow orchestration and scheduler loop migration
   - `BIG-GOM-304` — observability, reporting, and weekly operations surface migration
 - Standby:
