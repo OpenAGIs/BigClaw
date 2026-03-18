@@ -55,10 +55,15 @@
           "author": "codex",
           "created_at": "2026-03-18T15:31:00Z",
           "body": "Added Go-owned dashboard builder reporting surfaces in `bigclaw-go/internal/reporting`, including widget/layout specs, release-readiness audit checks for duplicate or overlapping placements, missing/inaccessible widgets, out-of-bounds placements, and markdown bundle export coverage. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `0b82af85f5bab85e069412340488c02c2461c43e`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured."
+        },
+        {
+          "author": "codex",
+          "created_at": "2026-03-18T15:42:00Z",
+          "body": "Added Go-owned engineering overview reporting in `bigclaw-go/internal/reporting`, including KPI/funnel/blocker/activity contracts, role-based module visibility, a Go-native builder over `domain.Task` and `domain.Event`, markdown rendering, and bundle export coverage. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `a651069b4611b12458fb297e59c70e65e16bb05c`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured."
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-18T15:31:00Z"
+      "updated_at": "2026-03-18T15:42:00Z"
     },
     {
       "id": "big-gom-305",
