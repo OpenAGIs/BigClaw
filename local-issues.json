@@ -95,10 +95,14 @@
         {
           "body": "Progressed BIG-GOM-307 by wiring an optional canonical GitHub remote through the Go bootstrap path. Changed: `bigclaw-go/internal/bootstrap/bootstrap.go` now configures a `github` remote when `github_url` is supplied while preserving `origin` as the push-default mirror remote; `bigclaw-go/cmd/bigclawctl/main.go` now accepts `--github-url` for `workspace bootstrap`, `workspace cleanup`, and `workspace validate`; workflow/docs/launcher defaults now pass `SYMPHONY_BOOTSTRAP_GITHUB_URL` so fresh workspaces keep PR tooling available without manual remote surgery. Validation: `cd bigclaw-go && go test ./internal/bootstrap ./cmd/bigclawctl` -> ok; `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `b2de09347a5d2141fa0333aa2f460305bc8d1ed3`. PR URL: `https://github.com/OpenAGIs/BigClaw/pull/137`.",
           "created_at": "2026-03-18T15:56:30Z"
+        },
+        {
+          "body": "Kept the canonical refill metadata aligned with the live local tracker while BIG-GOM-307 remains active. Changed: `docs/parallel-refill-queue.json` now moves `BIG-GOM-301` into the completed batch and marks its status `Done`; `docs/parallel-refill-queue.md` now lists `BIG-GOM-302` and `BIG-GOM-307` as the active tranche and moves `BIG-GOM-301` into the recently completed section so unattended refill guidance matches `local-issues.json`. Validation: doc/state sync only; the previously green `cd bigclaw-go && go test ./...` run still covers the Go tooling surfaces on this branch. Commit SHA: `d4e1f947953683f58b419f332a490d1d2976c5f7`. PR URL: `https://github.com/OpenAGIs/BigClaw/pull/137`.",
+          "created_at": "2026-03-18T16:01:10Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-18T15:56:30Z"
+      "updated_at": "2026-03-18T16:01:10Z"
     },
     {
       "id": "big-gom-308",
