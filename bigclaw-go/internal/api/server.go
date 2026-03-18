@@ -40,6 +40,7 @@ type Server struct {
 	SubscriberLeases *events.SubscriberLeaseCoordinator
 	Now              func() time.Time
 	Worker           WorkerStatusProvider
+	Runtime          *worker.Runtime
 	Control          *control.Controller
 	FlowStore        *flow.Store
 	SchedulerPolicy  *scheduler.PolicyStore
@@ -245,6 +246,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/v2/launch/checklist", s.handleV2LaunchChecklist)
 	mux.HandleFunc("/v2/support/handoff", s.handleV2SupportHandoff)
 	mux.HandleFunc("/v2/workflows/definitions/render", s.handleV2WorkflowDefinitionRender)
+	mux.HandleFunc("/v2/workflows/run", s.handleV2WorkflowRun)
 	mux.HandleFunc("/v2/navigation", s.handleV2Navigation)
 	mux.HandleFunc("/v2/home", s.handleV2Home)
 	mux.HandleFunc("/v2/design-system", s.handleV2DesignSystem)
@@ -1168,6 +1170,17 @@ func (s *Server) executorNames() []string {
 	}
 	sort.Strings(names)
 	return names
+}
+
+func (s *Server) workflowRuntime() *worker.Runtime {
+	if s == nil {
+		return nil
+	}
+	if s.Runtime != nil {
+		return s.Runtime
+	}
+	runtime, _ := s.Worker.(*worker.Runtime)
+	return runtime
 }
 
 func eventState(eventType domain.EventType) string {

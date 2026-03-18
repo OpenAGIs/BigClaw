@@ -2,9 +2,12 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -12,9 +15,31 @@ import (
 	"bigclaw-go/internal/control"
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/events"
+	"bigclaw-go/internal/executor"
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/queue"
+	"bigclaw-go/internal/scheduler"
+	"bigclaw-go/internal/worker"
 )
+
+type workflowAPITestRunner struct {
+	kind   domain.ExecutorKind
+	result executor.Result
+}
+
+func (runner workflowAPITestRunner) Kind() domain.ExecutorKind { return runner.kind }
+
+func (runner workflowAPITestRunner) Capability() executor.Capability {
+	return executor.Capability{Kind: runner.kind, MaxConcurrency: 1, SupportsShell: true}
+}
+
+func (runner workflowAPITestRunner) Execute(_ context.Context, _ domain.Task) executor.Result {
+	result := runner.result
+	if result.FinishedAt.IsZero() {
+		result.FinishedAt = time.Unix(1700000002, 0).UTC()
+	}
+	return result
+}
 
 func TestV2WeeklyReportBuildsSummaryActionsAndMarkdownExport(t *testing.T) {
 	recorder := observability.NewRecorder()
@@ -365,6 +390,88 @@ func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
 	}
 	if renderDecoded.Rendered.ReportPath != "reports/BIG-401/run-1.md" || renderDecoded.Rendered.JournalPath != "journals/release-closeout/run-1.json" {
 		t.Fatalf("unexpected rendered workflow paths: %+v", renderDecoded.Rendered)
+	}
+
+	recorder = observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	q := queue.NewMemoryQueue()
+	runtime := &worker.Runtime{
+		WorkerID:    "worker-api-1",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(workflowAPITestRunner{kind: domain.ExecutorLocal, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    100 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+	runServer := &Server{
+		Recorder: recorder,
+		Queue:    q,
+		Bus:      bus,
+		Worker:   runtime,
+		Runtime:  runtime,
+		Control:  control.New(),
+		Now:      func() time.Time { return time.Unix(1700000000, 0).UTC() },
+	}
+	runHandler := runServer.Handler()
+	tempDir := t.TempDir()
+	runBody, _ := json.Marshal(map[string]any{
+		"definition": map[string]any{
+			"name":                  "release-closeout",
+			"steps":                 []map[string]any{{"name": "execute", "kind": "scheduler"}},
+			"report_path_template":  filepath.Join(tempDir, "reports", "{task_id}", "{run_id}.md"),
+			"journal_path_template": filepath.Join(tempDir, "journals", "{workflow}", "{run_id}.json"),
+			"validation_evidence":   []string{"go test ./..."},
+		},
+		"task": map[string]any{
+			"id":                  "BIG-402",
+			"title":               "Execute workflow run",
+			"acceptance_criteria": []string{"go test ./..."},
+			"validation_plan":     []string{"go test ./..."},
+		},
+		"run_id":              "run-2",
+		"validation_evidence": []string{"go test ./..."},
+		"git_push_succeeded":  true,
+		"git_log_stat_output": " cmd/file.go | 10 +++++-----",
+	})
+	runResponse := httptest.NewRecorder()
+	runHandler.ServeHTTP(runResponse, httptest.NewRequest(http.MethodPost, "/v2/workflows/run", bytes.NewReader(runBody)))
+	if runResponse.Code != http.StatusOK {
+		t.Fatalf("expected workflow run 200, got %d %s", runResponse.Code, runResponse.Body.String())
+	}
+	var runDecoded struct {
+		Result struct {
+			JournalPath string `json:"journal_path"`
+			ReportPath  string `json:"report_path"`
+			Acceptance  struct {
+				Status string `json:"status"`
+			} `json:"acceptance"`
+			Closeout struct {
+				Complete bool `json:"complete"`
+			} `json:"closeout"`
+			Task struct {
+				State string `json:"state"`
+			} `json:"task"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal(runResponse.Body.Bytes(), &runDecoded); err != nil {
+		t.Fatalf("decode workflow run response: %v", err)
+	}
+	if runDecoded.Result.Acceptance.Status != "accepted" || !runDecoded.Result.Closeout.Complete || runDecoded.Result.Task.State != "succeeded" {
+		t.Fatalf("unexpected workflow run result: %+v", runDecoded.Result)
+	}
+	reportContents, err := os.ReadFile(runDecoded.Result.ReportPath)
+	if err != nil {
+		t.Fatalf("read workflow report: %v", err)
+	}
+	journalContents, err := os.ReadFile(runDecoded.Result.JournalPath)
+	if err != nil {
+		t.Fatalf("read workflow journal: %v", err)
+	}
+	if !strings.Contains(string(reportContents), "Acceptance: accepted") || !strings.Contains(string(journalContents), `"status": "complete"`) {
+		t.Fatalf("unexpected workflow artifacts report=%s journal=%s", string(reportContents), string(journalContents))
 	}
 }
 

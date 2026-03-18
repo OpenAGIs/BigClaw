@@ -1,0 +1,161 @@
+package workflow
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
+	"bigclaw-go/internal/domain"
+	"bigclaw-go/internal/events"
+	"bigclaw-go/internal/executor"
+	"bigclaw-go/internal/observability"
+	"bigclaw-go/internal/queue"
+	"bigclaw-go/internal/scheduler"
+	"bigclaw-go/internal/worker"
+)
+
+type testRunner struct {
+	kind   domain.ExecutorKind
+	result executor.Result
+}
+
+func (runner testRunner) Kind() domain.ExecutorKind { return runner.kind }
+
+func (runner testRunner) Capability() executor.Capability {
+	return executor.Capability{Kind: runner.kind, MaxConcurrency: 1, SupportsShell: true}
+}
+
+func (runner testRunner) Execute(_ context.Context, _ domain.Task) executor.Result {
+	result := runner.result
+	if result.FinishedAt.IsZero() {
+		result.FinishedAt = time.Unix(1700000002, 0).UTC()
+	}
+	return result
+}
+
+func TestEngineRunDefinitionWritesReportAndJournal(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	runtime := &worker.Runtime{
+		WorkerID:    "worker-1",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(testRunner{kind: domain.ExecutorLocal, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    100 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+	engine := &Engine{
+		Runtime:  runtime,
+		Recorder: recorder,
+		Queue:    q,
+		Quota:    scheduler.QuotaSnapshot{ConcurrentLimit: 4, BudgetRemaining: 5000},
+		Now:      func() time.Time { return time.Unix(1700000000, 0).UTC() },
+	}
+
+	tempDir := t.TempDir()
+	definition, err := ParseDefinition(`{"name":"release-closeout","report_path_template":"` + filepath.Join(tempDir, `reports`, `{task_id}`, `{run_id}.md`) + `","journal_path_template":"` + filepath.Join(tempDir, `journals`, `{workflow}`, `{run_id}.json`) + `","validation_evidence":["go test ./..."]}`)
+	if err != nil {
+		t.Fatalf("parse definition: %v", err)
+	}
+	result, err := engine.RunDefinition(context.Background(), domain.Task{
+		ID:                 "task-1",
+		Title:              "Ship runtime closeout",
+		AcceptanceCriteria: []string{"go test ./..."},
+		ValidationPlan:     []string{"go test ./..."},
+	}, definition, "run-1", RunOptions{
+		ValidationEvidence: []string{"go test ./..."},
+		GitPushSucceeded:   true,
+		GitLogStatOutput:   " cmd/file.go | 10 +++++-----",
+	})
+	if err != nil {
+		t.Fatalf("run definition: %v", err)
+	}
+	if result.Acceptance.Status != "accepted" || !result.Acceptance.Passed {
+		t.Fatalf("expected accepted result, got %+v", result.Acceptance)
+	}
+	if !result.Closeout.Complete {
+		t.Fatalf("expected complete closeout, got %+v", result.Closeout)
+	}
+	if result.Task.State != domain.TaskSucceeded {
+		t.Fatalf("expected succeeded task, got %+v", result.Task)
+	}
+	if len(result.Events) != 4 {
+		t.Fatalf("expected 4 events, got %d", len(result.Events))
+	}
+	reportContents, err := os.ReadFile(filepath.Join(tempDir, "reports", "task-1", "run-1.md"))
+	if err != nil {
+		t.Fatalf("read report: %v", err)
+	}
+	if !strings.Contains(string(reportContents), "Acceptance: accepted") {
+		t.Fatalf("expected acceptance in report, got %s", string(reportContents))
+	}
+	journalContents, err := os.ReadFile(filepath.Join(tempDir, "journals", "release-closeout", "run-1.json"))
+	if err != nil {
+		t.Fatalf("read journal: %v", err)
+	}
+	if !strings.Contains(string(journalContents), `"step": "closeout"`) {
+		t.Fatalf("expected closeout journal entry, got %s", string(journalContents))
+	}
+}
+
+func TestEngineRunDefinitionRequiresApprovalForHighRiskTask(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	runtime := &worker.Runtime{
+		WorkerID:    "worker-2",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(testRunner{kind: domain.ExecutorKubernetes, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    100 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+	engine := &Engine{
+		Runtime:  runtime,
+		Recorder: recorder,
+		Queue:    q,
+		Quota:    scheduler.QuotaSnapshot{ConcurrentLimit: 4, BudgetRemaining: 5000},
+	}
+
+	definition, err := ParseDefinition(`{"name":"risk-closeout","validation_evidence":["go test ./..."]}`)
+	if err != nil {
+		t.Fatalf("parse definition: %v", err)
+	}
+	result, err := engine.RunDefinition(context.Background(), domain.Task{
+		ID:                 "task-risk",
+		Title:              "Sensitive rollout",
+		RiskLevel:          domain.RiskHigh,
+		AcceptanceCriteria: []string{"go test ./..."},
+		ValidationPlan:     []string{"go test ./..."},
+	}, definition, "run-risk", RunOptions{ValidationEvidence: []string{"go test ./..."}})
+	if err != nil {
+		t.Fatalf("run definition: %v", err)
+	}
+	if result.Acceptance.Status != "needs-approval" || result.Acceptance.Passed {
+		t.Fatalf("expected needs-approval, got %+v", result.Acceptance)
+	}
+}
+
+func TestAcceptanceGateRejectsMissingEvidence(t *testing.T) {
+	decision := AcceptanceGate{}.Evaluate(domain.Task{
+		ID:                 "task-evidence",
+		AcceptanceCriteria: []string{"go test ./..."},
+		ValidationPlan:     []string{"git log -1 --stat"},
+	}, []string{"go test ./..."}, nil)
+	if decision.Status != "rejected" || decision.Passed {
+		t.Fatalf("expected rejected decision, got %+v", decision)
+	}
+	if len(decision.MissingValidationSteps) != 1 || decision.MissingValidationSteps[0] != "git log -1 --stat" {
+		t.Fatalf("unexpected missing validation steps: %+v", decision)
+	}
+}

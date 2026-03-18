@@ -109,6 +109,7 @@ func main() {
 		EventLog:         eventLog,
 		SubscriberLeases: subscriberLeases,
 		Worker:           runtime,
+		Runtime:          runtime,
 		Control:          controller,
 		SchedulerPolicy:  policyStore,
 		SchedulerRuntime: schedulerRuntime,

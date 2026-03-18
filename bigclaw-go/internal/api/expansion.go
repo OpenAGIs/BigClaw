@@ -17,6 +17,7 @@ import (
 	"bigclaw-go/internal/prd"
 	"bigclaw-go/internal/product"
 	"bigclaw-go/internal/reporting"
+	"bigclaw-go/internal/scheduler"
 	"bigclaw-go/internal/workflow"
 )
 
@@ -44,6 +45,17 @@ type workflowDefinitionRenderRequest struct {
 	Definition workflow.Definition `json:"definition"`
 	Task       domain.Task         `json:"task"`
 	RunID      string              `json:"run_id"`
+}
+
+type workflowRunRequest struct {
+	Definition         workflow.Definition     `json:"definition"`
+	Task               domain.Task             `json:"task"`
+	RunID              string                  `json:"run_id"`
+	ValidationEvidence []string                `json:"validation_evidence,omitempty"`
+	Approvals          []string                `json:"approvals,omitempty"`
+	GitPushSucceeded   bool                    `json:"git_push_succeeded"`
+	GitLogStatOutput   string                  `json:"git_log_stat_output,omitempty"`
+	Quota              scheduler.QuotaSnapshot `json:"quota,omitempty"`
 }
 
 func (s *Server) handleV2WeeklyReport(w http.ResponseWriter, r *http.Request) {
@@ -305,6 +317,53 @@ func (s *Server) handleV2WorkflowDefinitionRender(w http.ResponseWriter, r *http
 			"journal_path": request.Definition.RenderJournalPath(request.Task, request.RunID),
 		},
 	})
+}
+
+func (s *Server) handleV2WorkflowRun(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	runtime := s.workflowRuntime()
+	if runtime == nil {
+		http.Error(w, "workflow runtime not configured", http.StatusServiceUnavailable)
+		return
+	}
+	var request workflowRunRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, fmt.Sprintf("decode workflow run request: %v", err), http.StatusBadRequest)
+		return
+	}
+	if strings.TrimSpace(request.Definition.Name) == "" {
+		http.Error(w, "missing definition.name", http.StatusBadRequest)
+		return
+	}
+	if strings.TrimSpace(request.Task.ID) == "" {
+		http.Error(w, "missing task.id", http.StatusBadRequest)
+		return
+	}
+	if strings.TrimSpace(request.RunID) == "" {
+		http.Error(w, "missing run_id", http.StatusBadRequest)
+		return
+	}
+	engine := &workflow.Engine{
+		Runtime:  runtime,
+		Recorder: s.Recorder,
+		Queue:    s.Queue,
+		Quota:    request.Quota,
+		Now:      s.Now,
+	}
+	result, err := engine.RunDefinition(r.Context(), request.Task, request.Definition, request.RunID, workflow.RunOptions{
+		ValidationEvidence: request.ValidationEvidence,
+		Approvals:          request.Approvals,
+		GitPushSucceeded:   request.GitPushSucceeded,
+		GitLogStatOutput:   request.GitLogStatOutput,
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("run workflow definition: %v", err), http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"result": result})
 }
 
 func (s *Server) handleV2Navigation(w http.ResponseWriter, r *http.Request) {
