@@ -60,10 +60,15 @@
           "author": "codex",
           "created_at": "2026-03-18T15:42:00Z",
           "body": "Added Go-owned engineering overview reporting in `bigclaw-go/internal/reporting`, including KPI/funnel/blocker/activity contracts, role-based module visibility, a Go-native builder over `domain.Task` and `domain.Event`, markdown rendering, and bundle export coverage. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `a651069b4611b12458fb297e59c70e65e16bb05c`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured."
+        },
+        {
+          "author": "codex",
+          "created_at": "2026-03-18T15:56:00Z",
+          "body": "Added Go-owned policy/prompt version center reporting in `bigclaw-go/internal/reporting`, including version history contracts, diff summaries, rollback-readiness checks, markdown rendering, and bundle export coverage. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHAs: `50877662af2669f304db2e42eb06a26262d7fec1` (reporting surface), `71ab21b104baaaf2cbf63f7da17bad6df4f83b57` (tracked `go.mod` difflib dependency required by the new reporting diff preview). PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured."
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-18T15:42:00Z"
+      "updated_at": "2026-03-18T15:56:00Z"
     },
     {
       "id": "big-gom-305",
