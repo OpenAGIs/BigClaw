@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -342,4 +343,117 @@ func TestRunLocalIssueUpdateTransitionsStateAndAppendsComment(t *testing.T) {
 	if !strings.Contains(text, `"commit_sha": "feedface"`) {
 		t.Fatalf("expected commit metadata, got %s", text)
 	}
+}
+
+func TestRunWorkspaceValidateEmitsJSONReport(t *testing.T) {
+	root := t.TempDir()
+	remote := initWorkspaceValidationRemote(t, root)
+	workspaceRoot := filepath.Join(root, "workspaces")
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runWorkspace([]string{
+		"validate",
+		"--workspace-root", workspaceRoot,
+		"--repo-url", remote,
+		"--cache-base", filepath.Join(root, "repos"),
+		"--issues", "OPE-401,OPE-402,OPE-403",
+		"--json",
+	})
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("run workspace validate: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"workspace_count": 3`)) {
+		t.Fatalf("expected workspace count in JSON report, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"cleanup_preserved_cache": true`)) {
+		t.Fatalf("expected cleanup summary in JSON report, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"bootstrap_results"`)) {
+		t.Fatalf("expected bootstrap results in JSON report, got %s", string(output))
+	}
+}
+
+func TestRunWorkspaceValidateWritesMarkdownReport(t *testing.T) {
+	root := t.TempDir()
+	remote := initWorkspaceValidationRemote(t, root)
+	reportPath := filepath.Join(root, "reports", "bootstrap-validation.md")
+
+	runErr := runWorkspace([]string{
+		"validate",
+		"--workspace-root", filepath.Join(root, "workspaces"),
+		"--repo-url", remote,
+		"--cache-base", filepath.Join(root, "repos"),
+		"--issues", "OPE-411,OPE-412,OPE-413",
+		"--report", reportPath,
+		"--cleanup=true",
+	})
+	if runErr != nil {
+		t.Fatalf("run workspace validate with report: %v", runErr)
+	}
+
+	body, err := os.ReadFile(reportPath)
+	if err != nil {
+		t.Fatalf("read markdown report: %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, "# Symphony bootstrap cache validation") {
+		t.Fatalf("expected markdown heading, got %s", text)
+	}
+	if !strings.Contains(text, "- Workspaces: `3`") {
+		t.Fatalf("expected workspace summary, got %s", text)
+	}
+	if !strings.Contains(text, "Cleanup preserved cache: `true`") {
+		t.Fatalf("expected cleanup summary, got %s", text)
+	}
+}
+
+func initWorkspaceValidationRemote(t *testing.T, root string) string {
+	t.Helper()
+	remote := filepath.Join(root, "remote.git")
+	if output, err := exec.Command("git", "init", "--bare", "--initial-branch=main", remote).CombinedOutput(); err != nil {
+		t.Fatalf("git init --bare failed: %v (%s)", err, string(output))
+	}
+
+	source := filepath.Join(root, "source")
+	if err := os.MkdirAll(source, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{
+		{"init", "-b", "main"},
+		{"config", "user.email", "test@example.com"},
+		{"config", "user.name", "Test User"},
+		{"remote", "add", "origin", remote},
+	} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = source
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v failed: %v (%s)", args, err, string(output))
+		}
+	}
+	if err := os.WriteFile(filepath.Join(source, "README.md"), []byte("hello\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{
+		{"add", "README.md"},
+		{"commit", "-m", "initial"},
+		{"push", "-u", "origin", "main"},
+	} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = source
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v failed: %v (%s)", args, err, string(output))
+		}
+	}
+	return remote
 }
