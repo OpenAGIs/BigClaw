@@ -81,3 +81,60 @@ func TestLocalIssueStoreIssueStatesFiltersRequestedStates(t *testing.T) {
 		t.Fatalf("unexpected filtered issues: %+v", issues)
 	}
 }
+
+func TestLocalIssueStoreCloseIssueAppendsCommentMetadata(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "title": "Toolchain migration",
+      "state": "In Progress",
+      "comments": [
+        {"body": "existing", "created_at": "2026-03-18T09:00:00Z"}
+      ]
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	updatedState, err := store.CloseIssue("BIG-GOM-307", "Done", LocalIssueComment{
+		Body:      "What changed:\nMoved workflow sync into Go\n\nValidation:\ngo test ./...",
+		CreatedAt: time.Date(2026, 3, 18, 16, 45, 0, 0, time.UTC),
+		Metadata: map[string]any{
+			"commit_sha": "abc123",
+			"pr_url":     "https://github.com/OpenAGIs/BigClaw/pull/307",
+		},
+	}, time.Date(2026, 3, 18, 16, 45, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("close issue: %v", err)
+	}
+	if updatedState != "Done" {
+		t.Fatalf("expected Done, got %q", updatedState)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"state": "Done"`) {
+		t.Fatalf("expected done state, got %s", text)
+	}
+	if strings.Count(text, `"body":`) != 2 {
+		t.Fatalf("expected appended comment, got %s", text)
+	}
+	if !strings.Contains(text, `"commit_sha": "abc123"`) {
+		t.Fatalf("expected commit metadata, got %s", text)
+	}
+	if !strings.Contains(text, `"pr_url": "https://github.com/OpenAGIs/BigClaw/pull/307"`) {
+		t.Fatalf("expected PR metadata, got %s", text)
+	}
+}

@@ -216,3 +216,65 @@ func TestRunRefillOncePromotesUsingLocalIssueStore(t *testing.T) {
 		t.Fatalf("expected local issue store updated_at refresh, got %s", string(body))
 	}
 }
+
+func TestRunLocalIssueCloseoutMarksDoneAndAppendsComment(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
+      "state": "In Progress",
+      "comments": []
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runLocalIssue([]string{
+		"closeout",
+		"--local-issues", storePath,
+		"--issue", "BIG-GOM-307",
+		"--summary", "Moved local tracker closeout into Go.",
+		"--validation", "go test ./cmd/bigclawctl ./internal/refill",
+		"--commit", "deadbeef",
+		"--pr-url", "https://github.com/OpenAGIs/BigClaw/pull/307",
+		"--json",
+	})
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("run local issue closeout: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"state": "Done"`)) {
+		t.Fatalf("expected done state in output, got %s", string(output))
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"state": "Done"`) {
+		t.Fatalf("expected done state, got %s", text)
+	}
+	if !strings.Contains(text, `What changed:\nMoved local tracker closeout into Go.`) {
+		t.Fatalf("expected closeout summary in comment, got %s", text)
+	}
+	if !strings.Contains(text, `"commit_sha": "deadbeef"`) {
+		t.Fatalf("expected commit sha metadata, got %s", text)
+	}
+}

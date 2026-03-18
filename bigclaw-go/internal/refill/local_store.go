@@ -17,6 +17,12 @@ type LocalIssueStore struct {
 	issueMap []map[string]any
 }
 
+type LocalIssueComment struct {
+	Body      string
+	CreatedAt time.Time
+	Metadata  map[string]any
+}
+
 func LoadLocalIssueStore(path string) (*LocalIssueStore, error) {
 	absolute, err := filepath.Abs(path)
 	if err != nil {
@@ -104,8 +110,22 @@ func (s *LocalIssueStore) UpdateIssueState(ref string, stateName string, now tim
 		if !issueMatchesRef(issue, ref) {
 			continue
 		}
-		issue["state"] = stateName
-		issue["updated_at"] = now.UTC().Truncate(time.Second).Format(time.RFC3339)
+		updateIssueFields(issue, stateName, now)
+		if err := s.Save(); err != nil {
+			return "", err
+		}
+		return mapString(issue, "state"), nil
+	}
+	return "", ErrLocalIssueNotFound
+}
+
+func (s *LocalIssueStore) CloseIssue(ref string, stateName string, comment LocalIssueComment, now time.Time) (string, error) {
+	for _, issue := range s.issueMap {
+		if !issueMatchesRef(issue, ref) {
+			continue
+		}
+		updateIssueFields(issue, stateName, now)
+		appendIssueComment(issue, comment)
 		if err := s.Save(); err != nil {
 			return "", err
 		}
@@ -132,6 +152,30 @@ func (s *LocalIssueStore) Save() error {
 
 func issueMatchesRef(issue map[string]any, ref string) bool {
 	return mapString(issue, "id") == ref || mapString(issue, "identifier") == ref
+}
+
+func updateIssueFields(issue map[string]any, stateName string, now time.Time) {
+	issue["state"] = stateName
+	issue["updated_at"] = now.UTC().Truncate(time.Second).Format(time.RFC3339)
+}
+
+func appendIssueComment(issue map[string]any, comment LocalIssueComment) {
+	body := strings.TrimSpace(comment.Body)
+	if body == "" {
+		return
+	}
+	entry := map[string]any{
+		"body":       body,
+		"created_at": comment.CreatedAt.UTC().Truncate(time.Second).Format(time.RFC3339),
+	}
+	for key, value := range comment.Metadata {
+		if strings.TrimSpace(key) == "" || value == nil {
+			continue
+		}
+		entry[key] = value
+	}
+	comments, _ := issue["comments"].([]any)
+	issue["comments"] = append(comments, entry)
 }
 
 func mapString(issue map[string]any, key string) string {

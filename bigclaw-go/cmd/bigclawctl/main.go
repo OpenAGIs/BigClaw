@@ -110,6 +110,8 @@ func main() {
 		err = runWorkspace(os.Args[2:])
 	case "refill":
 		err = runRefill(os.Args[2:])
+	case "local-issue":
+		err = runLocalIssue(os.Args[2:])
 	default:
 		err = fmt.Errorf("unknown command: %s", os.Args[1])
 	}
@@ -172,6 +174,65 @@ func runGitHubSync(args []string) error {
 		return emit(payload, *asJSON, code)
 	default:
 		return fmt.Errorf("unknown github-sync subcommand: %s", command)
+	}
+}
+
+func runLocalIssue(args []string) error {
+	if len(args) == 0 {
+		return errors.New("usage: bigclawctl local-issue <closeout> [flags]")
+	}
+	command := args[0]
+	flags := flag.NewFlagSet("local-issue "+command, flag.ContinueOnError)
+	flags.SetOutput(io.Discard)
+	localIssuesPath := flags.String("local-issues", "", "local issue store path")
+	issueRef := flags.String("issue", "", "issue identifier or id")
+	stateName := flags.String("state", "Done", "state name")
+	summary := flags.String("summary", "", "what changed")
+	validation := flags.String("validation", "", "validation commands/results")
+	commitSHA := flags.String("commit", "", "commit SHA")
+	prURL := flags.String("pr-url", "", "PR URL")
+	asJSON := flags.Bool("json", false, "json")
+	if err := flags.Parse(args[1:]); err != nil {
+		return err
+	}
+	switch command {
+	case "closeout":
+		if trim(*issueRef) == "" {
+			return errors.New("local-issue closeout requires --issue")
+		}
+		storePath := resolvedLocalIssueStorePath(*localIssuesPath)
+		if storePath == "" {
+			return errors.New("local issue store not found")
+		}
+		store, err := refill.LoadLocalIssueStore(storePath)
+		if err != nil {
+			return err
+		}
+		now := time.Now().UTC()
+		commentBody := buildCloseoutComment(*summary, *validation, *commitSHA, *prURL)
+		comment := refill.LocalIssueComment{
+			Body:      commentBody,
+			CreatedAt: now,
+			Metadata: map[string]any{
+				"commit_sha": trim(*commitSHA),
+				"pr_url":     trim(*prURL),
+			},
+		}
+		updatedState, err := store.CloseIssue(*issueRef, *stateName, comment, now)
+		if err != nil {
+			return err
+		}
+		return emit(map[string]any{
+			"status":       "ok",
+			"backend":      "local",
+			"issue":        trim(*issueRef),
+			"state":        updatedState,
+			"local_issues": absPath(storePath),
+			"commit_sha":   trim(*commitSHA),
+			"pr_url":       trim(*prURL),
+		}, *asJSON, 0)
+	default:
+		return fmt.Errorf("unknown local-issue subcommand: %s", command)
 	}
 }
 
@@ -520,6 +581,33 @@ func emit(payload map[string]any, asJSON bool, exitCode int) error {
 	return nil
 }
 
+func buildCloseoutComment(summary string, validation string, commitSHA string, prURL string) string {
+	lines := []string{}
+	appendSection := func(title string, value string) {
+		value = trim(value)
+		if value == "" {
+			return
+		}
+		if len(lines) > 0 {
+			lines = append(lines, "")
+		}
+		lines = append(lines, title+":")
+		lines = append(lines, value)
+	}
+	appendSection("What changed", summary)
+	appendSection("Validation", validation)
+	if trim(commitSHA) != "" {
+		if len(lines) > 0 {
+			lines = append(lines, "")
+		}
+		lines = append(lines, "Commit SHA: "+trim(commitSHA))
+	}
+	if trim(prURL) != "" {
+		lines = append(lines, "PR URL: "+trim(prURL))
+	}
+	return trim(joinLines(lines))
+}
+
 type exitError int
 
 func (e exitError) Error() string {
@@ -607,4 +695,14 @@ func atoiPointer(value string) *int {
 		return nil
 	}
 	return &number
+}
+
+func joinLines(lines []string) string {
+	return string(bytes.Join(func() [][]byte {
+		parts := make([][]byte, 0, len(lines))
+		for _, line := range lines {
+			parts = append(parts, []byte(line))
+		}
+		return parts
+	}(), []byte("\n")))
 }

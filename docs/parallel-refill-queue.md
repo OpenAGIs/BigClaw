@@ -18,6 +18,7 @@ longer waits on Linear to keep issue execution moving.
 - Local issue CLI:
   - `bash scripts/ops/bigclaw-issue list`
   - `bash scripts/ops/bigclaw-issue state BIG-GOM-303 "In Progress"`
+  - `bash scripts/ops/bigclawctl local-issue closeout --local-issues local-issues.json --issue BIG-GOM-307 --summary "..." --validation "..." --commit "$(git rev-parse HEAD)" --pr-url "https://github.com/OpenAGIs/BigClaw/pull/307"`
 - Local dashboard/orchestrator:
   - `bash scripts/ops/bigclaw-symphony`
   - `bash scripts/ops/bigclaw-panel`
@@ -42,6 +43,7 @@ longer waits on Linear to keep issue execution moving.
 - Current tracker expectation:
   - issue state lives in `local-issues.json`
   - queue promotion is handled by `bigclawctl refill`
+  - closeout comments and terminal state updates can be written by `bigclawctl local-issue closeout`
 - Repo-native cutover plan:
   - `docs/go-mainline-cutover-issue-pack.md`
 
