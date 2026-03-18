@@ -56,6 +56,14 @@ func (r *Recorder) Record(event domain.Event) {
 	}
 }
 
+func (r *Recorder) RecordSpecEvent(event domain.Event) error {
+	if err := ValidateEvent(event); err != nil {
+		return err
+	}
+	r.Record(event)
+	return nil
+}
+
 func (r *Recorder) StoreTask(task domain.Task) {
 	if task.ID == "" {
 		return

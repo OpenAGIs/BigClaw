@@ -1,6 +1,7 @@
 package observability
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -76,5 +77,54 @@ func TestRecorderStoresTaskSnapshotsAndAppliesEventStates(t *testing.T) {
 	tasks := recorder.Tasks(1)
 	if len(tasks) != 1 || tasks[0].ID != "task-snapshot" {
 		t.Fatalf("expected sorted task snapshots, got %+v", tasks)
+	}
+}
+
+func TestRecordSpecEventRejectsMalformedAuditEventsBeforeMutation(t *testing.T) {
+	recorder := NewRecorder()
+	err := recorder.RecordSpecEvent(domain.Event{
+		ID:     "evt-approval-invalid",
+		Type:   domain.EventType(ApprovalRecordedEvent),
+		TaskID: "task-invalid",
+		RunID:  "run-invalid",
+		Payload: map[string]any{
+			"approvals": []string{"eng_lead"},
+		},
+	})
+	if err == nil || !strings.Contains(err.Error(), "approval_count") {
+		t.Fatalf("expected validation error, got %v", err)
+	}
+	if len(recorder.Logs()) != 0 {
+		t.Fatalf("expected malformed event to avoid recorder mutation, got %+v", recorder.Logs())
+	}
+	if snapshot := recorder.Snapshot(); len(snapshot) != 0 {
+		t.Fatalf("expected malformed event to avoid counters, got %+v", snapshot)
+	}
+}
+
+func TestRecordSpecEventAcceptsWellFormedAuditEvents(t *testing.T) {
+	recorder := NewRecorder()
+	event := domain.Event{
+		ID:        "evt-approval-valid",
+		Type:      domain.EventType(ApprovalRecordedEvent),
+		TaskID:    "task-valid",
+		RunID:     "run-valid",
+		TraceID:   "trace-valid",
+		Timestamp: time.Now(),
+		Payload: map[string]any{
+			"approvals":         []string{"eng_lead"},
+			"approval_count":    1,
+			"acceptance_status": "approved",
+		},
+	}
+	if err := recorder.RecordSpecEvent(event); err != nil {
+		t.Fatalf("expected valid spec event to record, got %v", err)
+	}
+	logs := recorder.Logs()
+	if len(logs) != 1 || logs[0].ID != event.ID {
+		t.Fatalf("expected recorded event, got %+v", logs)
+	}
+	if snapshot := recorder.Snapshot(); snapshot[event.Type] != 1 {
+		t.Fatalf("expected event counter, got %+v", snapshot)
 	}
 }
