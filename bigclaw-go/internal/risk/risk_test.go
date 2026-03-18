@@ -44,3 +44,17 @@ func TestScoreTaskUsesFailuresRetriesAndRegressions(t *testing.T) {
 		t.Fatalf("expected populated risk factor summary, got %+v", score)
 	}
 }
+
+func TestScoreTaskFlagsNegativeBudgetForManualReview(t *testing.T) {
+	score := ScoreTask(domain.Task{
+		ID:          "BIG-902-budget",
+		Title:       "backfill billing envelope",
+		BudgetCents: -1,
+	}, nil)
+	if score.Total != 20 || score.Level != domain.RiskLow || score.RequiresApproval {
+		t.Fatalf("expected negative budget to add review-only risk without high-risk approval, got %+v", score)
+	}
+	if len(score.Factors) != 1 || score.Factors[0].Name != "budget" {
+		t.Fatalf("expected budget factor, got %+v", score.Factors)
+	}
+}
