@@ -384,6 +384,81 @@ func TestRunWorkspaceValidateEmitsJSONReport(t *testing.T) {
 	}
 }
 
+func TestRunGitHubSyncStatusRequireCleanReturnsExitErrorForDirtyRepo(t *testing.T) {
+	root := t.TempDir()
+	repo := initGitHubSyncRepo(t, root)
+	if err := os.WriteFile(filepath.Join(repo, "README.md"), []byte("dirty\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runGitHubSync([]string{
+		"status",
+		"--repo", repo,
+		"--require-clean",
+		"--json",
+	})
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr == nil {
+		t.Fatalf("expected require-clean to fail for dirty repo (stdout=%s)", string(output))
+	}
+	if _, ok := runErr.(exitError); !ok {
+		t.Fatalf("expected exitError, got %T (%v)", runErr, runErr)
+	}
+	if !bytes.Contains(output, []byte(`"dirty": true`)) {
+		t.Fatalf("expected dirty status in output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"synced": true`)) {
+		t.Fatalf("expected synced branch state in output, got %s", string(output))
+	}
+}
+
+func TestRunGitHubSyncSyncAllowDirtyReportsStatus(t *testing.T) {
+	root := t.TempDir()
+	repo := initGitHubSyncRepo(t, root)
+	if err := os.WriteFile(filepath.Join(repo, "README.md"), []byte("dirty\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runGitHubSync([]string{
+		"sync",
+		"--repo", repo,
+		"--allow-dirty",
+		"--json",
+	})
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("expected allow-dirty sync to succeed: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"dirty": true`)) {
+		t.Fatalf("expected dirty status in output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"status": "ok"`)) {
+		t.Fatalf("expected ok status in output, got %s", string(output))
+	}
+}
+
 func TestRunWorkspaceValidateWritesMarkdownReport(t *testing.T) {
 	root := t.TempDir()
 	remote := initWorkspaceValidationRemote(t, root)
@@ -456,4 +531,44 @@ func initWorkspaceValidationRemote(t *testing.T, root string) string {
 		}
 	}
 	return remote
+}
+
+func initGitHubSyncRepo(t *testing.T, root string) string {
+	t.Helper()
+	remote := filepath.Join(root, "remote.git")
+	if output, err := exec.Command("git", "init", "--bare", "--initial-branch=main", remote).CombinedOutput(); err != nil {
+		t.Fatalf("git init --bare failed: %v (%s)", err, string(output))
+	}
+
+	repo := filepath.Join(root, "repo")
+	if err := os.MkdirAll(repo, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{
+		{"init", "-b", "main"},
+		{"config", "user.email", "test@example.com"},
+		{"config", "user.name", "Test User"},
+		{"remote", "add", "origin", remote},
+	} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = repo
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v failed: %v (%s)", args, err, string(output))
+		}
+	}
+	if err := os.WriteFile(filepath.Join(repo, "README.md"), []byte("hello\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{
+		{"add", "README.md"},
+		{"commit", "-m", "initial"},
+		{"push", "-u", "origin", "main"},
+	} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = repo
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v failed: %v (%s)", args, err, string(output))
+		}
+	}
+	return repo
 }
