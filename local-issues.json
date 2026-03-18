@@ -18,17 +18,21 @@
       "title": "Risk, policy, and approval semantics migration",
       "description": "Keep porting governance, execution-contract, audit, and policy semantics into Go so review and approval behavior no longer depends on Python-only code paths.",
       "priority": 1,
-      "state": "In Progress",
+      "state": "Done",
       "labels": ["go-mainline", "migration", "risk", "policy"],
       "assigned_to_worker": true,
       "comments": [
         {
           "body": "Restored Python risk-scoring parity for invalid budgets in `bigclaw-go/internal/risk/risk.go` by adding a manual-review `budget` factor when `budget_cents` is negative, and added `TestScoreTaskFlagsNegativeBudgetForManualReview` coverage in `bigclaw-go/internal/risk/risk_test.go`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/risk` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `69b1d9b4759537af3154cc26999c6f5227c9af80`\n- remote SHA check for `origin/symphony/BIG-GOM-302` -> `69b1d9b4759537af3154cc26999c6f5227c9af80` (matches local)\n\nCommit: `69b1d9b4759537af3154cc26999c6f5227c9af80`\nPR URL: unavailable in this workspace mirror (`origin` is a local path, not a GitHub HTTPS remote).",
           "created_at": "2026-03-18T15:35:00Z"
+        },
+        {
+          "body": "Completed the remaining Go-side audit semantics parity for policy and approval events in `bigclaw-go/internal/observability/*`.\n\nWhat changed:\n- `bigclaw-go/internal/observability/audit.go` now validates spec-backed execution audit events before JSONL persistence, using top-level `task_id` / `run_id` plus payload fields so malformed approval, takeover, budget-override, and handoff events cannot be written.\n- `bigclaw-go/internal/observability/recorder.go` now exposes `RecordSpecEvent`, a spec-aware recorder path that rejects malformed audit events before they mutate in-memory recorder state.\n- Added focused coverage in `bigclaw-go/internal/observability/audit_test.go` and `bigclaw-go/internal/observability/recorder_test.go` for top-level identifier handling, missing required fields, sink rejection, and recorder rejection/acceptance behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/observability` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `caecf9d6ce3774d0491d5ddd52e15dc771594236`\n- remote SHA check for `origin/symphony/BIG-GOM-302` -> `caecf9d6ce3774d0491d5ddd52e15dc771594236` (matches local)\n- `git log -1 --stat` captured commit `caecf9d6ce3774d0491d5ddd52e15dc771594236` with recorder test coverage; prior supporting commit `1eb6016c8cb1b1add099cdfce166e9dc6f8427e1` enforced spec-backed sink validation.\n\nCommit: `caecf9d6ce3774d0491d5ddd52e15dc771594236`\nPR URL: unavailable in this workspace mirror (`origin` is a local path, not a GitHub HTTPS remote).",
+          "created_at": "2026-03-18T15:38:03Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-18T15:35:00Z"
+      "updated_at": "2026-03-18T15:38:03Z"
     },
     {
       "id": "big-gom-303",

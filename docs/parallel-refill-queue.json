@@ -17,10 +17,11 @@
     "blocked_reason": "Linear workspace issue quota still blocks new Linear issues, but the active BigClaw tracker now runs from local-issues.json and this queue remains the refill source of truth"
   },
   "recent_batches": {
-    "completed": [],
+    "completed": [
+      "BIG-GOM-302"
+    ],
     "active": [
       "BIG-GOM-301",
-      "BIG-GOM-302",
       "BIG-GOM-307"
     ],
     "standby": [
@@ -52,7 +53,7 @@
       "identifier": "BIG-GOM-302",
       "title": "Risk, policy, and approval semantics migration",
       "track": "Control/Workflow Surface Migration",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-GOM-303",
