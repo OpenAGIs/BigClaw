@@ -174,6 +174,66 @@ func TestEnsureRepoSyncPublishesMissingIssueBranchEvenWhenHeadMatchesRemoteDefau
 	}
 }
 
+func TestEnsureRepoSyncFastForwardsCleanBranchBeforePush(t *testing.T) {
+	tmp := t.TempDir()
+	remote := filepath.Join(tmp, "remote.git")
+	if output, err := exec.Command("git", "init", "--bare", "--initial-branch=main", remote).CombinedOutput(); err != nil {
+		t.Fatalf("git init --bare failed: %v (%s)", err, string(output))
+	}
+
+	seed := filepath.Join(tmp, "seed")
+	if err := os.MkdirAll(seed, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initRepo(t, seed)
+	if output, err := exec.Command("git", "-C", seed, "branch", "-M", "main").CombinedOutput(); err != nil {
+		t.Fatalf("git branch -M failed: %v (%s)", err, string(output))
+	}
+	cmd := exec.Command("git", "remote", "add", "origin", remote)
+	cmd.Dir = seed
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git remote add failed: %v (%s)", err, string(output))
+	}
+	if output, err := exec.Command("git", "-C", seed, "config", "core.hooksPath", "/dev/null").CombinedOutput(); err != nil {
+		t.Fatalf("git config core.hooksPath failed: %v (%s)", err, string(output))
+	}
+	commitFile(t, seed, "README.md", "seed\n", "seed")
+	cmd = exec.Command("git", "push", "-u", "origin", "main")
+	cmd.Dir = seed
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git push seed failed: %v (%s)", err, string(output))
+	}
+
+	stale := filepath.Join(tmp, "stale")
+	if output, err := exec.Command("git", "clone", "-b", "main", remote, stale).CombinedOutput(); err != nil {
+		t.Fatalf("git clone failed: %v (%s)", err, string(output))
+	}
+
+	expectedSHA := commitFile(t, seed, "README.md", "seed\nnext\n", "next")
+	cmd = exec.Command("git", "push", "origin", "main")
+	cmd.Dir = seed
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git push next failed: %v (%s)", err, string(output))
+	}
+
+	status, err := EnsureRepoSync(stale, "origin", true, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status.Pushed {
+		t.Fatalf("expected fast-forward without an extra push, got %+v", status)
+	}
+	if !status.Synced || status.LocalSHA != expectedSHA || status.RemoteSHA != expectedSHA {
+		t.Fatalf("expected stale branch to fast-forward to %s, got %+v", expectedSHA, status)
+	}
+	if got := gitOutput(t, stale, "rev-parse", "HEAD"); got != expectedSHA {
+		t.Fatalf("expected local head %s, got %s", expectedSHA, got)
+	}
+	if got := gitOutput(t, stale, "rev-parse", "origin/main"); got != expectedSHA {
+		t.Fatalf("expected origin/main %s, got %s", expectedSHA, got)
+	}
+}
+
 func TestInspectRepoSyncMarksDirtyWorktree(t *testing.T) {
 	tmp := t.TempDir()
 	remote := filepath.Join(tmp, "remote.git")
