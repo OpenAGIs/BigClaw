@@ -24,6 +24,7 @@ func TestMapSourceState(t *testing.T) {
 		"In Progress":  domain.TaskRunning,
 		"Blocked":      domain.TaskBlocked,
 		"Closed":       domain.TaskSucceeded,
+		"resolved":     domain.TaskSucceeded,
 		"failed check": domain.TaskFailed,
 	}
 	for input, want := range cases {
@@ -62,5 +63,57 @@ func TestMapSourceIssueToTask(t *testing.T) {
 	}
 	if task.Metadata["source_state"] != "Todo" {
 		t.Fatalf("expected source state metadata Todo, got %q", task.Metadata["source_state"])
+	}
+	if task.Metadata["source_id"] != "BIG-102" {
+		t.Fatalf("expected source ID metadata BIG-102, got %q", task.Metadata["source_id"])
+	}
+	if task.Metadata["issue_url"] != "https://linear.app/openagi/issue/BIG-102" {
+		t.Fatalf("expected issue_url metadata to be preserved, got %q", task.Metadata["issue_url"])
+	}
+	if task.TraceID != "BIG-102" {
+		t.Fatalf("expected trace ID BIG-102, got %q", task.TraceID)
+	}
+}
+
+func TestMapSourceIssueToTaskAppliesFallbacksAndGitHubTooling(t *testing.T) {
+	issue := SourceIssue{
+		Source:      "",
+		SourceID:    "",
+		Title:       "Fix repo drift",
+		Description: "desc",
+		State:       "Resolved",
+		Links:       map[string]string{"issue": "https://github.com/OpenAGIs/BigClaw/issues/7"},
+	}
+	task := MapSourceIssueToTask(issue)
+	if task.ID != "unknown:fix-repo-drift" {
+		t.Fatalf("expected fallback task ID unknown:fix-repo-drift, got %q", task.ID)
+	}
+	if task.Source != "unknown" {
+		t.Fatalf("expected blank source to normalize to unknown, got %q", task.Source)
+	}
+	if task.TraceID != task.ID {
+		t.Fatalf("expected trace ID to match fallback ID, got %q", task.TraceID)
+	}
+	if task.State != domain.TaskSucceeded {
+		t.Fatalf("expected resolved state to map to succeeded, got %q", task.State)
+	}
+	if task.RequiredTools[0] != "connector" {
+		t.Fatalf("expected unknown source to use connector tooling, got %#v", task.RequiredTools)
+	}
+}
+
+func TestMapSourceIssueToTaskUsesGitHubTooling(t *testing.T) {
+	issue := SourceIssue{
+		Source:   "github",
+		SourceID: "OpenAGIs/BigClaw#8",
+		Title:    "Fix sync script",
+		State:    "In Progress",
+	}
+	task := MapSourceIssueToTask(issue)
+	if task.RequiredTools[0] != "github" {
+		t.Fatalf("expected github source to require github tooling, got %#v", task.RequiredTools)
+	}
+	if task.State != domain.TaskRunning {
+		t.Fatalf("expected in-progress source state to map to running, got %q", task.State)
 	}
 }

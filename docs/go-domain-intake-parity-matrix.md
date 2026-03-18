@@ -53,12 +53,12 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
   - `/v2/intake/issues/map`
   - `/v2/workflows/definitions/render`
 - The active API and contract mainline now uses `internal/intake` and `internal/workflow` as the sole Go owners for this migration slice.
+- Go tests now pin the connector field contract, source-issue mapping fallbacks, and DSL parse surfaces so later migration slices reuse the same vocabulary.
 
 ## Remaining gaps
 
 - Legacy Python modules under `src/bigclaw` still exist and are not yet fully retired.
 - Python tests under `BigClaw/tests` still remain as migration references.
-- Intake connector and mapping contract coverage still needs stronger Go-side tests so later slices cannot drift the canonical source-issue vocabulary.
 - Follow-on `BIG-GOM-302` migration work has started in Go with:
   - `bigclaw-go/internal/governance/freeze.go`
   - `bigclaw-go/internal/contract/execution.go`

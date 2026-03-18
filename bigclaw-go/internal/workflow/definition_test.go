@@ -26,6 +26,12 @@ func TestDefinitionParsesAndRendersTemplates(t *testing.T) {
 	if !definition.Steps[0].Required {
 		t.Fatalf("expected step required default true")
 	}
+	if len(definition.ValidationEvidence) != 1 || definition.ValidationEvidence[0] != "pytest" {
+		t.Fatalf("expected validation evidence to round-trip, got %#v", definition.ValidationEvidence)
+	}
+	if len(definition.Approvals) != 1 || definition.Approvals[0] != "ops-review" {
+		t.Fatalf("expected approvals to round-trip, got %#v", definition.Approvals)
+	}
 }
 
 func TestDefinitionRespectsExplicitOptionalStep(t *testing.T) {
