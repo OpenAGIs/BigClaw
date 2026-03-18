@@ -22,6 +22,7 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
 - `TriageLabel`, `TriageRecord` -> `bigclaw-go/internal/triage/record.go`
 - `BillingInterval`, `BillingRate`, `UsageRecord`, `BillingSummary` -> `bigclaw-go/internal/billing/statement.go`
 - `FlowTrigger`, `FlowRunStatus`, `FlowStepStatus`, `FlowTemplate*`, `FlowRun*` -> `bigclaw-go/internal/workflow/model.go`
+  - Python contract names now resolve to the canonical Go workflow model via compatibility aliases instead of duplicate structs
 
 ### `src/bigclaw/connectors.py`
 
@@ -54,6 +55,7 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
   - `/v2/workflows/definitions/render`
 - The active API and contract mainline now uses `internal/intake` and `internal/workflow` as the sole Go owners for this migration slice.
 - Go tests now pin the connector field contract, source-issue mapping fallbacks, and DSL parse surfaces so later migration slices reuse the same vocabulary.
+- Go workflow model tests now also pin Python-compatible flow type aliases and default JSON behavior for template and run contracts.
 
 ## Remaining gaps
 

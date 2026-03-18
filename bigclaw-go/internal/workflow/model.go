@@ -77,6 +77,34 @@ type WorkflowRun struct {
 	ApprovalRefs []string          `json:"approval_refs,omitempty"`
 }
 
+// These aliases expose the Python-side workflow contract names while reusing the
+// existing Go workflow model so later slices share one canonical implementation.
+type FlowTrigger = WorkflowTrigger
+type FlowRunStatus = WorkflowRunStatus
+type FlowStepStatus = WorkflowStepStatus
+type FlowTemplateStep = WorkflowTemplateStep
+type FlowTemplate = WorkflowTemplate
+type FlowStepRun = WorkflowStepRun
+type FlowRun = WorkflowRun
+
+const (
+	FlowTriggerManual    = WorkflowTriggerManual
+	FlowTriggerScheduled = WorkflowTriggerScheduled
+	FlowTriggerEvent     = WorkflowTriggerEvent
+
+	FlowRunQueued    = WorkflowRunQueued
+	FlowRunRunning   = WorkflowRunRunning
+	FlowRunSucceeded = WorkflowRunSucceeded
+	FlowRunFailed    = WorkflowRunFailed
+	FlowRunCanceled  = WorkflowRunCanceled
+
+	FlowStepPending   = WorkflowStepPending
+	FlowStepRunning   = WorkflowStepRunning
+	FlowStepSucceeded = WorkflowStepSucceeded
+	FlowStepFailed    = WorkflowStepFailed
+	FlowStepSkipped   = WorkflowStepSkipped
+)
+
 func (template *WorkflowTemplate) UnmarshalJSON(data []byte) error {
 	type alias WorkflowTemplate
 	aux := struct {
