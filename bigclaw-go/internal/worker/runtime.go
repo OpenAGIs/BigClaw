@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/queue"
 	"bigclaw-go/internal/scheduler"
+	"bigclaw-go/internal/workflow"
 )
 
 type Runtime struct {
@@ -98,6 +100,8 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	if task.TraceID == "" {
 		task.TraceID = task.ID
 	}
+	leasedAt := time.Now()
+	runID := runtimeRunID(*task, leasedAt)
 	if r.Recorder != nil {
 		r.Recorder.StoreTask(*task)
 	}
@@ -116,7 +120,8 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 				Type:      domain.EventRunAnnotated,
 				TaskID:    task.ID,
 				TraceID:   task.TraceID,
-				Timestamp: time.Now(),
+				RunID:     runID,
+				Timestamp: leasedAt,
 				Payload: map[string]any{
 					"message":  "automation deferred while human takeover is active",
 					"owner":    takeover.Owner,
@@ -127,24 +132,42 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		}
 	}
 
-	now := time.Now()
 	r.updateStatus(func(status *Status) {
 		status.WorkerID = r.WorkerID
 		status.State = "leased"
 		status.CurrentTaskID = task.ID
 		status.CurrentTraceID = task.TraceID
 		status.LastTransition = string(domain.EventTaskLeased)
-		status.LastHeartbeatAt = now
+		status.LastHeartbeatAt = leasedAt
 	})
 
-	r.publish(domain.Event{ID: eventID(task.ID, "leased"), Type: domain.EventTaskLeased, TaskID: task.ID, TraceID: task.TraceID, Timestamp: now})
+	r.publish(domain.Event{ID: eventID(task.ID, "leased"), Type: domain.EventTaskLeased, TaskID: task.ID, TraceID: task.TraceID, RunID: runID, Timestamp: leasedAt})
 	decision := r.Scheduler.Decide(*task, quota)
 	if !decision.Accepted {
 		_ = r.Queue.Requeue(ctx, lease, time.Now().Add(100*time.Millisecond))
+		finishedAt := time.Now()
+		closeout := workflow.BuildCloseout(workflow.CloseoutInput{
+			Task:           *task,
+			RunID:          runID,
+			Status:         workflow.WorkflowRunFailed,
+			Executor:       decision.Assignment.Executor,
+			Message:        decision.Reason,
+			StartedAt:      leasedAt,
+			CompletedAt:    finishedAt,
+			RetryScheduled: true,
+		})
 		r.finishStatus(string(domain.EventTaskRetried), decision.Reason, func(status *Status) {
 			status.RetriedRuns++
 		})
-		r.publish(domain.Event{ID: eventID(task.ID, "requeued"), Type: domain.EventTaskRetried, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"reason": decision.Reason}})
+		r.publish(domain.Event{
+			ID:        eventID(task.ID, "requeued"),
+			Type:      domain.EventTaskRetried,
+			TaskID:    task.ID,
+			TraceID:   task.TraceID,
+			RunID:     runID,
+			Timestamp: finishedAt,
+			Payload:   runtimeTerminalPayload(runID, decision.Assignment.Executor, decision.Reason, nil, finishedAt, closeout, true),
+		})
 		return true
 	}
 	r.updateStatus(func(status *Status) {
@@ -155,36 +178,75 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	if decision.Preemption.Required {
 		routedPayload["preemption"] = decision.Preemption
 	}
-	r.publish(domain.Event{ID: eventID(task.ID, "routed"), Type: domain.EventSchedulerRouted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: routedPayload})
+	r.publish(domain.Event{ID: eventID(task.ID, "routed"), Type: domain.EventSchedulerRouted, TaskID: task.ID, TraceID: task.TraceID, RunID: runID, Timestamp: time.Now(), Payload: routedPayload})
 
 	runner, ok := r.Registry.Get(decision.Assignment.Executor)
 	if !ok {
 		_ = r.Queue.DeadLetter(ctx, lease, "executor not registered")
+		finishedAt := time.Now()
+		closeout := workflow.BuildCloseout(workflow.CloseoutInput{
+			Task:        *task,
+			RunID:       runID,
+			Status:      workflow.WorkflowRunFailed,
+			Executor:    decision.Assignment.Executor,
+			Message:     "executor not registered",
+			StartedAt:   leasedAt,
+			CompletedAt: finishedAt,
+		})
 		r.finishStatus(string(domain.EventTaskDeadLetter), "executor not registered", func(status *Status) {
 			status.DeadLetterRuns++
 		})
-		r.publish(domain.Event{ID: eventID(task.ID, "deadletter"), Type: domain.EventTaskDeadLetter, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"message": "executor not registered", "executor": decision.Assignment.Executor}})
+		r.publish(domain.Event{
+			ID:        eventID(task.ID, "deadletter"),
+			Type:      domain.EventTaskDeadLetter,
+			TaskID:    task.ID,
+			TraceID:   task.TraceID,
+			RunID:     runID,
+			Timestamp: finishedAt,
+			Payload:   runtimeTerminalPayload(runID, decision.Assignment.Executor, "executor not registered", nil, finishedAt, closeout, false),
+		})
 		return true
 	}
 
 	preemptedSnapshot, err := r.dispatchPreemption(ctx, *task, decision)
 	if err != nil {
 		_ = r.Queue.Requeue(ctx, lease, time.Now().Add(100*time.Millisecond))
+		finishedAt := time.Now()
+		closeout := workflow.BuildCloseout(workflow.CloseoutInput{
+			Task:           *task,
+			RunID:          runID,
+			Status:         workflow.WorkflowRunFailed,
+			Executor:       decision.Assignment.Executor,
+			Message:        err.Error(),
+			StartedAt:      leasedAt,
+			CompletedAt:    finishedAt,
+			RetryScheduled: true,
+		})
 		r.finishStatus(string(domain.EventTaskRetried), err.Error(), func(status *Status) {
 			status.RetriedRuns++
 		})
-		r.publish(domain.Event{ID: eventID(task.ID, "preemption-requeued"), Type: domain.EventTaskRetried, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"reason": err.Error()}})
+		r.publish(domain.Event{
+			ID:        eventID(task.ID, "preemption-requeued"),
+			Type:      domain.EventTaskRetried,
+			TaskID:    task.ID,
+			TraceID:   task.TraceID,
+			RunID:     runID,
+			Timestamp: finishedAt,
+			Payload:   runtimeTerminalPayload(runID, decision.Assignment.Executor, err.Error(), nil, finishedAt, closeout, true),
+		})
 		return true
 	}
 
+	startedAt := leasedAt
 	task.State = domain.TaskRunning
 	if r.Recorder != nil {
 		r.Recorder.StoreTask(*task)
 	}
+	startedAt = time.Now()
 	r.updateStatus(func(status *Status) {
 		status.State = "running"
 		status.CurrentExecutor = runner.Kind()
-		status.LastStartedAt = time.Now()
+		status.LastStartedAt = startedAt
 		status.LastTransition = string(domain.EventTaskStarted)
 	})
 	startedPayload := map[string]any{"executor": runner.Kind(), "required_tools": task.RequiredTools}
@@ -193,7 +255,7 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		startedPayload["preempted_worker_id"] = preemptedSnapshot.LeaseWorker
 		startedPayload["preemption_reason"] = preemptionReason(*task, preemptedSnapshot.Task)
 	}
-	r.publish(domain.Event{ID: eventID(task.ID, "started"), Type: domain.EventTaskStarted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: startedPayload})
+	r.publish(domain.Event{ID: eventID(task.ID, "started"), Type: domain.EventTaskStarted, TaskID: task.ID, TraceID: task.TraceID, RunID: runID, Timestamp: startedAt, Payload: startedPayload})
 
 	execCtx, cancel := context.WithTimeout(ctx, r.TaskTimeout)
 	stopHeartbeat := r.startHeartbeat(execCtx, lease)
@@ -208,13 +270,31 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		if message == "" {
 			message = "task cancelled by control center"
 		}
+		finishedAt := time.Now()
 		if r.Recorder != nil {
 			r.Recorder.StoreTask(cancelled.Task)
 		}
+		closeout := workflow.BuildCloseout(workflow.CloseoutInput{
+			Task:        cancelled.Task,
+			RunID:       runID,
+			Status:      workflow.WorkflowRunCanceled,
+			Executor:    runner.Kind(),
+			Message:     message,
+			StartedAt:   startedAt,
+			CompletedAt: finishedAt,
+		})
 		r.finishStatus(string(domain.EventTaskCancelled), message, func(status *Status) {
 			status.CancelledRuns++
 		})
-		r.publish(domain.Event{ID: eventID(task.ID, "cancelled"), Type: domain.EventTaskCancelled, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"message": message, "executor": runner.Kind()}})
+		r.publish(domain.Event{
+			ID:        eventID(task.ID, "cancelled"),
+			Type:      domain.EventTaskCancelled,
+			TaskID:    task.ID,
+			TraceID:   task.TraceID,
+			RunID:     runID,
+			Timestamp: finishedAt,
+			Payload:   runtimeTerminalPayload(runID, runner.Kind(), message, nil, finishedAt, closeout, false),
+		})
 		return true
 	}
 	if cancelled, ok := r.cancelledSnapshot(ctx, task.ID); ok {
@@ -223,29 +303,91 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		if message == "" {
 			message = "task cancelled by control center"
 		}
+		finishedAt := time.Now()
 		if r.Recorder != nil {
 			r.Recorder.StoreTask(cancelled.Task)
 		}
+		closeout := workflow.BuildCloseout(workflow.CloseoutInput{
+			Task:        cancelled.Task,
+			RunID:       runID,
+			Status:      workflow.WorkflowRunCanceled,
+			Executor:    runner.Kind(),
+			Message:     message,
+			StartedAt:   startedAt,
+			CompletedAt: finishedAt,
+		})
 		r.finishStatus(string(domain.EventTaskCancelled), message, func(status *Status) {
 			status.CancelledRuns++
 		})
-		r.publish(domain.Event{ID: eventID(task.ID, "cancelled"), Type: domain.EventTaskCancelled, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"message": message, "executor": runner.Kind()}})
+		r.publish(domain.Event{
+			ID:        eventID(task.ID, "cancelled"),
+			Type:      domain.EventTaskCancelled,
+			TaskID:    task.ID,
+			TraceID:   task.TraceID,
+			RunID:     runID,
+			Timestamp: finishedAt,
+			Payload:   runtimeTerminalPayload(runID, runner.Kind(), message, nil, finishedAt, closeout, false),
+		})
 		return true
 	}
 
 	switch {
 	case result.Success:
 		_ = r.Queue.Ack(ctx, lease)
+		finishedAt := result.FinishedAt
+		if finishedAt.IsZero() {
+			finishedAt = time.Now()
+		}
+		closeout := workflow.BuildCloseout(workflow.CloseoutInput{
+			Task:        *task,
+			RunID:       runID,
+			Status:      workflow.WorkflowRunSucceeded,
+			Executor:    runner.Kind(),
+			Message:     result.Message,
+			Artifacts:   result.Artifacts,
+			StartedAt:   startedAt,
+			CompletedAt: finishedAt,
+		})
 		r.finishStatus(string(domain.EventTaskCompleted), result.Message, func(status *Status) {
 			status.SuccessfulRuns++
 		})
-		r.publish(domain.Event{ID: eventID(task.ID, "completed"), Type: domain.EventTaskCompleted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeResultPayload(runner.Kind(), result)})
+		r.publish(domain.Event{
+			ID:        eventID(task.ID, "completed"),
+			Type:      domain.EventTaskCompleted,
+			TaskID:    task.ID,
+			TraceID:   task.TraceID,
+			RunID:     runID,
+			Timestamp: finishedAt,
+			Payload:   runtimeTerminalPayload(runID, runner.Kind(), result.Message, result.Artifacts, finishedAt, closeout, false),
+		})
 	case result.DeadLetter:
 		_ = r.Queue.DeadLetter(ctx, lease, result.Message)
+		finishedAt := result.FinishedAt
+		if finishedAt.IsZero() {
+			finishedAt = time.Now()
+		}
+		closeout := workflow.BuildCloseout(workflow.CloseoutInput{
+			Task:        *task,
+			RunID:       runID,
+			Status:      workflow.WorkflowRunFailed,
+			Executor:    runner.Kind(),
+			Message:     result.Message,
+			Artifacts:   result.Artifacts,
+			StartedAt:   startedAt,
+			CompletedAt: finishedAt,
+		})
 		r.finishStatus(string(domain.EventTaskDeadLetter), result.Message, func(status *Status) {
 			status.DeadLetterRuns++
 		})
-		r.publish(domain.Event{ID: eventID(task.ID, "deadletter"), Type: domain.EventTaskDeadLetter, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeResultPayload(runner.Kind(), result)})
+		r.publish(domain.Event{
+			ID:        eventID(task.ID, "deadletter"),
+			Type:      domain.EventTaskDeadLetter,
+			TaskID:    task.ID,
+			TraceID:   task.TraceID,
+			RunID:     runID,
+			Timestamp: finishedAt,
+			Payload:   runtimeTerminalPayload(runID, runner.Kind(), result.Message, result.Artifacts, finishedAt, closeout, false),
+		})
 	default:
 		_ = r.Queue.Requeue(ctx, lease, time.Now().Add(200*time.Millisecond))
 		transition := string(domain.EventTaskRetried)
@@ -258,8 +400,31 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 				status.CancelledRuns++
 			}
 		}
+		finishedAt := result.FinishedAt
+		if finishedAt.IsZero() {
+			finishedAt = time.Now()
+		}
+		closeout := workflow.BuildCloseout(workflow.CloseoutInput{
+			Task:           *task,
+			RunID:          runID,
+			Status:         workflow.WorkflowRunFailed,
+			Executor:       runner.Kind(),
+			Message:        result.Message,
+			Artifacts:      result.Artifacts,
+			StartedAt:      startedAt,
+			CompletedAt:    finishedAt,
+			RetryScheduled: true,
+		})
 		r.finishStatus(transition, result.Message, extra)
-		r.publish(domain.Event{ID: eventID(task.ID, "retry"), Type: domain.EventTaskRetried, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeResultPayload(runner.Kind(), result)})
+		r.publish(domain.Event{
+			ID:        eventID(task.ID, "retry"),
+			Type:      domain.EventTaskRetried,
+			TaskID:    task.ID,
+			TraceID:   task.TraceID,
+			RunID:     runID,
+			Timestamp: finishedAt,
+			Payload:   runtimeTerminalPayload(runID, runner.Kind(), result.Message, result.Artifacts, finishedAt, closeout, true),
+		})
 	}
 	return true
 }
@@ -489,15 +654,47 @@ func (r *Runtime) cancelledSnapshot(ctx context.Context, taskID string) (queue.T
 	return snapshot, snapshot.Task.State == domain.TaskCancelled
 }
 
-func runtimeResultPayload(executorKind domain.ExecutorKind, result executor.Result) map[string]any {
-	payload := map[string]any{"message": result.Message, "executor": executorKind}
-	if len(result.Artifacts) > 0 {
-		payload["artifacts"] = append([]string(nil), result.Artifacts...)
+func runtimeTerminalPayload(runID string, executorKind domain.ExecutorKind, message string, artifacts []string, finishedAt time.Time, closeout workflow.Closeout, retryScheduled bool) map[string]any {
+	payload := map[string]any{"message": message, "run_id": runID}
+	if executor := strings.TrimSpace(string(executorKind)); executor != "" {
+		payload["executor"] = executorKind
 	}
-	if !result.FinishedAt.IsZero() {
-		payload["finished_at"] = result.FinishedAt.UTC().Format(time.RFC3339)
+	if len(artifacts) > 0 {
+		payload["artifacts"] = append([]string(nil), artifacts...)
+	}
+	if !finishedAt.IsZero() {
+		payload["finished_at"] = finishedAt.UTC().Format(time.RFC3339)
+	}
+	if retryScheduled {
+		payload["retry_scheduled"] = true
+	}
+	if closeout.Run.RunID != "" {
+		payload["workflow_run"] = closeout.Run
+	}
+	if closeout.ReportPath != "" {
+		payload["report_path"] = closeout.ReportPath
+	}
+	if closeout.JournalPath != "" {
+		payload["journal_path"] = closeout.JournalPath
+	}
+	if len(closeout.ValidationEvidence) > 0 {
+		payload["validation_evidence"] = append([]string(nil), closeout.ValidationEvidence...)
+	}
+	if len(closeout.RequiredApprovals) > 0 {
+		payload["required_approvals"] = append([]string(nil), closeout.RequiredApprovals...)
 	}
 	return payload
+}
+
+func runtimeRunID(task domain.Task, startedAt time.Time) string {
+	base := strings.TrimSpace(task.TraceID)
+	if base == "" {
+		base = strings.TrimSpace(task.ID)
+	}
+	if base == "" {
+		base = "run"
+	}
+	return fmt.Sprintf("%s-%d", base, startedAt.UnixNano())
 }
 
 func eventID(taskID, suffix string) string {
