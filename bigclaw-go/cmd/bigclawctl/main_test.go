@@ -15,6 +15,23 @@ import (
 	"bigclaw-go/internal/refill"
 )
 
+func captureStdout(t *testing.T, fn func() error) ([]byte, error) {
+	t.Helper()
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+	runErr := fn()
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	return output, runErr
+}
+
 func TestLinearClientFetchIssueStatesPreservesLinearIDs(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var request graphqlRequest
@@ -109,19 +126,9 @@ func TestRunRefillOncePromotesUsingLinearIssueID(t *testing.T) {
 
 	client := &linearClient{apiKey: "test-token", endpoint: server.URL, httpClient: server.Client()}
 
-	originalStdout := os.Stdout
-	reader, writer, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("create pipe: %v", err)
-	}
-	os.Stdout = writer
-	defer func() {
-		os.Stdout = originalStdout
-	}()
-
-	runErr := runRefillOnce(queue, client, true, "", nil)
-	_ = writer.Close()
-	output, _ := io.ReadAll(reader)
+	output, runErr := captureStdout(t, func() error {
+		return runRefillOnce(queue, client, true, "", nil)
+	})
 	if runErr != nil {
 		t.Fatalf("run refill once: %v (stdout=%s)", runErr, string(output))
 	}
@@ -185,19 +192,9 @@ func TestRunRefillOncePromotesUsingLocalIssueStore(t *testing.T) {
 		},
 	}
 
-	originalStdout := os.Stdout
-	reader, writer, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("create pipe: %v", err)
-	}
-	os.Stdout = writer
-	defer func() {
-		os.Stdout = originalStdout
-	}()
-
-	runErr := runRefillOnce(queue, client, true, "", nil)
-	_ = writer.Close()
-	output, _ := io.ReadAll(reader)
+	output, runErr := captureStdout(t, func() error {
+		return runRefillOnce(queue, client, true, "", nil)
+	})
 	if runErr != nil {
 		t.Fatalf("run refill once: %v (stdout=%s)", runErr, string(output))
 	}
@@ -214,5 +211,54 @@ func TestRunRefillOncePromotesUsingLocalIssueStore(t *testing.T) {
 	}
 	if !bytes.Contains(body, []byte(`"updated_at": "2026-03-18T12:34:56Z"`)) {
 		t.Fatalf("expected local issue store updated_at refresh, got %s", string(body))
+	}
+}
+
+func TestRunLocalIssueUpdateAppendsCommentAndState(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "title": "Toolchain migration",
+      "state": "Todo",
+      "comments": [
+        {"body": "seed comment", "created_at": "2026-03-18T09:00:00Z"}
+      ],
+      "updated_at": "2026-03-18T09:00:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	output, runErr := captureStdout(t, func() error {
+		return runLocalIssue([]string{
+			"update",
+			"--local-issues", storePath,
+			"--issue", "BIG-GOM-307",
+			"--state", "In Progress",
+			"--comment", "validated the go-first tracker path",
+			"--json",
+		})
+	})
+	if runErr != nil {
+		t.Fatalf("run local issue update: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"comment_added": true`)) || !bytes.Contains(output, []byte(`"state": "In Progress"`)) {
+		t.Fatalf("unexpected update output: %s", string(output))
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"body": "validated the go-first tracker path"`)) {
+		t.Fatalf("expected comment in store, got %s", string(body))
+	}
+	if !bytes.Contains(body, []byte(`"state": "In Progress"`)) {
+		t.Fatalf("expected updated state in store, got %s", string(body))
 	}
 }

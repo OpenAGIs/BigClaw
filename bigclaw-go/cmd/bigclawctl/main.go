@@ -100,7 +100,7 @@ type refillClient interface {
 
 func main() {
 	if len(os.Args) < 2 {
-		fatalf("usage: bigclawctl <github-sync|workspace|refill> ...")
+		fatalf("usage: bigclawctl <github-sync|workspace|refill|local-issue> ...")
 	}
 	var err error
 	switch os.Args[1] {
@@ -110,6 +110,8 @@ func main() {
 		err = runWorkspace(os.Args[2:])
 	case "refill":
 		err = runRefill(os.Args[2:])
+	case "local-issue":
+		err = runLocalIssue(os.Args[2:])
 	default:
 		err = fmt.Errorf("unknown command: %s", os.Args[1])
 	}
@@ -270,6 +272,79 @@ func runRefill(args []string) error {
 			fmt.Fprintf(os.Stderr, "watcher error: %v\n", err)
 		}
 		time.Sleep(time.Duration(*interval) * time.Second)
+	}
+}
+
+func runLocalIssue(args []string) error {
+	if len(args) == 0 {
+		return errors.New("usage: bigclawctl local-issue <show|update> [flags]")
+	}
+	command := args[0]
+	flags := flag.NewFlagSet("local-issue "+command, flag.ContinueOnError)
+	flags.SetOutput(io.Discard)
+	localIssuesPath := flags.String("local-issues", "", "local issue store path")
+	issueRef := flags.String("issue", "", "issue identifier or id")
+	stateName := flags.String("state", "", "updated state")
+	commentBody := flags.String("comment", "", "comment body")
+	asJSON := flags.Bool("json", false, "json")
+	if err := flags.Parse(args[1:]); err != nil {
+		return err
+	}
+	storePath := resolvedLocalIssueStorePath(*localIssuesPath)
+	if trim(storePath) == "" {
+		return errors.New("local issue store path is required")
+	}
+	store, err := refill.LoadLocalIssueStore(storePath)
+	if err != nil {
+		return err
+	}
+	if trim(*issueRef) == "" {
+		return errors.New("issue reference is required")
+	}
+
+	switch command {
+	case "show":
+		issue, err := store.Issue(*issueRef)
+		if err != nil {
+			return emit(map[string]any{"status": "error", "error": err.Error(), "issue": *issueRef, "local_issues": absPath(storePath)}, *asJSON, 1)
+		}
+		payload := mergeMap(map[string]any{
+			"status":       "ok",
+			"backend":      "local",
+			"issue":        *issueRef,
+			"local_issues": absPath(storePath),
+		}, issue)
+		return emit(payload, *asJSON, 0)
+	case "update":
+		if trim(*stateName) == "" && trim(*commentBody) == "" {
+			return errors.New("at least one of --state or --comment is required")
+		}
+		if trim(*stateName) != "" {
+			if _, err := store.UpdateIssueState(*issueRef, *stateName, time.Now()); err != nil {
+				return emit(map[string]any{"status": "error", "error": err.Error(), "issue": *issueRef, "local_issues": absPath(storePath)}, *asJSON, 1)
+			}
+		}
+		commentAdded := false
+		if trim(*commentBody) != "" {
+			if _, err := store.AddComment(*issueRef, *commentBody, time.Now()); err != nil {
+				return emit(map[string]any{"status": "error", "error": err.Error(), "issue": *issueRef, "local_issues": absPath(storePath)}, *asJSON, 1)
+			}
+			commentAdded = true
+		}
+		issue, err := store.Issue(*issueRef)
+		if err != nil {
+			return emit(map[string]any{"status": "error", "error": err.Error(), "issue": *issueRef, "local_issues": absPath(storePath)}, *asJSON, 1)
+		}
+		payload := mergeMap(map[string]any{
+			"status":        "ok",
+			"backend":       "local",
+			"issue":         *issueRef,
+			"comment_added": commentAdded,
+			"local_issues":  absPath(storePath),
+		}, issue)
+		return emit(payload, *asJSON, 0)
+	default:
+		return fmt.Errorf("unknown local-issue subcommand: %s", command)
 	}
 }
 

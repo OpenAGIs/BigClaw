@@ -81,3 +81,46 @@ func TestLocalIssueStoreIssueStatesFiltersRequestedStates(t *testing.T) {
 		t.Fatalf("unexpected filtered issues: %+v", issues)
 	}
 }
+
+func TestLocalIssueStoreAddCommentAppendsAndRefreshesUpdatedAt(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "title": "Toolchain migration",
+      "state": "In Progress",
+      "comments": [
+        {"body": "seed comment", "created_at": "2026-03-18T09:00:00Z"}
+      ],
+      "updated_at": "2026-03-18T09:00:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	comment, err := store.AddComment("BIG-GOM-307", "added progress note", time.Date(2026, 3, 18, 16, 30, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("add comment: %v", err)
+	}
+	if comment.Body != "added progress note" || comment.CreatedAt != "2026-03-18T16:30:00Z" {
+		t.Fatalf("unexpected comment payload: %+v", comment)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !strings.Contains(string(body), `"body": "seed comment"`) || !strings.Contains(string(body), `"body": "added progress note"`) {
+		t.Fatalf("expected both comments in store, got %s", string(body))
+	}
+	if !strings.Contains(string(body), `"updated_at": "2026-03-18T16:30:00Z"`) {
+		t.Fatalf("expected updated_at refresh, got %s", string(body))
+	}
+}

@@ -17,6 +17,11 @@ type LocalIssueStore struct {
 	issueMap []map[string]any
 }
 
+type LocalIssueComment struct {
+	Body      string `json:"body"`
+	CreatedAt string `json:"created_at"`
+}
+
 func LoadLocalIssueStore(path string) (*LocalIssueStore, error) {
 	absolute, err := filepath.Abs(path)
 	if err != nil {
@@ -100,18 +105,58 @@ func (s *LocalIssueStore) IssueStates(stateNames []string) []LinearIssue {
 }
 
 func (s *LocalIssueStore) UpdateIssueState(ref string, stateName string, now time.Time) (string, error) {
-	for _, issue := range s.issueMap {
-		if !issueMatchesRef(issue, ref) {
-			continue
-		}
-		issue["state"] = stateName
-		issue["updated_at"] = now.UTC().Truncate(time.Second).Format(time.RFC3339)
-		if err := s.Save(); err != nil {
-			return "", err
-		}
-		return mapString(issue, "state"), nil
+	issue, err := s.findIssue(ref)
+	if err != nil {
+		return "", err
 	}
-	return "", ErrLocalIssueNotFound
+	issue["state"] = stateName
+	issue["updated_at"] = now.UTC().Truncate(time.Second).Format(time.RFC3339)
+	if err := s.Save(); err != nil {
+		return "", err
+	}
+	return mapString(issue, "state"), nil
+}
+
+func (s *LocalIssueStore) AddComment(ref string, body string, now time.Time) (LocalIssueComment, error) {
+	issue, err := s.findIssue(ref)
+	if err != nil {
+		return LocalIssueComment{}, err
+	}
+	comment := LocalIssueComment{
+		Body:      strings.TrimSpace(body),
+		CreatedAt: now.UTC().Truncate(time.Second).Format(time.RFC3339),
+	}
+	if comment.Body == "" {
+		return LocalIssueComment{}, errors.New("comment body is required")
+	}
+	comments := commentSlice(issue["comments"])
+	comments = append(comments, map[string]any{
+		"body":       comment.Body,
+		"created_at": comment.CreatedAt,
+	})
+	issue["comments"] = comments
+	issue["updated_at"] = comment.CreatedAt
+	if err := s.Save(); err != nil {
+		return LocalIssueComment{}, err
+	}
+	return comment, nil
+}
+
+func (s *LocalIssueStore) Issue(ref string) (map[string]any, error) {
+	issue, err := s.findIssue(ref)
+	if err != nil {
+		return nil, err
+	}
+	return cloneMap(issue), nil
+}
+
+func (s *LocalIssueStore) findIssue(ref string) (map[string]any, error) {
+	for _, issue := range s.issueMap {
+		if issueMatchesRef(issue, ref) {
+			return issue, nil
+		}
+	}
+	return nil, ErrLocalIssueNotFound
 }
 
 func (s *LocalIssueStore) Save() error {
@@ -132,6 +177,37 @@ func (s *LocalIssueStore) Save() error {
 
 func issueMatchesRef(issue map[string]any, ref string) bool {
 	return mapString(issue, "id") == ref || mapString(issue, "identifier") == ref
+}
+
+func commentSlice(value any) []map[string]any {
+	items, ok := value.([]any)
+	if ok {
+		result := make([]map[string]any, 0, len(items))
+		for _, item := range items {
+			comment, ok := item.(map[string]any)
+			if ok {
+				result = append(result, cloneMap(comment))
+			}
+		}
+		return result
+	}
+	itemsMap, ok := value.([]map[string]any)
+	if ok {
+		result := make([]map[string]any, 0, len(itemsMap))
+		for _, item := range itemsMap {
+			result = append(result, cloneMap(item))
+		}
+		return result
+	}
+	return []map[string]any{}
+}
+
+func cloneMap(value map[string]any) map[string]any {
+	cloned := make(map[string]any, len(value))
+	for key, item := range value {
+		cloned[key] = item
+	}
+	return cloned
 }
 
 func mapString(issue map[string]any, key string) string {
