@@ -126,6 +126,10 @@
         {
           "body": "Progressed BIG-GOM-307 by routing the remaining legacy ops entrypoints through the Go toolchain. Changed: `bigclaw-go/cmd/bigclawctl` now normalizes the legacy `workspace validate` flags (`--issues` list, `--report-file`, `--no-cleanup`) so existing callers keep working; `scripts/ops/bigclaw_github_sync.py`, `scripts/ops/bigclaw_refill_queue.py`, `scripts/ops/bigclaw_workspace_bootstrap.py`, `scripts/ops/symphony_workspace_bootstrap.py`, and `scripts/ops/symphony_workspace_validate.py` now preserve their historical paths while dispatching into `scripts/ops/bigclawctl`; the refill wrapper now defaults to `local-issues.json` when available so the local tracker remains the canonical backend. Validation: `cd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl` -\u003e ok; `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok; `scripts/ops/bigclaw_github_sync.py status --json` -\u003e ok; `scripts/ops/bigclaw_refill_queue.py --queue docs/parallel-refill-queue.json --local-issues local-issues.json` -\u003e ok; `scripts/ops/symphony_workspace_validate.py --repo-url git@github.com:OpenAGIs/BigClaw.git --workspace-root /tmp/bigclawctl-validate-smoke --issues BIG-GOM-302 BIG-GOM-307 --report-file /tmp/bigclawctl-validate-smoke/report.json --no-cleanup --json` -\u003e ok; `scripts/ops/bigclaw_workspace_bootstrap.py cleanup --workspace /tmp/bigclawctl-validate-smoke/BIG-GOM-302 --issue BIG-GOM-302 --repo-url git@github.com:OpenAGIs/BigClaw.git --cache-key github.com-openagis-bigclaw --json` -\u003e ok. Commit SHA: `a0e9ccadc131cbc061b95c05f760395772259b56`. PR URL: `https://github.com/OpenAGIs/BigClaw/pull/137`.",
           "created_at": "2026-03-19T06:50:13Z"
+        },
+        {
+          "body": "Progressed BIG-GOM-307 by teaching the Go workspace CLI to honor unattended bootstrap environment defaults directly. Changed: `bigclaw-go/cmd/bigclawctl/main.go` now loads `SYMPHONY_BOOTSTRAP_REPO_URL`, `SYMPHONY_BOOTSTRAP_GITHUB_URL`, `SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH`, `SYMPHONY_BOOTSTRAP_CACHE_ROOT`, `SYMPHONY_BOOTSTRAP_CACHE_BASE`, and `SYMPHONY_BOOTSTRAP_CACHE_KEY` as the default values for `workspace bootstrap|cleanup|validate`; added unit coverage for both env-backed defaults and fallback behavior in `bigclaw-go/cmd/bigclawctl/main_test.go`; refreshed `docs/go-mainline-cutover-issue-pack.md` so BIG-GOM-307 records the env-backed Go-first operator path. Validation: `cd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl` -\u003e ok; `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok; `SYMPHONY_BOOTSTRAP_REPO_URL=git@github.com:OpenAGIs/BigClaw.git SYMPHONY_BOOTSTRAP_GITHUB_URL=git@github.com:OpenAGIs/BigClaw.git SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH=main SYMPHONY_BOOTSTRAP_CACHE_BASE=$HOME/.cache/symphony/repos SYMPHONY_BOOTSTRAP_CACHE_KEY=github.com-openagis-bigclaw scripts/ops/bigclawctl workspace validate --workspace-root /tmp/bigclawctl-env-validate --issues BIG-GOM-302,BIG-GOM-307 --report /tmp/bigclawctl-env-validate/report.json --cleanup=false --json` -\u003e ok; `scripts/ops/bigclaw_workspace_bootstrap.py cleanup --workspace /tmp/bigclawctl-env-validate/BIG-GOM-302 --issue BIG-GOM-302 --json` -\u003e expected safety error because branch `symphony/BIG-GOM-302` is already checked out in `/Users/jxrt/code/symphony-workspaces/BIG-GOM-302`. Commit SHA: `83315010d760b9c7a73bd864e2723a77e65a9816`. PR URL: `https://github.com/OpenAGIs/BigClaw/pull/137`.",
+          "created_at": "2026-03-19T07:15:19Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -141,7 +145,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
-      "updated_at": "2026-03-19T06:50:13Z"
+      "updated_at": "2026-03-19T07:15:19Z"
     },
     {
       "assigned_to_worker": true,
