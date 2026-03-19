@@ -596,19 +596,31 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		}
 		if success {
 			fmt.Printf("promoted %s -> %s\n", identifier, stateName)
-			if refreshURL != "" {
-				request, err := http.NewRequest(http.MethodPost, refreshURL, bytes.NewReader([]byte("{}")))
-				if err != nil {
-					return err
-				}
-				request.Header.Set("Content-Type", "application/json")
-				response, err := http.DefaultClient.Do(request)
-				if err != nil {
-					return err
-				}
-				response.Body.Close()
+			if err := triggerRefresh(refreshURL); err != nil {
+				return err
 			}
 		}
+	}
+	return nil
+}
+
+func triggerRefresh(refreshURL string) error {
+	if trim(refreshURL) == "" {
+		return nil
+	}
+	request, err := http.NewRequest(http.MethodPost, refreshURL, bytes.NewReader([]byte("{}")))
+	if err != nil {
+		return err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+	if response.StatusCode >= 400 {
+		body, _ := io.ReadAll(response.Body)
+		return fmt.Errorf("refresh HTTP %d: %s", response.StatusCode, trim(string(body)))
 	}
 	return nil
 }

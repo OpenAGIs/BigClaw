@@ -218,6 +218,148 @@ func TestRunRefillOncePromotesUsingLocalIssueStore(t *testing.T) {
 	}
 }
 
+func TestRunRefillOnceTriggersRefreshAfterPromotion(t *testing.T) {
+	queuePath := filepath.Join(t.TempDir(), "queue.json")
+	if err := os.WriteFile(queuePath, []byte(`{
+  "project": {"slug_id": "project-slug"},
+  "policy": {
+    "target_in_progress": 1,
+    "activate_state_name": "In Progress",
+    "activate_state_id": "state-in-progress",
+    "refill_states": ["Todo", "Backlog"]
+  },
+  "issue_order": ["BIG-GOM-301"],
+  "issues": [
+    {"identifier": "BIG-GOM-301", "title": "Domain parity", "track": "Control/Workflow", "status": "Todo"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write queue file: %v", err)
+	}
+	queue, err := refill.LoadQueue(queuePath)
+	if err != nil {
+		t.Fatalf("load queue: %v", err)
+	}
+
+	var refreshCalls int
+	refreshServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		refreshCalls++
+		if r.Method != http.MethodPost {
+			t.Fatalf("expected POST refresh, got %s", r.Method)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer refreshServer.Close()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var request graphqlRequest
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+		switch {
+		case strings.Contains(request.Query, "query RefillIssues"):
+			response := refillResponse{}
+			response.Data.Issues.Nodes = []linearIssueNode{
+				{
+					ID:         "issue-linear-301",
+					Identifier: "BIG-GOM-301",
+					Title:      "Domain parity",
+					State: struct {
+						Name string `json:"name"`
+					}{Name: "Todo"},
+				},
+			}
+			_ = json.NewEncoder(w).Encode(response)
+		case strings.Contains(request.Query, "mutation PromoteIssue"):
+			response := promoteResponse{}
+			response.Data.IssueUpdate.Success = true
+			response.Data.IssueUpdate.Issue.Identifier = "BIG-GOM-301"
+			response.Data.IssueUpdate.Issue.State.Name = "In Progress"
+			_ = json.NewEncoder(w).Encode(response)
+		default:
+			t.Fatalf("unexpected query: %s", request.Query)
+		}
+	}))
+	defer server.Close()
+
+	client := &linearClient{apiKey: "test-token", endpoint: server.URL, httpClient: server.Client()}
+
+	if err := runRefillOnce(queue, client, true, refreshServer.URL, nil); err != nil {
+		t.Fatalf("run refill once: %v", err)
+	}
+	if refreshCalls != 1 {
+		t.Fatalf("expected exactly one refresh call, got %d", refreshCalls)
+	}
+}
+
+func TestRunRefillOnceFailsWhenRefreshEndpointReturnsError(t *testing.T) {
+	queuePath := filepath.Join(t.TempDir(), "queue.json")
+	if err := os.WriteFile(queuePath, []byte(`{
+  "project": {"slug_id": "project-slug"},
+  "policy": {
+    "target_in_progress": 1,
+    "activate_state_name": "In Progress",
+    "activate_state_id": "state-in-progress",
+    "refill_states": ["Todo", "Backlog"]
+  },
+  "issue_order": ["BIG-GOM-301"],
+  "issues": [
+    {"identifier": "BIG-GOM-301", "title": "Domain parity", "track": "Control/Workflow", "status": "Todo"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write queue file: %v", err)
+	}
+	queue, err := refill.LoadQueue(queuePath)
+	if err != nil {
+		t.Fatalf("load queue: %v", err)
+	}
+
+	refreshServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "dashboard unavailable", http.StatusBadGateway)
+	}))
+	defer refreshServer.Close()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var request graphqlRequest
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+		switch {
+		case strings.Contains(request.Query, "query RefillIssues"):
+			response := refillResponse{}
+			response.Data.Issues.Nodes = []linearIssueNode{
+				{
+					ID:         "issue-linear-301",
+					Identifier: "BIG-GOM-301",
+					Title:      "Domain parity",
+					State: struct {
+						Name string `json:"name"`
+					}{Name: "Todo"},
+				},
+			}
+			_ = json.NewEncoder(w).Encode(response)
+		case strings.Contains(request.Query, "mutation PromoteIssue"):
+			response := promoteResponse{}
+			response.Data.IssueUpdate.Success = true
+			response.Data.IssueUpdate.Issue.Identifier = "BIG-GOM-301"
+			response.Data.IssueUpdate.Issue.State.Name = "In Progress"
+			_ = json.NewEncoder(w).Encode(response)
+		default:
+			t.Fatalf("unexpected query: %s", request.Query)
+		}
+	}))
+	defer server.Close()
+
+	client := &linearClient{apiKey: "test-token", endpoint: server.URL, httpClient: server.Client()}
+
+	err = runRefillOnce(queue, client, true, refreshServer.URL, nil)
+	if err == nil {
+		t.Fatal("expected refresh endpoint failure to abort refill")
+	}
+	if !strings.Contains(err.Error(), "refresh HTTP 502") {
+		t.Fatalf("expected refresh HTTP status in error, got %v", err)
+	}
+}
+
 func TestRunLocalIssueCloseoutMarksDoneAndAppendsComment(t *testing.T) {
 	tempDir := t.TempDir()
 	storePath := filepath.Join(tempDir, "local-issues.json")
