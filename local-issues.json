@@ -1,119 +1,163 @@
 {
   "issues": [
     {
-      "id": "big-gom-301",
-      "identifier": "BIG-GOM-301",
-      "title": "Unified domain model and intake contract migration",
-      "description": "Finish consolidating the canonical Go task, intake, and workflow vocabulary so downstream runtime slices stop inventing parallel compatibility contracts.",
-      "priority": 1,
-      "state": "Done",
-      "labels": ["go-mainline", "migration", "domain", "intake"],
       "assigned_to_worker": true,
       "comments": [
         {
-          "body": "Completed the Go-side BIG-GOM-301 parity coverage hardening slice. Changed: expanded intake connector tests to pin canonical source issue fields and Todo fallback behavior; expanded source-issue mapping tests to cover resolved-state normalization, metadata preservation, fallback IDs, trace IDs, and GitHub tooling selection; expanded workflow definition tests to round-trip validation evidence and approvals; updated the parity matrix to reflect the new Go test ownership. Validation: `cd bigclaw-go && go test ./internal/intake ./internal/workflow` -> ok; `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `753017bdc0f6815f4f79d38c152d18959d0e2f6a`. PR URL: unavailable from this workspace because `origin` is a local mirror path and `gh pr view` cannot resolve a GitHub host; branch sync was verified by matching local/remote SHA `753017bdc0f6815f4f79d38c152d18959d0e2f6a`.",
+          "body": "Completed the Go-side BIG-GOM-301 parity coverage hardening slice. Changed: expanded intake connector tests to pin canonical source issue fields and Todo fallback behavior; expanded source-issue mapping tests to cover resolved-state normalization, metadata preservation, fallback IDs, trace IDs, and GitHub tooling selection; expanded workflow definition tests to round-trip validation evidence and approvals; updated the parity matrix to reflect the new Go test ownership. Validation: `cd bigclaw-go \u0026\u0026 go test ./internal/intake ./internal/workflow` -\u003e ok; `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok. Commit SHA: `753017bdc0f6815f4f79d38c152d18959d0e2f6a`. PR URL: unavailable from this workspace because `origin` is a local mirror path and `gh pr view` cannot resolve a GitHub host; branch sync was verified by matching local/remote SHA `753017bdc0f6815f4f79d38c152d18959d0e2f6a`.",
           "created_at": "2026-03-18T15:31:08Z"
         },
         {
-          "body": "Closed BIG-GOM-301 after finishing the remaining Go workflow contract compatibility work. Changed: added Python-compatible `Flow*` aliases in `bigclaw-go/internal/workflow/model.go`, added default-value coverage for template and run JSON decoding, and refreshed `docs/go-domain-intake-parity-matrix.md` so the repo-native brief matches the canonical Go ownership. Validation: `cd bigclaw-go && go test ./internal/workflow` -> ok; `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `e9a23718417d7cb44c1a2cd8dc3cb2b5598abe14`. PR URL: `https://github.com/OpenAGIs/BigClaw/pull/137`. Branch sync verified on both remotes before tracker closeout: `origin/symphony/BIG-GOM-301` and `github/symphony/BIG-GOM-301` matched `e9a23718417d7cb44c1a2cd8dc3cb2b5598abe14`.",
+          "body": "Closed BIG-GOM-301 after finishing the remaining Go workflow contract compatibility work. Changed: added Python-compatible `Flow*` aliases in `bigclaw-go/internal/workflow/model.go`, added default-value coverage for template and run JSON decoding, and refreshed `docs/go-domain-intake-parity-matrix.md` so the repo-native brief matches the canonical Go ownership. Validation: `cd bigclaw-go \u0026\u0026 go test ./internal/workflow` -\u003e ok; `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok. Commit SHA: `e9a23718417d7cb44c1a2cd8dc3cb2b5598abe14`. PR URL: `https://github.com/OpenAGIs/BigClaw/pull/137`. Branch sync verified on both remotes before tracker closeout: `origin/symphony/BIG-GOM-301` and `github/symphony/BIG-GOM-301` matched `e9a23718417d7cb44c1a2cd8dc3cb2b5598abe14`.",
           "created_at": "2026-03-18T15:44:21Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
+      "description": "Finish consolidating the canonical Go task, intake, and workflow vocabulary so downstream runtime slices stop inventing parallel compatibility contracts.",
+      "id": "big-gom-301",
+      "identifier": "BIG-GOM-301",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "domain",
+        "intake"
+      ],
+      "priority": 1,
+      "state": "Done",
+      "title": "Unified domain model and intake contract migration",
       "updated_at": "2026-03-18T15:44:21Z"
     },
     {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Keep porting governance, execution-contract, audit, and policy semantics into Go so review and approval behavior no longer depends on Python-only code paths.",
       "id": "big-gom-302",
       "identifier": "BIG-GOM-302",
-      "title": "Risk, policy, and approval semantics migration",
-      "description": "Keep porting governance, execution-contract, audit, and policy semantics into Go so review and approval behavior no longer depends on Python-only code paths.",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "risk",
+        "policy"
+      ],
       "priority": 1,
       "state": "In Progress",
-      "labels": ["go-mainline", "migration", "risk", "policy"],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
+      "title": "Risk, policy, and approval semantics migration",
       "updated_at": "2026-03-18T09:00:00Z"
     },
     {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Close the Go execution loop with workflow-aware orchestration, journal state, and runtime closeout so active development no longer needs the Python workflow engine.",
       "id": "big-gom-303",
       "identifier": "BIG-GOM-303",
-      "title": "Workflow orchestration and scheduler loop migration",
-      "description": "Close the Go execution loop with workflow-aware orchestration, journal state, and runtime closeout so active development no longer needs the Python workflow engine.",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "workflow",
+        "runtime"
+      ],
       "priority": 1,
       "state": "Todo",
-      "labels": ["go-mainline", "migration", "workflow", "runtime"],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
+      "title": "Workflow orchestration and scheduler loop migration",
       "updated_at": "2026-03-18T09:00:00Z"
     },
     {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Move runtime evidence, reporting, and weekly operations closeout onto Go-owned observability outputs that line up with the new execution loop.",
       "id": "big-gom-304",
       "identifier": "BIG-GOM-304",
-      "title": "Observability, reporting, and weekly operations surface migration",
-      "description": "Move runtime evidence, reporting, and weekly operations closeout onto Go-owned observability outputs that line up with the new execution loop.",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "observability",
+        "reporting"
+      ],
       "priority": 2,
       "state": "Todo",
-      "labels": ["go-mainline", "migration", "observability", "reporting"],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
+      "title": "Observability, reporting, and weekly operations surface migration",
       "updated_at": "2026-03-18T09:00:00Z"
     },
     {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Finish moving operator-facing status, control-center, and triage endpoints to Go once the workflow runtime and reporting surfaces are stable.",
       "id": "big-gom-305",
       "identifier": "BIG-GOM-305",
-      "title": "Control center, triage, and operations view migration",
-      "description": "Finish moving operator-facing status, control-center, and triage endpoints to Go once the workflow runtime and reporting surfaces are stable.",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "api",
+        "triage"
+      ],
       "priority": 2,
       "state": "Backlog",
-      "labels": ["go-mainline", "migration", "api", "triage"],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
+      "title": "Control center, triage, and operations view migration",
       "updated_at": "2026-03-18T09:00:00Z"
     },
     {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Port the remaining repo board, registry, gateway, linkage, and lineage surfaces into Go without leaking repo-specific concerns into the scheduler runtime.",
       "id": "big-gom-306",
       "identifier": "BIG-GOM-306",
-      "title": "Repo collaboration and lineage surface migration",
-      "description": "Port the remaining repo board, registry, gateway, linkage, and lineage surfaces into Go without leaking repo-specific concerns into the scheduler runtime.",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "repo",
+        "governance"
+      ],
       "priority": 2,
       "state": "Backlog",
-      "labels": ["go-mainline", "migration", "repo", "governance"],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
+      "title": "Repo collaboration and lineage surface migration",
       "updated_at": "2026-03-18T09:00:00Z"
     },
     {
-      "id": "big-gom-307",
-      "identifier": "BIG-GOM-307",
-      "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
-      "description": "Keep hardening the Go-first bootstrap, refill, and GitHub sync toolchain so unattended multi-issue work no longer relies on Python entrypoints or Linear-only operators.",
-      "priority": 1,
-      "state": "In Progress",
-      "labels": ["go-mainline", "migration", "tooling", "orchestration"],
       "assigned_to_worker": true,
       "comments": [
         {
-          "body": "Progressed BIG-GOM-307 by wiring an optional canonical GitHub remote through the Go bootstrap path. Changed: `bigclaw-go/internal/bootstrap/bootstrap.go` now configures a `github` remote when `github_url` is supplied while preserving `origin` as the push-default mirror remote; `bigclaw-go/cmd/bigclawctl/main.go` now accepts `--github-url` for `workspace bootstrap`, `workspace cleanup`, and `workspace validate`; workflow/docs/launcher defaults now pass `SYMPHONY_BOOTSTRAP_GITHUB_URL` so fresh workspaces keep PR tooling available without manual remote surgery. Validation: `cd bigclaw-go && go test ./internal/bootstrap ./cmd/bigclawctl` -> ok; `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `b2de09347a5d2141fa0333aa2f460305bc8d1ed3`. PR URL: `https://github.com/OpenAGIs/BigClaw/pull/137`.",
+          "body": "Progressed BIG-GOM-307 by wiring an optional canonical GitHub remote through the Go bootstrap path. Changed: `bigclaw-go/internal/bootstrap/bootstrap.go` now configures a `github` remote when `github_url` is supplied while preserving `origin` as the push-default mirror remote; `bigclaw-go/cmd/bigclawctl/main.go` now accepts `--github-url` for `workspace bootstrap`, `workspace cleanup`, and `workspace validate`; workflow/docs/launcher defaults now pass `SYMPHONY_BOOTSTRAP_GITHUB_URL` so fresh workspaces keep PR tooling available without manual remote surgery. Validation: `cd bigclaw-go \u0026\u0026 go test ./internal/bootstrap ./cmd/bigclawctl` -\u003e ok; `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok. Commit SHA: `b2de09347a5d2141fa0333aa2f460305bc8d1ed3`. PR URL: `https://github.com/OpenAGIs/BigClaw/pull/137`.",
           "created_at": "2026-03-18T15:56:30Z"
         },
         {
-          "body": "Kept the canonical refill metadata aligned with the live local tracker while BIG-GOM-307 remains active. Changed: `docs/parallel-refill-queue.json` now moves `BIG-GOM-301` into the completed batch and marks its status `Done`; `docs/parallel-refill-queue.md` now lists `BIG-GOM-302` and `BIG-GOM-307` as the active tranche and moves `BIG-GOM-301` into the recently completed section so unattended refill guidance matches `local-issues.json`. Validation: doc/state sync only; the previously green `cd bigclaw-go && go test ./...` run still covers the Go tooling surfaces on this branch. Commit SHA: `d4e1f947953683f58b419f332a490d1d2976c5f7`. PR URL: `https://github.com/OpenAGIs/BigClaw/pull/137`.",
+          "body": "Kept the canonical refill metadata aligned with the live local tracker while BIG-GOM-307 remains active. Changed: `docs/parallel-refill-queue.json` now moves `BIG-GOM-301` into the completed batch and marks its status `Done`; `docs/parallel-refill-queue.md` now lists `BIG-GOM-302` and `BIG-GOM-307` as the active tranche and moves `BIG-GOM-301` into the recently completed section so unattended refill guidance matches `local-issues.json`. Validation: doc/state sync only; the previously green `cd bigclaw-go \u0026\u0026 go test ./...` run still covers the Go tooling surfaces on this branch. Commit SHA: `d4e1f947953683f58b419f332a490d1d2976c5f7`. PR URL: `https://github.com/OpenAGIs/BigClaw/pull/137`.",
           "created_at": "2026-03-18T16:01:10Z"
+        },
+        {
+          "body": "Progressed BIG-GOM-307 by routing the remaining legacy ops entrypoints through the Go toolchain. Changed: `bigclaw-go/cmd/bigclawctl` now normalizes the legacy `workspace validate` flags (`--issues` list, `--report-file`, `--no-cleanup`) so existing callers keep working; `scripts/ops/bigclaw_github_sync.py`, `scripts/ops/bigclaw_refill_queue.py`, `scripts/ops/bigclaw_workspace_bootstrap.py`, `scripts/ops/symphony_workspace_bootstrap.py`, and `scripts/ops/symphony_workspace_validate.py` now preserve their historical paths while dispatching into `scripts/ops/bigclawctl`; the refill wrapper now defaults to `local-issues.json` when available so the local tracker remains the canonical backend. Validation: `cd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl` -\u003e ok; `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok; `scripts/ops/bigclaw_github_sync.py status --json` -\u003e ok; `scripts/ops/bigclaw_refill_queue.py --queue docs/parallel-refill-queue.json --local-issues local-issues.json` -\u003e ok; `scripts/ops/symphony_workspace_validate.py --repo-url git@github.com:OpenAGIs/BigClaw.git --workspace-root /tmp/bigclawctl-validate-smoke --issues BIG-GOM-302 BIG-GOM-307 --report-file /tmp/bigclawctl-validate-smoke/report.json --no-cleanup --json` -\u003e ok; `scripts/ops/bigclaw_workspace_bootstrap.py cleanup --workspace /tmp/bigclawctl-validate-smoke/BIG-GOM-302 --issue BIG-GOM-302 --repo-url git@github.com:OpenAGIs/BigClaw.git --cache-key github.com-openagis-bigclaw --json` -\u003e ok. Commit SHA: `a0e9ccadc131cbc061b95c05f760395772259b56`. PR URL: `https://github.com/OpenAGIs/BigClaw/pull/137`.",
+          "created_at": "2026-03-19T06:50:13Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-18T16:01:10Z"
+      "description": "Keep hardening the Go-first bootstrap, refill, and GitHub sync toolchain so unattended multi-issue work no longer relies on Python entrypoints or Linear-only operators.",
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "tooling",
+        "orchestration"
+      ],
+      "priority": 1,
+      "state": "In Progress",
+      "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
+      "updated_at": "2026-03-19T06:50:13Z"
     },
     {
-      "id": "big-gom-308",
-      "identifier": "BIG-GOM-308",
-      "title": "Python deprecation and Go-only mainline switch",
-      "description": "Freeze or retire the remaining Python runtime entrypoints only after the Go workflow, observability, and repo collaboration surfaces have matching owners and validation.",
-      "priority": 3,
-      "state": "Backlog",
-      "labels": ["go-mainline", "migration", "deprecation", "python-retirement"],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
+      "description": "Freeze or retire the remaining Python runtime entrypoints only after the Go workflow, observability, and repo collaboration surfaces have matching owners and validation.",
+      "id": "big-gom-308",
+      "identifier": "BIG-GOM-308",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "deprecation",
+        "python-retirement"
+      ],
+      "priority": 3,
+      "state": "Backlog",
+      "title": "Python deprecation and Go-only mainline switch",
       "updated_at": "2026-03-18T09:00:00Z"
     }
   ]
