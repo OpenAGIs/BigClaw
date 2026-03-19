@@ -15,6 +15,34 @@ import (
 	"bigclaw-go/internal/refill"
 )
 
+func TestNormalizeWorkspaceArgsLeavesBootstrapUntouched(t *testing.T) {
+	args := []string{"--workspace", "/tmp/demo", "--issue", "BIG-GOM-307"}
+	got := normalizeWorkspaceArgs("bootstrap", args)
+	if strings.Join(got, "\x00") != strings.Join(args, "\x00") {
+		t.Fatalf("expected bootstrap args unchanged, got %#v", got)
+	}
+}
+
+func TestNormalizeWorkspaceArgsSupportsLegacyValidateFlags(t *testing.T) {
+	got := normalizeWorkspaceArgs("validate", []string{
+		"--repo-url", "git@github.com:OpenAGIs/BigClaw.git",
+		"--workspace-root", "/tmp/workspaces",
+		"--issues", "BIG-GOM-302", "BIG-GOM-307",
+		"--report-file", "reports/bootstrap.json",
+		"--no-cleanup",
+	})
+	want := []string{
+		"--repo-url", "git@github.com:OpenAGIs/BigClaw.git",
+		"--workspace-root", "/tmp/workspaces",
+		"--issues=BIG-GOM-302,BIG-GOM-307",
+		"--report", "reports/bootstrap.json",
+		"--cleanup=false",
+	}
+	if strings.Join(got, "\x00") != strings.Join(want, "\x00") {
+		t.Fatalf("unexpected normalized args: got %#v want %#v", got, want)
+	}
+}
+
 func captureStdout(t *testing.T, fn func() error) ([]byte, error) {
 	t.Helper()
 	originalStdout := os.Stdout

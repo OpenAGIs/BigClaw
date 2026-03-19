@@ -1,18 +1,5 @@
-#!/usr/bin/env python3
-from __future__ import annotations
+#!/usr/bin/env bash
+set -euo pipefail
 
-import sys
-from pathlib import Path
-
-sys.dont_write_bytecode = True
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-SRC_ROOT = REPO_ROOT / "src"
-if str(SRC_ROOT) not in sys.path:
-    sys.path.insert(0, str(SRC_ROOT))
-
-from bigclaw.workspace_bootstrap_cli import main
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+exec "$script_dir/bigclawctl" workspace "$@"

@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"bigclaw-go/internal/bootstrap"
@@ -182,6 +183,7 @@ func runWorkspace(args []string) error {
 		return errors.New("usage: bigclawctl workspace <bootstrap|cleanup|validate> [flags]")
 	}
 	command := args[0]
+	normalizedArgs := normalizeWorkspaceArgs(command, args[1:])
 	flags := flag.NewFlagSet("workspace "+command, flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	workspace := flags.String("workspace", ".", "workspace")
@@ -197,7 +199,7 @@ func runWorkspace(args []string) error {
 	issuesCSV := flags.String("issues", "", "comma-separated issues")
 	reportPath := flags.String("report", "", "report path")
 	cleanup := flags.Bool("cleanup", true, "cleanup")
-	if err := flags.Parse(args[1:]); err != nil {
+	if err := flags.Parse(normalizedArgs); err != nil {
 		return err
 	}
 	switch command {
@@ -234,6 +236,35 @@ func runWorkspace(args []string) error {
 	default:
 		return fmt.Errorf("unknown workspace subcommand: %s", command)
 	}
+}
+
+func normalizeWorkspaceArgs(command string, args []string) []string {
+	if command != "validate" {
+		return args
+	}
+
+	normalized := make([]string, 0, len(args))
+	for index := 0; index < len(args); index++ {
+		arg := args[index]
+		switch {
+		case arg == "--report-file":
+			normalized = append(normalized, "--report")
+		case strings.HasPrefix(arg, "--report-file="):
+			normalized = append(normalized, "--report="+strings.TrimPrefix(arg, "--report-file="))
+		case arg == "--no-cleanup":
+			normalized = append(normalized, "--cleanup=false")
+		case arg == "--issues":
+			values := make([]string, 0, 1)
+			for index+1 < len(args) && !strings.HasPrefix(args[index+1], "-") {
+				index++
+				values = append(values, args[index])
+			}
+			normalized = append(normalized, "--issues="+strings.Join(values, ","))
+		default:
+			normalized = append(normalized, arg)
+		}
+	}
+	return normalized
 }
 
 func runRefill(args []string) error {

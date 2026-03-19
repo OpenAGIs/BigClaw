@@ -1,24 +1,27 @@
-#!/usr/bin/env python3
-from __future__ import annotations
+#!/usr/bin/env bash
+set -euo pipefail
 
-import sys
-from pathlib import Path
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
-sys.dont_write_bytecode = True
+args=("$@")
+has_repo_url=0
+has_cache_key=0
+for arg in "${args[@]}"; do
+  case "$arg" in
+    --repo-url|--repo-url=*)
+      has_repo_url=1
+      ;;
+    --cache-key|--cache-key=*)
+      has_cache_key=1
+      ;;
+  esac
+done
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-SRC_ROOT = REPO_ROOT / "src"
-if str(SRC_ROOT) not in sys.path:
-    sys.path.insert(0, str(SRC_ROOT))
+if [ "$has_repo_url" -eq 0 ]; then
+  args+=(--repo-url "git@github.com:OpenAGIs/BigClaw.git")
+fi
+if [ "$has_cache_key" -eq 0 ]; then
+  args+=(--cache-key "openagis-bigclaw")
+fi
 
-from bigclaw.workspace_bootstrap_cli import main
-
-
-if __name__ == "__main__":
-    raise SystemExit(
-        main(
-            description="Bootstrap BigClaw workspaces from a shared local mirror.",
-            default_repo_url="git@github.com:OpenAGIs/BigClaw.git",
-            default_cache_key="openagis-bigclaw",
-        )
-    )
+exec "$script_dir/bigclawctl" workspace "${args[@]}"
