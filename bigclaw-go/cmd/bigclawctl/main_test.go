@@ -771,6 +771,79 @@ func TestRunWorkspaceValidateWritesMarkdownReport(t *testing.T) {
 	}
 }
 
+func TestRunWorkspaceValidateAcceptsReportFileAlias(t *testing.T) {
+	root := t.TempDir()
+	remote := initWorkspaceValidationRemote(t, root)
+	reportPath := filepath.Join(root, "reports", "bootstrap-validation-alias.md")
+
+	runErr := runWorkspace([]string{
+		"validate",
+		"--workspace-root", filepath.Join(root, "workspaces"),
+		"--repo-url", remote,
+		"--cache-base", filepath.Join(root, "repos"),
+		"--issues", "OPE-421,OPE-422",
+		"--report-file", reportPath,
+	})
+	if runErr != nil {
+		t.Fatalf("run workspace validate with report-file alias: %v", runErr)
+	}
+
+	body, err := os.ReadFile(reportPath)
+	if err != nil {
+		t.Fatalf("read markdown report: %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, "# Symphony bootstrap cache validation") {
+		t.Fatalf("expected markdown heading, got %s", text)
+	}
+	if !strings.Contains(text, "- Workspaces: `2`") {
+		t.Fatalf("expected workspace summary, got %s", text)
+	}
+}
+
+func TestRunWorkspaceValidateNoCleanupLeavesWorkspacesPresent(t *testing.T) {
+	root := t.TempDir()
+	remote := initWorkspaceValidationRemote(t, root)
+	workspaceRoot := filepath.Join(root, "workspaces")
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runWorkspace([]string{
+		"validate",
+		"--workspace-root", workspaceRoot,
+		"--repo-url", remote,
+		"--cache-base", filepath.Join(root, "repos"),
+		"--issues", "OPE-431,OPE-432",
+		"--no-cleanup",
+		"--json",
+	})
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("run workspace validate with no-cleanup: %v (stdout=%s)", runErr, string(output))
+	}
+	if bytes.Contains(output, []byte(`"cleanup_results"`)) && bytes.Contains(output, []byte(`"removed": true`)) {
+		t.Fatalf("expected no cleanup removals in output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"cleanup_preserved_cache": true`)) {
+		t.Fatalf("expected cache summary in output, got %s", string(output))
+	}
+	for _, issue := range []string{"OPE-431", "OPE-432"} {
+		workspacePath := filepath.Join(workspaceRoot, issue)
+		if _, err := os.Stat(filepath.Join(workspacePath, ".git")); err != nil {
+			t.Fatalf("expected preserved workspace %s: %v", workspacePath, err)
+		}
+	}
+}
+
 func initWorkspaceValidationRemote(t *testing.T, root string) string {
 	t.Helper()
 	remote := filepath.Join(root, "remote.git")

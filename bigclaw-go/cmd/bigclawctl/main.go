@@ -296,6 +296,8 @@ func runWorkspace(args []string) error {
 	issuesCSV := flags.String("issues", "", "comma-separated issues")
 	reportPath := flags.String("report", "", "report path")
 	cleanup := flags.Bool("cleanup", true, "cleanup")
+	noCleanup := flags.Bool("no-cleanup", false, "preserve workspaces after validation")
+	reportFilePath := flags.String("report-file", "", "report path compatibility alias")
 	if err := flags.Parse(args[1:]); err != nil {
 		return err
 	}
@@ -313,6 +315,12 @@ func runWorkspace(args []string) error {
 		}
 		return emit(mergeMap(map[string]any{"status": "ok"}, structToMap(status)), *asJSON, 0)
 	case "validate":
+		if trim(*reportPath) == "" && trim(*reportFilePath) != "" {
+			*reportPath = *reportFilePath
+		}
+		if *noCleanup {
+			*cleanup = false
+		}
 		issues := splitCSV(*issuesCSV)
 		report, err := bootstrap.BuildValidationReport(*repoURL, *workspaceRoot, issues, *defaultBranch, *cacheRoot, *cacheBase, *cacheKey, *cleanup)
 		if err != nil {
