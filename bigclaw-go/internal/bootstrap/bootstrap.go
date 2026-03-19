@@ -398,22 +398,29 @@ func BootstrapWorkspace(workspace string, issueIdentifier string, repoURL string
 	repoCacheRoot := resolveCacheRoot(repoURL, cacheRoot, cacheBase, cacheKey)
 	var status WorkspaceBootstrapStatus
 	err := withCacheLock(repoCacheRoot, func() error {
+		branch := BootstrapBranchName(firstNonEmpty(issueIdentifier, filepath.Base(workspacePath)))
+		expectedSeedPath := filepath.Join(repoCacheRoot, "seed")
+		workspaceExists := false
+		preflightBranch := ""
+		if _, err := os.Stat(filepath.Join(workspacePath, ".git")); err == nil {
+			workspaceExists = true
+			currentBranch, err := verifyReusableWorkspace(workspacePath, branch, expectedSeedPath, repoURL)
+			if err != nil {
+				return err
+			}
+			preflightBranch = currentBranch
+		}
 		state, err := ensureSeedUnlocked(repoURL, defaultBranch, cacheRoot, cacheBase, cacheKey)
 		if err != nil {
 			return err
 		}
 		seedPath := state.SeedPath
-		branch := BootstrapBranchName(firstNonEmpty(issueIdentifier, filepath.Base(workspacePath)))
 		cacheReused := !state.MirrorCreated && !state.SeedCreated
 		cloneSuppressed := !state.MirrorCreated
-		if _, err := os.Stat(filepath.Join(workspacePath, ".git")); err == nil {
-			currentBranch, err := requireGit(workspacePath, "branch", "--show-current")
-			if err != nil {
-				return err
-			}
+		if workspaceExists {
 			status = WorkspaceBootstrapStatus{
 				Workspace:       workspacePath,
-				Branch:          firstNonEmpty(currentBranch, branch),
+				Branch:          firstNonEmpty(preflightBranch, branch),
 				CacheRoot:       state.CacheRoot,
 				CacheKey:        state.CacheKey,
 				MirrorPath:      state.MirrorPath,
@@ -459,6 +466,62 @@ func BootstrapWorkspace(workspace string, issueIdentifier string, repoURL string
 		return nil
 	})
 	return status, err
+}
+
+func verifyReusableWorkspace(workspacePath string, expectedBranch string, seedPath string, repoURL string) (string, error) {
+	currentBranch, err := requireGit(workspacePath, "branch", "--show-current")
+	if err != nil {
+		return "", err
+	}
+	if trim(currentBranch) != trim(expectedBranch) {
+		return "", fmt.Errorf("existing workspace branch mismatch: got %s want %s", firstNonEmpty(currentBranch, "<detached>"), expectedBranch)
+	}
+	commonDir, err := requireGit(workspacePath, "rev-parse", "--git-common-dir")
+	if err != nil {
+		return "", err
+	}
+	expectedCommonDir := filepath.Join(seedPath, ".git")
+	if !samePath(resolveGitPath(workspacePath, commonDir), expectedCommonDir) {
+		return "", fmt.Errorf("existing workspace git-common-dir mismatch: got %s want %s", resolveGitPath(workspacePath, commonDir), expectedCommonDir)
+	}
+	originURL, err := requireGit(workspacePath, "remote", "get-url", "origin")
+	if err != nil {
+		return "", err
+	}
+	if !sameRepoOrigin(originURL, repoURL) {
+		return "", fmt.Errorf("existing workspace origin mismatch: got %s want %s", originURL, repoURL)
+	}
+	return currentBranch, nil
+}
+
+func resolveGitPath(repoPath string, gitPath string) string {
+	if filepath.IsAbs(gitPath) {
+		return gitPath
+	}
+	return filepath.Join(repoPath, gitPath)
+}
+
+func sameRepoOrigin(actual string, expected string) bool {
+	if NormalizeRepoLocator(actual) == NormalizeRepoLocator(expected) {
+		return true
+	}
+	return samePath(actual, expected)
+}
+
+func samePath(left string, right string) bool {
+	return canonicalPath(left) == canonicalPath(right)
+}
+
+func canonicalPath(path string) string {
+	absolute, err := filepath.Abs(path)
+	if err != nil {
+		return filepath.Clean(path)
+	}
+	resolved, err := filepath.EvalSymlinks(absolute)
+	if err != nil {
+		return filepath.Clean(absolute)
+	}
+	return filepath.Clean(resolved)
 }
 
 func CleanupWorkspace(workspace string, issueIdentifier string, repoURL string, defaultBranch string, cacheRoot string, cacheBase string, cacheKey string) (WorkspaceBootstrapStatus, error) {

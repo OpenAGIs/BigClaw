@@ -319,6 +319,82 @@ func TestBootstrapWorkspaceReusesExistingIssueWorktree(t *testing.T) {
 	}
 }
 
+func TestBootstrapWorkspaceRejectsCloneThatIsNotBackedBySharedSeed(t *testing.T) {
+	root := t.TempDir()
+	remote := initRemoteWithMain(t, root)
+	cacheBase := filepath.Join(root, "repos")
+	workspace := filepath.Join(root, "workspaces", "OPE-324-mismatch")
+
+	cmd := exec.Command("git", "clone", remote, workspace)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git clone failed: %v (%s)", err, string(output))
+	}
+	cmd = exec.Command("git", "checkout", "-b", "symphony/OPE-324-mismatch")
+	cmd.Dir = workspace
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git checkout -b failed: %v (%s)", err, string(output))
+	}
+
+	_, err := BootstrapWorkspace(workspace, "OPE-324-mismatch", remote, "main", "", cacheBase, "")
+	if err == nil {
+		t.Fatal("expected bootstrap to reject a standalone clone")
+	}
+	if !strings.Contains(err.Error(), "git-common-dir mismatch") {
+		t.Fatalf("expected git-common-dir mismatch error, got %v", err)
+	}
+}
+
+func TestBootstrapWorkspaceRejectsExistingWorkspaceOnUnexpectedBranch(t *testing.T) {
+	root := t.TempDir()
+	remote := initRemoteWithMain(t, root)
+	cacheBase := filepath.Join(root, "repos")
+	workspace := filepath.Join(root, "workspaces", "OPE-324-branch")
+
+	if _, err := BootstrapWorkspace(workspace, "OPE-324-branch", remote, "main", "", cacheBase, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := exec.Command("git", "checkout", "-B", "symphony/OPE-324-other")
+	cmd.Dir = workspace
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git checkout -B failed: %v (%s)", err, string(output))
+	}
+
+	_, err := BootstrapWorkspace(workspace, "OPE-324-branch", remote, "main", "", cacheBase, "")
+	if err == nil {
+		t.Fatal("expected bootstrap to reject a workspace on the wrong branch")
+	}
+	if !strings.Contains(err.Error(), "branch mismatch") {
+		t.Fatalf("expected branch mismatch error, got %v", err)
+	}
+}
+
+func TestBootstrapWorkspaceRejectsExistingWorkspaceWithUnexpectedOrigin(t *testing.T) {
+	root := t.TempDir()
+	remote := initRemoteWithMain(t, root)
+	otherRemote := initRemoteWithMain(t, filepath.Join(root, "other"))
+	cacheBase := filepath.Join(root, "repos")
+	workspace := filepath.Join(root, "workspaces", "OPE-324-origin")
+
+	if _, err := BootstrapWorkspace(workspace, "OPE-324-origin", remote, "main", "", cacheBase, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := exec.Command("git", "remote", "set-url", "origin", otherRemote)
+	cmd.Dir = workspace
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git remote set-url failed: %v (%s)", err, string(output))
+	}
+
+	_, err := BootstrapWorkspace(workspace, "OPE-324-origin", remote, "main", "", cacheBase, "")
+	if err == nil {
+		t.Fatal("expected bootstrap to reject a workspace with the wrong origin")
+	}
+	if !strings.Contains(err.Error(), "origin mismatch") {
+		t.Fatalf("expected origin mismatch error, got %v", err)
+	}
+}
+
 func TestCleanupWorkspacePreservesSharedCacheForFutureReuse(t *testing.T) {
 	root := t.TempDir()
 	remote := initRemoteWithMain(t, root)
