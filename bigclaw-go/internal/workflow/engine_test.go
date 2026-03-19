@@ -60,7 +60,7 @@ func TestEngineRunDefinitionWritesReportAndJournal(t *testing.T) {
 	}
 
 	tempDir := t.TempDir()
-	definition, err := ParseDefinition(`{"name":"release-closeout","report_path_template":"` + filepath.Join(tempDir, `reports`, `{task_id}`, `{run_id}.md`) + `","journal_path_template":"` + filepath.Join(tempDir, `journals`, `{workflow}`, `{run_id}.json`) + `","validation_evidence":["go test ./..."]}`)
+	definition, err := ParseDefinition(`{"name":"release-closeout","steps":[{"name":"execute","kind":"scheduler"}],"report_path_template":"` + filepath.Join(tempDir, `reports`, `{task_id}`, `{run_id}.md`) + `","journal_path_template":"` + filepath.Join(tempDir, `journals`, `{workflow}`, `{run_id}.json`) + `","validation_evidence":["go test ./..."]}`)
 	if err != nil {
 		t.Fatalf("parse definition: %v", err)
 	}
@@ -86,6 +86,12 @@ func TestEngineRunDefinitionWritesReportAndJournal(t *testing.T) {
 	}
 	if result.Acceptance.Status != "accepted" || !result.Acceptance.Passed {
 		t.Fatalf("expected accepted result, got %+v", result.Acceptance)
+	}
+	if result.WorkflowRun.Status != WorkflowRunSucceeded {
+		t.Fatalf("expected succeeded workflow run, got %+v", result.WorkflowRun)
+	}
+	if len(result.WorkflowRun.Steps) != 1 || result.WorkflowRun.Steps[0].Status != WorkflowStepSucceeded {
+		t.Fatalf("expected execute step succeeded, got %+v", result.WorkflowRun.Steps)
 	}
 	if !result.Closeout.Complete {
 		t.Fatalf("expected complete closeout, got %+v", result.Closeout)
@@ -146,7 +152,7 @@ func TestEngineRunDefinitionRequiresApprovalForHighRiskTask(t *testing.T) {
 		Quota:    scheduler.QuotaSnapshot{ConcurrentLimit: 4, BudgetRemaining: 5000},
 	}
 
-	definition, err := ParseDefinition(`{"name":"risk-closeout","validation_evidence":["go test ./..."]}`)
+	definition, err := ParseDefinition(`{"name":"risk-closeout","steps":[{"name":"security-review","kind":"approval"}],"validation_evidence":["go test ./..."]}`)
 	if err != nil {
 		t.Fatalf("parse definition: %v", err)
 	}
@@ -162,6 +168,12 @@ func TestEngineRunDefinitionRequiresApprovalForHighRiskTask(t *testing.T) {
 	}
 	if result.Acceptance.Status != "needs-approval" || result.Acceptance.Passed {
 		t.Fatalf("expected needs-approval, got %+v", result.Acceptance)
+	}
+	if result.WorkflowRun.Status != WorkflowRunRunning {
+		t.Fatalf("expected running workflow run awaiting approval, got %+v", result.WorkflowRun)
+	}
+	if len(result.WorkflowRun.Steps) != 1 || result.WorkflowRun.Steps[0].Status != WorkflowStepPending {
+		t.Fatalf("expected pending approval step, got %+v", result.WorkflowRun.Steps)
 	}
 }
 
@@ -230,5 +242,54 @@ func TestAcceptanceGateRejectsMissingEvidence(t *testing.T) {
 	}
 	if len(decision.MissingValidationSteps) != 1 || decision.MissingValidationSteps[0] != "git log -1 --stat" {
 		t.Fatalf("unexpected missing validation steps: %+v", decision)
+	}
+}
+
+func TestEngineRunDefinitionMarksValidationAndCloseoutStepsFailedWhenIncomplete(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	runtime := &worker.Runtime{
+		WorkerID:    "worker-4",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(testRunner{kind: domain.ExecutorLocal, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    100 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+	engine := &Engine{
+		Runtime:  runtime,
+		Recorder: recorder,
+		Queue:    q,
+		Quota:    scheduler.QuotaSnapshot{ConcurrentLimit: 4, BudgetRemaining: 5000},
+		Now:      func() time.Time { return time.Unix(1700000200, 0).UTC() },
+	}
+	definition, err := ParseDefinition(`{"name":"release-closeout","steps":[{"name":"execute","kind":"scheduler"},{"name":"validate","kind":"validation"},{"name":"closeout","kind":"closeout"}],"validation_evidence":["go test ./..."]}`)
+	if err != nil {
+		t.Fatalf("parse definition: %v", err)
+	}
+	result, err := engine.RunDefinition(context.Background(), domain.Task{
+		ID:                 "task-3",
+		Title:              "Release build",
+		AcceptanceCriteria: []string{"go test ./..."},
+		ValidationPlan:     []string{"git log -1 --stat"},
+	}, definition, "run-3", RunOptions{
+		ValidationEvidence: []string{"go test ./..."},
+		GitPushSucceeded:   false,
+	})
+	if err != nil {
+		t.Fatalf("run definition: %v", err)
+	}
+	if result.WorkflowRun.Status != WorkflowRunFailed {
+		t.Fatalf("expected failed workflow run, got %+v", result.WorkflowRun)
+	}
+	if len(result.WorkflowRun.Steps) != 3 {
+		t.Fatalf("expected three workflow steps, got %+v", result.WorkflowRun.Steps)
+	}
+	if result.WorkflowRun.Steps[1].Status != WorkflowStepFailed || result.WorkflowRun.Steps[2].Status != WorkflowStepFailed {
+		t.Fatalf("expected validation and closeout steps failed, got %+v", result.WorkflowRun.Steps)
 	}
 }

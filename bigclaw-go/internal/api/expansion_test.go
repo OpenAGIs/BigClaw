@@ -454,7 +454,14 @@ func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
 		Result struct {
 			JournalPath string `json:"journal_path"`
 			ReportPath  string `json:"report_path"`
-			Acceptance  struct {
+			WorkflowRun struct {
+				Status string `json:"status"`
+				Steps  []struct {
+					StepID string `json:"step_id"`
+					Status string `json:"status"`
+				} `json:"steps"`
+			} `json:"workflow_run"`
+			Acceptance struct {
 				Status string `json:"status"`
 			} `json:"acceptance"`
 			Closeout struct {
@@ -475,6 +482,9 @@ func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
 	}
 	if runDecoded.Result.Acceptance.Status != "accepted" || !runDecoded.Result.Closeout.Complete || runDecoded.Result.Task.State != "succeeded" || runDecoded.Result.Closeout.RepoSyncAudit.Sync.Status != "synced" {
 		t.Fatalf("unexpected workflow run result: %+v", runDecoded.Result)
+	}
+	if runDecoded.Result.WorkflowRun.Status != "succeeded" || len(runDecoded.Result.WorkflowRun.Steps) != 1 || runDecoded.Result.WorkflowRun.Steps[0].StepID != "execute" || runDecoded.Result.WorkflowRun.Steps[0].Status != "succeeded" {
+		t.Fatalf("expected workflow step run details in response, got %+v", runDecoded.Result.WorkflowRun)
 	}
 	reportContents, err := os.ReadFile(runDecoded.Result.ReportPath)
 	if err != nil {

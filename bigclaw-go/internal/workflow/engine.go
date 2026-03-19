@@ -125,6 +125,7 @@ type RunOptions struct {
 type RunResult struct {
 	Task        domain.Task        `json:"task"`
 	Events      []domain.Event     `json:"events,omitempty"`
+	WorkflowRun WorkflowRun        `json:"workflow_run"`
 	Acceptance  AcceptanceDecision `json:"acceptance"`
 	Closeout    Closeout           `json:"closeout"`
 	Journal     WorkpadJournal     `json:"journal"`
@@ -216,6 +217,7 @@ func (engine *Engine) RunDefinition(ctx context.Context, task domain.Task, defin
 		closeout.GitPushSucceeded &&
 		closeout.GitLogStatCaptured &&
 		closeout.repoSyncVerified()
+	workflowRun := buildWorkflowRun(definition, finalTask, runID, journal, acceptance, closeout, now, engine.now())
 	closeoutDetails := map[string]any{
 		"validation_evidence":   append([]string(nil), closeout.ValidationEvidence...),
 		"git_push_succeeded":    closeout.GitPushSucceeded,
@@ -240,6 +242,7 @@ func (engine *Engine) RunDefinition(ctx context.Context, task domain.Task, defin
 	return RunResult{
 		Task:        finalTask,
 		Events:      events,
+		WorkflowRun: workflowRun,
 		Acceptance:  acceptance,
 		Closeout:    closeout,
 		Journal:     journal,
@@ -401,4 +404,128 @@ func cloneRepoSyncAudit(audit *observability.RepoSyncAudit) *observability.RepoS
 
 func (closeout Closeout) repoSyncVerified() bool {
 	return closeout.RepoSyncAudit != nil && closeout.RepoSyncAudit.Verified()
+}
+
+func buildWorkflowRun(definition Definition, task domain.Task, runID string, journal WorkpadJournal, acceptance AcceptanceDecision, closeout Closeout, startedAt, completedAt time.Time) WorkflowRun {
+	run := WorkflowRun{
+		RunID:       runID,
+		TemplateID:  firstNonEmpty(definition.Name, task.Metadata["workflow"], "workflow-run"),
+		TaskID:      task.ID,
+		TriggeredBy: "workflow-engine",
+		StartedAt:   startedAt.UTC().Format(time.RFC3339),
+		CompletedAt: completedAt.UTC().Format(time.RFC3339),
+		Outputs: map[string]any{
+			"acceptance_status": acceptance.Status,
+			"closeout_complete": closeout.Complete,
+			"journal_entries":   len(journal.Entries),
+			"task_state":        task.State,
+		},
+		ApprovalRefs: append([]string(nil), acceptance.Approvals...),
+	}
+	run.Steps = buildWorkflowStepRuns(definition.Steps, acceptance, closeout, task, startedAt, completedAt)
+	run.Status = resolveWorkflowRunStatus(run.Steps, task, acceptance)
+	return run
+}
+
+func buildWorkflowStepRuns(steps []Step, acceptance AcceptanceDecision, closeout Closeout, task domain.Task, startedAt, completedAt time.Time) []WorkflowStepRun {
+	if len(steps) == 0 {
+		return nil
+	}
+	runs := make([]WorkflowStepRun, 0, len(steps))
+	for index, step := range steps {
+		stepID := firstNonEmpty(step.Name, step.Kind, fmt.Sprintf("step-%d", index+1))
+		run := WorkflowStepRun{
+			StepID:    stepID,
+			Actor:     "workflow-engine",
+			StartedAt: startedAt.UTC().Format(time.RFC3339),
+		}
+		status, output := resolveWorkflowStepStatus(step, acceptance, closeout, task)
+		run.Status = status
+		if status != WorkflowStepPending {
+			run.CompletedAt = completedAt.UTC().Format(time.RFC3339)
+		}
+		if len(output) > 0 {
+			run.Output = output
+		}
+		runs = append(runs, run)
+	}
+	return runs
+}
+
+func resolveWorkflowStepStatus(step Step, acceptance AcceptanceDecision, closeout Closeout, task domain.Task) (WorkflowStepStatus, map[string]any) {
+	output := cloneMap(step.Metadata)
+	if output == nil {
+		output = make(map[string]any)
+	}
+	output["required"] = step.Required
+	kind := strings.ToLower(strings.TrimSpace(step.Kind))
+	switch kind {
+	case "approval":
+		output["approvals"] = append([]string(nil), acceptance.Approvals...)
+		if len(acceptance.Approvals) > 0 {
+			return WorkflowStepSucceeded, output
+		}
+		if step.Required {
+			output["status"] = acceptance.Status
+			return WorkflowStepPending, output
+		}
+		return WorkflowStepSkipped, output
+	case "validation":
+		output["missing_validation_steps"] = append([]string(nil), acceptance.MissingValidationSteps...)
+		if len(acceptance.MissingValidationSteps) == 0 {
+			return WorkflowStepSucceeded, output
+		}
+		if step.Required {
+			return WorkflowStepFailed, output
+		}
+		return WorkflowStepSkipped, output
+	case "closeout":
+		output["complete"] = closeout.Complete
+		if closeout.Complete {
+			return WorkflowStepSucceeded, output
+		}
+		if step.Required {
+			return WorkflowStepFailed, output
+		}
+		return WorkflowStepSkipped, output
+	default:
+		output["task_state"] = task.State
+		switch task.State {
+		case domain.TaskSucceeded:
+			return WorkflowStepSucceeded, output
+		case domain.TaskCancelled:
+			return WorkflowStepSkipped, output
+		case domain.TaskDeadLetter, domain.TaskBlocked:
+			return WorkflowStepFailed, output
+		default:
+			if step.Required {
+				return WorkflowStepFailed, output
+			}
+			return WorkflowStepSkipped, output
+		}
+	}
+}
+
+func resolveWorkflowRunStatus(steps []WorkflowStepRun, task domain.Task, acceptance AcceptanceDecision) WorkflowRunStatus {
+	switch task.State {
+	case domain.TaskCancelled:
+		return WorkflowRunCanceled
+	case domain.TaskDeadLetter, domain.TaskBlocked:
+		return WorkflowRunFailed
+	}
+	for _, step := range steps {
+		switch step.Status {
+		case WorkflowStepFailed:
+			return WorkflowRunFailed
+		case WorkflowStepPending, WorkflowStepRunning:
+			return WorkflowRunRunning
+		}
+	}
+	if acceptance.Passed {
+		return WorkflowRunSucceeded
+	}
+	if acceptance.Status == "needs-approval" {
+		return WorkflowRunRunning
+	}
+	return WorkflowRunFailed
 }
