@@ -77,11 +77,39 @@ type OperationsMetricSpec struct {
 }
 
 type WeeklyArtifacts struct {
-	RootDir           string `json:"root_dir"`
-	WeeklyReportPath  string `json:"weekly_report_path"`
-	DashboardPath     string `json:"dashboard_path"`
-	MetricSpecPath    string `json:"metric_spec_path,omitempty"`
-	VersionCenterPath string `json:"version_center_path,omitempty"`
+	RootDir              string `json:"root_dir"`
+	WeeklyReportPath     string `json:"weekly_report_path"`
+	DashboardPath        string `json:"dashboard_path"`
+	MetricSpecPath       string `json:"metric_spec_path,omitempty"`
+	RegressionCenterPath string `json:"regression_center_path,omitempty"`
+	QueueControlPath     string `json:"queue_control_path,omitempty"`
+	VersionCenterPath    string `json:"version_center_path,omitempty"`
+}
+
+type ConsoleAction struct {
+	ActionID string `json:"action_id"`
+	Label    string `json:"label"`
+	Target   string `json:"target"`
+	Enabled  bool   `json:"enabled"`
+	Reason   string `json:"reason,omitempty"`
+}
+
+func (a ConsoleAction) State() string {
+	if a.Enabled {
+		return "enabled"
+	}
+	return "disabled"
+}
+
+type QueueControlCenter struct {
+	QueueDepth          int                        `json:"queue_depth"`
+	QueuedByPriority    map[string]int             `json:"queued_by_priority,omitempty"`
+	QueuedByRisk        map[string]int             `json:"queued_by_risk,omitempty"`
+	ExecutionMedia      map[string]int             `json:"execution_media,omitempty"`
+	WaitingApprovalRuns int                        `json:"waiting_approval_runs"`
+	BlockedTasks        []string                   `json:"blocked_tasks,omitempty"`
+	QueuedTasks         []string                   `json:"queued_tasks,omitempty"`
+	Actions             map[string][]ConsoleAction `json:"actions,omitempty"`
 }
 
 type EngineeringOverviewPermission struct {
@@ -458,6 +486,37 @@ func WriteWeeklyOperationsBundle(rootDir string, weekly Weekly, metricSpec *Oper
 	return artifacts, nil
 }
 
+func WriteWeeklyOperationsBundleWithVersionCenter(rootDir string, weekly Weekly, metricSpec *OperationsMetricSpec, versionCenter *PolicyPromptVersionCenter) (WeeklyArtifacts, error) {
+	return WriteWeeklyOperationsBundleWithCenters(rootDir, weekly, metricSpec, "", nil, nil, versionCenter)
+}
+
+func WriteWeeklyOperationsBundleWithCenters(rootDir string, weekly Weekly, metricSpec *OperationsMetricSpec, regressionName string, regressionCenter *regression.Center, queueControl *QueueControlCenter, versionCenter *PolicyPromptVersionCenter) (WeeklyArtifacts, error) {
+	artifacts, err := WriteWeeklyOperationsBundle(rootDir, weekly, metricSpec)
+	if err != nil {
+		return WeeklyArtifacts{}, err
+	}
+	if regressionCenter != nil {
+		artifacts.RegressionCenterPath = filepath.Join(rootDir, "regression-center.md")
+		if err := WriteReport(artifacts.RegressionCenterPath, RenderRegressionCenter(regressionName, *regressionCenter)); err != nil {
+			return WeeklyArtifacts{}, err
+		}
+	}
+	if queueControl != nil {
+		artifacts.QueueControlPath = filepath.Join(rootDir, "queue-control-center.md")
+		if err := WriteReport(artifacts.QueueControlPath, RenderQueueControlCenter(*queueControl)); err != nil {
+			return WeeklyArtifacts{}, err
+		}
+	}
+	if versionCenter == nil {
+		return artifacts, nil
+	}
+	artifacts.VersionCenterPath = filepath.Join(rootDir, "policy-prompt-version-center.md")
+	if err := WriteReport(artifacts.VersionCenterPath, RenderPolicyPromptVersionCenter(*versionCenter)); err != nil {
+		return WeeklyArtifacts{}, err
+	}
+	return artifacts, nil
+}
+
 func AuditDashboardBuilder(dashboard DashboardBuilder) DashboardBuilderAudit {
 	widgetIndex := dashboard.WidgetIndex()
 	placementCounts := make(map[string]int)
@@ -721,6 +780,87 @@ func WriteEngineeringOverviewBundle(rootDir string, overview EngineeringOverview
 	return path, nil
 }
 
+func BuildQueueControlCenter(tasks []domain.Task) QueueControlCenter {
+	center := QueueControlCenter{
+		QueuedByPriority: map[string]int{"P0": 0, "P1": 0, "P2": 0},
+		QueuedByRisk:     map[string]int{"low": 0, "medium": 0, "high": 0},
+		ExecutionMedia:   make(map[string]int),
+		Actions:          make(map[string][]ConsoleAction),
+	}
+	for _, task := range tasks {
+		if domain.IsActiveTaskState(task.State) {
+			center.QueueDepth++
+		}
+		if task.State == domain.TaskBlocked || strings.EqualFold(task.Metadata["approval_status"], "needs-approval") {
+			center.WaitingApprovalRuns++
+			center.BlockedTasks = append(center.BlockedTasks, task.ID)
+		}
+		if task.State == domain.TaskQueued || task.State == domain.TaskLeased || task.State == domain.TaskRetrying {
+			center.QueuedTasks = append(center.QueuedTasks, task.ID)
+			center.QueuedByPriority[priorityBucket(task.Priority)]++
+			center.QueuedByRisk[riskBucket(task.RiskLevel)]++
+			medium := firstNonEmpty(string(task.RequiredExecutor), task.Metadata["medium"], "unknown")
+			center.ExecutionMedia[medium]++
+			center.Actions[task.ID] = buildConsoleActions(task.ID, task.State == domain.TaskBlocked, task.State != domain.TaskBlocked, task.State == domain.TaskBlocked)
+		}
+	}
+	sort.Strings(center.BlockedTasks)
+	sort.Strings(center.QueuedTasks)
+	return center
+}
+
+func RenderQueueControlCenter(center QueueControlCenter) string {
+	builder := strings.Builder{}
+	builder.WriteString("# Queue Control Center\n\n")
+	builder.WriteString(fmt.Sprintf("- Queue Depth: %d\n", center.QueueDepth))
+	builder.WriteString(fmt.Sprintf("- Waiting Approval Runs: %d\n", center.WaitingApprovalRuns))
+	builder.WriteString(fmt.Sprintf("- Queued Tasks: %s\n\n", joinOrNone(center.QueuedTasks)))
+	builder.WriteString("## Queue By Priority\n\n")
+	for _, priority := range []string{"P0", "P1", "P2"} {
+		builder.WriteString(fmt.Sprintf("- %s: %d\n", priority, center.QueuedByPriority[priority]))
+	}
+	builder.WriteString("\n## Queue By Risk\n\n")
+	for _, risk := range []string{"low", "medium", "high"} {
+		builder.WriteString(fmt.Sprintf("- %s: %d\n", risk, center.QueuedByRisk[risk]))
+	}
+	builder.WriteString("\n## Execution Media\n\n")
+	if len(center.ExecutionMedia) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, medium := range sortedMapKeys(center.ExecutionMedia) {
+			builder.WriteString(fmt.Sprintf("- %s: %d\n", medium, center.ExecutionMedia[medium]))
+		}
+	}
+	builder.WriteString("\n## Blocked Tasks\n\n")
+	if len(center.BlockedTasks) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, taskID := range center.BlockedTasks {
+			builder.WriteString(fmt.Sprintf("- %s\n", taskID))
+		}
+	}
+	builder.WriteString("\n## Actions\n\n")
+	if len(center.QueuedTasks) == 0 {
+		builder.WriteString("- None\n")
+		return builder.String()
+	}
+	for _, taskID := range center.QueuedTasks {
+		builder.WriteString(fmt.Sprintf("- %s: %s\n", taskID, RenderConsoleActions(center.Actions[taskID])))
+	}
+	return builder.String()
+}
+
+func WriteQueueControlCenterBundle(rootDir string, center QueueControlCenter) (string, error) {
+	if err := os.MkdirAll(rootDir, 0o755); err != nil {
+		return "", err
+	}
+	path := filepath.Join(rootDir, "queue-control-center.md")
+	if err := WriteReport(path, RenderQueueControlCenter(center)); err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
 func BuildPolicyPromptVersionCenter(name string, generatedAt time.Time, artifacts []VersionedArtifact, diffPreviewLines int) PolicyPromptVersionCenter {
 	grouped := make(map[string][]VersionedArtifact)
 	for _, artifact := range artifacts {
@@ -973,6 +1113,71 @@ func joinOrNone(values []string) string {
 		return "none"
 	}
 	return strings.Join(values, ", ")
+}
+
+func sortedMapKeys(values map[string]int) []string {
+	out := make([]string, 0, len(values))
+	for key := range values {
+		out = append(out, key)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func buildConsoleActions(target string, allowRetry, allowPause, allowEscalate bool) []ConsoleAction {
+	return []ConsoleAction{
+		{ActionID: "drill-down", Label: "Drill Down", Target: target, Enabled: true},
+		{ActionID: "export", Label: "Export", Target: target, Enabled: true},
+		{ActionID: "add-note", Label: "Add Note", Target: target, Enabled: true},
+		{ActionID: "escalate", Label: "Escalate", Target: target, Enabled: allowEscalate, Reason: disabledReason(allowEscalate, "escalate is reserved for blocked queue items")},
+		{ActionID: "retry", Label: "Retry", Target: target, Enabled: allowRetry, Reason: disabledReason(allowRetry, "retry is reserved for blocked queue items")},
+		{ActionID: "pause", Label: "Pause", Target: target, Enabled: allowPause, Reason: disabledReason(allowPause, "approval-blocked tasks should be escalated instead of paused")},
+		{ActionID: "audit", Label: "Audit Trail", Target: target, Enabled: true},
+	}
+}
+
+func RenderConsoleActions(actions []ConsoleAction) string {
+	if len(actions) == 0 {
+		return "none"
+	}
+	rendered := make([]string, 0, len(actions))
+	for _, action := range actions {
+		detail := fmt.Sprintf("%s [%s] state=%s target=%s", action.Label, action.ActionID, action.State(), action.Target)
+		if reason := strings.TrimSpace(action.Reason); reason != "" {
+			detail += " reason=" + reason
+		}
+		rendered = append(rendered, detail)
+	}
+	return strings.Join(rendered, "; ")
+}
+
+func disabledReason(enabled bool, reason string) string {
+	if enabled {
+		return ""
+	}
+	return reason
+}
+
+func priorityBucket(priority int) string {
+	switch {
+	case priority <= 0:
+		return "P0"
+	case priority == 1:
+		return "P1"
+	default:
+		return "P2"
+	}
+}
+
+func riskBucket(level domain.RiskLevel) string {
+	switch level {
+	case domain.RiskHigh:
+		return "high"
+	case domain.RiskMedium:
+		return "medium"
+	default:
+		return "low"
+	}
 }
 
 func sortedKeys(values map[string]struct{}) []string {

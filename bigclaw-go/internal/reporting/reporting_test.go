@@ -409,6 +409,90 @@ func TestRenderAndWriteEngineeringOverviewBundle(t *testing.T) {
 	}
 }
 
+func TestBuildRenderAndWriteQueueControlCenterBundle(t *testing.T) {
+	tasks := []domain.Task{
+		{
+			ID:               "task-queued",
+			Priority:         0,
+			State:            domain.TaskQueued,
+			RiskLevel:        domain.RiskHigh,
+			RequiredExecutor: domain.ExecutorRay,
+			Metadata:         map[string]string{},
+		},
+		{
+			ID:               "task-blocked",
+			Priority:         1,
+			State:            domain.TaskBlocked,
+			RiskLevel:        domain.RiskMedium,
+			RequiredExecutor: domain.ExecutorLocal,
+			Metadata: map[string]string{
+				"approval_status": "needs-approval",
+			},
+		},
+		{
+			ID:               "task-retrying",
+			Priority:         2,
+			State:            domain.TaskRetrying,
+			RiskLevel:        domain.RiskLow,
+			RequiredExecutor: domain.ExecutorKubernetes,
+			Metadata:         map[string]string{},
+		},
+	}
+
+	center := BuildQueueControlCenter(tasks)
+	if center.QueueDepth != 3 || center.WaitingApprovalRuns != 1 {
+		t.Fatalf("unexpected queue center counts: %+v", center)
+	}
+	if len(center.BlockedTasks) != 1 || center.BlockedTasks[0] != "task-blocked" {
+		t.Fatalf("unexpected blocked tasks: %+v", center.BlockedTasks)
+	}
+	if strings.Join(center.QueuedTasks, ",") != "task-queued,task-retrying" {
+		t.Fatalf("unexpected queued tasks: %+v", center.QueuedTasks)
+	}
+	if center.QueuedByPriority["P0"] != 1 || center.QueuedByPriority["P2"] != 1 {
+		t.Fatalf("unexpected queued by priority: %+v", center.QueuedByPriority)
+	}
+	if center.QueuedByRisk["high"] != 1 || center.QueuedByRisk["low"] != 1 {
+		t.Fatalf("unexpected queued by risk: %+v", center.QueuedByRisk)
+	}
+	if center.ExecutionMedia["ray"] != 1 || center.ExecutionMedia["kubernetes"] != 1 {
+		t.Fatalf("unexpected execution media: %+v", center.ExecutionMedia)
+	}
+	if len(center.Actions["task-queued"]) == 0 || len(center.Actions["task-retrying"]) == 0 {
+		t.Fatalf("expected actions for queued tasks, got %+v", center.Actions)
+	}
+
+	rendered := RenderQueueControlCenter(center)
+	for _, fragment := range []string{
+		"# Queue Control Center",
+		"- Queue Depth: 3",
+		"- Waiting Approval Runs: 1",
+		"- ray: 1",
+		"- task-blocked",
+		"Retry [retry] state=disabled target=task-queued",
+	} {
+		if !strings.Contains(rendered, fragment) {
+			t.Fatalf("expected %q in rendered queue center, got %s", fragment, rendered)
+		}
+	}
+
+	outputDir := t.TempDir()
+	path, err := WriteQueueControlCenterBundle(outputDir, center)
+	if err != nil {
+		t.Fatalf("write queue control center bundle: %v", err)
+	}
+	if path != filepath.Join(outputDir, "queue-control-center.md") {
+		t.Fatalf("unexpected queue control center path: %s", path)
+	}
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read queue control center bundle: %v", err)
+	}
+	if !strings.Contains(string(body), "## Actions") || !strings.Contains(string(body), "task-retrying") {
+		t.Fatalf("unexpected queue control center content: %s", string(body))
+	}
+}
+
 func TestBuildPolicyPromptVersionCenterSummarizesRevisionDiffs(t *testing.T) {
 	center := BuildPolicyPromptVersionCenter(
 		"Policy/Prompt Version Center",
@@ -521,6 +605,127 @@ func TestRenderAndWritePolicyPromptVersionCenterBundle(t *testing.T) {
 	}
 	if !strings.Contains(string(body), "approval-gate") || !strings.Contains(string(body), "BIG-GOM-304") {
 		t.Fatalf("unexpected version center bundle content: %s", string(body))
+	}
+}
+
+func TestWriteWeeklyOperationsBundleWithVersionCenter(t *testing.T) {
+	rootDir := t.TempDir()
+	start := time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC)
+	end := start.Add(7 * 24 * time.Hour)
+	weekly := Weekly{
+		WeekStart:  start,
+		WeekEnd:    end,
+		Highlights: []string{"Completed 1 / 1 runs this week."},
+		Actions:    []string{"No urgent actions detected; maintain current operating cadence."},
+	}
+	center := BuildPolicyPromptVersionCenter("Policy Center", time.Date(2026, 3, 18, 12, 0, 0, 0, time.UTC), []VersionedArtifact{
+		{
+			ArtifactType: "prompt",
+			ArtifactID:   "triage-summary",
+			Version:      "v1",
+			UpdatedAt:    "2026-03-17T10:00:00Z",
+			Author:       "alice",
+			Summary:      "initial prompt",
+			Content:      "summarize blockers\n",
+		},
+		{
+			ArtifactType: "prompt",
+			ArtifactID:   "triage-summary",
+			Version:      "v2",
+			UpdatedAt:    "2026-03-18T10:00:00Z",
+			Author:       "carol",
+			Summary:      "latest prompt",
+			Content:      "summarize blockers\ninclude owners\n",
+			ChangeTicket: "BIG-GOM-304",
+		},
+	}, 8)
+
+	artifacts, err := WriteWeeklyOperationsBundleWithVersionCenter(rootDir, weekly, nil, &center)
+	if err != nil {
+		t.Fatalf("write weekly bundle with version center: %v", err)
+	}
+	if artifacts.VersionCenterPath != filepath.Join(rootDir, "policy-prompt-version-center.md") {
+		t.Fatalf("unexpected version center path: %+v", artifacts)
+	}
+	body, err := os.ReadFile(artifacts.VersionCenterPath)
+	if err != nil {
+		t.Fatalf("read version center bundle: %v", err)
+	}
+	if !strings.Contains(string(body), "triage-summary") || !strings.Contains(string(body), "latest prompt") {
+		t.Fatalf("unexpected version center weekly bundle content: %s", string(body))
+	}
+}
+
+func TestWriteWeeklyOperationsBundleWithCenters(t *testing.T) {
+	rootDir := t.TempDir()
+	start := time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC)
+	end := start.Add(7 * 24 * time.Hour)
+	weekly := Weekly{
+		WeekStart:  start,
+		WeekEnd:    end,
+		Highlights: []string{"Completed 1 / 1 runs this week."},
+		Actions:    []string{"No urgent actions detected; maintain current operating cadence."},
+	}
+	queueCenter := BuildQueueControlCenter([]domain.Task{
+		{ID: "task-queued", Priority: 1, State: domain.TaskQueued, RiskLevel: domain.RiskMedium, RequiredExecutor: domain.ExecutorLocal},
+	})
+	versionCenter := BuildPolicyPromptVersionCenter("Policy Center", time.Date(2026, 3, 18, 12, 0, 0, 0, time.UTC), []VersionedArtifact{
+		{
+			ArtifactType: "prompt",
+			ArtifactID:   "triage-summary",
+			Version:      "v1",
+			UpdatedAt:    "2026-03-18T10:00:00Z",
+			Author:       "carol",
+			Summary:      "latest prompt",
+			Content:      "summarize blockers\ninclude owners\n",
+			ChangeTicket: "BIG-GOM-304",
+		},
+	}, 8)
+
+	regressionCenter := regression.Center{
+		Summary: regression.Summary{
+			TotalRegressions: 1,
+			AffectedTasks:    1,
+			TopSource:        "ops",
+		},
+		Findings: []regression.Finding{
+			{TaskID: "task-queued", Severity: "medium", RegressionCount: 1, Summary: "retry loop detected"},
+		},
+	}
+
+	artifacts, err := WriteWeeklyOperationsBundleWithCenters(rootDir, weekly, nil, "Regression Analysis Center", &regressionCenter, &queueCenter, &versionCenter)
+	if err != nil {
+		t.Fatalf("write weekly bundle with centers: %v", err)
+	}
+	if artifacts.RegressionCenterPath != filepath.Join(rootDir, "regression-center.md") {
+		t.Fatalf("unexpected regression center path: %+v", artifacts)
+	}
+	if artifacts.QueueControlPath != filepath.Join(rootDir, "queue-control-center.md") {
+		t.Fatalf("unexpected queue control path: %+v", artifacts)
+	}
+	if artifacts.VersionCenterPath != filepath.Join(rootDir, "policy-prompt-version-center.md") {
+		t.Fatalf("unexpected version center path: %+v", artifacts)
+	}
+	queueBody, err := os.ReadFile(artifacts.QueueControlPath)
+	if err != nil {
+		t.Fatalf("read queue control bundle: %v", err)
+	}
+	if !strings.Contains(string(queueBody), "task-queued") {
+		t.Fatalf("unexpected queue control bundle content: %s", string(queueBody))
+	}
+	regressionBody, err := os.ReadFile(artifacts.RegressionCenterPath)
+	if err != nil {
+		t.Fatalf("read regression center bundle: %v", err)
+	}
+	if !strings.Contains(string(regressionBody), "retry loop detected") {
+		t.Fatalf("unexpected regression center bundle content: %s", string(regressionBody))
+	}
+	versionBody, err := os.ReadFile(artifacts.VersionCenterPath)
+	if err != nil {
+		t.Fatalf("read version center bundle: %v", err)
+	}
+	if !strings.Contains(string(versionBody), "triage-summary") {
+		t.Fatalf("unexpected version center bundle content: %s", string(versionBody))
 	}
 }
 
