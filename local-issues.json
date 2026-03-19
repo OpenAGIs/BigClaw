@@ -146,6 +146,18 @@
           "commit_sha": "7825a026dce5befc688614570f860df7cf7a3d91",
           "created_at": "2026-03-18T16:20:15Z",
           "pr_url": "unavailable (origin is /Users/jxrt/Desktop/symphony-main/BigClaw; gh cannot resolve a GitHub host)"
+        },
+        {
+          "body": "What changed:\nAdded command-level regression coverage for Go github-sync `--require-synced` behavior. The CLI now has tests proving `status --require-synced` fails with JSON SHA evidence for an unpushed commit, and `sync --require-synced` succeeds only after publishing a missing issue branch and verifying remote branch parity.\n\nValidation:\ncd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl ./internal/githubsync\npassed\n\nCommit SHA: 117f6015e7cabc6860eb604ee548e031bbb37833\nPR URL: unavailable (origin is /Users/jxrt/Desktop/symphony-main/BigClaw; gh cannot resolve a GitHub host)",
+          "commit_sha": "117f6015e7cabc6860eb604ee548e031bbb37833",
+          "created_at": "2026-03-19T06:26:23Z",
+          "pr_url": "unavailable (origin is /Users/jxrt/Desktop/symphony-main/BigClaw; gh cannot resolve a GitHub host)"
+        },
+        {
+          "body": "What changed:\nHardened Go workspace bootstrap reuse validation so existing workspaces are checked for branch, shared seed git-common-dir, and origin drift before the seed repair path can normalize those mismatches. Added regression coverage for standalone clone rejection plus wrong-branch and wrong-origin reuse cases.\n\nValidation:\ncd bigclaw-go \u0026\u0026 go test ./internal/bootstrap\npassed\ncd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl ./internal/bootstrap\npassed",
+          "commit_sha": "b4702bc04e9b9e51976a39df7d99eca8907d3ce5",
+          "created_at": "2026-03-19T06:43:48Z",
+          "pr_url": "unavailable (origin is /Users/jxrt/Desktop/symphony-main/BigClaw; gh cannot resolve a GitHub host)"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -161,7 +173,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
-      "updated_at": "2026-03-18T16:20:15Z"
+      "updated_at": "2026-03-19T06:43:48Z"
     },
     {
       "assigned_to_worker": true,
