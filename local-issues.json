@@ -29,10 +29,14 @@
         {
           "body": "Completed the remaining Go-side audit semantics parity for policy and approval events in `bigclaw-go/internal/observability/*`.\n\nWhat changed:\n- `bigclaw-go/internal/observability/audit.go` now validates spec-backed execution audit events before JSONL persistence, using top-level `task_id` / `run_id` plus payload fields so malformed approval, takeover, budget-override, and handoff events cannot be written.\n- `bigclaw-go/internal/observability/recorder.go` now exposes `RecordSpecEvent`, a spec-aware recorder path that rejects malformed audit events before they mutate in-memory recorder state.\n- Added focused coverage in `bigclaw-go/internal/observability/audit_test.go` and `bigclaw-go/internal/observability/recorder_test.go` for top-level identifier handling, missing required fields, sink rejection, and recorder rejection/acceptance behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/observability` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `caecf9d6ce3774d0491d5ddd52e15dc771594236`\n- remote SHA check for `origin/symphony/BIG-GOM-302` -> `caecf9d6ce3774d0491d5ddd52e15dc771594236` (matches local)\n- `git log -1 --stat` captured commit `caecf9d6ce3774d0491d5ddd52e15dc771594236` with recorder test coverage; prior supporting commit `1eb6016c8cb1b1add099cdfce166e9dc6f8427e1` enforced spec-backed sink validation.\n\nCommit: `caecf9d6ce3774d0491d5ddd52e15dc771594236`\nPR URL: unavailable in this workspace mirror (`origin` is a local path, not a GitHub HTTPS remote).",
           "created_at": "2026-03-18T15:38:03Z"
+        },
+        {
+          "body": "Synced the completed `BIG-GOM-302` branch to GitHub and refreshed closeout evidence.\n\nWhat changed:\n- pushed `symphony/BIG-GOM-302` to the `github` remote so the completed migration branch exists on GitHub as well as the local mirror\n- created PR `BIG-GOM-302: close risk and policy migration slice`\n- re-ran the focused Go verification suite for the migrated risk, policy, governance, contract, observability, and API surfaces\n\nValidation:\n- `cd bigclaw-go && go test ./internal/risk ./internal/policy ./internal/governance ./internal/contract ./internal/observability ./internal/api` -> passed\n- `git rev-parse HEAD` -> `b05db848be9eec330245fd92a8a6c895ed36c4a1`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `b05db848be9eec330245fd92a8a6c895ed36c4a1` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `b05db848be9eec330245fd92a8a6c895ed36c4a1` (matches local)\n- `git log -1 --stat` -> `Close BIG-GOM-302 in local tracker` with tracker closeout updates in `docs/parallel-refill-queue.json` and `local-issues.json`\n\nCommit: `b05db848be9eec330245fd92a8a6c895ed36c4a1`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-19T00:00:00Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-18T15:38:03Z"
+      "updated_at": "2026-03-19T00:00:00Z"
     },
     {
       "id": "big-gom-303",
