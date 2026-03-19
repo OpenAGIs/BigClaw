@@ -7,7 +7,12 @@
       "description": "Finish consolidating the canonical Go task, intake, and workflow vocabulary so downstream runtime slices stop inventing parallel compatibility contracts.",
       "priority": 1,
       "state": "In Progress",
-      "labels": ["go-mainline", "migration", "domain", "intake"],
+      "labels": [
+        "go-mainline",
+        "migration",
+        "domain",
+        "intake"
+      ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
       "updated_at": "2026-03-18T09:00:00Z"
@@ -19,7 +24,12 @@
       "description": "Keep porting governance, execution-contract, audit, and policy semantics into Go so review and approval behavior no longer depends on Python-only code paths.",
       "priority": 1,
       "state": "In Progress",
-      "labels": ["go-mainline", "migration", "risk", "policy"],
+      "labels": [
+        "go-mainline",
+        "migration",
+        "risk",
+        "policy"
+      ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
       "updated_at": "2026-03-18T09:00:00Z"
@@ -31,15 +41,25 @@
       "description": "Close the Go execution loop with workflow-aware orchestration, journal state, and runtime closeout so active development no longer needs the Python workflow engine.",
       "priority": 1,
       "state": "In Progress",
-      "labels": ["go-mainline", "migration", "workflow", "runtime"],
+      "labels": [
+        "go-mainline",
+        "migration",
+        "workflow",
+        "runtime"
+      ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-19T00:00:00Z",
+      "updated_at": "2026-03-19T06:45:00Z",
       "comments": [
         {
           "author": "codex",
           "created_at": "2026-03-18T15:45:00Z",
           "body": "Completed the Go workflow execution slice by adding a workflow engine with journal/report closeout handling, exposing a `/v2/workflows/run` API endpoint that reuses the worker runtime, and wiring the daemon server to provide runtime-backed workflow execution.\nValidation: `cd bigclaw-go && go test ./internal/workflow ./internal/api` (pass); `cd bigclaw-go && go test ./...` (pass).\nCommit: `68a25dc8d458010d65de75c07b7158f9feff24cc`.\nPR URL: unavailable in this workspace because `origin` points to `/Users/jxrt/Desktop/symphony-main/BigClaw` rather than a GitHub remote."
+        },
+        {
+          "author": "codex",
+          "created_at": "2026-03-19T06:45:00Z",
+          "body": "Updated the Go orchestrator loop so each scheduler tick derives live quota inputs from the current queue instead of reusing the bootstrap snapshot. This now feeds queue depth, active leased work, and preemptible capacity into scheduler decisions, with a focused loop test covering live queued vs leased tasks.\nValidation: `cd bigclaw-go && gofmt -w internal/orchestrator/loop.go internal/orchestrator/loop_test.go` (pass); `cd bigclaw-go && go test ./internal/orchestrator ./internal/scheduler ./internal/worker ./internal/workflow` (pass).\nCommit: `ffc682ea98227da27af1d2fc8256d2cd19059665`.\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/139."
         }
       ]
     },
@@ -50,7 +70,12 @@
       "description": "Move runtime evidence, reporting, and weekly operations closeout onto Go-owned observability outputs that line up with the new execution loop.",
       "priority": 2,
       "state": "In Progress",
-      "labels": ["go-mainline", "migration", "observability", "reporting"],
+      "labels": [
+        "go-mainline",
+        "migration",
+        "observability",
+        "reporting"
+      ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
       "updated_at": "2026-03-18T16:05:00Z"
@@ -62,7 +87,12 @@
       "description": "Finish moving operator-facing status, control-center, and triage endpoints to Go once the workflow runtime and reporting surfaces are stable.",
       "priority": 2,
       "state": "Backlog",
-      "labels": ["go-mainline", "migration", "api", "triage"],
+      "labels": [
+        "go-mainline",
+        "migration",
+        "api",
+        "triage"
+      ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
       "updated_at": "2026-03-18T09:00:00Z"
@@ -74,7 +104,12 @@
       "description": "Port the remaining repo board, registry, gateway, linkage, and lineage surfaces into Go without leaking repo-specific concerns into the scheduler runtime.",
       "priority": 2,
       "state": "Backlog",
-      "labels": ["go-mainline", "migration", "repo", "governance"],
+      "labels": [
+        "go-mainline",
+        "migration",
+        "repo",
+        "governance"
+      ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
       "updated_at": "2026-03-18T09:00:00Z"
@@ -86,7 +121,12 @@
       "description": "Keep hardening the Go-first bootstrap, refill, and GitHub sync toolchain so unattended multi-issue work no longer relies on Python entrypoints or Linear-only operators.",
       "priority": 1,
       "state": "In Progress",
-      "labels": ["go-mainline", "migration", "tooling", "orchestration"],
+      "labels": [
+        "go-mainline",
+        "migration",
+        "tooling",
+        "orchestration"
+      ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
       "updated_at": "2026-03-18T09:00:00Z"
@@ -98,7 +138,12 @@
       "description": "Freeze or retire the remaining Python runtime entrypoints only after the Go workflow, observability, and repo collaboration surfaces have matching owners and validation.",
       "priority": 3,
       "state": "Backlog",
-      "labels": ["go-mainline", "migration", "deprecation", "python-retirement"],
+      "labels": [
+        "go-mainline",
+        "migration",
+        "deprecation",
+        "python-retirement"
+      ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
       "updated_at": "2026-03-18T09:00:00Z"
