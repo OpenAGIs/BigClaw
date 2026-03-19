@@ -459,6 +459,142 @@ func TestRunGitHubSyncSyncAllowDirtyReportsStatus(t *testing.T) {
 	}
 }
 
+func TestRunGitHubSyncStatusRequireSyncedReturnsExitErrorForUnpushedCommit(t *testing.T) {
+	root := t.TempDir()
+	repo := initGitHubSyncRepo(t, root)
+	cmd := exec.Command("git", "config", "user.email", "test@example.com")
+	cmd.Dir = repo
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git config user.email failed: %v (%s)", err, string(output))
+	}
+	cmd = exec.Command("git", "config", "user.name", "Test User")
+	cmd.Dir = repo
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git config user.name failed: %v (%s)", err, string(output))
+	}
+	if err := os.WriteFile(filepath.Join(repo, "README.md"), []byte("hello\nnext\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{
+		{"add", "README.md"},
+		{"commit", "-m", "next"},
+	} {
+		cmd = exec.Command("git", args...)
+		cmd.Dir = repo
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v failed: %v (%s)", args, err, string(output))
+		}
+	}
+	localSHA, err := exec.Command("git", "-C", repo, "rev-parse", "HEAD").Output()
+	if err != nil {
+		t.Fatalf("git rev-parse HEAD failed: %v", err)
+	}
+	remoteSHA, err := exec.Command("git", "-C", repo, "rev-parse", "origin/main").Output()
+	if err != nil {
+		t.Fatalf("git rev-parse origin/main failed: %v", err)
+	}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runGitHubSync([]string{
+		"status",
+		"--repo", repo,
+		"--require-synced",
+		"--json",
+	})
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr == nil {
+		t.Fatalf("expected require-synced to fail for unpushed commit (stdout=%s)", string(output))
+	}
+	if _, ok := runErr.(exitError); !ok {
+		t.Fatalf("expected exitError, got %T (%v)", runErr, runErr)
+	}
+	if !bytes.Contains(output, []byte(`"synced": false`)) {
+		t.Fatalf("expected unsynced status in output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"remote_exists": true`)) {
+		t.Fatalf("expected remote branch to exist in output, got %s", string(output))
+	}
+	if !bytes.Contains(output, bytes.TrimSpace(localSHA)) {
+		t.Fatalf("expected local SHA in output, got %s", string(output))
+	}
+	if !bytes.Contains(output, bytes.TrimSpace(remoteSHA)) {
+		t.Fatalf("expected remote SHA in output, got %s", string(output))
+	}
+}
+
+func TestRunGitHubSyncSyncRequireSyncedPublishesMissingIssueBranch(t *testing.T) {
+	root := t.TempDir()
+	repo := initGitHubSyncRepo(t, root)
+	remotePath, err := exec.Command("git", "-C", repo, "remote", "get-url", "origin").Output()
+	if err != nil {
+		t.Fatalf("git remote get-url failed: %v", err)
+	}
+
+	workspace := filepath.Join(root, "workspace")
+	cmd := exec.Command("git", "clone", strings.TrimSpace(string(remotePath)), workspace)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git clone failed: %v (%s)", err, string(output))
+	}
+	cmd = exec.Command("git", "checkout", "-b", "symphony/BIG-GOM-307")
+	cmd.Dir = workspace
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git checkout -b failed: %v (%s)", err, string(output))
+	}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runGitHubSync([]string{
+		"sync",
+		"--repo", workspace,
+		"--require-synced",
+		"--json",
+	})
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("expected sync require-synced to publish missing branch: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"remote_exists": true`)) {
+		t.Fatalf("expected published remote branch in output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"synced": true`)) {
+		t.Fatalf("expected synced status in output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"pushed": true`)) {
+		t.Fatalf("expected pushed status in output, got %s", string(output))
+	}
+
+	remoteBranchSHA, err := exec.Command("git", "-C", workspace, "rev-parse", "origin/symphony/BIG-GOM-307").Output()
+	if err != nil {
+		t.Fatalf("git rev-parse origin/symphony/BIG-GOM-307 failed: %v", err)
+	}
+	localSHA, err := exec.Command("git", "-C", workspace, "rev-parse", "HEAD").Output()
+	if err != nil {
+		t.Fatalf("git rev-parse HEAD failed: %v", err)
+	}
+	if !bytes.Equal(bytes.TrimSpace(localSHA), bytes.TrimSpace(remoteBranchSHA)) {
+		t.Fatalf("expected published branch SHA to match HEAD, local=%s remote=%s", bytes.TrimSpace(localSHA), bytes.TrimSpace(remoteBranchSHA))
+	}
+}
+
 func TestRunWorkspaceValidateWritesMarkdownReport(t *testing.T) {
 	root := t.TempDir()
 	remote := initWorkspaceValidationRemote(t, root)
