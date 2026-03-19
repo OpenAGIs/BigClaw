@@ -334,6 +334,47 @@ func (s *Server) handleV2DesignSystem(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, product.DefaultDesignSystem())
 }
 
+func (s *Server) handleV2SavedViews(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	team := strings.TrimSpace(r.URL.Query().Get("team"))
+	project := strings.TrimSpace(r.URL.Query().Get("project"))
+	actor := firstNonEmpty(r.URL.Query().Get("actor"), r.Header.Get("X-BigClaw-Actor"))
+	catalog := product.BuildSavedViewCatalog(s.filteredTasks(team, project, "", time.Time{}, time.Time{}), actor, team, project)
+	audit := product.AuditSavedViewCatalog(catalog)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"filters": map[string]string{
+			"team":    team,
+			"project": project,
+			"actor":   actor,
+		},
+		"catalog": catalog,
+		"audit":   audit,
+		"report": map[string]any{
+			"markdown":   product.RenderSavedViewReport(catalog, audit),
+			"export_url": savedViewsExportURL(team, project, actor),
+		},
+	})
+}
+
+func (s *Server) handleV2SavedViewsExport(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	team := strings.TrimSpace(r.URL.Query().Get("team"))
+	project := strings.TrimSpace(r.URL.Query().Get("project"))
+	actor := firstNonEmpty(r.URL.Query().Get("actor"), r.Header.Get("X-BigClaw-Actor"))
+	catalog := product.BuildSavedViewCatalog(s.filteredTasks(team, project, "", time.Time{}, time.Time{}), actor, team, project)
+	audit := product.AuditSavedViewCatalog(catalog)
+	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+	w.Header().Set("Content-Disposition", `attachment; filename="saved-views.md"`)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(product.RenderSavedViewReport(catalog, audit)))
+}
+
 func (s *Server) handleV2BillingUsage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -377,6 +418,24 @@ func parseWeeklyFilters(r *http.Request, now time.Time) (string, string, time.Ti
 		end = start.Add(7*24*time.Hour - time.Second)
 	}
 	return team, project, start, end, nil
+}
+
+func savedViewsExportURL(team, project, actor string) string {
+	base := "/v2/saved-views/export"
+	query := make([]string, 0, 3)
+	if team = strings.TrimSpace(team); team != "" {
+		query = append(query, "team="+team)
+	}
+	if project = strings.TrimSpace(project); project != "" {
+		query = append(query, "project="+project)
+	}
+	if actor = strings.TrimSpace(actor); actor != "" {
+		query = append(query, "actor="+actor)
+	}
+	if len(query) == 0 {
+		return base
+	}
+	return base + "?" + strings.Join(query, "&")
 }
 
 func weeklyExportURL(team string, project string, start time.Time, end time.Time) string {

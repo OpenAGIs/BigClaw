@@ -239,6 +239,56 @@ func TestV2ProductizationAndBillingEndpoints(t *testing.T) {
 		t.Fatalf("expected design system payload, got %d %s", designResponse.Code, designResponse.Body.String())
 	}
 
+	savedViewsResponse := httptest.NewRecorder()
+	savedViewsRequest := httptest.NewRequest(http.MethodGet, "/v2/saved-views?team=platform&project=apollo&actor=alice", nil)
+	handler.ServeHTTP(savedViewsResponse, savedViewsRequest)
+	if savedViewsResponse.Code != http.StatusOK {
+		t.Fatalf("expected saved views 200, got %d %s", savedViewsResponse.Code, savedViewsResponse.Body.String())
+	}
+	var savedViewsDecoded struct {
+		Catalog struct {
+			Views []struct {
+				ViewID string `json:"view_id"`
+				Route  string `json:"route"`
+			} `json:"views"`
+			Subscriptions []struct {
+				SavedViewID string   `json:"saved_view_id"`
+				Recipients  []string `json:"recipients"`
+			} `json:"subscriptions"`
+		} `json:"catalog"`
+		Audit struct {
+			ReadinessScore float64 `json:"readiness_score"`
+		} `json:"audit"`
+		Report struct {
+			Markdown  string `json:"markdown"`
+			ExportURL string `json:"export_url"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(savedViewsResponse.Body.Bytes(), &savedViewsDecoded); err != nil {
+		t.Fatalf("decode saved views: %v", err)
+	}
+	if savedViewsDecoded.Audit.ReadinessScore != 100 || len(savedViewsDecoded.Catalog.Views) < 6 {
+		t.Fatalf("unexpected saved views payload: %+v", savedViewsDecoded)
+	}
+	if !strings.Contains(savedViewsDecoded.Catalog.Views[0].Route, "team=platform") || !strings.Contains(savedViewsDecoded.Report.Markdown, "Saved Views & Alert Digests Report") {
+		t.Fatalf("expected scoped routes and report markdown, got %+v", savedViewsDecoded)
+	}
+	if len(savedViewsDecoded.Catalog.Subscriptions) != 2 || savedViewsDecoded.Catalog.Subscriptions[1].SavedViewID == "" || len(savedViewsDecoded.Catalog.Subscriptions[1].Recipients) == 0 {
+		t.Fatalf("expected digest subscriptions, got %+v", savedViewsDecoded.Catalog.Subscriptions)
+	}
+
+	savedViewsExportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(savedViewsExportResponse, httptest.NewRequest(http.MethodGet, savedViewsDecoded.Report.ExportURL, nil))
+	if savedViewsExportResponse.Code != http.StatusOK {
+		t.Fatalf("expected saved views export 200, got %d %s", savedViewsExportResponse.Code, savedViewsExportResponse.Body.String())
+	}
+	if contentType := savedViewsExportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected markdown export, got %q", contentType)
+	}
+	if !strings.Contains(savedViewsExportResponse.Body.String(), "Weekly Ops Review") || !strings.Contains(savedViewsExportResponse.Body.String(), "Readiness Score: 100.0") {
+		t.Fatalf("unexpected saved views export body: %s", savedViewsExportResponse.Body.String())
+	}
+
 	usageResponse := httptest.NewRecorder()
 	handler.ServeHTTP(usageResponse, httptest.NewRequest(http.MethodGet, "/v2/billing/usage?organization=openagi&tier=enterprise", nil))
 	if usageResponse.Code != http.StatusOK {
