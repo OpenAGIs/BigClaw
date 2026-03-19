@@ -22,10 +22,10 @@
     ],
     "active": [
       "BIG-GOM-301",
+      "BIG-GOM-303",
       "BIG-GOM-307"
     ],
     "standby": [
-      "BIG-GOM-303",
       "BIG-GOM-304",
       "BIG-GOM-305",
       "BIG-GOM-306",
@@ -59,7 +59,7 @@
       "identifier": "BIG-GOM-303",
       "title": "Workflow orchestration and scheduler loop migration",
       "track": "Control/Workflow Surface Migration",
-      "status": "Todo"
+      "status": "In Progress"
     },
     {
       "identifier": "BIG-GOM-304",
