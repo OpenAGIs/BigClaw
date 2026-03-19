@@ -46,6 +46,12 @@ type workflowDefinitionRenderRequest struct {
 	RunID      string              `json:"run_id"`
 }
 
+type workflowDefinitionRunRequest struct {
+	Definition workflow.Definition `json:"definition"`
+	Task       domain.Task         `json:"task"`
+	RunID      string              `json:"run_id"`
+}
+
 func (s *Server) handleV2WeeklyReport(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -303,6 +309,49 @@ func (s *Server) handleV2WorkflowDefinitionRender(w http.ResponseWriter, r *http
 		"rendered": map[string]any{
 			"report_path":  request.Definition.RenderReportPath(request.Task, request.RunID),
 			"journal_path": request.Definition.RenderJournalPath(request.Task, request.RunID),
+		},
+	})
+}
+
+func (s *Server) handleV2WorkflowDefinitionRun(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var request workflowDefinitionRunRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, fmt.Sprintf("decode workflow definition run request: %v", err), http.StatusBadRequest)
+		return
+	}
+	if strings.TrimSpace(request.Definition.Name) == "" {
+		http.Error(w, "missing definition.name", http.StatusBadRequest)
+		return
+	}
+	if strings.TrimSpace(request.Task.ID) == "" {
+		http.Error(w, "missing task.id", http.StatusBadRequest)
+		return
+	}
+	if strings.TrimSpace(request.RunID) == "" {
+		http.Error(w, "missing run_id", http.StatusBadRequest)
+		return
+	}
+	engine := workflow.NewEngine()
+	engine.Recorder = s.Recorder
+	result, err := engine.RunDefinition(request.Task, request.Definition, request.RunID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("run workflow definition: %v", err), http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"definition": request.Definition,
+		"execution":  result.Execution,
+		"acceptance": result.Acceptance,
+		"journal": map[string]any{
+			"path":        result.JournalPath,
+			"entry_count": len(result.Journal.Entries),
+		},
+		"report": map[string]any{
+			"path": result.ReportPath,
 		},
 	})
 }

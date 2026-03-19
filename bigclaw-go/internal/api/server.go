@@ -245,6 +245,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/v2/launch/checklist", s.handleV2LaunchChecklist)
 	mux.HandleFunc("/v2/support/handoff", s.handleV2SupportHandoff)
 	mux.HandleFunc("/v2/workflows/definitions/render", s.handleV2WorkflowDefinitionRender)
+	mux.HandleFunc("/v2/workflows/definitions/run", s.handleV2WorkflowDefinitionRun)
 	mux.HandleFunc("/v2/navigation", s.handleV2Navigation)
 	mux.HandleFunc("/v2/home", s.handleV2Home)
 	mux.HandleFunc("/v2/design-system", s.handleV2DesignSystem)

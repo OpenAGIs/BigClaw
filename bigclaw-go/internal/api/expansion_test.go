@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -365,6 +367,69 @@ func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
 	}
 	if renderDecoded.Rendered.ReportPath != "reports/BIG-401/run-1.md" || renderDecoded.Rendered.JournalPath != "journals/release-closeout/run-1.json" {
 		t.Fatalf("unexpected rendered workflow paths: %+v", renderDecoded.Rendered)
+	}
+
+	runBody, _ := json.Marshal(map[string]any{
+		"definition": map[string]any{
+			"name":                  "release-closeout",
+			"steps":                 []map[string]any{{"name": "execute", "kind": "scheduler"}},
+			"report_path_template":  filepath.Join(t.TempDir(), "reports", "{task_id}", "{run_id}.md"),
+			"journal_path_template": filepath.Join(t.TempDir(), "journals", "{workflow}", "{run_id}.json"),
+			"validation_evidence":   []string{"pytest", "report-shared"},
+			"approvals":             []string{"release-manager"},
+		},
+		"task": map[string]any{
+			"id":                  "BIG-402",
+			"source":              "linear",
+			"title":               "Run workflow",
+			"risk_level":          "high",
+			"acceptance_criteria": []string{"report-shared"},
+			"validation_plan":     []string{"pytest"},
+		},
+		"run_id": "run-2",
+	})
+	runResponse := httptest.NewRecorder()
+	handler.ServeHTTP(runResponse, httptest.NewRequest(http.MethodPost, "/v2/workflows/definitions/run", bytes.NewReader(runBody)))
+	if runResponse.Code != http.StatusOK {
+		t.Fatalf("expected workflow definition run 200, got %d %s", runResponse.Code, runResponse.Body.String())
+	}
+	var runDecoded struct {
+		Execution struct {
+			Status   string `json:"status"`
+			Decision struct {
+				Medium   string `json:"medium"`
+				Approved bool   `json:"approved"`
+			} `json:"decision"`
+		} `json:"execution"`
+		Acceptance struct {
+			Status    string   `json:"status"`
+			Approvals []string `json:"approvals"`
+		} `json:"acceptance"`
+		Journal struct {
+			Path       string `json:"path"`
+			EntryCount int    `json:"entry_count"`
+		} `json:"journal"`
+		Report struct {
+			Path string `json:"path"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(runResponse.Body.Bytes(), &runDecoded); err != nil {
+		t.Fatalf("decode workflow definition run response: %v", err)
+	}
+	if runDecoded.Execution.Status != "needs-approval" || runDecoded.Execution.Decision.Medium != "vm" || runDecoded.Execution.Decision.Approved {
+		t.Fatalf("unexpected workflow run execution payload: %+v", runDecoded.Execution)
+	}
+	if runDecoded.Acceptance.Status != "accepted" || len(runDecoded.Acceptance.Approvals) != 1 || runDecoded.Acceptance.Approvals[0] != "release-manager" {
+		t.Fatalf("unexpected workflow run acceptance payload: %+v", runDecoded.Acceptance)
+	}
+	if runDecoded.Journal.EntryCount != 4 || runDecoded.Journal.Path == "" || runDecoded.Report.Path == "" {
+		t.Fatalf("unexpected workflow run artifact payload: %+v", runDecoded)
+	}
+	if _, err := os.Stat(runDecoded.Journal.Path); err != nil {
+		t.Fatalf("expected journal file written: %v", err)
+	}
+	if _, err := os.Stat(runDecoded.Report.Path); err != nil {
+		t.Fatalf("expected report file written: %v", err)
 	}
 }
 
