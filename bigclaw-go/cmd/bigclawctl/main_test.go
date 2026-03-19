@@ -43,6 +43,30 @@ func TestNormalizeWorkspaceArgsSupportsLegacyValidateFlags(t *testing.T) {
 	}
 }
 
+func TestLoadWorkspaceDefaultsUsesEnvironment(t *testing.T) {
+	t.Setenv("SYMPHONY_BOOTSTRAP_REPO_URL", "ssh://mirror/repo.git")
+	t.Setenv("SYMPHONY_BOOTSTRAP_GITHUB_URL", "git@github.com:OpenAGIs/BigClaw.git")
+	t.Setenv("SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH", "release")
+	t.Setenv("SYMPHONY_BOOTSTRAP_CACHE_ROOT", "/tmp/cache-root")
+	t.Setenv("SYMPHONY_BOOTSTRAP_CACHE_BASE", "/tmp/cache-base")
+	t.Setenv("SYMPHONY_BOOTSTRAP_CACHE_KEY", "bigclaw-cache")
+
+	defaults := loadWorkspaceDefaults()
+	if defaults.repoURL != "ssh://mirror/repo.git" || defaults.githubURL != "git@github.com:OpenAGIs/BigClaw.git" || defaults.defaultBranch != "release" || defaults.cacheRoot != "/tmp/cache-root" || defaults.cacheBase != "/tmp/cache-base" || defaults.cacheKey != "bigclaw-cache" {
+		t.Fatalf("unexpected workspace defaults: %+v", defaults)
+	}
+}
+
+func TestLoadWorkspaceDefaultsFallsBackWhenEnvMissing(t *testing.T) {
+	defaults := loadWorkspaceDefaults()
+	if defaults.repoURL != "" || defaults.githubURL != "" || defaults.cacheRoot != "" || defaults.cacheKey != "" {
+		t.Fatalf("expected empty optional defaults, got %+v", defaults)
+	}
+	if defaults.defaultBranch != "main" || defaults.cacheBase != "~/.cache/symphony/repos" {
+		t.Fatalf("unexpected fallback defaults: %+v", defaults)
+	}
+}
+
 func captureStdout(t *testing.T, fn func() error) ([]byte, error) {
 	t.Helper()
 	originalStdout := os.Stdout

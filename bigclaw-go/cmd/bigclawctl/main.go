@@ -99,6 +99,15 @@ type refillClient interface {
 	promoteIssue(issueID string, stateID string, stateName string) (bool, string, error)
 }
 
+type workspaceDefaults struct {
+	repoURL       string
+	githubURL     string
+	defaultBranch string
+	cacheRoot     string
+	cacheBase     string
+	cacheKey      string
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fatalf("usage: bigclawctl <github-sync|workspace|refill|local-issue> ...")
@@ -184,17 +193,18 @@ func runWorkspace(args []string) error {
 	}
 	command := args[0]
 	normalizedArgs := normalizeWorkspaceArgs(command, args[1:])
+	defaults := loadWorkspaceDefaults()
 	flags := flag.NewFlagSet("workspace "+command, flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	workspace := flags.String("workspace", ".", "workspace")
 	workspaceRoot := flags.String("workspace-root", ".", "workspace root")
 	issue := flags.String("issue", "", "issue identifier")
-	repoURL := flags.String("repo-url", "", "repo url")
-	githubURL := flags.String("github-url", "", "canonical github repo url")
-	defaultBranch := flags.String("default-branch", "main", "default branch")
-	cacheRoot := flags.String("cache-root", "", "cache root")
-	cacheBase := flags.String("cache-base", "~/.cache/symphony/repos", "cache base")
-	cacheKey := flags.String("cache-key", "", "cache key")
+	repoURL := flags.String("repo-url", defaults.repoURL, "repo url")
+	githubURL := flags.String("github-url", defaults.githubURL, "canonical github repo url")
+	defaultBranch := flags.String("default-branch", defaults.defaultBranch, "default branch")
+	cacheRoot := flags.String("cache-root", defaults.cacheRoot, "cache root")
+	cacheBase := flags.String("cache-base", defaults.cacheBase, "cache base")
+	cacheKey := flags.String("cache-key", defaults.cacheKey, "cache key")
 	asJSON := flags.Bool("json", false, "json")
 	issuesCSV := flags.String("issues", "", "comma-separated issues")
 	reportPath := flags.String("report", "", "report path")
@@ -235,6 +245,17 @@ func runWorkspace(args []string) error {
 		return err
 	default:
 		return fmt.Errorf("unknown workspace subcommand: %s", command)
+	}
+}
+
+func loadWorkspaceDefaults() workspaceDefaults {
+	return workspaceDefaults{
+		repoURL:       strings.TrimSpace(os.Getenv("SYMPHONY_BOOTSTRAP_REPO_URL")),
+		githubURL:     strings.TrimSpace(os.Getenv("SYMPHONY_BOOTSTRAP_GITHUB_URL")),
+		defaultBranch: defaultString(os.Getenv("SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH"), "main"),
+		cacheRoot:     strings.TrimSpace(os.Getenv("SYMPHONY_BOOTSTRAP_CACHE_ROOT")),
+		cacheBase:     defaultString(os.Getenv("SYMPHONY_BOOTSTRAP_CACHE_BASE"), "~/.cache/symphony/repos"),
+		cacheKey:      strings.TrimSpace(os.Getenv("SYMPHONY_BOOTSTRAP_CACHE_KEY")),
 	}
 }
 
@@ -539,6 +560,13 @@ func resolveRepoRelativePath(path string) string {
 		}
 	}
 	return path
+}
+
+func defaultString(value string, fallback string) string {
+	if trim(value) == "" {
+		return fallback
+	}
+	return strings.TrimSpace(value)
 }
 
 func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply bool, refreshURL string, targetOverride *int) error {

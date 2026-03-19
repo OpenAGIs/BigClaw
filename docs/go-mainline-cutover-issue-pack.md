@@ -294,7 +294,8 @@ Current repo progress:
 - `bigclaw-go/internal/bootstrap/*` now owns shared-mirror bootstrap, cleanup, and validation logic with Go tests
 - `bigclaw-go/internal/githubsync/*` now owns GitHub sync install / inspect / push guarantees with Go tests and hook integration
 - `bigclaw-go/internal/refill/*` now owns the draft refill queue selection logic, while `cmd/bigclawctl refill` handles Linear polling and promotion
-- `workflow.md`, `.githooks/post-commit`, and `.githooks/post-rewrite` now invoke the Go-first toolchain by default while legacy Python wrappers remain as compatibility shims
+- `workflow.md`, `.githooks/post-commit`, and `.githooks/post-rewrite` now invoke the Go-first toolchain by default while legacy Python wrapper paths (`scripts/ops/bigclaw_github_sync.py`, `scripts/ops/bigclaw_refill_queue.py`, `scripts/ops/bigclaw_workspace_bootstrap.py`, `scripts/ops/symphony_workspace_bootstrap.py`, `scripts/ops/symphony_workspace_validate.py`) remain as compatibility shims
+- `cmd/bigclawctl workspace` now honors `SYMPHONY_BOOTSTRAP_REPO_URL`, `SYMPHONY_BOOTSTRAP_GITHUB_URL`, `SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH`, `SYMPHONY_BOOTSTRAP_CACHE_ROOT`, `SYMPHONY_BOOTSTRAP_CACHE_BASE`, and `SYMPHONY_BOOTSTRAP_CACHE_KEY` when flags are omitted so direct CLI calls match the unattended workflow hooks
 - the remaining Python wrappers still exist as migration shims; `BIG-GOM-308` is still required to fully remove Python from the default operator path
 
 Milestone:
