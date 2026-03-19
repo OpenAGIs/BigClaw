@@ -42,7 +42,7 @@
       "title": "Observability, reporting, and weekly operations surface migration",
       "description": "Move runtime evidence, reporting, and weekly operations closeout onto Go-owned observability outputs that line up with the new execution loop.",
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "labels": ["go-mainline", "migration", "observability", "reporting"],
       "assigned_to_worker": true,
       "comments": [
@@ -70,10 +70,15 @@
           "author": "codex",
           "created_at": "2026-03-18T16:08:00Z",
           "body": "Added Go-owned regression center reporting in `bigclaw-go/internal/reporting`, wiring the existing `internal/regression.Center` data into markdown rendering and bundle export with direct package coverage. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `ac3fac2f1febc22a6c3f594893fed451524ca5c0`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured."
+        },
+        {
+          "author": "codex",
+          "created_at": "2026-03-19T06:30:34Z",
+          "body": "Added Go-owned queue control center reporting and completed weekly operations bundle parity in `bigclaw-go/internal/reporting`, including console action contracts, queue priority/risk/executor aggregation, markdown rendering, standalone bundle export, and combined weekly bundle export coverage for regression center, queue control center, and version center artifacts. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `42eaa81e6eacdf29ac0cc6e4b0d18bce89e9baf2`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured."
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-18T16:08:00Z"
+      "updated_at": "2026-03-19T06:30:34Z"
     },
     {
       "id": "big-gom-305",
