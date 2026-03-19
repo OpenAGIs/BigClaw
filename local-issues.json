@@ -164,6 +164,12 @@
           "commit_sha": "68fcb324ed40b94deb2bc2c0c28ddb96b8492a6b",
           "created_at": "2026-03-19T06:56:04Z",
           "pr_url": "unavailable (origin is /Users/jxrt/Desktop/symphony-main/BigClaw; gh cannot resolve a GitHub host)"
+        },
+        {
+          "body": "What changed:\nAdded Python-compatible `workspace validate` flag aliases to Go bigclawctl so unattended callers can keep using `--report-file` and `--no-cleanup` during the bootstrap-validator cutover. Added CLI coverage proving the report-file alias writes markdown output and the no-cleanup alias preserves issue workspaces after validation.\n\nValidation:\ncd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl\npassed",
+          "commit_sha": "3c53c7f59fd59ac6963f94256d9ff9ce6a6eda1e",
+          "created_at": "2026-03-19T07:11:35Z",
+          "pr_url": "unavailable (origin is /Users/jxrt/Desktop/symphony-main/BigClaw; gh cannot resolve a GitHub host)"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -179,7 +185,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
-      "updated_at": "2026-03-19T06:56:04Z"
+      "updated_at": "2026-03-19T07:11:35Z"
     },
     {
       "assigned_to_worker": true,
