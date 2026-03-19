@@ -84,18 +84,8 @@ func main() {
 	controller := control.New()
 	subscriberLeases := events.NewSubscriberLeaseCoordinator()
 	schedulerRuntime := scheduler.NewWithStores(policyStore, fairnessStore)
-	runtime := &worker.Runtime{
-		WorkerID:    "bootstrap-worker",
-		Queue:       q,
-		Scheduler:   schedulerRuntime,
-		Registry:    registry,
-		Bus:         bus,
-		Recorder:    recorder,
-		Control:     controller,
-		LeaseTTL:    cfg.LeaseTTL,
-		TaskTimeout: cfg.TaskTimeout,
-	}
-	loop := &orchestrator.Loop{Runtime: runtime, Quota: scheduler.QuotaSnapshot{ConcurrentLimit: cfg.MaxConcurrentRuns, BudgetRemaining: cfg.DefaultBudgetCents}, PollInterval: cfg.PollInterval}
+	pool := buildWorkerPool(cfg, q, schedulerRuntime, registry, bus, recorder, controller)
+	loop := &orchestrator.Loop{Runtime: pool, Quota: scheduler.QuotaSnapshot{ConcurrentLimit: cfg.MaxConcurrentRuns, BudgetRemaining: cfg.DefaultBudgetCents}, PollInterval: cfg.PollInterval}
 
 	if cfg.BootstrapTasks {
 		seed(context.Background(), q)
@@ -108,7 +98,7 @@ func main() {
 		EventPlan:        events.NewDurabilityPlanWithBrokerConfig(eventPlanBackend, cfg.EventLogTargetBackend, cfg.EventLogReplicationFactor, brokerRuntimeConfig(cfg)),
 		EventLog:         eventLog,
 		SubscriberLeases: subscriberLeases,
-		Worker:           runtime,
+		Worker:           pool,
 		Control:          controller,
 		SchedulerPolicy:  policyStore,
 		SchedulerRuntime: schedulerRuntime,
@@ -237,6 +227,38 @@ func buildRegistry(cfg config.Config) *executor.Registry {
 		fmt.Fprintf(os.Stderr, "ray runner disabled: %v\n", err)
 	}
 	return executor.NewRegistry(runners...)
+}
+
+func buildWorkerPool(
+	cfg config.Config,
+	q queue.Queue,
+	schedulerRuntime *scheduler.Scheduler,
+	registry *executor.Registry,
+	bus *events.Bus,
+	recorder *observability.Recorder,
+	controller *control.Controller,
+) *worker.Pool {
+	workerCount := cfg.MaxConcurrentRuns
+	if workerCount < 1 {
+		workerCount = 1
+	}
+
+	runtimes := make([]*worker.Runtime, 0, workerCount)
+	for index := 0; index < workerCount; index++ {
+		runtimes = append(runtimes, &worker.Runtime{
+			WorkerID:    fmt.Sprintf("worker-%d", index+1),
+			Queue:       q,
+			Scheduler:   schedulerRuntime,
+			Registry:    registry,
+			Bus:         bus,
+			Recorder:    recorder,
+			Control:     controller,
+			LeaseTTL:    cfg.LeaseTTL,
+			TaskTimeout: cfg.TaskTimeout,
+		})
+	}
+
+	return worker.NewPool(runtimes...)
 }
 
 func seed(ctx context.Context, q queue.Queue) {
