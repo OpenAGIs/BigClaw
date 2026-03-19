@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"bigclaw-go/internal/domain"
+	"bigclaw-go/internal/observability"
 )
 
 var (
@@ -417,6 +418,43 @@ func RenderMetricSpecMarkdown(spec OperationsMetricSpec) string {
 	return strings.Join(lines, "\n") + "\n"
 }
 
+func RenderRepoSyncAuditMarkdown(audit observability.RepoSyncAudit) string {
+	lines := []string{
+		"# Repo Sync Audit",
+		"",
+		"## Sync Status",
+		"",
+		fmt.Sprintf("- Status: %s", firstNonEmpty(audit.Sync.Status, "unknown")),
+		fmt.Sprintf("- Failure Category: %s", firstNonEmpty(audit.Sync.FailureCategory, "none")),
+		fmt.Sprintf("- Summary: %s", firstNonEmpty(audit.Sync.Summary, "none")),
+		fmt.Sprintf("- Branch: %s", firstNonEmpty(audit.Sync.Branch, "unknown")),
+		fmt.Sprintf("- Remote: %s", firstNonEmpty(audit.Sync.Remote, "origin")),
+		fmt.Sprintf("- Remote Ref: %s", firstNonEmpty(audit.Sync.RemoteRef, "unknown")),
+		fmt.Sprintf("- Ahead By: %d", audit.Sync.AheadBy),
+		fmt.Sprintf("- Behind By: %d", audit.Sync.BehindBy),
+		fmt.Sprintf("- Dirty Paths: %s", joinOrDefault(audit.Sync.DirtyPaths, "none")),
+		fmt.Sprintf("- Auth Target: %s", firstNonEmpty(audit.Sync.AuthTarget, "none")),
+		fmt.Sprintf("- Checked At: %s", firstNonEmpty(audit.Sync.Timestamp, "unknown")),
+		"",
+		"## Pull Request Freshness",
+		"",
+		fmt.Sprintf("- PR Number: %s", prNumberDisplay(audit.PullRequest.PRNumber)),
+		fmt.Sprintf("- PR URL: %s", firstNonEmpty(audit.PullRequest.PRURL, "none")),
+		fmt.Sprintf("- Branch State: %s", firstNonEmpty(audit.PullRequest.BranchState, "unknown")),
+		fmt.Sprintf("- Body State: %s", firstNonEmpty(audit.PullRequest.BodyState, "unknown")),
+		fmt.Sprintf("- Branch Head SHA: %s", firstNonEmpty(audit.PullRequest.BranchHeadSHA, "unknown")),
+		fmt.Sprintf("- PR Head SHA: %s", firstNonEmpty(audit.PullRequest.PRHeadSHA, "unknown")),
+		fmt.Sprintf("- Expected Body Digest: %s", firstNonEmpty(audit.PullRequest.ExpectedBodyDigest, "unknown")),
+		fmt.Sprintf("- Actual Body Digest: %s", firstNonEmpty(audit.PullRequest.ActualBodyDigest, "unknown")),
+		fmt.Sprintf("- Checked At: %s", firstNonEmpty(audit.PullRequest.CheckedAt, "unknown")),
+		"",
+		"## Summary",
+		"",
+		fmt.Sprintf("- %s", audit.Summary()),
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
 func metricCycleMinutes(run MetricRun) (float64, bool) {
 	startedAt, ok := parseMetricTimestamp(run.StartedAt)
 	if !ok {
@@ -483,6 +521,20 @@ func sortedKeys(values map[string]struct{}) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+func joinOrDefault(values []string, fallback string) string {
+	if len(values) == 0 {
+		return fallback
+	}
+	return strings.Join(values, ", ")
+}
+
+func prNumberDisplay(value *int) string {
+	if value == nil {
+		return "unknown"
+	}
+	return strconv.Itoa(*value)
 }
 
 func roundTo(value float64, places int) float64 {

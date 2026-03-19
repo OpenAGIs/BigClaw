@@ -14,6 +14,7 @@ import (
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/flow"
 	"bigclaw-go/internal/intake"
+	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/prd"
 	"bigclaw-go/internal/product"
 	"bigclaw-go/internal/reporting"
@@ -48,14 +49,15 @@ type workflowDefinitionRenderRequest struct {
 }
 
 type workflowRunRequest struct {
-	Definition         workflow.Definition     `json:"definition"`
-	Task               domain.Task             `json:"task"`
-	RunID              string                  `json:"run_id"`
-	ValidationEvidence []string                `json:"validation_evidence,omitempty"`
-	Approvals          []string                `json:"approvals,omitempty"`
-	GitPushSucceeded   bool                    `json:"git_push_succeeded"`
-	GitLogStatOutput   string                  `json:"git_log_stat_output,omitempty"`
-	Quota              scheduler.QuotaSnapshot `json:"quota,omitempty"`
+	Definition         workflow.Definition          `json:"definition"`
+	Task               domain.Task                  `json:"task"`
+	RunID              string                       `json:"run_id"`
+	ValidationEvidence []string                     `json:"validation_evidence,omitempty"`
+	Approvals          []string                     `json:"approvals,omitempty"`
+	GitPushSucceeded   bool                         `json:"git_push_succeeded"`
+	GitLogStatOutput   string                       `json:"git_log_stat_output,omitempty"`
+	RepoSyncAudit      *observability.RepoSyncAudit `json:"repo_sync_audit,omitempty"`
+	Quota              scheduler.QuotaSnapshot      `json:"quota,omitempty"`
 }
 
 func (s *Server) handleV2WeeklyReport(w http.ResponseWriter, r *http.Request) {
@@ -358,6 +360,7 @@ func (s *Server) handleV2WorkflowRun(w http.ResponseWriter, r *http.Request) {
 		Approvals:          request.Approvals,
 		GitPushSucceeded:   request.GitPushSucceeded,
 		GitLogStatOutput:   request.GitLogStatOutput,
+		RepoSyncAudit:      request.RepoSyncAudit,
 	})
 	if err != nil {
 		http.Error(w, fmt.Sprintf("run workflow definition: %v", err), http.StatusInternalServerError)

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bigclaw-go/internal/domain"
+	"bigclaw-go/internal/observability"
 )
 
 func TestBuildMetricSpecComputesCoreOperationsMetrics(t *testing.T) {
@@ -156,6 +157,39 @@ func TestRenderMetricSpecMarkdownIncludesDefinitionsAndValues(t *testing.T) {
 	rendered := RenderMetricSpecMarkdown(spec)
 	if !strings.Contains(rendered, "# Operations Metric Spec") || !strings.Contains(rendered, "### Runs Today") || !strings.Contains(rendered, "value=2") {
 		t.Fatalf("unexpected rendered markdown: %s", rendered)
+	}
+}
+
+func TestRenderRepoSyncAuditMarkdownIncludesSyncAndPREvidence(t *testing.T) {
+	prNumber := 42
+	rendered := RenderRepoSyncAuditMarkdown(observability.RepoSyncAudit{
+		Sync: observability.GitSyncTelemetry{
+			Status:          "synced",
+			FailureCategory: "",
+			Summary:         "clean sync",
+			Branch:          "feature/reporting",
+			Remote:          "origin",
+			RemoteRef:       "origin/feature/reporting",
+			AheadBy:         0,
+			BehindBy:        0,
+			DirtyPaths:      []string{"local-issues.json"},
+			AuthTarget:      "github.com",
+			Timestamp:       "2026-03-18T12:00:00Z",
+		},
+		PullRequest: observability.PullRequestFreshness{
+			PRNumber:           &prNumber,
+			PRURL:              "https://github.com/OpenAGIs/BigClaw/pull/42",
+			BranchState:        "in-sync",
+			BodyState:          "fresh",
+			BranchHeadSHA:      "abc123",
+			PRHeadSHA:          "abc123",
+			ExpectedBodyDigest: "digest-a",
+			ActualBodyDigest:   "digest-a",
+			CheckedAt:          "2026-03-18T12:01:00Z",
+		},
+	})
+	if !strings.Contains(rendered, "# Repo Sync Audit") || !strings.Contains(rendered, "- PR Number: 42") || !strings.Contains(rendered, "sync=synced, pr-branch=in-sync, pr-body=fresh") {
+		t.Fatalf("unexpected repo sync markdown: %s", rendered)
 	}
 }
 

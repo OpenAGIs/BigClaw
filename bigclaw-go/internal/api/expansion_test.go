@@ -435,6 +435,15 @@ func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
 		"validation_evidence": []string{"go test ./..."},
 		"git_push_succeeded":  true,
 		"git_log_stat_output": " cmd/file.go | 10 +++++-----",
+		"repo_sync_audit": map[string]any{
+			"sync": map[string]any{
+				"status": "synced",
+			},
+			"pull_request": map[string]any{
+				"branch_state": "in-sync",
+				"body_state":   "fresh",
+			},
+		},
 	})
 	runResponse := httptest.NewRecorder()
 	runHandler.ServeHTTP(runResponse, httptest.NewRequest(http.MethodPost, "/v2/workflows/run", bytes.NewReader(runBody)))
@@ -449,7 +458,12 @@ func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
 				Status string `json:"status"`
 			} `json:"acceptance"`
 			Closeout struct {
-				Complete bool `json:"complete"`
+				Complete      bool `json:"complete"`
+				RepoSyncAudit struct {
+					Sync struct {
+						Status string `json:"status"`
+					} `json:"sync"`
+				} `json:"repo_sync_audit"`
 			} `json:"closeout"`
 			Task struct {
 				State string `json:"state"`
@@ -459,7 +473,7 @@ func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
 	if err := json.Unmarshal(runResponse.Body.Bytes(), &runDecoded); err != nil {
 		t.Fatalf("decode workflow run response: %v", err)
 	}
-	if runDecoded.Result.Acceptance.Status != "accepted" || !runDecoded.Result.Closeout.Complete || runDecoded.Result.Task.State != "succeeded" {
+	if runDecoded.Result.Acceptance.Status != "accepted" || !runDecoded.Result.Closeout.Complete || runDecoded.Result.Task.State != "succeeded" || runDecoded.Result.Closeout.RepoSyncAudit.Sync.Status != "synced" {
 		t.Fatalf("unexpected workflow run result: %+v", runDecoded.Result)
 	}
 	reportContents, err := os.ReadFile(runDecoded.Result.ReportPath)

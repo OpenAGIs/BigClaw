@@ -73,6 +73,13 @@ func TestEngineRunDefinitionWritesReportAndJournal(t *testing.T) {
 		ValidationEvidence: []string{"go test ./..."},
 		GitPushSucceeded:   true,
 		GitLogStatOutput:   " cmd/file.go | 10 +++++-----",
+		RepoSyncAudit: &observability.RepoSyncAudit{
+			Sync: observability.GitSyncTelemetry{Status: "synced"},
+			PullRequest: observability.PullRequestFreshness{
+				BranchState: "in-sync",
+				BodyState:   "fresh",
+			},
+		},
 	})
 	if err != nil {
 		t.Fatalf("run definition: %v", err)
@@ -96,12 +103,24 @@ func TestEngineRunDefinitionWritesReportAndJournal(t *testing.T) {
 	if !strings.Contains(string(reportContents), "Acceptance: accepted") {
 		t.Fatalf("expected acceptance in report, got %s", string(reportContents))
 	}
+	if !strings.Contains(string(reportContents), "Repo Sync Status: synced") {
+		t.Fatalf("expected repo sync status in report, got %s", string(reportContents))
+	}
+	if !strings.Contains(string(reportContents), "Repo Sync Verified: true") {
+		t.Fatalf("expected repo sync verification in report, got %s", string(reportContents))
+	}
 	journalContents, err := os.ReadFile(filepath.Join(tempDir, "journals", "release-closeout", "run-1.json"))
 	if err != nil {
 		t.Fatalf("read journal: %v", err)
 	}
 	if !strings.Contains(string(journalContents), `"step": "closeout"`) {
 		t.Fatalf("expected closeout journal entry, got %s", string(journalContents))
+	}
+	if !strings.Contains(string(journalContents), `"repo_sync_status": "synced"`) {
+		t.Fatalf("expected repo sync journal details, got %s", string(journalContents))
+	}
+	if !strings.Contains(string(journalContents), `"repo_sync_verified": true`) {
+		t.Fatalf("expected repo sync verification in journal, got %s", string(journalContents))
 	}
 }
 
@@ -143,6 +162,60 @@ func TestEngineRunDefinitionRequiresApprovalForHighRiskTask(t *testing.T) {
 	}
 	if result.Acceptance.Status != "needs-approval" || result.Acceptance.Passed {
 		t.Fatalf("expected needs-approval, got %+v", result.Acceptance)
+	}
+}
+
+func TestEngineRunDefinitionKeepsCloseoutPendingWithoutVerifiedRepoSyncAudit(t *testing.T) {
+	tempDir := t.TempDir()
+	q := queue.NewMemoryQueue()
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	runtime := &worker.Runtime{
+		WorkerID:    "worker-3",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(testRunner{kind: domain.ExecutorLocal, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    100 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+	engine := &Engine{
+		Runtime:  runtime,
+		Recorder: recorder,
+		Queue:    q,
+		Quota:    scheduler.QuotaSnapshot{ConcurrentLimit: 4, BudgetRemaining: 5000},
+		Now:      func() time.Time { return time.Unix(0, 0).UTC() },
+	}
+	definition, err := ParseDefinition(`{"name":"release-closeout","report_path_template":"` + filepath.Join(tempDir, `reports`, `{task_id}`, `{run_id}.md`) + `","journal_path_template":"` + filepath.Join(tempDir, `journals`, `{workflow}`, `{run_id}.json`) + `","validation_evidence":["go test ./..."]}`)
+	if err != nil {
+		t.Fatalf("parse definition: %v", err)
+	}
+	result, err := engine.RunDefinition(context.Background(), domain.Task{
+		ID:                 "task-2",
+		TraceID:            "trace-2",
+		Title:              "Release build",
+		State:              domain.TaskQueued,
+		AcceptanceCriteria: []string{"go test ./..."},
+		ValidationPlan:     []string{"go test ./..."},
+	}, definition, "run-2", RunOptions{
+		ValidationEvidence: []string{"go test ./..."},
+		GitPushSucceeded:   true,
+		GitLogStatOutput:   " cmd/file.go | 10 +++++-----",
+		RepoSyncAudit: &observability.RepoSyncAudit{
+			Sync: observability.GitSyncTelemetry{Status: "synced"},
+			PullRequest: observability.PullRequestFreshness{
+				BranchState: "stale",
+				BodyState:   "fresh",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("run definition: %v", err)
+	}
+	if result.Closeout.Complete {
+		t.Fatalf("expected closeout to remain pending without verified repo sync audit: %+v", result.Closeout)
 	}
 }
 

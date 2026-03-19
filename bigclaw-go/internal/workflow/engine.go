@@ -106,11 +106,12 @@ func (gate AcceptanceGate) Evaluate(task domain.Task, evidence, approvals []stri
 }
 
 type Closeout struct {
-	ValidationEvidence []string `json:"validation_evidence,omitempty"`
-	GitPushSucceeded   bool     `json:"git_push_succeeded"`
-	GitLogStatCaptured bool     `json:"git_log_stat_captured"`
-	GitLogStatOutput   string   `json:"git_log_stat_output,omitempty"`
-	Complete           bool     `json:"complete"`
+	ValidationEvidence []string                     `json:"validation_evidence,omitempty"`
+	GitPushSucceeded   bool                         `json:"git_push_succeeded"`
+	GitLogStatCaptured bool                         `json:"git_log_stat_captured"`
+	GitLogStatOutput   string                       `json:"git_log_stat_output,omitempty"`
+	RepoSyncAudit      *observability.RepoSyncAudit `json:"repo_sync_audit,omitempty"`
+	Complete           bool                         `json:"complete"`
 }
 
 type RunOptions struct {
@@ -118,6 +119,7 @@ type RunOptions struct {
 	Approvals          []string
 	GitPushSucceeded   bool
 	GitLogStatOutput   string
+	RepoSyncAudit      *observability.RepoSyncAudit
 }
 
 type RunResult struct {
@@ -208,13 +210,23 @@ func (engine *Engine) RunDefinition(ctx context.Context, task domain.Task, defin
 		GitPushSucceeded:   options.GitPushSucceeded,
 		GitLogStatCaptured: strings.TrimSpace(options.GitLogStatOutput) != "",
 		GitLogStatOutput:   options.GitLogStatOutput,
+		RepoSyncAudit:      cloneRepoSyncAudit(options.RepoSyncAudit),
 	}
-	closeout.Complete = len(closeout.ValidationEvidence) > 0 && closeout.GitPushSucceeded && closeout.GitLogStatCaptured
-	journal.Record("closeout", closeoutStatus(closeout.Complete), engine.now(), map[string]any{
+	closeout.Complete = len(closeout.ValidationEvidence) > 0 &&
+		closeout.GitPushSucceeded &&
+		closeout.GitLogStatCaptured &&
+		closeout.repoSyncVerified()
+	closeoutDetails := map[string]any{
 		"validation_evidence":   append([]string(nil), closeout.ValidationEvidence...),
 		"git_push_succeeded":    closeout.GitPushSucceeded,
 		"git_log_stat_captured": closeout.GitLogStatCaptured,
-	})
+	}
+	if closeout.RepoSyncAudit != nil {
+		closeoutDetails["repo_sync_status"] = closeout.RepoSyncAudit.Sync.Status
+		closeoutDetails["repo_sync_summary"] = closeout.RepoSyncAudit.Summary()
+		closeoutDetails["repo_sync_verified"] = closeout.RepoSyncAudit.Verified()
+	}
+	journal.Record("closeout", closeoutStatus(closeout.Complete), engine.now(), closeoutDetails)
 
 	reportPath := definition.RenderReportPath(finalTask, runID)
 	if err := writeReport(reportPath, renderRunReport(definition, runID, finalTask, acceptance, closeout, events)); err != nil {
@@ -260,6 +272,13 @@ func renderRunReport(definition Definition, runID string, task domain.Task, acce
 	}
 	if len(closeout.ValidationEvidence) > 0 {
 		lines = append(lines, fmt.Sprintf("- Validation Evidence: %s", strings.Join(closeout.ValidationEvidence, ", ")))
+	}
+	if closeout.RepoSyncAudit != nil {
+		lines = append(lines,
+			fmt.Sprintf("- Repo Sync Status: %s", firstNonEmpty(closeout.RepoSyncAudit.Sync.Status, "unknown")),
+			fmt.Sprintf("- Repo Sync Summary: %s", closeout.RepoSyncAudit.Summary()),
+			fmt.Sprintf("- Repo Sync Verified: %t", closeout.RepoSyncAudit.Verified()),
+		)
 	}
 	if len(acceptance.Approvals) > 0 {
 		lines = append(lines, fmt.Sprintf("- Approvals: %s", strings.Join(acceptance.Approvals, ", ")))
@@ -369,4 +388,17 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
+}
+
+func cloneRepoSyncAudit(audit *observability.RepoSyncAudit) *observability.RepoSyncAudit {
+	if audit == nil {
+		return nil
+	}
+	clone := *audit
+	clone.Sync.DirtyPaths = append([]string(nil), audit.Sync.DirtyPaths...)
+	return &clone
+}
+
+func (closeout Closeout) repoSyncVerified() bool {
+	return closeout.RepoSyncAudit != nil && closeout.RepoSyncAudit.Verified()
 }
