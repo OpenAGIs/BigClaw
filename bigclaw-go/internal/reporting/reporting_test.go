@@ -61,11 +61,20 @@ func TestBuildRendersRichWeeklyMarkdownSections(t *testing.T) {
 	if len(weekly.TeamBreakdown) != 2 || weekly.TeamBreakdown[0].Key != "platform" {
 		t.Fatalf("unexpected team breakdown ordering: %+v", weekly.TeamBreakdown)
 	}
-	if !strings.Contains(weekly.Markdown, "## Highlights") || !strings.Contains(weekly.Markdown, "## Team Breakdown") {
+	if len(weekly.MetricSpec.Definitions) != 7 || len(weekly.MetricSpec.Values) != 7 {
+		t.Fatalf("expected metric spec to be populated, got %+v", weekly.MetricSpec)
+	}
+	if weekly.MetricSpec.Values[0].MetricID != "throughput" || weekly.MetricSpec.Values[0].DisplayValue != "66.7%" {
+		t.Fatalf("unexpected first metric value: %+v", weekly.MetricSpec.Values[0])
+	}
+	if !strings.Contains(weekly.Markdown, "## Highlights") || !strings.Contains(weekly.Markdown, "## Team Breakdown") || !strings.Contains(weekly.Markdown, "## Metric Spec") {
 		t.Fatalf("expected richer markdown sections, got %s", weekly.Markdown)
 	}
 	if !strings.Contains(weekly.Markdown, "- High-risk runs: 1") || !strings.Contains(weekly.Markdown, "- Premium runs: 1") {
 		t.Fatalf("expected risk and premium summary lines, got %s", weekly.Markdown)
+	}
+	if !strings.Contains(weekly.Markdown, "- Throughput: 66.7%") || !strings.Contains(weekly.Markdown, "- Average Budget: 466.7 cents") {
+		t.Fatalf("expected metric spec values in markdown, got %s", weekly.Markdown)
 	}
 	if !strings.Contains(weekly.Markdown, "- platform: total=2 completed=1 blocked=1 interventions=2 budget_cents=1200") {
 		t.Fatalf("expected platform breakdown in markdown, got %s", weekly.Markdown)

@@ -30,11 +30,40 @@ type TeamBreakdown struct {
 	HumanInterventions int    `json:"human_interventions"`
 }
 
+type MetricDefinition struct {
+	MetricID     string   `json:"metric_id"`
+	Label        string   `json:"label"`
+	Unit         string   `json:"unit"`
+	Direction    string   `json:"direction"`
+	Formula      string   `json:"formula"`
+	Description  string   `json:"description"`
+	SourceFields []string `json:"source_fields,omitempty"`
+}
+
+type MetricValue struct {
+	MetricID     string   `json:"metric_id"`
+	Label        string   `json:"label"`
+	Value        float64  `json:"value"`
+	DisplayValue string   `json:"display_value"`
+	Numerator    float64  `json:"numerator"`
+	Denominator  float64  `json:"denominator"`
+	Unit         string   `json:"unit"`
+	Evidence     []string `json:"evidence,omitempty"`
+}
+
+type MetricSpec struct {
+	Name        string             `json:"name"`
+	GeneratedAt string             `json:"generated_at"`
+	Definitions []MetricDefinition `json:"definitions"`
+	Values      []MetricValue      `json:"values"`
+}
+
 type Weekly struct {
 	WeekStart     time.Time       `json:"week_start"`
 	WeekEnd       time.Time       `json:"week_end"`
 	Summary       Summary         `json:"summary"`
 	TeamBreakdown []TeamBreakdown `json:"team_breakdown"`
+	MetricSpec    MetricSpec      `json:"metric_spec"`
 	Highlights    []string        `json:"highlights"`
 	Actions       []string        `json:"actions"`
 	Markdown      string          `json:"markdown"`
@@ -93,6 +122,7 @@ func Build(tasks []domain.Task, events []domain.Event, weekStart, weekEnd time.T
 	})
 	weekly.Highlights = buildHighlights(weekly)
 	weekly.Actions = buildActions(weekly)
+	weekly.MetricSpec = buildMetricSpec(weekly)
 	weekly.Markdown = RenderMarkdown(weekly)
 	return weekly
 }
@@ -134,6 +164,11 @@ func RenderMarkdown(weekly Weekly) string {
 		}
 	}
 	builder.WriteString("\n")
+	builder.WriteString("## Metric Spec\n")
+	for _, value := range weekly.MetricSpec.Values {
+		builder.WriteString(fmt.Sprintf("- %s: %s\n", value.Label, value.DisplayValue))
+	}
+	builder.WriteString("\n")
 	builder.WriteString("## Actions\n")
 	for _, action := range weekly.Actions {
 		builder.WriteString("- " + action + "\n")
@@ -167,6 +202,77 @@ func buildActions(weekly Weekly) []string {
 		actions = append(actions, "No urgent actions detected; maintain current operating cadence.")
 	}
 	return actions
+}
+
+func buildMetricSpec(weekly Weekly) MetricSpec {
+	totalRuns := float64(weekly.Summary.TotalRuns)
+	completedRuns := float64(weekly.Summary.CompletedRuns)
+	blockedRuns := float64(weekly.Summary.BlockedRuns)
+	interventions := float64(weekly.Summary.HumanInterventions)
+	highRiskRuns := float64(weekly.Summary.HighRiskRuns)
+	premiumRuns := float64(weekly.Summary.PremiumRuns)
+	regressions := float64(weekly.Summary.RegressionFindings)
+	budgetTotal := float64(weekly.Summary.BudgetCentsTotal)
+	return MetricSpec{
+		Name:        "Weekly Operations Metric Spec",
+		GeneratedAt: weekly.WeekEnd.UTC().Format(time.RFC3339),
+		Definitions: []MetricDefinition{
+			{MetricID: "throughput", Label: "Throughput", Unit: "%", Direction: "up", Formula: "100 * completed_runs / total_runs", Description: "Share of weekly runs that completed successfully.", SourceFields: []string{"summary.completed_runs", "summary.total_runs"}},
+			{MetricID: "blocked-rate", Label: "Blocked Rate", Unit: "%", Direction: "down", Formula: "100 * blocked_runs / total_runs", Description: "Share of weekly runs ending blocked, failed, or dead-lettered.", SourceFields: []string{"summary.blocked_runs", "summary.total_runs"}},
+			{MetricID: "intervention-rate", Label: "Intervention Rate", Unit: "%", Direction: "down", Formula: "100 * human_interventions / total_runs", Description: "Operator intervention pressure relative to total weekly runs.", SourceFields: []string{"summary.human_interventions", "summary.total_runs"}},
+			{MetricID: "high-risk-rate", Label: "High Risk Rate", Unit: "%", Direction: "down", Formula: "100 * high_risk_runs / total_runs", Description: "Share of weekly runs marked high risk.", SourceFields: []string{"summary.high_risk_runs", "summary.total_runs"}},
+			{MetricID: "premium-rate", Label: "Premium Rate", Unit: "%", Direction: "down", Formula: "100 * premium_runs / total_runs", Description: "Share of weekly runs routed through the premium lane.", SourceFields: []string{"summary.premium_runs", "summary.total_runs"}},
+			{MetricID: "regression-density", Label: "Regression Density", Unit: "cases/run", Direction: "down", Formula: "regression_findings / total_runs", Description: "Regression findings per weekly run.", SourceFields: []string{"summary.regression_findings", "summary.total_runs"}},
+			{MetricID: "avg-budget", Label: "Average Budget", Unit: "cents", Direction: "down", Formula: "budget_cents_total / total_runs", Description: "Average planned budget per weekly run.", SourceFields: []string{"summary.budget_cents_total", "summary.total_runs"}},
+		},
+		Values: []MetricValue{
+			ratioMetric("throughput", "Throughput", completedRuns, totalRuns, "%", "completed runs over total runs"),
+			ratioMetric("blocked-rate", "Blocked Rate", blockedRuns, totalRuns, "%", "blocked runs over total runs"),
+			ratioMetric("intervention-rate", "Intervention Rate", interventions, totalRuns, "%", "human interventions over total runs"),
+			ratioMetric("high-risk-rate", "High Risk Rate", highRiskRuns, totalRuns, "%", "high-risk runs over total runs"),
+			ratioMetric("premium-rate", "Premium Rate", premiumRuns, totalRuns, "%", "premium runs over total runs"),
+			decimalMetric("regression-density", "Regression Density", regressions, totalRuns, "cases/run", "regression findings per run"),
+			decimalMetric("avg-budget", "Average Budget", budgetTotal, totalRuns, "cents", "average budget cents per run"),
+		},
+	}
+}
+
+func ratioMetric(metricID string, label string, numerator float64, denominator float64, unit string, evidence string) MetricValue {
+	value := 0.0
+	if denominator > 0 {
+		value = roundTenth((numerator / denominator) * 100)
+	}
+	return MetricValue{
+		MetricID:     metricID,
+		Label:        label,
+		Value:        value,
+		DisplayValue: fmt.Sprintf("%.1f%s", value, unit),
+		Numerator:    numerator,
+		Denominator:  denominator,
+		Unit:         unit,
+		Evidence:     []string{evidence},
+	}
+}
+
+func decimalMetric(metricID string, label string, numerator float64, denominator float64, unit string, evidence string) MetricValue {
+	value := 0.0
+	if denominator > 0 {
+		value = roundTenth(numerator / denominator)
+	}
+	return MetricValue{
+		MetricID:     metricID,
+		Label:        label,
+		Value:        value,
+		DisplayValue: fmt.Sprintf("%.1f %s", value, unit),
+		Numerator:    numerator,
+		Denominator:  denominator,
+		Unit:         unit,
+		Evidence:     []string{evidence},
+	}
+}
+
+func roundTenth(value float64) float64 {
+	return float64(int(value*10+0.5)) / 10
 }
 
 func interventionCounts(events []domain.Event) map[string]int {

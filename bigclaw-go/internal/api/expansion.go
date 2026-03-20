@@ -67,6 +67,7 @@ func (s *Server) handleV2WeeklyReport(w http.ResponseWriter, r *http.Request) {
 		"filters":        map[string]any{"team": team, "project": project, "week_start": start, "week_end": end},
 		"summary":        report.Summary,
 		"team_breakdown": report.TeamBreakdown,
+		"metric_spec":    report.MetricSpec,
 		"highlights":     report.Highlights,
 		"actions":        report.Actions,
 		"report":         map[string]any{"markdown": report.Markdown, "export_url": weeklyExportURL(team, project, start, end)},

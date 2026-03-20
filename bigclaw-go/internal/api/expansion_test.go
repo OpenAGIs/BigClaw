@@ -53,6 +53,14 @@ func TestV2WeeklyReportBuildsSummaryActionsAndMarkdownExport(t *testing.T) {
 			Key       string `json:"key"`
 			TotalRuns int    `json:"total_runs"`
 		} `json:"team_breakdown"`
+		MetricSpec struct {
+			Name   string `json:"name"`
+			Values []struct {
+				MetricID     string  `json:"metric_id"`
+				DisplayValue string  `json:"display_value"`
+				Value        float64 `json:"value"`
+			} `json:"values"`
+		} `json:"metric_spec"`
 		Highlights []string `json:"highlights"`
 		Actions    []string `json:"actions"`
 		Report     struct {
@@ -68,6 +76,9 @@ func TestV2WeeklyReportBuildsSummaryActionsAndMarkdownExport(t *testing.T) {
 	}
 	if len(decoded.TeamBreakdown) != 1 || decoded.TeamBreakdown[0].Key != "platform" || decoded.TeamBreakdown[0].TotalRuns != 2 {
 		t.Fatalf("unexpected team breakdown: %+v", decoded.TeamBreakdown)
+	}
+	if decoded.MetricSpec.Name == "" || len(decoded.MetricSpec.Values) != 7 || decoded.MetricSpec.Values[0].MetricID != "throughput" || decoded.MetricSpec.Values[0].DisplayValue != "50.0%" {
+		t.Fatalf("unexpected weekly metric spec: %+v", decoded.MetricSpec)
 	}
 	if len(decoded.Highlights) == 0 || len(decoded.Actions) == 0 || !strings.Contains(decoded.Report.Markdown, "# BigClaw Weekly Ops Report") || !strings.Contains(decoded.Report.ExportURL, "/v2/reports/weekly/export") {
 		t.Fatalf("expected highlights/actions/export in weekly report, got %+v", decoded)
@@ -85,6 +96,8 @@ func TestV2WeeklyReportBuildsSummaryActionsAndMarkdownExport(t *testing.T) {
 		!strings.Contains(exportResponse.Body.String(), "Human interventions: 1") ||
 		!strings.Contains(exportResponse.Body.String(), "## Highlights") ||
 		!strings.Contains(exportResponse.Body.String(), "## Team Breakdown") ||
+		!strings.Contains(exportResponse.Body.String(), "## Metric Spec") ||
+		!strings.Contains(exportResponse.Body.String(), "- Throughput: 50.0%") ||
 		!strings.Contains(exportResponse.Body.String(), "- platform: total=2 completed=1 blocked=1 interventions=1 budget_cents=1200") {
 		t.Fatalf("unexpected weekly export body: %s", exportResponse.Body.String())
 	}
