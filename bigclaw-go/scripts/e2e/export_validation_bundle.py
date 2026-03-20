@@ -313,6 +313,10 @@ def refresh_continuation_artifacts(
         policy_gate = read_json(policy_gate_output)
         result['policy_gate_status'] = policy_gate.get('status', 'unknown')
         result['policy_gate_recommendation'] = policy_gate.get('recommendation', 'unknown')
+        summary = policy_gate.get('summary', {})
+        result['latest_bundle_age_hours'] = summary.get('latest_bundle_age_hours')
+        result['failing_checks'] = policy_gate.get('failing_checks', [])
+        result['next_actions'] = policy_gate.get('next_actions', [])
     return result
 
 

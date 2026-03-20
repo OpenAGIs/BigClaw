@@ -104,7 +104,11 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
     assert summary['shared_queue']['cross_node_completions'] == 12
     assert summary['shared_queue']['source'] == 'existing-report'
     assert summary['continuation']['refreshed'] is True
+    assert summary['continuation']['policy_gate_status'] == 'policy-hold'
     assert summary['continuation']['policy_gate_recommendation'] == 'hold'
+    assert summary['continuation']['failing_checks']
+    assert summary['continuation']['latest_bundle_age_hours'] == 0.0
+    assert summary['continuation']['next_actions']
 
     latest_local = json.loads((root / 'docs' / 'reports' / 'sqlite-smoke-report.json').read_text(encoding='utf-8'))
     assert latest_local['task']['id'] == 'local-1'
