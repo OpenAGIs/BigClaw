@@ -18,6 +18,7 @@
   },
   "recent_batches": {
     "completed": [
+      "BIG-GOM-310",
       "BIG-GOM-301",
       "BIG-GOM-309",
       "BIG-GOM-302",
@@ -28,9 +29,7 @@
       "BIG-GOM-306",
       "BIG-GOM-308"
     ],
-    "active": [
-      "BIG-GOM-310"
-    ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -104,7 +103,7 @@
       "identifier": "BIG-GOM-310",
       "title": "Merge readiness handoff for Go-mainline branch",
       "track": "Branch Closeout",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

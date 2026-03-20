@@ -50,8 +50,9 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Active repo tranche:
-  - `BIG-GOM-310` — merge readiness handoff for Go-mainline branch
+  - none
 - Recently completed:
+  - `BIG-GOM-310` — merge readiness handoff for Go-mainline branch
   - `BIG-GOM-301` — unified domain model and intake contract migration
   - `BIG-GOM-302` — risk, policy, and approval semantics migration
   - `BIG-GOM-303` — workflow orchestration and scheduler loop migration
