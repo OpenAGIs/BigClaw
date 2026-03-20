@@ -276,6 +276,126 @@ func TestRunIssueCommentWritesLocalTrackerComment(t *testing.T) {
 	}
 }
 
+func TestRunIssueCreateWritesLocalTrackerIssue(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{"issues":[]}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	originalArgs := os.Args
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Args = originalArgs
+		os.Stdout = originalStdout
+	}()
+
+	os.Args = []string{
+		"bigclawctl",
+		"issue",
+		"create",
+		"--local-issues", storePath,
+		"--identifier", "BIG-GOM-309",
+		"--title", "Go-native issue creation",
+		"--description", "Create local tracker slices from the Go CLI",
+		"--priority", "2",
+		"--state", "Todo",
+		"--labels", "go-mainline,tooling",
+		"--json",
+	}
+	runErr := runIssue(os.Args[2:])
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("run issue create: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"identifier": "BIG-GOM-309"`)) {
+		t.Fatalf("expected json identifier output, got %s", string(output))
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"identifier": "BIG-GOM-309"`)) {
+		t.Fatalf("expected created issue in local issue store, got %s", string(body))
+	}
+	if !bytes.Contains(body, []byte("\"labels\": [\n        \"go-mainline\",\n        \"tooling\"\n      ]")) {
+		t.Fatalf("expected labels in local issue store, got %s", string(body))
+	}
+	if !bytes.Contains(body, []byte(`"assigned_to_worker": true`)) {
+		t.Fatalf("expected assigned_to_worker in local issue store, got %s", string(body))
+	}
+}
+
+func TestRunIssueListReadsLocalTrackerIssues(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-301",
+      "identifier": "BIG-GOM-301",
+      "title": "Domain parity",
+      "priority": 1,
+      "state": "In Progress",
+      "labels": ["go-mainline", "domain"]
+    },
+    {
+      "id": "big-gom-305",
+      "identifier": "BIG-GOM-305",
+      "title": "Triage migration",
+      "priority": 2,
+      "state": "Backlog",
+      "labels": ["go-mainline", "triage"]
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	originalArgs := os.Args
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Args = originalArgs
+		os.Stdout = originalStdout
+	}()
+
+	os.Args = []string{
+		"bigclawctl",
+		"issue",
+		"list",
+		"--local-issues", storePath,
+		"--states", "In Progress",
+		"--json",
+	}
+	runErr := runIssue(os.Args[2:])
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("run issue list: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"count": 1`)) {
+		t.Fatalf("expected filtered count output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"identifier": "BIG-GOM-301"`)) {
+		t.Fatalf("expected filtered issue output, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`"identifier": "BIG-GOM-305"`)) {
+		t.Fatalf("did not expect backlog issue in filtered output, got %s", string(output))
+	}
+}
+
 func TestRunIssueStateUpdatesLocalTrackerState(t *testing.T) {
 	tempDir := t.TempDir()
 	storePath := filepath.Join(tempDir, "local-issues.json")

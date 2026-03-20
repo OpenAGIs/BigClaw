@@ -1,6 +1,7 @@
 package refill
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -56,6 +57,95 @@ func TestLocalIssueStoreUpdateIssueStatePreservesExtraFields(t *testing.T) {
 	}
 }
 
+func TestLocalIssueStoreCreateIssueAppendsStructuredRecord(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "title": "Toolchain migration",
+      "state": "In Progress",
+      "created_at": "2026-03-18T09:00:00Z",
+      "updated_at": "2026-03-18T09:00:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	created, err := store.CreateIssue(LocalIssueCreateInput{
+		Identifier:       "BIG-GOM-309",
+		Title:            "Go-native local issue creation",
+		Description:      "Add a Go CLI create flow for local tracker slices",
+		Priority:         2,
+		State:            "Todo",
+		Labels:           []string{"go-mainline", "tooling"},
+		AssignedToWorker: true,
+	}, time.Date(2026, 3, 20, 10, 15, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("create issue: %v", err)
+	}
+	if created.ID != "big-gom-309" || created.Identifier != "BIG-GOM-309" || created.StateName != "Todo" {
+		t.Fatalf("unexpected created issue payload: %+v", created)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"identifier": "BIG-GOM-309"`) {
+		t.Fatalf("expected identifier in local issue store, got %s", text)
+	}
+	if !strings.Contains(text, `"id": "big-gom-309"`) {
+		t.Fatalf("expected derived issue id in local issue store, got %s", text)
+	}
+	if !strings.Contains(text, "\"labels\": [\n        \"go-mainline\",\n        \"tooling\"\n      ]") {
+		t.Fatalf("expected labels in local issue store, got %s", text)
+	}
+	if !strings.Contains(text, `"assigned_to_worker": true`) {
+		t.Fatalf("expected assigned_to_worker in local issue store, got %s", text)
+	}
+	if !strings.Contains(text, `"created_at": "2026-03-20T10:15:00Z"`) {
+		t.Fatalf("expected created_at timestamp, got %s", text)
+	}
+}
+
+func TestLocalIssueStoreCreateIssueRejectsDuplicateIdentifier(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "title": "Toolchain migration",
+      "state": "In Progress"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	_, err = store.CreateIssue(LocalIssueCreateInput{
+		Identifier:       "BIG-GOM-307",
+		Title:            "Duplicate",
+		Priority:         3,
+		AssignedToWorker: true,
+	}, time.Date(2026, 3, 20, 10, 15, 0, 0, time.UTC))
+	if !errors.Is(err, ErrLocalIssueAlreadyExists) {
+		t.Fatalf("expected duplicate issue error, got %v", err)
+	}
+}
+
 func TestLocalIssueStoreIssueStatesFiltersRequestedStates(t *testing.T) {
 	storePath := filepath.Join(t.TempDir(), "local-issues.json")
 	if err := os.WriteFile(storePath, []byte(`{
@@ -79,6 +169,50 @@ func TestLocalIssueStoreIssueStatesFiltersRequestedStates(t *testing.T) {
 	}
 	if issues[0].Identifier != "BIG-GOM-301" || issues[1].Identifier != "BIG-GOM-303" {
 		t.Fatalf("unexpected filtered issues: %+v", issues)
+	}
+}
+
+func TestLocalIssueStoreListIssuesFiltersAndDecodesFields(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-301",
+      "identifier": "BIG-GOM-301",
+      "title": "Domain parity",
+      "priority": 1,
+      "state": "In Progress",
+      "labels": ["go-mainline", "domain"],
+      "created_at": "2026-03-18T09:00:00Z",
+      "updated_at": "2026-03-18T09:30:00Z"
+    },
+    {
+      "id": "big-gom-305",
+      "identifier": "BIG-GOM-305",
+      "title": "Triage migration",
+      "priority": 2,
+      "state": "Backlog",
+      "labels": ["go-mainline", "triage"]
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	issues := store.ListIssues([]string{"In Progress"})
+	if len(issues) != 1 {
+		t.Fatalf("expected one filtered issue, got %+v", issues)
+	}
+	if issues[0].Identifier != "BIG-GOM-301" || issues[0].Title != "Domain parity" || issues[0].Priority.(float64) != 1 {
+		t.Fatalf("unexpected listed issue payload: %+v", issues[0])
+	}
+	if len(issues[0].Labels) != 2 || issues[0].Labels[0] != "go-mainline" || issues[0].Labels[1] != "domain" {
+		t.Fatalf("unexpected labels: %+v", issues[0])
 	}
 }
 

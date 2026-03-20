@@ -13,10 +13,22 @@ import (
 )
 
 var ErrLocalIssueNotFound = errors.New("local issue not found")
+var ErrLocalIssueAlreadyExists = errors.New("local issue already exists")
 
 type LocalIssueStore struct {
 	path   string
 	issues []localIssue
+}
+
+type LocalIssueRecord struct {
+	ID         string   `json:"id"`
+	Identifier string   `json:"identifier"`
+	Title      string   `json:"title"`
+	State      string   `json:"state"`
+	Priority   any      `json:"priority,omitempty"`
+	Labels     []string `json:"labels,omitempty"`
+	CreatedAt  string   `json:"created_at,omitempty"`
+	UpdatedAt  string   `json:"updated_at,omitempty"`
 }
 
 type localIssueComment struct {
@@ -102,6 +114,37 @@ func (s *LocalIssueStore) IssueStates(stateNames []string) []LinearIssue {
 	return issues
 }
 
+func (s *LocalIssueStore) ListIssues(stateNames []string) []LocalIssueRecord {
+	wanted := map[string]struct{}{}
+	for _, stateName := range stateNames {
+		trimmed := strings.TrimSpace(stateName)
+		if trimmed != "" {
+			wanted[trimmed] = struct{}{}
+		}
+	}
+	issues := make([]LocalIssueRecord, 0, len(s.issues))
+	for _, issue := range s.issues {
+		stateName := strings.TrimSpace(issue.State)
+		if len(wanted) != 0 {
+			if _, ok := wanted[stateName]; !ok {
+				continue
+			}
+		}
+		record := LocalIssueRecord{
+			ID:         strings.TrimSpace(issue.ID),
+			Identifier: strings.TrimSpace(issue.Identifier),
+			Title:      strings.TrimSpace(issue.Title),
+			State:      stateName,
+			Priority:   decodeJSONScalar(issue.Priority),
+			Labels:     decodeJSONStringSlice(issue.Labels),
+			CreatedAt:  strings.TrimSpace(issue.CreatedAt),
+			UpdatedAt:  strings.TrimSpace(issue.UpdatedAt),
+		}
+		issues = append(issues, record)
+	}
+	return issues
+}
+
 func (s *LocalIssueStore) UpdateIssueState(ref string, stateName string, now time.Time) (string, error) {
 	for i := range s.issues {
 		issue := &s.issues[i]
@@ -116,6 +159,64 @@ func (s *LocalIssueStore) UpdateIssueState(ref string, stateName string, now tim
 		return strings.TrimSpace(issue.State), nil
 	}
 	return "", ErrLocalIssueNotFound
+}
+
+type LocalIssueCreateInput struct {
+	ID               string
+	Identifier       string
+	Title            string
+	Description      string
+	Priority         any
+	State            string
+	Labels           []string
+	AssignedToWorker bool
+}
+
+func (s *LocalIssueStore) CreateIssue(input LocalIssueCreateInput, now time.Time) (*LinearIssue, error) {
+	identifier := strings.TrimSpace(input.Identifier)
+	if identifier == "" {
+		return nil, errors.New("issue identifier is required")
+	}
+	title := strings.TrimSpace(input.Title)
+	if title == "" {
+		return nil, errors.New("issue title is required")
+	}
+	issueID := strings.TrimSpace(input.ID)
+	if issueID == "" {
+		issueID = strings.ToLower(identifier)
+	}
+	for i := range s.issues {
+		issue := &s.issues[i]
+		if issueMatchesRef(issue, issueID) || issueMatchesRef(issue, identifier) {
+			return nil, ErrLocalIssueAlreadyExists
+		}
+	}
+	stateName := strings.TrimSpace(input.State)
+	if stateName == "" {
+		stateName = "Backlog"
+	}
+	timestamp := now.UTC().Truncate(time.Second).Format(time.RFC3339)
+	created := localIssue{
+		ID:               issueID,
+		Identifier:       identifier,
+		Title:            title,
+		Description:      strings.TrimSpace(input.Description),
+		Priority:         mustMarshalJSON(input.Priority),
+		State:            stateName,
+		Labels:           mustMarshalJSON(input.Labels),
+		AssignedToWorker: mustMarshalJSON(input.AssignedToWorker),
+		CreatedAt:        timestamp,
+		UpdatedAt:        timestamp,
+	}
+	s.issues = append(s.issues, created)
+	if err := s.Save(); err != nil {
+		return nil, err
+	}
+	return &LinearIssue{
+		ID:         issueID,
+		Identifier: identifier,
+		StateName:  stateName,
+	}, nil
 }
 
 func (s *LocalIssueStore) AppendIssueComment(ref string, body string, now time.Time) error {
@@ -322,4 +423,26 @@ func jsonOrNull(raw json.RawMessage) []byte {
 		return []byte("null")
 	}
 	return raw
+}
+
+func decodeJSONScalar(raw json.RawMessage) any {
+	if len(raw) == 0 {
+		return nil
+	}
+	var value any
+	if err := json.Unmarshal(raw, &value); err != nil {
+		return nil
+	}
+	return value
+}
+
+func decodeJSONStringSlice(raw json.RawMessage) []string {
+	if len(raw) == 0 {
+		return nil
+	}
+	items := []string{}
+	if err := json.Unmarshal(raw, &items); err != nil {
+		return nil
+	}
+	return items
 }

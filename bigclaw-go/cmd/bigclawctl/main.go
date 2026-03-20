@@ -122,13 +122,21 @@ func main() {
 
 func runIssue(args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: bigclawctl issue <state|comment> [flags]")
+		return errors.New("usage: bigclawctl issue <create|list|state|comment> [flags]")
 	}
 	command := args[0]
 	flags := flag.NewFlagSet("issue "+command, flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	localIssuesPath := flags.String("local-issues", "", "local issue store path")
 	issueRef := flags.String("issue", "", "issue id or identifier")
+	issueID := flags.String("id", "", "issue id")
+	identifier := flags.String("identifier", "", "issue identifier")
+	title := flags.String("title", "", "issue title")
+	description := flags.String("description", "", "issue description")
+	priority := flags.Int("priority", 0, "issue priority")
+	labels := flags.String("labels", "", "comma-separated labels")
+	stateFilter := flags.String("states", "", "comma-separated states filter")
+	assignedToWorker := flags.Bool("assigned-to-worker", true, "assign to worker")
 	body := flags.String("body", "", "comment body")
 	bodyFile := flags.String("body-file", "", "comment body file")
 	stateName := flags.String("state", "", "new state")
@@ -140,7 +148,7 @@ func runIssue(args []string) error {
 	if trim(storePath) == "" {
 		return errors.New("local issue store is required")
 	}
-	if trim(*issueRef) == "" {
+	if command != "create" && command != "list" && trim(*issueRef) == "" {
 		return errors.New("issue reference is required")
 	}
 	store, err := refill.LoadLocalIssueStore(storePath)
@@ -149,6 +157,35 @@ func runIssue(args []string) error {
 	}
 	now := time.Now().UTC()
 	switch command {
+	case "create":
+		created, err := store.CreateIssue(refill.LocalIssueCreateInput{
+			ID:               trim(*issueID),
+			Identifier:       trim(*identifier),
+			Title:            trim(*title),
+			Description:      trim(*description),
+			Priority:         *priority,
+			State:            trim(*stateName),
+			Labels:           splitCSV(*labels),
+			AssignedToWorker: *assignedToWorker,
+		}, now)
+		if err != nil {
+			return err
+		}
+		return emit(map[string]any{
+			"status":       "ok",
+			"local_issues": absPath(storePath),
+			"id":           created.ID,
+			"identifier":   created.Identifier,
+			"state":        created.StateName,
+		}, *asJSON, 0)
+	case "list":
+		issues := store.ListIssues(splitCSV(*stateFilter))
+		return emit(map[string]any{
+			"status":       "ok",
+			"local_issues": absPath(storePath),
+			"count":        len(issues),
+			"issues":       issues,
+		}, *asJSON, 0)
 	case "state":
 		if trim(*stateName) == "" {
 			return errors.New("state is required")

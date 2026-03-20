@@ -16,7 +16,8 @@ longer waits on Linear to keep issue execution moving.
 - Optional dashboard refresh after promotion:
   - `bash scripts/ops/bigclawctl refill --apply --watch --local-issues local-issues.json --refresh-url http://127.0.0.1:4000/api/v1/refresh`
 - Local issue CLI:
-  - `bash scripts/ops/bigclaw-issue list`
+  - `bash scripts/ops/bigclawctl issue list --local-issues local-issues.json --json`
+  - `bash scripts/ops/bigclawctl issue create --local-issues local-issues.json --identifier BIG-GOM-309 --title "Go-native tracker slice"`
   - `bash scripts/ops/bigclaw-issue state BIG-GOM-303 "In Progress"`
 - Local dashboard/orchestrator:
   - `bash scripts/ops/bigclaw-symphony`
