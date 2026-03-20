@@ -17,6 +17,12 @@ type LocalIssueStore struct {
 	issueMap []map[string]any
 }
 
+type LocalIssueComment struct {
+	Author    string
+	CreatedAt time.Time
+	Body      string
+}
+
 func LoadLocalIssueStore(path string) (*LocalIssueStore, error) {
 	absolute, err := filepath.Abs(path)
 	if err != nil {
@@ -74,6 +80,22 @@ func normalizeLocalIssueMaps(items []any) []map[string]any {
 	return issues
 }
 
+func issueCommentList(value any) []map[string]any {
+	items, ok := value.([]any)
+	if !ok {
+		return []map[string]any{}
+	}
+	comments := make([]map[string]any, 0, len(items))
+	for _, item := range items {
+		comment, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		comments = append(comments, comment)
+	}
+	return comments
+}
+
 func (s *LocalIssueStore) IssueStates(stateNames []string) []LinearIssue {
 	wanted := map[string]struct{}{}
 	for _, stateName := range stateNames {
@@ -112,6 +134,38 @@ func (s *LocalIssueStore) UpdateIssueState(ref string, stateName string, now tim
 		return mapString(issue, "state"), nil
 	}
 	return "", ErrLocalIssueNotFound
+}
+
+func (s *LocalIssueStore) AddComment(ref string, comment LocalIssueComment) error {
+	body := strings.TrimSpace(comment.Body)
+	if body == "" {
+		return errors.New("comment body is required")
+	}
+	author := strings.TrimSpace(comment.Author)
+	if author == "" {
+		author = "codex"
+	}
+	createdAt := comment.CreatedAt
+	if createdAt.IsZero() {
+		createdAt = time.Now()
+	}
+	timestamp := createdAt.UTC().Truncate(time.Second).Format(time.RFC3339)
+	entry := map[string]any{
+		"author":     author,
+		"created_at": timestamp,
+		"body":       body,
+	}
+	for _, issue := range s.issueMap {
+		if !issueMatchesRef(issue, ref) {
+			continue
+		}
+		comments := issueCommentList(issue["comments"])
+		comments = append(comments, entry)
+		issue["comments"] = comments
+		issue["updated_at"] = timestamp
+		return s.Save()
+	}
+	return ErrLocalIssueNotFound
 }
 
 func (s *LocalIssueStore) Save() error {
