@@ -155,6 +155,11 @@
           "author": "codex",
           "body": "Status refresh on 2026-03-21: PR #141 is back to merge-ready after the tracker-note commit retriggered CI. GitHub now reports PR https://github.com/OpenAGIs/BigClaw/pull/141 as OPEN with merge state CLEAN, and the `test` workflow for commit 3649892189f97120af7925199f703b2e6b4dd0b5 completed successfully at 2026-03-20T16:07:25Z. No local implementation or validation work remains in this workspace; the only remaining blocker is reviewer approval and merge. Validation: gh pr view 141 --json url,title,state,mergeStateStatus,reviewDecision,statusCheckRollup -\u003e OPEN/CLEAN with successful completed test check; bash scripts/ops/bigclawctl github-sync status --json -\u003e local SHA 3649892189f97120af7925199f703b2e6b4dd0b5 matches remote SHA 3649892189f97120af7925199f703b2e6b4dd0b5 with status ok and synced true; git status --short --branch -\u003e clean branch. Commit SHA: pending tracker-note commit. PR URL: https://github.com/OpenAGIs/BigClaw/pull/141.",
           "created_at": "2026-03-20T16:08:11Z"
+        },
+        {
+          "author": "codex",
+          "body": "Status refresh on 2026-03-21: PR #141 is merge-ready again after the latest tracker-only sync commit. GitHub now reports PR https://github.com/OpenAGIs/BigClaw/pull/141 as OPEN with merge state CLEAN, and the `test` workflow for commit 5ba7994309c5f49808dd9c86b97b70aa5bb33a34 completed successfully at 2026-03-20T16:09:11Z. No local implementation or validation work remains in this workspace; the only remaining blocker is reviewer approval and merge. Validation: gh pr view 141 --json url,title,state,mergeStateStatus,reviewDecision,statusCheckRollup -\u003e OPEN/CLEAN with successful completed test check; bash scripts/ops/bigclawctl github-sync status --json -\u003e local SHA 5ba7994309c5f49808dd9c86b97b70aa5bb33a34 matches remote SHA 5ba7994309c5f49808dd9c86b97b70aa5bb33a34 with status ok and synced true; git status --short --branch -\u003e clean branch. Commit SHA: pending tracker-note commit. PR URL: https://github.com/OpenAGIs/BigClaw/pull/141.",
+          "created_at": "2026-03-20T16:10:00Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -170,7 +175,7 @@
       "priority": 2,
       "state": "Done",
       "title": "Observability, reporting, and weekly operations surface migration",
-      "updated_at": "2026-03-20T16:08:11Z"
+      "updated_at": "2026-03-20T16:10:00Z"
     },
     {
       "assigned_to_worker": true,
