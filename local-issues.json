@@ -340,7 +340,7 @@
       "title": "Merge readiness handoff for Go-mainline branch",
       "description": "Capture a concise repo-native handoff note for the completed Go-mainline cutover branch: branch SHA, PR, tracker status, validation evidence, and any remaining non-blocking caveats outside the BIG-GOM slice set.",
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "labels": [
         "go-mainline",
         "closeout",
@@ -348,7 +348,13 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-20T17:11:31Z",
-      "updated_at": "2026-03-20T17:11:50Z"
+      "updated_at": "2026-03-20T17:15:35Z",
+      "comments": [
+        {
+          "body": "Closed `BIG-GOM-310` after adding the repo-native merge-readiness handoff artifact for the completed Go-mainline cutover branch.\n\nWhat changed:\n- added `docs/go-mainline-cutover-handoff.md` with the branch head, PR link, local tracker status, validation evidence, completed scope, and the remaining non-blocking caveats that live outside the `BIG-GOM` slice set\n- refreshed `docs/parallel-refill-queue.md` and `docs/parallel-refill-queue.json` so the human-readable and machine-readable refill views both show the branch-closeout slice progression through `BIG-GOM-309` and `BIG-GOM-310`\n- kept the branch PR open and aligned with the completed branch scope\n\nValidation:\n- `cd bigclaw-go && go test ./...` -> passed\n- `python3 -m py_compile src/bigclaw/service.py src/bigclaw/__main__.py src/bigclaw/legacy_shim.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py` -> passed\n- `PYTHONPATH=src python3 - <<\"PY\" ... legacy shim assertions ...` -> passed\n- `git rev-parse HEAD` -> `85ba55fd0a295613e3c2c486b303f04f947f6a63`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `85ba55fd0a295613e3c2c486b303f04f947f6a63` (matches local)\n- `git rev-parse github/symphony/BIG-GOM-302` -> `85ba55fd0a295613e3c2c486b303f04f947f6a63` (matches local)\n- `git log -1 --stat` -> `Add Go-mainline cutover handoff note`\n\nCommit: `85ba55fd0a295613e3c2c486b303f04f947f6a63`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T17:15:35Z"
+        }
+      ]
     }
   ]
 }

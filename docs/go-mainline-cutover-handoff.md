@@ -7,7 +7,7 @@ This note captures the final merge-readiness handoff for the completed
 
 - Branch: `symphony/BIG-GOM-302`
 - Base: `main`
-- Validated branch head before the handoff-ticket closeout commit: `d2d067adb39db07b704de8fd1c51073faf65d0ff`
+- Current handoff branch head: `85ba55fd0a295613e3c2c486b303f04f947f6a63`
 - Pull request: `https://github.com/OpenAGIs/BigClaw/pull/138`
 - PR title:
   - `BIG-GOM-301/BIG-GOM-302/BIG-GOM-303/BIG-GOM-304/BIG-GOM-305/BIG-GOM-306/BIG-GOM-307/BIG-GOM-308: complete Go mainline cutover`
