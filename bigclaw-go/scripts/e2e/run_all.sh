@@ -87,6 +87,11 @@ if [[ "$REFRESH_SHARED_QUEUE" == "1" ]]; then
   SHARED_QUEUE_SOURCE="inline-workflow-refresh"
 fi
 
+EXPORTER_REFRESH_CONTINUATION="off"
+if [[ "$REFRESH_CONTINUATION" == "1" ]]; then
+  EXPORTER_REFRESH_CONTINUATION="always"
+fi
+
 export_status=0
 if ! python3 "$ROOT/scripts/e2e/export_validation_bundle.py" \
   --go-root "$ROOT" \
@@ -95,6 +100,7 @@ if ! python3 "$ROOT/scripts/e2e/export_validation_bundle.py" \
   --summary-path "$SUMMARY_REPORT_PATH" \
   --index-path "$INDEX_REPORT_PATH" \
   --manifest-path "$MANIFEST_REPORT_PATH" \
+  --refresh-continuation "$EXPORTER_REFRESH_CONTINUATION" \
   --shared-queue-source "$SHARED_QUEUE_SOURCE" \
   --run-local "$RUN_LOCAL" \
   --run-kubernetes "$RUN_KUBERNETES" \

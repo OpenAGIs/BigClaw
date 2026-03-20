@@ -160,6 +160,7 @@ parser.add_argument('--index-path', required=True)
 parser.add_argument('--manifest-path', required=True)
 parser.add_argument('--run-id', required=True)
 parser.add_argument('--bundle-dir', required=True)
+parser.add_argument('--refresh-continuation', required=True)
 parser.add_argument('--shared-queue-source', required=True)
 parser.add_argument('--local-report-path', required=True)
 parser.add_argument('--local-stdout-path', required=True)
@@ -182,6 +183,9 @@ shared_queue = json.loads(shared_queue_path.read_text(encoding='utf-8'))
 summary = {
     'run_id': args.run_id,
     'status': 'succeeded' if args.validation_status == '0' else 'failed',
+    'continuation': {
+        'mode': args.refresh_continuation,
+    },
     'shared_queue': {
         'available': shared_queue.get('all_ok', False),
         'cross_node_completions': shared_queue.get('cross_node_completions', 0),
@@ -259,3 +263,4 @@ print(json.dumps({'status': 'ok', 'report_path': str(report_path)}))
     assert summary['shared_queue']['available'] is True
     assert summary['shared_queue']['cross_node_completions'] == 16
     assert summary['shared_queue']['source'] == 'inline-workflow-refresh'
+    assert summary['continuation']['mode'] == 'off'
