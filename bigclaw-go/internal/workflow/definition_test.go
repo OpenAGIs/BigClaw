@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"encoding/json"
 	"testing"
 
 	"bigclaw-go/internal/domain"
@@ -51,5 +52,25 @@ func TestDefinitionDefaultsMissingCollectionsToEmpty(t *testing.T) {
 	}
 	if definition.Steps[0].Metadata == nil {
 		t.Fatalf("expected non-nil step metadata, got %+v", definition.Steps[0])
+	}
+}
+
+func TestDefinitionJSONEmitsPythonContractDefaults(t *testing.T) {
+	definition := Definition{Name: "lean-closeout"}
+
+	payload, err := json.Marshal(definition)
+	if err != nil {
+		t.Fatalf("marshal definition: %v", err)
+	}
+
+	var decoded map[string]any
+	if err := json.Unmarshal(payload, &decoded); err != nil {
+		t.Fatalf("decode definition: %v", err)
+	}
+
+	for _, key := range []string{"steps", "report_path_template", "journal_path_template", "validation_evidence", "approvals"} {
+		if _, ok := decoded[key]; !ok {
+			t.Fatalf("expected key %q in definition JSON, got %+v", key, decoded)
+		}
 	}
 }

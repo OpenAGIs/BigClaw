@@ -51,3 +51,46 @@ func TestBillingStatementRoundTrip(t *testing.T) {
 		t.Fatalf("unexpected summary after roundtrip: %#v", decoded)
 	}
 }
+
+func TestBillingStatementJSONEmitsPythonContractDefaults(t *testing.T) {
+	summary := BillingSummaryModel{
+		StatementID:   "bill-2",
+		AccountID:     "acct-2",
+		BillingPeriod: "2026-04",
+		Currency:      "USD",
+	}
+	data, err := json.Marshal(summary)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+
+	var decoded map[string]any
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	for _, key := range []string{"rates", "usage", "subtotal_usd", "overage_usd", "total_usd"} {
+		if _, ok := decoded[key]; !ok {
+			t.Fatalf("expected key %q in billing JSON, got %#v", key, decoded)
+		}
+	}
+
+	recordData, err := json.Marshal(BillingUsageRecord{
+		RecordID:  "usage-2",
+		AccountID: "acct-2",
+		Metric:    "orchestration-run",
+		Quantity:  1,
+		Period:    "2026-04",
+	})
+	if err != nil {
+		t.Fatalf("marshal usage record: %v", err)
+	}
+	var decodedRecord map[string]any
+	if err := json.Unmarshal(recordData, &decodedRecord); err != nil {
+		t.Fatalf("decode usage record: %v", err)
+	}
+	for _, key := range []string{"run_id", "unit", "metadata"} {
+		if _, ok := decodedRecord[key]; !ok {
+			t.Fatalf("expected key %q in usage JSON, got %#v", key, decodedRecord)
+		}
+	}
+}

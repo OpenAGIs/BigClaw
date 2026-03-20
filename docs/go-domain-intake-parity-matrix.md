@@ -26,8 +26,10 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
 - `TriageLabel`, `TriageRecord` -> `bigclaw-go/internal/triage/record.go`
 - `BillingInterval`, `BillingRate`, `UsageRecord`, `BillingSummary` -> `bigclaw-go/internal/billing/statement.go`
   - billing usage metadata now preserves Python-style `Dict[str, Any]` payloads instead of narrowing to string-only values
+  - billing JSON output now preserves the Python `to_dict()` field set for usage records and summaries, including empty metadata/rates/usage collections and default numeric totals
 - `FlowTrigger`, `FlowRunStatus`, `FlowStepStatus`, `FlowTemplate*`, `FlowRun*` -> `bigclaw-go/internal/workflow/model.go`
   - workflow JSON decode now defaults missing Python list/map fields to empty collections so `from_dict` behavior stays aligned for steps, tags, outputs, approvals, and step metadata
+  - workflow JSON output now preserves the Python `to_dict()` field set for templates and runs, including default trigger/status values and empty collection fields
 
 ### `src/bigclaw/connectors.py`
 
@@ -48,6 +50,7 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
 - `from_json` -> `bigclaw-go/internal/workflow/definition.go`
 - `render_report_path` / `render_journal_path` -> `bigclaw-go/internal/workflow/definition.go`
   - workflow-definition JSON decode now defaults missing Python list/map fields to empty collections so `from_dict` behavior stays aligned for step metadata, steps, validation evidence, and approvals
+  - workflow-definition JSON output now preserves the Python `to_dict()` field set, including empty steps, validation evidence, approvals, and blank template paths
 
 ## Key design decisions
 

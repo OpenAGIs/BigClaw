@@ -77,6 +77,61 @@ type WorkflowRun struct {
 	ApprovalRefs []string          `json:"approval_refs,omitempty"`
 }
 
+func (step WorkflowTemplateStep) MarshalJSON() ([]byte, error) {
+	payload := map[string]any{
+		"step_id":        step.StepID,
+		"name":           step.Name,
+		"kind":           step.Kind,
+		"required_tools": workflowStringsOrEmpty(step.RequiredTools),
+		"approvals":      workflowStringsOrEmpty(step.Approvals),
+		"metadata":       workflowMetadataOrEmpty(step.Metadata),
+	}
+	return json.Marshal(payload)
+}
+
+func (template WorkflowTemplate) MarshalJSON() ([]byte, error) {
+	payload := map[string]any{
+		"template_id":  template.TemplateID,
+		"name":         template.Name,
+		"version":      template.Version,
+		"description":  template.Description,
+		"trigger":      marshalWorkflowTrigger(template.Trigger),
+		"default_risk": marshalWorkflowRisk(template.DefaultRisk),
+		"steps":        stepTemplatesOrEmpty(template.Steps),
+		"tags":         workflowStringsOrEmpty(template.Tags),
+		"active":       template.Active,
+	}
+	return json.Marshal(payload)
+}
+
+func (run WorkflowStepRun) MarshalJSON() ([]byte, error) {
+	payload := map[string]any{
+		"step_id":      run.StepID,
+		"status":       marshalWorkflowStepStatus(run.Status),
+		"actor":        run.Actor,
+		"started_at":   run.StartedAt,
+		"completed_at": run.CompletedAt,
+		"output":       workflowMetadataOrEmpty(run.Output),
+	}
+	return json.Marshal(payload)
+}
+
+func (run WorkflowRun) MarshalJSON() ([]byte, error) {
+	payload := map[string]any{
+		"run_id":        run.RunID,
+		"template_id":   run.TemplateID,
+		"task_id":       run.TaskID,
+		"status":        marshalWorkflowRunStatus(run.Status),
+		"triggered_by":  run.TriggeredBy,
+		"started_at":    run.StartedAt,
+		"completed_at":  run.CompletedAt,
+		"steps":         stepRunsOrEmpty(run.Steps),
+		"outputs":       workflowMetadataOrEmpty(run.Outputs),
+		"approval_refs": workflowStringsOrEmpty(run.ApprovalRefs),
+	}
+	return json.Marshal(payload)
+}
+
 func (template *WorkflowTemplate) UnmarshalJSON(data []byte) error {
 	type alias WorkflowTemplate
 	aux := struct {
@@ -173,4 +228,60 @@ func (run *WorkflowRun) UnmarshalJSON(data []byte) error {
 		run.ApprovalRefs = []string{}
 	}
 	return nil
+}
+
+func marshalWorkflowTrigger(trigger WorkflowTrigger) string {
+	if trigger == "" {
+		return string(WorkflowTriggerManual)
+	}
+	return string(trigger)
+}
+
+func marshalWorkflowRisk(level domain.RiskLevel) string {
+	if level == "" {
+		return string(domain.RiskLow)
+	}
+	return string(level)
+}
+
+func marshalWorkflowStepStatus(status WorkflowStepStatus) string {
+	if status == "" {
+		return string(WorkflowStepPending)
+	}
+	return string(status)
+}
+
+func marshalWorkflowRunStatus(status WorkflowRunStatus) string {
+	if status == "" {
+		return string(WorkflowRunQueued)
+	}
+	return string(status)
+}
+
+func workflowStringsOrEmpty(values []string) []string {
+	if values == nil {
+		return []string{}
+	}
+	return values
+}
+
+func stepTemplatesOrEmpty(values []WorkflowTemplateStep) []WorkflowTemplateStep {
+	if values == nil {
+		return []WorkflowTemplateStep{}
+	}
+	return values
+}
+
+func stepRunsOrEmpty(values []WorkflowStepRun) []WorkflowStepRun {
+	if values == nil {
+		return []WorkflowStepRun{}
+	}
+	return values
+}
+
+func workflowMetadataOrEmpty(values map[string]any) map[string]any {
+	if values == nil {
+		return map[string]any{}
+	}
+	return values
 }

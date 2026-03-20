@@ -26,12 +26,12 @@ func TestWorkflowTemplateAndRunRoundTripPreserveStepsAndOutputs(t *testing.T) {
 				Metadata:      map[string]any{"lane": "risk"},
 			},
 			{
-				StepID:    "approve",
-				Name:      "Approval",
-				Kind:      "approval",
+				StepID:        "approve",
+				Name:          "Approval",
+				Kind:          "approval",
 				RequiredTools: []string{},
-				Approvals: []string{"security"},
-				Metadata:  map[string]any{},
+				Approvals:     []string{"security"},
+				Metadata:      map[string]any{},
 			},
 		},
 		Tags:   []string{"risk", "triage"},
@@ -123,5 +123,39 @@ func TestWorkflowModelsDefaultMissingCollectionsToEmpty(t *testing.T) {
 	}
 	if run.Status != WorkflowRunQueued || run.Steps[0].Status != WorkflowStepPending {
 		t.Fatalf("expected default statuses, got run=%+v step=%+v", run, run.Steps[0])
+	}
+}
+
+func TestWorkflowModelJSONEmitsPythonContractDefaults(t *testing.T) {
+	template := WorkflowTemplate{TemplateID: "flow-template-3", Name: "Default Flow", Version: "v1"}
+	run := WorkflowRun{RunID: "flow-run-3", TemplateID: "flow-template-3", TaskID: "OPE-132"}
+
+	templatePayload, err := json.Marshal(template)
+	if err != nil {
+		t.Fatalf("marshal template: %v", err)
+	}
+	runPayload, err := json.Marshal(run)
+	if err != nil {
+		t.Fatalf("marshal run: %v", err)
+	}
+
+	var decodedTemplate map[string]any
+	if err := json.Unmarshal(templatePayload, &decodedTemplate); err != nil {
+		t.Fatalf("decode template: %v", err)
+	}
+	var decodedRun map[string]any
+	if err := json.Unmarshal(runPayload, &decodedRun); err != nil {
+		t.Fatalf("decode run: %v", err)
+	}
+
+	for _, key := range []string{"description", "trigger", "default_risk", "steps", "tags", "active"} {
+		if _, ok := decodedTemplate[key]; !ok {
+			t.Fatalf("expected key %q in template JSON, got %+v", key, decodedTemplate)
+		}
+	}
+	for _, key := range []string{"status", "triggered_by", "started_at", "completed_at", "steps", "outputs", "approval_refs"} {
+		if _, ok := decodedRun[key]; !ok {
+			t.Fatalf("expected key %q in run JSON, got %+v", key, decodedRun)
+		}
 	}
 }
