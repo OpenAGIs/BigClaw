@@ -161,6 +161,18 @@ class ClawWorkerRuntime:
         )
 
         if not decision.approved:
+            if profile.medium == "none":
+                run.log("warn", "worker paused by scheduler budget policy", reason=decision.reason)
+                run.audit(
+                    "worker.lifecycle",
+                    actor,
+                    "paused",
+                    medium=decision.medium,
+                    required_tools=task.required_tools,
+                    reason=decision.reason,
+                )
+                run.trace("worker.lifecycle", "blocked", medium=decision.medium, reason=decision.reason)
+                return WorkerExecutionResult(run=run, tool_results=[], sandbox_profile=profile)
             run.log("warn", "worker waiting for approval", medium=decision.medium)
             run.audit(
                 "worker.lifecycle",

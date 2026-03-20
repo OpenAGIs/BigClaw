@@ -73,3 +73,25 @@ def test_scheduler_records_worker_runtime_results_and_waits_on_high_risk(tmp_pat
     assert record.tool_results == []
     assert entry["audits"][-1]["action"] == "worker.lifecycle"
     assert entry["audits"][-1]["outcome"] == "waiting-approval"
+
+
+def test_scheduler_pauses_execution_when_budget_cannot_cover_docker(tmp_path: Path):
+    ledger = ObservabilityLedger(str(tmp_path / "ledger.json"))
+    task = Task(
+        task_id="BIG-202-budget",
+        source="linear",
+        title="budget pause",
+        description="budget should stop execution",
+        budget=5.0,
+        required_tools=["github"],
+    )
+
+    record = Scheduler().execute(task, run_id="run-budget-pause", ledger=ledger)
+    entry = ledger.load()[0]
+
+    assert record.decision.medium == "none"
+    assert record.decision.approved is False
+    assert record.run.status == "paused"
+    assert record.tool_results == []
+    assert entry["audits"][-1]["action"] == "worker.lifecycle"
+    assert entry["audits"][-1]["outcome"] == "paused"
