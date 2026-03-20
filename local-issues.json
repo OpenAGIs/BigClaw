@@ -49,6 +49,12 @@
           "commit_sha": "",
           "created_at": "2026-03-20T10:16:51Z",
           "pr_url": ""
+        },
+        {
+          "body": "What changed:\nExtended `/v2/runs/{id}/audit` to expose canonical spec-backed audit events in addition to the existing control-action timeline. The endpoint now returns each matching audit event with its attached audit spec and any missing-required-field list, and the run-audit regression test proves scheduler-decision and manual-takeover events round-trip with zero missing fields.\n\nValidation:\ncd bigclaw-go \u0026\u0026 go test ./internal/api ./internal/worker ./internal/observability\npassed\n\nCommit SHA: 7fc841925a60734a5fd3199a295fe1d0df9cc8ed\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/140",
+          "commit_sha": "7fc841925a60734a5fd3199a295fe1d0df9cc8ed",
+          "created_at": "2026-03-20T10:18:58Z",
+          "pr_url": "https://github.com/OpenAGIs/BigClaw/pull/140"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -64,7 +70,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Risk, policy, and approval semantics migration",
-      "updated_at": "2026-03-20T10:16:51Z"
+      "updated_at": "2026-03-20T10:18:58Z"
     },
     {
       "assigned_to_worker": true,
