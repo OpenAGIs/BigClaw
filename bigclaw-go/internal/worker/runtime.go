@@ -250,18 +250,33 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	switch {
 	case result.Success:
 		_ = r.Queue.Ack(ctx, lease)
+		task.State = domain.TaskSucceeded
+		task.UpdatedAt = time.Now()
+		if r.Recorder != nil {
+			r.Recorder.StoreTask(*task)
+		}
 		r.finishStatus(string(domain.EventTaskCompleted), result.Message, func(status *Status) {
 			status.SuccessfulRuns++
 		})
 		r.publish(domain.Event{ID: eventID(task.ID, "completed"), Type: domain.EventTaskCompleted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeResultPayload(runner.Kind(), result)})
 	case result.DeadLetter:
 		_ = r.Queue.DeadLetter(ctx, lease, result.Message)
+		task.State = domain.TaskDeadLetter
+		task.UpdatedAt = time.Now()
+		if r.Recorder != nil {
+			r.Recorder.StoreTask(*task)
+		}
 		r.finishStatus(string(domain.EventTaskDeadLetter), result.Message, func(status *Status) {
 			status.DeadLetterRuns++
 		})
 		r.publish(domain.Event{ID: eventID(task.ID, "deadletter"), Type: domain.EventTaskDeadLetter, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeResultPayload(runner.Kind(), result)})
 	default:
 		_ = r.Queue.Requeue(ctx, lease, time.Now().Add(200*time.Millisecond))
+		task.State = domain.TaskRetrying
+		task.UpdatedAt = time.Now()
+		if r.Recorder != nil {
+			r.Recorder.StoreTask(*task)
+		}
 		transition := string(domain.EventTaskRetried)
 		extra := func(status *Status) {
 			status.RetriedRuns++

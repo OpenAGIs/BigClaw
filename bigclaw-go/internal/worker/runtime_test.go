@@ -108,6 +108,10 @@ func TestRuntimeProcessesTask(t *testing.T) {
 			t.Fatalf("expected trace propagation, got %+v", event)
 		}
 	}
+	task, ok := recorder.Task("task-1")
+	if !ok || task.State != domain.TaskSucceeded {
+		t.Fatalf("expected succeeded task snapshot, got %+v ok=%v", task, ok)
+	}
 }
 
 func TestRuntimeSkipsCleanlyWhenQueueUnset(t *testing.T) {
@@ -313,6 +317,10 @@ func TestRuntimeTimeoutRequeuesTask(t *testing.T) {
 	if !ok || latest.Type != domain.EventTaskRetried {
 		t.Fatalf("expected latest event retried, got %+v", latest)
 	}
+	task, ok := recorder.Task("task-timeout")
+	if !ok || task.State != domain.TaskRetrying {
+		t.Fatalf("expected retrying task snapshot, got %+v ok=%v", task, ok)
+	}
 	if latest.TraceID != "task-timeout" {
 		t.Fatalf("expected default trace id to match task id, got %+v", latest)
 	}
@@ -353,6 +361,10 @@ func TestRuntimeDeadLettersWhenExecutorMissing(t *testing.T) {
 	latest, ok := recorder.LatestByTask("task-missing")
 	if !ok || latest.Type != domain.EventTaskDeadLetter {
 		t.Fatalf("expected latest dead-letter event, got %+v", latest)
+	}
+	task, ok := recorder.Task("task-missing")
+	if !ok || task.State != domain.TaskDeadLetter {
+		t.Fatalf("expected dead-letter task snapshot, got %+v ok=%v", task, ok)
 	}
 	events := recorder.EventsByTask("task-missing", 10)
 	if len(events) < 3 || events[1].Type != domain.EventSchedulerRouted {
