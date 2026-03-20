@@ -1,6 +1,9 @@
 package repo
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type RepoCommit struct {
 	CommitHash   string         `json:"commit_hash"`
@@ -11,10 +14,10 @@ type RepoCommit struct {
 }
 
 type CommitLineage struct {
-	RootHash string                `json:"root_hash"`
-	Lineage  []RepoCommit          `json:"lineage,omitempty"`
-	Children map[string][]string   `json:"children,omitempty"`
-	Leaves   []string              `json:"leaves,omitempty"`
+	RootHash string              `json:"root_hash"`
+	Lineage  []RepoCommit        `json:"lineage,omitempty"`
+	Children map[string][]string `json:"children,omitempty"`
+	Leaves   []string            `json:"leaves,omitempty"`
 }
 
 type CommitDiff struct {
@@ -76,6 +79,13 @@ func stringValue(value any) string {
 	}
 }
 
+func defaultString(value any, fallback string) string {
+	if text := stringValue(value); text != "" {
+		return text
+	}
+	return fallback
+}
+
 func stringSliceValue(value any) []string {
 	items := sliceValue(value)
 	out := make([]string, 0, len(items))
@@ -117,6 +127,15 @@ func mapValue(value any) map[string]any {
 	}
 }
 
+func defaultBool(value any, fallback bool) bool {
+	switch typed := value.(type) {
+	case bool:
+		return typed
+	default:
+		return fallback
+	}
+}
+
 func intValue(value any) int {
 	switch typed := value.(type) {
 	case int:
@@ -128,4 +147,33 @@ func intValue(value any) int {
 	default:
 		return 0
 	}
+}
+
+func slugify(value string) string {
+	parts := make([]rune, 0, len(value))
+	lastDash := false
+	for _, r := range strings.ToLower(value) {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			parts = append(parts, r)
+			lastDash = false
+			continue
+		}
+		if !lastDash {
+			parts = append(parts, '-')
+			lastDash = true
+		}
+	}
+	out := strings.Trim(string(parts), "-")
+	if out == "" {
+		return "agent"
+	}
+	return out
+}
+
+func lowerASCII(value string) string {
+	return strings.ToLower(value)
+}
+
+func joinStrings(items []string, sep string) string {
+	return strings.Join(items, sep)
 }
