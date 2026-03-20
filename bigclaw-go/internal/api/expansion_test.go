@@ -53,7 +53,14 @@ func TestV2WeeklyReportBuildsSummaryActionsAndMarkdownExport(t *testing.T) {
 		} `json:"team_breakdown"`
 		Highlights []string `json:"highlights"`
 		Actions    []string `json:"actions"`
-		Report     struct {
+		MetricSpec struct {
+			Name   string `json:"name"`
+			Values []struct {
+				MetricID     string `json:"metric_id"`
+				DisplayValue string `json:"display_value"`
+			} `json:"values"`
+		} `json:"metric_spec"`
+		Report struct {
 			Markdown  string `json:"markdown"`
 			ExportURL string `json:"export_url"`
 		} `json:"report"`
@@ -67,8 +74,11 @@ func TestV2WeeklyReportBuildsSummaryActionsAndMarkdownExport(t *testing.T) {
 	if len(decoded.TeamBreakdown) != 1 || decoded.TeamBreakdown[0].Key != "platform" || decoded.TeamBreakdown[0].TotalRuns != 2 {
 		t.Fatalf("unexpected team breakdown: %+v", decoded.TeamBreakdown)
 	}
-	if len(decoded.Highlights) == 0 || len(decoded.Actions) == 0 || !strings.Contains(decoded.Report.Markdown, "# BigClaw Weekly Ops Report") || !strings.Contains(decoded.Report.ExportURL, "/v2/reports/weekly/export") {
-		t.Fatalf("expected highlights/actions/export in weekly report, got %+v", decoded)
+	if len(decoded.Highlights) == 0 || len(decoded.Actions) == 0 || decoded.MetricSpec.Name != "Operations Metric Spec" || len(decoded.MetricSpec.Values) != 7 || !strings.Contains(decoded.Report.Markdown, "# BigClaw Weekly Ops Report") || !strings.Contains(decoded.Report.ExportURL, "/v2/reports/weekly/export") {
+		t.Fatalf("expected highlights/actions/metric spec/export in weekly report, got %+v", decoded)
+	}
+	if decoded.MetricSpec.Values[0].MetricID == "" || decoded.MetricSpec.Values[0].DisplayValue == "" {
+		t.Fatalf("expected populated metric spec values, got %+v", decoded.MetricSpec.Values)
 	}
 
 	exportResponse := httptest.NewRecorder()

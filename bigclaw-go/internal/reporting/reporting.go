@@ -417,6 +417,94 @@ func RenderOperationsDashboard(weekly Weekly) string {
 	return builder.String() + "\n"
 }
 
+func BuildOperationsMetricSpec(tasks []domain.Task, events []domain.Event, periodStart, periodEnd time.Time, timezoneName string, slaTargetMinutes int) OperationsMetricSpec {
+	if timezoneName == "" {
+		timezoneName = "UTC"
+	}
+	if slaTargetMinutes <= 0 {
+		slaTargetMinutes = 60
+	}
+	interventions := interventionCounts(events)
+	totalRuns := len(tasks)
+	runsInWindow := 0
+	cycleSum := 0.0
+	cycleCount := 0
+	slaCompliantRuns := 0
+	intervenedRuns := 0
+	regressionFindings := 0
+	riskSum := 0.0
+	riskCount := 0
+	budgetUSDTotal := 0.0
+
+	for _, task := range tasks {
+		if within(task.CreatedAt, periodStart, periodEnd) || within(task.UpdatedAt, periodStart, periodEnd) {
+			runsInWindow++
+		}
+		if cycle, ok := cycleMinutes(task); ok {
+			cycleSum += cycle
+			cycleCount++
+			if cycle <= float64(slaTargetMinutes) {
+				slaCompliantRuns++
+			}
+		}
+		if interventions[task.ID] > 0 || strings.EqualFold(strings.TrimSpace(task.Metadata["approval_status"]), "needs-approval") {
+			intervenedRuns++
+		}
+		regressionFindings += regressionCount(task)
+		if score, ok := riskScoreForTask(task); ok {
+			riskSum += score
+			riskCount++
+		}
+		budgetUSDTotal += float64(task.BudgetCents) / 100.0
+	}
+
+	avgCycle := 0.0
+	if cycleCount > 0 {
+		avgCycle = roundTenth(cycleSum / float64(cycleCount))
+	}
+	interventionRate := 0.0
+	if totalRuns > 0 {
+		interventionRate = roundTenth((float64(intervenedRuns) / float64(totalRuns)) * 100)
+	}
+	slaCompliance := 0.0
+	if cycleCount > 0 {
+		slaCompliance = roundTenth((float64(slaCompliantRuns) / float64(cycleCount)) * 100)
+	}
+	avgRisk := 0.0
+	if riskCount > 0 {
+		avgRisk = roundTenth(riskSum / float64(riskCount))
+	}
+	budgetUSDTotal = math.Round(budgetUSDTotal*100) / 100
+
+	definitions := []OperationsMetricDefinition{
+		{MetricID: "runs-window", Label: "Runs In Window", Unit: "runs", Direction: "up", Formula: "count(tasks.created_at|updated_at within period)", Description: "Number of runs active inside the reporting window.", SourceFields: []string{"task.created_at", "task.updated_at"}},
+		{MetricID: "avg-cycle-minutes", Label: "Avg Cycle Minutes", Unit: "m", Direction: "down", Formula: "sum(updated_at - created_at) / measured_runs", Description: "Average measured run cycle time in minutes.", SourceFields: []string{"task.created_at", "task.updated_at"}},
+		{MetricID: "intervention-rate", Label: "Intervention Rate", Unit: "%", Direction: "down", Formula: "intervened_runs / total_runs", Description: "Share of runs that required manual intervention or approval handling.", SourceFields: []string{"events", "task.metadata.approval_status"}},
+		{MetricID: "sla-compliance", Label: "SLA Compliance", Unit: "%", Direction: "up", Formula: "runs within SLA target / measured_runs", Description: "Measured runs that completed inside the SLA target.", SourceFields: []string{"task.created_at", "task.updated_at"}},
+		{MetricID: "regression-findings", Label: "Regression Findings", Unit: "findings", Direction: "down", Formula: "sum(task.metadata.regression_count)", Description: "Regression findings attached to the reporting window.", SourceFields: []string{"task.metadata.regression_count", "task.metadata.regression"}},
+		{MetricID: "avg-risk-score", Label: "Avg Risk Score", Unit: "score", Direction: "down", Formula: "avg(mapped risk_level)", Description: "Average mapped risk score using low=25, medium=60, high=90.", SourceFields: []string{"task.risk_level"}},
+		{MetricID: "budget-spend", Label: "Budget Spend", Unit: "USD", Direction: "down", Formula: "sum(task.budget_cents) / 100", Description: "Budget total represented by the reporting slice.", SourceFields: []string{"task.budget_cents"}},
+	}
+
+	return OperationsMetricSpec{
+		Name:         "Operations Metric Spec",
+		GeneratedAt:  time.Now().UTC(),
+		PeriodStart:  periodStart.UTC(),
+		PeriodEnd:    periodEnd.UTC(),
+		TimezoneName: timezoneName,
+		Definitions:  definitions,
+		Values: []OperationsMetricValue{
+			{MetricID: "runs-window", Label: "Runs In Window", Value: float64(runsInWindow), DisplayValue: strconv.Itoa(runsInWindow), Numerator: float64(runsInWindow), Denominator: float64(totalRuns), Unit: "runs", Evidence: []string{fmt.Sprintf("%d of %d runs were created or updated inside the reporting window.", runsInWindow, totalRuns)}},
+			{MetricID: "avg-cycle-minutes", Label: "Avg Cycle Minutes", Value: avgCycle, DisplayValue: fmt.Sprintf("%.1fm", avgCycle), Numerator: roundTenth(cycleSum), Denominator: float64(cycleCount), Unit: "m", Evidence: []string{fmt.Sprintf("%d runs had valid created_at and updated_at timestamps.", cycleCount)}},
+			{MetricID: "intervention-rate", Label: "Intervention Rate", Value: interventionRate, DisplayValue: fmt.Sprintf("%.1f%%", interventionRate), Numerator: float64(intervenedRuns), Denominator: float64(totalRuns), Unit: "%", Evidence: []string{fmt.Sprintf("%d runs had intervention events or approval-required status.", intervenedRuns)}},
+			{MetricID: "sla-compliance", Label: "SLA Compliance", Value: slaCompliance, DisplayValue: fmt.Sprintf("%.1f%%", slaCompliance), Numerator: float64(slaCompliantRuns), Denominator: float64(cycleCount), Unit: "%", Evidence: []string{fmt.Sprintf("SLA target: %d minutes.", slaTargetMinutes), fmt.Sprintf("%d of %d measured runs met target.", slaCompliantRuns, cycleCount)}},
+			{MetricID: "regression-findings", Label: "Regression Findings", Value: float64(regressionFindings), DisplayValue: strconv.Itoa(regressionFindings), Numerator: float64(regressionFindings), Denominator: float64(totalRuns), Unit: "findings", Evidence: []string{"Regression count uses task metadata fields `regression_count`, `regressions`, or boolean `regression`."}},
+			{MetricID: "avg-risk-score", Label: "Avg Risk Score", Value: avgRisk, DisplayValue: fmt.Sprintf("%.1f", avgRisk), Numerator: roundTenth(riskSum), Denominator: float64(riskCount), Unit: "score", Evidence: []string{"Risk score mapping is low=25, medium=60, high=90."}},
+			{MetricID: "budget-spend", Label: "Budget Spend", Value: budgetUSDTotal, DisplayValue: fmt.Sprintf("$%.2f", budgetUSDTotal), Numerator: budgetUSDTotal, Denominator: float64(totalRuns), Unit: "USD", Evidence: []string{"Budget spend is derived from `task.budget_cents`."}},
+		},
+	}
+}
+
 func RenderOperationsMetricSpec(spec OperationsMetricSpec) string {
 	builder := strings.Builder{}
 	builder.WriteString("# Operations Metric Spec\n\n")
@@ -1177,6 +1265,19 @@ func riskBucket(level domain.RiskLevel) string {
 		return "medium"
 	default:
 		return "low"
+	}
+}
+
+func riskScoreForTask(task domain.Task) (float64, bool) {
+	switch task.RiskLevel {
+	case domain.RiskHigh:
+		return 90, true
+	case domain.RiskMedium:
+		return 60, true
+	case domain.RiskLow:
+		return 25, true
+	default:
+		return 0, false
 	}
 }
 

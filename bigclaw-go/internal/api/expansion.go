@@ -56,13 +56,17 @@ func (s *Server) handleV2WeeklyReport(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	report := reporting.Build(s.filteredTasks(team, project, "", start, end), s.Recorder.EventsByTask("", 0), start, end)
+	tasks := s.filteredTasks(team, project, "", start, end)
+	events := s.Recorder.EventsByTask("", 0)
+	report := reporting.Build(tasks, events, start, end)
+	metricSpec := reporting.BuildOperationsMetricSpec(tasks, events, start, end, "UTC", 60)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"filters":        map[string]any{"team": team, "project": project, "week_start": start, "week_end": end},
 		"summary":        report.Summary,
 		"team_breakdown": report.TeamBreakdown,
 		"highlights":     report.Highlights,
 		"actions":        report.Actions,
+		"metric_spec":    metricSpec,
 		"report":         map[string]any{"markdown": report.Markdown, "export_url": weeklyExportURL(team, project, start, end)},
 	})
 }
@@ -77,7 +81,8 @@ func (s *Server) handleV2WeeklyReportExport(w http.ResponseWriter, r *http.Reque
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	report := reporting.Build(s.filteredTasks(team, project, "", start, end), s.Recorder.EventsByTask("", 0), start, end)
+	tasks := s.filteredTasks(team, project, "", start, end)
+	report := reporting.Build(tasks, s.Recorder.EventsByTask("", 0), start, end)
 	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", fmt.Sprintf("bigclaw-weekly-report-%s.md", start.Format("2006-01-02"))))
 	w.WriteHeader(http.StatusOK)

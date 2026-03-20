@@ -61,6 +61,52 @@ func TestBuildWeeklyReportRendersExpandedMarkdown(t *testing.T) {
 	}
 }
 
+func TestBuildOperationsMetricSpec(t *testing.T) {
+	start := time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC)
+	end := start.Add(7 * 24 * time.Hour)
+	tasks := []domain.Task{
+		{ID: "task-1", State: domain.TaskSucceeded, RiskLevel: domain.RiskHigh, BudgetCents: 1200, CreatedAt: start, UpdatedAt: start.Add(31 * time.Minute), Metadata: map[string]string{"regression_count": "2"}},
+		{ID: "task-2", State: domain.TaskBlocked, RiskLevel: domain.RiskLow, BudgetCents: 300, CreatedAt: start.Add(2 * time.Hour), UpdatedAt: start.Add(3 * time.Hour), Metadata: map[string]string{"approval_status": "needs-approval"}},
+	}
+	events := []domain.Event{{ID: "evt-1", Type: domain.EventRunTakeover, TaskID: "task-1", Timestamp: start.Add(2 * time.Hour)}}
+
+	spec := BuildOperationsMetricSpec(tasks, events, start, end, "UTC", 60)
+	if spec.Name != "Operations Metric Spec" || spec.TimezoneName != "UTC" {
+		t.Fatalf("unexpected spec header: %+v", spec)
+	}
+	if len(spec.Definitions) != 7 || len(spec.Values) != 7 {
+		t.Fatalf("expected seven metric definitions and values, got %+v", spec)
+	}
+	byID := map[string]OperationsMetricValue{}
+	for _, value := range spec.Values {
+		byID[value.MetricID] = value
+	}
+	if byID["runs-window"].DisplayValue != "2" {
+		t.Fatalf("unexpected runs-window metric: %+v", byID["runs-window"])
+	}
+	if byID["avg-cycle-minutes"].DisplayValue != "45.5m" {
+		t.Fatalf("unexpected avg-cycle-minutes metric: %+v", byID["avg-cycle-minutes"])
+	}
+	if byID["intervention-rate"].DisplayValue != "100.0%" {
+		t.Fatalf("unexpected intervention-rate metric: %+v", byID["intervention-rate"])
+	}
+	if byID["sla-compliance"].DisplayValue != "100.0%" {
+		t.Fatalf("unexpected sla-compliance metric: %+v", byID["sla-compliance"])
+	}
+	if byID["regression-findings"].DisplayValue != "2" {
+		t.Fatalf("unexpected regression-findings metric: %+v", byID["regression-findings"])
+	}
+	if byID["avg-risk-score"].DisplayValue != "57.5" {
+		t.Fatalf("unexpected avg-risk-score metric: %+v", byID["avg-risk-score"])
+	}
+	if byID["budget-spend"].DisplayValue != "$15.00" {
+		t.Fatalf("unexpected budget-spend metric: %+v", byID["budget-spend"])
+	}
+	if len(byID["sla-compliance"].Evidence) < 2 || !strings.Contains(byID["sla-compliance"].Evidence[0], "SLA target: 60 minutes") {
+		t.Fatalf("expected SLA evidence, got %+v", byID["sla-compliance"])
+	}
+}
+
 func TestWriteWeeklyOperationsBundle(t *testing.T) {
 	rootDir := t.TempDir()
 	start := time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC)
