@@ -1405,6 +1405,79 @@ func TestV2ControlCenterActionsAndRunDetail(t *testing.T) {
 		t.Fatalf("unexpected assign reviewer payload: %+v", assignReviewerDecoded)
 	}
 
+	recordApprovalBody, _ := json.Marshal(map[string]any{"action": "record_approval", "task_id": "task-v2-1", "actor": "alice", "role": "eng_lead", "viewer_team": "platform", "approvals": []string{"security", "release"}, "acceptance_status": "approved", "note": "approvals captured"})
+	recordApprovalResponse := httptest.NewRecorder()
+	handler.ServeHTTP(recordApprovalResponse, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(recordApprovalBody)))
+	if recordApprovalResponse.Code != http.StatusOK {
+		t.Fatalf("expected record approval action payload, got %d %s", recordApprovalResponse.Code, recordApprovalResponse.Body.String())
+	}
+	var recordApprovalDecoded struct {
+		Action           string `json:"action"`
+		AcceptanceStatus string `json:"acceptance_status"`
+		Task             struct {
+			Metadata map[string]string `json:"metadata"`
+		} `json:"task"`
+	}
+	if err := json.Unmarshal(recordApprovalResponse.Body.Bytes(), &recordApprovalDecoded); err != nil {
+		t.Fatalf("decode record approval action: %v", err)
+	}
+	if recordApprovalDecoded.Action != "record_approval" || recordApprovalDecoded.AcceptanceStatus != "approved" || recordApprovalDecoded.Task.Metadata["approval_count"] != "2" || recordApprovalDecoded.Task.Metadata["approval_status"] != "approved" {
+		t.Fatalf("unexpected approval payload: %+v", recordApprovalDecoded)
+	}
+
+	overrideBudgetBody, _ := json.Marshal(map[string]any{"action": "override_budget", "task_id": "task-v2-1", "actor": "ops", "role": "platform_admin", "approved_budget": 1400, "reason": "prod hotfix exception"})
+	overrideBudgetResponse := httptest.NewRecorder()
+	handler.ServeHTTP(overrideBudgetResponse, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(overrideBudgetBody)))
+	if overrideBudgetResponse.Code != http.StatusOK {
+		t.Fatalf("expected override budget action payload, got %d %s", overrideBudgetResponse.Code, overrideBudgetResponse.Body.String())
+	}
+	var overrideBudgetDecoded struct {
+		Action          string `json:"action"`
+		RequestedBudget int64  `json:"requested_budget"`
+		ApprovedBudget  int64  `json:"approved_budget"`
+		Task            struct {
+			BudgetCents int64             `json:"budget_cents"`
+			Metadata    map[string]string `json:"metadata"`
+		} `json:"task"`
+		Operation struct {
+			Scope string `json:"scope"`
+		} `json:"operation"`
+	}
+	if err := json.Unmarshal(overrideBudgetResponse.Body.Bytes(), &overrideBudgetDecoded); err != nil {
+		t.Fatalf("decode override budget action: %v", err)
+	}
+	if overrideBudgetDecoded.Action != "override_budget" || overrideBudgetDecoded.RequestedBudget != 900 || overrideBudgetDecoded.ApprovedBudget != 1400 || overrideBudgetDecoded.Task.BudgetCents != 1400 || overrideBudgetDecoded.Task.Metadata["approved_budget_cents"] != "1400" || overrideBudgetDecoded.Operation.Scope != "governance" {
+		t.Fatalf("unexpected budget override payload: %+v", overrideBudgetDecoded)
+	}
+
+	auditResponse = httptest.NewRecorder()
+	handler.ServeHTTP(auditResponse, httptest.NewRequest(http.MethodGet, "/audit?limit=40", nil))
+	if auditResponse.Code != http.StatusOK {
+		t.Fatalf("expected audit 200 after approval/budget actions, got %d %s", auditResponse.Code, auditResponse.Body.String())
+	}
+	if err := json.Unmarshal(auditResponse.Body.Bytes(), &auditDecoded); err != nil {
+		t.Fatalf("decode audit response after approval/budget actions: %v", err)
+	}
+	foundApprovalAudit := false
+	foundBudgetAudit := false
+	for _, entry := range auditDecoded.Audit {
+		switch entry.Type {
+		case observability.ApprovalRecordedEvent:
+			foundApprovalAudit = true
+			if missing := observability.MissingRequiredFields(observability.ApprovalRecordedEvent, entry.Payload); len(missing) != 0 {
+				t.Fatalf("expected approval audit payload to satisfy spec, missing %+v in %+v", missing, entry.Payload)
+			}
+		case observability.BudgetOverrideEvent:
+			foundBudgetAudit = true
+			if missing := observability.MissingRequiredFields(observability.BudgetOverrideEvent, entry.Payload); len(missing) != 0 {
+				t.Fatalf("expected budget override audit payload to satisfy spec, missing %+v in %+v", missing, entry.Payload)
+			}
+		}
+	}
+	if !foundApprovalAudit || !foundBudgetAudit {
+		t.Fatalf("expected canonical approval and budget audit events in %+v", auditDecoded.Audit)
+	}
+
 	centerResponse := httptest.NewRecorder()
 	handler.ServeHTTP(centerResponse, httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5", nil))
 	if centerResponse.Code != http.StatusOK {
@@ -1420,7 +1493,7 @@ func TestV2ControlCenterActionsAndRunDetail(t *testing.T) {
 		t.Fatalf("expected run detail 200, got %d", runResponse.Code)
 	}
 	bodyString := runResponse.Body.String()
-	if !strings.Contains(bodyString, "premium") || !strings.Contains(bodyString, "Investigating flaky validation") || !strings.Contains(bodyString, "merge PR") || !strings.Contains(bodyString, "handoff ready") || !strings.Contains(bodyString, "carol") || !strings.Contains(bodyString, "dave") || !strings.Contains(bodyString, "assign_reviewer") {
+	if !strings.Contains(bodyString, "premium") || !strings.Contains(bodyString, "Investigating flaky validation") || !strings.Contains(bodyString, "merge PR") || !strings.Contains(bodyString, "handoff ready") || !strings.Contains(bodyString, "carol") || !strings.Contains(bodyString, "dave") || !strings.Contains(bodyString, "assign_reviewer") || !strings.Contains(bodyString, "record_approval") || !strings.Contains(bodyString, "override_budget") {
 		t.Fatalf("expected premium policy, collaboration details, and action timeline in run detail, got %s", bodyString)
 	}
 }

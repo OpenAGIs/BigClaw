@@ -339,15 +339,18 @@ type controlActionOperation struct {
 }
 
 type controlActionRequest struct {
-	Action     string `json:"action"`
-	TaskID     string `json:"task_id,omitempty"`
-	Actor      string `json:"actor,omitempty"`
-	Role       string `json:"role,omitempty"`
-	ViewerTeam string `json:"viewer_team,omitempty"`
-	Owner      string `json:"owner,omitempty"`
-	Reviewer   string `json:"reviewer,omitempty"`
-	Reason     string `json:"reason,omitempty"`
-	Note       string `json:"note,omitempty"`
+	Action           string   `json:"action"`
+	TaskID           string   `json:"task_id,omitempty"`
+	Actor            string   `json:"actor,omitempty"`
+	Role             string   `json:"role,omitempty"`
+	ViewerTeam       string   `json:"viewer_team,omitempty"`
+	Owner            string   `json:"owner,omitempty"`
+	Reviewer         string   `json:"reviewer,omitempty"`
+	Reason           string   `json:"reason,omitempty"`
+	Note             string   `json:"note,omitempty"`
+	Approvals        []string `json:"approvals,omitempty"`
+	AcceptanceStatus string   `json:"acceptance_status,omitempty"`
+	ApprovedBudget   int64    `json:"approved_budget,omitempty"`
 }
 
 func (s *Server) handleV2EngineeringDashboard(w http.ResponseWriter, r *http.Request) {
@@ -1371,6 +1374,90 @@ func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Requ
 		traceID := s.traceIDForTask(request.TaskID)
 		s.publish(domain.Event{ID: fmt.Sprintf("%s-assign-reviewer-%d", request.TaskID, now.UnixNano()), Type: domain.EventRunAnnotated, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: buildControlActionPayload(operation, s.taskTeam(request.TaskID), s.taskProject(request.TaskID))})
 		writeJSON(w, http.StatusOK, map[string]any{"action": action, "takeover": takeover, "operation": operation})
+	case "record_approval":
+		if request.TaskID == "" {
+			http.Error(w, "missing task_id", http.StatusBadRequest)
+			return
+		}
+		if err := s.authorizeTaskIDAccess(authorization, request.TaskID); err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+		approvals := compactUniqueStrings(request.Approvals)
+		if len(approvals) == 0 {
+			http.Error(w, "missing approvals", http.StatusBadRequest)
+			return
+		}
+		acceptanceStatus := firstNonEmpty(strings.TrimSpace(request.AcceptanceStatus), "approved")
+		beforeTask, _ := s.taskSnapshot(request.TaskID)
+		task := s.updateTaskMetadata(request.TaskID, now, func(task *domain.Task) {
+			task.Metadata["approval_status"] = acceptanceStatus
+			task.Metadata["approval_count"] = strconv.Itoa(len(approvals))
+			task.Metadata["approvals"] = strings.Join(approvals, ",")
+			task.Metadata["last_approval_actor"] = actor
+		})
+		operation := buildControlActionOperation(action, actor, authorization, request.TaskID, reason, note, now, beforeTask.State, task.State, nil, nil)
+		traceID := s.traceIDForTask(request.TaskID)
+		s.publish(domain.Event{ID: fmt.Sprintf("%s-record-approval-%d", request.TaskID, now.UnixNano()), Type: domain.EventRunAnnotated, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: buildControlActionPayload(operation, s.taskTeam(request.TaskID), s.taskProject(request.TaskID))})
+		s.publish(domain.Event{
+			ID:        fmt.Sprintf("%s-approval-audit-%d", request.TaskID, now.UnixNano()),
+			Type:      domain.EventType(observability.ApprovalRecordedEvent),
+			TaskID:    request.TaskID,
+			TraceID:   traceID,
+			RunID:     traceID,
+			Timestamp: now,
+			Payload: map[string]any{
+				"task_id":           request.TaskID,
+				"run_id":            traceID,
+				"approvals":         approvals,
+				"approval_count":    len(approvals),
+				"acceptance_status": acceptanceStatus,
+				"approval_actor":    actor,
+			},
+		})
+		writeJSON(w, http.StatusOK, map[string]any{"action": action, "task": task, "approvals": approvals, "acceptance_status": acceptanceStatus, "operation": operation})
+	case "override_budget":
+		if request.TaskID == "" {
+			http.Error(w, "missing task_id", http.StatusBadRequest)
+			return
+		}
+		if request.ApprovedBudget <= 0 {
+			http.Error(w, "missing approved_budget", http.StatusBadRequest)
+			return
+		}
+		if err := s.authorizeTaskIDAccess(authorization, request.TaskID); err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+		beforeTask, _ := s.taskSnapshot(request.TaskID)
+		requestedBudget := beforeTask.BudgetCents
+		task := s.updateTaskMetadata(request.TaskID, now, func(task *domain.Task) {
+			task.BudgetCents = request.ApprovedBudget
+			task.Metadata["budget_override_actor"] = actor
+			task.Metadata["budget_override_reason"] = firstNonEmpty(reason, note)
+			task.Metadata["requested_budget_cents"] = strconv.FormatInt(requestedBudget, 10)
+			task.Metadata["approved_budget_cents"] = strconv.FormatInt(request.ApprovedBudget, 10)
+		})
+		operation := buildControlActionOperation(action, actor, authorization, request.TaskID, reason, note, now, beforeTask.State, task.State, nil, nil)
+		traceID := s.traceIDForTask(request.TaskID)
+		s.publish(domain.Event{ID: fmt.Sprintf("%s-override-budget-%d", request.TaskID, now.UnixNano()), Type: domain.EventRunAnnotated, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: buildControlActionPayload(operation, s.taskTeam(request.TaskID), s.taskProject(request.TaskID))})
+		s.publish(domain.Event{
+			ID:        fmt.Sprintf("%s-budget-audit-%d", request.TaskID, now.UnixNano()),
+			Type:      domain.EventType(observability.BudgetOverrideEvent),
+			TaskID:    request.TaskID,
+			TraceID:   traceID,
+			RunID:     traceID,
+			Timestamp: now,
+			Payload: map[string]any{
+				"task_id":          request.TaskID,
+				"run_id":           traceID,
+				"requested_budget": requestedBudget,
+				"approved_budget":  request.ApprovedBudget,
+				"override_actor":   actor,
+				"reason":           firstNonEmpty(reason, note, "budget override recorded"),
+			},
+		})
+		writeJSON(w, http.StatusOK, map[string]any{"action": action, "task": task, "requested_budget": requestedBudget, "approved_budget": request.ApprovedBudget, "operation": operation})
 	default:
 		http.Error(w, "unsupported action", http.StatusBadRequest)
 	}
@@ -1449,6 +1536,8 @@ func controlActionScope(action string) string {
 		return "system"
 	case "retry", "cancel":
 		return "queue"
+	case "override_budget":
+		return "governance"
 	default:
 		return "collaboration"
 	}
@@ -2016,6 +2105,23 @@ func (s *Server) syncTaskState(taskID string, state domain.TaskState, updatedAt 
 	s.Recorder.StoreTask(task)
 }
 
+func (s *Server) updateTaskMetadata(taskID string, updatedAt time.Time, mutate func(*domain.Task)) domain.Task {
+	task, ok := s.taskSnapshot(taskID)
+	if !ok {
+		task = domain.Task{ID: taskID, TraceID: s.traceIDForTask(taskID), CreatedAt: updatedAt}
+	}
+	if task.Metadata == nil {
+		task.Metadata = make(map[string]string)
+	}
+	mutate(&task)
+	task.UpdatedAt = updatedAt
+	if task.TraceID == "" {
+		task.TraceID = taskID
+	}
+	s.Recorder.StoreTask(task)
+	return task
+}
+
 func (s *Server) traceIDForTask(taskID string) string {
 	if task, ok := s.Recorder.Task(taskID); ok && task.TraceID != "" {
 		return task.TraceID
@@ -2310,7 +2416,7 @@ func controlActionEntry(event domain.Event) (controlActionAuditEntry, bool) {
 func controlActionName(event domain.Event) (string, bool) {
 	if action := normalizeActionName(eventStringValue(event.Payload, "action")); action != "" {
 		switch action {
-		case "pause", "resume", "retry", "cancel", "takeover", "release_takeover", "annotate", "assign_owner", "assign_reviewer":
+		case "pause", "resume", "retry", "cancel", "takeover", "release_takeover", "annotate", "assign_owner", "assign_reviewer", "record_approval", "override_budget":
 			return action, true
 		}
 	}
@@ -2462,6 +2568,23 @@ func effectiveTaskState(current domain.TaskState, takeover *control.Takeover) do
 		return domain.TaskBlocked
 	}
 	return current
+}
+
+func compactUniqueStrings(values []string) []string {
+	out := make([]string, 0, len(values))
+	seen := make(map[string]struct{})
+	for _, value := range values {
+		trimmed := strings.TrimSpace(value)
+		if trimmed == "" {
+			continue
+		}
+		if _, ok := seen[trimmed]; ok {
+			continue
+		}
+		seen[trimmed] = struct{}{}
+		out = append(out, trimmed)
+	}
+	return out
 }
 
 func rankForControlState(state domain.TaskState) int {

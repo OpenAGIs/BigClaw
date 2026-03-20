@@ -87,11 +87,11 @@ func allowedControlActions(role ControlRole) []string {
 	var actions []string
 	switch role {
 	case RolePlatformAdmin:
-		actions = []string{"annotate", "assign_owner", "assign_reviewer", "cancel", "pause", "release_takeover", "resume", "retry", "takeover", "transfer_to_human"}
+		actions = []string{"annotate", "assign_owner", "assign_reviewer", "cancel", "override_budget", "pause", "record_approval", "release_takeover", "resume", "retry", "takeover", "transfer_to_human"}
 	case RoleCrossTeamOperator:
-		actions = []string{"annotate", "assign_owner", "assign_reviewer", "release_takeover", "retry", "takeover", "transfer_to_human"}
+		actions = []string{"annotate", "assign_owner", "assign_reviewer", "override_budget", "record_approval", "release_takeover", "retry", "takeover", "transfer_to_human"}
 	case RoleEngLead:
-		actions = []string{"annotate", "assign_owner", "assign_reviewer", "release_takeover", "takeover", "transfer_to_human"}
+		actions = []string{"annotate", "assign_owner", "assign_reviewer", "record_approval", "release_takeover", "takeover", "transfer_to_human"}
 	default:
 		actions = []string{}
 	}
@@ -117,6 +117,10 @@ func normalizeActionName(action string) string {
 		return "takeover"
 	case "release_to_automation":
 		return "release_takeover"
+	case "approve", "approval", "record-approval":
+		return "record_approval"
+	case "budget_override", "budget-override":
+		return "override_budget"
 	default:
 		return strings.ToLower(strings.TrimSpace(action))
 	}
