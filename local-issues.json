@@ -242,6 +242,11 @@
           "author": "codex",
           "body": "Replaced the remaining operator-facing Python shims in `scripts/ops` with Go-first shell wrappers so `bigclaw_github_sync.py`, `bigclaw_refill_queue.py`, `symphony_workspace_bootstrap.py`, `bigclaw_workspace_bootstrap.py`, and `symphony_workspace_validate.py` now execute `bigclawctl` directly while preserving the legacy wrapper entrypoints and validation argument compatibility. Validation: `bash scripts/ops/bigclaw_github_sync.py status --json` -\u003e ok, `bash scripts/ops/bigclaw_refill_queue.py --local-issues local-issues.json` -\u003e ok dry-run with no refill candidates, `BIGCLAW_BOOTSTRAP_REPO_URL=git@github.com:OpenAGIs/BigClaw.git BIGCLAW_BOOTSTRAP_CACHE_KEY=compat-cache bash scripts/ops/bigclaw_workspace_bootstrap.py bootstrap ... \u0026\u0026 cleanup ...` -\u003e ok against temporary workspace/cache roots, `bash scripts/ops/symphony_workspace_validate.py --repo-url git@github.com:OpenAGIs/BigClaw.git --workspace-root \u003ctmp\u003e --issues COMPAT-VAL-1 COMPAT-VAL-2 --report-file \u003ctmp\u003e/report.json --json` -\u003e ok with shared-cache validation report emitted, `bash scripts/ops/bigclawctl github-sync status --json` -\u003e local SHA `d2107f6daf1503668e41c5f0c2028704e1bb17cd` matches remote SHA `d2107f6daf1503668e41c5f0c2028704e1bb17cd` with `status: ok` and `synced: true`, `git log -1 --stat` -\u003e captured for commit `d2107f6daf1503668e41c5f0c2028704e1bb17cd` with the five operator wrapper scripts in the stat output. Commit SHA: `d2107f6daf1503668e41c5f0c2028704e1bb17cd`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
           "created_at": "2026-03-20T09:39:32Z"
+        },
+        {
+          "author": "codex",
+          "body": "Post-closeout tooling hygiene: excluded the Bash compatibility wrappers in scripts/ops from Ruffs Python scan via pyproject.toml and ignored generated *.egg-info artifacts in .gitignore so local packaging and wrapper execution no longer re-dirty the Go-mainline cutover branch. Validation: git check-ignore -v src/bigclaw.egg-info/PKG-INFO -\u003e .gitignore:6:*.egg-info/ applied; python3 inline assertion over pyproject.toml -\u003e wrapper excludes ok for all five wrapper entrypoints; bash scripts/ops/bigclawctl github-sync status --json -\u003e local SHA 8ccd42ef933319ecaca2cd3f339a6eb320b94981 matches remote SHA 8ccd42ef933319ecaca2cd3f339a6eb320b94981 with status ok and synced true; git log -1 --stat -\u003e captured for commit 8ccd42ef933319ecaca2cd3f339a6eb320b94981 with .gitignore and pyproject.toml in the stat output. Commit SHA: 8ccd42ef933319ecaca2cd3f339a6eb320b94981. PR URL: https://github.com/OpenAGIs/BigClaw/pull/141.",
+          "created_at": "2026-03-20T16:04:06Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -257,7 +262,7 @@
       "priority": 1,
       "state": "Done",
       "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
-      "updated_at": "2026-03-20T09:40:47Z"
+      "updated_at": "2026-03-20T16:04:06Z"
     },
     {
       "assigned_to_worker": true,
