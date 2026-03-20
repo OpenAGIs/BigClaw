@@ -150,6 +150,11 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	if !decision.Accepted {
 		if decision.ApprovalRequired {
 			blockedAt := time.Now()
+			var approvalTakeover *control.Takeover
+			if r.Control != nil {
+				takeover := r.Control.Takeover(task.ID, "security", "", decision.Reason, blockedAt)
+				approvalTakeover = &takeover
+			}
 			if controller, ok := r.Queue.(queue.TaskController); ok {
 				snapshot, err := controller.UpdateTaskState(ctx, task.ID, domain.TaskBlocked, blockedAt, decision.Reason)
 				if err == nil {
@@ -173,6 +178,7 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 					"message":  decision.Reason,
 					"executor": decision.Assignment.Executor,
 					"approval": "required",
+					"owner":    approvalOwner(approvalTakeover),
 				},
 			})
 			return true
@@ -539,4 +545,11 @@ func runtimeResultPayload(executorKind domain.ExecutorKind, result executor.Resu
 
 func eventID(taskID, suffix string) string {
 	return fmt.Sprintf("%s-%s", taskID, suffix)
+}
+
+func approvalOwner(takeover *control.Takeover) string {
+	if takeover == nil {
+		return ""
+	}
+	return takeover.Owner
 }

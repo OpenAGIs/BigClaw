@@ -408,6 +408,7 @@ func TestRuntimeParksApprovalRequiredTaskWithoutExecutingRunner(t *testing.T) {
 	}
 	bus, recorder := newRuntimeRecorder()
 	callCount := 0
+	controller := control.New()
 	runtime := Runtime{
 		WorkerID:    "worker-1",
 		Queue:       q,
@@ -415,6 +416,7 @@ func TestRuntimeParksApprovalRequiredTaskWithoutExecutingRunner(t *testing.T) {
 		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorKubernetes, result: executor.Result{Success: true, Message: "ok"}, calls: &callCount}),
 		Bus:         bus,
 		Recorder:    recorder,
+		Control:     controller,
 		LeaseTTL:    200 * time.Millisecond,
 		TaskTimeout: time.Second,
 	}
@@ -439,6 +441,13 @@ func TestRuntimeParksApprovalRequiredTaskWithoutExecutingRunner(t *testing.T) {
 	}
 	if latest.Payload["approval"] != "required" {
 		t.Fatalf("expected approval payload marker, got %+v", latest.Payload)
+	}
+	if latest.Payload["owner"] != "security" {
+		t.Fatalf("expected approval takeover owner in event payload, got %+v", latest.Payload)
+	}
+	takeover, ok := controller.TakeoverStatus("task-approval")
+	if !ok || !takeover.Active || takeover.Owner != "security" {
+		t.Fatalf("expected active approval takeover, got %+v ok=%v", takeover, ok)
 	}
 }
 
