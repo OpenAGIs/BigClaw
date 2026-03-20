@@ -17,7 +17,19 @@ type Loop struct {
 }
 
 func (l *Loop) Run(ctx context.Context) {
-	ticker := time.NewTicker(l.PollInterval)
+	if l == nil {
+		<-ctx.Done()
+		return
+	}
+
+	interval := l.PollInterval
+	if interval <= 0 {
+		interval = time.Second
+	}
+
+	l.RunTick(ctx)
+
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	for {
@@ -25,9 +37,32 @@ func (l *Loop) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			_ = l.Runtime.RunOnce(ctx, l.quotaSnapshot(ctx))
+			l.RunTick(ctx)
 		}
 	}
+}
+
+func (l *Loop) RunTick(ctx context.Context) int {
+	if l == nil || l.Runtime == nil || l.Runtime.Queue == nil {
+		return 0
+	}
+
+	iterations := l.Runtime.Queue.Size(ctx)
+	if iterations < 1 {
+		iterations = 1
+	}
+
+	processed := 0
+	for attempts := 0; attempts < iterations; attempts++ {
+		if ctx.Err() != nil {
+			break
+		}
+		if !l.Runtime.RunOnce(ctx, l.quotaSnapshot(ctx)) {
+			break
+		}
+		processed++
+	}
+	return processed
 }
 
 func (l *Loop) quotaSnapshot(ctx context.Context) scheduler.QuotaSnapshot {
