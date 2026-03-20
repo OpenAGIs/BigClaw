@@ -101,7 +101,7 @@ Current repo progress:
 - `bigclaw-go/internal/risk/assessment.go` and `bigclaw-go/internal/triage/record.go` now own the migrated Python assessment / triage contract surface
 - `bigclaw-go/internal/billing/statement.go` remains the canonical Go billing contract, with parity coverage expanded to preserve Python usage metadata during round trips
 - `/v2/intake/connectors/...`, `/v2/intake/issues/map`, and `/v2/workflows/definitions/render` now expose Go-owned intake / mapping / workflow-definition endpoints for downstream tooling
-- remaining `models.py` contract structs still need to be folded into the existing Go runtime / orchestration packages instead of copied into one compatibility file; the canonical Go task contract now covers legacy `task_id` plus Python budget override fields directly in `internal/domain/task.go`
+- remaining `models.py` contract structs still need to be folded into the existing Go runtime / orchestration packages instead of copied into one compatibility file; the canonical Go task contract now covers legacy `task_id`, Python `budget`, and budget override fields directly in `internal/domain/task.go`
 
 Milestone:
 - `Control/Workflow Surface Migration`

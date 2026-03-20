@@ -2,6 +2,7 @@ package domain
 
 import (
 	"encoding/json"
+	"math"
 	"time"
 )
 
@@ -157,12 +158,17 @@ type taskJSONAlias Task
 
 type taskJSONEnvelope struct {
 	taskJSONAlias
-	TaskID string `json:"task_id,omitempty"`
+	TaskID string   `json:"task_id,omitempty"`
+	Budget *float64 `json:"budget,omitempty"`
 }
 
 func (t Task) MarshalJSON() ([]byte, error) {
 	payload := taskJSONEnvelope{taskJSONAlias: taskJSONAlias(t)}
 	payload.TaskID = t.ID
+	if t.BudgetCents != 0 {
+		budget := float64(t.BudgetCents) / 100
+		payload.Budget = &budget
+	}
 	return json.Marshal(payload)
 }
 
@@ -174,6 +180,9 @@ func (t *Task) UnmarshalJSON(data []byte) error {
 	task := Task(payload.taskJSONAlias)
 	if task.ID == "" {
 		task.ID = payload.TaskID
+	}
+	if payload.Budget != nil && task.BudgetCents == 0 {
+		task.BudgetCents = int64(math.Round(*payload.Budget * 100))
 	}
 	*t = task
 	return nil

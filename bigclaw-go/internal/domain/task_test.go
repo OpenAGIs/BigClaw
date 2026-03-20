@@ -34,3 +34,30 @@ func TestTaskJSONSupportsLegacyTaskIDAndBudgetOverrides(t *testing.T) {
 		t.Fatalf("expected budget override JSON fields, got %+v", decoded)
 	}
 }
+
+func TestTaskJSONSupportsLegacyBudgetField(t *testing.T) {
+	payload := []byte(`{"task_id":"BIG-402","source":"linear","title":"Legacy budget","budget":12.34}`)
+
+	var task Task
+	if err := json.Unmarshal(payload, &task); err != nil {
+		t.Fatalf("unmarshal task: %v", err)
+	}
+	if task.BudgetCents != 1234 {
+		t.Fatalf("expected budget cents from legacy budget field, got %+v", task)
+	}
+
+	encoded, err := json.Marshal(task)
+	if err != nil {
+		t.Fatalf("marshal task: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("decode marshaled task: %v", err)
+	}
+	if decoded["budget"] != 12.34 {
+		t.Fatalf("expected legacy budget field in JSON, got %+v", decoded)
+	}
+	if decoded["budget_cents"] != float64(1234) {
+		t.Fatalf("expected canonical budget_cents field in JSON, got %+v", decoded)
+	}
+}
