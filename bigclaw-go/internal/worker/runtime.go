@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"sort"
@@ -332,11 +333,28 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 			"artifacts":   append([]string(nil), result.Artifacts...),
 			"finished_at": runtimeResultFinishedAt(result),
 		})
+		acceptance, hasAcceptance := r.evaluateAcceptance(*task)
+		if hasAcceptance {
+			r.recordWorkpad(journal, "acceptance", acceptance.Status, map[string]any{
+				"passed":                      acceptance.Passed,
+				"summary":                     acceptance.Summary,
+				"approvals":                   acceptance.Approvals,
+				"missing_acceptance_criteria": acceptance.MissingAcceptanceCriteria,
+				"missing_validation_steps":    acceptance.MissingValidationSteps,
+			})
+			applyAcceptanceMetadata(task, acceptance)
+			if r.Recorder != nil {
+				r.Recorder.StoreTask(*task)
+			}
+		}
 		r.persistWorkpad(task, lease, journal)
 		r.finishStatus(string(domain.EventTaskCompleted), result.Message, func(status *Status) {
 			status.SuccessfulRuns++
 		})
 		r.publish(domain.Event{ID: eventID(task.ID, "completed"), Type: domain.EventTaskCompleted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeResultPayload(runner.Kind(), result)})
+		if hasAcceptance {
+			r.publish(domain.Event{ID: eventID(task.ID, "acceptance"), Type: domain.EventRunAnnotated, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeAcceptancePayload(acceptance)})
+		}
 	case result.DeadLetter:
 		_ = r.Queue.DeadLetter(ctx, lease, result.Message)
 		task.State = domain.TaskDeadLetter
@@ -644,11 +662,43 @@ func runtimeResultFinishedAt(result executor.Result) string {
 	return result.FinishedAt.UTC().Format(time.RFC3339)
 }
 
+func runtimeAcceptancePayload(decision workflow.AcceptanceDecision) map[string]any {
+	payload := map[string]any{
+		"acceptance_status": decision.Status,
+		"passed":            decision.Passed,
+		"summary":           decision.Summary,
+	}
+	if len(decision.Approvals) > 0 {
+		payload["approvals"] = append([]string(nil), decision.Approvals...)
+	}
+	if len(decision.MissingAcceptanceCriteria) > 0 {
+		payload["missing_acceptance_criteria"] = append([]string(nil), decision.MissingAcceptanceCriteria...)
+	}
+	if len(decision.MissingValidationSteps) > 0 {
+		payload["missing_validation_steps"] = append([]string(nil), decision.MissingValidationSteps...)
+	}
+	return payload
+}
+
 func runtimeAssessmentStatus(decision scheduler.Decision) string {
 	if decision.Accepted {
 		return "accepted"
 	}
 	return "blocked"
+}
+
+func (r *Runtime) evaluateAcceptance(task domain.Task) (workflow.AcceptanceDecision, bool) {
+	if len(task.AcceptanceCriteria) == 0 && len(task.ValidationPlan) == 0 && strings.TrimSpace(task.Metadata["pilot_recommendation"]) == "" {
+		return workflow.AcceptanceDecision{}, false
+	}
+	gate := workflow.AcceptanceGate{}
+	return gate.Evaluate(
+		task,
+		workflow.ExecutionOutcome{Approved: true, Status: "completed"},
+		runtimeMetadataStringSlice(task, "validation_evidence"),
+		runtimeMetadataStringSlice(task, "approvals"),
+		strings.TrimSpace(task.Metadata["pilot_recommendation"]),
+	), true
 }
 
 func (r *Runtime) newWorkpadJournal(task domain.Task, lease *queue.Lease) *workflow.WorkpadJournal {
@@ -669,6 +719,23 @@ func (r *Runtime) recordWorkpad(journal *workflow.WorkpadJournal, step, status s
 	journal.Record(step, status, details)
 }
 
+func applyAcceptanceMetadata(task *domain.Task, decision workflow.AcceptanceDecision) {
+	if task == nil {
+		return
+	}
+	if task.Metadata == nil {
+		task.Metadata = make(map[string]string)
+	}
+	task.Metadata["acceptance_status"] = decision.Status
+	task.Metadata["approval_status"] = decision.Status
+	task.Metadata["acceptance_summary"] = decision.Summary
+	if !decision.Passed {
+		task.Metadata["blocked_reason"] = decision.Summary
+		return
+	}
+	delete(task.Metadata, "blocked_reason")
+}
+
 func (r *Runtime) persistWorkpad(task *domain.Task, lease *queue.Lease, journal *workflow.WorkpadJournal) {
 	if task == nil || lease == nil || journal == nil {
 		return
@@ -687,6 +754,32 @@ func (r *Runtime) persistWorkpad(task *domain.Task, lease *queue.Lease, journal 
 	if r.Recorder != nil {
 		r.Recorder.StoreTask(*task)
 	}
+}
+
+func runtimeMetadataStringSlice(task domain.Task, key string) []string {
+	raw := strings.TrimSpace(task.Metadata[key])
+	if raw == "" {
+		return nil
+	}
+	if strings.HasPrefix(raw, "[") {
+		var values []string
+		if err := json.Unmarshal([]byte(raw), &values); err == nil {
+			return values
+		}
+	}
+	parts := strings.FieldsFunc(raw, func(r rune) bool {
+		return r == '\n' || r == ';'
+	})
+	if len(parts) == 1 && strings.Contains(parts[0], ",") {
+		parts = strings.Split(parts[0], ",")
+	}
+	values := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			values = append(values, trimmed)
+		}
+	}
+	return values
 }
 
 func (r *Runtime) now() time.Time {

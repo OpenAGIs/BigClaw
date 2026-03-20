@@ -316,6 +316,55 @@ func TestRuntimeWritesWorkpadJournalAndStoresArtifactPath(t *testing.T) {
 	}
 }
 
+func TestRuntimeAnnotatesAcceptanceOutcomeFromTaskMetadata(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	task := domain.Task{
+		ID:                 "task-acceptance",
+		TraceID:            "trace-acceptance",
+		AcceptanceCriteria: []string{"ship report"},
+		ValidationPlan:     []string{"go test ./internal/worker"},
+		Metadata: map[string]string{
+			"validation_evidence": `["ship report","go test ./internal/worker"]`,
+			"approvals":           `["ops-review"]`,
+		},
+		CreatedAt: time.Now(),
+	}
+	if err := q.Enqueue(context.Background(), task); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+	runtime := Runtime{
+		WorkerID:    "worker-1",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorLocal, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    200 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
+	if !processed {
+		t.Fatalf("expected task to be processed")
+	}
+	stored, ok := recorder.Task("task-acceptance")
+	if !ok {
+		t.Fatal("expected stored task snapshot")
+	}
+	if stored.Metadata["acceptance_status"] != "accepted" || stored.Metadata["approval_status"] != "accepted" {
+		t.Fatalf("expected accepted metadata, got %+v", stored.Metadata)
+	}
+	events := recorder.EventsByTask("task-acceptance", 10)
+	if len(events) != 5 {
+		t.Fatalf("expected acceptance annotation event, got %+v", events)
+	}
+	annotated := events[4]
+	if annotated.Type != domain.EventRunAnnotated || annotated.Payload["acceptance_status"] != "accepted" || annotated.Payload["summary"] != "acceptance criteria and validation plan satisfied" {
+		t.Fatalf("expected acceptance annotation payload, got %+v", annotated)
+	}
+}
+
 func TestRuntimeRenewsLeaseDuringExecution(t *testing.T) {
 	baseQueue := queue.NewMemoryQueue()
 	if err := baseQueue.Enqueue(context.Background(), domain.Task{ID: "task-renew", Priority: 1, CreatedAt: time.Now()}); err != nil {
