@@ -18,7 +18,8 @@ longer waits on Linear to keep issue execution moving.
 - Local issue CLI:
   - `bash scripts/ops/bigclawctl issue list --local-issues local-issues.json --json`
   - `bash scripts/ops/bigclawctl issue create --local-issues local-issues.json --identifier BIG-GOM-309 --title "Go-native tracker slice"`
-  - `bash scripts/ops/bigclaw-issue state BIG-GOM-303 "In Progress"`
+  - `bash scripts/ops/bigclawctl issue state --local-issues local-issues.json --issue BIG-GOM-303 --state "In Progress"`
+  - `bash scripts/ops/bigclaw-issue state --issue BIG-GOM-303 --state "In Progress"` (same Go-native path via wrapper)
 - Local dashboard/orchestrator:
   - `bash scripts/ops/bigclaw-symphony`
   - `bash scripts/ops/bigclaw-panel`

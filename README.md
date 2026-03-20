@@ -63,8 +63,9 @@ Notes:
 - `bash scripts/ops/bigclaw-panel` prints the configured dashboard URL for the current workflow.
 - `bash scripts/ops/bigclawctl issue ... --local-issues local-issues.json` is the Go-native
   local tracker path for listing, creating, commenting on, and updating issue state.
-- `bash scripts/ops/bigclaw-issue ...` remains available as a Symphony wrapper when you explicitly
-  want the workflow-managed `symphony issue` UX.
+- `bash scripts/ops/bigclaw-issue list|create|state|comment ...` now delegates to the same
+  Go-native local tracker flow by default and only falls back to `symphony issue` for
+  workflow-managed subcommands outside that local tracker set.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
 
