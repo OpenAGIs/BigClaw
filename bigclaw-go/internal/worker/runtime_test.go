@@ -156,6 +156,101 @@ func TestRuntimePublishesExecutorArtifacts(t *testing.T) {
 	}
 }
 
+func TestRuntimePublishesOrchestrationAssessmentOnRoutedEvent(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	task := domain.Task{
+		ID:            "task-assessment",
+		TraceID:       "trace-assessment",
+		Source:        "linear",
+		Title:         "Customer analytics rollout",
+		Description:   "Need customer stakeholder rollout and analytics validation.",
+		Labels:        []string{"customer", "analytics"},
+		RequiredTools: []string{"browser", "sql"},
+		CreatedAt:     time.Now(),
+	}
+	if err := q.Enqueue(context.Background(), task); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+	runtime := Runtime{
+		WorkerID:    "worker-1",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorKubernetes, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    200 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
+	if !processed {
+		t.Fatalf("expected task to be processed")
+	}
+	events := recorder.EventsByTask("task-assessment", 10)
+	if len(events) != 5 {
+		t.Fatalf("expected 5 lifecycle events with handoff, got %d", len(events))
+	}
+	routed := events[1]
+	if routed.Type != domain.EventSchedulerRouted {
+		t.Fatalf("expected routed event, got %+v", routed)
+	}
+	orchestration, ok := routed.Payload["orchestration"].(map[string]any)
+	if !ok || orchestration["collaboration_mode"] != "tier-limited" {
+		t.Fatalf("expected orchestration payload on routed event, got %+v", routed.Payload)
+	}
+	policy, ok := routed.Payload["policy"].(map[string]any)
+	if !ok || policy["upgrade_required"] != true || policy["tier"] != "standard" {
+		t.Fatalf("expected policy payload on routed event, got %+v", routed.Payload)
+	}
+	handoff := events[2]
+	if handoff.Type != domain.EventRunTakeover || handoff.Payload["target_team"] != "operations" || handoff.Payload["handoff_status"] != "blocked" {
+		t.Fatalf("expected operations handoff event after routed event, got %+v", handoff)
+	}
+}
+
+func TestRuntimePublishesRejectedDecisionHandoffBeforeRetry(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	task := domain.Task{
+		ID:            "task-assessment-reject",
+		TraceID:       "trace-assessment-reject",
+		RiskLevel:     domain.RiskHigh,
+		Labels:        []string{"security"},
+		RequiredTools: []string{"deploy"},
+		BudgetCents:   500,
+		CreatedAt:     time.Now(),
+	}
+	if err := q.Enqueue(context.Background(), task); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+	runtime := Runtime{
+		WorkerID:    "worker-1",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorLocal, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    200 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 100})
+	if !processed {
+		t.Fatalf("expected task to be processed")
+	}
+	events := recorder.EventsByTask("task-assessment-reject", 10)
+	if len(events) != 3 {
+		t.Fatalf("expected leased, handoff, retry events, got %+v", events)
+	}
+	if events[1].Type != domain.EventRunTakeover || events[1].Payload["target_team"] != "security" {
+		t.Fatalf("expected security handoff event before retry, got %+v", events[1])
+	}
+	if events[2].Type != domain.EventTaskRetried {
+		t.Fatalf("expected retry event after handoff, got %+v", events[2])
+	}
+}
+
 func TestRuntimeRenewsLeaseDuringExecution(t *testing.T) {
 	baseQueue := queue.NewMemoryQueue()
 	if err := baseQueue.Enqueue(context.Background(), domain.Task{ID: "task-renew", Priority: 1, CreatedAt: time.Now()}); err != nil {

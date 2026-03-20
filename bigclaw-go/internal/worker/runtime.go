@@ -138,8 +138,12 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	})
 
 	r.publish(domain.Event{ID: eventID(task.ID, "leased"), Type: domain.EventTaskLeased, TaskID: task.ID, TraceID: task.TraceID, Timestamp: now})
-	decision := r.Scheduler.Decide(*task, quota)
+	assessment := r.Scheduler.Assess(*task, quota)
+	decision := assessment.Decision
 	if !decision.Accepted {
+		if assessment.HandoffRequest != nil {
+			r.publish(domain.Event{ID: eventID(task.ID, "handoff"), Type: domain.EventRunTakeover, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeHandoffPayload(assessment)})
+		}
 		_ = r.Queue.Requeue(ctx, lease, time.Now().Add(100*time.Millisecond))
 		r.finishStatus(string(domain.EventTaskRetried), decision.Reason, func(status *Status) {
 			status.RetriedRuns++
@@ -151,11 +155,35 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		status.CurrentExecutor = decision.Assignment.Executor
 		status.LastTransition = string(domain.EventSchedulerRouted)
 	})
-	routedPayload := map[string]any{"executor": decision.Assignment.Executor, "reason": decision.Reason, "quota": quota}
+	routedPayload := map[string]any{
+		"executor":          decision.Assignment.Executor,
+		"reason":            decision.Reason,
+		"quota":             quota,
+		"risk_level":        assessment.Risk.Level,
+		"risk_score":        assessment.Risk.Total,
+		"requires_approval": assessment.Risk.RequiresApproval,
+		"orchestration": map[string]any{
+			"collaboration_mode": assessment.OrchestrationPlan.CollaborationMode,
+			"departments":        assessment.OrchestrationPlan.Departments(),
+			"required_approvals": assessment.OrchestrationPlan.RequiredApprovals(),
+		},
+		"policy": map[string]any{
+			"tier":                assessment.OrchestrationPolicy.Tier,
+			"upgrade_required":    assessment.OrchestrationPolicy.UpgradeRequired,
+			"reason":              assessment.OrchestrationPolicy.Reason,
+			"blocked_departments": assessment.OrchestrationPolicy.BlockedDepartments,
+			"entitlement_status":  assessment.OrchestrationPolicy.EntitlementStatus,
+			"billing_model":       assessment.OrchestrationPolicy.BillingModel,
+			"estimated_cost_usd":  assessment.OrchestrationPolicy.EstimatedCostUSD,
+		},
+	}
 	if decision.Preemption.Required {
 		routedPayload["preemption"] = decision.Preemption
 	}
 	r.publish(domain.Event{ID: eventID(task.ID, "routed"), Type: domain.EventSchedulerRouted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: routedPayload})
+	if assessment.HandoffRequest != nil {
+		r.publish(domain.Event{ID: eventID(task.ID, "handoff"), Type: domain.EventRunTakeover, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeHandoffPayload(assessment)})
+	}
 
 	runner, ok := r.Registry.Get(decision.Assignment.Executor)
 	if !ok {
@@ -357,6 +385,28 @@ func preemptionCandidates(task domain.Task, snapshots []queue.TaskSnapshot) []qu
 
 func preemptionReason(task domain.Task, _ domain.Task) string {
 	return fmt.Sprintf("preempted by urgent task %s (priority=%d)", task.ID, task.Priority)
+}
+
+func runtimeHandoffPayload(assessment scheduler.Assessment) map[string]any {
+	payload := map[string]any{
+		"reason":             assessment.Decision.Reason,
+		"risk_level":         assessment.Risk.Level,
+		"risk_score":         assessment.Risk.Total,
+		"collaboration_mode": assessment.OrchestrationPlan.CollaborationMode,
+		"departments":        assessment.OrchestrationPlan.Departments(),
+		"policy_tier":        assessment.OrchestrationPolicy.Tier,
+		"upgrade_required":   assessment.OrchestrationPolicy.UpgradeRequired,
+	}
+	if len(assessment.OrchestrationPolicy.BlockedDepartments) > 0 {
+		payload["blocked_departments"] = assessment.OrchestrationPolicy.BlockedDepartments
+	}
+	if assessment.HandoffRequest != nil {
+		payload["target_team"] = assessment.HandoffRequest.TargetTeam
+		payload["handoff_status"] = assessment.HandoffRequest.Status
+		payload["handoff_reason"] = assessment.HandoffRequest.Reason
+		payload["required_approvals"] = assessment.HandoffRequest.RequiredApprovals
+	}
+	return payload
 }
 
 func (r *Runtime) startHeartbeat(ctx context.Context, lease *queue.Lease) func() {
