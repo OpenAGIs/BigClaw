@@ -99,9 +99,9 @@ Current repo progress:
 - `bigclaw-go/internal/intake/*` now backs the active Go-first intake connector and source-issue mapping API surface
 - `bigclaw-go/internal/workflow/definition.go` and `bigclaw-go/internal/workflow/model.go` now back the active Go workflow-definition and flow-contract surface
 - `bigclaw-go/internal/risk/assessment.go` and `bigclaw-go/internal/triage/record.go` now own the migrated Python assessment / triage contract surface
-- `bigclaw-go/internal/billing/statement.go` remains the canonical Go billing contract, with parity coverage expanded to preserve Python usage metadata during round trips
+- `bigclaw-go/internal/billing/statement.go` remains the canonical Go billing contract, with parity coverage expanded to preserve Python usage metadata and Python-style default JSON field sets during round trips
 - `/v2/intake/connectors/...`, `/v2/intake/issues/map`, and `/v2/workflows/definitions/render` now expose Go-owned intake / mapping / workflow-definition endpoints for downstream tooling
-- remaining `models.py` contract structs still need to be folded into the existing Go runtime / orchestration packages instead of copied into one compatibility file; the canonical Go task contract now covers legacy `task_id`, Python `budget`, and budget override fields directly in `internal/domain/task.go`
+- all `src/bigclaw/models.py` contract structs now have Go owners in the existing runtime / orchestration packages instead of a compatibility-only shim; the canonical Go owners now preserve the remaining Python migration aliases, defaults, and JSON field sets required by downstream slices
 
 Milestone:
 - `Control/Workflow Surface Migration`
