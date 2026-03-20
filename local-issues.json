@@ -49,7 +49,7 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T10:05:32Z",
+      "updated_at": "2026-03-20T10:12:52Z",
       "comments": [
         {
           "author": "codex",
@@ -85,6 +85,11 @@
           "author": "codex",
           "created_at": "2026-03-20T10:05:32Z",
           "body": "Aligned the Go runtime with the execution contract by surfacing a stable `sandbox_profile` across scheduler and worker lifecycle events instead of exposing executor kind alone. Routed, approval-blocked, started, completed, cancelled, retried, and dead-letter payloads now carry a profile that reflects browser, container, distributed, or workspace-write execution paths, with worker coverage asserting the new payloads for browser, approval-gated, and dead-letter flows.\nValidation: `cd bigclaw-go && gofmt -w internal/worker/runtime.go internal/worker/runtime_test.go` (pass); `cd bigclaw-go && go test ./internal/worker ./internal/scheduler ./internal/workflow` (pass); `cd bigclaw-go && go test ./...` (pass); `git rev-parse HEAD && git rev-parse origin/symphony/BIG-GOM-303` (same SHA).\nCommit: `a27d739eda288582dec7555e0208ba7c8e75a57c`.\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/139."
+        },
+        {
+          "author": "codex",
+          "created_at": "2026-03-20T10:12:52Z",
+          "body": "Extended the Go run-detail API and markdown report to expose the runtime `sandbox_profile` carried by scheduler and worker events, so operator-visible execution artifacts now show whether work ran in browser, container, distributed, or workspace-write mode. Event-backed tool traces now return the sandbox profile field in JSON, and the downloadable run report renders the same profile inline for the execution timeline.\nValidation: `cd bigclaw-go && gofmt -w internal/api/v2.go internal/api/server_test.go` (pass); `cd bigclaw-go && go test ./internal/api ./internal/worker ./internal/workflow` (pass); `cd bigclaw-go && go test ./...` (pass); `git rev-parse HEAD && git rev-parse origin/symphony/BIG-GOM-303` (same SHA).\nCommit: `16c32263ecb14d44237378fc0579e9f066d6f23a`.\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/139."
         }
       ]
     },
