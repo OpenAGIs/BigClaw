@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -125,3 +126,126 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
     manifest = json.loads((root / 'docs' / 'reports' / 'live-validation-index.json').read_text(encoding='utf-8'))
     assert manifest['latest']['run_id'] == '20260315T120000Z'
     assert manifest['recent_runs'][0]['run_id'] == '20260315T120000Z'
+
+
+def test_run_all_can_refresh_shared_queue_before_bundle_export(tmp_path: Path):
+    repo_root = tmp_path / 'repo'
+    root = repo_root / 'bigclaw-go'
+    scripts_dir = root / 'scripts' / 'e2e'
+    scripts_dir.mkdir(parents=True, exist_ok=True)
+
+    source_run_all = Path(__file__).resolve().parents[1] / 'bigclaw-go' / 'scripts' / 'e2e' / 'run_all.sh'
+    run_all = scripts_dir / 'run_all.sh'
+    run_all.write_text(source_run_all.read_text(encoding='utf-8'), encoding='utf-8')
+    run_all.chmod(0o755)
+
+    exporter = scripts_dir / 'export_validation_bundle.py'
+    exporter.write_text(
+        """#!/usr/bin/env python3
+import argparse
+import json
+from pathlib import Path
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--go-root', required=True)
+parser.add_argument('--summary-path', required=True)
+parser.add_argument('--index-path', required=True)
+parser.add_argument('--manifest-path', required=True)
+parser.add_argument('--run-id', required=True)
+parser.add_argument('--bundle-dir', required=True)
+parser.add_argument('--local-report-path', required=True)
+parser.add_argument('--local-stdout-path', required=True)
+parser.add_argument('--local-stderr-path', required=True)
+parser.add_argument('--kubernetes-report-path', required=True)
+parser.add_argument('--kubernetes-stdout-path', required=True)
+parser.add_argument('--kubernetes-stderr-path', required=True)
+parser.add_argument('--ray-report-path', required=True)
+parser.add_argument('--ray-stdout-path', required=True)
+parser.add_argument('--ray-stderr-path', required=True)
+parser.add_argument('--run-local', default='1')
+parser.add_argument('--run-kubernetes', default='1')
+parser.add_argument('--run-ray', default='1')
+parser.add_argument('--validation-status', default='0')
+args = parser.parse_args()
+
+root = Path(args.go_root)
+shared_queue_path = root / 'docs' / 'reports' / 'multi-node-shared-queue-report.json'
+shared_queue = json.loads(shared_queue_path.read_text(encoding='utf-8'))
+summary = {
+    'run_id': args.run_id,
+    'status': 'succeeded' if args.validation_status == '0' else 'failed',
+    'shared_queue': {
+        'available': shared_queue.get('all_ok', False),
+        'cross_node_completions': shared_queue.get('cross_node_completions', 0),
+    },
+}
+for rel in (args.summary_path, args.manifest_path):
+    path = root / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {'latest': summary, 'recent_runs': [summary]} if rel == args.manifest_path else summary
+    path.write_text(json.dumps(payload, indent=2) + '\\n', encoding='utf-8')
+(root / args.index_path).write_text('shared queue refreshed\\n', encoding='utf-8')
+print(json.dumps(summary))
+""",
+        encoding='utf-8',
+    )
+    exporter.chmod(0o755)
+
+    shared_queue = scripts_dir / 'multi_node_shared_queue.py'
+    shared_queue.write_text(
+        """#!/usr/bin/env python3
+import argparse
+import json
+from pathlib import Path
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--go-root', required=True)
+parser.add_argument('--report-path', required=True)
+parser.add_argument('--count', type=int, required=True)
+parser.add_argument('--submit-workers', type=int, required=True)
+parser.add_argument('--timeout-seconds', type=int, required=True)
+args = parser.parse_args()
+
+root = Path(args.go_root)
+report_path = root / args.report_path
+report_path.parent.mkdir(parents=True, exist_ok=True)
+report_path.write_text(json.dumps({
+    'all_ok': True,
+    'cross_node_completions': args.count - 1,
+    'duplicate_completed_tasks': [],
+    'duplicate_started_tasks': [],
+    'missing_completed_tasks': [],
+}) + '\\n', encoding='utf-8')
+print(json.dumps({'status': 'ok', 'report_path': str(report_path)}))
+""",
+        encoding='utf-8',
+    )
+    shared_queue.chmod(0o755)
+
+    env = os.environ.copy()
+    env.update(
+        {
+            'BIGCLAW_E2E_RUN_LOCAL': '0',
+            'BIGCLAW_E2E_RUN_KUBERNETES': '0',
+            'BIGCLAW_E2E_RUN_RAY': '0',
+            'BIGCLAW_E2E_REFRESH_SHARED_QUEUE': '1',
+            'BIGCLAW_E2E_REFRESH_CONTINUATION': '0',
+            'BIGCLAW_E2E_SHARED_QUEUE_COUNT': '17',
+            'BIGCLAW_E2E_SHARED_QUEUE_SUBMIT_WORKERS': '3',
+            'BIGCLAW_E2E_SHARED_QUEUE_TIMEOUT_SECONDS': '9',
+            'BIGCLAW_E2E_RUN_ID': '20260321T010203Z',
+        }
+    )
+    result = subprocess.run(
+        ['bash', str(run_all)],
+        cwd=root,
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    summary = json.loads((root / 'docs' / 'reports' / 'live-validation-summary.json').read_text(encoding='utf-8'))
+    assert summary['shared_queue']['available'] is True
+    assert summary['shared_queue']['cross_node_completions'] == 16
