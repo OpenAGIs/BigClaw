@@ -114,3 +114,67 @@ func TestRepoAuditPayloadIsDeterministic(t *testing.T) {
 		t.Fatalf("unexpected audit payload: %+v", payload)
 	}
 }
+
+func TestRecommendTriageAction(t *testing.T) {
+	tests := []struct {
+		name     string
+		status   string
+		evidence LineageEvidence
+		want     TriageRecommendation
+	}{
+		{
+			name:   "replay for repeated lineage failures",
+			status: "failed",
+			evidence: LineageEvidence{
+				CandidateCommit:     "abc123",
+				SimilarFailureCount: 2,
+			},
+			want: TriageRecommendation{Action: "replay", Reason: "similar lineage failures detected"},
+		},
+		{
+			name:   "approve when accepted ancestor exists",
+			status: "needs-approval",
+			evidence: LineageEvidence{
+				CandidateCommit:  "abc123",
+				AcceptedAncestor: "def456",
+			},
+			want: TriageRecommendation{Action: "approve", Reason: "accepted ancestor exists"},
+		},
+		{
+			name:   "handoff when discussion stays open",
+			status: "queued",
+			evidence: LineageEvidence{
+				CandidateCommit: "abc123",
+				DiscussionOpen:  1,
+			},
+			want: TriageRecommendation{Action: "handoff", Reason: "open repo discussion requires reviewer"},
+		},
+		{
+			name:   "retry by default",
+			status: "queued",
+			evidence: LineageEvidence{
+				CandidateCommit: "abc123",
+			},
+			want: TriageRecommendation{Action: "retry", Reason: "default retry path"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := RecommendTriageAction(test.status, test.evidence); got != test.want {
+				t.Fatalf("unexpected recommendation: got=%+v want=%+v", got, test.want)
+			}
+		})
+	}
+}
+
+func TestBuildApprovalEvidencePacket(t *testing.T) {
+	packet := BuildApprovalEvidencePacket("run-77", []RunCommitLink{
+		{RunID: "run-77", CommitHash: "abc123", Role: "candidate", RepoSpaceID: "space-1"},
+		{RunID: "run-77", CommitHash: "def456", Role: "accepted", RepoSpaceID: "space-1"},
+	}, "accepted ancestor def456 already passed review")
+
+	if packet.RunID != "run-77" || packet.CandidateCommitHash != "abc123" || packet.AcceptedCommitHash != "def456" || packet.LineageSummary == "" || len(packet.Links) != 2 {
+		t.Fatalf("unexpected approval packet: %+v", packet)
+	}
+}

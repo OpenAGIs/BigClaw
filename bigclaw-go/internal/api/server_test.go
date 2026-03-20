@@ -1588,6 +1588,80 @@ func TestV2RunDetailCloseoutSummaryFromMetadata(t *testing.T) {
 	}
 }
 
+func TestV2RunDetailIncludesRepoTriagePacket(t *testing.T) {
+	recorder := observability.NewRecorder()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Control: control.New(), Now: func() time.Time { return time.Unix(1700006100, 0) }}
+	handler := server.Handler()
+	task := domain.Task{
+		ID:      "task-run-repo-triage",
+		TraceID: "trace-run-repo-triage",
+		Title:   "Review repo lineage",
+		State:   domain.TaskBlocked,
+		Metadata: map[string]string{
+			"team":                  "platform",
+			"project":               "alpha",
+			"repo_triage_status":    "needs-approval",
+			"candidate_commit_hash": "abc123",
+			"accepted_commit_hash":  "def456",
+			"similar_failure_count": "1",
+			"discussion_open":       "1",
+			"lineage_summary":       "candidate abc123 descends from accepted commit def456 after reviewer fixes",
+			"run_commit_links":      `[{"run_id":"task-run-repo-triage","commit_hash":"abc123","role":"candidate","repo_space_id":"space-1"},{"run_id":"task-run-repo-triage","commit_hash":"def456","role":"accepted","repo_space_id":"space-1"}]`,
+		},
+	}
+	recorder.StoreTask(task)
+
+	runResponse := httptest.NewRecorder()
+	handler.ServeHTTP(runResponse, httptest.NewRequest(http.MethodGet, "/v2/runs/task-run-repo-triage?limit=20", nil))
+	if runResponse.Code != http.StatusOK {
+		t.Fatalf("expected run detail 200, got %d %s", runResponse.Code, runResponse.Body.String())
+	}
+	var decoded struct {
+		RepoTriage struct {
+			Status   string `json:"status"`
+			Evidence struct {
+				CandidateCommit     string `json:"candidate_commit"`
+				AcceptedAncestor    string `json:"accepted_ancestor"`
+				SimilarFailureCount int    `json:"similar_failure_count"`
+				DiscussionOpen      int    `json:"discussion_open"`
+			} `json:"evidence"`
+			Recommendation struct {
+				Action string `json:"action"`
+				Reason string `json:"reason"`
+			} `json:"recommendation"`
+			ApprovalPacket struct {
+				RunID               string `json:"run_id"`
+				CandidateCommitHash string `json:"candidate_commit_hash"`
+				AcceptedCommitHash  string `json:"accepted_commit_hash"`
+				LineageSummary      string `json:"lineage_summary"`
+			} `json:"approval_packet"`
+		} `json:"repo_triage"`
+	}
+	if err := json.Unmarshal(runResponse.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode repo triage run detail: %v", err)
+	}
+	if decoded.RepoTriage.Status != "needs-approval" || decoded.RepoTriage.Recommendation.Action != "approve" || decoded.RepoTriage.Recommendation.Reason != "accepted ancestor exists" {
+		t.Fatalf("unexpected repo triage recommendation: %+v", decoded.RepoTriage)
+	}
+	if decoded.RepoTriage.Evidence.CandidateCommit != "abc123" || decoded.RepoTriage.Evidence.AcceptedAncestor != "def456" || decoded.RepoTriage.Evidence.SimilarFailureCount != 1 || decoded.RepoTriage.Evidence.DiscussionOpen != 1 {
+		t.Fatalf("unexpected repo triage evidence: %+v", decoded.RepoTriage.Evidence)
+	}
+	if decoded.RepoTriage.ApprovalPacket.RunID != "task-run-repo-triage" || decoded.RepoTriage.ApprovalPacket.CandidateCommitHash != "abc123" || decoded.RepoTriage.ApprovalPacket.AcceptedCommitHash != "def456" || decoded.RepoTriage.ApprovalPacket.LineageSummary == "" {
+		t.Fatalf("unexpected repo triage approval packet: %+v", decoded.RepoTriage.ApprovalPacket)
+	}
+
+	reportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(reportResponse, httptest.NewRequest(http.MethodGet, "/v2/runs/task-run-repo-triage/report?limit=20", nil))
+	if reportResponse.Code != http.StatusOK {
+		t.Fatalf("expected run report 200, got %d %s", reportResponse.Code, reportResponse.Body.String())
+	}
+	for _, want := range []string{"## Repo Triage", "Recommendation: approve (accepted ancestor exists)", "Candidate Commit: abc123", "Accepted Ancestor: def456"} {
+		if !strings.Contains(reportResponse.Body.String(), want) {
+			t.Fatalf("expected %q in run report, got %s", want, reportResponse.Body.String())
+		}
+	}
+}
+
 func TestV2ControlCenterShowsQueueTasksAndSupportsCancel(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()

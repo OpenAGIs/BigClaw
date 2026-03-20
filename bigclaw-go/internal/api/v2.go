@@ -17,6 +17,7 @@ import (
 	"bigclaw-go/internal/policy"
 	"bigclaw-go/internal/queue"
 	"bigclaw-go/internal/regression"
+	"bigclaw-go/internal/repo"
 	"bigclaw-go/internal/risk"
 	"bigclaw-go/internal/triage"
 	"bigclaw-go/internal/worker"
@@ -303,6 +304,13 @@ type runCloseoutSummary struct {
 	Complete           bool     `json:"complete"`
 }
 
+type runRepoTriageSummary struct {
+	Status         string                      `json:"status"`
+	Evidence       repo.LineageEvidence        `json:"evidence"`
+	Recommendation repo.TriageRecommendation   `json:"recommendation"`
+	ApprovalPacket repo.ApprovalEvidencePacket `json:"approval_packet"`
+}
+
 type runDetailResponse struct {
 	Task          domain.Task                 `json:"task"`
 	State         string                      `json:"state"`
@@ -322,6 +330,7 @@ type runDetailResponse struct {
 	NotesTimeline []controlActionAuditEntry   `json:"notes_timeline,omitempty"`
 	Reports       []runReportLink             `json:"reports,omitempty"`
 	Closeout      runCloseoutSummary          `json:"closeout"`
+	RepoTriage    *runRepoTriageSummary       `json:"repo_triage,omitempty"`
 	Workpad       string                      `json:"workpad,omitempty"`
 }
 
@@ -1603,6 +1612,7 @@ func (s *Server) buildRunDetailResponse(task domain.Task, limit int, authorizati
 		RecentActions: auditEntries,
 		NotesTimeline: auditNotesTimeline(auditEntries, limit),
 		Closeout:      buildRunCloseout(task),
+		RepoTriage:    buildRunRepoTriage(task),
 		Reports: []runReportLink{{
 			Name:     "run_report",
 			URL:      fmt.Sprintf("/v2/runs/%s/report?limit=%d", task.ID, limit),
@@ -1643,6 +1653,33 @@ func buildRunCloseout(task domain.Task) runCloseoutSummary {
 	return closeout
 }
 
+func buildRunRepoTriage(task domain.Task) *runRepoTriageSummary {
+	status := firstNonEmpty(task.Metadata["repo_triage_status"], task.Metadata["review_status"], derivedRepoTriageStatus(task))
+	links := runCommitLinksFromMetadata(task)
+	evidence := repo.LineageEvidence{
+		CandidateCommit:     firstNonEmpty(task.Metadata["candidate_commit_hash"], commitHashForRole(links, "candidate")),
+		AcceptedAncestor:    firstNonEmpty(task.Metadata["accepted_ancestor"], task.Metadata["accepted_commit_hash"], commitHashForRole(links, "accepted")),
+		SimilarFailureCount: metadataIntValue(task, "similar_failure_count"),
+		DiscussionOpen:      metadataIntValue(task, "discussion_open"),
+	}
+	packet := repo.BuildApprovalEvidencePacket(task.ID, links, task.Metadata["lineage_summary"])
+	if packet.CandidateCommitHash == "" && evidence.CandidateCommit != "" {
+		packet.CandidateCommitHash = evidence.CandidateCommit
+	}
+	if packet.AcceptedCommitHash == "" && evidence.AcceptedAncestor != "" {
+		packet.AcceptedCommitHash = evidence.AcceptedAncestor
+	}
+	if strings.TrimSpace(status) == "" && evidence.CandidateCommit == "" && evidence.AcceptedAncestor == "" && evidence.SimilarFailureCount == 0 && evidence.DiscussionOpen == 0 && len(packet.Links) == 0 && strings.TrimSpace(packet.LineageSummary) == "" {
+		return nil
+	}
+	return &runRepoTriageSummary{
+		Status:         status,
+		Evidence:       evidence,
+		Recommendation: repo.RecommendTriageAction(status, evidence),
+		ApprovalPacket: packet,
+	}
+}
+
 func runValidationStatus(state domain.TaskState) string {
 	switch state {
 	case domain.TaskSucceeded:
@@ -1655,6 +1692,17 @@ func runValidationStatus(state domain.TaskState) string {
 		return "pending"
 	default:
 		return "unknown"
+	}
+}
+
+func derivedRepoTriageStatus(task domain.Task) string {
+	switch task.State {
+	case domain.TaskDeadLetter, domain.TaskFailed:
+		return "failed"
+	case domain.TaskBlocked:
+		return "needs-approval"
+	default:
+		return strings.ToLower(strings.TrimSpace(string(task.State)))
 	}
 }
 
@@ -1834,6 +1882,55 @@ func metadataStringSlice(task domain.Task, key string) []string {
 	return values
 }
 
+func runCommitLinksFromMetadata(task domain.Task) []repo.RunCommitLink {
+	raw := strings.TrimSpace(task.Metadata["run_commit_links"])
+	if raw == "" {
+		return fallbackRunCommitLinks(task)
+	}
+	var links []repo.RunCommitLink
+	if err := json.Unmarshal([]byte(raw), &links); err != nil {
+		return fallbackRunCommitLinks(task)
+	}
+	for index := range links {
+		if strings.TrimSpace(links[index].RunID) == "" {
+			links[index].RunID = task.ID
+		}
+	}
+	return links
+}
+
+func fallbackRunCommitLinks(task domain.Task) []repo.RunCommitLink {
+	links := make([]repo.RunCommitLink, 0, 2)
+	appendLink := func(role string, hashes ...string) {
+		for _, hash := range hashes {
+			hash = strings.TrimSpace(hash)
+			if hash == "" {
+				continue
+			}
+			links = append(links, repo.RunCommitLink{
+				RunID:       task.ID,
+				CommitHash:  hash,
+				Role:        role,
+				RepoSpaceID: strings.TrimSpace(task.Metadata["repo_space_id"]),
+				Actor:       strings.TrimSpace(task.Metadata["repo_actor"]),
+			})
+			return
+		}
+	}
+	appendLink("candidate", task.Metadata["candidate_commit_hash"])
+	appendLink("accepted", task.Metadata["accepted_commit_hash"], task.Metadata["accepted_ancestor"])
+	return links
+}
+
+func commitHashForRole(links []repo.RunCommitLink, role string) string {
+	for _, link := range links {
+		if strings.EqualFold(strings.TrimSpace(link.Role), role) {
+			return strings.TrimSpace(link.CommitHash)
+		}
+	}
+	return ""
+}
+
 func metadataBoolValue(task domain.Task, key string) bool {
 	value := strings.TrimSpace(task.Metadata[key])
 	if value == "" {
@@ -1841,6 +1938,20 @@ func metadataBoolValue(task domain.Task, key string) bool {
 	}
 	parsed, err := strconv.ParseBool(value)
 	return err == nil && parsed
+}
+
+func metadataIntValue(task domain.Task, key string) int {
+	value := strings.TrimSpace(task.Metadata[key])
+	if value == "" {
+		return 0
+	}
+	if parsed, err := strconv.Atoi(value); err == nil {
+		return parsed
+	}
+	if parsed, err := strconv.ParseBool(value); err == nil && parsed {
+		return 1
+	}
+	return 0
 }
 
 func renderRunDetailMarkdown(detail runDetailResponse) string {
@@ -1884,6 +1995,26 @@ func renderRunDetailMarkdown(detail runDetailResponse) string {
 		fmt.Fprintf(&builder, "- SHA Pair: local=%s remote=%s\n", firstNonEmpty(detail.Closeout.LocalSHA, "missing"), firstNonEmpty(detail.Closeout.RemoteSHA, "missing"))
 	}
 	fmt.Fprintf(&builder, "- Complete: %t\n", detail.Closeout.Complete)
+	if detail.RepoTriage != nil {
+		builder.WriteString("\n## Repo Triage\n\n")
+		fmt.Fprintf(&builder, "- Status: %s\n", firstNonEmpty(detail.RepoTriage.Status, "unknown"))
+		fmt.Fprintf(&builder, "- Recommendation: %s (%s)\n", detail.RepoTriage.Recommendation.Action, detail.RepoTriage.Recommendation.Reason)
+		if detail.RepoTriage.Evidence.CandidateCommit != "" {
+			fmt.Fprintf(&builder, "- Candidate Commit: %s\n", detail.RepoTriage.Evidence.CandidateCommit)
+		}
+		if detail.RepoTriage.Evidence.AcceptedAncestor != "" {
+			fmt.Fprintf(&builder, "- Accepted Ancestor: %s\n", detail.RepoTriage.Evidence.AcceptedAncestor)
+		}
+		if detail.RepoTriage.Evidence.SimilarFailureCount > 0 {
+			fmt.Fprintf(&builder, "- Similar Failures: %d\n", detail.RepoTriage.Evidence.SimilarFailureCount)
+		}
+		if detail.RepoTriage.Evidence.DiscussionOpen > 0 {
+			fmt.Fprintf(&builder, "- Open Discussions: %d\n", detail.RepoTriage.Evidence.DiscussionOpen)
+		}
+		if detail.RepoTriage.ApprovalPacket.LineageSummary != "" {
+			fmt.Fprintf(&builder, "- Lineage Summary: %s\n", detail.RepoTriage.ApprovalPacket.LineageSummary)
+		}
+	}
 	builder.WriteString("\n## Tool Trace\n\n")
 	if len(detail.ToolTraces) == 0 {
 		builder.WriteString("- None\n")
