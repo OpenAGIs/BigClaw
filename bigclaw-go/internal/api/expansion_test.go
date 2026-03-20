@@ -239,7 +239,7 @@ func TestV2ProductizationAndBillingEndpoints(t *testing.T) {
 
 	navigationResponse := httptest.NewRecorder()
 	handler.ServeHTTP(navigationResponse, httptest.NewRequest(http.MethodGet, "/v2/navigation?role=vp_eng", nil))
-	if navigationResponse.Code != http.StatusOK || !strings.Contains(navigationResponse.Body.String(), "Billing") || !strings.Contains(navigationResponse.Body.String(), "Flows") {
+	if navigationResponse.Code != http.StatusOK || !strings.Contains(navigationResponse.Body.String(), "Billing") || strings.Contains(navigationResponse.Body.String(), "\"key\":\"flows\"") || strings.Contains(navigationResponse.Body.String(), "\"key\":\"scheduler\"") {
 		t.Fatalf("expected product navigation response, got %d %s", navigationResponse.Code, navigationResponse.Body.String())
 	}
 

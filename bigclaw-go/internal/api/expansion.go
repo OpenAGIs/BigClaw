@@ -363,7 +363,7 @@ func (s *Server) handleV2Navigation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	role := normalizeHomeRole(r)
-	writeJSON(w, http.StatusOK, map[string]any{"role": role, "sections": product.Navigation()})
+	writeJSON(w, http.StatusOK, map[string]any{"role": role, "sections": product.NavigationForRole(role)})
 }
 
 func (s *Server) handleV2Home(w http.ResponseWriter, r *http.Request) {
