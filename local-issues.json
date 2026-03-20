@@ -61,6 +61,12 @@
           "commit_sha": "",
           "created_at": "2026-03-20T10:33:21Z",
           "pr_url": ""
+        },
+        {
+          "body": "What changed:\nAdded Go-native `record_approval` and `override_budget` control-center actions. Both actions now update the task snapshot, appear in the existing control-action timeline, and emit canonical `execution.approval_recorded` and `execution.budget_override` audit events with all required fields from the observability spec.\n\nValidation:\ncd bigclaw-go \u0026\u0026 go test ./internal/api ./internal/observability\npassed\n\nCommit SHA: 4da254562de39ce73267092816af1858ac622e35\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/140",
+          "commit_sha": "4da254562de39ce73267092816af1858ac622e35",
+          "created_at": "2026-03-20T10:35:32Z",
+          "pr_url": "https://github.com/OpenAGIs/BigClaw/pull/140"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -76,7 +82,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Risk, policy, and approval semantics migration",
-      "updated_at": "2026-03-20T10:33:21Z"
+      "updated_at": "2026-03-20T10:35:32Z"
     },
     {
       "assigned_to_worker": true,
