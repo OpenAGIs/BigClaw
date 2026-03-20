@@ -132,7 +132,7 @@
       "title": "Control center, triage, and operations view migration",
       "description": "Finish moving operator-facing status, control-center, and triage endpoints to Go once the workflow runtime and reporting surfaces are stable.",
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "labels": [
         "go-mainline",
         "migration",
@@ -141,7 +141,7 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T11:51:39Z",
+      "updated_at": "2026-03-20T12:03:15Z",
       "comments": [
         {
           "body": "Fixed the eng-lead home takeover card to use active control-center takeovers instead of reusing the blocked-run count.\n\nWhat changed:\n- `bigclaw-go/internal/product/console.go` now accepts an explicit active-takeover signal for role homes and uses it for the `takeovers` card.\n- `bigclaw-go/internal/api/expansion.go` now computes that signal from `Control.ActiveTakeovers()` when serving `/v2/home`.\n- Added focused coverage in `bigclaw-go/internal/product/console_test.go` and `bigclaw-go/internal/api/expansion_test.go` to prove blocked runs without takeovers do not inflate the home card.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product ./internal/api` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `9d05785805be3869362b53031f195dd407f01378`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `9d05785805be3869362b53031f195dd407f01378` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `9d05785805be3869362b53031f195dd407f01378` (matches local)\n- `git log -1 --stat` -> `Fix home takeover counts for eng lead`\n\nCommit: `9d05785805be3869362b53031f195dd407f01378`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
@@ -154,6 +154,14 @@
         {
           "body": "Scoped eng-lead home cards to the authenticated viewer team so home counts match the linked team-scoped dashboards and control-center views.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion.go` now derives the home task snapshot from the viewer team when the caller is team-scoped and filters active takeover counts through the same team scope.\n- `/v2/home` now reuses `filteredTasks` and `filteredActiveTakeovers` instead of aggregating the entire recorder/control snapshot for eng-lead viewers.\n- Added focused coverage in `bigclaw-go/internal/api/expansion_test.go` proving blocked and takeover counts only include the authenticated team.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `627c27f9cd61ac95d273e3da3f6d0b6943945ec3`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `627c27f9cd61ac95d273e3da3f6d0b6943945ec3` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `627c27f9cd61ac95d273e3da3f6d0b6943945ec3` (matches local)\n- `git log -1 --stat` -> `Scope eng lead home cards to viewer team`\n\nCommit: `627c27f9cd61ac95d273e3da3f6d0b6943945ec3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T11:51:39Z"
+        },
+        {
+          "body": "Filtered console navigation by explicit operator-role permissions derived from the legacy execution contract so queue, flow, regression, and billing links stop leaking across roles.\n\nWhat changed:\n- `bigclaw-go/internal/product/console.go` now annotates restricted nav items with explicit roles and exposes `NavigationForRole` to filter sections/items by effective role.\n- `bigclaw-go/internal/api/expansion.go` now serves `/v2/navigation` from `NavigationForRole(role)` instead of returning the full nav tree to every caller.\n- Added focused coverage in `bigclaw-go/internal/product/navigation_test.go` and tightened `bigclaw-go/internal/api/expansion_test.go` so eng leads lose billing/flow links and VP Eng loses queue-control links while keeping permitted read surfaces.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product ./internal/api` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `a6d63e8e8d1267d881d1fed123df2d2cef21fe52`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `a6d63e8e8d1267d881d1fed123df2d2cef21fe52` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `a6d63e8e8d1267d881d1fed123df2d2cef21fe52` (matches local)\n- `git log -1 --stat` -> `Filter console navigation by operator role`\n\nCommit: `a6d63e8e8d1267d881d1fed123df2d2cef21fe52`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T12:00:40Z"
+        },
+        {
+          "body": "Closed `BIG-GOM-305` after tightening the remaining Go-owned operator-view mismatches on home and navigation surfaces.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion.go` now serves `/v2/home` and `/v2/navigation` from the authenticated viewer role/team instead of trusting global snapshots or query-param role overrides.\n- `bigclaw-go/internal/product/console.go` now uses active takeover counts for eng-lead home cards and filters restricted navigation items by explicit operator-role permissions derived from the legacy execution contract.\n- Added focused coverage in `bigclaw-go/internal/product/console_test.go`, `bigclaw-go/internal/product/navigation_test.go`, and `bigclaw-go/internal/api/expansion_test.go` for takeover counts, team-scoped home cards, explicit-role precedence, and role-filtered navigation.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product ./internal/api` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `a6d63e8e8d1267d881d1fed123df2d2cef21fe52`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `a6d63e8e8d1267d881d1fed123df2d2cef21fe52` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `a6d63e8e8d1267d881d1fed123df2d2cef21fe52` (matches local)\n- `git log -1 --stat` -> `Filter console navigation by operator role`\n\nCommit: `a6d63e8e8d1267d881d1fed123df2d2cef21fe52`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T12:03:15Z"
         }
       ]
     },
