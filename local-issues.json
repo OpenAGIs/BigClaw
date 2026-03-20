@@ -150,6 +150,11 @@
           "author": "codex",
           "body": "External blocker only: as of 2026-03-21, all local child slices BIG-GOM-304 through BIG-GOM-308 are Done, branch symphony/BIG-GOM-304 is clean and synced, and PR #141 is OPEN with merge state CLEAN plus a successful `test` workflow run completed on 2026-03-20T16:05:21Z. No further local implementation work remains in this workspace; the remaining step is reviewer approval and merge of https://github.com/OpenAGIs/BigClaw/pull/141. Validation: gh pr view 141 --json url,title,state,mergeStateStatus,reviewDecision,statusCheckRollup -\u003e OPEN/CLEAN with successful test check; bash scripts/ops/bigclawctl github-sync status --json -\u003e local SHA d70f63f0d138466fda408ae24655ea81b1c95cf7 matches remote SHA d70f63f0d138466fda408ae24655ea81b1c95cf7 with status ok and synced true; git status --short --branch -\u003e clean branch. Commit SHA: pending tracker-note commit. PR URL: https://github.com/OpenAGIs/BigClaw/pull/141.",
           "created_at": "2026-03-20T16:06:27Z"
+        },
+        {
+          "author": "codex",
+          "body": "Status refresh on 2026-03-21: PR #141 is back to merge-ready after the tracker-note commit retriggered CI. GitHub now reports PR https://github.com/OpenAGIs/BigClaw/pull/141 as OPEN with merge state CLEAN, and the `test` workflow for commit 3649892189f97120af7925199f703b2e6b4dd0b5 completed successfully at 2026-03-20T16:07:25Z. No local implementation or validation work remains in this workspace; the only remaining blocker is reviewer approval and merge. Validation: gh pr view 141 --json url,title,state,mergeStateStatus,reviewDecision,statusCheckRollup -\u003e OPEN/CLEAN with successful completed test check; bash scripts/ops/bigclawctl github-sync status --json -\u003e local SHA 3649892189f97120af7925199f703b2e6b4dd0b5 matches remote SHA 3649892189f97120af7925199f703b2e6b4dd0b5 with status ok and synced true; git status --short --branch -\u003e clean branch. Commit SHA: pending tracker-note commit. PR URL: https://github.com/OpenAGIs/BigClaw/pull/141.",
+          "created_at": "2026-03-20T16:08:11Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -165,7 +170,7 @@
       "priority": 2,
       "state": "Done",
       "title": "Observability, reporting, and weekly operations surface migration",
-      "updated_at": "2026-03-20T16:06:27Z"
+      "updated_at": "2026-03-20T16:08:11Z"
     },
     {
       "assigned_to_worker": true,
