@@ -125,6 +125,10 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
     assert 'docs/reports/validation-bundle-continuation-digest.md' in index_text
     assert 'Cross-node completions: `12`' in index_text
     assert 'Source: `existing-report`' in index_text
+    assert 'Gate status: `policy-hold`' in index_text
+    assert 'Recommendation: `hold`' in index_text
+    assert 'Failing checks: `' in index_text
+    assert 'Next action:' in index_text
 
     manifest = json.loads((root / 'docs' / 'reports' / 'live-validation-index.json').read_text(encoding='utf-8'))
     assert manifest['latest']['run_id'] == '20260315T120000Z'

@@ -58,6 +58,12 @@
 - `docs/reports/validation-bundle-continuation-scorecard.json` summarizes the rolling readiness view across recent bundled local, Kubernetes, and Ray runs plus the shared-queue companion proof.
 - `docs/reports/validation-bundle-continuation-policy-gate.json` records the current policy decision for bundle freshness, repeated lane coverage, and shared-queue companion availability.
 
+- Gate status: `policy-hold`
+- Recommendation: `hold`
+- Latest bundle age hours: `101.33`
+- Failing checks: `latest_bundle_age_within_threshold`
+- Next action: rerun `cd bigclaw-go && ./scripts/e2e/run_all.sh` to refresh the latest validation bundle
+
 ## Parallel follow-up digests
 
 - `docs/reports/validation-bundle-continuation-digest.md` Validation bundle continuation caveats are consolidated here.

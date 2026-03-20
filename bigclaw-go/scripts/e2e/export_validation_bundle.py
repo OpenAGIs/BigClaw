@@ -220,6 +220,26 @@ def build_followup_digests(root: Path) -> list[tuple[str, str]]:
     return items
 
 
+def build_continuation_overview(root: Path, continuation: dict[str, Any]) -> dict[str, Any] | None:
+    policy_gate_path = continuation.get('policy_gate_path')
+    if not continuation.get('refreshed') or not policy_gate_path:
+        return None
+
+    policy_gate_file = root / policy_gate_path
+    if not policy_gate_file.exists():
+        return None
+
+    policy_gate = read_json(policy_gate_file)
+    summary = policy_gate.get('summary', {})
+    return {
+        'status': policy_gate.get('status', 'unknown'),
+        'recommendation': policy_gate.get('recommendation', 'unknown'),
+        'latest_bundle_age_hours': summary.get('latest_bundle_age_hours'),
+        'failing_checks': policy_gate.get('failing_checks', []),
+        'next_actions': policy_gate.get('next_actions', []),
+    }
+
+
 def refresh_continuation_artifacts(
     *,
     root: Path,
@@ -299,6 +319,7 @@ def refresh_continuation_artifacts(
 def render_index(
     summary: dict[str, Any],
     recent_runs: list[dict[str, Any]],
+    continuation_overview: dict[str, Any] | None = None,
     continuation_artifacts: list[tuple[str, str]] | None = None,
     followup_digests: list[tuple[str, str]] | None = None,
 ) -> str:
@@ -368,6 +389,18 @@ def render_index(
         lines.extend(['## Continuation artifacts', ''])
         for artifact_path, description in continuation_artifacts:
             lines.append(f'- `{artifact_path}` {description}')
+        if continuation_overview:
+            lines.append('')
+            lines.append(f"- Gate status: `{continuation_overview['status']}`")
+            lines.append(f"- Recommendation: `{continuation_overview['recommendation']}`")
+            if continuation_overview.get('latest_bundle_age_hours') is not None:
+                lines.append(f"- Latest bundle age hours: `{continuation_overview['latest_bundle_age_hours']}`")
+            failing_checks = continuation_overview.get('failing_checks', [])
+            if failing_checks:
+                lines.append(f"- Failing checks: `{', '.join(failing_checks)}`")
+            next_actions = continuation_overview.get('next_actions', [])
+            if next_actions:
+                lines.append(f"- Next action: {next_actions[0]}")
         lines.append('')
     if followup_digests:
         lines.extend(['## Parallel follow-up digests', ''])
@@ -478,9 +511,10 @@ def main() -> int:
     write_json(bundle_summary_path, summary)
     write_json(canonical_summary_path, summary)
 
+    continuation_overview = build_continuation_overview(root, summary['continuation'])
     continuation_artifacts = build_continuation_artifacts(root)
     followup_digests = build_followup_digests(root)
-    index_text = render_index(summary, recent_runs, continuation_artifacts, followup_digests)
+    index_text = render_index(summary, recent_runs, continuation_overview, continuation_artifacts, followup_digests)
     (root / args.index_path).parent.mkdir(parents=True, exist_ok=True)
     (root / args.index_path).write_text(index_text, encoding='utf-8')
     (bundle_dir / 'README.md').write_text(index_text, encoding='utf-8')
