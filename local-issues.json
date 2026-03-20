@@ -125,6 +125,11 @@
           "author": "codex",
           "body": "Branch-wide PR created after final closeout cleanup: https://github.com/OpenAGIs/BigClaw/pull/141. The PR title is 'BIG-GOM-304: complete BigClaw Go-mainline cutover' and it targets `main` from `symphony/BIG-GOM-304`.",
           "created_at": "2026-03-20T14:26:15Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final review surface: branch-wide PR https://github.com/OpenAGIs/BigClaw/pull/141 is now open with title 'BIG-GOM-304: complete BigClaw Go-mainline cutover' against `main`. This supersedes earlier tracker notes that listed the PR as unavailable.",
+          "created_at": "2026-03-20T14:30:23Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -140,7 +145,7 @@
       "priority": 2,
       "state": "Done",
       "title": "Observability, reporting, and weekly operations surface migration",
-      "updated_at": "2026-03-20T14:26:15Z"
+      "updated_at": "2026-03-20T14:30:23Z"
     },
     {
       "assigned_to_worker": true,
@@ -256,6 +261,11 @@
           "author": "codex",
           "body": "Deprecated the remaining Python local-server entry surface by marking `python -m bigclaw serve` as legacy migration-only, adding Go-mainline replacement metadata and a dedicated service warning helper in `src/bigclaw/service.py`, extending deprecation coverage in `tests/test_deprecation.py`, and updating the README to route local server usage to `go run ./bigclaw-go/cmd/bigclawd`.\n\nValidation: `python3 -m py_compile src/bigclaw/service.py src/bigclaw/__main__.py src/bigclaw/deprecation.py tests/test_deprecation.py scripts/dev_smoke.py` -\u003e ok; `PYTHONPATH=src python3 - \u003c\u003c'PY' ... service.warn_legacy_service_surface() ... PY` -\u003e emitted the expected Go-first deprecation warning once with replacement `go run ./bigclaw-go/cmd/bigclawd`; `bash scripts/ops/bigclawctl github-sync status --json` -\u003e local SHA `e30f61881475d40492df0d27a503af67320bc10d` matched remote SHA `e30f61881475d40492df0d27a503af67320bc10d` with status ok and synced true at code-commit time; `git log -1 --stat` -\u003e captured for commit `e30f61881475d40492df0d27a503af67320bc10d` with README, `__main__.py`, `service.py`, and deprecation test updates in the stat output.\n\nCommit SHA: `e30f61881475d40492df0d27a503af67320bc10d`.\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
           "created_at": "2026-03-20T14:13:27Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final review surface: the Python-retirement closeout is included in branch-wide PR https://github.com/OpenAGIs/BigClaw/pull/141 ('BIG-GOM-304: complete BigClaw Go-mainline cutover') against `main`, which supersedes earlier tracker notes that listed the PR as unavailable.",
+          "created_at": "2026-03-20T14:30:23Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -271,7 +281,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Python deprecation and Go-only mainline switch",
-      "updated_at": "2026-03-20T14:13:27Z"
+      "updated_at": "2026-03-20T14:30:23Z"
     }
   ]
 }
