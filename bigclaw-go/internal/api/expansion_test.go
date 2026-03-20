@@ -357,6 +357,40 @@ func TestV2HomeAndNavigationIgnoreRoleQueryWhenViewerRoleIsExplicit(t *testing.T
 	}
 }
 
+func TestV2HomeScopesEngLeadCardsToViewerTeam(t *testing.T) {
+	recorder := observability.NewRecorder()
+	base := time.Date(2026, 3, 14, 11, 0, 0, 0, time.UTC)
+	for _, task := range []domain.Task{
+		{ID: "task-scope-home-1", TraceID: "trace-scope-home-1", Title: "Platform blocker", State: domain.TaskBlocked, Metadata: map[string]string{"team": "platform"}, CreatedAt: base, UpdatedAt: base},
+		{ID: "task-scope-home-2", TraceID: "trace-scope-home-2", Title: "Growth blocker", State: domain.TaskBlocked, Metadata: map[string]string{"team": "growth"}, CreatedAt: base, UpdatedAt: base.Add(time.Minute)},
+	} {
+		recorder.StoreTask(task)
+	}
+	controller := control.New()
+	controller.Takeover("task-scope-home-1", "alice", "", "platform manual review", base.Add(2*time.Minute))
+	controller.Takeover("task-scope-home-2", "bob", "", "growth manual review", base.Add(3*time.Minute))
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: controller, Now: func() time.Time { return base.Add(time.Hour) }}
+
+	request := httptest.NewRequest(http.MethodGet, "/v2/home", nil)
+	request.Header.Set("X-BigClaw-Role", "eng_lead")
+	request.Header.Set("X-BigClaw-Team", "platform")
+	response := httptest.NewRecorder()
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected scoped home 200, got %d %s", response.Code, response.Body.String())
+	}
+	body := response.Body.String()
+	if !strings.Contains(body, "\"role\":\"eng_lead\"") {
+		t.Fatalf("expected eng lead role in scoped home, got %s", body)
+	}
+	if !strings.Contains(body, "\"key\":\"blockers\",\"title\":\"Blockers\",\"value\":1") {
+		t.Fatalf("expected home blockers to be team-scoped, got %s", body)
+	}
+	if !strings.Contains(body, "\"key\":\"takeovers\",\"title\":\"Takeovers\",\"value\":1") {
+		t.Fatalf("expected home takeovers to be team-scoped, got %s", body)
+	}
+}
+
 func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
 	recorder := observability.NewRecorder()
 	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return time.Date(2026, 3, 18, 12, 0, 0, 0, time.UTC) }}

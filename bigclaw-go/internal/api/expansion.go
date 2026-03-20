@@ -371,12 +371,18 @@ func (s *Server) handleV2Home(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	authorization := parseControlAuthorization(r, "", "", "")
 	role := normalizeHomeRole(r)
+	team := ""
+	if authorization.teamScoped() {
+		team = authorization.ViewerTeam
+	}
+	tasks := s.filteredTasks(team, "", "", time.Time{}, time.Time{})
 	activeTakeovers := 0
 	if s.Control != nil {
-		activeTakeovers = len(s.Control.ActiveTakeovers())
+		activeTakeovers = len(s.filteredActiveTakeovers(controlCenterFilters{Team: team}))
 	}
-	home := product.HomeForRole(role, s.Recorder.Tasks(0), activeTakeovers)
+	home := product.HomeForRole(role, tasks, activeTakeovers)
 	writeJSON(w, http.StatusOK, map[string]any{"home": home, "summary": product.SummaryText(home)})
 }
 
