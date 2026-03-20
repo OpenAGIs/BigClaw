@@ -208,6 +208,7 @@ def build_recent_runs(bundle_root: Path, root: Path, limit: int = 8) -> list[dic
                 'policy_gate_recommendation': continuation.get('policy_gate_recommendation'),
                 'latest_bundle_age_hours': continuation.get('latest_bundle_age_hours'),
                 'failing_checks': continuation.get('failing_checks', []),
+                'reason': continuation.get('reason', ''),
             }
         items.append(item)
     return items

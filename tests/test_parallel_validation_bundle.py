@@ -232,6 +232,7 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
     assert manifest['latest']['continuation']['failing_checks']
     assert manifest['recent_runs'][0]['run_id'] == '20260315T120000Z'
     assert manifest['recent_runs'][0]['continuation']['policy_gate_recommendation'] == 'hold'
+    assert manifest['recent_runs'][0]['continuation']['reason'] == 'generated from exporter closeout'
 
 
 def test_run_all_can_refresh_shared_queue_before_bundle_export(tmp_path: Path):
