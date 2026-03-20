@@ -818,6 +818,50 @@ func TestBigclawIssueScriptCommentUpdatesLocalTracker(t *testing.T) {
 	}
 }
 
+func TestBigclawIssueScriptUpdateAppliesStateAndCommentTogether(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-303",
+      "identifier": "BIG-GOM-303",
+      "title": "Workflow loop parity",
+      "state": "Todo",
+      "updated_at": "2026-03-18T09:00:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	commentPath := filepath.Join(tempDir, "comment.md")
+	if err := os.WriteFile(commentPath, []byte("claimed with evidence\n"), 0o644); err != nil {
+		t.Fatalf("write comment file: %v", err)
+	}
+
+	output := runIssueScript(
+		t,
+		storePath,
+		"update",
+		"BIG-GOM-303",
+		"--state", "In Progress",
+		"--comment-file", commentPath,
+		"--json",
+	)
+	if !bytes.Contains(output, []byte(`"state": "In Progress"`)) || !bytes.Contains(output, []byte(`"comment_added": true`)) {
+		t.Fatalf("unexpected issue update output: %s", string(output))
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"state": "In Progress"`)) || !bytes.Contains(body, []byte(`"body": "claimed with evidence"`)) {
+		t.Fatalf("expected combined update in local tracker, got %s", string(body))
+	}
+}
+
 func runIssueScript(t *testing.T, localIssuesPath string, args ...string) []byte {
 	t.Helper()
 	cwd, err := os.Getwd()

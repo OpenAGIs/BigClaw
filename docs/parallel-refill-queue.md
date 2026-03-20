@@ -18,8 +18,9 @@ longer waits on Linear to keep issue execution moving.
 - Local issue CLI:
   - `bash scripts/ops/bigclaw-issue list`
   - `bash scripts/ops/bigclaw-issue state BIG-GOM-303 "In Progress"`
+  - `bash scripts/ops/bigclaw-issue update BIG-GOM-303 --state "In Progress" --comment-file comment.md --json`
   - `bash scripts/ops/bigclaw-issue comment BIG-GOM-307 --comment-file comment.md --json`
-  - `bigclaw-issue create|list|show|state|comment` now works directly against `local-issues.json`
+  - `bigclaw-issue create|list|show|state|comment|update` now works directly against `local-issues.json`
     even when the standalone Symphony CLI is unavailable
 - Local dashboard/orchestrator:
   - `bash scripts/ops/bigclaw-symphony`

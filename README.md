@@ -53,6 +53,7 @@ bash scripts/ops/bigclawctl local-issue create --local-issues local-issues.json 
 bash scripts/ops/bigclaw-issue create --identifier BIG-GOM-309 --title "New slice" --labels "go-mainline,tooling" --priority 2 --json
 bash scripts/ops/bigclawctl local-issue list --local-issues local-issues.json --states "Todo,In Progress" --json
 bash scripts/ops/bigclaw-issue list
+bash scripts/ops/bigclaw-issue update BIG-GOM-303 --state "In Progress" --comment-file comment.md --json
 bash scripts/ops/bigclaw-issue comment BIG-GOM-307 --comment-file comment.md --json
 bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json
 bash scripts/ops/bigclaw-symphony
@@ -70,9 +71,11 @@ Notes:
 - `bash scripts/ops/bigclawctl local-issue create ...` creates repo-native tracker entries with
   safe defaults (`Backlog`, `assigned_to_worker=true`) and derives the local JSON id from
   `--identifier` when `--id` is omitted, so new local slices do not require manual JSON edits.
-- `bash scripts/ops/bigclaw-issue create|list|show|state|comment ...` now falls back to the
+- `bash scripts/ops/bigclaw-issue create|list|show|state|comment|update ...` now falls back to the
   repo-native Go tracker path directly, while other subcommands still wrap
   `symphony issue --workflow workflow.md`.
+- `bash scripts/ops/bigclaw-issue update BIG-GOM-303 --state "In Progress" --comment-file comment.md --json`
+  lets the wrapper claim work and record evidence in one timestamp-consistent local tracker update.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
 - `bash scripts/ops/bigclaw-issue comment BIG-GOM-307 --comment-file comment.md --json` records
