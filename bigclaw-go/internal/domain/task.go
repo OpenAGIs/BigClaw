@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type RiskLevel string
 
@@ -43,6 +46,9 @@ type Task struct {
 	State                   TaskState         `json:"state,omitempty"`
 	RiskLevel               RiskLevel         `json:"risk_level,omitempty"`
 	BudgetCents             int64             `json:"budget_cents,omitempty"`
+	BudgetOverrideActor     string            `json:"budget_override_actor,omitempty"`
+	BudgetOverrideReason    string            `json:"budget_override_reason,omitempty"`
+	BudgetOverrideAmount    float64           `json:"budget_override_amount,omitempty"`
 	RequiredTools           []string          `json:"required_tools,omitempty"`
 	AcceptanceCriteria      []string          `json:"acceptance_criteria,omitempty"`
 	ValidationPlan          []string          `json:"validation_plan,omitempty"`
@@ -145,4 +151,30 @@ func IsActiveTaskState(state TaskState) bool {
 	default:
 		return false
 	}
+}
+
+type taskJSONAlias Task
+
+type taskJSONEnvelope struct {
+	taskJSONAlias
+	TaskID string `json:"task_id,omitempty"`
+}
+
+func (t Task) MarshalJSON() ([]byte, error) {
+	payload := taskJSONEnvelope{taskJSONAlias: taskJSONAlias(t)}
+	payload.TaskID = t.ID
+	return json.Marshal(payload)
+}
+
+func (t *Task) UnmarshalJSON(data []byte) error {
+	var payload taskJSONEnvelope
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return err
+	}
+	task := Task(payload.taskJSONAlias)
+	if task.ID == "" {
+		task.ID = payload.TaskID
+	}
+	*t = task
+	return nil
 }
