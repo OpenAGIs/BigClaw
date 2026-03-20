@@ -143,6 +143,9 @@ func TestRuntimePublishesExecutorArtifacts(t *testing.T) {
 	if started.Type != domain.EventTaskStarted {
 		t.Fatalf("expected started event, got %+v", started)
 	}
+	if started.Payload["sandbox_profile"] != "browser" {
+		t.Fatalf("expected browser sandbox profile in started payload, got %+v", started.Payload)
+	}
 	tools, ok := started.Payload["required_tools"].([]string)
 	if !ok || len(tools) != 2 || tools[0] != "browser" || tools[1] != "git" {
 		t.Fatalf("expected required tools in started payload, got %+v", started.Payload)
@@ -157,6 +160,9 @@ func TestRuntimePublishesExecutorArtifacts(t *testing.T) {
 	}
 	if completed.Payload["executor"] != domain.ExecutorLocal {
 		t.Fatalf("expected executor in completed payload, got %+v", completed.Payload)
+	}
+	if completed.Payload["sandbox_profile"] != "browser" {
+		t.Fatalf("expected browser sandbox profile in completed payload, got %+v", completed.Payload)
 	}
 }
 
@@ -274,6 +280,12 @@ func TestRuntimeDeadLettersWhenExecutorMissing(t *testing.T) {
 	events := recorder.EventsByTask("task-missing", 10)
 	if len(events) < 3 || events[1].Type != domain.EventSchedulerRouted {
 		t.Fatalf("expected routed event before dead-letter, got %+v", events)
+	}
+	if events[1].Payload["sandbox_profile"] != "workspace-write" {
+		t.Fatalf("expected workspace-write sandbox profile on routed payload, got %+v", events[1].Payload)
+	}
+	if latest.Payload["sandbox_profile"] != "workspace-write" {
+		t.Fatalf("expected workspace-write sandbox profile on dead-letter payload, got %+v", latest.Payload)
 	}
 	snapshot := runtime.Snapshot()
 	if snapshot.DeadLetterRuns != 1 || snapshot.State != "idle" {
@@ -441,6 +453,9 @@ func TestRuntimeParksApprovalRequiredTaskWithoutExecutingRunner(t *testing.T) {
 	}
 	if latest.Payload["approval"] != "required" {
 		t.Fatalf("expected approval payload marker, got %+v", latest.Payload)
+	}
+	if latest.Payload["sandbox_profile"] != "container" {
+		t.Fatalf("expected container sandbox profile on approval payload, got %+v", latest.Payload)
 	}
 	if latest.Payload["owner"] != "security" {
 		t.Fatalf("expected approval takeover owner in event payload, got %+v", latest.Payload)

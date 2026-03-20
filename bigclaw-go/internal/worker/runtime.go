@@ -175,10 +175,11 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 				TraceID:   task.TraceID,
 				Timestamp: blockedAt,
 				Payload: map[string]any{
-					"message":  decision.Reason,
-					"executor": decision.Assignment.Executor,
-					"approval": "required",
-					"owner":    approvalOwner(approvalTakeover),
+					"message":         decision.Reason,
+					"executor":        decision.Assignment.Executor,
+					"sandbox_profile": sandboxProfile(*task, decision.Assignment.Executor),
+					"approval":        "required",
+					"owner":           approvalOwner(approvalTakeover),
 				},
 			})
 			return true
@@ -194,7 +195,12 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		status.CurrentExecutor = decision.Assignment.Executor
 		status.LastTransition = string(domain.EventSchedulerRouted)
 	})
-	routedPayload := map[string]any{"executor": decision.Assignment.Executor, "reason": decision.Reason, "quota": quota}
+	routedPayload := map[string]any{
+		"executor":        decision.Assignment.Executor,
+		"sandbox_profile": sandboxProfile(*task, decision.Assignment.Executor),
+		"reason":          decision.Reason,
+		"quota":           quota,
+	}
 	if decision.Preemption.Required {
 		routedPayload["preemption"] = decision.Preemption
 	}
@@ -206,7 +212,18 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		r.finishStatus(string(domain.EventTaskDeadLetter), "executor not registered", func(status *Status) {
 			status.DeadLetterRuns++
 		})
-		r.publish(domain.Event{ID: eventID(task.ID, "deadletter"), Type: domain.EventTaskDeadLetter, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"message": "executor not registered", "executor": decision.Assignment.Executor}})
+		r.publish(domain.Event{
+			ID:        eventID(task.ID, "deadletter"),
+			Type:      domain.EventTaskDeadLetter,
+			TaskID:    task.ID,
+			TraceID:   task.TraceID,
+			Timestamp: time.Now(),
+			Payload: map[string]any{
+				"message":         "executor not registered",
+				"executor":        decision.Assignment.Executor,
+				"sandbox_profile": sandboxProfile(*task, decision.Assignment.Executor),
+			},
+		})
 		return true
 	}
 
@@ -230,7 +247,11 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		status.LastStartedAt = time.Now()
 		status.LastTransition = string(domain.EventTaskStarted)
 	})
-	startedPayload := map[string]any{"executor": runner.Kind(), "required_tools": task.RequiredTools}
+	startedPayload := map[string]any{
+		"executor":        runner.Kind(),
+		"sandbox_profile": sandboxProfile(*task, runner.Kind()),
+		"required_tools":  task.RequiredTools,
+	}
 	if preemptedSnapshot != nil {
 		startedPayload["preempted_task_id"] = preemptedSnapshot.Task.ID
 		startedPayload["preempted_worker_id"] = preemptedSnapshot.LeaseWorker
@@ -257,7 +278,7 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		r.finishStatus(string(domain.EventTaskCancelled), message, func(status *Status) {
 			status.CancelledRuns++
 		})
-		r.publish(domain.Event{ID: eventID(task.ID, "cancelled"), Type: domain.EventTaskCancelled, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"message": message, "executor": runner.Kind()}})
+		r.publish(domain.Event{ID: eventID(task.ID, "cancelled"), Type: domain.EventTaskCancelled, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"message": message, "executor": runner.Kind(), "sandbox_profile": sandboxProfile(*task, runner.Kind())}})
 		return true
 	}
 	if cancelled, ok := r.cancelledSnapshot(ctx, task.ID); ok {
@@ -272,7 +293,7 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		r.finishStatus(string(domain.EventTaskCancelled), message, func(status *Status) {
 			status.CancelledRuns++
 		})
-		r.publish(domain.Event{ID: eventID(task.ID, "cancelled"), Type: domain.EventTaskCancelled, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"message": message, "executor": runner.Kind()}})
+		r.publish(domain.Event{ID: eventID(task.ID, "cancelled"), Type: domain.EventTaskCancelled, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: map[string]any{"message": message, "executor": runner.Kind(), "sandbox_profile": sandboxProfile(*task, runner.Kind())}})
 		return true
 	}
 
@@ -282,13 +303,13 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		r.finishStatus(string(domain.EventTaskCompleted), result.Message, func(status *Status) {
 			status.SuccessfulRuns++
 		})
-		r.publish(domain.Event{ID: eventID(task.ID, "completed"), Type: domain.EventTaskCompleted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeResultPayload(runner.Kind(), result)})
+		r.publish(domain.Event{ID: eventID(task.ID, "completed"), Type: domain.EventTaskCompleted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeResultPayload(*task, runner.Kind(), result)})
 	case result.DeadLetter:
 		_ = r.Queue.DeadLetter(ctx, lease, result.Message)
 		r.finishStatus(string(domain.EventTaskDeadLetter), result.Message, func(status *Status) {
 			status.DeadLetterRuns++
 		})
-		r.publish(domain.Event{ID: eventID(task.ID, "deadletter"), Type: domain.EventTaskDeadLetter, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeResultPayload(runner.Kind(), result)})
+		r.publish(domain.Event{ID: eventID(task.ID, "deadletter"), Type: domain.EventTaskDeadLetter, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeResultPayload(*task, runner.Kind(), result)})
 	default:
 		_ = r.Queue.Requeue(ctx, lease, time.Now().Add(200*time.Millisecond))
 		transition := string(domain.EventTaskRetried)
@@ -302,7 +323,7 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 			}
 		}
 		r.finishStatus(transition, result.Message, extra)
-		r.publish(domain.Event{ID: eventID(task.ID, "retry"), Type: domain.EventTaskRetried, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeResultPayload(runner.Kind(), result)})
+		r.publish(domain.Event{ID: eventID(task.ID, "retry"), Type: domain.EventTaskRetried, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeResultPayload(*task, runner.Kind(), result)})
 	}
 	return true
 }
@@ -532,8 +553,12 @@ func (r *Runtime) cancelledSnapshot(ctx context.Context, taskID string) (queue.T
 	return snapshot, snapshot.Task.State == domain.TaskCancelled
 }
 
-func runtimeResultPayload(executorKind domain.ExecutorKind, result executor.Result) map[string]any {
-	payload := map[string]any{"message": result.Message, "executor": executorKind}
+func runtimeResultPayload(task domain.Task, executorKind domain.ExecutorKind, result executor.Result) map[string]any {
+	payload := map[string]any{
+		"message":         result.Message,
+		"executor":        executorKind,
+		"sandbox_profile": sandboxProfile(task, executorKind),
+	}
 	if len(result.Artifacts) > 0 {
 		payload["artifacts"] = append([]string(nil), result.Artifacts...)
 	}
@@ -552,4 +577,29 @@ func approvalOwner(takeover *control.Takeover) string {
 		return ""
 	}
 	return takeover.Owner
+}
+
+func sandboxProfile(task domain.Task, executorKind domain.ExecutorKind) string {
+	if requiresTool(task.RequiredTools, "browser") {
+		return "browser"
+	}
+	switch executorKind {
+	case domain.ExecutorKubernetes:
+		return "container"
+	case domain.ExecutorRay:
+		return "distributed"
+	case domain.ExecutorLocal:
+		return "workspace-write"
+	default:
+		return "none"
+	}
+}
+
+func requiresTool(tools []string, want string) bool {
+	for _, tool := range tools {
+		if tool == want {
+			return true
+		}
+	}
+	return false
 }
