@@ -48,6 +48,12 @@
           "commit_sha": "b45bd88fe6a3f6b31e4e11fc3bc41d33f23e4553",
           "created_at": "2026-03-20T09:30:32Z",
           "pr_url": "https://github.com/OpenAGIs/BigClaw/pull/140"
+        },
+        {
+          "body": "What changed:\nWired the Go orchestration loop to collect live queue quota metrics before each scheduler cycle. `bigclawd` now feeds the loop a queue-backed quota source so real runtime decisions see current queue depth and active leased work instead of only the static startup limits, and orchestrator tests now cover the live queue-depth/running-count snapshot path.\n\nValidation:\ncd bigclaw-go \u0026\u0026 go test ./internal/orchestrator ./cmd/bigclawd\npassed\n\nCommit SHA: 2bc9c97d3f09c5872ae92c93b98c536ce2e9b279\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/140",
+          "commit_sha": "2bc9c97d3f09c5872ae92c93b98c536ce2e9b279",
+          "created_at": "2026-03-20T09:37:02Z",
+          "pr_url": "https://github.com/OpenAGIs/BigClaw/pull/140"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -63,7 +69,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Workflow orchestration and scheduler loop migration",
-      "updated_at": "2026-03-20T09:30:32Z"
+      "updated_at": "2026-03-20T09:37:02Z"
     },
     {
       "assigned_to_worker": true,
