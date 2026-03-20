@@ -146,3 +146,69 @@ func TestEngineRunDefinitionClosesHighRiskTaskWithManualApproval(t *testing.T) {
 		t.Fatalf("unexpected approval event payload: %+v", events[1])
 	}
 }
+
+func TestEngineJournalCloseoutReflectsRejectedAcceptance(t *testing.T) {
+	dir := t.TempDir()
+	engine := NewEngine()
+	task := domain.Task{
+		ID:                 "BIG-404",
+		Source:             "linear",
+		Title:              "Reject incomplete evidence",
+		AcceptanceCriteria: []string{"report-shared"},
+		ValidationPlan:     []string{"pytest"},
+	}
+
+	result, err := engine.Run(
+		task,
+		"run-wf-reject",
+		filepath.Join(dir, "reports", "run-wf-reject.md"),
+		filepath.Join(dir, "journals", "run-wf-reject.json"),
+		[]string{"pytest"},
+		nil,
+	)
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if result.Acceptance.Status != "rejected" {
+		t.Fatalf("expected rejected acceptance, got %+v", result.Acceptance)
+	}
+	if len(result.Journal.Entries) != 4 {
+		t.Fatalf("expected 4 journal entries, got %+v", result.Journal.Entries)
+	}
+	if result.Journal.Entries[3].Step != "closeout" || result.Journal.Entries[3].Status != "rejected" {
+		t.Fatalf("expected rejected closeout journal entry, got %+v", result.Journal.Entries[3])
+	}
+}
+
+func TestEngineJournalCloseoutReflectsPendingApproval(t *testing.T) {
+	dir := t.TempDir()
+	engine := NewEngine()
+	task := domain.Task{
+		ID:            "BIG-405",
+		Source:        "linear",
+		Title:         "Prod rollout without approval",
+		RiskLevel:     domain.RiskHigh,
+		ValidationPlan: []string{"integration-test"},
+	}
+
+	result, err := engine.Run(
+		task,
+		"run-wf-approval",
+		filepath.Join(dir, "reports", "run-wf-approval.md"),
+		filepath.Join(dir, "journals", "run-wf-approval.json"),
+		[]string{"integration-test"},
+		nil,
+	)
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if result.Acceptance.Status != "needs-approval" {
+		t.Fatalf("expected needs-approval acceptance, got %+v", result.Acceptance)
+	}
+	if len(result.Journal.Entries) != 4 {
+		t.Fatalf("expected 4 journal entries, got %+v", result.Journal.Entries)
+	}
+	if result.Journal.Entries[3].Step != "closeout" || result.Journal.Entries[3].Status != "needs-approval" {
+		t.Fatalf("expected needs-approval closeout journal entry, got %+v", result.Journal.Entries[3])
+	}
+}

@@ -229,7 +229,7 @@ func (e *Engine) Run(task domain.Task, runID, reportPath, journalPath string, va
 		"missing_acceptance_criteria": append([]string(nil), acceptance.MissingAcceptanceCriteria...),
 		"missing_validation_steps":    append([]string(nil), acceptance.MissingValidationSteps...),
 	})
-	journal.Record("closeout", "complete", map[string]any{
+	journal.Record("closeout", closeoutStatus(acceptance), map[string]any{
 		"validation_evidence": append([]string(nil), validationEvidence...),
 		"approval_count":      len(acceptance.Approvals),
 	})
@@ -309,6 +309,16 @@ func compactStrings(items []string) []string {
 		}
 	}
 	return out
+}
+
+func closeoutStatus(acceptance AcceptanceDecision) string {
+	if acceptance.Passed && acceptance.Status == "accepted" {
+		return "complete"
+	}
+	if strings.TrimSpace(acceptance.Status) != "" {
+		return acceptance.Status
+	}
+	return "incomplete"
 }
 
 func requiresTool(task domain.Task, want string) bool {
