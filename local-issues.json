@@ -120,6 +120,11 @@
           "author": "codex",
           "body": "Added a Go-native operations metric-spec builder in bigclaw-go/internal/reporting and surfaced it from /v2/reports/weekly so weekly operations responses now include reviewer-ready metric definitions and computed values derived from live task/event data. Also added reporting package coverage for the new builder and extended the weekly report API test to assert the metric-spec payload. Validation: cd bigclaw-go \u0026\u0026 go test ./internal/reporting ./internal/api -\u003e ok; cd bigclaw-go \u0026\u0026 go test ./... -\u003e ok; bash scripts/ops/bigclawctl github-sync status --json -\u003e local SHA eeb5f7eaf8bc4f70677fb018cf7b38454b2bdca4 matched remote SHA eeb5f7eaf8bc4f70677fb018cf7b38454b2bdca4 with status ok and synced true at code-commit time; git log -1 --stat -\u003e captured for commit eeb5f7eaf8bc4f70677fb018cf7b38454b2bdca4 with reporting and API files in the stat output. Commit SHA: eeb5f7eaf8bc4f70677fb018cf7b38454b2bdca4. PR URL: unavailable; gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state returned [].",
           "created_at": "2026-03-20T14:06:19Z"
+        },
+        {
+          "author": "codex",
+          "body": "Branch-wide PR created after final closeout cleanup: https://github.com/OpenAGIs/BigClaw/pull/141. The PR title is 'BIG-GOM-304: complete BigClaw Go-mainline cutover' and it targets `main` from `symphony/BIG-GOM-304`.",
+          "created_at": "2026-03-20T14:26:15Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -135,7 +140,7 @@
       "priority": 2,
       "state": "Done",
       "title": "Observability, reporting, and weekly operations surface migration",
-      "updated_at": "2026-03-20T14:06:19Z"
+      "updated_at": "2026-03-20T14:26:15Z"
     },
     {
       "assigned_to_worker": true,
