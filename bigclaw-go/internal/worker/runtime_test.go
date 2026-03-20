@@ -2,6 +2,9 @@ package worker
 
 import (
 	"context"
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -13,6 +16,7 @@ import (
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/queue"
 	"bigclaw-go/internal/scheduler"
+	"bigclaw-go/internal/workflow"
 )
 
 type fakeRunner struct {
@@ -248,6 +252,67 @@ func TestRuntimePublishesRejectedDecisionHandoffBeforeRetry(t *testing.T) {
 	}
 	if events[2].Type != domain.EventTaskRetried {
 		t.Fatalf("expected retry event after handoff, got %+v", events[2])
+	}
+}
+
+func TestRuntimeWritesWorkpadJournalAndStoresArtifactPath(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	task := domain.Task{
+		ID:            "task-workpad",
+		TraceID:       "trace-workpad",
+		Source:        "linear",
+		RequiredTools: []string{"git"},
+		CreatedAt:     time.Now(),
+	}
+	if err := q.Enqueue(context.Background(), task); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+	dir := t.TempDir()
+	runtime := Runtime{
+		WorkerID:    "worker-1",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorLocal, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    200 * time.Millisecond,
+		TaskTimeout: time.Second,
+		WorkpadDir:  dir,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
+	if !processed {
+		t.Fatalf("expected task to be processed")
+	}
+	stored, ok := recorder.Task("task-workpad")
+	if !ok {
+		t.Fatal("expected stored task snapshot")
+	}
+	workpadPath := stored.Metadata["workpad"]
+	if workpadPath == "" {
+		t.Fatalf("expected workpad path in task metadata, got %+v", stored.Metadata)
+	}
+	expectedPath := filepath.Join(dir, "task-workpad", "attempt-1.json")
+	if workpadPath != expectedPath {
+		t.Fatalf("expected workpad path %q, got %q", expectedPath, workpadPath)
+	}
+	body, err := os.ReadFile(workpadPath)
+	if err != nil {
+		t.Fatalf("read workpad journal: %v", err)
+	}
+	var journal workflow.WorkpadJournal
+	if err := json.Unmarshal(body, &journal); err != nil {
+		t.Fatalf("unmarshal workpad journal: %v", err)
+	}
+	if journal.TaskID != "task-workpad" || journal.RunID != "task-workpad-attempt-1" {
+		t.Fatalf("unexpected journal identity: %+v", journal)
+	}
+	if len(journal.Entries) != 4 {
+		t.Fatalf("expected intake, scheduler, execution started, execution completed entries, got %+v", journal.Entries)
+	}
+	if journal.Entries[0].Step != "intake" || journal.Entries[1].Step != "scheduler" || journal.Entries[2].Status != "started" || journal.Entries[3].Status != "completed" {
+		t.Fatalf("unexpected journal entries: %+v", journal.Entries)
 	}
 }
 

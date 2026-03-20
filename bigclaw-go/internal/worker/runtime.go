@@ -3,7 +3,9 @@ package worker
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,6 +16,7 @@ import (
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/queue"
 	"bigclaw-go/internal/scheduler"
+	"bigclaw-go/internal/workflow"
 )
 
 type Runtime struct {
@@ -26,6 +29,8 @@ type Runtime struct {
 	Control     *control.Controller
 	LeaseTTL    time.Duration
 	TaskTimeout time.Duration
+	WorkpadDir  string
+	Now         func() time.Time
 	statusMu    sync.Mutex
 	status      Status
 }
@@ -98,6 +103,13 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	if task.TraceID == "" {
 		task.TraceID = task.ID
 	}
+	journal := r.newWorkpadJournal(*task, lease)
+	r.recordWorkpad(journal, "intake", "recorded", map[string]any{
+		"source":   task.Source,
+		"trace_id": task.TraceID,
+		"attempt":  lease.Attempt,
+		"worker":   r.WorkerID,
+	})
 	if r.Recorder != nil {
 		r.Recorder.StoreTask(*task)
 	}
@@ -106,7 +118,13 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		if ok && takeover.Active {
 			_ = r.Queue.Requeue(ctx, lease, time.Now().Add(250*time.Millisecond))
 			task.State = domain.TaskBlocked
-			task.UpdatedAt = time.Now()
+			task.UpdatedAt = r.now()
+			r.recordWorkpad(journal, "control-takeover", "blocked", map[string]any{
+				"owner":    takeover.Owner,
+				"reviewer": takeover.Reviewer,
+				"reason":   "task under human takeover",
+			})
+			r.persistWorkpad(task, lease, journal)
 			if r.Recorder != nil {
 				r.Recorder.StoreTask(*task)
 			}
@@ -140,10 +158,31 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	r.publish(domain.Event{ID: eventID(task.ID, "leased"), Type: domain.EventTaskLeased, TaskID: task.ID, TraceID: task.TraceID, Timestamp: now})
 	assessment := r.Scheduler.Assess(*task, quota)
 	decision := assessment.Decision
+	r.recordWorkpad(journal, "scheduler", runtimeAssessmentStatus(decision), map[string]any{
+		"executor":           decision.Assignment.Executor,
+		"reason":             decision.Reason,
+		"risk_level":         assessment.Risk.Level,
+		"risk_score":         assessment.Risk.Total,
+		"requires_approval":  assessment.Risk.RequiresApproval,
+		"collaboration_mode": assessment.OrchestrationPlan.CollaborationMode,
+		"departments":        assessment.OrchestrationPlan.Departments(),
+		"required_approvals": assessment.OrchestrationPlan.RequiredApprovals(),
+		"policy_tier":        assessment.OrchestrationPolicy.Tier,
+		"upgrade_required":   assessment.OrchestrationPolicy.UpgradeRequired,
+	})
+	if assessment.HandoffRequest != nil {
+		r.recordWorkpad(journal, "handoff", assessment.HandoffRequest.Status, map[string]any{
+			"target_team":        assessment.HandoffRequest.TargetTeam,
+			"reason":             assessment.HandoffRequest.Reason,
+			"required_approvals": assessment.HandoffRequest.RequiredApprovals,
+		})
+	}
 	if !decision.Accepted {
 		if assessment.HandoffRequest != nil {
 			r.publish(domain.Event{ID: eventID(task.ID, "handoff"), Type: domain.EventRunTakeover, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeHandoffPayload(assessment)})
 		}
+		r.recordWorkpad(journal, "execution", "retried", map[string]any{"reason": decision.Reason})
+		r.persistWorkpad(task, lease, journal)
 		_ = r.Queue.Requeue(ctx, lease, time.Now().Add(100*time.Millisecond))
 		r.finishStatus(string(domain.EventTaskRetried), decision.Reason, func(status *Status) {
 			status.RetriedRuns++
@@ -188,6 +227,11 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	runner, ok := r.Registry.Get(decision.Assignment.Executor)
 	if !ok {
 		_ = r.Queue.DeadLetter(ctx, lease, "executor not registered")
+		r.recordWorkpad(journal, "execution", "dead-letter", map[string]any{
+			"executor": decision.Assignment.Executor,
+			"reason":   "executor not registered",
+		})
+		r.persistWorkpad(task, lease, journal)
 		r.finishStatus(string(domain.EventTaskDeadLetter), "executor not registered", func(status *Status) {
 			status.DeadLetterRuns++
 		})
@@ -206,6 +250,12 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	}
 
 	task.State = domain.TaskRunning
+	task.UpdatedAt = r.now()
+	r.recordWorkpad(journal, "execution", "started", map[string]any{
+		"executor":       runner.Kind(),
+		"required_tools": append([]string(nil), task.RequiredTools...),
+	})
+	r.persistWorkpad(task, lease, journal)
 	if r.Recorder != nil {
 		r.Recorder.StoreTask(*task)
 	}
@@ -239,6 +289,11 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		if r.Recorder != nil {
 			r.Recorder.StoreTask(cancelled.Task)
 		}
+		r.recordWorkpad(journal, "execution", "cancelled", map[string]any{
+			"executor": runner.Kind(),
+			"reason":   message,
+		})
+		r.persistWorkpad(&cancelled.Task, lease, journal)
 		r.finishStatus(string(domain.EventTaskCancelled), message, func(status *Status) {
 			status.CancelledRuns++
 		})
@@ -254,6 +309,11 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		if r.Recorder != nil {
 			r.Recorder.StoreTask(cancelled.Task)
 		}
+		r.recordWorkpad(journal, "execution", "cancelled", map[string]any{
+			"executor": runner.Kind(),
+			"reason":   message,
+		})
+		r.persistWorkpad(&cancelled.Task, lease, journal)
 		r.finishStatus(string(domain.EventTaskCancelled), message, func(status *Status) {
 			status.CancelledRuns++
 		})
@@ -264,12 +324,30 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	switch {
 	case result.Success:
 		_ = r.Queue.Ack(ctx, lease)
+		task.State = domain.TaskSucceeded
+		task.UpdatedAt = r.now()
+		r.recordWorkpad(journal, "execution", "completed", map[string]any{
+			"executor":    runner.Kind(),
+			"message":     result.Message,
+			"artifacts":   append([]string(nil), result.Artifacts...),
+			"finished_at": runtimeResultFinishedAt(result),
+		})
+		r.persistWorkpad(task, lease, journal)
 		r.finishStatus(string(domain.EventTaskCompleted), result.Message, func(status *Status) {
 			status.SuccessfulRuns++
 		})
 		r.publish(domain.Event{ID: eventID(task.ID, "completed"), Type: domain.EventTaskCompleted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeResultPayload(runner.Kind(), result)})
 	case result.DeadLetter:
 		_ = r.Queue.DeadLetter(ctx, lease, result.Message)
+		task.State = domain.TaskDeadLetter
+		task.UpdatedAt = r.now()
+		r.recordWorkpad(journal, "execution", "dead-letter", map[string]any{
+			"executor":    runner.Kind(),
+			"message":     result.Message,
+			"artifacts":   append([]string(nil), result.Artifacts...),
+			"finished_at": runtimeResultFinishedAt(result),
+		})
+		r.persistWorkpad(task, lease, journal)
 		r.finishStatus(string(domain.EventTaskDeadLetter), result.Message, func(status *Status) {
 			status.DeadLetterRuns++
 		})
@@ -286,6 +364,15 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 				status.CancelledRuns++
 			}
 		}
+		task.State = domain.TaskRetrying
+		task.UpdatedAt = r.now()
+		r.recordWorkpad(journal, "execution", "retried", map[string]any{
+			"executor":    runner.Kind(),
+			"message":     result.Message,
+			"artifacts":   append([]string(nil), result.Artifacts...),
+			"finished_at": runtimeResultFinishedAt(result),
+		})
+		r.persistWorkpad(task, lease, journal)
 		r.finishStatus(transition, result.Message, extra)
 		r.publish(domain.Event{ID: eventID(task.ID, "retry"), Type: domain.EventTaskRetried, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: runtimeResultPayload(runner.Kind(), result)})
 	}
@@ -544,10 +631,69 @@ func runtimeResultPayload(executorKind domain.ExecutorKind, result executor.Resu
 	if len(result.Artifacts) > 0 {
 		payload["artifacts"] = append([]string(nil), result.Artifacts...)
 	}
-	if !result.FinishedAt.IsZero() {
-		payload["finished_at"] = result.FinishedAt.UTC().Format(time.RFC3339)
+	if finishedAt := runtimeResultFinishedAt(result); finishedAt != "" {
+		payload["finished_at"] = finishedAt
 	}
 	return payload
+}
+
+func runtimeResultFinishedAt(result executor.Result) string {
+	if result.FinishedAt.IsZero() {
+		return ""
+	}
+	return result.FinishedAt.UTC().Format(time.RFC3339)
+}
+
+func runtimeAssessmentStatus(decision scheduler.Decision) string {
+	if decision.Accepted {
+		return "accepted"
+	}
+	return "blocked"
+}
+
+func (r *Runtime) newWorkpadJournal(task domain.Task, lease *queue.Lease) *workflow.WorkpadJournal {
+	if strings.TrimSpace(r.WorkpadDir) == "" || lease == nil {
+		return nil
+	}
+	return &workflow.WorkpadJournal{
+		TaskID: task.ID,
+		RunID:  fmt.Sprintf("%s-attempt-%d", task.ID, lease.Attempt),
+		Now:    r.now,
+	}
+}
+
+func (r *Runtime) recordWorkpad(journal *workflow.WorkpadJournal, step, status string, details map[string]any) {
+	if journal == nil {
+		return
+	}
+	journal.Record(step, status, details)
+}
+
+func (r *Runtime) persistWorkpad(task *domain.Task, lease *queue.Lease, journal *workflow.WorkpadJournal) {
+	if task == nil || lease == nil || journal == nil {
+		return
+	}
+	path, err := journal.Write(filepath.Join(r.WorkpadDir, task.ID, fmt.Sprintf("attempt-%d.json", lease.Attempt)))
+	if err != nil {
+		return
+	}
+	if task.Metadata == nil {
+		task.Metadata = make(map[string]string)
+	}
+	task.Metadata["workpad"] = path
+	if task.UpdatedAt.IsZero() {
+		task.UpdatedAt = r.now()
+	}
+	if r.Recorder != nil {
+		r.Recorder.StoreTask(*task)
+	}
+}
+
+func (r *Runtime) now() time.Time {
+	if r.Now != nil {
+		return r.Now()
+	}
+	return time.Now()
 }
 
 func eventID(taskID, suffix string) string {
