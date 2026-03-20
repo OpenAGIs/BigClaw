@@ -138,6 +138,10 @@
         {
           "body": "Progressed BIG-GOM-307 by hardening the repo-native tracker update path against shell quoting issues. Changed: `bigclaw-go/cmd/bigclawctl/main.go` now supports `local-issue update --comment-file \u003cpath\u003e` and `--comment-file -` for stdin so multiline validation evidence can be recorded exactly; `bigclaw-go/cmd/bigclawctl/main_test.go` now covers file-backed and stdin-backed comment ingestion; `README.md` now documents the safer tracker comment flow for local issue operations. Validation: `cd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl` -\u003e ok; `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok; `bash scripts/ops/bigclawctl local-issue update --local-issues local-issues.json --issue BIG-GOM-307 --comment-file /tmp/big-gom-307-comment.md --json` -\u003e ok. Commit SHA: `8ca805f08bef71304e675f61f9134748c457dfc4`. PR URL: `https://github.com/OpenAGIs/BigClaw/pull/137`.",
           "created_at": "2026-03-20T09:15:08Z"
+        },
+        {
+          "body": "Progressed BIG-GOM-307 by making repo-native tracker updates timestamp-consistent. Changed: `bigclaw-go/cmd/bigclawctl/main.go` now captures one timestamp per `local-issue update` call so a combined state+comment update cannot drift across seconds; `bigclaw-go/cmd/bigclawctl/main_test.go` now verifies that comment `created_at` matches issue `updated_at` when both are written in one command. Validation: `cd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl` -\u003e ok; `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok. Commit SHA: `bac6611f4b3691377156fd8364b5bd8d30345443`. PR URL: `https://github.com/OpenAGIs/BigClaw/pull/137`.",
+          "created_at": "2026-03-20T09:20:56Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -153,7 +157,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
-      "updated_at": "2026-03-20T09:15:08Z"
+      "updated_at": "2026-03-20T09:20:56Z"
     },
     {
       "assigned_to_worker": true,
