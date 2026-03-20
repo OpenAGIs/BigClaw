@@ -95,7 +95,12 @@ func main() {
 		LeaseTTL:    cfg.LeaseTTL,
 		TaskTimeout: cfg.TaskTimeout,
 	}
-	loop := &orchestrator.Loop{Runtime: runtime, Quota: scheduler.QuotaSnapshot{ConcurrentLimit: cfg.MaxConcurrentRuns, BudgetRemaining: cfg.DefaultBudgetCents}, PollInterval: cfg.PollInterval}
+	loop := &orchestrator.Loop{
+		Runtime:      runtime,
+		Quota:        scheduler.QuotaSnapshot{ConcurrentLimit: cfg.MaxConcurrentRuns, BudgetRemaining: cfg.DefaultBudgetCents},
+		QuotaSource:  orchestrator.QueueQuotaSource{Queue: q},
+		PollInterval: cfg.PollInterval,
+	}
 
 	if cfg.BootstrapTasks {
 		seed(context.Background(), q)

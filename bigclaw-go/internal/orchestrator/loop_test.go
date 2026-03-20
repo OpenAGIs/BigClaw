@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"bigclaw-go/internal/domain"
+	"bigclaw-go/internal/queue"
 	"bigclaw-go/internal/scheduler"
 )
 
@@ -50,5 +52,32 @@ func TestLoopUsesDefaultPollIntervalWhenUnset(t *testing.T) {
 	loop := &Loop{}
 	if got := loop.pollInterval(); got != 100*time.Millisecond {
 		t.Fatalf("expected default poll interval, got %s", got)
+	}
+}
+
+func TestQueueQuotaSourceCapturesQueueDepthAndRunningCount(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	ctx := context.Background()
+	base := time.Now()
+	if err := q.Enqueue(ctx, domain.Task{ID: "queued-1", Priority: 3, CreatedAt: base}); err != nil {
+		t.Fatalf("enqueue queued-1: %v", err)
+	}
+	if err := q.Enqueue(ctx, domain.Task{ID: "queued-2", Priority: 4, CreatedAt: base.Add(time.Second)}); err != nil {
+		t.Fatalf("enqueue queued-2: %v", err)
+	}
+	if _, _, err := q.LeaseNext(ctx, "worker-1", time.Minute); err != nil {
+		t.Fatalf("lease next: %v", err)
+	}
+
+	source := QueueQuotaSource{Queue: q}
+	quota := source.Snapshot(ctx, scheduler.QuotaSnapshot{ConcurrentLimit: 5, BudgetRemaining: 900})
+	if quota.ConcurrentLimit != 5 || quota.BudgetRemaining != 900 {
+		t.Fatalf("expected base quota preserved, got %+v", quota)
+	}
+	if quota.QueueDepth != 2 {
+		t.Fatalf("expected queue depth 2, got %+v", quota)
+	}
+	if quota.CurrentRunning != 1 {
+		t.Fatalf("expected one leased task counted as running, got %+v", quota)
 	}
 }
