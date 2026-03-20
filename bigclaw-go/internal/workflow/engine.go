@@ -12,6 +12,7 @@ import (
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/queue"
+	"bigclaw-go/internal/risk"
 	"bigclaw-go/internal/scheduler"
 	"bigclaw-go/internal/worker"
 )
@@ -309,7 +310,7 @@ func writeReport(path string, contents string) error {
 }
 
 func requiresManualApproval(task domain.Task) bool {
-	return task.RiskLevel == domain.RiskHigh
+	return risk.ScoreTask(task, nil).RequiresApproval
 }
 
 func closeoutStatus(complete bool) string {

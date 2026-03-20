@@ -187,6 +187,52 @@ func TestEngineRunDefinitionRequiresApprovalForHighRiskTask(t *testing.T) {
 	}
 }
 
+func TestEngineRunDefinitionRequiresApprovalForComputedHighRiskTask(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	runtime := &worker.Runtime{
+		WorkerID:    "worker-approval",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(testRunner{kind: domain.ExecutorKubernetes, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    100 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+	engine := &Engine{
+		Runtime:  runtime,
+		Recorder: recorder,
+		Queue:    q,
+		Quota:    scheduler.QuotaSnapshot{ConcurrentLimit: 4, BudgetRemaining: 5000},
+	}
+
+	definition, err := ParseDefinition(`{"name":"security-closeout","steps":[{"name":"security-review","kind":"approval"}],"validation_evidence":["go test ./..."]}`)
+	if err != nil {
+		t.Fatalf("parse definition: %v", err)
+	}
+	result, err := engine.RunDefinition(context.Background(), domain.Task{
+		ID:                 "task-computed-risk",
+		Title:              "Production deploy",
+		Priority:           1,
+		Labels:             []string{"security", "prod"},
+		RequiredTools:      []string{"deploy"},
+		AcceptanceCriteria: []string{"go test ./..."},
+		ValidationPlan:     []string{"go test ./..."},
+	}, definition, "run-computed-risk", RunOptions{ValidationEvidence: []string{"go test ./..."}})
+	if err != nil {
+		t.Fatalf("run definition: %v", err)
+	}
+	if result.Acceptance.Status != "needs-approval" || result.Task.State != domain.TaskBlocked {
+		t.Fatalf("expected computed high-risk workflow to block pending approval, got acceptance=%+v task=%+v", result.Acceptance, result.Task)
+	}
+	if result.WorkflowRun.Status != WorkflowRunRunning {
+		t.Fatalf("expected computed high-risk workflow to remain running pending approval, got %+v", result.WorkflowRun)
+	}
+}
+
 func TestEngineRunDefinitionKeepsCloseoutPendingWithoutVerifiedRepoSyncAudit(t *testing.T) {
 	tempDir := t.TempDir()
 	q := queue.NewMemoryQueue()
