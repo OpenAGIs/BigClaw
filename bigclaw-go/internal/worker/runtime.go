@@ -30,6 +30,11 @@ type Runtime struct {
 	status      Status
 }
 
+const (
+	defaultLeaseTTL    = 2 * time.Minute
+	defaultTaskTimeout = 30 * time.Second
+)
+
 type Status struct {
 	WorkerID                  string              `json:"worker_id"`
 	State                     string              `json:"state"`
@@ -85,7 +90,7 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		return false
 	}
 
-	task, lease, err := r.Queue.LeaseNext(ctx, r.WorkerID, r.LeaseTTL)
+	task, lease, err := r.Queue.LeaseNext(ctx, r.WorkerID, r.effectiveLeaseTTL())
 	if err != nil || task == nil || lease == nil {
 		r.updateStatus(func(status *Status) {
 			status.WorkerID = r.WorkerID
@@ -195,7 +200,7 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	}
 	r.publish(domain.Event{ID: eventID(task.ID, "started"), Type: domain.EventTaskStarted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: startedPayload})
 
-	execCtx, cancel := context.WithTimeout(ctx, r.TaskTimeout)
+	execCtx, cancel := context.WithTimeout(ctx, r.effectiveTaskTimeout())
 	stopHeartbeat := r.startHeartbeat(execCtx, lease)
 	watcher := r.startCancellationWatcher(execCtx, task.ID, cancel)
 	result := runner.Execute(execCtx, *task)
@@ -361,15 +366,16 @@ func preemptionReason(task domain.Task, _ domain.Task) string {
 
 func (r *Runtime) startHeartbeat(ctx context.Context, lease *queue.Lease) func() {
 	childCtx, cancel := context.WithCancel(ctx)
+	ttl := r.effectiveLeaseTTL()
 	go func() {
-		ticker := time.NewTicker(r.LeaseTTL / 2)
+		ticker := time.NewTicker(ttl / 2)
 		defer ticker.Stop()
 		for {
 			select {
 			case <-childCtx.Done():
 				return
 			case <-ticker.C:
-				_ = r.Queue.RenewLease(context.Background(), lease, r.LeaseTTL)
+				_ = r.Queue.RenewLease(context.Background(), lease, ttl)
 				r.updateStatus(func(status *Status) {
 					status.LastHeartbeatAt = time.Now()
 					status.LeaseRenewals++
@@ -421,6 +427,20 @@ func cancellationPollInterval(leaseTTL time.Duration) time.Duration {
 		interval = 100 * time.Millisecond
 	}
 	return interval
+}
+
+func (r *Runtime) effectiveLeaseTTL() time.Duration {
+	if r.LeaseTTL <= 0 {
+		return defaultLeaseTTL
+	}
+	return r.LeaseTTL
+}
+
+func (r *Runtime) effectiveTaskTimeout() time.Duration {
+	if r.TaskTimeout <= 0 {
+		return defaultTaskTimeout
+	}
+	return r.TaskTimeout
 }
 
 func (w *cancellationWatcher) record(snapshot queue.TaskSnapshot) {

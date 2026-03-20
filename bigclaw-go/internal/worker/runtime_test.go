@@ -110,6 +110,46 @@ func TestRuntimeProcessesTask(t *testing.T) {
 	}
 }
 
+func TestRuntimeUsesDefaultTimeoutAndLeaseWhenUnset(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	if err := q.Enqueue(context.Background(), domain.Task{ID: "task-defaults", TraceID: "trace-defaults", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+
+	runtime := Runtime{
+		WorkerID:  "worker-defaults",
+		Queue:     q,
+		Scheduler: scheduler.New(),
+		Registry: executor.NewRegistry(fakeRunner{
+			kind:  domain.ExecutorLocal,
+			delay: 20 * time.Millisecond,
+			result: executor.Result{
+				Success: true,
+				Message: "ok",
+			},
+		}),
+		Bus:      bus,
+		Recorder: recorder,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
+	if !processed {
+		t.Fatal("expected runtime to process task with default timeout and lease settings")
+	}
+	if got := q.Size(context.Background()); got != 0 {
+		t.Fatalf("expected queue size 0 after success, got %d", got)
+	}
+	latest, ok := recorder.LatestByTask("task-defaults")
+	if !ok || latest.Type != domain.EventTaskCompleted {
+		t.Fatalf("expected completed event with default runtime settings, got %+v", latest)
+	}
+	snapshot := runtime.Snapshot()
+	if snapshot.SuccessfulRuns != 1 || snapshot.State != "idle" {
+		t.Fatalf("expected successful idle snapshot, got %+v", snapshot)
+	}
+}
+
 func TestRuntimePublishesExecutorArtifacts(t *testing.T) {
 	q := queue.NewMemoryQueue()
 	if err := q.Enqueue(context.Background(), domain.Task{ID: "task-artifacts", TraceID: "trace-artifacts", Priority: 1, RequiredExecutor: domain.ExecutorLocal, RequiredTools: []string{"browser", "git"}, CreatedAt: time.Now()}); err != nil {
