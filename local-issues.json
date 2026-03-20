@@ -435,7 +435,7 @@
       "title": "Expose shared-queue refresh status in continuation policy actions",
       "description": "Tighten continuation policy guidance so hold/go next actions and bundle docs reflect whether the shared-queue companion was refreshed inline by the validation workflow or only reused from a previous proof.",
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "labels": [
         "parallel",
         "validation",
@@ -444,7 +444,13 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-20T18:53:11Z",
-      "updated_at": "2026-03-20T19:02:01Z"
+      "updated_at": "2026-03-20T19:06:54Z",
+      "comments": [
+        {
+          "body": "Closed `BIG-PAR-091` after teaching the continuation policy gate to surface the correct shared-queue refresh path for the current evidence source.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` now distinguishes `bundled-companion` vs `standalone-proof` shared-queue evidence, includes that mode-specific context in the `shared_queue_companion_available` policy-check detail, and emits the correct next action for each source.\n- `tests/test_validation_bundle_continuation_policy_gate.py` now covers the standalone-proof path, the bundled-companion hold path, and the unchanged repeated-lane hold path.\n- `bigclaw-go/docs/e2e-validation.md` and `bigclaw-go/docs/reports/validation-bundle-continuation-digest.md` now document that the gate’s next-action guidance follows the current shared-queue evidence source rather than one hard-coded rerun command.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` -> passed\n- `python3 - <<\"PY\" ... direct execution of test_validation_bundle_continuation_policy_gate.py test functions ...` -> passed (`policy gate direct tests passed`)\n- `python3 - <<\"PY\" ... synthetic bundled-companion gate harness ...` -> passed (next action includes `BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1`, policy-check detail includes `mode=bundled-companion`)\n- `git rev-parse HEAD` -> `ef7a1c19108e41602794d775774cc11706c6a724`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `ef7a1c19108e41602794d775774cc11706c6a724` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `ef7a1c19108e41602794d775774cc11706c6a724` (matches local)\n- `git log -1 --stat` -> `Clarify shared-queue refresh guidance in policy gate`\n\nCommit: `ef7a1c19108e41602794d775774cc11706c6a724`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T19:06:38Z"
+        }
+      ]
     }
   ]
 }
