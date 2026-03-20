@@ -17,14 +17,14 @@ type Rate struct {
 }
 
 type UsageRecord struct {
-	RecordID  string            `json:"record_id"`
-	AccountID string            `json:"account_id"`
-	Metric    string            `json:"metric"`
-	Quantity  float64           `json:"quantity"`
-	Period    string            `json:"period"`
-	RunID     string            `json:"run_id,omitempty"`
-	Unit      string            `json:"unit,omitempty"`
-	Metadata  map[string]string `json:"metadata,omitempty"`
+	RecordID  string         `json:"record_id"`
+	AccountID string         `json:"account_id"`
+	Metric    string         `json:"metric"`
+	Quantity  float64        `json:"quantity"`
+	Period    string         `json:"period"`
+	RunID     string         `json:"run_id,omitempty"`
+	Unit      string         `json:"unit,omitempty"`
+	Metadata  map[string]any `json:"metadata,omitempty"`
 }
 
 type BillingSummary struct {

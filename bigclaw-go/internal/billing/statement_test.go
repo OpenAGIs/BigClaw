@@ -29,7 +29,7 @@ func TestBillingStatementRoundTrip(t *testing.T) {
 				Period:    "2026-03",
 				RunID:     "flow-run-1",
 				Unit:      "run",
-				Metadata:  map[string]string{"source": "workflow-engine"},
+				Metadata:  map[string]any{"source": "workflow-engine", "attempt": float64(2), "billable": true},
 			},
 		},
 		SubtotalUSD: 0,
@@ -47,7 +47,7 @@ func TestBillingStatementRoundTrip(t *testing.T) {
 	if decoded.TotalUSD != summary.TotalUSD || decoded.Rates[0].Interval != BillingMonthly {
 		t.Fatalf("unexpected summary after roundtrip: %#v", decoded)
 	}
-	if decoded.Usage[0].Metadata["source"] != "workflow-engine" {
+	if decoded.Usage[0].Metadata["source"] != "workflow-engine" || decoded.Usage[0].Metadata["attempt"] != float64(2) || decoded.Usage[0].Metadata["billable"] != true {
 		t.Fatalf("unexpected summary after roundtrip: %#v", decoded)
 	}
 }

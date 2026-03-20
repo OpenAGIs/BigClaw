@@ -22,6 +22,7 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
 - `RiskSignal`, `RiskAssessment` -> `bigclaw-go/internal/risk/assessment.go`
 - `TriageLabel`, `TriageRecord` -> `bigclaw-go/internal/triage/record.go`
 - `BillingInterval`, `BillingRate`, `UsageRecord`, `BillingSummary` -> `bigclaw-go/internal/billing/statement.go`
+  - billing usage metadata now preserves Python-style `Dict[str, Any]` payloads instead of narrowing to string-only values
 - `FlowTrigger`, `FlowRunStatus`, `FlowStepStatus`, `FlowTemplate*`, `FlowRun*` -> `bigclaw-go/internal/workflow/model.go`
 
 ### `src/bigclaw/connectors.py`
