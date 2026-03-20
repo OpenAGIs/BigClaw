@@ -246,11 +246,15 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T14:21:35Z",
+      "updated_at": "2026-03-20T14:28:20Z",
       "comments": [
         {
           "body": "Progress update: marked `src/bigclaw/__main__.py` as a legacy-only Python entrypoint by adding an explicit Go-mainline deprecation notice, routing parser construction through `build_parser()`, and keeping the legacy commands available only for migration/validation use. Added focused coverage in `tests/test_legacy_entrypoint.py` to lock the deprecation notice text and parser metadata.\n\nValidation:\n- `PYTHONPATH=src python3 - <<\"PY\" ...` parser assertions -> passed\n- `python3 -c \"import pytest; print(pytest.__version__)\"` -> `9.0.1`\n- `git rev-parse HEAD` -> `e7cbe785cd3aa2b5697cfdb59b8e1b8013415116`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `e7cbe785cd3aa2b5697cfdb59b8e1b8013415116` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `e7cbe785cd3aa2b5697cfdb59b8e1b8013415116` (matches local)\n- `git log -1 --stat` -> `Mark Python entrypoint as legacy-only`\n\nCommit: `e7cbe785cd3aa2b5697cfdb59b8e1b8013415116`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T14:21:35Z"
+        },
+        {
+          "body": "Progress update: routed the remaining Python operator wrappers through the Go-first `scripts/ops/bigclawctl` shim instead of leaving Python-owned implementations on the default path. `scripts/ops/bigclaw_workspace_bootstrap.py`, `scripts/ops/bigclaw_github_sync.py`, and `scripts/ops/bigclaw_refill_queue.py` now emit an explicit legacy notice and `exec` the Go-owned wrapper, while `src/bigclaw/legacy_shim.py` centralizes the migration-only compatibility notice and argument translation. Added focused coverage in `tests/test_legacy_shim.py`.\n\nValidation:\n- `PYTHONPATH=src python3 - <<\"PY\" ... legacy parser and shim assertions ...` -> passed\n- `python3 -m py_compile src/bigclaw/legacy_shim.py src/bigclaw/__main__.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py` -> passed\n- `git rev-parse HEAD` -> `aa01d865b0f1e98992560aac7bf4c6b7aca46a4f`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `aa01d865b0f1e98992560aac7bf4c6b7aca46a4f` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `aa01d865b0f1e98992560aac7bf4c6b7aca46a4f` (matches local)\n- `git log -1 --stat` -> `Route legacy Python operator wrappers to Go shims`\n\nCommit: `aa01d865b0f1e98992560aac7bf4c6b7aca46a4f`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T14:28:20Z"
         }
       ]
     }
