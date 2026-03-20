@@ -49,6 +49,7 @@ Use these entrypoints to keep the remaining Go-mainline migration slices moving 
 Linear issue capacity:
 
 ```bash
+bash scripts/ops/bigclawctl local-issue list --local-issues local-issues.json --states "Todo,In Progress" --json
 bash scripts/ops/bigclaw-issue list
 bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json
 bash scripts/ops/bigclaw-symphony
@@ -60,6 +61,9 @@ Notes:
 - `bash scripts/ops/bigclaw-symphony` starts Symphony against [`workflow.md`](./workflow.md) and
   serves the local issue dashboard at `http://127.0.0.1:4000/`.
 - `bash scripts/ops/bigclaw-panel` prints the configured dashboard URL for the current workflow.
+- `bash scripts/ops/bigclawctl local-issue list --local-issues local-issues.json --states "Todo,In Progress"`
+  reads the repo-native tracker directly so planning can inspect runnable work without going through
+  the separate Symphony issue CLI.
 - `bash scripts/ops/bigclaw-issue ...` wraps `symphony issue ... --workflow workflow.md` so local
   issue creation and state changes stay pinned to this repository's tracker file.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next

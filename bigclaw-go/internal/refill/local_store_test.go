@@ -82,6 +82,41 @@ func TestLocalIssueStoreIssueStatesFiltersRequestedStates(t *testing.T) {
 	}
 }
 
+func TestLocalIssueStoreIssuesFiltersRequestedStatesAndClonesMaps(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {"id": "big-gom-301", "identifier": "BIG-GOM-301", "title": "Domain parity", "state": "In Progress"},
+    {"id": "big-gom-303", "identifier": "BIG-GOM-303", "title": "Workflow loop parity", "state": "Todo"},
+    {"id": "big-gom-305", "identifier": "BIG-GOM-305", "title": "Operations views", "state": "Backlog"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	issues := store.Issues([]string{"In Progress", "Todo"})
+	if len(issues) != 2 {
+		t.Fatalf("expected 2 issues, got %d", len(issues))
+	}
+	if mapString(issues[0], "identifier") != "BIG-GOM-301" || mapString(issues[1], "identifier") != "BIG-GOM-303" {
+		t.Fatalf("unexpected issues: %+v", issues)
+	}
+
+	issues[0]["state"] = "Done"
+	original, err := store.Issue("BIG-GOM-301")
+	if err != nil {
+		t.Fatalf("reload original issue: %v", err)
+	}
+	if mapString(original, "state") != "In Progress" {
+		t.Fatalf("expected returned list to be cloned, got %+v", original)
+	}
+}
+
 func TestLocalIssueStoreAddCommentAppendsAndRefreshesUpdatedAt(t *testing.T) {
 	storePath := filepath.Join(t.TempDir(), "local-issues.json")
 	if err := os.WriteFile(storePath, []byte(`{

@@ -329,7 +329,7 @@ func runRefill(args []string) error {
 
 func runLocalIssue(args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: bigclawctl local-issue <show|update> [flags]")
+		return errors.New("usage: bigclawctl local-issue <list|show|update> [flags]")
 	}
 	command := args[0]
 	flags := flag.NewFlagSet("local-issue "+command, flag.ContinueOnError)
@@ -337,6 +337,7 @@ func runLocalIssue(args []string) error {
 	localIssuesPath := flags.String("local-issues", "", "local issue store path")
 	issueRef := flags.String("issue", "", "issue identifier or id")
 	stateName := flags.String("state", "", "updated state")
+	statesCSV := flags.String("states", "", "comma-separated state filter for list")
 	commentBody := flags.String("comment", "", "comment body")
 	commentFile := flags.String("comment-file", "", "comment body file path, or - for stdin")
 	asJSON := flags.Bool("json", false, "json")
@@ -351,12 +352,22 @@ func runLocalIssue(args []string) error {
 	if err != nil {
 		return err
 	}
-	if trim(*issueRef) == "" {
-		return errors.New("issue reference is required")
-	}
 
 	switch command {
+	case "list":
+		issues := store.Issues(splitCSV(*statesCSV))
+		payload := map[string]any{
+			"status":       "ok",
+			"backend":      "local",
+			"count":        len(issues),
+			"issues":       issues,
+			"local_issues": absPath(storePath),
+		}
+		return emitLocalIssueList(payload, *asJSON)
 	case "show":
+		if trim(*issueRef) == "" {
+			return errors.New("issue reference is required")
+		}
 		issue, err := store.Issue(*issueRef)
 		if err != nil {
 			return emit(map[string]any{"status": "error", "error": err.Error(), "issue": *issueRef, "local_issues": absPath(storePath)}, *asJSON, 1)
@@ -369,6 +380,9 @@ func runLocalIssue(args []string) error {
 		}, issue)
 		return emit(payload, *asJSON, 0)
 	case "update":
+		if trim(*issueRef) == "" {
+			return errors.New("issue reference is required")
+		}
 		resolvedComment, err := resolveCommentBody(*commentBody, *commentFile)
 		if err != nil {
 			return err
@@ -404,6 +418,25 @@ func runLocalIssue(args []string) error {
 	default:
 		return fmt.Errorf("unknown local-issue subcommand: %s", command)
 	}
+}
+
+func emitLocalIssueList(payload map[string]any, asJSON bool) error {
+	if asJSON {
+		return emit(payload, true, 0)
+	}
+	issues, _ := payload["issues"].([]map[string]any)
+	for _, issue := range issues {
+		fmt.Printf("%s\t%s\t%s\n", localIssueField(issue, "identifier"), localIssueField(issue, "state"), localIssueField(issue, "title"))
+	}
+	return nil
+}
+
+func localIssueField(issue map[string]any, key string) string {
+	value, ok := issue[key]
+	if !ok || value == nil {
+		return ""
+	}
+	return trim(fmt.Sprint(value))
 }
 
 func resolveCommentBody(inline string, filePath string) (string, error) {

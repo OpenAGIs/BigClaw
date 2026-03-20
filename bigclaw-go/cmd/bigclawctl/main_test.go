@@ -520,6 +520,89 @@ func TestRunLocalIssueUpdateUsesSingleTimestampForStateAndComment(t *testing.T) 
 	}
 }
 
+func TestRunLocalIssueListFiltersStatesAndPreservesTrackerOrder(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-302",
+      "identifier": "BIG-GOM-302",
+      "title": "Risk and policy",
+      "state": "In Progress",
+      "updated_at": "2026-03-18T09:00:00Z"
+    },
+    {
+      "id": "big-gom-303",
+      "identifier": "BIG-GOM-303",
+      "title": "Workflow loop parity",
+      "state": "Todo",
+      "updated_at": "2026-03-18T09:00:00Z"
+    },
+    {
+      "id": "big-gom-305",
+      "identifier": "BIG-GOM-305",
+      "title": "Operations view parity",
+      "state": "Backlog",
+      "updated_at": "2026-03-18T09:00:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	output, runErr := captureStdout(t, func() error {
+		return runLocalIssue([]string{
+			"list",
+			"--local-issues", storePath,
+			"--states", "In Progress,Todo",
+			"--json",
+		})
+	})
+	if runErr != nil {
+		t.Fatalf("run local issue list: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"count": 2`)) {
+		t.Fatalf("expected filtered issue count, got %s", string(output))
+	}
+	if bytes.Index(output, []byte(`"identifier": "BIG-GOM-302"`)) > bytes.Index(output, []byte(`"identifier": "BIG-GOM-303"`)) {
+		t.Fatalf("expected tracker order to be preserved, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`"identifier": "BIG-GOM-305"`)) {
+		t.Fatalf("expected backlog issue to be filtered out, got %s", string(output))
+	}
+}
+
+func TestRunLocalIssueListPrintsTabSeparatedSummaryByDefault(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "title": "Toolchain migration",
+      "state": "In Progress"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	output, runErr := captureStdout(t, func() error {
+		return runLocalIssue([]string{
+			"list",
+			"--local-issues", storePath,
+		})
+	})
+	if runErr != nil {
+		t.Fatalf("run local issue list: %v (stdout=%s)", runErr, string(output))
+	}
+	if strings.TrimSpace(string(output)) != "BIG-GOM-307\tIn Progress\tToolchain migration" {
+		t.Fatalf("unexpected summary output: %q", string(output))
+	}
+}
+
 func TestResolveGitHubSyncRemotesPrefersUpstreamThenOriginAndGithub(t *testing.T) {
 	tmp := t.TempDir()
 	repo := filepath.Join(tmp, "repo")

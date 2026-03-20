@@ -22,6 +22,27 @@ type LocalIssueComment struct {
 	CreatedAt string `json:"created_at"`
 }
 
+func (s *LocalIssueStore) Issues(stateNames []string) []map[string]any {
+	wanted := map[string]struct{}{}
+	for _, stateName := range stateNames {
+		trimmed := strings.TrimSpace(stateName)
+		if trimmed != "" {
+			wanted[trimmed] = struct{}{}
+		}
+	}
+	issues := make([]map[string]any, 0, len(s.issueMap))
+	for _, issue := range s.issueMap {
+		stateName := mapString(issue, "state")
+		if len(wanted) != 0 {
+			if _, ok := wanted[stateName]; !ok {
+				continue
+			}
+		}
+		issues = append(issues, cloneMap(issue))
+	}
+	return issues
+}
+
 func LoadLocalIssueStore(path string) (*LocalIssueStore, error) {
 	absolute, err := filepath.Abs(path)
 	if err != nil {
