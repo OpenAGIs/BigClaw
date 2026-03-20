@@ -320,6 +320,43 @@ func TestV2HomeEngLeadUsesActiveTakeoversInsteadOfBlockedRuns(t *testing.T) {
 	}
 }
 
+func TestV2HomeAndNavigationIgnoreRoleQueryWhenViewerRoleIsExplicit(t *testing.T) {
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: time.Now}
+	handler := server.Handler()
+
+	homeRequest := httptest.NewRequest(http.MethodGet, "/v2/home?role=vp_eng", nil)
+	homeRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	homeRequest.Header.Set("X-BigClaw-Team", "platform")
+	homeResponse := httptest.NewRecorder()
+	handler.ServeHTTP(homeResponse, homeRequest)
+	if homeResponse.Code != http.StatusOK {
+		t.Fatalf("expected home 200, got %d %s", homeResponse.Code, homeResponse.Body.String())
+	}
+	homeBody := homeResponse.Body.String()
+	if strings.Contains(homeBody, "\"role\":\"vp_eng\"") || strings.Contains(homeBody, "\"key\":\"throughput\"") {
+		t.Fatalf("expected home role query to be ignored when header role is explicit, got %s", homeBody)
+	}
+	if !strings.Contains(homeBody, "\"role\":\"eng_lead\"") || !strings.Contains(homeBody, "\"key\":\"blockers\"") || !strings.Contains(homeBody, "\"key\":\"takeovers\"") {
+		t.Fatalf("expected eng lead home payload, got %s", homeBody)
+	}
+
+	navigationRequest := httptest.NewRequest(http.MethodGet, "/v2/navigation?role=vp_eng", nil)
+	navigationRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	navigationRequest.Header.Set("X-BigClaw-Team", "platform")
+	navigationResponse := httptest.NewRecorder()
+	handler.ServeHTTP(navigationResponse, navigationRequest)
+	if navigationResponse.Code != http.StatusOK {
+		t.Fatalf("expected navigation 200, got %d %s", navigationResponse.Code, navigationResponse.Body.String())
+	}
+	navigationBody := navigationResponse.Body.String()
+	if strings.Contains(navigationBody, "\"role\":\"vp_eng\"") {
+		t.Fatalf("expected navigation role query to be ignored when header role is explicit, got %s", navigationBody)
+	}
+	if !strings.Contains(navigationBody, "\"role\":\"eng_lead\"") {
+		t.Fatalf("expected navigation role to reflect explicit viewer role, got %s", navigationBody)
+	}
+}
+
 func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
 	recorder := observability.NewRecorder()
 	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return time.Date(2026, 3, 18, 12, 0, 0, 0, time.UTC) }}

@@ -447,11 +447,18 @@ func weeklyExportURL(team string, project string, start time.Time, end time.Time
 }
 
 func normalizeHomeRole(r *http.Request) string {
-	if role := strings.TrimSpace(r.URL.Query().Get("role")); role != "" {
-		return strings.ToLower(role)
-	}
 	authorization := parseControlAuthorization(r, "", "", "")
+	if hasExplicitViewerRole(r) {
+		return strings.ToLower(string(authorization.Role))
+	}
+	if role := strings.TrimSpace(r.URL.Query().Get("role")); role != "" {
+		return strings.ToLower(string(normalizeControlRole(role)))
+	}
 	return strings.ToLower(string(authorization.Role))
+}
+
+func hasExplicitViewerRole(r *http.Request) bool {
+	return strings.TrimSpace(r.Header.Get("X-BigClaw-Role")) != "" || strings.TrimSpace(r.URL.Query().Get("viewer_role")) != ""
 }
 
 func renderJSONBody(body any) *bytes.Reader {
