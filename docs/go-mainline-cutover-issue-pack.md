@@ -295,7 +295,7 @@ Current repo progress:
 - `bigclaw-go/internal/githubsync/*` now owns GitHub sync install / inspect / push guarantees with Go tests and hook integration
 - `bigclaw-go/internal/refill/*` now owns the draft refill queue selection logic, while `cmd/bigclawctl refill` handles Linear polling and promotion
 - `workflow.md`, `.githooks/post-commit`, and `.githooks/post-rewrite` now invoke the Go-first toolchain by default while legacy Python wrappers remain as compatibility shims
-- the remaining Python wrappers still exist as migration shims; `BIG-GOM-308` is still required to fully remove Python from the default operator path
+- the remaining Python wrappers now defer to `scripts/ops/bigclawctl` as compatibility shims, while `python -m bigclaw` and the legacy Python server path emit migration-only notices instead of presenting as default operator/runtime entrypoints
 
 Milestone:
 - `Python Retirement & Cutover Validation`

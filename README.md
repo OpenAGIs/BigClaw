@@ -137,5 +137,4 @@ Repository: https://github.com/OpenAGIs/BigClaw
 
 Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-managed repo to
 reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
-The Go-first BigClaw entrypoint is `scripts/ops/bigclawctl`; legacy Python
-bootstrap wrappers remain only as compatibility shims during migration.
+The Go-first BigClaw entrypoint is `scripts/ops/bigclawctl`, and `go run ./cmd/bigclawd` is the runtime mainline. Legacy Python operator wrappers, `python -m bigclaw`, and the Python static server path now emit migration-only notices and defer to the Go-owned path or remain explicitly legacy-only.
