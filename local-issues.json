@@ -451,6 +451,23 @@
           "created_at": "2026-03-20T19:06:38Z"
         }
       ]
+    },
+    {
+      "id": "big-par-092",
+      "identifier": "BIG-PAR-092",
+      "title": "Expose shared-queue refresh source in bundle summary",
+      "description": "Record whether the shared-queue companion was refreshed inline by the current validation workflow or reused from an existing report, and surface that source in the exported bundle summary/index so downstream policy/reporting can reason about freshness honestly.",
+      "priority": 2,
+      "state": "In Progress",
+      "labels": [
+        "parallel",
+        "validation",
+        "tooling",
+        "coordination"
+      ],
+      "assigned_to_worker": true,
+      "created_at": "2026-03-20T19:09:35Z",
+      "updated_at": "2026-03-20T19:09:35Z"
     }
   ]
 }
