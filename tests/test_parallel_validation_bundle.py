@@ -97,13 +97,21 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
     assert summary['local']['canonical_report_path'] == 'docs/reports/sqlite-smoke-report.json'
     assert summary['local']['audit_log_path'].endswith('local.audit.jsonl')
     assert summary['local']['service_log_path'].endswith('local.service.log')
+    assert summary['shared_queue']['available'] is True
+    assert summary['shared_queue']['bundle_report_path'].endswith('multi-node-shared-queue-report.json')
+    assert summary['shared_queue']['cross_node_completions'] == 12
     assert summary['continuation']['refreshed'] is True
     assert summary['continuation']['policy_gate_recommendation'] == 'hold'
 
     latest_local = json.loads((root / 'docs' / 'reports' / 'sqlite-smoke-report.json').read_text(encoding='utf-8'))
     assert latest_local['task']['id'] == 'local-1'
+    latest_shared_queue = json.loads((root / 'docs' / 'reports' / 'multi-node-shared-queue-report.json').read_text(encoding='utf-8'))
+    assert latest_shared_queue['cross_node_completions'] == 12
+    bundled_shared_queue = json.loads((bundle / 'multi-node-shared-queue-report.json').read_text(encoding='utf-8'))
+    assert bundled_shared_queue['all_ok'] is True
     scorecard = json.loads((root / 'docs' / 'reports' / 'validation-bundle-continuation-scorecard.json').read_text(encoding='utf-8'))
     assert scorecard['summary']['latest_run_id'] == '20260315T120000Z'
+    assert scorecard['shared_queue_companion']['mode'] == 'bundled-companion'
 
     index_text = (root / 'docs' / 'reports' / 'live-validation-index.md').read_text(encoding='utf-8')
     assert 'Live Validation Index' in index_text
@@ -112,6 +120,7 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
     assert 'docs/reports/validation-bundle-continuation-scorecard.json' in index_text
     assert 'docs/reports/validation-bundle-continuation-policy-gate.json' in index_text
     assert 'docs/reports/validation-bundle-continuation-digest.md' in index_text
+    assert 'Cross-node completions: `12`' in index_text
 
     manifest = json.loads((root / 'docs' / 'reports' / 'live-validation-index.json').read_text(encoding='utf-8'))
     assert manifest['latest']['run_id'] == '20260315T120000Z'

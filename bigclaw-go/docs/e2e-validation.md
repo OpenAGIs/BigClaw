@@ -57,7 +57,7 @@ export BIGCLAW_QUEUE_BACKEND=sqlite
 ./scripts/e2e/run_all.sh
 ```
 
-The script writes a consolidated summary to `docs/reports/live-validation-summary.json`, refreshes the canonical component reports for local, Kubernetes, and Ray validation, and creates a timestamped bundle plus index under `docs/reports/live-validation-runs/` and `docs/reports/live-validation-index.md`. The underlying `scripts/e2e/export_validation_bundle.py` exporter now refreshes the continuation scorecard and policy gate in `auto` mode whenever the shared-queue companion proof is present, so continuation evidence stays current for direct bundle-export workflows as well as `run_all.sh`.
+The script writes a consolidated summary to `docs/reports/live-validation-summary.json`, refreshes the canonical component reports for local, Kubernetes, and Ray validation, and creates a timestamped bundle plus index under `docs/reports/live-validation-runs/` and `docs/reports/live-validation-index.md`. The underlying `scripts/e2e/export_validation_bundle.py` exporter now refreshes the continuation scorecard and policy gate in `auto` mode whenever the shared-queue companion proof is present, and it copies that shared-queue proof into the exported bundle summary so the continuation lineage no longer depends on a report that only lives outside the bundle tree.
 
 You can then refresh the rolling continuation overlay from the checked-in bundle evidence:
 

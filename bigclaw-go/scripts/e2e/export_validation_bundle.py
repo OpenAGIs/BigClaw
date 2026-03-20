@@ -32,6 +32,8 @@ FOLLOWUP_DIGESTS = [
     ),
 ]
 
+SHARED_QUEUE_CANONICAL_REPORT = 'docs/reports/multi-node-shared-queue-report.json'
+
 
 def read_json(path: Path) -> Optional[Any]:
     if not path.exists() or path.stat().st_size == 0:
@@ -138,6 +140,38 @@ def build_component_section(
             service_copy = copy_text_artifact(Path(service_log), bundle_dir / f'{name}.service.log')
             if service_copy:
                 section['service_log_path'] = relpath(Path(service_copy), root)
+    return section
+
+
+def build_shared_queue_section(
+    *,
+    root: Path,
+    bundle_dir: Path,
+    report_path: Path,
+) -> dict[str, Any]:
+    section: dict[str, Any] = {
+        'available': False,
+        'canonical_report_path': SHARED_QUEUE_CANONICAL_REPORT,
+    }
+    report = read_json(report_path)
+    if not isinstance(report, dict):
+        section['status'] = 'missing_report'
+        return section
+
+    report_copy = copy_json_artifact(report_path, bundle_dir / 'multi-node-shared-queue-report.json')
+    if report_copy:
+        section['bundle_report_path'] = relpath(Path(report_copy), root)
+    canonical_copy = copy_json_artifact(report_path, root / SHARED_QUEUE_CANONICAL_REPORT)
+    if canonical_copy:
+        section['canonical_report_path'] = relpath(Path(canonical_copy), root)
+
+    section['available'] = bool(report.get('all_ok'))
+    section['status'] = 'succeeded' if report.get('all_ok') else 'failed'
+    section['report'] = report
+    section['cross_node_completions'] = report.get('cross_node_completions', 0)
+    section['duplicate_completed_tasks'] = len(report.get('duplicate_completed_tasks', []))
+    section['duplicate_started_tasks'] = len(report.get('duplicate_started_tasks', []))
+    section['missing_completed_tasks'] = len(report.get('missing_completed_tasks', []))
     return section
 
 
@@ -297,6 +331,22 @@ def render_index(
             lines.append(f"- Task ID: `{section['task_id']}`")
         lines.append('')
 
+    if 'shared_queue' in summary:
+        shared_queue = summary['shared_queue']
+        lines.extend(['### shared-queue', f"- Available: `{shared_queue['available']}`"])
+        if shared_queue.get('status'):
+            lines.append(f"- Status: `{shared_queue['status']}`")
+        if shared_queue.get('bundle_report_path'):
+            lines.append(f"- Bundle report: `{shared_queue['bundle_report_path']}`")
+        lines.append(f"- Latest report: `{shared_queue['canonical_report_path']}`")
+        if 'cross_node_completions' in shared_queue:
+            lines.append(f"- Cross-node completions: `{shared_queue['cross_node_completions']}`")
+        if 'duplicate_completed_tasks' in shared_queue:
+            lines.append(f"- Duplicate task.completed: `{shared_queue['duplicate_completed_tasks']}`")
+        if 'duplicate_started_tasks' in shared_queue:
+            lines.append(f"- Duplicate task.started: `{shared_queue['duplicate_started_tasks']}`")
+        lines.append('')
+
     lines.extend(['## Workflow closeout commands', ''])
     for command in summary['closeout_commands']:
         lines.append(f'- `{command}`')
@@ -394,6 +444,11 @@ def main() -> int:
         report_path=root / args.ray_report_path,
         stdout_path=Path(args.ray_stdout_path),
         stderr_path=Path(args.ray_stderr_path),
+    )
+    summary['shared_queue'] = build_shared_queue_section(
+        root=root,
+        bundle_dir=bundle_dir,
+        report_path=root / args.shared_queue_report_path,
     )
 
     bundle_summary_path = bundle_dir / 'summary.json'
