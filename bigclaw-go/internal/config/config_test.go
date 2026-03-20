@@ -38,3 +38,12 @@ func TestLoadFromEnvIncludesEventLogBrokerSettings(t *testing.T) {
 		t.Fatalf("expected checkpoint interval 15s, got %s", cfg.EventLogCheckpointInterval)
 	}
 }
+
+func TestLoadFromEnvIncludesSubscriberLeaseSQLitePath(t *testing.T) {
+	t.Setenv("BIGCLAW_SUBSCRIBER_LEASE_SQLITE_PATH", "/tmp/shared-subscriber-leases.db")
+
+	cfg := LoadFromEnv()
+	if cfg.SubscriberLeaseSQLitePath != "/tmp/shared-subscriber-leases.db" {
+		t.Fatalf("expected subscriber lease sqlite path, got %q", cfg.SubscriberLeaseSQLitePath)
+	}
+}

@@ -12,6 +12,11 @@ LATEST_REPORTS = {
     'kubernetes': 'docs/reports/kubernetes-live-smoke-report.json',
     'ray': 'docs/reports/ray-live-smoke-report.json',
 }
+BROKER_SUMMARY = 'docs/reports/broker-validation-summary.json'
+BROKER_BOOTSTRAP_SUMMARY = 'docs/reports/broker-bootstrap-review-summary.json'
+BROKER_VALIDATION_PACK = 'docs/reports/broker-failover-fault-injection-validation-pack.md'
+SHARED_QUEUE_REPORT = 'docs/reports/multi-node-shared-queue-report.json'
+SHARED_QUEUE_SUMMARY = 'docs/reports/shared-queue-companion-summary.json'
 
 CONTINUATION_ARTIFACTS = [
     (
@@ -30,6 +35,27 @@ FOLLOWUP_DIGESTS = [
         'Validation bundle continuation caveats are consolidated here.',
     ),
 ]
+
+
+def build_continuation_gate_summary(root: Path) -> Optional[dict[str, Any]]:
+    gate_path = root / 'docs/reports/validation-bundle-continuation-policy-gate.json'
+    gate = read_json(gate_path)
+    if not isinstance(gate, dict):
+        return None
+    enforcement = gate.get('enforcement')
+    summary = gate.get('summary')
+    reviewer_path = gate.get('reviewer_path')
+    next_actions = gate.get('next_actions')
+    return {
+        'path': relpath(gate_path, root),
+        'status': gate.get('status', 'unknown'),
+        'recommendation': gate.get('recommendation', 'unknown'),
+        'failing_checks': gate.get('failing_checks', []),
+        'enforcement': enforcement if isinstance(enforcement, dict) else {},
+        'summary': summary if isinstance(summary, dict) else {},
+        'reviewer_path': reviewer_path if isinstance(reviewer_path, dict) else {},
+        'next_actions': next_actions if isinstance(next_actions, list) else [],
+    }
 
 
 def read_json(path: Path) -> Optional[Any]:
@@ -53,6 +79,8 @@ def relpath(path: Path, root: Path) -> str:
 def copy_text_artifact(source: Path, destination: Path) -> str:
     if not source.exists():
         return ''
+    if source.resolve() == destination.resolve():
+        return str(destination)
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, destination)
     return str(destination)
@@ -61,6 +89,8 @@ def copy_text_artifact(source: Path, destination: Path) -> str:
 def copy_json_artifact(source: Path, destination: Path) -> str:
     if not source.exists():
         return ''
+    if source.resolve() == destination.resolve():
+        return str(destination)
     payload = read_json(source)
     if payload is None:
         return ''
@@ -81,6 +111,47 @@ def component_status(report: Optional[dict[str, Any]]) -> str:
     if report.get('all_ok') is False:
         return 'failed'
     return 'unknown'
+
+
+def build_shared_queue_companion(root: Path, bundle_dir: Path) -> dict[str, Any]:
+    canonical_report_path = root / SHARED_QUEUE_REPORT
+    canonical_summary_path = root / SHARED_QUEUE_SUMMARY
+    bundle_report_path = bundle_dir / 'multi-node-shared-queue-report.json'
+    bundle_summary_path = bundle_dir / 'shared-queue-companion-summary.json'
+    report = read_json(canonical_report_path)
+
+    summary: dict[str, Any] = {
+        'available': isinstance(report, dict),
+        'canonical_report_path': SHARED_QUEUE_REPORT,
+        'canonical_summary_path': SHARED_QUEUE_SUMMARY,
+        'bundle_report_path': relpath(bundle_report_path, root),
+        'bundle_summary_path': relpath(bundle_summary_path, root),
+    }
+    if not isinstance(report, dict):
+        summary['status'] = 'missing_report'
+        return summary
+
+    copied_report = copy_json_artifact(canonical_report_path, bundle_report_path)
+    if copied_report:
+        summary['bundle_report_path'] = relpath(Path(copied_report), root)
+
+    summary.update(
+        {
+            'status': 'succeeded' if report.get('all_ok') else 'failed',
+            'generated_at': report.get('generated_at'),
+            'count': report.get('count'),
+            'cross_node_completions': report.get('cross_node_completions'),
+            'duplicate_started_tasks': len(report.get('duplicate_started_tasks') or []),
+            'duplicate_completed_tasks': len(report.get('duplicate_completed_tasks') or []),
+            'missing_completed_tasks': len(report.get('missing_completed_tasks') or []),
+            'submitted_by_node': report.get('submitted_by_node', {}),
+            'completed_by_node': report.get('completed_by_node', {}),
+            'nodes': [node.get('name') for node in report.get('nodes', []) if isinstance(node, dict) and node.get('name')],
+        }
+    )
+    write_json(bundle_summary_path, summary)
+    write_json(canonical_summary_path, summary)
+    return summary
 
 
 def build_component_section(
@@ -140,6 +211,83 @@ def build_component_section(
     return section
 
 
+def build_broker_section(
+    *,
+    enabled: bool,
+    backend: str,
+    root: Path,
+    bundle_dir: Path,
+    bootstrap_summary_path: Path | None,
+    report_path: Path | None,
+) -> dict[str, Any]:
+    bundle_summary_path = bundle_dir / 'broker-validation-summary.json'
+    bundle_bootstrap_summary_path = bundle_dir / 'broker-bootstrap-review-summary.json'
+    section: dict[str, Any] = {
+        'enabled': enabled,
+        'backend': backend or None,
+        'bundle_summary_path': relpath(bundle_summary_path, root),
+        'canonical_summary_path': BROKER_SUMMARY,
+        'bundle_bootstrap_summary_path': relpath(bundle_bootstrap_summary_path, root),
+        'canonical_bootstrap_summary_path': BROKER_BOOTSTRAP_SUMMARY,
+        'validation_pack_path': BROKER_VALIDATION_PACK,
+    }
+    configuration_state = 'configured' if enabled and backend else 'not_configured'
+    section['configuration_state'] = configuration_state
+    bootstrap_summary = read_json(bootstrap_summary_path) if bootstrap_summary_path else None
+    if isinstance(bootstrap_summary, dict):
+        copied_bootstrap = copy_json_artifact(bootstrap_summary_path, bundle_bootstrap_summary_path)
+        if copied_bootstrap:
+            section['bundle_bootstrap_summary_path'] = relpath(Path(copied_bootstrap), root)
+        canonical_bootstrap = copy_json_artifact(bootstrap_summary_path, root / BROKER_BOOTSTRAP_SUMMARY)
+        if canonical_bootstrap:
+            section['canonical_bootstrap_summary_path'] = relpath(Path(canonical_bootstrap), root)
+        section['bootstrap_summary'] = bootstrap_summary
+        section['bootstrap_ready'] = bool(bootstrap_summary.get('ready'))
+        section['runtime_posture'] = bootstrap_summary.get('runtime_posture')
+        section['live_adapter_implemented'] = bool(bootstrap_summary.get('live_adapter_implemented'))
+        section['proof_boundary'] = bootstrap_summary.get('proof_boundary')
+        validation_errors = bootstrap_summary.get('validation_errors')
+        if isinstance(validation_errors, list):
+            section['validation_errors'] = validation_errors
+        completeness = bootstrap_summary.get('config_completeness')
+        if isinstance(completeness, dict):
+            section['config_completeness'] = completeness
+
+    if not enabled or not backend:
+        section['status'] = 'skipped'
+        section['reason'] = 'not_configured'
+        write_json(bundle_summary_path, section)
+        write_json(root / BROKER_SUMMARY, section)
+        return section
+
+    if report_path is None:
+        section['status'] = 'skipped'
+        section['reason'] = 'missing_report_path'
+        write_json(bundle_summary_path, section)
+        write_json(root / BROKER_SUMMARY, section)
+        return section
+
+    report = read_json(report_path)
+    report_relpath = relpath(report_path, root)
+    section['canonical_report_path'] = report_relpath
+    section['bundle_report_path'] = relpath(bundle_dir / report_path.name, root)
+    if not isinstance(report, dict):
+        section['status'] = 'skipped'
+        section['reason'] = 'not_configured'
+        write_json(bundle_summary_path, section)
+        write_json(root / BROKER_SUMMARY, section)
+        return section
+
+    copied_report = copy_json_artifact(report_path, bundle_dir / report_path.name)
+    if copied_report:
+        section['bundle_report_path'] = relpath(Path(copied_report), root)
+    section['report'] = report
+    section['status'] = component_status(report)
+    write_json(bundle_summary_path, section)
+    write_json(root / BROKER_SUMMARY, section)
+    return section
+
+
 def build_recent_runs(bundle_root: Path, root: Path, limit: int = 8) -> list[dict[str, Any]]:
     runs: list[tuple[str, dict[str, Any]]] = []
     if not bundle_root.exists():
@@ -186,6 +334,7 @@ def build_followup_digests(root: Path) -> list[tuple[str, str]]:
 def render_index(
     summary: dict[str, Any],
     recent_runs: list[dict[str, Any]],
+    continuation_gate: dict[str, Any] | None = None,
     continuation_artifacts: list[tuple[str, str]] | None = None,
     followup_digests: list[tuple[str, str]] | None = None,
 ) -> str:
@@ -220,6 +369,65 @@ def render_index(
             lines.append(f"- Task ID: `{section['task_id']}`")
         lines.append('')
 
+    broker = summary.get('broker')
+    if isinstance(broker, dict):
+        lines.append('### broker')
+        lines.append(f"- Enabled: `{broker['enabled']}`")
+        lines.append(f"- Status: `{broker['status']}`")
+        lines.append(f"- Configuration state: `{broker['configuration_state']}`")
+        lines.append(f"- Bundle summary: `{broker['bundle_summary_path']}`")
+        lines.append(f"- Canonical summary: `{broker['canonical_summary_path']}`")
+        lines.append(f"- Bundle bootstrap summary: `{broker['bundle_bootstrap_summary_path']}`")
+        lines.append(f"- Canonical bootstrap summary: `{broker['canonical_bootstrap_summary_path']}`")
+        lines.append(f"- Validation pack: `{broker['validation_pack_path']}`")
+        if broker.get('backend'):
+            lines.append(f"- Backend: `{broker['backend']}`")
+        if broker.get('bootstrap_ready') is not None:
+            lines.append(f"- Bootstrap ready: `{broker['bootstrap_ready']}`")
+        if broker.get('runtime_posture'):
+            lines.append(f"- Runtime posture: `{broker['runtime_posture']}`")
+        if broker.get('live_adapter_implemented') is not None:
+            lines.append(f"- Live adapter implemented: `{broker['live_adapter_implemented']}`")
+        completeness = broker.get('config_completeness')
+        if isinstance(completeness, dict):
+            lines.append(
+                "- Config completeness: "
+                f"driver=`{completeness.get('driver', False)}` "
+                f"urls=`{completeness.get('urls', False)}` "
+                f"topic=`{completeness.get('topic', False)}` "
+                f"consumer_group=`{completeness.get('consumer_group', False)}`"
+            )
+        if broker.get('proof_boundary'):
+            lines.append(f"- Proof boundary: `{broker['proof_boundary']}`")
+        for error in broker.get('validation_errors', []):
+            lines.append(f"- Validation error: `{error}`")
+        if broker.get('bundle_report_path'):
+            lines.append(f"- Bundle report: `{broker['bundle_report_path']}`")
+        if broker.get('canonical_report_path'):
+            lines.append(f"- Canonical report: `{broker['canonical_report_path']}`")
+        if broker.get('reason'):
+            lines.append(f"- Reason: `{broker['reason']}`")
+        lines.append('')
+
+    shared_queue = summary.get('shared_queue_companion')
+    if isinstance(shared_queue, dict):
+        lines.append('### shared-queue companion')
+        lines.append(f"- Available: `{shared_queue['available']}`")
+        lines.append(f"- Status: `{shared_queue['status']}`")
+        lines.append(f"- Bundle summary: `{shared_queue['bundle_summary_path']}`")
+        lines.append(f"- Canonical summary: `{shared_queue['canonical_summary_path']}`")
+        lines.append(f"- Bundle report: `{shared_queue['bundle_report_path']}`")
+        lines.append(f"- Canonical report: `{shared_queue['canonical_report_path']}`")
+        if shared_queue.get('cross_node_completions') is not None:
+            lines.append(f"- Cross-node completions: `{shared_queue['cross_node_completions']}`")
+        if shared_queue.get('duplicate_started_tasks') is not None:
+            lines.append(f"- Duplicate `task.started`: `{shared_queue['duplicate_started_tasks']}`")
+        if shared_queue.get('duplicate_completed_tasks') is not None:
+            lines.append(f"- Duplicate `task.completed`: `{shared_queue['duplicate_completed_tasks']}`")
+        if shared_queue.get('missing_completed_tasks') is not None:
+            lines.append(f"- Missing terminal completions: `{shared_queue['missing_completed_tasks']}`")
+        lines.append('')
+
     lines.extend(['## Workflow closeout commands', ''])
     for command in summary['closeout_commands']:
         lines.append(f'- `{command}`')
@@ -233,6 +441,31 @@ def render_index(
                 f"- `{run['run_id']}` · `{run['status']}` · `{run['generated_at']}` · `{run['bundle_path']}`"
             )
     lines.append('')
+    if continuation_gate:
+        lines.extend(['## Continuation gate', ''])
+        lines.append(f"- Status: `{continuation_gate['status']}`")
+        lines.append(f"- Recommendation: `{continuation_gate['recommendation']}`")
+        lines.append(f"- Report: `{continuation_gate['path']}`")
+        enforcement = continuation_gate.get('enforcement', {})
+        if enforcement.get('mode'):
+            lines.append(f"- Workflow mode: `{enforcement['mode']}`")
+        if enforcement.get('outcome'):
+            lines.append(f"- Workflow outcome: `{enforcement['outcome']}`")
+        gate_summary = continuation_gate.get('summary', {})
+        if gate_summary.get('latest_run_id'):
+            lines.append(f"- Latest reviewed run: `{gate_summary['latest_run_id']}`")
+        if 'failing_check_count' in gate_summary:
+            lines.append(f"- Failing checks: `{gate_summary['failing_check_count']}`")
+        if 'workflow_exit_code' in gate_summary:
+            lines.append(f"- Workflow exit code on current evidence: `{gate_summary['workflow_exit_code']}`")
+        reviewer_path = continuation_gate.get('reviewer_path', {})
+        if reviewer_path.get('digest_path'):
+            lines.append(f"- Reviewer digest: `{reviewer_path['digest_path']}`")
+        if reviewer_path.get('index_path'):
+            lines.append(f"- Reviewer index: `{reviewer_path['index_path']}`")
+        for action in continuation_gate.get('next_actions', []):
+            lines.append(f"- Next action: `{action}`")
+        lines.append('')
     if continuation_artifacts:
         lines.extend(['## Continuation artifacts', ''])
         for artifact_path, description in continuation_artifacts:
@@ -258,6 +491,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--run-kubernetes', default='1')
     parser.add_argument('--run-ray', default='1')
     parser.add_argument('--validation-status', default='0')
+    parser.add_argument('--run-broker', default='0')
+    parser.add_argument('--broker-backend', default='')
+    parser.add_argument('--broker-report-path', default='')
+    parser.add_argument('--broker-bootstrap-summary-path', default='')
     parser.add_argument('--local-report-path', required=True)
     parser.add_argument('--local-stdout-path', required=True)
     parser.add_argument('--local-stderr-path', required=True)
@@ -314,6 +551,15 @@ def main() -> int:
         stdout_path=Path(args.ray_stdout_path),
         stderr_path=Path(args.ray_stderr_path),
     )
+    summary['broker'] = build_broker_section(
+        enabled=args.run_broker == '1',
+        backend=args.broker_backend.strip(),
+        root=root,
+        bundle_dir=bundle_dir,
+        bootstrap_summary_path=(root / args.broker_bootstrap_summary_path) if args.broker_bootstrap_summary_path else None,
+        report_path=(root / args.broker_report_path) if args.broker_report_path else None,
+    )
+    summary['shared_queue_companion'] = build_shared_queue_companion(root, bundle_dir)
 
     bundle_summary_path = bundle_dir / 'summary.json'
     canonical_summary_path = root / args.summary_path
@@ -323,12 +569,15 @@ def main() -> int:
 
     bundle_root = bundle_dir.parent
     recent_runs = build_recent_runs(bundle_root, root)
+    continuation_gate = build_continuation_gate_summary(root)
     manifest = {'latest': summary, 'recent_runs': recent_runs}
+    if continuation_gate:
+        manifest['continuation_gate'] = continuation_gate
     write_json(root / args.manifest_path, manifest)
 
     continuation_artifacts = build_continuation_artifacts(root)
     followup_digests = build_followup_digests(root)
-    index_text = render_index(summary, recent_runs, continuation_artifacts, followup_digests)
+    index_text = render_index(summary, recent_runs, continuation_gate, continuation_artifacts, followup_digests)
     (root / args.index_path).parent.mkdir(parents=True, exist_ok=True)
     (root / args.index_path).write_text(index_text, encoding='utf-8')
     (bundle_dir / 'README.md').write_text(index_text, encoding='utf-8')

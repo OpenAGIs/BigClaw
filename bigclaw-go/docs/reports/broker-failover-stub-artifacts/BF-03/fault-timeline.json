@@ -1,0 +1,11 @@
+[
+  {
+    "timestamp": "2026-03-17T12:00:04Z",
+    "action": "consumer_crash",
+    "target": "consumer-a",
+    "details": {
+      "after_sequence": 3,
+      "before_checkpoint_commit": true
+    }
+  }
+]

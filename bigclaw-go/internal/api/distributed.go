@@ -10,6 +10,7 @@ import (
 	"bigclaw-go/internal/control"
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/executor"
+	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/risk"
 )
 
@@ -70,12 +71,63 @@ type distributedDiagnosticsReport struct {
 	ExportURL string `json:"export_url"`
 }
 
+type brokerProofReference struct {
+	Path       string   `json:"path"`
+	ScenarioID string   `json:"scenario_id"`
+	Outcomes   []string `json:"outcomes,omitempty"`
+}
+
+type brokerReviewPack struct {
+	Status                string               `json:"status"`
+	SummaryPath           string               `json:"summary_path"`
+	ReportPath            string               `json:"report_path"`
+	ValidationPackPath    string               `json:"validation_pack_path"`
+	ArtifactDirectory     string               `json:"artifact_directory"`
+	ReviewerLinks         []string             `json:"reviewer_links,omitempty"`
+	AmbiguousPublishProof brokerProofReference `json:"ambiguous_publish_proof"`
+}
+
+type traceExportBundleSummary struct {
+	TotalTraces             int                      `json:"total_traces"`
+	TracesWithTerminalState int                      `json:"traces_with_terminal_state"`
+	RecentTraces            []traceExportBundleTrace `json:"recent_traces,omitempty"`
+	ValidationArtifacts     []string                 `json:"validation_artifacts,omitempty"`
+	ReviewerNavigation      []string                 `json:"reviewer_navigation,omitempty"`
+	BackendLimitations      []string                 `json:"backend_limitations,omitempty"`
+	AmbiguousPublishProof   brokerProofReference     `json:"ambiguous_publish_proof"`
+}
+
+type traceExportBundleTrace struct {
+	TraceID         string           `json:"trace_id"`
+	TaskID          string           `json:"task_id"`
+	Executor        string           `json:"executor"`
+	State           string           `json:"state"`
+	EventCount      int              `json:"event_count"`
+	LatestEventType domain.EventType `json:"latest_event_type"`
+	DurationSeconds float64          `json:"duration_seconds"`
+	TraceURL        string           `json:"trace_url"`
+	EventURL        string           `json:"event_url"`
+}
+
 type distributedDiagnostics struct {
-	Summary          distributedDiagnosticsSummary `json:"summary"`
-	RoutingReasons   []routingReasonSummary        `json:"routing_reasons"`
-	ExecutorCapacity []executorCapacityView        `json:"executor_capacity"`
-	ClusterHealth    clusterHealthRollup           `json:"cluster_health"`
-	RolloutReport    distributedDiagnosticsReport  `json:"rollout_report"`
+	Summary               distributedDiagnosticsSummary            `json:"summary"`
+	RoutingReasons        []routingReasonSummary                   `json:"routing_reasons"`
+	ExecutorCapacity      []executorCapacityView                   `json:"executor_capacity"`
+	ClusterHealth         clusterHealthRollup                      `json:"cluster_health"`
+	LiveShadowMirror      liveShadowMirrorSurface                  `json:"live_shadow_mirror_scorecard"`
+	BrokerReviewPack      brokerReviewPack                         `json:"broker_review_pack"`
+	BrokerReviewBundle    brokerReviewBundleSurface                `json:"broker_review_bundle"`
+	MigrationReviewPack   migrationReviewPack                      `json:"migration_review_pack"`
+	BrokerFanoutIsolation brokerStubFanoutIsolationEvidencePack    `json:"broker_stub_fanout_isolation"`
+	ProviderLiveHandoff   providerLiveHandoffIsolationEvidencePack `json:"provider_live_handoff_isolation"`
+	BrokerBootstrap       brokerBootstrapSurface                   `json:"broker_bootstrap_surface"`
+	DeliveryAckReadiness  deliveryAckReadinessSurface              `json:"delivery_ack_readiness"`
+	PublishAckOutcomes    publishAckOutcomeSurface                 `json:"publish_ack_outcomes"`
+	SequenceBridge        sequenceBridgeSurface                    `json:"sequence_bridge_surface"`
+	RetentionExpiry       retentionExpirySurface                   `json:"retention_expiry_surface"`
+	ContinuationGate      validationBundleContinuationGateSurface  `json:"validation_bundle_continuation"`
+	TraceBundle           traceExportBundleSummary                 `json:"trace_export_bundle"`
+	RolloutReport         distributedDiagnosticsReport             `json:"rollout_report"`
 }
 
 type executorDiagnosticsCounters struct {
@@ -118,11 +170,25 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 			"limit":      filters.Limit,
 			"priority":   filters.Priority,
 		},
-		"summary":           diagnostics.Summary,
-		"routing_reasons":   diagnostics.RoutingReasons,
-		"executor_capacity": diagnostics.ExecutorCapacity,
-		"cluster_health":    diagnostics.ClusterHealth,
-		"report":            diagnostics.RolloutReport,
+		"event_durability":                s.EventPlan,
+		"summary":                         diagnostics.Summary,
+		"routing_reasons":                 diagnostics.RoutingReasons,
+		"executor_capacity":               diagnostics.ExecutorCapacity,
+		"cluster_health":                  diagnostics.ClusterHealth,
+		"live_shadow_mirror_scorecard":    diagnostics.LiveShadowMirror,
+		"broker_review_pack":              diagnostics.BrokerReviewPack,
+		"broker_review_bundle":            diagnostics.BrokerReviewBundle,
+		"broker_stub_fanout_isolation":    diagnostics.BrokerFanoutIsolation,
+		"provider_live_handoff_isolation": diagnostics.ProviderLiveHandoff,
+		"broker_bootstrap_surface":        diagnostics.BrokerBootstrap,
+		"trace_export_bundle":             diagnostics.TraceBundle,
+		"migration_review_pack":           diagnostics.MigrationReviewPack,
+		"delivery_ack_readiness":          diagnostics.DeliveryAckReadiness,
+		"publish_ack_outcomes":            diagnostics.PublishAckOutcomes,
+		"sequence_bridge_surface":         diagnostics.SequenceBridge,
+		"retention_expiry_surface":        diagnostics.RetentionExpiry,
+		"validation_bundle_continuation":  diagnostics.ContinuationGate,
+		"report":                          diagnostics.RolloutReport,
 	})
 }
 
@@ -342,10 +408,23 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		Notes:              diagnosticsNotes(summary, executorCapacity, s.Control.Snapshot()),
 	}
 	diagnostics := distributedDiagnostics{
-		Summary:          summary,
-		RoutingReasons:   routingReasons,
-		ExecutorCapacity: executorCapacity,
-		ClusterHealth:    clusterHealth,
+		Summary:               summary,
+		RoutingReasons:        routingReasons,
+		ExecutorCapacity:      executorCapacity,
+		ClusterHealth:         clusterHealth,
+		LiveShadowMirror:      liveShadowMirrorPayload(),
+		BrokerReviewPack:      buildBrokerReviewPack(),
+		BrokerReviewBundle:    brokerReviewBundleSurfacePayload(),
+		MigrationReviewPack:   buildMigrationReviewPack(),
+		BrokerFanoutIsolation: brokerStubFanoutIsolationPayload(),
+		ProviderLiveHandoff:   providerLiveHandoffIsolationPayload(),
+		BrokerBootstrap:       brokerBootstrapSurfacePayload(),
+		DeliveryAckReadiness:  deliveryAckReadinessPayload(),
+		PublishAckOutcomes:    publishAckOutcomeSurfacePayload(),
+		SequenceBridge:        sequenceBridgeSurfacePayload(),
+		RetentionExpiry:       retentionExpirySurfacePayload(),
+		ContinuationGate:      validationBundleContinuationGatePayload(),
+		TraceBundle:           buildTraceExportBundle(assignments, s.Recorder.TraceSummaries(5)),
 	}
 	diagnostics.RolloutReport = distributedDiagnosticsReport{
 		Markdown:  renderDistributedDiagnosticsMarkdown(diagnostics, filters),
@@ -652,6 +731,344 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	if len(diagnostics.ClusterHealth.TakeoverOwners) > 0 {
 		lines = append(lines, "- Takeover owners: "+formatFacetCounts(diagnostics.ClusterHealth.TakeoverOwners))
 	}
+	lines = append(lines,
+		"",
+		"## Trace Export Bundle",
+		fmt.Sprintf("- Total traces: %d", diagnostics.TraceBundle.TotalTraces),
+		fmt.Sprintf("- Traces with terminal state: %d", diagnostics.TraceBundle.TracesWithTerminalState),
+	)
+	if len(diagnostics.TraceBundle.RecentTraces) == 0 {
+		lines = append(lines, "- No trace summaries captured")
+	} else {
+		for _, item := range diagnostics.TraceBundle.RecentTraces {
+			lines = append(lines, fmt.Sprintf("- %s: task=%s executor=%s state=%s events=%d latest=%s duration=%.3fs trace=%s events=%s", item.TraceID, item.TaskID, firstNonEmpty(item.Executor, "unknown"), firstNonEmpty(item.State, "unknown"), item.EventCount, firstNonEmpty(string(item.LatestEventType), "unknown"), item.DurationSeconds, item.TraceURL, item.EventURL))
+		}
+	}
+	if len(diagnostics.TraceBundle.ValidationArtifacts) > 0 {
+		lines = append(lines, "- Validation artifacts: "+strings.Join(diagnostics.TraceBundle.ValidationArtifacts, ", "))
+	}
+	if diagnostics.TraceBundle.AmbiguousPublishProof.Path != "" {
+		lines = append(lines, fmt.Sprintf("- Ambiguous publish proof: %s (%s: %s)", diagnostics.TraceBundle.AmbiguousPublishProof.Path, diagnostics.TraceBundle.AmbiguousPublishProof.ScenarioID, strings.Join(diagnostics.TraceBundle.AmbiguousPublishProof.Outcomes, ", ")))
+	}
+	if len(diagnostics.TraceBundle.ReviewerNavigation) > 0 {
+		lines = append(lines, "- Reviewer navigation: "+strings.Join(diagnostics.TraceBundle.ReviewerNavigation, ", "))
+	}
+	if len(diagnostics.TraceBundle.BackendLimitations) > 0 {
+		lines = append(lines, "- Backend limitations: "+strings.Join(diagnostics.TraceBundle.BackendLimitations, "; "))
+	}
+	lines = append(lines,
+		"",
+		"## Live Shadow Mirror Scorecard",
+		fmt.Sprintf("- Canonical summary: %s", diagnostics.LiveShadowMirror.CanonicalSummaryPath),
+		fmt.Sprintf("- Scorecard report: %s", diagnostics.LiveShadowMirror.ReportPath),
+		fmt.Sprintf("- Status: %s", diagnostics.LiveShadowMirror.Status),
+		fmt.Sprintf("- Severity: %s", firstNonEmpty(diagnostics.LiveShadowMirror.Severity, "none")),
+		fmt.Sprintf("- Latest evidence timestamp: %s", firstNonEmpty(diagnostics.LiveShadowMirror.LatestEvidenceTimestamp, "unknown")),
+		fmt.Sprintf("- Evidence runs: %d", diagnostics.LiveShadowMirror.Summary.TotalEvidenceRuns),
+		fmt.Sprintf("- Parity OK: %d", diagnostics.LiveShadowMirror.Summary.ParityOKCount),
+		fmt.Sprintf("- Drift detected: %d", diagnostics.LiveShadowMirror.Summary.DriftDetectedCount),
+		fmt.Sprintf("- Matrix mismatched: %d", diagnostics.LiveShadowMirror.Summary.MatrixMismatched),
+		fmt.Sprintf("- Fresh inputs: %d", diagnostics.LiveShadowMirror.Summary.FreshInputs),
+		fmt.Sprintf("- Stale inputs: %d", diagnostics.LiveShadowMirror.Summary.StaleInputs),
+	)
+	if len(diagnostics.LiveShadowMirror.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.LiveShadowMirror.ReviewerLinks, ", "))
+	}
+	for _, checkpoint := range diagnostics.LiveShadowMirror.CutoverCheckpoints {
+		lines = append(lines, fmt.Sprintf("- Cutover check %s: passed=%t detail=%s", checkpoint.Name, checkpoint.Passed, firstNonEmpty(checkpoint.Detail, "n/a")))
+	}
+	lines = append(lines,
+		"",
+		"## Broker Failover Review Pack",
+		fmt.Sprintf("- Status: %s", diagnostics.BrokerReviewPack.Status),
+		fmt.Sprintf("- Canonical summary: %s", diagnostics.BrokerReviewPack.SummaryPath),
+		fmt.Sprintf("- Stub report: %s", diagnostics.BrokerReviewPack.ReportPath),
+		fmt.Sprintf("- Validation pack: %s", diagnostics.BrokerReviewPack.ValidationPackPath),
+		fmt.Sprintf("- Artifact directory: %s", diagnostics.BrokerReviewPack.ArtifactDirectory),
+	)
+	if diagnostics.BrokerReviewPack.AmbiguousPublishProof.Path != "" {
+		lines = append(lines, fmt.Sprintf("- Ambiguous publish proof: %s (%s: %s)", diagnostics.BrokerReviewPack.AmbiguousPublishProof.Path, diagnostics.BrokerReviewPack.AmbiguousPublishProof.ScenarioID, strings.Join(diagnostics.BrokerReviewPack.AmbiguousPublishProof.Outcomes, ", ")))
+	}
+	if len(diagnostics.BrokerReviewPack.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.BrokerReviewPack.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Broker Review Bundle",
+		fmt.Sprintf("- Canonical summary: %s", diagnostics.BrokerReviewBundle.CanonicalSummaryPath),
+		fmt.Sprintf("- Canonical bootstrap summary: %s", diagnostics.BrokerReviewBundle.CanonicalBootstrapSummaryPath),
+		fmt.Sprintf("- Validation pack: %s", diagnostics.BrokerReviewBundle.ValidationPackPath),
+		fmt.Sprintf("- Stub report: %s", diagnostics.BrokerReviewBundle.StubReportPath),
+		fmt.Sprintf("- Artifact directory: %s", diagnostics.BrokerReviewBundle.ArtifactDirectory),
+		fmt.Sprintf("- Review readiness: %s", diagnostics.BrokerReviewBundle.ReviewReadinessPath),
+		fmt.Sprintf("- Live validation index: %s", diagnostics.BrokerReviewBundle.LiveValidationIndexPath),
+		fmt.Sprintf("- Operator guide: %s", diagnostics.BrokerReviewBundle.OperatorGuidePath),
+		fmt.Sprintf("- Runtime posture: %s", firstNonEmpty(diagnostics.BrokerReviewBundle.RuntimePosture, "unknown")),
+		fmt.Sprintf("- Bootstrap ready: %t", diagnostics.BrokerReviewBundle.BootstrapReady),
+		fmt.Sprintf("- Live adapter implemented: %t", diagnostics.BrokerReviewBundle.LiveAdapterImplemented),
+	)
+	if diagnostics.BrokerReviewBundle.ProofBoundary != "" {
+		lines = append(lines, "- Proof boundary: "+diagnostics.BrokerReviewBundle.ProofBoundary)
+	}
+	if len(diagnostics.BrokerReviewBundle.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer bundle links: "+strings.Join(diagnostics.BrokerReviewBundle.ReviewerLinks, ", "))
+	}
+	if diagnostics.BrokerReviewBundle.AmbiguousPublishProof.Path != "" {
+		lines = append(lines, fmt.Sprintf("- Ambiguous publish proof: %s (%s: %s)", diagnostics.BrokerReviewBundle.AmbiguousPublishProof.Path, diagnostics.BrokerReviewBundle.AmbiguousPublishProof.ScenarioID, strings.Join(diagnostics.BrokerReviewBundle.AmbiguousPublishProof.Outcomes, ", ")))
+	}
+	lines = append(lines,
+		"",
+		"## Broker Bootstrap Readiness",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.BrokerBootstrap.ReportPath),
+		fmt.Sprintf("- Canonical summary: %s", diagnostics.BrokerBootstrap.CanonicalSummaryPath),
+		fmt.Sprintf("- Canonical bootstrap summary: %s", diagnostics.BrokerBootstrap.CanonicalBootstrapSummaryPath),
+		fmt.Sprintf("- Validation pack: %s", diagnostics.BrokerBootstrap.ValidationPackPath),
+		fmt.Sprintf("- Configuration state: %s", firstNonEmpty(diagnostics.BrokerBootstrap.ConfigurationState, "unknown")),
+		fmt.Sprintf("- Runtime posture: %s", firstNonEmpty(diagnostics.BrokerBootstrap.RuntimePosture, "unknown")),
+		fmt.Sprintf("- Runtime gate: requested=%t fail_closed=%t contract_only=%t stub_driver_only=%t safe_for_live_traffic=%t", diagnostics.BrokerBootstrap.RuntimeGate.Requested, diagnostics.BrokerBootstrap.RuntimeGate.FailClosed, diagnostics.BrokerBootstrap.RuntimeGate.ContractOnly, diagnostics.BrokerBootstrap.RuntimeGate.StubDriverOnly, diagnostics.BrokerBootstrap.RuntimeGate.SafeForLiveTraffic),
+		fmt.Sprintf("- Bootstrap ready: %t", diagnostics.BrokerBootstrap.BootstrapReady),
+		fmt.Sprintf("- Live adapter implemented: %t", diagnostics.BrokerBootstrap.LiveAdapterImplemented),
+	)
+	if diagnostics.BrokerBootstrap.ProofBoundary != "" {
+		lines = append(lines, "- Proof boundary: "+diagnostics.BrokerBootstrap.ProofBoundary)
+	}
+	if diagnostics.BrokerBootstrap.RuntimeGate.OperatorMessage != "" {
+		lines = append(lines, "- Runtime gate message: "+diagnostics.BrokerBootstrap.RuntimeGate.OperatorMessage)
+	}
+	lines = append(lines, fmt.Sprintf("- Config completeness: driver=%t urls=%t topic=%t consumer_group=%t", diagnostics.BrokerBootstrap.ConfigCompleteness.Driver, diagnostics.BrokerBootstrap.ConfigCompleteness.URLs, diagnostics.BrokerBootstrap.ConfigCompleteness.Topic, diagnostics.BrokerBootstrap.ConfigCompleteness.ConsumerGroup))
+	if len(diagnostics.BrokerBootstrap.ConfigDiagnostics.MissingFields) > 0 {
+		lines = append(lines, "- Missing fields: "+strings.Join(diagnostics.BrokerBootstrap.ConfigDiagnostics.MissingFields, ", "))
+	}
+	if len(diagnostics.BrokerBootstrap.ConfigDiagnostics.MissingRequiredEnv) > 0 {
+		lines = append(lines, "- Missing required env: "+strings.Join(diagnostics.BrokerBootstrap.ConfigDiagnostics.MissingRequiredEnv, ", "))
+	}
+	if len(diagnostics.BrokerBootstrap.ConfigDiagnostics.MissingAdvisoryEnv) > 0 {
+		lines = append(lines, "- Missing advisory env: "+strings.Join(diagnostics.BrokerBootstrap.ConfigDiagnostics.MissingAdvisoryEnv, ", "))
+	}
+	if len(diagnostics.BrokerBootstrap.ValidationErrors) > 0 {
+		lines = append(lines, "- Validation errors: "+strings.Join(diagnostics.BrokerBootstrap.ValidationErrors, "; "))
+	}
+	if diagnostics.BrokerBootstrap.BootstrapSummary.BrokerBootstrap != nil {
+		bootstrap := diagnostics.BrokerBootstrap.BootstrapSummary.BrokerBootstrap
+		lines = append(lines, fmt.Sprintf("- Broker timing knobs: publish_timeout=%s replay_limit=%d checkpoint_interval=%s", bootstrap.PublishTimeout, bootstrap.ReplayLimit, bootstrap.CheckpointInterval))
+	}
+	if len(diagnostics.BrokerBootstrap.ConfigDiagnostics.NextActions) > 0 {
+		lines = append(lines, "- Next actions: "+strings.Join(diagnostics.BrokerBootstrap.ConfigDiagnostics.NextActions, " ; "))
+	}
+	if len(diagnostics.BrokerBootstrap.ConfigDiagnostics.ReferenceDocs) > 0 {
+		lines = append(lines, "- Reference docs: "+strings.Join(diagnostics.BrokerBootstrap.ConfigDiagnostics.ReferenceDocs, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Migration Readiness Review Pack",
+		fmt.Sprintf("- Status: %s", diagnostics.MigrationReviewPack.Status),
+		fmt.Sprintf("- Readiness report: %s", diagnostics.MigrationReviewPack.ReadinessReportPath),
+		fmt.Sprintf("- Live shadow scorecard: %s", diagnostics.MigrationReviewPack.ScorecardPath),
+		fmt.Sprintf("- Canonical summary: %s", diagnostics.MigrationReviewPack.CanonicalSummaryPath),
+		fmt.Sprintf("- Run summary: %s", diagnostics.MigrationReviewPack.SummaryPath),
+		fmt.Sprintf("- Live shadow index: %s", diagnostics.MigrationReviewPack.IndexPath),
+		fmt.Sprintf("- Follow-up digest: %s", diagnostics.MigrationReviewPack.FollowUpDigestPath),
+		fmt.Sprintf("- Rollback trigger surface: %s", diagnostics.MigrationReviewPack.RollbackTriggerPath),
+		fmt.Sprintf("- Parity OK runs: %d", diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.ParityOKCount),
+		fmt.Sprintf("- Drift detected runs: %d", diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.DriftDetectedCount),
+		fmt.Sprintf("- Matrix mismatches: %d", diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.MatrixMismatched),
+		fmt.Sprintf("- Corpus coverage present: %t", diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.CorpusCoveragePresent),
+		fmt.Sprintf("- Rollback automation boundary: %s", diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.RollbackTriggerSurface.AutomationBoundary),
+	)
+	if len(diagnostics.MigrationReviewPack.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.MigrationReviewPack.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Rollback Trigger Surface",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReportPath),
+		fmt.Sprintf("- Issue: %s / %s", firstNonEmpty(diagnostics.MigrationReviewPack.RollbackTriggerSurface.Issue.ID, "unknown"), firstNonEmpty(diagnostics.MigrationReviewPack.RollbackTriggerSurface.Issue.Slug, "unknown")),
+		fmt.Sprintf("- Status: %s", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Status),
+		fmt.Sprintf("- Automation boundary: %s", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.AutomationBoundary),
+		fmt.Sprintf("- Automated rollback trigger: %t", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.AutomatedRollbackTrigger),
+		fmt.Sprintf("- Cutover gate: %s", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.CutoverGate),
+		fmt.Sprintf("- Blockers: %d", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Distinctions.Blockers),
+		fmt.Sprintf("- Warnings: %d", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Distinctions.Warnings),
+		fmt.Sprintf("- Manual-only paths: %d", diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Distinctions.ManualOnlyPaths),
+	)
+	if len(diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Broker Stub Live Fanout Isolation",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.BrokerFanoutIsolation.ReportPath),
+		fmt.Sprintf("- Scenario count: %d", diagnostics.BrokerFanoutIsolation.Summary.ScenarioCount),
+		fmt.Sprintf("- Isolated scenarios: %d", diagnostics.BrokerFanoutIsolation.Summary.IsolatedScenarios),
+		fmt.Sprintf("- Stalled scenarios: %d", diagnostics.BrokerFanoutIsolation.Summary.StalledScenarios),
+		fmt.Sprintf("- Replay backlog: %d events", diagnostics.BrokerFanoutIsolation.Summary.ReplayBacklogEvents),
+		fmt.Sprintf("- Replay step delay: %dms", diagnostics.BrokerFanoutIsolation.Summary.ReplayStepDelayMS),
+		fmt.Sprintf("- Live delivery deadline: %dms", diagnostics.BrokerFanoutIsolation.Summary.LiveDeliveryDeadlineMS),
+	)
+	for _, scenario := range diagnostics.BrokerFanoutIsolation.Scenarios {
+		lines = append(lines, fmt.Sprintf("- %s: status=%s replay=%s live=%s backlog=%d replay_delay=%dms live_deadline=%dms replay_after_live=%t", scenario.Name, scenario.Status, firstNonEmpty(scenario.ReplayPath, "unknown"), firstNonEmpty(scenario.LivePath, "unknown"), scenario.ReplayBacklogEvents, scenario.ReplayStepDelayMS, scenario.LiveDeliveryDeadlineMS, scenario.ReplayDrainsAfterLive))
+		if len(scenario.SourceTests) > 0 {
+			lines = append(lines, "  - source tests: "+strings.Join(scenario.SourceTests, ", "))
+		}
+	}
+	if len(diagnostics.BrokerFanoutIsolation.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.BrokerFanoutIsolation.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Delivery Acknowledgement Readiness",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.DeliveryAckReadiness.ReportPath),
+		fmt.Sprintf("- Explicit ACK backends: %d", diagnostics.DeliveryAckReadiness.Summary.ExplicitAckBackends),
+		fmt.Sprintf("- Durable ACK backends: %d", diagnostics.DeliveryAckReadiness.Summary.DurableAckBackends),
+		fmt.Sprintf("- Best-effort backends: %d", diagnostics.DeliveryAckReadiness.Summary.BestEffortBackends),
+		fmt.Sprintf("- Contract-only backends: %d", diagnostics.DeliveryAckReadiness.Summary.ContractOnlyBackends),
+	)
+	for _, backend := range diagnostics.DeliveryAckReadiness.Backends {
+		lines = append(lines, fmt.Sprintf("- %s: class=%s explicit_ack=%t durable_ack=%t readiness=%s", backend.Backend, backend.AcknowledgementClass, backend.ExplicitAcknowledgement, backend.DurableAcknowledgement, backend.RuntimeReadiness))
+		if len(backend.SourceReportLinks) > 0 {
+			lines = append(lines, "  - sources: "+strings.Join(backend.SourceReportLinks, ", "))
+		}
+	}
+	if len(diagnostics.DeliveryAckReadiness.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.DeliveryAckReadiness.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Publish Acknowledgement Outcome Ledger",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.PublishAckOutcomes.ReportPath),
+		fmt.Sprintf("- Scenario: %s", firstNonEmpty(diagnostics.PublishAckOutcomes.Summary.ScenarioID, "unknown")),
+		fmt.Sprintf("- Proof status: %s", firstNonEmpty(diagnostics.PublishAckOutcomes.Summary.ProofStatus, "unknown")),
+		fmt.Sprintf("- committed=%d rejected=%d unknown_commit=%d", diagnostics.PublishAckOutcomes.Summary.CommittedCount, diagnostics.PublishAckOutcomes.Summary.RejectedCount, diagnostics.PublishAckOutcomes.Summary.UnknownCommitCount),
+	)
+	if len(diagnostics.PublishAckOutcomes.Summary.RequiredOutcomes) > 0 {
+		lines = append(lines, "- Required outcomes: "+strings.Join(diagnostics.PublishAckOutcomes.Summary.RequiredOutcomes, ", "))
+	}
+	for _, outcome := range diagnostics.PublishAckOutcomes.Outcomes {
+		lines = append(lines, fmt.Sprintf("- %s: %s", outcome.Outcome, firstNonEmpty(outcome.ProofRule, "n/a")))
+		if len(outcome.RequiredEvidence) > 0 {
+			lines = append(lines, "  - evidence: "+strings.Join(outcome.RequiredEvidence, ", "))
+		}
+		if outcome.OperatorAction != "" {
+			lines = append(lines, "  - operator action: "+outcome.OperatorAction)
+		}
+	}
+	if len(diagnostics.PublishAckOutcomes.Limitations) > 0 {
+		lines = append(lines, "- Limitations: "+strings.Join(diagnostics.PublishAckOutcomes.Limitations, "; "))
+	}
+	if len(diagnostics.PublishAckOutcomes.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.PublishAckOutcomes.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Durable Sequence Bridge",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.SequenceBridge.ReportPath),
+		fmt.Sprintf("- Backends: %d", diagnostics.SequenceBridge.Summary.BackendCount),
+		fmt.Sprintf("- Live-proven backends: %d", diagnostics.SequenceBridge.Summary.LiveProvenBackends),
+		fmt.Sprintf("- Harness-proven backends: %d", diagnostics.SequenceBridge.Summary.HarnessProvenBackends),
+		fmt.Sprintf("- Contract-only backends: %d", diagnostics.SequenceBridge.Summary.ContractOnlyBackends),
+		fmt.Sprintf("- One-to-one mappings: %d", diagnostics.SequenceBridge.Summary.OneToOneMappings),
+		fmt.Sprintf("- Epoch-bridged backends: %d", diagnostics.SequenceBridge.Summary.ProviderEpochBridgedBackends),
+	)
+	for _, backend := range diagnostics.SequenceBridge.Backends {
+		lines = append(lines, fmt.Sprintf("- %s: readiness=%s contract=%s", backend.Backend, backend.RuntimeReadiness, firstNonEmpty(backend.MappingContract, "n/a")))
+		if backend.PortableSequenceSource != "" {
+			lines = append(lines, "  - portable sequence: "+backend.PortableSequenceSource)
+		}
+		if backend.ProviderOffsetSource != "" {
+			lines = append(lines, "  - provider offset: "+backend.ProviderOffsetSource)
+		}
+		if backend.OwnershipEpochSource != "" {
+			lines = append(lines, "  - ownership epoch: "+backend.OwnershipEpochSource)
+		}
+	}
+	if len(diagnostics.SequenceBridge.CurrentCeiling) > 0 {
+		lines = append(lines, "- Current ceiling: "+strings.Join(diagnostics.SequenceBridge.CurrentCeiling, "; "))
+	}
+	if len(diagnostics.SequenceBridge.NextRuntimeHooks) > 0 {
+		lines = append(lines, "- Next runtime hooks: "+strings.Join(diagnostics.SequenceBridge.NextRuntimeHooks, "; "))
+	}
+	lines = append(lines,
+		"",
+		"## Retention Watermark & Expiry",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.RetentionExpiry.ReportPath),
+		fmt.Sprintf("- Runtime-visible backends: %d", diagnostics.RetentionExpiry.Summary.RuntimeVisibleBackends),
+		fmt.Sprintf("- Persisted-boundary backends: %d", diagnostics.RetentionExpiry.Summary.PersistedBoundaryBackends),
+		fmt.Sprintf("- Fail-closed expiry backends: %d", diagnostics.RetentionExpiry.Summary.FailClosedExpiryBackends),
+		fmt.Sprintf("- Contract-only backends: %d", diagnostics.RetentionExpiry.Summary.ContractOnlyBackends),
+	)
+	for _, backend := range diagnostics.RetentionExpiry.Backends {
+		lines = append(lines, fmt.Sprintf("- %s: readiness=%s visible=%t persisted=%t fail_closed=%t", backend.Backend, backend.RuntimeReadiness, backend.RetainedBoundaryVisible, backend.PersistedBoundaries, backend.FailClosedExpiry))
+		if backend.ReplayBoundarySource != "" {
+			lines = append(lines, "  - replay boundary: "+backend.ReplayBoundarySource)
+		}
+		if backend.CheckpointExpiryHandling != "" {
+			lines = append(lines, "  - expiry handling: "+backend.CheckpointExpiryHandling)
+		}
+		if backend.CheckpointCleanupPolicy != "" {
+			lines = append(lines, "  - checkpoint cleanup: "+backend.CheckpointCleanupPolicy)
+		}
+	}
+	if len(diagnostics.RetentionExpiry.PolicySplit) > 0 {
+		lines = append(lines, "- Policy split: "+strings.Join(diagnostics.RetentionExpiry.PolicySplit, "; "))
+	}
+	if len(diagnostics.RetentionExpiry.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.RetentionExpiry.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Provider-backed Live Handoff Isolation",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.ProviderLiveHandoff.ReportPath),
+		fmt.Sprintf("- Backend: %s", firstNonEmpty(diagnostics.ProviderLiveHandoff.Backend, "unknown")),
+		fmt.Sprintf("- Validation lane: %s", firstNonEmpty(diagnostics.ProviderLiveHandoff.ValidationLane, "unknown")),
+		fmt.Sprintf("- Isolated scenarios: %d", diagnostics.ProviderLiveHandoff.Summary.IsolatedScenarios),
+		fmt.Sprintf("- Stalled scenarios: %d", diagnostics.ProviderLiveHandoff.Summary.StalledScenarios),
+		fmt.Sprintf("- Replay backlog events: %d", diagnostics.ProviderLiveHandoff.Summary.ReplayBacklogEvents),
+		fmt.Sprintf("- Live delivery deadline: %dms", diagnostics.ProviderLiveHandoff.Summary.LiveDeliveryDeadlineMS),
+	)
+	for _, scenario := range diagnostics.ProviderLiveHandoff.Scenarios {
+		lines = append(lines, fmt.Sprintf("- %s: status=%s replay_drains_after_live=%t", scenario.Name, scenario.Status, scenario.ReplayDrainsAfterLive))
+		if scenario.ReplayPath != "" {
+			lines = append(lines, "  - replay path: "+scenario.ReplayPath)
+		}
+		if scenario.LivePath != "" {
+			lines = append(lines, "  - live path: "+scenario.LivePath)
+		}
+	}
+	if len(diagnostics.ProviderLiveHandoff.Limitations) > 0 {
+		lines = append(lines, "- Limitations: "+strings.Join(diagnostics.ProviderLiveHandoff.Limitations, "; "))
+	}
+	if len(diagnostics.ProviderLiveHandoff.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.ProviderLiveHandoff.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## Validation Bundle Continuation Gate",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.ContinuationGate.ReportPath),
+		fmt.Sprintf("- Scorecard: %s", diagnostics.ContinuationGate.ScorecardPath),
+		fmt.Sprintf("- Recommendation: %s", diagnostics.ContinuationGate.Recommendation),
+		fmt.Sprintf("- Status: %s", diagnostics.ContinuationGate.Status),
+		fmt.Sprintf("- Latest run: %s", firstNonEmpty(diagnostics.ContinuationGate.Summary.LatestRunID, "unknown")),
+		fmt.Sprintf("- Latest bundle age: %.2f hours", diagnostics.ContinuationGate.Summary.LatestBundleAgeHours),
+		fmt.Sprintf("- Recent bundle count: %d", diagnostics.ContinuationGate.Summary.RecentBundleCount),
+		fmt.Sprintf("- Repeated executor coverage: %t", diagnostics.ContinuationGate.Summary.AllExecutorTracksHaveRepeatedRecentCoverage),
+		fmt.Sprintf("- Shared queue companion available: %t", diagnostics.ContinuationGate.Summary.SharedQueueCompanionAvailable),
+		fmt.Sprintf("- Cross-node completions: %d", diagnostics.ContinuationGate.Summary.CrossNodeCompletions),
+	)
+	if diagnostics.ContinuationGate.DigestPath != "" {
+		lines = append(lines, "- Reviewer digest: "+diagnostics.ContinuationGate.DigestPath)
+	}
+	for _, check := range diagnostics.ContinuationGate.PolicyChecks {
+		lines = append(lines, fmt.Sprintf("- Policy check %s: passed=%t detail=%s", check.Name, check.Passed, firstNonEmpty(check.Detail, "n/a")))
+	}
+	if len(diagnostics.ContinuationGate.CurrentCeiling) > 0 {
+		lines = append(lines, "- Current ceiling: "+strings.Join(diagnostics.ContinuationGate.CurrentCeiling, "; "))
+	}
+	if len(diagnostics.ContinuationGate.NextActions) > 0 {
+		lines = append(lines, "- Next actions: "+strings.Join(diagnostics.ContinuationGate.NextActions, "; "))
+	}
+	if len(diagnostics.ContinuationGate.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.ContinuationGate.ReviewerLinks, ", "))
+	}
 	lines = append(lines, "", "## Notes")
 	for _, note := range diagnostics.ClusterHealth.Notes {
 		lines = append(lines, "- "+note)
@@ -675,4 +1092,97 @@ func sanitizeReportName(value string) string {
 		return "all"
 	}
 	return value
+}
+
+func buildTraceExportBundle(assignments []distributedTaskAssignment, summaries []observability.TraceSummary) traceExportBundleSummary {
+	ambiguousPublishProof := buildAmbiguousPublishProofReference()
+	assignmentByTrace := make(map[string]distributedTaskAssignment, len(assignments))
+	tracesWithTerminalState := 0
+	for _, assignment := range assignments {
+		if assignment.Task.TraceID == "" {
+			continue
+		}
+		assignmentByTrace[assignment.Task.TraceID] = assignment
+		if isTerminalState(assignment.EffectiveState) {
+			tracesWithTerminalState++
+		}
+	}
+	recent := make([]traceExportBundleTrace, 0, len(summaries))
+	for _, summary := range summaries {
+		assignment, ok := assignmentByTrace[summary.TraceID]
+		if !ok {
+			continue
+		}
+		recent = append(recent, traceExportBundleTrace{
+			TraceID:         summary.TraceID,
+			TaskID:          assignment.Task.ID,
+			Executor:        string(assignment.Executor),
+			State:           string(assignment.EffectiveState),
+			EventCount:      summary.EventCount,
+			LatestEventType: summary.LatestEventType,
+			DurationSeconds: summary.DurationSeconds,
+			TraceURL:        fmt.Sprintf("/debug/traces/%s?limit=%d", summary.TraceID, 200),
+			EventURL:        fmt.Sprintf("/events?trace_id=%s&limit=%d", summary.TraceID, 200),
+		})
+	}
+	return traceExportBundleSummary{
+		TotalTraces:             len(assignmentByTrace),
+		TracesWithTerminalState: tracesWithTerminalState,
+		RecentTraces:            recent,
+		ValidationArtifacts: []string{
+			"docs/reports/live-validation-index.md",
+			"docs/reports/live-validation-summary.json",
+			"docs/reports/go-control-plane-observability-report.md",
+			"docs/reports/broker-validation-summary.json",
+			"docs/reports/broker-failover-stub-report.json",
+			"docs/reports/broker-failover-stub-artifacts",
+			ambiguousPublishProof.Path,
+		},
+		ReviewerNavigation: []string{
+			"/v2/reports/distributed/export",
+			"/debug/traces",
+			"/events?trace_id=<trace_id>&limit=200",
+			"docs/reports/review-readiness.md",
+			"docs/reports/broker-failover-fault-injection-validation-pack.md",
+			ambiguousPublishProof.Path,
+		},
+		BackendLimitations: []string{
+			"no external tracing backend or OTLP/Jaeger/Tempo/Zipkin export path",
+			"no cross-process span propagation beyond in-memory trace_id grouping",
+			"validation evidence is workflow-exported and repo-native, not a continuously indexed trace service",
+		},
+		AmbiguousPublishProof: ambiguousPublishProof,
+	}
+}
+
+func buildBrokerReviewPack() brokerReviewPack {
+	return brokerReviewPack{
+		Status:             "checked_in_stub_evidence",
+		SummaryPath:        "docs/reports/broker-validation-summary.json",
+		ReportPath:         "docs/reports/broker-failover-stub-report.json",
+		ValidationPackPath: "docs/reports/broker-failover-fault-injection-validation-pack.md",
+		ArtifactDirectory:  "docs/reports/broker-failover-stub-artifacts",
+		ReviewerLinks: []string{
+			"docs/reports/live-validation-index.json",
+			"docs/reports/review-readiness.md",
+		},
+		AmbiguousPublishProof: buildAmbiguousPublishProofReference(),
+	}
+}
+
+func buildAmbiguousPublishProofReference() brokerProofReference {
+	return brokerProofReference{
+		Path:       "docs/reports/ambiguous-publish-outcome-proof-summary.json",
+		ScenarioID: "BF-05",
+		Outcomes:   []string{"committed", "rejected", "unknown_commit"},
+	}
+}
+
+func isTerminalState(state domain.TaskState) bool {
+	switch state {
+	case domain.TaskSucceeded, domain.TaskFailed, domain.TaskCancelled, domain.TaskDeadLetter:
+		return true
+	default:
+		return false
+	}
 }

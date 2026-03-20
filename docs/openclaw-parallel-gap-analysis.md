@@ -53,14 +53,14 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
 
 ## Distributed diagnostics follow-up digests
 
-- `OPE-264` / `BIG-PAR-075` tracks the remaining external tracing backend and span-propagation caveats in `bigclaw-go/docs/reports/tracing-backend-follow-up-digest.md`.
+- `OPE-264` / `BIG-PAR-075` tracks the distributed trace export bundle path in `bigclaw-go/internal/api/distributed.go` and the remaining external tracing backend and span-propagation caveats in `bigclaw-go/docs/reports/tracing-backend-follow-up-digest.md`.
 - `OPE-265` / `BIG-PAR-076` tracks the remaining telemetry pipeline, sampling policy, and high-cardinality caveats in `bigclaw-go/docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.
 
 ## Migration follow-up digests
 
-- `OPE-266` / `BIG-PAR-077` tracks the remaining live shadow traffic comparison caveats in `bigclaw-go/docs/reports/live-shadow-comparison-follow-up-digest.md`.
+- `OPE-266` / `BIG-PAR-092` tracks the repo-native live shadow mirror parity drift scorecard and the remaining live shadow traffic comparison caveats in `bigclaw-go/docs/reports/live-shadow-comparison-follow-up-digest.md`.
 - `OPE-267` / `BIG-PAR-078` tracks the remaining rollback safeguard caveats in `bigclaw-go/docs/reports/rollback-safeguard-follow-up-digest.md`.
 - `OPE-268` / `BIG-PAR-079` tracks the remaining production corpus migration coverage caveats in `bigclaw-go/docs/reports/production-corpus-migration-coverage-digest.md`.
 - `OPE-269` / `BIG-PAR-080` tracks the remaining subscriber takeover executability caveats in `bigclaw-go/docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
-- `OPE-270` / `BIG-PAR-081` tracks the remaining cross-process coordination caveats in `bigclaw-go/docs/reports/cross-process-coordination-boundary-digest.md`.
-- `OPE-271` / `BIG-PAR-082` tracks the remaining validation bundle continuation caveats in `bigclaw-go/docs/reports/validation-bundle-continuation-digest.md`, with the current local lineage overlay summarized in `bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json` and the current policy result captured in `bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json`.
+- `OPE-261` / `BIG-PAR-085` and `OPE-257` / `BIG-PAR-095` track the runtime capability matrix and remaining cross-process coordination caveats in `bigclaw-go/docs/reports/cross-process-coordination-capability-surface.json` and `bigclaw-go/docs/reports/cross-process-coordination-boundary-digest.md`, using `live_proven`, `harness_proven`, and `contract_only` readiness labels plus the contract-only `PartitionRoute` and `SubscriberOwnershipContract` targets.
+- `OPE-271` / `BIG-PAR-082` tracks the remaining validation bundle continuation caveats in `bigclaw-go/docs/reports/validation-bundle-continuation-digest.md`, with the current local lineage overlay summarized in `bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json`, the shared-queue companion exported in `bigclaw-go/docs/reports/shared-queue-companion-summary.json`, and the current policy result captured in `bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json`.

@@ -1,0 +1,51 @@
+{
+  "enabled": false,
+  "backend": null,
+  "bundle_summary_path": "docs/reports/live-validation-runs/20260316T140138Z/broker-validation-summary.json",
+  "canonical_summary_path": "docs/reports/broker-validation-summary.json",
+  "bundle_bootstrap_summary_path": "docs/reports/live-validation-runs/20260316T140138Z/broker-bootstrap-review-summary.json",
+  "canonical_bootstrap_summary_path": "docs/reports/broker-bootstrap-review-summary.json",
+  "validation_pack_path": "docs/reports/broker-failover-fault-injection-validation-pack.md",
+  "configuration_state": "not_configured",
+  "bootstrap_summary": {
+    "event_log_backend": "memory",
+    "target_backend": "broker_replicated",
+    "ready": false,
+    "runtime_posture": "contract_only",
+    "live_adapter_implemented": false,
+    "proof_boundary": "broker bootstrap readiness is a pre-adapter contract surface, not live broker durability proof",
+    "config_completeness": {
+      "driver": false,
+      "urls": false,
+      "topic": false,
+      "consumer_group": false
+    },
+    "broker_bootstrap": {
+      "publish_timeout": "5s",
+      "replay_limit": 500,
+      "checkpoint_interval": "5s",
+      "ready": false,
+      "validation_errors": [
+        "broker event log config missing driver, urls, topic"
+      ]
+    },
+    "validation_errors": [
+      "broker event log config missing driver, urls, topic"
+    ]
+  },
+  "bootstrap_ready": false,
+  "runtime_posture": "contract_only",
+  "live_adapter_implemented": false,
+  "proof_boundary": "broker bootstrap readiness is a pre-adapter contract surface, not live broker durability proof",
+  "validation_errors": [
+    "broker event log config missing driver, urls, topic"
+  ],
+  "config_completeness": {
+    "driver": false,
+    "urls": false,
+    "topic": false,
+    "consumer_group": false
+  },
+  "status": "skipped",
+  "reason": "not_configured"
+}

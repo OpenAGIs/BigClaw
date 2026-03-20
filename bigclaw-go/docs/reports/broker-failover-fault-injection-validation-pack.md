@@ -11,6 +11,7 @@ It turns the current durability planning work into an implementation-ready check
 - `docs/e2e-validation.md` covers local SQLite smoke, mixed workload runs, and two-node shared queue proof.
 - `docs/reports/event-bus-reliability-report.md` proves replay only for the in-process event bus.
 - `docs/reports/queue-reliability-report.md` and `docs/reports/lease-recovery-report.md` prove lease recovery and dead-letter replay for local queue backends.
+- `docs/reports/ambiguous-publish-outcome-proof-summary.json` distills the `BF-05` committed, rejected, and `unknown_commit` verdict into one machine-readable reviewer proof.
 - No broker-backed event log, provider failover harness, or cross-backend checkpoint recovery report exists yet.
 
 ## Validation Objectives

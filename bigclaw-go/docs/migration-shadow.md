@@ -34,8 +34,40 @@ This matrix helper runs multiple shadow comparisons back to back and aggregates 
 matched vs mismatched outcomes into one report. `--task-file` inputs remain the explicit
 fixture-backed shadow submissions, while `--corpus-manifest` overlays an anonymized
 corpus scorecard so reviewers can compare fixture coverage against corpus slices and
-inspect any uncovered task shapes. It remains offline evidence rather than a live
-legacy-vs-Go production traffic comparison; see `docs/reports/live-shadow-comparison-follow-up-digest.md`.
+inspect any uncovered task shapes.
+
+To connect the single-run compare evidence and the matrix evidence into one reviewer-facing
+surface, generate the repo-native live shadow mirror scorecard:
+
+```bash
+cd bigclaw-go
+python3 scripts/migration/live_shadow_scorecard.py \
+  --shadow-compare-report ./docs/reports/shadow-compare-report.json \
+  --shadow-matrix-report ./docs/reports/shadow-matrix-report.json \
+  --output ./docs/reports/live-shadow-mirror-scorecard.json
+```
+
+The scorecard stays offline and repo-native. It summarizes parity drift and evidence
+freshness across the checked-in shadow artifacts, but it is still not a live legacy-vs-Go
+production traffic comparison; see `docs/reports/live-shadow-comparison-follow-up-digest.md`.
+
+To package the checked-in shadow artifacts into a repeatable reviewer bundle and refresh
+the parity drift rollup, export the live shadow bundle/index:
+
+```bash
+cd bigclaw-go
+python3 scripts/migration/export_live_shadow_bundle.py
+```
+
+This exporter copies the latest compare, matrix, scorecard, and rollback trigger summary artifacts into
+`docs/reports/live-shadow-runs/<run-id>/`, refreshes `docs/reports/live-shadow-summary.json`,
+and updates `docs/reports/live-shadow-index.md`, `docs/reports/live-shadow-index.json`, and
+`docs/reports/live-shadow-drift-rollup.json` for reviewer navigation.
+
+The checked-in bundle summary is also exposed through `GET /debug/status` as
+`live_shadow_mirror_scorecard` and through `GET /v2/control-center` as
+`distributed_diagnostics.live_shadow_mirror_scorecard`, so reviewers can inspect parity drift,
+freshness, and report links without reopening the standalone migration bundle first.
 
 When a manifest contains approved replay payloads, add `--replay-corpus-slices` to
 submit those corpus-backed slices through the same shadow matrix run. Slices without a
@@ -51,6 +83,10 @@ payload still contribute to the `corpus_coverage` scorecard and uncovered-slice 
 - A simple diff summary indicating whether end states matched
 - `corpus_coverage.shape_scorecard` comparing fixture task shapes vs anonymized corpus slices
 - `corpus_coverage.uncovered_slices` listing corpus shapes that still lack fixture coverage
+- `live-shadow-mirror-scorecard.json` can summarize parity drift status and evidence freshness across both checked-in reports
+- `live-shadow-index.md` can summarize the latest bundled shadow artifacts and reviewer navigation paths
+- `live-shadow-drift-rollup.json` can summarize freshness and mismatch severity across recent bundled shadow runs
+- `rollback-trigger-surface.json` can distinguish tenant-scoped blockers, warnings, and manual-only rollback paths without claiming automated rollback execution
 
 ## Parallel follow-up digests
 
