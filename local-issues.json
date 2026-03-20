@@ -43,6 +43,12 @@
           "commit_sha": "f4df77de2a3dac32a2cf5a88c13a5fb340038d2e",
           "created_at": "2026-03-20T10:10:42Z",
           "pr_url": "https://github.com/OpenAGIs/BigClaw/pull/140"
+        },
+        {
+          "body": "Claimed the run-audit exposure slice. Extending `/v2/runs/{id}/audit` so canonical Go audit events are visible alongside control-action timelines, with attached audit-spec metadata and missing-required-field checks for each spec-backed entry.",
+          "commit_sha": "",
+          "created_at": "2026-03-20T10:16:51Z",
+          "pr_url": ""
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -58,7 +64,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Risk, policy, and approval semantics migration",
-      "updated_at": "2026-03-20T10:10:42Z"
+      "updated_at": "2026-03-20T10:16:51Z"
     },
     {
       "assigned_to_worker": true,

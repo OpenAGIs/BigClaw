@@ -206,6 +206,12 @@ type controlActionAuditEntry struct {
 	Event            domain.Event `json:"event"`
 }
 
+type runAuditEventEntry struct {
+	Event                 domain.Event                  `json:"event"`
+	Spec                  *observability.AuditEventSpec `json:"spec,omitempty"`
+	MissingRequiredFields []string                      `json:"missing_required_fields,omitempty"`
+}
+
 type auditFacetCount struct {
 	Key   string `json:"key"`
 	Count int    `json:"count"`
@@ -1552,9 +1558,11 @@ func (s *Server) handleV2RunAudit(w http.ResponseWriter, r *http.Request, taskID
 		return
 	}
 	entries := s.recentControlActionsForTask(taskID, limit, authorization)
+	auditEvents := runAuditEvents(s.Recorder.EventsByTask(taskID, limit))
 	writeJSON(w, http.StatusOK, map[string]any{
 		"task_id":        taskID,
 		"recent_actions": entries,
+		"audit_events":   auditEvents,
 		"audit_summary":  summarizeControlAudit(entries),
 		"notes_timeline": auditNotesTimeline(entries, limit),
 	})
@@ -2407,6 +2415,24 @@ func (entry controlActionAuditEntry) EventStringField(key string) string {
 		return ""
 	}
 	return eventStringValue(entry.Event.Payload, key)
+}
+
+func runAuditEvents(events []domain.Event) []runAuditEventEntry {
+	out := make([]runAuditEventEntry, 0)
+	for _, event := range events {
+		spec, ok := observability.GetAuditEventSpec(string(event.Type))
+		if !ok {
+			continue
+		}
+		missing := observability.MissingRequiredFields(spec.EventType, event.Payload)
+		copy := spec
+		out = append(out, runAuditEventEntry{
+			Event:                 event,
+			Spec:                  &copy,
+			MissingRequiredFields: missing,
+		})
+	}
+	return out
 }
 
 func matchesTaskFilters(task domain.Task, effectiveState domain.TaskState, filters controlCenterFilters) bool {

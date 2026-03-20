@@ -1455,10 +1455,12 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 	}
 	recorder.StoreTask(task)
 	recorder.Record(domain.Event{ID: "evt-routed", Type: domain.EventSchedulerRouted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "reason": "browser workloads default to kubernetes executor"}})
+	recorder.Record(domain.Event{ID: "evt-scheduler-audit", Type: domain.EventType(observability.SchedulerDecisionEvent), TaskID: task.ID, TraceID: task.TraceID, RunID: task.TraceID, Timestamp: base.Add(time.Second), Payload: map[string]any{"task_id": task.ID, "run_id": task.TraceID, "medium": domain.ExecutorKubernetes, "approved": true, "reason": "browser workloads default to kubernetes executor", "risk_level": domain.RiskMedium, "risk_score": 40}})
 	recorder.Record(domain.Event{ID: "evt-started", Type: domain.EventTaskStarted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(2 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "required_tools": []string{"browser", "git"}}})
 	recorder.Record(domain.Event{ID: "evt-dead", Type: domain.EventTaskDeadLetter, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(3 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "message": "pod crashed during validation", "artifacts": []string{"k8s://jobs/bigclaw/run-report", "k8s://pods/bigclaw/run-report-0"}}})
 	controller.Takeover(task.ID, "alice", "bob", "Manual inspection required", base.Add(4*time.Second))
 	recorder.Record(domain.Event{ID: "evt-takeover", Type: domain.EventRunTakeover, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(4 * time.Second), Payload: map[string]any{"actor": "alice", "role": "eng_lead", "reviewer": "bob", "note": "Manual inspection required", "team": "platform", "project": "alpha"}})
+	recorder.Record(domain.Event{ID: "evt-manual-takeover-audit", Type: domain.EventType(observability.ManualTakeoverEvent), TaskID: task.ID, TraceID: task.TraceID, RunID: task.TraceID, Timestamp: base.Add(4 * time.Second), Payload: map[string]any{"task_id": task.ID, "run_id": task.TraceID, "target_team": "platform", "reason": "Manual inspection required", "requested_by": "alice", "required_approvals": []string{"bob", "risk-reviewed"}}})
 
 	runResponse := httptest.NewRecorder()
 	handler.ServeHTTP(runResponse, httptest.NewRequest(http.MethodGet, "/v2/runs/task-run-report?limit=20", nil))
@@ -1531,6 +1533,32 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 	}
 	if !strings.Contains(auditResponse.Body.String(), "Manual inspection required") || !strings.Contains(auditResponse.Body.String(), "audit_summary") {
 		t.Fatalf("expected audit view payload, got %s", auditResponse.Body.String())
+	}
+	var auditDecoded struct {
+		TaskID      string `json:"task_id"`
+		AuditEvents []struct {
+			Event struct {
+				Type string `json:"type"`
+			} `json:"event"`
+			Spec struct {
+				EventType string `json:"event_type"`
+			} `json:"spec"`
+			MissingRequiredFields []string `json:"missing_required_fields"`
+		} `json:"audit_events"`
+	}
+	if err := json.Unmarshal(auditResponse.Body.Bytes(), &auditDecoded); err != nil {
+		t.Fatalf("decode run audit response: %v", err)
+	}
+	if auditDecoded.TaskID != task.ID || len(auditDecoded.AuditEvents) != 2 {
+		t.Fatalf("expected canonical run audit events, got %+v", auditDecoded)
+	}
+	for _, entry := range auditDecoded.AuditEvents {
+		if entry.Event.Type != entry.Spec.EventType {
+			t.Fatalf("expected audit event type to match spec, got %+v", entry)
+		}
+		if len(entry.MissingRequiredFields) != 0 {
+			t.Fatalf("expected spec-complete audit event, got %+v", entry)
+		}
 	}
 
 	reportResponse := httptest.NewRecorder()
