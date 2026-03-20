@@ -84,7 +84,12 @@ Success criteria:
 - required Python-owned mainline surfaces have Go owners or are explicitly marked legacy
 - cutover validation demonstrates that Go can replace the Python mainline for active development
 
-## Draft issue slices
+## Archived issue slices
+
+The sections below preserve the original slice definitions used to execute the
+cutover. Any "initial state" value is historical and should be read as the
+starting state that was used when the local tracker was first populated, not as
+current runnable work.
 
 ### BIG-GOM-301 Unified domain model and intake contract migration
 
@@ -118,7 +123,7 @@ Current repo progress:
 Milestone:
 - `Control/Workflow Surface Migration`
 
-Recommended initial state:
+Historical initial state:
 - `In Progress`
 
 ### BIG-GOM-302 Risk, policy, and approval semantics migration
@@ -152,7 +157,7 @@ Dependencies:
 Milestone:
 - `Control/Workflow Surface Migration`
 
-Recommended initial state:
+Historical initial state:
 - `In Progress`
 
 ### BIG-GOM-303 Workflow orchestration and scheduler loop migration
@@ -182,7 +187,7 @@ Dependencies:
 Milestone:
 - `Control/Workflow Surface Migration`
 
-Recommended initial state:
+Historical initial state:
 - `Todo`
 
 ### BIG-GOM-304 Observability, reporting, and weekly operations surface migration
@@ -210,7 +215,7 @@ Dependencies:
 Milestone:
 - `Governance/Reporting Surface Migration`
 
-Recommended initial state:
+Historical initial state:
 - `Todo`
 
 ### BIG-GOM-305 Control center, triage, and operations view migration
@@ -238,7 +243,7 @@ Dependencies:
 Milestone:
 - `Governance/Reporting Surface Migration`
 
-Recommended initial state:
+Historical initial state:
 - `Backlog`
 
 ### BIG-GOM-306 Repo collaboration and lineage surface migration
@@ -273,7 +278,7 @@ Current repo progress:
 Milestone:
 - `Governance/Reporting Surface Migration`
 
-Recommended initial state:
+Historical initial state:
 - `Backlog`
 
 ### BIG-GOM-307 Workflow, bootstrap, and GitHub sync toolchain migration
@@ -307,12 +312,12 @@ Current repo progress:
 - `bigclaw-go/internal/githubsync/*` now owns GitHub sync install / inspect / push guarantees with Go tests and hook integration
 - `bigclaw-go/internal/refill/*` now owns the draft refill queue selection logic, while `cmd/bigclawctl refill` handles Linear polling and promotion
 - `workflow.md`, `.githooks/post-commit`, and `.githooks/post-rewrite` now invoke the Go-first toolchain by default while legacy Python wrappers remain as compatibility shims
-- the remaining Python wrappers still exist as migration shims; `BIG-GOM-308` is still required to fully remove Python from the default operator path
+- at the time this slice was defined, the remaining Python wrappers still existed as migration shims and `BIG-GOM-308` was the planned follow-on slice to remove Python from the default operator path
 
 Milestone:
 - `Python Retirement & Cutover Validation`
 
-Recommended initial state:
+Historical initial state:
 - `In Progress`
 
 ### BIG-GOM-308 Python deprecation and Go-only mainline switch
@@ -338,7 +343,7 @@ Dependencies:
 Milestone:
 - `Python Retirement & Cutover Validation`
 
-Recommended initial state:
+Historical initial state:
 - `Backlog`
 
 ## Parallel execution order
@@ -376,9 +381,12 @@ Phase 5:
 - `BIG-GOM-307` -> `Done`
 - `BIG-GOM-308` -> `Done`
 
-## Prepared refill batch blocked by Linear issue limits
+## Archived refill batch blocked by Linear issue limits
 
-These were the six concrete issue drafts queued for creation on March 18, 2026 before Linear rejected all `save_issue` attempts due to the workspace issue limit.
+These were the six concrete issue drafts queued for creation on March 18, 2026
+before Linear rejected all `save_issue` attempts due to the workspace issue
+limit. They are retained here as historical planning context rather than active
+tracker work.
 
 ### 1. Close risk and policy parity on the Go mainline
 
@@ -394,7 +402,7 @@ Go ownership:
 - `bigclaw-go/internal/api/policy_runtime.go`
 - `bigclaw-go/internal/observability/audit.go`
 
-Recommended state:
+Historical planned state:
 - `Todo`
 
 ### 2. Port the workflow, scheduler, runtime, and orchestration loop to Go
@@ -413,7 +421,7 @@ Go ownership:
 - `bigclaw-go/internal/control/controller.go`
 - `bigclaw-go/internal/queue/*`
 
-Recommended state:
+Historical planned state:
 - `Todo`
 
 ### 3. Port observability, reports, and operations evidence surfaces to Go
@@ -435,7 +443,7 @@ Go ownership:
 - `bigclaw-go/internal/triage/*`
 - `bigclaw-go/internal/billing/*`
 
-Recommended state:
+Historical planned state:
 - `Todo`
 
 ### 4. Port repo collaboration and lineage surfaces to Go
@@ -460,7 +468,7 @@ Go ownership:
 - optional new `bigclaw-go/internal/repo/*`
 - `bigclaw-go/internal/product/console.go`
 
-Recommended state:
+Historical planned state:
 - `Backlog`
 
 ### 5. Port operator console and saved-view surfaces to Go
@@ -478,7 +486,7 @@ Go ownership:
 - `bigclaw-go/internal/api/server.go`
 - optional new `bigclaw-go/internal/product/views.go`
 
-Recommended state:
+Historical planned state:
 - `Backlog`
 
 ### 6. Replace Python bootstrap and sync entrypoints with Go-only tooling
@@ -500,5 +508,5 @@ Go ownership:
 - `bigclaw-go/internal/refill/*`
 - `bigclaw-go/internal/api/server.go`
 
-Recommended state:
+Historical planned state:
 - `Backlog`
