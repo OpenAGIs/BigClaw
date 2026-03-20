@@ -182,6 +182,12 @@
           "commit_sha": "a6632e96041ca655f851ea3d1424fffac86b540a",
           "created_at": "2026-03-20T09:13:50Z",
           "pr_url": "https://github.com/OpenAGIs/BigClaw/pull/140"
+        },
+        {
+          "body": "What changed:\nFinished the Go-first operator cutover for the workflow/bootstrap/sync toolchain. The Go CLI now matches the legacy workspace-validate issue/report behavior, and every remaining Python compatibility entrypoint under scripts/ops for workspace bootstrap, workspace validate, github-sync, and refill is now a thin subprocess shim into scripts/ops/bigclawctl instead of importing src/bigclaw runtime code. The repo bootstrap template also now treats the Go wrapper as the canonical required artifact.\n\nValidation:\ncd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl\n/Users/jxrt/miniforge3/bin/python3 -m py_compile scripts/ops/symphony_workspace_bootstrap.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py tests/test_go_first_workspace_shims.py\n/Users/jxrt/miniforge3/bin/python3 - \u003c\u003c'PY'\nimport importlib.util\nfrom pathlib import Path\nroot = Path('/Users/jxrt/code/symphony-workspaces/BIG-GOM-307')\ndef load(name, relative):\n    path = root / relative\n    spec = importlib.util.spec_from_file_location(name, path)\n    module = importlib.util.module_from_spec(spec)\n    spec.loader.exec_module(module)\n    return module\nclass Completed:\n    returncode = 0\ndef verify(module, argv, expected):\n    captured = {}\n    def fake_run(command, cwd):\n        captured['command'] = command\n        captured['cwd'] = cwd\n        return Completed()\n    module.subprocess.run = fake_run\n    code = module.main(argv)\n    assert code == 0\n    assert captured['command'] == expected\n    assert captured['cwd'] == root\nverify(load('symphony_bootstrap', 'scripts/ops/symphony_workspace_bootstrap.py'), ['bootstrap', '--workspace', '/tmp/workspace', '--issue', 'BIG-GOM-307'], ['bash', str(root / 'scripts/ops/bigclawctl'), 'workspace', 'bootstrap', '--workspace', '/tmp/workspace', '--issue', 'BIG-GOM-307'])\nverify(load('bigclaw_bootstrap', 'scripts/ops/bigclaw_workspace_bootstrap.py'), ['bootstrap', '--workspace', '/tmp/workspace', '--issue', 'BIG-GOM-307'], ['bash', str(root / 'scripts/ops/bigclawctl'), 'workspace', 'bootstrap', '--workspace', '/tmp/workspace', '--issue', 'BIG-GOM-307', '--repo-url', 'git@github.com:OpenAGIs/BigClaw.git', '--cache-key', 'openagis-bigclaw'])\nverify(load('bigclaw_bootstrap_override', 'scripts/ops/bigclaw_workspace_bootstrap.py'), ['cleanup', '--workspace', '/tmp/workspace', '--repo-url=https://example.com/repo.git', '--cache-key=custom-cache'], ['bash', str(root / 'scripts/ops/bigclawctl'), 'workspace', 'cleanup', '--workspace', '/tmp/workspace', '--repo-url=https://example.com/repo.git', '--cache-key=custom-cache'])\nverify(load('symphony_validate', 'scripts/ops/symphony_workspace_validate.py'), ['--workspace-root', '/tmp/workspaces', '--repo-url', 'git@example.com:repo.git', '--issues', 'BIG-1', 'BIG-2', '--json'], ['bash', str(root / 'scripts/ops/bigclawctl'), 'workspace', 'validate', '--workspace-root', '/tmp/workspaces', '--repo-url', 'git@example.com:repo.git', '--issues', 'BIG-1', 'BIG-2', '--json'])\nverify(load('bigclaw_github_sync', 'scripts/ops/bigclaw_github_sync.py'), ['status', '--require-synced', '--json'], ['bash', str(root / 'scripts/ops/bigclawctl'), 'github-sync', 'status', '--require-synced', '--json'])\nverify(load('bigclaw_refill_queue', 'scripts/ops/bigclaw_refill_queue.py'), ['--apply', '--watch', '--local-issues', 'local-issues.json'], ['bash', str(root / 'scripts/ops/bigclawctl'), 'refill', '--apply', '--watch', '--local-issues', 'local-issues.json'])\nprint('all shim forwarding checks passed')\nPY\npassed\n\nCommit SHA: 6aafbd3c3c07c78edcee0fd32fca3f61af133975\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/140",
+          "commit_sha": "6aafbd3c3c07c78edcee0fd32fca3f61af133975",
+          "created_at": "2026-03-20T09:18:53Z",
+          "pr_url": "https://github.com/OpenAGIs/BigClaw/pull/140"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -195,9 +201,9 @@
         "orchestration"
       ],
       "priority": 1,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
-      "updated_at": "2026-03-20T09:13:50Z"
+      "updated_at": "2026-03-20T09:18:53Z"
     },
     {
       "assigned_to_worker": true,
