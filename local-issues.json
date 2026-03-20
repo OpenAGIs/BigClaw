@@ -246,7 +246,13 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T14:17:27Z"
+      "updated_at": "2026-03-20T14:21:35Z",
+      "comments": [
+        {
+          "body": "Progress update: marked `src/bigclaw/__main__.py` as a legacy-only Python entrypoint by adding an explicit Go-mainline deprecation notice, routing parser construction through `build_parser()`, and keeping the legacy commands available only for migration/validation use. Added focused coverage in `tests/test_legacy_entrypoint.py` to lock the deprecation notice text and parser metadata.\n\nValidation:\n- `PYTHONPATH=src python3 - <<\"PY\" ...` parser assertions -> passed\n- `python3 -c \"import pytest; print(pytest.__version__)\"` -> `9.0.1`\n- `git rev-parse HEAD` -> `e7cbe785cd3aa2b5697cfdb59b8e1b8013415116`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `e7cbe785cd3aa2b5697cfdb59b8e1b8013415116` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `e7cbe785cd3aa2b5697cfdb59b8e1b8013415116` (matches local)\n- `git log -1 --stat` -> `Mark Python entrypoint as legacy-only`\n\nCommit: `e7cbe785cd3aa2b5697cfdb59b8e1b8013415116`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T14:21:35Z"
+        }
+      ]
     }
   ]
 }
