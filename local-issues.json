@@ -497,6 +497,24 @@
           "created_at": "2026-03-20T19:25:00Z"
         }
       ]
+    },
+    {
+      "id": "big-par-094",
+      "identifier": "BIG-PAR-094",
+      "title": "Expose continuation gate summary in live validation index",
+      "description": "Surface the current continuation gate recommendation, freshness age, and failing checks directly in the exported live validation index so reviewers do not need to open the policy-gate JSON to see whether the checked-in bundle evidence is currently go or hold.",
+      "priority": 2,
+      "state": "In Progress",
+      "labels": [
+        "parallel",
+        "validation",
+        "tooling",
+        "reporting"
+      ],
+      "assigned_to_worker": true,
+      "created_at": "2026-03-20T19:27:00Z",
+      "updated_at": "2026-03-20T19:27:00Z",
+      "comments": []
     }
   ]
 }
