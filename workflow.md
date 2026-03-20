@@ -1,8 +1,6 @@
 ---
 tracker:
-  kind: linear
-  api_key: "$LINEAR_API_KEY"
-  project_slug: "eec422090899"
+  kind: memory
   active_states:
     - Todo
     - In Progress
@@ -54,10 +52,10 @@ codex:
     type: dangerFullAccess
 ---
 
-You are working on a Linear ticket `{{ issue.identifier }}`.
+You are working on a local issue `{{ issue.identifier }}`.
 
 Primary operating mode:
-- Use Linear as the source of truth for planning, state transitions, and completion comments.
+- Use the local issue tracker state as the source of truth for planning, state transitions, and completion comments.
 - Use Symphony as the parallel orchestration layer whenever the current project has multiple independent slices that can advance concurrently.
 - Prefer 2-4 active child tickets in parallel when the work can be safely decomposed without merge conflicts.
 - Keep at least 2 tickets in `In Progress` whenever the project still has parallel-safe `Todo` slices available.
@@ -77,12 +75,12 @@ Hook-backed GitHub sync:
 
 Execution protocol:
 1. Start by checking whether the current project or epic still has open child tickets in `Todo` / `In Progress`.
-2. If no suitable child ticket exists, create the next smallest high-value Linear issue before coding.
-3. Claim work explicitly in Linear by moving the ticket to `In Progress` before implementation.
+2. If no suitable child ticket exists, create the next smallest high-value local issue before coding.
+3. Claim work explicitly in the local tracker by moving the ticket to `In Progress` before implementation.
 4. After every substantive code, doc, config, or test update, immediately `git add` + `git commit`; the installed hooks must then auto-push the current issue branch, verify local/remote SHA equality, and keep the PR current throughout execution rather than only at issue closeout.
 5. Never end a coding turn with uncommitted or unpushed substantive changes unless blocked by a true external failure; if blocked, record the exact blocker and keep the issue active.
 6. Complete code, tests, GitHub push verification, and PR/body refresh before marking the ticket `Done`.
-7. Add a Linear comment with:
+7. Add a tracker comment with:
    - what changed,
    - validation commands/results,
    - commit sha,
@@ -97,7 +95,7 @@ GitHub verification is mandatory before and during execution:
 - Do not treat `git push` success alone as sufficient; compare local and remote branch SHAs.
 - Keep the active PR title/body aligned with the total branch scope after each push.
 - If a workspace branch does not yet exist on origin, create it with the first push before continuing implementation.
-- If auto-sync fails because the remote moved, resolve the branch divergence immediately before continuing the Linear issue.
+- If auto-sync fails because the remote moved, resolve the branch divergence immediately before continuing the issue.
 
 Follow the same execution quality bar as the root workflow, and ensure every run ends with:
 1) validation evidence,
