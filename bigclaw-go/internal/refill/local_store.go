@@ -35,6 +35,7 @@ type localIssue struct {
 	Labels           json.RawMessage
 	AssignedToWorker json.RawMessage
 	Comments         []localIssueComment
+	hasComments      bool
 	CreatedAt        string
 	UpdatedAt        string
 	extra            map[string]json.RawMessage
@@ -131,6 +132,7 @@ func (s *LocalIssueStore) AppendIssueComment(ref string, body string, now time.T
 			Body:      trimmedBody,
 			CreatedAt: now.UTC().Truncate(time.Second).Format(time.RFC3339),
 		})
+		issue.hasComments = true
 		issue.UpdatedAt = now.UTC().Truncate(time.Second).Format(time.RFC3339)
 		return s.Save()
 	}
@@ -228,6 +230,7 @@ func (i *localIssue) UnmarshalJSON(data []byte) error {
 			if err := json.Unmarshal(value, &i.Comments); err != nil {
 				return err
 			}
+			i.hasComments = true
 		case "created_at":
 			if err := json.Unmarshal(value, &i.CreatedAt); err != nil {
 				return err
@@ -253,9 +256,11 @@ func (i localIssue) MarshalJSON() ([]byte, error) {
 		{name: "state", raw: mustMarshalJSON(i.State)},
 		{name: "labels", raw: jsonOrNull(i.Labels)},
 		{name: "assigned_to_worker", raw: jsonOrNull(i.AssignedToWorker)},
-		{name: "comments", raw: mustMarshalJSON(i.Comments)},
 		{name: "created_at", raw: mustMarshalJSON(i.CreatedAt)},
 		{name: "updated_at", raw: mustMarshalJSON(i.UpdatedAt)},
+	}
+	if i.hasComments || len(i.Comments) != 0 {
+		fields = append(fields, jsonField{name: "comments", raw: mustMarshalJSON(i.Comments)})
 	}
 	fields = append(fields, extraFields(i.extra)...)
 	return marshalOrderedObject(fields)
