@@ -46,6 +46,7 @@ def test_policy_gate_holds_for_partial_lane_history(tmp_path: Path) -> None:
     assert report['recommendation'] == 'hold'
     assert 'repeated_lane_coverage_meets_policy' in report['failing_checks']
     assert report['summary']['failing_check_count'] == 1
+    assert 'refresh another full validation bundle with `ray` enabled' in report['next_actions'][0]
 
 
 def test_policy_gate_can_allow_partial_lane_history(tmp_path: Path) -> None:
@@ -75,6 +76,38 @@ def test_policy_gate_can_allow_partial_lane_history(tmp_path: Path) -> None:
     assert report['status'] == 'policy-go'
     assert report['recommendation'] == 'go'
     assert report['failing_checks'] == []
+    assert 'standalone shared-queue companion proof' in report['next_actions'][0]
+
+
+def test_policy_gate_recommends_inline_refresh_for_bundled_companion(tmp_path: Path) -> None:
+    scorecard = {
+        'summary': {
+            'latest_run_id': 'synthetic-run',
+            'latest_bundle_age_hours': 1.5,
+            'recent_bundle_count': 2,
+            'latest_all_executor_tracks_succeeded': True,
+            'recent_bundle_chain_has_no_failures': False,
+            'all_executor_tracks_have_repeated_recent_coverage': True,
+        },
+        'shared_queue_companion': {
+            'available': False,
+            'cross_node_completions': 0,
+            'duplicate_completed_tasks': 0,
+            'duplicate_started_tasks': 0,
+            'mode': 'bundled-companion',
+            'report_path': 'docs/reports/live-validation-runs/20260321T010203Z/multi-node-shared-queue-report.json',
+        },
+    }
+    scorecard_path = tmp_path / 'scorecard.json'
+    scorecard_path.write_text(json.dumps(scorecard), encoding='utf-8')
+
+    report = gate.build_report(scorecard_path=str(scorecard_path))
+
+    assert report['status'] == 'policy-hold'
+    assert 'shared_queue_companion_available' in report['failing_checks']
+    assert 'BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1' in report['next_actions'][0]
+    shared_queue_check = next(item for item in report['policy_checks'] if item['name'] == 'shared_queue_companion_available')
+    assert 'mode=bundled-companion' in shared_queue_check['detail']
 
 
 def test_checked_in_policy_gate_matches_expected_shape() -> None:

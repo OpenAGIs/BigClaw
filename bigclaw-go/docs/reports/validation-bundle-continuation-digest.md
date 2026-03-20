@@ -27,6 +27,7 @@ This digest consolidates the remaining validation-bundle continuation caveats fo
 
 - The repo-native policy gate now refreshes automatically during `run_all.sh` closeout, but enforcement is not enabled by default across ordinary workflows.
 - Shared-queue coordination evidence is now attached to the live validation bundle lineage as adjacent metadata, and `run_all.sh` can refresh it inline via `BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1`; it is still not on by default for every workflow invocation.
+- The continuation policy gate now distinguishes between `bundled-companion` and `standalone-proof` shared-queue evidence so next-action guidance points at the correct refresh path for the current evidence source.
 - Longitudinal history is bounded to the exported bundle index window and not a continuously retained validation service.
 - The current gate only reflects checked-in bundle history, so future regressions still depend on rerunning a workflow like `run_all.sh` or an equivalent orchestrated refresh.
 

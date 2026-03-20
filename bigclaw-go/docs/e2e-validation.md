@@ -75,7 +75,7 @@ cd bigclaw-go
 python3 scripts/e2e/validation_bundle_continuation_policy_gate.py --pretty
 ```
 
-This writes `docs/reports/validation-bundle-continuation-policy-gate.json` and currently returns `go` for the checked-in evidence window because the latest indexed bundles now include repeated `ray` coverage across multiple runs. Bundle export now refreshes the gate automatically during closeout; set `BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1` if you want a `hold` result to fail the command.
+This writes `docs/reports/validation-bundle-continuation-policy-gate.json` and currently returns `go` for the checked-in evidence window because the latest indexed bundles now include repeated `ray` coverage across multiple runs. Bundle export now refreshes the gate automatically during closeout; set `BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1` if you want a `hold` result to fail the command. The gate’s next-action guidance now differentiates between a `bundled-companion` shared-queue proof, which should be refreshed inline via `BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1 ./scripts/e2e/run_all.sh`, and a `standalone-proof`, which should be rerun via `scripts/e2e/multi_node_shared_queue.py`.
 
 ## Mixed workload matrix
 

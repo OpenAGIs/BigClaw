@@ -25,6 +25,22 @@ def build_check(name, passed, detail):
     return {'name': name, 'passed': passed, 'detail': detail}
 
 
+def shared_queue_refresh_hint(shared_queue):
+    mode = str(shared_queue.get('mode', 'standalone-proof'))
+    report_path = shared_queue.get('report_path', 'bigclaw-go/docs/reports/multi-node-shared-queue-report.json')
+    if mode == 'bundled-companion':
+        return (
+            mode,
+            f"bundled companion at {report_path}; rerun `cd bigclaw-go && BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1 ./scripts/e2e/run_all.sh` to refresh the shared-queue proof inline",
+            'rerun `cd bigclaw-go && BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1 ./scripts/e2e/run_all.sh` to refresh the shared-queue companion inline with the validation bundle',
+        )
+    return (
+        mode,
+        f"standalone companion at {report_path}; rerun `python3 scripts/e2e/multi_node_shared_queue.py --report-path docs/reports/multi-node-shared-queue-report.json` to refresh it directly",
+        'rerun `python3 scripts/e2e/multi_node_shared_queue.py --report-path docs/reports/multi-node-shared-queue-report.json` to refresh the standalone shared-queue companion proof',
+    )
+
+
 def build_report(
     repo_root=None,
     scorecard_path='bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json',
@@ -36,6 +52,7 @@ def build_report(
     scorecard = load_json(resolve_repo_path(repo_root, scorecard_path))
     summary = scorecard['summary']
     shared_queue = scorecard['shared_queue_companion']
+    shared_queue_mode, shared_queue_detail, shared_queue_refresh_action = shared_queue_refresh_hint(shared_queue)
 
     checks = [
         build_check(
@@ -61,7 +78,7 @@ def build_report(
         build_check(
             'shared_queue_companion_available',
             bool(shared_queue.get('available')),
-            f"cross_node_completions={shared_queue.get('cross_node_completions')}",
+            f"cross_node_completions={shared_queue.get('cross_node_completions')} mode={shared_queue_mode}; {shared_queue_detail}",
         ),
         build_check(
             'repeated_lane_coverage_meets_policy',
@@ -78,10 +95,11 @@ def build_report(
     if 'recent_bundle_count_meets_floor' in failing_checks:
         next_actions.append('export additional validation bundles so the continuation window spans multiple indexed runs')
     if 'shared_queue_companion_available' in failing_checks:
-        next_actions.append('rerun `python3 scripts/e2e/multi_node_shared_queue.py --report-path docs/reports/multi-node-shared-queue-report.json`')
+        next_actions.append(shared_queue_refresh_action)
     if 'repeated_lane_coverage_meets_policy' in failing_checks:
         next_actions.append('refresh another full validation bundle with `ray` enabled so each executor lane has repeated indexed coverage')
     if not next_actions:
+        next_actions.append(f'{shared_queue_refresh_action} when the shared-queue companion needs to be refreshed')
         next_actions.append('enable BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1 when workflow closeout should fail on continuation regressions')
 
     return {
