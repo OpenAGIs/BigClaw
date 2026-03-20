@@ -63,7 +63,7 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T10:48:28Z",
+      "updated_at": "2026-03-20T10:55:25Z",
       "comments": [
         {
           "body": "Improved the Go orchestrator loop in `bigclaw-go/internal/orchestrator/loop.go` so it no longer waits a full poll interval before touching queued work, drains available work within a single cycle, and falls back to a safe default poll interval when unset. Added focused coverage in `bigclaw-go/internal/orchestrator/loop_test.go` for immediate startup, per-cycle draining, and default poll interval behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/orchestrator` -> passed\n- `cd bigclaw-go && go test ./internal/orchestrator ./internal/worker ./cmd/bigclawd` -> passed (`cmd/bigclawd` has no test files)\n- `git rev-parse HEAD` -> `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3` (matches local)\n- `git log -1 --stat` -> `Drain scheduler work immediately in orchestrator loop`\n\nCommit: `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
@@ -76,6 +76,10 @@
         {
           "body": "Finished the remaining zero-value dependency hardening for the active orchestration runtime slice.\n\nWhat changed:\n- `bigclaw-go/internal/worker/runtime.go` now falls back to `scheduler.New()` when the runtime scheduler is unset and to an empty `executor.NewRegistry()` when the runtime registry is unset, preventing nil-pointer crashes in unattended runtime/bootstrap paths.\n- The nil registry path now dead-letters cleanly through the existing executor-missing behavior instead of panicking.\n- Added `TestRuntimeDefaultsNilSchedulerAndRegistryToSafeBehavior` in `bigclaw-go/internal/worker/runtime_test.go` to prove the zero-value runtime path stays safe.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/worker` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `d9f938e6d92822fcf46a12eb86d44e45410cc83e`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `d9f938e6d92822fcf46a12eb86d44e45410cc83e` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `d9f938e6d92822fcf46a12eb86d44e45410cc83e` (matches local)\n- `git log -1 --stat` -> `Default nil worker runtime dependencies`\n\nCommit: `d9f938e6d92822fcf46a12eb86d44e45410cc83e`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T10:48:28Z"
+        },
+        {
+          "body": "Added the last obvious zero-value queue guard for the active orchestration runtime slice.\n\nWhat changed:\n- `bigclaw-go/internal/worker/runtime.go` now returns a clean idle/no-op result when the runtime queue is unset instead of panicking on `LeaseNext`.\n- Added `TestRuntimeSkipsCleanlyWhenQueueUnset` in `bigclaw-go/internal/worker/runtime_test.go` to verify the zero-value queue path stays safe.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/worker` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `1776246156301eb23b995b1b046c05b4bfac347c`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `1776246156301eb23b995b1b046c05b4bfac347c` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `1776246156301eb23b995b1b046c05b4bfac347c` (matches local)\n- `git log -1 --stat` -> `Guard worker runtime when queue is unset`\n\nCommit: `1776246156301eb23b995b1b046c05b4bfac347c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T10:55:25Z"
         }
       ]
     },
