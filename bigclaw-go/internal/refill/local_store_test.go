@@ -196,6 +196,26 @@ func TestLocalIssueStoreCreateIssueAppendsWithDefaults(t *testing.T) {
 	}
 }
 
+func TestLocalIssueStoreCreateIssueDerivesIDFromIdentifier(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	issue, err := store.CreateIssue(LocalIssueCreateInput{
+		Identifier:       "BIG-GOM-310",
+		Title:            "Derive issue id",
+		AssignedToWorker: true,
+	}, time.Date(2026, 3, 20, 10, 15, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("create issue: %v", err)
+	}
+	if mapString(issue, "id") != "big-gom-310" {
+		t.Fatalf("expected derived id, got %+v", issue)
+	}
+}
+
 func TestLocalIssueStoreCreateIssueRejectsDuplicateIdentifiers(t *testing.T) {
 	storePath := filepath.Join(t.TempDir(), "local-issues.json")
 	if err := os.WriteFile(storePath, []byte(`{
@@ -219,5 +239,11 @@ func TestLocalIssueStoreCreateIssueRejectsDuplicateIdentifiers(t *testing.T) {
 	}, time.Date(2026, 3, 20, 9, 45, 0, 0, time.UTC))
 	if !errors.Is(err, ErrLocalIssueAlreadyExists) {
 		t.Fatalf("expected duplicate error, got %v", err)
+	}
+}
+
+func TestDefaultIssueIDFallsBackToNormalizedIdentifier(t *testing.T) {
+	if got := defaultIssueID("", " BIG/GOM 311 "); got != "big-gom-311" {
+		t.Fatalf("unexpected normalized id: %q", got)
 	}
 }

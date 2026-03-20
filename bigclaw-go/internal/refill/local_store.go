@@ -177,10 +177,13 @@ func (s *LocalIssueStore) AddComment(ref string, body string, now time.Time) (Lo
 
 func (s *LocalIssueStore) CreateIssue(input LocalIssueCreateInput, now time.Time) (map[string]any, error) {
 	identifier := strings.TrimSpace(input.Identifier)
-	id := strings.TrimSpace(input.ID)
+	id := defaultIssueID(input.ID, identifier)
 	title := strings.TrimSpace(input.Title)
-	if identifier == "" || id == "" || title == "" {
-		return nil, errors.New("id, identifier, and title are required")
+	if identifier == "" || title == "" {
+		return nil, errors.New("identifier and title are required")
+	}
+	if id == "" {
+		return nil, errors.New("id is required when identifier cannot be normalized")
 	}
 	if _, err := s.findIssue(identifier); err == nil {
 		return nil, ErrLocalIssueAlreadyExists
@@ -303,6 +306,32 @@ func defaultIssueState(state string) string {
 		return "Backlog"
 	}
 	return trimmed
+}
+
+func defaultIssueID(id string, identifier string) string {
+	trimmedID := strings.TrimSpace(id)
+	if trimmedID != "" {
+		return trimmedID
+	}
+	normalized := strings.ToLower(strings.TrimSpace(identifier))
+	if normalized == "" {
+		return ""
+	}
+	var builder strings.Builder
+	lastDash := false
+	for _, r := range normalized {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			builder.WriteRune(r)
+			lastDash = false
+			continue
+		}
+		if lastDash {
+			continue
+		}
+		builder.WriteByte('-')
+		lastDash = true
+	}
+	return strings.Trim(builder.String(), "-")
 }
 
 func mapString(issue map[string]any, key string) string {

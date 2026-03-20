@@ -609,6 +609,30 @@ func TestRunLocalIssueCreateAppendsToLocalTracker(t *testing.T) {
 	}
 }
 
+func TestRunLocalIssueCreateDerivesIDFromIdentifier(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{"issues":[]}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	output, runErr := captureStdout(t, func() error {
+		return runLocalIssue([]string{
+			"create",
+			"--local-issues", storePath,
+			"--identifier", "BIG-GOM-310",
+			"--title", "Create local issue from identifier only",
+			"--json",
+		})
+	})
+	if runErr != nil {
+		t.Fatalf("run local issue create: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"id": "big-gom-310"`)) {
+		t.Fatalf("unexpected derived id output: %s", string(output))
+	}
+}
+
 func TestRunLocalIssueCreateRejectsDuplicateIssue(t *testing.T) {
 	tempDir := t.TempDir()
 	storePath := filepath.Join(tempDir, "local-issues.json")
