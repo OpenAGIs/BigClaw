@@ -376,14 +376,15 @@ func runLocalIssue(args []string) error {
 		if trim(*stateName) == "" && trim(resolvedComment) == "" {
 			return errors.New("at least one of --state, --comment, or --comment-file is required")
 		}
+		now := time.Now()
 		if trim(*stateName) != "" {
-			if _, err := store.UpdateIssueState(*issueRef, *stateName, time.Now()); err != nil {
+			if _, err := store.UpdateIssueState(*issueRef, *stateName, now); err != nil {
 				return emit(map[string]any{"status": "error", "error": err.Error(), "issue": *issueRef, "local_issues": absPath(storePath)}, *asJSON, 1)
 			}
 		}
 		commentAdded := false
 		if trim(resolvedComment) != "" {
-			if _, err := store.AddComment(*issueRef, resolvedComment, time.Now()); err != nil {
+			if _, err := store.AddComment(*issueRef, resolvedComment, now); err != nil {
 				return emit(map[string]any{"status": "error", "error": err.Error(), "issue": *issueRef, "local_issues": absPath(storePath)}, *asJSON, 1)
 			}
 			commentAdded = true

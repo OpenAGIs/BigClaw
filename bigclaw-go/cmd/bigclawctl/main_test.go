@@ -468,6 +468,58 @@ func TestRunLocalIssueUpdateReadsCommentFromStdin(t *testing.T) {
 	}
 }
 
+func TestRunLocalIssueUpdateUsesSingleTimestampForStateAndComment(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "title": "Toolchain migration",
+      "state": "Todo",
+      "updated_at": "2026-03-18T09:00:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	output, runErr := captureStdout(t, func() error {
+		return runLocalIssue([]string{
+			"update",
+			"--local-issues", storePath,
+			"--issue", "BIG-GOM-307",
+			"--state", "In Progress",
+			"--comment", "single timestamp update",
+			"--json",
+		})
+	})
+	if runErr != nil {
+		t.Fatalf("run local issue update: %v (stdout=%s)", runErr, string(output))
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	updatedAtNeedle := []byte(`"updated_at": "`)
+	updatedAtStart := bytes.Index(body, updatedAtNeedle)
+	if updatedAtStart == -1 {
+		t.Fatalf("expected updated_at in store, got %s", string(body))
+	}
+	updatedAtValueStart := updatedAtStart + len(updatedAtNeedle)
+	updatedAtValueEnd := bytes.IndexByte(body[updatedAtValueStart:], '"')
+	if updatedAtValueEnd == -1 {
+		t.Fatalf("expected updated_at closing quote in store, got %s", string(body))
+	}
+	updatedAt := body[updatedAtValueStart : updatedAtValueStart+updatedAtValueEnd]
+	createdAtLine := []byte(`"created_at": "` + string(updatedAt) + `"`)
+	if !bytes.Contains(body, createdAtLine) {
+		t.Fatalf("expected comment created_at to match updated_at %s, got %s", string(updatedAt), string(body))
+	}
+}
+
 func TestResolveGitHubSyncRemotesPrefersUpstreamThenOriginAndGithub(t *testing.T) {
 	tmp := t.TempDir()
 	repo := filepath.Join(tmp, "repo")
