@@ -287,6 +287,56 @@ func TestEngineRunDefinitionKeepsCloseoutPendingWithoutVerifiedRepoSyncAudit(t *
 	}
 }
 
+func TestEngineRunDefinitionUsesPolicyQuotaDefaults(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	runtime := &worker.Runtime{
+		WorkerID:    "worker-policy",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(testRunner{kind: domain.ExecutorLocal, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    100 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+	engine := &Engine{
+		Runtime:  runtime,
+		Recorder: recorder,
+		Queue:    q,
+	}
+
+	definition, err := ParseDefinition(`{"name":"policy-closeout","steps":[{"name":"execute","kind":"scheduler"}]}`)
+	if err != nil {
+		t.Fatalf("parse definition: %v", err)
+	}
+	result, err := engine.RunDefinition(context.Background(), domain.Task{
+		ID:          "task-policy-budget",
+		TraceID:     "trace-policy-budget",
+		Title:       "Over-budget rollout",
+		BudgetCents: 15000,
+		Metadata:    map[string]string{"team": "growth"},
+	}, definition, "run-policy-budget", RunOptions{})
+	if err != nil {
+		t.Fatalf("run definition: %v", err)
+	}
+	snapshot, err := q.GetTask(context.Background(), "task-policy-budget")
+	if err != nil {
+		t.Fatalf("get queued task: %v", err)
+	}
+	if snapshot.Task.State != domain.TaskQueued || snapshot.Leased {
+		t.Fatalf("expected task requeued by policy budget default, got %+v", snapshot)
+	}
+	if len(result.Events) == 0 || result.Events[len(result.Events)-1].Type != domain.EventTaskRetried {
+		t.Fatalf("expected retry event after policy budget rejection, got %+v", result.Events)
+	}
+	if result.Status.LastResult != "budget exceeded" {
+		t.Fatalf("expected runtime status to report budget rejection, got %+v", result.Status)
+	}
+}
+
 func TestAcceptanceGateRejectsMissingEvidence(t *testing.T) {
 	decision := AcceptanceGate{}.Evaluate(domain.Task{
 		ID:                 "task-evidence",

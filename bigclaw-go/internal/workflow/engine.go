@@ -11,6 +11,7 @@ import (
 
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/observability"
+	"bigclaw-go/internal/policy"
 	"bigclaw-go/internal/queue"
 	"bigclaw-go/internal/risk"
 	"bigclaw-go/internal/scheduler"
@@ -183,7 +184,7 @@ func (engine *Engine) RunDefinition(ctx context.Context, task domain.Task, defin
 		"run_id":  runID,
 	})
 
-	processed := engine.Runtime.RunOnce(ctx, engine.Quota)
+	processed := engine.Runtime.RunOnce(ctx, resolvedQuota(engine.Quota, resolvedTask))
 	if !processed {
 		return RunResult{}, fmt.Errorf("runtime did not process queued task %s", resolvedTask.ID)
 	}
@@ -318,6 +319,21 @@ func closeoutStatus(complete bool) string {
 		return "complete"
 	}
 	return "pending"
+}
+
+func resolvedQuota(base scheduler.QuotaSnapshot, task domain.Task) scheduler.QuotaSnapshot {
+	summary := policy.Resolve(task)
+	quota := base
+	if quota.ConcurrentLimit <= 0 {
+		quota.ConcurrentLimit = summary.Quota.ConcurrentLimit
+	}
+	if quota.BudgetRemaining <= 0 {
+		quota.BudgetRemaining = summary.Quota.BudgetCapCents
+	}
+	if quota.MaxQueueDepth <= 0 {
+		quota.MaxQueueDepth = summary.Quota.QueueDepthLimit
+	}
+	return quota
 }
 
 func missingItems(required []string, present map[string]struct{}) []string {
