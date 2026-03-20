@@ -130,6 +130,11 @@
           "author": "codex",
           "body": "Final review surface: branch-wide PR https://github.com/OpenAGIs/BigClaw/pull/141 is now open with title 'BIG-GOM-304: complete BigClaw Go-mainline cutover' against `main`. This supersedes earlier tracker notes that listed the PR as unavailable.",
           "created_at": "2026-03-20T14:30:23Z"
+        },
+        {
+          "author": "codex",
+          "body": "Archived the remaining live-planning language in docs/go-mainline-cutover-issue-pack.md so the cutover brief now consistently reads as historical completion state rather than active runnable work. Validation: rg -n 'Archived issue slices|Historical initial state|Archived refill batch|Historical planned state' docs/go-mainline-cutover-issue-pack.md -\u003e ok; bash scripts/ops/bigclawctl refill --local-issues local-issues.json -\u003e no In Progress work and no promotion candidates. Commit SHA: pending. PR URL: https://github.com/OpenAGIs/BigClaw/pull/141.",
+          "created_at": "2026-03-20T14:35:01Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -145,7 +150,7 @@
       "priority": 2,
       "state": "Done",
       "title": "Observability, reporting, and weekly operations surface migration",
-      "updated_at": "2026-03-20T14:30:23Z"
+      "updated_at": "2026-03-20T14:35:01Z"
     },
     {
       "assigned_to_worker": true,
