@@ -231,6 +231,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Started `BIG-GOM-308` by freezing the legacy Python execution-kernel entrypoints: added `src/bigclaw/deprecation.py`, made `python -m bigclaw` emit a deprecation warning toward the Go-first entrypoints, marked `src/bigclaw/runtime.py`, `scheduler.py`, `workflow.py`, `orchestration.py`, and `queue.py` as migration-only with explicit Go replacement targets, added a focused Python deprecation test, and updated the README to state that active runtime work belongs in `bigclaw-go/internal/*`. Validation: `python3 -m py_compile src/bigclaw/deprecation.py src/bigclaw/__main__.py src/bigclaw/runtime.py src/bigclaw/scheduler.py src/bigclaw/workflow.py src/bigclaw/orchestration.py src/bigclaw/queue.py` -\u003e ok; `PYTHONPATH=src python3 -m pytest tests/test_deprecation.py -q` -\u003e blocked because this workspace Python does not have `pytest` installed (`No module named pytest`); `bash scripts/ops/bigclawctl github-sync status --json` -\u003e local SHA `992d34753b97d5b6f36c12a140f5d77ce8d0a00b` matches remote SHA `992d34753b97d5b6f36c12a140f5d77ce8d0a00b` with `status: ok` and `synced: true`; `git log -1 --stat` -\u003e captured for commit `992d34753b97d5b6f36c12a140f5d77ce8d0a00b` with the Python deprecation files in the stat output. Commit SHA: `992d34753b97d5b6f36c12a140f5d77ce8d0a00b`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-20T12:03:01Z"
+        }
+      ],
       "created_at": "2026-03-18T09:00:00Z",
       "description": "Freeze or retire the remaining Python runtime entrypoints only after the Go workflow, observability, and repo collaboration surfaces have matching owners and validation.",
       "id": "big-gom-308",
@@ -244,7 +251,7 @@
       "priority": 3,
       "state": "In Progress",
       "title": "Python deprecation and Go-only mainline switch",
-      "updated_at": "2026-03-20T11:55:36Z"
+      "updated_at": "2026-03-20T12:03:01Z"
     }
   ]
 }
