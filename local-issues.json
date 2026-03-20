@@ -180,11 +180,15 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T14:02:35Z",
+      "updated_at": "2026-03-20T14:13:01Z",
       "comments": [
         {
           "body": "Progress update: ported the remaining Go-owned repo plane, registry, and run-commit binding contracts into `bigclaw-go/internal/repo/*` with parity coverage for repo space defaults, default channels, agent resolution, accepted commit hash derivation, and invalid role rejection.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/repo` -> passed\n- `git rev-parse HEAD` -> `6c333a21abd3845414c8ad74d806b23f54f57d41`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `6c333a21abd3845414c8ad74d806b23f54f57d41` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `6c333a21abd3845414c8ad74d806b23f54f57d41` (matches local)\n- `git log -1 --stat` -> `Port Go repo plane and registry contracts`\n\nCommit: `6c333a21abd3845414c8ad74d806b23f54f57d41`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T14:02:35Z"
+        },
+        {
+          "body": "Progress update: added the Go-owned repo gateway client contract in `bigclaw-go/internal/repo/gateway.go`, including the typed gateway interface plus bundle and commit-list normalization helpers that mirror the remaining Python repo gateway surface. Added focused coverage in `bigclaw-go/internal/repo/gateway_test.go` for bundle normalization, commit-list normalization, children/leaves accessors, and deterministic gateway error normalization.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/repo` -> passed\n- `git rev-parse HEAD` -> `4f026ee5637fb0e618130687ede1ec012487e972`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `4f026ee5637fb0e618130687ede1ec012487e972` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `4f026ee5637fb0e618130687ede1ec012487e972` (matches local)\n- `git log -1 --stat` -> `Port Go repo gateway client contract`\n\nCommit: `4f026ee5637fb0e618130687ede1ec012487e972`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T14:13:01Z"
         }
       ]
     },
