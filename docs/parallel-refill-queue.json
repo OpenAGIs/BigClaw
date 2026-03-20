@@ -18,12 +18,12 @@
   },
   "recent_batches": {
     "completed": [
-      "BIG-GOM-302"
+      "BIG-GOM-302",
+      "BIG-GOM-304"
     ],
     "active": [
       "BIG-GOM-301",
       "BIG-GOM-303",
-      "BIG-GOM-304",
       "BIG-GOM-307"
     ],
     "standby": [
@@ -65,7 +65,7 @@
       "identifier": "BIG-GOM-304",
       "title": "Observability, reporting, and weekly operations surface migration",
       "track": "Governance/Reporting Surface Migration",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-GOM-305",
