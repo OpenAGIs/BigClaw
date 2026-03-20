@@ -148,6 +148,35 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	r.publish(domain.Event{ID: eventID(task.ID, "leased"), Type: domain.EventTaskLeased, TaskID: task.ID, TraceID: task.TraceID, Timestamp: now})
 	decision := r.Scheduler.Decide(*task, quota)
 	if !decision.Accepted {
+		if decision.ApprovalRequired {
+			blockedAt := time.Now()
+			if controller, ok := r.Queue.(queue.TaskController); ok {
+				snapshot, err := controller.UpdateTaskState(ctx, task.ID, domain.TaskBlocked, blockedAt, decision.Reason)
+				if err == nil {
+					task = &snapshot.Task
+				}
+			} else {
+				task.State = domain.TaskBlocked
+				task.UpdatedAt = blockedAt
+			}
+			if r.Recorder != nil {
+				r.Recorder.StoreTask(*task)
+			}
+			r.finishStatus(string(domain.EventRunTakeover), decision.Reason, nil)
+			r.publish(domain.Event{
+				ID:        eventID(task.ID, "approval-required"),
+				Type:      domain.EventRunTakeover,
+				TaskID:    task.ID,
+				TraceID:   task.TraceID,
+				Timestamp: blockedAt,
+				Payload: map[string]any{
+					"message":  decision.Reason,
+					"executor": decision.Assignment.Executor,
+					"approval": "required",
+				},
+			})
+			return true
+		}
 		_ = r.Queue.Requeue(ctx, lease, time.Now().Add(100*time.Millisecond))
 		r.finishStatus(string(domain.EventTaskRetried), decision.Reason, func(status *Status) {
 			status.RetriedRuns++

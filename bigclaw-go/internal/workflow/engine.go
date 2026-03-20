@@ -510,7 +510,12 @@ func resolveWorkflowRunStatus(steps []WorkflowStepRun, task domain.Task, accepta
 	switch task.State {
 	case domain.TaskCancelled:
 		return WorkflowRunCanceled
-	case domain.TaskDeadLetter, domain.TaskBlocked:
+	case domain.TaskBlocked:
+		if acceptance.Status == "needs-approval" {
+			return WorkflowRunRunning
+		}
+		return WorkflowRunFailed
+	case domain.TaskDeadLetter:
 		return WorkflowRunFailed
 	}
 	for _, step := range steps {

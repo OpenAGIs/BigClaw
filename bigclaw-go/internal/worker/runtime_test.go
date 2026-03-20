@@ -20,6 +20,7 @@ type fakeRunner struct {
 	delay             time.Duration
 	blockUntilContext bool
 	result            executor.Result
+	calls             *int
 }
 
 func (r fakeRunner) Kind() domain.ExecutorKind { return r.kind }
@@ -29,6 +30,9 @@ func (r fakeRunner) Capability() executor.Capability {
 }
 
 func (r fakeRunner) Execute(ctx context.Context, task domain.Task) executor.Result {
+	if r.calls != nil {
+		*r.calls = *r.calls + 1
+	}
 	if r.blockUntilContext {
 		<-ctx.Done()
 		return executor.Result{ShouldRetry: true, Message: ctx.Err().Error(), FinishedAt: time.Now()}
@@ -394,6 +398,47 @@ func TestRuntimeDefersTakenOverTask(t *testing.T) {
 	status := runtime.Snapshot()
 	if status.LastTransition != string(domain.EventRunTakeover) {
 		t.Fatalf("expected takeover transition in snapshot, got %+v", status)
+	}
+}
+
+func TestRuntimeParksApprovalRequiredTaskWithoutExecutingRunner(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	if err := q.Enqueue(context.Background(), domain.Task{ID: "task-approval", TraceID: "trace-approval", Priority: 1, Labels: []string{"security", "prod"}, RequiredTools: []string{"deploy"}, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+	callCount := 0
+	runtime := Runtime{
+		WorkerID:    "worker-1",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorKubernetes, result: executor.Result{Success: true, Message: "ok"}, calls: &callCount}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    200 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
+	if !processed {
+		t.Fatal("expected approval-gated task to be processed into blocked state")
+	}
+	if callCount != 0 {
+		t.Fatalf("expected executor not to run before approval, got %d calls", callCount)
+	}
+	snapshot, err := q.GetTask(context.Background(), "task-approval")
+	if err != nil {
+		t.Fatalf("get blocked approval task: %v", err)
+	}
+	if snapshot.Task.State != domain.TaskBlocked || snapshot.Task.Metadata["blocked_reason"] != "requires approval for high-risk task" {
+		t.Fatalf("expected blocked approval queue task, got %+v", snapshot)
+	}
+	latest, ok := recorder.LatestByTask("task-approval")
+	if !ok || latest.Type != domain.EventRunTakeover {
+		t.Fatalf("expected approval takeover event, got %+v", latest)
+	}
+	if latest.Payload["approval"] != "required" {
+		t.Fatalf("expected approval payload marker, got %+v", latest.Payload)
 	}
 }
 

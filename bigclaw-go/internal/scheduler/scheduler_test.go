@@ -19,22 +19,25 @@ func TestSchedulerBudgetGuardrail(t *testing.T) {
 	}
 }
 
-func TestSchedulerRoutesHighRiskToKubernetes(t *testing.T) {
+func TestSchedulerRequiresApprovalForHighRiskTask(t *testing.T) {
 	s := New()
 	decision := s.Decide(domain.Task{ID: "t1", RiskLevel: domain.RiskHigh}, QuotaSnapshot{})
-	if !decision.Accepted {
-		t.Fatalf("expected accepted decision")
+	if decision.Accepted || !decision.ApprovalRequired {
+		t.Fatalf("expected approval-required decision, got %+v", decision)
 	}
 	if decision.Assignment.Executor != domain.ExecutorKubernetes {
 		t.Fatalf("expected kubernetes executor, got %s", decision.Assignment.Executor)
 	}
+	if decision.Reason != "requires approval for high-risk task" {
+		t.Fatalf("expected approval reason, got %+v", decision)
+	}
 }
 
-func TestSchedulerRoutesComputedHighRiskToKubernetes(t *testing.T) {
+func TestSchedulerRequiresApprovalForComputedHighRiskTask(t *testing.T) {
 	s := New()
 	decision := s.Decide(domain.Task{ID: "risk-1", Priority: 1, Labels: []string{"security", "prod"}, RequiredTools: []string{"deploy"}}, QuotaSnapshot{})
-	if !decision.Accepted {
-		t.Fatalf("expected accepted decision")
+	if decision.Accepted || !decision.ApprovalRequired {
+		t.Fatalf("expected approval-required decision, got %+v", decision)
 	}
 	if decision.Assignment.Executor != domain.ExecutorKubernetes {
 		t.Fatalf("expected computed high-risk task to route to kubernetes, got %s", decision.Assignment.Executor)

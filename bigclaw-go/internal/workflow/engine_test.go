@@ -169,6 +169,16 @@ func TestEngineRunDefinitionRequiresApprovalForHighRiskTask(t *testing.T) {
 	if result.Acceptance.Status != "needs-approval" || result.Acceptance.Passed {
 		t.Fatalf("expected needs-approval, got %+v", result.Acceptance)
 	}
+	if result.Task.State != domain.TaskBlocked {
+		t.Fatalf("expected workflow task parked in blocked state pending approval, got %+v", result.Task)
+	}
+	snapshot, err := q.GetTask(context.Background(), "task-risk")
+	if err != nil {
+		t.Fatalf("get blocked workflow task: %v", err)
+	}
+	if snapshot.Task.State != domain.TaskBlocked || snapshot.Task.Metadata["blocked_reason"] != "requires approval for high-risk task" {
+		t.Fatalf("expected blocked workflow queue task, got %+v", snapshot)
+	}
 	if result.WorkflowRun.Status != WorkflowRunRunning {
 		t.Fatalf("expected running workflow run awaiting approval, got %+v", result.WorkflowRun)
 	}

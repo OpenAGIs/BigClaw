@@ -27,10 +27,11 @@ type PreemptionPlan struct {
 }
 
 type Decision struct {
-	Assignment executor.Assignment
-	Accepted   bool
-	Reason     string
-	Preemption PreemptionPlan
+	Assignment       executor.Assignment
+	Accepted         bool
+	ApprovalRequired bool
+	Reason           string
+	Preemption       PreemptionPlan
 }
 
 type Scheduler struct {
@@ -98,6 +99,14 @@ func (s *Scheduler) Decide(task domain.Task, quota QuotaSnapshot) Decision {
 		return Decision{Accepted: false, Reason: fairnessThrottleReason(strings.TrimSpace(task.TenantID), rules)}
 	}
 	assignment := assignmentForTask(task, rules)
+	if requiresManualApproval(task) {
+		return Decision{
+			Accepted:         false,
+			ApprovalRequired: true,
+			Assignment:       assignment,
+			Reason:           "requires approval for high-risk task",
+		}
+	}
 	if quota.ConcurrentLimit > 0 && quota.CurrentRunning >= quota.ConcurrentLimit {
 		if isPreemptible(task, rules) && quota.PreemptibleExecutions > 0 {
 			assignment.Reason = assignment.Reason + "; using preemptible capacity"
@@ -206,4 +215,8 @@ func shouldThrottleForFairness(task domain.Task, rules RoutingRules) bool {
 		return false
 	}
 	return !isPriorityExempt(task, rules)
+}
+
+func requiresManualApproval(task domain.Task) bool {
+	return risk.ScoreTask(task, nil).RequiresApproval
 }
