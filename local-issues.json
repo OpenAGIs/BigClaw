@@ -543,6 +543,24 @@
           "created_at": "2026-03-20T19:36:00Z"
         }
       ]
+    },
+    {
+      "id": "big-par-096",
+      "identifier": "BIG-PAR-096",
+      "title": "Expose continuation gate details in summary JSON",
+      "description": "Thread the continuation policy-gate failing checks and latest bundle age into the exported live-validation summary so machine-readable consumers do not need to open the separate policy-gate artifact to understand a hold result.",
+      "priority": 2,
+      "state": "In Progress",
+      "labels": [
+        "parallel",
+        "validation",
+        "tooling",
+        "reporting"
+      ],
+      "assigned_to_worker": true,
+      "created_at": "2026-03-20T19:39:00Z",
+      "updated_at": "2026-03-20T19:39:00Z",
+      "comments": []
     }
   ]
 }
