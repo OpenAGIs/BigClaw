@@ -359,6 +359,40 @@
           "created_at": "2026-03-20T17:19:11Z"
         }
       ]
+    },
+    {
+      "id": "big-par-088",
+      "identifier": "BIG-PAR-088",
+      "title": "Broaden validation continuation gate refresh beyond run_all",
+      "description": "Extend the repo-native validation continuation scorecard/policy-gate refresh into the broader workflow/orchestration entrypoint so continuation evidence stays current outside direct run_all.sh execution.",
+      "priority": 2,
+      "state": "In Progress",
+      "labels": [
+        "parallel",
+        "validation",
+        "tooling",
+        "continuation"
+      ],
+      "assigned_to_worker": true,
+      "created_at": "2026-03-20T18:28:36Z",
+      "updated_at": "2026-03-20T18:28:36Z"
+    },
+    {
+      "id": "big-par-089",
+      "identifier": "BIG-PAR-089",
+      "title": "Co-locate shared-queue proof with validation bundle lineage",
+      "description": "Reduce the standalone-proof caveat by threading shared-queue coordination evidence into the same validation bundle lineage metadata used by the continuation scorecard and policy gate.",
+      "priority": 3,
+      "state": "Backlog",
+      "labels": [
+        "parallel",
+        "validation",
+        "tooling",
+        "continuation"
+      ],
+      "assigned_to_worker": true,
+      "created_at": "2026-03-20T18:28:36Z",
+      "updated_at": "2026-03-20T18:28:36Z"
     }
   ]
 }
