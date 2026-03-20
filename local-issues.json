@@ -112,6 +112,11 @@
           "author": "codex",
           "body": "Completed the Go-owned dashboard run contract slice for `BIG-GOM-305` by adding `bigclaw-go/internal/product/dashboard_run_contract.go`, exposing `/v2/dashboard-run-contract` and `/v2/dashboard-run-contract/export`, and extending `/v2/runs/{id}` plus markdown run reports with closeout evidence fields for validation proof, git push status, git log `--stat`, and local/remote SHA sync. Validation: `cd bigclaw-go \u0026\u0026 go test ./internal/product ./internal/api` -\u003e ok, `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok, `bash scripts/ops/bigclawctl github-sync status --json` -\u003e local SHA `79fa078154d9d5167606fc4bcb9c302f4484c6c6` matches remote SHA `79fa078154d9d5167606fc4bcb9c302f4484c6c6` with `status: ok` and `synced: true`, `git log -1 --stat` -\u003e captured for commit `79fa078154d9d5167606fc4bcb9c302f4484c6c6` with API/product contract files in the stat output. Commit SHA: `79fa078154d9d5167606fc4bcb9c302f4484c6c6`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
           "created_at": "2026-03-20T09:10:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Ported the remaining repo-triage slice from src/bigclaw/repo_triage.py into Go by adding bigclaw-go/internal/repo/triage.go and wiring repo triage recommendation plus approval evidence packet data into /v2/runs/{id} and the markdown run report. Validation: cd bigclaw-go \u0026\u0026 go test ./internal/repo ./internal/api -\u003e ok; cd bigclaw-go \u0026\u0026 go test ./... -\u003e ok; bash scripts/ops/bigclawctl github-sync status --json -\u003e local SHA a884e35ff2bb17c8ef00b417bc74a8737128edee matches remote SHA a884e35ff2bb17c8ef00b417bc74a8737128edee with status ok and synced true; git log -1 --stat -\u003e captured for commit a884e35ff2bb17c8ef00b417bc74a8737128edee with api and repo triage files in the stat output. Commit SHA: a884e35ff2bb17c8ef00b417bc74a8737128edee. PR URL: unavailable; gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state returned [].",
+          "created_at": "2026-03-20T10:06:12Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -127,7 +132,7 @@
       "priority": 2,
       "state": "In Progress",
       "title": "Control center, triage, and operations view migration",
-      "updated_at": "2026-03-20T09:10:00Z"
+      "updated_at": "2026-03-20T10:06:12Z"
     },
     {
       "assigned_to_worker": true,
