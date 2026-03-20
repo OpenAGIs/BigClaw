@@ -658,6 +658,24 @@
           "created_at": "2026-03-20T20:04:00Z"
         }
       ]
+    },
+    {
+      "id": "big-par-101",
+      "identifier": "BIG-PAR-101",
+      "title": "Preserve continuation reason in manifest recent runs",
+      "description": "Carry the continuation refresh reason into the compact `recent_runs[].continuation` manifest subset so skipped and not-refreshed runs remain explainable without reopening each full summary artifact.",
+      "priority": 3,
+      "state": "In Progress",
+      "labels": [
+        "parallel",
+        "validation",
+        "tooling",
+        "reporting"
+      ],
+      "assigned_to_worker": true,
+      "created_at": "2026-03-20T20:07:00Z",
+      "updated_at": "2026-03-20T20:07:00Z",
+      "comments": []
     }
   ]
 }
