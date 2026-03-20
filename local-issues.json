@@ -140,9 +140,9 @@
         "triage"
       ],
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Control center, triage, and operations view migration",
-      "updated_at": "2026-03-20T10:30:28Z"
+      "updated_at": "2026-03-20T10:33:17Z"
     },
     {
       "assigned_to_worker": true,
