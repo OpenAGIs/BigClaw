@@ -23,10 +23,10 @@
     "active": [
       "BIG-GOM-301",
       "BIG-GOM-303",
+      "BIG-GOM-304",
       "BIG-GOM-307"
     ],
     "standby": [
-      "BIG-GOM-304",
       "BIG-GOM-305",
       "BIG-GOM-306",
       "BIG-GOM-308"
@@ -65,7 +65,7 @@
       "identifier": "BIG-GOM-304",
       "title": "Observability, reporting, and weekly operations surface migration",
       "track": "Governance/Reporting Surface Migration",
-      "status": "Todo"
+      "status": "In Progress"
     },
     {
       "identifier": "BIG-GOM-305",
