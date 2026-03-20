@@ -311,6 +311,28 @@
           "created_at": "2026-03-20T14:40:52Z"
         }
       ]
+    },
+    {
+      "id": "big-gom-309",
+      "identifier": "BIG-GOM-309",
+      "title": "Final Go-mainline branch validation and closeout",
+      "description": "Run a final branch-wide validation/reconciliation pass now that BIG-GOM-301 through BIG-GOM-308 are done, keep the local tracker and PR metadata aligned with the completed branch scope, and capture final evidence for the Go-mainline cutover branch.",
+      "priority": 2,
+      "state": "Done",
+      "labels": [
+        "go-mainline",
+        "validation",
+        "closeout"
+      ],
+      "assigned_to_worker": true,
+      "created_at": "2026-03-20T17:07:14Z",
+      "updated_at": "2026-03-20T17:09:17Z",
+      "comments": [
+        {
+          "body": "Closed `BIG-GOM-309` after the final branch-wide validation and closeout pass for the completed Go-mainline cutover branch.\n\nWhat changed:\n- verified the completed branch still passes the full Go test suite after closing `BIG-GOM-301` through `BIG-GOM-308`\n- re-ran the legacy Python shim assertions and `py_compile` checks to confirm the migration-only compatibility layer still matches the documented Go-first posture\n- confirmed PR `#138` is open again with branch-complete title/body covering `BIG-GOM-301` through `BIG-GOM-308`\n\nValidation:\n- `cd bigclaw-go && go test ./...` -> passed\n- `python3 -m py_compile src/bigclaw/service.py src/bigclaw/__main__.py src/bigclaw/legacy_shim.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py` -> passed\n- `PYTHONPATH=src python3 - <<\"PY\" ... legacy shim assertions ...` -> passed\n- `git rev-parse HEAD` -> `81d81221e2764990fc7b28078e14bde73319b6ce`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `81d81221e2764990fc7b28078e14bde73319b6ce` (matches local)\n- `git rev-parse github/symphony/BIG-GOM-302` -> `81d81221e2764990fc7b28078e14bde73319b6ce` (matches local)\n- `git log -1 --stat` -> `Close BIG-GOM-301 in local tracker`\n\nCommit: `81d81221e2764990fc7b28078e14bde73319b6ce`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T17:09:16Z"
+        }
+      ]
     }
   ]
 }
