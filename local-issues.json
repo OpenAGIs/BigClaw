@@ -550,7 +550,7 @@
       "title": "Expose continuation gate details in summary JSON",
       "description": "Thread the continuation policy-gate failing checks and latest bundle age into the exported live-validation summary so machine-readable consumers do not need to open the separate policy-gate artifact to understand a hold result.",
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "labels": [
         "parallel",
         "validation",
@@ -559,8 +559,13 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-20T19:39:00Z",
-      "updated_at": "2026-03-20T19:39:00Z",
-      "comments": []
+      "updated_at": "2026-03-20T19:44:00Z",
+      "comments": [
+        {
+          "body": "Closed `BIG-PAR-096` after extending the machine-readable validation summary with continuation gate detail.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now copies `latest_bundle_age_hours`, `failing_checks`, and `next_actions` from the continuation policy gate into `summary.continuation`, alongside the existing gate status and recommendation fields.\n- `tests/test_parallel_validation_bundle.py` now verifies that the exported summary JSON carries the continuation gate status, a non-empty failing-check list for the synthetic hold case, the latest bundle age, and next actions.\n- `bigclaw-go/docs/e2e-validation.md` now documents that `live-validation-summary.json` carries the continuation gate detail directly for machine-readable consumers.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded test_export_validation_bundle_generates_latest_reports_and_index harness ...` -> passed (`export validation bundle summary-detail harness passed`)\n- `git rev-parse HEAD` -> `3f14bca8f4b1619fabaa57d8ed01e418b6e42f1c`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `3f14bca8f4b1619fabaa57d8ed01e418b6e42f1c` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `3f14bca8f4b1619fabaa57d8ed01e418b6e42f1c` (matches local)\n- `git log -1 --stat` -> `Expose continuation gate details in summary`\n\nCommit: `3f14bca8f4b1619fabaa57d8ed01e418b6e42f1c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T19:44:00Z"
+        }
+      ]
     }
   ]
 }
