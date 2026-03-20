@@ -65,8 +65,14 @@
       "state": "In Progress",
       "labels": ["go-mainline", "migration", "observability", "reporting"],
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "body": "Expanded the Go weekly reporting export in `bigclaw-go/internal/reporting/reporting.go` so the markdown bundle now includes richer summary lines, highlights, and per-team breakdown sections instead of a thin summary-only export. Added direct package coverage in `bigclaw-go/internal/reporting/reporting_test.go` and tightened `bigclaw-go/internal/api/expansion_test.go` so the `/v2/reports/weekly/export` surface proves the richer markdown is emitted through the API.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/reporting ./internal/api` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `35d9fb4f87a176824aa9ca822cded6bc2c70d91d`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `35d9fb4f87a176824aa9ca822cded6bc2c70d91d` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `35d9fb4f87a176824aa9ca822cded6bc2c70d91d` (matches local)\n- `git log -1 --stat` -> `Expand Go weekly report markdown export`\n\nCommit: `35d9fb4f87a176824aa9ca822cded6bc2c70d91d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T09:10:00Z"
+        }
+      ],
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T00:00:00Z"
+      "updated_at": "2026-03-20T09:10:00Z"
     },
     {
       "id": "big-gom-305",
