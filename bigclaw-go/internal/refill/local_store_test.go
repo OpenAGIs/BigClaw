@@ -126,3 +126,49 @@ func TestLocalIssueStoreAppendIssueCommentPreservesExistingComments(t *testing.T
 		t.Fatalf("expected updated_at refresh, got %s", text)
 	}
 }
+
+func TestLocalIssueStoreAppendIssueCommentDoesNotEscapeBodyText(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "title": "Toolchain migration",
+      "description": "Keep Go && GitHub aligned -> no Python fallback",
+      "priority": 1,
+      "state": "In Progress",
+      "labels": ["go", "tooling"],
+      "assigned_to_worker": true,
+      "comments": [],
+      "created_at": "2026-03-18T09:00:00Z",
+      "updated_at": "2026-03-18T09:00:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	if err := store.AppendIssueComment("BIG-GOM-307", "ran go test ./internal/refill && go test ./cmd/bigclawctl -> passed", time.Date(2026, 3, 18, 17, 0, 0, 0, time.UTC)); err != nil {
+		t.Fatalf("append issue comment: %v", err)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	text := string(body)
+	if strings.Contains(text, `\u0026`) || strings.Contains(text, `\u003e`) {
+		t.Fatalf("expected literal comment/body text, got %s", text)
+	}
+	if !strings.Contains(text, `"description": "Keep Go && GitHub aligned -> no Python fallback"`) {
+		t.Fatalf("expected existing description literal text, got %s", text)
+	}
+	if !strings.Contains(text, `"body": "ran go test ./internal/refill && go test ./cmd/bigclawctl -> passed"`) {
+		t.Fatalf("expected literal appended comment, got %s", text)
+	}
+}
