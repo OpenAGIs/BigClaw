@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -11,14 +12,9 @@ SRC_ROOT = REPO_ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from bigclaw.workspace_bootstrap_cli import main
+from bigclaw.legacy_shim import LEGACY_PYTHON_WRAPPER_NOTICE, build_workspace_bootstrap_args
 
 
 if __name__ == "__main__":
-    raise SystemExit(
-        main(
-            description="Bootstrap BigClaw workspaces from a shared local mirror.",
-            default_repo_url="git@github.com:OpenAGIs/BigClaw.git",
-            default_cache_key="openagis-bigclaw",
-        )
-    )
+    print(LEGACY_PYTHON_WRAPPER_NOTICE, file=sys.stderr)
+    os.execvp("bash", build_workspace_bootstrap_args(REPO_ROOT, sys.argv[1:]))
