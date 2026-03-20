@@ -95,7 +95,19 @@ If your environment has restrictive system-packages permissions, run tests with 
 PYTHONPATH=src python3 -m pytest
 ```
 
-## Smoke verify
+## Go smoke verify
+
+```bash
+cd BigClaw/bigclaw-go
+go test ./...
+go run ./cmd/bigclawd &
+curl localhost:8080/healthz
+bash ../scripts/ops/bigclawctl github-sync status --json
+```
+
+## Legacy Python smoke verify
+
+Use this only when validating a frozen migration-reference path:
 
 ```bash
 PYTHONPATH=src python3 scripts/dev_smoke.py
