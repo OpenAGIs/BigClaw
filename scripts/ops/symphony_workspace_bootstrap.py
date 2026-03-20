@@ -2,16 +2,23 @@
 from __future__ import annotations
 
 import sys
+import subprocess
 from pathlib import Path
-
-sys.dont_write_bytecode = True
+from typing import Sequence
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SRC_ROOT = REPO_ROOT / "src"
-if str(SRC_ROOT) not in sys.path:
-    sys.path.insert(0, str(SRC_ROOT))
+BIGCLAWCTL = REPO_ROOT / "scripts" / "ops" / "bigclawctl"
 
-from bigclaw.workspace_bootstrap_cli import main
+
+def build_command(argv: Sequence[str]) -> list[str]:
+    return ["bash", str(BIGCLAWCTL), "workspace", *argv]
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    if argv is None:
+        argv = sys.argv[1:]
+    completed = subprocess.run(build_command(argv), cwd=REPO_ROOT)
+    return completed.returncode
 
 
 if __name__ == "__main__":

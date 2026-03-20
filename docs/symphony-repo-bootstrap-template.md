@@ -9,10 +9,8 @@ issue.
 Copy these files into the target repository:
 
 - `scripts/ops/bigclawctl`
-- `src/<your_package>/workspace_bootstrap.py`
-- `src/<your_package>/workspace_bootstrap_cli.py`
 
-The shell entrypoint is generic; only the Python compatibility package path is repo-specific while a repo is still mid-migration.
+The shell entrypoint is the canonical Go-first surface. If a repo still has historical callers wired to Python bootstrap filenames, keep those Python files as thin subprocess shims that forward into `scripts/ops/bigclawctl` rather than keeping repo-specific bootstrap logic under `src/<your_package>`.
 
 ## Workflow hook template
 

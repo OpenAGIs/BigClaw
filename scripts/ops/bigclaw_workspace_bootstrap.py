@@ -2,23 +2,29 @@
 from __future__ import annotations
 
 import sys
+import subprocess
 from pathlib import Path
-
-sys.dont_write_bytecode = True
+from typing import Sequence
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SRC_ROOT = REPO_ROOT / "src"
-if str(SRC_ROOT) not in sys.path:
-    sys.path.insert(0, str(SRC_ROOT))
+BIGCLAWCTL = REPO_ROOT / "scripts" / "ops" / "bigclawctl"
 
-from bigclaw.workspace_bootstrap_cli import main
+
+def build_command(argv: Sequence[str]) -> list[str]:
+    command = ["bash", str(BIGCLAWCTL), "workspace", *argv]
+    if not any(arg == "--repo-url" or arg.startswith("--repo-url=") for arg in argv):
+        command.extend(["--repo-url", "git@github.com:OpenAGIs/BigClaw.git"])
+    if not any(arg == "--cache-key" or arg.startswith("--cache-key=") for arg in argv):
+        command.extend(["--cache-key", "openagis-bigclaw"])
+    return command
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    if argv is None:
+        argv = sys.argv[1:]
+    completed = subprocess.run(build_command(argv), cwd=REPO_ROOT)
+    return completed.returncode
 
 
 if __name__ == "__main__":
-    raise SystemExit(
-        main(
-            description="Bootstrap BigClaw workspaces from a shared local mirror.",
-            default_repo_url="git@github.com:OpenAGIs/BigClaw.git",
-            default_cache_key="openagis-bigclaw",
-        )
-    )
+    raise SystemExit(main())
