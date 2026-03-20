@@ -93,6 +93,24 @@ type operationsSummary struct {
 	RiskDistribution  map[string]int `json:"risk_distribution"`
 }
 
+type runListFilters struct {
+	Team     string
+	Project  string
+	TenantID string
+	State    string
+	Limit    int
+}
+
+type runListSummary struct {
+	TotalRuns         int            `json:"total_runs"`
+	ActiveRuns        int            `json:"active_runs"`
+	BlockedRuns       int            `json:"blocked_runs"`
+	PremiumRuns       int            `json:"premium_runs"`
+	DeadLetters       int            `json:"dead_letters"`
+	BudgetCentsTotal  int64          `json:"budget_cents_total"`
+	StateDistribution map[string]int `json:"state_distribution"`
+}
+
 type triageSummary struct {
 	FlaggedRuns    int            `json:"flagged_runs"`
 	InboxSize      int            `json:"inbox_size"`
@@ -793,6 +811,87 @@ func (s *Server) handleV2OperationsDashboard(w http.ResponseWriter, r *http.Requ
 		"blocked_tasks":     limitDashboardTasks(blockedTasks, limit),
 		"tasks":             overviews,
 	})
+}
+
+func (s *Server) handleV2Runs(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	authorization := parseControlAuthorization(r, "", "", "")
+	filters, err := parseRunListFilters(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := enforceScopedTeamFilter(authorization, &filters.Team); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+	tasks := s.filteredTasks(filters.Team, filters.Project, filters.TenantID, time.Time{}, time.Time{})
+	summary := runListSummary{StateDistribution: make(map[string]int)}
+	runs := make([]dashboardTaskOverview, 0, len(tasks))
+	for _, task := range tasks {
+		if filters.State != "" && !strings.EqualFold(strings.TrimSpace(string(task.State)), filters.State) {
+			continue
+		}
+		if err := s.authorizeTaskAccess(authorization, task); err != nil {
+			continue
+		}
+		policySummary := policy.Resolve(task)
+		summary.TotalRuns++
+		summary.BudgetCentsTotal += task.BudgetCents
+		summary.StateDistribution[string(task.State)]++
+		if domain.IsActiveTaskState(task.State) {
+			summary.ActiveRuns++
+		}
+		if task.State == domain.TaskBlocked || strings.EqualFold(strings.TrimSpace(task.Metadata["blocked"]), "true") {
+			summary.BlockedRuns++
+		}
+		if task.State == domain.TaskDeadLetter {
+			summary.DeadLetters++
+		}
+		if policySummary.Plan == "premium" {
+			summary.PremiumRuns++
+		}
+		runs = append(runs, s.dashboardTaskOverview(task, policySummary))
+	}
+	sort.SliceStable(runs, func(i, j int) bool {
+		if runs[i].Task.UpdatedAt.Equal(runs[j].Task.UpdatedAt) {
+			return runs[i].Task.ID < runs[j].Task.ID
+		}
+		return runs[i].Task.UpdatedAt.After(runs[j].Task.UpdatedAt)
+	})
+	if filters.Limit > 0 && len(runs) > filters.Limit {
+		runs = runs[:filters.Limit]
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"authorization": authorization,
+		"filters": map[string]any{
+			"team":        filters.Team,
+			"project":     filters.Project,
+			"tenant_id":   filters.TenantID,
+			"state":       filters.State,
+			"viewer_team": authorization.ViewerTeam,
+			"limit":       filters.Limit,
+		},
+		"summary": summary,
+		"runs":    runs,
+	})
+}
+
+func parseRunListFilters(r *http.Request) (runListFilters, error) {
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit <= 0 {
+		limit = 25
+	}
+	return runListFilters{
+		Team:     strings.TrimSpace(r.URL.Query().Get("team")),
+		Project:  strings.TrimSpace(r.URL.Query().Get("project")),
+		TenantID: strings.TrimSpace(r.URL.Query().Get("tenant_id")),
+		State:    strings.TrimSpace(r.URL.Query().Get("state")),
+		Limit:    limit,
+	}, nil
 }
 
 func isOverdueTask(task domain.Task, now time.Time) bool {

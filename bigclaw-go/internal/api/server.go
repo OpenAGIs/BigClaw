@@ -254,6 +254,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/v2/dashboard-run-contract/export", s.handleV2DashboardRunContractExport)
 	mux.HandleFunc("/v2/billing/usage", s.handleV2BillingUsage)
 	mux.HandleFunc("/v2/billing/entitlements", s.handleV2BillingEntitlements)
+	mux.HandleFunc("/v2/runs", s.handleV2Runs)
 	mux.HandleFunc("/v2/runs/", s.handleV2RunDetail)
 	mux.HandleFunc("/tasks", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {

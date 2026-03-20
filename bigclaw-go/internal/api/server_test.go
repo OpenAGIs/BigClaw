@@ -1160,6 +1160,63 @@ func TestV2OperationsDashboardAggregatesSLAMetrics(t *testing.T) {
 	}
 }
 
+func TestV2RunsListsScopedRunIndex(t *testing.T) {
+	recorder := observability.NewRecorder()
+	controller := control.New()
+	base := time.Unix(1700000900, 0)
+	premium := domain.Task{ID: "task-runs-1", TraceID: "trace-runs-1", Title: "Premium blocked run", State: domain.TaskBlocked, BudgetCents: 1200, Metadata: map[string]string{"team": "platform", "project": "alpha", "plan": "premium"}, CreatedAt: base, UpdatedAt: base.Add(2 * time.Minute)}
+	dead := domain.Task{ID: "task-runs-2", TraceID: "trace-runs-2", Title: "Dead letter run", State: domain.TaskDeadLetter, BudgetCents: 300, Metadata: map[string]string{"team": "platform", "project": "alpha"}, CreatedAt: base, UpdatedAt: base.Add(4 * time.Minute)}
+	other := domain.Task{ID: "task-runs-3", TraceID: "trace-runs-3", Title: "Other team run", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "growth", "project": "beta"}, CreatedAt: base, UpdatedAt: base.Add(3 * time.Minute)}
+	for _, task := range []domain.Task{premium, dead, other} {
+		recorder.StoreTask(task)
+	}
+	recorder.Record(domain.Event{ID: "evt-runs-1", Type: domain.EventRunTakeover, TaskID: premium.ID, TraceID: premium.TraceID, Timestamp: base.Add(2 * time.Minute), Payload: map[string]any{"message": "awaiting review"}})
+	recorder.Record(domain.Event{ID: "evt-runs-2", Type: domain.EventTaskDeadLetter, TaskID: dead.ID, TraceID: dead.TraceID, Timestamp: base.Add(4 * time.Minute), Payload: map[string]any{"message": "replay required"}})
+	controller.Takeover(premium.ID, "alice", "bob", "manual review", base.Add(5*time.Minute))
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: controller, Now: func() time.Time { return base.Add(6 * time.Minute) }}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/runs?team=platform&project=alpha&limit=10", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected run index 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Summary struct {
+			TotalRuns         int            `json:"total_runs"`
+			ActiveRuns        int            `json:"active_runs"`
+			BlockedRuns       int            `json:"blocked_runs"`
+			PremiumRuns       int            `json:"premium_runs"`
+			DeadLetters       int            `json:"dead_letters"`
+			BudgetCentsTotal  int64          `json:"budget_cents_total"`
+			StateDistribution map[string]int `json:"state_distribution"`
+		} `json:"summary"`
+		Runs []struct {
+			Task struct {
+				ID string `json:"id"`
+			} `json:"task"`
+			Policy struct {
+				Plan string `json:"plan"`
+			} `json:"policy"`
+			Drilldown struct {
+				Run string `json:"run"`
+			} `json:"drilldown"`
+		} `json:"runs"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode run index: %v", err)
+	}
+	if decoded.Summary.TotalRuns != 2 || decoded.Summary.ActiveRuns != 1 || decoded.Summary.BlockedRuns != 1 || decoded.Summary.PremiumRuns != 1 || decoded.Summary.DeadLetters != 1 || decoded.Summary.BudgetCentsTotal != 1500 {
+		t.Fatalf("unexpected run index summary: %+v", decoded.Summary)
+	}
+	if len(decoded.Runs) != 2 || decoded.Runs[0].Task.ID != "task-runs-2" || decoded.Runs[1].Task.ID != "task-runs-1" {
+		t.Fatalf("unexpected run ordering: %+v", decoded.Runs)
+	}
+	if decoded.Runs[1].Policy.Plan != "premium" || decoded.Runs[1].Drilldown.Run != "/v2/runs/task-runs-1" {
+		t.Fatalf("unexpected run payload: %+v", decoded.Runs[1])
+	}
+}
+
 func TestV2TriageCenterBuildsRecommendationsAndSimilarity(t *testing.T) {
 	recorder := observability.NewRecorder()
 	base := time.Unix(1700002800, 0)
@@ -2270,6 +2327,20 @@ func TestV2DashboardAndRunDetailEnforceViewerTeamScope(t *testing.T) {
 		t.Fatalf("expected operations dashboard to be scoped to platform team, got %s", operationsBody)
 	}
 
+	runsRequest := httptest.NewRequest(http.MethodGet, "/v2/runs?limit=10", nil)
+	runsRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	runsRequest.Header.Set("X-BigClaw-Actor", "lead-2")
+	runsRequest.Header.Set("X-BigClaw-Team", "platform")
+	runsResponse := httptest.NewRecorder()
+	handler.ServeHTTP(runsResponse, runsRequest)
+	if runsResponse.Code != http.StatusOK {
+		t.Fatalf("expected scoped runs 200, got %d %s", runsResponse.Code, runsResponse.Body.String())
+	}
+	runsBody := runsResponse.Body.String()
+	if !strings.Contains(runsBody, "task-scope-1") || strings.Contains(runsBody, "task-scope-2") {
+		t.Fatalf("expected run index to be scoped to platform team, got %s", runsBody)
+	}
+
 	triageRequest := httptest.NewRequest(http.MethodGet, "/v2/triage/center?limit=10", nil)
 	triageRequest.Header.Set("X-BigClaw-Role", "eng_lead")
 	triageRequest.Header.Set("X-BigClaw-Actor", "lead-2")
@@ -2292,6 +2363,16 @@ func TestV2DashboardAndRunDetailEnforceViewerTeamScope(t *testing.T) {
 	handler.ServeHTTP(forbiddenDashboardResponse, forbiddenDashboardRequest)
 	if forbiddenDashboardResponse.Code != http.StatusForbidden {
 		t.Fatalf("expected forbidden dashboard for mismatched team, got %d %s", forbiddenDashboardResponse.Code, forbiddenDashboardResponse.Body.String())
+	}
+
+	forbiddenRunsRequest := httptest.NewRequest(http.MethodGet, "/v2/runs?team=growth&limit=10", nil)
+	forbiddenRunsRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	forbiddenRunsRequest.Header.Set("X-BigClaw-Actor", "lead-2")
+	forbiddenRunsRequest.Header.Set("X-BigClaw-Team", "platform")
+	forbiddenRunsResponse := httptest.NewRecorder()
+	handler.ServeHTTP(forbiddenRunsResponse, forbiddenRunsRequest)
+	if forbiddenRunsResponse.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden run index for mismatched team, got %d %s", forbiddenRunsResponse.Code, forbiddenRunsResponse.Body.String())
 	}
 
 	forbiddenTriageRequest := httptest.NewRequest(http.MethodGet, "/v2/triage/center?team=growth&limit=10", nil)
