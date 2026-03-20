@@ -135,6 +135,11 @@
           "author": "codex",
           "body": "Archived the remaining live-planning language in docs/go-mainline-cutover-issue-pack.md so the cutover brief now consistently reads as historical completion state rather than active runnable work. Validation: rg -n 'Archived issue slices|Historical initial state|Archived refill batch|Historical planned state' docs/go-mainline-cutover-issue-pack.md -\u003e ok; bash scripts/ops/bigclawctl refill --local-issues local-issues.json -\u003e no In Progress work and no promotion candidates. Commit SHA: pending. PR URL: https://github.com/OpenAGIs/BigClaw/pull/141.",
           "created_at": "2026-03-20T14:35:01Z"
+        },
+        {
+          "author": "codex",
+          "body": "Superseding note for the final archival cleanup: docs/go-mainline-cutover-issue-pack.md now labels the remaining slice and refill sections as archived historical planning context, eliminating the last live-planning wording after cutover completion. Validation: rg -n 'Archived issue slices|Historical initial state|Archived refill batch|Historical planned state' docs/go-mainline-cutover-issue-pack.md -\u003e ok; bash scripts/ops/bigclawctl refill --local-issues local-issues.json -\u003e no In Progress work and no promotion candidates. Commit SHA: 4464491b16b90c7ad4b13b9ab2ab78c94ed4dd6b. PR URL: https://github.com/OpenAGIs/BigClaw/pull/141.",
+          "created_at": "2026-03-20T14:35:55Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -150,7 +155,7 @@
       "priority": 2,
       "state": "Done",
       "title": "Observability, reporting, and weekly operations surface migration",
-      "updated_at": "2026-03-20T14:35:01Z"
+      "updated_at": "2026-03-20T14:35:55Z"
     },
     {
       "assigned_to_worker": true,
