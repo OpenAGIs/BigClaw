@@ -412,7 +412,7 @@
       "title": "Refresh shared-queue proof from run_all workflow",
       "description": "Let the repo-native live validation workflow refresh the shared-queue companion proof during run_all closeout so the bundled continuation lineage can come from the same orchestrated workflow instead of a separately rerun proof.",
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "labels": [
         "parallel",
         "validation",
@@ -421,7 +421,13 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-20T18:53:11Z",
-      "updated_at": "2026-03-20T18:53:11Z"
+      "updated_at": "2026-03-20T18:59:08Z",
+      "comments": [
+        {
+          "body": "Closed `BIG-PAR-090` after wiring the shared-queue companion proof into the same `run_all.sh` workflow that emits the live validation bundle.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/run_all.sh` now supports `BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1` plus count/worker/timeout/report-path knobs, reruns `scripts/e2e/multi_node_shared_queue.py` before bundle export, and marks the overall validation status failed if the inline shared-queue proof fails.\n- `tests/test_parallel_validation_bundle.py` now includes a stubbed `run_all.sh` orchestration harness that verifies the shared-queue proof is regenerated inline and consumed by the bundle export summary.\n- `bigclaw-go/docs/e2e-validation.md` and `bigclaw-go/docs/reports/validation-bundle-continuation-digest.md` now document that `run_all.sh` can refresh the shared-queue companion inline via `BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1`, while also making clear that this path is still opt-in rather than default.\n\nValidation:\n- `bash -n bigclaw-go/scripts/e2e/run_all.sh` -> passed\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py bigclaw-go/scripts/e2e/multi_node_shared_queue.py` -> passed\n- `python3 - <<\"PY\" ... temporary-repo run_all.sh harness with stub exporter/shared-queue scripts ...` -> passed (`RETURN 0`, `summary.shared_queue.available=True`, `summary.shared_queue.cross_node_completions=16`)\n- `git rev-parse HEAD` -> `668d4ea1e91454142a60a36dc167ddc09eb1fb62`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `668d4ea1e91454142a60a36dc167ddc09eb1fb62` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `668d4ea1e91454142a60a36dc167ddc09eb1fb62` (matches local)\n- `git log -1 --stat` -> `Refresh shared-queue proof from run_all`\n\nCommit: `668d4ea1e91454142a60a36dc167ddc09eb1fb62`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T18:58:32Z"
+        }
+      ]
     },
     {
       "id": "big-par-091",
