@@ -2,6 +2,8 @@ package reporting
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -56,6 +58,12 @@ type MetricSpec struct {
 	GeneratedAt string             `json:"generated_at"`
 	Definitions []MetricDefinition `json:"definitions"`
 	Values      []MetricValue      `json:"values"`
+}
+
+type WeeklyArtifacts struct {
+	RootDir          string `json:"root_dir"`
+	WeeklyReportPath string `json:"weekly_report_path"`
+	MetricSpecPath   string `json:"metric_spec_path"`
 }
 
 type Weekly struct {
@@ -174,6 +182,49 @@ func RenderMarkdown(weekly Weekly) string {
 		builder.WriteString("- " + action + "\n")
 	}
 	return builder.String()
+}
+
+func RenderMetricSpec(spec MetricSpec) string {
+	builder := strings.Builder{}
+	builder.WriteString("# BigClaw Weekly Metric Spec\n\n")
+	builder.WriteString(fmt.Sprintf("- Name: %s\n", spec.Name))
+	builder.WriteString(fmt.Sprintf("- Generated At: %s\n\n", spec.GeneratedAt))
+	builder.WriteString("## Definitions\n")
+	for _, definition := range spec.Definitions {
+		builder.WriteString(fmt.Sprintf("- %s: unit=%s direction=%s formula=%s\n", definition.Label, definition.Unit, definition.Direction, definition.Formula))
+	}
+	builder.WriteString("\n## Values\n")
+	for _, value := range spec.Values {
+		builder.WriteString(fmt.Sprintf("- %s: %s\n", value.Label, value.DisplayValue))
+	}
+	return builder.String()
+}
+
+func WriteWeeklyBundle(rootDir string, weekly Weekly) (WeeklyArtifacts, error) {
+	targetRoot := strings.TrimSpace(rootDir)
+	if targetRoot == "" {
+		targetRoot = "."
+	}
+	targetRoot, err := filepath.Abs(targetRoot)
+	if err != nil {
+		return WeeklyArtifacts{}, err
+	}
+	if err := os.MkdirAll(targetRoot, 0o755); err != nil {
+		return WeeklyArtifacts{}, err
+	}
+	weeklyReportPath := filepath.Join(targetRoot, "weekly-operations.md")
+	metricSpecPath := filepath.Join(targetRoot, "weekly-metric-spec.md")
+	if err := os.WriteFile(weeklyReportPath, []byte(weekly.Markdown), 0o644); err != nil {
+		return WeeklyArtifacts{}, err
+	}
+	if err := os.WriteFile(metricSpecPath, []byte(RenderMetricSpec(weekly.MetricSpec)), 0o644); err != nil {
+		return WeeklyArtifacts{}, err
+	}
+	return WeeklyArtifacts{
+		RootDir:          targetRoot,
+		WeeklyReportPath: weeklyReportPath,
+		MetricSpecPath:   metricSpecPath,
+	}, nil
 }
 
 func buildHighlights(weekly Weekly) []string {

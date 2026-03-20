@@ -1,6 +1,8 @@
 package reporting
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -81,5 +83,54 @@ func TestBuildRendersRichWeeklyMarkdownSections(t *testing.T) {
 	}
 	if !strings.Contains(weekly.Markdown, "Top team by throughput: platform.") {
 		t.Fatalf("expected highlight in markdown, got %s", weekly.Markdown)
+	}
+}
+
+func TestWriteWeeklyBundleEmitsMarkdownArtifacts(t *testing.T) {
+	base := time.Date(2026, 3, 9, 10, 0, 0, 0, time.UTC)
+	weekly := Build([]domain.Task{
+		{
+			ID:          "task-alpha-1",
+			TraceID:     "trace-alpha-1",
+			Title:       "Ship alpha",
+			State:       domain.TaskSucceeded,
+			RiskLevel:   domain.RiskHigh,
+			BudgetCents: 900,
+			Metadata: map[string]string{
+				"team":             "platform",
+				"plan":             "premium",
+				"regression_count": "1",
+			},
+			UpdatedAt: base.Add(24 * time.Hour),
+		},
+	}, nil, base, base.Add(7*24*time.Hour))
+
+	rootDir := t.TempDir()
+	artifacts, err := WriteWeeklyBundle(rootDir, weekly)
+	if err != nil {
+		t.Fatalf("write weekly bundle: %v", err)
+	}
+	if artifacts.RootDir != rootDir {
+		t.Fatalf("expected root dir %q, got %q", rootDir, artifacts.RootDir)
+	}
+	if artifacts.WeeklyReportPath != filepath.Join(rootDir, "weekly-operations.md") {
+		t.Fatalf("unexpected weekly report path: %+v", artifacts)
+	}
+	if artifacts.MetricSpecPath != filepath.Join(rootDir, "weekly-metric-spec.md") {
+		t.Fatalf("unexpected metric spec path: %+v", artifacts)
+	}
+	reportBody, err := os.ReadFile(artifacts.WeeklyReportPath)
+	if err != nil {
+		t.Fatalf("read weekly report: %v", err)
+	}
+	metricBody, err := os.ReadFile(artifacts.MetricSpecPath)
+	if err != nil {
+		t.Fatalf("read metric spec: %v", err)
+	}
+	if !strings.Contains(string(reportBody), "# BigClaw Weekly Ops Report") || !strings.Contains(string(reportBody), "## Metric Spec") {
+		t.Fatalf("unexpected weekly report body: %s", string(reportBody))
+	}
+	if !strings.Contains(string(metricBody), "# BigClaw Weekly Metric Spec") || !strings.Contains(string(metricBody), "- Throughput: 100.0%") {
+		t.Fatalf("unexpected metric spec body: %s", string(metricBody))
 	}
 }
