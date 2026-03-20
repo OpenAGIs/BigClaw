@@ -2,12 +2,62 @@ import json
 import os
 import subprocess
 import sys
+import importlib.util
 from pathlib import Path
 
 
 def write_json(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+
+def load_export_validation_bundle_module():
+    script = Path(__file__).resolve().parents[1] / 'bigclaw-go' / 'scripts' / 'e2e' / 'export_validation_bundle.py'
+    spec = importlib.util.spec_from_file_location('export_validation_bundle', script)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_refresh_continuation_artifacts_returns_stable_schema_when_disabled(tmp_path: Path):
+    export_validation_bundle = load_export_validation_bundle_module()
+    result = export_validation_bundle.refresh_continuation_artifacts(
+        root=tmp_path,
+        mode='off',
+        scorecard_path='docs/reports/validation-bundle-continuation-scorecard.json',
+        policy_gate_path='docs/reports/validation-bundle-continuation-policy-gate.json',
+        shared_queue_report_path='docs/reports/multi-node-shared-queue-report.json',
+    )
+
+    assert result['refreshed'] is False
+    assert result['reason'] == 'disabled'
+    assert result['scorecard_status'] == 'not-refreshed'
+    assert result['policy_gate_status'] == 'not-refreshed'
+    assert result['policy_gate_recommendation'] == 'unknown'
+    assert result['latest_bundle_age_hours'] is None
+    assert result['failing_checks'] == []
+    assert result['next_actions'] == []
+
+
+def test_refresh_continuation_artifacts_returns_stable_schema_when_auto_skips(tmp_path: Path):
+    export_validation_bundle = load_export_validation_bundle_module()
+    result = export_validation_bundle.refresh_continuation_artifacts(
+        root=tmp_path,
+        mode='auto',
+        scorecard_path='docs/reports/validation-bundle-continuation-scorecard.json',
+        policy_gate_path='docs/reports/validation-bundle-continuation-policy-gate.json',
+        shared_queue_report_path='docs/reports/multi-node-shared-queue-report.json',
+    )
+
+    assert result['refreshed'] is False
+    assert 'missing shared queue report' in result['reason']
+    assert result['scorecard_status'] == 'not-refreshed'
+    assert result['policy_gate_status'] == 'skipped'
+    assert result['policy_gate_recommendation'] == 'unknown'
+    assert result['latest_bundle_age_hours'] is None
+    assert result['failing_checks'] == []
+    assert result['next_actions'] == []
 
 
 def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: Path):

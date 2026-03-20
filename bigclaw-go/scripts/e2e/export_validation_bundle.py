@@ -220,6 +220,22 @@ def build_followup_digests(root: Path) -> list[tuple[str, str]]:
     return items
 
 
+def build_continuation_result(mode: str, scorecard_path: str, policy_gate_path: str) -> dict[str, Any]:
+    return {
+        'mode': mode,
+        'refreshed': False,
+        'reason': '',
+        'scorecard_path': scorecard_path,
+        'policy_gate_path': policy_gate_path,
+        'scorecard_status': 'not-refreshed',
+        'policy_gate_status': 'not-refreshed',
+        'policy_gate_recommendation': 'unknown',
+        'latest_bundle_age_hours': None,
+        'failing_checks': [],
+        'next_actions': [],
+    }
+
+
 def build_continuation_overview(root: Path, continuation: dict[str, Any]) -> dict[str, Any] | None:
     policy_gate_path = continuation.get('policy_gate_path')
     if not continuation.get('refreshed') or not policy_gate_path:
@@ -251,13 +267,7 @@ def refresh_continuation_artifacts(
     scorecard_output = root / scorecard_path
     policy_gate_output = root / policy_gate_path
     shared_queue_report = root / shared_queue_report_path
-    result: dict[str, Any] = {
-        'mode': mode,
-        'refreshed': False,
-        'reason': '',
-        'scorecard_path': scorecard_path,
-        'policy_gate_path': policy_gate_path,
-    }
+    result = build_continuation_result(mode, scorecard_path, policy_gate_path)
 
     if mode == 'off':
         result['reason'] = 'disabled'
@@ -266,6 +276,7 @@ def refresh_continuation_artifacts(
     if not shared_queue_report.exists():
         if mode == 'auto':
             result['reason'] = f'missing shared queue report: {shared_queue_report_path}'
+            result['policy_gate_status'] = 'skipped'
             return result
         raise FileNotFoundError(f'continuation refresh requires {shared_queue_report_path}')
 
