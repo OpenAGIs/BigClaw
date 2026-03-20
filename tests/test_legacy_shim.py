@@ -6,6 +6,8 @@ from bigclaw.legacy_shim import (
     build_github_sync_args,
     build_refill_args,
     build_workspace_bootstrap_args,
+    build_workspace_validate_args,
+    translate_workspace_validate_args,
 )
 
 
@@ -24,6 +26,28 @@ def test_workspace_bootstrap_wrapper_injects_go_defaults():
     assert 'git@github.com:OpenAGIs/BigClaw.git' in argv
     assert '--cache-key' in argv
     assert 'openagis-bigclaw' in argv
+
+
+def test_workspace_validate_wrapper_translates_legacy_flags():
+    translated = translate_workspace_validate_args([
+        '--repo-url', 'git@github.com:OpenAGIs/BigClaw.git',
+        '--workspace-root', '/tmp/ws',
+        '--issues', 'BIG-1', 'BIG-2',
+        '--report-file', '/tmp/report.md',
+        '--no-cleanup',
+        '--json',
+    ])
+    assert translated == [
+        '--repo-url', 'git@github.com:OpenAGIs/BigClaw.git',
+        '--workspace-root', '/tmp/ws',
+        '--issues', 'BIG-1,BIG-2',
+        '--report', '/tmp/report.md',
+        '--cleanup=false',
+        '--json',
+    ]
+    argv = build_workspace_validate_args(REPO_ROOT, ['--issues', 'BIG-1', 'BIG-2'])
+    assert argv[:4] == ['bash', '/repo/scripts/ops/bigclawctl', 'workspace', 'validate']
+    assert argv[4:] == ['--issues', 'BIG-1,BIG-2']
 
 
 def test_github_sync_and_refill_wrappers_target_go_shim():
