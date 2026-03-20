@@ -162,6 +162,10 @@
         {
           "body": "Progressed BIG-GOM-307 by removing duplicated local issue slug bookkeeping from create flows. Changed: `bigclaw-go/internal/refill/local_store.go` now derives the repo-local issue `id` from `identifier` when callers omit `--id`, while still preserving explicit ids and duplicate detection; `bigclaw-go/internal/refill/local_store_test.go` and `bigclaw-go/cmd/bigclawctl/main_test.go` now cover derived-id creation and identifier normalization; `README.md` now documents that `bigclawctl local-issue create` and `bigclaw-issue create` can be driven from the canonical issue identifier alone. Validation: `cd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl ./internal/refill` -\u003e ok; `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok; `bash scripts/ops/bigclaw-issue create --identifier BIG-GOM-310 --title \"Derived id smoke\" --labels tooling --priority 2 --json --local-issues /tmp/...` -\u003e ok with derived id `big-gom-310`. Commit SHA: `9ed1b4e7662a45b9cb5cde94453dcb6dbe01491b`. PR URL: `https://github.com/OpenAGIs/BigClaw/pull/137`.",
           "created_at": "2026-03-20T10:13:49Z"
+        },
+        {
+          "body": "Progressed BIG-GOM-307 by exposing timestamp-consistent state+comment tracker updates through the standard issue wrapper. Changed: `scripts/ops/bigclaw-issue` now supports `update \u003cissue\u003e [--state ...] [--comment|--comment-file ...]` and forwards it to the Go-native local tracker update path; `bigclaw-go/cmd/bigclawctl/main_test.go` now covers wrapper-driven combined state+comment updates; `README.md` and `docs/parallel-refill-queue.md` now document the high-level atomic update flow for claiming work with evidence in one command. Validation: `cd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl -run 'TestBigclawIssueScript|TestRunLocalIssue'` -\u003e ok; `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok; `BIGCLAW_LOCAL_ISSUES_PATH=/tmp/... bash scripts/ops/bigclaw-issue update BIG-GOM-303 --state \"In Progress\" --comment-file /tmp/comment.md --json` -\u003e ok against a seeded temp tracker. Commit SHA: `d7c0ae2e1185e190ba51ed0faa85eac3ffea482a`. PR URL: `https://github.com/OpenAGIs/BigClaw/pull/137`.",
+          "created_at": "2026-03-20T10:26:12Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -177,7 +181,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
-      "updated_at": "2026-03-20T10:13:49Z"
+      "updated_at": "2026-03-20T10:26:12Z"
     },
     {
       "assigned_to_worker": true,
