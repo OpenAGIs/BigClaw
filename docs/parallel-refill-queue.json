@@ -23,11 +23,11 @@
       "BIG-GOM-307",
       "BIG-GOM-303",
       "BIG-GOM-305",
-      "BIG-GOM-306"
+      "BIG-GOM-306",
+      "BIG-GOM-308"
     ],
     "active": [
-      "BIG-GOM-301",
-      "BIG-GOM-308"
+      "BIG-GOM-301"
     ],
     "standby": []
   },
@@ -88,7 +88,7 @@
       "identifier": "BIG-GOM-308",
       "title": "Python deprecation and Go-only mainline switch",
       "track": "Python Retirement & Cutover Validation",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
