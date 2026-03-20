@@ -4,6 +4,33 @@ set -euo pipefail
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 repo_root=$(cd -- "$script_dir/../.." && pwd)
 workflow="$repo_root/workflow.md"
+local_issues_path="${BIGCLAW_LOCAL_ISSUES_PATH:-$repo_root/local-issues.json}"
+
+case "${1:-}" in
+  list)
+    shift
+    exec bash "$script_dir/bigclawctl" local-issue list --local-issues "$local_issues_path" "$@"
+    ;;
+  show)
+    if [ $# -lt 2 ]; then
+      echo "usage: bigclaw-issue show <issue> [--json]" >&2
+      exit 1
+    fi
+    issue_ref=$2
+    shift 2
+    exec bash "$script_dir/bigclawctl" local-issue show --local-issues "$local_issues_path" --issue "$issue_ref" "$@"
+    ;;
+  state)
+    if [ $# -lt 3 ]; then
+      echo "usage: bigclaw-issue state <issue> <state> [--json]" >&2
+      exit 1
+    fi
+    issue_ref=$2
+    state_name=$3
+    shift 3
+    exec bash "$script_dir/bigclawctl" local-issue update --local-issues "$local_issues_path" --issue "$issue_ref" --state "$state_name" "$@"
+    ;;
+esac
 
 if [ -x "$repo_root/../elixir/bin/symphony" ]; then
   exec "$repo_root/../elixir/bin/symphony" issue --workflow "$workflow" "$@"

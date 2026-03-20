@@ -18,6 +18,8 @@ longer waits on Linear to keep issue execution moving.
 - Local issue CLI:
   - `bash scripts/ops/bigclaw-issue list`
   - `bash scripts/ops/bigclaw-issue state BIG-GOM-303 "In Progress"`
+  - `bigclaw-issue list|show|state` now works directly against `local-issues.json` even when the
+    standalone Symphony CLI is unavailable
 - Local dashboard/orchestrator:
   - `bash scripts/ops/bigclaw-symphony`
   - `bash scripts/ops/bigclaw-panel`

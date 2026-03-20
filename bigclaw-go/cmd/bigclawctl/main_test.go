@@ -603,6 +603,81 @@ func TestRunLocalIssueListPrintsTabSeparatedSummaryByDefault(t *testing.T) {
 	}
 }
 
+func TestBigclawIssueScriptListFallsBackToLocalTracker(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-302",
+      "identifier": "BIG-GOM-302",
+      "title": "Risk and policy",
+      "state": "In Progress"
+    },
+    {
+      "id": "big-gom-303",
+      "identifier": "BIG-GOM-303",
+      "title": "Workflow loop parity",
+      "state": "Todo"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	output := runIssueScript(t, storePath, "list", "--states", "Todo,In Progress", "--json")
+	if !bytes.Contains(output, []byte(`"count": 2`)) || !bytes.Contains(output, []byte(`"identifier": "BIG-GOM-302"`)) {
+		t.Fatalf("unexpected issue list output: %s", string(output))
+	}
+}
+
+func TestBigclawIssueScriptStateUpdatesLocalTracker(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-303",
+      "identifier": "BIG-GOM-303",
+      "title": "Workflow loop parity",
+      "state": "Todo",
+      "updated_at": "2026-03-18T09:00:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	output := runIssueScript(t, storePath, "state", "BIG-GOM-303", "In Progress", "--json")
+	if !bytes.Contains(output, []byte(`"state": "In Progress"`)) {
+		t.Fatalf("unexpected issue state output: %s", string(output))
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"state": "In Progress"`)) {
+		t.Fatalf("expected state update in local tracker, got %s", string(body))
+	}
+}
+
+func runIssueScript(t *testing.T, localIssuesPath string, args ...string) []byte {
+	t.Helper()
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	scriptPath := filepath.Clean(filepath.Join(cwd, "..", "..", "..", "scripts", "ops", "bigclaw-issue"))
+	cmd := exec.Command("bash", append([]string{scriptPath}, args...)...)
+	cmd.Env = append(os.Environ(), "BIGCLAW_LOCAL_ISSUES_PATH="+localIssuesPath)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("run issue script %v failed: %v (%s)", args, err, string(output))
+	}
+	return output
+}
+
 func TestResolveGitHubSyncRemotesPrefersUpstreamThenOriginAndGithub(t *testing.T) {
 	tmp := t.TempDir()
 	repo := filepath.Join(tmp, "repo")

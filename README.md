@@ -64,8 +64,8 @@ Notes:
 - `bash scripts/ops/bigclawctl local-issue list --local-issues local-issues.json --states "Todo,In Progress"`
   reads the repo-native tracker directly so planning can inspect runnable work without going through
   the separate Symphony issue CLI.
-- `bash scripts/ops/bigclaw-issue ...` wraps `symphony issue ... --workflow workflow.md` so local
-  issue creation and state changes stay pinned to this repository's tracker file.
+- `bash scripts/ops/bigclaw-issue list|show|state ...` now falls back to the repo-native Go tracker
+  path directly, while other subcommands still wrap `symphony issue --workflow workflow.md`.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
 - `bash scripts/ops/bigclawctl local-issue update --local-issues local-issues.json --issue BIG-GOM-307 --comment-file comment.md`
