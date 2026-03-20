@@ -22,15 +22,14 @@
       "BIG-GOM-304",
       "BIG-GOM-307",
       "BIG-GOM-303",
-      "BIG-GOM-305"
+      "BIG-GOM-305",
+      "BIG-GOM-306"
     ],
     "active": [
       "BIG-GOM-301",
-      "BIG-GOM-306"
-    ],
-    "standby": [
       "BIG-GOM-308"
-    ]
+    ],
+    "standby": []
   },
   "issue_order": [
     "BIG-GOM-301",
@@ -77,7 +76,7 @@
       "identifier": "BIG-GOM-306",
       "title": "Repo collaboration and lineage surface migration",
       "track": "Governance/Reporting Surface Migration",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-GOM-307",
@@ -89,7 +88,7 @@
       "identifier": "BIG-GOM-308",
       "title": "Python deprecation and Go-only mainline switch",
       "track": "Python Retirement & Cutover Validation",
-      "status": "Backlog"
+      "status": "In Progress"
     }
   ]
 }

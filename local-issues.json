@@ -171,7 +171,7 @@
       "title": "Repo collaboration and lineage surface migration",
       "description": "Port the remaining repo board, registry, gateway, linkage, and lineage surfaces into Go without leaking repo-specific concerns into the scheduler runtime.",
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "labels": [
         "go-mainline",
         "migration",
@@ -180,7 +180,7 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T14:13:01Z",
+      "updated_at": "2026-03-20T14:17:27Z",
       "comments": [
         {
           "body": "Progress update: ported the remaining Go-owned repo plane, registry, and run-commit binding contracts into `bigclaw-go/internal/repo/*` with parity coverage for repo space defaults, default channels, agent resolution, accepted commit hash derivation, and invalid role rejection.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/repo` -> passed\n- `git rev-parse HEAD` -> `6c333a21abd3845414c8ad74d806b23f54f57d41`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `6c333a21abd3845414c8ad74d806b23f54f57d41` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `6c333a21abd3845414c8ad74d806b23f54f57d41` (matches local)\n- `git log -1 --stat` -> `Port Go repo plane and registry contracts`\n\nCommit: `6c333a21abd3845414c8ad74d806b23f54f57d41`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
@@ -189,6 +189,10 @@
         {
           "body": "Progress update: added the Go-owned repo gateway client contract in `bigclaw-go/internal/repo/gateway.go`, including the typed gateway interface plus bundle and commit-list normalization helpers that mirror the remaining Python repo gateway surface. Added focused coverage in `bigclaw-go/internal/repo/gateway_test.go` for bundle normalization, commit-list normalization, children/leaves accessors, and deterministic gateway error normalization.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/repo` -> passed\n- `git rev-parse HEAD` -> `4f026ee5637fb0e618130687ede1ec012487e972`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `4f026ee5637fb0e618130687ede1ec012487e972` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `4f026ee5637fb0e618130687ede1ec012487e972` (matches local)\n- `git log -1 --stat` -> `Port Go repo gateway client contract`\n\nCommit: `4f026ee5637fb0e618130687ede1ec012487e972`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T14:13:01Z"
+        },
+        {
+          "body": "Completed the remaining Go-owned repo collaboration and lineage migration surfaces.\n\nWhat changed:\n- `bigclaw-go/internal/repo/*` now owns the Python repo plane, registry, run-commit binding, discussion board, gateway client contract, lineage normalization, and governance contract surfaces.\n- `bigclaw-go/internal/triage/repo.go` now owns the repo-triage lineage recommendation and approval evidence packet contract that previously lived in `src/bigclaw/repo_triage.py`.\n- The remaining repo collaboration Python references named in the issue pack now have Go owners for board, registry, gateway, plane, links, commits, governance, and triage behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/repo ./internal/triage` -> passed\n- `git rev-parse HEAD` -> `2dac4cade237b50ef62ddac75abe4b48a37f8844`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `2dac4cade237b50ef62ddac75abe4b48a37f8844` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `2dac4cade237b50ef62ddac75abe4b48a37f8844` (matches local)\n- `git log -1 --stat` -> `Port Go repo triage lineage contract`\n\nCommit: `2dac4cade237b50ef62ddac75abe4b48a37f8844`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T14:17:11Z"
         }
       ]
     },
@@ -233,7 +237,7 @@
       "title": "Python deprecation and Go-only mainline switch",
       "description": "Freeze or retire the remaining Python runtime entrypoints only after the Go workflow, observability, and repo collaboration surfaces have matching owners and validation.",
       "priority": 3,
-      "state": "Backlog",
+      "state": "In Progress",
       "labels": [
         "go-mainline",
         "migration",
@@ -242,7 +246,7 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-18T09:00:00Z"
+      "updated_at": "2026-03-20T14:17:27Z"
     }
   ]
 }

@@ -256,7 +256,7 @@ Dependencies:
 
 Current repo progress:
 - `bigclaw-go/internal/repo/governance.go` now ports `src/bigclaw/repo_governance.py` into a Go-owned repo permission matrix and audit-field contract
-- the remaining repo-collaboration Python surfaces still need Go owners across repo board, registry, gateway, plane, links, commits, and triage packages
+- `bigclaw-go/internal/repo/*` and `bigclaw-go/internal/triage/repo.go` now own the remaining repo board, registry, gateway, plane, links, commits, and repo-triage contract surfaces from the Python mainline
 
 Milestone:
 - `Governance/Reporting Surface Migration`
