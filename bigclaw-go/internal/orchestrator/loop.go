@@ -16,6 +16,10 @@ type quotaSource interface {
 	Snapshot(context.Context, scheduler.QuotaSnapshot) scheduler.QuotaSnapshot
 }
 
+type rulesProvider interface {
+	Rules() scheduler.RoutingRules
+}
+
 type Loop struct {
 	Runtime      runtimeRunner
 	Quota        scheduler.QuotaSnapshot
@@ -64,7 +68,8 @@ func (l *Loop) pollInterval() time.Duration {
 }
 
 type QueueQuotaSource struct {
-	Queue queue.Queue
+	Queue     queue.Queue
+	Scheduler rulesProvider
 }
 
 func (s QueueQuotaSource) Snapshot(ctx context.Context, base scheduler.QuotaSnapshot) scheduler.QuotaSnapshot {
@@ -81,12 +86,24 @@ func (s QueueQuotaSource) Snapshot(ctx context.Context, base scheduler.QuotaSnap
 	if err != nil {
 		return quota
 	}
+	urgentThreshold := scheduler.DefaultRoutingRules().UrgentPriorityThreshold
+	if s.Scheduler != nil {
+		if threshold := s.Scheduler.Rules().UrgentPriorityThreshold; threshold > 0 {
+			urgentThreshold = threshold
+		}
+	}
 	running := 0
+	preemptible := 0
 	for _, snapshot := range snapshots {
-		if snapshot.Leased {
-			running++
+		if !snapshot.Leased {
+			continue
+		}
+		running++
+		if snapshot.Task.Priority > urgentThreshold {
+			preemptible++
 		}
 	}
 	quota.CurrentRunning = running
+	quota.PreemptibleExecutions = preemptible
 	return quota
 }

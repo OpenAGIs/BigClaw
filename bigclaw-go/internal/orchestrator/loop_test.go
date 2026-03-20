@@ -62,14 +62,17 @@ func TestQueueQuotaSourceCapturesQueueDepthAndRunningCount(t *testing.T) {
 	if err := q.Enqueue(ctx, domain.Task{ID: "queued-1", Priority: 3, CreatedAt: base}); err != nil {
 		t.Fatalf("enqueue queued-1: %v", err)
 	}
-	if err := q.Enqueue(ctx, domain.Task{ID: "queued-2", Priority: 4, CreatedAt: base.Add(time.Second)}); err != nil {
+	if err := q.Enqueue(ctx, domain.Task{ID: "queued-2", Priority: 1, CreatedAt: base.Add(time.Second)}); err != nil {
 		t.Fatalf("enqueue queued-2: %v", err)
 	}
 	if _, _, err := q.LeaseNext(ctx, "worker-1", time.Minute); err != nil {
-		t.Fatalf("lease next: %v", err)
+		t.Fatalf("lease first task: %v", err)
+	}
+	if _, _, err := q.LeaseNext(ctx, "worker-2", time.Minute); err != nil {
+		t.Fatalf("lease second task: %v", err)
 	}
 
-	source := QueueQuotaSource{Queue: q}
+	source := QueueQuotaSource{Queue: q, Scheduler: scheduler.New()}
 	quota := source.Snapshot(ctx, scheduler.QuotaSnapshot{ConcurrentLimit: 5, BudgetRemaining: 900})
 	if quota.ConcurrentLimit != 5 || quota.BudgetRemaining != 900 {
 		t.Fatalf("expected base quota preserved, got %+v", quota)
@@ -77,7 +80,10 @@ func TestQueueQuotaSourceCapturesQueueDepthAndRunningCount(t *testing.T) {
 	if quota.QueueDepth != 2 {
 		t.Fatalf("expected queue depth 2, got %+v", quota)
 	}
-	if quota.CurrentRunning != 1 {
-		t.Fatalf("expected one leased task counted as running, got %+v", quota)
+	if quota.CurrentRunning != 2 {
+		t.Fatalf("expected two leased tasks counted as running, got %+v", quota)
+	}
+	if quota.PreemptibleExecutions != 1 {
+		t.Fatalf("expected one lower-priority leased task to count as preemptible, got %+v", quota)
 	}
 }
