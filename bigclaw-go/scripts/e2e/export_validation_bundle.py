@@ -238,7 +238,16 @@ def build_continuation_result(mode: str, scorecard_path: str, policy_gate_path: 
 
 def build_continuation_overview(root: Path, continuation: dict[str, Any]) -> dict[str, Any] | None:
     policy_gate_path = continuation.get('policy_gate_path')
-    if not continuation.get('refreshed') or not policy_gate_path:
+    if not continuation.get('refreshed'):
+        return {
+            'status': continuation.get('policy_gate_status', 'not-refreshed'),
+            'recommendation': continuation.get('policy_gate_recommendation', 'unknown'),
+            'latest_bundle_age_hours': continuation.get('latest_bundle_age_hours'),
+            'failing_checks': continuation.get('failing_checks', []),
+            'next_actions': continuation.get('next_actions', []),
+            'reason': continuation.get('reason', ''),
+        }
+    if not policy_gate_path:
         return None
 
     policy_gate_file = root / policy_gate_path
@@ -253,6 +262,7 @@ def build_continuation_overview(root: Path, continuation: dict[str, Any]) -> dic
         'latest_bundle_age_hours': summary.get('latest_bundle_age_hours'),
         'failing_checks': policy_gate.get('failing_checks', []),
         'next_actions': policy_gate.get('next_actions', []),
+        'reason': continuation.get('reason', ''),
     }
 
 
@@ -408,6 +418,8 @@ def render_index(
             lines.append('')
             lines.append(f"- Gate status: `{continuation_overview['status']}`")
             lines.append(f"- Recommendation: `{continuation_overview['recommendation']}`")
+            if continuation_overview.get('reason'):
+                lines.append(f"- Refresh state: `{continuation_overview['reason']}`")
             if continuation_overview.get('latest_bundle_age_hours') is not None:
                 lines.append(f"- Latest bundle age hours: `{continuation_overview['latest_bundle_age_hours']}`")
             failing_checks = continuation_overview.get('failing_checks', [])

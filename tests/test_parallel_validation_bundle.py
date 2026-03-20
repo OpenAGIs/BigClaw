@@ -60,6 +60,48 @@ def test_refresh_continuation_artifacts_returns_stable_schema_when_auto_skips(tm
     assert result['next_actions'] == []
 
 
+def test_build_continuation_overview_and_index_show_skipped_state(tmp_path: Path):
+    export_validation_bundle = load_export_validation_bundle_module()
+    root = tmp_path / 'bigclaw-go'
+    root.mkdir(parents=True, exist_ok=True)
+
+    summary = {
+        'run_id': '20260321T010203Z',
+        'generated_at': '2026-03-21T01:02:03Z',
+        'status': 'succeeded',
+        'bundle_path': 'docs/reports/live-validation-runs/20260321T010203Z',
+        'summary_path': 'docs/reports/live-validation-runs/20260321T010203Z/summary.json',
+        'closeout_commands': ['cd bigclaw-go && ./scripts/e2e/run_all.sh'],
+        'local': {'enabled': False, 'status': 'skipped', 'bundle_report_path': 'x', 'canonical_report_path': 'y'},
+        'kubernetes': {'enabled': False, 'status': 'skipped', 'bundle_report_path': 'x', 'canonical_report_path': 'y'},
+        'ray': {'enabled': False, 'status': 'skipped', 'bundle_report_path': 'x', 'canonical_report_path': 'y'},
+        'continuation': export_validation_bundle.build_continuation_result(
+            'auto',
+            'docs/reports/validation-bundle-continuation-scorecard.json',
+            'docs/reports/validation-bundle-continuation-policy-gate.json',
+        ),
+    }
+    summary['continuation']['policy_gate_status'] = 'skipped'
+    summary['continuation']['reason'] = 'missing shared queue report: docs/reports/multi-node-shared-queue-report.json'
+
+    overview = export_validation_bundle.build_continuation_overview(root, summary['continuation'])
+    assert overview is not None
+    assert overview['status'] == 'skipped'
+    assert overview['recommendation'] == 'unknown'
+    assert 'missing shared queue report' in overview['reason']
+
+    index_text = export_validation_bundle.render_index(
+        summary,
+        recent_runs=[],
+        continuation_overview=overview,
+        continuation_artifacts=[('docs/reports/validation-bundle-continuation-policy-gate.json', 'gate')],
+        followup_digests=[],
+    )
+    assert 'Gate status: `skipped`' in index_text
+    assert 'Recommendation: `unknown`' in index_text
+    assert 'Refresh state: `missing shared queue report: docs/reports/multi-node-shared-queue-report.json`' in index_text
+
+
 def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: Path):
     repo_root = tmp_path / 'repo'
     root = repo_root / 'bigclaw-go'
