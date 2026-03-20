@@ -527,7 +527,7 @@
       "title": "Honor continuation refresh disable flag in run_all",
       "description": "Make run_all forward the effective continuation refresh mode to export_validation_bundle.py so BIGCLAW_E2E_REFRESH_CONTINUATION=0 truly disables scorecard/policy regeneration instead of being ignored by the exporter default.",
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "labels": [
         "parallel",
         "validation",
@@ -536,8 +536,13 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-20T19:34:00Z",
-      "updated_at": "2026-03-20T19:34:00Z",
-      "comments": []
+      "updated_at": "2026-03-20T19:36:00Z",
+      "comments": [
+        {
+          "body": "Closed `BIG-PAR-095` after making the continuation disable flag authoritative in `run_all.sh`.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/run_all.sh` now derives an explicit exporter continuation mode from `BIGCLAW_E2E_REFRESH_CONTINUATION` and forwards `--refresh-continuation off|always` to `scripts/e2e/export_validation_bundle.py`, so `BIGCLAW_E2E_REFRESH_CONTINUATION=0` no longer gets ignored by the exporter default.\n- `tests/test_parallel_validation_bundle.py` now makes the stub exporter require `--refresh-continuation` and asserts that the summary records `continuation.mode=off` when the harness runs with `BIGCLAW_E2E_REFRESH_CONTINUATION=0`.\n- `bigclaw-go/docs/e2e-validation.md` now documents that setting `BIGCLAW_E2E_REFRESH_CONTINUATION=0` skips continuation regeneration in both the exporter and the `run_all.sh` wrapper for that run.\n\nValidation:\n- `bash -n bigclaw-go/scripts/e2e/run_all.sh` -> passed\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded test_run_all_can_refresh_shared_queue_before_bundle_export harness ...` -> passed (`run_all continuation-disable harness passed`)\n- `git rev-parse HEAD` -> `ee2dae7d03a01d73f2aed5d74a479cfca1f19068`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `ee2dae7d03a01d73f2aed5d74a479cfca1f19068` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `ee2dae7d03a01d73f2aed5d74a479cfca1f19068` (matches local)\n- `git log -1 --stat` -> `Honor continuation disable flag in run_all`\n\nCommit: `ee2dae7d03a01d73f2aed5d74a479cfca1f19068`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T19:36:00Z"
+        }
+      ]
     }
   ]
 }
