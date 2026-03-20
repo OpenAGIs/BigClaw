@@ -589,6 +589,24 @@
           "created_at": "2026-03-20T19:48:00Z"
         }
       ]
+    },
+    {
+      "id": "big-par-098",
+      "identifier": "BIG-PAR-098",
+      "title": "Stabilize continuation summary schema across refresh modes",
+      "description": "Keep `summary.continuation` shape consistent even when continuation refresh is disabled or skipped, so machine-readable consumers do not have to branch on missing fields for gate status, recommendation, failing checks, and next actions.",
+      "priority": 2,
+      "state": "In Progress",
+      "labels": [
+        "parallel",
+        "validation",
+        "tooling",
+        "reporting"
+      ],
+      "assigned_to_worker": true,
+      "created_at": "2026-03-20T19:52:00Z",
+      "updated_at": "2026-03-20T19:52:00Z",
+      "comments": []
     }
   ]
 }
