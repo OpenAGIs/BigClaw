@@ -114,6 +114,27 @@ func (s *LocalIssueStore) UpdateIssueState(ref string, stateName string, now tim
 	return "", ErrLocalIssueNotFound
 }
 
+func (s *LocalIssueStore) AppendIssueComment(ref string, body string, now time.Time) error {
+	trimmedBody := strings.TrimSpace(body)
+	if trimmedBody == "" {
+		return errors.New("comment body is required")
+	}
+	for _, issue := range s.issueMap {
+		if !issueMatchesRef(issue, ref) {
+			continue
+		}
+		comments := issueComments(issue)
+		comments = append(comments, map[string]any{
+			"body":       trimmedBody,
+			"created_at": now.UTC().Truncate(time.Second).Format(time.RFC3339),
+		})
+		issue["comments"] = comments
+		issue["updated_at"] = now.UTC().Truncate(time.Second).Format(time.RFC3339)
+		return s.Save()
+	}
+	return ErrLocalIssueNotFound
+}
+
 func (s *LocalIssueStore) Save() error {
 	issues := s.issueMap
 	if issues == nil {
@@ -145,4 +166,24 @@ func mapString(issue map[string]any, key string) string {
 	default:
 		return strings.TrimSpace(fmt.Sprint(value))
 	}
+}
+
+func issueComments(issue map[string]any) []map[string]any {
+	rawComments, ok := issue["comments"]
+	if !ok || rawComments == nil {
+		return []map[string]any{}
+	}
+	items, ok := rawComments.([]any)
+	if !ok {
+		return []map[string]any{}
+	}
+	comments := make([]map[string]any, 0, len(items))
+	for _, item := range items {
+		comment, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		comments = append(comments, comment)
+	}
+	return comments
 }

@@ -81,3 +81,48 @@ func TestLocalIssueStoreIssueStatesFiltersRequestedStates(t *testing.T) {
 		t.Fatalf("unexpected filtered issues: %+v", issues)
 	}
 }
+
+func TestLocalIssueStoreAppendIssueCommentPreservesExistingComments(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "title": "Toolchain migration",
+      "state": "In Progress",
+      "comments": [
+        {"body": "seed comment", "created_at": "2026-03-18T09:00:00Z"}
+      ]
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	if err := store.AppendIssueComment("BIG-GOM-307", "added closeout evidence", time.Date(2026, 3, 18, 16, 45, 0, 0, time.UTC)); err != nil {
+		t.Fatalf("append issue comment: %v", err)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"body": "seed comment"`) {
+		t.Fatalf("expected existing comment to remain, got %s", text)
+	}
+	if !strings.Contains(text, `"body": "added closeout evidence"`) {
+		t.Fatalf("expected appended comment to be written, got %s", text)
+	}
+	if !strings.Contains(text, `"created_at": "2026-03-18T16:45:00Z"`) {
+		t.Fatalf("expected appended comment timestamp, got %s", text)
+	}
+	if !strings.Contains(text, `"updated_at": "2026-03-18T16:45:00Z"`) {
+		t.Fatalf("expected updated_at refresh, got %s", text)
+	}
+}

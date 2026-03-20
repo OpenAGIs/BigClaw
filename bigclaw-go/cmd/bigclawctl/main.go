@@ -106,6 +106,8 @@ func main() {
 	switch os.Args[1] {
 	case "github-sync":
 		err = runGitHubSync(os.Args[2:])
+	case "issue":
+		err = runIssue(os.Args[2:])
 	case "workspace":
 		err = runWorkspace(os.Args[2:])
 	case "refill":
@@ -115,6 +117,68 @@ func main() {
 	}
 	if err != nil {
 		fatalf("%v", err)
+	}
+}
+
+func runIssue(args []string) error {
+	if len(args) == 0 {
+		return errors.New("usage: bigclawctl issue <state|comment> [flags]")
+	}
+	command := args[0]
+	flags := flag.NewFlagSet("issue "+command, flag.ContinueOnError)
+	flags.SetOutput(io.Discard)
+	localIssuesPath := flags.String("local-issues", "", "local issue store path")
+	issueRef := flags.String("issue", "", "issue id or identifier")
+	body := flags.String("body", "", "comment body")
+	bodyFile := flags.String("body-file", "", "comment body file")
+	stateName := flags.String("state", "", "new state")
+	asJSON := flags.Bool("json", false, "json")
+	if err := flags.Parse(args[1:]); err != nil {
+		return err
+	}
+	storePath := resolvedLocalIssueStorePath(*localIssuesPath)
+	if trim(storePath) == "" {
+		return errors.New("local issue store is required")
+	}
+	if trim(*issueRef) == "" {
+		return errors.New("issue reference is required")
+	}
+	store, err := refill.LoadLocalIssueStore(storePath)
+	if err != nil {
+		return err
+	}
+	now := time.Now().UTC()
+	switch command {
+	case "state":
+		if trim(*stateName) == "" {
+			return errors.New("state is required")
+		}
+		updatedState, err := store.UpdateIssueState(*issueRef, *stateName, now)
+		if err != nil {
+			return err
+		}
+		return emit(map[string]any{
+			"status":       "ok",
+			"local_issues": absPath(storePath),
+			"issue":        trim(*issueRef),
+			"state":        updatedState,
+		}, *asJSON, 0)
+	case "comment":
+		commentBody, err := resolveIssueCommentBody(*body, *bodyFile)
+		if err != nil {
+			return err
+		}
+		if err := store.AppendIssueComment(*issueRef, commentBody, now); err != nil {
+			return err
+		}
+		return emit(map[string]any{
+			"status":       "ok",
+			"local_issues": absPath(storePath),
+			"issue":        trim(*issueRef),
+			"commented":    true,
+		}, *asJSON, 0)
+	default:
+		return fmt.Errorf("unknown issue subcommand: %s", command)
 	}
 }
 
@@ -432,6 +496,21 @@ func resolveRepoRelativePath(path string) string {
 		}
 	}
 	return path
+}
+
+func resolveIssueCommentBody(body string, bodyFile string) (string, error) {
+	if trim(body) != "" {
+		return body, nil
+	}
+	if trim(bodyFile) == "" {
+		return "", errors.New("comment body is required")
+	}
+	resolved := resolveRepoRelativePath(bodyFile)
+	contents, err := os.ReadFile(resolved)
+	if err != nil {
+		return "", err
+	}
+	return string(contents), nil
 }
 
 func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply bool, refreshURL string, targetOverride *int) error {

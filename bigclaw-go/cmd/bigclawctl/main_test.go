@@ -216,3 +216,62 @@ func TestRunRefillOncePromotesUsingLocalIssueStore(t *testing.T) {
 		t.Fatalf("expected local issue store updated_at refresh, got %s", string(body))
 	}
 }
+
+func TestRunIssueCommentWritesLocalTrackerComment(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "title": "Toolchain migration",
+      "state": "In Progress",
+      "comments": [
+        {"body": "seed comment", "created_at": "2026-03-18T09:00:00Z"}
+      ]
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	originalArgs := os.Args
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Args = originalArgs
+		os.Stdout = originalStdout
+	}()
+
+	os.Args = []string{
+		"bigclawctl",
+		"issue",
+		"comment",
+		"--local-issues", storePath,
+		"--issue", "BIG-GOM-307",
+		"--body", "validation passed",
+		"--json",
+	}
+	runErr := runIssue(os.Args[2:])
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("run issue comment: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"commented": true`)) {
+		t.Fatalf("expected json success output, got %s", string(output))
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"body": "validation passed"`)) {
+		t.Fatalf("expected appended comment in local issue store, got %s", string(body))
+	}
+}
