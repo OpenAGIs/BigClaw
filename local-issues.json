@@ -405,6 +405,40 @@
           "created_at": "2026-03-20T18:48:37Z"
         }
       ]
+    },
+    {
+      "id": "big-par-090",
+      "identifier": "BIG-PAR-090",
+      "title": "Refresh shared-queue proof from run_all workflow",
+      "description": "Let the repo-native live validation workflow refresh the shared-queue companion proof during run_all closeout so the bundled continuation lineage can come from the same orchestrated workflow instead of a separately rerun proof.",
+      "priority": 2,
+      "state": "In Progress",
+      "labels": [
+        "parallel",
+        "validation",
+        "tooling",
+        "coordination"
+      ],
+      "assigned_to_worker": true,
+      "created_at": "2026-03-20T18:53:11Z",
+      "updated_at": "2026-03-20T18:53:11Z"
+    },
+    {
+      "id": "big-par-091",
+      "identifier": "BIG-PAR-091",
+      "title": "Expose shared-queue refresh status in continuation policy actions",
+      "description": "Tighten continuation policy guidance so hold/go next actions and bundle docs reflect whether the shared-queue companion was refreshed inline by the validation workflow or only reused from a previous proof.",
+      "priority": 3,
+      "state": "Backlog",
+      "labels": [
+        "parallel",
+        "validation",
+        "tooling",
+        "coordination"
+      ],
+      "assigned_to_worker": true,
+      "created_at": "2026-03-20T18:53:11Z",
+      "updated_at": "2026-03-20T18:53:11Z"
     }
   ]
 }
