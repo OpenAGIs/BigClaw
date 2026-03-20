@@ -159,3 +159,60 @@ def test_symphony_workspace_validate_shim_forwards_to_go_wrapper(monkeypatch) ->
         "--json",
     ]
     assert captured["cwd"] == ROOT
+
+
+def test_bigclaw_github_sync_shim_forwards_to_go_wrapper(monkeypatch) -> None:
+    module = load_script_module("bigclaw_github_sync", "scripts/ops/bigclaw_github_sync.py")
+    captured = {}
+
+    class Completed:
+        returncode = 0
+
+    def fake_run(command, cwd):
+        captured["command"] = command
+        captured["cwd"] = cwd
+        return Completed()
+
+    monkeypatch.setattr(module.subprocess, "run", fake_run)
+
+    exit_code = module.main(["status", "--require-synced", "--json"])
+
+    assert exit_code == 0
+    assert captured["command"] == [
+        "bash",
+        str(ROOT / "scripts/ops/bigclawctl"),
+        "github-sync",
+        "status",
+        "--require-synced",
+        "--json",
+    ]
+    assert captured["cwd"] == ROOT
+
+
+def test_bigclaw_refill_queue_shim_forwards_to_go_wrapper(monkeypatch) -> None:
+    module = load_script_module("bigclaw_refill_queue", "scripts/ops/bigclaw_refill_queue.py")
+    captured = {}
+
+    class Completed:
+        returncode = 0
+
+    def fake_run(command, cwd):
+        captured["command"] = command
+        captured["cwd"] = cwd
+        return Completed()
+
+    monkeypatch.setattr(module.subprocess, "run", fake_run)
+
+    exit_code = module.main(["--apply", "--watch", "--local-issues", "local-issues.json"])
+
+    assert exit_code == 0
+    assert captured["command"] == [
+        "bash",
+        str(ROOT / "scripts/ops/bigclawctl"),
+        "refill",
+        "--apply",
+        "--watch",
+        "--local-issues",
+        "local-issues.json",
+    ]
+    assert captured["cwd"] == ROOT
