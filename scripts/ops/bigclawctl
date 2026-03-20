@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+repo_root=$(cd -- "$script_dir/../.." && pwd)
+
+cd "$repo_root/bigclaw-go"
+
+if [ "${1:-}" = "github-sync" ]; then
+  for arg in "$@"; do
+    case "$arg" in
+      --repo|--repo=*)
+        exec go run ./cmd/bigclawctl "$@"
+        ;;
+    esac
+  done
+
+  exec go run ./cmd/bigclawctl "$@" --repo "$repo_root"
+fi
+
+exec go run ./cmd/bigclawctl "$@"

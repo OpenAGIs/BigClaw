@@ -109,7 +109,7 @@ def build_report(
     if 'repeated_lane_coverage_meets_policy' in failing_checks:
         next_actions.append('refresh another full validation bundle with `ray` enabled so each executor lane has repeated indexed coverage')
     if not next_actions:
-        next_actions.append('set BIGCLAW_E2E_CONTINUATION_GATE_MODE=review for local debugging when continuation holds should stay reviewer-visible')
+        next_actions.append('set BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail when workflow closeout should stop on continuation regressions')
 
     return {
         'generated_at': utc_iso(),

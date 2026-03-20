@@ -53,7 +53,14 @@ func TestV2WeeklyReportBuildsSummaryActionsAndMarkdownExport(t *testing.T) {
 		} `json:"team_breakdown"`
 		Highlights []string `json:"highlights"`
 		Actions    []string `json:"actions"`
-		Report     struct {
+		MetricSpec struct {
+			Name   string `json:"name"`
+			Values []struct {
+				MetricID     string `json:"metric_id"`
+				DisplayValue string `json:"display_value"`
+			} `json:"values"`
+		} `json:"metric_spec"`
+		Report struct {
 			Markdown  string `json:"markdown"`
 			ExportURL string `json:"export_url"`
 		} `json:"report"`
@@ -67,8 +74,11 @@ func TestV2WeeklyReportBuildsSummaryActionsAndMarkdownExport(t *testing.T) {
 	if len(decoded.TeamBreakdown) != 1 || decoded.TeamBreakdown[0].Key != "platform" || decoded.TeamBreakdown[0].TotalRuns != 2 {
 		t.Fatalf("unexpected team breakdown: %+v", decoded.TeamBreakdown)
 	}
-	if len(decoded.Highlights) == 0 || len(decoded.Actions) == 0 || !strings.Contains(decoded.Report.Markdown, "# BigClaw Weekly Ops Report") || !strings.Contains(decoded.Report.ExportURL, "/v2/reports/weekly/export") {
-		t.Fatalf("expected highlights/actions/export in weekly report, got %+v", decoded)
+	if len(decoded.Highlights) == 0 || len(decoded.Actions) == 0 || decoded.MetricSpec.Name != "Operations Metric Spec" || len(decoded.MetricSpec.Values) != 7 || !strings.Contains(decoded.Report.Markdown, "# BigClaw Weekly Ops Report") || !strings.Contains(decoded.Report.ExportURL, "/v2/reports/weekly/export") {
+		t.Fatalf("expected highlights/actions/metric spec/export in weekly report, got %+v", decoded)
+	}
+	if decoded.MetricSpec.Values[0].MetricID == "" || decoded.MetricSpec.Values[0].DisplayValue == "" {
+		t.Fatalf("expected populated metric spec values, got %+v", decoded.MetricSpec.Values)
 	}
 
 	exportResponse := httptest.NewRecorder()
@@ -239,6 +249,96 @@ func TestV2ProductizationAndBillingEndpoints(t *testing.T) {
 		t.Fatalf("expected design system payload, got %d %s", designResponse.Code, designResponse.Body.String())
 	}
 
+	savedViewsResponse := httptest.NewRecorder()
+	savedViewsRequest := httptest.NewRequest(http.MethodGet, "/v2/saved-views?team=platform&project=apollo&actor=alice", nil)
+	handler.ServeHTTP(savedViewsResponse, savedViewsRequest)
+	if savedViewsResponse.Code != http.StatusOK {
+		t.Fatalf("expected saved views 200, got %d %s", savedViewsResponse.Code, savedViewsResponse.Body.String())
+	}
+	var savedViewsDecoded struct {
+		Catalog struct {
+			Views []struct {
+				ViewID string `json:"view_id"`
+				Route  string `json:"route"`
+			} `json:"views"`
+			Subscriptions []struct {
+				SavedViewID string   `json:"saved_view_id"`
+				Recipients  []string `json:"recipients"`
+			} `json:"subscriptions"`
+		} `json:"catalog"`
+		Audit struct {
+			ReadinessScore float64 `json:"readiness_score"`
+		} `json:"audit"`
+		Report struct {
+			Markdown  string `json:"markdown"`
+			ExportURL string `json:"export_url"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(savedViewsResponse.Body.Bytes(), &savedViewsDecoded); err != nil {
+		t.Fatalf("decode saved views: %v", err)
+	}
+	if savedViewsDecoded.Audit.ReadinessScore != 100 || len(savedViewsDecoded.Catalog.Views) < 6 {
+		t.Fatalf("unexpected saved views payload: %+v", savedViewsDecoded)
+	}
+	if !strings.Contains(savedViewsDecoded.Catalog.Views[0].Route, "team=platform") || !strings.Contains(savedViewsDecoded.Report.Markdown, "Saved Views & Alert Digests Report") {
+		t.Fatalf("expected scoped routes and report markdown, got %+v", savedViewsDecoded)
+	}
+	if len(savedViewsDecoded.Catalog.Subscriptions) != 2 || savedViewsDecoded.Catalog.Subscriptions[1].SavedViewID == "" || len(savedViewsDecoded.Catalog.Subscriptions[1].Recipients) == 0 {
+		t.Fatalf("expected digest subscriptions, got %+v", savedViewsDecoded.Catalog.Subscriptions)
+	}
+
+	savedViewsExportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(savedViewsExportResponse, httptest.NewRequest(http.MethodGet, savedViewsDecoded.Report.ExportURL, nil))
+	if savedViewsExportResponse.Code != http.StatusOK {
+		t.Fatalf("expected saved views export 200, got %d %s", savedViewsExportResponse.Code, savedViewsExportResponse.Body.String())
+	}
+	if contentType := savedViewsExportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected markdown export, got %q", contentType)
+	}
+	if !strings.Contains(savedViewsExportResponse.Body.String(), "Weekly Ops Review") || !strings.Contains(savedViewsExportResponse.Body.String(), "Readiness Score: 100.0") {
+		t.Fatalf("unexpected saved views export body: %s", savedViewsExportResponse.Body.String())
+	}
+
+	dashboardRunContractResponse := httptest.NewRecorder()
+	handler.ServeHTTP(dashboardRunContractResponse, httptest.NewRequest(http.MethodGet, "/v2/dashboard-run-contract", nil))
+	if dashboardRunContractResponse.Code != http.StatusOK {
+		t.Fatalf("expected dashboard run contract 200, got %d %s", dashboardRunContractResponse.Code, dashboardRunContractResponse.Body.String())
+	}
+	var dashboardRunContractDecoded struct {
+		Contract struct {
+			ContractID string `json:"contract_id"`
+			Version    string `json:"version"`
+		} `json:"contract"`
+		Audit struct {
+			ReleaseReady bool `json:"release_ready"`
+		} `json:"audit"`
+		Report struct {
+			Markdown  string `json:"markdown"`
+			ExportURL string `json:"export_url"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(dashboardRunContractResponse.Body.Bytes(), &dashboardRunContractDecoded); err != nil {
+		t.Fatalf("decode dashboard run contract: %v", err)
+	}
+	if dashboardRunContractDecoded.Contract.ContractID != "BIG-GOM-305" || dashboardRunContractDecoded.Contract.Version != "go-v1" || !dashboardRunContractDecoded.Audit.ReleaseReady {
+		t.Fatalf("unexpected dashboard run contract payload: %+v", dashboardRunContractDecoded)
+	}
+	if !strings.Contains(dashboardRunContractDecoded.Report.Markdown, "\"closeout\"") || dashboardRunContractDecoded.Report.ExportURL != "/v2/dashboard-run-contract/export" {
+		t.Fatalf("expected closeout contract report and export url, got %+v", dashboardRunContractDecoded.Report)
+	}
+
+	dashboardRunContractExportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(dashboardRunContractExportResponse, httptest.NewRequest(http.MethodGet, dashboardRunContractDecoded.Report.ExportURL, nil))
+	if dashboardRunContractExportResponse.Code != http.StatusOK {
+		t.Fatalf("expected dashboard run contract export 200, got %d %s", dashboardRunContractExportResponse.Code, dashboardRunContractExportResponse.Body.String())
+	}
+	if contentType := dashboardRunContractExportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected markdown export, got %q", contentType)
+	}
+	if !strings.Contains(dashboardRunContractExportResponse.Body.String(), "Dashboard and Run Contract") || !strings.Contains(dashboardRunContractExportResponse.Body.String(), "Release Ready: true") {
+		t.Fatalf("unexpected dashboard run contract export body: %s", dashboardRunContractExportResponse.Body.String())
+	}
+
 	usageResponse := httptest.NewRecorder()
 	handler.ServeHTTP(usageResponse, httptest.NewRequest(http.MethodGet, "/v2/billing/usage?organization=openagi&tier=enterprise", nil))
 	if usageResponse.Code != http.StatusOK {
@@ -272,6 +372,99 @@ func TestV2ProductizationAndBillingEndpoints(t *testing.T) {
 	}
 	if !strings.Contains(entitlementsResponse.Body.String(), "premium_orchestration") || !strings.Contains(entitlementsResponse.Body.String(), "flow_canvas") || !strings.Contains(entitlementsResponse.Body.String(), "regression") {
 		t.Fatalf("expected enterprise entitlements payload, got %s", entitlementsResponse.Body.String())
+	}
+}
+
+func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
+	recorder := observability.NewRecorder()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return time.Date(2026, 3, 18, 12, 0, 0, 0, time.UTC) }}
+	handler := server.Handler()
+
+	connectorResponse := httptest.NewRecorder()
+	handler.ServeHTTP(connectorResponse, httptest.NewRequest(http.MethodGet, "/v2/intake/connectors/github/issues?project=OpenAGIs/BigClaw&states=Todo,In%20Progress", nil))
+	if connectorResponse.Code != http.StatusOK {
+		t.Fatalf("expected intake connector 200, got %d %s", connectorResponse.Code, connectorResponse.Body.String())
+	}
+	var connectorDecoded struct {
+		Connector string `json:"connector"`
+		Issues    []struct {
+			Source string `json:"source"`
+			Title  string `json:"title"`
+		} `json:"issues"`
+		MappedTasks []struct {
+			ID    string `json:"id"`
+			State string `json:"state"`
+		} `json:"mapped_tasks"`
+	}
+	if err := json.Unmarshal(connectorResponse.Body.Bytes(), &connectorDecoded); err != nil {
+		t.Fatalf("decode intake connector response: %v", err)
+	}
+	if connectorDecoded.Connector != "github" || len(connectorDecoded.Issues) != 1 || len(connectorDecoded.MappedTasks) != 1 {
+		t.Fatalf("unexpected intake connector payload: %+v", connectorDecoded)
+	}
+	if connectorDecoded.Issues[0].Source != "github" || connectorDecoded.MappedTasks[0].ID == "" || connectorDecoded.MappedTasks[0].State != "queued" {
+		t.Fatalf("unexpected mapped issue payload: %+v", connectorDecoded)
+	}
+
+	mapBody, _ := json.Marshal(map[string]any{
+		"source":      "linear",
+		"source_id":   "BIG-102",
+		"title":       "Implement prod model",
+		"description": "desc",
+		"labels":      []string{"p0"},
+		"priority":    "P0",
+		"state":       "Todo",
+		"links":       map[string]string{"issue": "https://linear.app/openagi/issue/BIG-102"},
+	})
+	mapResponse := httptest.NewRecorder()
+	handler.ServeHTTP(mapResponse, httptest.NewRequest(http.MethodPost, "/v2/intake/issues/map", bytes.NewReader(mapBody)))
+	if mapResponse.Code != http.StatusOK {
+		t.Fatalf("expected intake map 200, got %d %s", mapResponse.Code, mapResponse.Body.String())
+	}
+	var mappedDecoded struct {
+		Task struct {
+			ID        string `json:"id"`
+			Priority  int    `json:"priority"`
+			RiskLevel string `json:"risk_level"`
+		} `json:"task"`
+	}
+	if err := json.Unmarshal(mapResponse.Body.Bytes(), &mappedDecoded); err != nil {
+		t.Fatalf("decode intake map response: %v", err)
+	}
+	if mappedDecoded.Task.ID != "BIG-102" || mappedDecoded.Task.Priority != 0 || mappedDecoded.Task.RiskLevel != "high" {
+		t.Fatalf("unexpected mapped task payload: %+v", mappedDecoded.Task)
+	}
+
+	renderBody, _ := json.Marshal(map[string]any{
+		"definition": map[string]any{
+			"name":                  "release-closeout",
+			"steps":                 []map[string]any{{"name": "execute", "kind": "scheduler"}},
+			"report_path_template":  "reports/{task_id}/{run_id}.md",
+			"journal_path_template": "journals/{workflow}/{run_id}.json",
+		},
+		"task": map[string]any{
+			"id":     "BIG-401",
+			"source": "linear",
+			"title":  "DSL",
+		},
+		"run_id": "run-1",
+	})
+	renderResponse := httptest.NewRecorder()
+	handler.ServeHTTP(renderResponse, httptest.NewRequest(http.MethodPost, "/v2/workflows/definitions/render", bytes.NewReader(renderBody)))
+	if renderResponse.Code != http.StatusOK {
+		t.Fatalf("expected workflow definition render 200, got %d %s", renderResponse.Code, renderResponse.Body.String())
+	}
+	var renderDecoded struct {
+		Rendered struct {
+			ReportPath  string `json:"report_path"`
+			JournalPath string `json:"journal_path"`
+		} `json:"rendered"`
+	}
+	if err := json.Unmarshal(renderResponse.Body.Bytes(), &renderDecoded); err != nil {
+		t.Fatalf("decode workflow definition render response: %v", err)
+	}
+	if renderDecoded.Rendered.ReportPath != "reports/BIG-401/run-1.md" || renderDecoded.Rendered.JournalPath != "journals/release-closeout/run-1.json" {
+		t.Fatalf("unexpected rendered workflow paths: %+v", renderDecoded.Rendered)
 	}
 }
 

@@ -1967,6 +1967,63 @@ func TestV2OperationsDashboardAggregatesSLAMetrics(t *testing.T) {
 	}
 }
 
+func TestV2RunsListsScopedRunIndex(t *testing.T) {
+	recorder := observability.NewRecorder()
+	controller := control.New()
+	base := time.Unix(1700000900, 0)
+	premium := domain.Task{ID: "task-runs-1", TraceID: "trace-runs-1", Title: "Premium blocked run", State: domain.TaskBlocked, BudgetCents: 1200, Metadata: map[string]string{"team": "platform", "project": "alpha", "plan": "premium"}, CreatedAt: base, UpdatedAt: base.Add(2 * time.Minute)}
+	dead := domain.Task{ID: "task-runs-2", TraceID: "trace-runs-2", Title: "Dead letter run", State: domain.TaskDeadLetter, BudgetCents: 300, Metadata: map[string]string{"team": "platform", "project": "alpha"}, CreatedAt: base, UpdatedAt: base.Add(4 * time.Minute)}
+	other := domain.Task{ID: "task-runs-3", TraceID: "trace-runs-3", Title: "Other team run", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "growth", "project": "beta"}, CreatedAt: base, UpdatedAt: base.Add(3 * time.Minute)}
+	for _, task := range []domain.Task{premium, dead, other} {
+		recorder.StoreTask(task)
+	}
+	recorder.Record(domain.Event{ID: "evt-runs-1", Type: domain.EventRunTakeover, TaskID: premium.ID, TraceID: premium.TraceID, Timestamp: base.Add(2 * time.Minute), Payload: map[string]any{"message": "awaiting review"}})
+	recorder.Record(domain.Event{ID: "evt-runs-2", Type: domain.EventTaskDeadLetter, TaskID: dead.ID, TraceID: dead.TraceID, Timestamp: base.Add(4 * time.Minute), Payload: map[string]any{"message": "replay required"}})
+	controller.Takeover(premium.ID, "alice", "bob", "manual review", base.Add(5*time.Minute))
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: controller, Now: func() time.Time { return base.Add(6 * time.Minute) }}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/runs?team=platform&project=alpha&limit=10", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected run index 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Summary struct {
+			TotalRuns         int            `json:"total_runs"`
+			ActiveRuns        int            `json:"active_runs"`
+			BlockedRuns       int            `json:"blocked_runs"`
+			PremiumRuns       int            `json:"premium_runs"`
+			DeadLetters       int            `json:"dead_letters"`
+			BudgetCentsTotal  int64          `json:"budget_cents_total"`
+			StateDistribution map[string]int `json:"state_distribution"`
+		} `json:"summary"`
+		Runs []struct {
+			Task struct {
+				ID string `json:"id"`
+			} `json:"task"`
+			Policy struct {
+				Plan string `json:"plan"`
+			} `json:"policy"`
+			Drilldown struct {
+				Run string `json:"run"`
+			} `json:"drilldown"`
+		} `json:"runs"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode run index: %v", err)
+	}
+	if decoded.Summary.TotalRuns != 2 || decoded.Summary.ActiveRuns != 1 || decoded.Summary.BlockedRuns != 1 || decoded.Summary.PremiumRuns != 1 || decoded.Summary.DeadLetters != 1 || decoded.Summary.BudgetCentsTotal != 1500 {
+		t.Fatalf("unexpected run index summary: %+v", decoded.Summary)
+	}
+	if len(decoded.Runs) != 2 || decoded.Runs[0].Task.ID != "task-runs-2" || decoded.Runs[1].Task.ID != "task-runs-1" {
+		t.Fatalf("unexpected run ordering: %+v", decoded.Runs)
+	}
+	if decoded.Runs[1].Policy.Plan != "premium" || decoded.Runs[1].Drilldown.Run != "/v2/runs/task-runs-1" {
+		t.Fatalf("unexpected run payload: %+v", decoded.Runs[1])
+	}
+}
+
 func TestV2TriageCenterBuildsRecommendationsAndSimilarity(t *testing.T) {
 	recorder := observability.NewRecorder()
 	base := time.Unix(1700002800, 0)
@@ -2275,6 +2332,16 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 			Format   string `json:"format"`
 			Download bool   `json:"download"`
 		} `json:"reports"`
+		Closeout struct {
+			ValidationEvidence []string `json:"validation_evidence"`
+			GitPushSucceeded   bool     `json:"git_push_succeeded"`
+			GitPushOutput      string   `json:"git_push_output"`
+			GitLogStatOutput   string   `json:"git_log_stat_output"`
+			RemoteSynced       bool     `json:"remote_synced"`
+			LocalSHA           string   `json:"local_sha"`
+			RemoteSHA          string   `json:"remote_sha"`
+			Complete           bool     `json:"complete"`
+		} `json:"closeout"`
 	}
 	if err := json.Unmarshal(runResponse.Body.Bytes(), &decoded); err != nil {
 		t.Fatalf("decode run detail: %v", err)
@@ -2303,6 +2370,9 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 	if len(decoded.Reports) != 1 || decoded.Reports[0].Format != "markdown" || !decoded.Reports[0].Download {
 		t.Fatalf("expected downloadable markdown report, got %+v", decoded.Reports)
 	}
+	if len(decoded.Closeout.ValidationEvidence) != 0 || decoded.Closeout.GitPushSucceeded || decoded.Closeout.GitLogStatOutput != "" || decoded.Closeout.RemoteSynced || decoded.Closeout.Complete {
+		t.Fatalf("expected empty closeout summary when metadata is absent, got %+v", decoded.Closeout)
+	}
 
 	auditResponse := httptest.NewRecorder()
 	handler.ServeHTTP(auditResponse, httptest.NewRequest(http.MethodGet, "/v2/runs/task-run-report/audit?limit=20", nil))
@@ -2325,6 +2395,131 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 		t.Fatalf("expected attachment filename, got %q", disposition)
 	}
 	for _, want := range []string{"# BigClaw Run Report", "Task ID: task-run-report", "Failure Reason: pod crashed during validation", "k8s://jobs/bigclaw/run-report", "Manual inspection required"} {
+		if !strings.Contains(reportResponse.Body.String(), want) {
+			t.Fatalf("expected %q in run report, got %s", want, reportResponse.Body.String())
+		}
+	}
+	if !strings.Contains(reportResponse.Body.String(), "## Closeout") || !strings.Contains(reportResponse.Body.String(), "Complete: false") {
+		t.Fatalf("expected closeout section in run report, got %s", reportResponse.Body.String())
+	}
+}
+
+func TestV2RunDetailCloseoutSummaryFromMetadata(t *testing.T) {
+	recorder := observability.NewRecorder()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Control: control.New(), Now: func() time.Time { return time.Unix(1700006000, 0) }}
+	handler := server.Handler()
+	task := domain.Task{
+		ID:      "task-run-closeout",
+		TraceID: "trace-run-closeout",
+		Title:   "Close out release",
+		State:   domain.TaskSucceeded,
+		Metadata: map[string]string{
+			"team":                "platform",
+			"project":             "alpha",
+			"validation_evidence": `["go test ./internal/api","bash scripts/ops/bigclawctl github-sync status --json"]`,
+			"git_push_succeeded":  "true",
+			"git_push_output":     "To github.com:OpenAGIs/BigClaw.git",
+			"git_log_stat_output": "commit abc123\n bigclaw-go/internal/api/v2.go | 10 ++++++++++",
+			"remote_synced":       "true",
+			"local_sha":           "abc123",
+			"remote_sha":          "abc123",
+		},
+	}
+	recorder.StoreTask(task)
+
+	runResponse := httptest.NewRecorder()
+	handler.ServeHTTP(runResponse, httptest.NewRequest(http.MethodGet, "/v2/runs/task-run-closeout?limit=20", nil))
+	if runResponse.Code != http.StatusOK {
+		t.Fatalf("expected run detail 200, got %d %s", runResponse.Code, runResponse.Body.String())
+	}
+	var decoded struct {
+		Closeout struct {
+			ValidationEvidence []string `json:"validation_evidence"`
+			GitPushSucceeded   bool     `json:"git_push_succeeded"`
+			GitPushOutput      string   `json:"git_push_output"`
+			GitLogStatOutput   string   `json:"git_log_stat_output"`
+			RemoteSynced       bool     `json:"remote_synced"`
+			LocalSHA           string   `json:"local_sha"`
+			RemoteSHA          string   `json:"remote_sha"`
+			Complete           bool     `json:"complete"`
+		} `json:"closeout"`
+	}
+	if err := json.Unmarshal(runResponse.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode run detail closeout: %v", err)
+	}
+	if len(decoded.Closeout.ValidationEvidence) != 2 || !decoded.Closeout.GitPushSucceeded || decoded.Closeout.GitPushOutput == "" || decoded.Closeout.GitLogStatOutput == "" || !decoded.Closeout.RemoteSynced || decoded.Closeout.LocalSHA != "abc123" || decoded.Closeout.RemoteSHA != "abc123" || !decoded.Closeout.Complete {
+		t.Fatalf("unexpected closeout payload: %+v", decoded.Closeout)
+	}
+}
+
+func TestV2RunDetailIncludesRepoTriagePacket(t *testing.T) {
+	recorder := observability.NewRecorder()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Control: control.New(), Now: func() time.Time { return time.Unix(1700006100, 0) }}
+	handler := server.Handler()
+	task := domain.Task{
+		ID:      "task-run-repo-triage",
+		TraceID: "trace-run-repo-triage",
+		Title:   "Review repo lineage",
+		State:   domain.TaskBlocked,
+		Metadata: map[string]string{
+			"team":                  "platform",
+			"project":               "alpha",
+			"repo_triage_status":    "needs-approval",
+			"candidate_commit_hash": "abc123",
+			"accepted_commit_hash":  "def456",
+			"similar_failure_count": "1",
+			"discussion_open":       "1",
+			"lineage_summary":       "candidate abc123 descends from accepted commit def456 after reviewer fixes",
+			"run_commit_links":      `[{"run_id":"task-run-repo-triage","commit_hash":"abc123","role":"candidate","repo_space_id":"space-1"},{"run_id":"task-run-repo-triage","commit_hash":"def456","role":"accepted","repo_space_id":"space-1"}]`,
+		},
+	}
+	recorder.StoreTask(task)
+
+	runResponse := httptest.NewRecorder()
+	handler.ServeHTTP(runResponse, httptest.NewRequest(http.MethodGet, "/v2/runs/task-run-repo-triage?limit=20", nil))
+	if runResponse.Code != http.StatusOK {
+		t.Fatalf("expected run detail 200, got %d %s", runResponse.Code, runResponse.Body.String())
+	}
+	var decoded struct {
+		RepoTriage struct {
+			Status   string `json:"status"`
+			Evidence struct {
+				CandidateCommit     string `json:"candidate_commit"`
+				AcceptedAncestor    string `json:"accepted_ancestor"`
+				SimilarFailureCount int    `json:"similar_failure_count"`
+				DiscussionOpen      int    `json:"discussion_open"`
+			} `json:"evidence"`
+			Recommendation struct {
+				Action string `json:"action"`
+				Reason string `json:"reason"`
+			} `json:"recommendation"`
+			ApprovalPacket struct {
+				RunID               string `json:"run_id"`
+				CandidateCommitHash string `json:"candidate_commit_hash"`
+				AcceptedCommitHash  string `json:"accepted_commit_hash"`
+				LineageSummary      string `json:"lineage_summary"`
+			} `json:"approval_packet"`
+		} `json:"repo_triage"`
+	}
+	if err := json.Unmarshal(runResponse.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode repo triage run detail: %v", err)
+	}
+	if decoded.RepoTriage.Status != "needs-approval" || decoded.RepoTriage.Recommendation.Action != "approve" || decoded.RepoTriage.Recommendation.Reason != "accepted ancestor exists" {
+		t.Fatalf("unexpected repo triage recommendation: %+v", decoded.RepoTriage)
+	}
+	if decoded.RepoTriage.Evidence.CandidateCommit != "abc123" || decoded.RepoTriage.Evidence.AcceptedAncestor != "def456" || decoded.RepoTriage.Evidence.SimilarFailureCount != 1 || decoded.RepoTriage.Evidence.DiscussionOpen != 1 {
+		t.Fatalf("unexpected repo triage evidence: %+v", decoded.RepoTriage.Evidence)
+	}
+	if decoded.RepoTriage.ApprovalPacket.RunID != "task-run-repo-triage" || decoded.RepoTriage.ApprovalPacket.CandidateCommitHash != "abc123" || decoded.RepoTriage.ApprovalPacket.AcceptedCommitHash != "def456" || decoded.RepoTriage.ApprovalPacket.LineageSummary == "" {
+		t.Fatalf("unexpected repo triage approval packet: %+v", decoded.RepoTriage.ApprovalPacket)
+	}
+
+	reportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(reportResponse, httptest.NewRequest(http.MethodGet, "/v2/runs/task-run-repo-triage/report?limit=20", nil))
+	if reportResponse.Code != http.StatusOK {
+		t.Fatalf("expected run report 200, got %d %s", reportResponse.Code, reportResponse.Body.String())
+	}
+	for _, want := range []string{"## Repo Triage", "Recommendation: approve (accepted ancestor exists)", "Candidate Commit: abc123", "Accepted Ancestor: def456"} {
 		if !strings.Contains(reportResponse.Body.String(), want) {
 			t.Fatalf("expected %q in run report, got %s", want, reportResponse.Body.String())
 		}
@@ -3542,6 +3737,20 @@ func TestV2DashboardAndRunDetailEnforceViewerTeamScope(t *testing.T) {
 		t.Fatalf("expected operations dashboard to be scoped to platform team, got %s", operationsBody)
 	}
 
+	runsRequest := httptest.NewRequest(http.MethodGet, "/v2/runs?limit=10", nil)
+	runsRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	runsRequest.Header.Set("X-BigClaw-Actor", "lead-2")
+	runsRequest.Header.Set("X-BigClaw-Team", "platform")
+	runsResponse := httptest.NewRecorder()
+	handler.ServeHTTP(runsResponse, runsRequest)
+	if runsResponse.Code != http.StatusOK {
+		t.Fatalf("expected scoped runs 200, got %d %s", runsResponse.Code, runsResponse.Body.String())
+	}
+	runsBody := runsResponse.Body.String()
+	if !strings.Contains(runsBody, "task-scope-1") || strings.Contains(runsBody, "task-scope-2") {
+		t.Fatalf("expected run index to be scoped to platform team, got %s", runsBody)
+	}
+
 	triageRequest := httptest.NewRequest(http.MethodGet, "/v2/triage/center?limit=10", nil)
 	triageRequest.Header.Set("X-BigClaw-Role", "eng_lead")
 	triageRequest.Header.Set("X-BigClaw-Actor", "lead-2")
@@ -3564,6 +3773,16 @@ func TestV2DashboardAndRunDetailEnforceViewerTeamScope(t *testing.T) {
 	handler.ServeHTTP(forbiddenDashboardResponse, forbiddenDashboardRequest)
 	if forbiddenDashboardResponse.Code != http.StatusForbidden {
 		t.Fatalf("expected forbidden dashboard for mismatched team, got %d %s", forbiddenDashboardResponse.Code, forbiddenDashboardResponse.Body.String())
+	}
+
+	forbiddenRunsRequest := httptest.NewRequest(http.MethodGet, "/v2/runs?team=growth&limit=10", nil)
+	forbiddenRunsRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	forbiddenRunsRequest.Header.Set("X-BigClaw-Actor", "lead-2")
+	forbiddenRunsRequest.Header.Set("X-BigClaw-Team", "platform")
+	forbiddenRunsResponse := httptest.NewRecorder()
+	handler.ServeHTTP(forbiddenRunsResponse, forbiddenRunsRequest)
+	if forbiddenRunsResponse.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden run index for mismatched team, got %d %s", forbiddenRunsResponse.Code, forbiddenRunsResponse.Body.String())
 	}
 
 	forbiddenTriageRequest := httptest.NewRequest(http.MethodGet, "/v2/triage/center?team=growth&limit=10", nil)

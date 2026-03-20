@@ -1,11 +1,17 @@
+"""Legacy Python queue surface frozen after Go mainline cutover."""
+
 import heapq
 import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+from .deprecation import LEGACY_RUNTIME_GUIDANCE
 from .models import Task
 
+
+LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE
+GO_MAINLINE_REPLACEMENT = "bigclaw-go/internal/queue/queue.go"
 
 @dataclass(frozen=True)
 class DeadLetterEntry:

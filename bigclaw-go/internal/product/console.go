@@ -52,7 +52,7 @@ type DesignSystem struct {
 func Navigation() []NavSection {
 	return []NavSection{
 		{Key: "overview", Label: "Overview", Items: []NavItem{{Key: "home", Label: "Home", Path: "/v2/home"}, {Key: "dashboard", Label: "Engineering Dashboard", Path: "/v2/dashboard/engineering"}, {Key: "operations", Label: "Operations Dashboard", Path: "/v2/dashboard/operations"}}},
-		{Key: "operations", Label: "Operations", Items: []NavItem{{Key: "runs", Label: "Runs", Path: "/v2/runs"}, {Key: "scheduler", Label: "Scheduler", Path: "/v2/control-center"}, {Key: "triage", Label: "Triage", Path: "/v2/triage/center"}, {Key: "regression", Label: "Regression", Path: "/v2/regression/center"}}},
+		{Key: "operations", Label: "Operations", Items: []NavItem{{Key: "runs", Label: "Runs", Path: "/v2/runs"}, {Key: "scheduler", Label: "Scheduler", Path: "/v2/control-center"}, {Key: "triage", Label: "Triage", Path: "/v2/triage/center"}, {Key: "regression", Label: "Regression", Path: "/v2/regression/center"}, {Key: "saved-views", Label: "Saved Views", Path: "/v2/saved-views"}}},
 		{Key: "delivery", Label: "Flows", Items: []NavItem{{Key: "flows", Label: "Flows", Path: "/v2/flows/overview"}, {Key: "canvas", Label: "Canvas", Path: "/v2/flows/templates"}, {Key: "reports", Label: "Weekly Reports", Path: "/v2/reports/weekly"}}},
 		{Key: "business", Label: "Business", Items: []NavItem{{Key: "billing", Label: "Billing", Path: "/v2/billing/usage"}, {Key: "entitlements", Label: "Entitlements", Path: "/v2/billing/entitlements"}, {Key: "settings", Label: "Settings", Path: "/v2/design-system"}}},
 	}

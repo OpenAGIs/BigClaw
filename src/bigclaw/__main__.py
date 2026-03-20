@@ -2,16 +2,18 @@ import argparse
 import json
 from pathlib import Path
 
+from .deprecation import warn_legacy_runtime_surface
 from .observability import RepoSyncAudit
 from .reports import render_repo_sync_audit_report, write_report
 from .service import run_server
 
 
 def main() -> None:
+    warn_legacy_runtime_surface("python -m bigclaw", "bash scripts/ops/bigclawctl or go run ./bigclaw-go/cmd/bigclawd")
     parser = argparse.ArgumentParser(prog="bigclaw", description="BigClaw developer utilities")
     sub = parser.add_subparsers(dest="command")
 
-    serve = sub.add_parser("serve", help="Run local BigClaw static web server")
+    serve = sub.add_parser("serve", help="Run legacy migration-only static web server")
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8008)
     serve.add_argument("--dir", default="reports")

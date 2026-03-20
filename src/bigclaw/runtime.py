@@ -1,8 +1,15 @@
+"""Legacy Python runtime surface frozen after Go mainline cutover."""
+
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
+from .deprecation import LEGACY_RUNTIME_GUIDANCE
 from .models import Task
 from .observability import TaskRun
+
+
+LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE
+GO_MAINLINE_REPLACEMENT = "bigclaw-go/internal/worker/runtime.go"
 
 
 @dataclass

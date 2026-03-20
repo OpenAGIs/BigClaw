@@ -17,6 +17,7 @@ import (
 	"bigclaw-go/internal/policy"
 	"bigclaw-go/internal/queue"
 	"bigclaw-go/internal/regression"
+	"bigclaw-go/internal/repo"
 	"bigclaw-go/internal/risk"
 	"bigclaw-go/internal/triage"
 	"bigclaw-go/internal/worker"
@@ -90,6 +91,24 @@ type operationsSummary struct {
 	BudgetCentsTotal  int64          `json:"budget_cents_total"`
 	StateDistribution map[string]int `json:"state_distribution"`
 	RiskDistribution  map[string]int `json:"risk_distribution"`
+}
+
+type runListFilters struct {
+	Team     string
+	Project  string
+	TenantID string
+	State    string
+	Limit    int
+}
+
+type runListSummary struct {
+	TotalRuns         int            `json:"total_runs"`
+	ActiveRuns        int            `json:"active_runs"`
+	BlockedRuns       int            `json:"blocked_runs"`
+	PremiumRuns       int            `json:"premium_runs"`
+	DeadLetters       int            `json:"dead_letters"`
+	BudgetCentsTotal  int64          `json:"budget_cents_total"`
+	StateDistribution map[string]int `json:"state_distribution"`
 }
 
 type triageSummary struct {
@@ -292,6 +311,24 @@ type runReportLink struct {
 	Download bool   `json:"download"`
 }
 
+type runCloseoutSummary struct {
+	ValidationEvidence []string `json:"validation_evidence"`
+	GitPushSucceeded   bool     `json:"git_push_succeeded"`
+	GitPushOutput      string   `json:"git_push_output,omitempty"`
+	GitLogStatOutput   string   `json:"git_log_stat_output"`
+	RemoteSynced       bool     `json:"remote_synced"`
+	LocalSHA           string   `json:"local_sha,omitempty"`
+	RemoteSHA          string   `json:"remote_sha,omitempty"`
+	Complete           bool     `json:"complete"`
+}
+
+type runRepoTriageSummary struct {
+	Status         string                      `json:"status"`
+	Evidence       repo.LineageEvidence        `json:"evidence"`
+	Recommendation repo.TriageRecommendation   `json:"recommendation"`
+	ApprovalPacket repo.ApprovalEvidencePacket `json:"approval_packet"`
+}
+
 type runDetailResponse struct {
 	Task          domain.Task                 `json:"task"`
 	State         string                      `json:"state"`
@@ -310,6 +347,8 @@ type runDetailResponse struct {
 	RecentActions []controlActionAuditEntry   `json:"recent_actions,omitempty"`
 	NotesTimeline []controlActionAuditEntry   `json:"notes_timeline,omitempty"`
 	Reports       []runReportLink             `json:"reports,omitempty"`
+	Closeout      runCloseoutSummary          `json:"closeout"`
+	RepoTriage    *runRepoTriageSummary       `json:"repo_triage,omitempty"`
 	Workpad       string                      `json:"workpad,omitempty"`
 }
 
@@ -772,6 +811,87 @@ func (s *Server) handleV2OperationsDashboard(w http.ResponseWriter, r *http.Requ
 		"blocked_tasks":     limitDashboardTasks(blockedTasks, limit),
 		"tasks":             overviews,
 	})
+}
+
+func (s *Server) handleV2Runs(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	authorization := parseControlAuthorization(r, "", "", "")
+	filters, err := parseRunListFilters(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := enforceScopedTeamFilter(authorization, &filters.Team); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+	tasks := s.filteredTasks(filters.Team, filters.Project, filters.TenantID, time.Time{}, time.Time{})
+	summary := runListSummary{StateDistribution: make(map[string]int)}
+	runs := make([]dashboardTaskOverview, 0, len(tasks))
+	for _, task := range tasks {
+		if filters.State != "" && !strings.EqualFold(strings.TrimSpace(string(task.State)), filters.State) {
+			continue
+		}
+		if err := s.authorizeTaskAccess(authorization, task); err != nil {
+			continue
+		}
+		policySummary := policy.Resolve(task)
+		summary.TotalRuns++
+		summary.BudgetCentsTotal += task.BudgetCents
+		summary.StateDistribution[string(task.State)]++
+		if domain.IsActiveTaskState(task.State) {
+			summary.ActiveRuns++
+		}
+		if task.State == domain.TaskBlocked || strings.EqualFold(strings.TrimSpace(task.Metadata["blocked"]), "true") {
+			summary.BlockedRuns++
+		}
+		if task.State == domain.TaskDeadLetter {
+			summary.DeadLetters++
+		}
+		if policySummary.Plan == "premium" {
+			summary.PremiumRuns++
+		}
+		runs = append(runs, s.dashboardTaskOverview(task, policySummary))
+	}
+	sort.SliceStable(runs, func(i, j int) bool {
+		if runs[i].Task.UpdatedAt.Equal(runs[j].Task.UpdatedAt) {
+			return runs[i].Task.ID < runs[j].Task.ID
+		}
+		return runs[i].Task.UpdatedAt.After(runs[j].Task.UpdatedAt)
+	})
+	if filters.Limit > 0 && len(runs) > filters.Limit {
+		runs = runs[:filters.Limit]
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"authorization": authorization,
+		"filters": map[string]any{
+			"team":        filters.Team,
+			"project":     filters.Project,
+			"tenant_id":   filters.TenantID,
+			"state":       filters.State,
+			"viewer_team": authorization.ViewerTeam,
+			"limit":       filters.Limit,
+		},
+		"summary": summary,
+		"runs":    runs,
+	})
+}
+
+func parseRunListFilters(r *http.Request) (runListFilters, error) {
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit <= 0 {
+		limit = 25
+	}
+	return runListFilters{
+		Team:     strings.TrimSpace(r.URL.Query().Get("team")),
+		Project:  strings.TrimSpace(r.URL.Query().Get("project")),
+		TenantID: strings.TrimSpace(r.URL.Query().Get("tenant_id")),
+		State:    strings.TrimSpace(r.URL.Query().Get("state")),
+		Limit:    limit,
+	}, nil
 }
 
 func isOverdueTask(task domain.Task, now time.Time) bool {
@@ -1600,6 +1720,8 @@ func (s *Server) buildRunDetailResponse(task domain.Task, limit int, authorizati
 		AuditSummary:  summarizeControlAudit(auditEntries),
 		RecentActions: auditEntries,
 		NotesTimeline: auditNotesTimeline(auditEntries, limit),
+		Closeout:      buildRunCloseout(task),
+		RepoTriage:    buildRunRepoTriage(task),
 		Reports: []runReportLink{{
 			Name:     "run_report",
 			URL:      fmt.Sprintf("/v2/runs/%s/report?limit=%d", task.ID, limit),
@@ -1626,6 +1748,47 @@ func buildRunValidation(task domain.Task) runValidationSummary {
 	}
 }
 
+func buildRunCloseout(task domain.Task) runCloseoutSummary {
+	closeout := runCloseoutSummary{
+		ValidationEvidence: metadataStringSlice(task, "validation_evidence"),
+		GitPushSucceeded:   metadataBoolValue(task, "git_push_succeeded"),
+		GitPushOutput:      strings.TrimSpace(task.Metadata["git_push_output"]),
+		GitLogStatOutput:   strings.TrimSpace(task.Metadata["git_log_stat_output"]),
+		RemoteSynced:       metadataBoolValue(task, "remote_synced"),
+		LocalSHA:           strings.TrimSpace(task.Metadata["local_sha"]),
+		RemoteSHA:          strings.TrimSpace(task.Metadata["remote_sha"]),
+	}
+	closeout.Complete = len(closeout.ValidationEvidence) > 0 && closeout.GitPushSucceeded && closeout.GitLogStatOutput != "" && closeout.RemoteSynced
+	return closeout
+}
+
+func buildRunRepoTriage(task domain.Task) *runRepoTriageSummary {
+	status := firstNonEmpty(task.Metadata["repo_triage_status"], task.Metadata["review_status"], derivedRepoTriageStatus(task))
+	links := runCommitLinksFromMetadata(task)
+	evidence := repo.LineageEvidence{
+		CandidateCommit:     firstNonEmpty(task.Metadata["candidate_commit_hash"], commitHashForRole(links, "candidate")),
+		AcceptedAncestor:    firstNonEmpty(task.Metadata["accepted_ancestor"], task.Metadata["accepted_commit_hash"], commitHashForRole(links, "accepted")),
+		SimilarFailureCount: metadataIntValue(task, "similar_failure_count"),
+		DiscussionOpen:      metadataIntValue(task, "discussion_open"),
+	}
+	packet := repo.BuildApprovalEvidencePacket(task.ID, links, task.Metadata["lineage_summary"])
+	if packet.CandidateCommitHash == "" && evidence.CandidateCommit != "" {
+		packet.CandidateCommitHash = evidence.CandidateCommit
+	}
+	if packet.AcceptedCommitHash == "" && evidence.AcceptedAncestor != "" {
+		packet.AcceptedCommitHash = evidence.AcceptedAncestor
+	}
+	if strings.TrimSpace(status) == "" && evidence.CandidateCommit == "" && evidence.AcceptedAncestor == "" && evidence.SimilarFailureCount == 0 && evidence.DiscussionOpen == 0 && len(packet.Links) == 0 && strings.TrimSpace(packet.LineageSummary) == "" {
+		return nil
+	}
+	return &runRepoTriageSummary{
+		Status:         status,
+		Evidence:       evidence,
+		Recommendation: repo.RecommendTriageAction(status, evidence),
+		ApprovalPacket: packet,
+	}
+}
+
 func runValidationStatus(state domain.TaskState) string {
 	switch state {
 	case domain.TaskSucceeded:
@@ -1638,6 +1801,17 @@ func runValidationStatus(state domain.TaskState) string {
 		return "pending"
 	default:
 		return "unknown"
+	}
+}
+
+func derivedRepoTriageStatus(task domain.Task) string {
+	switch task.State {
+	case domain.TaskDeadLetter, domain.TaskFailed:
+		return "failed"
+	case domain.TaskBlocked:
+		return "needs-approval"
+	default:
+		return strings.ToLower(strings.TrimSpace(string(task.State)))
 	}
 }
 
@@ -1791,6 +1965,104 @@ func stringSliceFromAny(value any) []string {
 	}
 }
 
+func metadataStringSlice(task domain.Task, key string) []string {
+	raw := strings.TrimSpace(task.Metadata[key])
+	if raw == "" {
+		return nil
+	}
+	if strings.HasPrefix(raw, "[") {
+		var values []string
+		if err := json.Unmarshal([]byte(raw), &values); err == nil {
+			return values
+		}
+	}
+	parts := strings.FieldsFunc(raw, func(r rune) bool {
+		return r == '\n' || r == ';'
+	})
+	if len(parts) == 1 && strings.Contains(parts[0], ",") {
+		parts = strings.Split(parts[0], ",")
+	}
+	values := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			values = append(values, trimmed)
+		}
+	}
+	return values
+}
+
+func runCommitLinksFromMetadata(task domain.Task) []repo.RunCommitLink {
+	raw := strings.TrimSpace(task.Metadata["run_commit_links"])
+	if raw == "" {
+		return fallbackRunCommitLinks(task)
+	}
+	var links []repo.RunCommitLink
+	if err := json.Unmarshal([]byte(raw), &links); err != nil {
+		return fallbackRunCommitLinks(task)
+	}
+	for index := range links {
+		if strings.TrimSpace(links[index].RunID) == "" {
+			links[index].RunID = task.ID
+		}
+	}
+	return links
+}
+
+func fallbackRunCommitLinks(task domain.Task) []repo.RunCommitLink {
+	links := make([]repo.RunCommitLink, 0, 2)
+	appendLink := func(role string, hashes ...string) {
+		for _, hash := range hashes {
+			hash = strings.TrimSpace(hash)
+			if hash == "" {
+				continue
+			}
+			links = append(links, repo.RunCommitLink{
+				RunID:       task.ID,
+				CommitHash:  hash,
+				Role:        role,
+				RepoSpaceID: strings.TrimSpace(task.Metadata["repo_space_id"]),
+				Actor:       strings.TrimSpace(task.Metadata["repo_actor"]),
+			})
+			return
+		}
+	}
+	appendLink("candidate", task.Metadata["candidate_commit_hash"])
+	appendLink("accepted", task.Metadata["accepted_commit_hash"], task.Metadata["accepted_ancestor"])
+	return links
+}
+
+func commitHashForRole(links []repo.RunCommitLink, role string) string {
+	for _, link := range links {
+		if strings.EqualFold(strings.TrimSpace(link.Role), role) {
+			return strings.TrimSpace(link.CommitHash)
+		}
+	}
+	return ""
+}
+
+func metadataBoolValue(task domain.Task, key string) bool {
+	value := strings.TrimSpace(task.Metadata[key])
+	if value == "" {
+		return false
+	}
+	parsed, err := strconv.ParseBool(value)
+	return err == nil && parsed
+}
+
+func metadataIntValue(task domain.Task, key string) int {
+	value := strings.TrimSpace(task.Metadata[key])
+	if value == "" {
+		return 0
+	}
+	if parsed, err := strconv.Atoi(value); err == nil {
+		return parsed
+	}
+	if parsed, err := strconv.ParseBool(value); err == nil && parsed {
+		return 1
+	}
+	return 0
+}
+
 func renderRunDetailMarkdown(detail runDetailResponse) string {
 	var builder strings.Builder
 	builder.WriteString("# BigClaw Run Report\n\n")
@@ -1813,6 +2085,44 @@ func renderRunDetailMarkdown(detail runDetailResponse) string {
 	}
 	for _, item := range detail.Validation.ValidationPlan {
 		fmt.Fprintf(&builder, "- Validation Step: %s\n", item)
+	}
+	builder.WriteString("\n## Closeout\n\n")
+	if len(detail.Closeout.ValidationEvidence) == 0 {
+		builder.WriteString("- Validation Evidence: None\n")
+	} else {
+		for _, item := range detail.Closeout.ValidationEvidence {
+			fmt.Fprintf(&builder, "- Validation Evidence: %s\n", item)
+		}
+	}
+	fmt.Fprintf(&builder, "- Git Push Succeeded: %t\n", detail.Closeout.GitPushSucceeded)
+	if detail.Closeout.GitPushOutput != "" {
+		fmt.Fprintf(&builder, "- Git Push Output: %s\n", detail.Closeout.GitPushOutput)
+	}
+	fmt.Fprintf(&builder, "- Git Log -1 --stat Output: %s\n", firstNonEmpty(detail.Closeout.GitLogStatOutput, "None"))
+	fmt.Fprintf(&builder, "- Remote Synced: %t\n", detail.Closeout.RemoteSynced)
+	if detail.Closeout.LocalSHA != "" || detail.Closeout.RemoteSHA != "" {
+		fmt.Fprintf(&builder, "- SHA Pair: local=%s remote=%s\n", firstNonEmpty(detail.Closeout.LocalSHA, "missing"), firstNonEmpty(detail.Closeout.RemoteSHA, "missing"))
+	}
+	fmt.Fprintf(&builder, "- Complete: %t\n", detail.Closeout.Complete)
+	if detail.RepoTriage != nil {
+		builder.WriteString("\n## Repo Triage\n\n")
+		fmt.Fprintf(&builder, "- Status: %s\n", firstNonEmpty(detail.RepoTriage.Status, "unknown"))
+		fmt.Fprintf(&builder, "- Recommendation: %s (%s)\n", detail.RepoTriage.Recommendation.Action, detail.RepoTriage.Recommendation.Reason)
+		if detail.RepoTriage.Evidence.CandidateCommit != "" {
+			fmt.Fprintf(&builder, "- Candidate Commit: %s\n", detail.RepoTriage.Evidence.CandidateCommit)
+		}
+		if detail.RepoTriage.Evidence.AcceptedAncestor != "" {
+			fmt.Fprintf(&builder, "- Accepted Ancestor: %s\n", detail.RepoTriage.Evidence.AcceptedAncestor)
+		}
+		if detail.RepoTriage.Evidence.SimilarFailureCount > 0 {
+			fmt.Fprintf(&builder, "- Similar Failures: %d\n", detail.RepoTriage.Evidence.SimilarFailureCount)
+		}
+		if detail.RepoTriage.Evidence.DiscussionOpen > 0 {
+			fmt.Fprintf(&builder, "- Open Discussions: %d\n", detail.RepoTriage.Evidence.DiscussionOpen)
+		}
+		if detail.RepoTriage.ApprovalPacket.LineageSummary != "" {
+			fmt.Fprintf(&builder, "- Lineage Summary: %s\n", detail.RepoTriage.ApprovalPacket.LineageSummary)
+		}
 	}
 	builder.WriteString("\n## Tool Trace\n\n")
 	if len(detail.ToolTraces) == 0 {
