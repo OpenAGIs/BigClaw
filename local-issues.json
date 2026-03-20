@@ -178,9 +178,9 @@
         "orchestration"
       ],
       "priority": 1,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
-      "updated_at": "2026-03-20T09:39:32Z"
+      "updated_at": "2026-03-20T09:40:47Z"
     },
     {
       "assigned_to_worker": true,
