@@ -44,12 +44,33 @@ class WorkpadJournal:
     def record(self, step: str, status: str, **details: Any) -> None:
         self.entries.append(JournalEntry(step=step, status=status, details=details))
 
+    def replay(self) -> List[str]:
+        return [f"{entry.step}:{entry.status}" for entry in self.entries]
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "task_id": self.task_id,
             "run_id": self.run_id,
             "entries": [entry.to_dict() for entry in self.entries],
         }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "WorkpadJournal":
+        entries = [
+            JournalEntry(
+                step=item["step"],
+                status=item["status"],
+                timestamp=item.get("timestamp", utc_now()),
+                details=item.get("details", {}),
+            )
+            for item in data.get("entries", [])
+        ]
+        return cls(task_id=data["task_id"], run_id=data["run_id"], entries=entries)
+
+    @classmethod
+    def read(cls, path: str) -> "WorkpadJournal":
+        payload = json.loads(Path(path).read_text())
+        return cls.from_dict(payload)
 
     def write(self, path: str) -> str:
         output = Path(path)
@@ -357,6 +378,7 @@ class WorkflowEngine:
         run_id: str,
         ledger: ObservabilityLedger,
     ) -> WorkflowRunResult:
+        definition.validate()
         return self.run(
             task,
             run_id=run_id,

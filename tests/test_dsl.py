@@ -55,6 +55,27 @@ def test_workflow_engine_runs_definition_end_to_end(tmp_path: Path):
     assert Path(definition.render_journal_path(task, "run-dsl-1")).exists()
 
 
+def test_workflow_definition_rejects_unknown_step_kind(tmp_path: Path):
+    definition = WorkflowDefinition.from_dict(
+        {
+            "name": "broken-flow",
+            "steps": [{"name": "hack", "kind": "unknown-kind"}],
+        }
+    )
+    task = Task(task_id="BIG-401-invalid", source="local", title="invalid", description="")
+
+    try:
+        WorkflowEngine().run_definition(
+            task,
+            definition=definition,
+            run_id="run-dsl-invalid",
+            ledger=ObservabilityLedger(str(tmp_path / "ledger.json")),
+        )
+        assert False, "expected ValueError for invalid step kind"
+    except ValueError as exc:
+        assert "invalid workflow step kind" in str(exc)
+
+
 def test_workflow_definition_manual_approval_closes_high_risk_task(tmp_path: Path):
     definition = WorkflowDefinition.from_dict(
         {
