@@ -63,7 +63,7 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T11:08:09Z",
+      "updated_at": "2026-03-20T11:19:40Z",
       "comments": [
         {
           "body": "Improved the Go orchestrator loop in `bigclaw-go/internal/orchestrator/loop.go` so it no longer waits a full poll interval before touching queued work, drains available work within a single cycle, and falls back to a safe default poll interval when unset. Added focused coverage in `bigclaw-go/internal/orchestrator/loop_test.go` for immediate startup, per-cycle draining, and default poll interval behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/orchestrator` -> passed\n- `cd bigclaw-go && go test ./internal/orchestrator ./internal/worker ./cmd/bigclawd` -> passed (`cmd/bigclawd` has no test files)\n- `git rev-parse HEAD` -> `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3` (matches local)\n- `git log -1 --stat` -> `Drain scheduler work immediately in orchestrator loop`\n\nCommit: `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
@@ -84,6 +84,10 @@
         {
           "body": "Fixed Go worker runtime closeout state persistence for the active orchestration slice.\n\nWhat changed:\n- `bigclaw-go/internal/worker/runtime.go` now stores final task snapshots into the recorder for success, dead-letter, and retry paths instead of leaving the last stored task state at `running`.\n- Added assertions in `bigclaw-go/internal/worker/runtime_test.go` so recorder-backed task snapshots now prove `succeeded`, `dead_letter`, and `retrying` closeout states.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/worker` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `c6313c020484f0a807a4ece58b8ea2a1674f1804`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `c6313c020484f0a807a4ece58b8ea2a1674f1804` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `c6313c020484f0a807a4ece58b8ea2a1674f1804` (matches local)\n- `git log -1 --stat` -> `Persist final worker task states in recorder`\n\nCommit: `c6313c020484f0a807a4ece58b8ea2a1674f1804`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T11:08:09Z"
+        },
+        {
+          "body": "Aligned workflow journal closeout status with acceptance outcomes for the active orchestration slice.\n\nWhat changed:\n- `bigclaw-go/internal/workflow/engine.go` now records the `closeout` journal step as `complete` only for accepted runs and otherwise mirrors the acceptance status (`rejected` / `needs-approval`) instead of always claiming closeout completed.\n- Added focused coverage in `bigclaw-go/internal/workflow/engine_test.go` for rejected-evidence and pending-approval closeout journal cases.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/workflow` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `d98d6e4a7ab3472ef84b64429dcab95f76481e26`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `d98d6e4a7ab3472ef84b64429dcab95f76481e26` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `d98d6e4a7ab3472ef84b64429dcab95f76481e26` (matches local)\n- `git log -1 --stat` -> `Reflect workflow acceptance in closeout journal`\n\nCommit: `d98d6e4a7ab3472ef84b64429dcab95f76481e26`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T11:19:40Z"
         }
       ]
     },
