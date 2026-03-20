@@ -26,12 +26,13 @@ def build_check(name, passed, detail):
 
 
 def build_report(
+    repo_root=None,
     scorecard_path='bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json',
     max_latest_age_hours=72.0,
     min_recent_bundles=2,
     require_repeated_lane_coverage=True,
 ):
-    repo_root = pathlib.Path(__file__).resolve().parents[3]
+    repo_root = pathlib.Path(repo_root).resolve() if repo_root else pathlib.Path(__file__).resolve().parents[3]
     scorecard = load_json(resolve_repo_path(repo_root, scorecard_path))
     summary = scorecard['summary']
     shared_queue = scorecard['shared_queue_companion']
@@ -118,6 +119,7 @@ def build_report(
 
 def main():
     parser = argparse.ArgumentParser(description='Evaluate validation bundle continuation policy checks')
+    parser.add_argument('--repo-root', default=None)
     parser.add_argument('--scorecard', default='bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json')
     parser.add_argument('--output', default='bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json')
     parser.add_argument('--max-latest-age-hours', type=float, default=72.0)
@@ -127,8 +129,9 @@ def main():
     parser.add_argument('--pretty', action='store_true')
     args = parser.parse_args()
 
-    repo_root = pathlib.Path(__file__).resolve().parents[3]
+    repo_root = pathlib.Path(args.repo_root).resolve() if args.repo_root else pathlib.Path(__file__).resolve().parents[3]
     report = build_report(
+        repo_root=repo_root,
         scorecard_path=args.scorecard,
         max_latest_age_hours=args.max_latest_age_hours,
         min_recent_bundles=args.min_recent_bundles,

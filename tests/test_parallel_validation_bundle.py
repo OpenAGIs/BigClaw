@@ -10,7 +10,8 @@ def write_json(path: Path, payload: dict) -> None:
 
 
 def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: Path):
-    root = tmp_path / 'repo'
+    repo_root = tmp_path / 'repo'
+    root = repo_root / 'bigclaw-go'
     bundle = root / 'docs' / 'reports' / 'live-validation-runs' / '20260315T120000Z'
     state_dir = tmp_path / 'state-local'
     state_dir.mkdir(parents=True)
@@ -28,6 +29,15 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
     write_json(bundle / 'sqlite-smoke-report.json', local_report)
     write_json(bundle / 'kubernetes-live-smoke-report.json', {'task': {'id': 'k8s-1'}, 'status': {'state': 'succeeded'}})
     write_json(bundle / 'ray-live-smoke-report.json', {'task': {'id': 'ray-1'}, 'status': {'state': 'succeeded'}})
+    write_json(
+        root / 'docs' / 'reports' / 'multi-node-shared-queue-report.json',
+        {
+            'all_ok': True,
+            'cross_node_completions': 12,
+            'duplicate_completed_tasks': [],
+            'duplicate_started_tasks': [],
+        },
+    )
 
     (root / 'docs' / 'reports').mkdir(parents=True, exist_ok=True)
     (root / 'docs' / 'reports' / 'validation-bundle-continuation-scorecard.json').write_text('{}\n', encoding='utf-8')
@@ -87,9 +97,13 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
     assert summary['local']['canonical_report_path'] == 'docs/reports/sqlite-smoke-report.json'
     assert summary['local']['audit_log_path'].endswith('local.audit.jsonl')
     assert summary['local']['service_log_path'].endswith('local.service.log')
+    assert summary['continuation']['refreshed'] is True
+    assert summary['continuation']['policy_gate_recommendation'] == 'hold'
 
     latest_local = json.loads((root / 'docs' / 'reports' / 'sqlite-smoke-report.json').read_text(encoding='utf-8'))
     assert latest_local['task']['id'] == 'local-1'
+    scorecard = json.loads((root / 'docs' / 'reports' / 'validation-bundle-continuation-scorecard.json').read_text(encoding='utf-8'))
+    assert scorecard['summary']['latest_run_id'] == '20260315T120000Z'
 
     index_text = (root / 'docs' / 'reports' / 'live-validation-index.md').read_text(encoding='utf-8')
     assert 'Live Validation Index' in index_text

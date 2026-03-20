@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import subprocess
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
@@ -183,6 +184,82 @@ def build_followup_digests(root: Path) -> list[tuple[str, str]]:
     return items
 
 
+def refresh_continuation_artifacts(
+    *,
+    root: Path,
+    mode: str,
+    scorecard_path: str,
+    policy_gate_path: str,
+    shared_queue_report_path: str,
+) -> dict[str, Any]:
+    scorecard_output = root / scorecard_path
+    policy_gate_output = root / policy_gate_path
+    shared_queue_report = root / shared_queue_report_path
+    result: dict[str, Any] = {
+        'mode': mode,
+        'refreshed': False,
+        'reason': '',
+        'scorecard_path': scorecard_path,
+        'policy_gate_path': policy_gate_path,
+    }
+
+    if mode == 'off':
+        result['reason'] = 'disabled'
+        return result
+
+    if not shared_queue_report.exists():
+        if mode == 'auto':
+            result['reason'] = f'missing shared queue report: {shared_queue_report_path}'
+            return result
+        raise FileNotFoundError(f'continuation refresh requires {shared_queue_report_path}')
+
+    script_dir = Path(__file__).resolve().parent
+    scorecard_script = script_dir / 'validation_bundle_continuation_scorecard.py'
+    policy_gate_script = script_dir / 'validation_bundle_continuation_policy_gate.py'
+
+    repo_root = root.parent
+    subprocess.run(
+        [
+            'python3',
+            str(scorecard_script),
+            '--repo-root',
+            str(repo_root),
+            '--output',
+            str(scorecard_output),
+        ],
+        cwd=root,
+        check=True,
+    )
+    gate = subprocess.run(
+        [
+            'python3',
+            str(policy_gate_script),
+            '--repo-root',
+            str(repo_root),
+            '--scorecard',
+            str(scorecard_output),
+            '--output',
+            str(policy_gate_output),
+        ],
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if gate.returncode not in (0, 1):
+        raise RuntimeError(gate.stderr.strip() or gate.stdout.strip() or 'continuation policy gate failed')
+
+    result['refreshed'] = True
+    result['reason'] = 'generated from exporter closeout'
+    if scorecard_output.exists():
+        result['scorecard_status'] = read_json(scorecard_output).get('status', 'unknown')
+    if policy_gate_output.exists():
+        policy_gate = read_json(policy_gate_output)
+        result['policy_gate_status'] = policy_gate.get('status', 'unknown')
+        result['policy_gate_recommendation'] = policy_gate.get('recommendation', 'unknown')
+    return result
+
+
 def render_index(
     summary: dict[str, Any],
     recent_runs: list[dict[str, Any]],
@@ -254,6 +331,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--summary-path', default='docs/reports/live-validation-summary.json')
     parser.add_argument('--index-path', default='docs/reports/live-validation-index.md')
     parser.add_argument('--manifest-path', default='docs/reports/live-validation-index.json')
+    parser.add_argument('--refresh-continuation', choices=('off', 'auto', 'always'), default='auto')
+    parser.add_argument('--continuation-scorecard-path', default='docs/reports/validation-bundle-continuation-scorecard.json')
+    parser.add_argument('--continuation-policy-gate-path', default='docs/reports/validation-bundle-continuation-policy-gate.json')
+    parser.add_argument('--shared-queue-report-path', default='docs/reports/multi-node-shared-queue-report.json')
     parser.add_argument('--run-local', default='1')
     parser.add_argument('--run-kubernetes', default='1')
     parser.add_argument('--run-ray', default='1')
@@ -325,6 +406,16 @@ def main() -> int:
     recent_runs = build_recent_runs(bundle_root, root)
     manifest = {'latest': summary, 'recent_runs': recent_runs}
     write_json(root / args.manifest_path, manifest)
+
+    summary['continuation'] = refresh_continuation_artifacts(
+        root=root,
+        mode=args.refresh_continuation,
+        scorecard_path=args.continuation_scorecard_path,
+        policy_gate_path=args.continuation_policy_gate_path,
+        shared_queue_report_path=args.shared_queue_report_path,
+    )
+    write_json(bundle_summary_path, summary)
+    write_json(canonical_summary_path, summary)
 
     continuation_artifacts = build_continuation_artifacts(root)
     followup_digests = build_followup_digests(root)

@@ -85,12 +85,13 @@ def check(name, passed, detail):
 
 
 def build_report(
+    repo_root=None,
     index_manifest_path='bigclaw-go/docs/reports/live-validation-index.json',
     bundle_root_path='bigclaw-go/docs/reports/live-validation-runs',
     summary_path='bigclaw-go/docs/reports/live-validation-summary.json',
     shared_queue_report_path='bigclaw-go/docs/reports/multi-node-shared-queue-report.json',
 ):
-    repo_root = pathlib.Path(__file__).resolve().parents[3]
+    repo_root = pathlib.Path(repo_root).resolve() if repo_root else pathlib.Path(__file__).resolve().parents[3]
     bigclaw_go_root = repo_root / 'bigclaw-go'
     manifest = load_json(resolve_repo_path(repo_root, index_manifest_path))
     latest = manifest['latest']
@@ -212,12 +213,13 @@ def build_report(
 
 def main():
     parser = argparse.ArgumentParser(description='Generate the validation bundle continuation scorecard')
+    parser.add_argument('--repo-root', default=None)
     parser.add_argument('--output', default='bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json')
     parser.add_argument('--pretty', action='store_true')
     args = parser.parse_args()
 
-    repo_root = pathlib.Path(__file__).resolve().parents[3]
-    report = build_report()
+    repo_root = pathlib.Path(args.repo_root).resolve() if args.repo_root else pathlib.Path(__file__).resolve().parents[3]
+    report = build_report(repo_root=repo_root)
     output_path = resolve_repo_path(repo_root, args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
