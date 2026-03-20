@@ -389,7 +389,7 @@
       "title": "Co-locate shared-queue proof with validation bundle lineage",
       "description": "Reduce the standalone-proof caveat by threading shared-queue coordination evidence into the same validation bundle lineage metadata used by the continuation scorecard and policy gate.",
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "labels": [
         "parallel",
         "validation",
@@ -398,7 +398,13 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-20T18:28:36Z",
-      "updated_at": "2026-03-20T18:42:12Z"
+      "updated_at": "2026-03-20T18:48:59Z",
+      "comments": [
+        {
+          "body": "Closed `BIG-PAR-089` after attaching the shared-queue coordination proof to the validation-bundle lineage instead of keeping it only as a separate standalone report.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now copies `docs/reports/multi-node-shared-queue-report.json` into each exported bundle, includes a `shared_queue` section in the bundle summary, and renders the shared-queue proof in the live validation index alongside the local/Kubernetes/Ray lane artifacts.\n- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` now prefers the bundle-attached shared-queue report when the latest exported summary includes it, switching the continuation companion mode to `bundled-companion` while preserving fallback compatibility with the older standalone-only layout.\n- `tests/test_parallel_validation_bundle.py`, `tests/test_validation_bundle_continuation_scorecard.py`, `bigclaw-go/docs/e2e-validation.md`, and `bigclaw-go/docs/reports/validation-bundle-continuation-digest.md` now reflect the bundle-attached shared-queue lineage and the narrowed remaining caveat.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` -> passed\n- `python3 - <<\"PY\" ... continuation.build_report() import harness ...` -> passed (`shared_queue_companion.mode=standalone-proof`, `cross_node_completions=99`) for the checked-in evidence set\n- `python3 - <<\"PY\" ... direct temporary-repo export_validation_bundle harness ...` -> passed (`summary.shared_queue.bundle_report_path=docs/reports/live-validation-runs/20260315T120000Z/multi-node-shared-queue-report.json`, `scorecard.shared_queue_companion.mode=bundled-companion`, live index includes `Cross-node completions: 12`)\n- `git rev-parse HEAD` -> `8904fc83267ecb129200d68b4593a489b1300a18`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `8904fc83267ecb129200d68b4593a489b1300a18` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `8904fc83267ecb129200d68b4593a489b1300a18` (matches local)\n- `git log -1 --stat` -> `Attach shared-queue proof to validation bundles`\n\nCommit: `8904fc83267ecb129200d68b4593a489b1300a18`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T18:48:37Z"
+        }
+      ]
     }
   ]
 }
