@@ -142,7 +142,7 @@
       "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
       "description": "Keep hardening the Go-first bootstrap, refill, and GitHub sync toolchain so unattended multi-issue work no longer relies on Python entrypoints or Linear-only operators.",
       "priority": 1,
-      "state": "In Progress",
+      "state": "Done",
       "labels": [
         "go-mainline",
         "migration",
@@ -151,7 +151,7 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T10:03:45Z",
+      "updated_at": "2026-03-20T10:16:57Z",
       "comments": [
         {
           "body": "Added Go-owned local tracker comment support for the active tooling slice.\n\nWhat changed:\n- `bigclaw-go/internal/refill/local_store.go` now appends structured comments into `local-issues.json` while preserving existing comments and refreshing `updated_at`.\n- `bigclaw-go/cmd/bigclawctl/main.go` now exposes `bigclawctl issue comment` and `bigclawctl issue state` for local tracker updates without falling back to Python helpers.\n- Added focused coverage in `bigclaw-go/internal/refill/local_store_test.go` and `bigclaw-go/cmd/bigclawctl/main_test.go` for comment persistence and CLI behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> passed\n- `git rev-parse HEAD` -> `ce98157d5d0f2ecde23679703a3fafb44cca765c`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `ce98157d5d0f2ecde23679703a3fafb44cca765c` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `ce98157d5d0f2ecde23679703a3fafb44cca765c` (matches local)\n\nCommit: `ce98157d5d0f2ecde23679703a3fafb44cca765c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
@@ -164,6 +164,10 @@
         {
           "body": "Added Go-native local tracker creation and listing support for the active tooling slice.\n\nWhat changed:\n- `bigclaw-go/internal/refill/local_store.go` now supports structured local issue creation, duplicate detection, and filtered issue listing with decoded priority/label fields.\n- `bigclaw-go/cmd/bigclawctl/main.go` now exposes `bigclawctl issue create` and `bigclawctl issue list` alongside the existing state/comment flows.\n- Added focused coverage in `bigclaw-go/internal/refill/local_store_test.go` and `bigclaw-go/cmd/bigclawctl/main_test.go`, and updated `README.md` plus `docs/parallel-refill-queue.md` to point operators at the Go-native tracker CLI.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `cd bigclaw-go && go run ./cmd/bigclawctl issue create --local-issues <tmp>/local-issues.json --identifier BIG-GOM-999 --title \"CLI smoke\" --priority 2 --state Todo --labels go-mainline,tooling --json` -> passed\n- `cd bigclaw-go && go run ./cmd/bigclawctl issue list --local-issues <tmp>/local-issues.json --states Todo --json` -> passed\n- `git rev-parse HEAD` -> `7f7636ca9a437543e069d09fd3137d1bf56c7691`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `7f7636ca9a437543e069d09fd3137d1bf56c7691` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `7f7636ca9a437543e069d09fd3137d1bf56c7691` (matches local)\n- `git log -1 --stat` -> `Add Go-native local tracker issue create and list`\n\nCommit: `7f7636ca9a437543e069d09fd3137d1bf56c7691`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T10:03:45Z"
+        },
+        {
+          "body": "Closed `BIG-GOM-307` after finishing the remaining Go-first local operator compatibility slice.\n\nWhat changed:\n- `scripts/ops/bigclaw-issue` now routes `list`, `create`, `state`, and `comment` through the Go-native `bigclawctl issue` path by default, injects `local-issues.json` automatically when omitted, and preserves historical positional `state` / `comment` wrapper usage.\n- `README.md` now documents the wrapper as a Go-native compatibility shim for local tracker operations instead of a Symphony-first path.\n- `docs/parallel-refill-queue.md` now points state changes at the Go-native tracker commands and reflects `BIG-GOM-307` in the recently completed batch.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> passed\n- `bash scripts/ops/bigclaw-issue create --local-issues <tmp>/local-issues.json --identifier BIG-GOM-998 --title \"Wrapper create smoke\" --priority 2 --state Todo --labels go-mainline,tooling --json` -> passed\n- `bash scripts/ops/bigclaw-issue list --local-issues <tmp>/local-issues.json --states Todo --json` -> passed\n- `bash scripts/ops/bigclaw-issue state BIG-GOM-998 \"In Progress\" --local-issues <tmp>/local-issues.json --json` -> passed\n- `bash scripts/ops/bigclaw-issue comment BIG-GOM-998 \"wrapper comment smoke\" --local-issues <tmp>/local-issues.json --json` -> passed\n- `git rev-parse HEAD` -> `1fcc06ed4a1ae6479f7ceec9f117962fdda25538`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `1fcc06ed4a1ae6479f7ceec9f117962fdda25538` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `1fcc06ed4a1ae6479f7ceec9f117962fdda25538` (matches local)\n- `git log -1 --stat` -> `Route local issue wrapper through Go tracker CLI`\n\nCommit: `1fcc06ed4a1ae6479f7ceec9f117962fdda25538`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T10:16:56Z"
         }
       ]
     },

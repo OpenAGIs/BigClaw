@@ -19,12 +19,12 @@
   "recent_batches": {
     "completed": [
       "BIG-GOM-302",
-      "BIG-GOM-304"
+      "BIG-GOM-304",
+      "BIG-GOM-307"
     ],
     "active": [
       "BIG-GOM-301",
-      "BIG-GOM-303",
-      "BIG-GOM-307"
+      "BIG-GOM-303"
     ],
     "standby": [
       "BIG-GOM-305",
@@ -83,7 +83,7 @@
       "identifier": "BIG-GOM-307",
       "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
       "track": "Python Retirement & Cutover Validation",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-GOM-308",
