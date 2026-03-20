@@ -61,3 +61,27 @@ func TestTaskJSONSupportsLegacyBudgetField(t *testing.T) {
 		t.Fatalf("expected canonical budget_cents field in JSON, got %+v", decoded)
 	}
 }
+
+func TestTaskJSONNormalizesLegacyTaskStates(t *testing.T) {
+	tests := map[string]TaskState{
+		"Todo":        TaskQueued,
+		"In Progress": TaskRunning,
+		"Blocked":     TaskBlocked,
+		"Done":        TaskSucceeded,
+		"Failed":      TaskFailed,
+	}
+
+	for input, want := range tests {
+		t.Run(input, func(t *testing.T) {
+			payload := []byte(`{"task_id":"BIG-403","source":"linear","title":"Legacy state","state":"` + input + `"}`)
+
+			var task Task
+			if err := json.Unmarshal(payload, &task); err != nil {
+				t.Fatalf("unmarshal task: %v", err)
+			}
+			if task.State != want {
+				t.Fatalf("expected normalized state %q, got %+v", want, task)
+			}
+		})
+	}
+}

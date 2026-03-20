@@ -207,6 +207,39 @@ func TestCreateTaskAcceptsLegacyBudgetPayload(t *testing.T) {
 	}
 }
 
+func TestCreateTaskAcceptsLegacyStatePayload(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	server := &Server{
+		Recorder:  recorder,
+		Queue:     queue.NewMemoryQueue(),
+		Executors: []domain.ExecutorKind{domain.ExecutorLocal},
+		Bus:       bus,
+		Now:       func() time.Time { return time.Unix(1700000000, 0) },
+	}
+	handler := server.Handler()
+
+	payload := map[string]any{"task_id": "task-legacy-state-1", "title": "legacy state", "state": "In Progress"}
+	body, _ := json.Marshal(payload)
+	request := httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewReader(body))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusAccepted {
+		t.Fatalf("expected 202, got %d", response.Code)
+	}
+
+	var decoded struct {
+		Task domain.Task `json:"task"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if decoded.Task.State != domain.TaskQueued {
+		t.Fatalf("expected create-task runtime to queue accepted legacy state payloads, got %+v", decoded.Task)
+	}
+}
+
 func TestCreateTaskAndQueryStatus(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()

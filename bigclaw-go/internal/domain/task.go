@@ -3,6 +3,7 @@ package domain
 import (
 	"encoding/json"
 	"math"
+	"strings"
 	"time"
 )
 
@@ -184,6 +185,43 @@ func (t *Task) UnmarshalJSON(data []byte) error {
 	if payload.Budget != nil && task.BudgetCents == 0 {
 		task.BudgetCents = int64(math.Round(*payload.Budget * 100))
 	}
+	task.State = normalizeTaskState(task.State)
 	*t = task
 	return nil
+}
+
+func normalizeTaskState(state TaskState) TaskState {
+	normalized := strings.ToLower(strings.TrimSpace(string(state)))
+	switch normalized {
+	case "", string(TaskQueued), "todo":
+		return TaskQueued
+	case string(TaskLeased):
+		return TaskLeased
+	case string(TaskRunning):
+		return TaskRunning
+	case string(TaskBlocked):
+		return TaskBlocked
+	case string(TaskRetrying):
+		return TaskRetrying
+	case string(TaskSucceeded):
+		return TaskSucceeded
+	case string(TaskFailed):
+		return TaskFailed
+	case "cancelled", "canceled":
+		return TaskCancelled
+	case string(TaskDeadLetter):
+		return TaskDeadLetter
+	}
+	switch {
+	case strings.Contains(normalized, "progress"):
+		return TaskRunning
+	case strings.Contains(normalized, "done"), strings.Contains(normalized, "closed"), strings.Contains(normalized, "resolved"):
+		return TaskSucceeded
+	case strings.Contains(normalized, "block"):
+		return TaskBlocked
+	case strings.Contains(normalized, "fail"):
+		return TaskFailed
+	default:
+		return state
+	}
 }

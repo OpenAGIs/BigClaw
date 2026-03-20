@@ -16,6 +16,7 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
   - canonical Go runtime task shape
   - now accepts legacy `task_id` input for migration compatibility while preserving canonical Go `id`
   - now accepts legacy Python `budget` payloads and round-trips them alongside canonical Go `budget_cents`
+  - now normalizes legacy Python task states (`Todo`, `In Progress`, `Done`, `Blocked`, `Failed`) into canonical Go runtime states on ingest
   - now carries Python budget override fields (`budget_override_actor`, `budget_override_reason`, `budget_override_amount`) on the canonical task contract
   - execution lifecycle remains `queued/running/succeeded/...`
 - `Priority` -> `bigclaw-go/internal/domain/priority.go`
