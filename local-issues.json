@@ -1,150 +1,197 @@
 {
   "issues": [
     {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Finish consolidating the canonical Go task, intake, and workflow vocabulary so downstream runtime slices stop inventing parallel compatibility contracts.",
       "id": "big-gom-301",
       "identifier": "BIG-GOM-301",
-      "title": "Unified domain model and intake contract migration",
-      "description": "Finish consolidating the canonical Go task, intake, and workflow vocabulary so downstream runtime slices stop inventing parallel compatibility contracts.",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "domain",
+        "intake"
+      ],
       "priority": 1,
       "state": "Done",
-      "labels": ["go-mainline", "migration", "domain", "intake"],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
+      "title": "Unified domain model and intake contract migration",
       "updated_at": "2026-03-18T09:00:00Z"
     },
     {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Keep porting governance, execution-contract, audit, and policy semantics into Go so review and approval behavior no longer depends on Python-only code paths.",
       "id": "big-gom-302",
       "identifier": "BIG-GOM-302",
-      "title": "Risk, policy, and approval semantics migration",
-      "description": "Keep porting governance, execution-contract, audit, and policy semantics into Go so review and approval behavior no longer depends on Python-only code paths.",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "risk",
+        "policy"
+      ],
       "priority": 1,
       "state": "Done",
-      "labels": ["go-mainline", "migration", "risk", "policy"],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
+      "title": "Risk, policy, and approval semantics migration",
       "updated_at": "2026-03-18T09:00:00Z"
     },
     {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Close the Go execution loop with workflow-aware orchestration, journal state, and runtime closeout so active development no longer needs the Python workflow engine.",
       "id": "big-gom-303",
       "identifier": "BIG-GOM-303",
-      "title": "Workflow orchestration and scheduler loop migration",
-      "description": "Close the Go execution loop with workflow-aware orchestration, journal state, and runtime closeout so active development no longer needs the Python workflow engine.",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "workflow",
+        "runtime"
+      ],
       "priority": 1,
       "state": "In Progress",
-      "labels": ["go-mainline", "migration", "workflow", "runtime"],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
+      "title": "Workflow orchestration and scheduler loop migration",
       "updated_at": "2026-03-18T09:00:00Z"
     },
     {
-      "id": "big-gom-304",
-      "identifier": "BIG-GOM-304",
-      "title": "Observability, reporting, and weekly operations surface migration",
-      "description": "Move runtime evidence, reporting, and weekly operations closeout onto Go-owned observability outputs that line up with the new execution loop.",
-      "priority": 2,
-      "state": "Done",
-      "labels": ["go-mainline", "migration", "observability", "reporting"],
       "assigned_to_worker": true,
       "comments": [
         {
           "author": "codex",
-          "created_at": "2026-03-18T15:19:00Z",
-          "body": "Added Go-owned weekly reporting bundle exports in bigclaw-go/internal/reporting so the observability/reporting slice now writes weekly report, operations dashboard, and operations metric spec artifacts with direct package coverage. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./internal/api -run 'TestV2Weekly|TestOperationsDashboard'` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `8efa15865264dd3e729a61daba9ca800853aa858`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so `gh pr view` cannot resolve a GitHub host."
+          "body": "Added Go-owned weekly reporting bundle exports in bigclaw-go/internal/reporting so the observability/reporting slice now writes weekly report, operations dashboard, and operations metric spec artifacts with direct package coverage. Validation: `cd bigclaw-go \u0026\u0026 go test ./internal/reporting` -\u003e ok, `cd bigclaw-go \u0026\u0026 go test ./internal/api -run 'TestV2Weekly|TestOperationsDashboard'` -\u003e ok, `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok. Commit SHA: `8efa15865264dd3e729a61daba9ca800853aa858`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so `gh pr view` cannot resolve a GitHub host.",
+          "created_at": "2026-03-18T15:19:00Z"
         },
         {
           "author": "codex",
-          "created_at": "2026-03-18T15:31:00Z",
-          "body": "Added Go-owned dashboard builder reporting surfaces in `bigclaw-go/internal/reporting`, including widget/layout specs, release-readiness audit checks for duplicate or overlapping placements, missing/inaccessible widgets, out-of-bounds placements, and markdown bundle export coverage. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `0b82af85f5bab85e069412340488c02c2461c43e`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured."
+          "body": "Added Go-owned dashboard builder reporting surfaces in `bigclaw-go/internal/reporting`, including widget/layout specs, release-readiness audit checks for duplicate or overlapping placements, missing/inaccessible widgets, out-of-bounds placements, and markdown bundle export coverage. Validation: `cd bigclaw-go \u0026\u0026 go test ./internal/reporting` -\u003e ok, `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok. Commit SHA: `0b82af85f5bab85e069412340488c02c2461c43e`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured.",
+          "created_at": "2026-03-18T15:31:00Z"
         },
         {
           "author": "codex",
-          "created_at": "2026-03-18T15:42:00Z",
-          "body": "Added Go-owned engineering overview reporting in `bigclaw-go/internal/reporting`, including KPI/funnel/blocker/activity contracts, role-based module visibility, a Go-native builder over `domain.Task` and `domain.Event`, markdown rendering, and bundle export coverage. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `a651069b4611b12458fb297e59c70e65e16bb05c`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured."
+          "body": "Added Go-owned engineering overview reporting in `bigclaw-go/internal/reporting`, including KPI/funnel/blocker/activity contracts, role-based module visibility, a Go-native builder over `domain.Task` and `domain.Event`, markdown rendering, and bundle export coverage. Validation: `cd bigclaw-go \u0026\u0026 go test ./internal/reporting` -\u003e ok, `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok. Commit SHA: `a651069b4611b12458fb297e59c70e65e16bb05c`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured.",
+          "created_at": "2026-03-18T15:42:00Z"
         },
         {
           "author": "codex",
-          "created_at": "2026-03-18T15:56:00Z",
-          "body": "Added Go-owned policy/prompt version center reporting in `bigclaw-go/internal/reporting`, including version history contracts, diff summaries, rollback-readiness checks, markdown rendering, and bundle export coverage. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHAs: `50877662af2669f304db2e42eb06a26262d7fec1` (reporting surface), `71ab21b104baaaf2cbf63f7da17bad6df4f83b57` (tracked `go.mod` difflib dependency required by the new reporting diff preview). PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured."
+          "body": "Added Go-owned policy/prompt version center reporting in `bigclaw-go/internal/reporting`, including version history contracts, diff summaries, rollback-readiness checks, markdown rendering, and bundle export coverage. Validation: `cd bigclaw-go \u0026\u0026 go test ./internal/reporting` -\u003e ok, `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok. Commit SHAs: `50877662af2669f304db2e42eb06a26262d7fec1` (reporting surface), `71ab21b104baaaf2cbf63f7da17bad6df4f83b57` (tracked `go.mod` difflib dependency required by the new reporting diff preview). PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured.",
+          "created_at": "2026-03-18T15:56:00Z"
         },
         {
           "author": "codex",
-          "created_at": "2026-03-18T16:08:00Z",
-          "body": "Added Go-owned regression center reporting in `bigclaw-go/internal/reporting`, wiring the existing `internal/regression.Center` data into markdown rendering and bundle export with direct package coverage. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `ac3fac2f1febc22a6c3f594893fed451524ca5c0`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured."
+          "body": "Added Go-owned regression center reporting in `bigclaw-go/internal/reporting`, wiring the existing `internal/regression.Center` data into markdown rendering and bundle export with direct package coverage. Validation: `cd bigclaw-go \u0026\u0026 go test ./internal/reporting` -\u003e ok, `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok. Commit SHA: `ac3fac2f1febc22a6c3f594893fed451524ca5c0`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured.",
+          "created_at": "2026-03-18T16:08:00Z"
         },
         {
           "author": "codex",
-          "created_at": "2026-03-19T06:30:34Z",
-          "body": "Added Go-owned queue control center reporting and completed weekly operations bundle parity in `bigclaw-go/internal/reporting`, including console action contracts, queue priority/risk/executor aggregation, markdown rendering, standalone bundle export, and combined weekly bundle export coverage for regression center, queue control center, and version center artifacts. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `42eaa81e6eacdf29ac0cc6e4b0d18bce89e9baf2`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured."
+          "body": "Added Go-owned queue control center reporting and completed weekly operations bundle parity in `bigclaw-go/internal/reporting`, including console action contracts, queue priority/risk/executor aggregation, markdown rendering, standalone bundle export, and combined weekly bundle export coverage for regression center, queue control center, and version center artifacts. Validation: `cd bigclaw-go \u0026\u0026 go test ./internal/reporting` -\u003e ok, `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok. Commit SHA: `42eaa81e6eacdf29ac0cc6e4b0d18bce89e9baf2`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured.",
+          "created_at": "2026-03-19T06:30:34Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
+      "description": "Move runtime evidence, reporting, and weekly operations closeout onto Go-owned observability outputs that line up with the new execution loop.",
+      "id": "big-gom-304",
+      "identifier": "BIG-GOM-304",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "observability",
+        "reporting"
+      ],
+      "priority": 2,
+      "state": "Done",
+      "title": "Observability, reporting, and weekly operations surface migration",
       "updated_at": "2026-03-19T06:30:34Z"
     },
     {
-      "id": "big-gom-305",
-      "identifier": "BIG-GOM-305",
-      "title": "Control center, triage, and operations view migration",
-      "description": "Finish moving operator-facing status, control-center, and triage endpoints to Go once the workflow runtime and reporting surfaces are stable.",
-      "priority": 2,
-      "state": "In Progress",
-      "labels": ["go-mainline", "migration", "api", "triage"],
       "assigned_to_worker": true,
       "comments": [
         {
           "author": "codex",
-          "created_at": "2026-03-19T00:00:00Z",
-          "body": "Added a Go-owned saved views surface under `bigclaw-go/internal/product`, including saved-view and alert-digest contracts migrated from `src/bigclaw/saved_views.py`, catalog auditing, markdown report rendering, navigation wiring, and `/v2/saved-views` plus `/v2/saved-views/export` API coverage for scoped operator consoles. Validation: `cd bigclaw-go && go test ./internal/product ./internal/api` -> ok, `cd bigclaw-go && go test ./...` -> ok, `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `fe7d117edb2a011c1324357084a2aed67a7ec8b2` matches remote SHA `fe7d117edb2a011c1324357084a2aed67a7ec8b2` with `status: ok` and `synced: true`. Commit SHA: `fe7d117edb2a011c1324357084a2aed67a7ec8b2`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`."
+          "body": "Added a Go-owned saved views surface under `bigclaw-go/internal/product`, including saved-view and alert-digest contracts migrated from `src/bigclaw/saved_views.py`, catalog auditing, markdown report rendering, navigation wiring, and `/v2/saved-views` plus `/v2/saved-views/export` API coverage for scoped operator consoles. Validation: `cd bigclaw-go \u0026\u0026 go test ./internal/product ./internal/api` -\u003e ok, `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok, `bash scripts/ops/bigclawctl github-sync status --json` -\u003e local SHA `fe7d117edb2a011c1324357084a2aed67a7ec8b2` matches remote SHA `fe7d117edb2a011c1324357084a2aed67a7ec8b2` with `status: ok` and `synced: true`. Commit SHA: `fe7d117edb2a011c1324357084a2aed67a7ec8b2`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-19T00:00:00Z"
         },
         {
           "author": "codex",
-          "created_at": "2026-03-20T09:10:00Z",
-          "body": "Completed the Go-owned dashboard run contract slice for `BIG-GOM-305` by adding `bigclaw-go/internal/product/dashboard_run_contract.go`, exposing `/v2/dashboard-run-contract` and `/v2/dashboard-run-contract/export`, and extending `/v2/runs/{id}` plus markdown run reports with closeout evidence fields for validation proof, git push status, git log `--stat`, and local/remote SHA sync. Validation: `cd bigclaw-go && go test ./internal/product ./internal/api` -> ok, `cd bigclaw-go && go test ./...` -> ok, `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `79fa078154d9d5167606fc4bcb9c302f4484c6c6` matches remote SHA `79fa078154d9d5167606fc4bcb9c302f4484c6c6` with `status: ok` and `synced: true`, `git log -1 --stat` -> captured for commit `79fa078154d9d5167606fc4bcb9c302f4484c6c6` with API/product contract files in the stat output. Commit SHA: `79fa078154d9d5167606fc4bcb9c302f4484c6c6`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`."
+          "body": "Completed the Go-owned dashboard run contract slice for `BIG-GOM-305` by adding `bigclaw-go/internal/product/dashboard_run_contract.go`, exposing `/v2/dashboard-run-contract` and `/v2/dashboard-run-contract/export`, and extending `/v2/runs/{id}` plus markdown run reports with closeout evidence fields for validation proof, git push status, git log `--stat`, and local/remote SHA sync. Validation: `cd bigclaw-go \u0026\u0026 go test ./internal/product ./internal/api` -\u003e ok, `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok, `bash scripts/ops/bigclawctl github-sync status --json` -\u003e local SHA `79fa078154d9d5167606fc4bcb9c302f4484c6c6` matches remote SHA `79fa078154d9d5167606fc4bcb9c302f4484c6c6` with `status: ok` and `synced: true`, `git log -1 --stat` -\u003e captured for commit `79fa078154d9d5167606fc4bcb9c302f4484c6c6` with API/product contract files in the stat output. Commit SHA: `79fa078154d9d5167606fc4bcb9c302f4484c6c6`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-20T09:10:00Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
+      "description": "Finish moving operator-facing status, control-center, and triage endpoints to Go once the workflow runtime and reporting surfaces are stable.",
+      "id": "big-gom-305",
+      "identifier": "BIG-GOM-305",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "api",
+        "triage"
+      ],
+      "priority": 2,
+      "state": "In Progress",
+      "title": "Control center, triage, and operations view migration",
       "updated_at": "2026-03-20T09:10:00Z"
     },
     {
-      "id": "big-gom-306",
-      "identifier": "BIG-GOM-306",
-      "title": "Repo collaboration and lineage surface migration",
-      "description": "Port the remaining repo board, registry, gateway, linkage, and lineage surfaces into Go without leaking repo-specific concerns into the scheduler runtime.",
-      "priority": 2,
-      "state": "Done",
-      "labels": ["go-mainline", "migration", "repo", "governance"],
       "assigned_to_worker": true,
       "comments": [
         {
           "author": "codex",
-          "created_at": "2026-03-20T09:30:00Z",
-          "body": "Ported the remaining repo collaboration and lineage contract surfaces into `bigclaw-go/internal/repo`, adding Go-owned board, registry, gateway, run-commit binding, repo-space, repo-agent, commit-lineage, and diff models migrated from the Python repo package family while keeping repo concerns isolated from scheduler/runtime packages. Validation: `cd bigclaw-go && go test ./internal/repo` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `fe0273d24a5fce8cff860b9b3f481c033a04eada`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`."
+          "body": "Ported the remaining repo collaboration and lineage contract surfaces into `bigclaw-go/internal/repo`, adding Go-owned board, registry, gateway, run-commit binding, repo-space, repo-agent, commit-lineage, and diff models migrated from the Python repo package family while keeping repo concerns isolated from scheduler/runtime packages. Validation: `cd bigclaw-go \u0026\u0026 go test ./internal/repo` -\u003e ok, `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok. Commit SHA: `fe0273d24a5fce8cff860b9b3f481c033a04eada`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-20T09:30:00Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
+      "description": "Port the remaining repo board, registry, gateway, linkage, and lineage surfaces into Go without leaking repo-specific concerns into the scheduler runtime.",
+      "id": "big-gom-306",
+      "identifier": "BIG-GOM-306",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "repo",
+        "governance"
+      ],
+      "priority": 2,
+      "state": "Done",
+      "title": "Repo collaboration and lineage surface migration",
       "updated_at": "2026-03-20T09:30:00Z"
     },
     {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go-first local tracker management commands to bigclawctl so the toolchain can update local issue state and append required completion comments in local-issues.json without manual JSON edits. Validation: `cd bigclaw-go \u0026\u0026 go test ./internal/refill ./cmd/bigclawctl` -\u003e ok, `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok, `bash scripts/ops/bigclawctl github-sync status --json` -\u003e local SHA `0e35c0dc48c8e533c5107139a2e4ac3ae6c1b2e1` matches remote SHA `0e35c0dc48c8e533c5107139a2e4ac3ae6c1b2e1` with `status: ok` and `synced: true`, `git log -1 --stat` -\u003e captured for commit `0e35c0dc48c8e533c5107139a2e4ac3ae6c1b2e1` with bigclawctl and refill local store files in the stat output. Commit SHA: `0e35c0dc48c8e533c5107139a2e4ac3ae6c1b2e1`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-20T09:30:56Z"
+        }
+      ],
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Keep hardening the Go-first bootstrap, refill, and GitHub sync toolchain so unattended multi-issue work no longer relies on Python entrypoints or Linear-only operators.",
       "id": "big-gom-307",
       "identifier": "BIG-GOM-307",
-      "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
-      "description": "Keep hardening the Go-first bootstrap, refill, and GitHub sync toolchain so unattended multi-issue work no longer relies on Python entrypoints or Linear-only operators.",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "tooling",
+        "orchestration"
+      ],
       "priority": 1,
       "state": "In Progress",
-      "labels": ["go-mainline", "migration", "tooling", "orchestration"],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-18T09:00:00Z"
+      "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
+      "updated_at": "2026-03-20T09:30:56Z"
     },
     {
-      "id": "big-gom-308",
-      "identifier": "BIG-GOM-308",
-      "title": "Python deprecation and Go-only mainline switch",
-      "description": "Freeze or retire the remaining Python runtime entrypoints only after the Go workflow, observability, and repo collaboration surfaces have matching owners and validation.",
-      "priority": 3,
-      "state": "Backlog",
-      "labels": ["go-mainline", "migration", "deprecation", "python-retirement"],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
+      "description": "Freeze or retire the remaining Python runtime entrypoints only after the Go workflow, observability, and repo collaboration surfaces have matching owners and validation.",
+      "id": "big-gom-308",
+      "identifier": "BIG-GOM-308",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "deprecation",
+        "python-retirement"
+      ],
+      "priority": 3,
+      "state": "Backlog",
+      "title": "Python deprecation and Go-only mainline switch",
       "updated_at": "2026-03-18T09:00:00Z"
     }
   ]
