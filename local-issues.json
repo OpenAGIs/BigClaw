@@ -619,7 +619,7 @@
       "title": "Expose skipped continuation state in validation index",
       "description": "Surface continuation status and reason in the live validation index even when continuation refresh is disabled or auto-skipped, so human reviewers do not lose the same context that now exists in the stable summary schema.",
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "labels": [
         "parallel",
         "validation",
@@ -628,8 +628,13 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-20T19:58:00Z",
-      "updated_at": "2026-03-20T19:58:00Z",
-      "comments": []
+      "updated_at": "2026-03-20T19:59:00Z",
+      "comments": [
+        {
+          "body": "Closed `BIG-PAR-099` after surfacing skipped/disabled continuation state in the live validation index.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now builds a continuation overview from the stable summary schema even when continuation refresh did not run, and `render_index()` now shows gate status, recommendation, and refresh-state reason for skipped/disabled continuation cases instead of omitting continuation context.\n- `tests/test_parallel_validation_bundle.py` now covers the skipped-state overview/index path alongside the existing disabled, auto-skip, and refreshed hold cases.\n- `bigclaw-go/docs/e2e-validation.md` now documents that the live validation index surfaces skipped/disabled continuation state for human reviewers too.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded tests/test_parallel_validation_bundle.py harness for disabled, auto-skip, skipped-index, and refreshed hold cases ...` -> passed (`parallel validation bundle skipped-state tests passed`)\n- `git rev-parse HEAD` -> `d71b1e7b8b44c4b7d6d0bee7fb534e9e3cf71585`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `d71b1e7b8b44c4b7d6d0bee7fb534e9e3cf71585` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `d71b1e7b8b44c4b7d6d0bee7fb534e9e3cf71585` (matches local)\n- `git log -1 --stat` -> `Expose skipped continuation state in index`\n\nCommit: `d71b1e7b8b44c4b7d6d0bee7fb534e9e3cf71585`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T19:59:00Z"
+        }
+      ]
     }
   ]
 }
