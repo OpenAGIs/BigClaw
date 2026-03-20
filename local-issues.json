@@ -37,6 +37,12 @@
           "commit_sha": "",
           "created_at": "2026-03-20T10:08:14Z",
           "pr_url": ""
+        },
+        {
+          "body": "What changed:\nWired the canonical audit spec into live Go runtime/control paths. Worker scheduler admissions now emit `execution.scheduler_decision` audit events with risk and approval context, and control-center takeover actions now emit `execution.manual_takeover` audit events with the required handoff fields. Added regression coverage in the worker and API suites to prove both payloads satisfy the audit spec.\n\nValidation:\ncd bigclaw-go \u0026\u0026 go test ./internal/worker ./internal/api ./internal/observability\npassed\n\nCommit SHA: f4df77de2a3dac32a2cf5a88c13a5fb340038d2e\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/140",
+          "commit_sha": "f4df77de2a3dac32a2cf5a88c13a5fb340038d2e",
+          "created_at": "2026-03-20T10:10:42Z",
+          "pr_url": "https://github.com/OpenAGIs/BigClaw/pull/140"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -52,7 +58,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Risk, policy, and approval semantics migration",
-      "updated_at": "2026-03-20T10:08:14Z"
+      "updated_at": "2026-03-20T10:10:42Z"
     },
     {
       "assigned_to_worker": true,
