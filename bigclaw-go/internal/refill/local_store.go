@@ -11,6 +11,7 @@ import (
 )
 
 var ErrLocalIssueNotFound = errors.New("local issue not found")
+var ErrLocalIssueAlreadyExists = errors.New("local issue already exists")
 
 type LocalIssueStore struct {
 	path     string
@@ -20,6 +21,17 @@ type LocalIssueStore struct {
 type LocalIssueComment struct {
 	Body      string `json:"body"`
 	CreatedAt string `json:"created_at"`
+}
+
+type LocalIssueCreateInput struct {
+	ID               string
+	Identifier       string
+	Title            string
+	Description      string
+	State            string
+	Priority         int
+	Labels           []string
+	AssignedToWorker bool
 }
 
 func (s *LocalIssueStore) Issues(stateNames []string) []map[string]any {
@@ -163,6 +175,43 @@ func (s *LocalIssueStore) AddComment(ref string, body string, now time.Time) (Lo
 	return comment, nil
 }
 
+func (s *LocalIssueStore) CreateIssue(input LocalIssueCreateInput, now time.Time) (map[string]any, error) {
+	identifier := strings.TrimSpace(input.Identifier)
+	id := strings.TrimSpace(input.ID)
+	title := strings.TrimSpace(input.Title)
+	if identifier == "" || id == "" || title == "" {
+		return nil, errors.New("id, identifier, and title are required")
+	}
+	if _, err := s.findIssue(identifier); err == nil {
+		return nil, ErrLocalIssueAlreadyExists
+	} else if !errors.Is(err, ErrLocalIssueNotFound) {
+		return nil, err
+	}
+	if _, err := s.findIssue(id); err == nil {
+		return nil, ErrLocalIssueAlreadyExists
+	} else if !errors.Is(err, ErrLocalIssueNotFound) {
+		return nil, err
+	}
+	timestamp := now.UTC().Truncate(time.Second).Format(time.RFC3339)
+	issue := map[string]any{
+		"id":                 id,
+		"identifier":         identifier,
+		"title":              title,
+		"description":        strings.TrimSpace(input.Description),
+		"state":              defaultIssueState(input.State),
+		"priority":           input.Priority,
+		"labels":             normalizedLabels(input.Labels),
+		"assigned_to_worker": input.AssignedToWorker,
+		"created_at":         timestamp,
+		"updated_at":         timestamp,
+	}
+	s.issueMap = append(s.issueMap, issue)
+	if err := s.Save(); err != nil {
+		return nil, err
+	}
+	return cloneMap(issue), nil
+}
+
 func (s *LocalIssueStore) Issue(ref string) (map[string]any, error) {
 	issue, err := s.findIssue(ref)
 	if err != nil {
@@ -229,6 +278,31 @@ func cloneMap(value map[string]any) map[string]any {
 		cloned[key] = item
 	}
 	return cloned
+}
+
+func normalizedLabels(labels []string) []string {
+	result := make([]string, 0, len(labels))
+	seen := map[string]struct{}{}
+	for _, label := range labels {
+		trimmed := strings.TrimSpace(label)
+		if trimmed == "" {
+			continue
+		}
+		if _, ok := seen[trimmed]; ok {
+			continue
+		}
+		seen[trimmed] = struct{}{}
+		result = append(result, trimmed)
+	}
+	return result
+}
+
+func defaultIssueState(state string) string {
+	trimmed := strings.TrimSpace(state)
+	if trimmed == "" {
+		return "Backlog"
+	}
+	return trimmed
 }
 
 func mapString(issue map[string]any, key string) string {

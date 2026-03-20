@@ -573,6 +573,71 @@ func TestRunLocalIssueListFiltersStatesAndPreservesTrackerOrder(t *testing.T) {
 	}
 }
 
+func TestRunLocalIssueCreateAppendsToLocalTracker(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{"issues":[]}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	output, runErr := captureStdout(t, func() error {
+		return runLocalIssue([]string{
+			"create",
+			"--local-issues", storePath,
+			"--id", "big-gom-309",
+			"--identifier", "BIG-GOM-309",
+			"--title", "Create local issue from Go",
+			"--description", "Replace manual tracker edits",
+			"--labels", "go-mainline,tooling",
+			"--priority", "2",
+			"--json",
+		})
+	})
+	if runErr != nil {
+		t.Fatalf("run local issue create: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"identifier": "BIG-GOM-309"`)) || !bytes.Contains(output, []byte(`"state": "Backlog"`)) {
+		t.Fatalf("unexpected create output: %s", string(output))
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"assigned_to_worker": true`)) || !bytes.Contains(body, []byte(`"priority": 2`)) {
+		t.Fatalf("expected created issue in store, got %s", string(body))
+	}
+}
+
+func TestRunLocalIssueCreateRejectsDuplicateIssue(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {"id": "big-gom-307", "identifier": "BIG-GOM-307", "title": "Toolchain migration", "state": "In Progress"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	output, runErr := captureStdout(t, func() error {
+		return runLocalIssue([]string{
+			"create",
+			"--local-issues", storePath,
+			"--id", "big-gom-307",
+			"--identifier", "BIG-GOM-307",
+			"--title", "Duplicate toolchain migration",
+			"--json",
+		})
+	})
+	if runErr == nil {
+		t.Fatalf("expected duplicate create to fail, stdout=%s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"status": "error"`)) || !bytes.Contains(output, []byte(`local issue already exists`)) {
+		t.Fatalf("unexpected duplicate create output: %s", string(output))
+	}
+}
+
 func TestRunLocalIssueListPrintsTabSeparatedSummaryByDefault(t *testing.T) {
 	tempDir := t.TempDir()
 	storePath := filepath.Join(tempDir, "local-issues.json")
@@ -628,6 +693,37 @@ func TestBigclawIssueScriptListFallsBackToLocalTracker(t *testing.T) {
 	output := runIssueScript(t, storePath, "list", "--states", "Todo,In Progress", "--json")
 	if !bytes.Contains(output, []byte(`"count": 2`)) || !bytes.Contains(output, []byte(`"identifier": "BIG-GOM-302"`)) {
 		t.Fatalf("unexpected issue list output: %s", string(output))
+	}
+}
+
+func TestBigclawIssueScriptCreateAppendsToLocalTracker(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{"issues":[]}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	output := runIssueScript(
+		t,
+		storePath,
+		"create",
+		"--id", "big-gom-309",
+		"--identifier", "BIG-GOM-309",
+		"--title", "Create tracker slice",
+		"--labels", "go-mainline,tooling",
+		"--priority", "2",
+		"--json",
+	)
+	if !bytes.Contains(output, []byte(`"identifier": "BIG-GOM-309"`)) || !bytes.Contains(output, []byte(`"state": "Backlog"`)) {
+		t.Fatalf("unexpected issue create output: %s", string(output))
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"identifier": "BIG-GOM-309"`)) || !bytes.Contains(body, []byte(`"assigned_to_worker": true`)) {
+		t.Fatalf("expected created issue in local tracker, got %s", string(body))
 	}
 }
 

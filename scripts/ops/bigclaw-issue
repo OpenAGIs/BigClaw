@@ -7,6 +7,10 @@ workflow="$repo_root/workflow.md"
 local_issues_path="${BIGCLAW_LOCAL_ISSUES_PATH:-$repo_root/local-issues.json}"
 
 case "${1:-}" in
+  create)
+    shift
+    exec bash "$script_dir/bigclawctl" local-issue create --local-issues "$local_issues_path" "$@"
+    ;;
   list)
     shift
     exec bash "$script_dir/bigclawctl" local-issue list --local-issues "$local_issues_path" "$@"

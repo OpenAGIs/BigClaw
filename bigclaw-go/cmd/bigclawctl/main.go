@@ -329,15 +329,22 @@ func runRefill(args []string) error {
 
 func runLocalIssue(args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: bigclawctl local-issue <list|show|update> [flags]")
+		return errors.New("usage: bigclawctl local-issue <create|list|show|update> [flags]")
 	}
 	command := args[0]
 	flags := flag.NewFlagSet("local-issue "+command, flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	localIssuesPath := flags.String("local-issues", "", "local issue store path")
 	issueRef := flags.String("issue", "", "issue identifier or id")
+	issueID := flags.String("id", "", "issue id")
+	identifier := flags.String("identifier", "", "issue identifier")
+	title := flags.String("title", "", "issue title")
+	description := flags.String("description", "", "issue description")
 	stateName := flags.String("state", "", "updated state")
 	statesCSV := flags.String("states", "", "comma-separated state filter for list")
+	labelsCSV := flags.String("labels", "", "comma-separated labels for create")
+	priority := flags.Int("priority", 3, "priority for create")
+	assignedToWorker := flags.Bool("assigned-to-worker", true, "mark created issue as assigned to worker")
 	commentBody := flags.String("comment", "", "comment body")
 	commentFile := flags.String("comment-file", "", "comment body file path, or - for stdin")
 	asJSON := flags.Bool("json", false, "json")
@@ -354,6 +361,27 @@ func runLocalIssue(args []string) error {
 	}
 
 	switch command {
+	case "create":
+		now := time.Now()
+		issue, err := store.CreateIssue(refill.LocalIssueCreateInput{
+			ID:               *issueID,
+			Identifier:       *identifier,
+			Title:            *title,
+			Description:      *description,
+			State:            *stateName,
+			Priority:         *priority,
+			Labels:           splitCSV(*labelsCSV),
+			AssignedToWorker: *assignedToWorker,
+		}, now)
+		if err != nil {
+			return emit(map[string]any{"status": "error", "error": err.Error(), "local_issues": absPath(storePath)}, *asJSON, 1)
+		}
+		payload := mergeMap(map[string]any{
+			"status":       "ok",
+			"backend":      "local",
+			"local_issues": absPath(storePath),
+		}, issue)
+		return emit(payload, *asJSON, 0)
 	case "list":
 		issues := store.Issues(splitCSV(*statesCSV))
 		payload := map[string]any{

@@ -49,6 +49,8 @@ Use these entrypoints to keep the remaining Go-mainline migration slices moving 
 Linear issue capacity:
 
 ```bash
+bash scripts/ops/bigclawctl local-issue create --local-issues local-issues.json --id big-gom-309 --identifier BIG-GOM-309 --title "New slice" --state Backlog --labels "go-mainline,tooling" --priority 2 --json
+bash scripts/ops/bigclaw-issue create --id big-gom-309 --identifier BIG-GOM-309 --title "New slice" --labels "go-mainline,tooling" --priority 2 --json
 bash scripts/ops/bigclawctl local-issue list --local-issues local-issues.json --states "Todo,In Progress" --json
 bash scripts/ops/bigclaw-issue list
 bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json
@@ -64,8 +66,12 @@ Notes:
 - `bash scripts/ops/bigclawctl local-issue list --local-issues local-issues.json --states "Todo,In Progress"`
   reads the repo-native tracker directly so planning can inspect runnable work without going through
   the separate Symphony issue CLI.
-- `bash scripts/ops/bigclaw-issue list|show|state ...` now falls back to the repo-native Go tracker
-  path directly, while other subcommands still wrap `symphony issue --workflow workflow.md`.
+- `bash scripts/ops/bigclawctl local-issue create ...` creates repo-native tracker entries with
+  safe defaults (`Backlog`, `assigned_to_worker=true`) so new local slices do not require manual
+  JSON edits.
+- `bash scripts/ops/bigclaw-issue create|list|show|state ...` now falls back to the repo-native Go
+  tracker path directly, while other subcommands still wrap
+  `symphony issue --workflow workflow.md`.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
 - `bash scripts/ops/bigclawctl local-issue update --local-issues local-issues.json --issue BIG-GOM-307 --comment-file comment.md`

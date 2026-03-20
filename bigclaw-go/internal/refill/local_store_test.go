@@ -1,6 +1,7 @@
 package refill
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -157,5 +158,66 @@ func TestLocalIssueStoreAddCommentAppendsAndRefreshesUpdatedAt(t *testing.T) {
 	}
 	if !strings.Contains(string(body), `"updated_at": "2026-03-18T16:30:00Z"`) {
 		t.Fatalf("expected updated_at refresh, got %s", string(body))
+	}
+}
+
+func TestLocalIssueStoreCreateIssueAppendsWithDefaults(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	issue, err := store.CreateIssue(LocalIssueCreateInput{
+		ID:               "big-gom-309",
+		Identifier:       "BIG-GOM-309",
+		Title:            "New tracker issue",
+		Description:      "Create issues without Symphony",
+		Priority:         2,
+		Labels:           []string{"go-mainline", "tooling", "tooling"},
+		AssignedToWorker: true,
+	}, time.Date(2026, 3, 20, 9, 45, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("create issue: %v", err)
+	}
+	if mapString(issue, "state") != "Backlog" {
+		t.Fatalf("expected default backlog state, got %+v", issue)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !strings.Contains(string(body), `"identifier": "BIG-GOM-309"`) || !strings.Contains(string(body), `"created_at": "2026-03-20T09:45:00Z"`) {
+		t.Fatalf("expected created issue in store, got %s", string(body))
+	}
+	if strings.Count(string(body), `"tooling"`) != 1 {
+		t.Fatalf("expected duplicate labels to be collapsed, got %s", string(body))
+	}
+}
+
+func TestLocalIssueStoreCreateIssueRejectsDuplicateIdentifiers(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {"id": "big-gom-307", "identifier": "BIG-GOM-307", "title": "Toolchain migration", "state": "In Progress"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	_, err = store.CreateIssue(LocalIssueCreateInput{
+		ID:               "big-gom-307",
+		Identifier:       "BIG-GOM-307",
+		Title:            "Duplicate issue",
+		AssignedToWorker: true,
+	}, time.Date(2026, 3, 20, 9, 45, 0, 0, time.UTC))
+	if !errors.Is(err, ErrLocalIssueAlreadyExists) {
+		t.Fatalf("expected duplicate error, got %v", err)
 	}
 }
