@@ -143,7 +143,7 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	})
 
 	r.publish(domain.Event{ID: eventID(task.ID, "leased"), Type: domain.EventTaskLeased, TaskID: task.ID, TraceID: task.TraceID, Timestamp: now})
-	decision := r.Scheduler.Decide(*task, quota)
+	decision := r.effectiveScheduler().Decide(*task, quota)
 	if !decision.Accepted {
 		_ = r.Queue.Requeue(ctx, lease, time.Now().Add(100*time.Millisecond))
 		r.finishStatus(string(domain.EventTaskRetried), decision.Reason, func(status *Status) {
@@ -162,7 +162,7 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	}
 	r.publish(domain.Event{ID: eventID(task.ID, "routed"), Type: domain.EventSchedulerRouted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: routedPayload})
 
-	runner, ok := r.Registry.Get(decision.Assignment.Executor)
+	runner, ok := r.effectiveRegistry().Get(decision.Assignment.Executor)
 	if !ok {
 		_ = r.Queue.DeadLetter(ctx, lease, "executor not registered")
 		r.finishStatus(string(domain.EventTaskDeadLetter), "executor not registered", func(status *Status) {
@@ -441,6 +441,20 @@ func (r *Runtime) effectiveTaskTimeout() time.Duration {
 		return defaultTaskTimeout
 	}
 	return r.TaskTimeout
+}
+
+func (r *Runtime) effectiveScheduler() *scheduler.Scheduler {
+	if r.Scheduler == nil {
+		return scheduler.New()
+	}
+	return r.Scheduler
+}
+
+func (r *Runtime) effectiveRegistry() *executor.Registry {
+	if r.Registry == nil {
+		return executor.NewRegistry()
+	}
+	return r.Registry
 }
 
 func (w *cancellationWatcher) record(snapshot queue.TaskSnapshot) {

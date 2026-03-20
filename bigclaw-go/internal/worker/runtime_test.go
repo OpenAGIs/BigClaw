@@ -150,6 +150,41 @@ func TestRuntimeUsesDefaultTimeoutAndLeaseWhenUnset(t *testing.T) {
 	}
 }
 
+func TestRuntimeDefaultsNilSchedulerAndRegistryToSafeBehavior(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	if err := q.Enqueue(context.Background(), domain.Task{ID: "task-nil-runtime", TraceID: "trace-nil-runtime", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+
+	runtime := Runtime{
+		WorkerID: "worker-nil-runtime",
+		Queue:    q,
+		Bus:      bus,
+		Recorder: recorder,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
+	if !processed {
+		t.Fatal("expected runtime to process task even when scheduler and registry are unset")
+	}
+	deadLetters, err := q.ListDeadLetters(context.Background(), 10)
+	if err != nil {
+		t.Fatalf("list dead letters: %v", err)
+	}
+	if len(deadLetters) != 1 || deadLetters[0].ID != "task-nil-runtime" {
+		t.Fatalf("expected task to dead-letter cleanly, got %+v", deadLetters)
+	}
+	latest, ok := recorder.LatestByTask("task-nil-runtime")
+	if !ok || latest.Type != domain.EventTaskDeadLetter {
+		t.Fatalf("expected dead-letter event from safe defaults, got %+v", latest)
+	}
+	snapshot := runtime.Snapshot()
+	if snapshot.DeadLetterRuns != 1 || snapshot.State != "idle" {
+		t.Fatalf("expected idle dead-letter snapshot, got %+v", snapshot)
+	}
+}
+
 func TestRuntimePublishesExecutorArtifacts(t *testing.T) {
 	q := queue.NewMemoryQueue()
 	if err := q.Enqueue(context.Background(), domain.Task{ID: "task-artifacts", TraceID: "trace-artifacts", Priority: 1, RequiredExecutor: domain.ExecutorLocal, RequiredTools: []string{"browser", "git"}, CreatedAt: time.Now()}); err != nil {
