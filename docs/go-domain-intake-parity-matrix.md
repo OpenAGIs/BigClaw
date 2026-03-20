@@ -26,6 +26,7 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
 - `BillingInterval`, `BillingRate`, `UsageRecord`, `BillingSummary` -> `bigclaw-go/internal/billing/statement.go`
   - billing usage metadata now preserves Python-style `Dict[str, Any]` payloads instead of narrowing to string-only values
 - `FlowTrigger`, `FlowRunStatus`, `FlowStepStatus`, `FlowTemplate*`, `FlowRun*` -> `bigclaw-go/internal/workflow/model.go`
+  - workflow JSON decode now defaults missing Python list/map fields to empty collections so `from_dict` behavior stays aligned for steps, tags, outputs, approvals, and step metadata
 
 ### `src/bigclaw/connectors.py`
 

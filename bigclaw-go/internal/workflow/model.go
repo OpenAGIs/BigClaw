@@ -105,6 +105,23 @@ func (template *WorkflowTemplate) UnmarshalJSON(data []byte) error {
 	} else {
 		template.Active = *aux.Active
 	}
+	if template.Steps == nil {
+		template.Steps = []WorkflowTemplateStep{}
+	}
+	if template.Tags == nil {
+		template.Tags = []string{}
+	}
+	for index := range template.Steps {
+		if template.Steps[index].RequiredTools == nil {
+			template.Steps[index].RequiredTools = []string{}
+		}
+		if template.Steps[index].Approvals == nil {
+			template.Steps[index].Approvals = []string{}
+		}
+		if template.Steps[index].Metadata == nil {
+			template.Steps[index].Metadata = map[string]any{}
+		}
+	}
 	return nil
 }
 
@@ -124,6 +141,9 @@ func (run *WorkflowStepRun) UnmarshalJSON(data []byte) error {
 	} else {
 		run.Status = *aux.Status
 	}
+	if run.Output == nil {
+		run.Output = map[string]any{}
+	}
 	return nil
 }
 
@@ -142,6 +162,15 @@ func (run *WorkflowRun) UnmarshalJSON(data []byte) error {
 		run.Status = WorkflowRunQueued
 	} else {
 		run.Status = *aux.Status
+	}
+	if run.Steps == nil {
+		run.Steps = []WorkflowStepRun{}
+	}
+	if run.Outputs == nil {
+		run.Outputs = map[string]any{}
+	}
+	if run.ApprovalRefs == nil {
+		run.ApprovalRefs = []string{}
 	}
 	return nil
 }
