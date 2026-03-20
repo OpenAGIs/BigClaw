@@ -32,6 +32,9 @@ func (s *Step) UnmarshalJSON(data []byte) error {
 		s.Required = *raw.Required
 	}
 	s.Metadata = cloneMetadata(raw.Metadata)
+	if s.Metadata == nil {
+		s.Metadata = map[string]any{}
+	}
 	return nil
 }
 
@@ -42,6 +45,28 @@ type Definition struct {
 	JournalPathTemplate string   `json:"journal_path_template,omitempty"`
 	ValidationEvidence  []string `json:"validation_evidence,omitempty"`
 	Approvals           []string `json:"approvals,omitempty"`
+}
+
+func (d *Definition) UnmarshalJSON(data []byte) error {
+	type alias Definition
+	aux := struct {
+		*alias
+	}{
+		alias: (*alias)(d),
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	if d.Steps == nil {
+		d.Steps = []Step{}
+	}
+	if d.ValidationEvidence == nil {
+		d.ValidationEvidence = []string{}
+	}
+	if d.Approvals == nil {
+		d.Approvals = []string{}
+	}
+	return nil
 }
 
 func ParseDefinition(text string) (Definition, error) {
@@ -74,7 +99,7 @@ func (d Definition) RenderJournalPath(task domain.Task, runID string) string {
 
 func cloneMetadata(metadata map[string]any) map[string]any {
 	if len(metadata) == 0 {
-		return nil
+		return map[string]any{}
 	}
 	out := make(map[string]any, len(metadata))
 	for key, value := range metadata {

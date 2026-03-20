@@ -40,3 +40,16 @@ func TestDefinitionRespectsExplicitOptionalStep(t *testing.T) {
 		t.Fatalf("expected metadata lane risk, got %#v", got)
 	}
 }
+
+func TestDefinitionDefaultsMissingCollectionsToEmpty(t *testing.T) {
+	definition, err := ParseDefinition(`{"name":"lean-closeout","steps":[{"name":"review","kind":"approval"}]}`)
+	if err != nil {
+		t.Fatalf("parse definition: %v", err)
+	}
+	if definition.Steps == nil || definition.ValidationEvidence == nil || definition.Approvals == nil {
+		t.Fatalf("expected non-nil definition collections, got %+v", definition)
+	}
+	if definition.Steps[0].Metadata == nil {
+		t.Fatalf("expected non-nil step metadata, got %+v", definition.Steps[0])
+	}
+}

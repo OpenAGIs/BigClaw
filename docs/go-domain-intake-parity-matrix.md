@@ -46,6 +46,7 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
 - `WorkflowDefinition` -> `bigclaw-go/internal/workflow/definition.go`
 - `from_json` -> `bigclaw-go/internal/workflow/definition.go`
 - `render_report_path` / `render_journal_path` -> `bigclaw-go/internal/workflow/definition.go`
+  - workflow-definition JSON decode now defaults missing Python list/map fields to empty collections so `from_dict` behavior stays aligned for step metadata, steps, validation evidence, and approvals
 
 ## Key design decisions
 
