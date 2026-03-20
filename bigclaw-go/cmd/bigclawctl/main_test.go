@@ -526,6 +526,51 @@ func TestRunWorkspaceValidateEmitsJSONReport(t *testing.T) {
 	}
 }
 
+func TestRunWorkspaceValidateAcceptsSpaceSeparatedIssuesAndEmitsReportFileInJSON(t *testing.T) {
+	root := t.TempDir()
+	remote := initWorkspaceValidationRemote(t, root)
+	reportPath := filepath.Join(root, "reports", "bootstrap-validation.json")
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runWorkspace([]string{
+		"validate",
+		"--workspace-root", filepath.Join(root, "workspaces"),
+		"--repo-url", remote,
+		"--cache-base", filepath.Join(root, "repos"),
+		"--issues", "OPE-451", "OPE-452", "OPE-453",
+		"--report-file", reportPath,
+		"--json",
+	})
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("run workspace validate with space-separated issues: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"issue_identifiers": [`)) {
+		t.Fatalf("expected issue identifiers in output, got %s", string(output))
+	}
+	for _, issue := range []string{"OPE-451", "OPE-452", "OPE-453"} {
+		if !bytes.Contains(output, []byte(issue)) {
+			t.Fatalf("expected issue %s in output, got %s", issue, string(output))
+		}
+	}
+	if !bytes.Contains(output, []byte(`"report_file":`)) {
+		t.Fatalf("expected report_file in JSON output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(reportPath)) {
+		t.Fatalf("expected report path in JSON output, got %s", string(output))
+	}
+}
+
 func TestRunGitHubSyncStatusRequireCleanReturnsExitErrorForDirtyRepo(t *testing.T) {
 	root := t.TempDir()
 	repo := initGitHubSyncRepo(t, root)
@@ -798,6 +843,39 @@ func TestRunWorkspaceValidateAcceptsReportFileAlias(t *testing.T) {
 	}
 	if !strings.Contains(text, "- Workspaces: `2`") {
 		t.Fatalf("expected workspace summary, got %s", text)
+	}
+}
+
+func TestRunWorkspaceValidateNonJSONOutputPrintsReportFile(t *testing.T) {
+	root := t.TempDir()
+	remote := initWorkspaceValidationRemote(t, root)
+	reportPath := filepath.Join(root, "reports", "bootstrap-validation-human.md")
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runWorkspace([]string{
+		"validate",
+		"--workspace-root", filepath.Join(root, "workspaces"),
+		"--repo-url", remote,
+		"--cache-base", filepath.Join(root, "repos"),
+		"--issues", "OPE-461,OPE-462",
+		"--report-file", reportPath,
+	})
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("run workspace validate with non-json report-file: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte("report_file="+reportPath)) {
+		t.Fatalf("expected report_file line in output, got %s", string(output))
 	}
 }
 

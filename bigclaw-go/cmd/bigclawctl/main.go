@@ -282,6 +282,9 @@ func runWorkspace(args []string) error {
 		return errors.New("usage: bigclawctl workspace <bootstrap|cleanup|validate> [flags]")
 	}
 	command := args[0]
+	if command == "validate" {
+		args = append([]string{command}, normalizeWorkspaceValidateArgs(args[1:])...)
+	}
 	flags := flag.NewFlagSet("workspace "+command, flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	workspace := flags.String("workspace", ".", "workspace")
@@ -322,19 +325,32 @@ func runWorkspace(args []string) error {
 			*cleanup = false
 		}
 		issues := splitCSV(*issuesCSV)
+		for _, extra := range flags.Args() {
+			issues = append(issues, splitCSV(extra)...)
+		}
 		report, err := bootstrap.BuildValidationReport(*repoURL, *workspaceRoot, issues, *defaultBranch, *cacheRoot, *cacheBase, *cacheKey, *cleanup)
 		if err != nil {
 			return err
 		}
+		writtenReportPath := ""
 		if *reportPath != "" {
-			if _, err := bootstrap.WriteValidationReport(report, *reportPath); err != nil {
+			writtenPath, err := bootstrap.WriteValidationReport(report, *reportPath)
+			if err != nil {
 				return err
 			}
+			writtenReportPath = writtenPath
 		}
 		if *asJSON {
-			encoder := json.NewEncoder(os.Stdout)
-			encoder.SetIndent("", "  ")
-			return encoder.Encode(report)
+			payload := structToMap(report)
+			if writtenReportPath != "" {
+				payload["report_file"] = writtenReportPath
+			}
+			return emit(payload, true, 0)
+		}
+		if writtenReportPath != "" {
+			if _, err := fmt.Fprintf(os.Stdout, "report_file=%v\n", writtenReportPath); err != nil {
+				return err
+			}
 		}
 		_, err = os.Stdout.WriteString(bootstrap.RenderValidationMarkdown(report))
 		return err
@@ -734,6 +750,37 @@ func splitCSV(value string) []string {
 		items = append(items, current)
 	}
 	return items
+}
+
+func normalizeWorkspaceValidateArgs(args []string) []string {
+	normalized := make([]string, 0, len(args))
+	for idx := 0; idx < len(args); idx++ {
+		current := args[idx]
+		if current == "--issues" {
+			values := []string{}
+			for idx+1 < len(args) && !strings.HasPrefix(args[idx+1], "-") {
+				idx++
+				values = append(values, args[idx])
+			}
+			normalized = append(normalized, current)
+			normalized = append(normalized, strings.Join(values, ","))
+			continue
+		}
+		if strings.HasPrefix(current, "--issues=") {
+			prefix, value, ok := strings.Cut(current, "=")
+			if ok {
+				values := append(splitCSV(value), []string{}...)
+				for idx+1 < len(args) && !strings.HasPrefix(args[idx+1], "-") {
+					idx++
+					values = append(values, args[idx])
+				}
+				normalized = append(normalized, prefix+"="+strings.Join(values, ","))
+				continue
+			}
+		}
+		normalized = append(normalized, current)
+	}
+	return normalized
 }
 
 func absPath(path string) string {
