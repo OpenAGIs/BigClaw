@@ -117,7 +117,7 @@
         {
           "author": "codex",
           "created_at": "2026-03-20T09:30:00Z",
-          "body": "Ported the remaining repo collaboration and lineage contract surfaces into `bigclaw-go/internal/repo`, adding Go-owned board, registry, gateway, run-commit binding, repo-space, repo-agent, commit-lineage, and diff models migrated from the Python repo package family while keeping repo concerns isolated from scheduler/runtime packages. Validation: `cd bigclaw-go && go test ./internal/repo` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `fe0273d24a5fce8cff860b9b3f481c033a04eada`. PR URL: unavailable; pending `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` verification in this workspace."
+          "body": "Ported the remaining repo collaboration and lineage contract surfaces into `bigclaw-go/internal/repo`, adding Go-owned board, registry, gateway, run-commit binding, repo-space, repo-agent, commit-lineage, and diff models migrated from the Python repo package family while keeping repo concerns isolated from scheduler/runtime packages. Validation: `cd bigclaw-go && go test ./internal/repo` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `fe0273d24a5fce8cff860b9b3f481c033a04eada`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`."
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
