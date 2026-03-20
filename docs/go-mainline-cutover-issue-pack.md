@@ -14,10 +14,15 @@ This document is the repo-native planning pack for the Go-only mainline cutover.
 
 Until the Linear workspace issue limit is raised or old issue capacity is reclaimed, treat this file and the project status updates as the canonical issue-pack fallback for the Go-mainline project.
 
-As of March 18, 2026, the active execution tracker for this cutover is the
+As of March 18, 2026, the execution tracker for this cutover is the
 repo-native local issue store at `BigClaw/local-issues.json`; Linear metadata is
 retained only as historical/project-context reference until workspace capacity
 changes.
+
+As of March 20, 2026, all planned local cutover slices `BIG-GOM-301` through
+`BIG-GOM-308` are recorded as `Done` in `local-issues.json`, and the canonical
+refill queue in `docs/parallel-refill-queue.json` is drained with no runnable
+candidates remaining.
 
 ## March 18 tranche update
 
@@ -28,6 +33,13 @@ changes.
 - `bigclaw-go/internal/observability/audit_spec.go` now owns the canonical operational audit-event specification slice from Python.
 - JSON default restoration for governance backlog items, execution fields, and audit policies now matches the active Go tests.
 - Verification on March 18, 2026: `cd BigClaw/bigclaw-go && go test ./...` passed.
+
+## March 20 completion update
+
+- `BIG-GOM-301` through `BIG-GOM-308` are complete in the repo-native tracker.
+- `bigclaw-go` owns the active mainline surfaces covered by the cutover issue pack.
+- The remaining Python runtime entrypoints are explicitly frozen as migration-only compatibility paths.
+- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` now reports no `In Progress` work and no refill candidates for this cutover set.
 
 ## Mainline policy
 
@@ -351,14 +363,18 @@ Phase 5:
 
 ## First runnable batch once issue creation is available
 
-- `BIG-GOM-301` -> `In Progress`
-- `BIG-GOM-302` -> `In Progress`
-- `BIG-GOM-303` -> `Todo`
-- `BIG-GOM-304` -> `Todo`
-- `BIG-GOM-305` -> `Backlog`
-- `BIG-GOM-306` -> `Backlog`
-- `BIG-GOM-307` -> `Backlog`
-- `BIG-GOM-308` -> `Backlog`
+- Historical initial batch: `BIG-GOM-301` and `BIG-GOM-302` entered `In Progress` first, followed by downstream refill activation from the canonical queue.
+
+## Final local issue states as of March 20, 2026
+
+- `BIG-GOM-301` -> `Done`
+- `BIG-GOM-302` -> `Done`
+- `BIG-GOM-303` -> `Done`
+- `BIG-GOM-304` -> `Done`
+- `BIG-GOM-305` -> `Done`
+- `BIG-GOM-306` -> `Done`
+- `BIG-GOM-307` -> `Done`
+- `BIG-GOM-308` -> `Done`
 
 ## Prepared refill batch blocked by Linear issue limits
 
