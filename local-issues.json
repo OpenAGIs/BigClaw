@@ -642,7 +642,7 @@
       "title": "Refresh validation manifest after continuation write",
       "description": "Rebuild and rewrite the live validation manifest after continuation details are added so `live-validation-index.json` stays aligned with the final bundle summary instead of capturing a pre-continuation snapshot.",
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "labels": [
         "parallel",
         "validation",
@@ -651,8 +651,13 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-20T20:01:00Z",
-      "updated_at": "2026-03-20T20:01:00Z",
-      "comments": []
+      "updated_at": "2026-03-20T20:04:00Z",
+      "comments": [
+        {
+          "body": "Closed `BIG-PAR-100` after aligning the machine-readable validation manifest with the final post-continuation summary.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now writes an initial manifest before continuation refresh so the scorecard input still exists, then rewrites the manifest after the continuation-enriched summary is persisted.\n- `build_recent_runs()` now carries a compact `continuation` subset for each recent run, so `live-validation-index.json` exposes the current run\u2019s continuation gate state instead of dropping it from `recent_runs`.\n- `tests/test_parallel_validation_bundle.py` now asserts that both `manifest.latest` and the first `recent_runs` entry include the continuation policy-gate data after export.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded test_export_validation_bundle_generates_latest_reports_and_index harness ...` -> passed (`parallel validation bundle manifest-refresh test passed`)\n- `git rev-parse HEAD` -> `225310f124fa6024af1b03e6f680e7ad04894bc3`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `225310f124fa6024af1b03e6f680e7ad04894bc3` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `225310f124fa6024af1b03e6f680e7ad04894bc3` (matches local)\n- `git log -1 --stat` -> `Refresh validation manifest after continuation`\n\nCommit: `225310f124fa6024af1b03e6f680e7ad04894bc3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T20:04:00Z"
+        }
+      ]
     }
   ]
 }
