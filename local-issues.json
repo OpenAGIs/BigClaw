@@ -566,6 +566,24 @@
           "created_at": "2026-03-20T19:44:00Z"
         }
       ]
+    },
+    {
+      "id": "big-par-097",
+      "identifier": "BIG-PAR-097",
+      "title": "Sync coverage and readiness docs with continuation surfaces",
+      "description": "Update the broader repo-native reviewer docs so they mention that the live validation summary and index now carry continuation gate detail directly, not only the separate scorecard and policy-gate artifacts.",
+      "priority": 3,
+      "state": "In Progress",
+      "labels": [
+        "parallel",
+        "validation",
+        "reporting",
+        "docs"
+      ],
+      "assigned_to_worker": true,
+      "created_at": "2026-03-20T19:47:00Z",
+      "updated_at": "2026-03-20T19:47:00Z",
+      "comments": []
     }
   ]
 }
