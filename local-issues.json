@@ -504,7 +504,7 @@
       "title": "Expose continuation gate summary in live validation index",
       "description": "Surface the current continuation gate recommendation, freshness age, and failing checks directly in the exported live validation index so reviewers do not need to open the policy-gate JSON to see whether the checked-in bundle evidence is currently go or hold.",
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "labels": [
         "parallel",
         "validation",
@@ -513,8 +513,13 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-20T19:27:00Z",
-      "updated_at": "2026-03-20T19:27:00Z",
-      "comments": []
+      "updated_at": "2026-03-20T19:31:00Z",
+      "comments": [
+        {
+          "body": "Closed `BIG-PAR-094` after surfacing the continuation gate summary directly in the exported live validation index.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now reads the refreshed continuation policy-gate artifact after closeout and renders a compact continuation overview in `live-validation-index.md`, including gate status, recommendation, latest bundle age hours, failing checks, and the first next action.\n- `tests/test_parallel_validation_bundle.py` now asserts that the exported index includes the continuation gate summary instead of only linking to the continuation artifacts.\n- `bigclaw-go/docs/reports/live-validation-index.md` was regenerated so the checked-in reviewer surface now shows that the current continuation gate is `policy-hold`, with the stale-bundle freshness failure and the rerun command visible inline.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded tests/test_parallel_validation_bundle.py harness ...` -> passed (`parallel validation bundle tests passed`)\n- `git rev-parse HEAD` -> `8d222c7452d5eebe6eaa94a32d56f11aefd21341`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `8d222c7452d5eebe6eaa94a32d56f11aefd21341` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `8d222c7452d5eebe6eaa94a32d56f11aefd21341` (matches local)\n- `git log -1 --stat` -> `Expose continuation gate summary in validation index`\n\nCommit: `8d222c7452d5eebe6eaa94a32d56f11aefd21341`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T19:31:00Z"
+        }
+      ]
     }
   ]
 }
