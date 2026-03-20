@@ -125,17 +125,18 @@ type RunOptions struct {
 }
 
 type RunResult struct {
-	Task        domain.Task        `json:"task"`
-	Events      []domain.Event     `json:"events,omitempty"`
-	WorkflowRun WorkflowRun        `json:"workflow_run"`
-	Acceptance  AcceptanceDecision `json:"acceptance"`
-	Closeout    Closeout           `json:"closeout"`
-	Journal     WorkpadJournal     `json:"journal"`
-	JournalPath string             `json:"journal_path,omitempty"`
-	ReportPath  string             `json:"report_path,omitempty"`
-	Status      worker.Status      `json:"status"`
-	RunID       string             `json:"run_id"`
-	Definition  Definition         `json:"definition"`
+	Task        domain.Task             `json:"task"`
+	Events      []domain.Event          `json:"events,omitempty"`
+	WorkflowRun WorkflowRun             `json:"workflow_run"`
+	Quota       scheduler.QuotaSnapshot `json:"quota"`
+	Acceptance  AcceptanceDecision      `json:"acceptance"`
+	Closeout    Closeout                `json:"closeout"`
+	Journal     WorkpadJournal          `json:"journal"`
+	JournalPath string                  `json:"journal_path,omitempty"`
+	ReportPath  string                  `json:"report_path,omitempty"`
+	Status      worker.Status           `json:"status"`
+	RunID       string                  `json:"run_id"`
+	Definition  Definition              `json:"definition"`
 }
 
 type Engine struct {
@@ -184,7 +185,8 @@ func (engine *Engine) RunDefinition(ctx context.Context, task domain.Task, defin
 		"run_id":  runID,
 	})
 
-	processed := engine.Runtime.RunOnce(ctx, resolvedQuota(engine.Quota, resolvedTask))
+	effectiveQuota := resolvedQuota(engine.Quota, resolvedTask)
+	processed := engine.Runtime.RunOnce(ctx, effectiveQuota)
 	if !processed {
 		return RunResult{}, fmt.Errorf("runtime did not process queued task %s", resolvedTask.ID)
 	}
@@ -197,6 +199,7 @@ func (engine *Engine) RunDefinition(ctx context.Context, task domain.Task, defin
 	journal.Record("execution", string(finalTask.State), engine.now(), map[string]any{
 		"event_count": len(events),
 		"task_state":  finalTask.State,
+		"quota":       effectiveQuota,
 	})
 
 	evidence := uniqueNonEmpty(append(append([]string(nil), definition.ValidationEvidence...), options.ValidationEvidence...))
@@ -233,7 +236,7 @@ func (engine *Engine) RunDefinition(ctx context.Context, task domain.Task, defin
 	journal.Record("closeout", closeoutStatus(closeout.Complete), engine.now(), closeoutDetails)
 
 	reportPath := definition.RenderReportPath(finalTask, runID)
-	if err := writeReport(reportPath, renderRunReport(definition, runID, finalTask, acceptance, closeout, events)); err != nil {
+	if err := writeReport(reportPath, renderRunReport(definition, runID, finalTask, effectiveQuota, acceptance, closeout, events)); err != nil {
 		return RunResult{}, fmt.Errorf("write run report: %w", err)
 	}
 	journalPath, err := journal.Write(definition.RenderJournalPath(finalTask, runID))
@@ -245,6 +248,7 @@ func (engine *Engine) RunDefinition(ctx context.Context, task domain.Task, defin
 		Task:        finalTask,
 		Events:      events,
 		WorkflowRun: workflowRun,
+		Quota:       effectiveQuota,
 		Acceptance:  acceptance,
 		Closeout:    closeout,
 		Journal:     journal,
@@ -263,7 +267,7 @@ func (engine *Engine) now() time.Time {
 	return time.Now().UTC()
 }
 
-func renderRunReport(definition Definition, runID string, task domain.Task, acceptance AcceptanceDecision, closeout Closeout, events []domain.Event) string {
+func renderRunReport(definition Definition, runID string, task domain.Task, quota scheduler.QuotaSnapshot, acceptance AcceptanceDecision, closeout Closeout, events []domain.Event) string {
 	lines := []string{
 		"# Workflow Run Report",
 		"",
@@ -271,6 +275,7 @@ func renderRunReport(definition Definition, runID string, task domain.Task, acce
 		fmt.Sprintf("- Run ID: %s", runID),
 		fmt.Sprintf("- Task ID: %s", task.ID),
 		fmt.Sprintf("- Task State: %s", task.State),
+		fmt.Sprintf("- Scheduler Quota: concurrency=%d queue_depth=%d budget_remaining=%d", quota.ConcurrentLimit, quota.MaxQueueDepth, quota.BudgetRemaining),
 		fmt.Sprintf("- Acceptance: %s", acceptance.Status),
 		fmt.Sprintf("- Closeout Complete: %t", closeout.Complete),
 		fmt.Sprintf("- Event Count: %d", len(events)),

@@ -87,6 +87,9 @@ func TestEngineRunDefinitionWritesReportAndJournal(t *testing.T) {
 	if result.Acceptance.Status != "accepted" || !result.Acceptance.Passed {
 		t.Fatalf("expected accepted result, got %+v", result.Acceptance)
 	}
+	if result.Quota.ConcurrentLimit != 4 || result.Quota.BudgetRemaining != 5000 {
+		t.Fatalf("expected explicit quota preserved in result, got %+v", result.Quota)
+	}
 	if result.WorkflowRun.Status != WorkflowRunSucceeded {
 		t.Fatalf("expected succeeded workflow run, got %+v", result.WorkflowRun)
 	}
@@ -108,6 +111,9 @@ func TestEngineRunDefinitionWritesReportAndJournal(t *testing.T) {
 	}
 	if !strings.Contains(string(reportContents), "Acceptance: accepted") {
 		t.Fatalf("expected acceptance in report, got %s", string(reportContents))
+	}
+	if !strings.Contains(string(reportContents), "Scheduler Quota: concurrency=4 queue_depth=64 budget_remaining=5000") {
+		t.Fatalf("expected scheduler quota in report, got %s", string(reportContents))
 	}
 	if !strings.Contains(string(reportContents), "Repo Sync Status: synced") {
 		t.Fatalf("expected repo sync status in report, got %s", string(reportContents))
@@ -328,6 +334,9 @@ func TestEngineRunDefinitionUsesPolicyQuotaDefaults(t *testing.T) {
 	}
 	if snapshot.Task.State != domain.TaskQueued || snapshot.Leased {
 		t.Fatalf("expected task requeued by policy budget default, got %+v", snapshot)
+	}
+	if result.Quota.ConcurrentLimit != 8 || result.Quota.MaxQueueDepth != 64 || result.Quota.BudgetRemaining != 10000 {
+		t.Fatalf("expected standard policy quota defaults, got %+v", result.Quota)
 	}
 	if len(result.Events) == 0 || result.Events[len(result.Events)-1].Type != domain.EventTaskRetried {
 		t.Fatalf("expected retry event after policy budget rejection, got %+v", result.Events)
