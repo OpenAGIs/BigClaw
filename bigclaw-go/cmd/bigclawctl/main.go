@@ -138,7 +138,7 @@ func runGitHubSync(args []string) error {
 	flags := flag.NewFlagSet("github-sync "+command, flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	repo := flags.String("repo", ".", "repository path")
-	remote := flags.String("remote", "origin", "git remote")
+	remote := flags.String("remote", "", "git remote")
 	hooksPath := flags.String("hooks-path", ".githooks", "hooks path")
 	allowDirty := flags.Bool("allow-dirty", false, "allow dirty")
 	requireClean := flags.Bool("require-clean", false, "require clean")
@@ -155,30 +155,30 @@ func runGitHubSync(args []string) error {
 		}
 		return emit(map[string]any{"status": "installed", "repo": absPath(*repo), "hooks_path": hooksDir}, *asJSON, 0)
 	case "status":
-		status, err := githubsync.InspectRepoSync(*repo, *remote)
+		statuses, err := inspectRepoSyncRemotes(*repo, *remote)
 		if err != nil {
 			return emit(map[string]any{"status": "error", "error": err.Error(), "repo": absPath(*repo)}, *asJSON, 1)
 		}
-		payload := statusToMap("ok", status)
+		payload := syncStatusesToMap("ok", statuses)
 		code := 0
-		if *requireClean && status.Dirty {
+		if *requireClean && anyDirtyStatus(statuses) {
 			code = 1
 		}
-		if *requireSynced && !status.Synced {
+		if *requireSynced && !allSyncedStatuses(statuses) {
 			code = 1
 		}
 		return emit(payload, *asJSON, code)
 	case "sync":
-		status, err := githubsync.EnsureRepoSync(*repo, *remote, true, *allowDirty)
+		statuses, err := ensureRepoSyncRemotes(*repo, *remote, true, *allowDirty)
 		if err != nil {
 			return emit(map[string]any{"status": "error", "error": err.Error(), "repo": absPath(*repo)}, *asJSON, 1)
 		}
-		payload := statusToMap("ok", status)
+		payload := syncStatusesToMap("ok", statuses)
 		code := 0
-		if *requireClean && status.Dirty {
+		if *requireClean && anyDirtyStatus(statuses) {
 			code = 1
 		}
-		if *requireSynced && !status.Synced {
+		if *requireSynced && !allSyncedStatuses(statuses) {
 			code = 1
 		}
 		return emit(payload, *asJSON, code)
@@ -672,6 +672,152 @@ func statusToMap(status string, repo githubsync.RepoSyncStatus) map[string]any {
 		"synced":        repo.Synced,
 		"pushed":        repo.Pushed,
 	}
+}
+
+func inspectRepoSyncRemotes(repo string, requested string) (map[string]githubsync.RepoSyncStatus, error) {
+	remotes, err := resolveGitHubSyncRemotes(repo, requested)
+	if err != nil {
+		return nil, err
+	}
+	statuses := make(map[string]githubsync.RepoSyncStatus, len(remotes))
+	for _, remote := range remotes {
+		status, err := githubsync.InspectRepoSync(repo, remote)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", remote, err)
+		}
+		statuses[remote] = status
+	}
+	return statuses, nil
+}
+
+func ensureRepoSyncRemotes(repo string, requested string, autoPush bool, allowDirty bool) (map[string]githubsync.RepoSyncStatus, error) {
+	remotes, err := resolveGitHubSyncRemotes(repo, requested)
+	if err != nil {
+		return nil, err
+	}
+	statuses := make(map[string]githubsync.RepoSyncStatus, len(remotes))
+	for _, remote := range remotes {
+		status, err := githubsync.EnsureRepoSync(repo, remote, autoPush, allowDirty)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", remote, err)
+		}
+		statuses[remote] = status
+	}
+	return statuses, nil
+}
+
+func resolveGitHubSyncRemotes(repo string, requested string) ([]string, error) {
+	if trim(requested) != "" {
+		return []string{trim(requested)}, nil
+	}
+	available, err := githubsync.ListRemotes(repo)
+	if err != nil {
+		return nil, err
+	}
+	availableSet := map[string]struct{}{}
+	for _, remote := range available {
+		availableSet[remote] = struct{}{}
+	}
+	ordered := []string{}
+	appendRemote := func(name string) {
+		name = trim(name)
+		if name == "" {
+			return
+		}
+		if len(availableSet) != 0 {
+			if _, ok := availableSet[name]; !ok {
+				return
+			}
+		}
+		for _, existing := range ordered {
+			if existing == name {
+				return
+			}
+		}
+		ordered = append(ordered, name)
+	}
+	if upstream, err := githubsync.CurrentUpstreamRemote(repo); err == nil {
+		appendRemote(upstream)
+	}
+	appendRemote("origin")
+	appendRemote("github")
+	if len(ordered) == 0 {
+		appendRemote("origin")
+	}
+	return ordered, nil
+}
+
+func syncStatusesToMap(status string, statuses map[string]githubsync.RepoSyncStatus) map[string]any {
+	ordered := orderedRemoteNames(statuses)
+	if len(ordered) == 0 {
+		return map[string]any{"status": status}
+	}
+	primary := statuses[ordered[0]]
+	payload := statusToMap(status, primary)
+	payload["remote"] = ordered[0]
+	payload["dirty"] = anyDirtyStatus(statuses)
+	payload["synced"] = allSyncedStatuses(statuses)
+	payload["pushed"] = anyPushedStatus(statuses)
+	remotePayloads := make([]map[string]any, 0, len(ordered))
+	for _, remote := range ordered {
+		item := statusToMap(status, statuses[remote])
+		item["remote"] = remote
+		remotePayloads = append(remotePayloads, item)
+	}
+	payload["remotes"] = remotePayloads
+	return payload
+}
+
+func orderedRemoteNames(statuses map[string]githubsync.RepoSyncStatus) []string {
+	names := make([]string, 0, len(statuses))
+	for name := range statuses {
+		names = append(names, name)
+	}
+	preferred := []string{"github", "origin"}
+	ordered := make([]string, 0, len(names))
+	seen := map[string]struct{}{}
+	for _, name := range preferred {
+		if _, ok := statuses[name]; ok {
+			ordered = append(ordered, name)
+			seen[name] = struct{}{}
+		}
+	}
+	for _, name := range names {
+		if _, ok := seen[name]; !ok {
+			ordered = append(ordered, name)
+		}
+	}
+	return ordered
+}
+
+func anyDirtyStatus(statuses map[string]githubsync.RepoSyncStatus) bool {
+	for _, status := range statuses {
+		if status.Dirty {
+			return true
+		}
+	}
+	return false
+}
+
+func allSyncedStatuses(statuses map[string]githubsync.RepoSyncStatus) bool {
+	if len(statuses) == 0 {
+		return false
+	}
+	for _, status := range statuses {
+		if !status.Synced {
+			return false
+		}
+	}
+	return true
+}
+
+func anyPushedStatus(statuses map[string]githubsync.RepoSyncStatus) bool {
+	for _, status := range statuses {
+		if status.Pushed {
+			return true
+		}
+	}
+	return false
 }
 
 func structToMap(value any) map[string]any {

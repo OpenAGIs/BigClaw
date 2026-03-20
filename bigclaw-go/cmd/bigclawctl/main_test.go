@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -14,6 +15,47 @@ import (
 
 	"bigclaw-go/internal/refill"
 )
+
+func gitOutput(t *testing.T, repo string, args ...string) string {
+	t.Helper()
+	cmd := exec.Command("git", args...)
+	cmd.Dir = repo
+	output, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("git %v failed: %v", args, err)
+	}
+	return strings.TrimSpace(string(output))
+}
+
+func initGitRepo(t *testing.T, repo string) {
+	t.Helper()
+	for _, args := range [][]string{
+		{"init"},
+		{"config", "user.email", "test@example.com"},
+		{"config", "user.name", "Test User"},
+	} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = repo
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v failed: %v (%s)", args, err, string(output))
+		}
+	}
+}
+
+func gitCommitFile(t *testing.T, repo string, name string, content string, message string) string {
+	t.Helper()
+	if err := os.WriteFile(filepath.Join(repo, name), []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{{"add", name}, {"commit", "-m", message}} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = repo
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v failed: %v (%s)", args, err, string(output))
+		}
+	}
+	return gitOutput(t, repo, "rev-parse", "HEAD")
+}
 
 func TestNormalizeWorkspaceArgsLeavesBootstrapUntouched(t *testing.T) {
 	args := []string{"--workspace", "/tmp/demo", "--issue", "BIG-GOM-307"}
@@ -58,6 +100,16 @@ func TestLoadWorkspaceDefaultsUsesEnvironment(t *testing.T) {
 }
 
 func TestLoadWorkspaceDefaultsFallsBackWhenEnvMissing(t *testing.T) {
+	for _, key := range []string{
+		"SYMPHONY_BOOTSTRAP_REPO_URL",
+		"SYMPHONY_BOOTSTRAP_GITHUB_URL",
+		"SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH",
+		"SYMPHONY_BOOTSTRAP_CACHE_ROOT",
+		"SYMPHONY_BOOTSTRAP_CACHE_BASE",
+		"SYMPHONY_BOOTSTRAP_CACHE_KEY",
+	} {
+		t.Setenv(key, "")
+	}
 	defaults := loadWorkspaceDefaults()
 	if defaults.repoURL != "" || defaults.githubURL != "" || defaults.cacheRoot != "" || defaults.cacheKey != "" {
 		t.Fatalf("expected empty optional defaults, got %+v", defaults)
@@ -312,5 +364,82 @@ func TestRunLocalIssueUpdateAppendsCommentAndState(t *testing.T) {
 	}
 	if !bytes.Contains(body, []byte(`"state": "In Progress"`)) {
 		t.Fatalf("expected updated state in store, got %s", string(body))
+	}
+}
+
+func TestResolveGitHubSyncRemotesPrefersUpstreamThenOriginAndGithub(t *testing.T) {
+	tmp := t.TempDir()
+	repo := filepath.Join(tmp, "repo")
+	if err := os.MkdirAll(repo, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initGitRepo(t, repo)
+	for _, remote := range []string{"origin", "github"} {
+		remotePath := filepath.Join(tmp, remote+".git")
+		if output, err := exec.Command("git", "init", "--bare", remotePath).CombinedOutput(); err != nil {
+			t.Fatalf("git init --bare %s failed: %v (%s)", remote, err, string(output))
+		}
+		cmd := exec.Command("git", "remote", "add", remote, remotePath)
+		cmd.Dir = repo
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git remote add %s failed: %v (%s)", remote, err, string(output))
+		}
+	}
+	gitCommitFile(t, repo, "README.md", "hello\n", "initial commit")
+	cmd := exec.Command("git", "push", "-u", "github", "HEAD")
+	cmd.Dir = repo
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git push -u github HEAD failed: %v (%s)", err, string(output))
+	}
+
+	remotes, err := resolveGitHubSyncRemotes(repo, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(remotes, ",") != "github,origin" {
+		t.Fatalf("unexpected remote order: %v", remotes)
+	}
+}
+
+func TestRunGitHubSyncSyncPushesUpstreamAndOriginByDefault(t *testing.T) {
+	tmp := t.TempDir()
+	repo := filepath.Join(tmp, "repo")
+	if err := os.MkdirAll(repo, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initGitRepo(t, repo)
+	for _, remote := range []string{"origin", "github"} {
+		remotePath := filepath.Join(tmp, remote+".git")
+		if output, err := exec.Command("git", "init", "--bare", remotePath).CombinedOutput(); err != nil {
+			t.Fatalf("git init --bare %s failed: %v (%s)", remote, err, string(output))
+		}
+		cmd := exec.Command("git", "remote", "add", remote, remotePath)
+		cmd.Dir = repo
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git remote add %s failed: %v (%s)", remote, err, string(output))
+		}
+	}
+	gitCommitFile(t, repo, "README.md", "hello\n", "initial commit")
+	cmd := exec.Command("git", "push", "-u", "github", "HEAD")
+	cmd.Dir = repo
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git push -u github HEAD failed: %v (%s)", err, string(output))
+	}
+	localSHA := gitCommitFile(t, repo, "README.md", "hello again\n", "second commit")
+
+	output, runErr := captureStdout(t, func() error {
+		return runGitHubSync([]string{"sync", "--repo", repo, "--json"})
+	})
+	if runErr != nil {
+		t.Fatalf("run github-sync sync: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"remote": "github"`)) || !bytes.Contains(output, []byte(`"remote": "origin"`)) {
+		t.Fatalf("expected both remotes in output, got %s", string(output))
+	}
+	for _, remote := range []string{"origin", "github"} {
+		sha := gitOutput(t, repo, "ls-remote", "--heads", remote, gitOutput(t, repo, "branch", "--show-current"))
+		if !strings.Contains(sha, localSHA) {
+			t.Fatalf("expected %s to have %s, got %s", remote, localSHA, sha)
+		}
 	}
 }

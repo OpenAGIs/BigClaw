@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 )
 
 type RepoSyncStatus struct {
@@ -131,6 +132,42 @@ func remoteDefaultBranch(repo string, remote string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("could not determine default branch for remote %s", remote)
+}
+
+func ListRemotes(repo string) ([]string, error) {
+	repoPath, err := filepath.Abs(repo)
+	if err != nil {
+		return nil, err
+	}
+	output, err := requireGit(repoPath, "remote")
+	if err != nil {
+		return nil, err
+	}
+	remotes := []string{}
+	for _, line := range splitLines(output) {
+		name := trimmed(line)
+		if name != "" {
+			remotes = append(remotes, name)
+		}
+	}
+	sort.Strings(remotes)
+	return remotes, nil
+}
+
+func CurrentUpstreamRemote(repo string) (string, error) {
+	repoPath, err := filepath.Abs(repo)
+	if err != nil {
+		return "", err
+	}
+	upstream, err := requireGit(repoPath, "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}")
+	if err != nil {
+		return "", nil
+	}
+	parts := splitN(upstream, '/', 2)
+	if len(parts) != 2 {
+		return "", nil
+	}
+	return trimmed(parts[0]), nil
 }
 
 func remoteBranchSHA(repo string, remote string, branch string) (string, error) {
@@ -372,6 +409,24 @@ func splitWhitespace(value string) []string {
 	if current != "" {
 		result = append(result, current)
 	}
+	return result
+}
+
+func splitN(value string, sep rune, count int) []string {
+	if count <= 1 {
+		return []string{value}
+	}
+	result := []string{}
+	current := ""
+	for _, r := range value {
+		if r == sep && len(result) < count-1 {
+			result = append(result, current)
+			current = ""
+			continue
+		}
+		current += string(r)
+	}
+	result = append(result, current)
 	return result
 }
 
