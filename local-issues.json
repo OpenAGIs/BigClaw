@@ -596,7 +596,7 @@
       "title": "Stabilize continuation summary schema across refresh modes",
       "description": "Keep `summary.continuation` shape consistent even when continuation refresh is disabled or skipped, so machine-readable consumers do not have to branch on missing fields for gate status, recommendation, failing checks, and next actions.",
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "labels": [
         "parallel",
         "validation",
@@ -605,8 +605,13 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-20T19:52:00Z",
-      "updated_at": "2026-03-20T19:52:00Z",
-      "comments": []
+      "updated_at": "2026-03-20T19:54:00Z",
+      "comments": [
+        {
+          "body": "Closed `BIG-PAR-098` after stabilizing the continuation summary schema across refresh modes.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now builds a default continuation result shape up front, so `summary.continuation` keeps `scorecard_status`, `policy_gate_status`, `policy_gate_recommendation`, `latest_bundle_age_hours`, `failing_checks`, and `next_actions` even when continuation refresh is disabled or auto-skipped.\n- The auto-skip path now marks `policy_gate_status=skipped` instead of dropping gate fields entirely, while the disabled path reports `not-refreshed` defaults.\n- `tests/test_parallel_validation_bundle.py` now covers the disabled schema, the auto-skip schema, and the existing exporter hold path, and `bigclaw-go/docs/e2e-validation.md` now documents the stable summary shape for skipped refresh cases.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded tests/test_parallel_validation_bundle.py harness for disabled, auto-skip, and exporter hold cases ...` -> passed (`parallel validation bundle schema tests passed`)\n- `git rev-parse HEAD` -> `7259fa69a0b9ec5a0305b1bb66a35c8a07fa0f54`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `7259fa69a0b9ec5a0305b1bb66a35c8a07fa0f54` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `7259fa69a0b9ec5a0305b1bb66a35c8a07fa0f54` (matches local)\n- `git log -1 --stat` -> `Stabilize continuation summary schema`\n\nCommit: `7259fa69a0b9ec5a0305b1bb66a35c8a07fa0f54`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T19:54:00Z"
+        }
+      ]
     }
   ]
 }
