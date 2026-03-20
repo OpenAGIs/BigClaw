@@ -1468,6 +1468,16 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 			Format   string `json:"format"`
 			Download bool   `json:"download"`
 		} `json:"reports"`
+		Closeout struct {
+			ValidationEvidence []string `json:"validation_evidence"`
+			GitPushSucceeded   bool     `json:"git_push_succeeded"`
+			GitPushOutput      string   `json:"git_push_output"`
+			GitLogStatOutput   string   `json:"git_log_stat_output"`
+			RemoteSynced       bool     `json:"remote_synced"`
+			LocalSHA           string   `json:"local_sha"`
+			RemoteSHA          string   `json:"remote_sha"`
+			Complete           bool     `json:"complete"`
+		} `json:"closeout"`
 	}
 	if err := json.Unmarshal(runResponse.Body.Bytes(), &decoded); err != nil {
 		t.Fatalf("decode run detail: %v", err)
@@ -1496,6 +1506,9 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 	if len(decoded.Reports) != 1 || decoded.Reports[0].Format != "markdown" || !decoded.Reports[0].Download {
 		t.Fatalf("expected downloadable markdown report, got %+v", decoded.Reports)
 	}
+	if len(decoded.Closeout.ValidationEvidence) != 0 || decoded.Closeout.GitPushSucceeded || decoded.Closeout.GitLogStatOutput != "" || decoded.Closeout.RemoteSynced || decoded.Closeout.Complete {
+		t.Fatalf("expected empty closeout summary when metadata is absent, got %+v", decoded.Closeout)
+	}
 
 	auditResponse := httptest.NewRecorder()
 	handler.ServeHTTP(auditResponse, httptest.NewRequest(http.MethodGet, "/v2/runs/task-run-report/audit?limit=20", nil))
@@ -1521,6 +1534,57 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 		if !strings.Contains(reportResponse.Body.String(), want) {
 			t.Fatalf("expected %q in run report, got %s", want, reportResponse.Body.String())
 		}
+	}
+	if !strings.Contains(reportResponse.Body.String(), "## Closeout") || !strings.Contains(reportResponse.Body.String(), "Complete: false") {
+		t.Fatalf("expected closeout section in run report, got %s", reportResponse.Body.String())
+	}
+}
+
+func TestV2RunDetailCloseoutSummaryFromMetadata(t *testing.T) {
+	recorder := observability.NewRecorder()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Control: control.New(), Now: func() time.Time { return time.Unix(1700006000, 0) }}
+	handler := server.Handler()
+	task := domain.Task{
+		ID:      "task-run-closeout",
+		TraceID: "trace-run-closeout",
+		Title:   "Close out release",
+		State:   domain.TaskSucceeded,
+		Metadata: map[string]string{
+			"team":                "platform",
+			"project":             "alpha",
+			"validation_evidence": `["go test ./internal/api","bash scripts/ops/bigclawctl github-sync status --json"]`,
+			"git_push_succeeded":  "true",
+			"git_push_output":     "To github.com:OpenAGIs/BigClaw.git",
+			"git_log_stat_output": "commit abc123\n bigclaw-go/internal/api/v2.go | 10 ++++++++++",
+			"remote_synced":       "true",
+			"local_sha":           "abc123",
+			"remote_sha":          "abc123",
+		},
+	}
+	recorder.StoreTask(task)
+
+	runResponse := httptest.NewRecorder()
+	handler.ServeHTTP(runResponse, httptest.NewRequest(http.MethodGet, "/v2/runs/task-run-closeout?limit=20", nil))
+	if runResponse.Code != http.StatusOK {
+		t.Fatalf("expected run detail 200, got %d %s", runResponse.Code, runResponse.Body.String())
+	}
+	var decoded struct {
+		Closeout struct {
+			ValidationEvidence []string `json:"validation_evidence"`
+			GitPushSucceeded   bool     `json:"git_push_succeeded"`
+			GitPushOutput      string   `json:"git_push_output"`
+			GitLogStatOutput   string   `json:"git_log_stat_output"`
+			RemoteSynced       bool     `json:"remote_synced"`
+			LocalSHA           string   `json:"local_sha"`
+			RemoteSHA          string   `json:"remote_sha"`
+			Complete           bool     `json:"complete"`
+		} `json:"closeout"`
+	}
+	if err := json.Unmarshal(runResponse.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode run detail closeout: %v", err)
+	}
+	if len(decoded.Closeout.ValidationEvidence) != 2 || !decoded.Closeout.GitPushSucceeded || decoded.Closeout.GitPushOutput == "" || decoded.Closeout.GitLogStatOutput == "" || !decoded.Closeout.RemoteSynced || decoded.Closeout.LocalSHA != "abc123" || decoded.Closeout.RemoteSHA != "abc123" || !decoded.Closeout.Complete {
+		t.Fatalf("unexpected closeout payload: %+v", decoded.Closeout)
 	}
 }
 

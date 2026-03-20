@@ -292,6 +292,17 @@ type runReportLink struct {
 	Download bool   `json:"download"`
 }
 
+type runCloseoutSummary struct {
+	ValidationEvidence []string `json:"validation_evidence"`
+	GitPushSucceeded   bool     `json:"git_push_succeeded"`
+	GitPushOutput      string   `json:"git_push_output,omitempty"`
+	GitLogStatOutput   string   `json:"git_log_stat_output"`
+	RemoteSynced       bool     `json:"remote_synced"`
+	LocalSHA           string   `json:"local_sha,omitempty"`
+	RemoteSHA          string   `json:"remote_sha,omitempty"`
+	Complete           bool     `json:"complete"`
+}
+
 type runDetailResponse struct {
 	Task          domain.Task                 `json:"task"`
 	State         string                      `json:"state"`
@@ -310,6 +321,7 @@ type runDetailResponse struct {
 	RecentActions []controlActionAuditEntry   `json:"recent_actions,omitempty"`
 	NotesTimeline []controlActionAuditEntry   `json:"notes_timeline,omitempty"`
 	Reports       []runReportLink             `json:"reports,omitempty"`
+	Closeout      runCloseoutSummary          `json:"closeout"`
 	Workpad       string                      `json:"workpad,omitempty"`
 }
 
@@ -1590,6 +1602,7 @@ func (s *Server) buildRunDetailResponse(task domain.Task, limit int, authorizati
 		AuditSummary:  summarizeControlAudit(auditEntries),
 		RecentActions: auditEntries,
 		NotesTimeline: auditNotesTimeline(auditEntries, limit),
+		Closeout:      buildRunCloseout(task),
 		Reports: []runReportLink{{
 			Name:     "run_report",
 			URL:      fmt.Sprintf("/v2/runs/%s/report?limit=%d", task.ID, limit),
@@ -1614,6 +1627,20 @@ func buildRunValidation(task domain.Task) runValidationSummary {
 		Status:             runValidationStatus(task.State),
 		Checks:             len(task.AcceptanceCriteria) + len(task.ValidationPlan),
 	}
+}
+
+func buildRunCloseout(task domain.Task) runCloseoutSummary {
+	closeout := runCloseoutSummary{
+		ValidationEvidence: metadataStringSlice(task, "validation_evidence"),
+		GitPushSucceeded:   metadataBoolValue(task, "git_push_succeeded"),
+		GitPushOutput:      strings.TrimSpace(task.Metadata["git_push_output"]),
+		GitLogStatOutput:   strings.TrimSpace(task.Metadata["git_log_stat_output"]),
+		RemoteSynced:       metadataBoolValue(task, "remote_synced"),
+		LocalSHA:           strings.TrimSpace(task.Metadata["local_sha"]),
+		RemoteSHA:          strings.TrimSpace(task.Metadata["remote_sha"]),
+	}
+	closeout.Complete = len(closeout.ValidationEvidence) > 0 && closeout.GitPushSucceeded && closeout.GitLogStatOutput != "" && closeout.RemoteSynced
+	return closeout
 }
 
 func runValidationStatus(state domain.TaskState) string {
@@ -1781,6 +1808,41 @@ func stringSliceFromAny(value any) []string {
 	}
 }
 
+func metadataStringSlice(task domain.Task, key string) []string {
+	raw := strings.TrimSpace(task.Metadata[key])
+	if raw == "" {
+		return nil
+	}
+	if strings.HasPrefix(raw, "[") {
+		var values []string
+		if err := json.Unmarshal([]byte(raw), &values); err == nil {
+			return values
+		}
+	}
+	parts := strings.FieldsFunc(raw, func(r rune) bool {
+		return r == '\n' || r == ';'
+	})
+	if len(parts) == 1 && strings.Contains(parts[0], ",") {
+		parts = strings.Split(parts[0], ",")
+	}
+	values := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			values = append(values, trimmed)
+		}
+	}
+	return values
+}
+
+func metadataBoolValue(task domain.Task, key string) bool {
+	value := strings.TrimSpace(task.Metadata[key])
+	if value == "" {
+		return false
+	}
+	parsed, err := strconv.ParseBool(value)
+	return err == nil && parsed
+}
+
 func renderRunDetailMarkdown(detail runDetailResponse) string {
 	var builder strings.Builder
 	builder.WriteString("# BigClaw Run Report\n\n")
@@ -1804,6 +1866,24 @@ func renderRunDetailMarkdown(detail runDetailResponse) string {
 	for _, item := range detail.Validation.ValidationPlan {
 		fmt.Fprintf(&builder, "- Validation Step: %s\n", item)
 	}
+	builder.WriteString("\n## Closeout\n\n")
+	if len(detail.Closeout.ValidationEvidence) == 0 {
+		builder.WriteString("- Validation Evidence: None\n")
+	} else {
+		for _, item := range detail.Closeout.ValidationEvidence {
+			fmt.Fprintf(&builder, "- Validation Evidence: %s\n", item)
+		}
+	}
+	fmt.Fprintf(&builder, "- Git Push Succeeded: %t\n", detail.Closeout.GitPushSucceeded)
+	if detail.Closeout.GitPushOutput != "" {
+		fmt.Fprintf(&builder, "- Git Push Output: %s\n", detail.Closeout.GitPushOutput)
+	}
+	fmt.Fprintf(&builder, "- Git Log -1 --stat Output: %s\n", firstNonEmpty(detail.Closeout.GitLogStatOutput, "None"))
+	fmt.Fprintf(&builder, "- Remote Synced: %t\n", detail.Closeout.RemoteSynced)
+	if detail.Closeout.LocalSHA != "" || detail.Closeout.RemoteSHA != "" {
+		fmt.Fprintf(&builder, "- SHA Pair: local=%s remote=%s\n", firstNonEmpty(detail.Closeout.LocalSHA, "missing"), firstNonEmpty(detail.Closeout.RemoteSHA, "missing"))
+	}
+	fmt.Fprintf(&builder, "- Complete: %t\n", detail.Closeout.Complete)
 	builder.WriteString("\n## Tool Trace\n\n")
 	if len(detail.ToolTraces) == 0 {
 		builder.WriteString("- None\n")

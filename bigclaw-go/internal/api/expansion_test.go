@@ -289,6 +289,46 @@ func TestV2ProductizationAndBillingEndpoints(t *testing.T) {
 		t.Fatalf("unexpected saved views export body: %s", savedViewsExportResponse.Body.String())
 	}
 
+	dashboardRunContractResponse := httptest.NewRecorder()
+	handler.ServeHTTP(dashboardRunContractResponse, httptest.NewRequest(http.MethodGet, "/v2/dashboard-run-contract", nil))
+	if dashboardRunContractResponse.Code != http.StatusOK {
+		t.Fatalf("expected dashboard run contract 200, got %d %s", dashboardRunContractResponse.Code, dashboardRunContractResponse.Body.String())
+	}
+	var dashboardRunContractDecoded struct {
+		Contract struct {
+			ContractID string `json:"contract_id"`
+			Version    string `json:"version"`
+		} `json:"contract"`
+		Audit struct {
+			ReleaseReady bool `json:"release_ready"`
+		} `json:"audit"`
+		Report struct {
+			Markdown  string `json:"markdown"`
+			ExportURL string `json:"export_url"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(dashboardRunContractResponse.Body.Bytes(), &dashboardRunContractDecoded); err != nil {
+		t.Fatalf("decode dashboard run contract: %v", err)
+	}
+	if dashboardRunContractDecoded.Contract.ContractID != "BIG-GOM-305" || dashboardRunContractDecoded.Contract.Version != "go-v1" || !dashboardRunContractDecoded.Audit.ReleaseReady {
+		t.Fatalf("unexpected dashboard run contract payload: %+v", dashboardRunContractDecoded)
+	}
+	if !strings.Contains(dashboardRunContractDecoded.Report.Markdown, "\"closeout\"") || dashboardRunContractDecoded.Report.ExportURL != "/v2/dashboard-run-contract/export" {
+		t.Fatalf("expected closeout contract report and export url, got %+v", dashboardRunContractDecoded.Report)
+	}
+
+	dashboardRunContractExportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(dashboardRunContractExportResponse, httptest.NewRequest(http.MethodGet, dashboardRunContractDecoded.Report.ExportURL, nil))
+	if dashboardRunContractExportResponse.Code != http.StatusOK {
+		t.Fatalf("expected dashboard run contract export 200, got %d %s", dashboardRunContractExportResponse.Code, dashboardRunContractExportResponse.Body.String())
+	}
+	if contentType := dashboardRunContractExportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected markdown export, got %q", contentType)
+	}
+	if !strings.Contains(dashboardRunContractExportResponse.Body.String(), "Dashboard and Run Contract") || !strings.Contains(dashboardRunContractExportResponse.Body.String(), "Release Ready: true") {
+		t.Fatalf("unexpected dashboard run contract export body: %s", dashboardRunContractExportResponse.Body.String())
+	}
+
 	usageResponse := httptest.NewRecorder()
 	handler.ServeHTTP(usageResponse, httptest.NewRequest(http.MethodGet, "/v2/billing/usage?organization=openagi&tier=enterprise", nil))
 	if usageResponse.Code != http.StatusOK {

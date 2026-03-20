@@ -250,6 +250,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/v2/design-system", s.handleV2DesignSystem)
 	mux.HandleFunc("/v2/saved-views", s.handleV2SavedViews)
 	mux.HandleFunc("/v2/saved-views/export", s.handleV2SavedViewsExport)
+	mux.HandleFunc("/v2/dashboard-run-contract", s.handleV2DashboardRunContract)
+	mux.HandleFunc("/v2/dashboard-run-contract/export", s.handleV2DashboardRunContractExport)
 	mux.HandleFunc("/v2/billing/usage", s.handleV2BillingUsage)
 	mux.HandleFunc("/v2/billing/entitlements", s.handleV2BillingEntitlements)
 	mux.HandleFunc("/v2/runs/", s.handleV2RunDetail)

@@ -375,6 +375,36 @@ func (s *Server) handleV2SavedViewsExport(w http.ResponseWriter, r *http.Request
 	_, _ = w.Write([]byte(product.RenderSavedViewReport(catalog, audit)))
 }
 
+func (s *Server) handleV2DashboardRunContract(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	contract := product.BuildDefaultDashboardRunContract()
+	audit := product.AuditDashboardRunContract(contract)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"contract": contract,
+		"audit":    audit,
+		"report": map[string]any{
+			"markdown":   product.RenderDashboardRunContractReport(contract, audit),
+			"export_url": "/v2/dashboard-run-contract/export",
+		},
+	})
+}
+
+func (s *Server) handleV2DashboardRunContractExport(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	contract := product.BuildDefaultDashboardRunContract()
+	audit := product.AuditDashboardRunContract(contract)
+	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+	w.Header().Set("Content-Disposition", `attachment; filename="dashboard-run-contract.md"`)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(product.RenderDashboardRunContractReport(contract, audit)))
+}
+
 func (s *Server) handleV2BillingUsage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
