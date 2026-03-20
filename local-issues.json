@@ -15,11 +15,15 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T14:47:28Z",
+      "updated_at": "2026-03-20T14:53:35Z",
       "comments": [
         {
           "body": "Progress update: restored canonical Go task-contract parity for the remaining `models.py` identity/budget-override gap. `bigclaw-go/internal/domain/task.go` now accepts legacy `task_id` JSON input while preserving the canonical `id` field, emits both identifiers on JSON output for migration compatibility, and carries the Python budget-override fields (`budget_override_actor`, `budget_override_reason`, `budget_override_amount`) on the canonical Go task type. Added focused coverage in `bigclaw-go/internal/domain/task_test.go` for JSON round-trip behavior and in `bigclaw-go/internal/api/server_test.go` to verify `/tasks` accepts legacy `task_id` payloads.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/domain ./internal/api` -> passed\n- `git rev-parse HEAD` -> `cee6c12892541a4e485b0338c04965d5ac2d798b`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `cee6c12892541a4e485b0338c04965d5ac2d798b` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `cee6c12892541a4e485b0338c04965d5ac2d798b` (matches local)\n- `git log -1 --stat` -> `Restore Go task contract parity for legacy task IDs`\n\nCommit: `cee6c12892541a4e485b0338c04965d5ac2d798b`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T14:47:28Z"
+        },
+        {
+          "body": "Progress update: widened the canonical Go billing usage contract to preserve the remaining Python `models.py` metadata shape. `bigclaw-go/internal/billing/statement.go` now uses `map[string]any` for usage metadata instead of narrowing to string-only values, and `bigclaw-go/internal/billing/statement_test.go` now locks round-trip behavior for mixed-type metadata values. Updated `docs/go-domain-intake-parity-matrix.md` to reflect the preserved Python `Dict[str, Any]` billing metadata contract.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/billing` -> passed\n- `git rev-parse HEAD` -> `82b5bc690477760aa6a3634014042967aa902db8`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `82b5bc690477760aa6a3634014042967aa902db8` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `82b5bc690477760aa6a3634014042967aa902db8` (matches local)\n- `git log -1 --stat` -> `Preserve Python billing metadata shape in Go`\n\nCommit: `82b5bc690477760aa6a3634014042967aa902db8`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T14:53:35Z"
         }
       ]
     },
