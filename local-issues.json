@@ -41,6 +41,11 @@
           "author": "codex",
           "body": "Added the Go-native workflow journal and acceptance gate contract in bigclaw-go/internal/workflow so the runtime slice now has a typed WorkpadJournal, acceptance decision model, execution outcome contract, and evidence-driven approval logic migrated from src/bigclaw/workflow.py with direct package tests for journal persistence, approval requirements, incomplete evidence rejection, accepted closeout, and hold-path rejection. Validation: cd bigclaw-go \u0026\u0026 go test ./internal/workflow -\u003e ok; cd bigclaw-go \u0026\u0026 go test ./... -\u003e ok; bash scripts/ops/bigclawctl github-sync status --json -\u003e local SHA dc44588f83d7eaa5135489ec649799b77f860402 matches remote SHA dc44588f83d7eaa5135489ec649799b77f860402 with status ok and synced true; git log -1 --stat -\u003e captured for commit dc44588f83d7eaa5135489ec649799b77f860402 with workflow engine files in the stat output. Commit SHA: dc44588f83d7eaa5135489ec649799b77f860402. PR URL: unavailable; gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state returned [].",
           "created_at": "2026-03-20T10:51:51Z"
+        },
+        {
+          "author": "codex",
+          "body": "Ported the Python orchestration policy contract into bigclaw-go/internal/workflow by adding DepartmentHandoff, OrchestrationPlan, HandoffRequest, OrchestrationPolicyDecision, CrossDepartmentOrchestrator, PremiumOrchestrationPolicy, and handoff-request construction with tests covering cross-functional planning, standard-tier constraint behavior, premium passthrough, and blocked handoff generation. Validation: cd bigclaw-go \u0026\u0026 go test ./internal/workflow -\u003e ok; cd bigclaw-go \u0026\u0026 go test ./... -\u003e ok; bash scripts/ops/bigclawctl github-sync status --json -\u003e local SHA 6e8b630a30bbc871f4dcf8e9716d8e75774b09e7 matches remote SHA 6e8b630a30bbc871f4dcf8e9716d8e75774b09e7 with status ok and synced true; git log -1 --stat -\u003e captured for commit 6e8b630a30bbc871f4dcf8e9716d8e75774b09e7 with workflow orchestration files in the stat output. Commit SHA: 6e8b630a30bbc871f4dcf8e9716d8e75774b09e7. PR URL: unavailable; gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state returned [].",
+          "created_at": "2026-03-20T10:59:59Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -56,7 +61,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Workflow orchestration and scheduler loop migration",
-      "updated_at": "2026-03-20T10:51:51Z"
+      "updated_at": "2026-03-20T10:59:59Z"
     },
     {
       "assigned_to_worker": true,
