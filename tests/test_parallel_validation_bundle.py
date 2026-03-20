@@ -228,7 +228,10 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
 
     manifest = json.loads((root / 'docs' / 'reports' / 'live-validation-index.json').read_text(encoding='utf-8'))
     assert manifest['latest']['run_id'] == '20260315T120000Z'
+    assert manifest['latest']['continuation']['policy_gate_status'] == 'policy-hold'
+    assert manifest['latest']['continuation']['failing_checks']
     assert manifest['recent_runs'][0]['run_id'] == '20260315T120000Z'
+    assert manifest['recent_runs'][0]['continuation']['policy_gate_recommendation'] == 'hold'
 
 
 def test_run_all_can_refresh_shared_queue_before_bundle_export(tmp_path: Path):

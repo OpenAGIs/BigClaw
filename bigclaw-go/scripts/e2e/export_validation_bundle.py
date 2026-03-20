@@ -192,15 +192,24 @@ def build_recent_runs(bundle_root: Path, root: Path, limit: int = 8) -> list[dic
     runs.sort(key=lambda item: item[0], reverse=True)
     items: list[dict[str, Any]] = []
     for _, summary in runs[:limit]:
-        items.append(
-            {
-                'run_id': summary.get('run_id', ''),
-                'generated_at': summary.get('generated_at', ''),
-                'status': summary.get('status', 'unknown'),
-                'bundle_path': summary.get('bundle_path', ''),
-                'summary_path': summary.get('summary_path', ''),
+        item = {
+            'run_id': summary.get('run_id', ''),
+            'generated_at': summary.get('generated_at', ''),
+            'status': summary.get('status', 'unknown'),
+            'bundle_path': summary.get('bundle_path', ''),
+            'summary_path': summary.get('summary_path', ''),
+        }
+        continuation = summary.get('continuation')
+        if isinstance(continuation, dict):
+            item['continuation'] = {
+                'mode': continuation.get('mode'),
+                'refreshed': continuation.get('refreshed'),
+                'policy_gate_status': continuation.get('policy_gate_status'),
+                'policy_gate_recommendation': continuation.get('policy_gate_recommendation'),
+                'latest_bundle_age_hours': continuation.get('latest_bundle_age_hours'),
+                'failing_checks': continuation.get('failing_checks', []),
             }
-        )
+        items.append(item)
     return items
 
 
@@ -537,6 +546,10 @@ def main() -> int:
     )
     write_json(bundle_summary_path, summary)
     write_json(canonical_summary_path, summary)
+
+    recent_runs = build_recent_runs(bundle_root, root)
+    manifest = {'latest': summary, 'recent_runs': recent_runs}
+    write_json(root / args.manifest_path, manifest)
 
     continuation_overview = build_continuation_overview(root, summary['continuation'])
     continuation_artifacts = build_continuation_artifacts(root)
