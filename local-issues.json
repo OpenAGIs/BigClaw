@@ -520,6 +520,24 @@
           "created_at": "2026-03-20T19:31:00Z"
         }
       ]
+    },
+    {
+      "id": "big-par-095",
+      "identifier": "BIG-PAR-095",
+      "title": "Honor continuation refresh disable flag in run_all",
+      "description": "Make run_all forward the effective continuation refresh mode to export_validation_bundle.py so BIGCLAW_E2E_REFRESH_CONTINUATION=0 truly disables scorecard/policy regeneration instead of being ignored by the exporter default.",
+      "priority": 2,
+      "state": "In Progress",
+      "labels": [
+        "parallel",
+        "validation",
+        "tooling",
+        "workflow"
+      ],
+      "assigned_to_worker": true,
+      "created_at": "2026-03-20T19:34:00Z",
+      "updated_at": "2026-03-20T19:34:00Z",
+      "comments": []
     }
   ]
 }
