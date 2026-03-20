@@ -110,6 +110,18 @@ func TestRuntimeProcessesTask(t *testing.T) {
 	}
 }
 
+func TestRuntimeSkipsCleanlyWhenQueueUnset(t *testing.T) {
+	runtime := Runtime{WorkerID: "worker-no-queue"}
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
+	if processed {
+		t.Fatal("expected runtime to skip when queue is unset")
+	}
+	snapshot := runtime.Snapshot()
+	if snapshot.State != "idle" || snapshot.WorkerID != "worker-no-queue" {
+		t.Fatalf("expected idle snapshot when queue is unset, got %+v", snapshot)
+	}
+}
+
 func TestRuntimeUsesDefaultTimeoutAndLeaseWhenUnset(t *testing.T) {
 	q := queue.NewMemoryQueue()
 	if err := q.Enqueue(context.Background(), domain.Task{ID: "task-defaults", TraceID: "trace-defaults", Priority: 1, CreatedAt: time.Now()}); err != nil {

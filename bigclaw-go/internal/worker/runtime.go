@@ -89,6 +89,15 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		})
 		return false
 	}
+	if r.Queue == nil {
+		r.updateStatus(func(status *Status) {
+			status.WorkerID = r.WorkerID
+			if status.State == "" || status.State == "paused" {
+				status.State = "idle"
+			}
+		})
+		return false
+	}
 
 	task, lease, err := r.Queue.LeaseNext(ctx, r.WorkerID, r.effectiveLeaseTTL())
 	if err != nil || task == nil || lease == nil {
