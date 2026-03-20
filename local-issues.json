@@ -573,7 +573,7 @@
       "title": "Sync coverage and readiness docs with continuation surfaces",
       "description": "Update the broader repo-native reviewer docs so they mention that the live validation summary and index now carry continuation gate detail directly, not only the separate scorecard and policy-gate artifacts.",
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "labels": [
         "parallel",
         "validation",
@@ -582,8 +582,13 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-20T19:47:00Z",
-      "updated_at": "2026-03-20T19:47:00Z",
-      "comments": []
+      "updated_at": "2026-03-20T19:48:00Z",
+      "comments": [
+        {
+          "body": "Closed `BIG-PAR-097` after aligning the higher-level reviewer docs with the newer continuation surfaces.\n\nWhat changed:\n- `bigclaw-go/docs/reports/review-readiness.md` now notes that validation continuation evidence is not only captured in the scorecard and policy-gate artifacts, but is also surfaced inline in `docs/reports/live-validation-summary.json` and `docs/reports/live-validation-index.md`.\n- `bigclaw-go/docs/reports/issue-coverage.md` now carries the same repo-native reviewer framing in both the `OPE-271` follow-up digest mapping and the remaining-gap summary.\n\nValidation:\n- `python3 - <<\"PY\" ... direct importlib-loaded tests/test_followup_digests.py harness ...` -> passed (`followup digest consistency tests passed`)\n- `git rev-parse HEAD` -> `f46eb385f2784889ad75db1eda78cbddd7f846df`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `f46eb385f2784889ad75db1eda78cbddd7f846df` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `f46eb385f2784889ad75db1eda78cbddd7f846df` (matches local)\n- `git log -1 --stat` -> `Sync continuation surfaces in reviewer docs`\n\nCommit: `f46eb385f2784889ad75db1eda78cbddd7f846df`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T19:48:00Z"
+        }
+      ]
     }
   ]
 }
