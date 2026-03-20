@@ -358,14 +358,24 @@ class TaskRun:
         self.traces.append(TraceEntry(span=span, status=status, attributes=attributes))
 
     def register_artifact(self, name: str, kind: str, path: str, **metadata: Any) -> None:
+        digest = sha256_file(path)
         self.artifacts.append(
             ArtifactRecord(
                 name=name,
                 kind=kind,
                 path=path,
-                sha256=sha256_file(path),
+                sha256=digest,
                 metadata=metadata,
             )
+        )
+        self.audit(
+            "artifact.registered",
+            "task-run",
+            "recorded",
+            artifact_name=name,
+            artifact_kind=kind,
+            path=path,
+            sha256=digest,
         )
 
     def audit(self, action: str, actor: str, outcome: str, **details: Any) -> None:
@@ -466,6 +476,15 @@ class TaskRun:
             repo_sync_audit=repo_sync_audit,
             run_commit_links=links,
             accepted_commit_hash=binding.accepted_commit_hash if binding else "",
+        )
+        self.audit(
+            "closeout.recorded",
+            "task-run",
+            "recorded",
+            validation_evidence_count=len(validation_evidence),
+            git_push_succeeded=git_push_succeeded,
+            git_log_stat_captured=bool(git_log_stat_output.strip()),
+            has_repo_sync_audit=repo_sync_audit is not None,
         )
 
     def finalize(self, status: str, summary: str) -> None:
