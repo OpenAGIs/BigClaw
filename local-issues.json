@@ -19,6 +19,14 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "body": "Claimed the worker runtime quota-enforcement slice. Applying policy-resolved concurrency and queue-depth limits inside the Go worker scheduler path so runtime decisions enforce tenant/task policy caps instead of only global loop quotas.",
+          "commit_sha": "",
+          "created_at": "2026-03-20T09:51:52Z",
+          "pr_url": ""
+        }
+      ],
       "created_at": "2026-03-18T09:00:00Z",
       "description": "Keep porting governance, execution-contract, audit, and policy semantics into Go so review and approval behavior no longer depends on Python-only code paths.",
       "id": "big-gom-302",
@@ -32,7 +40,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Risk, policy, and approval semantics migration",
-      "updated_at": "2026-03-18T09:00:00Z"
+      "updated_at": "2026-03-20T09:51:52Z"
     },
     {
       "assigned_to_worker": true,

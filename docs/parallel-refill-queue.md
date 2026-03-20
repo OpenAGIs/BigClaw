@@ -18,7 +18,7 @@ longer waits on Linear to keep issue execution moving.
 - Local issue CLI:
   - `bash scripts/ops/bigclaw-issue list`
   - `bash scripts/ops/bigclaw-issue state BIG-GOM-303 "In Progress"`
-  - `bash scripts/ops/bigclawctl local-issue closeout --local-issues local-issues.json --issue BIG-GOM-307 --summary "..." --validation "..." --commit "$(git rev-parse HEAD)" --pr-url "https://github.com/OpenAGIs/BigClaw/pull/307"`
+  - `bash scripts/ops/bigclawctl local-issue closeout --local-issues local-issues.json --issue BIG-GOM-303 --summary "..." --validation "..." --commit "$(git rev-parse HEAD)" --pr-url "https://github.com/OpenAGIs/BigClaw/pull/303"`
 - Local dashboard/orchestrator:
   - `bash scripts/ops/bigclaw-symphony`
   - `bash scripts/ops/bigclaw-panel`
@@ -52,6 +52,7 @@ longer waits on Linear to keep issue execution moving.
 - Active repo tranche:
   - `BIG-GOM-301` — unified domain model and intake contract migration
   - `BIG-GOM-302` — risk, policy, and approval semantics migration
+- Recently completed:
   - `BIG-GOM-307` — workflow, bootstrap, and GitHub sync toolchain migration
 - Runnable first batch once issue creation is available:
   - `BIG-GOM-301` — unified domain model and intake contract migration
@@ -61,7 +62,6 @@ longer waits on Linear to keep issue execution moving.
 - Standby:
   - `BIG-GOM-305` — control center, triage, and operations view migration
   - `BIG-GOM-306` — repo collaboration and lineage surface migration
-  - `BIG-GOM-307` — workflow, bootstrap, and GitHub sync toolchain migration
   - `BIG-GOM-308` — Python deprecation and Go-only mainline switch
 
 ## Canonical refill order

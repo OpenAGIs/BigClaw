@@ -523,3 +523,93 @@ func TestRuntimeUrgentTaskPreemptsLowerPriorityRun(t *testing.T) {
 		t.Fatalf("expected urgent runtime preemption status, got %+v", snapshot)
 	}
 }
+
+func TestRuntimeUsesTaskPolicyConcurrencyLimit(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	if err := q.Enqueue(context.Background(), domain.Task{
+		ID:        "task-standard-concurrency",
+		Priority:  3,
+		TenantID:  "platform",
+		Metadata:  map[string]string{"team": "platform"},
+		CreatedAt: time.Now(),
+	}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+	runtime := Runtime{
+		WorkerID:    "worker-1",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorLocal, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    200 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{
+		ConcurrentLimit: 100,
+		CurrentRunning:  8,
+		BudgetRemaining: 100000,
+	})
+	if !processed {
+		t.Fatal("expected task to be processed")
+	}
+	if got := q.Size(context.Background()); got != 1 {
+		t.Fatalf("expected task to be requeued by policy concurrency limit, got size=%d", got)
+	}
+	latest, ok := recorder.LatestByTask("task-standard-concurrency")
+	if !ok || latest.Type != domain.EventTaskRetried {
+		t.Fatalf("expected retry event after policy concurrency rejection, got %+v", latest)
+	}
+	snapshot := runtime.Snapshot()
+	if snapshot.RetriedRuns != 1 || snapshot.LastResult != "tenant concurrency quota exceeded" {
+		t.Fatalf("expected retried snapshot with policy concurrency rejection, got %+v", snapshot)
+	}
+}
+
+func TestRuntimeUsesTaskPolicyQueueDepthLimit(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	if err := q.Enqueue(context.Background(), domain.Task{
+		ID:       "task-queue-depth",
+		Priority: 3,
+		TenantID: "platform",
+		Metadata: map[string]string{
+			"team":                     "platform",
+			"policy_queue_depth_limit": "2",
+		},
+		CreatedAt: time.Now(),
+	}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+	runtime := Runtime{
+		WorkerID:    "worker-1",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorLocal, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    200 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{
+		ConcurrentLimit: 100,
+		QueueDepth:      2,
+		BudgetRemaining: 100000,
+	})
+	if !processed {
+		t.Fatal("expected task to be processed")
+	}
+	if got := q.Size(context.Background()); got != 1 {
+		t.Fatalf("expected task to remain queued after policy backpressure, got size=%d", got)
+	}
+	latest, ok := recorder.LatestByTask("task-queue-depth")
+	if !ok || latest.Type != domain.EventTaskRetried {
+		t.Fatalf("expected retry event after policy queue depth rejection, got %+v", latest)
+	}
+	if reason := latest.Payload["reason"]; reason != "backpressure activated: queue depth limit exceeded" {
+		t.Fatalf("unexpected queue depth rejection reason: %+v", latest.Payload)
+	}
+}

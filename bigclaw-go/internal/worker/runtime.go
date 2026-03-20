@@ -12,6 +12,7 @@ import (
 	"bigclaw-go/internal/events"
 	"bigclaw-go/internal/executor"
 	"bigclaw-go/internal/observability"
+	"bigclaw-go/internal/policy"
 	"bigclaw-go/internal/queue"
 	"bigclaw-go/internal/scheduler"
 )
@@ -138,7 +139,7 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	})
 
 	r.publish(domain.Event{ID: eventID(task.ID, "leased"), Type: domain.EventTaskLeased, TaskID: task.ID, TraceID: task.TraceID, Timestamp: now})
-	decision := r.Scheduler.Decide(*task, quota)
+	decision := r.Scheduler.Decide(*task, effectiveQuota(*task, quota))
 	if !decision.Accepted {
 		_ = r.Queue.Requeue(ctx, lease, time.Now().Add(100*time.Millisecond))
 		r.finishStatus(string(domain.EventTaskRetried), decision.Reason, func(status *Status) {
@@ -502,4 +503,38 @@ func runtimeResultPayload(executorKind domain.ExecutorKind, result executor.Resu
 
 func eventID(taskID, suffix string) string {
 	return fmt.Sprintf("%s-%s", taskID, suffix)
+}
+
+func effectiveQuota(task domain.Task, base scheduler.QuotaSnapshot) scheduler.QuotaSnapshot {
+	summary := policy.Resolve(task)
+	base.ConcurrentLimit = tighterPositiveInt(base.ConcurrentLimit, summary.Quota.ConcurrentLimit)
+	base.MaxQueueDepth = tighterPositiveInt(base.MaxQueueDepth, summary.Quota.QueueDepthLimit)
+	base.BudgetRemaining = tighterPositiveInt64(base.BudgetRemaining, summary.Quota.BudgetCapCents)
+	return base
+}
+
+func tighterPositiveInt(current int, candidate int) int {
+	switch {
+	case current <= 0:
+		return candidate
+	case candidate <= 0:
+		return current
+	case candidate < current:
+		return candidate
+	default:
+		return current
+	}
+}
+
+func tighterPositiveInt64(current int64, candidate int64) int64 {
+	switch {
+	case current <= 0:
+		return candidate
+	case candidate <= 0:
+		return current
+	case candidate < current:
+		return candidate
+	default:
+		return current
+	}
 }

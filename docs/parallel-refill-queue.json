@@ -17,11 +17,12 @@
     "blocked_reason": "Linear workspace issue quota still blocks new Linear issues, but the active BigClaw tracker now runs from local-issues.json and this queue remains the refill source of truth"
   },
   "recent_batches": {
-    "completed": [],
+    "completed": [
+      "BIG-GOM-307"
+    ],
     "active": [
       "BIG-GOM-301",
-      "BIG-GOM-302",
-      "BIG-GOM-307"
+      "BIG-GOM-302"
     ],
     "standby": [
       "BIG-GOM-303",
@@ -82,7 +83,7 @@
       "identifier": "BIG-GOM-307",
       "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
       "track": "Python Retirement & Cutover Validation",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-GOM-308",
