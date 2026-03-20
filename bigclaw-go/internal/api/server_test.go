@@ -1477,6 +1477,8 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 			Summary          string `json:"summary"`
 			RequiresApproval bool   `json:"requires_approval"`
 		} `json:"risk_score"`
+		Executor     string            `json:"executor"`
+		Sandbox      string            `json:"sandbox_profile"`
 		Artifacts    map[string]string `json:"artifacts"`
 		ArtifactRefs []struct {
 			Kind string `json:"kind"`
@@ -1509,6 +1511,9 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 	}
 	if decoded.Risk.Total < 40 || decoded.Risk.Summary == "" || decoded.Risk.RequiresApproval {
 		t.Fatalf("expected explainable medium risk score, got %+v", decoded.Risk)
+	}
+	if decoded.Executor != "kubernetes" || decoded.Sandbox != "browser" {
+		t.Fatalf("expected top-level execution surface in run detail, got %+v", decoded)
 	}
 	if decoded.Artifacts["report"] != "/v2/runs/task-run-report/report?limit=20" || decoded.Artifacts["audit"] != "/v2/runs/task-run-report/audit?limit=20" || decoded.Artifacts["trace"] == "" {
 		t.Fatalf("expected report/audit/trace links, got %+v", decoded.Artifacts)
@@ -1549,7 +1554,7 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 	if disposition := reportResponse.Header().Get("Content-Disposition"); !strings.Contains(disposition, "task-run-report-run-report.md") {
 		t.Fatalf("expected attachment filename, got %q", disposition)
 	}
-	for _, want := range []string{"# BigClaw Run Report", "Task ID: task-run-report", "Failure Reason: pod crashed during validation", "sandbox=browser", "k8s://jobs/bigclaw/run-report", "Manual inspection required"} {
+	for _, want := range []string{"# BigClaw Run Report", "Task ID: task-run-report", "Executor: kubernetes", "Sandbox Profile: browser", "Failure Reason: pod crashed during validation", "sandbox=browser", "k8s://jobs/bigclaw/run-report", "Manual inspection required"} {
 		if !strings.Contains(reportResponse.Body.String(), want) {
 			t.Fatalf("expected %q in run report, got %s", want, reportResponse.Body.String())
 		}

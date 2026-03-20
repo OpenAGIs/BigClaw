@@ -298,6 +298,8 @@ type runDetailResponse struct {
 	State         string                      `json:"state"`
 	Policy        policy.Summary              `json:"policy"`
 	Risk          risk.Score                  `json:"risk_score"`
+	Executor      string                      `json:"executor,omitempty"`
+	Sandbox       string                      `json:"sandbox_profile,omitempty"`
 	Collaboration *control.Takeover           `json:"collaboration,omitempty"`
 	Trace         *observability.TraceSummary `json:"trace,omitempty"`
 	FailureReason string                      `json:"failure_reason,omitempty"`
@@ -1601,6 +1603,7 @@ func (s *Server) buildRunDetailResponse(task domain.Task, limit int, authorizati
 		}},
 		Workpad: task.Metadata["workpad"],
 	}
+	response.Executor, response.Sandbox = resolveRunExecutionSurface(events)
 	if s.Control != nil {
 		if takeover, ok := s.Control.TakeoverStatus(task.ID); ok {
 			copy := takeover
@@ -1714,6 +1717,17 @@ func collectRunToolTraces(task domain.Task, events []domain.Event) []runToolTrac
 	return traces
 }
 
+func resolveRunExecutionSurface(events []domain.Event) (string, string) {
+	for index := len(events) - 1; index >= 0; index-- {
+		executorName := eventStringValue(events[index].Payload, "executor")
+		sandboxProfile := eventStringValue(events[index].Payload, "sandbox_profile")
+		if executorName != "" || sandboxProfile != "" {
+			return executorName, sandboxProfile
+		}
+	}
+	return "", ""
+}
+
 func runToolTraceStatus(eventType domain.EventType) (string, bool) {
 	switch eventType {
 	case domain.EventSchedulerRouted:
@@ -1793,6 +1807,12 @@ func renderRunDetailMarkdown(detail runDetailResponse) string {
 	fmt.Fprintf(&builder, "- State: %s\n", detail.State)
 	fmt.Fprintf(&builder, "- Trace ID: %s\n", detail.Task.TraceID)
 	fmt.Fprintf(&builder, "- Plan: %s\n", detail.Policy.Plan)
+	if detail.Executor != "" {
+		fmt.Fprintf(&builder, "- Executor: %s\n", detail.Executor)
+	}
+	if detail.Sandbox != "" {
+		fmt.Fprintf(&builder, "- Sandbox Profile: %s\n", detail.Sandbox)
+	}
 	if detail.FailureReason != "" {
 		fmt.Fprintf(&builder, "- Failure Reason: %s\n", detail.FailureReason)
 	}
