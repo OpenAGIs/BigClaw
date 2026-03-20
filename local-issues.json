@@ -51,6 +51,11 @@
           "author": "codex",
           "body": "Added orchestration-aware scheduler assessment in bigclaw-go/internal/scheduler so the Go scheduler can now return a cohesive runtime assessment containing routing decision, risk score, constrained orchestration plan, premium-tier policy decision, and any resulting handoff request instead of only the executor assignment. Validation: cd bigclaw-go \u0026\u0026 go test ./internal/scheduler -\u003e ok; cd bigclaw-go \u0026\u0026 go test ./... -\u003e ok; git push origin HEAD:symphony/BIG-GOM-304 -\u003e ok after a transient SSH hook push failure; bash scripts/ops/bigclawctl github-sync status --json -\u003e local SHA 7d14c1875e59521c0c8754d29c940ea18529cca9 matches remote SHA 7d14c1875e59521c0c8754d29c940ea18529cca9 with status ok and synced true; git log -1 --stat -\u003e captured for commit 7d14c1875e59521c0c8754d29c940ea18529cca9 with scheduler assessment files in the stat output. Commit SHA: 7d14c1875e59521c0c8754d29c940ea18529cca9. PR URL: unavailable; gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state returned [].",
           "created_at": "2026-03-20T11:17:40Z"
+        },
+        {
+          "author": "codex",
+          "body": "Wired scheduler assessment output into the Go worker runtime so `RunOnce` now consumes `Scheduler.Assess(...)`, emits orchestration/risk/policy details on `scheduler.routed`, and publishes `run.takeover` handoff events for both blocked reroutes and accepted-but-human-required plans. Added worker runtime coverage for routed assessment payloads and rejected-decision handoff ordering. Validation: `cd bigclaw-go \u0026\u0026 go test ./internal/worker` -\u003e ok; `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok; `bash scripts/ops/bigclawctl github-sync status --json` -\u003e local SHA `0a556cae73da9b0ee105e0aad10166bc2e3a3bc1` matches remote SHA `0a556cae73da9b0ee105e0aad10166bc2e3a3bc1` with `status: ok` and `synced: true`; `git log -1 --stat` -\u003e captured for commit `0a556cae73da9b0ee105e0aad10166bc2e3a3bc1` with worker runtime files in the stat output. Commit SHA: `0a556cae73da9b0ee105e0aad10166bc2e3a3bc1`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-20T11:30:45Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
@@ -66,7 +71,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Workflow orchestration and scheduler loop migration",
-      "updated_at": "2026-03-20T11:17:40Z"
+      "updated_at": "2026-03-20T11:30:45Z"
     },
     {
       "assigned_to_worker": true,
