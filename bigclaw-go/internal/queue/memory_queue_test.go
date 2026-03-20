@@ -115,3 +115,40 @@ func TestMemoryQueueListAndCancelTask(t *testing.T) {
 		t.Fatal("expected queued cancelled task to be removed from queue")
 	}
 }
+
+func TestMemoryQueueUpdateTaskStateBlocksAndReleasesTask(t *testing.T) {
+	q := NewMemoryQueue()
+	ctx := context.Background()
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-block", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+
+	blocked, err := q.UpdateTaskState(ctx, "task-block", domain.TaskBlocked, time.Now(), "waiting for human review")
+	if err != nil {
+		t.Fatalf("block task: %v", err)
+	}
+	if blocked.Task.State != domain.TaskBlocked || blocked.Task.Metadata["blocked_reason"] != "waiting for human review" {
+		t.Fatalf("expected blocked snapshot metadata, got %+v", blocked)
+	}
+	if got := q.Size(ctx); got != 0 {
+		t.Fatalf("expected blocked task to be excluded from actionable size, got %d", got)
+	}
+	if task, lease, err := q.LeaseNext(ctx, "worker-a", time.Minute); err != nil || task != nil || lease != nil {
+		t.Fatalf("expected blocked task to stay parked, got task=%v lease=%v err=%v", task, lease, err)
+	}
+
+	released, err := q.UpdateTaskState(ctx, "task-block", domain.TaskQueued, time.Now(), "")
+	if err != nil {
+		t.Fatalf("release blocked task: %v", err)
+	}
+	if released.Task.State != domain.TaskQueued {
+		t.Fatalf("expected queued snapshot after release, got %+v", released)
+	}
+	if got := q.Size(ctx); got != 1 {
+		t.Fatalf("expected queued task to be actionable after release, got %d", got)
+	}
+	task, lease, err := q.LeaseNext(ctx, "worker-b", time.Minute)
+	if err != nil || task == nil || lease == nil || task.ID != "task-block" {
+		t.Fatalf("expected released task to lease normally, got task=%v lease=%v err=%v", task, lease, err)
+	}
+}

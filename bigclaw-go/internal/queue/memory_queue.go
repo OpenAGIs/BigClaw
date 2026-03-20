@@ -263,6 +263,40 @@ func (q *MemoryQueue) CancelTask(_ context.Context, taskID string, reason string
 	return snapshotFromItem(current), nil
 }
 
+func (q *MemoryQueue) UpdateTaskState(_ context.Context, taskID string, state domain.TaskState, availableAt time.Time, reason string) (TaskSnapshot, error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	current, ok := q.items[taskID]
+	if !ok {
+		return TaskSnapshot{}, ErrTaskNotFound
+	}
+	now := time.Now()
+	if availableAt.IsZero() {
+		availableAt = now
+	}
+	current.Leased = false
+	current.LeaseWorker = ""
+	current.LeaseExpires = time.Time{}
+	current.AvailableAt = availableAt
+	current.Task.State = state
+	current.Task.UpdatedAt = now
+	switch state {
+	case domain.TaskBlocked:
+		applyCancelReason(&current.Task, reason, "blocked_reason")
+		if current.Task.Metadata == nil {
+			current.Task.Metadata = make(map[string]string)
+		}
+		current.Task.Metadata["blocked"] = "true"
+	case domain.TaskQueued:
+		if current.Task.Metadata != nil {
+			delete(current.Task.Metadata, "blocked_reason")
+			delete(current.Task.Metadata, "blocked")
+		}
+	}
+	return snapshotFromItem(current), nil
+}
+
 func (q *MemoryQueue) Size(_ context.Context) int {
 	q.mu.Lock()
 	defer q.mu.Unlock()
@@ -310,7 +344,7 @@ func applyCancelReason(task *domain.Task, reason string, key string) {
 
 func isActionableState(state domain.TaskState) bool {
 	switch state {
-	case domain.TaskCancelled, domain.TaskDeadLetter:
+	case domain.TaskBlocked, domain.TaskCancelled, domain.TaskDeadLetter:
 		return false
 	default:
 		return true

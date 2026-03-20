@@ -1326,6 +1326,16 @@ func TestV2ControlCenterActionsAndRunDetail(t *testing.T) {
 	if takeoverResponse.Code != http.StatusOK || !strings.Contains(takeoverResponse.Body.String(), "alice") {
 		t.Fatalf("expected takeover action payload, got %d %s", takeoverResponse.Code, takeoverResponse.Body.String())
 	}
+	queueTask, err := server.Queue.(queue.TaskInspector).GetTask(context.Background(), "task-v2-1")
+	if err != nil {
+		t.Fatalf("get blocked queue task: %v", err)
+	}
+	if queueTask.Task.State != domain.TaskBlocked || queueTask.Task.Metadata["blocked_reason"] != "Investigating flaky validation" {
+		t.Fatalf("expected takeover to block queue task, got %+v", queueTask)
+	}
+	if task, lease, err := server.Queue.LeaseNext(context.Background(), "worker-a", time.Minute); err != nil || task != nil || lease != nil {
+		t.Fatalf("expected blocked queue task to stay parked, got task=%v lease=%v err=%v", task, lease, err)
+	}
 
 	assignOwnerBody, _ := json.Marshal(map[string]any{"action": "assign_owner", "task_id": "task-v2-1", "actor": "alice", "role": "eng_lead", "viewer_team": "platform", "owner": "carol", "note": "handoff owner"})
 	assignOwnerResponse := httptest.NewRecorder()
@@ -1395,6 +1405,24 @@ func TestV2ControlCenterActionsAndRunDetail(t *testing.T) {
 	bodyString := runResponse.Body.String()
 	if !strings.Contains(bodyString, "premium") || !strings.Contains(bodyString, "Investigating flaky validation") || !strings.Contains(bodyString, "merge PR") || !strings.Contains(bodyString, "handoff ready") || !strings.Contains(bodyString, "carol") || !strings.Contains(bodyString, "dave") || !strings.Contains(bodyString, "assign_reviewer") {
 		t.Fatalf("expected premium policy, collaboration details, and action timeline in run detail, got %s", bodyString)
+	}
+
+	releaseBody, _ := json.Marshal(map[string]any{"action": "release_takeover", "task_id": "task-v2-1", "actor": "alice", "role": "eng_lead", "viewer_team": "platform", "note": "handoff complete"})
+	releaseResponse := httptest.NewRecorder()
+	handler.ServeHTTP(releaseResponse, httptest.NewRequest(http.MethodPost, "/v2/control-center/actions", bytes.NewReader(releaseBody)))
+	if releaseResponse.Code != http.StatusOK {
+		t.Fatalf("expected release takeover action payload, got %d %s", releaseResponse.Code, releaseResponse.Body.String())
+	}
+	releasedQueueTask, err := server.Queue.(queue.TaskInspector).GetTask(context.Background(), "task-v2-1")
+	if err != nil {
+		t.Fatalf("get released queue task: %v", err)
+	}
+	if releasedQueueTask.Task.State != domain.TaskQueued {
+		t.Fatalf("expected released queue task to return to queued, got %+v", releasedQueueTask)
+	}
+	task, lease, err := server.Queue.LeaseNext(context.Background(), "worker-a", time.Minute)
+	if err != nil || task == nil || lease == nil || task.ID != "task-v2-1" {
+		t.Fatalf("expected released queue task to lease normally, got task=%v lease=%v err=%v", task, lease, err)
 	}
 }
 

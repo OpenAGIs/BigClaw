@@ -250,6 +250,42 @@ func TestSQLiteQueueCancelAndInspect(t *testing.T) {
 	}
 }
 
+func TestSQLiteQueueBlockedTaskStaysParkedUntilRelease(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.db")
+	q, err := NewSQLiteQueue(path)
+	if err != nil {
+		t.Fatalf("new sqlite queue: %v", err)
+	}
+	defer q.Close()
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-block", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	if _, err := q.UpdateTaskState(ctx, "task-block", domain.TaskBlocked, time.Now(), "manual review"); err != nil {
+		t.Fatalf("block task: %v", err)
+	}
+	if got := q.Size(ctx); got != 0 {
+		t.Fatalf("expected blocked task excluded from actionable size, got %d", got)
+	}
+	if task, lease, err := q.LeaseNext(ctx, "worker-a", time.Minute); err != nil || task != nil || lease != nil {
+		t.Fatalf("expected blocked task to stay parked, got task=%v lease=%v err=%v", task, lease, err)
+	}
+	snapshot, err := q.GetTask(ctx, "task-block")
+	if err != nil {
+		t.Fatalf("get blocked task: %v", err)
+	}
+	if snapshot.Task.State != domain.TaskBlocked || snapshot.Task.Metadata["blocked_reason"] != "manual review" {
+		t.Fatalf("expected blocked metadata, got %+v", snapshot)
+	}
+	if _, err := q.UpdateTaskState(ctx, "task-block", domain.TaskQueued, time.Now(), ""); err != nil {
+		t.Fatalf("release blocked task: %v", err)
+	}
+	task, lease, err := q.LeaseNext(ctx, "worker-b", time.Minute)
+	if err != nil || task == nil || lease == nil || task.ID != "task-block" {
+		t.Fatalf("expected released task to lease, got task=%v lease=%v err=%v", task, lease, err)
+	}
+}
+
 func TestSQLiteQueueRejectsStaleLeaseAfterReacquire(t *testing.T) {
 	ctx := context.Background()
 	path := filepath.Join(t.TempDir(), "queue.db")

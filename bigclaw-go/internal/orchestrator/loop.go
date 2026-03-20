@@ -74,7 +74,7 @@ func (l *Loop) quotaSnapshot(ctx context.Context) scheduler.QuotaSnapshot {
 
 func isQuotaActionable(state domain.TaskState) bool {
 	switch state {
-	case domain.TaskCancelled, domain.TaskDeadLetter:
+	case domain.TaskBlocked, domain.TaskCancelled, domain.TaskDeadLetter:
 		return false
 	default:
 		return true

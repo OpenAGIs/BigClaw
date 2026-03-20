@@ -96,10 +96,10 @@ func (q *SQLiteQueue) LeaseNext(_ context.Context, workerID string, ttl time.Dur
 	now := time.Now()
 	row := tx.QueryRow(`SELECT task_id, payload, attempt FROM tasks
 		WHERE available_at_ns <= ?
-		AND state NOT IN (?, ?)
+		AND state NOT IN (?, ?, ?)
 		AND (leased = 0 OR lease_expires_ns <= ?)
 		ORDER BY priority ASC, created_at_ns ASC
-		LIMIT 1`, now.UnixNano(), string(domain.TaskDeadLetter), string(domain.TaskCancelled), now.UnixNano())
+		LIMIT 1`, now.UnixNano(), string(domain.TaskDeadLetter), string(domain.TaskCancelled), string(domain.TaskBlocked), now.UnixNano())
 
 	var taskID string
 	var payload []byte
@@ -300,6 +300,46 @@ func (q *SQLiteQueue) CancelTask(_ context.Context, taskID string, reason string
 	return snapshot, nil
 }
 
+func (q *SQLiteQueue) UpdateTaskState(_ context.Context, taskID string, state domain.TaskState, availableAt time.Time, reason string) (TaskSnapshot, error) {
+	row := q.db.QueryRow(`SELECT payload, available_at_ns, attempt, leased, lease_worker, lease_expires_ns FROM tasks WHERE task_id=?`, taskID)
+	snapshot, err := scanSnapshotRow(row)
+	if err != nil {
+		return TaskSnapshot{}, err
+	}
+	now := time.Now()
+	if availableAt.IsZero() {
+		availableAt = now
+	}
+	snapshot.Task.State = state
+	snapshot.Task.UpdatedAt = now
+	snapshot.AvailableAt = availableAt
+	snapshot.Leased = false
+	snapshot.LeaseWorker = ""
+	snapshot.LeaseExpires = time.Time{}
+	switch state {
+	case domain.TaskBlocked:
+		applyCancelReason(&snapshot.Task, reason, "blocked_reason")
+		if snapshot.Task.Metadata == nil {
+			snapshot.Task.Metadata = make(map[string]string)
+		}
+		snapshot.Task.Metadata["blocked"] = "true"
+	case domain.TaskQueued:
+		if snapshot.Task.Metadata != nil {
+			delete(snapshot.Task.Metadata, "blocked_reason")
+			delete(snapshot.Task.Metadata, "blocked")
+		}
+	}
+	payload, err := json.Marshal(snapshot.Task)
+	if err != nil {
+		return TaskSnapshot{}, err
+	}
+	_, err = q.db.Exec(`UPDATE tasks SET payload=?, state=?, available_at_ns=?, leased=0, lease_worker='', lease_expires_ns=0 WHERE task_id=?`, payload, string(state), availableAt.UnixNano(), taskID)
+	if err != nil {
+		return TaskSnapshot{}, err
+	}
+	return snapshot, nil
+}
+
 func (q *SQLiteQueue) updateStateAfterLease(lease *Lease, state domain.TaskState, availableAt time.Time, reason string) error {
 	row := q.db.QueryRow(`SELECT payload FROM tasks WHERE task_id=?`, lease.TaskID)
 	var payload []byte
@@ -340,7 +380,7 @@ func (q *SQLiteQueue) updateStateAfterLease(lease *Lease, state domain.TaskState
 }
 
 func (q *SQLiteQueue) Size(_ context.Context) int {
-	row := q.db.QueryRow(`SELECT COUNT(*) FROM tasks WHERE state NOT IN (?, ?)`, string(domain.TaskDeadLetter), string(domain.TaskCancelled))
+	row := q.db.QueryRow(`SELECT COUNT(*) FROM tasks WHERE state NOT IN (?, ?, ?)`, string(domain.TaskDeadLetter), string(domain.TaskCancelled), string(domain.TaskBlocked))
 	var count int
 	if err := row.Scan(&count); err != nil {
 		return 0

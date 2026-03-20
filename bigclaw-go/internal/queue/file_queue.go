@@ -257,6 +257,40 @@ func (q *FileQueue) CancelTask(_ context.Context, taskID string, reason string) 
 	return snapshotFromItem(current), q.save()
 }
 
+func (q *FileQueue) UpdateTaskState(_ context.Context, taskID string, state domain.TaskState, availableAt time.Time, reason string) (TaskSnapshot, error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	current, ok := q.items[taskID]
+	if !ok {
+		return TaskSnapshot{}, ErrTaskNotFound
+	}
+	now := time.Now()
+	if availableAt.IsZero() {
+		availableAt = now
+	}
+	current.Leased = false
+	current.LeaseWorker = ""
+	current.LeaseExpires = time.Time{}
+	current.AvailableAt = availableAt
+	current.Task.State = state
+	current.Task.UpdatedAt = now
+	switch state {
+	case domain.TaskBlocked:
+		applyCancelReason(&current.Task, reason, "blocked_reason")
+		if current.Task.Metadata == nil {
+			current.Task.Metadata = make(map[string]string)
+		}
+		current.Task.Metadata["blocked"] = "true"
+	case domain.TaskQueued:
+		if current.Task.Metadata != nil {
+			delete(current.Task.Metadata, "blocked_reason")
+			delete(current.Task.Metadata, "blocked")
+		}
+	}
+	return snapshotFromItem(current), q.save()
+}
+
 func (q *FileQueue) Size(_ context.Context) int {
 	q.mu.Lock()
 	defer q.mu.Unlock()

@@ -114,3 +114,43 @@ func TestFileQueueCancelPersistsAcrossReload(t *testing.T) {
 		t.Fatal("expected unleased cancelled task to be removed after reload")
 	}
 }
+
+func TestFileQueueBlockedTaskPersistsAndCanBeReleased(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.json")
+	q, err := NewFileQueue(path)
+	if err != nil {
+		t.Fatalf("new queue: %v", err)
+	}
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-block", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	if _, err := q.UpdateTaskState(ctx, "task-block", domain.TaskBlocked, time.Now(), "awaiting operator"); err != nil {
+		t.Fatalf("block task: %v", err)
+	}
+
+	reloaded, err := NewFileQueue(path)
+	if err != nil {
+		t.Fatalf("reload queue: %v", err)
+	}
+	snapshot, err := reloaded.GetTask(ctx, "task-block")
+	if err != nil {
+		t.Fatalf("get blocked task: %v", err)
+	}
+	if snapshot.Task.State != domain.TaskBlocked || snapshot.Task.Metadata["blocked_reason"] != "awaiting operator" {
+		t.Fatalf("expected blocked task to persist, got %+v", snapshot)
+	}
+	if got := reloaded.Size(ctx); got != 0 {
+		t.Fatalf("expected blocked task to be excluded from actionable size, got %d", got)
+	}
+	if task, lease, err := reloaded.LeaseNext(ctx, "worker-a", time.Minute); err != nil || task != nil || lease != nil {
+		t.Fatalf("expected blocked task to stay parked after reload, got task=%v lease=%v err=%v", task, lease, err)
+	}
+	if _, err := reloaded.UpdateTaskState(ctx, "task-block", domain.TaskQueued, time.Now(), ""); err != nil {
+		t.Fatalf("release blocked task: %v", err)
+	}
+	task, lease, err := reloaded.LeaseNext(ctx, "worker-b", time.Minute)
+	if err != nil || task == nil || lease == nil || task.ID != "task-block" {
+		t.Fatalf("expected released blocked task to lease, got task=%v lease=%v err=%v", task, lease, err)
+	}
+}

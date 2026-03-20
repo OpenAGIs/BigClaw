@@ -1260,6 +1260,7 @@ func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Requ
 		beforeTakeover, beforeTakeoverOK := s.Control.TakeoverStatus(request.TaskID)
 		note = firstNonEmpty(note, reason)
 		takeover := s.Control.Takeover(request.TaskID, actor, reviewer, note, now)
+		s.syncQueueTaskState(r.Context(), request.TaskID, domain.TaskBlocked, now, note)
 		s.syncTaskState(request.TaskID, domain.TaskBlocked, now)
 		task, _ := s.Recorder.Task(request.TaskID)
 		operation := buildControlActionOperation(action, actor, authorization, request.TaskID, reason, note, now, beforeTask.State, task.State, takeoverRef(beforeTakeover, beforeTakeoverOK), takeoverRef(takeover, true))
@@ -1283,6 +1284,7 @@ func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Requ
 			http.Error(w, "takeover not found", http.StatusNotFound)
 			return
 		}
+		s.syncQueueTaskState(r.Context(), request.TaskID, domain.TaskQueued, now, "")
 		s.syncTaskState(request.TaskID, domain.TaskQueued, now)
 		task, _ := s.Recorder.Task(request.TaskID)
 		operation := buildControlActionOperation(action, actor, authorization, request.TaskID, reason, note, now, beforeTask.State, task.State, takeoverRef(beforeTakeover, beforeTakeoverOK), takeoverRef(takeover, true))
@@ -1975,6 +1977,14 @@ func (s *Server) syncTaskState(taskID string, state domain.TaskState, updatedAt 
 		task.TraceID = taskID
 	}
 	s.Recorder.StoreTask(task)
+}
+
+func (s *Server) syncQueueTaskState(ctx context.Context, taskID string, state domain.TaskState, availableAt time.Time, reason string) {
+	controller, ok := s.Queue.(queue.TaskController)
+	if !ok {
+		return
+	}
+	_, _ = controller.UpdateTaskState(ctx, taskID, state, availableAt, reason)
 }
 
 func (s *Server) traceIDForTask(taskID string) string {

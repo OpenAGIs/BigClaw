@@ -370,8 +370,8 @@ func TestRuntimeDefersTakenOverTask(t *testing.T) {
 	if !processed {
 		t.Fatal("expected runtime to requeue taken-over task")
 	}
-	if got := q.Size(context.Background()); got != 1 {
-		t.Fatalf("expected queue size 1 after takeover deferral, got %d", got)
+	if got := q.Size(context.Background()); got != 0 {
+		t.Fatalf("expected blocked task to be excluded from actionable queue size, got %d", got)
 	}
 	latest, ok := recorder.LatestByTask("task-takeover")
 	if !ok || latest.Type != domain.EventRunAnnotated {
@@ -381,9 +381,19 @@ func TestRuntimeDefersTakenOverTask(t *testing.T) {
 	if !ok || task.State != domain.TaskBlocked {
 		t.Fatalf("expected blocked task snapshot, got %+v ok=%v", task, ok)
 	}
-	snapshot := runtime.Snapshot()
-	if snapshot.LastTransition != string(domain.EventRunTakeover) {
-		t.Fatalf("expected takeover transition in snapshot, got %+v", snapshot)
+	snapshot, err := q.GetTask(context.Background(), "task-takeover")
+	if err != nil {
+		t.Fatalf("get blocked queue task: %v", err)
+	}
+	if snapshot.Task.State != domain.TaskBlocked || snapshot.Task.Metadata["blocked_reason"] == "" {
+		t.Fatalf("expected blocked queue snapshot, got %+v", snapshot)
+	}
+	if task, lease, err := q.LeaseNext(context.Background(), "worker-2", time.Minute); err != nil || task != nil || lease != nil {
+		t.Fatalf("expected blocked task to stay parked after deferral, got task=%v lease=%v err=%v", task, lease, err)
+	}
+	status := runtime.Snapshot()
+	if status.LastTransition != string(domain.EventRunTakeover) {
+		t.Fatalf("expected takeover transition in snapshot, got %+v", status)
 	}
 }
 

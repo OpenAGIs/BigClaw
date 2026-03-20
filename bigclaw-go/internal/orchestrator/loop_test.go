@@ -19,11 +19,15 @@ func TestLoopQuotaSnapshotUsesLiveQueueState(t *testing.T) {
 		{ID: "queued", Priority: 3, CreatedAt: base},
 		{ID: "leased-nonurgent", Priority: 3, CreatedAt: base.Add(time.Second)},
 		{ID: "leased-urgent", Priority: 1, CreatedAt: base.Add(2 * time.Second)},
-		{ID: "cancelled", Priority: 4, CreatedAt: base.Add(3 * time.Second), State: domain.TaskCancelled},
+		{ID: "blocked", Priority: 2, CreatedAt: base.Add(3 * time.Second), State: domain.TaskBlocked},
+		{ID: "cancelled", Priority: 4, CreatedAt: base.Add(4 * time.Second), State: domain.TaskCancelled},
 	} {
 		if err := q.Enqueue(ctx, task); err != nil {
 			t.Fatalf("enqueue %s: %v", task.ID, err)
 		}
+	}
+	if _, err := q.UpdateTaskState(ctx, "blocked", domain.TaskBlocked, base.Add(3*time.Second), "human review"); err != nil {
+		t.Fatalf("block task: %v", err)
 	}
 	if _, _, err := q.LeaseNext(ctx, "worker-a", time.Minute); err != nil {
 		t.Fatalf("lease first task: %v", err)

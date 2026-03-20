@@ -47,4 +47,5 @@ type TaskInspector interface {
 
 type TaskController interface {
 	CancelTask(context.Context, string, string) (TaskSnapshot, error)
+	UpdateTaskState(context.Context, string, domain.TaskState, time.Time, string) (TaskSnapshot, error)
 }

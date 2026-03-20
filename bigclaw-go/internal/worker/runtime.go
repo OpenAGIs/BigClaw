@@ -104,9 +104,17 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	if r.Control != nil {
 		takeover, ok := r.Control.TakeoverStatus(task.ID)
 		if ok && takeover.Active {
-			_ = r.Queue.Requeue(ctx, lease, time.Now().Add(250*time.Millisecond))
-			task.State = domain.TaskBlocked
-			task.UpdatedAt = time.Now()
+			blockedAt := time.Now()
+			if controller, ok := r.Queue.(queue.TaskController); ok {
+				snapshot, err := controller.UpdateTaskState(ctx, task.ID, domain.TaskBlocked, blockedAt, "automation deferred while human takeover is active")
+				if err == nil {
+					task = &snapshot.Task
+				}
+			} else {
+				_ = r.Queue.Requeue(ctx, lease, blockedAt.Add(250*time.Millisecond))
+				task.State = domain.TaskBlocked
+				task.UpdatedAt = blockedAt
+			}
 			if r.Recorder != nil {
 				r.Recorder.StoreTask(*task)
 			}
