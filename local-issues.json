@@ -333,6 +333,22 @@
           "created_at": "2026-03-20T17:09:16Z"
         }
       ]
+    },
+    {
+      "id": "big-gom-310",
+      "identifier": "BIG-GOM-310",
+      "title": "Merge readiness handoff for Go-mainline branch",
+      "description": "Capture a concise repo-native handoff note for the completed Go-mainline cutover branch: branch SHA, PR, tracker status, validation evidence, and any remaining non-blocking caveats outside the BIG-GOM slice set.",
+      "priority": 3,
+      "state": "In Progress",
+      "labels": [
+        "go-mainline",
+        "closeout",
+        "docs"
+      ],
+      "assigned_to_worker": true,
+      "created_at": "2026-03-20T17:11:31Z",
+      "updated_at": "2026-03-20T17:11:50Z"
     }
   ]
 }

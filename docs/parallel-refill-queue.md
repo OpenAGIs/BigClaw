@@ -17,7 +17,7 @@ longer waits on Linear to keep issue execution moving.
   - `bash scripts/ops/bigclawctl refill --apply --watch --local-issues local-issues.json --refresh-url http://127.0.0.1:4000/api/v1/refresh`
 - Local issue CLI:
   - `bash scripts/ops/bigclawctl issue list --local-issues local-issues.json --json`
-  - `bash scripts/ops/bigclawctl issue create --local-issues local-issues.json --identifier BIG-GOM-309 --title "Go-native tracker slice"`
+  - `bash scripts/ops/bigclawctl issue create --local-issues local-issues.json --identifier BIG-GOM-310 --title "Go-native tracker slice"`
   - `bash scripts/ops/bigclawctl issue state --local-issues local-issues.json --issue BIG-GOM-303 --state "In Progress"`
   - `bash scripts/ops/bigclaw-issue state --issue BIG-GOM-303 --state "In Progress"` (same Go-native path via wrapper)
 - Local dashboard/orchestrator:
@@ -50,21 +50,24 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Active repo tranche:
-  - `BIG-GOM-301` — unified domain model and intake contract migration
-  - `BIG-GOM-306` — repo collaboration and lineage surface migration
+  - `BIG-GOM-310` — merge readiness handoff for Go-mainline branch
 - Recently completed:
+  - `BIG-GOM-301` — unified domain model and intake contract migration
   - `BIG-GOM-302` — risk, policy, and approval semantics migration
   - `BIG-GOM-303` — workflow orchestration and scheduler loop migration
   - `BIG-GOM-304` — observability, reporting, and weekly operations surface migration
   - `BIG-GOM-305` — control center, triage, and operations view migration
+  - `BIG-GOM-306` — repo collaboration and lineage surface migration
   - `BIG-GOM-307` — workflow, bootstrap, and GitHub sync toolchain migration
+  - `BIG-GOM-308` — Python deprecation and Go-only mainline switch
+  - `BIG-GOM-309` — final Go-mainline branch validation and closeout
 - Runnable first batch once issue creation is available:
   - `BIG-GOM-301` — unified domain model and intake contract migration
   - `BIG-GOM-302` — risk, policy, and approval semantics migration
   - `BIG-GOM-303` — workflow orchestration and scheduler loop migration
   - `BIG-GOM-304` — observability, reporting, and weekly operations surface migration
 - Standby:
-  - `BIG-GOM-308` — Python deprecation and Go-only mainline switch
+  - none
 
 ## Canonical refill order
 

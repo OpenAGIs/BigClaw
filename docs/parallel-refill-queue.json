@@ -19,6 +19,7 @@
   "recent_batches": {
     "completed": [
       "BIG-GOM-301",
+      "BIG-GOM-309",
       "BIG-GOM-302",
       "BIG-GOM-304",
       "BIG-GOM-307",
@@ -27,7 +28,9 @@
       "BIG-GOM-306",
       "BIG-GOM-308"
     ],
-    "active": [],
+    "active": [
+      "BIG-GOM-310"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -38,7 +41,9 @@
     "BIG-GOM-305",
     "BIG-GOM-306",
     "BIG-GOM-307",
-    "BIG-GOM-308"
+    "BIG-GOM-308",
+    "BIG-GOM-309",
+    "BIG-GOM-310"
   ],
   "issues": [
     {
@@ -88,6 +93,18 @@
       "title": "Python deprecation and Go-only mainline switch",
       "track": "Python Retirement & Cutover Validation",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-GOM-309",
+      "title": "Final Go-mainline branch validation and closeout",
+      "track": "Branch Closeout",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-GOM-310",
+      "title": "Merge readiness handoff for Go-mainline branch",
+      "track": "Branch Closeout",
+      "status": "In Progress"
     }
   ]
 }
