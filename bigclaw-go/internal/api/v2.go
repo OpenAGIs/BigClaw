@@ -279,6 +279,7 @@ type runToolTrace struct {
 	Source    string    `json:"source"`
 	Status    string    `json:"status,omitempty"`
 	Executor  string    `json:"executor,omitempty"`
+	Sandbox   string    `json:"sandbox_profile,omitempty"`
 	Message   string    `json:"message,omitempty"`
 	Timestamp time.Time `json:"timestamp,omitempty"`
 	EventID   string    `json:"event_id,omitempty"`
@@ -1703,6 +1704,7 @@ func collectRunToolTraces(task domain.Task, events []domain.Event) []runToolTrac
 			Source:    "event",
 			Status:    status,
 			Executor:  executorName,
+			Sandbox:   eventStringValue(event.Payload, "sandbox_profile"),
 			Message:   runEventMessage(event),
 			Timestamp: event.Timestamp,
 			EventID:   event.ID,
@@ -1814,6 +1816,9 @@ func renderRunDetailMarkdown(detail runDetailResponse) string {
 			line := fmt.Sprintf("- %s [%s]", trace.Name, firstNonEmpty(trace.Status, "observed"))
 			if trace.Executor != "" && trace.Name != trace.Executor {
 				line += fmt.Sprintf(" via %s", trace.Executor)
+			}
+			if trace.Sandbox != "" {
+				line += fmt.Sprintf(" sandbox=%s", trace.Sandbox)
 			}
 			if trace.Message != "" {
 				line += fmt.Sprintf(": %s", trace.Message)

@@ -1455,9 +1455,9 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 		UpdatedAt: base.Add(3 * time.Second),
 	}
 	recorder.StoreTask(task)
-	recorder.Record(domain.Event{ID: "evt-routed", Type: domain.EventSchedulerRouted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "reason": "browser workloads default to kubernetes executor"}})
-	recorder.Record(domain.Event{ID: "evt-started", Type: domain.EventTaskStarted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(2 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "required_tools": []string{"browser", "git"}}})
-	recorder.Record(domain.Event{ID: "evt-dead", Type: domain.EventTaskDeadLetter, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(3 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "message": "pod crashed during validation", "artifacts": []string{"k8s://jobs/bigclaw/run-report", "k8s://pods/bigclaw/run-report-0"}}})
+	recorder.Record(domain.Event{ID: "evt-routed", Type: domain.EventSchedulerRouted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "sandbox_profile": "browser", "reason": "browser workloads default to kubernetes executor"}})
+	recorder.Record(domain.Event{ID: "evt-started", Type: domain.EventTaskStarted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(2 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "sandbox_profile": "browser", "required_tools": []string{"browser", "git"}}})
+	recorder.Record(domain.Event{ID: "evt-dead", Type: domain.EventTaskDeadLetter, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(3 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "sandbox_profile": "browser", "message": "pod crashed during validation", "artifacts": []string{"k8s://jobs/bigclaw/run-report", "k8s://pods/bigclaw/run-report-0"}}})
 	controller.Takeover(task.ID, "alice", "bob", "Manual inspection required", base.Add(4*time.Second))
 	recorder.Record(domain.Event{ID: "evt-takeover", Type: domain.EventRunTakeover, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(4 * time.Second), Payload: map[string]any{"actor": "alice", "role": "eng_lead", "reviewer": "bob", "note": "Manual inspection required", "team": "platform", "project": "alpha"}})
 
@@ -1486,6 +1486,7 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 			Name     string `json:"name"`
 			Status   string `json:"status"`
 			Executor string `json:"executor"`
+			Sandbox  string `json:"sandbox_profile"`
 		} `json:"tool_traces"`
 		AuditSummary struct {
 			Total      int `json:"total"`
@@ -1518,6 +1519,9 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 	if len(decoded.ToolTraces) < 4 {
 		t.Fatalf("expected tool traces for declared tools and executor events, got %+v", decoded.ToolTraces)
 	}
+	if decoded.ToolTraces[2].Sandbox != "browser" {
+		t.Fatalf("expected sandbox profile in event-backed tool traces, got %+v", decoded.ToolTraces)
+	}
 	if decoded.AuditSummary.Total != 1 || decoded.AuditSummary.NotesCount != 1 {
 		t.Fatalf("expected audit summary for takeover note, got %+v", decoded.AuditSummary)
 	}
@@ -1545,7 +1549,7 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 	if disposition := reportResponse.Header().Get("Content-Disposition"); !strings.Contains(disposition, "task-run-report-run-report.md") {
 		t.Fatalf("expected attachment filename, got %q", disposition)
 	}
-	for _, want := range []string{"# BigClaw Run Report", "Task ID: task-run-report", "Failure Reason: pod crashed during validation", "k8s://jobs/bigclaw/run-report", "Manual inspection required"} {
+	for _, want := range []string{"# BigClaw Run Report", "Task ID: task-run-report", "Failure Reason: pod crashed during validation", "sandbox=browser", "k8s://jobs/bigclaw/run-report", "Manual inspection required"} {
 		if !strings.Contains(reportResponse.Body.String(), want) {
 			t.Fatalf("expected %q in run report, got %s", want, reportResponse.Body.String())
 		}
