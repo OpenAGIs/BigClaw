@@ -338,6 +338,7 @@ func runLocalIssue(args []string) error {
 	issueRef := flags.String("issue", "", "issue identifier or id")
 	stateName := flags.String("state", "", "updated state")
 	commentBody := flags.String("comment", "", "comment body")
+	commentFile := flags.String("comment-file", "", "comment body file path, or - for stdin")
 	asJSON := flags.Bool("json", false, "json")
 	if err := flags.Parse(args[1:]); err != nil {
 		return err
@@ -368,8 +369,12 @@ func runLocalIssue(args []string) error {
 		}, issue)
 		return emit(payload, *asJSON, 0)
 	case "update":
-		if trim(*stateName) == "" && trim(*commentBody) == "" {
-			return errors.New("at least one of --state or --comment is required")
+		resolvedComment, err := resolveCommentBody(*commentBody, *commentFile)
+		if err != nil {
+			return err
+		}
+		if trim(*stateName) == "" && trim(resolvedComment) == "" {
+			return errors.New("at least one of --state, --comment, or --comment-file is required")
 		}
 		if trim(*stateName) != "" {
 			if _, err := store.UpdateIssueState(*issueRef, *stateName, time.Now()); err != nil {
@@ -377,8 +382,8 @@ func runLocalIssue(args []string) error {
 			}
 		}
 		commentAdded := false
-		if trim(*commentBody) != "" {
-			if _, err := store.AddComment(*issueRef, *commentBody, time.Now()); err != nil {
+		if trim(resolvedComment) != "" {
+			if _, err := store.AddComment(*issueRef, resolvedComment, time.Now()); err != nil {
 				return emit(map[string]any{"status": "error", "error": err.Error(), "issue": *issueRef, "local_issues": absPath(storePath)}, *asJSON, 1)
 			}
 			commentAdded = true
@@ -398,6 +403,26 @@ func runLocalIssue(args []string) error {
 	default:
 		return fmt.Errorf("unknown local-issue subcommand: %s", command)
 	}
+}
+
+func resolveCommentBody(inline string, filePath string) (string, error) {
+	if trim(inline) != "" && trim(filePath) != "" {
+		return "", errors.New("use only one of --comment or --comment-file")
+	}
+	if trim(filePath) == "" {
+		return inline, nil
+	}
+	var body []byte
+	var err error
+	if trim(filePath) == "-" {
+		body, err = io.ReadAll(os.Stdin)
+	} else {
+		body, err = os.ReadFile(filePath)
+	}
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
 }
 
 type linearClient struct {

@@ -64,6 +64,9 @@ Notes:
   issue creation and state changes stay pinned to this repository's tracker file.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
+- `bash scripts/ops/bigclawctl local-issue update --local-issues local-issues.json --issue BIG-GOM-307 --comment-file comment.md`
+  records multiline validation evidence without shell-escaping the tracker comment body. Use
+  `--comment-file -` to read the comment from stdin.
 
 ## Legacy Python quick start (migration-only)
 

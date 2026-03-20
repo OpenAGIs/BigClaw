@@ -367,6 +367,107 @@ func TestRunLocalIssueUpdateAppendsCommentAndState(t *testing.T) {
 	}
 }
 
+func TestRunLocalIssueUpdateReadsCommentFromFile(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	commentPath := filepath.Join(tempDir, "comment.md")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "title": "Toolchain migration",
+      "state": "In Progress",
+      "updated_at": "2026-03-18T09:00:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+	commentBody := "Validation:\n- `go test ./...` -> ok\n- `github-sync status` -> ok\n"
+	if err := os.WriteFile(commentPath, []byte(commentBody), 0o644); err != nil {
+		t.Fatalf("write comment file: %v", err)
+	}
+
+	output, runErr := captureStdout(t, func() error {
+		return runLocalIssue([]string{
+			"update",
+			"--local-issues", storePath,
+			"--issue", "BIG-GOM-307",
+			"--comment-file", commentPath,
+			"--json",
+		})
+	})
+	if runErr != nil {
+		t.Fatalf("run local issue update with file: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"comment_added": true`)) {
+		t.Fatalf("unexpected update output: %s", string(output))
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"body": "Validation:\n- `)) || !bytes.Contains(body, []byte("github-sync status")) {
+		t.Fatalf("expected multiline comment in store, got %s", string(body))
+	}
+}
+
+func TestRunLocalIssueUpdateReadsCommentFromStdin(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "title": "Toolchain migration",
+      "state": "In Progress",
+      "updated_at": "2026-03-18T09:00:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	originalStdin := os.Stdin
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create stdin pipe: %v", err)
+	}
+	os.Stdin = reader
+	defer func() {
+		os.Stdin = originalStdin
+	}()
+	stdinBody := "from stdin\nwith exact punctuation: `[]{}()`\n"
+	if _, err := writer.WriteString(stdinBody); err != nil {
+		t.Fatalf("write stdin body: %v", err)
+	}
+	_ = writer.Close()
+
+	output, runErr := captureStdout(t, func() error {
+		return runLocalIssue([]string{
+			"update",
+			"--local-issues", storePath,
+			"--issue", "BIG-GOM-307",
+			"--comment-file", "-",
+			"--json",
+		})
+	})
+	if runErr != nil {
+		t.Fatalf("run local issue update with stdin: %v (stdout=%s)", runErr, string(output))
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"body": "from stdin\nwith exact punctuation:`)) || !bytes.Contains(body, []byte("[]{}()")) {
+		t.Fatalf("expected stdin comment in store, got %s", string(body))
+	}
+}
+
 func TestResolveGitHubSyncRemotesPrefersUpstreamThenOriginAndGithub(t *testing.T) {
 	tmp := t.TempDir()
 	repo := filepath.Join(tmp, "repo")
