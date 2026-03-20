@@ -105,9 +105,35 @@ func RenderMarkdown(weekly Weekly) string {
 	builder.WriteString(fmt.Sprintf("- Total runs: %d\n", weekly.Summary.TotalRuns))
 	builder.WriteString(fmt.Sprintf("- Completed runs: %d\n", weekly.Summary.CompletedRuns))
 	builder.WriteString(fmt.Sprintf("- Blocked runs: %d\n", weekly.Summary.BlockedRuns))
+	builder.WriteString(fmt.Sprintf("- High-risk runs: %d\n", weekly.Summary.HighRiskRuns))
+	builder.WriteString(fmt.Sprintf("- Premium runs: %d\n", weekly.Summary.PremiumRuns))
 	builder.WriteString(fmt.Sprintf("- Human interventions: %d\n", weekly.Summary.HumanInterventions))
 	builder.WriteString(fmt.Sprintf("- Regressions: %d\n", weekly.Summary.RegressionFindings))
 	builder.WriteString(fmt.Sprintf("- Budget cents: %d\n\n", weekly.Summary.BudgetCentsTotal))
+	builder.WriteString("## Highlights\n")
+	if len(weekly.Highlights) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, highlight := range weekly.Highlights {
+			builder.WriteString("- " + highlight + "\n")
+		}
+	}
+	builder.WriteString("\n## Team Breakdown\n")
+	if len(weekly.TeamBreakdown) == 0 {
+		builder.WriteString("- None\n")
+	} else {
+		for _, team := range weekly.TeamBreakdown {
+			builder.WriteString(fmt.Sprintf("- %s: total=%d completed=%d blocked=%d interventions=%d budget_cents=%d\n",
+				team.Key,
+				team.TotalRuns,
+				team.CompletedRuns,
+				team.BlockedRuns,
+				team.HumanInterventions,
+				team.BudgetCentsTotal,
+			))
+		}
+	}
+	builder.WriteString("\n")
 	builder.WriteString("## Actions\n")
 	for _, action := range weekly.Actions {
 		builder.WriteString("- " + action + "\n")

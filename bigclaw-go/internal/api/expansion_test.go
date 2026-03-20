@@ -81,7 +81,11 @@ func TestV2WeeklyReportBuildsSummaryActionsAndMarkdownExport(t *testing.T) {
 	if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 		t.Fatalf("expected markdown export, got %q", contentType)
 	}
-	if !strings.Contains(exportResponse.Body.String(), "Completed runs: 1") || !strings.Contains(exportResponse.Body.String(), "Human interventions: 1") {
+	if !strings.Contains(exportResponse.Body.String(), "Completed runs: 1") ||
+		!strings.Contains(exportResponse.Body.String(), "Human interventions: 1") ||
+		!strings.Contains(exportResponse.Body.String(), "## Highlights") ||
+		!strings.Contains(exportResponse.Body.String(), "## Team Breakdown") ||
+		!strings.Contains(exportResponse.Body.String(), "- platform: total=2 completed=1 blocked=1 interventions=1 budget_cents=1200") {
 		t.Fatalf("unexpected weekly export body: %s", exportResponse.Body.String())
 	}
 }

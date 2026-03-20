@@ -1,0 +1,76 @@
+package reporting
+
+import (
+	"strings"
+	"testing"
+	"time"
+
+	"bigclaw-go/internal/domain"
+)
+
+func TestBuildRendersRichWeeklyMarkdownSections(t *testing.T) {
+	base := time.Date(2026, 3, 9, 10, 0, 0, 0, time.UTC)
+	tasks := []domain.Task{
+		{
+			ID:          "task-alpha-1",
+			TraceID:     "trace-alpha-1",
+			Title:       "Ship alpha",
+			State:       domain.TaskSucceeded,
+			RiskLevel:   domain.RiskHigh,
+			BudgetCents: 900,
+			Metadata: map[string]string{
+				"team":             "platform",
+				"plan":             "premium",
+				"regression_count": "2",
+			},
+			UpdatedAt: base.Add(24 * time.Hour),
+		},
+		{
+			ID:          "task-alpha-2",
+			TraceID:     "trace-alpha-2",
+			Title:       "Fix blocker",
+			State:       domain.TaskBlocked,
+			BudgetCents: 300,
+			Metadata: map[string]string{
+				"team": "platform",
+			},
+			UpdatedAt: base.Add(48 * time.Hour),
+		},
+		{
+			ID:          "task-growth-1",
+			TraceID:     "trace-growth-1",
+			Title:       "Launch growth test",
+			State:       domain.TaskSucceeded,
+			BudgetCents: 200,
+			Metadata: map[string]string{
+				"team": "growth",
+			},
+			UpdatedAt: base.Add(72 * time.Hour),
+		},
+	}
+	events := []domain.Event{
+		{ID: "evt-1", Type: domain.EventRunTakeover, TaskID: "task-alpha-2", TraceID: "trace-alpha-2", Timestamp: base.Add(48 * time.Hour)},
+		{ID: "evt-2", Type: domain.EventControlPaused, TaskID: "task-alpha-2", TraceID: "trace-alpha-2", Timestamp: base.Add(49 * time.Hour)},
+	}
+
+	weekly := Build(tasks, events, base, base.Add(7*24*time.Hour))
+
+	if weekly.Summary.TotalRuns != 3 || weekly.Summary.HighRiskRuns != 1 || weekly.Summary.PremiumRuns != 1 {
+		t.Fatalf("unexpected weekly summary: %+v", weekly.Summary)
+	}
+	if len(weekly.TeamBreakdown) != 2 || weekly.TeamBreakdown[0].Key != "platform" {
+		t.Fatalf("unexpected team breakdown ordering: %+v", weekly.TeamBreakdown)
+	}
+	if !strings.Contains(weekly.Markdown, "## Highlights") || !strings.Contains(weekly.Markdown, "## Team Breakdown") {
+		t.Fatalf("expected richer markdown sections, got %s", weekly.Markdown)
+	}
+	if !strings.Contains(weekly.Markdown, "- High-risk runs: 1") || !strings.Contains(weekly.Markdown, "- Premium runs: 1") {
+		t.Fatalf("expected risk and premium summary lines, got %s", weekly.Markdown)
+	}
+	if !strings.Contains(weekly.Markdown, "- platform: total=2 completed=1 blocked=1 interventions=2 budget_cents=1200") {
+		t.Fatalf("expected platform breakdown in markdown, got %s", weekly.Markdown)
+	}
+	if !strings.Contains(weekly.Markdown, "Top team by throughput: platform.") {
+		t.Fatalf("expected highlight in markdown, got %s", weekly.Markdown)
+	}
+}
