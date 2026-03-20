@@ -171,7 +171,7 @@
       "title": "Repo collaboration and lineage surface migration",
       "description": "Port the remaining repo board, registry, gateway, linkage, and lineage surfaces into Go without leaking repo-specific concerns into the scheduler runtime.",
       "priority": 2,
-      "state": "Backlog",
+      "state": "In Progress",
       "labels": [
         "go-mainline",
         "migration",
@@ -180,7 +180,13 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-18T09:00:00Z"
+      "updated_at": "2026-03-20T14:02:35Z",
+      "comments": [
+        {
+          "body": "Progress update: ported the remaining Go-owned repo plane, registry, and run-commit binding contracts into `bigclaw-go/internal/repo/*` with parity coverage for repo space defaults, default channels, agent resolution, accepted commit hash derivation, and invalid role rejection.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/repo` -> passed\n- `git rev-parse HEAD` -> `6c333a21abd3845414c8ad74d806b23f54f57d41`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `6c333a21abd3845414c8ad74d806b23f54f57d41` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `6c333a21abd3845414c8ad74d806b23f54f57d41` (matches local)\n- `git log -1 --stat` -> `Port Go repo plane and registry contracts`\n\nCommit: `6c333a21abd3845414c8ad74d806b23f54f57d41`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T14:02:35Z"
+        }
+      ]
     },
     {
       "id": "big-gom-307",
