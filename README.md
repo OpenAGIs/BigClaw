@@ -135,3 +135,9 @@ Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-ma
 reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
 The Go-first BigClaw entrypoint is `scripts/ops/bigclawctl`; legacy Python
 bootstrap wrappers remain only as compatibility shims during migration.
+
+The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
+`src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
+`src/bigclaw/orchestration.py`, and `src/bigclaw/queue.py` are now frozen for
+migration-only reference use. Active runtime development belongs in
+`bigclaw-go/internal/*`.

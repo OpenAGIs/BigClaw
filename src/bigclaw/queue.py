@@ -1,9 +1,16 @@
+"""Legacy Python queue surface frozen after Go mainline cutover."""
+
 import heapq
 import json
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+from .deprecation import LEGACY_RUNTIME_GUIDANCE
 from .models import Task
+
+
+LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE
+GO_MAINLINE_REPLACEMENT = "bigclaw-go/internal/queue/queue.go"
 
 
 class PersistentTaskQueue:
@@ -47,4 +54,3 @@ class PersistentTaskQueue:
         return len(self._heap)
     def peek_tasks(self) -> List[Task]:
         return [Task.from_dict(task) for (_p, _tid, task) in sorted(self._heap)]
-
