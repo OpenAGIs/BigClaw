@@ -97,11 +97,23 @@ func TestRuntimeProcessesTask(t *testing.T) {
 		t.Fatalf("expected queue size 0 after ack, got %d", got)
 	}
 	events := recorder.EventsByTask("task-1", 10)
-	if len(events) != 4 {
-		t.Fatalf("expected 4 lifecycle events, got %d", len(events))
+	if len(events) != 5 {
+		t.Fatalf("expected 5 lifecycle events including scheduler audit, got %d", len(events))
 	}
 	if events[1].Type != domain.EventSchedulerRouted {
 		t.Fatalf("expected routed event, got %+v", events)
+	}
+	foundSchedulerAudit := false
+	for _, event := range events {
+		if event.Type == domain.EventType(observability.SchedulerDecisionEvent) {
+			foundSchedulerAudit = true
+			if missing := observability.MissingRequiredFields(observability.SchedulerDecisionEvent, event.Payload); len(missing) != 0 {
+				t.Fatalf("expected scheduler audit payload to satisfy spec, missing %+v in %+v", missing, event.Payload)
+			}
+		}
+	}
+	if !foundSchedulerAudit {
+		t.Fatalf("expected scheduler decision audit event, got %+v", events)
 	}
 	for _, event := range events {
 		if event.TraceID != "trace-task-1" {
@@ -132,10 +144,10 @@ func TestRuntimePublishesExecutorArtifacts(t *testing.T) {
 		t.Fatalf("expected task to be processed")
 	}
 	events := recorder.EventsByTask("task-artifacts", 10)
-	if len(events) != 4 {
-		t.Fatalf("expected 4 lifecycle events, got %d", len(events))
+	if len(events) != 5 {
+		t.Fatalf("expected 5 lifecycle events including scheduler audit, got %d", len(events))
 	}
-	started := events[2]
+	started := events[3]
 	if started.Type != domain.EventTaskStarted {
 		t.Fatalf("expected started event, got %+v", started)
 	}
@@ -143,7 +155,7 @@ func TestRuntimePublishesExecutorArtifacts(t *testing.T) {
 	if !ok || len(tools) != 2 || tools[0] != "browser" || tools[1] != "git" {
 		t.Fatalf("expected required tools in started payload, got %+v", started.Payload)
 	}
-	completed := events[3]
+	completed := events[4]
 	if completed.Type != domain.EventTaskCompleted {
 		t.Fatalf("expected completed event, got %+v", completed)
 	}

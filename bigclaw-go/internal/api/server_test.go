@@ -1326,6 +1326,33 @@ func TestV2ControlCenterActionsAndRunDetail(t *testing.T) {
 	if takeoverResponse.Code != http.StatusOK || !strings.Contains(takeoverResponse.Body.String(), "alice") {
 		t.Fatalf("expected takeover action payload, got %d %s", takeoverResponse.Code, takeoverResponse.Body.String())
 	}
+	auditResponse := httptest.NewRecorder()
+	handler.ServeHTTP(auditResponse, httptest.NewRequest(http.MethodGet, "/audit?limit=20", nil))
+	if auditResponse.Code != http.StatusOK {
+		t.Fatalf("expected audit 200 after takeover, got %d %s", auditResponse.Code, auditResponse.Body.String())
+	}
+	var auditDecoded struct {
+		Audit []struct {
+			Type    string         `json:"type"`
+			Payload map[string]any `json:"payload"`
+		} `json:"audit"`
+	}
+	if err := json.Unmarshal(auditResponse.Body.Bytes(), &auditDecoded); err != nil {
+		t.Fatalf("decode audit response: %v", err)
+	}
+	foundManualTakeoverAudit := false
+	for _, entry := range auditDecoded.Audit {
+		if entry.Type != observability.ManualTakeoverEvent {
+			continue
+		}
+		foundManualTakeoverAudit = true
+		if missing := observability.MissingRequiredFields(observability.ManualTakeoverEvent, entry.Payload); len(missing) != 0 {
+			t.Fatalf("expected manual takeover audit payload to satisfy spec, missing %+v in %+v", missing, entry.Payload)
+		}
+	}
+	if !foundManualTakeoverAudit {
+		t.Fatalf("expected canonical manual takeover audit event in %+v", auditDecoded.Audit)
+	}
 
 	assignOwnerBody, _ := json.Marshal(map[string]any{"action": "assign_owner", "task_id": "task-v2-1", "actor": "alice", "role": "eng_lead", "viewer_team": "platform", "owner": "carol", "note": "handoff owner"})
 	assignOwnerResponse := httptest.NewRecorder()

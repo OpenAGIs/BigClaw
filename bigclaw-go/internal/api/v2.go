@@ -1265,6 +1265,7 @@ func (s *Server) handleV2ControlCenterAction(w http.ResponseWriter, r *http.Requ
 		operation := buildControlActionOperation(action, actor, authorization, request.TaskID, reason, note, now, beforeTask.State, task.State, takeoverRef(beforeTakeover, beforeTakeoverOK), takeoverRef(takeover, true))
 		traceID := s.traceIDForTask(request.TaskID)
 		s.publish(domain.Event{ID: fmt.Sprintf("%s-takeover-%d", request.TaskID, now.UnixNano()), Type: domain.EventRunTakeover, TaskID: request.TaskID, TraceID: traceID, Timestamp: now, Payload: buildControlActionPayload(operation, s.taskTeam(request.TaskID), s.taskProject(request.TaskID))})
+		s.publishManualTakeoverAuditEvent(task, takeover, operation, traceID, now)
 		writeJSON(w, http.StatusOK, map[string]any{"action": action, "takeover": takeover, "operation": operation})
 	case "release_takeover":
 		if request.TaskID == "" {
@@ -1452,6 +1453,36 @@ func controlActionAuditURL(taskID string, action string) string {
 		return fmt.Sprintf("/v2/control-center/audit?task_id=%s&action=%s&audit_limit=20", taskID, action)
 	}
 	return fmt.Sprintf("/v2/control-center/audit?action=%s&audit_limit=20", action)
+}
+
+func (s *Server) publishManualTakeoverAuditEvent(task domain.Task, takeover control.Takeover, operation controlActionOperation, traceID string, now time.Time) {
+	requiredApprovals := make([]string, 0, 2)
+	if takeover.Reviewer != "" {
+		requiredApprovals = append(requiredApprovals, takeover.Reviewer)
+	}
+	if approvalFlow := policy.Resolve(task).ApprovalFlow; approvalFlow != "" {
+		requiredApprovals = append(requiredApprovals, approvalFlow)
+	}
+	targetTeam := firstNonEmpty(strings.TrimSpace(task.Metadata["team"]), operation.Owner, "unassigned")
+	s.publish(domain.Event{
+		ID:        fmt.Sprintf("%s-manual-takeover-audit-%d", task.ID, now.UnixNano()),
+		Type:      domain.EventType(observability.ManualTakeoverEvent),
+		TaskID:    task.ID,
+		TraceID:   traceID,
+		RunID:     traceID,
+		Timestamp: now,
+		Payload: map[string]any{
+			"task_id":            task.ID,
+			"run_id":             traceID,
+			"target_team":        targetTeam,
+			"reason":             firstNonEmpty(operation.Reason, operation.Note, "manual takeover requested"),
+			"requested_by":       operation.Actor,
+			"required_approvals": requiredApprovals,
+			"owner":              takeover.Owner,
+			"reviewer":           takeover.Reviewer,
+			"approval_flow":      policy.Resolve(task).ApprovalFlow,
+		},
+	})
 }
 
 func takeoverRef(takeover control.Takeover, ok bool) *control.Takeover {

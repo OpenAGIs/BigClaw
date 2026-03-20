@@ -14,6 +14,7 @@ import (
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/policy"
 	"bigclaw-go/internal/queue"
+	"bigclaw-go/internal/risk"
 	"bigclaw-go/internal/scheduler"
 )
 
@@ -157,6 +158,7 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		routedPayload["preemption"] = decision.Preemption
 	}
 	r.publish(domain.Event{ID: eventID(task.ID, "routed"), Type: domain.EventSchedulerRouted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: time.Now(), Payload: routedPayload})
+	r.publishSchedulerDecisionAuditEvent(*task, decision)
 
 	runner, ok := r.Registry.Get(decision.Assignment.Executor)
 	if !ok {
@@ -503,6 +505,30 @@ func runtimeResultPayload(executorKind domain.ExecutorKind, result executor.Resu
 
 func eventID(taskID, suffix string) string {
 	return fmt.Sprintf("%s-%s", taskID, suffix)
+}
+
+func (r *Runtime) publishSchedulerDecisionAuditEvent(task domain.Task, decision scheduler.Decision) {
+	score := risk.ScoreTask(task, nil)
+	policySummary := policy.Resolve(task)
+	r.publish(domain.Event{
+		ID:        eventID(task.ID, "scheduler-decision-audit"),
+		Type:      domain.EventType(observability.SchedulerDecisionEvent),
+		TaskID:    task.ID,
+		TraceID:   task.TraceID,
+		RunID:     task.TraceID,
+		Timestamp: time.Now(),
+		Payload: map[string]any{
+			"task_id":       task.ID,
+			"run_id":        task.TraceID,
+			"medium":        decision.Assignment.Executor,
+			"approved":      !score.RequiresApproval,
+			"reason":        decision.Reason,
+			"risk_level":    score.Level,
+			"risk_score":    score.Total,
+			"policy_plan":   policySummary.Plan,
+			"resource_pool": policySummary.ResourcePool,
+		},
+	})
 }
 
 func effectiveQuota(task domain.Task, base scheduler.QuotaSnapshot) scheduler.QuotaSnapshot {
