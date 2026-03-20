@@ -100,7 +100,7 @@ type refillClient interface {
 
 func main() {
 	if len(os.Args) < 2 {
-		fatalf("usage: bigclawctl <github-sync|workspace|refill> ...")
+		fatalf("usage: bigclawctl <github-sync|issue|workspace|refill> ...")
 	}
 	var err error
 	switch os.Args[1] {
