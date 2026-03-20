@@ -148,10 +148,12 @@ def build_shared_queue_section(
     root: Path,
     bundle_dir: Path,
     report_path: Path,
+    source: str,
 ) -> dict[str, Any]:
     section: dict[str, Any] = {
         'available': False,
         'canonical_report_path': SHARED_QUEUE_CANONICAL_REPORT,
+        'source': source,
     }
     report = read_json(report_path)
     if not isinstance(report, dict):
@@ -345,6 +347,8 @@ def render_index(
             lines.append(f"- Duplicate task.completed: `{shared_queue['duplicate_completed_tasks']}`")
         if 'duplicate_started_tasks' in shared_queue:
             lines.append(f"- Duplicate task.started: `{shared_queue['duplicate_started_tasks']}`")
+        if shared_queue.get('source'):
+            lines.append(f"- Source: `{shared_queue['source']}`")
         lines.append('')
 
     lines.extend(['## Workflow closeout commands', ''])
@@ -385,6 +389,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--continuation-scorecard-path', default='docs/reports/validation-bundle-continuation-scorecard.json')
     parser.add_argument('--continuation-policy-gate-path', default='docs/reports/validation-bundle-continuation-policy-gate.json')
     parser.add_argument('--shared-queue-report-path', default='docs/reports/multi-node-shared-queue-report.json')
+    parser.add_argument('--shared-queue-source', default='existing-report')
     parser.add_argument('--run-local', default='1')
     parser.add_argument('--run-kubernetes', default='1')
     parser.add_argument('--run-ray', default='1')
@@ -449,6 +454,7 @@ def main() -> int:
         root=root,
         bundle_dir=bundle_dir,
         report_path=root / args.shared_queue_report_path,
+        source=args.shared_queue_source,
     )
 
     bundle_summary_path = bundle_dir / 'summary.json'

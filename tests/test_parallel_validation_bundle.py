@@ -72,6 +72,7 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
             '--summary-path', 'docs/reports/live-validation-summary.json',
             '--index-path', 'docs/reports/live-validation-index.md',
             '--manifest-path', 'docs/reports/live-validation-index.json',
+            '--shared-queue-source', 'existing-report',
             '--run-local', '1',
             '--run-kubernetes', '1',
             '--run-ray', '1',
@@ -101,6 +102,7 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
     assert summary['shared_queue']['available'] is True
     assert summary['shared_queue']['bundle_report_path'].endswith('multi-node-shared-queue-report.json')
     assert summary['shared_queue']['cross_node_completions'] == 12
+    assert summary['shared_queue']['source'] == 'existing-report'
     assert summary['continuation']['refreshed'] is True
     assert summary['continuation']['policy_gate_recommendation'] == 'hold'
 
@@ -122,6 +124,7 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
     assert 'docs/reports/validation-bundle-continuation-policy-gate.json' in index_text
     assert 'docs/reports/validation-bundle-continuation-digest.md' in index_text
     assert 'Cross-node completions: `12`' in index_text
+    assert 'Source: `existing-report`' in index_text
 
     manifest = json.loads((root / 'docs' / 'reports' / 'live-validation-index.json').read_text(encoding='utf-8'))
     assert manifest['latest']['run_id'] == '20260315T120000Z'
@@ -153,6 +156,7 @@ parser.add_argument('--index-path', required=True)
 parser.add_argument('--manifest-path', required=True)
 parser.add_argument('--run-id', required=True)
 parser.add_argument('--bundle-dir', required=True)
+parser.add_argument('--shared-queue-source', required=True)
 parser.add_argument('--local-report-path', required=True)
 parser.add_argument('--local-stdout-path', required=True)
 parser.add_argument('--local-stderr-path', required=True)
@@ -177,6 +181,7 @@ summary = {
     'shared_queue': {
         'available': shared_queue.get('all_ok', False),
         'cross_node_completions': shared_queue.get('cross_node_completions', 0),
+        'source': args.shared_queue_source,
     },
 }
 for rel in (args.summary_path, args.manifest_path):
@@ -249,3 +254,4 @@ print(json.dumps({'status': 'ok', 'report_path': str(report_path)}))
     summary = json.loads((root / 'docs' / 'reports' / 'live-validation-summary.json').read_text(encoding='utf-8'))
     assert summary['shared_queue']['available'] is True
     assert summary['shared_queue']['cross_node_completions'] == 16
+    assert summary['shared_queue']['source'] == 'inline-workflow-refresh'
