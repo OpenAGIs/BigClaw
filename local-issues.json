@@ -63,11 +63,15 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-19T06:45:00Z",
+      "updated_at": "2026-03-20T10:28:35Z",
       "comments": [
         {
           "body": "Improved the Go orchestrator loop in `bigclaw-go/internal/orchestrator/loop.go` so it no longer waits a full poll interval before touching queued work, drains available work within a single cycle, and falls back to a safe default poll interval when unset. Added focused coverage in `bigclaw-go/internal/orchestrator/loop_test.go` for immediate startup, per-cycle draining, and default poll interval behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/orchestrator` -> passed\n- `cd bigclaw-go && go test ./internal/orchestrator ./internal/worker ./cmd/bigclawd` -> passed (`cmd/bigclawd` has no test files)\n- `git rev-parse HEAD` -> `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3` (matches local)\n- `git log -1 --stat` -> `Drain scheduler work immediately in orchestrator loop`\n\nCommit: `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-19T06:45:00Z"
+        },
+        {
+          "body": "Hardened the Go worker runtime defaults for the active orchestration slice.\n\nWhat changed:\n- `bigclaw-go/internal/worker/runtime.go` now falls back to sane default lease and task timeout values when `LeaseTTL` or `TaskTimeout` are unset, preventing zero-value heartbeat ticker panics and immediate timeout cancellations in unattended bootstrap/runtime paths.\n- The runtime now uses those effective defaults consistently for `LeaseNext`, heartbeat renewals, cancellation polling, and execution deadlines.\n- Added `TestRuntimeUsesDefaultTimeoutAndLeaseWhenUnset` in `bigclaw-go/internal/worker/runtime_test.go` to lock the zero-value runtime behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/worker` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `a3a43f671feb3ab33f3fa9da7faa046e846ecf8c`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `a3a43f671feb3ab33f3fa9da7faa046e846ecf8c` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `a3a43f671feb3ab33f3fa9da7faa046e846ecf8c` (matches local)\n- `git log -1 --stat` -> `Default worker runtime lease and timeout settings`\n\nCommit: `a3a43f671feb3ab33f3fa9da7faa046e846ecf8c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T10:28:35Z"
         }
       ]
     },
