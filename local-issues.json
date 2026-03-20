@@ -1,133 +1,179 @@
 {
   "issues": [
     {
-      "id": "big-gom-301",
-      "identifier": "BIG-GOM-301",
-      "title": "Unified domain model and intake contract migration",
-      "description": "Finish consolidating the canonical Go task, intake, and workflow vocabulary so downstream runtime slices stop inventing parallel compatibility contracts.",
-      "priority": 1,
-      "state": "In Progress",
-      "labels": ["go-mainline", "migration", "domain", "intake"],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
+      "description": "Finish consolidating the canonical Go task, intake, and workflow vocabulary so downstream runtime slices stop inventing parallel compatibility contracts.",
+      "id": "big-gom-301",
+      "identifier": "BIG-GOM-301",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "domain",
+        "intake"
+      ],
+      "priority": 1,
+      "state": "In Progress",
+      "title": "Unified domain model and intake contract migration",
       "updated_at": "2026-03-18T09:00:00Z"
     },
     {
-      "id": "big-gom-302",
-      "identifier": "BIG-GOM-302",
-      "title": "Risk, policy, and approval semantics migration",
-      "description": "Keep porting governance, execution-contract, audit, and policy semantics into Go so review and approval behavior no longer depends on Python-only code paths.",
-      "priority": 1,
-      "state": "Done",
-      "labels": ["go-mainline", "migration", "risk", "policy"],
       "assigned_to_worker": true,
       "comments": [
         {
-          "body": "Restored Python risk-scoring parity for invalid budgets in `bigclaw-go/internal/risk/risk.go` by adding a manual-review `budget` factor when `budget_cents` is negative, and added `TestScoreTaskFlagsNegativeBudgetForManualReview` coverage in `bigclaw-go/internal/risk/risk_test.go`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/risk` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `69b1d9b4759537af3154cc26999c6f5227c9af80`\n- remote SHA check for `origin/symphony/BIG-GOM-302` -> `69b1d9b4759537af3154cc26999c6f5227c9af80` (matches local)\n\nCommit: `69b1d9b4759537af3154cc26999c6f5227c9af80`\nPR URL: unavailable in this workspace mirror (`origin` is a local path, not a GitHub HTTPS remote).",
+          "body": "Restored Python risk-scoring parity for invalid budgets in `bigclaw-go/internal/risk/risk.go` by adding a manual-review `budget` factor when `budget_cents` is negative, and added `TestScoreTaskFlagsNegativeBudgetForManualReview` coverage in `bigclaw-go/internal/risk/risk_test.go`.\n\nValidation:\n- `cd bigclaw-go \u0026\u0026 go test ./internal/risk` -\u003e passed\n- `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e passed\n- `git rev-parse HEAD` -\u003e `69b1d9b4759537af3154cc26999c6f5227c9af80`\n- remote SHA check for `origin/symphony/BIG-GOM-302` -\u003e `69b1d9b4759537af3154cc26999c6f5227c9af80` (matches local)\n\nCommit: `69b1d9b4759537af3154cc26999c6f5227c9af80`\nPR URL: unavailable in this workspace mirror (`origin` is a local path, not a GitHub HTTPS remote).",
           "created_at": "2026-03-18T15:35:00Z"
         },
         {
-          "body": "Completed the remaining Go-side audit semantics parity for policy and approval events in `bigclaw-go/internal/observability/*`.\n\nWhat changed:\n- `bigclaw-go/internal/observability/audit.go` now validates spec-backed execution audit events before JSONL persistence, using top-level `task_id` / `run_id` plus payload fields so malformed approval, takeover, budget-override, and handoff events cannot be written.\n- `bigclaw-go/internal/observability/recorder.go` now exposes `RecordSpecEvent`, a spec-aware recorder path that rejects malformed audit events before they mutate in-memory recorder state.\n- Added focused coverage in `bigclaw-go/internal/observability/audit_test.go` and `bigclaw-go/internal/observability/recorder_test.go` for top-level identifier handling, missing required fields, sink rejection, and recorder rejection/acceptance behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/observability` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `caecf9d6ce3774d0491d5ddd52e15dc771594236`\n- remote SHA check for `origin/symphony/BIG-GOM-302` -> `caecf9d6ce3774d0491d5ddd52e15dc771594236` (matches local)\n- `git log -1 --stat` captured commit `caecf9d6ce3774d0491d5ddd52e15dc771594236` with recorder test coverage; prior supporting commit `1eb6016c8cb1b1add099cdfce166e9dc6f8427e1` enforced spec-backed sink validation.\n\nCommit: `caecf9d6ce3774d0491d5ddd52e15dc771594236`\nPR URL: unavailable in this workspace mirror (`origin` is a local path, not a GitHub HTTPS remote).",
+          "body": "Completed the remaining Go-side audit semantics parity for policy and approval events in `bigclaw-go/internal/observability/*`.\n\nWhat changed:\n- `bigclaw-go/internal/observability/audit.go` now validates spec-backed execution audit events before JSONL persistence, using top-level `task_id` / `run_id` plus payload fields so malformed approval, takeover, budget-override, and handoff events cannot be written.\n- `bigclaw-go/internal/observability/recorder.go` now exposes `RecordSpecEvent`, a spec-aware recorder path that rejects malformed audit events before they mutate in-memory recorder state.\n- Added focused coverage in `bigclaw-go/internal/observability/audit_test.go` and `bigclaw-go/internal/observability/recorder_test.go` for top-level identifier handling, missing required fields, sink rejection, and recorder rejection/acceptance behavior.\n\nValidation:\n- `cd bigclaw-go \u0026\u0026 go test ./internal/observability` -\u003e passed\n- `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e passed\n- `git rev-parse HEAD` -\u003e `caecf9d6ce3774d0491d5ddd52e15dc771594236`\n- remote SHA check for `origin/symphony/BIG-GOM-302` -\u003e `caecf9d6ce3774d0491d5ddd52e15dc771594236` (matches local)\n- `git log -1 --stat` captured commit `caecf9d6ce3774d0491d5ddd52e15dc771594236` with recorder test coverage; prior supporting commit `1eb6016c8cb1b1add099cdfce166e9dc6f8427e1` enforced spec-backed sink validation.\n\nCommit: `caecf9d6ce3774d0491d5ddd52e15dc771594236`\nPR URL: unavailable in this workspace mirror (`origin` is a local path, not a GitHub HTTPS remote).",
           "created_at": "2026-03-18T15:38:03Z"
         },
         {
-          "body": "Synced the completed `BIG-GOM-302` branch to GitHub and refreshed closeout evidence.\n\nWhat changed:\n- pushed `symphony/BIG-GOM-302` to the `github` remote so the completed migration branch exists on GitHub as well as the local mirror\n- created PR `BIG-GOM-302: close risk and policy migration slice`\n- re-ran the focused Go verification suite for the migrated risk, policy, governance, contract, observability, and API surfaces\n\nValidation:\n- `cd bigclaw-go && go test ./internal/risk ./internal/policy ./internal/governance ./internal/contract ./internal/observability ./internal/api` -> passed\n- `git rev-parse HEAD` -> `b05db848be9eec330245fd92a8a6c895ed36c4a1`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `b05db848be9eec330245fd92a8a6c895ed36c4a1` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `b05db848be9eec330245fd92a8a6c895ed36c4a1` (matches local)\n- `git log -1 --stat` -> `Close BIG-GOM-302 in local tracker` with tracker closeout updates in `docs/parallel-refill-queue.json` and `local-issues.json`\n\nCommit: `b05db848be9eec330245fd92a8a6c895ed36c4a1`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "body": "Synced the completed `BIG-GOM-302` branch to GitHub and refreshed closeout evidence.\n\nWhat changed:\n- pushed `symphony/BIG-GOM-302` to the `github` remote so the completed migration branch exists on GitHub as well as the local mirror\n- created PR `BIG-GOM-302: close risk and policy migration slice`\n- re-ran the focused Go verification suite for the migrated risk, policy, governance, contract, observability, and API surfaces\n\nValidation:\n- `cd bigclaw-go \u0026\u0026 go test ./internal/risk ./internal/policy ./internal/governance ./internal/contract ./internal/observability ./internal/api` -\u003e passed\n- `git rev-parse HEAD` -\u003e `b05db848be9eec330245fd92a8a6c895ed36c4a1`\n- `git rev-parse origin/symphony/BIG-GOM-302` -\u003e `b05db848be9eec330245fd92a8a6c895ed36c4a1` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -\u003e `b05db848be9eec330245fd92a8a6c895ed36c4a1` (matches local)\n- `git log -1 --stat` -\u003e `Close BIG-GOM-302 in local tracker` with tracker closeout updates in `docs/parallel-refill-queue.json` and `local-issues.json`\n\nCommit: `b05db848be9eec330245fd92a8a6c895ed36c4a1`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-19T00:00:00Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
+      "description": "Keep porting governance, execution-contract, audit, and policy semantics into Go so review and approval behavior no longer depends on Python-only code paths.",
+      "id": "big-gom-302",
+      "identifier": "BIG-GOM-302",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "risk",
+        "policy"
+      ],
+      "priority": 1,
+      "state": "Done",
+      "title": "Risk, policy, and approval semantics migration",
       "updated_at": "2026-03-19T00:00:00Z"
     },
     {
-      "id": "big-gom-303",
-      "identifier": "BIG-GOM-303",
-      "title": "Workflow orchestration and scheduler loop migration",
-      "description": "Close the Go execution loop with workflow-aware orchestration, journal state, and runtime closeout so active development no longer needs the Python workflow engine.",
-      "priority": 1,
-      "state": "In Progress",
-      "labels": ["go-mainline", "migration", "workflow", "runtime"],
       "assigned_to_worker": true,
       "comments": [
         {
-          "body": "Improved the Go orchestrator loop in `bigclaw-go/internal/orchestrator/loop.go` so it no longer waits a full poll interval before touching queued work, drains available work within a single cycle, and falls back to a safe default poll interval when unset. Added focused coverage in `bigclaw-go/internal/orchestrator/loop_test.go` for immediate startup, per-cycle draining, and default poll interval behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/orchestrator` -> passed\n- `cd bigclaw-go && go test ./internal/orchestrator ./internal/worker ./cmd/bigclawd` -> passed (`cmd/bigclawd` has no test files)\n- `git rev-parse HEAD` -> `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3` (matches local)\n- `git log -1 --stat` -> `Drain scheduler work immediately in orchestrator loop`\n\nCommit: `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "body": "Improved the Go orchestrator loop in `bigclaw-go/internal/orchestrator/loop.go` so it no longer waits a full poll interval before touching queued work, drains available work within a single cycle, and falls back to a safe default poll interval when unset. Added focused coverage in `bigclaw-go/internal/orchestrator/loop_test.go` for immediate startup, per-cycle draining, and default poll interval behavior.\n\nValidation:\n- `cd bigclaw-go \u0026\u0026 go test ./internal/orchestrator` -\u003e passed\n- `cd bigclaw-go \u0026\u0026 go test ./internal/orchestrator ./internal/worker ./cmd/bigclawd` -\u003e passed (`cmd/bigclawd` has no test files)\n- `git rev-parse HEAD` -\u003e `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3`\n- `git rev-parse origin/symphony/BIG-GOM-302` -\u003e `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -\u003e `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3` (matches local)\n- `git log -1 --stat` -\u003e `Drain scheduler work immediately in orchestrator loop`\n\nCommit: `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-19T06:45:00Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
+      "description": "Close the Go execution loop with workflow-aware orchestration, journal state, and runtime closeout so active development no longer needs the Python workflow engine.",
+      "id": "big-gom-303",
+      "identifier": "BIG-GOM-303",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "workflow",
+        "runtime"
+      ],
+      "priority": 1,
+      "state": "In Progress",
+      "title": "Workflow orchestration and scheduler loop migration",
       "updated_at": "2026-03-19T06:45:00Z"
     },
     {
-      "id": "big-gom-304",
-      "identifier": "BIG-GOM-304",
-      "title": "Observability, reporting, and weekly operations surface migration",
-      "description": "Move runtime evidence, reporting, and weekly operations closeout onto Go-owned observability outputs that line up with the new execution loop.",
-      "priority": 2,
-      "state": "Done",
-      "labels": ["go-mainline", "migration", "observability", "reporting"],
       "assigned_to_worker": true,
       "comments": [
         {
-          "body": "Expanded the Go weekly reporting export in `bigclaw-go/internal/reporting/reporting.go` so the markdown bundle now includes richer summary lines, highlights, and per-team breakdown sections instead of a thin summary-only export. Added direct package coverage in `bigclaw-go/internal/reporting/reporting_test.go` and tightened `bigclaw-go/internal/api/expansion_test.go` so the `/v2/reports/weekly/export` surface proves the richer markdown is emitted through the API.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/reporting ./internal/api` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `35d9fb4f87a176824aa9ca822cded6bc2c70d91d`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `35d9fb4f87a176824aa9ca822cded6bc2c70d91d` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `35d9fb4f87a176824aa9ca822cded6bc2c70d91d` (matches local)\n- `git log -1 --stat` -> `Expand Go weekly report markdown export`\n\nCommit: `35d9fb4f87a176824aa9ca822cded6bc2c70d91d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "body": "Expanded the Go weekly reporting export in `bigclaw-go/internal/reporting/reporting.go` so the markdown bundle now includes richer summary lines, highlights, and per-team breakdown sections instead of a thin summary-only export. Added direct package coverage in `bigclaw-go/internal/reporting/reporting_test.go` and tightened `bigclaw-go/internal/api/expansion_test.go` so the `/v2/reports/weekly/export` surface proves the richer markdown is emitted through the API.\n\nValidation:\n- `cd bigclaw-go \u0026\u0026 go test ./internal/reporting ./internal/api` -\u003e passed\n- `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e passed\n- `git rev-parse HEAD` -\u003e `35d9fb4f87a176824aa9ca822cded6bc2c70d91d`\n- `git rev-parse origin/symphony/BIG-GOM-302` -\u003e `35d9fb4f87a176824aa9ca822cded6bc2c70d91d` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -\u003e `35d9fb4f87a176824aa9ca822cded6bc2c70d91d` (matches local)\n- `git log -1 --stat` -\u003e `Expand Go weekly report markdown export`\n\nCommit: `35d9fb4f87a176824aa9ca822cded6bc2c70d91d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T09:10:00Z"
         },
         {
-          "body": "Added a Go-owned weekly metric-spec surface in `bigclaw-go/internal/reporting/reporting.go` and exposed it from `/v2/reports/weekly` so reviewer evidence now includes explicit metric definitions and computed weekly values alongside the markdown export. Added focused assertions in `bigclaw-go/internal/reporting/reporting_test.go` and `bigclaw-go/internal/api/expansion_test.go` to verify metric-spec population and markdown export coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/reporting ./internal/api` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `718a8994134c9b220d69f01c1bf5b7c71f344884`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `718a8994134c9b220d69f01c1bf5b7c71f344884` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `718a8994134c9b220d69f01c1bf5b7c71f344884` (matches local)\n- `git log -1 --stat` -> `Add weekly metric spec to Go reporting`\n\nCommit: `718a8994134c9b220d69f01c1bf5b7c71f344884`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "body": "Added a Go-owned weekly metric-spec surface in `bigclaw-go/internal/reporting/reporting.go` and exposed it from `/v2/reports/weekly` so reviewer evidence now includes explicit metric definitions and computed weekly values alongside the markdown export. Added focused assertions in `bigclaw-go/internal/reporting/reporting_test.go` and `bigclaw-go/internal/api/expansion_test.go` to verify metric-spec population and markdown export coverage.\n\nValidation:\n- `cd bigclaw-go \u0026\u0026 go test ./internal/reporting ./internal/api` -\u003e passed\n- `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e passed\n- `git rev-parse HEAD` -\u003e `718a8994134c9b220d69f01c1bf5b7c71f344884`\n- `git rev-parse origin/symphony/BIG-GOM-302` -\u003e `718a8994134c9b220d69f01c1bf5b7c71f344884` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -\u003e `718a8994134c9b220d69f01c1bf5b7c71f344884` (matches local)\n- `git log -1 --stat` -\u003e `Add weekly metric spec to Go reporting`\n\nCommit: `718a8994134c9b220d69f01c1bf5b7c71f344884`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T09:15:00Z"
         },
         {
-          "body": "Closed `BIG-GOM-304` after finishing the remaining Go-owned weekly reporting closeout slice. `bigclaw-go/internal/reporting/reporting.go` now supports richer weekly markdown, metric-spec rendering, and `WriteWeeklyBundle` file output so reporting evidence can be exported as Go-owned bundle artifacts instead of remaining response-only. Added direct filesystem coverage in `bigclaw-go/internal/reporting/reporting_test.go` for bundle emission alongside the earlier weekly export and metric-spec tests.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/reporting ./internal/api` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `7dce853d0122a8175caa4bee5c9f7db47157891f`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `7dce853d0122a8175caa4bee5c9f7db47157891f` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `7dce853d0122a8175caa4bee5c9f7db47157891f` (matches local)\n- `git log -1 --stat` -> `Add Go weekly report bundle writer`\n\nCommit: `7dce853d0122a8175caa4bee5c9f7db47157891f`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "body": "Closed `BIG-GOM-304` after finishing the remaining Go-owned weekly reporting closeout slice. `bigclaw-go/internal/reporting/reporting.go` now supports richer weekly markdown, metric-spec rendering, and `WriteWeeklyBundle` file output so reporting evidence can be exported as Go-owned bundle artifacts instead of remaining response-only. Added direct filesystem coverage in `bigclaw-go/internal/reporting/reporting_test.go` for bundle emission alongside the earlier weekly export and metric-spec tests.\n\nValidation:\n- `cd bigclaw-go \u0026\u0026 go test ./internal/reporting ./internal/api` -\u003e passed\n- `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e passed\n- `git rev-parse HEAD` -\u003e `7dce853d0122a8175caa4bee5c9f7db47157891f`\n- `git rev-parse origin/symphony/BIG-GOM-302` -\u003e `7dce853d0122a8175caa4bee5c9f7db47157891f` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -\u003e `7dce853d0122a8175caa4bee5c9f7db47157891f` (matches local)\n- `git log -1 --stat` -\u003e `Add Go weekly report bundle writer`\n\nCommit: `7dce853d0122a8175caa4bee5c9f7db47157891f`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T09:20:00Z"
         }
       ],
       "created_at": "2026-03-18T09:00:00Z",
+      "description": "Move runtime evidence, reporting, and weekly operations closeout onto Go-owned observability outputs that line up with the new execution loop.",
+      "id": "big-gom-304",
+      "identifier": "BIG-GOM-304",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "observability",
+        "reporting"
+      ],
+      "priority": 2,
+      "state": "Done",
+      "title": "Observability, reporting, and weekly operations surface migration",
       "updated_at": "2026-03-20T09:20:00Z"
     },
     {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Finish moving operator-facing status, control-center, and triage endpoints to Go once the workflow runtime and reporting surfaces are stable.",
       "id": "big-gom-305",
       "identifier": "BIG-GOM-305",
-      "title": "Control center, triage, and operations view migration",
-      "description": "Finish moving operator-facing status, control-center, and triage endpoints to Go once the workflow runtime and reporting surfaces are stable.",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "api",
+        "triage"
+      ],
       "priority": 2,
       "state": "Backlog",
-      "labels": ["go-mainline", "migration", "api", "triage"],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
+      "title": "Control center, triage, and operations view migration",
       "updated_at": "2026-03-18T09:00:00Z"
     },
     {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Port the remaining repo board, registry, gateway, linkage, and lineage surfaces into Go without leaking repo-specific concerns into the scheduler runtime.",
       "id": "big-gom-306",
       "identifier": "BIG-GOM-306",
-      "title": "Repo collaboration and lineage surface migration",
-      "description": "Port the remaining repo board, registry, gateway, linkage, and lineage surfaces into Go without leaking repo-specific concerns into the scheduler runtime.",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "repo",
+        "governance"
+      ],
       "priority": 2,
       "state": "Backlog",
-      "labels": ["go-mainline", "migration", "repo", "governance"],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
+      "title": "Repo collaboration and lineage surface migration",
       "updated_at": "2026-03-18T09:00:00Z"
     },
     {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "body": "Added Go-owned local tracker comment support for the active tooling slice.\n\nWhat changed:\n- `bigclaw-go/internal/refill/local_store.go` now appends structured comments into `local-issues.json` while preserving existing comments and refreshing `updated_at`.\n- `bigclaw-go/cmd/bigclawctl/main.go` now exposes `bigclawctl issue comment` and `bigclawctl issue state` for local tracker updates without falling back to Python helpers.\n- Added focused coverage in `bigclaw-go/internal/refill/local_store_test.go` and `bigclaw-go/cmd/bigclawctl/main_test.go` for comment persistence and CLI behavior.\n\nValidation:\n- `cd bigclaw-go \u0026\u0026 go test ./internal/refill ./cmd/bigclawctl` -\u003e passed\n- `git rev-parse HEAD` -\u003e `ce98157d5d0f2ecde23679703a3fafb44cca765c`\n- `git rev-parse origin/symphony/BIG-GOM-302` -\u003e `ce98157d5d0f2ecde23679703a3fafb44cca765c` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -\u003e `ce98157d5d0f2ecde23679703a3fafb44cca765c` (matches local)\n\nCommit: `ce98157d5d0f2ecde23679703a3fafb44cca765c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T09:29:11Z"
+        }
+      ],
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Keep hardening the Go-first bootstrap, refill, and GitHub sync toolchain so unattended multi-issue work no longer relies on Python entrypoints or Linear-only operators.",
       "id": "big-gom-307",
       "identifier": "BIG-GOM-307",
-      "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
-      "description": "Keep hardening the Go-first bootstrap, refill, and GitHub sync toolchain so unattended multi-issue work no longer relies on Python entrypoints or Linear-only operators.",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "tooling",
+        "orchestration"
+      ],
       "priority": 1,
       "state": "In Progress",
-      "labels": ["go-mainline", "migration", "tooling", "orchestration"],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-18T09:00:00Z"
+      "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
+      "updated_at": "2026-03-20T09:29:11Z"
     },
     {
-      "id": "big-gom-308",
-      "identifier": "BIG-GOM-308",
-      "title": "Python deprecation and Go-only mainline switch",
-      "description": "Freeze or retire the remaining Python runtime entrypoints only after the Go workflow, observability, and repo collaboration surfaces have matching owners and validation.",
-      "priority": 3,
-      "state": "Backlog",
-      "labels": ["go-mainline", "migration", "deprecation", "python-retirement"],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
+      "description": "Freeze or retire the remaining Python runtime entrypoints only after the Go workflow, observability, and repo collaboration surfaces have matching owners and validation.",
+      "id": "big-gom-308",
+      "identifier": "BIG-GOM-308",
+      "labels": [
+        "go-mainline",
+        "migration",
+        "deprecation",
+        "python-retirement"
+      ],
+      "priority": 3,
+      "state": "Backlog",
+      "title": "Python deprecation and Go-only mainline switch",
       "updated_at": "2026-03-18T09:00:00Z"
     }
   ]
