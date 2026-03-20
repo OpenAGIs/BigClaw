@@ -90,6 +90,9 @@ func TestEngineRunDefinitionWritesReportAndJournal(t *testing.T) {
 	if result.Quota.ConcurrentLimit != 4 || result.Quota.BudgetRemaining != 5000 {
 		t.Fatalf("expected explicit quota preserved in result, got %+v", result.Quota)
 	}
+	if result.Executor != domain.ExecutorLocal || result.SandboxProfile != "workspace-write" {
+		t.Fatalf("expected execution surface in result, got executor=%s sandbox=%s", result.Executor, result.SandboxProfile)
+	}
 	if result.WorkflowRun.Status != WorkflowRunSucceeded {
 		t.Fatalf("expected succeeded workflow run, got %+v", result.WorkflowRun)
 	}
@@ -114,6 +117,9 @@ func TestEngineRunDefinitionWritesReportAndJournal(t *testing.T) {
 	}
 	if !strings.Contains(string(reportContents), "Scheduler Quota: concurrency=4 queue_depth=64 budget_remaining=5000") {
 		t.Fatalf("expected scheduler quota in report, got %s", string(reportContents))
+	}
+	if !strings.Contains(string(reportContents), "Executor: local") || !strings.Contains(string(reportContents), "Sandbox Profile: workspace-write") {
+		t.Fatalf("expected execution surface in report, got %s", string(reportContents))
 	}
 	if !strings.Contains(string(reportContents), "Repo Sync Status: synced") {
 		t.Fatalf("expected repo sync status in report, got %s", string(reportContents))

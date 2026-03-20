@@ -454,6 +454,8 @@ func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
 		Result struct {
 			JournalPath string `json:"journal_path"`
 			ReportPath  string `json:"report_path"`
+			Executor    string `json:"executor"`
+			Sandbox     string `json:"sandbox_profile"`
 			WorkflowRun struct {
 				Status string `json:"status"`
 				Steps  []struct {
@@ -483,6 +485,9 @@ func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
 	if runDecoded.Result.Acceptance.Status != "accepted" || !runDecoded.Result.Closeout.Complete || runDecoded.Result.Task.State != "succeeded" || runDecoded.Result.Closeout.RepoSyncAudit.Sync.Status != "synced" {
 		t.Fatalf("unexpected workflow run result: %+v", runDecoded.Result)
 	}
+	if runDecoded.Result.Executor != "local" || runDecoded.Result.Sandbox != "workspace-write" {
+		t.Fatalf("expected execution surface in workflow run response, got %+v", runDecoded.Result)
+	}
 	if runDecoded.Result.WorkflowRun.Status != "succeeded" || len(runDecoded.Result.WorkflowRun.Steps) != 1 || runDecoded.Result.WorkflowRun.Steps[0].StepID != "execute" || runDecoded.Result.WorkflowRun.Steps[0].Status != "succeeded" {
 		t.Fatalf("expected workflow step run details in response, got %+v", runDecoded.Result.WorkflowRun)
 	}
@@ -494,7 +499,7 @@ func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read workflow journal: %v", err)
 	}
-	if !strings.Contains(string(reportContents), "Acceptance: accepted") || !strings.Contains(string(journalContents), `"status": "complete"`) {
+	if !strings.Contains(string(reportContents), "Acceptance: accepted") || !strings.Contains(string(reportContents), "Sandbox Profile: workspace-write") || !strings.Contains(string(journalContents), `"status": "complete"`) {
 		t.Fatalf("unexpected workflow artifacts report=%s journal=%s", string(reportContents), string(journalContents))
 	}
 }
