@@ -635,6 +635,24 @@
           "created_at": "2026-03-20T19:59:00Z"
         }
       ]
+    },
+    {
+      "id": "big-par-100",
+      "identifier": "BIG-PAR-100",
+      "title": "Refresh validation manifest after continuation write",
+      "description": "Rebuild and rewrite the live validation manifest after continuation details are added so `live-validation-index.json` stays aligned with the final bundle summary instead of capturing a pre-continuation snapshot.",
+      "priority": 2,
+      "state": "In Progress",
+      "labels": [
+        "parallel",
+        "validation",
+        "tooling",
+        "reporting"
+      ],
+      "assigned_to_worker": true,
+      "created_at": "2026-03-20T20:01:00Z",
+      "updated_at": "2026-03-20T20:01:00Z",
+      "comments": []
     }
   ]
 }
