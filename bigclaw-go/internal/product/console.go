@@ -58,13 +58,13 @@ func Navigation() []NavSection {
 	}
 }
 
-func HomeForRole(role string, tasks []domain.Task) Home {
+func HomeForRole(role string, tasks []domain.Task, activeTakeovers int) Home {
 	role = normalizeRole(role)
 	counts := aggregate(tasks)
 	home := Home{Role: role}
 	switch role {
 	case "eng_lead":
-		home.Cards = []HomeCard{{Key: "blockers", Title: "Blockers", Value: counts["blocked"], Subtitle: "Open blocked engineering runs", Path: "/v2/dashboard/engineering"}, {Key: "takeovers", Title: "Takeovers", Value: counts["blocked"], Subtitle: "Runs requiring human ownership", Path: "/v2/control-center"}, {Key: "regressions", Title: "Regressions", Value: counts["regression"], Subtitle: "Regression findings this week", Path: "/v2/regression/center"}}
+		home.Cards = []HomeCard{{Key: "blockers", Title: "Blockers", Value: counts["blocked"], Subtitle: "Open blocked engineering runs", Path: "/v2/dashboard/engineering"}, {Key: "takeovers", Title: "Takeovers", Value: activeTakeovers, Subtitle: "Runs requiring human ownership", Path: "/v2/control-center"}, {Key: "regressions", Title: "Regressions", Value: counts["regression"], Subtitle: "Regression findings this week", Path: "/v2/regression/center"}}
 	case "platform_admin":
 		home.Cards = []HomeCard{{Key: "queue", Title: "Queue Depth", Value: counts["active"], Subtitle: "Queued or running work", Path: "/v2/control-center"}, {Key: "deadletters", Title: "Dead Letters", Value: counts["dead_letter"], Subtitle: "Runs requiring replay", Path: "/v2/control-center"}, {Key: "cost", Title: "Premium Runs", Value: counts["premium"], Subtitle: "Premium orchestration usage", Path: "/v2/billing/usage"}}
 	case "vp_eng":

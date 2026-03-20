@@ -294,6 +294,32 @@ func TestV2ProductizationAndBillingEndpoints(t *testing.T) {
 	}
 }
 
+func TestV2HomeEngLeadUsesActiveTakeoversInsteadOfBlockedRuns(t *testing.T) {
+	recorder := observability.NewRecorder()
+	base := time.Date(2026, 3, 14, 11, 0, 0, 0, time.UTC)
+	for _, task := range []domain.Task{
+		{ID: "task-home-1", TraceID: "trace-home-1", Title: "Blocked without takeover", State: domain.TaskBlocked, Metadata: map[string]string{"team": "platform"}, CreatedAt: base, UpdatedAt: base},
+		{ID: "task-home-2", TraceID: "trace-home-2", Title: "Blocked with takeover", State: domain.TaskBlocked, Metadata: map[string]string{"team": "platform"}, CreatedAt: base, UpdatedAt: base.Add(time.Minute)},
+	} {
+		recorder.StoreTask(task)
+	}
+	controller := control.New()
+	controller.Takeover("task-home-2", "alice", "bob", "manual ownership", base.Add(2*time.Minute))
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: controller, Now: func() time.Time { return base.Add(time.Hour) }}
+
+	response := httptest.NewRecorder()
+	server.Handler().ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v2/home?role=eng_lead", nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected eng lead home 200, got %d %s", response.Code, response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), "\"key\":\"blockers\",\"title\":\"Blockers\",\"value\":2") {
+		t.Fatalf("expected blockers card to reflect blocked runs, got %s", response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), "\"key\":\"takeovers\",\"title\":\"Takeovers\",\"value\":1") {
+		t.Fatalf("expected takeover card to reflect active takeovers, got %s", response.Body.String())
+	}
+}
+
 func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
 	recorder := observability.NewRecorder()
 	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return time.Date(2026, 3, 18, 12, 0, 0, 0, time.UTC) }}

@@ -372,7 +372,11 @@ func (s *Server) handleV2Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	role := normalizeHomeRole(r)
-	home := product.HomeForRole(role, s.Recorder.Tasks(0))
+	activeTakeovers := 0
+	if s.Control != nil {
+		activeTakeovers = len(s.Control.ActiveTakeovers())
+	}
+	home := product.HomeForRole(role, s.Recorder.Tasks(0), activeTakeovers)
 	writeJSON(w, http.StatusOK, map[string]any{"home": home, "summary": product.SummaryText(home)})
 }
 
