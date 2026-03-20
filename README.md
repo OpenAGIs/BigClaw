@@ -53,6 +53,7 @@ bash scripts/ops/bigclawctl local-issue create --local-issues local-issues.json 
 bash scripts/ops/bigclaw-issue create --id big-gom-309 --identifier BIG-GOM-309 --title "New slice" --labels "go-mainline,tooling" --priority 2 --json
 bash scripts/ops/bigclawctl local-issue list --local-issues local-issues.json --states "Todo,In Progress" --json
 bash scripts/ops/bigclaw-issue list
+bash scripts/ops/bigclaw-issue comment BIG-GOM-307 --comment-file comment.md --json
 bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json
 bash scripts/ops/bigclaw-symphony
 bash scripts/ops/bigclaw-panel
@@ -69,14 +70,15 @@ Notes:
 - `bash scripts/ops/bigclawctl local-issue create ...` creates repo-native tracker entries with
   safe defaults (`Backlog`, `assigned_to_worker=true`) so new local slices do not require manual
   JSON edits.
-- `bash scripts/ops/bigclaw-issue create|list|show|state ...` now falls back to the repo-native Go
-  tracker path directly, while other subcommands still wrap
+- `bash scripts/ops/bigclaw-issue create|list|show|state|comment ...` now falls back to the
+  repo-native Go tracker path directly, while other subcommands still wrap
   `symphony issue --workflow workflow.md`.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
-- `bash scripts/ops/bigclawctl local-issue update --local-issues local-issues.json --issue BIG-GOM-307 --comment-file comment.md`
-  records multiline validation evidence without shell-escaping the tracker comment body. Use
-  `--comment-file -` to read the comment from stdin.
+- `bash scripts/ops/bigclaw-issue comment BIG-GOM-307 --comment-file comment.md --json` records
+  multiline validation evidence without shell-escaping the tracker comment body. Use
+  `bash scripts/ops/bigclawctl local-issue update --comment-file - ...` to read the comment from
+  stdin when you need pipeline input.
 
 ## Legacy Python quick start (migration-only)
 

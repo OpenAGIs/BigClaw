@@ -758,6 +758,42 @@ func TestBigclawIssueScriptStateUpdatesLocalTracker(t *testing.T) {
 	}
 }
 
+func TestBigclawIssueScriptCommentUpdatesLocalTracker(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "title": "Toolchain migration",
+      "state": "In Progress",
+      "updated_at": "2026-03-18T09:00:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	commentPath := filepath.Join(tempDir, "comment.md")
+	if err := os.WriteFile(commentPath, []byte("validation passed\nwith multiline evidence\n"), 0o644); err != nil {
+		t.Fatalf("write comment file: %v", err)
+	}
+
+	output := runIssueScript(t, storePath, "comment", "BIG-GOM-307", "--comment-file", commentPath, "--json")
+	if !bytes.Contains(output, []byte(`"comment_added": true`)) {
+		t.Fatalf("unexpected issue comment output: %s", string(output))
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"body": "validation passed\nwith multiline evidence"`)) {
+		t.Fatalf("expected comment in local tracker, got %s", string(body))
+	}
+}
+
 func runIssueScript(t *testing.T, localIssuesPath string, args ...string) []byte {
 	t.Helper()
 	cwd, err := os.Getwd()
