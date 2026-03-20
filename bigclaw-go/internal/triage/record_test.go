@@ -40,3 +40,41 @@ func TestTriageRecordRoundTripPreservesQueueLabelsAndActions(t *testing.T) {
 		t.Fatalf("expected labels to survive round trip, got %+v", restored)
 	}
 }
+
+func TestTriageRecordJSONEmitsPythonContractDefaults(t *testing.T) {
+	record := TriageRecord{TriageID: "triage-2", TaskID: "OPE-131"}
+
+	payload, err := json.Marshal(record)
+	if err != nil {
+		t.Fatalf("marshal triage record: %v", err)
+	}
+
+	var decoded map[string]any
+	if err := json.Unmarshal(payload, &decoded); err != nil {
+		t.Fatalf("decode triage record: %v", err)
+	}
+
+	for _, key := range []string{"status", "queue", "owner", "summary", "labels", "related_run_id", "escalation_target", "actions"} {
+		if _, ok := decoded[key]; !ok {
+			t.Fatalf("expected key %q in triage JSON, got %+v", key, decoded)
+		}
+	}
+	if decoded["status"] != string(StatusOpen) || decoded["queue"] != "default" {
+		t.Fatalf("expected default status/queue in JSON, got %+v", decoded)
+	}
+
+	labelPayload, err := json.Marshal(Label{Name: "risk"})
+	if err != nil {
+		t.Fatalf("marshal label: %v", err)
+	}
+	var decodedLabel map[string]any
+	if err := json.Unmarshal(labelPayload, &decodedLabel); err != nil {
+		t.Fatalf("decode label: %v", err)
+	}
+	if decodedLabel["confidence"] != float64(1) {
+		t.Fatalf("expected default confidence in JSON, got %+v", decodedLabel)
+	}
+	if _, ok := decodedLabel["source"]; !ok {
+		t.Fatalf("expected source key in label JSON, got %+v", decodedLabel)
+	}
+}

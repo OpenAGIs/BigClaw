@@ -46,3 +46,40 @@ func TestAssessmentRoundTripPreservesSignalsAndMitigations(t *testing.T) {
 		t.Fatalf("expected signal metadata to survive round trip, got %+v", restored)
 	}
 }
+
+func TestAssessmentJSONEmitsPythonContractDefaults(t *testing.T) {
+	assessment := Assessment{AssessmentID: "risk-2", TaskID: "OPE-131"}
+
+	payload, err := json.Marshal(assessment)
+	if err != nil {
+		t.Fatalf("marshal assessment: %v", err)
+	}
+
+	var decoded map[string]any
+	if err := json.Unmarshal(payload, &decoded); err != nil {
+		t.Fatalf("decode assessment: %v", err)
+	}
+
+	for _, key := range []string{"level", "requires_approval", "signals", "mitigations", "reviewer", "notes"} {
+		if _, ok := decoded[key]; !ok {
+			t.Fatalf("expected key %q in assessment JSON, got %+v", key, decoded)
+		}
+	}
+	if decoded["level"] != string(domain.RiskLow) {
+		t.Fatalf("expected default low level in JSON, got %+v", decoded)
+	}
+
+	signalPayload, err := json.Marshal(Signal{Name: "prod", Reason: "check"})
+	if err != nil {
+		t.Fatalf("marshal signal: %v", err)
+	}
+	var decodedSignal map[string]any
+	if err := json.Unmarshal(signalPayload, &decodedSignal); err != nil {
+		t.Fatalf("decode signal: %v", err)
+	}
+	for _, key := range []string{"source", "metadata"} {
+		if _, ok := decodedSignal[key]; !ok {
+			t.Fatalf("expected key %q in signal JSON, got %+v", key, decodedSignal)
+		}
+	}
+}

@@ -23,7 +23,9 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
 - `Priority` -> `bigclaw-go/internal/domain/priority.go`
 - `RiskLevel` -> `bigclaw-go/internal/domain/task.go`
 - `RiskSignal`, `RiskAssessment` -> `bigclaw-go/internal/risk/assessment.go`
+  - risk JSON encode/decode now preserves the Python `to_dict()` / `from_dict()` field set, including default low-level output and empty signal/mitigation metadata collections
 - `TriageLabel`, `TriageRecord` -> `bigclaw-go/internal/triage/record.go`
+  - triage JSON encode/decode now preserves the Python `to_dict()` / `from_dict()` field set, including default `open` status, default `default` queue, label confidence/source defaults, and empty labels/actions collections
 - `BillingInterval`, `BillingRate`, `UsageRecord`, `BillingSummary` -> `bigclaw-go/internal/billing/statement.go`
   - billing usage metadata now preserves Python-style `Dict[str, Any]` payloads instead of narrowing to string-only values
   - billing JSON output now preserves the Python `to_dict()` field set for usage records and summaries, including empty metadata/rates/usage collections and default numeric totals
