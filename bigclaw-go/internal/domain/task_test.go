@@ -33,6 +33,15 @@ func TestTaskJSONSupportsLegacyTaskIDAndBudgetOverrides(t *testing.T) {
 	if decoded["budget_override_actor"] != "lead" || decoded["budget_override_reason"] != "approved" || decoded["budget_override_amount"] != 12.5 {
 		t.Fatalf("expected budget override JSON fields, got %+v", decoded)
 	}
+	if decoded["state"] != string(TaskQueued) || decoded["risk_level"] != string(RiskLow) {
+		t.Fatalf("expected default state and risk level in JSON, got %+v", decoded)
+	}
+	if labels, ok := decoded["labels"].([]any); !ok || len(labels) != 0 {
+		t.Fatalf("expected empty labels in JSON, got %+v", decoded["labels"])
+	}
+	if requiredTools, ok := decoded["required_tools"].([]any); !ok || len(requiredTools) != 0 {
+		t.Fatalf("expected empty required_tools in JSON, got %+v", decoded["required_tools"])
+	}
 }
 
 func TestTaskJSONSupportsLegacyBudgetField(t *testing.T) {
@@ -62,6 +71,28 @@ func TestTaskJSONSupportsLegacyBudgetField(t *testing.T) {
 	}
 }
 
+func TestTaskJSONEmitsPythonContractDefaults(t *testing.T) {
+	task := Task{ID: "BIG-404", Title: "Default contract"}
+
+	encoded, err := json.Marshal(task)
+	if err != nil {
+		t.Fatalf("marshal task: %v", err)
+	}
+
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("decode marshaled task: %v", err)
+	}
+	for _, key := range []string{"source", "description", "labels", "priority", "state", "risk_level", "budget", "budget_override_actor", "budget_override_reason", "budget_override_amount", "required_tools", "acceptance_criteria", "validation_plan"} {
+		if _, ok := decoded[key]; !ok {
+			t.Fatalf("expected key %q in task JSON, got %+v", key, decoded)
+		}
+	}
+	if decoded["state"] != string(TaskQueued) || decoded["risk_level"] != string(RiskLow) || decoded["budget"] != float64(0) {
+		t.Fatalf("expected Python-style defaults in task JSON, got %+v", decoded)
+	}
+}
+
 func TestTaskJSONNormalizesLegacyTaskStates(t *testing.T) {
 	tests := map[string]TaskState{
 		"Todo":        TaskQueued,
@@ -81,6 +112,9 @@ func TestTaskJSONNormalizesLegacyTaskStates(t *testing.T) {
 			}
 			if task.State != want {
 				t.Fatalf("expected normalized state %q, got %+v", want, task)
+			}
+			if task.Labels == nil || task.RequiredTools == nil || task.AcceptanceCriteria == nil || task.ValidationPlan == nil {
+				t.Fatalf("expected non-nil task collections, got %+v", task)
 			}
 		})
 	}
