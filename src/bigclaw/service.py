@@ -10,6 +10,17 @@ from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from typing import Deque, Dict, List
 
+LEGACY_SERVER_NOTICE = (
+    "Legacy Python service path: prefer go run ./cmd/bigclawd or scripts/ops/bigclawctl for active Go-mainline work. "
+    "Use this server only for migration or legacy-path validation."
+)
+
+
+def legacy_server_banner(host: str, port: int, directory: str) -> str:
+    return (
+        f"{LEGACY_SERVER_NOTICE} Serving http://{host}:{port} from {os.path.abspath(directory)}"
+    )
+
 
 @dataclass
 class ServerMonitoring:
@@ -283,7 +294,7 @@ def create_server(host: str = "127.0.0.1", port: int = 8008, directory: str = ".
 
 def run_server(host: str = "127.0.0.1", port: int = 8008, directory: str = ".") -> None:
     server, _ = create_server(host=host, port=port, directory=directory)
-    print(f"BigClaw server running at http://{host}:{port} (dir={os.path.abspath(directory)})")
+    print(legacy_server_banner(host, port, directory))
     try:
         server.serve_forever()
     except KeyboardInterrupt:
