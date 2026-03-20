@@ -51,9 +51,10 @@ longer waits on Linear to keep issue execution moving.
 
 - Active repo tranche:
   - `BIG-GOM-301` — unified domain model and intake contract migration
-  - `BIG-GOM-303` — workflow orchestration and scheduler loop migration
+  - `BIG-GOM-305` — control center, triage, and operations view migration
 - Recently completed:
   - `BIG-GOM-302` — risk, policy, and approval semantics migration
+  - `BIG-GOM-303` — workflow orchestration and scheduler loop migration
   - `BIG-GOM-304` — observability, reporting, and weekly operations surface migration
   - `BIG-GOM-307` — workflow, bootstrap, and GitHub sync toolchain migration
 - Runnable first batch once issue creation is available:
@@ -62,7 +63,6 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-GOM-303` — workflow orchestration and scheduler loop migration
   - `BIG-GOM-304` — observability, reporting, and weekly operations surface migration
 - Standby:
-  - `BIG-GOM-305` — control center, triage, and operations view migration
   - `BIG-GOM-306` — repo collaboration and lineage surface migration
   - `BIG-GOM-308` — Python deprecation and Go-only mainline switch
 

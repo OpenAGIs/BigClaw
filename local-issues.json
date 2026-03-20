@@ -54,7 +54,7 @@
       "title": "Workflow orchestration and scheduler loop migration",
       "description": "Close the Go execution loop with workflow-aware orchestration, journal state, and runtime closeout so active development no longer needs the Python workflow engine.",
       "priority": 1,
-      "state": "In Progress",
+      "state": "Done",
       "labels": [
         "go-mainline",
         "migration",
@@ -63,7 +63,7 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T11:19:40Z",
+      "updated_at": "2026-03-20T11:26:14Z",
       "comments": [
         {
           "body": "Improved the Go orchestrator loop in `bigclaw-go/internal/orchestrator/loop.go` so it no longer waits a full poll interval before touching queued work, drains available work within a single cycle, and falls back to a safe default poll interval when unset. Added focused coverage in `bigclaw-go/internal/orchestrator/loop_test.go` for immediate startup, per-cycle draining, and default poll interval behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/orchestrator` -> passed\n- `cd bigclaw-go && go test ./internal/orchestrator ./internal/worker ./cmd/bigclawd` -> passed (`cmd/bigclawd` has no test files)\n- `git rev-parse HEAD` -> `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3` (matches local)\n- `git log -1 --stat` -> `Drain scheduler work immediately in orchestrator loop`\n\nCommit: `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
@@ -88,6 +88,10 @@
         {
           "body": "Aligned workflow journal closeout status with acceptance outcomes for the active orchestration slice.\n\nWhat changed:\n- `bigclaw-go/internal/workflow/engine.go` now records the `closeout` journal step as `complete` only for accepted runs and otherwise mirrors the acceptance status (`rejected` / `needs-approval`) instead of always claiming closeout completed.\n- Added focused coverage in `bigclaw-go/internal/workflow/engine_test.go` for rejected-evidence and pending-approval closeout journal cases.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/workflow` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `d98d6e4a7ab3472ef84b64429dcab95f76481e26`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `d98d6e4a7ab3472ef84b64429dcab95f76481e26` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `d98d6e4a7ab3472ef84b64429dcab95f76481e26` (matches local)\n- `git log -1 --stat` -> `Reflect workflow acceptance in closeout journal`\n\nCommit: `d98d6e4a7ab3472ef84b64429dcab95f76481e26`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T11:19:40Z"
+        },
+        {
+          "body": "Closed `BIG-GOM-303` after finishing the remaining Go orchestration/runtime hardening slice.\n\nWhat changed:\n- `bigclaw-go/internal/orchestrator/loop.go` now runs queued work immediately on startup, drains work within a single cycle, and uses a safe default poll interval when unset.\n- `bigclaw-go/internal/worker/runtime.go` now hardens zero-value runtime construction (`LeaseTTL`, `TaskTimeout`, scheduler, registry, queue) and persists final recorder task states for success, retry, and dead-letter closeout.\n- `bigclaw-go/internal/workflow/engine.go` now records workflow `closeout` journal status in line with acceptance outcomes instead of always reporting `complete`.\n- Added focused coverage in `bigclaw-go/internal/orchestrator/loop_test.go`, `bigclaw-go/internal/worker/runtime_test.go`, and `bigclaw-go/internal/workflow/engine_test.go` for immediate drain behavior, zero-value runtime safety, recorder closeout state persistence, and workflow closeout journal accuracy.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/orchestrator ./internal/worker ./internal/workflow` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `6fadcdd8671222de62bbcd1e9ea9bded820f0baa`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `6fadcdd8671222de62bbcd1e9ea9bded820f0baa` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `6fadcdd8671222de62bbcd1e9ea9bded820f0baa` (matches local)\n- `git log -1 --stat` -> `Record BIG-GOM-303 workflow closeout progress`\n\nCommit: `6fadcdd8671222de62bbcd1e9ea9bded820f0baa`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T11:26:14Z"
         }
       ]
     },
@@ -128,7 +132,7 @@
       "title": "Control center, triage, and operations view migration",
       "description": "Finish moving operator-facing status, control-center, and triage endpoints to Go once the workflow runtime and reporting surfaces are stable.",
       "priority": 2,
-      "state": "Backlog",
+      "state": "In Progress",
       "labels": [
         "go-mainline",
         "migration",
@@ -137,7 +141,7 @@
       ],
       "assigned_to_worker": true,
       "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-18T09:00:00Z"
+      "updated_at": "2026-03-20T11:26:14Z"
     },
     {
       "id": "big-gom-306",
