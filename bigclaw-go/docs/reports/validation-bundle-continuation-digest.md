@@ -8,7 +8,7 @@ This digest consolidates the remaining validation-bundle continuation caveats fo
 
 - `docs/reports/live-validation-index.md` records the latest bundled local, Kubernetes, and Ray validation artifacts.
 - `docs/reports/live-validation-summary.json` captures the latest bundle summary and closeout commands.
-- `docs/reports/validation-bundle-continuation-scorecard.json` adds a rolling continuation scorecard across recent bundle generations plus the shared-queue companion proof now copied into each exported bundle summary.
+- `docs/reports/validation-bundle-continuation-scorecard.json` adds a rolling continuation scorecard across recent bundle generations plus the shared-queue companion proof now copied into each exported bundle summary, including whether the latest proof came from an `inline-workflow-refresh` or an `existing-report`.
 - `scripts/e2e/validation_bundle_continuation_scorecard.py` regenerates the scorecard from checked-in bundle summaries and shared-queue evidence.
 - `docs/reports/validation-bundle-continuation-policy-gate.json` records the current continuation policy decision for bundle freshness, repeated lane coverage, and shared-queue companion availability.
 - `scripts/e2e/validation_bundle_continuation_policy_gate.py` evaluates the scorecard as a repo-native policy gate.
@@ -18,8 +18,8 @@ This digest consolidates the remaining validation-bundle continuation caveats fo
 
 ## Reviewer Digest
 
-- The repo now has a rolling continuation scorecard plus a policy gate that makes bundle freshness, repeated lane coverage, and the bundle-attached shared-queue companion proof reviewable in machine-readable form.
-- The checked-in continuation window now includes repeated `local`, `kubernetes`, and `ray` coverage across recent indexed bundles, so the current policy gate returns `go`.
+- The repo now has a rolling continuation scorecard plus a policy gate that makes bundle freshness, repeated lane coverage, and the bundle-attached shared-queue companion proof reviewable in machine-readable form, including explicit refresh-source lineage.
+- The checked-in continuation window now includes repeated `local`, `kubernetes`, and `ray` coverage across recent indexed bundles, but on March 21, 2026 the current policy gate is still `hold` because the latest bundled evidence is older than the default 72-hour freshness threshold.
 - Validation continuation across future validation bundles remains workflow-triggered because `run_all.sh` now refreshes the scorecard and policy gate automatically, but the overall surface still depends on explicit workflow execution rather than an always-on service.
 - The continuation surface is therefore a repo-native longitudinal readiness overlay, not yet an always-on validation service.
 
@@ -29,6 +29,7 @@ This digest consolidates the remaining validation-bundle continuation caveats fo
 - Shared-queue coordination evidence is now attached to the live validation bundle lineage as adjacent metadata, and `run_all.sh` can refresh it inline via `BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1`; it is still not on by default for every workflow invocation.
 - The continuation policy gate now distinguishes between `bundled-companion` and `standalone-proof` shared-queue evidence so next-action guidance points at the correct refresh path for the current evidence source.
 - The exported bundle summary/index now records whether the attached shared-queue proof came from an `inline-workflow-refresh` or an `existing-report`, so downstream reviewers do not need to infer refresh provenance from the workflow command alone.
+- The continuation scorecard and policy gate now carry that `shared_queue.source` field forward so current-ceiling language and policy-check detail stay aligned with the latest refresh provenance instead of inferring it from mode alone.
 - Longitudinal history is bounded to the exported bundle index window and not a continuously retained validation service.
 - The current gate only reflects checked-in bundle history, so future regressions still depend on rerunning a workflow like `run_all.sh` or an equivalent orchestrated refresh.
 

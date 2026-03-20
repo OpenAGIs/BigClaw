@@ -66,7 +66,7 @@ cd bigclaw-go
 python3 scripts/e2e/validation_bundle_continuation_scorecard.py --pretty
 ```
 
-This writes `docs/reports/validation-bundle-continuation-scorecard.json`, summarizing the recent bundle lineage plus the current shared-queue companion proof. Bundle export now refreshes the scorecard automatically during closeout, but the continuation surface is still workflow-triggered rather than always-on.
+This writes `docs/reports/validation-bundle-continuation-scorecard.json`, summarizing the recent bundle lineage plus the current shared-queue companion proof. The scorecard now also records whether that proof came from an `inline-workflow-refresh` or an `existing-report`, so its current-ceiling guidance can distinguish between inline lineage and reused evidence. Bundle export now refreshes the scorecard automatically during closeout, but the continuation surface is still workflow-triggered rather than always-on.
 
 You can evaluate the checked-in continuation policy gate as a follow-up:
 
@@ -75,7 +75,7 @@ cd bigclaw-go
 python3 scripts/e2e/validation_bundle_continuation_policy_gate.py --pretty
 ```
 
-This writes `docs/reports/validation-bundle-continuation-policy-gate.json` and currently returns `go` for the checked-in evidence window because the latest indexed bundles now include repeated `ray` coverage across multiple runs. Bundle export now refreshes the gate automatically during closeout; set `BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1` if you want a `hold` result to fail the command. The gate’s next-action guidance now differentiates between a `bundled-companion` shared-queue proof, which should be refreshed inline via `BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1 ./scripts/e2e/run_all.sh`, and a `standalone-proof`, which should be rerun via `scripts/e2e/multi_node_shared_queue.py`.
+This writes `docs/reports/validation-bundle-continuation-policy-gate.json` and returns the current recommendation for the checked-in evidence window. On March 21, 2026, the checked-in gate is `hold` because the latest bundled validation evidence is older than the default 72-hour freshness threshold even though repeated `ray` coverage is present across indexed runs. Bundle export now refreshes the gate automatically during closeout; set `BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1` if you want a `hold` result to fail the command. The gate’s next-action guidance now carries both the shared-queue `mode` and `source`, distinguishing between a `bundled-companion` shared-queue proof that should be refreshed inline via `BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1 ./scripts/e2e/run_all.sh` and a `standalone-proof` / `existing-report` path that should be rerun via `scripts/e2e/multi_node_shared_queue.py`.
 
 ## Mixed workload matrix
 

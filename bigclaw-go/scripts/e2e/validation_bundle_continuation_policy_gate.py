@@ -27,16 +27,19 @@ def build_check(name, passed, detail):
 
 def shared_queue_refresh_hint(shared_queue):
     mode = str(shared_queue.get('mode', 'standalone-proof'))
+    source = str(shared_queue.get('source', 'existing-report'))
     report_path = shared_queue.get('report_path', 'bigclaw-go/docs/reports/multi-node-shared-queue-report.json')
     if mode == 'bundled-companion':
         return (
             mode,
-            f"bundled companion at {report_path}; rerun `cd bigclaw-go && BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1 ./scripts/e2e/run_all.sh` to refresh the shared-queue proof inline",
+            source,
+            f"bundled companion at {report_path}; source={source}; rerun `cd bigclaw-go && BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1 ./scripts/e2e/run_all.sh` to refresh the shared-queue proof inline",
             'rerun `cd bigclaw-go && BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1 ./scripts/e2e/run_all.sh` to refresh the shared-queue companion inline with the validation bundle',
         )
     return (
         mode,
-        f"standalone companion at {report_path}; rerun `python3 scripts/e2e/multi_node_shared_queue.py --report-path docs/reports/multi-node-shared-queue-report.json` to refresh it directly",
+        source,
+        f"standalone companion at {report_path}; source={source}; rerun `python3 scripts/e2e/multi_node_shared_queue.py --report-path docs/reports/multi-node-shared-queue-report.json` to refresh it directly",
         'rerun `python3 scripts/e2e/multi_node_shared_queue.py --report-path docs/reports/multi-node-shared-queue-report.json` to refresh the standalone shared-queue companion proof',
     )
 
@@ -52,7 +55,7 @@ def build_report(
     scorecard = load_json(resolve_repo_path(repo_root, scorecard_path))
     summary = scorecard['summary']
     shared_queue = scorecard['shared_queue_companion']
-    shared_queue_mode, shared_queue_detail, shared_queue_refresh_action = shared_queue_refresh_hint(shared_queue)
+    shared_queue_mode, shared_queue_source, shared_queue_detail, shared_queue_refresh_action = shared_queue_refresh_hint(shared_queue)
 
     checks = [
         build_check(
@@ -78,7 +81,7 @@ def build_report(
         build_check(
             'shared_queue_companion_available',
             bool(shared_queue.get('available')),
-            f"cross_node_completions={shared_queue.get('cross_node_completions')} mode={shared_queue_mode}; {shared_queue_detail}",
+            f"cross_node_completions={shared_queue.get('cross_node_completions')} mode={shared_queue_mode} source={shared_queue_source}; {shared_queue_detail}",
         ),
         build_check(
             'repeated_lane_coverage_meets_policy',
