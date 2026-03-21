@@ -1849,6 +1849,8 @@ func collectRunArtifactRefs(task domain.Task, events []domain.Event) []runArtifa
 		for index, uri := range stringSliceFromAny(event.Payload["artifacts"]) {
 			appendRef(fmt.Sprintf("artifact_%d", index+1), "executor_artifact", uri, string(event.Type), event.ID)
 		}
+		appendRef("workflow_report", "workflow_report", eventStringValue(event.Payload, "report_path"), string(event.Type), event.ID)
+		appendRef("workflow_journal", "workflow_journal", eventStringValue(event.Payload, "journal_path"), string(event.Type), event.ID)
 	}
 	appendRef("workpad", "workpad", task.Metadata["workpad"], "task_metadata", "")
 	appendRef("issue", "issue", firstNonEmpty(task.Metadata["issue_url"], task.Metadata["linear_url"], task.Metadata["jira_url"]), "task_metadata", "")

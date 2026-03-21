@@ -5,11 +5,14 @@ import (
 	"time"
 
 	"bigclaw-go/internal/scheduler"
-	"bigclaw-go/internal/worker"
 )
 
+type Runtime interface {
+	RunOnce(context.Context, scheduler.QuotaSnapshot) bool
+}
+
 type Loop struct {
-	Runtime      *worker.Runtime
+	Runtime      Runtime
 	Quota        scheduler.QuotaSnapshot
 	PollInterval time.Duration
 }

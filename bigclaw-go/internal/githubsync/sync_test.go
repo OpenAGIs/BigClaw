@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func gitOutput(t *testing.T, repo string, args ...string) string {
@@ -82,6 +83,64 @@ func TestInstallGitHooksConfiguresCoreHooksPath(t *testing.T) {
 	}
 	if info.Mode()&0o111 == 0 {
 		t.Fatalf("expected executable hook bits for %s", hookPath)
+	}
+}
+
+func TestInstallGitHooksSkipsRewriteWhenHooksPathAlreadyMatches(t *testing.T) {
+	repo := filepath.Join(t.TempDir(), "repo")
+	if err := os.MkdirAll(repo, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initRepo(t, repo)
+	hooksDir := filepath.Join(repo, ".githooks")
+	if err := os.MkdirAll(hooksDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	hookPath := filepath.Join(hooksDir, "post-commit")
+	if err := os.WriteFile(hookPath, []byte("#!/usr/bin/env bash\nexit 0\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := InstallGitHooks(repo, ".githooks"); err != nil {
+		t.Fatal(err)
+	}
+	lockPath := filepath.Join(repo, ".git", "config.lock")
+	if err := os.WriteFile(lockPath, []byte("held"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(lockPath)
+
+	if _, err := InstallGitHooks(repo, ".githooks"); err != nil {
+		t.Fatalf("expected existing hooks path to avoid config rewrite, got %v", err)
+	}
+}
+
+func TestInstallGitHooksRetriesTransientConfigLock(t *testing.T) {
+	repo := filepath.Join(t.TempDir(), "repo")
+	if err := os.MkdirAll(repo, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initRepo(t, repo)
+	hooksDir := filepath.Join(repo, ".githooks")
+	if err := os.MkdirAll(hooksDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	hookPath := filepath.Join(hooksDir, "post-commit")
+	if err := os.WriteFile(hookPath, []byte("#!/usr/bin/env bash\nexit 0\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	lockPath := filepath.Join(repo, ".git", "config.lock")
+	if err := os.WriteFile(lockPath, []byte("held"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		time.Sleep(40 * time.Millisecond)
+		_ = os.Remove(lockPath)
+	}()
+
+	if _, err := InstallGitHooks(repo, ".githooks"); err != nil {
+		t.Fatalf("expected transient config lock to be retried, got %v", err)
 	}
 }
 

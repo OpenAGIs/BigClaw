@@ -96,7 +96,7 @@ func issueCommentList(value any) []map[string]any {
 	return comments
 }
 
-func (s *LocalIssueStore) IssueStates(stateNames []string) []LinearIssue {
+func (s *LocalIssueStore) IssueStates(stateNames []string) []TrackedIssue {
 	wanted := map[string]struct{}{}
 	for _, stateName := range stateNames {
 		trimmed := strings.TrimSpace(stateName)
@@ -104,7 +104,7 @@ func (s *LocalIssueStore) IssueStates(stateNames []string) []LinearIssue {
 			wanted[trimmed] = struct{}{}
 		}
 	}
-	issues := make([]LinearIssue, 0, len(s.issueMap))
+	issues := make([]TrackedIssue, 0, len(s.issueMap))
 	for _, issue := range s.issueMap {
 		stateName := mapString(issue, "state")
 		if len(wanted) != 0 {
@@ -112,7 +112,7 @@ func (s *LocalIssueStore) IssueStates(stateNames []string) []LinearIssue {
 				continue
 			}
 		}
-		issues = append(issues, LinearIssue{
+		issues = append(issues, TrackedIssue{
 			ID:         mapString(issue, "id"),
 			Identifier: mapString(issue, "identifier"),
 			StateName:  stateName,

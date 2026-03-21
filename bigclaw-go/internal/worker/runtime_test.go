@@ -116,7 +116,24 @@ func TestRuntimeProcessesTask(t *testing.T) {
 
 func TestRuntimePublishesExecutorArtifacts(t *testing.T) {
 	q := queue.NewMemoryQueue()
-	if err := q.Enqueue(context.Background(), domain.Task{ID: "task-artifacts", TraceID: "trace-artifacts", Priority: 1, RequiredExecutor: domain.ExecutorLocal, RequiredTools: []string{"browser", "git"}, CreatedAt: time.Now()}); err != nil {
+	if err := q.Enqueue(context.Background(), domain.Task{
+		ID:               "task-artifacts",
+		TraceID:          "trace-artifacts",
+		Priority:         1,
+		RequiredExecutor: domain.ExecutorLocal,
+		RequiredTools:    []string{"browser", "git"},
+		ValidationPlan:   []string{"capture trace"},
+		Metadata: map[string]string{
+			"workflow_definition": `{
+				"name":"release-closeout",
+				"report_path_template":"reports/{task_id}/{run_id}.md",
+				"journal_path_template":"journals/{workflow}/{run_id}.json",
+				"validation_evidence":["capture trace","download bundle"],
+				"approvals":["ops-review"]
+			}`,
+		},
+		CreatedAt: time.Now(),
+	}); err != nil {
 		t.Fatalf("enqueue: %v", err)
 	}
 	bus, recorder := newRuntimeRecorder()
@@ -136,8 +153,8 @@ func TestRuntimePublishesExecutorArtifacts(t *testing.T) {
 		t.Fatalf("expected task to be processed")
 	}
 	events := recorder.EventsByTask("task-artifacts", 10)
-	if len(events) != 4 {
-		t.Fatalf("expected 4 lifecycle events, got %d", len(events))
+	if len(events) != 5 {
+		t.Fatalf("expected 5 lifecycle events including acceptance annotation, got %d", len(events))
 	}
 	started := events[2]
 	if started.Type != domain.EventTaskStarted {
@@ -151,12 +168,44 @@ func TestRuntimePublishesExecutorArtifacts(t *testing.T) {
 	if completed.Type != domain.EventTaskCompleted {
 		t.Fatalf("expected completed event, got %+v", completed)
 	}
+	if completed.RunID == "" {
+		t.Fatalf("expected run_id on completed event, got %+v", completed)
+	}
+	if completed.Payload["run_id"] != completed.RunID {
+		t.Fatalf("expected run_id in payload, got %+v", completed.Payload)
+	}
 	artifacts, ok := completed.Payload["artifacts"].([]string)
 	if !ok || len(artifacts) != 2 {
 		t.Fatalf("expected artifact list in completed payload, got %+v", completed.Payload)
 	}
 	if completed.Payload["executor"] != domain.ExecutorLocal {
 		t.Fatalf("expected executor in completed payload, got %+v", completed.Payload)
+	}
+	if completed.Payload["report_path"] != "reports/task-artifacts/"+completed.RunID+".md" {
+		t.Fatalf("expected report path in completed payload, got %+v", completed.Payload)
+	}
+	if completed.Payload["journal_path"] != "journals/release-closeout/"+completed.RunID+".json" {
+		t.Fatalf("expected journal path in completed payload, got %+v", completed.Payload)
+	}
+	if validation, ok := completed.Payload["validation_evidence"].([]string); !ok || len(validation) != 2 || validation[0] != "capture trace" || validation[1] != "download bundle" {
+		t.Fatalf("expected validation evidence in completed payload, got %+v", completed.Payload)
+	}
+	if approvals, ok := completed.Payload["required_approvals"].([]string); !ok || len(approvals) != 1 || approvals[0] != "ops-review" {
+		t.Fatalf("expected approvals in completed payload, got %+v", completed.Payload)
+	}
+	runCloseout, ok := completed.Payload["workflow_run"].(workflow.WorkflowRun)
+	if !ok {
+		t.Fatalf("expected workflow_run in completed payload, got %+v", completed.Payload)
+	}
+	if runCloseout.RunID != completed.RunID || runCloseout.Status != workflow.WorkflowRunSucceeded {
+		t.Fatalf("expected succeeded workflow closeout, got %+v", runCloseout)
+	}
+	annotated := events[4]
+	if annotated.Type != domain.EventRunAnnotated {
+		t.Fatalf("expected acceptance annotation event, got %+v", annotated)
+	}
+	if annotated.RunID != completed.RunID {
+		t.Fatalf("expected acceptance annotation to share run_id, got %+v", annotated)
 	}
 }
 
@@ -438,6 +487,16 @@ func TestRuntimeTimeoutRequeuesTask(t *testing.T) {
 	if latest.TraceID != "task-timeout" {
 		t.Fatalf("expected default trace id to match task id, got %+v", latest)
 	}
+	if latest.RunID == "" || latest.Payload["run_id"] != latest.RunID {
+		t.Fatalf("expected retry run_id propagation, got %+v", latest)
+	}
+	if latest.Payload["retry_scheduled"] != true {
+		t.Fatalf("expected retry_scheduled payload, got %+v", latest.Payload)
+	}
+	runCloseout, ok := latest.Payload["workflow_run"].(workflow.WorkflowRun)
+	if !ok || runCloseout.Status != workflow.WorkflowRunFailed {
+		t.Fatalf("expected failed workflow closeout for retry, got %+v", latest.Payload)
+	}
 	snapshot := runtime.Snapshot()
 	if snapshot.RetriedRuns != 1 || snapshot.State != "idle" {
 		t.Fatalf("expected retry snapshot after timeout, got %+v", snapshot)
@@ -637,6 +696,13 @@ func TestRuntimeCompletesCancelledInFlightTaskAsCancelled(t *testing.T) {
 	latest, ok := recorder.LatestByTask("task-live-cancel")
 	if !ok || latest.Type != domain.EventTaskCancelled {
 		t.Fatalf("expected latest cancel event, got %+v", latest)
+	}
+	if latest.RunID == "" || latest.Payload["run_id"] != latest.RunID {
+		t.Fatalf("expected cancel run_id propagation, got %+v", latest)
+	}
+	runCloseout, ok := latest.Payload["workflow_run"].(workflow.WorkflowRun)
+	if !ok || runCloseout.Status != workflow.WorkflowRunCanceled {
+		t.Fatalf("expected canceled workflow closeout, got %+v", latest.Payload)
 	}
 	snapshot := runtime.Snapshot()
 	if snapshot.CancelledRuns != 1 || snapshot.LastTransition != string(domain.EventTaskCancelled) {

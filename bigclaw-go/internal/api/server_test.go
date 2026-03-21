@@ -2293,7 +2293,21 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 	recorder.StoreTask(task)
 	recorder.Record(domain.Event{ID: "evt-routed", Type: domain.EventSchedulerRouted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "reason": "browser workloads default to kubernetes executor"}})
 	recorder.Record(domain.Event{ID: "evt-started", Type: domain.EventTaskStarted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(2 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "required_tools": []string{"browser", "git"}}})
-	recorder.Record(domain.Event{ID: "evt-dead", Type: domain.EventTaskDeadLetter, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(3 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "message": "pod crashed during validation", "artifacts": []string{"k8s://jobs/bigclaw/run-report", "k8s://pods/bigclaw/run-report-0"}}})
+	recorder.Record(domain.Event{
+		ID:        "evt-dead",
+		Type:      domain.EventTaskDeadLetter,
+		TaskID:    task.ID,
+		TraceID:   task.TraceID,
+		RunID:     "run-report-1",
+		Timestamp: base.Add(3 * time.Second),
+		Payload: map[string]any{
+			"executor":     domain.ExecutorKubernetes,
+			"message":      "pod crashed during validation",
+			"artifacts":    []string{"k8s://jobs/bigclaw/run-report", "k8s://pods/bigclaw/run-report-0"},
+			"report_path":  "reports/task-run-report/run-report-1.md",
+			"journal_path": "journals/platform/run-report-1.json",
+		},
+	})
 	controller.Takeover(task.ID, "alice", "bob", "Manual inspection required", base.Add(4*time.Second))
 	recorder.Record(domain.Event{ID: "evt-takeover", Type: domain.EventRunTakeover, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(4 * time.Second), Payload: map[string]any{"actor": "alice", "role": "eng_lead", "reviewer": "bob", "note": "Manual inspection required", "team": "platform", "project": "alpha"}})
 
@@ -2358,8 +2372,15 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 	if decoded.Artifacts["report"] != "/v2/runs/task-run-report/report?limit=20" || decoded.Artifacts["audit"] != "/v2/runs/task-run-report/audit?limit=20" || decoded.Artifacts["trace"] == "" {
 		t.Fatalf("expected report/audit/trace links, got %+v", decoded.Artifacts)
 	}
-	if len(decoded.ArtifactRefs) < 4 {
+	if len(decoded.ArtifactRefs) < 6 {
 		t.Fatalf("expected artifact refs for executor, workpad, and linked records, got %+v", decoded.ArtifactRefs)
+	}
+	artifactKinds := make(map[string]string, len(decoded.ArtifactRefs))
+	for _, ref := range decoded.ArtifactRefs {
+		artifactKinds[ref.Kind] = ref.URI
+	}
+	if artifactKinds["workflow_report"] != "reports/task-run-report/run-report-1.md" || artifactKinds["workflow_journal"] != "journals/platform/run-report-1.json" {
+		t.Fatalf("expected workflow artifact refs in run detail, got %+v", decoded.ArtifactRefs)
 	}
 	if len(decoded.ToolTraces) < 4 {
 		t.Fatalf("expected tool traces for declared tools and executor events, got %+v", decoded.ToolTraces)
