@@ -159,6 +159,108 @@ func (l *blockingEventLog) query(taskID, traceID, afterID string, limit int) []d
 	return out
 }
 
+func TestCreateTaskAcceptsLegacyTaskIDPayload(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	server := &Server{
+		Recorder:  recorder,
+		Queue:     queue.NewMemoryQueue(),
+		Executors: []domain.ExecutorKind{domain.ExecutorLocal},
+		Bus:       bus,
+		Now:       func() time.Time { return time.Unix(1700000000, 0) },
+	}
+	handler := server.Handler()
+
+	payload := map[string]any{"task_id": "task-legacy-1", "title": "legacy hello", "budget_override_actor": "lead", "budget_override_reason": "approved", "budget_override_amount": 7.5}
+	body, _ := json.Marshal(payload)
+	request := httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewReader(body))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusAccepted {
+		t.Fatalf("expected 202, got %d", response.Code)
+	}
+
+	var decoded struct {
+		Task domain.Task `json:"task"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if decoded.Task.ID != "task-legacy-1" || decoded.Task.TraceID != "task-legacy-1" {
+		t.Fatalf("expected legacy task id to hydrate task identity, got %+v", decoded.Task)
+	}
+	if decoded.Task.BudgetOverrideActor != "lead" || decoded.Task.BudgetOverrideReason != "approved" || decoded.Task.BudgetOverrideAmount != 7.5 {
+		t.Fatalf("expected budget override fields in response, got %+v", decoded.Task)
+	}
+}
+
+func TestCreateTaskAcceptsLegacyBudgetPayload(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	server := &Server{
+		Recorder:  recorder,
+		Queue:     queue.NewMemoryQueue(),
+		Executors: []domain.ExecutorKind{domain.ExecutorLocal},
+		Bus:       bus,
+		Now:       func() time.Time { return time.Unix(1700000000, 0) },
+	}
+	handler := server.Handler()
+
+	payload := map[string]any{"task_id": "task-legacy-budget-1", "title": "legacy budget", "budget": 12.34}
+	body, _ := json.Marshal(payload)
+	request := httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewReader(body))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusAccepted {
+		t.Fatalf("expected 202, got %d", response.Code)
+	}
+
+	var decoded struct {
+		Task domain.Task `json:"task"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if decoded.Task.ID != "task-legacy-budget-1" || decoded.Task.BudgetCents != 1234 {
+		t.Fatalf("expected legacy budget payload to hydrate canonical task budget, got %+v", decoded.Task)
+	}
+}
+
+func TestCreateTaskAcceptsLegacyStatePayload(t *testing.T) {
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	server := &Server{
+		Recorder:  recorder,
+		Queue:     queue.NewMemoryQueue(),
+		Executors: []domain.ExecutorKind{domain.ExecutorLocal},
+		Bus:       bus,
+		Now:       func() time.Time { return time.Unix(1700000000, 0) },
+	}
+	handler := server.Handler()
+
+	payload := map[string]any{"task_id": "task-legacy-state-1", "title": "legacy state", "state": "In Progress"}
+	body, _ := json.Marshal(payload)
+	request := httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewReader(body))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusAccepted {
+		t.Fatalf("expected 202, got %d", response.Code)
+	}
+
+	var decoded struct {
+		Task domain.Task `json:"task"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if decoded.Task.State != domain.TaskQueued {
+		t.Fatalf("expected create-task runtime to queue accepted legacy state payloads, got %+v", decoded.Task)
+	}
+}
+
 func TestCreateTaskAndQueryStatus(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()

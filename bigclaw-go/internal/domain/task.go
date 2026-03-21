@@ -1,6 +1,11 @@
 package domain
 
-import "time"
+import (
+	"encoding/json"
+	"math"
+	"strings"
+	"time"
+)
 
 type RiskLevel string
 
@@ -43,6 +48,9 @@ type Task struct {
 	State                   TaskState         `json:"state,omitempty"`
 	RiskLevel               RiskLevel         `json:"risk_level,omitempty"`
 	BudgetCents             int64             `json:"budget_cents,omitempty"`
+	BudgetOverrideActor     string            `json:"budget_override_actor,omitempty"`
+	BudgetOverrideReason    string            `json:"budget_override_reason,omitempty"`
+	BudgetOverrideAmount    float64           `json:"budget_override_amount,omitempty"`
 	RequiredTools           []string          `json:"required_tools,omitempty"`
 	AcceptanceCriteria      []string          `json:"acceptance_criteria,omitempty"`
 	ValidationPlan          []string          `json:"validation_plan,omitempty"`
@@ -150,5 +158,158 @@ func IsActiveTaskState(state TaskState) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+type taskJSONAlias Task
+
+func (t Task) MarshalJSON() ([]byte, error) {
+	payload := map[string]any{
+		"id":                      t.ID,
+		"task_id":                 t.ID,
+		"source":                  t.Source,
+		"title":                   t.Title,
+		"description":             t.Description,
+		"labels":                  sliceOrEmpty(t.Labels),
+		"priority":                t.Priority,
+		"state":                   marshalTaskState(t.State),
+		"risk_level":              marshalRiskLevel(t.RiskLevel),
+		"budget_cents":            t.BudgetCents,
+		"budget":                  float64(t.BudgetCents) / 100,
+		"budget_override_actor":   t.BudgetOverrideActor,
+		"budget_override_reason":  t.BudgetOverrideReason,
+		"budget_override_amount":  t.BudgetOverrideAmount,
+		"required_tools":          sliceOrEmpty(t.RequiredTools),
+		"acceptance_criteria":     sliceOrEmpty(t.AcceptanceCriteria),
+		"validation_plan":         sliceOrEmpty(t.ValidationPlan),
+	}
+	if t.TraceID != "" {
+		payload["trace_id"] = t.TraceID
+	}
+	if t.RequiredExecutor != "" {
+		payload["required_executor"] = t.RequiredExecutor
+	}
+	if t.IdempotencyKey != "" {
+		payload["idempotency_key"] = t.IdempotencyKey
+	}
+	if t.TenantID != "" {
+		payload["tenant_id"] = t.TenantID
+	}
+	if t.ContainerImage != "" {
+		payload["container_image"] = t.ContainerImage
+	}
+	if t.Entrypoint != "" {
+		payload["entrypoint"] = t.Entrypoint
+	}
+	if len(t.Command) > 0 {
+		payload["command"] = t.Command
+	}
+	if len(t.Args) > 0 {
+		payload["args"] = t.Args
+	}
+	if len(t.Environment) > 0 {
+		payload["environment"] = t.Environment
+	}
+	if len(t.RuntimeEnv) > 0 {
+		payload["runtime_env"] = t.RuntimeEnv
+	}
+	if len(t.Metadata) > 0 {
+		payload["metadata"] = t.Metadata
+	}
+	if t.WorkingDir != "" {
+		payload["working_dir"] = t.WorkingDir
+	}
+	if t.ExecutionTimeoutSeconds != 0 {
+		payload["execution_timeout_seconds"] = t.ExecutionTimeoutSeconds
+	}
+	if !t.CreatedAt.IsZero() {
+		payload["created_at"] = t.CreatedAt
+	}
+	if !t.UpdatedAt.IsZero() {
+		payload["updated_at"] = t.UpdatedAt
+	}
+	return json.Marshal(payload)
+}
+
+func (t *Task) UnmarshalJSON(data []byte) error {
+	type taskJSONEnvelope struct {
+		taskJSONAlias
+		TaskID string   `json:"task_id,omitempty"`
+		Budget *float64 `json:"budget,omitempty"`
+	}
+	var payload taskJSONEnvelope
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return err
+	}
+	task := Task(payload.taskJSONAlias)
+	if task.ID == "" {
+		task.ID = payload.TaskID
+	}
+	if payload.Budget != nil && task.BudgetCents == 0 {
+		task.BudgetCents = int64(math.Round(*payload.Budget * 100))
+	}
+	task.Labels = sliceOrEmpty(task.Labels)
+	task.RequiredTools = sliceOrEmpty(task.RequiredTools)
+	task.AcceptanceCriteria = sliceOrEmpty(task.AcceptanceCriteria)
+	task.ValidationPlan = sliceOrEmpty(task.ValidationPlan)
+	task.State = normalizeTaskState(task.State)
+	*t = task
+	return nil
+}
+
+func marshalTaskState(state TaskState) string {
+	if state == "" {
+		return string(TaskQueued)
+	}
+	return string(state)
+}
+
+func marshalRiskLevel(level RiskLevel) string {
+	if level == "" {
+		return string(RiskLow)
+	}
+	return string(level)
+}
+
+func sliceOrEmpty[T any](values []T) []T {
+	if values == nil {
+		return []T{}
+	}
+	return values
+}
+
+func normalizeTaskState(state TaskState) TaskState {
+	normalized := strings.ToLower(strings.TrimSpace(string(state)))
+	switch normalized {
+	case "", string(TaskQueued), "todo":
+		return TaskQueued
+	case string(TaskLeased):
+		return TaskLeased
+	case string(TaskRunning):
+		return TaskRunning
+	case string(TaskBlocked):
+		return TaskBlocked
+	case string(TaskRetrying):
+		return TaskRetrying
+	case string(TaskSucceeded):
+		return TaskSucceeded
+	case string(TaskFailed):
+		return TaskFailed
+	case "cancelled", "canceled":
+		return TaskCancelled
+	case string(TaskDeadLetter):
+		return TaskDeadLetter
+	}
+	switch {
+	case strings.Contains(normalized, "progress"):
+		return TaskRunning
+	case strings.Contains(normalized, "done"), strings.Contains(normalized, "closed"), strings.Contains(normalized, "resolved"):
+		return TaskSucceeded
+	case strings.Contains(normalized, "block"):
+		return TaskBlocked
+	case strings.Contains(normalized, "fail"):
+		return TaskFailed
+	default:
+		return state
 	}
 }

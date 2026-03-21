@@ -91,6 +91,16 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		return false
 	}
 
+	if r.Queue == nil {
+		return false
+	}
+	if r.LeaseTTL <= 0 {
+		r.LeaseTTL = 2 * time.Minute
+	}
+	if r.TaskTimeout <= 0 {
+		r.TaskTimeout = 30 * time.Second
+	}
+
 	task, lease, err := r.Queue.LeaseNext(ctx, r.WorkerID, r.LeaseTTL)
 	if err != nil || task == nil || lease == nil {
 		r.updateStatus(func(status *Status) {
@@ -159,6 +169,44 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	})
 
 	r.publish(domain.Event{ID: eventID(task.ID, "leased"), Type: domain.EventTaskLeased, TaskID: task.ID, TraceID: task.TraceID, RunID: runID, Timestamp: leasedAt})
+	if r.Scheduler == nil || r.Registry == nil {
+		reasonParts := make([]string, 0, 2)
+		if r.Scheduler == nil {
+			reasonParts = append(reasonParts, "scheduler not configured")
+		}
+		if r.Registry == nil {
+			reasonParts = append(reasonParts, "executor registry not configured")
+		}
+		reason := strings.Join(reasonParts, "; ")
+
+		_ = r.Queue.DeadLetter(ctx, lease, reason)
+		r.recordWorkpad(journal, "execution", "dead-letter", map[string]any{"reason": reason})
+		r.persistWorkpad(task, lease, journal)
+
+		finishedAt := time.Now()
+		closeout := workflow.BuildCloseout(workflow.CloseoutInput{
+			Task:        *task,
+			RunID:       runID,
+			Status:      workflow.WorkflowRunFailed,
+			Executor:    task.RequiredExecutor,
+			Message:     reason,
+			StartedAt:   leasedAt,
+			CompletedAt: finishedAt,
+		})
+		r.finishStatus(string(domain.EventTaskDeadLetter), reason, func(status *Status) {
+			status.DeadLetterRuns++
+		})
+		r.publish(domain.Event{
+			ID:        eventID(task.ID, "deadletter"),
+			Type:      domain.EventTaskDeadLetter,
+			TaskID:    task.ID,
+			TraceID:   task.TraceID,
+			RunID:     runID,
+			Timestamp: finishedAt,
+			Payload:   runtimeTerminalPayload(runID, task.RequiredExecutor, reason, nil, finishedAt, closeout, false),
+		})
+		return true
+	}
 	assessment := r.Scheduler.Assess(*task, quota)
 	decision := assessment.Decision
 	r.recordWorkpad(journal, "scheduler", runtimeAssessmentStatus(decision), map[string]any{

@@ -112,6 +112,97 @@ func TestRuntimeProcessesTask(t *testing.T) {
 			t.Fatalf("expected trace propagation, got %+v", event)
 		}
 	}
+	task, ok := recorder.Task("task-1")
+	if !ok || task.State != domain.TaskSucceeded {
+		t.Fatalf("expected succeeded task snapshot, got %+v ok=%v", task, ok)
+	}
+}
+
+func TestRuntimeSkipsCleanlyWhenQueueUnset(t *testing.T) {
+	runtime := Runtime{WorkerID: "worker-no-queue"}
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
+	if processed {
+		t.Fatal("expected runtime to skip when queue is unset")
+	}
+	snapshot := runtime.Snapshot()
+	if snapshot.State != "idle" || snapshot.WorkerID != "worker-no-queue" {
+		t.Fatalf("expected idle snapshot when queue is unset, got %+v", snapshot)
+	}
+}
+
+func TestRuntimeUsesDefaultTimeoutAndLeaseWhenUnset(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	if err := q.Enqueue(context.Background(), domain.Task{ID: "task-defaults", TraceID: "trace-defaults", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+
+	runtime := Runtime{
+		WorkerID:  "worker-defaults",
+		Queue:     q,
+		Scheduler: scheduler.New(),
+		Registry: executor.NewRegistry(fakeRunner{
+			kind:  domain.ExecutorLocal,
+			delay: 20 * time.Millisecond,
+			result: executor.Result{
+				Success: true,
+				Message: "ok",
+			},
+		}),
+		Bus:      bus,
+		Recorder: recorder,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
+	if !processed {
+		t.Fatal("expected runtime to process task with default timeout and lease settings")
+	}
+	if got := q.Size(context.Background()); got != 0 {
+		t.Fatalf("expected queue size 0 after success, got %d", got)
+	}
+	latest, ok := recorder.LatestByTask("task-defaults")
+	if !ok || latest.Type != domain.EventTaskCompleted {
+		t.Fatalf("expected completed event with default runtime settings, got %+v", latest)
+	}
+	snapshot := runtime.Snapshot()
+	if snapshot.SuccessfulRuns != 1 || snapshot.State != "idle" {
+		t.Fatalf("expected successful idle snapshot, got %+v", snapshot)
+	}
+}
+
+func TestRuntimeDefaultsNilSchedulerAndRegistryToSafeBehavior(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	if err := q.Enqueue(context.Background(), domain.Task{ID: "task-nil-runtime", TraceID: "trace-nil-runtime", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+
+	runtime := Runtime{
+		WorkerID: "worker-nil-runtime",
+		Queue:    q,
+		Bus:      bus,
+		Recorder: recorder,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
+	if !processed {
+		t.Fatal("expected runtime to process task even when scheduler and registry are unset")
+	}
+	deadLetters, err := q.ListDeadLetters(context.Background(), 10)
+	if err != nil {
+		t.Fatalf("list dead letters: %v", err)
+	}
+	if len(deadLetters) != 1 || deadLetters[0].ID != "task-nil-runtime" {
+		t.Fatalf("expected task to dead-letter cleanly, got %+v", deadLetters)
+	}
+	latest, ok := recorder.LatestByTask("task-nil-runtime")
+	if !ok || latest.Type != domain.EventTaskDeadLetter {
+		t.Fatalf("expected dead-letter event from safe defaults, got %+v", latest)
+	}
+	snapshot := runtime.Snapshot()
+	if snapshot.DeadLetterRuns != 1 || snapshot.State != "idle" {
+		t.Fatalf("expected idle dead-letter snapshot, got %+v", snapshot)
+	}
 }
 
 func TestRuntimePublishesExecutorArtifacts(t *testing.T) {
@@ -484,6 +575,10 @@ func TestRuntimeTimeoutRequeuesTask(t *testing.T) {
 	if !ok || latest.Type != domain.EventTaskRetried {
 		t.Fatalf("expected latest event retried, got %+v", latest)
 	}
+	task, ok := recorder.Task("task-timeout")
+	if !ok || task.State != domain.TaskRetrying {
+		t.Fatalf("expected retrying task snapshot, got %+v ok=%v", task, ok)
+	}
 	if latest.TraceID != "task-timeout" {
 		t.Fatalf("expected default trace id to match task id, got %+v", latest)
 	}
@@ -534,6 +629,10 @@ func TestRuntimeDeadLettersWhenExecutorMissing(t *testing.T) {
 	latest, ok := recorder.LatestByTask("task-missing")
 	if !ok || latest.Type != domain.EventTaskDeadLetter {
 		t.Fatalf("expected latest dead-letter event, got %+v", latest)
+	}
+	task, ok := recorder.Task("task-missing")
+	if !ok || task.State != domain.TaskDeadLetter {
+		t.Fatalf("expected dead-letter task snapshot, got %+v ok=%v", task, ok)
 	}
 	events := recorder.EventsByTask("task-missing", 10)
 	if len(events) < 3 || events[1].Type != domain.EventSchedulerRouted {

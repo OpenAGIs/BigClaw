@@ -121,6 +121,10 @@ func ScoreTask(task domain.Task, events []domain.Event) Score {
 		}
 	}
 
+	if task.BudgetCents < 0 {
+		add("budget", 20, "invalid budget requires manual review")
+	}
+
 	if changedFiles := metadataInt(task, "changed_files_count", "files_changed_count", "code_files_changed"); changedFiles >= 50 {
 		add("changed_files", 20, "large code delta expands review scope")
 	} else if changedFiles >= 10 {

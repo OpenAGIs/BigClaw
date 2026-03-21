@@ -14,13 +14,24 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
 
 - `Task` -> `bigclaw-go/internal/domain/task.go`
   - canonical Go runtime task shape
+  - now accepts legacy `task_id` input for migration compatibility while preserving canonical Go `id`
+  - now accepts legacy Python `budget` payloads and round-trips them alongside canonical Go `budget_cents`
+  - now normalizes legacy Python task states (`Todo`, `In Progress`, `Done`, `Blocked`, `Failed`) into canonical Go runtime states on ingest
+  - task JSON output now preserves the Python `to_dict()` core field set, including default state/risk/budget values and empty list fields for labels, required tools, acceptance criteria, and validation plan
+  - now carries Python budget override fields (`budget_override_actor`, `budget_override_reason`, `budget_override_amount`) on the canonical task contract
   - execution lifecycle remains `queued/running/succeeded/...`
 - `Priority` -> `bigclaw-go/internal/domain/priority.go`
 - `RiskLevel` -> `bigclaw-go/internal/domain/task.go`
 - `RiskSignal`, `RiskAssessment` -> `bigclaw-go/internal/risk/assessment.go`
+  - risk JSON encode/decode now preserves the Python `to_dict()` / `from_dict()` field set, including default low-level output and empty signal/mitigation metadata collections
 - `TriageLabel`, `TriageRecord` -> `bigclaw-go/internal/triage/record.go`
+  - triage JSON encode/decode now preserves the Python `to_dict()` / `from_dict()` field set, including default `open` status, default `default` queue, label confidence/source defaults, and empty labels/actions collections
 - `BillingInterval`, `BillingRate`, `UsageRecord`, `BillingSummary` -> `bigclaw-go/internal/billing/statement.go`
+  - billing usage metadata now preserves Python-style `Dict[str, Any]` payloads instead of narrowing to string-only values
+  - billing JSON output now preserves the Python `to_dict()` field set for usage records and summaries, including empty metadata/rates/usage collections and default numeric totals
 - `FlowTrigger`, `FlowRunStatus`, `FlowStepStatus`, `FlowTemplate*`, `FlowRun*` -> `bigclaw-go/internal/workflow/model.go`
+  - workflow JSON decode now defaults missing Python list/map fields to empty collections so `from_dict` behavior stays aligned for steps, tags, outputs, approvals, and step metadata
+  - workflow JSON output now preserves the Python `to_dict()` field set for templates and runs, including default trigger/status values and empty collection fields
 
 ### `src/bigclaw/connectors.py`
 
@@ -40,6 +51,8 @@ This matrix captures the current `BIG-GOM-301` field and ownership split while t
 - `WorkflowDefinition` -> `bigclaw-go/internal/workflow/definition.go`
 - `from_json` -> `bigclaw-go/internal/workflow/definition.go`
 - `render_report_path` / `render_journal_path` -> `bigclaw-go/internal/workflow/definition.go`
+  - workflow-definition JSON decode now defaults missing Python list/map fields to empty collections so `from_dict` behavior stays aligned for step metadata, steps, validation evidence, and approvals
+  - workflow-definition JSON output now preserves the Python `to_dict()` field set, including empty steps, validation evidence, approvals, and blank template paths
 
 ## Key design decisions
 
