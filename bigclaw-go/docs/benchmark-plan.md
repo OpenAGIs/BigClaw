@@ -23,6 +23,7 @@
 - queue benchmark report
 - scheduler benchmark report
 - soak test report
+- capacity certification matrix
 - migration readiness comparison
 
 ## Local matrix helper
@@ -47,3 +48,17 @@ python3 scripts/benchmark/soak_local.py \
   --timeout-seconds 480 \
   --report-path docs/reports/soak-local-2000x24.json
 ```
+
+## Capacity certification helper
+
+```bash
+cd bigclaw-go
+python3 scripts/benchmark/capacity_certification.py \
+  --output docs/reports/capacity-certification-matrix.json \
+  --markdown-output docs/reports/capacity-certification-report.md
+```
+
+This helper converts the checked-in benchmark, soak, and mixed-workload artifacts into
+an explicit certification matrix with pass/fail thresholds, saturation notes, and
+recommended operating envelopes. It is still repo-native evidence rather than a live
+production attestation.

@@ -1,20 +1,27 @@
-#!/usr/bin/env python3
-from __future__ import annotations
+#!/usr/bin/env bash
+set -euo pipefail
 
-import os
-import sys
-from pathlib import Path
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
-sys.dont_write_bytecode = True
+args=("$@")
+has_repo_url=false
+has_cache_key=false
+for arg in "${args[@]}"; do
+  case "$arg" in
+    --repo-url|--repo-url=*)
+      has_repo_url=true
+      ;;
+    --cache-key|--cache-key=*)
+      has_cache_key=true
+      ;;
+  esac
+done
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-SRC_ROOT = REPO_ROOT / "src"
-if str(SRC_ROOT) not in sys.path:
-    sys.path.insert(0, str(SRC_ROOT))
+if [ "$has_repo_url" = false ]; then
+  args+=(--repo-url "${BIGCLAW_BOOTSTRAP_REPO_URL:-git@github.com:OpenAGIs/BigClaw.git}")
+fi
+if [ "$has_cache_key" = false ]; then
+  args+=(--cache-key "${BIGCLAW_BOOTSTRAP_CACHE_KEY:-openagis-bigclaw}")
+fi
 
-from bigclaw.legacy_shim import LEGACY_PYTHON_WRAPPER_NOTICE, build_workspace_bootstrap_args
-
-
-if __name__ == "__main__":
-    print(LEGACY_PYTHON_WRAPPER_NOTICE, file=sys.stderr)
-    os.execvp("bash", build_workspace_bootstrap_args(REPO_ROOT, sys.argv[1:]))
+exec bash "$script_dir/bigclawctl" workspace "${args[@]}"

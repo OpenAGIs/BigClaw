@@ -32,15 +32,15 @@ hooks:
     git config user.email "dcjcloud@gmail.com"
     git config user.name "native cloud"
     gh auth setup-git || true
-    bash scripts/ops/bigclawctl github-sync install
-    bash scripts/ops/bigclawctl github-sync status --json
+    bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" github-sync install --repo "$SYMPHONY_WORKSPACE"
+    bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" github-sync status --json --repo "$SYMPHONY_WORKSPACE"
   before_run: |
     set -eu
-    bash scripts/ops/bigclawctl github-sync install
-    bash scripts/ops/bigclawctl github-sync sync --allow-dirty --json
+    bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" github-sync install --repo "$SYMPHONY_WORKSPACE"
+    bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" github-sync sync --allow-dirty --json --repo "$SYMPHONY_WORKSPACE"
   after_run: |
     set -eu
-    bash scripts/ops/bigclawctl github-sync status --json --require-clean --require-synced || true
+    bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" github-sync status --json --require-clean --require-synced --repo "$SYMPHONY_WORKSPACE" || true
   before_remove: |
     set -eu
     bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" workspace cleanup --workspace "$SYMPHONY_WORKSPACE" --issue "$SYMPHONY_ISSUE_IDENTIFIER" --repo-url "${SYMPHONY_BOOTSTRAP_REPO_URL:-git@github.com:OpenAGIs/BigClaw.git}" --default-branch "${SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH:-main}" --cache-base "${SYMPHONY_BOOTSTRAP_CACHE_BASE:-$HOME/.cache/symphony/repos}" --cache-key "${SYMPHONY_BOOTSTRAP_CACHE_KEY:-openagis-bigclaw}" --json || true

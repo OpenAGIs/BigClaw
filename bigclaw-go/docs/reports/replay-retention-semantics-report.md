@@ -10,7 +10,7 @@ The current Go runtime still uses in-process replay history in `internal/events/
 
 - `Bus.SubscribeReplay` replays the tail of the in-memory append history before switching the subscriber to live events.
 - `GET /events`, `GET /replay/{id}`, and `GET /stream/events?replay=1` expose replay-oriented views over recorder history.
-- No durable retention watermark, checkpoint expiration signal, or history compaction rule exists yet.
+- Durable retention watermarks and checkpoint-expiration diagnostics are now surfaced through `GET /events`, `GET /debug/status`, `GET/DELETE /stream/events/checkpoints/{subscriber_id}`, and the checked-in reviewer surface at `docs/reports/retention-watermark-expiry-surface.json`.
 
 ## Retention model
 
@@ -64,8 +64,12 @@ The current Go runtime still uses in-process replay history in `internal/events/
 
 - `OPE-212` establishes the compaction and retention contract.
 - `OPE-216` established the expired replay cursor semantics, `OPE-226` added the concrete checkpoint diagnostics / reset surface for durable checkpoint resumes, and `OPE-228` extends that flow with persisted reset audit history.
+- `docs/reports/broker-retention-boundary-proof-summary.json` now captures the deterministic broker-stub scenario where a stale checkpoint falls behind the retention floor and must be reset explicitly.
+- `docs/reports/retention-watermark-expiry-surface.json` now keeps the runtime/reviewer posture explicit by separating replay-retention policy from checkpoint cleanup expectations for each backend lane.
 - Durable backends extending `internal/events` should expose retention watermarks before replay-aware checkpoint cleanup is implemented.
 - SQLite-backed durable logs now persist trimmed replay boundaries across restarts when a retention window is configured, giving operators a stable replay horizon even after reboot.
+- The remote HTTP event-log validation lane in `docs/reports/external-store-validation-report.json` now proves that the same persisted retention-boundary metadata stays visible through a repo-native external-store service boundary, not only when the log is embedded locally.
+- That report's backend matrix keeps the lane split explicit: `http_remote_service` is the checked-in proof, while `broker_replicated` remains `not_configured` and `quorum_replicated` remains `contract_only`.
 
 ## Repo evidence
 
@@ -74,3 +78,4 @@ The current Go runtime still uses in-process replay history in `internal/events/
 - `internal/api/server.go`
 - `internal/api/server_test.go`
 - `docs/reports/event-bus-reliability-report.md`
+- `docs/reports/broker-retention-boundary-proof-summary.json`

@@ -50,14 +50,19 @@ func main() {
 		}
 		defer closeEventLog(eventLog)
 	default:
-		if _, err = buildEventLog(cfg); err != nil {
+		eventLog, err = buildEventLog(cfg)
+		if err != nil {
 			panic(err)
+		}
+		if eventLog != nil {
+			eventPlanBackend = eventLog.Backend()
 		}
 	}
 
 	bus := events.NewBus()
 	if eventLog != nil {
 		bus.AddSink(eventLog)
+		bus.SetCapabilities(eventLog.Capabilities())
 	}
 	recorder := buildRecorder(cfg)
 	bus.AddSink(events.RecorderSink{Recorder: recorder})
@@ -82,20 +87,14 @@ func main() {
 	defer closeFairnessStore(fairnessStore)
 
 	controller := control.New()
-	subscriberLeases := events.NewSubscriberLeaseCoordinator()
-	schedulerRuntime := scheduler.NewWithStores(policyStore, fairnessStore)
-	runtime := &worker.Runtime{
-		WorkerID:    "bootstrap-worker",
-		Queue:       q,
-		Scheduler:   schedulerRuntime,
-		Registry:    registry,
-		Bus:         bus,
-		Recorder:    recorder,
-		Control:     controller,
-		LeaseTTL:    cfg.LeaseTTL,
-		TaskTimeout: cfg.TaskTimeout,
+	subscriberLeases, err := buildSubscriberLeaseStore(cfg)
+	if err != nil {
+		panic(err)
 	}
-	loop := &orchestrator.Loop{Runtime: runtime, Quota: scheduler.QuotaSnapshot{ConcurrentLimit: cfg.MaxConcurrentRuns, BudgetRemaining: cfg.DefaultBudgetCents}, PollInterval: cfg.PollInterval}
+	defer closeSubscriberLeaseStore(subscriberLeases)
+	schedulerRuntime := scheduler.NewWithStores(policyStore, fairnessStore)
+	pool := buildWorkerPool(cfg, q, schedulerRuntime, registry, bus, recorder, controller)
+	loop := &orchestrator.Loop{Runtime: pool, Quota: scheduler.QuotaSnapshot{ConcurrentLimit: cfg.MaxConcurrentRuns, BudgetRemaining: cfg.DefaultBudgetCents}, PollInterval: cfg.PollInterval}
 
 	if cfg.BootstrapTasks {
 		seed(context.Background(), q)
@@ -108,7 +107,7 @@ func main() {
 		EventPlan:        events.NewDurabilityPlanWithBrokerConfig(eventPlanBackend, cfg.EventLogTargetBackend, cfg.EventLogReplicationFactor, brokerRuntimeConfig(cfg)),
 		EventLog:         eventLog,
 		SubscriberLeases: subscriberLeases,
-		Worker:           runtime,
+		Worker:           pool,
 		Control:          controller,
 		SchedulerPolicy:  policyStore,
 		SchedulerRuntime: schedulerRuntime,
@@ -131,14 +130,31 @@ func main() {
 	fmt.Printf("%s stopped events=%d\n", cfg.ServiceName, len(bus.Replay()))
 }
 
-func buildEventLog(cfg config.Config) (*events.MemoryLog, error) {
+func buildSubscriberLeaseStore(cfg config.Config) (events.SubscriberLeaseStore, error) {
+	if cfg.SubscriberLeaseSQLitePath == "" {
+		return events.NewSubscriberLeaseCoordinator(), nil
+	}
+	return events.NewSQLiteSubscriberLeaseStore(cfg.SubscriberLeaseSQLitePath)
+}
+
+func closeSubscriberLeaseStore(store events.SubscriberLeaseStore) {
+	type closer interface{ Close() error }
+	if closable, ok := store.(closer); ok {
+		_ = closable.Close()
+	}
+}
+
+func buildEventLog(cfg config.Config) (events.EventLog, error) {
 	switch cfg.EventLogBackend {
 	case "", string(events.EventLogBackendMemory):
-		return events.NewMemoryLog(), nil
+		return nil, nil
 	case string(events.EventLogBackendBroker):
 		broker := brokerRuntimeConfig(cfg)
 		if err := broker.Validate(); err != nil {
 			return nil, err
+		}
+		if broker.Driver == events.BrokerDriverStub {
+			return events.NewBrokerStubEventLog(), nil
 		}
 		return nil, fmt.Errorf("event log backend %q is not implemented yet; driver=%s topic=%s contract validated for the future adapter", cfg.EventLogBackend, broker.Driver, broker.Topic)
 	default:
@@ -237,6 +253,38 @@ func buildRegistry(cfg config.Config) *executor.Registry {
 		fmt.Fprintf(os.Stderr, "ray runner disabled: %v\n", err)
 	}
 	return executor.NewRegistry(runners...)
+}
+
+func buildWorkerPool(
+	cfg config.Config,
+	q queue.Queue,
+	schedulerRuntime *scheduler.Scheduler,
+	registry *executor.Registry,
+	bus *events.Bus,
+	recorder *observability.Recorder,
+	controller *control.Controller,
+) *worker.Pool {
+	workerCount := cfg.MaxConcurrentRuns
+	if workerCount < 1 {
+		workerCount = 1
+	}
+
+	runtimes := make([]*worker.Runtime, 0, workerCount)
+	for index := 0; index < workerCount; index++ {
+		runtimes = append(runtimes, &worker.Runtime{
+			WorkerID:    fmt.Sprintf("worker-%d", index+1),
+			Queue:       q,
+			Scheduler:   schedulerRuntime,
+			Registry:    registry,
+			Bus:         bus,
+			Recorder:    recorder,
+			Control:     controller,
+			LeaseTTL:    cfg.LeaseTTL,
+			TaskTimeout: cfg.TaskTimeout,
+		})
+	}
+
+	return worker.NewPool(runtimes...)
 }
 
 func seed(ctx context.Context, q queue.Queue) {

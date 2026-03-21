@@ -1,22 +1,19 @@
 package repo
 
-import "strings"
+import (
+	"encoding/json"
+	"strings"
+)
 
-type GatewayClient interface {
-	PushBundle(repoSpaceID string, bundleRef string) map[string]any
-	FetchBundle(repoSpaceID string, bundleRef string) map[string]any
-	ListCommits(repoSpaceID string) []map[string]any
-	GetCommit(repoSpaceID string, commitHash string) map[string]any
-	GetChildren(repoSpaceID string, commitHash string) []string
-	GetLineage(repoSpaceID string, commitHash string) map[string]any
-	GetLeaves(repoSpaceID string, commitHash string) []string
-	Diff(repoSpaceID string, leftHash string, rightHash string) map[string]any
-}
-
-type RepoBundle struct {
-	RepoSpaceID string         `json:"repo_space_id,omitempty"`
-	BundleRef   string         `json:"bundle_ref,omitempty"`
-	Metadata    map[string]any `json:"metadata,omitempty"`
+type RepoGatewayClient interface {
+	PushBundle(repoSpaceID, bundleRef string) (map[string]any, error)
+	FetchBundle(repoSpaceID, bundleRef string) (map[string]any, error)
+	ListCommits(repoSpaceID string) ([]map[string]any, error)
+	GetCommit(repoSpaceID, commitHash string) (map[string]any, error)
+	GetChildren(repoSpaceID, commitHash string) ([]string, error)
+	GetLineage(repoSpaceID, commitHash string) (map[string]any, error)
+	GetLeaves(repoSpaceID, commitHash string) ([]string, error)
+	Diff(repoSpaceID, leftHash, rightHash string) (map[string]any, error)
 }
 
 type RepoGatewayError struct {
@@ -26,10 +23,7 @@ type RepoGatewayError struct {
 }
 
 func NormalizeGatewayError(err error) RepoGatewayError {
-	if err == nil {
-		return RepoGatewayError{}
-	}
-	message := strings.ToLower(err.Error())
+	message := strings.ToLower(strings.TrimSpace(err.Error()))
 	switch {
 	case strings.Contains(message, "timeout"):
 		return RepoGatewayError{Code: "timeout", Message: err.Error(), Retryable: true}
@@ -40,23 +34,31 @@ func NormalizeGatewayError(err error) RepoGatewayError {
 	}
 }
 
-func NormalizeBundle(payload map[string]any) RepoBundle {
-	return RepoBundle{
-		RepoSpaceID: stringValue(payload["repo_space_id"]),
-		BundleRef:   stringValue(payload["bundle_ref"]),
-		Metadata:    mapValue(payload["metadata"]),
+func NormalizeCommit(payload map[string]any) (RepoCommit, error) {
+	var commit RepoCommit
+	if err := decodeMap(payload, &commit); err != nil {
+		return RepoCommit{}, err
 	}
+	return commit, nil
 }
 
-func NormalizeCommitList(payload []map[string]any) []RepoCommit {
-	commits := make([]RepoCommit, 0, len(payload))
-	for _, item := range payload {
-		commits = append(commits, NormalizeCommit(item))
+func NormalizeLineage(payload map[string]any) (CommitLineage, error) {
+	var lineage CommitLineage
+	if err := decodeMap(payload, &lineage); err != nil {
+		return CommitLineage{}, err
 	}
-	return commits
+	return lineage, nil
 }
 
-func RepoAuditPayload(actor string, action string, outcome string, commitHash string, repoSpaceID string) map[string]any {
+func NormalizeDiff(payload map[string]any) (CommitDiff, error) {
+	var diff CommitDiff
+	if err := decodeMap(payload, &diff); err != nil {
+		return CommitDiff{}, err
+	}
+	return diff, nil
+}
+
+func RepoAuditPayload(actor, action, outcome, commitHash, repoSpaceID string) map[string]any {
 	return map[string]any{
 		"actor":         actor,
 		"action":        action,
@@ -64,4 +66,12 @@ func RepoAuditPayload(actor string, action string, outcome string, commitHash st
 		"commit_hash":   commitHash,
 		"repo_space_id": repoSpaceID,
 	}
+}
+
+func decodeMap(payload map[string]any, target any) error {
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(encoded, target)
 }

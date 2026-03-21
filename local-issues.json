@@ -1,354 +1,352 @@
 {
   "issues": [
     {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Finish consolidating the canonical Go task, intake, and workflow vocabulary so downstream runtime slices stop inventing parallel compatibility contracts.",
       "id": "big-gom-301",
       "identifier": "BIG-GOM-301",
-      "title": "Unified domain model and intake contract migration",
-      "description": "Finish consolidating the canonical Go task, intake, and workflow vocabulary so downstream runtime slices stop inventing parallel compatibility contracts.",
-      "priority": 1,
-      "state": "Done",
       "labels": [
         "go-mainline",
         "migration",
         "domain",
         "intake"
       ],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T17:00:07Z",
-      "comments": [
-        {
-          "body": "Progress update: restored canonical Go task-contract parity for the remaining `models.py` identity/budget-override gap. `bigclaw-go/internal/domain/task.go` now accepts legacy `task_id` JSON input while preserving the canonical `id` field, emits both identifiers on JSON output for migration compatibility, and carries the Python budget-override fields (`budget_override_actor`, `budget_override_reason`, `budget_override_amount`) on the canonical Go task type. Added focused coverage in `bigclaw-go/internal/domain/task_test.go` for JSON round-trip behavior and in `bigclaw-go/internal/api/server_test.go` to verify `/tasks` accepts legacy `task_id` payloads.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/domain ./internal/api` -> passed\n- `git rev-parse HEAD` -> `cee6c12892541a4e485b0338c04965d5ac2d798b`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `cee6c12892541a4e485b0338c04965d5ac2d798b` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `cee6c12892541a4e485b0338c04965d5ac2d798b` (matches local)\n- `git log -1 --stat` -> `Restore Go task contract parity for legacy task IDs`\n\nCommit: `cee6c12892541a4e485b0338c04965d5ac2d798b`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T14:47:28Z"
-        },
-        {
-          "body": "Progress update: widened the canonical Go billing usage contract to preserve the remaining Python `models.py` metadata shape. `bigclaw-go/internal/billing/statement.go` now uses `map[string]any` for usage metadata instead of narrowing to string-only values, and `bigclaw-go/internal/billing/statement_test.go` now locks round-trip behavior for mixed-type metadata values. Updated `docs/go-domain-intake-parity-matrix.md` to reflect the preserved Python `Dict[str, Any]` billing metadata contract.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/billing` -> passed\n- `git rev-parse HEAD` -> `82b5bc690477760aa6a3634014042967aa902db8`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `82b5bc690477760aa6a3634014042967aa902db8` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `82b5bc690477760aa6a3634014042967aa902db8` (matches local)\n- `git log -1 --stat` -> `Preserve Python billing metadata shape in Go`\n\nCommit: `82b5bc690477760aa6a3634014042967aa902db8`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T14:53:35Z"
-        },
-        {
-          "body": "Progress update: restored legacy Python `Task.budget` compatibility on the canonical Go task contract. `bigclaw-go/internal/domain/task.go` now accepts the legacy `budget` JSON field, converts it into canonical `budget_cents` on ingest, and round-trips the legacy `budget` alias alongside `budget_cents` on JSON output so migration-era Python payloads are preserved instead of dropping planned spend. Added focused coverage in `bigclaw-go/internal/domain/task_test.go` for legacy budget unmarshalling/marshalling and in `bigclaw-go/internal/api/server_test.go` to verify `/tasks` accepts legacy `budget` payloads. Updated `docs/go-domain-intake-parity-matrix.md` and `docs/go-mainline-cutover-issue-pack.md` to record the restored task-budget parity.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/domain ./internal/api` -> passed\n- `git rev-parse HEAD` -> `614c17dccedbd2cea4adb9d47f4b38b46b17402b`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `614c17dccedbd2cea4adb9d47f4b38b46b17402b` (matches local)\n- `git rev-parse github/symphony/BIG-GOM-302` -> `614c17dccedbd2cea4adb9d47f4b38b46b17402b` (matches local after fetch)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `614c17dccedbd2cea4adb9d47f4b38b46b17402b` (matches local)\n- `git log -1 --stat` -> `Preserve legacy Python task budget in Go`\n\nCommit: `614c17dccedbd2cea4adb9d47f4b38b46b17402b`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T16:05:09Z"
-        },
-        {
-          "body": "Progress update: normalized legacy Python `Task.state` values at the canonical Go task boundary. `bigclaw-go/internal/domain/task.go` now converts migration-era task states like `Todo`, `In Progress`, `Done`, `Blocked`, and `Failed` into canonical Go runtime states during JSON ingest, so Python-shaped task payloads no longer leak legacy state strings into the Go mainline. Added focused coverage in `bigclaw-go/internal/domain/task_test.go` for state normalization and in `bigclaw-go/internal/api/server_test.go` to verify `/tasks` accepts legacy state payloads while still queuing new work in the runtime. Updated `docs/go-domain-intake-parity-matrix.md` to record the restored task-state parity.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/domain ./internal/api` -> passed\n- `git rev-parse HEAD` -> `9a53742ec218addd6ad392ce7d78c6302442daa4`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `9a53742ec218addd6ad392ce7d78c6302442daa4` (matches local)\n- `git rev-parse github/symphony/BIG-GOM-302` -> `9a53742ec218addd6ad392ce7d78c6302442daa4` (matches local after fetch)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `9a53742ec218addd6ad392ce7d78c6302442daa4` (matches local)\n- `git log -1 --stat` -> `Normalize legacy Python task states in Go`\n\nCommit: `9a53742ec218addd6ad392ce7d78c6302442daa4`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T16:11:34Z"
-        },
-        {
-          "body": "Progress update: aligned the Go workflow model decode path with Python `from_dict` defaults for missing collections. `bigclaw-go/internal/workflow/model.go` now defaults absent workflow lists/maps to empty collections on JSON ingest, including template steps/tags plus run outputs, approval refs, step outputs, and step metadata, so migration-era Python workflow payloads decode into the same empty-collection shape the legacy `models.py` contract produces. Added focused coverage in `bigclaw-go/internal/workflow/model_test.go` for empty-collection defaults alongside the existing round-trip coverage, and updated `docs/go-domain-intake-parity-matrix.md` to record the restored workflow parity.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/workflow` -> passed\n- `git rev-parse HEAD` -> `29bbaf5db62c806b64675b9ca8e5616fbe4a68f5`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `29bbaf5db62c806b64675b9ca8e5616fbe4a68f5` (matches local)\n- `git rev-parse github/symphony/BIG-GOM-302` -> `29bbaf5db62c806b64675b9ca8e5616fbe4a68f5` (matches local after fetch)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `29bbaf5db62c806b64675b9ca8e5616fbe4a68f5` (matches local)\n- `git log -1 --stat` -> `Default empty workflow collections for Python parity`\n\nCommit: `29bbaf5db62c806b64675b9ca8e5616fbe4a68f5`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T16:18:03Z"
-        },
-        {
-          "body": "Progress update: aligned the Go workflow-definition decode path with Python `WorkflowDefinition.from_dict` defaults. `bigclaw-go/internal/workflow/definition.go` now defaults missing step metadata, steps, validation evidence, and approvals to empty collections on JSON ingest, so the Go DSL owner matches the legacy Python shape instead of leaving nil maps/slices in the decoded contract. Added focused coverage in `bigclaw-go/internal/workflow/definition_test.go` for missing-collection defaults and updated `docs/go-domain-intake-parity-matrix.md` to record the restored DSL-definition parity.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/workflow` -> passed\n- `git rev-parse HEAD` -> `8f542dde333b6757643b334660677f4006c3c49c`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `8f542dde333b6757643b334660677f4006c3c49c` (matches local)\n- `git rev-parse github/symphony/BIG-GOM-302` -> `8f542dde333b6757643b334660677f4006c3c49c` (matches local after fetch)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `8f542dde333b6757643b334660677f4006c3c49c` (matches local)\n- `git log -1 --stat` -> `Default DSL definition collections for Python parity`\n\nCommit: `8f542dde333b6757643b334660677f4006c3c49c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T16:22:05Z"
-        },
-        {
-          "body": "Progress update: restored the Python `Task.to_dict()` default output shape on the canonical Go task contract. `bigclaw-go/internal/domain/task.go` now emits the core Python task field set even when values are empty/default, including default `state`, `risk_level`, and `budget` values plus empty list fields for `labels`, `required_tools`, `acceptance_criteria`, and `validation_plan`, while still preserving the canonical Go `id` / `budget_cents` fields and the legacy `task_id` / `budget` aliases. Added focused coverage in `bigclaw-go/internal/domain/task_test.go` for the Python-style default field set and non-nil collection defaults, and updated `docs/go-domain-intake-parity-matrix.md` to record the restored task JSON output parity.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/domain` -> passed\n- `git rev-parse HEAD` -> `47136d5947e12277f56eba720017407631212282`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `47136d5947e12277f56eba720017407631212282` (matches local)\n- `git rev-parse github/symphony/BIG-GOM-302` -> `47136d5947e12277f56eba720017407631212282` (matches local after fetch)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `47136d5947e12277f56eba720017407631212282` (matches local)\n- `git log -1 --stat` -> `Preserve Python task JSON defaults in Go`\n\nCommit: `47136d5947e12277f56eba720017407631212282`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T16:27:36Z"
-        },
-        {
-          "body": "Progress update: restored the Python `to_dict()` output shape for the remaining workflow, DSL-definition, and billing contract owners. `bigclaw-go/internal/workflow/model.go` now emits the Python field set for templates and runs even when values are empty/default, including default trigger/status values and empty collection fields; `bigclaw-go/internal/workflow/definition.go` now does the same for steps, validation evidence, approvals, and blank template paths; and `bigclaw-go/internal/billing/statement.go` now preserves the Python output shape for usage records and summaries, including empty metadata/rates/usage collections and default numeric totals. Added focused coverage in `bigclaw-go/internal/workflow/model_test.go`, `bigclaw-go/internal/workflow/definition_test.go`, and `bigclaw-go/internal/billing/statement_test.go`, and updated `docs/go-domain-intake-parity-matrix.md` to record the restored output parity.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/workflow ./internal/billing` -> passed\n- `git rev-parse HEAD` -> `e58c67fd81fe88951db1cf366b77ef8bb5ec70e2`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `e58c67fd81fe88951db1cf366b77ef8bb5ec70e2` (matches local)\n- `git rev-parse github/symphony/BIG-GOM-302` -> `e58c67fd81fe88951db1cf366b77ef8bb5ec70e2` (matches local after fetch)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `e58c67fd81fe88951db1cf366b77ef8bb5ec70e2` (matches local)\n- `git log -1 --stat` -> `Preserve Python workflow and billing JSON defaults`\n\nCommit: `e58c67fd81fe88951db1cf366b77ef8bb5ec70e2`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T16:37:44Z"
-        },
-        {
-          "body": "Progress update: restored the Python `to_dict()` / `from_dict()` default behavior for the remaining risk and triage contract owners. `bigclaw-go/internal/risk/assessment.go` now preserves the Python field set for assessments and signals, including default low risk level output plus empty signal/mitigation metadata collections; `bigclaw-go/internal/triage/record.go` now preserves the Python field set for triage labels and records, including default `open` status, default `default` queue, label confidence/source defaults, and empty labels/actions collections. Added focused coverage in `bigclaw-go/internal/risk/assessment_test.go` and `bigclaw-go/internal/triage/record_test.go`, and updated `docs/go-domain-intake-parity-matrix.md` to record the restored risk/triage parity.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/risk ./internal/triage` -> passed\n- `git rev-parse HEAD` -> `e8c0da2e983ef9396c1030a7eaae6deeca309831`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `e8c0da2e983ef9396c1030a7eaae6deeca309831` (matches local)\n- `git rev-parse github/symphony/BIG-GOM-302` -> `e8c0da2e983ef9396c1030a7eaae6deeca309831` (matches local after fetch)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `e8c0da2e983ef9396c1030a7eaae6deeca309831` (matches local)\n- `git log -1 --stat` -> `Preserve Python risk and triage JSON defaults`\n\nCommit: `e8c0da2e983ef9396c1030a7eaae6deeca309831`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T16:51:07Z"
-        },
-        {
-          "body": "Closed `BIG-GOM-301` after finishing the remaining Go-owned domain, intake, workflow, billing, risk, and triage contract parity work.\n\nWhat changed:\n- `bigclaw-go/internal/domain/task.go` now owns the Python task contract defaults/aliases, including legacy `task_id`, Python `budget`, budget-override fields, legacy task-state normalization, and Python-style default JSON field output.\n- `bigclaw-go/internal/risk/assessment.go`, `bigclaw-go/internal/triage/record.go`, `bigclaw-go/internal/workflow/model.go`, `bigclaw-go/internal/workflow/definition.go`, and `bigclaw-go/internal/billing/statement.go` now preserve the Python `to_dict()` / `from_dict()` field sets and default collection behavior for the remaining `models.py` / `dsl.py` surfaces.\n- `docs/go-domain-intake-parity-matrix.md`, `docs/go-mainline-cutover-issue-pack.md`, and `docs/parallel-refill-queue.json` now reflect that all `src/bigclaw/models.py`, `connectors.py`, `mapping.py`, and `dsl.py` contract owners for `BIG-GOM-301` have Go owners and the refill queue no longer treats `BIG-GOM-301` as active.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/domain ./internal/intake ./internal/workflow ./internal/risk ./internal/triage ./internal/billing` -> passed\n- `git rev-parse HEAD` -> `10a232988a3cb11f1a1dc2c5d94df82587e48515`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `10a232988a3cb11f1a1dc2c5d94df82587e48515` (matches local)\n- `git rev-parse github/symphony/BIG-GOM-302` -> `10a232988a3cb11f1a1dc2c5d94df82587e48515` (matches local after fetch)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `10a232988a3cb11f1a1dc2c5d94df82587e48515` (matches local)\n- `git log -1 --stat` -> `Document BIG-GOM-301 domain parity completion`\n\nCommit: `10a232988a3cb11f1a1dc2c5d94df82587e48515`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T17:00:07Z"
-        }
-      ]
-    },
-    {
-      "id": "big-gom-302",
-      "identifier": "BIG-GOM-302",
-      "title": "Risk, policy, and approval semantics migration",
-      "description": "Keep porting governance, execution-contract, audit, and policy semantics into Go so review and approval behavior no longer depends on Python-only code paths.",
       "priority": 1,
       "state": "Done",
+      "title": "Unified domain model and intake contract migration",
+      "updated_at": "2026-03-18T09:00:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Keep porting governance, execution-contract, audit, and policy semantics into Go so review and approval behavior no longer depends on Python-only code paths.",
+      "id": "big-gom-302",
+      "identifier": "BIG-GOM-302",
       "labels": [
         "go-mainline",
         "migration",
         "risk",
         "policy"
       ],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-19T00:00:00Z",
-      "comments": [
-        {
-          "body": "Restored Python risk-scoring parity for invalid budgets in `bigclaw-go/internal/risk/risk.go` by adding a manual-review `budget` factor when `budget_cents` is negative, and added `TestScoreTaskFlagsNegativeBudgetForManualReview` coverage in `bigclaw-go/internal/risk/risk_test.go`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/risk` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `69b1d9b4759537af3154cc26999c6f5227c9af80`\n- remote SHA check for `origin/symphony/BIG-GOM-302` -> `69b1d9b4759537af3154cc26999c6f5227c9af80` (matches local)\n\nCommit: `69b1d9b4759537af3154cc26999c6f5227c9af80`\nPR URL: unavailable in this workspace mirror (`origin` is a local path, not a GitHub HTTPS remote).",
-          "created_at": "2026-03-18T15:35:00Z"
-        },
-        {
-          "body": "Completed the remaining Go-side audit semantics parity for policy and approval events in `bigclaw-go/internal/observability/*`.\n\nWhat changed:\n- `bigclaw-go/internal/observability/audit.go` now validates spec-backed execution audit events before JSONL persistence, using top-level `task_id` / `run_id` plus payload fields so malformed approval, takeover, budget-override, and handoff events cannot be written.\n- `bigclaw-go/internal/observability/recorder.go` now exposes `RecordSpecEvent`, a spec-aware recorder path that rejects malformed audit events before they mutate in-memory recorder state.\n- Added focused coverage in `bigclaw-go/internal/observability/audit_test.go` and `bigclaw-go/internal/observability/recorder_test.go` for top-level identifier handling, missing required fields, sink rejection, and recorder rejection/acceptance behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/observability` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `caecf9d6ce3774d0491d5ddd52e15dc771594236`\n- remote SHA check for `origin/symphony/BIG-GOM-302` -> `caecf9d6ce3774d0491d5ddd52e15dc771594236` (matches local)\n- `git log -1 --stat` captured commit `caecf9d6ce3774d0491d5ddd52e15dc771594236` with recorder test coverage; prior supporting commit `1eb6016c8cb1b1add099cdfce166e9dc6f8427e1` enforced spec-backed sink validation.\n\nCommit: `caecf9d6ce3774d0491d5ddd52e15dc771594236`\nPR URL: unavailable in this workspace mirror (`origin` is a local path, not a GitHub HTTPS remote).",
-          "created_at": "2026-03-18T15:38:03Z"
-        },
-        {
-          "body": "Synced the completed `BIG-GOM-302` branch to GitHub and refreshed closeout evidence.\n\nWhat changed:\n- pushed `symphony/BIG-GOM-302` to the `github` remote so the completed migration branch exists on GitHub as well as the local mirror\n- created PR `BIG-GOM-302: close risk and policy migration slice`\n- re-ran the focused Go verification suite for the migrated risk, policy, governance, contract, observability, and API surfaces\n\nValidation:\n- `cd bigclaw-go && go test ./internal/risk ./internal/policy ./internal/governance ./internal/contract ./internal/observability ./internal/api` -> passed\n- `git rev-parse HEAD` -> `b05db848be9eec330245fd92a8a6c895ed36c4a1`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `b05db848be9eec330245fd92a8a6c895ed36c4a1` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `b05db848be9eec330245fd92a8a6c895ed36c4a1` (matches local)\n- `git log -1 --stat` -> `Close BIG-GOM-302 in local tracker` with tracker closeout updates in `docs/parallel-refill-queue.json` and `local-issues.json`\n\nCommit: `b05db848be9eec330245fd92a8a6c895ed36c4a1`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-19T00:00:00Z"
-        }
-      ]
-    },
-    {
-      "id": "big-gom-303",
-      "identifier": "BIG-GOM-303",
-      "title": "Workflow orchestration and scheduler loop migration",
-      "description": "Close the Go execution loop with workflow-aware orchestration, journal state, and runtime closeout so active development no longer needs the Python workflow engine.",
       "priority": 1,
       "state": "Done",
+      "title": "Risk, policy, and approval semantics migration",
+      "updated_at": "2026-03-18T09:00:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added the Go-native workflow journal and acceptance gate contract in bigclaw-go/internal/workflow so the runtime slice now has a typed WorkpadJournal, acceptance decision model, execution outcome contract, and evidence-driven approval logic migrated from src/bigclaw/workflow.py with direct package tests for journal persistence, approval requirements, incomplete evidence rejection, accepted closeout, and hold-path rejection. Validation: cd bigclaw-go && go test ./internal/workflow -> ok; cd bigclaw-go && go test ./... -> ok; bash scripts/ops/bigclawctl github-sync status --json -> local SHA dc44588f83d7eaa5135489ec649799b77f860402 matches remote SHA dc44588f83d7eaa5135489ec649799b77f860402 with status ok and synced true; git log -1 --stat -> captured for commit dc44588f83d7eaa5135489ec649799b77f860402 with workflow engine files in the stat output. Commit SHA: dc44588f83d7eaa5135489ec649799b77f860402. PR URL: unavailable; gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state returned [].",
+          "created_at": "2026-03-20T10:51:51Z"
+        },
+        {
+          "author": "codex",
+          "body": "Ported the Python orchestration policy contract into bigclaw-go/internal/workflow by adding DepartmentHandoff, OrchestrationPlan, HandoffRequest, OrchestrationPolicyDecision, CrossDepartmentOrchestrator, PremiumOrchestrationPolicy, and handoff-request construction with tests covering cross-functional planning, standard-tier constraint behavior, premium passthrough, and blocked handoff generation. Validation: cd bigclaw-go && go test ./internal/workflow -> ok; cd bigclaw-go && go test ./... -> ok; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 6e8b630a30bbc871f4dcf8e9716d8e75774b09e7 matches remote SHA 6e8b630a30bbc871f4dcf8e9716d8e75774b09e7 with status ok and synced true; git log -1 --stat -> captured for commit 6e8b630a30bbc871f4dcf8e9716d8e75774b09e7 with workflow orchestration files in the stat output. Commit SHA: 6e8b630a30bbc871f4dcf8e9716d8e75774b09e7. PR URL: unavailable; gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state returned [].",
+          "created_at": "2026-03-20T10:59:59Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added orchestration-aware scheduler assessment in bigclaw-go/internal/scheduler so the Go scheduler can now return a cohesive runtime assessment containing routing decision, risk score, constrained orchestration plan, premium-tier policy decision, and any resulting handoff request instead of only the executor assignment. Validation: cd bigclaw-go && go test ./internal/scheduler -> ok; cd bigclaw-go && go test ./... -> ok; git push origin HEAD:symphony/BIG-GOM-304 -> ok after a transient SSH hook push failure; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 7d14c1875e59521c0c8754d29c940ea18529cca9 matches remote SHA 7d14c1875e59521c0c8754d29c940ea18529cca9 with status ok and synced true; git log -1 --stat -> captured for commit 7d14c1875e59521c0c8754d29c940ea18529cca9 with scheduler assessment files in the stat output. Commit SHA: 7d14c1875e59521c0c8754d29c940ea18529cca9. PR URL: unavailable; gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state returned [].",
+          "created_at": "2026-03-20T11:17:40Z"
+        },
+        {
+          "author": "codex",
+          "body": "Wired scheduler assessment output into the Go worker runtime so `RunOnce` now consumes `Scheduler.Assess(...)`, emits orchestration/risk/policy details on `scheduler.routed`, and publishes `run.takeover` handoff events for both blocked reroutes and accepted-but-human-required plans. Added worker runtime coverage for routed assessment payloads and rejected-decision handoff ordering. Validation: `cd bigclaw-go && go test ./internal/worker` -> ok; `cd bigclaw-go && go test ./...` -> ok; `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `0a556cae73da9b0ee105e0aad10166bc2e3a3bc1` matches remote SHA `0a556cae73da9b0ee105e0aad10166bc2e3a3bc1` with `status: ok` and `synced: true`; `git log -1 --stat` -> captured for commit `0a556cae73da9b0ee105e0aad10166bc2e3a3bc1` with worker runtime files in the stat output. Commit SHA: `0a556cae73da9b0ee105e0aad10166bc2e3a3bc1`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-20T11:30:45Z"
+        },
+        {
+          "author": "codex",
+          "body": "Extended the Go worker runtime to emit per-attempt workpad journals under an optional runtime `WorkpadDir`, record intake/scheduler/handoff/execution transitions into `workflow.WorkpadJournal`, and persist the resulting path into task metadata so existing `/v2/runs/{id}` artifacts can surface the workpad without additional API changes. Added worker coverage proving the journal file is written and attached to the stored task snapshot. Validation: `cd bigclaw-go && go test ./internal/worker` -> ok; `cd bigclaw-go && go test ./...` -> ok; `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `781f23336090194d385788350dc0aa945ecbf1bb` matches remote SHA `781f23336090194d385788350dc0aa945ecbf1bb` with `status: ok` and `synced: true`; `git log -1 --stat` -> captured for commit `781f23336090194d385788350dc0aa945ecbf1bb` with worker runtime files in the stat output. Commit SHA: `781f23336090194d385788350dc0aa945ecbf1bb`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-20T11:41:46Z"
+        },
+        {
+          "author": "codex",
+          "body": "Finished the Go workflow closeout wiring in the worker runtime so successful runs now evaluate `workflow.AcceptanceGate` from task metadata evidence, persist acceptance and approval status back onto the task snapshot, record acceptance details in the workpad journal, and emit a `run.annotated` acceptance event for downstream reporting and triage surfaces. Validation: `cd bigclaw-go && go test ./internal/worker` -> ok; `cd bigclaw-go && go test ./...` -> ok; `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `ced2b37bfb430e07f87f2f945373e0ee87320e34` matches remote SHA `ced2b37bfb430e07f87f2f945373e0ee87320e34` with `status: ok` and `synced: true`; `git log -1 --stat` -> captured for commit `ced2b37bfb430e07f87f2f945373e0ee87320e34` with worker runtime acceptance files in the stat output. Commit SHA: `ced2b37bfb430e07f87f2f945373e0ee87320e34`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-20T11:52:11Z"
+        }
+      ],
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Close the Go execution loop with workflow-aware orchestration, journal state, and runtime closeout so active development no longer needs the Python workflow engine.",
+      "id": "big-gom-303",
+      "identifier": "BIG-GOM-303",
       "labels": [
         "go-mainline",
         "migration",
         "workflow",
         "runtime"
       ],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T11:26:14Z",
-      "comments": [
-        {
-          "body": "Improved the Go orchestrator loop in `bigclaw-go/internal/orchestrator/loop.go` so it no longer waits a full poll interval before touching queued work, drains available work within a single cycle, and falls back to a safe default poll interval when unset. Added focused coverage in `bigclaw-go/internal/orchestrator/loop_test.go` for immediate startup, per-cycle draining, and default poll interval behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/orchestrator` -> passed\n- `cd bigclaw-go && go test ./internal/orchestrator ./internal/worker ./cmd/bigclawd` -> passed (`cmd/bigclawd` has no test files)\n- `git rev-parse HEAD` -> `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3` (matches local)\n- `git log -1 --stat` -> `Drain scheduler work immediately in orchestrator loop`\n\nCommit: `b7544e538d2ed7ef8a4a2461df0b4d709c77d9c3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-19T06:45:00Z"
-        },
-        {
-          "body": "Hardened the Go worker runtime defaults for the active orchestration slice.\n\nWhat changed:\n- `bigclaw-go/internal/worker/runtime.go` now falls back to sane default lease and task timeout values when `LeaseTTL` or `TaskTimeout` are unset, preventing zero-value heartbeat ticker panics and immediate timeout cancellations in unattended bootstrap/runtime paths.\n- The runtime now uses those effective defaults consistently for `LeaseNext`, heartbeat renewals, cancellation polling, and execution deadlines.\n- Added `TestRuntimeUsesDefaultTimeoutAndLeaseWhenUnset` in `bigclaw-go/internal/worker/runtime_test.go` to lock the zero-value runtime behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/worker` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `a3a43f671feb3ab33f3fa9da7faa046e846ecf8c`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `a3a43f671feb3ab33f3fa9da7faa046e846ecf8c` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `a3a43f671feb3ab33f3fa9da7faa046e846ecf8c` (matches local)\n- `git log -1 --stat` -> `Default worker runtime lease and timeout settings`\n\nCommit: `a3a43f671feb3ab33f3fa9da7faa046e846ecf8c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T10:28:35Z"
-        },
-        {
-          "body": "Finished the remaining zero-value dependency hardening for the active orchestration runtime slice.\n\nWhat changed:\n- `bigclaw-go/internal/worker/runtime.go` now falls back to `scheduler.New()` when the runtime scheduler is unset and to an empty `executor.NewRegistry()` when the runtime registry is unset, preventing nil-pointer crashes in unattended runtime/bootstrap paths.\n- The nil registry path now dead-letters cleanly through the existing executor-missing behavior instead of panicking.\n- Added `TestRuntimeDefaultsNilSchedulerAndRegistryToSafeBehavior` in `bigclaw-go/internal/worker/runtime_test.go` to prove the zero-value runtime path stays safe.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/worker` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `d9f938e6d92822fcf46a12eb86d44e45410cc83e`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `d9f938e6d92822fcf46a12eb86d44e45410cc83e` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `d9f938e6d92822fcf46a12eb86d44e45410cc83e` (matches local)\n- `git log -1 --stat` -> `Default nil worker runtime dependencies`\n\nCommit: `d9f938e6d92822fcf46a12eb86d44e45410cc83e`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T10:48:28Z"
-        },
-        {
-          "body": "Added the last obvious zero-value queue guard for the active orchestration runtime slice.\n\nWhat changed:\n- `bigclaw-go/internal/worker/runtime.go` now returns a clean idle/no-op result when the runtime queue is unset instead of panicking on `LeaseNext`.\n- Added `TestRuntimeSkipsCleanlyWhenQueueUnset` in `bigclaw-go/internal/worker/runtime_test.go` to verify the zero-value queue path stays safe.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/worker` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `1776246156301eb23b995b1b046c05b4bfac347c`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `1776246156301eb23b995b1b046c05b4bfac347c` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `1776246156301eb23b995b1b046c05b4bfac347c` (matches local)\n- `git log -1 --stat` -> `Guard worker runtime when queue is unset`\n\nCommit: `1776246156301eb23b995b1b046c05b4bfac347c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T10:55:25Z"
-        },
-        {
-          "body": "Fixed Go worker runtime closeout state persistence for the active orchestration slice.\n\nWhat changed:\n- `bigclaw-go/internal/worker/runtime.go` now stores final task snapshots into the recorder for success, dead-letter, and retry paths instead of leaving the last stored task state at `running`.\n- Added assertions in `bigclaw-go/internal/worker/runtime_test.go` so recorder-backed task snapshots now prove `succeeded`, `dead_letter`, and `retrying` closeout states.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/worker` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `c6313c020484f0a807a4ece58b8ea2a1674f1804`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `c6313c020484f0a807a4ece58b8ea2a1674f1804` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `c6313c020484f0a807a4ece58b8ea2a1674f1804` (matches local)\n- `git log -1 --stat` -> `Persist final worker task states in recorder`\n\nCommit: `c6313c020484f0a807a4ece58b8ea2a1674f1804`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T11:08:09Z"
-        },
-        {
-          "body": "Aligned workflow journal closeout status with acceptance outcomes for the active orchestration slice.\n\nWhat changed:\n- `bigclaw-go/internal/workflow/engine.go` now records the `closeout` journal step as `complete` only for accepted runs and otherwise mirrors the acceptance status (`rejected` / `needs-approval`) instead of always claiming closeout completed.\n- Added focused coverage in `bigclaw-go/internal/workflow/engine_test.go` for rejected-evidence and pending-approval closeout journal cases.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/workflow` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `d98d6e4a7ab3472ef84b64429dcab95f76481e26`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `d98d6e4a7ab3472ef84b64429dcab95f76481e26` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `d98d6e4a7ab3472ef84b64429dcab95f76481e26` (matches local)\n- `git log -1 --stat` -> `Reflect workflow acceptance in closeout journal`\n\nCommit: `d98d6e4a7ab3472ef84b64429dcab95f76481e26`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T11:19:40Z"
-        },
-        {
-          "body": "Closed `BIG-GOM-303` after finishing the remaining Go orchestration/runtime hardening slice.\n\nWhat changed:\n- `bigclaw-go/internal/orchestrator/loop.go` now runs queued work immediately on startup, drains work within a single cycle, and uses a safe default poll interval when unset.\n- `bigclaw-go/internal/worker/runtime.go` now hardens zero-value runtime construction (`LeaseTTL`, `TaskTimeout`, scheduler, registry, queue) and persists final recorder task states for success, retry, and dead-letter closeout.\n- `bigclaw-go/internal/workflow/engine.go` now records workflow `closeout` journal status in line with acceptance outcomes instead of always reporting `complete`.\n- Added focused coverage in `bigclaw-go/internal/orchestrator/loop_test.go`, `bigclaw-go/internal/worker/runtime_test.go`, and `bigclaw-go/internal/workflow/engine_test.go` for immediate drain behavior, zero-value runtime safety, recorder closeout state persistence, and workflow closeout journal accuracy.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/orchestrator ./internal/worker ./internal/workflow` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `6fadcdd8671222de62bbcd1e9ea9bded820f0baa`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `6fadcdd8671222de62bbcd1e9ea9bded820f0baa` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `6fadcdd8671222de62bbcd1e9ea9bded820f0baa` (matches local)\n- `git log -1 --stat` -> `Record BIG-GOM-303 workflow closeout progress`\n\nCommit: `6fadcdd8671222de62bbcd1e9ea9bded820f0baa`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T11:26:14Z"
-        }
-      ]
+      "priority": 1,
+      "state": "Done",
+      "title": "Workflow orchestration and scheduler loop migration",
+      "updated_at": "2026-03-20T11:52:42Z"
     },
     {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go-owned weekly reporting bundle exports in bigclaw-go/internal/reporting so the observability/reporting slice now writes weekly report, operations dashboard, and operations metric spec artifacts with direct package coverage. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./internal/api -run 'TestV2Weekly|TestOperationsDashboard'` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `8efa15865264dd3e729a61daba9ca800853aa858`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so `gh pr view` cannot resolve a GitHub host.",
+          "created_at": "2026-03-18T15:19:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added Go-owned dashboard builder reporting surfaces in `bigclaw-go/internal/reporting`, including widget/layout specs, release-readiness audit checks for duplicate or overlapping placements, missing/inaccessible widgets, out-of-bounds placements, and markdown bundle export coverage. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `0b82af85f5bab85e069412340488c02c2461c43e`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured.",
+          "created_at": "2026-03-18T15:31:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added Go-owned engineering overview reporting in `bigclaw-go/internal/reporting`, including KPI/funnel/blocker/activity contracts, role-based module visibility, a Go-native builder over `domain.Task` and `domain.Event`, markdown rendering, and bundle export coverage. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `a651069b4611b12458fb297e59c70e65e16bb05c`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured.",
+          "created_at": "2026-03-18T15:42:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added Go-owned policy/prompt version center reporting in `bigclaw-go/internal/reporting`, including version history contracts, diff summaries, rollback-readiness checks, markdown rendering, and bundle export coverage. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHAs: `50877662af2669f304db2e42eb06a26262d7fec1` (reporting surface), `71ab21b104baaaf2cbf63f7da17bad6df4f83b57` (tracked `go.mod` difflib dependency required by the new reporting diff preview). PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured.",
+          "created_at": "2026-03-18T15:56:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added Go-owned regression center reporting in `bigclaw-go/internal/reporting`, wiring the existing `internal/regression.Center` data into markdown rendering and bundle export with direct package coverage. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `ac3fac2f1febc22a6c3f594893fed451524ca5c0`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured.",
+          "created_at": "2026-03-18T16:08:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added Go-owned queue control center reporting and completed weekly operations bundle parity in `bigclaw-go/internal/reporting`, including console action contracts, queue priority/risk/executor aggregation, markdown rendering, standalone bundle export, and combined weekly bundle export coverage for regression center, queue control center, and version center artifacts. Validation: `cd bigclaw-go && go test ./internal/reporting` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `42eaa81e6eacdf29ac0cc6e4b0d18bce89e9baf2`. PR URL: unavailable in this workspace because `origin` points to local path `/Users/jxrt/Desktop/symphony-main/BigClaw`, so no GitHub PR host is configured.",
+          "created_at": "2026-03-19T06:30:34Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added a Go-native operations metric-spec builder in bigclaw-go/internal/reporting and surfaced it from /v2/reports/weekly so weekly operations responses now include reviewer-ready metric definitions and computed values derived from live task/event data. Also added reporting package coverage for the new builder and extended the weekly report API test to assert the metric-spec payload. Validation: cd bigclaw-go && go test ./internal/reporting ./internal/api -> ok; cd bigclaw-go && go test ./... -> ok; bash scripts/ops/bigclawctl github-sync status --json -> local SHA eeb5f7eaf8bc4f70677fb018cf7b38454b2bdca4 matched remote SHA eeb5f7eaf8bc4f70677fb018cf7b38454b2bdca4 with status ok and synced true at code-commit time; git log -1 --stat -> captured for commit eeb5f7eaf8bc4f70677fb018cf7b38454b2bdca4 with reporting and API files in the stat output. Commit SHA: eeb5f7eaf8bc4f70677fb018cf7b38454b2bdca4. PR URL: unavailable; gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state returned [].",
+          "created_at": "2026-03-20T14:06:19Z"
+        },
+        {
+          "author": "codex",
+          "body": "Branch-wide PR created after final closeout cleanup: https://github.com/OpenAGIs/BigClaw/pull/141. The PR title is 'BIG-GOM-304: complete BigClaw Go-mainline cutover' and it targets `main` from `symphony/BIG-GOM-304`.",
+          "created_at": "2026-03-20T14:26:15Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final review surface: branch-wide PR https://github.com/OpenAGIs/BigClaw/pull/141 is now open with title 'BIG-GOM-304: complete BigClaw Go-mainline cutover' against `main`. This supersedes earlier tracker notes that listed the PR as unavailable.",
+          "created_at": "2026-03-20T14:30:23Z"
+        },
+        {
+          "author": "codex",
+          "body": "Archived the remaining live-planning language in docs/go-mainline-cutover-issue-pack.md so the cutover brief now consistently reads as historical completion state rather than active runnable work. Validation: rg -n 'Archived issue slices|Historical initial state|Archived refill batch|Historical planned state' docs/go-mainline-cutover-issue-pack.md -> ok; bash scripts/ops/bigclawctl refill --local-issues local-issues.json -> no In Progress work and no promotion candidates. Commit SHA: pending. PR URL: https://github.com/OpenAGIs/BigClaw/pull/141.",
+          "created_at": "2026-03-20T14:35:01Z"
+        },
+        {
+          "author": "codex",
+          "body": "Superseding note for the final archival cleanup: docs/go-mainline-cutover-issue-pack.md now labels the remaining slice and refill sections as archived historical planning context, eliminating the last live-planning wording after cutover completion. Validation: rg -n 'Archived issue slices|Historical initial state|Archived refill batch|Historical planned state' docs/go-mainline-cutover-issue-pack.md -> ok; bash scripts/ops/bigclawctl refill --local-issues local-issues.json -> no In Progress work and no promotion candidates. Commit SHA: 4464491b16b90c7ad4b13b9ab2ab78c94ed4dd6b. PR URL: https://github.com/OpenAGIs/BigClaw/pull/141.",
+          "created_at": "2026-03-20T14:35:55Z"
+        },
+        {
+          "author": "codex",
+          "body": "Refreshed the branch against origin/main to clear PR #141's dirty merge state, resolved the Go-mainline/local-tracker conflict set in the refill queue and workflow docs, preserved the Python queue dead-letter support while keeping Go-mainline deprecation markers, and regenerated the validation bundle continuation gate artifact after aligning its generator with the merged API expectations. Validation: cd bigclaw-go && go test ./cmd/bigclawctl ./cmd/bigclawd ./internal/api ./internal/reporting ./internal/refill ./internal/product -> ok; cd bigclaw-go && go test ./internal/api -run 'TestDebugStatusIncludesValidationBundleContinuationGate|TestV2ControlCenterIncludesDistributedDiagnostics' -> ok; python3 -m py_compile src/bigclaw/queue.py tests/test_parallel_refill.py -> ok; bash scripts/ops/bigclawctl refill --local-issues local-issues.json -> no In Progress work and no promotion candidates; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 7a75ba7c19ea29940fb9c8ed25c90b6ce47da85b matches remote SHA 7a75ba7c19ea29940fb9c8ed25c90b6ce47da85b with status ok and synced true. Commit SHA: 7a75ba7c19ea29940fb9c8ed25c90b6ce47da85b. PR URL: https://github.com/OpenAGIs/BigClaw/pull/141.",
+          "created_at": "2026-03-20T14:48:55Z"
+        },
+        {
+          "author": "codex",
+          "body": "External blocker only: as of 2026-03-21, all local child slices BIG-GOM-304 through BIG-GOM-308 are Done, branch symphony/BIG-GOM-304 is clean and synced, and PR #141 is OPEN with merge state CLEAN plus a successful `test` workflow run completed on 2026-03-20T16:05:21Z. No further local implementation work remains in this workspace; the remaining step is reviewer approval and merge of https://github.com/OpenAGIs/BigClaw/pull/141. Validation: gh pr view 141 --json url,title,state,mergeStateStatus,reviewDecision,statusCheckRollup -> OPEN/CLEAN with successful test check; bash scripts/ops/bigclawctl github-sync status --json -> local SHA d70f63f0d138466fda408ae24655ea81b1c95cf7 matches remote SHA d70f63f0d138466fda408ae24655ea81b1c95cf7 with status ok and synced true; git status --short --branch -> clean branch. Commit SHA: pending tracker-note commit. PR URL: https://github.com/OpenAGIs/BigClaw/pull/141.",
+          "created_at": "2026-03-20T16:06:27Z"
+        },
+        {
+          "author": "codex",
+          "body": "Status refresh on 2026-03-21: PR #141 is back to merge-ready after the tracker-note commit retriggered CI. GitHub now reports PR https://github.com/OpenAGIs/BigClaw/pull/141 as OPEN with merge state CLEAN, and the `test` workflow for commit 3649892189f97120af7925199f703b2e6b4dd0b5 completed successfully at 2026-03-20T16:07:25Z. No local implementation or validation work remains in this workspace; the only remaining blocker is reviewer approval and merge. Validation: gh pr view 141 --json url,title,state,mergeStateStatus,reviewDecision,statusCheckRollup -> OPEN/CLEAN with successful completed test check; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 3649892189f97120af7925199f703b2e6b4dd0b5 matches remote SHA 3649892189f97120af7925199f703b2e6b4dd0b5 with status ok and synced true; git status --short --branch -> clean branch. Commit SHA: pending tracker-note commit. PR URL: https://github.com/OpenAGIs/BigClaw/pull/141.",
+          "created_at": "2026-03-20T16:08:11Z"
+        },
+        {
+          "author": "codex",
+          "body": "Status refresh on 2026-03-21: PR #141 is merge-ready again after the latest tracker-only sync commit. GitHub now reports PR https://github.com/OpenAGIs/BigClaw/pull/141 as OPEN with merge state CLEAN, and the `test` workflow for commit 5ba7994309c5f49808dd9c86b97b70aa5bb33a34 completed successfully at 2026-03-20T16:09:11Z. No local implementation or validation work remains in this workspace; the only remaining blocker is reviewer approval and merge. Validation: gh pr view 141 --json url,title,state,mergeStateStatus,reviewDecision,statusCheckRollup -> OPEN/CLEAN with successful completed test check; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 5ba7994309c5f49808dd9c86b97b70aa5bb33a34 matches remote SHA 5ba7994309c5f49808dd9c86b97b70aa5bb33a34 with status ok and synced true; git status --short --branch -> clean branch. Commit SHA: pending tracker-note commit. PR URL: https://github.com/OpenAGIs/BigClaw/pull/141.",
+          "created_at": "2026-03-20T16:10:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout: PR https://github.com/OpenAGIs/BigClaw/pull/141 (`BIG-GOM-304: complete BigClaw Go-mainline cutover`) merged into `main` at 2026-03-20T16:21:09Z with merge commit `669ed366cd3cea4ddf647280812021d084b87434`. No local child slices remain runnable; `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` still reports no `In Progress` work and no promotion candidates. Validation: `gh pr view 141 --json url,title,state,mergedAt,mergeCommit` -> `MERGED` with merge commit `669ed366cd3cea4ddf647280812021d084b87434`; `git push origin HEAD` -> `Everything up-to-date`; `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `b43ca5837c6fd05e56daca92d8d40263265de6ae` matches remote SHA `b43ca5837c6fd05e56daca92d8d40263265de6ae` with status `ok` and `synced: true`; `git rev-parse origin/main` -> `669ed366cd3cea4ddf647280812021d084b87434`; `git log -1 --stat` -> captured for commit `b43ca5837c6fd05e56daca92d8d40263265de6ae` with `local-issues.json` in the stat output. Commit SHA: pending tracker-note commit. PR URL: https://github.com/OpenAGIs/BigClaw/pull/141.",
+          "created_at": "2026-03-20T16:23:08Z"
+        }
+      ],
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Move runtime evidence, reporting, and weekly operations closeout onto Go-owned observability outputs that line up with the new execution loop.",
       "id": "big-gom-304",
       "identifier": "BIG-GOM-304",
-      "title": "Observability, reporting, and weekly operations surface migration",
-      "description": "Move runtime evidence, reporting, and weekly operations closeout onto Go-owned observability outputs that line up with the new execution loop.",
-      "priority": 2,
-      "state": "Done",
       "labels": [
         "go-mainline",
         "migration",
         "observability",
         "reporting"
       ],
+      "priority": 2,
+      "state": "Done",
+      "title": "Observability, reporting, and weekly operations surface migration",
+      "updated_at": "2026-03-20T16:23:08Z"
+    },
+    {
       "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T09:20:00Z",
       "comments": [
         {
-          "body": "Expanded the Go weekly reporting export in `bigclaw-go/internal/reporting/reporting.go` so the markdown bundle now includes richer summary lines, highlights, and per-team breakdown sections instead of a thin summary-only export. Added direct package coverage in `bigclaw-go/internal/reporting/reporting_test.go` and tightened `bigclaw-go/internal/api/expansion_test.go` so the `/v2/reports/weekly/export` surface proves the richer markdown is emitted through the API.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/reporting ./internal/api` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `35d9fb4f87a176824aa9ca822cded6bc2c70d91d`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `35d9fb4f87a176824aa9ca822cded6bc2c70d91d` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `35d9fb4f87a176824aa9ca822cded6bc2c70d91d` (matches local)\n- `git log -1 --stat` -> `Expand Go weekly report markdown export`\n\nCommit: `35d9fb4f87a176824aa9ca822cded6bc2c70d91d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "author": "codex",
+          "body": "Added a Go-owned saved views surface under `bigclaw-go/internal/product`, including saved-view and alert-digest contracts migrated from `src/bigclaw/saved_views.py`, catalog auditing, markdown report rendering, navigation wiring, and `/v2/saved-views` plus `/v2/saved-views/export` API coverage for scoped operator consoles. Validation: `cd bigclaw-go && go test ./internal/product ./internal/api` -> ok, `cd bigclaw-go && go test ./...` -> ok, `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `fe7d117edb2a011c1324357084a2aed67a7ec8b2` matches remote SHA `fe7d117edb2a011c1324357084a2aed67a7ec8b2` with `status: ok` and `synced: true`. Commit SHA: `fe7d117edb2a011c1324357084a2aed67a7ec8b2`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-19T00:00:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Completed the Go-owned dashboard run contract slice for `BIG-GOM-305` by adding `bigclaw-go/internal/product/dashboard_run_contract.go`, exposing `/v2/dashboard-run-contract` and `/v2/dashboard-run-contract/export`, and extending `/v2/runs/{id}` plus markdown run reports with closeout evidence fields for validation proof, git push status, git log `--stat`, and local/remote SHA sync. Validation: `cd bigclaw-go && go test ./internal/product ./internal/api` -> ok, `cd bigclaw-go && go test ./...` -> ok, `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `79fa078154d9d5167606fc4bcb9c302f4484c6c6` matches remote SHA `79fa078154d9d5167606fc4bcb9c302f4484c6c6` with `status: ok` and `synced: true`, `git log -1 --stat` -> captured for commit `79fa078154d9d5167606fc4bcb9c302f4484c6c6` with API/product contract files in the stat output. Commit SHA: `79fa078154d9d5167606fc4bcb9c302f4484c6c6`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
           "created_at": "2026-03-20T09:10:00Z"
         },
         {
-          "body": "Added a Go-owned weekly metric-spec surface in `bigclaw-go/internal/reporting/reporting.go` and exposed it from `/v2/reports/weekly` so reviewer evidence now includes explicit metric definitions and computed weekly values alongside the markdown export. Added focused assertions in `bigclaw-go/internal/reporting/reporting_test.go` and `bigclaw-go/internal/api/expansion_test.go` to verify metric-spec population and markdown export coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/reporting ./internal/api` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `718a8994134c9b220d69f01c1bf5b7c71f344884`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `718a8994134c9b220d69f01c1bf5b7c71f344884` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `718a8994134c9b220d69f01c1bf5b7c71f344884` (matches local)\n- `git log -1 --stat` -> `Add weekly metric spec to Go reporting`\n\nCommit: `718a8994134c9b220d69f01c1bf5b7c71f344884`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T09:15:00Z"
+          "author": "codex",
+          "body": "Ported the remaining repo-triage slice from src/bigclaw/repo_triage.py into Go by adding bigclaw-go/internal/repo/triage.go and wiring repo triage recommendation plus approval evidence packet data into /v2/runs/{id} and the markdown run report. Validation: cd bigclaw-go && go test ./internal/repo ./internal/api -> ok; cd bigclaw-go && go test ./... -> ok; bash scripts/ops/bigclawctl github-sync status --json -> local SHA a884e35ff2bb17c8ef00b417bc74a8737128edee matches remote SHA a884e35ff2bb17c8ef00b417bc74a8737128edee with status ok and synced true; git log -1 --stat -> captured for commit a884e35ff2bb17c8ef00b417bc74a8737128edee with api and repo triage files in the stat output. Commit SHA: a884e35ff2bb17c8ef00b417bc74a8737128edee. PR URL: unavailable; gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state returned [].",
+          "created_at": "2026-03-20T10:06:12Z"
         },
         {
-          "body": "Closed `BIG-GOM-304` after finishing the remaining Go-owned weekly reporting closeout slice. `bigclaw-go/internal/reporting/reporting.go` now supports richer weekly markdown, metric-spec rendering, and `WriteWeeklyBundle` file output so reporting evidence can be exported as Go-owned bundle artifacts instead of remaining response-only. Added direct filesystem coverage in `bigclaw-go/internal/reporting/reporting_test.go` for bundle emission alongside the earlier weekly export and metric-spec tests.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/reporting ./internal/api` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `7dce853d0122a8175caa4bee5c9f7db47157891f`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `7dce853d0122a8175caa4bee5c9f7db47157891f` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `7dce853d0122a8175caa4bee5c9f7db47157891f` (matches local)\n- `git log -1 --stat` -> `Add Go weekly report bundle writer`\n\nCommit: `7dce853d0122a8175caa4bee5c9f7db47157891f`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T09:20:00Z"
+          "author": "codex",
+          "body": "Added the missing Go-owned  index so the operator console's Runs navigation no longer dead-ends, reusing scoped task snapshots to return filtered run summaries, drilldown links, and authorization-aware results with API coverage for both normal and team-scoped access. Validation: cd bigclaw-go && go test ./internal/api -> ok; cd bigclaw-go && go test ./... -> ok; bash scripts/ops/bigclawctl github-sync status --json -> local SHA afea5ead329729a600c56c374c8f2a40e5fc8df3 matches remote SHA afea5ead329729a600c56c374c8f2a40e5fc8df3 with status ok and synced true; git log -1 --stat -> captured for commit afea5ead329729a600c56c374c8f2a40e5fc8df3 with run index API files in the stat output. Commit SHA: afea5ead329729a600c56c374c8f2a40e5fc8df3. PR URL: unavailable; gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state returned [].",
+          "created_at": "2026-03-20T10:28:18Z"
+        },
+        {
+          "author": "codex",
+          "body": "Corrected tracker note for the latest BIG-GOM-305 slice: added the missing Go-owned /v2/runs index so the operator console Runs navigation no longer dead-ends, reusing scoped task snapshots to return filtered run summaries, drilldown links, and authorization-aware results with API coverage for both normal and team-scoped access. Validation: cd bigclaw-go && go test ./internal/api -> ok; cd bigclaw-go && go test ./... -> ok; bash scripts/ops/bigclawctl github-sync status --json -> local SHA afea5ead329729a600c56c374c8f2a40e5fc8df3 matches remote SHA afea5ead329729a600c56c374c8f2a40e5fc8df3 with status ok and synced true; git log -1 --stat -> captured for commit afea5ead329729a600c56c374c8f2a40e5fc8df3 with run index API files in the stat output. Commit SHA: afea5ead329729a600c56c374c8f2a40e5fc8df3. PR URL: unavailable; gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state returned [].",
+          "created_at": "2026-03-20T10:30:28Z"
         }
-      ]
-    },
-    {
+      ],
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Finish moving operator-facing status, control-center, and triage endpoints to Go once the workflow runtime and reporting surfaces are stable.",
       "id": "big-gom-305",
       "identifier": "BIG-GOM-305",
-      "title": "Control center, triage, and operations view migration",
-      "description": "Finish moving operator-facing status, control-center, and triage endpoints to Go once the workflow runtime and reporting surfaces are stable.",
-      "priority": 2,
-      "state": "Done",
       "labels": [
         "go-mainline",
         "migration",
         "api",
         "triage"
       ],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T12:03:15Z",
-      "comments": [
-        {
-          "body": "Fixed the eng-lead home takeover card to use active control-center takeovers instead of reusing the blocked-run count.\n\nWhat changed:\n- `bigclaw-go/internal/product/console.go` now accepts an explicit active-takeover signal for role homes and uses it for the `takeovers` card.\n- `bigclaw-go/internal/api/expansion.go` now computes that signal from `Control.ActiveTakeovers()` when serving `/v2/home`.\n- Added focused coverage in `bigclaw-go/internal/product/console_test.go` and `bigclaw-go/internal/api/expansion_test.go` to prove blocked runs without takeovers do not inflate the home card.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product ./internal/api` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `9d05785805be3869362b53031f195dd407f01378`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `9d05785805be3869362b53031f195dd407f01378` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `9d05785805be3869362b53031f195dd407f01378` (matches local)\n- `git log -1 --stat` -> `Fix home takeover counts for eng lead`\n\nCommit: `9d05785805be3869362b53031f195dd407f01378`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T11:36:36Z"
-        },
-        {
-          "body": "Stopped `/v2/home` and `/v2/navigation` from letting `?role=` override an explicit viewer role.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion.go` now resolves the effective home/navigation role from the explicit viewer role headers/query first, only falling back to `?role=` when no viewer role was supplied.\n- The `?role=` path is now normalized through the control-role mapping instead of accepting raw strings.\n- Added focused coverage in `bigclaw-go/internal/api/expansion_test.go` proving explicit `X-BigClaw-Role` headers prevent role escalation on both endpoints.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `dfd4a7b756bfec520f577896df6fc2796068f4d5`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `dfd4a7b756bfec520f577896df6fc2796068f4d5` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `dfd4a7b756bfec520f577896df6fc2796068f4d5` (matches local)\n- `git log -1 --stat` -> `Honor explicit viewer role on home endpoints`\n\nCommit: `dfd4a7b756bfec520f577896df6fc2796068f4d5`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T11:46:19Z"
-        },
-        {
-          "body": "Scoped eng-lead home cards to the authenticated viewer team so home counts match the linked team-scoped dashboards and control-center views.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion.go` now derives the home task snapshot from the viewer team when the caller is team-scoped and filters active takeover counts through the same team scope.\n- `/v2/home` now reuses `filteredTasks` and `filteredActiveTakeovers` instead of aggregating the entire recorder/control snapshot for eng-lead viewers.\n- Added focused coverage in `bigclaw-go/internal/api/expansion_test.go` proving blocked and takeover counts only include the authenticated team.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `627c27f9cd61ac95d273e3da3f6d0b6943945ec3`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `627c27f9cd61ac95d273e3da3f6d0b6943945ec3` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `627c27f9cd61ac95d273e3da3f6d0b6943945ec3` (matches local)\n- `git log -1 --stat` -> `Scope eng lead home cards to viewer team`\n\nCommit: `627c27f9cd61ac95d273e3da3f6d0b6943945ec3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T11:51:39Z"
-        },
-        {
-          "body": "Filtered console navigation by explicit operator-role permissions derived from the legacy execution contract so queue, flow, regression, and billing links stop leaking across roles.\n\nWhat changed:\n- `bigclaw-go/internal/product/console.go` now annotates restricted nav items with explicit roles and exposes `NavigationForRole` to filter sections/items by effective role.\n- `bigclaw-go/internal/api/expansion.go` now serves `/v2/navigation` from `NavigationForRole(role)` instead of returning the full nav tree to every caller.\n- Added focused coverage in `bigclaw-go/internal/product/navigation_test.go` and tightened `bigclaw-go/internal/api/expansion_test.go` so eng leads lose billing/flow links and VP Eng loses queue-control links while keeping permitted read surfaces.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product ./internal/api` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `a6d63e8e8d1267d881d1fed123df2d2cef21fe52`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `a6d63e8e8d1267d881d1fed123df2d2cef21fe52` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `a6d63e8e8d1267d881d1fed123df2d2cef21fe52` (matches local)\n- `git log -1 --stat` -> `Filter console navigation by operator role`\n\nCommit: `a6d63e8e8d1267d881d1fed123df2d2cef21fe52`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T12:00:40Z"
-        },
-        {
-          "body": "Closed `BIG-GOM-305` after tightening the remaining Go-owned operator-view mismatches on home and navigation surfaces.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion.go` now serves `/v2/home` and `/v2/navigation` from the authenticated viewer role/team instead of trusting global snapshots or query-param role overrides.\n- `bigclaw-go/internal/product/console.go` now uses active takeover counts for eng-lead home cards and filters restricted navigation items by explicit operator-role permissions derived from the legacy execution contract.\n- Added focused coverage in `bigclaw-go/internal/product/console_test.go`, `bigclaw-go/internal/product/navigation_test.go`, and `bigclaw-go/internal/api/expansion_test.go` for takeover counts, team-scoped home cards, explicit-role precedence, and role-filtered navigation.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product ./internal/api` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `git rev-parse HEAD` -> `a6d63e8e8d1267d881d1fed123df2d2cef21fe52`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `a6d63e8e8d1267d881d1fed123df2d2cef21fe52` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `a6d63e8e8d1267d881d1fed123df2d2cef21fe52` (matches local)\n- `git log -1 --stat` -> `Filter console navigation by operator role`\n\nCommit: `a6d63e8e8d1267d881d1fed123df2d2cef21fe52`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T12:03:15Z"
-        }
-      ]
-    },
-    {
-      "id": "big-gom-306",
-      "identifier": "BIG-GOM-306",
-      "title": "Repo collaboration and lineage surface migration",
-      "description": "Port the remaining repo board, registry, gateway, linkage, and lineage surfaces into Go without leaking repo-specific concerns into the scheduler runtime.",
       "priority": 2,
       "state": "Done",
+      "title": "Control center, triage, and operations view migration",
+      "updated_at": "2026-03-20T10:33:17Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Ported the remaining repo collaboration and lineage contract surfaces into `bigclaw-go/internal/repo`, adding Go-owned board, registry, gateway, run-commit binding, repo-space, repo-agent, commit-lineage, and diff models migrated from the Python repo package family while keeping repo concerns isolated from scheduler/runtime packages. Validation: `cd bigclaw-go && go test ./internal/repo` -> ok, `cd bigclaw-go && go test ./...` -> ok. Commit SHA: `fe0273d24a5fce8cff860b9b3f481c033a04eada`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-20T09:30:00Z"
+        }
+      ],
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Port the remaining repo board, registry, gateway, linkage, and lineage surfaces into Go without leaking repo-specific concerns into the scheduler runtime.",
+      "id": "big-gom-306",
+      "identifier": "BIG-GOM-306",
       "labels": [
         "go-mainline",
         "migration",
         "repo",
         "governance"
       ],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T14:17:27Z",
-      "comments": [
-        {
-          "body": "Progress update: ported the remaining Go-owned repo plane, registry, and run-commit binding contracts into `bigclaw-go/internal/repo/*` with parity coverage for repo space defaults, default channels, agent resolution, accepted commit hash derivation, and invalid role rejection.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/repo` -> passed\n- `git rev-parse HEAD` -> `6c333a21abd3845414c8ad74d806b23f54f57d41`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `6c333a21abd3845414c8ad74d806b23f54f57d41` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `6c333a21abd3845414c8ad74d806b23f54f57d41` (matches local)\n- `git log -1 --stat` -> `Port Go repo plane and registry contracts`\n\nCommit: `6c333a21abd3845414c8ad74d806b23f54f57d41`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T14:02:35Z"
-        },
-        {
-          "body": "Progress update: added the Go-owned repo gateway client contract in `bigclaw-go/internal/repo/gateway.go`, including the typed gateway interface plus bundle and commit-list normalization helpers that mirror the remaining Python repo gateway surface. Added focused coverage in `bigclaw-go/internal/repo/gateway_test.go` for bundle normalization, commit-list normalization, children/leaves accessors, and deterministic gateway error normalization.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/repo` -> passed\n- `git rev-parse HEAD` -> `4f026ee5637fb0e618130687ede1ec012487e972`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `4f026ee5637fb0e618130687ede1ec012487e972` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `4f026ee5637fb0e618130687ede1ec012487e972` (matches local)\n- `git log -1 --stat` -> `Port Go repo gateway client contract`\n\nCommit: `4f026ee5637fb0e618130687ede1ec012487e972`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T14:13:01Z"
-        },
-        {
-          "body": "Completed the remaining Go-owned repo collaboration and lineage migration surfaces.\n\nWhat changed:\n- `bigclaw-go/internal/repo/*` now owns the Python repo plane, registry, run-commit binding, discussion board, gateway client contract, lineage normalization, and governance contract surfaces.\n- `bigclaw-go/internal/triage/repo.go` now owns the repo-triage lineage recommendation and approval evidence packet contract that previously lived in `src/bigclaw/repo_triage.py`.\n- The remaining repo collaboration Python references named in the issue pack now have Go owners for board, registry, gateway, plane, links, commits, governance, and triage behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/repo ./internal/triage` -> passed\n- `git rev-parse HEAD` -> `2dac4cade237b50ef62ddac75abe4b48a37f8844`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `2dac4cade237b50ef62ddac75abe4b48a37f8844` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `2dac4cade237b50ef62ddac75abe4b48a37f8844` (matches local)\n- `git log -1 --stat` -> `Port Go repo triage lineage contract`\n\nCommit: `2dac4cade237b50ef62ddac75abe4b48a37f8844`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T14:17:11Z"
-        }
-      ]
+      "priority": 2,
+      "state": "Done",
+      "title": "Repo collaboration and lineage surface migration",
+      "updated_at": "2026-03-20T09:30:00Z"
     },
     {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go-first local tracker management commands to bigclawctl so the toolchain can update local issue state and append required completion comments in local-issues.json without manual JSON edits. Validation: `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> ok, `cd bigclaw-go && go test ./...` -> ok, `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `0e35c0dc48c8e533c5107139a2e4ac3ae6c1b2e1` matches remote SHA `0e35c0dc48c8e533c5107139a2e4ac3ae6c1b2e1` with `status: ok` and `synced: true`, `git log -1 --stat` -> captured for commit `0e35c0dc48c8e533c5107139a2e4ac3ae6c1b2e1` with bigclawctl and refill local store files in the stat output. Commit SHA: `0e35c0dc48c8e533c5107139a2e4ac3ae6c1b2e1`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-20T09:30:56Z"
+        },
+        {
+          "author": "codex",
+          "body": "Replaced the remaining operator-facing Python shims in `scripts/ops` with Go-first shell wrappers so `bigclaw_github_sync.py`, `bigclaw_refill_queue.py`, `symphony_workspace_bootstrap.py`, `bigclaw_workspace_bootstrap.py`, and `symphony_workspace_validate.py` now execute `bigclawctl` directly while preserving the legacy wrapper entrypoints and validation argument compatibility. Validation: `bash scripts/ops/bigclaw_github_sync.py status --json` -> ok, `bash scripts/ops/bigclaw_refill_queue.py --local-issues local-issues.json` -> ok dry-run with no refill candidates, `BIGCLAW_BOOTSTRAP_REPO_URL=git@github.com:OpenAGIs/BigClaw.git BIGCLAW_BOOTSTRAP_CACHE_KEY=compat-cache bash scripts/ops/bigclaw_workspace_bootstrap.py bootstrap ... && cleanup ...` -> ok against temporary workspace/cache roots, `bash scripts/ops/symphony_workspace_validate.py --repo-url git@github.com:OpenAGIs/BigClaw.git --workspace-root <tmp> --issues COMPAT-VAL-1 COMPAT-VAL-2 --report-file <tmp>/report.json --json` -> ok with shared-cache validation report emitted, `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `d2107f6daf1503668e41c5f0c2028704e1bb17cd` matches remote SHA `d2107f6daf1503668e41c5f0c2028704e1bb17cd` with `status: ok` and `synced: true`, `git log -1 --stat` -> captured for commit `d2107f6daf1503668e41c5f0c2028704e1bb17cd` with the five operator wrapper scripts in the stat output. Commit SHA: `d2107f6daf1503668e41c5f0c2028704e1bb17cd`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-20T09:39:32Z"
+        },
+        {
+          "author": "codex",
+          "body": "Post-closeout tooling hygiene: excluded the Bash compatibility wrappers in scripts/ops from Ruffs Python scan via pyproject.toml and ignored generated *.egg-info artifacts in .gitignore so local packaging and wrapper execution no longer re-dirty the Go-mainline cutover branch. Validation: git check-ignore -v src/bigclaw.egg-info/PKG-INFO -> .gitignore:6:*.egg-info/ applied; python3 inline assertion over pyproject.toml -> wrapper excludes ok for all five wrapper entrypoints; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 8ccd42ef933319ecaca2cd3f339a6eb320b94981 matches remote SHA 8ccd42ef933319ecaca2cd3f339a6eb320b94981 with status ok and synced true; git log -1 --stat -> captured for commit 8ccd42ef933319ecaca2cd3f339a6eb320b94981 with .gitignore and pyproject.toml in the stat output. Commit SHA: 8ccd42ef933319ecaca2cd3f339a6eb320b94981. PR URL: https://github.com/OpenAGIs/BigClaw/pull/141.",
+          "created_at": "2026-03-20T16:04:06Z"
+        }
+      ],
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Keep hardening the Go-first bootstrap, refill, and GitHub sync toolchain so unattended multi-issue work no longer relies on Python entrypoints or Linear-only operators.",
       "id": "big-gom-307",
       "identifier": "BIG-GOM-307",
-      "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
-      "description": "Keep hardening the Go-first bootstrap, refill, and GitHub sync toolchain so unattended multi-issue work no longer relies on Python entrypoints or Linear-only operators.",
-      "priority": 1,
-      "state": "Done",
       "labels": [
         "go-mainline",
         "migration",
         "tooling",
         "orchestration"
       ],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T10:16:57Z",
-      "comments": [
-        {
-          "body": "Added Go-owned local tracker comment support for the active tooling slice.\n\nWhat changed:\n- `bigclaw-go/internal/refill/local_store.go` now appends structured comments into `local-issues.json` while preserving existing comments and refreshing `updated_at`.\n- `bigclaw-go/cmd/bigclawctl/main.go` now exposes `bigclawctl issue comment` and `bigclawctl issue state` for local tracker updates without falling back to Python helpers.\n- Added focused coverage in `bigclaw-go/internal/refill/local_store_test.go` and `bigclaw-go/cmd/bigclawctl/main_test.go` for comment persistence and CLI behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> passed\n- `git rev-parse HEAD` -> `ce98157d5d0f2ecde23679703a3fafb44cca765c`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `ce98157d5d0f2ecde23679703a3fafb44cca765c` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `ce98157d5d0f2ecde23679703a3fafb44cca765c` (matches local)\n\nCommit: `ce98157d5d0f2ecde23679703a3fafb44cca765c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T09:29:11Z"
-        },
-        {
-          "body": "Reduced local tracker churn for Go-owned issue updates.\n\nWhat changed:\n- `bigclaw-go/internal/refill/local_store.go` now decodes local issues/comments into ordered typed records, preserves unknown fields, disables HTML escaping, and avoids serializing absent `comments` arrays.\n- Local tracker updates now keep operator evidence like `&&` and `->` readable instead of rewriting them as `\\u0026\\u0026` / `\\u003e`.\n- Added `TestLocalIssueStoreAppendIssueCommentDoesNotEscapeBodyText` in `bigclaw-go/internal/refill/local_store_test.go` to lock the literal-text behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> passed\n- `git rev-parse HEAD` -> `9decebc12392471f2202a40c83eb5674dcf6cbfa`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `a0cd161791c68b5fd9fddd3e27b7eec7e918fe4a` (pre-sync)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `a0cd161791c68b5fd9fddd3e27b7eec7e918fe4a` (pre-sync)\n\nCommit: `9decebc12392471f2202a40c83eb5674dcf6cbfa`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T09:39:46Z"
-        },
-        {
-          "body": "Added Go-native local tracker creation and listing support for the active tooling slice.\n\nWhat changed:\n- `bigclaw-go/internal/refill/local_store.go` now supports structured local issue creation, duplicate detection, and filtered issue listing with decoded priority/label fields.\n- `bigclaw-go/cmd/bigclawctl/main.go` now exposes `bigclawctl issue create` and `bigclawctl issue list` alongside the existing state/comment flows.\n- Added focused coverage in `bigclaw-go/internal/refill/local_store_test.go` and `bigclaw-go/cmd/bigclawctl/main_test.go`, and updated `README.md` plus `docs/parallel-refill-queue.md` to point operators at the Go-native tracker CLI.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> passed\n- `cd bigclaw-go && go test ./...` -> passed\n- `cd bigclaw-go && go run ./cmd/bigclawctl issue create --local-issues <tmp>/local-issues.json --identifier BIG-GOM-999 --title \"CLI smoke\" --priority 2 --state Todo --labels go-mainline,tooling --json` -> passed\n- `cd bigclaw-go && go run ./cmd/bigclawctl issue list --local-issues <tmp>/local-issues.json --states Todo --json` -> passed\n- `git rev-parse HEAD` -> `7f7636ca9a437543e069d09fd3137d1bf56c7691`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `7f7636ca9a437543e069d09fd3137d1bf56c7691` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `7f7636ca9a437543e069d09fd3137d1bf56c7691` (matches local)\n- `git log -1 --stat` -> `Add Go-native local tracker issue create and list`\n\nCommit: `7f7636ca9a437543e069d09fd3137d1bf56c7691`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T10:03:45Z"
-        },
-        {
-          "body": "Closed `BIG-GOM-307` after finishing the remaining Go-first local operator compatibility slice.\n\nWhat changed:\n- `scripts/ops/bigclaw-issue` now routes `list`, `create`, `state`, and `comment` through the Go-native `bigclawctl issue` path by default, injects `local-issues.json` automatically when omitted, and preserves historical positional `state` / `comment` wrapper usage.\n- `README.md` now documents the wrapper as a Go-native compatibility shim for local tracker operations instead of a Symphony-first path.\n- `docs/parallel-refill-queue.md` now points state changes at the Go-native tracker commands and reflects `BIG-GOM-307` in the recently completed batch.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> passed\n- `bash scripts/ops/bigclaw-issue create --local-issues <tmp>/local-issues.json --identifier BIG-GOM-998 --title \"Wrapper create smoke\" --priority 2 --state Todo --labels go-mainline,tooling --json` -> passed\n- `bash scripts/ops/bigclaw-issue list --local-issues <tmp>/local-issues.json --states Todo --json` -> passed\n- `bash scripts/ops/bigclaw-issue state BIG-GOM-998 \"In Progress\" --local-issues <tmp>/local-issues.json --json` -> passed\n- `bash scripts/ops/bigclaw-issue comment BIG-GOM-998 \"wrapper comment smoke\" --local-issues <tmp>/local-issues.json --json` -> passed\n- `git rev-parse HEAD` -> `1fcc06ed4a1ae6479f7ceec9f117962fdda25538`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `1fcc06ed4a1ae6479f7ceec9f117962fdda25538` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `1fcc06ed4a1ae6479f7ceec9f117962fdda25538` (matches local)\n- `git log -1 --stat` -> `Route local issue wrapper through Go tracker CLI`\n\nCommit: `1fcc06ed4a1ae6479f7ceec9f117962fdda25538`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T10:16:56Z"
-        }
-      ]
+      "priority": 1,
+      "state": "Done",
+      "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
+      "updated_at": "2026-03-20T16:04:06Z"
     },
     {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Started `BIG-GOM-308` by freezing the legacy Python execution-kernel entrypoints: added `src/bigclaw/deprecation.py`, made `python -m bigclaw` emit a deprecation warning toward the Go-first entrypoints, marked `src/bigclaw/runtime.py`, `scheduler.py`, `workflow.py`, `orchestration.py`, and `queue.py` as migration-only with explicit Go replacement targets, added a focused Python deprecation test, and updated the README to state that active runtime work belongs in `bigclaw-go/internal/*`. Validation: `python3 -m py_compile src/bigclaw/deprecation.py src/bigclaw/__main__.py src/bigclaw/runtime.py src/bigclaw/scheduler.py src/bigclaw/workflow.py src/bigclaw/orchestration.py src/bigclaw/queue.py` -> ok; `PYTHONPATH=src python3 -m pytest tests/test_deprecation.py -q` -> blocked because this workspace Python does not have `pytest` installed (`No module named pytest`); `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `992d34753b97d5b6f36c12a140f5d77ce8d0a00b` matches remote SHA `992d34753b97d5b6f36c12a140f5d77ce8d0a00b` with `status: ok` and `synced: true`; `git log -1 --stat` -> captured for commit `992d34753b97d5b6f36c12a140f5d77ce8d0a00b` with the Python deprecation files in the stat output. Commit SHA: `992d34753b97d5b6f36c12a140f5d77ce8d0a00b`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-20T12:03:01Z"
+        },
+        {
+          "author": "codex",
+          "body": "Extended the Python retirement slice by marking `scripts/dev_smoke.py` as migration-only, making it emit the same Go-first deprecation guidance as the frozen Python runtime surface, and updating the README to split Go smoke verification from the legacy Python smoke path. Validation: `python3 -m py_compile scripts/dev_smoke.py` -> ok; `PYTHONPATH=src python3 scripts/dev_smoke.py` -> ok with the expected `DeprecationWarning` and `smoke_ok docker`; `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `0362f77015c35e34ba08881b16c2ffc033514415` matches remote SHA `0362f77015c35e34ba08881b16c2ffc033514415` with `status: ok` and `synced: true`; `git log -1 --stat` -> captured for commit `0362f77015c35e34ba08881b16c2ffc033514415` with README and smoke script updates in the stat output. Commit SHA: `0362f77015c35e34ba08881b16c2ffc033514415`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-20T12:12:38Z"
+        },
+        {
+          "author": "codex",
+          "body": "Deprecated the remaining Python local-server entry surface by marking `python -m bigclaw serve` as legacy migration-only, adding Go-mainline replacement metadata and a dedicated service warning helper in `src/bigclaw/service.py`, extending deprecation coverage in `tests/test_deprecation.py`, and updating the README to route local server usage to `go run ./bigclaw-go/cmd/bigclawd`.\n\nValidation: `python3 -m py_compile src/bigclaw/service.py src/bigclaw/__main__.py src/bigclaw/deprecation.py tests/test_deprecation.py scripts/dev_smoke.py` -> ok; `PYTHONPATH=src python3 - <<'PY' ... service.warn_legacy_service_surface() ... PY` -> emitted the expected Go-first deprecation warning once with replacement `go run ./bigclaw-go/cmd/bigclawd`; `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `e30f61881475d40492df0d27a503af67320bc10d` matched remote SHA `e30f61881475d40492df0d27a503af67320bc10d` with status ok and synced true at code-commit time; `git log -1 --stat` -> captured for commit `e30f61881475d40492df0d27a503af67320bc10d` with README, `__main__.py`, `service.py`, and deprecation test updates in the stat output.\n\nCommit SHA: `e30f61881475d40492df0d27a503af67320bc10d`.\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-20T14:13:27Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final review surface: the Python-retirement closeout is included in branch-wide PR https://github.com/OpenAGIs/BigClaw/pull/141 ('BIG-GOM-304: complete BigClaw Go-mainline cutover') against `main`, which supersedes earlier tracker notes that listed the PR as unavailable.",
+          "created_at": "2026-03-20T14:30:23Z"
+        }
+      ],
+      "created_at": "2026-03-18T09:00:00Z",
+      "description": "Freeze or retire the remaining Python runtime entrypoints only after the Go workflow, observability, and repo collaboration surfaces have matching owners and validation.",
       "id": "big-gom-308",
       "identifier": "BIG-GOM-308",
-      "title": "Python deprecation and Go-only mainline switch",
-      "description": "Freeze or retire the remaining Python runtime entrypoints only after the Go workflow, observability, and repo collaboration surfaces have matching owners and validation.",
-      "priority": 3,
-      "state": "Done",
       "labels": [
         "go-mainline",
         "migration",
         "deprecation",
         "python-retirement"
       ],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-18T09:00:00Z",
-      "updated_at": "2026-03-20T14:40:52Z",
-      "comments": [
-        {
-          "body": "Progress update: marked `src/bigclaw/__main__.py` as a legacy-only Python entrypoint by adding an explicit Go-mainline deprecation notice, routing parser construction through `build_parser()`, and keeping the legacy commands available only for migration/validation use. Added focused coverage in `tests/test_legacy_entrypoint.py` to lock the deprecation notice text and parser metadata.\n\nValidation:\n- `PYTHONPATH=src python3 - <<\"PY\" ...` parser assertions -> passed\n- `python3 -c \"import pytest; print(pytest.__version__)\"` -> `9.0.1`\n- `git rev-parse HEAD` -> `e7cbe785cd3aa2b5697cfdb59b8e1b8013415116`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `e7cbe785cd3aa2b5697cfdb59b8e1b8013415116` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `e7cbe785cd3aa2b5697cfdb59b8e1b8013415116` (matches local)\n- `git log -1 --stat` -> `Mark Python entrypoint as legacy-only`\n\nCommit: `e7cbe785cd3aa2b5697cfdb59b8e1b8013415116`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T14:21:35Z"
-        },
-        {
-          "body": "Progress update: routed the remaining Python operator wrappers through the Go-first `scripts/ops/bigclawctl` shim instead of leaving Python-owned implementations on the default path. `scripts/ops/bigclaw_workspace_bootstrap.py`, `scripts/ops/bigclaw_github_sync.py`, and `scripts/ops/bigclaw_refill_queue.py` now emit an explicit legacy notice and `exec` the Go-owned wrapper, while `src/bigclaw/legacy_shim.py` centralizes the migration-only compatibility notice and argument translation. Added focused coverage in `tests/test_legacy_shim.py`.\n\nValidation:\n- `PYTHONPATH=src python3 - <<\"PY\" ... legacy parser and shim assertions ...` -> passed\n- `python3 -m py_compile src/bigclaw/legacy_shim.py src/bigclaw/__main__.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py` -> passed\n- `git rev-parse HEAD` -> `aa01d865b0f1e98992560aac7bf4c6b7aca46a4f`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `aa01d865b0f1e98992560aac7bf4c6b7aca46a4f` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `aa01d865b0f1e98992560aac7bf4c6b7aca46a4f` (matches local)\n- `git log -1 --stat` -> `Route legacy Python operator wrappers to Go shims`\n\nCommit: `aa01d865b0f1e98992560aac7bf4c6b7aca46a4f`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T14:28:20Z"
-        },
-        {
-          "body": "Progress update: routed the remaining Symphony-facing Python workspace wrappers through the Go-first `bigclawctl` path as well. `scripts/ops/symphony_workspace_bootstrap.py` now execs the Go workspace bootstrap shim, and `scripts/ops/symphony_workspace_validate.py` now execs the Go workspace validate shim with translation for legacy `--issues`, `--report-file`, and `--no-cleanup` flags via `src/bigclaw/legacy_shim.py`. Updated `tests/test_legacy_shim.py` to lock the validate-argument translation.\n\nValidation:\n- `PYTHONPATH=src python3 - <<\"PY\" ... legacy shim assertions ...` -> passed\n- `python3 -m py_compile src/bigclaw/legacy_shim.py src/bigclaw/__main__.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py` -> passed\n- `git rev-parse HEAD` -> `69c20bde667fb79e3c3dcc7d967c4a256f70f45c`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `69c20bde667fb79e3c3dcc7d967c4a256f70f45c` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `69c20bde667fb79e3c3dcc7d967c4a256f70f45c` (matches local)\n- `git log -1 --stat` -> `Route Symphony Python wrappers to Go shims`\n\nCommit: `69c20bde667fb79e3c3dcc7d967c4a256f70f45c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T14:32:37Z"
-        },
-        {
-          "body": "Progress update: marked the legacy Python service path as migration-only in `src/bigclaw/service.py`. The server banner now points operators at `go run ./cmd/bigclawd` / `scripts/ops/bigclawctl` for the Go mainline and states that the Python server should be used only for migration or legacy-path validation. Added coverage in `tests/test_legacy_entrypoint.py` for the new banner helper.\n\nValidation:\n- `PYTHONPATH=src python3 - <<\"PY\" ... legacy banner and shim assertions ...` -> passed\n- `python3 -m py_compile src/bigclaw/service.py src/bigclaw/__main__.py src/bigclaw/legacy_shim.py` -> passed\n- `git rev-parse HEAD` -> `50f4a8694b46fb0bfbafcd61ce2e334ec2f807f1`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `50f4a8694b46fb0bfbafcd61ce2e334ec2f807f1` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `50f4a8694b46fb0bfbafcd61ce2e334ec2f807f1` (matches local)\n- `git log -1 --stat` -> `Mark legacy Python service path as migration-only`\n\nCommit: `50f4a8694b46fb0bfbafcd61ce2e334ec2f807f1`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T14:36:39Z"
-        },
-        {
-          "body": "Closed `BIG-GOM-308` after removing Python from the default operator/runtime path and freezing the remaining Python entrypoints as explicit migration shims.\n\nWhat changed:\n- `src/bigclaw/__main__.py` and `src/bigclaw/service.py` now emit migration-only notices that point operators at `scripts/ops/bigclawctl` / `go run ./cmd/bigclawd`.\n- All remaining Python wrappers under `scripts/ops/*.py` now exec the Go-owned `bigclawctl` path as compatibility shims instead of retaining Python-owned workflow/bootstrap/refill/sync implementations.\n- `src/bigclaw/legacy_shim.py`, `README.md`, and `docs/go-mainline-cutover-issue-pack.md` now document the Go-only mainline state and legacy-Python posture explicitly.\n\nValidation:\n- `PYTHONPATH=src python3 - <<\"PY\" ... legacy banner and shim assertions ...` -> passed\n- `python3 -m py_compile src/bigclaw/service.py src/bigclaw/__main__.py src/bigclaw/legacy_shim.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py` -> passed\n- `git rev-parse HEAD` -> `6822a2c0bf82fd121d4959853153c3db5b847488`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `6822a2c0bf82fd121d4959853153c3db5b847488` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `6822a2c0bf82fd121d4959853153c3db5b847488` (matches local)\n- `git log -1 --stat` -> `Document Go-only mainline cutover state`\n\nCommit: `6822a2c0bf82fd121d4959853153c3db5b847488`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T14:40:52Z"
-        }
-      ]
+      "priority": 3,
+      "state": "Done",
+      "title": "Python deprecation and Go-only mainline switch",
+      "updated_at": "2026-03-20T14:30:23Z"
     },
     {
-      "id": "big-gom-309",
-      "identifier": "BIG-GOM-309",
-      "title": "Final Go-mainline branch validation and closeout",
-      "description": "Run a final branch-wide validation/reconciliation pass now that BIG-GOM-301 through BIG-GOM-308 are done, keep the local tracker and PR metadata aligned with the completed branch scope, and capture final evidence for the Go-mainline cutover branch.",
-      "priority": 2,
-      "state": "Done",
-      "labels": [
-        "go-mainline",
-        "validation",
-        "closeout"
-      ],
       "assigned_to_worker": true,
-      "created_at": "2026-03-20T17:07:14Z",
-      "updated_at": "2026-03-20T17:09:17Z",
       "comments": [
         {
           "body": "Closed `BIG-GOM-309` after the final branch-wide validation and closeout pass for the completed Go-mainline cutover branch.\n\nWhat changed:\n- verified the completed branch still passes the full Go test suite after closing `BIG-GOM-301` through `BIG-GOM-308`\n- re-ran the legacy Python shim assertions and `py_compile` checks to confirm the migration-only compatibility layer still matches the documented Go-first posture\n- confirmed PR `#138` is open again with branch-complete title/body covering `BIG-GOM-301` through `BIG-GOM-308`\n\nValidation:\n- `cd bigclaw-go && go test ./...` -> passed\n- `python3 -m py_compile src/bigclaw/service.py src/bigclaw/__main__.py src/bigclaw/legacy_shim.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py` -> passed\n- `PYTHONPATH=src python3 - <<\"PY\" ... legacy shim assertions ...` -> passed\n- `git rev-parse HEAD` -> `81d81221e2764990fc7b28078e14bde73319b6ce`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `81d81221e2764990fc7b28078e14bde73319b6ce` (matches local)\n- `git rev-parse github/symphony/BIG-GOM-302` -> `81d81221e2764990fc7b28078e14bde73319b6ce` (matches local)\n- `git log -1 --stat` -> `Close BIG-GOM-301 in local tracker`\n\nCommit: `81d81221e2764990fc7b28078e14bde73319b6ce`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T17:09:16Z"
         }
-      ]
-    },
-    {
-      "id": "big-gom-310",
-      "identifier": "BIG-GOM-310",
-      "title": "Merge readiness handoff for Go-mainline branch",
-      "description": "Capture a concise repo-native handoff note for the completed Go-mainline cutover branch: branch SHA, PR, tracker status, validation evidence, and any remaining non-blocking caveats outside the BIG-GOM slice set.",
-      "priority": 3,
-      "state": "Done",
+      ],
+      "created_at": "2026-03-20T17:07:14Z",
+      "description": "Run a final branch-wide validation/reconciliation pass now that BIG-GOM-301 through BIG-GOM-308 are done, keep the local tracker and PR metadata aligned with the completed branch scope, and capture final evidence for the Go-mainline cutover branch.",
+      "id": "big-gom-309",
+      "identifier": "BIG-GOM-309",
       "labels": [
         "go-mainline",
-        "closeout",
-        "docs"
+        "validation",
+        "closeout"
       ],
+      "priority": 2,
+      "state": "Done",
+      "title": "Final Go-mainline branch validation and closeout",
+      "updated_at": "2026-03-20T17:09:17Z"
+    },
+    {
       "assigned_to_worker": true,
-      "created_at": "2026-03-20T17:11:31Z",
-      "updated_at": "2026-03-20T17:19:11Z",
       "comments": [
         {
           "body": "Closed `BIG-GOM-310` after adding the repo-native merge-readiness handoff artifact for the completed Go-mainline cutover branch.\n\nWhat changed:\n- added `docs/go-mainline-cutover-handoff.md` with the branch head, PR link, local tracker status, validation evidence, completed scope, and the remaining non-blocking caveats that live outside the `BIG-GOM` slice set\n- refreshed `docs/parallel-refill-queue.md` and `docs/parallel-refill-queue.json` so the human-readable and machine-readable refill views both show the branch-closeout slice progression through `BIG-GOM-309` and `BIG-GOM-310`\n- kept the branch PR open and aligned with the completed branch scope\n\nValidation:\n- `cd bigclaw-go && go test ./...` -> passed\n- `python3 -m py_compile src/bigclaw/service.py src/bigclaw/__main__.py src/bigclaw/legacy_shim.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py` -> passed\n- `PYTHONPATH=src python3 - <<\"PY\" ... legacy shim assertions ...` -> passed\n- `git rev-parse HEAD` -> `85ba55fd0a295613e3c2c486b303f04f947f6a63`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `85ba55fd0a295613e3c2c486b303f04f947f6a63` (matches local)\n- `git rev-parse github/symphony/BIG-GOM-302` -> `85ba55fd0a295613e3c2c486b303f04f947f6a63` (matches local)\n- `git log -1 --stat` -> `Add Go-mainline cutover handoff note`\n\nCommit: `85ba55fd0a295613e3c2c486b303f04f947f6a63`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
@@ -358,329 +356,342 @@
           "body": "Finalized `BIG-GOM-310` after reconciling the repo-native handoff documents with the final branch-closeout tracker state.\n\nWhat changed:\n- updated `docs/go-mainline-cutover-handoff.md` so the recorded branch head, completed `BIG-GOM-301` through `BIG-GOM-310` scope, and closeout status all match the final tracker state\n- refreshed `docs/parallel-refill-queue.md` and `docs/parallel-refill-queue.json` so both refill views show `BIG-GOM-310` as completed and no active `BIG-GOM` closeout slice remaining\n- kept PR `#138` aligned with the fully completed Go-mainline cutover branch scope\n\nValidation:\n- `git rev-parse HEAD` -> `c9914ae27c203e925bf3220a416d33ec128295b3`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `c9914ae27c203e925bf3220a416d33ec128295b3` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `c9914ae27c203e925bf3220a416d33ec128295b3` (matches local)\n- `git log -1 --stat` -> `Finalize Go-mainline handoff state docs`\n\nCommit: `c9914ae27c203e925bf3220a416d33ec128295b3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T17:19:11Z"
         }
-      ]
+      ],
+      "created_at": "2026-03-20T17:11:31Z",
+      "description": "Capture a concise repo-native handoff note for the completed Go-mainline cutover branch: branch SHA, PR, tracker status, validation evidence, and any remaining non-blocking caveats outside the BIG-GOM slice set.",
+      "id": "big-gom-310",
+      "identifier": "BIG-GOM-310",
+      "labels": [
+        "go-mainline",
+        "closeout",
+        "docs"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Merge readiness handoff for Go-mainline branch",
+      "updated_at": "2026-03-20T17:19:11Z"
     },
     {
-      "id": "big-par-088",
-      "identifier": "BIG-PAR-088",
-      "title": "Broaden validation continuation gate refresh beyond run_all",
-      "description": "Extend the repo-native validation continuation scorecard/policy-gate refresh into the broader workflow/orchestration entrypoint so continuation evidence stays current outside direct run_all.sh execution.",
-      "priority": 2,
-      "state": "Done",
-      "labels": [
-        "parallel",
-        "validation",
-        "tooling",
-        "continuation"
-      ],
       "assigned_to_worker": true,
-      "created_at": "2026-03-20T18:28:36Z",
-      "updated_at": "2026-03-20T18:39:33Z",
       "comments": [
         {
           "body": "Closed `BIG-PAR-088` after moving validation-bundle continuation refresh into the reusable bundle exporter instead of relying on `run_all.sh` alone.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now owns continuation refresh in `auto|always|off` modes, regenerates the continuation scorecard and policy gate when the shared-queue companion proof is present, and records the refresh result in the exported summary JSON.\n- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` and `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` now accept `--repo-root` so the exporter can run them against any target checkout/layout instead of only the current repo path.\n- `tests/test_parallel_validation_bundle.py` now exercises direct bundle export with continuation refresh enabled, and `bigclaw-go/docs/e2e-validation.md` documents that direct bundle export workflows refresh continuation artifacts too.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` -> passed\n- `python3 - <<\"PY\" ... direct temporary-repo export_validation_bundle harness ...` -> passed (`continuation.refreshed=True`, `policy_gate_recommendation=hold`, `scorecard.summary.latest_run_id=20260315T120000Z`)\n- `python3 -m pytest -q tests/test_parallel_validation_bundle.py -vv` -> environment failure in this workspace (`exit code -1` with no emitted output), so the direct harness above was used as the executable verification path\n- `git rev-parse HEAD` -> `c12e8d8c3f2dd5f4c896a301fb6b986c19eb2860`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `c12e8d8c3f2dd5f4c896a301fb6b986c19eb2860` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `c12e8d8c3f2dd5f4c896a301fb6b986c19eb2860` (matches local)\n- `git log -1 --stat` -> `Refresh continuation artifacts from bundle export`\n\nCommit: `c12e8d8c3f2dd5f4c896a301fb6b986c19eb2860`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T18:37:57Z"
         }
-      ]
-    },
-    {
-      "id": "big-par-089",
-      "identifier": "BIG-PAR-089",
-      "title": "Co-locate shared-queue proof with validation bundle lineage",
-      "description": "Reduce the standalone-proof caveat by threading shared-queue coordination evidence into the same validation bundle lineage metadata used by the continuation scorecard and policy gate.",
-      "priority": 3,
-      "state": "Done",
+      ],
+      "created_at": "2026-03-20T18:28:36Z",
+      "description": "Extend the repo-native validation continuation scorecard/policy-gate refresh into the broader workflow/orchestration entrypoint so continuation evidence stays current outside direct run_all.sh execution.",
+      "id": "big-par-088",
+      "identifier": "BIG-PAR-088",
       "labels": [
         "parallel",
         "validation",
         "tooling",
         "continuation"
       ],
+      "priority": 2,
+      "state": "Done",
+      "title": "Broaden validation continuation gate refresh beyond run_all",
+      "updated_at": "2026-03-20T18:39:33Z"
+    },
+    {
       "assigned_to_worker": true,
-      "created_at": "2026-03-20T18:28:36Z",
-      "updated_at": "2026-03-20T18:48:59Z",
       "comments": [
         {
           "body": "Closed `BIG-PAR-089` after attaching the shared-queue coordination proof to the validation-bundle lineage instead of keeping it only as a separate standalone report.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now copies `docs/reports/multi-node-shared-queue-report.json` into each exported bundle, includes a `shared_queue` section in the bundle summary, and renders the shared-queue proof in the live validation index alongside the local/Kubernetes/Ray lane artifacts.\n- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` now prefers the bundle-attached shared-queue report when the latest exported summary includes it, switching the continuation companion mode to `bundled-companion` while preserving fallback compatibility with the older standalone-only layout.\n- `tests/test_parallel_validation_bundle.py`, `tests/test_validation_bundle_continuation_scorecard.py`, `bigclaw-go/docs/e2e-validation.md`, and `bigclaw-go/docs/reports/validation-bundle-continuation-digest.md` now reflect the bundle-attached shared-queue lineage and the narrowed remaining caveat.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` -> passed\n- `python3 - <<\"PY\" ... continuation.build_report() import harness ...` -> passed (`shared_queue_companion.mode=standalone-proof`, `cross_node_completions=99`) for the checked-in evidence set\n- `python3 - <<\"PY\" ... direct temporary-repo export_validation_bundle harness ...` -> passed (`summary.shared_queue.bundle_report_path=docs/reports/live-validation-runs/20260315T120000Z/multi-node-shared-queue-report.json`, `scorecard.shared_queue_companion.mode=bundled-companion`, live index includes `Cross-node completions: 12`)\n- `git rev-parse HEAD` -> `8904fc83267ecb129200d68b4593a489b1300a18`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `8904fc83267ecb129200d68b4593a489b1300a18` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `8904fc83267ecb129200d68b4593a489b1300a18` (matches local)\n- `git log -1 --stat` -> `Attach shared-queue proof to validation bundles`\n\nCommit: `8904fc83267ecb129200d68b4593a489b1300a18`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T18:48:37Z"
         }
-      ]
-    },
-    {
-      "id": "big-par-090",
-      "identifier": "BIG-PAR-090",
-      "title": "Refresh shared-queue proof from run_all workflow",
-      "description": "Let the repo-native live validation workflow refresh the shared-queue companion proof during run_all closeout so the bundled continuation lineage can come from the same orchestrated workflow instead of a separately rerun proof.",
-      "priority": 2,
-      "state": "Done",
+      ],
+      "created_at": "2026-03-20T18:28:36Z",
+      "description": "Reduce the standalone-proof caveat by threading shared-queue coordination evidence into the same validation bundle lineage metadata used by the continuation scorecard and policy gate.",
+      "id": "big-par-089",
+      "identifier": "BIG-PAR-089",
       "labels": [
         "parallel",
         "validation",
         "tooling",
-        "coordination"
+        "continuation"
       ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Co-locate shared-queue proof with validation bundle lineage",
+      "updated_at": "2026-03-20T18:48:59Z"
+    },
+    {
       "assigned_to_worker": true,
-      "created_at": "2026-03-20T18:53:11Z",
-      "updated_at": "2026-03-20T18:59:08Z",
       "comments": [
         {
           "body": "Closed `BIG-PAR-090` after wiring the shared-queue companion proof into the same `run_all.sh` workflow that emits the live validation bundle.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/run_all.sh` now supports `BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1` plus count/worker/timeout/report-path knobs, reruns `scripts/e2e/multi_node_shared_queue.py` before bundle export, and marks the overall validation status failed if the inline shared-queue proof fails.\n- `tests/test_parallel_validation_bundle.py` now includes a stubbed `run_all.sh` orchestration harness that verifies the shared-queue proof is regenerated inline and consumed by the bundle export summary.\n- `bigclaw-go/docs/e2e-validation.md` and `bigclaw-go/docs/reports/validation-bundle-continuation-digest.md` now document that `run_all.sh` can refresh the shared-queue companion inline via `BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1`, while also making clear that this path is still opt-in rather than default.\n\nValidation:\n- `bash -n bigclaw-go/scripts/e2e/run_all.sh` -> passed\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py bigclaw-go/scripts/e2e/multi_node_shared_queue.py` -> passed\n- `python3 - <<\"PY\" ... temporary-repo run_all.sh harness with stub exporter/shared-queue scripts ...` -> passed (`RETURN 0`, `summary.shared_queue.available=True`, `summary.shared_queue.cross_node_completions=16`)\n- `git rev-parse HEAD` -> `668d4ea1e91454142a60a36dc167ddc09eb1fb62`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `668d4ea1e91454142a60a36dc167ddc09eb1fb62` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `668d4ea1e91454142a60a36dc167ddc09eb1fb62` (matches local)\n- `git log -1 --stat` -> `Refresh shared-queue proof from run_all`\n\nCommit: `668d4ea1e91454142a60a36dc167ddc09eb1fb62`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T18:58:32Z"
         }
-      ]
-    },
-    {
-      "id": "big-par-091",
-      "identifier": "BIG-PAR-091",
-      "title": "Expose shared-queue refresh status in continuation policy actions",
-      "description": "Tighten continuation policy guidance so hold/go next actions and bundle docs reflect whether the shared-queue companion was refreshed inline by the validation workflow or only reused from a previous proof.",
-      "priority": 3,
-      "state": "Done",
+      ],
+      "created_at": "2026-03-20T18:53:11Z",
+      "description": "Let the repo-native live validation workflow refresh the shared-queue companion proof during run_all closeout so the bundled continuation lineage can come from the same orchestrated workflow instead of a separately rerun proof.",
+      "id": "big-par-090",
+      "identifier": "BIG-PAR-090",
       "labels": [
         "parallel",
         "validation",
         "tooling",
         "coordination"
       ],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-20T18:53:11Z",
-      "updated_at": "2026-03-20T19:06:54Z",
-      "comments": [
-        {
-          "body": "Closed `BIG-PAR-091` after teaching the continuation policy gate to surface the correct shared-queue refresh path for the current evidence source.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` now distinguishes `bundled-companion` vs `standalone-proof` shared-queue evidence, includes that mode-specific context in the `shared_queue_companion_available` policy-check detail, and emits the correct next action for each source.\n- `tests/test_validation_bundle_continuation_policy_gate.py` now covers the standalone-proof path, the bundled-companion hold path, and the unchanged repeated-lane hold path.\n- `bigclaw-go/docs/e2e-validation.md` and `bigclaw-go/docs/reports/validation-bundle-continuation-digest.md` now document that the gate’s next-action guidance follows the current shared-queue evidence source rather than one hard-coded rerun command.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` -> passed\n- `python3 - <<\"PY\" ... direct execution of test_validation_bundle_continuation_policy_gate.py test functions ...` -> passed (`policy gate direct tests passed`)\n- `python3 - <<\"PY\" ... synthetic bundled-companion gate harness ...` -> passed (next action includes `BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1`, policy-check detail includes `mode=bundled-companion`)\n- `git rev-parse HEAD` -> `ef7a1c19108e41602794d775774cc11706c6a724`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `ef7a1c19108e41602794d775774cc11706c6a724` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `ef7a1c19108e41602794d775774cc11706c6a724` (matches local)\n- `git log -1 --stat` -> `Clarify shared-queue refresh guidance in policy gate`\n\nCommit: `ef7a1c19108e41602794d775774cc11706c6a724`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T19:06:38Z"
-        }
-      ]
-    },
-    {
-      "id": "big-par-092",
-      "identifier": "BIG-PAR-092",
-      "title": "Expose shared-queue refresh source in bundle summary",
-      "description": "Record whether the shared-queue companion was refreshed inline by the current validation workflow or reused from an existing report, and surface that source in the exported bundle summary/index so downstream policy/reporting can reason about freshness honestly.",
       "priority": 2,
       "state": "Done",
+      "title": "Refresh shared-queue proof from run_all workflow",
+      "updated_at": "2026-03-20T18:59:08Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "body": "Closed `BIG-PAR-091` after teaching the continuation policy gate to surface the correct shared-queue refresh path for the current evidence source.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` now distinguishes `bundled-companion` vs `standalone-proof` shared-queue evidence, includes that mode-specific context in the `shared_queue_companion_available` policy-check detail, and emits the correct next action for each source.\n- `tests/test_validation_bundle_continuation_policy_gate.py` now covers the standalone-proof path, the bundled-companion hold path, and the unchanged repeated-lane hold path.\n- `bigclaw-go/docs/e2e-validation.md` and `bigclaw-go/docs/reports/validation-bundle-continuation-digest.md` now document that the gate\u2019s next-action guidance follows the current shared-queue evidence source rather than one hard-coded rerun command.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` -> passed\n- `python3 - <<\"PY\" ... direct execution of test_validation_bundle_continuation_policy_gate.py test functions ...` -> passed (`policy gate direct tests passed`)\n- `python3 - <<\"PY\" ... synthetic bundled-companion gate harness ...` -> passed (next action includes `BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1`, policy-check detail includes `mode=bundled-companion`)\n- `git rev-parse HEAD` -> `ef7a1c19108e41602794d775774cc11706c6a724`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `ef7a1c19108e41602794d775774cc11706c6a724` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `ef7a1c19108e41602794d775774cc11706c6a724` (matches local)\n- `git log -1 --stat` -> `Clarify shared-queue refresh guidance in policy gate`\n\nCommit: `ef7a1c19108e41602794d775774cc11706c6a724`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T19:06:38Z"
+        }
+      ],
+      "created_at": "2026-03-20T18:53:11Z",
+      "description": "Tighten continuation policy guidance so hold/go next actions and bundle docs reflect whether the shared-queue companion was refreshed inline by the validation workflow or only reused from a previous proof.",
+      "id": "big-par-091",
+      "identifier": "BIG-PAR-091",
       "labels": [
         "parallel",
         "validation",
         "tooling",
         "coordination"
       ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Expose shared-queue refresh status in continuation policy actions",
+      "updated_at": "2026-03-20T19:06:54Z"
+    },
+    {
       "assigned_to_worker": true,
-      "created_at": "2026-03-20T19:09:35Z",
-      "updated_at": "2026-03-20T19:15:55Z",
       "comments": [
         {
           "body": "Closed `BIG-PAR-092` after adding an explicit shared-queue refresh source to the exported validation-bundle summary and workflow path.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now accepts `--shared-queue-source`, stores it on `summary.shared_queue.source`, and renders that source in the live validation index next to the shared-queue metrics.\n- `bigclaw-go/scripts/e2e/run_all.sh` now passes `shared_queue.source=inline-workflow-refresh` when it regenerates the companion proof inline and `shared_queue.source=existing-report` when it reuses the current canonical proof.\n- `tests/test_parallel_validation_bundle.py`, `bigclaw-go/docs/e2e-validation.md`, and `bigclaw-go/docs/reports/validation-bundle-continuation-digest.md` now cover/document the explicit refresh-source field.\n\nValidation:\n- `bash -n bigclaw-go/scripts/e2e/run_all.sh` -> passed\n- `python3 - <<\"PY\" ... direct export_validation_bundle harness ...` -> passed (`shared_queue.source=existing-report`, live index contains `Source: existing-report`)\n- `python3 - <<\"PY\" ... temporary-repo run_all.sh harness ...` -> passed (`shared_queue.source=inline-workflow-refresh`)\n- `git rev-parse HEAD` -> `12640111caa2d697a52df17a42ffc4f757a2a30d`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `12640111caa2d697a52df17a42ffc4f757a2a30d` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `12640111caa2d697a52df17a42ffc4f757a2a30d` (matches local)\n- `git log -1 --stat` -> `Track shared-queue refresh source in bundles`\n\nCommit: `12640111caa2d697a52df17a42ffc4f757a2a30d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T19:15:28Z"
         }
-      ]
-    },
-    {
-      "id": "big-par-093",
-      "identifier": "BIG-PAR-093",
-      "title": "Thread shared-queue refresh source into continuation scorecard",
-      "description": "Carry the exported bundle shared-queue refresh source into the continuation scorecard and downstream policy/reporting outputs so source-specific caveats and next actions reflect whether the latest evidence came from an inline workflow refresh or an existing report.",
-      "priority": 2,
-      "state": "Done",
+      ],
+      "created_at": "2026-03-20T19:09:35Z",
+      "description": "Record whether the shared-queue companion was refreshed inline by the current validation workflow or reused from an existing report, and surface that source in the exported bundle summary/index so downstream policy/reporting can reason about freshness honestly.",
+      "id": "big-par-092",
+      "identifier": "BIG-PAR-092",
       "labels": [
         "parallel",
         "validation",
         "tooling",
         "coordination"
       ],
+      "priority": 2,
+      "state": "Done",
+      "title": "Expose shared-queue refresh source in bundle summary",
+      "updated_at": "2026-03-20T19:15:55Z"
+    },
+    {
       "assigned_to_worker": true,
-      "created_at": "2026-03-21T00:00:00Z",
-      "updated_at": "2026-03-20T19:25:00Z",
       "comments": [
         {
           "body": "Closed `BIG-PAR-093` after threading the shared-queue refresh source into the continuation scorecard and downstream reporting/gate surfaces.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` now carries `shared_queue.source` into `shared_queue_companion`, uses `existing-report` as the fallback for older evidence, and tailors current-ceiling / next-runtime-hook guidance to the actual refresh provenance.\n- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` now includes both shared-queue `mode` and `source` in policy-check detail so hold/go guidance reflects the latest lineage honestly.\n- `bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json` and `bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json` were regenerated from the updated scripts; on March 21, 2026 the checked-in gate is `hold` because the latest validation bundle is older than the default 72-hour freshness threshold.\n- `tests/test_validation_bundle_continuation_scorecard.py`, `tests/test_validation_bundle_continuation_policy_gate.py`, `bigclaw-go/docs/e2e-validation.md`, and `bigclaw-go/docs/reports/validation-bundle-continuation-digest.md` now cover and document the new source-aware behavior without assuming a stale `go` snapshot.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded continuation scorecard/policy test-function harness ...` -> passed (`continuation scorecard/policy tests passed`)\n- `python3 bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` -> passed\n- `python3 bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` -> expected `hold` / exit 1 after regenerating checked-in artifacts because `latest_bundle_age_hours=101.33` exceeded the 72-hour threshold on 2026-03-21\n- `git rev-parse HEAD` -> `c1452a4b3d566ed69f02aa48ef445515be4ee4cc`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `c1452a4b3d566ed69f02aa48ef445515be4ee4cc` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `c1452a4b3d566ed69f02aa48ef445515be4ee4cc` (matches local)\n- `git log -1 --stat` -> `Thread shared-queue source into continuation scorecard`\n\nCommit: `c1452a4b3d566ed69f02aa48ef445515be4ee4cc`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T19:25:00Z"
         }
-      ]
-    },
-    {
-      "id": "big-par-094",
-      "identifier": "BIG-PAR-094",
-      "title": "Expose continuation gate summary in live validation index",
-      "description": "Surface the current continuation gate recommendation, freshness age, and failing checks directly in the exported live validation index so reviewers do not need to open the policy-gate JSON to see whether the checked-in bundle evidence is currently go or hold.",
+      ],
+      "created_at": "2026-03-21T00:00:00Z",
+      "description": "Carry the exported bundle shared-queue refresh source into the continuation scorecard and downstream policy/reporting outputs so source-specific caveats and next actions reflect whether the latest evidence came from an inline workflow refresh or an existing report.",
+      "id": "big-par-093",
+      "identifier": "BIG-PAR-093",
+      "labels": [
+        "parallel",
+        "validation",
+        "tooling",
+        "coordination"
+      ],
       "priority": 2,
       "state": "Done",
+      "title": "Thread shared-queue refresh source into continuation scorecard",
+      "updated_at": "2026-03-20T19:25:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "body": "Closed `BIG-PAR-094` after surfacing the continuation gate summary directly in the exported live validation index.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now reads the refreshed continuation policy-gate artifact after closeout and renders a compact continuation overview in `live-validation-index.md`, including gate status, recommendation, latest bundle age hours, failing checks, and the first next action.\n- `tests/test_parallel_validation_bundle.py` now asserts that the exported index includes the continuation gate summary instead of only linking to the continuation artifacts.\n- `bigclaw-go/docs/reports/live-validation-index.md` was regenerated so the checked-in reviewer surface now shows that the current continuation gate is `policy-hold`, with the stale-bundle freshness failure and the rerun command visible inline.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded tests/test_parallel_validation_bundle.py harness ...` -> passed (`parallel validation bundle tests passed`)\n- `git rev-parse HEAD` -> `8d222c7452d5eebe6eaa94a32d56f11aefd21341`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `8d222c7452d5eebe6eaa94a32d56f11aefd21341` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `8d222c7452d5eebe6eaa94a32d56f11aefd21341` (matches local)\n- `git log -1 --stat` -> `Expose continuation gate summary in validation index`\n\nCommit: `8d222c7452d5eebe6eaa94a32d56f11aefd21341`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T19:31:00Z"
+        }
+      ],
+      "created_at": "2026-03-20T19:27:00Z",
+      "description": "Surface the current continuation gate recommendation, freshness age, and failing checks directly in the exported live validation index so reviewers do not need to open the policy-gate JSON to see whether the checked-in bundle evidence is currently go or hold.",
+      "id": "big-par-094",
+      "identifier": "BIG-PAR-094",
       "labels": [
         "parallel",
         "validation",
         "tooling",
         "reporting"
       ],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-20T19:27:00Z",
-      "updated_at": "2026-03-20T19:31:00Z",
-      "comments": [
-        {
-          "body": "Closed `BIG-PAR-094` after surfacing the continuation gate summary directly in the exported live validation index.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now reads the refreshed continuation policy-gate artifact after closeout and renders a compact continuation overview in `live-validation-index.md`, including gate status, recommendation, latest bundle age hours, failing checks, and the first next action.\n- `tests/test_parallel_validation_bundle.py` now asserts that the exported index includes the continuation gate summary instead of only linking to the continuation artifacts.\n- `bigclaw-go/docs/reports/live-validation-index.md` was regenerated so the checked-in reviewer surface now shows that the current continuation gate is `policy-hold`, with the stale-bundle freshness failure and the rerun command visible inline.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded tests/test_parallel_validation_bundle.py harness ...` -> passed (`parallel validation bundle tests passed`)\n- `git rev-parse HEAD` -> `8d222c7452d5eebe6eaa94a32d56f11aefd21341`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `8d222c7452d5eebe6eaa94a32d56f11aefd21341` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `8d222c7452d5eebe6eaa94a32d56f11aefd21341` (matches local)\n- `git log -1 --stat` -> `Expose continuation gate summary in validation index`\n\nCommit: `8d222c7452d5eebe6eaa94a32d56f11aefd21341`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T19:31:00Z"
-        }
-      ]
-    },
-    {
-      "id": "big-par-095",
-      "identifier": "BIG-PAR-095",
-      "title": "Honor continuation refresh disable flag in run_all",
-      "description": "Make run_all forward the effective continuation refresh mode to export_validation_bundle.py so BIGCLAW_E2E_REFRESH_CONTINUATION=0 truly disables scorecard/policy regeneration instead of being ignored by the exporter default.",
       "priority": 2,
       "state": "Done",
+      "title": "Expose continuation gate summary in live validation index",
+      "updated_at": "2026-03-20T19:31:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "body": "Closed `BIG-PAR-095` after making the continuation disable flag authoritative in `run_all.sh`.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/run_all.sh` now derives an explicit exporter continuation mode from `BIGCLAW_E2E_REFRESH_CONTINUATION` and forwards `--refresh-continuation off|always` to `scripts/e2e/export_validation_bundle.py`, so `BIGCLAW_E2E_REFRESH_CONTINUATION=0` no longer gets ignored by the exporter default.\n- `tests/test_parallel_validation_bundle.py` now makes the stub exporter require `--refresh-continuation` and asserts that the summary records `continuation.mode=off` when the harness runs with `BIGCLAW_E2E_REFRESH_CONTINUATION=0`.\n- `bigclaw-go/docs/e2e-validation.md` now documents that setting `BIGCLAW_E2E_REFRESH_CONTINUATION=0` skips continuation regeneration in both the exporter and the `run_all.sh` wrapper for that run.\n\nValidation:\n- `bash -n bigclaw-go/scripts/e2e/run_all.sh` -> passed\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded test_run_all_can_refresh_shared_queue_before_bundle_export harness ...` -> passed (`run_all continuation-disable harness passed`)\n- `git rev-parse HEAD` -> `ee2dae7d03a01d73f2aed5d74a479cfca1f19068`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `ee2dae7d03a01d73f2aed5d74a479cfca1f19068` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `ee2dae7d03a01d73f2aed5d74a479cfca1f19068` (matches local)\n- `git log -1 --stat` -> `Honor continuation disable flag in run_all`\n\nCommit: `ee2dae7d03a01d73f2aed5d74a479cfca1f19068`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T19:36:00Z"
+        }
+      ],
+      "created_at": "2026-03-20T19:34:00Z",
+      "description": "Make run_all forward the effective continuation refresh mode to export_validation_bundle.py so BIGCLAW_E2E_REFRESH_CONTINUATION=0 truly disables scorecard/policy regeneration instead of being ignored by the exporter default.",
+      "id": "big-par-095",
+      "identifier": "BIG-PAR-095",
       "labels": [
         "parallel",
         "validation",
         "tooling",
         "workflow"
       ],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-20T19:34:00Z",
-      "updated_at": "2026-03-20T19:36:00Z",
-      "comments": [
-        {
-          "body": "Closed `BIG-PAR-095` after making the continuation disable flag authoritative in `run_all.sh`.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/run_all.sh` now derives an explicit exporter continuation mode from `BIGCLAW_E2E_REFRESH_CONTINUATION` and forwards `--refresh-continuation off|always` to `scripts/e2e/export_validation_bundle.py`, so `BIGCLAW_E2E_REFRESH_CONTINUATION=0` no longer gets ignored by the exporter default.\n- `tests/test_parallel_validation_bundle.py` now makes the stub exporter require `--refresh-continuation` and asserts that the summary records `continuation.mode=off` when the harness runs with `BIGCLAW_E2E_REFRESH_CONTINUATION=0`.\n- `bigclaw-go/docs/e2e-validation.md` now documents that setting `BIGCLAW_E2E_REFRESH_CONTINUATION=0` skips continuation regeneration in both the exporter and the `run_all.sh` wrapper for that run.\n\nValidation:\n- `bash -n bigclaw-go/scripts/e2e/run_all.sh` -> passed\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded test_run_all_can_refresh_shared_queue_before_bundle_export harness ...` -> passed (`run_all continuation-disable harness passed`)\n- `git rev-parse HEAD` -> `ee2dae7d03a01d73f2aed5d74a479cfca1f19068`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `ee2dae7d03a01d73f2aed5d74a479cfca1f19068` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `ee2dae7d03a01d73f2aed5d74a479cfca1f19068` (matches local)\n- `git log -1 --stat` -> `Honor continuation disable flag in run_all`\n\nCommit: `ee2dae7d03a01d73f2aed5d74a479cfca1f19068`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T19:36:00Z"
-        }
-      ]
-    },
-    {
-      "id": "big-par-096",
-      "identifier": "BIG-PAR-096",
-      "title": "Expose continuation gate details in summary JSON",
-      "description": "Thread the continuation policy-gate failing checks and latest bundle age into the exported live-validation summary so machine-readable consumers do not need to open the separate policy-gate artifact to understand a hold result.",
       "priority": 2,
       "state": "Done",
+      "title": "Honor continuation refresh disable flag in run_all",
+      "updated_at": "2026-03-20T19:36:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "body": "Closed `BIG-PAR-096` after extending the machine-readable validation summary with continuation gate detail.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now copies `latest_bundle_age_hours`, `failing_checks`, and `next_actions` from the continuation policy gate into `summary.continuation`, alongside the existing gate status and recommendation fields.\n- `tests/test_parallel_validation_bundle.py` now verifies that the exported summary JSON carries the continuation gate status, a non-empty failing-check list for the synthetic hold case, the latest bundle age, and next actions.\n- `bigclaw-go/docs/e2e-validation.md` now documents that `live-validation-summary.json` carries the continuation gate detail directly for machine-readable consumers.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded test_export_validation_bundle_generates_latest_reports_and_index harness ...` -> passed (`export validation bundle summary-detail harness passed`)\n- `git rev-parse HEAD` -> `3f14bca8f4b1619fabaa57d8ed01e418b6e42f1c`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `3f14bca8f4b1619fabaa57d8ed01e418b6e42f1c` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `3f14bca8f4b1619fabaa57d8ed01e418b6e42f1c` (matches local)\n- `git log -1 --stat` -> `Expose continuation gate details in summary`\n\nCommit: `3f14bca8f4b1619fabaa57d8ed01e418b6e42f1c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T19:44:00Z"
+        }
+      ],
+      "created_at": "2026-03-20T19:39:00Z",
+      "description": "Thread the continuation policy-gate failing checks and latest bundle age into the exported live-validation summary so machine-readable consumers do not need to open the separate policy-gate artifact to understand a hold result.",
+      "id": "big-par-096",
+      "identifier": "BIG-PAR-096",
       "labels": [
         "parallel",
         "validation",
         "tooling",
         "reporting"
       ],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-20T19:39:00Z",
-      "updated_at": "2026-03-20T19:44:00Z",
-      "comments": [
-        {
-          "body": "Closed `BIG-PAR-096` after extending the machine-readable validation summary with continuation gate detail.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now copies `latest_bundle_age_hours`, `failing_checks`, and `next_actions` from the continuation policy gate into `summary.continuation`, alongside the existing gate status and recommendation fields.\n- `tests/test_parallel_validation_bundle.py` now verifies that the exported summary JSON carries the continuation gate status, a non-empty failing-check list for the synthetic hold case, the latest bundle age, and next actions.\n- `bigclaw-go/docs/e2e-validation.md` now documents that `live-validation-summary.json` carries the continuation gate detail directly for machine-readable consumers.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded test_export_validation_bundle_generates_latest_reports_and_index harness ...` -> passed (`export validation bundle summary-detail harness passed`)\n- `git rev-parse HEAD` -> `3f14bca8f4b1619fabaa57d8ed01e418b6e42f1c`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `3f14bca8f4b1619fabaa57d8ed01e418b6e42f1c` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `3f14bca8f4b1619fabaa57d8ed01e418b6e42f1c` (matches local)\n- `git log -1 --stat` -> `Expose continuation gate details in summary`\n\nCommit: `3f14bca8f4b1619fabaa57d8ed01e418b6e42f1c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T19:44:00Z"
-        }
-      ]
+      "priority": 2,
+      "state": "Done",
+      "title": "Expose continuation gate details in summary JSON",
+      "updated_at": "2026-03-20T19:44:00Z"
     },
     {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "body": "Closed `BIG-PAR-097` after aligning the higher-level reviewer docs with the newer continuation surfaces.\n\nWhat changed:\n- `bigclaw-go/docs/reports/review-readiness.md` now notes that validation continuation evidence is not only captured in the scorecard and policy-gate artifacts, but is also surfaced inline in `docs/reports/live-validation-summary.json` and `docs/reports/live-validation-index.md`.\n- `bigclaw-go/docs/reports/issue-coverage.md` now carries the same repo-native reviewer framing in both the `OPE-271` follow-up digest mapping and the remaining-gap summary.\n\nValidation:\n- `python3 - <<\"PY\" ... direct importlib-loaded tests/test_followup_digests.py harness ...` -> passed (`followup digest consistency tests passed`)\n- `git rev-parse HEAD` -> `f46eb385f2784889ad75db1eda78cbddd7f846df`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `f46eb385f2784889ad75db1eda78cbddd7f846df` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `f46eb385f2784889ad75db1eda78cbddd7f846df` (matches local)\n- `git log -1 --stat` -> `Sync continuation surfaces in reviewer docs`\n\nCommit: `f46eb385f2784889ad75db1eda78cbddd7f846df`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T19:48:00Z"
+        }
+      ],
+      "created_at": "2026-03-20T19:47:00Z",
+      "description": "Update the broader repo-native reviewer docs so they mention that the live validation summary and index now carry continuation gate detail directly, not only the separate scorecard and policy-gate artifacts.",
       "id": "big-par-097",
       "identifier": "BIG-PAR-097",
-      "title": "Sync coverage and readiness docs with continuation surfaces",
-      "description": "Update the broader repo-native reviewer docs so they mention that the live validation summary and index now carry continuation gate detail directly, not only the separate scorecard and policy-gate artifacts.",
-      "priority": 3,
-      "state": "Done",
       "labels": [
         "parallel",
         "validation",
         "reporting",
         "docs"
       ],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-20T19:47:00Z",
-      "updated_at": "2026-03-20T19:48:00Z",
-      "comments": [
-        {
-          "body": "Closed `BIG-PAR-097` after aligning the higher-level reviewer docs with the newer continuation surfaces.\n\nWhat changed:\n- `bigclaw-go/docs/reports/review-readiness.md` now notes that validation continuation evidence is not only captured in the scorecard and policy-gate artifacts, but is also surfaced inline in `docs/reports/live-validation-summary.json` and `docs/reports/live-validation-index.md`.\n- `bigclaw-go/docs/reports/issue-coverage.md` now carries the same repo-native reviewer framing in both the `OPE-271` follow-up digest mapping and the remaining-gap summary.\n\nValidation:\n- `python3 - <<\"PY\" ... direct importlib-loaded tests/test_followup_digests.py harness ...` -> passed (`followup digest consistency tests passed`)\n- `git rev-parse HEAD` -> `f46eb385f2784889ad75db1eda78cbddd7f846df`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `f46eb385f2784889ad75db1eda78cbddd7f846df` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `f46eb385f2784889ad75db1eda78cbddd7f846df` (matches local)\n- `git log -1 --stat` -> `Sync continuation surfaces in reviewer docs`\n\nCommit: `f46eb385f2784889ad75db1eda78cbddd7f846df`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T19:48:00Z"
-        }
-      ]
+      "priority": 3,
+      "state": "Done",
+      "title": "Sync coverage and readiness docs with continuation surfaces",
+      "updated_at": "2026-03-20T19:48:00Z"
     },
     {
-      "id": "big-par-098",
-      "identifier": "BIG-PAR-098",
-      "title": "Stabilize continuation summary schema across refresh modes",
-      "description": "Keep `summary.continuation` shape consistent even when continuation refresh is disabled or skipped, so machine-readable consumers do not have to branch on missing fields for gate status, recommendation, failing checks, and next actions.",
-      "priority": 2,
-      "state": "Done",
-      "labels": [
-        "parallel",
-        "validation",
-        "tooling",
-        "reporting"
-      ],
       "assigned_to_worker": true,
-      "created_at": "2026-03-20T19:52:00Z",
-      "updated_at": "2026-03-20T19:54:00Z",
       "comments": [
         {
           "body": "Closed `BIG-PAR-098` after stabilizing the continuation summary schema across refresh modes.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now builds a default continuation result shape up front, so `summary.continuation` keeps `scorecard_status`, `policy_gate_status`, `policy_gate_recommendation`, `latest_bundle_age_hours`, `failing_checks`, and `next_actions` even when continuation refresh is disabled or auto-skipped.\n- The auto-skip path now marks `policy_gate_status=skipped` instead of dropping gate fields entirely, while the disabled path reports `not-refreshed` defaults.\n- `tests/test_parallel_validation_bundle.py` now covers the disabled schema, the auto-skip schema, and the existing exporter hold path, and `bigclaw-go/docs/e2e-validation.md` now documents the stable summary shape for skipped refresh cases.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded tests/test_parallel_validation_bundle.py harness for disabled, auto-skip, and exporter hold cases ...` -> passed (`parallel validation bundle schema tests passed`)\n- `git rev-parse HEAD` -> `7259fa69a0b9ec5a0305b1bb66a35c8a07fa0f54`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `7259fa69a0b9ec5a0305b1bb66a35c8a07fa0f54` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `7259fa69a0b9ec5a0305b1bb66a35c8a07fa0f54` (matches local)\n- `git log -1 --stat` -> `Stabilize continuation summary schema`\n\nCommit: `7259fa69a0b9ec5a0305b1bb66a35c8a07fa0f54`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T19:54:00Z"
         }
-      ]
-    },
-    {
-      "id": "big-par-099",
-      "identifier": "BIG-PAR-099",
-      "title": "Expose skipped continuation state in validation index",
-      "description": "Surface continuation status and reason in the live validation index even when continuation refresh is disabled or auto-skipped, so human reviewers do not lose the same context that now exists in the stable summary schema.",
-      "priority": 2,
-      "state": "Done",
+      ],
+      "created_at": "2026-03-20T19:52:00Z",
+      "description": "Keep `summary.continuation` shape consistent even when continuation refresh is disabled or skipped, so machine-readable consumers do not have to branch on missing fields for gate status, recommendation, failing checks, and next actions.",
+      "id": "big-par-098",
+      "identifier": "BIG-PAR-098",
       "labels": [
         "parallel",
         "validation",
         "tooling",
         "reporting"
       ],
+      "priority": 2,
+      "state": "Done",
+      "title": "Stabilize continuation summary schema across refresh modes",
+      "updated_at": "2026-03-20T19:54:00Z"
+    },
+    {
       "assigned_to_worker": true,
-      "created_at": "2026-03-20T19:58:00Z",
-      "updated_at": "2026-03-20T19:59:00Z",
       "comments": [
         {
           "body": "Closed `BIG-PAR-099` after surfacing skipped/disabled continuation state in the live validation index.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now builds a continuation overview from the stable summary schema even when continuation refresh did not run, and `render_index()` now shows gate status, recommendation, and refresh-state reason for skipped/disabled continuation cases instead of omitting continuation context.\n- `tests/test_parallel_validation_bundle.py` now covers the skipped-state overview/index path alongside the existing disabled, auto-skip, and refreshed hold cases.\n- `bigclaw-go/docs/e2e-validation.md` now documents that the live validation index surfaces skipped/disabled continuation state for human reviewers too.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded tests/test_parallel_validation_bundle.py harness for disabled, auto-skip, skipped-index, and refreshed hold cases ...` -> passed (`parallel validation bundle skipped-state tests passed`)\n- `git rev-parse HEAD` -> `d71b1e7b8b44c4b7d6d0bee7fb534e9e3cf71585`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `d71b1e7b8b44c4b7d6d0bee7fb534e9e3cf71585` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `d71b1e7b8b44c4b7d6d0bee7fb534e9e3cf71585` (matches local)\n- `git log -1 --stat` -> `Expose skipped continuation state in index`\n\nCommit: `d71b1e7b8b44c4b7d6d0bee7fb534e9e3cf71585`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T19:59:00Z"
         }
-      ]
-    },
-    {
-      "id": "big-par-100",
-      "identifier": "BIG-PAR-100",
-      "title": "Refresh validation manifest after continuation write",
-      "description": "Rebuild and rewrite the live validation manifest after continuation details are added so `live-validation-index.json` stays aligned with the final bundle summary instead of capturing a pre-continuation snapshot.",
+      ],
+      "created_at": "2026-03-20T19:58:00Z",
+      "description": "Surface continuation status and reason in the live validation index even when continuation refresh is disabled or auto-skipped, so human reviewers do not lose the same context that now exists in the stable summary schema.",
+      "id": "big-par-099",
+      "identifier": "BIG-PAR-099",
+      "labels": [
+        "parallel",
+        "validation",
+        "tooling",
+        "reporting"
+      ],
       "priority": 2,
       "state": "Done",
-      "labels": [
-        "parallel",
-        "validation",
-        "tooling",
-        "reporting"
-      ],
-      "assigned_to_worker": true,
-      "created_at": "2026-03-20T20:01:00Z",
-      "updated_at": "2026-03-20T20:04:00Z",
-      "comments": [
-        {
-          "body": "Closed `BIG-PAR-100` after aligning the machine-readable validation manifest with the final post-continuation summary.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now writes an initial manifest before continuation refresh so the scorecard input still exists, then rewrites the manifest after the continuation-enriched summary is persisted.\n- `build_recent_runs()` now carries a compact `continuation` subset for each recent run, so `live-validation-index.json` exposes the current run’s continuation gate state instead of dropping it from `recent_runs`.\n- `tests/test_parallel_validation_bundle.py` now asserts that both `manifest.latest` and the first `recent_runs` entry include the continuation policy-gate data after export.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded test_export_validation_bundle_generates_latest_reports_and_index harness ...` -> passed (`parallel validation bundle manifest-refresh test passed`)\n- `git rev-parse HEAD` -> `225310f124fa6024af1b03e6f680e7ad04894bc3`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `225310f124fa6024af1b03e6f680e7ad04894bc3` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `225310f124fa6024af1b03e6f680e7ad04894bc3` (matches local)\n- `git log -1 --stat` -> `Refresh validation manifest after continuation`\n\nCommit: `225310f124fa6024af1b03e6f680e7ad04894bc3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
-          "created_at": "2026-03-20T20:04:00Z"
-        }
-      ]
+      "title": "Expose skipped continuation state in validation index",
+      "updated_at": "2026-03-20T19:59:00Z"
     },
     {
-      "id": "big-par-101",
-      "identifier": "BIG-PAR-101",
-      "title": "Preserve continuation reason in manifest recent runs",
-      "description": "Carry the continuation refresh reason into the compact `recent_runs[].continuation` manifest subset so skipped and not-refreshed runs remain explainable without reopening each full summary artifact.",
-      "priority": 3,
-      "state": "Done",
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "body": "Closed `BIG-PAR-100` after aligning the machine-readable validation manifest with the final post-continuation summary.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now writes an initial manifest before continuation refresh so the scorecard input still exists, then rewrites the manifest after the continuation-enriched summary is persisted.\n- `build_recent_runs()` now carries a compact `continuation` subset for each recent run, so `live-validation-index.json` exposes the current run\u2019s continuation gate state instead of dropping it from `recent_runs`.\n- `tests/test_parallel_validation_bundle.py` now asserts that both `manifest.latest` and the first `recent_runs` entry include the continuation policy-gate data after export.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded test_export_validation_bundle_generates_latest_reports_and_index harness ...` -> passed (`parallel validation bundle manifest-refresh test passed`)\n- `git rev-parse HEAD` -> `225310f124fa6024af1b03e6f680e7ad04894bc3`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `225310f124fa6024af1b03e6f680e7ad04894bc3` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `225310f124fa6024af1b03e6f680e7ad04894bc3` (matches local)\n- `git log -1 --stat` -> `Refresh validation manifest after continuation`\n\nCommit: `225310f124fa6024af1b03e6f680e7ad04894bc3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "created_at": "2026-03-20T20:04:00Z"
+        }
+      ],
+      "created_at": "2026-03-20T20:01:00Z",
+      "description": "Rebuild and rewrite the live validation manifest after continuation details are added so `live-validation-index.json` stays aligned with the final bundle summary instead of capturing a pre-continuation snapshot.",
+      "id": "big-par-100",
+      "identifier": "BIG-PAR-100",
       "labels": [
         "parallel",
         "validation",
         "tooling",
         "reporting"
       ],
+      "priority": 2,
+      "state": "Done",
+      "title": "Refresh validation manifest after continuation write",
+      "updated_at": "2026-03-20T20:04:00Z"
+    },
+    {
       "assigned_to_worker": true,
-      "created_at": "2026-03-20T20:07:00Z",
-      "updated_at": "2026-03-20T20:10:42Z",
       "comments": [
         {
           "body": "Completed `BIG-PAR-101` by preserving the continuation refresh reason in the compact manifest `recent_runs` payload.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now carries `continuation.reason` into `recent_runs[].continuation` so skipped and non-refreshed runs keep an explainable compact reason alongside the policy gate summary.\n- `tests/test_parallel_validation_bundle.py` now verifies the exported manifest retains that reason in the compact recent-runs entry.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- targeted harness via `importlib` for `test_export_validation_bundle_generates_latest_reports_and_index` -> passed\n- `git rev-parse HEAD` at code commit time -> `354663968e39adf9dbefe710cee1ce7f58f905cd`\n- `git rev-parse origin/symphony/BIG-GOM-302` after auto-push -> `354663968e39adf9dbefe710cee1ce7f58f905cd` (matches local)\n- `git log -1 --stat` at code commit -> `Preserve continuation reason in manifest recent runs`\n\nCommit: `354663968e39adf9dbefe710cee1ce7f58f905cd`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T20:10:37Z"
         }
-      ]
+      ],
+      "created_at": "2026-03-20T20:07:00Z",
+      "description": "Carry the continuation refresh reason into the compact `recent_runs[].continuation` manifest subset so skipped and not-refreshed runs remain explainable without reopening each full summary artifact.",
+      "id": "big-par-101",
+      "identifier": "BIG-PAR-101",
+      "labels": [
+        "parallel",
+        "validation",
+        "tooling",
+        "reporting"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Preserve continuation reason in manifest recent runs",
+      "updated_at": "2026-03-20T20:10:42Z"
     }
   ]
 }

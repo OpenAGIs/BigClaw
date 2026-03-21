@@ -49,8 +49,7 @@ Use these entrypoints to keep the remaining Go-mainline migration slices moving 
 Linear issue capacity:
 
 ```bash
-bash scripts/ops/bigclawctl issue list --local-issues local-issues.json --json
-bash scripts/ops/bigclawctl issue create --local-issues local-issues.json --identifier BIG-GOM-309 --title "Go-native tracker slice"
+bash scripts/ops/bigclaw-issue list
 bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json
 bash scripts/ops/bigclaw-symphony
 bash scripts/ops/bigclaw-panel
@@ -61,11 +60,8 @@ Notes:
 - `bash scripts/ops/bigclaw-symphony` starts Symphony against [`workflow.md`](./workflow.md) and
   serves the local issue dashboard at `http://127.0.0.1:4000/`.
 - `bash scripts/ops/bigclaw-panel` prints the configured dashboard URL for the current workflow.
-- `bash scripts/ops/bigclawctl issue ... --local-issues local-issues.json` is the Go-native
-  local tracker path for listing, creating, commenting on, and updating issue state.
-- `bash scripts/ops/bigclaw-issue list|create|state|comment ...` now delegates to the same
-  Go-native local tracker flow by default and only falls back to `symphony issue` for
-  workflow-managed subcommands outside that local tracker set.
+- `bash scripts/ops/bigclaw-issue ...` wraps `symphony issue ... --workflow workflow.md` so local
+  issue creation and state changes stay pinned to this repository's tracker file.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
 
@@ -85,10 +81,10 @@ pip install -e .[dev]
 python -m pytest
 ```
 
-Or use the helper script:
+Or use the legacy bootstrap helper:
 
 ```bash
-bash scripts/dev_bootstrap.sh
+BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
 ```
 
 ## Legacy Python local test (without editable install)
@@ -99,7 +95,19 @@ If your environment has restrictive system-packages permissions, run tests with 
 PYTHONPATH=src python3 -m pytest
 ```
 
-## Smoke verify
+## Go smoke verify
+
+```bash
+cd BigClaw/bigclaw-go
+go test ./...
+go run ./cmd/bigclawd &
+curl localhost:8080/healthz
+bash ../scripts/ops/bigclawctl github-sync status --json
+```
+
+## Legacy Python smoke verify
+
+Use this only when validating a frozen migration-reference path:
 
 ```bash
 PYTHONPATH=src python3 scripts/dev_smoke.py
@@ -112,6 +120,12 @@ Go mainline:
 ```bash
 cd BigClaw/bigclaw-go
 go test ./...
+```
+
+Go-first bootstrap helper:
+
+```bash
+bash scripts/dev_bootstrap.sh
 ```
 
 Legacy Python migration surface:
@@ -137,4 +151,13 @@ Repository: https://github.com/OpenAGIs/BigClaw
 
 Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-managed repo to
 reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
-The Go-first BigClaw entrypoint is `scripts/ops/bigclawctl`, and `go run ./cmd/bigclawd` is the runtime mainline. Legacy Python operator wrappers, `python -m bigclaw`, and the Python static server path now emit migration-only notices and defer to the Go-owned path or remain explicitly legacy-only.
+The Go-first BigClaw entrypoint is `scripts/ops/bigclawctl`; legacy Python
+bootstrap wrappers remain only as compatibility shims during migration.
+
+The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
+`src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
+`src/bigclaw/orchestration.py`, and `src/bigclaw/queue.py` are now frozen for
+migration-only reference use. The legacy `python -m bigclaw serve` /
+`src/bigclaw/service.py` path is also frozen; use `go run ./bigclaw-go/cmd/bigclawd`
+for the active local server path. Active runtime development belongs in
+`bigclaw-go/internal/*`.

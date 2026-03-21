@@ -1,0 +1,57 @@
+{
+  "generated_at": "2026-03-17T23:45:00Z",
+  "ticket": "OPE-225",
+  "track": "BIG-DUR-104",
+  "title": "Provider-backed live handoff isolation evidence pack",
+  "status": "checked_in_evidence_pack",
+  "backend": "http_remote_service",
+  "validation_lane": "external_store_validation",
+  "report_path": "docs/reports/provider-live-handoff-isolation-evidence-pack.json",
+  "evidence_sources": [
+    "bigclaw-go/docs/reports/external-store-validation-report.json",
+    "bigclaw-go/internal/events/http_log.go",
+    "bigclaw-go/internal/api/server_test.go",
+    "bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md"
+  ],
+  "reviewer_links": [
+    "docs/e2e-validation.md",
+    "docs/reports/external-store-validation-report.json",
+    "docs/reports/replicated-event-log-durability-rollout-contract.md",
+    "docs/reports/review-readiness.md"
+  ],
+  "summary": {
+    "scenario_count": 1,
+    "isolated_scenarios": 1,
+    "stalled_scenarios": 0,
+    "replay_backlog_events": 4,
+    "replay_step_delay_ms": 0,
+    "replay_window_ms": 0,
+    "live_delivery_deadline_ms": 200,
+    "isolation_maintained": true
+  },
+  "scenarios": [
+    {
+      "name": "http_remote_service_replay_handoff_keeps_live_lane_unblocked",
+      "status": "isolated",
+      "replay_path": "HTTPEventLog replay through the repo-native remote event-log service while backlog delivery is intentionally gated",
+      "live_path": "events.Bus live subscriber delivery and /stream/events handoff on the runtime node",
+      "replay_backlog_events": 4,
+      "replay_step_delay_ms": 0,
+      "replay_window_ms": 0,
+      "live_delivery_deadline_ms": 200,
+      "replay_drains_after_live": true,
+      "source_tests": [
+        "internal/api/server_test.go"
+      ],
+      "notes": [
+        "The first provider-backed adapter path is the repo-native HTTP remote-service event log backed by durable SQLite storage.",
+        "A replaying subscriber is held behind the remote service gate while a live-only subscriber must still receive the next publish inside the review deadline.",
+        "After the gate opens, the replaying subscriber drains backlog and then receives the buffered live event plus the next handoff publish without duplicate replay overlap."
+      ]
+    }
+  ],
+  "limitations": [
+    "This proof covers the first provider-backed adapter path (`http_remote_service`), not a native broker_replicated adapter.",
+    "Live fanout still terminates through the runtime node's in-process event bus while replay and checkpoint state are served by the remote durable event-log service."
+  ]
+}

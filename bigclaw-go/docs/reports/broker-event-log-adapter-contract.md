@@ -2,7 +2,7 @@
 
 ## Scope
 
-This note captures the implementation-ready boundary for `OPE-208` / `BIG-PAR-021`: a provider-agnostic event-log contract that can move BigClaw beyond the current in-process replay history while preserving publish, replay, and checkpoint semantics.
+This note captures the implementation-ready boundary for `OPE-208` / `BIG-PAR-021` and the contract-surface follow-up in `OPE-257` / `BIG-PAR-095`: a provider-agnostic event-log contract that can move BigClaw beyond the current in-process replay history while preserving publish, replay, checkpoint, partition-routing, and subscriber-ownership semantics.
 
 ## Contract surface
 
@@ -11,7 +11,22 @@ This note captures the implementation-ready boundary for `OPE-208` / `BIG-PAR-02
   - `CheckpointStore` for consumer resume state.
   - `Record` and `Position` so replay can be anchored to a portable sequence/offset token instead of an implementation-specific cursor.
   - `Capabilities` so API/bootstrap surfaces can report whether a backend is durable, ordered, checkpoint-aware, and broker-backed.
+  - `PartitionRoute` so future broker-backed adapters can describe topic routing with provider-neutral `trace_id`, `task_id`, and `event_type` partition keys.
+  - `SubscriberOwnershipContract` so future broker-backed adapters can describe exclusive subscriber-group ownership, lease fencing, and partition affinity without changing caller-facing subscription APIs.
 - `internal/events/memory_log.go` is the first implementation of that contract and acts as the compatibility baseline for future broker adapters.
+
+## Contract-only target semantics
+
+- Partitioned topic routing:
+  - `SubscriptionRequest.PartitionRoute` reserves one neutral route description for future backends.
+  - `PartitionRoute.Topic` names the provider-defined stream or topic family.
+  - `PartitionRoute.PartitionKey` is limited to existing BigClaw selectors: `trace_id`, `task_id`, and `event_type`.
+  - `PartitionRoute.OrderingScope` is descriptive only; callers still use `Position.Sequence` as the portable replay token.
+- Broker-backed subscriber ownership:
+  - `SubscriptionRequest.OwnershipContract` reserves one neutral ownership description for future backends.
+  - `SubscriberOwnershipContract` carries `subscriber_group`, `consumer`, `mode`, `epoch`, `lease_token`, and optional `partition_hints`.
+  - The contract is explicit that epoch plus lease token fencing is required before checkpoint writes can claim cross-process ownership transfer safety.
+- These fields are contract-only in the current checkout. No broker-backed adapter, partitioned topic runtime, or shared durable ownership backend is shipped yet.
 
 ## Portable semantics
 

@@ -6,6 +6,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
+)
+
+const (
+	configLockRetryCount = 6
+	configLockRetryDelay = 50 * time.Millisecond
 )
 
 type RepoSyncStatus struct {
@@ -58,6 +64,22 @@ func requireGit(repo string, args ...string) (string, error) {
 		return "", errors.New(detail)
 	}
 	return trimmed(result.stdout), nil
+}
+
+func requireGitWithConfigLockRetry(repo string, args ...string) (string, error) {
+	var lastErr error
+	for attempt := 0; attempt < configLockRetryCount; attempt++ {
+		output, err := requireGit(repo, args...)
+		if err == nil {
+			return output, nil
+		}
+		lastErr = err
+		if !isConfigLockError(err) || attempt == configLockRetryCount-1 {
+			break
+		}
+		time.Sleep(time.Duration(attempt+1) * configLockRetryDelay)
+	}
+	return "", lastErr
 }
 
 func trimmed(value string) string {
@@ -230,13 +252,22 @@ func InstallGitHooks(repo string, hooksPath string) (string, error) {
 	if err != nil || !info.IsDir() {
 		return "", fmt.Errorf("missing hooks directory: %s", hooksDir)
 	}
-	if _, err := requireGit(repoPath, "config", "core.hooksPath", hooksPath); err != nil {
+
+	currentHooksPath, configured, err := gitConfigValue(repoPath, "core.hooksPath")
+	if err != nil {
 		return "", err
 	}
+	if !configured || currentHooksPath != hooksPath {
+		if _, err := requireGitWithConfigLockRetry(repoPath, "config", "core.hooksPath", hooksPath); err != nil {
+			return "", err
+		}
+	}
+
 	entries, err := os.ReadDir(hooksDir)
 	if err != nil {
 		return "", err
 	}
+
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
@@ -253,6 +284,47 @@ func InstallGitHooks(repo string, hooksPath string) (string, error) {
 	return hooksDir, nil
 }
 
+func gitConfigValue(repo string, key string) (string, bool, error) {
+	result := git(repo, "config", "--get", key)
+	if result.returnCode == 0 {
+		return trimmed(result.stdout), true, nil
+	}
+	if result.returnCode == 1 {
+		return "", false, nil
+	}
+	detail := trimmed(result.stderr)
+	if detail == "" {
+		detail = trimmed(result.stdout)
+	}
+	if detail == "" {
+		detail = fmt.Sprintf("git config --get %s failed", key)
+	}
+	return "", false, errors.New(detail)
+}
+
+func isConfigLockError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return hasSubstring(err.Error(), "could not lock config file")
+}
+
+func hasSubstring(value string, needle string) bool {
+	if needle == "" {
+		return true
+	}
+	if len(needle) > len(value) {
+		return false
+	}
+	lastStart := len(value) - len(needle)
+	for start := 0; start <= lastStart; start++ {
+		if value[start:start+len(needle)] == needle {
+			return true
+		}
+	}
+	return false
+}
+
 func EnsureRepoSync(repo string, remote string, autoPush bool, allowDirty bool) (RepoSyncStatus, error) {
 	repoPath, err := filepath.Abs(repo)
 	if err != nil {
@@ -262,10 +334,7 @@ func EnsureRepoSync(repo string, remote string, autoPush bool, allowDirty bool) 
 	if err != nil {
 		return RepoSyncStatus{}, err
 	}
-	if status.Dirty {
-		if allowDirty {
-			return status, nil
-		}
+	if status.Dirty && !allowDirty {
 		return RepoSyncStatus{}, errors.New("working tree is dirty; commit or stash changes before syncing")
 	}
 	if status.RemoteExists && !status.Synced {
@@ -280,16 +349,25 @@ func EnsureRepoSync(repo string, remote string, autoPush bool, allowDirty bool) 
 			}
 			return RepoSyncStatus{}, errors.New(detail)
 		}
-		pullResult := git(repoPath, "pull", "--ff-only", remote, status.Branch)
-		if pullResult.returnCode != 0 {
-			detail := trimmed(pullResult.stderr)
-			if detail == "" {
-				detail = trimmed(pullResult.stdout)
+		relation, err := branchRelation(repoPath, remote, status.Branch)
+		if err != nil {
+			return RepoSyncStatus{}, err
+		}
+		if relation.behind > 0 {
+			if status.Dirty {
+				return RepoSyncStatus{}, fmt.Errorf("remote branch moved while working tree is dirty: branch=%s ahead=%d behind=%d", status.Branch, relation.ahead, relation.behind)
 			}
-			if detail == "" {
-				detail = fmt.Sprintf("git pull --ff-only %s %s failed", remote, status.Branch)
+			pullResult := git(repoPath, "pull", "--ff-only", remote, status.Branch)
+			if pullResult.returnCode != 0 {
+				detail := trimmed(pullResult.stderr)
+				if detail == "" {
+					detail = trimmed(pullResult.stdout)
+				}
+				if detail == "" {
+					detail = fmt.Sprintf("git pull --ff-only %s %s failed", remote, status.Branch)
+				}
+				return RepoSyncStatus{}, errors.New(detail)
 			}
-			return RepoSyncStatus{}, errors.New(detail)
 		}
 		status, err = InspectRepoSync(repoPath, remote)
 		if err != nil {
@@ -334,6 +412,42 @@ func valueOr(value string, fallback string) string {
 		return fallback
 	}
 	return value
+}
+
+type syncRelation struct {
+	ahead  int
+	behind int
+}
+
+func branchRelation(repo string, remote string, branch string) (syncRelation, error) {
+	output, err := requireGit(repo, "rev-list", "--left-right", "--count", "HEAD...refs/remotes/"+remote+"/"+branch)
+	if err != nil {
+		return syncRelation{}, err
+	}
+	fields := splitWhitespace(output)
+	if len(fields) != 2 {
+		return syncRelation{}, fmt.Errorf("unexpected rev-list output: %q", output)
+	}
+	ahead, err := parseInt(fields[0])
+	if err != nil {
+		return syncRelation{}, err
+	}
+	behind, err := parseInt(fields[1])
+	if err != nil {
+		return syncRelation{}, err
+	}
+	return syncRelation{ahead: ahead, behind: behind}, nil
+}
+
+func parseInt(value string) (int, error) {
+	result := 0
+	for _, r := range value {
+		if r < '0' || r > '9' {
+			return 0, fmt.Errorf("invalid integer: %q", value)
+		}
+		result = result*10 + int(r-'0')
+	}
+	return result, nil
 }
 
 func splitLines(value string) []string {

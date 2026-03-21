@@ -1,8 +1,15 @@
+"""Legacy Python runtime surface frozen after Go mainline cutover."""
+
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
+from .deprecation import LEGACY_RUNTIME_GUIDANCE
 from .models import Task
 from .observability import TaskRun
+
+
+LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE
+GO_MAINLINE_REPLACEMENT = "bigclaw-go/internal/worker/runtime.go"
 
 
 @dataclass
@@ -161,6 +168,18 @@ class ClawWorkerRuntime:
         )
 
         if not decision.approved:
+            if profile.medium == "none":
+                run.log("warn", "worker paused by scheduler budget policy", reason=decision.reason)
+                run.audit(
+                    "worker.lifecycle",
+                    actor,
+                    "paused",
+                    medium=decision.medium,
+                    required_tools=task.required_tools,
+                    reason=decision.reason,
+                )
+                run.trace("worker.lifecycle", "blocked", medium=decision.medium, reason=decision.reason)
+                return WorkerExecutionResult(run=run, tool_results=[], sandbox_profile=profile)
             run.log("warn", "worker waiting for approval", medium=decision.medium)
             run.audit(
                 "worker.lifecycle",

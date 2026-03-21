@@ -85,13 +85,12 @@ def check(name, passed, detail):
 
 
 def build_report(
-    repo_root=None,
     index_manifest_path='bigclaw-go/docs/reports/live-validation-index.json',
     bundle_root_path='bigclaw-go/docs/reports/live-validation-runs',
     summary_path='bigclaw-go/docs/reports/live-validation-summary.json',
     shared_queue_report_path='bigclaw-go/docs/reports/multi-node-shared-queue-report.json',
 ):
-    repo_root = pathlib.Path(repo_root).resolve() if repo_root else pathlib.Path(__file__).resolve().parents[3]
+    repo_root = pathlib.Path(__file__).resolve().parents[3]
     bigclaw_go_root = repo_root / 'bigclaw-go'
     manifest = load_json(resolve_repo_path(repo_root, index_manifest_path))
     latest = manifest['latest']
@@ -104,19 +103,9 @@ def build_report(
         recent_run_inputs.append(str(summary_file.relative_to(repo_root)))
 
     latest_summary = load_json(resolve_repo_path(repo_root, summary_path))
-    shared_queue_summary = latest_summary.get('shared_queue', {}) if isinstance(latest_summary, dict) else {}
-    bundled_shared_queue_report_path = shared_queue_summary.get('bundle_report_path')
-    shared_queue_source = shared_queue_summary.get('source', 'existing-report')
-    if bundled_shared_queue_report_path:
-        shared_queue = load_json(resolve_evidence_path(repo_root, bigclaw_go_root, bundled_shared_queue_report_path))
-        shared_queue_report_source = bundled_shared_queue_report_path
-        shared_queue_mode = 'bundled-companion'
-    else:
-        shared_queue = load_json(resolve_repo_path(repo_root, shared_queue_report_path))
-        shared_queue_report_source = shared_queue_report_path
-        shared_queue_mode = 'standalone-proof'
-        shared_queue_source = 'existing-report'
+    shared_queue = load_json(resolve_repo_path(repo_root, shared_queue_report_path))
     bundle_root = resolve_repo_path(repo_root, bundle_root_path)
+    bundled_shared_queue = latest_summary.get('shared_queue_companion', {}) if isinstance(latest_summary, dict) else {}
 
     lane_scorecards = [build_lane_scorecard(recent_runs, lane) for lane in EXECUTOR_LANES]
     latest_generated_at = parse_time(latest['generated_at'])
@@ -156,8 +145,8 @@ def build_report(
         ),
         check(
             'shared_queue_companion_proof_available',
-            bool(shared_queue.get('all_ok')),
-            f"cross_node_completions={shared_queue.get('cross_node_completions')}",
+            bool(bundled_shared_queue.get('available', shared_queue.get('all_ok'))),
+            f"cross_node_completions={bundled_shared_queue.get('cross_node_completions', shared_queue.get('cross_node_completions'))}",
         ),
         check(
             'continuation_surface_is_workflow_triggered',
@@ -167,35 +156,32 @@ def build_report(
     ]
 
     shared_queue_companion = {
-        'available': bool(shared_queue.get('all_ok')),
-        'report_path': shared_queue_report_source,
-        'cross_node_completions': shared_queue.get('cross_node_completions', 0),
-        'duplicate_completed_tasks': len(shared_queue.get('duplicate_completed_tasks', [])),
-        'duplicate_started_tasks': len(shared_queue.get('duplicate_started_tasks', [])),
-        'mode': shared_queue_mode,
-        'source': shared_queue_source,
+        'available': bool(bundled_shared_queue.get('available', shared_queue.get('all_ok'))),
+        'report_path': bundled_shared_queue.get('canonical_report_path', shared_queue_report_path),
+        'summary_path': bundled_shared_queue.get('canonical_summary_path', 'bigclaw-go/docs/reports/shared-queue-companion-summary.json'),
+        'bundle_report_path': bundled_shared_queue.get('bundle_report_path'),
+        'bundle_summary_path': bundled_shared_queue.get('bundle_summary_path'),
+        'cross_node_completions': bundled_shared_queue.get('cross_node_completions', shared_queue.get('cross_node_completions', 0)),
+        'duplicate_completed_tasks': bundled_shared_queue.get(
+            'duplicate_completed_tasks', len(shared_queue.get('duplicate_completed_tasks', []))
+        ),
+        'duplicate_started_tasks': bundled_shared_queue.get(
+            'duplicate_started_tasks', len(shared_queue.get('duplicate_started_tasks', []))
+        ),
+        'mode': 'bundle-companion-summary' if bundled_shared_queue else 'standalone-proof',
     }
 
     current_ceiling = [
         'continuation across future validation bundles remains workflow-triggered',
-        (
-            'shared-queue coordination proof is attached to bundle lineage, but the latest checked-in evidence '
-            'still reuses an existing shared-queue report rather than an inline workflow refresh'
-            if shared_queue_source == 'existing-report'
-            else 'shared-queue coordination proof is attached to bundle lineage via an inline workflow refresh, but that refresh is still opt-in rather than default'
-        ),
+        'shared-queue coordination proof now ships as adjacent bundle metadata rather than an executor-native lane',
         'recent history is bounded to the exported bundle index and not an always-on service',
     ]
     if not repeated_lane_coverage:
         current_ceiling.append('not every executor lane is enabled across every indexed bundle in the current recent window')
 
     next_runtime_hooks = [
-        'enable BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1 in workflow closeout when continuation holds should fail the run',
-        (
-            'prefer BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1 during run_all.sh closeout when bundle lineage should capture an inline shared-queue refresh'
-            if shared_queue_source == 'existing-report'
-            else 'keep shared-queue companion refresh on the same orchestrated workflow that emits the live validation bundle'
-        ),
+        'set BIGCLAW_E2E_CONTINUATION_GATE_MODE=hold or fail in workflow closeout when continuation holds should block or fail the run',
+        'decide whether shared-queue coordination should stay as adjacent bundle metadata or gain its own executor-native validation lane',
         'extend the automatic continuation refresh beyond run_all.sh into broader workflow orchestrators',
         'extend the scorecard beyond the latest recent_runs window when more longitudinal evidence exists',
     ]
@@ -234,13 +220,12 @@ def build_report(
 
 def main():
     parser = argparse.ArgumentParser(description='Generate the validation bundle continuation scorecard')
-    parser.add_argument('--repo-root', default=None)
     parser.add_argument('--output', default='bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json')
     parser.add_argument('--pretty', action='store_true')
     args = parser.parse_args()
 
-    repo_root = pathlib.Path(args.repo_root).resolve() if args.repo_root else pathlib.Path(__file__).resolve().parents[3]
-    report = build_report(repo_root=repo_root)
+    repo_root = pathlib.Path(__file__).resolve().parents[3]
+    report = build_report()
     output_path = resolve_repo_path(repo_root, args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')

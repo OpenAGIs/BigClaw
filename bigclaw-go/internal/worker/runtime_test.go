@@ -2,6 +2,9 @@ package worker
 
 import (
 	"context"
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -13,6 +16,7 @@ import (
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/queue"
 	"bigclaw-go/internal/scheduler"
+	"bigclaw-go/internal/workflow"
 )
 
 type fakeRunner struct {
@@ -203,7 +207,24 @@ func TestRuntimeDefaultsNilSchedulerAndRegistryToSafeBehavior(t *testing.T) {
 
 func TestRuntimePublishesExecutorArtifacts(t *testing.T) {
 	q := queue.NewMemoryQueue()
-	if err := q.Enqueue(context.Background(), domain.Task{ID: "task-artifacts", TraceID: "trace-artifacts", Priority: 1, RequiredExecutor: domain.ExecutorLocal, RequiredTools: []string{"browser", "git"}, CreatedAt: time.Now()}); err != nil {
+	if err := q.Enqueue(context.Background(), domain.Task{
+		ID:               "task-artifacts",
+		TraceID:          "trace-artifacts",
+		Priority:         1,
+		RequiredExecutor: domain.ExecutorLocal,
+		RequiredTools:    []string{"browser", "git"},
+		ValidationPlan:   []string{"capture trace"},
+		Metadata: map[string]string{
+			"workflow_definition": `{
+				"name":"release-closeout",
+				"report_path_template":"reports/{task_id}/{run_id}.md",
+				"journal_path_template":"journals/{workflow}/{run_id}.json",
+				"validation_evidence":["capture trace","download bundle"],
+				"approvals":["ops-review"]
+			}`,
+		},
+		CreatedAt: time.Now(),
+	}); err != nil {
 		t.Fatalf("enqueue: %v", err)
 	}
 	bus, recorder := newRuntimeRecorder()
@@ -223,8 +244,8 @@ func TestRuntimePublishesExecutorArtifacts(t *testing.T) {
 		t.Fatalf("expected task to be processed")
 	}
 	events := recorder.EventsByTask("task-artifacts", 10)
-	if len(events) != 4 {
-		t.Fatalf("expected 4 lifecycle events, got %d", len(events))
+	if len(events) != 5 {
+		t.Fatalf("expected 5 lifecycle events including acceptance annotation, got %d", len(events))
 	}
 	started := events[2]
 	if started.Type != domain.EventTaskStarted {
@@ -238,12 +259,249 @@ func TestRuntimePublishesExecutorArtifacts(t *testing.T) {
 	if completed.Type != domain.EventTaskCompleted {
 		t.Fatalf("expected completed event, got %+v", completed)
 	}
+	if completed.RunID == "" {
+		t.Fatalf("expected run_id on completed event, got %+v", completed)
+	}
+	if completed.Payload["run_id"] != completed.RunID {
+		t.Fatalf("expected run_id in payload, got %+v", completed.Payload)
+	}
 	artifacts, ok := completed.Payload["artifacts"].([]string)
 	if !ok || len(artifacts) != 2 {
 		t.Fatalf("expected artifact list in completed payload, got %+v", completed.Payload)
 	}
 	if completed.Payload["executor"] != domain.ExecutorLocal {
 		t.Fatalf("expected executor in completed payload, got %+v", completed.Payload)
+	}
+	if completed.Payload["report_path"] != "reports/task-artifacts/"+completed.RunID+".md" {
+		t.Fatalf("expected report path in completed payload, got %+v", completed.Payload)
+	}
+	if completed.Payload["journal_path"] != "journals/release-closeout/"+completed.RunID+".json" {
+		t.Fatalf("expected journal path in completed payload, got %+v", completed.Payload)
+	}
+	if validation, ok := completed.Payload["validation_evidence"].([]string); !ok || len(validation) != 2 || validation[0] != "capture trace" || validation[1] != "download bundle" {
+		t.Fatalf("expected validation evidence in completed payload, got %+v", completed.Payload)
+	}
+	if approvals, ok := completed.Payload["required_approvals"].([]string); !ok || len(approvals) != 1 || approvals[0] != "ops-review" {
+		t.Fatalf("expected approvals in completed payload, got %+v", completed.Payload)
+	}
+	runCloseout, ok := completed.Payload["workflow_run"].(workflow.WorkflowRun)
+	if !ok {
+		t.Fatalf("expected workflow_run in completed payload, got %+v", completed.Payload)
+	}
+	if runCloseout.RunID != completed.RunID || runCloseout.Status != workflow.WorkflowRunSucceeded {
+		t.Fatalf("expected succeeded workflow closeout, got %+v", runCloseout)
+	}
+	annotated := events[4]
+	if annotated.Type != domain.EventRunAnnotated {
+		t.Fatalf("expected acceptance annotation event, got %+v", annotated)
+	}
+	if annotated.RunID != completed.RunID {
+		t.Fatalf("expected acceptance annotation to share run_id, got %+v", annotated)
+	}
+}
+
+func TestRuntimePublishesOrchestrationAssessmentOnRoutedEvent(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	task := domain.Task{
+		ID:            "task-assessment",
+		TraceID:       "trace-assessment",
+		Source:        "linear",
+		Title:         "Customer analytics rollout",
+		Description:   "Need customer stakeholder rollout and analytics validation.",
+		Labels:        []string{"customer", "analytics"},
+		RequiredTools: []string{"browser", "sql"},
+		CreatedAt:     time.Now(),
+	}
+	if err := q.Enqueue(context.Background(), task); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+	runtime := Runtime{
+		WorkerID:    "worker-1",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorKubernetes, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    200 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
+	if !processed {
+		t.Fatalf("expected task to be processed")
+	}
+	events := recorder.EventsByTask("task-assessment", 10)
+	if len(events) != 5 {
+		t.Fatalf("expected 5 lifecycle events with handoff, got %d", len(events))
+	}
+	routed := events[1]
+	if routed.Type != domain.EventSchedulerRouted {
+		t.Fatalf("expected routed event, got %+v", routed)
+	}
+	orchestration, ok := routed.Payload["orchestration"].(map[string]any)
+	if !ok || orchestration["collaboration_mode"] != "tier-limited" {
+		t.Fatalf("expected orchestration payload on routed event, got %+v", routed.Payload)
+	}
+	policy, ok := routed.Payload["policy"].(map[string]any)
+	if !ok || policy["upgrade_required"] != true || policy["tier"] != "standard" {
+		t.Fatalf("expected policy payload on routed event, got %+v", routed.Payload)
+	}
+	handoff := events[2]
+	if handoff.Type != domain.EventRunTakeover || handoff.Payload["target_team"] != "operations" || handoff.Payload["handoff_status"] != "blocked" {
+		t.Fatalf("expected operations handoff event after routed event, got %+v", handoff)
+	}
+}
+
+func TestRuntimePublishesRejectedDecisionHandoffBeforeRetry(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	task := domain.Task{
+		ID:            "task-assessment-reject",
+		TraceID:       "trace-assessment-reject",
+		RiskLevel:     domain.RiskHigh,
+		Labels:        []string{"security"},
+		RequiredTools: []string{"deploy"},
+		BudgetCents:   500,
+		CreatedAt:     time.Now(),
+	}
+	if err := q.Enqueue(context.Background(), task); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+	runtime := Runtime{
+		WorkerID:    "worker-1",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorLocal, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    200 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 100})
+	if !processed {
+		t.Fatalf("expected task to be processed")
+	}
+	events := recorder.EventsByTask("task-assessment-reject", 10)
+	if len(events) != 3 {
+		t.Fatalf("expected leased, handoff, retry events, got %+v", events)
+	}
+	if events[1].Type != domain.EventRunTakeover || events[1].Payload["target_team"] != "security" {
+		t.Fatalf("expected security handoff event before retry, got %+v", events[1])
+	}
+	if events[2].Type != domain.EventTaskRetried {
+		t.Fatalf("expected retry event after handoff, got %+v", events[2])
+	}
+}
+
+func TestRuntimeWritesWorkpadJournalAndStoresArtifactPath(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	task := domain.Task{
+		ID:            "task-workpad",
+		TraceID:       "trace-workpad",
+		Source:        "linear",
+		RequiredTools: []string{"git"},
+		CreatedAt:     time.Now(),
+	}
+	if err := q.Enqueue(context.Background(), task); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+	dir := t.TempDir()
+	runtime := Runtime{
+		WorkerID:    "worker-1",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorLocal, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    200 * time.Millisecond,
+		TaskTimeout: time.Second,
+		WorkpadDir:  dir,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
+	if !processed {
+		t.Fatalf("expected task to be processed")
+	}
+	stored, ok := recorder.Task("task-workpad")
+	if !ok {
+		t.Fatal("expected stored task snapshot")
+	}
+	workpadPath := stored.Metadata["workpad"]
+	if workpadPath == "" {
+		t.Fatalf("expected workpad path in task metadata, got %+v", stored.Metadata)
+	}
+	expectedPath := filepath.Join(dir, "task-workpad", "attempt-1.json")
+	if workpadPath != expectedPath {
+		t.Fatalf("expected workpad path %q, got %q", expectedPath, workpadPath)
+	}
+	body, err := os.ReadFile(workpadPath)
+	if err != nil {
+		t.Fatalf("read workpad journal: %v", err)
+	}
+	var journal workflow.WorkpadJournal
+	if err := json.Unmarshal(body, &journal); err != nil {
+		t.Fatalf("unmarshal workpad journal: %v", err)
+	}
+	if journal.TaskID != "task-workpad" || journal.RunID != "task-workpad-attempt-1" {
+		t.Fatalf("unexpected journal identity: %+v", journal)
+	}
+	if len(journal.Entries) != 4 {
+		t.Fatalf("expected intake, scheduler, execution started, execution completed entries, got %+v", journal.Entries)
+	}
+	if journal.Entries[0].Step != "intake" || journal.Entries[1].Step != "scheduler" || journal.Entries[2].Status != "started" || journal.Entries[3].Status != "completed" {
+		t.Fatalf("unexpected journal entries: %+v", journal.Entries)
+	}
+}
+
+func TestRuntimeAnnotatesAcceptanceOutcomeFromTaskMetadata(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	task := domain.Task{
+		ID:                 "task-acceptance",
+		TraceID:            "trace-acceptance",
+		AcceptanceCriteria: []string{"ship report"},
+		ValidationPlan:     []string{"go test ./internal/worker"},
+		Metadata: map[string]string{
+			"validation_evidence": `["ship report","go test ./internal/worker"]`,
+			"approvals":           `["ops-review"]`,
+		},
+		CreatedAt: time.Now(),
+	}
+	if err := q.Enqueue(context.Background(), task); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+	runtime := Runtime{
+		WorkerID:    "worker-1",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorLocal, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    200 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
+	if !processed {
+		t.Fatalf("expected task to be processed")
+	}
+	stored, ok := recorder.Task("task-acceptance")
+	if !ok {
+		t.Fatal("expected stored task snapshot")
+	}
+	if stored.Metadata["acceptance_status"] != "accepted" || stored.Metadata["approval_status"] != "accepted" {
+		t.Fatalf("expected accepted metadata, got %+v", stored.Metadata)
+	}
+	events := recorder.EventsByTask("task-acceptance", 10)
+	if len(events) != 5 {
+		t.Fatalf("expected acceptance annotation event, got %+v", events)
+	}
+	annotated := events[4]
+	if annotated.Type != domain.EventRunAnnotated || annotated.Payload["acceptance_status"] != "accepted" || annotated.Payload["summary"] != "acceptance criteria and validation plan satisfied" {
+		t.Fatalf("expected acceptance annotation payload, got %+v", annotated)
 	}
 }
 
@@ -323,6 +581,16 @@ func TestRuntimeTimeoutRequeuesTask(t *testing.T) {
 	}
 	if latest.TraceID != "task-timeout" {
 		t.Fatalf("expected default trace id to match task id, got %+v", latest)
+	}
+	if latest.RunID == "" || latest.Payload["run_id"] != latest.RunID {
+		t.Fatalf("expected retry run_id propagation, got %+v", latest)
+	}
+	if latest.Payload["retry_scheduled"] != true {
+		t.Fatalf("expected retry_scheduled payload, got %+v", latest.Payload)
+	}
+	runCloseout, ok := latest.Payload["workflow_run"].(workflow.WorkflowRun)
+	if !ok || runCloseout.Status != workflow.WorkflowRunFailed {
+		t.Fatalf("expected failed workflow closeout for retry, got %+v", latest.Payload)
 	}
 	snapshot := runtime.Snapshot()
 	if snapshot.RetriedRuns != 1 || snapshot.State != "idle" {
@@ -527,6 +795,13 @@ func TestRuntimeCompletesCancelledInFlightTaskAsCancelled(t *testing.T) {
 	latest, ok := recorder.LatestByTask("task-live-cancel")
 	if !ok || latest.Type != domain.EventTaskCancelled {
 		t.Fatalf("expected latest cancel event, got %+v", latest)
+	}
+	if latest.RunID == "" || latest.Payload["run_id"] != latest.RunID {
+		t.Fatalf("expected cancel run_id propagation, got %+v", latest)
+	}
+	runCloseout, ok := latest.Payload["workflow_run"].(workflow.WorkflowRun)
+	if !ok || runCloseout.Status != workflow.WorkflowRunCanceled {
+		t.Fatalf("expected canceled workflow closeout, got %+v", latest.Payload)
 	}
 	snapshot := runtime.Snapshot()
 	if snapshot.CancelledRuns != 1 || snapshot.LastTransition != string(domain.EventTaskCancelled) {

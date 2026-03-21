@@ -13,43 +13,53 @@ var validRunCommitRoles = map[string]struct{}{
 }
 
 type RunCommitBinding struct {
-	Links              []RunCommitLink `json:"links,omitempty"`
-	AcceptedCommitHash string          `json:"accepted_commit_hash,omitempty"`
+	Links []RunCommitLink `json:"links"`
+}
+
+func (b RunCommitBinding) AcceptedCommitHash() string {
+	for _, link := range b.Links {
+		if link.Role == "accepted" {
+			return link.CommitHash
+		}
+	}
+	return ""
+}
+
+func ValidateRunCommitRoles(links []RunCommitLink) error {
+	invalidSet := map[string]struct{}{}
+	for _, link := range links {
+		if _, ok := validRunCommitRoles[link.Role]; !ok {
+			invalidSet[link.Role] = struct{}{}
+		}
+	}
+	if len(invalidSet) == 0 {
+		return nil
+	}
+	invalid := make([]string, 0, len(invalidSet))
+	for role := range invalidSet {
+		invalid = append(invalid, role)
+	}
+	sort.Strings(invalid)
+	return fmt.Errorf("unsupported run commit roles: %s", joinCSV(invalid))
 }
 
 func BindRunCommits(links []RunCommitLink) (RunCommitBinding, error) {
 	if err := ValidateRunCommitRoles(links); err != nil {
 		return RunCommitBinding{}, err
 	}
-	return RunCommitBinding{
-		Links:              append([]RunCommitLink(nil), links...),
-		AcceptedCommitHash: acceptedCommitHash(links),
-	}, nil
+	return RunCommitBinding{Links: append([]RunCommitLink(nil), links...)}, nil
 }
 
-func ValidateRunCommitRoles(links []RunCommitLink) error {
-	invalid := make(map[string]struct{})
-	for _, link := range links {
-		if _, ok := validRunCommitRoles[link.Role]; !ok {
-			invalid[link.Role] = struct{}{}
-		}
+func joinCSV(values []string) string {
+	switch len(values) {
+	case 0:
+		return ""
+	case 1:
+		return values[0]
 	}
-	if len(invalid) == 0 {
-		return nil
+	out := values[0]
+	for _, value := range values[1:] {
+		out += ", " + value
 	}
-	roles := make([]string, 0, len(invalid))
-	for role := range invalid {
-		roles = append(roles, role)
-	}
-	sort.Strings(roles)
-	return fmt.Errorf("unsupported run commit roles: %s", joinStrings(roles, ", "))
-}
-
-func acceptedCommitHash(links []RunCommitLink) string {
-	for _, link := range links {
-		if link.Role == "accepted" {
-			return link.CommitHash
-		}
-	}
-	return ""
+	return out
 }

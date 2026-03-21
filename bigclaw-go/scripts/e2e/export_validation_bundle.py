@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import json
-import subprocess
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,6 +12,11 @@ LATEST_REPORTS = {
     'kubernetes': 'docs/reports/kubernetes-live-smoke-report.json',
     'ray': 'docs/reports/ray-live-smoke-report.json',
 }
+BROKER_SUMMARY = 'docs/reports/broker-validation-summary.json'
+BROKER_BOOTSTRAP_SUMMARY = 'docs/reports/broker-bootstrap-review-summary.json'
+BROKER_VALIDATION_PACK = 'docs/reports/broker-failover-fault-injection-validation-pack.md'
+SHARED_QUEUE_REPORT = 'docs/reports/multi-node-shared-queue-report.json'
+SHARED_QUEUE_SUMMARY = 'docs/reports/shared-queue-companion-summary.json'
 
 CONTINUATION_ARTIFACTS = [
     (
@@ -32,7 +36,26 @@ FOLLOWUP_DIGESTS = [
     ),
 ]
 
-SHARED_QUEUE_CANONICAL_REPORT = 'docs/reports/multi-node-shared-queue-report.json'
+
+def build_continuation_gate_summary(root: Path) -> Optional[dict[str, Any]]:
+    gate_path = root / 'docs/reports/validation-bundle-continuation-policy-gate.json'
+    gate = read_json(gate_path)
+    if not isinstance(gate, dict):
+        return None
+    enforcement = gate.get('enforcement')
+    summary = gate.get('summary')
+    reviewer_path = gate.get('reviewer_path')
+    next_actions = gate.get('next_actions')
+    return {
+        'path': relpath(gate_path, root),
+        'status': gate.get('status', 'unknown'),
+        'recommendation': gate.get('recommendation', 'unknown'),
+        'failing_checks': gate.get('failing_checks', []),
+        'enforcement': enforcement if isinstance(enforcement, dict) else {},
+        'summary': summary if isinstance(summary, dict) else {},
+        'reviewer_path': reviewer_path if isinstance(reviewer_path, dict) else {},
+        'next_actions': next_actions if isinstance(next_actions, list) else [],
+    }
 
 
 def read_json(path: Path) -> Optional[Any]:
@@ -56,6 +79,8 @@ def relpath(path: Path, root: Path) -> str:
 def copy_text_artifact(source: Path, destination: Path) -> str:
     if not source.exists():
         return ''
+    if source.resolve() == destination.resolve():
+        return str(destination)
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, destination)
     return str(destination)
@@ -64,6 +89,8 @@ def copy_text_artifact(source: Path, destination: Path) -> str:
 def copy_json_artifact(source: Path, destination: Path) -> str:
     if not source.exists():
         return ''
+    if source.resolve() == destination.resolve():
+        return str(destination)
     payload = read_json(source)
     if payload is None:
         return ''
@@ -84,6 +111,47 @@ def component_status(report: Optional[dict[str, Any]]) -> str:
     if report.get('all_ok') is False:
         return 'failed'
     return 'unknown'
+
+
+def build_shared_queue_companion(root: Path, bundle_dir: Path) -> dict[str, Any]:
+    canonical_report_path = root / SHARED_QUEUE_REPORT
+    canonical_summary_path = root / SHARED_QUEUE_SUMMARY
+    bundle_report_path = bundle_dir / 'multi-node-shared-queue-report.json'
+    bundle_summary_path = bundle_dir / 'shared-queue-companion-summary.json'
+    report = read_json(canonical_report_path)
+
+    summary: dict[str, Any] = {
+        'available': isinstance(report, dict),
+        'canonical_report_path': SHARED_QUEUE_REPORT,
+        'canonical_summary_path': SHARED_QUEUE_SUMMARY,
+        'bundle_report_path': relpath(bundle_report_path, root),
+        'bundle_summary_path': relpath(bundle_summary_path, root),
+    }
+    if not isinstance(report, dict):
+        summary['status'] = 'missing_report'
+        return summary
+
+    copied_report = copy_json_artifact(canonical_report_path, bundle_report_path)
+    if copied_report:
+        summary['bundle_report_path'] = relpath(Path(copied_report), root)
+
+    summary.update(
+        {
+            'status': 'succeeded' if report.get('all_ok') else 'failed',
+            'generated_at': report.get('generated_at'),
+            'count': report.get('count'),
+            'cross_node_completions': report.get('cross_node_completions'),
+            'duplicate_started_tasks': len(report.get('duplicate_started_tasks') or []),
+            'duplicate_completed_tasks': len(report.get('duplicate_completed_tasks') or []),
+            'missing_completed_tasks': len(report.get('missing_completed_tasks') or []),
+            'submitted_by_node': report.get('submitted_by_node', {}),
+            'completed_by_node': report.get('completed_by_node', {}),
+            'nodes': [node.get('name') for node in report.get('nodes', []) if isinstance(node, dict) and node.get('name')],
+        }
+    )
+    write_json(bundle_summary_path, summary)
+    write_json(canonical_summary_path, summary)
+    return summary
 
 
 def build_component_section(
@@ -143,37 +211,80 @@ def build_component_section(
     return section
 
 
-def build_shared_queue_section(
+def build_broker_section(
     *,
+    enabled: bool,
+    backend: str,
     root: Path,
     bundle_dir: Path,
-    report_path: Path,
-    source: str,
+    bootstrap_summary_path: Path | None,
+    report_path: Path | None,
 ) -> dict[str, Any]:
+    bundle_summary_path = bundle_dir / 'broker-validation-summary.json'
+    bundle_bootstrap_summary_path = bundle_dir / 'broker-bootstrap-review-summary.json'
     section: dict[str, Any] = {
-        'available': False,
-        'canonical_report_path': SHARED_QUEUE_CANONICAL_REPORT,
-        'source': source,
+        'enabled': enabled,
+        'backend': backend or None,
+        'bundle_summary_path': relpath(bundle_summary_path, root),
+        'canonical_summary_path': BROKER_SUMMARY,
+        'bundle_bootstrap_summary_path': relpath(bundle_bootstrap_summary_path, root),
+        'canonical_bootstrap_summary_path': BROKER_BOOTSTRAP_SUMMARY,
+        'validation_pack_path': BROKER_VALIDATION_PACK,
     }
-    report = read_json(report_path)
-    if not isinstance(report, dict):
-        section['status'] = 'missing_report'
+    configuration_state = 'configured' if enabled and backend else 'not_configured'
+    section['configuration_state'] = configuration_state
+    bootstrap_summary = read_json(bootstrap_summary_path) if bootstrap_summary_path else None
+    if isinstance(bootstrap_summary, dict):
+        copied_bootstrap = copy_json_artifact(bootstrap_summary_path, bundle_bootstrap_summary_path)
+        if copied_bootstrap:
+            section['bundle_bootstrap_summary_path'] = relpath(Path(copied_bootstrap), root)
+        canonical_bootstrap = copy_json_artifact(bootstrap_summary_path, root / BROKER_BOOTSTRAP_SUMMARY)
+        if canonical_bootstrap:
+            section['canonical_bootstrap_summary_path'] = relpath(Path(canonical_bootstrap), root)
+        section['bootstrap_summary'] = bootstrap_summary
+        section['bootstrap_ready'] = bool(bootstrap_summary.get('ready'))
+        section['runtime_posture'] = bootstrap_summary.get('runtime_posture')
+        section['live_adapter_implemented'] = bool(bootstrap_summary.get('live_adapter_implemented'))
+        section['proof_boundary'] = bootstrap_summary.get('proof_boundary')
+        validation_errors = bootstrap_summary.get('validation_errors')
+        if isinstance(validation_errors, list):
+            section['validation_errors'] = validation_errors
+        completeness = bootstrap_summary.get('config_completeness')
+        if isinstance(completeness, dict):
+            section['config_completeness'] = completeness
+
+    if not enabled or not backend:
+        section['status'] = 'skipped'
+        section['reason'] = 'not_configured'
+        write_json(bundle_summary_path, section)
+        write_json(root / BROKER_SUMMARY, section)
         return section
 
-    report_copy = copy_json_artifact(report_path, bundle_dir / 'multi-node-shared-queue-report.json')
-    if report_copy:
-        section['bundle_report_path'] = relpath(Path(report_copy), root)
-    canonical_copy = copy_json_artifact(report_path, root / SHARED_QUEUE_CANONICAL_REPORT)
-    if canonical_copy:
-        section['canonical_report_path'] = relpath(Path(canonical_copy), root)
+    if report_path is None:
+        section['status'] = 'skipped'
+        section['reason'] = 'missing_report_path'
+        write_json(bundle_summary_path, section)
+        write_json(root / BROKER_SUMMARY, section)
+        return section
 
-    section['available'] = bool(report.get('all_ok'))
-    section['status'] = 'succeeded' if report.get('all_ok') else 'failed'
+    report = read_json(report_path)
+    report_relpath = relpath(report_path, root)
+    section['canonical_report_path'] = report_relpath
+    section['bundle_report_path'] = relpath(bundle_dir / report_path.name, root)
+    if not isinstance(report, dict):
+        section['status'] = 'skipped'
+        section['reason'] = 'not_configured'
+        write_json(bundle_summary_path, section)
+        write_json(root / BROKER_SUMMARY, section)
+        return section
+
+    copied_report = copy_json_artifact(report_path, bundle_dir / report_path.name)
+    if copied_report:
+        section['bundle_report_path'] = relpath(Path(copied_report), root)
     section['report'] = report
-    section['cross_node_completions'] = report.get('cross_node_completions', 0)
-    section['duplicate_completed_tasks'] = len(report.get('duplicate_completed_tasks', []))
-    section['duplicate_started_tasks'] = len(report.get('duplicate_started_tasks', []))
-    section['missing_completed_tasks'] = len(report.get('missing_completed_tasks', []))
+    section['status'] = component_status(report)
+    write_json(bundle_summary_path, section)
+    write_json(root / BROKER_SUMMARY, section)
     return section
 
 
@@ -192,25 +303,15 @@ def build_recent_runs(bundle_root: Path, root: Path, limit: int = 8) -> list[dic
     runs.sort(key=lambda item: item[0], reverse=True)
     items: list[dict[str, Any]] = []
     for _, summary in runs[:limit]:
-        item = {
-            'run_id': summary.get('run_id', ''),
-            'generated_at': summary.get('generated_at', ''),
-            'status': summary.get('status', 'unknown'),
-            'bundle_path': summary.get('bundle_path', ''),
-            'summary_path': summary.get('summary_path', ''),
-        }
-        continuation = summary.get('continuation')
-        if isinstance(continuation, dict):
-            item['continuation'] = {
-                'mode': continuation.get('mode'),
-                'refreshed': continuation.get('refreshed'),
-                'policy_gate_status': continuation.get('policy_gate_status'),
-                'policy_gate_recommendation': continuation.get('policy_gate_recommendation'),
-                'latest_bundle_age_hours': continuation.get('latest_bundle_age_hours'),
-                'failing_checks': continuation.get('failing_checks', []),
-                'reason': continuation.get('reason', ''),
+        items.append(
+            {
+                'run_id': summary.get('run_id', ''),
+                'generated_at': summary.get('generated_at', ''),
+                'status': summary.get('status', 'unknown'),
+                'bundle_path': summary.get('bundle_path', ''),
+                'summary_path': summary.get('summary_path', ''),
             }
-        items.append(item)
+        )
     return items
 
 
@@ -230,131 +331,10 @@ def build_followup_digests(root: Path) -> list[tuple[str, str]]:
     return items
 
 
-def build_continuation_result(mode: str, scorecard_path: str, policy_gate_path: str) -> dict[str, Any]:
-    return {
-        'mode': mode,
-        'refreshed': False,
-        'reason': '',
-        'scorecard_path': scorecard_path,
-        'policy_gate_path': policy_gate_path,
-        'scorecard_status': 'not-refreshed',
-        'policy_gate_status': 'not-refreshed',
-        'policy_gate_recommendation': 'unknown',
-        'latest_bundle_age_hours': None,
-        'failing_checks': [],
-        'next_actions': [],
-    }
-
-
-def build_continuation_overview(root: Path, continuation: dict[str, Any]) -> dict[str, Any] | None:
-    policy_gate_path = continuation.get('policy_gate_path')
-    if not continuation.get('refreshed'):
-        return {
-            'status': continuation.get('policy_gate_status', 'not-refreshed'),
-            'recommendation': continuation.get('policy_gate_recommendation', 'unknown'),
-            'latest_bundle_age_hours': continuation.get('latest_bundle_age_hours'),
-            'failing_checks': continuation.get('failing_checks', []),
-            'next_actions': continuation.get('next_actions', []),
-            'reason': continuation.get('reason', ''),
-        }
-    if not policy_gate_path:
-        return None
-
-    policy_gate_file = root / policy_gate_path
-    if not policy_gate_file.exists():
-        return None
-
-    policy_gate = read_json(policy_gate_file)
-    summary = policy_gate.get('summary', {})
-    return {
-        'status': policy_gate.get('status', 'unknown'),
-        'recommendation': policy_gate.get('recommendation', 'unknown'),
-        'latest_bundle_age_hours': summary.get('latest_bundle_age_hours'),
-        'failing_checks': policy_gate.get('failing_checks', []),
-        'next_actions': policy_gate.get('next_actions', []),
-        'reason': continuation.get('reason', ''),
-    }
-
-
-def refresh_continuation_artifacts(
-    *,
-    root: Path,
-    mode: str,
-    scorecard_path: str,
-    policy_gate_path: str,
-    shared_queue_report_path: str,
-) -> dict[str, Any]:
-    scorecard_output = root / scorecard_path
-    policy_gate_output = root / policy_gate_path
-    shared_queue_report = root / shared_queue_report_path
-    result = build_continuation_result(mode, scorecard_path, policy_gate_path)
-
-    if mode == 'off':
-        result['reason'] = 'disabled'
-        return result
-
-    if not shared_queue_report.exists():
-        if mode == 'auto':
-            result['reason'] = f'missing shared queue report: {shared_queue_report_path}'
-            result['policy_gate_status'] = 'skipped'
-            return result
-        raise FileNotFoundError(f'continuation refresh requires {shared_queue_report_path}')
-
-    script_dir = Path(__file__).resolve().parent
-    scorecard_script = script_dir / 'validation_bundle_continuation_scorecard.py'
-    policy_gate_script = script_dir / 'validation_bundle_continuation_policy_gate.py'
-
-    repo_root = root.parent
-    subprocess.run(
-        [
-            'python3',
-            str(scorecard_script),
-            '--repo-root',
-            str(repo_root),
-            '--output',
-            str(scorecard_output),
-        ],
-        cwd=root,
-        check=True,
-    )
-    gate = subprocess.run(
-        [
-            'python3',
-            str(policy_gate_script),
-            '--repo-root',
-            str(repo_root),
-            '--scorecard',
-            str(scorecard_output),
-            '--output',
-            str(policy_gate_output),
-        ],
-        cwd=root,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    if gate.returncode not in (0, 1):
-        raise RuntimeError(gate.stderr.strip() or gate.stdout.strip() or 'continuation policy gate failed')
-
-    result['refreshed'] = True
-    result['reason'] = 'generated from exporter closeout'
-    if scorecard_output.exists():
-        result['scorecard_status'] = read_json(scorecard_output).get('status', 'unknown')
-    if policy_gate_output.exists():
-        policy_gate = read_json(policy_gate_output)
-        result['policy_gate_status'] = policy_gate.get('status', 'unknown')
-        result['policy_gate_recommendation'] = policy_gate.get('recommendation', 'unknown')
-        summary = policy_gate.get('summary', {})
-        result['latest_bundle_age_hours'] = summary.get('latest_bundle_age_hours')
-        result['failing_checks'] = policy_gate.get('failing_checks', [])
-        result['next_actions'] = policy_gate.get('next_actions', [])
-    return result
-
-
 def render_index(
     summary: dict[str, Any],
     recent_runs: list[dict[str, Any]],
-    continuation_overview: dict[str, Any] | None = None,
+    continuation_gate: dict[str, Any] | None = None,
     continuation_artifacts: list[tuple[str, str]] | None = None,
     followup_digests: list[tuple[str, str]] | None = None,
 ) -> str:
@@ -389,22 +369,63 @@ def render_index(
             lines.append(f"- Task ID: `{section['task_id']}`")
         lines.append('')
 
-    if 'shared_queue' in summary:
-        shared_queue = summary['shared_queue']
-        lines.extend(['### shared-queue', f"- Available: `{shared_queue['available']}`"])
-        if shared_queue.get('status'):
-            lines.append(f"- Status: `{shared_queue['status']}`")
-        if shared_queue.get('bundle_report_path'):
-            lines.append(f"- Bundle report: `{shared_queue['bundle_report_path']}`")
-        lines.append(f"- Latest report: `{shared_queue['canonical_report_path']}`")
-        if 'cross_node_completions' in shared_queue:
+    broker = summary.get('broker')
+    if isinstance(broker, dict):
+        lines.append('### broker')
+        lines.append(f"- Enabled: `{broker['enabled']}`")
+        lines.append(f"- Status: `{broker['status']}`")
+        lines.append(f"- Configuration state: `{broker['configuration_state']}`")
+        lines.append(f"- Bundle summary: `{broker['bundle_summary_path']}`")
+        lines.append(f"- Canonical summary: `{broker['canonical_summary_path']}`")
+        lines.append(f"- Bundle bootstrap summary: `{broker['bundle_bootstrap_summary_path']}`")
+        lines.append(f"- Canonical bootstrap summary: `{broker['canonical_bootstrap_summary_path']}`")
+        lines.append(f"- Validation pack: `{broker['validation_pack_path']}`")
+        if broker.get('backend'):
+            lines.append(f"- Backend: `{broker['backend']}`")
+        if broker.get('bootstrap_ready') is not None:
+            lines.append(f"- Bootstrap ready: `{broker['bootstrap_ready']}`")
+        if broker.get('runtime_posture'):
+            lines.append(f"- Runtime posture: `{broker['runtime_posture']}`")
+        if broker.get('live_adapter_implemented') is not None:
+            lines.append(f"- Live adapter implemented: `{broker['live_adapter_implemented']}`")
+        completeness = broker.get('config_completeness')
+        if isinstance(completeness, dict):
+            lines.append(
+                "- Config completeness: "
+                f"driver=`{completeness.get('driver', False)}` "
+                f"urls=`{completeness.get('urls', False)}` "
+                f"topic=`{completeness.get('topic', False)}` "
+                f"consumer_group=`{completeness.get('consumer_group', False)}`"
+            )
+        if broker.get('proof_boundary'):
+            lines.append(f"- Proof boundary: `{broker['proof_boundary']}`")
+        for error in broker.get('validation_errors', []):
+            lines.append(f"- Validation error: `{error}`")
+        if broker.get('bundle_report_path'):
+            lines.append(f"- Bundle report: `{broker['bundle_report_path']}`")
+        if broker.get('canonical_report_path'):
+            lines.append(f"- Canonical report: `{broker['canonical_report_path']}`")
+        if broker.get('reason'):
+            lines.append(f"- Reason: `{broker['reason']}`")
+        lines.append('')
+
+    shared_queue = summary.get('shared_queue_companion')
+    if isinstance(shared_queue, dict):
+        lines.append('### shared-queue companion')
+        lines.append(f"- Available: `{shared_queue['available']}`")
+        lines.append(f"- Status: `{shared_queue['status']}`")
+        lines.append(f"- Bundle summary: `{shared_queue['bundle_summary_path']}`")
+        lines.append(f"- Canonical summary: `{shared_queue['canonical_summary_path']}`")
+        lines.append(f"- Bundle report: `{shared_queue['bundle_report_path']}`")
+        lines.append(f"- Canonical report: `{shared_queue['canonical_report_path']}`")
+        if shared_queue.get('cross_node_completions') is not None:
             lines.append(f"- Cross-node completions: `{shared_queue['cross_node_completions']}`")
-        if 'duplicate_completed_tasks' in shared_queue:
-            lines.append(f"- Duplicate task.completed: `{shared_queue['duplicate_completed_tasks']}`")
-        if 'duplicate_started_tasks' in shared_queue:
-            lines.append(f"- Duplicate task.started: `{shared_queue['duplicate_started_tasks']}`")
-        if shared_queue.get('source'):
-            lines.append(f"- Source: `{shared_queue['source']}`")
+        if shared_queue.get('duplicate_started_tasks') is not None:
+            lines.append(f"- Duplicate `task.started`: `{shared_queue['duplicate_started_tasks']}`")
+        if shared_queue.get('duplicate_completed_tasks') is not None:
+            lines.append(f"- Duplicate `task.completed`: `{shared_queue['duplicate_completed_tasks']}`")
+        if shared_queue.get('missing_completed_tasks') is not None:
+            lines.append(f"- Missing terminal completions: `{shared_queue['missing_completed_tasks']}`")
         lines.append('')
 
     lines.extend(['## Workflow closeout commands', ''])
@@ -420,24 +441,35 @@ def render_index(
                 f"- `{run['run_id']}` · `{run['status']}` · `{run['generated_at']}` · `{run['bundle_path']}`"
             )
     lines.append('')
+    if continuation_gate:
+        lines.extend(['## Continuation gate', ''])
+        lines.append(f"- Status: `{continuation_gate['status']}`")
+        lines.append(f"- Recommendation: `{continuation_gate['recommendation']}`")
+        lines.append(f"- Report: `{continuation_gate['path']}`")
+        enforcement = continuation_gate.get('enforcement', {})
+        if enforcement.get('mode'):
+            lines.append(f"- Workflow mode: `{enforcement['mode']}`")
+        if enforcement.get('outcome'):
+            lines.append(f"- Workflow outcome: `{enforcement['outcome']}`")
+        gate_summary = continuation_gate.get('summary', {})
+        if gate_summary.get('latest_run_id'):
+            lines.append(f"- Latest reviewed run: `{gate_summary['latest_run_id']}`")
+        if 'failing_check_count' in gate_summary:
+            lines.append(f"- Failing checks: `{gate_summary['failing_check_count']}`")
+        if 'workflow_exit_code' in gate_summary:
+            lines.append(f"- Workflow exit code on current evidence: `{gate_summary['workflow_exit_code']}`")
+        reviewer_path = continuation_gate.get('reviewer_path', {})
+        if reviewer_path.get('digest_path'):
+            lines.append(f"- Reviewer digest: `{reviewer_path['digest_path']}`")
+        if reviewer_path.get('index_path'):
+            lines.append(f"- Reviewer index: `{reviewer_path['index_path']}`")
+        for action in continuation_gate.get('next_actions', []):
+            lines.append(f"- Next action: `{action}`")
+        lines.append('')
     if continuation_artifacts:
         lines.extend(['## Continuation artifacts', ''])
         for artifact_path, description in continuation_artifacts:
             lines.append(f'- `{artifact_path}` {description}')
-        if continuation_overview:
-            lines.append('')
-            lines.append(f"- Gate status: `{continuation_overview['status']}`")
-            lines.append(f"- Recommendation: `{continuation_overview['recommendation']}`")
-            if continuation_overview.get('reason'):
-                lines.append(f"- Refresh state: `{continuation_overview['reason']}`")
-            if continuation_overview.get('latest_bundle_age_hours') is not None:
-                lines.append(f"- Latest bundle age hours: `{continuation_overview['latest_bundle_age_hours']}`")
-            failing_checks = continuation_overview.get('failing_checks', [])
-            if failing_checks:
-                lines.append(f"- Failing checks: `{', '.join(failing_checks)}`")
-            next_actions = continuation_overview.get('next_actions', [])
-            if next_actions:
-                lines.append(f"- Next action: {next_actions[0]}")
         lines.append('')
     if followup_digests:
         lines.extend(['## Parallel follow-up digests', ''])
@@ -455,15 +487,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--summary-path', default='docs/reports/live-validation-summary.json')
     parser.add_argument('--index-path', default='docs/reports/live-validation-index.md')
     parser.add_argument('--manifest-path', default='docs/reports/live-validation-index.json')
-    parser.add_argument('--refresh-continuation', choices=('off', 'auto', 'always'), default='auto')
-    parser.add_argument('--continuation-scorecard-path', default='docs/reports/validation-bundle-continuation-scorecard.json')
-    parser.add_argument('--continuation-policy-gate-path', default='docs/reports/validation-bundle-continuation-policy-gate.json')
-    parser.add_argument('--shared-queue-report-path', default='docs/reports/multi-node-shared-queue-report.json')
-    parser.add_argument('--shared-queue-source', default='existing-report')
     parser.add_argument('--run-local', default='1')
     parser.add_argument('--run-kubernetes', default='1')
     parser.add_argument('--run-ray', default='1')
     parser.add_argument('--validation-status', default='0')
+    parser.add_argument('--run-broker', default='0')
+    parser.add_argument('--broker-backend', default='')
+    parser.add_argument('--broker-report-path', default='')
+    parser.add_argument('--broker-bootstrap-summary-path', default='')
     parser.add_argument('--local-report-path', required=True)
     parser.add_argument('--local-stdout-path', required=True)
     parser.add_argument('--local-stderr-path', required=True)
@@ -520,12 +551,15 @@ def main() -> int:
         stdout_path=Path(args.ray_stdout_path),
         stderr_path=Path(args.ray_stderr_path),
     )
-    summary['shared_queue'] = build_shared_queue_section(
+    summary['broker'] = build_broker_section(
+        enabled=args.run_broker == '1',
+        backend=args.broker_backend.strip(),
         root=root,
         bundle_dir=bundle_dir,
-        report_path=root / args.shared_queue_report_path,
-        source=args.shared_queue_source,
+        bootstrap_summary_path=(root / args.broker_bootstrap_summary_path) if args.broker_bootstrap_summary_path else None,
+        report_path=(root / args.broker_report_path) if args.broker_report_path else None,
     )
+    summary['shared_queue_companion'] = build_shared_queue_companion(root, bundle_dir)
 
     bundle_summary_path = bundle_dir / 'summary.json'
     canonical_summary_path = root / args.summary_path
@@ -535,27 +569,15 @@ def main() -> int:
 
     bundle_root = bundle_dir.parent
     recent_runs = build_recent_runs(bundle_root, root)
+    continuation_gate = build_continuation_gate_summary(root)
     manifest = {'latest': summary, 'recent_runs': recent_runs}
+    if continuation_gate:
+        manifest['continuation_gate'] = continuation_gate
     write_json(root / args.manifest_path, manifest)
 
-    summary['continuation'] = refresh_continuation_artifacts(
-        root=root,
-        mode=args.refresh_continuation,
-        scorecard_path=args.continuation_scorecard_path,
-        policy_gate_path=args.continuation_policy_gate_path,
-        shared_queue_report_path=args.shared_queue_report_path,
-    )
-    write_json(bundle_summary_path, summary)
-    write_json(canonical_summary_path, summary)
-
-    recent_runs = build_recent_runs(bundle_root, root)
-    manifest = {'latest': summary, 'recent_runs': recent_runs}
-    write_json(root / args.manifest_path, manifest)
-
-    continuation_overview = build_continuation_overview(root, summary['continuation'])
     continuation_artifacts = build_continuation_artifacts(root)
     followup_digests = build_followup_digests(root)
-    index_text = render_index(summary, recent_runs, continuation_overview, continuation_artifacts, followup_digests)
+    index_text = render_index(summary, recent_runs, continuation_gate, continuation_artifacts, followup_digests)
     (root / args.index_path).parent.mkdir(parents=True, exist_ok=True)
     (root / args.index_path).write_text(index_text, encoding='utf-8')
     (bundle_dir / 'README.md').write_text(index_text, encoding='utf-8')

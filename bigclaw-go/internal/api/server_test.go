@@ -44,6 +44,15 @@ func (fakeWorkerPoolStatus) Snapshots() []worker.Status {
 	}
 }
 
+func containsString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
+}
+
 type blockingEventLog struct {
 	history       []domain.Event
 	replayStarted chan struct{}
@@ -101,6 +110,18 @@ func (l *blockingEventLog) Path() string {
 
 func (l *blockingEventLog) Close() error {
 	return nil
+}
+
+type blockingRemoteServiceLog struct {
+	*blockingEventLog
+}
+
+func (l *blockingRemoteServiceLog) Acknowledge(string, string, time.Time) (events.SubscriberCheckpoint, error) {
+	return events.SubscriberCheckpoint{}, errors.New("checkpoint ack unavailable in blocking replay test double")
+}
+
+func (l *blockingRemoteServiceLog) Checkpoint(string) (events.SubscriberCheckpoint, error) {
+	return events.SubscriberCheckpoint{}, errors.New("checkpoint unavailable in blocking replay test double")
 }
 
 func (l *blockingEventLog) query(taskID, traceID, afterID string, limit int) []domain.Event {
@@ -362,23 +383,695 @@ func TestDebugStatusIncludesEventDurabilityPlan(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", response.Code)
 	}
-	if !strings.Contains(response.Body.String(), "\"backend\":\"http\"") {
-		t.Fatalf("expected current backend in payload, got %s", response.Body.String())
+	var decoded struct {
+		EventDurability struct {
+			Current struct {
+				Backend string `json:"backend"`
+			} `json:"current"`
+			Target struct {
+				Backend string `json:"backend"`
+			} `json:"target"`
+			ReplicationFactor int `json:"replication_factor"`
+			RolloutChecks     []struct {
+				Name string `json:"name"`
+			} `json:"rollout_checks"`
+			FailureDomains []struct {
+				Name string `json:"name"`
+			} `json:"failure_domains"`
+			VerificationEvidence []struct {
+				Name string `json:"name"`
+			} `json:"verification_evidence"`
+			RolloutScorecard struct {
+				Status          string   `json:"status"`
+				RolloutReady    bool     `json:"rollout_ready"`
+				CurrentBackend  string   `json:"current_backend"`
+				TargetBackend   string   `json:"target_backend"`
+				ReadyEvidence   int      `json:"ready_evidence"`
+				PartialEvidence int      `json:"partial_evidence"`
+				BlockedEvidence int      `json:"blocked_evidence"`
+				Blockers        []string `json:"blockers"`
+			} `json:"rollout_scorecard"`
+		} `json:"event_durability"`
 	}
-	if !strings.Contains(response.Body.String(), "\"backend\":\"broker_replicated\"") {
-		t.Fatalf("expected target backend in payload, got %s", response.Body.String())
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug status: %v", err)
 	}
-	if !strings.Contains(response.Body.String(), "\"replication_factor\":5") {
-		t.Fatalf("expected replication factor in payload, got %s", response.Body.String())
+	if decoded.EventDurability.Current.Backend != "http" || decoded.EventDurability.Target.Backend != "broker_replicated" {
+		t.Fatalf("unexpected event durability backends: %+v", decoded.EventDurability)
 	}
-	if !strings.Contains(response.Body.String(), "\"rollout_checks\"") {
-		t.Fatalf("expected rollout checks in payload, got %s", response.Body.String())
+	if decoded.EventDurability.ReplicationFactor != 5 {
+		t.Fatalf("expected replication factor 5, got %+v", decoded.EventDurability)
 	}
-	if !strings.Contains(response.Body.String(), "\"failure_domains\"") {
-		t.Fatalf("expected failure domains in payload, got %s", response.Body.String())
+	if len(decoded.EventDurability.RolloutChecks) == 0 || len(decoded.EventDurability.FailureDomains) == 0 || len(decoded.EventDurability.VerificationEvidence) == 0 {
+		t.Fatalf("expected rollout contract details in payload, got %+v", decoded.EventDurability)
 	}
-	if !strings.Contains(response.Body.String(), "\"verification_evidence\"") {
-		t.Fatalf("expected verification evidence in payload, got %s", response.Body.String())
+	if decoded.EventDurability.RolloutScorecard.Status != "blocked" || decoded.EventDurability.RolloutScorecard.RolloutReady {
+		t.Fatalf("expected blocked rollout scorecard, got %+v", decoded.EventDurability.RolloutScorecard)
+	}
+	if decoded.EventDurability.RolloutScorecard.CurrentBackend != "http" || decoded.EventDurability.RolloutScorecard.TargetBackend != "broker_replicated" {
+		t.Fatalf("unexpected rollout scorecard backend payload: %+v", decoded.EventDurability.RolloutScorecard)
+	}
+	if decoded.EventDurability.RolloutScorecard.ReadyEvidence != 3 || decoded.EventDurability.RolloutScorecard.PartialEvidence != 0 || decoded.EventDurability.RolloutScorecard.BlockedEvidence != 1 {
+		t.Fatalf("unexpected rollout scorecard evidence counts: %+v", decoded.EventDurability.RolloutScorecard)
+	}
+	if len(decoded.EventDurability.RolloutScorecard.Blockers) != 2 {
+		t.Fatalf("expected rollout blockers, got %+v", decoded.EventDurability.RolloutScorecard)
+	}
+	if !strings.Contains(response.Body.String(), "\"event_durability_rollout\"") {
+		t.Fatalf("expected rollout scorecard in payload, got %s", response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), "\"rollout_ready\":false") {
+		t.Fatalf("expected rollout readiness flag in payload, got %s", response.Body.String())
+	}
+}
+
+func TestDebugStatusIncludesAdmissionPolicySummary(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		AdmissionPolicy struct {
+			ReportPath string `json:"report_path"`
+			MatrixPath string `json:"matrix_path"`
+			Ticket     string `json:"ticket"`
+			Status     string `json:"status"`
+			PolicyMode string `json:"policy_mode"`
+			Enforced   bool   `json:"enforced"`
+			Summary    struct {
+				OverallStatus                string `json:"overall_status"`
+				PassedLanes                  int    `json:"passed_lanes"`
+				TotalLanes                   int    `json:"total_lanes"`
+				RecommendedSustainedEnvelope string `json:"recommended_sustained_envelope"`
+				CeilingEnvelope              string `json:"ceiling_envelope"`
+				AdvisoryNote                 string `json:"advisory_note"`
+			} `json:"summary"`
+			RecommendedLanes []struct {
+				Name                  string   `json:"name"`
+				Lane                  string   `json:"lane"`
+				MaxQueuedTasks        int      `json:"max_queued_tasks"`
+				SubmitWorkers         int      `json:"submit_workers"`
+				ObservedThroughputTPS float64  `json:"observed_throughput_tasks_per_sec"`
+				EvidenceLanes         []string `json:"evidence_lanes"`
+				DefaultRecommendation bool     `json:"default_recommendation"`
+				CeilingOnly           bool     `json:"ceiling_only"`
+			} `json:"recommended_lanes"`
+			SupportingEvidence []struct {
+				Name   string `json:"name"`
+				Status string `json:"status"`
+			} `json:"supporting_evidence"`
+			Saturation struct {
+				BaselineLane      string  `json:"baseline_lane"`
+				CeilingLane       string  `json:"ceiling_lane"`
+				ThroughputDropPct float64 `json:"throughput_drop_pct"`
+				Status            string  `json:"status"`
+			} `json:"saturation"`
+		} `json:"admission_policy_summary"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug admission policy payload: %v", err)
+	}
+	if decoded.AdmissionPolicy.ReportPath != capacityCertificationReportPath || decoded.AdmissionPolicy.MatrixPath != capacityCertificationMatrixPath {
+		t.Fatalf("unexpected admission policy report metadata: %+v", decoded.AdmissionPolicy)
+	}
+	if decoded.AdmissionPolicy.Ticket != "BIG-PAR-098" || decoded.AdmissionPolicy.Status != "repo-native-capacity-certification" {
+		t.Fatalf("unexpected admission policy status metadata: %+v", decoded.AdmissionPolicy)
+	}
+	if decoded.AdmissionPolicy.PolicyMode != "advisory_only" || decoded.AdmissionPolicy.Enforced {
+		t.Fatalf("expected advisory-only non-enforced admission policy, got %+v", decoded.AdmissionPolicy)
+	}
+	if decoded.AdmissionPolicy.Summary.OverallStatus != "pass" || decoded.AdmissionPolicy.Summary.PassedLanes != 9 || decoded.AdmissionPolicy.Summary.TotalLanes != 9 {
+		t.Fatalf("unexpected admission policy summary counts: %+v", decoded.AdmissionPolicy.Summary)
+	}
+	if decoded.AdmissionPolicy.Summary.RecommendedSustainedEnvelope != "<=1000 tasks with 24 submit workers" || decoded.AdmissionPolicy.Summary.CeilingEnvelope != "<=2000 tasks with 24 submit workers" {
+		t.Fatalf("unexpected admission policy envelope summary: %+v", decoded.AdmissionPolicy.Summary)
+	}
+	if !strings.Contains(decoded.AdmissionPolicy.Summary.AdvisoryNote, "not an automated runtime admission policy") {
+		t.Fatalf("expected advisory note in admission policy summary, got %+v", decoded.AdmissionPolicy.Summary)
+	}
+	if len(decoded.AdmissionPolicy.RecommendedLanes) != 2 {
+		t.Fatalf("expected 2 recommended lanes, got %+v", decoded.AdmissionPolicy.RecommendedLanes)
+	}
+	if decoded.AdmissionPolicy.RecommendedLanes[0].Name != "recommended-local-sustained" || decoded.AdmissionPolicy.RecommendedLanes[0].Lane != "1000x24" || decoded.AdmissionPolicy.RecommendedLanes[0].MaxQueuedTasks != 1000 || decoded.AdmissionPolicy.RecommendedLanes[0].SubmitWorkers != 24 || !decoded.AdmissionPolicy.RecommendedLanes[0].DefaultRecommendation || decoded.AdmissionPolicy.RecommendedLanes[0].CeilingOnly {
+		t.Fatalf("unexpected default admission lane: %+v", decoded.AdmissionPolicy.RecommendedLanes[0])
+	}
+	if decoded.AdmissionPolicy.RecommendedLanes[1].Name != "recommended-local-ceiling" || decoded.AdmissionPolicy.RecommendedLanes[1].Lane != "2000x24" || decoded.AdmissionPolicy.RecommendedLanes[1].MaxQueuedTasks != 2000 || !decoded.AdmissionPolicy.RecommendedLanes[1].CeilingOnly {
+		t.Fatalf("unexpected ceiling admission lane: %+v", decoded.AdmissionPolicy.RecommendedLanes[1])
+	}
+	if len(decoded.AdmissionPolicy.SupportingEvidence) != 1 || decoded.AdmissionPolicy.SupportingEvidence[0].Name != "mixed-workload-routing" || decoded.AdmissionPolicy.SupportingEvidence[0].Status != "pass" {
+		t.Fatalf("unexpected supporting admission evidence: %+v", decoded.AdmissionPolicy.SupportingEvidence)
+	}
+	if decoded.AdmissionPolicy.Saturation.BaselineLane != "1000x24" || decoded.AdmissionPolicy.Saturation.CeilingLane != "2000x24" || decoded.AdmissionPolicy.Saturation.ThroughputDropPct != 5.02 || decoded.AdmissionPolicy.Saturation.Status != "pass" {
+		t.Fatalf("unexpected admission policy saturation summary: %+v", decoded.AdmissionPolicy.Saturation)
+	}
+}
+
+func TestDebugStatusIncludesCoordinationCapabilitySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		Coordination struct {
+			ReportPath string `json:"report_path"`
+			Status     string `json:"status"`
+			Summary    struct {
+				CapabilityCount        int            `json:"capability_count"`
+				ContractOnlyCount      int            `json:"contract_only_count"`
+				HarnessProvenCount     int            `json:"harness_proven_count"`
+				LiveProvenCount        int            `json:"live_proven_count"`
+				CurrentStateCounts     map[string]int `json:"current_state_counts"`
+				RuntimeReadinessCounts map[string]int `json:"runtime_readiness_counts"`
+			} `json:"summary"`
+			Capabilities []struct {
+				Name              string   `json:"name"`
+				CurrentState      string   `json:"current_state"`
+				RuntimeReadiness  string   `json:"runtime_readiness"`
+				ContractOnly      bool     `json:"contract_only"`
+				HarnessProven     bool     `json:"harness_proven"`
+				LiveProven        bool     `json:"live_proven"`
+				SourceReportLinks []string `json:"source_report_links"`
+			} `json:"capabilities"`
+		} `json:"coordination_capability_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug coordination payload: %v", err)
+	}
+	if decoded.Coordination.ReportPath != coordinationCapabilitySurfacePath || decoded.Coordination.Status != "local-capability-surface" {
+		t.Fatalf("unexpected coordination report metadata: %+v", decoded.Coordination)
+	}
+	if decoded.Coordination.Summary.CapabilityCount != 7 || decoded.Coordination.Summary.ContractOnlyCount != 2 || decoded.Coordination.Summary.HarnessProvenCount != 1 || decoded.Coordination.Summary.LiveProvenCount != 3 {
+		t.Fatalf("unexpected coordination summary: %+v", decoded.Coordination.Summary)
+	}
+	if decoded.Coordination.Summary.CurrentStateCounts["contract_defined"] != 1 || decoded.Coordination.Summary.CurrentStateCounts["not_available"] != 2 {
+		t.Fatalf("unexpected coordination state counts: %+v", decoded.Coordination.Summary.CurrentStateCounts)
+	}
+	if decoded.Coordination.Summary.RuntimeReadinessCounts["supporting_surface"] != 1 || decoded.Coordination.Summary.RuntimeReadinessCounts["live_proven"] != 3 {
+		t.Fatalf("unexpected coordination readiness counts: %+v", decoded.Coordination.Summary.RuntimeReadinessCounts)
+	}
+	if len(decoded.Coordination.Capabilities) == 0 {
+		t.Fatalf("expected capability entries in debug status payload")
+	}
+	first := decoded.Coordination.Capabilities[0]
+	if first.Name != "shared_queue_task_coordination" || first.CurrentState != "implemented" || first.RuntimeReadiness != "live_proven" || first.ContractOnly || !first.LiveProven || len(first.SourceReportLinks) == 0 {
+		t.Fatalf("unexpected first capability payload: %+v", first)
+	}
+}
+
+func TestDebugStatusIncludesCoordinationLeaderElectionSurface(t *testing.T) {
+	server := &Server{
+		Recorder:         observability.NewRecorder(),
+		Queue:            queue.NewMemoryQueue(),
+		Bus:              events.NewBus(),
+		SubscriberLeases: events.NewSubscriberLeaseCoordinator(),
+		Now:              time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		Leader struct {
+			Endpoint      string `json:"endpoint"`
+			GroupID       string `json:"group_id"`
+			SubscriberID  string `json:"subscriber_id"`
+			ElectionModel string `json:"election_model"`
+			Status        string `json:"status"`
+			LeaderPresent bool   `json:"leader_present"`
+		} `json:"coordination_leader_election"`
+		LeaderElectionCapability struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				BackendCount        int    `json:"backend_count"`
+				CurrentProofBackend string `json:"current_proof_backend"`
+			} `json:"summary"`
+		} `json:"leader_election_capability"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug leader surface: %v", err)
+	}
+	if decoded.Leader.Endpoint != coordinationLeaderEndpoint || decoded.Leader.GroupID != coordinationLeaderGroupID || decoded.Leader.SubscriberID != coordinationLeaderSubscriberID {
+		t.Fatalf("unexpected leader election identity: %+v", decoded.Leader)
+	}
+	if decoded.Leader.ElectionModel != "subscriber_lease" || decoded.Leader.Status != "idle" || decoded.Leader.LeaderPresent {
+		t.Fatalf("unexpected leader election surface: %+v", decoded.Leader)
+	}
+	if decoded.LeaderElectionCapability.ReportPath != leaderElectionCapabilitySurfacePath || decoded.LeaderElectionCapability.Summary.BackendCount != 4 || decoded.LeaderElectionCapability.Summary.CurrentProofBackend != "shared_sqlite_subscriber_lease" {
+		t.Fatalf("unexpected leader election capability payload: %+v", decoded.LeaderElectionCapability)
+	}
+}
+
+func TestDebugStatusIncludesBrokerStubFanoutIsolationEvidencePack(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		BrokerStubFanoutIsolation struct {
+			ReportPath string `json:"report_path"`
+			Ticket     string `json:"ticket"`
+			Summary    struct {
+				ScenarioCount          int  `json:"scenario_count"`
+				IsolatedScenarios      int  `json:"isolated_scenarios"`
+				StalledScenarios       int  `json:"stalled_scenarios"`
+				ReplayBacklogEvents    int  `json:"replay_backlog_events"`
+				ReplayStepDelayMS      int  `json:"replay_step_delay_ms"`
+				ReplayWindowMS         int  `json:"replay_window_ms"`
+				LiveDeliveryDeadlineMS int  `json:"live_delivery_deadline_ms"`
+				IsolationMaintained    bool `json:"isolation_maintained"`
+			} `json:"summary"`
+			Scenarios []struct {
+				Name                   string `json:"name"`
+				Status                 string `json:"status"`
+				ReplayBacklogEvents    int    `json:"replay_backlog_events"`
+				ReplayStepDelayMS      int    `json:"replay_step_delay_ms"`
+				ReplayWindowMS         int    `json:"replay_window_ms"`
+				LiveDeliveryDeadlineMS int    `json:"live_delivery_deadline_ms"`
+				ReplayDrainsAfterLive  bool   `json:"replay_drains_after_live"`
+			} `json:"scenarios"`
+		} `json:"broker_stub_fanout_isolation"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug broker fanout payload: %v", err)
+	}
+	if decoded.BrokerStubFanoutIsolation.ReportPath != brokerStubFanoutIsolationEvidencePackPath || decoded.BrokerStubFanoutIsolation.Ticket != "OPE-261" {
+		t.Fatalf("unexpected broker fanout report metadata: %+v", decoded.BrokerStubFanoutIsolation)
+	}
+	if decoded.BrokerStubFanoutIsolation.Summary.ScenarioCount != 1 || decoded.BrokerStubFanoutIsolation.Summary.IsolatedScenarios != 1 || decoded.BrokerStubFanoutIsolation.Summary.StalledScenarios != 0 || decoded.BrokerStubFanoutIsolation.Summary.ReplayBacklogEvents != 4 || decoded.BrokerStubFanoutIsolation.Summary.ReplayStepDelayMS != 30 || decoded.BrokerStubFanoutIsolation.Summary.ReplayWindowMS != 120 || decoded.BrokerStubFanoutIsolation.Summary.LiveDeliveryDeadlineMS != 50 || !decoded.BrokerStubFanoutIsolation.Summary.IsolationMaintained {
+		t.Fatalf("unexpected broker fanout summary: %+v", decoded.BrokerStubFanoutIsolation.Summary)
+	}
+	if len(decoded.BrokerStubFanoutIsolation.Scenarios) != 1 {
+		t.Fatalf("expected 1 broker fanout scenario, got %+v", decoded.BrokerStubFanoutIsolation.Scenarios)
+	}
+	if decoded.BrokerStubFanoutIsolation.Scenarios[0].Name != "replay_catchup_does_not_block_live_publish" || decoded.BrokerStubFanoutIsolation.Scenarios[0].Status != "isolated" || decoded.BrokerStubFanoutIsolation.Scenarios[0].ReplayBacklogEvents != 4 || decoded.BrokerStubFanoutIsolation.Scenarios[0].ReplayStepDelayMS != 30 || decoded.BrokerStubFanoutIsolation.Scenarios[0].ReplayWindowMS != 120 || decoded.BrokerStubFanoutIsolation.Scenarios[0].LiveDeliveryDeadlineMS != 50 || !decoded.BrokerStubFanoutIsolation.Scenarios[0].ReplayDrainsAfterLive {
+		t.Fatalf("unexpected broker fanout scenario: %+v", decoded.BrokerStubFanoutIsolation.Scenarios[0])
+	}
+}
+
+func TestDebugStatusIncludesLiveShadowMirrorScorecard(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		LiveShadow struct {
+			ReportPath           string   `json:"report_path"`
+			CanonicalSummaryPath string   `json:"canonical_summary_path"`
+			Status               string   `json:"status"`
+			Severity             string   `json:"severity"`
+			BundlePath           string   `json:"bundle_path"`
+			SummaryPath          string   `json:"summary_path"`
+			ReviewerLinks        []string `json:"reviewer_links"`
+			Summary              struct {
+				TotalEvidenceRuns  int `json:"total_evidence_runs"`
+				ParityOKCount      int `json:"parity_ok_count"`
+				DriftDetectedCount int `json:"drift_detected_count"`
+				MatrixMismatched   int `json:"matrix_mismatched"`
+				FreshInputs        int `json:"fresh_inputs"`
+				StaleInputs        int `json:"stale_inputs"`
+			} `json:"summary"`
+			CutoverCheckpoints []struct {
+				Name   string `json:"name"`
+				Passed bool   `json:"passed"`
+			} `json:"cutover_checkpoints"`
+			RollbackTriggerSurface struct {
+				Status                   string `json:"status"`
+				AutomationBoundary       string `json:"automation_boundary"`
+				AutomatedRollbackTrigger bool   `json:"automated_rollback_trigger"`
+				SummaryPath              string `json:"summary_path"`
+			} `json:"rollback_trigger_surface"`
+			Limitations []string `json:"limitations"`
+			FutureWork  []string `json:"future_work"`
+		} `json:"live_shadow_mirror_scorecard"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug status: %v", err)
+	}
+	if decoded.LiveShadow.ReportPath != liveShadowMirrorScorecardPath || decoded.LiveShadow.CanonicalSummaryPath != liveShadowSummaryPath {
+		t.Fatalf("unexpected live shadow report paths: %+v", decoded.LiveShadow)
+	}
+	if decoded.LiveShadow.Status != "parity-ok" || decoded.LiveShadow.Severity != "none" {
+		t.Fatalf("unexpected live shadow status: %+v", decoded.LiveShadow)
+	}
+	if decoded.LiveShadow.BundlePath != "docs/reports/live-shadow-runs/20260313T085655Z" || decoded.LiveShadow.SummaryPath != "docs/reports/live-shadow-runs/20260313T085655Z/summary.json" {
+		t.Fatalf("unexpected live shadow bundle payload: %+v", decoded.LiveShadow)
+	}
+	if decoded.LiveShadow.Summary.TotalEvidenceRuns != 4 || decoded.LiveShadow.Summary.ParityOKCount != 4 || decoded.LiveShadow.Summary.DriftDetectedCount != 0 || decoded.LiveShadow.Summary.MatrixMismatched != 0 || decoded.LiveShadow.Summary.FreshInputs != 2 || decoded.LiveShadow.Summary.StaleInputs != 0 {
+		t.Fatalf("unexpected live shadow summary payload: %+v", decoded.LiveShadow.Summary)
+	}
+	if len(decoded.LiveShadow.CutoverCheckpoints) != 5 || !decoded.LiveShadow.CutoverCheckpoints[0].Passed {
+		t.Fatalf("unexpected cutover checkpoint payload: %+v", decoded.LiveShadow.CutoverCheckpoints)
+	}
+	if decoded.LiveShadow.RollbackTriggerSurface.Status != "manual-review-required" || decoded.LiveShadow.RollbackTriggerSurface.AutomationBoundary != "manual_only" || decoded.LiveShadow.RollbackTriggerSurface.AutomatedRollbackTrigger || decoded.LiveShadow.RollbackTriggerSurface.SummaryPath != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected rollback trigger surface payload: %+v", decoded.LiveShadow.RollbackTriggerSurface)
+	}
+	if len(decoded.LiveShadow.ReviewerLinks) == 0 || decoded.LiveShadow.ReviewerLinks[0] != liveShadowSummaryPath || decoded.LiveShadow.ReviewerLinks[len(decoded.LiveShadow.ReviewerLinks)-1] != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected reviewer links: %+v", decoded.LiveShadow.ReviewerLinks)
+	}
+	if len(decoded.LiveShadow.Limitations) == 0 || len(decoded.LiveShadow.FutureWork) == 0 {
+		t.Fatalf("expected scorecard caveats and future work, got %+v", decoded.LiveShadow)
+	}
+	if !strings.Contains(response.Body.String(), "\"live_shadow_mirror_scorecard\"") || !strings.Contains(response.Body.String(), "\"canonical_summary_path\":\"docs/reports/live-shadow-summary.json\"") {
+		t.Fatalf("expected live shadow payload in response, got %s", response.Body.String())
+	}
+}
+
+func TestDebugStatusIncludesRollbackTriggerSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		RollbackTrigger struct {
+			ReportPath string `json:"report_path"`
+			Issue      struct {
+				ID   string `json:"id"`
+				Slug string `json:"slug"`
+			} `json:"issue"`
+			Summary struct {
+				Status                   string `json:"status"`
+				AutomationBoundary       string `json:"automation_boundary"`
+				AutomatedRollbackTrigger bool   `json:"automated_rollback_trigger"`
+				CutoverGate              string `json:"cutover_gate"`
+				Distinctions             struct {
+					Blockers        int `json:"blockers"`
+					Warnings        int `json:"warnings"`
+					ManualOnlyPaths int `json:"manual_only_paths"`
+				} `json:"distinctions"`
+			} `json:"summary"`
+			SharedGuardrailSummary struct {
+				DigestPath             string `json:"digest_path"`
+				MigrationReadinessPath string `json:"migration_readiness_path"`
+				LiveShadowIndexPath    string `json:"live_shadow_index_path"`
+				LiveShadowRollupPath   string `json:"live_shadow_rollup_path"`
+			} `json:"shared_guardrail_summary"`
+			Warnings        []map[string]any `json:"warnings"`
+			Blockers        []map[string]any `json:"blockers"`
+			ManualOnlyPaths []map[string]any `json:"manual_only_paths"`
+			ReviewerLinks   []string         `json:"reviewer_links"`
+		} `json:"rollback_trigger_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug rollback payload: %v", err)
+	}
+	if decoded.RollbackTrigger.ReportPath != rollbackTriggerSurfacePath || decoded.RollbackTrigger.Issue.ID != "OPE-254" || decoded.RollbackTrigger.Issue.Slug != "BIG-PAR-088" {
+		t.Fatalf("unexpected rollback trigger metadata: %+v", decoded.RollbackTrigger)
+	}
+	if decoded.RollbackTrigger.Summary.Status != "manual-review-required" || decoded.RollbackTrigger.Summary.AutomationBoundary != "manual_only" || decoded.RollbackTrigger.Summary.AutomatedRollbackTrigger || decoded.RollbackTrigger.Summary.CutoverGate != "reviewer_enforced" {
+		t.Fatalf("unexpected rollback trigger summary: %+v", decoded.RollbackTrigger.Summary)
+	}
+	if decoded.RollbackTrigger.Summary.Distinctions.Blockers != 3 || decoded.RollbackTrigger.Summary.Distinctions.Warnings != 1 || decoded.RollbackTrigger.Summary.Distinctions.ManualOnlyPaths != 2 {
+		t.Fatalf("unexpected rollback distinctions: %+v", decoded.RollbackTrigger.Summary.Distinctions)
+	}
+	if decoded.RollbackTrigger.SharedGuardrailSummary.DigestPath != "docs/reports/rollback-safeguard-follow-up-digest.md" || decoded.RollbackTrigger.SharedGuardrailSummary.MigrationReadinessPath != migrationReadinessReportPath || decoded.RollbackTrigger.SharedGuardrailSummary.LiveShadowIndexPath != liveShadowIndexPath || decoded.RollbackTrigger.SharedGuardrailSummary.LiveShadowRollupPath != "docs/reports/live-shadow-drift-rollup.json" {
+		t.Fatalf("unexpected rollback guardrail summary: %+v", decoded.RollbackTrigger.SharedGuardrailSummary)
+	}
+	if len(decoded.RollbackTrigger.Warnings) != 1 || len(decoded.RollbackTrigger.Blockers) != 3 || len(decoded.RollbackTrigger.ManualOnlyPaths) != 2 {
+		t.Fatalf("unexpected rollback collections: %+v", decoded.RollbackTrigger)
+	}
+	if len(decoded.RollbackTrigger.ReviewerLinks) == 0 || decoded.RollbackTrigger.ReviewerLinks[0] != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected rollback reviewer links: %+v", decoded.RollbackTrigger.ReviewerLinks)
+	}
+	if !strings.Contains(response.Body.String(), "\"rollback_trigger_surface\"") || !strings.Contains(response.Body.String(), "\"cutover_gate\":\"reviewer_enforced\"") {
+		t.Fatalf("expected rollback trigger payload in response, got %s", response.Body.String())
+	}
+}
+
+func TestDebugStatusIncludesSequenceBridgeSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		SequenceBridge struct {
+			ReportPath string `json:"report_path"`
+			Ticket     string `json:"ticket"`
+			Track      string `json:"track"`
+			Summary    struct {
+				BackendCount                 int `json:"backend_count"`
+				LiveProvenBackends           int `json:"live_proven_backends"`
+				HarnessProvenBackends        int `json:"harness_proven_backends"`
+				ContractOnlyBackends         int `json:"contract_only_backends"`
+				OneToOneMappings             int `json:"one_to_one_mappings"`
+				ProviderEpochBridgedBackends int `json:"provider_epoch_bridged_backends"`
+			} `json:"summary"`
+			Backends []struct {
+				Backend          string `json:"backend"`
+				RuntimeReadiness string `json:"runtime_readiness"`
+			} `json:"backends"`
+		} `json:"sequence_bridge_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode sequence bridge payload: %v", err)
+	}
+	if decoded.SequenceBridge.ReportPath != sequenceBridgeSurfacePath || decoded.SequenceBridge.Ticket != "OPE-12" || decoded.SequenceBridge.Track != "BIG-DUR-102" {
+		t.Fatalf("unexpected sequence bridge metadata: %+v", decoded.SequenceBridge)
+	}
+	if decoded.SequenceBridge.Summary.BackendCount != 5 || decoded.SequenceBridge.Summary.LiveProvenBackends != 3 || decoded.SequenceBridge.Summary.HarnessProvenBackends != 1 || decoded.SequenceBridge.Summary.ContractOnlyBackends != 1 || decoded.SequenceBridge.Summary.OneToOneMappings != 2 || decoded.SequenceBridge.Summary.ProviderEpochBridgedBackends != 3 {
+		t.Fatalf("unexpected sequence bridge summary: %+v", decoded.SequenceBridge.Summary)
+	}
+	if len(decoded.SequenceBridge.Backends) != 5 || decoded.SequenceBridge.Backends[0].Backend != "memory" || decoded.SequenceBridge.Backends[4].RuntimeReadiness != "contract_only" {
+		t.Fatalf("unexpected sequence bridge backends: %+v", decoded.SequenceBridge.Backends)
+	}
+}
+
+func TestDebugStatusIncludesPublishAckOutcomeSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		PublishAckOutcomes struct {
+			ReportPath string `json:"report_path"`
+			Ticket     string `json:"ticket"`
+			Track      string `json:"track"`
+			Summary    struct {
+				ScenarioID         string   `json:"scenario_id"`
+				ProofStatus        string   `json:"proof_status"`
+				RequiredOutcomes   []string `json:"required_outcomes"`
+				CommittedCount     int      `json:"committed_count"`
+				RejectedCount      int      `json:"rejected_count"`
+				UnknownCommitCount int      `json:"unknown_commit_count"`
+			} `json:"summary"`
+			Outcomes []struct {
+				Outcome string `json:"outcome"`
+			} `json:"outcomes"`
+		} `json:"publish_ack_outcomes"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode publish ack surface payload: %v", err)
+	}
+	if decoded.PublishAckOutcomes.ReportPath != publishAckOutcomeSurfacePath || decoded.PublishAckOutcomes.Ticket != "OPE-5" || decoded.PublishAckOutcomes.Track != "BIG-DUR-101" {
+		t.Fatalf("unexpected publish ack report metadata: %+v", decoded.PublishAckOutcomes)
+	}
+	if decoded.PublishAckOutcomes.Summary.ScenarioID != "BF-05" || decoded.PublishAckOutcomes.Summary.ProofStatus != "repo-proof-summary" {
+		t.Fatalf("unexpected publish ack summary metadata: %+v", decoded.PublishAckOutcomes.Summary)
+	}
+	if decoded.PublishAckOutcomes.Summary.CommittedCount != 1 || decoded.PublishAckOutcomes.Summary.RejectedCount != 1 || decoded.PublishAckOutcomes.Summary.UnknownCommitCount != 1 {
+		t.Fatalf("unexpected publish ack counts: %+v", decoded.PublishAckOutcomes.Summary)
+	}
+	if len(decoded.PublishAckOutcomes.Summary.RequiredOutcomes) != 3 || len(decoded.PublishAckOutcomes.Outcomes) != 3 {
+		t.Fatalf("unexpected publish ack outcomes payload: %+v", decoded.PublishAckOutcomes)
+	}
+}
+
+func TestDebugStatusIncludesDeliveryAckReadinessSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		DeliveryAckReadiness struct {
+			ReportPath string `json:"report_path"`
+			Ticket     string `json:"ticket"`
+			Summary    struct {
+				BackendCount         int `json:"backend_count"`
+				ExplicitAckBackends  int `json:"explicit_ack_backends"`
+				DurableAckBackends   int `json:"durable_ack_backends"`
+				BestEffortBackends   int `json:"best_effort_backends"`
+				ContractOnlyBackends int `json:"contract_only_backends"`
+			} `json:"summary"`
+			Backends []struct {
+				Backend                 string `json:"backend"`
+				AcknowledgementClass    string `json:"acknowledgement_class"`
+				ExplicitAcknowledgement bool   `json:"explicit_acknowledgement"`
+				DurableAcknowledgement  bool   `json:"durable_acknowledgement"`
+				RuntimeReadiness        string `json:"runtime_readiness"`
+			} `json:"backends"`
+		} `json:"delivery_ack_readiness"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug ack readiness payload: %v", err)
+	}
+	if decoded.DeliveryAckReadiness.ReportPath != deliveryAckReadinessSurfacePath || decoded.DeliveryAckReadiness.Ticket != "OPE-264" {
+		t.Fatalf("unexpected delivery ack report metadata: %+v", decoded.DeliveryAckReadiness)
+	}
+	if decoded.DeliveryAckReadiness.Summary.BackendCount != 5 || decoded.DeliveryAckReadiness.Summary.ExplicitAckBackends != 3 || decoded.DeliveryAckReadiness.Summary.DurableAckBackends != 2 || decoded.DeliveryAckReadiness.Summary.BestEffortBackends != 1 || decoded.DeliveryAckReadiness.Summary.ContractOnlyBackends != 1 {
+		t.Fatalf("unexpected delivery ack summary: %+v", decoded.DeliveryAckReadiness.Summary)
+	}
+	if len(decoded.DeliveryAckReadiness.Backends) != 5 {
+		t.Fatalf("expected 5 ack readiness backends, got %+v", decoded.DeliveryAckReadiness.Backends)
+	}
+	if decoded.DeliveryAckReadiness.Backends[0].Backend != "memory" || decoded.DeliveryAckReadiness.Backends[0].AcknowledgementClass != "best_effort_only" || decoded.DeliveryAckReadiness.Backends[0].ExplicitAcknowledgement || decoded.DeliveryAckReadiness.Backends[0].DurableAcknowledgement {
+		t.Fatalf("unexpected memory ack readiness payload: %+v", decoded.DeliveryAckReadiness.Backends[0])
+	}
+	if decoded.DeliveryAckReadiness.Backends[1].Backend != "sqlite" || !decoded.DeliveryAckReadiness.Backends[1].ExplicitAcknowledgement || !decoded.DeliveryAckReadiness.Backends[1].DurableAcknowledgement {
+		t.Fatalf("unexpected sqlite ack readiness payload: %+v", decoded.DeliveryAckReadiness.Backends[1])
+	}
+	if decoded.DeliveryAckReadiness.Backends[4].Backend != "broker_replicated" || decoded.DeliveryAckReadiness.Backends[4].RuntimeReadiness != "contract_only" {
+		t.Fatalf("unexpected broker replicated ack readiness payload: %+v", decoded.DeliveryAckReadiness.Backends[4])
+	}
+}
+
+func TestDebugStatusIncludesValidationBundleContinuationGate(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		ValidationBundleContinuation struct {
+			ReportPath     string   `json:"report_path"`
+			ScorecardPath  string   `json:"scorecard_path"`
+			DigestPath     string   `json:"digest_path"`
+			Ticket         string   `json:"ticket"`
+			Status         string   `json:"status"`
+			Recommendation string   `json:"recommendation"`
+			ReviewerLinks  []string `json:"reviewer_links"`
+			Summary        struct {
+				LatestRunID                                 string  `json:"latest_run_id"`
+				LatestBundleAgeHours                        float64 `json:"latest_bundle_age_hours"`
+				RecentBundleCount                           int     `json:"recent_bundle_count"`
+				AllExecutorTracksHaveRepeatedRecentCoverage bool    `json:"all_executor_tracks_have_repeated_recent_coverage"`
+				SharedQueueCompanionAvailable               bool    `json:"shared_queue_companion_available"`
+				CrossNodeCompletions                        int     `json:"cross_node_completions"`
+				PassingCheckCount                           int     `json:"passing_check_count"`
+				FailingCheckCount                           int     `json:"failing_check_count"`
+			} `json:"summary"`
+			PolicyChecks []struct {
+				Name   string `json:"name"`
+				Passed bool   `json:"passed"`
+			} `json:"policy_checks"`
+			NextActions []string `json:"next_actions"`
+		} `json:"validation_bundle_continuation"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode continuation gate payload: %v", err)
+	}
+	if decoded.ValidationBundleContinuation.ReportPath != validationBundleContinuationGatePath ||
+		decoded.ValidationBundleContinuation.ScorecardPath != validationBundleContinuationScorecardPath ||
+		decoded.ValidationBundleContinuation.DigestPath != "docs/reports/validation-bundle-continuation-digest.md" ||
+		decoded.ValidationBundleContinuation.Ticket != "OPE-262" ||
+		decoded.ValidationBundleContinuation.Status != "policy-go" ||
+		decoded.ValidationBundleContinuation.Recommendation != "go" {
+		t.Fatalf("unexpected continuation gate metadata: %+v", decoded.ValidationBundleContinuation)
+	}
+	if len(decoded.ValidationBundleContinuation.ReviewerLinks) != 3 ||
+		decoded.ValidationBundleContinuation.ReviewerLinks[0] != "docs/reports/live-validation-index.md" ||
+		decoded.ValidationBundleContinuation.ReviewerLinks[1] != "docs/reports/validation-bundle-continuation-digest.md" ||
+		decoded.ValidationBundleContinuation.ReviewerLinks[2] != validationBundleContinuationScorecardPath {
+		t.Fatalf("unexpected continuation gate reviewer links: %+v", decoded.ValidationBundleContinuation.ReviewerLinks)
+	}
+	if decoded.ValidationBundleContinuation.Summary.LatestRunID != "20260316T140138Z" ||
+		decoded.ValidationBundleContinuation.Summary.RecentBundleCount != 3 ||
+		!decoded.ValidationBundleContinuation.Summary.AllExecutorTracksHaveRepeatedRecentCoverage ||
+		!decoded.ValidationBundleContinuation.Summary.SharedQueueCompanionAvailable ||
+		decoded.ValidationBundleContinuation.Summary.CrossNodeCompletions != 99 ||
+		decoded.ValidationBundleContinuation.Summary.PassingCheckCount != 6 ||
+		decoded.ValidationBundleContinuation.Summary.FailingCheckCount != 0 {
+		t.Fatalf("unexpected continuation gate summary: %+v", decoded.ValidationBundleContinuation.Summary)
+	}
+	if len(decoded.ValidationBundleContinuation.PolicyChecks) != 6 ||
+		decoded.ValidationBundleContinuation.PolicyChecks[0].Name != "latest_bundle_age_within_threshold" ||
+		!decoded.ValidationBundleContinuation.PolicyChecks[0].Passed {
+		t.Fatalf("unexpected continuation gate policy checks: %+v", decoded.ValidationBundleContinuation.PolicyChecks)
+	}
+	if len(decoded.ValidationBundleContinuation.NextActions) < 4 ||
+		decoded.ValidationBundleContinuation.NextActions[0] != "set BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail when workflow closeout should stop on continuation regressions" {
+		t.Fatalf("unexpected continuation gate next actions: %+v", decoded.ValidationBundleContinuation.NextActions)
 	}
 }
 
@@ -540,12 +1233,19 @@ func TestStreamEventsSupportsReplayAndFiltersByTrace(t *testing.T) {
 
 func TestSubscriberGroupLeaseEndpointsFenceConflictsAndRollback(t *testing.T) {
 	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	now := time.Unix(1700000000, 0)
 	server := &Server{
 		Recorder:         recorder,
 		Queue:            queue.NewMemoryQueue(),
-		Bus:              events.NewBus(),
+		Bus:              bus,
 		SubscriberLeases: events.NewSubscriberLeaseCoordinator(),
-		Now:              func() time.Time { return time.Unix(1700000000, 0) },
+		Now: func() time.Time {
+			current := now
+			now = now.Add(time.Second)
+			return current
+		},
 	}
 	handler := server.Handler()
 
@@ -599,8 +1299,90 @@ func TestSubscriberGroupLeaseEndpointsFenceConflictsAndRollback(t *testing.T) {
 	if statusResponse.Code != http.StatusOK {
 		t.Fatalf("expected lease status 200, got %d with %s", statusResponse.Code, statusResponse.Body.String())
 	}
-	if !strings.Contains(statusResponse.Body.String(), "\"checkpoint_offset\":7") {
-		t.Fatalf("expected checkpoint offset in status payload, got %s", statusResponse.Body.String())
+	if !strings.Contains(statusResponse.Body.String(), "\"checkpoint_offset\":7") || !strings.Contains(statusResponse.Body.String(), "\"sequence_bridge\"") {
+		t.Fatalf("expected sequence bridge in status payload, got %s", statusResponse.Body.String())
+	}
+	now = now.Add(30 * time.Second)
+
+	takeoverBody := bytes.NewReader([]byte(`{"group_id":"group-a","subscriber_id":"sub-a","consumer_id":"consumer-b","ttl_seconds":30}`))
+	takeoverRequest := httptest.NewRequest(http.MethodPost, "/subscriber-groups/leases", takeoverBody)
+	takeoverResponse := httptest.NewRecorder()
+	handler.ServeHTTP(takeoverResponse, takeoverRequest)
+	if takeoverResponse.Code != http.StatusOK {
+		t.Fatalf("expected takeover acquire 200, got %d with %s", takeoverResponse.Code, takeoverResponse.Body.String())
+	}
+
+	var takeover struct {
+		Lease events.SubscriberLease `json:"lease"`
+	}
+	if err := json.Unmarshal(takeoverResponse.Body.Bytes(), &takeover); err != nil {
+		t.Fatalf("decode takeover response: %v", err)
+	}
+
+	staleBody := bytes.NewReader([]byte(`{"group_id":"group-a","subscriber_id":"sub-a","consumer_id":"consumer-a","lease_token":"` + acquired.Lease.LeaseToken + `","lease_epoch":` + epoch + `,"checkpoint_offset":8,"checkpoint_event_id":"evt-8"}`))
+	staleRequest := httptest.NewRequest(http.MethodPost, "/subscriber-groups/checkpoints", staleBody)
+	staleResponse := httptest.NewRecorder()
+	handler.ServeHTTP(staleResponse, staleRequest)
+	if staleResponse.Code != http.StatusConflict {
+		t.Fatalf("expected stale writer conflict 409, got %d with %s", staleResponse.Code, staleResponse.Body.String())
+	}
+
+	takeoverEpoch := strconv.FormatInt(takeover.Lease.LeaseEpoch, 10)
+	takeoverCommitBody := bytes.NewReader([]byte(`{"group_id":"group-a","subscriber_id":"sub-a","consumer_id":"consumer-b","lease_token":"` + takeover.Lease.LeaseToken + `","lease_epoch":` + takeoverEpoch + `,"checkpoint_offset":9,"checkpoint_event_id":"evt-9"}`))
+	takeoverCommitRequest := httptest.NewRequest(http.MethodPost, "/subscriber-groups/checkpoints", takeoverCommitBody)
+	takeoverCommitResponse := httptest.NewRecorder()
+	handler.ServeHTTP(takeoverCommitResponse, takeoverCommitRequest)
+	if takeoverCommitResponse.Code != http.StatusOK {
+		t.Fatalf("expected takeover checkpoint commit 200, got %d with %s", takeoverCommitResponse.Code, takeoverCommitResponse.Body.String())
+	}
+
+	auditEvents := recorder.EventsByTask("", 0)
+	wantTypes := []domain.EventType{
+		domain.EventSubscriberLeaseAcquired,
+		domain.EventSubscriberLeaseRejected,
+		domain.EventSubscriberCheckpointCommitted,
+		domain.EventSubscriberCheckpointRejected,
+		domain.EventSubscriberLeaseExpired,
+		domain.EventSubscriberTakeoverSucceeded,
+		domain.EventSubscriberCheckpointRejected,
+		domain.EventSubscriberCheckpointCommitted,
+	}
+	filtered := make([]domain.Event, 0, len(wantTypes))
+	for _, event := range auditEvents {
+		switch event.Type {
+		case domain.EventSubscriberLeaseAcquired,
+			domain.EventSubscriberLeaseRejected,
+			domain.EventSubscriberCheckpointCommitted,
+			domain.EventSubscriberCheckpointRejected,
+			domain.EventSubscriberLeaseExpired,
+			domain.EventSubscriberTakeoverSucceeded:
+			filtered = append(filtered, event)
+		}
+	}
+	if len(filtered) != len(wantTypes) {
+		t.Fatalf("expected %d subscriber audit events, got %d: %+v", len(wantTypes), len(filtered), filtered)
+	}
+	for i, want := range wantTypes {
+		if filtered[i].Type != want {
+			t.Fatalf("expected subscriber event %d to be %s, got %+v", i, want, filtered)
+		}
+	}
+	takeoverEvent := filtered[5]
+	for _, key := range []string{"group_id", "subscriber_id", "consumer_id", "previous_consumer_id", "lease_token", "lease_epoch", "checkpoint_offset", "sequence_bridge"} {
+		if _, ok := takeoverEvent.Payload[key]; !ok {
+			t.Fatalf("expected takeover payload field %q in %+v", key, takeoverEvent.Payload)
+		}
+	}
+	if takeoverEvent.Payload["consumer_id"] != "consumer-b" || takeoverEvent.Payload["previous_consumer_id"] != "consumer-a" {
+		t.Fatalf("unexpected takeover payload: %+v", takeoverEvent.Payload)
+	}
+	rejected := filtered[6]
+	if rejected.Payload["reason"] != events.ErrLeaseFence.Error() {
+		t.Fatalf("expected fenced checkpoint rejection payload, got %+v", rejected.Payload)
+	}
+	bridge, ok := rejected.Payload["sequence_bridge"].(map[string]any)
+	if !ok || bridge["mapping_status"] != "lease_checkpoint_offset_mirrors_portable_sequence" || bridge["ownership_epoch"] == nil {
+		t.Fatalf("expected sequence bridge metadata in rejection payload, got %+v", rejected.Payload["sequence_bridge"])
 	}
 }
 
@@ -783,6 +1565,31 @@ func TestDebugTraceEndpointsExposeTraceSummary(t *testing.T) {
 	server.Handler().ServeHTTP(metricsResponse, metricsRequest)
 	if !strings.Contains(metricsResponse.Body.String(), "trace_count") {
 		t.Fatalf("expected trace_count in metrics payload, got %s", metricsResponse.Body.String())
+	}
+}
+
+func TestMetricsJSONIncludesDurabilityRolloutScorecard(t *testing.T) {
+	recorder := observability.NewRecorder()
+	server := &Server{
+		Recorder:  recorder,
+		Queue:     queue.NewMemoryQueue(),
+		Bus:       events.NewBus(),
+		EventPlan: events.NewDurabilityPlan("memory", "broker_replicated", 3),
+		Now:       time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected metrics 200, got %d", response.Code)
+	}
+	body := response.Body.String()
+	if !strings.Contains(body, "\"event_durability_rollout\"") {
+		t.Fatalf("expected durability rollout scorecard in metrics payload, got %s", body)
+	}
+	if !strings.Contains(body, "\"rollout_ready\":false") {
+		t.Fatalf("expected rollout readiness flag in metrics payload, got %s", body)
 	}
 }
 
@@ -1262,6 +2069,63 @@ func TestV2OperationsDashboardAggregatesSLAMetrics(t *testing.T) {
 	}
 }
 
+func TestV2RunsListsScopedRunIndex(t *testing.T) {
+	recorder := observability.NewRecorder()
+	controller := control.New()
+	base := time.Unix(1700000900, 0)
+	premium := domain.Task{ID: "task-runs-1", TraceID: "trace-runs-1", Title: "Premium blocked run", State: domain.TaskBlocked, BudgetCents: 1200, Metadata: map[string]string{"team": "platform", "project": "alpha", "plan": "premium"}, CreatedAt: base, UpdatedAt: base.Add(2 * time.Minute)}
+	dead := domain.Task{ID: "task-runs-2", TraceID: "trace-runs-2", Title: "Dead letter run", State: domain.TaskDeadLetter, BudgetCents: 300, Metadata: map[string]string{"team": "platform", "project": "alpha"}, CreatedAt: base, UpdatedAt: base.Add(4 * time.Minute)}
+	other := domain.Task{ID: "task-runs-3", TraceID: "trace-runs-3", Title: "Other team run", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "growth", "project": "beta"}, CreatedAt: base, UpdatedAt: base.Add(3 * time.Minute)}
+	for _, task := range []domain.Task{premium, dead, other} {
+		recorder.StoreTask(task)
+	}
+	recorder.Record(domain.Event{ID: "evt-runs-1", Type: domain.EventRunTakeover, TaskID: premium.ID, TraceID: premium.TraceID, Timestamp: base.Add(2 * time.Minute), Payload: map[string]any{"message": "awaiting review"}})
+	recorder.Record(domain.Event{ID: "evt-runs-2", Type: domain.EventTaskDeadLetter, TaskID: dead.ID, TraceID: dead.TraceID, Timestamp: base.Add(4 * time.Minute), Payload: map[string]any{"message": "replay required"}})
+	controller.Takeover(premium.ID, "alice", "bob", "manual review", base.Add(5*time.Minute))
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: controller, Now: func() time.Time { return base.Add(6 * time.Minute) }}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/runs?team=platform&project=alpha&limit=10", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected run index 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Summary struct {
+			TotalRuns         int            `json:"total_runs"`
+			ActiveRuns        int            `json:"active_runs"`
+			BlockedRuns       int            `json:"blocked_runs"`
+			PremiumRuns       int            `json:"premium_runs"`
+			DeadLetters       int            `json:"dead_letters"`
+			BudgetCentsTotal  int64          `json:"budget_cents_total"`
+			StateDistribution map[string]int `json:"state_distribution"`
+		} `json:"summary"`
+		Runs []struct {
+			Task struct {
+				ID string `json:"id"`
+			} `json:"task"`
+			Policy struct {
+				Plan string `json:"plan"`
+			} `json:"policy"`
+			Drilldown struct {
+				Run string `json:"run"`
+			} `json:"drilldown"`
+		} `json:"runs"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode run index: %v", err)
+	}
+	if decoded.Summary.TotalRuns != 2 || decoded.Summary.ActiveRuns != 1 || decoded.Summary.BlockedRuns != 1 || decoded.Summary.PremiumRuns != 1 || decoded.Summary.DeadLetters != 1 || decoded.Summary.BudgetCentsTotal != 1500 {
+		t.Fatalf("unexpected run index summary: %+v", decoded.Summary)
+	}
+	if len(decoded.Runs) != 2 || decoded.Runs[0].Task.ID != "task-runs-2" || decoded.Runs[1].Task.ID != "task-runs-1" {
+		t.Fatalf("unexpected run ordering: %+v", decoded.Runs)
+	}
+	if decoded.Runs[1].Policy.Plan != "premium" || decoded.Runs[1].Drilldown.Run != "/v2/runs/task-runs-1" {
+		t.Fatalf("unexpected run payload: %+v", decoded.Runs[1])
+	}
+}
+
 func TestV2TriageCenterBuildsRecommendationsAndSimilarity(t *testing.T) {
 	recorder := observability.NewRecorder()
 	base := time.Unix(1700002800, 0)
@@ -1531,7 +2395,21 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 	recorder.StoreTask(task)
 	recorder.Record(domain.Event{ID: "evt-routed", Type: domain.EventSchedulerRouted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "reason": "browser workloads default to kubernetes executor"}})
 	recorder.Record(domain.Event{ID: "evt-started", Type: domain.EventTaskStarted, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(2 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "required_tools": []string{"browser", "git"}}})
-	recorder.Record(domain.Event{ID: "evt-dead", Type: domain.EventTaskDeadLetter, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(3 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "message": "pod crashed during validation", "artifacts": []string{"k8s://jobs/bigclaw/run-report", "k8s://pods/bigclaw/run-report-0"}}})
+	recorder.Record(domain.Event{
+		ID:        "evt-dead",
+		Type:      domain.EventTaskDeadLetter,
+		TaskID:    task.ID,
+		TraceID:   task.TraceID,
+		RunID:     "run-report-1",
+		Timestamp: base.Add(3 * time.Second),
+		Payload: map[string]any{
+			"executor":     domain.ExecutorKubernetes,
+			"message":      "pod crashed during validation",
+			"artifacts":    []string{"k8s://jobs/bigclaw/run-report", "k8s://pods/bigclaw/run-report-0"},
+			"report_path":  "reports/task-run-report/run-report-1.md",
+			"journal_path": "journals/platform/run-report-1.json",
+		},
+	})
 	controller.Takeover(task.ID, "alice", "bob", "Manual inspection required", base.Add(4*time.Second))
 	recorder.Record(domain.Event{ID: "evt-takeover", Type: domain.EventRunTakeover, TaskID: task.ID, TraceID: task.TraceID, Timestamp: base.Add(4 * time.Second), Payload: map[string]any{"actor": "alice", "role": "eng_lead", "reviewer": "bob", "note": "Manual inspection required", "team": "platform", "project": "alpha"}})
 
@@ -1570,6 +2448,16 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 			Format   string `json:"format"`
 			Download bool   `json:"download"`
 		} `json:"reports"`
+		Closeout struct {
+			ValidationEvidence []string `json:"validation_evidence"`
+			GitPushSucceeded   bool     `json:"git_push_succeeded"`
+			GitPushOutput      string   `json:"git_push_output"`
+			GitLogStatOutput   string   `json:"git_log_stat_output"`
+			RemoteSynced       bool     `json:"remote_synced"`
+			LocalSHA           string   `json:"local_sha"`
+			RemoteSHA          string   `json:"remote_sha"`
+			Complete           bool     `json:"complete"`
+		} `json:"closeout"`
 	}
 	if err := json.Unmarshal(runResponse.Body.Bytes(), &decoded); err != nil {
 		t.Fatalf("decode run detail: %v", err)
@@ -1586,8 +2474,15 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 	if decoded.Artifacts["report"] != "/v2/runs/task-run-report/report?limit=20" || decoded.Artifacts["audit"] != "/v2/runs/task-run-report/audit?limit=20" || decoded.Artifacts["trace"] == "" {
 		t.Fatalf("expected report/audit/trace links, got %+v", decoded.Artifacts)
 	}
-	if len(decoded.ArtifactRefs) < 4 {
+	if len(decoded.ArtifactRefs) < 6 {
 		t.Fatalf("expected artifact refs for executor, workpad, and linked records, got %+v", decoded.ArtifactRefs)
+	}
+	artifactKinds := make(map[string]string, len(decoded.ArtifactRefs))
+	for _, ref := range decoded.ArtifactRefs {
+		artifactKinds[ref.Kind] = ref.URI
+	}
+	if artifactKinds["workflow_report"] != "reports/task-run-report/run-report-1.md" || artifactKinds["workflow_journal"] != "journals/platform/run-report-1.json" {
+		t.Fatalf("expected workflow artifact refs in run detail, got %+v", decoded.ArtifactRefs)
 	}
 	if len(decoded.ToolTraces) < 4 {
 		t.Fatalf("expected tool traces for declared tools and executor events, got %+v", decoded.ToolTraces)
@@ -1597,6 +2492,9 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 	}
 	if len(decoded.Reports) != 1 || decoded.Reports[0].Format != "markdown" || !decoded.Reports[0].Download {
 		t.Fatalf("expected downloadable markdown report, got %+v", decoded.Reports)
+	}
+	if len(decoded.Closeout.ValidationEvidence) != 0 || decoded.Closeout.GitPushSucceeded || decoded.Closeout.GitLogStatOutput != "" || decoded.Closeout.RemoteSynced || decoded.Closeout.Complete {
+		t.Fatalf("expected empty closeout summary when metadata is absent, got %+v", decoded.Closeout)
 	}
 
 	auditResponse := httptest.NewRecorder()
@@ -1620,6 +2518,131 @@ func TestV2RunDetailExposesToolTraceArtifactsAuditAndReport(t *testing.T) {
 		t.Fatalf("expected attachment filename, got %q", disposition)
 	}
 	for _, want := range []string{"# BigClaw Run Report", "Task ID: task-run-report", "Failure Reason: pod crashed during validation", "k8s://jobs/bigclaw/run-report", "Manual inspection required"} {
+		if !strings.Contains(reportResponse.Body.String(), want) {
+			t.Fatalf("expected %q in run report, got %s", want, reportResponse.Body.String())
+		}
+	}
+	if !strings.Contains(reportResponse.Body.String(), "## Closeout") || !strings.Contains(reportResponse.Body.String(), "Complete: false") {
+		t.Fatalf("expected closeout section in run report, got %s", reportResponse.Body.String())
+	}
+}
+
+func TestV2RunDetailCloseoutSummaryFromMetadata(t *testing.T) {
+	recorder := observability.NewRecorder()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Control: control.New(), Now: func() time.Time { return time.Unix(1700006000, 0) }}
+	handler := server.Handler()
+	task := domain.Task{
+		ID:      "task-run-closeout",
+		TraceID: "trace-run-closeout",
+		Title:   "Close out release",
+		State:   domain.TaskSucceeded,
+		Metadata: map[string]string{
+			"team":                "platform",
+			"project":             "alpha",
+			"validation_evidence": `["go test ./internal/api","bash scripts/ops/bigclawctl github-sync status --json"]`,
+			"git_push_succeeded":  "true",
+			"git_push_output":     "To github.com:OpenAGIs/BigClaw.git",
+			"git_log_stat_output": "commit abc123\n bigclaw-go/internal/api/v2.go | 10 ++++++++++",
+			"remote_synced":       "true",
+			"local_sha":           "abc123",
+			"remote_sha":          "abc123",
+		},
+	}
+	recorder.StoreTask(task)
+
+	runResponse := httptest.NewRecorder()
+	handler.ServeHTTP(runResponse, httptest.NewRequest(http.MethodGet, "/v2/runs/task-run-closeout?limit=20", nil))
+	if runResponse.Code != http.StatusOK {
+		t.Fatalf("expected run detail 200, got %d %s", runResponse.Code, runResponse.Body.String())
+	}
+	var decoded struct {
+		Closeout struct {
+			ValidationEvidence []string `json:"validation_evidence"`
+			GitPushSucceeded   bool     `json:"git_push_succeeded"`
+			GitPushOutput      string   `json:"git_push_output"`
+			GitLogStatOutput   string   `json:"git_log_stat_output"`
+			RemoteSynced       bool     `json:"remote_synced"`
+			LocalSHA           string   `json:"local_sha"`
+			RemoteSHA          string   `json:"remote_sha"`
+			Complete           bool     `json:"complete"`
+		} `json:"closeout"`
+	}
+	if err := json.Unmarshal(runResponse.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode run detail closeout: %v", err)
+	}
+	if len(decoded.Closeout.ValidationEvidence) != 2 || !decoded.Closeout.GitPushSucceeded || decoded.Closeout.GitPushOutput == "" || decoded.Closeout.GitLogStatOutput == "" || !decoded.Closeout.RemoteSynced || decoded.Closeout.LocalSHA != "abc123" || decoded.Closeout.RemoteSHA != "abc123" || !decoded.Closeout.Complete {
+		t.Fatalf("unexpected closeout payload: %+v", decoded.Closeout)
+	}
+}
+
+func TestV2RunDetailIncludesRepoTriagePacket(t *testing.T) {
+	recorder := observability.NewRecorder()
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Control: control.New(), Now: func() time.Time { return time.Unix(1700006100, 0) }}
+	handler := server.Handler()
+	task := domain.Task{
+		ID:      "task-run-repo-triage",
+		TraceID: "trace-run-repo-triage",
+		Title:   "Review repo lineage",
+		State:   domain.TaskBlocked,
+		Metadata: map[string]string{
+			"team":                  "platform",
+			"project":               "alpha",
+			"repo_triage_status":    "needs-approval",
+			"candidate_commit_hash": "abc123",
+			"accepted_commit_hash":  "def456",
+			"similar_failure_count": "1",
+			"discussion_open":       "1",
+			"lineage_summary":       "candidate abc123 descends from accepted commit def456 after reviewer fixes",
+			"run_commit_links":      `[{"run_id":"task-run-repo-triage","commit_hash":"abc123","role":"candidate","repo_space_id":"space-1"},{"run_id":"task-run-repo-triage","commit_hash":"def456","role":"accepted","repo_space_id":"space-1"}]`,
+		},
+	}
+	recorder.StoreTask(task)
+
+	runResponse := httptest.NewRecorder()
+	handler.ServeHTTP(runResponse, httptest.NewRequest(http.MethodGet, "/v2/runs/task-run-repo-triage?limit=20", nil))
+	if runResponse.Code != http.StatusOK {
+		t.Fatalf("expected run detail 200, got %d %s", runResponse.Code, runResponse.Body.String())
+	}
+	var decoded struct {
+		RepoTriage struct {
+			Status   string `json:"status"`
+			Evidence struct {
+				CandidateCommit     string `json:"candidate_commit"`
+				AcceptedAncestor    string `json:"accepted_ancestor"`
+				SimilarFailureCount int    `json:"similar_failure_count"`
+				DiscussionOpen      int    `json:"discussion_open"`
+			} `json:"evidence"`
+			Recommendation struct {
+				Action string `json:"action"`
+				Reason string `json:"reason"`
+			} `json:"recommendation"`
+			ApprovalPacket struct {
+				RunID               string `json:"run_id"`
+				CandidateCommitHash string `json:"candidate_commit_hash"`
+				AcceptedCommitHash  string `json:"accepted_commit_hash"`
+				LineageSummary      string `json:"lineage_summary"`
+			} `json:"approval_packet"`
+		} `json:"repo_triage"`
+	}
+	if err := json.Unmarshal(runResponse.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode repo triage run detail: %v", err)
+	}
+	if decoded.RepoTriage.Status != "needs-approval" || decoded.RepoTriage.Recommendation.Action != "approve" || decoded.RepoTriage.Recommendation.Reason != "accepted ancestor exists" {
+		t.Fatalf("unexpected repo triage recommendation: %+v", decoded.RepoTriage)
+	}
+	if decoded.RepoTriage.Evidence.CandidateCommit != "abc123" || decoded.RepoTriage.Evidence.AcceptedAncestor != "def456" || decoded.RepoTriage.Evidence.SimilarFailureCount != 1 || decoded.RepoTriage.Evidence.DiscussionOpen != 1 {
+		t.Fatalf("unexpected repo triage evidence: %+v", decoded.RepoTriage.Evidence)
+	}
+	if decoded.RepoTriage.ApprovalPacket.RunID != "task-run-repo-triage" || decoded.RepoTriage.ApprovalPacket.CandidateCommitHash != "abc123" || decoded.RepoTriage.ApprovalPacket.AcceptedCommitHash != "def456" || decoded.RepoTriage.ApprovalPacket.LineageSummary == "" {
+		t.Fatalf("unexpected repo triage approval packet: %+v", decoded.RepoTriage.ApprovalPacket)
+	}
+
+	reportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(reportResponse, httptest.NewRequest(http.MethodGet, "/v2/runs/task-run-repo-triage/report?limit=20", nil))
+	if reportResponse.Code != http.StatusOK {
+		t.Fatalf("expected run report 200, got %d %s", reportResponse.Code, reportResponse.Body.String())
+	}
+	for _, want := range []string{"## Repo Triage", "Recommendation: approve (accepted ancestor exists)", "Candidate Commit: abc123", "Accepted Ancestor: def456"} {
 		if !strings.Contains(reportResponse.Body.String(), want) {
 			t.Fatalf("expected %q in run report, got %s", want, reportResponse.Body.String())
 		}
@@ -1792,9 +2815,18 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		Recorder:  recorder,
 		Queue:     queue.NewMemoryQueue(),
 		Executors: []domain.ExecutorKind{domain.ExecutorLocal, domain.ExecutorKubernetes, domain.ExecutorRay},
-		Control:   controller,
-		Worker:    fakeWorkerPoolStatus{},
-		Now:       func() time.Time { return time.Unix(1700007200, 0) },
+		EventPlan: events.NewDurabilityPlanWithBrokerConfig("http", "broker_replicated", 3, events.BrokerRuntimeConfig{
+			Driver:             "kafka",
+			URLs:               []string{"kafka-1:9092"},
+			Topic:              "bigclaw.events",
+			ConsumerGroup:      "bigclaw-reviewers",
+			PublishTimeout:     5 * time.Second,
+			ReplayLimit:        1024,
+			CheckpointInterval: 10 * time.Second,
+		}),
+		Control: controller,
+		Worker:  fakeWorkerPoolStatus{},
+		Now:     func() time.Time { return time.Unix(1700007200, 0) },
 	}
 	handler := server.Handler()
 	base := time.Unix(1700000000, 0)
@@ -1824,6 +2856,11 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
 	}
 	var decoded struct {
+		EventDurability struct {
+			RolloutScorecard struct {
+				Status string `json:"status"`
+			} `json:"rollout_scorecard"`
+		} `json:"event_durability"`
 		Diagnostics struct {
 			Summary struct {
 				RegisteredExecutors  int `json:"registered_executors"`
@@ -1865,6 +2902,159 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 					Count int    `json:"count"`
 				} `json:"takeover_owners"`
 			} `json:"cluster_health"`
+			LiveShadowMirror struct {
+				ReportPath           string   `json:"report_path"`
+				CanonicalSummaryPath string   `json:"canonical_summary_path"`
+				SummaryPath          string   `json:"summary_path"`
+				Status               string   `json:"status"`
+				Severity             string   `json:"severity"`
+				ReviewerLinks        []string `json:"reviewer_links"`
+				Summary              struct {
+					ParityOKCount      int `json:"parity_ok_count"`
+					DriftDetectedCount int `json:"drift_detected_count"`
+					FreshInputs        int `json:"fresh_inputs"`
+				} `json:"summary"`
+				RollbackTriggerSurface struct {
+					Status string `json:"status"`
+				} `json:"rollback_trigger_surface"`
+			} `json:"live_shadow_mirror_scorecard"`
+			BrokerReviewPack struct {
+				Status                string   `json:"status"`
+				SummaryPath           string   `json:"summary_path"`
+				ReportPath            string   `json:"report_path"`
+				ValidationPackPath    string   `json:"validation_pack_path"`
+				ArtifactDirectory     string   `json:"artifact_directory"`
+				ReviewerLinks         []string `json:"reviewer_links"`
+				AmbiguousPublishProof struct {
+					Path       string   `json:"path"`
+					ScenarioID string   `json:"scenario_id"`
+					Outcomes   []string `json:"outcomes"`
+				} `json:"ambiguous_publish_proof"`
+			} `json:"broker_review_pack"`
+			TraceBundle struct {
+				AmbiguousPublishProof struct {
+					Path       string   `json:"path"`
+					ScenarioID string   `json:"scenario_id"`
+					Outcomes   []string `json:"outcomes"`
+				} `json:"ambiguous_publish_proof"`
+			} `json:"trace_export_bundle"`
+			MigrationReviewPack struct {
+				Status                 string   `json:"status"`
+				ReadinessReportPath    string   `json:"readiness_report_path"`
+				ScorecardPath          string   `json:"scorecard_path"`
+				CanonicalSummaryPath   string   `json:"canonical_summary_path"`
+				SummaryPath            string   `json:"summary_path"`
+				IndexPath              string   `json:"index_path"`
+				FollowUpDigestPath     string   `json:"follow_up_digest_path"`
+				RollbackTriggerPath    string   `json:"rollback_trigger_path"`
+				ReviewerLinks          []string `json:"reviewer_links"`
+				RollbackTriggerSurface struct {
+					ReportPath string `json:"report_path"`
+					Issue      struct {
+						ID   string `json:"id"`
+						Slug string `json:"slug"`
+					} `json:"issue"`
+					Summary struct {
+						Status                   string `json:"status"`
+						AutomationBoundary       string `json:"automation_boundary"`
+						AutomatedRollbackTrigger bool   `json:"automated_rollback_trigger"`
+						CutoverGate              string `json:"cutover_gate"`
+						Distinctions             struct {
+							Blockers        int `json:"blockers"`
+							Warnings        int `json:"warnings"`
+							ManualOnlyPaths int `json:"manual_only_paths"`
+						} `json:"distinctions"`
+					} `json:"summary"`
+					ReviewerLinks []string `json:"reviewer_links"`
+				} `json:"rollback_trigger_surface"`
+				LiveShadowMirrorScorecard struct {
+					ReportPath           string `json:"report_path"`
+					CanonicalSummaryPath string `json:"canonical_summary_path"`
+					Summary              struct {
+						ParityOKCount         int  `json:"parity_ok_count"`
+						DriftDetectedCount    int  `json:"drift_detected_count"`
+						MatrixMismatched      int  `json:"matrix_mismatched"`
+						CorpusCoveragePresent bool `json:"corpus_coverage_present"`
+					} `json:"summary"`
+					RollbackTriggerSurface struct {
+						AutomationBoundary string `json:"automation_boundary"`
+						SummaryPath        string `json:"summary_path"`
+					} `json:"rollback_trigger_surface"`
+				} `json:"live_shadow_mirror_scorecard"`
+			} `json:"migration_review_pack"`
+			BrokerStubFanoutIsolation struct {
+				ReportPath string `json:"report_path"`
+				Summary    struct {
+					ScenarioCount          int  `json:"scenario_count"`
+					IsolatedScenarios      int  `json:"isolated_scenarios"`
+					StalledScenarios       int  `json:"stalled_scenarios"`
+					ReplayBacklogEvents    int  `json:"replay_backlog_events"`
+					ReplayStepDelayMS      int  `json:"replay_step_delay_ms"`
+					LiveDeliveryDeadlineMS int  `json:"live_delivery_deadline_ms"`
+					IsolationMaintained    bool `json:"isolation_maintained"`
+				} `json:"summary"`
+				Scenarios []struct {
+					Name                  string `json:"name"`
+					Status                string `json:"status"`
+					ReplayBacklogEvents   int    `json:"replay_backlog_events"`
+					ReplayStepDelayMS     int    `json:"replay_step_delay_ms"`
+					ReplayDrainsAfterLive bool   `json:"replay_drains_after_live"`
+				} `json:"scenarios"`
+			} `json:"broker_stub_fanout_isolation"`
+			DeliveryAckReadiness struct {
+				ReportPath string `json:"report_path"`
+				Summary    struct {
+					ExplicitAckBackends  int `json:"explicit_ack_backends"`
+					DurableAckBackends   int `json:"durable_ack_backends"`
+					BestEffortBackends   int `json:"best_effort_backends"`
+					ContractOnlyBackends int `json:"contract_only_backends"`
+				} `json:"summary"`
+				Backends []struct {
+					Backend              string `json:"backend"`
+					AcknowledgementClass string `json:"acknowledgement_class"`
+				} `json:"backends"`
+			} `json:"delivery_ack_readiness"`
+			PublishAckOutcomes struct {
+				ReportPath string `json:"report_path"`
+				Summary    struct {
+					ScenarioID         string `json:"scenario_id"`
+					CommittedCount     int    `json:"committed_count"`
+					RejectedCount      int    `json:"rejected_count"`
+					UnknownCommitCount int    `json:"unknown_commit_count"`
+				} `json:"summary"`
+				Outcomes []struct {
+					Outcome string `json:"outcome"`
+				} `json:"outcomes"`
+			} `json:"publish_ack_outcomes"`
+			SequenceBridge struct {
+				ReportPath string `json:"report_path"`
+				Summary    struct {
+					BackendCount                 int `json:"backend_count"`
+					LiveProvenBackends           int `json:"live_proven_backends"`
+					HarnessProvenBackends        int `json:"harness_proven_backends"`
+					ContractOnlyBackends         int `json:"contract_only_backends"`
+					OneToOneMappings             int `json:"one_to_one_mappings"`
+					ProviderEpochBridgedBackends int `json:"provider_epoch_bridged_backends"`
+				} `json:"summary"`
+				Backends []struct {
+					Backend          string `json:"backend"`
+					RuntimeReadiness string `json:"runtime_readiness"`
+				} `json:"backends"`
+			} `json:"sequence_bridge_surface"`
+			ValidationBundleContinuation struct {
+				ReportPath     string   `json:"report_path"`
+				ScorecardPath  string   `json:"scorecard_path"`
+				DigestPath     string   `json:"digest_path"`
+				Recommendation string   `json:"recommendation"`
+				ReviewerLinks  []string `json:"reviewer_links"`
+				Summary        struct {
+					RecentBundleCount                           int  `json:"recent_bundle_count"`
+					AllExecutorTracksHaveRepeatedRecentCoverage bool `json:"all_executor_tracks_have_repeated_recent_coverage"`
+					SharedQueueCompanionAvailable               bool `json:"shared_queue_companion_available"`
+					CrossNodeCompletions                        int  `json:"cross_node_completions"`
+				} `json:"summary"`
+				NextActions []string `json:"next_actions"`
+			} `json:"validation_bundle_continuation"`
 			RolloutReport struct {
 				Markdown  string `json:"markdown"`
 				ExportURL string `json:"export_url"`
@@ -1873,6 +3063,9 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	}
 	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
 		t.Fatalf("decode distributed diagnostics: %v", err)
+	}
+	if decoded.EventDurability.RolloutScorecard.Status != "blocked" {
+		t.Fatalf("expected control center event durability scorecard, got %+v", decoded.EventDurability)
 	}
 	if decoded.Diagnostics.Summary.RegisteredExecutors != 3 || decoded.Diagnostics.Summary.TotalRoutedDecisions != 3 {
 		t.Fatalf("unexpected diagnostics summary: %+v", decoded.Diagnostics.Summary)
@@ -1901,8 +3094,441 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	if len(decoded.Diagnostics.ClusterHealth.TakeoverOwners) == 0 || decoded.Diagnostics.ClusterHealth.TakeoverOwners[0].Key != "alice" {
 		t.Fatalf("expected takeover owner rollup, got %+v", decoded.Diagnostics.ClusterHealth)
 	}
-	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") || !strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {
+	if decoded.Diagnostics.LiveShadowMirror.ReportPath != liveShadowMirrorScorecardPath ||
+		decoded.Diagnostics.LiveShadowMirror.CanonicalSummaryPath != liveShadowSummaryPath ||
+		decoded.Diagnostics.LiveShadowMirror.SummaryPath != "docs/reports/live-shadow-runs/20260313T085655Z/summary.json" ||
+		decoded.Diagnostics.LiveShadowMirror.Status != "parity-ok" ||
+		decoded.Diagnostics.LiveShadowMirror.Severity != "none" ||
+		decoded.Diagnostics.LiveShadowMirror.Summary.ParityOKCount != 4 ||
+		decoded.Diagnostics.LiveShadowMirror.Summary.DriftDetectedCount != 0 ||
+		decoded.Diagnostics.LiveShadowMirror.Summary.FreshInputs != 2 ||
+		decoded.Diagnostics.LiveShadowMirror.RollbackTriggerSurface.Status != "manual-review-required" {
+		t.Fatalf("unexpected live shadow diagnostics payload: %+v", decoded.Diagnostics.LiveShadowMirror)
+	}
+	if len(decoded.Diagnostics.LiveShadowMirror.ReviewerLinks) == 0 {
+		t.Fatalf("expected live shadow reviewer links, got %+v", decoded.Diagnostics.LiveShadowMirror)
+	}
+	if decoded.Diagnostics.BrokerReviewPack.Status != "checked_in_stub_evidence" ||
+		decoded.Diagnostics.BrokerReviewPack.SummaryPath != "docs/reports/broker-validation-summary.json" ||
+		decoded.Diagnostics.BrokerReviewPack.ReportPath != "docs/reports/broker-failover-stub-report.json" ||
+		decoded.Diagnostics.BrokerReviewPack.ValidationPackPath != "docs/reports/broker-failover-fault-injection-validation-pack.md" ||
+		decoded.Diagnostics.BrokerReviewPack.ArtifactDirectory != "docs/reports/broker-failover-stub-artifacts" {
+		t.Fatalf("unexpected broker review pack payload: %+v", decoded.Diagnostics.BrokerReviewPack)
+	}
+	if len(decoded.Diagnostics.BrokerReviewPack.ReviewerLinks) != 2 ||
+		decoded.Diagnostics.BrokerReviewPack.ReviewerLinks[0] != "docs/reports/live-validation-index.json" ||
+		decoded.Diagnostics.BrokerReviewPack.ReviewerLinks[1] != "docs/reports/review-readiness.md" {
+		t.Fatalf("unexpected broker review pack reviewer links: %+v", decoded.Diagnostics.BrokerReviewPack.ReviewerLinks)
+	}
+	if decoded.Diagnostics.BrokerReviewPack.AmbiguousPublishProof.Path != "docs/reports/ambiguous-publish-outcome-proof-summary.json" ||
+		decoded.Diagnostics.BrokerReviewPack.AmbiguousPublishProof.ScenarioID != "BF-05" ||
+		len(decoded.Diagnostics.BrokerReviewPack.AmbiguousPublishProof.Outcomes) != 3 {
+		t.Fatalf("unexpected broker review pack ambiguous publish proof: %+v", decoded.Diagnostics.BrokerReviewPack.AmbiguousPublishProof)
+	}
+	if decoded.Diagnostics.TraceBundle.AmbiguousPublishProof.Path != "docs/reports/ambiguous-publish-outcome-proof-summary.json" ||
+		decoded.Diagnostics.TraceBundle.AmbiguousPublishProof.ScenarioID != "BF-05" ||
+		len(decoded.Diagnostics.TraceBundle.AmbiguousPublishProof.Outcomes) != 3 {
+		t.Fatalf("unexpected trace bundle ambiguous publish proof: %+v", decoded.Diagnostics.TraceBundle.AmbiguousPublishProof)
+	}
+	if decoded.Diagnostics.MigrationReviewPack.Status != "parity-ok" ||
+		decoded.Diagnostics.MigrationReviewPack.ReadinessReportPath != migrationReadinessReportPath ||
+		decoded.Diagnostics.MigrationReviewPack.ScorecardPath != liveShadowMirrorScorecardPath ||
+		decoded.Diagnostics.MigrationReviewPack.CanonicalSummaryPath != liveShadowSummaryPath ||
+		decoded.Diagnostics.MigrationReviewPack.SummaryPath != "docs/reports/live-shadow-runs/20260313T085655Z/summary.json" ||
+		decoded.Diagnostics.MigrationReviewPack.IndexPath != liveShadowIndexPath ||
+		decoded.Diagnostics.MigrationReviewPack.FollowUpDigestPath != liveShadowComparisonFollowUpDigestPath ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerPath != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected migration review pack payload: %+v", decoded.Diagnostics.MigrationReviewPack)
+	}
+	if decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReportPath != rollbackTriggerSurfacePath ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Issue.ID != "OPE-254" ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Issue.Slug != "BIG-PAR-088" ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Status != "manual-review-required" ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.AutomationBoundary != "manual_only" ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.AutomatedRollbackTrigger ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.CutoverGate != "reviewer_enforced" ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Distinctions.Blockers != 3 ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Distinctions.Warnings != 1 ||
+		decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.Summary.Distinctions.ManualOnlyPaths != 2 {
+		t.Fatalf("unexpected migration rollback trigger payload: %+v", decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface)
+	}
+	if len(decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReviewerLinks) == 0 || decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReviewerLinks[0] != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected migration rollback reviewer links: %+v", decoded.Diagnostics.MigrationReviewPack.RollbackTriggerSurface.ReviewerLinks)
+	}
+	if decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.ReportPath != liveShadowMirrorScorecardPath ||
+		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.CanonicalSummaryPath != liveShadowSummaryPath ||
+		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.ParityOKCount != 4 ||
+		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.DriftDetectedCount != 0 ||
+		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.MatrixMismatched != 0 ||
+		!decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.Summary.CorpusCoveragePresent ||
+		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.RollbackTriggerSurface.AutomationBoundary != "manual_only" ||
+		decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard.RollbackTriggerSurface.SummaryPath != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected migration live shadow scorecard payload: %+v", decoded.Diagnostics.MigrationReviewPack.LiveShadowMirrorScorecard)
+	}
+	if len(decoded.Diagnostics.MigrationReviewPack.ReviewerLinks) == 0 ||
+		decoded.Diagnostics.MigrationReviewPack.ReviewerLinks[0] != liveShadowSummaryPath ||
+		decoded.Diagnostics.MigrationReviewPack.ReviewerLinks[len(decoded.Diagnostics.MigrationReviewPack.ReviewerLinks)-1] != rollbackTriggerSurfacePath {
+		t.Fatalf("unexpected migration review links: %+v", decoded.Diagnostics.MigrationReviewPack.ReviewerLinks)
+	}
+	if decoded.Diagnostics.BrokerStubFanoutIsolation.ReportPath != brokerStubFanoutIsolationEvidencePackPath ||
+		decoded.Diagnostics.BrokerStubFanoutIsolation.Summary.ScenarioCount != 1 ||
+		decoded.Diagnostics.BrokerStubFanoutIsolation.Summary.IsolatedScenarios != 1 ||
+		decoded.Diagnostics.BrokerStubFanoutIsolation.Summary.StalledScenarios != 0 ||
+		decoded.Diagnostics.BrokerStubFanoutIsolation.Summary.ReplayBacklogEvents != 4 ||
+		decoded.Diagnostics.BrokerStubFanoutIsolation.Summary.ReplayStepDelayMS != 30 ||
+		decoded.Diagnostics.BrokerStubFanoutIsolation.Summary.LiveDeliveryDeadlineMS != 50 ||
+		!decoded.Diagnostics.BrokerStubFanoutIsolation.Summary.IsolationMaintained {
+		t.Fatalf("unexpected broker fanout isolation payload: %+v", decoded.Diagnostics.BrokerStubFanoutIsolation)
+	}
+	if len(decoded.Diagnostics.BrokerStubFanoutIsolation.Scenarios) != 1 ||
+		decoded.Diagnostics.BrokerStubFanoutIsolation.Scenarios[0].Name != "replay_catchup_does_not_block_live_publish" ||
+		decoded.Diagnostics.BrokerStubFanoutIsolation.Scenarios[0].Status != "isolated" ||
+		!decoded.Diagnostics.BrokerStubFanoutIsolation.Scenarios[0].ReplayDrainsAfterLive {
+		t.Fatalf("unexpected broker fanout isolation backend detail: %+v", decoded.Diagnostics.BrokerStubFanoutIsolation.Scenarios)
+	}
+	if decoded.Diagnostics.DeliveryAckReadiness.ReportPath != deliveryAckReadinessSurfacePath ||
+		decoded.Diagnostics.DeliveryAckReadiness.Summary.ExplicitAckBackends != 3 ||
+		decoded.Diagnostics.DeliveryAckReadiness.Summary.DurableAckBackends != 2 ||
+		decoded.Diagnostics.DeliveryAckReadiness.Summary.BestEffortBackends != 1 ||
+		decoded.Diagnostics.DeliveryAckReadiness.Summary.ContractOnlyBackends != 1 {
+		t.Fatalf("unexpected delivery ack readiness payload: %+v", decoded.Diagnostics.DeliveryAckReadiness)
+	}
+	if len(decoded.Diagnostics.DeliveryAckReadiness.Backends) != 5 ||
+		decoded.Diagnostics.DeliveryAckReadiness.Backends[0].Backend != "memory" ||
+		decoded.Diagnostics.DeliveryAckReadiness.Backends[0].AcknowledgementClass != "best_effort_only" {
+		t.Fatalf("unexpected delivery ack readiness backend detail: %+v", decoded.Diagnostics.DeliveryAckReadiness.Backends)
+	}
+	if decoded.Diagnostics.PublishAckOutcomes.ReportPath != publishAckOutcomeSurfacePath ||
+		decoded.Diagnostics.PublishAckOutcomes.Summary.ScenarioID != "BF-05" ||
+		decoded.Diagnostics.PublishAckOutcomes.Summary.CommittedCount != 1 ||
+		decoded.Diagnostics.PublishAckOutcomes.Summary.RejectedCount != 1 ||
+		decoded.Diagnostics.PublishAckOutcomes.Summary.UnknownCommitCount != 1 ||
+		len(decoded.Diagnostics.PublishAckOutcomes.Outcomes) != 3 {
+		t.Fatalf("unexpected publish ack outcomes payload: %+v", decoded.Diagnostics.PublishAckOutcomes)
+	}
+	if decoded.Diagnostics.SequenceBridge.ReportPath != sequenceBridgeSurfacePath ||
+		decoded.Diagnostics.SequenceBridge.Summary.BackendCount != 5 ||
+		decoded.Diagnostics.SequenceBridge.Summary.LiveProvenBackends != 3 ||
+		decoded.Diagnostics.SequenceBridge.Summary.HarnessProvenBackends != 1 ||
+		decoded.Diagnostics.SequenceBridge.Summary.ContractOnlyBackends != 1 ||
+		decoded.Diagnostics.SequenceBridge.Summary.OneToOneMappings != 2 ||
+		decoded.Diagnostics.SequenceBridge.Summary.ProviderEpochBridgedBackends != 3 ||
+		len(decoded.Diagnostics.SequenceBridge.Backends) != 5 {
+		t.Fatalf("unexpected sequence bridge payload: %+v", decoded.Diagnostics.SequenceBridge)
+	}
+	if decoded.Diagnostics.ValidationBundleContinuation.ReportPath != validationBundleContinuationGatePath ||
+		decoded.Diagnostics.ValidationBundleContinuation.ScorecardPath != validationBundleContinuationScorecardPath ||
+		decoded.Diagnostics.ValidationBundleContinuation.DigestPath != "docs/reports/validation-bundle-continuation-digest.md" ||
+		decoded.Diagnostics.ValidationBundleContinuation.Recommendation != "go" {
+		t.Fatalf("unexpected continuation gate payload: %+v", decoded.Diagnostics.ValidationBundleContinuation)
+	}
+	if decoded.Diagnostics.ValidationBundleContinuation.Summary.RecentBundleCount != 3 ||
+		!decoded.Diagnostics.ValidationBundleContinuation.Summary.AllExecutorTracksHaveRepeatedRecentCoverage ||
+		!decoded.Diagnostics.ValidationBundleContinuation.Summary.SharedQueueCompanionAvailable ||
+		decoded.Diagnostics.ValidationBundleContinuation.Summary.CrossNodeCompletions != 99 {
+		t.Fatalf("unexpected continuation gate summary: %+v", decoded.Diagnostics.ValidationBundleContinuation.Summary)
+	}
+	if len(decoded.Diagnostics.ValidationBundleContinuation.ReviewerLinks) != 3 ||
+		decoded.Diagnostics.ValidationBundleContinuation.ReviewerLinks[0] != "docs/reports/live-validation-index.md" {
+		t.Fatalf("unexpected continuation gate reviewer links: %+v", decoded.Diagnostics.ValidationBundleContinuation.ReviewerLinks)
+	}
+	if len(decoded.Diagnostics.ValidationBundleContinuation.NextActions) < 4 {
+		t.Fatalf("expected merged continuation next actions, got %+v", decoded.Diagnostics.ValidationBundleContinuation.NextActions)
+	}
+	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Live Shadow Mirror Scorecard") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Failover Review Pack") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Migration Readiness Review Pack") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Rollback Trigger Surface") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Stub Live Fanout Isolation") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Delivery Acknowledgement Readiness") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Publish Acknowledgement Outcome Ledger") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Durable Sequence Bridge") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Validation Bundle Continuation Gate") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, liveShadowSummaryPath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, liveShadowMirrorScorecardPath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, migrationReadinessReportPath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, liveShadowComparisonFollowUpDigestPath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, rollbackTriggerSurfacePath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "reviewer_enforced") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-validation-summary.json") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/ambiguous-publish-outcome-proof-summary.json") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, brokerStubFanoutIsolationEvidencePackPath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, deliveryAckReadinessSurfacePath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, publishAckOutcomeSurfacePath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, sequenceBridgeSurfacePath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, validationBundleContinuationGatePath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, validationBundleContinuationScorecardPath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/validation-bundle-continuation-digest.md") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-failover-stub-artifacts") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {
 		t.Fatalf("unexpected rollout report payload: %+v", decoded.Diagnostics.RolloutReport)
+	}
+}
+
+func TestV2ControlCenterIncludesCoordinationCapabilitySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Coordination struct {
+			Ticket           string   `json:"ticket"`
+			CurrentCeiling   []string `json:"current_ceiling"`
+			NextRuntimeHooks []string `json:"next_runtime_hooks"`
+			EvidenceSources  struct {
+				SharedQueueReport     string   `json:"shared_queue_report"`
+				TakeoverHarnessReport string   `json:"takeover_harness_report"`
+				SupportingDocs        []string `json:"supporting_docs"`
+			} `json:"evidence_sources"`
+			Capabilities []struct {
+				Name              string   `json:"name"`
+				ContractOnly      bool     `json:"contract_only"`
+				HarnessProven     bool     `json:"harness_proven"`
+				LiveProven        bool     `json:"live_proven"`
+				SourceReportLinks []string `json:"source_report_links"`
+			} `json:"capabilities"`
+		} `json:"coordination_capability_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center coordination payload: %v", err)
+	}
+	if decoded.Coordination.Ticket != "BIG-PAR-085-local-prework" {
+		t.Fatalf("unexpected coordination ticket payload: %+v", decoded.Coordination)
+	}
+	if decoded.Coordination.EvidenceSources.SharedQueueReport == "" || decoded.Coordination.EvidenceSources.TakeoverHarnessReport == "" || len(decoded.Coordination.EvidenceSources.SupportingDocs) != 3 {
+		t.Fatalf("unexpected coordination evidence sources: %+v", decoded.Coordination.EvidenceSources)
+	}
+	if len(decoded.Coordination.CurrentCeiling) != 3 || len(decoded.Coordination.NextRuntimeHooks) != 3 {
+		t.Fatalf("unexpected coordination summary detail: %+v", decoded.Coordination)
+	}
+	if len(decoded.Coordination.Capabilities) < 3 {
+		t.Fatalf("expected capability surface in control center payload, got %+v", decoded.Coordination)
+	}
+	contractOnly := decoded.Coordination.Capabilities[4]
+	if contractOnly.Name != "partitioned_topic_routing" || !contractOnly.ContractOnly || contractOnly.LiveProven || len(contractOnly.SourceReportLinks) == 0 {
+		t.Fatalf("unexpected contract-only coordination entry: %+v", contractOnly)
+	}
+}
+
+func TestV2ControlCenterIncludesAdmissionPolicySummary(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		AdmissionPolicy struct {
+			PolicyMode       string   `json:"policy_mode"`
+			Enforced         bool     `json:"enforced"`
+			EvidenceSources  []string `json:"evidence_sources"`
+			RecommendedLanes []struct {
+				Name                  string  `json:"name"`
+				MaxQueuedTasks        int     `json:"max_queued_tasks"`
+				SubmitWorkers         int     `json:"submit_workers"`
+				ObservedThroughputTPS float64 `json:"observed_throughput_tasks_per_sec"`
+			} `json:"recommended_lanes"`
+		} `json:"admission_policy_summary"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center admission policy payload: %v", err)
+	}
+	if decoded.AdmissionPolicy.PolicyMode != "advisory_only" || decoded.AdmissionPolicy.Enforced {
+		t.Fatalf("expected advisory-only admission policy in control center payload, got %+v", decoded.AdmissionPolicy)
+	}
+	if len(decoded.AdmissionPolicy.EvidenceSources) < 4 ||
+		!containsString(decoded.AdmissionPolicy.EvidenceSources, capacityCertificationMatrixPath) ||
+		!containsString(decoded.AdmissionPolicy.EvidenceSources, capacityCertificationReportPath) {
+		t.Fatalf("unexpected admission policy evidence sources: %+v", decoded.AdmissionPolicy.EvidenceSources)
+	}
+	if len(decoded.AdmissionPolicy.RecommendedLanes) != 2 {
+		t.Fatalf("expected recommended admission lanes in control center payload, got %+v", decoded.AdmissionPolicy.RecommendedLanes)
+	}
+	if decoded.AdmissionPolicy.RecommendedLanes[0].Name != "recommended-local-sustained" || decoded.AdmissionPolicy.RecommendedLanes[0].MaxQueuedTasks != 1000 || decoded.AdmissionPolicy.RecommendedLanes[0].SubmitWorkers != 24 || decoded.AdmissionPolicy.RecommendedLanes[0].ObservedThroughputTPS != 9.607 {
+		t.Fatalf("unexpected sustained admission lane in control center payload: %+v", decoded.AdmissionPolicy.RecommendedLanes[0])
+	}
+}
+
+func TestV2ControlCenterIncludesCoordinationLeaderElectionSurface(t *testing.T) {
+	now := time.Unix(1700000000, 0)
+	coordinator := events.NewSubscriberLeaseCoordinator()
+	lease, err := coordinator.Acquire(events.LeaseRequest{
+		GroupID:      coordinationLeaderGroupID,
+		SubscriberID: coordinationLeaderSubscriberID,
+		ConsumerID:   "node-a",
+		TTL:          30 * time.Second,
+		Now:          now,
+	})
+	if err != nil {
+		t.Fatalf("seed leader lease: %v", err)
+	}
+	server := &Server{
+		Recorder:         observability.NewRecorder(),
+		Queue:            queue.NewMemoryQueue(),
+		Bus:              events.NewBus(),
+		Control:          control.New(),
+		SubscriberLeases: coordinator,
+		Now:              func() time.Time { return now.Add(5 * time.Second) },
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Leader struct {
+			Endpoint            string `json:"endpoint"`
+			Status              string `json:"status"`
+			LeaderPresent       bool   `json:"leader_present"`
+			RemainingTTLSeconds int64  `json:"remaining_ttl_seconds"`
+			Lease               struct {
+				ConsumerID string `json:"consumer_id"`
+				LeaseToken string `json:"lease_token"`
+				LeaseEpoch int64  `json:"lease_epoch"`
+			} `json:"lease"`
+		} `json:"coordination_leader_election"`
+		LeaderElectionCapability struct {
+			Summary struct {
+				BackendCount          int `json:"backend_count"`
+				LiveProvenBackends    int `json:"live_proven_backends"`
+				HarnessProvenBackends int `json:"harness_proven_backends"`
+				ContractOnlyBackends  int `json:"contract_only_backends"`
+			} `json:"summary"`
+		} `json:"leader_election_capability"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center leader surface: %v", err)
+	}
+	if decoded.Leader.Endpoint != coordinationLeaderEndpoint || decoded.Leader.Status != "active" || !decoded.Leader.LeaderPresent {
+		t.Fatalf("unexpected leader surface: %+v", decoded.Leader)
+	}
+	if decoded.Leader.Lease.ConsumerID != "node-a" || decoded.Leader.Lease.LeaseToken != lease.LeaseToken || decoded.Leader.Lease.LeaseEpoch != lease.LeaseEpoch {
+		t.Fatalf("unexpected leader lease payload: %+v", decoded.Leader)
+	}
+	if decoded.Leader.RemainingTTLSeconds <= 0 {
+		t.Fatalf("expected positive ttl remaining, got %+v", decoded.Leader)
+	}
+	if decoded.LeaderElectionCapability.Summary.BackendCount != 4 || decoded.LeaderElectionCapability.Summary.LiveProvenBackends != 1 || decoded.LeaderElectionCapability.Summary.HarnessProvenBackends != 1 || decoded.LeaderElectionCapability.Summary.ContractOnlyBackends != 2 {
+		t.Fatalf("unexpected control center leader election capability summary: %+v", decoded.LeaderElectionCapability.Summary)
+	}
+}
+
+func TestCoordinationLeaderEndpointsAcquireStatusAndTakeover(t *testing.T) {
+	now := time.Unix(1700000000, 0)
+	current := now
+	server := &Server{
+		Recorder:         observability.NewRecorder(),
+		Queue:            queue.NewMemoryQueue(),
+		Bus:              events.NewBus(),
+		SubscriberLeases: events.NewSubscriberLeaseCoordinator(),
+		Now:              func() time.Time { return current },
+	}
+	handler := server.Handler()
+
+	acquire := httptest.NewRecorder()
+	handler.ServeHTTP(acquire, httptest.NewRequest(http.MethodPost, coordinationLeaderEndpoint, strings.NewReader(`{"consumer_id":"node-a","ttl_seconds":30}`)))
+	if acquire.Code != http.StatusOK {
+		t.Fatalf("expected first acquire 200, got %d %s", acquire.Code, acquire.Body.String())
+	}
+	var acquired struct {
+		Lease struct {
+			ConsumerID string `json:"consumer_id"`
+			LeaseToken string `json:"lease_token"`
+			LeaseEpoch int64  `json:"lease_epoch"`
+		} `json:"lease"`
+		LeaderElectionCapability struct {
+			Summary struct {
+				CurrentProofBackend string `json:"current_proof_backend"`
+			} `json:"summary"`
+		} `json:"leader_election_capability"`
+	}
+	if err := json.Unmarshal(acquire.Body.Bytes(), &acquired); err != nil {
+		t.Fatalf("decode acquire response: %v", err)
+	}
+	if acquired.Lease.ConsumerID != "node-a" || acquired.Lease.LeaseToken == "" || acquired.Lease.LeaseEpoch != 1 {
+		t.Fatalf("unexpected acquired lease: %+v", acquired.Lease)
+	}
+	if acquired.LeaderElectionCapability.Summary.CurrentProofBackend != "shared_sqlite_subscriber_lease" {
+		t.Fatalf("unexpected leader election capability on acquire: %+v", acquired.LeaderElectionCapability)
+	}
+
+	status := httptest.NewRecorder()
+	handler.ServeHTTP(status, httptest.NewRequest(http.MethodGet, coordinationLeaderEndpoint, nil))
+	if status.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d %s", status.Code, status.Body.String())
+	}
+	var statusDecoded struct {
+		Leader struct {
+			Status        string `json:"status"`
+			LeaderPresent bool   `json:"leader_present"`
+			Lease         struct {
+				ConsumerID string `json:"consumer_id"`
+			} `json:"lease"`
+		} `json:"leader"`
+		LeaderElectionCapability struct {
+			ReportPath string `json:"report_path"`
+			Backends   []struct {
+				Name             string `json:"name"`
+				RuntimeReadiness string `json:"runtime_readiness"`
+			} `json:"backends"`
+		} `json:"leader_election_capability"`
+	}
+	if err := json.Unmarshal(status.Body.Bytes(), &statusDecoded); err != nil {
+		t.Fatalf("decode status response: %v", err)
+	}
+	if statusDecoded.Leader.Status != "active" || !statusDecoded.Leader.LeaderPresent || statusDecoded.Leader.Lease.ConsumerID != "node-a" {
+		t.Fatalf("unexpected leader status payload: %+v", statusDecoded.Leader)
+	}
+	if statusDecoded.LeaderElectionCapability.ReportPath != leaderElectionCapabilitySurfacePath || len(statusDecoded.LeaderElectionCapability.Backends) != 4 || statusDecoded.LeaderElectionCapability.Backends[0].Name != "shared_sqlite_subscriber_lease" {
+		t.Fatalf("unexpected leader capability status payload: %+v", statusDecoded.LeaderElectionCapability)
+	}
+
+	current = now.Add(10 * time.Second)
+	conflict := httptest.NewRecorder()
+	handler.ServeHTTP(conflict, httptest.NewRequest(http.MethodPost, coordinationLeaderEndpoint, strings.NewReader(`{"consumer_id":"node-b","ttl_seconds":30}`)))
+	if conflict.Code != http.StatusConflict {
+		t.Fatalf("expected conflicting acquire 409, got %d %s", conflict.Code, conflict.Body.String())
+	}
+
+	current = now.Add(31 * time.Second)
+	takeover := httptest.NewRecorder()
+	handler.ServeHTTP(takeover, httptest.NewRequest(http.MethodPost, coordinationLeaderEndpoint, strings.NewReader(`{"consumer_id":"node-b","ttl_seconds":30}`)))
+	if takeover.Code != http.StatusOK {
+		t.Fatalf("expected takeover acquire 200, got %d %s", takeover.Code, takeover.Body.String())
+	}
+	var takeoverDecoded struct {
+		Lease struct {
+			ConsumerID string `json:"consumer_id"`
+			LeaseEpoch int64  `json:"lease_epoch"`
+		} `json:"lease"`
+	}
+	if err := json.Unmarshal(takeover.Body.Bytes(), &takeoverDecoded); err != nil {
+		t.Fatalf("decode takeover response: %v", err)
+	}
+	if takeoverDecoded.Lease.ConsumerID != "node-b" || takeoverDecoded.Lease.LeaseEpoch != 2 {
+		t.Fatalf("unexpected takeover lease: %+v", takeoverDecoded.Lease)
 	}
 }
 
@@ -2234,6 +3860,20 @@ func TestV2DashboardAndRunDetailEnforceViewerTeamScope(t *testing.T) {
 		t.Fatalf("expected operations dashboard to be scoped to platform team, got %s", operationsBody)
 	}
 
+	runsRequest := httptest.NewRequest(http.MethodGet, "/v2/runs?limit=10", nil)
+	runsRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	runsRequest.Header.Set("X-BigClaw-Actor", "lead-2")
+	runsRequest.Header.Set("X-BigClaw-Team", "platform")
+	runsResponse := httptest.NewRecorder()
+	handler.ServeHTTP(runsResponse, runsRequest)
+	if runsResponse.Code != http.StatusOK {
+		t.Fatalf("expected scoped runs 200, got %d %s", runsResponse.Code, runsResponse.Body.String())
+	}
+	runsBody := runsResponse.Body.String()
+	if !strings.Contains(runsBody, "task-scope-1") || strings.Contains(runsBody, "task-scope-2") {
+		t.Fatalf("expected run index to be scoped to platform team, got %s", runsBody)
+	}
+
 	triageRequest := httptest.NewRequest(http.MethodGet, "/v2/triage/center?limit=10", nil)
 	triageRequest.Header.Set("X-BigClaw-Role", "eng_lead")
 	triageRequest.Header.Set("X-BigClaw-Actor", "lead-2")
@@ -2256,6 +3896,16 @@ func TestV2DashboardAndRunDetailEnforceViewerTeamScope(t *testing.T) {
 	handler.ServeHTTP(forbiddenDashboardResponse, forbiddenDashboardRequest)
 	if forbiddenDashboardResponse.Code != http.StatusForbidden {
 		t.Fatalf("expected forbidden dashboard for mismatched team, got %d %s", forbiddenDashboardResponse.Code, forbiddenDashboardResponse.Body.String())
+	}
+
+	forbiddenRunsRequest := httptest.NewRequest(http.MethodGet, "/v2/runs?team=growth&limit=10", nil)
+	forbiddenRunsRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	forbiddenRunsRequest.Header.Set("X-BigClaw-Actor", "lead-2")
+	forbiddenRunsRequest.Header.Set("X-BigClaw-Team", "platform")
+	forbiddenRunsResponse := httptest.NewRecorder()
+	handler.ServeHTTP(forbiddenRunsResponse, forbiddenRunsRequest)
+	if forbiddenRunsResponse.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden run index for mismatched team, got %d %s", forbiddenRunsResponse.Code, forbiddenRunsResponse.Body.String())
 	}
 
 	forbiddenTriageRequest := httptest.NewRequest(http.MethodGet, "/v2/triage/center?team=growth&limit=10", nil)
@@ -2907,6 +4557,32 @@ func TestDebugStatusIncludesCheckpointResetSummary(t *testing.T) {
 	}
 }
 
+func TestDebugStatusDistinguishesBrokerStubEventLog(t *testing.T) {
+	store := events.NewBrokerStubEventLog()
+	if err := store.Write(context.Background(), domain.Event{
+		ID:        "evt-broker-stub-debug-1",
+		Type:      domain.EventTaskQueued,
+		TaskID:    "task-broker-stub-debug",
+		TraceID:   "trace-broker-stub-debug",
+		Timestamp: time.Now().UTC(),
+	}); err != nil {
+		t.Fatalf("write broker stub event: %v", err)
+	}
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: store, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d", response.Code)
+	}
+	body := response.Body.String()
+	for _, want := range []string{"broker_stub", "process_local_stub", "append_only_stub", "process_memory_stub"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected %q in broker stub debug payload, got %s", want, body)
+		}
+	}
+}
+
 func TestStreamEventCheckpointExpiredDiagnosticsAndReset(t *testing.T) {
 	logPath := filepath.Join(t.TempDir(), "event-log.db")
 	base := time.Unix(1_700_000_000, 0).UTC()
@@ -3010,5 +4686,681 @@ func TestStreamEventCheckpointExpiredDiagnosticsAndReset(t *testing.T) {
 	}
 	if !strings.Contains(historyAfterResume.Body.String(), "evt-expired-1") || !strings.Contains(historyAfterResume.Body.String(), "operator_reset") {
 		t.Fatalf("expected checkpoint reset history to remain visible, got %s", historyAfterResume.Body.String())
+	}
+}
+
+func TestDebugStatusIncludesRetentionExpirySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		RetentionExpiry struct {
+			ReportPath string `json:"report_path"`
+			Ticket     string `json:"ticket"`
+			Track      string `json:"track"`
+			Summary    struct {
+				BackendCount              int `json:"backend_count"`
+				RuntimeVisibleBackends    int `json:"runtime_visible_backends"`
+				PersistedBoundaryBackends int `json:"persisted_boundary_backends"`
+				FailClosedExpiryBackends  int `json:"fail_closed_expiry_backends"`
+				ContractOnlyBackends      int `json:"contract_only_backends"`
+			} `json:"summary"`
+			Backends []struct {
+				Backend                 string `json:"backend"`
+				RuntimeReadiness        string `json:"runtime_readiness"`
+				RetainedBoundaryVisible bool   `json:"retained_boundary_visible"`
+				PersistedBoundaries     bool   `json:"persisted_boundaries"`
+				FailClosedExpiry        bool   `json:"fail_closed_expiry"`
+			} `json:"backends"`
+			PolicySplit []string `json:"policy_split"`
+		} `json:"retention_expiry_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode retention expiry payload: %v", err)
+	}
+	if decoded.RetentionExpiry.ReportPath != retentionExpirySurfacePath || decoded.RetentionExpiry.Ticket != "OPE-21" || decoded.RetentionExpiry.Track != "BIG-DUR-103" {
+		t.Fatalf("unexpected retention expiry metadata: %+v", decoded.RetentionExpiry)
+	}
+	if decoded.RetentionExpiry.Summary.BackendCount != 5 || decoded.RetentionExpiry.Summary.RuntimeVisibleBackends != 4 || decoded.RetentionExpiry.Summary.PersistedBoundaryBackends != 2 || decoded.RetentionExpiry.Summary.FailClosedExpiryBackends != 3 || decoded.RetentionExpiry.Summary.ContractOnlyBackends != 1 {
+		t.Fatalf("unexpected retention expiry summary: %+v", decoded.RetentionExpiry.Summary)
+	}
+	if len(decoded.RetentionExpiry.Backends) != 5 || decoded.RetentionExpiry.Backends[1].Backend != "sqlite" || !decoded.RetentionExpiry.Backends[1].PersistedBoundaries || !decoded.RetentionExpiry.Backends[2].FailClosedExpiry {
+		t.Fatalf("unexpected retention expiry backends: %+v", decoded.RetentionExpiry.Backends)
+	}
+	if len(decoded.RetentionExpiry.PolicySplit) != 3 {
+		t.Fatalf("expected retention policy split guidance, got %+v", decoded.RetentionExpiry.PolicySplit)
+	}
+}
+
+func TestV2ControlCenterIncludesRetentionExpirySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5&audit_limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		RetentionExpiry struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				PersistedBoundaryBackends int `json:"persisted_boundary_backends"`
+			} `json:"summary"`
+		} `json:"retention_expiry_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center retention expiry payload: %v", err)
+	}
+	if decoded.RetentionExpiry.ReportPath != retentionExpirySurfacePath || decoded.RetentionExpiry.Summary.PersistedBoundaryBackends != 2 {
+		t.Fatalf("unexpected control center retention expiry payload: %+v", decoded.RetentionExpiry)
+	}
+}
+
+func TestV2DistributedReportIncludesRetentionExpirySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		RetentionExpiry struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				RuntimeVisibleBackends   int `json:"runtime_visible_backends"`
+				FailClosedExpiryBackends int `json:"fail_closed_expiry_backends"`
+			} `json:"summary"`
+		} `json:"retention_expiry_surface"`
+		Report struct {
+			Markdown string `json:"markdown"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed retention expiry payload: %v", err)
+	}
+	if decoded.RetentionExpiry.ReportPath != retentionExpirySurfacePath || decoded.RetentionExpiry.Summary.RuntimeVisibleBackends != 4 || decoded.RetentionExpiry.Summary.FailClosedExpiryBackends != 3 {
+		t.Fatalf("unexpected distributed retention expiry payload: %+v", decoded.RetentionExpiry)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "## Retention Watermark & Expiry") || !strings.Contains(decoded.Report.Markdown, "Fail-closed expiry backends: 3") {
+		t.Fatalf("expected retention expiry markdown section, got %s", decoded.Report.Markdown)
+	}
+}
+
+func TestRemoteEventLogExpiredCheckpointFailsClosedWithRetentionGuidance(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "event-log-remote.db")
+	base := time.Unix(1_700_100_000, 0).UTC()
+	log1, err := events.NewSQLiteEventLog(logPath)
+	if err != nil {
+		t.Fatalf("new sqlite event log: %v", err)
+	}
+	for _, event := range []domain.Event{
+		{ID: "evt-remote-expired-1", Type: domain.EventTaskQueued, TaskID: "task-remote-expired", TraceID: "trace-remote-expired", Timestamp: base},
+		{ID: "evt-remote-expired-2", Type: domain.EventTaskStarted, TaskID: "task-remote-expired", TraceID: "trace-remote-expired", Timestamp: base.Add(3 * time.Second)},
+	} {
+		if err := log1.Write(context.Background(), event); err != nil {
+			t.Fatalf("write remote checkpoint event %s: %v", event.ID, err)
+		}
+	}
+	if _, err := log1.Acknowledge("subscriber-remote-expired", "evt-remote-expired-1", base.Add(time.Second)); err != nil {
+		t.Fatalf("ack remote expired checkpoint: %v", err)
+	}
+	if err := log1.Close(); err != nil {
+		t.Fatalf("close first sqlite event log: %v", err)
+	}
+
+	log2, err := events.NewSQLiteEventLogWithOptions(logPath, events.SQLiteEventLogOptions{
+		Retention: 2 * time.Second,
+		Now:       func() time.Time { return base.Add(4 * time.Second) },
+	})
+	if err != nil {
+		t.Fatalf("reopen sqlite event log with retention: %v", err)
+	}
+	defer func() { _ = log2.Close() }()
+	serviceServer := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: log2, Now: func() time.Time { return base.Add(4 * time.Second) }}
+	serviceTS := httptest.NewServer(serviceServer.Handler())
+	defer serviceTS.Close()
+
+	remoteLog, err := events.NewHTTPEventLog(serviceTS.URL+"/internal/events/log", "")
+	if err != nil {
+		t.Fatalf("new remote event log: %v", err)
+	}
+	apiServer := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: remoteLog, Now: func() time.Time { return base.Add(4 * time.Second) }}
+
+	checkpointResponse := httptest.NewRecorder()
+	checkpointRequest := httptest.NewRequest(http.MethodGet, "/stream/events/checkpoints/subscriber-remote-expired", nil)
+	apiServer.Handler().ServeHTTP(checkpointResponse, checkpointRequest)
+	if checkpointResponse.Code != http.StatusOK {
+		t.Fatalf("expected remote checkpoint diagnostics 200, got %d %s", checkpointResponse.Code, checkpointResponse.Body.String())
+	}
+	if !strings.Contains(checkpointResponse.Body.String(), "\"status\":\"expired\"") || !strings.Contains(checkpointResponse.Body.String(), "trimmed_through_sequence") || !strings.Contains(checkpointResponse.Body.String(), "evt-remote-expired-1") {
+		t.Fatalf("expected remote expired checkpoint diagnostics, got %s", checkpointResponse.Body.String())
+	}
+
+	eventsResponse := httptest.NewRecorder()
+	eventsRequest := httptest.NewRequest(http.MethodGet, "/events?subscriber_id=subscriber-remote-expired&trace_id=trace-remote-expired&limit=10", nil)
+	apiServer.Handler().ServeHTTP(eventsResponse, eventsRequest)
+	if eventsResponse.Code != http.StatusConflict {
+		t.Fatalf("expected remote expired checkpoint conflict, got %d %s", eventsResponse.Code, eventsResponse.Body.String())
+	}
+	body := eventsResponse.Body.String()
+	if !strings.Contains(body, "checkpoint_expired") || !strings.Contains(body, "DELETE /stream/events/checkpoints/{subscriber_id}") || !strings.Contains(body, "trimmed_through_sequence") {
+		t.Fatalf("expected remote checkpoint expired payload with retention guidance, got %s", body)
+	}
+}
+
+func TestDebugStatusIncludesProviderLiveHandoffIsolationSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		ProviderLiveHandoff struct {
+			ReportPath     string `json:"report_path"`
+			Ticket         string `json:"ticket"`
+			Track          string `json:"track"`
+			Backend        string `json:"backend"`
+			ValidationLane string `json:"validation_lane"`
+			Summary        struct {
+				ScenarioCount          int  `json:"scenario_count"`
+				IsolatedScenarios      int  `json:"isolated_scenarios"`
+				StalledScenarios       int  `json:"stalled_scenarios"`
+				ReplayBacklogEvents    int  `json:"replay_backlog_events"`
+				LiveDeliveryDeadlineMS int  `json:"live_delivery_deadline_ms"`
+				IsolationMaintained    bool `json:"isolation_maintained"`
+			} `json:"summary"`
+			Scenarios []struct {
+				Name                  string `json:"name"`
+				Status                string `json:"status"`
+				ReplayDrainsAfterLive bool   `json:"replay_drains_after_live"`
+			} `json:"scenarios"`
+		} `json:"provider_live_handoff_isolation"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode provider handoff payload: %v", err)
+	}
+	if decoded.ProviderLiveHandoff.ReportPath != providerLiveHandoffIsolationEvidencePackPath || decoded.ProviderLiveHandoff.Ticket != "OPE-225" || decoded.ProviderLiveHandoff.Track != "BIG-DUR-104" {
+		t.Fatalf("unexpected provider handoff metadata: %+v", decoded.ProviderLiveHandoff)
+	}
+	if decoded.ProviderLiveHandoff.Backend != "http_remote_service" || decoded.ProviderLiveHandoff.ValidationLane != "external_store_validation" {
+		t.Fatalf("unexpected provider handoff backend posture: %+v", decoded.ProviderLiveHandoff)
+	}
+	if decoded.ProviderLiveHandoff.Summary.ScenarioCount != 1 || decoded.ProviderLiveHandoff.Summary.IsolatedScenarios != 1 || decoded.ProviderLiveHandoff.Summary.StalledScenarios != 0 || decoded.ProviderLiveHandoff.Summary.ReplayBacklogEvents != 4 || decoded.ProviderLiveHandoff.Summary.LiveDeliveryDeadlineMS != 200 || !decoded.ProviderLiveHandoff.Summary.IsolationMaintained {
+		t.Fatalf("unexpected provider handoff summary: %+v", decoded.ProviderLiveHandoff.Summary)
+	}
+	if len(decoded.ProviderLiveHandoff.Scenarios) != 1 || decoded.ProviderLiveHandoff.Scenarios[0].Name != "http_remote_service_replay_handoff_keeps_live_lane_unblocked" || decoded.ProviderLiveHandoff.Scenarios[0].Status != "isolated" || !decoded.ProviderLiveHandoff.Scenarios[0].ReplayDrainsAfterLive {
+		t.Fatalf("unexpected provider handoff scenarios: %+v", decoded.ProviderLiveHandoff.Scenarios)
+	}
+}
+
+func TestV2ControlCenterIncludesProviderLiveHandoffIsolationSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5&audit_limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ProviderLiveHandoff struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				IsolatedScenarios int `json:"isolated_scenarios"`
+			} `json:"summary"`
+		} `json:"provider_live_handoff_isolation"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center provider handoff payload: %v", err)
+	}
+	if decoded.ProviderLiveHandoff.ReportPath != providerLiveHandoffIsolationEvidencePackPath || decoded.ProviderLiveHandoff.Summary.IsolatedScenarios != 1 {
+		t.Fatalf("unexpected control center provider handoff payload: %+v", decoded.ProviderLiveHandoff)
+	}
+}
+
+func TestV2DistributedReportIncludesProviderLiveHandoffIsolationSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ProviderLiveHandoff struct {
+			ReportPath string `json:"report_path"`
+			Backend    string `json:"backend"`
+			Summary    struct {
+				IsolatedScenarios      int `json:"isolated_scenarios"`
+				LiveDeliveryDeadlineMS int `json:"live_delivery_deadline_ms"`
+			} `json:"summary"`
+		} `json:"provider_live_handoff_isolation"`
+		Report struct {
+			Markdown string `json:"markdown"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed provider handoff payload: %v", err)
+	}
+	if decoded.ProviderLiveHandoff.ReportPath != providerLiveHandoffIsolationEvidencePackPath || decoded.ProviderLiveHandoff.Backend != "http_remote_service" || decoded.ProviderLiveHandoff.Summary.IsolatedScenarios != 1 || decoded.ProviderLiveHandoff.Summary.LiveDeliveryDeadlineMS != 200 {
+		t.Fatalf("unexpected distributed provider handoff payload: %+v", decoded.ProviderLiveHandoff)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "## Provider-backed Live Handoff Isolation") || !strings.Contains(decoded.Report.Markdown, "Backend: http_remote_service") {
+		t.Fatalf("expected provider handoff markdown section, got %s", decoded.Report.Markdown)
+	}
+}
+
+func TestProviderBackedRemoteEventLogLiveHandoffIsolation(t *testing.T) {
+	base := time.Unix(1_700_200_000, 0).UTC()
+	backlog := []domain.Event{
+		{ID: "evt-provider-backlog-1", Type: domain.EventTaskQueued, TaskID: "task-provider", TraceID: "trace-provider", Timestamp: base},
+		{ID: "evt-provider-backlog-2", Type: domain.EventTaskStarted, TaskID: "task-provider", TraceID: "trace-provider", Timestamp: base.Add(time.Second)},
+		{ID: "evt-provider-backlog-3", Type: domain.EventTaskCompleted, TaskID: "task-provider", TraceID: "trace-provider", Timestamp: base.Add(2 * time.Second)},
+		{ID: "evt-provider-backlog-4", Type: domain.EventTaskQueued, TaskID: "task-provider", TraceID: "trace-provider", Timestamp: base.Add(3 * time.Second)},
+	}
+	liveEvent := domain.Event{ID: "evt-provider-live", Type: domain.EventTaskStarted, TaskID: "task-provider", TraceID: "trace-provider", Timestamp: base.Add(4 * time.Second)}
+	handoffEvent := domain.Event{ID: "evt-provider-handoff", Type: domain.EventTaskCompleted, TaskID: "task-provider", TraceID: "trace-provider", Timestamp: base.Add(5 * time.Second)}
+	remoteStore := &blockingRemoteServiceLog{blockingEventLog: &blockingEventLog{
+		history:       backlog,
+		replayStarted: make(chan struct{}, 1),
+		release:       make(chan struct{}),
+	}}
+	remoteService := httptest.NewServer(events.NewEventLogServiceHandler(remoteStore))
+	defer remoteService.Close()
+	remoteLog, err := events.NewHTTPEventLog(remoteService.URL, "")
+	if err != nil {
+		t.Fatalf("new remote event log: %v", err)
+	}
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), EventLog: remoteLog, Now: time.Now}
+	ts := httptest.NewServer(server.Handler())
+	defer ts.Close()
+
+	type sseResult struct {
+		lines []string
+		err   string
+	}
+	liveCtx, liveCancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer liveCancel()
+	liveReq, err := http.NewRequestWithContext(liveCtx, http.MethodGet, ts.URL+"/stream/events?trace_id=trace-provider&limit=10", nil)
+	if err != nil {
+		t.Fatalf("new live request: %v", err)
+	}
+	liveCh := make(chan sseResult, 1)
+	go func() {
+		response, err := http.DefaultClient.Do(liveReq)
+		if err != nil {
+			liveCh <- sseResult{err: err.Error()}
+			return
+		}
+		defer response.Body.Close()
+		reader := bufio.NewReader(response.Body)
+		line1, err := reader.ReadString('\n')
+		if err != nil {
+			liveCh <- sseResult{err: err.Error()}
+			return
+		}
+		line2, err := reader.ReadString('\n')
+		if err != nil {
+			liveCh <- sseResult{err: err.Error()}
+			return
+		}
+		liveCh <- sseResult{lines: []string{strings.TrimSpace(line1), strings.TrimSpace(line2)}}
+	}()
+
+	replayCtx, replayCancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer replayCancel()
+	replayReq, err := http.NewRequestWithContext(replayCtx, http.MethodGet, ts.URL+"/stream/events?trace_id=trace-provider&after_id=evt-before&limit=10", nil)
+	if err != nil {
+		t.Fatalf("new replay request: %v", err)
+	}
+	replayCh := make(chan sseResult, 1)
+	go func() {
+		response, err := http.DefaultClient.Do(replayReq)
+		if err != nil {
+			replayCh <- sseResult{err: err.Error()}
+			return
+		}
+		defer response.Body.Close()
+		reader := bufio.NewReader(response.Body)
+		lines := make([]string, 0, 16)
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				replayCh <- sseResult{lines: lines, err: err.Error()}
+				return
+			}
+			line = strings.TrimSpace(line)
+			if line != "" {
+				lines = append(lines, line)
+			}
+		}
+	}()
+
+	select {
+	case <-remoteStore.replayStarted:
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for provider-backed replay to start")
+	}
+
+	publishStarted := time.Now()
+	server.Bus.Publish(liveEvent)
+	select {
+	case result := <-liveCh:
+		if result.err != "" {
+			t.Fatalf("live subscriber failed: %s", result.err)
+		}
+		if time.Since(publishStarted) > 200*time.Millisecond {
+			t.Fatalf("expected live subscriber delivery within 200ms while replay was blocked, took %s", time.Since(publishStarted))
+		}
+		if len(result.lines) != 2 || !strings.Contains(result.lines[0], "evt-provider-live") || result.lines[1] != "id: evt-provider-live" {
+			t.Fatalf("unexpected live subscriber lines: %+v", result.lines)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for live-only subscriber while replay was blocked")
+	}
+
+	close(remoteStore.release)
+	server.Bus.Publish(handoffEvent)
+	time.Sleep(150 * time.Millisecond)
+	replayCancel()
+
+	result := <-replayCh
+	if len(result.lines) == 0 {
+		t.Fatalf("expected replay subscriber lines, got err=%q", result.err)
+	}
+	body := strings.Join(result.lines, "\n")
+	for _, want := range []string{"evt-provider-backlog-1", "evt-provider-backlog-2", "evt-provider-backlog-3", "evt-provider-backlog-4", "evt-provider-live", "evt-provider-handoff"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected replay/live handoff body to include %s, got %s", want, body)
+		}
+	}
+}
+
+func TestDebugStatusIncludesBrokerBootstrapSurface(t *testing.T) {
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		BrokerBootstrap struct {
+			ReportPath                    string `json:"report_path"`
+			CanonicalSummaryPath          string `json:"canonical_summary_path"`
+			CanonicalBootstrapSummaryPath string `json:"canonical_bootstrap_summary_path"`
+			ValidationPackPath            string `json:"validation_pack_path"`
+			ConfigurationState            string `json:"configuration_state"`
+			BootstrapReady                bool   `json:"bootstrap_ready"`
+			RuntimePosture                string `json:"runtime_posture"`
+			LiveAdapterImplemented        bool   `json:"live_adapter_implemented"`
+			ProofBoundary                 string `json:"proof_boundary"`
+			ConfigCompleteness            struct {
+				Driver        bool `json:"driver"`
+				URLs          bool `json:"urls"`
+				Topic         bool `json:"topic"`
+				ConsumerGroup bool `json:"consumer_group"`
+			} `json:"config_completeness"`
+			ConfigDiagnostics struct {
+				MissingFields      []string `json:"missing_fields"`
+				RequiredEnv        []string `json:"required_env"`
+				MissingRequiredEnv []string `json:"missing_required_env"`
+				AdvisoryEnv        []string `json:"advisory_env"`
+				MissingAdvisoryEnv []string `json:"missing_advisory_env"`
+				NextActions        []string `json:"next_actions"`
+				ReferenceDocs      []string `json:"reference_docs"`
+				RuntimeKnobs       struct {
+					PublishTimeout     string `json:"publish_timeout"`
+					ReplayLimit        int    `json:"replay_limit"`
+					CheckpointInterval string `json:"checkpoint_interval"`
+					ConsumerGroup      string `json:"consumer_group"`
+				} `json:"runtime_knobs"`
+			} `json:"config_diagnostics"`
+			RuntimeGate struct {
+				Status             string `json:"status"`
+				Requested          bool   `json:"requested"`
+				FailClosed         bool   `json:"fail_closed"`
+				ContractOnly       bool   `json:"contract_only"`
+				StubDriverOnly     bool   `json:"stub_driver_only"`
+				SafeForLiveTraffic bool   `json:"safe_for_live_traffic"`
+				OperatorMessage    string `json:"operator_message"`
+				ProofBoundary      string `json:"proof_boundary"`
+			} `json:"runtime_gate"`
+			ValidationErrors []string `json:"validation_errors"`
+		} `json:"broker_bootstrap_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode broker bootstrap payload: %v", err)
+	}
+	if decoded.BrokerBootstrap.ReportPath != brokerBootstrapSurfacePath || decoded.BrokerBootstrap.CanonicalSummaryPath != "docs/reports/broker-validation-summary.json" || decoded.BrokerBootstrap.CanonicalBootstrapSummaryPath != "docs/reports/broker-bootstrap-review-summary.json" || decoded.BrokerBootstrap.ValidationPackPath != "docs/reports/broker-failover-fault-injection-validation-pack.md" {
+		t.Fatalf("unexpected broker bootstrap paths: %+v", decoded.BrokerBootstrap)
+	}
+	if decoded.BrokerBootstrap.ConfigurationState != "not_configured" || decoded.BrokerBootstrap.BootstrapReady || decoded.BrokerBootstrap.RuntimePosture != "contract_only" || decoded.BrokerBootstrap.LiveAdapterImplemented {
+		t.Fatalf("unexpected broker bootstrap posture: %+v", decoded.BrokerBootstrap)
+	}
+	if decoded.BrokerBootstrap.ProofBoundary == "" || len(decoded.BrokerBootstrap.ValidationErrors) == 0 {
+		t.Fatalf("expected broker bootstrap boundary/errors, got %+v", decoded.BrokerBootstrap)
+	}
+	if decoded.BrokerBootstrap.ConfigCompleteness.Driver || decoded.BrokerBootstrap.ConfigCompleteness.URLs || decoded.BrokerBootstrap.ConfigCompleteness.Topic || decoded.BrokerBootstrap.ConfigCompleteness.ConsumerGroup {
+		t.Fatalf("expected missing broker config completeness, got %+v", decoded.BrokerBootstrap.ConfigCompleteness)
+	}
+	if strings.Join(decoded.BrokerBootstrap.ConfigDiagnostics.MissingFields, ",") != "driver,urls,topic" {
+		t.Fatalf("unexpected missing fields: %+v", decoded.BrokerBootstrap.ConfigDiagnostics)
+	}
+	if strings.Join(decoded.BrokerBootstrap.ConfigDiagnostics.MissingRequiredEnv, ",") != "BIGCLAW_EVENT_LOG_BROKER_DRIVER,BIGCLAW_EVENT_LOG_BROKER_URLS,BIGCLAW_EVENT_LOG_BROKER_TOPIC" {
+		t.Fatalf("unexpected missing required env: %+v", decoded.BrokerBootstrap.ConfigDiagnostics)
+	}
+	if strings.Join(decoded.BrokerBootstrap.ConfigDiagnostics.MissingAdvisoryEnv, ",") != "BIGCLAW_EVENT_LOG_CONSUMER_GROUP" {
+		t.Fatalf("unexpected missing advisory env: %+v", decoded.BrokerBootstrap.ConfigDiagnostics)
+	}
+	if decoded.BrokerBootstrap.ConfigDiagnostics.RuntimeKnobs.PublishTimeout != "5s" || decoded.BrokerBootstrap.ConfigDiagnostics.RuntimeKnobs.ReplayLimit != 500 || decoded.BrokerBootstrap.ConfigDiagnostics.RuntimeKnobs.CheckpointInterval != "5s" {
+		t.Fatalf("unexpected runtime knobs: %+v", decoded.BrokerBootstrap.ConfigDiagnostics.RuntimeKnobs)
+	}
+	if len(decoded.BrokerBootstrap.ConfigDiagnostics.NextActions) == 0 || !strings.Contains(strings.Join(decoded.BrokerBootstrap.ConfigDiagnostics.NextActions, " | "), "BIGCLAW_EVENT_LOG_BROKER_DRIVER") {
+		t.Fatalf("expected operator next actions, got %+v", decoded.BrokerBootstrap.ConfigDiagnostics.NextActions)
+	}
+	if !strings.Contains(strings.Join(decoded.BrokerBootstrap.ConfigDiagnostics.ReferenceDocs, " | "), "docs/reports/broker-event-log-adapter-contract.md") {
+		t.Fatalf("expected broker operator guide reference, got %+v", decoded.BrokerBootstrap.ConfigDiagnostics.ReferenceDocs)
+	}
+	if decoded.BrokerBootstrap.RuntimeGate.Status != "contract_only" || !decoded.BrokerBootstrap.RuntimeGate.Requested || decoded.BrokerBootstrap.RuntimeGate.FailClosed || !decoded.BrokerBootstrap.RuntimeGate.ContractOnly || decoded.BrokerBootstrap.RuntimeGate.StubDriverOnly || decoded.BrokerBootstrap.RuntimeGate.SafeForLiveTraffic {
+		t.Fatalf("unexpected broker runtime gate: %+v", decoded.BrokerBootstrap.RuntimeGate)
+	}
+	if !strings.Contains(decoded.BrokerBootstrap.RuntimeGate.OperatorMessage, "contract-only") || decoded.BrokerBootstrap.RuntimeGate.ProofBoundary == "" {
+		t.Fatalf("expected runtime gate messaging, got %+v", decoded.BrokerBootstrap.RuntimeGate)
+	}
+}
+
+func TestV2ControlCenterIncludesBrokerBootstrapSurface(t *testing.T) {
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5&audit_limit=5", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		BrokerBootstrap struct {
+			ReportPath         string `json:"report_path"`
+			ConfigurationState string `json:"configuration_state"`
+			RuntimePosture     string `json:"runtime_posture"`
+			ConfigDiagnostics  struct {
+				MissingRequiredEnv []string `json:"missing_required_env"`
+			} `json:"config_diagnostics"`
+			RuntimeGate struct {
+				Status        string `json:"status"`
+				Requested     bool   `json:"requested"`
+				FailClosed    bool   `json:"fail_closed"`
+				ProofBoundary string `json:"proof_boundary"`
+			} `json:"runtime_gate"`
+		} `json:"broker_bootstrap_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center broker bootstrap payload: %v", err)
+	}
+	if decoded.BrokerBootstrap.ReportPath != brokerBootstrapSurfacePath || decoded.BrokerBootstrap.ConfigurationState != "not_configured" || decoded.BrokerBootstrap.RuntimePosture != "contract_only" {
+		t.Fatalf("unexpected control center broker bootstrap payload: %+v", decoded.BrokerBootstrap)
+	}
+	if strings.Join(decoded.BrokerBootstrap.ConfigDiagnostics.MissingRequiredEnv, ",") != "BIGCLAW_EVENT_LOG_BROKER_DRIVER,BIGCLAW_EVENT_LOG_BROKER_URLS,BIGCLAW_EVENT_LOG_BROKER_TOPIC" {
+		t.Fatalf("unexpected control center config diagnostics: %+v", decoded.BrokerBootstrap.ConfigDiagnostics)
+	}
+	if decoded.BrokerBootstrap.RuntimeGate.Status != "contract_only" || !decoded.BrokerBootstrap.RuntimeGate.Requested || decoded.BrokerBootstrap.RuntimeGate.FailClosed || decoded.BrokerBootstrap.RuntimeGate.ProofBoundary == "" {
+		t.Fatalf("unexpected control center runtime gate: %+v", decoded.BrokerBootstrap.RuntimeGate)
+	}
+}
+
+func TestV2DistributedReportIncludesBrokerBootstrapSurface(t *testing.T) {
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?limit=5", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		BrokerBootstrap struct {
+			ReportPath         string `json:"report_path"`
+			ConfigurationState string `json:"configuration_state"`
+			RuntimePosture     string `json:"runtime_posture"`
+			BootstrapReady     bool   `json:"bootstrap_ready"`
+		} `json:"broker_bootstrap_surface"`
+		Report struct {
+			Markdown string `json:"markdown"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed broker bootstrap payload: %v", err)
+	}
+	if decoded.BrokerBootstrap.ReportPath != brokerBootstrapSurfacePath || decoded.BrokerBootstrap.ConfigurationState != "not_configured" || decoded.BrokerBootstrap.RuntimePosture != "contract_only" || decoded.BrokerBootstrap.BootstrapReady {
+		t.Fatalf("unexpected distributed broker bootstrap payload: %+v", decoded.BrokerBootstrap)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "## Broker Bootstrap Readiness") || !strings.Contains(decoded.Report.Markdown, "Configuration state: not_configured") || !strings.Contains(decoded.Report.Markdown, "Runtime posture: contract_only") || !strings.Contains(decoded.Report.Markdown, "Runtime gate: requested=true fail_closed=false contract_only=true stub_driver_only=false safe_for_live_traffic=false") || !strings.Contains(decoded.Report.Markdown, "Runtime gate message: Broker durability remains a contract-only target") || !strings.Contains(decoded.Report.Markdown, "Missing required env: BIGCLAW_EVENT_LOG_BROKER_DRIVER, BIGCLAW_EVENT_LOG_BROKER_URLS, BIGCLAW_EVENT_LOG_BROKER_TOPIC") || !strings.Contains(decoded.Report.Markdown, "Reference docs: docs/reports/broker-event-log-adapter-contract.md") {
+		t.Fatalf("expected broker bootstrap markdown section, got %s", decoded.Report.Markdown)
+	}
+}
+
+func TestDebugStatusIncludesBrokerReviewBundle(t *testing.T) {
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		BrokerReviewBundle struct {
+			CanonicalSummaryPath          string   `json:"canonical_summary_path"`
+			CanonicalBootstrapSummaryPath string   `json:"canonical_bootstrap_summary_path"`
+			ValidationPackPath            string   `json:"validation_pack_path"`
+			ReviewReadinessPath           string   `json:"review_readiness_path"`
+			OperatorGuidePath             string   `json:"operator_guide_path"`
+			RuntimePosture                string   `json:"runtime_posture"`
+			ReviewerLinks                 []string `json:"reviewer_links"`
+		} `json:"broker_review_bundle"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode broker review bundle payload: %v", err)
+	}
+	if decoded.BrokerReviewBundle.CanonicalSummaryPath != "docs/reports/broker-validation-summary.json" || decoded.BrokerReviewBundle.CanonicalBootstrapSummaryPath != "docs/reports/broker-bootstrap-review-summary.json" || decoded.BrokerReviewBundle.ValidationPackPath != "docs/reports/broker-failover-fault-injection-validation-pack.md" || decoded.BrokerReviewBundle.ReviewReadinessPath != "docs/reports/review-readiness.md" || decoded.BrokerReviewBundle.OperatorGuidePath != "docs/reports/broker-event-log-adapter-contract.md" || decoded.BrokerReviewBundle.RuntimePosture != "contract_only" {
+		t.Fatalf("unexpected broker review bundle payload: %+v", decoded.BrokerReviewBundle)
+	}
+	if !strings.Contains(strings.Join(decoded.BrokerReviewBundle.ReviewerLinks, " | "), "docs/reports/review-readiness.md") {
+		t.Fatalf("expected bundle reviewer links, got %+v", decoded.BrokerReviewBundle.ReviewerLinks)
+	}
+}
+
+func TestV2ControlCenterIncludesBrokerReviewBundle(t *testing.T) {
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5&audit_limit=5", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		BrokerReviewBundle struct {
+			LiveValidationIndexPath string `json:"live_validation_index_path"`
+			ReviewReadinessPath     string `json:"review_readiness_path"`
+			RuntimePosture          string `json:"runtime_posture"`
+		} `json:"broker_review_bundle"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center broker review bundle payload: %v", err)
+	}
+	if decoded.BrokerReviewBundle.LiveValidationIndexPath != "docs/reports/live-validation-index.json" || decoded.BrokerReviewBundle.ReviewReadinessPath != "docs/reports/review-readiness.md" || decoded.BrokerReviewBundle.RuntimePosture != "contract_only" {
+		t.Fatalf("unexpected control center broker review bundle payload: %+v", decoded.BrokerReviewBundle)
+	}
+}
+
+func TestV2DistributedReportIncludesBrokerReviewBundle(t *testing.T) {
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?limit=5", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		BrokerReviewBundle struct {
+			CanonicalSummaryPath string `json:"canonical_summary_path"`
+			StubReportPath       string `json:"stub_report_path"`
+		} `json:"broker_review_bundle"`
+		Report struct {
+			Markdown string `json:"markdown"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed broker review bundle payload: %v", err)
+	}
+	if decoded.BrokerReviewBundle.CanonicalSummaryPath != "docs/reports/broker-validation-summary.json" || decoded.BrokerReviewBundle.StubReportPath != "docs/reports/broker-failover-stub-report.json" {
+		t.Fatalf("unexpected distributed broker review bundle payload: %+v", decoded.BrokerReviewBundle)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "## Broker Review Bundle") || !strings.Contains(decoded.Report.Markdown, "Review readiness: docs/reports/review-readiness.md") || !strings.Contains(decoded.Report.Markdown, "Operator guide: docs/reports/broker-event-log-adapter-contract.md") || !strings.Contains(decoded.Report.Markdown, "Reviewer bundle links: docs/reports/broker-validation-summary.json") {
+		t.Fatalf("expected broker review bundle markdown section, got %s", decoded.Report.Markdown)
 	}
 }

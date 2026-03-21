@@ -33,6 +33,7 @@ type Config struct {
 	EventLogRemoteURL             string
 	EventLogRemoteBearer          string
 	QueueSQLitePath               string
+	SubscriberLeaseSQLitePath     string
 	AuditLogPath                  string
 	ServiceName                   string
 	LeaseTTL                      time.Duration
@@ -83,6 +84,7 @@ func Default() Config {
 		EventLogRemoteURL:             "",
 		EventLogRemoteBearer:          "",
 		QueueSQLitePath:               "./state/queue.db",
+		SubscriberLeaseSQLitePath:     "",
 		AuditLogPath:                  "./state/audit.jsonl",
 		ServiceName:                   "bigclawd",
 		LeaseTTL:                      2 * time.Minute,
@@ -139,6 +141,7 @@ func LoadFromEnv() Config {
 	cfg.EventLogRemoteURL = getString("BIGCLAW_EVENT_LOG_REMOTE_URL", cfg.EventLogRemoteURL)
 	cfg.EventLogRemoteBearer = getString("BIGCLAW_EVENT_LOG_REMOTE_BEARER_TOKEN", cfg.EventLogRemoteBearer)
 	cfg.QueueSQLitePath = getString("BIGCLAW_QUEUE_SQLITE_PATH", cfg.QueueSQLitePath)
+	cfg.SubscriberLeaseSQLitePath = getString("BIGCLAW_SUBSCRIBER_LEASE_SQLITE_PATH", cfg.SubscriberLeaseSQLitePath)
 	cfg.AuditLogPath = getString("BIGCLAW_AUDIT_LOG_PATH", cfg.AuditLogPath)
 	cfg.ServiceName = getString("BIGCLAW_SERVICE_NAME", cfg.ServiceName)
 	cfg.QueueFilePath = getString("BIGCLAW_QUEUE_FILE", cfg.QueueFilePath)

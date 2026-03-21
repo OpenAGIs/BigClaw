@@ -1,0 +1,48 @@
+[
+  {
+    "label": "before",
+    "timestamp": "2026-03-17T12:00:00Z",
+    "nodes": {
+      "broker-a": {
+        "role": "leader",
+        "healthy": true
+      },
+      "broker-b": {
+        "role": "follower",
+        "healthy": true
+      },
+      "broker-c": {
+        "role": "follower",
+        "healthy": true
+      }
+    },
+    "retention_floor": 1,
+    "committed_sequences": []
+  },
+  {
+    "label": "after_recovery",
+    "timestamp": "2026-03-17T12:00:07Z",
+    "nodes": {
+      "broker-a": {
+        "role": "follower",
+        "healthy": true
+      },
+      "broker-b": {
+        "role": "leader",
+        "healthy": true
+      },
+      "broker-c": {
+        "role": "follower",
+        "healthy": true
+      }
+    },
+    "retention_floor": 1,
+    "committed_sequences": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  }
+]

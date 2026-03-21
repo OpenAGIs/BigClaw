@@ -8,7 +8,8 @@ This digest consolidates the remaining validation-bundle continuation caveats fo
 
 - `docs/reports/live-validation-index.md` records the latest bundled local, Kubernetes, and Ray validation artifacts.
 - `docs/reports/live-validation-summary.json` captures the latest bundle summary and closeout commands.
-- `docs/reports/validation-bundle-continuation-scorecard.json` adds a rolling continuation scorecard across recent bundle generations plus the shared-queue companion proof now copied into each exported bundle summary, including whether the latest proof came from an `inline-workflow-refresh` or an `existing-report`.
+- `docs/reports/shared-queue-companion-summary.json` exports the compact shared-queue coordination summary that now rides alongside the live validation bundle outputs.
+- `docs/reports/validation-bundle-continuation-scorecard.json` adds a rolling continuation scorecard across recent bundle generations plus the shared-queue companion proof.
 - `scripts/e2e/validation_bundle_continuation_scorecard.py` regenerates the scorecard from checked-in bundle summaries and shared-queue evidence.
 - `docs/reports/validation-bundle-continuation-policy-gate.json` records the current continuation policy decision for bundle freshness, repeated lane coverage, and shared-queue companion availability.
 - `scripts/e2e/validation_bundle_continuation_policy_gate.py` evaluates the scorecard as a repo-native policy gate.
@@ -18,23 +19,20 @@ This digest consolidates the remaining validation-bundle continuation caveats fo
 
 ## Reviewer Digest
 
-- The repo now has a rolling continuation scorecard plus a policy gate that makes bundle freshness, repeated lane coverage, and the bundle-attached shared-queue companion proof reviewable in machine-readable form, including explicit refresh-source lineage.
-- The checked-in continuation window now includes repeated `local`, `kubernetes`, and `ray` coverage across recent indexed bundles, but on March 21, 2026 the current policy gate is still `hold` because the latest bundled evidence is older than the default 72-hour freshness threshold.
+- The repo now has a rolling continuation scorecard plus a policy gate that makes bundle freshness, shared-queue companion proof, and repeated lane coverage reviewable in machine-readable form.
+- The checked-in continuation window now includes repeated `local`, `kubernetes`, and `ray` coverage across recent indexed bundles, so the current policy gate returns `go`.
 - Validation continuation across future validation bundles remains workflow-triggered because `run_all.sh` now refreshes the scorecard and policy gate automatically, but the overall surface still depends on explicit workflow execution rather than an always-on service.
 - The continuation surface is therefore a repo-native longitudinal readiness overlay, not yet an always-on validation service.
 
 ## Current Blockers
 
 - The repo-native policy gate now refreshes automatically during `run_all.sh` closeout, but enforcement is not enabled by default across ordinary workflows.
-- Shared-queue coordination evidence is now attached to the live validation bundle lineage as adjacent metadata, and `run_all.sh` can refresh it inline via `BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1`; it is still not on by default for every workflow invocation.
-- The continuation policy gate now distinguishes between `bundled-companion` and `standalone-proof` shared-queue evidence so next-action guidance points at the correct refresh path for the current evidence source.
-- The exported bundle summary/index now records whether the attached shared-queue proof came from an `inline-workflow-refresh` or an `existing-report`, so downstream reviewers do not need to infer refresh provenance from the workflow command alone.
-- The continuation scorecard and policy gate now carry that `shared_queue.source` field forward so current-ceiling language and policy-check detail stay aligned with the latest refresh provenance instead of inferring it from mode alone.
+- Shared-queue coordination evidence now ships as adjacent bundle metadata, but it still is not a first-class executor lane inside the main live-validation run.
 - Longitudinal history is bounded to the exported bundle index window and not a continuously retained validation service.
 - The current gate only reflects checked-in bundle history, so future regressions still depend on rerunning a workflow like `run_all.sh` or an equivalent orchestrated refresh.
 
 ## Lightweight Consistency Check
 
-- Keep this digest aligned with `docs/reports/live-validation-index.md`, `docs/reports/live-validation-summary.json`, `docs/reports/validation-bundle-continuation-scorecard.json`, `docs/reports/validation-bundle-continuation-policy-gate.json`, and `docs/reports/multi-node-coordination-report.md`.
+- Keep this digest aligned with `docs/reports/live-validation-index.md`, `docs/reports/live-validation-summary.json`, `docs/reports/shared-queue-companion-summary.json`, `docs/reports/validation-bundle-continuation-scorecard.json`, `docs/reports/validation-bundle-continuation-policy-gate.json`, and `docs/reports/multi-node-coordination-report.md`.
 - Repeat the `rolling continuation scorecard` and `continuation across future validation bundles remains manual` caveats anywhere distributed validation is summarized.
 - When an always-on continuation surface lands, update this digest, `docs/reports/review-readiness.md`, and `docs/openclaw-parallel-gap-analysis.md` together.

@@ -66,6 +66,72 @@ func TestSchedulerRoutesBrowserToKubernetes(t *testing.T) {
 	}
 }
 
+func TestSchedulerAssessmentBuildsSecurityHandoffForRejectedDecision(t *testing.T) {
+	s := New()
+	assessment := s.Assess(domain.Task{
+		ID:            "risk-handoff-1",
+		RiskLevel:     domain.RiskHigh,
+		Labels:        []string{"security"},
+		RequiredTools: []string{"deploy"},
+		BudgetCents:   500,
+	}, QuotaSnapshot{BudgetRemaining: 100})
+	if assessment.Decision.Accepted {
+		t.Fatalf("expected rejected decision for budget-blocked assessment, got %+v", assessment.Decision)
+	}
+	if assessment.Risk.Level != domain.RiskHigh {
+		t.Fatalf("expected high risk score, got %+v", assessment.Risk)
+	}
+	if assessment.HandoffRequest == nil || assessment.HandoffRequest.TargetTeam != "security" || assessment.HandoffRequest.Reason == "" {
+		t.Fatalf("expected security handoff request, got %+v", assessment.HandoffRequest)
+	}
+	if len(assessment.HandoffRequest.RequiredApprovals) == 0 || assessment.HandoffRequest.RequiredApprovals[0] != "security-review" {
+		t.Fatalf("expected security-review approval requirement, got %+v", assessment.HandoffRequest)
+	}
+}
+
+func TestSchedulerAssessmentBuildsUpgradeHandoffForStandardTier(t *testing.T) {
+	s := New()
+	assessment := s.Assess(domain.Task{
+		ID:            "upgrade-handoff-1",
+		Source:        "linear",
+		Title:         "Customer analytics rollout",
+		Description:   "Need customer stakeholder rollout and analytics validation.",
+		Labels:        []string{"customer", "analytics"},
+		RequiredTools: []string{"browser", "sql"},
+	}, QuotaSnapshot{})
+	if !assessment.Decision.Accepted {
+		t.Fatalf("expected accepted decision, got %+v", assessment.Decision)
+	}
+	if assessment.OrchestrationPolicy.UpgradeRequired != true {
+		t.Fatalf("expected upgrade-required policy, got %+v", assessment.OrchestrationPolicy)
+	}
+	if assessment.HandoffRequest == nil || assessment.HandoffRequest.TargetTeam != "operations" || assessment.HandoffRequest.Status != "blocked" {
+		t.Fatalf("expected blocked operations handoff, got %+v", assessment.HandoffRequest)
+	}
+	if assessment.OrchestrationPlan.CollaborationMode != "tier-limited" || len(assessment.OrchestrationPlan.Handoffs) != 2 || len(assessment.OrchestrationPolicy.BlockedDepartments) == 0 {
+		t.Fatalf("expected constrained orchestration plan with blocked departments, got plan=%+v policy=%+v", assessment.OrchestrationPlan, assessment.OrchestrationPolicy)
+	}
+}
+
+func TestSchedulerAssessmentOmitsHandoffWhenStandardPlanFits(t *testing.T) {
+	s := New()
+	assessment := s.Assess(domain.Task{
+		ID:            "no-handoff-1",
+		Source:        "linear",
+		Title:         "Basic browser task",
+		RequiredTools: []string{"browser"},
+	}, QuotaSnapshot{})
+	if !assessment.Decision.Accepted {
+		t.Fatalf("expected accepted decision, got %+v", assessment.Decision)
+	}
+	if assessment.OrchestrationPolicy.UpgradeRequired {
+		t.Fatalf("expected no upgrade requirement, got %+v", assessment.OrchestrationPolicy)
+	}
+	if assessment.HandoffRequest != nil {
+		t.Fatalf("expected no handoff request, got %+v", assessment.HandoffRequest)
+	}
+}
+
 func TestSchedulerRejectsLowPriorityOnBackpressure(t *testing.T) {
 	s := New()
 	decision := s.Decide(domain.Task{ID: "bp-1", Priority: 3}, QuotaSnapshot{QueueDepth: 50, MaxQueueDepth: 50})

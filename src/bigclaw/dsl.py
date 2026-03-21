@@ -2,6 +2,14 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+_VALID_WORKFLOW_STEP_KINDS = {
+    "scheduler",
+    "approval",
+    "orchestration",
+    "report",
+    "closeout",
+}
+
 from .models import Task
 
 
@@ -79,3 +87,9 @@ class WorkflowDefinition:
 
     def render_journal_path(self, task: Task, run_id: str) -> Optional[str]:
         return self.render_path(self.journal_path_template, task, run_id)
+
+    def validate(self) -> None:
+        invalid_steps = [step.kind for step in self.steps if step.kind not in _VALID_WORKFLOW_STEP_KINDS]
+        if invalid_steps:
+            joined = ", ".join(sorted(set(invalid_steps)))
+            raise ValueError(f"invalid workflow step kind(s): {joined}")

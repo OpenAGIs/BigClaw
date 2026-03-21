@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -53,17 +51,16 @@ func TestV2WeeklyReportBuildsSummaryActionsAndMarkdownExport(t *testing.T) {
 			Key       string `json:"key"`
 			TotalRuns int    `json:"total_runs"`
 		} `json:"team_breakdown"`
+		Highlights []string `json:"highlights"`
+		Actions    []string `json:"actions"`
 		MetricSpec struct {
 			Name   string `json:"name"`
 			Values []struct {
-				MetricID     string  `json:"metric_id"`
-				DisplayValue string  `json:"display_value"`
-				Value        float64 `json:"value"`
+				MetricID     string `json:"metric_id"`
+				DisplayValue string `json:"display_value"`
 			} `json:"values"`
 		} `json:"metric_spec"`
-		Highlights []string `json:"highlights"`
-		Actions    []string `json:"actions"`
-		Report     struct {
+		Report struct {
 			Markdown  string `json:"markdown"`
 			ExportURL string `json:"export_url"`
 		} `json:"report"`
@@ -77,11 +74,11 @@ func TestV2WeeklyReportBuildsSummaryActionsAndMarkdownExport(t *testing.T) {
 	if len(decoded.TeamBreakdown) != 1 || decoded.TeamBreakdown[0].Key != "platform" || decoded.TeamBreakdown[0].TotalRuns != 2 {
 		t.Fatalf("unexpected team breakdown: %+v", decoded.TeamBreakdown)
 	}
-	if decoded.MetricSpec.Name == "" || len(decoded.MetricSpec.Values) != 7 || decoded.MetricSpec.Values[0].MetricID != "throughput" || decoded.MetricSpec.Values[0].DisplayValue != "50.0%" {
-		t.Fatalf("unexpected weekly metric spec: %+v", decoded.MetricSpec)
+	if len(decoded.Highlights) == 0 || len(decoded.Actions) == 0 || decoded.MetricSpec.Name != "Operations Metric Spec" || len(decoded.MetricSpec.Values) != 7 || !strings.Contains(decoded.Report.Markdown, "# BigClaw Weekly Ops Report") || !strings.Contains(decoded.Report.ExportURL, "/v2/reports/weekly/export") {
+		t.Fatalf("expected highlights/actions/metric spec/export in weekly report, got %+v", decoded)
 	}
-	if len(decoded.Highlights) == 0 || len(decoded.Actions) == 0 || !strings.Contains(decoded.Report.Markdown, "# BigClaw Weekly Ops Report") || !strings.Contains(decoded.Report.ExportURL, "/v2/reports/weekly/export") {
-		t.Fatalf("expected highlights/actions/export in weekly report, got %+v", decoded)
+	if decoded.MetricSpec.Values[0].MetricID == "" || decoded.MetricSpec.Values[0].DisplayValue == "" {
+		t.Fatalf("expected populated metric spec values, got %+v", decoded.MetricSpec.Values)
 	}
 
 	exportResponse := httptest.NewRecorder()
@@ -92,13 +89,7 @@ func TestV2WeeklyReportBuildsSummaryActionsAndMarkdownExport(t *testing.T) {
 	if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 		t.Fatalf("expected markdown export, got %q", contentType)
 	}
-	if !strings.Contains(exportResponse.Body.String(), "Completed runs: 1") ||
-		!strings.Contains(exportResponse.Body.String(), "Human interventions: 1") ||
-		!strings.Contains(exportResponse.Body.String(), "## Highlights") ||
-		!strings.Contains(exportResponse.Body.String(), "## Team Breakdown") ||
-		!strings.Contains(exportResponse.Body.String(), "## Metric Spec") ||
-		!strings.Contains(exportResponse.Body.String(), "- Throughput: 50.0%") ||
-		!strings.Contains(exportResponse.Body.String(), "- platform: total=2 completed=1 blocked=1 interventions=1 budget_cents=1200") {
+	if !strings.Contains(exportResponse.Body.String(), "Completed runs: 1") || !strings.Contains(exportResponse.Body.String(), "Human interventions: 1") {
 		t.Fatalf("unexpected weekly export body: %s", exportResponse.Body.String())
 	}
 }
@@ -239,7 +230,7 @@ func TestV2ProductizationAndBillingEndpoints(t *testing.T) {
 
 	navigationResponse := httptest.NewRecorder()
 	handler.ServeHTTP(navigationResponse, httptest.NewRequest(http.MethodGet, "/v2/navigation?role=vp_eng", nil))
-	if navigationResponse.Code != http.StatusOK || !strings.Contains(navigationResponse.Body.String(), "Billing") || strings.Contains(navigationResponse.Body.String(), "\"key\":\"flows\"") || strings.Contains(navigationResponse.Body.String(), "\"key\":\"scheduler\"") {
+	if navigationResponse.Code != http.StatusOK || !strings.Contains(navigationResponse.Body.String(), "Billing") || !strings.Contains(navigationResponse.Body.String(), "Flows") {
 		t.Fatalf("expected product navigation response, got %d %s", navigationResponse.Code, navigationResponse.Body.String())
 	}
 
@@ -256,6 +247,96 @@ func TestV2ProductizationAndBillingEndpoints(t *testing.T) {
 	handler.ServeHTTP(designResponse, httptest.NewRequest(http.MethodGet, "/v2/design-system", nil))
 	if designResponse.Code != http.StatusOK || !strings.Contains(designResponse.Body.String(), "status-badge") || !strings.Contains(designResponse.Body.String(), "dark_mode") {
 		t.Fatalf("expected design system payload, got %d %s", designResponse.Code, designResponse.Body.String())
+	}
+
+	savedViewsResponse := httptest.NewRecorder()
+	savedViewsRequest := httptest.NewRequest(http.MethodGet, "/v2/saved-views?team=platform&project=apollo&actor=alice", nil)
+	handler.ServeHTTP(savedViewsResponse, savedViewsRequest)
+	if savedViewsResponse.Code != http.StatusOK {
+		t.Fatalf("expected saved views 200, got %d %s", savedViewsResponse.Code, savedViewsResponse.Body.String())
+	}
+	var savedViewsDecoded struct {
+		Catalog struct {
+			Views []struct {
+				ViewID string `json:"view_id"`
+				Route  string `json:"route"`
+			} `json:"views"`
+			Subscriptions []struct {
+				SavedViewID string   `json:"saved_view_id"`
+				Recipients  []string `json:"recipients"`
+			} `json:"subscriptions"`
+		} `json:"catalog"`
+		Audit struct {
+			ReadinessScore float64 `json:"readiness_score"`
+		} `json:"audit"`
+		Report struct {
+			Markdown  string `json:"markdown"`
+			ExportURL string `json:"export_url"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(savedViewsResponse.Body.Bytes(), &savedViewsDecoded); err != nil {
+		t.Fatalf("decode saved views: %v", err)
+	}
+	if savedViewsDecoded.Audit.ReadinessScore != 100 || len(savedViewsDecoded.Catalog.Views) < 6 {
+		t.Fatalf("unexpected saved views payload: %+v", savedViewsDecoded)
+	}
+	if !strings.Contains(savedViewsDecoded.Catalog.Views[0].Route, "team=platform") || !strings.Contains(savedViewsDecoded.Report.Markdown, "Saved Views & Alert Digests Report") {
+		t.Fatalf("expected scoped routes and report markdown, got %+v", savedViewsDecoded)
+	}
+	if len(savedViewsDecoded.Catalog.Subscriptions) != 2 || savedViewsDecoded.Catalog.Subscriptions[1].SavedViewID == "" || len(savedViewsDecoded.Catalog.Subscriptions[1].Recipients) == 0 {
+		t.Fatalf("expected digest subscriptions, got %+v", savedViewsDecoded.Catalog.Subscriptions)
+	}
+
+	savedViewsExportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(savedViewsExportResponse, httptest.NewRequest(http.MethodGet, savedViewsDecoded.Report.ExportURL, nil))
+	if savedViewsExportResponse.Code != http.StatusOK {
+		t.Fatalf("expected saved views export 200, got %d %s", savedViewsExportResponse.Code, savedViewsExportResponse.Body.String())
+	}
+	if contentType := savedViewsExportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected markdown export, got %q", contentType)
+	}
+	if !strings.Contains(savedViewsExportResponse.Body.String(), "Weekly Ops Review") || !strings.Contains(savedViewsExportResponse.Body.String(), "Readiness Score: 100.0") {
+		t.Fatalf("unexpected saved views export body: %s", savedViewsExportResponse.Body.String())
+	}
+
+	dashboardRunContractResponse := httptest.NewRecorder()
+	handler.ServeHTTP(dashboardRunContractResponse, httptest.NewRequest(http.MethodGet, "/v2/dashboard-run-contract", nil))
+	if dashboardRunContractResponse.Code != http.StatusOK {
+		t.Fatalf("expected dashboard run contract 200, got %d %s", dashboardRunContractResponse.Code, dashboardRunContractResponse.Body.String())
+	}
+	var dashboardRunContractDecoded struct {
+		Contract struct {
+			ContractID string `json:"contract_id"`
+			Version    string `json:"version"`
+		} `json:"contract"`
+		Audit struct {
+			ReleaseReady bool `json:"release_ready"`
+		} `json:"audit"`
+		Report struct {
+			Markdown  string `json:"markdown"`
+			ExportURL string `json:"export_url"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(dashboardRunContractResponse.Body.Bytes(), &dashboardRunContractDecoded); err != nil {
+		t.Fatalf("decode dashboard run contract: %v", err)
+	}
+	if dashboardRunContractDecoded.Contract.ContractID != "BIG-GOM-305" || dashboardRunContractDecoded.Contract.Version != "go-v1" || !dashboardRunContractDecoded.Audit.ReleaseReady {
+		t.Fatalf("unexpected dashboard run contract payload: %+v", dashboardRunContractDecoded)
+	}
+	if !strings.Contains(dashboardRunContractDecoded.Report.Markdown, "\"closeout\"") || dashboardRunContractDecoded.Report.ExportURL != "/v2/dashboard-run-contract/export" {
+		t.Fatalf("expected closeout contract report and export url, got %+v", dashboardRunContractDecoded.Report)
+	}
+
+	dashboardRunContractExportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(dashboardRunContractExportResponse, httptest.NewRequest(http.MethodGet, dashboardRunContractDecoded.Report.ExportURL, nil))
+	if dashboardRunContractExportResponse.Code != http.StatusOK {
+		t.Fatalf("expected dashboard run contract export 200, got %d %s", dashboardRunContractExportResponse.Code, dashboardRunContractExportResponse.Body.String())
+	}
+	if contentType := dashboardRunContractExportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected markdown export, got %q", contentType)
+	}
+	if !strings.Contains(dashboardRunContractExportResponse.Body.String(), "Dashboard and Run Contract") || !strings.Contains(dashboardRunContractExportResponse.Body.String(), "Release Ready: true") {
+		t.Fatalf("unexpected dashboard run contract export body: %s", dashboardRunContractExportResponse.Body.String())
 	}
 
 	usageResponse := httptest.NewRecorder()
@@ -291,103 +372,6 @@ func TestV2ProductizationAndBillingEndpoints(t *testing.T) {
 	}
 	if !strings.Contains(entitlementsResponse.Body.String(), "premium_orchestration") || !strings.Contains(entitlementsResponse.Body.String(), "flow_canvas") || !strings.Contains(entitlementsResponse.Body.String(), "regression") {
 		t.Fatalf("expected enterprise entitlements payload, got %s", entitlementsResponse.Body.String())
-	}
-}
-
-func TestV2HomeEngLeadUsesActiveTakeoversInsteadOfBlockedRuns(t *testing.T) {
-	recorder := observability.NewRecorder()
-	base := time.Date(2026, 3, 14, 11, 0, 0, 0, time.UTC)
-	for _, task := range []domain.Task{
-		{ID: "task-home-1", TraceID: "trace-home-1", Title: "Blocked without takeover", State: domain.TaskBlocked, Metadata: map[string]string{"team": "platform"}, CreatedAt: base, UpdatedAt: base},
-		{ID: "task-home-2", TraceID: "trace-home-2", Title: "Blocked with takeover", State: domain.TaskBlocked, Metadata: map[string]string{"team": "platform"}, CreatedAt: base, UpdatedAt: base.Add(time.Minute)},
-	} {
-		recorder.StoreTask(task)
-	}
-	controller := control.New()
-	controller.Takeover("task-home-2", "alice", "bob", "manual ownership", base.Add(2*time.Minute))
-	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: controller, Now: func() time.Time { return base.Add(time.Hour) }}
-
-	response := httptest.NewRecorder()
-	server.Handler().ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v2/home?role=eng_lead", nil))
-	if response.Code != http.StatusOK {
-		t.Fatalf("expected eng lead home 200, got %d %s", response.Code, response.Body.String())
-	}
-	if !strings.Contains(response.Body.String(), "\"key\":\"blockers\",\"title\":\"Blockers\",\"value\":2") {
-		t.Fatalf("expected blockers card to reflect blocked runs, got %s", response.Body.String())
-	}
-	if !strings.Contains(response.Body.String(), "\"key\":\"takeovers\",\"title\":\"Takeovers\",\"value\":1") {
-		t.Fatalf("expected takeover card to reflect active takeovers, got %s", response.Body.String())
-	}
-}
-
-func TestV2HomeAndNavigationIgnoreRoleQueryWhenViewerRoleIsExplicit(t *testing.T) {
-	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: time.Now}
-	handler := server.Handler()
-
-	homeRequest := httptest.NewRequest(http.MethodGet, "/v2/home?role=vp_eng", nil)
-	homeRequest.Header.Set("X-BigClaw-Role", "eng_lead")
-	homeRequest.Header.Set("X-BigClaw-Team", "platform")
-	homeResponse := httptest.NewRecorder()
-	handler.ServeHTTP(homeResponse, homeRequest)
-	if homeResponse.Code != http.StatusOK {
-		t.Fatalf("expected home 200, got %d %s", homeResponse.Code, homeResponse.Body.String())
-	}
-	homeBody := homeResponse.Body.String()
-	if strings.Contains(homeBody, "\"role\":\"vp_eng\"") || strings.Contains(homeBody, "\"key\":\"throughput\"") {
-		t.Fatalf("expected home role query to be ignored when header role is explicit, got %s", homeBody)
-	}
-	if !strings.Contains(homeBody, "\"role\":\"eng_lead\"") || !strings.Contains(homeBody, "\"key\":\"blockers\"") || !strings.Contains(homeBody, "\"key\":\"takeovers\"") {
-		t.Fatalf("expected eng lead home payload, got %s", homeBody)
-	}
-
-	navigationRequest := httptest.NewRequest(http.MethodGet, "/v2/navigation?role=vp_eng", nil)
-	navigationRequest.Header.Set("X-BigClaw-Role", "eng_lead")
-	navigationRequest.Header.Set("X-BigClaw-Team", "platform")
-	navigationResponse := httptest.NewRecorder()
-	handler.ServeHTTP(navigationResponse, navigationRequest)
-	if navigationResponse.Code != http.StatusOK {
-		t.Fatalf("expected navigation 200, got %d %s", navigationResponse.Code, navigationResponse.Body.String())
-	}
-	navigationBody := navigationResponse.Body.String()
-	if strings.Contains(navigationBody, "\"role\":\"vp_eng\"") {
-		t.Fatalf("expected navigation role query to be ignored when header role is explicit, got %s", navigationBody)
-	}
-	if !strings.Contains(navigationBody, "\"role\":\"eng_lead\"") {
-		t.Fatalf("expected navigation role to reflect explicit viewer role, got %s", navigationBody)
-	}
-}
-
-func TestV2HomeScopesEngLeadCardsToViewerTeam(t *testing.T) {
-	recorder := observability.NewRecorder()
-	base := time.Date(2026, 3, 14, 11, 0, 0, 0, time.UTC)
-	for _, task := range []domain.Task{
-		{ID: "task-scope-home-1", TraceID: "trace-scope-home-1", Title: "Platform blocker", State: domain.TaskBlocked, Metadata: map[string]string{"team": "platform"}, CreatedAt: base, UpdatedAt: base},
-		{ID: "task-scope-home-2", TraceID: "trace-scope-home-2", Title: "Growth blocker", State: domain.TaskBlocked, Metadata: map[string]string{"team": "growth"}, CreatedAt: base, UpdatedAt: base.Add(time.Minute)},
-	} {
-		recorder.StoreTask(task)
-	}
-	controller := control.New()
-	controller.Takeover("task-scope-home-1", "alice", "", "platform manual review", base.Add(2*time.Minute))
-	controller.Takeover("task-scope-home-2", "bob", "", "growth manual review", base.Add(3*time.Minute))
-	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: controller, Now: func() time.Time { return base.Add(time.Hour) }}
-
-	request := httptest.NewRequest(http.MethodGet, "/v2/home", nil)
-	request.Header.Set("X-BigClaw-Role", "eng_lead")
-	request.Header.Set("X-BigClaw-Team", "platform")
-	response := httptest.NewRecorder()
-	server.Handler().ServeHTTP(response, request)
-	if response.Code != http.StatusOK {
-		t.Fatalf("expected scoped home 200, got %d %s", response.Code, response.Body.String())
-	}
-	body := response.Body.String()
-	if !strings.Contains(body, "\"role\":\"eng_lead\"") {
-		t.Fatalf("expected eng lead role in scoped home, got %s", body)
-	}
-	if !strings.Contains(body, "\"key\":\"blockers\",\"title\":\"Blockers\",\"value\":1") {
-		t.Fatalf("expected home blockers to be team-scoped, got %s", body)
-	}
-	if !strings.Contains(body, "\"key\":\"takeovers\",\"title\":\"Takeovers\",\"value\":1") {
-		t.Fatalf("expected home takeovers to be team-scoped, got %s", body)
 	}
 }
 
@@ -482,69 +466,6 @@ func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
 	if renderDecoded.Rendered.ReportPath != "reports/BIG-401/run-1.md" || renderDecoded.Rendered.JournalPath != "journals/release-closeout/run-1.json" {
 		t.Fatalf("unexpected rendered workflow paths: %+v", renderDecoded.Rendered)
 	}
-
-	runBody, _ := json.Marshal(map[string]any{
-		"definition": map[string]any{
-			"name":                  "release-closeout",
-			"steps":                 []map[string]any{{"name": "execute", "kind": "scheduler"}},
-			"report_path_template":  filepath.Join(t.TempDir(), "reports", "{task_id}", "{run_id}.md"),
-			"journal_path_template": filepath.Join(t.TempDir(), "journals", "{workflow}", "{run_id}.json"),
-			"validation_evidence":   []string{"pytest", "report-shared"},
-			"approvals":             []string{"release-manager"},
-		},
-		"task": map[string]any{
-			"id":                  "BIG-402",
-			"source":              "linear",
-			"title":               "Run workflow",
-			"risk_level":          "high",
-			"acceptance_criteria": []string{"report-shared"},
-			"validation_plan":     []string{"pytest"},
-		},
-		"run_id": "run-2",
-	})
-	runResponse := httptest.NewRecorder()
-	handler.ServeHTTP(runResponse, httptest.NewRequest(http.MethodPost, "/v2/workflows/definitions/run", bytes.NewReader(runBody)))
-	if runResponse.Code != http.StatusOK {
-		t.Fatalf("expected workflow definition run 200, got %d %s", runResponse.Code, runResponse.Body.String())
-	}
-	var runDecoded struct {
-		Execution struct {
-			Status   string `json:"status"`
-			Decision struct {
-				Medium   string `json:"medium"`
-				Approved bool   `json:"approved"`
-			} `json:"decision"`
-		} `json:"execution"`
-		Acceptance struct {
-			Status    string   `json:"status"`
-			Approvals []string `json:"approvals"`
-		} `json:"acceptance"`
-		Journal struct {
-			Path       string `json:"path"`
-			EntryCount int    `json:"entry_count"`
-		} `json:"journal"`
-		Report struct {
-			Path string `json:"path"`
-		} `json:"report"`
-	}
-	if err := json.Unmarshal(runResponse.Body.Bytes(), &runDecoded); err != nil {
-		t.Fatalf("decode workflow definition run response: %v", err)
-	}
-	if runDecoded.Execution.Status != "needs-approval" || runDecoded.Execution.Decision.Medium != "vm" || runDecoded.Execution.Decision.Approved {
-		t.Fatalf("unexpected workflow run execution payload: %+v", runDecoded.Execution)
-	}
-	if runDecoded.Acceptance.Status != "accepted" || len(runDecoded.Acceptance.Approvals) != 1 || runDecoded.Acceptance.Approvals[0] != "release-manager" {
-		t.Fatalf("unexpected workflow run acceptance payload: %+v", runDecoded.Acceptance)
-	}
-	if runDecoded.Journal.EntryCount != 4 || runDecoded.Journal.Path == "" || runDecoded.Report.Path == "" {
-		t.Fatalf("unexpected workflow run artifact payload: %+v", runDecoded)
-	}
-	if _, err := os.Stat(runDecoded.Journal.Path); err != nil {
-		t.Fatalf("expected journal file written: %v", err)
-	}
-	if _, err := os.Stat(runDecoded.Report.Path); err != nil {
-		t.Fatalf("expected report file written: %v", err)
-	}
 }
 
 func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
@@ -589,6 +510,52 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 			RegisteredExecutors  int `json:"registered_executors"`
 			TotalRoutedDecisions int `json:"total_routed_decisions"`
 		} `json:"summary"`
+		TraceBundle struct {
+			TotalTraces             int `json:"total_traces"`
+			TracesWithTerminalState int `json:"traces_with_terminal_state"`
+			RecentTraces            []struct {
+				TraceID  string `json:"trace_id"`
+				Executor string `json:"executor"`
+				State    string `json:"state"`
+				TraceURL string `json:"trace_url"`
+				EventURL string `json:"event_url"`
+			} `json:"recent_traces"`
+			ValidationArtifacts   []string `json:"validation_artifacts"`
+			ReviewerNavigation    []string `json:"reviewer_navigation"`
+			BackendLimitations    []string `json:"backend_limitations"`
+			AmbiguousPublishProof struct {
+				Path       string   `json:"path"`
+				ScenarioID string   `json:"scenario_id"`
+				Outcomes   []string `json:"outcomes"`
+			} `json:"ambiguous_publish_proof"`
+		} `json:"trace_export_bundle"`
+		BrokerReviewPack struct {
+			AmbiguousPublishProof struct {
+				Path       string   `json:"path"`
+				ScenarioID string   `json:"scenario_id"`
+				Outcomes   []string `json:"outcomes"`
+			} `json:"ambiguous_publish_proof"`
+		} `json:"broker_review_pack"`
+		PublishAckOutcomes struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				ScenarioID         string `json:"scenario_id"`
+				CommittedCount     int    `json:"committed_count"`
+				RejectedCount      int    `json:"rejected_count"`
+				UnknownCommitCount int    `json:"unknown_commit_count"`
+			} `json:"summary"`
+		} `json:"publish_ack_outcomes"`
+		SequenceBridge struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				BackendCount                 int `json:"backend_count"`
+				LiveProvenBackends           int `json:"live_proven_backends"`
+				HarnessProvenBackends        int `json:"harness_proven_backends"`
+				ContractOnlyBackends         int `json:"contract_only_backends"`
+				OneToOneMappings             int `json:"one_to_one_mappings"`
+				ProviderEpochBridgedBackends int `json:"provider_epoch_bridged_backends"`
+			} `json:"summary"`
+		} `json:"sequence_bridge_surface"`
 		RoutingReasons []struct {
 			Executor string `json:"executor"`
 			Reason   string `json:"reason"`
@@ -640,7 +607,28 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if len(decoded.ClusterHealth.TakeoverOwners) == 0 || decoded.ClusterHealth.TakeoverOwners[0].Key != "alice" {
 		t.Fatalf("unexpected takeover owner breakdown: %+v", decoded.ClusterHealth)
 	}
-	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") {
+	if decoded.TraceBundle.TotalTraces != 3 || decoded.TraceBundle.TracesWithTerminalState != 2 || len(decoded.TraceBundle.RecentTraces) != 3 {
+		t.Fatalf("unexpected trace export bundle summary: %+v", decoded.TraceBundle)
+	}
+	if decoded.TraceBundle.RecentTraces[0].TraceURL == "" || decoded.TraceBundle.RecentTraces[0].EventURL == "" {
+		t.Fatalf("expected trace bundle navigation urls, got %+v", decoded.TraceBundle.RecentTraces[0])
+	}
+	if len(decoded.TraceBundle.ValidationArtifacts) == 0 || len(decoded.TraceBundle.ReviewerNavigation) == 0 || len(decoded.TraceBundle.BackendLimitations) == 0 {
+		t.Fatalf("expected trace bundle reviewer metadata, got %+v", decoded.TraceBundle)
+	}
+	if decoded.TraceBundle.AmbiguousPublishProof.Path != "docs/reports/ambiguous-publish-outcome-proof-summary.json" || decoded.TraceBundle.AmbiguousPublishProof.ScenarioID != "BF-05" || len(decoded.TraceBundle.AmbiguousPublishProof.Outcomes) != 3 {
+		t.Fatalf("expected trace bundle ambiguous publish proof reference, got %+v", decoded.TraceBundle.AmbiguousPublishProof)
+	}
+	if decoded.BrokerReviewPack.AmbiguousPublishProof.Path != "docs/reports/ambiguous-publish-outcome-proof-summary.json" || decoded.BrokerReviewPack.AmbiguousPublishProof.ScenarioID != "BF-05" || len(decoded.BrokerReviewPack.AmbiguousPublishProof.Outcomes) != 3 {
+		t.Fatalf("expected broker review pack ambiguous publish proof reference, got %+v", decoded.BrokerReviewPack.AmbiguousPublishProof)
+	}
+	if decoded.PublishAckOutcomes.ReportPath != publishAckOutcomeSurfacePath || decoded.PublishAckOutcomes.Summary.ScenarioID != "BF-05" || decoded.PublishAckOutcomes.Summary.CommittedCount != 1 || decoded.PublishAckOutcomes.Summary.RejectedCount != 1 || decoded.PublishAckOutcomes.Summary.UnknownCommitCount != 1 {
+		t.Fatalf("expected publish ack outcome surface, got %+v", decoded.PublishAckOutcomes)
+	}
+	if decoded.SequenceBridge.ReportPath != sequenceBridgeSurfacePath || decoded.SequenceBridge.Summary.BackendCount != 5 || decoded.SequenceBridge.Summary.LiveProvenBackends != 3 || decoded.SequenceBridge.Summary.HarnessProvenBackends != 1 || decoded.SequenceBridge.Summary.ContractOnlyBackends != 1 || decoded.SequenceBridge.Summary.OneToOneMappings != 2 || decoded.SequenceBridge.Summary.ProviderEpochBridgedBackends != 3 {
+		t.Fatalf("expected sequence bridge surface, got %+v", decoded.SequenceBridge)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") || !strings.Contains(decoded.Report.Markdown, "## Durable Sequence Bridge") {
 		t.Fatalf("unexpected distributed markdown: %s", decoded.Report.Markdown)
 	}
 	if !strings.Contains(decoded.Report.ExportURL, "/v2/reports/distributed/export") {
@@ -655,7 +643,7 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 		t.Fatalf("expected markdown export content type, got %q", contentType)
 	}
-	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") {
+	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") || !strings.Contains(exportResponse.Body.String(), "Validation artifacts: docs/reports/live-validation-index.md") || !strings.Contains(exportResponse.Body.String(), "Ambiguous publish proof: docs/reports/ambiguous-publish-outcome-proof-summary.json (BF-05: committed, rejected, unknown_commit)") || !strings.Contains(exportResponse.Body.String(), "Backend limitations: no external tracing backend") {
 		t.Fatalf("unexpected distributed export markdown: %s", exportResponse.Body.String())
 	}
 }

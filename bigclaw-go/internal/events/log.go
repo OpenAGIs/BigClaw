@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -14,6 +15,8 @@ type EventLogBackend string
 const (
 	EventLogBackendMemory EventLogBackend = "memory"
 	EventLogBackendBroker EventLogBackend = "broker"
+
+	BrokerDriverStub = "stub"
 )
 
 type Position struct {
@@ -36,6 +39,21 @@ type Capabilities struct {
 	BrokerBacked        bool `json:"broker_backed"`
 }
 
+type PartitionKeyKind string
+
+const (
+	PartitionKeyTraceID   PartitionKeyKind = "trace_id"
+	PartitionKeyTaskID    PartitionKeyKind = "task_id"
+	PartitionKeyEventType PartitionKeyKind = "event_type"
+)
+
+type PartitionRoute struct {
+	Topic         string           `json:"topic"`
+	PartitionKey  PartitionKeyKind `json:"partition_key"`
+	OrderingScope string           `json:"ordering_scope,omitempty"`
+	Description   string           `json:"description,omitempty"`
+}
+
 type ReplayRequest struct {
 	After   Position `json:"after,omitempty"`
 	Limit   int      `json:"limit,omitempty"`
@@ -43,9 +61,28 @@ type ReplayRequest struct {
 	TraceID string   `json:"trace_id,omitempty"`
 }
 
+type OwnershipMode string
+
+const (
+	OwnershipModeExclusive OwnershipMode = "exclusive"
+	OwnershipModeShared    OwnershipMode = "shared"
+)
+
+type SubscriberOwnershipContract struct {
+	SubscriberGroup string            `json:"subscriber_group"`
+	Consumer        string            `json:"consumer"`
+	Mode            OwnershipMode     `json:"mode"`
+	Epoch           int64             `json:"epoch,omitempty"`
+	LeaseToken      string            `json:"lease_token,omitempty"`
+	PartitionHints  []string          `json:"partition_hints,omitempty"`
+	Metadata        map[string]string `json:"metadata,omitempty"`
+}
+
 type SubscriptionRequest struct {
-	Replay ReplayRequest `json:"replay"`
-	Buffer int           `json:"buffer,omitempty"`
+	Replay            ReplayRequest                `json:"replay"`
+	Buffer            int                          `json:"buffer,omitempty"`
+	PartitionRoute    *PartitionRoute              `json:"partition_route,omitempty"`
+	OwnershipContract *SubscriberOwnershipContract `json:"ownership_contract,omitempty"`
 }
 
 type Checkpoint struct {
@@ -66,6 +103,21 @@ type DurableEventLog interface {
 type DurableCheckpointStore interface {
 	GetCheckpoint(context.Context, string) (Checkpoint, bool, error)
 	SaveCheckpoint(context.Context, Checkpoint) error
+}
+
+var (
+	ErrUnsupportedSubscriptionPartitionRoute    = errors.New("subscription partition routing unsupported")
+	ErrUnsupportedSubscriptionOwnershipContract = errors.New("subscription ownership contract unsupported")
+)
+
+func validateSubscriptionRequest(backend EventLogBackend, request SubscriptionRequest) error {
+	if request.PartitionRoute != nil {
+		return fmt.Errorf("%w for backend %q; feature remains contract-only", ErrUnsupportedSubscriptionPartitionRoute, backend)
+	}
+	if request.OwnershipContract != nil {
+		return fmt.Errorf("%w for backend %q; feature remains contract-only", ErrUnsupportedSubscriptionOwnershipContract, backend)
+	}
+	return nil
 }
 
 type BrokerRuntimeConfig struct {

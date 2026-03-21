@@ -1,20 +1,40 @@
-#!/usr/bin/env python3
-from __future__ import annotations
+#!/usr/bin/env bash
+set -euo pipefail
 
-import os
-import sys
-from pathlib import Path
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
-sys.dont_write_bytecode = True
+translated=()
+issues=()
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --issues)
+      shift
+      while [ "$#" -gt 0 ] && [[ "$1" != --* ]]; do
+        issues+=("$1")
+        shift
+      done
+      continue
+      ;;
+    --report-file)
+      translated+=(--report "$2")
+      shift 2
+      continue
+      ;;
+    --no-cleanup)
+      translated+=(--cleanup=false)
+      shift
+      continue
+      ;;
+    *)
+      translated+=("$1")
+      shift
+      ;;
+  esac
+done
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-SRC_ROOT = REPO_ROOT / "src"
-if str(SRC_ROOT) not in sys.path:
-    sys.path.insert(0, str(SRC_ROOT))
+if [ "${#issues[@]}" -gt 0 ]; then
+  issue_csv=$(IFS=,; printf '%s' "${issues[*]}")
+  translated+=(--issues "$issue_csv")
+fi
 
-from bigclaw.legacy_shim import LEGACY_PYTHON_WRAPPER_NOTICE, build_workspace_validate_args
-
-
-if __name__ == "__main__":
-    print(LEGACY_PYTHON_WRAPPER_NOTICE, file=sys.stderr)
-    os.execvp("bash", build_workspace_validate_args(REPO_ROOT, sys.argv[1:]))
+exec bash "$script_dir/bigclawctl" workspace validate "${translated[@]}"

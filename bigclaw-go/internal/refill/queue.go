@@ -37,7 +37,7 @@ type ParallelIssueQueue struct {
 	payload   QueuePayload
 }
 
-type LinearIssue struct {
+type TrackedIssue struct {
 	ID         string
 	Identifier string
 	StateName  string
@@ -129,7 +129,7 @@ func (q *ParallelIssueQueue) SelectCandidates(activeIdentifiers map[string]struc
 	return candidates
 }
 
-func IssueStateMap(issues []LinearIssue) map[string]string {
+func IssueStateMap(issues []TrackedIssue) map[string]string {
 	result := map[string]string{}
 	for _, issue := range issues {
 		if issue.Identifier != "" && issue.StateName != "" {
@@ -139,7 +139,7 @@ func IssueStateMap(issues []LinearIssue) map[string]string {
 	return result
 }
 
-func SortedActive(issues []LinearIssue) []string {
+func SortedActive(issues []TrackedIssue) []string {
 	active := []string{}
 	for _, issue := range issues {
 		if issue.StateName == "In Progress" {

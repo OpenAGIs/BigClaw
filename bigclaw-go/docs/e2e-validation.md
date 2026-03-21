@@ -57,7 +57,7 @@ export BIGCLAW_QUEUE_BACKEND=sqlite
 ./scripts/e2e/run_all.sh
 ```
 
-The script writes a consolidated summary to `docs/reports/live-validation-summary.json`, refreshes the canonical component reports for local, Kubernetes, and Ray validation, and creates a timestamped bundle plus index under `docs/reports/live-validation-runs/` and `docs/reports/live-validation-index.md`. The underlying `scripts/e2e/export_validation_bundle.py` exporter now refreshes the continuation scorecard and policy gate when `run_all.sh` keeps continuation refresh enabled, copies the shared-queue proof into the exported bundle summary, and records whether the proof was reused from an existing report or refreshed inline by the current workflow. The summary JSON now also carries the continuation gate status, recommendation, latest bundle age, failing checks, and next actions so machine-readable consumers do not need to reopen the separate policy-gate artifact just to interpret a `hold`; when continuation refresh is disabled or auto-skipped, the summary keeps the same continuation keys with `not-refreshed` / `skipped` status markers instead of dropping fields entirely, and the live validation index now surfaces that skipped/disabled continuation state for human reviewers as well. Set `BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1` if you want `run_all.sh` to regenerate the shared-queue proof as part of the same orchestrated workflow before bundle export, or `BIGCLAW_E2E_REFRESH_CONTINUATION=0` if you want both the exporter and `run_all.sh` to skip continuation regeneration for a specific run.
+The script writes a consolidated summary to `docs/reports/live-validation-summary.json`, refreshes the canonical component reports for local, Kubernetes, and Ray validation, exports a machine-readable shared-queue companion summary to `docs/reports/shared-queue-companion-summary.json`, writes a broker-lane summary to `docs/reports/broker-validation-summary.json`, and creates a timestamped bundle plus index under `docs/reports/live-validation-runs/` and `docs/reports/live-validation-index.md`.
 
 You can then refresh the rolling continuation overlay from the checked-in bundle evidence:
 
@@ -66,7 +66,7 @@ cd bigclaw-go
 python3 scripts/e2e/validation_bundle_continuation_scorecard.py --pretty
 ```
 
-This writes `docs/reports/validation-bundle-continuation-scorecard.json`, summarizing the recent bundle lineage plus the current shared-queue companion proof. The scorecard now also records whether that proof came from an `inline-workflow-refresh` or an `existing-report`, so its current-ceiling guidance can distinguish between inline lineage and reused evidence. Bundle export now refreshes the scorecard automatically during closeout, but the continuation surface is still workflow-triggered rather than always-on.
+This writes `docs/reports/validation-bundle-continuation-scorecard.json`, summarizing the recent bundle lineage plus the current shared-queue companion proof exported with the live validation bundle. `run_all.sh` refreshes the scorecard automatically during closeout.
 
 You can evaluate the checked-in continuation policy gate as a follow-up:
 
@@ -75,7 +75,15 @@ cd bigclaw-go
 python3 scripts/e2e/validation_bundle_continuation_policy_gate.py --pretty
 ```
 
-This writes `docs/reports/validation-bundle-continuation-policy-gate.json` and returns the current recommendation for the checked-in evidence window. On March 21, 2026, the checked-in gate is `hold` because the latest bundled validation evidence is older than the default 72-hour freshness threshold even though repeated `ray` coverage is present across indexed runs. Bundle export now refreshes the gate automatically during closeout; set `BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1` if you want a `hold` result to fail the command. The gate’s next-action guidance now carries both the shared-queue `mode` and `source`, distinguishing between a `bundled-companion` shared-queue proof that should be refreshed inline via `BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1 ./scripts/e2e/run_all.sh` and a `standalone-proof` / `existing-report` path that should be rerun via `scripts/e2e/multi_node_shared_queue.py`.
+This writes `docs/reports/validation-bundle-continuation-policy-gate.json` and currently returns `go` for the checked-in evidence window because the latest indexed bundles now include repeated `ray` coverage across multiple runs. `run_all.sh` refreshes the gate automatically during closeout and now defaults unattended runs to `BIGCLAW_E2E_CONTINUATION_GATE_MODE=hold`, so stale or incomplete evidence exits with code `2`.
+
+For workflow behavior, prefer `BIGCLAW_E2E_CONTINUATION_GATE_MODE`:
+
+- `review` keeps the gate reviewer-visible but does not fail the workflow on `hold`; use this for local debugging or evidence inspection
+- `hold` exits with code `2` when the evidence is stale or incomplete
+- `fail` exits with code `1` when the evidence is stale or incomplete
+
+`BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE=1` remains as a compatibility alias for `BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail`. Set `BIGCLAW_E2E_CONTINUATION_GATE_MODE=review` when you explicitly want a review-only local run. `run_all.sh` rerenders the bundle README and `docs/reports/live-validation-index.md` after the gate refresh so the exported reviewer surface always reflects the latest gate mode and outcome from the same run.
 
 ## Mixed workload matrix
 
@@ -92,6 +100,18 @@ python3 scripts/e2e/mixed_workload_matrix.py \
 
 This validates one control-plane instance against a more production-like mix of `local`, tool-routed `kubernetes`, tool-routed `ray`, and high-risk isolation scenarios.
 
+## External-store remote event-log validation lane
+
+```bash
+cd bigclaw-go
+python3 scripts/e2e/external_store_validation.py \
+  --report-path docs/reports/external-store-validation-report.json
+```
+
+This lane starts one repo-native SQLite-backed event-log service node plus two client `bigclawd` nodes configured with `BIGCLAW_EVENT_LOG_REMOTE_URL`. It validates that replay, checkpoint reset history, persisted retention boundaries, and lease-backed takeover behavior remain reviewable when the event log moves behind a remote HTTP service boundary.
+
+The checked-in output lives at `docs/reports/external-store-validation-report.json`. Its `backend_matrix` now makes the backend posture machine-readable instead of leaving it in prose alone: `http_remote_service` is `live_validated`, `broker_replicated` is a deterministic `not_configured` placeholder, and `quorum_replicated` is a `contract_only` placeholder. Replay and checkpoint state are remote-service-backed, while takeover still relies on the shared durable lease store. Replay-to-live handoff isolation for that same provider-backed lane is summarized separately in `docs/reports/provider-live-handoff-isolation-evidence-pack.json` so reviewers can inspect the no-stall contract without opening the full lane output.
+
 ## Multi-node shared queue proof
 
 ```bash
@@ -104,6 +124,8 @@ python3 scripts/e2e/multi_node_shared_queue.py \
 
 This starts two `bigclawd` processes against one SQLite queue and verifies there are no duplicate terminal completions across the two nodes.
 
+The same command now also refreshes `docs/reports/live-multi-node-subscriber-takeover-report.json` plus per-scenario audit artifacts under `docs/reports/live-multi-node-subscriber-takeover-artifacts/`, so the shared-queue proof and the live takeover proof stay generated from one two-node run.
+
 ## Broker failover and replay fault-injection pack
 
 The current repo does not yet ship a broker-backed event log or live failover harness, but the implementation-ready validation matrix now lives in `docs/reports/broker-failover-fault-injection-validation-pack.md`.
@@ -115,6 +137,15 @@ Use that pack as the source of truth for:
 - checkpoint fencing and stale-writer recovery rules
 - the minimum machine-readable report schema required before future broker durability work can be closed honestly
 
+Use this deterministic local harness to exercise the same scenario ids without a live broker:
+
+```bash
+cd bigclaw-go
+python3 scripts/e2e/broker_failover_stub_matrix.py --pretty
+```
+
+This refreshes `docs/reports/broker-failover-stub-report.json` plus per-scenario raw artifacts under `docs/reports/broker-failover-stub-artifacts/`. The stub backend is provider-neutral and deterministic, so sequence accounting, replay resume behavior, ambiguous publish resolution, and checkpoint fencing can be validated before a live Kafka / NATS / Redis adapter exists.
+
 ## Multi-subscriber takeover validation matrix
 
 Use this to regenerate the executable local takeover harness report for lease-aware subscriber-group checkpoint ownership.
@@ -125,6 +156,19 @@ python3 scripts/e2e/subscriber_takeover_fault_matrix.py --pretty
 ```
 
 This refreshes `docs/reports/multi-subscriber-takeover-validation-report.json` with three deterministic local takeover scenarios, owner timelines, checkpoint transitions, duplicate replay accounting, and stale-writer rejection counts. The remaining live multi-node executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
+
+For the live proof path, run the shared-queue harness:
+
+```bash
+cd bigclaw-go
+python3 scripts/e2e/multi_node_shared_queue.py \
+  --count 200 \
+  --submit-workers 8 \
+  --report-path docs/reports/multi-node-shared-queue-report.json \
+  --takeover-report-path docs/reports/live-multi-node-subscriber-takeover-report.json
+```
+
+This starts the same two-node cluster, drives live lease acquisition and checkpoint takeover through the subscriber-group API on both nodes against one shared SQLite-backed lease store, and exports runtime-emitted subscriber transition events into per-scenario takeover audit artifacts. The live proof upgrades ownership to a shared durable scaffold while keeping broker-backed and replicated ownership caveats explicit.
 
 ## Cross-process coordination capability surface
 
@@ -143,9 +187,14 @@ Optional toggles:
 export BIGCLAW_E2E_RUN_LOCAL=0
 export BIGCLAW_E2E_RUN_KUBERNETES=1
 export BIGCLAW_E2E_RUN_RAY=1
+export BIGCLAW_E2E_RUN_BROKER=0
+export BIGCLAW_E2E_BROKER_BACKEND=stub
+export BIGCLAW_E2E_BROKER_REPORT_PATH=docs/reports/broker-failover-stub-report.json
 export BIGCLAW_E2E_SUMMARY_REPORT_PATH=docs/reports/live-validation-summary.json
 ./scripts/e2e/run_all.sh
 ```
+
+Leave `BIGCLAW_E2E_RUN_BROKER=0` when no live broker backend is available. The exported bundle will keep a reviewer-visible `broker` section with `status: skipped` and `configuration_state: not_configured` so the closeout surface stays explicit without requiring broker infrastructure.
 
 ```bash
 cd bigclaw-go

@@ -10,16 +10,18 @@ from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from typing import Deque, Dict, List
 
-LEGACY_SERVER_NOTICE = (
-    "Legacy Python service path: prefer go run ./cmd/bigclawd or scripts/ops/bigclawctl for active Go-mainline work. "
-    "Use this server only for migration or legacy-path validation."
+from .deprecation import warn_legacy_runtime_surface
+
+
+GO_MAINLINE_REPLACEMENT = "bigclaw-go/cmd/bigclawd/main.go"
+LEGACY_MAINLINE_STATUS = (
+    "bigclaw-go is the sole implementation mainline for active development; "
+    "service.py remains migration-only compatibility scaffolding."
 )
 
 
-def legacy_server_banner(host: str, port: int, directory: str) -> str:
-    return (
-        f"{LEGACY_SERVER_NOTICE} Serving http://{host}:{port} from {os.path.abspath(directory)}"
-    )
+def warn_legacy_service_surface(surface: str = "python -m bigclaw serve") -> str:
+    return warn_legacy_runtime_surface(surface, "go run ./bigclaw-go/cmd/bigclawd")
 
 
 @dataclass
@@ -293,8 +295,9 @@ def create_server(host: str = "127.0.0.1", port: int = 8008, directory: str = ".
 
 
 def run_server(host: str = "127.0.0.1", port: int = 8008, directory: str = ".") -> None:
+    warn_legacy_service_surface()
     server, _ = create_server(host=host, port=port, directory=directory)
-    print(legacy_server_banner(host, port, directory))
+    print(f"BigClaw server running at http://{host}:{port} (dir={os.path.abspath(directory)})")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

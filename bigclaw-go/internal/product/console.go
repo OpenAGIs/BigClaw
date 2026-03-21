@@ -52,38 +52,19 @@ type DesignSystem struct {
 func Navigation() []NavSection {
 	return []NavSection{
 		{Key: "overview", Label: "Overview", Items: []NavItem{{Key: "home", Label: "Home", Path: "/v2/home"}, {Key: "dashboard", Label: "Engineering Dashboard", Path: "/v2/dashboard/engineering"}, {Key: "operations", Label: "Operations Dashboard", Path: "/v2/dashboard/operations"}}},
-		{Key: "operations", Label: "Operations", Items: []NavItem{{Key: "runs", Label: "Runs", Path: "/v2/runs"}, {Key: "scheduler", Label: "Scheduler", Path: "/v2/control-center", Roles: []string{"eng_lead", "platform_admin", "cross_team_operator"}}, {Key: "triage", Label: "Triage", Path: "/v2/triage/center"}, {Key: "regression", Label: "Regression", Path: "/v2/regression/center", Roles: []string{"eng_lead", "platform_admin", "vp_eng"}}}},
-		{Key: "delivery", Label: "Flows", Items: []NavItem{{Key: "flows", Label: "Flows", Path: "/v2/flows/overview", Roles: []string{"platform_admin", "cross_team_operator"}}, {Key: "canvas", Label: "Canvas", Path: "/v2/flows/templates", Roles: []string{"platform_admin", "cross_team_operator"}}, {Key: "reports", Label: "Weekly Reports", Path: "/v2/reports/weekly"}}},
-		{Key: "business", Label: "Business", Items: []NavItem{{Key: "billing", Label: "Billing", Path: "/v2/billing/usage", Roles: []string{"platform_admin", "vp_eng", "cross_team_operator"}}, {Key: "entitlements", Label: "Entitlements", Path: "/v2/billing/entitlements", Roles: []string{"platform_admin", "vp_eng", "cross_team_operator"}}, {Key: "settings", Label: "Settings", Path: "/v2/design-system"}}},
+		{Key: "operations", Label: "Operations", Items: []NavItem{{Key: "runs", Label: "Runs", Path: "/v2/runs"}, {Key: "scheduler", Label: "Scheduler", Path: "/v2/control-center"}, {Key: "triage", Label: "Triage", Path: "/v2/triage/center"}, {Key: "regression", Label: "Regression", Path: "/v2/regression/center"}, {Key: "saved-views", Label: "Saved Views", Path: "/v2/saved-views"}}},
+		{Key: "delivery", Label: "Flows", Items: []NavItem{{Key: "flows", Label: "Flows", Path: "/v2/flows/overview"}, {Key: "canvas", Label: "Canvas", Path: "/v2/flows/templates"}, {Key: "reports", Label: "Weekly Reports", Path: "/v2/reports/weekly"}}},
+		{Key: "business", Label: "Business", Items: []NavItem{{Key: "billing", Label: "Billing", Path: "/v2/billing/usage"}, {Key: "entitlements", Label: "Entitlements", Path: "/v2/billing/entitlements"}, {Key: "settings", Label: "Settings", Path: "/v2/design-system"}}},
 	}
 }
 
-func NavigationForRole(role string) []NavSection {
-	role = normalizeRole(role)
-	sections := Navigation()
-	filtered := make([]NavSection, 0, len(sections))
-	for _, section := range sections {
-		items := make([]NavItem, 0, len(section.Items))
-		for _, item := range section.Items {
-			if navItemAllowedForRole(item, role) {
-				items = append(items, item)
-			}
-		}
-		if len(items) == 0 {
-			continue
-		}
-		filtered = append(filtered, NavSection{Key: section.Key, Label: section.Label, Items: items})
-	}
-	return filtered
-}
-
-func HomeForRole(role string, tasks []domain.Task, activeTakeovers int) Home {
+func HomeForRole(role string, tasks []domain.Task) Home {
 	role = normalizeRole(role)
 	counts := aggregate(tasks)
 	home := Home{Role: role}
 	switch role {
 	case "eng_lead":
-		home.Cards = []HomeCard{{Key: "blockers", Title: "Blockers", Value: counts["blocked"], Subtitle: "Open blocked engineering runs", Path: "/v2/dashboard/engineering"}, {Key: "takeovers", Title: "Takeovers", Value: activeTakeovers, Subtitle: "Runs requiring human ownership", Path: "/v2/control-center"}, {Key: "regressions", Title: "Regressions", Value: counts["regression"], Subtitle: "Regression findings this week", Path: "/v2/regression/center"}}
+		home.Cards = []HomeCard{{Key: "blockers", Title: "Blockers", Value: counts["blocked"], Subtitle: "Open blocked engineering runs", Path: "/v2/dashboard/engineering"}, {Key: "takeovers", Title: "Takeovers", Value: counts["blocked"], Subtitle: "Runs requiring human ownership", Path: "/v2/control-center"}, {Key: "regressions", Title: "Regressions", Value: counts["regression"], Subtitle: "Regression findings this week", Path: "/v2/regression/center"}}
 	case "platform_admin":
 		home.Cards = []HomeCard{{Key: "queue", Title: "Queue Depth", Value: counts["active"], Subtitle: "Queued or running work", Path: "/v2/control-center"}, {Key: "deadletters", Title: "Dead Letters", Value: counts["dead_letter"], Subtitle: "Runs requiring replay", Path: "/v2/control-center"}, {Key: "cost", Title: "Premium Runs", Value: counts["premium"], Subtitle: "Premium orchestration usage", Path: "/v2/billing/usage"}}
 	case "vp_eng":
@@ -157,16 +138,4 @@ func SummaryText(home Home) string {
 		parts = append(parts, fmt.Sprintf("%s=%d", card.Key, card.Value))
 	}
 	return strings.Join(parts, ", ")
-}
-
-func navItemAllowedForRole(item NavItem, role string) bool {
-	if len(item.Roles) == 0 {
-		return true
-	}
-	for _, allowed := range item.Roles {
-		if normalizeRole(allowed) == role {
-			return true
-		}
-	}
-	return false
 }

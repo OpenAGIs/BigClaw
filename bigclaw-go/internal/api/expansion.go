@@ -46,12 +46,6 @@ type workflowDefinitionRenderRequest struct {
 	RunID      string              `json:"run_id"`
 }
 
-type workflowDefinitionRunRequest struct {
-	Definition workflow.Definition `json:"definition"`
-	Task       domain.Task         `json:"task"`
-	RunID      string              `json:"run_id"`
-}
-
 func (s *Server) handleV2WeeklyReport(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -62,14 +56,17 @@ func (s *Server) handleV2WeeklyReport(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	report := reporting.Build(s.filteredTasks(team, project, "", start, end), s.Recorder.EventsByTask("", 0), start, end)
+	tasks := s.filteredTasks(team, project, "", start, end)
+	events := s.Recorder.EventsByTask("", 0)
+	report := reporting.Build(tasks, events, start, end)
+	metricSpec := reporting.BuildOperationsMetricSpec(tasks, events, start, end, "UTC", 60)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"filters":        map[string]any{"team": team, "project": project, "week_start": start, "week_end": end},
 		"summary":        report.Summary,
 		"team_breakdown": report.TeamBreakdown,
-		"metric_spec":    report.MetricSpec,
 		"highlights":     report.Highlights,
 		"actions":        report.Actions,
+		"metric_spec":    metricSpec,
 		"report":         map[string]any{"markdown": report.Markdown, "export_url": weeklyExportURL(team, project, start, end)},
 	})
 }
@@ -84,7 +81,8 @@ func (s *Server) handleV2WeeklyReportExport(w http.ResponseWriter, r *http.Reque
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	report := reporting.Build(s.filteredTasks(team, project, "", start, end), s.Recorder.EventsByTask("", 0), start, end)
+	tasks := s.filteredTasks(team, project, "", start, end)
+	report := reporting.Build(tasks, s.Recorder.EventsByTask("", 0), start, end)
 	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", fmt.Sprintf("bigclaw-weekly-report-%s.md", start.Format("2006-01-02"))))
 	w.WriteHeader(http.StatusOK)
@@ -314,56 +312,13 @@ func (s *Server) handleV2WorkflowDefinitionRender(w http.ResponseWriter, r *http
 	})
 }
 
-func (s *Server) handleV2WorkflowDefinitionRun(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	var request workflowDefinitionRunRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, fmt.Sprintf("decode workflow definition run request: %v", err), http.StatusBadRequest)
-		return
-	}
-	if strings.TrimSpace(request.Definition.Name) == "" {
-		http.Error(w, "missing definition.name", http.StatusBadRequest)
-		return
-	}
-	if strings.TrimSpace(request.Task.ID) == "" {
-		http.Error(w, "missing task.id", http.StatusBadRequest)
-		return
-	}
-	if strings.TrimSpace(request.RunID) == "" {
-		http.Error(w, "missing run_id", http.StatusBadRequest)
-		return
-	}
-	engine := workflow.NewEngine()
-	engine.Recorder = s.Recorder
-	result, err := engine.RunDefinition(request.Task, request.Definition, request.RunID)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("run workflow definition: %v", err), http.StatusInternalServerError)
-		return
-	}
-	writeJSON(w, http.StatusOK, map[string]any{
-		"definition": request.Definition,
-		"execution":  result.Execution,
-		"acceptance": result.Acceptance,
-		"journal": map[string]any{
-			"path":        result.JournalPath,
-			"entry_count": len(result.Journal.Entries),
-		},
-		"report": map[string]any{
-			"path": result.ReportPath,
-		},
-	})
-}
-
 func (s *Server) handleV2Navigation(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	role := normalizeHomeRole(r)
-	writeJSON(w, http.StatusOK, map[string]any{"role": role, "sections": product.NavigationForRole(role)})
+	writeJSON(w, http.StatusOK, map[string]any{"role": role, "sections": product.Navigation()})
 }
 
 func (s *Server) handleV2Home(w http.ResponseWriter, r *http.Request) {
@@ -371,18 +326,8 @@ func (s *Server) handleV2Home(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	authorization := parseControlAuthorization(r, "", "", "")
 	role := normalizeHomeRole(r)
-	team := ""
-	if authorization.teamScoped() {
-		team = authorization.ViewerTeam
-	}
-	tasks := s.filteredTasks(team, "", "", time.Time{}, time.Time{})
-	activeTakeovers := 0
-	if s.Control != nil {
-		activeTakeovers = len(s.filteredActiveTakeovers(controlCenterFilters{Team: team}))
-	}
-	home := product.HomeForRole(role, tasks, activeTakeovers)
+	home := product.HomeForRole(role, s.Recorder.Tasks(0))
 	writeJSON(w, http.StatusOK, map[string]any{"home": home, "summary": product.SummaryText(home)})
 }
 
@@ -392,6 +337,77 @@ func (s *Server) handleV2DesignSystem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, product.DefaultDesignSystem())
+}
+
+func (s *Server) handleV2SavedViews(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	team := strings.TrimSpace(r.URL.Query().Get("team"))
+	project := strings.TrimSpace(r.URL.Query().Get("project"))
+	actor := firstNonEmpty(r.URL.Query().Get("actor"), r.Header.Get("X-BigClaw-Actor"))
+	catalog := product.BuildSavedViewCatalog(s.filteredTasks(team, project, "", time.Time{}, time.Time{}), actor, team, project)
+	audit := product.AuditSavedViewCatalog(catalog)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"filters": map[string]string{
+			"team":    team,
+			"project": project,
+			"actor":   actor,
+		},
+		"catalog": catalog,
+		"audit":   audit,
+		"report": map[string]any{
+			"markdown":   product.RenderSavedViewReport(catalog, audit),
+			"export_url": savedViewsExportURL(team, project, actor),
+		},
+	})
+}
+
+func (s *Server) handleV2SavedViewsExport(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	team := strings.TrimSpace(r.URL.Query().Get("team"))
+	project := strings.TrimSpace(r.URL.Query().Get("project"))
+	actor := firstNonEmpty(r.URL.Query().Get("actor"), r.Header.Get("X-BigClaw-Actor"))
+	catalog := product.BuildSavedViewCatalog(s.filteredTasks(team, project, "", time.Time{}, time.Time{}), actor, team, project)
+	audit := product.AuditSavedViewCatalog(catalog)
+	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+	w.Header().Set("Content-Disposition", `attachment; filename="saved-views.md"`)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(product.RenderSavedViewReport(catalog, audit)))
+}
+
+func (s *Server) handleV2DashboardRunContract(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	contract := product.BuildDefaultDashboardRunContract()
+	audit := product.AuditDashboardRunContract(contract)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"contract": contract,
+		"audit":    audit,
+		"report": map[string]any{
+			"markdown":   product.RenderDashboardRunContractReport(contract, audit),
+			"export_url": "/v2/dashboard-run-contract/export",
+		},
+	})
+}
+
+func (s *Server) handleV2DashboardRunContractExport(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	contract := product.BuildDefaultDashboardRunContract()
+	audit := product.AuditDashboardRunContract(contract)
+	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+	w.Header().Set("Content-Disposition", `attachment; filename="dashboard-run-contract.md"`)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(product.RenderDashboardRunContractReport(contract, audit)))
 }
 
 func (s *Server) handleV2BillingUsage(w http.ResponseWriter, r *http.Request) {
@@ -439,6 +455,24 @@ func parseWeeklyFilters(r *http.Request, now time.Time) (string, string, time.Ti
 	return team, project, start, end, nil
 }
 
+func savedViewsExportURL(team, project, actor string) string {
+	base := "/v2/saved-views/export"
+	query := make([]string, 0, 3)
+	if team = strings.TrimSpace(team); team != "" {
+		query = append(query, "team="+team)
+	}
+	if project = strings.TrimSpace(project); project != "" {
+		query = append(query, "project="+project)
+	}
+	if actor = strings.TrimSpace(actor); actor != "" {
+		query = append(query, "actor="+actor)
+	}
+	if len(query) == 0 {
+		return base
+	}
+	return base + "?" + strings.Join(query, "&")
+}
+
 func weeklyExportURL(team string, project string, start time.Time, end time.Time) string {
 	parts := make([]string, 0)
 	if team != "" {
@@ -453,18 +487,11 @@ func weeklyExportURL(team string, project string, start time.Time, end time.Time
 }
 
 func normalizeHomeRole(r *http.Request) string {
-	authorization := parseControlAuthorization(r, "", "", "")
-	if hasExplicitViewerRole(r) {
-		return strings.ToLower(string(authorization.Role))
-	}
 	if role := strings.TrimSpace(r.URL.Query().Get("role")); role != "" {
-		return strings.ToLower(string(normalizeControlRole(role)))
+		return strings.ToLower(role)
 	}
+	authorization := parseControlAuthorization(r, "", "", "")
 	return strings.ToLower(string(authorization.Role))
-}
-
-func hasExplicitViewerRole(r *http.Request) bool {
-	return strings.TrimSpace(r.Header.Get("X-BigClaw-Role")) != "" || strings.TrimSpace(r.URL.Query().Get("viewer_role")) != ""
 }
 
 func renderJSONBody(body any) *bytes.Reader {

@@ -4,7 +4,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 )
 
 func gitOutput(t *testing.T, repo string, args ...string) string {
@@ -84,6 +86,64 @@ func TestInstallGitHooksConfiguresCoreHooksPath(t *testing.T) {
 	}
 }
 
+func TestInstallGitHooksSkipsRewriteWhenHooksPathAlreadyMatches(t *testing.T) {
+	repo := filepath.Join(t.TempDir(), "repo")
+	if err := os.MkdirAll(repo, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initRepo(t, repo)
+	hooksDir := filepath.Join(repo, ".githooks")
+	if err := os.MkdirAll(hooksDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	hookPath := filepath.Join(hooksDir, "post-commit")
+	if err := os.WriteFile(hookPath, []byte("#!/usr/bin/env bash\nexit 0\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := InstallGitHooks(repo, ".githooks"); err != nil {
+		t.Fatal(err)
+	}
+	lockPath := filepath.Join(repo, ".git", "config.lock")
+	if err := os.WriteFile(lockPath, []byte("held"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(lockPath)
+
+	if _, err := InstallGitHooks(repo, ".githooks"); err != nil {
+		t.Fatalf("expected existing hooks path to avoid config rewrite, got %v", err)
+	}
+}
+
+func TestInstallGitHooksRetriesTransientConfigLock(t *testing.T) {
+	repo := filepath.Join(t.TempDir(), "repo")
+	if err := os.MkdirAll(repo, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initRepo(t, repo)
+	hooksDir := filepath.Join(repo, ".githooks")
+	if err := os.MkdirAll(hooksDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	hookPath := filepath.Join(hooksDir, "post-commit")
+	if err := os.WriteFile(hookPath, []byte("#!/usr/bin/env bash\nexit 0\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	lockPath := filepath.Join(repo, ".git", "config.lock")
+	if err := os.WriteFile(lockPath, []byte("held"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		time.Sleep(40 * time.Millisecond)
+		_ = os.Remove(lockPath)
+	}()
+
+	if _, err := InstallGitHooks(repo, ".githooks"); err != nil {
+		t.Fatalf("expected transient config lock to be retried, got %v", err)
+	}
+}
+
 func TestEnsureRepoSyncPushesHeadToOrigin(t *testing.T) {
 	tmp := t.TempDir()
 	remote := filepath.Join(tmp, "remote.git")
@@ -147,5 +207,95 @@ func TestInspectRepoSyncMarksDirtyWorktree(t *testing.T) {
 	}
 	if !status.Dirty || !status.Synced {
 		t.Fatalf("expected dirty synced status, got %+v", status)
+	}
+}
+
+func TestEnsureRepoSyncPushesDirtyWorktreeWhenRemoteIsBehind(t *testing.T) {
+	tmp := t.TempDir()
+	remote := filepath.Join(tmp, "remote.git")
+	if output, err := exec.Command("git", "init", "--bare", remote).CombinedOutput(); err != nil {
+		t.Fatalf("git init --bare failed: %v (%s)", err, string(output))
+	}
+
+	repo := filepath.Join(tmp, "repo")
+	if err := os.MkdirAll(repo, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initRepo(t, repo)
+	cmd := exec.Command("git", "remote", "add", "origin", remote)
+	cmd.Dir = repo
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git remote add failed: %v (%s)", err, string(output))
+	}
+	commitFile(t, repo, "README.md", "hello\n", "initial commit")
+	if _, err := EnsureRepoSync(repo, "origin", true, false); err != nil {
+		t.Fatal(err)
+	}
+	head := commitFile(t, repo, "tracked.txt", "version-2\n", "second commit")
+	if err := os.WriteFile(filepath.Join(repo, "local-issues.json"), []byte("{\"issues\":[]}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	status, err := EnsureRepoSync(repo, "origin", true, true)
+	if err != nil {
+		t.Fatalf("ensure dirty sync: %v", err)
+	}
+	if !status.Dirty || !status.Pushed || !status.Synced {
+		t.Fatalf("expected dirty pushed synced status, got %+v", status)
+	}
+	if status.LocalSHA != head || status.RemoteSHA != head {
+		t.Fatalf("expected remote to match dirty HEAD %s, got %+v", head, status)
+	}
+}
+
+func TestEnsureRepoSyncRejectsDirtyWorktreeWhenRemoteMoved(t *testing.T) {
+	tmp := t.TempDir()
+	remote := filepath.Join(tmp, "remote.git")
+	if output, err := exec.Command("git", "init", "--bare", remote).CombinedOutput(); err != nil {
+		t.Fatalf("git init --bare failed: %v (%s)", err, string(output))
+	}
+
+	repoA := filepath.Join(tmp, "repo-a")
+	if err := os.MkdirAll(repoA, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initRepo(t, repoA)
+	cmd := exec.Command("git", "remote", "add", "origin", remote)
+	cmd.Dir = repoA
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git remote add failed: %v (%s)", err, string(output))
+	}
+	commitFile(t, repoA, "README.md", "hello\n", "initial commit")
+	if _, err := EnsureRepoSync(repoA, "origin", true, false); err != nil {
+		t.Fatal(err)
+	}
+
+	repoB := filepath.Join(tmp, "repo-b")
+	if output, err := exec.Command("git", "clone", remote, repoB).CombinedOutput(); err != nil {
+		t.Fatalf("git clone failed: %v (%s)", err, string(output))
+	}
+	cmd = exec.Command("git", "config", "user.email", "test@example.com")
+	cmd.Dir = repoB
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git config user.email failed: %v (%s)", err, string(output))
+	}
+	cmd = exec.Command("git", "config", "user.name", "Test User")
+	cmd.Dir = repoB
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git config user.name failed: %v (%s)", err, string(output))
+	}
+	commitFile(t, repoB, "REMOTE.md", "remote\n", "remote advance")
+	push := exec.Command("git", "push", "origin", "HEAD")
+	push.Dir = repoB
+	if output, err := push.CombinedOutput(); err != nil {
+		t.Fatalf("git push failed: %v (%s)", err, string(output))
+	}
+
+	if err := os.WriteFile(filepath.Join(repoA, "local-issues.json"), []byte("{\"issues\":[]}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err := EnsureRepoSync(repoA, "origin", true, true)
+	if err == nil || !strings.Contains(err.Error(), "remote branch moved while working tree is dirty") {
+		t.Fatalf("expected dirty remote moved error, got %v", err)
 	}
 }
