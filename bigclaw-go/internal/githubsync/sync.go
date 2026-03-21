@@ -6,6 +6,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
+)
+
+const (
+	configLockRetryCount = 6
+	configLockRetryDelay = 50 * time.Millisecond
 )
 
 type RepoSyncStatus struct {
@@ -58,6 +64,22 @@ func requireGit(repo string, args ...string) (string, error) {
 		return "", errors.New(detail)
 	}
 	return trimmed(result.stdout), nil
+}
+
+func requireGitWithConfigLockRetry(repo string, args ...string) (string, error) {
+	var lastErr error
+	for attempt := 0; attempt < configLockRetryCount; attempt++ {
+		output, err := requireGit(repo, args...)
+		if err == nil {
+			return output, nil
+		}
+		lastErr = err
+		if !isConfigLockError(err) || attempt == configLockRetryCount-1 {
+			break
+		}
+		time.Sleep(time.Duration(attempt+1) * configLockRetryDelay)
+	}
+	return "", lastErr
 }
 
 func trimmed(value string) string {
@@ -230,13 +252,22 @@ func InstallGitHooks(repo string, hooksPath string) (string, error) {
 	if err != nil || !info.IsDir() {
 		return "", fmt.Errorf("missing hooks directory: %s", hooksDir)
 	}
-	if _, err := requireGit(repoPath, "config", "core.hooksPath", hooksPath); err != nil {
+
+	currentHooksPath, configured, err := gitConfigValue(repoPath, "core.hooksPath")
+	if err != nil {
 		return "", err
 	}
+	if !configured || currentHooksPath != hooksPath {
+		if _, err := requireGitWithConfigLockRetry(repoPath, "config", "core.hooksPath", hooksPath); err != nil {
+			return "", err
+		}
+	}
+
 	entries, err := os.ReadDir(hooksDir)
 	if err != nil {
 		return "", err
 	}
+
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
@@ -251,6 +282,47 @@ func InstallGitHooks(repo string, hooksPath string) (string, error) {
 		}
 	}
 	return hooksDir, nil
+}
+
+func gitConfigValue(repo string, key string) (string, bool, error) {
+	result := git(repo, "config", "--get", key)
+	if result.returnCode == 0 {
+		return trimmed(result.stdout), true, nil
+	}
+	if result.returnCode == 1 {
+		return "", false, nil
+	}
+	detail := trimmed(result.stderr)
+	if detail == "" {
+		detail = trimmed(result.stdout)
+	}
+	if detail == "" {
+		detail = fmt.Sprintf("git config --get %s failed", key)
+	}
+	return "", false, errors.New(detail)
+}
+
+func isConfigLockError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return hasSubstring(err.Error(), "could not lock config file")
+}
+
+func hasSubstring(value string, needle string) bool {
+	if needle == "" {
+		return true
+	}
+	if len(needle) > len(value) {
+		return false
+	}
+	lastStart := len(value) - len(needle)
+	for start := 0; start <= lastStart; start++ {
+		if value[start:start+len(needle)] == needle {
+			return true
+		}
+	}
+	return false
 }
 
 func EnsureRepoSync(repo string, remote string, autoPush bool, allowDirty bool) (RepoSyncStatus, error) {
