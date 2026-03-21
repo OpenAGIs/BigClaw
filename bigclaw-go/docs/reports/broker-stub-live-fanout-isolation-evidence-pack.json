@@ -1,0 +1,52 @@
+{
+  "ticket": "OPE-261",
+  "title": "Broker stub live fanout isolation evidence pack",
+  "status": "checked_in_evidence_pack",
+  "generated_at": "2026-03-17T08:20:00Z",
+  "backend": "broker_stub",
+  "report_path": "docs/reports/broker-stub-live-fanout-isolation-evidence-pack.json",
+  "evidence_sources": [
+    "bigclaw-go/internal/events/broker_stub_log.go",
+    "bigclaw-go/internal/events/broker_stub_log_test.go",
+    "bigclaw-go/internal/events/bus.go",
+    "bigclaw-go/docs/reports/event-bus-reliability-report.md"
+  ],
+  "reviewer_links": [
+    "docs/reports/event-bus-reliability-report.md",
+    "docs/reports/broker-durability-rollout-scorecard.json",
+    "docs/reports/review-readiness.md"
+  ],
+  "summary": {
+    "scenario_count": 1,
+    "isolated_scenarios": 1,
+    "stalled_scenarios": 0,
+    "replay_backlog_events": 4,
+    "replay_step_delay_ms": 30,
+    "replay_window_ms": 120,
+    "live_delivery_deadline_ms": 50,
+    "isolation_maintained": true
+  },
+  "scenarios": [
+    {
+      "name": "replay_catchup_does_not_block_live_publish",
+      "status": "isolated",
+      "replay_path": "BrokerStubEventLog.Replay with synthetic per-event delay",
+      "live_path": "events.Bus live subscriber delivery",
+      "replay_backlog_events": 4,
+      "replay_step_delay_ms": 30,
+      "replay_window_ms": 120,
+      "live_delivery_deadline_ms": 50,
+      "replay_drains_after_live": true,
+      "source_tests": [
+        "internal/events/broker_stub_log_test.go",
+        "internal/api/server_test.go",
+        "internal/regression/broker_stub_fanout_isolation_evidence_pack_test.go"
+      ],
+      "notes": [
+        "The drill seeds broker_stub replay backlog before publishing a new live event.",
+        "A live-only subscriber must observe the new event before the replay worker drains the backlog.",
+        "This evidence validates process-local fanout isolation for the local broker stub only; replicated broker fanout remains future runtime work."
+      ]
+    }
+  ]
+}

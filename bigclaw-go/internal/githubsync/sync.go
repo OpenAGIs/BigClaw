@@ -334,10 +334,7 @@ func EnsureRepoSync(repo string, remote string, autoPush bool, allowDirty bool) 
 	if err != nil {
 		return RepoSyncStatus{}, err
 	}
-	if status.Dirty {
-		if allowDirty {
-			return status, nil
-		}
+	if status.Dirty && !allowDirty {
 		return RepoSyncStatus{}, errors.New("working tree is dirty; commit or stash changes before syncing")
 	}
 	if status.RemoteExists && !status.Synced {
@@ -352,16 +349,25 @@ func EnsureRepoSync(repo string, remote string, autoPush bool, allowDirty bool) 
 			}
 			return RepoSyncStatus{}, errors.New(detail)
 		}
-		pullResult := git(repoPath, "pull", "--ff-only", remote, status.Branch)
-		if pullResult.returnCode != 0 {
-			detail := trimmed(pullResult.stderr)
-			if detail == "" {
-				detail = trimmed(pullResult.stdout)
+		relation, err := branchRelation(repoPath, remote, status.Branch)
+		if err != nil {
+			return RepoSyncStatus{}, err
+		}
+		if relation.behind > 0 {
+			if status.Dirty {
+				return RepoSyncStatus{}, fmt.Errorf("remote branch moved while working tree is dirty: branch=%s ahead=%d behind=%d", status.Branch, relation.ahead, relation.behind)
 			}
-			if detail == "" {
-				detail = fmt.Sprintf("git pull --ff-only %s %s failed", remote, status.Branch)
+			pullResult := git(repoPath, "pull", "--ff-only", remote, status.Branch)
+			if pullResult.returnCode != 0 {
+				detail := trimmed(pullResult.stderr)
+				if detail == "" {
+					detail = trimmed(pullResult.stdout)
+				}
+				if detail == "" {
+					detail = fmt.Sprintf("git pull --ff-only %s %s failed", remote, status.Branch)
+				}
+				return RepoSyncStatus{}, errors.New(detail)
 			}
-			return RepoSyncStatus{}, errors.New(detail)
 		}
 		status, err = InspectRepoSync(repoPath, remote)
 		if err != nil {
@@ -406,6 +412,42 @@ func valueOr(value string, fallback string) string {
 		return fallback
 	}
 	return value
+}
+
+type syncRelation struct {
+	ahead  int
+	behind int
+}
+
+func branchRelation(repo string, remote string, branch string) (syncRelation, error) {
+	output, err := requireGit(repo, "rev-list", "--left-right", "--count", "HEAD...refs/remotes/"+remote+"/"+branch)
+	if err != nil {
+		return syncRelation{}, err
+	}
+	fields := splitWhitespace(output)
+	if len(fields) != 2 {
+		return syncRelation{}, fmt.Errorf("unexpected rev-list output: %q", output)
+	}
+	ahead, err := parseInt(fields[0])
+	if err != nil {
+		return syncRelation{}, err
+	}
+	behind, err := parseInt(fields[1])
+	if err != nil {
+		return syncRelation{}, err
+	}
+	return syncRelation{ahead: ahead, behind: behind}, nil
+}
+
+func parseInt(value string) (int, error) {
+	result := 0
+	for _, r := range value {
+		if r < '0' || r > '9' {
+			return 0, fmt.Errorf("invalid integer: %q", value)
+		}
+		result = result*10 + int(r-'0')
+	}
+	return result, nil
 }
 
 func splitLines(value string) []string {

@@ -1,7 +1,10 @@
+"""Legacy Python scheduler surface frozen after Go mainline cutover."""
+
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
+from .deprecation import LEGACY_RUNTIME_GUIDANCE
 from .audit_events import (
     BUDGET_OVERRIDE_EVENT,
     FLOW_HANDOFF_EVENT,
@@ -20,6 +23,10 @@ from .orchestration import (
 from .reports import render_task_run_detail_page, render_task_run_report, write_report
 from .risk import RiskScore, RiskScorer
 from .runtime import ClawWorkerRuntime, ToolCallResult
+
+
+LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE
+GO_MAINLINE_REPLACEMENT = "bigclaw-go/internal/scheduler/scheduler.go"
 
 
 @dataclass
@@ -42,6 +49,12 @@ class ExecutionRecord:
 
 
 class Scheduler:
+    _MEDIUM_BUDGET_FLOORS = {
+        "docker": 10.0,
+        "browser": 20.0,
+        "vm": 40.0,
+    }
+
     def __init__(
         self,
         worker_runtime: Optional[ClawWorkerRuntime] = None,
@@ -60,15 +73,19 @@ class Scheduler:
             return SchedulerDecision("none", False, "invalid budget")
 
         if resolved_risk.level == RiskLevel.HIGH:
-            return SchedulerDecision("vm", False, "requires approval for high-risk task")
+            decision = SchedulerDecision("vm", False, "requires approval for high-risk task")
+            return self._apply_budget_policy(task, decision, resolved_risk)
 
         if "browser" in task.required_tools:
-            return SchedulerDecision("browser", True, "browser automation task")
+            decision = SchedulerDecision("browser", True, "browser automation task")
+            return self._apply_budget_policy(task, decision, resolved_risk)
 
         if resolved_risk.level == RiskLevel.MEDIUM:
-            return SchedulerDecision("docker", True, "medium risk in docker")
+            decision = SchedulerDecision("docker", True, "medium risk in docker")
+            return self._apply_budget_policy(task, decision, resolved_risk)
 
-        return SchedulerDecision("docker", True, "default low risk path")
+        decision = SchedulerDecision("docker", True, "default low risk path")
+        return self._apply_budget_policy(task, decision, resolved_risk)
 
     def execute(
         self,
@@ -219,7 +236,12 @@ class Scheduler:
 
         worker_execution = self.worker_runtime.execute(task, decision, run, actor=actor)
 
-        final_status = "approved" if decision.approved else "needs-approval"
+        if decision.approved:
+            final_status = "approved"
+        elif decision.medium == "none":
+            final_status = "paused"
+        else:
+            final_status = "needs-approval"
         run.finalize(final_status, decision.reason)
 
         resolved_report_path = None
@@ -263,3 +285,43 @@ class Scheduler:
                 required_approvals=["ops-manager"],
             )
         return None
+
+    def _apply_budget_policy(
+        self,
+        task: Task,
+        decision: SchedulerDecision,
+        risk_score: RiskScore,
+    ) -> SchedulerDecision:
+        effective_budget = self._effective_budget(task)
+        if effective_budget is None:
+            return decision
+
+        required_budget = self._MEDIUM_BUDGET_FLOORS.get(decision.medium, 0.0)
+        if effective_budget >= required_budget:
+            return decision
+
+        if (
+            decision.medium == "browser"
+            and risk_score.level != RiskLevel.HIGH
+            and effective_budget >= self._MEDIUM_BUDGET_FLOORS["docker"]
+        ):
+            return SchedulerDecision(
+                "docker",
+                True,
+                (
+                    "budget degraded browser route to docker "
+                    f"(budget {effective_budget:.1f} < required {required_budget:.1f})"
+                ),
+            )
+
+        return SchedulerDecision(
+            "none",
+            False,
+            f"paused: budget {effective_budget:.1f} below required {decision.medium} budget {required_budget:.1f}",
+        )
+
+    def _effective_budget(self, task: Task) -> Optional[float]:
+        effective_budget = task.budget + task.budget_override_amount
+        if effective_budget <= 0:
+            return None
+        return effective_budget

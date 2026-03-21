@@ -1,0 +1,45 @@
+[
+  {
+    "label": "before",
+    "timestamp": "2026-03-17T12:00:00Z",
+    "nodes": {
+      "broker-a": {
+        "role": "leader",
+        "healthy": true
+      },
+      "broker-b": {
+        "role": "follower",
+        "healthy": true
+      },
+      "broker-c": {
+        "role": "follower",
+        "healthy": true
+      }
+    },
+    "retention_floor": 1,
+    "committed_sequences": []
+  },
+  {
+    "label": "after_timeout",
+    "timestamp": "2026-03-17T12:00:02Z",
+    "nodes": {
+      "broker-a": {
+        "role": "leader",
+        "healthy": true
+      },
+      "broker-b": {
+        "role": "follower",
+        "healthy": true
+      },
+      "broker-c": {
+        "role": "follower",
+        "healthy": true
+      }
+    },
+    "retention_floor": 1,
+    "committed_sequences": [
+      1,
+      2
+    ]
+  }
+]

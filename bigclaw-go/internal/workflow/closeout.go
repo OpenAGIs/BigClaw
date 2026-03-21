@@ -122,7 +122,7 @@ func validationEvidenceForTask(task domain.Task, definition Definition) []string
 	if len(definition.ValidationEvidence) > 0 {
 		return append([]string(nil), definition.ValidationEvidence...)
 	}
-	return normalizeStrings(append(append([]string(nil), task.ValidationPlan...), task.AcceptanceCriteria...))
+	return normalizeCloseoutStrings(append(append([]string(nil), task.ValidationPlan...), task.AcceptanceCriteria...))
 }
 
 func approvalsForTask(task domain.Task, definition Definition) []string {
@@ -153,7 +153,7 @@ func parseStringList(raw string) []string {
 	if strings.HasPrefix(raw, "[") {
 		var values []string
 		if err := json.Unmarshal([]byte(raw), &values); err == nil {
-			return normalizeStrings(values)
+			return normalizeCloseoutStrings(values)
 		}
 		var generic []any
 		if err := json.Unmarshal([]byte(raw), &generic); err == nil {
@@ -161,15 +161,15 @@ func parseStringList(raw string) []string {
 			for _, value := range generic {
 				values = append(values, strings.TrimSpace(toString(value)))
 			}
-			return normalizeStrings(values)
+			return normalizeCloseoutStrings(values)
 		}
 	}
-	return normalizeStrings(strings.FieldsFunc(raw, func(r rune) bool {
+	return normalizeCloseoutStrings(strings.FieldsFunc(raw, func(r rune) bool {
 		return r == ',' || r == '\n' || r == '\r'
 	}))
 }
 
-func normalizeStrings(values []string) []string {
+func normalizeCloseoutStrings(values []string) []string {
 	if len(values) == 0 {
 		return nil
 	}

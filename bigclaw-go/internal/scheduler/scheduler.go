@@ -9,6 +9,7 @@ import (
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/executor"
 	"bigclaw-go/internal/risk"
+	"bigclaw-go/internal/workflow"
 )
 
 type QuotaSnapshot struct {
@@ -31,6 +32,14 @@ type Decision struct {
 	Accepted   bool
 	Reason     string
 	Preemption PreemptionPlan
+}
+
+type Assessment struct {
+	Decision            Decision
+	Risk                risk.Score
+	OrchestrationPlan   workflow.OrchestrationPlan
+	OrchestrationPolicy workflow.OrchestrationPolicyDecision
+	HandoffRequest      *workflow.HandoffRequest
 }
 
 type Scheduler struct {
@@ -114,6 +123,20 @@ func (s *Scheduler) Decide(task domain.Task, quota QuotaSnapshot) Decision {
 
 	s.fairness.RecordAccepted(now, strings.TrimSpace(task.TenantID), rules)
 	return Decision{Accepted: true, Assignment: assignment, Reason: assignment.Reason}
+}
+
+func (s *Scheduler) Assess(task domain.Task, quota QuotaSnapshot) Assessment {
+	decision := s.Decide(task, quota)
+	score := risk.ScoreTask(task, nil)
+	rawPlan := workflow.CrossDepartmentOrchestrator{}.Plan(task)
+	orchestrationPlan, policyDecision := workflow.PremiumOrchestrationPolicy{}.Apply(task, rawPlan)
+	return Assessment{
+		Decision:            decision,
+		Risk:                score,
+		OrchestrationPlan:   orchestrationPlan,
+		OrchestrationPolicy: policyDecision,
+		HandoffRequest:      buildHandoffRequest(decision, orchestrationPlan, policyDecision),
+	}
 }
 
 func assignmentForTask(task domain.Task, rules RoutingRules) executor.Assignment {
@@ -206,4 +229,28 @@ func shouldThrottleForFairness(task domain.Task, rules RoutingRules) bool {
 		return false
 	}
 	return !isPriorityExempt(task, rules)
+}
+
+func buildHandoffRequest(decision Decision, plan workflow.OrchestrationPlan, policyDecision workflow.OrchestrationPolicyDecision) *workflow.HandoffRequest {
+	if !decision.Accepted {
+		requiredApprovals := plan.RequiredApprovals()
+		if len(requiredApprovals) == 0 {
+			requiredApprovals = []string{"security-review"}
+		}
+		return &workflow.HandoffRequest{
+			TargetTeam:        "security",
+			Reason:            decision.Reason,
+			Status:            "pending",
+			RequiredApprovals: requiredApprovals,
+		}
+	}
+	if policyDecision.UpgradeRequired {
+		return &workflow.HandoffRequest{
+			TargetTeam:        "operations",
+			Reason:            policyDecision.Reason,
+			Status:            "blocked",
+			RequiredApprovals: []string{"ops-manager"},
+		}
+	}
+	return nil
 }

@@ -46,17 +46,18 @@ DIGESTS = {
     },
     "OPE-266": {
         "path": Path("bigclaw-go/docs/reports/live-shadow-comparison-follow-up-digest.md"),
-        "title": "BIG-PAR-077",
+        "title": "BIG-PAR-092",
         "links": [
             "docs/reports/migration-readiness-report.md",
             "docs/migration-shadow.md",
             "docs/reports/shadow-compare-report.json",
             "docs/reports/shadow-matrix-report.json",
+            "docs/reports/live-shadow-mirror-scorecard.json",
             "docs/reports/migration-plan-review-notes.md",
         ],
         "phrases": [
+            "repo-native live shadow mirror scorecard",
             "no live legacy-vs-Go production traffic comparison",
-            "fixture-backed",
         ],
         "indexes": [
             Path("bigclaw-go/docs/reports/migration-readiness-report.md"),
@@ -67,9 +68,9 @@ DIGESTS = {
             Path("docs/openclaw-parallel-gap-analysis.md"),
         ],
     },
-    "OPE-267": {
+    "OPE-254": {
         "path": Path("bigclaw-go/docs/reports/rollback-safeguard-follow-up-digest.md"),
-        "title": "BIG-PAR-078",
+        "title": "BIG-PAR-088",
         "links": [
             "docs/reports/migration-readiness-report.md",
             "docs/migration.md",
@@ -126,8 +127,8 @@ DIGESTS = {
             "docs/openclaw-parallel-gap-analysis.md",
         ],
         "phrases": [
-            "deterministic local harness only",
-            "not yet a live multi-node subscriber takeover proof",
+            "live two-node shared-queue proof",
+            "live schema parity exists but shared durable ownership does not",
         ],
         "indexes": [
             Path("bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.md"),
@@ -138,9 +139,9 @@ DIGESTS = {
             Path("bigclaw-go/docs/e2e-validation.md"),
         ],
     },
-    "OPE-270": {
+    "OPE-261": {
         "path": Path("bigclaw-go/docs/reports/cross-process-coordination-boundary-digest.md"),
-        "title": "BIG-PAR-081",
+        "title": "BIG-PAR-085",
         "links": [
             "docs/reports/event-bus-reliability-report.md",
             "docs/reports/multi-node-coordination-report.md",
@@ -168,6 +169,7 @@ DIGESTS = {
         "links": [
             "docs/reports/live-validation-index.md",
             "docs/reports/live-validation-summary.json",
+            "docs/reports/shared-queue-companion-summary.json",
             "docs/reports/validation-bundle-continuation-scorecard.json",
             "scripts/e2e/validation_bundle_continuation_scorecard.py",
             "docs/reports/validation-bundle-continuation-policy-gate.json",

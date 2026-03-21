@@ -1,7 +1,14 @@
+"""Legacy Python orchestration surface frozen after Go mainline cutover."""
+
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Tuple
 
+from .deprecation import LEGACY_RUNTIME_GUIDANCE
 from .models import RiskLevel, Task
+
+
+LEGACY_MAINLINE_STATUS = LEGACY_RUNTIME_GUIDANCE
+GO_MAINLINE_REPLACEMENT = "bigclaw-go/internal/workflow/orchestration.go"
 
 
 @dataclass

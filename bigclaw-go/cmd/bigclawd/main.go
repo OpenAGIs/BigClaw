@@ -50,14 +50,19 @@ func main() {
 		}
 		defer closeEventLog(eventLog)
 	default:
-		if _, err = buildEventLog(cfg); err != nil {
+		eventLog, err = buildEventLog(cfg)
+		if err != nil {
 			panic(err)
+		}
+		if eventLog != nil {
+			eventPlanBackend = eventLog.Backend()
 		}
 	}
 
 	bus := events.NewBus()
 	if eventLog != nil {
 		bus.AddSink(eventLog)
+		bus.SetCapabilities(eventLog.Capabilities())
 	}
 	recorder := buildRecorder(cfg)
 	bus.AddSink(events.RecorderSink{Recorder: recorder})
@@ -82,7 +87,11 @@ func main() {
 	defer closeFairnessStore(fairnessStore)
 
 	controller := control.New()
-	subscriberLeases := events.NewSubscriberLeaseCoordinator()
+	subscriberLeases, err := buildSubscriberLeaseStore(cfg)
+	if err != nil {
+		panic(err)
+	}
+	defer closeSubscriberLeaseStore(subscriberLeases)
 	schedulerRuntime := scheduler.NewWithStores(policyStore, fairnessStore)
 	pool := buildWorkerPool(cfg, q, schedulerRuntime, registry, bus, recorder, controller)
 	loop := &orchestrator.Loop{Runtime: pool, Quota: scheduler.QuotaSnapshot{ConcurrentLimit: cfg.MaxConcurrentRuns, BudgetRemaining: cfg.DefaultBudgetCents}, PollInterval: cfg.PollInterval}
@@ -121,14 +130,31 @@ func main() {
 	fmt.Printf("%s stopped events=%d\n", cfg.ServiceName, len(bus.Replay()))
 }
 
-func buildEventLog(cfg config.Config) (*events.MemoryLog, error) {
+func buildSubscriberLeaseStore(cfg config.Config) (events.SubscriberLeaseStore, error) {
+	if cfg.SubscriberLeaseSQLitePath == "" {
+		return events.NewSubscriberLeaseCoordinator(), nil
+	}
+	return events.NewSQLiteSubscriberLeaseStore(cfg.SubscriberLeaseSQLitePath)
+}
+
+func closeSubscriberLeaseStore(store events.SubscriberLeaseStore) {
+	type closer interface{ Close() error }
+	if closable, ok := store.(closer); ok {
+		_ = closable.Close()
+	}
+}
+
+func buildEventLog(cfg config.Config) (events.EventLog, error) {
 	switch cfg.EventLogBackend {
 	case "", string(events.EventLogBackendMemory):
-		return events.NewMemoryLog(), nil
+		return nil, nil
 	case string(events.EventLogBackendBroker):
 		broker := brokerRuntimeConfig(cfg)
 		if err := broker.Validate(); err != nil {
 			return nil, err
+		}
+		if broker.Driver == events.BrokerDriverStub {
+			return events.NewBrokerStubEventLog(), nil
 		}
 		return nil, fmt.Errorf("event log backend %q is not implemented yet; driver=%s topic=%s contract validated for the future adapter", cfg.EventLogBackend, broker.Driver, broker.Topic)
 	default:

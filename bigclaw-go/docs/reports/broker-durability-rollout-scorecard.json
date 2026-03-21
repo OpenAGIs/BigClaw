@@ -1,0 +1,120 @@
+{
+  "status": "blocked",
+  "rollout_ready": false,
+  "current_backend": "memory",
+  "target_backend": "broker_replicated",
+  "replication_factor": 3,
+  "ready_checks": 0,
+  "blocked_checks": 4,
+  "ready_evidence": 3,
+  "partial_evidence": 0,
+  "blocked_evidence": 1,
+  "evidence": [
+    {
+      "name": "debug_and_control_plane_surface",
+      "status": "ready",
+      "artifacts": [
+        "GET /debug/status event_durability payload",
+        "control-plane snapshots carrying backend and rollout metadata"
+      ],
+      "detail": "repo advertises concrete supporting artifacts for reviewer inspection"
+    },
+    {
+      "name": "replay_and_failover_validation",
+      "status": "ready",
+      "artifacts": [
+        "docs/reports/broker-failover-fault-injection-validation-pack.md",
+        "docs/reports/broker-failover-stub-report.json"
+      ],
+      "detail": "repo advertises concrete supporting artifacts for reviewer inspection"
+    },
+    {
+      "name": "operator_rollout_contract",
+      "status": "ready",
+      "artifacts": [
+        "docs/reports/event-bus-reliability-report.md",
+        "docs/reports/replicated-event-log-durability-rollout-contract.md",
+        "docs/reports/replicated-broker-durability-rollout-spike.md",
+        "docs/reports/broker-durability-rollout-scorecard.json",
+        "docs/reports/durability-rollout-scorecard.json"
+      ],
+      "detail": "repo advertises concrete supporting artifacts for reviewer inspection"
+    },
+    {
+      "name": "broker_bootstrap_config",
+      "status": "blocked",
+      "artifacts": [
+        "broker runtime configuration"
+      ],
+      "detail": "broker event log config missing driver, urls, topic"
+    }
+  ],
+  "checks": [
+    {
+      "name": "durable_publish_ack",
+      "status": "blocked",
+      "requirement": "publish success must represent replicated commit acknowledgement rather than leader-local enqueue",
+      "failure_mode": "ambiguous client timeout or leader crash can leave operators unable to classify whether an event committed",
+      "supporting_evidence": [
+        "operator_rollout_contract",
+        "broker_bootstrap_config",
+        "debug_and_control_plane_surface"
+      ],
+      "blockers": [
+        "current backend memory does not yet match the replicated target broker_replicated",
+        "broker bootstrap configuration is not ready: broker event log config missing driver, urls, topic"
+      ]
+    },
+    {
+      "name": "replay_checkpoint_alignment",
+      "status": "blocked",
+      "requirement": "replay cursors and subscriber checkpoints must resolve to the same durable sequence domain across failover",
+      "failure_mode": "consumer recovery can skip or duplicate committed events after broker election or reconnect",
+      "supporting_evidence": [
+        "operator_rollout_contract",
+        "replay_and_failover_validation",
+        "broker_bootstrap_config"
+      ],
+      "blockers": [
+        "current backend memory does not yet match the replicated target broker_replicated",
+        "broker bootstrap configuration is not ready: broker event log config missing driver, urls, topic"
+      ]
+    },
+    {
+      "name": "retention_boundary_visibility",
+      "status": "blocked",
+      "requirement": "the backend must expose oldest/newest retained replay boundaries before rollout claims resumable recovery",
+      "failure_mode": "aged-out checkpoints can silently start from an unsafe later point instead of surfacing truncation",
+      "supporting_evidence": [
+        "debug_and_control_plane_surface",
+        "replay_and_failover_validation"
+      ],
+      "blockers": [
+        "current backend memory does not yet match the replicated target broker_replicated",
+        "broker bootstrap configuration is not ready: broker event log config missing driver, urls, topic"
+      ]
+    },
+    {
+      "name": "live_fanout_isolation",
+      "status": "blocked",
+      "requirement": "SSE and in-process live subscribers must stay decoupled from broker catch-up lag and replay backfill",
+      "failure_mode": "replay recovery or broker lag can stall live delivery and blur the source of operator-visible latency",
+      "supporting_evidence": [
+        "debug_and_control_plane_surface",
+        "replay_and_failover_validation"
+      ],
+      "blockers": [
+        "current backend memory does not yet match the replicated target broker_replicated",
+        "broker bootstrap configuration is not ready: broker event log config missing driver, urls, topic"
+      ]
+    }
+  ],
+  "blockers": [
+    "current backend memory does not yet match the replicated target broker_replicated",
+    "broker bootstrap configuration is not ready: broker event log config missing driver, urls, topic"
+  ],
+  "next_actions": [
+    "switch BIGCLAW_EVENT_LOG_BACKEND to broker_replicated after the replicated adapter is wired into runtime paths",
+    "set BIGCLAW_EVENT_LOG_BROKER_DRIVER, BIGCLAW_EVENT_LOG_BROKER_URLS, and BIGCLAW_EVENT_LOG_BROKER_TOPIC so broker bootstrap becomes ready"
+  ]
+}

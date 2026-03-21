@@ -10,6 +10,19 @@ from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from typing import Deque, Dict, List
 
+from .deprecation import warn_legacy_runtime_surface
+
+
+GO_MAINLINE_REPLACEMENT = "bigclaw-go/cmd/bigclawd/main.go"
+LEGACY_MAINLINE_STATUS = (
+    "bigclaw-go is the sole implementation mainline for active development; "
+    "service.py remains migration-only compatibility scaffolding."
+)
+
+
+def warn_legacy_service_surface(surface: str = "python -m bigclaw serve") -> str:
+    return warn_legacy_runtime_surface(surface, "go run ./bigclaw-go/cmd/bigclawd")
+
 
 @dataclass
 class ServerMonitoring:
@@ -282,6 +295,7 @@ def create_server(host: str = "127.0.0.1", port: int = 8008, directory: str = ".
 
 
 def run_server(host: str = "127.0.0.1", port: int = 8008, directory: str = ".") -> None:
+    warn_legacy_service_surface()
     server, _ = create_server(host=host, port=port, directory=directory)
     print(f"BigClaw server running at http://{host}:{port} (dir={os.path.abspath(directory)})")
     try:

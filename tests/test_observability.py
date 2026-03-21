@@ -42,7 +42,10 @@ def test_task_run_captures_logs_trace_artifacts_and_audits(tmp_path: Path):
     assert entries[0]["logs"][0]["context"]["queue"] == "primary"
     assert entries[0]["traces"][0]["attributes"]["approved"] is True
     assert entries[0]["artifacts"][0]["sha256"] == expected_digest
-    assert entries[0]["audits"][0]["action"] == "scheduler.approved"
+    actions = [item["action"] for item in entries[0]["audits"]]
+    assert "artifact.registered" in actions
+    assert "closeout.recorded" in actions
+    assert "scheduler.approved" in actions
     assert entries[0]["closeout"]["complete"] is True
 
 

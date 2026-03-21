@@ -4,7 +4,20 @@ from pathlib import Path
 from bigclaw.models import Priority, RiskLevel, Task
 from bigclaw.observability import GitSyncTelemetry, ObservabilityLedger, PullRequestFreshness, RepoSyncAudit
 from bigclaw.reports import PilotMetric, PilotScorecard
-from bigclaw.workflow import AcceptanceGate, WorkflowEngine
+from bigclaw.workflow import AcceptanceGate, WorkflowEngine, WorkpadJournal
+
+
+def test_workpad_journal_can_replay_and_reload(tmp_path: Path):
+    journal = WorkpadJournal(task_id="BIG-402-replay", run_id="run-journal-1")
+    journal.record("intake", "recorded", source="local")
+    journal.record("execution", "approved", medium="docker")
+    output = journal.write(str(tmp_path / "journals" / "run-journal-1.json"))
+
+    loaded = WorkpadJournal.read(output)
+
+    assert loaded.task_id == "BIG-402-replay"
+    assert loaded.run_id == "run-journal-1"
+    assert loaded.replay() == ["intake:recorded", "execution:approved"]
 
 
 def test_acceptance_gate_rejects_missing_evidence(tmp_path: Path):

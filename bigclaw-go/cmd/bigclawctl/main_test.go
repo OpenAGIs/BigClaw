@@ -216,3 +216,86 @@ func TestRunRefillOncePromotesUsingLocalIssueStore(t *testing.T) {
 		t.Fatalf("expected local issue store updated_at refresh, got %s", string(body))
 	}
 }
+
+func TestRunLocalIssuesSetStateUpdatesStore(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "title": "Toolchain migration",
+      "state": "Todo",
+      "updated_at": "2026-03-18T09:00:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	if err := runLocalIssues([]string{
+		"set-state",
+		"--local-issues", storePath,
+		"--issue", "BIG-GOM-307",
+		"--state", "In Progress",
+		"--created-at", "2026-03-20T11:00:00Z",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run local-issues set-state: %v", err)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"state": "In Progress"`)) {
+		t.Fatalf("expected updated state, got %s", string(body))
+	}
+	if !bytes.Contains(body, []byte(`"updated_at": "2026-03-20T11:00:00Z"`)) {
+		t.Fatalf("expected updated timestamp, got %s", string(body))
+	}
+}
+
+func TestRunLocalIssuesCommentAppendsComment(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "title": "Toolchain migration",
+      "state": "In Progress",
+      "comments": [
+        {"author": "codex", "created_at": "2026-03-18T09:00:00Z", "body": "seed"}
+      ]
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	if err := runLocalIssues([]string{
+		"comment",
+		"--local-issues", storePath,
+		"--issue", "BIG-GOM-307",
+		"--author", "codex",
+		"--body", "validation passed",
+		"--created-at", "2026-03-20T11:05:00Z",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run local-issues comment: %v", err)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"body": "validation passed"`)) {
+		t.Fatalf("expected appended comment, got %s", string(body))
+	}
+	if !bytes.Contains(body, []byte(`"updated_at": "2026-03-20T11:05:00Z"`)) {
+		t.Fatalf("expected updated timestamp, got %s", string(body))
+	}
+}

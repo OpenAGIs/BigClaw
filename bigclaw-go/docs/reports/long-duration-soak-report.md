@@ -15,8 +15,16 @@
 
 ## Meaning
 
-This run adds a same-day longer-duration local soak to the existing benchmark package. It is still local evidence rather than production certification, but it materially reduces the remaining closure gap around sustained control-plane stability.
+This run adds a same-day longer-duration local soak to the existing benchmark package. On its own it is still local evidence rather than production certification, but it now serves as the ceiling lane for `docs/reports/capacity-certification-matrix.json`.
+
+Within the current repo-native certification slice, `2000x24` is treated as:
+
+- the checked-in local ceiling envelope,
+- a `0 failure` sustained run,
+- a saturation check against the `1000x24` lane, where throughput drops only from `9.607` to `9.125 tasks/s` (`5.02%`).
 
 ## Artifact
 
 - `docs/reports/soak-local-2000x24.json`
+- `docs/reports/capacity-certification-matrix.json`
+- `docs/reports/capacity-certification-report.md`

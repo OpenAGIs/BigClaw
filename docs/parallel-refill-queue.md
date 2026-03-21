@@ -47,20 +47,23 @@ longer waits on Linear to keep issue execution moving.
 
 ## Current batch
 
-- Active repo tranche:
-  - `BIG-GOM-301` — unified domain model and intake contract migration
-  - `BIG-GOM-302` — risk, policy, and approval semantics migration
-  - `BIG-GOM-307` — workflow, bootstrap, and GitHub sync toolchain migration
-- Runnable first batch once issue creation is available:
+- Current repo tranche status as of March 20, 2026:
+  - no active refill tranche remains for the Go-mainline cutover queue
+  - `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` returns no `In Progress` work and no promotion candidates
+- Completed slices:
   - `BIG-GOM-301` — unified domain model and intake contract migration
   - `BIG-GOM-302` — risk, policy, and approval semantics migration
   - `BIG-GOM-303` — workflow orchestration and scheduler loop migration
   - `BIG-GOM-304` — observability, reporting, and weekly operations surface migration
-- Standby:
   - `BIG-GOM-305` — control center, triage, and operations view migration
   - `BIG-GOM-306` — repo collaboration and lineage surface migration
   - `BIG-GOM-307` — workflow, bootstrap, and GitHub sync toolchain migration
   - `BIG-GOM-308` — Python deprecation and Go-only mainline switch
+- Historical first runnable batch once issue creation was available:
+  - `BIG-GOM-301` — unified domain model and intake contract migration
+  - `BIG-GOM-302` — risk, policy, and approval semantics migration
+  - `BIG-GOM-303` — workflow orchestration and scheduler loop migration
+  - `BIG-GOM-304` — observability, reporting, and weekly operations surface migration
 
 ## Canonical refill order
 

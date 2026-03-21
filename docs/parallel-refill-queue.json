@@ -17,19 +17,18 @@
     "blocked_reason": "Linear workspace issue quota still blocks new Linear issues, but the active BigClaw tracker now runs from local-issues.json and this queue remains the refill source of truth"
   },
   "recent_batches": {
-    "completed": [],
-    "active": [
+    "completed": [
       "BIG-GOM-301",
       "BIG-GOM-302",
       "BIG-GOM-303",
-      "BIG-GOM-307"
-    ],
-    "standby": [
       "BIG-GOM-304",
       "BIG-GOM-305",
       "BIG-GOM-306",
+      "BIG-GOM-307",
       "BIG-GOM-308"
-    ]
+    ],
+    "active": [],
+    "standby": []
   },
   "issue_order": [
     "BIG-GOM-301",
@@ -46,49 +45,49 @@
       "identifier": "BIG-GOM-301",
       "title": "Unified domain model and intake contract migration",
       "track": "Control/Workflow Surface Migration",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-GOM-302",
       "title": "Risk, policy, and approval semantics migration",
       "track": "Control/Workflow Surface Migration",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-GOM-303",
       "title": "Workflow orchestration and scheduler loop migration",
       "track": "Control/Workflow Surface Migration",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-GOM-304",
       "title": "Observability, reporting, and weekly operations surface migration",
       "track": "Governance/Reporting Surface Migration",
-      "status": "Todo"
+      "status": "Done"
     },
     {
       "identifier": "BIG-GOM-305",
       "title": "Control center, triage, and operations view migration",
       "track": "Governance/Reporting Surface Migration",
-      "status": "Backlog"
+      "status": "Done"
     },
     {
       "identifier": "BIG-GOM-306",
       "title": "Repo collaboration and lineage surface migration",
       "track": "Governance/Reporting Surface Migration",
-      "status": "Backlog"
+      "status": "Done"
     },
     {
       "identifier": "BIG-GOM-307",
       "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
       "track": "Python Retirement & Cutover Validation",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-GOM-308",
       "title": "Python deprecation and Go-only mainline switch",
       "track": "Python Retirement & Cutover Validation",
-      "status": "Backlog"
+      "status": "Done"
     }
   ]
 }

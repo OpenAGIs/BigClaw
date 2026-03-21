@@ -1,0 +1,10 @@
+{
+  "enabled": false,
+  "backend": null,
+  "bundle_summary_path": "docs/reports/live-validation-runs/20260316T140138Z/broker-validation-summary.json",
+  "canonical_summary_path": "docs/reports/broker-validation-summary.json",
+  "validation_pack_path": "docs/reports/broker-failover-fault-injection-validation-pack.md",
+  "configuration_state": "not_configured",
+  "status": "skipped",
+  "reason": "not_configured"
+}

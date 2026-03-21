@@ -95,7 +95,19 @@ If your environment has restrictive system-packages permissions, run tests with 
 PYTHONPATH=src python3 -m pytest
 ```
 
-## Smoke verify
+## Go smoke verify
+
+```bash
+cd BigClaw/bigclaw-go
+go test ./...
+go run ./cmd/bigclawd &
+curl localhost:8080/healthz
+bash ../scripts/ops/bigclawctl github-sync status --json
+```
+
+## Legacy Python smoke verify
+
+Use this only when validating a frozen migration-reference path:
 
 ```bash
 PYTHONPATH=src python3 scripts/dev_smoke.py
@@ -141,3 +153,11 @@ Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-ma
 reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
 The Go-first BigClaw entrypoint is `scripts/ops/bigclawctl`; legacy Python
 bootstrap wrappers remain only as compatibility shims during migration.
+
+The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
+`src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
+`src/bigclaw/orchestration.py`, and `src/bigclaw/queue.py` are now frozen for
+migration-only reference use. The legacy `python -m bigclaw serve` /
+`src/bigclaw/service.py` path is also frozen; use `go run ./bigclaw-go/cmd/bigclawd`
+for the active local server path. Active runtime development belongs in
+`bigclaw-go/internal/*`.

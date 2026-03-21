@@ -100,7 +100,7 @@ type refillClient interface {
 
 func main() {
 	if len(os.Args) < 2 {
-		fatalf("usage: bigclawctl <github-sync|workspace|refill> ...")
+		fatalf("usage: bigclawctl <github-sync|workspace|refill|local-issues> ...")
 	}
 	var err error
 	switch os.Args[1] {
@@ -110,6 +110,8 @@ func main() {
 		err = runWorkspace(os.Args[2:])
 	case "refill":
 		err = runRefill(os.Args[2:])
+	case "local-issues":
+		err = runLocalIssues(os.Args[2:])
 	default:
 		err = fmt.Errorf("unknown command: %s", os.Args[1])
 	}
@@ -269,6 +271,71 @@ func runRefill(args []string) error {
 			fmt.Fprintf(os.Stderr, "watcher error: %v\n", err)
 		}
 		time.Sleep(time.Duration(*interval) * time.Second)
+	}
+}
+
+func runLocalIssues(args []string) error {
+	if len(args) == 0 {
+		return errors.New("usage: bigclawctl local-issues <set-state|comment> [flags]")
+	}
+	command := args[0]
+	flags := flag.NewFlagSet("local-issues "+command, flag.ContinueOnError)
+	flags.SetOutput(io.Discard)
+	storePath := flags.String("local-issues", "", "local issue store path")
+	issueRef := flags.String("issue", "", "issue id or identifier")
+	stateName := flags.String("state", "", "state name")
+	author := flags.String("author", "codex", "comment author")
+	body := flags.String("body", "", "comment body")
+	createdAt := flags.String("created-at", "", "RFC3339 timestamp")
+	asJSON := flags.Bool("json", false, "json")
+	if err := flags.Parse(args[1:]); err != nil {
+		return err
+	}
+	if trim(*issueRef) == "" {
+		return errors.New("issue is required")
+	}
+	store, err := refill.LoadLocalIssueStore(resolvedLocalIssueStorePath(*storePath))
+	if err != nil {
+		return err
+	}
+	switch command {
+	case "set-state":
+		if trim(*stateName) == "" {
+			return errors.New("state is required")
+		}
+		when, err := parseOptionalTime(*createdAt)
+		if err != nil {
+			return err
+		}
+		updatedState, err := store.UpdateIssueState(*issueRef, *stateName, when)
+		if err != nil {
+			return err
+		}
+		return emit(map[string]any{
+			"status":       "ok",
+			"backend":      "local",
+			"issue":        *issueRef,
+			"state":        updatedState,
+			"local_issues": absPath(resolvedLocalIssueStorePath(*storePath)),
+		}, *asJSON, 0)
+	case "comment":
+		when, err := parseOptionalTime(*createdAt)
+		if err != nil {
+			return err
+		}
+		if err := store.AddComment(*issueRef, refill.LocalIssueComment{Author: *author, Body: *body, CreatedAt: when}); err != nil {
+			return err
+		}
+		return emit(map[string]any{
+			"status":       "ok",
+			"backend":      "local",
+			"issue":        *issueRef,
+			"author":       *author,
+			"body":         *body,
+			"local_issues": absPath(resolvedLocalIssueStorePath(*storePath)),
+		}, *asJSON, 0)
+	default:
+		return fmt.Errorf("unknown local-issues subcommand: %s", command)
 	}
 }
 
@@ -432,6 +499,17 @@ func resolveRepoRelativePath(path string) string {
 		}
 	}
 	return path
+}
+
+func parseOptionalTime(value string) (time.Time, error) {
+	if trim(value) == "" {
+		return time.Now(), nil
+	}
+	parsed, err := time.Parse(time.RFC3339, value)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("parse created-at: %w", err)
+	}
+	return parsed, nil
 }
 
 func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply bool, refreshURL string, targetOverride *int) error {

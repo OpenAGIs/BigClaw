@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-03-17T12:06:00Z",
+  "ticket": "BIG-PAR-101",
+  "title": "Leader-election capability surface",
+  "status": "checked_in_surface",
+  "target_contract_surface_version": "2026-03-17",
+  "runtime_readiness_levels": {
+    "live_proven": "Shipped runtime behavior with checked-in live shared-SQLite proof.",
+    "harness_proven": "Deterministic executable harness coverage exists, but no checked-in live proof for that backend posture exists.",
+    "contract_only": "Only target contracts or rollout docs define the expected semantics today."
+  },
+  "evidence_inputs": {
+    "coordination_report": "bigclaw-go/docs/reports/multi-node-coordination-report.md",
+    "shared_queue_report": "bigclaw-go/docs/reports/multi-node-shared-queue-report.json",
+    "takeover_harness_report": "bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json",
+    "live_takeover_report": "bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-report.json",
+    "coordination_capability_surface": "bigclaw-go/docs/reports/cross-process-coordination-capability-surface.json",
+    "supporting_docs": [
+      "bigclaw-go/docs/reports/review-readiness.md",
+      "bigclaw-go/docs/reports/issue-coverage.md",
+      "bigclaw-go/docs/reports/replicated-event-log-durability-rollout-contract.md"
+    ]
+  },
+  "summary": {
+    "backend_count": 4,
+    "live_proven_backends": 1,
+    "harness_proven_backends": 1,
+    "contract_only_backends": 2,
+    "current_proof_backend": "shared_sqlite_subscriber_lease"
+  },
+  "backends": [
+    {
+      "backend": "shared_sqlite_subscriber_lease",
+      "runtime_readiness": "live_proven",
+      "proof_scope": "two-node shared SQLite runtime",
+      "backing_store": "shared SQLite subscriber lease store",
+      "endpoint_surfaces": [
+        "/coordination/leader",
+        "/debug/status",
+        "/v2/control-center"
+      ],
+      "notes": [
+        "The current repo-native leader-election scaffold uses the subscriber lease store and is exposed through runtime surfaces.",
+        "The checked-in live proof remains local/shared-store scoped rather than broker-backed or quorum-backed."
+      ]
+    },
+    {
+      "backend": "shared_store_takeover_hardening",
+      "runtime_readiness": "harness_proven",
+      "proof_scope": "deterministic takeover harness",
+      "backing_store": "shared durable subscriber lease scaffold",
+      "endpoint_surfaces": [
+        "/coordination/leader",
+        "/debug/status",
+        "/v2/control-center"
+      ],
+      "notes": [
+        "Takeover, stale-writer fencing, and replay coordination have deterministic harness coverage.",
+        "This row captures shared-store hardening posture separately from the live shared-SQLite proof."
+      ]
+    },
+    {
+      "backend": "broker_backed_leader_election",
+      "runtime_readiness": "contract_only",
+      "proof_scope": "future broker adapter contract",
+      "backing_store": "broker-backed ownership backend",
+      "endpoint_surfaces": [
+        "/coordination/leader",
+        "/debug/status",
+        "/v2/control-center"
+      ],
+      "notes": [
+        "The runtime does not ship a broker-backed leader-election backend today.",
+        "Broker bootstrap and durability summaries remain rollout metadata, not live ownership proof."
+      ]
+    },
+    {
+      "backend": "quorum_replicated_leader_election",
+      "runtime_readiness": "contract_only",
+      "proof_scope": "future replicated/quorum backend",
+      "backing_store": "replicated coordination backend",
+      "endpoint_surfaces": [
+        "/coordination/leader",
+        "/debug/status",
+        "/v2/control-center"
+      ],
+      "notes": [
+        "Quorum-backed ownership is reserved as future work beyond the current shared-store scaffold.",
+        "This row exists so reviewers can distinguish quorum goals from the shipped SQLite-backed runtime."
+      ]
+    }
+  ]
+}
