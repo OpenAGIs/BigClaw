@@ -692,6 +692,23 @@
       "state": "Done",
       "title": "Preserve continuation reason in manifest recent runs",
       "updated_at": "2026-03-20T20:10:42Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T00:00:00Z",
+      "description": "Fix the Go-first `scripts/ops/bigclawctl workspace validate` flow so repo-root relative paths like `--workspace-root ./tmp/...` and `--report reports/...` resolve against the BigClaw repo root even though the wrapper executes `go run` from `bigclaw-go`. This restores the documented bootstrap-cache validation workflow and prevents report artifacts from being written under `bigclaw-go/` unexpectedly.",
+      "id": "big-par-103",
+      "identifier": "BIG-PAR-103",
+      "labels": [
+        "parallel",
+        "tooling",
+        "bootstrap",
+        "workflow"
+      ],
+      "priority": 2,
+      "state": "In Progress",
+      "title": "Fix repo-root path resolution for bigclawctl workspace validate",
+      "updated_at": "2026-03-22T00:00:00Z"
     }
   ]
 }
