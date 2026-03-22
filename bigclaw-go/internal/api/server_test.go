@@ -39,7 +39,7 @@ func (fakeWorkerPoolStatus) Snapshot() worker.Status {
 func (fakeWorkerPoolStatus) Snapshots() []worker.Status {
 	return []worker.Status{
 		{WorkerID: "worker-a", State: "running", CurrentExecutor: domain.ExecutorLocal, SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"},
-		{WorkerID: "worker-b", State: "leased", CurrentExecutor: domain.ExecutorKubernetes, SuccessfulRuns: 3, LeaseRenewals: 2, LastResult: "warming", PreemptionActive: true, CurrentPreemptionTaskID: "task-low", CurrentPreemptionWorkerID: "worker-low", LastPreemptedTaskID: "task-low", LastPreemptionAt: time.Unix(1700000100, 0), LastPreemptionReason: "preempted by urgent task task-urgent (priority=1)", PreemptionsIssued: 1},
+		{WorkerID: "worker-b", State: "leased", CurrentExecutor: domain.ExecutorKubernetes, SuccessfulRuns: 3, LeaseRenewals: 2, LeaseRenewalFailures: 1, LeaseLostRuns: 1, LastResult: "warming", PreemptionActive: true, CurrentPreemptionTaskID: "task-low", CurrentPreemptionWorkerID: "worker-low", LastPreemptedTaskID: "task-low", LastPreemptionAt: time.Unix(1700000100, 0), LastPreemptionReason: "preempted by urgent task task-urgent (priority=1)", PreemptionsIssued: 1},
 		{WorkerID: "worker-c", State: "idle", SuccessfulRuns: 8, LeaseRenewals: 0, LastResult: "idle"},
 	}
 }
@@ -1638,6 +1638,8 @@ func TestMetricsSupportsPrometheusFormat(t *testing.T) {
 		"bigclaw_worker_status{current_executor=\"kubernetes\",state=\"leased\",worker_id=\"worker-b\"} 1",
 		"bigclaw_worker_successful_runs_total{worker_id=\"worker-a\"} 5",
 		"bigclaw_worker_lease_renewals_total{worker_id=\"worker-b\"} 2",
+		"bigclaw_worker_lease_renewal_failures_total{worker_id=\"worker-b\"} 1",
+		"bigclaw_worker_lease_lost_runs_total{worker_id=\"worker-b\"} 1",
 	}
 	for _, check := range checks {
 		if !strings.Contains(body, check) {

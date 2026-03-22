@@ -112,6 +112,8 @@ func renderPrometheusMetrics(snapshot metricsSnapshot) string {
 		writePrometheusHeader(&builder, "bigclaw_worker_status", "gauge", "Worker state marker with executor labels.")
 		writePrometheusHeader(&builder, "bigclaw_worker_successful_runs_total", "counter", "Successful runs per worker.")
 		writePrometheusHeader(&builder, "bigclaw_worker_lease_renewals_total", "counter", "Lease renewals per worker.")
+		writePrometheusHeader(&builder, "bigclaw_worker_lease_renewal_failures_total", "counter", "Lease renewal failures per worker.")
+		writePrometheusHeader(&builder, "bigclaw_worker_lease_lost_runs_total", "counter", "Runs cancelled due to lease loss per worker.")
 		writePrometheusHeader(&builder, "bigclaw_worker_retried_runs_total", "counter", "Retried runs per worker.")
 		writePrometheusHeader(&builder, "bigclaw_worker_dead_letter_runs_total", "counter", "Dead-letter runs per worker.")
 		writePrometheusHeader(&builder, "bigclaw_worker_cancelled_runs_total", "counter", "Cancelled runs per worker.")
@@ -135,6 +137,8 @@ func renderPrometheusMetrics(snapshot metricsSnapshot) string {
 			workerLabels := map[string]string{"worker_id": status.WorkerID}
 			builder.WriteString(prometheusSample("bigclaw_worker_successful_runs_total", workerLabels, float64(status.SuccessfulRuns)))
 			builder.WriteString(prometheusSample("bigclaw_worker_lease_renewals_total", workerLabels, float64(status.LeaseRenewals)))
+			builder.WriteString(prometheusSample("bigclaw_worker_lease_renewal_failures_total", workerLabels, float64(status.LeaseRenewalFailures)))
+			builder.WriteString(prometheusSample("bigclaw_worker_lease_lost_runs_total", workerLabels, float64(status.LeaseLostRuns)))
 			builder.WriteString(prometheusSample("bigclaw_worker_retried_runs_total", workerLabels, float64(status.RetriedRuns)))
 			builder.WriteString(prometheusSample("bigclaw_worker_dead_letter_runs_total", workerLabels, float64(status.DeadLetterRuns)))
 			builder.WriteString(prometheusSample("bigclaw_worker_cancelled_runs_total", workerLabels, float64(status.CancelledRuns)))

@@ -2,7 +2,7 @@
 
 ## Scope
 
-This digest consolidates the remaining validation-bundle continuation caveats for `OPE-271` / `BIG-PAR-082`, with the current local scorecard prework captured under `BIG-PAR-086` and the follow-on policy gate captured under `BIG-PAR-087`.
+This digest consolidates the remaining validation-bundle continuation caveats for `OPE-271` / `BIG-PAR-082`, with the current local scorecard prework captured under `BIG-PAR-086-local-prework` and the follow-on policy gate captured under `OPE-262` in `docs/reports/validation-bundle-continuation-policy-gate.json`.
 
 ## Current Repo-Backed Evidence
 
