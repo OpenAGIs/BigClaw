@@ -31,7 +31,8 @@
       "BIG-PAR-221",
       "BIG-PAR-222",
       "BIG-PAR-223",
-      "BIG-PAR-224"
+      "BIG-PAR-224",
+      "BIG-PAR-225"
     ],
     "active": [],
     "standby": []
@@ -50,7 +51,8 @@
     "BIG-PAR-221",
     "BIG-PAR-222",
     "BIG-PAR-223",
-    "BIG-PAR-224"
+    "BIG-PAR-224",
+    "BIG-PAR-225"
   ],
   "issues": [
     {
@@ -134,6 +136,12 @@
     {
       "identifier": "BIG-PAR-224",
       "title": "Reconcile tracker and refill queue follow-up state",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-225",
+      "title": "Publish canonical parallel follow-up index",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }
