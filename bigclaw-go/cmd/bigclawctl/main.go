@@ -755,14 +755,19 @@ func (e exitError) Error() string {
 
 func statusToMap(status string, repo githubsync.RepoSyncStatus) map[string]any {
 	return map[string]any{
-		"status":        status,
-		"branch":        repo.Branch,
-		"local_sha":     repo.LocalSHA,
-		"remote_sha":    repo.RemoteSHA,
-		"dirty":         repo.Dirty,
-		"remote_exists": repo.RemoteExists,
-		"synced":        repo.Synced,
-		"pushed":        repo.Pushed,
+		"status":         status,
+		"branch":         repo.Branch,
+		"detached":       repo.Detached,
+		"local_sha":      repo.LocalSHA,
+		"remote_sha":     repo.RemoteSHA,
+		"dirty":          repo.Dirty,
+		"remote_exists":  repo.RemoteExists,
+		"synced":         repo.Synced,
+		"pushed":         repo.Pushed,
+		"relation_known": repo.RelationKnown,
+		"ahead":          repo.Ahead,
+		"behind":         repo.Behind,
+		"diverged":       repo.Diverged,
 	}
 }
 

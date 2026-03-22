@@ -15,14 +15,18 @@ const (
 )
 
 type RepoSyncStatus struct {
-	Branch       string `json:"branch"`
-	Detached     bool   `json:"detached"`
-	LocalSHA     string `json:"local_sha"`
-	RemoteSHA    string `json:"remote_sha"`
-	Dirty        bool   `json:"dirty"`
-	RemoteExists bool   `json:"remote_exists"`
-	Synced       bool   `json:"synced"`
-	Pushed       bool   `json:"pushed"`
+	Branch        string `json:"branch"`
+	Detached      bool   `json:"detached"`
+	LocalSHA      string `json:"local_sha"`
+	RemoteSHA     string `json:"remote_sha"`
+	Dirty         bool   `json:"dirty"`
+	RemoteExists  bool   `json:"remote_exists"`
+	Synced        bool   `json:"synced"`
+	Pushed        bool   `json:"pushed"`
+	RelationKnown bool   `json:"relation_known"`
+	Ahead         int    `json:"ahead"`
+	Behind        int    `json:"behind"`
+	Diverged      bool   `json:"diverged"`
 }
 
 type commandResult struct {
@@ -224,6 +228,12 @@ func InspectRepoSync(repo string, remote string) (RepoSyncStatus, error) {
 			RemoteExists: false,
 			Synced:       synced,
 			Pushed:       false,
+			// Detached HEAD has no remote branch relationship; callers can still use Synced to
+			// understand whether this checkout matches the remote default branch.
+			RelationKnown: false,
+			Ahead:         0,
+			Behind:        0,
+			Diverged:      false,
 		}, nil
 	}
 
@@ -251,15 +261,37 @@ func InspectRepoSync(repo string, remote string) (RepoSyncStatus, error) {
 	// "pushed" should be stable: it means the remote branch exists and contains HEAD.
 	// A synced default-branch fallback (remote branch absent but SHA matches default) is not considered pushed.
 	pushed := remoteExists && localSHA == remoteSHA
+
+	relationKnown := false
+	ahead := 0
+	behind := 0
+	if remoteExists {
+		// If SHAs match, relation is trivially known (no extra git invocations required).
+		if localSHA == remoteSHA {
+			relationKnown = true
+		} else {
+			relation, ok := relationToRemote(repoPath, remote, branch, remoteSHA)
+			if ok {
+				relationKnown = true
+				ahead = relation.ahead
+				behind = relation.behind
+			}
+		}
+	}
+	diverged := relationKnown && ahead > 0 && behind > 0
 	return RepoSyncStatus{
-		Branch:       branch,
-		Detached:     false,
-		LocalSHA:     localSHA,
-		RemoteSHA:    remoteSHA,
-		Dirty:        isDirty,
-		RemoteExists: remoteExists,
-		Synced:       synced,
-		Pushed:       pushed,
+		Branch:        branch,
+		Detached:      false,
+		LocalSHA:      localSHA,
+		RemoteSHA:     remoteSHA,
+		Dirty:         isDirty,
+		RemoteExists:  remoteExists,
+		Synced:        synced,
+		Pushed:        pushed,
+		RelationKnown: relationKnown,
+		Ahead:         ahead,
+		Behind:        behind,
+		Diverged:      diverged,
 	}, nil
 }
 
@@ -444,6 +476,45 @@ func valueOr(value string, fallback string) string {
 type syncRelation struct {
 	ahead  int
 	behind int
+}
+
+func relationToRemote(repo string, remote string, branch string, remoteSHA string) (syncRelation, bool) {
+	relation, err := relationToSHA(repo, remoteSHA)
+	if err == nil {
+		return relation, true
+	}
+
+	// If the remote has moved and we don't have the commit object yet, fetch and retry against
+	// the remote-tracking ref. Status should be best-effort, never fatal.
+	fetchResult := git(repo, "fetch", remote, branch)
+	if fetchResult.returnCode != 0 {
+		return syncRelation{}, false
+	}
+	relation, err = branchRelation(repo, remote, branch)
+	if err != nil {
+		return syncRelation{}, false
+	}
+	return relation, true
+}
+
+func relationToSHA(repo string, remoteSHA string) (syncRelation, error) {
+	output, err := requireGit(repo, "rev-list", "--left-right", "--count", "HEAD..."+remoteSHA)
+	if err != nil {
+		return syncRelation{}, err
+	}
+	fields := splitWhitespace(output)
+	if len(fields) != 2 {
+		return syncRelation{}, fmt.Errorf("unexpected rev-list output: %q", output)
+	}
+	ahead, err := parseInt(fields[0])
+	if err != nil {
+		return syncRelation{}, err
+	}
+	behind, err := parseInt(fields[1])
+	if err != nil {
+		return syncRelation{}, err
+	}
+	return syncRelation{ahead: ahead, behind: behind}, nil
 }
 
 func branchRelation(repo string, remote string, branch string) (syncRelation, error) {

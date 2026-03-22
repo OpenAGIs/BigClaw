@@ -394,3 +394,148 @@ func TestEnsureRepoSyncRejectsDirtyWorktreeWhenRemoteMoved(t *testing.T) {
 		t.Fatalf("expected dirty remote moved error, got %v", err)
 	}
 }
+
+func configureCloneIdentity(t *testing.T, repo string) {
+	t.Helper()
+	for _, args := range [][]string{
+		{"config", "user.email", "test@example.com"},
+		{"config", "user.name", "Test User"},
+	} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = repo
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v failed: %v (%s)", args, err, string(output))
+		}
+	}
+}
+
+func TestInspectRepoSyncReportsAheadWhenLocalHasUnpushedCommits(t *testing.T) {
+	tmp := t.TempDir()
+	remote := filepath.Join(tmp, "remote.git")
+	if output, err := exec.Command("git", "init", "--bare", remote).CombinedOutput(); err != nil {
+		t.Fatalf("git init --bare failed: %v (%s)", err, string(output))
+	}
+
+	repo := filepath.Join(tmp, "repo")
+	if err := os.MkdirAll(repo, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initRepo(t, repo)
+	cmd := exec.Command("git", "remote", "add", "origin", remote)
+	cmd.Dir = repo
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git remote add failed: %v (%s)", err, string(output))
+	}
+	commitFile(t, repo, "README.md", "hello\n", "initial commit")
+	if _, err := EnsureRepoSync(repo, "origin", true, false); err != nil {
+		t.Fatal(err)
+	}
+
+	commitFile(t, repo, "tracked.txt", "v2\n", "second commit")
+	status, err := InspectRepoSync(repo, "origin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status.Synced {
+		t.Fatalf("expected status to be unsynced after local-only commit, got %+v", status)
+	}
+	if !status.RelationKnown || status.Ahead != 1 || status.Behind != 0 || status.Diverged {
+		t.Fatalf("expected ahead-only relation, got %+v", status)
+	}
+}
+
+func TestInspectRepoSyncReportsBehindWhenRemoteAdvanced(t *testing.T) {
+	tmp := t.TempDir()
+	remote := filepath.Join(tmp, "remote.git")
+	if output, err := exec.Command("git", "init", "--bare", remote).CombinedOutput(); err != nil {
+		t.Fatalf("git init --bare failed: %v (%s)", err, string(output))
+	}
+
+	repoA := filepath.Join(tmp, "repo-a")
+	if err := os.MkdirAll(repoA, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initRepo(t, repoA)
+	cmd := exec.Command("git", "remote", "add", "origin", remote)
+	cmd.Dir = repoA
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git remote add failed: %v (%s)", err, string(output))
+	}
+	commitFile(t, repoA, "README.md", "hello\n", "initial commit")
+	if _, err := EnsureRepoSync(repoA, "origin", true, false); err != nil {
+		t.Fatal(err)
+	}
+
+	repoB := filepath.Join(tmp, "repo-b")
+	if output, err := exec.Command("git", "clone", remote, repoB).CombinedOutput(); err != nil {
+		t.Fatalf("git clone failed: %v (%s)", err, string(output))
+	}
+	configureCloneIdentity(t, repoB)
+	commitFile(t, repoB, "REMOTE.md", "remote\n", "remote advance")
+	push := exec.Command("git", "push", "origin", "HEAD")
+	push.Dir = repoB
+	if output, err := push.CombinedOutput(); err != nil {
+		t.Fatalf("git push failed: %v (%s)", err, string(output))
+	}
+
+	status, err := InspectRepoSync(repoA, "origin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status.Synced {
+		t.Fatalf("expected status to be unsynced after remote-only commit, got %+v", status)
+	}
+	if !status.RelationKnown || status.Ahead != 0 || status.Behind != 1 || status.Diverged {
+		t.Fatalf("expected behind-only relation, got %+v", status)
+	}
+}
+
+func TestInspectRepoSyncReportsDivergedWhenLocalAndRemoteBothMoved(t *testing.T) {
+	tmp := t.TempDir()
+	remote := filepath.Join(tmp, "remote.git")
+	if output, err := exec.Command("git", "init", "--bare", remote).CombinedOutput(); err != nil {
+		t.Fatalf("git init --bare failed: %v (%s)", err, string(output))
+	}
+
+	repoA := filepath.Join(tmp, "repo-a")
+	if err := os.MkdirAll(repoA, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initRepo(t, repoA)
+	cmd := exec.Command("git", "remote", "add", "origin", remote)
+	cmd.Dir = repoA
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git remote add failed: %v (%s)", err, string(output))
+	}
+	commitFile(t, repoA, "README.md", "hello\n", "initial commit")
+	if _, err := EnsureRepoSync(repoA, "origin", true, false); err != nil {
+		t.Fatal(err)
+	}
+
+	// Local-only commit (ahead).
+	commitFile(t, repoA, "LOCAL.md", "local\n", "local advance")
+
+	// Remote-only commit from a separate clone (behind).
+	repoB := filepath.Join(tmp, "repo-b")
+	if output, err := exec.Command("git", "clone", remote, repoB).CombinedOutput(); err != nil {
+		t.Fatalf("git clone failed: %v (%s)", err, string(output))
+	}
+	configureCloneIdentity(t, repoB)
+	commitFile(t, repoB, "REMOTE.md", "remote\n", "remote advance")
+	push := exec.Command("git", "push", "origin", "HEAD")
+	push.Dir = repoB
+	if output, err := push.CombinedOutput(); err != nil {
+		t.Fatalf("git push failed: %v (%s)", err, string(output))
+	}
+
+	status, err := InspectRepoSync(repoA, "origin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status.Synced {
+		t.Fatalf("expected status to be unsynced after diverging commits, got %+v", status)
+	}
+	if !status.RelationKnown || status.Ahead != 1 || status.Behind != 1 || !status.Diverged {
+		t.Fatalf("expected diverged relation, got %+v", status)
+	}
+}
