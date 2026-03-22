@@ -49,11 +49,11 @@ hooks:
   timeout_ms: 120000
 
 agent:
-  max_concurrent_agents: 10
+  max_concurrent_agents: 4
   max_concurrent_agents_by_state:
-    Todo: 4
-    In Progress: 6
-    In Review: 2
+    Todo: 2
+    In Progress: 2
+    In Review: 1
   max_turns: 20
 
 codex:
@@ -75,6 +75,7 @@ Primary operating mode:
 - Keep at least 2 tickets in `In Progress` whenever the project still has parallel-safe `Todo` slices available.
 - Use `Backlog` rather than `Todo` for standby slices that should not be picked up immediately; Symphony treats `Todo` as runnable work.
 - Keep each parallel slice small, code-backed, and independently verifiable.
+- If agent orchestration starts returning `429 Too Many Requests`, immediately reduce child-agent fanout and continue the active slice locally instead of queueing more delegated work.
 - Use `docs/parallel-refill-queue.json` as the canonical refill order and `bash scripts/ops/bigclawctl refill --apply --watch --local-issues local-issues.json` as the reusable manual/automated refill entrypoint.
 - Use `docs/go-mainline-cutover-issue-pack.md` as the canonical project brief behind the local tracker issue set.
 - Mirror `elixir/WORKFLOW.md`'s unattended posture: keep ticket state current, keep GitHub current throughout execution, and avoid leaving active work without a synced branch state.
