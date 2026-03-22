@@ -34,7 +34,10 @@
       "BIG-PAR-224",
       "BIG-PAR-225"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-226",
+      "BIG-PAR-227"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -52,7 +55,9 @@
     "BIG-PAR-222",
     "BIG-PAR-223",
     "BIG-PAR-224",
-    "BIG-PAR-225"
+    "BIG-PAR-225",
+    "BIG-PAR-226",
+    "BIG-PAR-227"
   ],
   "issues": [
     {
@@ -144,6 +149,18 @@
       "title": "Refill queue: align tracker automation follow-up slices",
       "track": "Parallel Tracker Automation",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-226",
+      "title": "Document local-issues ensure for automation",
+      "track": "Parallel Tracker Automation",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-227",
+      "title": "Refill: warn when queue is drained",
+      "track": "Parallel Tracker Automation",
+      "status": "In Progress"
     }
   ]
 }

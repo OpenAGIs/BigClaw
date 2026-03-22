@@ -1443,6 +1443,38 @@
       "state": "Done",
       "title": "Link planning docs to the parallel validation matrix",
       "updated_at": "2026-03-22T11:06:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T12:00:00Z",
+      "description": "Document when to use bigclawctl local-issues ensure, how hook-side path resolution should target the workspace tracker, and how it interacts with refill-driven state management.",
+      "id": "big-par-226",
+      "identifier": "BIG-PAR-226",
+      "labels": [
+        "parallel",
+        "docs",
+        "tracker"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Document local-issues ensure for automation",
+      "updated_at": "2026-03-22T12:00:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T12:01:00Z",
+      "description": "When docs/parallel-refill-queue.json has no runnable identifiers, bigclawctl refill should warn (once) so operators understand why target_in_progress cannot be met.",
+      "id": "big-par-227",
+      "identifier": "BIG-PAR-227",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Refill: warn when queue is drained",
+      "updated_at": "2026-03-22T12:02:00Z"
     }
   ]
 }
