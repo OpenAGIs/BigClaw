@@ -8,8 +8,8 @@
   },
   "policy": {
     "target_in_progress": 2,
-    "activate_state_id": "bd8aafe7-4d8b-41aa-a85b-13e76d49ead7",
     "activate_state_name": "In Progress",
+    "activate_state_id": "bd8aafe7-4d8b-41aa-a85b-13e76d49ead7",
     "refill_states": [
       "Backlog",
       "Todo"
@@ -38,9 +38,7 @@
       "BIG-PAR-228",
       "BIG-PAR-229",
       "BIG-PAR-230",
-      "BIG-PAR-231",
-      "BIG-PAR-232",
-      "BIG-PAR-233"
+      "BIG-PAR-231"
     ],
     "active": [],
     "standby": []
@@ -66,9 +64,7 @@
     "BIG-PAR-228",
     "BIG-PAR-229",
     "BIG-PAR-230",
-    "BIG-PAR-231",
-    "BIG-PAR-232",
-    "BIG-PAR-233"
+    "BIG-PAR-231"
   ],
   "issues": [
     {
@@ -145,68 +141,56 @@
     },
     {
       "identifier": "BIG-PAR-223",
-      "title": "Link planning docs to the parallel validation matrix",
+      "title": "Link planning docs to validation matrix",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     },
     {
       "identifier": "BIG-PAR-224",
-      "title": "Workflow hooks ensure local tracker entries exist",
-      "track": "Parallel Tracker Automation",
+      "title": "Reconcile tracker and refill queue follow-up state",
+      "track": "Go Mainline Follow-ups",
       "status": "Done"
     },
     {
       "identifier": "BIG-PAR-225",
-      "title": "Refill queue: align tracker automation follow-up slices",
-      "track": "Parallel Tracker Automation",
+      "title": "Publish canonical parallel follow-up index",
+      "track": "Go Mainline Follow-ups",
       "status": "Done"
     },
     {
       "identifier": "BIG-PAR-226",
-      "title": "Document local-issues ensure for automation",
-      "track": "Parallel Tracker Automation",
+      "title": "Rewire maintained reports to canonical follow-up index",
+      "track": "Go Mainline Follow-ups",
       "status": "Done"
     },
     {
       "identifier": "BIG-PAR-227",
-      "title": "Refill: warn when queue is drained",
-      "track": "Parallel Tracker Automation",
+      "title": "Rewire migration plan review notes to follow-up index",
+      "track": "Go Mainline Follow-ups",
       "status": "Done"
     },
     {
       "identifier": "BIG-PAR-228",
-      "title": "Local issue store: atomic writes to avoid concurrent corruption",
-      "track": "Parallel Tracker Automation",
+      "title": "Rewire per-run bundle READMEs to follow-up index",
+      "track": "Go Mainline Follow-ups",
       "status": "Done"
     },
     {
       "identifier": "BIG-PAR-229",
-      "title": "Refill queue: sync issue statuses from local tracker",
-      "track": "Parallel Tracker Automation",
+      "title": "Rename maintained follow-up sections to follow-up index",
+      "track": "Go Mainline Follow-ups",
       "status": "Done"
     },
     {
       "identifier": "BIG-PAR-230",
-      "title": "Refill: sync queue metadata statuses from local tracker",
-      "track": "Parallel Tracker Automation",
+      "title": "Rename bundle README follow-up sections to follow-up index",
+      "track": "Go Mainline Follow-ups",
       "status": "Done"
     },
     {
       "identifier": "BIG-PAR-231",
-      "title": "Docs: explain refill queue metadata drift handling",
-      "track": "Parallel Tracker Automation",
-      "status": "Done"
-    },
-    {
-      "identifier": "BIG-PAR-232",
-      "title": "ops: bigclawctl wrapper resolves --repo relative to invocation dir",
-      "track": "Parallel Tracker Automation",
-      "status": "Done"
-    },
-    {
-      "identifier": "BIG-PAR-233",
-      "title": "refill: include queue/local-issues paths in JSON output",
-      "track": "Parallel Tracker Automation",
+      "title": "Restore required follow-up digest references for CI",
+      "track": "Go Mainline Follow-ups",
       "status": "Done"
     }
   ]

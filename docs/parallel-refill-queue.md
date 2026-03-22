@@ -11,8 +11,6 @@ longer waits on Linear to keep issue execution moving.
 
 - Manual one-shot refill:
   - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json`
-- Manual one-shot refill (sync queue metadata from local tracker):
-  - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status`
 - Continuous refill watcher:
   - `bash scripts/ops/bigclawctl refill --apply --watch --local-issues local-issues.json`
 - Optional dashboard refresh after promotion:
@@ -35,8 +33,6 @@ longer waits on Linear to keep issue execution moving.
 - Shared mirror bootstrap remains mandatory so multiple Symphony issues reuse one local mirror/seed cache instead of re-downloading the repo.
 - `local-issues.json` is the authoritative issue state backend for ongoing work.
 - Use `docs/go-mainline-cutover-issue-pack.md` as the detailed project brief behind this queue.
-- Drift note:
-  - see `docs/parallel-refill-queue-metadata.md` for how queue metadata status fields can drift from local tracker state and how to reconcile them.
 
 ## Repo Validation
 
@@ -53,9 +49,9 @@ longer waits on Linear to keep issue execution moving.
 
 - Current repo tranche status as of March 22, 2026:
   - the Go-mainline cutover tranche is complete and merged to `main`
-  - completed follow-up slices are `BIG-PAR-219`, `BIG-PAR-220`, `BIG-PAR-221`, `BIG-PAR-222`, `BIG-PAR-223`, `BIG-PAR-224`, and `BIG-PAR-225`
-  - completed automation follow-up slices are now `BIG-PAR-226` through `BIG-PAR-233`
-  - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` to confirm whether any additional `Todo` slices should be promoted (it will warn if the queue is drained)
+  - `BIG-PAR-220`, `BIG-PAR-221`, `BIG-PAR-222`, `BIG-PAR-223`, `BIG-PAR-224`, `BIG-PAR-225`, `BIG-PAR-226`, `BIG-PAR-227`, `BIG-PAR-228`, `BIG-PAR-229`, `BIG-PAR-230`, and `BIG-PAR-231` are now closed in the repo-native tracker
+  - no active follow-up slice remains in the current repo-native queue snapshot
+  - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` to confirm whether any additional `Todo` slices should be promoted
 - Completed slices:
   - `BIG-GOM-301` — unified domain model and intake contract migration
   - `BIG-GOM-302` — risk, policy, and approval semantics migration
@@ -94,5 +90,3 @@ longer waits on Linear to keep issue execution moving.
 19. `BIG-PAR-229`
 20. `BIG-PAR-230`
 21. `BIG-PAR-231`
-22. `BIG-PAR-232`
-23. `BIG-PAR-233`
