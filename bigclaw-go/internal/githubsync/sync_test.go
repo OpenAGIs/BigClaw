@@ -205,8 +205,103 @@ func TestInspectRepoSyncMarksDirtyWorktree(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !status.Dirty || !status.Synced {
+	if !status.Dirty || !status.Synced || !status.Pushed {
 		t.Fatalf("expected dirty synced status, got %+v", status)
+	}
+}
+
+func TestInspectRepoSyncDetachedHeadReportsDefaultBranchSync(t *testing.T) {
+	tmp := t.TempDir()
+	remote := filepath.Join(tmp, "remote.git")
+	if output, err := exec.Command("git", "init", "--bare", remote).CombinedOutput(); err != nil {
+		t.Fatalf("git init --bare failed: %v (%s)", err, string(output))
+	}
+
+	repo := filepath.Join(tmp, "repo")
+	if err := os.MkdirAll(repo, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initRepo(t, repo)
+	cmd := exec.Command("git", "remote", "add", "origin", remote)
+	cmd.Dir = repo
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git remote add failed: %v (%s)", err, string(output))
+	}
+	commitFile(t, repo, "README.md", "hello\n", "initial commit")
+	if _, err := EnsureRepoSync(repo, "origin", true, false); err != nil {
+		t.Fatal(err)
+	}
+	detach := exec.Command("git", "checkout", "--detach", "HEAD")
+	detach.Dir = repo
+	if output, err := detach.CombinedOutput(); err != nil {
+		t.Fatalf("git checkout --detach failed: %v (%s)", err, string(output))
+	}
+
+	status, err := InspectRepoSync(repo, "origin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !status.Detached || status.Branch != "HEAD" {
+		t.Fatalf("expected detached HEAD branch status, got %+v", status)
+	}
+	if status.RemoteExists || status.Pushed {
+		t.Fatalf("expected detached status to omit remote branch info, got %+v", status)
+	}
+	if !status.Synced {
+		t.Fatalf("expected detached checkout to be synced to remote default branch, got %+v", status)
+	}
+}
+
+func TestEnsureRepoSyncRefusesAutoPushWhenDetachedAndUnsynced(t *testing.T) {
+	tmp := t.TempDir()
+	remote := filepath.Join(tmp, "remote.git")
+	if output, err := exec.Command("git", "init", "--bare", remote).CombinedOutput(); err != nil {
+		t.Fatalf("git init --bare failed: %v (%s)", err, string(output))
+	}
+
+	repo := filepath.Join(tmp, "repo")
+	if err := os.MkdirAll(repo, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initRepo(t, repo)
+	cmd := exec.Command("git", "remote", "add", "origin", remote)
+	cmd.Dir = repo
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git remote add failed: %v (%s)", err, string(output))
+	}
+	first := commitFile(t, repo, "README.md", "hello\n", "initial commit")
+	if _, err := EnsureRepoSync(repo, "origin", true, false); err != nil {
+		t.Fatal(err)
+	}
+	remoteDefault := gitOutput(t, repo, "remote", "show", "origin")
+	defaultBranch := ""
+	for _, line := range strings.Split(remoteDefault, "\n") {
+		if strings.HasPrefix(line, "  HEAD branch: ") {
+			defaultBranch = strings.TrimSpace(strings.TrimPrefix(line, "  HEAD branch: "))
+		}
+	}
+	if defaultBranch == "" {
+		t.Fatalf("expected remote show origin to include default branch, got:\n%s", remoteDefault)
+	}
+
+	// Advance local history without pushing, then detach at that new commit.
+	second := commitFile(t, repo, "tracked.txt", "v2\n", "second commit")
+	if second == first {
+		t.Fatalf("expected second commit to differ from first")
+	}
+	detach := exec.Command("git", "checkout", "--detach", "HEAD")
+	detach.Dir = repo
+	if output, err := detach.CombinedOutput(); err != nil {
+		t.Fatalf("git checkout --detach failed: %v (%s)", err, string(output))
+	}
+
+	if _, err := EnsureRepoSync(repo, "origin", true, false); err == nil {
+		t.Fatalf("expected ensure repo sync to refuse auto-push on detached unsynced HEAD")
+	}
+
+	// Remote default branch should remain at the first commit.
+	if got := gitOutput(t, repo, "ls-remote", remote, defaultBranch); !strings.HasPrefix(got, first) {
+		t.Fatalf("expected remote default branch %s to remain at %s, got %s", defaultBranch, first, got)
 	}
 }
 

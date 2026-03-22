@@ -16,6 +16,7 @@ const (
 
 type RepoSyncStatus struct {
 	Branch       string `json:"branch"`
+	Detached     bool   `json:"detached"`
 	LocalSHA     string `json:"local_sha"`
 	RemoteSHA    string `json:"remote_sha"`
 	Dirty        bool   `json:"dirty"`
@@ -200,13 +201,32 @@ func InspectRepoSync(repo string, remote string) (RepoSyncStatus, error) {
 	if err != nil {
 		return RepoSyncStatus{}, err
 	}
-	if branch == "" {
-		return RepoSyncStatus{}, errors.New("detached HEAD does not support issue branch sync automation")
-	}
 	localSHA, err := requireGit(repoPath, "rev-parse", "HEAD")
 	if err != nil {
 		return RepoSyncStatus{}, err
 	}
+	isDirty, err := dirty(repoPath)
+	if err != nil {
+		return RepoSyncStatus{}, err
+	}
+
+	// Detached HEAD is common after merging a PR with `--delete-branch`.
+	// We cannot infer an "issue branch" on the remote, but we can still report
+	// whether this checkout matches the remote default branch.
+	if branch == "" {
+		synced := matchesRemoteDefaultBranch(repoPath, remote, localSHA)
+		return RepoSyncStatus{
+			Branch:       "HEAD",
+			Detached:     true,
+			LocalSHA:     localSHA,
+			RemoteSHA:    "",
+			Dirty:        isDirty,
+			RemoteExists: false,
+			Synced:       synced,
+			Pushed:       false,
+		}, nil
+	}
+
 	remoteResult := git(repoPath, "ls-remote", "--heads", remote, branch)
 	if remoteResult.returnCode != 0 {
 		detail := trimmed(remoteResult.stderr)
@@ -223,22 +243,23 @@ func InspectRepoSync(repo string, remote string) (RepoSyncStatus, error) {
 	if len(fields) > 0 {
 		remoteSHA = fields[0]
 	}
-	isDirty, err := dirty(repoPath)
-	if err != nil {
-		return RepoSyncStatus{}, err
-	}
 	remoteExists := remoteSHA != ""
 	synced := remoteExists && localSHA == remoteSHA
 	if !remoteExists && matchesRemoteDefaultBranch(repoPath, remote, localSHA) {
 		synced = true
 	}
+	// "pushed" should be stable: it means the remote branch exists and contains HEAD.
+	// A synced default-branch fallback (remote branch absent but SHA matches default) is not considered pushed.
+	pushed := remoteExists && localSHA == remoteSHA
 	return RepoSyncStatus{
 		Branch:       branch,
+		Detached:     false,
 		LocalSHA:     localSHA,
 		RemoteSHA:    remoteSHA,
 		Dirty:        isDirty,
 		RemoteExists: remoteExists,
 		Synced:       synced,
+		Pushed:       pushed,
 	}, nil
 }
 
@@ -336,6 +357,12 @@ func EnsureRepoSync(repo string, remote string, autoPush bool, allowDirty bool) 
 	}
 	if status.Dirty && !allowDirty {
 		return RepoSyncStatus{}, errors.New("working tree is dirty; commit or stash changes before syncing")
+	}
+	if status.Detached {
+		if status.Synced {
+			return status, nil
+		}
+		return status, errors.New("detached HEAD; refusing to auto-push (checkout a branch)")
 	}
 	if status.RemoteExists && !status.Synced {
 		fetchResult := git(repoPath, "fetch", remote, status.Branch)
