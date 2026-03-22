@@ -8,6 +8,12 @@ if [ "${BIGCLAW_SKIP_AUTO_SYNC:-0}" = "1" ]; then
   exit 0
 fi
 
+branch=$(git branch --show-current 2>/dev/null || true)
+if [ -z "$branch" ]; then
+  # Detached HEAD (for example after merging a PR and deleting the branch).
+  exit 0
+fi
+
 export PYTHONDONTWRITEBYTECODE=1
 
 if [ ! -f "scripts/ops/bigclawctl" ]; then
