@@ -27,14 +27,8 @@
       "BIG-GOM-307",
       "BIG-GOM-308"
     ],
-    "active": [
-      "BIG-PAR-102",
-      "BIG-PAR-103"
-    ],
-    "standby": [
-      "BIG-PAR-104",
-      "BIG-PAR-105"
-    ]
+    "active": [],
+    "standby": []
   },
   "issue_order": [
     "BIG-GOM-301",
@@ -44,11 +38,7 @@
     "BIG-GOM-305",
     "BIG-GOM-306",
     "BIG-GOM-307",
-    "BIG-GOM-308",
-    "BIG-PAR-102",
-    "BIG-PAR-103",
-    "BIG-PAR-104",
-    "BIG-PAR-105"
+    "BIG-GOM-308"
   ],
   "issues": [
     {
@@ -98,30 +88,6 @@
       "title": "Python deprecation and Go-only mainline switch",
       "track": "Python Retirement & Cutover Validation",
       "status": "Done"
-    },
-    {
-      "identifier": "BIG-PAR-102",
-      "title": "Multi-worker and multi-node control-plane observability",
-      "track": "Parallel Mainline",
-      "status": "In Progress"
-    },
-    {
-      "identifier": "BIG-PAR-103",
-      "title": "Shared-queue coordination and lease-safety hardening",
-      "track": "Parallel Mainline",
-      "status": "In Progress"
-    },
-    {
-      "identifier": "BIG-PAR-104",
-      "title": "Parallel validation matrix and evidence bundling",
-      "track": "Parallel Mainline",
-      "status": "Todo"
-    },
-    {
-      "identifier": "BIG-PAR-105",
-      "title": "Distributed scheduler and executor diagnostics",
-      "track": "Parallel Mainline",
-      "status": "Todo"
     }
   ]
 }
