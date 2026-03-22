@@ -743,6 +743,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-107` after embedding the continuation policy-gate summary into `live-validation-summary.json` so machine-readable consumers can read continuation state directly from the canonical validation summary.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now attaches `continuation_gate` (derived from `docs/reports/validation-bundle-continuation-policy-gate.json`) onto the exported `summary.json` and canonical `bigclaw-go/docs/reports/live-validation-summary.json`.\n- `tests/test_parallel_validation_bundle.py` now asserts that the exported summary includes `continuation_gate` fields (status, recommendation, latest bundle age, failing checks, and next actions).\n- Re-rendered the checked-in `bigclaw-go/docs/reports/live-validation-summary.json` and bundle `summary.json` for run `20260322T002048Z` so the continuation gate detail is present in the repo-native evidence.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... importlib-load tests/test_parallel_validation_bundle.py and call test_export_validation_bundle_generates_latest_reports_and_index(...) ...` -> passed\n- `python3 bigclaw-go/scripts/e2e/export_validation_bundle.py --go-root \"$PWD/bigclaw-go\" --run-id 20260322T002048Z ...` -> passed (re-render)\n\nCommit: `9706acfef3222c964c9afdb1c14fcccc2ba27116`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/145",
+          "created_at": "2026-03-22T00:45:18Z"
+        }
+      ],
       "created_at": "2026-03-22T00:35:06Z",
       "description": "Embed the continuation policy-gate summary into `bigclaw-go/docs/reports/live-validation-summary.json` so machine-readable consumers can reason about continuation gate outcome without opening separate continuation artifacts.",
       "id": "big-par-107",
@@ -750,13 +757,13 @@
       "labels": [
         "parallel",
         "validation",
-        "tooling",
-        "reporting"
+      "tooling",
+      "reporting"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Expose continuation gate detail in live validation summary",
-      "updated_at": "2026-03-22T00:35:06Z"
+      "updated_at": "2026-03-22T00:45:18Z"
     }
   ]
 }
