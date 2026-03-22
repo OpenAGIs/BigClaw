@@ -1295,12 +1295,19 @@
         "validation"
       ],
       "priority": 3,
-      "state": "Todo",
+      "state": "In Progress",
       "title": "Draft parallel validation matrix artifact for local/k8s/ray",
-      "updated_at": "2026-03-22T04:27:00Z"
+      "updated_at": "2026-03-22T09:28:00Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added a Go-first fast compile-check path for the frozen legacy Python compatibility shims.\n\nWhat changed:\n- `bigclaw-go/cmd/bigclawctl` now supports `legacy-python compile-check` with `--repo`, `--python`, and `--json` flags.\n- `bigclaw-go/internal/legacyshim` now owns the frozen shim file list and runs `python3 -m py_compile` against `src/bigclaw/service.py`, `src/bigclaw/__main__.py`, and `src/bigclaw/legacy_shim.py`.\n- `docs/go-mainline-cutover-handoff.md` now points cutover validation at the reusable Go-first command instead of the stale inline `py_compile` file list, and the refill queue docs now reflect that `BIG-PAR-220` and `BIG-PAR-221` are the active follow-up slices.\n\nValidation:\n- `cd bigclaw-go \u0026\u0026 go test ./internal/legacyshim ./cmd/bigclawctl` -\u003e ok\n- `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok\n- `PYTHONPATH=src python3 -m pytest -q tests/test_legacy_shim.py` -\u003e ok\n- `bash scripts/ops/bigclawctl legacy-python compile-check --json` -\u003e status `ok` for the three frozen shim files\n- `bash scripts/ops/bigclawctl github-sync status --json` -\u003e local SHA `ebca8a035a5052f4b27f903e5075c20aded95eb0` matches remote SHA `ebca8a035a5052f4b27f903e5075c20aded95eb0` with `status: ok` and `synced: true`\n- `git log -1 --stat` -\u003e captured for commit `ebca8a035a5052f4b27f903e5075c20aded95eb0` with bigclawctl, legacyshim, doc, and tracker files in the stat output\n\nCommit SHA: `ebca8a035a5052f4b27f903e5075c20aded95eb0`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/155.",
+          "created_at": "2026-03-22T09:26:00Z"
+        }
+      ],
       "created_at": "2026-03-22T04:28:00Z",
       "description": "Add a fast repo-native compile-check entrypoint for the frozen legacy Python compatibility shims so cutover validation can prove the migration wrappers still parse without repeating long inline py_compile command lists.",
       "id": "big-par-222",
@@ -1311,9 +1318,9 @@
         "python-compat"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add fast compile-check path for frozen legacy Python shims",
-      "updated_at": "2026-03-22T04:28:00Z"
+      "updated_at": "2026-03-22T09:27:00Z"
     },
     {
       "assigned_to_worker": true,
@@ -1333,6 +1340,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Recorded `BIG-PAR-219` after the branch landed ahead/behind relation metrics in the Go-first github-sync status payload.\n\nWhat changed:\n- `bigclaw-go/internal/githubsync` now reports `relation_known`, `ahead`, `behind`, and `diverged` for the current branch relation to origin.\n- `bigclaw-go/cmd/bigclawctl` now emits those relation fields in `github-sync status --json` so automation can distinguish local-only drift, remote-only drift, and divergence.\n\nValidation:\n- `cd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl ./internal/githubsync` -\u003e ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -\u003e includes `ahead`, `behind`, `relation_known`, and `diverged`; local SHA `ebca8a035a5052f4b27f903e5075c20aded95eb0` matches remote SHA `ebca8a035a5052f4b27f903e5075c20aded95eb0` with `status: ok` and `synced: true`\n- `git show --stat --summary f6e793783e55f5222e015e5e81321f749c2ad0ab` -\u003e captured for the BIG-PAR-219 commit\n\nCommit SHA: `f6e793783e55f5222e015e5e81321f749c2ad0ab`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/155.",
+          "created_at": "2026-03-22T09:25:00Z"
+        }
+      ],
       "created_at": "2026-03-22T04:25:00Z",
       "description": "Extend the Go-first github-sync status payload to expose ahead/behind relation counts and diverged detection so automation can distinguish unsynced-local, unsynced-remote, and divergent branch states.",
       "id": "big-par-219",
@@ -1345,7 +1359,7 @@
       "priority": 2,
       "state": "Done",
       "title": "Expose ahead/behind relation in github-sync status payload",
-      "updated_at": "2026-03-22T04:25:00Z"
+      "updated_at": "2026-03-22T09:25:00Z"
     }
   ]
 }

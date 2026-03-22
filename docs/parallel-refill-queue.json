@@ -25,15 +25,15 @@
       "BIG-GOM-305",
       "BIG-GOM-306",
       "BIG-GOM-307",
-      "BIG-GOM-308"
+      "BIG-GOM-308",
+      "BIG-PAR-219",
+      "BIG-PAR-222"
     ],
     "active": [
       "BIG-PAR-220",
-      "BIG-PAR-222"
-    ],
-    "standby": [
       "BIG-PAR-221"
-    ]
+    ],
+    "standby": []
   },
   "issue_order": [
     "BIG-GOM-301",
@@ -114,13 +114,13 @@
       "identifier": "BIG-PAR-221",
       "title": "Draft parallel validation matrix artifact for local/k8s/ray",
       "track": "Go Mainline Follow-ups",
-      "status": "Todo"
+      "status": "In Progress"
     },
     {
       "identifier": "BIG-PAR-222",
       "title": "Add fast compile-check path for frozen legacy Python shims",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
