@@ -943,6 +943,22 @@
     },
     {
       "assigned_to_worker": true,
+      "created_at": "2026-03-22T00:00:00Z",
+      "description": "Bring PR #146 back to merge-ready by syncing `symphony/BIG-PAR-102` with `origin/main` and resolving any conflicts so GitHub merge state is no longer DIRTY.",
+      "id": "big-par-108",
+      "identifier": "BIG-PAR-108",
+      "labels": [
+        "parallel",
+        "tooling",
+        "github-sync"
+      ],
+      "priority": 2,
+      "state": "In Progress",
+      "title": "Resolve PR #146 dirty merge state",
+      "updated_at": "2026-03-22T00:00:00Z"
+    },
+    {
+      "assigned_to_worker": true,
       "comments": [
         {
           "author": "codex",
