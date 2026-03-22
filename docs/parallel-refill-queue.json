@@ -109,7 +109,7 @@
       "identifier": "BIG-PAR-221",
       "title": "Draft parallel validation matrix artifact for local/k8s/ray",
       "track": "Go Mainline Follow-ups",
-      "status": "Backlog"
+      "status": "Todo"
     },
     {
       "identifier": "BIG-PAR-222",

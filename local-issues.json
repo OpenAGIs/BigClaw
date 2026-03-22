@@ -1327,9 +1327,9 @@
         "docs"
       ],
       "priority": 4,
-      "state": "Backlog",
+      "state": "In Progress",
       "title": "Draft parallel validation matrix artifact for local/k8s/ray",
-      "updated_at": "2026-03-22T02:40:00Z"
+      "updated_at": "2026-03-22T03:49:25Z"
     },
     {
       "assigned_to_worker": true,
