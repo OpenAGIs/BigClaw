@@ -11,6 +11,8 @@ longer waits on Linear to keep issue execution moving.
 
 - Manual one-shot refill:
   - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json`
+- Manual one-shot refill (sync queue metadata from local tracker):
+  - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status`
 - Continuous refill watcher:
   - `bash scripts/ops/bigclawctl refill --apply --watch --local-issues local-issues.json`
 - Optional dashboard refresh after promotion:
@@ -33,6 +35,8 @@ longer waits on Linear to keep issue execution moving.
 - Shared mirror bootstrap remains mandatory so multiple Symphony issues reuse one local mirror/seed cache instead of re-downloading the repo.
 - `local-issues.json` is the authoritative issue state backend for ongoing work.
 - Use `docs/go-mainline-cutover-issue-pack.md` as the detailed project brief behind this queue.
+- Drift note:
+  - see `docs/parallel-refill-queue-metadata.md` for how queue metadata status fields can drift from local tracker state and how to reconcile them.
 
 ## Repo Validation
 
