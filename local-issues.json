@@ -1469,6 +1469,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Rewired checked-in per-run bundle READMEs to route follow-up discovery through the canonical parallel follow-up index.\n\nWhat changed:\n- Updated `bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/README.md` to reference `bigclaw-go/docs/reports/parallel-follow-up-index.md` while keeping the run-specific continuation digest, gate, and scorecard pointers.\n- Updated `bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/README.md` to reference the canonical follow-up index while retaining direct links to the live-shadow comparison and rollback safeguard digests.\n\nValidation:\n- `git log -1 --stat` -> captured for commit `44fe6c601a5fc756e11290437dc511f478743a87`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `44fe6c601a5fc756e11290437dc511f478743a87` matches remote SHA `44fe6c601a5fc756e11290437dc511f478743a87` with `status: ok` and `synced: true`\n\nCommit SHA: `44fe6c601a5fc756e11290437dc511f478743a87`\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-224 --json url,title,state,number` returned `[]`.",
+          "created_at": "2026-03-22T10:22:00Z"
+        }
+      ],
       "created_at": "2026-03-22T10:10:30Z",
       "description": "Normalize the checked-in per-run bundle README follow-up-digest pointers to route through the canonical parallel follow-up index so reviewers do not see inconsistent or incomplete lists across bundles.",
       "id": "big-par-228",
@@ -1479,9 +1486,9 @@
         "traceability"
       ],
       "priority": 4,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Rewire per-run bundle READMEs to follow-up index",
-      "updated_at": "2026-03-22T10:10:30Z"
+      "updated_at": "2026-03-22T10:22:00Z"
     },
     {
       "assigned_to_worker": true,
