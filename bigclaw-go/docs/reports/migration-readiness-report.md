@@ -47,8 +47,10 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 - No tenant-scoped automated rollback trigger yet; the current trigger surface and manual rollback guardrails are documented in `docs/reports/rollback-safeguard-follow-up-digest.md` and summarized machine-readably in `docs/reports/rollback-trigger-surface.json`. Reviewers can inspect the same runtime-facing trigger payload through `GET /debug/status` under `rollback_trigger_surface` and through `GET /v2/control-center` under `distributed_diagnostics.migration_review_pack.rollback_trigger_surface`.
 - Matrix now accepts anonymized corpus manifests, but the checked-in sample still defaults to local fixture tasks and requires operator-supplied corpus slices for real production-weighted evidence; see `docs/reports/production-corpus-migration-coverage-digest.md`.
 
-## Parallel follow-up digests
+## Parallel Follow-up Index
 
-- `OPE-266` / `BIG-PAR-092` — `docs/reports/live-shadow-comparison-follow-up-digest.md`
-- `OPE-254` / `BIG-PAR-088` — `docs/reports/rollback-safeguard-follow-up-digest.md` and `docs/reports/rollback-trigger-surface.json`.
-- `OPE-268` / `BIG-PAR-079` — `docs/reports/production-corpus-migration-coverage-digest.md`
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining migration-shadow, rollback, and corpus-coverage caveats.
+- Use `docs/reports/parallel-validation-matrix.md` first when the migration
+  review needs the executor-lane validation evidence that sits alongside these
+  follow-up tracks.

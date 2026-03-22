@@ -32,7 +32,13 @@
       "BIG-PAR-222",
       "BIG-PAR-223",
       "BIG-PAR-224",
-      "BIG-PAR-225"
+      "BIG-PAR-225",
+      "BIG-PAR-226",
+      "BIG-PAR-227",
+      "BIG-PAR-228",
+      "BIG-PAR-229",
+      "BIG-PAR-230",
+      "BIG-PAR-231"
     ],
     "active": [],
     "standby": []
@@ -52,7 +58,13 @@
     "BIG-PAR-222",
     "BIG-PAR-223",
     "BIG-PAR-224",
-    "BIG-PAR-225"
+    "BIG-PAR-225",
+    "BIG-PAR-226",
+    "BIG-PAR-227",
+    "BIG-PAR-228",
+    "BIG-PAR-229",
+    "BIG-PAR-230",
+    "BIG-PAR-231"
   ],
   "issues": [
     {
@@ -129,20 +141,56 @@
     },
     {
       "identifier": "BIG-PAR-223",
-      "title": "Link planning docs to the parallel validation matrix",
+      "title": "Link planning docs to validation matrix",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     },
     {
       "identifier": "BIG-PAR-224",
-      "title": "Workflow hooks ensure local tracker entries exist",
-      "track": "Parallel Tracker Automation",
+      "title": "Reconcile tracker and refill queue follow-up state",
+      "track": "Go Mainline Follow-ups",
       "status": "Done"
     },
     {
       "identifier": "BIG-PAR-225",
-      "title": "Refill queue: align tracker automation follow-up slices",
-      "track": "Parallel Tracker Automation",
+      "title": "Publish canonical parallel follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-226",
+      "title": "Rewire maintained reports to canonical follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-227",
+      "title": "Rewire migration plan review notes to follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-228",
+      "title": "Rewire per-run bundle READMEs to follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-229",
+      "title": "Rename maintained follow-up sections to follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-230",
+      "title": "Rename bundle README follow-up sections to follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-231",
+      "title": "Restore required follow-up digest references for CI",
+      "track": "Go Mainline Follow-ups",
       "status": "Done"
     }
   ]

@@ -38,7 +38,12 @@ This note captures the review outcome for the Go rewrite boundary and migration 
 - Rollback path is documented and operationally simple.
 - This issue is considered ready for closure from a design-governance perspective.
 
-## Parallel follow-up digests
+## Parallel Follow-up Index
 
-- `OPE-266` / `BIG-PAR-092` tracks the repo-native live shadow mirror parity drift scorecard and the remaining live shadow traffic comparison caveats in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
-- `OPE-254` / `BIG-PAR-088` tracks the remaining rollback safeguard trigger-surface caveats in `docs/reports/rollback-safeguard-follow-up-digest.md` and `docs/reports/rollback-trigger-surface.json`.
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining migration-shadow, rollback, and corpus-coverage follow-up digests.
+- Use `docs/reports/parallel-validation-matrix.md` first when the review needs
+  the checked-in local/Kubernetes/Ray validation evidence.
+- The two migration caveat tracks that this review note explicitly calls out are
+  `docs/reports/live-shadow-comparison-follow-up-digest.md` and
+  `docs/reports/rollback-safeguard-follow-up-digest.md`.

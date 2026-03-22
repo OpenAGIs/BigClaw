@@ -99,6 +99,11 @@
 - Failing checks: `latest_bundle_age_within_threshold`
 - Next action: rerun `cd bigclaw-go && ./scripts/e2e/run_all.sh` to refresh the latest validation bundle
 
-## Parallel follow-up digests
+## Parallel Follow-up Index
 
-- `docs/reports/validation-bundle-continuation-digest.md` Validation bundle continuation caveats are consolidated here.
+- `docs/reports/parallel-validation-matrix.md` is the canonical index for
+  executor-lane validation commands and checked-in local/Kubernetes/Ray
+  evidence.
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining follow-up digests and rollout contracts behind those validation
+  lanes.

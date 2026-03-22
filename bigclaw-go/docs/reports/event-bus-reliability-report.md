@@ -173,7 +173,10 @@ This report summarizes the current event bus reliability evidence and the next r
 - Multi-subscriber takeover validation now has both a deterministic local harness in `docs/reports/multi-subscriber-takeover-validation-report.md` / `docs/reports/multi-subscriber-takeover-validation-report.json` and a live two-node companion proof in `docs/reports/live-multi-node-subscriber-takeover-report.json`; see `docs/reports/subscriber-takeover-executability-follow-up-digest.md` for the remaining shared-durable and broker-backed ownership caveats.
 - `docs/reports/cross-process-coordination-capability-surface.json` now acts as the runtime capability matrix, summarizing which coordination guarantees are `live_proven`, which are `harness_proven`, and which remain `contract_only`.
 
-## Parallel follow-up digests
+## Parallel Follow-up Index
 
-- `OPE-269` / `BIG-PAR-080` — takeover executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
-- `OPE-261` / `BIG-PAR-085` — cross-process coordination caveats are consolidated in `docs/reports/cross-process-coordination-boundary-digest.md`.
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining event-bus takeover, coordination-boundary, and rollout follow-up
+  tracks.
+- Use `docs/reports/parallel-validation-matrix.md` for the checked-in executor
+  validation entrypoint when the event-bus review needs lane-specific proof.
