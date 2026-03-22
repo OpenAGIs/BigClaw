@@ -1446,6 +1446,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Rewired the maintained migration plan review notes to the canonical parallel follow-up index.\n\nWhat changed:\n- Updated `bigclaw-go/docs/reports/migration-plan-review-notes.md` so its follow-up section points to `bigclaw-go/docs/reports/parallel-follow-up-index.md` instead of repeating a partial migration/rollback digest list.\n- Added the companion pointer to `parallel-validation-matrix.md` for executor-lane evidence discovery.\n\nValidation:\n- `git log -1 --stat` -> captured for commit `c9b001522aec78a794c0ef699f7b9c5914b30c73`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `c9b001522aec78a794c0ef699f7b9c5914b30c73` matches remote SHA `c9b001522aec78a794c0ef699f7b9c5914b30c73` with `status: ok` and `synced: true`\n\nCommit SHA: `c9b001522aec78a794c0ef699f7b9c5914b30c73`\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-224 --json url,title,state,number` returned `[]`.",
+          "created_at": "2026-03-22T10:15:00Z"
+        }
+      ],
       "created_at": "2026-03-22T10:10:00Z",
       "description": "Normalize the maintained migration-plan review notes to point at the canonical parallel follow-up index instead of carrying a partial, drifting digest list.",
       "id": "big-par-227",
@@ -1456,9 +1463,9 @@
         "traceability"
       ],
       "priority": 4,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Rewire migration plan review notes to follow-up index",
-      "updated_at": "2026-03-22T10:10:00Z"
+      "updated_at": "2026-03-22T10:15:00Z"
     },
     {
       "assigned_to_worker": true,
