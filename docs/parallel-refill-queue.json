@@ -40,10 +40,7 @@
       "BIG-PAR-230",
       "BIG-PAR-231"
     ],
-    "active": [
-      "BIG-PAR-232",
-      "BIG-PAR-233"
-    ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -202,13 +199,13 @@
       "identifier": "BIG-PAR-232",
       "title": "ops: bigclawctl wrapper resolves --repo relative to invocation dir",
       "track": "Parallel Tracker Automation",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-233",
       "title": "refill: include queue/local-issues paths in JSON output",
       "track": "Parallel Tracker Automation",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
