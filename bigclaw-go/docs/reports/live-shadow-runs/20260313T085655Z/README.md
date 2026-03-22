@@ -57,5 +57,9 @@
 
 ## Parallel follow-up digests
 
-- `docs/reports/live-shadow-comparison-follow-up-digest.md` Live shadow traffic comparison caveats are consolidated here.
-- `docs/reports/rollback-safeguard-follow-up-digest.md` Rollback remains operator-driven; this digest explains the guardrail visibility and trigger caveats.
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining live-shadow, rollback, and corpus-coverage follow-up digests behind
+  this run bundle.
+- For the two primary caveat tracks referenced by this bundle, see
+  `docs/reports/live-shadow-comparison-follow-up-digest.md` and
+  `docs/reports/rollback-safeguard-follow-up-digest.md`.

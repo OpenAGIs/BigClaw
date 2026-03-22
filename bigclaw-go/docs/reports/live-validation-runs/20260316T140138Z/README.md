@@ -95,4 +95,10 @@
 
 ## Parallel follow-up digests
 
-- `docs/reports/validation-bundle-continuation-digest.md` Validation bundle continuation caveats are consolidated here.
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining parallel follow-up digests and rollout contracts behind the live
+  validation baseline.
+- Validation bundle continuation caveats remain tracked in
+  `docs/reports/validation-bundle-continuation-digest.md`, with the latest gate
+  and scorecard captured in `docs/reports/validation-bundle-continuation-policy-gate.json`
+  and `docs/reports/validation-bundle-continuation-scorecard.json`.
