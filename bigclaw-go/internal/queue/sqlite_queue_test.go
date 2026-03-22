@@ -79,6 +79,71 @@ func TestSQLiteQueueLeaseExpiresAndCanBeReacquired(t *testing.T) {
 	}
 }
 
+func TestSQLiteQueueDoesNotDoubleLeaseAcrossClients(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.db")
+	primary, err := NewSQLiteQueue(path)
+	if err != nil {
+		t.Fatalf("new sqlite queue: %v", err)
+	}
+	defer primary.Close()
+	secondary, err := NewSQLiteQueue(path)
+	if err != nil {
+		t.Fatalf("new secondary sqlite queue: %v", err)
+	}
+	defer secondary.Close()
+
+	if err := primary.Enqueue(ctx, domain.Task{ID: "task-double-lease", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+
+	type leaseResult struct {
+		task  *domain.Task
+		lease *Lease
+		err   error
+	}
+
+	start := make(chan struct{})
+	results := make(chan leaseResult, 2)
+	go func() {
+		<-start
+		task, lease, err := primary.LeaseNext(ctx, "worker-a", time.Minute)
+		results <- leaseResult{task: task, lease: lease, err: err}
+	}()
+	go func() {
+		<-start
+		task, lease, err := secondary.LeaseNext(ctx, "worker-b", time.Minute)
+		results <- leaseResult{task: task, lease: lease, err: err}
+	}()
+	close(start)
+
+	first := <-results
+	second := <-results
+	if first.err != nil {
+		t.Fatalf("first lease: %v", first.err)
+	}
+	if second.err != nil {
+		t.Fatalf("second lease: %v", second.err)
+	}
+
+	leasedCount := 0
+	if first.task != nil || first.lease != nil {
+		if first.task == nil || first.lease == nil {
+			t.Fatalf("expected first result to include both task and lease, got task=%v lease=%v", first.task, first.lease)
+		}
+		leasedCount++
+	}
+	if second.task != nil || second.lease != nil {
+		if second.task == nil || second.lease == nil {
+			t.Fatalf("expected second result to include both task and lease, got task=%v lease=%v", second.task, second.lease)
+		}
+		leasedCount++
+	}
+	if leasedCount != 1 {
+		t.Fatalf("expected exactly one lease across clients, got %d (first=%v second=%v)", leasedCount, first.lease, second.lease)
+	}
+}
+
 func TestSQLiteQueueDeadLetterReplayPersistsAcrossReopen(t *testing.T) {
 	ctx := context.Background()
 	path := filepath.Join(t.TempDir(), "queue.db")
@@ -228,6 +293,9 @@ func TestSQLiteQueueCancelAndInspect(t *testing.T) {
 	if _, err := q.CancelTask(ctx, "task-2", "manual stop"); err != nil {
 		t.Fatalf("cancel leased task: %v", err)
 	}
+	if err := q.Requeue(ctx, lease, time.Now()); !errors.Is(err, ErrLeaseNotOwned) {
+		t.Fatalf("expected cancelled task to reject requeue with ErrLeaseNotOwned, got %v", err)
+	}
 	if _, err := q.CancelTask(ctx, "task-1", "duplicate"); err != nil {
 		t.Fatalf("cancel queued task: %v", err)
 	}
@@ -290,5 +358,58 @@ func TestSQLiteQueueRejectsStaleLeaseAfterReacquire(t *testing.T) {
 	}
 	if got := q.Size(ctx); got != 0 {
 		t.Fatalf("expected queue size 0 after ack, got %d", got)
+	}
+}
+
+func TestSQLiteQueueRejectsRenewalAfterLeaseExpiry(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.db")
+	q, err := NewSQLiteQueue(path)
+	if err != nil {
+		t.Fatalf("new sqlite queue: %v", err)
+	}
+	defer q.Close()
+
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-expired-renew", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	_, lease, err := q.LeaseNext(ctx, "worker-a", 30*time.Millisecond)
+	if err != nil || lease == nil {
+		t.Fatalf("lease: %v lease=%v", err, lease)
+	}
+	time.Sleep(40 * time.Millisecond)
+	if err := q.RenewLease(ctx, lease, time.Minute); !errors.Is(err, ErrLeaseExpired) {
+		t.Fatalf("expected ErrLeaseExpired, got %v", err)
+	}
+}
+
+func TestSQLiteQueuePurgesCancelledLeaseAfterExpiry(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.db")
+	q, err := NewSQLiteQueue(path)
+	if err != nil {
+		t.Fatalf("new sqlite queue: %v", err)
+	}
+	defer q.Close()
+
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-expire-cancel", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	_, lease, err := q.LeaseNext(ctx, "worker-a", 25*time.Millisecond)
+	if err != nil || lease == nil {
+		t.Fatalf("lease: %v lease=%v", err, lease)
+	}
+	if _, err := q.CancelTask(ctx, "task-expire-cancel", "stop"); err != nil {
+		t.Fatalf("cancel: %v", err)
+	}
+	time.Sleep(40 * time.Millisecond)
+
+	// LeaseNext runs the cancelled-lease cleanup.
+	task, lease2, err := q.LeaseNext(ctx, "worker-b", time.Minute)
+	if err != nil || task != nil || lease2 != nil {
+		t.Fatalf("expected no lease after purge, got task=%v lease=%v err=%v", task, lease2, err)
+	}
+	if _, err := q.GetTask(ctx, "task-expire-cancel"); !errors.Is(err, ErrTaskNotFound) {
+		t.Fatalf("expected purged task, got %v", err)
 	}
 }

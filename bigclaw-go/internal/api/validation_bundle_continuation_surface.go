@@ -23,10 +23,21 @@ type validationBundleContinuationGateSurface struct {
 	Recommendation string                                    `json:"recommendation,omitempty"`
 	ReviewerLinks  []string                                  `json:"reviewer_links,omitempty"`
 	Summary        validationBundleContinuationGateSummary   `json:"summary"`
+	ExecutorLanes  []validationBundleContinuationLaneSummary `json:"executor_lanes,omitempty"`
 	PolicyChecks   []validationBundleContinuationPolicyCheck `json:"policy_checks,omitempty"`
 	CurrentCeiling []string                                  `json:"current_ceiling,omitempty"`
 	NextActions    []string                                  `json:"next_actions,omitempty"`
 	Error          string                                    `json:"error,omitempty"`
+}
+
+type validationBundleContinuationLaneSummary struct {
+	Lane                   string `json:"lane"`
+	LatestEnabled          bool   `json:"latest_enabled"`
+	LatestStatus           string `json:"latest_status"`
+	EnabledRuns            int    `json:"enabled_runs"`
+	SucceededRuns          int    `json:"succeeded_runs"`
+	ConsecutiveSuccesses   int    `json:"consecutive_successes"`
+	AllRecentRunsSucceeded bool   `json:"all_recent_runs_succeeded"`
 }
 
 type validationBundleContinuationGateSummary struct {
@@ -87,6 +98,15 @@ type validationBundleContinuationGateDocument struct {
 type validationBundleContinuationScorecardDocument struct {
 	CurrentCeiling   []string `json:"current_ceiling"`
 	NextRuntimeHooks []string `json:"next_runtime_hooks"`
+	ExecutorLanes    []struct {
+		Lane                   string `json:"lane"`
+		LatestEnabled          bool   `json:"latest_enabled"`
+		LatestStatus           string `json:"latest_status"`
+		EnabledRuns            int    `json:"enabled_runs"`
+		SucceededRuns          int    `json:"succeeded_runs"`
+		ConsecutiveSuccesses   int    `json:"consecutive_successes"`
+		AllRecentRunsSucceeded bool   `json:"all_recent_runs_succeeded"`
+	} `json:"executor_lanes"`
 }
 
 func validationBundleContinuationGatePayload() validationBundleContinuationGateSurface {
@@ -159,6 +179,18 @@ func validationBundleContinuationGatePayload() validationBundleContinuationGateS
 		FailingCheckCount:                           gate.Summary.FailingCheckCount,
 	}
 	surface.PolicyChecks = append([]validationBundleContinuationPolicyCheck(nil), gate.PolicyChecks...)
+	surface.ExecutorLanes = make([]validationBundleContinuationLaneSummary, 0, len(scorecard.ExecutorLanes))
+	for _, lane := range scorecard.ExecutorLanes {
+		surface.ExecutorLanes = append(surface.ExecutorLanes, validationBundleContinuationLaneSummary{
+			Lane:                   lane.Lane,
+			LatestEnabled:          lane.LatestEnabled,
+			LatestStatus:           lane.LatestStatus,
+			EnabledRuns:            lane.EnabledRuns,
+			SucceededRuns:          lane.SucceededRuns,
+			ConsecutiveSuccesses:   lane.ConsecutiveSuccesses,
+			AllRecentRunsSucceeded: lane.AllRecentRunsSucceeded,
+		})
+	}
 	surface.CurrentCeiling = append([]string(nil), scorecard.CurrentCeiling...)
 	surface.NextActions = append([]string(nil), gate.NextActions...)
 	surface.NextActions = append(surface.NextActions, scorecard.NextRuntimeHooks...)

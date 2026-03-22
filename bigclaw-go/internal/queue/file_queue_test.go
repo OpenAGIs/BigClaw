@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"testing"
 	"time"
@@ -112,5 +113,39 @@ func TestFileQueueCancelPersistsAcrossReload(t *testing.T) {
 	}
 	if _, err := reloaded.GetTask(ctx, "task-1"); err == nil {
 		t.Fatal("expected unleased cancelled task to be removed after reload")
+	}
+}
+
+func TestFileQueuePurgesCancelledLeaseAfterExpiry(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.json")
+	q, err := NewFileQueue(path)
+	if err != nil {
+		t.Fatalf("new queue: %v", err)
+	}
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-expire", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	_, lease, err := q.LeaseNext(ctx, "worker-a", 25*time.Millisecond)
+	if err != nil || lease == nil {
+		t.Fatalf("lease: %v lease=%v", err, lease)
+	}
+	if _, err := q.CancelTask(ctx, "task-expire", "stop"); err != nil {
+		t.Fatalf("cancel: %v", err)
+	}
+	time.Sleep(40 * time.Millisecond)
+
+	// Trigger expiry recovery + purge.
+	task, newLease, err := q.LeaseNext(ctx, "worker-b", time.Minute)
+	if err != nil || task != nil || newLease != nil {
+		t.Fatalf("expected no lease after purge, got task=%v lease=%v err=%v", task, newLease, err)
+	}
+
+	reloaded, err := NewFileQueue(path)
+	if err != nil {
+		t.Fatalf("reload queue: %v", err)
+	}
+	if _, err := reloaded.GetTask(ctx, "task-expire"); !errors.Is(err, ErrTaskNotFound) {
+		t.Fatalf("expected task to be purged after reload, got %v", err)
 	}
 }

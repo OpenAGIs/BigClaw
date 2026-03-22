@@ -17,10 +17,35 @@ type LocalIssueStore struct {
 	issueMap []map[string]any
 }
 
+type LocalIssue struct {
+	ID               string
+	Identifier       string
+	Title            string
+	Description      string
+	State            string
+	Priority         int
+	Labels           []string
+	AssignedToWorker bool
+	CreatedAt        string
+	UpdatedAt        string
+}
+
 type LocalIssueComment struct {
 	Author    string
 	CreatedAt time.Time
 	Body      string
+}
+
+type LocalIssueCreateParams struct {
+	ID               string
+	Identifier       string
+	Title            string
+	Description      string
+	State            string
+	Priority         int
+	Labels           []string
+	AssignedToWorker bool
+	CreatedAt        time.Time
 }
 
 func LoadLocalIssueStore(path string) (*LocalIssueStore, error) {
@@ -40,6 +65,88 @@ func LoadLocalIssueStore(path string) (*LocalIssueStore, error) {
 		return nil, err
 	}
 	return &LocalIssueStore{path: absolute, issueMap: issues}, nil
+}
+
+func (s *LocalIssueStore) Issues() []LocalIssue {
+	issues := make([]LocalIssue, 0, len(s.issueMap))
+	for _, issue := range s.issueMap {
+		issues = append(issues, LocalIssue{
+			ID:               mapString(issue, "id"),
+			Identifier:       mapString(issue, "identifier"),
+			Title:            mapString(issue, "title"),
+			Description:      mapString(issue, "description"),
+			State:            mapString(issue, "state"),
+			Priority:         mapInt(issue, "priority"),
+			Labels:           mapStringSlice(issue, "labels"),
+			AssignedToWorker: mapBool(issue, "assigned_to_worker"),
+			CreatedAt:        mapString(issue, "created_at"),
+			UpdatedAt:        mapString(issue, "updated_at"),
+		})
+	}
+	return issues
+}
+
+func (s *LocalIssueStore) CreateIssue(params LocalIssueCreateParams) (LocalIssue, error) {
+	identifier := strings.TrimSpace(params.Identifier)
+	if identifier == "" {
+		return LocalIssue{}, errors.New("identifier is required")
+	}
+	title := strings.TrimSpace(params.Title)
+	if title == "" {
+		return LocalIssue{}, errors.New("title is required")
+	}
+	id := strings.TrimSpace(params.ID)
+	if id == "" {
+		id = strings.ToLower(strings.ReplaceAll(identifier, "_", "-"))
+	}
+
+	for _, issue := range s.issueMap {
+		if strings.EqualFold(mapString(issue, "id"), id) || strings.EqualFold(mapString(issue, "identifier"), identifier) {
+			return LocalIssue{}, fmt.Errorf("issue %q already exists", identifier)
+		}
+	}
+
+	createdAt := params.CreatedAt
+	if createdAt.IsZero() {
+		createdAt = time.Now()
+	}
+	createdAt = createdAt.UTC().Truncate(time.Second)
+	createdAtString := createdAt.Format(time.RFC3339)
+
+	stateName := strings.TrimSpace(params.State)
+	if stateName == "" {
+		stateName = "Todo"
+	}
+
+	entry := map[string]any{
+		"assigned_to_worker": params.AssignedToWorker,
+		"created_at":         createdAtString,
+		"description":        strings.TrimSpace(params.Description),
+		"id":                 id,
+		"identifier":         identifier,
+		"labels":             params.Labels,
+		"priority":           params.Priority,
+		"state":              stateName,
+		"title":              title,
+		"updated_at":         createdAtString,
+	}
+	s.issueMap = append(s.issueMap, entry)
+
+	if err := s.Save(); err != nil {
+		return LocalIssue{}, err
+	}
+	return LocalIssue{
+		ID:               id,
+		Identifier:       identifier,
+		Title:            title,
+		Description:      strings.TrimSpace(params.Description),
+		State:            stateName,
+		Priority:         params.Priority,
+		Labels:           params.Labels,
+		AssignedToWorker: params.AssignedToWorker,
+		CreatedAt:        createdAtString,
+		UpdatedAt:        createdAtString,
+	}, nil
 }
 
 func decodeLocalIssueMaps(body []byte) ([]map[string]any, error) {
@@ -198,5 +305,64 @@ func mapString(issue map[string]any, key string) string {
 		return strings.TrimSpace(typed)
 	default:
 		return strings.TrimSpace(fmt.Sprint(value))
+	}
+}
+
+func mapInt(issue map[string]any, key string) int {
+	value, ok := issue[key]
+	if !ok || value == nil {
+		return 0
+	}
+	switch typed := value.(type) {
+	case float64:
+		return int(typed)
+	case int:
+		return typed
+	default:
+		return 0
+	}
+}
+
+func mapBool(issue map[string]any, key string) bool {
+	value, ok := issue[key]
+	if !ok || value == nil {
+		return false
+	}
+	switch typed := value.(type) {
+	case bool:
+		return typed
+	default:
+		return false
+	}
+}
+
+func mapStringSlice(issue map[string]any, key string) []string {
+	value, ok := issue[key]
+	if !ok || value == nil {
+		return nil
+	}
+	switch typed := value.(type) {
+	case []any:
+		out := make([]string, 0, len(typed))
+		for _, item := range typed {
+			text := strings.TrimSpace(fmt.Sprint(item))
+			if text == "" {
+				continue
+			}
+			out = append(out, text)
+		}
+		return out
+	case []string:
+		out := make([]string, 0, len(typed))
+		for _, item := range typed {
+			text := strings.TrimSpace(item)
+			if text == "" {
+				continue
+			}
+			out = append(out, text)
+		}
+		return out
+	default:
+		return nil
 	}
 }

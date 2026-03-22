@@ -59,6 +59,8 @@ func (p *Pool) Snapshot() Status {
 	summary := Status{WorkerID: "worker-pool", State: "idle"}
 	for _, snapshot := range snapshots {
 		summary.LeaseRenewals += snapshot.LeaseRenewals
+		summary.LeaseRenewalFailures += snapshot.LeaseRenewalFailures
+		summary.LeaseLostRuns += snapshot.LeaseLostRuns
 		summary.SuccessfulRuns += snapshot.SuccessfulRuns
 		summary.RetriedRuns += snapshot.RetriedRuns
 		summary.DeadLetterRuns += snapshot.DeadLetterRuns
