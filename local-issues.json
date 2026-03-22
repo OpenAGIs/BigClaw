@@ -1130,6 +1130,22 @@
       "state": "Done",
       "title": "Skip auto-sync hook behavior on detached HEAD",
       "updated_at": "2026-03-22T01:29:06Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T01:38:59Z",
+      "description": "Clear the repo workpad’s stale unchecked validation item so the BIG-PAR-102 workspace no longer appears active after all local tracker slices are complete.",
+      "id": "big-par-112",
+      "identifier": "BIG-PAR-112",
+      "labels": [
+        "parallel",
+        "docs",
+        "workflow"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Workpad closeout: mark validation complete",
+      "updated_at": "2026-03-22T01:38:59Z"
     }
   ]
 }
