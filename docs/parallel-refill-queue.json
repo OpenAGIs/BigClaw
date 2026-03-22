@@ -106,13 +106,13 @@
     {
       "identifier": "BIG-GOM-307",
       "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
-      "track": "Python Retirement \u0026 Cutover Validation",
+      "track": "Python Retirement & Cutover Validation",
       "status": "Done"
     },
     {
       "identifier": "BIG-GOM-308",
       "title": "Python deprecation and Go-only mainline switch",
-      "track": "Python Retirement \u0026 Cutover Validation",
+      "track": "Python Retirement & Cutover Validation",
       "status": "Done"
     },
     {
