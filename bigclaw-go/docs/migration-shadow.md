@@ -88,7 +88,11 @@ payload still contribute to the `corpus_coverage` scorecard and uncovered-slice 
 - `live-shadow-drift-rollup.json` can summarize freshness and mismatch severity across recent bundled shadow runs
 - `rollback-trigger-surface.json` can distinguish tenant-scoped blockers, warnings, and manual-only rollback paths without claiming automated rollback execution
 
-## Parallel follow-up digests
+## Parallel Follow-up Index
 
-- Live shadow traffic comparison caveats are consolidated in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
-- Production corpus coverage caveats are consolidated in `docs/reports/production-corpus-migration-coverage-digest.md`.
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining migration-shadow and parallel-hardening follow-up digests.
+- Use `docs/reports/parallel-validation-matrix.md` first when a migration-shadow
+  review needs the checked-in local/Kubernetes/Ray validation entrypoint.
+- Production corpus coverage caveats remain tracked in
+  `docs/reports/production-corpus-migration-coverage-digest.md`.

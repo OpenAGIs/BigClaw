@@ -58,6 +58,9 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
 
 ## Migration follow-up digests
 
+- Use `bigclaw-go/docs/reports/parallel-follow-up-index.md` as the canonical
+  index for the remaining follow-up digests and rollout contracts before
+  drilling into any specific caveat track.
 - `BIG-PAR-221` publishes `bigclaw-go/docs/reports/parallel-validation-matrix.md` as the canonical local/Kubernetes/Ray matrix; use it first when mapping follow-up slices to validation commands and evidence artifacts.
 - `OPE-266` / `BIG-PAR-092` tracks the repo-native live shadow mirror parity drift scorecard and the remaining live shadow traffic comparison caveats in `bigclaw-go/docs/reports/live-shadow-comparison-follow-up-digest.md`.
 - `OPE-267` / `BIG-PAR-088` tracks the remaining rollback safeguard caveats in `bigclaw-go/docs/reports/rollback-safeguard-follow-up-digest.md`.

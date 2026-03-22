@@ -27,12 +27,20 @@
       "BIG-GOM-307",
       "BIG-GOM-308",
       "BIG-PAR-219",
-      "BIG-PAR-222"
-    ],
-    "active": [
       "BIG-PAR-220",
-      "BIG-PAR-221"
+      "BIG-PAR-221",
+      "BIG-PAR-222",
+      "BIG-PAR-223",
+      "BIG-PAR-224",
+      "BIG-PAR-225",
+      "BIG-PAR-226",
+      "BIG-PAR-227",
+      "BIG-PAR-228",
+      "BIG-PAR-229",
+      "BIG-PAR-230",
+      "BIG-PAR-231"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -47,7 +55,16 @@
     "BIG-PAR-219",
     "BIG-PAR-220",
     "BIG-PAR-221",
-    "BIG-PAR-222"
+    "BIG-PAR-222",
+    "BIG-PAR-223",
+    "BIG-PAR-224",
+    "BIG-PAR-225",
+    "BIG-PAR-226",
+    "BIG-PAR-227",
+    "BIG-PAR-228",
+    "BIG-PAR-229",
+    "BIG-PAR-230",
+    "BIG-PAR-231"
   ],
   "issues": [
     {
@@ -108,17 +125,71 @@
       "identifier": "BIG-PAR-220",
       "title": "Go-first traceability refresh for issue plan evidence pointers",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-221",
       "title": "Draft parallel validation matrix artifact for local/k8s/ray",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-222",
       "title": "Add fast compile-check path for frozen legacy Python shims",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-223",
+      "title": "Link planning docs to validation matrix",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-224",
+      "title": "Reconcile tracker and refill queue follow-up state",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-225",
+      "title": "Publish canonical parallel follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-226",
+      "title": "Rewire maintained reports to canonical follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-227",
+      "title": "Rewire migration plan review notes to follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-228",
+      "title": "Rewire per-run bundle READMEs to follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-229",
+      "title": "Rename maintained follow-up sections to follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-230",
+      "title": "Rename bundle README follow-up sections to follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-231",
+      "title": "Restore required follow-up digest references for CI",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }

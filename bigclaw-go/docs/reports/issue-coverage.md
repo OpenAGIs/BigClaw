@@ -34,16 +34,17 @@ This document maps the current local MVP implementation to the Linear rewrite is
 - `OPE-3` / `BIG-PAR-098`
   - Covered by `docs/benchmark-plan.md`, `docs/reports/capacity-certification-report.md`, `docs/reports/capacity-certification-matrix.json`, `docs/reports/benchmark-readiness-report.md`, `docs/reports/long-duration-soak-report.md`, `docs/reports/mixed-workload-matrix-report.json`, `scripts/benchmark/capacity_certification.py`, and `scripts/benchmark/capacity_certification_test.py`
 
-## Parallel follow-up digests
+## Parallel Follow-up Index
 
-- `OPE-264` / `BIG-PAR-075` — tracing backend and span-propagation caveats are consolidated in `docs/reports/tracing-backend-follow-up-digest.md`.
-- `OPE-265` / `BIG-PAR-076` — telemetry pipeline, sampling policy, and high-cardinality caveats are consolidated in `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`, with the current machine-checkable surface in `docs/reports/telemetry-sampling-cardinality-evidence-pack.json`.
-- `OPE-266` / `BIG-PAR-092` — repo-native live shadow mirror scorecard and remaining live shadow traffic comparison caveats are consolidated in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
-- `OPE-254` / `BIG-PAR-088` — rollback safeguard trigger-surface caveats are consolidated in `docs/reports/rollback-safeguard-follow-up-digest.md`, with the machine-checkable reviewer surface in `docs/reports/rollback-trigger-surface.json`.
-- `OPE-268` / `BIG-PAR-079` — production corpus coverage caveats are consolidated in `docs/reports/production-corpus-migration-coverage-digest.md`.
-- `OPE-269` / `BIG-PAR-080` — subscriber takeover executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
-- `OPE-261` / `BIG-PAR-085` — cross-process coordination caveats are consolidated in `docs/reports/cross-process-coordination-boundary-digest.md`, with the current runtime capability matrix in `docs/reports/cross-process-coordination-capability-surface.json` using `live_proven`, `harness_proven`, and `contract_only` readiness labels.
-- `OPE-271` / `BIG-PAR-082` — validation bundle continuation caveats are consolidated in `docs/reports/validation-bundle-continuation-digest.md`, with the current multi-bundle lineage summarized in `docs/reports/validation-bundle-continuation-scorecard.json` and the current gate result captured in `docs/reports/validation-bundle-continuation-policy-gate.json`.
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining `BIG-PAR-*` follow-up digests, capability surfaces, and rollout
+  contracts.
+- Use `docs/reports/parallel-validation-matrix.md` first for executor-lane
+  validation commands and checked-in local/Kubernetes/Ray evidence, then use
+  the follow-up index for the unfinished hardening tracks behind those lanes.
+- Coordination and continuation follow-ups referenced across the evidence set
+  include `docs/reports/cross-process-coordination-boundary-digest.md` and
+  `docs/reports/validation-bundle-continuation-digest.md`.
 
 ## Remaining Gaps Before Honest Closure
 
