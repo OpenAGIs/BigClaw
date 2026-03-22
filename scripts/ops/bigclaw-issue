@@ -57,7 +57,12 @@ if [ "$#" -gt 0 ]; then
       if [ "$has_local_issues" -eq 0 ]; then
         args+=(--local-issues "$local_issues")
       fi
-      exec bash "$repo_root/scripts/ops/bigclawctl" issue "${args[@]}"
+      subcommand="${args[0]}"
+      if [ "$subcommand" = "state" ]; then
+        subcommand="set-state"
+        args=("${subcommand}" "${args[@]:1}")
+      fi
+      exec bash "$repo_root/scripts/ops/bigclawctl" local-issues "${args[@]}"
       ;;
   esac
 fi
