@@ -47,9 +47,11 @@ longer waits on Linear to keep issue execution moving.
 
 ## Current batch
 
-- Current repo tranche status as of March 20, 2026:
-  - no active refill tranche remains for the Go-mainline cutover queue
-  - `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` returns no `In Progress` work and no promotion candidates
+- Current repo tranche status as of March 22, 2026:
+  - the Go-mainline cutover tranche is complete and merged to `main`
+  - the next parallel-mainline tranche is queued and ready for promotion (`BIG-PAR-102` through `BIG-PAR-105`)
+  - current `In Progress` slices: `BIG-PAR-102`, `BIG-PAR-103`
+  - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` to promote the next `Todo` slices into `In Progress`
 - Completed slices:
   - `BIG-GOM-301` — unified domain model and intake contract migration
   - `BIG-GOM-302` — risk, policy, and approval semantics migration
@@ -59,6 +61,11 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-GOM-306` — repo collaboration and lineage surface migration
   - `BIG-GOM-307` — workflow, bootstrap, and GitHub sync toolchain migration
   - `BIG-GOM-308` — Python deprecation and Go-only mainline switch
+- Next parallel-mainline slices:
+  - `BIG-PAR-102` — multi-worker and multi-node control-plane observability
+  - `BIG-PAR-103` — shared-queue coordination and lease-safety hardening
+  - `BIG-PAR-104` — parallel validation matrix and evidence bundling
+  - `BIG-PAR-105` — distributed scheduler and executor diagnostics
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — unified domain model and intake contract migration
   - `BIG-GOM-302` — risk, policy, and approval semantics migration
@@ -75,3 +82,7 @@ longer waits on Linear to keep issue execution moving.
 6. `BIG-GOM-306`
 7. `BIG-GOM-307`
 8. `BIG-GOM-308`
+9. `BIG-PAR-102`
+10. `BIG-PAR-103`
+11. `BIG-PAR-104`
+12. `BIG-PAR-105`

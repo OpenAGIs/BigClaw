@@ -695,51 +695,78 @@
     },
     {
       "assigned_to_worker": true,
-      "comments": [
-        {
-          "author": "codex",
-          "body": "What changed:\\n- Fixed live takeover report generator + checked-in report to use ticket OPE-260 (was OPE-256).\\n\\nValidation:\\n- python3 bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py -\u003e ok\\n- python3 -m py_compile bigclaw-go/scripts/e2e/multi_node_shared_queue.py -\u003e ok\\n\\nCommit: 79bff9760e544233f5ec5ba04a382104d1d14b1e\\nPR: (none found)",
-          "created_at": "2026-03-22T00:31:39Z"
-        }
-      ],
-      "created_at": "2026-03-22T00:00:00Z",
-      "description": "Fix the checked-in live multi-node subscriber takeover proof report so it correctly attributes the OPE-260 takeover evidence (not OPE-256), and keep the generator + report aligned.",
-      "id": "big-par-104",
-      "identifier": "BIG-PAR-104",
+      "created_at": "2026-03-22T00:16:05Z",
+      "description": "Expose multi-worker/multi-node runtime state as first-class API payloads so dashboards and ops review can reason about distributed execution (worker pool health, active leases, takeovers, retention watermarks, and lane coverage).",
+      "id": "local-1",
+      "identifier": "BIG-PAR-102",
       "labels": [
-        "parallel",
-        "distributed",
-        "validation",
-        "reporting"
+        "parallel-mainline",
+        "observability",
+        "control-plane",
+        "distributed"
       ],
       "priority": 2,
-      "state": "Done",
-      "title": "Fix OPE-260 ticket identity in live takeover proof report",
-      "updated_at": "2026-03-22T00:31:39Z"
+      "state": "In Progress",
+      "title": "Multi-worker and multi-node control-plane observability",
+      "updated_at": "2026-03-22T00:18:22Z"
     },
     {
       "assigned_to_worker": true,
-      "created_at": "2026-03-22T00:00:00Z",
-      "description": "Add a Go regression test that verifies the checked-in live multi-node takeover proof report exists, has the correct identity, and references on-disk takeover artifacts.",
-      "id": "big-par-105",
+      "created_at": "2026-03-22T00:16:30Z",
+      "description": "Harden shared-queue coordination across workers: lease renewal/expiry observability, cancellation/requeue safety, idempotency guards, and clearer dead-letter + replay diagnostics for multi-worker runs.",
+      "id": "local-2",
+      "identifier": "BIG-PAR-103",
+      "labels": [
+        "parallel-mainline",
+        "queue",
+        "coordination",
+        "safety"
+      ],
+      "priority": 2,
+      "state": "In Progress",
+      "title": "Shared-queue coordination and lease-safety hardening",
+      "updated_at": "2026-03-22T00:18:22Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T00:16:44Z",
+      "description": "Extend the repo-native validation bundle so local/Kubernetes/Ray lanes produce a consistent matrix report and per-run evidence bundle, with clear 'live_proven' vs 'harness_proven' labels and a single live index entry point.",
+      "id": "local-3",
+      "identifier": "BIG-PAR-104",
+      "labels": [
+        "parallel-mainline",
+        "validation",
+        "evidence",
+        "e2e"
+      ],
+      "priority": 2,
+      "state": "Todo",
+      "title": "Parallel validation matrix and evidence bundling",
+      "updated_at": "2026-03-22T00:16:44Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T00:17:04Z",
+      "description": "Add scheduler/executor diagnostics surfaces for capacity, routing, recovery, and fairness (including per-executor health summaries) so multi-worker runs can be triaged without reading logs.",
+      "id": "local-4",
       "identifier": "BIG-PAR-105",
       "labels": [
-        "parallel",
-        "distributed",
-        "validation",
-        "testing"
+        "parallel-mainline",
+        "scheduler",
+        "diagnostics",
+        "executor"
       ],
-      "priority": 3,
-      "state": "Done",
-      "title": "Guard live takeover proof report via regression test",
-      "updated_at": "2026-03-22T00:31:15Z"
+      "priority": 2,
+      "state": "Todo",
+      "title": "Distributed scheduler and executor diagnostics",
+      "updated_at": "2026-03-22T00:17:04Z"
     },
     {
       "assigned_to_worker": true,
       "comments": [
         {
           "author": "codex",
-          "body": "What changed:\\n- Extended bigclawctl local-issues with list/create.\\n- Updated scripts/ops/bigclaw-issue to call bigclawctl local-issues (and map state -\u003e set-state) so the documented wrapper works again.\\n\\nValidation:\\n- cd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl ./internal/refill -\u003e ok\\n- bash scripts/ops/bigclaw-issue list --states 'Done' -\u003e ok\\n\\nCommit: df8d01d3cb43559bd070c8d91a05e0b30756e345\\nPR: (none found)",
+          "body": "Extended bigclawctl local-issues with list/create and fixed scripts/ops/bigclaw-issue wrapper to call local-issues subcommand. Validation: go test ./cmd/bigclawctl ./internal/refill. Commit: df8d01d3cb43559bd070c8d91a05e0b30756e345. PR: (none found).",
           "created_at": "2026-03-22T00:35:27Z"
         }
       ],
@@ -756,6 +783,54 @@
       "state": "Done",
       "title": "Fix local issue CLI wrapper and add list/create support",
       "updated_at": "2026-03-22T00:35:27Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Fixed live takeover proof generator + checked-in report to use ticket OPE-260 (was OPE-256). Validation: python3 scripts/e2e/multi_node_shared_queue_test.py + py_compile. Commit: 79bff9760e544233f5ec5ba04a382104d1d14b1e. PR: (none found).",
+          "created_at": "2026-03-22T00:31:39Z"
+        }
+      ],
+      "created_at": "2026-03-22T00:00:00Z",
+      "description": "Fix the checked-in live multi-node subscriber takeover proof report so it correctly attributes the OPE-260 takeover evidence (not OPE-256), and keep the generator + report aligned.",
+      "id": "big-par-107",
+      "identifier": "BIG-PAR-107",
+      "labels": [
+        "parallel",
+        "distributed",
+        "validation",
+        "reporting"
+      ],
+      "priority": 2,
+      "state": "Done",
+      "title": "Fix OPE-260 ticket identity in live takeover proof report",
+      "updated_at": "2026-03-22T00:31:39Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go regression test to ensure live takeover proof report identity and referenced artifacts remain valid. Validation: go test ./internal/regression. Commit: bf9d90728f8064937a9259c823a2b22fbb6603a8. PR: (none found).",
+          "created_at": "2026-03-22T00:36:30Z"
+        }
+      ],
+      "created_at": "2026-03-22T00:00:00Z",
+      "description": "Add a Go regression test that verifies the checked-in live multi-node takeover proof report exists, has the correct identity, and references on-disk takeover artifacts.",
+      "id": "big-par-108",
+      "identifier": "BIG-PAR-108",
+      "labels": [
+        "parallel",
+        "distributed",
+        "validation",
+        "testing"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Guard live takeover proof report via regression test",
+      "updated_at": "2026-03-22T00:36:30Z"
     }
   ]
 }
