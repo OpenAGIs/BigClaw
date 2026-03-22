@@ -1,6 +1,7 @@
 package refill
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -21,7 +22,13 @@ type QueuePayload struct {
 		ActivateStateID   string   `json:"activate_state_id"`
 		ActivateStateName string   `json:"activate_state_name"`
 		RefillStates      []string `json:"refill_states"`
+		BlockedReason     string   `json:"blocked_reason,omitempty"`
 	} `json:"policy"`
+	RecentBatches struct {
+		Completed []string `json:"completed"`
+		Active    []string `json:"active"`
+		Standby   []string `json:"standby"`
+	} `json:"recent_batches,omitempty"`
 	IssueOrder []string      `json:"issue_order"`
 	Issues     []IssueRecord `json:"issues"`
 }
@@ -61,8 +68,11 @@ func LoadQueue(path string) (*ParallelIssueQueue, error) {
 }
 
 func (q *ParallelIssueQueue) Save() error {
-	body, err := json.MarshalIndent(q.payload, "", "  ")
-	if err != nil {
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(q.payload); err != nil {
 		return err
 	}
 	dir := filepath.Dir(q.queuePath)
@@ -81,7 +91,7 @@ func (q *ParallelIssueQueue) Save() error {
 		_ = tmp.Close()
 		return err
 	}
-	if _, err := tmp.Write(append(body, '\n')); err != nil {
+	if _, err := tmp.Write(buf.Bytes()); err != nil {
 		_ = tmp.Close()
 		return err
 	}

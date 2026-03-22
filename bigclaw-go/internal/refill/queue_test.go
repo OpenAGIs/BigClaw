@@ -1,6 +1,11 @@
 package refill
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
 
 func TestIssueStateMapRecordsIdentifiers(t *testing.T) {
 	issues := []TrackedIssue{
@@ -62,5 +67,41 @@ func TestParallelIssueQueueRunnableCountForStatesPrefersLiveStateMap(t *testing.
 	}
 	if got := queue.RunnableCountForStates(liveStates); got != 0 {
 		t.Fatalf("expected live state map to mark queue drained, got %d", got)
+	}
+}
+
+func TestParallelIssueQueueSavePreservesBlockedReasonAndRecentBatches(t *testing.T) {
+	queuePath := filepath.Join(t.TempDir(), "queue.json")
+	queue := &ParallelIssueQueue{
+		queuePath: queuePath,
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-230"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-230", Status: "Todo"},
+			},
+		},
+	}
+	queue.payload.Policy.BlockedReason = "local tracker owns live issue state"
+	queue.payload.RecentBatches.Completed = []string{"BIG-PAR-229"}
+	queue.payload.RecentBatches.Active = []string{"BIG-PAR-230"}
+	queue.payload.RecentBatches.Standby = []string{}
+
+	if err := queue.Save(); err != nil {
+		t.Fatalf("save queue: %v", err)
+	}
+
+	body, err := os.ReadFile(queuePath)
+	if err != nil {
+		t.Fatalf("read queue: %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"blocked_reason": "local tracker owns live issue state"`) {
+		t.Fatalf("expected blocked_reason to persist, got %s", text)
+	}
+	if !strings.Contains(text, `"recent_batches"`) {
+		t.Fatalf("expected recent_batches to persist, got %s", text)
+	}
+	if !strings.Contains(text, `"completed": [`) || !strings.Contains(text, `"active": [`) || !strings.Contains(text, `"standby": []`) {
+		t.Fatalf("expected recent_batches fields to persist, got %s", text)
 	}
 }

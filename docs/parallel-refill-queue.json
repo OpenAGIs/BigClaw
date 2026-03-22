@@ -8,8 +8,8 @@
   },
   "policy": {
     "target_in_progress": 2,
-    "activate_state_name": "In Progress",
     "activate_state_id": "bd8aafe7-4d8b-41aa-a85b-13e76d49ead7",
+    "activate_state_name": "In Progress",
     "refill_states": [
       "Backlog",
       "Todo"
@@ -33,13 +33,14 @@
       "BIG-PAR-223",
       "BIG-PAR-224",
       "BIG-PAR-225",
+      "BIG-PAR-226",
+      "BIG-PAR-227",
       "BIG-PAR-228",
-      "BIG-PAR-229"
-    ],
-    "active": [
+      "BIG-PAR-229",
       "BIG-PAR-230",
       "BIG-PAR-231"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -105,13 +106,13 @@
     {
       "identifier": "BIG-GOM-307",
       "title": "Workflow, bootstrap, and GitHub sync toolchain migration",
-      "track": "Python Retirement & Cutover Validation",
+      "track": "Python Retirement \u0026 Cutover Validation",
       "status": "Done"
     },
     {
       "identifier": "BIG-GOM-308",
       "title": "Python deprecation and Go-only mainline switch",
-      "track": "Python Retirement & Cutover Validation",
+      "track": "Python Retirement \u0026 Cutover Validation",
       "status": "Done"
     },
     {
@@ -184,13 +185,13 @@
       "identifier": "BIG-PAR-230",
       "title": "Refill: sync queue metadata statuses from local tracker",
       "track": "Parallel Tracker Automation",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-231",
       "title": "Docs: explain refill queue metadata drift handling",
       "track": "Parallel Tracker Automation",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
