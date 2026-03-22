@@ -35,8 +35,8 @@
       "BIG-PAR-225"
     ],
     "active": [
-      "BIG-PAR-226",
-      "BIG-PAR-227"
+      "BIG-PAR-228",
+      "BIG-PAR-229"
     ],
     "standby": []
   },
@@ -57,7 +57,9 @@
     "BIG-PAR-224",
     "BIG-PAR-225",
     "BIG-PAR-226",
-    "BIG-PAR-227"
+    "BIG-PAR-227",
+    "BIG-PAR-228",
+    "BIG-PAR-229"
   ],
   "issues": [
     {
@@ -154,11 +156,23 @@
       "identifier": "BIG-PAR-226",
       "title": "Document local-issues ensure for automation",
       "track": "Parallel Tracker Automation",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-227",
       "title": "Refill: warn when queue is drained",
+      "track": "Parallel Tracker Automation",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-228",
+      "title": "Local issue store: atomic writes to avoid concurrent corruption",
+      "track": "Parallel Tracker Automation",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-229",
+      "title": "Refill queue: sync issue statuses from local tracker",
       "track": "Parallel Tracker Automation",
       "status": "In Progress"
     }
