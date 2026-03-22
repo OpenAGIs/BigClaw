@@ -184,6 +184,7 @@ func runWorkspace(args []string) error {
 	command := args[0]
 	flags := flag.NewFlagSet("workspace "+command, flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
+	repoRoot := flags.String("repo", "..", "repo root")
 	workspace := flags.String("workspace", ".", "workspace")
 	workspaceRoot := flags.String("workspace-root", ".", "workspace root")
 	issue := flags.String("issue", "", "issue identifier")
@@ -199,27 +200,31 @@ func runWorkspace(args []string) error {
 	if err := flags.Parse(args[1:]); err != nil {
 		return err
 	}
+	resolvedRepoRoot := absPath(*repoRoot)
+	resolvedWorkspace := resolvePathAgainstRepoRoot(resolvedRepoRoot, *workspace)
+	resolvedWorkspaceRoot := resolvePathAgainstRepoRoot(resolvedRepoRoot, *workspaceRoot)
+	resolvedReportPath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *reportPath)
 	switch command {
 	case "bootstrap":
-		status, err := bootstrap.BootstrapWorkspace(*workspace, *issue, *repoURL, *defaultBranch, *cacheRoot, *cacheBase, *cacheKey)
+		status, err := bootstrap.BootstrapWorkspace(resolvedWorkspace, *issue, *repoURL, *defaultBranch, *cacheRoot, *cacheBase, *cacheKey)
 		if err != nil {
-			return emit(map[string]any{"status": "error", "workspace": absPath(*workspace), "error": err.Error()}, *asJSON, 1)
+			return emit(map[string]any{"status": "error", "workspace": absPath(resolvedWorkspace), "error": err.Error()}, *asJSON, 1)
 		}
 		return emit(mergeMap(map[string]any{"status": "ok"}, structToMap(status)), *asJSON, 0)
 	case "cleanup":
-		status, err := bootstrap.CleanupWorkspace(*workspace, *issue, *repoURL, *defaultBranch, *cacheRoot, *cacheBase, *cacheKey)
+		status, err := bootstrap.CleanupWorkspace(resolvedWorkspace, *issue, *repoURL, *defaultBranch, *cacheRoot, *cacheBase, *cacheKey)
 		if err != nil {
-			return emit(map[string]any{"status": "error", "workspace": absPath(*workspace), "error": err.Error()}, *asJSON, 1)
+			return emit(map[string]any{"status": "error", "workspace": absPath(resolvedWorkspace), "error": err.Error()}, *asJSON, 1)
 		}
 		return emit(mergeMap(map[string]any{"status": "ok"}, structToMap(status)), *asJSON, 0)
 	case "validate":
 		issues := splitCSV(*issuesCSV)
-		report, err := bootstrap.BuildValidationReport(*repoURL, *workspaceRoot, issues, *defaultBranch, *cacheRoot, *cacheBase, *cacheKey, *cleanup)
+		report, err := bootstrap.BuildValidationReport(*repoURL, resolvedWorkspaceRoot, issues, *defaultBranch, *cacheRoot, *cacheBase, *cacheKey, *cleanup)
 		if err != nil {
 			return err
 		}
-		if *reportPath != "" {
-			if _, err := bootstrap.WriteValidationReport(report, *reportPath); err != nil {
+		if resolvedReportPath != "" {
+			if _, err := bootstrap.WriteValidationReport(report, resolvedReportPath); err != nil {
 				return err
 			}
 		}
@@ -238,6 +243,7 @@ func runWorkspace(args []string) error {
 func runRefill(args []string) error {
 	flags := flag.NewFlagSet("refill", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
+	repoRoot := flags.String("repo", "..", "repo root")
 	queuePath := flags.String("queue", "docs/parallel-refill-queue.json", "queue path")
 	localIssuesPath := flags.String("local-issues", "", "local issue store path")
 	targetInProgress := flags.Int("target-in-progress", -1, "override target")
@@ -248,11 +254,14 @@ func runRefill(args []string) error {
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
-	queue, err := refill.LoadQueue(resolveRepoRelativePath(*queuePath))
+	resolvedRepoRoot := absPath(*repoRoot)
+	resolvedQueuePath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *queuePath)
+	queue, err := refill.LoadQueue(resolvedQueuePath)
 	if err != nil {
 		return err
 	}
-	client, err := refillClientFromFlags(*localIssuesPath)
+	resolvedLocalIssuesPath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *localIssuesPath)
+	client, err := refillClientFromFlags(resolvedRepoRoot, resolvedLocalIssuesPath)
 	if err != nil {
 		return err
 	}
@@ -283,13 +292,16 @@ func runLocalIssues(args []string) error {
 	case "list":
 		flags := flag.NewFlagSet("local-issues "+command, flag.ContinueOnError)
 		flags.SetOutput(io.Discard)
+		repoRoot := flags.String("repo", "..", "repo root")
 		storePath := flags.String("local-issues", "", "local issue store path")
 		statesCSV := flags.String("states", "", "comma-separated state filter")
 		asJSON := flags.Bool("json", false, "json")
 		if err := flags.Parse(args[1:]); err != nil {
 			return err
 		}
-		store, err := refill.LoadLocalIssueStore(resolvedLocalIssueStorePath(*storePath))
+		resolvedRepoRoot := absPath(*repoRoot)
+		resolvedStorePath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *storePath)
+		store, err := refill.LoadLocalIssueStore(resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedStorePath))
 		if err != nil {
 			return err
 		}
@@ -315,7 +327,7 @@ func runLocalIssues(args []string) error {
 			return encoder.Encode(map[string]any{
 				"status":       "ok",
 				"backend":      "local",
-				"local_issues": absPath(resolvedLocalIssueStorePath(*storePath)),
+				"local_issues": absPath(resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedStorePath)),
 				"issues":       filtered,
 			})
 		}
@@ -326,6 +338,7 @@ func runLocalIssues(args []string) error {
 	case "create":
 		flags := flag.NewFlagSet("local-issues "+command, flag.ContinueOnError)
 		flags.SetOutput(io.Discard)
+		repoRoot := flags.String("repo", "..", "repo root")
 		storePath := flags.String("local-issues", "", "local issue store path")
 		id := flags.String("id", "", "issue id (defaults to lowercased identifier)")
 		identifier := flags.String("identifier", "", "issue identifier (e.g. BIG-PAR-104)")
@@ -340,7 +353,9 @@ func runLocalIssues(args []string) error {
 		if err := flags.Parse(args[1:]); err != nil {
 			return err
 		}
-		store, err := refill.LoadLocalIssueStore(resolvedLocalIssueStorePath(*storePath))
+		resolvedRepoRoot := absPath(*repoRoot)
+		resolvedStorePath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *storePath)
+		store, err := refill.LoadLocalIssueStore(resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedStorePath))
 		if err != nil {
 			return err
 		}
@@ -373,11 +388,12 @@ func runLocalIssues(args []string) error {
 			"backend":      "local",
 			"issue":        created.Identifier,
 			"state":        created.State,
-			"local_issues": absPath(resolvedLocalIssueStorePath(*storePath)),
+			"local_issues": absPath(resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedStorePath)),
 		}, *asJSON, 0)
 	case "set-state":
 		flags := flag.NewFlagSet("local-issues "+command, flag.ContinueOnError)
 		flags.SetOutput(io.Discard)
+		repoRoot := flags.String("repo", "..", "repo root")
 		storePath := flags.String("local-issues", "", "local issue store path")
 		issueRef := flags.String("issue", "", "issue id or identifier")
 		stateName := flags.String("state", "", "state name")
@@ -396,7 +412,9 @@ func runLocalIssues(args []string) error {
 		if err != nil {
 			return err
 		}
-		store, err := refill.LoadLocalIssueStore(resolvedLocalIssueStorePath(*storePath))
+		resolvedRepoRoot := absPath(*repoRoot)
+		resolvedStorePath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *storePath)
+		store, err := refill.LoadLocalIssueStore(resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedStorePath))
 		if err != nil {
 			return err
 		}
@@ -409,11 +427,12 @@ func runLocalIssues(args []string) error {
 			"backend":      "local",
 			"issue":        *issueRef,
 			"state":        updatedState,
-			"local_issues": absPath(resolvedLocalIssueStorePath(*storePath)),
+			"local_issues": absPath(resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedStorePath)),
 		}, *asJSON, 0)
 	case "comment":
 		flags := flag.NewFlagSet("local-issues "+command, flag.ContinueOnError)
 		flags.SetOutput(io.Discard)
+		repoRoot := flags.String("repo", "..", "repo root")
 		storePath := flags.String("local-issues", "", "local issue store path")
 		issueRef := flags.String("issue", "", "issue id or identifier")
 		author := flags.String("author", "codex", "comment author")
@@ -426,7 +445,9 @@ func runLocalIssues(args []string) error {
 		if trim(*issueRef) == "" {
 			return errors.New("issue is required")
 		}
-		store, err := refill.LoadLocalIssueStore(resolvedLocalIssueStorePath(*storePath))
+		resolvedRepoRoot := absPath(*repoRoot)
+		resolvedStorePath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *storePath)
+		store, err := refill.LoadLocalIssueStore(resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedStorePath))
 		if err != nil {
 			return err
 		}
@@ -443,7 +464,7 @@ func runLocalIssues(args []string) error {
 			"issue":        *issueRef,
 			"author":       *author,
 			"body":         *body,
-			"local_issues": absPath(resolvedLocalIssueStorePath(*storePath)),
+			"local_issues": absPath(resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedStorePath)),
 		}, *asJSON, 0)
 	default:
 		return fmt.Errorf("unknown local-issues subcommand: %s", command)
@@ -572,8 +593,8 @@ func (c *localIssueClient) promoteIssue(issueID string, _ string, stateName stri
 	return true, updatedState, nil
 }
 
-func refillClientFromFlags(localIssuesPath string) (refillClient, error) {
-	if path := resolvedLocalIssueStorePath(localIssuesPath); path != "" {
+func refillClientFromFlags(repoRoot string, localIssuesPath string) (refillClient, error) {
+	if path := resolvedLocalIssueStorePath(repoRoot, localIssuesPath); path != "" {
 		store, err := refill.LoadLocalIssueStore(path)
 		if err != nil {
 			return nil, err
@@ -587,11 +608,16 @@ func refillClientFromFlags(localIssuesPath string) (refillClient, error) {
 	return client, nil
 }
 
-func resolvedLocalIssueStorePath(path string) string {
+func resolvedLocalIssueStorePath(repoRoot string, path string) string {
 	if trim(path) != "" {
+		path = resolvePathAgainstRepoRoot(repoRoot, path)
 		return resolveRepoRelativePath(path)
 	}
-	for _, candidate := range []string{"local-issues.json", "../local-issues.json"} {
+	candidates := []string{"local-issues.json", "../local-issues.json"}
+	if trim(repoRoot) != "" {
+		candidates = append([]string{filepath.Join(repoRoot, "local-issues.json")}, candidates...)
+	}
+	for _, candidate := range candidates {
 		if _, err := os.Stat(candidate); err == nil {
 			return candidate
 		}
@@ -610,6 +636,18 @@ func resolveRepoRelativePath(path string) string {
 		}
 	}
 	return path
+}
+
+func resolvePathAgainstRepoRoot(repoRoot string, path string) string {
+	path = trim(path)
+	if path == "" || filepath.IsAbs(path) || (len(path) > 0 && path[0] == '~') {
+		return path
+	}
+	repoRoot = trim(repoRoot)
+	if repoRoot == "" {
+		return path
+	}
+	return filepath.Join(repoRoot, path)
 }
 
 func parseOptionalTime(value string) (time.Time, error) {

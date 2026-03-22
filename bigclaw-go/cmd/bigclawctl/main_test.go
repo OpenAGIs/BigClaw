@@ -52,6 +52,22 @@ func TestLinearClientFetchIssueStatesPreservesTrackerIDs(t *testing.T) {
 	}
 }
 
+func TestResolvePathAgainstRepoRootJoinsRelativePaths(t *testing.T) {
+	repoRoot := filepath.Join(t.TempDir(), "repo-root")
+	if got := resolvePathAgainstRepoRoot(repoRoot, "reports/bootstrap-cache-validation.json"); got != filepath.Join(repoRoot, "reports/bootstrap-cache-validation.json") {
+		t.Fatalf("expected join, got %q", got)
+	}
+	if got := resolvePathAgainstRepoRoot(repoRoot, "/tmp/absolute.json"); got != "/tmp/absolute.json" {
+		t.Fatalf("expected absolute path passthrough, got %q", got)
+	}
+	if got := resolvePathAgainstRepoRoot(repoRoot, "~/relative.json"); got != "~/relative.json" {
+		t.Fatalf("expected tilde passthrough, got %q", got)
+	}
+	if got := resolvePathAgainstRepoRoot("", "reports/bootstrap-cache-validation.json"); got != "reports/bootstrap-cache-validation.json" {
+		t.Fatalf("expected repoRoot empty passthrough, got %q", got)
+	}
+}
+
 func TestRunRefillOncePromotesUsingLinearIssueID(t *testing.T) {
 	queuePath := filepath.Join(t.TempDir(), "queue.json")
 	if err := os.WriteFile(queuePath, []byte(`{

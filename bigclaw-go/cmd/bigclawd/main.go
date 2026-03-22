@@ -273,6 +273,7 @@ func buildWorkerPool(
 	for index := 0; index < workerCount; index++ {
 		runtimes = append(runtimes, &worker.Runtime{
 			WorkerID:    fmt.Sprintf("worker-%d", index+1),
+			NodeID:      cfg.NodeID,
 			Queue:       q,
 			Scheduler:   schedulerRuntime,
 			Registry:    registry,
