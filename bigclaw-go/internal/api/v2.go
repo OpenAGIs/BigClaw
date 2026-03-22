@@ -204,6 +204,17 @@ type workerPoolSummary struct {
 	Workers       []worker.Status `json:"workers"`
 }
 
+type workerPoolHealthSummary struct {
+	StaleAfterSeconds          int64    `json:"stale_after_seconds"`
+	WorkersWithHeartbeat       int      `json:"workers_with_heartbeat"`
+	WorkersMissingHeartbeat    int      `json:"workers_missing_heartbeat"`
+	StaleWorkers               int      `json:"stale_workers"`
+	StaleWorkerIDs             []string `json:"stale_worker_ids,omitempty"`
+	MissingHeartbeatWorkerIDs  []string `json:"missing_heartbeat_worker_ids,omitempty"`
+	OldestHeartbeatAgeSeconds  *int64   `json:"oldest_heartbeat_age_seconds,omitempty"`
+	NewestHeartbeatAgeSeconds  *int64   `json:"newest_heartbeat_age_seconds,omitempty"`
+}
+
 type controlActionAuditEntry struct {
 	OperationID      string       `json:"operation_id,omitempty"`
 	Action           string       `json:"action"`
@@ -1233,6 +1244,7 @@ func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 	}
 	if pool := s.workerPoolSummary(); pool != nil {
 		response["worker_pool"] = pool
+		response["worker_pool_health"] = workerPoolHealth(s.Now(), pool)
 	}
 	if checkpointResets := s.checkpointResetAuditSnapshot(filters.AuditLimit); checkpointResets != nil {
 		response["checkpoint_resets"] = checkpointResets
@@ -2786,5 +2798,60 @@ func (s *Server) workerPoolSummary() *workerPoolSummary {
 		ActiveWorkers: active,
 		IdleWorkers:   idle,
 		Workers:       snapshots,
+	}
+}
+
+func workerPoolHealth(now time.Time, pool *workerPoolSummary) *workerPoolHealthSummary {
+	if pool == nil {
+		return nil
+	}
+	// Default threshold: if a worker hasn't heartbeat in 5 minutes, surface it as stale in operator payloads.
+	staleAfter := 5 * time.Minute
+
+	withHeartbeat := 0
+	missingIDs := make([]string, 0)
+	staleIDs := make([]string, 0)
+	var oldestSeconds *int64
+	var newestSeconds *int64
+
+	for _, status := range pool.Workers {
+		if status.WorkerID == "" {
+			continue
+		}
+		if status.LastHeartbeatAt.IsZero() {
+			missingIDs = append(missingIDs, status.WorkerID)
+			continue
+		}
+		withHeartbeat++
+		age := now.Sub(status.LastHeartbeatAt)
+		if age < 0 {
+			age = 0
+		}
+		seconds := int64(age.Seconds())
+		if oldestSeconds == nil || seconds > *oldestSeconds {
+			value := seconds
+			oldestSeconds = &value
+		}
+		if newestSeconds == nil || seconds < *newestSeconds {
+			value := seconds
+			newestSeconds = &value
+		}
+		if age >= staleAfter {
+			staleIDs = append(staleIDs, status.WorkerID)
+		}
+	}
+
+	sort.Strings(staleIDs)
+	sort.Strings(missingIDs)
+
+	return &workerPoolHealthSummary{
+		StaleAfterSeconds:         int64(staleAfter.Seconds()),
+		WorkersWithHeartbeat:      withHeartbeat,
+		WorkersMissingHeartbeat:   len(missingIDs),
+		StaleWorkers:              len(staleIDs),
+		StaleWorkerIDs:            staleIDs,
+		MissingHeartbeatWorkerIDs: missingIDs,
+		OldestHeartbeatAgeSeconds: oldestSeconds,
+		NewestHeartbeatAgeSeconds: newestSeconds,
 	}
 }

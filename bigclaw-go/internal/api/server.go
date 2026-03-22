@@ -222,6 +222,11 @@ func (s *Server) Handler() http.Handler {
 		}
 		if pool := s.workerPoolSummary(); pool != nil {
 			payload["worker_pool"] = pool
+			if s.Now != nil {
+				payload["worker_pool_health"] = workerPoolHealth(s.Now(), pool)
+			} else {
+				payload["worker_pool_health"] = workerPoolHealth(time.Now(), pool)
+			}
 		}
 		if s.Control != nil {
 			payload["control"] = s.Control.Snapshot()
