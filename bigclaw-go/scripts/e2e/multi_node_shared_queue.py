@@ -619,7 +619,7 @@ def build_live_takeover_report(scenarios, shared_queue_report_path):
     passing = sum(1 for scenario in scenarios if scenario['all_assertions_passed'])
     return {
         'generated_at': utc_iso(),
-        'ticket': 'OPE-256',
+        'ticket': 'OPE-260',
         'title': 'Live multi-node subscriber takeover proof',
         'status': 'live-multi-node-proof',
         'harness_mode': 'live_multi_node_bigclawd_cluster',
