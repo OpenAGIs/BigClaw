@@ -332,7 +332,7 @@ func runRefill(args []string) error {
 
 func runLocalIssues(args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: bigclawctl local-issues <list|create|set-state|comment> [flags]")
+		return errors.New("usage: bigclawctl local-issues <list|create|ensure|set-state|comment> [flags]")
 	}
 	command := args[0]
 	switch command {
@@ -433,6 +433,98 @@ func runLocalIssues(args []string) error {
 		return emit(map[string]any{
 			"status":       "ok",
 			"backend":      "local",
+			"issue":        created.Identifier,
+			"state":        created.State,
+			"local_issues": absPath(resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedStorePath)),
+		}, *asJSON, 0)
+	case "ensure":
+		flags := flag.NewFlagSet("local-issues "+command, flag.ContinueOnError)
+		flags.SetOutput(io.Discard)
+		repoRoot := flags.String("repo", "..", "repo root")
+		storePath := flags.String("local-issues", "", "local issue store path")
+		id := flags.String("id", "", "issue id (defaults to lowercased identifier)")
+		identifier := flags.String("identifier", "", "issue identifier (e.g. BIG-PAR-104)")
+		title := flags.String("title", "", "issue title (defaults to identifier)")
+		description := flags.String("description", "", "issue description")
+		stateName := flags.String("state", "Todo", "state name")
+		priority := flags.Int("priority", 3, "priority (1=urgent, 4=low)")
+		labelsCSV := flags.String("labels", "", "comma-separated labels")
+		assigned := flags.Bool("assigned-to-worker", true, "assigned to worker")
+		createdAt := flags.String("created-at", "", "RFC3339 timestamp")
+		setStateIfExists := flags.Bool("set-state-if-exists", false, "update the issue state when the issue already exists")
+		asJSON := flags.Bool("json", false, "json")
+		if err := flags.Parse(args[1:]); err != nil {
+			return err
+		}
+		trimmedIdentifier := trim(*identifier)
+		if trimmedIdentifier == "" {
+			return errors.New("identifier is required")
+		}
+		resolvedRepoRoot := absPath(*repoRoot)
+		resolvedStorePath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *storePath)
+		store, err := refill.LoadLocalIssueStore(resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedStorePath))
+		if err != nil {
+			return err
+		}
+		when, err := parseOptionalTime(*createdAt)
+		if err != nil {
+			return err
+		}
+		labels := []string{}
+		for _, label := range splitCSV(*labelsCSV) {
+			if trimmed := trim(label); trimmed != "" {
+				labels = append(labels, trimmed)
+			}
+		}
+		existing, found := store.FindIssue(trimmedIdentifier)
+		action := "created"
+		state := trim(*stateName)
+		if state == "" {
+			state = "Todo"
+		}
+		if found {
+			action = "exists"
+			if *setStateIfExists && existing.State != state {
+				if when.IsZero() {
+					when = time.Now()
+				}
+				updatedState, err := store.UpdateIssueState(trimmedIdentifier, state, when)
+				if err != nil {
+					return err
+				}
+				existing.State = updatedState
+				action = "updated"
+			}
+			return emit(map[string]any{
+				"status":       "ok",
+				"backend":      "local",
+				"action":       action,
+				"issue":        existing.Identifier,
+				"state":        existing.State,
+				"local_issues": absPath(resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedStorePath)),
+			}, *asJSON, 0)
+		}
+		if trim(*title) == "" {
+			*title = trimmedIdentifier
+		}
+		created, err := store.CreateIssue(refill.LocalIssueCreateParams{
+			ID:               *id,
+			Identifier:       trimmedIdentifier,
+			Title:            *title,
+			Description:      *description,
+			State:            state,
+			Priority:         *priority,
+			Labels:           labels,
+			AssignedToWorker: *assigned,
+			CreatedAt:        when,
+		})
+		if err != nil {
+			return err
+		}
+		return emit(map[string]any{
+			"status":       "ok",
+			"backend":      "local",
+			"action":       action,
 			"issue":        created.Identifier,
 			"state":        created.State,
 			"local_issues": absPath(resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedStorePath)),

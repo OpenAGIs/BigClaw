@@ -29,6 +29,7 @@ hooks:
   after_create: |
     set -eu
     bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" workspace bootstrap --workspace "$SYMPHONY_WORKSPACE" --issue "$SYMPHONY_ISSUE_IDENTIFIER" --repo-url "${SYMPHONY_BOOTSTRAP_REPO_URL:-git@github.com:OpenAGIs/BigClaw.git}" --default-branch "${SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH:-main}" --cache-base "${SYMPHONY_BOOTSTRAP_CACHE_BASE:-$HOME/.cache/symphony/repos}" --cache-key "${SYMPHONY_BOOTSTRAP_CACHE_KEY:-openagis-bigclaw}" --json
+    bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" local-issues ensure --repo "$SYMPHONY_WORKSPACE/bigclaw-go" --local-issues ../local-issues.json --identifier "$SYMPHONY_ISSUE_IDENTIFIER" --state "In Progress" --set-state-if-exists --json
     git config user.email "dcjcloud@gmail.com"
     git config user.name "native cloud"
     gh auth setup-git || true
@@ -36,6 +37,7 @@ hooks:
     bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" github-sync status --json --repo "$SYMPHONY_WORKSPACE"
   before_run: |
     set -eu
+    bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" local-issues ensure --repo "$SYMPHONY_WORKSPACE/bigclaw-go" --local-issues ../local-issues.json --identifier "$SYMPHONY_ISSUE_IDENTIFIER" --state "In Progress" --json
     bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" github-sync install --repo "$SYMPHONY_WORKSPACE"
     bash "$SYMPHONY_WORKFLOW_DIR/scripts/ops/bigclawctl" github-sync sync --allow-dirty --json --repo "$SYMPHONY_WORKSPACE"
   after_run: |
