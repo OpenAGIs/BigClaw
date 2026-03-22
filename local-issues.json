@@ -1084,6 +1084,38 @@
       "state": "Done",
       "title": "Refresh repo-wide validation report ticket references",
       "updated_at": "2026-03-22T00:00:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T01:20:42Z",
+      "description": "Make `bigclawctl github-sync status --json` return a non-fatal status payload on detached HEAD so merged/deleted-branch worktrees do not trip workspace automation.",
+      "id": "big-par-110",
+      "identifier": "BIG-PAR-110",
+      "labels": [
+        "parallel",
+        "tooling",
+        "github-sync"
+      ],
+      "priority": 2,
+      "state": "In Progress",
+      "title": "Handle detached HEAD in github-sync status",
+      "updated_at": "2026-03-22T01:20:42Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T01:20:42Z",
+      "description": "Avoid noisy or unsafe auto-sync attempts from git hooks when HEAD is detached (for example after a PR merge with `--delete-branch`).",
+      "id": "big-par-111",
+      "identifier": "BIG-PAR-111",
+      "labels": [
+        "parallel",
+        "tooling",
+        "workflow"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Skip auto-sync hook behavior on detached HEAD",
+      "updated_at": "2026-03-22T01:20:42Z"
     }
   ]
 }
