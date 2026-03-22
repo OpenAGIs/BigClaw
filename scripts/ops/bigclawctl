@@ -3,20 +3,57 @@ set -euo pipefail
 
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 repo_root=$(cd -- "$script_dir/../.." && pwd)
+invocation_dir=$(pwd)
 
 cd "$repo_root/bigclaw-go"
 
 needs_repo=true
+out_args=()
+consume_next_as_repo=0
 for arg in "$@"; do
+  if [ "$consume_next_as_repo" -eq 1 ]; then
+    consume_next_as_repo=0
+    if [[ "$arg" != /* && "$arg" != "~"* ]]; then
+      if resolved_repo=$(cd "$invocation_dir" && cd "$arg" 2>/dev/null && pwd); then
+        out_args+=("$resolved_repo")
+      else
+        out_args+=("$arg")
+      fi
+    else
+      out_args+=("$arg")
+    fi
+    continue
+  fi
   case "$arg" in
     --repo|--repo=*)
       needs_repo=false
+      case "$arg" in
+        --repo)
+          out_args+=("$arg")
+          consume_next_as_repo=1
+          ;;
+        --repo=*)
+          repo_value="${arg#--repo=}"
+          if [[ "$repo_value" != /* && "$repo_value" != "~"* ]]; then
+            if resolved_repo=$(cd "$invocation_dir" && cd "$repo_value" 2>/dev/null && pwd); then
+              out_args+=(--repo="$resolved_repo")
+            else
+              out_args+=("$arg")
+            fi
+          else
+            out_args+=("$arg")
+          fi
+          ;;
+      esac
+      ;;
+    *)
+      out_args+=("$arg")
       ;;
   esac
 done
 
 if [ "$needs_repo" = true ]; then
-  exec go run ./cmd/bigclawctl "$@" --repo "$repo_root"
+  exec go run ./cmd/bigclawctl "${out_args[@]}" --repo "$repo_root"
 fi
 
-exec go run ./cmd/bigclawctl "$@"
+exec go run ./cmd/bigclawctl "${out_args[@]}"

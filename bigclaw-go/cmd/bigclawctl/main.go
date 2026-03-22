@@ -297,6 +297,7 @@ func runRefill(args []string) error {
 	watch := flags.Bool("watch", false, "watch")
 	interval := flags.Int("interval", 20, "interval")
 	apply := flags.Bool("apply", false, "apply")
+	syncQueueStatus := flags.Bool("sync-queue-status", false, "sync queue issue statuses from local tracker (local backend only; requires --apply to write)")
 	refreshURL := flags.String("refresh-url", "", "refresh url")
 	if err := flags.Parse(args); err != nil {
 		return err
@@ -317,7 +318,7 @@ func runRefill(args []string) error {
 		if *targetInProgress >= 0 {
 			override = targetInProgress
 		}
-		return runRefillOnce(queue, client, *apply, *refreshURL, override)
+		return runRefillOnce(queue, client, *apply, *refreshURL, override, *syncQueueStatus, resolvedQueuePath, resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedLocalIssuesPath))
 	}
 	if !*watch {
 		return runOnce()
@@ -800,16 +801,45 @@ func parseOptionalTime(value string) (time.Time, error) {
 	return parsed, nil
 }
 
-func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply bool, refreshURL string, targetOverride *int) error {
+func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply bool, refreshURL string, targetOverride *int, syncQueueStatus bool, queuePath string, localIssuesPath string) error {
+	queueStatusUpdates := 0
+	queueStatusWritten := false
+	if syncQueueStatus && client.backend() == "local" {
+		allIssues, err := client.fetchIssueStates(queue.ProjectSlug(), nil)
+		if err != nil {
+			return err
+		}
+		queueStatusUpdates = queue.SyncStatusFromStates(refill.IssueStateMap(allIssues))
+		if apply && queueStatusUpdates > 0 {
+			if err := queue.Save(); err != nil {
+				return err
+			}
+			queueStatusWritten = true
+		}
+	}
+
 	refillStates := make([]string, 0, len(queue.RefillStates()))
 	for state := range queue.RefillStates() {
 		refillStates = append(refillStates, state)
 	}
-	issues, err := client.fetchIssueStates(queue.ProjectSlug(), append([]string{"In Progress"}, refillStates...))
+	statesToFetch := append([]string{"In Progress"}, refillStates...)
+	if client.backend() == "local" {
+		// Load the full local tracker state so Done issues are reflected even if queue metadata lags.
+		statesToFetch = nil
+	}
+	issues, err := client.fetchIssueStates(queue.ProjectSlug(), statesToFetch)
 	if err != nil {
 		return err
 	}
 	stateMap := refill.IssueStateMap(issues)
+	liveStateMap := stateMap
+	if client.backend() == "local" {
+		allIssues, err := client.fetchIssueStates(queue.ProjectSlug(), nil)
+		if err != nil {
+			return err
+		}
+		liveStateMap = refill.IssueStateMap(allIssues)
+	}
 	active := map[string]struct{}{}
 	issueIDs := map[string]string{}
 	for _, issue := range issues {
@@ -826,11 +856,27 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		target = *targetOverride
 	}
 	payload := map[string]any{
-		"active_in_progress": refill.SortedActive(issues),
-		"backend":            client.backend(),
-		"target_in_progress": target,
-		"candidates":         candidates,
-		"mode":               map[bool]string{true: "apply", false: "dry-run"}[apply],
+		"active_in_progress":   refill.SortedActive(issues),
+		"backend":              client.backend(),
+		"target_in_progress":   target,
+		"candidates":           candidates,
+		"mode":                 map[bool]string{true: "apply", false: "dry-run"}[apply],
+		"queue_status_synced":  syncQueueStatus && client.backend() == "local",
+		"queue_status_updates": queueStatusUpdates,
+		"queue_status_written": queueStatusWritten,
+		"queue_path":           queuePath,
+	}
+	if trim(localIssuesPath) != "" {
+		payload["local_issues_path"] = localIssuesPath
+	}
+	queueRunnable := queue.RunnableCount()
+	if client.backend() == "local" {
+		queueRunnable = queue.RunnableCountForStates(liveStateMap)
+	}
+	payload["queue_runnable"] = queueRunnable
+	payload["queue_drained"] = queueRunnable == 0
+	if queueRunnable == 0 {
+		payload["warning"] = "refill queue drained: no runnable identifiers in docs/parallel-refill-queue.json"
 	}
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")

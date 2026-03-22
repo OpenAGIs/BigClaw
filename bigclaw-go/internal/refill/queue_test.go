@@ -1,6 +1,11 @@
 package refill
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
 
 func TestIssueStateMapRecordsIdentifiers(t *testing.T) {
 	issues := []TrackedIssue{
@@ -10,5 +15,93 @@ func TestIssueStateMapRecordsIdentifiers(t *testing.T) {
 	stateMap := IssueStateMap(issues)
 	if stateMap["BIG-GOM-301"] != "Todo" || stateMap["BIG-GOM-302"] != "Todo" {
 		t.Fatalf("unexpected state map: %+v", stateMap)
+	}
+}
+
+func TestParallelIssueQueueRunnableCountTreatsFullyDoneQueueAsDrained(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-001", "BIG-PAR-002"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-001", Status: "Done"},
+				{Identifier: "BIG-PAR-002", Status: "Done"},
+			},
+		},
+	}
+	if got := queue.RunnableCount(); got != 0 {
+		t.Fatalf("expected drained runnable count, got %d", got)
+	}
+}
+
+func TestParallelIssueQueueRunnableCountDoesNotDrainWhenMetadataMissing(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-001", "BIG-PAR-002"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-001", Status: "Done"},
+			},
+		},
+	}
+	if got := queue.RunnableCount(); got == 0 {
+		t.Fatalf("expected runnable count for missing metadata, got %d", got)
+	}
+}
+
+func TestParallelIssueQueueRunnableCountForStatesPrefersLiveStateMap(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-224", "BIG-PAR-225", "BIG-PAR-226", "BIG-PAR-227"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-224", Status: "In Progress"},
+				{Identifier: "BIG-PAR-225", Status: "In Progress"},
+				{Identifier: "BIG-PAR-226", Status: "Todo"},
+				{Identifier: "BIG-PAR-227", Status: "Todo"},
+			},
+		},
+	}
+	liveStates := map[string]string{
+		"BIG-PAR-224": "Done",
+		"BIG-PAR-225": "Done",
+		"BIG-PAR-226": "Done",
+		"BIG-PAR-227": "Done",
+	}
+	if got := queue.RunnableCountForStates(liveStates); got != 0 {
+		t.Fatalf("expected live state map to mark queue drained, got %d", got)
+	}
+}
+
+func TestParallelIssueQueueSavePreservesBlockedReasonAndRecentBatches(t *testing.T) {
+	queuePath := filepath.Join(t.TempDir(), "queue.json")
+	queue := &ParallelIssueQueue{
+		queuePath: queuePath,
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-230"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-230", Status: "Todo"},
+			},
+		},
+	}
+	queue.payload.Policy.BlockedReason = "local tracker owns live issue state"
+	queue.payload.RecentBatches.Completed = []string{"BIG-PAR-229"}
+	queue.payload.RecentBatches.Active = []string{"BIG-PAR-230"}
+	queue.payload.RecentBatches.Standby = []string{}
+
+	if err := queue.Save(); err != nil {
+		t.Fatalf("save queue: %v", err)
+	}
+
+	body, err := os.ReadFile(queuePath)
+	if err != nil {
+		t.Fatalf("read queue: %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"blocked_reason": "local tracker owns live issue state"`) {
+		t.Fatalf("expected blocked_reason to persist, got %s", text)
+	}
+	if !strings.Contains(text, `"recent_batches"`) {
+		t.Fatalf("expected recent_batches to persist, got %s", text)
+	}
+	if !strings.Contains(text, `"completed": [`) || !strings.Contains(text, `"active": [`) || !strings.Contains(text, `"standby": []`) {
+		t.Fatalf("expected recent_batches fields to persist, got %s", text)
 	}
 }
