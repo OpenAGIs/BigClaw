@@ -135,7 +135,7 @@ func TestRunRefillOncePromotesUsingLinearIssueID(t *testing.T) {
 		os.Stdout = originalStdout
 	}()
 
-	runErr := runRefillOnce(queue, client, true, "", nil)
+	runErr := runRefillOnce(queue, client, true, "", nil, false)
 	_ = writer.Close()
 	output, _ := io.ReadAll(reader)
 	if runErr != nil {
@@ -211,7 +211,7 @@ func TestRunRefillOncePromotesUsingLocalIssueStore(t *testing.T) {
 		os.Stdout = originalStdout
 	}()
 
-	runErr := runRefillOnce(queue, client, true, "", nil)
+	runErr := runRefillOnce(queue, client, true, "", nil, false)
 	_ = writer.Close()
 	output, _ := io.ReadAll(reader)
 	if runErr != nil {
@@ -286,7 +286,7 @@ func TestRunRefillOnceLocalIssueStoreDetectsQueueDrainedWhenMetadataStale(t *tes
 		os.Stdout = originalStdout
 	}()
 
-	runErr := runRefillOnce(queue, client, false, "", nil)
+	runErr := runRefillOnce(queue, client, false, "", nil, false)
 	_ = writer.Close()
 	output, _ := io.ReadAll(reader)
 	if runErr != nil {
@@ -351,7 +351,7 @@ func TestRunRefillOnceLocalBackendUsesAllLocalStatesForRunnableCount(t *testing.
 		os.Stdout = originalStdout
 	}()
 
-	runErr := runRefillOnce(queue, client, false, "", nil)
+	runErr := runRefillOnce(queue, client, false, "", nil, false)
 	_ = writer.Close()
 	output, _ := io.ReadAll(reader)
 	if runErr != nil {
@@ -359,6 +359,75 @@ func TestRunRefillOnceLocalBackendUsesAllLocalStatesForRunnableCount(t *testing.
 	}
 	if !bytes.Contains(output, []byte(`"queue_runnable": 1`)) {
 		t.Fatalf("expected runnable count to use full local state, got %s", string(output))
+	}
+}
+
+func TestRunRefillOnceLocalBackendSyncsQueueStatusFromLocalIssues(t *testing.T) {
+	tempDir := t.TempDir()
+	queuePath := filepath.Join(tempDir, "queue.json")
+	if err := os.WriteFile(queuePath, []byte(`{
+  "project": {"slug_id": "project-slug"},
+  "policy": {
+    "target_in_progress": 1,
+    "activate_state_name": "In Progress",
+    "activate_state_id": "state-in-progress",
+    "refill_states": ["Todo", "Backlog"]
+  },
+  "issue_order": ["BIG-GOM-501"],
+  "issues": [
+    {"identifier": "BIG-GOM-501", "title": "Queue metadata drift", "track": "Automation", "status": "Todo"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write queue file: %v", err)
+	}
+	queue, err := refill.LoadQueue(queuePath)
+	if err != nil {
+		t.Fatalf("load queue: %v", err)
+	}
+
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {"id": "big-gom-501", "identifier": "BIG-GOM-501", "state": "Done"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+	store, err := refill.LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	client := &localIssueClient{store: store}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runRefillOnce(queue, client, true, "", nil, true)
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("run refill once: %v (stdout=%s)", runErr, string(output))
+	}
+
+	body, err := os.ReadFile(queuePath)
+	if err != nil {
+		t.Fatalf("read updated queue file: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"status": "Done"`)) {
+		t.Fatalf("expected queue status update, got %s", string(body))
+	}
+	if !bytes.Contains(output, []byte(`"queue_status_updates": 1`)) {
+		t.Fatalf("expected refill output to include queue status updates, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"queue_status_written": true`)) {
+		t.Fatalf("expected refill output to confirm write, got %s", string(output))
 	}
 }
 

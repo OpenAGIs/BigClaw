@@ -60,6 +60,37 @@ func LoadQueue(path string) (*ParallelIssueQueue, error) {
 	return &ParallelIssueQueue{queuePath: absolute, payload: payload}, nil
 }
 
+func (q *ParallelIssueQueue) Save() error {
+	body, err := json.MarshalIndent(q.payload, "", "  ")
+	if err != nil {
+		return err
+	}
+	dir := filepath.Dir(q.queuePath)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	tmp, err := os.CreateTemp(dir, ".parallel-refill-queue.*.tmp")
+	if err != nil {
+		return err
+	}
+	tmpName := tmp.Name()
+	defer func() {
+		_ = os.Remove(tmpName)
+	}()
+	if err := tmp.Chmod(0o644); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if _, err := tmp.Write(append(body, '\n')); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmpName, q.queuePath)
+}
+
 func (q *ParallelIssueQueue) ProjectSlug() string {
 	return q.payload.Project.SlugID
 }
@@ -93,6 +124,30 @@ func (q *ParallelIssueQueue) IssueOrder() []string {
 
 func (q *ParallelIssueQueue) IssueRecords() []IssueRecord {
 	return append([]IssueRecord{}, q.payload.Issues...)
+}
+
+func (q *ParallelIssueQueue) SyncStatusFromStates(issueStates map[string]string) int {
+	updated := 0
+	for idx := range q.payload.Issues {
+		identifier := strings.TrimSpace(q.payload.Issues[idx].Identifier)
+		if identifier == "" {
+			continue
+		}
+		state, ok := issueStates[identifier]
+		if !ok {
+			continue
+		}
+		state = strings.TrimSpace(state)
+		if state == "" {
+			continue
+		}
+		if strings.TrimSpace(q.payload.Issues[idx].Status) == state {
+			continue
+		}
+		q.payload.Issues[idx].Status = state
+		updated++
+	}
+	return updated
 }
 
 func (q *ParallelIssueQueue) IssueIdentifiers() []string {

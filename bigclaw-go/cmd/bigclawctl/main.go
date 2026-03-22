@@ -297,6 +297,7 @@ func runRefill(args []string) error {
 	watch := flags.Bool("watch", false, "watch")
 	interval := flags.Int("interval", 20, "interval")
 	apply := flags.Bool("apply", false, "apply")
+	syncQueueStatus := flags.Bool("sync-queue-status", false, "sync queue issue statuses from local tracker (local backend only; requires --apply to write)")
 	refreshURL := flags.String("refresh-url", "", "refresh url")
 	if err := flags.Parse(args); err != nil {
 		return err
@@ -317,7 +318,7 @@ func runRefill(args []string) error {
 		if *targetInProgress >= 0 {
 			override = targetInProgress
 		}
-		return runRefillOnce(queue, client, *apply, *refreshURL, override)
+		return runRefillOnce(queue, client, *apply, *refreshURL, override, *syncQueueStatus)
 	}
 	if !*watch {
 		return runOnce()
@@ -800,7 +801,23 @@ func parseOptionalTime(value string) (time.Time, error) {
 	return parsed, nil
 }
 
-func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply bool, refreshURL string, targetOverride *int) error {
+func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply bool, refreshURL string, targetOverride *int, syncQueueStatus bool) error {
+	queueStatusUpdates := 0
+	queueStatusWritten := false
+	if syncQueueStatus && client.backend() == "local" {
+		allIssues, err := client.fetchIssueStates(queue.ProjectSlug(), nil)
+		if err != nil {
+			return err
+		}
+		queueStatusUpdates = queue.SyncStatusFromStates(refill.IssueStateMap(allIssues))
+		if apply && queueStatusUpdates > 0 {
+			if err := queue.Save(); err != nil {
+				return err
+			}
+			queueStatusWritten = true
+		}
+	}
+
 	refillStates := make([]string, 0, len(queue.RefillStates()))
 	for state := range queue.RefillStates() {
 		refillStates = append(refillStates, state)
@@ -839,11 +856,14 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		target = *targetOverride
 	}
 	payload := map[string]any{
-		"active_in_progress": refill.SortedActive(issues),
-		"backend":            client.backend(),
-		"target_in_progress": target,
-		"candidates":         candidates,
-		"mode":               map[bool]string{true: "apply", false: "dry-run"}[apply],
+		"active_in_progress":   refill.SortedActive(issues),
+		"backend":              client.backend(),
+		"target_in_progress":   target,
+		"candidates":           candidates,
+		"mode":                 map[bool]string{true: "apply", false: "dry-run"}[apply],
+		"queue_status_synced":  syncQueueStatus && client.backend() == "local",
+		"queue_status_updates": queueStatusUpdates,
+		"queue_status_written": queueStatusWritten,
 	}
 	queueRunnable := queue.RunnableCount()
 	if client.backend() == "local" {
