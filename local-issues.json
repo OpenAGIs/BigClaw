@@ -1580,6 +1580,22 @@
       "state": "Done",
       "title": "Docs: explain refill queue metadata drift handling",
       "updated_at": "2026-03-22T11:35:10Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T12:15:10Z",
+      "description": "For operator debugging, include resolved queue path and local-issues path in bigclawctl refill JSON output so it is obvious which files were read/written.",
+      "id": "big-par-233",
+      "identifier": "BIG-PAR-233",
+      "labels": [
+        "parallel",
+        "refill",
+        "tooling"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "refill: include queue/local-issues paths in JSON output",
+      "updated_at": "2026-03-22T12:15:10Z"
     }
   ]
 }

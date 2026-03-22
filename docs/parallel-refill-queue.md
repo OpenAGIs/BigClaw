@@ -55,6 +55,7 @@ longer waits on Linear to keep issue execution moving.
   - the Go-mainline cutover tranche is complete and merged to `main`
   - completed follow-up slices are `BIG-PAR-219`, `BIG-PAR-220`, `BIG-PAR-221`, `BIG-PAR-222`, `BIG-PAR-223`, `BIG-PAR-224`, and `BIG-PAR-225`
   - completed automation follow-up slices are now `BIG-PAR-226` through `BIG-PAR-231`
+  - active automation follow-up slices are `BIG-PAR-232` and `BIG-PAR-233`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` to confirm whether any additional `Todo` slices should be promoted (it will warn if the queue is drained)
 - Completed slices:
   - `BIG-GOM-301` — unified domain model and intake contract migration
@@ -94,3 +95,5 @@ longer waits on Linear to keep issue execution moving.
 19. `BIG-PAR-229`
 20. `BIG-PAR-230`
 21. `BIG-PAR-231`
+22. `BIG-PAR-232`
+23. `BIG-PAR-233`
