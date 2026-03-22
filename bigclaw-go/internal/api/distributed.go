@@ -114,6 +114,7 @@ type distributedDiagnostics struct {
 	RoutingReasons        []routingReasonSummary                   `json:"routing_reasons"`
 	ExecutorCapacity      []executorCapacityView                   `json:"executor_capacity"`
 	ClusterHealth         clusterHealthRollup                      `json:"cluster_health"`
+	CoordinationLeader    any                                      `json:"coordination_leader_election,omitempty"`
 	LiveShadowMirror      liveShadowMirrorSurface                  `json:"live_shadow_mirror_scorecard"`
 	BrokerReviewPack      brokerReviewPack                         `json:"broker_review_pack"`
 	BrokerReviewBundle    brokerReviewBundleSurface                `json:"broker_review_bundle"`
@@ -175,6 +176,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"routing_reasons":                 diagnostics.RoutingReasons,
 		"executor_capacity":               diagnostics.ExecutorCapacity,
 		"cluster_health":                  diagnostics.ClusterHealth,
+		"coordination_leader_election":    diagnostics.CoordinationLeader,
 		"live_shadow_mirror_scorecard":    diagnostics.LiveShadowMirror,
 		"broker_review_pack":              diagnostics.BrokerReviewPack,
 		"broker_review_bundle":            diagnostics.BrokerReviewBundle,
@@ -412,6 +414,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		RoutingReasons:        routingReasons,
 		ExecutorCapacity:      executorCapacity,
 		ClusterHealth:         clusterHealth,
+		CoordinationLeader:    s.coordinationLeaderElectionPayload(),
 		LiveShadowMirror:      liveShadowMirrorPayload(),
 		BrokerReviewPack:      buildBrokerReviewPack(),
 		BrokerReviewBundle:    brokerReviewBundleSurfacePayload(),
@@ -730,6 +733,25 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.ClusterHealth.TakeoverOwners) > 0 {
 		lines = append(lines, "- Takeover owners: "+formatFacetCounts(diagnostics.ClusterHealth.TakeoverOwners))
+	}
+	if leader, ok := diagnostics.CoordinationLeader.(coordinationLeaderElectionSurface); ok {
+		lines = append(lines,
+			"",
+			"## Coordination Leader Election",
+			fmt.Sprintf("- Endpoint: %s", leader.Endpoint),
+			fmt.Sprintf("- Status: %s", firstNonEmpty(leader.Status, "unknown")),
+			fmt.Sprintf("- Backend: %s", firstNonEmpty(leader.Backend, "unknown")),
+			fmt.Sprintf("- Leader present: %t", leader.LeaderPresent),
+		)
+		if leader.Lease != nil {
+			lines = append(lines, fmt.Sprintf("- Lease owner: %s (epoch=%d token=%s)", firstNonEmpty(leader.Lease.ConsumerID, "unknown"), leader.Lease.LeaseEpoch, firstNonEmpty(leader.Lease.LeaseToken, "unknown")))
+		}
+		if leader.RemainingTTLSeconds > 0 {
+			lines = append(lines, fmt.Sprintf("- Remaining TTL seconds: %d", leader.RemainingTTLSeconds))
+		}
+		if len(leader.Notes) > 0 {
+			lines = append(lines, "- Notes: "+strings.Join(leader.Notes, "; "))
+		}
 	}
 	lines = append(lines,
 		"",
@@ -1059,6 +1081,9 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	for _, check := range diagnostics.ContinuationGate.PolicyChecks {
 		lines = append(lines, fmt.Sprintf("- Policy check %s: passed=%t detail=%s", check.Name, check.Passed, firstNonEmpty(check.Detail, "n/a")))
+	}
+	for _, lane := range diagnostics.ContinuationGate.ExecutorLanes {
+		lines = append(lines, fmt.Sprintf("- Lane %s: latest_status=%s latest_enabled=%t enabled_runs=%d succeeded_runs=%d consecutive_successes=%d all_recent_runs_succeeded=%t", lane.Lane, firstNonEmpty(lane.LatestStatus, "unknown"), lane.LatestEnabled, lane.EnabledRuns, lane.SucceededRuns, lane.ConsecutiveSuccesses, lane.AllRecentRunsSucceeded))
 	}
 	if len(diagnostics.ContinuationGate.CurrentCeiling) > 0 {
 		lines = append(lines, "- Current ceiling: "+strings.Join(diagnostics.ContinuationGate.CurrentCeiling, "; "))
