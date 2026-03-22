@@ -692,6 +692,23 @@
       "state": "Done",
       "title": "Preserve continuation reason in manifest recent runs",
       "updated_at": "2026-03-20T20:10:42Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T00:00:00Z",
+      "description": "Reconcile the repo-native external-store validation lane report, backend matrix placeholders, and local tracker metadata so BIG-PAR ticket identifiers remain consistent across checked-in evidence and Symphony execution.",
+      "id": "big-par-102",
+      "identifier": "BIG-PAR-102",
+      "labels": [
+        "parallel",
+        "validation",
+        "durability",
+        "tracker"
+      ],
+      "priority": 2,
+      "state": "In Progress",
+      "title": "External-store validation backend matrix and broker placeholders",
+      "updated_at": "2026-03-22T00:00:00Z"
     }
   ]
 }
