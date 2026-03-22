@@ -943,6 +943,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-108` after merging `origin/main` into the issue branch and resolving the local tracker conflict so PR #146 is no longer merge-blocked.\n\nWhat changed:\n- Merged the latest `origin/main` into `symphony/BIG-PAR-102` and resolved the `local-issues.json` conflict by keeping the repo-native BIG-PAR identifier reconciliation (avoiding reintroducing conflicting BIG-PAR IDs).\n\nValidation:\n- `cd bigclaw-go && go test ./...` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `d0ff3c35bcd0e8ab8fc0a7ca39bfaf0b1b594ec0` matches remote SHA `d0ff3c35bcd0e8ab8fc0a7ca39bfaf0b1b594ec0` with `status: ok`, `synced: true`, `pushed: true`\n- `git log -1 --stat` -> captured for merge commit `d0ff3c35bcd0e8ab8fc0a7ca39bfaf0b1b594ec0`\n\nCommit: `d0ff3c35bcd0e8ab8fc0a7ca39bfaf0b1b594ec0`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/146.",
+          "created_at": "2026-03-22T00:00:00Z"
+        }
+      ],
       "created_at": "2026-03-22T00:00:00Z",
       "description": "Bring PR #146 back to merge-ready by syncing `symphony/BIG-PAR-102` with `origin/main` and resolving any conflicts so GitHub merge state is no longer DIRTY.",
       "id": "big-par-108",
@@ -953,7 +960,7 @@
         "github-sync"
       ],
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Resolve PR #146 dirty merge state",
       "updated_at": "2026-03-22T00:00:00Z"
     },
