@@ -23,6 +23,7 @@
   - saved views: `bigclaw-go/internal/product/saved_views.go`, `bigclaw-go/internal/api/expansion.go`, `bigclaw-go/internal/product/saved_views_test.go`, `bigclaw-go/internal/api/expansion_test.go`
   - dashboard builder: `bigclaw-go/internal/product/console.go`, `bigclaw-go/internal/api/expansion.go`, `bigclaw-go/internal/api/expansion_test.go`
   - simulation / replay evidence: `bigclaw-go/internal/api/server.go`, `bigclaw-go/internal/api/server_test.go`, `bigclaw-go/internal/regression/regression_test.go`
+- For lane-oriented validation discovery (`local`, `kubernetes`, `ray`), use `bigclaw-go/docs/reports/parallel-validation-matrix.md` as the canonical index before drilling into individual evidence files.
 - Keep candidate artifacts rich enough to render both named evidence requirements and clickable evidence links in the backlog report so review can happen without reconstructing supporting files manually.
 
 #### Entry gate
