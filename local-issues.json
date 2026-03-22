@@ -1285,6 +1285,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed after the repo-native validation matrix artifact landed.\n\nWhat changed:\n- Added `bigclaw-go/docs/reports/parallel-validation-matrix.md` as the canonical local/Kubernetes/Ray validation index.\n\nValidation:\n- `git show --stat --summary f6787a987e5432268beca158bccfde29421bfa70` -\u003e ok\n\nCommit SHA: `f6787a987e5432268beca158bccfde29421bfa70`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/154.",
+          "created_at": "2026-03-22T11:05:30Z"
+        }
+      ],
       "created_at": "2026-03-22T04:27:00Z",
       "description": "Create a repo-native validation matrix artifact that compares the local, Kubernetes, and Ray execution lanes with the current proof points, gaps, and evidence locations.",
       "id": "big-par-221",
@@ -1297,7 +1304,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Draft parallel validation matrix artifact for local/k8s/ray",
-      "updated_at": "2026-03-22T10:56:30Z"
+      "updated_at": "2026-03-22T11:05:30Z"
     },
     {
       "assigned_to_worker": true,
@@ -1324,6 +1331,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed after the Go-first traceability refresh landed in `docs/issue-plan.md`.\n\nWhat changed:\n- Repointed the OPE-139 minimum trace set from legacy Python paths to Go-mainline evidence under `bigclaw-go`.\n\nValidation:\n- `git show --stat --summary c1131ff3e6408832321234f9225f8e3ec781b099` -\u003e ok\n\nCommit SHA: `c1131ff3e6408832321234f9225f8e3ec781b099`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/153.",
+          "created_at": "2026-03-22T11:05:00Z"
+        }
+      ],
       "created_at": "2026-03-22T04:26:00Z",
       "description": "Refresh repo-native issue planning and evidence pointers so the Go-first workflow surfaces link to the current validation and tracker artifacts instead of stale cutover references.",
       "id": "big-par-220",
@@ -1336,7 +1350,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Go-first traceability refresh for issue plan evidence pointers",
-      "updated_at": "2026-03-22T10:56:00Z"
+      "updated_at": "2026-03-22T11:05:00Z"
     },
     {
       "assigned_to_worker": true,
@@ -1363,6 +1377,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed after aligning the tracker automation follow-up batch with the canonical refill queue.\n\nWhat changed:\n- Refreshed `docs/parallel-refill-queue.json` and `docs/parallel-refill-queue.md` so `BIG-PAR-220` through `223` are recorded as completed follow-ups and `BIG-PAR-224`/`225` are the active automation batch.\n- Added the missing `BIG-PAR-223`, `BIG-PAR-224`, and `BIG-PAR-225` local tracker entries and reconciled the stale `BIG-PAR-220`/`221` states against the landed branch history.\n\nValidation:\n- `python3 -m json.tool docs/parallel-refill-queue.json \u003e/dev/null` -\u003e ok\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -\u003e `active_in_progress` showed `BIG-PAR-224` and `BIG-PAR-225` with `candidates: []` before closeout\n- `bash scripts/ops/bigclawctl github-sync status --json` -\u003e local SHA `42ca4f389afd22ae0b4c3558cbc4f389a368249e` matches remote SHA `42ca4f389afd22ae0b4c3558cbc4f389a368249e` with `status: ok` and `synced: true`\n- `git log -1 --stat` -\u003e captured for commit `42ca4f389afd22ae0b4c3558cbc4f389a368249e`\n\nCommit SHA: `42ca4f389afd22ae0b4c3558cbc4f389a368249e`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/157.",
+          "created_at": "2026-03-22T11:08:00Z"
+        }
+      ],
       "created_at": "2026-03-22T10:40:00Z",
       "description": "Add the missing local tracker/bootstrap automation support and refresh the canonical refill queue so the BIG-PAR follow-up batch is represented consistently in local-issues.json and docs/parallel-refill-queue.*.",
       "id": "big-par-225",
@@ -1373,12 +1394,19 @@
         "tracker"
       ],
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Refill queue: align tracker automation follow-up slices",
-      "updated_at": "2026-03-22T10:40:00Z"
+      "updated_at": "2026-03-22T11:08:00Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed after wiring unattended tracker bootstrap into the workflow hooks.\n\nWhat changed:\n- Added `bigclawctl local-issues ensure` and case-insensitive local tracker lookup so hook execution can create or reuse the active issue record safely.\n- Wired `workflow.md` `after_create` and `before_run` to ensure the active issue exists in `local-issues.json` before bootstrap/sync continues.\n\nValidation:\n- `cd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl ./internal/refill` -\u003e ok\n- `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok\n- `bash scripts/ops/bigclawctl local-issues ensure --repo /Users/jxrt/code/symphony-workspaces/BIG-PAR-225/bigclaw-go --local-issues ../local-issues.json --identifier BIG-PAR-225 --state \"In Progress\" --set-state-if-exists --json` -\u003e action `exists`\n- `bash scripts/ops/bigclawctl github-sync status --json` -\u003e local SHA `42ca4f389afd22ae0b4c3558cbc4f389a368249e` matches remote SHA `42ca4f389afd22ae0b4c3558cbc4f389a368249e` with `status: ok` and `synced: true`\n- `git log -1 --stat` -\u003e captured for commit `42ca4f389afd22ae0b4c3558cbc4f389a368249e`\n\nCommit SHA: `42ca4f389afd22ae0b4c3558cbc4f389a368249e`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/157.",
+          "created_at": "2026-03-22T11:07:30Z"
+        }
+      ],
       "created_at": "2026-03-22T10:55:00Z",
       "description": "Wire local-issues ensure into the Symphony workflow hooks so new and resumed workspaces backfill a missing local tracker record for the active issue identifier.",
       "id": "big-par-224",
@@ -1389,9 +1417,32 @@
         "tracker"
       ],
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Workflow hooks ensure local tracker entries exist",
-      "updated_at": "2026-03-22T10:55:00Z"
+      "updated_at": "2026-03-22T11:07:30Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed after the planning docs were linked to the validation matrix entrypoint.\n\nWhat changed:\n- Linked `docs/issue-plan.md` and `docs/openclaw-parallel-gap-analysis.md` to `bigclaw-go/docs/reports/parallel-validation-matrix.md` so follow-up validation discovery starts from one canonical artifact.\n\nValidation:\n- `git show --stat --summary 09ffcf9bf2d082c6448174aaa9a31b76d2c6fdb5` -\u003e ok\n\nCommit SHA: `09ffcf9bf2d082c6448174aaa9a31b76d2c6fdb5`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/157.",
+          "created_at": "2026-03-22T11:06:00Z"
+        }
+      ],
+      "created_at": "2026-03-22T09:49:25Z",
+      "description": "Link repo planning docs to bigclaw-go/docs/reports/parallel-validation-matrix.md so local, Kubernetes, and Ray validation discovery starts from one canonical index.",
+      "id": "big-par-223",
+      "identifier": "BIG-PAR-223",
+      "labels": [
+        "parallel",
+        "docs",
+        "validation"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Link planning docs to the parallel validation matrix",
+      "updated_at": "2026-03-22T11:06:00Z"
     }
   ]
 }

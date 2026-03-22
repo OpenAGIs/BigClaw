@@ -29,13 +29,12 @@
       "BIG-PAR-219",
       "BIG-PAR-220",
       "BIG-PAR-221",
+      "BIG-PAR-222",
       "BIG-PAR-223",
-      "BIG-PAR-222"
-    ],
-    "active": [
       "BIG-PAR-224",
       "BIG-PAR-225"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -138,13 +137,13 @@
       "identifier": "BIG-PAR-224",
       "title": "Workflow hooks ensure local tracker entries exist",
       "track": "Parallel Tracker Automation",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-225",
       "title": "Refill queue: align tracker automation follow-up slices",
       "track": "Parallel Tracker Automation",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
