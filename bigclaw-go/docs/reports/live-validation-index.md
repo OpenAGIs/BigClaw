@@ -1,7 +1,7 @@
 # Live Validation Index
 
 - Latest run: `20260322T002048Z`
-- Generated at: `2026-03-22T00:38:55.251591+00:00`
+- Generated at: `2026-03-22T00:44:22.344830+00:00`
 - Status: `succeeded`
 - Bundle: `docs/reports/live-validation-runs/20260322T002048Z`
 - Summary JSON: `docs/reports/live-validation-runs/20260322T002048Z/summary.json`
@@ -66,7 +66,7 @@
 
 ## Recent bundles
 
-- `20260322T002048Z` · `succeeded` · `2026-03-22T00:38:55.251591+00:00` · `docs/reports/live-validation-runs/20260322T002048Z`
+- `20260322T002048Z` · `succeeded` · `2026-03-22T00:44:22.344830+00:00` · `docs/reports/live-validation-runs/20260322T002048Z`
 - `20260316T140138Z` · `succeeded` · `2026-03-17T04:32:13.251910+00:00` · `docs/reports/live-validation-runs/20260316T140138Z`
 - `20260314T164647Z` · `succeeded` · `2026-03-14T16:46:57.671520+00:00` · `docs/reports/live-validation-runs/20260314T164647Z`
 - `20260314T163430Z` · `succeeded` · `2026-03-14T16:34:42.080370+00:00` · `docs/reports/live-validation-runs/20260314T163430Z`
