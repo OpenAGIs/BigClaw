@@ -1614,6 +1614,29 @@
       "comments": [
         {
           "author": "codex",
+          "body": "Fixed `bigclawctl` help output and exit codes so operator automation can safely probe flags.\n\nWhat changed:\n- `bigclawctl --help` now prints root usage/command list and exits `0`.\n- `bigclawctl refill --help` (and other subcommands) now print usage plus defaults and exit `0` instead of failing with `flag: help requested`.\n- Added focused tests covering root help and `refill --help` behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl --help` -> prints usage, exit 0\n- `bash scripts/ops/bigclawctl refill --help` -> prints defaults, exit 0\n\nCommit SHA: `e1e023d9645c7794148d6f6447a69721247e697d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/167.",
+          "created_at": "2026-03-22T14:41:17Z"
+        }
+      ],
+      "created_at": "2026-03-22T14:05:22Z",
+      "description": "Fix bigclawctl operator UX so `--help` and `help` work at the root and subcommand levels, print usage to stdout, and exit 0 instead of failing with `unknown command` or `flag: help requested`.",
+      "id": "big-par-234",
+      "identifier": "BIG-PAR-234",
+      "labels": [
+        "tooling",
+        "ops",
+        "bigclawctl"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "bigclawctl: support --help at root and subcommands",
+      "updated_at": "2026-03-22T14:41:17Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
           "body": "Recorded `BIG-PAR-219` after the branch landed ahead/behind relation metrics in the Go-first github-sync status payload.\n\nWhat changed:\n- `bigclaw-go/internal/githubsync` now reports `relation_known`, `ahead`, `behind`, and `diverged` for the current branch relation to origin.\n- `bigclaw-go/cmd/bigclawctl` now emits those relation fields in `github-sync status --json` so automation can distinguish local-only drift, remote-only drift, and divergence.\n\nValidation:\n- `cd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl ./internal/githubsync` -\u003e ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -\u003e includes `ahead`, `behind`, `relation_known`, and `diverged`; local SHA `ebca8a035a5052f4b27f903e5075c20aded95eb0` matches remote SHA `ebca8a035a5052f4b27f903e5075c20aded95eb0` with `status: ok` and `synced: true`\n- `git show --stat --summary f6e793783e55f5222e015e5e81321f749c2ad0ab` -\u003e captured for the BIG-PAR-219 commit\n\nCommit SHA: `f6e793783e55f5222e015e5e81321f749c2ad0ab`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/155.",
           "created_at": "2026-03-22T09:25:00Z"
         }

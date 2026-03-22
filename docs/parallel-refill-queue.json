@@ -38,7 +38,8 @@
       "BIG-PAR-228",
       "BIG-PAR-229",
       "BIG-PAR-230",
-      "BIG-PAR-231"
+      "BIG-PAR-231",
+      "BIG-PAR-234"
     ],
     "active": [],
     "standby": []
@@ -64,7 +65,8 @@
     "BIG-PAR-228",
     "BIG-PAR-229",
     "BIG-PAR-230",
-    "BIG-PAR-231"
+    "BIG-PAR-231",
+    "BIG-PAR-234"
   ],
   "issues": [
     {
@@ -190,6 +192,12 @@
     {
       "identifier": "BIG-PAR-231",
       "title": "Restore required follow-up digest references for CI",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-234",
+      "title": "bigclawctl: support --help at root and subcommands",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }
