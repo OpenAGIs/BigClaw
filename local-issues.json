@@ -1397,6 +1397,11 @@
           "author": "codex",
           "body": "PR `#159` hygiene: updated the PR body head SHA after the final tracker-only commits.\n\nWhat changed:\n- Updated PR `#159` body so `Current head SHA` now matches the current branch head `6ef13b3adf7dcf7495f423ad817f796f4ae27084`.\n\nValidation:\n- `gh pr view 159 --repo OpenAGIs/BigClaw --json url,state,body` -> body now lists `6ef13b3adf7dcf7495f423ad817f796f4ae27084`\n\nCommit SHA: `6ef13b3adf7dcf7495f423ad817f796f4ae27084`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/159.",
           "created_at": "2026-03-22T11:05:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "PR `#159` hygiene: removed the brittle head-SHA line from the PR body.\n\nWhat changed:\n- Updated the PR body to omit the `Current head SHA` field so tracker-only commits no longer force follow-up PR edits.\n\nValidation:\n- `gh pr view 159 --repo OpenAGIs/BigClaw --json url,state,body` -> body no longer contains a head SHA line.\n\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/159.",
+          "created_at": "2026-03-22T11:15:00Z"
         }
       ],
       "created_at": "2026-03-22T09:40:00Z",
@@ -1411,7 +1416,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Reconcile tracker and refill queue follow-up state",
-      "updated_at": "2026-03-22T11:05:00Z"
+      "updated_at": "2026-03-22T11:15:00Z"
     },
     {
       "assigned_to_worker": true,
