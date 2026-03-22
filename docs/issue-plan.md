@@ -18,11 +18,11 @@
 #### Candidate traceability
 - Operations command-center hardening evidence should explicitly cover queue control center, approval queue handling, auto-triage, regression analysis, weekly operations reporting, dashboard builder output, saved views, and rollback simulation status so v3 planning reflects the actual operator journey.
 - Link evidence to repo-native artifacts instead of prose-only references; minimum trace set for `OPE-139`:
-  - command center: `src/bigclaw/operations.py`, `tests/test_control_center.py`, `tests/test_operations.py`
-  - approval: `src/bigclaw/execution_contract.py`, `src/bigclaw/workflow.py`, `tests/test_workflow.py`, `tests/test_execution_flow.py`
-  - saved views: `src/bigclaw/saved_views.py`, `tests/test_saved_views.py`
-  - dashboard builder: `src/bigclaw/operations.py`, `tests/test_operations.py`
-  - simulation / replay evidence: `src/bigclaw/evaluation.py`, `tests/test_evaluation.py`
+  - command center: `bigclaw-go/internal/api/v2.go`, `bigclaw-go/internal/api/server.go`, `bigclaw-go/internal/api/server_test.go`
+  - approval: `bigclaw-go/internal/contract/execution.go`, `bigclaw-go/internal/workflow/engine.go`, `bigclaw-go/internal/contract/execution_test.go`, `bigclaw-go/internal/workflow/engine_test.go`
+  - saved views: `bigclaw-go/internal/product/saved_views.go`, `bigclaw-go/internal/api/expansion.go`, `bigclaw-go/internal/product/saved_views_test.go`, `bigclaw-go/internal/api/expansion_test.go`
+  - dashboard builder: `bigclaw-go/internal/product/console.go`, `bigclaw-go/internal/api/expansion.go`, `bigclaw-go/internal/api/expansion_test.go`
+  - simulation / replay evidence: `bigclaw-go/internal/api/server.go`, `bigclaw-go/internal/api/server_test.go`, `bigclaw-go/internal/regression/regression_test.go`
 - Keep candidate artifacts rich enough to render both named evidence requirements and clickable evidence links in the backlog report so review can happen without reconstructing supporting files manually.
 
 #### Entry gate
@@ -257,4 +257,3 @@
 - Shared-queue coordination hardening and lease safety regression coverage.
 - Parallel live-validation matrix and cluster evidence bundle export.
 - Distributed scheduler / executor diagnostics and capacity reporting.
-
