@@ -805,7 +805,12 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 	for state := range queue.RefillStates() {
 		refillStates = append(refillStates, state)
 	}
-	issues, err := client.fetchIssueStates(queue.ProjectSlug(), append([]string{"In Progress"}, refillStates...))
+	statesToFetch := append([]string{"In Progress"}, refillStates...)
+	if client.backend() == "local" {
+		// Load the full local tracker state so Done issues are reflected even if queue metadata lags.
+		statesToFetch = nil
+	}
+	issues, err := client.fetchIssueStates(queue.ProjectSlug(), statesToFetch)
 	if err != nil {
 		return err
 	}
