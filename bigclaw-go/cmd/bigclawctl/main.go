@@ -276,34 +276,127 @@ func runRefill(args []string) error {
 
 func runLocalIssues(args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: bigclawctl local-issues <set-state|comment> [flags]")
+		return errors.New("usage: bigclawctl local-issues <list|create|set-state|comment> [flags]")
 	}
 	command := args[0]
-	flags := flag.NewFlagSet("local-issues "+command, flag.ContinueOnError)
-	flags.SetOutput(io.Discard)
-	storePath := flags.String("local-issues", "", "local issue store path")
-	issueRef := flags.String("issue", "", "issue id or identifier")
-	stateName := flags.String("state", "", "state name")
-	author := flags.String("author", "codex", "comment author")
-	body := flags.String("body", "", "comment body")
-	createdAt := flags.String("created-at", "", "RFC3339 timestamp")
-	asJSON := flags.Bool("json", false, "json")
-	if err := flags.Parse(args[1:]); err != nil {
-		return err
-	}
-	if trim(*issueRef) == "" {
-		return errors.New("issue is required")
-	}
-	store, err := refill.LoadLocalIssueStore(resolvedLocalIssueStorePath(*storePath))
-	if err != nil {
-		return err
-	}
 	switch command {
+	case "list":
+		flags := flag.NewFlagSet("local-issues "+command, flag.ContinueOnError)
+		flags.SetOutput(io.Discard)
+		storePath := flags.String("local-issues", "", "local issue store path")
+		statesCSV := flags.String("states", "", "comma-separated state filter")
+		asJSON := flags.Bool("json", false, "json")
+		if err := flags.Parse(args[1:]); err != nil {
+			return err
+		}
+		store, err := refill.LoadLocalIssueStore(resolvedLocalIssueStorePath(*storePath))
+		if err != nil {
+			return err
+		}
+		issues := store.Issues()
+		stateFilter := map[string]struct{}{}
+		for _, state := range splitCSV(*statesCSV) {
+			if trimmed := trim(state); trimmed != "" {
+				stateFilter[trimmed] = struct{}{}
+			}
+		}
+		filtered := make([]refill.LocalIssue, 0, len(issues))
+		for _, issue := range issues {
+			if len(stateFilter) != 0 {
+				if _, ok := stateFilter[issue.State]; !ok {
+					continue
+				}
+			}
+			filtered = append(filtered, issue)
+		}
+		if *asJSON {
+			encoder := json.NewEncoder(os.Stdout)
+			encoder.SetIndent("", "  ")
+			return encoder.Encode(map[string]any{
+				"status":       "ok",
+				"backend":      "local",
+				"local_issues": absPath(resolvedLocalIssueStorePath(*storePath)),
+				"issues":       filtered,
+			})
+		}
+		for _, issue := range filtered {
+			fmt.Printf("%s\t%s\t%s\n", issue.Identifier, issue.State, issue.Title)
+		}
+		return nil
+	case "create":
+		flags := flag.NewFlagSet("local-issues "+command, flag.ContinueOnError)
+		flags.SetOutput(io.Discard)
+		storePath := flags.String("local-issues", "", "local issue store path")
+		id := flags.String("id", "", "issue id (defaults to lowercased identifier)")
+		identifier := flags.String("identifier", "", "issue identifier (e.g. BIG-PAR-104)")
+		title := flags.String("title", "", "issue title")
+		description := flags.String("description", "", "issue description")
+		stateName := flags.String("state", "Todo", "state name")
+		priority := flags.Int("priority", 3, "priority (1=urgent, 4=low)")
+		labelsCSV := flags.String("labels", "", "comma-separated labels")
+		assigned := flags.Bool("assigned-to-worker", true, "assigned to worker")
+		createdAt := flags.String("created-at", "", "RFC3339 timestamp")
+		asJSON := flags.Bool("json", false, "json")
+		if err := flags.Parse(args[1:]); err != nil {
+			return err
+		}
+		store, err := refill.LoadLocalIssueStore(resolvedLocalIssueStorePath(*storePath))
+		if err != nil {
+			return err
+		}
+		when, err := parseOptionalTime(*createdAt)
+		if err != nil {
+			return err
+		}
+		labels := []string{}
+		for _, label := range splitCSV(*labelsCSV) {
+			if trimmed := trim(label); trimmed != "" {
+				labels = append(labels, trimmed)
+			}
+		}
+		created, err := store.CreateIssue(refill.LocalIssueCreateParams{
+			ID:               *id,
+			Identifier:       *identifier,
+			Title:            *title,
+			Description:      *description,
+			State:            *stateName,
+			Priority:         *priority,
+			Labels:           labels,
+			AssignedToWorker: *assigned,
+			CreatedAt:        when,
+		})
+		if err != nil {
+			return err
+		}
+		return emit(map[string]any{
+			"status":       "ok",
+			"backend":      "local",
+			"issue":        created.Identifier,
+			"state":        created.State,
+			"local_issues": absPath(resolvedLocalIssueStorePath(*storePath)),
+		}, *asJSON, 0)
 	case "set-state":
+		flags := flag.NewFlagSet("local-issues "+command, flag.ContinueOnError)
+		flags.SetOutput(io.Discard)
+		storePath := flags.String("local-issues", "", "local issue store path")
+		issueRef := flags.String("issue", "", "issue id or identifier")
+		stateName := flags.String("state", "", "state name")
+		createdAt := flags.String("created-at", "", "RFC3339 timestamp")
+		asJSON := flags.Bool("json", false, "json")
+		if err := flags.Parse(args[1:]); err != nil {
+			return err
+		}
+		if trim(*issueRef) == "" {
+			return errors.New("issue is required")
+		}
 		if trim(*stateName) == "" {
 			return errors.New("state is required")
 		}
 		when, err := parseOptionalTime(*createdAt)
+		if err != nil {
+			return err
+		}
+		store, err := refill.LoadLocalIssueStore(resolvedLocalIssueStorePath(*storePath))
 		if err != nil {
 			return err
 		}
@@ -319,6 +412,24 @@ func runLocalIssues(args []string) error {
 			"local_issues": absPath(resolvedLocalIssueStorePath(*storePath)),
 		}, *asJSON, 0)
 	case "comment":
+		flags := flag.NewFlagSet("local-issues "+command, flag.ContinueOnError)
+		flags.SetOutput(io.Discard)
+		storePath := flags.String("local-issues", "", "local issue store path")
+		issueRef := flags.String("issue", "", "issue id or identifier")
+		author := flags.String("author", "codex", "comment author")
+		body := flags.String("body", "", "comment body")
+		createdAt := flags.String("created-at", "", "RFC3339 timestamp")
+		asJSON := flags.Bool("json", false, "json")
+		if err := flags.Parse(args[1:]); err != nil {
+			return err
+		}
+		if trim(*issueRef) == "" {
+			return errors.New("issue is required")
+		}
+		store, err := refill.LoadLocalIssueStore(resolvedLocalIssueStorePath(*storePath))
+		if err != nil {
+			return err
+		}
 		when, err := parseOptionalTime(*createdAt)
 		if err != nil {
 			return err
