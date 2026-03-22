@@ -1611,6 +1611,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Fixed `bigclawctl` help output and exit codes so operator automation can safely probe flags.\n\nWhat changed:\n- `bigclawctl --help` now prints root usage/command list and exits `0`.\n- `bigclawctl refill --help` (and other subcommands) now print usage plus defaults and exit `0` instead of failing with `flag: help requested`.\n- Added focused tests covering root help and `refill --help` behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl --help` -> prints usage, exit 0\n- `bash scripts/ops/bigclawctl refill --help` -> prints defaults, exit 0\n\nCommit SHA: `e1e023d9645c7794148d6f6447a69721247e697d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/167.",
+          "created_at": "2026-03-22T14:41:17Z"
+        }
+      ],
       "created_at": "2026-03-22T14:05:22Z",
       "description": "Fix bigclawctl operator UX so `--help` and `help` work at the root and subcommand levels, print usage to stdout, and exit 0 instead of failing with `unknown command` or `flag: help requested`.",
       "id": "big-par-234",
@@ -1621,9 +1628,9 @@
         "bigclawctl"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "bigclawctl: support --help at root and subcommands",
-      "updated_at": "2026-03-22T14:05:22Z"
+      "updated_at": "2026-03-22T14:41:17Z"
     },
     {
       "assigned_to_worker": true,

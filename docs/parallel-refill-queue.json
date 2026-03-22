@@ -38,11 +38,10 @@
       "BIG-PAR-228",
       "BIG-PAR-229",
       "BIG-PAR-230",
-      "BIG-PAR-231"
-    ],
-    "active": [
+      "BIG-PAR-231",
       "BIG-PAR-234"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -200,7 +199,7 @@
       "identifier": "BIG-PAR-234",
       "title": "bigclawctl: support --help at root and subcommands",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
