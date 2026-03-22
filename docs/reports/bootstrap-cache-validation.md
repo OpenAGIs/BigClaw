@@ -7,7 +7,7 @@ of re-downloading the same GitHub repository for every parallel issue workspace.
 
 ```bash
 bash scripts/ops/bigclawctl workspace validate \
-  --repo . \
+  --repo "$(pwd)" \
   --repo-url "$SYMPHONY_BOOTSTRAP_REPO_URL" \
   --workspace-root ./tmp/bootstrap-validation \
   --issues OPE-272,OPE-273,OPE-274 \
@@ -17,9 +17,8 @@ bash scripts/ops/bigclawctl workspace validate \
   --json
 ```
 
-Note: `scripts/ops/bigclawctl` forwards `--repo` automatically, but keeping it explicit here makes it
-clear that `--workspace-root` and `--report` are resolved relative to the BigClaw repo root (not the
-`bigclaw-go/` module directory).
+Note: `--repo` makes it explicit that `--workspace-root` and `--report` are resolved relative to the
+BigClaw repo root (not the `bigclaw-go/` module directory).
 
 ## Expected evidence
 
