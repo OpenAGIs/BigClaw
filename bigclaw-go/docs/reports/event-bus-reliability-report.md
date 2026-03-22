@@ -175,5 +175,8 @@ This report summarizes the current event bus reliability evidence and the next r
 
 ## Parallel follow-up digests
 
-- `OPE-269` / `BIG-PAR-080` — takeover executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
-- `OPE-261` / `BIG-PAR-085` — cross-process coordination caveats are consolidated in `docs/reports/cross-process-coordination-boundary-digest.md`.
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining event-bus takeover, coordination-boundary, and rollout follow-up
+  tracks.
+- Use `docs/reports/parallel-validation-matrix.md` for the checked-in executor
+  validation entrypoint when the event-bus review needs lane-specific proof.

@@ -57,5 +57,8 @@
 
 ## Parallel follow-up digests
 
-- `docs/reports/live-shadow-comparison-follow-up-digest.md` Live shadow traffic comparison caveats are consolidated here.
-- `docs/reports/rollback-safeguard-follow-up-digest.md` Rollback remains operator-driven; this digest explains the guardrail visibility and trigger caveats.
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining live-shadow, rollback, and corpus-coverage follow-up digests.
+- Use `docs/reports/parallel-validation-matrix.md` first when a shadow review
+  needs the checked-in local/Kubernetes/Ray validation entrypoint alongside the
+  shadow evidence bundle.

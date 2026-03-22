@@ -36,5 +36,9 @@ In the runtime capability matrix, this shared-queue result is the current `live_
 
 ## Parallel follow-up digests
 
-- Cross-process coordination caveats are consolidated in `docs/reports/cross-process-coordination-boundary-digest.md`.
-- Validation bundle continuation caveats are consolidated in `docs/reports/validation-bundle-continuation-digest.md`.
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining coordination, takeover, and validation-continuation caveats behind
+  the current multi-node proof set.
+- Use `docs/reports/parallel-validation-matrix.md` for the checked-in
+  local/Kubernetes/Ray validation entrypoint before drilling into the follow-up
+  caveats.

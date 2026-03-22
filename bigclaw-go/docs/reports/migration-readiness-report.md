@@ -49,6 +49,8 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 
 ## Parallel follow-up digests
 
-- `OPE-266` / `BIG-PAR-092` — `docs/reports/live-shadow-comparison-follow-up-digest.md`
-- `OPE-254` / `BIG-PAR-088` — `docs/reports/rollback-safeguard-follow-up-digest.md` and `docs/reports/rollback-trigger-surface.json`.
-- `OPE-268` / `BIG-PAR-079` — `docs/reports/production-corpus-migration-coverage-digest.md`
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining migration-shadow, rollback, and corpus-coverage caveats.
+- Use `docs/reports/parallel-validation-matrix.md` first when the migration
+  review needs the executor-lane validation evidence that sits alongside these
+  follow-up tracks.

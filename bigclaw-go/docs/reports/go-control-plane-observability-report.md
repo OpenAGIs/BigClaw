@@ -46,5 +46,9 @@ This report summarizes the current observability/debug evidence for `OPE-184` / 
 
 ## Parallel follow-up digests
 
-- `OPE-264` / `BIG-PAR-075` — distributed trace export bundle caveats remain consolidated in `docs/reports/tracing-backend-follow-up-digest.md`, while the reviewer-facing export path now ships through `GET /v2/reports/distributed/export`.
-- `OPE-265` / `BIG-PAR-076` — `docs/reports/telemetry-pipeline-controls-follow-up-digest.md` and `docs/reports/telemetry-sampling-cardinality-evidence-pack.json`
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining observability follow-up digests, companion evidence, and rollout
+  contracts.
+- Use `GET /v2/reports/distributed/export` for the current reviewer-facing
+  observability bundle, then use the follow-up index for the unfinished
+  tracing-backend and telemetry-pipeline caveats behind that export.
