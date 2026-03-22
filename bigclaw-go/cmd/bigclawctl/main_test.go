@@ -304,6 +304,15 @@ func TestRunRefillOnceLocalIssueStoreDetectsQueueDrainedWhenMetadataStale(t *tes
 	if !bytes.Contains(output, []byte(`"queue_runnable": 0`)) {
 		t.Fatalf("expected runnable count 0, got %s", string(output))
 	}
+	if !bytes.Contains(output, []byte(`"next_steps": [`)) {
+		t.Fatalf("expected drained queue next_steps guidance, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`docs/parallel-refill-queue.json`)) {
+		t.Fatalf("expected queue recovery hint, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`local-issues ensure`)) {
+		t.Fatalf("expected local issue ensure hint, got %s", string(output))
+	}
 }
 
 func TestRunHelpAtRootPrintsUsageAndExitsZero(t *testing.T) {

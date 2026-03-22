@@ -924,6 +924,11 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 	payload["queue_drained"] = queueRunnable == 0
 	if queueRunnable == 0 {
 		payload["warning"] = "refill queue drained: no runnable identifiers in docs/parallel-refill-queue.json"
+		payload["next_steps"] = []string{
+			"Add the next BIG-PAR identifiers to docs/parallel-refill-queue.json (issue_order + issues[] records).",
+			"Ensure matching tracker entries exist in local-issues.json (e.g. `bash scripts/ops/bigclawctl local-issues ensure --local-issues local-issues.json --identifier BIG-PAR-XXX --state Todo --json`).",
+			"Optionally align queue metadata: `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status`.",
+		}
 	}
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
