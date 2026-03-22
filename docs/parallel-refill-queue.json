@@ -32,12 +32,11 @@
       "BIG-PAR-222",
       "BIG-PAR-223",
       "BIG-PAR-224",
-      "BIG-PAR-225"
-    ],
-    "active": [
+      "BIG-PAR-225",
       "BIG-PAR-228",
       "BIG-PAR-229"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -168,13 +167,13 @@
       "identifier": "BIG-PAR-228",
       "title": "Local issue store: atomic writes to avoid concurrent corruption",
       "track": "Parallel Tracker Automation",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-229",
       "title": "Refill queue: sync issue statuses from local tracker",
       "track": "Parallel Tracker Automation",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

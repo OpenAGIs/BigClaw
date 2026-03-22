@@ -1502,12 +1502,19 @@
         "tooling"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Local issue store: atomic writes to avoid concurrent corruption",
-      "updated_at": "2026-03-22T12:12:00Z"
+      "updated_at": "2026-03-22T12:40:00Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Updated refill runnable-count logic to use the full local tracker state when the backend is `local`.\n\nWhat changed:\n- `bigclawctl refill` now loads all local issue states instead of only refill candidates, so terminal tracker states override stale queue metadata.\n- Added a focused CLI test proving a queue record that still says `Todo` is reported as drained when the live local issue state is `Done`.\n\nValidation:\n- `cd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl ./internal/refill` -\u003e ok\n- `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -\u003e `queue_runnable: 2`, `queue_drained: false` with `BIG-PAR-228`/`229` active\n- `bash scripts/ops/bigclawctl github-sync status --json` -\u003e local SHA `6e17e26d768f74bc9988fbbf02552f944d5468c4` matches remote SHA `6e17e26d768f74bc9988fbbf02552f944d5468c4` with `status: ok` and `synced: true`\n- `git log -1 --stat` -\u003e captured for commit `6e17e26d768f74bc9988fbbf02552f944d5468c4`\n\nCommit SHA: `6e17e26d768f74bc9988fbbf02552f944d5468c4`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/160.",
+          "created_at": "2026-03-22T12:45:30Z"
+        }
+      ],
       "created_at": "2026-03-22T12:20:00Z",
       "description": "Use local tracker state to keep refill warnings and queue metadata aligned after terminal slices close.",
       "id": "big-par-229",
@@ -1518,9 +1525,9 @@
         "tracker"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Refill queue: sync issue statuses from local tracker",
-      "updated_at": "2026-03-22T12:20:00Z"
+      "updated_at": "2026-03-22T12:45:30Z"
     }
   ]
 }
