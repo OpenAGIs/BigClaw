@@ -44,7 +44,7 @@ This report summarizes the current observability/debug evidence for `OPE-184` / 
 - Prometheus-style text exposition is now available, but there is still no full OpenTelemetry-native metrics / tracing pipeline; see `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.
 - No configurable sampling policy or production-grade high-cardinality controls exist beyond lightweight in-memory usage; the current repo-native evidence pack is `docs/reports/telemetry-sampling-cardinality-evidence-pack.json` and the follow-up digest remains `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`.
 
-## Parallel follow-up digests
+## Parallel Follow-up Index
 
 - `docs/reports/parallel-follow-up-index.md` is the canonical index for the
   remaining observability follow-up digests, companion evidence, and rollout

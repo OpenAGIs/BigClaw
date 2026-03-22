@@ -88,7 +88,7 @@ payload still contribute to the `corpus_coverage` scorecard and uncovered-slice 
 - `live-shadow-drift-rollup.json` can summarize freshness and mismatch severity across recent bundled shadow runs
 - `rollback-trigger-surface.json` can distinguish tenant-scoped blockers, warnings, and manual-only rollback paths without claiming automated rollback execution
 
-## Parallel follow-up digests
+## Parallel Follow-up Index
 
 - `docs/reports/parallel-follow-up-index.md` is the canonical index for the
   remaining migration-shadow and parallel-hardening follow-up digests.

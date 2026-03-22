@@ -51,7 +51,7 @@
 - `docs/reports/leader-election-capability-surface.json` now captures the leader-election backend posture explicitly: shared SQLite is `live_proven`, shared-store takeover hardening is `harness_proven`, and broker/quorum ownership remains `contract_only`.
 - A repo-native external-store validation lane now exists in `docs/reports/external-store-validation-report.json`, proving replay, checkpoint reset history, persisted retention boundaries, and shared-lease takeover behavior through the remote HTTP event-log service boundary. Its backend matrix now makes the remaining posture explicit as `http_remote_service=live_validated`, `broker_replicated=not_configured`, and `quorum_replicated=contract_only` instead of leaving broker-backed or quorum-backed durability as prose-only caveats. The same lane now has a dedicated handoff proof bundle at `docs/reports/provider-live-handoff-isolation-evidence-pack.json`, making the replay-to-live no-stall posture reviewable from runtime diagnostics and distributed exports as well.
 
-## Parallel follow-up digests
+## Parallel Follow-up Index
 
 - `docs/reports/parallel-follow-up-index.md` is the canonical index for the
   remaining `BIG-PAR-*` follow-up digests, reviewer-facing companion evidence,

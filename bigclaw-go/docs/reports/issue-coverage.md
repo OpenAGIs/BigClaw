@@ -34,7 +34,7 @@ This document maps the current local MVP implementation to the Linear rewrite is
 - `OPE-3` / `BIG-PAR-098`
   - Covered by `docs/benchmark-plan.md`, `docs/reports/capacity-certification-report.md`, `docs/reports/capacity-certification-matrix.json`, `docs/reports/benchmark-readiness-report.md`, `docs/reports/long-duration-soak-report.md`, `docs/reports/mixed-workload-matrix-report.json`, `scripts/benchmark/capacity_certification.py`, and `scripts/benchmark/capacity_certification_test.py`
 
-## Parallel follow-up digests
+## Parallel Follow-up Index
 
 - `docs/reports/parallel-follow-up-index.md` is the canonical index for the
   remaining `BIG-PAR-*` follow-up digests, capability surfaces, and rollout

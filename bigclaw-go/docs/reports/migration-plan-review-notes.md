@@ -38,7 +38,7 @@ This note captures the review outcome for the Go rewrite boundary and migration 
 - Rollback path is documented and operationally simple.
 - This issue is considered ready for closure from a design-governance perspective.
 
-## Parallel follow-up digests
+## Parallel Follow-up Index
 
 - `docs/reports/parallel-follow-up-index.md` is the canonical index for the
   remaining migration-shadow, rollback, and corpus-coverage follow-up digests.

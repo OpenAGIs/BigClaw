@@ -25,7 +25,7 @@
 - Treat the tenant-scoped trigger surface in `docs/reports/rollback-safeguard-follow-up-digest.md` and `docs/reports/rollback-trigger-surface.json` as the minimum rollback review gate before any tenant cutover expands
 - Current rollback remains operator-driven until the safeguards in `docs/reports/rollback-safeguard-follow-up-digest.md` are implemented; the JSON trigger surface is visibility-only and does not execute rollback automatically
 
-## Parallel follow-up digests
+## Parallel Follow-up Index
 
 - `docs/reports/parallel-follow-up-index.md` is the canonical index for the
   remaining migration, rollback, and parallel-hardening follow-up digests.

@@ -55,7 +55,7 @@
 - `docs/reports/migration-plan-review-notes.md` Review notes tied to the shadow bundle index.
 - `docs/reports/rollback-trigger-surface.json` Machine-readable rollback blockers, warnings, and manual-only paths linked from the shadow bundle.
 
-## Parallel follow-up digests
+## Parallel Follow-up Index
 
 - `docs/reports/parallel-follow-up-index.md` is the canonical index for the
   remaining live-shadow, rollback, and corpus-coverage follow-up digests.

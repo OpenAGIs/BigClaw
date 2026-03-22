@@ -34,7 +34,7 @@ In the runtime capability matrix, this shared-queue result is the current `live_
 - `docs/reports/cross-process-coordination-capability-surface.json`
 - `docs/reports/leader-election-capability-surface.json`
 
-## Parallel follow-up digests
+## Parallel Follow-up Index
 
 - `docs/reports/parallel-follow-up-index.md` is the canonical index for the
   remaining coordination, takeover, and validation-continuation caveats behind
