@@ -82,23 +82,41 @@ func (q *SQLiteQueue) Enqueue(_ context.Context, task domain.Task) error {
 	return err
 }
 
-func (q *SQLiteQueue) LeaseNext(_ context.Context, workerID string, ttl time.Duration) (*domain.Task, *Lease, error) {
-	now := time.Now()
-	if _, err := q.db.Exec(`DELETE FROM tasks WHERE state = ? AND (leased = 0 OR lease_expires_ns <= ?)`, string(domain.TaskCancelled), now.UnixNano()); err != nil {
+func (q *SQLiteQueue) LeaseNext(ctx context.Context, workerID string, ttl time.Duration) (*domain.Task, *Lease, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	cleanupNow := time.Now()
+	// Cancelled tasks remain in the queue while a worker still holds the lease,
+	// but once the lease expires there is no owner left to ACK the item. Purge
+	// cancelled tasks once they are unleased or expired so multi-worker setups
+	// do not accumulate stale cancelled rows indefinitely.
+	if _, err := q.db.ExecContext(ctx, `DELETE FROM tasks WHERE state = ? AND (leased = 0 OR lease_expires_ns <= ?)`, string(domain.TaskCancelled), cleanupNow.UnixNano()); err != nil {
 		return nil, nil, err
 	}
-
-	tx, err := q.db.Begin()
+	conn, err := q.db.Conn(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
+	defer conn.Close()
+
+	// Lease selection needs to be safe across multiple processes sharing one
+	// SQLite file. A deferred transaction can allow two clients to select the
+	// same row before either UPDATE runs. `BEGIN IMMEDIATE` forces the lease path
+	// to serialize at the database file boundary.
+	if _, err := conn.ExecContext(ctx, `BEGIN IMMEDIATE`); err != nil {
+		return nil, nil, err
+	}
+	committed := false
 	defer func() {
-		if tx != nil {
-			_ = tx.Rollback()
+		if committed {
+			return
 		}
+		_, _ = conn.ExecContext(context.Background(), `ROLLBACK`)
 	}()
 
-	row := tx.QueryRow(`SELECT task_id, payload, attempt FROM tasks
+	now := time.Now()
+	row := conn.QueryRowContext(ctx, `SELECT task_id, payload, attempt FROM tasks
 		WHERE available_at_ns <= ?
 		AND state NOT IN (?, ?)
 		AND (leased = 0 OR lease_expires_ns <= ?)
@@ -110,8 +128,8 @@ func (q *SQLiteQueue) LeaseNext(_ context.Context, workerID string, ttl time.Dur
 	var attempt int
 	if err := row.Scan(&taskID, &payload, &attempt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			_ = tx.Rollback()
-			tx = nil
+			_, _ = conn.ExecContext(context.Background(), `ROLLBACK`)
+			committed = true
 			return nil, nil, nil
 		}
 		return nil, nil, err
@@ -129,17 +147,17 @@ func (q *SQLiteQueue) LeaseNext(_ context.Context, workerID string, ttl time.Dur
 	if err != nil {
 		return nil, nil, err
 	}
-	result, err := tx.Exec(`UPDATE tasks SET payload=?, state=?, leased=1, lease_worker=?, lease_expires_ns=?, attempt=? WHERE task_id=?`, updatedPayload, string(task.State), workerID, leaseExpires.UnixNano(), attempt, taskID)
+	result, err := conn.ExecContext(ctx, `UPDATE tasks SET payload=?, state=?, leased=1, lease_worker=?, lease_expires_ns=?, attempt=? WHERE task_id=?`, updatedPayload, string(task.State), workerID, leaseExpires.UnixNano(), attempt, taskID)
 	if err != nil {
 		return nil, nil, err
 	}
 	if rows, _ := result.RowsAffected(); rows != 1 {
 		return nil, nil, fmt.Errorf("unexpected rows affected during lease: %d", rows)
 	}
-	if err := tx.Commit(); err != nil {
+	if _, err := conn.ExecContext(ctx, `COMMIT`); err != nil {
 		return nil, nil, err
 	}
-	tx = nil
+	committed = true
 	return &task, &Lease{TaskID: taskID, WorkerID: workerID, ExpiresAt: leaseExpires, Attempt: attempt, AcquiredAt: now}, nil
 }
 
@@ -338,7 +356,18 @@ func (q *SQLiteQueue) updateStateAfterLease(lease *Lease, state domain.TaskState
 	if err != nil {
 		return err
 	}
-	result, err := q.db.Exec(`UPDATE tasks SET payload=?, state=?, available_at_ns=?, leased=0, lease_worker='', lease_expires_ns=0 WHERE task_id=? AND leased=1 AND lease_worker=? AND attempt=?`, updatedPayload, string(state), availableAt.UnixNano(), lease.TaskID, lease.WorkerID, lease.Attempt)
+	result, err := q.db.Exec(`UPDATE tasks SET payload=?, state=?, available_at_ns=?, leased=0, lease_worker='', lease_expires_ns=0
+		WHERE task_id=? AND leased=1 AND lease_worker=? AND attempt=?
+		AND state NOT IN (?, ?)`,
+		updatedPayload,
+		string(state),
+		availableAt.UnixNano(),
+		lease.TaskID,
+		lease.WorkerID,
+		lease.Attempt,
+		string(domain.TaskCancelled),
+		string(domain.TaskDeadLetter),
+	)
 	if err != nil {
 		return err
 	}

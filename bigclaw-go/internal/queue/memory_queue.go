@@ -102,7 +102,7 @@ func (q *MemoryQueue) RenewLease(_ context.Context, lease *Lease, ttl time.Durat
 	if !ok {
 		return ErrTaskNotFound
 	}
-	if !current.Leased || current.LeaseWorker != lease.WorkerID {
+	if !current.Leased || current.LeaseWorker != lease.WorkerID || current.Attempt != lease.Attempt {
 		return ErrLeaseNotOwned
 	}
 	if !current.LeaseExpires.After(time.Now()) {
@@ -117,8 +117,12 @@ func (q *MemoryQueue) Ack(_ context.Context, lease *Lease) error {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	if _, ok := q.items[lease.TaskID]; !ok {
+	current, ok := q.items[lease.TaskID]
+	if !ok {
 		return ErrTaskNotFound
+	}
+	if !current.Leased || current.LeaseWorker != lease.WorkerID || current.Attempt != lease.Attempt {
+		return ErrLeaseNotOwned
 	}
 	delete(q.items, lease.TaskID)
 	return nil
@@ -131,6 +135,12 @@ func (q *MemoryQueue) Requeue(_ context.Context, lease *Lease, availableAt time.
 	current, ok := q.items[lease.TaskID]
 	if !ok {
 		return ErrTaskNotFound
+	}
+	if !current.Leased || current.LeaseWorker != lease.WorkerID || current.Attempt != lease.Attempt {
+		return ErrLeaseNotOwned
+	}
+	if current.Task.State == domain.TaskCancelled || current.Task.State == domain.TaskDeadLetter {
+		return ErrLeaseNotOwned
 	}
 	current.Leased = false
 	current.LeaseWorker = ""
@@ -148,6 +158,12 @@ func (q *MemoryQueue) DeadLetter(_ context.Context, lease *Lease, reason string)
 	current, ok := q.items[lease.TaskID]
 	if !ok {
 		return ErrTaskNotFound
+	}
+	if !current.Leased || current.LeaseWorker != lease.WorkerID || current.Attempt != lease.Attempt {
+		return ErrLeaseNotOwned
+	}
+	if current.Task.State == domain.TaskCancelled || current.Task.State == domain.TaskDeadLetter {
+		return ErrLeaseNotOwned
 	}
 	current.Leased = false
 	current.LeaseWorker = ""
