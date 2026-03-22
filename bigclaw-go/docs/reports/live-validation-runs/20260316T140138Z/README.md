@@ -93,7 +93,7 @@
 - `docs/reports/validation-bundle-continuation-scorecard.json` summarizes the rolling readiness view across recent bundled local, Kubernetes, and Ray runs plus the shared-queue companion proof.
 - `docs/reports/validation-bundle-continuation-policy-gate.json` records the current policy decision for bundle freshness, repeated lane coverage, and shared-queue companion availability.
 
-## Parallel follow-up digests
+## Parallel Follow-up Index
 
 - `docs/reports/parallel-follow-up-index.md` is the canonical index for the
   remaining parallel follow-up digests and rollout contracts behind the live
