@@ -1031,6 +1031,15 @@ func TestDebugStatusIncludesValidationBundleContinuationGate(t *testing.T) {
 				PassingCheckCount                           int     `json:"passing_check_count"`
 				FailingCheckCount                           int     `json:"failing_check_count"`
 			} `json:"summary"`
+			ExecutorLanes []struct {
+				Lane                   string `json:"lane"`
+				LatestStatus           string `json:"latest_status"`
+				LatestEnabled          bool   `json:"latest_enabled"`
+				EnabledRuns            int    `json:"enabled_runs"`
+				SucceededRuns          int    `json:"succeeded_runs"`
+				ConsecutiveSuccesses   int    `json:"consecutive_successes"`
+				AllRecentRunsSucceeded bool   `json:"all_recent_runs_succeeded"`
+			} `json:"executor_lanes"`
 			PolicyChecks []struct {
 				Name   string `json:"name"`
 				Passed bool   `json:"passed"`
@@ -1068,6 +1077,13 @@ func TestDebugStatusIncludesValidationBundleContinuationGate(t *testing.T) {
 		decoded.ValidationBundleContinuation.PolicyChecks[0].Name != "latest_bundle_age_within_threshold" ||
 		!decoded.ValidationBundleContinuation.PolicyChecks[0].Passed {
 		t.Fatalf("unexpected continuation gate policy checks: %+v", decoded.ValidationBundleContinuation.PolicyChecks)
+	}
+	if len(decoded.ValidationBundleContinuation.ExecutorLanes) != 3 ||
+		decoded.ValidationBundleContinuation.ExecutorLanes[0].Lane != "local" ||
+		decoded.ValidationBundleContinuation.ExecutorLanes[0].LatestStatus != "succeeded" ||
+		!decoded.ValidationBundleContinuation.ExecutorLanes[0].LatestEnabled ||
+		decoded.ValidationBundleContinuation.ExecutorLanes[0].ConsecutiveSuccesses != 3 {
+		t.Fatalf("unexpected continuation gate executor lanes: %+v", decoded.ValidationBundleContinuation.ExecutorLanes)
 	}
 	if len(decoded.ValidationBundleContinuation.NextActions) < 4 ||
 		decoded.ValidationBundleContinuation.NextActions[0] != "set BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail when workflow closeout should stop on continuation regressions" {
@@ -1511,7 +1527,7 @@ func TestDebugStatusIncludesWorkerPoolSummary(t *testing.T) {
 		t.Fatalf("expected status 200, got %d", response.Code)
 	}
 	body := response.Body.String()
-	for _, want := range []string{"worker_pool", "total_workers", "3", "active_workers", "2", "idle_workers", "1", "worker-b", "leased", "preemption_active", "last_preempted_task_id", "task-low"} {
+	for _, want := range []string{"worker_pool", "worker_pool_health", "workers_missing_heartbeat", "total_workers", "3", "active_workers", "2", "idle_workers", "1", "worker-b", "leased", "preemption_active", "last_preempted_task_id", "task-low"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("expected %q in debug payload, got %s", want, body)
 		}
@@ -2803,7 +2819,7 @@ func TestV2ControlCenterIncludesMultiWorkerPoolSummary(t *testing.T) {
 		t.Fatalf("expected control center 200, got %d", centerResponse.Code)
 	}
 	bodyText := centerResponse.Body.String()
-	for _, want := range []string{"worker_pool", "total_workers", "3", "active_workers", "2", "idle_workers", "1", "worker-c", "idle", "preemption_active", "task-low"} {
+	for _, want := range []string{"worker_pool", "worker_pool_health", "workers_missing_heartbeat", "total_workers", "3", "active_workers", "2", "idle_workers", "1", "worker-c", "idle", "preemption_active", "task-low"} {
 		if !strings.Contains(bodyText, want) {
 			t.Fatalf("expected %q in control center payload, got %s", want, bodyText)
 		}
@@ -2848,6 +2864,14 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		{ID: "evt-k8s-completed", Type: domain.EventTaskCompleted, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(5 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes}},
 		{ID: "evt-ray-routed", Type: domain.EventSchedulerRouted, TaskID: "diag-ray", TraceID: "trace-ray", Timestamp: base.Add(6 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay, "reason": "gpu workloads default to ray executor"}},
 		{ID: "evt-ray-completed", Type: domain.EventTaskCompleted, TaskID: "diag-ray", TraceID: "trace-ray", Timestamp: base.Add(7 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay}},
+		{ID: "evt-replayed", Type: domain.EventTaskQueued, TaskID: "diag-local", TraceID: "trace-local", Timestamp: base.Add(8 * time.Second), Payload: map[string]any{"replayed": true}},
+		{ID: "evt-dead-untracked", Type: domain.EventTaskDeadLetter, TaskID: "diag-untracked", TraceID: "trace-untracked", Timestamp: base.Add(9 * time.Second), Payload: map[string]any{"message": "manual dead letter"}},
+		{ID: "evt-lease-acquired", Type: domain.EventSubscriberLeaseAcquired, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(10 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a", "consumer_id": "node-a"}},
+		{ID: "evt-lease-rejected", Type: domain.EventSubscriberLeaseRejected, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(11 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a", "reason": "lease held"}},
+		{ID: "evt-lease-expired", Type: domain.EventSubscriberLeaseExpired, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(12 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a"}},
+		{ID: "evt-takeover-succeeded", Type: domain.EventSubscriberTakeoverSucceeded, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(13 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a"}},
+		{ID: "evt-checkpoint-committed", Type: domain.EventSubscriberCheckpointCommitted, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(14 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a"}},
+		{ID: "evt-checkpoint-rejected", Type: domain.EventSubscriberCheckpointRejected, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(15 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a", "reason": "subscriber checkpoint lease fenced"}},
 	} {
 		recorder.Record(event)
 	}
@@ -2904,6 +2928,27 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 					Count int    `json:"count"`
 				} `json:"takeover_owners"`
 			} `json:"cluster_health"`
+			CoordinationLeader struct {
+				Endpoint      string `json:"endpoint"`
+				ElectionModel string `json:"election_model"`
+				Status        string `json:"status"`
+				LeaderPresent bool   `json:"leader_present"`
+			} `json:"coordination_leader_election"`
+			SharedQueueDiagnostics struct {
+				DeadLetterBacklog         int   `json:"dead_letter_backlog"`
+				DeadLetterEvents          int   `json:"dead_letter_events"`
+				ReplayedQueueEvents       int   `json:"replayed_queue_events"`
+				LeaseAcquiredEvents       int   `json:"lease_acquired_events"`
+				LeaseRejectedEvents       int   `json:"lease_rejected_events"`
+				LeaseExpiredEvents        int   `json:"lease_expired_events"`
+				TakeoverSucceededEvents   int   `json:"takeover_succeeded_events"`
+				CheckpointCommittedEvents int   `json:"checkpoint_committed_events"`
+				CheckpointRejectedEvents  int   `json:"checkpoint_rejected_events"`
+				LeaseFencedEvents         int   `json:"lease_fenced_events"`
+				CheckpointResetsRecent    int   `json:"checkpoint_resets_recent"`
+				RetentionWatermarkVisible bool  `json:"retention_watermark_available"`
+				RetentionTrimmedThrough   int64 `json:"retention_trimmed_through_sequence"`
+			} `json:"shared_queue_diagnostics"`
 			LiveShadowMirror struct {
 				ReportPath           string   `json:"report_path"`
 				CanonicalSummaryPath string   `json:"canonical_summary_path"`
@@ -3055,6 +3100,13 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 					SharedQueueCompanionAvailable               bool `json:"shared_queue_companion_available"`
 					CrossNodeCompletions                        int  `json:"cross_node_completions"`
 				} `json:"summary"`
+				ExecutorLanes []struct {
+					Lane                   string `json:"lane"`
+					LatestStatus           string `json:"latest_status"`
+					LatestEnabled          bool   `json:"latest_enabled"`
+					ConsecutiveSuccesses   int    `json:"consecutive_successes"`
+					AllRecentRunsSucceeded bool   `json:"all_recent_runs_succeeded"`
+				} `json:"executor_lanes"`
 				NextActions []string `json:"next_actions"`
 			} `json:"validation_bundle_continuation"`
 			RolloutReport struct {
@@ -3095,6 +3147,27 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	}
 	if len(decoded.Diagnostics.ClusterHealth.TakeoverOwners) == 0 || decoded.Diagnostics.ClusterHealth.TakeoverOwners[0].Key != "alice" {
 		t.Fatalf("expected takeover owner rollup, got %+v", decoded.Diagnostics.ClusterHealth)
+	}
+	if decoded.Diagnostics.CoordinationLeader.Endpoint != coordinationLeaderEndpoint ||
+		decoded.Diagnostics.CoordinationLeader.ElectionModel != "subscriber_lease" ||
+		decoded.Diagnostics.CoordinationLeader.Status != "unavailable" ||
+		decoded.Diagnostics.CoordinationLeader.LeaderPresent {
+		t.Fatalf("unexpected coordination leader diagnostics payload: %+v", decoded.Diagnostics.CoordinationLeader)
+	}
+	if decoded.Diagnostics.SharedQueueDiagnostics.DeadLetterBacklog != 0 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.DeadLetterEvents != 1 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.ReplayedQueueEvents != 1 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.LeaseAcquiredEvents != 1 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.LeaseRejectedEvents != 1 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.LeaseExpiredEvents != 1 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.TakeoverSucceededEvents != 1 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.CheckpointCommittedEvents != 1 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.CheckpointRejectedEvents != 1 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.LeaseFencedEvents != 1 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.CheckpointResetsRecent != 0 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.RetentionWatermarkVisible ||
+		decoded.Diagnostics.SharedQueueDiagnostics.RetentionTrimmedThrough != 0 {
+		t.Fatalf("unexpected shared queue diagnostics payload: %+v", decoded.Diagnostics.SharedQueueDiagnostics)
 	}
 	if decoded.Diagnostics.LiveShadowMirror.ReportPath != liveShadowMirrorScorecardPath ||
 		decoded.Diagnostics.LiveShadowMirror.CanonicalSummaryPath != liveShadowSummaryPath ||
@@ -3230,6 +3303,14 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		decoded.Diagnostics.ValidationBundleContinuation.Summary.CrossNodeCompletions != 99 {
 		t.Fatalf("unexpected continuation gate summary: %+v", decoded.Diagnostics.ValidationBundleContinuation.Summary)
 	}
+	if len(decoded.Diagnostics.ValidationBundleContinuation.ExecutorLanes) != 3 ||
+		decoded.Diagnostics.ValidationBundleContinuation.ExecutorLanes[0].Lane != "local" ||
+		decoded.Diagnostics.ValidationBundleContinuation.ExecutorLanes[0].LatestStatus != "succeeded" ||
+		!decoded.Diagnostics.ValidationBundleContinuation.ExecutorLanes[0].LatestEnabled ||
+		decoded.Diagnostics.ValidationBundleContinuation.ExecutorLanes[0].ConsecutiveSuccesses != 3 ||
+		!decoded.Diagnostics.ValidationBundleContinuation.ExecutorLanes[0].AllRecentRunsSucceeded {
+		t.Fatalf("unexpected continuation executor lanes: %+v", decoded.Diagnostics.ValidationBundleContinuation.ExecutorLanes)
+	}
 	if len(decoded.Diagnostics.ValidationBundleContinuation.ReviewerLinks) != 3 ||
 		decoded.Diagnostics.ValidationBundleContinuation.ReviewerLinks[0] != "docs/reports/live-validation-index.md" {
 		t.Fatalf("unexpected continuation gate reviewer links: %+v", decoded.Diagnostics.ValidationBundleContinuation.ReviewerLinks)
@@ -3239,6 +3320,10 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	}
 	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Coordination Leader Election") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Shared Queue Coordination") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Lease fenced events: 1") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Replayed queue events: 1") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Live Shadow Mirror Scorecard") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Failover Review Pack") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Migration Readiness Review Pack") ||
@@ -3262,6 +3347,7 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, sequenceBridgeSurfacePath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, validationBundleContinuationGatePath) ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, validationBundleContinuationScorecardPath) ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Lane local: latest_status=succeeded") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/validation-bundle-continuation-digest.md") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-failover-stub-artifacts") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {

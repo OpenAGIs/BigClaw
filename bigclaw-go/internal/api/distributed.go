@@ -1,7 +1,9 @@
 package api
 
 import (
+	"context"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"sort"
@@ -53,6 +55,7 @@ type executorCapacityView struct {
 	TeamBreakdown        []auditFacetCount      `json:"team_breakdown,omitempty"`
 	ProjectBreakdown     []auditFacetCount      `json:"project_breakdown,omitempty"`
 	TopRoutingReasons    []routingReasonSummary `json:"top_routing_reasons,omitempty"`
+	HealthSummary        []string               `json:"health_summary,omitempty"`
 	SampleTasks          []string               `json:"sample_tasks,omitempty"`
 }
 
@@ -68,9 +71,54 @@ type clusterHealthRollup struct {
 	Notes              []string          `json:"notes"`
 }
 
+type recoveryDiagnostics struct {
+	ActiveTakeovers          int `json:"active_takeovers"`
+	TakeoverEvents           int `json:"takeover_events"`
+	ReleaseEvents            int `json:"release_events"`
+	RetriedRuns              int `json:"retried_runs"`
+	DeadLetterRuns           int `json:"dead_letter_runs"`
+	LeaseExpiredEvents       int `json:"lease_expired_events"`
+	CheckpointRejectedEvents int `json:"checkpoint_rejected_events"`
+	UnreleasedTakeovers      int `json:"unreleased_takeovers"`
+}
+
+type fairnessExecutorShare struct {
+	Executor        string  `json:"executor"`
+	RoutedDecisions int     `json:"routed_decisions"`
+	ExpectedShare   float64 `json:"expected_share"`
+	ActualShare     float64 `json:"actual_share"`
+	ShareDelta      float64 `json:"share_delta"`
+	Status          string  `json:"status"`
+}
+
+type fairnessDiagnostics struct {
+	TotalRoutedDecisions int                     `json:"total_routed_decisions"`
+	CapacityWeightTotal  int                     `json:"capacity_weight_total"`
+	ImbalanceScore       float64                 `json:"imbalance_score"`
+	ExecutorShares       []fairnessExecutorShare `json:"executor_shares"`
+	Notes                []string                `json:"notes,omitempty"`
+}
+
 type distributedDiagnosticsReport struct {
 	Markdown  string `json:"markdown"`
 	ExportURL string `json:"export_url"`
+}
+
+type sharedQueueCoordinationDiagnostics struct {
+	DeadLetterBacklog           int   `json:"dead_letter_backlog"`
+	DeadLetterEvents            int   `json:"dead_letter_events"`
+	ReplayedQueueEvents         int   `json:"replayed_queue_events"`
+	LeaseAcquiredEvents         int   `json:"lease_acquired_events"`
+	LeaseRejectedEvents         int   `json:"lease_rejected_events"`
+	LeaseExpiredEvents          int   `json:"lease_expired_events"`
+	TakeoverSucceededEvents     int   `json:"takeover_succeeded_events"`
+	CheckpointCommittedEvents   int   `json:"checkpoint_committed_events"`
+	CheckpointRejectedEvents    int   `json:"checkpoint_rejected_events"`
+	LeaseFencedEvents           int   `json:"lease_fenced_events"`
+	CheckpointResetsRecent      int   `json:"checkpoint_resets_recent"`
+	RetentionWatermarkAvailable bool  `json:"retention_watermark_available"`
+	RetentionTrimmedThroughSeq  int64 `json:"retention_trimmed_through_sequence,omitempty"`
+	RetentionHistoryTruncated   bool  `json:"retention_history_truncated"`
 }
 
 type brokerProofReference struct {
@@ -116,6 +164,10 @@ type distributedDiagnostics struct {
 	RoutingReasons        []routingReasonSummary                   `json:"routing_reasons"`
 	ExecutorCapacity      []executorCapacityView                   `json:"executor_capacity"`
 	ClusterHealth         clusterHealthRollup                      `json:"cluster_health"`
+	Recovery              recoveryDiagnostics                      `json:"recovery"`
+	Fairness              fairnessDiagnostics                      `json:"fairness"`
+	CoordinationLeader    any                                      `json:"coordination_leader_election,omitempty"`
+	SharedQueue           sharedQueueCoordinationDiagnostics       `json:"shared_queue_diagnostics"`
 	LiveShadowMirror      liveShadowMirrorSurface                  `json:"live_shadow_mirror_scorecard"`
 	BrokerReviewPack      brokerReviewPack                         `json:"broker_review_pack"`
 	BrokerReviewBundle    brokerReviewBundleSurface                `json:"broker_review_bundle"`
@@ -177,6 +229,10 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"routing_reasons":                 diagnostics.RoutingReasons,
 		"executor_capacity":               diagnostics.ExecutorCapacity,
 		"cluster_health":                  diagnostics.ClusterHealth,
+		"recovery":                        diagnostics.Recovery,
+		"fairness":                        diagnostics.Fairness,
+		"coordination_leader_election":    diagnostics.CoordinationLeader,
+		"shared_queue_diagnostics":        diagnostics.SharedQueue,
 		"live_shadow_mirror_scorecard":    diagnostics.LiveShadowMirror,
 		"broker_review_pack":              diagnostics.BrokerReviewPack,
 		"broker_review_bundle":            diagnostics.BrokerReviewBundle,
@@ -253,6 +309,9 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		copy := takeovers[index]
 		takeoverByTask[copy.TaskID] = &copy
 	}
+	recovery := recoveryDiagnostics{
+		ActiveTakeovers: len(takeovers),
+	}
 	assignments := make([]distributedTaskAssignment, 0, len(tasks))
 	assignmentByTask := make(map[string]distributedTaskAssignment, len(tasks))
 	tasksByExecutor := make(map[domain.ExecutorKind][]distributedTaskAssignment)
@@ -303,9 +362,23 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 			entry.Started++
 		case domain.EventTaskCompleted:
 			entry.Completed++
+		case domain.EventTaskRetried:
+			recovery.RetriedRuns++
 		case domain.EventTaskDeadLetter:
 			entry.DeadLetter++
+			recovery.DeadLetterRuns++
+		case domain.EventRunTakeover:
+			recovery.TakeoverEvents++
+		case domain.EventRunReleased:
+			recovery.ReleaseEvents++
+		case domain.EventSubscriberLeaseExpired:
+			recovery.LeaseExpiredEvents++
+		case domain.EventSubscriberCheckpointRejected:
+			recovery.CheckpointRejectedEvents++
 		}
+	}
+	if recovery.TakeoverEvents > recovery.ReleaseEvents {
+		recovery.UnreleasedTakeovers = recovery.TakeoverEvents - recovery.ReleaseEvents
 	}
 
 	routingReasons := make([]routingReasonSummary, 0, len(routingIndex))
@@ -368,6 +441,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 			view.SaturationPercent = float64(view.ActiveWorkers) / float64(capability.MaxConcurrency) * 100
 		}
 		view.Health = diagnosticsHealth(view)
+		view.HealthSummary = executorHealthSummary(view)
 		if view.Health != "idle" {
 			activeExecutors++
 		}
@@ -415,11 +489,16 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		SaturatedExecutors: saturatedExecutors,
 		Notes:              diagnosticsNotes(summary, executorCapacity, s.Control.Snapshot()),
 	}
+	fairness := buildFairnessDiagnostics(capabilities, countersByExecutor, totalRouted)
 	diagnostics := distributedDiagnostics{
 		Summary:               summary,
 		RoutingReasons:        routingReasons,
 		ExecutorCapacity:      executorCapacity,
 		ClusterHealth:         clusterHealth,
+		Recovery:              recovery,
+		Fairness:              fairness,
+		CoordinationLeader:    s.coordinationLeaderElectionPayload(),
+		SharedQueue:           s.sharedQueueCoordinationDiagnostics(),
 		LiveShadowMirror:      liveShadowMirrorPayload(),
 		BrokerReviewPack:      buildBrokerReviewPack(),
 		BrokerReviewBundle:    brokerReviewBundleSurfacePayload(),
@@ -526,6 +605,100 @@ func diagnosticsNotes(summary distributedDiagnosticsSummary, capacity []executor
 	return notes
 }
 
+func executorHealthSummary(view executorCapacityView) []string {
+	summary := make([]string, 0, 3)
+	if view.Health == "degraded" {
+		summary = append(summary, "dead-letter activity without offsetting completions")
+	}
+	if executorIsSaturated(view) {
+		summary = append(summary, "worker saturation above 80% or no spare capacity")
+	}
+	if view.QueuedTasks > view.ActiveWorkers && view.QueuedTasks > 0 {
+		summary = append(summary, fmt.Sprintf("%d queued tasks waiting behind %d active workers", view.QueuedTasks, view.ActiveWorkers))
+	}
+	if len(summary) == 0 {
+		summary = append(summary, "no immediate capacity or recovery risk signals")
+	}
+	return summary
+}
+
+func buildFairnessDiagnostics(capabilities []executor.Capability, countersByExecutor map[domain.ExecutorKind]*executorDiagnosticsCounters, totalRouted int) fairnessDiagnostics {
+	shares := make([]fairnessExecutorShare, 0, len(capabilities))
+	weightTotal := 0
+	for _, capability := range capabilities {
+		weight := capability.MaxConcurrency
+		if weight <= 0 {
+			weight = 1
+		}
+		weightTotal += weight
+	}
+	if weightTotal <= 0 {
+		weightTotal = len(capabilities)
+		if weightTotal == 0 {
+			weightTotal = 1
+		}
+	}
+
+	maxDelta := 0.0
+	for _, capability := range capabilities {
+		weight := capability.MaxConcurrency
+		if weight <= 0 {
+			weight = 1
+		}
+		expectedShare := float64(weight) / float64(weightTotal)
+		routed := 0
+		if counters := countersByExecutor[capability.Kind]; counters != nil {
+			routed = counters.Routed
+		}
+		actualShare := 0.0
+		if totalRouted > 0 {
+			actualShare = float64(routed) / float64(totalRouted)
+		}
+		delta := actualShare - expectedShare
+		absDelta := math.Abs(delta)
+		if absDelta > maxDelta {
+			maxDelta = absDelta
+		}
+		status := "balanced"
+		switch {
+		case totalRouted == 0:
+			status = "no-traffic"
+		case absDelta <= 0.15:
+			status = "balanced"
+		case delta > 0:
+			status = "over-assigned"
+		default:
+			status = "under-assigned"
+		}
+		shares = append(shares, fairnessExecutorShare{
+			Executor:        string(capability.Kind),
+			RoutedDecisions: routed,
+			ExpectedShare:   expectedShare,
+			ActualShare:     actualShare,
+			ShareDelta:      delta,
+			Status:          status,
+		})
+	}
+	sort.SliceStable(shares, func(i, j int) bool { return shares[i].Executor < shares[j].Executor })
+
+	notes := make([]string, 0, 2)
+	if totalRouted == 0 {
+		notes = append(notes, "no routed decisions available for fairness analysis")
+	} else if maxDelta > 0.15 {
+		notes = append(notes, "routing distribution is imbalanced relative to executor capacity weights")
+	} else {
+		notes = append(notes, "routing distribution is within fairness tolerance")
+	}
+
+	return fairnessDiagnostics{
+		TotalRoutedDecisions: totalRouted,
+		CapacityWeightTotal:  weightTotal,
+		ImbalanceScore:       maxDelta,
+		ExecutorShares:       shares,
+		Notes:                notes,
+	}
+}
+
 func countActiveAssignments(assignments []distributedTaskAssignment) int {
 	count := 0
 	for _, item := range assignments {
@@ -623,6 +796,24 @@ func eventExecutorKind(event domain.Event, task domain.Task) domain.ExecutorKind
 	return ""
 }
 
+func eventBoolValue(payload map[string]any, key string) bool {
+	if payload == nil {
+		return false
+	}
+	value, ok := payload[key]
+	if !ok || value == nil {
+		return false
+	}
+	switch typed := value.(type) {
+	case bool:
+		return typed
+	case string:
+		return strings.EqualFold(strings.TrimSpace(typed), "true")
+	default:
+		return false
+	}
+}
+
 func taskRequiresTool(task domain.Task, tool string) bool {
 	for _, item := range task.RequiredTools {
 		if item == tool {
@@ -706,6 +897,9 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 			}
 			lines = append(lines, "  - top routing reasons: "+strings.Join(parts, ", "))
 		}
+		if len(item.HealthSummary) > 0 {
+			lines = append(lines, "  - health summary: "+strings.Join(item.HealthSummary, "; "))
+		}
 		if len(item.SampleTasks) > 0 {
 			lines = append(lines, "  - sample tasks: "+strings.Join(item.SampleTasks, ", "))
 		}
@@ -740,6 +934,70 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.ClusterHealth.TakeoverOwners) > 0 {
 		lines = append(lines, "- Takeover owners: "+formatFacetCounts(diagnostics.ClusterHealth.TakeoverOwners))
+	}
+	if leader, ok := diagnostics.CoordinationLeader.(coordinationLeaderElectionSurface); ok {
+		lines = append(lines,
+			"",
+			"## Coordination Leader Election",
+			fmt.Sprintf("- Endpoint: %s", leader.Endpoint),
+			fmt.Sprintf("- Status: %s", firstNonEmpty(leader.Status, "unknown")),
+			fmt.Sprintf("- Backend: %s", firstNonEmpty(leader.Backend, "unknown")),
+			fmt.Sprintf("- Leader present: %t", leader.LeaderPresent),
+		)
+		if leader.Lease != nil {
+			lines = append(lines, fmt.Sprintf("- Lease owner: %s (epoch=%d token=%s)", firstNonEmpty(leader.Lease.ConsumerID, "unknown"), leader.Lease.LeaseEpoch, firstNonEmpty(leader.Lease.LeaseToken, "unknown")))
+		}
+		if leader.RemainingTTLSeconds > 0 {
+			lines = append(lines, fmt.Sprintf("- Remaining TTL seconds: %d", leader.RemainingTTLSeconds))
+		}
+		if len(leader.Notes) > 0 {
+			lines = append(lines, "- Notes: "+strings.Join(leader.Notes, "; "))
+		}
+	}
+	lines = append(lines,
+		"",
+		"## Shared Queue Coordination",
+		fmt.Sprintf("- Dead-letter backlog: %d", diagnostics.SharedQueue.DeadLetterBacklog),
+		fmt.Sprintf("- Dead-letter events: %d", diagnostics.SharedQueue.DeadLetterEvents),
+		fmt.Sprintf("- Replayed queue events: %d", diagnostics.SharedQueue.ReplayedQueueEvents),
+		fmt.Sprintf("- Lease acquired events: %d", diagnostics.SharedQueue.LeaseAcquiredEvents),
+		fmt.Sprintf("- Lease rejected events: %d", diagnostics.SharedQueue.LeaseRejectedEvents),
+		fmt.Sprintf("- Lease expired events: %d", diagnostics.SharedQueue.LeaseExpiredEvents),
+		fmt.Sprintf("- Takeover succeeded events: %d", diagnostics.SharedQueue.TakeoverSucceededEvents),
+		fmt.Sprintf("- Checkpoint committed events: %d", diagnostics.SharedQueue.CheckpointCommittedEvents),
+		fmt.Sprintf("- Checkpoint rejected events: %d", diagnostics.SharedQueue.CheckpointRejectedEvents),
+		fmt.Sprintf("- Lease fenced events: %d", diagnostics.SharedQueue.LeaseFencedEvents),
+		fmt.Sprintf("- Checkpoint resets (recent): %d", diagnostics.SharedQueue.CheckpointResetsRecent),
+		fmt.Sprintf("- Retention watermark visible: %t", diagnostics.SharedQueue.RetentionWatermarkAvailable),
+	)
+	if diagnostics.SharedQueue.RetentionTrimmedThroughSeq > 0 {
+		lines = append(lines, fmt.Sprintf("- Retention trimmed through sequence: %d", diagnostics.SharedQueue.RetentionTrimmedThroughSeq))
+	}
+	if diagnostics.SharedQueue.RetentionHistoryTruncated {
+		lines = append(lines, "- Retention history truncated: true")
+	}
+	lines = append(lines,
+		"",
+		"## Recovery Signals",
+		fmt.Sprintf("- Active takeovers: %d", diagnostics.Recovery.ActiveTakeovers),
+		fmt.Sprintf("- Takeover events: %d", diagnostics.Recovery.TakeoverEvents),
+		fmt.Sprintf("- Release events: %d", diagnostics.Recovery.ReleaseEvents),
+		fmt.Sprintf("- Unreleased takeovers: %d", diagnostics.Recovery.UnreleasedTakeovers),
+		fmt.Sprintf("- Retried runs: %d", diagnostics.Recovery.RetriedRuns),
+		fmt.Sprintf("- Dead-letter runs: %d", diagnostics.Recovery.DeadLetterRuns),
+		fmt.Sprintf("- Lease expired events: %d", diagnostics.Recovery.LeaseExpiredEvents),
+		fmt.Sprintf("- Checkpoint rejected events: %d", diagnostics.Recovery.CheckpointRejectedEvents),
+		"",
+		"## Fairness",
+		fmt.Sprintf("- Total routed decisions: %d", diagnostics.Fairness.TotalRoutedDecisions),
+		fmt.Sprintf("- Capacity weight total: %d", diagnostics.Fairness.CapacityWeightTotal),
+		fmt.Sprintf("- Imbalance score: %.3f", diagnostics.Fairness.ImbalanceScore),
+	)
+	for _, item := range diagnostics.Fairness.ExecutorShares {
+		lines = append(lines, fmt.Sprintf("- %s: routed=%d expected_share=%.3f actual_share=%.3f delta=%.3f status=%s", item.Executor, item.RoutedDecisions, item.ExpectedShare, item.ActualShare, item.ShareDelta, item.Status))
+	}
+	if len(diagnostics.Fairness.Notes) > 0 {
+		lines = append(lines, "- Notes: "+strings.Join(diagnostics.Fairness.Notes, "; "))
 	}
 	lines = append(lines,
 		"",
@@ -1070,6 +1328,9 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	for _, check := range diagnostics.ContinuationGate.PolicyChecks {
 		lines = append(lines, fmt.Sprintf("- Policy check %s: passed=%t detail=%s", check.Name, check.Passed, firstNonEmpty(check.Detail, "n/a")))
 	}
+	for _, lane := range diagnostics.ContinuationGate.ExecutorLanes {
+		lines = append(lines, fmt.Sprintf("- Lane %s: latest_status=%s latest_enabled=%t enabled_runs=%d succeeded_runs=%d consecutive_successes=%d all_recent_runs_succeeded=%t", lane.Lane, firstNonEmpty(lane.LatestStatus, "unknown"), lane.LatestEnabled, lane.EnabledRuns, lane.SucceededRuns, lane.ConsecutiveSuccesses, lane.AllRecentRunsSucceeded))
+	}
 	if len(diagnostics.ContinuationGate.CurrentCeiling) > 0 {
 		lines = append(lines, "- Current ceiling: "+strings.Join(diagnostics.ContinuationGate.CurrentCeiling, "; "))
 	}
@@ -1093,6 +1354,49 @@ func formatFacetCounts(items []auditFacetCount) string {
 		parts = append(parts, fmt.Sprintf("%s=%d", item.Key, item.Count))
 	}
 	return strings.Join(parts, ", ")
+}
+
+func (s *Server) sharedQueueCoordinationDiagnostics() sharedQueueCoordinationDiagnostics {
+	diagnostics := sharedQueueCoordinationDiagnostics{}
+	if s.Queue != nil {
+		if deadLetters, err := s.Queue.ListDeadLetters(context.Background(), 0); err == nil {
+			diagnostics.DeadLetterBacklog = len(deadLetters)
+		}
+	}
+	for _, event := range s.Recorder.EventsByTask("", 0) {
+		switch event.Type {
+		case domain.EventTaskDeadLetter:
+			diagnostics.DeadLetterEvents++
+		case domain.EventTaskQueued:
+			if eventBoolValue(event.Payload, "replayed") {
+				diagnostics.ReplayedQueueEvents++
+			}
+		case domain.EventSubscriberLeaseAcquired:
+			diagnostics.LeaseAcquiredEvents++
+		case domain.EventSubscriberLeaseRejected:
+			diagnostics.LeaseRejectedEvents++
+		case domain.EventSubscriberLeaseExpired:
+			diagnostics.LeaseExpiredEvents++
+		case domain.EventSubscriberTakeoverSucceeded:
+			diagnostics.TakeoverSucceededEvents++
+		case domain.EventSubscriberCheckpointCommitted:
+			diagnostics.CheckpointCommittedEvents++
+		case domain.EventSubscriberCheckpointRejected:
+			diagnostics.CheckpointRejectedEvents++
+			if strings.Contains(strings.ToLower(eventStringValue(event.Payload, "reason")), "fenced") {
+				diagnostics.LeaseFencedEvents++
+			}
+		}
+	}
+	if checkpointResets := s.checkpointResetAuditSnapshot(20); checkpointResets != nil {
+		diagnostics.CheckpointResetsRecent = checkpointResets.RecentCount
+	}
+	if watermark := s.typedRetentionWatermark(); watermark != nil {
+		diagnostics.RetentionWatermarkAvailable = true
+		diagnostics.RetentionTrimmedThroughSeq = watermark.TrimmedThroughSequence
+		diagnostics.RetentionHistoryTruncated = watermark.HistoryTruncated
+	}
+	return diagnostics
 }
 
 func sanitizeReportName(value string) string {

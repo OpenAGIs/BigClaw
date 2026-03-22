@@ -584,6 +584,28 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 				Count int    `json:"count"`
 			} `json:"takeover_owners"`
 		} `json:"cluster_health"`
+		Recovery struct {
+			ActiveTakeovers          int `json:"active_takeovers"`
+			TakeoverEvents           int `json:"takeover_events"`
+			ReleaseEvents            int `json:"release_events"`
+			UnreleasedTakeovers      int `json:"unreleased_takeovers"`
+			RetriedRuns              int `json:"retried_runs"`
+			DeadLetterRuns           int `json:"dead_letter_runs"`
+			LeaseExpiredEvents       int `json:"lease_expired_events"`
+			CheckpointRejectedEvents int `json:"checkpoint_rejected_events"`
+		} `json:"recovery"`
+		Fairness struct {
+			TotalRoutedDecisions int `json:"total_routed_decisions"`
+			CapacityWeightTotal  int `json:"capacity_weight_total"`
+			ExecutorShares       []struct {
+				Executor        string  `json:"executor"`
+				RoutedDecisions int     `json:"routed_decisions"`
+				ExpectedShare   float64 `json:"expected_share"`
+				ActualShare     float64 `json:"actual_share"`
+				ShareDelta      float64 `json:"share_delta"`
+				Status          string  `json:"status"`
+			} `json:"executor_shares"`
+		} `json:"fairness"`
 		Report struct {
 			Markdown  string `json:"markdown"`
 			ExportURL string `json:"export_url"`
@@ -607,6 +629,15 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if len(decoded.ClusterHealth.TakeoverOwners) == 0 || decoded.ClusterHealth.TakeoverOwners[0].Key != "alice" {
 		t.Fatalf("unexpected takeover owner breakdown: %+v", decoded.ClusterHealth)
 	}
+	if decoded.Recovery.ActiveTakeovers != 1 || decoded.Recovery.RetriedRuns != 0 || decoded.Recovery.DeadLetterRuns != 0 || decoded.Recovery.UnreleasedTakeovers != 0 {
+		t.Fatalf("unexpected recovery diagnostics payload: %+v", decoded.Recovery)
+	}
+	if decoded.Fairness.TotalRoutedDecisions != 3 || decoded.Fairness.CapacityWeightTotal <= 0 || len(decoded.Fairness.ExecutorShares) != 3 {
+		t.Fatalf("unexpected fairness diagnostics payload: %+v", decoded.Fairness)
+	}
+	if decoded.Fairness.ExecutorShares[0].Executor != "kubernetes" || decoded.Fairness.ExecutorShares[0].RoutedDecisions != 1 {
+		t.Fatalf("unexpected fairness executor share payload: %+v", decoded.Fairness.ExecutorShares[0])
+	}
 	if decoded.TraceBundle.TotalTraces != 3 || decoded.TraceBundle.TracesWithTerminalState != 2 || len(decoded.TraceBundle.RecentTraces) != 3 {
 		t.Fatalf("unexpected trace export bundle summary: %+v", decoded.TraceBundle)
 	}
@@ -628,8 +659,11 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if decoded.SequenceBridge.ReportPath != sequenceBridgeSurfacePath || decoded.SequenceBridge.Summary.BackendCount != 5 || decoded.SequenceBridge.Summary.LiveProvenBackends != 3 || decoded.SequenceBridge.Summary.HarnessProvenBackends != 1 || decoded.SequenceBridge.Summary.ContractOnlyBackends != 1 || decoded.SequenceBridge.Summary.OneToOneMappings != 2 || decoded.SequenceBridge.Summary.ProviderEpochBridgedBackends != 3 {
 		t.Fatalf("expected sequence bridge surface, got %+v", decoded.SequenceBridge)
 	}
-	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") || !strings.Contains(decoded.Report.Markdown, "## Durable Sequence Bridge") {
+	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Recovery Signals") || !strings.Contains(decoded.Report.Markdown, "## Fairness") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") || !strings.Contains(decoded.Report.Markdown, "## Durable Sequence Bridge") {
 		t.Fatalf("unexpected distributed markdown: %s", decoded.Report.Markdown)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "## Shared Queue Coordination") || !strings.Contains(decoded.Report.Markdown, "Dead-letter backlog:") {
+		t.Fatalf("expected shared queue coordination section in distributed markdown: %s", decoded.Report.Markdown)
 	}
 	if !strings.Contains(decoded.Report.ExportURL, "/v2/reports/distributed/export") {
 		t.Fatalf("unexpected distributed export url: %s", decoded.Report.ExportURL)
@@ -643,7 +677,13 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 		t.Fatalf("expected markdown export content type, got %q", contentType)
 	}
-	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") || !strings.Contains(exportResponse.Body.String(), "Validation artifacts: docs/reports/live-validation-index.md") || !strings.Contains(exportResponse.Body.String(), "Ambiguous publish proof: docs/reports/ambiguous-publish-outcome-proof-summary.json (BF-05: committed, rejected, unknown_commit)") || !strings.Contains(exportResponse.Body.String(), "Backend limitations: no external tracing backend") {
+	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") || !strings.Contains(exportResponse.Body.String(), "## Recovery Signals") || !strings.Contains(exportResponse.Body.String(), "## Fairness") || !strings.Contains(exportResponse.Body.String(), "Validation artifacts: docs/reports/live-validation-index.md") || !strings.Contains(exportResponse.Body.String(), "Ambiguous publish proof: docs/reports/ambiguous-publish-outcome-proof-summary.json (BF-05: committed, rejected, unknown_commit)") || !strings.Contains(exportResponse.Body.String(), "Backend limitations: no external tracing backend") {
 		t.Fatalf("unexpected distributed export markdown: %s", exportResponse.Body.String())
+	}
+	if !strings.Contains(exportResponse.Body.String(), "## Shared Queue Coordination") {
+		t.Fatalf("expected shared queue coordination in distributed export markdown: %s", exportResponse.Body.String())
+	}
+	if !strings.Contains(exportResponse.Body.String(), "Lane local: latest_status=succeeded") {
+		t.Fatalf("expected continuation lane coverage in distributed export markdown: %s", exportResponse.Body.String())
 	}
 }

@@ -561,6 +561,10 @@ def main() -> int:
     )
     summary['shared_queue_companion'] = build_shared_queue_companion(root, bundle_dir)
 
+    continuation_gate = build_continuation_gate_summary(root)
+    if continuation_gate:
+        summary['continuation_gate'] = continuation_gate
+
     bundle_summary_path = bundle_dir / 'summary.json'
     canonical_summary_path = root / args.summary_path
     summary['summary_path'] = relpath(bundle_summary_path, root)
@@ -569,7 +573,6 @@ def main() -> int:
 
     bundle_root = bundle_dir.parent
     recent_runs = build_recent_runs(bundle_root, root)
-    continuation_gate = build_continuation_gate_summary(root)
     manifest = {'latest': summary, 'recent_runs': recent_runs}
     if continuation_gate:
         manifest['continuation_gate'] = continuation_gate

@@ -17,8 +17,11 @@ BROKER_BOOTSTRAP_SUMMARY_PATH="${BIGCLAW_E2E_BROKER_BOOTSTRAP_SUMMARY_PATH:-docs
 REFRESH_CONTINUATION="${BIGCLAW_E2E_REFRESH_CONTINUATION:-1}"
 ENFORCE_CONTINUATION_GATE="${BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE:-0}"
 CONTINUATION_GATE_MODE="${BIGCLAW_E2E_CONTINUATION_GATE_MODE:-}"
-CONTINUATION_SCORECARD_PATH="${BIGCLAW_E2E_CONTINUATION_SCORECARD_PATH:-docs/reports/validation-bundle-continuation-scorecard.json}"
-CONTINUATION_POLICY_GATE_PATH="${BIGCLAW_E2E_CONTINUATION_POLICY_GATE_PATH:-docs/reports/validation-bundle-continuation-policy-gate.json}"
+# NOTE: The continuation scripts resolve output paths relative to the repo root,
+# so we must include the bigclaw-go prefix here to avoid emitting repo-root
+# duplicates under docs/reports/.
+CONTINUATION_SCORECARD_PATH="${BIGCLAW_E2E_CONTINUATION_SCORECARD_PATH:-bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json}"
+CONTINUATION_POLICY_GATE_PATH="${BIGCLAW_E2E_CONTINUATION_POLICY_GATE_PATH:-bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json}"
 
 if [[ -z "$CONTINUATION_GATE_MODE" ]]; then
   if [[ "$ENFORCE_CONTINUATION_GATE" == "1" ]]; then
