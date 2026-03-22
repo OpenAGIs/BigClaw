@@ -1511,7 +1511,7 @@ func TestDebugStatusIncludesWorkerPoolSummary(t *testing.T) {
 		t.Fatalf("expected status 200, got %d", response.Code)
 	}
 	body := response.Body.String()
-	for _, want := range []string{"worker_pool", "total_workers", "3", "active_workers", "2", "idle_workers", "1", "worker-b", "leased", "preemption_active", "last_preempted_task_id", "task-low"} {
+	for _, want := range []string{"worker_pool", "worker_pool_health", "workers_missing_heartbeat", "total_workers", "3", "active_workers", "2", "idle_workers", "1", "worker-b", "leased", "preemption_active", "last_preempted_task_id", "task-low"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("expected %q in debug payload, got %s", want, body)
 		}
@@ -2801,7 +2801,7 @@ func TestV2ControlCenterIncludesMultiWorkerPoolSummary(t *testing.T) {
 		t.Fatalf("expected control center 200, got %d", centerResponse.Code)
 	}
 	bodyText := centerResponse.Body.String()
-	for _, want := range []string{"worker_pool", "total_workers", "3", "active_workers", "2", "idle_workers", "1", "worker-c", "idle", "preemption_active", "task-low"} {
+	for _, want := range []string{"worker_pool", "worker_pool_health", "workers_missing_heartbeat", "total_workers", "3", "active_workers", "2", "idle_workers", "1", "worker-c", "idle", "preemption_active", "task-low"} {
 		if !strings.Contains(bodyText, want) {
 			t.Fatalf("expected %q in control center payload, got %s", want, bodyText)
 		}
