@@ -35,7 +35,8 @@
       "BIG-PAR-225",
       "BIG-PAR-226",
       "BIG-PAR-227",
-      "BIG-PAR-228"
+      "BIG-PAR-228",
+      "BIG-PAR-229"
     ],
     "active": [],
     "standby": []
@@ -58,7 +59,8 @@
     "BIG-PAR-225",
     "BIG-PAR-226",
     "BIG-PAR-227",
-    "BIG-PAR-228"
+    "BIG-PAR-228",
+    "BIG-PAR-229"
   ],
   "issues": [
     {
@@ -166,6 +168,12 @@
     {
       "identifier": "BIG-PAR-228",
       "title": "Rewire per-run bundle READMEs to follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-229",
+      "title": "Rename maintained follow-up sections to follow-up index",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }
