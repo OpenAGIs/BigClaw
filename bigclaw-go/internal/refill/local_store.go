@@ -1,6 +1,7 @@
 package refill
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -302,8 +303,11 @@ func (s *LocalIssueStore) Save() error {
 		issues = []map[string]any{}
 	}
 	payload := map[string]any{"issues": issues}
-	body, err := json.MarshalIndent(payload, "", "  ")
-	if err != nil {
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(payload); err != nil {
 		return err
 	}
 	dir := filepath.Dir(s.path)
@@ -325,7 +329,7 @@ func (s *LocalIssueStore) Save() error {
 		_ = tmp.Close()
 		return err
 	}
-	if _, err := tmp.Write(append(body, '\n')); err != nil {
+	if _, err := tmp.Write(buf.Bytes()); err != nil {
 		_ = tmp.Close()
 		return err
 	}
