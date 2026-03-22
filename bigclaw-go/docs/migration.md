@@ -27,5 +27,7 @@
 
 ## Parallel follow-up digests
 
-- Live shadow traffic comparison caveats are consolidated in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
-- Rollback safeguard caveats are consolidated in `docs/reports/rollback-safeguard-follow-up-digest.md`.
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining migration, rollback, and parallel-hardening follow-up digests.
+- For executor-lane validation evidence, start with
+  `docs/reports/parallel-validation-matrix.md`.

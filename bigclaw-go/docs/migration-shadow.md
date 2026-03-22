@@ -90,5 +90,7 @@ payload still contribute to the `corpus_coverage` scorecard and uncovered-slice 
 
 ## Parallel follow-up digests
 
-- Live shadow traffic comparison caveats are consolidated in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
-- Production corpus coverage caveats are consolidated in `docs/reports/production-corpus-migration-coverage-digest.md`.
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining migration-shadow and parallel-hardening follow-up digests.
+- Use `docs/reports/parallel-validation-matrix.md` first when a migration-shadow
+  review needs the checked-in local/Kubernetes/Ray validation entrypoint.

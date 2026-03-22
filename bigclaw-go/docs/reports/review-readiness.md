@@ -53,12 +53,9 @@
 
 ## Parallel follow-up digests
 
-- `OPE-264` / `BIG-PAR-075` — external tracing backend and span-propagation caveats are consolidated in `docs/reports/tracing-backend-follow-up-digest.md`, while the current reviewer bundle lives in `GET /v2/reports/distributed/export`.
-- `OPE-265` / `BIG-PAR-076` — telemetry pipeline, sampling policy, and high-cardinality caveats are consolidated in `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`, with the current review surface summarized in `docs/reports/telemetry-sampling-cardinality-evidence-pack.json`.
-- `OPE-266` / `BIG-PAR-092` — repo-native live shadow mirror scorecard and remaining live shadow traffic comparison caveats are consolidated in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
-- `OPE-266` / `BIG-PAR-092` — the same checked-in mirror evidence is now visible at runtime via `GET /debug/status` (`live_shadow_mirror_scorecard`) and `GET /v2/control-center` (`distributed_diagnostics.live_shadow_mirror_scorecard`) so reviewers can inspect parity drift, freshness, and report links without opening the bundle first.
-- `OPE-254` / `BIG-PAR-088` — rollback safeguard trigger-surface caveats are consolidated in `docs/reports/rollback-safeguard-follow-up-digest.md`, with the machine-checkable reviewer surface in `docs/reports/rollback-trigger-surface.json`. The same payload is now visible at runtime via `GET /debug/status` (`rollback_trigger_surface`) and `GET /v2/control-center` (`distributed_diagnostics.migration_review_pack.rollback_trigger_surface`).
-- `OPE-268` / `BIG-PAR-079` — production corpus coverage caveats are consolidated in `docs/reports/production-corpus-migration-coverage-digest.md`.
-- `OPE-269` / `BIG-PAR-080` — subscriber takeover executability caveats are consolidated in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
-- `OPE-261` / `BIG-PAR-085` — cross-process coordination caveats are consolidated in `docs/reports/cross-process-coordination-boundary-digest.md`, with the current runtime capability matrix summarized in `docs/reports/cross-process-coordination-capability-surface.json` using `live_proven`, `harness_proven`, and `contract_only` readiness labels.
-- `OPE-271` / `BIG-PAR-082` — validation bundle continuation caveats are consolidated in `docs/reports/validation-bundle-continuation-digest.md`, with the latest multi-bundle lineage summarized in `docs/reports/validation-bundle-continuation-scorecard.json` and the latest gate result captured in `docs/reports/validation-bundle-continuation-policy-gate.json`.
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining `BIG-PAR-*` follow-up digests, reviewer-facing companion evidence,
+  and rollout contracts.
+- Use `docs/reports/parallel-validation-matrix.md` first for executor-lane
+  validation proof, then use the follow-up index for the unfinished hardening
+  tracks behind the shipped review baseline.
