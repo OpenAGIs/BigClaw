@@ -70,6 +70,25 @@ func (q *renewSpyQueue) RenewCount() int {
 	return q.renewCalls
 }
 
+type leaseLossQueue struct {
+	queue.Queue
+	mu       sync.Mutex
+	lostOnce bool
+}
+
+func (q *leaseLossQueue) RenewLease(ctx context.Context, lease *queue.Lease, ttl time.Duration) error {
+	q.mu.Lock()
+	shouldLose := !q.lostOnce
+	if shouldLose {
+		q.lostOnce = true
+	}
+	q.mu.Unlock()
+	if shouldLose {
+		return queue.ErrLeaseNotOwned
+	}
+	return q.Queue.RenewLease(ctx, lease, ttl)
+}
+
 func newRuntimeRecorder() (*events.Bus, *observability.Recorder) {
 	bus := events.NewBus()
 	recorder := observability.NewRecorder()
@@ -536,6 +555,49 @@ func TestRuntimeRenewsLeaseDuringExecution(t *testing.T) {
 	}
 	if snapshot.SuccessfulRuns != 1 || snapshot.State != "idle" {
 		t.Fatalf("expected successful idle snapshot, got %+v", snapshot)
+	}
+}
+
+func TestRuntimeCancelsExecutionWhenLeaseIsLost(t *testing.T) {
+	baseQueue := queue.NewMemoryQueue()
+	if err := baseQueue.Enqueue(context.Background(), domain.Task{ID: "task-lease-lost", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	leaseLossQueue := &leaseLossQueue{Queue: baseQueue}
+
+	bus, recorder := newRuntimeRecorder()
+	runtime := Runtime{
+		WorkerID:  "worker-1",
+		Queue:     leaseLossQueue,
+		Scheduler: scheduler.New(),
+		Registry: executor.NewRegistry(fakeRunner{
+			kind:              domain.ExecutorLocal,
+			blockUntilContext: true,
+		}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    30 * time.Millisecond,
+		TaskTimeout: 2 * time.Second,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000})
+	if !processed {
+		t.Fatalf("expected task to be processed")
+	}
+	// Renewals should fail once the lease TTL elapses; the runtime should treat this as a lease-loss retry.
+	snapshot := runtime.Snapshot()
+	if snapshot.LeaseRenewalFailures == 0 {
+		t.Fatalf("expected lease renewal failures to be recorded, got %+v", snapshot)
+	}
+	if snapshot.LeaseLostRuns != 1 || snapshot.LastTransition != "lease.lost" {
+		t.Fatalf("expected lease-lost transition, got %+v", snapshot)
+	}
+	if got := baseQueue.Size(context.Background()); got != 1 {
+		t.Fatalf("expected task to be requeued after lease loss, got %d", got)
+	}
+	latest, ok := recorder.LatestByTask("task-lease-lost")
+	if !ok || latest.Type != domain.EventTaskRetried {
+		t.Fatalf("expected retried event, got %+v ok=%v", latest, ok)
 	}
 }
 

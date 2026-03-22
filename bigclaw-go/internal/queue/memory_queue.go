@@ -103,7 +103,10 @@ func (q *MemoryQueue) RenewLease(_ context.Context, lease *Lease, ttl time.Durat
 		return ErrTaskNotFound
 	}
 	if !current.Leased || current.LeaseWorker != lease.WorkerID {
-		return errors.New("lease not owned by worker")
+		return ErrLeaseNotOwned
+	}
+	if !current.LeaseExpires.After(time.Now()) {
+		return ErrLeaseExpired
 	}
 	current.LeaseExpires = time.Now().Add(ttl)
 	lease.ExpiresAt = current.LeaseExpires

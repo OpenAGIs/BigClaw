@@ -140,13 +140,25 @@ func (q *SQLiteQueue) LeaseNext(_ context.Context, workerID string, ttl time.Dur
 }
 
 func (q *SQLiteQueue) RenewLease(_ context.Context, lease *Lease, ttl time.Duration) error {
-	expiresAt := time.Now().Add(ttl)
-	result, err := q.db.Exec(`UPDATE tasks SET lease_expires_ns=? WHERE task_id=? AND leased=1 AND lease_worker=? AND attempt=?`, expiresAt.UnixNano(), lease.TaskID, lease.WorkerID, lease.Attempt)
+	now := time.Now()
+	expiresAt := now.Add(ttl)
+	result, err := q.db.Exec(`UPDATE tasks SET lease_expires_ns=? WHERE task_id=? AND leased=1 AND lease_worker=? AND attempt=? AND lease_expires_ns > ?`, expiresAt.UnixNano(), lease.TaskID, lease.WorkerID, lease.Attempt, now.UnixNano())
 	if err != nil {
 		return err
 	}
 	rows, _ := result.RowsAffected()
 	if rows != 1 {
+		row := q.db.QueryRow(`SELECT lease_expires_ns FROM tasks WHERE task_id=? AND leased=1 AND lease_worker=? AND attempt=?`, lease.TaskID, lease.WorkerID, lease.Attempt)
+		var leaseExpiresNS int64
+		if err := row.Scan(&leaseExpiresNS); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return ErrLeaseNotOwned
+			}
+			return err
+		}
+		if leaseExpiresNS <= now.UnixNano() {
+			return ErrLeaseExpired
+		}
 		return ErrLeaseNotOwned
 	}
 	lease.ExpiresAt = expiresAt
