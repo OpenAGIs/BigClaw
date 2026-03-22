@@ -815,6 +815,14 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		return err
 	}
 	stateMap := refill.IssueStateMap(issues)
+	liveStateMap := stateMap
+	if client.backend() == "local" {
+		allIssues, err := client.fetchIssueStates(queue.ProjectSlug(), nil)
+		if err != nil {
+			return err
+		}
+		liveStateMap = refill.IssueStateMap(allIssues)
+	}
 	active := map[string]struct{}{}
 	issueIDs := map[string]string{}
 	for _, issue := range issues {
@@ -839,7 +847,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 	}
 	queueRunnable := queue.RunnableCount()
 	if client.backend() == "local" {
-		queueRunnable = queue.RunnableCountForStates(stateMap)
+		queueRunnable = queue.RunnableCountForStates(liveStateMap)
 	}
 	payload["queue_runnable"] = queueRunnable
 	payload["queue_drained"] = queueRunnable == 0
