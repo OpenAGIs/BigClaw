@@ -932,6 +932,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-104` after checking in the deterministic BF-05 ambiguous publish outcome proof summary and linking it into the distributed diagnostics reviewer surfaces.\n\nWhat changed:\n- Added `bigclaw-go/docs/reports/ambiguous-publish-outcome-proof-summary.json` capturing the committed/rejected/unknown_commit classification rules, required evidence, and reviewer checks.\n- Added `bigclaw-go/internal/regression/ambiguous_publish_proof_test.go` to assert the proof summary structure, verify linked docs reference the proof, and enforce that referenced paths exist.\n- Wired the proof reference into diagnostics export surfaces (for example `bigclaw-go/internal/api/distributed.go`) and the reviewer docs that cite the proof.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestAmbiguousPublishOutcomeProofSummary` -> ok\n- `cd bigclaw-go && go test ./...` -> ok\n\nCommit: `950e54f88ab0cb7f8d86afd5e8eec5b30b164c9d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/148.",
+          "created_at": "2026-03-22T03:10:11Z"
+        }
+      ],
       "created_at": "2026-03-22T00:00:00Z",
       "description": "Track the deterministic stub proof summary that classifies committed/rejected/unknown_commit publish outcomes and reviewer checks.",
       "id": "big-par-104",
@@ -944,7 +951,7 @@
       "priority": 2,
       "state": "Done",
       "title": "Ambiguous publish outcome proof summary",
-      "updated_at": "2026-03-22T00:00:00Z"
+      "updated_at": "2026-03-22T03:10:11Z"
     },
     {
       "assigned_to_worker": true,
