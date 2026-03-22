@@ -97,8 +97,8 @@ func (q *FileQueue) RenewLease(_ context.Context, lease *Lease, ttl time.Duratio
 	if !ok {
 		return ErrTaskNotFound
 	}
-	if !current.Leased || current.LeaseWorker != lease.WorkerID {
-		return errors.New("lease not owned by worker")
+	if !current.Leased || current.LeaseWorker != lease.WorkerID || current.Attempt != lease.Attempt {
+		return ErrLeaseNotOwned
 	}
 	current.LeaseExpires = time.Now().Add(ttl)
 	lease.ExpiresAt = current.LeaseExpires
@@ -109,8 +109,12 @@ func (q *FileQueue) Ack(_ context.Context, lease *Lease) error {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	if _, ok := q.items[lease.TaskID]; !ok {
+	current, ok := q.items[lease.TaskID]
+	if !ok {
 		return ErrTaskNotFound
+	}
+	if !current.Leased || current.LeaseWorker != lease.WorkerID || current.Attempt != lease.Attempt {
+		return ErrLeaseNotOwned
 	}
 	delete(q.items, lease.TaskID)
 	return q.save()
@@ -123,6 +127,12 @@ func (q *FileQueue) Requeue(_ context.Context, lease *Lease, availableAt time.Ti
 	current, ok := q.items[lease.TaskID]
 	if !ok {
 		return ErrTaskNotFound
+	}
+	if !current.Leased || current.LeaseWorker != lease.WorkerID || current.Attempt != lease.Attempt {
+		return ErrLeaseNotOwned
+	}
+	if current.Task.State == domain.TaskCancelled || current.Task.State == domain.TaskDeadLetter {
+		return ErrLeaseNotOwned
 	}
 	current.Leased = false
 	current.LeaseWorker = ""
@@ -140,6 +150,12 @@ func (q *FileQueue) DeadLetter(_ context.Context, lease *Lease, reason string) e
 	current, ok := q.items[lease.TaskID]
 	if !ok {
 		return ErrTaskNotFound
+	}
+	if !current.Leased || current.LeaseWorker != lease.WorkerID || current.Attempt != lease.Attempt {
+		return ErrLeaseNotOwned
+	}
+	if current.Task.State == domain.TaskCancelled || current.Task.State == domain.TaskDeadLetter {
+		return ErrLeaseNotOwned
 	}
 	current.Leased = false
 	current.LeaseWorker = ""
