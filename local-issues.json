@@ -719,6 +719,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-106` after aligning the continuation artifacts with the Go bundle exporter so the live validation index can reliably render continuation status.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/run_all.sh` now defaults continuation outputs to `bigclaw-go/docs/reports/validation-bundle-continuation-*.json` (the continuation scripts resolve `--output` relative to repo root), eliminating stray repo-root `docs/reports/validation-bundle-continuation-*.json` duplicates.\n- Removed the repo-root duplicates under `docs/reports/` and refreshed the Go-owned continuation artifacts under `bigclaw-go/docs/reports/`.\n- Re-rendered the live validation index/manifest/summary so `bigclaw-go/docs/reports/live-validation-index.md` now includes the `Continuation gate` section and points at the Go-owned continuation artifacts.\n\nValidation:\n- `bash -n bigclaw-go/scripts/e2e/run_all.sh` -> passed\n- `python3 bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py --output bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json` -> passed\n- `python3 bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py --scorecard bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json --enforcement-mode review --output bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json` -> passed\n- `python3 bigclaw-go/scripts/e2e/export_validation_bundle.py --go-root \"$PWD/bigclaw-go\" --run-id 20260322T002048Z ...` -> passed (re-render)\n\nCommit: `426636bd41e8f45a69b034302e233263347945fd`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/145",
+          "created_at": "2026-03-22T00:40:39Z"
+        }
+      ],
       "created_at": "2026-03-22T00:35:06Z",
       "description": "Align continuation scorecard/policy gate artifact paths with the Go validation bundle exporter so the live validation index and manifest can always find and render continuation status without writing stray repo-root duplicates.",
       "id": "big-par-106",
@@ -726,13 +733,13 @@
       "labels": [
         "parallel",
         "validation",
-        "tooling",
-        "reporting"
+      "tooling",
+      "reporting"
       ],
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Align continuation artifact paths with exporter expectations",
-      "updated_at": "2026-03-22T00:35:06Z"
+      "updated_at": "2026-03-22T00:40:39Z"
     },
     {
       "assigned_to_worker": true,
