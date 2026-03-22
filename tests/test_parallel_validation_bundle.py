@@ -46,7 +46,18 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
         },
     )
     (root / 'docs' / 'reports' / 'validation-bundle-continuation-scorecard.json').write_text('{}\n', encoding='utf-8')
-    (root / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json').write_text('{}\n', encoding='utf-8')
+    write_json(
+        root / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json',
+        {
+            'status': 'policy-hold',
+            'recommendation': 'hold',
+            'failing_checks': ['latest_bundle_all_executor_tracks_succeeded'],
+            'enforcement': {'mode': 'review'},
+            'summary': {'latest_bundle_age_hours': 12.5},
+            'reviewer_path': {'digest': 'docs/reports/validation-bundle-continuation-digest.md'},
+            'next_actions': ['rerun ./scripts/e2e/run_all.sh'],
+        },
+    )
     (root / 'docs' / 'reports' / 'validation-bundle-continuation-digest.md').write_text('# digest\n', encoding='utf-8')
 
     local_stdout = tmp_path / 'local.stdout'
@@ -106,6 +117,11 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
     assert summary['shared_queue_companion']['cross_node_completions'] == 4
     assert summary['shared_queue_companion']['canonical_summary_path'] == 'docs/reports/shared-queue-companion-summary.json'
     assert summary['shared_queue_companion']['bundle_summary_path'].endswith('shared-queue-companion-summary.json')
+    assert summary['continuation_gate']['status'] == 'policy-hold'
+    assert summary['continuation_gate']['recommendation'] == 'hold'
+    assert summary['continuation_gate']['summary']['latest_bundle_age_hours'] == 12.5
+    assert summary['continuation_gate']['failing_checks'] == ['latest_bundle_all_executor_tracks_succeeded']
+    assert summary['continuation_gate']['next_actions'] == ['rerun ./scripts/e2e/run_all.sh']
 
     latest_local = json.loads((root / 'docs' / 'reports' / 'sqlite-smoke-report.json').read_text(encoding='utf-8'))
     assert latest_local['task']['id'] == 'local-1'
