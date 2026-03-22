@@ -1382,6 +1382,11 @@
           "author": "codex",
           "body": "Closed after aligning the tracker automation follow-up batch with the canonical refill queue.\n\nWhat changed:\n- Refreshed `docs/parallel-refill-queue.json` and `docs/parallel-refill-queue.md` so `BIG-PAR-220` through `223` are recorded as completed follow-ups and `BIG-PAR-224`/`225` are the active automation batch.\n- Added the missing `BIG-PAR-223`, `BIG-PAR-224`, and `BIG-PAR-225` local tracker entries and reconciled the stale `BIG-PAR-220`/`221` states against the landed branch history.\n\nValidation:\n- `python3 -m json.tool docs/parallel-refill-queue.json \u003e/dev/null` -\u003e ok\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -\u003e `active_in_progress` showed `BIG-PAR-224` and `BIG-PAR-225` with `candidates: []` before closeout\n- `bash scripts/ops/bigclawctl github-sync status --json` -\u003e local SHA `42ca4f389afd22ae0b4c3558cbc4f389a368249e` matches remote SHA `42ca4f389afd22ae0b4c3558cbc4f389a368249e` with `status: ok` and `synced: true`\n- `git log -1 --stat` -\u003e captured for commit `42ca4f389afd22ae0b4c3558cbc4f389a368249e`\n\nCommit SHA: `42ca4f389afd22ae0b4c3558cbc4f389a368249e`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/157.",
           "created_at": "2026-03-22T11:08:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final branch closeout for the refill queue automation follow-up batch.\n\nWhat changed:\n- completed `BIG-PAR-230` by adding local-tracker queue metadata sync support, atomic queue writes, and output fields for queue status sync activity\n- completed `BIG-PAR-231` by documenting refill queue metadata drift handling and extending the human-readable canonical refill order through `BIG-PAR-231`\n- preserved `docs/parallel-refill-queue.json` metadata during queue status sync, kept `policy.blocked_reason` and `recent_batches`, and cleaned up the remaining queue JSON formatting drift\n- closed the local tracker child slices and reconciled the queue to the drained state with no active runnable work remaining\n\nValidation:\n- `cd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl ./internal/refill` -\u003e ok\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -\u003e `queue_drained: true`, `queue_runnable: 0`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -\u003e local SHA `6023119ade4763076f1c44c8e2e65eaa4b8499ab` matches remote SHA `6023119ade4763076f1c44c8e2e65eaa4b8499ab` with `status: ok` and `synced: true`\n- `git log -1 --stat` -\u003e captured for commit `6023119ade4763076f1c44c8e2e65eaa4b8499ab`\n\nCommit SHA: `6023119ade4763076f1c44c8e2e65eaa4b8499ab`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/161.",
+          "created_at": "2026-03-22T12:05:00Z"
         }
       ],
       "created_at": "2026-03-22T10:40:00Z",
@@ -1396,7 +1401,7 @@
       "priority": 2,
       "state": "Done",
       "title": "Refill queue: align tracker automation follow-up slices",
-      "updated_at": "2026-03-22T11:08:00Z"
+      "updated_at": "2026-03-22T12:05:00Z"
     },
     {
       "assigned_to_worker": true,
@@ -1557,7 +1562,7 @@
       "comments": [
         {
           "author": "codex",
-          "body": "Closed `BIG-PAR-231` after documenting how refill queue metadata can drift from the local tracker and how operators should reconcile it.\n\nWhat changed:\n- added `docs/parallel-refill-queue-metadata.md` describing the split between queue order metadata and local tracker state, the drift modes, and the reconciliation workflow\n- updated `docs/parallel-refill-queue.md` to point operators at the new metadata drift note and the `--sync-queue-status` refill command\n\nValidation:\n- `python3 -m json.tool docs/parallel-refill-queue.json > /dev/null` -> ok\n- `rg -n \"parallel-refill-queue-metadata|sync-queue-status\" docs/parallel-refill-queue.md docs/parallel-refill-queue-metadata.md` -> ok\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `1414c194318a94b30bc6186859a88c1a4db6892a` matches remote SHA `1414c194318a94b30bc6186859a88c1a4db6892a` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `1414c194318a94b30bc6186859a88c1a4db6892a`\n\nCommit SHA: `1414c194318a94b30bc6186859a88c1a4db6892a`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/161.",
+          "body": "Closed `BIG-PAR-231` after documenting how refill queue metadata can drift from the local tracker and how operators should reconcile it.\n\nWhat changed:\n- added `docs/parallel-refill-queue-metadata.md` describing the split between queue order metadata and local tracker state, the drift modes, and the reconciliation workflow\n- updated `docs/parallel-refill-queue.md` to point operators at the new metadata drift note and the `--sync-queue-status` refill command\n\nValidation:\n- `python3 -m json.tool docs/parallel-refill-queue.json \u003e /dev/null` -\u003e ok\n- `rg -n \"parallel-refill-queue-metadata|sync-queue-status\" docs/parallel-refill-queue.md docs/parallel-refill-queue-metadata.md` -\u003e ok\n- `cd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl ./internal/refill` -\u003e ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -\u003e local SHA `1414c194318a94b30bc6186859a88c1a4db6892a` matches remote SHA `1414c194318a94b30bc6186859a88c1a4db6892a` with `status: ok` and `synced: true`\n- `git log -1 --stat` -\u003e captured for commit `1414c194318a94b30bc6186859a88c1a4db6892a`\n\nCommit SHA: `1414c194318a94b30bc6186859a88c1a4db6892a`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/161.",
           "created_at": "2026-03-22T11:35:00Z"
         }
       ],
