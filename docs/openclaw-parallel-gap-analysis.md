@@ -36,7 +36,7 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
 - Replay retention watermarks are now visible in runtime payloads, SQLite-backed logs now persist trimmed replay boundaries across restarts, expired durable checkpoints now fail closed with reset guidance, and checkpoint resets now leave a persisted operator history trail; memory-only deployments are still bounded by in-process history and broker/quorum retention remains future work.
 - Service-style SQLite and HTTP-backed coordination improve sharing, but replicated broker or quorum-backed durability is still future work.
 - Downstream consumers still need idempotent handlers and durable dedupe stores; the system remains replay-safe, not globally exactly-once.
-- Parallel validation for Kubernetes, Ray, and shared-queue takeover should continue to be bundled as repo-native evidence.
+- Parallel validation for Kubernetes, Ray, and shared-queue takeover should continue to be bundled as repo-native evidence, with `bigclaw-go/docs/reports/parallel-validation-matrix.md` as the discovery entrypoint for lane-specific commands and evidence links.
 
 ### Current rollout gate
 
@@ -58,6 +58,7 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
 
 ## Migration follow-up digests
 
+- `BIG-PAR-221` publishes `bigclaw-go/docs/reports/parallel-validation-matrix.md` as the canonical local/Kubernetes/Ray matrix; use it first when mapping follow-up slices to validation commands and evidence artifacts.
 - `OPE-266` / `BIG-PAR-092` tracks the repo-native live shadow mirror parity drift scorecard and the remaining live shadow traffic comparison caveats in `bigclaw-go/docs/reports/live-shadow-comparison-follow-up-digest.md`.
 - `OPE-267` / `BIG-PAR-088` tracks the remaining rollback safeguard caveats in `bigclaw-go/docs/reports/rollback-safeguard-follow-up-digest.md`.
 - `OPE-268` / `BIG-PAR-079` tracks the remaining production corpus migration coverage caveats in `bigclaw-go/docs/reports/production-corpus-migration-coverage-digest.md`.
