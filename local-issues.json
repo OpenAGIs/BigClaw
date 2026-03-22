@@ -940,6 +940,38 @@
       "state": "Done",
       "title": "Ambiguous publish outcome proof summary",
       "updated_at": "2026-03-22T00:00:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T00:00:00Z",
+      "description": "Fix the repo-native reviewer digest for validation-bundle continuation so it references the correct policy gate ticket and avoids stale BIG-PAR identifiers.",
+      "id": "big-par-103",
+      "identifier": "BIG-PAR-103",
+      "labels": [
+        "parallel",
+        "docs",
+        "validation"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Correct validation-bundle continuation digest ticket references",
+      "updated_at": "2026-03-22T00:00:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T00:00:00Z",
+      "description": "Update the repo-wide validation report planning section so BIG-PAR ticket references match the checked-in evidence set (live shadow scorecard, continuation gate, etc.).",
+      "id": "big-par-105",
+      "identifier": "BIG-PAR-105",
+      "labels": [
+        "parallel",
+        "docs",
+        "coordination"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Refresh repo-wide validation report ticket references",
+      "updated_at": "2026-03-22T00:00:00Z"
     }
   ]
 }
