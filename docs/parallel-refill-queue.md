@@ -50,7 +50,7 @@ longer waits on Linear to keep issue execution moving.
 - Current repo tranche status as of March 22, 2026:
   - the Go-mainline cutover tranche is complete and merged to `main`
   - `BIG-PAR-220`, `BIG-PAR-221`, `BIG-PAR-222`, `BIG-PAR-223`, `BIG-PAR-224`, `BIG-PAR-225`, `BIG-PAR-226`, `BIG-PAR-227`, `BIG-PAR-228`, `BIG-PAR-229`, `BIG-PAR-230`, and `BIG-PAR-231` are now closed in the repo-native tracker
-  - no active follow-up slice remains in the current repo-native queue snapshot
+  - `BIG-PAR-234` is the active follow-up slice for `bigclawctl` operator help/usage behavior
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` to confirm whether any additional `Todo` slices should be promoted
 - Completed slices:
   - `BIG-GOM-301` — unified domain model and intake contract migration
@@ -90,3 +90,4 @@ longer waits on Linear to keep issue execution moving.
 19. `BIG-PAR-229`
 20. `BIG-PAR-230`
 21. `BIG-PAR-231`
+22. `BIG-PAR-234`

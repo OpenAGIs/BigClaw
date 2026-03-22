@@ -1611,6 +1611,22 @@
     },
     {
       "assigned_to_worker": true,
+      "created_at": "2026-03-22T14:05:22Z",
+      "description": "Fix bigclawctl operator UX so `--help` and `help` work at the root and subcommand levels, print usage to stdout, and exit 0 instead of failing with `unknown command` or `flag: help requested`.",
+      "id": "big-par-234",
+      "identifier": "BIG-PAR-234",
+      "labels": [
+        "tooling",
+        "ops",
+        "bigclawctl"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "bigclawctl: support --help at root and subcommands",
+      "updated_at": "2026-03-22T14:05:22Z"
+    },
+    {
+      "assigned_to_worker": true,
       "comments": [
         {
           "author": "codex",
