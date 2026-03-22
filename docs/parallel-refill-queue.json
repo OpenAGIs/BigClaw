@@ -32,7 +32,8 @@
       "BIG-PAR-222",
       "BIG-PAR-223",
       "BIG-PAR-224",
-      "BIG-PAR-225"
+      "BIG-PAR-225",
+      "BIG-PAR-226"
     ],
     "active": [],
     "standby": []
@@ -52,7 +53,8 @@
     "BIG-PAR-222",
     "BIG-PAR-223",
     "BIG-PAR-224",
-    "BIG-PAR-225"
+    "BIG-PAR-225",
+    "BIG-PAR-226"
   ],
   "issues": [
     {
@@ -142,6 +144,12 @@
     {
       "identifier": "BIG-PAR-225",
       "title": "Publish canonical parallel follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-226",
+      "title": "Rewire maintained reports to canonical follow-up index",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }
