@@ -1387,6 +1387,11 @@
           "author": "codex",
           "body": "Final branch closeout for `BIG-PAR-224`.\n\nWhat changed:\n- Landed the repo-native follow-up traceability cleanup branch, including `BIG-PAR-225` through `BIG-PAR-230`: canonical parallel follow-up index publication, report/planning doc rewiring, maintained and snapshot heading normalization, and refill/tracker reconciliation.\n- Created PR `#159` so the accumulated branch scope now has a reviewable merge target.\n\nValidation:\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `active_in_progress: []`, `candidates: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `bfe8901b5c48d1f83fd78dd733b520ca60aa9ebb` matches remote SHA `bfe8901b5c48d1f83fd78dd733b520ca60aa9ebb` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `bfe8901b5c48d1f83fd78dd733b520ca60aa9ebb`\n\nCommit SHA: `bfe8901b5c48d1f83fd78dd733b520ca60aa9ebb`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/159.",
           "created_at": "2026-03-22T10:45:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Post-closeout hygiene: refreshed PR `#159` body to be stable and to reference the current branch head.\n\nWhat changed:\n- Updated PR `#159` body to remove embedded JSON output blobs and to record the current head SHA.\n\nValidation:\n- `gh pr view 159 --repo OpenAGIs/BigClaw --json url,title,state,headRefName,baseRefName` -> `OPEN`, head `symphony/BIG-PAR-224`, base `main`\n- `git rev-parse HEAD` -> `790a2dc9e87f68487805e98c539aa8721148e7fe`\n\nCommit SHA: `790a2dc9e87f68487805e98c539aa8721148e7fe`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/159.",
+          "created_at": "2026-03-22T10:55:00Z"
         }
       ],
       "created_at": "2026-03-22T09:40:00Z",
@@ -1401,7 +1406,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Reconcile tracker and refill queue follow-up state",
-      "updated_at": "2026-03-22T10:45:00Z"
+      "updated_at": "2026-03-22T10:55:00Z"
     },
     {
       "assigned_to_worker": true,
