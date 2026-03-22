@@ -1420,6 +1420,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Fixed CI failure in `tests/test_followup_digests.py` by restoring the explicit digest-path mentions that the follow-up index checks assert.\n\nWhat changed:\n- Updated `bigclaw-go/docs/reports/migration-plan-review-notes.md` to explicitly mention `docs/reports/live-shadow-comparison-follow-up-digest.md` and `docs/reports/rollback-safeguard-follow-up-digest.md` while still pointing to `docs/reports/parallel-follow-up-index.md`.\n- Updated `bigclaw-go/docs/migration-shadow.md` to explicitly mention `docs/reports/production-corpus-migration-coverage-digest.md`.\n- Updated `bigclaw-go/docs/reports/multi-node-coordination-report.md` and `bigclaw-go/docs/reports/issue-coverage.md` to explicitly mention `docs/reports/cross-process-coordination-boundary-digest.md` and `docs/reports/validation-bundle-continuation-digest.md`.\n\nValidation:\n- Local parity check for the test condition: ran a Python harness mirroring `test_followup_indexes_reference_new_digests` and confirmed it reports `ok`.\n- `git log -1 --stat` -> captured for commit `eb042aeaf8f6d65b83bc76eb7fa28925a35ff0e5`.\n\nCommit SHA: `eb042aeaf8f6d65b83bc76eb7fa28925a35ff0e5`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/159.",
+          "created_at": "2026-03-22T11:35:00Z"
+        }
+      ],
       "created_at": "2026-03-22T11:20:00Z",
       "description": "Fix the follow-up digest index references expected by `tests/test_followup_digests.py` after the follow-up-index rewiring, by reintroducing minimal explicit digest path mentions in the required index docs.",
       "id": "big-par-231",
@@ -1430,9 +1437,9 @@
         "ci"
       ],
       "priority": 4,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Restore required follow-up digest references for CI",
-      "updated_at": "2026-03-22T11:20:00Z"
+      "updated_at": "2026-03-22T11:35:00Z"
     },
     {
       "assigned_to_worker": true,

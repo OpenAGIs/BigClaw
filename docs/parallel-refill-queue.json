@@ -37,7 +37,8 @@
       "BIG-PAR-227",
       "BIG-PAR-228",
       "BIG-PAR-229",
-      "BIG-PAR-230"
+      "BIG-PAR-230",
+      "BIG-PAR-231"
     ],
     "active": [],
     "standby": []
@@ -62,7 +63,8 @@
     "BIG-PAR-227",
     "BIG-PAR-228",
     "BIG-PAR-229",
-    "BIG-PAR-230"
+    "BIG-PAR-230",
+    "BIG-PAR-231"
   ],
   "issues": [
     {
@@ -182,6 +184,12 @@
     {
       "identifier": "BIG-PAR-230",
       "title": "Rename bundle README follow-up sections to follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-231",
+      "title": "Restore required follow-up digest references for CI",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }
