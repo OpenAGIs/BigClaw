@@ -315,3 +315,74 @@ func TestRunLocalIssuesCommentAppendsComment(t *testing.T) {
 		t.Fatalf("expected updated timestamp, got %s", string(body))
 	}
 }
+
+func TestRunLocalIssuesEnsureCreatesMissingIssue(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+
+	if err := runLocalIssues([]string{
+		"ensure",
+		"--local-issues", storePath,
+		"--identifier", "BIG-PAR-225",
+		"--title", "Refill queue follow-up",
+		"--description", "seed missing issue",
+		"--state", "In Progress",
+		"--labels", "parallel,tracker",
+		"--created-at", "2026-03-22T10:40:00Z",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run local-issues ensure create: %v", err)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"identifier": "BIG-PAR-225"`)) {
+		t.Fatalf("expected BIG-PAR-225 issue, got %s", string(body))
+	}
+	if !bytes.Contains(body, []byte(`"state": "In Progress"`)) {
+		t.Fatalf("expected in-progress state, got %s", string(body))
+	}
+}
+
+func TestRunLocalIssuesEnsureUpdatesExistingStateCaseInsensitive(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-225",
+      "identifier": "BIG-PAR-225",
+      "title": "Refill queue follow-up",
+      "state": "Todo",
+      "updated_at": "2026-03-22T10:40:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	if err := runLocalIssues([]string{
+		"ensure",
+		"--local-issues", storePath,
+		"--identifier", "big-par-225",
+		"--state", "In Progress",
+		"--set-state-if-exists",
+		"--created-at", "2026-03-22T10:45:00Z",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run local-issues ensure update: %v", err)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"state": "In Progress"`)) {
+		t.Fatalf("expected updated state, got %s", string(body))
+	}
+	if !bytes.Contains(body, []byte(`"updated_at": "2026-03-22T10:45:00Z"`)) {
+		t.Fatalf("expected updated timestamp, got %s", string(body))
+	}
+}

@@ -1295,9 +1295,9 @@
         "validation"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Draft parallel validation matrix artifact for local/k8s/ray",
-      "updated_at": "2026-03-22T09:28:00Z"
+      "updated_at": "2026-03-22T10:56:30Z"
     },
     {
       "assigned_to_worker": true,
@@ -1334,9 +1334,9 @@
         "traceability"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Go-first traceability refresh for issue plan evidence pointers",
-      "updated_at": "2026-03-22T04:26:00Z"
+      "updated_at": "2026-03-22T10:56:00Z"
     },
     {
       "assigned_to_worker": true,
@@ -1360,6 +1360,38 @@
       "state": "Done",
       "title": "Expose ahead/behind relation in github-sync status payload",
       "updated_at": "2026-03-22T09:25:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T10:40:00Z",
+      "description": "Add the missing local tracker/bootstrap automation support and refresh the canonical refill queue so the BIG-PAR follow-up batch is represented consistently in local-issues.json and docs/parallel-refill-queue.*.",
+      "id": "big-par-225",
+      "identifier": "BIG-PAR-225",
+      "labels": [
+        "parallel",
+        "refill",
+        "tracker"
+      ],
+      "priority": 2,
+      "state": "In Progress",
+      "title": "Refill queue: align tracker automation follow-up slices",
+      "updated_at": "2026-03-22T10:40:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T10:55:00Z",
+      "description": "Wire local-issues ensure into the Symphony workflow hooks so new and resumed workspaces backfill a missing local tracker record for the active issue identifier.",
+      "id": "big-par-224",
+      "identifier": "BIG-PAR-224",
+      "labels": [
+        "parallel",
+        "workflow",
+        "tracker"
+      ],
+      "priority": 2,
+      "state": "In Progress",
+      "title": "Workflow hooks ensure local tracker entries exist",
+      "updated_at": "2026-03-22T10:55:00Z"
     }
   ]
 }

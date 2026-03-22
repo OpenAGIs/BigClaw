@@ -86,6 +86,27 @@ func (s *LocalIssueStore) Issues() []LocalIssue {
 	return issues
 }
 
+func (s *LocalIssueStore) FindIssue(ref string) (LocalIssue, bool) {
+	for _, issue := range s.issueMap {
+		if !issueMatchesRef(issue, ref) {
+			continue
+		}
+		return LocalIssue{
+			ID:               mapString(issue, "id"),
+			Identifier:       mapString(issue, "identifier"),
+			Title:            mapString(issue, "title"),
+			Description:      mapString(issue, "description"),
+			State:            mapString(issue, "state"),
+			Priority:         mapInt(issue, "priority"),
+			Labels:           mapStringSlice(issue, "labels"),
+			AssignedToWorker: mapBool(issue, "assigned_to_worker"),
+			CreatedAt:        mapString(issue, "created_at"),
+			UpdatedAt:        mapString(issue, "updated_at"),
+		}, true
+	}
+	return LocalIssue{}, false
+}
+
 func (s *LocalIssueStore) CreateIssue(params LocalIssueCreateParams) (LocalIssue, error) {
 	identifier := strings.TrimSpace(params.Identifier)
 	if identifier == "" {
@@ -292,7 +313,7 @@ func (s *LocalIssueStore) Save() error {
 }
 
 func issueMatchesRef(issue map[string]any, ref string) bool {
-	return mapString(issue, "id") == ref || mapString(issue, "identifier") == ref
+	return strings.EqualFold(mapString(issue, "id"), ref) || strings.EqualFold(mapString(issue, "identifier"), ref)
 }
 
 func mapString(issue map[string]any, key string) string {
