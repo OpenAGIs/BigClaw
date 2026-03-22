@@ -1,0 +1,26 @@
+{
+  "event_log_backend": "memory",
+  "target_backend": "broker_replicated",
+  "ready": false,
+  "runtime_posture": "contract_only",
+  "live_adapter_implemented": false,
+  "proof_boundary": "broker bootstrap readiness is a pre-adapter contract surface, not live broker durability proof",
+  "config_completeness": {
+    "driver": false,
+    "urls": false,
+    "topic": false,
+    "consumer_group": false
+  },
+  "broker_bootstrap": {
+    "publish_timeout": "5s",
+    "replay_limit": 500,
+    "checkpoint_interval": "5s",
+    "ready": false,
+    "validation_errors": [
+      "broker event log config missing driver, urls, topic"
+    ]
+  },
+  "validation_errors": [
+    "broker event log config missing driver, urls, topic"
+  ]
+}
