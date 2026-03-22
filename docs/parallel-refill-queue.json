@@ -29,12 +29,11 @@
       "BIG-PAR-219",
       "BIG-PAR-220",
       "BIG-PAR-221",
+      "BIG-PAR-222",
       "BIG-PAR-223",
-      "BIG-PAR-222"
-    ],
-    "active": [
       "BIG-PAR-224"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -136,7 +135,7 @@
       "identifier": "BIG-PAR-224",
       "title": "Reconcile tracker and refill queue follow-up state",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
