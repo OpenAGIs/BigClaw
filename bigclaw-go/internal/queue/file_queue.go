@@ -53,7 +53,9 @@ func (q *FileQueue) LeaseNext(_ context.Context, workerID string, ttl time.Durat
 	defer q.mu.Unlock()
 
 	now := time.Now()
-	q.recoverExpiredLeases(now)
+	if _, err := q.recoverExpiredLeases(now); err != nil {
+		return nil, nil, err
+	}
 
 	ordered := make([]*item, 0, len(q.items))
 	for _, current := range q.items {
@@ -214,7 +216,9 @@ func (q *FileQueue) ListTasks(_ context.Context, limit int) ([]TaskSnapshot, err
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	now := time.Now()
-	q.recoverExpiredLeases(now)
+	if _, err := q.recoverExpiredLeases(now); err != nil {
+		return nil, err
+	}
 	items := make([]*item, 0, len(q.items))
 	for _, current := range q.items {
 		items = append(items, current)
@@ -304,14 +308,26 @@ func (q *FileQueue) save() error {
 	return os.Rename(tmp, q.path)
 }
 
-func (q *FileQueue) recoverExpiredLeases(now time.Time) {
-	for _, current := range q.items {
-		if current.Leased && !current.LeaseExpires.After(now) && current.Task.State != domain.TaskCancelled {
-			current.Leased = false
-			current.LeaseWorker = ""
-			current.Task.State = domain.TaskQueued
-			current.Task.UpdatedAt = now
-			current.AvailableAt = now
+func (q *FileQueue) recoverExpiredLeases(now time.Time) (bool, error) {
+	changed := false
+	for taskID, current := range q.items {
+		if !current.Leased || current.LeaseExpires.After(now) {
+			continue
 		}
+		if current.Task.State == domain.TaskCancelled {
+			delete(q.items, taskID)
+			changed = true
+			continue
+		}
+		current.Leased = false
+		current.LeaseWorker = ""
+		current.Task.State = domain.TaskQueued
+		current.Task.UpdatedAt = now
+		current.AvailableAt = now
+		changed = true
 	}
+	if !changed {
+		return false, nil
+	}
+	return true, q.save()
 }

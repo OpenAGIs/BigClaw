@@ -132,3 +132,26 @@ func TestMemoryQueueRejectsRenewalAfterLeaseExpiry(t *testing.T) {
 		t.Fatalf("expected ErrLeaseExpired, got %v", err)
 	}
 }
+
+func TestMemoryQueuePurgesCancelledLeaseAfterExpiry(t *testing.T) {
+	q := NewMemoryQueue()
+	ctx := context.Background()
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-cancel-expire", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	_, lease, err := q.LeaseNext(ctx, "worker-a", 25*time.Millisecond)
+	if err != nil || lease == nil {
+		t.Fatalf("lease: %v lease=%v", err, lease)
+	}
+	if _, err := q.CancelTask(ctx, "task-cancel-expire", "stop"); err != nil {
+		t.Fatalf("cancel: %v", err)
+	}
+	time.Sleep(40 * time.Millisecond)
+	task, newLease, err := q.LeaseNext(ctx, "worker-b", time.Minute)
+	if err != nil || task != nil || newLease != nil {
+		t.Fatalf("expected no lease after purge, got task=%v lease=%v err=%v", task, newLease, err)
+	}
+	if _, err := q.GetTask(ctx, "task-cancel-expire"); !errors.Is(err, ErrTaskNotFound) {
+		t.Fatalf("expected task to be purged, got %v", err)
+	}
+}

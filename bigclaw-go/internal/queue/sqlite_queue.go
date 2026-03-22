@@ -83,6 +83,11 @@ func (q *SQLiteQueue) Enqueue(_ context.Context, task domain.Task) error {
 }
 
 func (q *SQLiteQueue) LeaseNext(_ context.Context, workerID string, ttl time.Duration) (*domain.Task, *Lease, error) {
+	now := time.Now()
+	if _, err := q.db.Exec(`DELETE FROM tasks WHERE state = ? AND (leased = 0 OR lease_expires_ns <= ?)`, string(domain.TaskCancelled), now.UnixNano()); err != nil {
+		return nil, nil, err
+	}
+
 	tx, err := q.db.Begin()
 	if err != nil {
 		return nil, nil, err
@@ -93,7 +98,6 @@ func (q *SQLiteQueue) LeaseNext(_ context.Context, workerID string, ttl time.Dur
 		}
 	}()
 
-	now := time.Now()
 	row := tx.QueryRow(`SELECT task_id, payload, attempt FROM tasks
 		WHERE available_at_ns <= ?
 		AND state NOT IN (?, ?)
