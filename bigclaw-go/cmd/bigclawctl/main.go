@@ -15,6 +15,7 @@ import (
 
 	"bigclaw-go/internal/bootstrap"
 	"bigclaw-go/internal/githubsync"
+	"bigclaw-go/internal/legacyshim"
 	"bigclaw-go/internal/refill"
 )
 
@@ -100,7 +101,7 @@ type refillClient interface {
 
 func main() {
 	if len(os.Args) < 2 {
-		fatalf("usage: bigclawctl <github-sync|workspace|refill|local-issues> ...")
+		fatalf("usage: bigclawctl <github-sync|workspace|refill|local-issues|legacy-python> ...")
 	}
 	var err error
 	switch os.Args[1] {
@@ -112,11 +113,57 @@ func main() {
 		err = runRefill(os.Args[2:])
 	case "local-issues":
 		err = runLocalIssues(os.Args[2:])
+	case "legacy-python":
+		err = runLegacyPython(os.Args[2:])
 	default:
 		err = fmt.Errorf("unknown command: %s", os.Args[1])
 	}
 	if err != nil {
 		fatalf("%v", err)
+	}
+}
+
+func runLegacyPython(args []string) error {
+	if len(args) == 0 {
+		return errors.New("usage: bigclawctl legacy-python <compile-check> [flags]")
+	}
+	command := args[0]
+	flags := flag.NewFlagSet("legacy-python "+command, flag.ContinueOnError)
+	flags.SetOutput(io.Discard)
+	repoRoot := flags.String("repo", "..", "repo root")
+	pythonBin := flags.String("python", "python3", "python executable")
+	asJSON := flags.Bool("json", false, "json")
+	if err := flags.Parse(args[1:]); err != nil {
+		return err
+	}
+	switch command {
+	case "compile-check":
+		result, err := legacyshim.CompileCheck(absPath(*repoRoot), *pythonBin)
+		if err != nil {
+			payload := map[string]any{
+				"status": "error",
+				"repo":   absPath(*repoRoot),
+				"python": *pythonBin,
+				"files":  result.Files,
+				"error":  err.Error(),
+			}
+			if result.Output != "" {
+				payload["output"] = result.Output
+			}
+			return emit(payload, *asJSON, 1)
+		}
+		payload := map[string]any{
+			"status": "ok",
+			"repo":   absPath(*repoRoot),
+			"python": result.Python,
+			"files":  result.Files,
+		}
+		if result.Output != "" {
+			payload["output"] = result.Output
+		}
+		return emit(payload, *asJSON, 0)
+	default:
+		return fmt.Errorf("unknown legacy-python subcommand: %s", command)
 	}
 }
 
