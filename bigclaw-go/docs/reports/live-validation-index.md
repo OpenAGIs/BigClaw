@@ -1,57 +1,61 @@
 # Live Validation Index
 
-- Latest run: `20260322T002048Z`
-- Generated at: `2026-03-22T00:44:22.344830+00:00`
+- Latest run: `20260316T140138Z`
+- Generated at: `2026-03-17T04:32:13.251910+00:00`
 - Status: `succeeded`
-- Bundle: `docs/reports/live-validation-runs/20260322T002048Z`
-- Summary JSON: `docs/reports/live-validation-runs/20260322T002048Z/summary.json`
+- Bundle: `docs/reports/live-validation-runs/20260316T140138Z`
+- Summary JSON: `docs/reports/live-validation-runs/20260316T140138Z/summary.json`
 
 ## Latest bundle artifacts
 
 ### local
 - Enabled: `True`
 - Status: `succeeded`
-- Bundle report: `docs/reports/live-validation-runs/20260322T002048Z/sqlite-smoke-report.json`
+- Bundle report: `docs/reports/live-validation-runs/20260316T140138Z/sqlite-smoke-report.json`
 - Latest report: `docs/reports/sqlite-smoke-report.json`
-- Service log: `docs/reports/live-validation-runs/20260322T002048Z/local.service.log`
-- Audit log: `docs/reports/live-validation-runs/20260322T002048Z/local.audit.jsonl`
-- Task ID: `local-smoke-1774138853`
+- Stdout log: `docs/reports/live-validation-runs/20260316T140138Z/local.stdout.log`
+- Stderr log: `docs/reports/live-validation-runs/20260316T140138Z/local.stderr.log`
+- Service log: `docs/reports/live-validation-runs/20260316T140138Z/local.service.log`
+- Audit log: `docs/reports/live-validation-runs/20260316T140138Z/local.audit.jsonl`
+- Task ID: `local-smoke-1773669703`
 
 ### kubernetes
-- Enabled: `False`
-- Status: `skipped`
-- Bundle report: `docs/reports/live-validation-runs/20260322T002048Z/kubernetes-live-smoke-report.json`
+- Enabled: `True`
+- Status: `succeeded`
+- Bundle report: `docs/reports/live-validation-runs/20260316T140138Z/kubernetes-live-smoke-report.json`
 - Latest report: `docs/reports/kubernetes-live-smoke-report.json`
+- Stdout log: `docs/reports/live-validation-runs/20260316T140138Z/kubernetes.stdout.log`
+- Stderr log: `docs/reports/live-validation-runs/20260316T140138Z/kubernetes.stderr.log`
+- Service log: `docs/reports/live-validation-runs/20260316T140138Z/kubernetes.service.log`
+- Audit log: `docs/reports/live-validation-runs/20260316T140138Z/kubernetes.audit.jsonl`
+- Task ID: `kubernetes-smoke-1773669703`
 
 ### ray
-- Enabled: `False`
-- Status: `skipped`
-- Bundle report: `docs/reports/live-validation-runs/20260322T002048Z/ray-live-smoke-report.json`
+- Enabled: `True`
+- Status: `succeeded`
+- Bundle report: `docs/reports/live-validation-runs/20260316T140138Z/ray-live-smoke-report.json`
 - Latest report: `docs/reports/ray-live-smoke-report.json`
+- Stdout log: `docs/reports/live-validation-runs/20260316T140138Z/ray.stdout.log`
+- Stderr log: `docs/reports/live-validation-runs/20260316T140138Z/ray.stderr.log`
+- Service log: `docs/reports/live-validation-runs/20260316T140138Z/ray.service.log`
+- Audit log: `docs/reports/live-validation-runs/20260316T140138Z/ray.audit.jsonl`
+- Task ID: `ray-smoke-1773669703`
 
 ### broker
 - Enabled: `False`
 - Status: `skipped`
 - Configuration state: `not_configured`
-- Bundle summary: `docs/reports/live-validation-runs/20260322T002048Z/broker-validation-summary.json`
+- Bundle summary: `docs/reports/live-validation-runs/20260316T140138Z/broker-validation-summary.json`
 - Canonical summary: `docs/reports/broker-validation-summary.json`
-- Bundle bootstrap summary: `docs/reports/live-validation-runs/20260322T002048Z/broker-bootstrap-review-summary.json`
-- Canonical bootstrap summary: `docs/reports/broker-bootstrap-review-summary.json`
 - Validation pack: `docs/reports/broker-failover-fault-injection-validation-pack.md`
-- Bootstrap ready: `False`
-- Runtime posture: `contract_only`
-- Live adapter implemented: `False`
-- Config completeness: driver=`False` urls=`False` topic=`False` consumer_group=`False`
-- Proof boundary: `broker bootstrap readiness is a pre-adapter contract surface, not live broker durability proof`
-- Validation error: `broker event log config missing driver, urls, topic`
 - Reason: `not_configured`
 
 ### shared-queue companion
 - Available: `True`
 - Status: `succeeded`
-- Bundle summary: `docs/reports/live-validation-runs/20260322T002048Z/shared-queue-companion-summary.json`
+- Bundle summary: `docs/reports/live-validation-runs/20260316T140138Z/shared-queue-companion-summary.json`
 - Canonical summary: `docs/reports/shared-queue-companion-summary.json`
-- Bundle report: `docs/reports/live-validation-runs/20260322T002048Z/multi-node-shared-queue-report.json`
+- Bundle report: `docs/reports/live-validation-runs/20260316T140138Z/multi-node-shared-queue-report.json`
 - Canonical report: `docs/reports/multi-node-shared-queue-report.json`
 - Cross-node completions: `99`
 - Duplicate `task.started`: `0`
@@ -66,7 +70,6 @@
 
 ## Recent bundles
 
-- `20260322T002048Z` · `succeeded` · `2026-03-22T00:44:22.344830+00:00` · `docs/reports/live-validation-runs/20260322T002048Z`
 - `20260316T140138Z` · `succeeded` · `2026-03-17T04:32:13.251910+00:00` · `docs/reports/live-validation-runs/20260316T140138Z`
 - `20260314T164647Z` · `succeeded` · `2026-03-14T16:46:57.671520+00:00` · `docs/reports/live-validation-runs/20260314T164647Z`
 - `20260314T163430Z` · `succeeded` · `2026-03-14T16:34:42.080370+00:00` · `docs/reports/live-validation-runs/20260314T163430Z`
@@ -89,6 +92,12 @@
 
 - `docs/reports/validation-bundle-continuation-scorecard.json` summarizes the rolling readiness view across recent bundled local, Kubernetes, and Ray runs plus the shared-queue companion proof.
 - `docs/reports/validation-bundle-continuation-policy-gate.json` records the current policy decision for bundle freshness, repeated lane coverage, and shared-queue companion availability.
+
+- Gate status: `policy-hold`
+- Recommendation: `hold`
+- Latest bundle age hours: `101.33`
+- Failing checks: `latest_bundle_age_within_threshold`
+- Next action: rerun `cd bigclaw-go && ./scripts/e2e/run_all.sh` to refresh the latest validation bundle
 
 ## Parallel follow-up digests
 
