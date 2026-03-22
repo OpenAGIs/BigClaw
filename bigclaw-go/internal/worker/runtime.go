@@ -23,6 +23,7 @@ import (
 
 type Runtime struct {
 	WorkerID    string
+	NodeID      string
 	Queue       queue.Queue
 	Scheduler   *scheduler.Scheduler
 	Registry    *executor.Registry
@@ -39,6 +40,7 @@ type Runtime struct {
 
 type Status struct {
 	WorkerID                  string              `json:"worker_id"`
+	NodeID                    string              `json:"node_id,omitempty"`
 	State                     string              `json:"state"`
 	CurrentTaskID             string              `json:"current_task_id,omitempty"`
 	CurrentTraceID            string              `json:"current_trace_id,omitempty"`
@@ -77,6 +79,9 @@ func (r *Runtime) Snapshot() Status {
 	snapshot := r.status
 	if snapshot.WorkerID == "" {
 		snapshot.WorkerID = r.WorkerID
+	}
+	if snapshot.NodeID == "" {
+		snapshot.NodeID = r.NodeID
 	}
 	if snapshot.State == "" {
 		snapshot.State = "idle"
@@ -860,6 +865,9 @@ func (r *Runtime) updateStatus(apply func(*Status)) {
 	defer r.statusMu.Unlock()
 	if r.status.WorkerID == "" {
 		r.status.WorkerID = r.WorkerID
+	}
+	if r.status.NodeID == "" {
+		r.status.NodeID = r.NodeID
 	}
 	if r.status.State == "" {
 		r.status.State = "idle"
