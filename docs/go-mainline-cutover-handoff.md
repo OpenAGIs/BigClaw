@@ -21,7 +21,7 @@ This note captures the final merge-readiness handoff for the completed
 
 - `cd bigclaw-go && go test ./...`
 - `cd bigclaw-go && go test ./internal/domain ./internal/intake ./internal/workflow ./internal/risk ./internal/triage ./internal/billing`
-- `python3 -m py_compile src/bigclaw/service.py src/bigclaw/__main__.py src/bigclaw/legacy_shim.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py`
+- `bash scripts/ops/bigclawctl legacy-python compile-check --json`
 - `PYTHONPATH=src python3 - <<"... legacy shim assertions ..."`
 
 ## Completed scope

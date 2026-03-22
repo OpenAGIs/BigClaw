@@ -27,8 +27,13 @@
       "BIG-GOM-307",
       "BIG-GOM-308"
     ],
-    "active": [],
-    "standby": []
+    "active": [
+      "BIG-PAR-220",
+      "BIG-PAR-222"
+    ],
+    "standby": [
+      "BIG-PAR-221"
+    ]
   },
   "issue_order": [
     "BIG-GOM-301",
@@ -97,13 +102,13 @@
       "identifier": "BIG-PAR-219",
       "title": "Expose ahead/behind relation in github-sync status payload",
       "track": "Go Mainline Follow-ups",
-      "status": "Todo"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-220",
       "title": "Go-first traceability refresh for issue plan evidence pointers",
       "track": "Go Mainline Follow-ups",
-      "status": "Todo"
+      "status": "In Progress"
     },
     {
       "identifier": "BIG-PAR-221",
@@ -115,7 +120,7 @@
       "identifier": "BIG-PAR-222",
       "title": "Add fast compile-check path for frozen legacy Python shims",
       "track": "Go Mainline Follow-ups",
-      "status": "Backlog"
+      "status": "In Progress"
     }
   ]
 }
