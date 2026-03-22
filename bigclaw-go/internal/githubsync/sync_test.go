@@ -205,7 +205,7 @@ func TestInspectRepoSyncMarksDirtyWorktree(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !status.Dirty || !status.Synced {
+	if !status.Dirty || !status.Synced || !status.Pushed {
 		t.Fatalf("expected dirty synced status, got %+v", status)
 	}
 }

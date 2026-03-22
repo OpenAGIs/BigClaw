@@ -232,6 +232,9 @@ func InspectRepoSync(repo string, remote string) (RepoSyncStatus, error) {
 	if !remoteExists && matchesRemoteDefaultBranch(repoPath, remote, localSHA) {
 		synced = true
 	}
+	// "pushed" should be stable: it means the remote branch exists and contains HEAD.
+	// A synced default-branch fallback (remote branch absent but SHA matches default) is not considered pushed.
+	pushed := remoteExists && localSHA == remoteSHA
 	return RepoSyncStatus{
 		Branch:       branch,
 		LocalSHA:     localSHA,
@@ -239,6 +242,7 @@ func InspectRepoSync(repo string, remote string) (RepoSyncStatus, error) {
 		Dirty:        isDirty,
 		RemoteExists: remoteExists,
 		Synced:       synced,
+		Pushed:       pushed,
 	}, nil
 }
 
