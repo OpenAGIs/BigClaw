@@ -1204,6 +1204,40 @@
       "state": "Done",
       "title": "Add node identifier to worker status snapshots",
       "updated_at": "2026-03-22T01:54:45Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T02:04:06Z",
+      "description": "Update the distributed diagnostics markdown export to include lease-safety summary counters (lease renewal failures and lease-lost runs) so the exported report preserves the new coordination signals.",
+      "id": "big-par-217",
+      "identifier": "BIG-PAR-217",
+      "labels": [
+        "parallel",
+        "observability",
+        "reporting",
+        "api"
+      ],
+      "priority": 4,
+      "state": "In Progress",
+      "title": "Render lease-safety counters in distributed diagnostics report",
+      "updated_at": "2026-03-22T02:04:06Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T02:04:06Z",
+      "description": "Plumb `BIGCLAW_NODE_ID` into `bigclawd` worker runtimes so the new `node_id` field in worker status snapshots is populated by default in multi-node deployments.",
+      "id": "big-par-218",
+      "identifier": "BIG-PAR-218",
+      "labels": [
+        "parallel",
+        "config",
+        "worker",
+        "control-center"
+      ],
+      "priority": 4,
+      "state": "In Progress",
+      "title": "Wire BIGCLAW_NODE_ID into worker runtime NodeID",
+      "updated_at": "2026-03-22T02:04:06Z"
     }
   ]
 }
