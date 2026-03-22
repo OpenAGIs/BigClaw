@@ -700,6 +700,11 @@
           "author": "codex",
           "body": "Closed `BIG-PAR-102` after reconciling the local tracker with the repo-native BIG-PAR ticket IDs used by the checked-in durability/observability evidence set.\n\nWhat changed:\n- Renumbered the previously mis-tracked local continuation tickets out of the conflicting `BIG-PAR-088` through `BIG-PAR-101` range (now tracked as `BIG-PAR-200` through `BIG-PAR-213`) so the local tracker no longer collides with repo-native tickets like rollback (`BIG-PAR-088`), live shadow (`BIG-PAR-092`), capacity certification (`BIG-PAR-098`), leader election (`BIG-PAR-101`), and external-store validation (`BIG-PAR-102`).\n- Backfilled missing repo-native BIG-PAR ticket entries in `local-issues.json` for the checked-in follow-up digests and proof summaries.\n- Updated `docs/openclaw-parallel-gap-analysis.md` to reference the correct rollback follow-up ticket (`BIG-PAR-088`).\n\nValidation:\n- `cd bigclaw-go && go test ./...` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `0bf9fd4525e93e3ea93d939bc8d7ed65c7faf59a` matches remote SHA `0bf9fd4525e93e3ea93d939bc8d7ed65c7faf59a` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `0bf9fd4525e93e3ea93d939bc8d7ed65c7faf59a`\n\nCommit: `0bf9fd4525e93e3ea93d939bc8d7ed65c7faf59a`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/146.",
           "created_at": "2026-03-22T00:00:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Turn #5 sync audit for `BIG-PAR-102`.\n\nValidation:\n- `cd bigclaw-go && go test ./...` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> `status: ok`, `synced: true`, `pushed: true` and local SHA `a4b0ef9b435828d2654af3f12c7efd795f919324` matches remote SHA `a4b0ef9b435828d2654af3f12c7efd795f919324`\n- `git rev-parse HEAD` == `git rev-parse origin/symphony/BIG-PAR-102` -> `a4b0ef9b435828d2654af3f12c7efd795f919324`\n- `gh pr view 146 --json mergeStateStatus,statusCheckRollup` -> `mergeStateStatus=CLEAN`, latest check `test=SUCCESS`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `candidates: []`\n- `git log -1 --stat` -> captured for commit `a4b0ef9b435828d2654af3f12c7efd795f919324`\n\nCommit: `a4b0ef9b435828d2654af3f12c7efd795f919324`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/146.",
+          "created_at": "2026-03-22T01:10:22Z"
         }
       ],
       "created_at": "2026-03-22T00:00:00Z",
@@ -715,7 +720,7 @@
       "priority": 2,
       "state": "Done",
       "title": "External-store validation backend matrix and broker placeholders",
-      "updated_at": "2026-03-22T00:00:00Z"
+      "updated_at": "2026-03-22T01:10:22Z"
     },
     {
       "assigned_to_worker": true,
