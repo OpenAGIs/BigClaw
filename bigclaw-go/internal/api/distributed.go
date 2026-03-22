@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"sort"
@@ -51,6 +52,7 @@ type executorCapacityView struct {
 	TeamBreakdown        []auditFacetCount      `json:"team_breakdown,omitempty"`
 	ProjectBreakdown     []auditFacetCount      `json:"project_breakdown,omitempty"`
 	TopRoutingReasons    []routingReasonSummary `json:"top_routing_reasons,omitempty"`
+	HealthSummary        []string               `json:"health_summary,omitempty"`
 	SampleTasks          []string               `json:"sample_tasks,omitempty"`
 }
 
@@ -64,6 +66,34 @@ type clusterHealthRollup struct {
 	TakeoverOwners     []auditFacetCount `json:"takeover_owners,omitempty"`
 	SaturatedExecutors []string          `json:"saturated_executors,omitempty"`
 	Notes              []string          `json:"notes"`
+}
+
+type recoveryDiagnostics struct {
+	ActiveTakeovers          int `json:"active_takeovers"`
+	TakeoverEvents           int `json:"takeover_events"`
+	ReleaseEvents            int `json:"release_events"`
+	RetriedRuns              int `json:"retried_runs"`
+	DeadLetterRuns           int `json:"dead_letter_runs"`
+	LeaseExpiredEvents       int `json:"lease_expired_events"`
+	CheckpointRejectedEvents int `json:"checkpoint_rejected_events"`
+	UnreleasedTakeovers      int `json:"unreleased_takeovers"`
+}
+
+type fairnessExecutorShare struct {
+	Executor        string  `json:"executor"`
+	RoutedDecisions int     `json:"routed_decisions"`
+	ExpectedShare   float64 `json:"expected_share"`
+	ActualShare     float64 `json:"actual_share"`
+	ShareDelta      float64 `json:"share_delta"`
+	Status          string  `json:"status"`
+}
+
+type fairnessDiagnostics struct {
+	TotalRoutedDecisions int                    `json:"total_routed_decisions"`
+	CapacityWeightTotal  int                    `json:"capacity_weight_total"`
+	ImbalanceScore       float64                `json:"imbalance_score"`
+	ExecutorShares       []fairnessExecutorShare `json:"executor_shares"`
+	Notes                []string               `json:"notes,omitempty"`
 }
 
 type distributedDiagnosticsReport struct {
@@ -114,6 +144,8 @@ type distributedDiagnostics struct {
 	RoutingReasons        []routingReasonSummary                   `json:"routing_reasons"`
 	ExecutorCapacity      []executorCapacityView                   `json:"executor_capacity"`
 	ClusterHealth         clusterHealthRollup                      `json:"cluster_health"`
+	Recovery              recoveryDiagnostics                      `json:"recovery"`
+	Fairness              fairnessDiagnostics                      `json:"fairness"`
 	LiveShadowMirror      liveShadowMirrorSurface                  `json:"live_shadow_mirror_scorecard"`
 	BrokerReviewPack      brokerReviewPack                         `json:"broker_review_pack"`
 	BrokerReviewBundle    brokerReviewBundleSurface                `json:"broker_review_bundle"`
@@ -175,6 +207,8 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"routing_reasons":                 diagnostics.RoutingReasons,
 		"executor_capacity":               diagnostics.ExecutorCapacity,
 		"cluster_health":                  diagnostics.ClusterHealth,
+		"recovery":                        diagnostics.Recovery,
+		"fairness":                        diagnostics.Fairness,
 		"live_shadow_mirror_scorecard":    diagnostics.LiveShadowMirror,
 		"broker_review_pack":              diagnostics.BrokerReviewPack,
 		"broker_review_bundle":            diagnostics.BrokerReviewBundle,
@@ -247,6 +281,9 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		copy := takeovers[index]
 		takeoverByTask[copy.TaskID] = &copy
 	}
+	recovery := recoveryDiagnostics{
+		ActiveTakeovers: len(takeovers),
+	}
 	assignments := make([]distributedTaskAssignment, 0, len(tasks))
 	assignmentByTask := make(map[string]distributedTaskAssignment, len(tasks))
 	tasksByExecutor := make(map[domain.ExecutorKind][]distributedTaskAssignment)
@@ -297,9 +334,23 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 			entry.Started++
 		case domain.EventTaskCompleted:
 			entry.Completed++
+		case domain.EventTaskRetried:
+			recovery.RetriedRuns++
 		case domain.EventTaskDeadLetter:
 			entry.DeadLetter++
+			recovery.DeadLetterRuns++
+		case domain.EventRunTakeover:
+			recovery.TakeoverEvents++
+		case domain.EventRunReleased:
+			recovery.ReleaseEvents++
+		case domain.EventSubscriberLeaseExpired:
+			recovery.LeaseExpiredEvents++
+		case domain.EventSubscriberCheckpointRejected:
+			recovery.CheckpointRejectedEvents++
 		}
+	}
+	if recovery.TakeoverEvents > recovery.ReleaseEvents {
+		recovery.UnreleasedTakeovers = recovery.TakeoverEvents - recovery.ReleaseEvents
 	}
 
 	routingReasons := make([]routingReasonSummary, 0, len(routingIndex))
@@ -362,6 +413,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 			view.SaturationPercent = float64(view.ActiveWorkers) / float64(capability.MaxConcurrency) * 100
 		}
 		view.Health = diagnosticsHealth(view)
+		view.HealthSummary = executorHealthSummary(view)
 		if view.Health != "idle" {
 			activeExecutors++
 		}
@@ -407,11 +459,14 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		SaturatedExecutors: saturatedExecutors,
 		Notes:              diagnosticsNotes(summary, executorCapacity, s.Control.Snapshot()),
 	}
+	fairness := buildFairnessDiagnostics(capabilities, countersByExecutor, totalRouted)
 	diagnostics := distributedDiagnostics{
 		Summary:               summary,
 		RoutingReasons:        routingReasons,
 		ExecutorCapacity:      executorCapacity,
 		ClusterHealth:         clusterHealth,
+		Recovery:              recovery,
+		Fairness:              fairness,
 		LiveShadowMirror:      liveShadowMirrorPayload(),
 		BrokerReviewPack:      buildBrokerReviewPack(),
 		BrokerReviewBundle:    brokerReviewBundleSurfacePayload(),
@@ -516,6 +571,100 @@ func diagnosticsNotes(summary distributedDiagnosticsSummary, capacity []executor
 		notes = append(notes, "distributed control plane looks healthy for the current slice")
 	}
 	return notes
+}
+
+func executorHealthSummary(view executorCapacityView) []string {
+	summary := make([]string, 0, 3)
+	if view.Health == "degraded" {
+		summary = append(summary, "dead-letter activity without offsetting completions")
+	}
+	if executorIsSaturated(view) {
+		summary = append(summary, "worker saturation above 80% or no spare capacity")
+	}
+	if view.QueuedTasks > view.ActiveWorkers && view.QueuedTasks > 0 {
+		summary = append(summary, fmt.Sprintf("%d queued tasks waiting behind %d active workers", view.QueuedTasks, view.ActiveWorkers))
+	}
+	if len(summary) == 0 {
+		summary = append(summary, "no immediate capacity or recovery risk signals")
+	}
+	return summary
+}
+
+func buildFairnessDiagnostics(capabilities []executor.Capability, countersByExecutor map[domain.ExecutorKind]*executorDiagnosticsCounters, totalRouted int) fairnessDiagnostics {
+	shares := make([]fairnessExecutorShare, 0, len(capabilities))
+	weightTotal := 0
+	for _, capability := range capabilities {
+		weight := capability.MaxConcurrency
+		if weight <= 0 {
+			weight = 1
+		}
+		weightTotal += weight
+	}
+	if weightTotal <= 0 {
+		weightTotal = len(capabilities)
+		if weightTotal == 0 {
+			weightTotal = 1
+		}
+	}
+
+	maxDelta := 0.0
+	for _, capability := range capabilities {
+		weight := capability.MaxConcurrency
+		if weight <= 0 {
+			weight = 1
+		}
+		expectedShare := float64(weight) / float64(weightTotal)
+		routed := 0
+		if counters := countersByExecutor[capability.Kind]; counters != nil {
+			routed = counters.Routed
+		}
+		actualShare := 0.0
+		if totalRouted > 0 {
+			actualShare = float64(routed) / float64(totalRouted)
+		}
+		delta := actualShare - expectedShare
+		absDelta := math.Abs(delta)
+		if absDelta > maxDelta {
+			maxDelta = absDelta
+		}
+		status := "balanced"
+		switch {
+		case totalRouted == 0:
+			status = "no-traffic"
+		case absDelta <= 0.15:
+			status = "balanced"
+		case delta > 0:
+			status = "over-assigned"
+		default:
+			status = "under-assigned"
+		}
+		shares = append(shares, fairnessExecutorShare{
+			Executor:        string(capability.Kind),
+			RoutedDecisions: routed,
+			ExpectedShare:   expectedShare,
+			ActualShare:     actualShare,
+			ShareDelta:      delta,
+			Status:          status,
+		})
+	}
+	sort.SliceStable(shares, func(i, j int) bool { return shares[i].Executor < shares[j].Executor })
+
+	notes := make([]string, 0, 2)
+	if totalRouted == 0 {
+		notes = append(notes, "no routed decisions available for fairness analysis")
+	} else if maxDelta > 0.15 {
+		notes = append(notes, "routing distribution is imbalanced relative to executor capacity weights")
+	} else {
+		notes = append(notes, "routing distribution is within fairness tolerance")
+	}
+
+	return fairnessDiagnostics{
+		TotalRoutedDecisions: totalRouted,
+		CapacityWeightTotal:  weightTotal,
+		ImbalanceScore:       maxDelta,
+		ExecutorShares:       shares,
+		Notes:                notes,
+	}
 }
 
 func countActiveAssignments(assignments []distributedTaskAssignment) int {
@@ -696,6 +845,9 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 			}
 			lines = append(lines, "  - top routing reasons: "+strings.Join(parts, ", "))
 		}
+		if len(item.HealthSummary) > 0 {
+			lines = append(lines, "  - health summary: "+strings.Join(item.HealthSummary, "; "))
+		}
 		if len(item.SampleTasks) > 0 {
 			lines = append(lines, "  - sample tasks: "+strings.Join(item.SampleTasks, ", "))
 		}
@@ -730,6 +882,29 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.ClusterHealth.TakeoverOwners) > 0 {
 		lines = append(lines, "- Takeover owners: "+formatFacetCounts(diagnostics.ClusterHealth.TakeoverOwners))
+	}
+	lines = append(lines,
+		"",
+		"## Recovery Signals",
+		fmt.Sprintf("- Active takeovers: %d", diagnostics.Recovery.ActiveTakeovers),
+		fmt.Sprintf("- Takeover events: %d", diagnostics.Recovery.TakeoverEvents),
+		fmt.Sprintf("- Release events: %d", diagnostics.Recovery.ReleaseEvents),
+		fmt.Sprintf("- Unreleased takeovers: %d", diagnostics.Recovery.UnreleasedTakeovers),
+		fmt.Sprintf("- Retried runs: %d", diagnostics.Recovery.RetriedRuns),
+		fmt.Sprintf("- Dead-letter runs: %d", diagnostics.Recovery.DeadLetterRuns),
+		fmt.Sprintf("- Lease expired events: %d", diagnostics.Recovery.LeaseExpiredEvents),
+		fmt.Sprintf("- Checkpoint rejected events: %d", diagnostics.Recovery.CheckpointRejectedEvents),
+		"",
+		"## Fairness",
+		fmt.Sprintf("- Total routed decisions: %d", diagnostics.Fairness.TotalRoutedDecisions),
+		fmt.Sprintf("- Capacity weight total: %d", diagnostics.Fairness.CapacityWeightTotal),
+		fmt.Sprintf("- Imbalance score: %.3f", diagnostics.Fairness.ImbalanceScore),
+	)
+	for _, item := range diagnostics.Fairness.ExecutorShares {
+		lines = append(lines, fmt.Sprintf("- %s: routed=%d expected_share=%.3f actual_share=%.3f delta=%.3f status=%s", item.Executor, item.RoutedDecisions, item.ExpectedShare, item.ActualShare, item.ShareDelta, item.Status))
+	}
+	if len(diagnostics.Fairness.Notes) > 0 {
+		lines = append(lines, "- Notes: "+strings.Join(diagnostics.Fairness.Notes, "; "))
 	}
 	lines = append(lines,
 		"",
