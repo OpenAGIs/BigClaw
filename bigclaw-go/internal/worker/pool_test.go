@@ -134,6 +134,8 @@ func TestPoolSnapshotSummarizesWorkerState(t *testing.T) {
 		status.CurrentTraceID = "trace-urgent"
 		status.CurrentExecutor = domain.ExecutorLocal
 		status.LeaseRenewals = 2
+		status.LeaseRenewalFailures = 1
+		status.LeaseLostRuns = 2
 		status.SuccessfulRuns = 3
 		status.PreemptionActive = true
 		status.CurrentPreemptionTaskID = "task-low"
@@ -147,6 +149,8 @@ func TestPoolSnapshotSummarizesWorkerState(t *testing.T) {
 	workerB := &Runtime{WorkerID: "worker-b"}
 	workerB.updateStatus(func(status *Status) {
 		status.State = "idle"
+		status.LeaseRenewalFailures = 3
+		status.LeaseLostRuns = 1
 		status.SuccessfulRuns = 4
 		status.LastResult = "ok"
 		status.LastFinishedAt = time.Unix(1_700_000_200, 0)
@@ -161,6 +165,9 @@ func TestPoolSnapshotSummarizesWorkerState(t *testing.T) {
 	}
 	if summary.SuccessfulRuns != 7 || summary.LeaseRenewals != 2 {
 		t.Fatalf("expected aggregated counters, got %+v", summary)
+	}
+	if summary.LeaseRenewalFailures != 4 || summary.LeaseLostRuns != 3 {
+		t.Fatalf("expected aggregated lease-safety counters, got %+v", summary)
 	}
 	if !summary.PreemptionActive || summary.LastPreemptedTaskID != "task-low" {
 		t.Fatalf("expected aggregated preemption state, got %+v", summary)

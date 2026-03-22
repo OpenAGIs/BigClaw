@@ -22,6 +22,8 @@ type distributedDiagnosticsSummary struct {
 	TotalRoutedDecisions int `json:"total_routed_decisions"`
 	ActiveWorkers        int `json:"active_workers"`
 	IdleWorkers          int `json:"idle_workers"`
+	LeaseRenewalFailures int `json:"lease_renewal_failures"`
+	LeaseLostRuns        int `json:"lease_lost_runs"`
 	SaturatedExecutors   int `json:"saturated_executors"`
 	ActiveTakeovers      int `json:"active_takeovers"`
 }
@@ -225,6 +227,8 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 	activeByExecutor := make(map[domain.ExecutorKind]int)
 	activeWorkers := 0
 	idleWorkers := 0
+	leaseRenewalFailures := 0
+	leaseLostRuns := 0
 	if pool != nil {
 		activeWorkers = pool.ActiveWorkers
 		idleWorkers = pool.IdleWorkers
@@ -234,6 +238,8 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 				state = "idle"
 			}
 			workerStates[state]++
+			leaseRenewalFailures += workerStatus.LeaseRenewalFailures
+			leaseLostRuns += workerStatus.LeaseLostRuns
 			if workerStatus.CurrentExecutor != "" && (state == "leased" || state == "running") {
 				activeByExecutor[workerStatus.CurrentExecutor]++
 			}
@@ -389,6 +395,8 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		TotalRoutedDecisions: totalRouted,
 		ActiveWorkers:        activeWorkers,
 		IdleWorkers:          idleWorkers,
+		LeaseRenewalFailures: leaseRenewalFailures,
+		LeaseLostRuns:        leaseLostRuns,
 		SaturatedExecutors:   len(saturatedExecutors),
 		ActiveTakeovers:      len(takeovers),
 	}
@@ -668,6 +676,8 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 		fmt.Sprintf("- Routed decisions: %d", diagnostics.Summary.TotalRoutedDecisions),
 		fmt.Sprintf("- Active workers: %d", diagnostics.Summary.ActiveWorkers),
 		fmt.Sprintf("- Idle workers: %d", diagnostics.Summary.IdleWorkers),
+		fmt.Sprintf("- Lease renewal failures: %d", diagnostics.Summary.LeaseRenewalFailures),
+		fmt.Sprintf("- Lease lost runs: %d", diagnostics.Summary.LeaseLostRuns),
 		fmt.Sprintf("- Saturated executors: %d", diagnostics.Summary.SaturatedExecutors),
 		fmt.Sprintf("- Active takeovers: %d", diagnostics.Summary.ActiveTakeovers),
 		"",

@@ -1136,6 +1136,31 @@
       "comments": [
         {
           "author": "codex",
+          "body": "Closed `BIG-PAR-214` after landing lease-safety hardening for shared queue coordination.\n\nWhat changed:\n- Lease renewals now fail closed after expiry across queue backends; sqlite renew requires the lease to still be valid at renewal time and can return `ErrLeaseExpired`.\n- Worker runtime treats lease loss as a first-class outcome (cancels execution and requeues with `LastTransition=\\\"lease.lost\\\"`, tracking renewal failures and lost runs).\n- Cancelled+leased runs are purged after lease expiry across backends to avoid stuck cancelled work if a worker dies.\n- Prometheus counters exported for lease renewal failures and lease-lost runs.\n\nValidation:\n- `cd bigclaw-go && go test ./...` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `469cb3b79698e3596096fc79d46132d4fc1dff02` matches remote SHA `469cb3b79698e3596096fc79d46132d4fc1dff02` with `status: ok`, `synced: true`, `pushed: true`\n- `git log -1 --stat` -> captured for commit `469cb3b79698e3596096fc79d46132d4fc1dff02`\n\nKey commits:\n- `9d3ecffa7d7f343a83376b64662556c79f71d12e`\n- `5edec4a88680237c9989db81a1f0c85d1159057a`\n- `d6feb340081be417b41575074c1b0ace0d6b218c`\n- merge `origin/main`: `60a929681a026c978b67c3db43ba308d1ffcc8ea`\n\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/147.",
+          "created_at": "2026-03-22T01:28:58Z"
+        }
+      ],
+      "created_at": "2026-03-22T01:26:07Z",
+      "description": "Harden shared-queue coordination by failing lease renewals closed after expiry, treating lease loss as an explicit worker runtime outcome, purging cancelled runs after lease expiry, and exporting lease-loss Prometheus counters.",
+      "id": "big-par-214",
+      "identifier": "BIG-PAR-214",
+      "labels": [
+        "parallel",
+        "durability",
+        "queue",
+        "worker",
+        "metrics"
+      ],
+      "priority": 2,
+      "state": "Done",
+      "title": "Shared-queue coordination and lease-safety hardening",
+      "updated_at": "2026-03-22T01:28:58Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
           "body": "Closed `BIG-PAR-112` after clearing the stale unchecked validation item in `.symphony/workpad.md`.\n\nWhat changed:\n- Updated `.symphony/workpad.md` so the remaining plan checkbox reflects the already-recorded completed validation, preventing this workspace from appearing active due to stale workpad state.\n\nValidation:\n- `cd bigclaw-go && go test ./...` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `aaff9c9b6a3a27c29aac5cdf19567d419d967a53` matches remote SHA `aaff9c9b6a3a27c29aac5cdf19567d419d967a53` with `status: ok`, `synced: true`\n- `git rev-parse HEAD` == `git rev-parse origin/symphony/BIG-PAR-112` -> `aaff9c9b6a3a27c29aac5cdf19567d419d967a53`\n- `git log -1 --stat` -> captured for commit `aaff9c9b6a3a27c29aac5cdf19567d419d967a53`\n\nCommit: `aaff9c9b6a3a27c29aac5cdf19567d419d967a53`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/150.",
           "created_at": "2026-03-22T01:52:13Z"
         }
@@ -1153,6 +1178,103 @@
       "state": "Done",
       "title": "Workpad closeout: mark validation complete",
       "updated_at": "2026-03-22T01:52:13Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-215` after surfacing lease-safety signals in distributed diagnostics.\n\nWhat changed:\n- `distributed_diagnostics.summary` now includes `lease_renewal_failures` and `lease_lost_runs` aggregated from worker pool snapshots.\n- `worker.Pool` summary snapshot now aggregates the lease renewal failure and lease-lost run counters.\n\nValidation:\n- `cd bigclaw-go && go test ./...` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `28f7aee36ae6b2281bce09b810715140b54b8b64` matches remote SHA `28f7aee36ae6b2281bce09b810715140b54b8b64` with `status: ok`, `synced: true`, `pushed: true`\n- `git log -1 --stat` -> captured for commit `28f7aee36ae6b2281bce09b810715140b54b8b64`\n\nCommit: `28f7aee36ae6b2281bce09b810715140b54b8b64`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/147.",
+          "created_at": "2026-03-22T01:54:45Z"
+        }
+      ],
+      "created_at": "2026-03-22T01:39:35Z",
+      "description": "Extend distributed diagnostics and control-center payloads to surface lease-safety signals (lease renewal failures, lease-lost runs) so operators can diagnose coordination instability without scraping raw metrics.",
+      "id": "big-par-215",
+      "identifier": "BIG-PAR-215",
+      "labels": [
+        "parallel",
+        "observability",
+        "queue",
+        "worker",
+        "api"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Expose lease-safety signals in distributed diagnostics",
+      "updated_at": "2026-03-22T01:54:45Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-216` after adding a node identifier to worker status snapshots.\n\nWhat changed:\n- `worker.Status` now includes an optional `node_id` field, and `worker.Runtime` propagates it into status snapshots so control-center payloads can attribute active work to a node.\n\nValidation:\n- `cd bigclaw-go && go test ./...` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `28f7aee36ae6b2281bce09b810715140b54b8b64` matches remote SHA `28f7aee36ae6b2281bce09b810715140b54b8b64` with `status: ok`, `synced: true`, `pushed: true`\n\nCommit: `40de58646fa01d888fa035f1b1a98b203902835c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/147.",
+          "created_at": "2026-03-22T01:54:45Z"
+        }
+      ],
+      "created_at": "2026-03-22T01:39:35Z",
+      "description": "Make worker pool snapshots node-aware by adding an optional NodeID to worker status and wiring it through the control-center payload so multi-node deployments can attribute active work to a node.",
+      "id": "big-par-216",
+      "identifier": "BIG-PAR-216",
+      "labels": [
+        "parallel",
+        "observability",
+        "worker",
+        "control-center"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add node identifier to worker status snapshots",
+      "updated_at": "2026-03-22T01:54:45Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-217` after updating the distributed diagnostics markdown export to render lease-safety counters.\n\nWhat changed:\n- The distributed diagnostics markdown report summary now includes the `lease_renewal_failures` and `lease_lost_runs` counters.\n\nValidation:\n- `cd bigclaw-go && go test ./...` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA matches remote SHA with `status: ok`, `synced: true`, `pushed: true`\n\nCommit: `6a2f1634fd37dd8f741ce0d77b9494cddd7f0063`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/147.",
+          "created_at": "2026-03-22T02:10:18Z"
+        }
+      ],
+      "created_at": "2026-03-22T02:04:06Z",
+      "description": "Update the distributed diagnostics markdown export to include lease-safety summary counters (lease renewal failures and lease-lost runs) so the exported report preserves the new coordination signals.",
+      "id": "big-par-217",
+      "identifier": "BIG-PAR-217",
+      "labels": [
+        "parallel",
+        "observability",
+        "reporting",
+        "api"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Render lease-safety counters in distributed diagnostics report",
+      "updated_at": "2026-03-22T02:10:18Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-218` after plumbing `BIGCLAW_NODE_ID` into `bigclawd` worker runtimes.\n\nWhat changed:\n- `BIGCLAW_NODE_ID` (fallback `HOSTNAME`) is now loaded into config and wired into each `worker.Runtime` so worker status snapshots populate `node_id` by default.\n\nValidation:\n- `cd bigclaw-go && go test ./...` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA matches remote SHA with `status: ok`, `synced: true`, `pushed: true`\n\nCommit: `0337325649bd70fcf167c0cd21f3c0be7cd53151`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/147.",
+          "created_at": "2026-03-22T02:10:18Z"
+        }
+      ],
+      "created_at": "2026-03-22T02:04:06Z",
+      "description": "Plumb `BIGCLAW_NODE_ID` into `bigclawd` worker runtimes so the new `node_id` field in worker status snapshots is populated by default in multi-node deployments.",
+      "id": "big-par-218",
+      "identifier": "BIG-PAR-218",
+      "labels": [
+        "parallel",
+        "config",
+        "worker",
+        "control-center"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Wire BIGCLAW_NODE_ID into worker runtime NodeID",
+      "updated_at": "2026-03-22T02:10:18Z"
     }
   ]
 }

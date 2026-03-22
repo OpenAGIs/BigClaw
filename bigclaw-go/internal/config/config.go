@@ -9,6 +9,7 @@ import (
 
 type Config struct {
 	QueueBackend                  string
+	NodeID                        string
 	EventLogBackend               string
 	EventLogTargetBackend         string
 	EventLogReplicationFactor     int
@@ -68,6 +69,7 @@ type Config struct {
 func Default() Config {
 	return Config{
 		QueueBackend:                  "file",
+		NodeID:                        "",
 		EventLogBackend:               "memory",
 		EventLogTargetBackend:         "broker_replicated",
 		EventLogReplicationFactor:     3,
@@ -117,6 +119,7 @@ func Default() Config {
 func LoadFromEnv() Config {
 	cfg := Default()
 	cfg.QueueBackend = getString("BIGCLAW_QUEUE_BACKEND", cfg.QueueBackend)
+	cfg.NodeID = getString("BIGCLAW_NODE_ID", getString("HOSTNAME", cfg.NodeID))
 	cfg.EventLogBackend = getString("BIGCLAW_EVENT_LOG_BACKEND", cfg.EventLogBackend)
 	cfg.EventLogTargetBackend = getString("BIGCLAW_EVENT_LOG_TARGET_BACKEND", cfg.EventLogTargetBackend)
 	cfg.EventLogReplicationFactor = getInt("BIGCLAW_EVENT_LOG_REPLICATION_FACTOR", cfg.EventLogReplicationFactor)
