@@ -86,6 +86,14 @@ func (q *SQLiteQueue) LeaseNext(ctx context.Context, workerID string, ttl time.D
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	cleanupNow := time.Now()
+	// Cancelled tasks remain in the queue while a worker still holds the lease,
+	// but once the lease expires there is no owner left to ACK the item. Purge
+	// cancelled tasks once they are unleased or expired so multi-worker setups
+	// do not accumulate stale cancelled rows indefinitely.
+	if _, err := q.db.ExecContext(ctx, `DELETE FROM tasks WHERE state = ? AND (leased = 0 OR lease_expires_ns <= ?)`, string(domain.TaskCancelled), cleanupNow.UnixNano()); err != nil {
+		return nil, nil, err
+	}
 	conn, err := q.db.Conn(ctx)
 	if err != nil {
 		return nil, nil, err

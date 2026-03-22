@@ -295,14 +295,19 @@ func (q *MemoryQueue) Size(_ context.Context) int {
 }
 
 func (q *MemoryQueue) recoverExpiredLeases(now time.Time) {
-	for _, current := range q.items {
-		if current.Leased && !current.LeaseExpires.After(now) && current.Task.State != domain.TaskCancelled {
-			current.Leased = false
-			current.LeaseWorker = ""
-			current.Task.State = domain.TaskQueued
-			current.Task.UpdatedAt = now
-			current.AvailableAt = now
+	for taskID, current := range q.items {
+		if !current.Leased || current.LeaseExpires.After(now) {
+			continue
 		}
+		if current.Task.State == domain.TaskCancelled {
+			delete(q.items, taskID)
+			continue
+		}
+		current.Leased = false
+		current.LeaseWorker = ""
+		current.Task.State = domain.TaskQueued
+		current.Task.UpdatedAt = now
+		current.AvailableAt = now
 	}
 }
 

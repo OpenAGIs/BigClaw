@@ -717,6 +717,11 @@
           "author": "codex",
           "body": "Progress update (turn #2): implemented lease-loss hardening.\n\nWhat changed:\n- queue backends (sqlite/file/memory) now fail closed on renew after lease expiry via queue.ErrLeaseExpired; file/memory renew also return queue.ErrLeaseNotOwned consistently.\n- worker heartbeat now records lease renewal failures, cancels execution on ErrLeaseExpired/ErrLeaseNotOwned, and the run requeues with LastTransition=lease.lost plus LeaseLostRuns counter.\n\nValidation:\n- cd bigclaw-go \u0026\u0026 go test ./... -\u003e ok\n\nCommit: 9d3ecffa7d7f343a83376b64662556c79f71d12e\nPR: https://github.com/OpenAGIs/BigClaw/pull/147",
           "created_at": "2026-03-22T00:52:04Z"
+        },
+        {
+          "author": "codex",
+          "body": "Progress update (turn #3): cancelled-lease cleanup after expiry.\n\nWhat changed:\n- memory/file queues now purge cancelled tasks once their lease expires (instead of leaving them stuck leased forever if the worker dies).\n- sqlite queue now deletes cancelled tasks whose lease is expired before attempting a new lease, so cancelled+leased rows do not accumulate.\n- added coverage for purge behavior in memory/file/sqlite queue tests.\n\nValidation:\n- cd bigclaw-go \u0026\u0026 go test ./... -\u003e ok\n\nCommit: 5edec4a88680237c9989db81a1f0c85d1159057a\nPR: https://github.com/OpenAGIs/BigClaw/pull/147",
+          "created_at": "2026-03-22T01:07:49Z"
         }
       ],
       "created_at": "2026-03-22T00:16:30Z",
@@ -732,7 +737,7 @@
       "priority": 2,
       "state": "In Progress",
       "title": "Shared-queue coordination and lease-safety hardening",
-      "updated_at": "2026-03-22T00:52:04Z"
+      "updated_at": "2026-03-22T01:07:49Z"
     },
     {
       "assigned_to_worker": true,
