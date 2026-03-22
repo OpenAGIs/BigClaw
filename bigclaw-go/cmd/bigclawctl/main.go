@@ -833,6 +833,9 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		"mode":               map[bool]string{true: "apply", false: "dry-run"}[apply],
 	}
 	queueRunnable := queue.RunnableCount()
+	if client.backend() == "local" {
+		queueRunnable = queue.RunnableCountForStates(stateMap)
+	}
 	payload["queue_runnable"] = queueRunnable
 	payload["queue_drained"] = queueRunnable == 0
 	if queueRunnable == 0 {

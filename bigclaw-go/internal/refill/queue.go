@@ -108,6 +108,35 @@ func (q *ParallelIssueQueue) RunnableCount() int {
 	if len(q.payload.IssueOrder) == 0 {
 		return 0
 	}
+	return countRunnable(q.payload.IssueOrder, issueRecordStateMap(q.IssueRecords()))
+}
+
+func (q *ParallelIssueQueue) RunnableCountForStates(issueStates map[string]string) int {
+	if len(q.payload.IssueOrder) == 0 {
+		return 0
+	}
+	merged := issueRecordStateMap(q.IssueRecords())
+	for identifier, state := range issueStates {
+		if strings.TrimSpace(identifier) == "" || strings.TrimSpace(state) == "" {
+			continue
+		}
+		merged[identifier] = strings.TrimSpace(state)
+	}
+	return countRunnable(q.payload.IssueOrder, merged)
+}
+
+func issueRecordStateMap(records []IssueRecord) map[string]string {
+	statusByIdentifier := map[string]string{}
+	for _, record := range records {
+		if record.Identifier == "" {
+			continue
+		}
+		statusByIdentifier[record.Identifier] = strings.TrimSpace(record.Status)
+	}
+	return statusByIdentifier
+}
+
+func countRunnable(issueOrder []string, states map[string]string) int {
 	terminal := map[string]struct{}{
 		"Archived":   {},
 		"Canceled":   {},
@@ -120,16 +149,9 @@ func (q *ParallelIssueQueue) RunnableCount() int {
 		"Done.":      {},
 		"Duplicate":  {},
 	}
-	statusByIdentifier := map[string]string{}
-	for _, record := range q.IssueRecords() {
-		if record.Identifier == "" {
-			continue
-		}
-		statusByIdentifier[record.Identifier] = strings.TrimSpace(record.Status)
-	}
 	count := 0
-	for _, identifier := range q.IssueOrder() {
-		status, ok := statusByIdentifier[identifier]
+	for _, identifier := range issueOrder {
+		status, ok := states[identifier]
 		if !ok || status == "" {
 			count++
 			continue
