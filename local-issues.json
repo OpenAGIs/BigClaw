@@ -1446,6 +1446,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added repo-native automation guidance for the local tracker.\n\nWhat changed:\n- Added `docs/local-tracker-automation.md` documenting `bigclawctl local-issues ensure`, hook usage, state-mutation guidance, and the repo-root/path-resolution caveat for `../local-issues.json`.\n- Refreshed the refill queue docs so `BIG-PAR-226` and `BIG-PAR-227` are represented as the active automation batch.\n\nValidation:\n- `python3 -m json.tool docs/parallel-refill-queue.json \u003e/dev/null` -\u003e ok\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -\u003e active batch reported `BIG-PAR-226` and `BIG-PAR-227`\n- `bash scripts/ops/bigclawctl github-sync status --json` -\u003e local SHA `fcea4856efec5253902f4fa69e9bad46b47a947b` matches remote SHA `fcea4856efec5253902f4fa69e9bad46b47a947b` with `status: ok` and `synced: true`\n- `git log -1 --stat` -\u003e captured for commits `a7517a77156f95f3be5e783b3f9accd0db2f9cbe` and `fcea4856efec5253902f4fa69e9bad46b47a947b`\n\nCommit SHA: `a7517a77156f95f3be5e783b3f9accd0db2f9cbe`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/158.",
+          "created_at": "2026-03-22T12:10:30Z"
+        }
+      ],
       "created_at": "2026-03-22T12:00:00Z",
       "description": "Document when to use bigclawctl local-issues ensure, how hook-side path resolution should target the workspace tracker, and how it interacts with refill-driven state management.",
       "id": "big-par-226",
@@ -1456,12 +1463,19 @@
         "tracker"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Document local-issues ensure for automation",
-      "updated_at": "2026-03-22T12:00:00Z"
+      "updated_at": "2026-03-22T12:10:30Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Enhanced `bigclawctl refill` to explicitly report when the canonical queue is drained.\n\nWhat changed:\n- `bigclaw-go/internal/refill.ParallelIssueQueue` now computes `RunnableCount()` based on queue metadata status.\n- `bigclawctl refill` now includes `queue_runnable`, `queue_drained`, and a warning message when runnable count is zero.\n\nValidation:\n- `cd bigclaw-go \u0026\u0026 go test ./internal/refill ./cmd/bigclawctl` -\u003e ok\n- `cd bigclaw-go \u0026\u0026 go test ./...` -\u003e ok\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -\u003e includes `queue_runnable` and `queue_drained`\n- `bash scripts/ops/bigclawctl github-sync status --json` -\u003e local SHA `fcea4856efec5253902f4fa69e9bad46b47a947b` matches remote SHA `fcea4856efec5253902f4fa69e9bad46b47a947b` with `status: ok` and `synced: true`\n- `git log -1 --stat` -\u003e captured for commit `fcea4856efec5253902f4fa69e9bad46b47a947b`\n\nCommit SHA: `fcea4856efec5253902f4fa69e9bad46b47a947b`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/158.",
+          "created_at": "2026-03-22T12:11:30Z"
+        }
+      ],
       "created_at": "2026-03-22T12:01:00Z",
       "description": "When docs/parallel-refill-queue.json has no runnable identifiers, bigclawctl refill should warn (once) so operators understand why target_in_progress cannot be met.",
       "id": "big-par-227",
@@ -1472,9 +1486,25 @@
         "refill"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Refill: warn when queue is drained",
-      "updated_at": "2026-03-22T12:02:00Z"
+      "updated_at": "2026-03-22T12:11:30Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T12:12:00Z",
+      "description": "Write local-issues.json via atomic rename so tracker updates do not leave partial or stale state when multiple automation steps touch the store in quick succession.",
+      "id": "big-par-228",
+      "identifier": "BIG-PAR-228",
+      "labels": [
+        "parallel",
+        "tracker",
+        "tooling"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Local issue store: atomic writes to avoid concurrent corruption",
+      "updated_at": "2026-03-22T12:12:00Z"
     }
   ]
 }
