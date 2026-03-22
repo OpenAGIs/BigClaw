@@ -127,3 +127,42 @@ func TestLocalIssueStoreAddCommentAppendsAndUpdatesTimestamp(t *testing.T) {
 		t.Fatalf("expected updated_at refresh, got %s", text)
 	}
 }
+
+func TestLocalIssueStoreSaveDoesNotEscapeArrowTokens(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-307",
+      "identifier": "BIG-GOM-307",
+      "title": "Toolchain migration",
+      "state": "Todo",
+      "comments": [
+        {"author": "codex", "created_at": "2026-03-18T09:00:00Z", "body": "seed -> ok"}
+      ]
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	if _, err := store.UpdateIssueState("BIG-GOM-307", "In Progress", time.Date(2026, 3, 18, 15, 0, 0, 0, time.UTC)); err != nil {
+		t.Fatalf("update issue state: %v", err)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, "seed -> ok") {
+		t.Fatalf("expected arrow token to persist, got %s", text)
+	}
+	if strings.Contains(text, `\\u003e`) {
+		t.Fatalf("expected no HTML escaping, got %s", text)
+	}
+}

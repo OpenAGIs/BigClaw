@@ -27,6 +27,19 @@ Guidance:
 - Prefer absolute repo roots in hook invocations so `--local-issues ../local-issues.json`
   resolves to the workspace tracker file (not a nested `bigclaw-go/local-issues.json`).
 
+## Rate-limit fallback
+
+If Symphony or Codex child-agent orchestration starts returning
+`429 Too Many Requests`:
+
+- stop spawning new child agents for the current batch;
+- keep the currently claimed issue in `In Progress` and continue the slice
+  locally in the existing workspace;
+- lower the workflow concurrency caps before re-enabling broad fanout so the
+  next polling cycle does not immediately re-trigger the same rate limit;
+- prefer one fresh issue branch at a time until GitHub sync, local validation,
+  and tracker updates are stable again.
+
 Examples:
 
 ```bash
@@ -45,4 +58,3 @@ bash scripts/ops/bigclawctl local-issues ensure \
   --set-state-if-exists \
   --json
 ```
-
