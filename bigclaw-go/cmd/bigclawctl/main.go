@@ -318,7 +318,7 @@ func runRefill(args []string) error {
 		if *targetInProgress >= 0 {
 			override = targetInProgress
 		}
-		return runRefillOnce(queue, client, *apply, *refreshURL, override, *syncQueueStatus)
+		return runRefillOnce(queue, client, *apply, *refreshURL, override, *syncQueueStatus, resolvedQueuePath, resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedLocalIssuesPath))
 	}
 	if !*watch {
 		return runOnce()
@@ -801,7 +801,7 @@ func parseOptionalTime(value string) (time.Time, error) {
 	return parsed, nil
 }
 
-func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply bool, refreshURL string, targetOverride *int, syncQueueStatus bool) error {
+func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply bool, refreshURL string, targetOverride *int, syncQueueStatus bool, queuePath string, localIssuesPath string) error {
 	queueStatusUpdates := 0
 	queueStatusWritten := false
 	if syncQueueStatus && client.backend() == "local" {
@@ -864,6 +864,10 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		"queue_status_synced":  syncQueueStatus && client.backend() == "local",
 		"queue_status_updates": queueStatusUpdates,
 		"queue_status_written": queueStatusWritten,
+		"queue_path":           queuePath,
+	}
+	if trim(localIssuesPath) != "" {
+		payload["local_issues_path"] = localIssuesPath
 	}
 	queueRunnable := queue.RunnableCount()
 	if client.backend() == "local" {

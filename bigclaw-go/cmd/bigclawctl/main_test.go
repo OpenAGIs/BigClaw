@@ -135,7 +135,7 @@ func TestRunRefillOncePromotesUsingLinearIssueID(t *testing.T) {
 		os.Stdout = originalStdout
 	}()
 
-	runErr := runRefillOnce(queue, client, true, "", nil, false)
+	runErr := runRefillOnce(queue, client, true, "", nil, false, queuePath, "")
 	_ = writer.Close()
 	output, _ := io.ReadAll(reader)
 	if runErr != nil {
@@ -211,7 +211,7 @@ func TestRunRefillOncePromotesUsingLocalIssueStore(t *testing.T) {
 		os.Stdout = originalStdout
 	}()
 
-	runErr := runRefillOnce(queue, client, true, "", nil, false)
+	runErr := runRefillOnce(queue, client, true, "", nil, false, queuePath, storePath)
 	_ = writer.Close()
 	output, _ := io.ReadAll(reader)
 	if runErr != nil {
@@ -219,6 +219,12 @@ func TestRunRefillOncePromotesUsingLocalIssueStore(t *testing.T) {
 	}
 	if !bytes.Contains(output, []byte(`"backend": "local"`)) {
 		t.Fatalf("expected refill output to advertise local backend, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"queue_path":`)) || !bytes.Contains(output, []byte(queuePath)) {
+		t.Fatalf("expected refill output to include queue_path, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"local_issues_path":`)) || !bytes.Contains(output, []byte(storePath)) {
+		t.Fatalf("expected refill output to include local_issues_path, got %s", string(output))
 	}
 
 	body, err := os.ReadFile(storePath)
@@ -286,7 +292,7 @@ func TestRunRefillOnceLocalIssueStoreDetectsQueueDrainedWhenMetadataStale(t *tes
 		os.Stdout = originalStdout
 	}()
 
-	runErr := runRefillOnce(queue, client, false, "", nil, false)
+	runErr := runRefillOnce(queue, client, false, "", nil, false, queuePath, storePath)
 	_ = writer.Close()
 	output, _ := io.ReadAll(reader)
 	if runErr != nil {
@@ -351,7 +357,7 @@ func TestRunRefillOnceLocalBackendUsesAllLocalStatesForRunnableCount(t *testing.
 		os.Stdout = originalStdout
 	}()
 
-	runErr := runRefillOnce(queue, client, false, "", nil, false)
+	runErr := runRefillOnce(queue, client, false, "", nil, false, queuePath, storePath)
 	_ = writer.Close()
 	output, _ := io.ReadAll(reader)
 	if runErr != nil {
@@ -409,7 +415,7 @@ func TestRunRefillOnceLocalBackendSyncsQueueStatusFromLocalIssues(t *testing.T) 
 		os.Stdout = originalStdout
 	}()
 
-	runErr := runRefillOnce(queue, client, true, "", nil, true)
+	runErr := runRefillOnce(queue, client, true, "", nil, true, queuePath, storePath)
 	_ = writer.Close()
 	output, _ := io.ReadAll(reader)
 	if runErr != nil {
