@@ -42,6 +42,9 @@ This document maps the current local MVP implementation to the Linear rewrite is
 - Use `docs/reports/parallel-validation-matrix.md` first for executor-lane
   validation commands and checked-in local/Kubernetes/Ray evidence, then use
   the follow-up index for the unfinished hardening tracks behind those lanes.
+- Coordination and continuation follow-ups referenced across the evidence set
+  include `docs/reports/cross-process-coordination-boundary-digest.md` and
+  `docs/reports/validation-bundle-continuation-digest.md`.
 
 ## Remaining Gaps Before Honest Closure
 

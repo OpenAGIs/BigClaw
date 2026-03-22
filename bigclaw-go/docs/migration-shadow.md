@@ -94,3 +94,5 @@ payload still contribute to the `corpus_coverage` scorecard and uncovered-slice 
   remaining migration-shadow and parallel-hardening follow-up digests.
 - Use `docs/reports/parallel-validation-matrix.md` first when a migration-shadow
   review needs the checked-in local/Kubernetes/Ray validation entrypoint.
+- Production corpus coverage caveats remain tracked in
+  `docs/reports/production-corpus-migration-coverage-digest.md`.

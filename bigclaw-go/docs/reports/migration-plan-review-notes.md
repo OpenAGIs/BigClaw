@@ -44,3 +44,6 @@ This note captures the review outcome for the Go rewrite boundary and migration 
   remaining migration-shadow, rollback, and corpus-coverage follow-up digests.
 - Use `docs/reports/parallel-validation-matrix.md` first when the review needs
   the checked-in local/Kubernetes/Ray validation evidence.
+- The two migration caveat tracks that this review note explicitly calls out are
+  `docs/reports/live-shadow-comparison-follow-up-digest.md` and
+  `docs/reports/rollback-safeguard-follow-up-digest.md`.

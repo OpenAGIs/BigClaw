@@ -42,3 +42,6 @@ In the runtime capability matrix, this shared-queue result is the current `live_
 - Use `docs/reports/parallel-validation-matrix.md` for the checked-in
   local/Kubernetes/Ray validation entrypoint before drilling into the follow-up
   caveats.
+- The two coordination follow-up digests most directly tied to this report are
+  `docs/reports/cross-process-coordination-boundary-digest.md` and
+  `docs/reports/validation-bundle-continuation-digest.md`.
