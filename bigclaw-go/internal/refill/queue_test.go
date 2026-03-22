@@ -12,3 +12,32 @@ func TestIssueStateMapRecordsIdentifiers(t *testing.T) {
 		t.Fatalf("unexpected state map: %+v", stateMap)
 	}
 }
+
+func TestParallelIssueQueueRunnableCountTreatsFullyDoneQueueAsDrained(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-001", "BIG-PAR-002"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-001", Status: "Done"},
+				{Identifier: "BIG-PAR-002", Status: "Done"},
+			},
+		},
+	}
+	if got := queue.RunnableCount(); got != 0 {
+		t.Fatalf("expected drained runnable count, got %d", got)
+	}
+}
+
+func TestParallelIssueQueueRunnableCountDoesNotDrainWhenMetadataMissing(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-001", "BIG-PAR-002"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-001", Status: "Done"},
+			},
+		},
+	}
+	if got := queue.RunnableCount(); got == 0 {
+		t.Fatalf("expected runnable count for missing metadata, got %d", got)
+	}
+}

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 )
 
 type QueuePayload struct {
@@ -101,6 +102,44 @@ func (q *ParallelIssueQueue) IssueIdentifiers() []string {
 		result = append(result, record.Identifier)
 	}
 	return result
+}
+
+func (q *ParallelIssueQueue) RunnableCount() int {
+	if len(q.payload.IssueOrder) == 0 {
+		return 0
+	}
+	terminal := map[string]struct{}{
+		"Archived":   {},
+		"Canceled":   {},
+		"Canceled.":  {},
+		"Cancelled":  {},
+		"Cancelled.": {},
+		"Closed":     {},
+		"Closed.":    {},
+		"Done":       {},
+		"Done.":      {},
+		"Duplicate":  {},
+	}
+	statusByIdentifier := map[string]string{}
+	for _, record := range q.IssueRecords() {
+		if record.Identifier == "" {
+			continue
+		}
+		statusByIdentifier[record.Identifier] = strings.TrimSpace(record.Status)
+	}
+	count := 0
+	for _, identifier := range q.IssueOrder() {
+		status, ok := statusByIdentifier[identifier]
+		if !ok || status == "" {
+			count++
+			continue
+		}
+		if _, ok := terminal[status]; ok {
+			continue
+		}
+		count++
+	}
+	return count
 }
 
 func (q *ParallelIssueQueue) SelectCandidates(activeIdentifiers map[string]struct{}, issueStates map[string]string, targetOverride *int) []string {

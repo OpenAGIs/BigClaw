@@ -832,6 +832,12 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		"candidates":         candidates,
 		"mode":               map[bool]string{true: "apply", false: "dry-run"}[apply],
 	}
+	queueRunnable := queue.RunnableCount()
+	payload["queue_runnable"] = queueRunnable
+	payload["queue_drained"] = queueRunnable == 0
+	if queueRunnable == 0 {
+		payload["warning"] = "refill queue drained: no runnable identifiers in docs/parallel-refill-queue.json"
+	}
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(payload); err != nil {
