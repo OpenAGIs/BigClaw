@@ -100,40 +100,54 @@ type refillClient interface {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		fatalf("usage: bigclawctl <github-sync|workspace|refill|local-issues|legacy-python> ...")
+	os.Exit(run(os.Args[1:]))
+}
+
+func run(args []string) int {
+	if len(args) == 0 || isHelpToken(args[0]) {
+		printRootUsage(os.Stdout)
+		return 0
 	}
 	var err error
-	switch os.Args[1] {
+	switch args[0] {
 	case "github-sync":
-		err = runGitHubSync(os.Args[2:])
+		err = runGitHubSync(args[1:])
 	case "workspace":
-		err = runWorkspace(os.Args[2:])
+		err = runWorkspace(args[1:])
 	case "refill":
-		err = runRefill(os.Args[2:])
+		err = runRefill(args[1:])
 	case "local-issues":
-		err = runLocalIssues(os.Args[2:])
+		err = runLocalIssues(args[1:])
 	case "legacy-python":
-		err = runLegacyPython(os.Args[2:])
+		err = runLegacyPython(args[1:])
 	default:
-		err = fmt.Errorf("unknown command: %s", os.Args[1])
+		err = fmt.Errorf("unknown command: %s", args[0])
 	}
 	if err != nil {
-		fatalf("%v", err)
+		fmt.Fprintln(os.Stderr, err)
+		return 1
 	}
+	return 0
 }
 
 func runLegacyPython(args []string) error {
+	if len(args) == 0 || isHelpToken(args[0]) {
+		_, _ = os.Stdout.WriteString("usage: bigclawctl legacy-python <compile-check> [flags]\n")
+		return nil
+	}
 	if len(args) == 0 {
 		return errors.New("usage: bigclawctl legacy-python <compile-check> [flags]")
 	}
 	command := args[0]
 	flags := flag.NewFlagSet("legacy-python "+command, flag.ContinueOnError)
-	flags.SetOutput(io.Discard)
 	repoRoot := flags.String("repo", "..", "repo root")
 	pythonBin := flags.String("python", "python3", "python executable")
 	asJSON := flags.Bool("json", false, "json")
-	if err := flags.Parse(args[1:]); err != nil {
+	if helpText, err := parseFlagsWithHelp(flags, fmt.Sprintf("usage: bigclawctl legacy-python %s [flags]", command), args[1:]); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
 		return err
 	}
 	switch command {
@@ -168,12 +182,15 @@ func runLegacyPython(args []string) error {
 }
 
 func runGitHubSync(args []string) error {
+	if len(args) == 0 || isHelpToken(args[0]) {
+		_, _ = os.Stdout.WriteString("usage: bigclawctl github-sync <install|status|sync> [flags]\n")
+		return nil
+	}
 	if len(args) == 0 {
 		return errors.New("usage: bigclawctl github-sync <install|status|sync> [flags]")
 	}
 	command := args[0]
 	flags := flag.NewFlagSet("github-sync "+command, flag.ContinueOnError)
-	flags.SetOutput(io.Discard)
 	repo := flags.String("repo", ".", "repository path")
 	remote := flags.String("remote", "origin", "git remote")
 	hooksPath := flags.String("hooks-path", ".githooks", "hooks path")
@@ -181,7 +198,11 @@ func runGitHubSync(args []string) error {
 	requireClean := flags.Bool("require-clean", false, "require clean")
 	requireSynced := flags.Bool("require-synced", false, "require synced")
 	asJSON := flags.Bool("json", false, "json")
-	if err := flags.Parse(args[1:]); err != nil {
+	if helpText, err := parseFlagsWithHelp(flags, fmt.Sprintf("usage: bigclawctl github-sync %s [flags]", command), args[1:]); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
 		return err
 	}
 	switch command {
@@ -225,12 +246,15 @@ func runGitHubSync(args []string) error {
 }
 
 func runWorkspace(args []string) error {
+	if len(args) == 0 || isHelpToken(args[0]) {
+		_, _ = os.Stdout.WriteString("usage: bigclawctl workspace <bootstrap|cleanup|validate> [flags]\n")
+		return nil
+	}
 	if len(args) == 0 {
 		return errors.New("usage: bigclawctl workspace <bootstrap|cleanup|validate> [flags]")
 	}
 	command := args[0]
 	flags := flag.NewFlagSet("workspace "+command, flag.ContinueOnError)
-	flags.SetOutput(io.Discard)
 	repoRoot := flags.String("repo", "..", "repo root")
 	workspace := flags.String("workspace", ".", "workspace")
 	workspaceRoot := flags.String("workspace-root", ".", "workspace root")
@@ -244,7 +268,11 @@ func runWorkspace(args []string) error {
 	issuesCSV := flags.String("issues", "", "comma-separated issues")
 	reportPath := flags.String("report", "", "report path")
 	cleanup := flags.Bool("cleanup", true, "cleanup")
-	if err := flags.Parse(args[1:]); err != nil {
+	if helpText, err := parseFlagsWithHelp(flags, fmt.Sprintf("usage: bigclawctl workspace %s [flags]", command), args[1:]); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
 		return err
 	}
 	resolvedRepoRoot := absPath(*repoRoot)
@@ -289,7 +317,6 @@ func runWorkspace(args []string) error {
 
 func runRefill(args []string) error {
 	flags := flag.NewFlagSet("refill", flag.ContinueOnError)
-	flags.SetOutput(io.Discard)
 	repoRoot := flags.String("repo", "..", "repo root")
 	queuePath := flags.String("queue", "docs/parallel-refill-queue.json", "queue path")
 	localIssuesPath := flags.String("local-issues", "", "local issue store path")
@@ -299,7 +326,11 @@ func runRefill(args []string) error {
 	apply := flags.Bool("apply", false, "apply")
 	syncQueueStatus := flags.Bool("sync-queue-status", false, "sync queue issue statuses from local tracker (local backend only; requires --apply to write)")
 	refreshURL := flags.String("refresh-url", "", "refresh url")
-	if err := flags.Parse(args); err != nil {
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl refill [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
 		return err
 	}
 	resolvedRepoRoot := absPath(*repoRoot)
@@ -332,19 +363,23 @@ func runRefill(args []string) error {
 }
 
 func runLocalIssues(args []string) error {
-	if len(args) == 0 {
-		return errors.New("usage: bigclawctl local-issues <list|create|ensure|set-state|comment> [flags]")
+	if len(args) == 0 || isHelpToken(args[0]) {
+		_, _ = os.Stdout.WriteString("usage: bigclawctl local-issues <list|create|ensure|set-state|comment> [flags]\n")
+		return nil
 	}
 	command := args[0]
 	switch command {
 	case "list":
 		flags := flag.NewFlagSet("local-issues "+command, flag.ContinueOnError)
-		flags.SetOutput(io.Discard)
 		repoRoot := flags.String("repo", "..", "repo root")
 		storePath := flags.String("local-issues", "", "local issue store path")
 		statesCSV := flags.String("states", "", "comma-separated state filter")
 		asJSON := flags.Bool("json", false, "json")
-		if err := flags.Parse(args[1:]); err != nil {
+		if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl local-issues list [flags]", args[1:]); err != nil {
+			if errors.Is(err, flag.ErrHelp) {
+				_, _ = os.Stdout.WriteString(helpText)
+				return nil
+			}
 			return err
 		}
 		resolvedRepoRoot := absPath(*repoRoot)
@@ -385,7 +420,6 @@ func runLocalIssues(args []string) error {
 		return nil
 	case "create":
 		flags := flag.NewFlagSet("local-issues "+command, flag.ContinueOnError)
-		flags.SetOutput(io.Discard)
 		repoRoot := flags.String("repo", "..", "repo root")
 		storePath := flags.String("local-issues", "", "local issue store path")
 		id := flags.String("id", "", "issue id (defaults to lowercased identifier)")
@@ -398,7 +432,11 @@ func runLocalIssues(args []string) error {
 		assigned := flags.Bool("assigned-to-worker", true, "assigned to worker")
 		createdAt := flags.String("created-at", "", "RFC3339 timestamp")
 		asJSON := flags.Bool("json", false, "json")
-		if err := flags.Parse(args[1:]); err != nil {
+		if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl local-issues create [flags]", args[1:]); err != nil {
+			if errors.Is(err, flag.ErrHelp) {
+				_, _ = os.Stdout.WriteString(helpText)
+				return nil
+			}
 			return err
 		}
 		resolvedRepoRoot := absPath(*repoRoot)
@@ -440,7 +478,6 @@ func runLocalIssues(args []string) error {
 		}, *asJSON, 0)
 	case "ensure":
 		flags := flag.NewFlagSet("local-issues "+command, flag.ContinueOnError)
-		flags.SetOutput(io.Discard)
 		repoRoot := flags.String("repo", "..", "repo root")
 		storePath := flags.String("local-issues", "", "local issue store path")
 		id := flags.String("id", "", "issue id (defaults to lowercased identifier)")
@@ -454,7 +491,11 @@ func runLocalIssues(args []string) error {
 		createdAt := flags.String("created-at", "", "RFC3339 timestamp")
 		setStateIfExists := flags.Bool("set-state-if-exists", false, "update the issue state when the issue already exists")
 		asJSON := flags.Bool("json", false, "json")
-		if err := flags.Parse(args[1:]); err != nil {
+		if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl local-issues ensure [flags]", args[1:]); err != nil {
+			if errors.Is(err, flag.ErrHelp) {
+				_, _ = os.Stdout.WriteString(helpText)
+				return nil
+			}
 			return err
 		}
 		trimmedIdentifier := trim(*identifier)
@@ -532,14 +573,17 @@ func runLocalIssues(args []string) error {
 		}, *asJSON, 0)
 	case "set-state":
 		flags := flag.NewFlagSet("local-issues "+command, flag.ContinueOnError)
-		flags.SetOutput(io.Discard)
 		repoRoot := flags.String("repo", "..", "repo root")
 		storePath := flags.String("local-issues", "", "local issue store path")
 		issueRef := flags.String("issue", "", "issue id or identifier")
 		stateName := flags.String("state", "", "state name")
 		createdAt := flags.String("created-at", "", "RFC3339 timestamp")
 		asJSON := flags.Bool("json", false, "json")
-		if err := flags.Parse(args[1:]); err != nil {
+		if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl local-issues set-state [flags]", args[1:]); err != nil {
+			if errors.Is(err, flag.ErrHelp) {
+				_, _ = os.Stdout.WriteString(helpText)
+				return nil
+			}
 			return err
 		}
 		if trim(*issueRef) == "" {
@@ -571,7 +615,6 @@ func runLocalIssues(args []string) error {
 		}, *asJSON, 0)
 	case "comment":
 		flags := flag.NewFlagSet("local-issues "+command, flag.ContinueOnError)
-		flags.SetOutput(io.Discard)
 		repoRoot := flags.String("repo", "..", "repo root")
 		storePath := flags.String("local-issues", "", "local issue store path")
 		issueRef := flags.String("issue", "", "issue id or identifier")
@@ -579,7 +622,11 @@ func runLocalIssues(args []string) error {
 		body := flags.String("body", "", "comment body")
 		createdAt := flags.String("created-at", "", "RFC3339 timestamp")
 		asJSON := flags.Bool("json", false, "json")
-		if err := flags.Parse(args[1:]); err != nil {
+		if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl local-issues comment [flags]", args[1:]); err != nil {
+			if errors.Is(err, flag.ErrHelp) {
+				_, _ = os.Stdout.WriteString(helpText)
+				return nil
+			}
 			return err
 		}
 		if trim(*issueRef) == "" {
@@ -995,6 +1042,39 @@ func splitCSV(value string) []string {
 	return items
 }
 
+func isHelpToken(token string) bool {
+	switch token {
+	case "-h", "--help", "help":
+		return true
+	default:
+		return false
+	}
+}
+
+func parseFlagsWithHelp(flags *flag.FlagSet, usageLine string, args []string) (string, error) {
+	var buf bytes.Buffer
+	flags.SetOutput(&buf)
+	flags.Usage = func() {
+		fmt.Fprintln(&buf, usageLine)
+		flags.PrintDefaults()
+	}
+	if err := flags.Parse(args); err != nil {
+		return buf.String(), err
+	}
+	return "", nil
+}
+
+func printRootUsage(w io.Writer) {
+	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|refill|local-issues|legacy-python> ...")
+	fmt.Fprintln(w, "")
+	fmt.Fprintln(w, "commands:")
+	fmt.Fprintln(w, "  github-sync     install/sync/status hooks and branch sync state")
+	fmt.Fprintln(w, "  workspace       bootstrap/cleanup/validate workspaces using the shared mirror")
+	fmt.Fprintln(w, "  refill          promote issues to maintain target in-progress count")
+	fmt.Fprintln(w, "  local-issues    manage the repo-native issue store in local-issues.json")
+	fmt.Fprintln(w, "  legacy-python   validate frozen Python compatibility shims")
+}
+
 func absPath(path string) string {
 	if path == "" {
 		path = "."
@@ -1008,11 +1088,6 @@ func absPath(path string) string {
 
 func trim(value string) string {
 	return string(bytes.TrimSpace([]byte(value)))
-}
-
-func fatalf(format string, args ...any) {
-	fmt.Fprintf(os.Stderr, format+"\n", args...)
-	os.Exit(1)
 }
 
 func atoiPointer(value string) *int {

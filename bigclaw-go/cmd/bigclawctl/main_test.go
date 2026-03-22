@@ -306,6 +306,57 @@ func TestRunRefillOnceLocalIssueStoreDetectsQueueDrainedWhenMetadataStale(t *tes
 	}
 }
 
+func TestRunHelpAtRootPrintsUsageAndExitsZero(t *testing.T) {
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	code := run([]string{"--help"})
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d (stdout=%s)", code, string(output))
+	}
+	if !strings.Contains(string(output), "usage: bigclawctl") {
+		t.Fatalf("expected usage in help output, got %s", string(output))
+	}
+	if !strings.Contains(string(output), "github-sync") || !strings.Contains(string(output), "refill") {
+		t.Fatalf("expected command list in help output, got %s", string(output))
+	}
+}
+
+func TestRunRefillHelpPrintsDefaultsAndExitsZero(t *testing.T) {
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	code := run([]string{"refill", "--help"})
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d (stdout=%s)", code, string(output))
+	}
+	text := string(output)
+	if !strings.Contains(text, "usage: bigclawctl refill") {
+		t.Fatalf("expected refill usage, got %s", text)
+	}
+	if !strings.Contains(text, "-sync-queue-status") {
+		t.Fatalf("expected sync-queue-status flag in help output, got %s", text)
+	}
+}
+
 func TestRunRefillOnceLocalBackendUsesAllLocalStatesForRunnableCount(t *testing.T) {
 	tempDir := t.TempDir()
 	queuePath := filepath.Join(tempDir, "queue.json")
