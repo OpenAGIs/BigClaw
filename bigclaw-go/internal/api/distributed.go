@@ -676,6 +676,8 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 		fmt.Sprintf("- Routed decisions: %d", diagnostics.Summary.TotalRoutedDecisions),
 		fmt.Sprintf("- Active workers: %d", diagnostics.Summary.ActiveWorkers),
 		fmt.Sprintf("- Idle workers: %d", diagnostics.Summary.IdleWorkers),
+		fmt.Sprintf("- Lease renewal failures: %d", diagnostics.Summary.LeaseRenewalFailures),
+		fmt.Sprintf("- Lease lost runs: %d", diagnostics.Summary.LeaseLostRuns),
 		fmt.Sprintf("- Saturated executors: %d", diagnostics.Summary.SaturatedExecutors),
 		fmt.Sprintf("- Active takeovers: %d", diagnostics.Summary.ActiveTakeovers),
 		"",

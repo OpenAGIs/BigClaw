@@ -8,7 +8,7 @@ jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
 
 - [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
 - [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [ ] Validate the renamed refill surface with targeted Go tests.
+- [x] Validate the renamed refill surface with targeted Go tests.
 
 ### Acceptance Criteria
 
@@ -24,3 +24,4 @@ jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
 
 - 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
 - 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
+- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
