@@ -695,22 +695,85 @@
     },
     {
       "assigned_to_worker": true,
+      "created_at": "2026-03-22T00:16:05Z",
+      "description": "Expose multi-worker/multi-node runtime state as first-class API payloads so dashboards and ops review can reason about distributed execution (worker pool health, active leases, takeovers, retention watermarks, and lane coverage).",
+      "id": "local-1",
+      "identifier": "BIG-PAR-102",
+      "labels": [
+        "parallel-mainline",
+        "observability",
+        "control-plane",
+        "distributed"
+      ],
+      "priority": 2,
+      "state": "In Progress",
+      "title": "Multi-worker and multi-node control-plane observability",
+      "updated_at": "2026-03-22T00:18:22Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T00:16:30Z",
+      "description": "Harden shared-queue coordination across workers: lease renewal/expiry observability, cancellation/requeue safety, idempotency guards, and clearer dead-letter + replay diagnostics for multi-worker runs.",
+      "id": "local-2",
+      "identifier": "BIG-PAR-103",
+      "labels": [
+        "parallel-mainline",
+        "queue",
+        "coordination",
+        "safety"
+      ],
+      "priority": 2,
+      "state": "In Progress",
+      "title": "Shared-queue coordination and lease-safety hardening",
+      "updated_at": "2026-03-22T00:18:22Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T00:16:44Z",
+      "description": "Extend the repo-native validation bundle so local/Kubernetes/Ray lanes produce a consistent matrix report and per-run evidence bundle, with clear 'live_proven' vs 'harness_proven' labels and a single live index entry point.",
+      "id": "local-3",
+      "identifier": "BIG-PAR-104",
+      "labels": [
+        "parallel-mainline",
+        "validation",
+        "evidence",
+        "e2e"
+      ],
+      "priority": 2,
+      "state": "Todo",
+      "title": "Parallel validation matrix and evidence bundling",
+      "updated_at": "2026-03-22T00:16:44Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T00:17:04Z",
+      "description": "Add scheduler/executor diagnostics surfaces for capacity, routing, recovery, and fairness (including per-executor health summaries) so multi-worker runs can be triaged without reading logs.",
+      "id": "local-4",
+      "identifier": "BIG-PAR-105",
+      "labels": [
+        "parallel-mainline",
+        "scheduler",
+        "diagnostics",
+        "executor"
+      ],
+      "priority": 2,
+      "state": "Todo",
+      "title": "Distributed scheduler and executor diagnostics",
+      "updated_at": "2026-03-22T00:17:04Z"
+    },
+    {
+      "assigned_to_worker": true,
       "comments": [
         {
           "author": "codex",
-          "body": "Closed BIG-PAR-103.\n\nWhat changed:\n- scripts/ops/bigclawctl now forwards --repo \u003crepo_root\u003e for all subcommands unless already provided.\n- bigclaw-go/cmd/bigclawctl: workspace validate/bootstrap/cleanup resolve workspace/workspace-root/report against repo root; refill and local-issues also accept --repo for consistent repo-root path resolution.\n- docs/reports/bootstrap-cache-validation.md now makes repo-root resolution explicit.\n\nValidation:\n- bash -n scripts/ops/bigclawctl -\u003e ok\n- cd bigclaw-go \u0026\u0026 go test ./... -\u003e ok\n- git rev-parse HEAD == git rev-parse origin/symphony/BIG-PAR-103 == f7d37d1bef16673db4b24f80887816313283c711\n\nCommit: f7d37d1bef16673db4b24f80887816313283c711\nPR: https://github.com/OpenAGIs/BigClaw/pull/147",
-          "created_at": "2026-03-22T00:29:03Z"
-        },
-        {
-          "author": "codex",
-          "body": "Follow-up: updated docs/bootstrap-cache-validation.md to use --repo \"$(pwd)\" so repo-root resolution remains correct when the wrapper executes from bigclaw-go, and recorded final tracker state/comment updates.\n\nFinal HEAD: c5978a78696fefb2f641399e0fd57701e251a4c3\nPR: https://github.com/OpenAGIs/BigClaw/pull/147",
-          "created_at": "2026-03-22T00:31:32Z"
+          "body": "Closed BIG-PAR-106.\n\nWhat changed:\n- scripts/ops/bigclawctl now forwards --repo <repo_root> for all subcommands unless already provided.\n- bigclaw-go/cmd/bigclawctl: workspace validate/bootstrap/cleanup resolve workspace/workspace-root/report against repo root; refill and local-issues also accept --repo for consistent repo-root path resolution.\n- docs/reports/bootstrap-cache-validation.md now makes repo-root resolution explicit.\n\nValidation:\n- bash -n scripts/ops/bigclawctl -> ok\n- cd bigclaw-go && go test ./... -> ok\n- git rev-parse HEAD == git rev-parse origin/symphony/BIG-PAR-103 == fc39c4c04ba3f2326c958c88eea5de0a24fb2926\n\nCommit: fc39c4c04ba3f2326c958c88eea5de0a24fb2926\nPR: https://github.com/OpenAGIs/BigClaw/pull/147",
+          "created_at": "2026-03-22T00:33:00Z"
         }
       ],
-      "created_at": "2026-03-22T00:00:00Z",
-      "description": "Fix the Go-first `scripts/ops/bigclawctl workspace validate` flow so repo-root relative paths like `--workspace-root ./tmp/...` and `--report reports/...` resolve against the BigClaw repo root even though the wrapper executes `go run` from `bigclaw-go`. This restores the documented bootstrap-cache validation workflow and prevents report artifacts from being written under `bigclaw-go/` unexpectedly.",
-      "id": "big-par-103",
-      "identifier": "BIG-PAR-103",
+      "created_at": "2026-03-22T00:20:00Z",
+      "description": "Fix the Go-first scripts/ops/bigclawctl workspace validate flow so repo-root relative paths like --workspace-root ./tmp/... and --report reports/... resolve against the BigClaw repo root even though the wrapper executes go run from bigclaw-go. This prevents report artifacts from being written under bigclaw-go unexpectedly.",
+      "id": "big-par-106",
+      "identifier": "BIG-PAR-106",
       "labels": [
         "parallel",
         "tooling",
@@ -720,7 +783,7 @@
       "priority": 2,
       "state": "Done",
       "title": "Fix repo-root path resolution for bigclawctl workspace validate",
-      "updated_at": "2026-03-22T00:31:32Z"
+      "updated_at": "2026-03-22T00:33:00Z"
     }
   ]
 }
