@@ -360,3 +360,25 @@ func TestSQLiteQueueRejectsStaleLeaseAfterReacquire(t *testing.T) {
 		t.Fatalf("expected queue size 0 after ack, got %d", got)
 	}
 }
+
+func TestSQLiteQueueRejectsRenewalAfterLeaseExpiry(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.db")
+	q, err := NewSQLiteQueue(path)
+	if err != nil {
+		t.Fatalf("new sqlite queue: %v", err)
+	}
+	defer q.Close()
+
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-expired-renew", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	_, lease, err := q.LeaseNext(ctx, "worker-a", 30*time.Millisecond)
+	if err != nil || lease == nil {
+		t.Fatalf("lease: %v lease=%v", err, lease)
+	}
+	time.Sleep(40 * time.Millisecond)
+	if err := q.RenewLease(ctx, lease, time.Minute); !errors.Is(err, ErrLeaseExpired) {
+		t.Fatalf("expected ErrLeaseExpired, got %v", err)
+	}
+}

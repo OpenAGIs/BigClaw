@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"sort"
@@ -47,6 +48,8 @@ type Status struct {
 	LastFinishedAt            time.Time           `json:"last_finished_at,omitempty"`
 	LastResult                string              `json:"last_result,omitempty"`
 	LeaseRenewals             int                 `json:"lease_renewals"`
+	LeaseRenewalFailures      int                 `json:"lease_renewal_failures"`
+	LeaseLostRuns             int                 `json:"lease_lost_runs"`
 	SuccessfulRuns            int                 `json:"successful_runs"`
 	RetriedRuns               int                 `json:"retried_runs"`
 	DeadLetterRuns            int                 `json:"dead_letter_runs"`
@@ -385,7 +388,8 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	r.publish(domain.Event{ID: eventID(task.ID, "started"), Type: domain.EventTaskStarted, TaskID: task.ID, TraceID: task.TraceID, RunID: runID, Timestamp: startedAt, Payload: startedPayload})
 
 	execCtx, cancel := context.WithTimeout(ctx, r.TaskTimeout)
-	stopHeartbeat := r.startHeartbeat(execCtx, lease)
+	leaseLost := make(chan error, 1)
+	stopHeartbeat := r.startHeartbeat(execCtx, lease, cancel, leaseLost)
 	watcher := r.startCancellationWatcher(execCtx, task.ID, cancel)
 	result := runner.Execute(execCtx, *task)
 	stopHeartbeat()
@@ -566,7 +570,20 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 		extra := func(status *Status) {
 			status.RetriedRuns++
 		}
-		if ctx.Err() != nil || execCtx.Err() == context.Canceled {
+		var leaseLostErr error
+		select {
+		case leaseLostErr = <-leaseLost:
+		default:
+		}
+		if leaseLostErr != nil {
+			transition = "lease.lost"
+			if result.Message == "" || result.Message == context.Canceled.Error() {
+				result.Message = fmt.Sprintf("lost lease: %v", leaseLostErr)
+			}
+			extra = func(status *Status) {
+				status.LeaseLostRuns++
+			}
+		} else if ctx.Err() != nil || execCtx.Err() == context.Canceled {
 			transition = "context.cancelled"
 			extra = func(status *Status) {
 				status.CancelledRuns++
@@ -727,8 +744,8 @@ func runtimeHandoffPayload(assessment scheduler.Assessment) map[string]any {
 	return payload
 }
 
-func (r *Runtime) startHeartbeat(ctx context.Context, lease *queue.Lease) func() {
-	childCtx, cancel := context.WithCancel(ctx)
+func (r *Runtime) startHeartbeat(ctx context.Context, lease *queue.Lease, cancelExec context.CancelFunc, leaseLost chan<- error) func() {
+	childCtx, cancelHeartbeat := context.WithCancel(ctx)
 	go func() {
 		ticker := time.NewTicker(r.LeaseTTL / 2)
 		defer ticker.Stop()
@@ -737,7 +754,22 @@ func (r *Runtime) startHeartbeat(ctx context.Context, lease *queue.Lease) func()
 			case <-childCtx.Done():
 				return
 			case <-ticker.C:
-				_ = r.Queue.RenewLease(context.Background(), lease, r.LeaseTTL)
+				if err := r.Queue.RenewLease(context.Background(), lease, r.LeaseTTL); err != nil {
+					r.updateStatus(func(status *Status) {
+						status.LastHeartbeatAt = time.Now()
+						status.LeaseRenewalFailures++
+						status.LastResult = fmt.Sprintf("lease_renew_failed: %v", err)
+					})
+					if errors.Is(err, queue.ErrLeaseExpired) || errors.Is(err, queue.ErrLeaseNotOwned) {
+						select {
+						case leaseLost <- err:
+						default:
+						}
+						cancelExec()
+						cancelHeartbeat()
+					}
+					continue
+				}
 				r.updateStatus(func(status *Status) {
 					status.LastHeartbeatAt = time.Now()
 					status.LeaseRenewals++
@@ -745,7 +777,7 @@ func (r *Runtime) startHeartbeat(ctx context.Context, lease *queue.Lease) func()
 			}
 		}
 	}()
-	return cancel
+	return cancelHeartbeat
 }
 
 func (r *Runtime) startCancellationWatcher(ctx context.Context, taskID string, cancel context.CancelFunc) *cancellationWatcher {

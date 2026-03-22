@@ -100,6 +100,9 @@ func (q *FileQueue) RenewLease(_ context.Context, lease *Lease, ttl time.Duratio
 	if !current.Leased || current.LeaseWorker != lease.WorkerID || current.Attempt != lease.Attempt {
 		return ErrLeaseNotOwned
 	}
+	if !current.LeaseExpires.After(time.Now()) {
+		return ErrLeaseExpired
+	}
 	current.LeaseExpires = time.Now().Add(ttl)
 	lease.ExpiresAt = current.LeaseExpires
 	return q.save()

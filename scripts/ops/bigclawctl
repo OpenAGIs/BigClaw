@@ -6,15 +6,16 @@ repo_root=$(cd -- "$script_dir/../.." && pwd)
 
 cd "$repo_root/bigclaw-go"
 
-if [ "${1:-}" = "github-sync" ]; then
-  for arg in "$@"; do
-    case "$arg" in
-      --repo|--repo=*)
-        exec go run ./cmd/bigclawctl "$@"
-        ;;
-    esac
-  done
+needs_repo=true
+for arg in "$@"; do
+  case "$arg" in
+    --repo|--repo=*)
+      needs_repo=false
+      ;;
+  esac
+done
 
+if [ "$needs_repo" = true ]; then
   exec go run ./cmd/bigclawctl "$@" --repo "$repo_root"
 fi
 
