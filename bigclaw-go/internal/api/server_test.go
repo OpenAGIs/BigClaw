@@ -2862,6 +2862,14 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		{ID: "evt-k8s-completed", Type: domain.EventTaskCompleted, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(5 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes}},
 		{ID: "evt-ray-routed", Type: domain.EventSchedulerRouted, TaskID: "diag-ray", TraceID: "trace-ray", Timestamp: base.Add(6 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay, "reason": "gpu workloads default to ray executor"}},
 		{ID: "evt-ray-completed", Type: domain.EventTaskCompleted, TaskID: "diag-ray", TraceID: "trace-ray", Timestamp: base.Add(7 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay}},
+		{ID: "evt-replayed", Type: domain.EventTaskQueued, TaskID: "diag-local", TraceID: "trace-local", Timestamp: base.Add(8 * time.Second), Payload: map[string]any{"replayed": true}},
+		{ID: "evt-dead-untracked", Type: domain.EventTaskDeadLetter, TaskID: "diag-untracked", TraceID: "trace-untracked", Timestamp: base.Add(9 * time.Second), Payload: map[string]any{"message": "manual dead letter"}},
+		{ID: "evt-lease-acquired", Type: domain.EventSubscriberLeaseAcquired, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(10 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a", "consumer_id": "node-a"}},
+		{ID: "evt-lease-rejected", Type: domain.EventSubscriberLeaseRejected, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(11 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a", "reason": "lease held"}},
+		{ID: "evt-lease-expired", Type: domain.EventSubscriberLeaseExpired, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(12 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a"}},
+		{ID: "evt-takeover-succeeded", Type: domain.EventSubscriberTakeoverSucceeded, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(13 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a"}},
+		{ID: "evt-checkpoint-committed", Type: domain.EventSubscriberCheckpointCommitted, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(14 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a"}},
+		{ID: "evt-checkpoint-rejected", Type: domain.EventSubscriberCheckpointRejected, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(15 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a", "reason": "subscriber checkpoint lease fenced"}},
 	} {
 		recorder.Record(event)
 	}
@@ -2924,6 +2932,21 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 				Status        string `json:"status"`
 				LeaderPresent bool   `json:"leader_present"`
 			} `json:"coordination_leader_election"`
+			SharedQueueDiagnostics struct {
+				DeadLetterBacklog         int   `json:"dead_letter_backlog"`
+				DeadLetterEvents          int   `json:"dead_letter_events"`
+				ReplayedQueueEvents       int   `json:"replayed_queue_events"`
+				LeaseAcquiredEvents       int   `json:"lease_acquired_events"`
+				LeaseRejectedEvents       int   `json:"lease_rejected_events"`
+				LeaseExpiredEvents        int   `json:"lease_expired_events"`
+				TakeoverSucceededEvents   int   `json:"takeover_succeeded_events"`
+				CheckpointCommittedEvents int   `json:"checkpoint_committed_events"`
+				CheckpointRejectedEvents  int   `json:"checkpoint_rejected_events"`
+				LeaseFencedEvents         int   `json:"lease_fenced_events"`
+				CheckpointResetsRecent    int   `json:"checkpoint_resets_recent"`
+				RetentionWatermarkVisible bool  `json:"retention_watermark_available"`
+				RetentionTrimmedThrough   int64 `json:"retention_trimmed_through_sequence"`
+			} `json:"shared_queue_diagnostics"`
 			LiveShadowMirror struct {
 				ReportPath           string   `json:"report_path"`
 				CanonicalSummaryPath string   `json:"canonical_summary_path"`
@@ -3129,6 +3152,21 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		decoded.Diagnostics.CoordinationLeader.LeaderPresent {
 		t.Fatalf("unexpected coordination leader diagnostics payload: %+v", decoded.Diagnostics.CoordinationLeader)
 	}
+	if decoded.Diagnostics.SharedQueueDiagnostics.DeadLetterBacklog != 0 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.DeadLetterEvents != 1 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.ReplayedQueueEvents != 1 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.LeaseAcquiredEvents != 1 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.LeaseRejectedEvents != 1 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.LeaseExpiredEvents != 1 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.TakeoverSucceededEvents != 1 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.CheckpointCommittedEvents != 1 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.CheckpointRejectedEvents != 1 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.LeaseFencedEvents != 1 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.CheckpointResetsRecent != 0 ||
+		decoded.Diagnostics.SharedQueueDiagnostics.RetentionWatermarkVisible ||
+		decoded.Diagnostics.SharedQueueDiagnostics.RetentionTrimmedThrough != 0 {
+		t.Fatalf("unexpected shared queue diagnostics payload: %+v", decoded.Diagnostics.SharedQueueDiagnostics)
+	}
 	if decoded.Diagnostics.LiveShadowMirror.ReportPath != liveShadowMirrorScorecardPath ||
 		decoded.Diagnostics.LiveShadowMirror.CanonicalSummaryPath != liveShadowSummaryPath ||
 		decoded.Diagnostics.LiveShadowMirror.SummaryPath != "docs/reports/live-shadow-runs/20260313T085655Z/summary.json" ||
@@ -3281,6 +3319,9 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Coordination Leader Election") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Shared Queue Coordination") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Lease fenced events: 1") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Replayed queue events: 1") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Live Shadow Mirror Scorecard") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Broker Failover Review Pack") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Migration Readiness Review Pack") ||

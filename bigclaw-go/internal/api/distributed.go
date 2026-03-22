@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -71,6 +72,23 @@ type distributedDiagnosticsReport struct {
 	ExportURL string `json:"export_url"`
 }
 
+type sharedQueueCoordinationDiagnostics struct {
+	DeadLetterBacklog           int   `json:"dead_letter_backlog"`
+	DeadLetterEvents            int   `json:"dead_letter_events"`
+	ReplayedQueueEvents         int   `json:"replayed_queue_events"`
+	LeaseAcquiredEvents         int   `json:"lease_acquired_events"`
+	LeaseRejectedEvents         int   `json:"lease_rejected_events"`
+	LeaseExpiredEvents          int   `json:"lease_expired_events"`
+	TakeoverSucceededEvents     int   `json:"takeover_succeeded_events"`
+	CheckpointCommittedEvents   int   `json:"checkpoint_committed_events"`
+	CheckpointRejectedEvents    int   `json:"checkpoint_rejected_events"`
+	LeaseFencedEvents           int   `json:"lease_fenced_events"`
+	CheckpointResetsRecent      int   `json:"checkpoint_resets_recent"`
+	RetentionWatermarkAvailable bool  `json:"retention_watermark_available"`
+	RetentionTrimmedThroughSeq  int64 `json:"retention_trimmed_through_sequence,omitempty"`
+	RetentionHistoryTruncated   bool  `json:"retention_history_truncated"`
+}
+
 type brokerProofReference struct {
 	Path       string   `json:"path"`
 	ScenarioID string   `json:"scenario_id"`
@@ -115,6 +133,7 @@ type distributedDiagnostics struct {
 	ExecutorCapacity      []executorCapacityView                   `json:"executor_capacity"`
 	ClusterHealth         clusterHealthRollup                      `json:"cluster_health"`
 	CoordinationLeader    any                                      `json:"coordination_leader_election,omitempty"`
+	SharedQueue           sharedQueueCoordinationDiagnostics       `json:"shared_queue_diagnostics"`
 	LiveShadowMirror      liveShadowMirrorSurface                  `json:"live_shadow_mirror_scorecard"`
 	BrokerReviewPack      brokerReviewPack                         `json:"broker_review_pack"`
 	BrokerReviewBundle    brokerReviewBundleSurface                `json:"broker_review_bundle"`
@@ -177,6 +196,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"executor_capacity":               diagnostics.ExecutorCapacity,
 		"cluster_health":                  diagnostics.ClusterHealth,
 		"coordination_leader_election":    diagnostics.CoordinationLeader,
+		"shared_queue_diagnostics":        diagnostics.SharedQueue,
 		"live_shadow_mirror_scorecard":    diagnostics.LiveShadowMirror,
 		"broker_review_pack":              diagnostics.BrokerReviewPack,
 		"broker_review_bundle":            diagnostics.BrokerReviewBundle,
@@ -415,6 +435,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		ExecutorCapacity:      executorCapacity,
 		ClusterHealth:         clusterHealth,
 		CoordinationLeader:    s.coordinationLeaderElectionPayload(),
+		SharedQueue:           s.sharedQueueCoordinationDiagnostics(),
 		LiveShadowMirror:      liveShadowMirrorPayload(),
 		BrokerReviewPack:      buildBrokerReviewPack(),
 		BrokerReviewBundle:    brokerReviewBundleSurfacePayload(),
@@ -618,6 +639,24 @@ func eventExecutorKind(event domain.Event, task domain.Task) domain.ExecutorKind
 	return ""
 }
 
+func eventBoolValue(payload map[string]any, key string) bool {
+	if payload == nil {
+		return false
+	}
+	value, ok := payload[key]
+	if !ok || value == nil {
+		return false
+	}
+	switch typed := value.(type) {
+	case bool:
+		return typed
+	case string:
+		return strings.EqualFold(strings.TrimSpace(typed), "true")
+	default:
+		return false
+	}
+}
+
 func taskRequiresTool(task domain.Task, tool string) bool {
 	for _, item := range task.RequiredTools {
 		if item == tool {
@@ -752,6 +791,28 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 		if len(leader.Notes) > 0 {
 			lines = append(lines, "- Notes: "+strings.Join(leader.Notes, "; "))
 		}
+	}
+	lines = append(lines,
+		"",
+		"## Shared Queue Coordination",
+		fmt.Sprintf("- Dead-letter backlog: %d", diagnostics.SharedQueue.DeadLetterBacklog),
+		fmt.Sprintf("- Dead-letter events: %d", diagnostics.SharedQueue.DeadLetterEvents),
+		fmt.Sprintf("- Replayed queue events: %d", diagnostics.SharedQueue.ReplayedQueueEvents),
+		fmt.Sprintf("- Lease acquired events: %d", diagnostics.SharedQueue.LeaseAcquiredEvents),
+		fmt.Sprintf("- Lease rejected events: %d", diagnostics.SharedQueue.LeaseRejectedEvents),
+		fmt.Sprintf("- Lease expired events: %d", diagnostics.SharedQueue.LeaseExpiredEvents),
+		fmt.Sprintf("- Takeover succeeded events: %d", diagnostics.SharedQueue.TakeoverSucceededEvents),
+		fmt.Sprintf("- Checkpoint committed events: %d", diagnostics.SharedQueue.CheckpointCommittedEvents),
+		fmt.Sprintf("- Checkpoint rejected events: %d", diagnostics.SharedQueue.CheckpointRejectedEvents),
+		fmt.Sprintf("- Lease fenced events: %d", diagnostics.SharedQueue.LeaseFencedEvents),
+		fmt.Sprintf("- Checkpoint resets (recent): %d", diagnostics.SharedQueue.CheckpointResetsRecent),
+		fmt.Sprintf("- Retention watermark visible: %t", diagnostics.SharedQueue.RetentionWatermarkAvailable),
+	)
+	if diagnostics.SharedQueue.RetentionTrimmedThroughSeq > 0 {
+		lines = append(lines, fmt.Sprintf("- Retention trimmed through sequence: %d", diagnostics.SharedQueue.RetentionTrimmedThroughSeq))
+	}
+	if diagnostics.SharedQueue.RetentionHistoryTruncated {
+		lines = append(lines, "- Retention history truncated: true")
 	}
 	lines = append(lines,
 		"",
@@ -1108,6 +1169,49 @@ func formatFacetCounts(items []auditFacetCount) string {
 		parts = append(parts, fmt.Sprintf("%s=%d", item.Key, item.Count))
 	}
 	return strings.Join(parts, ", ")
+}
+
+func (s *Server) sharedQueueCoordinationDiagnostics() sharedQueueCoordinationDiagnostics {
+	diagnostics := sharedQueueCoordinationDiagnostics{}
+	if s.Queue != nil {
+		if deadLetters, err := s.Queue.ListDeadLetters(context.Background(), 0); err == nil {
+			diagnostics.DeadLetterBacklog = len(deadLetters)
+		}
+	}
+	for _, event := range s.Recorder.EventsByTask("", 0) {
+		switch event.Type {
+		case domain.EventTaskDeadLetter:
+			diagnostics.DeadLetterEvents++
+		case domain.EventTaskQueued:
+			if eventBoolValue(event.Payload, "replayed") {
+				diagnostics.ReplayedQueueEvents++
+			}
+		case domain.EventSubscriberLeaseAcquired:
+			diagnostics.LeaseAcquiredEvents++
+		case domain.EventSubscriberLeaseRejected:
+			diagnostics.LeaseRejectedEvents++
+		case domain.EventSubscriberLeaseExpired:
+			diagnostics.LeaseExpiredEvents++
+		case domain.EventSubscriberTakeoverSucceeded:
+			diagnostics.TakeoverSucceededEvents++
+		case domain.EventSubscriberCheckpointCommitted:
+			diagnostics.CheckpointCommittedEvents++
+		case domain.EventSubscriberCheckpointRejected:
+			diagnostics.CheckpointRejectedEvents++
+			if strings.Contains(strings.ToLower(eventStringValue(event.Payload, "reason")), "fenced") {
+				diagnostics.LeaseFencedEvents++
+			}
+		}
+	}
+	if checkpointResets := s.checkpointResetAuditSnapshot(20); checkpointResets != nil {
+		diagnostics.CheckpointResetsRecent = checkpointResets.RecentCount
+	}
+	if watermark := s.typedRetentionWatermark(); watermark != nil {
+		diagnostics.RetentionWatermarkAvailable = true
+		diagnostics.RetentionTrimmedThroughSeq = watermark.TrimmedThroughSequence
+		diagnostics.RetentionHistoryTruncated = watermark.HistoryTruncated
+	}
+	return diagnostics
 }
 
 func sanitizeReportName(value string) string {

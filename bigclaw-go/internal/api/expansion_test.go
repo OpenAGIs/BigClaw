@@ -631,6 +631,9 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") || !strings.Contains(decoded.Report.Markdown, "## Durable Sequence Bridge") {
 		t.Fatalf("unexpected distributed markdown: %s", decoded.Report.Markdown)
 	}
+	if !strings.Contains(decoded.Report.Markdown, "## Shared Queue Coordination") || !strings.Contains(decoded.Report.Markdown, "Dead-letter backlog:") {
+		t.Fatalf("expected shared queue coordination section in distributed markdown: %s", decoded.Report.Markdown)
+	}
 	if !strings.Contains(decoded.Report.ExportURL, "/v2/reports/distributed/export") {
 		t.Fatalf("unexpected distributed export url: %s", decoded.Report.ExportURL)
 	}
@@ -645,6 +648,9 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	}
 	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") || !strings.Contains(exportResponse.Body.String(), "Validation artifacts: docs/reports/live-validation-index.md") || !strings.Contains(exportResponse.Body.String(), "Ambiguous publish proof: docs/reports/ambiguous-publish-outcome-proof-summary.json (BF-05: committed, rejected, unknown_commit)") || !strings.Contains(exportResponse.Body.String(), "Backend limitations: no external tracing backend") {
 		t.Fatalf("unexpected distributed export markdown: %s", exportResponse.Body.String())
+	}
+	if !strings.Contains(exportResponse.Body.String(), "## Shared Queue Coordination") {
+		t.Fatalf("expected shared queue coordination in distributed export markdown: %s", exportResponse.Body.String())
 	}
 	if !strings.Contains(exportResponse.Body.String(), "Lane local: latest_status=succeeded") {
 		t.Fatalf("expected continuation lane coverage in distributed export markdown: %s", exportResponse.Body.String())
