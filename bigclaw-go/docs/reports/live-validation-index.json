@@ -1,7 +1,7 @@
 {
   "latest": {
     "run_id": "20260322T002048Z",
-    "generated_at": "2026-03-22T00:20:55.123869+00:00",
+    "generated_at": "2026-03-22T00:38:55.251591+00:00",
     "status": "succeeded",
     "bundle_path": "docs/reports/live-validation-runs/20260322T002048Z",
     "closeout_commands": [
@@ -359,8 +359,6 @@
         "service_log": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-e2e-hpnmo0w_.log"
       },
       "status": "succeeded",
-      "stdout_path": "docs/reports/live-validation-runs/20260322T002048Z/local.stdout.log",
-      "stderr_path": "docs/reports/live-validation-runs/20260322T002048Z/local.stderr.log",
       "task_id": "local-smoke-1774138853",
       "base_url": "http://127.0.0.1:50088",
       "state_dir": "/var/folders/hk/51n7fnmd61z1gd61v3znybxm0000gn/T/bigclawd-state-kgx5zadl",
@@ -461,7 +459,7 @@
   "recent_runs": [
     {
       "run_id": "20260322T002048Z",
-      "generated_at": "2026-03-22T00:20:55.123869+00:00",
+      "generated_at": "2026-03-22T00:38:55.251591+00:00",
       "status": "succeeded",
       "bundle_path": "docs/reports/live-validation-runs/20260322T002048Z",
       "summary_path": "docs/reports/live-validation-runs/20260322T002048Z/summary.json"
@@ -494,7 +492,7 @@
     "recommendation": "go",
     "failing_checks": [],
     "enforcement": {
-      "mode": "hold",
+      "mode": "review",
       "outcome": "pass",
       "exit_code": 0
     },
@@ -506,7 +504,7 @@
       "recent_bundle_chain_has_no_failures": true,
       "all_executor_tracks_have_repeated_recent_coverage": true,
       "recommendation": "go",
-      "enforcement_mode": "hold",
+      "enforcement_mode": "review",
       "workflow_outcome": "pass",
       "workflow_exit_code": 0,
       "passing_check_count": 6,

@@ -716,6 +716,40 @@
       "state": "Done",
       "title": "Refresh checked-in live validation bundle artifacts",
       "updated_at": "2026-03-22T00:29:17Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T00:35:06Z",
+      "description": "Align continuation scorecard/policy gate artifact paths with the Go validation bundle exporter so the live validation index and manifest can always find and render continuation status without writing stray repo-root duplicates.",
+      "id": "big-par-106",
+      "identifier": "BIG-PAR-106",
+      "labels": [
+        "parallel",
+        "validation",
+        "tooling",
+        "reporting"
+      ],
+      "priority": 2,
+      "state": "In Progress",
+      "title": "Align continuation artifact paths with exporter expectations",
+      "updated_at": "2026-03-22T00:35:06Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T00:35:06Z",
+      "description": "Embed the continuation policy-gate summary into `bigclaw-go/docs/reports/live-validation-summary.json` so machine-readable consumers can reason about continuation gate outcome without opening separate continuation artifacts.",
+      "id": "big-par-107",
+      "identifier": "BIG-PAR-107",
+      "labels": [
+        "parallel",
+        "validation",
+        "tooling",
+        "reporting"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Expose continuation gate detail in live validation summary",
+      "updated_at": "2026-03-22T00:35:06Z"
     }
   ]
 }

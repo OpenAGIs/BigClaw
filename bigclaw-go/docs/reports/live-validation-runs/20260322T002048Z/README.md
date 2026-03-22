@@ -1,7 +1,7 @@
 # Live Validation Index
 
 - Latest run: `20260322T002048Z`
-- Generated at: `2026-03-22T00:20:55.123869+00:00`
+- Generated at: `2026-03-22T00:38:55.251591+00:00`
 - Status: `succeeded`
 - Bundle: `docs/reports/live-validation-runs/20260322T002048Z`
 - Summary JSON: `docs/reports/live-validation-runs/20260322T002048Z/summary.json`
@@ -13,8 +13,6 @@
 - Status: `succeeded`
 - Bundle report: `docs/reports/live-validation-runs/20260322T002048Z/sqlite-smoke-report.json`
 - Latest report: `docs/reports/sqlite-smoke-report.json`
-- Stdout log: `docs/reports/live-validation-runs/20260322T002048Z/local.stdout.log`
-- Stderr log: `docs/reports/live-validation-runs/20260322T002048Z/local.stderr.log`
 - Service log: `docs/reports/live-validation-runs/20260322T002048Z/local.service.log`
 - Audit log: `docs/reports/live-validation-runs/20260322T002048Z/local.audit.jsonl`
 - Task ID: `local-smoke-1774138853`
@@ -68,7 +66,7 @@
 
 ## Recent bundles
 
-- `20260322T002048Z` · `succeeded` · `2026-03-22T00:20:55.123869+00:00` · `docs/reports/live-validation-runs/20260322T002048Z`
+- `20260322T002048Z` · `succeeded` · `2026-03-22T00:38:55.251591+00:00` · `docs/reports/live-validation-runs/20260322T002048Z`
 - `20260316T140138Z` · `succeeded` · `2026-03-17T04:32:13.251910+00:00` · `docs/reports/live-validation-runs/20260316T140138Z`
 - `20260314T164647Z` · `succeeded` · `2026-03-14T16:46:57.671520+00:00` · `docs/reports/live-validation-runs/20260314T164647Z`
 - `20260314T163430Z` · `succeeded` · `2026-03-14T16:34:42.080370+00:00` · `docs/reports/live-validation-runs/20260314T163430Z`
@@ -78,7 +76,7 @@
 - Status: `policy-go`
 - Recommendation: `go`
 - Report: `docs/reports/validation-bundle-continuation-policy-gate.json`
-- Workflow mode: `hold`
+- Workflow mode: `review`
 - Workflow outcome: `pass`
 - Latest reviewed run: `20260316T140138Z`
 - Failing checks: `0`

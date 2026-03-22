@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-21T17:16:28.832704Z",
+  "generated_at": "2026-03-22T00:36:57.507892Z",
   "ticket": "OPE-262",
   "title": "Validation workflow continuation gate",
   "status": "policy-go",
@@ -14,7 +14,7 @@
     "require_repeated_lane_coverage": true
   },
   "enforcement": {
-    "mode": "hold",
+    "mode": "review",
     "outcome": "pass",
     "exit_code": 0
   },
@@ -26,7 +26,7 @@
     "recent_bundle_chain_has_no_failures": true,
     "all_executor_tracks_have_repeated_recent_coverage": true,
     "recommendation": "go",
-    "enforcement_mode": "hold",
+    "enforcement_mode": "review",
     "workflow_outcome": "pass",
     "workflow_exit_code": 0,
     "passing_check_count": 6,
