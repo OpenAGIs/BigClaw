@@ -38,7 +38,11 @@
     "BIG-GOM-305",
     "BIG-GOM-306",
     "BIG-GOM-307",
-    "BIG-GOM-308"
+    "BIG-GOM-308",
+    "BIG-PAR-219",
+    "BIG-PAR-220",
+    "BIG-PAR-221",
+    "BIG-PAR-222"
   ],
   "issues": [
     {
@@ -88,6 +92,30 @@
       "title": "Python deprecation and Go-only mainline switch",
       "track": "Python Retirement & Cutover Validation",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-219",
+      "title": "Expose ahead/behind relation in github-sync status payload",
+      "track": "Go Mainline Follow-ups",
+      "status": "Todo"
+    },
+    {
+      "identifier": "BIG-PAR-220",
+      "title": "Go-first traceability refresh for issue plan evidence pointers",
+      "track": "Go Mainline Follow-ups",
+      "status": "Todo"
+    },
+    {
+      "identifier": "BIG-PAR-221",
+      "title": "Draft parallel validation matrix artifact for local/k8s/ray",
+      "track": "Go Mainline Follow-ups",
+      "status": "Backlog"
+    },
+    {
+      "identifier": "BIG-PAR-222",
+      "title": "Add fast compile-check path for frozen legacy Python shims",
+      "track": "Go Mainline Follow-ups",
+      "status": "Backlog"
     }
   ]
 }

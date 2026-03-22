@@ -1275,6 +1275,70 @@
       "state": "Done",
       "title": "Wire BIGCLAW_NODE_ID into worker runtime NodeID",
       "updated_at": "2026-03-22T02:10:18Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T02:40:00Z",
+      "description": "Extend `bigclawctl github-sync status --json` to report ahead/behind counts (and detached/relationship metadata) so automation can distinguish synced, ahead-only, behind-only, and diverged states without parsing human git output.",
+      "id": "big-par-219",
+      "identifier": "BIG-PAR-219",
+      "labels": [
+        "parallel",
+        "tooling",
+        "github-sync"
+      ],
+      "priority": 2,
+      "state": "Todo",
+      "title": "Expose ahead/behind relation in github-sync status payload",
+      "updated_at": "2026-03-22T02:40:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T02:40:00Z",
+      "description": "Refresh `docs/issue-plan.md` so operator-facing evidence pointers prefer the Go mainline (`bigclaw-go/internal/*` and `/v2/*` report surfaces) and clearly mark remaining Python references as migration-only compatibility paths.",
+      "id": "big-par-220",
+      "identifier": "BIG-PAR-220",
+      "labels": [
+        "parallel",
+        "docs",
+        "planning"
+      ],
+      "priority": 3,
+      "state": "Todo",
+      "title": "Go-first traceability refresh for issue plan evidence pointers",
+      "updated_at": "2026-03-22T02:40:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T02:40:00Z",
+      "description": "Follow up on the open OpenClaw comparison note by adding a repo-native parallel validation matrix artifact describing local, Kubernetes, and Ray execution evidence expectations for the distributed control plane (contract-only initially, code-backed audit later).",
+      "id": "big-par-221",
+      "identifier": "BIG-PAR-221",
+      "labels": [
+        "parallel",
+        "validation",
+        "docs"
+      ],
+      "priority": 4,
+      "state": "Backlog",
+      "title": "Draft parallel validation matrix artifact for local/k8s/ray",
+      "updated_at": "2026-03-22T02:40:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T02:40:00Z",
+      "description": "Add a small Go-first helper command (or documented workflow) to compile-check the frozen legacy Python shims (`src/bigclaw/__main__.py`, `src/bigclaw/service.py`, etc.) so the migration-only surfaces fail fast without requiring a full Python test run.",
+      "id": "big-par-222",
+      "identifier": "BIG-PAR-222",
+      "labels": [
+        "parallel",
+        "tooling",
+        "python-legacy"
+      ],
+      "priority": 4,
+      "state": "Backlog",
+      "title": "Add fast compile-check path for frozen legacy Python shims",
+      "updated_at": "2026-03-22T02:40:00Z"
     }
   ]
 }

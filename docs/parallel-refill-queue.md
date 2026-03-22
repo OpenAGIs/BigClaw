@@ -76,3 +76,7 @@ longer waits on Linear to keep issue execution moving.
 6. `BIG-GOM-306`
 7. `BIG-GOM-307`
 8. `BIG-GOM-308`
+9. `BIG-PAR-219`
+10. `BIG-PAR-220`
+11. `BIG-PAR-221`
+12. `BIG-PAR-222`
