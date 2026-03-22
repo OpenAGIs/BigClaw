@@ -1084,6 +1084,24 @@
       "state": "Done",
       "title": "Refresh repo-wide validation report ticket references",
       "updated_at": "2026-03-22T00:00:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-22T01:26:07Z",
+      "description": "Harden shared-queue coordination by failing lease renewals closed after expiry, treating lease loss as an explicit worker runtime outcome, purging cancelled runs after lease expiry, and exporting lease-loss Prometheus counters.",
+      "id": "big-par-214",
+      "identifier": "BIG-PAR-214",
+      "labels": [
+        "parallel",
+        "durability",
+        "queue",
+        "worker",
+        "metrics"
+      ],
+      "priority": 2,
+      "state": "In Progress",
+      "title": "Shared-queue coordination and lease-safety hardening",
+      "updated_at": "2026-03-22T01:26:07Z"
     }
   ]
 }
