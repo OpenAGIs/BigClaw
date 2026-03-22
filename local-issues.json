@@ -1407,6 +1407,11 @@
           "author": "codex",
           "body": "PR merged.\n\n- PR URL: https://github.com/OpenAGIs/BigClaw/pull/159\n- Merged at: 2026-03-22T11:30:29Z\n- Merge commit: 1554ae9b9b12ed983d0d0f947ca34ce25c9aae4e\n\nPost-merge tracker state:\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `active_in_progress: []`, `candidates: []`.\n\nCommit SHA: `c6eebd9b8b51fa62b1fdda47936208339bca43d4` (last branch head before merge).\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/159.",
           "created_at": "2026-03-22T11:35:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Recovery note: landed the missing post-merge tracker comment onto `main` via PR #162.\n\nContext:\n- The \"PR merged\" tracker note above existed on branch `symphony/BIG-PAR-224` (commit `5065cf9fdb8812f4317cefc9a5b47d4dcbed7c33`) but was not part of `main` after PR #159 merged.\n\nWhat changed:\n- Opened and merged PR #162 to bring that tracker-only commit onto `main`.\n\nValidation:\n- `gh pr view 162 --repo OpenAGIs/BigClaw --json url,state,mergedAt,mergeCommit` -> MERGED at `2026-03-22T12:06:06Z` with merge commit `d1452673f1848de388447dfb8d0ecc24ab4e606c`\n- `git rev-parse HEAD origin/main` -> both `d1452673f1848de388447dfb8d0ecc24ab4e606c`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `active_in_progress: []`, `candidates: []`\n\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/162.",
+          "created_at": "2026-03-22T12:06:06Z"
         }
       ],
       "created_at": "2026-03-22T09:40:00Z",
@@ -1421,7 +1426,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Reconcile tracker and refill queue follow-up state",
-      "updated_at": "2026-03-22T11:35:00Z"
+      "updated_at": "2026-03-22T12:06:06Z"
     },
     {
       "assigned_to_worker": true,
