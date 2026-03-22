@@ -712,6 +712,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Progress update (turn #2): implemented lease-loss hardening.\n\nWhat changed:\n- queue backends (sqlite/file/memory) now fail closed on renew after lease expiry via queue.ErrLeaseExpired; file/memory renew also return queue.ErrLeaseNotOwned consistently.\n- worker heartbeat now records lease renewal failures, cancels execution on ErrLeaseExpired/ErrLeaseNotOwned, and the run requeues with LastTransition=lease.lost plus LeaseLostRuns counter.\n\nValidation:\n- cd bigclaw-go \u0026\u0026 go test ./... -\u003e ok\n\nCommit: 9d3ecffa7d7f343a83376b64662556c79f71d12e\nPR: https://github.com/OpenAGIs/BigClaw/pull/147",
+          "created_at": "2026-03-22T00:52:04Z"
+        }
+      ],
       "created_at": "2026-03-22T00:16:30Z",
       "description": "Harden shared-queue coordination across workers: lease renewal/expiry observability, cancellation/requeue safety, idempotency guards, and clearer dead-letter + replay diagnostics for multi-worker runs.",
       "id": "local-2",
@@ -725,7 +732,7 @@
       "priority": 2,
       "state": "In Progress",
       "title": "Shared-queue coordination and lease-safety hardening",
-      "updated_at": "2026-03-22T00:18:22Z"
+      "updated_at": "2026-03-22T00:52:04Z"
     },
     {
       "assigned_to_worker": true,
@@ -766,7 +773,7 @@
       "comments": [
         {
           "author": "codex",
-          "body": "Closed BIG-PAR-106.\n\nWhat changed:\n- scripts/ops/bigclawctl now forwards --repo <repo_root> for all subcommands unless already provided.\n- bigclaw-go/cmd/bigclawctl: workspace validate/bootstrap/cleanup resolve workspace/workspace-root/report against repo root; refill and local-issues also accept --repo for consistent repo-root path resolution.\n- docs/reports/bootstrap-cache-validation.md now makes repo-root resolution explicit.\n\nValidation:\n- bash -n scripts/ops/bigclawctl -> ok\n- cd bigclaw-go && go test ./... -> ok\n- git rev-parse HEAD == git rev-parse origin/symphony/BIG-PAR-103 == fc39c4c04ba3f2326c958c88eea5de0a24fb2926\n\nCommit: fc39c4c04ba3f2326c958c88eea5de0a24fb2926\nPR: https://github.com/OpenAGIs/BigClaw/pull/147",
+          "body": "Closed BIG-PAR-106.\n\nWhat changed:\n- scripts/ops/bigclawctl now forwards --repo \u003crepo_root\u003e for all subcommands unless already provided.\n- bigclaw-go/cmd/bigclawctl: workspace validate/bootstrap/cleanup resolve workspace/workspace-root/report against repo root; refill and local-issues also accept --repo for consistent repo-root path resolution.\n- docs/reports/bootstrap-cache-validation.md now makes repo-root resolution explicit.\n\nValidation:\n- bash -n scripts/ops/bigclawctl -\u003e ok\n- cd bigclaw-go \u0026\u0026 go test ./... -\u003e ok\n- git rev-parse HEAD == git rev-parse origin/symphony/BIG-PAR-103 == fc39c4c04ba3f2326c958c88eea5de0a24fb2926\n\nCommit: fc39c4c04ba3f2326c958c88eea5de0a24fb2926\nPR: https://github.com/OpenAGIs/BigClaw/pull/147",
           "created_at": "2026-03-22T00:33:00Z"
         }
       ],
