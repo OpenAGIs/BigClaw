@@ -943,6 +943,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-103` after correcting the validation-bundle continuation digest to reference the real scorecard and policy-gate ticket IDs.\n\nWhat changed:\n- `bigclaw-go/docs/reports/validation-bundle-continuation-digest.md` now references `BIG-PAR-086-local-prework` for the scorecard and `OPE-262` for the policy gate (instead of the stale `BIG-PAR-087` reference).\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `88672284fbeb2c98a8eb7b194024c313223a40f1` matches remote SHA `88672284fbeb2c98a8eb7b194024c313223a40f1` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `88672284fbeb2c98a8eb7b194024c313223a40f1`\n\nCommit: `88672284fbeb2c98a8eb7b194024c313223a40f1`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/146.",
+          "created_at": "2026-03-22T00:00:00Z"
+        }
+      ],
       "created_at": "2026-03-22T00:00:00Z",
       "description": "Fix the repo-native reviewer digest for validation-bundle continuation so it references the correct policy gate ticket and avoids stale BIG-PAR identifiers.",
       "id": "big-par-103",
@@ -953,7 +960,7 @@
         "validation"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Correct validation-bundle continuation digest ticket references",
       "updated_at": "2026-03-22T00:00:00Z"
     },
