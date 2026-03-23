@@ -53,11 +53,10 @@
       "BIG-PAR-245",
       "BIG-PAR-246",
       "BIG-PAR-247",
-      "BIG-PAR-248"
-    ],
-    "active": [
+      "BIG-PAR-248",
       "BIG-PAR-249"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -320,7 +319,7 @@
       "identifier": "BIG-PAR-249",
       "title": "Refresh queue reliability references after 10k proof",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
