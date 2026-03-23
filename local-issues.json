@@ -2007,6 +2007,11 @@
           "author": "codex",
           "body": "Closed `BIG-PAR-249` after refreshing stale queue-reliability references that still mentioned only the older 1k SQLite proof lane.\n\nWhat changed:\n- `bigclaw-go/docs/reports/review-readiness.md` now states that queue reliability evidence includes both the `1k` and `10k` SQLite no-duplicate-consumption stress lanes.\n- `bigclaw-go/docs/reports/lease-recovery-report.md` now reflects that the concurrent-processing proof covers both `1k` and `10k` task lanes instead of only the original `1k` lane.\n\nValidation:\n- `rg -n \"1k|10k|Queue reliability evidence includes|concurrent-processing proof\" bigclaw-go/docs/reports/review-readiness.md bigclaw-go/docs/reports/lease-recovery-report.md` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `4bc91a2979b01e70d5cc60e5f14c93d55b1ae540` matches remote SHA `4bc91a2979b01e70d5cc60e5f14c93d55b1ae540` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `4bc91a2979b01e70d5cc60e5f14c93d55b1ae540`\n\nCommit SHA: `4bc91a2979b01e70d5cc60e5f14c93d55b1ae540`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/178",
           "created_at": "2026-03-23T04:45:30Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout: PR `#178` (`BIG-PAR-249: refresh queue reliability references`) merged into `main` at `2026-03-23T04:15:09Z` with merge commit `cb6315ef2aca0146f13b511b9206f49f27161051`.\n\nValidation:\n- `gh pr view 178 --repo OpenAGIs/BigClaw --json url,title,state,mergedAt,mergeCommit` -> `MERGED` with merge commit `cb6315ef2aca0146f13b511b9206f49f27161051`\n- `git fetch origin main && git rev-parse origin/main` -> `cb6315ef2aca0146f13b511b9206f49f27161051`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `6816812144ab9c23ad4e0e9e92e9d47d299dda45` matches remote SHA `6816812144ab9c23ad4e0e9e92e9d47d299dda45` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `6816812144ab9c23ad4e0e9e92e9d47d299dda45`\n\nCommit SHA: `6816812144ab9c23ad4e0e9e92e9d47d299dda45`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/178",
+          "created_at": "2026-03-23T04:46:00Z"
         }
       ],
       "created_at": "2026-03-23T04:09:59Z",
@@ -2023,7 +2028,7 @@
       "priority": 4,
       "state": "Done",
       "title": "Refresh queue reliability references after 10k proof",
-      "updated_at": "2026-03-23T04:45:00Z"
+      "updated_at": "2026-03-23T04:46:00Z"
     }
   ]
 }
