@@ -31,6 +31,22 @@ type SubscriberLease struct {
 	UpdatedAt        time.Time `json:"updated_at"`
 }
 
+type subscriberLeaseState string
+
+const (
+	subscriberLeaseStateVacant  subscriberLeaseState = "vacant"
+	subscriberLeaseStateActive  subscriberLeaseState = "active"
+	subscriberLeaseStateExpired subscriberLeaseState = "expired"
+)
+
+type subscriberLeaseAction string
+
+const (
+	subscriberLeaseActionAcquire subscriberLeaseAction = "acquire"
+	subscriberLeaseActionCommit  subscriberLeaseAction = "commit"
+	subscriberLeaseActionRelease subscriberLeaseAction = "release"
+)
+
 type LeaseRequest struct {
 	GroupID      string
 	SubscriberID string
@@ -116,19 +132,16 @@ func (c *memorySubscriberLeaseStore) Acquire(request LeaseRequest) (SubscriberLe
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	current, ok := c.leases[key]
-	if ok && !leaseExpired(current, request.Now) && current.ConsumerID != request.ConsumerID {
+	current := c.leases[key]
+	switch current.stateAt(request.Now) {
+	case subscriberLeaseStateActive:
+		if current.ConsumerID == request.ConsumerID {
+			current.ExpiresAt = request.Now.Add(request.TTL)
+			current.UpdatedAt = request.Now
+			c.leases[key] = current
+			return current, nil
+		}
 		return current, ErrLeaseHeld
-	}
-	if ok && leaseExpired(current, request.Now) && current.ConsumerID != request.ConsumerID {
-		current.LeaseToken = ""
-	}
-
-	if ok && !leaseExpired(current, request.Now) && current.ConsumerID == request.ConsumerID {
-		current.ExpiresAt = request.Now.Add(request.TTL)
-		current.UpdatedAt = request.Now
-		c.leases[key] = current
-		return current, nil
 	}
 
 	next := SubscriberLease{
@@ -159,11 +172,8 @@ func (c *memorySubscriberLeaseStore) Commit(request CheckpointCommit) (Subscribe
 	if !ok {
 		return SubscriberLease{}, ErrLeaseExpired
 	}
-	if leaseExpired(current, request.Now) {
-		return current, ErrLeaseExpired
-	}
-	if current.ConsumerID != request.ConsumerID || current.LeaseToken != request.LeaseToken || current.LeaseEpoch != request.LeaseEpoch {
-		return current, ErrLeaseFence
+	if err := current.validateAction(subscriberLeaseActionCommit, request.Now, request.ConsumerID, request.LeaseToken, request.LeaseEpoch); err != nil {
+		return current, errors.Unwrap(err)
 	}
 	if request.CheckpointOffset < current.CheckpointOffset {
 		return current, ErrCheckpointRollback
@@ -185,6 +195,10 @@ func (c *memorySubscriberLeaseStore) Get(groupID string, subscriberID string) (S
 }
 
 func (c *memorySubscriberLeaseStore) Release(groupID string, subscriberID string, consumerID string, leaseToken string, leaseEpoch int64) error {
+	return c.releaseAt(groupID, subscriberID, consumerID, leaseToken, leaseEpoch, time.Now().UTC())
+}
+
+func (c *memorySubscriberLeaseStore) releaseAt(groupID string, subscriberID string, consumerID string, leaseToken string, leaseEpoch int64, now time.Time) error {
 	key := SubscriberLeaseKey{GroupID: groupID, SubscriberID: subscriberID}
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -192,10 +206,14 @@ func (c *memorySubscriberLeaseStore) Release(groupID string, subscriberID string
 	if !ok {
 		return ErrLeaseExpired
 	}
-	if current.ConsumerID != consumerID || current.LeaseToken != leaseToken || current.LeaseEpoch != leaseEpoch {
-		return ErrLeaseFence
+	if err := current.validateAction(subscriberLeaseActionRelease, now, consumerID, leaseToken, leaseEpoch); err != nil {
+		return errors.Unwrap(err)
 	}
-	delete(c.leases, key)
+	current.ConsumerID = ""
+	current.LeaseToken = ""
+	current.ExpiresAt = time.Time{}
+	current.UpdatedAt = now
+	c.leases[key] = current
 	return nil
 }
 
@@ -206,4 +224,24 @@ func (c *memorySubscriberLeaseStore) nextToken() string {
 
 func leaseExpired(lease SubscriberLease, now time.Time) bool {
 	return !lease.ExpiresAt.IsZero() && !now.Before(lease.ExpiresAt)
+}
+
+func (lease SubscriberLease) stateAt(now time.Time) subscriberLeaseState {
+	if lease.ConsumerID == "" || lease.LeaseToken == "" {
+		return subscriberLeaseStateVacant
+	}
+	if leaseExpired(lease, now) {
+		return subscriberLeaseStateExpired
+	}
+	return subscriberLeaseStateActive
+}
+
+func (lease SubscriberLease) validateAction(action subscriberLeaseAction, now time.Time, consumerID string, leaseToken string, leaseEpoch int64) error {
+	if lease.stateAt(now) != subscriberLeaseStateActive {
+		return fmt.Errorf("%s: %w", action, ErrLeaseExpired)
+	}
+	if lease.ConsumerID != consumerID || lease.LeaseToken != leaseToken || lease.LeaseEpoch != leaseEpoch {
+		return fmt.Errorf("%s: %w", action, ErrLeaseFence)
+	}
+	return nil
 }

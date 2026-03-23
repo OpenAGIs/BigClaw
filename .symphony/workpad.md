@@ -1,27 +1,21 @@
-## Codex Workpad
+# BIGCLAW-172 Workpad
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## Plan
 
-### Plan
+1. Verify the current queue and subscriber lease changes already in the worktree against the issue acceptance for shared coordination, stale lease fencing, and release safety.
+2. Keep the implementation scoped to `bigclaw-go/internal/events` and `bigclaw-go/internal/queue`, only adjusting behavior required to formalize acquire, renew, release, expiry, and stale-owner handling.
+3. Extend focused regression coverage for local memory and SQLite-backed shared-store flows, including expired mutations, takeover fencing, and release-with-checkpoint preservation.
+4. Run targeted Go and Python validation commands, record exact commands and pass/fail results, then commit and push the branch.
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+## Acceptance
 
-### Acceptance Criteria
+- Lease acquire, renew, commit, and release paths use an explicit state model so vacant, active, and expired leases are handled consistently.
+- Duplicate consumption, stale renewals, stale releases, and expired ack/requeue/dead-letter attempts do not allow a second executor to win after takeover or expiry.
+- Regression coverage includes both local memory and distributed SQLite-backed queue or lease-store paths.
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
+## Validation
 
-### Validation
+- `cd bigclaw-go && go test ./internal/events ./internal/queue ./internal/worker`
+- `cd bigclaw-go && python3 -m unittest scripts/e2e/multi_node_shared_queue_test.py`
 
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
-
-### Notes
-
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+Record exact command lines and results in the final closeout.

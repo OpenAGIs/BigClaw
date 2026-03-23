@@ -2,6 +2,7 @@ package events
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -103,18 +104,21 @@ func (s *SQLiteSubscriberLeaseStore) Acquire(request LeaseRequest) (lease Subscr
 		if err != nil {
 			return err
 		}
-		if ok && !leaseExpired(current, request.Now) && current.ConsumerID != request.ConsumerID {
-			lease = current
-			return ErrLeaseHeld
-		}
-		if ok && !leaseExpired(current, request.Now) && current.ConsumerID == request.ConsumerID {
-			current.ExpiresAt = request.Now.Add(request.TTL)
-			current.UpdatedAt = request.Now
-			if err := s.save(current); err != nil {
-				return err
+		if ok {
+			switch current.stateAt(request.Now) {
+			case subscriberLeaseStateActive:
+				if current.ConsumerID != request.ConsumerID {
+					lease = current
+					return ErrLeaseHeld
+				}
+				current.ExpiresAt = request.Now.Add(request.TTL)
+				current.UpdatedAt = request.Now
+				if err := s.save(current); err != nil {
+					return err
+				}
+				lease = current
+				return nil
 			}
-			lease = current
-			return nil
 		}
 
 		token, err := s.nextToken()
@@ -154,13 +158,9 @@ func (s *SQLiteSubscriberLeaseStore) Commit(request CheckpointCommit) (lease Sub
 		if !ok {
 			return ErrLeaseExpired
 		}
-		if leaseExpired(current, request.Now) {
+		if err := current.validateAction(subscriberLeaseActionCommit, request.Now, request.ConsumerID, request.LeaseToken, request.LeaseEpoch); err != nil {
 			lease = current
-			return ErrLeaseExpired
-		}
-		if current.ConsumerID != request.ConsumerID || current.LeaseToken != request.LeaseToken || current.LeaseEpoch != request.LeaseEpoch {
-			lease = current
-			return ErrLeaseFence
+			return errors.Unwrap(err)
 		}
 		if request.CheckpointOffset < current.CheckpointOffset {
 			lease = current
@@ -190,6 +190,10 @@ func (s *SQLiteSubscriberLeaseStore) Get(groupID string, subscriberID string) (S
 }
 
 func (s *SQLiteSubscriberLeaseStore) Release(groupID string, subscriberID string, consumerID string, leaseToken string, leaseEpoch int64) error {
+	return s.releaseAt(groupID, subscriberID, consumerID, leaseToken, leaseEpoch, time.Now().UTC())
+}
+
+func (s *SQLiteSubscriberLeaseStore) releaseAt(groupID string, subscriberID string, consumerID string, leaseToken string, leaseEpoch int64, now time.Time) error {
 	key := SubscriberLeaseKey{GroupID: groupID, SubscriberID: subscriberID}
 	return s.withImmediateTx(func() error {
 		current, ok, err := s.get(key)
@@ -199,11 +203,14 @@ func (s *SQLiteSubscriberLeaseStore) Release(groupID string, subscriberID string
 		if !ok {
 			return ErrLeaseExpired
 		}
-		if current.ConsumerID != consumerID || current.LeaseToken != leaseToken || current.LeaseEpoch != leaseEpoch {
-			return ErrLeaseFence
+		if err := current.validateAction(subscriberLeaseActionRelease, now, consumerID, leaseToken, leaseEpoch); err != nil {
+			return errors.Unwrap(err)
 		}
-		_, err = s.db.Exec(`DELETE FROM subscriber_group_lease WHERE group_id = ? AND subscriber_id = ?`, groupID, subscriberID)
-		return err
+		current.ConsumerID = ""
+		current.LeaseToken = ""
+		current.ExpiresAt = time.Time{}
+		current.UpdatedAt = now
+		return s.save(current)
 	})
 }
 

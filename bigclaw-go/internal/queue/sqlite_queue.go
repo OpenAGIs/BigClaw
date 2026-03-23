@@ -188,19 +188,14 @@ func (q *SQLiteQueue) RenewLease(_ context.Context, lease *Lease, ttl time.Durat
 }
 
 func (q *SQLiteQueue) Ack(_ context.Context, lease *Lease) error {
-	result, err := q.db.Exec(`DELETE FROM tasks WHERE task_id=? AND leased=1 AND lease_worker=? AND attempt=?`, lease.TaskID, lease.WorkerID, lease.Attempt)
+	now := time.Now()
+	result, err := q.db.Exec(`DELETE FROM tasks WHERE task_id=? AND leased=1 AND lease_worker=? AND attempt=? AND lease_expires_ns > ?`, lease.TaskID, lease.WorkerID, lease.Attempt, now.UnixNano())
 	if err != nil {
 		return err
 	}
 	rows, _ := result.RowsAffected()
 	if rows != 1 {
-		if _, err := q.GetTask(context.Background(), lease.TaskID); err != nil {
-			if errors.Is(err, ErrTaskNotFound) {
-				return ErrTaskNotFound
-			}
-			return err
-		}
-		return ErrLeaseNotOwned
+		return q.classifyLeaseMutationFailure(lease, now)
 	}
 	return nil
 }
@@ -356,8 +351,10 @@ func (q *SQLiteQueue) updateStateAfterLease(lease *Lease, state domain.TaskState
 	if err != nil {
 		return err
 	}
+	now := time.Now()
 	result, err := q.db.Exec(`UPDATE tasks SET payload=?, state=?, available_at_ns=?, leased=0, lease_worker='', lease_expires_ns=0
 		WHERE task_id=? AND leased=1 AND lease_worker=? AND attempt=?
+		AND lease_expires_ns > ?
 		AND state NOT IN (?, ?)`,
 		updatedPayload,
 		string(state),
@@ -365,6 +362,7 @@ func (q *SQLiteQueue) updateStateAfterLease(lease *Lease, state domain.TaskState
 		lease.TaskID,
 		lease.WorkerID,
 		lease.Attempt,
+		now.UnixNano(),
 		string(domain.TaskCancelled),
 		string(domain.TaskDeadLetter),
 	)
@@ -373,15 +371,30 @@ func (q *SQLiteQueue) updateStateAfterLease(lease *Lease, state domain.TaskState
 	}
 	rows, _ := result.RowsAffected()
 	if rows != 1 {
-		if _, err := q.GetTask(context.Background(), lease.TaskID); err != nil {
-			if errors.Is(err, ErrTaskNotFound) {
-				return ErrTaskNotFound
-			}
-			return err
-		}
-		return ErrLeaseNotOwned
+		return q.classifyLeaseMutationFailure(lease, now)
 	}
 	return nil
+}
+
+func (q *SQLiteQueue) classifyLeaseMutationFailure(lease *Lease, now time.Time) error {
+	row := q.db.QueryRow(`SELECT leased, lease_worker, attempt, lease_expires_ns FROM tasks WHERE task_id=?`, lease.TaskID)
+	var leased int
+	var leaseWorker string
+	var attempt int
+	var leaseExpiresNS int64
+	if err := row.Scan(&leased, &leaseWorker, &attempt, &leaseExpiresNS); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrTaskNotFound
+		}
+		return err
+	}
+	if leased != 1 || leaseWorker != lease.WorkerID || attempt != lease.Attempt {
+		return ErrLeaseNotOwned
+	}
+	if leaseExpiresNS <= now.UnixNano() {
+		return ErrLeaseExpired
+	}
+	return ErrLeaseNotOwned
 }
 
 func (q *SQLiteQueue) Size(_ context.Context) int {

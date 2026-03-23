@@ -124,6 +124,9 @@ func (q *MemoryQueue) Ack(_ context.Context, lease *Lease) error {
 	if !current.Leased || current.LeaseWorker != lease.WorkerID || current.Attempt != lease.Attempt {
 		return ErrLeaseNotOwned
 	}
+	if !current.LeaseExpires.After(time.Now()) {
+		return ErrLeaseExpired
+	}
 	delete(q.items, lease.TaskID)
 	return nil
 }
@@ -138,6 +141,9 @@ func (q *MemoryQueue) Requeue(_ context.Context, lease *Lease, availableAt time.
 	}
 	if !current.Leased || current.LeaseWorker != lease.WorkerID || current.Attempt != lease.Attempt {
 		return ErrLeaseNotOwned
+	}
+	if !current.LeaseExpires.After(time.Now()) {
+		return ErrLeaseExpired
 	}
 	if current.Task.State == domain.TaskCancelled || current.Task.State == domain.TaskDeadLetter {
 		return ErrLeaseNotOwned
@@ -161,6 +167,9 @@ func (q *MemoryQueue) DeadLetter(_ context.Context, lease *Lease, reason string)
 	}
 	if !current.Leased || current.LeaseWorker != lease.WorkerID || current.Attempt != lease.Attempt {
 		return ErrLeaseNotOwned
+	}
+	if !current.LeaseExpires.After(time.Now()) {
+		return ErrLeaseExpired
 	}
 	if current.Task.State == domain.TaskCancelled || current.Task.State == domain.TaskDeadLetter {
 		return ErrLeaseNotOwned

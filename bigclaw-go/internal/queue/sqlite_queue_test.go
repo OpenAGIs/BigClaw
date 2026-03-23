@@ -144,6 +144,61 @@ func TestSQLiteQueueDoesNotDoubleLeaseAcrossClients(t *testing.T) {
 	}
 }
 
+func TestSQLiteQueueRejectsStaleOwnerAfterExpiryTakeover(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.db")
+	primary, err := NewSQLiteQueue(path)
+	if err != nil {
+		t.Fatalf("new sqlite queue: %v", err)
+	}
+	defer primary.Close()
+	secondary, err := NewSQLiteQueue(path)
+	if err != nil {
+		t.Fatalf("new secondary sqlite queue: %v", err)
+	}
+	defer secondary.Close()
+
+	if err := primary.Enqueue(ctx, domain.Task{ID: "task-stale-owner", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+
+	leasedTask, firstLease, err := primary.LeaseNext(ctx, "worker-a", 40*time.Millisecond)
+	if err != nil || leasedTask == nil || firstLease == nil {
+		t.Fatalf("first lease: %v task=%v lease=%v", err, leasedTask, firstLease)
+	}
+
+	time.Sleep(60 * time.Millisecond)
+
+	takeoverTask, secondLease, err := secondary.LeaseNext(ctx, "worker-b", time.Minute)
+	if err != nil || takeoverTask == nil || secondLease == nil {
+		t.Fatalf("second lease: %v task=%v lease=%v", err, takeoverTask, secondLease)
+	}
+	if takeoverTask.ID != leasedTask.ID {
+		t.Fatalf("expected takeover of %s, got %s", leasedTask.ID, takeoverTask.ID)
+	}
+
+	if err := primary.RenewLease(ctx, firstLease, time.Minute); !errors.Is(err, ErrLeaseNotOwned) {
+		t.Fatalf("expected stale renew to return ErrLeaseNotOwned, got %v", err)
+	}
+	if err := primary.Ack(ctx, firstLease); !errors.Is(err, ErrLeaseNotOwned) {
+		t.Fatalf("expected stale ack to return ErrLeaseNotOwned, got %v", err)
+	}
+	if err := primary.Requeue(ctx, firstLease, time.Now().Add(time.Minute)); !errors.Is(err, ErrLeaseNotOwned) {
+		t.Fatalf("expected stale requeue to return ErrLeaseNotOwned, got %v", err)
+	}
+
+	snapshot, err := secondary.GetTask(ctx, takeoverTask.ID)
+	if err != nil {
+		t.Fatalf("get task after stale-owner attempts: %v", err)
+	}
+	if !snapshot.Leased || snapshot.LeaseWorker != "worker-b" || snapshot.Attempt != secondLease.Attempt {
+		t.Fatalf("expected takeover lease to remain authoritative, got %+v", snapshot)
+	}
+	if err := secondary.Ack(ctx, secondLease); err != nil {
+		t.Fatalf("ack takeover lease: %v", err)
+	}
+}
+
 func TestSQLiteQueueDeadLetterReplayPersistsAcrossReopen(t *testing.T) {
 	ctx := context.Background()
 	path := filepath.Join(t.TempDir(), "queue.db")
@@ -380,6 +435,34 @@ func TestSQLiteQueueRejectsRenewalAfterLeaseExpiry(t *testing.T) {
 	time.Sleep(40 * time.Millisecond)
 	if err := q.RenewLease(ctx, lease, time.Minute); !errors.Is(err, ErrLeaseExpired) {
 		t.Fatalf("expected ErrLeaseExpired, got %v", err)
+	}
+}
+
+func TestSQLiteQueueRejectsExpiredLeaseMutations(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.db")
+	q, err := NewSQLiteQueue(path)
+	if err != nil {
+		t.Fatalf("new sqlite queue: %v", err)
+	}
+	defer q.Close()
+
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-expired-mutations", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	_, lease, err := q.LeaseNext(ctx, "worker-a", 25*time.Millisecond)
+	if err != nil || lease == nil {
+		t.Fatalf("lease: %v lease=%v", err, lease)
+	}
+	time.Sleep(40 * time.Millisecond)
+	if err := q.Ack(ctx, lease); !errors.Is(err, ErrLeaseExpired) {
+		t.Fatalf("expected expired ack to return ErrLeaseExpired, got %v", err)
+	}
+	if err := q.Requeue(ctx, lease, time.Now()); !errors.Is(err, ErrLeaseExpired) {
+		t.Fatalf("expected expired requeue to return ErrLeaseExpired, got %v", err)
+	}
+	if err := q.DeadLetter(ctx, lease, "expired"); !errors.Is(err, ErrLeaseExpired) {
+		t.Fatalf("expected expired dead-letter to return ErrLeaseExpired, got %v", err)
 	}
 }
 
