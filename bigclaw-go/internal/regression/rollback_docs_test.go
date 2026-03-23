@@ -131,6 +131,15 @@ func TestRollbackDocsStayAligned(t *testing.T) {
 	if liveShadowTriggerSurface.ReviewerPath.DigestIssue.ID != "OPE-254" || liveShadowTriggerSurface.ReviewerPath.DigestIssue.Slug != "BIG-PAR-088" {
 		t.Fatalf("unexpected live-shadow reviewer digest issue: %+v", liveShadowTriggerSurface.ReviewerPath.DigestIssue)
 	}
+
+	liveShadowIndexSummary := readLiveShadowSummary(t, repoRoot, "docs/reports/live-shadow-index.json")
+	assertLiveShadowRollbackSummary(t, liveShadowIndexSummary)
+
+	liveShadowSummary := readLiveShadowSummary(t, repoRoot, "docs/reports/live-shadow-summary.json")
+	assertLiveShadowRollbackSummary(t, liveShadowSummary)
+
+	liveShadowBundleSummary := readLiveShadowSummary(t, repoRoot, "docs/reports/live-shadow-runs/20260313T085655Z/summary.json")
+	assertLiveShadowRollbackSummary(t, liveShadowBundleSummary)
 }
 
 type rollbackTriggerSurface struct {
@@ -154,6 +163,25 @@ type rollbackTriggerSurface struct {
 	Warnings        []map[string]any `json:"warnings"`
 	Blockers        []map[string]any `json:"blockers"`
 	ManualOnlyPaths []map[string]any `json:"manual_only_paths"`
+}
+
+type liveShadowSummary struct {
+	RollbackTriggerSurface struct {
+		Status                   string `json:"status"`
+		AutomationBoundary       string `json:"automation_boundary"`
+		AutomatedRollbackTrigger bool   `json:"automated_rollback_trigger"`
+		Distinctions             struct {
+			Blockers        int `json:"blockers"`
+			Warnings        int `json:"warnings"`
+			ManualOnlyPaths int `json:"manual_only_paths"`
+		} `json:"distinctions"`
+		Issue struct {
+			ID   string `json:"id"`
+			Slug string `json:"slug"`
+		} `json:"issue"`
+		DigestPath string `json:"digest_path"`
+		SummaryPath string `json:"summary_path"`
+	} `json:"rollback_trigger_surface"`
 }
 
 func readRollbackTriggerSurface(t *testing.T, root string) rollbackTriggerSurface {
@@ -180,6 +208,55 @@ func readLiveShadowRollbackTriggerSurface(t *testing.T, root string) rollbackTri
 		t.Fatalf("parse live-shadow rollback trigger surface: %v", err)
 	}
 	return payload
+}
+
+func readLiveShadowSummary(t *testing.T, root string, relative string) liveShadowSummary {
+	t.Helper()
+	contents, err := os.ReadFile(filepath.Join(root, relative))
+	if err != nil {
+		t.Fatalf("read %s: %v", relative, err)
+	}
+	var payload liveShadowSummary
+	if err := json.Unmarshal(contents, &payload); err != nil {
+		t.Fatalf("parse %s: %v", relative, err)
+	}
+	if payload.RollbackTriggerSurface.Status == "" {
+		var wrapped struct {
+			Latest liveShadowSummary `json:"latest"`
+		}
+		if err := json.Unmarshal(contents, &wrapped); err != nil {
+			t.Fatalf("parse wrapped %s: %v", relative, err)
+		}
+		if wrapped.Latest.RollbackTriggerSurface.Status != "" {
+			return wrapped.Latest
+		}
+	}
+	return payload
+}
+
+func assertLiveShadowRollbackSummary(t *testing.T, payload liveShadowSummary) {
+	t.Helper()
+	if payload.RollbackTriggerSurface.Status != "manual-review-required" {
+		t.Fatalf("unexpected live-shadow rollback status: %s", payload.RollbackTriggerSurface.Status)
+	}
+	if payload.RollbackTriggerSurface.AutomationBoundary != "manual_only" {
+		t.Fatalf("unexpected live-shadow rollback automation boundary: %s", payload.RollbackTriggerSurface.AutomationBoundary)
+	}
+	if payload.RollbackTriggerSurface.AutomatedRollbackTrigger {
+		t.Fatal("live-shadow rollback summary must not claim automated rollback execution")
+	}
+	if payload.RollbackTriggerSurface.Distinctions.Blockers != 3 || payload.RollbackTriggerSurface.Distinctions.Warnings != 1 || payload.RollbackTriggerSurface.Distinctions.ManualOnlyPaths != 2 {
+		t.Fatalf("unexpected live-shadow rollback distinctions: %+v", payload.RollbackTriggerSurface.Distinctions)
+	}
+	if payload.RollbackTriggerSurface.Issue.ID != "OPE-254" || payload.RollbackTriggerSurface.Issue.Slug != "BIG-PAR-088" {
+		t.Fatalf("unexpected live-shadow rollback issue: %+v", payload.RollbackTriggerSurface.Issue)
+	}
+	if payload.RollbackTriggerSurface.DigestPath != "docs/reports/rollback-safeguard-follow-up-digest.md" {
+		t.Fatalf("unexpected live-shadow rollback digest path: %s", payload.RollbackTriggerSurface.DigestPath)
+	}
+	if payload.RollbackTriggerSurface.SummaryPath != "docs/reports/rollback-trigger-surface.json" {
+		t.Fatalf("unexpected live-shadow rollback summary path: %s", payload.RollbackTriggerSurface.SummaryPath)
+	}
 }
 
 func repoRoot(t *testing.T) string {
