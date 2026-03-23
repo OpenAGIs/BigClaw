@@ -33,7 +33,8 @@
 - `OPE-185`
   - Migration evidence includes a shadow matrix across multiple sample tasks with matched terminal states, matched event sequences, an anonymized corpus coverage scorecard, and a repo-native live shadow mirror scorecard that summarizes parity drift and evidence freshness across the checked-in compare and matrix artifacts.
   - Supporting report: `docs/reports/migration-readiness-report.md`.
-  - Follow-up digests capture the remaining live shadow comparison, rollback safeguard trigger surface, and production corpus coverage caveats in `docs/reports/live-shadow-comparison-follow-up-digest.md`, `docs/reports/rollback-safeguard-follow-up-digest.md`, `docs/reports/rollback-trigger-surface.json`, and `docs/reports/production-corpus-migration-coverage-digest.md`.
+  - Runtime-facing mirror and rollback reviewer surfaces are available through `GET /debug/status` and `GET /v2/control-center` under `distributed_diagnostics.live_shadow_mirror_scorecard` and `distributed_diagnostics.migration_review_pack.rollback_trigger_surface`.
+  - Follow-up digests capture the remaining `OPE-266` / `BIG-PAR-092` live shadow comparison, `OPE-254` / `BIG-PAR-088` rollback safeguard trigger surface, and production corpus coverage caveats in `docs/reports/live-shadow-comparison-follow-up-digest.md`, `docs/reports/rollback-safeguard-follow-up-digest.md`, `docs/reports/rollback-trigger-surface.json`, and `docs/reports/production-corpus-migration-coverage-digest.md`.
 - `OPE-186`
   - Benchmark evidence includes a repeatable matrix runner plus `50x8`, `100x12`, `1000x24`, and `2000x24` soak runs with zero failures.
   - Supporting reports: `docs/reports/benchmark-readiness-report.md`, `docs/reports/benchmark-matrix-report.json`, `docs/reports/long-duration-soak-report.md`, `docs/reports/capacity-certification-report.md`, and `docs/reports/capacity-certification-matrix.json`.

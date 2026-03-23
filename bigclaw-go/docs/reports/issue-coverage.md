@@ -28,7 +28,7 @@ This document maps the current local MVP implementation to the Linear rewrite is
   - Follow-up caveats for external tracing backends, span propagation, telemetry pipeline controls, sampling policy, and high-cardinality handling are tracked in `docs/reports/tracing-backend-follow-up-digest.md`, `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`, and `docs/reports/telemetry-sampling-cardinality-evidence-pack.json`
 - `OPE-185` / `BIG-GO-010`
   - Covered by `docs/migration.md`, `docs/migration-shadow.md`, `scripts/migration/shadow_compare.py`, `scripts/migration/shadow_matrix.py`, `scripts/migration/live_shadow_scorecard.py`, `examples/shadow-corpus-manifest.json`, `docs/reports/migration-readiness-report.md`, `docs/reports/shadow-compare-report.json`, `docs/reports/shadow-matrix-report.json`, and `docs/reports/live-shadow-mirror-scorecard.json`
-  - Follow-up caveats for live shadow traffic comparison, rollback safeguard trigger surfaces, and production corpus coverage are tracked in `docs/reports/live-shadow-comparison-follow-up-digest.md`, `docs/reports/rollback-safeguard-follow-up-digest.md`, `docs/reports/rollback-trigger-surface.json`, and `docs/reports/production-corpus-migration-coverage-digest.md`
+  - Follow-up caveats for `OPE-266` / `BIG-PAR-092` live shadow traffic comparison, `OPE-254` / `BIG-PAR-088` rollback safeguard trigger surfaces, and production corpus coverage are tracked in `docs/reports/live-shadow-comparison-follow-up-digest.md`, `docs/reports/rollback-safeguard-follow-up-digest.md`, `docs/reports/rollback-trigger-surface.json`, and `docs/reports/production-corpus-migration-coverage-digest.md`
 - `OPE-186` / `BIG-GO-011`
   - Covered by `internal/queue/benchmark_test.go`, `internal/scheduler/benchmark_test.go`, `docs/benchmark-plan.md`, `docs/reports/benchmark-report.md`, `docs/reports/benchmark-readiness-report.md`, `docs/reports/benchmark-matrix-report.json`, `docs/reports/long-duration-soak-report.md`, `docs/reports/soak-local-report.json`, `docs/reports/soak-local-50x8.json`, `docs/reports/soak-local-100x12.json`, `docs/reports/soak-local-1000x24.json`, `docs/reports/soak-local-2000x24.json`, `docs/reports/live-validation-summary.json`, `scripts/benchmark/run_suite.sh`, `scripts/benchmark/run_matrix.py`, `scripts/benchmark/soak_local.py`, and `scripts/e2e/run_all.sh`
 - `OPE-3` / `BIG-PAR-098`
@@ -45,6 +45,9 @@ This document maps the current local MVP implementation to the Linear rewrite is
 - Coordination and continuation follow-ups referenced across the evidence set
   include `docs/reports/cross-process-coordination-boundary-digest.md` and
   `docs/reports/validation-bundle-continuation-digest.md`.
+- The runtime capability matrix in
+  `docs/reports/cross-process-coordination-capability-surface.json` makes the
+  remaining coordination posture explicit as `live_proven`, `harness_proven`, and `contract_only`.
 
 ## Remaining Gaps Before Honest Closure
 

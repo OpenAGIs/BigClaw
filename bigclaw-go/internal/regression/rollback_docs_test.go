@@ -72,6 +72,15 @@ func TestRollbackDocsStayAligned(t *testing.T) {
 				"OPE-254` / `BIG-PAR-088",
 			},
 		},
+		{
+			path: "../docs/openclaw-parallel-gap-analysis.md",
+			substrings: []string{
+				"Distributed diagnostics follow-up digests",
+				"Migration follow-up digests",
+				"OPE-254` / `BIG-PAR-088",
+				"rollback-safeguard-follow-up-digest.md",
+			},
+		},
 	}
 
 	for _, tc := range cases {
