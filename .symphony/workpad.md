@@ -26,3 +26,5 @@
 - Existing unrelated worktree changes in `bigclaw-go/internal/api/distributed.go` and `bigclaw-go/internal/api/v2.go` are treated as in-scope only where they support this issue.
 - Initial inspection shows the issue is already partially implemented in the worktree; remaining work is verification and any targeted fixes uncovered by tests.
 - Validation-adjusted assertions: `recovery.retried_runs=1` and `scheduling.queue_latency.waiting_tasks=1` for the retry fixture, matching the current event semantics.
+- Local commit created: `34924f21d8945dcc974b4532440ab59ae71070d1` (`Implement distributed scheduling diagnostics report`).
+- Push blocker: `GIT_TERMINAL_PROMPT=0 git push --set-upstream origin BIGCLAW-174` failed with `fatal: could not read Username for 'https://github.com': terminal prompts disabled`; SSH fallback also failed with `Permission denied (publickey)`.
