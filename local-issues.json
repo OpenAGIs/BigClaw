@@ -2674,6 +2674,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added `bigclaw-go/internal/regression/provider_live_handoff_evidence_pack_test.go` to pin the checked-in provider live handoff evidence pack: backend posture, isolation summary, replay/live scenario invariants, and linked reviewer docs now have dedicated regression coverage. Validation: `cd bigclaw-go && go test ./internal/regression -run TestProviderLiveHandoffIsolationEvidencePackStaysAligned` -> ok; `cd bigclaw-go && go test ./internal/regression` -> ok; `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `eef3659d3b592b1bca03bc6587b6bdfcfbb8e598` matches remote SHA `eef3659d3b592b1bca03bc6587b6bdfcfbb8e598` with `status: ok` and `synced: true`; `git log -1 --stat` -> captured for commit `eef3659d3b592b1bca03bc6587b6bdfcfbb8e598`. Commit SHA: `eef3659d3b592b1bca03bc6587b6bdfcfbb8e598`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-275 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-23T15:36:07Z"
+        }
+      ],
       "created_at": "2026-03-23T15:30:55Z",
       "description": "Add regression coverage for bigclaw-go/docs/reports/provider-live-handoff-isolation-evidence-pack.json so backend posture, replay/live isolation summary, scenario invariants, and linked reviewer artifacts stay aligned with the checked-in provider handoff evidence surface.",
       "id": "big-par-275",
@@ -2683,9 +2690,9 @@
         "provider-handoff"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add provider live handoff evidence pack regression coverage",
-      "updated_at": "2026-03-23T15:33:08Z"
+      "updated_at": "2026-03-23T15:36:07Z"
     }
   ]
 }
