@@ -2734,6 +2734,21 @@
       "state": "Done",
       "title": "Add live-shadow rollback bundle regression coverage",
       "updated_at": "2026-03-23T15:41:48Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T15:56:29Z",
+      "description": "Normalize the validation-bundle continuation reviewer wording so the digest, planner guidance, and Go regression expectations all describe the current workflow-triggered refresh contract instead of mixing in stale manual-only language.",
+      "id": "big-par-279",
+      "identifier": "BIG-PAR-279",
+      "labels": [
+        "documentation",
+        "validation"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Normalize continuation workflow-triggered wording",
+      "updated_at": "2026-03-23T16:10:00Z"
     }
   ]
 }

@@ -33,7 +33,7 @@ func TestFollowUpLaneDocsStayAligned(t *testing.T) {
 				"OPE-271` / `BIG-PAR-082",
 				"validation-bundle-continuation-policy-gate.json",
 				"rolling continuation scorecard",
-				"continuation across future validation bundles remains manual",
+				"continuation across future validation bundles remains workflow-triggered",
 			},
 		},
 		{

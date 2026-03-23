@@ -48,7 +48,7 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 23, 2026:
-  - active slices: none
+  - active slices: `BIG-PAR-279` — Normalize continuation workflow-triggered wording
   - standby slices: none
   - recently completed slices: `BIG-PAR-270` — Add live validation summary regression coverage; `BIG-PAR-271` — Add broker validation summary regression coverage; `BIG-PAR-272` — Add shared queue companion summary regression coverage; `BIG-PAR-273` — Add live validation index regression coverage; `BIG-PAR-274` — Add shared queue report regression coverage; `BIG-PAR-275` — Add observability follow-up regression coverage; `BIG-PAR-276` — Add coordination contract-only regression coverage; `BIG-PAR-277` — Add live-shadow rollback bundle regression coverage
   - queue status: `queue_runnable=0`, `target_in_progress=2`
@@ -184,3 +184,4 @@ longer waits on Linear to keep issue execution moving.
 57. `BIG-PAR-275`
 58. `BIG-PAR-276`
 59. `BIG-PAR-277`
+60. `BIG-PAR-279`
