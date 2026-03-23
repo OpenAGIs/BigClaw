@@ -2428,6 +2428,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Updated `bigclaw-go/docs/reports/benchmark-readiness-report.md` and `bigclaw-go/docs/reports/epic-closure-readiness-report.md` so maintained readiness reports now route unfinished hardening through the canonical follow-up index, while preserving their benchmark and validation entrypoints. Added `bigclaw-go/internal/regression/readiness_followup_index_docs_test.go` to pin those report entrypoints.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestReadinessFollowUpIndexDocsStayAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `git push origin HEAD:symphony/BIG-PAR-240` -> ok after a transient post-commit SSH transport failure in the auto-sync hook\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `a872107e39e74cd9796764d03f494357b1b5b236` matches remote SHA `a872107e39e74cd9796764d03f494357b1b5b236` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `a872107e39e74cd9796764d03f494357b1b5b236`\n\nCommit SHA: `a872107e39e74cd9796764d03f494357b1b5b236`\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-240 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-23T06:38:30Z"
+        }
+      ],
       "created_at": "2026-03-23T06:32:37Z",
       "description": "Update benchmark and epic-closure readiness reports so remaining hardening guidance routes through the canonical parallel follow-up index and add regression coverage for the maintained report entrypoints.",
       "id": "big-par-268",
@@ -2436,9 +2443,23 @@
         "documentation"
       ],
       "priority": 4,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Rewire readiness reports to canonical follow-up index",
-      "updated_at": "2026-03-23T06:32:37Z"
+      "updated_at": "2026-03-23T06:38:30Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T06:38:30Z",
+      "description": "Add regression coverage for bigclaw-go/docs/reports/parallel-validation-matrix.md so lane commands, evidence paths, and companion proof pointers cannot drift silently from the checked-in validation surfaces.",
+      "id": "big-par-269",
+      "identifier": "BIG-PAR-269",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Backlog",
+      "title": "Add canonical validation matrix regression coverage",
+      "updated_at": "2026-03-23T06:38:30Z"
     }
   ]
 }

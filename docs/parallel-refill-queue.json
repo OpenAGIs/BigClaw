@@ -66,12 +66,13 @@
       "BIG-PAR-258",
       "BIG-PAR-259",
       "BIG-PAR-260",
-      "BIG-PAR-261"
-    ],
-    "active": [
+      "BIG-PAR-261",
       "BIG-PAR-268"
     ],
-    "standby": []
+    "active": [],
+    "standby": [
+      "BIG-PAR-269"
+    ]
   },
   "issue_order": [
     "BIG-GOM-301",
@@ -123,7 +124,8 @@
     "BIG-PAR-259",
     "BIG-PAR-260",
     "BIG-PAR-261",
-    "BIG-PAR-268"
+    "BIG-PAR-268",
+    "BIG-PAR-269"
   ],
   "issues": [
     {
@@ -454,7 +456,13 @@
       "identifier": "BIG-PAR-268",
       "title": "Rewire readiness reports to canonical follow-up index",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-269",
+      "title": "Add canonical validation matrix regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Backlog"
     }
   ]
 }
