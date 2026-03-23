@@ -2124,6 +2124,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-254` after adding regression coverage for the runtime-facing follow-up references and aligning the missing takeover and continuation lane identifiers in the live reviewer docs.\n\nWhat changed:\n- Added `bigclaw-go/internal/regression/runtime_report_followup_docs_test.go` to keep the live-validation index, multi-node coordination report, event-bus reliability report, and the linked takeover/continuation digests aligned.\n- Updated `bigclaw-go/docs/reports/live-validation-index.md`, `bigclaw-go/docs/reports/multi-node-coordination-report.md`, and `bigclaw-go/docs/reports/event-bus-reliability-report.md` to carry the authoritative `OPE-269` / `BIG-PAR-080` and `OPE-271` / `BIG-PAR-082` follow-up identifiers.\n- Re-ran the full `internal/regression` package to confirm the new runtime-report alignment check passes alongside the existing doc coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `d978c52983dfed7a86f7c41662bd9e2aaf4f10ef` matches remote SHA `d978c52983dfed7a86f7c41662bd9e2aaf4f10ef` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `d978c52983dfed7a86f7c41662bd9e2aaf4f10ef`\n\nCommit: `d978c52983dfed7a86f7c41662bd9e2aaf4f10ef`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180.",
+          "created_at": "2026-03-23T05:01:03Z"
+        }
+      ],
       "created_at": "2026-03-23T04:56:54Z",
       "description": "Add regression coverage that keeps runtime-facing reports and bundle indexes aligned with the follow-up lane identifiers for subscriber takeover and validation continuation; patch missing OPE-269 / BIG-PAR-080 and OPE-271 / BIG-PAR-082 references in live-validation and coordination-facing docs.",
       "id": "big-par-254",
@@ -2132,9 +2139,9 @@
         "documentation"
       ],
       "priority": 4,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add runtime report follow-up ID coverage",
-      "updated_at": "2026-03-23T04:56:54Z"
+      "updated_at": "2026-03-23T05:01:03Z"
     }
   ]
 }

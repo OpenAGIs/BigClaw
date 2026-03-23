@@ -58,11 +58,10 @@
       "BIG-PAR-250",
       "BIG-PAR-251",
       "BIG-PAR-252",
-      "BIG-PAR-253"
-    ],
-    "active": [
+      "BIG-PAR-253",
       "BIG-PAR-254"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -360,7 +359,7 @@
       "identifier": "BIG-PAR-254",
       "title": "Add runtime report follow-up ID coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
