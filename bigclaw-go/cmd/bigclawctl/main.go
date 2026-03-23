@@ -851,18 +851,14 @@ func parseOptionalTime(value string) (time.Time, error) {
 func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply bool, refreshURL string, targetOverride *int, syncQueueStatus bool, queuePath string, localIssuesPath string) error {
 	queueStatusUpdates := 0
 	queueStatusWritten := false
+	recentBatchesUpdated := false
+	recentBatchesWritten := false
 	if syncQueueStatus && client.backend() == "local" {
 		allIssues, err := client.fetchIssueStates(queue.ProjectSlug(), nil)
 		if err != nil {
 			return err
 		}
 		queueStatusUpdates = queue.SyncStatusFromStates(refill.IssueStateMap(allIssues))
-		if apply && queueStatusUpdates > 0 {
-			if err := queue.Save(); err != nil {
-				return err
-			}
-			queueStatusWritten = true
-		}
 	}
 
 	refillStates := make([]string, 0, len(queue.RefillStates()))
@@ -886,6 +882,14 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 			return err
 		}
 		liveStateMap = refill.IssueStateMap(allIssues)
+		recentBatchesUpdated = queue.RefreshRecentBatchesFromStates(liveStateMap)
+	}
+	if apply && (queueStatusUpdates > 0 || recentBatchesUpdated) {
+		if err := queue.Save(); err != nil {
+			return err
+		}
+		queueStatusWritten = queueStatusUpdates > 0
+		recentBatchesWritten = recentBatchesUpdated
 	}
 	active := map[string]struct{}{}
 	issueIDs := map[string]string{}
@@ -903,15 +907,18 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		target = *targetOverride
 	}
 	payload := map[string]any{
-		"active_in_progress":   refill.SortedActive(issues),
-		"backend":              client.backend(),
-		"target_in_progress":   target,
-		"candidates":           candidates,
-		"mode":                 map[bool]string{true: "apply", false: "dry-run"}[apply],
-		"queue_status_synced":  syncQueueStatus && client.backend() == "local",
-		"queue_status_updates": queueStatusUpdates,
-		"queue_status_written": queueStatusWritten,
-		"queue_path":           queuePath,
+		"active_in_progress":     refill.SortedActive(issues),
+		"backend":                client.backend(),
+		"target_in_progress":     target,
+		"candidates":             candidates,
+		"mode":                   map[bool]string{true: "apply", false: "dry-run"}[apply],
+		"recent_batches_synced":  client.backend() == "local",
+		"recent_batches_updated": recentBatchesUpdated,
+		"recent_batches_written": recentBatchesWritten,
+		"queue_status_synced":    syncQueueStatus && client.backend() == "local",
+		"queue_status_updates":   queueStatusUpdates,
+		"queue_status_written":   queueStatusWritten,
+		"queue_path":             queuePath,
 	}
 	if trim(localIssuesPath) != "" {
 		payload["local_issues_path"] = localIssuesPath

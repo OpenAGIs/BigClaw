@@ -41,7 +41,10 @@
       "BIG-PAR-231",
       "BIG-PAR-234"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-241",
+      "BIG-PAR-242"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -66,7 +69,9 @@
     "BIG-PAR-229",
     "BIG-PAR-230",
     "BIG-PAR-231",
-    "BIG-PAR-234"
+    "BIG-PAR-234",
+    "BIG-PAR-241",
+    "BIG-PAR-242"
   ],
   "issues": [
     {
@@ -200,6 +205,18 @@
       "title": "bigclawctl: support --help at root and subcommands",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-241",
+      "title": "Serialize local tracker writes with an explicit lock",
+      "track": "Tracker and Refill Hygiene",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-242",
+      "title": "Sync refill recent-batch metadata from the local tracker",
+      "track": "Tracker and Refill Hygiene",
+      "status": "In Progress"
     }
   ]
 }

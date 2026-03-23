@@ -166,3 +166,91 @@ func TestLocalIssueStoreSaveDoesNotEscapeArrowTokens(t *testing.T) {
 		t.Fatalf("expected no HTML escaping, got %s", text)
 	}
 }
+
+func TestLocalIssueStoreAddCommentReloadsLatestStateBeforeSaving(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-241",
+      "identifier": "BIG-PAR-241",
+      "title": "Serialize local tracker writes with an explicit lock",
+      "state": "In Progress",
+      "comments": []
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	storeA, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store A: %v", err)
+	}
+	storeB, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store B: %v", err)
+	}
+
+	if err := storeA.AddComment("BIG-PAR-241", LocalIssueComment{
+		Author:    "codex",
+		Body:      "first writer",
+		CreatedAt: time.Date(2026, 3, 23, 2, 45, 0, 0, time.UTC),
+	}); err != nil {
+		t.Fatalf("add comment with store A: %v", err)
+	}
+	if err := storeB.AddComment("BIG-PAR-241", LocalIssueComment{
+		Author:    "codex",
+		Body:      "second writer",
+		CreatedAt: time.Date(2026, 3, 23, 2, 45, 1, 0, time.UTC),
+	}); err != nil {
+		t.Fatalf("add comment with store B: %v", err)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"body": "first writer"`) || !strings.Contains(text, `"body": "second writer"`) {
+		t.Fatalf("expected both comments to persist after stale reload protection, got %s", text)
+	}
+}
+
+func TestLocalIssueStoreAddCommentRetriesTransientLockFile(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-241",
+      "identifier": "BIG-PAR-241",
+      "title": "Serialize local tracker writes with an explicit lock",
+      "state": "In Progress"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	lockPath := storePath + ".lock"
+	if err := os.WriteFile(lockPath, []byte("held"), 0o644); err != nil {
+		t.Fatalf("write transient lock file: %v", err)
+	}
+	go func() {
+		time.Sleep(40 * time.Millisecond)
+		_ = os.Remove(lockPath)
+	}()
+
+	if err := store.AddComment("BIG-PAR-241", LocalIssueComment{
+		Author:    "codex",
+		Body:      "lock released",
+		CreatedAt: time.Date(2026, 3, 23, 2, 46, 0, 0, time.UTC),
+	}); err != nil {
+		t.Fatalf("expected transient lock retry to succeed, got %v", err)
+	}
+}

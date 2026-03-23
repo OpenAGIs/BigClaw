@@ -51,6 +51,15 @@ type TrackedIssue struct {
 	StateName  string
 }
 
+var terminalStateSet = map[string]struct{}{
+	"archived":  {},
+	"canceled":  {},
+	"cancelled": {},
+	"closed":    {},
+	"done":      {},
+	"duplicate": {},
+}
+
 func LoadQueue(path string) (*ParallelIssueQueue, error) {
 	absolute, err := filepath.Abs(path)
 	if err != nil {
@@ -202,31 +211,43 @@ func issueRecordStateMap(records []IssueRecord) map[string]string {
 }
 
 func countRunnable(issueOrder []string, states map[string]string) int {
-	terminal := map[string]struct{}{
-		"Archived":   {},
-		"Canceled":   {},
-		"Canceled.":  {},
-		"Cancelled":  {},
-		"Cancelled.": {},
-		"Closed":     {},
-		"Closed.":    {},
-		"Done":       {},
-		"Done.":      {},
-		"Duplicate":  {},
-	}
 	count := 0
 	for _, identifier := range issueOrder {
-		status, ok := states[identifier]
-		if !ok || status == "" {
+		status := statusNormalize(states[identifier])
+		if status == "" || !isTerminalStatus(status) {
 			count++
-			continue
 		}
-		if _, ok := terminal[status]; ok {
-			continue
-		}
-		count++
 	}
 	return count
+}
+
+func statusNormalize(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	if strings.HasSuffix(value, ".") {
+		value = strings.TrimSuffix(value, ".")
+	}
+	return strings.ToLower(value)
+}
+
+func isTerminalStatus(status string) bool {
+	if normalized := statusNormalize(status); normalized != "" {
+		_, ok := terminalStateSet[normalized]
+		return ok
+	}
+	return false
+}
+
+func (q *ParallelIssueQueue) normalizedRefillStateSet() map[string]struct{} {
+	result := map[string]struct{}{}
+	for state := range q.RefillStates() {
+		if normalized := statusNormalize(state); normalized != "" {
+			result[normalized] = struct{}{}
+		}
+	}
+	return result
 }
 
 func (q *ParallelIssueQueue) SelectCandidates(activeIdentifiers map[string]struct{}, issueStates map[string]string, targetOverride *int) []string {
@@ -239,7 +260,7 @@ func (q *ParallelIssueQueue) SelectCandidates(activeIdentifiers map[string]struc
 		return []string{}
 	}
 	candidates := []string{}
-	refillStates := q.RefillStates()
+	refillStates := q.normalizedRefillStateSet()
 	for _, identifier := range q.IssueOrder() {
 		if needed == 0 {
 			break
@@ -247,7 +268,7 @@ func (q *ParallelIssueQueue) SelectCandidates(activeIdentifiers map[string]struc
 		if _, ok := activeIdentifiers[identifier]; ok {
 			continue
 		}
-		if _, ok := refillStates[issueStates[identifier]]; ok {
+		if _, ok := refillStates[statusNormalize(issueStates[identifier])]; ok {
 			candidates = append(candidates, identifier)
 			needed--
 		}
@@ -274,4 +295,54 @@ func SortedActive(issues []TrackedIssue) []string {
 	}
 	sort.Strings(active)
 	return active
+}
+
+func equalStringSlices(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func (q *ParallelIssueQueue) RefreshRecentBatchesFromStates(states map[string]string) bool {
+	if len(states) == 0 {
+		return false
+	}
+	active, completed, standby := q.classifyRecentBatches(states)
+	if equalStringSlices(q.payload.RecentBatches.Active, active) &&
+		equalStringSlices(q.payload.RecentBatches.Completed, completed) &&
+		equalStringSlices(q.payload.RecentBatches.Standby, standby) {
+		return false
+	}
+	q.payload.RecentBatches.Active = active
+	q.payload.RecentBatches.Completed = completed
+	q.payload.RecentBatches.Standby = standby
+	return true
+}
+
+func (q *ParallelIssueQueue) classifyRecentBatches(states map[string]string) ([]string, []string, []string) {
+	active := []string{}
+	completed := []string{}
+	standby := []string{}
+	activeState := statusNormalize(q.ActivateStateName())
+	for _, identifier := range q.IssueOrder() {
+		status := statusNormalize(states[identifier])
+		if status == "" {
+			continue
+		}
+		switch {
+		case status == activeState:
+			active = append(active, identifier)
+		case isTerminalStatus(status):
+			completed = append(completed, identifier)
+		default:
+			standby = append(standby, identifier)
+		}
+	}
+	return active, completed, standby
 }

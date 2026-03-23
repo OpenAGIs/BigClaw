@@ -70,6 +70,36 @@ func TestParallelIssueQueueRunnableCountForStatesPrefersLiveStateMap(t *testing.
 	}
 }
 
+func TestParallelIssueQueueRefreshRecentBatchesFromStates(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-241", "BIG-PAR-242", "BIG-PAR-243"},
+		},
+	}
+	queue.payload.Policy.RefillStates = []string{"Todo", "Backlog"}
+	states := map[string]string{
+		"BIG-PAR-241": "In Progress",
+		"BIG-PAR-242": "Done",
+		"BIG-PAR-243": "Backlog",
+	}
+	updated := queue.RefreshRecentBatchesFromStates(states)
+	if !updated {
+		t.Fatalf("expected recent batches to report a change")
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Active, []string{"BIG-PAR-241"}) {
+		t.Fatalf("unexpected active batches: %v", queue.payload.RecentBatches.Active)
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Completed, []string{"BIG-PAR-242"}) {
+		t.Fatalf("unexpected completed batches: %v", queue.payload.RecentBatches.Completed)
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Standby, []string{"BIG-PAR-243"}) {
+		t.Fatalf("unexpected standby batches: %v", queue.payload.RecentBatches.Standby)
+	}
+	if queue.RefreshRecentBatchesFromStates(states) {
+		t.Fatalf("expected no change when data is already fresh")
+	}
+}
+
 func TestParallelIssueQueueSavePreservesBlockedReasonAndRecentBatches(t *testing.T) {
 	queuePath := filepath.Join(t.TempDir(), "queue.json")
 	queue := &ParallelIssueQueue{

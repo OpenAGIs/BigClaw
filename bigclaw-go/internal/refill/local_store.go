@@ -13,6 +13,11 @@ import (
 
 var ErrLocalIssueNotFound = errors.New("local issue not found")
 
+const (
+	localIssueLockRetryCount = 10
+	localIssueLockRetryDelay = 25 * time.Millisecond
+)
+
 type LocalIssueStore struct {
 	path     string
 	issueMap []map[string]any
@@ -54,10 +59,18 @@ func LoadLocalIssueStore(path string) (*LocalIssueStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	body, err := os.ReadFile(absolute)
+	issues, err := readLocalIssueMaps(absolute)
+	if err != nil {
+		return nil, err
+	}
+	return &LocalIssueStore{path: absolute, issueMap: issues}, nil
+}
+
+func readLocalIssueMaps(path string) ([]map[string]any, error) {
+	body, err := os.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return &LocalIssueStore{path: absolute}, nil
+			return nil, nil
 		}
 		return nil, err
 	}
@@ -65,7 +78,7 @@ func LoadLocalIssueStore(path string) (*LocalIssueStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &LocalIssueStore{path: absolute, issueMap: issues}, nil
+	return issues, nil
 }
 
 func (s *LocalIssueStore) Issues() []LocalIssue {
@@ -122,12 +135,6 @@ func (s *LocalIssueStore) CreateIssue(params LocalIssueCreateParams) (LocalIssue
 		id = strings.ToLower(strings.ReplaceAll(identifier, "_", "-"))
 	}
 
-	for _, issue := range s.issueMap {
-		if strings.EqualFold(mapString(issue, "id"), id) || strings.EqualFold(mapString(issue, "identifier"), identifier) {
-			return LocalIssue{}, fmt.Errorf("issue %q already exists", identifier)
-		}
-	}
-
 	createdAt := params.CreatedAt
 	if createdAt.IsZero() {
 		createdAt = time.Now()
@@ -140,35 +147,45 @@ func (s *LocalIssueStore) CreateIssue(params LocalIssueCreateParams) (LocalIssue
 		stateName = "Todo"
 	}
 
-	entry := map[string]any{
-		"assigned_to_worker": params.AssignedToWorker,
-		"created_at":         createdAtString,
-		"description":        strings.TrimSpace(params.Description),
-		"id":                 id,
-		"identifier":         identifier,
-		"labels":             params.Labels,
-		"priority":           params.Priority,
-		"state":              stateName,
-		"title":              title,
-		"updated_at":         createdAtString,
-	}
-	s.issueMap = append(s.issueMap, entry)
+	created := LocalIssue{}
+	err := s.withWriteLock(func() error {
+		for _, issue := range s.issueMap {
+			if strings.EqualFold(mapString(issue, "id"), id) || strings.EqualFold(mapString(issue, "identifier"), identifier) {
+				return fmt.Errorf("issue %q already exists", identifier)
+			}
+		}
 
-	if err := s.Save(); err != nil {
+		entry := map[string]any{
+			"assigned_to_worker": params.AssignedToWorker,
+			"created_at":         createdAtString,
+			"description":        strings.TrimSpace(params.Description),
+			"id":                 id,
+			"identifier":         identifier,
+			"labels":             params.Labels,
+			"priority":           params.Priority,
+			"state":              stateName,
+			"title":              title,
+			"updated_at":         createdAtString,
+		}
+		s.issueMap = append(s.issueMap, entry)
+		created = LocalIssue{
+			ID:               id,
+			Identifier:       identifier,
+			Title:            title,
+			Description:      strings.TrimSpace(params.Description),
+			State:            stateName,
+			Priority:         params.Priority,
+			Labels:           params.Labels,
+			AssignedToWorker: params.AssignedToWorker,
+			CreatedAt:        createdAtString,
+			UpdatedAt:        createdAtString,
+		}
+		return s.saveUnlocked()
+	})
+	if err != nil {
 		return LocalIssue{}, err
 	}
-	return LocalIssue{
-		ID:               id,
-		Identifier:       identifier,
-		Title:            title,
-		Description:      strings.TrimSpace(params.Description),
-		State:            stateName,
-		Priority:         params.Priority,
-		Labels:           params.Labels,
-		AssignedToWorker: params.AssignedToWorker,
-		CreatedAt:        createdAtString,
-		UpdatedAt:        createdAtString,
-	}, nil
+	return created, nil
 }
 
 func decodeLocalIssueMaps(body []byte) ([]map[string]any, error) {
@@ -251,18 +268,23 @@ func (s *LocalIssueStore) IssueStates(stateNames []string) []TrackedIssue {
 }
 
 func (s *LocalIssueStore) UpdateIssueState(ref string, stateName string, now time.Time) (string, error) {
-	for _, issue := range s.issueMap {
-		if !issueMatchesRef(issue, ref) {
-			continue
+	updated := ""
+	err := s.withWriteLock(func() error {
+		for _, issue := range s.issueMap {
+			if !issueMatchesRef(issue, ref) {
+				continue
+			}
+			issue["state"] = stateName
+			issue["updated_at"] = now.UTC().Truncate(time.Second).Format(time.RFC3339)
+			updated = mapString(issue, "state")
+			return s.saveUnlocked()
 		}
-		issue["state"] = stateName
-		issue["updated_at"] = now.UTC().Truncate(time.Second).Format(time.RFC3339)
-		if err := s.Save(); err != nil {
-			return "", err
-		}
-		return mapString(issue, "state"), nil
+		return ErrLocalIssueNotFound
+	})
+	if err != nil {
+		return "", err
 	}
-	return "", ErrLocalIssueNotFound
+	return updated, nil
 }
 
 func (s *LocalIssueStore) AddComment(ref string, comment LocalIssueComment) error {
@@ -284,20 +306,68 @@ func (s *LocalIssueStore) AddComment(ref string, comment LocalIssueComment) erro
 		"created_at": timestamp,
 		"body":       body,
 	}
-	for _, issue := range s.issueMap {
-		if !issueMatchesRef(issue, ref) {
-			continue
+	return s.withWriteLock(func() error {
+		for _, issue := range s.issueMap {
+			if !issueMatchesRef(issue, ref) {
+				continue
+			}
+			comments := issueCommentList(issue["comments"])
+			comments = append(comments, entry)
+			issue["comments"] = comments
+			issue["updated_at"] = timestamp
+			return s.saveUnlocked()
 		}
-		comments := issueCommentList(issue["comments"])
-		comments = append(comments, entry)
-		issue["comments"] = comments
-		issue["updated_at"] = timestamp
-		return s.Save()
-	}
-	return ErrLocalIssueNotFound
+		return ErrLocalIssueNotFound
+	})
 }
 
 func (s *LocalIssueStore) Save() error {
+	return s.withFileLock(func() error {
+		return s.saveUnlocked()
+	})
+}
+
+func (s *LocalIssueStore) withWriteLock(fn func() error) error {
+	return s.withFileLock(func() error {
+		if err := s.reloadUnlocked(); err != nil {
+			return err
+		}
+		return fn()
+	})
+}
+
+func (s *LocalIssueStore) withFileLock(fn func() error) error {
+	lockPath := s.path + ".lock"
+	var lockFile *os.File
+	var err error
+	for attempt := 0; attempt < localIssueLockRetryCount; attempt++ {
+		lockFile, err = os.OpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+		if err == nil {
+			break
+		}
+		if !errors.Is(err, os.ErrExist) || attempt == localIssueLockRetryCount-1 {
+			return err
+		}
+		time.Sleep(time.Duration(attempt+1) * localIssueLockRetryDelay)
+	}
+	if lockFile == nil {
+		return errors.New("failed to acquire local issue lock")
+	}
+	_ = lockFile.Close()
+	defer os.Remove(lockPath)
+	return fn()
+}
+
+func (s *LocalIssueStore) reloadUnlocked() error {
+	issues, err := readLocalIssueMaps(s.path)
+	if err != nil {
+		return err
+	}
+	s.issueMap = issues
+	return nil
+}
+
+func (s *LocalIssueStore) saveUnlocked() error {
 	issues := s.issueMap
 	if issues == nil {
 		issues = []map[string]any{}
