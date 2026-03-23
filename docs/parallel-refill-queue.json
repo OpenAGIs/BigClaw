@@ -52,11 +52,10 @@
       "BIG-PAR-244",
       "BIG-PAR-245",
       "BIG-PAR-246",
-      "BIG-PAR-247"
-    ],
-    "active": [
+      "BIG-PAR-247",
       "BIG-PAR-248"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -312,7 +311,7 @@
       "identifier": "BIG-PAR-248",
       "title": "Expand SQLite queue reliability proof to 10k tasks",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
