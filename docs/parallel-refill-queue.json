@@ -44,7 +44,9 @@
       "BIG-PAR-242",
       "BIG-PAR-243"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-244"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -72,7 +74,8 @@
     "BIG-PAR-234",
     "BIG-PAR-241",
     "BIG-PAR-242",
-    "BIG-PAR-243"
+    "BIG-PAR-243",
+    "BIG-PAR-244"
   ],
   "issues": [
     {
@@ -224,6 +227,12 @@
       "title": "Reload local tracker state on each refill fetch",
       "track": "Tracker and Refill Hygiene",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-244",
+      "title": "Refresh refill queue docs for current local-backend behavior",
+      "track": "Tracker and Refill Hygiene",
+      "status": "In Progress"
     }
   ]
 }

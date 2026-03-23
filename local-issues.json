@@ -1747,6 +1747,23 @@
       "state": "Done",
       "title": "Reload local tracker state on each refill fetch",
       "updated_at": "2026-03-23T03:08:01Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T03:12:00Z",
+      "description": "Bring the refill queue documentation back in sync with the current local-backend behavior, including recent-batch metadata refresh and per-read tracker reloads.",
+      "id": "big-par-244",
+      "identifier": "BIG-PAR-244",
+      "labels": [
+        "parallel",
+        "docs",
+        "refill",
+        "local-tracker"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Refresh refill queue docs for current local-backend behavior",
+      "updated_at": "2026-03-23T03:12:00Z"
     }
   ]
 }

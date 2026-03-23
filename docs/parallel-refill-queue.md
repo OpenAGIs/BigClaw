@@ -47,15 +47,16 @@ longer waits on Linear to keep issue execution moving.
 
 ## Current batch
 
-- Current repo tranche status as of March 22, 2026:
+- Current repo tranche status as of March 23, 2026:
   - the Go-mainline cutover tranche is complete and merged to `main`
   - `BIG-PAR-220`, `BIG-PAR-221`, `BIG-PAR-222`, `BIG-PAR-223`, `BIG-PAR-224`, `BIG-PAR-225`, `BIG-PAR-226`, `BIG-PAR-227`, `BIG-PAR-228`, `BIG-PAR-229`, `BIG-PAR-230`, and `BIG-PAR-231` are now closed in the repo-native tracker
   - `BIG-PAR-234` closed: `bigclawctl` now supports root and subcommand `--help` with exit 0
+  - `BIG-PAR-241`, `BIG-PAR-242`, and `BIG-PAR-243` closed: local tracker writes now lock+reload safely, refill refreshes `recent_batches` from live tracker state, and local refill reads reload the tracker file between polls
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` to confirm whether any additional `Todo` slices should be promoted
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
   - add the next `BIG-PAR-*` identifiers to `docs/parallel-refill-queue.json` (`issue_order` plus a matching `issues[]` record) and create matching `local-issues.json` tracker entries
-  - once the next batch exists, run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to align queue metadata with the local tracker state
+  - once the next batch exists, run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to align queue `issues[].status` and `recent_batches` metadata with the local tracker state
 - Completed slices:
   - `BIG-GOM-301` — unified domain model and intake contract migration
   - `BIG-GOM-302` — risk, policy, and approval semantics migration
@@ -95,3 +96,7 @@ longer waits on Linear to keep issue execution moving.
 20. `BIG-PAR-230`
 21. `BIG-PAR-231`
 22. `BIG-PAR-234`
+23. `BIG-PAR-241`
+24. `BIG-PAR-242`
+25. `BIG-PAR-243`
+26. `BIG-PAR-244`
