@@ -65,7 +65,9 @@
       "BIG-PAR-257",
       "BIG-PAR-258"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-259"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -114,7 +116,8 @@
     "BIG-PAR-255",
     "BIG-PAR-256",
     "BIG-PAR-257",
-    "BIG-PAR-258"
+    "BIG-PAR-258",
+    "BIG-PAR-259"
   ],
   "issues": [
     {
@@ -392,6 +395,12 @@
       "title": "Align rollback trigger JSON follow-up metadata",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-259",
+      "title": "Align live shadow JSON follow-up metadata",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
