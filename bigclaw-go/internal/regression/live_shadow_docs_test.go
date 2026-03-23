@@ -23,6 +23,7 @@ func TestLiveShadowRuntimeDocsStayAligned(t *testing.T) {
 		{
 			path: "docs/reports/migration-readiness-report.md",
 			substrings: []string{
+				"OPE-266` / `BIG-PAR-092",
 				"GET /debug/status` live shadow mirror payload",
 				"GET /v2/control-center` distributed diagnostics live shadow mirror payload",
 				"`live_shadow_mirror_scorecard`",
