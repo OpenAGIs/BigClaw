@@ -48,32 +48,55 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 23, 2026:
-  - the Go-mainline cutover tranche is complete and merged to `main`
-  - `BIG-PAR-220`, `BIG-PAR-221`, `BIG-PAR-222`, `BIG-PAR-223`, `BIG-PAR-224`, `BIG-PAR-225`, `BIG-PAR-226`, `BIG-PAR-227`, `BIG-PAR-228`, `BIG-PAR-229`, `BIG-PAR-230`, and `BIG-PAR-231` are now closed in the repo-native tracker
-  - `BIG-PAR-234` closed: `bigclawctl` now supports root and subcommand `--help` with exit 0
-  - `BIG-PAR-235`, `BIG-PAR-236`, and `BIG-PAR-237` are closed with 429 fanout mitigation plus refill/local-tracker recovery hardening
-  - `BIG-PAR-238`, `BIG-PAR-239`, and `BIG-PAR-240` are now closed with queue seeding, local-tracker `recent_batches` sync, and drained-batch recovery documentation
-  - `BIG-PAR-241`, `BIG-PAR-242`, `BIG-PAR-243`, `BIG-PAR-244`, and `BIG-PAR-245` are closed with tracker write locking, refill reload hardening, doc refresh, and branch PR setup
-  - `BIG-PAR-246` is the active merge-readiness slice for refreshing this branch against current `main`
-  - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status and `recent_batches` metadata aligned after branch updates
+  - active slices: `BIG-PAR-247` — bigclawctl refill: sync queue markdown from canonical state
+  - standby slices: none
+  - recently completed slices: `BIG-PAR-239` — bigclawctl refill: sync recent_batches metadata from local tracker; `BIG-PAR-240` — Document queue seeding and drained-batch recovery workflow; `BIG-PAR-241` — Serialize local tracker writes with an explicit lock; `BIG-PAR-242` — Sync refill recent-batch metadata from the local tracker; `BIG-PAR-243` — Reload local tracker state on each refill fetch; `BIG-PAR-244` — Refresh refill queue docs for current local-backend behavior; `BIG-PAR-245` — Open PR for tracker and refill hardening branch; `BIG-PAR-246` — Refresh PR branch against main
+  - queue status: `queue_runnable=1`, `target_in_progress=2`
+  - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
-  - add the next `BIG-PAR-*` identifiers to `docs/parallel-refill-queue.json` (`issue_order` plus a matching `issues[]` record) and create matching `local-issues.json` tracker entries
-  - once the next batch exists, run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to align queue `issues[].status` and `recent_batches` metadata with the local tracker state
+  - seed the next `BIG-PAR-*` identifier with `bash scripts/ops/bigclawctl refill seed --local-issues local-issues.json --identifier BIG-PAR-XXX --title "..." --state Todo --recent-batch standby --json`
+  - once the next batch exists, run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to align queue metadata and this markdown companion with the local tracker state
 - Completed slices:
-  - `BIG-GOM-301` — unified domain model and intake contract migration
-  - `BIG-GOM-302` — risk, policy, and approval semantics migration
-  - `BIG-GOM-303` — workflow orchestration and scheduler loop migration
-  - `BIG-GOM-304` — observability, reporting, and weekly operations surface migration
-  - `BIG-GOM-305` — control center, triage, and operations view migration
-  - `BIG-GOM-306` — repo collaboration and lineage surface migration
-  - `BIG-GOM-307` — workflow, bootstrap, and GitHub sync toolchain migration
+  - `BIG-GOM-301` — Unified domain model and intake contract migration
+  - `BIG-GOM-302` — Risk, policy, and approval semantics migration
+  - `BIG-GOM-303` — Workflow orchestration and scheduler loop migration
+  - `BIG-GOM-304` — Observability, reporting, and weekly operations surface migration
+  - `BIG-GOM-305` — Control center, triage, and operations view migration
+  - `BIG-GOM-306` — Repo collaboration and lineage surface migration
+  - `BIG-GOM-307` — Workflow, bootstrap, and GitHub sync toolchain migration
   - `BIG-GOM-308` — Python deprecation and Go-only mainline switch
+  - `BIG-PAR-219` — Expose ahead/behind relation in github-sync status payload
+  - `BIG-PAR-220` — Go-first traceability refresh for issue plan evidence pointers
+  - `BIG-PAR-221` — Draft parallel validation matrix artifact for local/k8s/ray
+  - `BIG-PAR-222` — Add fast compile-check path for frozen legacy Python shims
+  - `BIG-PAR-223` — Link planning docs to validation matrix
+  - `BIG-PAR-224` — Reconcile tracker and refill queue follow-up state
+  - `BIG-PAR-225` — Publish canonical parallel follow-up index
+  - `BIG-PAR-226` — Rewire maintained reports to canonical follow-up index
+  - `BIG-PAR-227` — Rewire migration plan review notes to follow-up index
+  - `BIG-PAR-228` — Rewire per-run bundle READMEs to follow-up index
+  - `BIG-PAR-229` — Rename maintained follow-up sections to follow-up index
+  - `BIG-PAR-230` — Rename bundle README follow-up sections to follow-up index
+  - `BIG-PAR-231` — Restore required follow-up digest references for CI
+  - `BIG-PAR-234` — bigclawctl: support --help at root and subcommands
+  - `BIG-PAR-235` — cap workflow agent fanout after 429s
+  - `BIG-PAR-236` — harden local tracker recovery and serialization
+  - `BIG-PAR-237` — emit queue-drained recovery hints in refill output
+  - `BIG-PAR-238` — bigclawctl refill: seed queue entries from CLI
+  - `BIG-PAR-239` — bigclawctl refill: sync recent_batches metadata from local tracker
+  - `BIG-PAR-240` — Document queue seeding and drained-batch recovery workflow
+  - `BIG-PAR-241` — Serialize local tracker writes with an explicit lock
+  - `BIG-PAR-242` — Sync refill recent-batch metadata from the local tracker
+  - `BIG-PAR-243` — Reload local tracker state on each refill fetch
+  - `BIG-PAR-244` — Refresh refill queue docs for current local-backend behavior
+  - `BIG-PAR-245` — Open PR for tracker and refill hardening branch
+  - `BIG-PAR-246` — Refresh PR branch against main
 - Historical first runnable batch once issue creation was available:
-  - `BIG-GOM-301` — unified domain model and intake contract migration
-  - `BIG-GOM-302` — risk, policy, and approval semantics migration
-  - `BIG-GOM-303` — workflow orchestration and scheduler loop migration
-  - `BIG-GOM-304` — observability, reporting, and weekly operations surface migration
+  - `BIG-GOM-301` — Unified domain model and intake contract migration
+  - `BIG-GOM-302` — Risk, policy, and approval semantics migration
+  - `BIG-GOM-303` — Workflow orchestration and scheduler loop migration
+  - `BIG-GOM-304` — Observability, reporting, and weekly operations surface migration
 
 ## Canonical refill order
 
@@ -111,3 +134,4 @@ longer waits on Linear to keep issue execution moving.
 32. `BIG-PAR-244`
 33. `BIG-PAR-245`
 34. `BIG-PAR-246`
+35. `BIG-PAR-247`
