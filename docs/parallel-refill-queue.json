@@ -64,11 +64,10 @@
       "BIG-PAR-256",
       "BIG-PAR-257",
       "BIG-PAR-258",
-      "BIG-PAR-259"
-    ],
-    "active": [
+      "BIG-PAR-259",
       "BIG-PAR-260"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -408,7 +407,7 @@
       "identifier": "BIG-PAR-260",
       "title": "Align live shadow bundle follow-up IDs",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
