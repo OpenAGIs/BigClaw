@@ -121,6 +121,15 @@ func (s *LocalIssueStore) FindIssue(ref string) (LocalIssue, bool) {
 	return LocalIssue{}, false
 }
 
+func (s *LocalIssueStore) Reload() error {
+	issues, err := readLocalIssueMaps(s.path)
+	if err != nil {
+		return err
+	}
+	s.issueMap = issues
+	return nil
+}
+
 func (s *LocalIssueStore) CreateIssue(params LocalIssueCreateParams) (LocalIssue, error) {
 	identifier := strings.TrimSpace(params.Identifier)
 	if identifier == "" {
@@ -359,12 +368,7 @@ func (s *LocalIssueStore) withFileLock(fn func() error) error {
 }
 
 func (s *LocalIssueStore) reloadUnlocked() error {
-	issues, err := readLocalIssueMaps(s.path)
-	if err != nil {
-		return err
-	}
-	s.issueMap = issues
-	return nil
+	return s.Reload()
 }
 
 func (s *LocalIssueStore) saveUnlocked() error {

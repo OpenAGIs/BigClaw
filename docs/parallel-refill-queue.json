@@ -43,7 +43,9 @@
       "BIG-PAR-241",
       "BIG-PAR-242"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-243"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -70,7 +72,8 @@
     "BIG-PAR-231",
     "BIG-PAR-234",
     "BIG-PAR-241",
-    "BIG-PAR-242"
+    "BIG-PAR-242",
+    "BIG-PAR-243"
   ],
   "issues": [
     {
@@ -216,6 +219,12 @@
       "title": "Sync refill recent-batch metadata from the local tracker",
       "track": "Tracker and Refill Hygiene",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-243",
+      "title": "Reload local tracker state on each refill fetch",
+      "track": "Tracker and Refill Hygiene",
+      "status": "In Progress"
     }
   ]
 }

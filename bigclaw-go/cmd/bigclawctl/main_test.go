@@ -429,6 +429,48 @@ func TestRunRefillOnceLocalBackendUsesAllLocalStatesForRunnableCount(t *testing.
 	}
 }
 
+func TestLocalIssueClientFetchIssueStatesReloadsTrackerBetweenReads(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {"id": "big-par-243", "identifier": "BIG-PAR-243", "state": "Todo"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := refill.LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	client := &localIssueClient{store: store}
+
+	issues, err := client.fetchIssueStates("ignored", []string{"Todo"})
+	if err != nil {
+		t.Fatalf("fetch issue states: %v", err)
+	}
+	if len(issues) != 1 || issues[0].Identifier != "BIG-PAR-243" {
+		t.Fatalf("expected initial todo issue, got %+v", issues)
+	}
+
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {"id": "big-par-243", "identifier": "BIG-PAR-243", "state": "Done"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("rewrite local issue store: %v", err)
+	}
+
+	issues, err = client.fetchIssueStates("ignored", []string{"Done"})
+	if err != nil {
+		t.Fatalf("fetch reloaded issue states: %v", err)
+	}
+	if len(issues) != 1 || issues[0].Identifier != "BIG-PAR-243" || issues[0].StateName != "Done" {
+		t.Fatalf("expected reloaded done issue, got %+v", issues)
+	}
+}
+
 func TestRunRefillOnceLocalBackendSyncsQueueStatusFromLocalIssues(t *testing.T) {
 	tempDir := t.TempDir()
 	queuePath := filepath.Join(tempDir, "queue.json")

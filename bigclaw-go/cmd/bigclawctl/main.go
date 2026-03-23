@@ -762,6 +762,9 @@ func (c *localIssueClient) backend() string {
 }
 
 func (c *localIssueClient) fetchIssueStates(_ string, stateNames []string) ([]refill.TrackedIssue, error) {
+	if err := c.store.Reload(); err != nil {
+		return nil, err
+	}
 	return c.store.IssueStates(stateNames), nil
 }
 
