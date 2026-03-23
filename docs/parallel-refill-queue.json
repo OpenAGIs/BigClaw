@@ -74,7 +74,8 @@
       "BIG-PAR-271"
     ],
     "standby": [
-      "BIG-PAR-269"
+      "BIG-PAR-269",
+      "BIG-PAR-272"
     ]
   },
   "issue_order": [
@@ -130,7 +131,8 @@
     "BIG-PAR-268",
     "BIG-PAR-269",
     "BIG-PAR-270",
-    "BIG-PAR-271"
+    "BIG-PAR-271",
+    "BIG-PAR-272"
   ],
   "issues": [
     {
@@ -480,6 +482,12 @@
       "title": "Add broker validation summary regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-272",
+      "title": "Add shared queue companion summary regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Backlog"
     }
   ]
 }

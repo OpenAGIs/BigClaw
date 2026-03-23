@@ -2491,6 +2491,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added `bigclaw-go/internal/regression/broker_validation_summary_test.go` to pin the checked-in `docs/reports/broker-validation-summary.json` contract surface: canonical summary paths, bootstrap summary pointers, contract-only posture, validation-pack path, and nested bootstrap configuration.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestBrokerValidationSummaryStaysAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `9bb9532c8b27500f2b50a70eceadb1bc7c10e68a` matches remote SHA `9bb9532c8b27500f2b50a70eceadb1bc7c10e68a` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `9bb9532c8b27500f2b50a70eceadb1bc7c10e68a`\n\nCommit SHA: `9bb9532c8b27500f2b50a70eceadb1bc7c10e68a`\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-240 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-23T06:52:11Z"
+        }
+      ],
       "created_at": "2026-03-23T06:49:44Z",
       "description": "Add regression coverage for bigclaw-go/docs/reports/broker-validation-summary.json so canonical summary paths, bootstrap summary pointers, contract-only posture, and validation-pack references cannot drift silently from the checked-in broker readiness surface.",
       "id": "big-par-271",
@@ -2499,9 +2506,23 @@
         "documentation"
       ],
       "priority": 4,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add broker validation summary regression coverage",
-      "updated_at": "2026-03-23T06:49:44Z"
+      "updated_at": "2026-03-23T06:52:11Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T06:52:11Z",
+      "description": "Add regression coverage for bigclaw-go/docs/reports/shared-queue-companion-summary.json so canonical report and bundle summary paths plus per-node completion counters stay aligned with the checked-in live validation companion surface.",
+      "id": "big-par-272",
+      "identifier": "BIG-PAR-272",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Backlog",
+      "title": "Add shared queue companion summary regression coverage",
+      "updated_at": "2026-03-23T06:52:11Z"
     }
   ]
 }
