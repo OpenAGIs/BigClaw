@@ -24,7 +24,7 @@
 - `OPE-183`
   - Event bus evidence includes replay-first subscriptions, webhook fanout, recorder sink coverage, and SSE replay/filter behavior by task or trace.
   - Supporting report: `docs/reports/event-bus-reliability-report.md`.
-  - Follow-up digest captures the deterministic local harness, the live two-node companion proof, and the remaining shared-durable ownership caveats in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
+  - Follow-up digest captures the deterministic local harness, the live two-node companion proof, and the remaining `OPE-269` / `BIG-PAR-080` shared-durable ownership caveats in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
 - `OPE-184`
   - Audit and debug surfaces include trace summary endpoints, trace timeline lookup, worker lifecycle snapshots, and `trace_count` metrics visibility.
   - Supporting report: `docs/reports/go-control-plane-observability-report.md`.
@@ -34,14 +34,14 @@
   - Migration evidence includes a shadow matrix across multiple sample tasks with matched terminal states, matched event sequences, an anonymized corpus coverage scorecard, and a repo-native live shadow mirror scorecard that summarizes parity drift and evidence freshness across the checked-in compare and matrix artifacts.
   - Supporting report: `docs/reports/migration-readiness-report.md`.
   - Runtime-facing mirror and rollback reviewer surfaces are available through `GET /debug/status` and `GET /v2/control-center` under `distributed_diagnostics.live_shadow_mirror_scorecard` and `distributed_diagnostics.migration_review_pack.rollback_trigger_surface`.
-  - Follow-up digests capture the remaining `OPE-266` / `BIG-PAR-092` live shadow comparison, `OPE-254` / `BIG-PAR-088` rollback safeguard trigger surface, and production corpus coverage caveats in `docs/reports/live-shadow-comparison-follow-up-digest.md`, `docs/reports/rollback-safeguard-follow-up-digest.md`, `docs/reports/rollback-trigger-surface.json`, and `docs/reports/production-corpus-migration-coverage-digest.md`.
+  - Follow-up digests capture the remaining `OPE-266` / `BIG-PAR-092` live shadow comparison, `OPE-254` / `BIG-PAR-088` rollback safeguard trigger surface, and `OPE-268` / `BIG-PAR-079` production corpus coverage caveats in `docs/reports/live-shadow-comparison-follow-up-digest.md`, `docs/reports/rollback-safeguard-follow-up-digest.md`, `docs/reports/rollback-trigger-surface.json`, and `docs/reports/production-corpus-migration-coverage-digest.md`.
 - `OPE-186`
   - Benchmark evidence includes a repeatable matrix runner plus `50x8`, `100x12`, `1000x24`, and `2000x24` soak runs with zero failures.
   - Supporting reports: `docs/reports/benchmark-readiness-report.md`, `docs/reports/benchmark-matrix-report.json`, `docs/reports/long-duration-soak-report.md`, `docs/reports/capacity-certification-report.md`, and `docs/reports/capacity-certification-matrix.json`.
 - `OPE-175`
   - Epic-level evidence includes longer-duration soak (`2000x24`), mixed workload validation across `local` / `kubernetes` / `ray`, and a concrete two-node shared-queue coordination proof.
   - Supporting report: `docs/reports/epic-closure-readiness-report.md`.
-  - Follow-up digests capture the remaining cross-process coordination and validation bundle continuation caveats in `docs/reports/cross-process-coordination-boundary-digest.md` and `docs/reports/validation-bundle-continuation-digest.md`, with the current multi-bundle lineage summarized in `docs/reports/validation-bundle-continuation-scorecard.json` and the current gate result captured in `docs/reports/validation-bundle-continuation-policy-gate.json`.
+  - Follow-up digests capture the remaining cross-process coordination and `OPE-271` / `BIG-PAR-082` validation bundle continuation caveats in `docs/reports/cross-process-coordination-boundary-digest.md` and `docs/reports/validation-bundle-continuation-digest.md`, with the current multi-bundle lineage summarized in `docs/reports/validation-bundle-continuation-scorecard.json` and the current gate result captured in `docs/reports/validation-bundle-continuation-policy-gate.json`.
   - The coordination runtime capability matrix in `docs/reports/cross-process-coordination-capability-surface.json` makes the remaining coordination claims explicit as `live_proven`, `harness_proven`, and `contract_only` instead of treating all cross-process semantics as equally shipped.
   - Replicated broker durability remains a follow-up track with an explicit rollout spike in `docs/reports/replicated-broker-durability-rollout-spike.md`, the governing contract in `docs/reports/replicated-event-log-durability-rollout-contract.md`, and the current readiness posture in `docs/reports/broker-durability-rollout-scorecard.json`.
 
