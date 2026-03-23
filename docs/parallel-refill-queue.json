@@ -53,7 +53,8 @@
       "BIG-PAR-245",
       "BIG-PAR-246",
       "BIG-PAR-247",
-      "BIG-PAR-248"
+      "BIG-PAR-248",
+      "BIG-PAR-249"
     ],
     "active": [],
     "standby": []
@@ -94,7 +95,8 @@
     "BIG-PAR-245",
     "BIG-PAR-246",
     "BIG-PAR-247",
-    "BIG-PAR-248"
+    "BIG-PAR-248",
+    "BIG-PAR-249"
   ],
   "issues": [
     {
@@ -310,6 +312,12 @@
     {
       "identifier": "BIG-PAR-248",
       "title": "Expand SQLite queue reliability proof to 10k tasks",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-249",
+      "title": "Refresh queue reliability references after 10k proof",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }

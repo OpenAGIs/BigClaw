@@ -50,7 +50,7 @@ longer waits on Linear to keep issue execution moving.
 - Current repo tranche status as of March 23, 2026:
   - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-241` — Serialize local tracker writes with an explicit lock; `BIG-PAR-242` — Sync refill recent-batch metadata from the local tracker; `BIG-PAR-243` — Reload local tracker state on each refill fetch; `BIG-PAR-244` — Refresh refill queue docs for current local-backend behavior; `BIG-PAR-245` — Open PR for tracker and refill hardening branch; `BIG-PAR-246` — Refresh PR branch against main; `BIG-PAR-247` — bigclawctl refill: sync queue markdown from canonical state; `BIG-PAR-248` — Expand SQLite queue reliability proof to 10k tasks
+  - recently completed slices: `BIG-PAR-242` — Sync refill recent-batch metadata from the local tracker; `BIG-PAR-243` — Reload local tracker state on each refill fetch; `BIG-PAR-244` — Refresh refill queue docs for current local-backend behavior; `BIG-PAR-245` — Open PR for tracker and refill hardening branch; `BIG-PAR-246` — Refresh PR branch against main; `BIG-PAR-247` — bigclawctl refill: sync queue markdown from canonical state; `BIG-PAR-248` — Expand SQLite queue reliability proof to 10k tasks; `BIG-PAR-249` — Refresh queue reliability references after 10k proof
   - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
@@ -94,6 +94,7 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-246` — Refresh PR branch against main
   - `BIG-PAR-247` — bigclawctl refill: sync queue markdown from canonical state
   - `BIG-PAR-248` — Expand SQLite queue reliability proof to 10k tasks
+  - `BIG-PAR-249` — Refresh queue reliability references after 10k proof
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -138,3 +139,4 @@ longer waits on Linear to keep issue execution moving.
 34. `BIG-PAR-246`
 35. `BIG-PAR-247`
 36. `BIG-PAR-248`
+37. `BIG-PAR-249`

@@ -1977,6 +1977,11 @@
           "author": "codex",
           "body": "Closed `BIG-PAR-248` after expanding the checked-in SQLite queue reliability proof from the existing 1k lane to a 10k no-duplicate-consumption lane.\n\nWhat changed:\n- `bigclaw-go/internal/queue/sqlite_queue_test.go` now parameterizes the SQLite scale proof across `1k` and `10k` task lanes, with a longer lease TTL for the heavier stress lane so the test measures duplicate leasing under sustained load rather than forced lease expiry.\n- `bigclaw-go/docs/reports/queue-reliability-report.md` now cites the new `10k` proof directly and removes the stale note that a larger reliability matrix was only a future follow-up.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/queue` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `67517dd8b3f5c93caff3dd894ae9d911971cc56d` matches remote SHA `67517dd8b3f5c93caff3dd894ae9d911971cc56d` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `67517dd8b3f5c93caff3dd894ae9d911971cc56d`\n\nCommit SHA: `67517dd8b3f5c93caff3dd894ae9d911971cc56d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/177",
           "created_at": "2026-03-23T04:30:30Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout: PR `#177` (`BIG-PAR-248: expand queue reliability proof to 10k tasks`) merged into `main` at `2026-03-23T04:05:47Z` with merge commit `45061a2f32f47a85fb5b5f7d0b30b5396e094dcf`.\n\nValidation:\n- `gh pr view 177 --repo OpenAGIs/BigClaw --json url,title,state,mergedAt,mergeCommit` -> `MERGED` with merge commit `45061a2f32f47a85fb5b5f7d0b30b5396e094dcf`\n- `git fetch origin main && git rev-parse origin/main` -> `45061a2f32f47a85fb5b5f7d0b30b5396e094dcf`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `ff656ff200bf220347e344ae81d1ccfb686871ec` matches remote SHA `ff656ff200bf220347e344ae81d1ccfb686871ec` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `ff656ff200bf220347e344ae81d1ccfb686871ec`\n\nCommit SHA: `ff656ff200bf220347e344ae81d1ccfb686871ec`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/177",
+          "created_at": "2026-03-23T04:31:00Z"
         }
       ],
       "created_at": "2026-03-23T03:57:58Z",
@@ -1993,7 +1998,32 @@
       "priority": 3,
       "state": "Done",
       "title": "Expand SQLite queue reliability proof to 10k tasks",
-      "updated_at": "2026-03-23T04:30:30Z"
+      "updated_at": "2026-03-23T04:31:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-249` after refreshing stale queue-reliability references that still mentioned only the older 1k SQLite proof lane.\n\nWhat changed:\n- `bigclaw-go/docs/reports/review-readiness.md` now states that queue reliability evidence includes both the `1k` and `10k` SQLite no-duplicate-consumption stress lanes.\n- `bigclaw-go/docs/reports/lease-recovery-report.md` now reflects that the concurrent-processing proof covers both `1k` and `10k` task lanes instead of only the original `1k` lane.\n\nValidation:\n- `rg -n \"1k|10k|Queue reliability evidence includes|concurrent-processing proof\" bigclaw-go/docs/reports/review-readiness.md bigclaw-go/docs/reports/lease-recovery-report.md` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `4bc91a2979b01e70d5cc60e5f14c93d55b1ae540` matches remote SHA `4bc91a2979b01e70d5cc60e5f14c93d55b1ae540` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `4bc91a2979b01e70d5cc60e5f14c93d55b1ae540`\n\nCommit SHA: `4bc91a2979b01e70d5cc60e5f14c93d55b1ae540`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/178",
+          "created_at": "2026-03-23T04:45:30Z"
+        }
+      ],
+      "created_at": "2026-03-23T04:09:59Z",
+      "description": "Update stale reviewer-facing queue reliability references that still mention only the older 1k SQLite no-duplicate-consumption proof now that the 10k lane is checked in.",
+      "id": "big-par-249",
+      "identifier": "BIG-PAR-249",
+      "labels": [
+        "parallel",
+        "docs",
+        "queue",
+        "reliability",
+        "traceability"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Refresh queue reliability references after 10k proof",
+      "updated_at": "2026-03-23T04:45:00Z"
     }
   ]
 }
