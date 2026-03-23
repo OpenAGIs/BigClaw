@@ -9,7 +9,7 @@
   - Task protocol and state model are codified in `internal/domain/*`.
   - Supporting reports exist in `docs/reports/task-protocol-spec.md` and `docs/reports/state-machine-validation-report.md`.
 - `OPE-178`
-  - Queue reliability evidence includes dead-letter replay, lease expiry recovery, API replay endpoints, and a `1k` no-duplicate-consumption test.
+  - Queue reliability evidence includes dead-letter replay, lease expiry recovery, API replay endpoints, and both `1k` and `10k` SQLite no-duplicate-consumption stress lanes.
   - Supporting reports exist in `docs/reports/queue-reliability-report.md` and `docs/reports/lease-recovery-report.md`.
 - `OPE-179`
   - Scheduler policy coverage includes budget guardrails, backpressure, preemptible concurrency, and tool-aware routing for GPU/browser workloads.
