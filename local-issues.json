@@ -1977,6 +1977,11 @@
           "author": "codex",
           "body": "Closed `BIG-PAR-248` after expanding the checked-in SQLite queue reliability proof from the existing 1k lane to a 10k no-duplicate-consumption lane.\n\nWhat changed:\n- `bigclaw-go/internal/queue/sqlite_queue_test.go` now parameterizes the SQLite scale proof across `1k` and `10k` task lanes, with a longer lease TTL for the heavier stress lane so the test measures duplicate leasing under sustained load rather than forced lease expiry.\n- `bigclaw-go/docs/reports/queue-reliability-report.md` now cites the new `10k` proof directly and removes the stale note that a larger reliability matrix was only a future follow-up.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/queue` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `67517dd8b3f5c93caff3dd894ae9d911971cc56d` matches remote SHA `67517dd8b3f5c93caff3dd894ae9d911971cc56d` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `67517dd8b3f5c93caff3dd894ae9d911971cc56d`\n\nCommit SHA: `67517dd8b3f5c93caff3dd894ae9d911971cc56d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/177",
           "created_at": "2026-03-23T04:30:30Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout: PR `#177` (`BIG-PAR-248: expand queue reliability proof to 10k tasks`) merged into `main` at `2026-03-23T04:05:47Z` with merge commit `45061a2f32f47a85fb5b5f7d0b30b5396e094dcf`.\n\nValidation:\n- `gh pr view 177 --repo OpenAGIs/BigClaw --json url,title,state,mergedAt,mergeCommit` -> `MERGED` with merge commit `45061a2f32f47a85fb5b5f7d0b30b5396e094dcf`\n- `git fetch origin main && git rev-parse origin/main` -> `45061a2f32f47a85fb5b5f7d0b30b5396e094dcf`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `ff656ff200bf220347e344ae81d1ccfb686871ec` matches remote SHA `ff656ff200bf220347e344ae81d1ccfb686871ec` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `ff656ff200bf220347e344ae81d1ccfb686871ec`\n\nCommit SHA: `ff656ff200bf220347e344ae81d1ccfb686871ec`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/177",
+          "created_at": "2026-03-23T04:31:00Z"
         }
       ],
       "created_at": "2026-03-23T03:57:58Z",
@@ -1993,7 +1998,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Expand SQLite queue reliability proof to 10k tasks",
-      "updated_at": "2026-03-23T04:30:30Z"
+      "updated_at": "2026-03-23T04:31:00Z"
     }
   ]
 }
