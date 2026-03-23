@@ -45,7 +45,9 @@
       "BIG-PAR-243",
       "BIG-PAR-244"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-245"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -74,7 +76,8 @@
     "BIG-PAR-241",
     "BIG-PAR-242",
     "BIG-PAR-243",
-    "BIG-PAR-244"
+    "BIG-PAR-244",
+    "BIG-PAR-245"
   ],
   "issues": [
     {
@@ -232,6 +235,12 @@
       "title": "Refresh refill queue docs for current local-backend behavior",
       "track": "Tracker and Refill Hygiene",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-245",
+      "title": "Open PR for tracker and refill hardening branch",
+      "track": "Tracker and Refill Hygiene",
+      "status": "In Progress"
     }
   ]
 }
