@@ -53,3 +53,15 @@ Every sampled task reached `task.completed`, preserved `trace_id`, and emitted `
 - `1000x24` is the recommended single-instance local sustained envelope.
 - `2000x24` is the current checked-in local ceiling, with throughput staying in the same `9-10 tasks/s` band and no failures.
 - Mixed local / Kubernetes / Ray executor routing is certified for correctness via `docs/reports/mixed-workload-matrix-report.json`, but not for sustained multi-executor saturation.
+
+## Canonical follow-up routing
+
+- `docs/reports/capacity-certification-report.md` and
+  `docs/reports/capacity-certification-matrix.json` remain the checked-in
+  capacity-certification entrypoints for the benchmark envelope summarized here.
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining coordination, takeover, continuation, and broker-durability
+  hardening lanes that still sit outside this closed local benchmark baseline.
+- When this benchmark proof is reviewed alongside executor or migration
+  readiness, use the follow-up index for `OPE-269` / `BIG-PAR-080`,
+  `OPE-261` / `BIG-PAR-085`, `OPE-271` / `BIG-PAR-082`, and `OPE-222`.

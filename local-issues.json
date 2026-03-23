@@ -36,7 +36,7 @@
     },
     {
       "assigned_to_worker": true,
-  "comments": [
+      "comments": [
         {
           "author": "codex",
           "body": "Added the Go-native workflow journal and acceptance gate contract in bigclaw-go/internal/workflow so the runtime slice now has a typed WorkpadJournal, acceptance decision model, execution outcome contract, and evidence-driven approval logic migrated from src/bigclaw/workflow.py with direct package tests for journal persistence, approval requirements, incomplete evidence rejection, accepted closeout, and hold-path rejection. Validation: cd bigclaw-go && go test ./internal/workflow -> ok; cd bigclaw-go && go test ./... -> ok; bash scripts/ops/bigclawctl github-sync status --json -> local SHA dc44588f83d7eaa5135489ec649799b77f860402 matches remote SHA dc44588f83d7eaa5135489ec649799b77f860402 with status ok and synced true; git log -1 --stat -> captured for commit dc44588f83d7eaa5135489ec649799b77f860402 with workflow engine files in the stat output. Commit SHA: dc44588f83d7eaa5135489ec649799b77f860402. PR URL: unavailable; gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-GOM-304 --json url,title,state returned [].",
@@ -1720,22 +1720,22 @@
           "body": "Closed the repo-native docs slice after confirming the queue seeding and drained-batch recovery workflow is now documented on the refreshed branch and the branch PR is merge-ready again.\n\nWhat changed:\n- `docs/parallel-refill-queue.md` now documents the seeded `BIG-PAR-235..246` order, including the queue-seeding and drained-batch recovery workflow carried by this `BIG-PAR-240` slice.\n- `docs/parallel-refill-queue.json` now preserves main's canonical `BIG-PAR-235..240` history while keeping the newer `BIG-PAR-241..246` tracker/refill hygiene slices appended after it.\n- PR `#175` is back to `CLEAN`, so the documented recovery workflow and the follow-on tracker/refill hardening work are reviewable on one branch.\n\nValidation:\n- `gh pr view 175 --repo OpenAGIs/BigClaw --json url,title,state,mergeStateStatus` -> `OPEN` with `mergeStateStatus: CLEAN`\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok; queue metadata synced from the local tracker after the branch refresh\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `18fae5c59b3688134c6e7b706963ad9d56154ef7` matches remote SHA `18fae5c59b3688134c6e7b706963ad9d56154ef7` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for merge commit `18fae5c59b3688134c6e7b706963ad9d56154ef7`\n\nCommit SHA: `18fae5c59b3688134c6e7b706963ad9d56154ef7`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/175",
           "created_at": "2026-03-23T03:25:01Z"
         },
-    {
-      "author": "codex",
-      "body": "Final umbrella closeout: the tracker/refill hardening branch PR `#175` is now merged into `main`, so the umbrella `BIG-PAR-240` work is fully landed upstream.\n\nValidation:\n- `gh pr view 175 --repo OpenAGIs/BigClaw --json url,title,state,mergedAt,mergeCommit` -> `MERGED` at `2026-03-23T03:30:40Z` with merge commit `1c60cdaa73ba8823f73320fbb1ea86962e8c5105`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `fa46142fb89f8abfd4e46c9f02fd4897bb76c9dd` matches remote SHA `fa46142fb89f8abfd4e46c9f02fd4897bb76c9dd` with `status: ok` and `synced: true`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `active_in_progress: []`, `candidates: []`, `queue_drained: true`\n- `git log -1 --stat` -> captured for commit `fa46142fb89f8abfd4e46c9f02fd4897bb76c9dd`\n\nCommit SHA: `fa46142fb89f8abfd4e46c9f02fd4897bb76c9dd`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/175",
-      "created_at": "2026-03-23T03:30:40Z"
-    },
-    {
-      "author": "codex",
-      "body": "Final umbrella closeout refresh: the current follow-up-doc regression branch PR `#180` is now merged into `main`, and the repo-native child queue for `BIG-PAR-240` is fully drained through `BIG-PAR-266`.\n\nValidation:\n- `gh pr view 180 --json url,title,state,mergedAt,mergeCommit` -> `MERGED` at `2026-03-23T06:16:43Z` with merge commit `5b2a2e39b696279cb5bfb4a5486b6a0f111aaca4`\n- `git fetch origin main` -> updated `origin/main` to `5b2a2e39b696279cb5bfb4a5486b6a0f111aaca4`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `active_in_progress: []`, `candidates: []`, `queue_drained: true`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `8504170a8f8e53d61d28f6e90b5a0b958d542e7f` matches remote SHA `8504170a8f8e53d61d28f6e90b5a0b958d542e7f` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `8504170a8f8e53d61d28f6e90b5a0b958d542e7f`\n\nCommit SHA: `8504170a8f8e53d61d28f6e90b5a0b958d542e7f`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180",
-      "created_at": "2026-03-23T06:17:55Z"
-    },
-    {
-      "author": "codex",
-      "body": "Final umbrella closeout landed: the tracker-only refresh branch PR `#181` is now merged into `main`, so the local parent issue history matches the final landed branch state for `BIG-PAR-240`.\n\nValidation:\n- `gh pr view 181 --json url,title,state,mergedAt,mergeCommit` -> `MERGED` at `2026-03-23T06:21:16Z` with merge commit `b26961ed77eff3317b379729febc6bd2c7b6c1fd`\n- `git fetch origin main` -> updated `origin/main` to `b26961ed77eff3317b379729febc6bd2c7b6c1fd`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `active_in_progress: []`, `candidates: []`, `queue_drained: true`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `807ef573742d1aaa9076ebc95dd006aa583f2c21` matches remote SHA `807ef573742d1aaa9076ebc95dd006aa583f2c21` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `807ef573742d1aaa9076ebc95dd006aa583f2c21`\n\nCommit SHA: `807ef573742d1aaa9076ebc95dd006aa583f2c21`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/181",
-      "created_at": "2026-03-23T06:22:23Z"
-    }
-  ],
+        {
+          "author": "codex",
+          "body": "Final umbrella closeout: the tracker/refill hardening branch PR `#175` is now merged into `main`, so the umbrella `BIG-PAR-240` work is fully landed upstream.\n\nValidation:\n- `gh pr view 175 --repo OpenAGIs/BigClaw --json url,title,state,mergedAt,mergeCommit` -> `MERGED` at `2026-03-23T03:30:40Z` with merge commit `1c60cdaa73ba8823f73320fbb1ea86962e8c5105`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `fa46142fb89f8abfd4e46c9f02fd4897bb76c9dd` matches remote SHA `fa46142fb89f8abfd4e46c9f02fd4897bb76c9dd` with `status: ok` and `synced: true`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `active_in_progress: []`, `candidates: []`, `queue_drained: true`\n- `git log -1 --stat` -> captured for commit `fa46142fb89f8abfd4e46c9f02fd4897bb76c9dd`\n\nCommit SHA: `fa46142fb89f8abfd4e46c9f02fd4897bb76c9dd`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/175",
+          "created_at": "2026-03-23T03:30:40Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final umbrella closeout refresh: the current follow-up-doc regression branch PR `#180` is now merged into `main`, and the repo-native child queue for `BIG-PAR-240` is fully drained through `BIG-PAR-266`.\n\nValidation:\n- `gh pr view 180 --json url,title,state,mergedAt,mergeCommit` -> `MERGED` at `2026-03-23T06:16:43Z` with merge commit `5b2a2e39b696279cb5bfb4a5486b6a0f111aaca4`\n- `git fetch origin main` -> updated `origin/main` to `5b2a2e39b696279cb5bfb4a5486b6a0f111aaca4`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `active_in_progress: []`, `candidates: []`, `queue_drained: true`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `8504170a8f8e53d61d28f6e90b5a0b958d542e7f` matches remote SHA `8504170a8f8e53d61d28f6e90b5a0b958d542e7f` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `8504170a8f8e53d61d28f6e90b5a0b958d542e7f`\n\nCommit SHA: `8504170a8f8e53d61d28f6e90b5a0b958d542e7f`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180",
+          "created_at": "2026-03-23T06:17:55Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final umbrella closeout landed: the tracker-only refresh branch PR `#181` is now merged into `main`, so the local parent issue history matches the final landed branch state for `BIG-PAR-240`.\n\nValidation:\n- `gh pr view 181 --json url,title,state,mergedAt,mergeCommit` -> `MERGED` at `2026-03-23T06:21:16Z` with merge commit `b26961ed77eff3317b379729febc6bd2c7b6c1fd`\n- `git fetch origin main` -> updated `origin/main` to `b26961ed77eff3317b379729febc6bd2c7b6c1fd`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `active_in_progress: []`, `candidates: []`, `queue_drained: true`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `807ef573742d1aaa9076ebc95dd006aa583f2c21` matches remote SHA `807ef573742d1aaa9076ebc95dd006aa583f2c21` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `807ef573742d1aaa9076ebc95dd006aa583f2c21`\n\nCommit SHA: `807ef573742d1aaa9076ebc95dd006aa583f2c21`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/181",
+          "created_at": "2026-03-23T06:22:23Z"
+        }
+      ],
       "created_at": "2026-03-23T01:12:00Z",
       "description": "Document the queue seeding workflow and drained-batch recovery playbook for repo-native local tracker operations.",
       "id": "big-par-240",
@@ -1748,7 +1748,7 @@
       "priority": 4,
       "state": "Done",
       "title": "Document queue seeding and drained-batch recovery workflow",
-  "updated_at": "2026-03-23T06:22:23Z"
+      "updated_at": "2026-03-23T06:22:23Z"
     },
     {
       "assigned_to_worker": true,
@@ -2404,6 +2404,125 @@
       "state": "Done",
       "title": "Add planning follow-up index regression coverage",
       "updated_at": "2026-03-23T06:12:37Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Updated `bigclaw-go/docs/e2e-validation.md` to route runnable validation lanes through `docs/reports/parallel-validation-matrix.md` and unfinished continuation / coordination / takeover / broker-durability work through `docs/reports/parallel-follow-up-index.md`. Added `bigclaw-go/internal/regression/e2e_validation_docs_test.go` to keep those canonical entrypoints pinned.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestE2EValidationDocsStayAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `d0beb1e6fdbd8a117ede678d7a77129b197ce83b` matches remote SHA `d0beb1e6fdbd8a117ede678d7a77129b197ce83b` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `d0beb1e6fdbd8a117ede678d7a77129b197ce83b`\n\nCommit SHA: `d0beb1e6fdbd8a117ede678d7a77129b197ce83b`\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-240 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-23T06:35:21Z"
+        }
+      ],
+      "created_at": "2026-03-23T06:32:37Z",
+      "description": "Update bigclaw-go/docs/e2e-validation.md so remaining continuation, coordination, and broker-hardening references point at the canonical parallel follow-up index and validation matrix, then add regression coverage for those entrypoints.",
+      "id": "big-par-267",
+      "identifier": "BIG-PAR-267",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Rewire e2e validation guide to canonical follow-up index",
+      "updated_at": "2026-03-23T06:35:21Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Updated `bigclaw-go/docs/reports/benchmark-readiness-report.md` and `bigclaw-go/docs/reports/epic-closure-readiness-report.md` so maintained readiness reports now route unfinished hardening through the canonical follow-up index, while preserving their benchmark and validation entrypoints. Added `bigclaw-go/internal/regression/readiness_followup_index_docs_test.go` to pin those report entrypoints.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestReadinessFollowUpIndexDocsStayAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `git push origin HEAD:symphony/BIG-PAR-240` -> ok after a transient post-commit SSH transport failure in the auto-sync hook\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `a872107e39e74cd9796764d03f494357b1b5b236` matches remote SHA `a872107e39e74cd9796764d03f494357b1b5b236` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `a872107e39e74cd9796764d03f494357b1b5b236`\n\nCommit SHA: `a872107e39e74cd9796764d03f494357b1b5b236`\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-240 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-23T06:38:30Z"
+        }
+      ],
+      "created_at": "2026-03-23T06:32:37Z",
+      "description": "Update benchmark and epic-closure readiness reports so remaining hardening guidance routes through the canonical parallel follow-up index and add regression coverage for the maintained report entrypoints.",
+      "id": "big-par-268",
+      "identifier": "BIG-PAR-268",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Rewire readiness reports to canonical follow-up index",
+      "updated_at": "2026-03-23T06:38:30Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Updated `bigclaw-go/docs/reports/parallel-validation-matrix.md` to add canonical follow-up routing for the checked-in validation lanes, and added `bigclaw-go/internal/regression/parallel_validation_matrix_docs_test.go` to pin the matrix commands, evidence paths, companion proof links, and follow-up entrypoint.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestParallelValidationMatrixDocsStayAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `c35e7d6b1104aebd9e2fb72a0d1548d2857fd65f` matches remote SHA `c35e7d6b1104aebd9e2fb72a0d1548d2857fd65f` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `c35e7d6b1104aebd9e2fb72a0d1548d2857fd65f`\n\nCommit SHA: `c35e7d6b1104aebd9e2fb72a0d1548d2857fd65f`\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-240 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-23T06:45:47Z"
+        }
+      ],
+      "created_at": "2026-03-23T06:38:30Z",
+      "description": "Add regression coverage for bigclaw-go/docs/reports/parallel-validation-matrix.md so lane commands, evidence paths, and companion proof pointers cannot drift silently from the checked-in validation surfaces.",
+      "id": "big-par-269",
+      "identifier": "BIG-PAR-269",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add canonical validation matrix regression coverage",
+      "updated_at": "2026-03-23T06:45:47Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added `bigclaw-go/internal/regression/live_validation_summary_test.go` to pin the checked-in `docs/reports/live-validation-summary.json` surface: run metadata, closeout commands, canonical lane report paths, broker summary paths, and shared-queue companion summary paths and counts.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestLiveValidationSummaryStaysAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `b0f0490bbeea7a50dd0177f25af49e1a359ce5e1` matches remote SHA `b0f0490bbeea7a50dd0177f25af49e1a359ce5e1` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `b0f0490bbeea7a50dd0177f25af49e1a359ce5e1`\n\nCommit SHA: `b0f0490bbeea7a50dd0177f25af49e1a359ce5e1`\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-240 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-23T06:49:20Z"
+        }
+      ],
+      "created_at": "2026-03-23T06:46:57Z",
+      "description": "Add regression coverage for bigclaw-go/docs/reports/live-validation-summary.json so canonical lane report paths, closeout commands, broker summary paths, and shared-queue companion summary paths cannot drift silently from the checked-in validation bundle surface.",
+      "id": "big-par-270",
+      "identifier": "BIG-PAR-270",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add live validation summary regression coverage",
+      "updated_at": "2026-03-23T06:49:20Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added `bigclaw-go/internal/regression/broker_validation_summary_test.go` to pin the checked-in `docs/reports/broker-validation-summary.json` contract surface: canonical summary paths, bootstrap summary pointers, contract-only posture, validation-pack path, and nested bootstrap configuration.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestBrokerValidationSummaryStaysAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `9bb9532c8b27500f2b50a70eceadb1bc7c10e68a` matches remote SHA `9bb9532c8b27500f2b50a70eceadb1bc7c10e68a` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `9bb9532c8b27500f2b50a70eceadb1bc7c10e68a`\n\nCommit SHA: `9bb9532c8b27500f2b50a70eceadb1bc7c10e68a`\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-240 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-23T06:52:11Z"
+        }
+      ],
+      "created_at": "2026-03-23T06:49:44Z",
+      "description": "Add regression coverage for bigclaw-go/docs/reports/broker-validation-summary.json so canonical summary paths, bootstrap summary pointers, contract-only posture, and validation-pack references cannot drift silently from the checked-in broker readiness surface.",
+      "id": "big-par-271",
+      "identifier": "BIG-PAR-271",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add broker validation summary regression coverage",
+      "updated_at": "2026-03-23T06:52:11Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T06:52:11Z",
+      "description": "Add regression coverage for bigclaw-go/docs/reports/shared-queue-companion-summary.json so canonical report and bundle summary paths plus per-node completion counters stay aligned with the checked-in live validation companion surface.",
+      "id": "big-par-272",
+      "identifier": "BIG-PAR-272",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Backlog",
+      "title": "Add shared queue companion summary regression coverage",
+      "updated_at": "2026-03-23T06:52:11Z"
     }
   ]
 }

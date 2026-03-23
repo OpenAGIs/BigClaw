@@ -66,10 +66,17 @@
       "BIG-PAR-258",
       "BIG-PAR-259",
       "BIG-PAR-260",
-      "BIG-PAR-261"
+      "BIG-PAR-261",
+      "BIG-PAR-268"
     ],
-    "active": [],
-    "standby": []
+    "active": [
+      "BIG-PAR-270",
+      "BIG-PAR-271"
+    ],
+    "standby": [
+      "BIG-PAR-269",
+      "BIG-PAR-272"
+    ]
   },
   "issue_order": [
     "BIG-GOM-301",
@@ -120,7 +127,12 @@
     "BIG-PAR-258",
     "BIG-PAR-259",
     "BIG-PAR-260",
-    "BIG-PAR-261"
+    "BIG-PAR-261",
+    "BIG-PAR-268",
+    "BIG-PAR-269",
+    "BIG-PAR-270",
+    "BIG-PAR-271",
+    "BIG-PAR-272"
   ],
   "issues": [
     {
@@ -446,6 +458,36 @@
       "title": "Add planning follow-up index regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-268",
+      "title": "Rewire readiness reports to canonical follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-269",
+      "title": "Add canonical validation matrix regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Backlog"
+    },
+    {
+      "identifier": "BIG-PAR-270",
+      "title": "Add live validation summary regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-271",
+      "title": "Add broker validation summary regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-272",
+      "title": "Add shared queue companion summary regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Backlog"
     }
   ]
 }

@@ -36,3 +36,12 @@ The matrix below is grounded in checked-in evidence under
 
 These artifacts remain the companion proofs for shared-queue takeover safety,
 cross-process boundary expectations, and validation-bundle continuation policy.
+
+## Canonical follow-up routing
+
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining takeover, coordination, continuation, and broker-durability
+  hardening lanes behind this validation matrix.
+- Start here for runnable lane commands and checked-in evidence, then use the
+  follow-up index for `OPE-269` / `BIG-PAR-080`, `OPE-261` / `BIG-PAR-085`,
+  `OPE-271` / `BIG-PAR-082`, and `OPE-222`.
