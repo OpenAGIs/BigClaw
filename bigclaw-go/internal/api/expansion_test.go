@@ -484,6 +484,7 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 		{ID: "report-local", TraceID: "trace-report-local", Title: "Local", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(time.Minute)},
 		{ID: "report-k8s", TraceID: "trace-report-k8s", Title: "K8s", State: domain.TaskSucceeded, RequiredTools: []string{"browser"}, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(2 * time.Minute)},
 		{ID: "report-ray", TraceID: "trace-report-ray", Title: "Ray", State: domain.TaskSucceeded, RequiredTools: []string{"gpu"}, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(3 * time.Minute)},
+		{ID: "report-retry", TraceID: "trace-report-retry", Title: "Retry", State: domain.TaskRetrying, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(4 * time.Minute)},
 	} {
 		recorder.StoreTask(task)
 	}
@@ -494,6 +495,10 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 		{ID: "report-k8s-started", Type: domain.EventTaskStarted, TaskID: "report-k8s", TraceID: "trace-report-k8s", Timestamp: base.Add(4 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes}},
 		{ID: "report-ray-routed", Type: domain.EventSchedulerRouted, TaskID: "report-ray", TraceID: "trace-report-ray", Timestamp: base.Add(5 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay, "reason": "gpu workloads default to ray executor"}},
 		{ID: "report-ray-completed", Type: domain.EventTaskCompleted, TaskID: "report-ray", TraceID: "trace-report-ray", Timestamp: base.Add(6 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay}},
+		{ID: "report-retry-queued", Type: domain.EventTaskQueued, TaskID: "report-retry", TraceID: "trace-report-retry", Timestamp: base.Add(20 * time.Second)},
+		{ID: "report-retry-routed", Type: domain.EventSchedulerRouted, TaskID: "report-retry", TraceID: "trace-report-retry", Timestamp: base.Add(25 * time.Second), Payload: map[string]any{"executor": domain.ExecutorLocal, "reason": "capacity held locally for fast retry"}},
+		{ID: "report-retry-started", Type: domain.EventTaskStarted, TaskID: "report-retry", TraceID: "trace-report-retry", Timestamp: base.Add(3*time.Minute + 20*time.Second), Payload: map[string]any{"executor": domain.ExecutorLocal}},
+		{ID: "report-retry-retried", Type: domain.EventTaskRetried, TaskID: "report-retry", TraceID: "trace-report-retry", Timestamp: base.Add(4 * time.Minute), Payload: map[string]any{"executor": domain.ExecutorLocal, "reason": "executor backoff waiting for downstream capacity"}},
 	} {
 		recorder.Record(event)
 	}
@@ -606,6 +611,37 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 				Status          string  `json:"status"`
 			} `json:"executor_shares"`
 		} `json:"fairness"`
+		Scheduling struct {
+			QueueLatency struct {
+				Samples      int     `json:"samples"`
+				P95Seconds   float64 `json:"p95_seconds"`
+				DelayedTasks int     `json:"delayed_tasks"`
+				WaitingTasks int     `json:"waiting_tasks"`
+				ServiceLevel int     `json:"service_level_limit_seconds"`
+			} `json:"queue_latency"`
+			Backoff struct {
+				RetriedTasks        int     `json:"retried_tasks"`
+				RetryEvents         int     `json:"retry_events"`
+				MaxSeconds          float64 `json:"max_seconds"`
+				OutstandingBackoffs int     `json:"outstanding_backoffs"`
+			} `json:"backoff"`
+			DecisionPaths []struct {
+				TaskID              string   `json:"task_id"`
+				Executor            string   `json:"executor"`
+				LatestState         string   `json:"latest_state"`
+				RoutingReason       string   `json:"routing_reason"`
+				QueueLatencySeconds float64  `json:"queue_latency_seconds"`
+				BackoffCount        int      `json:"backoff_count"`
+				BackoffSeconds      float64  `json:"backoff_seconds"`
+				DecisionPath        []string `json:"decision_path"`
+			} `json:"decision_paths"`
+			CapacityRecommendations []struct {
+				Category string `json:"category"`
+				Target   string `json:"target"`
+				Severity string `json:"severity"`
+				Evidence string `json:"evidence"`
+			} `json:"capacity_recommendations"`
+		} `json:"scheduling"`
 		Report struct {
 			Markdown  string `json:"markdown"`
 			ExportURL string `json:"export_url"`
@@ -614,10 +650,10 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
 		t.Fatalf("decode distributed report: %v", err)
 	}
-	if decoded.Summary.RegisteredExecutors != 3 || decoded.Summary.TotalRoutedDecisions != 3 {
+	if decoded.Summary.RegisteredExecutors != 3 || decoded.Summary.TotalRoutedDecisions != 4 {
 		t.Fatalf("unexpected distributed report summary: %+v", decoded.Summary)
 	}
-	if len(decoded.RoutingReasons) != 3 || len(decoded.ExecutorCapacity) != 3 {
+	if len(decoded.RoutingReasons) != 4 || len(decoded.ExecutorCapacity) != 3 {
 		t.Fatalf("unexpected distributed report payload: %+v", decoded)
 	}
 	if decoded.ExecutorCapacity[0].Executor != "kubernetes" || decoded.ExecutorCapacity[0].ActiveTasks != 1 || len(decoded.ExecutorCapacity[0].TopRoutingReasons) == 0 {
@@ -629,16 +665,28 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if len(decoded.ClusterHealth.TakeoverOwners) == 0 || decoded.ClusterHealth.TakeoverOwners[0].Key != "alice" {
 		t.Fatalf("unexpected takeover owner breakdown: %+v", decoded.ClusterHealth)
 	}
-	if decoded.Recovery.ActiveTakeovers != 1 || decoded.Recovery.RetriedRuns != 0 || decoded.Recovery.DeadLetterRuns != 0 || decoded.Recovery.UnreleasedTakeovers != 0 {
+	if decoded.Recovery.ActiveTakeovers != 1 || decoded.Recovery.RetriedRuns != 1 || decoded.Recovery.DeadLetterRuns != 0 || decoded.Recovery.UnreleasedTakeovers != 0 {
 		t.Fatalf("unexpected recovery diagnostics payload: %+v", decoded.Recovery)
 	}
-	if decoded.Fairness.TotalRoutedDecisions != 3 || decoded.Fairness.CapacityWeightTotal <= 0 || len(decoded.Fairness.ExecutorShares) != 3 {
+	if decoded.Fairness.TotalRoutedDecisions != 4 || decoded.Fairness.CapacityWeightTotal <= 0 || len(decoded.Fairness.ExecutorShares) != 3 {
 		t.Fatalf("unexpected fairness diagnostics payload: %+v", decoded.Fairness)
 	}
 	if decoded.Fairness.ExecutorShares[0].Executor != "kubernetes" || decoded.Fairness.ExecutorShares[0].RoutedDecisions != 1 {
 		t.Fatalf("unexpected fairness executor share payload: %+v", decoded.Fairness.ExecutorShares[0])
 	}
-	if decoded.TraceBundle.TotalTraces != 3 || decoded.TraceBundle.TracesWithTerminalState != 2 || len(decoded.TraceBundle.RecentTraces) != 3 {
+	if decoded.Scheduling.QueueLatency.Samples == 0 || decoded.Scheduling.QueueLatency.P95Seconds < 180 || decoded.Scheduling.QueueLatency.DelayedTasks != 1 || decoded.Scheduling.QueueLatency.WaitingTasks != 1 || decoded.Scheduling.QueueLatency.ServiceLevel != 120 {
+		t.Fatalf("unexpected scheduling queue latency payload: %+v", decoded.Scheduling.QueueLatency)
+	}
+	if decoded.Scheduling.Backoff.RetriedTasks != 1 || decoded.Scheduling.Backoff.RetryEvents != 1 || decoded.Scheduling.Backoff.MaxSeconds < 20000 || decoded.Scheduling.Backoff.OutstandingBackoffs != 1 {
+		t.Fatalf("unexpected scheduling backoff payload: %+v", decoded.Scheduling.Backoff)
+	}
+	if len(decoded.Scheduling.DecisionPaths) == 0 || decoded.Scheduling.DecisionPaths[0].TaskID != "report-retry" || decoded.Scheduling.DecisionPaths[0].BackoffCount != 1 || decoded.Scheduling.DecisionPaths[0].QueueLatencySeconds < 180 || !strings.Contains(strings.Join(decoded.Scheduling.DecisionPaths[0].DecisionPath, " | "), "retry scheduled") {
+		t.Fatalf("unexpected scheduling decision path payload: %+v", decoded.Scheduling.DecisionPaths)
+	}
+	if len(decoded.Scheduling.CapacityRecommendations) < 3 || decoded.Scheduling.CapacityRecommendations[0].Category == "" || decoded.Scheduling.CapacityRecommendations[0].Evidence == "" {
+		t.Fatalf("unexpected scheduling capacity recommendations: %+v", decoded.Scheduling.CapacityRecommendations)
+	}
+	if decoded.TraceBundle.TotalTraces != 4 || decoded.TraceBundle.TracesWithTerminalState != 2 || len(decoded.TraceBundle.RecentTraces) != 4 {
 		t.Fatalf("unexpected trace export bundle summary: %+v", decoded.TraceBundle)
 	}
 	if decoded.TraceBundle.RecentTraces[0].TraceURL == "" || decoded.TraceBundle.RecentTraces[0].EventURL == "" {
@@ -659,7 +707,7 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if decoded.SequenceBridge.ReportPath != sequenceBridgeSurfacePath || decoded.SequenceBridge.Summary.BackendCount != 5 || decoded.SequenceBridge.Summary.LiveProvenBackends != 3 || decoded.SequenceBridge.Summary.HarnessProvenBackends != 1 || decoded.SequenceBridge.Summary.ContractOnlyBackends != 1 || decoded.SequenceBridge.Summary.OneToOneMappings != 2 || decoded.SequenceBridge.Summary.ProviderEpochBridgedBackends != 3 {
 		t.Fatalf("expected sequence bridge surface, got %+v", decoded.SequenceBridge)
 	}
-	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Recovery Signals") || !strings.Contains(decoded.Report.Markdown, "## Fairness") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") || !strings.Contains(decoded.Report.Markdown, "## Durable Sequence Bridge") {
+	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Recovery Signals") || !strings.Contains(decoded.Report.Markdown, "## Fairness") || !strings.Contains(decoded.Report.Markdown, "## Scheduling Diagnostics") || !strings.Contains(decoded.Report.Markdown, "executor backoff waiting for downstream capacity") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") || !strings.Contains(decoded.Report.Markdown, "## Durable Sequence Bridge") {
 		t.Fatalf("unexpected distributed markdown: %s", decoded.Report.Markdown)
 	}
 	if !strings.Contains(decoded.Report.Markdown, "## Shared Queue Coordination") || !strings.Contains(decoded.Report.Markdown, "Dead-letter backlog:") {
@@ -677,7 +725,7 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 		t.Fatalf("expected markdown export content type, got %q", contentType)
 	}
-	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") || !strings.Contains(exportResponse.Body.String(), "## Recovery Signals") || !strings.Contains(exportResponse.Body.String(), "## Fairness") || !strings.Contains(exportResponse.Body.String(), "Validation artifacts: docs/reports/live-validation-index.md") || !strings.Contains(exportResponse.Body.String(), "Ambiguous publish proof: docs/reports/ambiguous-publish-outcome-proof-summary.json (BF-05: committed, rejected, unknown_commit)") || !strings.Contains(exportResponse.Body.String(), "Backend limitations: no external tracing backend") {
+	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") || !strings.Contains(exportResponse.Body.String(), "## Recovery Signals") || !strings.Contains(exportResponse.Body.String(), "## Fairness") || !strings.Contains(exportResponse.Body.String(), "## Scheduling Diagnostics") || !strings.Contains(exportResponse.Body.String(), "Capacity recommendations:") || !strings.Contains(exportResponse.Body.String(), "Validation artifacts: docs/reports/live-validation-index.md") || !strings.Contains(exportResponse.Body.String(), "Ambiguous publish proof: docs/reports/ambiguous-publish-outcome-proof-summary.json (BF-05: committed, rejected, unknown_commit)") || !strings.Contains(exportResponse.Body.String(), "Backend limitations: no external tracing backend") {
 		t.Fatalf("unexpected distributed export markdown: %s", exportResponse.Body.String())
 	}
 	if !strings.Contains(exportResponse.Body.String(), "## Shared Queue Coordination") {
@@ -685,5 +733,75 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	}
 	if !strings.Contains(exportResponse.Body.String(), "Lane local: latest_status=succeeded") {
 		t.Fatalf("expected continuation lane coverage in distributed export markdown: %s", exportResponse.Body.String())
+	}
+}
+
+func TestV2DistributedReportAppliesTeamAndTimeWindowFilters(t *testing.T) {
+	base := time.Date(2026, 3, 14, 9, 0, 0, 0, time.UTC)
+	recorder := observability.NewRecorder()
+	server := &Server{
+		Recorder:  recorder,
+		Queue:     queue.NewMemoryQueue(),
+		Executors: []domain.ExecutorKind{domain.ExecutorLocal, domain.ExecutorKubernetes},
+		Control:   control.New(),
+		Now:       func() time.Time { return base.Add(6 * time.Hour) },
+	}
+	for _, task := range []domain.Task{
+		{ID: "window-hit", TraceID: "trace-window-hit", Title: "Window Hit", State: domain.TaskQueued, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(3 * time.Hour)},
+		{ID: "window-miss-team", TraceID: "trace-window-team", Title: "Other Team", State: domain.TaskQueued, Metadata: map[string]string{"team": "growth", "project": "apollo"}, UpdatedAt: base.Add(3 * time.Hour)},
+		{ID: "window-miss-time", TraceID: "trace-window-time", Title: "Old", State: domain.TaskQueued, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(30 * time.Minute)},
+	} {
+		recorder.StoreTask(task)
+	}
+	for _, event := range []domain.Event{
+		{ID: "window-hit-queued", Type: domain.EventTaskQueued, TaskID: "window-hit", TraceID: "trace-window-hit", Timestamp: base.Add(2*time.Hour + 10*time.Minute)},
+		{ID: "window-hit-routed", Type: domain.EventSchedulerRouted, TaskID: "window-hit", TraceID: "trace-window-hit", Timestamp: base.Add(2*time.Hour + 11*time.Minute), Payload: map[string]any{"executor": domain.ExecutorLocal, "reason": "within requested window"}},
+		{ID: "window-team-queued", Type: domain.EventTaskQueued, TaskID: "window-miss-team", TraceID: "trace-window-team", Timestamp: base.Add(2*time.Hour + 12*time.Minute)},
+		{ID: "window-time-queued", Type: domain.EventTaskQueued, TaskID: "window-miss-time", TraceID: "trace-window-time", Timestamp: base.Add(20 * time.Minute)},
+	} {
+		recorder.Record(event)
+	}
+
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?team=platform&since=2026-03-14T11:00:00Z&until=2026-03-14T13:30:00Z&limit=5", nil)
+	response := httptest.NewRecorder()
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected distributed report 200, got %d %s", response.Code, response.Body.String())
+	}
+
+	var decoded struct {
+		Filters struct {
+			Team  string    `json:"team"`
+			Since time.Time `json:"since"`
+			Until time.Time `json:"until"`
+		} `json:"filters"`
+		Summary struct {
+			TotalTasks int `json:"total_tasks"`
+		} `json:"summary"`
+		Scheduling struct {
+			DecisionPaths []struct {
+				TaskID string `json:"task_id"`
+				Team   string `json:"team"`
+			} `json:"decision_paths"`
+		} `json:"scheduling"`
+		Report struct {
+			Markdown  string `json:"markdown"`
+			ExportURL string `json:"export_url"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode filtered distributed report: %v", err)
+	}
+	if decoded.Filters.Team != "platform" || decoded.Filters.Since.Format(time.RFC3339) != "2026-03-14T11:00:00Z" || decoded.Filters.Until.Format(time.RFC3339) != "2026-03-14T13:30:00Z" {
+		t.Fatalf("unexpected distributed filters payload: %+v", decoded.Filters)
+	}
+	if decoded.Summary.TotalTasks != 1 || len(decoded.Scheduling.DecisionPaths) != 1 || decoded.Scheduling.DecisionPaths[0].TaskID != "window-hit" || decoded.Scheduling.DecisionPaths[0].Team != "platform" {
+		t.Fatalf("expected only the in-window platform task, got %+v", decoded)
+	}
+	if !strings.Contains(decoded.Report.ExportURL, "team=platform") || !strings.Contains(decoded.Report.ExportURL, "since=2026-03-14T11%3A00%3A00Z") || !strings.Contains(decoded.Report.ExportURL, "until=2026-03-14T13%3A30%3A00Z") {
+		t.Fatalf("expected time window filters in export url, got %s", decoded.Report.ExportURL)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "since=2026-03-14T11:00:00Z until=2026-03-14T13:30:00Z") {
+		t.Fatalf("expected time window filters in markdown, got %s", decoded.Report.Markdown)
 	}
 }

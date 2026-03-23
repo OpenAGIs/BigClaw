@@ -205,14 +205,14 @@ type workerPoolSummary struct {
 }
 
 type workerPoolHealthSummary struct {
-	StaleAfterSeconds          int64    `json:"stale_after_seconds"`
-	WorkersWithHeartbeat       int      `json:"workers_with_heartbeat"`
-	WorkersMissingHeartbeat    int      `json:"workers_missing_heartbeat"`
-	StaleWorkers               int      `json:"stale_workers"`
-	StaleWorkerIDs             []string `json:"stale_worker_ids,omitempty"`
-	MissingHeartbeatWorkerIDs  []string `json:"missing_heartbeat_worker_ids,omitempty"`
-	OldestHeartbeatAgeSeconds  *int64   `json:"oldest_heartbeat_age_seconds,omitempty"`
-	NewestHeartbeatAgeSeconds  *int64   `json:"newest_heartbeat_age_seconds,omitempty"`
+	StaleAfterSeconds         int64    `json:"stale_after_seconds"`
+	WorkersWithHeartbeat      int      `json:"workers_with_heartbeat"`
+	WorkersMissingHeartbeat   int      `json:"workers_missing_heartbeat"`
+	StaleWorkers              int      `json:"stale_workers"`
+	StaleWorkerIDs            []string `json:"stale_worker_ids,omitempty"`
+	MissingHeartbeatWorkerIDs []string `json:"missing_heartbeat_worker_ids,omitempty"`
+	OldestHeartbeatAgeSeconds *int64   `json:"oldest_heartbeat_age_seconds,omitempty"`
+	NewestHeartbeatAgeSeconds *int64   `json:"newest_heartbeat_age_seconds,omitempty"`
 }
 
 type controlActionAuditEntry struct {
@@ -260,6 +260,8 @@ type controlCenterFilters struct {
 	TaskID     string
 	State      string
 	RiskLevel  string
+	Since      time.Time
+	Until      time.Time
 	Actor      string
 	Action     string
 	Owner      string
@@ -2363,6 +2365,14 @@ func supportsQueueCancel(q queue.Queue) bool {
 }
 
 func parseControlCenterFilters(r *http.Request) (controlCenterFilters, error) {
+	since, err := parseOptionalTime(r.URL.Query().Get("since"))
+	if err != nil {
+		return controlCenterFilters{}, fmt.Errorf("invalid since value, expected RFC3339")
+	}
+	until, err := parseOptionalTime(r.URL.Query().Get("until"))
+	if err != nil {
+		return controlCenterFilters{}, fmt.Errorf("invalid until value, expected RFC3339")
+	}
 	priorityRaw := strings.TrimSpace(r.URL.Query().Get("priority"))
 	var priority *int
 	if priorityRaw != "" {
@@ -2386,6 +2396,8 @@ func parseControlCenterFilters(r *http.Request) (controlCenterFilters, error) {
 		TaskID:     strings.TrimSpace(r.URL.Query().Get("task_id")),
 		State:      strings.ToLower(strings.TrimSpace(r.URL.Query().Get("state"))),
 		RiskLevel:  strings.ToLower(strings.TrimSpace(r.URL.Query().Get("risk_level"))),
+		Since:      since,
+		Until:      until,
 		Actor:      strings.TrimSpace(r.URL.Query().Get("actor")),
 		Action:     normalizeActionName(r.URL.Query().Get("action")),
 		Owner:      strings.TrimSpace(r.URL.Query().Get("owner")),
@@ -2494,7 +2506,7 @@ func summarizeControlCenter(queueTasks []queueTaskOverview, deadLetters []domain
 
 func (s *Server) filteredActiveTakeovers(filters controlCenterFilters) []control.Takeover {
 	takeovers := s.Control.ActiveTakeovers()
-	if filters.Team == "" && filters.Project == "" && filters.TaskID == "" && filters.State == "" && filters.RiskLevel == "" && filters.Priority == nil {
+	if filters.Team == "" && filters.Project == "" && filters.TaskID == "" && filters.State == "" && filters.RiskLevel == "" && filters.Priority == nil && filters.Since.IsZero() && filters.Until.IsZero() {
 		return takeovers
 	}
 	filtered := make([]control.Takeover, 0, len(takeovers))
@@ -2729,6 +2741,13 @@ func matchesTaskFilters(task domain.Task, effectiveState domain.TaskState, filte
 		return false
 	}
 	if filters.Priority != nil && task.Priority != *filters.Priority {
+		return false
+	}
+	anchor := taskAnchorTime(task)
+	if !filters.Since.IsZero() && anchor.Before(filters.Since) {
+		return false
+	}
+	if !filters.Until.IsZero() && anchor.After(filters.Until) {
 		return false
 	}
 	return true

@@ -1,27 +1,28 @@
 ## Codex Workpad
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
-
 ### Plan
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+- [x] Inspect the distributed diagnostics report path and identify the smallest change set needed for scheduling diagnostics.
+- [x] Implement scheduling decision path, queue latency, backoff statistics, and capacity recommendations in `bigclaw-go/internal/api/distributed.go`.
+- [x] Thread `since`/`until` filters through the distributed diagnostics response, export URL, and relevant filter helpers.
+- [x] Extend focused API tests for the new scheduling diagnostics and filter behavior.
+- [ ] Run targeted Go tests, then commit and push the branch.
 
 ### Acceptance Criteria
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
+- [x] The distributed diagnostics payload includes scheduling decision paths, queue latency metrics, and backoff statistics.
+- [x] The diagnostics report includes actionable capacity recommendations for worker, queue, and executor bottlenecks.
+- [x] Distributed diagnostics support filtering by time window and team, including markdown export links.
+- [x] Targeted tests cover the new diagnostics and pass.
 
 ### Validation
 
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
+- [x] `cd bigclaw-go && go test ./internal/api -run 'TestV2DistributedReport'` -> `ok  	bigclaw-go/internal/api	2.180s`
+- [x] `cd bigclaw-go && go test ./internal/api` -> `ok  	bigclaw-go/internal/api	4.420s`
 
 ### Notes
 
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+- Scope is limited to the distributed scheduling diagnostics/reporting surface required by `BIGCLAW-174`.
+- Existing unrelated worktree changes in `bigclaw-go/internal/api/distributed.go` and `bigclaw-go/internal/api/v2.go` are treated as in-scope only where they support this issue.
+- Initial inspection shows the issue is already partially implemented in the worktree; remaining work is verification and any targeted fixes uncovered by tests.
+- Validation-adjusted assertions: `recovery.retried_runs=1` and `scheduling.queue_latency.waiting_tasks=1` for the retry fixture, matching the current event semantics.

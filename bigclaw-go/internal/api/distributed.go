@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+	"time"
 
 	"bigclaw-go/internal/control"
 	"bigclaw-go/internal/domain"
@@ -99,6 +100,55 @@ type fairnessDiagnostics struct {
 	Notes                []string                `json:"notes,omitempty"`
 }
 
+type queueLatencyDiagnostics struct {
+	Samples           int     `json:"samples"`
+	AverageSeconds    float64 `json:"average_seconds"`
+	P95Seconds        float64 `json:"p95_seconds"`
+	MaxSeconds        float64 `json:"max_seconds"`
+	WaitingTasks      int     `json:"waiting_tasks"`
+	DelayedTasks      int     `json:"delayed_tasks"`
+	ServiceLevelLimit int     `json:"service_level_limit_seconds"`
+}
+
+type backoffDiagnostics struct {
+	RetriedTasks        int     `json:"retried_tasks"`
+	RetryEvents         int     `json:"retry_events"`
+	AverageSeconds      float64 `json:"average_seconds"`
+	P95Seconds          float64 `json:"p95_seconds"`
+	MaxSeconds          float64 `json:"max_seconds"`
+	OutstandingBackoffs int     `json:"outstanding_backoffs"`
+}
+
+type schedulingDecisionPath struct {
+	TaskID               string    `json:"task_id"`
+	TraceID              string    `json:"trace_id,omitempty"`
+	Team                 string    `json:"team"`
+	Project              string    `json:"project"`
+	Executor             string    `json:"executor"`
+	LatestState          string    `json:"latest_state"`
+	RoutingReason        string    `json:"routing_reason,omitempty"`
+	QueueLatencySeconds  float64   `json:"queue_latency_seconds"`
+	BackoffCount         int       `json:"backoff_count"`
+	BackoffSeconds       float64   `json:"backoff_seconds"`
+	LatestEventTimestamp time.Time `json:"latest_event_timestamp,omitempty"`
+	DecisionPath         []string  `json:"decision_path"`
+}
+
+type capacityRecommendation struct {
+	Category       string `json:"category"`
+	Target         string `json:"target"`
+	Severity       string `json:"severity"`
+	Recommendation string `json:"recommendation"`
+	Evidence       string `json:"evidence"`
+}
+
+type schedulingDiagnostics struct {
+	DecisionPaths           []schedulingDecisionPath `json:"decision_paths"`
+	QueueLatency            queueLatencyDiagnostics  `json:"queue_latency"`
+	Backoff                 backoffDiagnostics       `json:"backoff"`
+	CapacityRecommendations []capacityRecommendation `json:"capacity_recommendations"`
+}
+
 type distributedDiagnosticsReport struct {
 	Markdown  string `json:"markdown"`
 	ExportURL string `json:"export_url"`
@@ -166,6 +216,7 @@ type distributedDiagnostics struct {
 	ClusterHealth         clusterHealthRollup                      `json:"cluster_health"`
 	Recovery              recoveryDiagnostics                      `json:"recovery"`
 	Fairness              fairnessDiagnostics                      `json:"fairness"`
+	Scheduling            schedulingDiagnostics                    `json:"scheduling"`
 	CoordinationLeader    any                                      `json:"coordination_leader_election,omitempty"`
 	SharedQueue           sharedQueueCoordinationDiagnostics       `json:"shared_queue_diagnostics"`
 	LiveShadowMirror      liveShadowMirrorSurface                  `json:"live_shadow_mirror_scorecard"`
@@ -197,6 +248,14 @@ type distributedTaskAssignment struct {
 	Executor       domain.ExecutorKind
 }
 
+type schedulingTaskDiagnostics struct {
+	DecisionPath        schedulingDecisionPath
+	QueueLatency        float64
+	QueueLatencyDelayed bool
+	BackoffDurations    []float64
+	OutstandingBackoff  bool
+}
+
 func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -221,6 +280,8 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 			"task_id":    filters.TaskID,
 			"state":      filters.State,
 			"risk_level": filters.RiskLevel,
+			"since":      filters.Since,
+			"until":      filters.Until,
 			"limit":      filters.Limit,
 			"priority":   filters.Priority,
 		},
@@ -231,6 +292,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"cluster_health":                  diagnostics.ClusterHealth,
 		"recovery":                        diagnostics.Recovery,
 		"fairness":                        diagnostics.Fairness,
+		"scheduling":                      diagnostics.Scheduling,
 		"coordination_leader_election":    diagnostics.CoordinationLeader,
 		"shared_queue_diagnostics":        diagnostics.SharedQueue,
 		"live_shadow_mirror_scorecard":    diagnostics.LiveShadowMirror,
@@ -329,11 +391,16 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 	countersByExecutor := make(map[domain.ExecutorKind]*executorDiagnosticsCounters)
 	routingIndex := make(map[string]*routingReasonSummary)
 	totalRouted := 0
+	taskEvents := make(map[string][]domain.Event, len(assignments))
 	for _, event := range s.Recorder.EventsByTask("", 0) {
 		assignment, ok := assignmentByTask[event.TaskID]
 		if !ok {
 			continue
 		}
+		if !eventMatchesTimeWindow(event, filters) {
+			continue
+		}
+		taskEvents[event.TaskID] = append(taskEvents[event.TaskID], event)
 		executorKind := eventExecutorKind(event, assignment.Task)
 		if executorKind == "" {
 			executorKind = assignment.Executor
@@ -460,6 +527,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 	}
 	sort.SliceStable(executorCapacity, func(i, j int) bool { return executorCapacity[i].Executor < executorCapacity[j].Executor })
 	sort.Strings(saturatedExecutors)
+	scheduling := s.buildSchedulingDiagnostics(assignments, taskEvents, executorCapacity, filters)
 
 	summary := distributedDiagnosticsSummary{
 		RegisteredExecutors:  len(capabilities),
@@ -497,6 +565,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		ClusterHealth:         clusterHealth,
 		Recovery:              recovery,
 		Fairness:              fairness,
+		Scheduling:            scheduling,
 		CoordinationLeader:    s.coordinationLeaderElectionPayload(),
 		SharedQueue:           s.sharedQueueCoordinationDiagnostics(),
 		LiveShadowMirror:      liveShadowMirrorPayload(),
@@ -699,6 +768,285 @@ func buildFairnessDiagnostics(capabilities []executor.Capability, countersByExec
 	}
 }
 
+func (s *Server) buildSchedulingDiagnostics(assignments []distributedTaskAssignment, taskEvents map[string][]domain.Event, capacity []executorCapacityView, filters controlCenterFilters) schedulingDiagnostics {
+	decisionDiagnostics := make([]schedulingTaskDiagnostics, 0, len(assignments))
+	queueSamples := make([]float64, 0, len(assignments))
+	backoffSamples := make([]float64, 0, len(assignments))
+	waitingTasks := 0
+	delayedTasks := 0
+	retriedTasks := 0
+	retryEvents := 0
+	outstandingBackoffs := 0
+
+	for _, assignment := range assignments {
+		diagnostic := buildSchedulingTaskDiagnostics(assignment, taskEvents[assignment.Task.ID], s.currentTime())
+		decisionDiagnostics = append(decisionDiagnostics, diagnostic)
+		if diagnostic.QueueLatency > 0 {
+			queueSamples = append(queueSamples, diagnostic.QueueLatency)
+		}
+		if assignment.EffectiveState == domain.TaskQueued || assignment.EffectiveState == domain.TaskRetrying || assignment.EffectiveState == domain.TaskLeased {
+			waitingTasks++
+		}
+		if diagnostic.QueueLatencyDelayed {
+			delayedTasks++
+		}
+		if len(diagnostic.BackoffDurations) > 0 {
+			retriedTasks++
+			retryEvents += len(diagnostic.BackoffDurations)
+			backoffSamples = append(backoffSamples, diagnostic.BackoffDurations...)
+		}
+		if diagnostic.OutstandingBackoff {
+			outstandingBackoffs++
+		}
+	}
+
+	sort.SliceStable(decisionDiagnostics, func(i, j int) bool {
+		left := decisionDiagnostics[i].DecisionPath
+		right := decisionDiagnostics[j].DecisionPath
+		if left.QueueLatencySeconds == right.QueueLatencySeconds {
+			if left.BackoffCount == right.BackoffCount {
+				if left.LatestEventTimestamp.Equal(right.LatestEventTimestamp) {
+					return left.TaskID < right.TaskID
+				}
+				return left.LatestEventTimestamp.After(right.LatestEventTimestamp)
+			}
+			return left.BackoffCount > right.BackoffCount
+		}
+		return left.QueueLatencySeconds > right.QueueLatencySeconds
+	})
+
+	limit := filters.Limit
+	if limit <= 0 || limit > len(decisionDiagnostics) {
+		limit = len(decisionDiagnostics)
+	}
+	decisionPaths := make([]schedulingDecisionPath, 0, limit)
+	for index := 0; index < limit; index++ {
+		decisionPaths = append(decisionPaths, decisionDiagnostics[index].DecisionPath)
+	}
+
+	return schedulingDiagnostics{
+		DecisionPaths: decisionPaths,
+		QueueLatency: queueLatencyDiagnostics{
+			Samples:           len(queueSamples),
+			AverageSeconds:    averageFloat64(queueSamples),
+			P95Seconds:        percentileFloat64(queueSamples, 0.95),
+			MaxSeconds:        maxFloat64(queueSamples),
+			WaitingTasks:      waitingTasks,
+			DelayedTasks:      delayedTasks,
+			ServiceLevelLimit: 120,
+		},
+		Backoff: backoffDiagnostics{
+			RetriedTasks:        retriedTasks,
+			RetryEvents:         retryEvents,
+			AverageSeconds:      averageFloat64(backoffSamples),
+			P95Seconds:          percentileFloat64(backoffSamples, 0.95),
+			MaxSeconds:          maxFloat64(backoffSamples),
+			OutstandingBackoffs: outstandingBackoffs,
+		},
+		CapacityRecommendations: buildCapacityRecommendations(capacity, decisionDiagnostics),
+	}
+}
+
+func buildSchedulingTaskDiagnostics(assignment distributedTaskAssignment, events []domain.Event, now time.Time) schedulingTaskDiagnostics {
+	events = append([]domain.Event(nil), events...)
+	sort.SliceStable(events, func(i, j int) bool {
+		if events[i].Timestamp.Equal(events[j].Timestamp) {
+			return events[i].ID < events[j].ID
+		}
+		return events[i].Timestamp.Before(events[j].Timestamp)
+	})
+
+	decision := schedulingDecisionPath{
+		TaskID:      assignment.Task.ID,
+		TraceID:     assignment.Task.TraceID,
+		Team:        firstNonEmpty(strings.TrimSpace(assignment.Task.Metadata["team"]), "unassigned"),
+		Project:     firstNonEmpty(strings.TrimSpace(assignment.Task.Metadata["project"]), "unassigned"),
+		Executor:    string(assignment.Executor),
+		LatestState: string(assignment.EffectiveState),
+	}
+	if decision.TraceID == "" {
+		decision.TraceID = assignment.Task.ID
+	}
+
+	var latestQueueAt time.Time
+	var latestRetryAt time.Time
+	var latestRetryReason string
+	var latestTimestamp time.Time
+	queueLatencySeconds := 0.0
+	backoffDurations := make([]float64, 0)
+	decisionSteps := make([]string, 0, len(events)+1)
+
+	for _, event := range events {
+		if event.Timestamp.After(latestTimestamp) {
+			latestTimestamp = event.Timestamp
+		}
+		switch event.Type {
+		case domain.EventTaskQueued:
+			latestQueueAt = event.Timestamp
+			decisionSteps = append(decisionSteps, fmt.Sprintf("%s queued", event.Timestamp.Format(time.RFC3339)))
+		case domain.EventSchedulerRouted:
+			reason := firstNonEmpty(strings.TrimSpace(eventStringValue(event.Payload, "reason")), "no reason captured")
+			executorName := firstNonEmpty(strings.TrimSpace(eventStringValue(event.Payload, "executor")), string(assignment.Executor))
+			decision.Executor = executorName
+			decision.RoutingReason = reason
+			decisionSteps = append(decisionSteps, fmt.Sprintf("%s routed to %s (%s)", event.Timestamp.Format(time.RFC3339), executorName, reason))
+		case domain.EventTaskLeased:
+			decisionSteps = append(decisionSteps, fmt.Sprintf("%s lease acquired", event.Timestamp.Format(time.RFC3339)))
+		case domain.EventTaskStarted:
+			if !latestQueueAt.IsZero() {
+				queueLatencySeconds += event.Timestamp.Sub(latestQueueAt).Seconds()
+				latestQueueAt = time.Time{}
+			}
+			if !latestRetryAt.IsZero() {
+				backoffDurations = append(backoffDurations, event.Timestamp.Sub(latestRetryAt).Seconds())
+				latestRetryAt = time.Time{}
+				latestRetryReason = ""
+			}
+			decisionSteps = append(decisionSteps, fmt.Sprintf("%s started on %s", event.Timestamp.Format(time.RFC3339), decision.Executor))
+		case domain.EventTaskRetried:
+			latestRetryAt = event.Timestamp
+			latestRetryReason = firstNonEmpty(strings.TrimSpace(eventStringValue(event.Payload, "reason")), "retry requested")
+			decisionSteps = append(decisionSteps, fmt.Sprintf("%s retry scheduled (%s)", event.Timestamp.Format(time.RFC3339), latestRetryReason))
+		case domain.EventTaskCompleted:
+			decisionSteps = append(decisionSteps, fmt.Sprintf("%s completed", event.Timestamp.Format(time.RFC3339)))
+		case domain.EventTaskDeadLetter:
+			decisionSteps = append(decisionSteps, fmt.Sprintf("%s dead-lettered", event.Timestamp.Format(time.RFC3339)))
+		case domain.EventRunTakeover:
+			decisionSteps = append(decisionSteps, fmt.Sprintf("%s human takeover requested", event.Timestamp.Format(time.RFC3339)))
+		}
+	}
+
+	if latestTimestamp.IsZero() {
+		latestTimestamp = taskAnchorTime(assignment.Task)
+	}
+	if !latestQueueAt.IsZero() && now.After(latestQueueAt) {
+		queueLatencySeconds += now.Sub(latestQueueAt).Seconds()
+	}
+	outstandingBackoff := false
+	if !latestRetryAt.IsZero() && now.After(latestRetryAt) {
+		backoffDurations = append(backoffDurations, now.Sub(latestRetryAt).Seconds())
+		outstandingBackoff = assignment.EffectiveState == domain.TaskRetrying || assignment.EffectiveState == domain.TaskQueued || assignment.EffectiveState == domain.TaskLeased
+		if outstandingBackoff && latestRetryReason != "" {
+			decisionSteps = append(decisionSteps, fmt.Sprintf("%s backoff still pending (%s)", now.Format(time.RFC3339), latestRetryReason))
+		}
+	}
+	if len(decisionSteps) == 0 {
+		decisionSteps = append(decisionSteps, fmt.Sprintf("%s no scheduling events captured", latestTimestamp.Format(time.RFC3339)))
+	}
+
+	decision.QueueLatencySeconds = roundMetric(queueLatencySeconds)
+	decision.BackoffCount = len(backoffDurations)
+	decision.BackoffSeconds = roundMetric(sumFloat64(backoffDurations))
+	decision.LatestEventTimestamp = latestTimestamp
+	decision.DecisionPath = decisionSteps
+
+	return schedulingTaskDiagnostics{
+		DecisionPath:        decision,
+		QueueLatency:        queueLatencySeconds,
+		QueueLatencyDelayed: queueLatencySeconds >= 120,
+		BackoffDurations:    backoffDurations,
+		OutstandingBackoff:  outstandingBackoff,
+	}
+}
+
+func buildCapacityRecommendations(capacity []executorCapacityView, scheduling []schedulingTaskDiagnostics) []capacityRecommendation {
+	recommendations := make([]capacityRecommendation, 0, 4)
+	categories := make(map[string]bool)
+	maxQueueLatency := 0.0
+	delayedTasks := 0
+	outstandingBackoffs := 0
+	for _, item := range scheduling {
+		if item.QueueLatency > maxQueueLatency {
+			maxQueueLatency = item.QueueLatency
+		}
+		if item.QueueLatencyDelayed {
+			delayedTasks++
+		}
+		if item.OutstandingBackoff {
+			outstandingBackoffs++
+		}
+	}
+	for _, view := range capacity {
+		if executorIsSaturated(view) || view.QueuedTasks > view.AvailableConcurrency+1 {
+			recommendations = append(recommendations, capacityRecommendation{
+				Category:       "worker",
+				Target:         view.Executor,
+				Severity:       recommendationSeverity(view.QueuedTasks, view.ActiveWorkers, int(math.Round(view.SaturationPercent))),
+				Recommendation: fmt.Sprintf("Increase %s worker capacity or rebalance leases to recover spare concurrency.", view.Executor),
+				Evidence:       fmt.Sprintf("active_workers=%d max_concurrency=%d available=%d queued_tasks=%d saturation=%.1f%%", view.ActiveWorkers, view.MaxConcurrency, view.AvailableConcurrency, view.QueuedTasks, view.SaturationPercent),
+			})
+			categories["worker"] = true
+		}
+		if view.QueuedTasks >= 2 && view.QueuedTasks > view.ActiveWorkers {
+			recommendations = append(recommendations, capacityRecommendation{
+				Category:       "queue",
+				Target:         view.Executor,
+				Severity:       recommendationSeverity(view.QueuedTasks, delayedTasks),
+				Recommendation: fmt.Sprintf("Split the %s backlog across additional queue shards or reduce per-task execution time.", view.Executor),
+				Evidence:       fmt.Sprintf("queued_tasks=%d active_workers=%d delayed_tasks=%d", view.QueuedTasks, view.ActiveWorkers, delayedTasks),
+			})
+			categories["queue"] = true
+		}
+	}
+	if maxQueueLatency >= 120 || outstandingBackoffs > 0 {
+		recommendations = append(recommendations, capacityRecommendation{
+			Category:       "executor",
+			Target:         "scheduler",
+			Severity:       recommendationSeverity(int(maxQueueLatency), outstandingBackoffs, delayedTasks),
+			Recommendation: "Tune executor routing weights or add executor lanes for teams with sustained queue delay and retry backoff.",
+			Evidence:       fmt.Sprintf("max_queue_latency_seconds=%.1f outstanding_backoffs=%d delayed_tasks=%d", maxQueueLatency, outstandingBackoffs, delayedTasks),
+		})
+		categories["executor"] = true
+	}
+	if !categories["worker"] {
+		recommendations = append(recommendations, capacityRecommendation{
+			Category:       "worker",
+			Target:         "global",
+			Severity:       "info",
+			Recommendation: "Keep current worker pool levels and continue watching queued-to-start latency for the selected slice.",
+			Evidence:       "no worker saturation signal exceeded the recommendation threshold",
+		})
+		categories["worker"] = true
+	}
+	if !categories["queue"] {
+		recommendations = append(recommendations, capacityRecommendation{
+			Category:       "queue",
+			Target:         "global",
+			Severity:       "info",
+			Recommendation: "Current queue depth is within the observed service level; no extra sharding is required for this slice.",
+			Evidence:       fmt.Sprintf("delayed_tasks=%d max_queue_latency_seconds=%.1f", delayedTasks, maxQueueLatency),
+		})
+		categories["queue"] = true
+	}
+	if !categories["executor"] {
+		recommendations = append(recommendations, capacityRecommendation{
+			Category:       "executor",
+			Target:         "scheduler",
+			Severity:       "info",
+			Recommendation: "Current executor mix is sufficient; continue monitoring routing fairness and retry backoff trends.",
+			Evidence:       fmt.Sprintf("outstanding_backoffs=%d max_queue_latency_seconds=%.1f", outstandingBackoffs, maxQueueLatency),
+		})
+	}
+	return recommendations
+}
+
+func recommendationSeverity(values ...int) string {
+	maxValue := 0
+	for _, value := range values {
+		if value > maxValue {
+			maxValue = value
+		}
+	}
+	switch {
+	case maxValue >= 5:
+		return "high"
+	case maxValue >= 2:
+		return "medium"
+	default:
+		return "low"
+	}
+}
+
 func countActiveAssignments(assignments []distributedTaskAssignment) int {
 	count := 0
 	for _, item := range assignments {
@@ -823,6 +1171,75 @@ func taskRequiresTool(task domain.Task, tool string) bool {
 	return false
 }
 
+func (s *Server) currentTime() time.Time {
+	if s.Now != nil {
+		return s.Now()
+	}
+	return time.Now()
+}
+
+func eventMatchesTimeWindow(event domain.Event, filters controlCenterFilters) bool {
+	if !filters.Since.IsZero() && event.Timestamp.Before(filters.Since) {
+		return false
+	}
+	if !filters.Until.IsZero() && event.Timestamp.After(filters.Until) {
+		return false
+	}
+	return true
+}
+
+func averageFloat64(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+	return roundMetric(sumFloat64(values) / float64(len(values)))
+}
+
+func percentileFloat64(values []float64, percentile float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+	sorted := append([]float64(nil), values...)
+	sort.Float64s(sorted)
+	index := int(math.Ceil(percentile*float64(len(sorted)))) - 1
+	if index < 0 {
+		index = 0
+	}
+	if index >= len(sorted) {
+		index = len(sorted) - 1
+	}
+	return roundMetric(sorted[index])
+}
+
+func maxFloat64(values []float64) float64 {
+	maxValue := 0.0
+	for _, value := range values {
+		if value > maxValue {
+			maxValue = value
+		}
+	}
+	return roundMetric(maxValue)
+}
+
+func sumFloat64(values []float64) float64 {
+	total := 0.0
+	for _, value := range values {
+		total += value
+	}
+	return total
+}
+
+func roundMetric(value float64) float64 {
+	return math.Round(value*10) / 10
+}
+
+func formatOptionalTime(value time.Time) string {
+	if value.IsZero() {
+		return "all"
+	}
+	return value.Format(time.RFC3339)
+}
+
 func distributedExportURL(filters controlCenterFilters) string {
 	values := url.Values{}
 	if filters.Team != "" {
@@ -839,6 +1256,12 @@ func distributedExportURL(filters controlCenterFilters) string {
 	}
 	if filters.RiskLevel != "" {
 		values.Set("risk_level", filters.RiskLevel)
+	}
+	if !filters.Since.IsZero() {
+		values.Set("since", filters.Since.Format(time.RFC3339))
+	}
+	if !filters.Until.IsZero() {
+		values.Set("until", filters.Until.Format(time.RFC3339))
 	}
 	if filters.Priority != nil {
 		values.Set("priority", fmt.Sprintf("%d", *filters.Priority))
@@ -857,7 +1280,7 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	lines := []string{
 		"# BigClaw Distributed Diagnostics Report",
 		"",
-		fmt.Sprintf("Filters: team=%s project=%s task_id=%s state=%s risk_level=%s", firstNonEmpty(filters.Team, "all"), firstNonEmpty(filters.Project, "all"), firstNonEmpty(filters.TaskID, "all"), firstNonEmpty(filters.State, "all"), firstNonEmpty(filters.RiskLevel, "all")),
+		fmt.Sprintf("Filters: team=%s project=%s task_id=%s state=%s risk_level=%s since=%s until=%s", firstNonEmpty(filters.Team, "all"), firstNonEmpty(filters.Project, "all"), firstNonEmpty(filters.TaskID, "all"), firstNonEmpty(filters.State, "all"), firstNonEmpty(filters.RiskLevel, "all"), formatOptionalTime(filters.Since), formatOptionalTime(filters.Until)),
 		"",
 		"## Summary",
 		fmt.Sprintf("- Registered executors: %d", diagnostics.Summary.RegisteredExecutors),
@@ -998,6 +1421,43 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.Fairness.Notes) > 0 {
 		lines = append(lines, "- Notes: "+strings.Join(diagnostics.Fairness.Notes, "; "))
+	}
+	lines = append(lines,
+		"",
+		"## Scheduling Diagnostics",
+		fmt.Sprintf("- Queue latency samples: %d", diagnostics.Scheduling.QueueLatency.Samples),
+		fmt.Sprintf("- Queue latency average seconds: %.1f", diagnostics.Scheduling.QueueLatency.AverageSeconds),
+		fmt.Sprintf("- Queue latency p95 seconds: %.1f", diagnostics.Scheduling.QueueLatency.P95Seconds),
+		fmt.Sprintf("- Queue latency max seconds: %.1f", diagnostics.Scheduling.QueueLatency.MaxSeconds),
+		fmt.Sprintf("- Waiting tasks: %d", diagnostics.Scheduling.QueueLatency.WaitingTasks),
+		fmt.Sprintf("- Delayed tasks: %d", diagnostics.Scheduling.QueueLatency.DelayedTasks),
+		fmt.Sprintf("- Queue latency service level seconds: %d", diagnostics.Scheduling.QueueLatency.ServiceLevelLimit),
+		fmt.Sprintf("- Retried tasks: %d", diagnostics.Scheduling.Backoff.RetriedTasks),
+		fmt.Sprintf("- Retry events: %d", diagnostics.Scheduling.Backoff.RetryEvents),
+		fmt.Sprintf("- Backoff average seconds: %.1f", diagnostics.Scheduling.Backoff.AverageSeconds),
+		fmt.Sprintf("- Backoff p95 seconds: %.1f", diagnostics.Scheduling.Backoff.P95Seconds),
+		fmt.Sprintf("- Backoff max seconds: %.1f", diagnostics.Scheduling.Backoff.MaxSeconds),
+		fmt.Sprintf("- Outstanding backoffs: %d", diagnostics.Scheduling.Backoff.OutstandingBackoffs),
+	)
+	if len(diagnostics.Scheduling.DecisionPaths) == 0 {
+		lines = append(lines, "- No scheduling decision paths captured")
+	} else {
+		lines = append(lines, "- Decision paths:")
+		for _, item := range diagnostics.Scheduling.DecisionPaths {
+			lines = append(lines, fmt.Sprintf("  - %s: executor=%s state=%s queue_latency=%.1fs backoffs=%d backoff_seconds=%.1f reason=%s", item.TaskID, firstNonEmpty(item.Executor, "unknown"), firstNonEmpty(item.LatestState, "unknown"), item.QueueLatencySeconds, item.BackoffCount, item.BackoffSeconds, firstNonEmpty(item.RoutingReason, "n/a")))
+			for _, step := range item.DecisionPath {
+				lines = append(lines, "    - "+step)
+			}
+		}
+	}
+	if len(diagnostics.Scheduling.CapacityRecommendations) == 0 {
+		lines = append(lines, "- No capacity recommendations")
+	} else {
+		lines = append(lines, "- Capacity recommendations:")
+		for _, item := range diagnostics.Scheduling.CapacityRecommendations {
+			lines = append(lines, fmt.Sprintf("  - [%s/%s] %s: %s", item.Category, item.Severity, item.Target, item.Recommendation))
+			lines = append(lines, "    - evidence: "+item.Evidence)
+		}
 	}
 	lines = append(lines,
 		"",
