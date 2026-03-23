@@ -2079,6 +2079,20 @@
       "state": "Done",
       "title": "Fix rollback follow-up issue ID drift in gap analysis",
       "updated_at": "2026-03-23T04:39:37Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T04:41:46Z",
+      "description": "Add a regression that keeps the observability follow-up docs aligned across the gap analysis, observability report, tracing/telemetry digests, and reviewer coverage docs; patch any stale or missing OPE-264 / BIG-PAR-075 and OPE-265 / BIG-PAR-076 references the new check exposes.",
+      "id": "big-par-252",
+      "identifier": "BIG-PAR-252",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "In Progress",
+      "title": "Add observability follow-up doc regression coverage",
+      "updated_at": "2026-03-23T04:41:46Z"
     }
   ]
 }

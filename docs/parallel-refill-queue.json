@@ -55,10 +55,11 @@
       "BIG-PAR-247",
       "BIG-PAR-248",
       "BIG-PAR-249",
-      "BIG-PAR-250"
+      "BIG-PAR-250",
+      "BIG-PAR-251"
     ],
     "active": [
-      "BIG-PAR-251"
+      "BIG-PAR-252"
     ],
     "standby": []
   },
@@ -101,7 +102,8 @@
     "BIG-PAR-248",
     "BIG-PAR-249",
     "BIG-PAR-250",
-    "BIG-PAR-251"
+    "BIG-PAR-251",
+    "BIG-PAR-252"
   ],
   "issues": [
     {
@@ -335,6 +337,12 @@
     {
       "identifier": "BIG-PAR-251",
       "title": "Fix rollback follow-up issue ID drift in gap analysis",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-252",
+      "title": "Add observability follow-up doc regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "In Progress"
     }
