@@ -1948,6 +1948,11 @@
           "author": "codex",
           "body": "Status refresh: PR `#176` is now merge-ready on the final `BIG-PAR-247` head, and the tracker closeout commit is also synced upstream.\n\nValidation:\n- `gh pr view 176 --repo OpenAGIs/BigClaw --json url,title,state,mergeStateStatus,statusCheckRollup` -> `OPEN` with `mergeStateStatus: CLEAN` and successful completed `test` check\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `956afdd246866e3d5f5507891b572f15991a2b15` matches remote SHA `956afdd246866e3d5f5507891b572f15991a2b15` with `status: ok` and `synced: true`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `active_in_progress: []`, `candidates: []`, `queue_drained: true`\n- `git log -1 --stat` -> captured for commit `956afdd246866e3d5f5507891b572f15991a2b15`\n\nCommit SHA: `956afdd246866e3d5f5507891b572f15991a2b15`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/176",
           "created_at": "2026-03-23T04:00:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout: PR `#176` (`BIG-PAR-247: sync queue markdown from canonical state`) merged into `main` at `2026-03-23T03:54:17Z` with merge commit `edf27494258491db2083053350203602dad649dc`.\n\nValidation:\n- `gh pr view 176 --repo OpenAGIs/BigClaw --json url,title,state,mergedAt,mergeCommit` -> `MERGED` with merge commit `edf27494258491db2083053350203602dad649dc`\n- `git fetch origin main && git rev-parse origin/main` -> `edf27494258491db2083053350203602dad649dc`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `0901c9d3bcee37a035d98aae8b8711b996c50637` matches remote SHA `0901c9d3bcee37a035d98aae8b8711b996c50637` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `0901c9d3bcee37a035d98aae8b8711b996c50637`\n\nCommit SHA: `0901c9d3bcee37a035d98aae8b8711b996c50637`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/176",
+          "created_at": "2026-03-23T04:05:00Z"
         }
       ],
       "created_at": "2026-03-23T03:43:23Z",
@@ -1963,7 +1968,7 @@
       "priority": 3,
       "state": "Done",
       "title": "bigclawctl refill: sync queue markdown from canonical state",
-      "updated_at": "2026-03-23T04:00:00Z"
+      "updated_at": "2026-03-23T04:05:00Z"
     }
   ]
 }
