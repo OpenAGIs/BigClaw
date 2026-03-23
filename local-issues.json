@@ -1882,6 +1882,11 @@
           "author": "codex",
           "body": "Closed `BIG-PAR-245` after opening the GitHub PR for the tracker/refill hardening branch.\n\nWhat changed:\n- Created PR `#175` with title `BIG-PAR-240: harden local tracker and refill sync` from `symphony/BIG-PAR-240` to `main`.\n- Aligned the PR summary/body with the branch scope: local tracker write locking, refill metadata sync, local refill read reloads, and the refill-doc updates completed on this branch.\n\nValidation:\n- `gh pr view 175 --repo OpenAGIs/BigClaw --json url,title,state,baseRefName,headRefName` -> open PR metadata confirmed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `77145a836cdc7462ac95ec12393842ec8006a8fb` matches remote SHA `77145a836cdc7462ac95ec12393842ec8006a8fb` with `status: ok` and `synced: true` before tracker closeout\n- `git log -1 --stat` -> captured for commit `77145a836cdc7462ac95ec12393842ec8006a8fb`\n\nCommit SHA: `77145a836cdc7462ac95ec12393842ec8006a8fb`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/175",
           "created_at": "2026-03-23T03:25:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final PR closeout: branch PR `#175` (`BIG-PAR-240: harden local tracker and refill sync`) merged into `main` at `2026-03-23T03:30:40Z` with merge commit `1c60cdaa73ba8823f73320fbb1ea86962e8c5105`.\n\nValidation:\n- `gh pr view 175 --repo OpenAGIs/BigClaw --json url,title,state,mergedAt,mergeCommit` -> `MERGED` with merge commit `1c60cdaa73ba8823f73320fbb1ea86962e8c5105`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `53925ecc660a108696237f006f31e1af22b2a5dd` matches remote SHA `53925ecc660a108696237f006f31e1af22b2a5dd` with `status: ok` and `synced: true`\n- `git fetch origin main` -> updated `origin/main` to `1c60cdaa73ba8823f73320fbb1ea86962e8c5105`\n- `git log -1 --stat` -> captured for commit `53925ecc660a108696237f006f31e1af22b2a5dd`\n\nCommit SHA: `53925ecc660a108696237f006f31e1af22b2a5dd`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/175",
+          "created_at": "2026-03-23T03:30:40Z"
         }
       ],
       "created_at": "2026-03-23T03:20:00Z",
@@ -1896,7 +1901,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Open PR for tracker and refill hardening branch",
-      "updated_at": "2026-03-23T03:25:01Z"
+      "updated_at": "2026-03-23T03:30:40Z"
     },
     {
       "assigned_to_worker": true,
@@ -1905,6 +1910,11 @@
           "author": "codex",
           "body": "Refreshed the branch against current `origin/main`, resolved the refill/local-tracker and queue-doc merge conflicts, preserved main's canonical `BIG-PAR-235..240` queue history while appending `BIG-PAR-241..246`, and kept both queue seeding plus local-tracker recent-batch refresh behavior in `bigclawctl refill` and `internal/refill`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `18fae5c59b3688134c6e7b706963ad9d56154ef7` matches remote SHA `18fae5c59b3688134c6e7b706963ad9d56154ef7` with `status: ok` and `synced: true`\n- `gh pr view 175 --repo OpenAGIs/BigClaw --json url,title,state,mergeStateStatus,statusCheckRollup` -> PR `#175` is `OPEN` with `mergeStateStatus: CLEAN` and a successful `test` check\n- `git log -1 --stat` -> captured for merge commit `18fae5c59b3688134c6e7b706963ad9d56154ef7`\n\nCommit SHA: `18fae5c59b3688134c6e7b706963ad9d56154ef7`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/175",
           "created_at": "2026-03-23T03:25:01Z"
+        },
+        {
+          "author": "codex",
+          "body": "Post-merge status refresh: PR `#175` is now merged into `main`, so the branch refresh work for `BIG-PAR-246` is fully complete and the merge-readiness blocker is cleared.\n\nValidation:\n- `gh pr view 175 --repo OpenAGIs/BigClaw --json url,title,state,mergedAt,mergeCommit` -> `MERGED` at `2026-03-23T03:30:40Z` with merge commit `1c60cdaa73ba8823f73320fbb1ea86962e8c5105`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `53925ecc660a108696237f006f31e1af22b2a5dd` matches remote SHA `53925ecc660a108696237f006f31e1af22b2a5dd` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `53925ecc660a108696237f006f31e1af22b2a5dd`\n\nCommit SHA: `53925ecc660a108696237f006f31e1af22b2a5dd`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/175",
+          "created_at": "2026-03-23T03:30:40Z"
         }
       ],
       "created_at": "2026-03-23T03:30:00Z",
@@ -1919,7 +1929,7 @@
       "priority": 2,
       "state": "Done",
       "title": "Refresh PR branch against main",
-      "updated_at": "2026-03-23T03:25:01Z"
+      "updated_at": "2026-03-23T03:30:40Z"
     }
   ]
 }
