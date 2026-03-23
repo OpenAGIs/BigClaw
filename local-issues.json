@@ -2313,6 +2313,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added `bigclaw-go/internal/regression/migration_followup_index_docs_test.go` to pin the migration-facing docs that route reviewers to `docs/reports/parallel-follow-up-index.md`, so `docs/migration-shadow.md`, `docs/migration.md`, and `docs/reports/migration-readiness-report.md` keep their canonical follow-up-index and validation-matrix entrypoints aligned.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestMigrationFollowUpIndexDocsStayAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `git push origin HEAD:symphony/BIG-PAR-240` -> ok after a transient post-commit SSH transport failure in the auto-sync hook\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `195abdb0b16d02fa68a3b74e1c0a0d0da06cdf6a` matches remote SHA `195abdb0b16d02fa68a3b74e1c0a0d0da06cdf6a` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `195abdb0b16d02fa68a3b74e1c0a0d0da06cdf6a`\n\nCommit SHA: `195abdb0b16d02fa68a3b74e1c0a0d0da06cdf6a`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180",
+          "created_at": "2026-03-23T05:58:32Z"
+        }
+      ],
       "created_at": "2026-03-23T05:55:44Z",
       "description": "Add regression coverage for migration-facing docs that route reviewers to the canonical parallel follow-up index so migration, migration-shadow, and migration-readiness references do not drift away from the checked-in index and validation matrix entrypoint.",
       "id": "big-par-263",
@@ -2321,9 +2328,9 @@
         "documentation"
       ],
       "priority": 4,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add migration follow-up index regression coverage",
-      "updated_at": "2026-03-23T05:55:44Z"
+      "updated_at": "2026-03-23T05:58:32Z"
     }
   ]
 }

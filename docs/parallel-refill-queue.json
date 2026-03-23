@@ -427,7 +427,7 @@
       "identifier": "BIG-PAR-263",
       "title": "Add migration follow-up index regression coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
