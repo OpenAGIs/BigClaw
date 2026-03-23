@@ -61,7 +61,9 @@
       "BIG-PAR-253",
       "BIG-PAR-254"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-255"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -106,7 +108,8 @@
     "BIG-PAR-251",
     "BIG-PAR-252",
     "BIG-PAR-253",
-    "BIG-PAR-254"
+    "BIG-PAR-254",
+    "BIG-PAR-255"
   ],
   "issues": [
     {
@@ -360,6 +363,12 @@
       "title": "Add runtime report follow-up ID coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-255",
+      "title": "Align live validation bundle follow-up IDs",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

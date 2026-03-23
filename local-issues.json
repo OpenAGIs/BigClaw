@@ -2142,6 +2142,20 @@
       "state": "Done",
       "title": "Add runtime report follow-up ID coverage",
       "updated_at": "2026-03-23T05:01:03Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T05:02:20Z",
+      "description": "Add regression coverage for the checked-in live validation bundle README and align its continuation follow-up references with the authoritative OPE-271 / BIG-PAR-082 lane identifier and current reviewer index wording.",
+      "id": "big-par-255",
+      "identifier": "BIG-PAR-255",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "In Progress",
+      "title": "Align live validation bundle follow-up IDs",
+      "updated_at": "2026-03-23T05:02:20Z"
     }
   ]
 }
