@@ -2693,6 +2693,21 @@
       "state": "Done",
       "title": "Add provider live handoff evidence pack regression coverage",
       "updated_at": "2026-03-23T15:36:07Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T15:38:13Z",
+      "description": "Add regression coverage for bigclaw-go/docs/reports/broker-bootstrap-review-summary.json so bootstrap posture, canonical summary pointers, runtime status, and linked reviewer artifacts stay aligned with the checked-in broker bootstrap review surface.",
+      "id": "big-par-276",
+      "identifier": "BIG-PAR-276",
+      "labels": [
+        "regression",
+        "broker-bootstrap"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add broker bootstrap review summary regression coverage",
+      "updated_at": "2026-03-23T15:38:13Z"
     }
   ]
 }
