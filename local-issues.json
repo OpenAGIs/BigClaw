@@ -1999,6 +1999,24 @@
       "state": "Done",
       "title": "Expand SQLite queue reliability proof to 10k tasks",
       "updated_at": "2026-03-23T04:31:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T04:09:59Z",
+      "description": "Update stale reviewer-facing queue reliability references that still mention only the older 1k SQLite no-duplicate-consumption proof now that the 10k lane is checked in.",
+      "id": "big-par-249",
+      "identifier": "BIG-PAR-249",
+      "labels": [
+        "parallel",
+        "docs",
+        "queue",
+        "reliability",
+        "traceability"
+      ],
+      "priority": 4,
+      "state": "In Progress",
+      "title": "Refresh queue reliability references after 10k proof",
+      "updated_at": "2026-03-23T04:09:59Z"
     }
   ]
 }
