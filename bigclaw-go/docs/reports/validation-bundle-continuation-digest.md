@@ -34,5 +34,5 @@ This digest consolidates the remaining validation-bundle continuation caveats fo
 ## Lightweight Consistency Check
 
 - Keep this digest aligned with `docs/reports/live-validation-index.md`, `docs/reports/live-validation-summary.json`, `docs/reports/shared-queue-companion-summary.json`, `docs/reports/validation-bundle-continuation-scorecard.json`, `docs/reports/validation-bundle-continuation-policy-gate.json`, and `docs/reports/multi-node-coordination-report.md`.
-- Repeat the `rolling continuation scorecard` and `continuation across future validation bundles remains manual` caveats anywhere distributed validation is summarized.
+- Repeat the `rolling continuation scorecard` and `continuation across future validation bundles remains workflow-triggered` caveats anywhere distributed validation is summarized.
 - When an always-on continuation surface lands, update this digest, `docs/reports/review-readiness.md`, and `docs/openclaw-parallel-gap-analysis.md` together.

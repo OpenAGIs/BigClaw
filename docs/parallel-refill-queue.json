@@ -78,7 +78,9 @@
       "BIG-PAR-276",
       "BIG-PAR-277"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-279"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -140,7 +142,8 @@
     "BIG-PAR-274",
     "BIG-PAR-275",
     "BIG-PAR-276",
-    "BIG-PAR-277"
+    "BIG-PAR-277",
+    "BIG-PAR-279"
   ],
   "issues": [
     {
@@ -526,6 +529,12 @@
       "title": "Add live-shadow rollback bundle regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-279",
+      "title": "Normalize continuation workflow-triggered wording",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
