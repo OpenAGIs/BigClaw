@@ -2870,6 +2870,75 @@
       "state": "Done",
       "title": "Add publish acknowledgement surface regression coverage",
       "updated_at": "2026-03-23T16:10:38Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Refactored bigclaw-go/internal/api/v2.go into smaller control-center helpers while preserving the existing /v2/control-center payload contract, filter behavior, worker pool summary, and distributed diagnostics wiring. Added focused helpers for recent task overviews, queue breakdowns, filter payload assembly, and the final response builder. Validation: cd bigclaw-go && go test ./internal/api.",
+          "created_at": "2026-03-23T16:34:14Z"
+        }
+      ],
+      "created_at": "2026-03-23T16:25:55Z",
+      "description": "Refactor bigclaw-go/internal/api/v2.go by extracting the /v2/control-center response assembly into smaller helpers while preserving the existing payload contract, filter behavior, and worker pool / diagnostics wiring.",
+      "id": "big-par-284",
+      "identifier": "BIG-PAR-284",
+      "labels": [
+        "go",
+        "refactor",
+        "api"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Refactor control center response assembly",
+      "updated_at": "2026-03-23T16:34:14Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Refactored bigclaw-go/internal/api/distributed.go into smaller distributed diagnostics rollups while preserving summary, routing reasons, recovery counters, cluster health, fairness, and rollout report behavior. Extracted worker, task, event, and executor-capacity aggregation helpers to make the diagnostics assembly easier to maintain. Validation: cd bigclaw-go && go test ./internal/api && cd bigclaw-go && go test ./....",
+          "created_at": "2026-03-23T16:34:15Z"
+        }
+      ],
+      "created_at": "2026-03-23T16:25:55Z",
+      "description": "Refactor bigclaw-go/internal/api/distributed.go by extracting distributed diagnostics worker/task/event aggregation into smaller helpers while preserving summary, routing, fairness, and rollout-report payload behavior.",
+      "id": "big-par-285",
+      "identifier": "BIG-PAR-285",
+      "labels": [
+        "go",
+        "refactor",
+        "api"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Refactor distributed diagnostics builders",
+      "updated_at": "2026-03-23T16:34:15Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Refactored bigclaw-go/internal/worker/runtime.go by extracting RunOnce setup, leasing, takeover handling, routing, runner resolution, cancellation, and terminal-result helpers into bigclaw-go/internal/worker/runtime_runonce.go while preserving queue, event, workpad, and closeout behavior. Validation: cd bigclaw-go && go test ./internal/worker && cd bigclaw-go && go test ./....",
+          "created_at": "2026-03-23T16:34:15Z"
+        }
+      ],
+      "created_at": "2026-03-23T16:25:55Z",
+      "description": "Refactor bigclaw-go/internal/worker/runtime.go by extracting setup, scheduling, and terminal-path helpers from Runtime.RunOnce while preserving queue, event, workpad, and closeout behavior.",
+      "id": "big-par-286",
+      "identifier": "BIG-PAR-286",
+      "labels": [
+        "go",
+        "refactor",
+        "worker"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Refactor worker runtime RunOnce flow",
+      "updated_at": "2026-03-23T16:34:15Z"
     }
   ]
 }

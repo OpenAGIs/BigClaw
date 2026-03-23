@@ -81,7 +81,10 @@
       "BIG-PAR-279",
       "BIG-PAR-280",
       "BIG-PAR-283",
-      "BIG-PAR-282"
+      "BIG-PAR-282",
+      "BIG-PAR-284",
+      "BIG-PAR-285",
+      "BIG-PAR-286"
     ],
     "active": [],
     "standby": []
@@ -150,7 +153,10 @@
     "BIG-PAR-279",
     "BIG-PAR-280",
     "BIG-PAR-283",
-    "BIG-PAR-282"
+    "BIG-PAR-282",
+    "BIG-PAR-284",
+    "BIG-PAR-285",
+    "BIG-PAR-286"
   ],
   "issues": [
     {
@@ -564,6 +570,24 @@
     {
       "identifier": "BIG-PAR-282",
       "title": "Add sequence and retention surface regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-284",
+      "title": "Refactor control center response assembly",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-285",
+      "title": "Refactor distributed diagnostics builders",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-286",
+      "title": "Refactor worker runtime RunOnce flow",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }

@@ -1173,6 +1173,117 @@ func firstNonEmpty(values ...string) string {
 	return ""
 }
 
+func (s *Server) controlCenterRecentTaskOverviews(filters controlCenterFilters, authorization ControlAuthorization) []taskOverview {
+	recentTasks := filterTasks(s.Recorder.Tasks(0), filters)
+	recentTasks = limitTasks(recentTasks, filters.Limit)
+	overviews := make([]taskOverview, 0, len(recentTasks))
+	for _, task := range recentTasks {
+		overview := taskOverview{
+			Task:          task,
+			Policy:        policy.Resolve(task),
+			Risk:          s.riskScore(task),
+			RecentActions: s.recentControlActionsForTask(task.ID, 3, authorization),
+		}
+		if latest, ok := s.Recorder.LatestByTask(task.ID); ok {
+			copy := latest
+			overview.Latest = &copy
+		}
+		if takeover, ok := s.Control.TakeoverStatus(task.ID); ok {
+			copy := takeover
+			overview.Takeover = &copy
+		}
+		overviews = append(overviews, overview)
+	}
+	return overviews
+}
+
+func controlCenterQueueBreakdowns(queueTasks []queueTaskOverview) (map[string]*dashboardBreakdown, map[string]*dashboardBreakdown) {
+	queueByProject := make(map[string]*dashboardBreakdown)
+	queueByTeam := make(map[string]*dashboardBreakdown)
+	for _, item := range queueTasks {
+		accumulateQueueBreakdown(queueByProject, item)
+		accumulateQueueBreakdownByTeam(queueByTeam, item)
+	}
+	return queueByProject, queueByTeam
+}
+
+func limitQueueTasks(queueTasks []queueTaskOverview, limit int) []queueTaskOverview {
+	if limit <= 0 || len(queueTasks) <= limit {
+		return queueTasks
+	}
+	return queueTasks[:limit]
+}
+
+func controlCenterFiltersPayload(filters controlCenterFilters) map[string]any {
+	return map[string]any{
+		"team":        filters.Team,
+		"project":     filters.Project,
+		"task_id":     filters.TaskID,
+		"state":       filters.State,
+		"risk_level":  filters.RiskLevel,
+		"since":       filters.Since,
+		"until":       filters.Until,
+		"priority":    filters.Priority,
+		"limit":       filters.Limit,
+		"audit_limit": filters.AuditLimit,
+	}
+}
+
+func (s *Server) buildControlCenterResponse(
+	ctx context.Context,
+	filters controlCenterFilters,
+	authorization ControlAuthorization,
+	queueTasks []queueTaskOverview,
+	filteredDeadLetters []domain.Task,
+	returnedQueueTasks []queueTaskOverview,
+	queueByProject map[string]*dashboardBreakdown,
+	queueByTeam map[string]*dashboardBreakdown,
+	overviews []taskOverview,
+	auditEntries []controlActionAuditEntry,
+) map[string]any {
+	response := map[string]any{
+		"authorization":                   authorization,
+		"filters":                         controlCenterFiltersPayload(filters),
+		"control":                         s.Control.Snapshot(),
+		"event_durability":                s.EventPlan,
+		"event_log":                       s.eventLogCapabilities(ctx),
+		"admission_policy_summary":        admissionPolicySummaryPayload(),
+		"coordination_capability_surface": coordinationCapabilitySurfacePayload(),
+		"coordination_leader_election":    s.coordinationLeaderElectionPayload(),
+		"leader_election_capability":      leaderElectionCapabilitySurfacePayload(),
+		"sequence_bridge_surface":         sequenceBridgeSurfacePayload(),
+		"retention_expiry_surface":        retentionExpirySurfacePayload(),
+		"provider_live_handoff_isolation": providerLiveHandoffIsolationPayload(),
+		"broker_bootstrap_surface":        brokerBootstrapSurfacePayload(),
+		"broker_review_bundle":            brokerReviewBundleSurfacePayload(),
+		"summary":                         summarizeControlCenter(queueTasks, filteredDeadLetters),
+		"queue": map[string]any{
+			"size":          s.Queue.Size(context.Background()),
+			"filtered_size": len(queueTasks),
+			"dead_letters":  len(filteredDeadLetters),
+			"tasks":         returnedQueueTasks,
+			"cancellable":   supportsQueueCancel(s.Queue),
+		},
+		"queue_by_project": sortedDashboardBreakdowns(queueByProject),
+		"queue_by_team":    sortedDashboardBreakdowns(queueByTeam),
+		"dead_letters":     limitTasks(filteredDeadLetters, filters.Limit),
+		"active_takeovers": s.filteredActiveTakeovers(filters),
+		"recent_tasks":     overviews,
+		"audit":            auditEntries,
+		"audit_summary":    summarizeControlAudit(auditEntries),
+		"notes_timeline":   auditNotesTimeline(auditEntries, filters.AuditLimit),
+	}
+	if pool := s.workerPoolSummary(); pool != nil {
+		response["worker_pool"] = pool
+		response["worker_pool_health"] = workerPoolHealth(s.Now(), pool)
+	}
+	if checkpointResets := s.checkpointResetAuditSnapshot(filters.AuditLimit); checkpointResets != nil {
+		response["checkpoint_resets"] = checkpointResets
+	}
+	response["distributed_diagnostics"] = s.buildDistributedDiagnostics(filters)
+	return response
+}
+
 func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -1195,85 +1306,28 @@ func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 	}
 	filteredDeadLetters := filterTasks(deadLetters, filters)
 
-	recentTasks := filterTasks(s.Recorder.Tasks(0), filters)
-	recentTasks = limitTasks(recentTasks, filters.Limit)
-	overviews := make([]taskOverview, 0, len(recentTasks))
-	for _, task := range recentTasks {
-		overview := taskOverview{Task: task, Policy: policy.Resolve(task), Risk: s.riskScore(task), RecentActions: s.recentControlActionsForTask(task.ID, 3, authorization)}
-		if latest, ok := s.Recorder.LatestByTask(task.ID); ok {
-			copy := latest
-			overview.Latest = &copy
-		}
-		if takeover, ok := s.Control.TakeoverStatus(task.ID); ok {
-			copy := takeover
-			overview.Takeover = &copy
-		}
-		overviews = append(overviews, overview)
-	}
+	overviews := s.controlCenterRecentTaskOverviews(filters, authorization)
 
 	queueTasks, err := s.filteredQueueTasks(r.Context(), filters)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("list queue tasks: %v", err), http.StatusInternalServerError)
 		return
 	}
-	returnedQueueTasks := queueTasks
-	if filters.Limit > 0 && len(returnedQueueTasks) > filters.Limit {
-		returnedQueueTasks = returnedQueueTasks[:filters.Limit]
-	}
-	queueByProject := make(map[string]*dashboardBreakdown)
-	queueByTeam := make(map[string]*dashboardBreakdown)
-	for _, item := range queueTasks {
-		accumulateQueueBreakdown(queueByProject, item)
-		accumulateQueueBreakdownByTeam(queueByTeam, item)
-	}
+	returnedQueueTasks := limitQueueTasks(queueTasks, filters.Limit)
+	queueByProject, queueByTeam := controlCenterQueueBreakdowns(queueTasks)
 	auditEntries := s.controlActionAuditEntries(filters, authorization)
-	auditSummary := summarizeControlAudit(auditEntries)
-	notesTimeline := auditNotesTimeline(auditEntries, filters.AuditLimit)
-	response := map[string]any{
-		"authorization": authorization,
-		"filters": map[string]any{
-			"team":        filters.Team,
-			"project":     filters.Project,
-			"task_id":     filters.TaskID,
-			"state":       filters.State,
-			"risk_level":  filters.RiskLevel,
-			"since":       filters.Since,
-			"until":       filters.Until,
-			"priority":    filters.Priority,
-			"limit":       filters.Limit,
-			"audit_limit": filters.AuditLimit,
-		},
-		"control":                         s.Control.Snapshot(),
-		"event_durability":                s.EventPlan,
-		"event_log":                       s.eventLogCapabilities(r.Context()),
-		"admission_policy_summary":        admissionPolicySummaryPayload(),
-		"coordination_capability_surface": coordinationCapabilitySurfacePayload(),
-		"coordination_leader_election":    s.coordinationLeaderElectionPayload(),
-		"leader_election_capability":      leaderElectionCapabilitySurfacePayload(),
-		"sequence_bridge_surface":         sequenceBridgeSurfacePayload(),
-		"retention_expiry_surface":        retentionExpirySurfacePayload(),
-		"provider_live_handoff_isolation": providerLiveHandoffIsolationPayload(),
-		"broker_bootstrap_surface":        brokerBootstrapSurfacePayload(),
-		"broker_review_bundle":            brokerReviewBundleSurfacePayload(),
-		"summary":                         summarizeControlCenter(queueTasks, filteredDeadLetters),
-		"queue":                           map[string]any{"size": s.Queue.Size(context.Background()), "filtered_size": len(queueTasks), "dead_letters": len(filteredDeadLetters), "tasks": returnedQueueTasks, "cancellable": supportsQueueCancel(s.Queue)},
-		"queue_by_project":                sortedDashboardBreakdowns(queueByProject),
-		"queue_by_team":                   sortedDashboardBreakdowns(queueByTeam),
-		"dead_letters":                    limitTasks(filteredDeadLetters, filters.Limit),
-		"active_takeovers":                s.filteredActiveTakeovers(filters),
-		"recent_tasks":                    overviews,
-		"audit":                           auditEntries,
-		"audit_summary":                   auditSummary,
-		"notes_timeline":                  notesTimeline,
-	}
-	if pool := s.workerPoolSummary(); pool != nil {
-		response["worker_pool"] = pool
-		response["worker_pool_health"] = workerPoolHealth(s.Now(), pool)
-	}
-	if checkpointResets := s.checkpointResetAuditSnapshot(filters.AuditLimit); checkpointResets != nil {
-		response["checkpoint_resets"] = checkpointResets
-	}
-	response["distributed_diagnostics"] = s.buildDistributedDiagnostics(filters)
+	response := s.buildControlCenterResponse(
+		r.Context(),
+		filters,
+		authorization,
+		queueTasks,
+		filteredDeadLetters,
+		returnedQueueTasks,
+		queueByProject,
+		queueByTeam,
+		overviews,
+		auditEntries,
+	)
 	writeJSON(w, http.StatusOK, response)
 }
 

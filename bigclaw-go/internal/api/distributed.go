@@ -198,6 +198,40 @@ type distributedTaskAssignment struct {
 	Executor       domain.ExecutorKind
 }
 
+type distributedWorkerRollup struct {
+	WorkerStates         map[string]int
+	ActiveByExecutor     map[domain.ExecutorKind]int
+	ActiveWorkers        int
+	IdleWorkers          int
+	LeaseRenewalFailures int
+	LeaseLostRuns        int
+}
+
+type distributedTaskRollup struct {
+	Tasks            []domain.Task
+	Takeovers        []control.Takeover
+	Assignments      []distributedTaskAssignment
+	AssignmentByTask map[string]distributedTaskAssignment
+	TasksByExecutor  map[domain.ExecutorKind][]distributedTaskAssignment
+	Recovery         recoveryDiagnostics
+}
+
+type distributedEventRollup struct {
+	CountersByExecutor map[domain.ExecutorKind]*executorDiagnosticsCounters
+	RoutingReasons     []routingReasonSummary
+	TotalRouted        int
+	Recovery           recoveryDiagnostics
+}
+
+type executorCapacityRollup struct {
+	ExecutorCapacity  []executorCapacityView
+	HealthyExecutors  int
+	DegradedExecutors int
+	IdleExecutors     int
+	ActiveExecutors   int
+	Saturated         []string
+}
+
 func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -281,39 +315,103 @@ func (s *Server) handleV2DistributedReportExport(w http.ResponseWriter, r *http.
 
 func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distributedDiagnostics {
 	capabilities := s.executorCapabilities()
+	worker := s.distributedWorkerRollup()
+	taskRollup := s.distributedTaskRollup(filters)
+	eventRollup := s.distributedEventRollup(taskRollup.AssignmentByTask, taskRollup.Recovery)
+	capacity := buildExecutorCapacityRollup(capabilities, taskRollup.TasksByExecutor, eventRollup.CountersByExecutor, eventRollup.RoutingReasons, worker.ActiveByExecutor)
+
+	summary := distributedDiagnosticsSummary{
+		RegisteredExecutors:  len(capabilities),
+		ActiveExecutors:      capacity.ActiveExecutors,
+		TotalTasks:           len(taskRollup.Assignments),
+		ActiveRuns:           countActiveAssignments(taskRollup.Assignments),
+		TotalRoutedDecisions: eventRollup.TotalRouted,
+		ActiveWorkers:        worker.ActiveWorkers,
+		IdleWorkers:          worker.IdleWorkers,
+		LeaseRenewalFailures: worker.LeaseRenewalFailures,
+		LeaseLostRuns:        worker.LeaseLostRuns,
+		SaturatedExecutors:   len(capacity.Saturated),
+		ActiveTakeovers:      len(taskRollup.Takeovers),
+	}
+	clusterHealth := clusterHealthRollup{
+		HealthyExecutors:  capacity.HealthyExecutors,
+		DegradedExecutors: capacity.DegradedExecutors,
+		IdleExecutors:     capacity.IdleExecutors,
+		WorkerStates:      worker.WorkerStates,
+		TeamBreakdown: facetCountsFromAssignments(taskRollup.Assignments, func(item distributedTaskAssignment) string {
+			return firstNonEmpty(strings.TrimSpace(item.Task.Metadata["team"]), "unassigned")
+		}),
+		ProjectBreakdown: facetCountsFromAssignments(taskRollup.Assignments, func(item distributedTaskAssignment) string {
+			return firstNonEmpty(strings.TrimSpace(item.Task.Metadata["project"]), "unassigned")
+		}),
+		TakeoverOwners:     facetCountsFromTakeovers(taskRollup.Takeovers, func(item control.Takeover) string { return firstNonEmpty(strings.TrimSpace(item.Owner), "unassigned") }),
+		SaturatedExecutors: capacity.Saturated,
+		Notes:              diagnosticsNotes(summary, capacity.ExecutorCapacity, s.Control.Snapshot()),
+	}
+	fairness := buildFairnessDiagnostics(capabilities, eventRollup.CountersByExecutor, eventRollup.TotalRouted)
+	diagnostics := distributedDiagnostics{
+		Summary:               summary,
+		RoutingReasons:        eventRollup.RoutingReasons,
+		ExecutorCapacity:      capacity.ExecutorCapacity,
+		ClusterHealth:         clusterHealth,
+		Recovery:              eventRollup.Recovery,
+		Fairness:              fairness,
+		CoordinationLeader:    s.coordinationLeaderElectionPayload(),
+		SharedQueue:           s.sharedQueueCoordinationDiagnostics(),
+		LiveShadowMirror:      liveShadowMirrorPayload(),
+		BrokerReviewPack:      buildBrokerReviewPack(),
+		BrokerReviewBundle:    brokerReviewBundleSurfacePayload(),
+		MigrationReviewPack:   buildMigrationReviewPack(),
+		BrokerFanoutIsolation: brokerStubFanoutIsolationPayload(),
+		ProviderLiveHandoff:   providerLiveHandoffIsolationPayload(),
+		BrokerBootstrap:       brokerBootstrapSurfacePayload(),
+		DeliveryAckReadiness:  deliveryAckReadinessPayload(),
+		PublishAckOutcomes:    publishAckOutcomeSurfacePayload(),
+		SequenceBridge:        sequenceBridgeSurfacePayload(),
+		RetentionExpiry:       retentionExpirySurfacePayload(),
+		ContinuationGate:      validationBundleContinuationGatePayload(),
+		TraceBundle:           buildTraceExportBundle(taskRollup.Assignments, s.Recorder.TraceSummaries(5)),
+	}
+	diagnostics.RolloutReport = distributedDiagnosticsReport{
+		Markdown:  renderDistributedDiagnosticsMarkdown(diagnostics, filters),
+		ExportURL: distributedExportURL(filters),
+	}
+	return diagnostics
+}
+
+func (s *Server) distributedWorkerRollup() distributedWorkerRollup {
+	rollup := distributedWorkerRollup{
+		WorkerStates:     make(map[string]int),
+		ActiveByExecutor: make(map[domain.ExecutorKind]int),
+	}
 	pool := s.workerPoolSummary()
-	workerStates := make(map[string]int)
-	activeByExecutor := make(map[domain.ExecutorKind]int)
-	activeWorkers := 0
-	idleWorkers := 0
-	leaseRenewalFailures := 0
-	leaseLostRuns := 0
-	if pool != nil {
-		activeWorkers = pool.ActiveWorkers
-		idleWorkers = pool.IdleWorkers
-		for _, workerStatus := range pool.Workers {
-			state := strings.TrimSpace(workerStatus.State)
-			if state == "" {
-				state = "idle"
-			}
-			workerStates[state]++
-			leaseRenewalFailures += workerStatus.LeaseRenewalFailures
-			leaseLostRuns += workerStatus.LeaseLostRuns
-			if workerStatus.CurrentExecutor != "" && (state == "leased" || state == "running") {
-				activeByExecutor[workerStatus.CurrentExecutor]++
-			}
+	if pool == nil {
+		return rollup
+	}
+	rollup.ActiveWorkers = pool.ActiveWorkers
+	rollup.IdleWorkers = pool.IdleWorkers
+	for _, workerStatus := range pool.Workers {
+		state := strings.TrimSpace(workerStatus.State)
+		if state == "" {
+			state = "idle"
+		}
+		rollup.WorkerStates[state]++
+		rollup.LeaseRenewalFailures += workerStatus.LeaseRenewalFailures
+		rollup.LeaseLostRuns += workerStatus.LeaseLostRuns
+		if workerStatus.CurrentExecutor != "" && (state == "leased" || state == "running") {
+			rollup.ActiveByExecutor[workerStatus.CurrentExecutor]++
 		}
 	}
+	return rollup
+}
 
+func (s *Server) distributedTaskRollup(filters controlCenterFilters) distributedTaskRollup {
 	tasks := filterTasks(s.Recorder.Tasks(0), filters)
 	takeovers := s.filteredActiveTakeovers(filters)
 	takeoverByTask := make(map[string]*control.Takeover, len(takeovers))
 	for index := range takeovers {
 		copy := takeovers[index]
 		takeoverByTask[copy.TaskID] = &copy
-	}
-	recovery := recoveryDiagnostics{
-		ActiveTakeovers: len(takeovers),
 	}
 	assignments := make([]distributedTaskAssignment, 0, len(tasks))
 	assignmentByTask := make(map[string]distributedTaskAssignment, len(tasks))
@@ -328,10 +426,23 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		assignmentByTask[task.ID] = assignment
 		tasksByExecutor[assignment.Executor] = append(tasksByExecutor[assignment.Executor], assignment)
 	}
+	return distributedTaskRollup{
+		Tasks:            tasks,
+		Takeovers:        takeovers,
+		Assignments:      assignments,
+		AssignmentByTask: assignmentByTask,
+		TasksByExecutor:  tasksByExecutor,
+		Recovery: recoveryDiagnostics{
+			ActiveTakeovers: len(takeovers),
+		},
+	}
+}
 
+func (s *Server) distributedEventRollup(assignmentByTask map[string]distributedTaskAssignment, base recoveryDiagnostics) distributedEventRollup {
 	countersByExecutor := make(map[domain.ExecutorKind]*executorDiagnosticsCounters)
 	routingIndex := make(map[string]*routingReasonSummary)
 	totalRouted := 0
+	recovery := base
 	for _, event := range s.Recorder.EventsByTask("", 0) {
 		assignment, ok := assignmentByTask[event.TaskID]
 		if !ok {
@@ -383,28 +494,21 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 	if recovery.TakeoverEvents > recovery.ReleaseEvents {
 		recovery.UnreleasedTakeovers = recovery.TakeoverEvents - recovery.ReleaseEvents
 	}
-
-	routingReasons := make([]routingReasonSummary, 0, len(routingIndex))
-	for _, item := range routingIndex {
-		routingReasons = append(routingReasons, *item)
+	return distributedEventRollup{
+		CountersByExecutor: countersByExecutor,
+		RoutingReasons:     sortedRoutingReasons(routingIndex),
+		TotalRouted:        totalRouted,
+		Recovery:           recovery,
 	}
-	sort.SliceStable(routingReasons, func(i, j int) bool {
-		if routingReasons[i].Count == routingReasons[j].Count {
-			if routingReasons[i].Executor == routingReasons[j].Executor {
-				return routingReasons[i].Reason < routingReasons[j].Reason
-			}
-			return routingReasons[i].Executor < routingReasons[j].Executor
-		}
-		return routingReasons[i].Count > routingReasons[j].Count
-	})
+}
 
+func buildExecutorCapacityRollup(capabilities []executor.Capability, tasksByExecutor map[domain.ExecutorKind][]distributedTaskAssignment, countersByExecutor map[domain.ExecutorKind]*executorDiagnosticsCounters, routingReasons []routingReasonSummary, activeByExecutor map[domain.ExecutorKind]int) executorCapacityRollup {
 	executorCapacity := make([]executorCapacityView, 0, len(capabilities))
-	healthyExecutors := 0
-	degradedExecutors := 0
-	idleExecutors := 0
-	activeExecutors := 0
-	saturatedExecutors := make([]string, 0)
+	rollup := executorCapacityRollup{
+		Saturated: make([]string, 0),
+	}
 	for _, capability := range capabilities {
+		assignments := tasksByExecutor[capability.Kind]
 		counts := countersByExecutor[capability.Kind]
 		view := executorCapacityView{
 			Executor:        string(capability.Kind),
@@ -420,7 +524,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 			view.CompletedRuns = counts.Completed
 			view.DeadLetters = counts.DeadLetter
 		}
-		for _, assignment := range tasksByExecutor[capability.Kind] {
+		for _, assignment := range assignments {
 			if assignment.EffectiveState == domain.TaskQueued || assignment.EffectiveState == domain.TaskRetrying {
 				view.QueuedTasks++
 			}
@@ -428,14 +532,14 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 				view.ActiveTasks++
 			}
 		}
-		view.TeamBreakdown = facetCountsFromAssignments(tasksByExecutor[capability.Kind], func(item distributedTaskAssignment) string {
+		view.TeamBreakdown = facetCountsFromAssignments(assignments, func(item distributedTaskAssignment) string {
 			return firstNonEmpty(strings.TrimSpace(item.Task.Metadata["team"]), "unassigned")
 		})
-		view.ProjectBreakdown = facetCountsFromAssignments(tasksByExecutor[capability.Kind], func(item distributedTaskAssignment) string {
+		view.ProjectBreakdown = facetCountsFromAssignments(assignments, func(item distributedTaskAssignment) string {
 			return firstNonEmpty(strings.TrimSpace(item.Task.Metadata["project"]), "unassigned")
 		})
 		view.TopRoutingReasons = routingReasonsForExecutor(routingReasons, capability.Kind, 3)
-		view.SampleTasks = sampleTaskIDs(tasksByExecutor[capability.Kind], 3)
+		view.SampleTasks = sampleTaskIDs(assignments, 3)
 		if capability.MaxConcurrency > 0 {
 			view.AvailableConcurrency = capability.MaxConcurrency - view.ActiveWorkers
 			if view.AvailableConcurrency < 0 {
@@ -446,81 +550,42 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		view.Health = diagnosticsHealth(view)
 		view.HealthSummary = executorHealthSummary(view)
 		if view.Health != "idle" {
-			activeExecutors++
+			rollup.ActiveExecutors++
 		}
 		if executorIsSaturated(view) {
-			saturatedExecutors = append(saturatedExecutors, view.Executor)
+			rollup.Saturated = append(rollup.Saturated, view.Executor)
 		}
 		switch view.Health {
 		case "healthy":
-			healthyExecutors++
+			rollup.HealthyExecutors++
 		case "degraded":
-			degradedExecutors++
+			rollup.DegradedExecutors++
 		default:
-			idleExecutors++
+			rollup.IdleExecutors++
 		}
 		executorCapacity = append(executorCapacity, view)
 	}
 	sort.SliceStable(executorCapacity, func(i, j int) bool { return executorCapacity[i].Executor < executorCapacity[j].Executor })
-	sort.Strings(saturatedExecutors)
+	sort.Strings(rollup.Saturated)
+	rollup.ExecutorCapacity = executorCapacity
+	return rollup
+}
 
-	summary := distributedDiagnosticsSummary{
-		RegisteredExecutors:  len(capabilities),
-		ActiveExecutors:      activeExecutors,
-		TotalTasks:           len(assignments),
-		ActiveRuns:           countActiveAssignments(assignments),
-		TotalRoutedDecisions: totalRouted,
-		ActiveWorkers:        activeWorkers,
-		IdleWorkers:          idleWorkers,
-		LeaseRenewalFailures: leaseRenewalFailures,
-		LeaseLostRuns:        leaseLostRuns,
-		SaturatedExecutors:   len(saturatedExecutors),
-		ActiveTakeovers:      len(takeovers),
+func sortedRoutingReasons(index map[string]*routingReasonSummary) []routingReasonSummary {
+	reasons := make([]routingReasonSummary, 0, len(index))
+	for _, item := range index {
+		reasons = append(reasons, *item)
 	}
-	clusterHealth := clusterHealthRollup{
-		HealthyExecutors:  healthyExecutors,
-		DegradedExecutors: degradedExecutors,
-		IdleExecutors:     idleExecutors,
-		WorkerStates:      workerStates,
-		TeamBreakdown: facetCountsFromAssignments(assignments, func(item distributedTaskAssignment) string {
-			return firstNonEmpty(strings.TrimSpace(item.Task.Metadata["team"]), "unassigned")
-		}),
-		ProjectBreakdown: facetCountsFromAssignments(assignments, func(item distributedTaskAssignment) string {
-			return firstNonEmpty(strings.TrimSpace(item.Task.Metadata["project"]), "unassigned")
-		}),
-		TakeoverOwners:     facetCountsFromTakeovers(takeovers, func(item control.Takeover) string { return firstNonEmpty(strings.TrimSpace(item.Owner), "unassigned") }),
-		SaturatedExecutors: saturatedExecutors,
-		Notes:              diagnosticsNotes(summary, executorCapacity, s.Control.Snapshot()),
-	}
-	fairness := buildFairnessDiagnostics(capabilities, countersByExecutor, totalRouted)
-	diagnostics := distributedDiagnostics{
-		Summary:               summary,
-		RoutingReasons:        routingReasons,
-		ExecutorCapacity:      executorCapacity,
-		ClusterHealth:         clusterHealth,
-		Recovery:              recovery,
-		Fairness:              fairness,
-		CoordinationLeader:    s.coordinationLeaderElectionPayload(),
-		SharedQueue:           s.sharedQueueCoordinationDiagnostics(),
-		LiveShadowMirror:      liveShadowMirrorPayload(),
-		BrokerReviewPack:      buildBrokerReviewPack(),
-		BrokerReviewBundle:    brokerReviewBundleSurfacePayload(),
-		MigrationReviewPack:   buildMigrationReviewPack(),
-		BrokerFanoutIsolation: brokerStubFanoutIsolationPayload(),
-		ProviderLiveHandoff:   providerLiveHandoffIsolationPayload(),
-		BrokerBootstrap:       brokerBootstrapSurfacePayload(),
-		DeliveryAckReadiness:  deliveryAckReadinessPayload(),
-		PublishAckOutcomes:    publishAckOutcomeSurfacePayload(),
-		SequenceBridge:        sequenceBridgeSurfacePayload(),
-		RetentionExpiry:       retentionExpirySurfacePayload(),
-		ContinuationGate:      validationBundleContinuationGatePayload(),
-		TraceBundle:           buildTraceExportBundle(assignments, s.Recorder.TraceSummaries(5)),
-	}
-	diagnostics.RolloutReport = distributedDiagnosticsReport{
-		Markdown:  renderDistributedDiagnosticsMarkdown(diagnostics, filters),
-		ExportURL: distributedExportURL(filters),
-	}
-	return diagnostics
+	sort.SliceStable(reasons, func(i, j int) bool {
+		if reasons[i].Count == reasons[j].Count {
+			if reasons[i].Executor == reasons[j].Executor {
+				return reasons[i].Reason < reasons[j].Reason
+			}
+			return reasons[i].Executor < reasons[j].Executor
+		}
+		return reasons[i].Count > reasons[j].Count
+	})
+	return reasons
 }
 
 func (s *Server) executorCapabilities() []executor.Capability {
