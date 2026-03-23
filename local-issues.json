@@ -1794,6 +1794,22 @@
       "state": "Done",
       "title": "Open PR for tracker and refill hardening branch",
       "updated_at": "2026-03-23T03:25:01Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T03:30:00Z",
+      "description": "Refresh the branch against current main so PR #175 is merge-ready again and the tracker records the resulting sync evidence.",
+      "id": "big-par-246",
+      "identifier": "BIG-PAR-246",
+      "labels": [
+        "parallel",
+        "github",
+        "merge-readiness"
+      ],
+      "priority": 2,
+      "state": "In Progress",
+      "title": "Refresh PR branch against main",
+      "updated_at": "2026-03-23T03:30:00Z"
     }
   ]
 }
