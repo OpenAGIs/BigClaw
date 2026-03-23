@@ -55,4 +55,14 @@ func TestDeliveryAckReadinessSurfaceReportStaysAligned(t *testing.T) {
 			t.Fatalf("event-bus reliability report missing substring %q", needle)
 		}
 	}
+
+	for _, relative := range []string{
+		"docs/reports/issue-coverage.md",
+		"docs/reports/review-readiness.md",
+	} {
+		body := readRepoFile(t, repoRoot, relative)
+		if !strings.Contains(body, "delivery-ack-readiness-surface.json") {
+			t.Fatalf("expected %s to reference delivery ack readiness surface", relative)
+		}
+	}
 }

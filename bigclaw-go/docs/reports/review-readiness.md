@@ -24,6 +24,7 @@
 - `OPE-183`
   - Event bus evidence includes replay-first subscriptions, webhook fanout, recorder sink coverage, and SSE replay/filter behavior by task or trace.
   - Supporting report: `docs/reports/event-bus-reliability-report.md`.
+  - Reviewer-facing backend acknowledgement posture also remains available through `docs/reports/delivery-ack-readiness-surface.json`, which keeps the best-effort, explicit durable, and contract-only backend classes visible from the review map.
   - Follow-up digest captures the deterministic local harness, the live two-node companion proof, and the remaining `OPE-269` / `BIG-PAR-080` shared-durable ownership caveats in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
 - `OPE-184`
   - Audit and debug surfaces include trace summary endpoints, trace timeline lookup, worker lifecycle snapshots, and `trace_count` metrics visibility.
