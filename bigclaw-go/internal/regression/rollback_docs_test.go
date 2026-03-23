@@ -111,6 +111,26 @@ func TestRollbackDocsStayAligned(t *testing.T) {
 	if triggerSurface.SharedGuardrailSummary.LiveShadowRollupPath != "docs/reports/live-shadow-drift-rollup.json" {
 		t.Fatalf("unexpected live shadow rollup path: %s", triggerSurface.SharedGuardrailSummary.LiveShadowRollupPath)
 	}
+	if triggerSurface.ReviewerPath.IndexPath != "docs/reports/live-shadow-index.md" {
+		t.Fatalf("unexpected reviewer index path: %s", triggerSurface.ReviewerPath.IndexPath)
+	}
+	if triggerSurface.ReviewerPath.DigestPath != "docs/reports/rollback-safeguard-follow-up-digest.md" {
+		t.Fatalf("unexpected reviewer digest path: %s", triggerSurface.ReviewerPath.DigestPath)
+	}
+	if triggerSurface.ReviewerPath.DigestIssue.ID != "OPE-254" || triggerSurface.ReviewerPath.DigestIssue.Slug != "BIG-PAR-088" {
+		t.Fatalf("unexpected reviewer digest issue: %+v", triggerSurface.ReviewerPath.DigestIssue)
+	}
+
+	liveShadowTriggerSurface := readLiveShadowRollbackTriggerSurface(t, repoRoot)
+	if liveShadowTriggerSurface.ReviewerPath.IndexPath != "docs/reports/live-shadow-index.md" {
+		t.Fatalf("unexpected live-shadow reviewer index path: %s", liveShadowTriggerSurface.ReviewerPath.IndexPath)
+	}
+	if liveShadowTriggerSurface.ReviewerPath.DigestPath != "docs/reports/rollback-safeguard-follow-up-digest.md" {
+		t.Fatalf("unexpected live-shadow reviewer digest path: %s", liveShadowTriggerSurface.ReviewerPath.DigestPath)
+	}
+	if liveShadowTriggerSurface.ReviewerPath.DigestIssue.ID != "OPE-254" || liveShadowTriggerSurface.ReviewerPath.DigestIssue.Slug != "BIG-PAR-088" {
+		t.Fatalf("unexpected live-shadow reviewer digest issue: %+v", liveShadowTriggerSurface.ReviewerPath.DigestIssue)
+	}
 }
 
 type rollbackTriggerSurface struct {
@@ -123,6 +143,14 @@ type rollbackTriggerSurface struct {
 		LiveShadowIndexPath  string `json:"live_shadow_index_path"`
 		LiveShadowRollupPath string `json:"live_shadow_rollup_path"`
 	} `json:"shared_guardrail_summary"`
+	ReviewerPath struct {
+		IndexPath   string `json:"index_path"`
+		DigestPath  string `json:"digest_path"`
+		DigestIssue struct {
+			ID   string `json:"id"`
+			Slug string `json:"slug"`
+		} `json:"digest_issue"`
+	} `json:"reviewer_path"`
 	Warnings        []map[string]any `json:"warnings"`
 	Blockers        []map[string]any `json:"blockers"`
 	ManualOnlyPaths []map[string]any `json:"manual_only_paths"`
@@ -137,6 +165,19 @@ func readRollbackTriggerSurface(t *testing.T, root string) rollbackTriggerSurfac
 	var payload rollbackTriggerSurface
 	if err := json.Unmarshal(contents, &payload); err != nil {
 		t.Fatalf("parse rollback trigger surface: %v", err)
+	}
+	return payload
+}
+
+func readLiveShadowRollbackTriggerSurface(t *testing.T, root string) rollbackTriggerSurface {
+	t.Helper()
+	contents, err := os.ReadFile(filepath.Join(root, "docs/reports/live-shadow-runs/20260313T085655Z/rollback-trigger-surface.json"))
+	if err != nil {
+		t.Fatalf("read live-shadow rollback trigger surface: %v", err)
+	}
+	var payload rollbackTriggerSurface
+	if err := json.Unmarshal(contents, &payload); err != nil {
+		t.Fatalf("parse live-shadow rollback trigger surface: %v", err)
 	}
 	return payload
 }

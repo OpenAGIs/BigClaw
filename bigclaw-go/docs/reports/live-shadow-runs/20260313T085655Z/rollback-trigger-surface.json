@@ -22,6 +22,14 @@
     "live_shadow_manifest_path": "docs/reports/live-shadow-index.json",
     "live_shadow_rollup_path": "docs/reports/live-shadow-drift-rollup.json"
   },
+  "reviewer_path": {
+    "index_path": "docs/reports/live-shadow-index.md",
+    "digest_path": "docs/reports/rollback-safeguard-follow-up-digest.md",
+    "digest_issue": {
+      "id": "OPE-254",
+      "slug": "BIG-PAR-088"
+    }
+  },
   "warnings": [
     {
       "key": "shadow_parity_drift",
