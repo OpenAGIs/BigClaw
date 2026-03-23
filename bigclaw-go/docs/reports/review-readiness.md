@@ -29,7 +29,7 @@
   - Audit and debug surfaces include trace summary endpoints, trace timeline lookup, worker lifecycle snapshots, and `trace_count` metrics visibility.
   - Supporting report: `docs/reports/go-control-plane-observability-report.md`.
   - The distributed diagnostics export now packages recent trace summaries, reviewer navigation, validation-artifact references, the `BF-05` ambiguous publish proof in `docs/reports/ambiguous-publish-outcome-proof-summary.json`, the runtime-facing publish outcome ledger in `docs/reports/publish-ack-outcome-surface.json`, and backend limitations through `GET /v2/reports/distributed/export` and `GET /debug/status`.
-  - Follow-up evidence captures the remaining tracing-backend and telemetry-pipeline caveats in `docs/reports/tracing-backend-follow-up-digest.md`, `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`, and the machine-checkable `docs/reports/telemetry-sampling-cardinality-evidence-pack.json`.
+  - Follow-up evidence captures the remaining `OPE-264` / `BIG-PAR-075` tracing-backend and `OPE-265` / `BIG-PAR-076` telemetry-pipeline caveats in `docs/reports/tracing-backend-follow-up-digest.md`, `docs/reports/telemetry-pipeline-controls-follow-up-digest.md`, and the machine-checkable `docs/reports/telemetry-sampling-cardinality-evidence-pack.json`.
 - `OPE-185`
   - Migration evidence includes a shadow matrix across multiple sample tasks with matched terminal states, matched event sequences, an anonymized corpus coverage scorecard, and a repo-native live shadow mirror scorecard that summarizes parity drift and evidence freshness across the checked-in compare and matrix artifacts.
   - Supporting report: `docs/reports/migration-readiness-report.md`.
