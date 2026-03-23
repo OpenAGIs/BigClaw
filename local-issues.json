@@ -2100,6 +2100,20 @@
       "state": "Done",
       "title": "Add observability follow-up doc regression coverage",
       "updated_at": "2026-03-23T04:46:50Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T04:49:24Z",
+      "description": "Add a regression that keeps the production corpus, subscriber takeover, and validation bundle continuation follow-up docs aligned across the canonical digests, gap analysis, review readiness, and issue coverage summaries; patch any missing OPE-268 / BIG-PAR-079, OPE-269 / BIG-PAR-080, and OPE-271 / BIG-PAR-082 references the new check exposes.",
+      "id": "big-par-253",
+      "identifier": "BIG-PAR-253",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "In Progress",
+      "title": "Add migration and validation follow-up doc regression coverage",
+      "updated_at": "2026-03-23T04:49:24Z"
     }
   ]
 }

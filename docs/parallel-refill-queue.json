@@ -59,7 +59,9 @@
       "BIG-PAR-251",
       "BIG-PAR-252"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-253"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -102,7 +104,8 @@
     "BIG-PAR-249",
     "BIG-PAR-250",
     "BIG-PAR-251",
-    "BIG-PAR-252"
+    "BIG-PAR-252",
+    "BIG-PAR-253"
   ],
   "issues": [
     {
@@ -344,6 +347,12 @@
       "title": "Add observability follow-up doc regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-253",
+      "title": "Add migration and validation follow-up doc regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
