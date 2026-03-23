@@ -50,11 +50,10 @@
       "BIG-PAR-242",
       "BIG-PAR-243",
       "BIG-PAR-244",
-      "BIG-PAR-245"
-    ],
-    "active": [
+      "BIG-PAR-245",
       "BIG-PAR-246"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -296,7 +295,7 @@
       "identifier": "BIG-PAR-246",
       "title": "Refresh PR branch against main",
       "track": "Tracker and Refill Hygiene",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

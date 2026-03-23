@@ -1714,6 +1714,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed the repo-native docs slice after confirming the queue seeding and drained-batch recovery workflow is now documented on the refreshed branch and the branch PR is merge-ready again.\n\nWhat changed:\n- `docs/parallel-refill-queue.md` now documents the seeded `BIG-PAR-235..246` order, including the queue-seeding and drained-batch recovery workflow carried by this `BIG-PAR-240` slice.\n- `docs/parallel-refill-queue.json` now preserves main's canonical `BIG-PAR-235..240` history while keeping the newer `BIG-PAR-241..246` tracker/refill hygiene slices appended after it.\n- PR `#175` is back to `CLEAN`, so the documented recovery workflow and the follow-on tracker/refill hardening work are reviewable on one branch.\n\nValidation:\n- `gh pr view 175 --repo OpenAGIs/BigClaw --json url,title,state,mergeStateStatus` -> `OPEN` with `mergeStateStatus: CLEAN`\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok; queue metadata synced from the local tracker after the branch refresh\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `18fae5c59b3688134c6e7b706963ad9d56154ef7` matches remote SHA `18fae5c59b3688134c6e7b706963ad9d56154ef7` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for merge commit `18fae5c59b3688134c6e7b706963ad9d56154ef7`\n\nCommit SHA: `18fae5c59b3688134c6e7b706963ad9d56154ef7`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/175",
+          "created_at": "2026-03-23T03:25:01Z"
+        }
+      ],
       "created_at": "2026-03-23T01:12:00Z",
       "description": "Document the queue seeding workflow and drained-batch recovery playbook for repo-native local tracker operations.",
       "id": "big-par-240",
@@ -1724,9 +1731,9 @@
         "refill"
       ],
       "priority": 4,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Document queue seeding and drained-batch recovery workflow",
-      "updated_at": "2026-03-23T02:46:06Z"
+      "updated_at": "2026-03-23T03:25:01Z"
     },
     {
       "assigned_to_worker": true,
@@ -1893,6 +1900,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Refreshed the branch against current `origin/main`, resolved the refill/local-tracker and queue-doc merge conflicts, preserved main's canonical `BIG-PAR-235..240` queue history while appending `BIG-PAR-241..246`, and kept both queue seeding plus local-tracker recent-batch refresh behavior in `bigclawctl refill` and `internal/refill`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `18fae5c59b3688134c6e7b706963ad9d56154ef7` matches remote SHA `18fae5c59b3688134c6e7b706963ad9d56154ef7` with `status: ok` and `synced: true`\n- `gh pr view 175 --repo OpenAGIs/BigClaw --json url,title,state,mergeStateStatus,statusCheckRollup` -> PR `#175` is `OPEN` with `mergeStateStatus: CLEAN` and a successful `test` check\n- `git log -1 --stat` -> captured for merge commit `18fae5c59b3688134c6e7b706963ad9d56154ef7`\n\nCommit SHA: `18fae5c59b3688134c6e7b706963ad9d56154ef7`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/175",
+          "created_at": "2026-03-23T03:25:01Z"
+        }
+      ],
       "created_at": "2026-03-23T03:30:00Z",
       "description": "Refresh the branch against current main so PR #175 is merge-ready again and the tracker records the resulting sync evidence.",
       "id": "big-par-246",
@@ -1903,9 +1917,9 @@
         "merge-readiness"
       ],
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Refresh PR branch against main",
-      "updated_at": "2026-03-23T03:30:00Z"
+      "updated_at": "2026-03-23T03:25:01Z"
     }
   ]
 }
