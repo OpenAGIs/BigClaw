@@ -42,11 +42,10 @@
       "BIG-PAR-234",
       "BIG-PAR-241",
       "BIG-PAR-242",
-      "BIG-PAR-243"
-    ],
-    "active": [
+      "BIG-PAR-243",
       "BIG-PAR-244"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -232,7 +231,7 @@
       "identifier": "BIG-PAR-244",
       "title": "Refresh refill queue docs for current local-backend behavior",
       "track": "Tracker and Refill Hygiene",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

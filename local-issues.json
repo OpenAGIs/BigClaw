@@ -1750,6 +1750,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-244` after updating the refill queue docs to match the current local-backend behavior.\n\nWhat changed:\n- `docs/parallel-refill-queue-metadata.md` now documents that local refill runs reload the tracker file on each fetch and refresh `recent_batches` metadata, not just `issues[].status`.\n- `docs/parallel-refill-queue.md` now records the recently completed `BIG-PAR-241` through `BIG-PAR-243` slices and extends the canonical refill order through `BIG-PAR-244`.\n- `docs/parallel-refill-queue.json` and `local-issues.json` were updated to claim the docs slice in the local tracker workflow.\n\nValidation:\n- `rg -n \"recent_batches|reloads the tracker file|BIG-PAR-241|BIG-PAR-244\" docs/parallel-refill-queue.md docs/parallel-refill-queue-metadata.md` -> ok\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> ok (`active_in_progress=[BIG-PAR-244]`, `queue_runnable=1`) before closeout\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `251a8b4b959204714bf658e6259988993f12e496` matches remote SHA `251a8b4b959204714bf658e6259988993f12e496` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `251a8b4b959204714bf658e6259988993f12e496`\n\nCommit SHA: `251a8b4b959204714bf658e6259988993f12e496`\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-240 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-23T03:15:00Z"
+        }
+      ],
       "created_at": "2026-03-23T03:12:00Z",
       "description": "Bring the refill queue documentation back in sync with the current local-backend behavior, including recent-batch metadata refresh and per-read tracker reloads.",
       "id": "big-par-244",
@@ -1761,9 +1768,9 @@
         "local-tracker"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Refresh refill queue docs for current local-backend behavior",
-      "updated_at": "2026-03-23T03:12:00Z"
+      "updated_at": "2026-03-23T03:15:01Z"
     }
   ]
 }
