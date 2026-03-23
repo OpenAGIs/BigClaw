@@ -76,7 +76,10 @@
       "BIG-PAR-274",
       "BIG-PAR-275",
       "BIG-PAR-276",
-      "BIG-PAR-277"
+      "BIG-PAR-277",
+      "BIG-PAR-278",
+      "BIG-PAR-279",
+      "BIG-PAR-280"
     ],
     "active": [],
     "standby": []
@@ -140,7 +143,10 @@
     "BIG-PAR-274",
     "BIG-PAR-275",
     "BIG-PAR-276",
-    "BIG-PAR-277"
+    "BIG-PAR-277",
+    "BIG-PAR-278",
+    "BIG-PAR-279",
+    "BIG-PAR-280"
   ],
   "issues": [
     {
@@ -524,6 +530,24 @@
     {
       "identifier": "BIG-PAR-277",
       "title": "Add live-shadow rollback bundle regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-278",
+      "title": "Add production corpus coverage regression surface",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-279",
+      "title": "Add subscriber takeover proof regression surface",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-280",
+      "title": "Add durability rollout review bundle regression surface",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }

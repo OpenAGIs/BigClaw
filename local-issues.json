@@ -2734,6 +2734,69 @@
       "state": "Done",
       "title": "Add live-shadow rollback bundle regression coverage",
       "updated_at": "2026-03-23T15:41:48Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added production corpus coverage regression coverage in bigclaw-go/internal/regression/production_corpus_surface_test.go so the repo now pins shadow matrix totals, manifest alignment, drift rollup consistency, and production-corpus digest references across the checked-in migration evidence bundle. Validation: cd bigclaw-go && go test ./internal/regression.",
+          "created_at": "2026-03-23T16:02:22Z"
+        }
+      ],
+      "created_at": "2026-03-23T15:56:02Z",
+      "description": "Add regression coverage for the production-corpus migration follow-up lane so the shadow matrix corpus overlay, drift rollup, and reviewer-facing digest references cannot drift silently from the checked-in migration evidence bundle.",
+      "id": "big-par-278",
+      "identifier": "BIG-PAR-278",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add production corpus coverage regression surface",
+      "updated_at": "2026-03-23T16:02:34Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added subscriber takeover proof regression coverage in bigclaw-go/internal/regression/takeover_proof_surface_test.go so the repo now pins local and live takeover summaries, primitive references, scenario-level audit invariants, live artifact paths, and takeover follow-up digest caveats. Validation: cd bigclaw-go && go test ./internal/regression.",
+          "created_at": "2026-03-23T16:02:22Z"
+        }
+      ],
+      "created_at": "2026-03-23T15:56:13Z",
+      "description": "Add regression coverage for the local and live subscriber takeover proof reports so summary counters, scenario invariants, audit artifact paths, and follow-up digest references cannot drift silently from the checked-in takeover evidence bundle.",
+      "id": "big-par-279",
+      "identifier": "BIG-PAR-279",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add subscriber takeover proof regression surface",
+      "updated_at": "2026-03-23T16:02:34Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added durability rollout review bundle regression coverage in bigclaw-go/internal/regression/durability_review_bundle_test.go so the repo now pins the broker durability rollout scorecard, broker validation summary, checkpoint/retention/ambiguous-publish proof summaries, and reviewer-facing contract references as one durability review bundle. Validation: cd bigclaw-go && go test ./internal/regression.",
+          "created_at": "2026-03-23T16:02:23Z"
+        }
+      ],
+      "created_at": "2026-03-23T15:56:22Z",
+      "description": "Add regression coverage for the replicated event-log durability rollout lane so the rollout scorecard, proof summaries, and reviewer-facing contract references stay aligned with the checked-in broker durability review bundle.",
+      "id": "big-par-280",
+      "identifier": "BIG-PAR-280",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add durability rollout review bundle regression surface",
+      "updated_at": "2026-03-23T16:02:34Z"
     }
   ]
 }
