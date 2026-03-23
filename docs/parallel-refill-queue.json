@@ -83,7 +83,9 @@
       "BIG-PAR-283",
       "BIG-PAR-282"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-284"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -150,7 +152,8 @@
     "BIG-PAR-279",
     "BIG-PAR-280",
     "BIG-PAR-283",
-    "BIG-PAR-282"
+    "BIG-PAR-282",
+    "BIG-PAR-284"
   ],
   "issues": [
     {
@@ -566,6 +569,12 @@
       "title": "Add sequence and retention surface regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-284",
+      "title": "Add queue/runtime reliability report regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

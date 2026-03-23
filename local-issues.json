@@ -2870,6 +2870,20 @@
       "state": "Done",
       "title": "Add publish acknowledgement surface regression coverage",
       "updated_at": "2026-03-23T16:10:38Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T16:26:10Z",
+      "description": "Add regression coverage for the queue reliability, lease recovery, and state-machine validation reports so their cited automated evidence, API surfaces, and runtime lifecycle claims stay pinned to the checked-in queue/runtime test suite.",
+      "id": "big-par-284",
+      "identifier": "BIG-PAR-284",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add queue/runtime reliability report regression coverage",
+      "updated_at": "2026-03-24T00:00:00Z"
     }
   ]
 }

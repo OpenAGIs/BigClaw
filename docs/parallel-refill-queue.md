@@ -47,8 +47,8 @@ longer waits on Linear to keep issue execution moving.
 
 ## Current batch
 
-- Current repo tranche status as of March 23, 2026:
-  - active slices: none
+- Current repo tranche status as of March 24, 2026:
+  - active slices: `BIG-PAR-284` — Add queue/runtime reliability report regression coverage
   - standby slices: none
   - recently completed slices: `BIG-PAR-275` — Add observability follow-up regression coverage; `BIG-PAR-276` — Add coordination contract-only regression coverage; `BIG-PAR-277` — Add live-shadow rollback bundle regression coverage; `BIG-PAR-278` — Add production corpus coverage regression surface; `BIG-PAR-279` — Add subscriber takeover proof regression surface; `BIG-PAR-280` — Add durability rollout review bundle regression surface; `BIG-PAR-283` — Add provider live handoff isolation regression coverage; `BIG-PAR-282` — Add sequence and retention surface regression coverage
   - queue status: `queue_runnable=0`, `target_in_progress=2`
@@ -194,3 +194,4 @@ longer waits on Linear to keep issue execution moving.
 62. `BIG-PAR-280`
 63. `BIG-PAR-283`
 64. `BIG-PAR-282`
+65. `BIG-PAR-284`
