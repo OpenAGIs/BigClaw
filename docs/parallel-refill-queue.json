@@ -41,11 +41,10 @@
       "BIG-PAR-231",
       "BIG-PAR-234",
       "BIG-PAR-241",
-      "BIG-PAR-242"
-    ],
-    "active": [
+      "BIG-PAR-242",
       "BIG-PAR-243"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -224,7 +223,7 @@
       "identifier": "BIG-PAR-243",
       "title": "Reload local tracker state on each refill fetch",
       "track": "Tracker and Refill Hygiene",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

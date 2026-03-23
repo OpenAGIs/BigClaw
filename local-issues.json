@@ -1726,6 +1726,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-243` after making local refill reads reload the tracker file between polls.\n\nWhat changed:\n- `bigclaw-go/internal/refill/local_store.go` now exposes `Reload()` so a long-lived store can refresh its in-memory snapshot from `local-issues.json`.\n- `bigclaw-go/cmd/bigclawctl/main.go` now makes the local refill client call `store.Reload()` on each `fetchIssueStates` call, so `refill --watch` sees tracker updates written by other processes instead of serving stale state forever.\n- `bigclaw-go/internal/refill/local_store_test.go` and `bigclaw-go/cmd/bigclawctl/main_test.go` now cover explicit reload behavior and the refill-client read path after an external tracker rewrite.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `3892cdde156dd861c5878fcf48c43fbcdac89fec` matches remote SHA `3892cdde156dd861c5878fcf48c43fbcdac89fec` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `3892cdde156dd861c5878fcf48c43fbcdac89fec`\n\nCommit SHA: `3892cdde156dd861c5878fcf48c43fbcdac89fec`\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-240 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-23T03:08:00Z"
+        }
+      ],
       "created_at": "2026-03-23T03:05:00Z",
       "description": "Reload local-issues.json on each local refill client read so long-lived refill/watch processes observe external tracker mutations instead of serving a stale in-memory snapshot.",
       "id": "big-par-243",
@@ -1737,9 +1744,9 @@
         "local-tracker"
       ],
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Reload local tracker state on each refill fetch",
-      "updated_at": "2026-03-23T03:05:00Z"
+      "updated_at": "2026-03-23T03:08:01Z"
     }
   ]
 }
