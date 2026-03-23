@@ -34,6 +34,18 @@ The three previously open closure items are now covered by fresh same-day eviden
 
 This does not magically turn the system into production-grade distributed infrastructure, but it does make the current rewrite epic complete enough to close in Linear. Remaining work is now follow-up hardening, not missing baseline evidence. One of those hardening lanes now has a concrete repo-native external-store proof in `docs/reports/external-store-validation-report.json`, which validates remote HTTP event-log replay, checkpoint, retention-boundary, and shared-lease takeover behavior beyond the single-process embedded-log path. The report's backend matrix also keeps the remaining follow-up honest by marking `broker_replicated` as `not_configured` and `quorum_replicated` as `contract_only`.
 
+## Canonical follow-up routing
+
+- `docs/reports/parallel-validation-matrix.md` is the canonical index for the
+  checked-in local, Kubernetes, and Ray validation lanes plus the companion
+  multi-node evidence that underpins this closeout report.
+- `docs/reports/parallel-follow-up-index.md` is the canonical index for the
+  remaining takeover, coordination, continuation, and broker-durability
+  hardening tracks left after the epic-close baseline.
+- Start with `docs/reports/parallel-validation-matrix.md` for runnable lane
+  evidence, then use the follow-up index for `OPE-269` / `BIG-PAR-080`,
+  `OPE-261` / `BIG-PAR-085`, `OPE-271` / `BIG-PAR-082`, and `OPE-222`.
+
 ## Artifacts
 
 - `docs/reports/benchmark-readiness-report.md`
