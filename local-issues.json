@@ -2032,6 +2032,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-250` after bringing the Go-mainline cutover handoff note back in sync with the merged cutover state.\n\nWhat changed:\n- `docs/go-mainline-cutover-handoff.md` now describes the Go-mainline cutover as a merged handoff instead of a merge-readiness note for the stale `symphony/BIG-GOM-302` branch snapshot.\n- The handoff note now records PR `#138` as `MERGED`, includes merge commit `94e1f455e48a8115249cfa82b047528c010dd495`, restores the full `BIG-GOM-301` through `BIG-GOM-310` scope in the PR title, and clarifies that later `BIG-PAR-*` slices are follow-up hardening rather than missing Go-mainline ownership work.\n\nValidation:\n- `rg -n \"Historical cutover branch|PR state|Merge commit|BIG-GOM-309|repo-native cutover PR is merged\" docs/go-mainline-cutover-handoff.md` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `37549ce4148e9eb21ea2f5f1cc50a27d31926d3e` matches remote SHA `37549ce4148e9eb21ea2f5f1cc50a27d31926d3e` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `37549ce4148e9eb21ea2f5f1cc50a27d31926d3e`\n\nCommit SHA: `37549ce4148e9eb21ea2f5f1cc50a27d31926d3e`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/179",
+          "created_at": "2026-03-23T05:00:30Z"
+        }
+      ],
       "created_at": "2026-03-23T04:19:12Z",
       "description": "Update docs/go-mainline-cutover-handoff.md so its branch/PR references and completion wording match the merged Go-mainline cutover state instead of the stale pre-closeout branch snapshot.",
       "id": "big-par-250",
@@ -2043,9 +2050,9 @@
         "traceability"
       ],
       "priority": 4,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Refresh Go-mainline handoff note for merged cutover state",
-      "updated_at": "2026-03-23T04:19:12Z"
+      "updated_at": "2026-03-23T05:00:00Z"
     }
   ]
 }
