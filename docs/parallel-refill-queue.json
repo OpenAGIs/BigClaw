@@ -63,7 +63,9 @@
       "BIG-PAR-255",
       "BIG-PAR-256"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-257"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -110,7 +112,8 @@
     "BIG-PAR-253",
     "BIG-PAR-254",
     "BIG-PAR-255",
-    "BIG-PAR-256"
+    "BIG-PAR-256",
+    "BIG-PAR-257"
   ],
   "issues": [
     {
@@ -376,6 +379,12 @@
       "title": "Align live validation index JSON follow-up metadata",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-257",
+      "title": "Align continuation gate JSON follow-up metadata",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
