@@ -8,8 +8,8 @@
   },
   "policy": {
     "target_in_progress": 2,
-    "activate_state_name": "In Progress",
     "activate_state_id": "bd8aafe7-4d8b-41aa-a85b-13e76d49ead7",
+    "activate_state_name": "In Progress",
     "refill_states": [
       "Backlog",
       "Todo"
@@ -39,12 +39,11 @@
       "BIG-PAR-229",
       "BIG-PAR-230",
       "BIG-PAR-231",
-      "BIG-PAR-234"
-    ],
-    "active": [
+      "BIG-PAR-234",
       "BIG-PAR-241",
       "BIG-PAR-242"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -210,13 +209,13 @@
       "identifier": "BIG-PAR-241",
       "title": "Serialize local tracker writes with an explicit lock",
       "track": "Tracker and Refill Hygiene",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-242",
       "title": "Sync refill recent-batch metadata from the local tracker",
       "track": "Tracker and Refill Hygiene",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

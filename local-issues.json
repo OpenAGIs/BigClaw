@@ -1657,18 +1657,36 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-240` after completing both tracker/refill hardening child slices.\n\nWhat changed:\n- Closed `BIG-PAR-241` by adding lock-and-reload mutation safety for `local-issues.json` so overlapping hook/worker writes no longer silently drop comments or state transitions.\n- Closed `BIG-PAR-242` by teaching `bigclawctl refill` to refresh `docs/parallel-refill-queue.json` recent-batch metadata from the live local tracker state during local-backend runs.\n- Updated the local tracker/queue seed metadata so the child slices were explicitly claimed, validated, and closed in the repo-native workflow.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `8395cb5c25e1fde3a2b77d58a39c6e4a540943f1` matches remote SHA `8395cb5c25e1fde3a2b77d58a39c6e4a540943f1` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `8395cb5c25e1fde3a2b77d58a39c6e4a540943f1`\n\nCommit SHA: `8395cb5c25e1fde3a2b77d58a39c6e4a540943f1`\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-240 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-23T02:52:20Z"
+        }
+      ],
       "created_at": "2026-03-23T02:25:32Z",
-      "description": "",
+      "description": "Harden repo-native local tracker mutation safety and keep the canonical refill queue metadata aligned with live local issue state during local-backend runs.",
       "id": "big-par-240",
       "identifier": "BIG-PAR-240",
-      "labels": [],
+      "labels": [
+        "parallel",
+        "tooling",
+        "tracker"
+      ],
       "priority": 3,
-      "state": "In Progress",
-      "title": "BIG-PAR-240",
-      "updated_at": "2026-03-23T02:25:32Z"
+      "state": "Done",
+      "title": "Tracker and refill synchronization hardening",
+      "updated_at": "2026-03-23T02:52:21Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-241` after hardening repo-native local tracker mutations against overlapping writers.\n\nWhat changed:\n- `bigclaw-go/internal/refill/local_store.go` now acquires a bounded-retry `local-issues.json.lock`, reloads the latest on-disk tracker state inside the lock, and only then applies create/state/comment mutations before rewriting the store.\n- `bigclaw-go/internal/refill/local_store_test.go` now covers stale-snapshot comment preservation and transient lock-file retry behavior.\n- `docs/local-tracker-automation.md` now documents the explicit lock file behavior and the expectation that tracker critical sections stay short.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill` -> ok\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`recent_batches_synced=true`, `queue_status_synced=true`)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `8395cb5c25e1fde3a2b77d58a39c6e4a540943f1` matches remote SHA `8395cb5c25e1fde3a2b77d58a39c6e4a540943f1` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `8395cb5c25e1fde3a2b77d58a39c6e4a540943f1`\n\nCommit SHA: `8395cb5c25e1fde3a2b77d58a39c6e4a540943f1`\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-240 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-23T02:52:00Z"
+        }
+      ],
       "created_at": "2026-03-23T02:40:00Z",
       "description": "Prevent overlapping local tracker mutations from dropping comments or state changes by adding an explicit repo-native write lock with bounded retry behavior around local-issues.json saves.",
       "id": "big-par-241",
@@ -1679,12 +1697,19 @@
         "local-tracker"
       ],
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Serialize local tracker writes with an explicit lock",
-      "updated_at": "2026-03-23T02:40:00Z"
+      "updated_at": "2026-03-23T02:52:01Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-242` after making the canonical refill queue derive `recent_batches` from live local tracker state during local-backend runs.\n\nWhat changed:\n- `bigclaw-go/internal/refill/queue.go` now normalizes issue states, classifies active/completed/standby slices from the live tracker map, and refreshes `recent_batches` only when the queue metadata is actually stale.\n- `bigclaw-go/cmd/bigclawctl/main.go` now persists refreshed `recent_batches` metadata during local `refill` execution and reports `recent_batches_synced`, `recent_batches_updated`, and `recent_batches_written` in the command payload.\n- `bigclaw-go/internal/refill/queue_test.go` and `bigclaw-go/cmd/bigclawctl/main_test.go` now cover queue classification and queue-file rewrite behavior for the local backend path.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-240 BIG-PAR-241 BIG-PAR-242]`, `recent_batches_synced=true`, `recent_batches_updated=false`)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `8395cb5c25e1fde3a2b77d58a39c6e4a540943f1` matches remote SHA `8395cb5c25e1fde3a2b77d58a39c6e4a540943f1` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `8395cb5c25e1fde3a2b77d58a39c6e4a540943f1`\n\nCommit SHA: `8395cb5c25e1fde3a2b77d58a39c6e4a540943f1`\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-240 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-23T02:52:10Z"
+        }
+      ],
       "created_at": "2026-03-23T02:40:00Z",
       "description": "Keep docs/parallel-refill-queue.json honest during local-tracker execution by deriving recent_batches active/completed/standby metadata from the live local issue store when refill runs with the local backend.",
       "id": "big-par-242",
@@ -1695,9 +1720,9 @@
         "refill"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Sync refill recent-batch metadata from the local tracker",
-      "updated_at": "2026-03-23T02:40:00Z"
+      "updated_at": "2026-03-23T02:52:11Z"
     }
   ]
 }
