@@ -2037,6 +2037,11 @@
           "author": "codex",
           "body": "Closed `BIG-PAR-250` after bringing the Go-mainline cutover handoff note back in sync with the merged cutover state.\n\nWhat changed:\n- `docs/go-mainline-cutover-handoff.md` now describes the Go-mainline cutover as a merged handoff instead of a merge-readiness note for the stale `symphony/BIG-GOM-302` branch snapshot.\n- The handoff note now records PR `#138` as `MERGED`, includes merge commit `94e1f455e48a8115249cfa82b047528c010dd495`, restores the full `BIG-GOM-301` through `BIG-GOM-310` scope in the PR title, and clarifies that later `BIG-PAR-*` slices are follow-up hardening rather than missing Go-mainline ownership work.\n\nValidation:\n- `rg -n \"Historical cutover branch|PR state|Merge commit|BIG-GOM-309|repo-native cutover PR is merged\" docs/go-mainline-cutover-handoff.md` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `37549ce4148e9eb21ea2f5f1cc50a27d31926d3e` matches remote SHA `37549ce4148e9eb21ea2f5f1cc50a27d31926d3e` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `37549ce4148e9eb21ea2f5f1cc50a27d31926d3e`\n\nCommit SHA: `37549ce4148e9eb21ea2f5f1cc50a27d31926d3e`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/179",
           "created_at": "2026-03-23T05:00:30Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout: PR `#179` (`BIG-PAR-250: refresh cutover handoff note`) merged into `main` at `2026-03-23T04:26:03Z` with merge commit `45b5fa5916f433587ec4c7d48f371e2487c38f11`.\n\nValidation:\n- `gh pr view 179 --repo OpenAGIs/BigClaw --json url,title,state,mergedAt,mergeCommit` -> `MERGED` with merge commit `45b5fa5916f433587ec4c7d48f371e2487c38f11`\n- `git fetch origin main && git rev-parse origin/main` -> `45b5fa5916f433587ec4c7d48f371e2487c38f11`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `cad51e4a2d3598aee81ddc0292ea3a4686311507` matches remote SHA `cad51e4a2d3598aee81ddc0292ea3a4686311507` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `cad51e4a2d3598aee81ddc0292ea3a4686311507`\n\nCommit SHA: `cad51e4a2d3598aee81ddc0292ea3a4686311507`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/179",
+          "created_at": "2026-03-23T05:05:00Z"
         }
       ],
       "created_at": "2026-03-23T04:19:12Z",
@@ -2052,7 +2057,343 @@
       "priority": 4,
       "state": "Done",
       "title": "Refresh Go-mainline handoff note for merged cutover state",
-      "updated_at": "2026-03-23T05:00:00Z"
+      "updated_at": "2026-03-23T05:05:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-251` after correcting the stale rollback follow-up issue mapping and extending the regression coverage that guards these reviewer-facing docs.\n\nWhat changed:\n- Updated `docs/openclaw-parallel-gap-analysis.md` to use the authoritative `OPE-254` / `BIG-PAR-088` rollback mapping instead of the stale `OPE-267` reference.\n- Extended `bigclaw-go/internal/regression/rollback_docs_test.go` so the workspace-level gap-analysis doc is checked alongside the rollback, migration, and review docs.\n- Refreshed adjacent migration/review coverage docs so the rollback and live-shadow follow-up references stay aligned with the regression expectations.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `2d7d84b26a2bb99f66f28eb1c520d3f9e2fe3b73` matches remote SHA `2d7d84b26a2bb99f66f28eb1c520d3f9e2fe3b73` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `2d7d84b26a2bb99f66f28eb1c520d3f9e2fe3b73`\n\nCommit: `2d7d84b26a2bb99f66f28eb1c520d3f9e2fe3b73`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180.",
+          "created_at": "2026-03-23T04:39:37Z"
+        }
+      ],
+      "created_at": "2026-03-23T04:32:04Z",
+      "description": "Update the stale rollback follow-up mapping in docs/openclaw-parallel-gap-analysis.md to match the authoritative OPE-254 / BIG-PAR-088 references already used by rollback trigger surfaces, API payloads, and regression docs checks; extend regression coverage so the gap-analysis doc cannot drift again.",
+      "id": "big-par-251",
+      "identifier": "BIG-PAR-251",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Fix rollback follow-up issue ID drift in gap analysis",
+      "updated_at": "2026-03-23T04:39:37Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-252` after adding observability follow-up regression coverage for the reviewer-facing docs and aligning the missing issue identifiers in the coverage summaries.\n\nWhat changed:\n- Added `bigclaw-go/internal/regression/observability_followup_docs_test.go` to keep the observability report, tracing/telemetry digests, reviewer coverage docs, and workspace gap-analysis references aligned.\n- Updated `bigclaw-go/docs/reports/review-readiness.md` and `bigclaw-go/docs/reports/issue-coverage.md` to carry the authoritative `OPE-264` / `BIG-PAR-075` and `OPE-265` / `BIG-PAR-076` follow-up identifiers.\n- Re-ran the full `internal/regression` package to confirm the new observability check and the existing doc-alignment checks pass together.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `071dabb9788088b109bb3f87eb31bf1c8e001f54` matches remote SHA `071dabb9788088b109bb3f87eb31bf1c8e001f54` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `071dabb9788088b109bb3f87eb31bf1c8e001f54`\n\nCommit: `071dabb9788088b109bb3f87eb31bf1c8e001f54`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180.",
+          "created_at": "2026-03-23T04:46:50Z"
+        }
+      ],
+      "created_at": "2026-03-23T04:41:46Z",
+      "description": "Add a regression that keeps the observability follow-up docs aligned across the gap analysis, observability report, tracing/telemetry digests, and reviewer coverage docs; patch any stale or missing OPE-264 / BIG-PAR-075 and OPE-265 / BIG-PAR-076 references the new check exposes.",
+      "id": "big-par-252",
+      "identifier": "BIG-PAR-252",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add observability follow-up doc regression coverage",
+      "updated_at": "2026-03-23T04:46:50Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-253` after adding regression coverage for the remaining migration and validation follow-up lanes and aligning their reviewer-facing issue identifiers.\n\nWhat changed:\n- Added `bigclaw-go/internal/regression/followup_lane_docs_test.go` to keep the production corpus, subscriber takeover, validation bundle continuation, review readiness, issue coverage, and workspace gap-analysis references aligned.\n- Updated `bigclaw-go/docs/reports/review-readiness.md` and `bigclaw-go/docs/reports/issue-coverage.md` to carry the authoritative `OPE-268` / `BIG-PAR-079`, `OPE-269` / `BIG-PAR-080`, and `OPE-271` / `BIG-PAR-082` follow-up identifiers.\n- Re-ran the full `internal/regression` package to confirm the new lane-alignment check passes alongside the existing doc/regression coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `a8a53e524d311d3fe1001ac1fa89a7c7ce298e1b` matches remote SHA `a8a53e524d311d3fe1001ac1fa89a7c7ce298e1b` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `a8a53e524d311d3fe1001ac1fa89a7c7ce298e1b`\n\nCommit: `a8a53e524d311d3fe1001ac1fa89a7c7ce298e1b`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180.",
+          "created_at": "2026-03-23T04:53:25Z"
+        }
+      ],
+      "created_at": "2026-03-23T04:49:24Z",
+      "description": "Add a regression that keeps the production corpus, subscriber takeover, and validation bundle continuation follow-up docs aligned across the canonical digests, gap analysis, review readiness, and issue coverage summaries; patch any missing OPE-268 / BIG-PAR-079, OPE-269 / BIG-PAR-080, and OPE-271 / BIG-PAR-082 references the new check exposes.",
+      "id": "big-par-253",
+      "identifier": "BIG-PAR-253",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add migration and validation follow-up doc regression coverage",
+      "updated_at": "2026-03-23T04:53:25Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-254` after adding regression coverage for the runtime-facing follow-up references and aligning the missing takeover and continuation lane identifiers in the live reviewer docs.\n\nWhat changed:\n- Added `bigclaw-go/internal/regression/runtime_report_followup_docs_test.go` to keep the live-validation index, multi-node coordination report, event-bus reliability report, and the linked takeover/continuation digests aligned.\n- Updated `bigclaw-go/docs/reports/live-validation-index.md`, `bigclaw-go/docs/reports/multi-node-coordination-report.md`, and `bigclaw-go/docs/reports/event-bus-reliability-report.md` to carry the authoritative `OPE-269` / `BIG-PAR-080` and `OPE-271` / `BIG-PAR-082` follow-up identifiers.\n- Re-ran the full `internal/regression` package to confirm the new runtime-report alignment check passes alongside the existing doc coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `d978c52983dfed7a86f7c41662bd9e2aaf4f10ef` matches remote SHA `d978c52983dfed7a86f7c41662bd9e2aaf4f10ef` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `d978c52983dfed7a86f7c41662bd9e2aaf4f10ef`\n\nCommit: `d978c52983dfed7a86f7c41662bd9e2aaf4f10ef`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180.",
+          "created_at": "2026-03-23T05:01:03Z"
+        }
+      ],
+      "created_at": "2026-03-23T04:56:54Z",
+      "description": "Add regression coverage that keeps runtime-facing reports and bundle indexes aligned with the follow-up lane identifiers for subscriber takeover and validation continuation; patch missing OPE-269 / BIG-PAR-080 and OPE-271 / BIG-PAR-082 references in live-validation and coordination-facing docs.",
+      "id": "big-par-254",
+      "identifier": "BIG-PAR-254",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add runtime report follow-up ID coverage",
+      "updated_at": "2026-03-23T05:01:03Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-255` after aligning the checked-in live validation bundle README with the authoritative continuation follow-up lane ID and extending regression coverage to keep that bundle doc synchronized.\n\nWhat changed:\n- Updated `bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/README.md` so its reviewer digest and continuation artifact bullets carry the authoritative `OPE-271` / `BIG-PAR-082` identifier and current reviewer-index wording.\n- Extended `bigclaw-go/internal/regression/runtime_report_followup_docs_test.go` so the checked-in bundle README stays aligned with the canonical live-validation index and continuation digest references.\n- Re-ran the full `internal/regression` package to confirm the bundle README alignment passes alongside the existing runtime-report doc checks.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `a1a973d5ebc4ef99ccb7daf996d4c9c54e005ce0` matches remote SHA `a1a973d5ebc4ef99ccb7daf996d4c9c54e005ce0` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `a1a973d5ebc4ef99ccb7daf996d4c9c54e005ce0`\n\nCommit: `a1a973d5ebc4ef99ccb7daf996d4c9c54e005ce0`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180.",
+          "created_at": "2026-03-23T05:06:31Z"
+        }
+      ],
+      "created_at": "2026-03-23T05:02:20Z",
+      "description": "Add regression coverage for the checked-in live validation bundle README and align its continuation follow-up references with the authoritative OPE-271 / BIG-PAR-082 lane identifier and current reviewer index wording.",
+      "id": "big-par-255",
+      "identifier": "BIG-PAR-255",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Align live validation bundle follow-up IDs",
+      "updated_at": "2026-03-23T05:06:31Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-256` after aligning the machine-readable live validation index continuation metadata with the authoritative continuation follow-up lane identifier and extending regression coverage for that JSON surface.\n\nWhat changed:\n- Updated `bigclaw-go/docs/reports/live-validation-index.json` so its continuation reviewer path now carries the authoritative `OPE-271` / `BIG-PAR-082` issue metadata alongside the digest path.\n- Extended `bigclaw-go/internal/regression/runtime_report_followup_docs_test.go` with a JSON assertion that keeps the live validation index continuation metadata aligned with the markdown reviewer docs.\n- Re-ran the full `internal/regression` package to confirm the new machine-readable metadata check passes alongside the existing runtime-report doc coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `7531e3dde3407bb25b3c1b706ec4f25194acb947` matches remote SHA `7531e3dde3407bb25b3c1b706ec4f25194acb947` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `7531e3dde3407bb25b3c1b706ec4f25194acb947`\n\nCommit: `7531e3dde3407bb25b3c1b706ec4f25194acb947`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180.",
+          "created_at": "2026-03-23T05:11:31Z"
+        }
+      ],
+      "created_at": "2026-03-23T05:07:26Z",
+      "description": "Add regression coverage for the machine-readable live validation index continuation metadata and align its reviewer-path payload with the authoritative OPE-271 / BIG-PAR-082 follow-up lane identifier used by the checked-in markdown bundle and index docs.",
+      "id": "big-par-256",
+      "identifier": "BIG-PAR-256",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Align live validation index JSON follow-up metadata",
+      "updated_at": "2026-03-23T05:11:31Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-257` after aligning the machine-readable continuation policy gate reviewer metadata with the authoritative continuation follow-up lane identifier and extending regression coverage for that payload.\n\nWhat changed:\n- Updated `bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json` so its reviewer path now carries the authoritative `OPE-271` / `BIG-PAR-082` issue metadata alongside the digest path.\n- Extended `bigclaw-go/internal/regression/runtime_report_followup_docs_test.go` with a JSON assertion that keeps the continuation policy gate reviewer metadata aligned with the live validation index JSON and markdown reviewer docs.\n- Re-ran the full `internal/regression` package to confirm the new machine-readable policy gate check passes alongside the existing runtime-report coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `2a108ad78fe8a4de92c34c8ce94d425ede4857ae` matches remote SHA `2a108ad78fe8a4de92c34c8ce94d425ede4857ae` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `2a108ad78fe8a4de92c34c8ce94d425ede4857ae`\n\nCommit: `2a108ad78fe8a4de92c34c8ce94d425ede4857ae`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180.",
+          "created_at": "2026-03-23T05:17:10Z"
+        }
+      ],
+      "created_at": "2026-03-23T05:11:57Z",
+      "description": "Add regression coverage for the machine-readable validation bundle continuation policy gate reviewer-path payload and align it with the authoritative OPE-271 / BIG-PAR-082 follow-up lane identifier used by the live validation index JSON and markdown reviewer docs.",
+      "id": "big-par-257",
+      "identifier": "BIG-PAR-257",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Align continuation gate JSON follow-up metadata",
+      "updated_at": "2026-03-23T05:17:10Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-258` after aligning the machine-readable rollback trigger reviewer metadata with the authoritative rollback follow-up lane identifier and extending regression coverage for both checked-in rollback trigger surfaces.\n\nWhat changed:\n- Updated `bigclaw-go/docs/reports/rollback-trigger-surface.json` and `bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/rollback-trigger-surface.json` so their reviewer metadata now carries the authoritative `OPE-254` / `BIG-PAR-088` issue block alongside the digest path.\n- Extended `bigclaw-go/internal/regression/rollback_docs_test.go` to assert the reviewer metadata on both the canonical rollback trigger payload and the checked-in live-shadow bundle copy.\n- Re-ran the full `internal/regression` package to confirm the new rollback metadata check passes alongside the existing rollback and runtime-report coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `8af76b1b931b8c51f279497b069ee1e7abdd2d2a` matches remote SHA `8af76b1b931b8c51f279497b069ee1e7abdd2d2a` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `8af76b1b931b8c51f279497b069ee1e7abdd2d2a`\n\nCommit: `8af76b1b931b8c51f279497b069ee1e7abdd2d2a`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180.",
+          "created_at": "2026-03-23T05:24:17Z"
+        }
+      ],
+      "created_at": "2026-03-23T05:17:30Z",
+      "description": "Add regression coverage for the machine-readable rollback trigger reviewer-path payloads and align them with the authoritative OPE-254 / BIG-PAR-088 follow-up lane identifier used by the checked-in rollback digest and reviewer docs.",
+      "id": "big-par-258",
+      "identifier": "BIG-PAR-258",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Align rollback trigger JSON follow-up metadata",
+      "updated_at": "2026-03-23T05:24:17Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-259` after aligning the machine-readable live shadow summary and index rollback metadata with the authoritative rollback follow-up lane identifier and extending regression coverage for those JSON payloads.\n\nWhat changed:\n- Updated `bigclaw-go/docs/reports/live-shadow-index.json`, `bigclaw-go/docs/reports/live-shadow-summary.json`, and `bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/summary.json` so their rollback trigger summaries now carry the authoritative `OPE-254` / `BIG-PAR-088` issue block plus the rollback digest path.\n- Extended `bigclaw-go/internal/regression/rollback_docs_test.go` to assert the rollback metadata on the live shadow index, canonical summary, and checked-in bundle summary payloads.\n- Re-ran the full `internal/regression` package to confirm the new live-shadow metadata checks pass alongside the existing rollback and runtime-report coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `a45445922085291fac03ad37078e8fe44b0bb1e9` matches remote SHA `a45445922085291fac03ad37078e8fe44b0bb1e9` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `a45445922085291fac03ad37078e8fe44b0bb1e9`\n\nCommit: `a45445922085291fac03ad37078e8fe44b0bb1e9`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180.",
+          "created_at": "2026-03-23T05:29:29Z"
+        }
+      ],
+      "created_at": "2026-03-23T05:24:09Z",
+      "description": "Add regression coverage for the machine-readable live shadow summary/index payloads and align their rollback trigger metadata with the authoritative OPE-254 / BIG-PAR-088 follow-up lane identifier used by the rollback trigger surfaces and reviewer docs.",
+      "id": "big-par-259",
+      "identifier": "BIG-PAR-259",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Align live shadow JSON follow-up metadata",
+      "updated_at": "2026-03-23T05:29:29Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Aligned `bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/README.md` with the canonical follow-up issue IDs for the live-shadow comparison and rollback safeguard digests, and extended `bigclaw-go/internal/regression/live_shadow_docs_test.go` to keep the bundle README pinned to those issue/digest pairs.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestLiveShadowRuntimeDocsStayAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> synced true for `a0122629abf9b2ec9073cf56e66ca4e4af21c141`\n\nCommit: `a0122629abf9b2ec9073cf56e66ca4e4af21c141`\nPR: https://github.com/OpenAGIs/BigClaw/pull/180",
+          "created_at": "2026-03-23T05:36:54Z"
+        }
+      ],
+      "created_at": "2026-03-23T05:31:55Z",
+      "description": "Add regression coverage for the checked-in live shadow bundle README and align its live-shadow and rollback follow-up references with the authoritative OPE-266 / BIG-PAR-092 and OPE-254 / BIG-PAR-088 lane identifiers used by the canonical live shadow index and rollback docs.",
+      "id": "big-par-260",
+      "identifier": "BIG-PAR-260",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Align live shadow bundle follow-up IDs",
+      "updated_at": "2026-03-23T05:36:54Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Aligned `bigclaw-go/docs/reports/migration-readiness-report.md` with the canonical `OPE-266` / `BIG-PAR-092` live-shadow comparison follow-up identifier, and extended `bigclaw-go/internal/regression/live_shadow_docs_test.go` so the migration-readiness report keeps that issue-linked digest reference.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestLiveShadowRuntimeDocsStayAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> synced true for `b14ef3b51ecefb2b6b8833b423402fbb12bcf38a`\n\nCommit: `b14ef3b51ecefb2b6b8833b423402fbb12bcf38a`\nPR: https://github.com/OpenAGIs/BigClaw/pull/180",
+          "created_at": "2026-03-23T05:43:25Z"
+        }
+      ],
+      "created_at": "2026-03-23T05:36:54Z",
+      "description": "Align bigclaw-go/docs/reports/migration-readiness-report.md with the canonical OPE-266 / BIG-PAR-092 live-shadow comparison follow-up identifier and extend regression coverage so the migration-readiness report keeps that issue-linked digest reference.",
+      "id": "big-par-261",
+      "identifier": "BIG-PAR-261",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Align migration readiness live-shadow follow-up ID",
+      "updated_at": "2026-03-23T05:43:25Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added `bigclaw-go/internal/regression/followup_index_docs_test.go` to pin the canonical `docs/reports/parallel-follow-up-index.md` table to the expected follow-up lanes, digest paths, companion evidence links, and usage guidance so the repo-native follow-up index cannot drift silently.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestParallelFollowUpIndexStaysAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `581c9f739548f040ddf8a8b080bc09c43f843de6` matches remote SHA `581c9f739548f040ddf8a8b080bc09c43f843de6` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `581c9f739548f040ddf8a8b080bc09c43f843de6`\n\nCommit SHA: `581c9f739548f040ddf8a8b080bc09c43f843de6`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180",
+          "created_at": "2026-03-23T05:52:37Z"
+        }
+      ],
+      "created_at": "2026-03-23T05:49:18Z",
+      "description": "Add regression coverage for the canonical parallel follow-up index so the expected lane rows, digest paths, and companion evidence links stay aligned with the checked-in follow-up digests and rollout contracts.",
+      "id": "big-par-262",
+      "identifier": "BIG-PAR-262",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add canonical follow-up index regression coverage",
+      "updated_at": "2026-03-23T05:52:37Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added `bigclaw-go/internal/regression/migration_followup_index_docs_test.go` to pin the migration-facing docs that route reviewers to `docs/reports/parallel-follow-up-index.md`, so `docs/migration-shadow.md`, `docs/migration.md`, and `docs/reports/migration-readiness-report.md` keep their canonical follow-up-index and validation-matrix entrypoints aligned.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestMigrationFollowUpIndexDocsStayAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `git push origin HEAD:symphony/BIG-PAR-240` -> ok after a transient post-commit SSH transport failure in the auto-sync hook\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `195abdb0b16d02fa68a3b74e1c0a0d0da06cdf6a` matches remote SHA `195abdb0b16d02fa68a3b74e1c0a0d0da06cdf6a` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `195abdb0b16d02fa68a3b74e1c0a0d0da06cdf6a`\n\nCommit SHA: `195abdb0b16d02fa68a3b74e1c0a0d0da06cdf6a`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180",
+          "created_at": "2026-03-23T05:58:32Z"
+        }
+      ],
+      "created_at": "2026-03-23T05:55:44Z",
+      "description": "Add regression coverage for migration-facing docs that route reviewers to the canonical parallel follow-up index so migration, migration-shadow, and migration-readiness references do not drift away from the checked-in index and validation matrix entrypoint.",
+      "id": "big-par-263",
+      "identifier": "BIG-PAR-263",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add migration follow-up index regression coverage",
+      "updated_at": "2026-03-23T05:58:32Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added `bigclaw-go/internal/regression/runtime_followup_index_docs_test.go` to pin runtime and review docs that route operators to `docs/reports/parallel-follow-up-index.md`, so `docs/reports/review-readiness.md`, `docs/reports/issue-coverage.md`, `docs/reports/event-bus-reliability-report.md`, and `docs/reports/live-validation-index.md` keep their canonical follow-up-index and validation-matrix entrypoints aligned.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestRuntimeFollowUpIndexDocsStayAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `a82f9a9daeb0e409b7bf0341abae5ce6d713d6e2` matches remote SHA `a82f9a9daeb0e409b7bf0341abae5ce6d713d6e2` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `a82f9a9daeb0e409b7bf0341abae5ce6d713d6e2`\n\nCommit SHA: `a82f9a9daeb0e409b7bf0341abae5ce6d713d6e2`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180",
+          "created_at": "2026-03-23T06:03:13Z"
+        }
+      ],
+      "created_at": "2026-03-23T06:00:39Z",
+      "description": "Add regression coverage for runtime and review docs that route operators to the canonical parallel follow-up index so review-readiness, issue-coverage, event-bus reliability, and live-validation index pages keep their index and validation-matrix entrypoints aligned.",
+      "id": "big-par-264",
+      "identifier": "BIG-PAR-264",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add runtime follow-up index regression coverage",
+      "updated_at": "2026-03-23T06:03:13Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added `bigclaw-go/internal/regression/bundle_followup_index_docs_test.go` to pin bundle and operational docs that route reviewers to `docs/reports/parallel-follow-up-index.md`, so `docs/reports/go-control-plane-observability-report.md`, `docs/reports/live-shadow-index.md`, `docs/reports/live-shadow-runs/20260313T085655Z/README.md`, `docs/reports/live-validation-runs/20260316T140138Z/README.md`, and `docs/reports/multi-node-coordination-report.md` keep their canonical follow-up-index and companion reference paths aligned.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestBundleFollowUpIndexDocsStayAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `c611ac37f5e3d02c671076a53a0ee0bae311bd7a` matches remote SHA `c611ac37f5e3d02c671076a53a0ee0bae311bd7a` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `c611ac37f5e3d02c671076a53a0ee0bae311bd7a`\n\nCommit SHA: `c611ac37f5e3d02c671076a53a0ee0bae311bd7a`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180",
+          "created_at": "2026-03-23T06:08:05Z"
+        }
+      ],
+      "created_at": "2026-03-23T06:05:24Z",
+      "description": "Add regression coverage for bundle and operational docs that route reviewers to the canonical parallel follow-up index so observability, live-shadow, live-validation bundle, and multi-node coordination entrypoints keep their follow-up index and companion references aligned.",
+      "id": "big-par-265",
+      "identifier": "BIG-PAR-265",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add bundle follow-up index regression coverage",
+      "updated_at": "2026-03-23T06:08:05Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added `bigclaw-go/internal/regression/planning_followup_index_docs_test.go` to pin the planning docs that route contributors to `docs/reports/parallel-follow-up-index.md`, so `docs/reports/migration-plan-review-notes.md` and `docs/openclaw-parallel-gap-analysis.md` keep their canonical follow-up-index and validation-matrix entrypoints aligned.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestPlanningFollowUpIndexDocsStayAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `70e26d71ae3c2e736d18a3acfdd4a7167a672ba7` matches remote SHA `70e26d71ae3c2e736d18a3acfdd4a7167a672ba7` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `70e26d71ae3c2e736d18a3acfdd4a7167a672ba7`\n\nCommit SHA: `70e26d71ae3c2e736d18a3acfdd4a7167a672ba7`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180",
+          "created_at": "2026-03-23T06:12:37Z"
+        }
+      ],
+      "created_at": "2026-03-23T06:10:09Z",
+      "description": "Add regression coverage for planning docs that route contributors to the canonical parallel follow-up index so migration plan review notes and the repo-level OpenClaw gap analysis keep their follow-up index and validation matrix entrypoints aligned.",
+      "id": "big-par-266",
+      "identifier": "BIG-PAR-266",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add planning follow-up index regression coverage",
+      "updated_at": "2026-03-23T06:12:37Z"
     }
   ]
 }

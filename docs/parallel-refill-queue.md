@@ -50,7 +50,7 @@ longer waits on Linear to keep issue execution moving.
 - Current repo tranche status as of March 23, 2026:
   - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-243` — Reload local tracker state on each refill fetch; `BIG-PAR-244` — Refresh refill queue docs for current local-backend behavior; `BIG-PAR-245` — Open PR for tracker and refill hardening branch; `BIG-PAR-246` — Refresh PR branch against main; `BIG-PAR-247` — bigclawctl refill: sync queue markdown from canonical state; `BIG-PAR-248` — Expand SQLite queue reliability proof to 10k tasks; `BIG-PAR-249` — Refresh queue reliability references after 10k proof; `BIG-PAR-250` — Refresh Go-mainline handoff note for merged cutover state
+  - recently completed slices: `BIG-PAR-254` — Add runtime report follow-up ID coverage; `BIG-PAR-255` — Align live validation bundle follow-up IDs; `BIG-PAR-256` — Align live validation index JSON follow-up metadata; `BIG-PAR-257` — Align continuation gate JSON follow-up metadata; `BIG-PAR-258` — Align rollback trigger JSON follow-up metadata; `BIG-PAR-259` — Align live shadow JSON follow-up metadata; `BIG-PAR-260` — Align live shadow bundle follow-up IDs; `BIG-PAR-261` — Align migration readiness live-shadow follow-up ID
   - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
@@ -96,6 +96,17 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-248` — Expand SQLite queue reliability proof to 10k tasks
   - `BIG-PAR-249` — Refresh queue reliability references after 10k proof
   - `BIG-PAR-250` — Refresh Go-mainline handoff note for merged cutover state
+  - `BIG-PAR-251` — Fix rollback follow-up issue ID drift in gap analysis
+  - `BIG-PAR-252` — Add observability follow-up doc regression coverage
+  - `BIG-PAR-253` — Add migration and validation follow-up doc regression coverage
+  - `BIG-PAR-254` — Add runtime report follow-up ID coverage
+  - `BIG-PAR-255` — Align live validation bundle follow-up IDs
+  - `BIG-PAR-256` — Align live validation index JSON follow-up metadata
+  - `BIG-PAR-257` — Align continuation gate JSON follow-up metadata
+  - `BIG-PAR-258` — Align rollback trigger JSON follow-up metadata
+  - `BIG-PAR-259` — Align live shadow JSON follow-up metadata
+  - `BIG-PAR-260` — Align live shadow bundle follow-up IDs
+  - `BIG-PAR-261` — Align migration readiness live-shadow follow-up ID
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -142,3 +153,14 @@ longer waits on Linear to keep issue execution moving.
 36. `BIG-PAR-248`
 37. `BIG-PAR-249`
 38. `BIG-PAR-250`
+39. `BIG-PAR-251`
+40. `BIG-PAR-252`
+41. `BIG-PAR-253`
+42. `BIG-PAR-254`
+43. `BIG-PAR-255`
+44. `BIG-PAR-256`
+45. `BIG-PAR-257`
+46. `BIG-PAR-258`
+47. `BIG-PAR-259`
+48. `BIG-PAR-260`
+49. `BIG-PAR-261`

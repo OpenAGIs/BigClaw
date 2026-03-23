@@ -42,14 +42,19 @@
   "rollback_trigger_surface": {
     "status": "manual-review-required",
     "automation_boundary": "manual_only",
-    "automated_rollback_trigger": false,
-    "distinctions": {
-      "blockers": 3,
-      "warnings": 1,
-      "manual_only_paths": 2
-    },
-    "summary_path": "docs/reports/rollback-trigger-surface.json"
+  "automated_rollback_trigger": false,
+  "distinctions": {
+    "blockers": 3,
+    "warnings": 1,
+    "manual_only_paths": 2
   },
+  "issue": {
+    "id": "OPE-254",
+    "slug": "BIG-PAR-088"
+  },
+  "digest_path": "docs/reports/rollback-safeguard-follow-up-digest.md",
+  "summary_path": "docs/reports/rollback-trigger-surface.json"
+},
   "compare_trace_id": "shadow-compare-sample",
   "matrix_trace_ids": [
     "shadow-compare-sample-m1",

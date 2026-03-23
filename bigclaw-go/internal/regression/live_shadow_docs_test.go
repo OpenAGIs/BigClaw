@@ -23,6 +23,7 @@ func TestLiveShadowRuntimeDocsStayAligned(t *testing.T) {
 		{
 			path: "docs/reports/migration-readiness-report.md",
 			substrings: []string{
+				"OPE-266` / `BIG-PAR-092",
 				"GET /debug/status` live shadow mirror payload",
 				"GET /v2/control-center` distributed diagnostics live shadow mirror payload",
 				"`live_shadow_mirror_scorecard`",
@@ -36,6 +37,15 @@ func TestLiveShadowRuntimeDocsStayAligned(t *testing.T) {
 				"GET /debug/status",
 				"GET /v2/control-center",
 				"distributed_diagnostics.live_shadow_mirror_scorecard",
+			},
+		},
+		{
+			path: "docs/reports/live-shadow-runs/20260313T085655Z/README.md",
+			substrings: []string{
+				"OPE-266` / `BIG-PAR-092",
+				"live-shadow-comparison-follow-up-digest.md",
+				"OPE-254` / `BIG-PAR-088",
+				"rollback-safeguard-follow-up-digest.md",
 			},
 		},
 	}

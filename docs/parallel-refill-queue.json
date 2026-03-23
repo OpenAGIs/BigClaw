@@ -55,7 +55,18 @@
       "BIG-PAR-247",
       "BIG-PAR-248",
       "BIG-PAR-249",
-      "BIG-PAR-250"
+      "BIG-PAR-250",
+      "BIG-PAR-251",
+      "BIG-PAR-252",
+      "BIG-PAR-253",
+      "BIG-PAR-254",
+      "BIG-PAR-255",
+      "BIG-PAR-256",
+      "BIG-PAR-257",
+      "BIG-PAR-258",
+      "BIG-PAR-259",
+      "BIG-PAR-260",
+      "BIG-PAR-261"
     ],
     "active": [],
     "standby": []
@@ -98,7 +109,18 @@
     "BIG-PAR-247",
     "BIG-PAR-248",
     "BIG-PAR-249",
-    "BIG-PAR-250"
+    "BIG-PAR-250",
+    "BIG-PAR-251",
+    "BIG-PAR-252",
+    "BIG-PAR-253",
+    "BIG-PAR-254",
+    "BIG-PAR-255",
+    "BIG-PAR-256",
+    "BIG-PAR-257",
+    "BIG-PAR-258",
+    "BIG-PAR-259",
+    "BIG-PAR-260",
+    "BIG-PAR-261"
   ],
   "issues": [
     {
@@ -326,6 +348,102 @@
     {
       "identifier": "BIG-PAR-250",
       "title": "Refresh Go-mainline handoff note for merged cutover state",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-251",
+      "title": "Fix rollback follow-up issue ID drift in gap analysis",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-252",
+      "title": "Add observability follow-up doc regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-253",
+      "title": "Add migration and validation follow-up doc regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-254",
+      "title": "Add runtime report follow-up ID coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-255",
+      "title": "Align live validation bundle follow-up IDs",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-256",
+      "title": "Align live validation index JSON follow-up metadata",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-257",
+      "title": "Align continuation gate JSON follow-up metadata",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-258",
+      "title": "Align rollback trigger JSON follow-up metadata",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-259",
+      "title": "Align live shadow JSON follow-up metadata",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-260",
+      "title": "Align live shadow bundle follow-up IDs",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-261",
+      "title": "Align migration readiness live-shadow follow-up ID",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-262",
+      "title": "Add canonical follow-up index regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-263",
+      "title": "Add migration follow-up index regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-264",
+      "title": "Add runtime follow-up index regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-265",
+      "title": "Add bundle follow-up index regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-266",
+      "title": "Add planning follow-up index regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }

@@ -45,5 +45,7 @@ This note captures the review outcome for the Go rewrite boundary and migration 
 - Use `docs/reports/parallel-validation-matrix.md` first when the review needs
   the checked-in local/Kubernetes/Ray validation evidence.
 - The two migration caveat tracks that this review note explicitly calls out are
+  `OPE-266` / `BIG-PAR-092` in
   `docs/reports/live-shadow-comparison-follow-up-digest.md` and
+  `OPE-254` / `BIG-PAR-088` in
   `docs/reports/rollback-safeguard-follow-up-digest.md`.

@@ -84,21 +84,22 @@
 - Latest reviewed run: `20260316T140138Z`
 - Failing checks: `0`
 - Workflow exit code on current evidence: `0`
-- Reviewer digest: `docs/reports/validation-bundle-continuation-digest.md`
+- Reviewer digest: `OPE-271` / `BIG-PAR-082` in `docs/reports/validation-bundle-continuation-digest.md`
 - Reviewer index: `docs/reports/live-validation-index.md`
 - Next action: `set BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail when workflow closeout should stop on continuation regressions`
 
 ## Continuation artifacts
 
-- `docs/reports/validation-bundle-continuation-scorecard.json` summarizes the rolling readiness view across recent bundled local, Kubernetes, and Ray runs plus the shared-queue companion proof.
-- `docs/reports/validation-bundle-continuation-policy-gate.json` records the current policy decision for bundle freshness, repeated lane coverage, and shared-queue companion availability.
+- `docs/reports/validation-bundle-continuation-scorecard.json` summarizes the `OPE-271` / `BIG-PAR-082` rolling readiness view across recent bundled local, Kubernetes, and Ray runs plus the shared-queue companion proof.
+- `docs/reports/validation-bundle-continuation-policy-gate.json` records the current `OPE-271` / `BIG-PAR-082` policy decision for bundle freshness, repeated lane coverage, and shared-queue companion availability.
 
 ## Parallel Follow-up Index
 
 - `docs/reports/parallel-follow-up-index.md` is the canonical index for the
   remaining parallel follow-up digests and rollout contracts behind the live
   validation baseline.
-- Validation bundle continuation caveats remain tracked in
-  `docs/reports/validation-bundle-continuation-digest.md`, with the latest gate
-  and scorecard captured in `docs/reports/validation-bundle-continuation-policy-gate.json`
-  and `docs/reports/validation-bundle-continuation-scorecard.json`.
+- Validation bundle continuation caveats remain tracked in `OPE-271` /
+  `BIG-PAR-082` under `docs/reports/validation-bundle-continuation-digest.md`,
+  with the latest gate and scorecard captured in
+  `docs/reports/validation-bundle-continuation-policy-gate.json` and
+  `docs/reports/validation-bundle-continuation-scorecard.json`.

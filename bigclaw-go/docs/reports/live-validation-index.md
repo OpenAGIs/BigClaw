@@ -84,14 +84,14 @@
 - Latest reviewed run: `20260316T140138Z`
 - Failing checks: `0`
 - Workflow exit code on current evidence: `0`
-- Reviewer digest: `docs/reports/validation-bundle-continuation-digest.md`
+- Reviewer digest: `OPE-271` / `BIG-PAR-082` in `docs/reports/validation-bundle-continuation-digest.md`
 - Reviewer index: `docs/reports/live-validation-index.md`
 - Next action: `set BIGCLAW_E2E_CONTINUATION_GATE_MODE=fail when workflow closeout should stop on continuation regressions`
 
 ## Continuation artifacts
 
-- `docs/reports/validation-bundle-continuation-scorecard.json` summarizes the rolling readiness view across recent bundled local, Kubernetes, and Ray runs plus the shared-queue companion proof.
-- `docs/reports/validation-bundle-continuation-policy-gate.json` records the current policy decision for bundle freshness, repeated lane coverage, and shared-queue companion availability.
+- `docs/reports/validation-bundle-continuation-scorecard.json` summarizes the `OPE-271` / `BIG-PAR-082` rolling readiness view across recent bundled local, Kubernetes, and Ray runs plus the shared-queue companion proof.
+- `docs/reports/validation-bundle-continuation-policy-gate.json` records the current `OPE-271` / `BIG-PAR-082` policy decision for bundle freshness, repeated lane coverage, and shared-queue companion availability.
 
 - Gate status: `policy-hold`
 - Recommendation: `hold`

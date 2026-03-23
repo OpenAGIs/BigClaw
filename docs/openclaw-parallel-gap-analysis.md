@@ -63,7 +63,7 @@ The current BigClaw Go event plane now has replay-capable APIs, subscriber-group
   drilling into any specific caveat track.
 - `BIG-PAR-221` publishes `bigclaw-go/docs/reports/parallel-validation-matrix.md` as the canonical local/Kubernetes/Ray matrix; use it first when mapping follow-up slices to validation commands and evidence artifacts.
 - `OPE-266` / `BIG-PAR-092` tracks the repo-native live shadow mirror parity drift scorecard and the remaining live shadow traffic comparison caveats in `bigclaw-go/docs/reports/live-shadow-comparison-follow-up-digest.md`.
-- `OPE-267` / `BIG-PAR-088` tracks the remaining rollback safeguard caveats in `bigclaw-go/docs/reports/rollback-safeguard-follow-up-digest.md`.
+- `OPE-254` / `BIG-PAR-088` tracks the remaining rollback safeguard caveats in `bigclaw-go/docs/reports/rollback-safeguard-follow-up-digest.md`.
 - `OPE-268` / `BIG-PAR-079` tracks the remaining production corpus migration coverage caveats in `bigclaw-go/docs/reports/production-corpus-migration-coverage-digest.md`.
 - `OPE-269` / `BIG-PAR-080` tracks the remaining subscriber takeover executability caveats in `bigclaw-go/docs/reports/subscriber-takeover-executability-follow-up-digest.md`.
 - `OPE-261` / `BIG-PAR-085` and `OPE-257` / `BIG-PAR-095` track the runtime capability matrix and remaining cross-process coordination caveats in `bigclaw-go/docs/reports/cross-process-coordination-capability-surface.json` and `bigclaw-go/docs/reports/cross-process-coordination-boundary-digest.md`, using `live_proven`, `harness_proven`, and `contract_only` readiness labels plus the contract-only `PartitionRoute` and `SubscriberOwnershipContract` targets.
