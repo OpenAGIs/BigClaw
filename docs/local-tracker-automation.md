@@ -22,8 +22,12 @@ Guidance:
 - Avoid using `--set-state-if-exists` outside of explicit claim flows (for
   example, `after_create`) to prevent accidentally resurrecting `Done` issues
   as `In Progress`.
-- Keep `local-issues.json` mutations serialized; multiple concurrent writers can
-  cause lost updates even when the file stays valid.
+- `bigclawctl` local-tracker mutations now take an explicit `local-issues.json.lock`
+  file with bounded retry before rewriting the store, so overlapping hook/worker
+  writes do not silently drop earlier comments or state changes.
+- Keep `local-issues.json` mutations short-lived even with the lock in place; the
+  lock prevents overlapping writes, but long-running critical sections still
+  serialize every other tracker update behind them.
 - Prefer absolute repo roots in hook invocations so `--local-issues ../local-issues.json`
   resolves to the workspace tracker file (not a nested `bigclaw-go/local-issues.json`).
 

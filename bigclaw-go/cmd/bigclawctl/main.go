@@ -952,6 +952,9 @@ func (c *localIssueClient) backend() string {
 }
 
 func (c *localIssueClient) fetchIssueStates(_ string, stateNames []string) ([]refill.TrackedIssue, error) {
+	if err := c.store.Reload(); err != nil {
+		return nil, err
+	}
 	return c.store.IssueStates(stateNames), nil
 }
 
@@ -1042,6 +1045,8 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 	queueStatusUpdates := 0
 	queueRecentBatchUpdates := 0
 	queueStatusWritten := false
+	recentBatchesUpdated := false
+	recentBatchesWritten := false
 	var allIssues []refill.TrackedIssue
 	var err error
 	if client.backend() == "local" {
@@ -1080,6 +1085,14 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 	liveStateMap := stateMap
 	if client.backend() == "local" {
 		liveStateMap = refill.IssueStateMap(allIssues)
+		recentBatchesUpdated = queue.RefreshRecentBatchesFromStates(liveStateMap)
+	}
+	if apply && (queueStatusUpdates > 0 || recentBatchesUpdated) {
+		if err := queue.Save(); err != nil {
+			return err
+		}
+		queueStatusWritten = queueStatusUpdates > 0
+		recentBatchesWritten = recentBatchesUpdated
 	}
 	active := map[string]struct{}{}
 	issueIDs := map[string]string{}
@@ -1102,6 +1115,9 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		"target_in_progress":         target,
 		"candidates":                 candidates,
 		"mode":                       map[bool]string{true: "apply", false: "dry-run"}[apply],
+		"recent_batches_synced":      client.backend() == "local",
+		"recent_batches_updated":     recentBatchesUpdated,
+		"recent_batches_written":     recentBatchesWritten,
 		"queue_status_synced":        syncQueueStatus && client.backend() == "local",
 		"queue_status_updates":       queueStatusUpdates,
 		"queue_recent_batch_updates": queueRecentBatchUpdates,

@@ -57,6 +57,15 @@ type TrackedIssue struct {
 	StateName  string
 }
 
+var terminalStateSet = map[string]struct{}{
+	"archived":  {},
+	"canceled":  {},
+	"cancelled": {},
+	"closed":    {},
+	"done":      {},
+	"duplicate": {},
+}
+
 func LoadQueue(path string) (*ParallelIssueQueue, error) {
 	absolute, err := filepath.Abs(path)
 	if err != nil {
@@ -181,7 +190,7 @@ func (q *ParallelIssueQueue) SyncRecentBatchesFromStates(issueStates map[string]
 	if standbyLimit <= 0 {
 		standbyLimit = 1
 	}
-	refillStates := q.RefillStates()
+	refillStates := q.normalizedRefillStateSet()
 	completed := []string{}
 	active := []string{}
 	standby := []string{}
@@ -363,17 +372,45 @@ func issueRecordStateMap(records []IssueRecord) map[string]string {
 func countRunnable(issueOrder []string, states map[string]string) int {
 	count := 0
 	for _, identifier := range issueOrder {
-		status, ok := states[identifier]
-		if !ok || status == "" {
+		status := statusNormalize(states[identifier])
+		if status == "" || !isTerminalStatus(status) {
 			count++
-			continue
 		}
-		if isTerminalState(status) {
-			continue
-		}
-		count++
 	}
 	return count
+}
+
+func statusNormalize(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	if strings.HasSuffix(value, ".") {
+		value = strings.TrimSuffix(value, ".")
+	}
+	return strings.ToLower(value)
+}
+
+func isTerminalStatus(status string) bool {
+	if normalized := statusNormalize(status); normalized != "" {
+		_, ok := terminalStateSet[normalized]
+		return ok
+	}
+	return false
+}
+
+func isTerminalState(status string) bool {
+	return isTerminalStatus(status)
+}
+
+func (q *ParallelIssueQueue) normalizedRefillStateSet() map[string]struct{} {
+	result := map[string]struct{}{}
+	for state := range q.RefillStates() {
+		if normalized := statusNormalize(state); normalized != "" {
+			result[normalized] = struct{}{}
+		}
+	}
+	return result
 }
 
 func (q *ParallelIssueQueue) SelectCandidates(activeIdentifiers map[string]struct{}, issueStates map[string]string, targetOverride *int) []string {
@@ -386,7 +423,7 @@ func (q *ParallelIssueQueue) SelectCandidates(activeIdentifiers map[string]struc
 		return []string{}
 	}
 	candidates := []string{}
-	refillStates := q.RefillStates()
+	refillStates := q.normalizedRefillStateSet()
 	for _, identifier := range q.IssueOrder() {
 		if needed == 0 {
 			break
@@ -394,7 +431,7 @@ func (q *ParallelIssueQueue) SelectCandidates(activeIdentifiers map[string]struc
 		if _, ok := activeIdentifiers[identifier]; ok {
 			continue
 		}
-		if _, ok := refillStates[issueStates[identifier]]; ok {
+		if _, ok := refillStates[statusNormalize(issueStates[identifier])]; ok {
 			candidates = append(candidates, identifier)
 			needed--
 		}
@@ -423,30 +460,63 @@ func SortedActive(issues []TrackedIssue) []string {
 	return active
 }
 
-func isTerminalState(status string) bool {
-	switch strings.TrimSpace(status) {
-	case "Archived", "Canceled", "Canceled.", "Cancelled", "Cancelled.", "Closed", "Closed.", "Done", "Done.", "Duplicate":
-		return true
-	default:
+func equalStringSlices(a, b []string) bool {
+	if len(a) != len(b) {
 		return false
 	}
-}
-
-func stateInSet(values map[string]struct{}, state string) bool {
-	_, ok := values[strings.TrimSpace(state)]
-	return ok
-}
-
-func stringSlicesEqual(left []string, right []string) bool {
-	if len(left) != len(right) {
-		return false
-	}
-	for idx := range left {
-		if left[idx] != right[idx] {
+	for i := range a {
+		if a[i] != b[i] {
 			return false
 		}
 	}
 	return true
+}
+
+func stateInSet(values map[string]struct{}, state string) bool {
+	_, ok := values[statusNormalize(state)]
+	return ok
+}
+
+func stringSlicesEqual(left []string, right []string) bool {
+	return equalStringSlices(left, right)
+}
+
+func (q *ParallelIssueQueue) RefreshRecentBatchesFromStates(states map[string]string) bool {
+	if len(states) == 0 {
+		return false
+	}
+	active, completed, standby := q.classifyRecentBatches(states)
+	if equalStringSlices(q.payload.RecentBatches.Active, active) &&
+		equalStringSlices(q.payload.RecentBatches.Completed, completed) &&
+		equalStringSlices(q.payload.RecentBatches.Standby, standby) {
+		return false
+	}
+	q.payload.RecentBatches.Active = active
+	q.payload.RecentBatches.Completed = completed
+	q.payload.RecentBatches.Standby = standby
+	return true
+}
+
+func (q *ParallelIssueQueue) classifyRecentBatches(states map[string]string) ([]string, []string, []string) {
+	active := []string{}
+	completed := []string{}
+	standby := []string{}
+	activeState := statusNormalize(q.ActivateStateName())
+	for _, identifier := range q.IssueOrder() {
+		status := statusNormalize(states[identifier])
+		if status == "" {
+			continue
+		}
+		switch {
+		case status == activeState:
+			active = append(active, identifier)
+		case isTerminalStatus(status):
+			completed = append(completed, identifier)
+		default:
+			standby = append(standby, identifier)
+		}
+	}
+	return active, completed, standby
 }
 
 func appendIdentifierOnce(items *[]string, identifier string) bool {

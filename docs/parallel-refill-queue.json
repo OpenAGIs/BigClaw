@@ -44,11 +44,16 @@
       "BIG-PAR-236",
       "BIG-PAR-237",
       "BIG-PAR-238",
-      "BIG-PAR-239"
+      "BIG-PAR-239",
+      "BIG-PAR-240",
+      "BIG-PAR-241",
+      "BIG-PAR-242",
+      "BIG-PAR-243",
+      "BIG-PAR-244",
+      "BIG-PAR-245",
+      "BIG-PAR-246"
     ],
-    "active": [
-      "BIG-PAR-240"
-    ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -79,7 +84,13 @@
     "BIG-PAR-237",
     "BIG-PAR-238",
     "BIG-PAR-239",
-    "BIG-PAR-240"
+    "BIG-PAR-240",
+    "BIG-PAR-241",
+    "BIG-PAR-242",
+    "BIG-PAR-243",
+    "BIG-PAR-244",
+    "BIG-PAR-245",
+    "BIG-PAR-246"
   ],
   "issues": [
     {
@@ -248,7 +259,43 @@
       "identifier": "BIG-PAR-240",
       "title": "Document queue seeding and drained-batch recovery workflow",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-241",
+      "title": "Serialize local tracker writes with an explicit lock",
+      "track": "Tracker and Refill Hygiene",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-242",
+      "title": "Sync refill recent-batch metadata from the local tracker",
+      "track": "Tracker and Refill Hygiene",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-243",
+      "title": "Reload local tracker state on each refill fetch",
+      "track": "Tracker and Refill Hygiene",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-244",
+      "title": "Refresh refill queue docs for current local-backend behavior",
+      "track": "Tracker and Refill Hygiene",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-245",
+      "title": "Open PR for tracker and refill hardening branch",
+      "track": "Tracker and Refill Hygiene",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-246",
+      "title": "Refresh PR branch against main",
+      "track": "Tracker and Refill Hygiene",
+      "status": "Done"
     }
   ]
 }

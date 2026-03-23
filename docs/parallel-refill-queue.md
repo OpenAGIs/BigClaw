@@ -52,12 +52,14 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-220`, `BIG-PAR-221`, `BIG-PAR-222`, `BIG-PAR-223`, `BIG-PAR-224`, `BIG-PAR-225`, `BIG-PAR-226`, `BIG-PAR-227`, `BIG-PAR-228`, `BIG-PAR-229`, `BIG-PAR-230`, and `BIG-PAR-231` are now closed in the repo-native tracker
   - `BIG-PAR-234` closed: `bigclawctl` now supports root and subcommand `--help` with exit 0
   - `BIG-PAR-235`, `BIG-PAR-236`, and `BIG-PAR-237` are closed with 429 fanout mitigation plus refill/local-tracker recovery hardening
-  - active next batch is now `BIG-PAR-238` and `BIG-PAR-239`, with `BIG-PAR-240` seeded as standby
-  - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` to promote from this seeded next batch
+  - `BIG-PAR-238`, `BIG-PAR-239`, and `BIG-PAR-240` are now closed with queue seeding, local-tracker `recent_batches` sync, and drained-batch recovery documentation
+  - `BIG-PAR-241`, `BIG-PAR-242`, `BIG-PAR-243`, `BIG-PAR-244`, and `BIG-PAR-245` are closed with tracker write locking, refill reload hardening, doc refresh, and branch PR setup
+  - `BIG-PAR-246` is the active merge-readiness slice for refreshing this branch against current `main`
+  - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status and `recent_batches` metadata aligned after branch updates
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
   - add the next `BIG-PAR-*` identifiers to `docs/parallel-refill-queue.json` (`issue_order` plus a matching `issues[]` record) and create matching `local-issues.json` tracker entries
-  - once the next batch exists, run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to align queue metadata with the local tracker state
+  - once the next batch exists, run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to align queue `issues[].status` and `recent_batches` metadata with the local tracker state
 - Completed slices:
   - `BIG-GOM-301` — unified domain model and intake contract migration
   - `BIG-GOM-302` — risk, policy, and approval semantics migration
@@ -103,3 +105,9 @@ longer waits on Linear to keep issue execution moving.
 26. `BIG-PAR-238`
 27. `BIG-PAR-239`
 28. `BIG-PAR-240`
+29. `BIG-PAR-241`
+30. `BIG-PAR-242`
+31. `BIG-PAR-243`
+32. `BIG-PAR-244`
+33. `BIG-PAR-245`
+34. `BIG-PAR-246`

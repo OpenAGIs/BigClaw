@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -431,6 +432,48 @@ func TestRunRefillOnceLocalBackendUsesAllLocalStatesForRunnableCount(t *testing.
 	}
 }
 
+func TestLocalIssueClientFetchIssueStatesReloadsTrackerBetweenReads(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {"id": "big-par-243", "identifier": "BIG-PAR-243", "state": "Todo"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := refill.LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	client := &localIssueClient{store: store}
+
+	issues, err := client.fetchIssueStates("ignored", []string{"Todo"})
+	if err != nil {
+		t.Fatalf("fetch issue states: %v", err)
+	}
+	if len(issues) != 1 || issues[0].Identifier != "BIG-PAR-243" {
+		t.Fatalf("expected initial todo issue, got %+v", issues)
+	}
+
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {"id": "big-par-243", "identifier": "BIG-PAR-243", "state": "Done"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("rewrite local issue store: %v", err)
+	}
+
+	issues, err = client.fetchIssueStates("ignored", []string{"Done"})
+	if err != nil {
+		t.Fatalf("fetch reloaded issue states: %v", err)
+	}
+	if len(issues) != 1 || issues[0].Identifier != "BIG-PAR-243" || issues[0].StateName != "Done" {
+		t.Fatalf("expected reloaded done issue, got %+v", issues)
+	}
+}
+
 func TestRunRefillOnceLocalBackendSyncsQueueStatusFromLocalIssues(t *testing.T) {
 	tempDir := t.TempDir()
 	queuePath := filepath.Join(tempDir, "queue.json")
@@ -513,6 +556,92 @@ func TestRunRefillOnceLocalBackendSyncsQueueStatusFromLocalIssues(t *testing.T) 
 	}
 	if !bytes.Contains(output, []byte(`"queue_status_written": true`)) {
 		t.Fatalf("expected refill output to confirm write, got %s", string(output))
+	}
+}
+
+func TestRunRefillOnceUpdatesRecentBatchesFromLocalTracker(t *testing.T) {
+	tempDir := t.TempDir()
+	queuePath := filepath.Join(tempDir, "queue.json")
+	if err := os.WriteFile(queuePath, []byte(`{
+  "project": {"slug_id": "project-slug"},
+  "policy": {
+    "target_in_progress": 1,
+    "activate_state_name": "In Progress",
+    "activate_state_id": "state-in-progress",
+    "refill_states": ["Todo", "Backlog"]
+  },
+  "recent_batches": {
+    "completed": ["BIG-PAR-200"],
+    "active": [],
+    "standby": ["BIG-PAR-201"]
+  },
+  "issue_order": ["BIG-PAR-241", "BIG-PAR-242"],
+  "issues": [
+    {"identifier": "BIG-PAR-241", "title": "tracker lock", "track": "Automation", "status": "Todo"},
+    {"identifier": "BIG-PAR-242", "title": "queue sync", "track": "Automation", "status": "Todo"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write queue file: %v", err)
+	}
+	queue, err := refill.LoadQueue(queuePath)
+	if err != nil {
+		t.Fatalf("load queue: %v", err)
+	}
+
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {"id": "big-par-241", "identifier": "BIG-PAR-241", "state": "In Progress"},
+    {"id": "big-par-242", "identifier": "BIG-PAR-242", "state": "Done"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+	store, err := refill.LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	client := &localIssueClient{store: store}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runRefillOnce(queue, client, true, "", nil, false, queuePath, storePath)
+	_ = writer.Close()
+	if runErr != nil {
+		output, _ := io.ReadAll(reader)
+		t.Fatalf("run refill once: %v (stdout=%s)", runErr, string(output))
+	}
+
+	body, err := os.ReadFile(queuePath)
+	if err != nil {
+		t.Fatalf("read updated queue file: %v", err)
+	}
+	var updated struct {
+		RecentBatches struct {
+			Active    []string `json:"active"`
+			Completed []string `json:"completed"`
+			Standby   []string `json:"standby"`
+		} `json:"recent_batches"`
+	}
+	if err := json.Unmarshal(body, &updated); err != nil {
+		t.Fatalf("decode updated queue: %v", err)
+	}
+	if !reflect.DeepEqual(updated.RecentBatches.Active, []string{"BIG-PAR-241"}) {
+		t.Fatalf("unexpected active batches: %v", updated.RecentBatches.Active)
+	}
+	if !reflect.DeepEqual(updated.RecentBatches.Completed, []string{"BIG-PAR-242"}) {
+		t.Fatalf("unexpected completed batches: %v", updated.RecentBatches.Completed)
+	}
+	if len(updated.RecentBatches.Standby) != 0 {
+		t.Fatalf("expected empty standby batches, got %v", updated.RecentBatches.Standby)
 	}
 }
 
