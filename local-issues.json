@@ -2331,6 +2331,20 @@
       "state": "Done",
       "title": "Add migration follow-up index regression coverage",
       "updated_at": "2026-03-23T05:58:32Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T06:00:39Z",
+      "description": "Add regression coverage for runtime and review docs that route operators to the canonical parallel follow-up index so review-readiness, issue-coverage, event-bus reliability, and live-validation index pages keep their index and validation-matrix entrypoints aligned.",
+      "id": "big-par-264",
+      "identifier": "BIG-PAR-264",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "In Progress",
+      "title": "Add runtime follow-up index regression coverage",
+      "updated_at": "2026-03-23T06:00:39Z"
     }
   ]
 }
