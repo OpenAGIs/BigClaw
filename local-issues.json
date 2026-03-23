@@ -2247,6 +2247,20 @@
       "state": "Done",
       "title": "Align live shadow JSON follow-up metadata",
       "updated_at": "2026-03-23T05:29:29Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T05:31:55Z",
+      "description": "Add regression coverage for the checked-in live shadow bundle README and align its live-shadow and rollback follow-up references with the authoritative OPE-266 / BIG-PAR-092 and OPE-254 / BIG-PAR-088 lane identifiers used by the canonical live shadow index and rollback docs.",
+      "id": "big-par-260",
+      "identifier": "BIG-PAR-260",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "In Progress",
+      "title": "Align live shadow bundle follow-up IDs",
+      "updated_at": "2026-03-23T05:31:55Z"
     }
   ]
 }

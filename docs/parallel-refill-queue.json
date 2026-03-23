@@ -66,7 +66,9 @@
       "BIG-PAR-258",
       "BIG-PAR-259"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-260"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -116,7 +118,8 @@
     "BIG-PAR-256",
     "BIG-PAR-257",
     "BIG-PAR-258",
-    "BIG-PAR-259"
+    "BIG-PAR-259",
+    "BIG-PAR-260"
   ],
   "issues": [
     {
@@ -400,6 +403,12 @@
       "title": "Align live shadow JSON follow-up metadata",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-260",
+      "title": "Align live shadow bundle follow-up IDs",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
