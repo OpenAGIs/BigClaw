@@ -2352,6 +2352,20 @@
       "state": "Done",
       "title": "Add runtime follow-up index regression coverage",
       "updated_at": "2026-03-23T06:03:13Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T06:05:24Z",
+      "description": "Add regression coverage for bundle and operational docs that route reviewers to the canonical parallel follow-up index so observability, live-shadow, live-validation bundle, and multi-node coordination entrypoints keep their follow-up index and companion references aligned.",
+      "id": "big-par-265",
+      "identifier": "BIG-PAR-265",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "In Progress",
+      "title": "Add bundle follow-up index regression coverage",
+      "updated_at": "2026-03-23T06:05:24Z"
     }
   ]
 }
