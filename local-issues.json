@@ -1719,6 +1719,11 @@
           "author": "codex",
           "body": "Closed the repo-native docs slice after confirming the queue seeding and drained-batch recovery workflow is now documented on the refreshed branch and the branch PR is merge-ready again.\n\nWhat changed:\n- `docs/parallel-refill-queue.md` now documents the seeded `BIG-PAR-235..246` order, including the queue-seeding and drained-batch recovery workflow carried by this `BIG-PAR-240` slice.\n- `docs/parallel-refill-queue.json` now preserves main's canonical `BIG-PAR-235..240` history while keeping the newer `BIG-PAR-241..246` tracker/refill hygiene slices appended after it.\n- PR `#175` is back to `CLEAN`, so the documented recovery workflow and the follow-on tracker/refill hardening work are reviewable on one branch.\n\nValidation:\n- `gh pr view 175 --repo OpenAGIs/BigClaw --json url,title,state,mergeStateStatus` -> `OPEN` with `mergeStateStatus: CLEAN`\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok; queue metadata synced from the local tracker after the branch refresh\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `18fae5c59b3688134c6e7b706963ad9d56154ef7` matches remote SHA `18fae5c59b3688134c6e7b706963ad9d56154ef7` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for merge commit `18fae5c59b3688134c6e7b706963ad9d56154ef7`\n\nCommit SHA: `18fae5c59b3688134c6e7b706963ad9d56154ef7`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/175",
           "created_at": "2026-03-23T03:25:01Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final umbrella closeout: the tracker/refill hardening branch PR `#175` is now merged into `main`, so the umbrella `BIG-PAR-240` work is fully landed upstream.\n\nValidation:\n- `gh pr view 175 --repo OpenAGIs/BigClaw --json url,title,state,mergedAt,mergeCommit` -> `MERGED` at `2026-03-23T03:30:40Z` with merge commit `1c60cdaa73ba8823f73320fbb1ea86962e8c5105`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `fa46142fb89f8abfd4e46c9f02fd4897bb76c9dd` matches remote SHA `fa46142fb89f8abfd4e46c9f02fd4897bb76c9dd` with `status: ok` and `synced: true`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `active_in_progress: []`, `candidates: []`, `queue_drained: true`\n- `git log -1 --stat` -> captured for commit `fa46142fb89f8abfd4e46c9f02fd4897bb76c9dd`\n\nCommit SHA: `fa46142fb89f8abfd4e46c9f02fd4897bb76c9dd`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/175",
+          "created_at": "2026-03-23T03:30:40Z"
         }
       ],
       "created_at": "2026-03-23T01:12:00Z",
@@ -1733,7 +1738,7 @@
       "priority": 4,
       "state": "Done",
       "title": "Document queue seeding and drained-batch recovery workflow",
-      "updated_at": "2026-03-23T03:25:01Z"
+      "updated_at": "2026-03-23T03:30:40Z"
     },
     {
       "assigned_to_worker": true,
@@ -1882,6 +1887,11 @@
           "author": "codex",
           "body": "Closed `BIG-PAR-245` after opening the GitHub PR for the tracker/refill hardening branch.\n\nWhat changed:\n- Created PR `#175` with title `BIG-PAR-240: harden local tracker and refill sync` from `symphony/BIG-PAR-240` to `main`.\n- Aligned the PR summary/body with the branch scope: local tracker write locking, refill metadata sync, local refill read reloads, and the refill-doc updates completed on this branch.\n\nValidation:\n- `gh pr view 175 --repo OpenAGIs/BigClaw --json url,title,state,baseRefName,headRefName` -> open PR metadata confirmed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `77145a836cdc7462ac95ec12393842ec8006a8fb` matches remote SHA `77145a836cdc7462ac95ec12393842ec8006a8fb` with `status: ok` and `synced: true` before tracker closeout\n- `git log -1 --stat` -> captured for commit `77145a836cdc7462ac95ec12393842ec8006a8fb`\n\nCommit SHA: `77145a836cdc7462ac95ec12393842ec8006a8fb`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/175",
           "created_at": "2026-03-23T03:25:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final PR closeout: branch PR `#175` (`BIG-PAR-240: harden local tracker and refill sync`) merged into `main` at `2026-03-23T03:30:40Z` with merge commit `1c60cdaa73ba8823f73320fbb1ea86962e8c5105`.\n\nValidation:\n- `gh pr view 175 --repo OpenAGIs/BigClaw --json url,title,state,mergedAt,mergeCommit` -> `MERGED` with merge commit `1c60cdaa73ba8823f73320fbb1ea86962e8c5105`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `53925ecc660a108696237f006f31e1af22b2a5dd` matches remote SHA `53925ecc660a108696237f006f31e1af22b2a5dd` with `status: ok` and `synced: true`\n- `git fetch origin main` -> updated `origin/main` to `1c60cdaa73ba8823f73320fbb1ea86962e8c5105`\n- `git log -1 --stat` -> captured for commit `53925ecc660a108696237f006f31e1af22b2a5dd`\n\nCommit SHA: `53925ecc660a108696237f006f31e1af22b2a5dd`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/175",
+          "created_at": "2026-03-23T03:30:40Z"
         }
       ],
       "created_at": "2026-03-23T03:20:00Z",
@@ -1896,7 +1906,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Open PR for tracker and refill hardening branch",
-      "updated_at": "2026-03-23T03:25:01Z"
+      "updated_at": "2026-03-23T03:30:40Z"
     },
     {
       "assigned_to_worker": true,
@@ -1905,6 +1915,11 @@
           "author": "codex",
           "body": "Refreshed the branch against current `origin/main`, resolved the refill/local-tracker and queue-doc merge conflicts, preserved main's canonical `BIG-PAR-235..240` queue history while appending `BIG-PAR-241..246`, and kept both queue seeding plus local-tracker recent-batch refresh behavior in `bigclawctl refill` and `internal/refill`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `18fae5c59b3688134c6e7b706963ad9d56154ef7` matches remote SHA `18fae5c59b3688134c6e7b706963ad9d56154ef7` with `status: ok` and `synced: true`\n- `gh pr view 175 --repo OpenAGIs/BigClaw --json url,title,state,mergeStateStatus,statusCheckRollup` -> PR `#175` is `OPEN` with `mergeStateStatus: CLEAN` and a successful `test` check\n- `git log -1 --stat` -> captured for merge commit `18fae5c59b3688134c6e7b706963ad9d56154ef7`\n\nCommit SHA: `18fae5c59b3688134c6e7b706963ad9d56154ef7`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/175",
           "created_at": "2026-03-23T03:25:01Z"
+        },
+        {
+          "author": "codex",
+          "body": "Post-merge status refresh: PR `#175` is now merged into `main`, so the branch refresh work for `BIG-PAR-246` is fully complete and the merge-readiness blocker is cleared.\n\nValidation:\n- `gh pr view 175 --repo OpenAGIs/BigClaw --json url,title,state,mergedAt,mergeCommit` -> `MERGED` at `2026-03-23T03:30:40Z` with merge commit `1c60cdaa73ba8823f73320fbb1ea86962e8c5105`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `53925ecc660a108696237f006f31e1af22b2a5dd` matches remote SHA `53925ecc660a108696237f006f31e1af22b2a5dd` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `53925ecc660a108696237f006f31e1af22b2a5dd`\n\nCommit SHA: `53925ecc660a108696237f006f31e1af22b2a5dd`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/175",
+          "created_at": "2026-03-23T03:30:40Z"
         }
       ],
       "created_at": "2026-03-23T03:30:00Z",
@@ -1919,7 +1934,36 @@
       "priority": 2,
       "state": "Done",
       "title": "Refresh PR branch against main",
-      "updated_at": "2026-03-23T03:25:01Z"
+      "updated_at": "2026-03-23T03:30:40Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-247` after teaching `bigclawctl refill` to keep the human-readable refill queue markdown derived from the canonical queue state.\n\nWhat changed:\n- `bigclaw-go/internal/refill/queue_markdown.go` now renders and atomically writes `docs/parallel-refill-queue.md` from `docs/parallel-refill-queue.json` state, including active/standby/recently-completed slices and canonical refill order.\n- `bigclaw-go/cmd/bigclawctl/main.go` now accepts `--markdown` for both `refill` and `refill seed`, writes the markdown companion during seeding, and refreshes it on local `refill --apply` runs after queue state changes.\n- `bigclaw-go/internal/refill/queue_test.go`, `bigclaw-go/cmd/bigclawctl/main_test.go`, and `docs/parallel-refill-queue.md` now cover and reflect the generated markdown sync path.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-247]`, `queue_runnable=1`, `markdown_path=docs/parallel-refill-queue.md`) before closeout\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `b8b472f6af641ecd1dcaf4e7d99e3e474d6c96c9` matches remote SHA `b8b472f6af641ecd1dcaf4e7d99e3e474d6c96c9` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `b8b472f6af641ecd1dcaf4e7d99e3e474d6c96c9`\n\nCommit SHA: `b8b472f6af641ecd1dcaf4e7d99e3e474d6c96c9`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/176",
+          "created_at": "2026-03-23T03:52:30Z"
+        },
+        {
+          "author": "codex",
+          "body": "Status refresh: PR `#176` is now merge-ready on the final `BIG-PAR-247` head, and the tracker closeout commit is also synced upstream.\n\nValidation:\n- `gh pr view 176 --repo OpenAGIs/BigClaw --json url,title,state,mergeStateStatus,statusCheckRollup` -> `OPEN` with `mergeStateStatus: CLEAN` and successful completed `test` check\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `956afdd246866e3d5f5507891b572f15991a2b15` matches remote SHA `956afdd246866e3d5f5507891b572f15991a2b15` with `status: ok` and `synced: true`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `active_in_progress: []`, `candidates: []`, `queue_drained: true`\n- `git log -1 --stat` -> captured for commit `956afdd246866e3d5f5507891b572f15991a2b15`\n\nCommit SHA: `956afdd246866e3d5f5507891b572f15991a2b15`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/176",
+          "created_at": "2026-03-23T04:00:00Z"
+        }
+      ],
+      "created_at": "2026-03-23T03:43:23Z",
+      "description": "Add a Go-first refill tool path that rewrites docs/parallel-refill-queue.md from docs/parallel-refill-queue.json and local tracker state so the human-readable queue companion stops drifting from the canonical refill source.",
+      "id": "big-par-247",
+      "identifier": "BIG-PAR-247",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "docs"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "bigclawctl refill: sync queue markdown from canonical state",
+      "updated_at": "2026-03-23T04:00:00Z"
     }
   ]
 }

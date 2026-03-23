@@ -71,6 +71,7 @@ func TestResolvePathAgainstRepoRootJoinsRelativePaths(t *testing.T) {
 
 func TestRunRefillOncePromotesUsingLinearIssueID(t *testing.T) {
 	queuePath := filepath.Join(t.TempDir(), "queue.json")
+	markdownPath := filepath.Join(t.TempDir(), "queue.md")
 	if err := os.WriteFile(queuePath, []byte(`{
   "project": {"slug_id": "project-slug"},
   "policy": {
@@ -136,7 +137,7 @@ func TestRunRefillOncePromotesUsingLinearIssueID(t *testing.T) {
 		os.Stdout = originalStdout
 	}()
 
-	runErr := runRefillOnce(queue, client, true, "", nil, false, queuePath, "")
+	runErr := runRefillOnce(queue, client, true, "", nil, false, queuePath, markdownPath, "")
 	_ = writer.Close()
 	output, _ := io.ReadAll(reader)
 	if runErr != nil {
@@ -153,6 +154,7 @@ func TestRunRefillOncePromotesUsingLinearIssueID(t *testing.T) {
 func TestRunRefillOncePromotesUsingLocalIssueStore(t *testing.T) {
 	tempDir := t.TempDir()
 	queuePath := filepath.Join(tempDir, "queue.json")
+	markdownPath := filepath.Join(tempDir, "queue.md")
 	if err := os.WriteFile(queuePath, []byte(`{
   "project": {"slug_id": "project-slug"},
   "policy": {
@@ -212,7 +214,7 @@ func TestRunRefillOncePromotesUsingLocalIssueStore(t *testing.T) {
 		os.Stdout = originalStdout
 	}()
 
-	runErr := runRefillOnce(queue, client, true, "", nil, false, queuePath, storePath)
+	runErr := runRefillOnce(queue, client, true, "", nil, false, queuePath, markdownPath, storePath)
 	_ = writer.Close()
 	output, _ := io.ReadAll(reader)
 	if runErr != nil {
@@ -237,6 +239,13 @@ func TestRunRefillOncePromotesUsingLocalIssueStore(t *testing.T) {
 	}
 	if !bytes.Contains(body, []byte(`"updated_at": "2026-03-18T12:34:56Z"`)) {
 		t.Fatalf("expected local issue store updated_at refresh, got %s", string(body))
+	}
+	markdownBody, err := os.ReadFile(markdownPath)
+	if err != nil {
+		t.Fatalf("read markdown file: %v", err)
+	}
+	if !bytes.Contains(markdownBody, []byte("## Canonical refill order")) || !bytes.Contains(markdownBody, []byte("`BIG-GOM-303`")) {
+		t.Fatalf("expected markdown sync output, got %s", string(markdownBody))
 	}
 }
 
@@ -293,7 +302,7 @@ func TestRunRefillOnceLocalIssueStoreDetectsQueueDrainedWhenMetadataStale(t *tes
 		os.Stdout = originalStdout
 	}()
 
-	runErr := runRefillOnce(queue, client, false, "", nil, false, queuePath, storePath)
+	runErr := runRefillOnce(queue, client, false, "", nil, false, queuePath, filepath.Join(tempDir, "queue.md"), storePath)
 	_ = writer.Close()
 	output, _ := io.ReadAll(reader)
 	if runErr != nil {
@@ -421,7 +430,7 @@ func TestRunRefillOnceLocalBackendUsesAllLocalStatesForRunnableCount(t *testing.
 		os.Stdout = originalStdout
 	}()
 
-	runErr := runRefillOnce(queue, client, false, "", nil, false, queuePath, storePath)
+	runErr := runRefillOnce(queue, client, false, "", nil, false, queuePath, filepath.Join(tempDir, "queue.md"), storePath)
 	_ = writer.Close()
 	output, _ := io.ReadAll(reader)
 	if runErr != nil {
@@ -528,7 +537,7 @@ func TestRunRefillOnceLocalBackendSyncsQueueStatusFromLocalIssues(t *testing.T) 
 		os.Stdout = originalStdout
 	}()
 
-	runErr := runRefillOnce(queue, client, true, "", nil, true, queuePath, storePath)
+	runErr := runRefillOnce(queue, client, true, "", nil, true, queuePath, filepath.Join(tempDir, "queue.md"), storePath)
 	_ = writer.Close()
 	output, _ := io.ReadAll(reader)
 	if runErr != nil {
@@ -613,7 +622,7 @@ func TestRunRefillOnceUpdatesRecentBatchesFromLocalTracker(t *testing.T) {
 		os.Stdout = originalStdout
 	}()
 
-	runErr := runRefillOnce(queue, client, true, "", nil, false, queuePath, storePath)
+	runErr := runRefillOnce(queue, client, true, "", nil, false, queuePath, filepath.Join(tempDir, "queue.md"), storePath)
 	_ = writer.Close()
 	if runErr != nil {
 		output, _ := io.ReadAll(reader)
@@ -648,6 +657,7 @@ func TestRunRefillOnceUpdatesRecentBatchesFromLocalTracker(t *testing.T) {
 func TestRunRefillSeedCreatesQueueAndLocalIssue(t *testing.T) {
 	tempDir := t.TempDir()
 	queuePath := filepath.Join(tempDir, "queue.json")
+	markdownPath := filepath.Join(tempDir, "queue.md")
 	if err := os.WriteFile(queuePath, []byte(`{
   "project": {"slug_id": "project-slug"},
   "policy": {
@@ -671,6 +681,7 @@ func TestRunRefillSeedCreatesQueueAndLocalIssue(t *testing.T) {
 	if err := runRefillSeed([]string{
 		"--repo", tempDir,
 		"--queue", queuePath,
+		"--markdown", markdownPath,
 		"--local-issues", storePath,
 		"--identifier", "BIG-PAR-238",
 		"--title", "bigclawctl refill: seed queue entries from CLI",
@@ -704,6 +715,16 @@ func TestRunRefillSeedCreatesQueueAndLocalIssue(t *testing.T) {
 	}
 	if !bytes.Contains(storeBody, []byte(`"labels": [`)) || !bytes.Contains(storeBody, []byte(`"refill"`)) {
 		t.Fatalf("expected labels in local issue record, got %s", string(storeBody))
+	}
+	markdownBody, err := os.ReadFile(markdownPath)
+	if err != nil {
+		t.Fatalf("read markdown output: %v", err)
+	}
+	if !bytes.Contains(markdownBody, []byte("Current repo tranche status as of March 23, 2026")) {
+		t.Fatalf("expected generated current batch date, got %s", string(markdownBody))
+	}
+	if !bytes.Contains(markdownBody, []byte("`BIG-PAR-238` — bigclawctl refill: seed queue entries from CLI")) {
+		t.Fatalf("expected markdown issue summary, got %s", string(markdownBody))
 	}
 }
 

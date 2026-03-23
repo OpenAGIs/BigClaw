@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestIssueStateMapRecordsIdentifiers(t *testing.T) {
@@ -222,5 +223,65 @@ func TestParallelIssueQueueSyncRecentBatchesFromStates(t *testing.T) {
 	}
 	if !stringSlicesEqual(snapshot.Standby, []string{"BIG-PAR-240"}) {
 		t.Fatalf("unexpected standby snapshot: %+v", snapshot)
+	}
+}
+
+func TestParallelIssueQueueSaveMarkdownRendersCurrentBatchAndOrder(t *testing.T) {
+	queuePath := filepath.Join(t.TempDir(), "queue.json")
+	markdownPath := filepath.Join(t.TempDir(), "queue.md")
+	queue := &ParallelIssueQueue{
+		queuePath: queuePath,
+		payload: QueuePayload{
+			Policy: struct {
+				TargetInProgress  int      `json:"target_in_progress"`
+				ActivateStateID   string   `json:"activate_state_id"`
+				ActivateStateName string   `json:"activate_state_name"`
+				RefillStates      []string `json:"refill_states"`
+				BlockedReason     string   `json:"blocked_reason,omitempty"`
+			}{
+				TargetInProgress:  2,
+				ActivateStateName: "In Progress",
+				RefillStates:      []string{"Todo", "Backlog"},
+			},
+			RecentBatches: struct {
+				Completed []string `json:"completed"`
+				Active    []string `json:"active"`
+				Standby   []string `json:"standby"`
+			}{
+				Completed: []string{"BIG-PAR-244", "BIG-PAR-245"},
+				Active:    []string{"BIG-PAR-247"},
+				Standby:   []string{"BIG-PAR-248"},
+			},
+			IssueOrder: []string{"BIG-PAR-244", "BIG-PAR-245", "BIG-PAR-247", "BIG-PAR-248"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-244", Title: "refresh queue docs", Status: "Done"},
+				{Identifier: "BIG-PAR-245", Title: "open branch PR", Status: "Done"},
+				{Identifier: "BIG-PAR-247", Title: "sync queue markdown", Status: "In Progress"},
+				{Identifier: "BIG-PAR-248", Title: "follow-on refill slice", Status: "Todo"},
+			},
+		},
+	}
+
+	written, err := queue.SaveMarkdown(markdownPath, time.Date(2026, 3, 23, 3, 45, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("save markdown: %v", err)
+	}
+	if !written {
+		t.Fatalf("expected markdown write")
+	}
+
+	body, err := os.ReadFile(markdownPath)
+	if err != nil {
+		t.Fatalf("read markdown: %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, "Current repo tranche status as of March 23, 2026") {
+		t.Fatalf("expected generated status date, got %s", text)
+	}
+	if !strings.Contains(text, "`BIG-PAR-247` — sync queue markdown") {
+		t.Fatalf("expected active issue summary, got %s", text)
+	}
+	if !strings.Contains(text, "4. `BIG-PAR-248`") {
+		t.Fatalf("expected numbered canonical order, got %s", text)
 	}
 }

@@ -51,7 +51,8 @@
       "BIG-PAR-243",
       "BIG-PAR-244",
       "BIG-PAR-245",
-      "BIG-PAR-246"
+      "BIG-PAR-246",
+      "BIG-PAR-247"
     ],
     "active": [],
     "standby": []
@@ -90,7 +91,8 @@
     "BIG-PAR-243",
     "BIG-PAR-244",
     "BIG-PAR-245",
-    "BIG-PAR-246"
+    "BIG-PAR-246",
+    "BIG-PAR-247"
   ],
   "issues": [
     {
@@ -295,6 +297,12 @@
       "identifier": "BIG-PAR-246",
       "title": "Refresh PR branch against main",
       "track": "Tracker and Refill Hygiene",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-247",
+      "title": "bigclawctl refill: sync queue markdown from canonical state",
+      "track": "Go Mainline Follow-ups",
       "status": "Done"
     }
   ]

@@ -318,6 +318,7 @@ func runWorkspace(args []string) error {
 type refillFlags struct {
 	repoRoot         *string
 	queuePath        *string
+	markdownPath     *string
 	localIssuesPath  *string
 	targetInProgress *int
 	watch            *bool
@@ -330,6 +331,7 @@ type refillFlags struct {
 type refillSeedFlags struct {
 	repoRoot         *string
 	queuePath        *string
+	markdownPath     *string
 	localIssuesPath  *string
 	identifier       *string
 	title            *string
@@ -350,6 +352,7 @@ func newRefillFlagSet() (*flag.FlagSet, refillFlags) {
 	return flags, refillFlags{
 		repoRoot:         flags.String("repo", "..", "repo root"),
 		queuePath:        flags.String("queue", "docs/parallel-refill-queue.json", "queue path"),
+		markdownPath:     flags.String("markdown", "docs/parallel-refill-queue.md", "human-readable queue markdown path"),
 		localIssuesPath:  flags.String("local-issues", "", "local issue store path"),
 		targetInProgress: flags.Int("target-in-progress", -1, "override target"),
 		watch:            flags.Bool("watch", false, "watch"),
@@ -365,6 +368,7 @@ func newRefillSeedFlagSet() (*flag.FlagSet, refillSeedFlags) {
 	return flags, refillSeedFlags{
 		repoRoot:         flags.String("repo", "..", "repo root"),
 		queuePath:        flags.String("queue", "docs/parallel-refill-queue.json", "queue path"),
+		markdownPath:     flags.String("markdown", "docs/parallel-refill-queue.md", "human-readable queue markdown path"),
 		localIssuesPath:  flags.String("local-issues", "", "local issue store path"),
 		identifier:       flags.String("identifier", "", "issue identifier (e.g. BIG-PAR-238)"),
 		title:            flags.String("title", "", "issue title"),
@@ -419,7 +423,8 @@ func runRefill(args []string) error {
 		if *options.targetInProgress >= 0 {
 			override = options.targetInProgress
 		}
-		return runRefillOnce(queue, client, *options.apply, *options.refreshURL, override, *options.syncQueueStatus, resolvedQueuePath, resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedLocalIssuesPath))
+		resolvedMarkdownPath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *options.markdownPath)
+		return runRefillOnce(queue, client, *options.apply, *options.refreshURL, override, *options.syncQueueStatus, resolvedQueuePath, resolvedMarkdownPath, resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedLocalIssuesPath))
 	}
 	if !*options.watch {
 		return runOnce()
@@ -465,6 +470,7 @@ func runRefillSeed(args []string) error {
 
 	resolvedRepoRoot := absPath(*options.repoRoot)
 	resolvedQueuePath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *options.queuePath)
+	resolvedMarkdownPath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *options.markdownPath)
 	queue, err := refill.LoadQueue(resolvedQueuePath)
 	if err != nil {
 		return err
@@ -486,6 +492,10 @@ func runRefillSeed(args []string) error {
 		}
 	}
 	if err := queue.Save(); err != nil {
+		return err
+	}
+	markdownWritten, err := queue.SaveMarkdown(resolvedMarkdownPath, when)
+	if err != nil {
 		return err
 	}
 
@@ -540,6 +550,8 @@ func runRefillSeed(args []string) error {
 		"queue_action":       queueAction,
 		"queue_order_added":  orderAdded,
 		"queue_path":         absPath(resolvedQueuePath),
+		"markdown_path":      absPath(resolvedMarkdownPath),
+		"markdown_written":   markdownWritten,
 		"local_issue_action": localAction,
 	}
 	if trim(*options.recentBatch) != "" {
@@ -1041,7 +1053,7 @@ func parseOptionalTime(value string) (time.Time, error) {
 	return parsed, nil
 }
 
-func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply bool, refreshURL string, targetOverride *int, syncQueueStatus bool, queuePath string, localIssuesPath string) error {
+func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply bool, refreshURL string, targetOverride *int, syncQueueStatus bool, queuePath string, markdownPath string, localIssuesPath string) error {
 	queueStatusUpdates := 0
 	queueRecentBatchUpdates := 0
 	queueStatusWritten := false
@@ -1123,6 +1135,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		"queue_recent_batch_updates": queueRecentBatchUpdates,
 		"queue_status_written":       queueStatusWritten,
 		"queue_path":                 queuePath,
+		"markdown_path":              markdownPath,
 	}
 	if trim(localIssuesPath) != "" {
 		payload["local_issues_path"] = localIssuesPath
@@ -1148,6 +1161,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 	if !apply {
 		return nil
 	}
+	promoted := false
 	for _, identifier := range candidates {
 		issueID, ok := issueIDs[identifier]
 		if !ok {
@@ -1158,6 +1172,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 			return err
 		}
 		if success {
+			promoted = true
 			fmt.Printf("promoted %s -> %s\n", identifier, stateName)
 			if refreshURL != "" {
 				request, err := http.NewRequest(http.MethodPost, refreshURL, bytes.NewReader([]byte("{}")))
@@ -1171,6 +1186,26 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 				}
 				response.Body.Close()
 			}
+		}
+	}
+	if client.backend() == "local" && trim(markdownPath) != "" {
+		latestIssues := allIssues
+		if promoted || len(latestIssues) == 0 {
+			latestIssues, err = client.fetchIssueStates(queue.ProjectSlug(), nil)
+			if err != nil {
+				return err
+			}
+		}
+		latestStates := refill.IssueStateMap(latestIssues)
+		postStatusUpdates := queue.SyncStatusFromStates(latestStates)
+		postRecentUpdates := queue.RefreshRecentBatchesFromStates(latestStates)
+		if postStatusUpdates > 0 || postRecentUpdates {
+			if err := queue.Save(); err != nil {
+				return err
+			}
+		}
+		if _, err := queue.SaveMarkdown(markdownPath, time.Now().UTC()); err != nil {
+			return err
 		}
 	}
 	return nil
