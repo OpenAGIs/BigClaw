@@ -2082,6 +2082,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-252` after adding observability follow-up regression coverage for the reviewer-facing docs and aligning the missing issue identifiers in the coverage summaries.\n\nWhat changed:\n- Added `bigclaw-go/internal/regression/observability_followup_docs_test.go` to keep the observability report, tracing/telemetry digests, reviewer coverage docs, and workspace gap-analysis references aligned.\n- Updated `bigclaw-go/docs/reports/review-readiness.md` and `bigclaw-go/docs/reports/issue-coverage.md` to carry the authoritative `OPE-264` / `BIG-PAR-075` and `OPE-265` / `BIG-PAR-076` follow-up identifiers.\n- Re-ran the full `internal/regression` package to confirm the new observability check and the existing doc-alignment checks pass together.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `071dabb9788088b109bb3f87eb31bf1c8e001f54` matches remote SHA `071dabb9788088b109bb3f87eb31bf1c8e001f54` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `071dabb9788088b109bb3f87eb31bf1c8e001f54`\n\nCommit: `071dabb9788088b109bb3f87eb31bf1c8e001f54`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180.",
+          "created_at": "2026-03-23T04:46:50Z"
+        }
+      ],
       "created_at": "2026-03-23T04:41:46Z",
       "description": "Add a regression that keeps the observability follow-up docs aligned across the gap analysis, observability report, tracing/telemetry digests, and reviewer coverage docs; patch any stale or missing OPE-264 / BIG-PAR-075 and OPE-265 / BIG-PAR-076 references the new check exposes.",
       "id": "big-par-252",
@@ -2090,9 +2097,9 @@
         "documentation"
       ],
       "priority": 4,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add observability follow-up doc regression coverage",
-      "updated_at": "2026-03-23T04:41:46Z"
+      "updated_at": "2026-03-23T04:46:50Z"
     }
   ]
 }
