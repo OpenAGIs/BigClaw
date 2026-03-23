@@ -2615,6 +2615,20 @@
       "state": "Done",
       "title": "BIG-vNext-002 共享队列协调与 lease 安全回归",
       "updated_at": "2026-03-23T14:50:12Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T15:00:58Z",
+      "description": "Add regression coverage for bigclaw-go/docs/reports/shared-queue-companion-summary.json so canonical report and bundle summary paths plus per-node completion counters stay aligned with the checked-in live validation companion surface.",
+      "id": "big-par-274",
+      "identifier": "BIG-PAR-274",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add shared queue companion summary regression coverage",
+      "updated_at": "2026-03-23T15:00:58Z"
     }
   ]
 }
