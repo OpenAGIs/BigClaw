@@ -1692,9 +1692,9 @@
         "refill"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "bigclawctl refill: seed queue entries from CLI",
-      "updated_at": "2026-03-23T02:37:12Z"
+      "updated_at": "2026-03-23T02:45:02Z"
     },
     {
       "assigned_to_worker": true,
@@ -1708,9 +1708,9 @@
         "refill"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "bigclawctl refill: sync recent_batches metadata from local tracker",
-      "updated_at": "2026-03-23T02:37:12Z"
+      "updated_at": "2026-03-23T02:43:18Z"
     },
     {
       "assigned_to_worker": true,
@@ -1724,9 +1724,9 @@
         "refill"
       ],
       "priority": 4,
-      "state": "Todo",
+      "state": "In Progress",
       "title": "Document queue seeding and drained-batch recovery workflow",
-      "updated_at": "2026-03-23T01:12:00Z"
+      "updated_at": "2026-03-23T02:46:06Z"
     },
     {
       "assigned_to_worker": true,

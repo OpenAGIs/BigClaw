@@ -42,15 +42,14 @@
       "BIG-PAR-234",
       "BIG-PAR-235",
       "BIG-PAR-236",
-      "BIG-PAR-237"
-    ],
-    "active": [
+      "BIG-PAR-237",
       "BIG-PAR-238",
       "BIG-PAR-239"
     ],
-    "standby": [
+    "active": [
       "BIG-PAR-240"
-    ]
+    ],
+    "standby": []
   },
   "issue_order": [
     "BIG-GOM-301",
@@ -237,19 +236,19 @@
       "identifier": "BIG-PAR-238",
       "title": "bigclawctl refill: seed queue entries from CLI",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-239",
       "title": "bigclawctl refill: sync recent_batches metadata from local tracker",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-240",
       "title": "Document queue seeding and drained-batch recovery workflow",
       "track": "Go Mainline Follow-ups",
-      "status": "Todo"
+      "status": "In Progress"
     }
   ]
 }
