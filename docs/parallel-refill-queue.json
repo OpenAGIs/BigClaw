@@ -43,11 +43,10 @@
       "BIG-PAR-241",
       "BIG-PAR-242",
       "BIG-PAR-243",
-      "BIG-PAR-244"
-    ],
-    "active": [
+      "BIG-PAR-244",
       "BIG-PAR-245"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -240,7 +239,7 @@
       "identifier": "BIG-PAR-245",
       "title": "Open PR for tracker and refill hardening branch",
       "track": "Tracker and Refill Hygiene",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
