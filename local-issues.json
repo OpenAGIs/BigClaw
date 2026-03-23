@@ -2058,6 +2058,20 @@
       "state": "Done",
       "title": "Refresh Go-mainline handoff note for merged cutover state",
       "updated_at": "2026-03-23T05:05:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T04:32:04Z",
+      "description": "Update the stale rollback follow-up mapping in docs/openclaw-parallel-gap-analysis.md to match the authoritative OPE-254 / BIG-PAR-088 references already used by rollback trigger surfaces, API payloads, and regression docs checks; extend regression coverage so the gap-analysis doc cannot drift again.",
+      "id": "big-par-251",
+      "identifier": "BIG-PAR-251",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "In Progress",
+      "title": "Fix rollback follow-up issue ID drift in gap analysis",
+      "updated_at": "2026-03-23T04:32:04Z"
     }
   ]
 }
