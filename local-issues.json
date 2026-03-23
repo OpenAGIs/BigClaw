@@ -2355,6 +2355,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added `bigclaw-go/internal/regression/bundle_followup_index_docs_test.go` to pin bundle and operational docs that route reviewers to `docs/reports/parallel-follow-up-index.md`, so `docs/reports/go-control-plane-observability-report.md`, `docs/reports/live-shadow-index.md`, `docs/reports/live-shadow-runs/20260313T085655Z/README.md`, `docs/reports/live-validation-runs/20260316T140138Z/README.md`, and `docs/reports/multi-node-coordination-report.md` keep their canonical follow-up-index and companion reference paths aligned.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestBundleFollowUpIndexDocsStayAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `c611ac37f5e3d02c671076a53a0ee0bae311bd7a` matches remote SHA `c611ac37f5e3d02c671076a53a0ee0bae311bd7a` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `c611ac37f5e3d02c671076a53a0ee0bae311bd7a`\n\nCommit SHA: `c611ac37f5e3d02c671076a53a0ee0bae311bd7a`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180",
+          "created_at": "2026-03-23T06:08:05Z"
+        }
+      ],
       "created_at": "2026-03-23T06:05:24Z",
       "description": "Add regression coverage for bundle and operational docs that route reviewers to the canonical parallel follow-up index so observability, live-shadow, live-validation bundle, and multi-node coordination entrypoints keep their follow-up index and companion references aligned.",
       "id": "big-par-265",
@@ -2363,9 +2370,9 @@
         "documentation"
       ],
       "priority": 4,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add bundle follow-up index regression coverage",
-      "updated_at": "2026-03-23T06:05:24Z"
+      "updated_at": "2026-03-23T06:08:05Z"
     }
   ]
 }
