@@ -2310,6 +2310,20 @@
       "state": "Done",
       "title": "Add canonical follow-up index regression coverage",
       "updated_at": "2026-03-23T05:52:37Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T05:55:44Z",
+      "description": "Add regression coverage for migration-facing docs that route reviewers to the canonical parallel follow-up index so migration, migration-shadow, and migration-readiness references do not drift away from the checked-in index and validation matrix entrypoint.",
+      "id": "big-par-263",
+      "identifier": "BIG-PAR-263",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "In Progress",
+      "title": "Add migration follow-up index regression coverage",
+      "updated_at": "2026-03-23T05:55:44Z"
     }
   ]
 }
