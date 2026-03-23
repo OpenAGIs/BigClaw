@@ -2457,9 +2457,9 @@
         "documentation"
       ],
       "priority": 4,
-      "state": "Backlog",
+      "state": "In Progress",
       "title": "Add canonical validation matrix regression coverage",
-      "updated_at": "2026-03-23T06:38:30Z"
+      "updated_at": "2026-03-23T06:41:06Z"
     }
   ]
 }
