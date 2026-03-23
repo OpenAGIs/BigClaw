@@ -2145,6 +2145,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-255` after aligning the checked-in live validation bundle README with the authoritative continuation follow-up lane ID and extending regression coverage to keep that bundle doc synchronized.\n\nWhat changed:\n- Updated `bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/README.md` so its reviewer digest and continuation artifact bullets carry the authoritative `OPE-271` / `BIG-PAR-082` identifier and current reviewer-index wording.\n- Extended `bigclaw-go/internal/regression/runtime_report_followup_docs_test.go` so the checked-in bundle README stays aligned with the canonical live-validation index and continuation digest references.\n- Re-ran the full `internal/regression` package to confirm the bundle README alignment passes alongside the existing runtime-report doc checks.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `a1a973d5ebc4ef99ccb7daf996d4c9c54e005ce0` matches remote SHA `a1a973d5ebc4ef99ccb7daf996d4c9c54e005ce0` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `a1a973d5ebc4ef99ccb7daf996d4c9c54e005ce0`\n\nCommit: `a1a973d5ebc4ef99ccb7daf996d4c9c54e005ce0`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180.",
+          "created_at": "2026-03-23T05:06:31Z"
+        }
+      ],
       "created_at": "2026-03-23T05:02:20Z",
       "description": "Add regression coverage for the checked-in live validation bundle README and align its continuation follow-up references with the authoritative OPE-271 / BIG-PAR-082 lane identifier and current reviewer index wording.",
       "id": "big-par-255",
@@ -2153,9 +2160,9 @@
         "documentation"
       ],
       "priority": 4,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Align live validation bundle follow-up IDs",
-      "updated_at": "2026-03-23T05:02:20Z"
+      "updated_at": "2026-03-23T05:06:31Z"
     }
   ]
 }

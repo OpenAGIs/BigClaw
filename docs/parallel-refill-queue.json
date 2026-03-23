@@ -59,11 +59,10 @@
       "BIG-PAR-251",
       "BIG-PAR-252",
       "BIG-PAR-253",
-      "BIG-PAR-254"
-    ],
-    "active": [
+      "BIG-PAR-254",
       "BIG-PAR-255"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -368,7 +367,7 @@
       "identifier": "BIG-PAR-255",
       "title": "Align live validation bundle follow-up IDs",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
