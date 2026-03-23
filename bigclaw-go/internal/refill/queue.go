@@ -45,6 +45,12 @@ type ParallelIssueQueue struct {
 	payload   QueuePayload
 }
 
+type RecentBatchesSnapshot struct {
+	Completed []string
+	Active    []string
+	Standby   []string
+}
+
 type TrackedIssue struct {
 	ID         string
 	Identifier string
@@ -160,6 +166,159 @@ func (q *ParallelIssueQueue) SyncStatusFromStates(issueStates map[string]string)
 	return updated
 }
 
+func (q *ParallelIssueQueue) SyncRecentBatchesFromStates(issueStates map[string]string) int {
+	merged := issueRecordStateMap(q.IssueRecords())
+	for identifier, state := range issueStates {
+		identifier = strings.TrimSpace(identifier)
+		state = strings.TrimSpace(state)
+		if identifier == "" || state == "" {
+			continue
+		}
+		merged[identifier] = state
+	}
+
+	standbyLimit := q.TargetInProgress()
+	if standbyLimit <= 0 {
+		standbyLimit = 1
+	}
+	refillStates := q.RefillStates()
+	completed := []string{}
+	active := []string{}
+	standby := []string{}
+	for _, identifier := range q.payload.IssueOrder {
+		state := strings.TrimSpace(merged[identifier])
+		switch {
+		case isTerminalState(state):
+			completed = append(completed, identifier)
+		case state == q.ActivateStateName():
+			active = append(active, identifier)
+		case state == "" || stateInSet(refillStates, state):
+			if len(standby) < standbyLimit {
+				standby = append(standby, identifier)
+			}
+		}
+	}
+
+	updated := 0
+	if !stringSlicesEqual(q.payload.RecentBatches.Completed, completed) {
+		q.payload.RecentBatches.Completed = completed
+		updated++
+	}
+	if !stringSlicesEqual(q.payload.RecentBatches.Active, active) {
+		q.payload.RecentBatches.Active = active
+		updated++
+	}
+	if !stringSlicesEqual(q.payload.RecentBatches.Standby, standby) {
+		q.payload.RecentBatches.Standby = standby
+		updated++
+	}
+	return updated
+}
+
+func (q *ParallelIssueQueue) RecentBatchesSnapshot() RecentBatchesSnapshot {
+	return RecentBatchesSnapshot{
+		Completed: append([]string{}, q.payload.RecentBatches.Completed...),
+		Active:    append([]string{}, q.payload.RecentBatches.Active...),
+		Standby:   append([]string{}, q.payload.RecentBatches.Standby...),
+	}
+}
+
+func (q *ParallelIssueQueue) UpsertIssue(record IssueRecord) (string, bool, error) {
+	identifier := strings.TrimSpace(record.Identifier)
+	title := strings.TrimSpace(record.Title)
+	track := strings.TrimSpace(record.Track)
+	status := strings.TrimSpace(record.Status)
+	if identifier == "" {
+		return "", false, os.ErrInvalid
+	}
+	if title == "" {
+		return "", false, os.ErrInvalid
+	}
+	if track == "" {
+		return "", false, os.ErrInvalid
+	}
+	if status == "" {
+		status = "Todo"
+	}
+
+	for idx := range q.payload.Issues {
+		existingIdentifier := strings.TrimSpace(q.payload.Issues[idx].Identifier)
+		if !strings.EqualFold(existingIdentifier, identifier) {
+			continue
+		}
+		action := "exists"
+		if strings.TrimSpace(q.payload.Issues[idx].Title) != title {
+			q.payload.Issues[idx].Title = title
+			action = "updated"
+		}
+		if strings.TrimSpace(q.payload.Issues[idx].Track) != track {
+			q.payload.Issues[idx].Track = track
+			action = "updated"
+		}
+		if strings.TrimSpace(q.payload.Issues[idx].Status) != status {
+			q.payload.Issues[idx].Status = status
+			action = "updated"
+		}
+		orderAdded := appendIdentifierOnce(&q.payload.IssueOrder, existingIdentifier)
+		if orderAdded && action == "exists" {
+			action = "updated"
+		}
+		return action, orderAdded, nil
+	}
+
+	q.payload.Issues = append(q.payload.Issues, IssueRecord{
+		Identifier: identifier,
+		Title:      title,
+		Track:      track,
+		Status:     status,
+	})
+	orderAdded := appendIdentifierOnce(&q.payload.IssueOrder, identifier)
+	return "created", orderAdded, nil
+}
+
+func (q *ParallelIssueQueue) SetRecentBatch(batchName string, identifier string) (bool, error) {
+	identifier = strings.TrimSpace(identifier)
+	if identifier == "" {
+		return false, os.ErrInvalid
+	}
+	batchName = strings.ToLower(strings.TrimSpace(batchName))
+	changed := false
+	if next, removed := withoutIdentifier(q.payload.RecentBatches.Completed, identifier); removed {
+		q.payload.RecentBatches.Completed = next
+		changed = true
+	}
+	if next, removed := withoutIdentifier(q.payload.RecentBatches.Active, identifier); removed {
+		q.payload.RecentBatches.Active = next
+		changed = true
+	}
+	if next, removed := withoutIdentifier(q.payload.RecentBatches.Standby, identifier); removed {
+		q.payload.RecentBatches.Standby = next
+		changed = true
+	}
+
+	var target *[]string
+	switch batchName {
+	case "", "none":
+		return changed, nil
+	case "completed":
+		target = &q.payload.RecentBatches.Completed
+	case "active":
+		target = &q.payload.RecentBatches.Active
+	case "standby":
+		target = &q.payload.RecentBatches.Standby
+	default:
+		return false, os.ErrInvalid
+	}
+
+	before := append([]string{}, (*target)...)
+	*target = append((*target), identifier)
+	*target = orderByIssueOrder(uniqueIdentifiers(*target), q.payload.IssueOrder)
+	if !stringSlicesEqual(before, *target) {
+		changed = true
+	}
+	return changed, nil
+}
+
 func (q *ParallelIssueQueue) IssueIdentifiers() []string {
 	records := q.IssueRecords()
 	result := make([]string, 0, len(records))
@@ -202,18 +361,6 @@ func issueRecordStateMap(records []IssueRecord) map[string]string {
 }
 
 func countRunnable(issueOrder []string, states map[string]string) int {
-	terminal := map[string]struct{}{
-		"Archived":   {},
-		"Canceled":   {},
-		"Canceled.":  {},
-		"Cancelled":  {},
-		"Cancelled.": {},
-		"Closed":     {},
-		"Closed.":    {},
-		"Done":       {},
-		"Done.":      {},
-		"Duplicate":  {},
-	}
 	count := 0
 	for _, identifier := range issueOrder {
 		status, ok := states[identifier]
@@ -221,7 +368,7 @@ func countRunnable(issueOrder []string, states map[string]string) int {
 			count++
 			continue
 		}
-		if _, ok := terminal[status]; ok {
+		if isTerminalState(status) {
 			continue
 		}
 		count++
@@ -274,4 +421,99 @@ func SortedActive(issues []TrackedIssue) []string {
 	}
 	sort.Strings(active)
 	return active
+}
+
+func isTerminalState(status string) bool {
+	switch strings.TrimSpace(status) {
+	case "Archived", "Canceled", "Canceled.", "Cancelled", "Cancelled.", "Closed", "Closed.", "Done", "Done.", "Duplicate":
+		return true
+	default:
+		return false
+	}
+}
+
+func stateInSet(values map[string]struct{}, state string) bool {
+	_, ok := values[strings.TrimSpace(state)]
+	return ok
+}
+
+func stringSlicesEqual(left []string, right []string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for idx := range left {
+		if left[idx] != right[idx] {
+			return false
+		}
+	}
+	return true
+}
+
+func appendIdentifierOnce(items *[]string, identifier string) bool {
+	identifier = strings.TrimSpace(identifier)
+	if identifier == "" {
+		return false
+	}
+	for _, item := range *items {
+		if strings.EqualFold(strings.TrimSpace(item), identifier) {
+			return false
+		}
+	}
+	*items = append(*items, identifier)
+	return true
+}
+
+func withoutIdentifier(items []string, identifier string) ([]string, bool) {
+	result := make([]string, 0, len(items))
+	removed := false
+	for _, item := range items {
+		if strings.EqualFold(strings.TrimSpace(item), identifier) {
+			removed = true
+			continue
+		}
+		result = append(result, item)
+	}
+	return result, removed
+}
+
+func uniqueIdentifiers(items []string) []string {
+	result := make([]string, 0, len(items))
+	seen := map[string]struct{}{}
+	for _, item := range items {
+		trimmed := strings.TrimSpace(item)
+		if trimmed == "" {
+			continue
+		}
+		key := strings.ToLower(trimmed)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		result = append(result, trimmed)
+	}
+	return result
+}
+
+func orderByIssueOrder(items []string, issueOrder []string) []string {
+	orderIndex := map[string]int{}
+	for idx, identifier := range issueOrder {
+		orderIndex[strings.ToLower(strings.TrimSpace(identifier))] = idx
+	}
+	sort.SliceStable(items, func(left int, right int) bool {
+		leftKey := strings.ToLower(strings.TrimSpace(items[left]))
+		rightKey := strings.ToLower(strings.TrimSpace(items[right]))
+		leftOrder, leftOK := orderIndex[leftKey]
+		rightOrder, rightOK := orderIndex[rightKey]
+		switch {
+		case leftOK && rightOK:
+			return leftOrder < rightOrder
+		case leftOK:
+			return true
+		case rightOK:
+			return false
+		default:
+			return leftKey < rightKey
+		}
+	})
+	return items
 }

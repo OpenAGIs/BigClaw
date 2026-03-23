@@ -47,11 +47,13 @@ longer waits on Linear to keep issue execution moving.
 
 ## Current batch
 
-- Current repo tranche status as of March 22, 2026:
+- Current repo tranche status as of March 23, 2026:
   - the Go-mainline cutover tranche is complete and merged to `main`
   - `BIG-PAR-220`, `BIG-PAR-221`, `BIG-PAR-222`, `BIG-PAR-223`, `BIG-PAR-224`, `BIG-PAR-225`, `BIG-PAR-226`, `BIG-PAR-227`, `BIG-PAR-228`, `BIG-PAR-229`, `BIG-PAR-230`, and `BIG-PAR-231` are now closed in the repo-native tracker
   - `BIG-PAR-234` closed: `bigclawctl` now supports root and subcommand `--help` with exit 0
-  - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` to confirm whether any additional `Todo` slices should be promoted
+  - `BIG-PAR-235`, `BIG-PAR-236`, and `BIG-PAR-237` are closed with 429 fanout mitigation plus refill/local-tracker recovery hardening
+  - active next batch is now `BIG-PAR-238` and `BIG-PAR-239`, with `BIG-PAR-240` seeded as standby
+  - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` to promote from this seeded next batch
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
   - add the next `BIG-PAR-*` identifiers to `docs/parallel-refill-queue.json` (`issue_order` plus a matching `issues[]` record) and create matching `local-issues.json` tracker entries
@@ -95,3 +97,9 @@ longer waits on Linear to keep issue execution moving.
 20. `BIG-PAR-230`
 21. `BIG-PAR-231`
 22. `BIG-PAR-234`
+23. `BIG-PAR-235`
+24. `BIG-PAR-236`
+25. `BIG-PAR-237`
+26. `BIG-PAR-238`
+27. `BIG-PAR-239`
+28. `BIG-PAR-240`

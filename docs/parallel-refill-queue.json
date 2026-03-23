@@ -8,8 +8,8 @@
   },
   "policy": {
     "target_in_progress": 2,
-    "activate_state_name": "In Progress",
     "activate_state_id": "bd8aafe7-4d8b-41aa-a85b-13e76d49ead7",
+    "activate_state_name": "In Progress",
     "refill_states": [
       "Backlog",
       "Todo"
@@ -39,10 +39,18 @@
       "BIG-PAR-229",
       "BIG-PAR-230",
       "BIG-PAR-231",
-      "BIG-PAR-234"
+      "BIG-PAR-234",
+      "BIG-PAR-235",
+      "BIG-PAR-236",
+      "BIG-PAR-237"
     ],
-    "active": [],
-    "standby": []
+    "active": [
+      "BIG-PAR-238",
+      "BIG-PAR-239"
+    ],
+    "standby": [
+      "BIG-PAR-240"
+    ]
   },
   "issue_order": [
     "BIG-GOM-301",
@@ -66,7 +74,13 @@
     "BIG-PAR-229",
     "BIG-PAR-230",
     "BIG-PAR-231",
-    "BIG-PAR-234"
+    "BIG-PAR-234",
+    "BIG-PAR-235",
+    "BIG-PAR-236",
+    "BIG-PAR-237",
+    "BIG-PAR-238",
+    "BIG-PAR-239",
+    "BIG-PAR-240"
   ],
   "issues": [
     {
@@ -200,6 +214,42 @@
       "title": "bigclawctl: support --help at root and subcommands",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-235",
+      "title": "cap workflow agent fanout after 429s",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-236",
+      "title": "harden local tracker recovery and serialization",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-237",
+      "title": "emit queue-drained recovery hints in refill output",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-238",
+      "title": "bigclawctl refill: seed queue entries from CLI",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-239",
+      "title": "bigclawctl refill: sync recent_batches metadata from local tracker",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-240",
+      "title": "Document queue seeding and drained-batch recovery workflow",
+      "track": "Go Mainline Follow-ups",
+      "status": "Todo"
     }
   ]
 }
