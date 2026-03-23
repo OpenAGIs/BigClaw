@@ -1969,6 +1969,24 @@
       "state": "Done",
       "title": "bigclawctl refill: sync queue markdown from canonical state",
       "updated_at": "2026-03-23T04:05:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T03:57:58Z",
+      "description": "Raise the checked-in SQLite queue scale proof from the current 1k no-duplicate-consumption test to a 10k task lane and refresh the queue reliability report so the next-follow-up note becomes concrete evidence.",
+      "id": "big-par-248",
+      "identifier": "BIG-PAR-248",
+      "labels": [
+        "parallel",
+        "queue",
+        "reliability",
+        "sqlite",
+        "docs"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Expand SQLite queue reliability proof to 10k tasks",
+      "updated_at": "2026-03-23T03:57:58Z"
     }
   ]
 }
