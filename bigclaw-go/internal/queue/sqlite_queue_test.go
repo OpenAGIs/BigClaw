@@ -203,72 +203,83 @@ func TestSQLiteQueueDeadLetterReplayPersistsAcrossReopen(t *testing.T) {
 	}
 }
 
-func TestSQLiteQueueProcesses1000TasksWithoutDuplicateLease(t *testing.T) {
+func TestSQLiteQueueProcessesTaskScaleWithoutDuplicateLease(t *testing.T) {
 	ctx := context.Background()
-	path := filepath.Join(t.TempDir(), "queue.db")
-	q, err := NewSQLiteQueue(path)
-	if err != nil {
-		t.Fatalf("new sqlite queue: %v", err)
-	}
-	defer q.Close()
+	for _, tc := range []struct {
+		name       string
+		totalTasks int
+		workers    int
+		leaseTTL   time.Duration
+	}{
+		{name: "1k", totalTasks: 1000, workers: 8, leaseTTL: time.Second},
+		{name: "10k", totalTasks: 10000, workers: 16, leaseTTL: 30 * time.Second},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "queue.db")
+			q, err := NewSQLiteQueue(path)
+			if err != nil {
+				t.Fatalf("new sqlite queue: %v", err)
+			}
+			defer q.Close()
 
-	const totalTasks = 1000
-	for i := 0; i < totalTasks; i++ {
-		if err := q.Enqueue(ctx, domain.Task{ID: fmt.Sprintf("task-%d", i), Priority: i % 5, CreatedAt: time.Now()}); err != nil {
-			t.Fatalf("enqueue %d: %v", i, err)
-		}
-	}
-
-	var (
-		mu        sync.Mutex
-		processed = make(map[string]struct{}, totalTasks)
-		wg        sync.WaitGroup
-		errCh     = make(chan error, 32)
-	)
-	for worker := 0; worker < 8; worker++ {
-		wg.Add(1)
-		go func(workerID string) {
-			defer wg.Done()
-			for {
-				task, lease, err := q.LeaseNext(ctx, workerID, time.Second)
-				if err != nil {
-					errCh <- err
-					return
-				}
-				if task == nil || lease == nil {
-					if q.Size(ctx) == 0 {
-						return
-					}
-					time.Sleep(time.Millisecond)
-					continue
-				}
-				mu.Lock()
-				if _, exists := processed[task.ID]; exists {
-					mu.Unlock()
-					errCh <- fmt.Errorf("duplicate lease for %s", task.ID)
-					return
-				}
-				processed[task.ID] = struct{}{}
-				mu.Unlock()
-				if err := q.Ack(ctx, lease); err != nil {
-					errCh <- err
-					return
+			for i := 0; i < tc.totalTasks; i++ {
+				if err := q.Enqueue(ctx, domain.Task{ID: fmt.Sprintf("task-%d", i), Priority: i % 5, CreatedAt: time.Now()}); err != nil {
+					t.Fatalf("enqueue %d: %v", i, err)
 				}
 			}
-		}(fmt.Sprintf("worker-%d", worker))
-	}
-	wg.Wait()
-	close(errCh)
-	for err := range errCh {
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-	if len(processed) != totalTasks {
-		t.Fatalf("expected %d processed tasks, got %d", totalTasks, len(processed))
-	}
-	if got := q.Size(ctx); got != 0 {
-		t.Fatalf("expected queue size 0, got %d", got)
+
+			var (
+				mu        sync.Mutex
+				processed = make(map[string]struct{}, tc.totalTasks)
+				wg        sync.WaitGroup
+				errCh     = make(chan error, tc.workers*2)
+			)
+			for worker := 0; worker < tc.workers; worker++ {
+				wg.Add(1)
+				go func(workerID string) {
+					defer wg.Done()
+					for {
+						task, lease, err := q.LeaseNext(ctx, workerID, tc.leaseTTL)
+						if err != nil {
+							errCh <- err
+							return
+						}
+						if task == nil || lease == nil {
+							if q.Size(ctx) == 0 {
+								return
+							}
+							time.Sleep(time.Millisecond)
+							continue
+						}
+						mu.Lock()
+						if _, exists := processed[task.ID]; exists {
+							mu.Unlock()
+							errCh <- fmt.Errorf("duplicate lease for %s", task.ID)
+							return
+						}
+						processed[task.ID] = struct{}{}
+						mu.Unlock()
+						if err := q.Ack(ctx, lease); err != nil {
+							errCh <- err
+							return
+						}
+					}
+				}(fmt.Sprintf("worker-%d", worker))
+			}
+			wg.Wait()
+			close(errCh)
+			for err := range errCh {
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			if len(processed) != tc.totalTasks {
+				t.Fatalf("expected %d processed tasks, got %d", tc.totalTasks, len(processed))
+			}
+			if got := q.Size(ctx); got != 0 {
+				t.Fatalf("expected queue size 0, got %d", got)
+			}
+		})
 	}
 }
 
