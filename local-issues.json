@@ -2512,6 +2512,18 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added `bigclaw-go/internal/regression/shared_queue_companion_summary_test.go` to pin canonical and bundled shared-queue companion summaries, including path invariants, completion counters, per-node totals, and referenced artifact existence.\\n\\nValidation: `go test ./internal/regression -run TestSharedQueueCompanionSummaryStaysAligned`.,yield_time_ms:1000,max_output_tokens:2000}},{",
+          "created_at": "2026-03-23T15:06:44Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final note: shared queue companion summary regression coverage landed cleanly in `bigclaw-go/internal/regression/shared_queue_companion_summary_test.go`. Validation: `go test ./internal/regression -run TestSharedQueueCompanionSummaryStaysAligned`.",
+          "created_at": "2026-03-23T15:07:15Z"
+        }
+      ],
       "created_at": "2026-03-23T06:52:11Z",
       "description": "Add regression coverage for bigclaw-go/docs/reports/shared-queue-companion-summary.json so canonical report and bundle summary paths plus per-node completion counters stay aligned with the checked-in live validation companion surface.",
       "id": "big-par-272",
@@ -2520,9 +2532,9 @@
         "documentation"
       ],
       "priority": 4,
-      "state": "Backlog",
+      "state": "Done",
       "title": "Add shared queue companion summary regression coverage",
-      "updated_at": "2026-03-23T06:52:11Z"
+      "updated_at": "2026-03-23T15:07:15Z"
     },
     {
       "assigned_to_worker": true,
@@ -2615,6 +2627,50 @@
       "state": "Done",
       "title": "BIG-vNext-002 共享队列协调与 lease 安全回归",
       "updated_at": "2026-03-23T14:50:12Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added `bigclaw-go/internal/regression/live_validation_index_test.go` and `bigclaw-go/internal/regression/live_validation_index_summary_test.go` to pin the checked-in live validation index, bundle pointers, continuation metadata, and reviewer navigation. Validation: `go test ./internal/regression -run \"TestLiveValidationIndexStaysAligned|TestLiveValidationIndexSummaryPointers\"`.",
+          "created_at": "2026-03-23T15:07:15Z"
+        }
+      ],
+      "created_at": "2026-03-23T15:00:28Z",
+      "description": "Add regression coverage for docs/reports/live-validation-index.json so bundle paths, lane metadata, continuation pointers, and reviewer navigation stay aligned with the checked-in validation evidence surface.",
+      "id": "big-par-273",
+      "identifier": "BIG-PAR-273",
+      "labels": [
+        "regression",
+        "validation-index"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add live validation index regression coverage",
+      "updated_at": "2026-03-23T15:07:15Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added `bigclaw-go/internal/regression/shared_queue_report_test.go` to pin canonical and bundled shared-queue report rollups, per-node counts, node identities, and artifact path shapes. Validation: `go test ./internal/regression -run TestSharedQueueReportStaysAligned`.",
+          "created_at": "2026-03-23T15:07:15Z"
+        }
+      ],
+      "created_at": "2026-03-23T15:00:28Z",
+      "description": "Add regression coverage for docs/reports/multi-node-shared-queue-report.json so canonical and bundled shared-queue evidence stays aligned with per-node counts, node identities, and artifact paths.",
+      "id": "big-par-274",
+      "identifier": "BIG-PAR-274",
+      "labels": [
+        "regression",
+        "shared-queue"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add shared queue report regression coverage",
+      "updated_at": "2026-03-23T15:07:15Z"
     }
   ]
 }
