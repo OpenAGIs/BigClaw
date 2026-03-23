@@ -62,7 +62,9 @@
       "BIG-PAR-254",
       "BIG-PAR-255"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-256"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -108,7 +110,8 @@
     "BIG-PAR-252",
     "BIG-PAR-253",
     "BIG-PAR-254",
-    "BIG-PAR-255"
+    "BIG-PAR-255",
+    "BIG-PAR-256"
   ],
   "issues": [
     {
@@ -368,6 +371,12 @@
       "title": "Align live validation bundle follow-up IDs",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-256",
+      "title": "Align live validation index JSON follow-up metadata",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

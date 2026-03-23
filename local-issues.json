@@ -2163,6 +2163,20 @@
       "state": "Done",
       "title": "Align live validation bundle follow-up IDs",
       "updated_at": "2026-03-23T05:06:31Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T05:07:26Z",
+      "description": "Add regression coverage for the machine-readable live validation index continuation metadata and align its reviewer-path payload with the authoritative OPE-271 / BIG-PAR-082 follow-up lane identifier used by the checked-in markdown bundle and index docs.",
+      "id": "big-par-256",
+      "identifier": "BIG-PAR-256",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "In Progress",
+      "title": "Align live validation index JSON follow-up metadata",
+      "updated_at": "2026-03-23T05:07:26Z"
     }
   ]
 }
