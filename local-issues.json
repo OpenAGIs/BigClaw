@@ -1729,6 +1729,11 @@
       "author": "codex",
       "body": "Final umbrella closeout refresh: the current follow-up-doc regression branch PR `#180` is now merged into `main`, and the repo-native child queue for `BIG-PAR-240` is fully drained through `BIG-PAR-266`.\n\nValidation:\n- `gh pr view 180 --json url,title,state,mergedAt,mergeCommit` -> `MERGED` at `2026-03-23T06:16:43Z` with merge commit `5b2a2e39b696279cb5bfb4a5486b6a0f111aaca4`\n- `git fetch origin main` -> updated `origin/main` to `5b2a2e39b696279cb5bfb4a5486b6a0f111aaca4`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `active_in_progress: []`, `candidates: []`, `queue_drained: true`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `8504170a8f8e53d61d28f6e90b5a0b958d542e7f` matches remote SHA `8504170a8f8e53d61d28f6e90b5a0b958d542e7f` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `8504170a8f8e53d61d28f6e90b5a0b958d542e7f`\n\nCommit SHA: `8504170a8f8e53d61d28f6e90b5a0b958d542e7f`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180",
       "created_at": "2026-03-23T06:17:55Z"
+    },
+    {
+      "author": "codex",
+      "body": "Final umbrella closeout landed: the tracker-only refresh branch PR `#181` is now merged into `main`, so the local parent issue history matches the final landed branch state for `BIG-PAR-240`.\n\nValidation:\n- `gh pr view 181 --json url,title,state,mergedAt,mergeCommit` -> `MERGED` at `2026-03-23T06:21:16Z` with merge commit `b26961ed77eff3317b379729febc6bd2c7b6c1fd`\n- `git fetch origin main` -> updated `origin/main` to `b26961ed77eff3317b379729febc6bd2c7b6c1fd`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `active_in_progress: []`, `candidates: []`, `queue_drained: true`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `807ef573742d1aaa9076ebc95dd006aa583f2c21` matches remote SHA `807ef573742d1aaa9076ebc95dd006aa583f2c21` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `807ef573742d1aaa9076ebc95dd006aa583f2c21`\n\nCommit SHA: `807ef573742d1aaa9076ebc95dd006aa583f2c21`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/181",
+      "created_at": "2026-03-23T06:22:23Z"
     }
   ],
       "created_at": "2026-03-23T01:12:00Z",
@@ -1743,7 +1748,7 @@
       "priority": 4,
       "state": "Done",
       "title": "Document queue seeding and drained-batch recovery workflow",
-  "updated_at": "2026-03-23T06:17:55Z"
+  "updated_at": "2026-03-23T06:22:23Z"
     },
     {
       "assigned_to_worker": true,
