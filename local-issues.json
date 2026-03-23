@@ -2671,6 +2671,21 @@
       "state": "Done",
       "title": "Add shared queue report regression coverage",
       "updated_at": "2026-03-23T15:07:15Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T15:31:24Z",
+      "description": "Add regression coverage for bigclaw-go/docs/reports/live-shadow-index.json so the checked-in live shadow reviewer entrypoint stays aligned with bundle paths, rollback navigation, drift rollup metadata, and recent-run pointers.",
+      "id": "big-par-277",
+      "identifier": "BIG-PAR-277",
+      "labels": [
+        "regression",
+        "live-shadow"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add live shadow index regression coverage",
+      "updated_at": "2026-03-23T15:33:34Z"
     }
   ]
 }
