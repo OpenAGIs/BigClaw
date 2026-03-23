@@ -52,7 +52,8 @@
       "BIG-PAR-244",
       "BIG-PAR-245",
       "BIG-PAR-246",
-      "BIG-PAR-247"
+      "BIG-PAR-247",
+      "BIG-PAR-248"
     ],
     "active": [],
     "standby": []
@@ -92,7 +93,8 @@
     "BIG-PAR-244",
     "BIG-PAR-245",
     "BIG-PAR-246",
-    "BIG-PAR-247"
+    "BIG-PAR-247",
+    "BIG-PAR-248"
   ],
   "issues": [
     {
@@ -302,6 +304,12 @@
     {
       "identifier": "BIG-PAR-247",
       "title": "bigclawctl refill: sync queue markdown from canonical state",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-248",
+      "title": "Expand SQLite queue reliability proof to 10k tasks",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }
