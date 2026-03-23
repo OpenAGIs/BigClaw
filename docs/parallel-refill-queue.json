@@ -68,7 +68,9 @@
       "BIG-PAR-260",
       "BIG-PAR-261"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-268"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -120,7 +122,8 @@
     "BIG-PAR-258",
     "BIG-PAR-259",
     "BIG-PAR-260",
-    "BIG-PAR-261"
+    "BIG-PAR-261",
+    "BIG-PAR-268"
   ],
   "issues": [
     {
@@ -446,6 +449,12 @@
       "title": "Add planning follow-up index regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-268",
+      "title": "Rewire readiness reports to canonical follow-up index",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

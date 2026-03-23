@@ -48,10 +48,10 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 23, 2026:
-  - active slices: none
+  - active slices: `BIG-PAR-267` — Rewire e2e validation guide to canonical follow-up index
   - standby slices: none
   - recently completed slices: `BIG-PAR-254` — Add runtime report follow-up ID coverage; `BIG-PAR-255` — Align live validation bundle follow-up IDs; `BIG-PAR-256` — Align live validation index JSON follow-up metadata; `BIG-PAR-257` — Align continuation gate JSON follow-up metadata; `BIG-PAR-258` — Align rollback trigger JSON follow-up metadata; `BIG-PAR-259` — Align live shadow JSON follow-up metadata; `BIG-PAR-260` — Align live shadow bundle follow-up IDs; `BIG-PAR-261` — Align migration readiness live-shadow follow-up ID
-  - queue status: `queue_runnable=0`, `target_in_progress=2`
+  - queue status: `queue_runnable=1`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -164,3 +164,4 @@ longer waits on Linear to keep issue execution moving.
 47. `BIG-PAR-259`
 48. `BIG-PAR-260`
 49. `BIG-PAR-261`
+50. `BIG-PAR-267`
