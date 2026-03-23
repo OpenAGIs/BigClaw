@@ -51,11 +51,10 @@
       "BIG-PAR-243",
       "BIG-PAR-244",
       "BIG-PAR-245",
-      "BIG-PAR-246"
-    ],
-    "active": [
+      "BIG-PAR-246",
       "BIG-PAR-247"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -304,7 +303,7 @@
       "identifier": "BIG-PAR-247",
       "title": "bigclawctl refill: sync queue markdown from canonical state",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
