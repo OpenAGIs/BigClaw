@@ -61,5 +61,7 @@
   remaining live-shadow, rollback, and corpus-coverage follow-up digests behind
   this run bundle.
 - For the two primary caveat tracks referenced by this bundle, see
+  `OPE-266` / `BIG-PAR-092` in
   `docs/reports/live-shadow-comparison-follow-up-digest.md` and
+  `OPE-254` / `BIG-PAR-088` in
   `docs/reports/rollback-safeguard-follow-up-digest.md`.

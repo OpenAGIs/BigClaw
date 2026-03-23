@@ -38,6 +38,15 @@ func TestLiveShadowRuntimeDocsStayAligned(t *testing.T) {
 				"distributed_diagnostics.live_shadow_mirror_scorecard",
 			},
 		},
+		{
+			path: "docs/reports/live-shadow-runs/20260313T085655Z/README.md",
+			substrings: []string{
+				"OPE-266` / `BIG-PAR-092",
+				"live-shadow-comparison-follow-up-digest.md",
+				"OPE-254` / `BIG-PAR-088",
+				"rollback-safeguard-follow-up-digest.md",
+			},
+		},
 	}
 
 	for _, tc := range cases {
