@@ -1,16 +1,18 @@
 # BigClaw Go Mainline Cutover Handoff
 
-This note captures the final merge-readiness handoff for the completed
-`symphony/BIG-GOM-302` branch.
+This note captures the final merged handoff for the completed Go-mainline
+cutover set.
 
 ## Branch state
 
-- Branch: `symphony/BIG-GOM-302`
+- Historical cutover branch: `symphony/BIG-GOM-302`
 - Base: `main`
-- Current handoff branch head: `f29903e1654e4735ba6e327ed097f5aa97cdb0c7`
+- Final cutover branch head: `f29903e1654e4735ba6e327ed097f5aa97cdb0c7`
 - Pull request: `https://github.com/OpenAGIs/BigClaw/pull/138`
+- PR state: `MERGED` at `2026-03-21T17:30:02Z`
+- Merge commit: `94e1f455e48a8115249cfa82b047528c010dd495`
 - PR title:
-  - `BIG-GOM-301/BIG-GOM-302/BIG-GOM-303/BIG-GOM-304/BIG-GOM-305/BIG-GOM-306/BIG-GOM-307/BIG-GOM-308: complete Go mainline cutover`
+  - `BIG-GOM-301/BIG-GOM-302/BIG-GOM-303/BIG-GOM-304/BIG-GOM-305/BIG-GOM-306/BIG-GOM-307/BIG-GOM-308/BIG-GOM-309/BIG-GOM-310: complete Go mainline cutover`
 
 ## Local tracker
 
@@ -31,6 +33,9 @@ This note captures the final merge-readiness handoff for the completed
   contract surfaces required by the cutover plan.
 - Risk, policy, orchestration, reporting, control-center, repo collaboration,
   tooling, and Python-retirement slices are closed in the local tracker.
+- The repo-native cutover PR is merged on `main`; later `BIG-PAR-*` slices now
+  represent follow-up hardening and tracker hygiene rather than missing
+  Go-mainline ownership work.
 - The default mainline posture is Go-first, with remaining Python entrypoints
   marked as migration-only compatibility shims.
 

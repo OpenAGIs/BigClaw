@@ -54,7 +54,8 @@
       "BIG-PAR-246",
       "BIG-PAR-247",
       "BIG-PAR-248",
-      "BIG-PAR-249"
+      "BIG-PAR-249",
+      "BIG-PAR-250"
     ],
     "active": [],
     "standby": []
@@ -96,7 +97,8 @@
     "BIG-PAR-246",
     "BIG-PAR-247",
     "BIG-PAR-248",
-    "BIG-PAR-249"
+    "BIG-PAR-249",
+    "BIG-PAR-250"
   ],
   "issues": [
     {
@@ -318,6 +320,12 @@
     {
       "identifier": "BIG-PAR-249",
       "title": "Refresh queue reliability references after 10k proof",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-250",
+      "title": "Refresh Go-mainline handoff note for merged cutover state",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }
