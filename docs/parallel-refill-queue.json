@@ -61,11 +61,10 @@
       "BIG-PAR-253",
       "BIG-PAR-254",
       "BIG-PAR-255",
-      "BIG-PAR-256"
-    ],
-    "active": [
+      "BIG-PAR-256",
       "BIG-PAR-257"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -384,7 +383,7 @@
       "identifier": "BIG-PAR-257",
       "title": "Align continuation gate JSON follow-up metadata",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

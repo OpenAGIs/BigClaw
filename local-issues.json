@@ -2187,6 +2187,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-257` after aligning the machine-readable continuation policy gate reviewer metadata with the authoritative continuation follow-up lane identifier and extending regression coverage for that payload.\n\nWhat changed:\n- Updated `bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json` so its reviewer path now carries the authoritative `OPE-271` / `BIG-PAR-082` issue metadata alongside the digest path.\n- Extended `bigclaw-go/internal/regression/runtime_report_followup_docs_test.go` with a JSON assertion that keeps the continuation policy gate reviewer metadata aligned with the live validation index JSON and markdown reviewer docs.\n- Re-ran the full `internal/regression` package to confirm the new machine-readable policy gate check passes alongside the existing runtime-report coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `2a108ad78fe8a4de92c34c8ce94d425ede4857ae` matches remote SHA `2a108ad78fe8a4de92c34c8ce94d425ede4857ae` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `2a108ad78fe8a4de92c34c8ce94d425ede4857ae`\n\nCommit: `2a108ad78fe8a4de92c34c8ce94d425ede4857ae`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180.",
+          "created_at": "2026-03-23T05:17:10Z"
+        }
+      ],
       "created_at": "2026-03-23T05:11:57Z",
       "description": "Add regression coverage for the machine-readable validation bundle continuation policy gate reviewer-path payload and align it with the authoritative OPE-271 / BIG-PAR-082 follow-up lane identifier used by the live validation index JSON and markdown reviewer docs.",
       "id": "big-par-257",
@@ -2195,9 +2202,9 @@
         "documentation"
       ],
       "priority": 4,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Align continuation gate JSON follow-up metadata",
-      "updated_at": "2026-03-23T05:11:57Z"
+      "updated_at": "2026-03-23T05:17:10Z"
     }
   ]
 }
