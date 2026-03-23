@@ -44,4 +44,5 @@ In the runtime capability matrix, this shared-queue result is the current `live_
   caveats.
 - The two coordination follow-up digests most directly tied to this report are
   `docs/reports/cross-process-coordination-boundary-digest.md` and
+  `OPE-271` / `BIG-PAR-082` in
   `docs/reports/validation-bundle-continuation-digest.md`.
