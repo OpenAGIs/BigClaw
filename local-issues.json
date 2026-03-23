@@ -2696,6 +2696,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added `bigclaw-go/internal/regression/broker_bootstrap_review_summary_test.go` to pin the checked-in broker bootstrap review summary: contract-only posture, bootstrap runtime knobs, missing broker config signals, and linked rollout/operator docs now have dedicated regression coverage. Validation: `cd bigclaw-go && go test ./internal/regression -run TestBrokerBootstrapReviewSummaryStaysAligned` -> ok; `cd bigclaw-go && go test ./internal/regression` -> ok; `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `6e878cac4b4c57b9358e45f2291a61042c88528e` matches remote SHA `6e878cac4b4c57b9358e45f2291a61042c88528e` with `status: ok` and `synced: true`; `git log -1 --stat` -> captured for commit `6e878cac4b4c57b9358e45f2291a61042c88528e`. Commit SHA: `6e878cac4b4c57b9358e45f2291a61042c88528e`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-275 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-23T15:40:25Z"
+        }
+      ],
       "created_at": "2026-03-23T15:38:13Z",
       "description": "Add regression coverage for bigclaw-go/docs/reports/broker-bootstrap-review-summary.json so bootstrap posture, canonical summary pointers, runtime status, and linked reviewer artifacts stay aligned with the checked-in broker bootstrap review surface.",
       "id": "big-par-276",
@@ -2705,9 +2712,9 @@
         "broker-bootstrap"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add broker bootstrap review summary regression coverage",
-      "updated_at": "2026-03-23T15:38:13Z"
+      "updated_at": "2026-03-23T15:40:25Z"
     }
   ]
 }
