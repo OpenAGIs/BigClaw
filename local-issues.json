@@ -2103,6 +2103,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-253` after adding regression coverage for the remaining migration and validation follow-up lanes and aligning their reviewer-facing issue identifiers.\n\nWhat changed:\n- Added `bigclaw-go/internal/regression/followup_lane_docs_test.go` to keep the production corpus, subscriber takeover, validation bundle continuation, review readiness, issue coverage, and workspace gap-analysis references aligned.\n- Updated `bigclaw-go/docs/reports/review-readiness.md` and `bigclaw-go/docs/reports/issue-coverage.md` to carry the authoritative `OPE-268` / `BIG-PAR-079`, `OPE-269` / `BIG-PAR-080`, and `OPE-271` / `BIG-PAR-082` follow-up identifiers.\n- Re-ran the full `internal/regression` package to confirm the new lane-alignment check passes alongside the existing doc/regression coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `a8a53e524d311d3fe1001ac1fa89a7c7ce298e1b` matches remote SHA `a8a53e524d311d3fe1001ac1fa89a7c7ce298e1b` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `a8a53e524d311d3fe1001ac1fa89a7c7ce298e1b`\n\nCommit: `a8a53e524d311d3fe1001ac1fa89a7c7ce298e1b`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180.",
+          "created_at": "2026-03-23T04:53:25Z"
+        }
+      ],
       "created_at": "2026-03-23T04:49:24Z",
       "description": "Add a regression that keeps the production corpus, subscriber takeover, and validation bundle continuation follow-up docs aligned across the canonical digests, gap analysis, review readiness, and issue coverage summaries; patch any missing OPE-268 / BIG-PAR-079, OPE-269 / BIG-PAR-080, and OPE-271 / BIG-PAR-082 references the new check exposes.",
       "id": "big-par-253",
@@ -2111,9 +2118,9 @@
         "documentation"
       ],
       "priority": 4,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add migration and validation follow-up doc regression coverage",
-      "updated_at": "2026-03-23T04:49:24Z"
+      "updated_at": "2026-03-23T04:53:25Z"
     }
   ]
 }
