@@ -67,7 +67,9 @@
       "BIG-PAR-259",
       "BIG-PAR-260"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-261"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -118,7 +120,8 @@
     "BIG-PAR-257",
     "BIG-PAR-258",
     "BIG-PAR-259",
-    "BIG-PAR-260"
+    "BIG-PAR-260",
+    "BIG-PAR-261"
   ],
   "issues": [
     {
@@ -408,6 +411,12 @@
       "title": "Align live shadow bundle follow-up IDs",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-261",
+      "title": "Align migration readiness live-shadow follow-up ID",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
