@@ -2289,6 +2289,20 @@
       "state": "Done",
       "title": "Align migration readiness live-shadow follow-up ID",
       "updated_at": "2026-03-23T05:43:25Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T05:49:18Z",
+      "description": "Add regression coverage for the canonical parallel follow-up index so the expected lane rows, digest paths, and companion evidence links stay aligned with the checked-in follow-up digests and rollout contracts.",
+      "id": "big-par-262",
+      "identifier": "BIG-PAR-262",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "In Progress",
+      "title": "Add canonical follow-up index regression coverage",
+      "updated_at": "2026-03-23T05:49:18Z"
     }
   ]
 }

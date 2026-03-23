@@ -416,6 +416,12 @@
       "title": "Align migration readiness live-shadow follow-up ID",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-262",
+      "title": "Add canonical follow-up index regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
