@@ -2674,6 +2674,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added `bigclaw-go/internal/regression/live_shadow_index_test.go` to pin the checked-in `docs/reports/live-shadow-index.json` reviewer surface: latest bundle and artifact paths, freshness entries, parity rollup, matrix trace pointers, closeout commands, recent-run navigation, and drift-rollup metadata.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestLiveShadowIndexStaysAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `4b7aa6d0c32ae953f5f3e5a9610512cda6c261be` matches remote SHA `4b7aa6d0c32ae953f5f3e5a9610512cda6c261be` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `4b7aa6d0c32ae953f5f3e5a9610512cda6c261be`\n\nCommit SHA: `4b7aa6d0c32ae953f5f3e5a9610512cda6c261be`\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-277 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-23T15:37:38Z"
+        }
+      ],
       "created_at": "2026-03-23T15:31:24Z",
       "description": "Add regression coverage for bigclaw-go/docs/reports/live-shadow-index.json so the checked-in live shadow reviewer entrypoint stays aligned with bundle paths, rollback navigation, drift rollup metadata, and recent-run pointers.",
       "id": "big-par-277",
@@ -2683,9 +2690,9 @@
         "live-shadow"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add live shadow index regression coverage",
-      "updated_at": "2026-03-23T15:33:34Z"
+      "updated_at": "2026-03-23T15:37:38Z"
     }
   ]
 }
