@@ -2671,6 +2671,69 @@
       "state": "Done",
       "title": "Add shared queue report regression coverage",
       "updated_at": "2026-03-23T15:07:15Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added observability runtime regression coverage in bigclaw-go/internal/regression/observability_runtime_surface_test.go and extended telemetry evidence-pack decoding so the repo now pins reviewer-facing links between the Go observability report, tracing follow-up digest, telemetry follow-up digest, distributed export surface, and telemetry reviewer checks. Validation: cd bigclaw-go && go test ./internal/regression.",
+          "created_at": "2026-03-23T15:41:02Z"
+        }
+      ],
+      "created_at": "2026-03-23T15:30:43Z",
+      "description": "Add regression coverage for the tracing-backend and telemetry follow-up surfaces so checked-in digests, evidence packs, and reviewer-facing observability links cannot drift silently from the repo-native distributed diagnostics baseline.",
+      "id": "big-par-275",
+      "identifier": "BIG-PAR-275",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add observability follow-up regression coverage",
+      "updated_at": "2026-03-23T15:41:30Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added coordination contract-only regression coverage in bigclaw-go/internal/regression/coordination_contract_surface_test.go so the repo now pins cross-process coordination evidence inputs, summary counters, current ceiling and next-runtime hooks, plus field-level contract assertions for partitioned_topic_routing and broker_backed_subscriber_ownership. Validation: cd bigclaw-go && go test ./internal/regression.",
+          "created_at": "2026-03-23T15:41:24Z"
+        }
+      ],
+      "created_at": "2026-03-23T15:30:51Z",
+      "description": "Add regression coverage for the cross-process coordination capability surface so contract-only targets, evidence links, and reviewer-facing readiness distinctions stay aligned with the checked-in coordination follow-up baseline.",
+      "id": "big-par-276",
+      "identifier": "BIG-PAR-276",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add coordination contract-only regression coverage",
+      "updated_at": "2026-03-23T15:41:39Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added live-shadow rollback bundle regression coverage in bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go so the repo now pins canonical-vs-bundled live-shadow scorecards, bundle summary/index linkage, referenced artifact paths, rollback surface parity, and closeout command invariants. Validation: cd bigclaw-go && go test ./internal/regression.",
+          "created_at": "2026-03-23T15:41:24Z"
+        }
+      ],
+      "created_at": "2026-03-23T15:30:59Z",
+      "description": "Add regression coverage for the live-shadow scorecard and rollback-trigger bundle surfaces so canonical summary paths, reviewer links, corpus-coverage signals, and manual rollback posture cannot drift silently from migration diagnostics outputs.",
+      "id": "big-par-277",
+      "identifier": "BIG-PAR-277",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add live-shadow rollback bundle regression coverage",
+      "updated_at": "2026-03-23T15:41:48Z"
     }
   ]
 }

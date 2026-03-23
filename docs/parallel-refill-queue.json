@@ -70,12 +70,16 @@
       "BIG-PAR-268",
       "BIG-PAR-269",
       "BIG-PAR-270",
+      "BIG-PAR-271",
       "BIG-PAR-272",
       "BIG-PAR-273",
-      "BIG-PAR-274"
+      "BIG-PAR-274",
+      "BIG-PAR-275",
+      "BIG-PAR-276",
+      "BIG-PAR-277"
     ],
-    "active": [
-    ]
+    "active": [],
+    "standby": []
   },
   "issue_order": [
     "BIG-GOM-301",
@@ -133,7 +137,10 @@
     "BIG-PAR-271",
     "BIG-PAR-272",
     "BIG-PAR-273",
-    "BIG-PAR-274"
+    "BIG-PAR-274",
+    "BIG-PAR-275",
+    "BIG-PAR-276",
+    "BIG-PAR-277"
   ],
   "issues": [
     {
@@ -499,6 +506,24 @@
     {
       "identifier": "BIG-PAR-274",
       "title": "Add shared queue report regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-275",
+      "title": "Add observability follow-up regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-276",
+      "title": "Add coordination contract-only regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-277",
+      "title": "Add live-shadow rollback bundle regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }

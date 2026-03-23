@@ -48,10 +48,10 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 23, 2026:
-  - active slices: `BIG-PAR-270` — Add live validation summary regression coverage; `BIG-PAR-271` — Add broker validation summary regression coverage
-  - standby slices: `BIG-PAR-269` — Add canonical validation matrix regression coverage; `BIG-PAR-272` — Add shared queue companion summary regression coverage
-  - recently completed slices: `BIG-PAR-255` — Align live validation bundle follow-up IDs; `BIG-PAR-256` — Align live validation index JSON follow-up metadata; `BIG-PAR-257` — Align continuation gate JSON follow-up metadata; `BIG-PAR-258` — Align rollback trigger JSON follow-up metadata; `BIG-PAR-259` — Align live shadow JSON follow-up metadata; `BIG-PAR-260` — Align live shadow bundle follow-up IDs; `BIG-PAR-261` — Align migration readiness live-shadow follow-up ID; `BIG-PAR-268` — Rewire readiness reports to canonical follow-up index
-  - queue status: `queue_runnable=4`, `target_in_progress=2`
+  - active slices: none
+  - standby slices: none
+  - recently completed slices: `BIG-PAR-270` — Add live validation summary regression coverage; `BIG-PAR-271` — Add broker validation summary regression coverage; `BIG-PAR-272` — Add shared queue companion summary regression coverage; `BIG-PAR-273` — Add live validation index regression coverage; `BIG-PAR-274` — Add shared queue report regression coverage; `BIG-PAR-275` — Add observability follow-up regression coverage; `BIG-PAR-276` — Add coordination contract-only regression coverage; `BIG-PAR-277` — Add live-shadow rollback bundle regression coverage
+  - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -108,6 +108,15 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-260` — Align live shadow bundle follow-up IDs
   - `BIG-PAR-261` — Align migration readiness live-shadow follow-up ID
   - `BIG-PAR-268` — Rewire readiness reports to canonical follow-up index
+  - `BIG-PAR-269` — Add canonical validation matrix regression coverage
+  - `BIG-PAR-270` — Add live validation summary regression coverage
+  - `BIG-PAR-271` — Add broker validation summary regression coverage
+  - `BIG-PAR-272` — Add shared queue companion summary regression coverage
+  - `BIG-PAR-273` — Add live validation index regression coverage
+  - `BIG-PAR-274` — Add shared queue report regression coverage
+  - `BIG-PAR-275` — Add observability follow-up regression coverage
+  - `BIG-PAR-276` — Add coordination contract-only regression coverage
+  - `BIG-PAR-277` — Add live-shadow rollback bundle regression coverage
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -170,3 +179,8 @@ longer waits on Linear to keep issue execution moving.
 52. `BIG-PAR-270`
 53. `BIG-PAR-271`
 54. `BIG-PAR-272`
+55. `BIG-PAR-273`
+56. `BIG-PAR-274`
+57. `BIG-PAR-275`
+58. `BIG-PAR-276`
+59. `BIG-PAR-277`

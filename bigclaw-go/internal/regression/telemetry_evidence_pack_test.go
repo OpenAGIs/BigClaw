@@ -33,6 +33,11 @@ type telemetryEvidencePack struct {
 		CurrentRuntimePosture string   `json:"current_runtime_posture"`
 		IntendedProduction    []string `json:"intended_production_posture"`
 	} `json:"reviewer_posture"`
+	ReviewerChecks []struct {
+		Name     string `json:"name"`
+		Status   string `json:"status"`
+		Evidence string `json:"evidence"`
+	} `json:"reviewer_checks"`
 }
 
 func TestTelemetrySamplingCardinalityEvidencePack(t *testing.T) {
