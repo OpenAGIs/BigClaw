@@ -2671,6 +2671,21 @@
       "state": "Done",
       "title": "Add shared queue report regression coverage",
       "updated_at": "2026-03-23T15:07:15Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T15:30:55Z",
+      "description": "Add regression coverage for bigclaw-go/docs/reports/provider-live-handoff-isolation-evidence-pack.json so backend posture, replay/live isolation summary, scenario invariants, and linked reviewer artifacts stay aligned with the checked-in provider handoff evidence surface.",
+      "id": "big-par-275",
+      "identifier": "BIG-PAR-275",
+      "labels": [
+        "regression",
+        "provider-handoff"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add provider live handoff evidence pack regression coverage",
+      "updated_at": "2026-03-23T15:33:08Z"
     }
   ]
 }
