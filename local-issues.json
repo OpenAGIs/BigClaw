@@ -1943,6 +1943,11 @@
           "author": "codex",
           "body": "Closed `BIG-PAR-247` after teaching `bigclawctl refill` to keep the human-readable refill queue markdown derived from the canonical queue state.\n\nWhat changed:\n- `bigclaw-go/internal/refill/queue_markdown.go` now renders and atomically writes `docs/parallel-refill-queue.md` from `docs/parallel-refill-queue.json` state, including active/standby/recently-completed slices and canonical refill order.\n- `bigclaw-go/cmd/bigclawctl/main.go` now accepts `--markdown` for both `refill` and `refill seed`, writes the markdown companion during seeding, and refreshes it on local `refill --apply` runs after queue state changes.\n- `bigclaw-go/internal/refill/queue_test.go`, `bigclaw-go/cmd/bigclawctl/main_test.go`, and `docs/parallel-refill-queue.md` now cover and reflect the generated markdown sync path.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-247]`, `queue_runnable=1`, `markdown_path=docs/parallel-refill-queue.md`) before closeout\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `b8b472f6af641ecd1dcaf4e7d99e3e474d6c96c9` matches remote SHA `b8b472f6af641ecd1dcaf4e7d99e3e474d6c96c9` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `b8b472f6af641ecd1dcaf4e7d99e3e474d6c96c9`\n\nCommit SHA: `b8b472f6af641ecd1dcaf4e7d99e3e474d6c96c9`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/176",
           "created_at": "2026-03-23T03:52:30Z"
+        },
+        {
+          "author": "codex",
+          "body": "Status refresh: PR `#176` is now merge-ready on the final `BIG-PAR-247` head, and the tracker closeout commit is also synced upstream.\n\nValidation:\n- `gh pr view 176 --repo OpenAGIs/BigClaw --json url,title,state,mergeStateStatus,statusCheckRollup` -> `OPEN` with `mergeStateStatus: CLEAN` and successful completed `test` check\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `956afdd246866e3d5f5507891b572f15991a2b15` matches remote SHA `956afdd246866e3d5f5507891b572f15991a2b15` with `status: ok` and `synced: true`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `active_in_progress: []`, `candidates: []`, `queue_drained: true`\n- `git log -1 --stat` -> captured for commit `956afdd246866e3d5f5507891b572f15991a2b15`\n\nCommit SHA: `956afdd246866e3d5f5507891b572f15991a2b15`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/176",
+          "created_at": "2026-03-23T04:00:00Z"
         }
       ],
       "created_at": "2026-03-23T03:43:23Z",
@@ -1958,7 +1963,7 @@
       "priority": 3,
       "state": "Done",
       "title": "bigclawctl refill: sync queue markdown from canonical state",
-      "updated_at": "2026-03-23T03:52:30Z"
+      "updated_at": "2026-03-23T04:00:00Z"
     }
   ]
 }
