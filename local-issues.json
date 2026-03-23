@@ -2671,6 +2671,29 @@
       "state": "Done",
       "title": "Add shared queue report regression coverage",
       "updated_at": "2026-03-23T15:07:15Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Aligned the checked-in live validation bundle's broker reviewer artifacts with the canonical surfaces by restoring the missing `broker-bootstrap-review-summary.json`, expanding the bundled `broker-validation-summary.json` to carry the same bootstrap and readiness fields as the canonical summary, and adding `bigclaw-go/internal/regression/broker_bundle_summary_test.go` so bundled broker summaries cannot drift silently again. Validation: `cd bigclaw-go && go test ./internal/regression -run TestBrokerBundleSummaryStaysAligned` -> ok; `cd bigclaw-go && go test ./internal/regression` -> ok; `cd bigclaw-go && go test ./...` -> ok; `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `7d43331971a255beaec421ab4493ee9957ad9dea` matches remote SHA `7d43331971a255beaec421ab4493ee9957ad9dea` with `status: ok` and `synced: true`; `git log -1 --stat` -> captured for commit `7d43331971a255beaec421ab4493ee9957ad9dea` with bundled broker report artifacts and regression test in the stat output. Commit SHA: `7d43331971a255beaec421ab4493ee9957ad9dea`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-276 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-23T15:38:59Z"
+        }
+      ],
+      "created_at": "2026-03-23T15:31:08Z",
+      "description": "Restore the bundled broker validation reviewer artifacts inside the checked-in live validation run and add regression coverage so the bundle summary and bootstrap summary stay aligned with the canonical broker readiness surfaces.",
+      "id": "big-par-276",
+      "identifier": "BIG-PAR-276",
+      "labels": [
+        "regression",
+        "validation-bundle",
+        "broker"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Align bundled broker validation summaries with canonical artifacts",
+      "updated_at": "2026-03-23T15:38:59Z"
     }
   ]
 }
