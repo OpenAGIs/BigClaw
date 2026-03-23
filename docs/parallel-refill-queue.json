@@ -69,7 +69,9 @@
       "BIG-PAR-261",
       "BIG-PAR-268"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-270"
+    ],
     "standby": [
       "BIG-PAR-269"
     ]
@@ -125,7 +127,8 @@
     "BIG-PAR-260",
     "BIG-PAR-261",
     "BIG-PAR-268",
-    "BIG-PAR-269"
+    "BIG-PAR-269",
+    "BIG-PAR-270"
   ],
   "issues": [
     {
@@ -463,6 +466,12 @@
       "title": "Add canonical validation matrix regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Backlog"
+    },
+    {
+      "identifier": "BIG-PAR-270",
+      "title": "Add live validation summary regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

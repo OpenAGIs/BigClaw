@@ -2449,6 +2449,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Updated `bigclaw-go/docs/reports/parallel-validation-matrix.md` to add canonical follow-up routing for the checked-in validation lanes, and added `bigclaw-go/internal/regression/parallel_validation_matrix_docs_test.go` to pin the matrix commands, evidence paths, companion proof links, and follow-up entrypoint.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestParallelValidationMatrixDocsStayAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `c35e7d6b1104aebd9e2fb72a0d1548d2857fd65f` matches remote SHA `c35e7d6b1104aebd9e2fb72a0d1548d2857fd65f` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `c35e7d6b1104aebd9e2fb72a0d1548d2857fd65f`\n\nCommit SHA: `c35e7d6b1104aebd9e2fb72a0d1548d2857fd65f`\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-240 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-23T06:45:47Z"
+        }
+      ],
       "created_at": "2026-03-23T06:38:30Z",
       "description": "Add regression coverage for bigclaw-go/docs/reports/parallel-validation-matrix.md so lane commands, evidence paths, and companion proof pointers cannot drift silently from the checked-in validation surfaces.",
       "id": "big-par-269",
@@ -2457,9 +2464,23 @@
         "documentation"
       ],
       "priority": 4,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add canonical validation matrix regression coverage",
-      "updated_at": "2026-03-23T06:41:06Z"
+      "updated_at": "2026-03-23T06:45:47Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T06:46:57Z",
+      "description": "Add regression coverage for bigclaw-go/docs/reports/live-validation-summary.json so canonical lane report paths, closeout commands, broker summary paths, and shared-queue companion summary paths cannot drift silently from the checked-in validation bundle surface.",
+      "id": "big-par-270",
+      "identifier": "BIG-PAR-270",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "In Progress",
+      "title": "Add live validation summary regression coverage",
+      "updated_at": "2026-03-23T06:46:57Z"
     }
   ]
 }
