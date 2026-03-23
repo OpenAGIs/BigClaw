@@ -311,8 +311,8 @@ func TestRunRefillOnceLocalIssueStoreDetectsQueueDrainedWhenMetadataStale(t *tes
 	if !bytes.Contains(output, []byte(`docs/parallel-refill-queue.json`)) {
 		t.Fatalf("expected queue recovery hint, got %s", string(output))
 	}
-	if !bytes.Contains(output, []byte(`local-issues ensure`)) {
-		t.Fatalf("expected local issue ensure hint, got %s", string(output))
+	if !bytes.Contains(output, []byte(`refill seed`)) {
+		t.Fatalf("expected refill seed hint, got %s", string(output))
 	}
 }
 
@@ -364,6 +364,9 @@ func TestRunRefillHelpPrintsDefaultsAndExitsZero(t *testing.T) {
 	}
 	if !strings.Contains(text, "-sync-queue-status") {
 		t.Fatalf("expected sync-queue-status flag in help output, got %s", text)
+	}
+	if !strings.Contains(text, "seed") {
+		t.Fatalf("expected refill seed subcommand in help output, got %s", text)
 	}
 }
 
@@ -477,14 +480,20 @@ func TestRunRefillOnceLocalBackendSyncsQueueStatusFromLocalIssues(t *testing.T) 
 	if err := os.WriteFile(queuePath, []byte(`{
   "project": {"slug_id": "project-slug"},
   "policy": {
-    "target_in_progress": 1,
+    "target_in_progress": 2,
     "activate_state_name": "In Progress",
     "activate_state_id": "state-in-progress",
     "refill_states": ["Todo", "Backlog"]
   },
-  "issue_order": ["BIG-GOM-501"],
+  "recent_batches": {
+    "completed": [],
+    "active": ["BIG-GOM-501"],
+    "standby": []
+  },
+  "issue_order": ["BIG-GOM-501", "BIG-GOM-502"],
   "issues": [
-    {"identifier": "BIG-GOM-501", "title": "Queue metadata drift", "track": "Automation", "status": "Todo"}
+    {"identifier": "BIG-GOM-501", "title": "Queue metadata drift", "track": "Automation", "status": "Todo"},
+    {"identifier": "BIG-GOM-502", "title": "Standby seed", "track": "Automation", "status": "Todo"}
   ]
 }`), 0o644); err != nil {
 		t.Fatalf("write queue file: %v", err)
@@ -497,7 +506,8 @@ func TestRunRefillOnceLocalBackendSyncsQueueStatusFromLocalIssues(t *testing.T) 
 	storePath := filepath.Join(tempDir, "local-issues.json")
 	if err := os.WriteFile(storePath, []byte(`{
   "issues": [
-    {"id": "big-gom-501", "identifier": "BIG-GOM-501", "state": "Done"}
+    {"id": "big-gom-501", "identifier": "BIG-GOM-501", "state": "Done"},
+    {"id": "big-gom-502", "identifier": "BIG-GOM-502", "state": "Todo"}
   ]
 }`), 0o644); err != nil {
 		t.Fatalf("write local issue store: %v", err)
@@ -532,8 +542,17 @@ func TestRunRefillOnceLocalBackendSyncsQueueStatusFromLocalIssues(t *testing.T) 
 	if !bytes.Contains(body, []byte(`"status": "Done"`)) {
 		t.Fatalf("expected queue status update, got %s", string(body))
 	}
+	if !bytes.Contains(body, []byte(`"completed": [`)) || !bytes.Contains(body, []byte(`"BIG-GOM-501"`)) {
+		t.Fatalf("expected recent batch completion sync, got %s", string(body))
+	}
+	if !bytes.Contains(body, []byte(`"standby": [`)) || !bytes.Contains(body, []byte(`"BIG-GOM-502"`)) {
+		t.Fatalf("expected recent batch standby sync, got %s", string(body))
+	}
 	if !bytes.Contains(output, []byte(`"queue_status_updates": 1`)) {
 		t.Fatalf("expected refill output to include queue status updates, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"queue_recent_batch_updates": 3`)) {
+		t.Fatalf("expected refill output to include recent batch updates, got %s", string(output))
 	}
 	if !bytes.Contains(output, []byte(`"queue_status_written": true`)) {
 		t.Fatalf("expected refill output to confirm write, got %s", string(output))
@@ -623,6 +642,68 @@ func TestRunRefillOnceUpdatesRecentBatchesFromLocalTracker(t *testing.T) {
 	}
 	if len(updated.RecentBatches.Standby) != 0 {
 		t.Fatalf("expected empty standby batches, got %v", updated.RecentBatches.Standby)
+	}
+}
+
+func TestRunRefillSeedCreatesQueueAndLocalIssue(t *testing.T) {
+	tempDir := t.TempDir()
+	queuePath := filepath.Join(tempDir, "queue.json")
+	if err := os.WriteFile(queuePath, []byte(`{
+  "project": {"slug_id": "project-slug"},
+  "policy": {
+    "target_in_progress": 2,
+    "activate_state_name": "In Progress",
+    "activate_state_id": "state-in-progress",
+    "refill_states": ["Todo", "Backlog"]
+  },
+  "recent_batches": {
+    "completed": [],
+    "active": [],
+    "standby": []
+  },
+  "issue_order": [],
+  "issues": []
+}`), 0o644); err != nil {
+		t.Fatalf("write queue file: %v", err)
+	}
+	storePath := filepath.Join(tempDir, "local-issues.json")
+
+	if err := runRefillSeed([]string{
+		"--repo", tempDir,
+		"--queue", queuePath,
+		"--local-issues", storePath,
+		"--identifier", "BIG-PAR-238",
+		"--title", "bigclawctl refill: seed queue entries from CLI",
+		"--description", "seed queue and tracker metadata from one command",
+		"--labels", "parallel,tooling,refill",
+		"--state", "Todo",
+		"--recent-batch", "active",
+		"--created-at", "2026-03-23T01:10:00Z",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run refill seed: %v", err)
+	}
+
+	queueBody, err := os.ReadFile(queuePath)
+	if err != nil {
+		t.Fatalf("read queue file: %v", err)
+	}
+	if !bytes.Contains(queueBody, []byte(`"identifier": "BIG-PAR-238"`)) {
+		t.Fatalf("expected queue issue record, got %s", string(queueBody))
+	}
+	if !bytes.Contains(queueBody, []byte(`"active": [`)) || !bytes.Contains(queueBody, []byte(`"BIG-PAR-238"`)) {
+		t.Fatalf("expected recent batch metadata, got %s", string(queueBody))
+	}
+
+	storeBody, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(storeBody, []byte(`"identifier": "BIG-PAR-238"`)) {
+		t.Fatalf("expected local issue record, got %s", string(storeBody))
+	}
+	if !bytes.Contains(storeBody, []byte(`"labels": [`)) || !bytes.Contains(storeBody, []byte(`"refill"`)) {
+		t.Fatalf("expected labels in local issue record, got %s", string(storeBody))
 	}
 }
 

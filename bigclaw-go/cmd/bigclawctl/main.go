@@ -315,51 +315,241 @@ func runWorkspace(args []string) error {
 	}
 }
 
-func runRefill(args []string) error {
+type refillFlags struct {
+	repoRoot         *string
+	queuePath        *string
+	localIssuesPath  *string
+	targetInProgress *int
+	watch            *bool
+	interval         *int
+	apply            *bool
+	syncQueueStatus  *bool
+	refreshURL       *string
+}
+
+type refillSeedFlags struct {
+	repoRoot         *string
+	queuePath        *string
+	localIssuesPath  *string
+	identifier       *string
+	title            *string
+	track            *string
+	description      *string
+	stateName        *string
+	priority         *int
+	labelsCSV        *string
+	assigned         *bool
+	createdAt        *string
+	recentBatch      *string
+	setStateIfExists *bool
+	asJSON           *bool
+}
+
+func newRefillFlagSet() (*flag.FlagSet, refillFlags) {
 	flags := flag.NewFlagSet("refill", flag.ContinueOnError)
-	repoRoot := flags.String("repo", "..", "repo root")
-	queuePath := flags.String("queue", "docs/parallel-refill-queue.json", "queue path")
-	localIssuesPath := flags.String("local-issues", "", "local issue store path")
-	targetInProgress := flags.Int("target-in-progress", -1, "override target")
-	watch := flags.Bool("watch", false, "watch")
-	interval := flags.Int("interval", 20, "interval")
-	apply := flags.Bool("apply", false, "apply")
-	syncQueueStatus := flags.Bool("sync-queue-status", false, "sync queue issue statuses from local tracker (local backend only; requires --apply to write)")
-	refreshURL := flags.String("refresh-url", "", "refresh url")
-	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl refill [flags]", args); err != nil {
+	return flags, refillFlags{
+		repoRoot:         flags.String("repo", "..", "repo root"),
+		queuePath:        flags.String("queue", "docs/parallel-refill-queue.json", "queue path"),
+		localIssuesPath:  flags.String("local-issues", "", "local issue store path"),
+		targetInProgress: flags.Int("target-in-progress", -1, "override target"),
+		watch:            flags.Bool("watch", false, "watch"),
+		interval:         flags.Int("interval", 20, "interval"),
+		apply:            flags.Bool("apply", false, "apply"),
+		syncQueueStatus:  flags.Bool("sync-queue-status", false, "sync queue issue statuses and recent batches from local tracker metadata (local backend only; requires --apply to write)"),
+		refreshURL:       flags.String("refresh-url", "", "refresh url"),
+	}
+}
+
+func newRefillSeedFlagSet() (*flag.FlagSet, refillSeedFlags) {
+	flags := flag.NewFlagSet("refill seed", flag.ContinueOnError)
+	return flags, refillSeedFlags{
+		repoRoot:         flags.String("repo", "..", "repo root"),
+		queuePath:        flags.String("queue", "docs/parallel-refill-queue.json", "queue path"),
+		localIssuesPath:  flags.String("local-issues", "", "local issue store path"),
+		identifier:       flags.String("identifier", "", "issue identifier (e.g. BIG-PAR-238)"),
+		title:            flags.String("title", "", "issue title"),
+		track:            flags.String("track", "Go Mainline Follow-ups", "queue track"),
+		description:      flags.String("description", "", "local issue description"),
+		stateName:        flags.String("state", "Todo", "state name"),
+		priority:         flags.Int("priority", 3, "priority (1=urgent, 4=low)"),
+		labelsCSV:        flags.String("labels", "", "comma-separated labels"),
+		assigned:         flags.Bool("assigned-to-worker", true, "assigned to worker"),
+		createdAt:        flags.String("created-at", "", "RFC3339 timestamp"),
+		recentBatch:      flags.String("recent-batch", "", "optional recent batch bucket (active|standby|completed)"),
+		setStateIfExists: flags.Bool("set-state-if-exists", false, "update the local issue state when the issue already exists"),
+		asJSON:           flags.Bool("json", false, "json"),
+	}
+}
+
+func runRefill(args []string) error {
+	if len(args) == 0 || isHelpToken(args[0]) {
+		printRefillUsage(os.Stdout)
+		return nil
+	}
+	if len(args[0]) > 0 && args[0][0] != '-' {
+		switch args[0] {
+		case "seed":
+			return runRefillSeed(args[1:])
+		default:
+			return fmt.Errorf("unknown refill subcommand: %s", args[0])
+		}
+	}
+
+	flags, options := newRefillFlagSet()
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl refill [flags]\n       bigclawctl refill seed [flags]", args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			_, _ = os.Stdout.WriteString(helpText)
 			return nil
 		}
 		return err
 	}
-	resolvedRepoRoot := absPath(*repoRoot)
-	resolvedQueuePath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *queuePath)
+	resolvedRepoRoot := absPath(*options.repoRoot)
+	resolvedQueuePath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *options.queuePath)
 	queue, err := refill.LoadQueue(resolvedQueuePath)
 	if err != nil {
 		return err
 	}
-	resolvedLocalIssuesPath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *localIssuesPath)
+	resolvedLocalIssuesPath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *options.localIssuesPath)
 	client, err := refillClientFromFlags(resolvedRepoRoot, resolvedLocalIssuesPath)
 	if err != nil {
 		return err
 	}
 	runOnce := func() error {
 		var override *int
-		if *targetInProgress >= 0 {
-			override = targetInProgress
+		if *options.targetInProgress >= 0 {
+			override = options.targetInProgress
 		}
-		return runRefillOnce(queue, client, *apply, *refreshURL, override, *syncQueueStatus, resolvedQueuePath, resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedLocalIssuesPath))
+		return runRefillOnce(queue, client, *options.apply, *options.refreshURL, override, *options.syncQueueStatus, resolvedQueuePath, resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedLocalIssuesPath))
 	}
-	if !*watch {
+	if !*options.watch {
 		return runOnce()
 	}
 	for {
 		if err := runOnce(); err != nil {
 			fmt.Fprintf(os.Stderr, "watcher error: %v\n", err)
 		}
-		time.Sleep(time.Duration(*interval) * time.Second)
+		time.Sleep(time.Duration(*options.interval) * time.Second)
 	}
+}
+
+func runRefillSeed(args []string) error {
+	flags, options := newRefillSeedFlagSet()
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl refill seed [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+
+	identifier := trim(*options.identifier)
+	if identifier == "" {
+		return errors.New("identifier is required")
+	}
+	title := trim(*options.title)
+	if title == "" {
+		return errors.New("title is required")
+	}
+	track := trim(*options.track)
+	if track == "" {
+		return errors.New("track is required")
+	}
+	stateName := trim(*options.stateName)
+	if stateName == "" {
+		stateName = "Todo"
+	}
+	when, err := parseOptionalTime(*options.createdAt)
+	if err != nil {
+		return err
+	}
+
+	resolvedRepoRoot := absPath(*options.repoRoot)
+	resolvedQueuePath := resolvePathAgainstRepoRoot(resolvedRepoRoot, *options.queuePath)
+	queue, err := refill.LoadQueue(resolvedQueuePath)
+	if err != nil {
+		return err
+	}
+	queueAction, orderAdded, err := queue.UpsertIssue(refill.IssueRecord{
+		Identifier: identifier,
+		Title:      title,
+		Track:      track,
+		Status:     stateName,
+	})
+	if err != nil {
+		return err
+	}
+	recentBatchUpdated := false
+	if trim(*options.recentBatch) != "" {
+		recentBatchUpdated, err = queue.SetRecentBatch(*options.recentBatch, identifier)
+		if err != nil {
+			return fmt.Errorf("set recent batch: %w", err)
+		}
+	}
+	if err := queue.Save(); err != nil {
+		return err
+	}
+
+	resolvedLocalIssuesPath := resolvedLocalIssueStorePath(resolvedRepoRoot, resolvePathAgainstRepoRoot(resolvedRepoRoot, *options.localIssuesPath))
+	localAction := "skipped"
+	localState := stateName
+	if trim(resolvedLocalIssuesPath) != "" {
+		store, err := refill.LoadLocalIssueStore(resolvedLocalIssuesPath)
+		if err != nil {
+			return err
+		}
+		if existing, found := store.FindIssue(identifier); found {
+			localAction = "exists"
+			localState = existing.State
+			if *options.setStateIfExists && existing.State != stateName {
+				localState, err = store.UpdateIssueState(identifier, stateName, when)
+				if err != nil {
+					return err
+				}
+				localAction = "updated"
+			}
+		} else {
+			labels := []string{}
+			for _, label := range splitCSV(*options.labelsCSV) {
+				if trimmed := trim(label); trimmed != "" {
+					labels = append(labels, trimmed)
+				}
+			}
+			created, err := store.CreateIssue(refill.LocalIssueCreateParams{
+				Identifier:       identifier,
+				Title:            title,
+				Description:      *options.description,
+				State:            stateName,
+				Priority:         *options.priority,
+				Labels:           labels,
+				AssignedToWorker: *options.assigned,
+				CreatedAt:        when,
+			})
+			if err != nil {
+				return err
+			}
+			localAction = "created"
+			localState = created.State
+		}
+	}
+
+	payload := map[string]any{
+		"status":             "ok",
+		"backend":            "local",
+		"issue":              identifier,
+		"state":              localState,
+		"queue_action":       queueAction,
+		"queue_order_added":  orderAdded,
+		"queue_path":         absPath(resolvedQueuePath),
+		"local_issue_action": localAction,
+	}
+	if trim(*options.recentBatch) != "" {
+		payload["recent_batch"] = trim(*options.recentBatch)
+		payload["recent_batch_updated"] = recentBatchUpdated
+	}
+	if trim(resolvedLocalIssuesPath) != "" {
+		payload["local_issues"] = absPath(resolvedLocalIssuesPath)
+	}
+	return emit(payload, *options.asJSON, 0)
 }
 
 func runLocalIssues(args []string) error {
@@ -853,15 +1043,28 @@ func parseOptionalTime(value string) (time.Time, error) {
 
 func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply bool, refreshURL string, targetOverride *int, syncQueueStatus bool, queuePath string, localIssuesPath string) error {
 	queueStatusUpdates := 0
+	queueRecentBatchUpdates := 0
 	queueStatusWritten := false
 	recentBatchesUpdated := false
 	recentBatchesWritten := false
-	if syncQueueStatus && client.backend() == "local" {
-		allIssues, err := client.fetchIssueStates(queue.ProjectSlug(), nil)
+	var allIssues []refill.TrackedIssue
+	var err error
+	if client.backend() == "local" {
+		allIssues, err = client.fetchIssueStates(queue.ProjectSlug(), nil)
 		if err != nil {
 			return err
 		}
-		queueStatusUpdates = queue.SyncStatusFromStates(refill.IssueStateMap(allIssues))
+	}
+	if syncQueueStatus && client.backend() == "local" {
+		issueStates := refill.IssueStateMap(allIssues)
+		queueStatusUpdates = queue.SyncStatusFromStates(issueStates)
+		queueRecentBatchUpdates = queue.SyncRecentBatchesFromStates(issueStates)
+		if apply && (queueStatusUpdates > 0 || queueRecentBatchUpdates > 0) {
+			if err := queue.Save(); err != nil {
+				return err
+			}
+			queueStatusWritten = true
+		}
 	}
 
 	refillStates := make([]string, 0, len(queue.RefillStates()))
@@ -869,21 +1072,18 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		refillStates = append(refillStates, state)
 	}
 	statesToFetch := append([]string{"In Progress"}, refillStates...)
+	issues := []refill.TrackedIssue{}
 	if client.backend() == "local" {
-		// Load the full local tracker state so Done issues are reflected even if queue metadata lags.
-		statesToFetch = nil
-	}
-	issues, err := client.fetchIssueStates(queue.ProjectSlug(), statesToFetch)
-	if err != nil {
-		return err
+		issues = allIssues
+	} else {
+		issues, err = client.fetchIssueStates(queue.ProjectSlug(), statesToFetch)
+		if err != nil {
+			return err
+		}
 	}
 	stateMap := refill.IssueStateMap(issues)
 	liveStateMap := stateMap
 	if client.backend() == "local" {
-		allIssues, err := client.fetchIssueStates(queue.ProjectSlug(), nil)
-		if err != nil {
-			return err
-		}
 		liveStateMap = refill.IssueStateMap(allIssues)
 		recentBatchesUpdated = queue.RefreshRecentBatchesFromStates(liveStateMap)
 	}
@@ -910,18 +1110,19 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		target = *targetOverride
 	}
 	payload := map[string]any{
-		"active_in_progress":     refill.SortedActive(issues),
-		"backend":                client.backend(),
-		"target_in_progress":     target,
-		"candidates":             candidates,
-		"mode":                   map[bool]string{true: "apply", false: "dry-run"}[apply],
-		"recent_batches_synced":  client.backend() == "local",
-		"recent_batches_updated": recentBatchesUpdated,
-		"recent_batches_written": recentBatchesWritten,
-		"queue_status_synced":    syncQueueStatus && client.backend() == "local",
-		"queue_status_updates":   queueStatusUpdates,
-		"queue_status_written":   queueStatusWritten,
-		"queue_path":             queuePath,
+		"active_in_progress":         refill.SortedActive(issues),
+		"backend":                    client.backend(),
+		"target_in_progress":         target,
+		"candidates":                 candidates,
+		"mode":                       map[bool]string{true: "apply", false: "dry-run"}[apply],
+		"recent_batches_synced":      client.backend() == "local",
+		"recent_batches_updated":     recentBatchesUpdated,
+		"recent_batches_written":     recentBatchesWritten,
+		"queue_status_synced":        syncQueueStatus && client.backend() == "local",
+		"queue_status_updates":       queueStatusUpdates,
+		"queue_recent_batch_updates": queueRecentBatchUpdates,
+		"queue_status_written":       queueStatusWritten,
+		"queue_path":                 queuePath,
 	}
 	if trim(localIssuesPath) != "" {
 		payload["local_issues_path"] = localIssuesPath
@@ -935,8 +1136,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 	if queueRunnable == 0 {
 		payload["warning"] = "refill queue drained: no runnable identifiers in docs/parallel-refill-queue.json"
 		payload["next_steps"] = []string{
-			"Add the next BIG-PAR identifiers to docs/parallel-refill-queue.json (issue_order + issues[] records).",
-			"Ensure matching tracker entries exist in local-issues.json (e.g. `bash scripts/ops/bigclawctl local-issues ensure --local-issues local-issues.json --identifier BIG-PAR-XXX --state Todo --json`).",
+			"Seed the next BIG-PAR identifiers with `bash scripts/ops/bigclawctl refill seed --local-issues local-issues.json --identifier BIG-PAR-XXX --title \"...\" --state Todo --recent-batch standby --json`, or add them manually to docs/parallel-refill-queue.json.",
 			"Optionally align queue metadata: `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status`.",
 		}
 	}
@@ -1077,6 +1277,14 @@ func parseFlagsWithHelp(flags *flag.FlagSet, usageLine string, args []string) (s
 		return buf.String(), err
 	}
 	return "", nil
+}
+
+func printRefillUsage(w io.Writer) {
+	flags, _ := newRefillFlagSet()
+	helpText, _ := parseFlagsWithHelp(flags, "usage: bigclawctl refill [flags]\n       bigclawctl refill seed [flags]", []string{"--help"})
+	_, _ = io.WriteString(w, helpText)
+	_, _ = io.WriteString(w, "\nsubcommands:\n")
+	_, _ = io.WriteString(w, "  seed    add or update a queue entry and matching local tracker issue\n")
 }
 
 func printRootUsage(w io.Writer) {

@@ -135,3 +135,92 @@ func TestParallelIssueQueueSavePreservesBlockedReasonAndRecentBatches(t *testing
 		t.Fatalf("expected recent_batches fields to persist, got %s", text)
 	}
 }
+
+func TestParallelIssueQueueUpsertIssueCreatesAndUpdatesQueueRecord(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-238"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-238", Title: "seed queue entry", Track: "Go Mainline Follow-ups", Status: "Todo"},
+			},
+		},
+	}
+
+	action, orderAdded, err := queue.UpsertIssue(IssueRecord{
+		Identifier: "BIG-PAR-239",
+		Title:      "sync recent batches",
+		Track:      "Go Mainline Follow-ups",
+		Status:     "Todo",
+	})
+	if err != nil {
+		t.Fatalf("upsert create: %v", err)
+	}
+	if action != "created" || !orderAdded {
+		t.Fatalf("expected created action with order add, got action=%s orderAdded=%v", action, orderAdded)
+	}
+	if len(queue.payload.Issues) != 2 || queue.payload.IssueOrder[len(queue.payload.IssueOrder)-1] != "BIG-PAR-239" {
+		t.Fatalf("expected queue append, got %+v", queue.payload)
+	}
+
+	action, orderAdded, err = queue.UpsertIssue(IssueRecord{
+		Identifier: "BIG-PAR-239",
+		Title:      "sync recent_batches metadata from local tracker",
+		Track:      "Go Mainline Follow-ups",
+		Status:     "In Progress",
+	})
+	if err != nil {
+		t.Fatalf("upsert update: %v", err)
+	}
+	if action != "updated" || orderAdded {
+		t.Fatalf("expected updated action without order add, got action=%s orderAdded=%v", action, orderAdded)
+	}
+	if queue.payload.Issues[1].Status != "In Progress" || queue.payload.Issues[1].Title != "sync recent_batches metadata from local tracker" {
+		t.Fatalf("expected queue record update, got %+v", queue.payload.Issues[1])
+	}
+}
+
+func TestParallelIssueQueueSyncRecentBatchesFromStates(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			Policy: struct {
+				TargetInProgress  int      `json:"target_in_progress"`
+				ActivateStateID   string   `json:"activate_state_id"`
+				ActivateStateName string   `json:"activate_state_name"`
+				RefillStates      []string `json:"refill_states"`
+				BlockedReason     string   `json:"blocked_reason,omitempty"`
+			}{
+				TargetInProgress:  2,
+				ActivateStateName: "In Progress",
+				RefillStates:      []string{"Todo", "Backlog"},
+			},
+			IssueOrder: []string{"BIG-PAR-235", "BIG-PAR-238", "BIG-PAR-239", "BIG-PAR-240"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-235", Status: "Todo"},
+				{Identifier: "BIG-PAR-238", Status: "Todo"},
+				{Identifier: "BIG-PAR-239", Status: "Todo"},
+				{Identifier: "BIG-PAR-240", Status: "Todo"},
+			},
+		},
+	}
+
+	updates := queue.SyncRecentBatchesFromStates(map[string]string{
+		"BIG-PAR-235": "Done",
+		"BIG-PAR-238": "In Progress",
+		"BIG-PAR-239": "In Progress",
+		"BIG-PAR-240": "Todo",
+	})
+	if updates != 3 {
+		t.Fatalf("expected three recent batch updates, got %d", updates)
+	}
+
+	snapshot := queue.RecentBatchesSnapshot()
+	if !stringSlicesEqual(snapshot.Completed, []string{"BIG-PAR-235"}) {
+		t.Fatalf("unexpected completed snapshot: %+v", snapshot)
+	}
+	if !stringSlicesEqual(snapshot.Active, []string{"BIG-PAR-238", "BIG-PAR-239"}) {
+		t.Fatalf("unexpected active snapshot: %+v", snapshot)
+	}
+	if !stringSlicesEqual(snapshot.Standby, []string{"BIG-PAR-240"}) {
+		t.Fatalf("unexpected standby snapshot: %+v", snapshot)
+	}
+}

@@ -51,8 +51,11 @@ longer waits on Linear to keep issue execution moving.
   - the Go-mainline cutover tranche is complete and merged to `main`
   - `BIG-PAR-220`, `BIG-PAR-221`, `BIG-PAR-222`, `BIG-PAR-223`, `BIG-PAR-224`, `BIG-PAR-225`, `BIG-PAR-226`, `BIG-PAR-227`, `BIG-PAR-228`, `BIG-PAR-229`, `BIG-PAR-230`, and `BIG-PAR-231` are now closed in the repo-native tracker
   - `BIG-PAR-234` closed: `bigclawctl` now supports root and subcommand `--help` with exit 0
-  - `BIG-PAR-241`, `BIG-PAR-242`, and `BIG-PAR-243` closed: local tracker writes now lock+reload safely, refill refreshes `recent_batches` from live tracker state, and local refill reads reload the tracker file between polls
-  - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` to confirm whether any additional `Todo` slices should be promoted
+  - `BIG-PAR-235`, `BIG-PAR-236`, and `BIG-PAR-237` are closed with 429 fanout mitigation plus refill/local-tracker recovery hardening
+  - `BIG-PAR-238`, `BIG-PAR-239`, and `BIG-PAR-240` are now closed with queue seeding, local-tracker `recent_batches` sync, and drained-batch recovery documentation
+  - `BIG-PAR-241`, `BIG-PAR-242`, `BIG-PAR-243`, `BIG-PAR-244`, and `BIG-PAR-245` are closed with tracker write locking, refill reload hardening, doc refresh, and branch PR setup
+  - `BIG-PAR-246` is the active merge-readiness slice for refreshing this branch against current `main`
+  - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status and `recent_batches` metadata aligned after branch updates
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
   - add the next `BIG-PAR-*` identifiers to `docs/parallel-refill-queue.json` (`issue_order` plus a matching `issues[]` record) and create matching `local-issues.json` tracker entries
@@ -96,7 +99,15 @@ longer waits on Linear to keep issue execution moving.
 20. `BIG-PAR-230`
 21. `BIG-PAR-231`
 22. `BIG-PAR-234`
-23. `BIG-PAR-241`
-24. `BIG-PAR-242`
-25. `BIG-PAR-243`
-26. `BIG-PAR-244`
+23. `BIG-PAR-235`
+24. `BIG-PAR-236`
+25. `BIG-PAR-237`
+26. `BIG-PAR-238`
+27. `BIG-PAR-239`
+28. `BIG-PAR-240`
+29. `BIG-PAR-241`
+30. `BIG-PAR-242`
+31. `BIG-PAR-243`
+32. `BIG-PAR-244`
+33. `BIG-PAR-245`
+34. `BIG-PAR-246`

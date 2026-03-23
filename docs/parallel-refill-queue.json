@@ -40,6 +40,12 @@
       "BIG-PAR-230",
       "BIG-PAR-231",
       "BIG-PAR-234",
+      "BIG-PAR-235",
+      "BIG-PAR-236",
+      "BIG-PAR-237",
+      "BIG-PAR-238",
+      "BIG-PAR-239",
+      "BIG-PAR-240",
       "BIG-PAR-241",
       "BIG-PAR-242",
       "BIG-PAR-243",
@@ -74,6 +80,12 @@
     "BIG-PAR-230",
     "BIG-PAR-231",
     "BIG-PAR-234",
+    "BIG-PAR-235",
+    "BIG-PAR-236",
+    "BIG-PAR-237",
+    "BIG-PAR-238",
+    "BIG-PAR-239",
+    "BIG-PAR-240",
     "BIG-PAR-241",
     "BIG-PAR-242",
     "BIG-PAR-243",
@@ -211,6 +223,42 @@
     {
       "identifier": "BIG-PAR-234",
       "title": "bigclawctl: support --help at root and subcommands",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-235",
+      "title": "cap workflow agent fanout after 429s",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-236",
+      "title": "harden local tracker recovery and serialization",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-237",
+      "title": "emit queue-drained recovery hints in refill output",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-238",
+      "title": "bigclawctl refill: seed queue entries from CLI",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-239",
+      "title": "bigclawctl refill: sync recent_batches metadata from local tracker",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-240",
+      "title": "Document queue seeding and drained-batch recovery workflow",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     },
