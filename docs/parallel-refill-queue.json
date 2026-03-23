@@ -83,9 +83,7 @@
       "BIG-PAR-283",
       "BIG-PAR-282"
     ],
-    "active": [
-      "BIG-PAR-284"
-    ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -574,7 +572,7 @@
       "identifier": "BIG-PAR-284",
       "title": "Add queue/runtime reliability report regression coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

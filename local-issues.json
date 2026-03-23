@@ -2873,6 +2873,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added queue/runtime reliability report regression coverage in `bigclaw-go/internal/regression/queue_runtime_reliability_docs_test.go` so the repo now pins the checked-in queue reliability, lease recovery, and state-machine validation reports to their cited automated evidence, dead-letter API surfaces, and runtime lifecycle claims. Validation: `cd bigclaw-go && go test ./internal/regression -run QueueRuntimeReliabilityDocs` -> ok; `cd bigclaw-go && go test ./internal/regression` -> ok; `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `3fea0042162351ac508f5707e6880e0c31f7bde9` matches remote SHA `3fea0042162351ac508f5707e6880e0c31f7bde9` with `status: ok` and `synced: true`; `git log -1 --stat` -> captured for commit `3fea0042162351ac508f5707e6880e0c31f7bde9` with the new regression test and tracker/queue metadata in the stat output. Commit SHA: `3fea0042162351ac508f5707e6880e0c31f7bde9`. PR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-284 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-24T00:33:00Z"
+        }
+      ],
       "created_at": "2026-03-23T16:26:10Z",
       "description": "Add regression coverage for the queue reliability, lease recovery, and state-machine validation reports so their cited automated evidence, API surfaces, and runtime lifecycle claims stay pinned to the checked-in queue/runtime test suite.",
       "id": "big-par-284",
@@ -2881,9 +2888,9 @@
         "documentation"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add queue/runtime reliability report regression coverage",
-      "updated_at": "2026-03-24T00:00:00Z"
+      "updated_at": "2026-03-24T00:33:00Z"
     }
   ]
 }
