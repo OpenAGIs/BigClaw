@@ -433,7 +433,7 @@
       "identifier": "BIG-PAR-264",
       "title": "Add runtime follow-up index regression coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
