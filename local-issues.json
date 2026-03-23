@@ -2292,6 +2292,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added `bigclaw-go/internal/regression/followup_index_docs_test.go` to pin the canonical `docs/reports/parallel-follow-up-index.md` table to the expected follow-up lanes, digest paths, companion evidence links, and usage guidance so the repo-native follow-up index cannot drift silently.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestParallelFollowUpIndexStaysAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `581c9f739548f040ddf8a8b080bc09c43f843de6` matches remote SHA `581c9f739548f040ddf8a8b080bc09c43f843de6` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `581c9f739548f040ddf8a8b080bc09c43f843de6`\n\nCommit SHA: `581c9f739548f040ddf8a8b080bc09c43f843de6`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180",
+          "created_at": "2026-03-23T05:52:37Z"
+        }
+      ],
       "created_at": "2026-03-23T05:49:18Z",
       "description": "Add regression coverage for the canonical parallel follow-up index so the expected lane rows, digest paths, and companion evidence links stay aligned with the checked-in follow-up digests and rollout contracts.",
       "id": "big-par-262",
@@ -2300,9 +2307,9 @@
         "documentation"
       ],
       "priority": 4,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add canonical follow-up index regression coverage",
-      "updated_at": "2026-03-23T05:49:18Z"
+      "updated_at": "2026-03-23T05:52:37Z"
     }
   ]
 }
