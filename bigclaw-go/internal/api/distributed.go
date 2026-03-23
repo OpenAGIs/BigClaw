@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+	"time"
 
 	"bigclaw-go/internal/control"
 	"bigclaw-go/internal/domain"
@@ -221,6 +222,8 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 			"task_id":    filters.TaskID,
 			"state":      filters.State,
 			"risk_level": filters.RiskLevel,
+			"since":      filters.Since,
+			"until":      filters.Until,
 			"limit":      filters.Limit,
 			"priority":   filters.Priority,
 		},
@@ -840,6 +843,12 @@ func distributedExportURL(filters controlCenterFilters) string {
 	if filters.RiskLevel != "" {
 		values.Set("risk_level", filters.RiskLevel)
 	}
+	if !filters.Since.IsZero() {
+		values.Set("since", filters.Since.UTC().Format(time.RFC3339))
+	}
+	if !filters.Until.IsZero() {
+		values.Set("until", filters.Until.UTC().Format(time.RFC3339))
+	}
 	if filters.Priority != nil {
 		values.Set("priority", fmt.Sprintf("%d", *filters.Priority))
 	}
@@ -857,7 +866,17 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	lines := []string{
 		"# BigClaw Distributed Diagnostics Report",
 		"",
-		fmt.Sprintf("Filters: team=%s project=%s task_id=%s state=%s risk_level=%s", firstNonEmpty(filters.Team, "all"), firstNonEmpty(filters.Project, "all"), firstNonEmpty(filters.TaskID, "all"), firstNonEmpty(filters.State, "all"), firstNonEmpty(filters.RiskLevel, "all")),
+		fmt.Sprintf(
+			"Filters: team=%s project=%s task_id=%s state=%s risk_level=%s priority=%s since=%s until=%s",
+			firstNonEmpty(filters.Team, "all"),
+			firstNonEmpty(filters.Project, "all"),
+			firstNonEmpty(filters.TaskID, "all"),
+			firstNonEmpty(filters.State, "all"),
+			firstNonEmpty(filters.RiskLevel, "all"),
+			formatOptionalPriority(filters.Priority),
+			formatOptionalFilterTime(filters.Since),
+			formatOptionalFilterTime(filters.Until),
+		),
 		"",
 		"## Summary",
 		fmt.Sprintf("- Registered executors: %d", diagnostics.Summary.RegisteredExecutors),

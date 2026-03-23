@@ -57,6 +57,54 @@ func TestSubscriberLeaseCoordinatorRejectsActiveConflictAndAllowsExpiryTakeover(
 	}
 }
 
+func TestSubscriberLeaseCoordinatorRenewsInPlaceAndReleasesActiveLease(t *testing.T) {
+	for _, store := range testSubscriberLeaseStores(t) {
+		t.Run(store.name, func(t *testing.T) {
+			now := time.Unix(1700000000, 0)
+
+			lease, err := store.primary.Acquire(LeaseRequest{
+				GroupID:      "group-a",
+				SubscriberID: "sub-a",
+				ConsumerID:   "consumer-a",
+				TTL:          20 * time.Second,
+				Now:          now,
+			})
+			if err != nil {
+				t.Fatalf("acquire initial lease: %v", err)
+			}
+
+			renewed, err := store.primary.Acquire(LeaseRequest{
+				GroupID:      "group-a",
+				SubscriberID: "sub-a",
+				ConsumerID:   "consumer-a",
+				TTL:          45 * time.Second,
+				Now:          now.Add(10 * time.Second),
+			})
+			if err != nil {
+				t.Fatalf("renew lease: %v", err)
+			}
+			if renewed.LeaseToken != lease.LeaseToken {
+				t.Fatalf("expected renewal to retain lease token %q, got %q", lease.LeaseToken, renewed.LeaseToken)
+			}
+			if renewed.LeaseEpoch != lease.LeaseEpoch {
+				t.Fatalf("expected renewal to retain lease epoch %d, got %d", lease.LeaseEpoch, renewed.LeaseEpoch)
+			}
+			if !renewed.ExpiresAt.After(lease.ExpiresAt) {
+				t.Fatalf("expected renewal expiry to advance beyond %s, got %s", lease.ExpiresAt, renewed.ExpiresAt)
+			}
+
+			if err := store.primary.Release("group-a", "sub-a", "consumer-a", renewed.LeaseToken, renewed.LeaseEpoch); err != nil {
+				t.Fatalf("release active lease: %v", err)
+			}
+
+			current, ok := store.primary.Get("group-a", "sub-a")
+			if ok {
+				t.Fatalf("expected lease to be removed after release, got %+v", current)
+			}
+		})
+	}
+}
+
 func TestSubscriberLeaseCoordinatorFencesStaleWriterAndRollback(t *testing.T) {
 	for _, store := range testSubscriberLeaseStores(t) {
 		t.Run(store.name, func(t *testing.T) {
@@ -140,6 +188,38 @@ func TestSubscriberLeaseCoordinatorFencesStaleWriterAndRollback(t *testing.T) {
 				t.Fatalf("expected checkpoint offset 15, got %d", current.CheckpointOffset)
 			}
 		})
+	}
+}
+
+func TestSubscriberLeaseLifecycleModelCoversRenewReleaseAndFence(t *testing.T) {
+	model := SubscriberLeaseLifecycleModelSpec()
+	if model.RenewalMechanism == "" || model.ReleaseMechanism == "" {
+		t.Fatalf("expected lifecycle model semantics, got %+v", model)
+	}
+	if len(model.States) != 5 {
+		t.Fatalf("expected 5 lifecycle states, got %+v", model.States)
+	}
+
+	required := map[string]bool{
+		"idle|acquire|held":                     false,
+		"held|renew|held":                       false,
+		"held|commit|held":                      false,
+		"held|release|released":                 false,
+		"held|expire|expired":                   false,
+		"expired|takeover|held":                 false,
+		"held|stale_release_or_commit|fenced":   false,
+		"released|acquire|held":                 false,
+	}
+	for _, transition := range model.Transitions {
+		key := string(transition.From) + "|" + transition.Action + "|" + string(transition.To)
+		if _, ok := required[key]; ok {
+			required[key] = true
+		}
+	}
+	for key, seen := range required {
+		if !seen {
+			t.Fatalf("expected lifecycle transition %s in %+v", key, model.Transitions)
+		}
 	}
 }
 

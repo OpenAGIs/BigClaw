@@ -198,21 +198,41 @@ type controlCenterSummary struct {
 }
 
 type workerPoolSummary struct {
-	TotalWorkers  int             `json:"total_workers"`
-	ActiveWorkers int             `json:"active_workers"`
-	IdleWorkers   int             `json:"idle_workers"`
-	Workers       []worker.Status `json:"workers"`
+	TotalWorkers               int                  `json:"total_workers"`
+	ActiveWorkers              int                  `json:"active_workers"`
+	IdleWorkers                int                  `json:"idle_workers"`
+	TotalNodes                 int                  `json:"total_nodes"`
+	ActiveNodes                int                  `json:"active_nodes"`
+	IdleNodes                  int                  `json:"idle_nodes"`
+	DegradedNodes              int                  `json:"degraded_nodes"`
+	CapacityUtilizationPercent float64              `json:"capacity_utilization_percent"`
+	ExecutorDistribution       []auditFacetCount    `json:"executor_distribution,omitempty"`
+	Nodes                      []workerPoolNodeView `json:"nodes,omitempty"`
+	Workers                    []worker.Status      `json:"workers"`
+}
+
+type workerPoolNodeView struct {
+	NodeID                     string            `json:"node_id"`
+	TotalWorkers               int               `json:"total_workers"`
+	ActiveWorkers              int               `json:"active_workers"`
+	IdleWorkers                int               `json:"idle_workers"`
+	MissingHeartbeatWorkers    int               `json:"missing_heartbeat_workers"`
+	StaleWorkers               int               `json:"stale_workers"`
+	CapacityUtilizationPercent float64           `json:"capacity_utilization_percent"`
+	Health                     string            `json:"health"`
+	ExecutorDistribution       []auditFacetCount `json:"executor_distribution,omitempty"`
+	WorkerStates               map[string]int    `json:"worker_states,omitempty"`
 }
 
 type workerPoolHealthSummary struct {
-	StaleAfterSeconds          int64    `json:"stale_after_seconds"`
-	WorkersWithHeartbeat       int      `json:"workers_with_heartbeat"`
-	WorkersMissingHeartbeat    int      `json:"workers_missing_heartbeat"`
-	StaleWorkers               int      `json:"stale_workers"`
-	StaleWorkerIDs             []string `json:"stale_worker_ids,omitempty"`
-	MissingHeartbeatWorkerIDs  []string `json:"missing_heartbeat_worker_ids,omitempty"`
-	OldestHeartbeatAgeSeconds  *int64   `json:"oldest_heartbeat_age_seconds,omitempty"`
-	NewestHeartbeatAgeSeconds  *int64   `json:"newest_heartbeat_age_seconds,omitempty"`
+	StaleAfterSeconds         int64    `json:"stale_after_seconds"`
+	WorkersWithHeartbeat      int      `json:"workers_with_heartbeat"`
+	WorkersMissingHeartbeat   int      `json:"workers_missing_heartbeat"`
+	StaleWorkers              int      `json:"stale_workers"`
+	StaleWorkerIDs            []string `json:"stale_worker_ids,omitempty"`
+	MissingHeartbeatWorkerIDs []string `json:"missing_heartbeat_worker_ids,omitempty"`
+	OldestHeartbeatAgeSeconds *int64   `json:"oldest_heartbeat_age_seconds,omitempty"`
+	NewestHeartbeatAgeSeconds *int64   `json:"newest_heartbeat_age_seconds,omitempty"`
 }
 
 type controlActionAuditEntry struct {
@@ -260,6 +280,8 @@ type controlCenterFilters struct {
 	TaskID     string
 	State      string
 	RiskLevel  string
+	Since      time.Time
+	Until      time.Time
 	Actor      string
 	Action     string
 	Owner      string
@@ -1215,6 +1237,8 @@ func (s *Server) handleV2ControlCenter(w http.ResponseWriter, r *http.Request) {
 			"task_id":     filters.TaskID,
 			"state":       filters.State,
 			"risk_level":  filters.RiskLevel,
+			"since":       filters.Since,
+			"until":       filters.Until,
 			"priority":    filters.Priority,
 			"limit":       filters.Limit,
 			"audit_limit": filters.AuditLimit,
@@ -1272,14 +1296,20 @@ func (s *Server) handleV2ControlCenterAudit(w http.ResponseWriter, r *http.Reque
 	response := map[string]any{
 		"authorization": authorization,
 		"filters": map[string]any{
-			"task_id":  filters.TaskID,
-			"team":     filters.Team,
-			"action":   filters.Action,
-			"actor":    filters.Actor,
-			"owner":    filters.Owner,
-			"reviewer": filters.Reviewer,
-			"scope":    filters.Scope,
-			"limit":    filters.AuditLimit,
+			"task_id":    filters.TaskID,
+			"team":       filters.Team,
+			"project":    filters.Project,
+			"state":      filters.State,
+			"risk_level": filters.RiskLevel,
+			"since":      filters.Since,
+			"until":      filters.Until,
+			"action":     filters.Action,
+			"actor":      filters.Actor,
+			"owner":      filters.Owner,
+			"reviewer":   filters.Reviewer,
+			"scope":      filters.Scope,
+			"priority":   filters.Priority,
+			"limit":      filters.AuditLimit,
 		},
 		"audit":          entries,
 		"audit_summary":  summarizeControlAudit(entries),
@@ -2349,6 +2379,20 @@ func parseOptionalTime(raw string) (time.Time, error) {
 	return time.Parse(time.RFC3339, raw)
 }
 
+func formatOptionalFilterTime(value time.Time) string {
+	if value.IsZero() {
+		return "all"
+	}
+	return value.UTC().Format(time.RFC3339)
+}
+
+func formatOptionalPriority(value *int) string {
+	if value == nil {
+		return "all"
+	}
+	return fmt.Sprintf("%d", *value)
+}
+
 func normalizedActor(actor string) string {
 	actor = strings.TrimSpace(actor)
 	if actor == "" {
@@ -2363,6 +2407,14 @@ func supportsQueueCancel(q queue.Queue) bool {
 }
 
 func parseControlCenterFilters(r *http.Request) (controlCenterFilters, error) {
+	since, err := parseOptionalTime(r.URL.Query().Get("since"))
+	if err != nil {
+		return controlCenterFilters{}, fmt.Errorf("invalid since value, expected RFC3339")
+	}
+	until, err := parseOptionalTime(r.URL.Query().Get("until"))
+	if err != nil {
+		return controlCenterFilters{}, fmt.Errorf("invalid until value, expected RFC3339")
+	}
 	priorityRaw := strings.TrimSpace(r.URL.Query().Get("priority"))
 	var priority *int
 	if priorityRaw != "" {
@@ -2386,6 +2438,8 @@ func parseControlCenterFilters(r *http.Request) (controlCenterFilters, error) {
 		TaskID:     strings.TrimSpace(r.URL.Query().Get("task_id")),
 		State:      strings.ToLower(strings.TrimSpace(r.URL.Query().Get("state"))),
 		RiskLevel:  strings.ToLower(strings.TrimSpace(r.URL.Query().Get("risk_level"))),
+		Since:      since,
+		Until:      until,
 		Actor:      strings.TrimSpace(r.URL.Query().Get("actor")),
 		Action:     normalizeActionName(r.URL.Query().Get("action")),
 		Owner:      strings.TrimSpace(r.URL.Query().Get("owner")),
@@ -2494,7 +2548,7 @@ func summarizeControlCenter(queueTasks []queueTaskOverview, deadLetters []domain
 
 func (s *Server) filteredActiveTakeovers(filters controlCenterFilters) []control.Takeover {
 	takeovers := s.Control.ActiveTakeovers()
-	if filters.Team == "" && filters.Project == "" && filters.TaskID == "" && filters.State == "" && filters.RiskLevel == "" && filters.Priority == nil {
+	if filters.Team == "" && filters.Project == "" && filters.TaskID == "" && filters.State == "" && filters.RiskLevel == "" && filters.Priority == nil && filters.Since.IsZero() && filters.Until.IsZero() {
 		return takeovers
 	}
 	filtered := make([]control.Takeover, 0, len(takeovers))
@@ -2518,6 +2572,9 @@ func (s *Server) controlActionAuditEntries(filters controlCenterFilters, authori
 		limit = filters.Limit
 	}
 	out := make([]controlActionAuditEntry, 0)
+	taskFilters := filters
+	taskFilters.Since = time.Time{}
+	taskFilters.Until = time.Time{}
 	for index := len(logs) - 1; index >= 0; index-- {
 		entry, ok := controlActionEntry(logs[index])
 		if !ok {
@@ -2541,7 +2598,13 @@ func (s *Server) controlActionAuditEntries(filters controlCenterFilters, authori
 		if filters.Reviewer != "" && !strings.EqualFold(entry.Reviewer, filters.Reviewer) {
 			continue
 		}
-		if filters.Team != "" || authorization.teamScoped() {
+		if !filters.Since.IsZero() && entry.Timestamp.Before(filters.Since) {
+			continue
+		}
+		if !filters.Until.IsZero() && entry.Timestamp.After(filters.Until) {
+			continue
+		}
+		if filters.Team != "" || filters.Project != "" || filters.State != "" || filters.RiskLevel != "" || filters.Priority != nil || authorization.teamScoped() {
 			if entry.TaskID == "" {
 				continue
 			}
@@ -2549,7 +2612,8 @@ func (s *Server) controlActionAuditEntries(filters controlCenterFilters, authori
 			if !ok {
 				continue
 			}
-			if filters.Team != "" && !strings.EqualFold(strings.TrimSpace(task.Metadata["team"]), filters.Team) {
+			takeover, takeoverOK := s.Control.TakeoverStatus(entry.TaskID)
+			if !matchesTaskFilters(task, effectiveTaskState(task.State, takeoverOrNil(takeover, takeoverOK)), taskFilters) {
 				continue
 			}
 			if err := s.authorizeTaskAccess(authorization, task); err != nil {
@@ -2716,6 +2780,18 @@ func matchesTaskFilters(task domain.Task, effectiveState domain.TaskState, filte
 	if filters.TaskID != "" && task.ID != filters.TaskID {
 		return false
 	}
+	if !filters.Since.IsZero() || !filters.Until.IsZero() {
+		anchor := taskAnchorTime(task)
+		if anchor.IsZero() {
+			return false
+		}
+		if !filters.Since.IsZero() && anchor.Before(filters.Since) {
+			return false
+		}
+		if !filters.Until.IsZero() && anchor.After(filters.Until) {
+			return false
+		}
+	}
 	if filters.Team != "" && !strings.EqualFold(strings.TrimSpace(task.Metadata["team"]), filters.Team) {
 		return false
 	}
@@ -2778,6 +2854,12 @@ func (s *Server) workerPoolSummary() *workerPoolSummary {
 		}
 	}
 	active := 0
+	nodeIndex := make(map[string]*workerPoolNodeView)
+	executorCounts := make(map[string]int)
+	now := time.Now()
+	if s.Now != nil {
+		now = s.Now()
+	}
 	for index := range snapshots {
 		if snapshots[index].WorkerID == "" {
 			snapshots[index].WorkerID = fmt.Sprintf("worker-%d", index+1)
@@ -2788,16 +2870,80 @@ func (s *Server) workerPoolSummary() *workerPoolSummary {
 		if snapshots[index].State == "leased" || snapshots[index].State == "running" {
 			active++
 		}
+		executorCounts[firstNonEmpty(string(snapshots[index].CurrentExecutor), "unassigned")]++
+		nodeID := firstNonEmpty(strings.TrimSpace(snapshots[index].NodeID), "unassigned")
+		node := nodeIndex[nodeID]
+		if node == nil {
+			node = &workerPoolNodeView{
+				NodeID:               nodeID,
+				ExecutorDistribution: []auditFacetCount{},
+				WorkerStates:         make(map[string]int),
+			}
+			nodeIndex[nodeID] = node
+		}
+		node.TotalWorkers++
+		node.WorkerStates[snapshots[index].State]++
+		if snapshots[index].State == "leased" || snapshots[index].State == "running" {
+			node.ActiveWorkers++
+		} else {
+			node.IdleWorkers++
+		}
+		if snapshots[index].LastHeartbeatAt.IsZero() {
+			node.MissingHeartbeatWorkers++
+		} else if workerHeartbeatAge(now, snapshots[index]) >= workerPoolStaleAfterDuration() {
+			node.StaleWorkers++
+		}
 	}
 	idle := len(snapshots) - active
 	if idle < 0 {
 		idle = 0
 	}
+	nodes := make([]workerPoolNodeView, 0, len(nodeIndex))
+	activeNodes := 0
+	idleNodes := 0
+	degradedNodes := 0
+	for _, node := range nodeIndex {
+		if node.TotalWorkers > 0 {
+			node.CapacityUtilizationPercent = float64(node.ActiveWorkers) / float64(node.TotalWorkers) * 100
+		}
+		executorCounts := make(map[string]int)
+		for _, status := range snapshots {
+			if firstNonEmpty(strings.TrimSpace(status.NodeID), "unassigned") != node.NodeID {
+				continue
+			}
+			executorCounts[firstNonEmpty(string(status.CurrentExecutor), "unassigned")]++
+		}
+		node.ExecutorDistribution = sortFacetCounts(executorCounts)
+		switch {
+		case node.MissingHeartbeatWorkers > 0 || node.StaleWorkers > 0:
+			node.Health = "degraded"
+			degradedNodes++
+		case node.ActiveWorkers > 0:
+			node.Health = "active"
+			activeNodes++
+		default:
+			node.Health = "idle"
+			idleNodes++
+		}
+		nodes = append(nodes, *node)
+	}
+	sort.SliceStable(nodes, func(i, j int) bool { return nodes[i].NodeID < nodes[j].NodeID })
+	capacityUtilizationPercent := 0.0
+	if len(snapshots) > 0 {
+		capacityUtilizationPercent = float64(active) / float64(len(snapshots)) * 100
+	}
 	return &workerPoolSummary{
-		TotalWorkers:  len(snapshots),
-		ActiveWorkers: active,
-		IdleWorkers:   idle,
-		Workers:       snapshots,
+		TotalWorkers:               len(snapshots),
+		ActiveWorkers:              active,
+		IdleWorkers:                idle,
+		TotalNodes:                 len(nodes),
+		ActiveNodes:                activeNodes,
+		IdleNodes:                  idleNodes,
+		DegradedNodes:              degradedNodes,
+		CapacityUtilizationPercent: capacityUtilizationPercent,
+		ExecutorDistribution:       sortFacetCounts(executorCounts),
+		Nodes:                      nodes,
+		Workers:                    snapshots,
 	}
 }
 
@@ -2805,8 +2951,7 @@ func workerPoolHealth(now time.Time, pool *workerPoolSummary) *workerPoolHealthS
 	if pool == nil {
 		return nil
 	}
-	// Default threshold: if a worker hasn't heartbeat in 5 minutes, surface it as stale in operator payloads.
-	staleAfter := 5 * time.Minute
+	staleAfter := workerPoolStaleAfterDuration()
 
 	withHeartbeat := 0
 	missingIDs := make([]string, 0)
@@ -2823,10 +2968,7 @@ func workerPoolHealth(now time.Time, pool *workerPoolSummary) *workerPoolHealthS
 			continue
 		}
 		withHeartbeat++
-		age := now.Sub(status.LastHeartbeatAt)
-		if age < 0 {
-			age = 0
-		}
+		age := workerHeartbeatAge(now, status)
 		seconds := int64(age.Seconds())
 		if oldestSeconds == nil || seconds > *oldestSeconds {
 			value := seconds
@@ -2854,4 +2996,19 @@ func workerPoolHealth(now time.Time, pool *workerPoolSummary) *workerPoolHealthS
 		OldestHeartbeatAgeSeconds: oldestSeconds,
 		NewestHeartbeatAgeSeconds: newestSeconds,
 	}
+}
+
+func workerPoolStaleAfterDuration() time.Duration {
+	return 5 * time.Minute
+}
+
+func workerHeartbeatAge(now time.Time, status worker.Status) time.Duration {
+	if status.LastHeartbeatAt.IsZero() {
+		return 0
+	}
+	age := now.Sub(status.LastHeartbeatAt)
+	if age < 0 {
+		return 0
+	}
+	return age
 }

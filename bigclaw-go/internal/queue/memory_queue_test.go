@@ -3,6 +3,7 @@ package queue
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -65,6 +66,53 @@ func TestMemoryQueueDeadLetterAndReplay(t *testing.T) {
 	}
 	if replayed.ID != "task-dead" {
 		t.Fatalf("expected replayed task task-dead, got %s", replayed.ID)
+	}
+}
+
+func TestMemoryQueueDoesNotDoubleLeaseAcrossWorkers(t *testing.T) {
+	q := NewMemoryQueue()
+	ctx := context.Background()
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-double-lease", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+
+	type leaseResult struct {
+		task  *domain.Task
+		lease *Lease
+		err   error
+	}
+
+	start := make(chan struct{})
+	results := make(chan leaseResult, 2)
+	var group sync.WaitGroup
+	for _, workerID := range []string{"worker-a", "worker-b"} {
+		group.Add(1)
+		go func(workerID string) {
+			defer group.Done()
+			<-start
+			task, lease, err := q.LeaseNext(ctx, workerID, time.Minute)
+			results <- leaseResult{task: task, lease: lease, err: err}
+		}(workerID)
+	}
+	close(start)
+	group.Wait()
+	close(results)
+
+	leasedCount := 0
+	for result := range results {
+		if result.err != nil {
+			t.Fatalf("lease: %v", result.err)
+		}
+		if result.task == nil || result.lease == nil {
+			continue
+		}
+		if result.task.ID != "task-double-lease" {
+			t.Fatalf("expected task-double-lease, got %+v", result.task)
+		}
+		leasedCount++
+	}
+	if leasedCount != 1 {
+		t.Fatalf("expected exactly one active lease, got %d", leasedCount)
 	}
 }
 

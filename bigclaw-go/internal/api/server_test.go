@@ -6,8 +6,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -41,6 +43,26 @@ func (fakeWorkerPoolStatus) Snapshots() []worker.Status {
 		{WorkerID: "worker-a", State: "running", CurrentExecutor: domain.ExecutorLocal, SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"},
 		{WorkerID: "worker-b", State: "leased", CurrentExecutor: domain.ExecutorKubernetes, SuccessfulRuns: 3, LeaseRenewals: 2, LeaseRenewalFailures: 1, LeaseLostRuns: 1, LastResult: "warming", PreemptionActive: true, CurrentPreemptionTaskID: "task-low", CurrentPreemptionWorkerID: "worker-low", LastPreemptedTaskID: "task-low", LastPreemptionAt: time.Unix(1700000100, 0), LastPreemptionReason: "preempted by urgent task task-urgent (priority=1)", PreemptionsIssued: 1},
 		{WorkerID: "worker-c", State: "idle", SuccessfulRuns: 8, LeaseRenewals: 0, LastResult: "idle"},
+	}
+}
+
+type fakeNodeAwareWorkerPoolStatus struct {
+	now time.Time
+}
+
+func (f fakeNodeAwareWorkerPoolStatus) Snapshot() worker.Status {
+	return f.Snapshots()[0]
+}
+
+func (f fakeNodeAwareWorkerPoolStatus) Snapshots() []worker.Status {
+	base := f.now
+	if base.IsZero() {
+		base = time.Unix(1700003600, 0)
+	}
+	return []worker.Status{
+		{WorkerID: "worker-node-a", NodeID: "node-a", State: "running", CurrentExecutor: domain.ExecutorLocal, LastHeartbeatAt: base.Add(-2 * time.Minute), SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"},
+		{WorkerID: "worker-node-b", NodeID: "node-b", State: "leased", CurrentExecutor: domain.ExecutorKubernetes, LastHeartbeatAt: base.Add(-9 * time.Minute), SuccessfulRuns: 3, LeaseRenewals: 2, LeaseRenewalFailures: 1, LeaseLostRuns: 1, LastResult: "warming"},
+		{WorkerID: "worker-node-c", NodeID: "node-c", State: "idle", CurrentExecutor: domain.ExecutorRay, LastHeartbeatAt: base.Add(-time.Minute), SuccessfulRuns: 8, LeaseRenewals: 0, LastResult: "idle"},
 	}
 }
 
@@ -2823,6 +2845,133 @@ func TestV2ControlCenterIncludesMultiWorkerPoolSummary(t *testing.T) {
 		if !strings.Contains(bodyText, want) {
 			t.Fatalf("expected %q in control center payload, got %s", want, bodyText)
 		}
+	}
+}
+
+func TestV2ControlCenterAppliesTimeWindowAndReturnsNodeAwareWorkerPoolSummary(t *testing.T) {
+	base := time.Date(2026, 3, 23, 10, 0, 0, 0, time.UTC)
+	recorder := observability.NewRecorder()
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Worker:   fakeNodeAwareWorkerPoolStatus{now: base},
+		Control:  control.New(),
+		Now:      func() time.Time { return base },
+	}
+	for _, task := range []domain.Task{
+		{ID: "task-window-old", TraceID: "trace-window-old", Title: "Old task", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "platform", "project": "alpha"}, UpdatedAt: base.Add(-2 * time.Hour)},
+		{ID: "task-window-current", TraceID: "trace-window-current", Title: "Current task", State: domain.TaskRunning, Metadata: map[string]string{"team": "platform", "project": "alpha"}, UpdatedAt: base.Add(-15 * time.Minute)},
+		{ID: "task-window-other-team", TraceID: "trace-window-other-team", Title: "Other team", State: domain.TaskRunning, Metadata: map[string]string{"team": "growth", "project": "alpha"}, UpdatedAt: base.Add(-10 * time.Minute)},
+	} {
+		recorder.StoreTask(task)
+	}
+
+	since := base.Add(-30 * time.Minute)
+	requestURL := fmt.Sprintf(
+		"/v2/control-center?team=platform&project=alpha&since=%s&until=%s&limit=10&audit_limit=10",
+		url.QueryEscape(since.Format(time.RFC3339)),
+		url.QueryEscape(base.Format(time.RFC3339)),
+	)
+	response := httptest.NewRecorder()
+	server.Handler().ServeHTTP(response, httptest.NewRequest(http.MethodGet, requestURL, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+
+	var decoded struct {
+		Filters struct {
+			Since time.Time `json:"since"`
+			Until time.Time `json:"until"`
+		} `json:"filters"`
+		RecentTasks []struct {
+			Task struct {
+				ID string `json:"id"`
+			} `json:"task"`
+		} `json:"recent_tasks"`
+		WorkerPool struct {
+			TotalNodes                 int     `json:"total_nodes"`
+			ActiveNodes                int     `json:"active_nodes"`
+			IdleNodes                  int     `json:"idle_nodes"`
+			DegradedNodes              int     `json:"degraded_nodes"`
+			CapacityUtilizationPercent float64 `json:"capacity_utilization_percent"`
+			Nodes                      []struct {
+				NodeID                     string         `json:"node_id"`
+				Health                     string         `json:"health"`
+				ActiveWorkers              int            `json:"active_workers"`
+				IdleWorkers                int            `json:"idle_workers"`
+				StaleWorkers               int            `json:"stale_workers"`
+				CapacityUtilizationPercent float64        `json:"capacity_utilization_percent"`
+				WorkerStates               map[string]int `json:"worker_states"`
+			} `json:"nodes"`
+			ExecutorDistribution []struct {
+				Key   string `json:"key"`
+				Count int    `json:"count"`
+			} `json:"executor_distribution"`
+		} `json:"worker_pool"`
+		DistributedDiagnostics struct {
+			Summary struct {
+				TotalTasks int `json:"total_tasks"`
+			} `json:"summary"`
+			RolloutReport struct {
+				ExportURL string `json:"export_url"`
+			} `json:"rollout_report"`
+		} `json:"distributed_diagnostics"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center payload: %v", err)
+	}
+	if !decoded.Filters.Since.Equal(since) || !decoded.Filters.Until.Equal(base) {
+		t.Fatalf("expected control center filters to preserve time window, got %+v", decoded.Filters)
+	}
+	if len(decoded.RecentTasks) != 1 || decoded.RecentTasks[0].Task.ID != "task-window-current" {
+		t.Fatalf("expected time-window filtering to keep only the current platform task, got %+v", decoded.RecentTasks)
+	}
+	if decoded.WorkerPool.TotalNodes != 3 || decoded.WorkerPool.ActiveNodes != 1 || decoded.WorkerPool.IdleNodes != 1 || decoded.WorkerPool.DegradedNodes != 1 {
+		t.Fatalf("unexpected node-aware worker pool summary: %+v", decoded.WorkerPool)
+	}
+	if len(decoded.WorkerPool.ExecutorDistribution) != 3 {
+		t.Fatalf("expected executor distribution across worker nodes, got %+v", decoded.WorkerPool.ExecutorDistribution)
+	}
+	nodesByID := make(map[string]struct {
+		Health                     string
+		ActiveWorkers              int
+		IdleWorkers                int
+		StaleWorkers               int
+		CapacityUtilizationPercent float64
+		WorkerStates               map[string]int
+	}, len(decoded.WorkerPool.Nodes))
+	for _, node := range decoded.WorkerPool.Nodes {
+		nodesByID[node.NodeID] = struct {
+			Health                     string
+			ActiveWorkers              int
+			IdleWorkers                int
+			StaleWorkers               int
+			CapacityUtilizationPercent float64
+			WorkerStates               map[string]int
+		}{
+			Health:                     node.Health,
+			ActiveWorkers:              node.ActiveWorkers,
+			IdleWorkers:                node.IdleWorkers,
+			StaleWorkers:               node.StaleWorkers,
+			CapacityUtilizationPercent: node.CapacityUtilizationPercent,
+			WorkerStates:               node.WorkerStates,
+		}
+	}
+	if node, ok := nodesByID["node-a"]; !ok || node.Health != "active" || node.ActiveWorkers != 1 || node.StaleWorkers != 0 || node.WorkerStates["running"] != 1 {
+		t.Fatalf("unexpected node-a summary: %+v", node)
+	}
+	if node, ok := nodesByID["node-b"]; !ok || node.Health != "degraded" || node.ActiveWorkers != 1 || node.StaleWorkers != 1 || node.WorkerStates["leased"] != 1 {
+		t.Fatalf("unexpected node-b summary: %+v", node)
+	}
+	if node, ok := nodesByID["node-c"]; !ok || node.Health != "idle" || node.IdleWorkers != 1 || node.CapacityUtilizationPercent != 0 || node.WorkerStates["idle"] != 1 {
+		t.Fatalf("unexpected node-c summary: %+v", node)
+	}
+	if decoded.DistributedDiagnostics.Summary.TotalTasks != 1 {
+		t.Fatalf("expected distributed diagnostics to honor the same time window, got %+v", decoded.DistributedDiagnostics.Summary)
+	}
+	if !strings.Contains(decoded.DistributedDiagnostics.RolloutReport.ExportURL, "since=2026-03-23T09%3A30%3A00Z") || !strings.Contains(decoded.DistributedDiagnostics.RolloutReport.ExportURL, "until=2026-03-23T10%3A00%3A00Z") {
+		t.Fatalf("expected distributed export url to retain the time window, got %s", decoded.DistributedDiagnostics.RolloutReport.ExportURL)
 	}
 }
 

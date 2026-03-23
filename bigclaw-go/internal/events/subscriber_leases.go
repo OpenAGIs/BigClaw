@@ -14,6 +14,31 @@ var (
 	ErrCheckpointRollback = errors.New("subscriber checkpoint rollback rejected")
 )
 
+type LeaseLifecycleState string
+
+const (
+	LeaseLifecycleIdle     LeaseLifecycleState = "idle"
+	LeaseLifecycleHeld     LeaseLifecycleState = "held"
+	LeaseLifecycleExpired  LeaseLifecycleState = "expired"
+	LeaseLifecycleReleased LeaseLifecycleState = "released"
+	LeaseLifecycleFenced   LeaseLifecycleState = "fenced"
+)
+
+type LeaseLifecycleTransition struct {
+	From        LeaseLifecycleState `json:"from"`
+	Action      string              `json:"action"`
+	To          LeaseLifecycleState `json:"to"`
+	Guard       string              `json:"guard,omitempty"`
+	Description string              `json:"description,omitempty"`
+}
+
+type LeaseLifecycleModel struct {
+	RenewalMechanism string                     `json:"renewal_mechanism"`
+	ReleaseMechanism string                     `json:"release_mechanism"`
+	States           []LeaseLifecycleState      `json:"states"`
+	Transitions      []LeaseLifecycleTransition `json:"transitions"`
+}
+
 type SubscriberLeaseKey struct {
 	GroupID      string
 	SubscriberID string
@@ -59,6 +84,78 @@ type SubscriberLeaseStore interface {
 
 type SubscriberLeaseCoordinator struct {
 	store SubscriberLeaseStore
+}
+
+func SubscriberLeaseLifecycleModelSpec() LeaseLifecycleModel {
+	return LeaseLifecycleModel{
+		RenewalMechanism: "same consumer reacquires the lease before expiry to extend ttl without advancing epoch",
+		ReleaseMechanism: "active owner must present matching consumer_id, lease_token, and lease_epoch",
+		States: []LeaseLifecycleState{
+			LeaseLifecycleIdle,
+			LeaseLifecycleHeld,
+			LeaseLifecycleExpired,
+			LeaseLifecycleReleased,
+			LeaseLifecycleFenced,
+		},
+		Transitions: []LeaseLifecycleTransition{
+			{
+				From:        LeaseLifecycleIdle,
+				Action:      "acquire",
+				To:          LeaseLifecycleHeld,
+				Guard:       "group_id, subscriber_id, consumer_id present and ttl > 0",
+				Description: "first owner acquires a fresh lease token and epoch",
+			},
+			{
+				From:        LeaseLifecycleHeld,
+				Action:      "renew",
+				To:          LeaseLifecycleHeld,
+				Guard:       "same consumer reacquires before ttl expiry",
+				Description: "ttl extends in place while lease token and epoch remain stable",
+			},
+			{
+				From:        LeaseLifecycleHeld,
+				Action:      "commit",
+				To:          LeaseLifecycleHeld,
+				Guard:       "matching token/epoch and monotonic checkpoint offset",
+				Description: "checkpoint advances while the same owner still holds the lease",
+			},
+			{
+				From:        LeaseLifecycleHeld,
+				Action:      "release",
+				To:          LeaseLifecycleReleased,
+				Guard:       "matching consumer_id, lease_token, and lease_epoch",
+				Description: "active owner releases the lease cleanly",
+			},
+			{
+				From:        LeaseLifecycleHeld,
+				Action:      "expire",
+				To:          LeaseLifecycleExpired,
+				Guard:       "ttl elapses before successful renew or release",
+				Description: "ownership window closes and the lease becomes takeover-eligible",
+			},
+			{
+				From:        LeaseLifecycleExpired,
+				Action:      "takeover",
+				To:          LeaseLifecycleHeld,
+				Guard:       "different consumer acquires after expiry",
+				Description: "new owner receives a fresh token and incremented epoch",
+			},
+			{
+				From:        LeaseLifecycleHeld,
+				Action:      "stale_release_or_commit",
+				To:          LeaseLifecycleFenced,
+				Guard:       "consumer_id, token, or epoch no longer matches the active owner",
+				Description: "stale writer is rejected to prevent dual execution or checkpoint rollback",
+			},
+			{
+				From:        LeaseLifecycleReleased,
+				Action:      "acquire",
+				To:          LeaseLifecycleHeld,
+				Guard:       "a consumer requests a new lease after release",
+				Description: "released slots can be reacquired without waiting for ttl expiry",
+			},
+		},
+	}
 }
 
 func NewSubscriberLeaseCoordinator() *SubscriberLeaseCoordinator {

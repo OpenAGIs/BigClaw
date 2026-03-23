@@ -3,8 +3,10 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -685,5 +687,92 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	}
 	if !strings.Contains(exportResponse.Body.String(), "Lane local: latest_status=succeeded") {
 		t.Fatalf("expected continuation lane coverage in distributed export markdown: %s", exportResponse.Body.String())
+	}
+}
+
+func TestV2DistributedReportAppliesTimeWindowFiltersToResponseAndExport(t *testing.T) {
+	base := time.Date(2026, 3, 23, 11, 0, 0, 0, time.UTC)
+	recorder := observability.NewRecorder()
+	server := &Server{
+		Recorder:  recorder,
+		Queue:     queue.NewMemoryQueue(),
+		Executors: []domain.ExecutorKind{domain.ExecutorLocal, domain.ExecutorKubernetes},
+		Control:   control.New(),
+		Worker:    fakeNodeAwareWorkerPoolStatus{now: base},
+		Now:       func() time.Time { return base },
+	}
+	for _, task := range []domain.Task{
+		{ID: "report-old", TraceID: "trace-report-old", Title: "Old routed task", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(-2 * time.Hour)},
+		{ID: "report-current", TraceID: "trace-report-current", Title: "Current routed task", State: domain.TaskRunning, RequiredTools: []string{"browser"}, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(-10 * time.Minute)},
+	} {
+		recorder.StoreTask(task)
+	}
+	for _, event := range []domain.Event{
+		{ID: "report-old-routed", Type: domain.EventSchedulerRouted, TaskID: "report-old", TraceID: "trace-report-old", Timestamp: base.Add(-2*time.Hour + time.Minute), Payload: map[string]any{"executor": domain.ExecutorLocal, "reason": "legacy routing path"}},
+		{ID: "report-old-completed", Type: domain.EventTaskCompleted, TaskID: "report-old", TraceID: "trace-report-old", Timestamp: base.Add(-2*time.Hour + 2*time.Minute), Payload: map[string]any{"executor": domain.ExecutorLocal}},
+		{ID: "report-current-routed", Type: domain.EventSchedulerRouted, TaskID: "report-current", TraceID: "trace-report-current", Timestamp: base.Add(-9 * time.Minute), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "reason": "browser workloads default to kubernetes executor"}},
+		{ID: "report-current-started", Type: domain.EventTaskStarted, TaskID: "report-current", TraceID: "trace-report-current", Timestamp: base.Add(-8 * time.Minute), Payload: map[string]any{"executor": domain.ExecutorKubernetes}},
+	} {
+		recorder.Record(event)
+	}
+
+	since := base.Add(-30 * time.Minute)
+	requestURL := fmt.Sprintf(
+		"/v2/reports/distributed?team=platform&project=apollo&since=%s&until=%s&limit=10",
+		url.QueryEscape(since.Format(time.RFC3339)),
+		url.QueryEscape(base.Format(time.RFC3339)),
+	)
+	response := httptest.NewRecorder()
+	server.Handler().ServeHTTP(response, httptest.NewRequest(http.MethodGet, requestURL, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected distributed report 200, got %d %s", response.Code, response.Body.String())
+	}
+
+	var decoded struct {
+		Filters struct {
+			Since time.Time `json:"since"`
+			Until time.Time `json:"until"`
+		} `json:"filters"`
+		Summary struct {
+			TotalTasks           int `json:"total_tasks"`
+			TotalRoutedDecisions int `json:"total_routed_decisions"`
+		} `json:"summary"`
+		RoutingReasons []struct {
+			Reason string `json:"reason"`
+		} `json:"routing_reasons"`
+		Report struct {
+			Markdown  string `json:"markdown"`
+			ExportURL string `json:"export_url"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode time-window distributed report: %v", err)
+	}
+	if !decoded.Filters.Since.Equal(since) || !decoded.Filters.Until.Equal(base) {
+		t.Fatalf("expected distributed report filters to preserve the time window, got %+v", decoded.Filters)
+	}
+	if decoded.Summary.TotalTasks != 1 || decoded.Summary.TotalRoutedDecisions != 1 {
+		t.Fatalf("expected distributed report to only include the current task slice, got %+v", decoded.Summary)
+	}
+	if len(decoded.RoutingReasons) != 1 || decoded.RoutingReasons[0].Reason != "browser workloads default to kubernetes executor" {
+		t.Fatalf("expected old routing evidence to be excluded by the time window, got %+v", decoded.RoutingReasons)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "since=2026-03-23T10:30:00Z") || !strings.Contains(decoded.Report.Markdown, "until=2026-03-23T11:00:00Z") {
+		t.Fatalf("expected markdown filter header to include the time window, got %s", decoded.Report.Markdown)
+	}
+	if !strings.Contains(decoded.Report.ExportURL, "since=2026-03-23T10%3A30%3A00Z") || !strings.Contains(decoded.Report.ExportURL, "until=2026-03-23T11%3A00%3A00Z") {
+		t.Fatalf("expected export url to preserve the time window, got %s", decoded.Report.ExportURL)
+	}
+
+	exportResponse := httptest.NewRecorder()
+	server.Handler().ServeHTTP(exportResponse, httptest.NewRequest(http.MethodGet, decoded.Report.ExportURL, nil))
+	if exportResponse.Code != http.StatusOK {
+		t.Fatalf("expected distributed export 200, got %d %s", exportResponse.Code, exportResponse.Body.String())
+	}
+	if !strings.Contains(exportResponse.Body.String(), "since=2026-03-23T10:30:00Z") || !strings.Contains(exportResponse.Body.String(), "until=2026-03-23T11:00:00Z") {
+		t.Fatalf("expected exported markdown to include the retained time window, got %s", exportResponse.Body.String())
+	}
+	if strings.Contains(exportResponse.Body.String(), "legacy routing path") {
+		t.Fatalf("expected exported markdown to exclude out-of-window routing evidence, got %s", exportResponse.Body.String())
 	}
 }

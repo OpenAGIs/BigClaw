@@ -2523,6 +2523,98 @@
       "state": "Backlog",
       "title": "Add shared queue companion summary regression coverage",
       "updated_at": "2026-03-23T06:52:11Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "已补齐分布式诊断时间窗口链路：控制中心与 `/v2/reports/distributed` 现在会保留 since/until 过滤、导出链接和 markdown 过滤头，并增加按时间窗口筛选的回归测试。\\n\\n验证：`go test ./internal/api`。",
+          "created_at": "2026-03-23T14:45:04Z"
+        }
+      ],
+      "created_at": "2026-03-23T13:31:58Z",
+      "description": "GitHub #174. 产出调度决策路径、排队时延、退避统计与容量建议，并支持按时间窗口和团队筛选。",
+      "id": "big-vnext-004",
+      "identifier": "BIG-vNext-004",
+      "labels": [
+        "bigclaw",
+        "parallel",
+        "vnext"
+      ],
+      "priority": 2,
+      "state": "Done",
+      "title": "BIG-vNext-004 分布式调度诊断与容量报告",
+      "updated_at": "2026-03-23T14:50:12Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "已增强 validation bundle 导出：补充 local/k8s/ray 验证矩阵、失败根因定位字段、routing reason 与最新事件摘要，并增加 Python 单测覆盖。\\n\\n验证：`python3 scripts/e2e/export_validation_bundle_test.py`。",
+          "created_at": "2026-03-23T14:45:04Z"
+        }
+      ],
+      "created_at": "2026-03-23T13:31:58Z",
+      "description": "GitHub #173. 支持 local/k8s/ray 三类执行器验证矩阵，输出统一 evidence bundle（json + markdown），并在报告中包含失败根因定位字段。",
+      "id": "big-vnext-003",
+      "identifier": "BIG-vNext-003",
+      "labels": [
+        "bigclaw",
+        "parallel",
+        "vnext"
+      ],
+      "priority": 1,
+      "state": "Done",
+      "title": "BIG-vNext-003 并行实时验证矩阵与证据包导出",
+      "updated_at": "2026-03-23T14:50:12Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "已补齐控制中心 node-aware worker pool 汇总：新增 total/active/idle/degraded node 统计、executor 分布与节点健康视图，并增加时间窗口控制中心过滤与 API 回归测试。\\n\\n验证：`go test ./internal/api`。",
+          "created_at": "2026-03-23T14:45:03Z"
+        }
+      ],
+      "created_at": "2026-03-23T13:31:58Z",
+      "description": "GitHub #171. 控制中心展示 worker pool 摘要与 node 维度统计，payload 包含 executor 分布、节点健康、容量利用，并补齐摘要计算与报告渲染测试。",
+      "id": "big-vnext-001",
+      "identifier": "BIG-vNext-001",
+      "labels": [
+        "bigclaw",
+        "parallel",
+        "vnext"
+      ],
+      "priority": 1,
+      "state": "Done",
+      "title": "BIG-vNext-001 多 worker 池状态汇总与节点感知控制中心",
+      "updated_at": "2026-03-23T14:50:12Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "已补齐 lease 生命周期模型与并发回归覆盖：新增 acquire/renew/commit/release/expire/takeover/fence 模型说明，并增加 lease 续约释放与内存队列双领取防回归测试。\\n\\n验证：`go test ./internal/events ./internal/queue`。",
+          "created_at": "2026-03-23T14:45:03Z"
+        }
+      ],
+      "created_at": "2026-03-23T13:31:58Z",
+      "description": "GitHub #172. 明确 lease 获取/续约/释放状态机，确保重复消费与网络抖动下不出现双执行，并增加 local + distributed 场景回归测试。",
+      "id": "big-vnext-002",
+      "identifier": "BIG-vNext-002",
+      "labels": [
+        "bigclaw",
+        "parallel",
+        "vnext"
+      ],
+      "priority": 1,
+      "state": "Done",
+      "title": "BIG-vNext-002 共享队列协调与 lease 安全回归",
+      "updated_at": "2026-03-23T14:50:12Z"
     }
   ]
 }

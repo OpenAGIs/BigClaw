@@ -36,6 +36,19 @@ FOLLOWUP_DIGESTS = [
     ),
 ]
 
+LANE_ALIASES = {
+    'local': 'local',
+    'kubernetes': 'k8s',
+    'ray': 'ray',
+}
+
+FAILURE_EVENT_TYPES = {
+    'task.cancelled',
+    'task.dead_letter',
+    'task.failed',
+    'task.retried',
+}
+
 
 def build_continuation_gate_summary(root: Path) -> Optional[dict[str, Any]]:
     gate_path = root / 'docs/reports/validation-bundle-continuation-policy-gate.json'
@@ -96,6 +109,144 @@ def copy_json_artifact(source: Path, destination: Path) -> str:
         return ''
     write_json(destination, payload)
     return str(destination)
+
+
+def first_text(*values: Any) -> str:
+    for value in values:
+        if isinstance(value, str):
+            stripped = value.strip()
+            if stripped:
+                return stripped
+    return ''
+
+
+def collect_report_events(report: dict[str, Any]) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    status = report.get('status')
+    if isinstance(status, dict):
+        status_events = status.get('events')
+        if isinstance(status_events, list):
+            events.extend(event for event in status_events if isinstance(event, dict))
+        latest_event = status.get('latest_event')
+        if isinstance(latest_event, dict):
+            latest_id = latest_event.get('id')
+            if latest_id and any(event.get('id') == latest_id for event in events):
+                return events
+            events.append(latest_event)
+    report_events = report.get('events')
+    if isinstance(report_events, list):
+        for event in report_events:
+            if isinstance(event, dict):
+                event_id = event.get('id')
+                if event_id and any(existing.get('id') == event_id for existing in events):
+                    continue
+                events.append(event)
+    return events
+
+
+def event_payload_text(event: dict[str, Any], key: str) -> str:
+    payload = event.get('payload')
+    if not isinstance(payload, dict):
+        return ''
+    return first_text(payload.get(key))
+
+
+def latest_report_event(report: dict[str, Any]) -> Optional[dict[str, Any]]:
+    events = collect_report_events(report)
+    for event in reversed(events):
+        return event
+    return None
+
+
+def find_routing_reason(report: dict[str, Any]) -> str:
+    events = collect_report_events(report)
+    for event in reversed(events):
+        if event.get('type') == 'scheduler.routed':
+            return first_text(event_payload_text(event, 'reason'))
+    return ''
+
+
+def build_failure_root_cause(section: dict[str, Any], report: dict[str, Any]) -> dict[str, Any]:
+    events = collect_report_events(report)
+    latest_event = latest_report_event(report)
+    latest_status = first_text(
+        report.get('status', {}).get('state') if isinstance(report.get('status'), dict) else None,
+        report.get('task', {}).get('state') if isinstance(report.get('task'), dict) else None,
+        component_status(report),
+    )
+
+    cause_event: Optional[dict[str, Any]] = None
+    for event in reversed(events):
+        if first_text(event.get('type')) in FAILURE_EVENT_TYPES:
+            cause_event = event
+            break
+    if cause_event is None and latest_status not in {'', 'succeeded'}:
+        cause_event = latest_event
+
+    location = first_text(
+        section.get('stderr_path'),
+        section.get('service_log_path'),
+        section.get('audit_log_path'),
+        section.get('bundle_report_path'),
+    )
+    if cause_event is None:
+        return {
+            'status': 'not_triggered',
+            'event_type': first_text(latest_event.get('type')) if isinstance(latest_event, dict) else '',
+            'message': '',
+            'location': location,
+            'event_id': '',
+            'timestamp': '',
+        }
+
+    return {
+        'status': 'captured',
+        'event_type': first_text(cause_event.get('type')),
+        'message': first_text(
+            event_payload_text(cause_event, 'message'),
+            event_payload_text(cause_event, 'reason'),
+            report.get('error'),
+            report.get('failure_reason'),
+        ),
+        'location': location,
+        'event_id': first_text(cause_event.get('id')),
+        'timestamp': first_text(cause_event.get('timestamp')),
+    }
+
+
+def build_validation_matrix_entry(name: str, section: dict[str, Any], report: Optional[dict[str, Any]]) -> dict[str, Any]:
+    task = report.get('task') if isinstance(report, dict) else None
+    task_id = task.get('id') if isinstance(task, dict) else section.get('task_id')
+    executor = task.get('required_executor') if isinstance(task, dict) else None
+    if not isinstance(executor, str) or not executor.strip():
+        executor = name
+    root_cause = section.get('failure_root_cause')
+    return {
+        'lane': LANE_ALIASES.get(name, name),
+        'executor': executor,
+        'enabled': section.get('enabled', False),
+        'status': section.get('status', 'unknown'),
+        'task_id': task_id,
+        'canonical_report_path': section.get('canonical_report_path', ''),
+        'bundle_report_path': section.get('bundle_report_path', ''),
+        'latest_event_type': section.get('latest_event_type', ''),
+        'routing_reason': section.get('routing_reason', ''),
+        'root_cause_event_type': root_cause.get('event_type', '') if isinstance(root_cause, dict) else '',
+        'root_cause_location': root_cause.get('location', '') if isinstance(root_cause, dict) else '',
+        'root_cause_message': root_cause.get('message', '') if isinstance(root_cause, dict) else '',
+    }
+
+
+def build_validation_matrix(summary: dict[str, Any]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for name in ('local', 'kubernetes', 'ray'):
+        section = summary.get(name)
+        if not isinstance(section, dict):
+            continue
+        row = section.get('validation_matrix')
+        if isinstance(row, dict):
+            rows.append(row)
+    return rows
 
 
 def component_status(report: Optional[dict[str, Any]]) -> str:
@@ -208,6 +359,28 @@ def build_component_section(
             service_copy = copy_text_artifact(Path(service_log), bundle_dir / f'{name}.service.log')
             if service_copy:
                 section['service_log_path'] = relpath(Path(service_copy), root)
+        latest_event = latest_report_event(report)
+        if isinstance(latest_event, dict):
+            section['latest_event_type'] = first_text(latest_event.get('type'))
+            section['latest_event_timestamp'] = first_text(latest_event.get('timestamp'))
+            artifacts = latest_event.get('payload', {}).get('artifacts') if isinstance(latest_event.get('payload'), dict) else None
+            if isinstance(artifacts, list):
+                section['artifact_paths'] = [artifact for artifact in artifacts if isinstance(artifact, str)]
+        routing_reason = find_routing_reason(report)
+        if routing_reason:
+            section['routing_reason'] = routing_reason
+        section['failure_root_cause'] = build_failure_root_cause(section, report)
+        section['validation_matrix'] = build_validation_matrix_entry(name, section, report)
+    else:
+        section['failure_root_cause'] = {
+            'status': 'missing_report',
+            'event_type': '',
+            'message': '',
+            'location': section['bundle_report_path'],
+            'event_id': '',
+            'timestamp': '',
+        }
+        section['validation_matrix'] = build_validation_matrix_entry(name, section, None)
     return section
 
 
@@ -353,8 +526,11 @@ def render_index(
     for name in ('local', 'kubernetes', 'ray'):
         section = summary[name]
         lines.append(f"### {name}")
+        matrix = section.get('validation_matrix', {})
         lines.append(f"- Enabled: `{section['enabled']}`")
         lines.append(f"- Status: `{section['status']}`")
+        if matrix.get('lane'):
+            lines.append(f"- Validation lane: `{matrix['lane']}`")
         lines.append(f"- Bundle report: `{section['bundle_report_path']}`")
         lines.append(f"- Latest report: `{section['canonical_report_path']}`")
         if section.get('stdout_path'):
@@ -367,6 +543,39 @@ def render_index(
             lines.append(f"- Audit log: `{section['audit_log_path']}`")
         if section.get('task_id'):
             lines.append(f"- Task ID: `{section['task_id']}`")
+        if section.get('latest_event_type'):
+            lines.append(f"- Latest event: `{section['latest_event_type']}`")
+        if section.get('routing_reason'):
+            lines.append(f"- Routing reason: `{section['routing_reason']}`")
+        root_cause = section.get('failure_root_cause')
+        if isinstance(root_cause, dict):
+            lines.append(
+                f"- Failure root cause: status=`{root_cause.get('status', 'unknown')}` "
+                f"event=`{root_cause.get('event_type', 'unknown')}` "
+                f"location=`{root_cause.get('location', 'n/a')}`"
+            )
+            if root_cause.get('message'):
+                lines.append(f"- Failure detail: `{root_cause['message']}`")
+        lines.append('')
+
+    validation_matrix = summary.get('validation_matrix')
+    if isinstance(validation_matrix, list) and validation_matrix:
+        lines.extend(['## Validation matrix', ''])
+        for row in validation_matrix:
+            if not isinstance(row, dict):
+                continue
+            lines.append(
+                f"- Lane `{row.get('lane', 'unknown')}` executor=`{row.get('executor', 'unknown')}` "
+                f"status=`{row.get('status', 'unknown')}` enabled=`{row.get('enabled', False)}` "
+                f"report=`{row.get('bundle_report_path', '')}`"
+            )
+            if row.get('root_cause_event_type') or row.get('root_cause_message'):
+                lines.append(
+                    f"- Lane `{row.get('lane', 'unknown')}` root cause: "
+                    f"event=`{row.get('root_cause_event_type', 'unknown')}` "
+                    f"location=`{row.get('root_cause_location', 'n/a')}` "
+                    f"message=`{row.get('root_cause_message', '')}`"
+                )
         lines.append('')
 
     broker = summary.get('broker')
@@ -560,6 +769,7 @@ def main() -> int:
         report_path=(root / args.broker_report_path) if args.broker_report_path else None,
     )
     summary['shared_queue_companion'] = build_shared_queue_companion(root, bundle_dir)
+    summary['validation_matrix'] = build_validation_matrix(summary)
 
     continuation_gate = build_continuation_gate_summary(root)
     if continuation_gate:
