@@ -440,6 +440,12 @@
       "title": "Add bundle follow-up index regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-266",
+      "title": "Add planning follow-up index regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

@@ -2373,6 +2373,20 @@
       "state": "Done",
       "title": "Add bundle follow-up index regression coverage",
       "updated_at": "2026-03-23T06:08:05Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T06:10:09Z",
+      "description": "Add regression coverage for planning docs that route contributors to the canonical parallel follow-up index so migration plan review notes and the repo-level OpenClaw gap analysis keep their follow-up index and validation matrix entrypoints aligned.",
+      "id": "big-par-266",
+      "identifier": "BIG-PAR-266",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "In Progress",
+      "title": "Add planning follow-up index regression coverage",
+      "updated_at": "2026-03-23T06:10:09Z"
     }
   ]
 }
