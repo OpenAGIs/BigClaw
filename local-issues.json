@@ -2166,6 +2166,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-256` after aligning the machine-readable live validation index continuation metadata with the authoritative continuation follow-up lane identifier and extending regression coverage for that JSON surface.\n\nWhat changed:\n- Updated `bigclaw-go/docs/reports/live-validation-index.json` so its continuation reviewer path now carries the authoritative `OPE-271` / `BIG-PAR-082` issue metadata alongside the digest path.\n- Extended `bigclaw-go/internal/regression/runtime_report_followup_docs_test.go` with a JSON assertion that keeps the live validation index continuation metadata aligned with the markdown reviewer docs.\n- Re-ran the full `internal/regression` package to confirm the new machine-readable metadata check passes alongside the existing runtime-report doc coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `7531e3dde3407bb25b3c1b706ec4f25194acb947` matches remote SHA `7531e3dde3407bb25b3c1b706ec4f25194acb947` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `7531e3dde3407bb25b3c1b706ec4f25194acb947`\n\nCommit: `7531e3dde3407bb25b3c1b706ec4f25194acb947`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/180.",
+          "created_at": "2026-03-23T05:11:31Z"
+        }
+      ],
       "created_at": "2026-03-23T05:07:26Z",
       "description": "Add regression coverage for the machine-readable live validation index continuation metadata and align its reviewer-path payload with the authoritative OPE-271 / BIG-PAR-082 follow-up lane identifier used by the checked-in markdown bundle and index docs.",
       "id": "big-par-256",
@@ -2174,9 +2181,9 @@
         "documentation"
       ],
       "priority": 4,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Align live validation index JSON follow-up metadata",
-      "updated_at": "2026-03-23T05:07:26Z"
+      "updated_at": "2026-03-23T05:11:31Z"
     }
   ]
 }

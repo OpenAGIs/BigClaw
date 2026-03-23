@@ -60,11 +60,10 @@
       "BIG-PAR-252",
       "BIG-PAR-253",
       "BIG-PAR-254",
-      "BIG-PAR-255"
-    ],
-    "active": [
+      "BIG-PAR-255",
       "BIG-PAR-256"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -376,7 +375,7 @@
       "identifier": "BIG-PAR-256",
       "title": "Align live validation index JSON follow-up metadata",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
