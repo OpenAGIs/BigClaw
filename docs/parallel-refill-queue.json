@@ -60,7 +60,9 @@
       "BIG-PAR-252",
       "BIG-PAR-253"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-254"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -104,7 +106,8 @@
     "BIG-PAR-250",
     "BIG-PAR-251",
     "BIG-PAR-252",
-    "BIG-PAR-253"
+    "BIG-PAR-253",
+    "BIG-PAR-254"
   ],
   "issues": [
     {
@@ -352,6 +355,12 @@
       "title": "Add migration and validation follow-up doc regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-254",
+      "title": "Add runtime report follow-up ID coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

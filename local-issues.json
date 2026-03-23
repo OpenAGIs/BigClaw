@@ -2121,6 +2121,20 @@
       "state": "Done",
       "title": "Add migration and validation follow-up doc regression coverage",
       "updated_at": "2026-03-23T04:53:25Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T04:56:54Z",
+      "description": "Add regression coverage that keeps runtime-facing reports and bundle indexes aligned with the follow-up lane identifiers for subscriber takeover and validation continuation; patch missing OPE-269 / BIG-PAR-080 and OPE-271 / BIG-PAR-082 references in live-validation and coordination-facing docs.",
+      "id": "big-par-254",
+      "identifier": "BIG-PAR-254",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "In Progress",
+      "title": "Add runtime report follow-up ID coverage",
+      "updated_at": "2026-03-23T04:56:54Z"
     }
   ]
 }
