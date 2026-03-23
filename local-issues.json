@@ -2734,6 +2734,23 @@
       "state": "Done",
       "title": "Add live-shadow rollback bundle regression coverage",
       "updated_at": "2026-03-23T15:41:48Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T15:56:15Z",
+      "description": "Align the live-shadow bundle generator with the checked-in reviewer surfaces so the canonical index and bundled README keep the new parallel follow-up guidance, validation-matrix pointers, and caveat references under regression coverage.",
+      "id": "big-par-278",
+      "identifier": "BIG-PAR-278",
+      "labels": [
+        "parallel",
+        "regression",
+        "migration",
+        "documentation"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Align live-shadow bundle follow-up index surfaces",
+      "updated_at": "2026-03-23T16:20:00Z"
     }
   ]
 }

@@ -40,8 +40,16 @@ func TestLiveShadowRuntimeDocsStayAligned(t *testing.T) {
 			},
 		},
 		{
+			path: "docs/reports/live-shadow-index.md",
+			substrings: []string{
+				"docs/reports/parallel-follow-up-index.md",
+				"docs/reports/parallel-validation-matrix.md",
+			},
+		},
+		{
 			path: "docs/reports/live-shadow-runs/20260313T085655Z/README.md",
 			substrings: []string{
+				"docs/reports/parallel-follow-up-index.md",
 				"OPE-266` / `BIG-PAR-092",
 				"live-shadow-comparison-follow-up-digest.md",
 				"OPE-254` / `BIG-PAR-088",

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import json
-import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -11,16 +10,8 @@ SHADOW_COMPARE_REPORT = 'docs/reports/shadow-compare-report.json'
 SHADOW_MATRIX_REPORT = 'docs/reports/shadow-matrix-report.json'
 SHADOW_SCORECARD_REPORT = 'docs/reports/live-shadow-mirror-scorecard.json'
 ROLLBACK_TRIGGER_REPORT = 'docs/reports/rollback-trigger-surface.json'
-FOLLOWUP_DIGESTS = [
-    (
-        'docs/reports/live-shadow-comparison-follow-up-digest.md',
-        'Live shadow traffic comparison caveats are consolidated here.',
-    ),
-    (
-        'docs/reports/rollback-safeguard-follow-up-digest.md',
-        'Rollback remains operator-driven; this digest explains the guardrail visibility and trigger caveats.',
-    ),
-]
+FOLLOWUP_INDEX_PATH = 'docs/reports/parallel-follow-up-index.md'
+VALIDATION_MATRIX_PATH = 'docs/reports/parallel-validation-matrix.md'
 DOC_LINKS = [
     ('docs/migration-shadow.md', 'Shadow helper workflow and bundle generation steps.'),
     ('docs/reports/migration-readiness-report.md', 'Migration readiness summary linked to the shadow bundle.'),
@@ -56,12 +47,6 @@ def utc_iso(moment: datetime) -> str:
 def copy_json_artifact(source: Path, destination: Path) -> str:
     payload = read_json(source)
     write_json(destination, payload)
-    return str(destination)
-
-
-def copy_text_artifact(source: Path, destination: Path) -> str:
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(source, destination)
     return str(destination)
 
 
@@ -302,9 +287,36 @@ def render_index(
     for path, description in DOC_LINKS:
         lines.append(f"- `{path}` {description}")
     lines.append('')
-    lines.extend(['## Parallel follow-up digests', ''])
-    for path, description in FOLLOWUP_DIGESTS:
-        lines.append(f"- `{path}` {description}")
+    lines.extend(['## Parallel Follow-up Index', ''])
+    lines.append(
+        f"- `{FOLLOWUP_INDEX_PATH}` is the canonical index for the remaining live-shadow, rollback, and corpus-coverage follow-up digests."
+    )
+    lines.append(
+        f"- Use `{VALIDATION_MATRIX_PATH}` first when a shadow review needs the checked-in local/Kubernetes/Ray validation entrypoint alongside the shadow evidence bundle."
+    )
+    lines.append('')
+    return '\n'.join(lines)
+
+
+def render_bundle_readme(
+    latest: dict[str, Any],
+    recent_runs: list[dict[str, Any]],
+    rollup: dict[str, Any],
+) -> str:
+    lines = render_index(latest, recent_runs, rollup).splitlines()
+    lines.extend(
+        [
+            '## Primary caveat tracks',
+            '',
+            f"- `{FOLLOWUP_INDEX_PATH}` is the canonical index for the remaining live-shadow, rollback, and corpus-coverage follow-up digests behind this run bundle.",
+            '- For the two primary caveat tracks referenced by this bundle, see',
+            '  `OPE-266` / `BIG-PAR-092` in',
+            '  `docs/reports/live-shadow-comparison-follow-up-digest.md` and',
+            '  `OPE-254` / `BIG-PAR-088` in',
+            '  `docs/reports/rollback-safeguard-follow-up-digest.md`.',
+            '',
+        ]
+    )
     lines.append('')
     return '\n'.join(lines)
 
@@ -378,7 +390,8 @@ def main() -> int:
 
     index_text = render_index(latest, manifest['recent_runs'], rollup)
     (root / args.index_path).write_text(index_text, encoding='utf-8')
-    copy_text_artifact(root / args.index_path, bundle_dir / 'README.md')
+    readme_text = render_bundle_readme(latest, manifest['recent_runs'], rollup)
+    (bundle_dir / 'README.md').write_text(readme_text, encoding='utf-8')
 
     print(json.dumps(manifest, ensure_ascii=False, indent=2))
     return 0

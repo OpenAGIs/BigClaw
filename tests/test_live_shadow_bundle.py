@@ -136,12 +136,16 @@ def test_export_live_shadow_bundle_generates_index_and_rollup(tmp_path: Path) ->
     assert 'Live Shadow Mirror Index' in index_text
     assert 'docs/reports/live-shadow-runs/20260310T100601Z' in index_text
     assert 'docs/migration-shadow.md' in index_text
-    assert 'docs/reports/live-shadow-comparison-follow-up-digest.md' in index_text
+    assert 'docs/reports/parallel-follow-up-index.md' in index_text
+    assert 'docs/reports/parallel-validation-matrix.md' in index_text
 
     bundle_readme = (
         reports / 'live-shadow-runs' / '20260310T100601Z' / 'README.md'
     ).read_text(encoding='utf-8')
     assert 'Parity drift rollup' in bundle_readme
+    assert 'docs/reports/parallel-follow-up-index.md' in bundle_readme
+    assert 'docs/reports/live-shadow-comparison-follow-up-digest.md' in bundle_readme
+    assert 'docs/reports/rollback-safeguard-follow-up-digest.md' in bundle_readme
 
 
 def test_export_live_shadow_bundle_supports_documented_bigclaw_go_cwd(tmp_path: Path) -> None:
@@ -238,6 +242,10 @@ def test_checked_in_live_shadow_bundle_matches_expected_shape() -> None:
     manifest = json.loads(Path('bigclaw-go/docs/reports/live-shadow-index.json').read_text(encoding='utf-8'))
     latest = manifest['latest']
     rollup = manifest['drift_rollup']
+    index_text = Path('bigclaw-go/docs/reports/live-shadow-index.md').read_text(encoding='utf-8')
+    bundle_readme = Path(
+        'bigclaw-go/docs/reports/live-shadow-runs/20260313T085655Z/README.md'
+    ).read_text(encoding='utf-8')
 
     assert latest['run_id']
     assert latest['status'] == 'parity-ok'
@@ -248,3 +256,8 @@ def test_checked_in_live_shadow_bundle_matches_expected_shape() -> None:
     assert rollup['status'] == 'parity-ok'
     assert rollup['summary']['highest_severity'] == 'none'
     assert rollup['summary']['latest_run_id'] == latest['run_id']
+    assert 'docs/reports/parallel-follow-up-index.md' in index_text
+    assert 'docs/reports/parallel-validation-matrix.md' in index_text
+    assert 'docs/reports/live-shadow-comparison-follow-up-digest.md' not in index_text
+    assert 'docs/reports/live-shadow-comparison-follow-up-digest.md' in bundle_readme
+    assert 'docs/reports/rollback-safeguard-follow-up-digest.md' in bundle_readme
