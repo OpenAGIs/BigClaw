@@ -70,7 +70,8 @@
       "BIG-PAR-268"
     ],
     "active": [
-      "BIG-PAR-270"
+      "BIG-PAR-270",
+      "BIG-PAR-271"
     ],
     "standby": [
       "BIG-PAR-269"
@@ -128,7 +129,8 @@
     "BIG-PAR-261",
     "BIG-PAR-268",
     "BIG-PAR-269",
-    "BIG-PAR-270"
+    "BIG-PAR-270",
+    "BIG-PAR-271"
   ],
   "issues": [
     {
@@ -470,6 +472,12 @@
     {
       "identifier": "BIG-PAR-270",
       "title": "Add live validation summary regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-271",
+      "title": "Add broker validation summary regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "In Progress"
     }

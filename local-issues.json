@@ -2470,6 +2470,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added `bigclaw-go/internal/regression/live_validation_summary_test.go` to pin the checked-in `docs/reports/live-validation-summary.json` surface: run metadata, closeout commands, canonical lane report paths, broker summary paths, and shared-queue companion summary paths and counts.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestLiveValidationSummaryStaysAligned` -> passed\n- `cd bigclaw-go && go test ./internal/regression` -> passed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `b0f0490bbeea7a50dd0177f25af49e1a359ce5e1` matches remote SHA `b0f0490bbeea7a50dd0177f25af49e1a359ce5e1` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `b0f0490bbeea7a50dd0177f25af49e1a359ce5e1`\n\nCommit SHA: `b0f0490bbeea7a50dd0177f25af49e1a359ce5e1`\nPR URL: unavailable; `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-240 --json url,title,state` returned `[]`.",
+          "created_at": "2026-03-23T06:49:20Z"
+        }
+      ],
       "created_at": "2026-03-23T06:46:57Z",
       "description": "Add regression coverage for bigclaw-go/docs/reports/live-validation-summary.json so canonical lane report paths, closeout commands, broker summary paths, and shared-queue companion summary paths cannot drift silently from the checked-in validation bundle surface.",
       "id": "big-par-270",
@@ -2478,9 +2485,23 @@
         "documentation"
       ],
       "priority": 4,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add live validation summary regression coverage",
-      "updated_at": "2026-03-23T06:46:57Z"
+      "updated_at": "2026-03-23T06:49:20Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-23T06:49:44Z",
+      "description": "Add regression coverage for bigclaw-go/docs/reports/broker-validation-summary.json so canonical summary paths, bootstrap summary pointers, contract-only posture, and validation-pack references cannot drift silently from the checked-in broker readiness surface.",
+      "id": "big-par-271",
+      "identifier": "BIG-PAR-271",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "In Progress",
+      "title": "Add broker validation summary regression coverage",
+      "updated_at": "2026-03-23T06:49:44Z"
     }
   ]
 }
