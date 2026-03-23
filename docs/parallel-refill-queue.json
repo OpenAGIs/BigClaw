@@ -79,7 +79,9 @@
       "BIG-PAR-277",
       "BIG-PAR-278",
       "BIG-PAR-279",
-      "BIG-PAR-280"
+      "BIG-PAR-280",
+      "BIG-PAR-283",
+      "BIG-PAR-282"
     ],
     "active": [],
     "standby": []
@@ -146,7 +148,9 @@
     "BIG-PAR-277",
     "BIG-PAR-278",
     "BIG-PAR-279",
-    "BIG-PAR-280"
+    "BIG-PAR-280",
+    "BIG-PAR-283",
+    "BIG-PAR-282"
   ],
   "issues": [
     {
@@ -548,6 +552,18 @@
     {
       "identifier": "BIG-PAR-280",
       "title": "Add durability rollout review bundle regression surface",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-283",
+      "title": "Add provider live handoff isolation regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-282",
+      "title": "Add sequence and retention surface regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }

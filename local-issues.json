@@ -2797,6 +2797,79 @@
       "state": "Done",
       "title": "Add durability rollout review bundle regression surface",
       "updated_at": "2026-03-23T16:02:34Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added provider live handoff isolation regression coverage in bigclaw-go/internal/regression/provider_live_handoff_surface_test.go so the repo now pins the external-store live handoff evidence pack's metadata, evidence sources, reviewer links, summary metrics, scenario invariants, and limitations. Validation: cd bigclaw-go && go test ./internal/regression.",
+          "created_at": "2026-03-23T16:10:30Z"
+        }
+      ],
+      "created_at": "2026-03-23T16:07:18Z",
+      "description": "Add regression coverage for the provider-backed live handoff isolation evidence pack so scenario metrics, reviewer links, and limitations remain aligned with the external-store validation lane and durability rollout contract.",
+      "id": "big-par-283",
+      "identifier": "BIG-PAR-283",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add provider live handoff isolation regression coverage",
+      "updated_at": "2026-03-23T16:10:38Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added  to pin the sequence-bridge and retention-watermark surfaces: it asserts summary counts, backend readiness, evidence links, and policy split invariants, covering both the contract-only durability lane and live backend proofs. Validation: ok  \tbigclaw-go/internal/regression\t0.012s [no tests to run].",
+          "created_at": "2026-03-23T16:10:15Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added sequence_retention_surface_test.go to pin the sequence-bridge and retention-watermark surfaces: it asserts summary counts, backend readiness, evidence links, and policy split invariants, covering both the contract-only durability lane and live backend proofs. Validation: cd bigclaw-go && go test ./internal/regression -run SequenceRetentionSurface.",
+          "created_at": "2026-03-23T16:10:27Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added sequence and retention surface regression coverage in bigclaw-go/internal/regression/sequence_retention_surface_test.go so the repo now pins durable sequence bridge counts, retention watermark backend posture, contract-only caveats, and linked review artifacts across the checked-in durability surfaces. Validation: cd bigclaw-go && go test ./internal/regression.",
+          "created_at": "2026-03-23T16:10:30Z"
+        }
+      ],
+      "created_at": "2026-03-23T16:07:18Z",
+      "description": "Add regression coverage for the durable sequence bridge and retention watermark surfaces so backend readiness counts, source links, and contract-only posture stay aligned with the checked-in durability review bundle.",
+      "id": "big-par-282",
+      "identifier": "BIG-PAR-282",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add sequence and retention surface regression coverage",
+      "updated_at": "2026-03-23T16:10:40Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added publish acknowledgement surface regression coverage in bigclaw-go/internal/regression/publish_ack_surface_test.go so the repo now pins BF-05 verdict counts, reviewer links, source reports, and outcome evidence parity between the runtime-facing publish outcome ledger and the ambiguous-publish proof summary. Validation: cd bigclaw-go && go test ./internal/regression.",
+          "created_at": "2026-03-23T16:10:30Z"
+        }
+      ],
+      "created_at": "2026-03-23T16:07:18Z",
+      "description": "Add regression coverage for the publish acknowledgement outcome surface so BF-05 verdict counts, reviewer links, and source-report references stay aligned with the checked-in ambiguous-publish proof and distributed diagnostics surface.",
+      "id": "big-par-281",
+      "identifier": "BIG-PAR-281",
+      "labels": [
+        "documentation"
+      ],
+      "priority": 4,
+      "state": "Done",
+      "title": "Add publish acknowledgement surface regression coverage",
+      "updated_at": "2026-03-23T16:10:38Z"
     }
   ]
 }
