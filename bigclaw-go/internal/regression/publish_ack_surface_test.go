@@ -96,6 +96,7 @@ func TestPublishAckOutcomeSurfaceStaysAligned(t *testing.T) {
 	}
 
 	for _, relative := range []string{
+		"docs/reports/issue-coverage.md",
 		"docs/reports/replicated-event-log-durability-rollout-contract.md",
 		"docs/reports/review-readiness.md",
 	} {

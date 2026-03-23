@@ -22,6 +22,7 @@ This document maps the current local MVP implementation to the Linear rewrite is
   - Covered by `internal/executor/ray.go`, `internal/executor/ray_test.go`, `scripts/e2e/ray_smoke.sh`, `docs/e2e-validation.md`, and `docs/reports/ray-live-smoke-report.json`
 - `OPE-183` / `BIG-GO-008`
   - Covered by `internal/events/bus.go`, `internal/events/recorder_sink.go`, `internal/events/webhook.go`, `internal/events/bus_test.go`, `internal/events/webhook_test.go`, `internal/api/server.go`, `internal/api/server_test.go`, and `docs/reports/event-bus-reliability-report.md`
+  - Reviewer-facing publish acknowledgement outcome evidence also stays checked in via `docs/reports/ambiguous-publish-outcome-proof-summary.json` and the runtime-facing `docs/reports/publish-ack-outcome-surface.json`
   - Follow-up takeover caveats are tracked in `docs/reports/subscriber-takeover-executability-follow-up-digest.md`, which now captures the deterministic local harness, the live two-node proof, and the remaining `OPE-269` / `BIG-PAR-080` shared-durable ownership gap
 - `OPE-184` / `BIG-GO-009`
   - Covered by `internal/observability/recorder.go`, `internal/observability/recorder_test.go`, `internal/observability/audit.go`, `internal/observability/audit_test.go`, `internal/api/server.go`, `internal/api/server_test.go`, `internal/worker/runtime.go`, `docs/reports/go-control-plane-observability-report.md`, `scripts/e2e/run_task_smoke.py`, `scripts/e2e/run_all.sh`, and isolated autostart live-validation reports in `docs/reports/*.json`
