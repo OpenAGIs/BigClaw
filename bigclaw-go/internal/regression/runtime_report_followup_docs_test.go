@@ -21,6 +21,16 @@ func TestRuntimeReportFollowUpDocsStayAligned(t *testing.T) {
 			},
 		},
 		{
+			path: "docs/reports/live-validation-runs/20260316T140138Z/README.md",
+			substrings: []string{
+				"OPE-271` / `BIG-PAR-082",
+				"validation-bundle-continuation-digest.md",
+				"validation-bundle-continuation-scorecard.json",
+				"validation-bundle-continuation-policy-gate.json",
+				"live-validation-index.md",
+			},
+		},
+		{
 			path: "docs/reports/multi-node-coordination-report.md",
 			substrings: []string{
 				"OPE-271` / `BIG-PAR-082",
