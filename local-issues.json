@@ -3887,7 +3887,13 @@
     },
     {
       "assigned_to_worker": true,
-      "comments": [],
+      "comments": [
+        {
+          "author": "Codex",
+          "body": "Closed `BIG-PAR-329` after normalizing `distributedExportURL` helper filters.\n\nWhat changed:\n- `bigclaw-go/internal/api/distributed.go` now trims surrounding whitespace from distributed export scope filters and lowercases `state` and `risk_level` before query encoding, matching the normalization already enforced at the request parser boundary.\n- `bigclaw-go/internal/api/expansion_test.go` now adds direct helper-level coverage for `distributedExportURL`, including reserved-character `team`/`project`/`task_id` values plus encoded RFC3339 time, priority, and limit filters.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-329` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `b7ed293b8fa2c9d346a7097435c97c644d6d724d` matches remote SHA `b7ed293b8fa2c9d346a7097435c97c644d6d724d` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `b7ed293b8fa2c9d346a7097435c97c644d6d724d`\n\nCommit SHA: `b7ed293b8fa2c9d346a7097435c97c644d6d724d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-25T21:45:00Z"
+        }
+      ],
       "created_at": "2026-03-25T00:00:00Z",
       "description": "Normalize distributedExportURL filter handling so surrounding whitespace is trimmed before query encoding, and add direct helper coverage for reserved-character scopes plus time/priority filters.",
       "id": "big-par-329",
@@ -3899,8 +3905,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
-      "title": "Normalize distributedExportURL helper filters"
+      "state": "Done",
+      "title": "Normalize distributedExportURL helper filters",
+      "updated_at": "2026-03-25T21:45:00Z"
     }
   ]
 }
