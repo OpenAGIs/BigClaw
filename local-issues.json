@@ -3551,7 +3551,13 @@
     },
     {
       "assigned_to_worker": true,
-      "comments": [],
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-315` after sanitizing Go-owned attachment filenames for run-report style exports.\n\nWhat changed:\n- `bigclaw-go/internal/api/distributed.go` now normalizes report filename scopes by collapsing non-alphanumeric separators into single dashes and trimming leading/trailing punctuation.\n- `bigclaw-go/internal/api/v2.go` now reuses that sanitizer when emitting run-report `Content-Disposition` headers, so task IDs with spaces, slashes, or punctuation cannot leak raw into attachment filenames.\n- `bigclaw-go/internal/api/server_test.go` now proves `/v2/runs/{task_id}/report` keeps the markdown body's original task ID while emitting a sanitized attachment filename.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-315` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `bbd39f1252ca567911cdcb7c1a9f6b0c376fa943` matches remote SHA `bbd39f1252ca567911cdcb7c1a9f6b0c376fa943` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `bbd39f1252ca567911cdcb7c1a9f6b0c376fa943`\n\nCommit SHA: `bbd39f1252ca567911cdcb7c1a9f6b0c376fa943`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T19:46:08Z"
+        }
+      ],
       "created_at": "2026-03-25T00:00:00Z",
       "description": "Sanitize Go-owned attachment filenames for run-report style exports so raw task identifiers with slashes, spaces, or punctuation cannot leak into Content-Disposition headers, and reuse the same normalization for distributed report filenames.",
       "id": "big-par-315",
@@ -3563,8 +3569,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
-      "title": "Sanitize attachment filenames for run report exports"
+      "state": "Done",
+      "title": "Sanitize attachment filenames for run report exports",
+      "updated_at": "2026-03-24T19:46:08Z"
     }
   ]
 }
