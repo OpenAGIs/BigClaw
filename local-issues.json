@@ -4500,9 +4500,16 @@
         "test"
       ],
       "priority": 3,
-      "state": "In",
+      "state": "Done",
       "title": "Add ClawHost expansion method guard coverage",
-      "updated_at": "2026-03-24T22:19:39Z"
+      "updated_at": "2026-03-25T00:31:30Z",
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added API regression coverage for the ClawHost expansion and export handlers so all eight endpoints now reject non-GET requests with the expected 405 and method-not-allowed body. Validation: cd bigclaw-go && go test ./internal/api -run TestV2ClawHostExpansionEndpointsRejectNonGET -count=1 -> ok; cd bigclaw-go && go test ./internal/api ./internal/product -count=1 -> ok. Commit SHA: 5554833a803823f54de840a93e32cbd2598e1b15. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T00:31:30Z"
+        }
+      ]
     }
   ]
 }
