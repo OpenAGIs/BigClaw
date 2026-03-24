@@ -1061,6 +1061,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 	recentBatchesSynced := false
 	recentBatchesUpdated := false
 	recentBatchesWritten := false
+	markdownWritten := false
 	var allIssues []refill.TrackedIssue
 	var err error
 	if client.backend() == "local" {
@@ -1104,10 +1105,17 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 	}
 	stateMap := refill.IssueStateMap(issues)
 	liveStateMap := stateMap
+	markdownGeneratedAt := time.Now().UTC()
 	if client.backend() == "local" {
 		liveStateMap = refill.IssueStateMap(allIssues)
 		if apply {
 			recentBatchesUpdated = queue.RefreshRecentBatchesFromStates(liveStateMap)
+		}
+		if apply && trim(markdownPath) != "" {
+			markdownWritten, err = queue.MarkdownNeedsWrite(markdownPath, markdownGeneratedAt)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	if apply && (queueStatusUpdates > 0 || recentBatchesUpdated) {
@@ -1147,6 +1155,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		"queue_status_written":       queueStatusWritten,
 		"queue_path":                 queuePath,
 		"markdown_path":              markdownPath,
+		"markdown_written":           markdownWritten,
 	}
 	if trim(localIssuesPath) != "" {
 		payload["local_issues_path"] = localIssuesPath
@@ -1215,7 +1224,8 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 				return err
 			}
 		}
-		if _, err := queue.SaveMarkdown(markdownPath, time.Now().UTC()); err != nil {
+		markdownWritten, err = queue.SaveMarkdown(markdownPath, markdownGeneratedAt)
+		if err != nil {
 			return err
 		}
 	}

@@ -569,6 +569,9 @@ func TestRunRefillOnceLocalBackendSyncsQueueStatusFromLocalIssues(t *testing.T) 
 	if !bytes.Contains(output, []byte(`"recent_batches_written": true`)) {
 		t.Fatalf("expected refill output to confirm recent batch write, got %s", string(output))
 	}
+	if !bytes.Contains(output, []byte(`"markdown_written": true`)) {
+		t.Fatalf("expected refill output to confirm markdown write, got %s", string(output))
+	}
 }
 
 func TestRunRefillOnceLocalBackendReportsRecentBatchWriteWithoutStatusWrite(t *testing.T) {

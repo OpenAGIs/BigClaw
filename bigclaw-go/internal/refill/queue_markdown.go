@@ -15,12 +15,12 @@ func (q *ParallelIssueQueue) SaveMarkdown(path string, generatedAt time.Time) (b
 		return false, err
 	}
 	body := []byte(q.RenderMarkdown(generatedAt))
-	existing, err := os.ReadFile(absolute)
-	if err == nil && bytes.Equal(existing, body) {
-		return false, nil
-	}
-	if err != nil && !os.IsNotExist(err) {
+	needsWrite, err := markdownNeedsWrite(absolute, body)
+	if err != nil {
 		return false, err
+	}
+	if !needsWrite {
+		return false, nil
 	}
 
 	dir := filepath.Dir(absolute)
@@ -47,6 +47,25 @@ func (q *ParallelIssueQueue) SaveMarkdown(path string, generatedAt time.Time) (b
 		return false, err
 	}
 	if err := os.Rename(tmpName, absolute); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (q *ParallelIssueQueue) MarkdownNeedsWrite(path string, generatedAt time.Time) (bool, error) {
+	absolute, err := filepath.Abs(path)
+	if err != nil {
+		return false, err
+	}
+	return markdownNeedsWrite(absolute, []byte(q.RenderMarkdown(generatedAt)))
+}
+
+func markdownNeedsWrite(path string, body []byte) (bool, error) {
+	existing, err := os.ReadFile(path)
+	if err == nil && bytes.Equal(existing, body) {
+		return false, nil
+	}
+	if err != nil && !os.IsNotExist(err) {
 		return false, err
 	}
 	return true, nil
