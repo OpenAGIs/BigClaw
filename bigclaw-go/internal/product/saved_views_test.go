@@ -80,6 +80,35 @@ func TestBuildSavedViewCatalogUnscopedBaseline(t *testing.T) {
 	}
 }
 
+func TestBuildSavedViewCatalogProjectScoped(t *testing.T) {
+	tasks := []domain.Task{
+		{ID: "task-1", State: domain.TaskRunning, Metadata: map[string]string{"owner": "alice"}},
+	}
+
+	catalog := BuildSavedViewCatalog(tasks, "alice", "", "apollo/mobile")
+	if len(catalog.Views) != 5 {
+		t.Fatalf("expected baseline project-scoped views, got %+v", catalog.Views)
+	}
+	for _, view := range catalog.Views {
+		if !strings.Contains(view.ViewID, "-apollo-mobile") {
+			t.Fatalf("expected project scope suffix in view id, got %s", view.ViewID)
+		}
+		if view.Visibility != "team" {
+			t.Fatalf("expected project-only scope to promote team visibility, got %+v", view)
+		}
+		parsed, err := url.Parse(view.Route)
+		if err != nil {
+			t.Fatalf("parse project-scoped route: %v", err)
+		}
+		if parsed.Query().Get("team") != "" || parsed.Query().Get("project") != "apollo/mobile" {
+			t.Fatalf("expected project-only scoped route, got %s", view.Route)
+		}
+	}
+	if catalog.Subscriptions[0].SubscriptionID != "saved-view-daily-triage-apollo-mobile" || catalog.Subscriptions[1].SubscriptionID != "saved-view-weekly-ops-apollo-mobile" {
+		t.Fatalf("unexpected project-scoped subscription ids: %+v", catalog.Subscriptions)
+	}
+}
+
 func TestAuditSavedViewCatalogAndRenderReport(t *testing.T) {
 	catalog := SavedViewCatalog{
 		Name:    "catalog",
