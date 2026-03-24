@@ -4413,6 +4413,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct API-unit coverage for the ClawHost policy surface payload so the catalog-only empty state, blank filter map, and zeroed summary stay pinned without going through the full handler stack. Validation: cd bigclaw-go && go test ./internal/api -run 'Test(ClawHostPolicySurfacePayloadHandlesEmptyScope|RenderClawHostPolicySurfaceReportHandlesEmptyFilters)' -count=1 -> ok; cd bigclaw-go && go test ./internal/api ./internal/product -count=1 -> ok. Commit SHA: ec8153c47712be8555c6f7ee71d90ca77c0d5957. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-24T22:07:38Z"
+        }
+      ],
       "created_at": "2026-03-24T22:06:10Z",
       "description": "Add direct API-unit coverage for the ClawHost policy surface payload so the catalog-only empty state and blank filter map remain pinned without going through full handlers.",
       "id": "big-par-346",
@@ -4425,9 +4432,9 @@
         "test"
       ],
       "priority": 3,
-      "state": "In",
+      "state": "Done",
       "title": "Add policy surface empty-state unit coverage",
-      "updated_at": "2026-03-24T22:06:10Z"
+      "updated_at": "2026-03-24T22:07:38Z"
     }
   ]
 }
