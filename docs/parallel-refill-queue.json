@@ -162,9 +162,12 @@
       "BIG-PAR-370",
       "BIG-PAR-371",
       "BIG-PAR-372",
-      "BIG-PAR-373"
+      "BIG-PAR-373",
+      "BIG-PAR-374"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-375"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -312,7 +315,9 @@
     "BIG-PAR-370",
     "BIG-PAR-371",
     "BIG-PAR-372",
-    "BIG-PAR-373"
+    "BIG-PAR-373",
+    "BIG-PAR-374",
+    "BIG-PAR-375"
   ],
   "issues": [
     {
@@ -1214,6 +1219,18 @@
       "title": "Add ClawHost merged review-doc regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-374",
+      "title": "Fix refill dry-run queue_status_synced drift",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-375",
+      "title": "Add refill dry-run drift preview regression",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
