@@ -93,11 +93,10 @@
       "BIG-PAR-292",
       "BIG-PAR-293",
       "BIG-PAR-294",
-      "BIG-PAR-295"
-    ],
-    "active": [
+      "BIG-PAR-295",
       "BIG-PAR-296"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -670,7 +669,7 @@
       "identifier": "BIG-PAR-296",
       "title": "Add ClawHost export coexistence regression coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
