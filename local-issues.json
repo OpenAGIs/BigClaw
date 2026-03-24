@@ -3344,6 +3344,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added optional `team` and `project` filters to the ClawHost fleet inventory and export surfaces, carried the active scope through the fleet export URL, and extended the fleet regression to prove the scoped response narrows apps, bots, and exported markdown to the selected operational slice.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api ./internal/product -count=1` -> ok\n- `cd bigclaw-go && go test ./internal/api -run TestV2ClawHostExpansionEndpoints -count=1` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `57481145ea7bd4107b5ff0a27791b04b770cd419` matches remote SHA `57481145ea7bd4107b5ff0a27791b04b770cd419` with `status: ok` and `synced: true`\n\nCommit SHA: `57481145ea7bd4107b5ff0a27791b04b770cd419`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-24T19:11:28Z"
+        }
+      ],
       "created_at": "2026-03-24T19:07:35Z",
       "description": "Add optional `team` and `project` scoping to the ClawHost fleet inventory/report surface so the fleet endpoint and export can be narrowed to one operational slice while preserving the selected scope in the export URL.",
       "id": "big-par-303",
@@ -3356,9 +3363,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add team and project scoping to ClawHost fleet surface",
-      "updated_at": "2026-03-24T19:07:35Z"
+      "updated_at": "2026-03-24T19:11:28Z"
     }
   ]
 }
