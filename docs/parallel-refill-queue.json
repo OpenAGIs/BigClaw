@@ -142,12 +142,11 @@
       "BIG-PAR-342",
       "BIG-PAR-343",
       "BIG-PAR-345",
-      "BIG-PAR-346"
-    ],
-    "active": [
+      "BIG-PAR-346",
       "BIG-PAR-348",
       "BIG-PAR-347"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1064,13 +1063,13 @@
       "identifier": "BIG-PAR-348",
       "title": "Add saved view catalog actor fallback coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-347",
       "title": "Add team-scoped saved view catalog coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
