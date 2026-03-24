@@ -101,11 +101,10 @@
       "BIG-PAR-300",
       "BIG-PAR-301",
       "BIG-PAR-302",
-      "BIG-PAR-303"
-    ],
-    "active": [
+      "BIG-PAR-303",
       "BIG-PAR-304"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -734,7 +733,7 @@
       "identifier": "BIG-PAR-304",
       "title": "Harden scoped ClawHost expansion export regressions",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

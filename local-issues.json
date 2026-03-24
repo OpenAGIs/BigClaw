@@ -3369,6 +3369,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Scoped the ClawHost recovery scorecard builder to the filtered fleet inventory so `team` and `project` actually narrow the recovery bots in both the JSON payload and export markdown, and tightened the expansion regressions to prove rollout/workflow exports preserve the requested scope while recovery exports exclude out-of-scope fleet members.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api -run TestV2ClawHostExpansionEndpoints -count=1` -> ok\n- `cd bigclaw-go && go test ./internal/api ./internal/product -count=1` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `adc581c3f54f7001e165f6c8fc686c8007423899` matches remote SHA `adc581c3f54f7001e165f6c8fc686c8007423899` with `status: ok` and `synced: true`\n\nCommit SHA: `adc581c3f54f7001e165f6c8fc686c8007423899`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-24T19:17:31Z"
+        }
+      ],
       "created_at": "2026-03-24T19:14:24Z",
       "description": "Extend the scoped ClawHost expansion endpoint regressions so rollout planner, workflow, and recovery-scorecard exports prove they retain the selected scope and exclude out-of-scope ClawHost tasks or lanes from exported markdown.",
       "id": "big-par-304",
@@ -3381,9 +3388,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Harden scoped ClawHost expansion export regressions",
-      "updated_at": "2026-03-24T19:14:24Z"
+      "updated_at": "2026-03-24T19:17:31Z"
     }
   ]
 }
