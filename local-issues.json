@@ -3575,7 +3575,13 @@
     },
     {
       "assigned_to_worker": true,
-      "comments": [],
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-316` after adding direct distributed diagnostics export coverage for sanitized attachment filenames.\n\nWhat changed:\n- `bigclaw-go/internal/api/server_test.go` now proves `/v2/reports/distributed/export` returns markdown and emits `attachment; filename=\"bigclaw-distributed-diagnostics-platform-ops-night.md\"` when the scoped team filter contains spaces, slashes, and punctuation.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-316` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `a80ea3cb87d9e805ed03ce83a98caed903e8d101` matches remote SHA `a80ea3cb87d9e805ed03ce83a98caed903e8d101` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `a80ea3cb87d9e805ed03ce83a98caed903e8d101`\n\nCommit SHA: `a80ea3cb87d9e805ed03ce83a98caed903e8d101`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T19:50:50Z"
+        }
+      ],
       "created_at": "2026-03-25T00:00:00Z",
       "description": "Add direct server-level regression coverage proving distributed diagnostics export filenames stay sanitized when scoped team or project filters contain spaces, slashes, and punctuation.",
       "id": "big-par-316",
@@ -3587,8 +3593,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
-      "title": "Add distributed export filename sanitization coverage"
+      "state": "Done",
+      "title": "Add distributed export filename sanitization coverage",
+      "updated_at": "2026-03-24T19:50:50Z"
     }
   ]
 }
