@@ -845,7 +845,7 @@
       "identifier": "BIG-PAR-319",
       "title": "Add distributed export project-scope filename sanitization coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
