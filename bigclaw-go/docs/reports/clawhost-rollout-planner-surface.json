@@ -1,0 +1,119 @@
+{
+  "generated_at": "2026-03-25T00:30:00Z",
+  "ticket": "BIG-PAR-288",
+  "title": "ClawHost parallel rollout planner surface",
+  "status": "checked_in_rollout_plan",
+  "provider": "clawhost",
+  "planner_mode": "wave_canary_takeover_guarded",
+  "report_path": "docs/reports/clawhost-rollout-planner-surface.json",
+  "evidence_sources": [
+    "bigclaw-go/internal/api/clawhost_rollout_planner_surface.go",
+    "bigclaw-go/internal/api/distributed.go",
+    "bigclaw-go/internal/api/server_test.go",
+    "bigclaw-go/docs/reports/clawhost-proxy-admin-validation-lane.json"
+  ],
+  "reviewer_links": [
+    "/debug/status",
+    "/v2/control-center",
+    "/v2/reports/distributed",
+    "docs/reports/clawhost-proxy-admin-validation-lane.json"
+  ],
+  "summary": {
+    "app_count": 2,
+    "bot_count": 5,
+    "total_waves": 3,
+    "canary_waves": 1,
+    "max_parallelism": 2,
+    "canary_bot_count": 1,
+    "takeover_protected_waves": 2,
+    "evidence_ready_waves": 2,
+    "blocked_waves": 1,
+    "execution_readiness": "guarded_ready"
+  },
+  "waves": [
+    {
+      "wave_id": "wave-canary-restart-sales",
+      "action": "restart",
+      "scope": "sales bots canary wave",
+      "target_bots": [
+        "bot-sales-a",
+        "bot-sales-b"
+      ],
+      "max_parallelism": 1,
+      "canary": true,
+      "canary_bot_ids": [
+        "bot-sales-a"
+      ],
+      "takeover_required": true,
+      "success_gate": "proxy and admin validation for bot-sales-a remains ready for 10 minutes",
+      "rollback_gate": "pause remaining rollout if websocket reachability or admin readiness regresses on the canary",
+      "validation_status": "ready",
+      "evidence_paths": [
+        "docs/reports/clawhost-proxy-admin-validation-lane.json"
+      ]
+    },
+    {
+      "wave_id": "wave-bulk-upgrade-sales",
+      "action": "upgrade",
+      "scope": "remaining sales bots after canary",
+      "target_bots": [
+        "bot-sales-b",
+        "bot-support-b"
+      ],
+      "max_parallelism": 2,
+      "canary": false,
+      "takeover_required": true,
+      "success_gate": "all upgraded bots return healthy HTTP and admin checks before the batch is marked complete",
+      "rollback_gate": "handoff to human takeover if one upgraded bot remains degraded for more than one probe interval",
+      "validation_status": "ready",
+      "evidence_paths": [
+        "docs/reports/clawhost-proxy-admin-validation-lane.json"
+      ]
+    },
+    {
+      "wave_id": "wave-support-websocket-unblock",
+      "action": "restart",
+      "scope": "support bot websocket remediation",
+      "target_bots": [
+        "bot-support-a"
+      ],
+      "max_parallelism": 1,
+      "canary": false,
+      "takeover_required": false,
+      "success_gate": "websocket upgrade succeeds and admin route stays auth-reachable",
+      "rollback_gate": "do not proceed with websocket-heavy tenant traffic until the degraded validation lane is cleared",
+      "validation_status": "blocked",
+      "evidence_paths": [
+        "docs/reports/clawhost-proxy-admin-validation-lane.json"
+      ]
+    }
+  ],
+  "takeover_hooks": [
+    {
+      "hook_id": "hook-canary-regression",
+      "trigger": "canary readiness regresses after a lifecycle action",
+      "owner": "operations",
+      "reviewer": "platform-oncall",
+      "required_steps": [
+        "pause downstream waves",
+        "capture proxy/admin evidence",
+        "assign takeover owner before retry"
+      ]
+    },
+    {
+      "hook_id": "hook-bulk-batch-failure",
+      "trigger": "one bot in a parallel batch misses the success gate",
+      "owner": "release",
+      "reviewer": "tenant-owner",
+      "required_steps": [
+        "fence the failed batch",
+        "hold remaining tenant waves",
+        "record per-bot evidence before rollback or retry"
+      ]
+    }
+  ],
+  "limitations": [
+    "This planner is a checked-in orchestration surface and does not execute live ClawHost lifecycle actions from this repository checkout.",
+    "Wave readiness depends on the checked-in proxy/admin validation lane and should be refreshed before using the plan for a live tenant rollout."
+  ]
+}

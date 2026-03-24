@@ -5361,6 +5361,137 @@ func TestV2DistributedReportIncludesClawHostProxyAdminValidationLane(t *testing.
 	}
 }
 
+func TestDebugStatusIncludesClawHostRolloutPlannerSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		Rollout struct {
+			ReportPath  string `json:"report_path"`
+			Ticket      string `json:"ticket"`
+			Provider    string `json:"provider"`
+			PlannerMode string `json:"planner_mode"`
+			Summary     struct {
+				AppCount           int    `json:"app_count"`
+				BotCount           int    `json:"bot_count"`
+				TotalWaves         int    `json:"total_waves"`
+				CanaryWaves        int    `json:"canary_waves"`
+				MaxParallelism     int    `json:"max_parallelism"`
+				TakeoverProtected  int    `json:"takeover_protected_waves"`
+				EvidenceReadyWaves int    `json:"evidence_ready_waves"`
+				BlockedWaves       int    `json:"blocked_waves"`
+				ExecutionReadiness string `json:"execution_readiness"`
+			} `json:"summary"`
+			Waves []struct {
+				WaveID           string `json:"wave_id"`
+				Action           string `json:"action"`
+				ValidationStatus string `json:"validation_status"`
+				TakeoverRequired bool   `json:"takeover_required"`
+			} `json:"waves"`
+		} `json:"clawhost_rollout_planner"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode clawhost rollout payload: %v", err)
+	}
+	if decoded.Rollout.ReportPath != clawHostRolloutPlannerSurfacePath || decoded.Rollout.Ticket != "BIG-PAR-288" || decoded.Rollout.Provider != "clawhost" || decoded.Rollout.PlannerMode != "wave_canary_takeover_guarded" {
+		t.Fatalf("unexpected clawhost rollout metadata: %+v", decoded.Rollout)
+	}
+	if decoded.Rollout.Summary.AppCount != 2 || decoded.Rollout.Summary.BotCount != 5 || decoded.Rollout.Summary.TotalWaves != 3 || decoded.Rollout.Summary.CanaryWaves != 1 || decoded.Rollout.Summary.MaxParallelism != 2 || decoded.Rollout.Summary.TakeoverProtected != 2 || decoded.Rollout.Summary.EvidenceReadyWaves != 2 || decoded.Rollout.Summary.BlockedWaves != 1 || decoded.Rollout.Summary.ExecutionReadiness != "guarded_ready" {
+		t.Fatalf("unexpected clawhost rollout summary: %+v", decoded.Rollout.Summary)
+	}
+	if len(decoded.Rollout.Waves) != 3 || decoded.Rollout.Waves[0].WaveID != "wave-canary-restart-sales" || !decoded.Rollout.Waves[0].TakeoverRequired || decoded.Rollout.Waves[2].ValidationStatus != "blocked" {
+		t.Fatalf("unexpected clawhost rollout waves: %+v", decoded.Rollout.Waves)
+	}
+}
+
+func TestV2ControlCenterIncludesClawHostRolloutPlannerSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5&audit_limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Rollout struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				TotalWaves         int `json:"total_waves"`
+				CanaryWaves        int `json:"canary_waves"`
+				TakeoverProtected  int `json:"takeover_protected_waves"`
+				EvidenceReadyWaves int `json:"evidence_ready_waves"`
+			} `json:"summary"`
+		} `json:"clawhost_rollout_planner"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center clawhost rollout payload: %v", err)
+	}
+	if decoded.Rollout.ReportPath != clawHostRolloutPlannerSurfacePath || decoded.Rollout.Summary.TotalWaves != 3 || decoded.Rollout.Summary.CanaryWaves != 1 || decoded.Rollout.Summary.TakeoverProtected != 2 || decoded.Rollout.Summary.EvidenceReadyWaves != 2 {
+		t.Fatalf("unexpected control center clawhost rollout payload: %+v", decoded.Rollout)
+	}
+}
+
+func TestV2DistributedReportIncludesClawHostRolloutPlannerSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Rollout struct {
+			ReportPath  string `json:"report_path"`
+			Provider    string `json:"provider"`
+			PlannerMode string `json:"planner_mode"`
+			Summary     struct {
+				BotCount          int `json:"bot_count"`
+				TotalWaves        int `json:"total_waves"`
+				CanaryWaves       int `json:"canary_waves"`
+				MaxParallelism    int `json:"max_parallelism"`
+				TakeoverProtected int `json:"takeover_protected_waves"`
+				BlockedWaves      int `json:"blocked_waves"`
+			} `json:"summary"`
+		} `json:"clawhost_rollout_planner"`
+		Report struct {
+			Markdown string `json:"markdown"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed clawhost rollout payload: %v", err)
+	}
+	if decoded.Rollout.ReportPath != clawHostRolloutPlannerSurfacePath || decoded.Rollout.Provider != "clawhost" || decoded.Rollout.PlannerMode != "wave_canary_takeover_guarded" || decoded.Rollout.Summary.BotCount != 5 || decoded.Rollout.Summary.TotalWaves != 3 || decoded.Rollout.Summary.CanaryWaves != 1 || decoded.Rollout.Summary.MaxParallelism != 2 || decoded.Rollout.Summary.TakeoverProtected != 2 || decoded.Rollout.Summary.BlockedWaves != 1 {
+		t.Fatalf("unexpected distributed clawhost rollout payload: %+v", decoded.Rollout)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "## ClawHost Rollout Planner") || !strings.Contains(decoded.Report.Markdown, "Planner mode: wave_canary_takeover_guarded") || !strings.Contains(decoded.Report.Markdown, "wave-support-websocket-unblock: action=restart validation=blocked") {
+		t.Fatalf("expected clawhost rollout markdown section, got %s", decoded.Report.Markdown)
+	}
+}
+
 func TestProviderBackedRemoteEventLogLiveHandoffIsolation(t *testing.T) {
 	base := time.Unix(1_700_200_000, 0).UTC()
 	backlog := []domain.Event{

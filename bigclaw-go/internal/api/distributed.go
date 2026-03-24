@@ -176,6 +176,7 @@ type distributedDiagnostics struct {
 	BrokerFanoutIsolation brokerStubFanoutIsolationEvidencePack    `json:"broker_stub_fanout_isolation"`
 	ProviderLiveHandoff   providerLiveHandoffIsolationEvidencePack `json:"provider_live_handoff_isolation"`
 	ClawHostProxyAdmin    clawHostProxyAdminValidationLane         `json:"clawhost_proxy_admin_validation"`
+	ClawHostRolloutPlan   clawHostRolloutPlannerSurface            `json:"clawhost_rollout_planner"`
 	BrokerBootstrap       brokerBootstrapSurface                   `json:"broker_bootstrap_surface"`
 	DeliveryAckReadiness  deliveryAckReadinessSurface              `json:"delivery_ack_readiness"`
 	PublishAckOutcomes    publishAckOutcomeSurface                 `json:"publish_ack_outcomes"`
@@ -277,6 +278,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"broker_stub_fanout_isolation":    diagnostics.BrokerFanoutIsolation,
 		"provider_live_handoff_isolation": diagnostics.ProviderLiveHandoff,
 		"clawhost_proxy_admin_validation": diagnostics.ClawHostProxyAdmin,
+		"clawhost_rollout_planner":        diagnostics.ClawHostRolloutPlan,
 		"broker_bootstrap_surface":        diagnostics.BrokerBootstrap,
 		"trace_export_bundle":             diagnostics.TraceBundle,
 		"migration_review_pack":           diagnostics.MigrationReviewPack,
@@ -367,6 +369,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		BrokerFanoutIsolation: brokerStubFanoutIsolationPayload(),
 		ProviderLiveHandoff:   providerLiveHandoffIsolationPayload(),
 		ClawHostProxyAdmin:    clawHostProxyAdminValidationLanePayload(),
+		ClawHostRolloutPlan:   clawHostRolloutPlannerSurfacePayload(),
 		BrokerBootstrap:       brokerBootstrapSurfacePayload(),
 		DeliveryAckReadiness:  deliveryAckReadinessPayload(),
 		PublishAckOutcomes:    publishAckOutcomeSurfacePayload(),
@@ -1424,6 +1427,39 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.ClawHostProxyAdmin.ReviewerLinks) > 0 {
 		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.ClawHostProxyAdmin.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## ClawHost Rollout Planner",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.ClawHostRolloutPlan.ReportPath),
+		fmt.Sprintf("- Provider: %s", firstNonEmpty(diagnostics.ClawHostRolloutPlan.Provider, "unknown")),
+		fmt.Sprintf("- Planner mode: %s", firstNonEmpty(diagnostics.ClawHostRolloutPlan.PlannerMode, "unknown")),
+		fmt.Sprintf("- App count: %d", diagnostics.ClawHostRolloutPlan.Summary.AppCount),
+		fmt.Sprintf("- Bot count: %d", diagnostics.ClawHostRolloutPlan.Summary.BotCount),
+		fmt.Sprintf("- Total waves: %d", diagnostics.ClawHostRolloutPlan.Summary.TotalWaves),
+		fmt.Sprintf("- Canary waves: %d", diagnostics.ClawHostRolloutPlan.Summary.CanaryWaves),
+		fmt.Sprintf("- Max parallelism: %d", diagnostics.ClawHostRolloutPlan.Summary.MaxParallelism),
+		fmt.Sprintf("- Takeover-protected waves: %d", diagnostics.ClawHostRolloutPlan.Summary.TakeoverProtected),
+		fmt.Sprintf("- Evidence-ready waves: %d", diagnostics.ClawHostRolloutPlan.Summary.EvidenceReadyWaves),
+		fmt.Sprintf("- Blocked waves: %d", diagnostics.ClawHostRolloutPlan.Summary.BlockedWaves),
+	)
+	for _, wave := range diagnostics.ClawHostRolloutPlan.Waves {
+		lines = append(lines, fmt.Sprintf("- %s: action=%s validation=%s canary=%t takeover_required=%t parallelism=%d", firstNonEmpty(wave.WaveID, "unknown-wave"), firstNonEmpty(wave.Action, "unknown"), firstNonEmpty(wave.ValidationStatus, "unknown"), wave.Canary, wave.TakeoverRequired, wave.MaxParallelism))
+		if wave.Scope != "" {
+			lines = append(lines, "  - scope: "+wave.Scope)
+		}
+		if wave.SuccessGate != "" {
+			lines = append(lines, "  - success gate: "+wave.SuccessGate)
+		}
+		if wave.RollbackGate != "" {
+			lines = append(lines, "  - rollback gate: "+wave.RollbackGate)
+		}
+	}
+	if len(diagnostics.ClawHostRolloutPlan.Limitations) > 0 {
+		lines = append(lines, "- Limitations: "+strings.Join(diagnostics.ClawHostRolloutPlan.Limitations, "; "))
+	}
+	if len(diagnostics.ClawHostRolloutPlan.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.ClawHostRolloutPlan.ReviewerLinks, ", "))
 	}
 	lines = append(lines,
 		"",

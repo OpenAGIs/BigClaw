@@ -1255,6 +1255,7 @@ func (s *Server) buildControlCenterResponse(
 		"retention_expiry_surface":        retentionExpirySurfacePayload(),
 		"provider_live_handoff_isolation": providerLiveHandoffIsolationPayload(),
 		"clawhost_proxy_admin_validation": clawHostProxyAdminValidationLanePayload(),
+		"clawhost_rollout_planner":        clawHostRolloutPlannerSurfacePayload(),
 		"broker_bootstrap_surface":        brokerBootstrapSurfacePayload(),
 		"broker_review_bundle":            brokerReviewBundleSurfacePayload(),
 		"summary":                         summarizeControlCenter(queueTasks, filteredDeadLetters),
