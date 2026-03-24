@@ -8,7 +8,7 @@ import (
 	"bigclaw-go/internal/domain"
 )
 
-func TestBuildClawHostWorkflowSurfaceIncludesParallelLanesAndSignals(t *testing.T) {
+func TestBuildClawHostWorkflowLaneSurfaceIncludesParallelLanesAndSignals(t *testing.T) {
 	tasks := []domain.Task{
 		{
 			ID:        "task-1",
@@ -31,7 +31,7 @@ func TestBuildClawHostWorkflowSurfaceIncludesParallelLanesAndSignals(t *testing.
 		},
 	}
 
-	surface := BuildDefaultClawHostWorkflowSurface(tasks, "alice", "platform", "apollo")
+	surface := BuildDefaultClawHostWorkflowLaneSurface(tasks, "alice", "platform", "apollo")
 	if surface.Name != "clawhost-workflow-surface" || surface.Version != "go-v1" {
 		t.Fatalf("unexpected workflow surface identity: %+v", surface)
 	}
@@ -75,8 +75,8 @@ func TestBuildClawHostWorkflowSurfaceIncludesParallelLanesAndSignals(t *testing.
 	}
 }
 
-func TestAuditClawHostWorkflowSurfaceFlagsWorkflowGaps(t *testing.T) {
-	surface := BuildDefaultClawHostWorkflowSurface(nil, "", "", "")
+func TestAuditClawHostWorkflowLaneSurfaceFlagsWorkflowGaps(t *testing.T) {
+	surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "", "", "")
 	if len(surface.Lanes) == 0 {
 		t.Fatal("expected base lanes from builder")
 	}
@@ -89,7 +89,7 @@ func TestAuditClawHostWorkflowSurfaceFlagsWorkflowGaps(t *testing.T) {
 	surface.Lanes[0].Stage = "unknown"
 	surface.Lanes[0].AutomationBoundary = "manual-only"
 
-	audit := AuditClawHostWorkflowSurface(surface)
+	audit := AuditClawHostWorkflowLaneSurface(surface)
 	if audit.LaneCount != len(surface.Lanes) {
 		t.Fatalf("unexpected lane count in audit: %+v", audit)
 	}
@@ -113,11 +113,11 @@ func TestAuditClawHostWorkflowSurfaceFlagsWorkflowGaps(t *testing.T) {
 	}
 }
 
-func TestRenderClawHostWorkflowReportIncludesKeySections(t *testing.T) {
-	surface := BuildDefaultClawHostWorkflowSurface(nil, "ops-bot", "platform", "apollo")
-	audit := AuditClawHostWorkflowSurface(surface)
+func TestRenderClawHostWorkflowLaneReportIncludesKeySections(t *testing.T) {
+	surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "ops-bot", "platform", "apollo")
+	audit := AuditClawHostWorkflowLaneSurface(surface)
 
-	report := RenderClawHostWorkflowReport(surface, audit)
+	report := RenderClawHostWorkflowLaneReport(surface, audit)
 	for _, want := range []string{
 		"# ClawHost Workflow Surface",
 		"## Summary",

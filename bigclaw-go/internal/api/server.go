@@ -217,6 +217,7 @@ func (s *Server) Handler() http.Handler {
 			"clawhost_workflow_surface":       clawHostWorkflowSurfacePayload(s.clawHostPolicyTasks(r.Context())),
 			"clawhost_rollout_surface":        clawHostRolloutSurfacePayload(s.clawHostPolicyTasks(r.Context())),
 			"clawhost_readiness_surface":      clawHostReadinessSurfacePayload(s.clawHostPolicyTasks(r.Context())),
+			"clawhost_recovery_surface":       clawHostRecoverySurfacePayload(s.clawHostPolicyTasks(r.Context())),
 			"broker_bootstrap_surface":        brokerBootstrapSurfacePayload(),
 			"broker_review_bundle":            brokerReviewBundleSurfacePayload(),
 			"validation_bundle_continuation":  validationBundleContinuationGatePayload(),
@@ -285,6 +286,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/v2/clawhost/rollout-planner/export", s.handleV2ClawHostRolloutPlannerExport)
 	mux.HandleFunc("/v2/clawhost/workflows", s.handleV2ClawHostWorkflows)
 	mux.HandleFunc("/v2/clawhost/workflows/export", s.handleV2ClawHostWorkflowsExport)
+	mux.HandleFunc("/v2/clawhost/recovery-scorecard", s.handleV2ClawHostRecoveryScorecard)
+	mux.HandleFunc("/v2/clawhost/recovery-scorecard/export", s.handleV2ClawHostRecoveryScorecardExport)
 	mux.HandleFunc("/v2/billing/usage", s.handleV2BillingUsage)
 	mux.HandleFunc("/v2/billing/entitlements", s.handleV2BillingEntitlements)
 	mux.HandleFunc("/v2/runs", s.handleV2Runs)
