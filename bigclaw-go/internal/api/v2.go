@@ -1255,7 +1255,7 @@ func (s *Server) buildControlCenterResponse(
 		"sequence_bridge_surface":         sequenceBridgeSurfacePayload(),
 		"retention_expiry_surface":        retentionExpirySurfacePayload(),
 		"provider_live_handoff_isolation": providerLiveHandoffIsolationPayload(),
-		"clawhost_policy_surface":         clawHostPolicySurfacePayload(clawHostTasks),
+		"clawhost_policy_surface":         clawHostPolicySurfacePayload(clawHostTasks, filters.Team, filters.Project),
 		"clawhost_workflow_surface":       clawHostWorkflowSurfacePayload(clawHostTasks),
 		"clawhost_rollout_surface":        clawHostRolloutSurfacePayload(clawHostTasks),
 		"clawhost_readiness_surface":      clawHostReadinessSurfacePayload(clawHostTasks),

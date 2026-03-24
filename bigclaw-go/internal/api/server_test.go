@@ -4610,7 +4610,8 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 			} `json:"tenants"`
 		} `json:"fairness"`
 		ClawHost struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				ActivePolicies      int `json:"active_policies"`
 				ActiveTenants       int `json:"active_tenants"`
@@ -4644,6 +4645,9 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	}
 	if policyDecoded.ClawHost.Status != "active" || policyDecoded.ClawHost.Summary.ActivePolicies != 1 || policyDecoded.ClawHost.Summary.ActiveTenants != 1 || policyDecoded.ClawHost.Summary.ActiveApps != 1 || policyDecoded.ClawHost.Summary.ReviewRequired != 0 || policyDecoded.ClawHost.Summary.TakeoverRequired != 0 || policyDecoded.ClawHost.Summary.OutOfPolicyDefaults != 0 {
 		t.Fatalf("unexpected ClawHost policy payload: %+v", policyDecoded.ClawHost)
+	}
+	if policyDecoded.ClawHost.Filters["team"] != "platform" || policyDecoded.ClawHost.Filters["project"] != "sales" {
+		t.Fatalf("expected scoped ClawHost surface filters, got %+v", policyDecoded.ClawHost.Filters)
 	}
 	if len(policyDecoded.ClawHost.ReviewQueue) != 1 || policyDecoded.ClawHost.ReviewQueue[0].TaskID != "clawhost-policy-endpoint-1" || policyDecoded.ClawHost.ReviewQueue[0].DriftStatus != "aligned" {
 		t.Fatalf("expected scoped ClawHost review queue, got %+v", policyDecoded.ClawHost.ReviewQueue)

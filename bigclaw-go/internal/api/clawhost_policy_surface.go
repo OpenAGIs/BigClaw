@@ -14,6 +14,7 @@ import (
 type clawHostPolicySurface struct {
 	Integration       string                        `json:"integration"`
 	Status            string                        `json:"status"`
+	Filters           map[string]string             `json:"filters,omitempty"`
 	Catalog           policy.ClawHostCatalog        `json:"catalog"`
 	Summary           clawHostPolicySurfaceSummary  `json:"summary"`
 	ObservedProviders []string                      `json:"observed_providers,omitempty"`
@@ -74,10 +75,14 @@ func filterClawHostPolicyTasks(tasks []domain.Task, team, project string) []doma
 	return filtered
 }
 
-func clawHostPolicySurfacePayload(tasks []domain.Task) clawHostPolicySurface {
+func clawHostPolicySurfacePayload(tasks []domain.Task, team, project string) clawHostPolicySurface {
 	surface := clawHostPolicySurface{
 		Integration: "clawhost",
 		Status:      "catalog_only",
+		Filters: map[string]string{
+			"team":    strings.TrimSpace(team),
+			"project": strings.TrimSpace(project),
+		},
 		Catalog:     policy.ClawHostCatalogInfo(),
 	}
 	reviewQueue := make([]policy.ClawHostTenantPolicy, 0, len(tasks))
@@ -150,7 +155,7 @@ func sortedKeys(values map[string]struct{}) []string {
 	return out
 }
 
-func renderClawHostPolicySurfaceReport(surface clawHostPolicySurface, team, project string) string {
+func renderClawHostPolicySurfaceReport(surface clawHostPolicySurface) string {
 	var out strings.Builder
 	out.WriteString("# ClawHost Policy Surface\n\n")
 	out.WriteString(fmt.Sprintf("- Status: `%s`\n", surface.Status))
@@ -165,8 +170,8 @@ func renderClawHostPolicySurfaceReport(surface clawHostPolicySurface, team, proj
 		out.WriteString(fmt.Sprintf("- Observed providers: `%s`\n", strings.Join(surface.ObservedProviders, "`, `")))
 	}
 	out.WriteString("\n## Filters\n\n")
-	out.WriteString(fmt.Sprintf("- Team: `%s`\n", clawHostPolicyFallback(strings.TrimSpace(team), "none")))
-	out.WriteString(fmt.Sprintf("- Project: `%s`\n", clawHostPolicyFallback(strings.TrimSpace(project), "none")))
+	out.WriteString(fmt.Sprintf("- Team: `%s`\n", clawHostPolicyFallback(strings.TrimSpace(surface.Filters["team"]), "none")))
+	out.WriteString(fmt.Sprintf("- Project: `%s`\n", clawHostPolicyFallback(strings.TrimSpace(surface.Filters["project"]), "none")))
 	out.WriteString("\n## Review Queue\n\n")
 	if len(surface.ReviewQueue) == 0 {
 		out.WriteString("No active ClawHost tenant policy reviews.\n")

@@ -220,7 +220,7 @@ func (s *Server) Handler() http.Handler {
 				"team":    team,
 				"project": project,
 			},
-			"clawhost_policy_surface":        clawHostPolicySurfacePayload(clawHostTasks),
+			"clawhost_policy_surface":        clawHostPolicySurfacePayload(clawHostTasks, team, project),
 			"clawhost_workflow_surface":      clawHostWorkflowSurfacePayload(clawHostTasks),
 			"clawhost_rollout_surface":       clawHostRolloutSurfacePayload(clawHostTasks),
 			"clawhost_readiness_surface":     clawHostReadinessSurfacePayload(clawHostTasks),

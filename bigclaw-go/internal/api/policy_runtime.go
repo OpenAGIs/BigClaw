@@ -89,16 +89,16 @@ func (s *Server) handleV2ControlCenterPolicyExport(w http.ResponseWriter, r *htt
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
-	surface := clawHostPolicySurfacePayload(filterClawHostPolicyTasks(s.clawHostPolicyTasks(r.Context()), team, project))
+	surface := clawHostPolicySurfacePayload(filterClawHostPolicyTasks(s.clawHostPolicyTasks(r.Context()), team, project), team, project)
 	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 	w.Header().Set("Content-Disposition", `attachment; filename="clawhost-policy-surface.md"`)
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(renderClawHostPolicySurfaceReport(surface, team, project)))
+	_, _ = w.Write([]byte(renderClawHostPolicySurfaceReport(surface)))
 }
 
 func (s *Server) controlCenterPolicyPayload(r *http.Request, authorization ControlAuthorization, team, project string, reloaded bool) map[string]any {
 	store := s.schedulerPolicyStore()
-	surface := clawHostPolicySurfacePayload(filterClawHostPolicyTasks(s.clawHostPolicyTasks(r.Context()), team, project))
+	surface := clawHostPolicySurfacePayload(filterClawHostPolicyTasks(s.clawHostPolicyTasks(r.Context()), team, project), team, project)
 	payload := map[string]any{
 		"authorization":     authorization,
 		"filters":           map[string]any{"team": team, "project": project},
@@ -114,7 +114,7 @@ func (s *Server) controlCenterPolicyPayload(r *http.Request, authorization Contr
 		"reload_authorized": canReloadSchedulerPolicy(authorization.Role),
 		"reload_url":        "/v2/control-center/policy/reload",
 		"report": map[string]any{
-			"markdown":   renderClawHostPolicySurfaceReport(surface, team, project),
+			"markdown":   renderClawHostPolicySurfaceReport(surface),
 			"export_url": clawHostExportURL("/v2/control-center/policy/export", team, project, ""),
 		},
 	}
