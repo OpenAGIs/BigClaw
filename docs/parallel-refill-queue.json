@@ -894,7 +894,7 @@
       "identifier": "BIG-PAR-326",
       "title": "Add distributed export task fallback-after-team coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
