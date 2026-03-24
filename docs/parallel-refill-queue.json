@@ -227,7 +227,8 @@
     "BIG-PAR-329",
     "BIG-PAR-330",
     "BIG-PAR-331",
-    "BIG-PAR-332"
+    "BIG-PAR-332",
+    "BIG-PAR-333"
   ],
   "issues": [
     {
@@ -937,6 +938,12 @@
       "title": "Add buildSavedViewRoute blank-scope coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-333",
+      "title": "Add viewScopeSuffix punctuation-fallback coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

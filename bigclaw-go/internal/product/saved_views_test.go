@@ -151,6 +151,12 @@ func TestViewScopeSuffixSanitizesReservedCharacters(t *testing.T) {
 	}
 }
 
+func TestViewScopeSuffixFallsBackToEmptyWhenScopesCollapse(t *testing.T) {
+	if suffix := viewScopeSuffix(" / @ ", "___---"); suffix != "" {
+		t.Fatalf("expected empty suffix when scopes collapse to punctuation, got %q", suffix)
+	}
+}
+
 func TestSavedViewScopeTokenNormalizesMixedSeparators(t *testing.T) {
 	for _, tc := range []struct {
 		input string
