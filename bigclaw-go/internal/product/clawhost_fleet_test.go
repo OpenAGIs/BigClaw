@@ -12,6 +12,9 @@ func TestBuildDefaultClawHostFleetInventoryIsControlPlaneReady(t *testing.T) {
 	if inventory.SurfaceID != "BIG-PAR-287" || inventory.Version != "go-v1" {
 		t.Fatalf("unexpected fleet metadata: %+v", inventory)
 	}
+	if inventory.Filters["team"] != "" || inventory.Filters["project"] != "" {
+		t.Fatalf("expected default fleet filters to stay empty, got %+v", inventory.Filters)
+	}
 	if inventory.Summary.AppCount != 2 || inventory.Summary.BotCount != 2 || inventory.Summary.RunningBots != 1 {
 		t.Fatalf("unexpected fleet summary: %+v", inventory.Summary)
 	}
@@ -127,6 +130,9 @@ func TestFilterClawHostFleetSurface(t *testing.T) {
 
 	t.Run("no matches", func(t *testing.T) {
 		filtered := FilterClawHostFleetSurface(inventory, "support", "phoenix")
+		if filtered.Filters["team"] != "support" || filtered.Filters["project"] != "phoenix" {
+			t.Fatalf("expected no-match fleet scope to persist filters, got %+v", filtered.Filters)
+		}
 		if filtered.Summary.AppCount != 0 || filtered.Summary.BotCount != 0 || filtered.Summary.RunningBots != 0 {
 			t.Fatalf("expected empty scoped summary, got %+v", filtered.Summary)
 		}

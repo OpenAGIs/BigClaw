@@ -4313,6 +4313,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Pinned default filter-map behavior in the ClawHost rollout, recovery, and workflow product regressions so empty/fallback scopes explicitly preserve the expected team/project/actor values. Validation: cd bigclaw-go && go test ./internal/product -run 'Test(BuildClawHostWorkflowSurfaceIdleDefaults|BuildDefaultClawHostRolloutPlannerFallsBackToProjectAndDefaults|AuditClawHostRolloutPlannerHandlesEmptyPlan|BuildDefaultClawHostLifecycleRecoveryScorecardScopesInventory)' -count=1 -> ok; cd bigclaw-go && go test ./internal/api ./internal/product -count=1 -> ok. Commit SHA: a48d975eec9f0f075164bd9978f2fba5ff872e57. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-24T21:56:03Z"
+        }
+      ],
       "created_at": "2026-03-24T21:54:39Z",
       "description": "Extend the rollout, recovery, and workflow product regressions to assert idle and fallback filter-map behavior so default team/project/actor handling stays stable.",
       "id": "big-par-342",
@@ -4325,9 +4332,27 @@
         "test"
       ],
       "priority": 3,
-      "state": "In",
+      "state": "Done",
       "title": "Pin default ClawHost product filter maps in regressions",
-      "updated_at": "2026-03-24T21:54:39Z"
+      "updated_at": "2026-03-24T21:56:03Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T21:56:30Z",
+      "description": "Extend the ClawHost fleet product regressions to assert default empty filters and no-match scoped filter echoes so fleet filter-map behavior stays aligned with the other ClawHost products.",
+      "id": "big-par-343",
+      "identifier": "BIG-PAR-343",
+      "labels": [
+        "go",
+        "clawhost",
+        "product",
+        "parallel",
+        "test"
+      ],
+      "priority": 3,
+      "state": "In",
+      "title": "Pin default fleet filter maps in regressions",
+      "updated_at": "2026-03-24T21:56:30Z"
     }
   ]
 }
