@@ -104,11 +104,10 @@
       "BIG-PAR-303",
       "BIG-PAR-304",
       "BIG-PAR-305",
-      "BIG-PAR-306"
-    ],
-    "active": [
+      "BIG-PAR-306",
       "BIG-PAR-307"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -758,7 +757,7 @@
       "identifier": "BIG-PAR-307",
       "title": "Add rollout planner actor-omission export URL coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

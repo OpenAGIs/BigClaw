@@ -3364,6 +3364,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-307` after adding endpoint-level regression coverage for ClawHost rollout planner export URLs.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now proves `/v2/clawhost/rollout-planner` preserves `team` and `project` in `report.export_url` while intentionally omitting `actor` even when actor query and `X-BigClaw-Actor` header inputs are supplied.\n- `local-issues.json` closes the rollout export-url omission coverage slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `3104e2d9f98ac4eb00527d71e627ea387426e32d` matches remote SHA `3104e2d9f98ac4eb00527d71e627ea387426e32d` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `3104e2d9f98ac4eb00527d71e627ea387426e32d`\n\nCommit SHA: `3104e2d9f98ac4eb00527d71e627ea387426e32d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T19:09:52Z"
+        }
+      ],
       "created_at": "2026-03-24T19:07:59Z",
       "description": "Add a focused ClawHost regression test proving the rollout planner endpoint preserves team and project filters in report.export_url while omitting actor even when an actor query or X-BigClaw-Actor header is supplied.",
       "id": "big-par-307",
@@ -3374,9 +3381,9 @@
         "api"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add rollout planner actor-omission export URL coverage",
-      "updated_at": "2026-03-24T19:07:59Z"
+      "updated_at": "2026-03-24T19:09:52Z"
     }
   ]
 }
