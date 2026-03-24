@@ -162,7 +162,9 @@
       "BIG-PAR-370",
       "BIG-PAR-371"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-372"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -308,7 +310,8 @@
     "BIG-PAR-367",
     "BIG-PAR-369",
     "BIG-PAR-370",
-    "BIG-PAR-371"
+    "BIG-PAR-371",
+    "BIG-PAR-372"
   ],
   "issues": [
     {
@@ -1198,6 +1201,12 @@
       "title": "Add rollout sorted-values blank-skip coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-372",
+      "title": "Refresh ClawHost review index for merged control-plane surfaces",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
