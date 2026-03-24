@@ -1,6 +1,7 @@
 package product
 
 import (
+	"slices"
 	"testing"
 
 	"bigclaw-go/internal/domain"
@@ -85,5 +86,60 @@ func TestBuildClawHostWorkflowSurfaceIgnoresNonClawHostTasksAndUsesFallbackReaso
 	}
 	if surface.ReviewQueue[0].TaskID != "claw-fallback" || surface.ReviewQueue[0].ReviewReason != "workflow requires explicit human takeover before mutating bot config" {
 		t.Fatalf("expected fallback clawhost item and reason, got %+v", surface.ReviewQueue[0])
+	}
+}
+
+func TestBuildClawHostWorkflowSurfaceOrdersReviewQueue(t *testing.T) {
+	surface := BuildClawHostWorkflowSurface([]domain.Task{
+		{
+			ID:       "paired-zeta",
+			Source:   "clawhost",
+			TenantID: "tenant-z",
+			Metadata: map[string]string{
+				"control_plane":           "clawhost",
+				"claw_name":               "zeta",
+				"whatsapp_pairing_status": "paired",
+			},
+		},
+		{
+			ID:       "takeover-beta",
+			Source:   "clawhost",
+			TenantID: "tenant-b",
+			Metadata: map[string]string{
+				"control_plane":              "clawhost",
+				"claw_name":                  "beta",
+				"whatsapp_pairing_status":    "paired",
+				"clawhost_takeover_required": "true",
+			},
+		},
+		{
+			ID:       "paired-alpha",
+			Source:   "clawhost",
+			TenantID: "tenant-a",
+			Metadata: map[string]string{
+				"control_plane":           "clawhost",
+				"claw_name":               "alpha",
+				"whatsapp_pairing_status": "paired",
+			},
+		},
+		{
+			ID:       "waiting-gamma",
+			Source:   "clawhost",
+			TenantID: "tenant-g",
+			Metadata: map[string]string{
+				"control_plane":           "clawhost",
+				"claw_name":               "gamma",
+				"whatsapp_pairing_status": "waiting",
+			},
+		},
+	})
+
+	got := make([]string, 0, len(surface.ReviewQueue))
+	for _, item := range surface.ReviewQueue {
+		got = append(got, item.TaskID)
+	}
+	want := []string{"takeover-beta", "waiting-gamma", "paired-alpha", "paired-zeta"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("unexpected workflow review queue ordering: got=%v want=%v queue=%+v", got, want, surface.ReviewQueue)
 	}
 }
