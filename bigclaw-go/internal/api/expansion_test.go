@@ -896,6 +896,28 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		}
 	})
 
+	t.Run("fleet omits scope filters from export url", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/fleet?team=platform&project=apollo&actor=query-actor&limit=5", nil)
+		request.Header.Set("X-BigClaw-Actor", "header-actor")
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected fleet endpoint 200 with extra query params, got %d %s", response.Code, response.Body.String())
+		}
+
+		var decoded struct {
+			Report struct {
+				ExportURL string `json:"export_url"`
+			} `json:"report"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("decode fleet filter omission response: %v", err)
+		}
+		if decoded.Report.ExportURL != "/v2/clawhost/fleet/export" {
+			t.Fatalf("expected fleet export url to remain unscoped, got %s", decoded.Report.ExportURL)
+		}
+	})
+
 	t.Run("rollout planner", func(t *testing.T) {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v2/clawhost/rollout-planner?team=platform&project=apollo", nil))
