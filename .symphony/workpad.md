@@ -1,27 +1,22 @@
-## Codex Workpad
+# BIGCLAW-177 Workpad
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## Plan
 
-### Plan
+1. Inspect the existing control center and distributed diagnostics payload builders in `bigclaw-go/internal/api` and keep the change isolated to those surfaces.
+2. Add a ClawHost proxy/domain routing observability bridge that derives route, domain, bot, and executor evidence from task metadata plus task event payloads.
+3. Expose the new bridge in the control center and distributed diagnostics JSON payloads with a summary and traceable mapping rows.
+4. Render the same routing/domain bridge in the distributed diagnostics markdown/export output.
+5. Extend targeted Go tests for payload and markdown coverage, then run the focused test set, commit, and push the branch.
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+## Acceptance
 
-### Acceptance Criteria
+1. The control center and distributed diagnostics payloads include a route/domain summary surface.
+2. Bot and executor to entry-domain mappings are traceable through the new payload contract.
+3. Distributed diagnostics markdown/export renders the new routing/domain observability section and the related tests pass.
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
+## Validation
 
-### Validation
-
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
-
-### Notes
-
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+- Run focused Go tests for `internal/api` control center and distributed report coverage.
+- Verify the JSON payload contains the new route/domain summary and mapping rows.
+- Verify the markdown/export contains the ClawHost routing observability section with route/domain mapping details.
+- Record exact test commands and results for handoff before commit/push.

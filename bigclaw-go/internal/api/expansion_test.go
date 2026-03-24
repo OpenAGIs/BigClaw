@@ -483,16 +483,16 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 		Now:       func() time.Time { return base.Add(6 * time.Hour) },
 	}
 	for _, task := range []domain.Task{
-		{ID: "report-local", TraceID: "trace-report-local", Title: "Local", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(time.Minute)},
+		{ID: "report-local", TraceID: "trace-report-local", Title: "Local", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "platform", "project": "apollo", "bot_id": "bot-alpha", "route": "/bots/alpha", "entry_domain": "alpha.claw.example.com"}, UpdatedAt: base.Add(time.Minute)},
 		{ID: "report-k8s", TraceID: "trace-report-k8s", Title: "K8s", State: domain.TaskSucceeded, RequiredTools: []string{"browser"}, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(2 * time.Minute)},
-		{ID: "report-ray", TraceID: "trace-report-ray", Title: "Ray", State: domain.TaskSucceeded, RequiredTools: []string{"gpu"}, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(3 * time.Minute)},
+		{ID: "report-ray", TraceID: "trace-report-ray", Title: "Ray", State: domain.TaskSucceeded, RequiredTools: []string{"gpu"}, Metadata: map[string]string{"team": "platform", "project": "apollo", "bot_id": "bot-gamma", "route": "/bots/gamma", "entry_domain": "gamma.claw.example.com"}, UpdatedAt: base.Add(3 * time.Minute)},
 	} {
 		recorder.StoreTask(task)
 	}
 	for _, event := range []domain.Event{
 		{ID: "report-local-routed", Type: domain.EventSchedulerRouted, TaskID: "report-local", TraceID: "trace-report-local", Timestamp: base.Add(time.Second), Payload: map[string]any{"executor": domain.ExecutorLocal, "reason": "default local executor for low/medium risk"}},
 		{ID: "report-local-completed", Type: domain.EventTaskCompleted, TaskID: "report-local", TraceID: "trace-report-local", Timestamp: base.Add(2 * time.Second), Payload: map[string]any{"executor": domain.ExecutorLocal}},
-		{ID: "report-k8s-routed", Type: domain.EventSchedulerRouted, TaskID: "report-k8s", TraceID: "trace-report-k8s", Timestamp: base.Add(3 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "reason": "browser workloads default to kubernetes executor"}},
+		{ID: "report-k8s-routed", Type: domain.EventSchedulerRouted, TaskID: "report-k8s", TraceID: "trace-report-k8s", Timestamp: base.Add(3 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "reason": "browser workloads default to kubernetes executor", "bot_id": "bot-beta", "route": "/bots/beta", "entry_domain": "beta.claw.example.com"}},
 		{ID: "report-k8s-started", Type: domain.EventTaskStarted, TaskID: "report-k8s", TraceID: "trace-report-k8s", Timestamp: base.Add(4 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes}},
 		{ID: "report-ray-routed", Type: domain.EventSchedulerRouted, TaskID: "report-ray", TraceID: "trace-report-ray", Timestamp: base.Add(5 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay, "reason": "gpu workloads default to ray executor"}},
 		{ID: "report-ray-completed", Type: domain.EventTaskCompleted, TaskID: "report-ray", TraceID: "trace-report-ray", Timestamp: base.Add(6 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay}},
@@ -608,6 +608,26 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 				Status          string  `json:"status"`
 			} `json:"executor_shares"`
 		} `json:"fairness"`
+		ClawHostRouting struct {
+			Summary struct {
+				MappedTasks         int `json:"mapped_tasks"`
+				ObservedRoutes      int `json:"observed_routes"`
+				ObservedDomains     int `json:"observed_domains"`
+				ObservedBots        int `json:"observed_bots"`
+				ObservedExecutors   int `json:"observed_executors"`
+				RouteDomainLinks    int `json:"route_domain_links"`
+				ExecutorDomainLinks int `json:"executor_domain_links"`
+				BotDomainLinks      int `json:"bot_domain_links"`
+			} `json:"summary"`
+			Mappings []struct {
+				TaskID          string   `json:"task_id"`
+				Bot             string   `json:"bot"`
+				Executor        string   `json:"executor"`
+				Route           string   `json:"route"`
+				Domain          string   `json:"domain"`
+				EvidenceSources []string `json:"evidence_sources"`
+			} `json:"mappings"`
+		} `json:"clawhost_routing_observability"`
 		Report struct {
 			Markdown  string `json:"markdown"`
 			ExportURL string `json:"export_url"`
@@ -640,6 +660,22 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if decoded.Fairness.ExecutorShares[0].Executor != "kubernetes" || decoded.Fairness.ExecutorShares[0].RoutedDecisions != 1 {
 		t.Fatalf("unexpected fairness executor share payload: %+v", decoded.Fairness.ExecutorShares[0])
 	}
+	if decoded.ClawHostRouting.Summary.MappedTasks != 3 ||
+		decoded.ClawHostRouting.Summary.ObservedRoutes != 3 ||
+		decoded.ClawHostRouting.Summary.ObservedDomains != 3 ||
+		decoded.ClawHostRouting.Summary.ObservedBots != 3 ||
+		decoded.ClawHostRouting.Summary.ObservedExecutors != 3 ||
+		decoded.ClawHostRouting.Summary.RouteDomainLinks != 3 ||
+		decoded.ClawHostRouting.Summary.ExecutorDomainLinks != 3 ||
+		decoded.ClawHostRouting.Summary.BotDomainLinks != 3 {
+		t.Fatalf("unexpected ClawHost routing summary: %+v", decoded.ClawHostRouting.Summary)
+	}
+	if len(decoded.ClawHostRouting.Mappings) != 3 ||
+		decoded.ClawHostRouting.Mappings[0].Domain != "alpha.claw.example.com" ||
+		decoded.ClawHostRouting.Mappings[1].EvidenceSources[0] != "event_payload" ||
+		decoded.ClawHostRouting.Mappings[2].Bot != "bot-gamma" {
+		t.Fatalf("unexpected ClawHost routing mappings: %+v", decoded.ClawHostRouting.Mappings)
+	}
 	if decoded.TraceBundle.TotalTraces != 3 || decoded.TraceBundle.TracesWithTerminalState != 2 || len(decoded.TraceBundle.RecentTraces) != 3 {
 		t.Fatalf("unexpected trace export bundle summary: %+v", decoded.TraceBundle)
 	}
@@ -661,7 +697,7 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if decoded.SequenceBridge.ReportPath != sequenceBridgeSurfacePath || decoded.SequenceBridge.Summary.BackendCount != 5 || decoded.SequenceBridge.Summary.LiveProvenBackends != 3 || decoded.SequenceBridge.Summary.HarnessProvenBackends != 1 || decoded.SequenceBridge.Summary.ContractOnlyBackends != 1 || decoded.SequenceBridge.Summary.OneToOneMappings != 2 || decoded.SequenceBridge.Summary.ProviderEpochBridgedBackends != 3 {
 		t.Fatalf("expected sequence bridge surface, got %+v", decoded.SequenceBridge)
 	}
-	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Recovery Signals") || !strings.Contains(decoded.Report.Markdown, "## Fairness") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") || !strings.Contains(decoded.Report.Markdown, "## Durable Sequence Bridge") {
+	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Recovery Signals") || !strings.Contains(decoded.Report.Markdown, "## Fairness") || !strings.Contains(decoded.Report.Markdown, "## ClawHost Proxy & Domain Routing") || !strings.Contains(decoded.Report.Markdown, "alpha.claw.example.com") || !strings.Contains(decoded.Report.Markdown, "task=report-k8s") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") || !strings.Contains(decoded.Report.Markdown, "## Durable Sequence Bridge") {
 		t.Fatalf("unexpected distributed markdown: %s", decoded.Report.Markdown)
 	}
 	if !strings.Contains(decoded.Report.Markdown, "## Shared Queue Coordination") || !strings.Contains(decoded.Report.Markdown, "Dead-letter backlog:") {
@@ -679,7 +715,7 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 		t.Fatalf("expected markdown export content type, got %q", contentType)
 	}
-	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") || !strings.Contains(exportResponse.Body.String(), "## Recovery Signals") || !strings.Contains(exportResponse.Body.String(), "## Fairness") || !strings.Contains(exportResponse.Body.String(), "Validation artifacts: docs/reports/live-validation-index.md") || !strings.Contains(exportResponse.Body.String(), "Ambiguous publish proof: docs/reports/ambiguous-publish-outcome-proof-summary.json (BF-05: committed, rejected, unknown_commit)") || !strings.Contains(exportResponse.Body.String(), "Backend limitations: no external tracing backend") {
+	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") || !strings.Contains(exportResponse.Body.String(), "## Recovery Signals") || !strings.Contains(exportResponse.Body.String(), "## Fairness") || !strings.Contains(exportResponse.Body.String(), "## ClawHost Proxy & Domain Routing") || !strings.Contains(exportResponse.Body.String(), "beta.claw.example.com") || !strings.Contains(exportResponse.Body.String(), "sources=event_payload") || !strings.Contains(exportResponse.Body.String(), "Validation artifacts: docs/reports/live-validation-index.md") || !strings.Contains(exportResponse.Body.String(), "Ambiguous publish proof: docs/reports/ambiguous-publish-outcome-proof-summary.json (BF-05: committed, rejected, unknown_commit)") || !strings.Contains(exportResponse.Body.String(), "Backend limitations: no external tracing backend") {
 		t.Fatalf("unexpected distributed export markdown: %s", exportResponse.Body.String())
 	}
 	if !strings.Contains(exportResponse.Body.String(), "## Shared Queue Coordination") {

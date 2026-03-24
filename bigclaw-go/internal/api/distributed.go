@@ -100,6 +100,39 @@ type fairnessDiagnostics struct {
 	Notes                []string                `json:"notes,omitempty"`
 }
 
+type clawHostRoutingSummary struct {
+	MappedTasks         int               `json:"mapped_tasks"`
+	UnmappedTasks       int               `json:"unmapped_tasks"`
+	ObservedRoutes      int               `json:"observed_routes"`
+	ObservedDomains     int               `json:"observed_domains"`
+	ObservedBots        int               `json:"observed_bots"`
+	ObservedExecutors   int               `json:"observed_executors"`
+	RouteDomainLinks    int               `json:"route_domain_links"`
+	ExecutorDomainLinks int               `json:"executor_domain_links"`
+	BotDomainLinks      int               `json:"bot_domain_links"`
+	Routes              []auditFacetCount `json:"routes,omitempty"`
+	Domains             []auditFacetCount `json:"domains,omitempty"`
+	Bots                []auditFacetCount `json:"bots,omitempty"`
+	Executors           []auditFacetCount `json:"executors,omitempty"`
+}
+
+type clawHostRoutingMapping struct {
+	TaskID          string   `json:"task_id"`
+	TraceID         string   `json:"trace_id,omitempty"`
+	Bot             string   `json:"bot,omitempty"`
+	Executor        string   `json:"executor,omitempty"`
+	Route           string   `json:"route"`
+	Domain          string   `json:"domain"`
+	EffectiveState  string   `json:"effective_state,omitempty"`
+	EvidenceSources []string `json:"evidence_sources,omitempty"`
+}
+
+type clawHostRoutingObservability struct {
+	Summary  clawHostRoutingSummary   `json:"summary"`
+	Mappings []clawHostRoutingMapping `json:"mappings,omitempty"`
+	Notes    []string                 `json:"notes,omitempty"`
+}
+
 type distributedDiagnosticsReport struct {
 	Markdown  string `json:"markdown"`
 	ExportURL string `json:"export_url"`
@@ -167,6 +200,7 @@ type distributedDiagnostics struct {
 	ClusterHealth         clusterHealthRollup                      `json:"cluster_health"`
 	Recovery              recoveryDiagnostics                      `json:"recovery"`
 	Fairness              fairnessDiagnostics                      `json:"fairness"`
+	ClawHostRouting       clawHostRoutingObservability             `json:"clawhost_routing_observability"`
 	CoordinationLeader    any                                      `json:"coordination_leader_election,omitempty"`
 	SharedQueue           sharedQueueCoordinationDiagnostics       `json:"shared_queue_diagnostics"`
 	LiveShadowMirror      liveShadowMirrorSurface                  `json:"live_shadow_mirror_scorecard"`
@@ -268,6 +302,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"cluster_health":                  diagnostics.ClusterHealth,
 		"recovery":                        diagnostics.Recovery,
 		"fairness":                        diagnostics.Fairness,
+		"clawhost_routing_observability":  diagnostics.ClawHostRouting,
 		"coordination_leader_election":    diagnostics.CoordinationLeader,
 		"shared_queue_diagnostics":        diagnostics.SharedQueue,
 		"live_shadow_mirror_scorecard":    diagnostics.LiveShadowMirror,
@@ -349,6 +384,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		Notes:              diagnosticsNotes(summary, capacity.ExecutorCapacity, s.Control.Snapshot()),
 	}
 	fairness := buildFairnessDiagnostics(capabilities, eventRollup.CountersByExecutor, eventRollup.TotalRouted)
+	clawHostRouting := s.buildClawHostRoutingObservability(taskRollup.Assignments)
 	diagnostics := distributedDiagnostics{
 		Summary:               summary,
 		RoutingReasons:        eventRollup.RoutingReasons,
@@ -356,6 +392,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		ClusterHealth:         clusterHealth,
 		Recovery:              eventRollup.Recovery,
 		Fairness:              fairness,
+		ClawHostRouting:       clawHostRouting,
 		CoordinationLeader:    s.coordinationLeaderElectionPayload(),
 		SharedQueue:           s.sharedQueueCoordinationDiagnostics(),
 		LiveShadowMirror:      liveShadowMirrorPayload(),
@@ -1085,6 +1122,37 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	lines = append(lines,
 		"",
+		"## ClawHost Proxy & Domain Routing",
+		fmt.Sprintf("- Mapped tasks: %d", diagnostics.ClawHostRouting.Summary.MappedTasks),
+		fmt.Sprintf("- Unmapped tasks: %d", diagnostics.ClawHostRouting.Summary.UnmappedTasks),
+		fmt.Sprintf("- Observed routes: %d", diagnostics.ClawHostRouting.Summary.ObservedRoutes),
+		fmt.Sprintf("- Observed domains: %d", diagnostics.ClawHostRouting.Summary.ObservedDomains),
+		fmt.Sprintf("- Observed bots: %d", diagnostics.ClawHostRouting.Summary.ObservedBots),
+		fmt.Sprintf("- Observed executors: %d", diagnostics.ClawHostRouting.Summary.ObservedExecutors),
+		fmt.Sprintf("- Route/domain links: %d", diagnostics.ClawHostRouting.Summary.RouteDomainLinks),
+		fmt.Sprintf("- Executor/domain links: %d", diagnostics.ClawHostRouting.Summary.ExecutorDomainLinks),
+		fmt.Sprintf("- Bot/domain links: %d", diagnostics.ClawHostRouting.Summary.BotDomainLinks),
+	)
+	if len(diagnostics.ClawHostRouting.Summary.Routes) > 0 {
+		lines = append(lines, "- Routes: "+formatFacetCounts(diagnostics.ClawHostRouting.Summary.Routes))
+	}
+	if len(diagnostics.ClawHostRouting.Summary.Domains) > 0 {
+		lines = append(lines, "- Domains: "+formatFacetCounts(diagnostics.ClawHostRouting.Summary.Domains))
+	}
+	if len(diagnostics.ClawHostRouting.Summary.Bots) > 0 {
+		lines = append(lines, "- Bots: "+formatFacetCounts(diagnostics.ClawHostRouting.Summary.Bots))
+	}
+	if len(diagnostics.ClawHostRouting.Summary.Executors) > 0 {
+		lines = append(lines, "- Executors: "+formatFacetCounts(diagnostics.ClawHostRouting.Summary.Executors))
+	}
+	for _, item := range diagnostics.ClawHostRouting.Mappings {
+		lines = append(lines, fmt.Sprintf("- task=%s trace=%s bot=%s executor=%s route=%s domain=%s state=%s sources=%s", item.TaskID, firstNonEmpty(item.TraceID, "n/a"), firstNonEmpty(item.Bot, "unknown"), firstNonEmpty(item.Executor, "unknown"), item.Route, item.Domain, firstNonEmpty(item.EffectiveState, "unknown"), strings.Join(item.EvidenceSources, ",")))
+	}
+	if len(diagnostics.ClawHostRouting.Notes) > 0 {
+		lines = append(lines, "- Notes: "+strings.Join(diagnostics.ClawHostRouting.Notes, "; "))
+	}
+	lines = append(lines,
+		"",
 		"## Trace Export Bundle",
 		fmt.Sprintf("- Total traces: %d", diagnostics.TraceBundle.TotalTraces),
 		fmt.Sprintf("- Traces with terminal state: %d", diagnostics.TraceBundle.TracesWithTerminalState),
@@ -1438,6 +1506,168 @@ func formatFacetCounts(items []auditFacetCount) string {
 		parts = append(parts, fmt.Sprintf("%s=%d", item.Key, item.Count))
 	}
 	return strings.Join(parts, ", ")
+}
+
+func (s *Server) buildClawHostRoutingObservability(assignments []distributedTaskAssignment) clawHostRoutingObservability {
+	routeCounts := make(map[string]int)
+	domainCounts := make(map[string]int)
+	botCounts := make(map[string]int)
+	executorCounts := make(map[string]int)
+	routeDomainLinks := make(map[string]struct{})
+	executorDomainLinks := make(map[string]struct{})
+	botDomainLinks := make(map[string]struct{})
+	mappings := make([]clawHostRoutingMapping, 0, len(assignments))
+	unmappedTasks := 0
+
+	for _, assignment := range assignments {
+		events := s.Recorder.EventsByTask(assignment.Task.ID, 0)
+		route, routeSource := clawHostRouteValue(assignment.Task, events)
+		domainName, domainSource := clawHostDomainValue(assignment.Task, events)
+		bot, botSource := clawHostBotValue(assignment.Task, events)
+		executorName := strings.TrimSpace(string(assignment.Executor))
+
+		if route != "" {
+			routeCounts[route]++
+		}
+		if domainName != "" {
+			domainCounts[domainName]++
+		}
+		if bot != "" {
+			botCounts[bot]++
+		}
+		if executorName != "" {
+			executorCounts[executorName]++
+		}
+		if route == "" || domainName == "" {
+			unmappedTasks++
+			continue
+		}
+
+		routeDomainLinks[route+"\n"+domainName] = struct{}{}
+		if executorName != "" {
+			executorDomainLinks[executorName+"\n"+domainName] = struct{}{}
+		}
+		if bot != "" {
+			botDomainLinks[bot+"\n"+domainName] = struct{}{}
+		}
+
+		mappings = append(mappings, clawHostRoutingMapping{
+			TaskID:          assignment.Task.ID,
+			TraceID:         assignment.Task.TraceID,
+			Bot:             bot,
+			Executor:        executorName,
+			Route:           route,
+			Domain:          domainName,
+			EffectiveState:  string(assignment.EffectiveState),
+			EvidenceSources: joinClawHostEvidenceSources(routeSource, domainSource, botSource),
+		})
+	}
+
+	sort.SliceStable(mappings, func(i, j int) bool {
+		if mappings[i].Domain == mappings[j].Domain {
+			if mappings[i].Route == mappings[j].Route {
+				return mappings[i].TaskID < mappings[j].TaskID
+			}
+			return mappings[i].Route < mappings[j].Route
+		}
+		return mappings[i].Domain < mappings[j].Domain
+	})
+
+	notes := make([]string, 0, 2)
+	if len(mappings) == 0 {
+		notes = append(notes, "no ClawHost route/domain mapping evidence captured from task metadata or event payloads")
+	} else {
+		notes = append(notes, "route/domain bridge is derived from task metadata plus scheduler/runtime event payload evidence")
+	}
+	if unmappedTasks > 0 {
+		notes = append(notes, fmt.Sprintf("%d tasks in the current slice are missing either route or domain evidence", unmappedTasks))
+	}
+
+	return clawHostRoutingObservability{
+		Summary: clawHostRoutingSummary{
+			MappedTasks:         len(mappings),
+			UnmappedTasks:       unmappedTasks,
+			ObservedRoutes:      len(routeCounts),
+			ObservedDomains:     len(domainCounts),
+			ObservedBots:        len(botCounts),
+			ObservedExecutors:   len(executorCounts),
+			RouteDomainLinks:    len(routeDomainLinks),
+			ExecutorDomainLinks: len(executorDomainLinks),
+			BotDomainLinks:      len(botDomainLinks),
+			Routes:              sortFacetCounts(routeCounts),
+			Domains:             sortFacetCounts(domainCounts),
+			Bots:                sortFacetCounts(botCounts),
+			Executors:           sortFacetCounts(executorCounts),
+		},
+		Mappings: mappings,
+		Notes:    notes,
+	}
+}
+
+func clawHostRouteValue(task domain.Task, events []domain.Event) (string, string) {
+	return clawHostValueWithSource(task, events,
+		[]string{"route", "proxy_route", "subdomain_route", "ingress_route", "entry_route", "host_route", "path"},
+	)
+}
+
+func clawHostDomainValue(task domain.Task, events []domain.Event) (string, string) {
+	return clawHostValueWithSource(task, events,
+		[]string{"entry_domain", "domain", "hostname", "host", "fqdn", "ingress_domain", "public_domain", "subdomain"},
+	)
+}
+
+func clawHostBotValue(task domain.Task, events []domain.Event) (string, string) {
+	return clawHostValueWithSource(task, events,
+		[]string{"bot_id", "bot", "bot_name", "agent_id", "agent", "executor_bot"},
+	)
+}
+
+func clawHostValueWithSource(task domain.Task, events []domain.Event, keys []string) (string, string) {
+	if value := firstTaskMetadataValue(task, keys...); value != "" {
+		return value, "task_metadata"
+	}
+	for index := len(events) - 1; index >= 0; index-- {
+		if value := firstEventPayloadValue(events[index], keys...); value != "" {
+			return value, "event_payload"
+		}
+	}
+	return "", ""
+}
+
+func firstTaskMetadataValue(task domain.Task, keys ...string) string {
+	for _, key := range keys {
+		if value := strings.TrimSpace(task.Metadata[key]); value != "" {
+			return value
+		}
+	}
+	return ""
+}
+
+func firstEventPayloadValue(event domain.Event, keys ...string) string {
+	for _, key := range keys {
+		if value := eventStringValue(event.Payload, key); value != "" {
+			return value
+		}
+	}
+	return ""
+}
+
+func joinClawHostEvidenceSources(values ...string) []string {
+	seen := make(map[string]struct{}, len(values))
+	out := make([]string, 0, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			continue
+		}
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		out = append(out, value)
+	}
+	sort.Strings(out)
+	return out
 }
 
 func (s *Server) sharedQueueCoordinationDiagnostics() sharedQueueCoordinationDiagnostics {

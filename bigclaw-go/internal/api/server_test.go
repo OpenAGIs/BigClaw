@@ -2998,9 +2998,9 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	handler := server.Handler()
 	base := time.Unix(1700000000, 0)
 	for _, task := range []domain.Task{
-		{ID: "diag-local", TraceID: "trace-local", Title: "Local diag", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "platform", "project": "alpha"}, UpdatedAt: base.Add(time.Minute)},
+		{ID: "diag-local", TraceID: "trace-local", Title: "Local diag", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "platform", "project": "alpha", "bot_id": "bot-alpha", "route": "/bots/alpha", "entry_domain": "alpha.claw.example.com"}, UpdatedAt: base.Add(time.Minute)},
 		{ID: "diag-k8s", TraceID: "trace-k8s", Title: "K8s diag", State: domain.TaskSucceeded, RequiredTools: []string{"browser"}, Metadata: map[string]string{"team": "platform", "project": "alpha"}, UpdatedAt: base.Add(2 * time.Minute)},
-		{ID: "diag-ray", TraceID: "trace-ray", Title: "Ray diag", State: domain.TaskSucceeded, RequiredTools: []string{"gpu"}, Metadata: map[string]string{"team": "platform", "project": "alpha"}, UpdatedAt: base.Add(3 * time.Minute)},
+		{ID: "diag-ray", TraceID: "trace-ray", Title: "Ray diag", State: domain.TaskSucceeded, RequiredTools: []string{"gpu"}, Metadata: map[string]string{"team": "platform", "project": "alpha", "bot_id": "bot-gamma", "route": "/bots/gamma", "entry_domain": "gamma.claw.example.com"}, UpdatedAt: base.Add(3 * time.Minute)},
 	} {
 		recorder.StoreTask(task)
 	}
@@ -3008,7 +3008,7 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	for _, event := range []domain.Event{
 		{ID: "evt-local-routed", Type: domain.EventSchedulerRouted, TaskID: "diag-local", TraceID: "trace-local", Timestamp: base.Add(time.Second), Payload: map[string]any{"executor": domain.ExecutorLocal, "reason": "default local executor for low/medium risk"}},
 		{ID: "evt-local-completed", Type: domain.EventTaskCompleted, TaskID: "diag-local", TraceID: "trace-local", Timestamp: base.Add(2 * time.Second), Payload: map[string]any{"executor": domain.ExecutorLocal}},
-		{ID: "evt-k8s-routed", Type: domain.EventSchedulerRouted, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(3 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "reason": "browser workloads default to kubernetes executor"}},
+		{ID: "evt-k8s-routed", Type: domain.EventSchedulerRouted, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(3 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "reason": "browser workloads default to kubernetes executor", "bot_id": "bot-beta", "route": "/bots/beta", "entry_domain": "beta.claw.example.com"}},
 		{ID: "evt-k8s-started", Type: domain.EventTaskStarted, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(4 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes}},
 		{ID: "evt-k8s-completed", Type: domain.EventTaskCompleted, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(5 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes}},
 		{ID: "evt-ray-routed", Type: domain.EventSchedulerRouted, TaskID: "diag-ray", TraceID: "trace-ray", Timestamp: base.Add(6 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay, "reason": "gpu workloads default to ray executor"}},
@@ -3237,6 +3237,26 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 					RuntimeReadiness string `json:"runtime_readiness"`
 				} `json:"backends"`
 			} `json:"sequence_bridge_surface"`
+			ClawHostRouting struct {
+				Summary struct {
+					MappedTasks         int `json:"mapped_tasks"`
+					ObservedRoutes      int `json:"observed_routes"`
+					ObservedDomains     int `json:"observed_domains"`
+					ObservedBots        int `json:"observed_bots"`
+					ObservedExecutors   int `json:"observed_executors"`
+					RouteDomainLinks    int `json:"route_domain_links"`
+					ExecutorDomainLinks int `json:"executor_domain_links"`
+					BotDomainLinks      int `json:"bot_domain_links"`
+				} `json:"summary"`
+				Mappings []struct {
+					TaskID          string   `json:"task_id"`
+					Bot             string   `json:"bot"`
+					Executor        string   `json:"executor"`
+					Route           string   `json:"route"`
+					Domain          string   `json:"domain"`
+					EvidenceSources []string `json:"evidence_sources"`
+				} `json:"mappings"`
+			} `json:"clawhost_routing_observability"`
 			ValidationBundleContinuation struct {
 				ReportPath     string   `json:"report_path"`
 				ScorecardPath  string   `json:"scorecard_path"`
@@ -3290,6 +3310,23 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	}
 	if decoded.Diagnostics.ClusterHealth.HealthyExecutors != 3 || decoded.Diagnostics.ClusterHealth.WorkerStates["running"] != 1 {
 		t.Fatalf("unexpected cluster health payload: %+v", decoded.Diagnostics.ClusterHealth)
+	}
+	if decoded.Diagnostics.ClawHostRouting.Summary.MappedTasks != 3 ||
+		decoded.Diagnostics.ClawHostRouting.Summary.ObservedRoutes != 3 ||
+		decoded.Diagnostics.ClawHostRouting.Summary.ObservedDomains != 3 ||
+		decoded.Diagnostics.ClawHostRouting.Summary.ObservedBots != 3 ||
+		decoded.Diagnostics.ClawHostRouting.Summary.ObservedExecutors != 3 ||
+		decoded.Diagnostics.ClawHostRouting.Summary.RouteDomainLinks != 3 ||
+		decoded.Diagnostics.ClawHostRouting.Summary.ExecutorDomainLinks != 3 ||
+		decoded.Diagnostics.ClawHostRouting.Summary.BotDomainLinks != 3 {
+		t.Fatalf("unexpected ClawHost routing summary: %+v", decoded.Diagnostics.ClawHostRouting.Summary)
+	}
+	if len(decoded.Diagnostics.ClawHostRouting.Mappings) != 3 ||
+		decoded.Diagnostics.ClawHostRouting.Mappings[0].Domain != "alpha.claw.example.com" ||
+		decoded.Diagnostics.ClawHostRouting.Mappings[1].Bot != "bot-beta" ||
+		decoded.Diagnostics.ClawHostRouting.Mappings[1].EvidenceSources[0] != "event_payload" ||
+		decoded.Diagnostics.ClawHostRouting.Mappings[2].Executor != "ray" {
+		t.Fatalf("unexpected ClawHost routing mappings: %+v", decoded.Diagnostics.ClawHostRouting.Mappings)
 	}
 	if len(decoded.Diagnostics.ClusterHealth.TeamBreakdown) == 0 || decoded.Diagnostics.ClusterHealth.TeamBreakdown[0].Key != "platform" {
 		t.Fatalf("expected cluster team breakdown, got %+v", decoded.Diagnostics.ClusterHealth)
@@ -3471,6 +3508,9 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Coordination Leader Election") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Shared Queue Coordination") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## ClawHost Proxy & Domain Routing") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "beta.claw.example.com") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "task=diag-k8s") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Lease fenced events: 1") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Replayed queue events: 1") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Live Shadow Mirror Scorecard") ||
