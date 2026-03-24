@@ -75,6 +75,32 @@ func TestBuildClawHostWorkflowLaneSurfaceIncludesParallelLanesAndSignals(t *test
 	}
 }
 
+func TestBuildClawHostWorkflowLaneSurfaceScopesRoutesAndDefaultsActor(t *testing.T) {
+	t.Run("scoped routes", func(t *testing.T) {
+		surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "alice", "platform", "apollo")
+		for _, lane := range surface.Lanes {
+			if !strings.Contains(lane.Route, "team=platform") || !strings.Contains(lane.Route, "project=apollo") {
+				t.Fatalf("expected scoped route for lane %s, got %s", lane.LaneID, lane.Route)
+			}
+			if lane.Owner != "alice" {
+				t.Fatalf("expected explicit actor to own lane %s, got %+v", lane.LaneID, lane)
+			}
+		}
+	})
+
+	t.Run("default actor fallback", func(t *testing.T) {
+		surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "", "platform", "apollo")
+		if surface.Filters["actor"] != "workflow-operator" {
+			t.Fatalf("expected default workflow actor, got %+v", surface.Filters)
+		}
+		for _, lane := range surface.Lanes {
+			if lane.Owner != "workflow-operator" {
+				t.Fatalf("expected default actor owner for lane %s, got %+v", lane.LaneID, lane)
+			}
+		}
+	})
+}
+
 func TestAuditClawHostWorkflowLaneSurfaceFlagsWorkflowGaps(t *testing.T) {
 	surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "", "", "")
 	if len(surface.Lanes) == 0 {

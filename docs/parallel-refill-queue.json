@@ -106,7 +106,9 @@
       "BIG-PAR-305",
       "BIG-PAR-306"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-307"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -196,7 +198,8 @@
     "BIG-PAR-303",
     "BIG-PAR-304",
     "BIG-PAR-305",
-    "BIG-PAR-306"
+    "BIG-PAR-306",
+    "BIG-PAR-307"
   ],
   "issues": [
     {
@@ -750,6 +753,12 @@
       "title": "Add product regression coverage for scoped ClawHost recovery scorecards",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-307",
+      "title": "Add product regression coverage for scoped ClawHost workflow lanes",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
