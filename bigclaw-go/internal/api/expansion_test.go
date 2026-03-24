@@ -408,6 +408,38 @@ func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
 		t.Fatalf("unexpected mapped issue payload: %+v", connectorDecoded)
 	}
 
+	clawhostResponse := httptest.NewRecorder()
+	handler.ServeHTTP(clawhostResponse, httptest.NewRequest(http.MethodGet, "/v2/intake/connectors/clawhost/issues?project=openagi&states=running,stopped", nil))
+	if clawhostResponse.Code != http.StatusOK {
+		t.Fatalf("expected clawhost intake connector 200, got %d %s", clawhostResponse.Code, clawhostResponse.Body.String())
+	}
+	var clawhostDecoded struct {
+		Connector string `json:"connector"`
+		Issues    []struct {
+			Source   string            `json:"source"`
+			State    string            `json:"state"`
+			Metadata map[string]string `json:"metadata"`
+		} `json:"issues"`
+		MappedTasks []struct {
+			ID       string            `json:"id"`
+			State    string            `json:"state"`
+			TenantID string            `json:"tenant_id"`
+			Metadata map[string]string `json:"metadata"`
+		} `json:"mapped_tasks"`
+	}
+	if err := json.Unmarshal(clawhostResponse.Body.Bytes(), &clawhostDecoded); err != nil {
+		t.Fatalf("decode clawhost intake connector response: %v", err)
+	}
+	if clawhostDecoded.Connector != "clawhost" || len(clawhostDecoded.Issues) != 2 || len(clawhostDecoded.MappedTasks) != 2 {
+		t.Fatalf("unexpected clawhost intake connector payload: %+v", clawhostDecoded)
+	}
+	if clawhostDecoded.Issues[0].Source != "clawhost" || clawhostDecoded.Issues[0].Metadata["inventory_kind"] != "claw" {
+		t.Fatalf("expected clawhost inventory issue metadata, got %+v", clawhostDecoded.Issues[0])
+	}
+	if clawhostDecoded.MappedTasks[0].TenantID == "" || clawhostDecoded.MappedTasks[0].Metadata["control_plane"] != "clawhost" {
+		t.Fatalf("expected clawhost mapped task metadata, got %+v", clawhostDecoded.MappedTasks[0])
+	}
+
 	mapBody, _ := json.Marshal(map[string]any{
 		"source":      "linear",
 		"source_id":   "BIG-102",
@@ -1015,6 +1047,67 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		}
 		if !strings.Contains(exportResponse.Body.String(), "token_session=true") || !strings.Contains(exportResponse.Body.String(), "IM Channels and Device Approval Workflows") {
 			t.Fatalf("unexpected workflow export body: %s", exportResponse.Body.String())
+		}
+	})
+
+	t.Run("recovery scorecard", func(t *testing.T) {
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v2/clawhost/recovery-scorecard?team=platform&project=apollo", nil))
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected recovery scorecard 200, got %d %s", response.Code, response.Body.String())
+		}
+
+		var decoded struct {
+			Scorecard struct {
+				ScorecardID string            `json:"scorecard_id"`
+				Filters     map[string]string `json:"filters"`
+				Summary     struct {
+					BotCount        int `json:"bot_count"`
+					RecoverableBots int `json:"recoverable_bots"`
+					IsolatedBots    int `json:"isolated_bots"`
+				} `json:"summary"`
+			} `json:"scorecard"`
+			Audit struct {
+				ReleaseReady bool `json:"release_ready"`
+			} `json:"audit"`
+			Report struct {
+				Markdown  string `json:"markdown"`
+				ExportURL string `json:"export_url"`
+			} `json:"report"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("decode recovery scorecard response: %v", err)
+		}
+		if decoded.Scorecard.ScorecardID != "BIG-PAR-292" || decoded.Scorecard.Summary.BotCount != 2 || decoded.Scorecard.Summary.RecoverableBots != 2 || decoded.Scorecard.Summary.IsolatedBots != 2 {
+			t.Fatalf("unexpected recovery scorecard payload: %+v", decoded.Scorecard)
+		}
+		if decoded.Scorecard.Filters["team"] != "platform" || decoded.Scorecard.Filters["project"] != "apollo" {
+			t.Fatalf("unexpected recovery filters: %+v", decoded.Scorecard.Filters)
+		}
+		if !decoded.Audit.ReleaseReady {
+			t.Fatalf("expected recovery audit to be release ready, got %+v", decoded.Audit)
+		}
+		recoveryExportURL, err := url.Parse(decoded.Report.ExportURL)
+		if err != nil {
+			t.Fatalf("parse recovery export url: %v", err)
+		}
+		if recoveryExportURL.Path != "/v2/clawhost/recovery-scorecard/export" || recoveryExportURL.Query().Get("team") != "platform" || recoveryExportURL.Query().Get("project") != "apollo" {
+			t.Fatalf("unexpected recovery export url: %s", decoded.Report.ExportURL)
+		}
+		if !strings.Contains(decoded.Report.Markdown, "# ClawHost Lifecycle Recovery Scorecard") || !strings.Contains(decoded.Report.Markdown, "Per-Bot Isolation") {
+			t.Fatalf("unexpected recovery markdown: %s", decoded.Report.Markdown)
+		}
+
+		exportResponse := httptest.NewRecorder()
+		handler.ServeHTTP(exportResponse, httptest.NewRequest(http.MethodGet, decoded.Report.ExportURL, nil))
+		if exportResponse.Code != http.StatusOK {
+			t.Fatalf("expected recovery export 200, got %d %s", exportResponse.Code, exportResponse.Body.String())
+		}
+		if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+			t.Fatalf("expected recovery export markdown content type, got %q", contentType)
+		}
+		if !strings.Contains(exportResponse.Body.String(), "platform-release-bot") || !strings.Contains(exportResponse.Body.String(), "Recoverable Bots: 2/2") {
+			t.Fatalf("unexpected recovery export body: %s", exportResponse.Body.String())
 		}
 	})
 }

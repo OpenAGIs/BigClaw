@@ -77,13 +77,13 @@ func (s *Server) handleV2ClawHostWorkflows(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	team, project, actor := clawHostScopeFilters(r)
-	surface := product.BuildDefaultClawHostWorkflowSurface(s.filteredTasks(team, project, "", time.Time{}, time.Time{}), actor, team, project)
-	audit := product.AuditClawHostWorkflowSurface(surface)
+	surface := product.BuildDefaultClawHostWorkflowLaneSurface(s.filteredTasks(team, project, "", time.Time{}, time.Time{}), actor, team, project)
+	audit := product.AuditClawHostWorkflowLaneSurface(surface)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"surface": surface,
 		"audit":   audit,
 		"report": map[string]any{
-			"markdown":   product.RenderClawHostWorkflowReport(surface, audit),
+			"markdown":   product.RenderClawHostWorkflowLaneReport(surface, audit),
 			"export_url": clawHostExportURL("/v2/clawhost/workflows/export", team, project, actor),
 		},
 	})
@@ -95,12 +95,44 @@ func (s *Server) handleV2ClawHostWorkflowsExport(w http.ResponseWriter, r *http.
 		return
 	}
 	team, project, actor := clawHostScopeFilters(r)
-	surface := product.BuildDefaultClawHostWorkflowSurface(s.filteredTasks(team, project, "", time.Time{}, time.Time{}), actor, team, project)
-	audit := product.AuditClawHostWorkflowSurface(surface)
+	surface := product.BuildDefaultClawHostWorkflowLaneSurface(s.filteredTasks(team, project, "", time.Time{}, time.Time{}), actor, team, project)
+	audit := product.AuditClawHostWorkflowLaneSurface(surface)
 	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 	w.Header().Set("Content-Disposition", `attachment; filename="clawhost-workflows.md"`)
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(product.RenderClawHostWorkflowReport(surface, audit)))
+	_, _ = w.Write([]byte(product.RenderClawHostWorkflowLaneReport(surface, audit)))
+}
+
+func (s *Server) handleV2ClawHostRecoveryScorecard(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	team, project, _ := clawHostScopeFilters(r)
+	scorecard := product.BuildDefaultClawHostLifecycleRecoveryScorecard(team, project)
+	audit := product.AuditClawHostLifecycleRecoveryScorecard(scorecard)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"scorecard": scorecard,
+		"audit":     audit,
+		"report": map[string]any{
+			"markdown":   product.RenderClawHostLifecycleRecoveryReport(scorecard, audit),
+			"export_url": clawHostExportURL("/v2/clawhost/recovery-scorecard/export", team, project, ""),
+		},
+	})
+}
+
+func (s *Server) handleV2ClawHostRecoveryScorecardExport(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	team, project, _ := clawHostScopeFilters(r)
+	scorecard := product.BuildDefaultClawHostLifecycleRecoveryScorecard(team, project)
+	audit := product.AuditClawHostLifecycleRecoveryScorecard(scorecard)
+	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+	w.Header().Set("Content-Disposition", `attachment; filename="clawhost-recovery-scorecard.md"`)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(product.RenderClawHostLifecycleRecoveryReport(scorecard, audit)))
 }
 
 func clawHostScopeFilters(r *http.Request) (string, string, string) {

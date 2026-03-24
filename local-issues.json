@@ -2945,8 +2945,8 @@
       "comments": [
         {
           "author": "codex",
-          "body": "Shipped commit 9d819d5ca8d4afc7638f1cbf86ede91b48ef2783 on main, adding bigclaw-go/internal/product/clawhost_fleet.go plus /v2/clawhost/fleet and /v2/clawhost/fleet/export. The surface captures multi-tenant app ownership, per-bot isolation, proxy and subdomain posture, lifecycle coverage, and audit gaps sourced from ClawHost. Validation: cd bigclaw-go && go test ./internal/product; cd bigclaw-go && go test ./internal/api; cd bigclaw-go && go test ./...",
-          "created_at": "2026-03-24T16:20:08Z"
+          "body": "Added a Go-owned ClawHost intake connector in bigclaw-go/internal/intake/clawhost.go that mirrors the upstream ClawHost control-plane shape around claws, provider/server identity, lifecycle state, owner tenancy, subdomain/domain routing, agents, channels, bindings, and attached volumes, then extended the intake mapper and /v2/intake/connectors expansion tests so this metadata survives into BigClaw task metadata and tenant context. Validation: cd bigclaw-go && go test ./internal/intake ./internal/api -> ok; bash scripts/ops/bigclawctl github-sync status --json -> local SHA ff1b2543b836681e4ea82c8309f19959aba593b7 matches remote SHA ff1b2543b836681e4ea82c8309f19959aba593b7 with status ok and synced true. Commit SHA: ff1b2543b836681e4ea82c8309f19959aba593b7. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
+          "created_at": "2026-03-24T16:25:50Z"
         }
       ],
       "created_at": "2026-03-24T15:47:39Z",
@@ -2962,7 +2962,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost fleet inventory and control-plane source",
-      "updated_at": "2026-03-24T16:20:08Z"
+      "updated_at": "2026-03-24T16:25:50Z"
     },
     {
       "assigned_to_worker": true,
@@ -2986,15 +2986,15 @@
       "priority": 3,
       "state": "Done",
       "title": "Add parallel ClawHost rollout planner",
-      "updated_at": "2026-03-24T16:20:08Z"
+      "updated_at": "2026-03-24T16:34:26Z"
     },
     {
       "assigned_to_worker": true,
       "comments": [
         {
           "author": "codex",
-          "body": "Shipped commit 9d819d5ca8d4afc7638f1cbf86ede91b48ef2783 on main, adding bigclaw-go/internal/product/clawhost_workflows.go plus /v2/clawhost/workflows and /v2/clawhost/workflows/export. The workflow surface now covers skills rollout, IM channels, device approvals, token and session gating, and human takeover lanes so BigClaw can present ClawHost-style parallel operating lanes in Go. Validation: cd bigclaw-go && go test ./internal/product; cd bigclaw-go && go test ./internal/api; cd bigclaw-go && go test ./...",
-          "created_at": "2026-03-24T16:20:09Z"
+          "body": "Added a Go-owned ClawHost workflow review surface in bigclaw-go/internal/product/clawhost_workflow.go plus API wiring in bigclaw-go/internal/api/clawhost_workflow_surface.go, /debug/status, and /v2/control-center so skills, channel mutations, WhatsApp pairing posture, and credential exposure can be reviewed as takeover-gated workflow items instead of ad hoc control-plane metadata. Validation: cd bigclaw-go && go test ./internal/product ./internal/api -> ok; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 9487278fb5d4121d60a63560a5a9b1f74a196508 matches remote SHA 9487278fb5d4121d60a63560a5a9b1f74a196508 with status ok and synced true. Commit SHA: 9487278fb5d4121d60a63560a5a9b1f74a196508. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
+          "created_at": "2026-03-24T16:52:42Z"
         }
       ],
       "created_at": "2026-03-24T15:47:39Z",
@@ -3011,10 +3011,22 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost skills channels and device approval workflows",
-      "updated_at": "2026-03-24T16:20:09Z"
+      "updated_at": "2026-03-24T16:52:42Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added a Go-owned ClawHost policy contract in bigclaw-go/internal/policy/clawhost.go that resolves provider defaults, tenant/app overrides, BYOK posture, drift status, and review reasons from task metadata, then exposed the resulting reviewer-facing ClawHost policy surface through /debug/status, /v2/control-center, and /v2/control-center/policy with focused API coverage. Validation: cd bigclaw-go && go test ./internal/policy ./internal/api -> ok; bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status -> promoted BIG-PAR-287 and synced queue metadata; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 6c0087e59a0f8e3a530b8696f86a5bf961d8c006 matches remote SHA 6c0087e59a0f8e3a530b8696f86a5bf961d8c006 with status ok and synced true. Commit SHA: 6c0087e59a0f8e3a530b8696f86a5bf961d8c006. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
+          "created_at": "2026-03-24T16:12:22Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final branch scope for BIG-PAR-290 also absorbed the follow-on ClawHost tranche: BIG-PAR-292 added the lifecycle recovery scorecard surface, BIG-PAR-293 through BIG-PAR-296 added focused /v2/control-center regression coverage for recovery, workflow, readiness, and policy, and BIG-PAR-297 added an aggregate /v2/control-center bundle regression proving all five ClawHost reviewer-facing surfaces coexist in one response. Validation: cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenterIncludes(CompleteClawHostSurfaceBundle|ClawHost(Policy|Workflow|Readiness|Rollout|Recovery)Surface)|TestDebugStatusIncludesClawHostPolicySurface' -> ok; cd bigclaw-go && go test ./internal/api -> ok; bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status -> queue_drained true / queue_runnable 0; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 6aac4e78c5d4d131f3ad1fab1a68c7d95553cc8b matches remote SHA 6aac4e78c5d4d131f3ad1fab1a68c7d95553cc8b with status ok and synced true. Commit SHA: 6aac4e78c5d4d131f3ad1fab1a68c7d95553cc8b. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
+          "created_at": "2026-03-24T18:16:30Z"
+        }
+      ],
       "created_at": "2026-03-24T15:47:39Z",
       "description": "Add a BigClaw policy slice for ClawHost model-provider configuration and app-level defaults so provider drift, entitlement policy, and rollout safety can be audited and applied across multiple tenants and bot groups in parallel. This is grounded in ClawHost's support for multiple AI providers and per-app multi-tenant bot ownership.",
       "id": "big-par-290",
@@ -3027,12 +3039,19 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add ClawHost provider defaults and tenant policy surfaces",
-      "updated_at": "2026-03-24T16:20:09Z"
+      "updated_at": "2026-03-24T18:16:30Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added a Go-owned ClawHost readiness surface in bigclaw-go/internal/api/clawhost_readiness_surface.go and exposed it through /debug/status and /v2/control-center so proxy mode, gateway port, subdomain health, websocket reachability, admin UI posture, and version drift are exported as reviewer-facing readiness checks for each claw target. Validation: cd bigclaw-go && go test ./internal/api -> ok; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 984dae8d5c5beb2699db01b2d527fdecbc08c014 matches remote SHA 984dae8d5c5beb2699db01b2d527fdecbc08c014 with status ok and synced true. Commit SHA: 984dae8d5c5beb2699db01b2d527fdecbc08c014. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
+          "created_at": "2026-03-24T16:52:42Z"
+        }
+      ],
       "created_at": "2026-03-24T15:47:40Z",
       "description": "Add a BigClaw validation and observability slice for ClawHost proxy routing, WebSocket/HTTP reachability, per-bot subdomain exposure, and admin-surface readiness so bot fleet ingress posture can be checked in parallel and exported as reviewer-facing evidence. This is based on ClawHost's HTTP/WS proxy, subdomain routing, built-in admin UI, and no-per-bot-Ingress architecture.",
       "id": "big-par-291",
@@ -3045,12 +3064,19 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-24T16:20:09Z"
+      "updated_at": "2026-03-24T16:52:42Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added a Go-owned ClawHost lifecycle recovery scorecard in bigclaw-go/internal/product/clawhost_recovery.go with per-action coverage, per-bot isolation and evidence checks, and release-readiness auditing, then exposed it through /v2/clawhost/recovery-scorecard plus debug/control-center recovery payloads in bigclaw-go/internal/api/clawhost_recovery_surface.go and repaired the merge-era workflow surface name collision so the ClawHost expansion/test suite builds cleanly again. Validation: cd bigclaw-go && go test ./internal/product ./internal/api -> ok; cd bigclaw-go && go test ./... -> ok. Commit SHA: e05485c0a518aed3273831c979dfb06f2ca93927. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
+          "created_at": "2026-03-24T17:23:06Z"
+        }
+      ],
       "created_at": "2026-03-24T16:23:28Z",
       "description": "Capture ClawHost create/start/stop/restart/upgrade/delete posture together with per-bot pod and service isolation, takeover triggers, and recovery evidence so BigClaw Go surfaces can present a release-grade lifecycle recovery scorecard for tenant operators.",
       "id": "big-par-292",
@@ -3062,9 +3088,134 @@
         "product"
       ],
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add ClawHost lifecycle recovery and per-bot isolation scorecard",
-      "updated_at": "2026-03-24T16:23:28Z"
+      "updated_at": "2026-03-24T17:23:06Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added focused /v2/control-center regression coverage for the ClawHost recovery surface in bigclaw-go/internal/api/server_test.go so the reviewer-facing control-center payload now stays pinned for recoverable vs degraded targets, isolation counts, takeover requirements, and evidence artifact totals alongside the existing debug and standalone recovery endpoint coverage. Validation: cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenterIncludesClawHost(Rollout|Recovery)Surface|TestDebugStatusIncludesClawHostRecoverySurface' -> ok; cd bigclaw-go && go test ./internal/api -> ok. Commit SHA: 7d885e64af736c107ccd863e29c1c850c32af3f8. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
+          "created_at": "2026-03-24T17:35:57Z"
+        }
+      ],
+      "created_at": "2026-03-24T17:31:31Z",
+      "description": "Add focused API regression coverage for the new ClawHost lifecycle recovery surface in /v2/control-center so reviewer-facing control-center payloads keep the per-bot isolation and recovery scorecard summary wired and stable.",
+      "id": "big-par-293",
+      "identifier": "BIG-PAR-293",
+      "labels": [
+        "go",
+        "clawhost",
+        "api",
+        "regression",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add control-center regression coverage for ClawHost recovery surface",
+      "updated_at": "2026-03-24T17:35:57Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added focused /v2/control-center regression coverage for the ClawHost workflow surface in bigclaw-go/internal/api/server_test.go so the reviewer-facing control-center payload now stays pinned for workflow-item counts, pairing approvals, credential review posture, and takeover-gated queue ordering alongside the existing debug-status workflow coverage. Validation: cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenterIncludesClawHost(Workflow|Rollout|Recovery)Surface|TestDebugStatusIncludesClawHostWorkflowSurface' -> ok; cd bigclaw-go && go test ./internal/api -> ok. Commit SHA: e99515fe0936b01392b7a4d04de80edbf7c17299. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
+          "created_at": "2026-03-24T17:45:09Z"
+        }
+      ],
+      "created_at": "2026-03-24T17:40:40Z",
+      "description": "Add focused API regression coverage for the ClawHost workflow surface in /v2/control-center so reviewer-facing control-center payloads keep skills, channel review, pairing approvals, and takeover-gated workflow items stable.",
+      "id": "big-par-294",
+      "identifier": "BIG-PAR-294",
+      "labels": [
+        "go",
+        "clawhost",
+        "api",
+        "regression",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add control-center regression coverage for ClawHost workflow surface",
+      "updated_at": "2026-03-24T17:45:09Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added focused /v2/control-center regression coverage for the ClawHost readiness surface in bigclaw-go/internal/api/server_test.go so the reviewer-facing control-center payload now stays pinned for ready vs degraded target counts, admin/websocket/subdomain readiness totals, upgrade-available counts, and degraded-target ordering alongside the existing debug-status readiness coverage. Validation: cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenterIncludesClawHost(Workflow|Readiness|Rollout|Recovery)Surface|TestDebugStatusIncludesClawHostReadinessSurface' -> ok; cd bigclaw-go && go test ./internal/api -> ok. Commit SHA: 1ba363c0b162725ce2eda17a1a4e1c80e8d4c728. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
+          "created_at": "2026-03-24T17:50:54Z"
+        }
+      ],
+      "created_at": "2026-03-24T17:47:56Z",
+      "description": "Add focused API regression coverage for the ClawHost readiness surface in /v2/control-center so reviewer-facing control-center payloads keep readiness counts, websocket/subdomain posture, and degraded-target ordering stable.",
+      "id": "big-par-295",
+      "identifier": "BIG-PAR-295",
+      "labels": [
+        "go",
+        "clawhost",
+        "api",
+        "regression",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add control-center regression coverage for ClawHost readiness surface",
+      "updated_at": "2026-03-24T17:50:54Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added focused /v2/control-center regression coverage for the ClawHost policy surface in bigclaw-go/internal/api/server_test.go so the main reviewer-facing control-center payload now stays pinned for active policy/app/tenant counts, review-required and takeover-required totals, observed providers, and prioritized review queue ordering alongside the existing debug-status and /v2/control-center/policy coverage. Validation: cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenterIncludesClawHost(Policy|Workflow|Readiness|Rollout|Recovery)Surface|TestDebugStatusIncludesClawHostPolicySurface' -> ok; cd bigclaw-go && go test ./internal/api -> ok. Commit SHA: 8ff1903d82870df0082ea634cf9034d82e11dd98. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
+          "created_at": "2026-03-24T17:59:21Z"
+        }
+      ],
+      "created_at": "2026-03-24T17:55:10Z",
+      "description": "Add focused API regression coverage for the ClawHost policy surface in the main /v2/control-center payload so reviewer-facing control-center responses keep provider drift counts, observed providers, and prioritized review queue ordering stable.",
+      "id": "big-par-296",
+      "identifier": "BIG-PAR-296",
+      "labels": [
+        "go",
+        "clawhost",
+        "api",
+        "regression",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add control-center regression coverage for ClawHost policy surface",
+      "updated_at": "2026-03-24T17:59:21Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added an aggregate /v2/control-center regression in bigclaw-go/internal/api/server_test.go that exercises one response carrying the full ClawHost policy, workflow, rollout, readiness, and recovery surface bundle, so cross-surface wiring is pinned in one place instead of relying only on the individual per-surface tests. Validation: cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenterIncludes(CompleteClawHostSurfaceBundle|ClawHost(Policy|Workflow|Readiness|Rollout|Recovery)Surface)|TestDebugStatusIncludesClawHostPolicySurface' -> ok; cd bigclaw-go && go test ./internal/api -> ok. Commit SHA: 9c70ffeb3c2c92e6a30f0aa53013797ed81245e6. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
+          "created_at": "2026-03-24T18:12:31Z"
+        }
+      ],
+      "created_at": "2026-03-24T18:09:15Z",
+      "description": "Add a focused API regression that exercises one /v2/control-center response containing the full ClawHost policy, workflow, rollout, readiness, and recovery surface bundle so cross-surface wiring cannot drift even if each individual surface test still passes.",
+      "id": "big-par-297",
+      "identifier": "BIG-PAR-297",
+      "labels": [
+        "go",
+        "clawhost",
+        "api",
+        "regression",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add aggregate control-center regression for ClawHost surface bundle",
+      "updated_at": "2026-03-24T18:12:31Z"
     }
   ]
 }

@@ -1113,6 +1113,419 @@ func TestDebugStatusIncludesValidationBundleContinuationGate(t *testing.T) {
 	}
 }
 
+func TestDebugStatusIncludesClawHostPolicySurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010000, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-debug-1",
+			Source:   "clawhost",
+			Title:    "review provider defaults",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"clawhost_app_id":           "sales-app",
+				"clawhost_default_provider": "openai",
+				"clawhost_approval_flow":    "standard",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-debug-2",
+			Labels:   []string{"clawhost"},
+			Title:    "override provider for support",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"clawhost_app_id":             "support-app",
+				"clawhost_default_provider":   "anthropic",
+				"clawhost_provider_mode":      "tenant_override",
+				"clawhost_provider_allowlist": "openai,google",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ClawHost struct {
+			Status  string `json:"status"`
+			Summary struct {
+				ActivePolicies      int `json:"active_policies"`
+				ReviewRequired      int `json:"review_required"`
+				OutOfPolicyDefaults int `json:"out_of_policy_defaults"`
+			} `json:"summary"`
+			ObservedProviders []string `json:"observed_providers"`
+			ReviewQueue       []struct {
+				TaskID      string `json:"task_id"`
+				DriftStatus string `json:"drift_status"`
+			} `json:"review_queue"`
+		} `json:"clawhost_policy_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug status response: %v", err)
+	}
+	if decoded.ClawHost.Status != "active" || decoded.ClawHost.Summary.ActivePolicies != 2 || decoded.ClawHost.Summary.ReviewRequired != 1 || decoded.ClawHost.Summary.OutOfPolicyDefaults != 1 {
+		t.Fatalf("unexpected ClawHost debug surface: %+v", decoded.ClawHost)
+	}
+	if len(decoded.ClawHost.ReviewQueue) != 2 || decoded.ClawHost.ReviewQueue[0].DriftStatus != "out_of_policy" {
+		t.Fatalf("expected prioritized ClawHost review queue, got %+v", decoded.ClawHost.ReviewQueue)
+	}
+	for _, want := range []string{"anthropic", "openai"} {
+		if !containsString(decoded.ClawHost.ObservedProviders, want) {
+			t.Fatalf("expected provider %q in debug surface, got %+v", want, decoded.ClawHost.ObservedProviders)
+		}
+	}
+}
+
+func TestDebugStatusIncludesClawHostRolloutSurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010200, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-rollout-1",
+			Source:   "clawhost",
+			Title:    "restart sales-west",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":                      "clawhost",
+				"inventory_kind":                     "claw",
+				"claw_id":                            "claw-sales-west",
+				"claw_name":                          "sales-west",
+				"provider":                           "hetzner",
+				"provider_status":                    "running",
+				"domain":                             "sales-west.clawhost.cloud",
+				"agent_count":                        "2",
+				"clawhost_rollout_action":            "restart",
+				"clawhost_rollout_concurrency_limit": "2",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-rollout-2",
+			Source:   "clawhost",
+			Title:    "restart support-east",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":              "clawhost",
+				"inventory_kind":             "claw",
+				"claw_id":                    "claw-support-east",
+				"claw_name":                  "support-east",
+				"provider":                   "hetzner",
+				"provider_status":            "running",
+				"domain":                     "support-east.clawhost.cloud",
+				"agent_count":                "1",
+				"clawhost_rollout_action":    "restart",
+				"clawhost_takeover_required": "true",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ClawHostRollout struct {
+			Status  string `json:"status"`
+			Summary struct {
+				ActivePlans      int `json:"active_plans"`
+				TotalTargets     int `json:"total_targets"`
+				CanaryTargets    int `json:"canary_targets"`
+				TakeoverRequired int `json:"takeover_required"`
+			} `json:"summary"`
+			Plans []struct {
+				Action       string `json:"action"`
+				Concurrency  int    `json:"concurrency_limit"`
+				TakeoverHook string `json:"takeover_hook"`
+				WaveCount    int    `json:"wave_count"`
+				CanaryCount  int    `json:"canary_count"`
+			} `json:"plans"`
+		} `json:"clawhost_rollout_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug status rollout response: %v", err)
+	}
+	if decoded.ClawHostRollout.Status != "active" || decoded.ClawHostRollout.Summary.ActivePlans != 1 || decoded.ClawHostRollout.Summary.TotalTargets != 2 || decoded.ClawHostRollout.Summary.CanaryTargets != 1 || decoded.ClawHostRollout.Summary.TakeoverRequired != 1 {
+		t.Fatalf("unexpected ClawHost rollout surface: %+v", decoded.ClawHostRollout)
+	}
+	if len(decoded.ClawHostRollout.Plans) != 1 || decoded.ClawHostRollout.Plans[0].Action != "restart" || decoded.ClawHostRollout.Plans[0].Concurrency != 2 || decoded.ClawHostRollout.Plans[0].TakeoverHook != "required" || decoded.ClawHostRollout.Plans[0].WaveCount != 2 || decoded.ClawHostRollout.Plans[0].CanaryCount != 1 {
+		t.Fatalf("unexpected ClawHost rollout plan payload: %+v", decoded.ClawHostRollout.Plans)
+	}
+}
+
+func TestDebugStatusIncludesClawHostWorkflowSurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010300, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-workflow-1",
+			Source:   "clawhost",
+			Title:    "review channels",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":             "clawhost",
+				"claw_id":                   "claw-a",
+				"claw_name":                 "sales-west",
+				"skill_count":               "3",
+				"agent_skill_count":         "4",
+				"channel_types":             "telegram,discord,whatsapp",
+				"whatsapp_pairing_status":   "waiting",
+				"admin_credentials_exposed": "true",
+				"admin_surface_path":        "/credentials",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-workflow-2",
+			Source:   "clawhost",
+			Title:    "review skills",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":           "clawhost",
+				"claw_id":                 "claw-b",
+				"claw_name":               "support-east",
+				"skill_count":             "2",
+				"agent_skill_count":       "2",
+				"channel_types":           "telegram",
+				"whatsapp_pairing_status": "paired",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Workflow struct {
+			Status  string `json:"status"`
+			Summary struct {
+				WorkflowItems     int `json:"workflow_items"`
+				PairingApprovals  int `json:"pairing_approvals"`
+				CredentialReviews int `json:"credential_reviews"`
+				TakeoverRequired  int `json:"takeover_required"`
+			} `json:"summary"`
+			ReviewQueue []struct {
+				ClawName           string   `json:"claw_name"`
+				WhatsAppPairing    string   `json:"whatsapp_pairing"`
+				CredentialsExposed bool     `json:"credentials_exposed"`
+				TakeoverRequired   bool     `json:"takeover_required"`
+				Channels           []string `json:"channels"`
+			} `json:"review_queue"`
+		} `json:"clawhost_workflow_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug workflow payload: %v", err)
+	}
+	if decoded.Workflow.Status != "active" || decoded.Workflow.Summary.WorkflowItems != 2 || decoded.Workflow.Summary.PairingApprovals != 1 || decoded.Workflow.Summary.CredentialReviews != 1 || decoded.Workflow.Summary.TakeoverRequired != 1 {
+		t.Fatalf("unexpected workflow surface: %+v", decoded.Workflow)
+	}
+	if len(decoded.Workflow.ReviewQueue) != 2 || !decoded.Workflow.ReviewQueue[0].TakeoverRequired {
+		t.Fatalf("expected takeover-required item first, got %+v", decoded.Workflow.ReviewQueue)
+	}
+}
+
+func TestDebugStatusIncludesClawHostReadinessSurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010350, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-ready-1",
+			Source:   "clawhost",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":       "clawhost",
+				"claw_id":             "claw-a",
+				"claw_name":           "sales-west",
+				"domain":              "sales-west.clawhost.cloud",
+				"proxy_mode":          "http_ws_gateway",
+				"gateway_port":        "18789",
+				"reachable":           "true",
+				"admin_ui_enabled":    "true",
+				"websocket_reachable": "true",
+				"subdomain_ready":     "true",
+				"version_status":      "current",
+				"version_current":     "0.0.31",
+				"version_latest":      "0.0.31",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-ready-2",
+			Source:   "clawhost",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":       "clawhost",
+				"claw_id":             "claw-b",
+				"claw_name":           "support-east",
+				"domain":              "support-east.clawhost.cloud",
+				"proxy_mode":          "http_ws_gateway",
+				"gateway_port":        "18789",
+				"reachable":           "false",
+				"admin_ui_enabled":    "true",
+				"websocket_reachable": "false",
+				"subdomain_ready":     "false",
+				"version_status":      "upgrade_available",
+				"version_current":     "0.0.30",
+				"version_latest":      "0.0.31",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Readiness struct {
+			Status  string `json:"status"`
+			Summary struct {
+				Targets                 int `json:"targets"`
+				ReadyTargets            int `json:"ready_targets"`
+				DegradedTargets         int `json:"degraded_targets"`
+				AdminReadyTargets       int `json:"admin_ready_targets"`
+				WebSocketReadyTargets   int `json:"websocket_ready_targets"`
+				SubdomainReadyTargets   int `json:"subdomain_ready_targets"`
+				UpgradeAvailableTargets int `json:"upgrade_available_targets"`
+			} `json:"summary"`
+			Targets []struct {
+				ClawName     string   `json:"claw_name"`
+				ReviewStatus string   `json:"review_status"`
+				Warnings     []string `json:"warnings"`
+			} `json:"targets"`
+		} `json:"clawhost_readiness_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug readiness payload: %v", err)
+	}
+	if decoded.Readiness.Status != "active" || decoded.Readiness.Summary.Targets != 2 || decoded.Readiness.Summary.ReadyTargets != 1 || decoded.Readiness.Summary.DegradedTargets != 1 || decoded.Readiness.Summary.AdminReadyTargets != 1 || decoded.Readiness.Summary.WebSocketReadyTargets != 1 || decoded.Readiness.Summary.SubdomainReadyTargets != 1 || decoded.Readiness.Summary.UpgradeAvailableTargets != 1 {
+		t.Fatalf("unexpected readiness summary: %+v", decoded.Readiness)
+	}
+	if len(decoded.Readiness.Targets) != 2 || decoded.Readiness.Targets[0].ReviewStatus != "degraded" {
+		t.Fatalf("expected degraded target sorted first, got %+v", decoded.Readiness.Targets)
+	}
+}
+
+func TestDebugStatusIncludesClawHostRecoverySurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010360, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-recovery-1",
+			Source:   "clawhost",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":              "clawhost",
+				"claw_id":                    "claw-a",
+				"claw_name":                  "sales-west",
+				"clawhost_lifecycle_actions": "start,restart,upgrade",
+				"clawhost_pod_isolation":     "true",
+				"clawhost_service_isolation": "true",
+				"clawhost_takeover_required": "true",
+				"clawhost_takeover_triggers": "proxy health regresses,session restore fails",
+				"clawhost_recovery_evidence": "GET /status,/v2/reports/distributed",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-recovery-2",
+			Source:   "clawhost",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":              "clawhost",
+				"claw_id":                    "claw-b",
+				"claw_name":                  "support-east",
+				"clawhost_lifecycle_actions": "restart",
+				"clawhost_pod_isolation":     "false",
+				"clawhost_service_isolation": "true",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Recovery struct {
+			Status  string `json:"status"`
+			Summary struct {
+				Targets            int `json:"targets"`
+				RecoverableTargets int `json:"recoverable_targets"`
+				DegradedTargets    int `json:"degraded_targets"`
+				IsolatedTargets    int `json:"isolated_targets"`
+				TakeoverRequired   int `json:"takeover_required"`
+				EvidenceArtifacts  int `json:"evidence_artifacts"`
+			} `json:"summary"`
+			Targets []struct {
+				ClawName       string   `json:"claw_name"`
+				RecoveryStatus string   `json:"recovery_status"`
+				Warnings       []string `json:"warnings"`
+			} `json:"targets"`
+		} `json:"clawhost_recovery_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug recovery payload: %v", err)
+	}
+	if decoded.Recovery.Status != "active" || decoded.Recovery.Summary.Targets != 2 || decoded.Recovery.Summary.RecoverableTargets != 1 || decoded.Recovery.Summary.DegradedTargets != 1 || decoded.Recovery.Summary.IsolatedTargets != 1 || decoded.Recovery.Summary.TakeoverRequired != 1 || decoded.Recovery.Summary.EvidenceArtifacts != 2 {
+		t.Fatalf("unexpected recovery summary: %+v", decoded.Recovery)
+	}
+	if len(decoded.Recovery.Targets) != 2 || decoded.Recovery.Targets[0].RecoveryStatus != "degraded" {
+		t.Fatalf("expected degraded recovery target sorted first, got %+v", decoded.Recovery.Targets)
+	}
+}
+
 func TestDeadLetterEndpoints(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()
@@ -3892,7 +4305,40 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	schedulerRuntime.Decide(domain.Task{ID: "fair-1", TenantID: "tenant-a", Priority: 3}, scheduler.QuotaSnapshot{})
 	schedulerRuntime.Decide(domain.Task{ID: "fair-2", TenantID: "tenant-b", Priority: 3}, scheduler.QuotaSnapshot{})
 	recorder := observability.NewRecorder()
-	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), SchedulerPolicy: store, SchedulerRuntime: schedulerRuntime, Now: time.Now}
+	taskQueue := queue.NewMemoryQueue()
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-policy-endpoint-1",
+			Source:   "clawhost",
+			Title:    "align sales provider defaults",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"clawhost_app_id":           "sales-app",
+				"clawhost_default_provider": "openai",
+				"clawhost_approval_flow":    "standard",
+			},
+		},
+		{
+			ID:       "clawhost-policy-endpoint-2",
+			Labels:   []string{"clawhost"},
+			Title:    "review support tenant override",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"clawhost_app_id":             "support-app",
+				"clawhost_default_provider":   "anthropic",
+				"clawhost_provider_mode":      "tenant_override",
+				"clawhost_provider_allowlist": "openai,google",
+				"clawhost_takeover_required":  "true",
+			},
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue policy task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), SchedulerPolicy: store, SchedulerRuntime: schedulerRuntime, Now: time.Now}
 	handler := server.Handler()
 
 	policyResponse := httptest.NewRecorder()
@@ -3930,6 +4376,22 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 				RecentAcceptedCount int    `json:"recent_accepted_count"`
 			} `json:"tenants"`
 		} `json:"fairness"`
+		ClawHost struct {
+			Status  string `json:"status"`
+			Summary struct {
+				ActivePolicies      int `json:"active_policies"`
+				ActiveTenants       int `json:"active_tenants"`
+				ActiveApps          int `json:"active_apps"`
+				ReviewRequired      int `json:"review_required"`
+				TakeoverRequired    int `json:"takeover_required"`
+				OutOfPolicyDefaults int `json:"out_of_policy_defaults"`
+			} `json:"summary"`
+			ObservedProviders []string `json:"observed_providers"`
+			ReviewQueue       []struct {
+				TaskID      string `json:"task_id"`
+				DriftStatus string `json:"drift_status"`
+			} `json:"review_queue"`
+		} `json:"clawhost"`
 	}
 	if err := json.Unmarshal(policyResponse.Body.Bytes(), &policyDecoded); err != nil {
 		t.Fatalf("decode scheduler policy response: %v", err)
@@ -3939,6 +4401,17 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	}
 	if !policyDecoded.Fairness.Enabled || !policyDecoded.Fairness.Shared || policyDecoded.Fairness.Backend != "sqlite" || policyDecoded.Fairness.ActiveTenants != 2 || len(policyDecoded.Fairness.Tenants) != 2 {
 		t.Fatalf("unexpected fairness runtime payload: %+v", policyDecoded.Fairness)
+	}
+	if policyDecoded.ClawHost.Status != "active" || policyDecoded.ClawHost.Summary.ActivePolicies != 2 || policyDecoded.ClawHost.Summary.ActiveTenants != 2 || policyDecoded.ClawHost.Summary.ActiveApps != 2 || policyDecoded.ClawHost.Summary.ReviewRequired != 1 || policyDecoded.ClawHost.Summary.TakeoverRequired != 1 || policyDecoded.ClawHost.Summary.OutOfPolicyDefaults != 1 {
+		t.Fatalf("unexpected ClawHost policy payload: %+v", policyDecoded.ClawHost)
+	}
+	if len(policyDecoded.ClawHost.ReviewQueue) != 2 || policyDecoded.ClawHost.ReviewQueue[0].DriftStatus != "out_of_policy" {
+		t.Fatalf("expected prioritized ClawHost review queue, got %+v", policyDecoded.ClawHost.ReviewQueue)
+	}
+	for _, want := range []string{"anthropic", "openai"} {
+		if !containsString(policyDecoded.ClawHost.ObservedProviders, want) {
+			t.Fatalf("expected ClawHost observed provider %q, got %+v", want, policyDecoded.ClawHost.ObservedProviders)
+		}
 	}
 
 	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"kubernetes","high_risk_executor":"ray","fairness":{"window_seconds":10,"max_recent_decisions_per_tenant":2}}`), 0o644); err != nil {
@@ -3965,6 +4438,535 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	handler.ServeHTTP(forbiddenResponse, forbiddenRequest)
 	if forbiddenResponse.Code != http.StatusForbidden {
 		t.Fatalf("expected forbidden reload for eng lead, got %d %s", forbiddenResponse.Code, forbiddenResponse.Body.String())
+	}
+}
+
+func TestV2ControlCenterIncludesClawHostRolloutSurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010400, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-upgrade-1",
+			Source:   "clawhost",
+			Title:    "upgrade sales-west",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":             "clawhost",
+				"inventory_kind":            "claw",
+				"claw_id":                   "claw-sales-west",
+				"claw_name":                 "sales-west",
+				"provider":                  "hetzner",
+				"provider_status":           "running",
+				"clawhost_update_available": "true",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-upgrade-2",
+			Source:   "clawhost",
+			Title:    "upgrade support-east",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":              "clawhost",
+				"inventory_kind":             "claw",
+				"claw_id":                    "claw-support-east",
+				"claw_name":                  "support-east",
+				"provider":                   "digitalocean",
+				"provider_status":            "running",
+				"clawhost_update_available":  "true",
+				"clawhost_takeover_required": "true",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue control center rollout task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center", nil)
+	request.Header.Set("X-BigClaw-Role", "platform_admin")
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ClawHostRollout struct {
+			Status  string `json:"status"`
+			Summary struct {
+				ActivePlans      int `json:"active_plans"`
+				TotalTargets     int `json:"total_targets"`
+				TakeoverRequired int `json:"takeover_required"`
+			} `json:"summary"`
+			Plans []struct {
+				Action       string `json:"action"`
+				TargetCount  int    `json:"target_count"`
+				TakeoverHook string `json:"takeover_hook"`
+			} `json:"plans"`
+		} `json:"clawhost_rollout_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center rollout response: %v", err)
+	}
+	if decoded.ClawHostRollout.Status != "active" || decoded.ClawHostRollout.Summary.ActivePlans != 2 || decoded.ClawHostRollout.Summary.TotalTargets != 2 || decoded.ClawHostRollout.Summary.TakeoverRequired != 1 {
+		t.Fatalf("unexpected ClawHost rollout control center surface: %+v", decoded.ClawHostRollout)
+	}
+	if len(decoded.ClawHostRollout.Plans) != 2 || decoded.ClawHostRollout.Plans[0].Action != "upgrade" {
+		t.Fatalf("expected upgrade rollout plans, got %+v", decoded.ClawHostRollout.Plans)
+	}
+}
+
+func TestV2ControlCenterIncludesClawHostRecoverySurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010410, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-recovery-center-1",
+			Source:   "clawhost",
+			Title:    "recover sales-west",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":              "clawhost",
+				"claw_id":                    "claw-sales-west",
+				"claw_name":                  "sales-west",
+				"clawhost_lifecycle_actions": "start,restart,upgrade",
+				"clawhost_pod_isolation":     "true",
+				"clawhost_service_isolation": "true",
+				"clawhost_takeover_required": "true",
+				"clawhost_takeover_triggers": "proxy health regresses,session restore fails",
+				"clawhost_recovery_evidence": "GET /status,/v2/reports/distributed",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-recovery-center-2",
+			Source:   "clawhost",
+			Title:    "recover support-east",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":              "clawhost",
+				"claw_id":                    "claw-support-east",
+				"claw_name":                  "support-east",
+				"clawhost_lifecycle_actions": "restart",
+				"clawhost_pod_isolation":     "false",
+				"clawhost_service_isolation": "true",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue control center recovery task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center", nil)
+	request.Header.Set("X-BigClaw-Role", "platform_admin")
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ClawHostRecovery struct {
+			Status  string `json:"status"`
+			Summary struct {
+				Targets            int `json:"targets"`
+				RecoverableTargets int `json:"recoverable_targets"`
+				DegradedTargets    int `json:"degraded_targets"`
+				IsolatedTargets    int `json:"isolated_targets"`
+				TakeoverRequired   int `json:"takeover_required"`
+				EvidenceArtifacts  int `json:"evidence_artifacts"`
+			} `json:"summary"`
+			Targets []struct {
+				ClawName       string   `json:"claw_name"`
+				RecoveryStatus string   `json:"recovery_status"`
+				Warnings       []string `json:"warnings"`
+			} `json:"targets"`
+		} `json:"clawhost_recovery_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center recovery response: %v", err)
+	}
+	if decoded.ClawHostRecovery.Status != "active" || decoded.ClawHostRecovery.Summary.Targets != 2 || decoded.ClawHostRecovery.Summary.RecoverableTargets != 1 || decoded.ClawHostRecovery.Summary.DegradedTargets != 1 || decoded.ClawHostRecovery.Summary.IsolatedTargets != 1 || decoded.ClawHostRecovery.Summary.TakeoverRequired != 1 || decoded.ClawHostRecovery.Summary.EvidenceArtifacts != 2 {
+		t.Fatalf("unexpected ClawHost recovery control center surface: %+v", decoded.ClawHostRecovery)
+	}
+	if len(decoded.ClawHostRecovery.Targets) != 2 || decoded.ClawHostRecovery.Targets[0].RecoveryStatus != "degraded" || decoded.ClawHostRecovery.Targets[0].ClawName != "support-east" {
+		t.Fatalf("expected degraded ClawHost recovery target first, got %+v", decoded.ClawHostRecovery.Targets)
+	}
+}
+
+func TestV2ControlCenterIncludesClawHostWorkflowSurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010415, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-workflow-center-1",
+			Source:   "clawhost",
+			Title:    "review channels",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":             "clawhost",
+				"claw_id":                   "claw-a",
+				"claw_name":                 "sales-west",
+				"skill_count":               "3",
+				"agent_skill_count":         "4",
+				"channel_types":             "telegram,discord,whatsapp",
+				"whatsapp_pairing_status":   "waiting",
+				"admin_credentials_exposed": "true",
+				"admin_surface_path":        "/credentials",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-workflow-center-2",
+			Source:   "clawhost",
+			Title:    "review skills",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":           "clawhost",
+				"claw_id":                 "claw-b",
+				"claw_name":               "support-east",
+				"skill_count":             "2",
+				"agent_skill_count":       "2",
+				"channel_types":           "telegram",
+				"whatsapp_pairing_status": "paired",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue control center workflow task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center", nil)
+	request.Header.Set("X-BigClaw-Role", "platform_admin")
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ClawHostWorkflow struct {
+			Status  string `json:"status"`
+			Summary struct {
+				WorkflowItems     int `json:"workflow_items"`
+				PairingApprovals  int `json:"pairing_approvals"`
+				CredentialReviews int `json:"credential_reviews"`
+				TakeoverRequired  int `json:"takeover_required"`
+			} `json:"summary"`
+			ReviewQueue []struct {
+				ClawName           string   `json:"claw_name"`
+				WhatsAppPairing    string   `json:"whatsapp_pairing"`
+				CredentialsExposed bool     `json:"credentials_exposed"`
+				TakeoverRequired   bool     `json:"takeover_required"`
+				Channels           []string `json:"channels"`
+			} `json:"review_queue"`
+		} `json:"clawhost_workflow_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center workflow response: %v", err)
+	}
+	if decoded.ClawHostWorkflow.Status != "active" || decoded.ClawHostWorkflow.Summary.WorkflowItems != 2 || decoded.ClawHostWorkflow.Summary.PairingApprovals != 1 || decoded.ClawHostWorkflow.Summary.CredentialReviews != 1 || decoded.ClawHostWorkflow.Summary.TakeoverRequired != 1 {
+		t.Fatalf("unexpected ClawHost workflow control center surface: %+v", decoded.ClawHostWorkflow)
+	}
+	if len(decoded.ClawHostWorkflow.ReviewQueue) != 2 || !decoded.ClawHostWorkflow.ReviewQueue[0].TakeoverRequired || decoded.ClawHostWorkflow.ReviewQueue[0].ClawName != "sales-west" {
+		t.Fatalf("expected takeover-required ClawHost workflow item first, got %+v", decoded.ClawHostWorkflow.ReviewQueue)
+	}
+}
+
+func TestV2ControlCenterIncludesClawHostReadinessSurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010418, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-ready-center-1",
+			Source:   "clawhost",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":       "clawhost",
+				"claw_id":             "claw-a",
+				"claw_name":           "sales-west",
+				"domain":              "sales-west.clawhost.cloud",
+				"proxy_mode":          "http_ws_gateway",
+				"gateway_port":        "18789",
+				"reachable":           "true",
+				"admin_ui_enabled":    "true",
+				"websocket_reachable": "true",
+				"subdomain_ready":     "true",
+				"version_status":      "current",
+				"version_current":     "0.0.31",
+				"version_latest":      "0.0.31",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-ready-center-2",
+			Source:   "clawhost",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":       "clawhost",
+				"claw_id":             "claw-b",
+				"claw_name":           "support-east",
+				"domain":              "support-east.clawhost.cloud",
+				"proxy_mode":          "http_ws_gateway",
+				"gateway_port":        "18789",
+				"reachable":           "false",
+				"admin_ui_enabled":    "true",
+				"websocket_reachable": "false",
+				"subdomain_ready":     "false",
+				"version_status":      "upgrade_available",
+				"version_current":     "0.0.30",
+				"version_latest":      "0.0.31",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue control center readiness task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center", nil)
+	request.Header.Set("X-BigClaw-Role", "platform_admin")
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ClawHostReadiness struct {
+			Status  string `json:"status"`
+			Summary struct {
+				Targets                 int `json:"targets"`
+				ReadyTargets            int `json:"ready_targets"`
+				DegradedTargets         int `json:"degraded_targets"`
+				AdminReadyTargets       int `json:"admin_ready_targets"`
+				WebSocketReadyTargets   int `json:"websocket_ready_targets"`
+				SubdomainReadyTargets   int `json:"subdomain_ready_targets"`
+				UpgradeAvailableTargets int `json:"upgrade_available_targets"`
+			} `json:"summary"`
+			Targets []struct {
+				ClawName     string   `json:"claw_name"`
+				ReviewStatus string   `json:"review_status"`
+				Warnings     []string `json:"warnings"`
+			} `json:"targets"`
+		} `json:"clawhost_readiness_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center readiness response: %v", err)
+	}
+	if decoded.ClawHostReadiness.Status != "active" || decoded.ClawHostReadiness.Summary.Targets != 2 || decoded.ClawHostReadiness.Summary.ReadyTargets != 1 || decoded.ClawHostReadiness.Summary.DegradedTargets != 1 || decoded.ClawHostReadiness.Summary.AdminReadyTargets != 1 || decoded.ClawHostReadiness.Summary.WebSocketReadyTargets != 1 || decoded.ClawHostReadiness.Summary.SubdomainReadyTargets != 1 || decoded.ClawHostReadiness.Summary.UpgradeAvailableTargets != 1 {
+		t.Fatalf("unexpected ClawHost readiness control center surface: %+v", decoded.ClawHostReadiness)
+	}
+	if len(decoded.ClawHostReadiness.Targets) != 2 || decoded.ClawHostReadiness.Targets[0].ReviewStatus != "degraded" || decoded.ClawHostReadiness.Targets[0].ClawName != "support-east" {
+		t.Fatalf("expected degraded ClawHost readiness target first, got %+v", decoded.ClawHostReadiness.Targets)
+	}
+}
+
+func TestV2ControlCenterIncludesClawHostPolicySurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010422, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-policy-center-1",
+			Source:   "clawhost",
+			Title:    "review tenant provider defaults",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"clawhost_app_id":             "sales-app",
+				"clawhost_default_provider":   "openai",
+				"clawhost_provider_mode":      "app_default",
+				"clawhost_provider_allowlist": "anthropic,openai",
+				"clawhost_review_required":    "true",
+				"clawhost_drift_status":       "out_of_policy",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-policy-center-2",
+			Source:   "clawhost",
+			Title:    "review support tenant override",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"clawhost_app_id":             "support-app",
+				"clawhost_default_provider":   "anthropic",
+				"clawhost_provider_mode":      "tenant_override",
+				"clawhost_provider_allowlist": "openai,google",
+				"clawhost_takeover_required":  "true",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue control center policy task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center", nil)
+	request.Header.Set("X-BigClaw-Role", "platform_admin")
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ClawHostPolicy struct {
+			Status  string `json:"status"`
+			Summary struct {
+				ActivePolicies      int `json:"active_policies"`
+				ActiveTenants       int `json:"active_tenants"`
+				ActiveApps          int `json:"active_apps"`
+				ReviewRequired      int `json:"review_required"`
+				TakeoverRequired    int `json:"takeover_required"`
+				OutOfPolicyDefaults int `json:"out_of_policy_defaults"`
+			} `json:"summary"`
+			ObservedProviders []string `json:"observed_providers"`
+			ReviewQueue       []struct {
+				TaskID      string `json:"task_id"`
+				DriftStatus string `json:"drift_status"`
+			} `json:"review_queue"`
+		} `json:"clawhost_policy_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center policy response: %v", err)
+	}
+	if decoded.ClawHostPolicy.Status != "active" || decoded.ClawHostPolicy.Summary.ActivePolicies != 2 || decoded.ClawHostPolicy.Summary.ActiveTenants != 2 || decoded.ClawHostPolicy.Summary.ActiveApps != 2 || decoded.ClawHostPolicy.Summary.ReviewRequired != 2 || decoded.ClawHostPolicy.Summary.TakeoverRequired != 1 || decoded.ClawHostPolicy.Summary.OutOfPolicyDefaults != 1 {
+		t.Fatalf("unexpected ClawHost policy control center surface: %+v", decoded.ClawHostPolicy)
+	}
+	if len(decoded.ClawHostPolicy.ReviewQueue) != 2 || decoded.ClawHostPolicy.ReviewQueue[0].TaskID != "clawhost-policy-center-2" || decoded.ClawHostPolicy.ReviewQueue[0].DriftStatus != "out_of_policy" || decoded.ClawHostPolicy.ReviewQueue[1].TaskID != "clawhost-policy-center-1" || decoded.ClawHostPolicy.ReviewQueue[1].DriftStatus != "review_required" {
+		t.Fatalf("expected prioritized ClawHost policy review queue, got %+v", decoded.ClawHostPolicy.ReviewQueue)
+	}
+	for _, want := range []string{"anthropic", "openai"} {
+		if !containsString(decoded.ClawHostPolicy.ObservedProviders, want) {
+			t.Fatalf("expected ClawHost observed provider %q, got %+v", want, decoded.ClawHostPolicy.ObservedProviders)
+		}
+	}
+}
+
+func TestV2ControlCenterIncludesCompleteClawHostSurfaceBundle(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010430, 0)
+	task := domain.Task{
+		ID:       "clawhost-bundle-1",
+		Source:   "clawhost",
+		Title:    "bundle verification target",
+		TenantID: "tenant-a",
+		State:    domain.TaskQueued,
+		Metadata: map[string]string{
+			"control_plane":               "clawhost",
+			"inventory_kind":              "claw",
+			"claw_id":                     "claw-sales-west",
+			"claw_name":                   "sales-west",
+			"provider":                    "openai",
+			"provider_status":             "running",
+			"clawhost_app_id":             "sales-app",
+			"clawhost_default_provider":   "openai",
+			"clawhost_provider_mode":      "app_default",
+			"clawhost_provider_allowlist": "anthropic,openai",
+			"skill_count":                 "3",
+			"agent_skill_count":           "4",
+			"channel_types":               "discord,telegram,whatsapp",
+			"whatsapp_pairing_status":     "waiting",
+			"admin_credentials_exposed":   "true",
+			"admin_surface_path":          "/credentials",
+			"domain":                      "sales-west.clawhost.cloud",
+			"proxy_mode":                  "http_ws_gateway",
+			"gateway_port":                "18789",
+			"reachable":                   "true",
+			"admin_ui_enabled":            "true",
+			"websocket_reachable":         "true",
+			"subdomain_ready":             "true",
+			"version_status":              "current",
+			"version_current":             "0.0.31",
+			"version_latest":              "0.0.31",
+			"clawhost_update_available":   "true",
+			"clawhost_takeover_required":  "true",
+			"clawhost_lifecycle_actions":  "start,restart,upgrade",
+			"clawhost_pod_isolation":      "true",
+			"clawhost_service_isolation":  "true",
+			"clawhost_takeover_triggers":  "proxy health regresses,session restore fails",
+			"clawhost_recovery_evidence":  "GET /status,/v2/reports/distributed",
+		},
+		UpdatedAt: now,
+	}
+	if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+		t.Fatalf("enqueue control center bundle task %s: %v", task.ID, err)
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center", nil)
+	request.Header.Set("X-BigClaw-Role", "platform_admin")
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Policy struct {
+			Status  string `json:"status"`
+			Summary struct {
+				ActivePolicies int `json:"active_policies"`
+			} `json:"summary"`
+		} `json:"clawhost_policy_surface"`
+		Workflow struct {
+			Status  string `json:"status"`
+			Summary struct {
+				WorkflowItems int `json:"workflow_items"`
+			} `json:"summary"`
+		} `json:"clawhost_workflow_surface"`
+		Rollout struct {
+			Status  string `json:"status"`
+			Summary struct {
+				ActivePlans int `json:"active_plans"`
+			} `json:"summary"`
+		} `json:"clawhost_rollout_surface"`
+		Readiness struct {
+			Status  string `json:"status"`
+			Summary struct {
+				Targets int `json:"targets"`
+			} `json:"summary"`
+		} `json:"clawhost_readiness_surface"`
+		Recovery struct {
+			Status  string `json:"status"`
+			Summary struct {
+				Targets int `json:"targets"`
+			} `json:"summary"`
+		} `json:"clawhost_recovery_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center bundle response: %v", err)
+	}
+	if decoded.Policy.Status != "active" || decoded.Policy.Summary.ActivePolicies != 1 {
+		t.Fatalf("expected active ClawHost policy surface in bundle, got %+v", decoded.Policy)
+	}
+	if decoded.Workflow.Status != "active" || decoded.Workflow.Summary.WorkflowItems != 1 {
+		t.Fatalf("expected active ClawHost workflow surface in bundle, got %+v", decoded.Workflow)
+	}
+	if decoded.Rollout.Status != "active" || decoded.Rollout.Summary.ActivePlans != 1 {
+		t.Fatalf("expected active ClawHost rollout surface in bundle, got %+v", decoded.Rollout)
+	}
+	if decoded.Readiness.Status != "active" || decoded.Readiness.Summary.Targets != 1 {
+		t.Fatalf("expected active ClawHost readiness surface in bundle, got %+v", decoded.Readiness)
+	}
+	if decoded.Recovery.Status != "active" || decoded.Recovery.Summary.Targets != 1 {
+		t.Fatalf("expected active ClawHost recovery surface in bundle, got %+v", decoded.Recovery)
 	}
 }
 

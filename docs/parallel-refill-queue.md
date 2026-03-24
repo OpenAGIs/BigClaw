@@ -48,10 +48,10 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 24, 2026:
-  - active slices: `BIG-PAR-290` — Add ClawHost provider defaults and tenant policy surfaces; `BIG-PAR-291` — Add ClawHost proxy subdomain and admin validation lane; `BIG-PAR-292` — Add ClawHost lifecycle recovery and per-bot isolation scorecard
+  - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-283` — Add provider live handoff isolation regression coverage; `BIG-PAR-282` — Add sequence and retention surface regression coverage; `BIG-PAR-284` — Refactor control center response assembly; `BIG-PAR-285` — Refactor distributed diagnostics builders; `BIG-PAR-286` — Refactor worker runtime RunOnce flow; `BIG-PAR-287` — Add ClawHost fleet inventory and control-plane source; `BIG-PAR-288` — Add parallel ClawHost rollout planner; `BIG-PAR-289` — Add ClawHost skills channels and device approval workflows
-  - queue status: `queue_runnable=3`, `target_in_progress=2`
+  - recently completed slices: `BIG-PAR-290` — Add ClawHost provider defaults and tenant policy surfaces; `BIG-PAR-291` — Add ClawHost proxy subdomain and admin validation lane; `BIG-PAR-292` — Add ClawHost lifecycle recovery and per-bot isolation scorecard; `BIG-PAR-293` — Add control-center regression coverage for ClawHost recovery surface; `BIG-PAR-294` — Add control-center regression coverage for ClawHost workflow surface; `BIG-PAR-295` — Add control-center regression coverage for ClawHost readiness surface; `BIG-PAR-296` — Add control-center regression coverage for ClawHost policy surface; `BIG-PAR-297` — Add aggregate control-center regression for ClawHost surface bundle
+  - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -128,6 +128,14 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-287` — Add ClawHost fleet inventory and control-plane source
   - `BIG-PAR-288` — Add parallel ClawHost rollout planner
   - `BIG-PAR-289` — Add ClawHost skills channels and device approval workflows
+  - `BIG-PAR-290` — Add ClawHost provider defaults and tenant policy surfaces
+  - `BIG-PAR-291` — Add ClawHost proxy subdomain and admin validation lane
+  - `BIG-PAR-292` — Add ClawHost lifecycle recovery and per-bot isolation scorecard
+  - `BIG-PAR-293` — Add control-center regression coverage for ClawHost recovery surface
+  - `BIG-PAR-294` — Add control-center regression coverage for ClawHost workflow surface
+  - `BIG-PAR-295` — Add control-center regression coverage for ClawHost readiness surface
+  - `BIG-PAR-296` — Add control-center regression coverage for ClawHost policy surface
+  - `BIG-PAR-297` — Add aggregate control-center regression for ClawHost surface bundle
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -209,3 +217,8 @@ longer waits on Linear to keep issue execution moving.
 71. `BIG-PAR-290`
 72. `BIG-PAR-291`
 73. `BIG-PAR-292`
+74. `BIG-PAR-293`
+75. `BIG-PAR-294`
+76. `BIG-PAR-295`
+77. `BIG-PAR-296`
+78. `BIG-PAR-297`
