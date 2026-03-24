@@ -111,7 +111,10 @@
       "BIG-PAR-310",
       "BIG-PAR-311"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-338",
+      "BIG-PAR-337"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -231,7 +234,9 @@
     "BIG-PAR-333",
     "BIG-PAR-334",
     "BIG-PAR-335",
-    "BIG-PAR-336"
+    "BIG-PAR-336",
+    "BIG-PAR-338",
+    "BIG-PAR-337"
   ],
   "issues": [
     {
@@ -965,6 +970,18 @@
       "title": "Add saved view metric helper coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-338",
+      "title": "Add saved view rendering helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-337",
+      "title": "Add saved view scope and duplicate helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

@@ -224,3 +224,37 @@ func TestCountPremiumAndHighRisk(t *testing.T) {
 		t.Fatalf("countHighRisk = %d, want 2", got)
 	}
 }
+
+func TestVisibilityForScope(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		team    string
+		project string
+		want    string
+	}{
+		{name: "unscoped", team: "", project: "", want: "private"},
+		{name: "trimmed blanks", team: "   ", project: "\n\t", want: "private"},
+		{name: "team scope", team: " platform ", project: "", want: "team"},
+		{name: "project scope", team: "", project: " apollo ", want: "team"},
+	} {
+		if got := visibilityForScope(tc.team, tc.project); got != tc.want {
+			t.Fatalf("%s: visibilityForScope(%q, %q) = %q, want %q", tc.name, tc.team, tc.project, got, tc.want)
+		}
+	}
+}
+
+func TestDuplicateStringsTrimsIgnoresBlankAndSorts(t *testing.T) {
+	got := duplicateStrings([]string{
+		" Inbox ",
+		"",
+		"blocked",
+		"Inbox",
+		"blocked",
+		"   ",
+		"triage",
+	})
+	want := []string{"Inbox", "blocked"}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("duplicateStrings = %v, want %v", got, want)
+	}
+}

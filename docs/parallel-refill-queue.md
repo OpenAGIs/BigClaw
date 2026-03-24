@@ -47,11 +47,11 @@ longer waits on Linear to keep issue execution moving.
 
 ## Current batch
 
-- Current repo tranche status as of March 24, 2026:
-  - active slices: none
+- Current repo tranche status as of March 25, 2026:
+  - active slices: `BIG-PAR-338` — Add saved view rendering helper coverage; `BIG-PAR-337` — Add saved view scope and duplicate helper coverage
   - standby slices: none
   - recently completed slices: `BIG-PAR-304` — Add ClawHost partial export-filter regression coverage; `BIG-PAR-305` — Add ClawHost blank scope-filter normalization coverage; `BIG-PAR-306` — Add workflow endpoint header-actor export URL coverage; `BIG-PAR-307` — Add rollout planner actor-omission export URL coverage; `BIG-PAR-308` — Add fleet export URL filter-omission coverage; `BIG-PAR-309` — Add rollout planner scope-normalization coverage; `BIG-PAR-310` — Add direct workflow export header-fallback coverage; `BIG-PAR-311` — Add workflow export filename fallback coverage
-  - queue status: `queue_runnable=0`, `target_in_progress=2`
+  - queue status: `queue_runnable=2`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -150,6 +150,31 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-309` — Add rollout planner scope-normalization coverage
   - `BIG-PAR-310` — Add direct workflow export header-fallback coverage
   - `BIG-PAR-311` — Add workflow export filename fallback coverage
+  - `BIG-PAR-312` — Encode scoped ClawHost saved-view routes
+  - `BIG-PAR-313` — Sanitize scoped ClawHost saved-view IDs
+  - `BIG-PAR-314` — Encode scoped export URLs for saved views and weekly reports
+  - `BIG-PAR-315` — Sanitize attachment filenames for run report exports
+  - `BIG-PAR-316` — Add distributed export filename sanitization coverage
+  - `BIG-PAR-317` — Add run report fallback filename sanitization coverage
+  - `BIG-PAR-318` — Add distributed export fallback filename sanitization coverage
+  - `BIG-PAR-319` — Add distributed export project-scope filename sanitization coverage
+  - `BIG-PAR-320` — Add distributed export task-scope filename sanitization coverage
+  - `BIG-PAR-321` — Add distributed export project-fallback filename sanitization coverage
+  - `BIG-PAR-322` — Add distributed export task-fallback filename sanitization coverage
+  - `BIG-PAR-323` — Add direct sanitizeReportName helper coverage
+  - `BIG-PAR-324` — Add distributed export filename-scope precedence coverage
+  - `BIG-PAR-325` — Fix distributed export filename fallback precedence
+  - `BIG-PAR-326` — Add distributed export task fallback-after-team coverage
+  - `BIG-PAR-327` — Add firstMeaningfulReportName helper coverage
+  - `BIG-PAR-328` — Add weeklyExportURL helper coverage
+  - `BIG-PAR-329` — Normalize distributedExportURL helper filters
+  - `BIG-PAR-330` — Encode controlActionAuditURL query parameters
+  - `BIG-PAR-331` — Add savedViewScopeToken helper coverage
+  - `BIG-PAR-332` — Add buildSavedViewRoute blank-scope coverage
+  - `BIG-PAR-333` — Add viewScopeSuffix punctuation-fallback coverage
+  - `BIG-PAR-334` — Add normalizedViewOwner helper coverage
+  - `BIG-PAR-335` — Add digestRecipients helper coverage
+  - `BIG-PAR-336` — Add saved view metric helper coverage
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -250,3 +275,30 @@ longer waits on Linear to keep issue execution moving.
 90. `BIG-PAR-309`
 91. `BIG-PAR-310`
 92. `BIG-PAR-311`
+93. `BIG-PAR-312`
+94. `BIG-PAR-313`
+95. `BIG-PAR-314`
+96. `BIG-PAR-315`
+97. `BIG-PAR-316`
+98. `BIG-PAR-317`
+99. `BIG-PAR-318`
+100. `BIG-PAR-319`
+101. `BIG-PAR-320`
+102. `BIG-PAR-321`
+103. `BIG-PAR-322`
+104. `BIG-PAR-323`
+105. `BIG-PAR-324`
+106. `BIG-PAR-325`
+107. `BIG-PAR-326`
+108. `BIG-PAR-327`
+109. `BIG-PAR-328`
+110. `BIG-PAR-329`
+111. `BIG-PAR-330`
+112. `BIG-PAR-331`
+113. `BIG-PAR-332`
+114. `BIG-PAR-333`
+115. `BIG-PAR-334`
+116. `BIG-PAR-335`
+117. `BIG-PAR-336`
+118. `BIG-PAR-338`
+119. `BIG-PAR-337`
