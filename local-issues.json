@@ -4079,6 +4079,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-338` after adding direct helper coverage for saved-view rendering helpers.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds helper-level coverage proving `renderSavedViewFilters` returns `none` for empty filters and joins populated filters in report order.\n- `bigclaw-go/internal/product/saved_views_test.go` now adds helper-level coverage proving `renderSavedViewScopeMap` sorts both scopes and names, and that `emptyFallback` trims non-empty values while preserving the fallback for blank input.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `0144009ea94bf38730d318aeacdbd41142295bf7` matched remote SHA `0144009ea94bf38730d318aeacdbd41142295bf7` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `0144009ea94bf38730d318aeacdbd41142295bf7`\n\nCommit SHA: `0144009ea94bf38730d318aeacdbd41142295bf7`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:26:09Z"
+        }
+      ],
       "created_at": "2026-03-24T21:23:09Z",
       "description": "Add direct helper-level coverage for renderSavedViewFilters, renderSavedViewScopeMap, and emptyFallback so saved-view report formatting stays stable for empty and sorted helper inputs.",
       "id": "big-par-338",
@@ -4090,12 +4097,19 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add saved view rendering helper coverage",
-      "updated_at": "2026-03-24T21:23:09Z"
+      "updated_at": "2026-03-24T21:26:09Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-337` after adding direct helper coverage for saved-view scope and duplicate detection.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds helper-level coverage proving `visibilityForScope` returns `private` for blank scope and `team` when either trimmed scope value is present.\n- `bigclaw-go/internal/product/saved_views_test.go` now adds helper-level coverage proving `duplicateStrings` trims blank inputs, ignores empty values, and returns duplicate names in sorted order.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `0941143a488d697525aa179c2c2dc9aa0a862036` matched remote SHA `0941143a488d697525aa179c2c2dc9aa0a862036` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `0941143a488d697525aa179c2c2dc9aa0a862036`\n\nCommit SHA: `0941143a488d697525aa179c2c2dc9aa0a862036`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:26:09Z"
+        }
+      ],
       "created_at": "2026-03-24T21:23:09Z",
       "description": "Add direct helper-level coverage for visibilityForScope and duplicateStrings so scoped/private visibility and duplicate-name detection stay explicit when team/project are blank, trimmed, or repeated.",
       "id": "big-par-337",
@@ -4107,9 +4121,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add saved view scope and duplicate helper coverage",
-      "updated_at": "2026-03-24T21:23:09Z"
+      "updated_at": "2026-03-24T21:26:09Z"
     }
   ]
 }

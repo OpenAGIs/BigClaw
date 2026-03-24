@@ -109,12 +109,36 @@
       "BIG-PAR-308",
       "BIG-PAR-309",
       "BIG-PAR-310",
-      "BIG-PAR-311"
-    ],
-    "active": [
+      "BIG-PAR-311",
+      "BIG-PAR-312",
+      "BIG-PAR-313",
+      "BIG-PAR-314",
+      "BIG-PAR-315",
+      "BIG-PAR-316",
+      "BIG-PAR-317",
+      "BIG-PAR-318",
+      "BIG-PAR-319",
+      "BIG-PAR-320",
+      "BIG-PAR-321",
+      "BIG-PAR-322",
+      "BIG-PAR-323",
+      "BIG-PAR-324",
+      "BIG-PAR-325",
+      "BIG-PAR-326",
+      "BIG-PAR-327",
+      "BIG-PAR-328",
+      "BIG-PAR-329",
+      "BIG-PAR-330",
+      "BIG-PAR-331",
+      "BIG-PAR-332",
+      "BIG-PAR-333",
+      "BIG-PAR-334",
+      "BIG-PAR-335",
+      "BIG-PAR-336",
       "BIG-PAR-338",
       "BIG-PAR-337"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -975,13 +999,13 @@
       "identifier": "BIG-PAR-338",
       "title": "Add saved view rendering helper coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-337",
       "title": "Add saved view scope and duplicate helper coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
