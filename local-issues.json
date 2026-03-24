@@ -3788,6 +3788,23 @@
       "state": "Done",
       "title": "Add distributed export filename-scope precedence coverage",
       "updated_at": "2026-03-25T20:45:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Fix distributed-export filename scope selection so punctuation-only or whitespace-only team filters fall through to a meaningful project or task_id scope instead of forcing the `all` fallback.",
+      "id": "big-par-325",
+      "identifier": "BIG-PAR-325",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Fix distributed export filename fallback precedence"
     }
   ]
 }

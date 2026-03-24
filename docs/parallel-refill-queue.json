@@ -219,7 +219,8 @@
     "BIG-PAR-321",
     "BIG-PAR-322",
     "BIG-PAR-323",
-    "BIG-PAR-324"
+    "BIG-PAR-324",
+    "BIG-PAR-325"
   ],
   "issues": [
     {
@@ -881,6 +882,12 @@
       "title": "Add distributed export filename-scope precedence coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-325",
+      "title": "Fix distributed export filename fallback precedence",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

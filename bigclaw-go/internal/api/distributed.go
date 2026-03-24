@@ -311,7 +311,7 @@ func (s *Server) handleV2DistributedReportExport(w http.ResponseWriter, r *http.
 		return
 	}
 	diagnostics := s.buildDistributedDiagnostics(filters)
-	filenameScope := firstNonEmpty(filters.Team, filters.Project, filters.TaskID, "all")
+	filenameScope := firstMeaningfulReportName(filters.Team, filters.Project, filters.TaskID)
 	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 	w.Header().Set(
 		"Content-Disposition",
@@ -1618,6 +1618,15 @@ func (s *Server) sharedQueueCoordinationDiagnostics() sharedQueueCoordinationDia
 		diagnostics.RetentionHistoryTruncated = watermark.HistoryTruncated
 	}
 	return diagnostics
+}
+
+func firstMeaningfulReportName(values ...string) string {
+	for _, value := range values {
+		if sanitizeReportName(value) != "all" {
+			return value
+		}
+	}
+	return "all"
 }
 
 func sanitizeReportName(value string) string {
