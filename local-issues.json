@@ -3012,6 +3012,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-291` after adding a checked-in ClawHost proxy/admin validation lane to the Go control-plane surfaces.\n\nWhat changed:\n- `bigclaw-go/internal/api/clawhost_proxy_admin_validation_surface.go` now loads the canonical ClawHost ingress/admin evidence pack and exposes reviewer-facing summary, per-bot readiness, and limitation fields.\n- `bigclaw-go/internal/api/server.go`, `bigclaw-go/internal/api/v2.go`, and `bigclaw-go/internal/api/distributed.go` now publish the ClawHost validation surface through `/debug/status`, `/v2/control-center`, and `/v2/reports/distributed`, including a dedicated distributed-markdown section.\n- `bigclaw-go/internal/api/server_test.go` now covers the new debug-status, control-center, and distributed-report payloads.\n- `bigclaw-go/docs/reports/clawhost-proxy-admin-validation-lane.json` now provides the checked-in reviewer evidence pack for proxy routing, subdomain exposure, WebSocket/HTTP reachability, and admin readiness.\n- `local-issues.json` also activates `BIG-PAR-287` and `BIG-PAR-288` so the next ClawHost slices remain available for parallel refill.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `952ca6f1f79843a543431e83cda20b6b76a8e8a3` matches remote SHA `952ca6f1f79843a543431e83cda20b6b76a8e8a3` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `952ca6f1f79843a543431e83cda20b6b76a8e8a3`\n- `git log -1 --stat` -> captured for commit `952ca6f1f79843a543431e83cda20b6b76a8e8a3`\n\nCommit SHA: `952ca6f1f79843a543431e83cda20b6b76a8e8a3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T16:08:30Z"
+        }
+      ],
       "created_at": "2026-03-24T15:47:40Z",
       "description": "Add a BigClaw validation and observability slice for ClawHost proxy routing, WebSocket/HTTP reachability, per-bot subdomain exposure, and admin-surface readiness so bot fleet ingress posture can be checked in parallel and exported as reviewer-facing evidence. This is based on ClawHost's HTTP/WS proxy, subdomain routing, built-in admin UI, and no-per-bot-Ingress architecture.",
       "id": "big-par-291",
@@ -3024,9 +3031,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-24T15:55:02Z"
+      "updated_at": "2026-03-24T16:08:30Z"
     }
   ]
 }
