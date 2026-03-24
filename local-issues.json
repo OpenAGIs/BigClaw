@@ -4559,6 +4559,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go regression coverage for ClawHost fleet helper functions in `bigclaw-go/internal/product/clawhost_fleet_test.go`, including status normalization, string dedupe, facet rendering, and integer max behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_fleet.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_fleet.cover | grep \"clawhost_fleet.go\"` -> `normalizedClawHostStatus 100.0%`, `dedupeNonEmptyStrings 100.0%`, `renderFleetFacetMap 100.0%`, `fleetMaxInt 100.0%`\n\nCommit: `d992e089df32c9f0febb020252cb7e6fb6381a57`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:06:24Z"
+        }
+      ],
       "created_at": "2026-03-24T22:04:47Z",
       "description": "Add narrow Go tests covering normalized fleet status, dedupe helpers, facet rendering, and integer max behavior in clawhost_fleet.go.",
       "id": "big-par-358",
@@ -4570,12 +4577,19 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add ClawHost fleet helper regression coverage",
-      "updated_at": "2026-03-24T22:04:47Z"
+      "updated_at": "2026-03-24T22:06:25Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go coverage for the backward-compatible ClawHost fleet inventory wrapper aliases in `bigclaw-go/internal/product/clawhost_fleet_test.go`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_fleet.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_fleet.cover | grep \"clawhost_fleet.go\"` -> `BuildDefaultClawHostFleetInventory 100.0%`, `BuildClawHostFleetInventory 100.0%`, `AuditClawHostFleetInventory 100.0%`\n\nCommit: `d992e089df32c9f0febb020252cb7e6fb6381a57`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:06:24Z"
+        }
+      ],
       "created_at": "2026-03-24T22:04:47Z",
       "description": "Add narrow Go tests covering BuildDefaultClawHostFleetInventory, BuildClawHostFleetInventory, and AuditClawHostFleetInventory compatibility wrappers.",
       "id": "big-par-357",
@@ -4587,9 +4601,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add ClawHost fleet inventory alias wrapper coverage",
-      "updated_at": "2026-03-24T22:04:47Z"
+      "updated_at": "2026-03-24T22:06:24Z"
     }
   ]
 }
