@@ -1274,6 +1274,88 @@ func TestDebugStatusIncludesClawHostRolloutSurface(t *testing.T) {
 	}
 }
 
+func TestDebugStatusIncludesClawHostWorkflowSurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010300, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-workflow-1",
+			Source:   "clawhost",
+			Title:    "review channels",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":             "clawhost",
+				"claw_id":                   "claw-a",
+				"claw_name":                 "sales-west",
+				"skill_count":               "3",
+				"agent_skill_count":         "4",
+				"channel_types":             "telegram,discord,whatsapp",
+				"whatsapp_pairing_status":   "waiting",
+				"admin_credentials_exposed": "true",
+				"admin_surface_path":        "/credentials",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-workflow-2",
+			Source:   "clawhost",
+			Title:    "review skills",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":           "clawhost",
+				"claw_id":                 "claw-b",
+				"claw_name":               "support-east",
+				"skill_count":             "2",
+				"agent_skill_count":       "2",
+				"channel_types":           "telegram",
+				"whatsapp_pairing_status": "paired",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Workflow struct {
+			Status  string `json:"status"`
+			Summary struct {
+				WorkflowItems     int `json:"workflow_items"`
+				PairingApprovals  int `json:"pairing_approvals"`
+				CredentialReviews int `json:"credential_reviews"`
+				TakeoverRequired  int `json:"takeover_required"`
+			} `json:"summary"`
+			ReviewQueue []struct {
+				ClawName           string   `json:"claw_name"`
+				WhatsAppPairing    string   `json:"whatsapp_pairing"`
+				CredentialsExposed bool     `json:"credentials_exposed"`
+				TakeoverRequired   bool     `json:"takeover_required"`
+				Channels           []string `json:"channels"`
+			} `json:"review_queue"`
+		} `json:"clawhost_workflow_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug workflow payload: %v", err)
+	}
+	if decoded.Workflow.Status != "active" || decoded.Workflow.Summary.WorkflowItems != 2 || decoded.Workflow.Summary.PairingApprovals != 1 || decoded.Workflow.Summary.CredentialReviews != 1 || decoded.Workflow.Summary.TakeoverRequired != 1 {
+		t.Fatalf("unexpected workflow surface: %+v", decoded.Workflow)
+	}
+	if len(decoded.Workflow.ReviewQueue) != 2 || !decoded.Workflow.ReviewQueue[0].TakeoverRequired {
+		t.Fatalf("expected takeover-required item first, got %+v", decoded.Workflow.ReviewQueue)
+	}
+}
+
 func TestDeadLetterEndpoints(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()

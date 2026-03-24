@@ -214,6 +214,7 @@ func (s *Server) Handler() http.Handler {
 			"broker_stub_fanout_isolation":    brokerStubFanoutIsolationPayload(),
 			"provider_live_handoff_isolation": providerLiveHandoffIsolationPayload(),
 			"clawhost_policy_surface":         clawHostPolicySurfacePayload(s.clawHostPolicyTasks(r.Context())),
+			"clawhost_workflow_surface":       clawHostWorkflowSurfacePayload(s.clawHostPolicyTasks(r.Context())),
 			"clawhost_rollout_surface":        clawHostRolloutSurfacePayload(s.clawHostPolicyTasks(r.Context())),
 			"broker_bootstrap_surface":        brokerBootstrapSurfacePayload(),
 			"broker_review_bundle":            brokerReviewBundleSurfacePayload(),

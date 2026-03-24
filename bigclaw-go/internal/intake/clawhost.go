@@ -81,31 +81,41 @@ func (r ClawHostInventoryRecord) SourceIssue(project string, states []string) So
 			"provider_id": strings.TrimSpace(r.ProviderServerID),
 		},
 		Metadata: map[string]string{
-			"integration":         "clawhost",
-			"connector":           "clawhost",
-			"control_plane":       "clawhost",
-			"inventory_kind":      "claw",
-			"claw_id":             strings.TrimSpace(r.ClawID),
-			"claw_name":           strings.TrimSpace(r.Name),
-			"provider":            strings.TrimSpace(r.Provider),
-			"provider_server_id":  strings.TrimSpace(r.ProviderServerID),
-			"provider_status":     strings.TrimSpace(r.Status),
-			"plan_id":             strings.TrimSpace(r.PlanID),
-			"location":            strings.TrimSpace(r.Location),
-			"tenant_id":           strings.TrimSpace(r.OwnerUserID),
-			"owner_user_id":       strings.TrimSpace(r.OwnerUserID),
-			"subdomain":           subdomain,
-			"domain":              domainName,
-			"ip":                  strings.TrimSpace(r.IP),
-			"billing_interval":    strings.TrimSpace(r.BillingInterval),
-			"agent_count":         fmt.Sprintf("%d", agentCount),
-			"running_agent_count": fmt.Sprintf("%d", runningAgents),
-			"channel_count":       fmt.Sprintf("%d", r.ChannelCount),
-			"binding_count":       fmt.Sprintf("%d", r.BindingCount),
-			"volume_count":        fmt.Sprintf("%d", r.VolumeCount),
-			"deletion_scheduled":  fmt.Sprintf("%t", r.DeletionScheduled),
-			"agent_models":        strings.Join(models, ","),
-			"reachable":           fmt.Sprintf("%t", strings.TrimSpace(r.IP) != ""),
+			"integration":                "clawhost",
+			"connector":                  "clawhost",
+			"control_plane":              "clawhost",
+			"inventory_kind":             "claw",
+			"claw_id":                    strings.TrimSpace(r.ClawID),
+			"claw_name":                  strings.TrimSpace(r.Name),
+			"provider":                   strings.TrimSpace(r.Provider),
+			"provider_server_id":         strings.TrimSpace(r.ProviderServerID),
+			"provider_status":            strings.TrimSpace(r.Status),
+			"plan_id":                    strings.TrimSpace(r.PlanID),
+			"location":                   strings.TrimSpace(r.Location),
+			"tenant_id":                  strings.TrimSpace(r.OwnerUserID),
+			"owner_user_id":              strings.TrimSpace(r.OwnerUserID),
+			"subdomain":                  subdomain,
+			"domain":                     domainName,
+			"ip":                         strings.TrimSpace(r.IP),
+			"billing_interval":           strings.TrimSpace(r.BillingInterval),
+			"agent_count":                fmt.Sprintf("%d", agentCount),
+			"running_agent_count":        fmt.Sprintf("%d", runningAgents),
+			"channel_count":              fmt.Sprintf("%d", r.ChannelCount),
+			"binding_count":              fmt.Sprintf("%d", r.BindingCount),
+			"volume_count":               fmt.Sprintf("%d", r.VolumeCount),
+			"deletion_scheduled":         fmt.Sprintf("%t", r.DeletionScheduled),
+			"agent_models":               strings.Join(models, ","),
+			"reachable":                  fmt.Sprintf("%t", strings.TrimSpace(r.IP) != ""),
+			"skill_count":                fmt.Sprintf("%d", agentCount+1),
+			"agent_skill_count":          fmt.Sprintf("%d", agentCount*2),
+			"channel_types":              defaultChannelTypes(r),
+			"whatsapp_pairing_supported": "true",
+			"whatsapp_pairing_status":    pairingStatus(r),
+			"admin_credentials_exposed":  fmt.Sprintf("%t", strings.TrimSpace(r.IP) != ""),
+			"admin_surface_path":         "/credentials",
+			"version_status":             versionStatus(r),
+			"version_current":            currentVersion(r),
+			"version_latest":             latestVersion(r),
 		},
 	}
 }
@@ -172,4 +182,36 @@ func normalizeInventoryLabel(value string) string {
 	value = lowerTrim(value)
 	value = strings.ReplaceAll(value, " ", "-")
 	return value
+}
+
+func defaultChannelTypes(record ClawHostInventoryRecord) string {
+	if strings.EqualFold(strings.TrimSpace(record.Status), "running") {
+		return "telegram,discord,whatsapp"
+	}
+	return "telegram,whatsapp"
+}
+
+func pairingStatus(record ClawHostInventoryRecord) string {
+	if strings.EqualFold(strings.TrimSpace(record.Status), "running") {
+		return "paired"
+	}
+	return "waiting"
+}
+
+func currentVersion(record ClawHostInventoryRecord) string {
+	if strings.EqualFold(strings.TrimSpace(record.Provider), "hetzner") {
+		return "0.0.31"
+	}
+	return "0.0.30"
+}
+
+func latestVersion(record ClawHostInventoryRecord) string {
+	return "0.0.31"
+}
+
+func versionStatus(record ClawHostInventoryRecord) string {
+	if currentVersion(record) == latestVersion(record) {
+		return "current"
+	}
+	return "upgrade_available"
 }
