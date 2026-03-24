@@ -219,3 +219,41 @@ func TestBuildClawHostWorkflowSurfaceNormalizesParsingDefaults(t *testing.T) {
 		t.Fatalf("expected channel-only review reason, got %+v", item)
 	}
 }
+
+func TestBuildClawHostWorkflowSurfaceDefaultsPairingAndTrimsCredentialPath(t *testing.T) {
+	surface := BuildClawHostWorkflowSurface([]domain.Task{
+		{
+			ID:       "claw-default-pairing",
+			Source:   "clawhost",
+			TenantID: "tenant-default",
+			Title:    "default-pairing-bot",
+			Metadata: map[string]string{
+				"control_plane":      "clawhost",
+				"claw_id":            "claw-default",
+				"claw_name":          "default-pairing-bot",
+				"admin_surface_path": "  /credentials/default  ",
+			},
+		},
+	})
+
+	if surface.Status != "active" || surface.Summary.WorkflowItems != 1 || surface.Summary.PairingApprovals != 1 || surface.Summary.TakeoverRequired != 1 {
+		t.Fatalf("expected default pairing workflow item to require approval/takeover, got %+v", surface)
+	}
+	if len(surface.ReviewQueue) != 1 {
+		t.Fatalf("expected one workflow item, got %+v", surface.ReviewQueue)
+	}
+
+	item := surface.ReviewQueue[0]
+	if item.WhatsAppPairing != "waiting" {
+		t.Fatalf("expected missing pairing status to fall back to waiting, got %+v", item)
+	}
+	if item.CredentialsPath != "/credentials/default" {
+		t.Fatalf("expected admin surface path to be trimmed, got %+v", item)
+	}
+	if !item.TakeoverRequired {
+		t.Fatalf("expected default waiting pairing to require takeover, got %+v", item)
+	}
+	if item.ReviewReason != "WhatsApp pairing still needs human completion" {
+		t.Fatalf("expected default waiting pairing reason, got %+v", item)
+	}
+}
