@@ -185,6 +185,54 @@ func TestRenderClawHostFleetReportHandlesEmptyInventory(t *testing.T) {
 	}
 }
 
+func TestRenderClawHostFleetReportHandlesSparseInventoryAndEmptyFacets(t *testing.T) {
+	inventory := ClawHostFleetInventory{
+		SurfaceID:        "BIG-PAR-364",
+		Version:          "go-v1",
+		SourceRepository: "https://github.com/fastclaw-ai/clawhost",
+		ControlPlane:     ClawHostControlPlane{},
+		Apps: []ClawHostAppInventory{
+			{AppID: "app-a", Name: "App A"},
+		},
+		Bots: []ClawHostBotInventory{
+			{BotID: "bot-a", Name: "Bot A", Status: "", ModelProviders: nil, Channels: nil},
+		},
+		Facets: ClawHostInventoryFacets{},
+		Summary: ClawHostFleetSummary{
+			AppCount: 1,
+			BotCount: 1,
+		},
+	}
+	audit := ClawHostFleetAudit{
+		SurfaceID:         inventory.SurfaceID,
+		Version:           inventory.Version,
+		ReadinessScore:    0,
+		ControlPlaneReady: false,
+	}
+
+	report := RenderClawHostFleetReport(inventory, audit)
+	for _, want := range []string{
+		"## Filters",
+		"- none",
+		"## Control Plane",
+		"- Proxy Modes: ",
+		"## Lifecycle Actions",
+		"- none",
+		"App A (app-a): team=unassigned project=unassigned tenant=unassigned owner=unassigned",
+		"Bot A (bot-a): app=unassigned team=unassigned project=unassigned user=unassigned status=unknown",
+		"providers=none channels=none",
+		"## Inventory Facets",
+		"By Status: none",
+		"By Provider: none",
+		"By Channel: none",
+		"By Tenant: none",
+	} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected fleet edge-case report to contain %q, got %s", want, report)
+		}
+	}
+}
+
 func TestNormalizedClawHostStatusFallbacks(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
