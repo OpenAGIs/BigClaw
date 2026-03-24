@@ -290,7 +290,8 @@
     "BIG-PAR-350",
     "BIG-PAR-351",
     "BIG-PAR-352",
-    "BIG-PAR-353"
+    "BIG-PAR-353",
+    "BIG-PAR-354"
   ],
   "issues": [
     {
@@ -1126,6 +1127,12 @@
       "title": "Add ClawHost workflow surface payload unit coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-354",
+      "title": "Add ClawHost parsing helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In"
     }
   ]
 }

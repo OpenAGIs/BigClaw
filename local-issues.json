@@ -4588,6 +4588,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct API-unit coverage for clawHostWorkflowSurfacePayload so the wrapper now pins explicit actor/team/project scope, default actor fallback, idle workflow state, and active summary passthrough without relying only on product and handler regressions. Validation: cd bigclaw-go && go test ./internal/api -run 'TestClawHostWorkflowSurfacePayload(HandlesDefaultScope|PreservesExplicitScope)' -count=1 -> ok; cd bigclaw-go && go test ./internal/api ./internal/product -count=1 -> ok. Commit SHA: 427e9d82cb6bc2675d33b1e0b35ab128db2ec800. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T01:02:00Z"
+        }
+      ],
       "created_at": "2026-03-24T22:34:45Z",
       "description": "Add direct API-unit coverage for clawHostWorkflowSurfacePayload so the wrapper keeps actor/team/project scope, default actor fallback, and idle/active workflow surface behavior pinned without relying only on product and handler tests.",
       "id": "big-par-353",
@@ -4602,14 +4609,25 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost workflow surface payload unit coverage",
-      "updated_at": "2026-03-25T01:02:00Z",
-      "comments": [
-        {
-          "author": "codex",
-          "body": "Added direct API-unit coverage for clawHostWorkflowSurfacePayload so the wrapper now pins explicit actor/team/project scope, default actor fallback, idle workflow state, and active summary passthrough without relying only on product and handler regressions. Validation: cd bigclaw-go && go test ./internal/api -run 'TestClawHostWorkflowSurfacePayload(HandlesDefaultScope|PreservesExplicitScope)' -count=1 -> ok; cd bigclaw-go && go test ./internal/api ./internal/product -count=1 -> ok. Commit SHA: 427e9d82cb6bc2675d33b1e0b35ab128db2ec800. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
-          "created_at": "2026-03-25T01:02:00Z"
-        }
-      ]
+      "updated_at": "2026-03-25T01:02:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T22:38:32Z",
+      "description": "Add direct API-unit coverage for parseBoolClawHost, parseIntClawHost, and splitCSVClawHostRecovery so whitespace trimming, invalid-value fallbacks, and sorted CSV normalization stay pinned outside the readiness and recovery target tests.",
+      "id": "big-par-354",
+      "identifier": "BIG-PAR-354",
+      "labels": [
+        "go",
+        "clawhost",
+        "api",
+        "parallel",
+        "test"
+      ],
+      "priority": 3,
+      "state": "In",
+      "title": "Add ClawHost parsing helper unit coverage",
+      "updated_at": "2026-03-24T22:38:32Z"
     }
   ]
 }
