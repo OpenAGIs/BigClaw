@@ -168,7 +168,8 @@
       "BIG-PAR-376",
       "BIG-PAR-377",
       "BIG-PAR-378",
-      "BIG-PAR-379"
+      "BIG-PAR-379",
+      "BIG-PAR-380"
     ],
     "active": [],
     "standby": []
@@ -324,7 +325,8 @@
     "BIG-PAR-376",
     "BIG-PAR-377",
     "BIG-PAR-378",
-    "BIG-PAR-379"
+    "BIG-PAR-379",
+    "BIG-PAR-380"
   ],
   "issues": [
     {
@@ -1260,6 +1262,12 @@
     {
       "identifier": "BIG-PAR-379",
       "title": "Report refill markdown companion writes",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-380",
+      "title": "Document refill markdown_written payload",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }
