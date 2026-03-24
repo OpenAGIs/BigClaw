@@ -46,6 +46,46 @@ func TestAuditClawHostFleetInventoryDetectsCoverageGaps(t *testing.T) {
 	}
 }
 
+func TestFilterClawHostFleetSurface(t *testing.T) {
+	inventory := BuildDefaultClawHostFleetSurface()
+
+	t.Run("team and project", func(t *testing.T) {
+		filtered := FilterClawHostFleetSurface(inventory, "platform", "apollo")
+		if filtered.Summary.AppCount != 1 || filtered.Summary.BotCount != 1 || filtered.Summary.RunningBots != 1 {
+			t.Fatalf("unexpected scoped summary: %+v", filtered.Summary)
+		}
+		if len(filtered.Apps) != 1 || filtered.Apps[0].AppID != "app-platform" {
+			t.Fatalf("expected only platform app, got %+v", filtered.Apps)
+		}
+		if len(filtered.Bots) != 1 || filtered.Bots[0].BotID != "bot-platform-1" {
+			t.Fatalf("expected only platform bot, got %+v", filtered.Bots)
+		}
+	})
+
+	t.Run("project only", func(t *testing.T) {
+		filtered := FilterClawHostFleetSurface(inventory, "", "campaigns")
+		if filtered.Summary.AppCount != 1 || filtered.Summary.BotCount != 1 || filtered.Summary.RunningBots != 0 {
+			t.Fatalf("unexpected project-only scoped summary: %+v", filtered.Summary)
+		}
+		if len(filtered.Apps) != 1 || filtered.Apps[0].AppID != "app-growth" {
+			t.Fatalf("expected only growth app, got %+v", filtered.Apps)
+		}
+		if len(filtered.Bots) != 1 || filtered.Bots[0].BotID != "bot-growth-1" {
+			t.Fatalf("expected only growth bot, got %+v", filtered.Bots)
+		}
+	})
+
+	t.Run("no matches", func(t *testing.T) {
+		filtered := FilterClawHostFleetSurface(inventory, "support", "phoenix")
+		if filtered.Summary.AppCount != 0 || filtered.Summary.BotCount != 0 || filtered.Summary.RunningBots != 0 {
+			t.Fatalf("expected empty scoped summary, got %+v", filtered.Summary)
+		}
+		if len(filtered.Apps) != 0 || len(filtered.Bots) != 0 {
+			t.Fatalf("expected no scoped inventory, got apps=%+v bots=%+v", filtered.Apps, filtered.Bots)
+		}
+	})
+}
+
 func TestRenderClawHostFleetReport(t *testing.T) {
 	inventory := BuildDefaultClawHostFleetSurface()
 	audit := AuditClawHostFleetSurface(inventory)
