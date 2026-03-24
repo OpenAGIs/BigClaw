@@ -2752,6 +2752,40 @@ func TestV2DistributedExportSanitizationFallsBackForPunctuationOnlyTeam(t *testi
 	}
 }
 
+func TestV2DistributedExportSanitizesProjectScopedAttachmentFilename(t *testing.T) {
+	recorder := observability.NewRecorder()
+	task := domain.Task{
+		ID:        "dist-export-project-scope",
+		TraceID:   "trace-dist-export-project-scope",
+		Title:     "Distributed project-scope filename coverage",
+		State:     domain.TaskSucceeded,
+		Metadata:  map[string]string{"project": "Apollo / Mobile @ Core"},
+		CreatedAt: time.Date(2026, 3, 25, 4, 30, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 3, 25, 4, 45, 0, 0, time.UTC),
+	}
+	recorder.StoreTask(task)
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed/export?project=Apollo%20%2F%20Mobile%20%40%20Core", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected project-scoped distributed export 200, got %d %s", response.Code, response.Body.String())
+	}
+	if disposition := response.Header().Get("Content-Disposition"); disposition != `attachment; filename="bigclaw-distributed-diagnostics-apollo-mobile-core.md"` {
+		t.Fatalf("expected sanitized project-scoped attachment filename, got %q", disposition)
+	}
+	if !strings.Contains(response.Body.String(), "# BigClaw Distributed Diagnostics") {
+		t.Fatalf("expected distributed diagnostics markdown body, got %s", response.Body.String())
+	}
+}
+
 func TestV2RunDetailIncludesRepoTriagePacket(t *testing.T) {
 	recorder := observability.NewRecorder()
 	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Control: control.New(), Now: func() time.Time { return time.Unix(1700006100, 0) }}
