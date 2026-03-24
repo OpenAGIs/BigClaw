@@ -147,11 +147,10 @@
       "BIG-PAR-347",
       "BIG-PAR-349",
       "BIG-PAR-352",
-      "BIG-PAR-351"
-    ],
-    "active": [
+      "BIG-PAR-351",
       "BIG-PAR-353"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1102,7 +1101,7 @@
       "identifier": "BIG-PAR-353",
       "title": "Add saved view baseline field coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
