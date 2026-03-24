@@ -1390,3 +1390,37 @@ func TestClawHostExportURL(t *testing.T) {
 		}
 	})
 }
+
+func TestV2ClawHostExpansionEndpointsRejectNonGET(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+	}
+	handler := server.Handler()
+
+	for _, path := range []string{
+		"/v2/clawhost/fleet",
+		"/v2/clawhost/fleet/export",
+		"/v2/clawhost/rollout-planner",
+		"/v2/clawhost/rollout-planner/export",
+		"/v2/clawhost/workflows",
+		"/v2/clawhost/workflows/export",
+		"/v2/clawhost/recovery-scorecard",
+		"/v2/clawhost/recovery-scorecard/export",
+	} {
+		t.Run(path, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodPost, path, strings.NewReader(`{}`))
+			response := httptest.NewRecorder()
+
+			handler.ServeHTTP(response, request)
+			if response.Code != http.StatusMethodNotAllowed {
+				t.Fatalf("expected %s to reject non-GET with 405, got %d %s", path, response.Code, response.Body.String())
+			}
+			if !strings.Contains(response.Body.String(), "method not allowed") {
+				t.Fatalf("expected %s to report method-not-allowed body, got %q", path, response.Body.String())
+			}
+		})
+	}
+}

@@ -280,7 +280,8 @@
     "BIG-PAR-345",
     "BIG-PAR-346",
     "BIG-PAR-347",
-    "BIG-PAR-348"
+    "BIG-PAR-348",
+    "BIG-PAR-349"
   ],
   "issues": [
     {
@@ -1086,6 +1087,12 @@
       "title": "Add ClawHost expansion helper unit coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-349",
+      "title": "Add ClawHost expansion method guard coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In"
     }
   ]
 }
