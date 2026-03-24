@@ -2969,8 +2969,8 @@
       "comments": [
         {
           "author": "codex",
-          "body": "Added a Go-owned ClawHost rollout planner in bigclaw-go/internal/control/clawhost_rollout.go plus reviewer-facing rollout surfaces in bigclaw-go/internal/api/clawhost_rollout_surface.go, /debug/status, and /v2/control-center that group ClawHost claws into canary and batch waves, apply action-aware concurrency defaults, carry takeover hooks, and emit evidence artifacts for start/stop/restart/upgrade execution review. Validation: cd bigclaw-go && go test ./internal/control ./internal/api -> ok; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 6a4d9ec62b39c81647ddc02e1ec0b8f7214bb4c9 matches remote SHA 6a4d9ec62b39c81647ddc02e1ec0b8f7214bb4c9 with status ok and synced true. Commit SHA: 6a4d9ec62b39c81647ddc02e1ec0b8f7214bb4c9. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
-          "created_at": "2026-03-24T16:34:26Z"
+          "body": "Shipped commit 9d819d5ca8d4afc7638f1cbf86ede91b48ef2783 on main, adding bigclaw-go/internal/product/clawhost_rollout.go plus /v2/clawhost/rollout-planner and /v2/clawhost/rollout-planner/export. The planner now models canary, tenant-ring, and app-fanout rollout waves with takeover triggers, validation evidence, and concurrency guards derived from ClawHost lifecycle operations. Validation: cd bigclaw-go && go test ./internal/product; cd bigclaw-go && go test ./internal/api; cd bigclaw-go && go test ./...",
+          "created_at": "2026-03-24T16:20:08Z"
         }
       ],
       "created_at": "2026-03-24T15:47:39Z",
@@ -3062,6 +3062,23 @@
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
       "updated_at": "2026-03-24T16:52:42Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T16:23:28Z",
+      "description": "Capture ClawHost create/start/stop/restart/upgrade/delete posture together with per-bot pod and service isolation, takeover triggers, and recovery evidence so BigClaw Go surfaces can present a release-grade lifecycle recovery scorecard for tenant operators.",
+      "id": "big-par-292",
+      "identifier": "BIG-PAR-292",
+      "labels": [
+        "parallel",
+        "clawhost",
+        "go-mainline",
+        "product"
+      ],
+      "priority": 2,
+      "state": "In Progress",
+      "title": "Add ClawHost lifecycle recovery and per-bot isolation scorecard",
+      "updated_at": "2026-03-24T16:23:28Z"
     }
   ]
 }

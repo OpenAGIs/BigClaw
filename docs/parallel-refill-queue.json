@@ -91,7 +91,9 @@
       "BIG-PAR-290",
       "BIG-PAR-291"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-292"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -166,7 +168,8 @@
     "BIG-PAR-288",
     "BIG-PAR-289",
     "BIG-PAR-290",
-    "BIG-PAR-291"
+    "BIG-PAR-291",
+    "BIG-PAR-292"
   ],
   "issues": [
     {
@@ -630,6 +633,12 @@
       "title": "Add ClawHost proxy subdomain and admin validation lane",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-292",
+      "title": "Add ClawHost lifecycle recovery and per-bot isolation scorecard",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
