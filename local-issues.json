@@ -3132,15 +3132,22 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-295` after adding a coexistence regression that exercises the report-backed ClawHost surfaces and the product-backed `/v2/clawhost/*` endpoints through the same API handler.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now includes `TestClawHostReportAndExpansionSurfacesCoexist`, which verifies `/debug/status`, `/v2/control-center`, `/v2/reports/distributed`, `/v2/clawhost/fleet`, `/v2/clawhost/rollout-planner`, and `/v2/clawhost/workflows` all remain live together after the mainline merge.\n- `local-issues.json` closes the seeded coexistence slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `f2c137cc6a6bd604f32a95af0b29a84aa0b41299` matches remote SHA `f2c137cc6a6bd604f32a95af0b29a84aa0b41299` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `f2c137cc6a6bd604f32a95af0b29a84aa0b41299`\n\nCommit SHA: `f2c137cc6a6bd604f32a95af0b29a84aa0b41299`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T17:44:56Z"
+        }
+      ],
       "created_at": "2026-03-24T17:39:55Z",
       "description": "Add API regression coverage that proves the checked-in ClawHost control-center/debug/distributed surfaces continue to coexist with the product-backed /v2/clawhost expansion endpoints after the mainline merge.",
       "id": "big-par-295",
       "identifier": "BIG-PAR-295",
       "labels": [],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add ClawHost surface coexistence regression coverage",
-      "updated_at": "2026-03-24T17:40:13Z"
+      "updated_at": "2026-03-24T17:44:56Z"
     }
   ]
 }
