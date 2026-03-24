@@ -180,3 +180,33 @@ func TestRenderSavedViewReportHandlesEmptyCatalogAndRecipientFallback(t *testing
 		t.Fatalf("expected recipient fallback and gap in saved-view report, got %s", report)
 	}
 }
+
+func TestAuditSavedViewCatalogPopulatesDuplicateMapsAndMixedPenaltyScore(t *testing.T) {
+	catalog := SavedViewCatalog{
+		Name:    "catalog",
+		Version: "v1",
+		Views: []SavedView{
+			{ViewID: "view-1", Name: "Inbox", Route: "/v2/triage/center", Owner: "alice", Visibility: "private", Filters: []SavedViewFilter{{Field: "severity", Operator: "eq", Value: "high"}}, IsDefault: true},
+			{ViewID: "view-2", Name: "Inbox", Route: "/v2/triage/center", Owner: "alice", Visibility: "private", Filters: []SavedViewFilter{{Field: "severity", Operator: "eq", Value: "critical"}}, IsDefault: true},
+			{ViewID: "view-3", Name: "Ops", Route: "/v2/control-center", Owner: "alice", Visibility: "team"},
+			{ViewID: "view-4", Name: "Valid", Route: "/v2/runs", Owner: "bob", Visibility: "private", Filters: []SavedViewFilter{{Field: "state", Operator: "eq", Value: "running"}}},
+		},
+		Subscriptions: []AlertDigestSubscription{
+			{SubscriptionID: "sub-1", SavedViewID: "view-4", Channel: "email", Cadence: "daily", Recipients: []string{"alice"}},
+		},
+	}
+
+	audit := AuditSavedViewCatalog(catalog)
+	if got := audit.DuplicateViewNames["/v2/triage/center:alice"]; strings.Join(got, ",") != "Inbox" {
+		t.Fatalf("expected duplicate view name map entry for triage scope, got %+v", audit.DuplicateViewNames)
+	}
+	if got := strings.Join(audit.DuplicateDefaultViews["/v2/triage/center:alice"], ","); got != "Inbox,Inbox" {
+		t.Fatalf("expected duplicate default view map entry, got %+v", audit.DuplicateDefaultViews)
+	}
+	if len(audit.ViewsMissingFilters) != 1 || audit.ViewsMissingFilters[0] != "Ops" {
+		t.Fatalf("expected one missing-filter view, got %+v", audit.ViewsMissingFilters)
+	}
+	if audit.ReadinessScore != 75 {
+		t.Fatalf("expected mixed-penalty readiness score of 75, got %+v", audit)
+	}
+}
