@@ -48,10 +48,10 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 24, 2026:
-  - active slices: none
+  - active slices: `BIG-PAR-368` — Broaden direct recovery builder coverage
   - standby slices: none
   - recently completed slices: `BIG-PAR-360` — Extract ClawHost recovery builder for direct inventory coverage; `BIG-PAR-361` — Add ClawHost workflow max helper unit coverage; `BIG-PAR-362` — Add ClawHost workflow report edge-case coverage; `BIG-PAR-363` — Add ClawHost rollout report edge-case coverage; `BIG-PAR-364` — Add ClawHost fleet report edge-case coverage; `BIG-PAR-365` — Add product console unit coverage; `BIG-PAR-366` — Add saved-view helper unit coverage; `BIG-PAR-367` — Add dashboard run contract path helper coverage
-  - queue status: `queue_runnable=0`, `target_in_progress=2`
+  - queue status: `queue_runnable=1`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -362,3 +362,4 @@ longer waits on Linear to keep issue execution moving.
 146. `BIG-PAR-365`
 147. `BIG-PAR-366`
 148. `BIG-PAR-367`
+149. `BIG-PAR-368`

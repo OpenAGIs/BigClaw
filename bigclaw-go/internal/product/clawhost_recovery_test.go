@@ -99,6 +99,35 @@ func TestBuildClawHostLifecycleRecoveryScorecardFromInventoryCapturesDegradedBot
 	}
 }
 
+func TestBuildClawHostLifecycleRecoveryScorecardFromInventoryOrdersBotsAndHandlesMissingTenantMapping(t *testing.T) {
+	inventory := BuildClawHostFleetSurface(
+		[]ClawHostAppInventory{
+			{AppID: "app-b", TenantID: "tenant-b", Name: "app-b"},
+		},
+		[]ClawHostBotInventory{
+			{BotID: "bot-z", AppID: "missing-app", Name: "bot-z", Status: "", PodIsolation: true, ServiceIsolation: true},
+			{BotID: "bot-a", AppID: "app-b", Name: "bot-a", Status: " Running ", PodIsolation: true, ServiceIsolation: true},
+		},
+	)
+
+	scorecard := buildClawHostLifecycleRecoveryScorecard(inventory, "", "")
+	if len(scorecard.Bots) != 2 {
+		t.Fatalf("expected two recovery bots, got %+v", scorecard.Bots)
+	}
+	if scorecard.Bots[0].BotID != "bot-a" || scorecard.Bots[1].BotID != "bot-z" {
+		t.Fatalf("expected bot ordering by BotID, got %+v", scorecard.Bots)
+	}
+	if scorecard.Bots[0].TenantID != "tenant-b" || scorecard.Bots[0].Status != "running" {
+		t.Fatalf("expected mapped tenant and normalized status on first bot, got %+v", scorecard.Bots[0])
+	}
+	if scorecard.Bots[1].TenantID != "" || scorecard.Bots[1].Status != "unknown" {
+		t.Fatalf("expected missing app tenant to stay empty and blank status to normalize to unknown, got %+v", scorecard.Bots[1])
+	}
+	if scorecard.Summary.RecoverableBots != 2 || scorecard.Summary.DegradedBots != 0 || scorecard.Summary.IsolatedBots != 2 {
+		t.Fatalf("unexpected recovery summary for ordered inventory: %+v", scorecard.Summary)
+	}
+}
+
 func TestAuditClawHostLifecycleRecoveryScorecardDetectsGaps(t *testing.T) {
 	scorecard := BuildDefaultClawHostLifecycleRecoveryScorecard("", "")
 	scorecard.Lifecycle[0].Evidence = nil

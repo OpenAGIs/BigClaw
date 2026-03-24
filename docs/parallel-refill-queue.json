@@ -167,7 +167,9 @@
       "BIG-PAR-366",
       "BIG-PAR-367"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-368"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -318,7 +320,8 @@
     "BIG-PAR-364",
     "BIG-PAR-365",
     "BIG-PAR-366",
-    "BIG-PAR-367"
+    "BIG-PAR-367",
+    "BIG-PAR-368"
   ],
   "issues": [
     {
@@ -1238,6 +1241,12 @@
       "title": "Add dashboard run contract path helper coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-368",
+      "title": "Broaden direct recovery builder coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
