@@ -1136,6 +1136,17 @@ func TestClawHostReportAndExpansionSurfacesCoexist(t *testing.T) {
 	if !strings.Contains(distributedDecoded.Report.Markdown, "## ClawHost Proxy and Admin Validation") || !strings.Contains(distributedDecoded.Report.Markdown, "## ClawHost Tenant Policy") {
 		t.Fatalf("expected distributed markdown to retain report-backed clawhost sections, got %s", distributedDecoded.Report.Markdown)
 	}
+	distributedExportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(distributedExportResponse, httptest.NewRequest(http.MethodGet, "/v2/reports/distributed/export?team=platform&project=apollo&limit=5", nil))
+	if distributedExportResponse.Code != http.StatusOK {
+		t.Fatalf("expected distributed export 200, got %d %s", distributedExportResponse.Code, distributedExportResponse.Body.String())
+	}
+	if contentType := distributedExportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected distributed export markdown content type, got %q", contentType)
+	}
+	if !strings.Contains(distributedExportResponse.Body.String(), "## ClawHost Proxy and Admin Validation") || !strings.Contains(distributedExportResponse.Body.String(), "## ClawHost Rollout Planner") {
+		t.Fatalf("expected distributed export to retain report-backed clawhost sections, got %s", distributedExportResponse.Body.String())
+	}
 
 	fleetResponse := httptest.NewRecorder()
 	handler.ServeHTTP(fleetResponse, httptest.NewRequest(http.MethodGet, "/v2/clawhost/fleet", nil))
@@ -1152,6 +1163,17 @@ func TestClawHostReportAndExpansionSurfacesCoexist(t *testing.T) {
 	}
 	if fleetDecoded.Inventory.SurfaceID != "BIG-PAR-287" {
 		t.Fatalf("unexpected fleet expansion surface id: %+v", fleetDecoded.Inventory)
+	}
+	fleetExportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(fleetExportResponse, httptest.NewRequest(http.MethodGet, "/v2/clawhost/fleet/export", nil))
+	if fleetExportResponse.Code != http.StatusOK {
+		t.Fatalf("expected fleet expansion export 200, got %d %s", fleetExportResponse.Code, fleetExportResponse.Body.String())
+	}
+	if contentType := fleetExportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected fleet expansion export markdown content type, got %q", contentType)
+	}
+	if !strings.Contains(fleetExportResponse.Body.String(), "# ClawHost Fleet Inventory & Control Plane Report") || !strings.Contains(fleetExportResponse.Body.String(), "platform-release-bot") {
+		t.Fatalf("unexpected fleet expansion export body: %s", fleetExportResponse.Body.String())
 	}
 
 	rolloutResponse := httptest.NewRecorder()
@@ -1170,6 +1192,17 @@ func TestClawHostReportAndExpansionSurfacesCoexist(t *testing.T) {
 	if rolloutDecoded.Plan.PlanID != "BIG-PAR-288" {
 		t.Fatalf("unexpected rollout planner expansion payload: %+v", rolloutDecoded.Plan)
 	}
+	rolloutExportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(rolloutExportResponse, httptest.NewRequest(http.MethodGet, "/v2/clawhost/rollout-planner/export?team=platform&project=apollo", nil))
+	if rolloutExportResponse.Code != http.StatusOK {
+		t.Fatalf("expected rollout planner expansion export 200, got %d %s", rolloutExportResponse.Code, rolloutExportResponse.Body.String())
+	}
+	if contentType := rolloutExportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected rollout planner expansion export markdown content type, got %q", contentType)
+	}
+	if !strings.Contains(rolloutExportResponse.Body.String(), "# ClawHost Rollout Planner") || !strings.Contains(rolloutExportResponse.Body.String(), "Tenant Ring 1") {
+		t.Fatalf("unexpected rollout planner expansion export body: %s", rolloutExportResponse.Body.String())
+	}
 
 	workflowsResponse := httptest.NewRecorder()
 	handler.ServeHTTP(workflowsResponse, httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=platform&project=apollo&actor=alice", nil))
@@ -1186,5 +1219,16 @@ func TestClawHostReportAndExpansionSurfacesCoexist(t *testing.T) {
 	}
 	if workflowsDecoded.Surface.Name != "clawhost-workflow-surface" {
 		t.Fatalf("unexpected workflows expansion payload: %+v", workflowsDecoded.Surface)
+	}
+	workflowsExportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(workflowsExportResponse, httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows/export?team=platform&project=apollo&actor=alice", nil))
+	if workflowsExportResponse.Code != http.StatusOK {
+		t.Fatalf("expected workflows expansion export 200, got %d %s", workflowsExportResponse.Code, workflowsExportResponse.Body.String())
+	}
+	if contentType := workflowsExportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected workflows expansion export markdown content type, got %q", contentType)
+	}
+	if !strings.Contains(workflowsExportResponse.Body.String(), "# ClawHost Workflow Surface") || !strings.Contains(workflowsExportResponse.Body.String(), "IM Channels and Device Approval Workflows") {
+		t.Fatalf("unexpected workflows expansion export body: %s", workflowsExportResponse.Body.String())
 	}
 }

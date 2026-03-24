@@ -3148,6 +3148,18 @@
       "state": "Done",
       "title": "Add ClawHost surface coexistence regression coverage",
       "updated_at": "2026-03-24T17:44:56Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T17:51:13Z",
+      "description": "Add API regression coverage that proves the product-backed /v2/clawhost/*/export markdown endpoints continue to coexist with the report-backed distributed/export surfaces after the ClawHost mainline merge.",
+      "id": "big-par-296",
+      "identifier": "BIG-PAR-296",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add ClawHost export coexistence regression coverage",
+      "updated_at": "2026-03-24T17:51:35Z"
     }
   ]
 }
