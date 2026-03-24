@@ -50,8 +50,8 @@ longer waits on Linear to keep issue execution moving.
 - Current repo tranche status as of March 24, 2026:
   - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-301` — Add ClawHost export header regression coverage; `BIG-PAR-302` — Add ClawHost blank-actor fallback regression coverage; `BIG-PAR-303` — Add ClawHost empty-actor export omission coverage; `BIG-PAR-304` — Add ClawHost partial export-filter regression coverage; `BIG-PAR-305` — Add ClawHost blank scope-filter normalization coverage; `BIG-PAR-306` — Add workflow endpoint header-actor export URL coverage; `BIG-PAR-307` — Add rollout planner actor-omission export URL coverage; `BIG-PAR-308` — Add fleet export URL filter-omission coverage
-  - queue status: `queue_runnable=1`, `target_in_progress=2`
+  - recently completed slices: `BIG-PAR-302` — Add ClawHost blank-actor fallback regression coverage; `BIG-PAR-303` — Add ClawHost empty-actor export omission coverage; `BIG-PAR-304` — Add ClawHost partial export-filter regression coverage; `BIG-PAR-305` — Add ClawHost blank scope-filter normalization coverage; `BIG-PAR-306` — Add workflow endpoint header-actor export URL coverage; `BIG-PAR-307` — Add rollout planner actor-omission export URL coverage; `BIG-PAR-308` — Add fleet export URL filter-omission coverage; `BIG-PAR-309` — Add rollout planner scope-normalization coverage
+  - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -147,6 +147,7 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-306` — Add workflow endpoint header-actor export URL coverage
   - `BIG-PAR-307` — Add rollout planner actor-omission export URL coverage
   - `BIG-PAR-308` — Add fleet export URL filter-omission coverage
+  - `BIG-PAR-309` — Add rollout planner scope-normalization coverage
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
