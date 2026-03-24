@@ -1018,3 +1018,173 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		}
 	})
 }
+
+func TestClawHostReportAndExpansionSurfacesCoexist(t *testing.T) {
+	base := time.Date(2026, 3, 24, 9, 0, 0, 0, time.UTC)
+	recorder := observability.NewRecorder()
+	for _, task := range []domain.Task{
+		{
+			ID:        "clawhost-coexist-1",
+			TraceID:   "trace-clawhost-coexist-1",
+			Title:     "Upgrade platform tenant wave",
+			State:     domain.TaskBlocked,
+			RiskLevel: domain.RiskHigh,
+			TenantID:  "tenant-a",
+			Metadata: map[string]string{
+				"team":     "platform",
+				"project":  "apollo",
+				"app":      "alpha-app",
+				"provider": "openai",
+				"channel":  "slack",
+				"device":   "ios",
+			},
+			CreatedAt: base.Add(-2 * time.Hour),
+			UpdatedAt: base.Add(-30 * time.Minute),
+		},
+		{
+			ID:       "clawhost-coexist-2",
+			TraceID:  "trace-clawhost-coexist-2",
+			Title:    "Restart growth bot ring",
+			State:    domain.TaskRunning,
+			TenantID: "tenant-b",
+			Metadata: map[string]string{
+				"team":     "platform",
+				"project":  "apollo",
+				"app":      "beta-app",
+				"provider": "anthropic",
+				"channel":  "telegram",
+				"device":   "android",
+			},
+			CreatedAt: base.Add(-90 * time.Minute),
+			UpdatedAt: base.Add(-10 * time.Minute),
+		},
+	} {
+		recorder.StoreTask(task)
+	}
+
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      func() time.Time { return base },
+	}
+	handler := server.Handler()
+
+	debugResponse := httptest.NewRecorder()
+	handler.ServeHTTP(debugResponse, httptest.NewRequest(http.MethodGet, "/debug/status", nil))
+	if debugResponse.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d %s", debugResponse.Code, debugResponse.Body.String())
+	}
+	var debugDecoded struct {
+		Fleet struct {
+			ReportPath string `json:"report_path"`
+		} `json:"clawhost_fleet_inventory"`
+		Proxy struct {
+			ValidationLane string `json:"validation_lane"`
+		} `json:"clawhost_proxy_admin_validation"`
+	}
+	if err := json.Unmarshal(debugResponse.Body.Bytes(), &debugDecoded); err != nil {
+		t.Fatalf("decode debug clawhost payloads: %v", err)
+	}
+	if debugDecoded.Fleet.ReportPath != clawHostFleetInventorySurfacePath || debugDecoded.Proxy.ValidationLane != "clawhost_proxy_admin_parallel_probe" {
+		t.Fatalf("unexpected debug clawhost payloads: %+v %+v", debugDecoded.Fleet, debugDecoded.Proxy)
+	}
+
+	centerResponse := httptest.NewRecorder()
+	handler.ServeHTTP(centerResponse, httptest.NewRequest(http.MethodGet, "/v2/control-center?team=platform&project=apollo&limit=5&audit_limit=5", nil))
+	if centerResponse.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", centerResponse.Code, centerResponse.Body.String())
+	}
+	var centerDecoded struct {
+		Fleet struct {
+			ReportPath string `json:"report_path"`
+		} `json:"clawhost_fleet_inventory"`
+		Proxy struct {
+			ReportPath string `json:"report_path"`
+		} `json:"clawhost_proxy_admin_validation"`
+	}
+	if err := json.Unmarshal(centerResponse.Body.Bytes(), &centerDecoded); err != nil {
+		t.Fatalf("decode control center clawhost payloads: %v", err)
+	}
+	if centerDecoded.Fleet.ReportPath != clawHostFleetInventorySurfacePath || centerDecoded.Proxy.ReportPath != clawHostProxyAdminValidationLanePath {
+		t.Fatalf("unexpected control center clawhost payloads: %+v %+v", centerDecoded.Fleet, centerDecoded.Proxy)
+	}
+
+	distributedResponse := httptest.NewRecorder()
+	handler.ServeHTTP(distributedResponse, httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?team=platform&project=apollo&limit=5", nil))
+	if distributedResponse.Code != http.StatusOK {
+		t.Fatalf("expected distributed report 200, got %d %s", distributedResponse.Code, distributedResponse.Body.String())
+	}
+	var distributedDecoded struct {
+		Rollout struct {
+			ReportPath string `json:"report_path"`
+		} `json:"clawhost_rollout_planner"`
+		Policy struct {
+			ReportPath string `json:"report_path"`
+		} `json:"clawhost_tenant_policy"`
+		Report struct {
+			Markdown string `json:"markdown"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(distributedResponse.Body.Bytes(), &distributedDecoded); err != nil {
+		t.Fatalf("decode distributed clawhost payloads: %v", err)
+	}
+	if distributedDecoded.Rollout.ReportPath != clawHostRolloutPlannerSurfacePath || distributedDecoded.Policy.ReportPath != clawHostTenantPolicySurfacePath {
+		t.Fatalf("unexpected distributed clawhost payloads: %+v %+v", distributedDecoded.Rollout, distributedDecoded.Policy)
+	}
+	if !strings.Contains(distributedDecoded.Report.Markdown, "## ClawHost Proxy and Admin Validation") || !strings.Contains(distributedDecoded.Report.Markdown, "## ClawHost Tenant Policy") {
+		t.Fatalf("expected distributed markdown to retain report-backed clawhost sections, got %s", distributedDecoded.Report.Markdown)
+	}
+
+	fleetResponse := httptest.NewRecorder()
+	handler.ServeHTTP(fleetResponse, httptest.NewRequest(http.MethodGet, "/v2/clawhost/fleet", nil))
+	if fleetResponse.Code != http.StatusOK {
+		t.Fatalf("expected fleet expansion 200, got %d %s", fleetResponse.Code, fleetResponse.Body.String())
+	}
+	var fleetDecoded struct {
+		Inventory struct {
+			SurfaceID string `json:"surface_id"`
+		} `json:"inventory"`
+	}
+	if err := json.Unmarshal(fleetResponse.Body.Bytes(), &fleetDecoded); err != nil {
+		t.Fatalf("decode fleet expansion response: %v", err)
+	}
+	if fleetDecoded.Inventory.SurfaceID != "BIG-PAR-287" {
+		t.Fatalf("unexpected fleet expansion surface id: %+v", fleetDecoded.Inventory)
+	}
+
+	rolloutResponse := httptest.NewRecorder()
+	handler.ServeHTTP(rolloutResponse, httptest.NewRequest(http.MethodGet, "/v2/clawhost/rollout-planner?team=platform&project=apollo", nil))
+	if rolloutResponse.Code != http.StatusOK {
+		t.Fatalf("expected rollout planner expansion 200, got %d %s", rolloutResponse.Code, rolloutResponse.Body.String())
+	}
+	var rolloutDecoded struct {
+		Plan struct {
+			PlanID string `json:"plan_id"`
+		} `json:"plan"`
+	}
+	if err := json.Unmarshal(rolloutResponse.Body.Bytes(), &rolloutDecoded); err != nil {
+		t.Fatalf("decode rollout planner expansion response: %v", err)
+	}
+	if rolloutDecoded.Plan.PlanID != "BIG-PAR-288" {
+		t.Fatalf("unexpected rollout planner expansion payload: %+v", rolloutDecoded.Plan)
+	}
+
+	workflowsResponse := httptest.NewRecorder()
+	handler.ServeHTTP(workflowsResponse, httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=platform&project=apollo&actor=alice", nil))
+	if workflowsResponse.Code != http.StatusOK {
+		t.Fatalf("expected workflows expansion 200, got %d %s", workflowsResponse.Code, workflowsResponse.Body.String())
+	}
+	var workflowsDecoded struct {
+		Surface struct {
+			Name string `json:"name"`
+		} `json:"surface"`
+	}
+	if err := json.Unmarshal(workflowsResponse.Body.Bytes(), &workflowsDecoded); err != nil {
+		t.Fatalf("decode workflows expansion response: %v", err)
+	}
+	if workflowsDecoded.Surface.Name != "clawhost-workflow-surface" {
+		t.Fatalf("unexpected workflows expansion payload: %+v", workflowsDecoded.Surface)
+	}
+}

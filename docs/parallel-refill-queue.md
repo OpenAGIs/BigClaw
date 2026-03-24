@@ -48,10 +48,10 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 24, 2026:
-  - active slices: `BIG-PAR-292` — Add ClawHost lifecycle recovery and per-bot isolation scorecard; `BIG-PAR-293` — Refresh ClawHost control-plane branch against main
+  - active slices: `BIG-PAR-295` — Add ClawHost surface coexistence regression coverage
   - standby slices: none
-  - recently completed slices: `BIG-PAR-285` — Refactor distributed diagnostics builders; `BIG-PAR-286` — Refactor worker runtime RunOnce flow; `BIG-PAR-287` — Add ClawHost fleet inventory and control-plane source; `BIG-PAR-288` — Add parallel ClawHost rollout planner; `BIG-PAR-289` — Add ClawHost skills channels and device approval workflows; `BIG-PAR-290` — Add ClawHost provider defaults and tenant policy surfaces; `BIG-PAR-291` — Add ClawHost proxy subdomain and admin validation lane; `BIG-PAR-294` — Publish ClawHost control-plane review index
-  - queue status: `queue_runnable=2`, `target_in_progress=2`
+  - recently completed slices: `BIG-PAR-287` — Add ClawHost fleet inventory and control-plane source; `BIG-PAR-288` — Add parallel ClawHost rollout planner; `BIG-PAR-289` — Add ClawHost skills channels and device approval workflows; `BIG-PAR-290` — Add ClawHost provider defaults and tenant policy surfaces; `BIG-PAR-291` — Add ClawHost proxy subdomain and admin validation lane; `BIG-PAR-292` — Add ClawHost lifecycle recovery and per-bot isolation scorecard; `BIG-PAR-293` — Refresh ClawHost control-plane branch against main; `BIG-PAR-294` — Publish ClawHost control-plane review index
+  - queue status: `queue_runnable=1`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -130,6 +130,8 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-289` — Add ClawHost skills channels and device approval workflows
   - `BIG-PAR-290` — Add ClawHost provider defaults and tenant policy surfaces
   - `BIG-PAR-291` — Add ClawHost proxy subdomain and admin validation lane
+  - `BIG-PAR-292` — Add ClawHost lifecycle recovery and per-bot isolation scorecard
+  - `BIG-PAR-293` — Refresh ClawHost control-plane branch against main
   - `BIG-PAR-294` — Publish ClawHost control-plane review index
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
@@ -214,3 +216,4 @@ longer waits on Linear to keep issue execution moving.
 73. `BIG-PAR-292`
 74. `BIG-PAR-293`
 75. `BIG-PAR-294`
+76. `BIG-PAR-295`

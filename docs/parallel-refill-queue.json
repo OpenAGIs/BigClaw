@@ -90,11 +90,12 @@
       "BIG-PAR-289",
       "BIG-PAR-290",
       "BIG-PAR-291",
+      "BIG-PAR-292",
+      "BIG-PAR-293",
       "BIG-PAR-294"
     ],
     "active": [
-      "BIG-PAR-292",
-      "BIG-PAR-293"
+      "BIG-PAR-295"
     ],
     "standby": []
   },
@@ -173,7 +174,8 @@
     "BIG-PAR-291",
     "BIG-PAR-292",
     "BIG-PAR-293",
-    "BIG-PAR-294"
+    "BIG-PAR-294",
+    "BIG-PAR-295"
   ],
   "issues": [
     {
@@ -642,19 +644,25 @@
       "identifier": "BIG-PAR-292",
       "title": "Add ClawHost lifecycle recovery and per-bot isolation scorecard",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-293",
       "title": "Refresh ClawHost control-plane branch against main",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-294",
       "title": "Publish ClawHost control-plane review index",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-295",
+      "title": "Add ClawHost surface coexistence regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
