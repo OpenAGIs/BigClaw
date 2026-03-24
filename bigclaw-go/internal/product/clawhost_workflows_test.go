@@ -230,13 +230,41 @@ func TestAuditClawHostWorkflowLaneSurfaceFlagsWorkflowGaps(t *testing.T) {
 }
 
 func TestRenderClawHostWorkflowLaneReportIncludesKeySections(t *testing.T) {
-	surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "ops-bot", "platform", "apollo")
+	tasks := []domain.Task{
+		{
+			ID:        "task-1",
+			State:     domain.TaskBlocked,
+			RiskLevel: domain.RiskHigh,
+			Metadata: map[string]string{
+				"channel":  "telegram",
+				"device":   "wechat",
+				"provider": "openai",
+			},
+			CreatedAt: time.Now(),
+		},
+		{
+			ID: "task-2",
+			Metadata: map[string]string{
+				"channel":  "slack",
+				"provider": "anthropic",
+			},
+			CreatedAt: time.Now(),
+		},
+	}
+	surface := BuildDefaultClawHostWorkflowLaneSurface(tasks, "ops-bot", "platform", "apollo")
 	audit := AuditClawHostWorkflowLaneSurface(surface)
 
 	report := RenderClawHostWorkflowLaneReport(surface, audit)
 	for _, want := range []string{
 		"# ClawHost Workflow Surface",
 		"## Summary",
+		"## Filters",
+		"- actor: ops-bot",
+		"- project: apollo",
+		"- team: platform",
+		"## Operational Signals",
+		"- blocked_tasks: 1",
+		"- provider_tagged_tasks: 2",
 		"## Lanes",
 		"## Gaps",
 		"clawhost-parallel-rollout-control",
@@ -268,6 +296,13 @@ func TestRenderClawHostWorkflowLaneReportHandlesEmptyLanes(t *testing.T) {
 
 	for _, want := range []string{
 		"## Lanes",
+		"## Filters",
+		"- actor: workflow-operator",
+		"- project: apollo",
+		"- team: platform",
+		"## Operational Signals",
+		"- blocked_tasks: 0",
+		"- total_tasks: 0",
 		"- none",
 		"- Lane Count: 0",
 		"- Readiness Score: 0.0",

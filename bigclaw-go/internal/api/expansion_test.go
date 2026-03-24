@@ -1049,7 +1049,15 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		if workflowExportURL.Path != "/v2/clawhost/workflows/export" || workflowExportURL.Query().Get("team") != "platform" || workflowExportURL.Query().Get("project") != "apollo" || workflowExportURL.Query().Get("actor") != "alice" {
 			t.Fatalf("unexpected workflow export url: %s", decoded.Report.ExportURL)
 		}
-		if !strings.Contains(decoded.Report.Markdown, "# ClawHost Workflow Surface") || !strings.Contains(decoded.Report.Markdown, "clawhost-parallel-rollout-control") {
+		if !strings.Contains(decoded.Report.Markdown, "# ClawHost Workflow Surface") ||
+			!strings.Contains(decoded.Report.Markdown, "## Filters") ||
+			!strings.Contains(decoded.Report.Markdown, "- actor: alice") ||
+			!strings.Contains(decoded.Report.Markdown, "- project: apollo") ||
+			!strings.Contains(decoded.Report.Markdown, "- team: platform") ||
+			!strings.Contains(decoded.Report.Markdown, "## Operational Signals") ||
+			!strings.Contains(decoded.Report.Markdown, "- blocked_tasks: 1") ||
+			!strings.Contains(decoded.Report.Markdown, "- provider_tagged_tasks: 2") ||
+			!strings.Contains(decoded.Report.Markdown, "clawhost-parallel-rollout-control") {
 			t.Fatalf("unexpected workflow markdown: %s", decoded.Report.Markdown)
 		}
 
@@ -1061,7 +1069,13 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 			t.Fatalf("expected workflow export markdown content type, got %q", contentType)
 		}
-		if !strings.Contains(exportResponse.Body.String(), "token_session=true") || !strings.Contains(exportResponse.Body.String(), "IM Channels and Device Approval Workflows") || !strings.Contains(exportResponse.Body.String(), "owner=alice") || !strings.Contains(exportResponse.Body.String(), "/v2/control-center?team=platform&project=apollo") || strings.Contains(exportResponse.Body.String(), "owner=workflow-operator") {
+		if !strings.Contains(exportResponse.Body.String(), "token_session=true") ||
+			!strings.Contains(exportResponse.Body.String(), "IM Channels and Device Approval Workflows") ||
+			!strings.Contains(exportResponse.Body.String(), "owner=alice") ||
+			!strings.Contains(exportResponse.Body.String(), "/v2/control-center?team=platform&project=apollo") ||
+			!strings.Contains(exportResponse.Body.String(), "- actor: alice") ||
+			!strings.Contains(exportResponse.Body.String(), "- provider_tagged_tasks: 2") ||
+			strings.Contains(exportResponse.Body.String(), "owner=workflow-operator") {
 			t.Fatalf("unexpected workflow export body: %s", exportResponse.Body.String())
 		}
 	})

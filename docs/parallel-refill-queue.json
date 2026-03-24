@@ -125,7 +125,9 @@
       "BIG-PAR-324",
       "BIG-PAR-325"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-326"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -234,7 +236,8 @@
     "BIG-PAR-322",
     "BIG-PAR-323",
     "BIG-PAR-324",
-    "BIG-PAR-325"
+    "BIG-PAR-325",
+    "BIG-PAR-326"
   ],
   "issues": [
     {
@@ -902,6 +905,12 @@
       "title": "Add product regression coverage for ClawHost workflow lane compatibility alias",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-326",
+      "title": "Expose ClawHost workflow report filters and operational signals",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
