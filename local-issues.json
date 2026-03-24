@@ -4067,6 +4067,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added scoped `filters` to the nested ClawHost rollout surface so the debug/control-center JSON now preserves the same team/project context as the other scoped ClawHost surfaces. Updated the rollout surface callers and added focused debug/control-center regression coverage for the new JSON shape.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api -run 'Test(DebugStatusIncludesClawHostRolloutSurface|V2ControlCenterIncludesClawHostRolloutSurface|V2ControlCenterScopesClawHostSurfaceBundleByFilters)' -count=1` -> ok\n- `cd bigclaw-go && go test ./internal/api ./internal/product -count=1` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `caad39a0d76168ddbf28dd0f67e43030fefabef1` matches remote SHA `caad39a0d76168ddbf28dd0f67e43030fefabef1` with `status: ok` and `synced: true`\n- `git log -1 --stat --oneline` -> `caad39a feat(api): add filters to rollout surface` with `bigclaw-go/internal/api/clawhost_rollout_surface.go`, `bigclaw-go/internal/api/server.go`, `bigclaw-go/internal/api/v2.go`, `bigclaw-go/internal/api/server_test.go`, `docs/parallel-refill-queue.json`, and `local-issues.json`\n\nCommit SHA: `caad39a0d76168ddbf28dd0f67e43030fefabef1`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-24T21:21:41Z"
+        }
+      ],
       "created_at": "2026-03-24T21:17:54Z",
       "description": "Add scoped team/project filters to the nested ClawHost rollout surface so the debug/control-center JSON stays consistent with the other scoped ClawHost surfaces.",
       "id": "big-par-332",
@@ -4078,9 +4085,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add filters to ClawHost rollout surface payload",
-      "updated_at": "2026-03-24T21:17:54Z"
+      "updated_at": "2026-03-24T21:21:41Z"
     }
   ]
 }

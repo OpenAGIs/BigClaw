@@ -129,11 +129,10 @@
       "BIG-PAR-328",
       "BIG-PAR-329",
       "BIG-PAR-330",
-      "BIG-PAR-331"
-    ],
-    "active": [
+      "BIG-PAR-331",
       "BIG-PAR-332"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -958,7 +957,7 @@
       "identifier": "BIG-PAR-332",
       "title": "Add filters to ClawHost rollout surface payload",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
