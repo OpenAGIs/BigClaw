@@ -3010,6 +3010,34 @@ func TestSanitizeReportNameNormalizesMixedSeparatorInputs(t *testing.T) {
 	}
 }
 
+func TestFirstMeaningfulReportNameSkipsEmptyAndPunctuationOnlyScopes(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		inputs []string
+		want   string
+	}{
+		{
+			name:   "project after punctuation-only team",
+			inputs: []string{" / @ ", "Apollo / Mobile @ Core", "Task / Scope @ Edge"},
+			want:   "Apollo / Mobile @ Core",
+		},
+		{
+			name:   "task after whitespace team and project",
+			inputs: []string{"   ", " / @ ", "Task / Scope @ Edge"},
+			want:   "Task / Scope @ Edge",
+		},
+		{
+			name:   "all when every scope collapses",
+			inputs: []string{"   ", " / @ ", ""},
+			want:   "all",
+		},
+	} {
+		if got := firstMeaningfulReportName(tc.inputs...); got != tc.want {
+			t.Fatalf("%s: firstMeaningfulReportName(%q) = %q, want %q", tc.name, tc.inputs, got, tc.want)
+		}
+	}
+}
+
 func TestV2RunDetailIncludesRepoTriagePacket(t *testing.T) {
 	recorder := observability.NewRecorder()
 	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Control: control.New(), Now: func() time.Time { return time.Unix(1700006100, 0) }}
