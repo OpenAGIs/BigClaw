@@ -30,6 +30,7 @@ type Summary struct {
 	VMPoolAccess          bool     `json:"vm_pool_access"`
 	Isolation             string   `json:"isolation"`
 	TenantIsolationMode   string   `json:"tenant_isolation_mode"`
+	TenantMetadataKeys    []string `json:"tenant_metadata_keys,omitempty"`
 	OwnerMatchingRequired bool     `json:"owner_matching_required"`
 	OwnerMetadataKeys     []string `json:"owner_metadata_keys,omitempty"`
 	ApprovalFlow          string   `json:"approval_flow"`
@@ -71,6 +72,7 @@ func Resolve(task domain.Task) Summary {
 			VMPoolAccess:          vmAccess,
 			Isolation:             isolation,
 			TenantIsolationMode:   resolveTenantIsolationMode(task, isolation),
+			TenantMetadataKeys:    resolveTenantMetadataKeys(task),
 			OwnerMatchingRequired: metadataBool(task, false, "policy_require_owner_match", "policy_owner_match"),
 			OwnerMetadataKeys:     resolveOwnerMetadataKeys(task),
 			ApprovalFlow:          firstNonEmpty(metadataString(task, "policy_approval_flow"), approvalFlowDefault),
@@ -105,6 +107,7 @@ func Resolve(task domain.Task) Summary {
 		VMPoolAccess:          false,
 		Isolation:             isolation,
 		TenantIsolationMode:   resolveTenantIsolationMode(task, isolation),
+		TenantMetadataKeys:    resolveTenantMetadataKeys(task),
 		OwnerMatchingRequired: metadataBool(task, false, "policy_require_owner_match", "policy_owner_match"),
 		OwnerMetadataKeys:     resolveOwnerMetadataKeys(task),
 		ApprovalFlow:          firstNonEmpty(metadataString(task, "policy_approval_flow"), approvalFlowDefault),
@@ -239,7 +242,15 @@ func resolveTenantIsolationMode(task domain.Task, isolation string) string {
 }
 
 func resolveOwnerMetadataKeys(task domain.Task) []string {
-	raw := strings.TrimSpace(metadataString(task, "policy_owner_metadata_keys"))
+	return resolveMetadataKeyList(task, "policy_owner_metadata_keys")
+}
+
+func resolveTenantMetadataKeys(task domain.Task) []string {
+	return resolveMetadataKeyList(task, "policy_tenant_metadata_keys")
+}
+
+func resolveMetadataKeyList(task domain.Task, key string) []string {
+	raw := strings.TrimSpace(metadataString(task, key))
 	if raw == "" {
 		return nil
 	}

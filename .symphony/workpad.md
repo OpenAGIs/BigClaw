@@ -17,6 +17,14 @@
 - Review git diff to keep scope limited to BIGCLAW-178.
 
 ## Results
+- `go test ./internal/policy -run 'TestResolvePolicyOverridesQuotaBoundaries' -count=1`
+  - `ok  	bigclaw-go/internal/policy	0.140s`
+- `go test ./internal/scheduler -run 'TestScheduler(EnforcesTenantIsolationAndOwnerMatch|TaskPolicyTightensIsolationAgainstSharedDefaults)' -count=1`
+  - `ok  	bigclaw-go/internal/scheduler	0.331s`
+- `go test ./internal/worker -run 'TestRuntime(PublishesRejectedDecisionHandoffBeforeRetry|PublishesTaskPolicyIsolationOnBlockedEvent)' -count=1`
+  - `ok  	bigclaw-go/internal/worker	0.537s`
+- `go test ./internal/api -run 'TestV2ControlCenter(PolicyEndpoints|DistributedDiagnosticsShowIsolationBoundaries)' -count=1`
+  - `ok  	bigclaw-go/internal/api	0.420s`
 - `go test ./internal/scheduler -run 'TestScheduler(EnforcesTenantIsolationAndOwnerMatch|TaskPolicyTightensIsolationAgainstSharedDefaults)' -count=1`
   - `ok  	bigclaw-go/internal/scheduler	1.350s`
 - `go test ./internal/worker -run 'TestRuntime(PublishesRejectedDecisionHandoffBeforeRetry|PublishesTaskPolicyIsolationOnBlockedEvent)' -count=1`

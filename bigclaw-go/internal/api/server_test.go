@@ -3918,9 +3918,10 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 				MaxRecentDecisionsPerTenant int `json:"max_recent_decisions_per_tenant"`
 			} `json:"fairness"`
 			Isolation struct {
-				TenantMode        string   `json:"tenant_mode"`
-				RequireOwnerMatch bool     `json:"require_owner_match"`
-				OwnerMetadataKeys []string `json:"owner_metadata_keys"`
+				TenantMode         string   `json:"tenant_mode"`
+				TenantMetadataKeys []string `json:"tenant_metadata_keys"`
+				RequireOwnerMatch  bool     `json:"require_owner_match"`
+				OwnerMetadataKeys  []string `json:"owner_metadata_keys"`
 			} `json:"isolation"`
 		} `json:"policy"`
 		Fairness struct {
@@ -3939,7 +3940,7 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	if err := json.Unmarshal(policyResponse.Body.Bytes(), &policyDecoded); err != nil {
 		t.Fatalf("decode scheduler policy response: %v", err)
 	}
-	if policyDecoded.Backend != "sqlite" || !policyDecoded.Shared || policyDecoded.SourcePath != policyPath || policyDecoded.SharedPath != policySQLitePath || !policyDecoded.ReloadSupported || !policyDecoded.ReloadAuthorized || policyDecoded.Policy.DefaultExecutor != string(domain.ExecutorRay) || policyDecoded.Policy.ToolExecutors["browser"] != string(domain.ExecutorRay) || policyDecoded.Policy.UrgentPriorityThreshold != 2 || policyDecoded.Policy.Fairness.WindowSeconds != 30 || policyDecoded.Policy.Fairness.MaxRecentDecisionsPerTenant != 1 || policyDecoded.Policy.Isolation.TenantMode != "tenant" || !policyDecoded.Policy.Isolation.RequireOwnerMatch || len(policyDecoded.Policy.Isolation.OwnerMetadataKeys) != 2 {
+	if policyDecoded.Backend != "sqlite" || !policyDecoded.Shared || policyDecoded.SourcePath != policyPath || policyDecoded.SharedPath != policySQLitePath || !policyDecoded.ReloadSupported || !policyDecoded.ReloadAuthorized || policyDecoded.Policy.DefaultExecutor != string(domain.ExecutorRay) || policyDecoded.Policy.ToolExecutors["browser"] != string(domain.ExecutorRay) || policyDecoded.Policy.UrgentPriorityThreshold != 2 || policyDecoded.Policy.Fairness.WindowSeconds != 30 || policyDecoded.Policy.Fairness.MaxRecentDecisionsPerTenant != 1 || policyDecoded.Policy.Isolation.TenantMode != "tenant" || len(policyDecoded.Policy.Isolation.TenantMetadataKeys) != 3 || policyDecoded.Policy.Isolation.TenantMetadataKeys[2] != "app_id" || !policyDecoded.Policy.Isolation.RequireOwnerMatch || len(policyDecoded.Policy.Isolation.OwnerMetadataKeys) != 2 {
 		t.Fatalf("unexpected scheduler policy payload: %+v", policyDecoded)
 	}
 	if !policyDecoded.Fairness.Enabled || !policyDecoded.Fairness.Shared || policyDecoded.Fairness.Backend != "sqlite" || policyDecoded.Fairness.ActiveTenants != 2 || len(policyDecoded.Fairness.Tenants) != 2 {

@@ -281,18 +281,21 @@ func buildHandoffRequest(decision Decision, plan workflow.OrchestrationPlan, pol
 
 func evaluateIsolation(task domain.Task, quota QuotaSnapshot, rules RoutingRules) IsolationDecision {
 	effective := effectiveIsolationRules(task, rules)
-	taskTenantID := strings.TrimSpace(task.TenantID)
+	taskTenantID, tenantSource := taskTenant(task, effective.TenantMetadataKeys)
 	quotaTenantID := strings.TrimSpace(quota.TenantID)
-	taskOwner := taskOwner(task, effective.OwnerMetadataKeys)
+	taskOwner, ownerSource := taskOwner(task, effective.OwnerMetadataKeys)
 	quotaOwnerID := strings.TrimSpace(quota.OwnerID)
 	isolation := IsolationDecision{
-		TenantMode:        effective.TenantMode,
-		RequireOwnerMatch: effective.RequireOwnerMatch,
-		OwnerMetadataKeys: append([]string(nil), effective.OwnerMetadataKeys...),
-		TaskTenantID:      taskTenantID,
-		QuotaTenantID:     quotaTenantID,
-		TaskOwner:         taskOwner,
-		QuotaOwnerID:      quotaOwnerID,
+		TenantMode:         effective.TenantMode,
+		TenantSource:       tenantSource,
+		TenantMetadataKeys: append([]string(nil), effective.TenantMetadataKeys...),
+		RequireOwnerMatch:  effective.RequireOwnerMatch,
+		OwnerMetadataKeys:  append([]string(nil), effective.OwnerMetadataKeys...),
+		TaskTenantID:       taskTenantID,
+		QuotaTenantID:      quotaTenantID,
+		TaskOwner:          taskOwner,
+		OwnerSource:        ownerSource,
+		QuotaOwnerID:       quotaOwnerID,
 	}
 	if effective.TenantMode == "tenant" {
 		isolation.Boundary = "tenant"
@@ -329,6 +332,7 @@ func effectiveIsolationRules(task domain.Task, rules RoutingRules) IsolationRule
 	if taskPolicy.TenantIsolationMode == "tenant" {
 		effective.TenantMode = "tenant"
 	}
+	effective.TenantMetadataKeys = mergeMetadataKeys(effective.TenantMetadataKeys, taskPolicy.TenantMetadataKeys)
 	if taskPolicy.OwnerMatchingRequired {
 		effective.RequireOwnerMatch = true
 	}
@@ -338,6 +342,7 @@ func effectiveIsolationRules(task domain.Task, rules RoutingRules) IsolationRule
 
 func cloneIsolationRules(rules IsolationRules) IsolationRules {
 	out := rules
+	out.TenantMetadataKeys = append([]string(nil), rules.TenantMetadataKeys...)
 	out.OwnerMetadataKeys = append([]string(nil), rules.OwnerMetadataKeys...)
 	return out
 }
@@ -359,11 +364,23 @@ func mergeMetadataKeys(base []string, extra []string) []string {
 	return merged
 }
 
-func taskOwner(task domain.Task, metadataKeys []string) string {
+func taskTenant(task domain.Task, metadataKeys []string) (string, string) {
+	if tenantID := strings.TrimSpace(task.TenantID); tenantID != "" {
+		return tenantID, "task.tenant_id"
+	}
 	for _, key := range metadataKeys {
-		if owner := strings.TrimSpace(task.Metadata[key]); owner != "" {
-			return owner
+		if tenantID := strings.TrimSpace(task.Metadata[key]); tenantID != "" {
+			return tenantID, "task.metadata." + key
 		}
 	}
-	return ""
+	return "", ""
+}
+
+func taskOwner(task domain.Task, metadataKeys []string) (string, string) {
+	for _, key := range metadataKeys {
+		if owner := strings.TrimSpace(task.Metadata[key]); owner != "" {
+			return owner, "task.metadata." + key
+		}
+	}
+	return "", ""
 }

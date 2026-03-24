@@ -847,7 +847,7 @@ func buildIsolationDiagnostics(assignments []distributedTaskAssignment, base iso
 		diagnostics.OwnerMatchingRequired = rules.Isolation.RequireOwnerMatch
 	}
 	diagnostics.TenantBoundaries = facetCountsFromAssignments(assignments, func(item distributedTaskAssignment) string {
-		return firstNonEmpty(strings.TrimSpace(item.Task.TenantID), "unassigned")
+		return firstNonEmpty(isolationTaskTenant(item.Task, rules.Isolation.TenantMetadataKeys), "unassigned")
 	})
 	if diagnostics.OwnerMatchingRequired {
 		diagnostics.OwnerBoundaries = facetCountsFromAssignments(assignments, func(item distributedTaskAssignment) string {
@@ -860,6 +860,9 @@ func buildIsolationDiagnostics(assignments []distributedTaskAssignment, base iso
 		notes = append(notes, "scheduler enforces per-tenant capacity boundaries")
 	default:
 		notes = append(notes, "scheduler uses shared tenant capacity")
+	}
+	if len(rules.Isolation.TenantMetadataKeys) > 0 {
+		notes = append(notes, fmt.Sprintf("tenant boundaries resolved using task.tenant_id plus metadata keys: %s", strings.Join(rules.Isolation.TenantMetadataKeys, ", ")))
 	}
 	if diagnostics.OwnerMatchingRequired {
 		notes = append(notes, fmt.Sprintf("owner matching enforced using metadata keys: %s", strings.Join(rules.Isolation.OwnerMetadataKeys, ", ")))
@@ -1010,17 +1013,21 @@ func isolationFromValue(value any) (scheduler.IsolationDecision, bool) {
 		return *typed, true
 	case map[string]any:
 		decision := scheduler.IsolationDecision{
-			TenantMode:        stringValue(typed["tenant_mode"]),
-			RequireOwnerMatch: boolValue(typed["require_owner_match"]),
-			TaskTenantID:      stringValue(typed["task_tenant_id"]),
-			QuotaTenantID:     stringValue(typed["quota_tenant_id"]),
-			TaskOwner:         stringValue(typed["task_owner"]),
-			QuotaOwnerID:      stringValue(typed["quota_owner_id"]),
-			Boundary:          stringValue(typed["boundary"]),
-			Violation:         boolValue(typed["violation"]),
-			Reason:            stringValue(typed["reason"]),
+			TenantMode:         stringValue(typed["tenant_mode"]),
+			TenantSource:       stringValue(typed["tenant_source"]),
+			TenantMetadataKeys: stringSliceValue(typed["tenant_metadata_keys"]),
+			RequireOwnerMatch:  boolValue(typed["require_owner_match"]),
+			OwnerMetadataKeys:  stringSliceValue(typed["owner_metadata_keys"]),
+			TaskTenantID:       stringValue(typed["task_tenant_id"]),
+			QuotaTenantID:      stringValue(typed["quota_tenant_id"]),
+			TaskOwner:          stringValue(typed["task_owner"]),
+			OwnerSource:        stringValue(typed["owner_source"]),
+			QuotaOwnerID:       stringValue(typed["quota_owner_id"]),
+			Boundary:           stringValue(typed["boundary"]),
+			Violation:          boolValue(typed["violation"]),
+			Reason:             stringValue(typed["reason"]),
 		}
-		if decision.TenantMode == "" && !decision.RequireOwnerMatch && decision.TaskTenantID == "" && decision.QuotaTenantID == "" && decision.TaskOwner == "" && decision.QuotaOwnerID == "" && decision.Boundary == "" && !decision.Violation && decision.Reason == "" {
+		if decision.TenantMode == "" && decision.TenantSource == "" && len(decision.TenantMetadataKeys) == 0 && !decision.RequireOwnerMatch && len(decision.OwnerMetadataKeys) == 0 && decision.TaskTenantID == "" && decision.QuotaTenantID == "" && decision.TaskOwner == "" && decision.OwnerSource == "" && decision.QuotaOwnerID == "" && decision.Boundary == "" && !decision.Violation && decision.Reason == "" {
 			return scheduler.IsolationDecision{}, false
 		}
 		return decision, true
@@ -1038,6 +1045,37 @@ func boolValue(value any) bool {
 	default:
 		return false
 	}
+}
+
+func stringSliceValue(value any) []string {
+	items, ok := value.([]any)
+	if !ok {
+		return nil
+	}
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		text := strings.TrimSpace(stringValue(item))
+		if text == "" {
+			continue
+		}
+		out = append(out, text)
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+func isolationTaskTenant(task domain.Task, metadataKeys []string) string {
+	if tenantID := strings.TrimSpace(task.TenantID); tenantID != "" {
+		return tenantID
+	}
+	for _, key := range metadataKeys {
+		if tenantID := strings.TrimSpace(task.Metadata[key]); tenantID != "" {
+			return tenantID
+		}
+	}
+	return ""
 }
 
 func isolationTaskOwner(task domain.Task, metadataKeys []string) string {

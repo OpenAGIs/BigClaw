@@ -73,6 +73,7 @@ func TestResolvePolicyOverridesQuotaBoundaries(t *testing.T) {
 			"policy_resource_pool":         "premium/gold",
 			"policy_multi_agent_graph":     "false",
 			"policy_tenant_isolation_mode": "shared",
+			"policy_tenant_metadata_keys":  "app_id, workspace_id, app_id",
 			"policy_require_owner_match":   "true",
 			"policy_owner_metadata_keys":   "owner, created_by, owner",
 		},
@@ -86,7 +87,7 @@ func TestResolvePolicyOverridesQuotaBoundaries(t *testing.T) {
 	if summary.ApprovalFlow != "manual-gated" || summary.ResourcePool != "premium/gold" || summary.MultiAgentGraph {
 		t.Fatalf("expected configurable capability boundaries, got %+v", summary)
 	}
-	if summary.TenantIsolationMode != "shared" || !summary.OwnerMatchingRequired || len(summary.OwnerMetadataKeys) != 2 || summary.OwnerMetadataKeys[1] != "created_by" {
+	if summary.TenantIsolationMode != "shared" || len(summary.TenantMetadataKeys) != 2 || summary.TenantMetadataKeys[1] != "workspace_id" || !summary.OwnerMatchingRequired || len(summary.OwnerMetadataKeys) != 2 || summary.OwnerMetadataKeys[1] != "created_by" {
 		t.Fatalf("expected isolation overrides, got %+v", summary)
 	}
 }

@@ -230,27 +230,29 @@ func TestSchedulerEnforcesTenantIsolationAndOwnerMatch(t *testing.T) {
 func TestSchedulerTaskPolicyTightensIsolationAgainstSharedDefaults(t *testing.T) {
 	s := New()
 	accepted := s.Decide(domain.Task{
-		ID:       "policy-isol-accepted",
-		TenantID: "tenant-a",
+		ID: "policy-isol-accepted",
 		Metadata: map[string]string{
 			"policy_tenant_isolation_mode": "tenant",
+			"policy_tenant_metadata_keys":  "app_id",
 			"policy_require_owner_match":   "true",
-			"policy_owner_metadata_keys":   "created_by",
-			"created_by":                   "alice",
+			"policy_owner_metadata_keys":   "bot_owner, created_by",
+			"app_id":                       "tenant-a",
+			"bot_owner":                    "alice",
 		},
 	}, QuotaSnapshot{TenantID: "tenant-a", OwnerID: "alice"})
 	if !accepted.Accepted || accepted.Isolation.Violation {
 		t.Fatalf("expected accepted task policy isolation decision, got %+v", accepted)
 	}
-	if accepted.Isolation.TenantMode != "tenant" || !accepted.Isolation.RequireOwnerMatch || len(accepted.Isolation.OwnerMetadataKeys) != 2 || accepted.Isolation.OwnerMetadataKeys[1] != "created_by" {
+	if accepted.Isolation.TenantMode != "tenant" || accepted.Isolation.TenantSource != "task.metadata.app_id" || len(accepted.Isolation.TenantMetadataKeys) != 3 || accepted.Isolation.TenantMetadataKeys[2] != "app_id" || !accepted.Isolation.RequireOwnerMatch || accepted.Isolation.OwnerSource != "task.metadata.bot_owner" || len(accepted.Isolation.OwnerMetadataKeys) != 3 || accepted.Isolation.OwnerMetadataKeys[1] != "bot_owner" {
 		t.Fatalf("expected effective task policy isolation details, got %+v", accepted.Isolation)
 	}
 
 	crossTenant := s.Decide(domain.Task{
-		ID:       "policy-isol-cross-tenant",
-		TenantID: "tenant-b",
+		ID: "policy-isol-cross-tenant",
 		Metadata: map[string]string{
 			"policy_tenant_isolation_mode": "tenant",
+			"policy_tenant_metadata_keys":  "app_id",
+			"app_id":                       "tenant-b",
 		},
 	}, QuotaSnapshot{TenantID: "tenant-a"})
 	if crossTenant.Accepted || !crossTenant.Isolation.Violation || crossTenant.Isolation.Boundary != "tenant" {
@@ -258,12 +260,13 @@ func TestSchedulerTaskPolicyTightensIsolationAgainstSharedDefaults(t *testing.T)
 	}
 
 	crossOwner := s.Decide(domain.Task{
-		ID:       "policy-isol-cross-owner",
-		TenantID: "tenant-a",
+		ID: "policy-isol-cross-owner",
 		Metadata: map[string]string{
-			"policy_require_owner_match": "true",
-			"policy_owner_metadata_keys": "created_by",
-			"created_by":                 "bob",
+			"policy_require_owner_match":  "true",
+			"policy_owner_metadata_keys":  "bot_owner",
+			"policy_tenant_metadata_keys": "app_id",
+			"app_id":                      "tenant-a",
+			"bot_owner":                   "bob",
 		},
 	}, QuotaSnapshot{TenantID: "tenant-a", OwnerID: "alice"})
 	if crossOwner.Accepted || !crossOwner.Isolation.Violation || crossOwner.Isolation.Boundary != "owner" {

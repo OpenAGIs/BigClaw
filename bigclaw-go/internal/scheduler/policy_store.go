@@ -21,9 +21,10 @@ type RoutingRules struct {
 }
 
 type IsolationRules struct {
-	TenantMode        string   `json:"tenant_mode"`
-	RequireOwnerMatch bool     `json:"require_owner_match"`
-	OwnerMetadataKeys []string `json:"owner_metadata_keys,omitempty"`
+	TenantMode         string   `json:"tenant_mode"`
+	TenantMetadataKeys []string `json:"tenant_metadata_keys,omitempty"`
+	RequireOwnerMatch  bool     `json:"require_owner_match"`
+	OwnerMetadataKeys  []string `json:"owner_metadata_keys,omitempty"`
 }
 
 type PolicyStore struct {
@@ -49,9 +50,10 @@ type fairnessRulesFile struct {
 }
 
 type isolationRulesFile struct {
-	TenantMode        string   `json:"tenant_mode,omitempty"`
-	RequireOwnerMatch *bool    `json:"require_owner_match,omitempty"`
-	OwnerMetadataKeys []string `json:"owner_metadata_keys,omitempty"`
+	TenantMode         string   `json:"tenant_mode,omitempty"`
+	TenantMetadataKeys []string `json:"tenant_metadata_keys,omitempty"`
+	RequireOwnerMatch  *bool    `json:"require_owner_match,omitempty"`
+	OwnerMetadataKeys  []string `json:"owner_metadata_keys,omitempty"`
 }
 
 func DefaultRoutingRules() RoutingRules {
@@ -61,8 +63,9 @@ func DefaultRoutingRules() RoutingRules {
 		ToolExecutors:           map[string]domain.ExecutorKind{"browser": domain.ExecutorKubernetes, "gpu": domain.ExecutorRay},
 		UrgentPriorityThreshold: 1,
 		Isolation: IsolationRules{
-			TenantMode:        "shared",
-			OwnerMetadataKeys: []string{"owner"},
+			TenantMode:         "shared",
+			TenantMetadataKeys: []string{"tenant", "tenant_id", "app_id"},
+			OwnerMetadataKeys:  []string{"owner"},
 		},
 	}
 }
@@ -310,6 +313,13 @@ func (raw routingRulesFile) normalize() (RoutingRules, error) {
 			}
 			rules.Isolation.TenantMode = mode
 		}
+		if raw.Isolation.TenantMetadataKeys != nil {
+			keys := normalizeMetadataKeys(raw.Isolation.TenantMetadataKeys)
+			if len(keys) == 0 {
+				return RoutingRules{}, fmt.Errorf("isolation.tenant_metadata_keys must include at least one non-empty key")
+			}
+			rules.Isolation.TenantMetadataKeys = keys
+		}
 		if raw.Isolation.RequireOwnerMatch != nil {
 			rules.Isolation.RequireOwnerMatch = *raw.Isolation.RequireOwnerMatch
 		}
@@ -330,6 +340,7 @@ func cloneRoutingRules(rules RoutingRules) RoutingRules {
 	for key, value := range rules.ToolExecutors {
 		clone.ToolExecutors[key] = value
 	}
+	clone.Isolation.TenantMetadataKeys = append([]string(nil), rules.Isolation.TenantMetadataKeys...)
 	clone.Isolation.OwnerMetadataKeys = append([]string(nil), rules.Isolation.OwnerMetadataKeys...)
 	return clone
 }
