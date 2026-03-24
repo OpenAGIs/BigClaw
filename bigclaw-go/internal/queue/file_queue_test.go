@@ -149,3 +149,85 @@ func TestFileQueuePurgesCancelledLeaseAfterExpiry(t *testing.T) {
 		t.Fatalf("expected task to be purged after reload, got %v", err)
 	}
 }
+
+func TestFileQueueRejectsRenewalAfterLeaseExpiry(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.json")
+	q, err := NewFileQueue(path)
+	if err != nil {
+		t.Fatalf("new queue: %v", err)
+	}
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-expired-renew", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	_, lease, err := q.LeaseNext(ctx, "worker-a", 25*time.Millisecond)
+	if err != nil || lease == nil {
+		t.Fatalf("lease: %v lease=%v", err, lease)
+	}
+	time.Sleep(40 * time.Millisecond)
+	if err := q.RenewLease(ctx, lease, time.Minute); !errors.Is(err, ErrLeaseExpired) {
+		t.Fatalf("expected ErrLeaseExpired, got %v", err)
+	}
+}
+
+func TestFileQueueRejectsExpiredLeaseMutations(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.json")
+	q, err := NewFileQueue(path)
+	if err != nil {
+		t.Fatalf("new queue: %v", err)
+	}
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-expired-mutations", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	_, lease, err := q.LeaseNext(ctx, "worker-a", 25*time.Millisecond)
+	if err != nil || lease == nil {
+		t.Fatalf("lease: %v lease=%v", err, lease)
+	}
+	time.Sleep(40 * time.Millisecond)
+	if err := q.Ack(ctx, lease); !errors.Is(err, ErrLeaseExpired) {
+		t.Fatalf("expected expired ack to return ErrLeaseExpired, got %v", err)
+	}
+	if err := q.Requeue(ctx, lease, time.Now()); !errors.Is(err, ErrLeaseExpired) {
+		t.Fatalf("expected expired requeue to return ErrLeaseExpired, got %v", err)
+	}
+	if err := q.DeadLetter(ctx, lease, "expired"); !errors.Is(err, ErrLeaseExpired) {
+		t.Fatalf("expected expired dead-letter to return ErrLeaseExpired, got %v", err)
+	}
+}
+
+func TestFileQueueRejectsStaleLeaseAfterReacquire(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.json")
+	q, err := NewFileQueue(path)
+	if err != nil {
+		t.Fatalf("new queue: %v", err)
+	}
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-stale", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	_, firstLease, err := q.LeaseNext(ctx, "worker-a", 25*time.Millisecond)
+	if err != nil || firstLease == nil {
+		t.Fatalf("first lease: %v lease=%v", err, firstLease)
+	}
+	time.Sleep(40 * time.Millisecond)
+	_, secondLease, err := q.LeaseNext(ctx, "worker-b", time.Minute)
+	if err != nil || secondLease == nil {
+		t.Fatalf("second lease: %v lease=%v", err, secondLease)
+	}
+	if err := q.Ack(ctx, firstLease); !errors.Is(err, ErrLeaseNotOwned) {
+		t.Fatalf("expected stale ack to fail with ErrLeaseNotOwned, got %v", err)
+	}
+	if err := q.Requeue(ctx, firstLease, time.Now()); !errors.Is(err, ErrLeaseNotOwned) {
+		t.Fatalf("expected stale requeue to fail with ErrLeaseNotOwned, got %v", err)
+	}
+	if err := q.DeadLetter(ctx, firstLease, "stale"); !errors.Is(err, ErrLeaseNotOwned) {
+		t.Fatalf("expected stale dead-letter to fail with ErrLeaseNotOwned, got %v", err)
+	}
+	if err := q.RenewLease(ctx, firstLease, time.Minute); !errors.Is(err, ErrLeaseNotOwned) {
+		t.Fatalf("expected stale renew to fail with ErrLeaseNotOwned, got %v", err)
+	}
+	if err := q.Ack(ctx, secondLease); err != nil {
+		t.Fatalf("ack second lease: %v", err)
+	}
+}

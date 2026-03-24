@@ -199,6 +199,59 @@ func TestSQLiteQueueRejectsStaleOwnerAfterExpiryTakeover(t *testing.T) {
 	}
 }
 
+func TestSQLiteQueueRenewalPreventsEarlyTakeoverAcrossClients(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.db")
+	primary, err := NewSQLiteQueue(path)
+	if err != nil {
+		t.Fatalf("new sqlite queue: %v", err)
+	}
+	defer primary.Close()
+	secondary, err := NewSQLiteQueue(path)
+	if err != nil {
+		t.Fatalf("new secondary sqlite queue: %v", err)
+	}
+	defer secondary.Close()
+
+	if err := primary.Enqueue(ctx, domain.Task{ID: "task-renew-blocks-takeover", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+
+	_, firstLease, err := primary.LeaseNext(ctx, "worker-a", 50*time.Millisecond)
+	if err != nil || firstLease == nil {
+		t.Fatalf("first lease: %v lease=%v", err, firstLease)
+	}
+
+	time.Sleep(20 * time.Millisecond)
+	if err := primary.RenewLease(ctx, firstLease, 80*time.Millisecond); err != nil {
+		t.Fatalf("renew lease: %v", err)
+	}
+
+	time.Sleep(40 * time.Millisecond)
+	task, lease, err := secondary.LeaseNext(ctx, "worker-b", time.Minute)
+	if err != nil {
+		t.Fatalf("early takeover attempt: %v", err)
+	}
+	if task != nil || lease != nil {
+		t.Fatalf("expected renewal to block early takeover, got task=%v lease=%v", task, lease)
+	}
+
+	time.Sleep(70 * time.Millisecond)
+	takeoverTask, secondLease, err := secondary.LeaseNext(ctx, "worker-b", time.Minute)
+	if err != nil || takeoverTask == nil || secondLease == nil {
+		t.Fatalf("takeover after renewed expiry: %v task=%v lease=%v", err, takeoverTask, secondLease)
+	}
+	if takeoverTask.ID != "task-renew-blocks-takeover" {
+		t.Fatalf("expected takeover of task-renew-blocks-takeover, got %s", takeoverTask.ID)
+	}
+	if err := primary.Ack(ctx, firstLease); !errors.Is(err, ErrLeaseNotOwned) {
+		t.Fatalf("expected stale ack after takeover to return ErrLeaseNotOwned, got %v", err)
+	}
+	if err := secondary.Ack(ctx, secondLease); err != nil {
+		t.Fatalf("ack takeover lease: %v", err)
+	}
+}
+
 func TestSQLiteQueueDeadLetterReplayPersistsAcrossReopen(t *testing.T) {
 	ctx := context.Background()
 	path := filepath.Join(t.TempDir(), "queue.db")

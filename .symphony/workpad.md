@@ -1,21 +1,19 @@
-# BIGCLAW-172 Workpad
+# BIGCLAW-172
 
 ## Plan
+- Inspect shared queue lease paths across `MemoryQueue`, `FileQueue`, and `SQLiteQueue`.
+- Tighten lease acquire/renew/release state transitions so expired or stale leases cannot mutate task ownership.
+- Add regression tests for local backends and shared SQLite clients covering duplicate consumption, expiry takeover, and stale writer rejection.
+- Run targeted queue tests, record exact commands and results, then commit and push the scoped change set.
 
-1. Verify the current queue and subscriber lease changes already in the worktree against the issue acceptance for shared coordination, stale lease fencing, and release safety.
-2. Keep the implementation scoped to `bigclaw-go/internal/events` and `bigclaw-go/internal/queue`, only adjusting behavior required to formalize acquire, renew, release, expiry, and stale-owner handling.
-3. Extend focused regression coverage for local memory and SQLite-backed shared-store flows, including expired mutations, takeover fencing, and release-with-checkpoint preservation.
-4. Run targeted Go and Python validation commands, record exact commands and pass/fail results, then commit and push the branch.
-
-## Acceptance
-
-- Lease acquire, renew, commit, and release paths use an explicit state model so vacant, active, and expired leases are handled consistently.
-- Duplicate consumption, stale renewals, stale releases, and expired ack/requeue/dead-letter attempts do not allow a second executor to win after takeover or expiry.
-- Regression coverage includes both local memory and distributed SQLite-backed queue or lease-store paths.
+## Acceptance Mapping
+- 明确 lease 获取/续约/释放状态机:
+  centralize and document lease mutation validation in queue internals, and make backends enforce the same stale/expired ownership rules.
+- 重复消费与网络抖动下不出现双执行:
+  reject stale or expired ack/requeue/dead-letter mutations after takeover or renewal races, including shared SQLite clients.
+- 增加回归测试覆盖 local + distributed 场景:
+  extend file/local queue tests and shared SQLite cross-client tests for expiry, takeover, and duplicate-consumption safety.
 
 ## Validation
-
-- `cd bigclaw-go && go test ./internal/events ./internal/queue ./internal/worker`
-- `cd bigclaw-go && python3 -m unittest scripts/e2e/multi_node_shared_queue_test.py`
-
-Record exact command lines and results in the final closeout.
+- `cd /Users/openagi/code/bigclaw-workspaces/BIGCLAW-172/bigclaw-go && go test ./internal/queue`
+- If needed, run focused reruns for failing queue tests while iterating.
