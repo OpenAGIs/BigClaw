@@ -270,7 +270,8 @@
     "BIG-PAR-340",
     "BIG-PAR-341",
     "BIG-PAR-342",
-    "BIG-PAR-343"
+    "BIG-PAR-343",
+    "BIG-PAR-344"
   ],
   "issues": [
     {
@@ -1046,6 +1047,12 @@
       "title": "Pin default fleet filter maps in regressions",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-344",
+      "title": "Add policy report fallback filter regression",
+      "track": "Go Mainline Follow-ups",
+      "status": "In"
     }
   ]
 }

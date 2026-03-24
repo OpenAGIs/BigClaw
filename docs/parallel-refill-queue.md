@@ -47,11 +47,11 @@ longer waits on Linear to keep issue execution moving.
 
 ## Current batch
 
-- Current repo tranche status as of March 24, 2026:
+- Current repo tranche status as of March 25, 2026:
   - active slices: none
   - standby slices: none
   - recently completed slices: `BIG-PAR-336` — Add workflow filter assertions to API regressions; `BIG-PAR-337` — Add scoped debug filter assertions for remaining ClawHost surfaces; `BIG-PAR-338` — Add unscoped bundle filter assertions for remaining ClawHost surfaces; `BIG-PAR-339` — Add policy filter assertions to bundle regressions; `BIG-PAR-340` — Add policy filter assertions to standalone API regressions; `BIG-PAR-341` — Add scoped debug policy filter assertion; `BIG-PAR-342` — Pin default ClawHost product filter maps in regressions; `BIG-PAR-343` — Pin default fleet filter maps in regressions
-  - queue status: `queue_runnable=0`, `target_in_progress=2`
+  - queue status: `queue_runnable=1`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -314,3 +314,4 @@ longer waits on Linear to keep issue execution moving.
 122. `BIG-PAR-341`
 123. `BIG-PAR-342`
 124. `BIG-PAR-343`
+125. `BIG-PAR-344`
