@@ -3764,6 +3764,23 @@
       "state": "Done",
       "title": "Add direct sanitizeReportName helper coverage",
       "updated_at": "2026-03-25T20:35:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct distributed-export regression coverage proving the attachment filename prefers the scoped team filter over project and task_id when all three are present.",
+      "id": "big-par-324",
+      "identifier": "BIG-PAR-324",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add distributed export filename-scope precedence coverage"
     }
   ]
 }

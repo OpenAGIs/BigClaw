@@ -218,7 +218,8 @@
     "BIG-PAR-320",
     "BIG-PAR-321",
     "BIG-PAR-322",
-    "BIG-PAR-323"
+    "BIG-PAR-323",
+    "BIG-PAR-324"
   ],
   "issues": [
     {
@@ -874,6 +875,12 @@
       "title": "Add direct sanitizeReportName helper coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-324",
+      "title": "Add distributed export filename-scope precedence coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
