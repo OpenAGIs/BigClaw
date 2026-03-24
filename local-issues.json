@@ -3164,6 +3164,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added focused /v2/control-center regression coverage for the ClawHost policy surface in bigclaw-go/internal/api/server_test.go so the main reviewer-facing control-center payload now stays pinned for active policy/app/tenant counts, review-required and takeover-required totals, observed providers, and prioritized review queue ordering alongside the existing debug-status and /v2/control-center/policy coverage. Validation: cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenterIncludesClawHost(Policy|Workflow|Readiness|Rollout|Recovery)Surface|TestDebugStatusIncludesClawHostPolicySurface' -> ok; cd bigclaw-go && go test ./internal/api -> ok. Commit SHA: 8ff1903d82870df0082ea634cf9034d82e11dd98. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
+          "created_at": "2026-03-24T17:59:21Z"
+        }
+      ],
       "created_at": "2026-03-24T17:55:10Z",
       "description": "Add focused API regression coverage for the ClawHost policy surface in the main /v2/control-center payload so reviewer-facing control-center responses keep provider drift counts, observed providers, and prioritized review queue ordering stable.",
       "id": "big-par-296",
@@ -3176,9 +3183,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add control-center regression coverage for ClawHost policy surface",
-      "updated_at": "2026-03-24T17:55:10Z"
+      "updated_at": "2026-03-24T17:59:21Z"
     }
   ]
 }
