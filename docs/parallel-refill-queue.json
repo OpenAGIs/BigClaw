@@ -943,7 +943,7 @@
       "identifier": "BIG-PAR-333",
       "title": "Add viewScopeSuffix punctuation-fallback coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
