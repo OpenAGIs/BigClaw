@@ -5233,6 +5233,134 @@ func TestV2DistributedReportIncludesProviderLiveHandoffIsolationSurface(t *testi
 	}
 }
 
+func TestDebugStatusIncludesClawHostProxyAdminValidationLane(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		ClawHost struct {
+			ReportPath     string `json:"report_path"`
+			Ticket         string `json:"ticket"`
+			Provider       string `json:"provider"`
+			ValidationLane string `json:"validation_lane"`
+			Summary        struct {
+				AppCount               int    `json:"app_count"`
+				BotCount               int    `json:"bot_count"`
+				HTTPReachableBots      int    `json:"http_reachable_bots"`
+				WebsocketReachableBots int    `json:"websocket_reachable_bots"`
+				SubdomainReadyBots     int    `json:"subdomain_ready_bots"`
+				AdminReadyBots         int    `json:"admin_ready_bots"`
+				DegradedBots           int    `json:"degraded_bots"`
+				ParallelProbeWidth     int    `json:"parallel_probe_width"`
+				ReviewerExportStatus   string `json:"reviewer_export_status"`
+			} `json:"summary"`
+			Bots []struct {
+				AppID            string `json:"app_id"`
+				BotID            string `json:"bot_id"`
+				WebsocketStatus  string `json:"websocket_status"`
+				ValidationStatus string `json:"validation_status"`
+			} `json:"bots"`
+		} `json:"clawhost_proxy_admin_validation"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode clawhost validation payload: %v", err)
+	}
+	if decoded.ClawHost.ReportPath != clawHostProxyAdminValidationLanePath || decoded.ClawHost.Ticket != "BIG-PAR-291" || decoded.ClawHost.Provider != "clawhost" || decoded.ClawHost.ValidationLane != "clawhost_proxy_admin_parallel_probe" {
+		t.Fatalf("unexpected clawhost validation metadata: %+v", decoded.ClawHost)
+	}
+	if decoded.ClawHost.Summary.AppCount != 2 || decoded.ClawHost.Summary.BotCount != 3 || decoded.ClawHost.Summary.HTTPReachableBots != 3 || decoded.ClawHost.Summary.WebsocketReachableBots != 2 || decoded.ClawHost.Summary.SubdomainReadyBots != 3 || decoded.ClawHost.Summary.AdminReadyBots != 2 || decoded.ClawHost.Summary.DegradedBots != 1 || decoded.ClawHost.Summary.ParallelProbeWidth != 3 || decoded.ClawHost.Summary.ReviewerExportStatus != "ready" {
+		t.Fatalf("unexpected clawhost validation summary: %+v", decoded.ClawHost.Summary)
+	}
+	if len(decoded.ClawHost.Bots) != 3 || decoded.ClawHost.Bots[2].BotID != "bot-support-a" || decoded.ClawHost.Bots[2].WebsocketStatus != "degraded" || decoded.ClawHost.Bots[2].ValidationStatus != "degraded" {
+		t.Fatalf("unexpected clawhost validation bots: %+v", decoded.ClawHost.Bots)
+	}
+}
+
+func TestV2ControlCenterIncludesClawHostProxyAdminValidationLane(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5&audit_limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ClawHost struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				BotCount           int `json:"bot_count"`
+				AdminReadyBots     int `json:"admin_ready_bots"`
+				SubdomainReadyBots int `json:"subdomain_ready_bots"`
+			} `json:"summary"`
+		} `json:"clawhost_proxy_admin_validation"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center clawhost payload: %v", err)
+	}
+	if decoded.ClawHost.ReportPath != clawHostProxyAdminValidationLanePath || decoded.ClawHost.Summary.BotCount != 3 || decoded.ClawHost.Summary.AdminReadyBots != 2 || decoded.ClawHost.Summary.SubdomainReadyBots != 3 {
+		t.Fatalf("unexpected control center clawhost payload: %+v", decoded.ClawHost)
+	}
+}
+
+func TestV2DistributedReportIncludesClawHostProxyAdminValidationLane(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ClawHost struct {
+			ReportPath     string `json:"report_path"`
+			Provider       string `json:"provider"`
+			ValidationLane string `json:"validation_lane"`
+			Summary        struct {
+				BotCount               int `json:"bot_count"`
+				HTTPReachableBots      int `json:"http_reachable_bots"`
+				WebsocketReachableBots int `json:"websocket_reachable_bots"`
+				DegradedBots           int `json:"degraded_bots"`
+			} `json:"summary"`
+		} `json:"clawhost_proxy_admin_validation"`
+		Report struct {
+			Markdown string `json:"markdown"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed clawhost payload: %v", err)
+	}
+	if decoded.ClawHost.ReportPath != clawHostProxyAdminValidationLanePath || decoded.ClawHost.Provider != "clawhost" || decoded.ClawHost.ValidationLane != "clawhost_proxy_admin_parallel_probe" || decoded.ClawHost.Summary.BotCount != 3 || decoded.ClawHost.Summary.HTTPReachableBots != 3 || decoded.ClawHost.Summary.WebsocketReachableBots != 2 || decoded.ClawHost.Summary.DegradedBots != 1 {
+		t.Fatalf("unexpected distributed clawhost payload: %+v", decoded.ClawHost)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "## ClawHost Proxy and Admin Validation") || !strings.Contains(decoded.Report.Markdown, "Provider: clawhost") || !strings.Contains(decoded.Report.Markdown, "bot-support-a: validation=degraded") {
+		t.Fatalf("expected clawhost markdown section, got %s", decoded.Report.Markdown)
+	}
+}
+
 func TestProviderBackedRemoteEventLogLiveHandoffIsolation(t *testing.T) {
 	base := time.Unix(1_700_200_000, 0).UTC()
 	backlog := []domain.Event{

@@ -1254,6 +1254,7 @@ func (s *Server) buildControlCenterResponse(
 		"sequence_bridge_surface":         sequenceBridgeSurfacePayload(),
 		"retention_expiry_surface":        retentionExpirySurfacePayload(),
 		"provider_live_handoff_isolation": providerLiveHandoffIsolationPayload(),
+		"clawhost_proxy_admin_validation": clawHostProxyAdminValidationLanePayload(),
 		"broker_bootstrap_surface":        brokerBootstrapSurfacePayload(),
 		"broker_review_bundle":            brokerReviewBundleSurfacePayload(),
 		"summary":                         summarizeControlCenter(queueTasks, filteredDeadLetters),

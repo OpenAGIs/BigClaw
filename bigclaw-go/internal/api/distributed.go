@@ -175,6 +175,7 @@ type distributedDiagnostics struct {
 	MigrationReviewPack   migrationReviewPack                      `json:"migration_review_pack"`
 	BrokerFanoutIsolation brokerStubFanoutIsolationEvidencePack    `json:"broker_stub_fanout_isolation"`
 	ProviderLiveHandoff   providerLiveHandoffIsolationEvidencePack `json:"provider_live_handoff_isolation"`
+	ClawHostProxyAdmin    clawHostProxyAdminValidationLane         `json:"clawhost_proxy_admin_validation"`
 	BrokerBootstrap       brokerBootstrapSurface                   `json:"broker_bootstrap_surface"`
 	DeliveryAckReadiness  deliveryAckReadinessSurface              `json:"delivery_ack_readiness"`
 	PublishAckOutcomes    publishAckOutcomeSurface                 `json:"publish_ack_outcomes"`
@@ -275,6 +276,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"broker_review_bundle":            diagnostics.BrokerReviewBundle,
 		"broker_stub_fanout_isolation":    diagnostics.BrokerFanoutIsolation,
 		"provider_live_handoff_isolation": diagnostics.ProviderLiveHandoff,
+		"clawhost_proxy_admin_validation": diagnostics.ClawHostProxyAdmin,
 		"broker_bootstrap_surface":        diagnostics.BrokerBootstrap,
 		"trace_export_bundle":             diagnostics.TraceBundle,
 		"migration_review_pack":           diagnostics.MigrationReviewPack,
@@ -364,6 +366,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		MigrationReviewPack:   buildMigrationReviewPack(),
 		BrokerFanoutIsolation: brokerStubFanoutIsolationPayload(),
 		ProviderLiveHandoff:   providerLiveHandoffIsolationPayload(),
+		ClawHostProxyAdmin:    clawHostProxyAdminValidationLanePayload(),
 		BrokerBootstrap:       brokerBootstrapSurfacePayload(),
 		DeliveryAckReadiness:  deliveryAckReadinessPayload(),
 		PublishAckOutcomes:    publishAckOutcomeSurfacePayload(),
@@ -1391,6 +1394,36 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.ProviderLiveHandoff.ReviewerLinks) > 0 {
 		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.ProviderLiveHandoff.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## ClawHost Proxy and Admin Validation",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.ClawHostProxyAdmin.ReportPath),
+		fmt.Sprintf("- Provider: %s", firstNonEmpty(diagnostics.ClawHostProxyAdmin.Provider, "unknown")),
+		fmt.Sprintf("- Validation lane: %s", firstNonEmpty(diagnostics.ClawHostProxyAdmin.ValidationLane, "unknown")),
+		fmt.Sprintf("- App count: %d", diagnostics.ClawHostProxyAdmin.Summary.AppCount),
+		fmt.Sprintf("- Bot count: %d", diagnostics.ClawHostProxyAdmin.Summary.BotCount),
+		fmt.Sprintf("- HTTP reachable bots: %d", diagnostics.ClawHostProxyAdmin.Summary.HTTPReachableBots),
+		fmt.Sprintf("- WebSocket reachable bots: %d", diagnostics.ClawHostProxyAdmin.Summary.WebsocketReachableBots),
+		fmt.Sprintf("- Subdomain ready bots: %d", diagnostics.ClawHostProxyAdmin.Summary.SubdomainReadyBots),
+		fmt.Sprintf("- Admin ready bots: %d", diagnostics.ClawHostProxyAdmin.Summary.AdminReadyBots),
+		fmt.Sprintf("- Degraded bots: %d", diagnostics.ClawHostProxyAdmin.Summary.DegradedBots),
+		fmt.Sprintf("- Parallel probe width: %d", diagnostics.ClawHostProxyAdmin.Summary.ParallelProbeWidth),
+	)
+	for _, bot := range diagnostics.ClawHostProxyAdmin.Bots {
+		lines = append(lines, fmt.Sprintf("- %s/%s: validation=%s http=%s websocket=%s admin=%s", firstNonEmpty(bot.AppID, "unknown-app"), firstNonEmpty(bot.BotID, "unknown-bot"), firstNonEmpty(bot.ValidationStatus, "unknown"), firstNonEmpty(bot.HTTPStatus, "unknown"), firstNonEmpty(bot.WebsocketStatus, "unknown"), firstNonEmpty(bot.AdminStatus, "unknown")))
+		if bot.Subdomain != "" {
+			lines = append(lines, "  - subdomain: "+bot.Subdomain)
+		}
+		if bot.ProxyRoute != "" {
+			lines = append(lines, "  - proxy route: "+bot.ProxyRoute)
+		}
+	}
+	if len(diagnostics.ClawHostProxyAdmin.Limitations) > 0 {
+		lines = append(lines, "- Limitations: "+strings.Join(diagnostics.ClawHostProxyAdmin.Limitations, "; "))
+	}
+	if len(diagnostics.ClawHostProxyAdmin.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.ClawHostProxyAdmin.ReviewerLinks, ", "))
 	}
 	lines = append(lines,
 		"",
