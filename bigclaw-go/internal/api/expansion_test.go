@@ -1094,6 +1094,41 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		}
 	})
 
+	t.Run("workflows omit actor from export url when actor is absent", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=platform&project=apollo", nil)
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected workflows endpoint 200 without actor, got %d %s", response.Code, response.Body.String())
+		}
+
+		var decoded struct {
+			Surface struct {
+				Filters map[string]string `json:"filters"`
+			} `json:"surface"`
+			Report struct {
+				ExportURL string `json:"export_url"`
+			} `json:"report"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("decode no-actor workflow response: %v", err)
+		}
+		if decoded.Surface.Filters["actor"] != "workflow-operator" {
+			t.Fatalf("expected default workflow owner when actor is absent, got %+v", decoded.Surface.Filters)
+		}
+
+		workflowExportURL, err := url.Parse(decoded.Report.ExportURL)
+		if err != nil {
+			t.Fatalf("parse no-actor export url: %v", err)
+		}
+		if workflowExportURL.Query().Get("actor") != "" {
+			t.Fatalf("expected export url to omit actor query when actor is absent, got %s", decoded.Report.ExportURL)
+		}
+		if workflowExportURL.Query().Get("team") != "platform" || workflowExportURL.Query().Get("project") != "apollo" {
+			t.Fatalf("expected export url to preserve non-empty filters, got %s", decoded.Report.ExportURL)
+		}
+	})
+
 	t.Run("workflows scope normalization", func(t *testing.T) {
 		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=%20platform%20&project=%20apollo%20&actor=%20query-actor%20", nil)
 		request.Header.Set("X-BigClaw-Actor", "header-actor")
