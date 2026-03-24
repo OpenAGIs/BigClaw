@@ -254,7 +254,8 @@
     "BIG-PAR-332",
     "BIG-PAR-333",
     "BIG-PAR-334",
-    "BIG-PAR-335"
+    "BIG-PAR-335",
+    "BIG-PAR-336"
   ],
   "issues": [
     {
@@ -982,6 +983,12 @@
       "title": "Thread filters into ClawHost workflow surface payload",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-336",
+      "title": "Add workflow filter assertions to API regressions",
+      "track": "Go Mainline Follow-ups",
+      "status": "In"
     }
   ]
 }

@@ -1730,6 +1730,7 @@ func TestDebugStatusScopesClawHostSurfacesByFilters(t *testing.T) {
 			} `json:"review_queue"`
 		} `json:"clawhost_policy_surface"`
 		Workflow struct {
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				WorkflowItems int `json:"workflow_items"`
 			} `json:"summary"`
@@ -1761,6 +1762,9 @@ func TestDebugStatusScopesClawHostSurfacesByFilters(t *testing.T) {
 	}
 	if containsString(decoded.Policy.ObservedProviders, "anthropic") || !containsString(decoded.Policy.ObservedProviders, "openai") {
 		t.Fatalf("expected scoped debug policy providers, got %+v", decoded.Policy.ObservedProviders)
+	}
+	if decoded.Workflow.Filters["team"] != "platform" || decoded.Workflow.Filters["project"] != "sales" || decoded.Workflow.Filters["actor"] != "workflow-operator" {
+		t.Fatalf("expected scoped debug workflow filters, got %+v", decoded.Workflow.Filters)
 	}
 	if decoded.Workflow.Summary.WorkflowItems != 1 || decoded.Rollout.Summary.ActivePlans != 1 || decoded.Readiness.Summary.Targets != 1 || decoded.Recovery.Summary.Targets != 1 {
 		t.Fatalf("expected scoped debug ClawHost surfaces, got workflow=%+v rollout=%+v readiness=%+v recovery=%+v", decoded.Workflow, decoded.Rollout, decoded.Readiness, decoded.Recovery)
@@ -4969,7 +4973,8 @@ func TestV2ControlCenterIncludesClawHostWorkflowSurface(t *testing.T) {
 	}
 	var decoded struct {
 		ClawHostWorkflow struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				WorkflowItems     int `json:"workflow_items"`
 				PairingApprovals  int `json:"pairing_approvals"`
@@ -4990,6 +4995,9 @@ func TestV2ControlCenterIncludesClawHostWorkflowSurface(t *testing.T) {
 	}
 	if decoded.ClawHostWorkflow.Status != "active" || decoded.ClawHostWorkflow.Summary.WorkflowItems != 2 || decoded.ClawHostWorkflow.Summary.PairingApprovals != 1 || decoded.ClawHostWorkflow.Summary.CredentialReviews != 1 || decoded.ClawHostWorkflow.Summary.TakeoverRequired != 1 {
 		t.Fatalf("unexpected ClawHost workflow control center surface: %+v", decoded.ClawHostWorkflow)
+	}
+	if decoded.ClawHostWorkflow.Filters["team"] != "" || decoded.ClawHostWorkflow.Filters["project"] != "" || decoded.ClawHostWorkflow.Filters["actor"] != "workflow-operator" {
+		t.Fatalf("expected unscoped ClawHost workflow filters, got %+v", decoded.ClawHostWorkflow.Filters)
 	}
 	if len(decoded.ClawHostWorkflow.ReviewQueue) != 2 || !decoded.ClawHostWorkflow.ReviewQueue[0].TakeoverRequired || decoded.ClawHostWorkflow.ReviewQueue[0].ClawName != "sales-west" {
 		t.Fatalf("expected takeover-required ClawHost workflow item first, got %+v", decoded.ClawHostWorkflow.ReviewQueue)
