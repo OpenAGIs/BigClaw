@@ -2886,6 +2886,22 @@ func TestV2DistributedExportTaskFallbacksToAllFilename(t *testing.T) {
 	}
 }
 
+func TestSanitizeReportNameNormalizesMixedSeparatorInputs(t *testing.T) {
+	for _, tc := range []struct {
+		input string
+		want  string
+	}{
+		{input: "Platform / Ops @ Night", want: "platform-ops-night"},
+		{input: "  Apollo___Mobile---Core  ", want: "apollo-mobile-core"},
+		{input: " / @ ", want: "all"},
+		{input: "", want: "all"},
+	} {
+		if got := sanitizeReportName(tc.input); got != tc.want {
+			t.Fatalf("sanitizeReportName(%q) = %q, want %q", tc.input, got, tc.want)
+		}
+	}
+}
+
 func TestV2RunDetailIncludesRepoTriagePacket(t *testing.T) {
 	recorder := observability.NewRecorder()
 	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Control: control.New(), Now: func() time.Time { return time.Unix(1700006100, 0) }}
