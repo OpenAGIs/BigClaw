@@ -93,7 +93,7 @@ func (s *Server) handleV2ControlCenterPolicyExport(w http.ResponseWriter, r *htt
 	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 	w.Header().Set("Content-Disposition", `attachment; filename="clawhost-policy-surface.md"`)
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(renderClawHostPolicySurfaceReport(surface)))
+	_, _ = w.Write([]byte(renderClawHostPolicySurfaceReport(surface, team, project)))
 }
 
 func (s *Server) controlCenterPolicyPayload(r *http.Request, authorization ControlAuthorization, team, project string, reloaded bool) map[string]any {
@@ -114,7 +114,7 @@ func (s *Server) controlCenterPolicyPayload(r *http.Request, authorization Contr
 		"reload_authorized": canReloadSchedulerPolicy(authorization.Role),
 		"reload_url":        "/v2/control-center/policy/reload",
 		"report": map[string]any{
-			"markdown":   renderClawHostPolicySurfaceReport(surface),
+			"markdown":   renderClawHostPolicySurfaceReport(surface, team, project),
 			"export_url": clawHostExportURL("/v2/control-center/policy/export", team, project, ""),
 		},
 	}

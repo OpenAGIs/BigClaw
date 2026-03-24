@@ -128,7 +128,9 @@
       "BIG-PAR-327",
       "BIG-PAR-328"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-329"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -240,7 +242,8 @@
     "BIG-PAR-325",
     "BIG-PAR-326",
     "BIG-PAR-327",
-    "BIG-PAR-328"
+    "BIG-PAR-328",
+    "BIG-PAR-329"
   ],
   "issues": [
     {
@@ -926,6 +929,12 @@
       "title": "Expose ClawHost recovery report filters",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-329",
+      "title": "Expose ClawHost policy report filters",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

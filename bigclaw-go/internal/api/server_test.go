@@ -4656,7 +4656,13 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	if containsString(policyDecoded.ClawHost.ObservedProviders, "anthropic") {
 		t.Fatalf("did not expect unscoped provider in scoped response, got %+v", policyDecoded.ClawHost.ObservedProviders)
 	}
-	if policyDecoded.Report.ExportURL != "/v2/control-center/policy/export?project=sales&team=platform" || !strings.Contains(policyDecoded.Report.Markdown, "# ClawHost Policy Surface") || !strings.Contains(policyDecoded.Report.Markdown, "clawhost-policy-endpoint-1") || strings.Contains(policyDecoded.Report.Markdown, "clawhost-policy-endpoint-2") {
+	if policyDecoded.Report.ExportURL != "/v2/control-center/policy/export?project=sales&team=platform" ||
+		!strings.Contains(policyDecoded.Report.Markdown, "# ClawHost Policy Surface") ||
+		!strings.Contains(policyDecoded.Report.Markdown, "## Filters") ||
+		!strings.Contains(policyDecoded.Report.Markdown, "- Team: `platform`") ||
+		!strings.Contains(policyDecoded.Report.Markdown, "- Project: `sales`") ||
+		!strings.Contains(policyDecoded.Report.Markdown, "clawhost-policy-endpoint-1") ||
+		strings.Contains(policyDecoded.Report.Markdown, "clawhost-policy-endpoint-2") {
 		t.Fatalf("expected policy report metadata in response, got %+v", policyDecoded.Report)
 	}
 
@@ -4673,7 +4679,7 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	if disposition := exportResponse.Header().Get("Content-Disposition"); !strings.Contains(disposition, "clawhost-policy-surface.md") {
 		t.Fatalf("expected attachment filename, got %q", disposition)
 	}
-	for _, want := range []string{"# ClawHost Policy Surface", "tenant `tenant-a`", "provider `openai`", "Reason: provider default remains aligned with the shared app policy"} {
+	for _, want := range []string{"# ClawHost Policy Surface", "## Filters", "- Team: `platform`", "- Project: `sales`", "tenant `tenant-a`", "provider `openai`", "Reason: provider default remains aligned with the shared app policy"} {
 		if !strings.Contains(exportResponse.Body.String(), want) {
 			t.Fatalf("expected %q in policy export, got %s", want, exportResponse.Body.String())
 		}

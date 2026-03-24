@@ -150,7 +150,7 @@ func sortedKeys(values map[string]struct{}) []string {
 	return out
 }
 
-func renderClawHostPolicySurfaceReport(surface clawHostPolicySurface) string {
+func renderClawHostPolicySurfaceReport(surface clawHostPolicySurface, team, project string) string {
 	var out strings.Builder
 	out.WriteString("# ClawHost Policy Surface\n\n")
 	out.WriteString(fmt.Sprintf("- Status: `%s`\n", surface.Status))
@@ -164,6 +164,9 @@ func renderClawHostPolicySurfaceReport(surface clawHostPolicySurface) string {
 	if len(surface.ObservedProviders) > 0 {
 		out.WriteString(fmt.Sprintf("- Observed providers: `%s`\n", strings.Join(surface.ObservedProviders, "`, `")))
 	}
+	out.WriteString("\n## Filters\n\n")
+	out.WriteString(fmt.Sprintf("- Team: `%s`\n", clawHostPolicyFallback(strings.TrimSpace(team), "none")))
+	out.WriteString(fmt.Sprintf("- Project: `%s`\n", clawHostPolicyFallback(strings.TrimSpace(project), "none")))
 	out.WriteString("\n## Review Queue\n\n")
 	if len(surface.ReviewQueue) == 0 {
 		out.WriteString("No active ClawHost tenant policy reviews.\n")
@@ -176,4 +179,11 @@ func renderClawHostPolicySurfaceReport(surface clawHostPolicySurface) string {
 		}
 	}
 	return out.String()
+}
+
+func clawHostPolicyFallback(value, fallback string) string {
+	if value == "" {
+		return fallback
+	}
+	return value
 }
