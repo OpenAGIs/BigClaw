@@ -104,6 +104,9 @@ func TestRenderClawHostRolloutPlannerReport(t *testing.T) {
 	for _, want := range []string{
 		"# ClawHost Rollout Planner",
 		"Plan ID: BIG-PAR-288",
+		"## Filters",
+		"- project: apollo",
+		"- team: platform",
 		"Canary Upgrade Wave",
 		"Tenant Ring 1",
 		"GET /proxy/:bot_id/",
@@ -122,6 +125,9 @@ func TestRenderClawHostRolloutPlannerReportHandlesFallbackPlanner(t *testing.T) 
 
 	for _, want := range []string{
 		"# ClawHost Rollout Planner",
+		"## Filters",
+		"- project: none",
+		"- team: none",
 		"Tenants: 3",
 		"Apps: 1",
 		"Canary Upgrade Wave",

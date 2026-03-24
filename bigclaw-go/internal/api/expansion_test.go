@@ -988,7 +988,11 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		if exportURL.Path != "/v2/clawhost/rollout-planner/export" || exportURL.Query().Get("team") != "platform" || exportURL.Query().Get("project") != "apollo" {
 			t.Fatalf("unexpected rollout export url: %s", decoded.Report.ExportURL)
 		}
-		if !strings.Contains(decoded.Report.Markdown, "# ClawHost Rollout Planner") || !strings.Contains(decoded.Report.Markdown, "Tenant Ring 1") {
+		if !strings.Contains(decoded.Report.Markdown, "# ClawHost Rollout Planner") ||
+			!strings.Contains(decoded.Report.Markdown, "## Filters") ||
+			!strings.Contains(decoded.Report.Markdown, "- project: apollo") ||
+			!strings.Contains(decoded.Report.Markdown, "- team: platform") ||
+			!strings.Contains(decoded.Report.Markdown, "Tenant Ring 1") {
 			t.Fatalf("unexpected rollout markdown: %s", decoded.Report.Markdown)
 		}
 
@@ -1000,7 +1004,12 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 			t.Fatalf("expected rollout export markdown content type, got %q", contentType)
 		}
-		if !strings.Contains(exportResponse.Body.String(), "alpha-app") || !strings.Contains(exportResponse.Body.String(), "tenant-a") || strings.Contains(exportResponse.Body.String(), "gamma-app") || strings.Contains(exportResponse.Body.String(), "tenant-c") {
+		if !strings.Contains(exportResponse.Body.String(), "alpha-app") ||
+			!strings.Contains(exportResponse.Body.String(), "tenant-a") ||
+			!strings.Contains(exportResponse.Body.String(), "- project: apollo") ||
+			!strings.Contains(exportResponse.Body.String(), "- team: platform") ||
+			strings.Contains(exportResponse.Body.String(), "gamma-app") ||
+			strings.Contains(exportResponse.Body.String(), "tenant-c") {
 			t.Fatalf("unexpected rollout export body: %s", exportResponse.Body.String())
 		}
 	})
