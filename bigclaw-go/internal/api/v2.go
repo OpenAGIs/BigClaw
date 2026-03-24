@@ -197,6 +197,35 @@ type controlCenterSummary struct {
 	ActiveTakeovers       int            `json:"active_takeovers"`
 }
 
+type batchApprovalPanelSummary struct {
+	PendingRuns       int               `json:"pending_runs"`
+	BlockedRuns       int               `json:"blocked_runs"`
+	HighRiskRuns      int               `json:"high_risk_runs"`
+	RepoTriageRuns    int               `json:"repo_triage_runs"`
+	ApprovalFlows     []auditFacetCount `json:"approval_flows,omitempty"`
+	RequiredApprovals []auditFacetCount `json:"required_approvals,omitempty"`
+}
+
+type batchApprovalPanelItem struct {
+	Task              domain.Task               `json:"task"`
+	EffectiveState    domain.TaskState          `json:"effective_state"`
+	ApprovalStatus    string                    `json:"approval_status"`
+	ApprovalFlow      string                    `json:"approval_flow,omitempty"`
+	RequiredApprovals []string                  `json:"required_approvals,omitempty"`
+	Reason            string                    `json:"reason,omitempty"`
+	Policy            policy.Summary            `json:"policy"`
+	Risk              risk.Score                `json:"risk_score"`
+	Takeover          *control.Takeover         `json:"takeover,omitempty"`
+	Drilldown         dashboardDrilldown        `json:"drilldown"`
+	RecentActions     []controlActionAuditEntry `json:"recent_actions,omitempty"`
+}
+
+type batchApprovalPanel struct {
+	Summary          batchApprovalPanelSummary `json:"summary"`
+	Items            []batchApprovalPanelItem  `json:"items,omitempty"`
+	BatchableTaskIDs []string                  `json:"batchable_task_ids,omitempty"`
+}
+
 type workerPoolSummary struct {
 	TotalWorkers               int                  `json:"total_workers"`
 	ActiveWorkers              int                  `json:"active_workers"`
@@ -233,6 +262,33 @@ type workerPoolHealthSummary struct {
 	MissingHeartbeatWorkerIDs []string `json:"missing_heartbeat_worker_ids,omitempty"`
 	OldestHeartbeatAgeSeconds *int64   `json:"oldest_heartbeat_age_seconds,omitempty"`
 	NewestHeartbeatAgeSeconds *int64   `json:"newest_heartbeat_age_seconds,omitempty"`
+}
+
+type exceptionDowngradeTaskItem struct {
+	Task           domain.Task        `json:"task"`
+	EffectiveState domain.TaskState   `json:"effective_state"`
+	Reason         string             `json:"reason,omitempty"`
+	TargetTeam     string             `json:"target_team,omitempty"`
+	RequiredAction string             `json:"required_action,omitempty"`
+	Drilldown      dashboardDrilldown `json:"drilldown"`
+}
+
+type exceptionDowngradePanelSummary struct {
+	PolicyBlockedRuns        int `json:"policy_blocked_runs"`
+	DegradedNodes            int `json:"degraded_nodes"`
+	DegradedExecutors        int `json:"degraded_executors"`
+	SaturatedExecutors       int `json:"saturated_executors"`
+	ActiveTakeovers          int `json:"active_takeovers"`
+	LeaseFencedEvents        int `json:"lease_fenced_events"`
+	CheckpointRejectedEvents int `json:"checkpoint_rejected_events"`
+}
+
+type exceptionDowngradePanel struct {
+	Summary             exceptionDowngradePanelSummary `json:"summary"`
+	Tasks               []exceptionDowngradeTaskItem   `json:"tasks,omitempty"`
+	DegradedWorkerNodes []workerPoolNodeView           `json:"degraded_worker_nodes,omitempty"`
+	DegradedExecutors   []executorCapacityView         `json:"degraded_executors,omitempty"`
+	Notes               []string                       `json:"notes,omitempty"`
 }
 
 type controlActionAuditEntry struct {
@@ -1241,6 +1297,12 @@ func (s *Server) buildControlCenterResponse(
 	overviews []taskOverview,
 	auditEntries []controlActionAuditEntry,
 ) map[string]any {
+	activeTakeovers := s.filteredActiveTakeovers(filters)
+	distributedDiagnostics := s.buildDistributedDiagnostics(filters)
+	var pool *workerPoolSummary
+	if s.Worker != nil {
+		pool = s.workerPoolSummary()
+	}
 	response := map[string]any{
 		"authorization":                   authorization,
 		"filters":                         controlCenterFiltersPayload(filters),
@@ -1264,23 +1326,25 @@ func (s *Server) buildControlCenterResponse(
 			"tasks":         returnedQueueTasks,
 			"cancellable":   supportsQueueCancel(s.Queue),
 		},
-		"queue_by_project": sortedDashboardBreakdowns(queueByProject),
-		"queue_by_team":    sortedDashboardBreakdowns(queueByTeam),
-		"dead_letters":     limitTasks(filteredDeadLetters, filters.Limit),
-		"active_takeovers": s.filteredActiveTakeovers(filters),
-		"recent_tasks":     overviews,
-		"audit":            auditEntries,
-		"audit_summary":    summarizeControlAudit(auditEntries),
-		"notes_timeline":   auditNotesTimeline(auditEntries, filters.AuditLimit),
+		"queue_by_project":          sortedDashboardBreakdowns(queueByProject),
+		"queue_by_team":             sortedDashboardBreakdowns(queueByTeam),
+		"dead_letters":              limitTasks(filteredDeadLetters, filters.Limit),
+		"active_takeovers":          activeTakeovers,
+		"recent_tasks":              overviews,
+		"audit":                     auditEntries,
+		"audit_summary":             summarizeControlAudit(auditEntries),
+		"notes_timeline":            auditNotesTimeline(auditEntries, filters.AuditLimit),
+		"batch_approval_panel":      buildBatchApprovalPanel(queueTasks, filters.Limit),
+		"exception_downgrade_panel": s.buildExceptionDowngradePanel(queueTasks, filters.Limit, activeTakeovers, pool, distributedDiagnostics),
 	}
-	if pool := s.workerPoolSummary(); pool != nil {
+	if pool != nil {
 		response["worker_pool"] = pool
 		response["worker_pool_health"] = workerPoolHealth(s.Now(), pool)
 	}
 	if checkpointResets := s.checkpointResetAuditSnapshot(filters.AuditLimit); checkpointResets != nil {
 		response["checkpoint_resets"] = checkpointResets
 	}
-	response["distributed_diagnostics"] = s.buildDistributedDiagnostics(filters)
+	response["distributed_diagnostics"] = distributedDiagnostics
 	return response
 }
 
@@ -2041,6 +2105,18 @@ func stringValue(value any) string {
 	}
 }
 
+func anyBoolValue(value any) bool {
+	switch typed := value.(type) {
+	case bool:
+		return typed
+	case string:
+		parsed, err := strconv.ParseBool(strings.TrimSpace(typed))
+		return err == nil && parsed
+	default:
+		return false
+	}
+}
+
 func stringSliceFromAny(value any) []string {
 	switch typed := value.(type) {
 	case nil:
@@ -2598,6 +2674,204 @@ func summarizeControlCenter(queueTasks []queueTaskOverview, deadLetters []domain
 		}
 	}
 	return summary
+}
+
+func buildBatchApprovalPanel(queueTasks []queueTaskOverview, limit int) batchApprovalPanel {
+	summary := batchApprovalPanelSummary{}
+	flowCounts := make(map[string]int)
+	requiredCounts := make(map[string]int)
+	items := make([]batchApprovalPanelItem, 0)
+	batchableTaskIDs := make([]string, 0)
+	for _, item := range queueTasks {
+		if !queueTaskNeedsApproval(item) {
+			continue
+		}
+		task := item.QueueTask.Task
+		approvalStatus := taskApprovalStatus(task)
+		approvalFlow := firstNonEmpty(strings.TrimSpace(item.Policy.ApprovalFlow), strings.TrimSpace(task.Metadata["approval_flow"]))
+		requiredApprovals := taskApprovalRefs(task)
+		reason := firstNonEmpty(
+			strings.TrimSpace(task.Metadata["approval_reason"]),
+			strings.TrimSpace(task.Metadata["acceptance_summary"]),
+			strings.TrimSpace(task.Metadata["blocked_reason"]),
+			strings.TrimSpace(task.Metadata["failure_reason"]),
+		)
+		summary.PendingRuns++
+		if item.EffectiveState == domain.TaskBlocked {
+			summary.BlockedRuns++
+		}
+		if isHighRiskTask(task) {
+			summary.HighRiskRuns++
+		}
+		if strings.EqualFold(strings.TrimSpace(firstNonEmpty(task.Metadata["repo_triage_status"], task.Metadata["review_status"])), "needs-approval") {
+			summary.RepoTriageRuns++
+		}
+		if approvalFlow != "" {
+			flowCounts[approvalFlow]++
+		}
+		for _, approval := range requiredApprovals {
+			requiredCounts[approval]++
+		}
+		items = append(items, batchApprovalPanelItem{
+			Task:              task,
+			EffectiveState:    item.EffectiveState,
+			ApprovalStatus:    approvalStatus,
+			ApprovalFlow:      approvalFlow,
+			RequiredApprovals: requiredApprovals,
+			Reason:            reason,
+			Policy:            item.Policy,
+			Risk:              item.Risk,
+			Takeover:          item.Takeover,
+			Drilldown:         item.Drilldown,
+			RecentActions:     item.RecentActions,
+		})
+		batchableTaskIDs = append(batchableTaskIDs, task.ID)
+	}
+	if limit > 0 && len(items) > limit {
+		items = items[:limit]
+		batchableTaskIDs = batchableTaskIDs[:limit]
+	}
+	summary.ApprovalFlows = sortFacetCounts(flowCounts)
+	summary.RequiredApprovals = sortFacetCounts(requiredCounts)
+	return batchApprovalPanel{
+		Summary:          summary,
+		Items:            items,
+		BatchableTaskIDs: batchableTaskIDs,
+	}
+}
+
+func queueTaskNeedsApproval(item queueTaskOverview) bool {
+	task := item.QueueTask.Task
+	status := taskApprovalStatus(task)
+	if strings.EqualFold(status, "needs-approval") {
+		return true
+	}
+	reason := strings.ToLower(firstNonEmpty(
+		strings.TrimSpace(task.Metadata["approval_reason"]),
+		strings.TrimSpace(task.Metadata["blocked_reason"]),
+		strings.TrimSpace(task.Metadata["acceptance_summary"]),
+	))
+	if item.EffectiveState == domain.TaskBlocked && strings.Contains(reason, "approval") {
+		return true
+	}
+	return item.EffectiveState == domain.TaskBlocked && (item.Risk.RequiresApproval || len(taskApprovalRefs(task)) > 0)
+}
+
+func taskApprovalStatus(task domain.Task) string {
+	status := firstNonEmpty(task.Metadata["approval_status"], task.Metadata["repo_triage_status"], task.Metadata["review_status"])
+	if strings.TrimSpace(status) != "" {
+		return strings.TrimSpace(status)
+	}
+	if metadataBoolValue(task, "requires_approval") || metadataBoolValue(task, "approval_required") {
+		return "needs-approval"
+	}
+	return ""
+}
+
+func taskApprovalRefs(task domain.Task) []string {
+	for _, key := range []string{"required_approvals", "workflow_approvals", "approvals", "approval"} {
+		if values := metadataStringSlice(task, key); len(values) > 0 {
+			return values
+		}
+	}
+	return nil
+}
+
+func (s *Server) buildExceptionDowngradePanel(queueTasks []queueTaskOverview, limit int, activeTakeovers []control.Takeover, pool *workerPoolSummary, diagnostics distributedDiagnostics) exceptionDowngradePanel {
+	panel := exceptionDowngradePanel{
+		Summary: exceptionDowngradePanelSummary{
+			ActiveTakeovers:          len(activeTakeovers),
+			DegradedExecutors:        diagnostics.ClusterHealth.DegradedExecutors,
+			SaturatedExecutors:       len(diagnostics.ClusterHealth.SaturatedExecutors),
+			LeaseFencedEvents:        diagnostics.SharedQueue.LeaseFencedEvents,
+			CheckpointRejectedEvents: diagnostics.SharedQueue.CheckpointRejectedEvents,
+		},
+		Notes: append([]string(nil), diagnostics.ClusterHealth.Notes...),
+	}
+	degradedExecutorIndex := make(map[string]int)
+	if pool != nil {
+		panel.Summary.DegradedNodes = pool.DegradedNodes
+		for _, node := range pool.Nodes {
+			if node.Health == "degraded" {
+				panel.DegradedWorkerNodes = append(panel.DegradedWorkerNodes, node)
+			}
+		}
+	}
+	for _, executorView := range diagnostics.ExecutorCapacity {
+		if executorView.Health == "degraded" || executorView.SaturationPercent >= 100 {
+			degradedExecutorIndex[executorView.Executor] = len(panel.DegradedExecutors)
+			panel.DegradedExecutors = append(panel.DegradedExecutors, executorView)
+		}
+	}
+	for _, node := range panel.DegradedWorkerNodes {
+		for _, executorFacet := range node.ExecutorDistribution {
+			if executorFacet.Key == "" {
+				continue
+			}
+			if _, ok := degradedExecutorIndex[executorFacet.Key]; ok {
+				continue
+			}
+			degradedExecutorIndex[executorFacet.Key] = len(panel.DegradedExecutors)
+			panel.DegradedExecutors = append(panel.DegradedExecutors, executorCapacityView{
+				Executor:      executorFacet.Key,
+				Health:        "degraded",
+				ActiveWorkers: node.ActiveWorkers,
+				SampleTasks:   nil,
+				HealthSummary: []string{fmt.Sprintf("degraded worker node: %s", node.NodeID)},
+			})
+		}
+	}
+	if len(panel.DegradedExecutors) > panel.Summary.DegradedExecutors {
+		panel.Summary.DegradedExecutors = len(panel.DegradedExecutors)
+	}
+	for _, item := range queueTasks {
+		if taskItem, ok := s.exceptionDowngradeTaskItem(item); ok {
+			panel.Summary.PolicyBlockedRuns++
+			panel.Tasks = append(panel.Tasks, taskItem)
+		}
+	}
+	if limit > 0 && len(panel.Tasks) > limit {
+		panel.Tasks = panel.Tasks[:limit]
+	}
+	return panel
+}
+
+func (s *Server) exceptionDowngradeTaskItem(item queueTaskOverview) (exceptionDowngradeTaskItem, bool) {
+	task := item.QueueTask.Task
+	events := s.Recorder.EventsByTask(task.ID, 20)
+	for index := len(events) - 1; index >= 0; index-- {
+		event := events[index]
+		if !eventSignalsExceptionDowngrade(event) {
+			continue
+		}
+		return exceptionDowngradeTaskItem{
+			Task:           task,
+			EffectiveState: item.EffectiveState,
+			Reason: firstNonEmpty(
+				eventStringValue(event.Payload, "policy.reason"),
+				eventStringValue(event.Payload, "handoff_reason"),
+				eventStringValue(event.Payload, "reason"),
+				eventStringValue(event.Payload, "message"),
+			),
+			TargetTeam:     firstNonEmpty(eventStringValue(event.Payload, "target_team"), eventStringValue(event.Payload, "team")),
+			RequiredAction: firstNonEmpty(strings.TrimSpace(task.Metadata["approval_status"]), "operator-review"),
+			Drilldown:      item.Drilldown,
+		}, true
+	}
+	return exceptionDowngradeTaskItem{}, false
+}
+
+func eventSignalsExceptionDowngrade(event domain.Event) bool {
+	if anyBoolValue(event.Payload["policy.upgrade_required"]) {
+		return true
+	}
+	reason := strings.ToLower(firstNonEmpty(
+		eventStringValue(event.Payload, "policy.reason"),
+		eventStringValue(event.Payload, "handoff_reason"),
+		eventStringValue(event.Payload, "reason"),
+		eventStringValue(event.Payload, "message"),
+	))
+	return strings.Contains(reason, "upgrade") || strings.Contains(reason, "downgrad") || strings.Contains(reason, "degrad") || strings.Contains(reason, "exception")
 }
 
 func (s *Server) filteredActiveTakeovers(filters controlCenterFilters) []control.Takeover {

@@ -1,27 +1,26 @@
-## Codex Workpad
-
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## BIGCLAW-191 Workpad
 
 ### Plan
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+- [x] Audit the existing control center payload, task metadata, and action surface for approval and degradation concepts already present in `bigclaw-go/internal/api`.
+- [x] Add a scoped control-center panel for batch approval visibility and exception downgrade visibility without changing unrelated routes or persistence.
+- [x] Extend targeted API tests to cover the new panel summaries and task membership.
+- [x] Run targeted Go tests for the modified API package and record the exact command/results.
+- [ ] Commit the issue-scoped changes and push branch `BIGCLAW-191` to `origin`.
 
 ### Acceptance Criteria
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
+- [x] `GET /v2/control-center` returns a dedicated panel describing approval-required queue work suitable for batch approval review.
+- [x] The same response returns a dedicated exception downgrade panel summarizing tasks degraded by policy/exception signals.
+- [x] Panel contents honor existing control-center filters and reuse existing task metadata where possible.
+- [x] Targeted regression tests cover both panels and pass.
 
 ### Validation
 
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
+- [x] `cd bigclaw-go && go test ./internal/api` -> `ok  	bigclaw-go/internal/api	1.730s`
 
 ### Notes
 
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+- 2026-03-24: `BIGCLAW-191` arrived without a checked-out branch in this workspace. Recreated the workspace from local `main`, created local branch `BIGCLAW-191`, and kept the implementation scoped to the Go control-center API/tests.
+- 2026-03-24: Issue description was empty, so implementation scope is inferred from the title: expose control-center batch approval and exception downgrade visibility as additive API payload panels.
+- 2026-03-24: Added `batch_approval_panel` for approval-needed queue items and `exception_downgrade_panel` for policy-blocked tasks plus degraded worker/executor signals in `GET /v2/control-center`.

@@ -2975,6 +2975,185 @@ func TestV2ControlCenterAppliesTimeWindowAndReturnsNodeAwareWorkerPoolSummary(t 
 	}
 }
 
+func TestV2ControlCenterIncludesBatchApprovalAndExceptionDowngradePanels(t *testing.T) {
+	base := time.Date(2026, 3, 23, 11, 0, 0, 0, time.UTC)
+	recorder := observability.NewRecorder()
+	queueBackend := queue.NewMemoryQueue()
+	controller := control.New()
+	server := &Server{
+		Recorder:  recorder,
+		Queue:     queueBackend,
+		Bus:       events.NewBus(),
+		Executors: []domain.ExecutorKind{domain.ExecutorLocal, domain.ExecutorKubernetes, domain.ExecutorRay},
+		Worker:    fakeNodeAwareWorkerPoolStatus{now: base},
+		Control:   controller,
+		Now:       func() time.Time { return base },
+	}
+
+	ctx := context.Background()
+	for _, task := range []domain.Task{
+		{
+			ID:        "task-approval-batch",
+			TraceID:   "trace-approval-batch",
+			Title:     "Batch approval",
+			Priority:  1,
+			RiskLevel: domain.RiskHigh,
+			Metadata: map[string]string{
+				"team":                 "platform",
+				"project":              "alpha",
+				"approval_status":      "needs-approval",
+				"required_approvals":   `["ops-review","security-review"]`,
+				"policy_approval_flow": "manual-gated",
+				"blocked_reason":       "approval pending for prod rollout",
+			},
+			CreatedAt: base,
+			UpdatedAt: base.Add(time.Minute),
+		},
+		{
+			ID:       "task-repo-approval",
+			TraceID:  "trace-repo-approval",
+			Title:    "Repo approval",
+			Priority: 2,
+			Metadata: map[string]string{
+				"team":               "platform",
+				"project":            "alpha",
+				"repo_triage_status": "needs-approval",
+				"required_approvals": "repo-admin",
+				"blocked_reason":     "approval pending for accepted ancestor",
+			},
+			CreatedAt: base.Add(2 * time.Minute),
+			UpdatedAt: base.Add(2 * time.Minute),
+		},
+		{
+			ID:       "task-upgrade-review",
+			TraceID:  "trace-upgrade-review",
+			Title:    "Upgrade review",
+			Priority: 3,
+			Metadata: map[string]string{
+				"team":    "platform",
+				"project": "alpha",
+			},
+			CreatedAt: base.Add(3 * time.Minute),
+			UpdatedAt: base.Add(3 * time.Minute),
+		},
+	} {
+		recorder.StoreTask(task)
+		if err := queueBackend.Enqueue(ctx, task); err != nil {
+			t.Fatalf("enqueue task %s: %v", task.ID, err)
+		}
+	}
+
+	controller.Takeover("task-approval-batch", "alice", "bob", "manual approval triage", base.Add(4*time.Minute))
+	for _, event := range []domain.Event{
+		{
+			ID:        "evt-upgrade-routed",
+			Type:      domain.EventSchedulerRouted,
+			TaskID:    "task-upgrade-review",
+			TraceID:   "trace-upgrade-review",
+			Timestamp: base.Add(5 * time.Minute),
+			Payload: map[string]any{
+				"executor":                domain.ExecutorKubernetes,
+				"reason":                  "upgrade required before premium handoff",
+				"policy.upgrade_required": true,
+				"policy.reason":           "premium tier upgrade required for browser workload",
+				"target_team":             "operations",
+			},
+		},
+		{
+			ID:        "evt-checkpoint-rejected",
+			Type:      domain.EventSubscriberCheckpointRejected,
+			TaskID:    "task-upgrade-review",
+			TraceID:   "trace-upgrade-review",
+			Timestamp: base.Add(6 * time.Minute),
+			Payload:   map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a", "reason": "subscriber checkpoint lease fenced"},
+		},
+	} {
+		recorder.Record(event)
+	}
+
+	response := httptest.NewRecorder()
+	server.Handler().ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v2/control-center?team=platform&project=alpha&limit=10&audit_limit=10", nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+
+	var decoded struct {
+		BatchApprovalPanel struct {
+			Summary struct {
+				PendingRuns    int `json:"pending_runs"`
+				BlockedRuns    int `json:"blocked_runs"`
+				HighRiskRuns   int `json:"high_risk_runs"`
+				RepoTriageRuns int `json:"repo_triage_runs"`
+				ApprovalFlows  []struct {
+					Key   string `json:"key"`
+					Count int    `json:"count"`
+				} `json:"approval_flows"`
+				RequiredApprovals []struct {
+					Key   string `json:"key"`
+					Count int    `json:"count"`
+				} `json:"required_approvals"`
+			} `json:"summary"`
+			Items []struct {
+				Task struct {
+					ID string `json:"id"`
+				} `json:"task"`
+				ApprovalStatus    string   `json:"approval_status"`
+				ApprovalFlow      string   `json:"approval_flow"`
+				RequiredApprovals []string `json:"required_approvals"`
+			} `json:"items"`
+			BatchableTaskIDs []string `json:"batchable_task_ids"`
+		} `json:"batch_approval_panel"`
+		ExceptionDowngradePanel struct {
+			Summary struct {
+				PolicyBlockedRuns        int `json:"policy_blocked_runs"`
+				DegradedNodes            int `json:"degraded_nodes"`
+				DegradedExecutors        int `json:"degraded_executors"`
+				ActiveTakeovers          int `json:"active_takeovers"`
+				CheckpointRejectedEvents int `json:"checkpoint_rejected_events"`
+			} `json:"summary"`
+			Tasks []struct {
+				Task struct {
+					ID string `json:"id"`
+				} `json:"task"`
+				Reason     string `json:"reason"`
+				TargetTeam string `json:"target_team"`
+			} `json:"tasks"`
+			DegradedWorkerNodes []struct {
+				NodeID string `json:"node_id"`
+				Health string `json:"health"`
+			} `json:"degraded_worker_nodes"`
+			DegradedExecutors []struct {
+				Executor string `json:"executor"`
+				Health   string `json:"health"`
+			} `json:"degraded_executors"`
+		} `json:"exception_downgrade_panel"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center approval/degrade panels: %v", err)
+	}
+	if decoded.BatchApprovalPanel.Summary.PendingRuns != 2 || decoded.BatchApprovalPanel.Summary.BlockedRuns != 1 || decoded.BatchApprovalPanel.Summary.HighRiskRuns != 1 || decoded.BatchApprovalPanel.Summary.RepoTriageRuns != 1 {
+		t.Fatalf("unexpected batch approval summary: %+v", decoded.BatchApprovalPanel.Summary)
+	}
+	if len(decoded.BatchApprovalPanel.Items) != 2 || !containsString(decoded.BatchApprovalPanel.BatchableTaskIDs, "task-approval-batch") || !containsString(decoded.BatchApprovalPanel.BatchableTaskIDs, "task-repo-approval") {
+		t.Fatalf("expected batch approval panel membership, got %+v", decoded.BatchApprovalPanel)
+	}
+	if decoded.BatchApprovalPanel.Items[0].ApprovalStatus != "needs-approval" || decoded.BatchApprovalPanel.Items[0].ApprovalFlow != "manual-gated" {
+		t.Fatalf("unexpected first approval item: %+v", decoded.BatchApprovalPanel.Items[0])
+	}
+	if decoded.ExceptionDowngradePanel.Summary.PolicyBlockedRuns != 1 || decoded.ExceptionDowngradePanel.Summary.DegradedNodes != 1 || decoded.ExceptionDowngradePanel.Summary.ActiveTakeovers != 1 || decoded.ExceptionDowngradePanel.Summary.CheckpointRejectedEvents != 1 {
+		t.Fatalf("unexpected exception downgrade summary: %+v", decoded.ExceptionDowngradePanel.Summary)
+	}
+	if len(decoded.ExceptionDowngradePanel.Tasks) != 1 || decoded.ExceptionDowngradePanel.Tasks[0].Task.ID != "task-upgrade-review" || decoded.ExceptionDowngradePanel.Tasks[0].TargetTeam != "operations" {
+		t.Fatalf("unexpected exception downgrade tasks: %+v", decoded.ExceptionDowngradePanel.Tasks)
+	}
+	if len(decoded.ExceptionDowngradePanel.DegradedWorkerNodes) != 1 || decoded.ExceptionDowngradePanel.DegradedWorkerNodes[0].NodeID != "node-b" || decoded.ExceptionDowngradePanel.DegradedWorkerNodes[0].Health != "degraded" {
+		t.Fatalf("unexpected degraded worker nodes: %+v", decoded.ExceptionDowngradePanel.DegradedWorkerNodes)
+	}
+	if len(decoded.ExceptionDowngradePanel.DegradedExecutors) == 0 {
+		t.Fatalf("expected degraded executor surface in exception downgrade panel, got %+v", decoded.ExceptionDowngradePanel.DegradedExecutors)
+	}
+}
+
 func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	recorder := observability.NewRecorder()
 	controller := control.New()
