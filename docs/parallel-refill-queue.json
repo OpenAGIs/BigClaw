@@ -96,11 +96,10 @@
       "BIG-PAR-295",
       "BIG-PAR-296",
       "BIG-PAR-297",
-      "BIG-PAR-298"
-    ],
-    "active": [
+      "BIG-PAR-298",
       "BIG-PAR-299"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -694,7 +693,7 @@
       "identifier": "BIG-PAR-299",
       "title": "Scope ClawHost policy surface by team and project",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
