@@ -50,7 +50,7 @@ longer waits on Linear to keep issue execution moving.
 - Current repo tranche status as of March 24, 2026:
   - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-284` — Refactor control center response assembly; `BIG-PAR-285` — Refactor distributed diagnostics builders; `BIG-PAR-286` — Refactor worker runtime RunOnce flow; `BIG-PAR-287` — Add ClawHost fleet inventory and control-plane source; `BIG-PAR-288` — Add parallel ClawHost rollout planner; `BIG-PAR-289` — Add ClawHost skills channels and device approval workflows; `BIG-PAR-290` — Add ClawHost provider defaults and tenant policy surfaces; `BIG-PAR-291` — Add ClawHost proxy subdomain and admin validation lane
+  - recently completed slices: `BIG-PAR-285` — Refactor distributed diagnostics builders; `BIG-PAR-286` — Refactor worker runtime RunOnce flow; `BIG-PAR-287` — Add ClawHost fleet inventory and control-plane source; `BIG-PAR-288` — Add parallel ClawHost rollout planner; `BIG-PAR-289` — Add ClawHost skills channels and device approval workflows; `BIG-PAR-290` — Add ClawHost provider defaults and tenant policy surfaces; `BIG-PAR-291` — Add ClawHost proxy subdomain and admin validation lane; `BIG-PAR-292` — Publish ClawHost control-plane review index
   - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
@@ -130,6 +130,7 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-289` — Add ClawHost skills channels and device approval workflows
   - `BIG-PAR-290` — Add ClawHost provider defaults and tenant policy surfaces
   - `BIG-PAR-291` — Add ClawHost proxy subdomain and admin validation lane
+  - `BIG-PAR-292` — Publish ClawHost control-plane review index
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -210,3 +211,4 @@ longer waits on Linear to keep issue execution moving.
 70. `BIG-PAR-289`
 71. `BIG-PAR-290`
 72. `BIG-PAR-291`
+73. `BIG-PAR-292`

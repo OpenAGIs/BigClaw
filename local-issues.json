@@ -3062,6 +3062,30 @@
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
       "updated_at": "2026-03-24T16:08:30Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-292` after publishing a reviewer-facing index for the completed ClawHost control-plane slice batch.\n\nWhat changed:\n- `bigclaw-go/docs/reports/clawhost-control-plane-review-index.md` now gives reviewers one entrypoint across the fleet inventory, tenant policy, proxy/admin validation, rollout planner, and workflow contract artifacts added on `symphony/BIG-PAR-291`.\n- `bigclaw-go/docs/reports/review-readiness.md` now points at the new ClawHost review index from the follow-up hardening section.\n\nValidation:\n- `rg -n \"ClawHost Control-Plane Review Index|clawhost-control-plane-review-index|ClawHost slice batch\" bigclaw-go/docs/reports/clawhost-control-plane-review-index.md bigclaw-go/docs/reports/review-readiness.md` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA matches remote SHA with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for the implementation commit recorded below\n\nCommit SHA: pending final commit\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T16:59:02Z"
+        }
+      ],
+      "created_at": "2026-03-24T16:55:45Z",
+      "description": "Publish a single reviewer-facing index that links the newly added ClawHost fleet, policy, validation, rollout, and workflow artifacts so PR review and merge-readiness handoff no longer require hopping across multiple files.",
+      "id": "big-par-292",
+      "identifier": "BIG-PAR-292",
+      "labels": [
+        "parallel",
+        "docs",
+        "clawhost",
+        "review"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Publish ClawHost control-plane review index",
+      "updated_at": "2026-03-24T16:59:02Z"
     }
   ]
 }
