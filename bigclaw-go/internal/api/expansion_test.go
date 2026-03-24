@@ -1195,6 +1195,9 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		if !strings.Contains(response.Body.String(), "owner=header-actor") {
 			t.Fatalf("expected workflow export body to include trimmed header actor fallback owner, got %s", response.Body.String())
 		}
+		if contentDisposition := response.Header().Get("Content-Disposition"); contentDisposition != `attachment; filename="clawhost-workflows.md"` {
+			t.Fatalf("expected workflow export to keep fixed attachment filename during header fallback, got %q", contentDisposition)
+		}
 	})
 
 	t.Run("workflows omit actor from export url when actor is absent", func(t *testing.T) {
