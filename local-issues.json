@@ -3569,6 +3569,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct product regression coverage for BuildDefaultClawHostWorkflowLaneSurface so the rollout-control lane now proves the concurrency threshold contract for small, medium, large, and extra-large task batches instead of relying only on broad surface assertions.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -run 'TestBuildClawHostWorkflowLaneSurfaceIncludesParallelLanesAndSignals|TestBuildClawHostWorkflowLaneSurfaceScopesRoutesAndDefaultsActor|TestBuildClawHostWorkflowLaneSurfaceInfersRolloutConcurrency|TestAuditClawHostWorkflowLaneSurfaceFlagsWorkflowGaps|TestRenderClawHostWorkflowLaneReportIncludesKeySections' -count=1` -> ok\n- `cd bigclaw-go && go test ./internal/api ./internal/product -count=1` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `d3c2745dcc80a6b2ab35b2cce05d03fd2db3d302` matches remote SHA `d3c2745dcc80a6b2ab35b2cce05d03fd2db3d302` with `status: ok` and `synced: true`\n\nCommit SHA: `d3c2745dcc80a6b2ab35b2cce05d03fd2db3d302`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-24T19:47:03Z"
+        }
+      ],
       "created_at": "2026-03-24T19:45:03Z",
       "description": "Add direct unit coverage for BuildDefaultClawHostWorkflowLaneSurface so the rollout-control lane proves task-volume-based max concurrency inference instead of relying only on broad surface assertions.",
       "id": "big-par-312",
@@ -3581,9 +3588,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add product regression coverage for ClawHost workflow lane concurrency",
-      "updated_at": "2026-03-24T19:45:03Z"
+      "updated_at": "2026-03-24T19:47:03Z"
     }
   ]
 }

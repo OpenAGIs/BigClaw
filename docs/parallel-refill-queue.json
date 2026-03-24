@@ -109,11 +109,10 @@
       "BIG-PAR-308",
       "BIG-PAR-309",
       "BIG-PAR-310",
-      "BIG-PAR-311"
-    ],
-    "active": [
+      "BIG-PAR-311",
       "BIG-PAR-312"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -798,7 +797,7 @@
       "identifier": "BIG-PAR-312",
       "title": "Add product regression coverage for ClawHost workflow lane concurrency",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
