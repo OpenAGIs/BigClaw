@@ -3394,6 +3394,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct product regression coverage for FilterClawHostFleetSurface so the shared fleet scoping helper now proves exact team/project matches, project-only matches, and empty-match behavior without relying solely on API-level endpoint tests.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -run 'Test(FilterClawHostFleetSurface|BuildDefaultClawHostFleetInventoryIsControlPlaneReady|AuditClawHostFleetInventoryDetectsCoverageGaps|RenderClawHostFleetReport)' -count=1` -> ok\n- `cd bigclaw-go && go test ./internal/api ./internal/product -count=1` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `cd1655237cf7fcda7f0e1573c9fa288edaf79b2f` matches remote SHA `cd1655237cf7fcda7f0e1573c9fa288edaf79b2f` with `status: ok` and `synced: true`\n\nCommit SHA: `cd1655237cf7fcda7f0e1573c9fa288edaf79b2f`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-24T19:21:11Z"
+        }
+      ],
       "created_at": "2026-03-24T19:19:29Z",
       "description": "Add direct unit coverage for FilterClawHostFleetSurface so team and project scoping semantics for app and bot inventory are locked down independently of the API endpoint tests that consume the shared fleet filter.",
       "id": "big-par-305",
@@ -3406,9 +3413,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add product regression coverage for ClawHost fleet filtering",
-      "updated_at": "2026-03-24T19:19:29Z"
+      "updated_at": "2026-03-24T19:21:11Z"
     }
   ]
 }
