@@ -4844,6 +4844,40 @@
       "state": "Done",
       "title": "Add dashboard contract non-map path traversal coverage",
       "updated_at": "2026-03-24T22:21:16Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T22:22:09Z",
+      "description": "Add narrow Go tests covering AuditClawHostWorkflowSurface empty-lane readiness behavior in clawhost_workflows.go.",
+      "id": "big-par-369",
+      "identifier": "BIG-PAR-369",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add ClawHost workflow empty-audit coverage",
+      "updated_at": "2026-03-24T22:22:09Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T22:22:09Z",
+      "description": "Add narrow Go tests covering empty summary and no-lane rendering paths in clawhost_workflows.go.",
+      "id": "big-par-370",
+      "identifier": "BIG-PAR-370",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add ClawHost workflow report empty-state coverage",
+      "updated_at": "2026-03-24T22:22:09Z"
     }
   ]
 }

@@ -199,3 +199,34 @@ func TestWorkflowParallelLimitHelpers(t *testing.T) {
 		t.Fatalf("maxIntWorkflow(10, 6) = %d, want 10", got)
 	}
 }
+
+func TestAuditClawHostWorkflowSurfaceEmptySurfaceReadiness(t *testing.T) {
+	audit := AuditClawHostWorkflowSurface(ClawHostWorkflowSurface{Name: "empty", Version: "v1"})
+	if audit.Name != "empty" || audit.Version != "v1" || audit.LaneCount != 0 {
+		t.Fatalf("unexpected empty-surface audit metadata: %+v", audit)
+	}
+	if audit.ReadinessScore != 0 {
+		t.Fatalf("expected empty workflow surface readiness to stay at zero, got %+v", audit)
+	}
+}
+
+func TestRenderClawHostWorkflowReportEmptyState(t *testing.T) {
+	surface := ClawHostWorkflowSurface{
+		Name:              "empty-surface",
+		Version:           "v1",
+		SourceRepo:        "https://github.com/fastclaw-ai/clawhost",
+		ReferenceRevision: "deadbeef",
+	}
+	report := RenderClawHostWorkflowReport(surface, ClawHostWorkflowSurfaceAudit{Name: "empty-surface", Version: "v1"})
+
+	for _, want := range []string{
+		"## Summary",
+		"## Lanes\n\n- none",
+		"- Missing route lanes: none",
+		"- Lanes with invalid automation policy: none",
+	} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in empty workflow report, got %s", want, report)
+		}
+	}
+}

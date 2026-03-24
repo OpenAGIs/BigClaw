@@ -156,10 +156,12 @@
       "BIG-PAR-360",
       "BIG-PAR-362",
       "BIG-PAR-364",
-      "BIG-PAR-365"
+      "BIG-PAR-365",
+      "BIG-PAR-367"
     ],
     "active": [
-      "BIG-PAR-367"
+      "BIG-PAR-369",
+      "BIG-PAR-370"
     ],
     "standby": []
   },
@@ -303,7 +305,9 @@
     "BIG-PAR-362",
     "BIG-PAR-364",
     "BIG-PAR-365",
-    "BIG-PAR-367"
+    "BIG-PAR-367",
+    "BIG-PAR-369",
+    "BIG-PAR-370"
   ],
   "issues": [
     {
@@ -1173,6 +1177,18 @@
     {
       "identifier": "BIG-PAR-367",
       "title": "Add dashboard contract non-map path traversal coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-369",
+      "title": "Add ClawHost workflow empty-audit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-370",
+      "title": "Add ClawHost workflow report empty-state coverage",
       "track": "Go Mainline Follow-ups",
       "status": "In Progress"
     }
