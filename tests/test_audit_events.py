@@ -147,6 +147,7 @@ def test_reports_accept_canonical_handoff_and_takeover_events() -> None:
                     "reason": "manual review required",
                     "requested_by": "scheduler",
                     "required_approvals": ["security-review"],
+                    "blocked_tasks": ["BOT-901", "BOT-902"],
                 },
             },
         ],
@@ -157,3 +158,5 @@ def test_reports_accept_canonical_handoff_and_takeover_events() -> None:
 
     assert canvas.handoff_team == "security"
     assert queue.requests[0].required_approvals == ["security-review"]
+    assert queue.requests[0].blocked_tasks == ["BOT-901", "BOT-902"]
+    assert queue.blocked_task_count == 2

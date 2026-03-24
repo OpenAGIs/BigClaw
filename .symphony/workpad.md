@@ -26,3 +26,5 @@
 - `python3 -m pytest tests/test_audit_events.py` -> `5 passed in 0.07s`
 - `python3 -m pytest tests/test_reports.py -k orchestration_portfolio` -> `3 passed, 31 deselected in 0.07s`
 - `git push origin symphony/BIGCLAW-176` -> pushed `symphony/BIGCLAW-176` to `origin`
+- `python3 -m pytest tests/test_audit_events.py -k canonical` -> `2 passed, 3 deselected in 0.06s`
+- `python3 -m pytest tests/test_audit_events.py` -> `5 passed in 0.06s`
