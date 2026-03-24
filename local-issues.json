@@ -3692,6 +3692,23 @@
       "state": "Done",
       "title": "Add distributed export task-scope filename sanitization coverage",
       "updated_at": "2026-03-24T20:11:52Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct distributed-export regression coverage proving the sanitized attachment filename falls back to `all` when team is absent and the scoped project filter contains only punctuation and separators.",
+      "id": "big-par-321",
+      "identifier": "BIG-PAR-321",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add distributed export project-fallback filename sanitization coverage"
     }
   ]
 }

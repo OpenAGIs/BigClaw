@@ -215,7 +215,8 @@
     "BIG-PAR-317",
     "BIG-PAR-318",
     "BIG-PAR-319",
-    "BIG-PAR-320"
+    "BIG-PAR-320",
+    "BIG-PAR-321"
   ],
   "issues": [
     {
@@ -853,6 +854,12 @@
       "title": "Add distributed export task-scope filename sanitization coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-321",
+      "title": "Add distributed export project-fallback filename sanitization coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
