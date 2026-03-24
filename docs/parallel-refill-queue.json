@@ -113,11 +113,10 @@
       "BIG-PAR-312",
       "BIG-PAR-313",
       "BIG-PAR-314",
-      "BIG-PAR-315"
-    ],
-    "active": [
+      "BIG-PAR-315",
       "BIG-PAR-316"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -830,7 +829,7 @@
       "identifier": "BIG-PAR-316",
       "title": "Add product regression coverage for fallback ClawHost rollout reports",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

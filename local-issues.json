@@ -3669,6 +3669,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct product regression coverage for RenderClawHostRolloutPlannerReport so the fallback planner path now proves the default app rendering and gap summary output without depending on expansion endpoint tests.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultClawHostRolloutPlannerUsesTaskTenantsAndApps|TestBuildDefaultClawHostRolloutPlannerFallsBackToProjectAndDefaults|TestAuditClawHostRolloutPlannerDetectsGaps|TestRenderClawHostRolloutPlannerReport|TestRenderClawHostRolloutPlannerReportHandlesFallbackPlanner' -count=1` -> ok\n- `cd bigclaw-go && go test ./internal/api ./internal/product -count=1` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `9ebc06507ddd907de763a764157ac4c5d4233aa7` matches remote SHA `9ebc06507ddd907de763a764157ac4c5d4233aa7` with `status: ok` and `synced: true`\n\nCommit SHA: `9ebc06507ddd907de763a764157ac4c5d4233aa7`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-24T20:02:16Z"
+        }
+      ],
       "created_at": "2026-03-24T20:00:12Z",
       "description": "Add direct unit coverage for RenderClawHostRolloutPlannerReport so the fallback planner path proves project/default app rendering and gap summaries without depending on expansion endpoint tests.",
       "id": "big-par-316",
@@ -3681,9 +3688,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add product regression coverage for fallback ClawHost rollout reports",
-      "updated_at": "2026-03-24T20:00:12Z"
+      "updated_at": "2026-03-24T20:02:16Z"
     }
   ]
 }
