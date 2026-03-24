@@ -213,6 +213,7 @@ func (s *Server) Handler() http.Handler {
 			"rollback_trigger_surface":        rollbackTriggerSurfacePayload(),
 			"broker_stub_fanout_isolation":    brokerStubFanoutIsolationPayload(),
 			"provider_live_handoff_isolation": providerLiveHandoffIsolationPayload(),
+			"clawhost_policy_surface":         clawHostPolicySurfacePayload(s.clawHostPolicyTasks(r.Context())),
 			"broker_bootstrap_surface":        brokerBootstrapSurfacePayload(),
 			"broker_review_bundle":            brokerReviewBundleSurfacePayload(),
 			"validation_bundle_continuation":  validationBundleContinuationGatePayload(),

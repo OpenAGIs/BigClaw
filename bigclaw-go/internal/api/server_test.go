@@ -1113,6 +1113,81 @@ func TestDebugStatusIncludesValidationBundleContinuationGate(t *testing.T) {
 	}
 }
 
+func TestDebugStatusIncludesClawHostPolicySurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010000, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-debug-1",
+			Source:   "clawhost",
+			Title:    "review provider defaults",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"clawhost_app_id":           "sales-app",
+				"clawhost_default_provider": "openai",
+				"clawhost_approval_flow":    "standard",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-debug-2",
+			Labels:   []string{"clawhost"},
+			Title:    "override provider for support",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"clawhost_app_id":             "support-app",
+				"clawhost_default_provider":   "anthropic",
+				"clawhost_provider_mode":      "tenant_override",
+				"clawhost_provider_allowlist": "openai,google",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ClawHost struct {
+			Status  string `json:"status"`
+			Summary struct {
+				ActivePolicies      int `json:"active_policies"`
+				ReviewRequired      int `json:"review_required"`
+				OutOfPolicyDefaults int `json:"out_of_policy_defaults"`
+			} `json:"summary"`
+			ObservedProviders []string `json:"observed_providers"`
+			ReviewQueue       []struct {
+				TaskID      string `json:"task_id"`
+				DriftStatus string `json:"drift_status"`
+			} `json:"review_queue"`
+		} `json:"clawhost_policy_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug status response: %v", err)
+	}
+	if decoded.ClawHost.Status != "active" || decoded.ClawHost.Summary.ActivePolicies != 2 || decoded.ClawHost.Summary.ReviewRequired != 1 || decoded.ClawHost.Summary.OutOfPolicyDefaults != 1 {
+		t.Fatalf("unexpected ClawHost debug surface: %+v", decoded.ClawHost)
+	}
+	if len(decoded.ClawHost.ReviewQueue) != 2 || decoded.ClawHost.ReviewQueue[0].DriftStatus != "out_of_policy" {
+		t.Fatalf("expected prioritized ClawHost review queue, got %+v", decoded.ClawHost.ReviewQueue)
+	}
+	for _, want := range []string{"anthropic", "openai"} {
+		if !containsString(decoded.ClawHost.ObservedProviders, want) {
+			t.Fatalf("expected provider %q in debug surface, got %+v", want, decoded.ClawHost.ObservedProviders)
+		}
+	}
+}
+
 func TestDeadLetterEndpoints(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()
@@ -3892,7 +3967,40 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	schedulerRuntime.Decide(domain.Task{ID: "fair-1", TenantID: "tenant-a", Priority: 3}, scheduler.QuotaSnapshot{})
 	schedulerRuntime.Decide(domain.Task{ID: "fair-2", TenantID: "tenant-b", Priority: 3}, scheduler.QuotaSnapshot{})
 	recorder := observability.NewRecorder()
-	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), SchedulerPolicy: store, SchedulerRuntime: schedulerRuntime, Now: time.Now}
+	taskQueue := queue.NewMemoryQueue()
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-policy-endpoint-1",
+			Source:   "clawhost",
+			Title:    "align sales provider defaults",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"clawhost_app_id":           "sales-app",
+				"clawhost_default_provider": "openai",
+				"clawhost_approval_flow":    "standard",
+			},
+		},
+		{
+			ID:       "clawhost-policy-endpoint-2",
+			Labels:   []string{"clawhost"},
+			Title:    "review support tenant override",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"clawhost_app_id":             "support-app",
+				"clawhost_default_provider":   "anthropic",
+				"clawhost_provider_mode":      "tenant_override",
+				"clawhost_provider_allowlist": "openai,google",
+				"clawhost_takeover_required":  "true",
+			},
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue policy task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), SchedulerPolicy: store, SchedulerRuntime: schedulerRuntime, Now: time.Now}
 	handler := server.Handler()
 
 	policyResponse := httptest.NewRecorder()
@@ -3930,6 +4038,22 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 				RecentAcceptedCount int    `json:"recent_accepted_count"`
 			} `json:"tenants"`
 		} `json:"fairness"`
+		ClawHost struct {
+			Status  string `json:"status"`
+			Summary struct {
+				ActivePolicies      int `json:"active_policies"`
+				ActiveTenants       int `json:"active_tenants"`
+				ActiveApps          int `json:"active_apps"`
+				ReviewRequired      int `json:"review_required"`
+				TakeoverRequired    int `json:"takeover_required"`
+				OutOfPolicyDefaults int `json:"out_of_policy_defaults"`
+			} `json:"summary"`
+			ObservedProviders []string `json:"observed_providers"`
+			ReviewQueue       []struct {
+				TaskID      string `json:"task_id"`
+				DriftStatus string `json:"drift_status"`
+			} `json:"review_queue"`
+		} `json:"clawhost"`
 	}
 	if err := json.Unmarshal(policyResponse.Body.Bytes(), &policyDecoded); err != nil {
 		t.Fatalf("decode scheduler policy response: %v", err)
@@ -3939,6 +4063,17 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	}
 	if !policyDecoded.Fairness.Enabled || !policyDecoded.Fairness.Shared || policyDecoded.Fairness.Backend != "sqlite" || policyDecoded.Fairness.ActiveTenants != 2 || len(policyDecoded.Fairness.Tenants) != 2 {
 		t.Fatalf("unexpected fairness runtime payload: %+v", policyDecoded.Fairness)
+	}
+	if policyDecoded.ClawHost.Status != "active" || policyDecoded.ClawHost.Summary.ActivePolicies != 2 || policyDecoded.ClawHost.Summary.ActiveTenants != 2 || policyDecoded.ClawHost.Summary.ActiveApps != 2 || policyDecoded.ClawHost.Summary.ReviewRequired != 1 || policyDecoded.ClawHost.Summary.TakeoverRequired != 1 || policyDecoded.ClawHost.Summary.OutOfPolicyDefaults != 1 {
+		t.Fatalf("unexpected ClawHost policy payload: %+v", policyDecoded.ClawHost)
+	}
+	if len(policyDecoded.ClawHost.ReviewQueue) != 2 || policyDecoded.ClawHost.ReviewQueue[0].DriftStatus != "out_of_policy" {
+		t.Fatalf("expected prioritized ClawHost review queue, got %+v", policyDecoded.ClawHost.ReviewQueue)
+	}
+	for _, want := range []string{"anthropic", "openai"} {
+		if !containsString(policyDecoded.ClawHost.ObservedProviders, want) {
+			t.Fatalf("expected ClawHost observed provider %q, got %+v", want, policyDecoded.ClawHost.ObservedProviders)
+		}
 	}
 
 	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"kubernetes","high_risk_executor":"ray","fairness":{"window_seconds":10,"max_recent_decisions_per_tenant":2}}`), 0o644); err != nil {

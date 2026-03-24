@@ -86,12 +86,13 @@
       "BIG-PAR-285",
       "BIG-PAR-286"
     ],
-    "active": [],
-    "standby": [
+    "active": [
       "BIG-PAR-287",
+      "BIG-PAR-290"
+    ],
+    "standby": [
       "BIG-PAR-288",
       "BIG-PAR-289",
-      "BIG-PAR-290",
       "BIG-PAR-291"
     ]
   },
@@ -606,7 +607,7 @@
       "identifier": "BIG-PAR-287",
       "title": "Add ClawHost fleet inventory and control-plane source",
       "track": "Go Mainline Follow-ups",
-      "status": "Todo"
+      "status": "In Progress"
     },
     {
       "identifier": "BIG-PAR-288",
@@ -624,7 +625,7 @@
       "identifier": "BIG-PAR-290",
       "title": "Add ClawHost provider defaults and tenant policy surfaces",
       "track": "Go Mainline Follow-ups",
-      "status": "Todo"
+      "status": "In Progress"
     },
     {
       "identifier": "BIG-PAR-291",

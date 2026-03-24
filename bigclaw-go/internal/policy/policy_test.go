@@ -81,3 +81,56 @@ func TestResolvePolicyOverridesQuotaBoundaries(t *testing.T) {
 		t.Fatalf("expected configurable capability boundaries, got %+v", summary)
 	}
 }
+
+func TestResolveClawHostTenantPolicyAlignedDefaults(t *testing.T) {
+	resolved, ok := ResolveClawHostTenantPolicy(domain.Task{
+		ID:       "clawhost-policy-1",
+		Source:   "clawhost",
+		TenantID: "tenant-a",
+		Labels:   []string{"integration"},
+		Metadata: map[string]string{
+			"clawhost_app_id":           "sales-app",
+			"clawhost_bot_group":        "sales-bots",
+			"clawhost_default_provider": "openai",
+			"clawhost_default_model":    "gpt-5.4",
+			"clawhost_approval_flow":    "standard",
+		},
+	})
+	if !ok {
+		t.Fatal("expected ClawHost task to resolve")
+	}
+	if resolved.DriftStatus != "aligned" || resolved.AppID != "sales-app" || resolved.BotGroup != "sales-bots" || resolved.ProviderDefault != "openai" {
+		t.Fatalf("unexpected aligned ClawHost policy: %+v", resolved)
+	}
+	if resolved.ManualReviewRequired || resolved.TakeoverRequired {
+		t.Fatalf("expected no manual review or takeover requirement, got %+v", resolved)
+	}
+}
+
+func TestResolveClawHostTenantPolicyOutOfPolicyOverride(t *testing.T) {
+	resolved, ok := ResolveClawHostTenantPolicy(domain.Task{
+		ID:       "clawhost-policy-2",
+		Labels:   []string{"clawhost"},
+		TenantID: "tenant-b",
+		Metadata: map[string]string{
+			"clawhost_app_id":             "ops-app",
+			"clawhost_default_provider":   "anthropic",
+			"clawhost_provider_mode":      "tenant_override",
+			"clawhost_provider_allowlist": "openai,google",
+			"clawhost_lock_app_defaults":  "true",
+			"clawhost_takeover_required":  "true",
+		},
+	})
+	if !ok {
+		t.Fatal("expected ClawHost label to resolve")
+	}
+	if resolved.DriftStatus != "out_of_policy" {
+		t.Fatalf("expected out_of_policy drift, got %+v", resolved)
+	}
+	if !resolved.ManualReviewRequired || !resolved.TakeoverRequired {
+		t.Fatalf("expected manual review and takeover requirement, got %+v", resolved)
+	}
+	if resolved.Reason == "" {
+		t.Fatalf("expected a review reason, got %+v", resolved)
+	}
+}
