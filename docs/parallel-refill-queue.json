@@ -105,11 +105,10 @@
       "BIG-PAR-304",
       "BIG-PAR-305",
       "BIG-PAR-306",
-      "BIG-PAR-307"
-    ],
-    "active": [
+      "BIG-PAR-307",
       "BIG-PAR-308"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -766,7 +765,7 @@
       "identifier": "BIG-PAR-308",
       "title": "Add fleet export URL filter-omission coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
