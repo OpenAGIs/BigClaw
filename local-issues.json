@@ -4316,6 +4316,40 @@
       "state": "Done",
       "title": "Add project-scoped saved view catalog coverage",
       "updated_at": "2026-03-24T21:42:03Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T21:43:49Z",
+      "description": "Add direct coverage for BuildSavedViewCatalog with a blank actor so view owners and digest recipients fall back to viewer through the built catalog output.",
+      "id": "big-par-348",
+      "identifier": "BIG-PAR-348",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add saved view catalog actor fallback coverage",
+      "updated_at": "2026-03-24T21:43:49Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T21:43:49Z",
+      "description": "Add direct coverage for BuildSavedViewCatalog with only a team scope so team-only routes, visibility, and scoped identifiers stay stable without a project filter.",
+      "id": "big-par-347",
+      "identifier": "BIG-PAR-347",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add team-scoped saved view catalog coverage",
+      "updated_at": "2026-03-24T21:43:49Z"
     }
   ]
 }

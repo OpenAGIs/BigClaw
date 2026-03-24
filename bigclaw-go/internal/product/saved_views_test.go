@@ -109,6 +109,35 @@ func TestBuildSavedViewCatalogProjectScoped(t *testing.T) {
 	}
 }
 
+func TestBuildSavedViewCatalogTeamScoped(t *testing.T) {
+	tasks := []domain.Task{
+		{ID: "task-1", State: domain.TaskRunning, Metadata: map[string]string{"owner": "alice"}},
+	}
+
+	catalog := BuildSavedViewCatalog(tasks, "alice", "platform", "")
+	if len(catalog.Views) != 5 {
+		t.Fatalf("expected baseline team-scoped views, got %+v", catalog.Views)
+	}
+	for _, view := range catalog.Views {
+		if !strings.Contains(view.ViewID, "-platform") {
+			t.Fatalf("expected team scope suffix in view id, got %s", view.ViewID)
+		}
+		if view.Visibility != "team" {
+			t.Fatalf("expected team-only scope to keep team visibility, got %+v", view)
+		}
+		parsed, err := url.Parse(view.Route)
+		if err != nil {
+			t.Fatalf("parse team-scoped route: %v", err)
+		}
+		if parsed.Query().Get("team") != "platform" || parsed.Query().Get("project") != "" {
+			t.Fatalf("expected team-only scoped route, got %s", view.Route)
+		}
+	}
+	if catalog.Subscriptions[0].SubscriptionID != "saved-view-daily-triage-platform" || catalog.Subscriptions[1].SubscriptionID != "saved-view-weekly-ops-platform" {
+		t.Fatalf("unexpected team-scoped subscription ids: %+v", catalog.Subscriptions)
+	}
+}
+
 func TestAuditSavedViewCatalogAndRenderReport(t *testing.T) {
 	catalog := SavedViewCatalog{
 		Name:    "catalog",
