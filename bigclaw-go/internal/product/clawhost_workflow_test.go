@@ -168,3 +168,54 @@ func TestBuildClawHostWorkflowSurfaceIdleDefaults(t *testing.T) {
 		t.Fatalf("unexpected supported channels: got=%v want=%v", surface.SupportedChannels, wantChannels)
 	}
 }
+
+func TestBuildClawHostWorkflowSurfaceNormalizesParsingDefaults(t *testing.T) {
+	surface := BuildClawHostWorkflowSurface([]domain.Task{
+		{
+			ID:       "claw-parsing",
+			Source:   "clawhost",
+			TenantID: "",
+			Title:    "parsing-bot",
+			Metadata: map[string]string{
+				"control_plane":             "clawhost",
+				"owner_user_id":             "owner-42",
+				"channel_types":             " telegram, ,discord,telegram ",
+				"whatsapp_pairing_status":   "paired",
+				"admin_credentials_exposed": "not-a-bool",
+				"clawhost_takeover_required": "not-a-bool",
+				"skill_count":               "NaN",
+				"agent_skill_count":         "oops",
+			},
+		},
+	})
+
+	if surface.Status != "active" || surface.Summary.WorkflowItems != 1 || surface.Summary.Tenants != 1 {
+		t.Fatalf("expected normalized workflow surface to stay active with one tenant, got %+v", surface)
+	}
+	if surface.Summary.ChannelMutations != 1 || surface.Summary.SkillMutations != 0 || surface.Summary.CredentialReviews != 0 || surface.Summary.TakeoverRequired != 0 {
+		t.Fatalf("unexpected normalized workflow summary counts: %+v", surface.Summary)
+	}
+	if len(surface.ReviewQueue) != 1 {
+		t.Fatalf("expected one normalized workflow item, got %+v", surface.ReviewQueue)
+	}
+
+	item := surface.ReviewQueue[0]
+	if item.TenantID != "owner-42" {
+		t.Fatalf("expected tenant fallback from owner_user_id, got %+v", item)
+	}
+	if item.ClawID != "claw-parsing" || item.ClawName != "parsing-bot" {
+		t.Fatalf("expected task id/title fallbacks, got %+v", item)
+	}
+	if !slices.Equal(item.Channels, []string{"discord", "telegram", "telegram"}) {
+		t.Fatalf("expected normalized sorted channels, got %+v", item.Channels)
+	}
+	if item.SkillsEnabled != 0 || item.AgentSkillCount != 0 {
+		t.Fatalf("expected invalid integer metadata to fall back to zero, got %+v", item)
+	}
+	if item.CredentialsExposed || item.TakeoverRequired {
+		t.Fatalf("expected invalid bool metadata to stay false, got %+v", item)
+	}
+	if item.ReviewReason != "channel config requires review across active IM integrations" {
+		t.Fatalf("expected channel-only review reason, got %+v", item)
+	}
+}

@@ -3816,6 +3816,18 @@
       "state": "Done",
       "title": "Add product regression coverage for default ClawHost fleet compatibility alias",
       "updated_at": "2026-03-24T20:26:17Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T20:28:08Z",
+      "description": "",
+      "id": "big-par-322",
+      "identifier": "BIG-PAR-322",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add product regression coverage for ClawHost workflow parsing defaults",
+      "updated_at": "2026-03-24T20:28:08Z"
     }
   ]
 }
