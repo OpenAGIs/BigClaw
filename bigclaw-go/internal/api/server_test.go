@@ -4685,6 +4685,98 @@ func TestV2ControlCenterIncludesClawHostWorkflowSurface(t *testing.T) {
 	}
 }
 
+func TestV2ControlCenterIncludesClawHostReadinessSurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010418, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-ready-center-1",
+			Source:   "clawhost",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":       "clawhost",
+				"claw_id":             "claw-a",
+				"claw_name":           "sales-west",
+				"domain":              "sales-west.clawhost.cloud",
+				"proxy_mode":          "http_ws_gateway",
+				"gateway_port":        "18789",
+				"reachable":           "true",
+				"admin_ui_enabled":    "true",
+				"websocket_reachable": "true",
+				"subdomain_ready":     "true",
+				"version_status":      "current",
+				"version_current":     "0.0.31",
+				"version_latest":      "0.0.31",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-ready-center-2",
+			Source:   "clawhost",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":       "clawhost",
+				"claw_id":             "claw-b",
+				"claw_name":           "support-east",
+				"domain":              "support-east.clawhost.cloud",
+				"proxy_mode":          "http_ws_gateway",
+				"gateway_port":        "18789",
+				"reachable":           "false",
+				"admin_ui_enabled":    "true",
+				"websocket_reachable": "false",
+				"subdomain_ready":     "false",
+				"version_status":      "upgrade_available",
+				"version_current":     "0.0.30",
+				"version_latest":      "0.0.31",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue control center readiness task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center", nil)
+	request.Header.Set("X-BigClaw-Role", "platform_admin")
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ClawHostReadiness struct {
+			Status  string `json:"status"`
+			Summary struct {
+				Targets                 int `json:"targets"`
+				ReadyTargets            int `json:"ready_targets"`
+				DegradedTargets         int `json:"degraded_targets"`
+				AdminReadyTargets       int `json:"admin_ready_targets"`
+				WebSocketReadyTargets   int `json:"websocket_ready_targets"`
+				SubdomainReadyTargets   int `json:"subdomain_ready_targets"`
+				UpgradeAvailableTargets int `json:"upgrade_available_targets"`
+			} `json:"summary"`
+			Targets []struct {
+				ClawName     string   `json:"claw_name"`
+				ReviewStatus string   `json:"review_status"`
+				Warnings     []string `json:"warnings"`
+			} `json:"targets"`
+		} `json:"clawhost_readiness_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center readiness response: %v", err)
+	}
+	if decoded.ClawHostReadiness.Status != "active" || decoded.ClawHostReadiness.Summary.Targets != 2 || decoded.ClawHostReadiness.Summary.ReadyTargets != 1 || decoded.ClawHostReadiness.Summary.DegradedTargets != 1 || decoded.ClawHostReadiness.Summary.AdminReadyTargets != 1 || decoded.ClawHostReadiness.Summary.WebSocketReadyTargets != 1 || decoded.ClawHostReadiness.Summary.SubdomainReadyTargets != 1 || decoded.ClawHostReadiness.Summary.UpgradeAvailableTargets != 1 {
+		t.Fatalf("unexpected ClawHost readiness control center surface: %+v", decoded.ClawHostReadiness)
+	}
+	if len(decoded.ClawHostReadiness.Targets) != 2 || decoded.ClawHostReadiness.Targets[0].ReviewStatus != "degraded" || decoded.ClawHostReadiness.Targets[0].ClawName != "support-east" {
+		t.Fatalf("expected degraded ClawHost readiness target first, got %+v", decoded.ClawHostReadiness.Targets)
+	}
+}
+
 func mustJSON(value any) []byte {
 	body, err := json.Marshal(value)
 	if err != nil {

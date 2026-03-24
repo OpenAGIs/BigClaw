@@ -3136,6 +3136,24 @@
       "state": "Done",
       "title": "Add control-center regression coverage for ClawHost workflow surface",
       "updated_at": "2026-03-24T17:45:09Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T17:47:56Z",
+      "description": "Add focused API regression coverage for the ClawHost readiness surface in /v2/control-center so reviewer-facing control-center payloads keep readiness counts, websocket/subdomain posture, and degraded-target ordering stable.",
+      "id": "big-par-295",
+      "identifier": "BIG-PAR-295",
+      "labels": [
+        "go",
+        "clawhost",
+        "api",
+        "regression",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add control-center regression coverage for ClawHost readiness surface",
+      "updated_at": "2026-03-24T17:47:56Z"
     }
   ]
 }
