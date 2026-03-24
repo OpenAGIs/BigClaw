@@ -3932,6 +3932,23 @@
       "state": "Done",
       "title": "Encode controlActionAuditURL query parameters",
       "updated_at": "2026-03-25T22:00:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct helper-level coverage for savedViewScopeToken so mixed separators, reserved characters, and punctuation-only inputs normalize to stable saved-view scope slugs.",
+      "id": "big-par-331",
+      "identifier": "BIG-PAR-331",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add savedViewScopeToken helper coverage"
     }
   ]
 }

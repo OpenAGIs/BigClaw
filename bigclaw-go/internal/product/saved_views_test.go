@@ -135,3 +135,19 @@ func TestViewScopeSuffixSanitizesReservedCharacters(t *testing.T) {
 		}
 	}
 }
+
+func TestSavedViewScopeTokenNormalizesMixedSeparators(t *testing.T) {
+	for _, tc := range []struct {
+		input string
+		want  string
+	}{
+		{input: "Platform / Ops @ Night", want: "platform-ops-night"},
+		{input: "  Apollo___Mobile---Core  ", want: "apollo-mobile-core"},
+		{input: " / @ ", want: ""},
+		{input: "", want: ""},
+	} {
+		if got := savedViewScopeToken(tc.input); got != tc.want {
+			t.Fatalf("savedViewScopeToken(%q) = %q, want %q", tc.input, got, tc.want)
+		}
+	}
+}

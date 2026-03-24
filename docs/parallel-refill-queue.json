@@ -225,7 +225,8 @@
     "BIG-PAR-327",
     "BIG-PAR-328",
     "BIG-PAR-329",
-    "BIG-PAR-330"
+    "BIG-PAR-330",
+    "BIG-PAR-331"
   ],
   "issues": [
     {
@@ -923,6 +924,12 @@
       "title": "Encode controlActionAuditURL query parameters",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-331",
+      "title": "Add savedViewScopeToken helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
