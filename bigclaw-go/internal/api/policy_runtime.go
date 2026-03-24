@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"bigclaw-go/internal/scheduler"
 )
@@ -31,7 +32,13 @@ func (s *Server) handleV2ControlCenterPolicy(w http.ResponseWriter, r *http.Requ
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
-	writeJSON(w, http.StatusOK, s.controlCenterPolicyPayload(r, authorization, false))
+	team := strings.TrimSpace(r.URL.Query().Get("team"))
+	project := strings.TrimSpace(r.URL.Query().Get("project"))
+	if err := enforceScopedTeamFilter(authorization, &team); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+	writeJSON(w, http.StatusOK, s.controlCenterPolicyPayload(r, authorization, team, project, false))
 }
 
 func (s *Server) handleV2ControlCenterPolicyReload(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +64,13 @@ func (s *Server) handleV2ControlCenterPolicyReload(w http.ResponseWriter, r *htt
 		http.Error(w, fmt.Sprintf("reload scheduler policy: %v", err), http.StatusInternalServerError)
 		return
 	}
-	writeJSON(w, http.StatusOK, s.controlCenterPolicyPayload(r, authorization, true))
+	team := strings.TrimSpace(r.URL.Query().Get("team"))
+	project := strings.TrimSpace(r.URL.Query().Get("project"))
+	if err := enforceScopedTeamFilter(authorization, &team); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+	writeJSON(w, http.StatusOK, s.controlCenterPolicyPayload(r, authorization, team, project, true))
 }
 
 func (s *Server) handleV2ControlCenterPolicyExport(w http.ResponseWriter, r *http.Request) {
@@ -70,18 +83,25 @@ func (s *Server) handleV2ControlCenterPolicyExport(w http.ResponseWriter, r *htt
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
-	surface := clawHostPolicySurfacePayload(s.clawHostPolicyTasks(r.Context()))
+	team := strings.TrimSpace(r.URL.Query().Get("team"))
+	project := strings.TrimSpace(r.URL.Query().Get("project"))
+	if err := enforceScopedTeamFilter(authorization, &team); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+	surface := clawHostPolicySurfacePayload(filterClawHostPolicyTasks(s.clawHostPolicyTasks(r.Context()), team, project))
 	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 	w.Header().Set("Content-Disposition", `attachment; filename="clawhost-policy-surface.md"`)
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(renderClawHostPolicySurfaceReport(surface)))
 }
 
-func (s *Server) controlCenterPolicyPayload(r *http.Request, authorization ControlAuthorization, reloaded bool) map[string]any {
+func (s *Server) controlCenterPolicyPayload(r *http.Request, authorization ControlAuthorization, team, project string, reloaded bool) map[string]any {
 	store := s.schedulerPolicyStore()
-	surface := clawHostPolicySurfacePayload(s.clawHostPolicyTasks(r.Context()))
+	surface := clawHostPolicySurfacePayload(filterClawHostPolicyTasks(s.clawHostPolicyTasks(r.Context()), team, project))
 	payload := map[string]any{
 		"authorization":     authorization,
+		"filters":           map[string]any{"team": team, "project": project},
 		"policy":            store.Snapshot(),
 		"fairness":          s.schedulerRuntime().FairnessSnapshot(),
 		"clawhost":          surface,
@@ -95,7 +115,7 @@ func (s *Server) controlCenterPolicyPayload(r *http.Request, authorization Contr
 		"reload_url":        "/v2/control-center/policy/reload",
 		"report": map[string]any{
 			"markdown":   renderClawHostPolicySurfaceReport(surface),
-			"export_url": "/v2/control-center/policy/export",
+			"export_url": clawHostExportURL("/v2/control-center/policy/export", team, project, ""),
 		},
 	}
 	if reloaded {

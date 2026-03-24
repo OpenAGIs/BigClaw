@@ -57,6 +57,23 @@ func (s *Server) clawHostPolicyTasks(ctx context.Context) []domain.Task {
 	return tasks
 }
 
+func filterClawHostPolicyTasks(tasks []domain.Task, team, project string) []domain.Task {
+	if team == "" && project == "" {
+		return tasks
+	}
+	filtered := make([]domain.Task, 0, len(tasks))
+	for _, task := range tasks {
+		if team != "" && !strings.EqualFold(strings.TrimSpace(task.Metadata["team"]), team) {
+			continue
+		}
+		if project != "" && !strings.EqualFold(strings.TrimSpace(task.Metadata["project"]), project) {
+			continue
+		}
+		filtered = append(filtered, task)
+	}
+	return filtered
+}
+
 func clawHostPolicySurfacePayload(tasks []domain.Task) clawHostPolicySurface {
 	surface := clawHostPolicySurface{
 		Integration: "clawhost",

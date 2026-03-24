@@ -4317,6 +4317,8 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 				"clawhost_app_id":           "sales-app",
 				"clawhost_default_provider": "openai",
 				"clawhost_approval_flow":    "standard",
+				"team":                      "platform",
+				"project":                   "sales",
 			},
 		},
 		{
@@ -4331,6 +4333,8 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 				"clawhost_provider_mode":      "tenant_override",
 				"clawhost_provider_allowlist": "openai,google",
 				"clawhost_takeover_required":  "true",
+				"team":                        "support",
+				"project":                     "care",
 			},
 		},
 	} {
@@ -4342,7 +4346,7 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	handler := server.Handler()
 
 	policyResponse := httptest.NewRecorder()
-	policyRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center/policy", nil)
+	policyRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center/policy?team=platform&project=sales", nil)
 	policyRequest.Header.Set("X-BigClaw-Role", "platform_admin")
 	handler.ServeHTTP(policyResponse, policyRequest)
 	if policyResponse.Code != http.StatusOK {
@@ -4355,7 +4359,11 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 		SharedPath       string `json:"shared_path"`
 		ReloadSupported  bool   `json:"reload_supported"`
 		ReloadAuthorized bool   `json:"reload_authorized"`
-		Policy           struct {
+		Filters          struct {
+			Team    string `json:"team"`
+			Project string `json:"project"`
+		} `json:"filters"`
+		Policy struct {
 			DefaultExecutor         string            `json:"default_executor"`
 			UrgentPriorityThreshold int               `json:"urgent_priority_threshold"`
 			ToolExecutors           map[string]string `json:"tool_executors"`
@@ -4406,23 +4414,29 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	if !policyDecoded.Fairness.Enabled || !policyDecoded.Fairness.Shared || policyDecoded.Fairness.Backend != "sqlite" || policyDecoded.Fairness.ActiveTenants != 2 || len(policyDecoded.Fairness.Tenants) != 2 {
 		t.Fatalf("unexpected fairness runtime payload: %+v", policyDecoded.Fairness)
 	}
-	if policyDecoded.ClawHost.Status != "active" || policyDecoded.ClawHost.Summary.ActivePolicies != 2 || policyDecoded.ClawHost.Summary.ActiveTenants != 2 || policyDecoded.ClawHost.Summary.ActiveApps != 2 || policyDecoded.ClawHost.Summary.ReviewRequired != 1 || policyDecoded.ClawHost.Summary.TakeoverRequired != 1 || policyDecoded.ClawHost.Summary.OutOfPolicyDefaults != 1 {
+	if policyDecoded.Filters.Team != "platform" || policyDecoded.Filters.Project != "sales" {
+		t.Fatalf("expected scoped filters in policy response, got %+v", policyDecoded.Filters)
+	}
+	if policyDecoded.ClawHost.Status != "active" || policyDecoded.ClawHost.Summary.ActivePolicies != 1 || policyDecoded.ClawHost.Summary.ActiveTenants != 1 || policyDecoded.ClawHost.Summary.ActiveApps != 1 || policyDecoded.ClawHost.Summary.ReviewRequired != 0 || policyDecoded.ClawHost.Summary.TakeoverRequired != 0 || policyDecoded.ClawHost.Summary.OutOfPolicyDefaults != 0 {
 		t.Fatalf("unexpected ClawHost policy payload: %+v", policyDecoded.ClawHost)
 	}
-	if len(policyDecoded.ClawHost.ReviewQueue) != 2 || policyDecoded.ClawHost.ReviewQueue[0].DriftStatus != "out_of_policy" {
-		t.Fatalf("expected prioritized ClawHost review queue, got %+v", policyDecoded.ClawHost.ReviewQueue)
+	if len(policyDecoded.ClawHost.ReviewQueue) != 1 || policyDecoded.ClawHost.ReviewQueue[0].TaskID != "clawhost-policy-endpoint-1" || policyDecoded.ClawHost.ReviewQueue[0].DriftStatus != "aligned" {
+		t.Fatalf("expected scoped ClawHost review queue, got %+v", policyDecoded.ClawHost.ReviewQueue)
 	}
-	for _, want := range []string{"anthropic", "openai"} {
+	for _, want := range []string{"openai"} {
 		if !containsString(policyDecoded.ClawHost.ObservedProviders, want) {
 			t.Fatalf("expected ClawHost observed provider %q, got %+v", want, policyDecoded.ClawHost.ObservedProviders)
 		}
 	}
-	if policyDecoded.Report.ExportURL != "/v2/control-center/policy/export" || !strings.Contains(policyDecoded.Report.Markdown, "# ClawHost Policy Surface") || !strings.Contains(policyDecoded.Report.Markdown, "clawhost-policy-endpoint-2") {
+	if containsString(policyDecoded.ClawHost.ObservedProviders, "anthropic") {
+		t.Fatalf("did not expect unscoped provider in scoped response, got %+v", policyDecoded.ClawHost.ObservedProviders)
+	}
+	if policyDecoded.Report.ExportURL != "/v2/control-center/policy/export?project=sales&team=platform" || !strings.Contains(policyDecoded.Report.Markdown, "# ClawHost Policy Surface") || !strings.Contains(policyDecoded.Report.Markdown, "clawhost-policy-endpoint-1") || strings.Contains(policyDecoded.Report.Markdown, "clawhost-policy-endpoint-2") {
 		t.Fatalf("expected policy report metadata in response, got %+v", policyDecoded.Report)
 	}
 
 	exportResponse := httptest.NewRecorder()
-	exportRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center/policy/export", nil)
+	exportRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center/policy/export?team=platform&project=sales", nil)
 	exportRequest.Header.Set("X-BigClaw-Role", "platform_admin")
 	handler.ServeHTTP(exportResponse, exportRequest)
 	if exportResponse.Code != http.StatusOK {
@@ -4434,10 +4448,13 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	if disposition := exportResponse.Header().Get("Content-Disposition"); !strings.Contains(disposition, "clawhost-policy-surface.md") {
 		t.Fatalf("expected attachment filename, got %q", disposition)
 	}
-	for _, want := range []string{"# ClawHost Policy Surface", "tenant `tenant-b`", "provider `anthropic`", "Reason: provider default falls outside the tenant allowlist"} {
+	for _, want := range []string{"# ClawHost Policy Surface", "tenant `tenant-a`", "provider `openai`", "Reason: provider default remains aligned with the shared app policy"} {
 		if !strings.Contains(exportResponse.Body.String(), want) {
 			t.Fatalf("expected %q in policy export, got %s", want, exportResponse.Body.String())
 		}
+	}
+	if strings.Contains(exportResponse.Body.String(), "tenant `tenant-b`") {
+		t.Fatalf("did not expect unscoped tenant in policy export, got %s", exportResponse.Body.String())
 	}
 
 	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"kubernetes","high_risk_executor":"ray","fairness":{"window_seconds":10,"max_recent_decisions_per_tenant":2}}`), 0o644); err != nil {
@@ -4464,6 +4481,15 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	handler.ServeHTTP(forbiddenResponse, forbiddenRequest)
 	if forbiddenResponse.Code != http.StatusForbidden {
 		t.Fatalf("expected forbidden reload for eng lead, got %d %s", forbiddenResponse.Code, forbiddenResponse.Body.String())
+	}
+
+	scopedForbidden := httptest.NewRecorder()
+	scopedForbiddenRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center/policy?team=support", nil)
+	scopedForbiddenRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	scopedForbiddenRequest.Header.Set("X-BigClaw-Team", "platform")
+	handler.ServeHTTP(scopedForbidden, scopedForbiddenRequest)
+	if scopedForbidden.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden policy scope for eng lead, got %d %s", scopedForbidden.Code, scopedForbidden.Body.String())
 	}
 }
 
