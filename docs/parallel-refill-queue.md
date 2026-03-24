@@ -48,10 +48,10 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 24, 2026:
-  - active slices: `BIG-PAR-371` — Add rollout sorted-values blank-skip coverage
+  - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-357` — Add ClawHost fleet inventory alias wrapper coverage; `BIG-PAR-360` — Add console helper and design-system coverage; `BIG-PAR-362` — Add ClawHost workflow helper threshold coverage; `BIG-PAR-364` — Add ClawHost rollout audit edge coverage; `BIG-PAR-365` — Add dashboard contract path traversal coverage; `BIG-PAR-367` — Add dashboard contract non-map path traversal coverage; `BIG-PAR-369` — Add ClawHost workflow empty-audit coverage; `BIG-PAR-370` — Add ClawHost workflow report empty-state coverage
-  - queue status: `queue_runnable=1`, `target_in_progress=2`
+  - recently completed slices: `BIG-PAR-360` — Add console helper and design-system coverage; `BIG-PAR-362` — Add ClawHost workflow helper threshold coverage; `BIG-PAR-364` — Add ClawHost rollout audit edge coverage; `BIG-PAR-365` — Add dashboard contract path traversal coverage; `BIG-PAR-367` — Add dashboard contract non-map path traversal coverage; `BIG-PAR-369` — Add ClawHost workflow empty-audit coverage; `BIG-PAR-370` — Add ClawHost workflow report empty-state coverage; `BIG-PAR-371` — Add rollout sorted-values blank-skip coverage
+  - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -200,6 +200,7 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-367` — Add dashboard contract non-map path traversal coverage
   - `BIG-PAR-369` — Add ClawHost workflow empty-audit coverage
   - `BIG-PAR-370` — Add ClawHost workflow report empty-state coverage
+  - `BIG-PAR-371` — Add rollout sorted-values blank-skip coverage
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
