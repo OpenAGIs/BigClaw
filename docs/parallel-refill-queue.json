@@ -161,11 +161,10 @@
       "BIG-PAR-369",
       "BIG-PAR-370",
       "BIG-PAR-371",
-      "BIG-PAR-372"
-    ],
-    "active": [
+      "BIG-PAR-372",
       "BIG-PAR-373"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1214,7 +1213,7 @@
       "identifier": "BIG-PAR-373",
       "title": "Add ClawHost merged review-doc regression coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
