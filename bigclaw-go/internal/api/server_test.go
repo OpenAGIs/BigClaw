@@ -1736,16 +1736,19 @@ func TestDebugStatusScopesClawHostSurfacesByFilters(t *testing.T) {
 			} `json:"summary"`
 		} `json:"clawhost_workflow_surface"`
 		Rollout struct {
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				ActivePlans int `json:"active_plans"`
 			} `json:"summary"`
 		} `json:"clawhost_rollout_surface"`
 		Readiness struct {
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				Targets int `json:"targets"`
 			} `json:"summary"`
 		} `json:"clawhost_readiness_surface"`
 		Recovery struct {
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				Targets int `json:"targets"`
 			} `json:"summary"`
@@ -1765,6 +1768,15 @@ func TestDebugStatusScopesClawHostSurfacesByFilters(t *testing.T) {
 	}
 	if decoded.Workflow.Filters["team"] != "platform" || decoded.Workflow.Filters["project"] != "sales" || decoded.Workflow.Filters["actor"] != "workflow-operator" {
 		t.Fatalf("expected scoped debug workflow filters, got %+v", decoded.Workflow.Filters)
+	}
+	if decoded.Rollout.Filters["team"] != "platform" || decoded.Rollout.Filters["project"] != "sales" {
+		t.Fatalf("expected scoped debug rollout filters, got %+v", decoded.Rollout.Filters)
+	}
+	if decoded.Readiness.Filters["team"] != "platform" || decoded.Readiness.Filters["project"] != "sales" {
+		t.Fatalf("expected scoped debug readiness filters, got %+v", decoded.Readiness.Filters)
+	}
+	if decoded.Recovery.Filters["team"] != "platform" || decoded.Recovery.Filters["project"] != "sales" {
+		t.Fatalf("expected scoped debug recovery filters, got %+v", decoded.Recovery.Filters)
 	}
 	if decoded.Workflow.Summary.WorkflowItems != 1 || decoded.Rollout.Summary.ActivePlans != 1 || decoded.Readiness.Summary.Targets != 1 || decoded.Recovery.Summary.Targets != 1 {
 		t.Fatalf("expected scoped debug ClawHost surfaces, got workflow=%+v rollout=%+v readiness=%+v recovery=%+v", decoded.Workflow, decoded.Rollout, decoded.Readiness, decoded.Recovery)

@@ -133,7 +133,8 @@
       "BIG-PAR-332",
       "BIG-PAR-333",
       "BIG-PAR-334",
-      "BIG-PAR-335"
+      "BIG-PAR-335",
+      "BIG-PAR-336"
     ],
     "active": [],
     "standby": []
@@ -255,7 +256,8 @@
     "BIG-PAR-333",
     "BIG-PAR-334",
     "BIG-PAR-335",
-    "BIG-PAR-336"
+    "BIG-PAR-336",
+    "BIG-PAR-337"
   ],
   "issues": [
     {
@@ -987,6 +989,12 @@
     {
       "identifier": "BIG-PAR-336",
       "title": "Add workflow filter assertions to API regressions",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-337",
+      "title": "Add scoped debug filter assertions for remaining ClawHost surfaces",
       "track": "Go Mainline Follow-ups",
       "status": "In"
     }
