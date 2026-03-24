@@ -4388,6 +4388,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Pinned the idle ClawHost workflow-lane filter map in product regressions so the default actor/team/project scope stays explicitly covered alongside the operational-signal baseline. Validation: cd bigclaw-go && go test ./internal/product -run 'TestBuildClawHostWorkflowLaneSurfaceIdleSignals' -count=1 -> ok; cd bigclaw-go && go test ./internal/api ./internal/product -count=1 -> ok. Commit SHA: 5d7c15eac05275885f7cdf11a98d8a798531dd23. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-24T22:04:35Z"
+        }
+      ],
       "created_at": "2026-03-24T22:03:07Z",
       "description": "Extend the ClawHost workflow-lane product regressions to assert the idle/default actor/team/project filter map so the lane surface stays aligned with the other ClawHost product defaults.",
       "id": "big-par-345",
@@ -4400,9 +4407,9 @@
         "test"
       ],
       "priority": 3,
-      "state": "In",
+      "state": "Done",
       "title": "Pin workflow-lane idle filter maps in regressions",
-      "updated_at": "2026-03-24T22:03:07Z"
+      "updated_at": "2026-03-24T22:04:35Z"
     }
   ]
 }
