@@ -140,7 +140,8 @@
       "BIG-PAR-339",
       "BIG-PAR-340",
       "BIG-PAR-341",
-      "BIG-PAR-342"
+      "BIG-PAR-342",
+      "BIG-PAR-343"
     ],
     "active": [],
     "standby": []
@@ -1044,7 +1045,7 @@
       "identifier": "BIG-PAR-343",
       "title": "Pin default fleet filter maps in regressions",
       "track": "Go Mainline Follow-ups",
-      "status": "In"
+      "status": "Done"
     }
   ]
 }
