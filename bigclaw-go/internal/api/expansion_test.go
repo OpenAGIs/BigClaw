@@ -1340,3 +1340,47 @@ func TestV2ClawHostEndpointsRejectNonGETMethods(t *testing.T) {
 		}
 	}
 }
+
+func TestClawHostScopeFilters(t *testing.T) {
+	t.Run("trims query values and prefers actor query over header", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=%20platform%20&project=%20apollo%20&actor=%20query-actor%20", nil)
+		request.Header.Set("X-BigClaw-Actor", "header-actor")
+
+		team, project, actor := clawHostScopeFilters(request)
+		if team != "platform" || project != "apollo" || actor != "query-actor" {
+			t.Fatalf("unexpected normalized scope filters: team=%q project=%q actor=%q", team, project, actor)
+		}
+	})
+
+	t.Run("falls back to trimmed actor header", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=platform&project=apollo", nil)
+		request.Header.Set("X-BigClaw-Actor", " header-actor ")
+
+		team, project, actor := clawHostScopeFilters(request)
+		if team != "platform" || project != "apollo" || actor != "header-actor" {
+			t.Fatalf("unexpected header fallback scope filters: team=%q project=%q actor=%q", team, project, actor)
+		}
+	})
+}
+
+func TestClawHostExportURL(t *testing.T) {
+	t.Run("omits empty filters", func(t *testing.T) {
+		if url := clawHostExportURL("/v2/clawhost/workflows/export", "", "", ""); url != "/v2/clawhost/workflows/export" {
+			t.Fatalf("expected export url without query string when filters are empty, got %s", url)
+		}
+	})
+
+	t.Run("normalizes filters and preserves query actor precedence output", func(t *testing.T) {
+		exportURL := clawHostExportURL("/v2/clawhost/workflows/export", " platform ", " apollo ", " query-actor ")
+		parsed, err := url.Parse(exportURL)
+		if err != nil {
+			t.Fatalf("parse normalized export url: %v", err)
+		}
+		if parsed.Query().Get("team") != "platform" || parsed.Query().Get("project") != "apollo" || parsed.Query().Get("actor") != "query-actor" {
+			t.Fatalf("unexpected normalized export query: %s", exportURL)
+		}
+		if strings.Contains(exportURL, "%20") {
+			t.Fatalf("expected export url without encoded whitespace, got %s", exportURL)
+		}
+	})
+}
