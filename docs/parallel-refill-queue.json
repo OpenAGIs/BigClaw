@@ -165,11 +165,10 @@
       "BIG-PAR-364",
       "BIG-PAR-365",
       "BIG-PAR-366",
-      "BIG-PAR-367"
-    ],
-    "active": [
+      "BIG-PAR-367",
       "BIG-PAR-368"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1246,7 +1245,7 @@
       "identifier": "BIG-PAR-368",
       "title": "Broaden direct recovery builder coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
