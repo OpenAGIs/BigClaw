@@ -4607,6 +4607,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go coverage for console design-system and helper contracts in `bigclaw-go/internal/product/console_test.go`, including `DefaultDesignSystem`, `aggregate`, `normalizeRole`, and `SummaryText`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_console.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_console.cover | head -n 40` -> `DefaultDesignSystem 100.0%`, `aggregate 100.0%`, `normalizeRole 100.0%`, `SummaryText 100.0%`\n\nCommit: `36e7ecad46ac43f96856259e695dda782b5cc854`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:08:50Z"
+        }
+      ],
       "created_at": "2026-03-24T22:07:10Z",
       "description": "Add narrow Go tests covering DefaultDesignSystem, aggregate, normalizeRole, and SummaryText behavior in console.go.",
       "id": "big-par-360",
@@ -4618,12 +4625,19 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add console helper and design-system coverage",
-      "updated_at": "2026-03-24T22:07:10Z"
+      "updated_at": "2026-03-24T22:08:50Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go coverage for console navigation and role-based home cards in `bigclaw-go/internal/product/console_test.go`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_console.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_console.cover | head -n 40` -> `Navigation 100.0%`, `HomeForRole 100.0%`\n\nCommit: `36e7ecad46ac43f96856259e695dda782b5cc854`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:08:50Z"
+        }
+      ],
       "created_at": "2026-03-24T22:07:10Z",
       "description": "Add narrow Go tests covering Navigation and HomeForRole behavior for key roles and task aggregates in console.go.",
       "id": "big-par-359",
@@ -4635,9 +4649,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add console navigation and home-role coverage",
-      "updated_at": "2026-03-24T22:07:10Z"
+      "updated_at": "2026-03-24T22:08:50Z"
     }
   ]
 }
