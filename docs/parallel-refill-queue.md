@@ -47,11 +47,11 @@ longer waits on Linear to keep issue execution moving.
 
 ## Current batch
 
-- Current repo tranche status as of March 25, 2026:
-  - active slices: `BIG-PAR-340` — Add saved view report empty-state coverage; `BIG-PAR-339` — Add saved view audit readiness edge coverage
+- Current repo tranche status as of March 24, 2026:
+  - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-331` — Add savedViewScopeToken helper coverage; `BIG-PAR-332` — Add buildSavedViewRoute blank-scope coverage; `BIG-PAR-333` — Add viewScopeSuffix punctuation-fallback coverage; `BIG-PAR-334` — Add normalizedViewOwner helper coverage; `BIG-PAR-335` — Add digestRecipients helper coverage; `BIG-PAR-336` — Add saved view metric helper coverage; `BIG-PAR-338` — Add saved view rendering helper coverage; `BIG-PAR-337` — Add saved view scope and duplicate helper coverage
-  - queue status: `queue_runnable=2`, `target_in_progress=2`
+  - recently completed slices: `BIG-PAR-333` — Add viewScopeSuffix punctuation-fallback coverage; `BIG-PAR-334` — Add normalizedViewOwner helper coverage; `BIG-PAR-335` — Add digestRecipients helper coverage; `BIG-PAR-336` — Add saved view metric helper coverage; `BIG-PAR-338` — Add saved view rendering helper coverage; `BIG-PAR-337` — Add saved view scope and duplicate helper coverage; `BIG-PAR-340` — Add saved view report empty-state coverage; `BIG-PAR-339` — Add saved view audit readiness edge coverage
+  - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -177,6 +177,8 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-336` — Add saved view metric helper coverage
   - `BIG-PAR-338` — Add saved view rendering helper coverage
   - `BIG-PAR-337` — Add saved view scope and duplicate helper coverage
+  - `BIG-PAR-340` — Add saved view report empty-state coverage
+  - `BIG-PAR-339` — Add saved view audit readiness edge coverage
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration

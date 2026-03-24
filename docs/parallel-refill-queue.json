@@ -136,12 +136,11 @@
       "BIG-PAR-335",
       "BIG-PAR-336",
       "BIG-PAR-338",
-      "BIG-PAR-337"
-    ],
-    "active": [
+      "BIG-PAR-337",
       "BIG-PAR-340",
       "BIG-PAR-339"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1016,13 +1015,13 @@
       "identifier": "BIG-PAR-340",
       "title": "Add saved view report empty-state coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-339",
       "title": "Add saved view audit readiness edge coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
