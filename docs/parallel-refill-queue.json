@@ -123,11 +123,10 @@
       "BIG-PAR-322",
       "BIG-PAR-323",
       "BIG-PAR-324",
-      "BIG-PAR-325"
-    ],
-    "active": [
+      "BIG-PAR-325",
       "BIG-PAR-326"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -910,7 +909,7 @@
       "identifier": "BIG-PAR-326",
       "title": "Expose ClawHost workflow report filters and operational signals",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
