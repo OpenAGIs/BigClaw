@@ -28,6 +28,34 @@ func TestBuildDefaultClawHostRolloutPlannerUsesTaskTenantsAndApps(t *testing.T) 
 	}
 }
 
+func TestBuildDefaultClawHostRolloutPlannerFallsBackToProjectAndDefaults(t *testing.T) {
+	t.Run("project fallback", func(t *testing.T) {
+		plan := BuildDefaultClawHostRolloutPlanner(nil, "platform", "apollo")
+		if plan.Filters["team"] != "platform" || plan.Filters["project"] != "apollo" {
+			t.Fatalf("unexpected filters: %+v", plan.Filters)
+		}
+		if plan.Summary.TenantCount != 3 || plan.Summary.AppCount != 1 {
+			t.Fatalf("unexpected fallback rollout summary: %+v", plan.Summary)
+		}
+		if len(plan.Waves) != 3 || len(plan.Waves[0].TargetApps) != 1 || plan.Waves[0].TargetApps[0] != "apollo" {
+			t.Fatalf("expected project fallback app in rollout waves, got %+v", plan.Waves)
+		}
+		if len(plan.Waves[2].TargetApps) != 1 || plan.Waves[2].TargetApps[0] != "apollo" {
+			t.Fatalf("expected app fanout to use project fallback app, got %+v", plan.Waves[2])
+		}
+	})
+
+	t.Run("empty project fallback", func(t *testing.T) {
+		plan := BuildDefaultClawHostRolloutPlanner(nil, "", "")
+		if len(plan.Waves) != 3 || len(plan.Waves[0].TargetApps) != 1 || plan.Waves[0].TargetApps[0] != "clawhost-app" {
+			t.Fatalf("expected default app fallback in rollout waves, got %+v", plan.Waves)
+		}
+		if len(plan.Waves[2].TargetApps) != 1 || plan.Waves[2].TargetApps[0] != "clawhost-app" {
+			t.Fatalf("expected default app fallback in app fanout wave, got %+v", plan.Waves[2])
+		}
+	})
+}
+
 func TestAuditClawHostRolloutPlannerDetectsGaps(t *testing.T) {
 	plan := BuildDefaultClawHostRolloutPlanner(nil, "", "")
 	plan.Waves[0].WaveID = plan.Waves[1].WaveID
