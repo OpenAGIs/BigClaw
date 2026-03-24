@@ -148,11 +148,13 @@
       "BIG-PAR-349",
       "BIG-PAR-352",
       "BIG-PAR-351",
-      "BIG-PAR-353"
-    ],
-    "active": [
+      "BIG-PAR-353",
       "BIG-PAR-355",
       "BIG-PAR-356"
+    ],
+    "active": [
+      "BIG-PAR-358",
+      "BIG-PAR-357"
     ],
     "standby": []
   },
@@ -289,7 +291,9 @@
     "BIG-PAR-351",
     "BIG-PAR-353",
     "BIG-PAR-355",
-    "BIG-PAR-356"
+    "BIG-PAR-356",
+    "BIG-PAR-358",
+    "BIG-PAR-357"
   ],
   "issues": [
     {
@@ -1112,11 +1116,23 @@
       "identifier": "BIG-PAR-355",
       "title": "Add invalid-visibility audit coverage for saved view catalogs",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-356",
       "title": "Add direct missing-recipient audit assertions for saved view digests",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-358",
+      "title": "Add ClawHost fleet helper regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-357",
+      "title": "Add ClawHost fleet inventory alias wrapper coverage",
       "track": "Go Mainline Follow-ups",
       "status": "In Progress"
     }
