@@ -101,6 +101,9 @@ func TestRenderClawHostLifecycleRecoveryReport(t *testing.T) {
 	report := RenderClawHostLifecycleRecoveryReport(scorecard, audit)
 	for _, want := range []string{
 		"# ClawHost Lifecycle Recovery Scorecard",
+		"## Filters",
+		"- project: apollo",
+		"- team: platform",
 		"Recoverable Bots: 1/1",
 		"Per-Bot Isolation",
 		"platform-release-bot",
@@ -119,6 +122,9 @@ func TestRenderClawHostLifecycleRecoveryReportHandlesEmptyBots(t *testing.T) {
 
 	for _, want := range []string{
 		"# ClawHost Lifecycle Recovery Scorecard",
+		"## Filters",
+		"- project: phoenix",
+		"- team: support",
 		"Recoverable Bots: 0/0",
 		"## Per-Bot Isolation",
 		"Missing lifecycle coverage: none",

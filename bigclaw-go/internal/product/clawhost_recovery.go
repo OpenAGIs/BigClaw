@@ -249,9 +249,26 @@ func RenderClawHostLifecycleRecoveryReport(scorecard ClawHostLifecycleRecoverySc
 		fmt.Sprintf("- Recoverable Bots: %d/%d", scorecard.Summary.RecoverableBots, scorecard.Summary.BotCount),
 		fmt.Sprintf("- Isolated Bots: %d/%d", scorecard.Summary.IsolatedBots, scorecard.Summary.BotCount),
 		"",
-		"## Lifecycle Coverage",
+		"## Filters",
 		"",
 	}
+	filterKeys := make([]string, 0, len(scorecard.Filters))
+	for key := range scorecard.Filters {
+		filterKeys = append(filterKeys, key)
+	}
+	sort.Strings(filterKeys)
+	if len(filterKeys) == 0 {
+		lines = append(lines, "- none")
+	} else {
+		for _, key := range filterKeys {
+			lines = append(lines, fmt.Sprintf("- %s: %s", key, emptyFallback(scorecard.Filters[key], "none")))
+		}
+	}
+	lines = append(lines,
+		"",
+		"## Lifecycle Coverage",
+		"",
+	)
 	for _, action := range scorecard.Lifecycle {
 		lines = append(lines, fmt.Sprintf("- %s: supported=%t recovery_check=%s evidence=%s takeover_triggers=%s",
 			action.Action,

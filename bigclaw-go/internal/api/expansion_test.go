@@ -1133,7 +1133,11 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		if recoveryExportURL.Path != "/v2/clawhost/recovery-scorecard/export" || recoveryExportURL.Query().Get("team") != "platform" || recoveryExportURL.Query().Get("project") != "apollo" {
 			t.Fatalf("unexpected recovery export url: %s", decoded.Report.ExportURL)
 		}
-		if !strings.Contains(decoded.Report.Markdown, "# ClawHost Lifecycle Recovery Scorecard") || !strings.Contains(decoded.Report.Markdown, "Per-Bot Isolation") {
+		if !strings.Contains(decoded.Report.Markdown, "# ClawHost Lifecycle Recovery Scorecard") ||
+			!strings.Contains(decoded.Report.Markdown, "## Filters") ||
+			!strings.Contains(decoded.Report.Markdown, "- project: apollo") ||
+			!strings.Contains(decoded.Report.Markdown, "- team: platform") ||
+			!strings.Contains(decoded.Report.Markdown, "Per-Bot Isolation") {
 			t.Fatalf("unexpected recovery markdown: %s", decoded.Report.Markdown)
 		}
 
@@ -1145,7 +1149,11 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 			t.Fatalf("expected recovery export markdown content type, got %q", contentType)
 		}
-		if !strings.Contains(exportResponse.Body.String(), "platform-release-bot") || !strings.Contains(exportResponse.Body.String(), "Recoverable Bots: 1/1") || strings.Contains(exportResponse.Body.String(), "growth-campaign-bot") {
+		if !strings.Contains(exportResponse.Body.String(), "platform-release-bot") ||
+			!strings.Contains(exportResponse.Body.String(), "Recoverable Bots: 1/1") ||
+			!strings.Contains(exportResponse.Body.String(), "- project: apollo") ||
+			!strings.Contains(exportResponse.Body.String(), "- team: platform") ||
+			strings.Contains(exportResponse.Body.String(), "growth-campaign-bot") {
 			t.Fatalf("unexpected recovery export body: %s", exportResponse.Body.String())
 		}
 	})
