@@ -5255,7 +5255,8 @@ func TestV2ControlCenterIncludesCompleteClawHostSurfaceBundle(t *testing.T) {
 	}
 	var decoded struct {
 		Policy struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				ActivePolicies int `json:"active_policies"`
 			} `json:"summary"`
@@ -5294,6 +5295,9 @@ func TestV2ControlCenterIncludesCompleteClawHostSurfaceBundle(t *testing.T) {
 	}
 	if decoded.Policy.Status != "active" || decoded.Policy.Summary.ActivePolicies != 1 {
 		t.Fatalf("expected active ClawHost policy surface in bundle, got %+v", decoded.Policy)
+	}
+	if decoded.Policy.Filters["team"] != "" || decoded.Policy.Filters["project"] != "" {
+		t.Fatalf("expected unscoped ClawHost policy filters in bundle, got %+v", decoded.Policy.Filters)
 	}
 	if decoded.Workflow.Status != "active" || decoded.Workflow.Summary.WorkflowItems != 1 {
 		t.Fatalf("expected active ClawHost workflow surface in bundle, got %+v", decoded.Workflow)
@@ -5430,6 +5434,7 @@ func TestV2ControlCenterScopesClawHostSurfaceBundleByFilters(t *testing.T) {
 	}
 	var decoded struct {
 		Policy struct {
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				ActivePolicies int `json:"active_policies"`
 			} `json:"summary"`
@@ -5484,6 +5489,9 @@ func TestV2ControlCenterScopesClawHostSurfaceBundleByFilters(t *testing.T) {
 	}
 	if decoded.Policy.Summary.ActivePolicies != 1 || len(decoded.Policy.ReviewQueue) != 1 || decoded.Policy.ReviewQueue[0].TaskID != "clawhost-filtered-1" {
 		t.Fatalf("expected scoped policy surface, got %+v", decoded.Policy)
+	}
+	if decoded.Policy.Filters["team"] != "platform" || decoded.Policy.Filters["project"] != "sales" {
+		t.Fatalf("expected scoped policy filters, got %+v", decoded.Policy.Filters)
 	}
 	if containsString(decoded.Policy.ObservedProviders, "anthropic") || !containsString(decoded.Policy.ObservedProviders, "openai") {
 		t.Fatalf("expected scoped policy providers, got %+v", decoded.Policy.ObservedProviders)

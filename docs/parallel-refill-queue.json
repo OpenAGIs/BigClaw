@@ -135,7 +135,8 @@
       "BIG-PAR-334",
       "BIG-PAR-335",
       "BIG-PAR-336",
-      "BIG-PAR-337"
+      "BIG-PAR-337",
+      "BIG-PAR-338"
     ],
     "active": [],
     "standby": []
@@ -259,7 +260,8 @@
     "BIG-PAR-335",
     "BIG-PAR-336",
     "BIG-PAR-337",
-    "BIG-PAR-338"
+    "BIG-PAR-338",
+    "BIG-PAR-339"
   ],
   "issues": [
     {
@@ -1003,6 +1005,12 @@
     {
       "identifier": "BIG-PAR-338",
       "title": "Add unscoped bundle filter assertions for remaining ClawHost surfaces",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-339",
+      "title": "Add policy filter assertions to bundle regressions",
       "track": "Go Mainline Follow-ups",
       "status": "In"
     }
