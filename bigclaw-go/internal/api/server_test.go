@@ -75,6 +75,20 @@ func containsString(values []string, want string) bool {
 	return false
 }
 
+type countingInspectorQueue struct {
+	*queue.MemoryQueue
+	listCalls int
+}
+
+func (q *countingInspectorQueue) GetTask(ctx context.Context, taskID string) (queue.TaskSnapshot, error) {
+	return q.MemoryQueue.GetTask(ctx, taskID)
+}
+
+func (q *countingInspectorQueue) ListTasks(ctx context.Context, limit int) ([]queue.TaskSnapshot, error) {
+	q.listCalls++
+	return q.MemoryQueue.ListTasks(ctx, limit)
+}
+
 type blockingEventLog struct {
 	history       []domain.Event
 	replayStarted chan struct{}
@@ -1523,6 +1537,64 @@ func TestDebugStatusIncludesClawHostRecoverySurface(t *testing.T) {
 	}
 	if len(decoded.Recovery.Targets) != 2 || decoded.Recovery.Targets[0].RecoveryStatus != "degraded" {
 		t.Fatalf("expected degraded recovery target sorted first, got %+v", decoded.Recovery.Targets)
+	}
+}
+
+func TestDebugStatusReusesSingleClawHostTaskSnapshot(t *testing.T) {
+	now := time.Unix(1700010365, 0)
+	taskQueue := &countingInspectorQueue{MemoryQueue: queue.NewMemoryQueue()}
+	task := domain.Task{
+		ID:       "clawhost-debug-shared-1",
+		Source:   "clawhost",
+		TenantID: "tenant-a",
+		State:    domain.TaskQueued,
+		Metadata: map[string]string{
+			"control_plane":               "clawhost",
+			"inventory_kind":              "claw",
+			"claw_id":                     "claw-a",
+			"claw_name":                   "sales-west",
+			"provider":                    "openai",
+			"provider_status":             "running",
+			"clawhost_app_id":             "sales-app",
+			"clawhost_default_provider":   "openai",
+			"clawhost_provider_mode":      "app_default",
+			"clawhost_provider_allowlist": "anthropic,openai",
+			"skill_count":                 "3",
+			"agent_skill_count":           "4",
+			"channel_types":               "discord,telegram",
+			"whatsapp_pairing_status":     "waiting",
+			"domain":                      "sales-west.clawhost.cloud",
+			"proxy_mode":                  "http_ws_gateway",
+			"gateway_port":                "18789",
+			"reachable":                   "true",
+			"admin_ui_enabled":            "true",
+			"websocket_reachable":         "true",
+			"subdomain_ready":             "true",
+			"version_status":              "current",
+			"version_current":             "0.0.31",
+			"version_latest":              "0.0.31",
+			"clawhost_update_available":   "true",
+			"clawhost_takeover_required":  "true",
+			"clawhost_lifecycle_actions":  "start,restart,upgrade",
+			"clawhost_pod_isolation":      "true",
+			"clawhost_service_isolation":  "true",
+			"clawhost_takeover_triggers":  "proxy health regresses,session restore fails",
+			"clawhost_recovery_evidence":  "GET /status,/v2/reports/distributed",
+		},
+		UpdatedAt: now,
+	}
+	if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+		t.Fatalf("enqueue task: %v", err)
+	}
+	server := &Server{Recorder: observability.NewRecorder(), Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d %s", response.Code, response.Body.String())
+	}
+	if taskQueue.listCalls != 1 {
+		t.Fatalf("expected a single ClawHost task snapshot, got %d list calls", taskQueue.listCalls)
 	}
 }
 
