@@ -32,6 +32,7 @@ type Runtime struct {
 	Control     *control.Controller
 	LeaseTTL    time.Duration
 	TaskTimeout time.Duration
+	Backoff     BackoffPolicy
 	WorkpadDir  string
 	Now         func() time.Time
 	statusMu    sync.Mutex
@@ -87,6 +88,10 @@ func (r *Runtime) Snapshot() Status {
 		snapshot.State = "idle"
 	}
 	return snapshot
+}
+
+func (r *Runtime) retryAvailableAt(reason BackoffReason, attempt int) time.Time {
+	return r.now().Add(r.Backoff.Resolve(reason, attempt))
 }
 
 func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bool {

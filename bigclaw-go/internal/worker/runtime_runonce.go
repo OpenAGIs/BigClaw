@@ -28,6 +28,7 @@ func (r *Runtime) ensureDefaults() {
 	if r.TaskTimeout <= 0 {
 		r.TaskTimeout = 30 * time.Second
 	}
+	r.Backoff = r.Backoff.withDefaults()
 }
 
 func (r *Runtime) acquireLeasedTask(ctx context.Context) (*leasedTaskRun, bool) {
@@ -72,7 +73,7 @@ func (r *Runtime) handleTakeoverHold(ctx context.Context, run *leasedTaskRun) bo
 	if !ok || !takeover.Active {
 		return false
 	}
-	_ = r.Queue.Requeue(ctx, run.lease, time.Now().Add(250*time.Millisecond))
+	_ = r.Queue.Requeue(ctx, run.lease, r.retryAvailableAt(BackoffTakeoverHold, run.lease.Attempt))
 	run.task.State = domain.TaskBlocked
 	run.task.UpdatedAt = r.now()
 	r.recordWorkpad(run.journal, "control-takeover", "blocked", map[string]any{
@@ -204,7 +205,7 @@ func (r *Runtime) handleRejectedAssessment(ctx context.Context, run *leasedTaskR
 	}
 	r.recordWorkpad(run.journal, "execution", "retried", map[string]any{"reason": assessment.Decision.Reason})
 	r.persistWorkpad(run.task, run.lease, run.journal)
-	_ = r.Queue.Requeue(ctx, run.lease, time.Now().Add(100*time.Millisecond))
+	_ = r.Queue.Requeue(ctx, run.lease, r.retryAvailableAt(BackoffSchedulerRetry, run.lease.Attempt))
 	finishedAt := time.Now()
 	closeout := workflow.BuildCloseout(workflow.CloseoutInput{
 		Task:           *run.task,
@@ -343,7 +344,7 @@ func (r *Runtime) handleMissingRunner(ctx context.Context, run *leasedTaskRun, e
 }
 
 func (r *Runtime) handlePreemptionRetry(ctx context.Context, run *leasedTaskRun, executorKind domain.ExecutorKind, err error) {
-	_ = r.Queue.Requeue(ctx, run.lease, time.Now().Add(100*time.Millisecond))
+	_ = r.Queue.Requeue(ctx, run.lease, r.retryAvailableAt(BackoffPreemption, run.lease.Attempt))
 	r.recordWorkpad(run.journal, "execution", "retried", map[string]any{"reason": err.Error()})
 	r.persistWorkpad(run.task, run.lease, run.journal)
 	finishedAt := time.Now()
@@ -558,7 +559,7 @@ func (r *Runtime) finalizeExecutionResult(ctx, execCtx context.Context, run *lea
 			Payload:   runtimeTerminalPayload(run.runID, runner.Kind(), result.Message, result.Artifacts, finishedAt, closeout, false),
 		})
 	default:
-		_ = r.Queue.Requeue(ctx, run.lease, time.Now().Add(200*time.Millisecond))
+		_ = r.Queue.Requeue(ctx, run.lease, r.retryAvailableAt(BackoffExecutionRetry, run.lease.Attempt))
 		transition := string(domain.EventTaskRetried)
 		extra := func(status *Status) {
 			status.RetriedRuns++
