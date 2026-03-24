@@ -3060,6 +3060,11 @@
           "author": "codex",
           "body": "Status refresh on March 25, 2026: PR `#186` is now merge-ready after the merge reconciliation commit retriggered CI. GitHub currently reports `https://github.com/OpenAGIs/BigClaw/pull/186` as `OPEN` with `mergeStateStatus: CLEAN`, and the `test` workflow for branch head `645943f7c6d5f2970d32b432951b8f0ffe5add66` completed `SUCCESS` at `2026-03-24T22:41:32Z`.\n\nValidation:\n- `gh pr view 186 --json url,title,state,mergeStateStatus,statusCheckRollup` -> `OPEN`, `CLEAN`, successful completed `test` check\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `645943f7c6d5f2970d32b432951b8f0ffe5add66` matches remote SHA `645943f7c6d5f2970d32b432951b8f0ffe5add66` with `status: ok` and `synced: true`\n- `git status --short --branch` -> clean branch\n- `git log -1 --stat` -> captured for commit `645943f7c6d5f2970d32b432951b8f0ffe5add66`\n\nCommit SHA: `645943f7c6d5f2970d32b432951b8f0ffe5add66`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
           "created_at": "2026-03-24T22:43:30Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout on March 25, 2026: PR `#186` (`Add ClawHost Go control-plane surfaces and saved-view helper regressions`) merged into `main` at `2026-03-24T22:44:16Z` with merge commit `bd854cd1f53808d529d7ae7413f01320eeeef337`. The branch remains locally clean and synced after merge, and no runnable refill candidates remain for this tranche.\n\nValidation:\n- `gh pr view 186 --json url,title,state,mergedAt,mergeCommit,mergeStateStatus` -> `MERGED` with merge commit `bd854cd1f53808d529d7ae7413f01320eeeef337`\n- `git push origin HEAD` -> `Everything up-to-date`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `4381b18f1a095ad98fd8faafef526c2b643c0c4c` matches remote SHA `4381b18f1a095ad98fd8faafef526c2b643c0c4c` with `status: ok` and `synced: true`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> queue remains drained with no active `In Progress` slices and no promotion candidates\n- `git log -1 --stat` -> captured for commit `4381b18f1a095ad98fd8faafef526c2b643c0c4c`\n\nCommit SHA: `4381b18f1a095ad98fd8faafef526c2b643c0c4c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:46:30Z"
         }
       ],
       "created_at": "2026-03-24T15:47:40Z",
@@ -3076,7 +3081,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-24T22:43:30Z"
+      "updated_at": "2026-03-24T22:46:30Z"
     },
     {
       "assigned_to_worker": true,
