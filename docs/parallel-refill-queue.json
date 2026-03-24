@@ -138,7 +138,8 @@
       "BIG-PAR-337",
       "BIG-PAR-338",
       "BIG-PAR-339",
-      "BIG-PAR-340"
+      "BIG-PAR-340",
+      "BIG-PAR-341"
     ],
     "active": [],
     "standby": []
@@ -1028,7 +1029,7 @@
       "identifier": "BIG-PAR-341",
       "title": "Add scoped debug policy filter assertion",
       "track": "Go Mainline Follow-ups",
-      "status": "In"
+      "status": "Done"
     }
   ]
 }
