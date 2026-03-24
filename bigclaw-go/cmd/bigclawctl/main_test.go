@@ -801,6 +801,9 @@ func TestRunRefillOnceLocalDryRunReportsQueueDriftWithoutMutatingQueue(t *testin
 	if !bytes.Contains(output, []byte(`"recent_batches_written": false`)) {
 		t.Fatalf("expected dry-run recent batch write flag to remain false, got %s", string(output))
 	}
+	if !bytes.Contains(output, []byte(`"markdown_written": false`)) {
+		t.Fatalf("expected dry-run markdown write flag to remain false, got %s", string(output))
+	}
 
 	body, err := os.ReadFile(queuePath)
 	if err != nil {
