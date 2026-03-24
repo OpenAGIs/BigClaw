@@ -13,6 +13,12 @@
 - Targeted automated tests cover the new behavior.
 
 ## Validation
-- Run focused test commands for operations analytics/report rendering.
-- Review generated diff for issue scope.
-- Commit on `BIGCLAW-179` and push to `origin/BIGCLAW-179`.
+- `pytest tests/test_operations.py` -> failed (`pytest: command not found`)
+- `python -m pytest tests/test_operations.py` -> failed (`python: command not found`)
+- `python3 -m pytest tests/test_operations.py` -> passed (`21 passed in 0.10s`)
+- Reviewed issue-scoped diff in `.symphony/workpad.md`, `src/bigclaw/operations.py`, and `tests/test_operations.py`.
+- Committed implementation to `BIGCLAW-179` and pushed to `origin/BIGCLAW-179`.
+
+## Status
+- Completed on branch `BIGCLAW-179`.
+- Implementation commit: `1c9aec1` (`BIGCLAW-179 add queue heat and congestion panels`)
