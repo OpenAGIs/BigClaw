@@ -162,11 +162,10 @@
       "BIG-PAR-361",
       "BIG-PAR-362",
       "BIG-PAR-363",
-      "BIG-PAR-364"
-    ],
-    "active": [
+      "BIG-PAR-364",
       "BIG-PAR-365"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1222,7 +1221,7 @@
       "identifier": "BIG-PAR-365",
       "title": "Add product console unit coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
