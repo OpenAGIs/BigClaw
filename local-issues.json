@@ -4688,6 +4688,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct product-package coverage for clawHostSortedValues, clawHostFirstNonEmpty, clawHostMin, and clawHostMax in bigclaw-go/internal/product/clawhost_rollout_test.go so ClawHost rollout helpers now pin sorted unique extraction plus lower/upper bound behavior outside the broader planner tests. Validation: cd bigclaw-go && go test ./internal/product -> ok; cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/clawhost-product.cover && go tool cover -func=/tmp/clawhost-product.cover | rg 'clawhost_rollout.go:259|clawhost_rollout.go:277|clawhost_rollout.go:316|clawhost_rollout.go:323|total:' -> clawHostSortedValues 100.0%, clawHostFirstNonEmpty 100.0%, clawHostMin 100.0%, clawHostMax 100.0%, total 90.8%; bash scripts/ops/bigclawctl github-sync status --json -> local SHA c0363d8c96ee83fbd71d16bbab5d81436c0a17fa matches remote SHA c0363d8c96ee83fbd71d16bbab5d81436c0a17fa with status ok and synced true; git log -1 --stat -> captured for commit c0363d8c96ee83fbd71d16bbab5d81436c0a17fa with clawhost rollout test and tracker files in the stat output. Commit SHA: c0363d8c96ee83fbd71d16bbab5d81436c0a17fa. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-24T22:54:41Z"
+        }
+      ],
       "created_at": "2026-03-24T22:53:25Z",
       "description": "Add focused product-package coverage for ClawHost rollout helper branches so sorted tenant/app extraction and min/max helper fallbacks stay pinned across empty, duplicate, and inverted inputs.",
       "id": "big-par-357",
@@ -4700,9 +4707,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add ClawHost rollout helper unit coverage",
-      "updated_at": "2026-03-24T22:53:25Z"
+      "updated_at": "2026-03-24T22:54:41Z"
     }
   ]
 }
