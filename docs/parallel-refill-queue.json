@@ -103,11 +103,10 @@
       "BIG-PAR-302",
       "BIG-PAR-303",
       "BIG-PAR-304",
-      "BIG-PAR-305"
-    ],
-    "active": [
+      "BIG-PAR-305",
       "BIG-PAR-306"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -750,7 +749,7 @@
       "identifier": "BIG-PAR-306",
       "title": "Add workflow endpoint header-actor export URL coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
