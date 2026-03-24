@@ -1166,12 +1166,12 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		"queue_status_updates":       queueStatusUpdates,
 		"queue_recent_batch_updates": queueRecentBatchUpdates,
 		"queue_status_written":       queueStatusWritten,
-		"queue_path":                 queuePath,
-		"markdown_path":              markdownPath,
+		"queue_path":                 absPath(queuePath),
+		"markdown_path":              absPath(markdownPath),
 		"markdown_written":           markdownWritten,
 	}
 	if trim(localIssuesPath) != "" {
-		payload["local_issues_path"] = localIssuesPath
+		payload["local_issues_path"] = absPath(localIssuesPath)
 	}
 	queueRunnable := queue.RunnableCount()
 	if client.backend() == "local" {

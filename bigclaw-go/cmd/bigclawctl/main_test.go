@@ -328,6 +328,86 @@ func TestRunRefillOnceLocalIssueStoreDetectsQueueDrainedWhenMetadataStale(t *tes
 	}
 }
 
+func TestRunRefillOnceReportsAbsolutePathsForRelativeInputs(t *testing.T) {
+	tempDir := t.TempDir()
+	originalWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	if err := os.Chdir(tempDir); err != nil {
+		t.Fatalf("chdir tempdir: %v", err)
+	}
+	defer func() {
+		_ = os.Chdir(originalWD)
+	}()
+
+	queuePath := "queue.json"
+	markdownPath := "queue.md"
+	storePath := "local-issues.json"
+	if err := os.WriteFile(queuePath, []byte(`{
+  "project": {"slug_id": "project-slug"},
+  "policy": {
+    "target_in_progress": 1,
+    "activate_state_name": "In Progress",
+    "activate_state_id": "state-in-progress",
+    "refill_states": ["Todo", "Backlog"]
+  },
+  "issue_order": ["BIG-GOM-303"],
+  "issues": [
+    {"identifier": "BIG-GOM-303", "title": "Workflow loop parity", "track": "Control/Workflow", "status": "Done"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write queue file: %v", err)
+	}
+	queue, err := refill.LoadQueue(queuePath)
+	if err != nil {
+		t.Fatalf("load queue: %v", err)
+	}
+
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {"id": "big-gom-303", "identifier": "BIG-GOM-303", "state": "Done"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+	store, err := refill.LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	client := &localIssueClient{store: store}
+
+	absoluteQueuePath := filepath.Join(tempDir, queuePath)
+	absoluteMarkdownPath := filepath.Join(tempDir, markdownPath)
+	absoluteStorePath := filepath.Join(tempDir, storePath)
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runRefillOnce(queue, client, false, "", nil, false, queuePath, markdownPath, storePath)
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("run refill once: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"queue_path":`)) || !bytes.Contains(output, []byte(absoluteQueuePath)) {
+		t.Fatalf("expected absolute queue_path, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"markdown_path":`)) || !bytes.Contains(output, []byte(absoluteMarkdownPath)) {
+		t.Fatalf("expected absolute markdown_path, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"local_issues_path":`)) || !bytes.Contains(output, []byte(absoluteStorePath)) {
+		t.Fatalf("expected absolute local_issues_path, got %s", string(output))
+	}
+}
+
 func TestRunHelpAtRootPrintsUsageAndExitsZero(t *testing.T) {
 	originalStdout := os.Stdout
 	reader, writer, err := os.Pipe()
