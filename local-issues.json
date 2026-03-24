@@ -4563,6 +4563,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct API-unit coverage for clawHostRolloutSurfacePayload so empty/default rollout surfaces, scoped summary counts, active-plan status, takeover aggregation, and evidence artifact totals are pinned outside the larger handler regressions. Validation: cd bigclaw-go && go test ./internal/api -run 'TestClawHostRolloutSurfacePayload(HandlesEmptyScope|SummarizesPlans)' -count=1 -> ok; cd bigclaw-go && go test ./internal/api ./internal/product -count=1 -> ok. Commit SHA: ec988ec1e6eb12332d87a2f5903f63af6e88b4e5. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T00:55:00Z"
+        }
+      ],
       "created_at": "2026-03-24T22:30:22Z",
       "description": "Add direct API-unit coverage for clawHostRolloutSurfacePayload so empty/default surfaces, active summary counts, takeover aggregation, and evidence artifact totals stay pinned outside the larger debug/control-center handler regressions.",
       "id": "big-par-352",
@@ -4577,14 +4584,25 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost rollout surface unit coverage",
-      "updated_at": "2026-03-25T00:55:00Z",
-      "comments": [
-        {
-          "author": "codex",
-          "body": "Added direct API-unit coverage for clawHostRolloutSurfacePayload so empty/default rollout surfaces, scoped summary counts, active-plan status, takeover aggregation, and evidence artifact totals are pinned outside the larger handler regressions. Validation: cd bigclaw-go && go test ./internal/api -run 'TestClawHostRolloutSurfacePayload(HandlesEmptyScope|SummarizesPlans)' -count=1 -> ok; cd bigclaw-go && go test ./internal/api ./internal/product -count=1 -> ok. Commit SHA: ec988ec1e6eb12332d87a2f5903f63af6e88b4e5. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
-          "created_at": "2026-03-25T00:55:00Z"
-        }
-      ]
+      "updated_at": "2026-03-25T00:55:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T22:34:45Z",
+      "description": "Add direct API-unit coverage for clawHostWorkflowSurfacePayload so the wrapper keeps actor/team/project scope, default actor fallback, and idle/active workflow surface behavior pinned without relying only on product and handler tests.",
+      "id": "big-par-353",
+      "identifier": "BIG-PAR-353",
+      "labels": [
+        "go",
+        "clawhost",
+        "api",
+        "parallel",
+        "test"
+      ],
+      "priority": 3,
+      "state": "In",
+      "title": "Add ClawHost workflow surface payload unit coverage",
+      "updated_at": "2026-03-24T22:34:45Z"
     }
   ]
 }
