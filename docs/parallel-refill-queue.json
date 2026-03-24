@@ -105,7 +105,9 @@
       "BIG-PAR-304",
       "BIG-PAR-305"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-306"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -194,7 +196,8 @@
     "BIG-PAR-302",
     "BIG-PAR-303",
     "BIG-PAR-304",
-    "BIG-PAR-305"
+    "BIG-PAR-305",
+    "BIG-PAR-306"
   ],
   "issues": [
     {
@@ -742,6 +745,12 @@
       "title": "Add ClawHost blank scope-filter normalization coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-306",
+      "title": "Add workflow endpoint header-actor export URL coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

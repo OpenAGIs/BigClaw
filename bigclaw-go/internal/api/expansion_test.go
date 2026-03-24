@@ -1360,6 +1360,9 @@ func TestClawHostReportAndExpansionSurfacesCoexist(t *testing.T) {
 		Surface struct {
 			Name string `json:"name"`
 		} `json:"surface"`
+		Report struct {
+			ExportURL string `json:"export_url"`
+		} `json:"report"`
 	}
 	if err := json.Unmarshal(workflowsResponse.Body.Bytes(), &workflowsDecoded); err != nil {
 		t.Fatalf("decode workflows expansion response: %v", err)
@@ -1377,6 +1380,35 @@ func TestClawHostReportAndExpansionSurfacesCoexist(t *testing.T) {
 	}
 	if !strings.Contains(workflowsExportResponse.Body.String(), "# ClawHost Workflow Surface") || !strings.Contains(workflowsExportResponse.Body.String(), "IM Channels and Device Approval Workflows") {
 		t.Fatalf("unexpected workflows expansion export body: %s", workflowsExportResponse.Body.String())
+	}
+
+	headerActorResponse := httptest.NewRecorder()
+	headerActorRequest := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=platform&project=apollo", nil)
+	headerActorRequest.Header.Set("X-BigClaw-Actor", " header-only ")
+	handler.ServeHTTP(headerActorResponse, headerActorRequest)
+	if headerActorResponse.Code != http.StatusOK {
+		t.Fatalf("expected header-actor workflows expansion 200, got %d %s", headerActorResponse.Code, headerActorResponse.Body.String())
+	}
+	var headerActorDecoded struct {
+		Report struct {
+			ExportURL string `json:"export_url"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(headerActorResponse.Body.Bytes(), &headerActorDecoded); err != nil {
+		t.Fatalf("decode header-actor workflows expansion response: %v", err)
+	}
+	headerActorExportURL, err := url.Parse(headerActorDecoded.Report.ExportURL)
+	if err != nil {
+		t.Fatalf("parse header-actor workflows export url: %v", err)
+	}
+	if headerActorExportURL.Path != "/v2/clawhost/workflows/export" {
+		t.Fatalf("unexpected header-actor workflows export path: %s", headerActorDecoded.Report.ExportURL)
+	}
+	if headerActorExportURL.Query().Get("actor") != "header-only" {
+		t.Fatalf("expected trimmed header actor in workflows export url, got %s", headerActorDecoded.Report.ExportURL)
+	}
+	if headerActorExportURL.Query().Get("team") != "platform" || headerActorExportURL.Query().Get("project") != "apollo" {
+		t.Fatalf("expected workflows export url to preserve team/project filters, got %s", headerActorDecoded.Report.ExportURL)
 	}
 }
 
