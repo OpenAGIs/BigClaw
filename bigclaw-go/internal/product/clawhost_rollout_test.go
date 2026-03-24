@@ -94,3 +94,22 @@ func TestRenderClawHostRolloutPlannerReport(t *testing.T) {
 		}
 	}
 }
+
+func TestRenderClawHostRolloutPlannerReportHandlesFallbackPlanner(t *testing.T) {
+	plan := BuildDefaultClawHostRolloutPlanner(nil, "", "")
+	audit := AuditClawHostRolloutPlanner(plan)
+	report := RenderClawHostRolloutPlannerReport(plan, audit)
+
+	for _, want := range []string{
+		"# ClawHost Rollout Planner",
+		"Tenants: 3",
+		"Apps: 1",
+		"Canary Upgrade Wave",
+		"apps=clawhost-app",
+		"Missing takeover signals: none",
+	} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in fallback rollout report, got %s", want, report)
+		}
+	}
+}

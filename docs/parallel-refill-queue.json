@@ -115,7 +115,9 @@
       "BIG-PAR-314",
       "BIG-PAR-315"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-316"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -214,7 +216,8 @@
     "BIG-PAR-312",
     "BIG-PAR-313",
     "BIG-PAR-314",
-    "BIG-PAR-315"
+    "BIG-PAR-315",
+    "BIG-PAR-316"
   ],
   "issues": [
     {
@@ -822,6 +825,12 @@
       "title": "Add product regression coverage for empty ClawHost recovery reports",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-316",
+      "title": "Add product regression coverage for fallback ClawHost rollout reports",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
