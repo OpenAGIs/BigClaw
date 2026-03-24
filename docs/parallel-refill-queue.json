@@ -95,11 +95,10 @@
       "BIG-PAR-294",
       "BIG-PAR-295",
       "BIG-PAR-296",
-      "BIG-PAR-297"
-    ],
-    "active": [
+      "BIG-PAR-297",
       "BIG-PAR-298"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -686,7 +685,7 @@
       "identifier": "BIG-PAR-298",
       "title": "Add ClawHost policy report and export surface",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
