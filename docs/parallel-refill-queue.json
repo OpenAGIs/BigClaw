@@ -99,11 +99,10 @@
       "BIG-PAR-298",
       "BIG-PAR-299",
       "BIG-PAR-300",
-      "BIG-PAR-301"
-    ],
-    "active": [
+      "BIG-PAR-301",
       "BIG-PAR-302"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -718,7 +717,7 @@
       "identifier": "BIG-PAR-302",
       "title": "Add ClawHost blank-actor fallback regression coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
