@@ -1188,6 +1188,92 @@ func TestDebugStatusIncludesClawHostPolicySurface(t *testing.T) {
 	}
 }
 
+func TestDebugStatusIncludesClawHostRolloutSurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010200, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-rollout-1",
+			Source:   "clawhost",
+			Title:    "restart sales-west",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":                      "clawhost",
+				"inventory_kind":                     "claw",
+				"claw_id":                            "claw-sales-west",
+				"claw_name":                          "sales-west",
+				"provider":                           "hetzner",
+				"provider_status":                    "running",
+				"domain":                             "sales-west.clawhost.cloud",
+				"agent_count":                        "2",
+				"clawhost_rollout_action":            "restart",
+				"clawhost_rollout_concurrency_limit": "2",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-rollout-2",
+			Source:   "clawhost",
+			Title:    "restart support-east",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":              "clawhost",
+				"inventory_kind":             "claw",
+				"claw_id":                    "claw-support-east",
+				"claw_name":                  "support-east",
+				"provider":                   "hetzner",
+				"provider_status":            "running",
+				"domain":                     "support-east.clawhost.cloud",
+				"agent_count":                "1",
+				"clawhost_rollout_action":    "restart",
+				"clawhost_takeover_required": "true",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ClawHostRollout struct {
+			Status  string `json:"status"`
+			Summary struct {
+				ActivePlans      int `json:"active_plans"`
+				TotalTargets     int `json:"total_targets"`
+				CanaryTargets    int `json:"canary_targets"`
+				TakeoverRequired int `json:"takeover_required"`
+			} `json:"summary"`
+			Plans []struct {
+				Action       string `json:"action"`
+				Concurrency  int    `json:"concurrency_limit"`
+				TakeoverHook string `json:"takeover_hook"`
+				WaveCount    int    `json:"wave_count"`
+				CanaryCount  int    `json:"canary_count"`
+			} `json:"plans"`
+		} `json:"clawhost_rollout_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug status rollout response: %v", err)
+	}
+	if decoded.ClawHostRollout.Status != "active" || decoded.ClawHostRollout.Summary.ActivePlans != 1 || decoded.ClawHostRollout.Summary.TotalTargets != 2 || decoded.ClawHostRollout.Summary.CanaryTargets != 1 || decoded.ClawHostRollout.Summary.TakeoverRequired != 1 {
+		t.Fatalf("unexpected ClawHost rollout surface: %+v", decoded.ClawHostRollout)
+	}
+	if len(decoded.ClawHostRollout.Plans) != 1 || decoded.ClawHostRollout.Plans[0].Action != "restart" || decoded.ClawHostRollout.Plans[0].Concurrency != 2 || decoded.ClawHostRollout.Plans[0].TakeoverHook != "required" || decoded.ClawHostRollout.Plans[0].WaveCount != 2 || decoded.ClawHostRollout.Plans[0].CanaryCount != 1 {
+		t.Fatalf("unexpected ClawHost rollout plan payload: %+v", decoded.ClawHostRollout.Plans)
+	}
+}
+
 func TestDeadLetterEndpoints(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()
@@ -4100,6 +4186,85 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	handler.ServeHTTP(forbiddenResponse, forbiddenRequest)
 	if forbiddenResponse.Code != http.StatusForbidden {
 		t.Fatalf("expected forbidden reload for eng lead, got %d %s", forbiddenResponse.Code, forbiddenResponse.Body.String())
+	}
+}
+
+func TestV2ControlCenterIncludesClawHostRolloutSurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010400, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-upgrade-1",
+			Source:   "clawhost",
+			Title:    "upgrade sales-west",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":             "clawhost",
+				"inventory_kind":            "claw",
+				"claw_id":                   "claw-sales-west",
+				"claw_name":                 "sales-west",
+				"provider":                  "hetzner",
+				"provider_status":           "running",
+				"clawhost_update_available": "true",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-upgrade-2",
+			Source:   "clawhost",
+			Title:    "upgrade support-east",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":              "clawhost",
+				"inventory_kind":             "claw",
+				"claw_id":                    "claw-support-east",
+				"claw_name":                  "support-east",
+				"provider":                   "digitalocean",
+				"provider_status":            "running",
+				"clawhost_update_available":  "true",
+				"clawhost_takeover_required": "true",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue control center rollout task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center", nil)
+	request.Header.Set("X-BigClaw-Role", "platform_admin")
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ClawHostRollout struct {
+			Status  string `json:"status"`
+			Summary struct {
+				ActivePlans      int `json:"active_plans"`
+				TotalTargets     int `json:"total_targets"`
+				TakeoverRequired int `json:"takeover_required"`
+			} `json:"summary"`
+			Plans []struct {
+				Action       string `json:"action"`
+				TargetCount  int    `json:"target_count"`
+				TakeoverHook string `json:"takeover_hook"`
+			} `json:"plans"`
+		} `json:"clawhost_rollout_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center rollout response: %v", err)
+	}
+	if decoded.ClawHostRollout.Status != "active" || decoded.ClawHostRollout.Summary.ActivePlans != 2 || decoded.ClawHostRollout.Summary.TotalTargets != 2 || decoded.ClawHostRollout.Summary.TakeoverRequired != 1 {
+		t.Fatalf("unexpected ClawHost rollout control center surface: %+v", decoded.ClawHostRollout)
+	}
+	if len(decoded.ClawHostRollout.Plans) != 2 || decoded.ClawHostRollout.Plans[0].Action != "upgrade" {
+		t.Fatalf("expected upgrade rollout plans, got %+v", decoded.ClawHostRollout.Plans)
 	}
 }
 
