@@ -138,6 +138,24 @@ func TestBuildSavedViewCatalogTeamScoped(t *testing.T) {
 	}
 }
 
+func TestBuildSavedViewCatalogBlankActorFallsBackToViewer(t *testing.T) {
+	catalog := BuildSavedViewCatalog(nil, "   ", "", "")
+	if len(catalog.Views) == 0 || len(catalog.Subscriptions) != 2 {
+		t.Fatalf("expected baseline catalog with actor fallback, got %+v", catalog)
+	}
+	for _, view := range catalog.Views {
+		if view.Owner != "viewer" {
+			t.Fatalf("expected view owner fallback to viewer, got %+v", view)
+		}
+	}
+	if got := strings.Join(catalog.Subscriptions[0].Recipients, ","); got != "viewer" {
+		t.Fatalf("expected daily digest recipients to fall back to viewer, got %s", got)
+	}
+	if got := strings.Join(catalog.Subscriptions[1].Recipients, ","); got != "viewer" {
+		t.Fatalf("expected weekly digest recipients to fall back to viewer, got %s", got)
+	}
+}
+
 func TestAuditSavedViewCatalogAndRenderReport(t *testing.T) {
 	catalog := SavedViewCatalog{
 		Name:    "catalog",
