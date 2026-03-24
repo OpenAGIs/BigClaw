@@ -308,7 +308,7 @@ func TestRenderSavedViewScopeMapSortsScopesAndNames(t *testing.T) {
 	}
 
 	got := renderSavedViewScopeMap(map[string][]string{
-		"/v2/control-center:bob": {"Weekly Ops", "Active Runs"},
+		"/v2/control-center:bob":  {"Weekly Ops", "Active Runs"},
 		"/v2/triage/center:alice": {"Regression Follow-up", "Blocked Runs"},
 	})
 	want := "/v2/control-center:bob=Active Runs, Weekly Ops; /v2/triage/center:alice=Blocked Runs, Regression Follow-up"
@@ -439,5 +439,32 @@ func TestRenderSavedViewReportPopulatedRowsUseFallbacks(t *testing.T) {
 	}
 	if !strings.Contains(report, "saved-view-weekly-ops: view=weekly-ops channel=email cadence=weekly recipients=none include_empty=false muted=false") {
 		t.Fatalf("expected populated subscription row with recipients fallback, got %s", report)
+	}
+}
+
+func TestRenderSavedViewReportGapSectionsStaySorted(t *testing.T) {
+	report := RenderSavedViewReport(
+		SavedViewCatalog{Name: "catalog", Version: "v1"},
+		SavedViewCatalogAudit{
+			CatalogName:                     "catalog",
+			Version:                         "v1",
+			DuplicateViewNames:              map[string][]string{"/b:alice": {"Zulu", "Alpha"}, "/a:bob": {"Beta", "Alpha"}},
+			DuplicateDefaultViews:           map[string][]string{"/z:viewer": {"Second", "First"}},
+			InvalidVisibilityViews:          []string{"Zulu", "Alpha"},
+			ViewsMissingFilters:             []string{"Second", "First"},
+			OrphanSubscriptions:             []string{"sub-2", "sub-1"},
+			SubscriptionsMissingRecipients:  []string{"sub-4", "sub-3"},
+			SubscriptionsWithInvalidChannel: []string{"sub-6", "sub-5"},
+			SubscriptionsWithInvalidCadence: []string{"sub-8", "sub-7"},
+		},
+	)
+	if !strings.Contains(report, "- Duplicate view names: /a:bob=Alpha, Beta; /b:alice=Alpha, Zulu") {
+		t.Fatalf("expected sorted duplicate view names, got %s", report)
+	}
+	if !strings.Contains(report, "- Duplicate default views: /z:viewer=First, Second") {
+		t.Fatalf("expected sorted duplicate default views, got %s", report)
+	}
+	if !strings.Contains(report, "- Invalid view visibility: Zulu, Alpha") || !strings.Contains(report, "- Subscriptions with invalid cadence: sub-8, sub-7") {
+		t.Fatalf("expected gap list rendering to preserve provided ordering, got %s", report)
 	}
 }
