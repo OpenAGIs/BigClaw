@@ -3541,6 +3541,24 @@
       "state": "Done",
       "title": "Add product regression coverage for ClawHost workflow review ordering",
       "updated_at": "2026-03-24T19:39:32Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T19:41:30Z",
+      "description": "Add direct unit coverage for BuildClawHostWorkflowSurface so the idle path with no ClawHost tasks preserves the expected default status, supported channels, and empty review queue without relying on endpoint tests.",
+      "id": "big-par-311",
+      "identifier": "BIG-PAR-311",
+      "labels": [
+        "go",
+        "clawhost",
+        "product",
+        "tests",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add product regression coverage for idle ClawHost workflow surfaces",
+      "updated_at": "2026-03-24T19:41:30Z"
     }
   ]
 }

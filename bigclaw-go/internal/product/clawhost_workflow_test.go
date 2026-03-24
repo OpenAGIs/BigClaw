@@ -143,3 +143,28 @@ func TestBuildClawHostWorkflowSurfaceOrdersReviewQueue(t *testing.T) {
 		t.Fatalf("unexpected workflow review queue ordering: got=%v want=%v queue=%+v", got, want, surface.ReviewQueue)
 	}
 }
+
+func TestBuildClawHostWorkflowSurfaceIdleDefaults(t *testing.T) {
+	surface := BuildClawHostWorkflowSurface([]domain.Task{
+		{
+			ID:       "other-task",
+			Source:   "github",
+			TenantID: "tenant-other",
+			Metadata: map[string]string{
+				"control_plane": "github",
+				"channel_types": "slack",
+			},
+		},
+	})
+
+	if surface.Status != "idle" || surface.Summary.WorkflowItems != 0 || surface.Summary.Tenants != 0 {
+		t.Fatalf("expected idle workflow surface, got %+v", surface)
+	}
+	if len(surface.ReviewQueue) != 0 {
+		t.Fatalf("expected empty review queue for idle surface, got %+v", surface.ReviewQueue)
+	}
+	wantChannels := []string{"whatsapp", "telegram", "discord", "slack", "signal"}
+	if !slices.Equal(surface.SupportedChannels, wantChannels) {
+		t.Fatalf("unexpected supported channels: got=%v want=%v", surface.SupportedChannels, wantChannels)
+	}
+}
