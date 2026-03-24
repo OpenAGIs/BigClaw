@@ -21,8 +21,10 @@ func MapPriority(priority string) int {
 func MapSourceState(state string) domain.TaskState {
 	normalized := normalizeSourceStatus(state)
 	switch {
-	case strings.Contains(normalized, "progress"):
+	case strings.Contains(normalized, "progress"), strings.Contains(normalized, "running"), strings.Contains(normalized, "active"), strings.Contains(normalized, "live"):
 		return domain.TaskRunning
+	case strings.Contains(normalized, "approval"), strings.Contains(normalized, "review"), strings.Contains(normalized, "paused"), strings.Contains(normalized, "stop"):
+		return domain.TaskBlocked
 	case strings.Contains(normalized, "done"), strings.Contains(normalized, "closed"), strings.Contains(normalized, "resolved"):
 		return domain.TaskSucceeded
 	case strings.Contains(normalized, "block"):
@@ -51,14 +53,23 @@ func MapSourceIssueToTask(issue SourceIssue) domain.Task {
 	if strings.EqualFold(source, "github") {
 		requiredTools = []string{"github"}
 	}
+	if strings.EqualFold(source, "clawhost") {
+		requiredTools = []string{"clawhost"}
+	}
 	metadata := map[string]string{
 		"source_id":    trim(issue.SourceID),
 		"source_state": trim(issue.State),
+	}
+	for key, value := range issue.Metadata {
+		if trimmedKey := trim(key); trimmedKey != "" {
+			metadata[trimmedKey] = trim(value)
+		}
 	}
 	if issueURL := trim(issue.Links["issue"]); issueURL != "" {
 		metadata["issue_url"] = issueURL
 		metadata["source_issue_url"] = issueURL
 	}
+	tenantID := firstNonEmpty(issue.Metadata["tenant_id"], issue.Metadata["tenant"], issue.Metadata["tenant_slug"])
 	return domain.Task{
 		ID:                 identifier,
 		TraceID:            identifier,
@@ -72,6 +83,7 @@ func MapSourceIssueToTask(issue SourceIssue) domain.Task {
 		RequiredTools:      append([]string(nil), requiredTools...),
 		AcceptanceCriteria: []string{"Synced from source issue"},
 		ValidationPlan:     []string{"mapping-test"},
+		TenantID:           tenantID,
 		Metadata:           metadata,
 	}
 }

@@ -768,6 +768,57 @@ func TestRunLocalIssuesSetStateUpdatesStore(t *testing.T) {
 	}
 }
 
+func TestRunLocalIssuesListFiltersByState(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-225",
+      "identifier": "BIG-PAR-225",
+      "title": "Refill queue follow-up",
+      "state": "In Progress"
+    },
+    {
+      "id": "big-par-226",
+      "identifier": "BIG-PAR-226",
+      "title": "Standby issue",
+      "state": "Todo"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	stdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create stdout pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() { os.Stdout = stdout }()
+
+	if err := runLocalIssues([]string{
+		"list",
+		"--local-issues", storePath,
+		"--states", "In Progress",
+	}); err != nil {
+		t.Fatalf("run local-issues list: %v", err)
+	}
+	writer.Close()
+
+	output, err := io.ReadAll(reader)
+	if err != nil {
+		t.Fatalf("read list output: %v", err)
+	}
+	if !bytes.Contains(output, []byte("BIG-PAR-225\tIn Progress\tRefill queue follow-up")) {
+		t.Fatalf("expected in-progress issue in output, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte("BIG-PAR-226")) {
+		t.Fatalf("expected todo issue to be filtered out, got %s", string(output))
+	}
+}
+
 func TestRunLocalIssuesCommentAppendsComment(t *testing.T) {
 	tempDir := t.TempDir()
 	storePath := filepath.Join(tempDir, "local-issues.json")

@@ -20,11 +20,14 @@ func TestMapPriority(t *testing.T) {
 
 func TestMapSourceState(t *testing.T) {
 	cases := map[string]domain.TaskState{
-		"Todo":         domain.TaskQueued,
-		"In Progress":  domain.TaskRunning,
-		"Blocked":      domain.TaskBlocked,
-		"Closed":       domain.TaskSucceeded,
-		"failed check": domain.TaskFailed,
+		"Todo":             domain.TaskQueued,
+		"In Progress":      domain.TaskRunning,
+		"Running":          domain.TaskRunning,
+		"Live":             domain.TaskRunning,
+		"Blocked":          domain.TaskBlocked,
+		"Pending Approval": domain.TaskBlocked,
+		"Closed":           domain.TaskSucceeded,
+		"failed check":     domain.TaskFailed,
 	}
 	for input, want := range cases {
 		if got := MapSourceState(input); got != want {
@@ -62,5 +65,43 @@ func TestMapSourceIssueToTask(t *testing.T) {
 	}
 	if task.Metadata["source_state"] != "Todo" {
 		t.Fatalf("expected source state metadata Todo, got %q", task.Metadata["source_state"])
+	}
+}
+
+func TestMapSourceIssueToTaskPreservesInventoryMetadata(t *testing.T) {
+	issue := SourceIssue{
+		Source:      "clawhost",
+		SourceID:    "openagi/apps/openagi-control/bots/support-router",
+		Title:       "support-router bot inventory",
+		Description: "inventory",
+		Priority:    "P1",
+		State:       "Running",
+		Metadata: map[string]string{
+			"tenant_id":       "openagi",
+			"owner":           "platform-ops",
+			"domain":          "support.openagi.example",
+			"lifecycle_state": "running",
+		},
+		Links: map[string]string{"issue": "https://clawhost.example/openagi/apps/openagi-control/bots/support-router"},
+	}
+	task := MapSourceIssueToTask(issue)
+	if task.State != domain.TaskRunning {
+		t.Fatalf("expected running task state, got %q", task.State)
+	}
+	if task.TenantID != "openagi" {
+		t.Fatalf("expected tenant_id to map, got %q", task.TenantID)
+	}
+	if len(task.RequiredTools) != 1 || task.RequiredTools[0] != "clawhost" {
+		t.Fatalf("expected clawhost tool requirement, got %+v", task.RequiredTools)
+	}
+	for key, want := range map[string]string{
+		"owner":            "platform-ops",
+		"domain":           "support.openagi.example",
+		"lifecycle_state":  "running",
+		"source_issue_url": "https://clawhost.example/openagi/apps/openagi-control/bots/support-router",
+	} {
+		if got := task.Metadata[key]; got != want {
+			t.Fatalf("expected metadata %s=%q, got %q", key, want, got)
+		}
 	}
 }
