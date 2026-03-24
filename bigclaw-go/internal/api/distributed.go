@@ -505,10 +505,16 @@ func (s *Server) buildCrossNodeExecutionHeatmap(assignmentByTask map[string]dist
 		sort.Strings(heatmap.Executors)
 		for _, nodeID := range heatmap.Nodes {
 			for _, executorName := range heatmap.Executors {
-				if cell := cellIndex[cellKey{nodeID: nodeID, executor: executorName}]; cell != nil {
-					sort.Strings(cell.SampleTaskIDs)
-					heatmap.Cells = append(heatmap.Cells, *cell)
+				cell := cellIndex[cellKey{nodeID: nodeID, executor: executorName}]
+				if cell == nil {
+					cell = &crossNodeExecutionHeatmapCell{
+						NodeID:   nodeID,
+						Executor: executorName,
+					}
+					cellIndex[cellKey{nodeID: nodeID, executor: executorName}] = cell
 				}
+				sort.Strings(cell.SampleTaskIDs)
+				heatmap.Cells = append(heatmap.Cells, *cell)
 			}
 		}
 	}

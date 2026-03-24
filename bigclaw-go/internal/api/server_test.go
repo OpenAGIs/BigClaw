@@ -3099,8 +3099,14 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 				} `json:"takeover_owners"`
 			} `json:"cluster_health"`
 			CrossNodeExecutionHeatmap struct {
-				Nodes       []string `json:"nodes"`
-				Executors   []string `json:"executors"`
+				Nodes     []string `json:"nodes"`
+				Executors []string `json:"executors"`
+				Cells     []struct {
+					NodeID       string `json:"node_id"`
+					Executor     string `json:"executor"`
+					TotalWorkers int    `json:"total_workers"`
+					ActiveTasks  int    `json:"active_tasks"`
+				} `json:"cells"`
 				Transitions []struct {
 					SourceNode  string   `json:"source_node"`
 					TargetNode  string   `json:"target_node"`
@@ -3343,6 +3349,18 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	if len(decoded.Diagnostics.CrossNodeExecutionHeatmap.Nodes) != 3 || len(decoded.Diagnostics.CrossNodeExecutionHeatmap.Executors) != 3 {
 		t.Fatalf("expected populated cross-node heatmap dimensions, got %+v", decoded.Diagnostics.CrossNodeExecutionHeatmap)
 	}
+	if len(decoded.Diagnostics.CrossNodeExecutionHeatmap.Cells) != 9 {
+		t.Fatalf("expected complete node/executor heatmap grid, got %+v", decoded.Diagnostics.CrossNodeExecutionHeatmap.Cells)
+	}
+	foundZeroCell := false
+	for _, cell := range decoded.Diagnostics.CrossNodeExecutionHeatmap.Cells {
+		if cell.NodeID == "node-a" && cell.Executor == "kubernetes" {
+			foundZeroCell = cell.TotalWorkers == 0 && cell.ActiveTasks == 0
+		}
+	}
+	if !foundZeroCell {
+		t.Fatalf("expected zero-value node-a/kubernetes heatmap cell, got %+v", decoded.Diagnostics.CrossNodeExecutionHeatmap.Cells)
+	}
 	if len(decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions) != 4 {
 		t.Fatalf("expected four cross-node coordination transitions, got %+v", decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions)
 	}
@@ -3584,6 +3602,9 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Lane local: latest_status=succeeded") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/validation-bundle-continuation-digest.md") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "docs/reports/broker-failover-stub-artifacts") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Cross-Node Execution Heatmap") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "- node-a/kubernetes: health=unknown total_workers=0 active_workers=0 idle_workers=0 stale_workers=0 missing_heartbeat_workers=0 active_tasks=0 capacity=0.0%") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Node Anomaly Clusters") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.ExportURL, "/v2/reports/distributed/export") {
 		t.Fatalf("unexpected rollout report payload: %+v", decoded.Diagnostics.RolloutReport)
 	}
