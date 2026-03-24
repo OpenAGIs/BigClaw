@@ -257,3 +257,40 @@ func TestBuildClawHostWorkflowSurfaceDefaultsPairingAndTrimsCredentialPath(t *te
 		t.Fatalf("expected default waiting pairing reason, got %+v", item)
 	}
 }
+
+func TestBuildClawHostWorkflowSurfacePrefersMetadataIdentifiers(t *testing.T) {
+	surface := BuildClawHostWorkflowSurface([]domain.Task{
+		{
+			ID:       "task-id-fallback",
+			Source:   "clawhost",
+			TenantID: "tenant-from-task",
+			Title:    "title-fallback",
+			Metadata: map[string]string{
+				"control_plane":         "clawhost",
+				"tenant_id":             "tenant-from-metadata",
+				"owner_user_id":         "owner-ignored",
+				"claw_id":               "claw-from-metadata",
+				"claw_name":             "metadata-name",
+				"whatsapp_pairing_status": "paired",
+			},
+		},
+	})
+
+	if surface.Status != "active" || len(surface.ReviewQueue) != 1 {
+		t.Fatalf("expected one active workflow item, got %+v", surface)
+	}
+
+	item := surface.ReviewQueue[0]
+	if item.TenantID != "tenant-from-task" {
+		t.Fatalf("expected task tenant to take precedence over metadata fallbacks, got %+v", item)
+	}
+	if item.ClawID != "claw-from-metadata" {
+		t.Fatalf("expected metadata claw_id to take precedence over task id, got %+v", item)
+	}
+	if item.ClawName != "metadata-name" {
+		t.Fatalf("expected metadata claw_name to take precedence over task title, got %+v", item)
+	}
+	if item.ReviewReason != "skills and channel posture are aligned" {
+		t.Fatalf("expected paired metadata-only workflow item to use aligned fallback reason, got %+v", item)
+	}
+}
