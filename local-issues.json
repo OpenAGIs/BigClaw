@@ -4839,6 +4839,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct product-package coverage for ClawHost rollout report edge paths in bigclaw-go/internal/product/clawhost_rollout_test.go so empty filter maps, empty concurrency/evidence sections, sparse waves with missing optional values, and fallback gap rendering now stay pinned outside the broader rollout planner tests. Validation: cd bigclaw-go && go test ./internal/product -> ok; cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/clawhost-product.cover && go tool cover -func=/tmp/clawhost-product.cover | rg 'clawhost_rollout.go:192|total:' -> RenderClawHostRolloutPlannerReport 100.0%, total 92.2%; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 18581280b27d9e03984d8d47f0f39cada539b232 matches remote SHA 18581280b27d9e03984d8d47f0f39cada539b232 with status ok and synced true; git log -1 --stat -> captured for commit 18581280b27d9e03984d8d47f0f39cada539b232 with clawhost rollout test and tracker files in the stat output. Commit SHA: 18581280b27d9e03984d8d47f0f39cada539b232. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-24T23:12:46Z"
+        }
+      ],
       "created_at": "2026-03-24T23:11:32Z",
       "description": "Add focused product-package coverage for ClawHost rollout report edge paths so empty filter maps, empty guard/evidence sections, and sparse waves with missing optional strings stay pinned outside the broader rollout planner tests.",
       "id": "big-par-363",
@@ -4851,9 +4858,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add ClawHost rollout report edge-case coverage",
-      "updated_at": "2026-03-24T23:11:32Z"
+      "updated_at": "2026-03-24T23:12:46Z"
     }
   ]
 }
