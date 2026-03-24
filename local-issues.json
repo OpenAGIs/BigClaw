@@ -4685,6 +4685,24 @@
       "state": "Done",
       "title": "Add ClawHost fleet helper unit coverage",
       "updated_at": "2026-03-24T22:52:23Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T22:53:25Z",
+      "description": "Add focused product-package coverage for ClawHost rollout helper branches so sorted tenant/app extraction and min/max helper fallbacks stay pinned across empty, duplicate, and inverted inputs.",
+      "id": "big-par-357",
+      "identifier": "BIG-PAR-357",
+      "labels": [
+        "go",
+        "product",
+        "clawhost",
+        "test",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add ClawHost rollout helper unit coverage",
+      "updated_at": "2026-03-24T22:53:25Z"
     }
   ]
 }

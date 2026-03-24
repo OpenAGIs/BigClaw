@@ -1,6 +1,7 @@
 package product
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -144,4 +145,48 @@ func TestRenderClawHostRolloutPlannerReportHandlesFallbackPlanner(t *testing.T) 
 			t.Fatalf("expected %q in fallback rollout report, got %s", want, report)
 		}
 	}
+}
+
+func TestClawHostRolloutHelperFunctions(t *testing.T) {
+	t.Run("sorted values dedupe and trim", func(t *testing.T) {
+		tasks := []domain.Task{
+			{TenantID: " tenant-b "},
+			{TenantID: "tenant-a"},
+			{TenantID: "tenant-b"},
+			{TenantID: ""},
+		}
+
+		got := clawHostSortedValues(tasks, func(task domain.Task) string {
+			return task.TenantID
+		})
+
+		want := []string{"tenant-a", "tenant-b"}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("expected sorted unique values %+v, got %+v", want, got)
+		}
+	})
+
+	t.Run("first non empty trims whitespace", func(t *testing.T) {
+		if got := clawHostFirstNonEmpty("", "  ", " alpha ", "beta"); got != "alpha" {
+			t.Fatalf("expected first non-empty value alpha, got %q", got)
+		}
+		if got := clawHostFirstNonEmpty("", " "); got != "" {
+			t.Fatalf("expected empty fallback when no values are present, got %q", got)
+		}
+	})
+
+	t.Run("min and max helpers preserve lower and upper bounds", func(t *testing.T) {
+		if got := clawHostMin(2, 5); got != 2 {
+			t.Fatalf("expected min helper to keep lower bound, got %d", got)
+		}
+		if got := clawHostMin(5, 2); got != 2 {
+			t.Fatalf("expected min helper to pick smaller value, got %d", got)
+		}
+		if got := clawHostMax(2, 5); got != 5 {
+			t.Fatalf("expected max helper to pick larger value, got %d", got)
+		}
+		if got := clawHostMax(5, 2); got != 5 {
+			t.Fatalf("expected max helper to keep upper bound, got %d", got)
+		}
+	})
 }

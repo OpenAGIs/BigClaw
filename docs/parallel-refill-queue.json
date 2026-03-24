@@ -156,7 +156,9 @@
       "BIG-PAR-355",
       "BIG-PAR-356"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-357"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -296,7 +298,8 @@
     "BIG-PAR-353",
     "BIG-PAR-354",
     "BIG-PAR-355",
-    "BIG-PAR-356"
+    "BIG-PAR-356",
+    "BIG-PAR-357"
   ],
   "issues": [
     {
@@ -1150,6 +1153,12 @@
       "title": "Add ClawHost fleet helper unit coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-357",
+      "title": "Add ClawHost rollout helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
