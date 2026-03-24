@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 import argparse
 import json
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
+import re
 from typing import Any, Optional
 
 
@@ -48,6 +51,7 @@ FAILURE_EVENT_TYPES = {
     'task.failed',
     'task.retried',
 }
+RUN_ID_PATTERN = re.compile(r'^\d{8}T\d{6}Z$')
 
 
 def build_continuation_gate_summary(root: Path) -> Optional[dict[str, Any]]:
@@ -462,10 +466,18 @@ def build_broker_section(
 
 
 def build_recent_runs(bundle_root: Path, root: Path, limit: int = 8) -> list[dict[str, Any]]:
-    runs: list[tuple[str, dict[str, Any]]] = []
     if not bundle_root.exists():
         return []
-    for child in bundle_root.iterdir():
+
+    children = [child for child in bundle_root.iterdir() if child.is_dir()]
+    if not children:
+        return []
+
+    if all(RUN_ID_PATTERN.match(child.name) for child in children):
+        return build_recent_runs_from_timestamped_dirs(children, root, limit)
+
+    runs: list[tuple[str, dict[str, Any]]] = []
+    for child in children:
         if not child.is_dir():
             continue
         summary_path = child / 'summary.json'
@@ -485,6 +497,26 @@ def build_recent_runs(bundle_root: Path, root: Path, limit: int = 8) -> list[dic
                 'summary_path': summary.get('summary_path', ''),
             }
         )
+    return items
+
+
+def build_recent_runs_from_timestamped_dirs(children: list[Path], root: Path, limit: int) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    for child in sorted(children, key=lambda path: path.name, reverse=True):
+        summary = read_json(child / 'summary.json')
+        if not isinstance(summary, dict):
+            continue
+        items.append(
+            {
+                'run_id': summary.get('run_id', ''),
+                'generated_at': summary.get('generated_at', ''),
+                'status': summary.get('status', 'unknown'),
+                'bundle_path': summary.get('bundle_path', ''),
+                'summary_path': summary.get('summary_path', ''),
+            }
+        )
+        if len(items) >= limit:
+            break
     return items
 
 

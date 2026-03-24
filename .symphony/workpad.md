@@ -1,27 +1,22 @@
-## Codex Workpad
+## Plan
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+- Survey the repository to map the parallel evidence bundle index/export flows and performance/benchmark tooling referenced by BIGCLAW-192.
+- Optimize the live validation archive index path so canonical timestamped bundle directories stop scanning every retained `summary.json`.
+- Add a repo-native benchmark harness for parallel evidence bundle archive export/index generation.
+- Update the validation docs with the benchmark entrypoint and record exact validation results.
 
-### Plan
+## Acceptance
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+- `bigclaw-go/scripts/e2e/export_validation_bundle.py` builds recent archive index entries without full-history summary scans when bundle directories use canonical timestamp run IDs.
+- Repository includes a scoped benchmark harness for parallel evidence bundle archive export/index generation.
+- Validation docs include the benchmark command.
+- `.symphony/workpad.md` documents the plan, acceptance, and validation steps for this issue.
+- All targeted tests/benchmarks execute successfully with commands/results captured.
 
-### Acceptance Criteria
+## Validation
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
-
-### Validation
-
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
-
-### Notes
-
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+- `python3 -m pytest tests/test_parallel_validation_bundle.py tests/test_parallel_validation_bundle_benchmark.py`
+  - Result: `3 passed in 0.09s`
+- `python3 bigclaw-go/scripts/e2e/benchmark_validation_bundle_export.py --iterations 3 --archive-runs 64 --pretty`
+  - Result: exit `0`
+  - Timing summary: `min=2.962ms`, `median=3.171ms`, `mean=3.336ms`, `p95=3.875ms`, `max=3.875ms`

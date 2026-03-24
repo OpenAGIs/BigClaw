@@ -59,6 +59,18 @@ export BIGCLAW_QUEUE_BACKEND=sqlite
 
 The script writes a consolidated summary to `docs/reports/live-validation-summary.json`, refreshes the canonical component reports for local, Kubernetes, and Ray validation, exports a machine-readable shared-queue companion summary to `docs/reports/shared-queue-companion-summary.json`, writes a broker-lane summary to `docs/reports/broker-validation-summary.json`, and creates a timestamped bundle plus index under `docs/reports/live-validation-runs/` and `docs/reports/live-validation-index.md`.
 
+To pressure-test archive index/export cost against a larger retained bundle history, run:
+
+```bash
+cd bigclaw-go
+python3 scripts/e2e/benchmark_validation_bundle_export.py \
+  --iterations 5 \
+  --archive-runs 250 \
+  --pretty
+```
+
+This synthesizes a retained archive, reruns the live validation bundle exporter repeatedly, and reports min/median/p95 timing for the archive index and export path without requiring a live cluster.
+
 You can then refresh the rolling continuation overlay from the checked-in bundle evidence:
 
 ```bash

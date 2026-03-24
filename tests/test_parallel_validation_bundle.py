@@ -1,12 +1,22 @@
 import json
 import subprocess
 import sys
+import importlib.util
 from pathlib import Path
 
 
 def write_json(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+
+def load_export_validation_bundle_module():
+    script = Path(__file__).resolve().parents[1] / 'bigclaw-go' / 'scripts' / 'e2e' / 'export_validation_bundle.py'
+    spec = importlib.util.spec_from_file_location('export_validation_bundle', script)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: Path):
@@ -146,3 +156,41 @@ def test_export_validation_bundle_generates_latest_reports_and_index(tmp_path: P
     assert manifest['latest']['run_id'] == '20260315T120000Z'
     assert manifest['latest']['shared_queue_companion']['nodes'] == ['node-a', 'node-b']
     assert manifest['recent_runs'][0]['run_id'] == '20260315T120000Z'
+
+
+def test_build_recent_runs_stops_after_limit_for_timestamped_archives(tmp_path, monkeypatch) -> None:
+    module = load_export_validation_bundle_module()
+    bundle_root = tmp_path / 'docs' / 'reports' / 'live-validation-runs'
+    bundle_root.mkdir(parents=True, exist_ok=True)
+
+    for minute in range(12):
+        run_id = f'20260316T12{minute:02d}00Z'
+        write_json(
+            bundle_root / run_id / 'summary.json',
+            {
+                'run_id': run_id,
+                'generated_at': f'2026-03-16T12:{minute:02d}:00+00:00',
+                'status': 'succeeded',
+                'bundle_path': f'docs/reports/live-validation-runs/{run_id}',
+                'summary_path': f'docs/reports/live-validation-runs/{run_id}/summary.json',
+            },
+        )
+
+    original_read_json = module.read_json
+    calls: list[str] = []
+
+    def counting_read_json(path):
+        calls.append(Path(path).parent.name)
+        return original_read_json(path)
+
+    monkeypatch.setattr(module, 'read_json', counting_read_json)
+
+    recent_runs = module.build_recent_runs(bundle_root, tmp_path, limit=4)
+
+    assert [item['run_id'] for item in recent_runs] == [
+        '20260316T121100Z',
+        '20260316T121000Z',
+        '20260316T120900Z',
+        '20260316T120800Z',
+    ]
+    assert len(calls) == 4
