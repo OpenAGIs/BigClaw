@@ -2966,6 +2966,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added a Go-owned ClawHost rollout planner in bigclaw-go/internal/control/clawhost_rollout.go plus reviewer-facing rollout surfaces in bigclaw-go/internal/api/clawhost_rollout_surface.go, /debug/status, and /v2/control-center that group ClawHost claws into canary and batch waves, apply action-aware concurrency defaults, carry takeover hooks, and emit evidence artifacts for start/stop/restart/upgrade execution review. Validation: cd bigclaw-go && go test ./internal/control ./internal/api -> ok; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 6a4d9ec62b39c81647ddc02e1ec0b8f7214bb4c9 matches remote SHA 6a4d9ec62b39c81647ddc02e1ec0b8f7214bb4c9 with status ok and synced true. Commit SHA: 6a4d9ec62b39c81647ddc02e1ec0b8f7214bb4c9. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
+          "created_at": "2026-03-24T16:34:26Z"
+        }
+      ],
       "created_at": "2026-03-24T15:47:39Z",
       "description": "Add a BigClaw orchestration slice for ClawHost bot lifecycle actions so start/stop/restart/upgrade waves can be planned and executed with concurrency limits, canaries, takeover hooks, and evidence capture across many bots in parallel. This aligns with ClawHost's lifecycle operations and Kubernetes-native isolated bot runtime.",
       "id": "big-par-288",
@@ -2977,9 +2984,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add parallel ClawHost rollout planner",
-      "updated_at": "2026-03-24T16:12:58Z"
+      "updated_at": "2026-03-24T16:34:26Z"
     },
     {
       "assigned_to_worker": true,
@@ -3038,9 +3045,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "Todo",
+      "state": "In Progress",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-24T15:47:40Z"
+      "updated_at": "2026-03-24T16:35:38Z"
     }
   ]
 }
