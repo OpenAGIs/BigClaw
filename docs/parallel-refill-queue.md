@@ -50,7 +50,7 @@ longer waits on Linear to keep issue execution moving.
 - Current repo tranche status as of March 24, 2026:
   - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-373` — Add ClawHost merged review-doc regression coverage; `BIG-PAR-374` — Fix refill dry-run queue_status_synced drift; `BIG-PAR-375` — Add refill dry-run drift preview regression; `BIG-PAR-376` — Fix refill dry-run recent_batches_synced drift; `BIG-PAR-377` — Fix refill apply write flags for queue metadata sync; `BIG-PAR-378` — Fix refill dry-run recent batch update mutation; `BIG-PAR-379` — Report refill markdown companion writes; `BIG-PAR-380` — Document refill markdown_written payload
+  - recently completed slices: `BIG-PAR-374` — Fix refill dry-run queue_status_synced drift; `BIG-PAR-375` — Add refill dry-run drift preview regression; `BIG-PAR-376` — Fix refill dry-run recent_batches_synced drift; `BIG-PAR-377` — Fix refill apply write flags for queue metadata sync; `BIG-PAR-378` — Fix refill dry-run recent batch update mutation; `BIG-PAR-379` — Report refill markdown companion writes; `BIG-PAR-380` — Document refill markdown_written payload; `BIG-PAR-381` — Preview refill markdown writes across promotions
   - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
@@ -210,6 +210,7 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-378` — Fix refill dry-run recent batch update mutation
   - `BIG-PAR-379` — Report refill markdown companion writes
   - `BIG-PAR-380` — Document refill markdown_written payload
+  - `BIG-PAR-381` — Preview refill markdown writes across promotions
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -370,3 +371,4 @@ longer waits on Linear to keep issue execution moving.
 150. `BIG-PAR-378`
 151. `BIG-PAR-379`
 152. `BIG-PAR-380`
+153. `BIG-PAR-381`
