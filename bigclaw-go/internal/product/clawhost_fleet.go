@@ -29,6 +29,8 @@ type ClawHostControlPlane struct {
 type ClawHostAppInventory struct {
 	AppID                    string `json:"app_id"`
 	Name                     string `json:"name"`
+	Team                     string `json:"team,omitempty"`
+	Project                  string `json:"project,omitempty"`
 	TenantID                 string `json:"tenant_id"`
 	Owner                    string `json:"owner"`
 	APIAccessTokenManaged    bool   `json:"api_access_token_managed"`
@@ -40,6 +42,8 @@ type ClawHostAppInventory struct {
 type ClawHostBotInventory struct {
 	BotID                 string   `json:"bot_id"`
 	AppID                 string   `json:"app_id"`
+	Team                  string   `json:"team,omitempty"`
+	Project               string   `json:"project,omitempty"`
 	UserID                string   `json:"user_id"`
 	Name                  string   `json:"name"`
 	Slug                  string   `json:"slug"`
@@ -110,6 +114,8 @@ func BuildDefaultClawHostFleetSurface() ClawHostFleetInventory {
 		{
 			AppID:                    "app-platform",
 			Name:                     "Platform Agents",
+			Team:                     "platform",
+			Project:                  "apollo",
 			TenantID:                 "tenant-platform",
 			Owner:                    "platform-ops",
 			APIAccessTokenManaged:    true,
@@ -118,6 +124,8 @@ func BuildDefaultClawHostFleetSurface() ClawHostFleetInventory {
 		{
 			AppID:                    "app-growth",
 			Name:                     "Growth Assistants",
+			Team:                     "growth",
+			Project:                  "campaigns",
 			TenantID:                 "tenant-growth",
 			Owner:                    "growth-ops",
 			APIAccessTokenManaged:    true,
@@ -128,6 +136,8 @@ func BuildDefaultClawHostFleetSurface() ClawHostFleetInventory {
 		{
 			BotID:                 "bot-platform-1",
 			AppID:                 "app-platform",
+			Team:                  "platform",
+			Project:               "apollo",
 			UserID:                "user-001",
 			Name:                  "platform-release-bot",
 			Slug:                  "platform-release-bot",
@@ -144,6 +154,8 @@ func BuildDefaultClawHostFleetSurface() ClawHostFleetInventory {
 		{
 			BotID:                 "bot-growth-1",
 			AppID:                 "app-growth",
+			Team:                  "growth",
+			Project:               "campaigns",
 			UserID:                "user-002",
 			Name:                  "growth-campaign-bot",
 			Slug:                  "growth-campaign-bot",
@@ -247,6 +259,33 @@ func BuildClawHostFleetSurface(apps []ClawHostAppInventory, bots []ClawHostBotIn
 	surface.Summary.BotCount = len(surface.Bots)
 	surface.Summary.MultiTenantApps = len(tenantSet)
 	return surface
+}
+
+func FilterClawHostFleetSurface(inventory ClawHostFleetInventory, team, project string) ClawHostFleetInventory {
+	team = strings.TrimSpace(team)
+	project = strings.TrimSpace(project)
+	if team == "" && project == "" {
+		return inventory
+	}
+	filteredApps := make([]ClawHostAppInventory, 0, len(inventory.Apps))
+	allowedApps := map[string]struct{}{}
+	for _, app := range inventory.Apps {
+		if team != "" && !strings.EqualFold(strings.TrimSpace(app.Team), team) {
+			continue
+		}
+		if project != "" && !strings.EqualFold(strings.TrimSpace(app.Project), project) {
+			continue
+		}
+		filteredApps = append(filteredApps, app)
+		allowedApps[app.AppID] = struct{}{}
+	}
+	filteredBots := make([]ClawHostBotInventory, 0, len(inventory.Bots))
+	for _, bot := range inventory.Bots {
+		if _, ok := allowedApps[bot.AppID]; ok {
+			filteredBots = append(filteredBots, bot)
+		}
+	}
+	return BuildClawHostFleetSurface(filteredApps, filteredBots)
 }
 
 func AuditClawHostFleetSurface(inventory ClawHostFleetInventory) ClawHostFleetAudit {
@@ -368,8 +407,8 @@ func RenderClawHostFleetReport(inventory ClawHostFleetInventory, audit ClawHostF
 		lines = append(lines, "- none")
 	} else {
 		for _, app := range inventory.Apps {
-			lines = append(lines, fmt.Sprintf("- %s (%s): tenant=%s owner=%s bots=%d running=%d token_managed=%t user_ownership=%t",
-				app.Name, app.AppID, emptyFallback(app.TenantID, "unassigned"), emptyFallback(app.Owner, "unassigned"), app.BotCount, app.RunningBotCount, app.APIAccessTokenManaged, app.SupportsUserBotOwnership))
+			lines = append(lines, fmt.Sprintf("- %s (%s): team=%s project=%s tenant=%s owner=%s bots=%d running=%d token_managed=%t user_ownership=%t",
+				app.Name, app.AppID, emptyFallback(app.Team, "unassigned"), emptyFallback(app.Project, "unassigned"), emptyFallback(app.TenantID, "unassigned"), emptyFallback(app.Owner, "unassigned"), app.BotCount, app.RunningBotCount, app.APIAccessTokenManaged, app.SupportsUserBotOwnership))
 		}
 	}
 
@@ -378,10 +417,12 @@ func RenderClawHostFleetReport(inventory ClawHostFleetInventory, audit ClawHostF
 		lines = append(lines, "- none")
 	} else {
 		for _, bot := range inventory.Bots {
-			lines = append(lines, fmt.Sprintf("- %s (%s): app=%s user=%s status=%s pod_isolation=%t service_isolation=%t subdomain=%s providers=%s channels=%s auto_approval=%t dynamic_skills=%t",
+			lines = append(lines, fmt.Sprintf("- %s (%s): app=%s team=%s project=%s user=%s status=%s pod_isolation=%t service_isolation=%t subdomain=%s providers=%s channels=%s auto_approval=%t dynamic_skills=%t",
 				bot.Name,
 				bot.BotID,
 				emptyFallback(bot.AppID, "unassigned"),
+				emptyFallback(bot.Team, "unassigned"),
+				emptyFallback(bot.Project, "unassigned"),
 				emptyFallback(bot.UserID, "unassigned"),
 				normalizedClawHostStatus(bot.Status),
 				bot.PodIsolation,

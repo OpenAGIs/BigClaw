@@ -880,7 +880,7 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 
 	t.Run("fleet", func(t *testing.T) {
 		response := httptest.NewRecorder()
-		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v2/clawhost/fleet", nil))
+		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v2/clawhost/fleet?team=platform&project=apollo", nil))
 		if response.Code != http.StatusOK {
 			t.Fatalf("expected fleet endpoint 200, got %d %s", response.Code, response.Body.String())
 		}
@@ -893,6 +893,16 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 					BotCount    int `json:"bot_count"`
 					RunningBots int `json:"running_bots"`
 				} `json:"summary"`
+				Apps []struct {
+					AppID   string `json:"app_id"`
+					Team    string `json:"team"`
+					Project string `json:"project"`
+				} `json:"apps"`
+				Bots []struct {
+					BotID   string `json:"bot_id"`
+					Team    string `json:"team"`
+					Project string `json:"project"`
+				} `json:"bots"`
 			} `json:"inventory"`
 			Audit struct {
 				ControlPlaneReady bool `json:"control_plane_ready"`
@@ -905,13 +915,19 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
 			t.Fatalf("decode fleet response: %v", err)
 		}
-		if decoded.Inventory.SurfaceID != "BIG-PAR-287" || decoded.Inventory.Summary.AppCount != 2 || decoded.Inventory.Summary.BotCount != 2 || decoded.Inventory.Summary.RunningBots != 1 {
+		if decoded.Inventory.SurfaceID != "BIG-PAR-287" || decoded.Inventory.Summary.AppCount != 1 || decoded.Inventory.Summary.BotCount != 1 || decoded.Inventory.Summary.RunningBots != 1 {
 			t.Fatalf("unexpected fleet inventory payload: %+v", decoded.Inventory)
+		}
+		if len(decoded.Inventory.Apps) != 1 || decoded.Inventory.Apps[0].AppID != "app-platform" || decoded.Inventory.Apps[0].Team != "platform" || decoded.Inventory.Apps[0].Project != "apollo" {
+			t.Fatalf("expected scoped app inventory, got %+v", decoded.Inventory.Apps)
+		}
+		if len(decoded.Inventory.Bots) != 1 || decoded.Inventory.Bots[0].BotID != "bot-platform-1" || decoded.Inventory.Bots[0].Team != "platform" || decoded.Inventory.Bots[0].Project != "apollo" {
+			t.Fatalf("expected scoped bot inventory, got %+v", decoded.Inventory.Bots)
 		}
 		if !decoded.Audit.ControlPlaneReady {
 			t.Fatalf("expected fleet audit to be ready, got %+v", decoded.Audit)
 		}
-		if decoded.Report.ExportURL != "/v2/clawhost/fleet/export" || !strings.Contains(decoded.Report.Markdown, "# ClawHost Fleet Inventory & Control Plane Report") {
+		if decoded.Report.ExportURL != "/v2/clawhost/fleet/export?project=apollo&team=platform" || !strings.Contains(decoded.Report.Markdown, "# ClawHost Fleet Inventory & Control Plane Report") {
 			t.Fatalf("unexpected fleet report payload: %+v", decoded.Report)
 		}
 
@@ -923,7 +939,7 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 			t.Fatalf("expected fleet export markdown content type, got %q", contentType)
 		}
-		if !strings.Contains(exportResponse.Body.String(), "Control Plane Ready: true") || !strings.Contains(exportResponse.Body.String(), "platform-release-bot") {
+		if !strings.Contains(exportResponse.Body.String(), "Control Plane Ready: true") || !strings.Contains(exportResponse.Body.String(), "platform-release-bot") || !strings.Contains(exportResponse.Body.String(), "team=platform") || !strings.Contains(exportResponse.Body.String(), "project=apollo") || strings.Contains(exportResponse.Body.String(), "growth-campaign-bot") {
 			t.Fatalf("unexpected fleet export body: %s", exportResponse.Body.String())
 		}
 	})

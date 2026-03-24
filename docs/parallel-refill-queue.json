@@ -102,7 +102,9 @@
       "BIG-PAR-301",
       "BIG-PAR-302"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-303"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -188,7 +190,8 @@
     "BIG-PAR-299",
     "BIG-PAR-300",
     "BIG-PAR-301",
-    "BIG-PAR-302"
+    "BIG-PAR-302",
+    "BIG-PAR-303"
   ],
   "issues": [
     {
@@ -718,6 +721,12 @@
       "title": "Add team and project scoping to ClawHost debug surfaces",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-303",
+      "title": "Add team and project scoping to ClawHost fleet surface",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
