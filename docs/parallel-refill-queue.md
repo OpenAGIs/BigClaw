@@ -48,10 +48,10 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 24, 2026:
-  - active slices: `BIG-PAR-359` — Add ClawHost recovery report edge-case coverage
+  - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-351` — Add ClawHost recovery surface unit coverage; `BIG-PAR-352` — Add ClawHost rollout surface unit coverage; `BIG-PAR-353` — Add ClawHost workflow surface payload unit coverage; `BIG-PAR-354` — Add ClawHost parsing helper unit coverage; `BIG-PAR-355` — Add ClawHost policy helper unit coverage; `BIG-PAR-356` — Add ClawHost fleet helper unit coverage; `BIG-PAR-357` — Add ClawHost rollout helper unit coverage; `BIG-PAR-358` — Add ClawHost workflow helper unit coverage
-  - queue status: `queue_runnable=1`, `target_in_progress=2`
+  - recently completed slices: `BIG-PAR-352` — Add ClawHost rollout surface unit coverage; `BIG-PAR-353` — Add ClawHost workflow surface payload unit coverage; `BIG-PAR-354` — Add ClawHost parsing helper unit coverage; `BIG-PAR-355` — Add ClawHost policy helper unit coverage; `BIG-PAR-356` — Add ClawHost fleet helper unit coverage; `BIG-PAR-357` — Add ClawHost rollout helper unit coverage; `BIG-PAR-358` — Add ClawHost workflow helper unit coverage; `BIG-PAR-359` — Add ClawHost recovery report edge-case coverage
+  - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -197,6 +197,7 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-356` — Add ClawHost fleet helper unit coverage
   - `BIG-PAR-357` — Add ClawHost rollout helper unit coverage
   - `BIG-PAR-358` — Add ClawHost workflow helper unit coverage
+  - `BIG-PAR-359` — Add ClawHost recovery report edge-case coverage
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
