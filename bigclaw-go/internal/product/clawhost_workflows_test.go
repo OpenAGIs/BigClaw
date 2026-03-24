@@ -1,6 +1,7 @@
 package product
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -72,6 +73,42 @@ func TestBuildClawHostWorkflowLaneSurfaceIncludesParallelLanesAndSignals(t *test
 	}
 	if approvalLanes != len(surface.Lanes) {
 		t.Fatalf("expected all lanes to include approvals, got %d/%d", approvalLanes, len(surface.Lanes))
+	}
+}
+
+func TestClawHostWorkflowLaneSurfaceCompatibilityAlias(t *testing.T) {
+	tasks := []domain.Task{
+		{
+			ID:        "task-1",
+			State:     domain.TaskBlocked,
+			RiskLevel: domain.RiskHigh,
+			Metadata: map[string]string{
+				"channel":  "telegram",
+				"device":   "wechat",
+				"provider": "openai",
+			},
+			CreatedAt: time.Now(),
+		},
+		{
+			ID: "task-2",
+			Metadata: map[string]string{
+				"channel":  "slack",
+				"provider": "anthropic",
+			},
+			CreatedAt: time.Now(),
+		},
+	}
+
+	aliasedSurface := BuildClawHostWorkflowLaneSurface(tasks, "alice", "platform", "apollo")
+	defaultSurface := BuildDefaultClawHostWorkflowLaneSurface(tasks, "alice", "platform", "apollo")
+	if !reflect.DeepEqual(aliasedSurface, defaultSurface) {
+		t.Fatalf("expected workflow lane alias builder to match default builder, got alias=%+v default=%+v", aliasedSurface, defaultSurface)
+	}
+
+	aliasedAudit := AuditClawHostWorkflowLaneSurface(aliasedSurface)
+	defaultAudit := AuditClawHostWorkflowLaneSurface(defaultSurface)
+	if !reflect.DeepEqual(aliasedAudit, defaultAudit) {
+		t.Fatalf("expected workflow lane alias audit to match default builder audit, got alias=%+v default=%+v", aliasedAudit, defaultAudit)
 	}
 }
 
