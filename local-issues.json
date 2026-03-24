@@ -3023,8 +3023,8 @@
         },
         {
           "author": "codex",
-          "body": "Final branch scope for BIG-PAR-290 also absorbed the follow-on ClawHost tranche: BIG-PAR-292 added the lifecycle recovery scorecard surface, and BIG-PAR-293 through BIG-PAR-296 added focused /v2/control-center regression coverage for recovery, workflow, readiness, and policy so every reviewer-facing ClawHost control-center payload is now pinned in the API suite. Validation: cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenterIncludesClawHost(Policy|Workflow|Readiness|Rollout|Recovery)Surface|TestDebugStatusIncludesClawHostPolicySurface' -> ok; cd bigclaw-go && go test ./internal/api -> ok; bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status -> queue_drained true / queue_runnable 0; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 2016a4ac6ce32a3052eac72b86c8a68051ed361a matches remote SHA 2016a4ac6ce32a3052eac72b86c8a68051ed361a with status ok and synced true. Commit SHA: 2016a4ac6ce32a3052eac72b86c8a68051ed361a. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
-          "created_at": "2026-03-24T18:05:32Z"
+          "body": "Final branch scope for BIG-PAR-290 also absorbed the follow-on ClawHost tranche: BIG-PAR-292 added the lifecycle recovery scorecard surface, BIG-PAR-293 through BIG-PAR-296 added focused /v2/control-center regression coverage for recovery, workflow, readiness, and policy, and BIG-PAR-297 added an aggregate /v2/control-center bundle regression proving all five ClawHost reviewer-facing surfaces coexist in one response. Validation: cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenterIncludes(CompleteClawHostSurfaceBundle|ClawHost(Policy|Workflow|Readiness|Rollout|Recovery)Surface)|TestDebugStatusIncludesClawHostPolicySurface' -> ok; cd bigclaw-go && go test ./internal/api -> ok; bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status -> queue_drained true / queue_runnable 0; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 6aac4e78c5d4d131f3ad1fab1a68c7d95553cc8b matches remote SHA 6aac4e78c5d4d131f3ad1fab1a68c7d95553cc8b with status ok and synced true. Commit SHA: 6aac4e78c5d4d131f3ad1fab1a68c7d95553cc8b. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
+          "created_at": "2026-03-24T18:16:30Z"
         }
       ],
       "created_at": "2026-03-24T15:47:39Z",
@@ -3041,7 +3041,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost provider defaults and tenant policy surfaces",
-      "updated_at": "2026-03-24T18:05:32Z"
+      "updated_at": "2026-03-24T18:16:30Z"
     },
     {
       "assigned_to_worker": true,
