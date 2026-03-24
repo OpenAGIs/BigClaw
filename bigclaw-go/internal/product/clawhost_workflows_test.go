@@ -331,3 +331,55 @@ func TestRenderClawHostWorkflowLaneReportHandlesEmptyLanes(t *testing.T) {
 		}
 	}
 }
+
+func TestRenderClawHostWorkflowLaneReportHandlesEmptySummarySignalsAndOptionalLaneSections(t *testing.T) {
+	surface := ClawHostWorkflowLaneSurface{
+		Name:              "clawhost-workflow-surface",
+		Version:           "go-v1",
+		SourceRepo:        "https://github.com/fastclaw-ai/clawhost",
+		ReferenceRevision: "rev-1",
+		Summary:           map[string]any{},
+		Filters:           nil,
+		OperationalSignals: nil,
+		Lanes: []ClawHostWorkflowLane{
+			{
+				LaneID:             "lane-a",
+				Name:               "Lane A",
+				Stage:              "planning",
+				Route:              "/v2/control-center",
+				Owner:              "ops-bot",
+				AutomationBoundary: "human_gated",
+				ParallelBatch: ClawHostParallelBatch{
+					Name:           "batch-a",
+					CanarySize:     1,
+					MaxConcurrency: 2,
+				},
+			},
+		},
+	}
+	audit := ClawHostWorkflowLaneSurfaceAudit{
+		Name:           surface.Name,
+		Version:        surface.Version,
+		LaneCount:      1,
+		ReadinessScore: 100,
+	}
+
+	report := RenderClawHostWorkflowLaneReport(surface, audit)
+	for _, want := range []string{
+		"## Summary",
+		"## Filters",
+		"- none",
+		"## Operational Signals",
+		"## Lanes",
+		"Lane A (lane-a): stage=planning route=/v2/control-center owner=ops-bot boundary=human_gated batch=batch-a[1/2] approvals=none",
+		"## Gaps",
+		"- Missing route lanes: none",
+	} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected workflow edge-case report to contain %q, got %s", want, report)
+		}
+	}
+	if strings.Contains(report, "handoff_teams=") || strings.Contains(report, "notes=") {
+		t.Fatalf("expected optional lane sections to stay omitted when empty, got %s", report)
+	}
+}

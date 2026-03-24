@@ -161,7 +161,9 @@
       "BIG-PAR-360",
       "BIG-PAR-361"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-362"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -306,7 +308,8 @@
     "BIG-PAR-358",
     "BIG-PAR-359",
     "BIG-PAR-360",
-    "BIG-PAR-361"
+    "BIG-PAR-361",
+    "BIG-PAR-362"
   ],
   "issues": [
     {
@@ -1190,6 +1193,12 @@
       "title": "Add ClawHost workflow max helper unit coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-362",
+      "title": "Add ClawHost workflow report edge-case coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
