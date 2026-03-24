@@ -4538,6 +4538,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct API-unit coverage for clawHostRecoverySurfacePayload and clawHostRecoveryTargetFromTask so empty/default recovery surfaces, scoped summary counts, evidence aggregation, degraded warning paths, fallback identifiers, and non-ClawHost task filtering are pinned outside the larger handler regressions. Validation: cd bigclaw-go && go test ./internal/api -run 'TestClawHostRecovery(SurfacePayloadHandlesEmptyScope|SurfacePayloadSummarizesTargets|TargetFromTaskNormalizesWarnings|TargetFromTaskRejectsNonClawHost)' -count=1 -> ok; cd bigclaw-go && go test ./internal/api ./internal/product -count=1 -> ok. Commit SHA: 4312b66439debee6b4f305fb88801881d8314d36. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T00:47:00Z"
+        }
+      ],
       "created_at": "2026-03-24T22:26:24Z",
       "description": "Add direct API-unit coverage for clawHostRecoverySurfacePayload and clawHostRecoveryTargetFromTask so empty/default surfaces, summary counts, recovery warnings, evidence counting, and non-ClawHost task filtering stay pinned without relying on broad handler regressions.",
       "id": "big-par-351",
@@ -4552,14 +4559,25 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost recovery surface unit coverage",
-      "updated_at": "2026-03-25T00:47:00Z",
-      "comments": [
-        {
-          "author": "codex",
-          "body": "Added direct API-unit coverage for clawHostRecoverySurfacePayload and clawHostRecoveryTargetFromTask so empty/default recovery surfaces, scoped summary counts, evidence aggregation, degraded warning paths, fallback identifiers, and non-ClawHost task filtering are pinned outside the larger handler regressions. Validation: cd bigclaw-go && go test ./internal/api -run 'TestClawHostRecovery(SurfacePayloadHandlesEmptyScope|SurfacePayloadSummarizesTargets|TargetFromTaskNormalizesWarnings|TargetFromTaskRejectsNonClawHost)' -count=1 -> ok; cd bigclaw-go && go test ./internal/api ./internal/product -count=1 -> ok. Commit SHA: 4312b66439debee6b4f305fb88801881d8314d36. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
-          "created_at": "2026-03-25T00:47:00Z"
-        }
-      ]
+      "updated_at": "2026-03-25T00:47:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T22:30:22Z",
+      "description": "Add direct API-unit coverage for clawHostRolloutSurfacePayload so empty/default surfaces, active summary counts, takeover aggregation, and evidence artifact totals stay pinned outside the larger debug/control-center handler regressions.",
+      "id": "big-par-352",
+      "identifier": "BIG-PAR-352",
+      "labels": [
+        "go",
+        "clawhost",
+        "api",
+        "parallel",
+        "test"
+      ],
+      "priority": 3,
+      "state": "In",
+      "title": "Add ClawHost rollout surface unit coverage",
+      "updated_at": "2026-03-24T22:30:22Z"
     }
   ]
 }
