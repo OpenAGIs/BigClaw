@@ -164,7 +164,8 @@
       "BIG-PAR-372",
       "BIG-PAR-373",
       "BIG-PAR-374",
-      "BIG-PAR-375"
+      "BIG-PAR-375",
+      "BIG-PAR-376"
     ],
     "active": [],
     "standby": []
@@ -316,7 +317,8 @@
     "BIG-PAR-372",
     "BIG-PAR-373",
     "BIG-PAR-374",
-    "BIG-PAR-375"
+    "BIG-PAR-375",
+    "BIG-PAR-376"
   ],
   "issues": [
     {
@@ -1228,6 +1230,12 @@
     {
       "identifier": "BIG-PAR-375",
       "title": "Add refill dry-run drift preview regression",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-376",
+      "title": "Fix refill dry-run recent_batches_synced drift",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }

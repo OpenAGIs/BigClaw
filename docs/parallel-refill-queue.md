@@ -50,7 +50,7 @@ longer waits on Linear to keep issue execution moving.
 - Current repo tranche status as of March 24, 2026:
   - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-367` — Add dashboard contract non-map path traversal coverage; `BIG-PAR-369` — Add ClawHost workflow empty-audit coverage; `BIG-PAR-370` — Add ClawHost workflow report empty-state coverage; `BIG-PAR-371` — Add rollout sorted-values blank-skip coverage; `BIG-PAR-372` — Refresh ClawHost review index for merged control-plane surfaces; `BIG-PAR-373` — Add ClawHost merged review-doc regression coverage; `BIG-PAR-374` — Fix refill dry-run queue_status_synced drift; `BIG-PAR-375` — Add refill dry-run drift preview regression
+  - recently completed slices: `BIG-PAR-369` — Add ClawHost workflow empty-audit coverage; `BIG-PAR-370` — Add ClawHost workflow report empty-state coverage; `BIG-PAR-371` — Add rollout sorted-values blank-skip coverage; `BIG-PAR-372` — Refresh ClawHost review index for merged control-plane surfaces; `BIG-PAR-373` — Add ClawHost merged review-doc regression coverage; `BIG-PAR-374` — Fix refill dry-run queue_status_synced drift; `BIG-PAR-375` — Add refill dry-run drift preview regression; `BIG-PAR-376` — Fix refill dry-run recent_batches_synced drift
   - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
@@ -205,6 +205,7 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-373` — Add ClawHost merged review-doc regression coverage
   - `BIG-PAR-374` — Fix refill dry-run queue_status_synced drift
   - `BIG-PAR-375` — Add refill dry-run drift preview regression
+  - `BIG-PAR-376` — Fix refill dry-run recent_batches_synced drift
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -360,3 +361,4 @@ longer waits on Linear to keep issue execution moving.
 145. `BIG-PAR-373`
 146. `BIG-PAR-374`
 147. `BIG-PAR-375`
+148. `BIG-PAR-376`
