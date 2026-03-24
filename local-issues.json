@@ -4713,6 +4713,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct product-package coverage for firstNonEmptyWorkflow in bigclaw-go/internal/product/clawhost_workflow_test.go so the remaining ClawHost workflow helper fallback now pins trimmed first-value selection and blank-input fallback outside the broader workflow surface tests. Validation: cd bigclaw-go && go test ./internal/product -> ok; cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/clawhost-product.cover && go tool cover -func=/tmp/clawhost-product.cover | rg 'clawhost_workflow.go:158|total:' -> firstNonEmptyWorkflow 100.0%, total 90.9%; bash scripts/ops/bigclawctl github-sync status --json -> local SHA a2a9a02f236a1c329296248a4b7d86b18bcd522a matches remote SHA a2a9a02f236a1c329296248a4b7d86b18bcd522a with status ok and synced true; git log -1 --stat -> captured for commit a2a9a02f236a1c329296248a4b7d86b18bcd522a with clawhost workflow test and tracker files in the stat output. Commit SHA: a2a9a02f236a1c329296248a4b7d86b18bcd522a. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-24T22:57:41Z"
+        }
+      ],
       "created_at": "2026-03-24T22:56:33Z",
       "description": "Add focused product-package coverage for the remaining ClawHost workflow helper fallback branches so trimmed first-non-empty selection stays pinned across blank and whitespace-only inputs.",
       "id": "big-par-358",
@@ -4725,9 +4732,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add ClawHost workflow helper unit coverage",
-      "updated_at": "2026-03-24T22:56:33Z"
+      "updated_at": "2026-03-24T22:57:41Z"
     }
   ]
 }

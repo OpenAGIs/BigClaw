@@ -155,11 +155,10 @@
       "BIG-PAR-354",
       "BIG-PAR-355",
       "BIG-PAR-356",
-      "BIG-PAR-357"
-    ],
-    "active": [
+      "BIG-PAR-357",
       "BIG-PAR-358"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1166,7 +1165,7 @@
       "identifier": "BIG-PAR-358",
       "title": "Add ClawHost workflow helper unit coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
