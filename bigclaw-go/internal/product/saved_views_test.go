@@ -187,3 +187,24 @@ func TestNormalizedViewOwnerFallsBackToViewer(t *testing.T) {
 		}
 	}
 }
+
+func TestDigestRecipientsDeduplicatesAndLimitsRecipients(t *testing.T) {
+	tasks := []domain.Task{
+		{Metadata: map[string]string{"owner": " alice ", "reviewer": "bob", "created_by": "carol"}},
+		{Metadata: map[string]string{"owner": "dave", "reviewer": "alice", "created_by": "erin"}},
+	}
+
+	got := digestRecipients(tasks, " alice ")
+	want := []string{"alice", "bob", "carol"}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("digestRecipients dedupe/limit = %v, want %v", got, want)
+	}
+}
+
+func TestDigestRecipientsFallsBackToViewerWhenEmpty(t *testing.T) {
+	got := digestRecipients(nil, "   ")
+	want := []string{"viewer"}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("digestRecipients fallback = %v, want %v", got, want)
+	}
+}

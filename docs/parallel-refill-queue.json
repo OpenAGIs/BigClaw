@@ -229,7 +229,8 @@
     "BIG-PAR-331",
     "BIG-PAR-332",
     "BIG-PAR-333",
-    "BIG-PAR-334"
+    "BIG-PAR-334",
+    "BIG-PAR-335"
   ],
   "issues": [
     {
@@ -951,6 +952,12 @@
       "title": "Add normalizedViewOwner helper coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-335",
+      "title": "Add digestRecipients helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
