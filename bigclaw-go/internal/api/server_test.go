@@ -2685,6 +2685,39 @@ func TestV2DistributedExportSanitizesAttachmentFilename(t *testing.T) {
 	}
 }
 
+func TestV2RunReportSanitizationFallsBackForPunctuationOnlyTaskID(t *testing.T) {
+	recorder := observability.NewRecorder()
+	task := domain.Task{
+		ID:        " / @ ",
+		TraceID:   "trace-run-report-fallback",
+		Title:     "Fallback filename coverage",
+		State:     domain.TaskBlocked,
+		CreatedAt: time.Date(2026, 3, 25, 3, 0, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 3, 25, 3, 15, 0, 0, time.UTC),
+	}
+	recorder.StoreTask(task)
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/runs/%20%2F%20%40%20/report?limit=20", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected fallback-sanitized run report 200, got %d %s", response.Code, response.Body.String())
+	}
+	if disposition := response.Header().Get("Content-Disposition"); disposition != `attachment; filename="all-run-report.md"` {
+		t.Fatalf("expected fallback attachment filename, got %q", disposition)
+	}
+	if !strings.Contains(response.Body.String(), "Task ID:  / @ ") {
+		t.Fatalf("expected markdown to preserve original punctuation-only task id, got %s", response.Body.String())
+	}
+}
+
 func TestV2RunDetailIncludesRepoTriagePacket(t *testing.T) {
 	recorder := observability.NewRecorder()
 	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Control: control.New(), Now: func() time.Time { return time.Unix(1700006100, 0) }}
