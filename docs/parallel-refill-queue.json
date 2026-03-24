@@ -130,7 +130,8 @@
       "BIG-PAR-329",
       "BIG-PAR-330",
       "BIG-PAR-331",
-      "BIG-PAR-332"
+      "BIG-PAR-332",
+      "BIG-PAR-333"
     ],
     "active": [],
     "standby": []
@@ -248,7 +249,8 @@
     "BIG-PAR-329",
     "BIG-PAR-330",
     "BIG-PAR-331",
-    "BIG-PAR-332"
+    "BIG-PAR-332",
+    "BIG-PAR-333"
   ],
   "issues": [
     {
@@ -956,6 +958,12 @@
     {
       "identifier": "BIG-PAR-332",
       "title": "Add filters to ClawHost rollout surface payload",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-333",
+      "title": "Add filters to ClawHost recovery surface payload",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }
