@@ -2,6 +2,7 @@ package product
 
 import (
 	"encoding/json"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -31,7 +32,11 @@ func TestBuildSavedViewCatalogAddsScopedViewsAndDigests(t *testing.T) {
 	for _, view := range catalog.Views {
 		if view.ViewID == "premium-runs-platform-apollo" {
 			premiumFound = true
-			if !strings.Contains(view.Route, "/v2/control-center?team=platform&project=apollo") {
+			parsed, err := url.Parse(view.Route)
+			if err != nil {
+				t.Fatalf("parse premium view route: %v", err)
+			}
+			if parsed.Path != "/v2/control-center" || parsed.Query().Get("team") != "platform" || parsed.Query().Get("project") != "apollo" {
 				t.Fatalf("expected premium view route to carry scope, got %+v", view)
 			}
 		}
@@ -89,5 +94,22 @@ func TestSavedViewCatalogJSONRoundTrip(t *testing.T) {
 	}
 	if restored.Name != catalog.Name || len(restored.Views) != len(catalog.Views) || restored.Subscriptions[0].SubscriptionID == "" {
 		t.Fatalf("unexpected round trip: restored=%+v want=%+v", restored, catalog)
+	}
+}
+
+func TestBuildSavedViewRouteEncodesScopedFilters(t *testing.T) {
+	route := buildSavedViewRoute("/v2/control-center", "platform & ops", "apollo/mobile")
+	parsed, err := url.Parse(route)
+	if err != nil {
+		t.Fatalf("parse encoded saved view route: %v", err)
+	}
+	if parsed.Path != "/v2/control-center" {
+		t.Fatalf("unexpected route path: %s", route)
+	}
+	if parsed.Query().Get("team") != "platform & ops" || parsed.Query().Get("project") != "apollo/mobile" {
+		t.Fatalf("expected encoded scope filters to round-trip, got %s", route)
+	}
+	if strings.Contains(route, "team=platform & ops") || strings.Contains(route, "project=apollo/mobile") {
+		t.Fatalf("expected reserved characters to be URL encoded, got %s", route)
 	}
 }

@@ -2,6 +2,7 @@ package product
 
 import (
 	"fmt"
+	"net/url"
 	"sort"
 	"strings"
 
@@ -315,17 +316,17 @@ func RenderSavedViewReport(catalog SavedViewCatalog, audit SavedViewCatalogAudit
 }
 
 func buildSavedViewRoute(base, team, project string) string {
-	parts := make([]string, 0, 2)
+	values := url.Values{}
 	if team = strings.TrimSpace(team); team != "" {
-		parts = append(parts, "team="+team)
+		values.Set("team", team)
 	}
 	if project = strings.TrimSpace(project); project != "" {
-		parts = append(parts, "project="+project)
+		values.Set("project", project)
 	}
-	if len(parts) == 0 {
+	if len(values) == 0 {
 		return base
 	}
-	return base + "?" + strings.Join(parts, "&")
+	return base + "?" + values.Encode()
 }
 
 func viewScopeSuffix(team, project string) string {

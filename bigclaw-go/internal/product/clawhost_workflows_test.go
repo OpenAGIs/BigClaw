@@ -1,6 +1,7 @@
 package product
 
 import (
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -133,5 +134,24 @@ func TestRenderClawHostWorkflowReportIncludesKeySections(t *testing.T) {
 	}
 	if !strings.HasSuffix(report, "\n") {
 		t.Fatalf("expected markdown report to end with newline, got %q", report)
+	}
+}
+
+func TestBuildClawHostWorkflowSurfaceEncodesScopedLaneRoutes(t *testing.T) {
+	surface := BuildDefaultClawHostWorkflowSurface(nil, "alice", "platform & ops", "apollo/mobile")
+	if len(surface.Lanes) == 0 {
+		t.Fatal("expected workflow lanes from builder")
+	}
+	for _, lane := range surface.Lanes {
+		parsed, err := url.Parse(lane.Route)
+		if err != nil {
+			t.Fatalf("parse lane route %s: %v", lane.LaneID, err)
+		}
+		if parsed.Query().Get("team") != "platform & ops" || parsed.Query().Get("project") != "apollo/mobile" {
+			t.Fatalf("expected encoded scope filters in lane %s route, got %s", lane.LaneID, lane.Route)
+		}
+		if strings.Contains(lane.Route, "team=platform & ops") || strings.Contains(lane.Route, "project=apollo/mobile") {
+			t.Fatalf("expected lane %s route to encode reserved characters, got %s", lane.LaneID, lane.Route)
+		}
 	}
 }

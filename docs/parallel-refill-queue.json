@@ -206,7 +206,8 @@
     "BIG-PAR-308",
     "BIG-PAR-309",
     "BIG-PAR-310",
-    "BIG-PAR-311"
+    "BIG-PAR-311",
+    "BIG-PAR-312"
   ],
   "issues": [
     {
@@ -790,6 +791,12 @@
       "title": "Add workflow export filename fallback coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-312",
+      "title": "Encode scoped ClawHost saved-view routes",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
