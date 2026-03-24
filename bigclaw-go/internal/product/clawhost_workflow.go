@@ -26,6 +26,7 @@ type ClawHostWorkflowItem struct {
 type ClawHostWorkflowSurface struct {
 	Integration       string                  `json:"integration"`
 	Status            string                  `json:"status"`
+	Filters           map[string]string       `json:"filters,omitempty"`
 	SupportedChannels []string                `json:"supported_channels"`
 	Summary           ClawHostWorkflowSummary `json:"summary"`
 	ReviewQueue       []ClawHostWorkflowItem  `json:"review_queue,omitempty"`
@@ -41,10 +42,15 @@ type ClawHostWorkflowSummary struct {
 	SkillMutations    int `json:"skill_mutations"`
 }
 
-func BuildClawHostWorkflowSurface(tasks []domain.Task) ClawHostWorkflowSurface {
+func BuildClawHostWorkflowSurface(tasks []domain.Task, actor, team, project string) ClawHostWorkflowSurface {
 	surface := ClawHostWorkflowSurface{
 		Integration:       "clawhost",
 		Status:            "idle",
+		Filters: map[string]string{
+			"team":    strings.TrimSpace(team),
+			"project": strings.TrimSpace(project),
+			"actor":   normalizedWorkflowOwner(actor),
+		},
 		SupportedChannels: []string{"whatsapp", "telegram", "discord", "slack", "signal"},
 	}
 	items := make([]ClawHostWorkflowItem, 0, len(tasks))

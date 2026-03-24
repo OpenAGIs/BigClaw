@@ -1347,7 +1347,8 @@ func TestDebugStatusIncludesClawHostWorkflowSurface(t *testing.T) {
 	}
 	var decoded struct {
 		Workflow struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				WorkflowItems     int `json:"workflow_items"`
 				PairingApprovals  int `json:"pairing_approvals"`
@@ -1368,6 +1369,9 @@ func TestDebugStatusIncludesClawHostWorkflowSurface(t *testing.T) {
 	}
 	if decoded.Workflow.Status != "active" || decoded.Workflow.Summary.WorkflowItems != 2 || decoded.Workflow.Summary.PairingApprovals != 1 || decoded.Workflow.Summary.CredentialReviews != 1 || decoded.Workflow.Summary.TakeoverRequired != 1 {
 		t.Fatalf("unexpected workflow surface: %+v", decoded.Workflow)
+	}
+	if decoded.Workflow.Filters["team"] != "" || decoded.Workflow.Filters["project"] != "" || decoded.Workflow.Filters["actor"] != "workflow-operator" {
+		t.Fatalf("expected unscoped workflow filters, got %+v", decoded.Workflow.Filters)
 	}
 	if len(decoded.Workflow.ReviewQueue) != 2 || !decoded.Workflow.ReviewQueue[0].TakeoverRequired {
 		t.Fatalf("expected takeover-required item first, got %+v", decoded.Workflow.ReviewQueue)
@@ -5237,7 +5241,8 @@ func TestV2ControlCenterIncludesCompleteClawHostSurfaceBundle(t *testing.T) {
 			} `json:"summary"`
 		} `json:"clawhost_policy_surface"`
 		Workflow struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				WorkflowItems int `json:"workflow_items"`
 			} `json:"summary"`
@@ -5269,6 +5274,9 @@ func TestV2ControlCenterIncludesCompleteClawHostSurfaceBundle(t *testing.T) {
 	}
 	if decoded.Workflow.Status != "active" || decoded.Workflow.Summary.WorkflowItems != 1 {
 		t.Fatalf("expected active ClawHost workflow surface in bundle, got %+v", decoded.Workflow)
+	}
+	if decoded.Workflow.Filters["team"] != "" || decoded.Workflow.Filters["project"] != "" || decoded.Workflow.Filters["actor"] != "workflow-operator" {
+		t.Fatalf("expected unscoped ClawHost workflow filters in bundle, got %+v", decoded.Workflow.Filters)
 	}
 	if decoded.Rollout.Status != "active" || decoded.Rollout.Summary.ActivePlans != 1 {
 		t.Fatalf("expected active ClawHost rollout surface in bundle, got %+v", decoded.Rollout)
@@ -5399,6 +5407,7 @@ func TestV2ControlCenterScopesClawHostSurfaceBundleByFilters(t *testing.T) {
 			} `json:"review_queue"`
 		} `json:"clawhost_policy_surface"`
 		Workflow struct {
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				WorkflowItems int `json:"workflow_items"`
 			} `json:"summary"`
@@ -5449,6 +5458,9 @@ func TestV2ControlCenterScopesClawHostSurfaceBundleByFilters(t *testing.T) {
 	}
 	if decoded.Workflow.Summary.WorkflowItems != 1 || len(decoded.Workflow.ReviewQueue) != 1 || decoded.Workflow.ReviewQueue[0].TaskID != "clawhost-filtered-1" {
 		t.Fatalf("expected scoped workflow surface, got %+v", decoded.Workflow)
+	}
+	if decoded.Workflow.Filters["team"] != "platform" || decoded.Workflow.Filters["project"] != "sales" || decoded.Workflow.Filters["actor"] != "workflow-operator" {
+		t.Fatalf("expected scoped workflow filters, got %+v", decoded.Workflow.Filters)
 	}
 	if decoded.Rollout.Summary.ActivePlans != 1 || len(decoded.Rollout.Plans) != 1 || len(decoded.Rollout.Plans[0].Waves) != 1 || len(decoded.Rollout.Plans[0].Waves[0].Targets) != 1 || decoded.Rollout.Plans[0].Waves[0].Targets[0].TaskID != "clawhost-filtered-1" {
 		t.Fatalf("expected scoped rollout surface, got %+v", decoded.Rollout)

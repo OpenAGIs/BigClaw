@@ -39,9 +39,12 @@ func TestBuildClawHostWorkflowSurface(t *testing.T) {
 				"whatsapp_pairing_status": "paired",
 			},
 		},
-	})
+	}, "alice", "platform", "apollo")
 	if surface.Status != "active" || surface.Summary.WorkflowItems != 2 || surface.Summary.Tenants != 2 {
 		t.Fatalf("unexpected workflow surface summary: %+v", surface)
+	}
+	if surface.Filters["actor"] != "alice" || surface.Filters["team"] != "platform" || surface.Filters["project"] != "apollo" {
+		t.Fatalf("unexpected workflow filters: %+v", surface.Filters)
 	}
 	if surface.Summary.PairingApprovals != 1 || surface.Summary.CredentialReviews != 1 || surface.Summary.TakeoverRequired != 1 {
 		t.Fatalf("unexpected workflow approval counts: %+v", surface.Summary)
@@ -73,7 +76,7 @@ func TestBuildClawHostWorkflowSurfaceIgnoresNonClawHostTasksAndUsesFallbackReaso
 				"channel_types": "slack",
 			},
 		},
-	})
+	}, "", "", "")
 
 	if surface.Status != "active" || surface.Summary.WorkflowItems != 1 || surface.Summary.Tenants != 1 {
 		t.Fatalf("expected only clawhost workflow item to count, got %+v", surface)
@@ -132,7 +135,7 @@ func TestBuildClawHostWorkflowSurfaceOrdersReviewQueue(t *testing.T) {
 				"whatsapp_pairing_status": "waiting",
 			},
 		},
-	})
+	}, "", "", "")
 
 	got := make([]string, 0, len(surface.ReviewQueue))
 	for _, item := range surface.ReviewQueue {
@@ -155,7 +158,7 @@ func TestBuildClawHostWorkflowSurfaceIdleDefaults(t *testing.T) {
 				"channel_types": "slack",
 			},
 		},
-	})
+	}, "", "", "")
 
 	if surface.Status != "idle" || surface.Summary.WorkflowItems != 0 || surface.Summary.Tenants != 0 {
 		t.Fatalf("expected idle workflow surface, got %+v", surface)
@@ -187,7 +190,7 @@ func TestBuildClawHostWorkflowSurfaceNormalizesParsingDefaults(t *testing.T) {
 				"agent_skill_count":         "oops",
 			},
 		},
-	})
+	}, "", "", "")
 
 	if surface.Status != "active" || surface.Summary.WorkflowItems != 1 || surface.Summary.Tenants != 1 {
 		t.Fatalf("expected normalized workflow surface to stay active with one tenant, got %+v", surface)
@@ -234,7 +237,7 @@ func TestBuildClawHostWorkflowSurfaceDefaultsPairingAndTrimsCredentialPath(t *te
 				"admin_surface_path": "  /credentials/default  ",
 			},
 		},
-	})
+	}, "", "", "")
 
 	if surface.Status != "active" || surface.Summary.WorkflowItems != 1 || surface.Summary.PairingApprovals != 1 || surface.Summary.TakeoverRequired != 1 {
 		t.Fatalf("expected default pairing workflow item to require approval/takeover, got %+v", surface)
@@ -274,7 +277,7 @@ func TestBuildClawHostWorkflowSurfacePrefersMetadataIdentifiers(t *testing.T) {
 				"whatsapp_pairing_status": "paired",
 			},
 		},
-	})
+	}, "", "", "")
 
 	if surface.Status != "active" || len(surface.ReviewQueue) != 1 {
 		t.Fatalf("expected one active workflow item, got %+v", surface)

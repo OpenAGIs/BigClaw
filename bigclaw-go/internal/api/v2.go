@@ -1256,7 +1256,7 @@ func (s *Server) buildControlCenterResponse(
 		"retention_expiry_surface":        retentionExpirySurfacePayload(),
 		"provider_live_handoff_isolation": providerLiveHandoffIsolationPayload(),
 		"clawhost_policy_surface":         clawHostPolicySurfacePayload(clawHostTasks, filters.Team, filters.Project),
-		"clawhost_workflow_surface":       clawHostWorkflowSurfacePayload(clawHostTasks),
+		"clawhost_workflow_surface":       clawHostWorkflowSurfacePayload(clawHostTasks, authorization.Actor, filters.Team, filters.Project),
 		"clawhost_rollout_surface":        clawHostRolloutSurfacePayload(clawHostTasks, filters.Team, filters.Project),
 		"clawhost_readiness_surface":      clawHostReadinessSurfacePayload(clawHostTasks, filters.Team, filters.Project),
 		"clawhost_recovery_surface":       clawHostRecoverySurfacePayload(clawHostTasks, filters.Team, filters.Project),
