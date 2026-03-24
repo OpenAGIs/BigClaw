@@ -50,7 +50,7 @@ longer waits on Linear to keep issue execution moving.
 - Current repo tranche status as of March 24, 2026:
   - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-317` — Add product regression coverage for empty ClawHost workflow lane reports; `BIG-PAR-318` — Add product regression coverage for empty ClawHost rollout audits; `BIG-PAR-319` — Add product regression coverage for empty ClawHost recovery audits; `BIG-PAR-320` — Add product regression coverage for ClawHost fleet compatibility aliases; `BIG-PAR-321` — Add product regression coverage for default ClawHost fleet compatibility alias; `BIG-PAR-322` — Add product regression coverage for ClawHost workflow parsing defaults; `BIG-PAR-323` — Add product regression coverage for ClawHost workflow pairing defaults; `BIG-PAR-324` — Add product regression coverage for ClawHost workflow metadata precedence
+  - recently completed slices: `BIG-PAR-318` — Add product regression coverage for empty ClawHost rollout audits; `BIG-PAR-319` — Add product regression coverage for empty ClawHost recovery audits; `BIG-PAR-320` — Add product regression coverage for ClawHost fleet compatibility aliases; `BIG-PAR-321` — Add product regression coverage for default ClawHost fleet compatibility alias; `BIG-PAR-322` — Add product regression coverage for ClawHost workflow parsing defaults; `BIG-PAR-323` — Add product regression coverage for ClawHost workflow pairing defaults; `BIG-PAR-324` — Add product regression coverage for ClawHost workflow metadata precedence; `BIG-PAR-325` — Add product regression coverage for ClawHost workflow lane compatibility alias
   - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
@@ -163,6 +163,7 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-322` — Add product regression coverage for ClawHost workflow parsing defaults
   - `BIG-PAR-323` — Add product regression coverage for ClawHost workflow pairing defaults
   - `BIG-PAR-324` — Add product regression coverage for ClawHost workflow metadata precedence
+  - `BIG-PAR-325` — Add product regression coverage for ClawHost workflow lane compatibility alias
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -276,3 +277,4 @@ longer waits on Linear to keep issue execution moving.
 103. `BIG-PAR-322`
 104. `BIG-PAR-323`
 105. `BIG-PAR-324`
+106. `BIG-PAR-325`

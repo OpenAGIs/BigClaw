@@ -122,11 +122,10 @@
       "BIG-PAR-321",
       "BIG-PAR-322",
       "BIG-PAR-323",
-      "BIG-PAR-324"
-    ],
-    "active": [
+      "BIG-PAR-324",
       "BIG-PAR-325"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -902,7 +901,7 @@
       "identifier": "BIG-PAR-325",
       "title": "Add product regression coverage for ClawHost workflow lane compatibility alias",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
