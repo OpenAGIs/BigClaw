@@ -1082,7 +1082,8 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 				if err := queue.Save(); err != nil {
 					return err
 				}
-				queueStatusWritten = true
+				queueStatusWritten = queueStatusUpdates > 0
+				recentBatchesWritten = queueRecentBatchUpdates > 0
 			}
 		}
 	}
@@ -1111,8 +1112,8 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		if err := queue.Save(); err != nil {
 			return err
 		}
-		queueStatusWritten = queueStatusUpdates > 0
-		recentBatchesWritten = recentBatchesUpdated
+		queueStatusWritten = queueStatusWritten || queueStatusUpdates > 0
+		recentBatchesWritten = recentBatchesWritten || recentBatchesUpdated
 	}
 	active := map[string]struct{}{}
 	issueIDs := map[string]string{}
