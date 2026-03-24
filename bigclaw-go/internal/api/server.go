@@ -224,7 +224,7 @@ func (s *Server) Handler() http.Handler {
 			"clawhost_workflow_surface":      clawHostWorkflowSurfacePayload(clawHostTasks),
 			"clawhost_rollout_surface":       clawHostRolloutSurfacePayload(clawHostTasks, team, project),
 			"clawhost_readiness_surface":     clawHostReadinessSurfacePayload(clawHostTasks),
-			"clawhost_recovery_surface":      clawHostRecoverySurfacePayload(clawHostTasks),
+			"clawhost_recovery_surface":      clawHostRecoverySurfacePayload(clawHostTasks, team, project),
 			"broker_bootstrap_surface":       brokerBootstrapSurfacePayload(),
 			"broker_review_bundle":           brokerReviewBundleSurfacePayload(),
 			"validation_bundle_continuation": validationBundleContinuationGatePayload(),

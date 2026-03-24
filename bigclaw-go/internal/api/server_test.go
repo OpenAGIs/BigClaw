@@ -1517,7 +1517,8 @@ func TestDebugStatusIncludesClawHostRecoverySurface(t *testing.T) {
 	}
 	var decoded struct {
 		Recovery struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				Targets            int `json:"targets"`
 				RecoverableTargets int `json:"recoverable_targets"`
@@ -1538,6 +1539,9 @@ func TestDebugStatusIncludesClawHostRecoverySurface(t *testing.T) {
 	}
 	if decoded.Recovery.Status != "active" || decoded.Recovery.Summary.Targets != 2 || decoded.Recovery.Summary.RecoverableTargets != 1 || decoded.Recovery.Summary.DegradedTargets != 1 || decoded.Recovery.Summary.IsolatedTargets != 1 || decoded.Recovery.Summary.TakeoverRequired != 1 || decoded.Recovery.Summary.EvidenceArtifacts != 2 {
 		t.Fatalf("unexpected recovery summary: %+v", decoded.Recovery)
+	}
+	if decoded.Recovery.Filters["team"] != "" || decoded.Recovery.Filters["project"] != "" {
+		t.Fatalf("expected unscoped recovery filters, got %+v", decoded.Recovery.Filters)
 	}
 	if len(decoded.Recovery.Targets) != 2 || decoded.Recovery.Targets[0].RecoveryStatus != "degraded" {
 		t.Fatalf("expected degraded recovery target sorted first, got %+v", decoded.Recovery.Targets)
@@ -4870,7 +4874,8 @@ func TestV2ControlCenterIncludesClawHostRecoverySurface(t *testing.T) {
 	}
 	var decoded struct {
 		ClawHostRecovery struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				Targets            int `json:"targets"`
 				RecoverableTargets int `json:"recoverable_targets"`
@@ -4891,6 +4896,9 @@ func TestV2ControlCenterIncludesClawHostRecoverySurface(t *testing.T) {
 	}
 	if decoded.ClawHostRecovery.Status != "active" || decoded.ClawHostRecovery.Summary.Targets != 2 || decoded.ClawHostRecovery.Summary.RecoverableTargets != 1 || decoded.ClawHostRecovery.Summary.DegradedTargets != 1 || decoded.ClawHostRecovery.Summary.IsolatedTargets != 1 || decoded.ClawHostRecovery.Summary.TakeoverRequired != 1 || decoded.ClawHostRecovery.Summary.EvidenceArtifacts != 2 {
 		t.Fatalf("unexpected ClawHost recovery control center surface: %+v", decoded.ClawHostRecovery)
+	}
+	if decoded.ClawHostRecovery.Filters["team"] != "" || decoded.ClawHostRecovery.Filters["project"] != "" {
+		t.Fatalf("expected unscoped ClawHost recovery filters, got %+v", decoded.ClawHostRecovery.Filters)
 	}
 	if len(decoded.ClawHostRecovery.Targets) != 2 || decoded.ClawHostRecovery.Targets[0].RecoveryStatus != "degraded" || decoded.ClawHostRecovery.Targets[0].ClawName != "support-east" {
 		t.Fatalf("expected degraded ClawHost recovery target first, got %+v", decoded.ClawHostRecovery.Targets)
@@ -5412,6 +5420,7 @@ func TestV2ControlCenterScopesClawHostSurfaceBundleByFilters(t *testing.T) {
 			} `json:"targets"`
 		} `json:"clawhost_readiness_surface"`
 		Recovery struct {
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				Targets int `json:"targets"`
 			} `json:"summary"`
@@ -5443,6 +5452,9 @@ func TestV2ControlCenterScopesClawHostSurfaceBundleByFilters(t *testing.T) {
 	}
 	if decoded.Recovery.Summary.Targets != 1 || len(decoded.Recovery.Targets) != 1 || decoded.Recovery.Targets[0].TaskID != "clawhost-filtered-1" {
 		t.Fatalf("expected scoped recovery surface, got %+v", decoded.Recovery)
+	}
+	if decoded.Recovery.Filters["team"] != "platform" || decoded.Recovery.Filters["project"] != "sales" {
+		t.Fatalf("expected scoped recovery filters, got %+v", decoded.Recovery.Filters)
 	}
 }
 

@@ -1259,7 +1259,7 @@ func (s *Server) buildControlCenterResponse(
 		"clawhost_workflow_surface":       clawHostWorkflowSurfacePayload(clawHostTasks),
 		"clawhost_rollout_surface":        clawHostRolloutSurfacePayload(clawHostTasks, filters.Team, filters.Project),
 		"clawhost_readiness_surface":      clawHostReadinessSurfacePayload(clawHostTasks),
-		"clawhost_recovery_surface":       clawHostRecoverySurfacePayload(clawHostTasks),
+		"clawhost_recovery_surface":       clawHostRecoverySurfacePayload(clawHostTasks, filters.Team, filters.Project),
 		"broker_bootstrap_surface":        brokerBootstrapSurfacePayload(),
 		"broker_review_bundle":            brokerReviewBundleSurfacePayload(),
 		"summary":                         summarizeControlCenter(queueTasks, filteredDeadLetters),
