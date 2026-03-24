@@ -1725,6 +1725,7 @@ func TestDebugStatusScopesClawHostSurfacesByFilters(t *testing.T) {
 			Project string `json:"project"`
 		} `json:"filters"`
 		Policy struct {
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				ActivePolicies int `json:"active_policies"`
 			} `json:"summary"`
@@ -1766,6 +1767,9 @@ func TestDebugStatusScopesClawHostSurfacesByFilters(t *testing.T) {
 	}
 	if decoded.Policy.Summary.ActivePolicies != 1 || len(decoded.Policy.ReviewQueue) != 1 || decoded.Policy.ReviewQueue[0].TaskID != "clawhost-debug-filtered-1" {
 		t.Fatalf("expected scoped debug policy surface, got %+v", decoded.Policy)
+	}
+	if decoded.Policy.Filters["team"] != "platform" || decoded.Policy.Filters["project"] != "sales" {
+		t.Fatalf("expected scoped debug policy filters, got %+v", decoded.Policy.Filters)
 	}
 	if containsString(decoded.Policy.ObservedProviders, "anthropic") || !containsString(decoded.Policy.ObservedProviders, "openai") {
 		t.Fatalf("expected scoped debug policy providers, got %+v", decoded.Policy.ObservedProviders)

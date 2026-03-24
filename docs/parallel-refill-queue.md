@@ -50,7 +50,7 @@ longer waits on Linear to keep issue execution moving.
 - Current repo tranche status as of March 25, 2026:
   - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-332` — Add filters to ClawHost rollout surface payload; `BIG-PAR-333` — Add filters to ClawHost recovery surface payload; `BIG-PAR-334` — Add filters to ClawHost readiness surface payload; `BIG-PAR-335` — Thread filters into ClawHost workflow surface payload; `BIG-PAR-336` — Add workflow filter assertions to API regressions; `BIG-PAR-337` — Add scoped debug filter assertions for remaining ClawHost surfaces; `BIG-PAR-338` — Add unscoped bundle filter assertions for remaining ClawHost surfaces; `BIG-PAR-339` — Add policy filter assertions to bundle regressions
+  - recently completed slices: `BIG-PAR-333` — Add filters to ClawHost recovery surface payload; `BIG-PAR-334` — Add filters to ClawHost readiness surface payload; `BIG-PAR-335` — Thread filters into ClawHost workflow surface payload; `BIG-PAR-336` — Add workflow filter assertions to API regressions; `BIG-PAR-337` — Add scoped debug filter assertions for remaining ClawHost surfaces; `BIG-PAR-338` — Add unscoped bundle filter assertions for remaining ClawHost surfaces; `BIG-PAR-339` — Add policy filter assertions to bundle regressions; `BIG-PAR-340` — Add policy filter assertions to standalone API regressions
   - queue status: `queue_runnable=1`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
@@ -178,6 +178,7 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-337` — Add scoped debug filter assertions for remaining ClawHost surfaces
   - `BIG-PAR-338` — Add unscoped bundle filter assertions for remaining ClawHost surfaces
   - `BIG-PAR-339` — Add policy filter assertions to bundle regressions
+  - `BIG-PAR-340` — Add policy filter assertions to standalone API regressions
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -307,3 +308,4 @@ longer waits on Linear to keep issue execution moving.
 119. `BIG-PAR-338`
 120. `BIG-PAR-339`
 121. `BIG-PAR-340`
+122. `BIG-PAR-341`

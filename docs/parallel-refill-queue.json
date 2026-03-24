@@ -137,7 +137,8 @@
       "BIG-PAR-336",
       "BIG-PAR-337",
       "BIG-PAR-338",
-      "BIG-PAR-339"
+      "BIG-PAR-339",
+      "BIG-PAR-340"
     ],
     "active": [],
     "standby": []
@@ -263,7 +264,8 @@
     "BIG-PAR-337",
     "BIG-PAR-338",
     "BIG-PAR-339",
-    "BIG-PAR-340"
+    "BIG-PAR-340",
+    "BIG-PAR-341"
   ],
   "issues": [
     {
@@ -1019,6 +1021,12 @@
     {
       "identifier": "BIG-PAR-340",
       "title": "Add policy filter assertions to standalone API regressions",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-341",
+      "title": "Add scoped debug policy filter assertion",
       "track": "Go Mainline Follow-ups",
       "status": "In"
     }
