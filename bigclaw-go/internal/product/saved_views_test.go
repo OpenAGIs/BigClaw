@@ -496,6 +496,32 @@ func TestAuditSavedViewCatalogEmptyCatalogReadiness(t *testing.T) {
 	}
 }
 
+func TestAuditSavedViewCatalogFlagsInvalidVisibilityAndMissingRecipients(t *testing.T) {
+	catalog := SavedViewCatalog{
+		Name:    "catalog",
+		Version: "v1",
+		Views: []SavedView{
+			{ViewID: "view-1", Name: "Zulu", Route: "/v2/control-center", Owner: "alice", Visibility: "external", Filters: []SavedViewFilter{{Field: "state", Operator: "eq", Value: "running"}}},
+			{ViewID: "view-2", Name: "Alpha", Route: "/v2/control-center", Owner: "alice", Visibility: "shared", Filters: []SavedViewFilter{{Field: "state", Operator: "eq", Value: "blocked"}}},
+		},
+		Subscriptions: []AlertDigestSubscription{
+			{SubscriptionID: "sub-2", SavedViewID: "view-2", Channel: "email", Cadence: "daily", Recipients: []string{"alice"}},
+			{SubscriptionID: "sub-1", SavedViewID: "view-1", Channel: "slack", Cadence: "daily"},
+		},
+	}
+
+	audit := AuditSavedViewCatalog(catalog)
+	if got := strings.Join(audit.InvalidVisibilityViews, ","); got != "Alpha,Zulu" {
+		t.Fatalf("expected sorted invalid visibility findings, got %+v", audit)
+	}
+	if got := strings.Join(audit.SubscriptionsMissingRecipients, ","); got != "sub-1" {
+		t.Fatalf("expected missing-recipient finding, got %+v", audit)
+	}
+	if audit.ReadinessScore != 0 {
+		t.Fatalf("expected invalid visibility and missing recipients to drive readiness to zero, got %+v", audit)
+	}
+}
+
 func TestAuditSavedViewCatalogReadinessFloorsAtZero(t *testing.T) {
 	catalog := SavedViewCatalog{
 		Name:    "catalog",
