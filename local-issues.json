@@ -3284,15 +3284,22 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-303` after adding regression coverage for empty-actor export URL omission on the ClawHost workflow surface.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now verifies the workflow endpoint omits the `actor` query parameter from its export URL when no usable actor is provided, while still preserving the non-empty `team` and `project` filters and using the default workflow owner in the surface payload.\n- `local-issues.json` closes the actor-omission slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `49d4ee073ccfab6fb5eb4fcab01bc206672e7e48` matches remote SHA `49d4ee073ccfab6fb5eb4fcab01bc206672e7e48` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `49d4ee073ccfab6fb5eb4fcab01bc206672e7e48`\n\nCommit SHA: `49d4ee073ccfab6fb5eb4fcab01bc206672e7e48`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T18:47:22Z"
+        }
+      ],
       "created_at": "2026-03-24T18:43:44Z",
       "description": "Add API regression coverage that proves the ClawHost workflow endpoint omits the actor query parameter from its export URL when neither the request query nor X-BigClaw-Actor provides a usable actor.",
       "id": "big-par-303",
       "identifier": "BIG-PAR-303",
       "labels": [],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add ClawHost empty-actor export omission coverage",
-      "updated_at": "2026-03-24T18:44:09Z"
+      "updated_at": "2026-03-24T18:47:22Z"
     }
   ]
 }
