@@ -341,3 +341,35 @@ func TestRenderSavedViewReportEmptyState(t *testing.T) {
 		t.Fatalf("expected empty-state gap fallbacks, got %s", report)
 	}
 }
+
+func TestRound1(t *testing.T) {
+	for _, tc := range []struct {
+		input float64
+		want  float64
+	}{
+		{input: 0, want: 0},
+		{input: 12.34, want: 12.3},
+		{input: 12.35, want: 12.4},
+		{input: 99.96, want: 100.0},
+	} {
+		if got := round1(tc.input); got != tc.want {
+			t.Fatalf("round1(%v) = %v, want %v", tc.input, got, tc.want)
+		}
+	}
+}
+
+func TestMaxFloat(t *testing.T) {
+	for _, tc := range []struct {
+		left  float64
+		right float64
+		want  float64
+	}{
+		{left: 10, right: 2, want: 10},
+		{left: -1, right: 0, want: 0},
+		{left: 4.5, right: 4.5, want: 4.5},
+	} {
+		if got := maxFloat(tc.left, tc.right); got != tc.want {
+			t.Fatalf("maxFloat(%v, %v) = %v, want %v", tc.left, tc.right, got, tc.want)
+		}
+	}
+}
