@@ -1,6 +1,7 @@
 package product
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -19,6 +20,38 @@ func TestBuildDefaultClawHostFleetInventoryIsControlPlaneReady(t *testing.T) {
 	}
 	if !audit.ControlPlaneReady {
 		t.Fatalf("expected default fleet inventory to be control-plane ready, got %+v", audit)
+	}
+}
+
+func TestClawHostFleetInventoryCompatibilityAliases(t *testing.T) {
+	apps := []ClawHostAppInventory{
+		{AppID: "app-zeta", Name: "zeta", TenantID: "tenant-z", Team: "platform", Project: "apollo"},
+		{AppID: "app-alpha", Name: "alpha", TenantID: "tenant-a", Team: "growth", Project: "campaigns"},
+	}
+	bots := []ClawHostBotInventory{
+		{BotID: "bot-zeta", AppID: "app-zeta", Name: "zeta-bot", UserID: "user-z", Status: "running", Endpoint: "http://clawhost.local/proxy/bot-zeta/", Subdomain: "zeta.clawhost.loc", PodIsolation: true, ServiceIsolation: true, ModelProviders: []string{"openai"}},
+		{BotID: "bot-alpha", AppID: "app-alpha", Name: "alpha-bot", UserID: "user-a", Status: "starting", Endpoint: "http://clawhost.local/proxy/bot-alpha/", Subdomain: "alpha.clawhost.loc", PodIsolation: true, ServiceIsolation: true, ModelProviders: []string{"anthropic"}},
+	}
+
+	aliasedInventory := BuildClawHostFleetInventory(apps, bots)
+	surfaceInventory := BuildClawHostFleetSurface(apps, bots)
+	if aliasedInventory.SurfaceID != surfaceInventory.SurfaceID || aliasedInventory.Version != surfaceInventory.Version {
+		t.Fatalf("expected fleet alias builder metadata to match surface builder, got alias=%+v surface=%+v", aliasedInventory, surfaceInventory)
+	}
+	if !reflect.DeepEqual(aliasedInventory.Apps, surfaceInventory.Apps) {
+		t.Fatalf("expected fleet alias builder apps to match surface builder, got alias=%+v surface=%+v", aliasedInventory.Apps, surfaceInventory.Apps)
+	}
+	if !reflect.DeepEqual(aliasedInventory.Bots, surfaceInventory.Bots) {
+		t.Fatalf("expected fleet alias builder bots to match surface builder, got alias=%+v surface=%+v", aliasedInventory.Bots, surfaceInventory.Bots)
+	}
+	if aliasedInventory.Summary != surfaceInventory.Summary {
+		t.Fatalf("expected fleet alias builder summary to match surface builder, got alias=%+v surface=%+v", aliasedInventory.Summary, surfaceInventory.Summary)
+	}
+
+	aliasedAudit := AuditClawHostFleetInventory(aliasedInventory)
+	surfaceAudit := AuditClawHostFleetSurface(surfaceInventory)
+	if !reflect.DeepEqual(aliasedAudit, surfaceAudit) {
+		t.Fatalf("expected fleet alias audit to match surface audit, got alias=%+v surface=%+v", aliasedAudit, surfaceAudit)
 	}
 }
 
