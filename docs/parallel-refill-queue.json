@@ -165,7 +165,8 @@
       "BIG-PAR-373",
       "BIG-PAR-374",
       "BIG-PAR-375",
-      "BIG-PAR-376"
+      "BIG-PAR-376",
+      "BIG-PAR-377"
     ],
     "active": [],
     "standby": []
@@ -318,7 +319,8 @@
     "BIG-PAR-373",
     "BIG-PAR-374",
     "BIG-PAR-375",
-    "BIG-PAR-376"
+    "BIG-PAR-376",
+    "BIG-PAR-377"
   ],
   "issues": [
     {
@@ -1236,6 +1238,12 @@
     {
       "identifier": "BIG-PAR-376",
       "title": "Fix refill dry-run recent_batches_synced drift",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-377",
+      "title": "Fix refill apply write flags for queue metadata sync",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }
