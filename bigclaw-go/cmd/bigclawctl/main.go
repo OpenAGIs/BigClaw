@@ -1058,6 +1058,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 	queueRecentBatchUpdates := 0
 	queueStatusWritten := false
 	queueStatusSynced := false
+	recentBatchesSynced := false
 	recentBatchesUpdated := false
 	recentBatchesWritten := false
 	var allIssues []refill.TrackedIssue
@@ -1073,6 +1074,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		queueStatusUpdates = queue.StatusSyncUpdatesForStates(issueStates)
 		queueRecentBatchUpdates = queue.RecentBatchSyncUpdatesForStates(issueStates)
 		queueStatusSynced = queueStatusUpdates == 0
+		recentBatchesSynced = queueRecentBatchUpdates == 0
 		if syncQueueStatus {
 			queueStatusUpdates = queue.SyncStatusFromStates(issueStates)
 			queueRecentBatchUpdates = queue.SyncRecentBatchesFromStates(issueStates)
@@ -1133,7 +1135,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		"target_in_progress":         target,
 		"candidates":                 candidates,
 		"mode":                       map[bool]string{true: "apply", false: "dry-run"}[apply],
-		"recent_batches_synced":      client.backend() == "local",
+		"recent_batches_synced":      recentBatchesSynced,
 		"recent_batches_updated":     recentBatchesUpdated,
 		"recent_batches_written":     recentBatchesWritten,
 		"queue_status_synced":        queueStatusSynced,

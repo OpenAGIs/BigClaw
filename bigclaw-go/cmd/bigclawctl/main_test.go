@@ -631,6 +631,9 @@ func TestRunRefillOnceLocalDryRunReportsQueueStatusSyncedWithoutSyncFlag(t *test
 	if !bytes.Contains(output, []byte(`"queue_status_synced": true`)) {
 		t.Fatalf("expected queue status to report synced in dry-run output, got %s", string(output))
 	}
+	if !bytes.Contains(output, []byte(`"recent_batches_synced": true`)) {
+		t.Fatalf("expected recent batches to report synced in dry-run output, got %s", string(output))
+	}
 	if !bytes.Contains(output, []byte(`"queue_status_updates": 0`)) {
 		t.Fatalf("expected zero queue status updates in dry-run output, got %s", string(output))
 	}
@@ -702,6 +705,9 @@ func TestRunRefillOnceLocalDryRunReportsQueueDriftWithoutMutatingQueue(t *testin
 	}
 	if !bytes.Contains(output, []byte(`"queue_status_synced": false`)) {
 		t.Fatalf("expected queue status to report drift in dry-run output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"recent_batches_synced": false`)) {
+		t.Fatalf("expected recent batches to report drift in dry-run output, got %s", string(output))
 	}
 	if !bytes.Contains(output, []byte(`"queue_status_updates": 1`)) {
 		t.Fatalf("expected one queue status update in dry-run output, got %s", string(output))
