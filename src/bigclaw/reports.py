@@ -384,7 +384,12 @@ class TakeoverRequest:
     status: str
     reason: str
     required_approvals: List[str] = field(default_factory=list)
+    blocked_tasks: List[str] = field(default_factory=list)
     actions: List["ConsoleAction"] = field(default_factory=list)
+
+    @property
+    def blocked_task_count(self) -> int:
+        return len(self.blocked_tasks)
 
 
 @dataclass
@@ -407,6 +412,19 @@ class TakeoverQueue:
     @property
     def approval_count(self) -> int:
         return sum(len(request.required_approvals) for request in self.requests)
+
+    @property
+    def blocked_task_count(self) -> int:
+        blocked_tasks: List[str] = []
+        for request in self.requests:
+            for task_id in request.blocked_tasks:
+                if task_id not in blocked_tasks:
+                    blocked_tasks.append(task_id)
+        return len(blocked_tasks)
+
+    @property
+    def requests_with_blocked_tasks(self) -> int:
+        return sum(1 for request in self.requests if request.blocked_tasks)
 
     @property
     def recommendation(self) -> str:
@@ -1319,7 +1337,8 @@ def render_orchestration_portfolio_report(
         f"{model}={count}" for model, count in sorted(portfolio.billing_model_counts.items())
     ) or "none"
     takeover_summary = (
-        f"pending={portfolio.takeover_queue.pending_requests} recommendation={portfolio.takeover_queue.recommendation}"
+        f"pending={portfolio.takeover_queue.pending_requests} blocked_tasks={portfolio.takeover_queue.blocked_task_count} "
+        f"recommendation={portfolio.takeover_queue.recommendation}"
         if portfolio.takeover_queue is not None
         else "none"
     )
@@ -1448,7 +1467,8 @@ def render_orchestration_overview_page(portfolio: OrchestrationPortfolio) -> str
     takeover = "none"
     if portfolio.takeover_queue is not None:
         takeover = (
-            f"pending={portfolio.takeover_queue.pending_requests} recommendation={portfolio.takeover_queue.recommendation}"
+            f"pending={portfolio.takeover_queue.pending_requests} blocked_tasks={portfolio.takeover_queue.blocked_task_count} "
+            f"recommendation={portfolio.takeover_queue.recommendation}"
         )
 
     return f"""<!doctype html>
@@ -1823,6 +1843,7 @@ def build_takeover_queue_from_ledger(
                 status=str(handoff_audit.get("outcome", "pending")),
                 reason=str(details.get("reason", entry.get("summary", "handoff requested"))),
                 required_approvals=[str(value) for value in details.get("required_approvals", [])],
+                blocked_tasks=_blocked_tasks_for_takeover(entry, details),
                 actions=build_console_actions(
                     str(entry.get("run_id", "")),
                     allow_retry=False,
@@ -1857,6 +1878,8 @@ def render_takeover_queue_report(
         f"- Recommendation: {queue.recommendation}",
         f"- Team Mix: {team_mix}",
         f"- Required Approvals: {queue.approval_count}",
+        f"- Blocked Runtime Tasks: {queue.blocked_task_count}",
+        f"- Requests With Blocked Tasks: {queue.requests_with_blocked_tasks}",
         "",
         "## Requests",
         "",
@@ -1866,9 +1889,11 @@ def render_takeover_queue_report(
     if queue.requests:
         for request in queue.requests:
             approvals = ",".join(request.required_approvals) if request.required_approvals else "none"
+            blocked_tasks = ",".join(request.blocked_tasks) if request.blocked_tasks else "none"
             lines.append(
                 f"- {request.run_id}: team={request.target_team} status={request.status} task={request.task_id} "
-                f"approvals={approvals} reason={request.reason} actions={render_console_actions(request.actions)}"
+                f"approvals={approvals} blocked_tasks={blocked_tasks} blocked_count={request.blocked_task_count} "
+                f"reason={request.reason} actions={render_console_actions(request.actions)}"
             )
     else:
         lines.append("- None")
@@ -1881,6 +1906,21 @@ def _latest_named_audit(audits: List[dict], action: str) -> Optional[dict]:
         if audit.get("action") == action:
             return audit
     return None
+
+
+def _blocked_tasks_for_takeover(entry: dict, details: dict) -> List[str]:
+    blocked_tasks: List[str] = []
+    for raw_value in (
+        details.get("blocked_tasks", []),
+        details.get("blocked_task_ids", []),
+        entry.get("blocked_tasks", []),
+    ):
+        if isinstance(raw_value, list):
+            for item in raw_value:
+                task_id = str(item)
+                if task_id and task_id not in blocked_tasks:
+                    blocked_tasks.append(task_id)
+    return blocked_tasks
 
 
 def _latest_handoff_audit(audits: List[dict]) -> Optional[dict]:

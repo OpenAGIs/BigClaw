@@ -640,6 +640,7 @@ def test_takeover_queue_from_ledger_groups_pending_handoffs():
                         "target_team": "security",
                         "reason": "requires approval for high-risk task",
                         "required_approvals": ["security-review"],
+                        "blocked_tasks": ["BOT-201", "BOT-202"],
                     },
                 }
             ],
@@ -657,6 +658,7 @@ def test_takeover_queue_from_ledger_groups_pending_handoffs():
                         "target_team": "operations",
                         "reason": "premium tier required for advanced cross-department orchestration",
                         "required_approvals": ["ops-manager"],
+                        "blocked_tasks": ["BOT-301"],
                     },
                 }
             ],
@@ -678,14 +680,20 @@ def test_takeover_queue_from_ledger_groups_pending_handoffs():
     assert queue.pending_requests == 2
     assert queue.team_counts == {"operations": 1, "security": 1}
     assert queue.approval_count == 2
+    assert queue.blocked_task_count == 3
+    assert queue.requests_with_blocked_tasks == 2
     assert queue.recommendation == "expedite-security-review"
     assert [request.run_id for request in queue.requests] == ["run-ops", "run-sec"]
+    assert queue.requests[0].blocked_tasks == ["BOT-301"]
+    assert queue.requests[1].blocked_tasks == ["BOT-201", "BOT-202"]
     assert queue.requests[0].actions[3].enabled is True
     assert queue.requests[1].actions[3].enabled is False
     assert "Pending Requests: 2" in report
     assert "Team Mix: operations=1 security=1" in report
-    assert "run-sec: team=security status=pending task=OPE-66-sec approvals=security-review" in report
-    assert "run-ops: team=operations status=pending task=OPE-66-ops approvals=ops-manager" in report
+    assert "Blocked Runtime Tasks: 3" in report
+    assert "Requests With Blocked Tasks: 2" in report
+    assert "run-sec: team=security status=pending task=OPE-66-sec approvals=security-review blocked_tasks=BOT-201,BOT-202 blocked_count=2" in report
+    assert "run-ops: team=operations status=pending task=OPE-66-ops approvals=ops-manager blocked_tasks=BOT-301 blocked_count=1" in report
     assert "Escalate [escalate] state=disabled target=run-sec reason=security takeovers are already escalated" in report
 
 
@@ -862,7 +870,7 @@ def test_orchestration_portfolio_rolls_up_canvas_and_takeover_state():
                     {
                         "action": "orchestration.handoff",
                         "outcome": "pending",
-                        "details": {"target_team": "security", "reason": "risk", "required_approvals": ["security-review"]},
+                        "details": {"target_team": "security", "reason": "risk", "required_approvals": ["security-review"], "blocked_tasks": ["BOT-401"]},
                     }
                 ],
             },
@@ -874,7 +882,7 @@ def test_orchestration_portfolio_rolls_up_canvas_and_takeover_state():
                     {
                         "action": "orchestration.handoff",
                         "outcome": "pending",
-                        "details": {"target_team": "operations", "reason": "entitlement", "required_approvals": ["ops-manager"]},
+                        "details": {"target_team": "operations", "reason": "entitlement", "required_approvals": ["ops-manager"], "blocked_tasks": ["BOT-402", "BOT-403"]},
                     }
                 ],
             },
@@ -909,7 +917,7 @@ def test_orchestration_portfolio_rolls_up_canvas_and_takeover_state():
     assert "- Billing Models: premium-included=1 standard-blocked=1" in report
     assert "- Estimated Cost (USD): 11.50" in report
     assert "- Overage Cost (USD): 4.00" in report
-    assert "- Takeover Queue: pending=2 recommendation=expedite-security-review" in report
+    assert "- Takeover Queue: pending=2 blocked_tasks=3 recommendation=expedite-security-review" in report
     assert "- run-a: mode=cross-functional tier=premium entitlement=included billing=premium-included estimated_cost_usd=4.50 overage_cost_usd=0.00 upgrade_required=False handoff=security" in report
     assert "actions=Drill Down [drill-down]" in report
 
@@ -953,7 +961,7 @@ def test_render_orchestration_overview_page():
                         {
                             "action": "orchestration.handoff",
                             "outcome": "pending",
-                            "details": {"target_team": "security", "reason": "risk", "required_approvals": ["security-review"]},
+                            "details": {"target_team": "security", "reason": "risk", "required_approvals": ["security-review"], "blocked_tasks": ["BOT-501"]},
                         }
                     ],
                 }
@@ -970,7 +978,7 @@ def test_render_orchestration_overview_page():
     assert "review-security-takeover" in page
     assert "Estimated Cost" in page
     assert "premium-included" in page
-    assert "pending=1 recommendation=expedite-security-review" in page
+    assert "pending=1 blocked_tasks=1 recommendation=expedite-security-review" in page
     assert "run-a" in page
     assert "actions=Drill Down [drill-down]" in page
 

@@ -4,7 +4,11 @@ from bigclaw.models import Priority, RiskLevel, Task
 from bigclaw.observability import ObservabilityLedger
 from bigclaw.orchestration import (
     CrossDepartmentOrchestrator,
+    LifecycleFanoutOperation,
+    LifecycleFanoutPlan,
+    LifecycleFanoutTarget,
     PremiumOrchestrationPolicy,
+    render_lifecycle_fanout_plan,
     render_orchestration_plan,
 )
 from bigclaw.scheduler import Scheduler
@@ -79,6 +83,64 @@ def test_render_orchestration_plan_lists_handoffs_and_policy() -> None:
     assert "- Estimated Cost (USD): 11.00" in content
     assert "- Blocked Departments: data, customer-success" in content
     assert "- Human Handoff Team:" not in content
+
+
+def test_render_lifecycle_fanout_plan_summarizes_batch_operations() -> None:
+    plan = LifecycleFanoutPlan(
+        name="BIGCLAW-176 lifecycle batch",
+        requested_by="operations-control",
+        operations=[
+            LifecycleFanoutOperation(
+                action="start",
+                reason="resume queued bots after approval window opens",
+                concurrency=2,
+                targets=[
+                    LifecycleFanoutTarget(run_id="run-start-a", task_id="BOT-101", current_status="stopped"),
+                    LifecycleFanoutTarget(run_id="run-start-b", task_id="BOT-102", current_status="stopped"),
+                ],
+            ),
+            LifecycleFanoutOperation(
+                action="restart",
+                reason="clear degraded browser workers",
+                concurrency=1,
+                takeover_queue="manual-takeovers",
+                targets=[
+                    LifecycleFanoutTarget(
+                        run_id="run-restart-a",
+                        task_id="BOT-201",
+                        current_status="degraded",
+                        owner="security",
+                        blocked=True,
+                        note="waiting for manual takeover slot",
+                    )
+                ],
+            ),
+            LifecycleFanoutOperation(
+                action="upgrade",
+                reason="roll forward to lifecycle v2",
+                concurrency=1,
+                targets=[LifecycleFanoutTarget(run_id="run-upgrade-a", task_id="BOT-301", current_status="running")],
+            ),
+            LifecycleFanoutOperation(
+                action="stop",
+                reason="drain unhealthy shards",
+                concurrency=1,
+                targets=[LifecycleFanoutTarget(run_id="run-stop-a", task_id="BOT-401", current_status="running")],
+            ),
+        ],
+    )
+
+    content = render_lifecycle_fanout_plan(plan)
+
+    assert "# Lifecycle Fanout Plan" in content
+    assert "- Name: BIGCLAW-176 lifecycle batch" in content
+    assert "- Requested By: operations-control" in content
+    assert "- Operations: 4" in content
+    assert "- Target Count: 5" in content
+    assert "- Blocked Targets: 1" in content
+    assert "- Action Mix: restart=1 start=2 stop=1 upgrade=1" in content
+    assert "- start: targets=2 blocked=0 concurrency=2 takeover_queue=none reason=resume queued bots after approval window opens" in content
+    assert "run-restart-a: task=BOT-201 status=degraded owner=security blocked=True note=waiting for manual takeover slot" in content
 
 
 def test_scheduler_execution_records_orchestration_plan_and_policy(tmp_path: Path) -> None:

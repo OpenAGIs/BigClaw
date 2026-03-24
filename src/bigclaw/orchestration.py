@@ -256,6 +256,91 @@ class PremiumOrchestrationPolicy:
         return round(4.0 * max(0, usage_units), 2)
 
 
+@dataclass
+class LifecycleFanoutTarget:
+    run_id: str
+    task_id: str
+    current_status: str = "unknown"
+    owner: str = "automation"
+    note: str = ""
+    blocked: bool = False
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "run_id": self.run_id,
+            "task_id": self.task_id,
+            "current_status": self.current_status,
+            "owner": self.owner,
+            "note": self.note,
+            "blocked": self.blocked,
+        }
+
+
+@dataclass
+class LifecycleFanoutOperation:
+    action: str
+    targets: List[LifecycleFanoutTarget] = field(default_factory=list)
+    reason: str = ""
+    concurrency: int = 1
+    takeover_queue: str = ""
+
+    @property
+    def target_count(self) -> int:
+        return len(self.targets)
+
+    @property
+    def blocked_target_count(self) -> int:
+        return sum(1 for target in self.targets if target.blocked)
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "action": self.action,
+            "reason": self.reason,
+            "concurrency": self.concurrency,
+            "takeover_queue": self.takeover_queue,
+            "target_count": self.target_count,
+            "blocked_target_count": self.blocked_target_count,
+            "targets": [target.to_dict() for target in self.targets],
+        }
+
+
+@dataclass
+class LifecycleFanoutPlan:
+    name: str
+    operations: List[LifecycleFanoutOperation] = field(default_factory=list)
+    requested_by: str = "system"
+
+    @property
+    def total_operations(self) -> int:
+        return len(self.operations)
+
+    @property
+    def total_targets(self) -> int:
+        return sum(operation.target_count for operation in self.operations)
+
+    @property
+    def blocked_target_count(self) -> int:
+        return sum(operation.blocked_target_count for operation in self.operations)
+
+    @property
+    def action_counts(self) -> Dict[str, int]:
+        counts: Dict[str, int] = {}
+        for operation in self.operations:
+            counts[operation.action] = counts.get(operation.action, 0) + operation.target_count
+        return counts
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "name": self.name,
+            "requested_by": self.requested_by,
+            "total_operations": self.total_operations,
+            "total_targets": self.total_targets,
+            "blocked_target_count": self.blocked_target_count,
+            "action_counts": self.action_counts,
+            "operations": [operation.to_dict() for operation in self.operations],
+        }
+
+
 def render_orchestration_plan(
     plan: OrchestrationPlan,
     policy_decision: Optional[OrchestrationPolicyDecision] = None,
@@ -308,6 +393,45 @@ def render_orchestration_plan(
             approvals = ", ".join(handoff.approvals) if handoff.approvals else "none"
             lines.append(
                 f"- {handoff.department}: reason={handoff.reason} tools={tools} approvals={approvals}"
+            )
+
+    return "\n".join(lines) + "\n"
+
+
+def render_lifecycle_fanout_plan(plan: LifecycleFanoutPlan) -> str:
+    action_mix = " ".join(
+        f"{action}={count}" for action, count in sorted(plan.action_counts.items())
+    ) or "none"
+    lines = [
+        "# Lifecycle Fanout Plan",
+        "",
+        f"- Name: {plan.name}",
+        f"- Requested By: {plan.requested_by}",
+        f"- Operations: {plan.total_operations}",
+        f"- Target Count: {plan.total_targets}",
+        f"- Blocked Targets: {plan.blocked_target_count}",
+        f"- Action Mix: {action_mix}",
+        "",
+        "## Operations",
+        "",
+    ]
+
+    if not plan.operations:
+        lines.append("- None")
+        return "\n".join(lines) + "\n"
+
+    for operation in plan.operations:
+        queue_name = operation.takeover_queue or "none"
+        reason = operation.reason or "none"
+        lines.append(
+            f"- {operation.action}: targets={operation.target_count} blocked={operation.blocked_target_count} "
+            f"concurrency={operation.concurrency} takeover_queue={queue_name} reason={reason}"
+        )
+        for target in operation.targets:
+            note = target.note or "none"
+            lines.append(
+                f"  - {target.run_id}: task={target.task_id} status={target.current_status} "
+                f"owner={target.owner} blocked={target.blocked} note={note}"
             )
 
     return "\n".join(lines) + "\n"

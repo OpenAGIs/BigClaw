@@ -1,27 +1,20 @@
-## Codex Workpad
+# BIGCLAW-176
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## Plan
+- Inspect the existing Python orchestration and reporting surfaces that already summarize run state, handoffs, and queue actions.
+- Add a lifecycle fanout batch model for `start` / `stop` / `restart` / `upgrade` on the legacy orchestration surface so one plan can render multiple lifecycle operations together.
+- Reuse the existing reporting layer for batch lifecycle summaries instead of creating a new subsystem.
+- Extend takeover queue requests with blocked runtime task linkage and blocked task counts so operators can see which waiting work is attached to a manual takeover.
+- Cover batch lifecycle rendering and takeover linkage summaries with focused regression tests in `tests/test_orchestration.py` and `tests/test_reports.py`.
+- Run only targeted tests for the touched surfaces, inspect the scoped diff, commit, and push `symphony/BIGCLAW-176`.
 
-### Plan
+## Acceptance
+- Lifecycle fanout plans for `start`, `stop`, `restart`, and `upgrade` can be rendered as one batch report with per-operation and aggregate summaries.
+- Takeover queue entries can link to blocked runtime tasks so an operator can see which tasks are waiting on manual takeover and how many are blocked.
+- Regression coverage asserts the bulk lifecycle summary text and takeover queue linkage data without widening scope outside the current orchestration/reporting surfaces.
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
-
-### Acceptance Criteria
-
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
-
-### Validation
-
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
-
-### Notes
-
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+## Validation
+- Run `pytest tests/test_orchestration.py tests/test_reports.py`.
+- If needed while iterating, run file-scoped subsets such as `pytest tests/test_orchestration.py -k lifecycle` and `pytest tests/test_reports.py -k takeover`.
+- Record the exact test commands and their results in the final report.
+- Run `git status --short`, `git log -1 --stat`, and `git push origin symphony/BIGCLAW-176` before closeout.
