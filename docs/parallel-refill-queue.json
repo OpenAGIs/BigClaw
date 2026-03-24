@@ -278,7 +278,8 @@
     "BIG-PAR-344",
     "BIG-PAR-345",
     "BIG-PAR-346",
-    "BIG-PAR-347"
+    "BIG-PAR-347",
+    "BIG-PAR-348"
   ],
   "issues": [
     {
@@ -1078,6 +1079,12 @@
       "title": "ClawHost expansion endpoints preserve default unscoped reports",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-348",
+      "title": "Add ClawHost expansion helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In"
     }
   ]
 }

@@ -1352,3 +1352,41 @@ func TestV2ClawHostExpansionEndpointsHandleDefaultUnscopedReports(t *testing.T) 
 		})
 	}
 }
+
+func TestClawHostScopeFilters(t *testing.T) {
+	t.Run("trims query scope and prefers query actor", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=%20platform%20&project=%20apollo%20&actor=%20alice%20", nil)
+		request.Header.Set("X-BigClaw-Actor", "header-actor")
+
+		team, project, actor := clawHostScopeFilters(request)
+		if team != "platform" || project != "apollo" || actor != "alice" {
+			t.Fatalf("expected trimmed query scope and query actor precedence, got team=%q project=%q actor=%q", team, project, actor)
+		}
+	})
+
+	t.Run("falls back to header actor", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=platform&project=apollo", nil)
+		request.Header.Set("X-BigClaw-Actor", "header-actor")
+
+		team, project, actor := clawHostScopeFilters(request)
+		if team != "platform" || project != "apollo" || actor != "header-actor" {
+			t.Fatalf("expected header actor fallback, got team=%q project=%q actor=%q", team, project, actor)
+		}
+	})
+}
+
+func TestClawHostExportURL(t *testing.T) {
+	t.Run("omits empty filters", func(t *testing.T) {
+		if got := clawHostExportURL("/v2/clawhost/workflows/export", " ", "\t", "\n"); got != "/v2/clawhost/workflows/export" {
+			t.Fatalf("expected bare export URL for empty filters, got %q", got)
+		}
+	})
+
+	t.Run("encodes trimmed filters", func(t *testing.T) {
+		got := clawHostExportURL("/v2/clawhost/workflows/export", " platform ", " apollo ", " alice ops ")
+		want := "/v2/clawhost/workflows/export?actor=alice+ops&project=apollo&team=platform"
+		if got != want {
+			t.Fatalf("expected encoded export URL %q, got %q", want, got)
+		}
+	})
+}

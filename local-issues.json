@@ -4438,6 +4438,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added API-level regression coverage for the unscoped ClawHost expansion endpoints so fleet, rollout planner, workflow, and recovery responses all keep empty team/project filters, bare export URLs, and the expected default report fallbacks without requiring scoped query params. Validation: cd bigclaw-go && go test ./internal/api -run TestV2ClawHostExpansionEndpointsHandleDefaultUnscopedReports -count=1 -> ok; cd bigclaw-go && go test ./internal/api ./internal/product -count=1 -> ok. Commit SHA: 657c4fb479c59b8a80cb2d6d678a236cac2a228a. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T00:18:00Z"
+        }
+      ],
       "created_at": "2026-03-24T22:10:36Z",
       "description": "Add a focused API regression test covering the unscoped/default ClawHost expansion endpoints so response filters remain empty, export URLs stay bare, and rendered markdown keeps the default none-filter fallback without leaking scoped query params.",
       "id": "big-par-347",
@@ -4452,14 +4459,25 @@
       "priority": 3,
       "state": "Done",
       "title": "ClawHost expansion endpoints preserve default unscoped reports",
-      "updated_at": "2026-03-25T00:18:00Z",
-      "comments": [
-        {
-          "author": "codex",
-          "body": "Added API-level regression coverage for the unscoped ClawHost expansion endpoints so fleet, rollout planner, workflow, and recovery responses all keep empty team/project filters, bare export URLs, and the expected default report fallbacks without requiring scoped query params. Validation: cd bigclaw-go && go test ./internal/api -run TestV2ClawHostExpansionEndpointsHandleDefaultUnscopedReports -count=1 -> ok; cd bigclaw-go && go test ./internal/api ./internal/product -count=1 -> ok. Commit SHA: 657c4fb479c59b8a80cb2d6d678a236cac2a228a. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
-          "created_at": "2026-03-25T00:18:00Z"
-        }
-      ]
+      "updated_at": "2026-03-25T00:18:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T22:15:51Z",
+      "description": "Add direct API-unit tests for clawHostScopeFilters and clawHostExportURL so query/header normalization, actor fallback, whitespace trimming, and bare export URL behavior stay pinned outside the endpoint integration tests.",
+      "id": "big-par-348",
+      "identifier": "BIG-PAR-348",
+      "labels": [
+        "go",
+        "clawhost",
+        "api",
+        "parallel",
+        "test"
+      ],
+      "priority": 3,
+      "state": "In",
+      "title": "Add ClawHost expansion helper unit coverage",
+      "updated_at": "2026-03-24T22:15:51Z"
     }
   ]
 }
