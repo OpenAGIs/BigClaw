@@ -65,6 +65,47 @@ func TestRenderClawHostFleetReport(t *testing.T) {
 	}
 }
 
+func TestClawHostFleetSurfaceTracksErrorBots(t *testing.T) {
+	inventory := BuildClawHostFleetSurface(
+		[]ClawHostAppInventory{{AppID: "app-1", Name: "Platform", TenantID: "tenant-1", Owner: "ops"}},
+		[]ClawHostBotInventory{{BotID: "bot-1", AppID: "app-1", UserID: "user-1", Name: "platform-bot", Status: "error", Endpoint: "http://proxy/bot-1", Subdomain: "bot.example", PodIsolation: true, ServiceIsolation: true}},
+	)
+
+	if inventory.Summary.ErrorBots != 1 {
+		t.Fatalf("expected error bot summary to increment, got %+v", inventory.Summary)
+	}
+	if inventory.Facets.ByStatus["error"] != 1 {
+		t.Fatalf("expected error status facet, got %+v", inventory.Facets.ByStatus)
+	}
+}
+
+func TestRenderClawHostFleetReportEmptySections(t *testing.T) {
+	inventory := ClawHostFleetInventory{
+		SurfaceID:        "BIG-PAR-287",
+		Version:          "go-v1",
+		SourceRepository: "https://github.com/fastclaw-ai/clawhost",
+		ControlPlane: ClawHostControlPlane{
+			Name:                 "ClawHost",
+			Mode:                 "kubernetes-native bot fleet hosting",
+			BackingStore:         "postgresql",
+			KubernetesNative:     true,
+			SubdomainRouting:     true,
+			MultiTenantSupported: true,
+		},
+	}
+	report := RenderClawHostFleetReport(inventory, ClawHostFleetAudit{})
+
+	for _, want := range []string{
+		"## Lifecycle Actions\n\n- none",
+		"## App Inventory\n\n- none",
+		"## Bot Inventory\n\n- none",
+	} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected empty-state block %q in report, got %s", want, report)
+		}
+	}
+}
+
 func TestClawHostFleetInventoryAliasesMatchSurfaceHelpers(t *testing.T) {
 	apps := []ClawHostAppInventory{
 		{AppID: "app-2", Name: "Growth", TenantID: "tenant-2", Owner: "growth"},

@@ -48,9 +48,9 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 24, 2026:
-  - active slices: `BIG-PAR-365` — Add dashboard contract path traversal coverage
+  - active slices: `BIG-PAR-367` — Add dashboard contract non-map path traversal coverage
   - standby slices: none
-  - recently completed slices: `BIG-PAR-353` — Add saved view baseline field coverage; `BIG-PAR-355` — Add invalid-visibility audit coverage for saved view catalogs; `BIG-PAR-356` — Add direct missing-recipient audit assertions for saved view digests; `BIG-PAR-358` — Add ClawHost fleet helper regression coverage; `BIG-PAR-357` — Add ClawHost fleet inventory alias wrapper coverage; `BIG-PAR-360` — Add console helper and design-system coverage; `BIG-PAR-362` — Add ClawHost workflow helper threshold coverage; `BIG-PAR-364` — Add ClawHost rollout audit edge coverage
+  - recently completed slices: `BIG-PAR-355` — Add invalid-visibility audit coverage for saved view catalogs; `BIG-PAR-356` — Add direct missing-recipient audit assertions for saved view digests; `BIG-PAR-358` — Add ClawHost fleet helper regression coverage; `BIG-PAR-357` — Add ClawHost fleet inventory alias wrapper coverage; `BIG-PAR-360` — Add console helper and design-system coverage; `BIG-PAR-362` — Add ClawHost workflow helper threshold coverage; `BIG-PAR-364` — Add ClawHost rollout audit edge coverage; `BIG-PAR-365` — Add dashboard contract path traversal coverage
   - queue status: `queue_runnable=1`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
@@ -196,6 +196,7 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-360` — Add console helper and design-system coverage
   - `BIG-PAR-362` — Add ClawHost workflow helper threshold coverage
   - `BIG-PAR-364` — Add ClawHost rollout audit edge coverage
+  - `BIG-PAR-365` — Add dashboard contract path traversal coverage
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -343,3 +344,4 @@ longer waits on Linear to keep issue execution moving.
 137. `BIG-PAR-362`
 138. `BIG-PAR-364`
 139. `BIG-PAR-365`
+140. `BIG-PAR-367`

@@ -4796,6 +4796,40 @@
       "state": "Done",
       "title": "Add dashboard contract helper formatting coverage",
       "updated_at": "2026-03-24T22:17:38Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T22:19:26Z",
+      "description": "Add narrow Go tests covering empty lifecycle, app, and bot sections plus error summary behavior in clawhost_fleet.go.",
+      "id": "big-par-368",
+      "identifier": "BIG-PAR-368",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add ClawHost fleet report empty-state coverage",
+      "updated_at": "2026-03-24T22:19:26Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T22:19:26Z",
+      "description": "Add narrow Go tests covering contractPathExists behavior when list traversal encounters non-object items in dashboard_run_contract.go.",
+      "id": "big-par-367",
+      "identifier": "BIG-PAR-367",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add dashboard contract non-map path traversal coverage",
+      "updated_at": "2026-03-24T22:19:26Z"
     }
   ]
 }

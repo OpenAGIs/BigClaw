@@ -70,6 +70,21 @@ func TestContractPathExistsTraversesNestedObjectsAndLists(t *testing.T) {
 	}
 }
 
+func TestContractPathExistsSkipsNonMapListEntries(t *testing.T) {
+	payload := map[string]any{
+		"closeout": map[string]any{
+			"checks": []any{
+				"not-a-map",
+				map[string]any{"status": "ok"},
+			},
+		},
+	}
+
+	if !contractPathExists(payload, "closeout.checks[].status") {
+		t.Fatal("expected path walker to skip non-map entries and still find later object values")
+	}
+}
+
 func TestDashboardContractFormattingHelpers(t *testing.T) {
 	if got := fallbackJoin(nil); got != "none" {
 		t.Fatalf("fallbackJoin(nil) = %q, want %q", got, "none")

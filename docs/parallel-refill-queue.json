@@ -155,10 +155,11 @@
       "BIG-PAR-357",
       "BIG-PAR-360",
       "BIG-PAR-362",
-      "BIG-PAR-364"
+      "BIG-PAR-364",
+      "BIG-PAR-365"
     ],
     "active": [
-      "BIG-PAR-365"
+      "BIG-PAR-367"
     ],
     "standby": []
   },
@@ -301,7 +302,8 @@
     "BIG-PAR-360",
     "BIG-PAR-362",
     "BIG-PAR-364",
-    "BIG-PAR-365"
+    "BIG-PAR-365",
+    "BIG-PAR-367"
   ],
   "issues": [
     {
@@ -1165,6 +1167,12 @@
     {
       "identifier": "BIG-PAR-365",
       "title": "Add dashboard contract path traversal coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-367",
+      "title": "Add dashboard contract non-map path traversal coverage",
       "track": "Go Mainline Follow-ups",
       "status": "In Progress"
     }
