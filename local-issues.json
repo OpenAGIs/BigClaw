@@ -2939,6 +2939,94 @@
       "state": "Done",
       "title": "Refactor worker runtime RunOnce flow",
       "updated_at": "2026-03-23T16:34:15Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T15:47:39Z",
+      "description": "Research-backed follow-up for fastclaw-ai/clawhost: add a BigClaw integration slice that ingests ClawHost app and bot inventory, lifecycle state, ownership, and domain metadata so BigClaw can treat ClawHost as a fleet control-plane source for parallel orchestration. This is motivated by ClawHost's REST API, multi-tenant app/bot model, and isolated per-bot Pod+Service lifecycle surfaces.",
+      "id": "big-par-287",
+      "identifier": "BIG-PAR-287",
+      "labels": [
+        "go",
+        "integration",
+        "clawhost",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "Todo",
+      "title": "Add ClawHost fleet inventory and control-plane source",
+      "updated_at": "2026-03-24T15:47:39Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T15:47:39Z",
+      "description": "Add a BigClaw orchestration slice for ClawHost bot lifecycle actions so start/stop/restart/upgrade waves can be planned and executed with concurrency limits, canaries, takeover hooks, and evidence capture across many bots in parallel. This aligns with ClawHost's lifecycle operations and Kubernetes-native isolated bot runtime.",
+      "id": "big-par-288",
+      "identifier": "BIG-PAR-288",
+      "labels": [
+        "go",
+        "integration",
+        "clawhost",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "Todo",
+      "title": "Add parallel ClawHost rollout planner",
+      "updated_at": "2026-03-24T15:47:39Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T15:47:39Z",
+      "description": "Add a BigClaw workflow slice for ClawHost skill management, IM channel connectivity, and device-pairing approvals so high-churn bot configuration changes can be reviewed, batched, and executed in parallel with human takeover when needed. This follows ClawHost's dynamic skills, IM channel, and device auto-approval capabilities.",
+      "id": "big-par-289",
+      "identifier": "BIG-PAR-289",
+      "labels": [
+        "go",
+        "integration",
+        "clawhost",
+        "workflow",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "Todo",
+      "title": "Add ClawHost skills channels and device approval workflows",
+      "updated_at": "2026-03-24T15:47:39Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T15:47:39Z",
+      "description": "Add a BigClaw policy slice for ClawHost model-provider configuration and app-level defaults so provider drift, entitlement policy, and rollout safety can be audited and applied across multiple tenants and bot groups in parallel. This is grounded in ClawHost's support for multiple AI providers and per-app multi-tenant bot ownership.",
+      "id": "big-par-290",
+      "identifier": "BIG-PAR-290",
+      "labels": [
+        "go",
+        "integration",
+        "clawhost",
+        "policy",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "Todo",
+      "title": "Add ClawHost provider defaults and tenant policy surfaces",
+      "updated_at": "2026-03-24T15:47:39Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T15:47:40Z",
+      "description": "Add a BigClaw validation and observability slice for ClawHost proxy routing, WebSocket/HTTP reachability, per-bot subdomain exposure, and admin-surface readiness so bot fleet ingress posture can be checked in parallel and exported as reviewer-facing evidence. This is based on ClawHost's HTTP/WS proxy, subdomain routing, built-in admin UI, and no-per-bot-Ingress architecture.",
+      "id": "big-par-291",
+      "identifier": "BIG-PAR-291",
+      "labels": [
+        "go",
+        "integration",
+        "clawhost",
+        "observability",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "Todo",
+      "title": "Add ClawHost proxy subdomain and admin validation lane",
+      "updated_at": "2026-03-24T15:47:40Z"
     }
   ]
 }
