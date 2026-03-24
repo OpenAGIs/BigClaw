@@ -87,11 +87,11 @@
       "BIG-PAR-286",
       "BIG-PAR-287",
       "BIG-PAR-288",
+      "BIG-PAR-290",
       "BIG-PAR-291"
     ],
     "active": [
-      "BIG-PAR-289",
-      "BIG-PAR-290"
+      "BIG-PAR-289"
     ],
     "standby": []
   },
@@ -624,7 +624,7 @@
       "identifier": "BIG-PAR-290",
       "title": "Add ClawHost provider defaults and tenant policy surfaces",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-291",

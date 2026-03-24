@@ -178,6 +178,7 @@ type distributedDiagnostics struct {
 	ClawHostProxyAdmin    clawHostProxyAdminValidationLane         `json:"clawhost_proxy_admin_validation"`
 	ClawHostFleet         clawHostFleetInventorySurface            `json:"clawhost_fleet_inventory"`
 	ClawHostRolloutPlan   clawHostRolloutPlannerSurface            `json:"clawhost_rollout_planner"`
+	ClawHostTenantPolicy  clawHostTenantPolicySurface              `json:"clawhost_tenant_policy"`
 	BrokerBootstrap       brokerBootstrapSurface                   `json:"broker_bootstrap_surface"`
 	DeliveryAckReadiness  deliveryAckReadinessSurface              `json:"delivery_ack_readiness"`
 	PublishAckOutcomes    publishAckOutcomeSurface                 `json:"publish_ack_outcomes"`
@@ -281,6 +282,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"clawhost_proxy_admin_validation": diagnostics.ClawHostProxyAdmin,
 		"clawhost_fleet_inventory":        diagnostics.ClawHostFleet,
 		"clawhost_rollout_planner":        diagnostics.ClawHostRolloutPlan,
+		"clawhost_tenant_policy":          diagnostics.ClawHostTenantPolicy,
 		"broker_bootstrap_surface":        diagnostics.BrokerBootstrap,
 		"trace_export_bundle":             diagnostics.TraceBundle,
 		"migration_review_pack":           diagnostics.MigrationReviewPack,
@@ -373,6 +375,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		ClawHostProxyAdmin:    clawHostProxyAdminValidationLanePayload(),
 		ClawHostFleet:         clawHostFleetInventorySurfacePayload(),
 		ClawHostRolloutPlan:   clawHostRolloutPlannerSurfacePayload(),
+		ClawHostTenantPolicy:  clawHostTenantPolicySurfacePayload(),
 		BrokerBootstrap:       brokerBootstrapSurfacePayload(),
 		DeliveryAckReadiness:  deliveryAckReadinessPayload(),
 		PublishAckOutcomes:    publishAckOutcomeSurfacePayload(),
@@ -1495,6 +1498,36 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.ClawHostRolloutPlan.ReviewerLinks) > 0 {
 		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.ClawHostRolloutPlan.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## ClawHost Tenant Policy",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.ClawHostTenantPolicy.ReportPath),
+		fmt.Sprintf("- Provider: %s", firstNonEmpty(diagnostics.ClawHostTenantPolicy.Provider, "unknown")),
+		fmt.Sprintf("- Policy mode: %s", firstNonEmpty(diagnostics.ClawHostTenantPolicy.PolicyMode, "unknown")),
+		fmt.Sprintf("- Tenant count: %d", diagnostics.ClawHostTenantPolicy.Summary.TenantCount),
+		fmt.Sprintf("- App defaults: %d", diagnostics.ClawHostTenantPolicy.Summary.AppDefaultCount),
+		fmt.Sprintf("- Multi-provider tenants: %d", diagnostics.ClawHostTenantPolicy.Summary.MultiProviderTenants),
+		fmt.Sprintf("- Entitlement guardrails: %d", diagnostics.ClawHostTenantPolicy.Summary.EntitlementGuardrails),
+		fmt.Sprintf("- Rollout-blocked defaults: %d", diagnostics.ClawHostTenantPolicy.Summary.RolloutBlockedDefaults),
+	)
+	for _, tenant := range diagnostics.ClawHostTenantPolicy.Tenants {
+		lines = append(lines, fmt.Sprintf("- tenant %s: default_provider=%s approval_mode=%s blocked_changes=%d", firstNonEmpty(tenant.Tenant, "unknown-tenant"), firstNonEmpty(tenant.DefaultProvider, "unknown"), firstNonEmpty(tenant.ApprovalMode, "unknown"), tenant.BlockedDefaultChanges))
+		if tenant.EntitlementPolicy != "" {
+			lines = append(lines, "  - entitlement policy: "+tenant.EntitlementPolicy)
+		}
+		if tenant.RolloutGuardrail != "" {
+			lines = append(lines, "  - rollout guardrail: "+tenant.RolloutGuardrail)
+		}
+	}
+	for _, app := range diagnostics.ClawHostTenantPolicy.AppDefaults {
+		lines = append(lines, fmt.Sprintf("- app %s: tenant=%s provider=%s model=%s rollout=%s approval_required=%t", firstNonEmpty(app.AppID, "unknown-app"), firstNonEmpty(app.Tenant, "unknown"), firstNonEmpty(app.Provider, "unknown"), firstNonEmpty(app.Model, "unknown"), firstNonEmpty(app.RolloutStatus, "unknown"), app.ApprovalRequired))
+	}
+	if len(diagnostics.ClawHostTenantPolicy.Limitations) > 0 {
+		lines = append(lines, "- Limitations: "+strings.Join(diagnostics.ClawHostTenantPolicy.Limitations, "; "))
+	}
+	if len(diagnostics.ClawHostTenantPolicy.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.ClawHostTenantPolicy.ReviewerLinks, ", "))
 	}
 	lines = append(lines,
 		"",

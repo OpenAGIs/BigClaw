@@ -5625,6 +5625,131 @@ func TestV2DistributedReportIncludesClawHostRolloutPlannerSurface(t *testing.T) 
 	}
 }
 
+func TestDebugStatusIncludesClawHostTenantPolicySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		Policy struct {
+			ReportPath string `json:"report_path"`
+			Ticket     string `json:"ticket"`
+			Provider   string `json:"provider"`
+			PolicyMode string `json:"policy_mode"`
+			Summary    struct {
+				TenantCount            int `json:"tenant_count"`
+				AppDefaultCount        int `json:"app_default_count"`
+				MultiProviderTenants   int `json:"multi_provider_tenants"`
+				EntitlementGuardrails  int `json:"entitlement_guardrails"`
+				RolloutBlockedDefaults int `json:"rollout_blocked_defaults"`
+				ReviewerReadyTenants   int `json:"reviewer_ready_tenants"`
+			} `json:"summary"`
+			Tenants []struct {
+				Tenant                string `json:"tenant"`
+				DefaultProvider       string `json:"default_provider"`
+				BlockedDefaultChanges int    `json:"blocked_default_changes"`
+			} `json:"tenants"`
+		} `json:"clawhost_tenant_policy"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode clawhost tenant policy payload: %v", err)
+	}
+	if decoded.Policy.ReportPath != clawHostTenantPolicySurfacePath || decoded.Policy.Ticket != "BIG-PAR-290" || decoded.Policy.Provider != "clawhost" || decoded.Policy.PolicyMode != "tenant_guarded_provider_defaults" {
+		t.Fatalf("unexpected clawhost tenant policy metadata: %+v", decoded.Policy)
+	}
+	if decoded.Policy.Summary.TenantCount != 2 || decoded.Policy.Summary.AppDefaultCount != 3 || decoded.Policy.Summary.MultiProviderTenants != 2 || decoded.Policy.Summary.EntitlementGuardrails != 2 || decoded.Policy.Summary.RolloutBlockedDefaults != 1 || decoded.Policy.Summary.ReviewerReadyTenants != 2 {
+		t.Fatalf("unexpected clawhost tenant policy summary: %+v", decoded.Policy.Summary)
+	}
+	if len(decoded.Policy.Tenants) != 2 || decoded.Policy.Tenants[0].Tenant != "tenant-acme" || decoded.Policy.Tenants[0].BlockedDefaultChanges != 1 {
+		t.Fatalf("unexpected clawhost tenant policy tenants: %+v", decoded.Policy.Tenants)
+	}
+}
+
+func TestV2ControlCenterIncludesClawHostTenantPolicySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5&audit_limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Policy struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				TenantCount            int `json:"tenant_count"`
+				AppDefaultCount        int `json:"app_default_count"`
+				RolloutBlockedDefaults int `json:"rollout_blocked_defaults"`
+			} `json:"summary"`
+		} `json:"clawhost_tenant_policy"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center clawhost tenant policy payload: %v", err)
+	}
+	if decoded.Policy.ReportPath != clawHostTenantPolicySurfacePath || decoded.Policy.Summary.TenantCount != 2 || decoded.Policy.Summary.AppDefaultCount != 3 || decoded.Policy.Summary.RolloutBlockedDefaults != 1 {
+		t.Fatalf("unexpected control center clawhost tenant policy payload: %+v", decoded.Policy)
+	}
+}
+
+func TestV2DistributedReportIncludesClawHostTenantPolicySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Policy struct {
+			ReportPath string `json:"report_path"`
+			Provider   string `json:"provider"`
+			PolicyMode string `json:"policy_mode"`
+			Summary    struct {
+				TenantCount            int `json:"tenant_count"`
+				AppDefaultCount        int `json:"app_default_count"`
+				MultiProviderTenants   int `json:"multi_provider_tenants"`
+				EntitlementGuardrails  int `json:"entitlement_guardrails"`
+				RolloutBlockedDefaults int `json:"rollout_blocked_defaults"`
+			} `json:"summary"`
+		} `json:"clawhost_tenant_policy"`
+		Report struct {
+			Markdown string `json:"markdown"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed clawhost tenant policy payload: %v", err)
+	}
+	if decoded.Policy.ReportPath != clawHostTenantPolicySurfacePath || decoded.Policy.Provider != "clawhost" || decoded.Policy.PolicyMode != "tenant_guarded_provider_defaults" || decoded.Policy.Summary.TenantCount != 2 || decoded.Policy.Summary.AppDefaultCount != 3 || decoded.Policy.Summary.MultiProviderTenants != 2 || decoded.Policy.Summary.EntitlementGuardrails != 2 || decoded.Policy.Summary.RolloutBlockedDefaults != 1 {
+		t.Fatalf("unexpected distributed clawhost tenant policy payload: %+v", decoded.Policy)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "## ClawHost Tenant Policy") || !strings.Contains(decoded.Report.Markdown, "Policy mode: tenant_guarded_provider_defaults") || !strings.Contains(decoded.Report.Markdown, "tenant tenant-acme: default_provider=openai") {
+		t.Fatalf("expected clawhost tenant policy markdown section, got %s", decoded.Report.Markdown)
+	}
+}
+
 func TestProviderBackedRemoteEventLogLiveHandoffIsolation(t *testing.T) {
 	base := time.Unix(1_700_200_000, 0).UTC()
 	backlog := []domain.Event{

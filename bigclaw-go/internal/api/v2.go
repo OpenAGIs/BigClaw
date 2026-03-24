@@ -1257,6 +1257,7 @@ func (s *Server) buildControlCenterResponse(
 		"clawhost_proxy_admin_validation": clawHostProxyAdminValidationLanePayload(),
 		"clawhost_fleet_inventory":        clawHostFleetInventorySurfacePayload(),
 		"clawhost_rollout_planner":        clawHostRolloutPlannerSurfacePayload(),
+		"clawhost_tenant_policy":          clawHostTenantPolicySurfacePayload(),
 		"broker_bootstrap_surface":        brokerBootstrapSurfacePayload(),
 		"broker_review_bundle":            brokerReviewBundleSurfacePayload(),
 		"summary":                         summarizeControlCenter(queueTasks, filteredDeadLetters),

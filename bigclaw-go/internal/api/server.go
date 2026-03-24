@@ -216,6 +216,7 @@ func (s *Server) Handler() http.Handler {
 			"clawhost_proxy_admin_validation": clawHostProxyAdminValidationLanePayload(),
 			"clawhost_fleet_inventory":        clawHostFleetInventorySurfacePayload(),
 			"clawhost_rollout_planner":        clawHostRolloutPlannerSurfacePayload(),
+			"clawhost_tenant_policy":          clawHostTenantPolicySurfacePayload(),
 			"broker_bootstrap_surface":        brokerBootstrapSurfacePayload(),
 			"broker_review_bundle":            brokerReviewBundleSurfacePayload(),
 			"validation_bundle_continuation":  validationBundleContinuationGatePayload(),
