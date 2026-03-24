@@ -3319,6 +3319,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added optional `team` and `project` filters to the ClawHost surfaces in `/debug/status`, echoed the active debug scope in the response payload, and added a focused regression proving the scoped debug request narrows all five ClawHost surfaces while preserving the shared single-snapshot behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api -run 'TestDebugStatus(IncludesClawHost(Policy|Workflow|Readiness|Rollout|Recovery)Surface|ReusesSingleClawHostTaskSnapshot|ScopesClawHostSurfacesByFilters)' -count=1` -> ok\n- `cd bigclaw-go && go test ./internal/api -count=1` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> `active_in_progress=[\"BIG-PAR-302\"]`, `queue_runnable=1`, `queue_status_synced=true`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `79a96d163b2f79ed354d1fa1fd88de83432d302c` matches remote SHA `79a96d163b2f79ed354d1fa1fd88de83432d302c` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `79a96d163b2f79ed354d1fa1fd88de83432d302c`\n\nCommit SHA: `79a96d163b2f79ed354d1fa1fd88de83432d302c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-24T19:04:04Z"
+        }
+      ],
       "created_at": "2026-03-24T19:01:30Z",
       "description": "Add optional `team` and `project` scoping to the ClawHost surfaces in `/debug/status` so the debug reviewer payload can be narrowed to one operational slice while preserving the shared single-snapshot behavior.",
       "id": "big-par-302",
@@ -3331,9 +3338,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add team and project scoping to ClawHost debug surfaces",
-      "updated_at": "2026-03-24T19:01:30Z"
+      "updated_at": "2026-03-24T19:04:04Z"
     }
   ]
 }
