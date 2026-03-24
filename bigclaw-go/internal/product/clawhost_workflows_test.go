@@ -283,6 +283,15 @@ func TestRenderClawHostWorkflowLaneReportIncludesKeySections(t *testing.T) {
 	}
 }
 
+func TestMaxIntWorkflowKeepsUpperBound(t *testing.T) {
+	if got := maxIntWorkflow(4, 10); got != 10 {
+		t.Fatalf("expected workflow max helper to pick larger value, got %d", got)
+	}
+	if got := maxIntWorkflow(10, 4); got != 10 {
+		t.Fatalf("expected workflow max helper to preserve left bound when already larger, got %d", got)
+	}
+}
+
 func TestRenderClawHostWorkflowLaneReportHandlesEmptyLanes(t *testing.T) {
 	surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "", "platform", "apollo")
 	surface.Lanes = nil

@@ -160,7 +160,9 @@
       "BIG-PAR-359",
       "BIG-PAR-360"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-361"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -304,7 +306,8 @@
     "BIG-PAR-357",
     "BIG-PAR-358",
     "BIG-PAR-359",
-    "BIG-PAR-360"
+    "BIG-PAR-360",
+    "BIG-PAR-361"
   ],
   "issues": [
     {
@@ -1182,6 +1185,12 @@
       "title": "Extract ClawHost recovery builder for direct inventory coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-361",
+      "title": "Add ClawHost workflow max helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
