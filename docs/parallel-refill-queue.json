@@ -144,11 +144,10 @@
       "BIG-PAR-345",
       "BIG-PAR-346",
       "BIG-PAR-348",
-      "BIG-PAR-347"
-    ],
-    "active": [
+      "BIG-PAR-347",
       "BIG-PAR-349"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1078,7 +1077,7 @@
       "identifier": "BIG-PAR-349",
       "title": "Add premium-only saved view catalog coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
