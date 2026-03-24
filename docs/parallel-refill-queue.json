@@ -104,7 +104,9 @@
       "BIG-PAR-303",
       "BIG-PAR-304"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-305"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -192,7 +194,8 @@
     "BIG-PAR-301",
     "BIG-PAR-302",
     "BIG-PAR-303",
-    "BIG-PAR-304"
+    "BIG-PAR-304",
+    "BIG-PAR-305"
   ],
   "issues": [
     {
@@ -734,6 +737,12 @@
       "title": "Add ClawHost partial export-filter regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-305",
+      "title": "Add ClawHost blank scope-filter normalization coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

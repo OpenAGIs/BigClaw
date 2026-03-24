@@ -1461,6 +1461,16 @@ func TestClawHostScopeFilters(t *testing.T) {
 			t.Fatalf("unexpected header fallback scope filters: team=%q project=%q actor=%q", team, project, actor)
 		}
 	})
+
+	t.Run("normalizes blank team and project to empty strings", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=%20%20&project=%20%20", nil)
+		request.Header.Set("X-BigClaw-Actor", " header-actor ")
+
+		team, project, actor := clawHostScopeFilters(request)
+		if team != "" || project != "" || actor != "header-actor" {
+			t.Fatalf("unexpected blank scope normalization: team=%q project=%q actor=%q", team, project, actor)
+		}
+	})
 }
 
 func TestClawHostExportURL(t *testing.T) {

@@ -3319,6 +3319,18 @@
       "state": "Done",
       "title": "Add ClawHost partial export-filter regression coverage",
       "updated_at": "2026-03-24T18:53:16Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T18:57:07Z",
+      "description": "Add helper-level API regression coverage that proves clawHostScopeFilters trims whitespace-only team and project values down to empty strings while preserving a usable actor.",
+      "id": "big-par-305",
+      "identifier": "BIG-PAR-305",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add ClawHost blank scope-filter normalization coverage",
+      "updated_at": "2026-03-24T18:57:19Z"
     }
   ]
 }
