@@ -138,7 +138,10 @@
       "BIG-PAR-338",
       "BIG-PAR-337"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-340",
+      "BIG-PAR-339"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -260,7 +263,9 @@
     "BIG-PAR-335",
     "BIG-PAR-336",
     "BIG-PAR-338",
-    "BIG-PAR-337"
+    "BIG-PAR-337",
+    "BIG-PAR-340",
+    "BIG-PAR-339"
   ],
   "issues": [
     {
@@ -1006,6 +1011,18 @@
       "title": "Add saved view scope and duplicate helper coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-340",
+      "title": "Add saved view report empty-state coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-339",
+      "title": "Add saved view audit readiness edge coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

@@ -297,3 +297,31 @@ func TestEmptyFallbackTrimsWhitespace(t *testing.T) {
 		t.Fatalf("emptyFallback blank fallback = %q, want %q", got, "none")
 	}
 }
+
+func TestAuditSavedViewCatalogEmptyCatalogReadiness(t *testing.T) {
+	audit := AuditSavedViewCatalog(SavedViewCatalog{Name: "empty", Version: "v1"})
+	if audit.ReadinessScore != 0 {
+		t.Fatalf("expected empty catalog readiness score to stay at zero, got %+v", audit)
+	}
+	if audit.DuplicateViewNames != nil || audit.DuplicateDefaultViews != nil {
+		t.Fatalf("expected empty duplicate maps to normalize to nil, got %+v", audit)
+	}
+}
+
+func TestAuditSavedViewCatalogReadinessFloorsAtZero(t *testing.T) {
+	catalog := SavedViewCatalog{
+		Name:    "catalog",
+		Version: "v1",
+		Views: []SavedView{
+			{ViewID: "view-1", Name: "Inbox", Route: "/v2/control-center", Owner: "alice", Visibility: "private"},
+		},
+		Subscriptions: []AlertDigestSubscription{
+			{SubscriptionID: "sub-1", SavedViewID: "missing", Channel: "pager", Cadence: "monthly"},
+		},
+	}
+
+	audit := AuditSavedViewCatalog(catalog)
+	if audit.ReadinessScore != 0 {
+		t.Fatalf("expected readiness score to floor at zero, got %+v", audit)
+	}
+}
