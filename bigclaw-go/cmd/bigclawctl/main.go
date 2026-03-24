@@ -1106,7 +1106,9 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 	liveStateMap := stateMap
 	if client.backend() == "local" {
 		liveStateMap = refill.IssueStateMap(allIssues)
-		recentBatchesUpdated = queue.RefreshRecentBatchesFromStates(liveStateMap)
+		if apply {
+			recentBatchesUpdated = queue.RefreshRecentBatchesFromStates(liveStateMap)
+		}
 	}
 	if apply && (queueStatusUpdates > 0 || recentBatchesUpdated) {
 		if err := queue.Save(); err != nil {
