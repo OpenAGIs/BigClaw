@@ -150,7 +150,8 @@
       "BIG-PAR-349",
       "BIG-PAR-350",
       "BIG-PAR-351",
-      "BIG-PAR-352"
+      "BIG-PAR-352",
+      "BIG-PAR-353"
     ],
     "active": [],
     "standby": []
@@ -1124,7 +1125,7 @@
       "identifier": "BIG-PAR-353",
       "title": "Add ClawHost workflow surface payload unit coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In"
+      "status": "Done"
     }
   ]
 }

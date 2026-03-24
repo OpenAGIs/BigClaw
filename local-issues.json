@@ -4600,9 +4600,16 @@
         "test"
       ],
       "priority": 3,
-      "state": "In",
+      "state": "Done",
       "title": "Add ClawHost workflow surface payload unit coverage",
-      "updated_at": "2026-03-24T22:34:45Z"
+      "updated_at": "2026-03-25T01:02:00Z",
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct API-unit coverage for clawHostWorkflowSurfacePayload so the wrapper now pins explicit actor/team/project scope, default actor fallback, idle workflow state, and active summary passthrough without relying only on product and handler regressions. Validation: cd bigclaw-go && go test ./internal/api -run 'TestClawHostWorkflowSurfacePayload(HandlesDefaultScope|PreservesExplicitScope)' -count=1 -> ok; cd bigclaw-go && go test ./internal/api ./internal/product -count=1 -> ok. Commit SHA: 427e9d82cb6bc2675d33b1e0b35ab128db2ec800. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T01:02:00Z"
+        }
+      ]
     }
   ]
 }
