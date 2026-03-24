@@ -1181,6 +1181,22 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		}
 	})
 
+	t.Run("workflow export blank actor query falls back to header", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows/export?team=platform&project=apollo&actor=%20%20", nil)
+		request.Header.Set("X-BigClaw-Actor", " header-actor ")
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected workflow export 200 with blank actor query fallback, got %d %s", response.Code, response.Body.String())
+		}
+		if contentType := response.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+			t.Fatalf("expected workflow export markdown content type, got %q", contentType)
+		}
+		if !strings.Contains(response.Body.String(), "owner=header-actor") {
+			t.Fatalf("expected workflow export body to include trimmed header actor fallback owner, got %s", response.Body.String())
+		}
+	})
+
 	t.Run("workflows omit actor from export url when actor is absent", func(t *testing.T) {
 		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=platform&project=apollo", nil)
 		response := httptest.NewRecorder()
