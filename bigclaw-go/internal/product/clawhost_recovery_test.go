@@ -54,6 +54,51 @@ func TestBuildDefaultClawHostLifecycleRecoveryScorecardScopesInventory(t *testin
 	})
 }
 
+func TestBuildClawHostLifecycleRecoveryScorecardFromInventoryCapturesDegradedBots(t *testing.T) {
+	inventory := BuildClawHostFleetSurface(
+		[]ClawHostAppInventory{
+			{AppID: "app-a", TenantID: "tenant-a", Name: "app-a"},
+		},
+		[]ClawHostBotInventory{
+			{
+				BotID:            "bot-a",
+				AppID:            "app-a",
+				Name:             "bot-a",
+				Status:           "error",
+				PodIsolation:     false,
+				ServiceIsolation: true,
+			},
+		},
+	)
+
+	scorecard := buildClawHostLifecycleRecoveryScorecard(inventory, "platform", "apollo")
+	if scorecard.Filters["team"] != "platform" || scorecard.Filters["project"] != "apollo" {
+		t.Fatalf("unexpected recovery filters from inventory-backed builder: %+v", scorecard.Filters)
+	}
+	if scorecard.Summary.BotCount != 1 || scorecard.Summary.DegradedBots != 1 || scorecard.Summary.RecoverableBots != 0 || scorecard.Summary.IsolatedBots != 0 {
+		t.Fatalf("expected degraded recovery summary from custom inventory, got %+v", scorecard.Summary)
+	}
+	if scorecard.Summary.TakeoverCoveredBots != 1 || scorecard.Summary.FullyCoveredActions != 6 {
+		t.Fatalf("expected lifecycle and takeover counters to stay populated, got %+v", scorecard.Summary)
+	}
+	if scorecard.Summary.EvidenceArtifactRefs != 21 {
+		t.Fatalf("expected lifecycle plus bot evidence refs to total 21, got %+v", scorecard.Summary)
+	}
+	if len(scorecard.Bots) != 1 {
+		t.Fatalf("expected one recovery bot score, got %+v", scorecard.Bots)
+	}
+	bot := scorecard.Bots[0]
+	if bot.TenantID != "tenant-a" || bot.Status != "error" || bot.RecoveryReadiness != "degraded" {
+		t.Fatalf("expected degraded bot with tenant mapping and normalized status, got %+v", bot)
+	}
+	if len(bot.Warnings) != 1 || bot.Warnings[0] != "bot is missing dedicated pod or service isolation" {
+		t.Fatalf("expected isolation warning to be recorded, got %+v", bot)
+	}
+	if len(bot.TakeoverTriggers) == 0 || len(bot.RecoveryEvidence) == 0 {
+		t.Fatalf("expected takeover triggers and evidence to stay populated, got %+v", bot)
+	}
+}
+
 func TestAuditClawHostLifecycleRecoveryScorecardDetectsGaps(t *testing.T) {
 	scorecard := BuildDefaultClawHostLifecycleRecoveryScorecard("", "")
 	scorecard.Lifecycle[0].Evidence = nil

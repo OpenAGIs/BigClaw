@@ -64,6 +64,10 @@ type ClawHostLifecycleRecoveryAudit struct {
 
 func BuildDefaultClawHostLifecycleRecoveryScorecard(team, project string) ClawHostLifecycleRecoveryScorecard {
 	inventory := FilterClawHostFleetSurface(BuildDefaultClawHostFleetSurface(), team, project)
+	return buildClawHostLifecycleRecoveryScorecard(inventory, team, project)
+}
+
+func buildClawHostLifecycleRecoveryScorecard(inventory ClawHostFleetInventory, team, project string) ClawHostLifecycleRecoveryScorecard {
 	appTenant := map[string]string{}
 	for _, app := range inventory.Apps {
 		appTenant[app.AppID] = app.TenantID
@@ -155,6 +159,10 @@ func BuildDefaultClawHostLifecycleRecoveryScorecard(team, project string) ClawHo
 	}
 	sort.SliceStable(bots, func(i, j int) bool { return bots[i].BotID < bots[j].BotID })
 
+	return buildClawHostLifecycleRecoveryScorecardWithLifecycle(inventory, lifecycle, bots, team, project)
+}
+
+func buildClawHostLifecycleRecoveryScorecardWithLifecycle(inventory ClawHostFleetInventory, lifecycle []ClawHostRecoveryLifecycleAction, bots []ClawHostBotRecoveryScore, team, project string) ClawHostLifecycleRecoveryScorecard {
 	scorecard := ClawHostLifecycleRecoveryScorecard{
 		ScorecardID:      "BIG-PAR-292",
 		Version:          "go-v1",
