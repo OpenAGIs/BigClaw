@@ -139,3 +139,49 @@ func TestRenderClawHostLifecycleRecoveryReportHandlesEmptyBots(t *testing.T) {
 		}
 	}
 }
+
+func TestRenderClawHostLifecycleRecoveryReportHandlesEmptyFiltersLifecycleAndWarnings(t *testing.T) {
+	scorecard := ClawHostLifecycleRecoveryScorecard{
+		ScorecardID:      "BIG-PAR-359",
+		Version:          "go-v1",
+		SourceRepository: "https://github.com/fastclaw-ai/clawhost",
+		ControlPlane:     ClawHostControlPlane{Name: "ClawHost"},
+		Filters:          nil,
+		Lifecycle:        nil,
+		Bots: []ClawHostBotRecoveryScore{
+			{
+				BotID:             "bot-warning-1",
+				Name:              "warning-bot",
+				Status:            "error",
+				RecoveryReadiness: "degraded",
+				Warnings:          []string{"bot is missing dedicated pod or service isolation"},
+			},
+		},
+		Summary: ClawHostLifecycleRecoverySummary{
+			BotCount:     1,
+			DegradedBots: 1,
+		},
+	}
+	audit := ClawHostLifecycleRecoveryAudit{
+		ScorecardID:    scorecard.ScorecardID,
+		Version:        scorecard.Version,
+		DegradedBots:   []string{"bot-warning-1"},
+		ReadinessScore: 50,
+		ReleaseReady:   false,
+	}
+
+	report := RenderClawHostLifecycleRecoveryReport(scorecard, audit)
+	for _, want := range []string{
+		"## Filters",
+		"- none",
+		"## Lifecycle Coverage",
+		"## Per-Bot Isolation",
+		"warning-bot (bot-warning-1)",
+		"warnings=bot is missing dedicated pod or service isolation",
+		"Degraded bots: bot-warning-1",
+	} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in edge-case recovery report, got %s", want, report)
+		}
+	}
+}

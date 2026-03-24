@@ -4735,6 +4735,24 @@
       "state": "Done",
       "title": "Add ClawHost workflow helper unit coverage",
       "updated_at": "2026-03-24T22:57:41Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T22:59:08Z",
+      "description": "Add focused product-package coverage for ClawHost recovery report edge paths so empty filter maps, missing lifecycle entries, and per-bot warning rendering stay pinned outside the broader scorecard tests.",
+      "id": "big-par-359",
+      "identifier": "BIG-PAR-359",
+      "labels": [
+        "go",
+        "product",
+        "clawhost",
+        "test",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add ClawHost recovery report edge-case coverage",
+      "updated_at": "2026-03-24T22:59:08Z"
     }
   ]
 }

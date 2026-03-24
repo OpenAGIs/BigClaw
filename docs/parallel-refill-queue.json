@@ -158,7 +158,9 @@
       "BIG-PAR-357",
       "BIG-PAR-358"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-359"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -300,7 +302,8 @@
     "BIG-PAR-355",
     "BIG-PAR-356",
     "BIG-PAR-357",
-    "BIG-PAR-358"
+    "BIG-PAR-358",
+    "BIG-PAR-359"
   ],
   "issues": [
     {
@@ -1166,6 +1169,12 @@
       "title": "Add ClawHost workflow helper unit coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-359",
+      "title": "Add ClawHost recovery report edge-case coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
