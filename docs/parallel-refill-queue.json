@@ -145,7 +145,8 @@
       "BIG-PAR-344",
       "BIG-PAR-345",
       "BIG-PAR-346",
-      "BIG-PAR-347"
+      "BIG-PAR-347",
+      "BIG-PAR-348"
     ],
     "active": [],
     "standby": []
@@ -1084,7 +1085,7 @@
       "identifier": "BIG-PAR-348",
       "title": "Add ClawHost expansion helper unit coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In"
+      "status": "Done"
     }
   ]
 }
