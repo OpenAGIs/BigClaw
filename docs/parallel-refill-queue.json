@@ -85,14 +85,14 @@
       "BIG-PAR-284",
       "BIG-PAR-285",
       "BIG-PAR-286",
+      "BIG-PAR-287",
       "BIG-PAR-290"
     ],
     "active": [
-      "BIG-PAR-287",
-      "BIG-PAR-288"
+      "BIG-PAR-288",
+      "BIG-PAR-289"
     ],
     "standby": [
-      "BIG-PAR-289",
       "BIG-PAR-291"
     ]
   },
@@ -607,7 +607,7 @@
       "identifier": "BIG-PAR-287",
       "title": "Add ClawHost fleet inventory and control-plane source",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-288",
@@ -619,7 +619,7 @@
       "identifier": "BIG-PAR-289",
       "title": "Add ClawHost skills channels and device approval workflows",
       "track": "Go Mainline Follow-ups",
-      "status": "Todo"
+      "status": "In Progress"
     },
     {
       "identifier": "BIG-PAR-290",
