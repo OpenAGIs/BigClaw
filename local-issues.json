@@ -3416,6 +3416,24 @@
       "state": "Done",
       "title": "Add product regression coverage for ClawHost fleet filtering",
       "updated_at": "2026-03-24T19:21:11Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T19:23:22Z",
+      "description": "Add direct unit coverage for BuildDefaultClawHostLifecycleRecoveryScorecard so scoped recovery scorecards prove project-only matches and empty-match behavior without relying solely on API endpoint regressions.",
+      "id": "big-par-306",
+      "identifier": "BIG-PAR-306",
+      "labels": [
+        "go",
+        "clawhost",
+        "product",
+        "tests",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add product regression coverage for scoped ClawHost recovery scorecards",
+      "updated_at": "2026-03-24T19:23:22Z"
     }
   ]
 }

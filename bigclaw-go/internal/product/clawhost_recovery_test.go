@@ -22,6 +22,35 @@ func TestBuildDefaultClawHostLifecycleRecoveryScorecard(t *testing.T) {
 	}
 }
 
+func TestBuildDefaultClawHostLifecycleRecoveryScorecardScopesInventory(t *testing.T) {
+	t.Run("project only", func(t *testing.T) {
+		scorecard := BuildDefaultClawHostLifecycleRecoveryScorecard("", "campaigns")
+		if scorecard.Filters["team"] != "" || scorecard.Filters["project"] != "campaigns" {
+			t.Fatalf("unexpected recovery filters: %+v", scorecard.Filters)
+		}
+		if scorecard.Summary.BotCount != 1 || scorecard.Summary.RecoverableBots != 1 || scorecard.Summary.IsolatedBots != 1 || scorecard.Summary.DegradedBots != 0 {
+			t.Fatalf("unexpected project-scoped recovery summary: %+v", scorecard.Summary)
+		}
+		if len(scorecard.Bots) != 1 || scorecard.Bots[0].BotID != "bot-growth-1" || scorecard.Bots[0].RecoveryReadiness != "ready" {
+			t.Fatalf("expected only ready growth bot in project scope, got %+v", scorecard.Bots)
+		}
+	})
+
+	t.Run("no matches", func(t *testing.T) {
+		scorecard := BuildDefaultClawHostLifecycleRecoveryScorecard("support", "phoenix")
+		audit := AuditClawHostLifecycleRecoveryScorecard(scorecard)
+		if scorecard.Summary.BotCount != 0 || scorecard.Summary.RecoverableBots != 0 || scorecard.Summary.IsolatedBots != 0 || scorecard.Summary.DegradedBots != 0 {
+			t.Fatalf("expected empty recovery summary, got %+v", scorecard.Summary)
+		}
+		if len(scorecard.Bots) != 0 {
+			t.Fatalf("expected no scoped recovery bots, got %+v", scorecard.Bots)
+		}
+		if !audit.ReleaseReady || audit.ReadinessScore != 100 {
+			t.Fatalf("expected empty recovery audit to stay lifecycle-ready, got %+v", audit)
+		}
+	})
+}
+
 func TestAuditClawHostLifecycleRecoveryScorecardDetectsGaps(t *testing.T) {
 	scorecard := BuildDefaultClawHostLifecycleRecoveryScorecard("", "")
 	scorecard.Lifecycle[0].Evidence = nil
