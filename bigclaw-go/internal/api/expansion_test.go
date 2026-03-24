@@ -1061,6 +1061,39 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		}
 	})
 
+	t.Run("workflows blank actor query falls back to header", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=platform&project=apollo&actor=%20%20", nil)
+		request.Header.Set("X-BigClaw-Actor", "header-actor")
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected workflows endpoint 200 with blank actor query fallback, got %d %s", response.Code, response.Body.String())
+		}
+
+		var decoded struct {
+			Surface struct {
+				Filters map[string]string `json:"filters"`
+			} `json:"surface"`
+			Report struct {
+				ExportURL string `json:"export_url"`
+			} `json:"report"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("decode blank actor query fallback response: %v", err)
+		}
+		if decoded.Surface.Filters["actor"] != "header-actor" {
+			t.Fatalf("expected blank actor query to fall back to header actor, got %+v", decoded.Surface.Filters)
+		}
+
+		workflowExportURL, err := url.Parse(decoded.Report.ExportURL)
+		if err != nil {
+			t.Fatalf("parse blank actor query fallback export url: %v", err)
+		}
+		if workflowExportURL.Query().Get("actor") != "header-actor" {
+			t.Fatalf("expected export url to preserve header actor after blank query fallback, got %s", decoded.Report.ExportURL)
+		}
+	})
+
 	t.Run("workflows scope normalization", func(t *testing.T) {
 		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=%20platform%20&project=%20apollo%20&actor=%20query-actor%20", nil)
 		request.Header.Set("X-BigClaw-Actor", "header-actor")

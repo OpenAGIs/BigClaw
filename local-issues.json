@@ -3262,6 +3262,18 @@
       "state": "Done",
       "title": "Add ClawHost export header regression coverage",
       "updated_at": "2026-03-24T18:34:13Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T18:37:53Z",
+      "description": "Add API regression coverage that proves a whitespace-only ClawHost workflow actor query falls back to X-BigClaw-Actor and preserves that actor in the emitted export URL.",
+      "id": "big-par-302",
+      "identifier": "BIG-PAR-302",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add ClawHost blank-actor fallback regression coverage",
+      "updated_at": "2026-03-24T18:38:09Z"
     }
   ]
 }
