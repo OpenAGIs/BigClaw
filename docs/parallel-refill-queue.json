@@ -111,11 +111,10 @@
       "BIG-PAR-310",
       "BIG-PAR-311",
       "BIG-PAR-312",
-      "BIG-PAR-313"
-    ],
-    "active": [
+      "BIG-PAR-313",
       "BIG-PAR-314"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -814,7 +813,7 @@
       "identifier": "BIG-PAR-314",
       "title": "Add product regression coverage for empty ClawHost fleet reports",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

@@ -3619,6 +3619,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct product regression coverage for RenderClawHostFleetReport so the empty filtered inventory path now proves the markdown keeps zero-count headings and empty app/bot sections without depending on expansion endpoint tests.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultClawHostFleetInventoryIsControlPlaneReady|TestAuditClawHostFleetInventoryDetectsCoverageGaps|TestFilterClawHostFleetSurface|TestRenderClawHostFleetReport|TestRenderClawHostFleetReportHandlesEmptyInventory' -count=1` -> ok\n- `cd bigclaw-go && go test ./internal/api ./internal/product -count=1` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `ff0286e25e7552b6925298768ec02f047c1545c4` matches remote SHA `ff0286e25e7552b6925298768ec02f047c1545c4` with `status: ok` and `synced: true`\n\nCommit SHA: `ff0286e25e7552b6925298768ec02f047c1545c4`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-24T19:53:44Z"
+        }
+      ],
       "created_at": "2026-03-24T19:51:31Z",
       "description": "Add direct unit coverage for RenderClawHostFleetReport so the empty scoped inventory path proves the markdown emits the expected empty sections and zero-count summary fields without depending on expansion endpoint tests.",
       "id": "big-par-314",
@@ -3631,9 +3638,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add product regression coverage for empty ClawHost fleet reports",
-      "updated_at": "2026-03-24T19:51:31Z"
+      "updated_at": "2026-03-24T19:53:44Z"
     }
   ]
 }
