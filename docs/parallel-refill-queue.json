@@ -166,11 +166,10 @@
       "BIG-PAR-365",
       "BIG-PAR-366",
       "BIG-PAR-367",
-      "BIG-PAR-368"
-    ],
-    "active": [
+      "BIG-PAR-368",
       "BIG-PAR-369"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1254,7 +1253,7 @@
       "identifier": "BIG-PAR-369",
       "title": "Add saved-view audit and report edge coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
