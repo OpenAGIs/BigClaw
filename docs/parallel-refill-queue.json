@@ -866,7 +866,7 @@
       "identifier": "BIG-PAR-322",
       "title": "Add distributed export task-fallback filename sanitization coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
