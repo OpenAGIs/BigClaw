@@ -324,7 +324,14 @@ func (q *FileQueue) save() error {
 	return os.Rename(tmp, q.path)
 }
 
-func (q *FileQueue) recoverExpiredLeases(now time.Time) (bool, error) {
+func (q *FileQueue) RecoverExpiredLeases(_ context.Context, now time.Time) (LeaseRecoveryResult, error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	return q.recoverExpiredLeases(now)
+}
+
+func (q *FileQueue) recoverExpiredLeases(now time.Time) (LeaseRecoveryResult, error) {
+	result := LeaseRecoveryResult{}
 	changed := false
 	for taskID, current := range q.items {
 		if !current.Leased || current.LeaseExpires.After(now) {
@@ -332,18 +339,23 @@ func (q *FileQueue) recoverExpiredLeases(now time.Time) (bool, error) {
 		}
 		if current.Task.State == domain.TaskCancelled {
 			delete(q.items, taskID)
+			result.Purged++
+			result.TaskIDs = append(result.TaskIDs, taskID)
 			changed = true
 			continue
 		}
 		current.Leased = false
 		current.LeaseWorker = ""
+		current.LeaseExpires = time.Time{}
 		current.Task.State = domain.TaskQueued
 		current.Task.UpdatedAt = now
 		current.AvailableAt = now
+		result.Recovered++
+		result.TaskIDs = append(result.TaskIDs, taskID)
 		changed = true
 	}
 	if !changed {
-		return false, nil
+		return result, nil
 	}
-	return true, q.save()
+	return result, q.save()
 }

@@ -203,3 +203,51 @@ func TestMemoryQueuePurgesCancelledLeaseAfterExpiry(t *testing.T) {
 		t.Fatalf("expected task to be purged, got %v", err)
 	}
 }
+
+func TestMemoryQueueRecoverExpiredLeasesRequeuesAndPurges(t *testing.T) {
+	q := NewMemoryQueue()
+	ctx := context.Background()
+	now := time.Now()
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-recover", Priority: 1, CreatedAt: now}); err != nil {
+		t.Fatalf("enqueue recoverable task: %v", err)
+	}
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-purge", Priority: 2, CreatedAt: now.Add(time.Second)}); err != nil {
+		t.Fatalf("enqueue purge task: %v", err)
+	}
+	_, recoverLease, err := q.LeaseNext(ctx, "worker-a", time.Minute)
+	if err != nil || recoverLease == nil {
+		t.Fatalf("lease recover task: %v lease=%v", err, recoverLease)
+	}
+	_, purgeLease, err := q.LeaseNext(ctx, "worker-b", time.Minute)
+	if err != nil || purgeLease == nil {
+		t.Fatalf("lease purge task: %v lease=%v", err, purgeLease)
+	}
+	if _, err := q.CancelTask(ctx, "task-purge", "stop"); err != nil {
+		t.Fatalf("cancel purge task: %v", err)
+	}
+
+	expiredAt := time.Now().Add(2 * time.Minute)
+	q.mu.Lock()
+	q.items["task-recover"].LeaseExpires = expiredAt.Add(-time.Second)
+	q.items["task-purge"].LeaseExpires = expiredAt.Add(-time.Second)
+	q.mu.Unlock()
+
+	result, err := q.RecoverExpiredLeases(ctx, expiredAt)
+	if err != nil {
+		t.Fatalf("recover expired leases: %v", err)
+	}
+	if result.Recovered != 1 || result.Purged != 1 {
+		t.Fatalf("expected one recovered and one purged lease, got %+v", result)
+	}
+
+	snapshot, err := q.GetTask(ctx, "task-recover")
+	if err != nil {
+		t.Fatalf("get recovered task: %v", err)
+	}
+	if snapshot.Leased || snapshot.Task.State != domain.TaskQueued {
+		t.Fatalf("expected recovered task to be queued and unleased, got %+v", snapshot)
+	}
+	if _, err := q.GetTask(ctx, "task-purge"); !errors.Is(err, ErrTaskNotFound) {
+		t.Fatalf("expected purged task to be removed, got %v", err)
+	}
+}

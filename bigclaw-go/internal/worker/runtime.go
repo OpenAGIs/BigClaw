@@ -46,9 +46,11 @@ type Status struct {
 	CurrentTraceID            string              `json:"current_trace_id,omitempty"`
 	CurrentExecutor           domain.ExecutorKind `json:"current_executor,omitempty"`
 	LastHeartbeatAt           time.Time           `json:"last_heartbeat_at,omitempty"`
+	LastHealthProbeAt         time.Time           `json:"last_health_probe_at,omitempty"`
 	LastStartedAt             time.Time           `json:"last_started_at,omitempty"`
 	LastFinishedAt            time.Time           `json:"last_finished_at,omitempty"`
 	LastResult                string              `json:"last_result,omitempty"`
+	LastHealthProbeResult     string              `json:"last_health_probe_result,omitempty"`
 	LeaseRenewals             int                 `json:"lease_renewals"`
 	LeaseRenewalFailures      int                 `json:"lease_renewal_failures"`
 	LeaseLostRuns             int                 `json:"lease_lost_runs"`
@@ -56,6 +58,11 @@ type Status struct {
 	RetriedRuns               int                 `json:"retried_runs"`
 	DeadLetterRuns            int                 `json:"dead_letter_runs"`
 	CancelledRuns             int                 `json:"cancelled_runs"`
+	HealthProbeRuns           int                 `json:"health_probe_runs"`
+	HealthProbeRecoveries     int                 `json:"health_probe_recoveries"`
+	HealthProbePurges         int                 `json:"health_probe_purges"`
+	HealthProbeFailures       int                 `json:"health_probe_failures"`
+	StaleHeartbeatWorkers     int                 `json:"stale_heartbeat_workers,omitempty"`
 	PreemptionActive          bool                `json:"preemption_active,omitempty"`
 	CurrentPreemptionTaskID   string              `json:"current_preemption_task_id,omitempty"`
 	CurrentPreemptionWorkerID string              `json:"current_preemption_worker_id,omitempty"`

@@ -294,21 +294,34 @@ func (q *MemoryQueue) Size(_ context.Context) int {
 	return count
 }
 
-func (q *MemoryQueue) recoverExpiredLeases(now time.Time) {
+func (q *MemoryQueue) RecoverExpiredLeases(_ context.Context, now time.Time) (LeaseRecoveryResult, error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	return q.recoverExpiredLeases(now), nil
+}
+
+func (q *MemoryQueue) recoverExpiredLeases(now time.Time) LeaseRecoveryResult {
+	result := LeaseRecoveryResult{}
 	for taskID, current := range q.items {
 		if !current.Leased || current.LeaseExpires.After(now) {
 			continue
 		}
 		if current.Task.State == domain.TaskCancelled {
 			delete(q.items, taskID)
+			result.Purged++
+			result.TaskIDs = append(result.TaskIDs, taskID)
 			continue
 		}
 		current.Leased = false
 		current.LeaseWorker = ""
+		current.LeaseExpires = time.Time{}
 		current.Task.State = domain.TaskQueued
 		current.Task.UpdatedAt = now
 		current.AvailableAt = now
+		result.Recovered++
+		result.TaskIDs = append(result.TaskIDs, taskID)
 	}
+	return result
 }
 
 func snapshotFromItem(current *item) TaskSnapshot {

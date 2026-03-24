@@ -35,14 +35,14 @@ func (fakeWorkerStatus) Snapshot() worker.Status {
 type fakeWorkerPoolStatus struct{}
 
 func (fakeWorkerPoolStatus) Snapshot() worker.Status {
-	return worker.Status{WorkerID: "worker-a", State: "running", CurrentExecutor: domain.ExecutorLocal, SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"}
+	return worker.Status{WorkerID: "worker-a", State: "running", CurrentExecutor: domain.ExecutorLocal, SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok", HealthProbeRuns: 1, HealthProbeRecoveries: 1, LastHealthProbeAt: time.Unix(1700000300, 0), LastHealthProbeResult: "redispatched=1 purged=0 stale_workers=1", StaleHeartbeatWorkers: 1}
 }
 
 func (fakeWorkerPoolStatus) Snapshots() []worker.Status {
 	return []worker.Status{
-		{WorkerID: "worker-a", State: "running", CurrentExecutor: domain.ExecutorLocal, SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"},
-		{WorkerID: "worker-b", State: "leased", CurrentExecutor: domain.ExecutorKubernetes, SuccessfulRuns: 3, LeaseRenewals: 2, LeaseRenewalFailures: 1, LeaseLostRuns: 1, LastResult: "warming", PreemptionActive: true, CurrentPreemptionTaskID: "task-low", CurrentPreemptionWorkerID: "worker-low", LastPreemptedTaskID: "task-low", LastPreemptionAt: time.Unix(1700000100, 0), LastPreemptionReason: "preempted by urgent task task-urgent (priority=1)", PreemptionsIssued: 1},
-		{WorkerID: "worker-c", State: "idle", SuccessfulRuns: 8, LeaseRenewals: 0, LastResult: "idle"},
+		{WorkerID: "worker-a", State: "running", CurrentExecutor: domain.ExecutorLocal, SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok", HealthProbeRuns: 1, HealthProbeRecoveries: 1, LastHealthProbeAt: time.Unix(1700000300, 0), LastHealthProbeResult: "redispatched=1 purged=0 stale_workers=1", StaleHeartbeatWorkers: 1},
+		{WorkerID: "worker-b", State: "leased", CurrentExecutor: domain.ExecutorKubernetes, SuccessfulRuns: 3, LeaseRenewals: 2, LeaseRenewalFailures: 1, LeaseLostRuns: 1, LastResult: "warming", PreemptionActive: true, CurrentPreemptionTaskID: "task-low", CurrentPreemptionWorkerID: "worker-low", LastPreemptedTaskID: "task-low", LastPreemptionAt: time.Unix(1700000100, 0), LastPreemptionReason: "preempted by urgent task task-urgent (priority=1)", PreemptionsIssued: 1, StaleHeartbeatWorkers: 1, LastHealthProbeAt: time.Unix(1700000300, 0), LastHealthProbeResult: "redispatched=1 purged=0 stale_workers=1"},
+		{WorkerID: "worker-c", State: "idle", SuccessfulRuns: 8, LeaseRenewals: 0, LastResult: "idle", StaleHeartbeatWorkers: 1, LastHealthProbeAt: time.Unix(1700000300, 0), LastHealthProbeResult: "redispatched=1 purged=0 stale_workers=1"},
 	}
 }
 
@@ -60,9 +60,9 @@ func (f fakeNodeAwareWorkerPoolStatus) Snapshots() []worker.Status {
 		base = time.Unix(1700003600, 0)
 	}
 	return []worker.Status{
-		{WorkerID: "worker-node-a", NodeID: "node-a", State: "running", CurrentExecutor: domain.ExecutorLocal, LastHeartbeatAt: base.Add(-2 * time.Minute), SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"},
-		{WorkerID: "worker-node-b", NodeID: "node-b", State: "leased", CurrentExecutor: domain.ExecutorKubernetes, LastHeartbeatAt: base.Add(-9 * time.Minute), SuccessfulRuns: 3, LeaseRenewals: 2, LeaseRenewalFailures: 1, LeaseLostRuns: 1, LastResult: "warming"},
-		{WorkerID: "worker-node-c", NodeID: "node-c", State: "idle", CurrentExecutor: domain.ExecutorRay, LastHeartbeatAt: base.Add(-time.Minute), SuccessfulRuns: 8, LeaseRenewals: 0, LastResult: "idle"},
+		{WorkerID: "worker-node-a", NodeID: "node-a", State: "running", CurrentExecutor: domain.ExecutorLocal, LastHeartbeatAt: base.Add(-2 * time.Minute), SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok", HealthProbeRuns: 1, HealthProbeRecoveries: 1, LastHealthProbeAt: base.Add(-30 * time.Second), LastHealthProbeResult: "redispatched=1 purged=0 stale_workers=1", StaleHeartbeatWorkers: 1},
+		{WorkerID: "worker-node-b", NodeID: "node-b", State: "leased", CurrentExecutor: domain.ExecutorKubernetes, LastHeartbeatAt: base.Add(-9 * time.Minute), SuccessfulRuns: 3, LeaseRenewals: 2, LeaseRenewalFailures: 1, LeaseLostRuns: 1, LastResult: "warming", LastHealthProbeAt: base.Add(-30 * time.Second), LastHealthProbeResult: "redispatched=1 purged=0 stale_workers=1", StaleHeartbeatWorkers: 1},
+		{WorkerID: "worker-node-c", NodeID: "node-c", State: "idle", CurrentExecutor: domain.ExecutorRay, LastHeartbeatAt: base.Add(-time.Minute), SuccessfulRuns: 8, LeaseRenewals: 0, LastResult: "idle", LastHealthProbeAt: base.Add(-30 * time.Second), LastHealthProbeResult: "redispatched=1 purged=0 stale_workers=1", StaleHeartbeatWorkers: 1},
 	}
 }
 
@@ -2917,6 +2917,13 @@ func TestV2ControlCenterAppliesTimeWindowAndReturnsNodeAwareWorkerPoolSummary(t 
 				ExportURL string `json:"export_url"`
 			} `json:"rollout_report"`
 		} `json:"distributed_diagnostics"`
+		WorkerPoolHealth struct {
+			WorkersMissingHeartbeat int    `json:"workers_missing_heartbeat"`
+			StaleWorkers            int    `json:"stale_workers"`
+			HealthProbeRuns         int    `json:"health_probe_runs"`
+			HealthProbeRecoveries   int    `json:"health_probe_recoveries"`
+			LastHealthProbeResult   string `json:"last_health_probe_result"`
+		} `json:"worker_pool_health"`
 	}
 	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
 		t.Fatalf("decode control center payload: %v", err)
@@ -2929,6 +2936,9 @@ func TestV2ControlCenterAppliesTimeWindowAndReturnsNodeAwareWorkerPoolSummary(t 
 	}
 	if decoded.WorkerPool.TotalNodes != 3 || decoded.WorkerPool.ActiveNodes != 1 || decoded.WorkerPool.IdleNodes != 1 || decoded.WorkerPool.DegradedNodes != 1 {
 		t.Fatalf("unexpected node-aware worker pool summary: %+v", decoded.WorkerPool)
+	}
+	if decoded.WorkerPoolHealth.WorkersMissingHeartbeat != 0 || decoded.WorkerPoolHealth.StaleWorkers != 1 || decoded.WorkerPoolHealth.HealthProbeRuns != 1 || decoded.WorkerPoolHealth.HealthProbeRecoveries != 1 || decoded.WorkerPoolHealth.LastHealthProbeResult == "" {
+		t.Fatalf("unexpected worker pool health telemetry: %+v", decoded.WorkerPoolHealth)
 	}
 	if len(decoded.WorkerPool.ExecutorDistribution) != 3 {
 		t.Fatalf("expected executor distribution across worker nodes, got %+v", decoded.WorkerPool.ExecutorDistribution)

@@ -29,6 +29,12 @@ type TaskSnapshot struct {
 	LeaseExpires time.Time   `json:"lease_expires,omitempty"`
 }
 
+type LeaseRecoveryResult struct {
+	Recovered int      `json:"recovered"`
+	Purged    int      `json:"purged"`
+	TaskIDs   []string `json:"task_ids,omitempty"`
+}
+
 type Queue interface {
 	Enqueue(context.Context, domain.Task) error
 	LeaseNext(context.Context, string, time.Duration) (*domain.Task, *Lease, error)
@@ -48,4 +54,8 @@ type TaskInspector interface {
 
 type TaskController interface {
 	CancelTask(context.Context, string, string) (TaskSnapshot, error)
+}
+
+type LeaseRecoverer interface {
+	RecoverExpiredLeases(context.Context, time.Time) (LeaseRecoveryResult, error)
 }

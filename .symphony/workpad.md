@@ -1,27 +1,19 @@
-## Codex Workpad
+# BIGCLAW-189
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## Plan
+- inspect the current worker runtime, pool, queue lease lifecycle, and worker-pool diagnostics surfaces
+- add a worker health probe in the pool that runs once per orchestration cycle and records stale heartbeat / recovery telemetry
+- add a queue self-heal hook that proactively requeues expired leased tasks so orphaned work is redispatched without waiting for new lease traffic
+- expose the probe and remediation counters through worker snapshots and API worker-pool health payloads
+- cover the new behavior with targeted queue, worker, and API tests
+- run targeted tests, record exact commands and results, then commit and push `BIGCLAW-189`
 
-### Plan
+## Acceptance
+- worker pool executes a health probe during normal loop cycles without changing unrelated worker execution paths
+- expired leased tasks are proactively recovered and become available for redispatch through a self-heal path
+- worker-pool health output includes probe/remediation telemetry that operators can inspect
+- targeted automated tests verify stale worker detection, lease recovery, and API reporting
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
-
-### Acceptance Criteria
-
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
-
-### Validation
-
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
-
-### Notes
-
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+## Validation
+- `cd /Users/openagi/code/bigclaw-workspaces/BIGCLAW-189/bigclaw-go && go test ./internal/queue ./internal/worker ./internal/api`
+- if failures indicate narrower scope is better, rerun focused packages or tests and record exact commands plus pass/fail status

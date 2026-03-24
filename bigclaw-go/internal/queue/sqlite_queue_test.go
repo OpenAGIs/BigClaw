@@ -203,6 +203,58 @@ func TestSQLiteQueueDeadLetterReplayPersistsAcrossReopen(t *testing.T) {
 	}
 }
 
+func TestSQLiteQueueRecoverExpiredLeasesRequeuesAndPurges(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.db")
+	q, err := NewSQLiteQueue(path)
+	if err != nil {
+		t.Fatalf("new sqlite queue: %v", err)
+	}
+	defer q.Close()
+	base := time.Now()
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-recover", Priority: 1, CreatedAt: base}); err != nil {
+		t.Fatalf("enqueue recover task: %v", err)
+	}
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-purge", Priority: 2, CreatedAt: base.Add(time.Second)}); err != nil {
+		t.Fatalf("enqueue purge task: %v", err)
+	}
+	_, recoverLease, err := q.LeaseNext(ctx, "worker-a", time.Minute)
+	if err != nil || recoverLease == nil {
+		t.Fatalf("lease recover task: %v lease=%v", err, recoverLease)
+	}
+	_, purgeLease, err := q.LeaseNext(ctx, "worker-b", time.Minute)
+	if err != nil || purgeLease == nil {
+		t.Fatalf("lease purge task: %v lease=%v", err, purgeLease)
+	}
+	if _, err := q.CancelTask(ctx, "task-purge", "stop"); err != nil {
+		t.Fatalf("cancel purge task: %v", err)
+	}
+
+	expiredAt := time.Now().Add(2 * time.Minute)
+	if _, err := q.db.Exec(`UPDATE tasks SET lease_expires_ns=? WHERE task_id IN (?, ?)`, expiredAt.Add(-time.Second).UnixNano(), "task-recover", "task-purge"); err != nil {
+		t.Fatalf("mark leases expired: %v", err)
+	}
+
+	result, err := q.RecoverExpiredLeases(ctx, expiredAt)
+	if err != nil {
+		t.Fatalf("recover expired leases: %v", err)
+	}
+	if result.Recovered != 1 || result.Purged != 1 {
+		t.Fatalf("expected one recovered and one purged lease, got %+v", result)
+	}
+
+	snapshot, err := q.GetTask(ctx, "task-recover")
+	if err != nil {
+		t.Fatalf("get recovered task: %v", err)
+	}
+	if snapshot.Leased || snapshot.Task.State != domain.TaskQueued {
+		t.Fatalf("expected recovered task to be queued and unleased, got %+v", snapshot)
+	}
+	if _, err := q.GetTask(ctx, "task-purge"); !errors.Is(err, ErrTaskNotFound) {
+		t.Fatalf("expected purged task to be removed, got %v", err)
+	}
+}
+
 func TestSQLiteQueueProcessesTaskScaleWithoutDuplicateLease(t *testing.T) {
 	ctx := context.Background()
 	for _, tc := range []struct {

@@ -176,3 +176,47 @@ func TestPoolSnapshotSummarizesWorkerState(t *testing.T) {
 		t.Fatalf("expected 2 snapshots in pool")
 	}
 }
+
+func TestPoolHealthProbeRecoversExpiredLeasesAndReportsTelemetry(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	now := time.Now()
+	if err := q.Enqueue(context.Background(), domain.Task{ID: "task-stale", Priority: 1, CreatedAt: now}); err != nil {
+		t.Fatalf("enqueue stale task: %v", err)
+	}
+	task, lease, err := q.LeaseNext(context.Background(), "worker-stale", 20*time.Millisecond)
+	if err != nil || task == nil || lease == nil {
+		t.Fatalf("lease stale task: %v task=%v lease=%v", err, task, lease)
+	}
+	time.Sleep(30 * time.Millisecond)
+
+	workerA := &Runtime{WorkerID: "worker-a", Queue: q}
+	workerA.updateStatus(func(status *Status) {
+		status.LastHeartbeatAt = time.Now().Add(-6 * time.Minute)
+	})
+	workerB := &Runtime{WorkerID: "worker-b", Queue: q}
+	workerB.updateStatus(func(status *Status) {
+		status.LastHeartbeatAt = time.Now().Add(-time.Minute)
+	})
+
+	pool := NewPool(workerA, workerB)
+	pool.runHealthProbe(context.Background())
+
+	snapshot := pool.Snapshot()
+	if snapshot.HealthProbeRuns != 1 || snapshot.HealthProbeRecoveries != 1 || snapshot.HealthProbePurges != 0 {
+		t.Fatalf("expected one successful probe recovery, got %+v", snapshot)
+	}
+	if snapshot.StaleHeartbeatWorkers != 1 {
+		t.Fatalf("expected one stale worker, got %+v", snapshot)
+	}
+	if snapshot.LastHealthProbeAt.IsZero() || snapshot.LastHealthProbeResult == "" {
+		t.Fatalf("expected probe timestamp and result, got %+v", snapshot)
+	}
+
+	recovered, err := q.GetTask(context.Background(), "task-stale")
+	if err != nil {
+		t.Fatalf("get recovered task: %v", err)
+	}
+	if recovered.Leased || recovered.Task.State != domain.TaskQueued {
+		t.Fatalf("expected stale task to be redispatched as queued, got %+v", recovered)
+	}
+}

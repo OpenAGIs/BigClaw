@@ -305,6 +305,88 @@ func (q *SQLiteQueue) ListTasks(_ context.Context, limit int) ([]TaskSnapshot, e
 	return out, nil
 }
 
+func (q *SQLiteQueue) RecoverExpiredLeases(ctx context.Context, now time.Time) (LeaseRecoveryResult, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	result := LeaseRecoveryResult{}
+
+	rows, err := q.db.QueryContext(ctx, `SELECT task_id, payload FROM tasks WHERE leased=1 AND lease_expires_ns > 0 AND lease_expires_ns <= ?`, now.UnixNano())
+	if err != nil {
+		return result, err
+	}
+	defer rows.Close()
+
+	recovered := make([]struct {
+		taskID string
+		task   domain.Task
+	}, 0)
+	purgedIDs := make([]string, 0)
+	for rows.Next() {
+		var taskID string
+		var payload []byte
+		if err := rows.Scan(&taskID, &payload); err != nil {
+			return result, err
+		}
+		var task domain.Task
+		if err := json.Unmarshal(payload, &task); err != nil {
+			return result, err
+		}
+		if task.State == domain.TaskCancelled {
+			purgedIDs = append(purgedIDs, taskID)
+			continue
+		}
+		task.State = domain.TaskQueued
+		task.UpdatedAt = now
+		recovered = append(recovered, struct {
+			taskID string
+			task   domain.Task
+		}{taskID: taskID, task: task})
+	}
+	if err := rows.Err(); err != nil {
+		return result, err
+	}
+
+	tx, err := q.db.BeginTx(ctx, nil)
+	if err != nil {
+		return result, err
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	for _, item := range recovered {
+		payload, err := json.Marshal(item.task)
+		if err != nil {
+			return result, err
+		}
+		res, err := tx.ExecContext(ctx, `UPDATE tasks SET payload=?, state=?, available_at_ns=?, leased=0, lease_worker='', lease_expires_ns=0 WHERE task_id=? AND leased=1 AND lease_expires_ns > 0 AND lease_expires_ns <= ?`, payload, string(domain.TaskQueued), now.UnixNano(), item.taskID, now.UnixNano())
+		if err != nil {
+			return result, err
+		}
+		if rowsAffected, _ := res.RowsAffected(); rowsAffected == 1 {
+			result.Recovered++
+			result.TaskIDs = append(result.TaskIDs, item.taskID)
+		}
+	}
+
+	for _, taskID := range purgedIDs {
+		res, err := tx.ExecContext(ctx, `DELETE FROM tasks WHERE task_id=? AND leased=1 AND lease_expires_ns > 0 AND lease_expires_ns <= ?`, taskID, now.UnixNano())
+		if err != nil {
+			return result, err
+		}
+		if rowsAffected, _ := res.RowsAffected(); rowsAffected == 1 {
+			result.Purged++
+			result.TaskIDs = append(result.TaskIDs, taskID)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
 func (q *SQLiteQueue) CancelTask(_ context.Context, taskID string, reason string) (TaskSnapshot, error) {
 	row := q.db.QueryRow(`SELECT payload, available_at_ns, attempt, leased, lease_worker, lease_expires_ns FROM tasks WHERE task_id=?`, taskID)
 	snapshot, err := scanSnapshotRow(row)

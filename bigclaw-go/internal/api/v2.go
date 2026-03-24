@@ -229,8 +229,13 @@ type workerPoolHealthSummary struct {
 	WorkersWithHeartbeat      int      `json:"workers_with_heartbeat"`
 	WorkersMissingHeartbeat   int      `json:"workers_missing_heartbeat"`
 	StaleWorkers              int      `json:"stale_workers"`
+	HealthProbeRuns           int      `json:"health_probe_runs"`
+	HealthProbeRecoveries     int      `json:"health_probe_recoveries"`
+	HealthProbePurges         int      `json:"health_probe_purges"`
+	HealthProbeFailures       int      `json:"health_probe_failures"`
 	StaleWorkerIDs            []string `json:"stale_worker_ids,omitempty"`
 	MissingHeartbeatWorkerIDs []string `json:"missing_heartbeat_worker_ids,omitempty"`
+	LastHealthProbeResult     string   `json:"last_health_probe_result,omitempty"`
 	OldestHeartbeatAgeSeconds *int64   `json:"oldest_heartbeat_age_seconds,omitempty"`
 	NewestHeartbeatAgeSeconds *int64   `json:"newest_heartbeat_age_seconds,omitempty"`
 }
@@ -3008,14 +3013,28 @@ func workerPoolHealth(now time.Time, pool *workerPoolSummary) *workerPoolHealthS
 	staleAfter := workerPoolStaleAfterDuration()
 
 	withHeartbeat := 0
+	healthProbeRuns := 0
+	healthProbeRecoveries := 0
+	healthProbePurges := 0
+	healthProbeFailures := 0
 	missingIDs := make([]string, 0)
 	staleIDs := make([]string, 0)
+	lastHealthProbeAt := time.Time{}
+	lastHealthProbeResult := ""
 	var oldestSeconds *int64
 	var newestSeconds *int64
 
 	for _, status := range pool.Workers {
 		if status.WorkerID == "" {
 			continue
+		}
+		healthProbeRuns += status.HealthProbeRuns
+		healthProbeRecoveries += status.HealthProbeRecoveries
+		healthProbePurges += status.HealthProbePurges
+		healthProbeFailures += status.HealthProbeFailures
+		if status.LastHealthProbeAt.After(lastHealthProbeAt) {
+			lastHealthProbeAt = status.LastHealthProbeAt
+			lastHealthProbeResult = status.LastHealthProbeResult
 		}
 		if status.LastHeartbeatAt.IsZero() {
 			missingIDs = append(missingIDs, status.WorkerID)
@@ -3045,8 +3064,13 @@ func workerPoolHealth(now time.Time, pool *workerPoolSummary) *workerPoolHealthS
 		WorkersWithHeartbeat:      withHeartbeat,
 		WorkersMissingHeartbeat:   len(missingIDs),
 		StaleWorkers:              len(staleIDs),
+		HealthProbeRuns:           healthProbeRuns,
+		HealthProbeRecoveries:     healthProbeRecoveries,
+		HealthProbePurges:         healthProbePurges,
+		HealthProbeFailures:       healthProbeFailures,
 		StaleWorkerIDs:            staleIDs,
 		MissingHeartbeatWorkerIDs: missingIDs,
+		LastHealthProbeResult:     lastHealthProbeResult,
 		OldestHeartbeatAgeSeconds: oldestSeconds,
 		NewestHeartbeatAgeSeconds: newestSeconds,
 	}
