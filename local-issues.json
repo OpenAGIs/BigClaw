@@ -3444,6 +3444,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct product regression coverage for BuildDefaultClawHostWorkflowLaneSurface so the shared workflow lane builder now proves scoped lane routes carry team and project filters and that an empty actor falls back to `workflow-operator` across the generated lanes.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -run 'TestBuildClawHostWorkflowLaneSurfaceIncludesParallelLanesAndSignals|TestBuildClawHostWorkflowLaneSurfaceScopesRoutesAndDefaultsActor|TestAuditClawHostWorkflowLaneSurfaceFlagsWorkflowGaps|TestRenderClawHostWorkflowLaneReportIncludesKeySections' -count=1` -> ok\n- `cd bigclaw-go && go test ./internal/api ./internal/product -count=1` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `ef67f915f5088a6957cb5692d5d2ba1f4eb75676` matches remote SHA `ef67f915f5088a6957cb5692d5d2ba1f4eb75676` with `status: ok` and `synced: true`\n\nCommit SHA: `ef67f915f5088a6957cb5692d5d2ba1f4eb75676`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-24T19:28:49Z"
+        }
+      ],
       "created_at": "2026-03-24T19:27:29Z",
       "description": "Add direct unit coverage for BuildDefaultClawHostWorkflowLaneSurface so lane routes prove team, project, and actor scoping semantics, including the default actor fallback, without depending only on API endpoint regressions.",
       "id": "big-par-307",
@@ -3456,9 +3463,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add product regression coverage for scoped ClawHost workflow lanes",
-      "updated_at": "2026-03-24T19:27:29Z"
+      "updated_at": "2026-03-24T19:28:49Z"
     }
   ]
 }
