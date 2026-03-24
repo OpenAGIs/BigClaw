@@ -14,6 +14,7 @@ import (
 
 type QuotaSnapshot struct {
 	TenantID              string
+	OwnerID               string
 	ConcurrentLimit       int
 	CurrentRunning        int
 	BudgetRemaining       int64
@@ -32,6 +33,19 @@ type Decision struct {
 	Accepted   bool
 	Reason     string
 	Preemption PreemptionPlan
+	Isolation  IsolationDecision
+}
+
+type IsolationDecision struct {
+	TenantMode        string `json:"tenant_mode,omitempty"`
+	RequireOwnerMatch bool   `json:"require_owner_match,omitempty"`
+	TaskTenantID      string `json:"task_tenant_id,omitempty"`
+	QuotaTenantID     string `json:"quota_tenant_id,omitempty"`
+	TaskOwner         string `json:"task_owner,omitempty"`
+	QuotaOwnerID      string `json:"quota_owner_id,omitempty"`
+	Boundary          string `json:"boundary,omitempty"`
+	Violation         bool   `json:"violation,omitempty"`
+	Reason            string `json:"reason,omitempty"`
 }
 
 type Assessment struct {
@@ -97,14 +111,18 @@ func (s *Scheduler) currentTime() time.Time {
 func (s *Scheduler) Decide(task domain.Task, quota QuotaSnapshot) Decision {
 	rules := s.Rules()
 	now := s.currentTime()
+	isolation := evaluateIsolation(task, quota, rules)
+	if isolation.Violation {
+		return Decision{Accepted: false, Reason: isolation.Reason, Isolation: isolation}
+	}
 	if quota.BudgetRemaining > 0 && task.BudgetCents > quota.BudgetRemaining {
-		return Decision{Accepted: false, Reason: "budget exceeded"}
+		return Decision{Accepted: false, Reason: "budget exceeded", Isolation: isolation}
 	}
 	if quota.MaxQueueDepth > 0 && quota.QueueDepth >= quota.MaxQueueDepth && !isPriorityExempt(task, rules) {
-		return Decision{Accepted: false, Reason: "backpressure activated: queue depth limit exceeded"}
+		return Decision{Accepted: false, Reason: "backpressure activated: queue depth limit exceeded", Isolation: isolation}
 	}
 	if shouldThrottleForFairness(task, rules) && s.fairness.ShouldThrottle(now, strings.TrimSpace(task.TenantID), rules) {
-		return Decision{Accepted: false, Reason: fairnessThrottleReason(strings.TrimSpace(task.TenantID), rules)}
+		return Decision{Accepted: false, Reason: fairnessThrottleReason(strings.TrimSpace(task.TenantID), rules), Isolation: isolation}
 	}
 	assignment := assignmentForTask(task, rules)
 	if quota.ConcurrentLimit > 0 && quota.CurrentRunning >= quota.ConcurrentLimit {
@@ -116,13 +134,14 @@ func (s *Scheduler) Decide(task domain.Task, quota QuotaSnapshot) Decision {
 				Assignment: assignment,
 				Reason:     assignment.Reason,
 				Preemption: PreemptionPlan{Required: true, Reason: "urgent task may reclaim lower-priority active capacity"},
+				Isolation:  isolation,
 			}
 		}
-		return Decision{Accepted: false, Reason: "tenant concurrency quota exceeded"}
+		return Decision{Accepted: false, Reason: "tenant concurrency quota exceeded", Isolation: isolation}
 	}
 
 	s.fairness.RecordAccepted(now, strings.TrimSpace(task.TenantID), rules)
-	return Decision{Accepted: true, Assignment: assignment, Reason: assignment.Reason}
+	return Decision{Accepted: true, Assignment: assignment, Reason: assignment.Reason, Isolation: isolation}
 }
 
 func (s *Scheduler) Assess(task domain.Task, quota QuotaSnapshot) Assessment {
@@ -253,4 +272,55 @@ func buildHandoffRequest(decision Decision, plan workflow.OrchestrationPlan, pol
 		}
 	}
 	return nil
+}
+
+func evaluateIsolation(task domain.Task, quota QuotaSnapshot, rules RoutingRules) IsolationDecision {
+	taskTenantID := strings.TrimSpace(task.TenantID)
+	quotaTenantID := strings.TrimSpace(quota.TenantID)
+	taskOwner := taskOwner(task, rules.Isolation.OwnerMetadataKeys)
+	quotaOwnerID := strings.TrimSpace(quota.OwnerID)
+	isolation := IsolationDecision{
+		TenantMode:        rules.Isolation.TenantMode,
+		RequireOwnerMatch: rules.Isolation.RequireOwnerMatch,
+		TaskTenantID:      taskTenantID,
+		QuotaTenantID:     quotaTenantID,
+		TaskOwner:         taskOwner,
+		QuotaOwnerID:      quotaOwnerID,
+	}
+	if rules.Isolation.TenantMode == "tenant" {
+		isolation.Boundary = "tenant"
+		switch {
+		case quotaTenantID != "" && taskTenantID == "":
+			isolation.Violation = true
+			isolation.Reason = fmt.Sprintf("tenant isolation boundary: unscoped task cannot use tenant %s capacity", quotaTenantID)
+			return isolation
+		case quotaTenantID != "" && taskTenantID != quotaTenantID:
+			isolation.Violation = true
+			isolation.Reason = fmt.Sprintf("tenant isolation boundary: task tenant %s cannot use tenant %s capacity", taskTenantID, quotaTenantID)
+			return isolation
+		}
+	}
+	if rules.Isolation.RequireOwnerMatch && quotaOwnerID != "" {
+		isolation.Boundary = "owner"
+		switch {
+		case taskOwner == "":
+			isolation.Violation = true
+			isolation.Reason = fmt.Sprintf("ownership boundary: task missing owner cannot use owner %s capacity", quotaOwnerID)
+			return isolation
+		case taskOwner != quotaOwnerID:
+			isolation.Violation = true
+			isolation.Reason = fmt.Sprintf("ownership boundary: task owner %s cannot use owner %s capacity", taskOwner, quotaOwnerID)
+			return isolation
+		}
+	}
+	return isolation
+}
+
+func taskOwner(task domain.Task, metadataKeys []string) string {
+	for _, key := range metadataKeys {
+		if owner := strings.TrimSpace(task.Metadata[key]); owner != "" {
+			return owner
+		}
+	}
+	return ""
 }

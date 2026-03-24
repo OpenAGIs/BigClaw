@@ -195,6 +195,38 @@ func TestSchedulerUsesFileBackedPolicyOverrides(t *testing.T) {
 	}
 }
 
+func TestSchedulerEnforcesTenantIsolationAndOwnerMatch(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "scheduler-policy.json")
+	content := []byte(`{"isolation":{"tenant_mode":"tenant","require_owner_match":true,"owner_metadata_keys":["owner","created_by"]}}`)
+	if err := os.WriteFile(path, content, 0o644); err != nil {
+		t.Fatalf("write policy file: %v", err)
+	}
+	store, err := NewPolicyStore(path)
+	if err != nil {
+		t.Fatalf("new policy store: %v", err)
+	}
+	s := NewWithPolicyStore(store)
+	accepted := s.Decide(domain.Task{ID: "isol-accepted", TenantID: "tenant-a", Metadata: map[string]string{"owner": "alice"}}, QuotaSnapshot{TenantID: "tenant-a", OwnerID: "alice"})
+	if !accepted.Accepted || accepted.Isolation.Violation {
+		t.Fatalf("expected accepted tenant/owner matched decision, got %+v", accepted)
+	}
+	crossTenant := s.Decide(domain.Task{ID: "isol-tenant", TenantID: "tenant-a", Metadata: map[string]string{"owner": "alice"}}, QuotaSnapshot{TenantID: "tenant-b", OwnerID: "alice"})
+	if crossTenant.Accepted || crossTenant.Isolation.Boundary != "tenant" || !crossTenant.Isolation.Violation {
+		t.Fatalf("expected cross-tenant decision rejected, got %+v", crossTenant)
+	}
+	if !strings.Contains(crossTenant.Reason, "tenant isolation boundary") {
+		t.Fatalf("expected tenant isolation rejection reason, got %+v", crossTenant)
+	}
+	crossOwner := s.Decide(domain.Task{ID: "isol-owner", TenantID: "tenant-a", Metadata: map[string]string{"created_by": "bob"}}, QuotaSnapshot{TenantID: "tenant-a", OwnerID: "alice"})
+	if crossOwner.Accepted || crossOwner.Isolation.Boundary != "owner" || !crossOwner.Isolation.Violation {
+		t.Fatalf("expected cross-owner decision rejected, got %+v", crossOwner)
+	}
+	if !strings.Contains(crossOwner.Reason, "ownership boundary") {
+		t.Fatalf("expected ownership rejection reason, got %+v", crossOwner)
+	}
+}
+
 func TestSchedulerPolicyStoreRejectsInvalidExecutor(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "scheduler-policy.json")
@@ -203,6 +235,17 @@ func TestSchedulerPolicyStoreRejectsInvalidExecutor(t *testing.T) {
 	}
 	if _, err := NewPolicyStore(path); err == nil {
 		t.Fatal("expected invalid executor error")
+	}
+}
+
+func TestSchedulerPolicyStoreRejectsEmptyIsolationOwnerKeys(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "scheduler-policy.json")
+	if err := os.WriteFile(path, []byte(`{"isolation":{"owner_metadata_keys":["","   "]}}`), 0o644); err != nil {
+		t.Fatalf("write invalid policy file: %v", err)
+	}
+	if _, err := NewPolicyStore(path); err == nil || !strings.Contains(err.Error(), "owner_metadata_keys") {
+		t.Fatalf("expected owner metadata key validation error, got %v", err)
 	}
 }
 

@@ -17,6 +17,13 @@ type RoutingRules struct {
 	ToolExecutors           map[string]domain.ExecutorKind `json:"tool_executors"`
 	UrgentPriorityThreshold int                            `json:"urgent_priority_threshold"`
 	Fairness                FairnessRules                  `json:"fairness"`
+	Isolation               IsolationRules                 `json:"isolation"`
+}
+
+type IsolationRules struct {
+	TenantMode        string   `json:"tenant_mode"`
+	RequireOwnerMatch bool     `json:"require_owner_match"`
+	OwnerMetadataKeys []string `json:"owner_metadata_keys,omitempty"`
 }
 
 type PolicyStore struct {
@@ -28,16 +35,23 @@ type PolicyStore struct {
 }
 
 type routingRulesFile struct {
-	DefaultExecutor         string             `json:"default_executor,omitempty"`
-	HighRiskExecutor        string             `json:"high_risk_executor,omitempty"`
-	ToolExecutors           map[string]string  `json:"tool_executors,omitempty"`
-	UrgentPriorityThreshold *int               `json:"urgent_priority_threshold,omitempty"`
-	Fairness                *fairnessRulesFile `json:"fairness,omitempty"`
+	DefaultExecutor         string              `json:"default_executor,omitempty"`
+	HighRiskExecutor        string              `json:"high_risk_executor,omitempty"`
+	ToolExecutors           map[string]string   `json:"tool_executors,omitempty"`
+	UrgentPriorityThreshold *int                `json:"urgent_priority_threshold,omitempty"`
+	Fairness                *fairnessRulesFile  `json:"fairness,omitempty"`
+	Isolation               *isolationRulesFile `json:"isolation,omitempty"`
 }
 
 type fairnessRulesFile struct {
 	WindowSeconds               *int `json:"window_seconds,omitempty"`
 	MaxRecentDecisionsPerTenant *int `json:"max_recent_decisions_per_tenant,omitempty"`
+}
+
+type isolationRulesFile struct {
+	TenantMode        string   `json:"tenant_mode,omitempty"`
+	RequireOwnerMatch *bool    `json:"require_owner_match,omitempty"`
+	OwnerMetadataKeys []string `json:"owner_metadata_keys,omitempty"`
 }
 
 func DefaultRoutingRules() RoutingRules {
@@ -46,6 +60,10 @@ func DefaultRoutingRules() RoutingRules {
 		HighRiskExecutor:        domain.ExecutorKubernetes,
 		ToolExecutors:           map[string]domain.ExecutorKind{"browser": domain.ExecutorKubernetes, "gpu": domain.ExecutorRay},
 		UrgentPriorityThreshold: 1,
+		Isolation: IsolationRules{
+			TenantMode:        "shared",
+			OwnerMetadataKeys: []string{"owner"},
+		},
 	}
 }
 
@@ -284,6 +302,25 @@ func (raw routingRulesFile) normalize() (RoutingRules, error) {
 			rules.Fairness.MaxRecentDecisionsPerTenant = *raw.Fairness.MaxRecentDecisionsPerTenant
 		}
 	}
+	if raw.Isolation != nil {
+		if raw.Isolation.TenantMode != "" {
+			mode, err := parseTenantIsolationMode(raw.Isolation.TenantMode)
+			if err != nil {
+				return RoutingRules{}, fmt.Errorf("isolation.tenant_mode: %w", err)
+			}
+			rules.Isolation.TenantMode = mode
+		}
+		if raw.Isolation.RequireOwnerMatch != nil {
+			rules.Isolation.RequireOwnerMatch = *raw.Isolation.RequireOwnerMatch
+		}
+		if raw.Isolation.OwnerMetadataKeys != nil {
+			keys := normalizeMetadataKeys(raw.Isolation.OwnerMetadataKeys)
+			if len(keys) == 0 {
+				return RoutingRules{}, fmt.Errorf("isolation.owner_metadata_keys must include at least one non-empty key")
+			}
+			rules.Isolation.OwnerMetadataKeys = keys
+		}
+	}
 	return rules, nil
 }
 
@@ -293,6 +330,7 @@ func cloneRoutingRules(rules RoutingRules) RoutingRules {
 	for key, value := range rules.ToolExecutors {
 		clone.ToolExecutors[key] = value
 	}
+	clone.Isolation.OwnerMetadataKeys = append([]string(nil), rules.Isolation.OwnerMetadataKeys...)
 	return clone
 }
 
@@ -311,4 +349,32 @@ func parseExecutorKind(raw string) (domain.ExecutorKind, error) {
 	default:
 		return "", fmt.Errorf("unsupported executor %q", raw)
 	}
+}
+
+func parseTenantIsolationMode(raw string) (string, error) {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "", "shared":
+		return "shared", nil
+	case "tenant", "strict":
+		return "tenant", nil
+	default:
+		return "", fmt.Errorf("unsupported tenant mode %q", raw)
+	}
+}
+
+func normalizeMetadataKeys(keys []string) []string {
+	seen := make(map[string]struct{}, len(keys))
+	normalized := make([]string, 0, len(keys))
+	for _, key := range keys {
+		trimmed := strings.TrimSpace(key)
+		if trimmed == "" {
+			continue
+		}
+		if _, ok := seen[trimmed]; ok {
+			continue
+		}
+		seen[trimmed] = struct{}{}
+		normalized = append(normalized, trimmed)
+	}
+	return normalized
 }

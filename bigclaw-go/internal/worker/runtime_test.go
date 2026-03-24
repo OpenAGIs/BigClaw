@@ -403,14 +403,17 @@ func TestRuntimePublishesRejectedDecisionHandoffBeforeRetry(t *testing.T) {
 		t.Fatalf("expected task to be processed")
 	}
 	events := recorder.EventsByTask("task-assessment-reject", 10)
-	if len(events) != 3 {
-		t.Fatalf("expected leased, handoff, retry events, got %+v", events)
+	if len(events) != 4 {
+		t.Fatalf("expected leased, blocked, handoff, retry events, got %+v", events)
 	}
-	if events[1].Type != domain.EventRunTakeover || events[1].Payload["target_team"] != "security" {
-		t.Fatalf("expected security handoff event before retry, got %+v", events[1])
+	if events[1].Type != domain.EventSchedulerBlocked || events[1].Payload["reason"] != "budget exceeded" {
+		t.Fatalf("expected blocked scheduling event before handoff, got %+v", events[1])
 	}
-	if events[2].Type != domain.EventTaskRetried {
-		t.Fatalf("expected retry event after handoff, got %+v", events[2])
+	if events[2].Type != domain.EventRunTakeover || events[2].Payload["target_team"] != "security" {
+		t.Fatalf("expected security handoff event before retry, got %+v", events[2])
+	}
+	if events[3].Type != domain.EventTaskRetried {
+		t.Fatalf("expected retry event after handoff, got %+v", events[3])
 	}
 }
 

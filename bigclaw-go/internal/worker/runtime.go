@@ -118,7 +118,7 @@ func (r *Runtime) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bo
 	}
 
 	assessment := r.assessTask(run, quota)
-	if r.handleRejectedAssessment(ctx, run, assessment) {
+	if r.handleRejectedAssessment(ctx, run, assessment, quota) {
 		return true
 	}
 

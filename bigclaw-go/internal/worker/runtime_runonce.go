@@ -187,10 +187,19 @@ func (r *Runtime) assessTask(run *leasedTaskRun, quota scheduler.QuotaSnapshot) 
 	return assessment
 }
 
-func (r *Runtime) handleRejectedAssessment(ctx context.Context, run *leasedTaskRun, assessment scheduler.Assessment) bool {
+func (r *Runtime) handleRejectedAssessment(ctx context.Context, run *leasedTaskRun, assessment scheduler.Assessment, quota scheduler.QuotaSnapshot) bool {
 	if assessment.Decision.Accepted {
 		return false
 	}
+	r.publish(domain.Event{
+		ID:        eventID(run.task.ID, "blocked"),
+		Type:      domain.EventSchedulerBlocked,
+		TaskID:    run.task.ID,
+		TraceID:   run.task.TraceID,
+		RunID:     run.runID,
+		Timestamp: time.Now(),
+		Payload:   runtimeRoutedPayload(assessment, quota),
+	})
 	if assessment.HandoffRequest != nil {
 		r.publish(domain.Event{
 			ID:        eventID(run.task.ID, "handoff"),
@@ -290,6 +299,9 @@ func runtimeRoutedPayload(assessment scheduler.Assessment, quota scheduler.Quota
 			"billing_model":       assessment.OrchestrationPolicy.BillingModel,
 			"estimated_cost_usd":  assessment.OrchestrationPolicy.EstimatedCostUSD,
 		},
+	}
+	if decision.Isolation.TenantMode != "" || decision.Isolation.RequireOwnerMatch || decision.Isolation.TaskTenantID != "" || decision.Isolation.QuotaTenantID != "" || decision.Isolation.TaskOwner != "" || decision.Isolation.QuotaOwnerID != "" || decision.Isolation.Violation {
+		payload["isolation"] = decision.Isolation
 	}
 	if decision.Preemption.Required {
 		payload["preemption"] = decision.Preemption

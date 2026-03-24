@@ -1,27 +1,29 @@
-## Codex Workpad
+# BIGCLAW-178
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## Plan
 
-### Plan
+1. Extend `bigclaw-go/internal/scheduler/policy_store.go` so distributed routing policy can express tenant isolation mode plus ownership requirements.
+2. Enforce those rules in `bigclaw-go/internal/scheduler/scheduler.go` using task tenant/owner metadata and quota tenant context, with explicit rejection reasons for cross-tenant or owner-boundary violations.
+3. Add distributed diagnostics fields and markdown rendering in `bigclaw-go/internal/api/distributed.go` so reports show tenant isolation boundaries and violations.
+4. Add focused Go tests in scheduler/policy/api packages for policy parsing, accepted same-tenant ownership routing, blocked cross-tenant placement, and report visibility.
+5. Run the narrowest relevant Go test targets, record exact commands and results below, then commit and push the branch.
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+## Acceptance
 
-### Acceptance Criteria
+1. Scheduler policy definitions can express tenant isolation and ownership constraints.
+2. Distributed diagnostics/report output indicates tenant-boundary enforcement or violations.
+3. Tests prove invalid cross-tenant or ownership-breaking assignments are rejected.
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
+## Validation
 
-### Validation
+- Run only the narrowest Go test targets that exercise scheduler policy parsing/enforcement and distributed diagnostics output:
+  - `go test ./internal/scheduler`
+  - `go test ./internal/api`
+- Record exact commands and pass/fail outcomes in this file after execution.
 
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
+## Test Log
 
-### Notes
-
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+- `cd /Users/openagi/code/bigclaw-workspaces/BIGCLAW-178/bigclaw-go && go test ./internal/scheduler ./internal/api ./internal/worker`
+  - `ok  	bigclaw-go/internal/scheduler	2.276s`
+  - `ok  	bigclaw-go/internal/api	6.866s`
+  - `ok  	bigclaw-go/internal/worker	5.692s`

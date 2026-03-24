@@ -94,6 +94,7 @@ const (
 	EventTaskCancelled                 EventType = "task.cancelled"
 	EventTaskDeadLetter                EventType = "task.dead_lettered"
 	EventSchedulerRouted               EventType = "scheduler.routed"
+	EventSchedulerBlocked              EventType = "scheduler.blocked"
 	EventControlPaused                 EventType = "control.paused"
 	EventControlResumed                EventType = "control.resumed"
 	EventRunTakeover                   EventType = "run.takeover"
@@ -137,6 +138,8 @@ func TaskStateFromEventType(eventType EventType) (TaskState, bool) {
 		return TaskQueued, true
 	case EventTaskLeased, EventSchedulerRouted:
 		return TaskLeased, true
+	case EventSchedulerBlocked:
+		return TaskBlocked, true
 	case EventTaskStarted:
 		return TaskRunning, true
 	case EventTaskRetried:
@@ -165,23 +168,23 @@ type taskJSONAlias Task
 
 func (t Task) MarshalJSON() ([]byte, error) {
 	payload := map[string]any{
-		"id":                      t.ID,
-		"task_id":                 t.ID,
-		"source":                  t.Source,
-		"title":                   t.Title,
-		"description":             t.Description,
-		"labels":                  sliceOrEmpty(t.Labels),
-		"priority":                t.Priority,
-		"state":                   marshalTaskState(t.State),
-		"risk_level":              marshalRiskLevel(t.RiskLevel),
-		"budget_cents":            t.BudgetCents,
-		"budget":                  float64(t.BudgetCents) / 100,
-		"budget_override_actor":   t.BudgetOverrideActor,
-		"budget_override_reason":  t.BudgetOverrideReason,
-		"budget_override_amount":  t.BudgetOverrideAmount,
-		"required_tools":          sliceOrEmpty(t.RequiredTools),
-		"acceptance_criteria":     sliceOrEmpty(t.AcceptanceCriteria),
-		"validation_plan":         sliceOrEmpty(t.ValidationPlan),
+		"id":                     t.ID,
+		"task_id":                t.ID,
+		"source":                 t.Source,
+		"title":                  t.Title,
+		"description":            t.Description,
+		"labels":                 sliceOrEmpty(t.Labels),
+		"priority":               t.Priority,
+		"state":                  marshalTaskState(t.State),
+		"risk_level":             marshalRiskLevel(t.RiskLevel),
+		"budget_cents":           t.BudgetCents,
+		"budget":                 float64(t.BudgetCents) / 100,
+		"budget_override_actor":  t.BudgetOverrideActor,
+		"budget_override_reason": t.BudgetOverrideReason,
+		"budget_override_amount": t.BudgetOverrideAmount,
+		"required_tools":         sliceOrEmpty(t.RequiredTools),
+		"acceptance_criteria":    sliceOrEmpty(t.AcceptanceCriteria),
+		"validation_plan":        sliceOrEmpty(t.ValidationPlan),
 	}
 	if t.TraceID != "" {
 		payload["trace_id"] = t.TraceID

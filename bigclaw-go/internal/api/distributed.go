@@ -15,6 +15,7 @@ import (
 	"bigclaw-go/internal/executor"
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/risk"
+	"bigclaw-go/internal/scheduler"
 )
 
 type distributedDiagnosticsSummary struct {
@@ -100,6 +101,17 @@ type fairnessDiagnostics struct {
 	Notes                []string                `json:"notes,omitempty"`
 }
 
+type isolationDiagnostics struct {
+	TenantIsolationMode   string            `json:"tenant_isolation_mode"`
+	OwnerMatchingRequired bool              `json:"owner_matching_required"`
+	TenantBoundaries      []auditFacetCount `json:"tenant_boundaries,omitempty"`
+	OwnerBoundaries       []auditFacetCount `json:"owner_boundaries,omitempty"`
+	CrossTenantViolations int               `json:"cross_tenant_violations"`
+	CrossOwnerViolations  int               `json:"cross_owner_violations"`
+	ViolationReasons      []string          `json:"violation_reasons,omitempty"`
+	Notes                 []string          `json:"notes,omitempty"`
+}
+
 type distributedDiagnosticsReport struct {
 	Markdown  string `json:"markdown"`
 	ExportURL string `json:"export_url"`
@@ -167,6 +179,7 @@ type distributedDiagnostics struct {
 	ClusterHealth         clusterHealthRollup                      `json:"cluster_health"`
 	Recovery              recoveryDiagnostics                      `json:"recovery"`
 	Fairness              fairnessDiagnostics                      `json:"fairness"`
+	Isolation             isolationDiagnostics                     `json:"isolation"`
 	CoordinationLeader    any                                      `json:"coordination_leader_election,omitempty"`
 	SharedQueue           sharedQueueCoordinationDiagnostics       `json:"shared_queue_diagnostics"`
 	LiveShadowMirror      liveShadowMirrorSurface                  `json:"live_shadow_mirror_scorecard"`
@@ -221,6 +234,7 @@ type distributedEventRollup struct {
 	RoutingReasons     []routingReasonSummary
 	TotalRouted        int
 	Recovery           recoveryDiagnostics
+	Isolation          isolationDiagnostics
 }
 
 type executorCapacityRollup struct {
@@ -268,6 +282,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"cluster_health":                  diagnostics.ClusterHealth,
 		"recovery":                        diagnostics.Recovery,
 		"fairness":                        diagnostics.Fairness,
+		"isolation":                       diagnostics.Isolation,
 		"coordination_leader_election":    diagnostics.CoordinationLeader,
 		"shared_queue_diagnostics":        diagnostics.SharedQueue,
 		"live_shadow_mirror_scorecard":    diagnostics.LiveShadowMirror,
@@ -317,6 +332,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 	capabilities := s.executorCapabilities()
 	worker := s.distributedWorkerRollup()
 	taskRollup := s.distributedTaskRollup(filters)
+	rules := s.schedulerPolicyStore().Snapshot()
 	eventRollup := s.distributedEventRollup(taskRollup.AssignmentByTask, taskRollup.Recovery)
 	capacity := buildExecutorCapacityRollup(capabilities, taskRollup.TasksByExecutor, eventRollup.CountersByExecutor, eventRollup.RoutingReasons, worker.ActiveByExecutor)
 
@@ -349,6 +365,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		Notes:              diagnosticsNotes(summary, capacity.ExecutorCapacity, s.Control.Snapshot()),
 	}
 	fairness := buildFairnessDiagnostics(capabilities, eventRollup.CountersByExecutor, eventRollup.TotalRouted)
+	isolation := buildIsolationDiagnostics(taskRollup.Assignments, eventRollup.Isolation, rules)
 	diagnostics := distributedDiagnostics{
 		Summary:               summary,
 		RoutingReasons:        eventRollup.RoutingReasons,
@@ -356,6 +373,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		ClusterHealth:         clusterHealth,
 		Recovery:              eventRollup.Recovery,
 		Fairness:              fairness,
+		Isolation:             isolation,
 		CoordinationLeader:    s.coordinationLeaderElectionPayload(),
 		SharedQueue:           s.sharedQueueCoordinationDiagnostics(),
 		LiveShadowMirror:      liveShadowMirrorPayload(),
@@ -441,6 +459,11 @@ func (s *Server) distributedTaskRollup(filters controlCenterFilters) distributed
 func (s *Server) distributedEventRollup(assignmentByTask map[string]distributedTaskAssignment, base recoveryDiagnostics) distributedEventRollup {
 	countersByExecutor := make(map[domain.ExecutorKind]*executorDiagnosticsCounters)
 	routingIndex := make(map[string]*routingReasonSummary)
+	violationReasonSet := make(map[string]struct{})
+	tenantViolations := 0
+	ownerViolations := 0
+	tenantMode := ""
+	ownerMatchingRequired := false
 	totalRouted := 0
 	recovery := base
 	for _, event := range s.Recorder.EventsByTask("", 0) {
@@ -472,6 +495,34 @@ func (s *Server) distributedEventRollup(assignmentByTask map[string]distributedT
 				routingIndex[key] = item
 			}
 			item.Count++
+			if isolation, ok := isolationFromPayload(event.Payload); ok {
+				if tenantMode == "" && isolation.TenantMode != "" {
+					tenantMode = isolation.TenantMode
+				}
+				if isolation.RequireOwnerMatch {
+					ownerMatchingRequired = true
+				}
+			}
+		case domain.EventSchedulerBlocked:
+			if isolation, ok := isolationFromPayload(event.Payload); ok {
+				if tenantMode == "" && isolation.TenantMode != "" {
+					tenantMode = isolation.TenantMode
+				}
+				if isolation.RequireOwnerMatch {
+					ownerMatchingRequired = true
+				}
+				if isolation.Violation {
+					switch isolation.Boundary {
+					case "tenant":
+						tenantViolations++
+					case "owner":
+						ownerViolations++
+					}
+					if reason := strings.TrimSpace(isolation.Reason); reason != "" {
+						violationReasonSet[reason] = struct{}{}
+					}
+				}
+			}
 		case domain.EventTaskStarted:
 			entry.Started++
 		case domain.EventTaskCompleted:
@@ -494,11 +545,23 @@ func (s *Server) distributedEventRollup(assignmentByTask map[string]distributedT
 	if recovery.TakeoverEvents > recovery.ReleaseEvents {
 		recovery.UnreleasedTakeovers = recovery.TakeoverEvents - recovery.ReleaseEvents
 	}
+	violationReasons := make([]string, 0, len(violationReasonSet))
+	for reason := range violationReasonSet {
+		violationReasons = append(violationReasons, reason)
+	}
+	sort.Strings(violationReasons)
 	return distributedEventRollup{
 		CountersByExecutor: countersByExecutor,
 		RoutingReasons:     sortedRoutingReasons(routingIndex),
 		TotalRouted:        totalRouted,
 		Recovery:           recovery,
+		Isolation: isolationDiagnostics{
+			TenantIsolationMode:   tenantMode,
+			OwnerMatchingRequired: ownerMatchingRequired,
+			CrossTenantViolations: tenantViolations,
+			CrossOwnerViolations:  ownerViolations,
+			ViolationReasons:      violationReasons,
+		},
 	}
 }
 
@@ -767,6 +830,39 @@ func buildFairnessDiagnostics(capabilities []executor.Capability, countersByExec
 	}
 }
 
+func buildIsolationDiagnostics(assignments []distributedTaskAssignment, base isolationDiagnostics, rules scheduler.RoutingRules) isolationDiagnostics {
+	diagnostics := base
+	if diagnostics.TenantIsolationMode == "" {
+		diagnostics.TenantIsolationMode = rules.Isolation.TenantMode
+	}
+	if !diagnostics.OwnerMatchingRequired {
+		diagnostics.OwnerMatchingRequired = rules.Isolation.RequireOwnerMatch
+	}
+	diagnostics.TenantBoundaries = facetCountsFromAssignments(assignments, func(item distributedTaskAssignment) string {
+		return firstNonEmpty(strings.TrimSpace(item.Task.TenantID), "unassigned")
+	})
+	if diagnostics.OwnerMatchingRequired {
+		diagnostics.OwnerBoundaries = facetCountsFromAssignments(assignments, func(item distributedTaskAssignment) string {
+			return firstNonEmpty(isolationTaskOwner(item.Task, rules.Isolation.OwnerMetadataKeys), "unassigned")
+		})
+	}
+	notes := make([]string, 0, 3)
+	switch diagnostics.TenantIsolationMode {
+	case "tenant":
+		notes = append(notes, "scheduler enforces per-tenant capacity boundaries")
+	default:
+		notes = append(notes, "scheduler uses shared tenant capacity")
+	}
+	if diagnostics.OwnerMatchingRequired {
+		notes = append(notes, fmt.Sprintf("owner matching enforced using metadata keys: %s", strings.Join(rules.Isolation.OwnerMetadataKeys, ", ")))
+	}
+	if diagnostics.CrossTenantViolations > 0 || diagnostics.CrossOwnerViolations > 0 {
+		notes = append(notes, fmt.Sprintf("blocked %d cross-tenant and %d cross-owner placements", diagnostics.CrossTenantViolations, diagnostics.CrossOwnerViolations))
+	}
+	diagnostics.Notes = append(notes, diagnostics.Notes...)
+	return diagnostics
+}
+
 func countActiveAssignments(assignments []distributedTaskAssignment) int {
 	count := 0
 	for _, item := range assignments {
@@ -880,6 +976,65 @@ func eventBoolValue(payload map[string]any, key string) bool {
 	default:
 		return false
 	}
+}
+
+func isolationFromPayload(payload map[string]any) (scheduler.IsolationDecision, bool) {
+	if payload == nil {
+		return scheduler.IsolationDecision{}, false
+	}
+	return isolationFromValue(payload["isolation"])
+}
+
+func isolationFromValue(value any) (scheduler.IsolationDecision, bool) {
+	switch typed := value.(type) {
+	case nil:
+		return scheduler.IsolationDecision{}, false
+	case scheduler.IsolationDecision:
+		return typed, true
+	case *scheduler.IsolationDecision:
+		if typed == nil {
+			return scheduler.IsolationDecision{}, false
+		}
+		return *typed, true
+	case map[string]any:
+		decision := scheduler.IsolationDecision{
+			TenantMode:        stringValue(typed["tenant_mode"]),
+			RequireOwnerMatch: boolValue(typed["require_owner_match"]),
+			TaskTenantID:      stringValue(typed["task_tenant_id"]),
+			QuotaTenantID:     stringValue(typed["quota_tenant_id"]),
+			TaskOwner:         stringValue(typed["task_owner"]),
+			QuotaOwnerID:      stringValue(typed["quota_owner_id"]),
+			Boundary:          stringValue(typed["boundary"]),
+			Violation:         boolValue(typed["violation"]),
+			Reason:            stringValue(typed["reason"]),
+		}
+		if decision.TenantMode == "" && !decision.RequireOwnerMatch && decision.TaskTenantID == "" && decision.QuotaTenantID == "" && decision.TaskOwner == "" && decision.QuotaOwnerID == "" && decision.Boundary == "" && !decision.Violation && decision.Reason == "" {
+			return scheduler.IsolationDecision{}, false
+		}
+		return decision, true
+	default:
+		return scheduler.IsolationDecision{}, false
+	}
+}
+
+func boolValue(value any) bool {
+	switch typed := value.(type) {
+	case bool:
+		return typed
+	case string:
+		return strings.EqualFold(strings.TrimSpace(typed), "true")
+	default:
+		return false
+	}
+}
+
+func isolationTaskOwner(task domain.Task, metadataKeys []string) string {
+	for _, key := range metadataKeys {
+		if owner := strings.TrimSpace(task.Metadata[key]); owner != "" {
+			return owner
+		}
+	}
+	return ""
 }
 
 func taskRequiresTool(task domain.Task, tool string) bool {
@@ -1082,6 +1237,26 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.Fairness.Notes) > 0 {
 		lines = append(lines, "- Notes: "+strings.Join(diagnostics.Fairness.Notes, "; "))
+	}
+	lines = append(lines,
+		"",
+		"## Isolation",
+		fmt.Sprintf("- Tenant isolation mode: %s", firstNonEmpty(diagnostics.Isolation.TenantIsolationMode, "shared")),
+		fmt.Sprintf("- Owner matching required: %t", diagnostics.Isolation.OwnerMatchingRequired),
+		fmt.Sprintf("- Cross-tenant violations: %d", diagnostics.Isolation.CrossTenantViolations),
+		fmt.Sprintf("- Cross-owner violations: %d", diagnostics.Isolation.CrossOwnerViolations),
+	)
+	if len(diagnostics.Isolation.TenantBoundaries) > 0 {
+		lines = append(lines, "- Tenant boundaries: "+formatFacetCounts(diagnostics.Isolation.TenantBoundaries))
+	}
+	if len(diagnostics.Isolation.OwnerBoundaries) > 0 {
+		lines = append(lines, "- Owner boundaries: "+formatFacetCounts(diagnostics.Isolation.OwnerBoundaries))
+	}
+	if len(diagnostics.Isolation.ViolationReasons) > 0 {
+		lines = append(lines, "- Violation reasons: "+strings.Join(diagnostics.Isolation.ViolationReasons, "; "))
+	}
+	if len(diagnostics.Isolation.Notes) > 0 {
+		lines = append(lines, "- Notes: "+strings.Join(diagnostics.Isolation.Notes, "; "))
 	}
 	lines = append(lines,
 		"",

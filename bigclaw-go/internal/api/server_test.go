@@ -3871,7 +3871,7 @@ func TestV2ControlCenterAuditFiltersOwnerReviewerAndScope(t *testing.T) {
 func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	dir := t.TempDir()
 	policyPath := filepath.Join(dir, "scheduler-policy.json")
-	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"ray","tool_executors":{"browser":"ray"},"urgent_priority_threshold":2,"fairness":{"window_seconds":30,"max_recent_decisions_per_tenant":1}}`), 0o644); err != nil {
+	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"ray","tool_executors":{"browser":"ray"},"urgent_priority_threshold":2,"fairness":{"window_seconds":30,"max_recent_decisions_per_tenant":1},"isolation":{"tenant_mode":"tenant","require_owner_match":true,"owner_metadata_keys":["owner","created_by"]}}`), 0o644); err != nil {
 		t.Fatalf("write policy file: %v", err)
 	}
 	policySQLitePath := filepath.Join(dir, "scheduler-policy.db")
@@ -3917,6 +3917,11 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 				WindowSeconds               int `json:"window_seconds"`
 				MaxRecentDecisionsPerTenant int `json:"max_recent_decisions_per_tenant"`
 			} `json:"fairness"`
+			Isolation struct {
+				TenantMode        string   `json:"tenant_mode"`
+				RequireOwnerMatch bool     `json:"require_owner_match"`
+				OwnerMetadataKeys []string `json:"owner_metadata_keys"`
+			} `json:"isolation"`
 		} `json:"policy"`
 		Fairness struct {
 			Enabled                     bool   `json:"enabled"`
@@ -3934,7 +3939,7 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	if err := json.Unmarshal(policyResponse.Body.Bytes(), &policyDecoded); err != nil {
 		t.Fatalf("decode scheduler policy response: %v", err)
 	}
-	if policyDecoded.Backend != "sqlite" || !policyDecoded.Shared || policyDecoded.SourcePath != policyPath || policyDecoded.SharedPath != policySQLitePath || !policyDecoded.ReloadSupported || !policyDecoded.ReloadAuthorized || policyDecoded.Policy.DefaultExecutor != string(domain.ExecutorRay) || policyDecoded.Policy.ToolExecutors["browser"] != string(domain.ExecutorRay) || policyDecoded.Policy.UrgentPriorityThreshold != 2 || policyDecoded.Policy.Fairness.WindowSeconds != 30 || policyDecoded.Policy.Fairness.MaxRecentDecisionsPerTenant != 1 {
+	if policyDecoded.Backend != "sqlite" || !policyDecoded.Shared || policyDecoded.SourcePath != policyPath || policyDecoded.SharedPath != policySQLitePath || !policyDecoded.ReloadSupported || !policyDecoded.ReloadAuthorized || policyDecoded.Policy.DefaultExecutor != string(domain.ExecutorRay) || policyDecoded.Policy.ToolExecutors["browser"] != string(domain.ExecutorRay) || policyDecoded.Policy.UrgentPriorityThreshold != 2 || policyDecoded.Policy.Fairness.WindowSeconds != 30 || policyDecoded.Policy.Fairness.MaxRecentDecisionsPerTenant != 1 || policyDecoded.Policy.Isolation.TenantMode != "tenant" || !policyDecoded.Policy.Isolation.RequireOwnerMatch || len(policyDecoded.Policy.Isolation.OwnerMetadataKeys) != 2 {
 		t.Fatalf("unexpected scheduler policy payload: %+v", policyDecoded)
 	}
 	if !policyDecoded.Fairness.Enabled || !policyDecoded.Fairness.Shared || policyDecoded.Fairness.Backend != "sqlite" || policyDecoded.Fairness.ActiveTenants != 2 || len(policyDecoded.Fairness.Tenants) != 2 {
@@ -4240,6 +4245,92 @@ func TestV2ControlCenterPolicyEndpointShowsRemoteFairnessHealth(t *testing.T) {
 		if !strings.Contains(body, want) {
 			t.Fatalf("expected %q in remote fairness policy payload, got %s", want, body)
 		}
+	}
+}
+
+func TestV2ControlCenterDistributedDiagnosticsShowIsolationBoundaries(t *testing.T) {
+	dir := t.TempDir()
+	policyPath := filepath.Join(dir, "scheduler-policy.json")
+	if err := os.WriteFile(policyPath, []byte(`{"isolation":{"tenant_mode":"tenant","require_owner_match":true,"owner_metadata_keys":["owner"]}}`), 0o644); err != nil {
+		t.Fatalf("write policy file: %v", err)
+	}
+	store, err := scheduler.NewPolicyStore(policyPath)
+	if err != nil {
+		t.Fatalf("new policy store: %v", err)
+	}
+	recorder := observability.NewRecorder()
+	base := time.Unix(1700010000, 0)
+	for _, task := range []domain.Task{
+		{ID: "iso-ok", TraceID: "trace-iso-ok", Title: "Isolated ok", State: domain.TaskSucceeded, TenantID: "tenant-a", Metadata: map[string]string{"team": "platform", "project": "alpha", "owner": "alice"}, UpdatedAt: base.Add(time.Minute)},
+		{ID: "iso-cross-tenant", TraceID: "trace-iso-cross-tenant", Title: "Cross tenant", State: domain.TaskBlocked, TenantID: "tenant-b", Metadata: map[string]string{"team": "platform", "project": "alpha", "owner": "alice"}, UpdatedAt: base.Add(2 * time.Minute)},
+		{ID: "iso-cross-owner", TraceID: "trace-iso-cross-owner", Title: "Cross owner", State: domain.TaskBlocked, TenantID: "tenant-a", Metadata: map[string]string{"team": "platform", "project": "alpha", "owner": "bob"}, UpdatedAt: base.Add(3 * time.Minute)},
+	} {
+		recorder.StoreTask(task)
+	}
+	for _, event := range []domain.Event{
+		{ID: "evt-iso-ok", Type: domain.EventSchedulerRouted, TaskID: "iso-ok", TraceID: "trace-iso-ok", Timestamp: base.Add(4 * time.Second), Payload: map[string]any{"executor": domain.ExecutorLocal, "reason": "default local executor for low/medium risk", "isolation": scheduler.IsolationDecision{TenantMode: "tenant", RequireOwnerMatch: true, TaskTenantID: "tenant-a", QuotaTenantID: "tenant-a", TaskOwner: "alice", QuotaOwnerID: "alice"}}},
+		{ID: "evt-iso-cross-tenant", Type: domain.EventSchedulerBlocked, TaskID: "iso-cross-tenant", TraceID: "trace-iso-cross-tenant", Timestamp: base.Add(5 * time.Second), Payload: map[string]any{"reason": "tenant isolation boundary: task tenant tenant-b cannot use tenant tenant-a capacity", "isolation": scheduler.IsolationDecision{TenantMode: "tenant", RequireOwnerMatch: true, TaskTenantID: "tenant-b", QuotaTenantID: "tenant-a", TaskOwner: "alice", QuotaOwnerID: "alice", Boundary: "tenant", Violation: true, Reason: "tenant isolation boundary: task tenant tenant-b cannot use tenant tenant-a capacity"}}},
+		{ID: "evt-iso-cross-owner", Type: domain.EventSchedulerBlocked, TaskID: "iso-cross-owner", TraceID: "trace-iso-cross-owner", Timestamp: base.Add(6 * time.Second), Payload: map[string]any{"reason": "ownership boundary: task owner bob cannot use owner alice capacity", "isolation": scheduler.IsolationDecision{TenantMode: "tenant", RequireOwnerMatch: true, TaskTenantID: "tenant-a", QuotaTenantID: "tenant-a", TaskOwner: "bob", QuotaOwnerID: "alice", Boundary: "owner", Violation: true, Reason: "ownership boundary: task owner bob cannot use owner alice capacity"}}},
+	} {
+		recorder.Record(event)
+	}
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), SchedulerPolicy: store, Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?team=platform&project=alpha&limit=10", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		DistributedDiagnostics struct {
+			Isolation struct {
+				TenantIsolationMode   string `json:"tenant_isolation_mode"`
+				OwnerMatchingRequired bool   `json:"owner_matching_required"`
+				CrossTenantViolations int    `json:"cross_tenant_violations"`
+				CrossOwnerViolations  int    `json:"cross_owner_violations"`
+				TenantBoundaries      []struct {
+					Key   string `json:"key"`
+					Count int    `json:"count"`
+				} `json:"tenant_boundaries"`
+				OwnerBoundaries []struct {
+					Key   string `json:"key"`
+					Count int    `json:"count"`
+				} `json:"owner_boundaries"`
+				ViolationReasons []string `json:"violation_reasons"`
+			} `json:"isolation"`
+			RolloutReport struct {
+				Markdown string `json:"markdown"`
+			} `json:"rollout_report"`
+		} `json:"distributed_diagnostics"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed diagnostics: %v", err)
+	}
+	if decoded.DistributedDiagnostics.Isolation.TenantIsolationMode != "tenant" ||
+		!decoded.DistributedDiagnostics.Isolation.OwnerMatchingRequired ||
+		decoded.DistributedDiagnostics.Isolation.CrossTenantViolations != 1 ||
+		decoded.DistributedDiagnostics.Isolation.CrossOwnerViolations != 1 {
+		t.Fatalf("unexpected isolation diagnostics: %+v", decoded.DistributedDiagnostics.Isolation)
+	}
+	if len(decoded.DistributedDiagnostics.Isolation.TenantBoundaries) != 2 ||
+		decoded.DistributedDiagnostics.Isolation.TenantBoundaries[0].Key != "tenant-a" ||
+		decoded.DistributedDiagnostics.Isolation.TenantBoundaries[0].Count != 2 {
+		t.Fatalf("unexpected tenant boundary breakdown: %+v", decoded.DistributedDiagnostics.Isolation.TenantBoundaries)
+	}
+	if len(decoded.DistributedDiagnostics.Isolation.OwnerBoundaries) != 2 ||
+		decoded.DistributedDiagnostics.Isolation.OwnerBoundaries[0].Key != "alice" ||
+		decoded.DistributedDiagnostics.Isolation.OwnerBoundaries[0].Count != 2 {
+		t.Fatalf("unexpected owner boundary breakdown: %+v", decoded.DistributedDiagnostics.Isolation.OwnerBoundaries)
+	}
+	if len(decoded.DistributedDiagnostics.Isolation.ViolationReasons) != 2 {
+		t.Fatalf("expected two violation reasons, got %+v", decoded.DistributedDiagnostics.Isolation.ViolationReasons)
+	}
+	markdown := decoded.DistributedDiagnostics.RolloutReport.Markdown
+	if !strings.Contains(markdown, "## Isolation") ||
+		!strings.Contains(markdown, "Tenant isolation mode: tenant") ||
+		!strings.Contains(markdown, "Cross-tenant violations: 1") ||
+		!strings.Contains(markdown, "ownership boundary: task owner bob cannot use owner alice capacity") {
+		t.Fatalf("unexpected isolation markdown: %s", markdown)
 	}
 }
 
