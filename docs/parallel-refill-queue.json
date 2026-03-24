@@ -171,7 +171,8 @@
       "BIG-PAR-379",
       "BIG-PAR-380",
       "BIG-PAR-381",
-      "BIG-PAR-382"
+      "BIG-PAR-382",
+      "BIG-PAR-383"
     ],
     "active": [],
     "standby": []
@@ -330,7 +331,8 @@
     "BIG-PAR-379",
     "BIG-PAR-380",
     "BIG-PAR-381",
-    "BIG-PAR-382"
+    "BIG-PAR-382",
+    "BIG-PAR-383"
   ],
   "issues": [
     {
@@ -1284,6 +1286,12 @@
     {
       "identifier": "BIG-PAR-382",
       "title": "Normalize refill payload paths to absolute",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-383",
+      "title": "Add markdown preview helper regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }
