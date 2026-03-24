@@ -512,6 +512,40 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 			RegisteredExecutors  int `json:"registered_executors"`
 			TotalRoutedDecisions int `json:"total_routed_decisions"`
 		} `json:"summary"`
+		DiagnosticsSnapshot struct {
+			FilterLimit       int `json:"filter_limit"`
+			TotalTasks        int `json:"total_tasks"`
+			ActiveTasks       int `json:"active_tasks"`
+			TerminalTasks     int `json:"terminal_tasks"`
+			TakeoverTasks     int `json:"takeover_tasks"`
+			StateDistribution []struct {
+				Key   string `json:"key"`
+				Count int    `json:"count"`
+			} `json:"state_distribution"`
+			ExecutorDistribution []struct {
+				Key   string `json:"key"`
+				Count int    `json:"count"`
+			} `json:"executor_distribution"`
+			TaskIDs []string `json:"task_ids"`
+		} `json:"diagnostics_snapshot"`
+		CrossTaskComparison struct {
+			ComparedTaskCount int      `json:"compared_task_count"`
+			BaselineTaskID    string   `json:"baseline_task_id"`
+			BaselineExecutor  string   `json:"baseline_executor"`
+			BaselineState     string   `json:"baseline_state"`
+			Dimensions        []string `json:"dimensions"`
+			Items             []struct {
+				TaskID            string   `json:"task_id"`
+				EventCount        int      `json:"event_count"`
+				PriorityDelta     int      `json:"priority_delta"`
+				EventCountDelta   int      `json:"event_count_delta"`
+				ChangedDimensions []string `json:"changed_dimensions"`
+			} `json:"items"`
+			Summary struct {
+				MaxEventCountDelta int      `json:"max_event_count_delta"`
+				Notes              []string `json:"notes"`
+			} `json:"summary"`
+		} `json:"cross_task_comparison"`
 		TraceBundle struct {
 			TotalTraces             int `json:"total_traces"`
 			TracesWithTerminalState int `json:"traces_with_terminal_state"`
@@ -619,6 +653,27 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if decoded.Summary.RegisteredExecutors != 3 || decoded.Summary.TotalRoutedDecisions != 3 {
 		t.Fatalf("unexpected distributed report summary: %+v", decoded.Summary)
 	}
+	if decoded.DiagnosticsSnapshot.FilterLimit != 10 || decoded.DiagnosticsSnapshot.TotalTasks != 3 || decoded.DiagnosticsSnapshot.ActiveTasks != 1 || decoded.DiagnosticsSnapshot.TerminalTasks != 2 || decoded.DiagnosticsSnapshot.TakeoverTasks != 1 {
+		t.Fatalf("unexpected diagnostics snapshot payload: %+v", decoded.DiagnosticsSnapshot)
+	}
+	if len(decoded.DiagnosticsSnapshot.StateDistribution) == 0 || decoded.DiagnosticsSnapshot.StateDistribution[0].Key != "succeeded" {
+		t.Fatalf("unexpected diagnostics snapshot state distribution: %+v", decoded.DiagnosticsSnapshot.StateDistribution)
+	}
+	if len(decoded.DiagnosticsSnapshot.ExecutorDistribution) != 3 || len(decoded.DiagnosticsSnapshot.TaskIDs) != 3 || decoded.DiagnosticsSnapshot.TaskIDs[0] != "report-ray" {
+		t.Fatalf("unexpected diagnostics snapshot distributions: %+v", decoded.DiagnosticsSnapshot)
+	}
+	if decoded.CrossTaskComparison.ComparedTaskCount != 3 || decoded.CrossTaskComparison.BaselineTaskID != "report-ray" || decoded.CrossTaskComparison.BaselineExecutor != "ray" || decoded.CrossTaskComparison.BaselineState != "succeeded" {
+		t.Fatalf("unexpected cross-task comparison header: %+v", decoded.CrossTaskComparison)
+	}
+	if len(decoded.CrossTaskComparison.Dimensions) != 6 || len(decoded.CrossTaskComparison.Items) != 3 {
+		t.Fatalf("unexpected cross-task comparison payload: %+v", decoded.CrossTaskComparison)
+	}
+	if decoded.CrossTaskComparison.Items[1].TaskID != "report-k8s" || decoded.CrossTaskComparison.Items[1].EventCount != 2 || decoded.CrossTaskComparison.Items[1].EventCountDelta != 0 {
+		t.Fatalf("unexpected comparison item payload: %+v", decoded.CrossTaskComparison.Items[1])
+	}
+	if len(decoded.CrossTaskComparison.Items[1].ChangedDimensions) == 0 || decoded.CrossTaskComparison.Summary.MaxEventCountDelta != 0 || len(decoded.CrossTaskComparison.Summary.Notes) == 0 {
+		t.Fatalf("unexpected comparison summary payload: %+v", decoded.CrossTaskComparison.Summary)
+	}
 	if len(decoded.RoutingReasons) != 3 || len(decoded.ExecutorCapacity) != 3 {
 		t.Fatalf("unexpected distributed report payload: %+v", decoded)
 	}
@@ -661,7 +716,7 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if decoded.SequenceBridge.ReportPath != sequenceBridgeSurfacePath || decoded.SequenceBridge.Summary.BackendCount != 5 || decoded.SequenceBridge.Summary.LiveProvenBackends != 3 || decoded.SequenceBridge.Summary.HarnessProvenBackends != 1 || decoded.SequenceBridge.Summary.ContractOnlyBackends != 1 || decoded.SequenceBridge.Summary.OneToOneMappings != 2 || decoded.SequenceBridge.Summary.ProviderEpochBridgedBackends != 3 {
 		t.Fatalf("expected sequence bridge surface, got %+v", decoded.SequenceBridge)
 	}
-	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Recovery Signals") || !strings.Contains(decoded.Report.Markdown, "## Fairness") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") || !strings.Contains(decoded.Report.Markdown, "## Durable Sequence Bridge") {
+	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "## Diagnostics Snapshot") || !strings.Contains(decoded.Report.Markdown, "Executor distribution: kubernetes=1, local=1, ray=1") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Recovery Signals") || !strings.Contains(decoded.Report.Markdown, "## Fairness") || !strings.Contains(decoded.Report.Markdown, "## Cross-Task Comparison") || !strings.Contains(decoded.Report.Markdown, "Baseline task: report-ray") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") || !strings.Contains(decoded.Report.Markdown, "## Durable Sequence Bridge") {
 		t.Fatalf("unexpected distributed markdown: %s", decoded.Report.Markdown)
 	}
 	if !strings.Contains(decoded.Report.Markdown, "## Shared Queue Coordination") || !strings.Contains(decoded.Report.Markdown, "Dead-letter backlog:") {
@@ -679,7 +734,7 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 		t.Fatalf("expected markdown export content type, got %q", contentType)
 	}
-	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") || !strings.Contains(exportResponse.Body.String(), "## Recovery Signals") || !strings.Contains(exportResponse.Body.String(), "## Fairness") || !strings.Contains(exportResponse.Body.String(), "Validation artifacts: docs/reports/live-validation-index.md") || !strings.Contains(exportResponse.Body.String(), "Ambiguous publish proof: docs/reports/ambiguous-publish-outcome-proof-summary.json (BF-05: committed, rejected, unknown_commit)") || !strings.Contains(exportResponse.Body.String(), "Backend limitations: no external tracing backend") {
+	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "## Diagnostics Snapshot") || !strings.Contains(exportResponse.Body.String(), "Task IDs: report-ray, report-k8s, report-local") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") || !strings.Contains(exportResponse.Body.String(), "## Recovery Signals") || !strings.Contains(exportResponse.Body.String(), "## Fairness") || !strings.Contains(exportResponse.Body.String(), "## Cross-Task Comparison") || !strings.Contains(exportResponse.Body.String(), "Summary: matching_state=2 differing_state=1") || !strings.Contains(exportResponse.Body.String(), "Validation artifacts: docs/reports/live-validation-index.md") || !strings.Contains(exportResponse.Body.String(), "Ambiguous publish proof: docs/reports/ambiguous-publish-outcome-proof-summary.json (BF-05: committed, rejected, unknown_commit)") || !strings.Contains(exportResponse.Body.String(), "Backend limitations: no external tracing backend") {
 		t.Fatalf("unexpected distributed export markdown: %s", exportResponse.Body.String())
 	}
 	if !strings.Contains(exportResponse.Body.String(), "## Shared Queue Coordination") {
@@ -737,6 +792,14 @@ func TestV2DistributedReportAppliesTimeWindowFiltersToResponseAndExport(t *testi
 			TotalTasks           int `json:"total_tasks"`
 			TotalRoutedDecisions int `json:"total_routed_decisions"`
 		} `json:"summary"`
+		DiagnosticsSnapshot struct {
+			TotalTasks int      `json:"total_tasks"`
+			TaskIDs    []string `json:"task_ids"`
+		} `json:"diagnostics_snapshot"`
+		CrossTaskComparison struct {
+			ComparedTaskCount int    `json:"compared_task_count"`
+			BaselineTaskID    string `json:"baseline_task_id"`
+		} `json:"cross_task_comparison"`
 		RoutingReasons []struct {
 			Reason string `json:"reason"`
 		} `json:"routing_reasons"`
@@ -754,10 +817,16 @@ func TestV2DistributedReportAppliesTimeWindowFiltersToResponseAndExport(t *testi
 	if decoded.Summary.TotalTasks != 1 || decoded.Summary.TotalRoutedDecisions != 1 {
 		t.Fatalf("expected distributed report to only include the current task slice, got %+v", decoded.Summary)
 	}
+	if decoded.DiagnosticsSnapshot.TotalTasks != 1 || len(decoded.DiagnosticsSnapshot.TaskIDs) != 1 || decoded.DiagnosticsSnapshot.TaskIDs[0] != "report-current" {
+		t.Fatalf("expected diagnostics snapshot to only include the current task slice, got %+v", decoded.DiagnosticsSnapshot)
+	}
+	if decoded.CrossTaskComparison.ComparedTaskCount != 1 || decoded.CrossTaskComparison.BaselineTaskID != "report-current" {
+		t.Fatalf("expected cross-task comparison to only include the current task slice, got %+v", decoded.CrossTaskComparison)
+	}
 	if len(decoded.RoutingReasons) != 1 || decoded.RoutingReasons[0].Reason != "browser workloads default to kubernetes executor" {
 		t.Fatalf("expected old routing evidence to be excluded by the time window, got %+v", decoded.RoutingReasons)
 	}
-	if !strings.Contains(decoded.Report.Markdown, "since=2026-03-23T10:30:00Z") || !strings.Contains(decoded.Report.Markdown, "until=2026-03-23T11:00:00Z") {
+	if !strings.Contains(decoded.Report.Markdown, "since=2026-03-23T10:30:00Z") || !strings.Contains(decoded.Report.Markdown, "until=2026-03-23T11:00:00Z") || !strings.Contains(decoded.Report.Markdown, "Task IDs: report-current") || strings.Contains(decoded.Report.Markdown, "report-old") {
 		t.Fatalf("expected markdown filter header to include the time window, got %s", decoded.Report.Markdown)
 	}
 	if !strings.Contains(decoded.Report.ExportURL, "since=2026-03-23T10%3A30%3A00Z") || !strings.Contains(decoded.Report.ExportURL, "until=2026-03-23T11%3A00%3A00Z") {
@@ -769,7 +838,7 @@ func TestV2DistributedReportAppliesTimeWindowFiltersToResponseAndExport(t *testi
 	if exportResponse.Code != http.StatusOK {
 		t.Fatalf("expected distributed export 200, got %d %s", exportResponse.Code, exportResponse.Body.String())
 	}
-	if !strings.Contains(exportResponse.Body.String(), "since=2026-03-23T10:30:00Z") || !strings.Contains(exportResponse.Body.String(), "until=2026-03-23T11:00:00Z") {
+	if !strings.Contains(exportResponse.Body.String(), "since=2026-03-23T10:30:00Z") || !strings.Contains(exportResponse.Body.String(), "until=2026-03-23T11:00:00Z") || !strings.Contains(exportResponse.Body.String(), "Baseline task: report-current") {
 		t.Fatalf("expected exported markdown to include the retained time window, got %s", exportResponse.Body.String())
 	}
 	if strings.Contains(exportResponse.Body.String(), "legacy routing path") {

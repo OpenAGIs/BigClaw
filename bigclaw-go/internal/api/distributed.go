@@ -100,6 +100,66 @@ type fairnessDiagnostics struct {
 	Notes                []string                `json:"notes,omitempty"`
 }
 
+type diagnosticsSnapshot struct {
+	GeneratedAt          time.Time         `json:"generated_at"`
+	FilterLimit          int               `json:"filter_limit"`
+	TotalTasks           int               `json:"total_tasks"`
+	ActiveTasks          int               `json:"active_tasks"`
+	TerminalTasks        int               `json:"terminal_tasks"`
+	TakeoverTasks        int               `json:"takeover_tasks"`
+	OldestTaskUpdatedAt  time.Time         `json:"oldest_task_updated_at,omitempty"`
+	NewestTaskUpdatedAt  time.Time         `json:"newest_task_updated_at,omitempty"`
+	StateDistribution    []auditFacetCount `json:"state_distribution,omitempty"`
+	RiskDistribution     []auditFacetCount `json:"risk_distribution,omitempty"`
+	ExecutorDistribution []auditFacetCount `json:"executor_distribution,omitempty"`
+	TeamDistribution     []auditFacetCount `json:"team_distribution,omitempty"`
+	ProjectDistribution  []auditFacetCount `json:"project_distribution,omitempty"`
+	TaskIDs              []string          `json:"task_ids,omitempty"`
+}
+
+type crossTaskComparison struct {
+	ComparedTaskCount int                        `json:"compared_task_count"`
+	BaselineTaskID    string                     `json:"baseline_task_id,omitempty"`
+	BaselineExecutor  string                     `json:"baseline_executor,omitempty"`
+	BaselineState     string                     `json:"baseline_state,omitempty"`
+	BaselineRiskLevel string                     `json:"baseline_risk_level,omitempty"`
+	Dimensions        []string                   `json:"dimensions,omitempty"`
+	Items             []crossTaskComparisonItem  `json:"items,omitempty"`
+	Summary           crossTaskComparisonSummary `json:"summary"`
+}
+
+type crossTaskComparisonItem struct {
+	TaskID                  string    `json:"task_id"`
+	TraceID                 string    `json:"trace_id,omitempty"`
+	Executor                string    `json:"executor,omitempty"`
+	State                   string    `json:"state,omitempty"`
+	RiskLevel               string    `json:"risk_level,omitempty"`
+	Priority                int       `json:"priority"`
+	EventCount              int       `json:"event_count"`
+	DurationSeconds         float64   `json:"duration_seconds"`
+	UpdatedAt               time.Time `json:"updated_at,omitempty"`
+	PriorityDelta           int       `json:"priority_delta"`
+	EventCountDelta         int       `json:"event_count_delta"`
+	DurationDeltaSeconds    float64   `json:"duration_delta_seconds"`
+	StateMatchesBaseline    bool      `json:"state_matches_baseline"`
+	ExecutorMatchesBaseline bool      `json:"executor_matches_baseline"`
+	RiskMatchesBaseline     bool      `json:"risk_matches_baseline"`
+	ChangedDimensions       []string  `json:"changed_dimensions,omitempty"`
+}
+
+type crossTaskComparisonSummary struct {
+	MatchingStateCount     int      `json:"matching_state_count"`
+	DifferingStateCount    int      `json:"differing_state_count"`
+	MatchingExecutorCount  int      `json:"matching_executor_count"`
+	DifferingExecutorCount int      `json:"differing_executor_count"`
+	MatchingRiskCount      int      `json:"matching_risk_count"`
+	DifferingRiskCount     int      `json:"differing_risk_count"`
+	MaxPriorityDelta       int      `json:"max_priority_delta"`
+	MaxEventCountDelta     int      `json:"max_event_count_delta"`
+	MaxDurationDeltaSecs   float64  `json:"max_duration_delta_seconds"`
+	Notes                  []string `json:"notes,omitempty"`
+}
+
 type distributedDiagnosticsReport struct {
 	Markdown  string `json:"markdown"`
 	ExportURL string `json:"export_url"`
@@ -181,6 +241,8 @@ type distributedDiagnostics struct {
 	SequenceBridge        sequenceBridgeSurface                    `json:"sequence_bridge_surface"`
 	RetentionExpiry       retentionExpirySurface                   `json:"retention_expiry_surface"`
 	ContinuationGate      validationBundleContinuationGateSurface  `json:"validation_bundle_continuation"`
+	DiagnosticsSnapshot   diagnosticsSnapshot                      `json:"diagnostics_snapshot"`
+	CrossTaskComparison   crossTaskComparison                      `json:"cross_task_comparison"`
 	TraceBundle           traceExportBundleSummary                 `json:"trace_export_bundle"`
 	RolloutReport         distributedDiagnosticsReport             `json:"rollout_report"`
 }
@@ -283,6 +345,8 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"sequence_bridge_surface":         diagnostics.SequenceBridge,
 		"retention_expiry_surface":        diagnostics.RetentionExpiry,
 		"validation_bundle_continuation":  diagnostics.ContinuationGate,
+		"diagnostics_snapshot":            diagnostics.DiagnosticsSnapshot,
+		"cross_task_comparison":           diagnostics.CrossTaskComparison,
 		"report":                          diagnostics.RolloutReport,
 	})
 }
@@ -370,6 +434,8 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		SequenceBridge:        sequenceBridgeSurfacePayload(),
 		RetentionExpiry:       retentionExpirySurfacePayload(),
 		ContinuationGate:      validationBundleContinuationGatePayload(),
+		DiagnosticsSnapshot:   buildDiagnosticsSnapshot(taskRollup.Assignments, len(taskRollup.Takeovers), filters.Limit, s.Now()),
+		CrossTaskComparison:   buildCrossTaskComparison(taskRollup.Assignments, s.Recorder.EventsByTask("", 0)),
 		TraceBundle:           buildTraceExportBundle(taskRollup.Assignments, s.Recorder.TraceSummaries(5)),
 	}
 	diagnostics.RolloutReport = distributedDiagnosticsReport{
@@ -956,7 +1022,39 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 		fmt.Sprintf("- Saturated executors: %d", diagnostics.Summary.SaturatedExecutors),
 		fmt.Sprintf("- Active takeovers: %d", diagnostics.Summary.ActiveTakeovers),
 		"",
+		"## Diagnostics Snapshot",
+		fmt.Sprintf("- Generated at: %s", formatOptionalFilterTime(diagnostics.DiagnosticsSnapshot.GeneratedAt)),
+		fmt.Sprintf("- Filter limit: %d", diagnostics.DiagnosticsSnapshot.FilterLimit),
+		fmt.Sprintf("- Total tasks: %d", diagnostics.DiagnosticsSnapshot.TotalTasks),
+		fmt.Sprintf("- Active tasks: %d", diagnostics.DiagnosticsSnapshot.ActiveTasks),
+		fmt.Sprintf("- Terminal tasks: %d", diagnostics.DiagnosticsSnapshot.TerminalTasks),
+		fmt.Sprintf("- Takeover tasks: %d", diagnostics.DiagnosticsSnapshot.TakeoverTasks),
+		"",
 		"## Routing Reasons",
+	}
+	if !diagnostics.DiagnosticsSnapshot.NewestTaskUpdatedAt.IsZero() {
+		lines = append(lines, fmt.Sprintf("- Newest task updated at: %s", formatOptionalFilterTime(diagnostics.DiagnosticsSnapshot.NewestTaskUpdatedAt)))
+	}
+	if !diagnostics.DiagnosticsSnapshot.OldestTaskUpdatedAt.IsZero() {
+		lines = append(lines, fmt.Sprintf("- Oldest task updated at: %s", formatOptionalFilterTime(diagnostics.DiagnosticsSnapshot.OldestTaskUpdatedAt)))
+	}
+	if len(diagnostics.DiagnosticsSnapshot.StateDistribution) > 0 {
+		lines = append(lines, "- State distribution: "+formatFacetCounts(diagnostics.DiagnosticsSnapshot.StateDistribution))
+	}
+	if len(diagnostics.DiagnosticsSnapshot.RiskDistribution) > 0 {
+		lines = append(lines, "- Risk distribution: "+formatFacetCounts(diagnostics.DiagnosticsSnapshot.RiskDistribution))
+	}
+	if len(diagnostics.DiagnosticsSnapshot.ExecutorDistribution) > 0 {
+		lines = append(lines, "- Executor distribution: "+formatFacetCounts(diagnostics.DiagnosticsSnapshot.ExecutorDistribution))
+	}
+	if len(diagnostics.DiagnosticsSnapshot.TeamDistribution) > 0 {
+		lines = append(lines, "- Team distribution: "+formatFacetCounts(diagnostics.DiagnosticsSnapshot.TeamDistribution))
+	}
+	if len(diagnostics.DiagnosticsSnapshot.ProjectDistribution) > 0 {
+		lines = append(lines, "- Project distribution: "+formatFacetCounts(diagnostics.DiagnosticsSnapshot.ProjectDistribution))
+	}
+	if len(diagnostics.DiagnosticsSnapshot.TaskIDs) > 0 {
+		lines = append(lines, "- Task IDs: "+strings.Join(diagnostics.DiagnosticsSnapshot.TaskIDs, ", "))
 	}
 	if len(diagnostics.RoutingReasons) == 0 {
 		lines = append(lines, "- No routing decisions captured")
@@ -1082,6 +1180,38 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.Fairness.Notes) > 0 {
 		lines = append(lines, "- Notes: "+strings.Join(diagnostics.Fairness.Notes, "; "))
+	}
+	lines = append(lines,
+		"",
+		"## Cross-Task Comparison",
+		fmt.Sprintf("- Compared tasks: %d", diagnostics.CrossTaskComparison.ComparedTaskCount),
+		fmt.Sprintf("- Baseline task: %s", firstNonEmpty(diagnostics.CrossTaskComparison.BaselineTaskID, "none")),
+		fmt.Sprintf("- Baseline executor: %s", firstNonEmpty(diagnostics.CrossTaskComparison.BaselineExecutor, "none")),
+		fmt.Sprintf("- Baseline state: %s", firstNonEmpty(diagnostics.CrossTaskComparison.BaselineState, "none")),
+		fmt.Sprintf("- Baseline risk: %s", firstNonEmpty(diagnostics.CrossTaskComparison.BaselineRiskLevel, "none")),
+	)
+	if len(diagnostics.CrossTaskComparison.Dimensions) > 0 {
+		lines = append(lines, "- Dimensions: "+strings.Join(diagnostics.CrossTaskComparison.Dimensions, ", "))
+	}
+	for _, item := range diagnostics.CrossTaskComparison.Items {
+		lines = append(lines, fmt.Sprintf("- %s: executor=%s state=%s risk=%s priority=%d priority_delta=%d events=%d event_delta=%d duration=%.3fs duration_delta=%.3fs matches(state=%t executor=%t risk=%t)", item.TaskID, firstNonEmpty(item.Executor, "unknown"), firstNonEmpty(item.State, "unknown"), firstNonEmpty(item.RiskLevel, "unknown"), item.Priority, item.PriorityDelta, item.EventCount, item.EventCountDelta, item.DurationSeconds, item.DurationDeltaSeconds, item.StateMatchesBaseline, item.ExecutorMatchesBaseline, item.RiskMatchesBaseline))
+		if len(item.ChangedDimensions) > 0 {
+			lines = append(lines, "  - changed dimensions: "+strings.Join(item.ChangedDimensions, ", "))
+		}
+	}
+	lines = append(lines, fmt.Sprintf("- Summary: matching_state=%d differing_state=%d matching_executor=%d differing_executor=%d matching_risk=%d differing_risk=%d max_priority_delta=%d max_event_count_delta=%d max_duration_delta_seconds=%.3f",
+		diagnostics.CrossTaskComparison.Summary.MatchingStateCount,
+		diagnostics.CrossTaskComparison.Summary.DifferingStateCount,
+		diagnostics.CrossTaskComparison.Summary.MatchingExecutorCount,
+		diagnostics.CrossTaskComparison.Summary.DifferingExecutorCount,
+		diagnostics.CrossTaskComparison.Summary.MatchingRiskCount,
+		diagnostics.CrossTaskComparison.Summary.DifferingRiskCount,
+		diagnostics.CrossTaskComparison.Summary.MaxPriorityDelta,
+		diagnostics.CrossTaskComparison.Summary.MaxEventCountDelta,
+		diagnostics.CrossTaskComparison.Summary.MaxDurationDeltaSecs,
+	))
+	if len(diagnostics.CrossTaskComparison.Summary.Notes) > 0 {
+		lines = append(lines, "- Notes: "+strings.Join(diagnostics.CrossTaskComparison.Summary.Notes, "; "))
 	}
 	lines = append(lines,
 		"",
@@ -1488,6 +1618,175 @@ func sanitizeReportName(value string) string {
 	value = strings.ReplaceAll(value, " ", "-")
 	if value == "" {
 		return "all"
+	}
+	return value
+}
+
+func buildDiagnosticsSnapshot(assignments []distributedTaskAssignment, takeoverCount, filterLimit int, now time.Time) diagnosticsSnapshot {
+	snapshot := diagnosticsSnapshot{
+		GeneratedAt: now.UTC(),
+		FilterLimit: filterLimit,
+		TotalTasks:  len(assignments),
+		TaskIDs:     sampleTaskIDs(assignments, filterLimit),
+	}
+	if len(assignments) == 0 {
+		return snapshot
+	}
+	stateCounts := make(map[string]int)
+	riskCounts := make(map[string]int)
+	executorCounts := make(map[string]int)
+	teamCounts := make(map[string]int)
+	projectCounts := make(map[string]int)
+	oldest := assignments[0].Task.UpdatedAt
+	newest := assignments[0].Task.UpdatedAt
+	for _, item := range assignments {
+		if domain.IsActiveTaskState(item.EffectiveState) {
+			snapshot.ActiveTasks++
+		} else {
+			snapshot.TerminalTasks++
+		}
+		stateCounts[firstNonEmpty(strings.TrimSpace(string(item.EffectiveState)), "unknown")]++
+		riskCounts[firstNonEmpty(strings.TrimSpace(string(item.Task.RiskLevel)), "unknown")]++
+		executorCounts[firstNonEmpty(strings.TrimSpace(string(item.Executor)), "unknown")]++
+		teamCounts[firstNonEmpty(strings.TrimSpace(item.Task.Metadata["team"]), "unassigned")]++
+		projectCounts[firstNonEmpty(strings.TrimSpace(item.Task.Metadata["project"]), "unassigned")]++
+		if item.Task.UpdatedAt.Before(oldest) {
+			oldest = item.Task.UpdatedAt
+		}
+		if item.Task.UpdatedAt.After(newest) {
+			newest = item.Task.UpdatedAt
+		}
+	}
+	snapshot.TakeoverTasks = takeoverCount
+	snapshot.OldestTaskUpdatedAt = oldest.UTC()
+	snapshot.NewestTaskUpdatedAt = newest.UTC()
+	snapshot.StateDistribution = sortFacetCounts(stateCounts)
+	snapshot.RiskDistribution = sortFacetCounts(riskCounts)
+	snapshot.ExecutorDistribution = sortFacetCounts(executorCounts)
+	snapshot.TeamDistribution = sortFacetCounts(teamCounts)
+	snapshot.ProjectDistribution = sortFacetCounts(projectCounts)
+	return snapshot
+}
+
+func buildCrossTaskComparison(assignments []distributedTaskAssignment, events []domain.Event) crossTaskComparison {
+	comparison := crossTaskComparison{
+		ComparedTaskCount: len(assignments),
+		Dimensions:        []string{"executor", "state", "risk_level", "priority", "event_count", "duration_seconds"},
+	}
+	if len(assignments) == 0 {
+		comparison.Summary.Notes = []string{"no tasks matched the current filter slice"}
+		return comparison
+	}
+	sortedAssignments := append([]distributedTaskAssignment(nil), assignments...)
+	sort.SliceStable(sortedAssignments, func(i, j int) bool {
+		if sortedAssignments[i].Task.UpdatedAt.Equal(sortedAssignments[j].Task.UpdatedAt) {
+			return sortedAssignments[i].Task.ID < sortedAssignments[j].Task.ID
+		}
+		return sortedAssignments[i].Task.UpdatedAt.After(sortedAssignments[j].Task.UpdatedAt)
+	})
+
+	eventCounts := make(map[string]int)
+	firstEventAt := make(map[string]time.Time)
+	lastEventAt := make(map[string]time.Time)
+	for _, event := range events {
+		if strings.TrimSpace(event.TaskID) == "" {
+			continue
+		}
+		eventCounts[event.TaskID]++
+		if current, ok := firstEventAt[event.TaskID]; !ok || event.Timestamp.Before(current) {
+			firstEventAt[event.TaskID] = event.Timestamp
+		}
+		if current, ok := lastEventAt[event.TaskID]; !ok || event.Timestamp.After(current) {
+			lastEventAt[event.TaskID] = event.Timestamp
+		}
+	}
+
+	baseline := sortedAssignments[0]
+	baselineDuration := comparisonDurationSeconds(baseline.Task, firstEventAt[baseline.Task.ID], lastEventAt[baseline.Task.ID])
+	baselineEventCount := eventCounts[baseline.Task.ID]
+	comparison.BaselineTaskID = baseline.Task.ID
+	comparison.BaselineExecutor = string(baseline.Executor)
+	comparison.BaselineState = string(baseline.EffectiveState)
+	comparison.BaselineRiskLevel = string(baseline.Task.RiskLevel)
+
+	for _, item := range sortedAssignments {
+		durationSeconds := comparisonDurationSeconds(item.Task, firstEventAt[item.Task.ID], lastEventAt[item.Task.ID])
+		result := crossTaskComparisonItem{
+			TaskID:                  item.Task.ID,
+			TraceID:                 item.Task.TraceID,
+			Executor:                string(item.Executor),
+			State:                   string(item.EffectiveState),
+			RiskLevel:               string(item.Task.RiskLevel),
+			Priority:                item.Task.Priority,
+			EventCount:              eventCounts[item.Task.ID],
+			DurationSeconds:         durationSeconds,
+			UpdatedAt:               item.Task.UpdatedAt.UTC(),
+			PriorityDelta:           item.Task.Priority - baseline.Task.Priority,
+			EventCountDelta:         eventCounts[item.Task.ID] - baselineEventCount,
+			DurationDeltaSeconds:    durationSeconds - baselineDuration,
+			StateMatchesBaseline:    item.EffectiveState == baseline.EffectiveState,
+			ExecutorMatchesBaseline: item.Executor == baseline.Executor,
+			RiskMatchesBaseline:     item.Task.RiskLevel == baseline.Task.RiskLevel,
+		}
+		if result.StateMatchesBaseline {
+			comparison.Summary.MatchingStateCount++
+		} else {
+			comparison.Summary.DifferingStateCount++
+			result.ChangedDimensions = append(result.ChangedDimensions, "state")
+		}
+		if result.ExecutorMatchesBaseline {
+			comparison.Summary.MatchingExecutorCount++
+		} else {
+			comparison.Summary.DifferingExecutorCount++
+			result.ChangedDimensions = append(result.ChangedDimensions, "executor")
+		}
+		if result.RiskMatchesBaseline {
+			comparison.Summary.MatchingRiskCount++
+		} else {
+			comparison.Summary.DifferingRiskCount++
+			result.ChangedDimensions = append(result.ChangedDimensions, "risk_level")
+		}
+		if result.PriorityDelta != 0 {
+			result.ChangedDimensions = append(result.ChangedDimensions, "priority")
+		}
+		if result.EventCountDelta != 0 {
+			result.ChangedDimensions = append(result.ChangedDimensions, "event_count")
+		}
+		if math.Abs(result.DurationDeltaSeconds) > 0 {
+			result.ChangedDimensions = append(result.ChangedDimensions, "duration_seconds")
+		}
+		if delta := absInt(result.PriorityDelta); delta > comparison.Summary.MaxPriorityDelta {
+			comparison.Summary.MaxPriorityDelta = delta
+		}
+		if delta := absInt(result.EventCountDelta); delta > comparison.Summary.MaxEventCountDelta {
+			comparison.Summary.MaxEventCountDelta = delta
+		}
+		if delta := math.Abs(result.DurationDeltaSeconds); delta > comparison.Summary.MaxDurationDeltaSecs {
+			comparison.Summary.MaxDurationDeltaSecs = delta
+		}
+		comparison.Items = append(comparison.Items, result)
+	}
+	if len(comparison.Items) <= 1 {
+		comparison.Summary.Notes = append(comparison.Summary.Notes, "only one task matched the current filter slice")
+	} else {
+		comparison.Summary.Notes = append(comparison.Summary.Notes, fmt.Sprintf("%d tasks compared against baseline %s", len(comparison.Items), baseline.Task.ID))
+	}
+	return comparison
+}
+
+func comparisonDurationSeconds(task domain.Task, startedAt, endedAt time.Time) float64 {
+	if !startedAt.IsZero() && !endedAt.IsZero() && endedAt.After(startedAt) {
+		return endedAt.Sub(startedAt).Seconds()
+	}
+	if !task.CreatedAt.IsZero() && !task.UpdatedAt.IsZero() && task.UpdatedAt.After(task.CreatedAt) {
+		return task.UpdatedAt.Sub(task.CreatedAt).Seconds()
+	}
+	return 0
+}
+
+func absInt(value int) int {
+	if value < 0 {
+		return -value
 	}
 	return value
 }

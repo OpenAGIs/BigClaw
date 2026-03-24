@@ -1,27 +1,25 @@
-## Codex Workpad
-
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## BIGCLAW-180 Workpad
 
 ### Plan
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+- [x] Audit `bigclaw-go/internal/api/distributed.go` and keep the implementation scoped to the distributed diagnostics response and markdown export.
+- [x] Add a machine-readable diagnostics snapshot section that summarizes the filtered task slice, state/risk/executor mix, and snapshot timing metadata.
+- [x] Add a cross-task comparison section that compares tasks within the filtered slice on executor, state, risk, priority, timing, and event counts.
+- [x] Extend markdown export coverage so snapshot and comparison data are included in `GET /v2/reports/distributed/export`.
+- [x] Add targeted regression tests for JSON payloads and markdown export, then run only the relevant Go tests.
+- [ ] Commit and push the issue branch `symphony/BIGCLAW-180`.
 
-### Acceptance Criteria
+### Acceptance
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
+- [x] `GET /v2/reports/distributed` returns a machine-readable `diagnostics_snapshot` section for the currently filtered task slice.
+- [x] `GET /v2/reports/distributed` returns a machine-readable `cross_task_comparison` section derived from the same filtered slice.
+- [x] `GET /v2/reports/distributed/export` renders both snapshot and cross-task comparison sections in markdown.
+- [x] The new sections remain bounded to the active filter slice and do not change unrelated report surfaces.
+- [x] Targeted Go tests cover JSON payload shape and markdown export content for the new sections.
 
 ### Validation
 
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
-
-### Notes
-
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+- [x] `cd bigclaw-go && go test ./internal/api -run 'TestV2DistributedReport(BuildsCapacityViewAndMarkdownExport|AppliesTimeWindowFiltersToResponseAndExport)'`
+  Result: `ok  	bigclaw-go/internal/api	5.307s`
+- [x] `cd bigclaw-go && go test ./internal/api -run 'TestV2DistributedReport(IncludesRetentionExpirySurface|IncludesProviderLiveHandoffIsolationSurface|IncludesBrokerBootstrapSurface|IncludesBrokerReviewBundle)'`
+  Result: `ok  	bigclaw-go/internal/api	5.594s`
