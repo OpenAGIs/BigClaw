@@ -14,7 +14,7 @@ func TestBuildDefaultClawHostLifecycleRecoveryScorecard(t *testing.T) {
 	if scorecard.Filters["team"] != "platform" || scorecard.Filters["project"] != "apollo" {
 		t.Fatalf("unexpected recovery filters: %+v", scorecard.Filters)
 	}
-	if scorecard.Summary.BotCount != 2 || scorecard.Summary.RecoverableBots != 2 || scorecard.Summary.IsolatedBots != 2 {
+	if scorecard.Summary.BotCount != 1 || scorecard.Summary.RecoverableBots != 1 || scorecard.Summary.IsolatedBots != 1 {
 		t.Fatalf("unexpected recovery summary: %+v", scorecard.Summary)
 	}
 	if !audit.ReleaseReady || audit.ReadinessScore != 100 {
@@ -48,7 +48,7 @@ func TestRenderClawHostLifecycleRecoveryReport(t *testing.T) {
 	report := RenderClawHostLifecycleRecoveryReport(scorecard, audit)
 	for _, want := range []string{
 		"# ClawHost Lifecycle Recovery Scorecard",
-		"Recoverable Bots: 2/2",
+		"Recoverable Bots: 1/1",
 		"Per-Bot Isolation",
 		"platform-release-bot",
 		"Missing lifecycle coverage: none",

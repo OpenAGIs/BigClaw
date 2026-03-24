@@ -63,7 +63,7 @@ type ClawHostLifecycleRecoveryAudit struct {
 }
 
 func BuildDefaultClawHostLifecycleRecoveryScorecard(team, project string) ClawHostLifecycleRecoveryScorecard {
-	inventory := BuildDefaultClawHostFleetSurface()
+	inventory := FilterClawHostFleetSurface(BuildDefaultClawHostFleetSurface(), team, project)
 	appTenant := map[string]string{}
 	for _, app := range inventory.Apps {
 		appTenant[app.AppID] = app.TenantID

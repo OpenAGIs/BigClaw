@@ -1000,7 +1000,7 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 			t.Fatalf("expected rollout export markdown content type, got %q", contentType)
 		}
-		if !strings.Contains(exportResponse.Body.String(), "alpha-app") || !strings.Contains(exportResponse.Body.String(), "tenant-a") {
+		if !strings.Contains(exportResponse.Body.String(), "alpha-app") || !strings.Contains(exportResponse.Body.String(), "tenant-a") || strings.Contains(exportResponse.Body.String(), "gamma-app") || strings.Contains(exportResponse.Body.String(), "tenant-c") {
 			t.Fatalf("unexpected rollout export body: %s", exportResponse.Body.String())
 		}
 	})
@@ -1061,7 +1061,7 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 			t.Fatalf("expected workflow export markdown content type, got %q", contentType)
 		}
-		if !strings.Contains(exportResponse.Body.String(), "token_session=true") || !strings.Contains(exportResponse.Body.String(), "IM Channels and Device Approval Workflows") {
+		if !strings.Contains(exportResponse.Body.String(), "token_session=true") || !strings.Contains(exportResponse.Body.String(), "IM Channels and Device Approval Workflows") || !strings.Contains(exportResponse.Body.String(), "owner=alice") || !strings.Contains(exportResponse.Body.String(), "/v2/control-center?team=platform&project=apollo") || strings.Contains(exportResponse.Body.String(), "owner=workflow-operator") {
 			t.Fatalf("unexpected workflow export body: %s", exportResponse.Body.String())
 		}
 	})
@@ -1094,7 +1094,7 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
 			t.Fatalf("decode recovery scorecard response: %v", err)
 		}
-		if decoded.Scorecard.ScorecardID != "BIG-PAR-292" || decoded.Scorecard.Summary.BotCount != 2 || decoded.Scorecard.Summary.RecoverableBots != 2 || decoded.Scorecard.Summary.IsolatedBots != 2 {
+		if decoded.Scorecard.ScorecardID != "BIG-PAR-292" || decoded.Scorecard.Summary.BotCount != 1 || decoded.Scorecard.Summary.RecoverableBots != 1 || decoded.Scorecard.Summary.IsolatedBots != 1 {
 			t.Fatalf("unexpected recovery scorecard payload: %+v", decoded.Scorecard)
 		}
 		if decoded.Scorecard.Filters["team"] != "platform" || decoded.Scorecard.Filters["project"] != "apollo" {
@@ -1122,7 +1122,7 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 			t.Fatalf("expected recovery export markdown content type, got %q", contentType)
 		}
-		if !strings.Contains(exportResponse.Body.String(), "platform-release-bot") || !strings.Contains(exportResponse.Body.String(), "Recoverable Bots: 2/2") {
+		if !strings.Contains(exportResponse.Body.String(), "platform-release-bot") || !strings.Contains(exportResponse.Body.String(), "Recoverable Bots: 1/1") || strings.Contains(exportResponse.Body.String(), "growth-campaign-bot") {
 			t.Fatalf("unexpected recovery export body: %s", exportResponse.Body.String())
 		}
 	})

@@ -103,7 +103,9 @@
       "BIG-PAR-302",
       "BIG-PAR-303"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-304"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -190,7 +192,8 @@
     "BIG-PAR-300",
     "BIG-PAR-301",
     "BIG-PAR-302",
-    "BIG-PAR-303"
+    "BIG-PAR-303",
+    "BIG-PAR-304"
   ],
   "issues": [
     {
@@ -726,6 +729,12 @@
       "title": "Add team and project scoping to ClawHost fleet surface",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-304",
+      "title": "Harden scoped ClawHost expansion export regressions",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
