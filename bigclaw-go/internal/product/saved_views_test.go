@@ -490,6 +490,26 @@ func TestAuditSavedViewCatalogReadinessFloorsAtZero(t *testing.T) {
 	}
 }
 
+func TestAuditSavedViewCatalogRoundsPartialReadiness(t *testing.T) {
+	catalog := SavedViewCatalog{
+		Name:    "catalog",
+		Version: "v1",
+		Views: []SavedView{
+			{ViewID: "view-1", Name: "Inbox", Route: "/v2/control-center", Owner: "alice", Visibility: "private", Filters: []SavedViewFilter{{Field: "state", Operator: "eq", Value: "running"}}},
+			{ViewID: "view-2", Name: "Blocked", Route: "/v2/control-center", Owner: "alice", Visibility: "private"},
+			{ViewID: "view-3", Name: "Ops", Route: "/v2/control-center", Owner: "alice", Visibility: "private", Filters: []SavedViewFilter{{Field: "priority", Operator: "eq", Value: "high"}}},
+		},
+	}
+
+	audit := AuditSavedViewCatalog(catalog)
+	if audit.ReadinessScore != 66.7 {
+		t.Fatalf("expected rounded partial readiness score, got %+v", audit)
+	}
+	if got := strings.Join(audit.ViewsMissingFilters, ","); got != "Blocked" {
+		t.Fatalf("expected single missing-filter finding, got %+v", audit)
+	}
+}
+
 func TestAuditSavedViewCatalogValidCatalogScoresPerfectReadiness(t *testing.T) {
 	catalog := SavedViewCatalog{
 		Name:    "catalog",
