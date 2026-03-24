@@ -194,7 +194,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc(coordinationLeaderEndpoint, s.handleCoordinationLeader)
 	mux.HandleFunc("/debug/status", func(w http.ResponseWriter, r *http.Request) {
 		rolloutScorecard := s.EventPlan.RolloutScorecard
-		clawHostTasks := s.clawHostPolicyTasks(r.Context())
+		team := strings.TrimSpace(r.URL.Query().Get("team"))
+		project := strings.TrimSpace(r.URL.Query().Get("project"))
+		clawHostTasks := filterClawHostPolicyTasks(s.clawHostPolicyTasks(r.Context()), team, project)
 		payload := map[string]any{
 			"queue_size":                      s.Queue.Size(context.Background()),
 			"audit_events":                    len(s.Recorder.Logs()),
@@ -214,14 +216,18 @@ func (s *Server) Handler() http.Handler {
 			"rollback_trigger_surface":        rollbackTriggerSurfacePayload(),
 			"broker_stub_fanout_isolation":    brokerStubFanoutIsolationPayload(),
 			"provider_live_handoff_isolation": providerLiveHandoffIsolationPayload(),
-			"clawhost_policy_surface":         clawHostPolicySurfacePayload(clawHostTasks),
-			"clawhost_workflow_surface":       clawHostWorkflowSurfacePayload(clawHostTasks),
-			"clawhost_rollout_surface":        clawHostRolloutSurfacePayload(clawHostTasks),
-			"clawhost_readiness_surface":      clawHostReadinessSurfacePayload(clawHostTasks),
-			"clawhost_recovery_surface":       clawHostRecoverySurfacePayload(clawHostTasks),
-			"broker_bootstrap_surface":        brokerBootstrapSurfacePayload(),
-			"broker_review_bundle":            brokerReviewBundleSurfacePayload(),
-			"validation_bundle_continuation":  validationBundleContinuationGatePayload(),
+			"filters": map[string]any{
+				"team":    team,
+				"project": project,
+			},
+			"clawhost_policy_surface":        clawHostPolicySurfacePayload(clawHostTasks),
+			"clawhost_workflow_surface":      clawHostWorkflowSurfacePayload(clawHostTasks),
+			"clawhost_rollout_surface":       clawHostRolloutSurfacePayload(clawHostTasks),
+			"clawhost_readiness_surface":     clawHostReadinessSurfacePayload(clawHostTasks),
+			"clawhost_recovery_surface":      clawHostRecoverySurfacePayload(clawHostTasks),
+			"broker_bootstrap_surface":       brokerBootstrapSurfacePayload(),
+			"broker_review_bundle":           brokerReviewBundleSurfacePayload(),
+			"validation_bundle_continuation": validationBundleContinuationGatePayload(),
 		}
 		if s.Worker != nil {
 			payload["worker"] = s.Worker.Snapshot()

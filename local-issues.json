@@ -3316,6 +3316,24 @@
       "state": "Done",
       "title": "Reuse one ClawHost snapshot across debug status surfaces",
       "updated_at": "2026-03-24T18:58:06Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T19:01:30Z",
+      "description": "Add optional `team` and `project` scoping to the ClawHost surfaces in `/debug/status` so the debug reviewer payload can be narrowed to one operational slice while preserving the shared single-snapshot behavior.",
+      "id": "big-par-302",
+      "identifier": "BIG-PAR-302",
+      "labels": [
+        "go",
+        "clawhost",
+        "api",
+        "debug",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add team and project scoping to ClawHost debug surfaces",
+      "updated_at": "2026-03-24T19:01:30Z"
     }
   ]
 }

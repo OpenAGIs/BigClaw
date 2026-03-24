@@ -101,7 +101,9 @@
       "BIG-PAR-300",
       "BIG-PAR-301"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-302"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -186,7 +188,8 @@
     "BIG-PAR-298",
     "BIG-PAR-299",
     "BIG-PAR-300",
-    "BIG-PAR-301"
+    "BIG-PAR-301",
+    "BIG-PAR-302"
   ],
   "issues": [
     {
@@ -710,6 +713,12 @@
       "title": "Reuse one ClawHost snapshot across debug status surfaces",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-302",
+      "title": "Add team and project scoping to ClawHost debug surfaces",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
