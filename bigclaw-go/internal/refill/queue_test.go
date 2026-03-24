@@ -285,3 +285,76 @@ func TestParallelIssueQueueSaveMarkdownRendersCurrentBatchAndOrder(t *testing.T)
 		t.Fatalf("expected numbered canonical order, got %s", text)
 	}
 }
+
+func TestParallelIssueQueueMarkdownNeedsWriteTracksRenderedChanges(t *testing.T) {
+	queuePath := filepath.Join(t.TempDir(), "queue.json")
+	markdownPath := filepath.Join(t.TempDir(), "queue.md")
+	generatedAt := time.Date(2026, 3, 23, 3, 45, 0, 0, time.UTC)
+	queue := &ParallelIssueQueue{
+		queuePath: queuePath,
+		payload: QueuePayload{
+			Policy: struct {
+				TargetInProgress  int      `json:"target_in_progress"`
+				ActivateStateID   string   `json:"activate_state_id"`
+				ActivateStateName string   `json:"activate_state_name"`
+				RefillStates      []string `json:"refill_states"`
+				BlockedReason     string   `json:"blocked_reason,omitempty"`
+			}{
+				TargetInProgress:  2,
+				ActivateStateName: "In Progress",
+				RefillStates:      []string{"Todo", "Backlog"},
+			},
+			RecentBatches: struct {
+				Completed []string `json:"completed"`
+				Active    []string `json:"active"`
+				Standby   []string `json:"standby"`
+			}{
+				Completed: []string{"BIG-PAR-244"},
+				Active:    []string{"BIG-PAR-247"},
+				Standby:   []string{"BIG-PAR-248"},
+			},
+			IssueOrder: []string{"BIG-PAR-244", "BIG-PAR-247", "BIG-PAR-248"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-244", Title: "refresh queue docs", Status: "Done"},
+				{Identifier: "BIG-PAR-247", Title: "sync queue markdown", Status: "In Progress"},
+				{Identifier: "BIG-PAR-248", Title: "follow-on refill slice", Status: "Todo"},
+			},
+		},
+	}
+
+	needsWrite, err := queue.MarkdownNeedsWrite(markdownPath, generatedAt)
+	if err != nil {
+		t.Fatalf("markdown needs write before save: %v", err)
+	}
+	if !needsWrite {
+		t.Fatalf("expected markdown preview to require initial write")
+	}
+
+	written, err := queue.SaveMarkdown(markdownPath, generatedAt)
+	if err != nil {
+		t.Fatalf("save markdown: %v", err)
+	}
+	if !written {
+		t.Fatalf("expected initial markdown write")
+	}
+
+	needsWrite, err = queue.MarkdownNeedsWrite(markdownPath, generatedAt)
+	if err != nil {
+		t.Fatalf("markdown needs write after save: %v", err)
+	}
+	if needsWrite {
+		t.Fatalf("expected identical markdown preview to report no write needed")
+	}
+
+	queue.payload.Issues[1].Status = "Done"
+	queue.payload.RecentBatches.Active = []string{}
+	queue.payload.RecentBatches.Completed = []string{"BIG-PAR-244", "BIG-PAR-247"}
+
+	needsWrite, err = queue.MarkdownNeedsWrite(markdownPath, generatedAt)
+	if err != nil {
+		t.Fatalf("markdown needs write after queue change: %v", err)
+	}
+	if !needsWrite {
+		t.Fatalf("expected markdown preview to detect rendered content drift")
+	}
+}
