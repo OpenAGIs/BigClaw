@@ -76,6 +76,26 @@ func TestAuditClawHostRolloutPlannerDetectsGaps(t *testing.T) {
 	}
 }
 
+func TestAuditClawHostRolloutPlannerHandlesEmptyPlan(t *testing.T) {
+	plan := BuildDefaultClawHostRolloutPlanner(nil, "", "")
+	plan.Waves = nil
+	plan.Summary = ClawHostRolloutSummary{}
+
+	audit := AuditClawHostRolloutPlanner(plan)
+	if audit.PlanID != plan.PlanID || audit.Version != plan.Version {
+		t.Fatalf("expected audit metadata to mirror empty plan, got %+v", audit)
+	}
+	if audit.ReadinessScore != 0 {
+		t.Fatalf("expected empty rollout plan readiness score to be zero, got %+v", audit)
+	}
+	if audit.ReleaseReady {
+		t.Fatalf("expected empty rollout plan to stay not release ready, got %+v", audit)
+	}
+	if len(audit.DuplicateWaveIDs) != 0 || len(audit.WavesMissingChecks) != 0 || len(audit.WavesMissingRollback) != 0 || len(audit.InvalidParallelism) != 0 || len(audit.MissingTakeoverSignals) != 0 {
+		t.Fatalf("expected empty rollout plan to have no per-wave gaps, got %+v", audit)
+	}
+}
+
 func TestRenderClawHostRolloutPlannerReport(t *testing.T) {
 	plan := BuildDefaultClawHostRolloutPlanner(nil, "platform", "apollo")
 	audit := AuditClawHostRolloutPlanner(plan)

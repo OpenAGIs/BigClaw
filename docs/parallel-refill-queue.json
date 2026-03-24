@@ -117,7 +117,9 @@
       "BIG-PAR-316",
       "BIG-PAR-317"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-318"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -218,7 +220,8 @@
     "BIG-PAR-314",
     "BIG-PAR-315",
     "BIG-PAR-316",
-    "BIG-PAR-317"
+    "BIG-PAR-317",
+    "BIG-PAR-318"
   ],
   "issues": [
     {
@@ -838,6 +841,12 @@
       "title": "Add product regression coverage for empty ClawHost workflow lane reports",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-318",
+      "title": "Add product regression coverage for empty ClawHost rollout audits",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
