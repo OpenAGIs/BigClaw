@@ -98,11 +98,10 @@
       "BIG-PAR-297",
       "BIG-PAR-298",
       "BIG-PAR-299",
-      "BIG-PAR-300"
-    ],
-    "active": [
+      "BIG-PAR-300",
       "BIG-PAR-301"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -710,7 +709,7 @@
       "identifier": "BIG-PAR-301",
       "title": "Reuse one ClawHost snapshot across debug status surfaces",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
