@@ -48,10 +48,10 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 24, 2026:
-  - active slices: none
+  - active slices: `BIG-PAR-300` — Scope ClawHost control-center surfaces by active filters
   - standby slices: none
   - recently completed slices: `BIG-PAR-292` — Add ClawHost lifecycle recovery and per-bot isolation scorecard; `BIG-PAR-293` — Add control-center regression coverage for ClawHost recovery surface; `BIG-PAR-294` — Add control-center regression coverage for ClawHost workflow surface; `BIG-PAR-295` — Add control-center regression coverage for ClawHost readiness surface; `BIG-PAR-296` — Add control-center regression coverage for ClawHost policy surface; `BIG-PAR-297` — Add aggregate control-center regression for ClawHost surface bundle; `BIG-PAR-298` — Add ClawHost policy report and export surface; `BIG-PAR-299` — Scope ClawHost policy surface by team and project
-  - queue status: `queue_runnable=0`, `target_in_progress=2`
+  - queue status: `queue_runnable=1`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -226,3 +226,4 @@ longer waits on Linear to keep issue execution moving.
 78. `BIG-PAR-297`
 79. `BIG-PAR-298`
 80. `BIG-PAR-299`
+81. `BIG-PAR-300`

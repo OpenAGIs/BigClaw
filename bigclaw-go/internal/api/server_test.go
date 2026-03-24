@@ -5022,6 +5022,183 @@ func TestV2ControlCenterIncludesCompleteClawHostSurfaceBundle(t *testing.T) {
 	}
 }
 
+func TestV2ControlCenterScopesClawHostSurfaceBundleByFilters(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010440, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-filtered-1",
+			Source:   "clawhost",
+			Title:    "platform sales bundle target",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":               "clawhost",
+				"team":                        "platform",
+				"project":                     "sales",
+				"inventory_kind":              "claw",
+				"claw_id":                     "claw-sales-west",
+				"claw_name":                   "sales-west",
+				"provider":                    "openai",
+				"provider_status":             "running",
+				"clawhost_app_id":             "sales-app",
+				"clawhost_default_provider":   "openai",
+				"clawhost_provider_mode":      "app_default",
+				"clawhost_provider_allowlist": "anthropic,openai",
+				"skill_count":                 "3",
+				"agent_skill_count":           "4",
+				"channel_types":               "discord,telegram",
+				"whatsapp_pairing_status":     "waiting",
+				"admin_credentials_exposed":   "true",
+				"admin_surface_path":          "/credentials",
+				"domain":                      "sales-west.clawhost.cloud",
+				"proxy_mode":                  "http_ws_gateway",
+				"gateway_port":                "18789",
+				"reachable":                   "true",
+				"admin_ui_enabled":            "true",
+				"websocket_reachable":         "true",
+				"subdomain_ready":             "true",
+				"version_status":              "current",
+				"version_current":             "0.0.31",
+				"version_latest":              "0.0.31",
+				"clawhost_update_available":   "true",
+				"clawhost_takeover_required":  "true",
+				"clawhost_lifecycle_actions":  "start,restart,upgrade",
+				"clawhost_pod_isolation":      "true",
+				"clawhost_service_isolation":  "true",
+				"clawhost_takeover_triggers":  "proxy health regresses,session restore fails",
+				"clawhost_recovery_evidence":  "GET /status,/v2/reports/distributed",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-filtered-2",
+			Source:   "clawhost",
+			Title:    "support care bundle target",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":               "clawhost",
+				"team":                        "support",
+				"project":                     "care",
+				"inventory_kind":              "claw",
+				"claw_id":                     "claw-support-east",
+				"claw_name":                   "support-east",
+				"provider":                    "anthropic",
+				"provider_status":             "running",
+				"clawhost_app_id":             "support-app",
+				"clawhost_default_provider":   "anthropic",
+				"clawhost_provider_mode":      "tenant_override",
+				"clawhost_provider_allowlist": "openai,google",
+				"skill_count":                 "5",
+				"agent_skill_count":           "6",
+				"channel_types":               "slack,whatsapp",
+				"whatsapp_pairing_status":     "approved",
+				"admin_credentials_exposed":   "false",
+				"domain":                      "support-east.clawhost.cloud",
+				"proxy_mode":                  "http_ws_gateway",
+				"gateway_port":                "18790",
+				"reachable":                   "true",
+				"admin_ui_enabled":            "true",
+				"websocket_reachable":         "true",
+				"subdomain_ready":             "true",
+				"version_status":              "current",
+				"version_current":             "0.0.31",
+				"version_latest":              "0.0.31",
+				"clawhost_update_available":   "false",
+				"clawhost_takeover_required":  "false",
+				"clawhost_lifecycle_actions":  "start,restart",
+				"clawhost_pod_isolation":      "true",
+				"clawhost_service_isolation":  "true",
+				"clawhost_takeover_triggers":  "session restore fails",
+				"clawhost_recovery_evidence":  "GET /status",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue filtered control center task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?team=platform&project=sales", nil)
+	request.Header.Set("X-BigClaw-Role", "platform_admin")
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected scoped control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Policy struct {
+			Summary struct {
+				ActivePolicies int `json:"active_policies"`
+			} `json:"summary"`
+			ObservedProviders []string `json:"observed_providers"`
+			ReviewQueue       []struct {
+				TaskID string `json:"task_id"`
+			} `json:"review_queue"`
+		} `json:"clawhost_policy_surface"`
+		Workflow struct {
+			Summary struct {
+				WorkflowItems int `json:"workflow_items"`
+			} `json:"summary"`
+			ReviewQueue []struct {
+				TaskID string `json:"task_id"`
+			} `json:"review_queue"`
+		} `json:"clawhost_workflow_surface"`
+		Rollout struct {
+			Summary struct {
+				ActivePlans int `json:"active_plans"`
+			} `json:"summary"`
+			Plans []struct {
+				Waves []struct {
+					Targets []struct {
+						TaskID string `json:"task_id"`
+					} `json:"targets"`
+				} `json:"waves"`
+			} `json:"plans"`
+		} `json:"clawhost_rollout_surface"`
+		Readiness struct {
+			Summary struct {
+				Targets int `json:"targets"`
+			} `json:"summary"`
+			Targets []struct {
+				TaskID string `json:"task_id"`
+			} `json:"targets"`
+		} `json:"clawhost_readiness_surface"`
+		Recovery struct {
+			Summary struct {
+				Targets int `json:"targets"`
+			} `json:"summary"`
+			Targets []struct {
+				TaskID string `json:"task_id"`
+			} `json:"targets"`
+		} `json:"clawhost_recovery_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode scoped control center response: %v", err)
+	}
+	if decoded.Policy.Summary.ActivePolicies != 1 || len(decoded.Policy.ReviewQueue) != 1 || decoded.Policy.ReviewQueue[0].TaskID != "clawhost-filtered-1" {
+		t.Fatalf("expected scoped policy surface, got %+v", decoded.Policy)
+	}
+	if containsString(decoded.Policy.ObservedProviders, "anthropic") || !containsString(decoded.Policy.ObservedProviders, "openai") {
+		t.Fatalf("expected scoped policy providers, got %+v", decoded.Policy.ObservedProviders)
+	}
+	if decoded.Workflow.Summary.WorkflowItems != 1 || len(decoded.Workflow.ReviewQueue) != 1 || decoded.Workflow.ReviewQueue[0].TaskID != "clawhost-filtered-1" {
+		t.Fatalf("expected scoped workflow surface, got %+v", decoded.Workflow)
+	}
+	if decoded.Rollout.Summary.ActivePlans != 1 || len(decoded.Rollout.Plans) != 1 || len(decoded.Rollout.Plans[0].Waves) != 1 || len(decoded.Rollout.Plans[0].Waves[0].Targets) != 1 || decoded.Rollout.Plans[0].Waves[0].Targets[0].TaskID != "clawhost-filtered-1" {
+		t.Fatalf("expected scoped rollout surface, got %+v", decoded.Rollout)
+	}
+	if decoded.Readiness.Summary.Targets != 1 || len(decoded.Readiness.Targets) != 1 || decoded.Readiness.Targets[0].TaskID != "clawhost-filtered-1" {
+		t.Fatalf("expected scoped readiness surface, got %+v", decoded.Readiness)
+	}
+	if decoded.Recovery.Summary.Targets != 1 || len(decoded.Recovery.Targets) != 1 || decoded.Recovery.Targets[0].TaskID != "clawhost-filtered-1" {
+		t.Fatalf("expected scoped recovery surface, got %+v", decoded.Recovery)
+	}
+}
+
 func mustJSON(value any) []byte {
 	body, err := json.Marshal(value)
 	if err != nil {

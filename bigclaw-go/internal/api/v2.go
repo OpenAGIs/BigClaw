@@ -1241,6 +1241,7 @@ func (s *Server) buildControlCenterResponse(
 	overviews []taskOverview,
 	auditEntries []controlActionAuditEntry,
 ) map[string]any {
+	clawHostTasks := filterClawHostPolicyTasks(s.clawHostPolicyTasks(ctx), filters.Team, filters.Project)
 	response := map[string]any{
 		"authorization":                   authorization,
 		"filters":                         controlCenterFiltersPayload(filters),
@@ -1254,11 +1255,11 @@ func (s *Server) buildControlCenterResponse(
 		"sequence_bridge_surface":         sequenceBridgeSurfacePayload(),
 		"retention_expiry_surface":        retentionExpirySurfacePayload(),
 		"provider_live_handoff_isolation": providerLiveHandoffIsolationPayload(),
-		"clawhost_policy_surface":         clawHostPolicySurfacePayload(s.clawHostPolicyTasks(ctx)),
-		"clawhost_workflow_surface":       clawHostWorkflowSurfacePayload(s.clawHostPolicyTasks(ctx)),
-		"clawhost_rollout_surface":        clawHostRolloutSurfacePayload(s.clawHostPolicyTasks(ctx)),
-		"clawhost_readiness_surface":      clawHostReadinessSurfacePayload(s.clawHostPolicyTasks(ctx)),
-		"clawhost_recovery_surface":       clawHostRecoverySurfacePayload(s.clawHostPolicyTasks(ctx)),
+		"clawhost_policy_surface":         clawHostPolicySurfacePayload(clawHostTasks),
+		"clawhost_workflow_surface":       clawHostWorkflowSurfacePayload(clawHostTasks),
+		"clawhost_rollout_surface":        clawHostRolloutSurfacePayload(clawHostTasks),
+		"clawhost_readiness_surface":      clawHostReadinessSurfacePayload(clawHostTasks),
+		"clawhost_recovery_surface":       clawHostRecoverySurfacePayload(clawHostTasks),
 		"broker_bootstrap_surface":        brokerBootstrapSurfacePayload(),
 		"broker_review_bundle":            brokerReviewBundleSurfacePayload(),
 		"summary":                         summarizeControlCenter(queueTasks, filteredDeadLetters),

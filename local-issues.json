@@ -3266,6 +3266,24 @@
       "state": "Done",
       "title": "Scope ClawHost policy surface by team and project",
       "updated_at": "2026-03-24T18:42:10Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T18:45:20Z",
+      "description": "Scope the ClawHost policy, workflow, rollout, readiness, and recovery surfaces in the main `/v2/control-center` response by the active `team` and `project` filters so the dashboard bundle matches the same filtered task set as the dedicated ClawHost endpoints.",
+      "id": "big-par-300",
+      "identifier": "BIG-PAR-300",
+      "labels": [
+        "go",
+        "clawhost",
+        "api",
+        "control-center",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Scope ClawHost control-center surfaces by active filters",
+      "updated_at": "2026-03-24T18:45:20Z"
     }
   ]
 }
