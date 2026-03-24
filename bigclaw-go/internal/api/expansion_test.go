@@ -1341,6 +1341,38 @@ func TestV2ClawHostEndpointsRejectNonGETMethods(t *testing.T) {
 	}
 }
 
+func TestV2ClawHostExportEndpointsSetAttachmentFilenames(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	handler := server.Handler()
+
+	for _, tc := range []struct {
+		path     string
+		filename string
+	}{
+		{path: "/v2/clawhost/fleet/export", filename: `attachment; filename="clawhost-fleet.md"`},
+		{path: "/v2/clawhost/rollout-planner/export?team=platform&project=apollo", filename: `attachment; filename="clawhost-rollout-planner.md"`},
+		{path: "/v2/clawhost/workflows/export?team=platform&project=apollo&actor=alice", filename: `attachment; filename="clawhost-workflows.md"`},
+	} {
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, tc.path, nil))
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected %s to return 200, got %d %s", tc.path, response.Code, response.Body.String())
+		}
+		if contentType := response.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+			t.Fatalf("expected %s to return markdown content type, got %q", tc.path, contentType)
+		}
+		if contentDisposition := response.Header().Get("Content-Disposition"); contentDisposition != tc.filename {
+			t.Fatalf("expected %s to return %q, got %q", tc.path, tc.filename, contentDisposition)
+		}
+	}
+}
+
 func TestClawHostScopeFilters(t *testing.T) {
 	t.Run("trims query values and prefers actor query over header", func(t *testing.T) {
 		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=%20platform%20&project=%20apollo%20&actor=%20query-actor%20", nil)

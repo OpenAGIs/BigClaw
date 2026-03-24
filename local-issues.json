@@ -3243,6 +3243,18 @@
       "state": "Done",
       "title": "Add ClawHost helper contract regression coverage",
       "updated_at": "2026-03-24T18:27:15Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T18:32:10Z",
+      "description": "Add API regression coverage that proves the ClawHost markdown export endpoints return the expected Content-Disposition attachment filenames alongside markdown content types.",
+      "id": "big-par-301",
+      "identifier": "BIG-PAR-301",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add ClawHost export header regression coverage",
+      "updated_at": "2026-03-24T18:32:23Z"
     }
   ]
 }
