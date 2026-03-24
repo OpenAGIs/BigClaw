@@ -2964,6 +2964,11 @@
           "author": "codex",
           "body": "Refactored `bigclaw-go/internal/api/v2.go` so `/v2/runs` now builds its filtered run list, summary accumulation, response filter payload, and sort/limit flow through smaller helpers, and run-detail assembly now uses dedicated context, trace, artifact, report, and collaboration helpers while preserving the existing payload contract and markdown report behavior. Validation: `cd bigclaw-go && go test ./internal/api` -> ok; `cd bigclaw-go && go test ./...` -> ok; `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> active_in_progress `[\"BIG-PAR-288\"]`, queue_status_synced true, queue_runnable 1 before closeout; `bash scripts/ops/bigclawctl github-sync status --json` at code-commit time -> local SHA `32c44f5b7ce21a05593fa7b4b0d88fe53a9ee50d` matched remote SHA `32c44f5b7ce21a05593fa7b4b0d88fe53a9ee50d` with status ok and synced true. Commit SHA: `32c44f5b7ce21a05593fa7b4b0d88fe53a9ee50d`. PR URL: https://github.com/OpenAGIs/BigClaw/pull/184.",
           "created_at": "2026-03-24T16:22:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Superseding post-rebase closeout: rebased the branch onto `origin/main` after GitHub reported PR #184 dirty, preserved the newly seeded ClawHost follow-up tranche from `origin/main`, and resolved the identifier collision by keeping this refactor on `BIG-PAR-288` while moving the newly seeded ClawHost rollout-planner slice to `BIG-PAR-292` in the local tracker and refill queue. Validation: `cd bigclaw-go && go test ./internal/api` -> ok; `cd bigclaw-go && go test ./...` -> ok; `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `cd16f367c4e3c910c83c732ac2e8f4a4bce0bbcc` matches remote SHA `cd16f367c4e3c910c83c732ac2e8f4a4bce0bbcc` with status ok and synced true; `gh pr view 184 --repo OpenAGIs/BigClaw --json url,title,state,mergeStateStatus,statusCheckRollup` -> PR is `OPEN` with merge state `CLEAN` and successful `test` check; `git log -1 --stat` -> captured for commit `cd16f367c4e3c910c83c732ac2e8f4a4bce0bbcc` with tracker queue files in the stat output. Commit SHAs: `2a56c4a57f0cd9259743943a10f66853cc54c290` (refactor after rebase), `cd16f367c4e3c910c83c732ac2e8f4a4bce0bbcc` (tracker and queue closeout after rebase). PR URL: https://github.com/OpenAGIs/BigClaw/pull/184.",
+          "created_at": "2026-03-24T16:24:00Z"
         }
       ],
       "created_at": "2026-03-24T15:48:03Z",
@@ -2978,7 +2983,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Refactor run list and detail response assembly",
-      "updated_at": "2026-03-24T16:22:00Z"
+      "updated_at": "2026-03-24T16:24:00Z"
     },
     {
       "assigned_to_worker": true,
