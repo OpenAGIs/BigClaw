@@ -4895,6 +4895,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added the final rollout helper assertion in `bigclaw-go/internal/product/clawhost_rollout_test.go`, covering blank trimmed values in `clawHostSortedValues` and taking the package to full statement coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_all.cover` -> `ok   bigclaw-go/internal/product`, `coverage: 100.0% of statements`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_all.cover | egrep \"clawhost_rollout.go|total:\"` -> `clawHostSortedValues 100.0%`, `total 100.0%`\n\nCommit: `75c276929b7de33294aa58ba3f1193f95e9de61e`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:26:12Z"
+        }
+      ],
       "created_at": "2026-03-24T22:24:45Z",
       "description": "Add narrow Go tests covering clawHostSortedValues behavior when getter values are blank after trimming in clawhost_rollout.go.",
       "id": "big-par-371",
@@ -4906,9 +4913,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add rollout sorted-values blank-skip coverage",
-      "updated_at": "2026-03-24T22:24:45Z"
+      "updated_at": "2026-03-24T22:26:12Z"
     }
   ]
 }
