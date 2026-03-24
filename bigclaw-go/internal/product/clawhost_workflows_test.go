@@ -2,6 +2,7 @@ package product
 
 import (
 	"net/url"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -153,5 +154,48 @@ func TestBuildClawHostWorkflowSurfaceEncodesScopedLaneRoutes(t *testing.T) {
 		if strings.Contains(lane.Route, "team=platform & ops") || strings.Contains(lane.Route, "project=apollo/mobile") {
 			t.Fatalf("expected lane %s route to encode reserved characters, got %s", lane.LaneID, lane.Route)
 		}
+	}
+}
+
+func TestBuildClawHostWorkflowSurfaceAliasMatchesDefaultBuilder(t *testing.T) {
+	tasks := []domain.Task{
+		{ID: "task-1", State: domain.TaskBlocked, RiskLevel: domain.RiskHigh, Metadata: map[string]string{"channel": "slack", "provider": "openai"}},
+		{ID: "task-2", State: domain.TaskRunning, Metadata: map[string]string{"device": "wechat"}},
+	}
+
+	got := BuildClawHostWorkflowSurface(tasks, "alice", "platform", "apollo")
+	want := BuildDefaultClawHostWorkflowSurface(tasks, "alice", "platform", "apollo")
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("workflow alias mismatch: got %+v want %+v", got, want)
+	}
+}
+
+func TestWorkflowParallelLimitHelpers(t *testing.T) {
+	cases := []struct {
+		count int
+		want  int
+	}{
+		{count: 0, want: 4},
+		{count: 1, want: 6},
+		{count: 9, want: 6},
+		{count: 10, want: 8},
+		{count: 29, want: 8},
+		{count: 30, want: 10},
+		{count: 59, want: 10},
+		{count: 60, want: 12},
+	}
+
+	for _, tc := range cases {
+		tasks := make([]domain.Task, tc.count)
+		if got := inferParallelLimit(tasks); got != tc.want {
+			t.Fatalf("inferParallelLimit(%d) = %d, want %d", tc.count, got, tc.want)
+		}
+	}
+
+	if got := maxIntWorkflow(4, 8); got != 8 {
+		t.Fatalf("maxIntWorkflow(4, 8) = %d, want 8", got)
+	}
+	if got := maxIntWorkflow(10, 6); got != 10 {
+		t.Fatalf("maxIntWorkflow(10, 6) = %d, want 10", got)
 	}
 }

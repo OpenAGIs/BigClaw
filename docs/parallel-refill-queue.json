@@ -155,7 +155,9 @@
       "BIG-PAR-357",
       "BIG-PAR-360"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-362"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -294,7 +296,8 @@
     "BIG-PAR-356",
     "BIG-PAR-358",
     "BIG-PAR-357",
-    "BIG-PAR-360"
+    "BIG-PAR-360",
+    "BIG-PAR-362"
   ],
   "issues": [
     {
@@ -1142,6 +1145,12 @@
       "title": "Add console helper and design-system coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-362",
+      "title": "Add ClawHost workflow helper threshold coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
