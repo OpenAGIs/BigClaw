@@ -208,7 +208,8 @@
     "BIG-PAR-310",
     "BIG-PAR-311",
     "BIG-PAR-312",
-    "BIG-PAR-313"
+    "BIG-PAR-313",
+    "BIG-PAR-314"
   ],
   "issues": [
     {
@@ -804,6 +805,12 @@
       "title": "Sanitize scoped ClawHost saved-view IDs",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-314",
+      "title": "Encode scoped export URLs for saved views and weekly reports",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

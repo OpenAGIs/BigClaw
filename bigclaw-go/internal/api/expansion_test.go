@@ -94,6 +94,31 @@ func TestV2WeeklyReportBuildsSummaryActionsAndMarkdownExport(t *testing.T) {
 	if !strings.Contains(exportResponse.Body.String(), "Completed runs: 1") || !strings.Contains(exportResponse.Body.String(), "Human interventions: 1") {
 		t.Fatalf("unexpected weekly export body: %s", exportResponse.Body.String())
 	}
+
+	specialScopeResponse := httptest.NewRecorder()
+	specialScopeRequest := httptest.NewRequest(http.MethodGet, "/v2/reports/weekly?team=Platform%20%26%20Ops&project=apollo%2Fmobile&week_start=2026-03-09T00:00:00Z&week_end=2026-03-15T00:00:00Z", nil)
+	server.Handler().ServeHTTP(specialScopeResponse, specialScopeRequest)
+	if specialScopeResponse.Code != http.StatusOK {
+		t.Fatalf("expected reserved-character weekly report 200, got %d %s", specialScopeResponse.Code, specialScopeResponse.Body.String())
+	}
+	var specialScopeDecoded struct {
+		Report struct {
+			ExportURL string `json:"export_url"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(specialScopeResponse.Body.Bytes(), &specialScopeDecoded); err != nil {
+		t.Fatalf("decode reserved-character weekly report: %v", err)
+	}
+	exportURL, err := url.Parse(specialScopeDecoded.Report.ExportURL)
+	if err != nil {
+		t.Fatalf("parse reserved-character weekly export url: %v", err)
+	}
+	if exportURL.Query().Get("team") != "Platform & Ops" || exportURL.Query().Get("project") != "apollo/mobile" {
+		t.Fatalf("expected encoded reserved-character weekly export filters, got %s", specialScopeDecoded.Report.ExportURL)
+	}
+	if strings.Contains(specialScopeDecoded.Report.ExportURL, "team=Platform & Ops") || strings.Contains(specialScopeDecoded.Report.ExportURL, "project=apollo/mobile") {
+		t.Fatalf("expected reserved-character weekly export url to encode scope values, got %s", specialScopeDecoded.Report.ExportURL)
+	}
 }
 
 func TestV2FlowTemplateLifecyclePRDIntakeChecklistAndSupportHandoff(t *testing.T) {
@@ -328,6 +353,17 @@ func TestV2ProductizationAndBillingEndpoints(t *testing.T) {
 		if subscription.SavedViewID == "" {
 			t.Fatalf("expected saved view reference for reserved-character scope subscription, got %+v", subscription)
 		}
+	}
+	specialScopeExportURL := savedViewsExportURL("Platform & Ops", "apollo/mobile", "alice@example.com")
+	parsedExportURL, err := url.Parse(specialScopeExportURL)
+	if err != nil {
+		t.Fatalf("parse reserved-character saved views export url: %v", err)
+	}
+	if parsedExportURL.Query().Get("team") != "Platform & Ops" || parsedExportURL.Query().Get("project") != "apollo/mobile" || parsedExportURL.Query().Get("actor") != "alice@example.com" {
+		t.Fatalf("expected encoded saved views export filters, got %s", specialScopeExportURL)
+	}
+	if strings.Contains(specialScopeExportURL, "team=Platform & Ops") || strings.Contains(specialScopeExportURL, "project=apollo/mobile") || strings.Contains(specialScopeExportURL, "actor=alice@example.com") {
+		t.Fatalf("expected reserved-character saved views export url to encode filters, got %s", specialScopeExportURL)
 	}
 
 	savedViewsExportResponse := httptest.NewRecorder()
