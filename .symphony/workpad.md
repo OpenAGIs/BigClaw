@@ -1,27 +1,25 @@
-## Codex Workpad
-
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## BIGCLAW-187 Workpad
 
 ### Plan
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+- [x] Inspect the distributed diagnostics builders, reviewer surfaces, and replay-validation report patterns.
+- [x] Add a repo-native distributed diagnostics surface for event compression and replay validation.
+- [x] Thread the new surface through the distributed diagnostics JSON and markdown exports.
+- [x] Add focused regression/API coverage for the new surface.
+- [in_progress] Run targeted Go tests, then commit and push the branch.
 
 ### Acceptance Criteria
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
+- [x] Distributed diagnostics expose a checked-in event-compression and replay-validation surface.
+- [x] The new surface is available in both JSON responses and markdown export output.
+- [x] A repo-native report captures compression summary, replay validation details, artifacts, and limitations.
+- [x] Focused regression and API tests validate the new surface end to end.
+- [x] Exact validation commands and outcomes are recorded for the final report.
 
 ### Validation
 
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
+- [x] `cd bigclaw-go && go test ./internal/api ./internal/regression`
 
 ### Notes
 
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+- Scope is intentionally limited to the distributed diagnostics/reporting surface and its checked-in evidence bundle.

@@ -169,6 +169,7 @@ type distributedDiagnostics struct {
 	Fairness              fairnessDiagnostics                      `json:"fairness"`
 	CoordinationLeader    any                                      `json:"coordination_leader_election,omitempty"`
 	SharedQueue           sharedQueueCoordinationDiagnostics       `json:"shared_queue_diagnostics"`
+	DiagnosticCompression diagnosticEventCompressionSurface        `json:"diagnostic_event_compression"`
 	LiveShadowMirror      liveShadowMirrorSurface                  `json:"live_shadow_mirror_scorecard"`
 	BrokerReviewPack      brokerReviewPack                         `json:"broker_review_pack"`
 	BrokerReviewBundle    brokerReviewBundleSurface                `json:"broker_review_bundle"`
@@ -270,6 +271,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"fairness":                        diagnostics.Fairness,
 		"coordination_leader_election":    diagnostics.CoordinationLeader,
 		"shared_queue_diagnostics":        diagnostics.SharedQueue,
+		"diagnostic_event_compression":    diagnostics.DiagnosticCompression,
 		"live_shadow_mirror_scorecard":    diagnostics.LiveShadowMirror,
 		"broker_review_pack":              diagnostics.BrokerReviewPack,
 		"broker_review_bundle":            diagnostics.BrokerReviewBundle,
@@ -358,6 +360,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		Fairness:              fairness,
 		CoordinationLeader:    s.coordinationLeaderElectionPayload(),
 		SharedQueue:           s.sharedQueueCoordinationDiagnostics(),
+		DiagnosticCompression: diagnosticEventCompressionSurfacePayload(),
 		LiveShadowMirror:      liveShadowMirrorPayload(),
 		BrokerReviewPack:      buildBrokerReviewPack(),
 		BrokerReviewBundle:    brokerReviewBundleSurfacePayload(),
@@ -1059,6 +1062,41 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if diagnostics.SharedQueue.RetentionHistoryTruncated {
 		lines = append(lines, "- Retention history truncated: true")
+	}
+	lines = append(lines,
+		"",
+		"## Diagnostic Event Compression",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.DiagnosticCompression.ReportPath),
+		fmt.Sprintf("- Status: %s", firstNonEmpty(diagnostics.DiagnosticCompression.Status, "unknown")),
+		fmt.Sprintf("- Source events: %d", diagnostics.DiagnosticCompression.Summary.SourceEventCount),
+		fmt.Sprintf("- Compressed events: %d", diagnostics.DiagnosticCompression.Summary.CompressedEventCount),
+		fmt.Sprintf("- Compression ratio: %.3f", diagnostics.DiagnosticCompression.Summary.CompressionRatio),
+		fmt.Sprintf("- Traces covered: %d", diagnostics.DiagnosticCompression.Summary.TraceCount),
+		fmt.Sprintf("- Replay-validated traces: %d", diagnostics.DiagnosticCompression.Summary.ReplayValidatedTraces),
+		fmt.Sprintf("- Deterministic replays: %d", diagnostics.DiagnosticCompression.Summary.DeterministicReplays),
+		fmt.Sprintf("- Replay backend: %s", firstNonEmpty(diagnostics.DiagnosticCompression.ReplayValidation.Backend, "unknown")),
+		fmt.Sprintf("- Replay validated: %t", diagnostics.DiagnosticCompression.ReplayValidation.Validated),
+		fmt.Sprintf("- Replay exact matches: %d/%d", diagnostics.DiagnosticCompression.ReplayValidation.ExactMatchTraceCount, diagnostics.DiagnosticCompression.ReplayValidation.SampledTraceCount),
+		fmt.Sprintf("- Replay mismatches: %d", diagnostics.DiagnosticCompression.ReplayValidation.MismatchCount),
+		fmt.Sprintf("- Replay window: %ds", diagnostics.DiagnosticCompression.ReplayValidation.ReplayWindowSeconds),
+	)
+	if diagnostics.DiagnosticCompression.ReplayValidation.LatestValidatedEventID != "" {
+		lines = append(lines, "- Latest validated event: "+diagnostics.DiagnosticCompression.ReplayValidation.LatestValidatedEventID)
+	}
+	for _, group := range diagnostics.DiagnosticCompression.CompressionGroups {
+		lines = append(lines, fmt.Sprintf("- Group %s: source=%d compressed=%d ratio=%.3f strategy=%s", group.EventType, group.SourceCount, group.CompressedCount, group.CompressionRatio, group.CompressionStrategy))
+	}
+	if len(diagnostics.DiagnosticCompression.Artifacts) > 0 {
+		lines = append(lines, "- Validation artifacts: "+strings.Join(diagnostics.DiagnosticCompression.Artifacts, ", "))
+	}
+	if len(diagnostics.DiagnosticCompression.ReplayValidation.Artifacts) > 0 {
+		lines = append(lines, "- Replay artifacts: "+strings.Join(diagnostics.DiagnosticCompression.ReplayValidation.Artifacts, ", "))
+	}
+	if len(diagnostics.DiagnosticCompression.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.DiagnosticCompression.ReviewerLinks, ", "))
+	}
+	if len(diagnostics.DiagnosticCompression.Limitations) > 0 {
+		lines = append(lines, "- Limitations: "+strings.Join(diagnostics.DiagnosticCompression.Limitations, "; "))
 	}
 	lines = append(lines,
 		"",

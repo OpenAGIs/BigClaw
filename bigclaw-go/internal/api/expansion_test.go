@@ -531,6 +531,22 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 				Outcomes   []string `json:"outcomes"`
 			} `json:"ambiguous_publish_proof"`
 		} `json:"trace_export_bundle"`
+		DiagnosticEventCompression struct {
+			ReportPath string `json:"report_path"`
+			Status     string `json:"status"`
+			Summary    struct {
+				SourceEventCount      int     `json:"source_event_count"`
+				CompressedEventCount  int     `json:"compressed_event_count"`
+				CompressionRatio      float64 `json:"compression_ratio"`
+				ReplayValidatedTraces int     `json:"replay_validated_traces"`
+			} `json:"summary"`
+			ReplayValidation struct {
+				Backend              string `json:"backend"`
+				Validated            bool   `json:"validated"`
+				ExactMatchTraceCount int    `json:"exact_match_trace_count"`
+				SampledTraceCount    int    `json:"sampled_trace_count"`
+			} `json:"replay_validation"`
+		} `json:"diagnostic_event_compression"`
 		BrokerReviewPack struct {
 			AmbiguousPublishProof struct {
 				Path       string   `json:"path"`
@@ -652,6 +668,12 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if decoded.TraceBundle.AmbiguousPublishProof.Path != "docs/reports/ambiguous-publish-outcome-proof-summary.json" || decoded.TraceBundle.AmbiguousPublishProof.ScenarioID != "BF-05" || len(decoded.TraceBundle.AmbiguousPublishProof.Outcomes) != 3 {
 		t.Fatalf("expected trace bundle ambiguous publish proof reference, got %+v", decoded.TraceBundle.AmbiguousPublishProof)
 	}
+	if decoded.DiagnosticEventCompression.ReportPath != diagnosticEventCompressionSurfacePath || decoded.DiagnosticEventCompression.Status != "validated" || decoded.DiagnosticEventCompression.Summary.SourceEventCount != 48 || decoded.DiagnosticEventCompression.Summary.CompressedEventCount != 17 || decoded.DiagnosticEventCompression.Summary.CompressionRatio != 0.354 || decoded.DiagnosticEventCompression.Summary.ReplayValidatedTraces != 5 {
+		t.Fatalf("expected diagnostic event compression surface, got %+v", decoded.DiagnosticEventCompression)
+	}
+	if decoded.DiagnosticEventCompression.ReplayValidation.Backend != "http_remote_service" || !decoded.DiagnosticEventCompression.ReplayValidation.Validated || decoded.DiagnosticEventCompression.ReplayValidation.ExactMatchTraceCount != 5 || decoded.DiagnosticEventCompression.ReplayValidation.SampledTraceCount != 5 {
+		t.Fatalf("expected replay validation summary, got %+v", decoded.DiagnosticEventCompression.ReplayValidation)
+	}
 	if decoded.BrokerReviewPack.AmbiguousPublishProof.Path != "docs/reports/ambiguous-publish-outcome-proof-summary.json" || decoded.BrokerReviewPack.AmbiguousPublishProof.ScenarioID != "BF-05" || len(decoded.BrokerReviewPack.AmbiguousPublishProof.Outcomes) != 3 {
 		t.Fatalf("expected broker review pack ambiguous publish proof reference, got %+v", decoded.BrokerReviewPack.AmbiguousPublishProof)
 	}
@@ -661,7 +683,7 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if decoded.SequenceBridge.ReportPath != sequenceBridgeSurfacePath || decoded.SequenceBridge.Summary.BackendCount != 5 || decoded.SequenceBridge.Summary.LiveProvenBackends != 3 || decoded.SequenceBridge.Summary.HarnessProvenBackends != 1 || decoded.SequenceBridge.Summary.ContractOnlyBackends != 1 || decoded.SequenceBridge.Summary.OneToOneMappings != 2 || decoded.SequenceBridge.Summary.ProviderEpochBridgedBackends != 3 {
 		t.Fatalf("expected sequence bridge surface, got %+v", decoded.SequenceBridge)
 	}
-	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Recovery Signals") || !strings.Contains(decoded.Report.Markdown, "## Fairness") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") || !strings.Contains(decoded.Report.Markdown, "## Durable Sequence Bridge") {
+	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Recovery Signals") || !strings.Contains(decoded.Report.Markdown, "## Fairness") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") || !strings.Contains(decoded.Report.Markdown, "## Diagnostic Event Compression") || !strings.Contains(decoded.Report.Markdown, "## Durable Sequence Bridge") {
 		t.Fatalf("unexpected distributed markdown: %s", decoded.Report.Markdown)
 	}
 	if !strings.Contains(decoded.Report.Markdown, "## Shared Queue Coordination") || !strings.Contains(decoded.Report.Markdown, "Dead-letter backlog:") {
@@ -679,7 +701,7 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 		t.Fatalf("expected markdown export content type, got %q", contentType)
 	}
-	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") || !strings.Contains(exportResponse.Body.String(), "## Recovery Signals") || !strings.Contains(exportResponse.Body.String(), "## Fairness") || !strings.Contains(exportResponse.Body.String(), "Validation artifacts: docs/reports/live-validation-index.md") || !strings.Contains(exportResponse.Body.String(), "Ambiguous publish proof: docs/reports/ambiguous-publish-outcome-proof-summary.json (BF-05: committed, rejected, unknown_commit)") || !strings.Contains(exportResponse.Body.String(), "Backend limitations: no external tracing backend") {
+	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") || !strings.Contains(exportResponse.Body.String(), "## Recovery Signals") || !strings.Contains(exportResponse.Body.String(), "## Fairness") || !strings.Contains(exportResponse.Body.String(), "Validation artifacts: docs/reports/live-validation-index.md") || !strings.Contains(exportResponse.Body.String(), "## Diagnostic Event Compression") || !strings.Contains(exportResponse.Body.String(), "Replay exact matches: 5/5") || !strings.Contains(exportResponse.Body.String(), "Ambiguous publish proof: docs/reports/ambiguous-publish-outcome-proof-summary.json (BF-05: committed, rejected, unknown_commit)") || !strings.Contains(exportResponse.Body.String(), "Backend limitations: no external tracing backend") {
 		t.Fatalf("unexpected distributed export markdown: %s", exportResponse.Body.String())
 	}
 	if !strings.Contains(exportResponse.Body.String(), "## Shared Queue Coordination") {

@@ -3134,6 +3134,26 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 					Outcomes   []string `json:"outcomes"`
 				} `json:"ambiguous_publish_proof"`
 			} `json:"trace_export_bundle"`
+			DiagnosticEventCompression struct {
+				ReportPath string `json:"report_path"`
+				Status     string `json:"status"`
+				Summary    struct {
+					SourceEventCount      int     `json:"source_event_count"`
+					CompressedEventCount  int     `json:"compressed_event_count"`
+					CompressionRatio      float64 `json:"compression_ratio"`
+					ReplayValidatedTraces int     `json:"replay_validated_traces"`
+				} `json:"summary"`
+				CompressionGroups []struct {
+					EventType string `json:"event_type"`
+				} `json:"compression_groups"`
+				ReplayValidation struct {
+					Backend                string `json:"backend"`
+					Validated              bool   `json:"validated"`
+					SampledTraceCount      int    `json:"sampled_trace_count"`
+					ExactMatchTraceCount   int    `json:"exact_match_trace_count"`
+					LatestValidatedEventID string `json:"latest_validated_event_id"`
+				} `json:"replay_validation"`
+			} `json:"diagnostic_event_compression"`
 			MigrationReviewPack struct {
 				Status                 string   `json:"status"`
 				ReadinessReportPath    string   `json:"readiness_report_path"`
@@ -3353,6 +3373,23 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		decoded.Diagnostics.TraceBundle.AmbiguousPublishProof.ScenarioID != "BF-05" ||
 		len(decoded.Diagnostics.TraceBundle.AmbiguousPublishProof.Outcomes) != 3 {
 		t.Fatalf("unexpected trace bundle ambiguous publish proof: %+v", decoded.Diagnostics.TraceBundle.AmbiguousPublishProof)
+	}
+	if decoded.Diagnostics.DiagnosticEventCompression.ReportPath != diagnosticEventCompressionSurfacePath ||
+		decoded.Diagnostics.DiagnosticEventCompression.Status != "validated" ||
+		decoded.Diagnostics.DiagnosticEventCompression.Summary.SourceEventCount != 48 ||
+		decoded.Diagnostics.DiagnosticEventCompression.Summary.CompressedEventCount != 17 ||
+		decoded.Diagnostics.DiagnosticEventCompression.Summary.CompressionRatio != 0.354 ||
+		decoded.Diagnostics.DiagnosticEventCompression.Summary.ReplayValidatedTraces != 5 {
+		t.Fatalf("unexpected diagnostic event compression payload: %+v", decoded.Diagnostics.DiagnosticEventCompression)
+	}
+	if len(decoded.Diagnostics.DiagnosticEventCompression.CompressionGroups) != 4 ||
+		decoded.Diagnostics.DiagnosticEventCompression.CompressionGroups[0].EventType != "scheduler.routed" ||
+		decoded.Diagnostics.DiagnosticEventCompression.ReplayValidation.Backend != "http_remote_service" ||
+		!decoded.Diagnostics.DiagnosticEventCompression.ReplayValidation.Validated ||
+		decoded.Diagnostics.DiagnosticEventCompression.ReplayValidation.SampledTraceCount != 5 ||
+		decoded.Diagnostics.DiagnosticEventCompression.ReplayValidation.ExactMatchTraceCount != 5 ||
+		decoded.Diagnostics.DiagnosticEventCompression.ReplayValidation.LatestValidatedEventID != "diag-replay-trace-05-completed" {
+		t.Fatalf("unexpected diagnostic replay validation payload: %+v", decoded.Diagnostics.DiagnosticEventCompression)
 	}
 	if decoded.Diagnostics.MigrationReviewPack.Status != "parity-ok" ||
 		decoded.Diagnostics.MigrationReviewPack.ReadinessReportPath != migrationReadinessReportPath ||

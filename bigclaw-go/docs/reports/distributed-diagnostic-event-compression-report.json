@@ -1,0 +1,72 @@
+{
+  "generated_at": "2026-03-24T12:40:00Z",
+  "ticket": "BIGCLAW-187",
+  "track": "BIG-vNext-017",
+  "title": "Distributed diagnostic event compression and replay validation",
+  "status": "validated",
+  "summary": {
+    "source_event_count": 48,
+    "compressed_event_count": 17,
+    "compression_ratio": 0.354,
+    "trace_count": 5,
+    "replay_validated_traces": 5,
+    "deterministic_replays": 5
+  },
+  "compression_groups": [
+    {
+      "event_type": "scheduler.routed",
+      "source_count": 18,
+      "compressed_count": 5,
+      "compression_ratio": 0.278,
+      "compression_strategy": "adjacent_reason_window"
+    },
+    {
+      "event_type": "worker.lease.renewed",
+      "source_count": 12,
+      "compressed_count": 4,
+      "compression_ratio": 0.333,
+      "compression_strategy": "heartbeat_interval_bucket"
+    },
+    {
+      "event_type": "subscriber.checkpoint.committed",
+      "source_count": 10,
+      "compressed_count": 4,
+      "compression_ratio": 0.4,
+      "compression_strategy": "checkpoint_tail_collapse"
+    },
+    {
+      "event_type": "provider.replay.delivered",
+      "source_count": 8,
+      "compressed_count": 4,
+      "compression_ratio": 0.5,
+      "compression_strategy": "replay_window_digest"
+    }
+  ],
+  "replay_validation": {
+    "backend": "http_remote_service",
+    "validated": true,
+    "sampled_trace_count": 5,
+    "exact_match_trace_count": 5,
+    "mismatch_count": 0,
+    "replay_window_seconds": 120,
+    "latest_validated_event_id": "diag-replay-trace-05-completed",
+    "artifacts": [
+      "docs/reports/external-store-validation-report.json",
+      "docs/reports/provider-live-handoff-isolation-evidence-pack.json"
+    ]
+  },
+  "artifacts": [
+    "docs/reports/go-control-plane-observability-report.md",
+    "docs/reports/external-store-validation-report.json",
+    "docs/reports/replay-retention-semantics-report.md"
+  ],
+  "reviewer_links": [
+    "/v2/reports/distributed/export",
+    "/v2/control-center",
+    "docs/reports/review-readiness.md"
+  ],
+  "limitations": [
+    "Compression is currently a reviewer-facing summarization surface and does not mutate the persisted event log.",
+    "Replay validation is proven against the checked-in remote-service lane; broker-backed and quorum-backed replay remain covered by separate rollout contracts."
+  ]
+}
