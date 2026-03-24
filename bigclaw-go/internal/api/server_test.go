@@ -4520,6 +4520,88 @@ func TestV2ControlCenterIncludesClawHostRolloutSurface(t *testing.T) {
 	}
 }
 
+func TestV2ControlCenterIncludesClawHostRecoverySurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010410, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-recovery-center-1",
+			Source:   "clawhost",
+			Title:    "recover sales-west",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":              "clawhost",
+				"claw_id":                    "claw-sales-west",
+				"claw_name":                  "sales-west",
+				"clawhost_lifecycle_actions": "start,restart,upgrade",
+				"clawhost_pod_isolation":     "true",
+				"clawhost_service_isolation": "true",
+				"clawhost_takeover_required": "true",
+				"clawhost_takeover_triggers": "proxy health regresses,session restore fails",
+				"clawhost_recovery_evidence": "GET /status,/v2/reports/distributed",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-recovery-center-2",
+			Source:   "clawhost",
+			Title:    "recover support-east",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":              "clawhost",
+				"claw_id":                    "claw-support-east",
+				"claw_name":                  "support-east",
+				"clawhost_lifecycle_actions": "restart",
+				"clawhost_pod_isolation":     "false",
+				"clawhost_service_isolation": "true",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue control center recovery task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center", nil)
+	request.Header.Set("X-BigClaw-Role", "platform_admin")
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ClawHostRecovery struct {
+			Status  string `json:"status"`
+			Summary struct {
+				Targets            int `json:"targets"`
+				RecoverableTargets int `json:"recoverable_targets"`
+				DegradedTargets    int `json:"degraded_targets"`
+				IsolatedTargets    int `json:"isolated_targets"`
+				TakeoverRequired   int `json:"takeover_required"`
+				EvidenceArtifacts  int `json:"evidence_artifacts"`
+			} `json:"summary"`
+			Targets []struct {
+				ClawName       string   `json:"claw_name"`
+				RecoveryStatus string   `json:"recovery_status"`
+				Warnings       []string `json:"warnings"`
+			} `json:"targets"`
+		} `json:"clawhost_recovery_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center recovery response: %v", err)
+	}
+	if decoded.ClawHostRecovery.Status != "active" || decoded.ClawHostRecovery.Summary.Targets != 2 || decoded.ClawHostRecovery.Summary.RecoverableTargets != 1 || decoded.ClawHostRecovery.Summary.DegradedTargets != 1 || decoded.ClawHostRecovery.Summary.IsolatedTargets != 1 || decoded.ClawHostRecovery.Summary.TakeoverRequired != 1 || decoded.ClawHostRecovery.Summary.EvidenceArtifacts != 2 {
+		t.Fatalf("unexpected ClawHost recovery control center surface: %+v", decoded.ClawHostRecovery)
+	}
+	if len(decoded.ClawHostRecovery.Targets) != 2 || decoded.ClawHostRecovery.Targets[0].RecoveryStatus != "degraded" || decoded.ClawHostRecovery.Targets[0].ClawName != "support-east" {
+		t.Fatalf("expected degraded ClawHost recovery target first, got %+v", decoded.ClawHostRecovery.Targets)
+	}
+}
+
 func mustJSON(value any) []byte {
 	body, err := json.Marshal(value)
 	if err != nil {
