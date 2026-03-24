@@ -3322,15 +3322,22 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-305` after adding helper-level regression coverage for blank ClawHost scope filters.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now verifies `clawHostScopeFilters` trims whitespace-only `team` and `project` values down to empty strings while preserving a usable actor from `X-BigClaw-Actor`.\n- `local-issues.json` closes the blank-scope normalization slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `ca24d08e45942e46bceb705d465a43d106778470` matches remote SHA `ca24d08e45942e46bceb705d465a43d106778470` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `ca24d08e45942e46bceb705d465a43d106778470`\n\nCommit SHA: `ca24d08e45942e46bceb705d465a43d106778470`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T18:58:53Z"
+        }
+      ],
       "created_at": "2026-03-24T18:57:07Z",
       "description": "Add helper-level API regression coverage that proves clawHostScopeFilters trims whitespace-only team and project values down to empty strings while preserving a usable actor.",
       "id": "big-par-305",
       "identifier": "BIG-PAR-305",
       "labels": [],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add ClawHost blank scope-filter normalization coverage",
-      "updated_at": "2026-03-24T18:57:19Z"
+      "updated_at": "2026-03-24T18:58:53Z"
     }
   ]
 }
