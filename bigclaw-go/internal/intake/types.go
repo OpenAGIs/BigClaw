@@ -9,4 +9,5 @@ type SourceIssue struct {
 	Priority    string            `json:"priority,omitempty"`
 	State       string            `json:"state,omitempty"`
 	Links       map[string]string `json:"links,omitempty"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
 }

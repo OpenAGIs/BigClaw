@@ -22,7 +22,9 @@ func TestMapSourceState(t *testing.T) {
 	cases := map[string]domain.TaskState{
 		"Todo":         domain.TaskQueued,
 		"In Progress":  domain.TaskRunning,
+		"running":      domain.TaskRunning,
 		"Blocked":      domain.TaskBlocked,
+		"stopped":      domain.TaskBlocked,
 		"Closed":       domain.TaskSucceeded,
 		"failed check": domain.TaskFailed,
 	}
@@ -62,5 +64,44 @@ func TestMapSourceIssueToTask(t *testing.T) {
 	}
 	if task.Metadata["source_state"] != "Todo" {
 		t.Fatalf("expected source state metadata Todo, got %q", task.Metadata["source_state"])
+	}
+}
+
+func TestMapClawHostSourceIssueToTaskPreservesInventoryMetadata(t *testing.T) {
+	issue := SourceIssue{
+		Source:      "clawhost",
+		SourceID:    "openagi/claw-sales-west",
+		Title:       "ClawHost claw sales-west (running)",
+		Description: "Provider hetzner plan cpx11 in ash with 2 agents.",
+		Labels:      []string{"clawhost", "inventory"},
+		Priority:    "P1",
+		State:       "running",
+		Links: map[string]string{
+			"issue":     "https://clawhost.cloud/claws/claw-sales-west",
+			"dashboard": "https://clawhost.cloud/claws/claw-sales-west",
+		},
+		Metadata: map[string]string{
+			"tenant_id":           "openagi-owner-a",
+			"inventory_kind":      "claw",
+			"provider":            "hetzner",
+			"provider_server_id":  "srv-hetzner-431",
+			"domain":              "sales-west.clawhost.cloud",
+			"agent_count":         "2",
+			"running_agent_count": "2",
+			"control_plane":       "clawhost",
+		},
+	}
+	task := MapSourceIssueToTask(issue)
+	if task.Source != "clawhost" || task.State != domain.TaskRunning {
+		t.Fatalf("unexpected mapped clawhost task: %+v", task)
+	}
+	if task.TenantID != "openagi-owner-a" {
+		t.Fatalf("expected clawhost tenant mapped, got %+v", task)
+	}
+	if len(task.RequiredTools) != 2 || task.RequiredTools[0] != "clawhost" {
+		t.Fatalf("expected clawhost required tools, got %+v", task.RequiredTools)
+	}
+	if task.Metadata["domain"] != "sales-west.clawhost.cloud" || task.Metadata["provider_server_id"] != "srv-hetzner-431" || task.Metadata["control_plane"] != "clawhost" {
+		t.Fatalf("expected clawhost inventory metadata preserved, got %+v", task.Metadata)
 	}
 }

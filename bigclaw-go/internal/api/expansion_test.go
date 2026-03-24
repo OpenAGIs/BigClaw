@@ -408,6 +408,38 @@ func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
 		t.Fatalf("unexpected mapped issue payload: %+v", connectorDecoded)
 	}
 
+	clawhostResponse := httptest.NewRecorder()
+	handler.ServeHTTP(clawhostResponse, httptest.NewRequest(http.MethodGet, "/v2/intake/connectors/clawhost/issues?project=openagi&states=running,stopped", nil))
+	if clawhostResponse.Code != http.StatusOK {
+		t.Fatalf("expected clawhost intake connector 200, got %d %s", clawhostResponse.Code, clawhostResponse.Body.String())
+	}
+	var clawhostDecoded struct {
+		Connector string `json:"connector"`
+		Issues    []struct {
+			Source   string            `json:"source"`
+			State    string            `json:"state"`
+			Metadata map[string]string `json:"metadata"`
+		} `json:"issues"`
+		MappedTasks []struct {
+			ID       string            `json:"id"`
+			State    string            `json:"state"`
+			TenantID string            `json:"tenant_id"`
+			Metadata map[string]string `json:"metadata"`
+		} `json:"mapped_tasks"`
+	}
+	if err := json.Unmarshal(clawhostResponse.Body.Bytes(), &clawhostDecoded); err != nil {
+		t.Fatalf("decode clawhost intake connector response: %v", err)
+	}
+	if clawhostDecoded.Connector != "clawhost" || len(clawhostDecoded.Issues) != 2 || len(clawhostDecoded.MappedTasks) != 2 {
+		t.Fatalf("unexpected clawhost intake connector payload: %+v", clawhostDecoded)
+	}
+	if clawhostDecoded.Issues[0].Source != "clawhost" || clawhostDecoded.Issues[0].Metadata["inventory_kind"] != "claw" {
+		t.Fatalf("expected clawhost inventory issue metadata, got %+v", clawhostDecoded.Issues[0])
+	}
+	if clawhostDecoded.MappedTasks[0].TenantID == "" || clawhostDecoded.MappedTasks[0].Metadata["control_plane"] != "clawhost" {
+		t.Fatalf("expected clawhost mapped task metadata, got %+v", clawhostDecoded.MappedTasks[0])
+	}
+
 	mapBody, _ := json.Marshal(map[string]any{
 		"source":      "linear",
 		"source_id":   "BIG-102",
