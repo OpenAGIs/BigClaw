@@ -52,6 +52,26 @@ func TestBuildSavedViewCatalogAddsScopedViewsAndDigests(t *testing.T) {
 	}
 }
 
+func TestBuildSavedViewCatalogSortsViewsAndSubscriptions(t *testing.T) {
+	tasks := []domain.Task{
+		{ID: "task-1", State: domain.TaskRunning, RiskLevel: domain.RiskHigh, Metadata: map[string]string{"plan": "premium", "owner": "alice"}},
+	}
+
+	catalog := BuildSavedViewCatalog(tasks, "alice", "platform", "apollo")
+	if got := catalog.Views[0].ViewID; got != "active-runs-platform-apollo" {
+		t.Fatalf("expected stable sorted view order, first view = %s", got)
+	}
+	if got := catalog.Views[len(catalog.Views)-1].ViewID; got != "weekly-ops-platform-apollo" {
+		t.Fatalf("expected weekly ops to sort last, got %s", got)
+	}
+	if got := catalog.Subscriptions[0].SubscriptionID; got != "saved-view-daily-triage-platform-apollo" {
+		t.Fatalf("expected stable sorted subscription order, got %+v", catalog.Subscriptions)
+	}
+	if got := catalog.Subscriptions[1].SubscriptionID; got != "saved-view-weekly-ops-platform-apollo" {
+		t.Fatalf("expected weekly ops digest second, got %+v", catalog.Subscriptions)
+	}
+}
+
 func TestBuildSavedViewCatalogPremiumOnlyAddsPremiumView(t *testing.T) {
 	tasks := []domain.Task{
 		{ID: "task-1", State: domain.TaskRunning, RiskLevel: domain.RiskLow, Metadata: map[string]string{"plan": "premium", "owner": "alice"}},
