@@ -153,11 +153,10 @@
       "BIG-PAR-352",
       "BIG-PAR-353",
       "BIG-PAR-354",
-      "BIG-PAR-355"
-    ],
-    "active": [
+      "BIG-PAR-355",
       "BIG-PAR-356"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1150,7 +1149,7 @@
       "identifier": "BIG-PAR-356",
       "title": "Add ClawHost fleet helper unit coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
