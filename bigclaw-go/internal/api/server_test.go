@@ -1356,6 +1356,97 @@ func TestDebugStatusIncludesClawHostWorkflowSurface(t *testing.T) {
 	}
 }
 
+func TestDebugStatusIncludesClawHostReadinessSurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010350, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-ready-1",
+			Source:   "clawhost",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":       "clawhost",
+				"claw_id":             "claw-a",
+				"claw_name":           "sales-west",
+				"domain":              "sales-west.clawhost.cloud",
+				"proxy_mode":          "http_ws_gateway",
+				"gateway_port":        "18789",
+				"reachable":           "true",
+				"admin_ui_enabled":    "true",
+				"websocket_reachable": "true",
+				"subdomain_ready":     "true",
+				"version_status":      "current",
+				"version_current":     "0.0.31",
+				"version_latest":      "0.0.31",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-ready-2",
+			Source:   "clawhost",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":       "clawhost",
+				"claw_id":             "claw-b",
+				"claw_name":           "support-east",
+				"domain":              "support-east.clawhost.cloud",
+				"proxy_mode":          "http_ws_gateway",
+				"gateway_port":        "18789",
+				"reachable":           "false",
+				"admin_ui_enabled":    "true",
+				"websocket_reachable": "false",
+				"subdomain_ready":     "false",
+				"version_status":      "upgrade_available",
+				"version_current":     "0.0.30",
+				"version_latest":      "0.0.31",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Readiness struct {
+			Status  string `json:"status"`
+			Summary struct {
+				Targets                 int `json:"targets"`
+				ReadyTargets            int `json:"ready_targets"`
+				DegradedTargets         int `json:"degraded_targets"`
+				AdminReadyTargets       int `json:"admin_ready_targets"`
+				WebSocketReadyTargets   int `json:"websocket_ready_targets"`
+				SubdomainReadyTargets   int `json:"subdomain_ready_targets"`
+				UpgradeAvailableTargets int `json:"upgrade_available_targets"`
+			} `json:"summary"`
+			Targets []struct {
+				ClawName     string   `json:"claw_name"`
+				ReviewStatus string   `json:"review_status"`
+				Warnings     []string `json:"warnings"`
+			} `json:"targets"`
+		} `json:"clawhost_readiness_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode debug readiness payload: %v", err)
+	}
+	if decoded.Readiness.Status != "active" || decoded.Readiness.Summary.Targets != 2 || decoded.Readiness.Summary.ReadyTargets != 1 || decoded.Readiness.Summary.DegradedTargets != 1 || decoded.Readiness.Summary.AdminReadyTargets != 1 || decoded.Readiness.Summary.WebSocketReadyTargets != 1 || decoded.Readiness.Summary.SubdomainReadyTargets != 1 || decoded.Readiness.Summary.UpgradeAvailableTargets != 1 {
+		t.Fatalf("unexpected readiness summary: %+v", decoded.Readiness)
+	}
+	if len(decoded.Readiness.Targets) != 2 || decoded.Readiness.Targets[0].ReviewStatus != "degraded" {
+		t.Fatalf("expected degraded target sorted first, got %+v", decoded.Readiness.Targets)
+	}
+}
+
 func TestDeadLetterEndpoints(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()

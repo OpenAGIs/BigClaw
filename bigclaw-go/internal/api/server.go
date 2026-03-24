@@ -216,6 +216,7 @@ func (s *Server) Handler() http.Handler {
 			"clawhost_policy_surface":         clawHostPolicySurfacePayload(s.clawHostPolicyTasks(r.Context())),
 			"clawhost_workflow_surface":       clawHostWorkflowSurfacePayload(s.clawHostPolicyTasks(r.Context())),
 			"clawhost_rollout_surface":        clawHostRolloutSurfacePayload(s.clawHostPolicyTasks(r.Context())),
+			"clawhost_readiness_surface":      clawHostReadinessSurfacePayload(s.clawHostPolicyTasks(r.Context())),
 			"broker_bootstrap_surface":        brokerBootstrapSurfacePayload(),
 			"broker_review_bundle":            brokerReviewBundleSurfacePayload(),
 			"validation_bundle_continuation":  validationBundleContinuationGatePayload(),
