@@ -1437,7 +1437,8 @@ func TestDebugStatusIncludesClawHostReadinessSurface(t *testing.T) {
 	}
 	var decoded struct {
 		Readiness struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				Targets                 int `json:"targets"`
 				ReadyTargets            int `json:"ready_targets"`
@@ -1459,6 +1460,9 @@ func TestDebugStatusIncludesClawHostReadinessSurface(t *testing.T) {
 	}
 	if decoded.Readiness.Status != "active" || decoded.Readiness.Summary.Targets != 2 || decoded.Readiness.Summary.ReadyTargets != 1 || decoded.Readiness.Summary.DegradedTargets != 1 || decoded.Readiness.Summary.AdminReadyTargets != 1 || decoded.Readiness.Summary.WebSocketReadyTargets != 1 || decoded.Readiness.Summary.SubdomainReadyTargets != 1 || decoded.Readiness.Summary.UpgradeAvailableTargets != 1 {
 		t.Fatalf("unexpected readiness summary: %+v", decoded.Readiness)
+	}
+	if decoded.Readiness.Filters["team"] != "" || decoded.Readiness.Filters["project"] != "" {
+		t.Fatalf("expected unscoped readiness filters, got %+v", decoded.Readiness.Filters)
 	}
 	if len(decoded.Readiness.Targets) != 2 || decoded.Readiness.Targets[0].ReviewStatus != "degraded" {
 		t.Fatalf("expected degraded target sorted first, got %+v", decoded.Readiness.Targets)
@@ -5052,7 +5056,8 @@ func TestV2ControlCenterIncludesClawHostReadinessSurface(t *testing.T) {
 	}
 	var decoded struct {
 		ClawHostReadiness struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				Targets                 int `json:"targets"`
 				ReadyTargets            int `json:"ready_targets"`
@@ -5074,6 +5079,9 @@ func TestV2ControlCenterIncludesClawHostReadinessSurface(t *testing.T) {
 	}
 	if decoded.ClawHostReadiness.Status != "active" || decoded.ClawHostReadiness.Summary.Targets != 2 || decoded.ClawHostReadiness.Summary.ReadyTargets != 1 || decoded.ClawHostReadiness.Summary.DegradedTargets != 1 || decoded.ClawHostReadiness.Summary.AdminReadyTargets != 1 || decoded.ClawHostReadiness.Summary.WebSocketReadyTargets != 1 || decoded.ClawHostReadiness.Summary.SubdomainReadyTargets != 1 || decoded.ClawHostReadiness.Summary.UpgradeAvailableTargets != 1 {
 		t.Fatalf("unexpected ClawHost readiness control center surface: %+v", decoded.ClawHostReadiness)
+	}
+	if decoded.ClawHostReadiness.Filters["team"] != "" || decoded.ClawHostReadiness.Filters["project"] != "" {
+		t.Fatalf("expected unscoped ClawHost readiness filters, got %+v", decoded.ClawHostReadiness.Filters)
 	}
 	if len(decoded.ClawHostReadiness.Targets) != 2 || decoded.ClawHostReadiness.Targets[0].ReviewStatus != "degraded" || decoded.ClawHostReadiness.Targets[0].ClawName != "support-east" {
 		t.Fatalf("expected degraded ClawHost readiness target first, got %+v", decoded.ClawHostReadiness.Targets)
@@ -5412,6 +5420,7 @@ func TestV2ControlCenterScopesClawHostSurfaceBundleByFilters(t *testing.T) {
 			} `json:"plans"`
 		} `json:"clawhost_rollout_surface"`
 		Readiness struct {
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				Targets int `json:"targets"`
 			} `json:"summary"`
@@ -5449,6 +5458,9 @@ func TestV2ControlCenterScopesClawHostSurfaceBundleByFilters(t *testing.T) {
 	}
 	if decoded.Readiness.Summary.Targets != 1 || len(decoded.Readiness.Targets) != 1 || decoded.Readiness.Targets[0].TaskID != "clawhost-filtered-1" {
 		t.Fatalf("expected scoped readiness surface, got %+v", decoded.Readiness)
+	}
+	if decoded.Readiness.Filters["team"] != "platform" || decoded.Readiness.Filters["project"] != "sales" {
+		t.Fatalf("expected scoped readiness filters, got %+v", decoded.Readiness.Filters)
 	}
 	if decoded.Recovery.Summary.Targets != 1 || len(decoded.Recovery.Targets) != 1 || decoded.Recovery.Targets[0].TaskID != "clawhost-filtered-1" {
 		t.Fatalf("expected scoped recovery surface, got %+v", decoded.Recovery)

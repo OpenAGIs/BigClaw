@@ -1258,7 +1258,7 @@ func (s *Server) buildControlCenterResponse(
 		"clawhost_policy_surface":         clawHostPolicySurfacePayload(clawHostTasks, filters.Team, filters.Project),
 		"clawhost_workflow_surface":       clawHostWorkflowSurfacePayload(clawHostTasks),
 		"clawhost_rollout_surface":        clawHostRolloutSurfacePayload(clawHostTasks, filters.Team, filters.Project),
-		"clawhost_readiness_surface":      clawHostReadinessSurfacePayload(clawHostTasks),
+		"clawhost_readiness_surface":      clawHostReadinessSurfacePayload(clawHostTasks, filters.Team, filters.Project),
 		"clawhost_recovery_surface":       clawHostRecoverySurfacePayload(clawHostTasks, filters.Team, filters.Project),
 		"broker_bootstrap_surface":        brokerBootstrapSurfacePayload(),
 		"broker_review_bundle":            brokerReviewBundleSurfacePayload(),

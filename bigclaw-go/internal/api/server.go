@@ -223,7 +223,7 @@ func (s *Server) Handler() http.Handler {
 			"clawhost_policy_surface":        clawHostPolicySurfacePayload(clawHostTasks, team, project),
 			"clawhost_workflow_surface":      clawHostWorkflowSurfacePayload(clawHostTasks),
 			"clawhost_rollout_surface":       clawHostRolloutSurfacePayload(clawHostTasks, team, project),
-			"clawhost_readiness_surface":     clawHostReadinessSurfacePayload(clawHostTasks),
+			"clawhost_readiness_surface":     clawHostReadinessSurfacePayload(clawHostTasks, team, project),
 			"clawhost_recovery_surface":      clawHostRecoverySurfacePayload(clawHostTasks, team, project),
 			"broker_bootstrap_surface":       brokerBootstrapSurfacePayload(),
 			"broker_review_bundle":           brokerReviewBundleSurfacePayload(),

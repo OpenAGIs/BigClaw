@@ -250,7 +250,8 @@
     "BIG-PAR-330",
     "BIG-PAR-331",
     "BIG-PAR-332",
-    "BIG-PAR-333"
+    "BIG-PAR-333",
+    "BIG-PAR-334"
   ],
   "issues": [
     {
@@ -966,6 +967,12 @@
       "title": "Add filters to ClawHost recovery surface payload",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-334",
+      "title": "Add filters to ClawHost readiness surface payload",
+      "track": "Go Mainline Follow-ups",
+      "status": "In"
     }
   ]
 }
