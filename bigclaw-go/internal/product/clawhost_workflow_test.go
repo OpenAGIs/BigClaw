@@ -264,6 +264,15 @@ func TestBuildClawHostWorkflowSurfaceDefaultsPairingAndTrimsCredentialPath(t *te
 	}
 }
 
+func TestFirstNonEmptyWorkflowTrimsWhitespaceAndFallsBack(t *testing.T) {
+	if got := firstNonEmptyWorkflow("", "  ", " tenant-a ", "tenant-b"); got != "tenant-a" {
+		t.Fatalf("expected trimmed first non-empty workflow value tenant-a, got %q", got)
+	}
+	if got := firstNonEmptyWorkflow("", "   "); got != "" {
+		t.Fatalf("expected empty workflow fallback when all values are blank, got %q", got)
+	}
+}
+
 func TestBuildClawHostWorkflowSurfacePrefersMetadataIdentifiers(t *testing.T) {
 	surface := BuildClawHostWorkflowSurface([]domain.Task{
 		{

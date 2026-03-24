@@ -4710,6 +4710,24 @@
       "state": "Done",
       "title": "Add ClawHost rollout helper unit coverage",
       "updated_at": "2026-03-24T22:54:41Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T22:56:33Z",
+      "description": "Add focused product-package coverage for the remaining ClawHost workflow helper fallback branches so trimmed first-non-empty selection stays pinned across blank and whitespace-only inputs.",
+      "id": "big-par-358",
+      "identifier": "BIG-PAR-358",
+      "labels": [
+        "go",
+        "product",
+        "clawhost",
+        "test",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add ClawHost workflow helper unit coverage",
+      "updated_at": "2026-03-24T22:56:33Z"
     }
   ]
 }
