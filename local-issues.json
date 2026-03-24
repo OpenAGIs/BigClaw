@@ -5227,6 +5227,30 @@
       "state": "Done",
       "title": "Add markdown preview helper regression coverage",
       "updated_at": "2026-03-24T23:33:28Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Changed: added direct internal/refill coverage proving ParallelIssueQueue.Clone deep-copies issue order, recent batch slices, and issue records, so markdown preview projections cannot leak mutations into the live queue state.\nValidation: go test ./cmd/bigclawctl ./internal/refill (pass).\nCommit: 64289eef1e7d4d1013f4da09b585f3c8eedb4ef9\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T23:36:44Z"
+        }
+      ],
+      "created_at": "2026-03-24T23:35:32Z",
+      "description": "Add direct unit coverage proving refill queue Clone() deep-copies payload slices so markdown preview mutations cannot leak back into the live queue state.",
+      "id": "big-par-384",
+      "identifier": "BIG-PAR-384",
+      "labels": [
+        "parallel",
+        "testing",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add queue clone isolation regression",
+      "updated_at": "2026-03-24T23:36:44Z"
     }
   ]
 }
