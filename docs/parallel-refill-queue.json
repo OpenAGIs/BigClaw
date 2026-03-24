@@ -138,11 +138,10 @@
       "BIG-PAR-338",
       "BIG-PAR-337",
       "BIG-PAR-340",
-      "BIG-PAR-339"
-    ],
-    "active": [
+      "BIG-PAR-339",
       "BIG-PAR-342"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1030,7 +1029,7 @@
       "identifier": "BIG-PAR-342",
       "title": "Add saved view populated report fallback coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

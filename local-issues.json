@@ -4175,6 +4175,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-342` after adding populated-row fallback coverage for saved-view reports.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving populated saved-view report rows render `sort=none` when a saved view omits `SortBy`.\n- the same test also proves populated alert-digest rows render `recipients=none` when a subscription has no recipients while keeping the rest of the row formatting stable.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `1bf7e90446360f24b6b4d25a735aacecd4abe35c` matched remote SHA `1bf7e90446360f24b6b4d25a735aacecd4abe35c` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `1bf7e90446360f24b6b4d25a735aacecd4abe35c`\n\nCommit SHA: `1bf7e90446360f24b6b4d25a735aacecd4abe35c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:34:22Z"
+        }
+      ],
       "created_at": "2026-03-24T21:32:10Z",
       "description": "Add direct coverage for RenderSavedViewReport populated entries so empty sort and recipient fields still render through the documented none/fallback paths in saved-view and alert-digest rows.",
       "id": "big-par-342",
@@ -4186,12 +4193,19 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add saved view populated report fallback coverage",
-      "updated_at": "2026-03-24T21:32:10Z"
+      "updated_at": "2026-03-24T21:34:22Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-341` after adding direct numeric-helper coverage for saved-view readiness scoring.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct helper-level coverage for `round1`, including half-up rounding and carry to `100.0`.\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct helper-level coverage for `maxFloat`, including left-win, right-win, and equal-value cases.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `4e9497158eb4d67510b4056966276a94af002394` matched remote SHA `4e9497158eb4d67510b4056966276a94af002394` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `4e9497158eb4d67510b4056966276a94af002394`\n\nCommit SHA: `4e9497158eb4d67510b4056966276a94af002394`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:34:22Z"
+        }
+      ],
       "created_at": "2026-03-24T21:32:10Z",
       "description": "Add direct helper-level coverage for round1 and maxFloat so saved-view readiness scoring keeps its expected rounding and floor-selection behavior at the helper boundary.",
       "id": "big-par-341",
@@ -4203,9 +4217,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add saved view numeric helper coverage",
-      "updated_at": "2026-03-24T21:32:10Z"
+      "updated_at": "2026-03-24T21:34:22Z"
     }
   ]
 }
