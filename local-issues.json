@@ -2990,6 +2990,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added a Go-owned ClawHost workflow review surface in bigclaw-go/internal/product/clawhost_workflow.go plus API wiring in bigclaw-go/internal/api/clawhost_workflow_surface.go, /debug/status, and /v2/control-center so skills, channel mutations, WhatsApp pairing posture, and credential exposure can be reviewed as takeover-gated workflow items instead of ad hoc control-plane metadata. Validation: cd bigclaw-go && go test ./internal/product ./internal/api -> ok; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 9487278fb5d4121d60a63560a5a9b1f74a196508 matches remote SHA 9487278fb5d4121d60a63560a5a9b1f74a196508 with status ok and synced true. Commit SHA: 9487278fb5d4121d60a63560a5a9b1f74a196508. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
+          "created_at": "2026-03-24T16:52:42Z"
+        }
+      ],
       "created_at": "2026-03-24T15:47:39Z",
       "description": "Add a BigClaw workflow slice for ClawHost skill management, IM channel connectivity, and device-pairing approvals so high-churn bot configuration changes can be reviewed, batched, and executed in parallel with human takeover when needed. This follows ClawHost's dynamic skills, IM channel, and device auto-approval capabilities.",
       "id": "big-par-289",
@@ -3002,9 +3009,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add ClawHost skills channels and device approval workflows",
-      "updated_at": "2026-03-24T16:26:31Z"
+      "updated_at": "2026-03-24T16:52:42Z"
     },
     {
       "assigned_to_worker": true,
@@ -3033,6 +3040,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added a Go-owned ClawHost readiness surface in bigclaw-go/internal/api/clawhost_readiness_surface.go and exposed it through /debug/status and /v2/control-center so proxy mode, gateway port, subdomain health, websocket reachability, admin UI posture, and version drift are exported as reviewer-facing readiness checks for each claw target. Validation: cd bigclaw-go && go test ./internal/api -> ok; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 984dae8d5c5beb2699db01b2d527fdecbc08c014 matches remote SHA 984dae8d5c5beb2699db01b2d527fdecbc08c014 with status ok and synced true. Commit SHA: 984dae8d5c5beb2699db01b2d527fdecbc08c014. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
+          "created_at": "2026-03-24T16:52:42Z"
+        }
+      ],
       "created_at": "2026-03-24T15:47:40Z",
       "description": "Add a BigClaw validation and observability slice for ClawHost proxy routing, WebSocket/HTTP reachability, per-bot subdomain exposure, and admin-surface readiness so bot fleet ingress posture can be checked in parallel and exported as reviewer-facing evidence. This is based on ClawHost's HTTP/WS proxy, subdomain routing, built-in admin UI, and no-per-bot-Ingress architecture.",
       "id": "big-par-291",
@@ -3045,9 +3059,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-24T16:35:38Z"
+      "updated_at": "2026-03-24T16:52:42Z"
     }
   ]
 }
