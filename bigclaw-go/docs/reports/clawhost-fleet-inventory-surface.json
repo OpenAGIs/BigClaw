@@ -1,0 +1,171 @@
+{
+  "generated_at": "2026-03-25T00:45:00Z",
+  "ticket": "BIG-PAR-287",
+  "title": "ClawHost fleet inventory and control-plane source surface",
+  "status": "checked_in_inventory_surface",
+  "provider": "clawhost",
+  "source_kind": "app_bot_control_plane_inventory",
+  "report_path": "docs/reports/clawhost-fleet-inventory-surface.json",
+  "evidence_sources": [
+    "bigclaw-go/internal/api/clawhost_fleet_inventory_surface.go",
+    "bigclaw-go/internal/api/distributed.go",
+    "bigclaw-go/internal/api/server_test.go",
+    "bigclaw-go/docs/reports/clawhost-rollout-planner-surface.json"
+  ],
+  "reviewer_links": [
+    "/debug/status",
+    "/v2/control-center",
+    "/v2/reports/distributed",
+    "docs/reports/clawhost-rollout-planner-surface.json"
+  ],
+  "summary": {
+    "app_count": 2,
+    "bot_count": 5,
+    "active_bots": 3,
+    "suspended_bots": 1,
+    "degraded_bots": 1,
+    "tenant_count": 2,
+    "domain_count": 5,
+    "ownership_teams": 3,
+    "reviewer_ready_apps": 2
+  },
+  "apps": [
+    {
+      "app_id": "clawhost-sales",
+      "tenant": "tenant-acme",
+      "owner": "revenue-ops",
+      "reviewer": "platform-oncall",
+      "default_domain": "sales.claw.example.com",
+      "default_subdomain": "sales",
+      "provider_policy": "provider-policy-sales-v2",
+      "bot_count": 3,
+      "lifecycle_states": [
+        "active",
+        "degraded"
+      ]
+    },
+    {
+      "app_id": "clawhost-support",
+      "tenant": "tenant-bravo",
+      "owner": "support-engineering",
+      "reviewer": "tenant-owner",
+      "default_domain": "support.claw.example.com",
+      "default_subdomain": "support",
+      "provider_policy": "provider-policy-support-v1",
+      "bot_count": 2,
+      "lifecycle_states": [
+        "active",
+        "suspended"
+      ]
+    }
+  ],
+  "bots": [
+    {
+      "bot_id": "bot-sales-a",
+      "app_id": "clawhost-sales",
+      "tenant": "tenant-acme",
+      "lifecycle_state": "active",
+      "owner": "revenue-ops",
+      "reviewer": "platform-oncall",
+      "runtime_region": "ap-southeast-1",
+      "service_name": "sales-a-svc",
+      "domain": "sales-a.claw.example.com",
+      "subdomain": "sales-a",
+      "capabilities": [
+        "http",
+        "websocket",
+        "admin"
+      ],
+      "labels": [
+        "sales",
+        "canary"
+      ]
+    },
+    {
+      "bot_id": "bot-sales-b",
+      "app_id": "clawhost-sales",
+      "tenant": "tenant-acme",
+      "lifecycle_state": "active",
+      "owner": "revenue-ops",
+      "reviewer": "platform-oncall",
+      "runtime_region": "ap-southeast-1",
+      "service_name": "sales-b-svc",
+      "domain": "sales-b.claw.example.com",
+      "subdomain": "sales-b",
+      "capabilities": [
+        "http",
+        "websocket",
+        "admin"
+      ],
+      "labels": [
+        "sales",
+        "bulk"
+      ]
+    },
+    {
+      "bot_id": "bot-sales-c",
+      "app_id": "clawhost-sales",
+      "tenant": "tenant-acme",
+      "lifecycle_state": "degraded",
+      "owner": "revenue-ops",
+      "reviewer": "platform-oncall",
+      "runtime_region": "us-east-1",
+      "service_name": "sales-c-svc",
+      "domain": "sales-c.claw.example.com",
+      "subdomain": "sales-c",
+      "capabilities": [
+        "http",
+        "admin"
+      ],
+      "labels": [
+        "sales",
+        "degraded"
+      ]
+    },
+    {
+      "bot_id": "bot-support-a",
+      "app_id": "clawhost-support",
+      "tenant": "tenant-bravo",
+      "lifecycle_state": "active",
+      "owner": "support-engineering",
+      "reviewer": "tenant-owner",
+      "runtime_region": "us-east-1",
+      "service_name": "support-a-svc",
+      "domain": "support-a.claw.example.com",
+      "subdomain": "support-a",
+      "capabilities": [
+        "http",
+        "websocket",
+        "admin"
+      ],
+      "labels": [
+        "support",
+        "priority"
+      ]
+    },
+    {
+      "bot_id": "bot-support-b",
+      "app_id": "clawhost-support",
+      "tenant": "tenant-bravo",
+      "lifecycle_state": "suspended",
+      "owner": "support-engineering",
+      "reviewer": "tenant-owner",
+      "runtime_region": "us-east-1",
+      "service_name": "support-b-svc",
+      "domain": "support-b.claw.example.com",
+      "subdomain": "support-b",
+      "capabilities": [
+        "http",
+        "admin"
+      ],
+      "labels": [
+        "support",
+        "standby"
+      ]
+    }
+  ],
+  "limitations": [
+    "This checked-in inventory surface captures the canonical reviewer contract and representative ClawHost metadata, not a live API crawl from an external control plane.",
+    "Lifecycle, domain, and ownership fields are intended to feed later rollout and workflow slices rather than act as an authoritative runtime reconciliation loop."
+  ]
+}

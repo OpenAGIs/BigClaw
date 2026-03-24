@@ -50,7 +50,7 @@ longer waits on Linear to keep issue execution moving.
 - Current repo tranche status as of March 24, 2026:
   - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-290` — Add ClawHost provider defaults and tenant policy surfaces; `BIG-PAR-291` — Add ClawHost proxy subdomain and admin validation lane; `BIG-PAR-292` — Add ClawHost lifecycle recovery and per-bot isolation scorecard; `BIG-PAR-293` — Add control-center regression coverage for ClawHost recovery surface; `BIG-PAR-294` — Add control-center regression coverage for ClawHost workflow surface; `BIG-PAR-295` — Add control-center regression coverage for ClawHost readiness surface; `BIG-PAR-296` — Add control-center regression coverage for ClawHost policy surface; `BIG-PAR-297` — Add aggregate control-center regression for ClawHost surface bundle
+  - recently completed slices: `BIG-PAR-360` — Add console helper and design-system coverage; `BIG-PAR-362` — Add ClawHost workflow helper threshold coverage; `BIG-PAR-364` — Add ClawHost rollout audit edge coverage; `BIG-PAR-365` — Add dashboard contract path traversal coverage; `BIG-PAR-367` — Add dashboard contract non-map path traversal coverage; `BIG-PAR-369` — Add ClawHost workflow empty-audit coverage; `BIG-PAR-370` — Add ClawHost workflow report empty-state coverage; `BIG-PAR-371` — Add rollout sorted-values blank-skip coverage
   - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
@@ -131,11 +131,76 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-290` — Add ClawHost provider defaults and tenant policy surfaces
   - `BIG-PAR-291` — Add ClawHost proxy subdomain and admin validation lane
   - `BIG-PAR-292` — Add ClawHost lifecycle recovery and per-bot isolation scorecard
-  - `BIG-PAR-293` — Add control-center regression coverage for ClawHost recovery surface
-  - `BIG-PAR-294` — Add control-center regression coverage for ClawHost workflow surface
-  - `BIG-PAR-295` — Add control-center regression coverage for ClawHost readiness surface
-  - `BIG-PAR-296` — Add control-center regression coverage for ClawHost policy surface
-  - `BIG-PAR-297` — Add aggregate control-center regression for ClawHost surface bundle
+  - `BIG-PAR-293` — Refresh ClawHost control-plane branch against main
+  - `BIG-PAR-294` — Publish ClawHost control-plane review index
+  - `BIG-PAR-295` — Add ClawHost surface coexistence regression coverage
+  - `BIG-PAR-296` — Add ClawHost export coexistence regression coverage
+  - `BIG-PAR-297` — Add ClawHost workflow actor-header regression coverage
+  - `BIG-PAR-298` — Add ClawHost endpoint method-guard regression coverage
+  - `BIG-PAR-299` — Add ClawHost scope-filter normalization regression coverage
+  - `BIG-PAR-300` — Add ClawHost helper contract regression coverage
+  - `BIG-PAR-301` — Add ClawHost export header regression coverage
+  - `BIG-PAR-302` — Add ClawHost blank-actor fallback regression coverage
+  - `BIG-PAR-303` — Add ClawHost empty-actor export omission coverage
+  - `BIG-PAR-304` — Add ClawHost partial export-filter regression coverage
+  - `BIG-PAR-305` — Add ClawHost blank scope-filter normalization coverage
+  - `BIG-PAR-306` — Add workflow endpoint header-actor export URL coverage
+  - `BIG-PAR-307` — Add rollout planner actor-omission export URL coverage
+  - `BIG-PAR-308` — Add fleet export URL filter-omission coverage
+  - `BIG-PAR-309` — Add rollout planner scope-normalization coverage
+  - `BIG-PAR-310` — Add direct workflow export header-fallback coverage
+  - `BIG-PAR-311` — Add workflow export filename fallback coverage
+  - `BIG-PAR-312` — Encode scoped ClawHost saved-view routes
+  - `BIG-PAR-313` — Sanitize scoped ClawHost saved-view IDs
+  - `BIG-PAR-314` — Encode scoped export URLs for saved views and weekly reports
+  - `BIG-PAR-315` — Sanitize attachment filenames for run report exports
+  - `BIG-PAR-316` — Add distributed export filename sanitization coverage
+  - `BIG-PAR-317` — Add run report fallback filename sanitization coverage
+  - `BIG-PAR-318` — Add distributed export fallback filename sanitization coverage
+  - `BIG-PAR-319` — Add distributed export project-scope filename sanitization coverage
+  - `BIG-PAR-320` — Add distributed export task-scope filename sanitization coverage
+  - `BIG-PAR-321` — Add distributed export project-fallback filename sanitization coverage
+  - `BIG-PAR-322` — Add distributed export task-fallback filename sanitization coverage
+  - `BIG-PAR-323` — Add direct sanitizeReportName helper coverage
+  - `BIG-PAR-324` — Add distributed export filename-scope precedence coverage
+  - `BIG-PAR-325` — Fix distributed export filename fallback precedence
+  - `BIG-PAR-326` — Add distributed export task fallback-after-team coverage
+  - `BIG-PAR-327` — Add firstMeaningfulReportName helper coverage
+  - `BIG-PAR-328` — Add weeklyExportURL helper coverage
+  - `BIG-PAR-329` — Normalize distributedExportURL helper filters
+  - `BIG-PAR-330` — Encode controlActionAuditURL query parameters
+  - `BIG-PAR-331` — Add savedViewScopeToken helper coverage
+  - `BIG-PAR-332` — Add buildSavedViewRoute blank-scope coverage
+  - `BIG-PAR-333` — Add viewScopeSuffix punctuation-fallback coverage
+  - `BIG-PAR-334` — Add normalizedViewOwner helper coverage
+  - `BIG-PAR-335` — Add digestRecipients helper coverage
+  - `BIG-PAR-336` — Add saved view metric helper coverage
+  - `BIG-PAR-338` — Add saved view rendering helper coverage
+  - `BIG-PAR-337` — Add saved view scope and duplicate helper coverage
+  - `BIG-PAR-340` — Add saved view report empty-state coverage
+  - `BIG-PAR-339` — Add saved view audit readiness edge coverage
+  - `BIG-PAR-342` — Add saved view populated report fallback coverage
+  - `BIG-PAR-343` — Add unscoped saved view catalog baseline coverage
+  - `BIG-PAR-345` — Add valid saved view audit clean-path coverage
+  - `BIG-PAR-346` — Add project-scoped saved view catalog coverage
+  - `BIG-PAR-348` — Add saved view catalog actor fallback coverage
+  - `BIG-PAR-347` — Add team-scoped saved view catalog coverage
+  - `BIG-PAR-349` — Add premium-only saved view catalog coverage
+  - `BIG-PAR-352` — Add saved view readiness rounding coverage
+  - `BIG-PAR-351` — Add saved view catalog ordering coverage
+  - `BIG-PAR-353` — Add saved view baseline field coverage
+  - `BIG-PAR-355` — Add invalid-visibility audit coverage for saved view catalogs
+  - `BIG-PAR-356` — Add direct missing-recipient audit assertions for saved view digests
+  - `BIG-PAR-358` — Add ClawHost fleet helper regression coverage
+  - `BIG-PAR-357` — Add ClawHost fleet inventory alias wrapper coverage
+  - `BIG-PAR-360` — Add console helper and design-system coverage
+  - `BIG-PAR-362` — Add ClawHost workflow helper threshold coverage
+  - `BIG-PAR-364` — Add ClawHost rollout audit edge coverage
+  - `BIG-PAR-365` — Add dashboard contract path traversal coverage
+  - `BIG-PAR-367` — Add dashboard contract non-map path traversal coverage
+  - `BIG-PAR-369` — Add ClawHost workflow empty-audit coverage
+  - `BIG-PAR-370` — Add ClawHost workflow report empty-state coverage
+  - `BIG-PAR-371` — Add rollout sorted-values blank-skip coverage
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -222,3 +287,68 @@ longer waits on Linear to keep issue execution moving.
 76. `BIG-PAR-295`
 77. `BIG-PAR-296`
 78. `BIG-PAR-297`
+79. `BIG-PAR-298`
+80. `BIG-PAR-299`
+81. `BIG-PAR-300`
+82. `BIG-PAR-301`
+83. `BIG-PAR-302`
+84. `BIG-PAR-303`
+85. `BIG-PAR-304`
+86. `BIG-PAR-305`
+87. `BIG-PAR-306`
+88. `BIG-PAR-307`
+89. `BIG-PAR-308`
+90. `BIG-PAR-309`
+91. `BIG-PAR-310`
+92. `BIG-PAR-311`
+93. `BIG-PAR-312`
+94. `BIG-PAR-313`
+95. `BIG-PAR-314`
+96. `BIG-PAR-315`
+97. `BIG-PAR-316`
+98. `BIG-PAR-317`
+99. `BIG-PAR-318`
+100. `BIG-PAR-319`
+101. `BIG-PAR-320`
+102. `BIG-PAR-321`
+103. `BIG-PAR-322`
+104. `BIG-PAR-323`
+105. `BIG-PAR-324`
+106. `BIG-PAR-325`
+107. `BIG-PAR-326`
+108. `BIG-PAR-327`
+109. `BIG-PAR-328`
+110. `BIG-PAR-329`
+111. `BIG-PAR-330`
+112. `BIG-PAR-331`
+113. `BIG-PAR-332`
+114. `BIG-PAR-333`
+115. `BIG-PAR-334`
+116. `BIG-PAR-335`
+117. `BIG-PAR-336`
+118. `BIG-PAR-338`
+119. `BIG-PAR-337`
+120. `BIG-PAR-340`
+121. `BIG-PAR-339`
+122. `BIG-PAR-342`
+123. `BIG-PAR-343`
+124. `BIG-PAR-345`
+125. `BIG-PAR-346`
+126. `BIG-PAR-348`
+127. `BIG-PAR-347`
+128. `BIG-PAR-349`
+129. `BIG-PAR-352`
+130. `BIG-PAR-351`
+131. `BIG-PAR-353`
+132. `BIG-PAR-355`
+133. `BIG-PAR-356`
+134. `BIG-PAR-358`
+135. `BIG-PAR-357`
+136. `BIG-PAR-360`
+137. `BIG-PAR-362`
+138. `BIG-PAR-364`
+139. `BIG-PAR-365`
+140. `BIG-PAR-367`
+141. `BIG-PAR-369`
+142. `BIG-PAR-370`
+143. `BIG-PAR-371`

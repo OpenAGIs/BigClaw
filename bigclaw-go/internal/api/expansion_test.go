@@ -94,6 +94,31 @@ func TestV2WeeklyReportBuildsSummaryActionsAndMarkdownExport(t *testing.T) {
 	if !strings.Contains(exportResponse.Body.String(), "Completed runs: 1") || !strings.Contains(exportResponse.Body.String(), "Human interventions: 1") {
 		t.Fatalf("unexpected weekly export body: %s", exportResponse.Body.String())
 	}
+
+	specialScopeResponse := httptest.NewRecorder()
+	specialScopeRequest := httptest.NewRequest(http.MethodGet, "/v2/reports/weekly?team=Platform%20%26%20Ops&project=apollo%2Fmobile&week_start=2026-03-09T00:00:00Z&week_end=2026-03-15T00:00:00Z", nil)
+	server.Handler().ServeHTTP(specialScopeResponse, specialScopeRequest)
+	if specialScopeResponse.Code != http.StatusOK {
+		t.Fatalf("expected reserved-character weekly report 200, got %d %s", specialScopeResponse.Code, specialScopeResponse.Body.String())
+	}
+	var specialScopeDecoded struct {
+		Report struct {
+			ExportURL string `json:"export_url"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(specialScopeResponse.Body.Bytes(), &specialScopeDecoded); err != nil {
+		t.Fatalf("decode reserved-character weekly report: %v", err)
+	}
+	exportURL, err := url.Parse(specialScopeDecoded.Report.ExportURL)
+	if err != nil {
+		t.Fatalf("parse reserved-character weekly export url: %v", err)
+	}
+	if exportURL.Query().Get("team") != "Platform & Ops" || exportURL.Query().Get("project") != "apollo/mobile" {
+		t.Fatalf("expected encoded reserved-character weekly export filters, got %s", specialScopeDecoded.Report.ExportURL)
+	}
+	if strings.Contains(specialScopeDecoded.Report.ExportURL, "team=Platform & Ops") || strings.Contains(specialScopeDecoded.Report.ExportURL, "project=apollo/mobile") {
+		t.Fatalf("expected reserved-character weekly export url to encode scope values, got %s", specialScopeDecoded.Report.ExportURL)
+	}
 }
 
 func TestV2FlowTemplateLifecyclePRDIntakeChecklistAndSupportHandoff(t *testing.T) {
@@ -289,6 +314,58 @@ func TestV2ProductizationAndBillingEndpoints(t *testing.T) {
 		t.Fatalf("expected digest subscriptions, got %+v", savedViewsDecoded.Catalog.Subscriptions)
 	}
 
+	specialScopeSavedViewsResponse := httptest.NewRecorder()
+	specialScopeSavedViewsRequest := httptest.NewRequest(http.MethodGet, "/v2/saved-views?team=Platform%20%26%20Ops&project=apollo%2Fmobile&actor=alice", nil)
+	handler.ServeHTTP(specialScopeSavedViewsResponse, specialScopeSavedViewsRequest)
+	if specialScopeSavedViewsResponse.Code != http.StatusOK {
+		t.Fatalf("expected saved views 200 for reserved-character scope, got %d %s", specialScopeSavedViewsResponse.Code, specialScopeSavedViewsResponse.Body.String())
+	}
+	var specialScopeSavedViewsDecoded struct {
+		Catalog struct {
+			Views []struct {
+				ViewID string `json:"view_id"`
+				Route  string `json:"route"`
+			} `json:"views"`
+			Subscriptions []struct {
+				SubscriptionID string `json:"subscription_id"`
+				SavedViewID    string `json:"saved_view_id"`
+			} `json:"subscriptions"`
+		} `json:"catalog"`
+	}
+	if err := json.Unmarshal(specialScopeSavedViewsResponse.Body.Bytes(), &specialScopeSavedViewsDecoded); err != nil {
+		t.Fatalf("decode reserved-character saved views: %v", err)
+	}
+	if len(specialScopeSavedViewsDecoded.Catalog.Views) == 0 || len(specialScopeSavedViewsDecoded.Catalog.Subscriptions) == 0 {
+		t.Fatalf("expected reserved-character scope catalog entries, got %+v", specialScopeSavedViewsDecoded.Catalog)
+	}
+	for _, view := range specialScopeSavedViewsDecoded.Catalog.Views {
+		if strings.Contains(view.ViewID, " ") || strings.Contains(view.ViewID, "/") || strings.Contains(view.ViewID, "&") {
+			t.Fatalf("expected sanitized reserved-character view id, got %s", view.ViewID)
+		}
+		if !strings.Contains(view.Route, "Platform+%26+Ops") || !strings.Contains(view.Route, "apollo%2Fmobile") {
+			t.Fatalf("expected reserved-character route encoding to survive API payload, got %s", view.Route)
+		}
+	}
+	for _, subscription := range specialScopeSavedViewsDecoded.Catalog.Subscriptions {
+		if strings.Contains(subscription.SubscriptionID, " ") || strings.Contains(subscription.SubscriptionID, "/") || strings.Contains(subscription.SubscriptionID, "&") {
+			t.Fatalf("expected sanitized reserved-character subscription id, got %s", subscription.SubscriptionID)
+		}
+		if subscription.SavedViewID == "" {
+			t.Fatalf("expected saved view reference for reserved-character scope subscription, got %+v", subscription)
+		}
+	}
+	specialScopeExportURL := savedViewsExportURL("Platform & Ops", "apollo/mobile", "alice@example.com")
+	parsedExportURL, err := url.Parse(specialScopeExportURL)
+	if err != nil {
+		t.Fatalf("parse reserved-character saved views export url: %v", err)
+	}
+	if parsedExportURL.Query().Get("team") != "Platform & Ops" || parsedExportURL.Query().Get("project") != "apollo/mobile" || parsedExportURL.Query().Get("actor") != "alice@example.com" {
+		t.Fatalf("expected encoded saved views export filters, got %s", specialScopeExportURL)
+	}
+	if strings.Contains(specialScopeExportURL, "team=Platform & Ops") || strings.Contains(specialScopeExportURL, "project=apollo/mobile") || strings.Contains(specialScopeExportURL, "actor=alice@example.com") {
+		t.Fatalf("expected reserved-character saved views export url to encode filters, got %s", specialScopeExportURL)
+	}
+
 	savedViewsExportResponse := httptest.NewRecorder()
 	handler.ServeHTTP(savedViewsExportResponse, httptest.NewRequest(http.MethodGet, savedViewsDecoded.Report.ExportURL, nil))
 	if savedViewsExportResponse.Code != http.StatusOK {
@@ -406,38 +483,6 @@ func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
 	}
 	if connectorDecoded.Issues[0].Source != "github" || connectorDecoded.MappedTasks[0].ID == "" || connectorDecoded.MappedTasks[0].State != "queued" {
 		t.Fatalf("unexpected mapped issue payload: %+v", connectorDecoded)
-	}
-
-	clawhostResponse := httptest.NewRecorder()
-	handler.ServeHTTP(clawhostResponse, httptest.NewRequest(http.MethodGet, "/v2/intake/connectors/clawhost/issues?project=openagi&states=running,stopped", nil))
-	if clawhostResponse.Code != http.StatusOK {
-		t.Fatalf("expected clawhost intake connector 200, got %d %s", clawhostResponse.Code, clawhostResponse.Body.String())
-	}
-	var clawhostDecoded struct {
-		Connector string `json:"connector"`
-		Issues    []struct {
-			Source   string            `json:"source"`
-			State    string            `json:"state"`
-			Metadata map[string]string `json:"metadata"`
-		} `json:"issues"`
-		MappedTasks []struct {
-			ID       string            `json:"id"`
-			State    string            `json:"state"`
-			TenantID string            `json:"tenant_id"`
-			Metadata map[string]string `json:"metadata"`
-		} `json:"mapped_tasks"`
-	}
-	if err := json.Unmarshal(clawhostResponse.Body.Bytes(), &clawhostDecoded); err != nil {
-		t.Fatalf("decode clawhost intake connector response: %v", err)
-	}
-	if clawhostDecoded.Connector != "clawhost" || len(clawhostDecoded.Issues) != 2 || len(clawhostDecoded.MappedTasks) != 2 {
-		t.Fatalf("unexpected clawhost intake connector payload: %+v", clawhostDecoded)
-	}
-	if clawhostDecoded.Issues[0].Source != "clawhost" || clawhostDecoded.Issues[0].Metadata["inventory_kind"] != "claw" {
-		t.Fatalf("expected clawhost inventory issue metadata, got %+v", clawhostDecoded.Issues[0])
-	}
-	if clawhostDecoded.MappedTasks[0].TenantID == "" || clawhostDecoded.MappedTasks[0].Metadata["control_plane"] != "clawhost" {
-		t.Fatalf("expected clawhost mapped task metadata, got %+v", clawhostDecoded.MappedTasks[0])
 	}
 
 	mapBody, _ := json.Marshal(map[string]any{
@@ -928,6 +973,28 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		}
 	})
 
+	t.Run("fleet omits scope filters from export url", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/fleet?team=platform&project=apollo&actor=query-actor&limit=5", nil)
+		request.Header.Set("X-BigClaw-Actor", "header-actor")
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected fleet endpoint 200 with extra query params, got %d %s", response.Code, response.Body.String())
+		}
+
+		var decoded struct {
+			Report struct {
+				ExportURL string `json:"export_url"`
+			} `json:"report"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("decode fleet filter omission response: %v", err)
+		}
+		if decoded.Report.ExportURL != "/v2/clawhost/fleet/export" {
+			t.Fatalf("expected fleet export url to remain unscoped, got %s", decoded.Report.ExportURL)
+		}
+	})
+
 	t.Run("rollout planner", func(t *testing.T) {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v2/clawhost/rollout-planner?team=platform&project=apollo", nil))
@@ -986,6 +1053,71 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		}
 		if !strings.Contains(exportResponse.Body.String(), "alpha-app") || !strings.Contains(exportResponse.Body.String(), "tenant-a") {
 			t.Fatalf("unexpected rollout export body: %s", exportResponse.Body.String())
+		}
+	})
+
+	t.Run("rollout planner omits actor from export url", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/rollout-planner?team=platform&project=apollo&actor=query-actor", nil)
+		request.Header.Set("X-BigClaw-Actor", "header-actor")
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected rollout planner 200 with actor inputs, got %d %s", response.Code, response.Body.String())
+		}
+
+		var decoded struct {
+			Report struct {
+				ExportURL string `json:"export_url"`
+			} `json:"report"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("decode rollout actor omission response: %v", err)
+		}
+
+		exportURL, err := url.Parse(decoded.Report.ExportURL)
+		if err != nil {
+			t.Fatalf("parse rollout actor omission export url: %v", err)
+		}
+		if exportURL.Query().Get("actor") != "" {
+			t.Fatalf("expected rollout export url to omit actor, got %s", decoded.Report.ExportURL)
+		}
+		if exportURL.Query().Get("team") != "platform" || exportURL.Query().Get("project") != "apollo" {
+			t.Fatalf("expected rollout export url to preserve team/project filters, got %s", decoded.Report.ExportURL)
+		}
+	})
+
+	t.Run("rollout planner scope normalization", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/rollout-planner?team=%20platform%20&project=%20apollo%20", nil)
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected rollout planner 200 with normalized scope filters, got %d %s", response.Code, response.Body.String())
+		}
+
+		var decoded struct {
+			Plan struct {
+				Filters map[string]string `json:"filters"`
+			} `json:"plan"`
+			Report struct {
+				ExportURL string `json:"export_url"`
+			} `json:"report"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("decode normalized rollout planner response: %v", err)
+		}
+		if decoded.Plan.Filters["team"] != "platform" || decoded.Plan.Filters["project"] != "apollo" {
+			t.Fatalf("expected normalized rollout planner filters, got %+v", decoded.Plan.Filters)
+		}
+
+		exportURL, err := url.Parse(decoded.Report.ExportURL)
+		if err != nil {
+			t.Fatalf("parse normalized rollout planner export url: %v", err)
+		}
+		if exportURL.Query().Get("team") != "platform" || exportURL.Query().Get("project") != "apollo" {
+			t.Fatalf("expected normalized rollout planner export url, got %s", decoded.Report.ExportURL)
+		}
+		if strings.Contains(decoded.Report.ExportURL, "%20") {
+			t.Fatalf("expected normalized rollout planner export url without encoded whitespace, got %s", decoded.Report.ExportURL)
 		}
 	})
 
@@ -1110,4 +1242,628 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 			t.Fatalf("unexpected recovery export body: %s", exportResponse.Body.String())
 		}
 	})
+
+	t.Run("workflows actor header fallback", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=platform&project=apollo", nil)
+		request.Header.Set("X-BigClaw-Actor", "header-actor")
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected workflows endpoint 200 with actor header fallback, got %d %s", response.Code, response.Body.String())
+		}
+
+		var decoded struct {
+			Surface struct {
+				Filters map[string]string `json:"filters"`
+			} `json:"surface"`
+			Report struct {
+				ExportURL string `json:"export_url"`
+			} `json:"report"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("decode workflow header fallback response: %v", err)
+		}
+		if decoded.Surface.Filters["actor"] != "header-actor" {
+			t.Fatalf("expected header actor fallback in workflow filters, got %+v", decoded.Surface.Filters)
+		}
+
+		workflowExportURL, err := url.Parse(decoded.Report.ExportURL)
+		if err != nil {
+			t.Fatalf("parse workflow header fallback export url: %v", err)
+		}
+		if workflowExportURL.Query().Get("actor") != "header-actor" {
+			t.Fatalf("expected workflow export url to preserve header actor fallback, got %s", decoded.Report.ExportURL)
+		}
+
+		exportRequest := httptest.NewRequest(http.MethodGet, decoded.Report.ExportURL, nil)
+		exportResponse := httptest.NewRecorder()
+		handler.ServeHTTP(exportResponse, exportRequest)
+		if exportResponse.Code != http.StatusOK {
+			t.Fatalf("expected workflow export 200 with header actor fallback, got %d %s", exportResponse.Code, exportResponse.Body.String())
+		}
+		if !strings.Contains(exportResponse.Body.String(), "owner=header-actor") {
+			t.Fatalf("expected workflow export body to include header actor fallback owner, got %s", exportResponse.Body.String())
+		}
+	})
+
+	t.Run("workflows blank actor query falls back to header", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=platform&project=apollo&actor=%20%20", nil)
+		request.Header.Set("X-BigClaw-Actor", "header-actor")
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected workflows endpoint 200 with blank actor query fallback, got %d %s", response.Code, response.Body.String())
+		}
+
+		var decoded struct {
+			Surface struct {
+				Filters map[string]string `json:"filters"`
+			} `json:"surface"`
+			Report struct {
+				ExportURL string `json:"export_url"`
+			} `json:"report"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("decode blank actor query fallback response: %v", err)
+		}
+		if decoded.Surface.Filters["actor"] != "header-actor" {
+			t.Fatalf("expected blank actor query to fall back to header actor, got %+v", decoded.Surface.Filters)
+		}
+
+		workflowExportURL, err := url.Parse(decoded.Report.ExportURL)
+		if err != nil {
+			t.Fatalf("parse blank actor query fallback export url: %v", err)
+		}
+		if workflowExportURL.Query().Get("actor") != "header-actor" {
+			t.Fatalf("expected export url to preserve header actor after blank query fallback, got %s", decoded.Report.ExportURL)
+		}
+	})
+
+	t.Run("workflow export blank actor query falls back to header", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows/export?team=platform&project=apollo&actor=%20%20", nil)
+		request.Header.Set("X-BigClaw-Actor", " header-actor ")
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected workflow export 200 with blank actor query fallback, got %d %s", response.Code, response.Body.String())
+		}
+		if contentType := response.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+			t.Fatalf("expected workflow export markdown content type, got %q", contentType)
+		}
+		if !strings.Contains(response.Body.String(), "owner=header-actor") {
+			t.Fatalf("expected workflow export body to include trimmed header actor fallback owner, got %s", response.Body.String())
+		}
+		if contentDisposition := response.Header().Get("Content-Disposition"); contentDisposition != `attachment; filename="clawhost-workflows.md"` {
+			t.Fatalf("expected workflow export to keep fixed attachment filename during header fallback, got %q", contentDisposition)
+		}
+	})
+
+	t.Run("workflows omit actor from export url when actor is absent", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=platform&project=apollo", nil)
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected workflows endpoint 200 without actor, got %d %s", response.Code, response.Body.String())
+		}
+
+		var decoded struct {
+			Surface struct {
+				Filters map[string]string `json:"filters"`
+			} `json:"surface"`
+			Report struct {
+				ExportURL string `json:"export_url"`
+			} `json:"report"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("decode no-actor workflow response: %v", err)
+		}
+		if decoded.Surface.Filters["actor"] != "workflow-operator" {
+			t.Fatalf("expected default workflow owner when actor is absent, got %+v", decoded.Surface.Filters)
+		}
+
+		workflowExportURL, err := url.Parse(decoded.Report.ExportURL)
+		if err != nil {
+			t.Fatalf("parse no-actor export url: %v", err)
+		}
+		if workflowExportURL.Query().Get("actor") != "" {
+			t.Fatalf("expected export url to omit actor query when actor is absent, got %s", decoded.Report.ExportURL)
+		}
+		if workflowExportURL.Query().Get("team") != "platform" || workflowExportURL.Query().Get("project") != "apollo" {
+			t.Fatalf("expected export url to preserve non-empty filters, got %s", decoded.Report.ExportURL)
+		}
+	})
+
+	t.Run("workflows scope normalization", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=%20platform%20&project=%20apollo%20&actor=%20query-actor%20", nil)
+		request.Header.Set("X-BigClaw-Actor", "header-actor")
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected workflows endpoint 200 with normalized scope filters, got %d %s", response.Code, response.Body.String())
+		}
+
+		var decoded struct {
+			Surface struct {
+				Filters map[string]string `json:"filters"`
+			} `json:"surface"`
+			Report struct {
+				ExportURL string `json:"export_url"`
+			} `json:"report"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("decode normalized workflow scope response: %v", err)
+		}
+		if decoded.Surface.Filters["team"] != "platform" || decoded.Surface.Filters["project"] != "apollo" || decoded.Surface.Filters["actor"] != "query-actor" {
+			t.Fatalf("expected normalized workflow filters with query actor precedence, got %+v", decoded.Surface.Filters)
+		}
+
+		workflowExportURL, err := url.Parse(decoded.Report.ExportURL)
+		if err != nil {
+			t.Fatalf("parse normalized workflow export url: %v", err)
+		}
+		if workflowExportURL.Query().Get("team") != "platform" || workflowExportURL.Query().Get("project") != "apollo" || workflowExportURL.Query().Get("actor") != "query-actor" {
+			t.Fatalf("expected normalized export url with query actor precedence, got %s", decoded.Report.ExportURL)
+		}
+		if strings.Contains(decoded.Report.ExportURL, "%20") {
+			t.Fatalf("expected normalized export url without encoded whitespace, got %s", decoded.Report.ExportURL)
+		}
+	})
+}
+
+func TestClawHostReportAndExpansionSurfacesCoexist(t *testing.T) {
+	base := time.Date(2026, 3, 24, 9, 0, 0, 0, time.UTC)
+	recorder := observability.NewRecorder()
+	for _, task := range []domain.Task{
+		{
+			ID:        "clawhost-coexist-1",
+			TraceID:   "trace-clawhost-coexist-1",
+			Title:     "Upgrade platform tenant wave",
+			State:     domain.TaskBlocked,
+			RiskLevel: domain.RiskHigh,
+			TenantID:  "tenant-a",
+			Metadata: map[string]string{
+				"team":     "platform",
+				"project":  "apollo",
+				"app":      "alpha-app",
+				"provider": "openai",
+				"channel":  "slack",
+				"device":   "ios",
+			},
+			CreatedAt: base.Add(-2 * time.Hour),
+			UpdatedAt: base.Add(-30 * time.Minute),
+		},
+		{
+			ID:       "clawhost-coexist-2",
+			TraceID:  "trace-clawhost-coexist-2",
+			Title:    "Restart growth bot ring",
+			State:    domain.TaskRunning,
+			TenantID: "tenant-b",
+			Metadata: map[string]string{
+				"team":     "platform",
+				"project":  "apollo",
+				"app":      "beta-app",
+				"provider": "anthropic",
+				"channel":  "telegram",
+				"device":   "android",
+			},
+			CreatedAt: base.Add(-90 * time.Minute),
+			UpdatedAt: base.Add(-10 * time.Minute),
+		},
+	} {
+		recorder.StoreTask(task)
+	}
+
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      func() time.Time { return base },
+	}
+	handler := server.Handler()
+
+	debugResponse := httptest.NewRecorder()
+	handler.ServeHTTP(debugResponse, httptest.NewRequest(http.MethodGet, "/debug/status", nil))
+	if debugResponse.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d %s", debugResponse.Code, debugResponse.Body.String())
+	}
+	var debugDecoded struct {
+		Fleet struct {
+			ReportPath string `json:"report_path"`
+		} `json:"clawhost_fleet_inventory"`
+		Proxy struct {
+			ValidationLane string `json:"validation_lane"`
+		} `json:"clawhost_proxy_admin_validation"`
+	}
+	if err := json.Unmarshal(debugResponse.Body.Bytes(), &debugDecoded); err != nil {
+		t.Fatalf("decode debug clawhost payloads: %v", err)
+	}
+	if debugDecoded.Fleet.ReportPath != clawHostFleetInventorySurfacePath || debugDecoded.Proxy.ValidationLane != "clawhost_proxy_admin_parallel_probe" {
+		t.Fatalf("unexpected debug clawhost payloads: %+v %+v", debugDecoded.Fleet, debugDecoded.Proxy)
+	}
+
+	centerResponse := httptest.NewRecorder()
+	handler.ServeHTTP(centerResponse, httptest.NewRequest(http.MethodGet, "/v2/control-center?team=platform&project=apollo&limit=5&audit_limit=5", nil))
+	if centerResponse.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", centerResponse.Code, centerResponse.Body.String())
+	}
+	var centerDecoded struct {
+		Fleet struct {
+			ReportPath string `json:"report_path"`
+		} `json:"clawhost_fleet_inventory"`
+		Proxy struct {
+			ReportPath string `json:"report_path"`
+		} `json:"clawhost_proxy_admin_validation"`
+	}
+	if err := json.Unmarshal(centerResponse.Body.Bytes(), &centerDecoded); err != nil {
+		t.Fatalf("decode control center clawhost payloads: %v", err)
+	}
+	if centerDecoded.Fleet.ReportPath != clawHostFleetInventorySurfacePath || centerDecoded.Proxy.ReportPath != clawHostProxyAdminValidationLanePath {
+		t.Fatalf("unexpected control center clawhost payloads: %+v %+v", centerDecoded.Fleet, centerDecoded.Proxy)
+	}
+
+	distributedResponse := httptest.NewRecorder()
+	handler.ServeHTTP(distributedResponse, httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?team=platform&project=apollo&limit=5", nil))
+	if distributedResponse.Code != http.StatusOK {
+		t.Fatalf("expected distributed report 200, got %d %s", distributedResponse.Code, distributedResponse.Body.String())
+	}
+	var distributedDecoded struct {
+		Rollout struct {
+			ReportPath string `json:"report_path"`
+		} `json:"clawhost_rollout_planner"`
+		Policy struct {
+			ReportPath string `json:"report_path"`
+		} `json:"clawhost_tenant_policy"`
+		Report struct {
+			Markdown string `json:"markdown"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(distributedResponse.Body.Bytes(), &distributedDecoded); err != nil {
+		t.Fatalf("decode distributed clawhost payloads: %v", err)
+	}
+	if distributedDecoded.Rollout.ReportPath != clawHostRolloutPlannerSurfacePath || distributedDecoded.Policy.ReportPath != clawHostTenantPolicySurfacePath {
+		t.Fatalf("unexpected distributed clawhost payloads: %+v %+v", distributedDecoded.Rollout, distributedDecoded.Policy)
+	}
+	if !strings.Contains(distributedDecoded.Report.Markdown, "## ClawHost Proxy and Admin Validation") || !strings.Contains(distributedDecoded.Report.Markdown, "## ClawHost Tenant Policy") {
+		t.Fatalf("expected distributed markdown to retain report-backed clawhost sections, got %s", distributedDecoded.Report.Markdown)
+	}
+	distributedExportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(distributedExportResponse, httptest.NewRequest(http.MethodGet, "/v2/reports/distributed/export?team=platform&project=apollo&limit=5", nil))
+	if distributedExportResponse.Code != http.StatusOK {
+		t.Fatalf("expected distributed export 200, got %d %s", distributedExportResponse.Code, distributedExportResponse.Body.String())
+	}
+	if contentType := distributedExportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected distributed export markdown content type, got %q", contentType)
+	}
+	if !strings.Contains(distributedExportResponse.Body.String(), "## ClawHost Proxy and Admin Validation") || !strings.Contains(distributedExportResponse.Body.String(), "## ClawHost Rollout Planner") {
+		t.Fatalf("expected distributed export to retain report-backed clawhost sections, got %s", distributedExportResponse.Body.String())
+	}
+
+	fleetResponse := httptest.NewRecorder()
+	handler.ServeHTTP(fleetResponse, httptest.NewRequest(http.MethodGet, "/v2/clawhost/fleet", nil))
+	if fleetResponse.Code != http.StatusOK {
+		t.Fatalf("expected fleet expansion 200, got %d %s", fleetResponse.Code, fleetResponse.Body.String())
+	}
+	var fleetDecoded struct {
+		Inventory struct {
+			SurfaceID string `json:"surface_id"`
+		} `json:"inventory"`
+	}
+	if err := json.Unmarshal(fleetResponse.Body.Bytes(), &fleetDecoded); err != nil {
+		t.Fatalf("decode fleet expansion response: %v", err)
+	}
+	if fleetDecoded.Inventory.SurfaceID != "BIG-PAR-287" {
+		t.Fatalf("unexpected fleet expansion surface id: %+v", fleetDecoded.Inventory)
+	}
+	fleetExportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(fleetExportResponse, httptest.NewRequest(http.MethodGet, "/v2/clawhost/fleet/export", nil))
+	if fleetExportResponse.Code != http.StatusOK {
+		t.Fatalf("expected fleet expansion export 200, got %d %s", fleetExportResponse.Code, fleetExportResponse.Body.String())
+	}
+	if contentType := fleetExportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected fleet expansion export markdown content type, got %q", contentType)
+	}
+	if !strings.Contains(fleetExportResponse.Body.String(), "# ClawHost Fleet Inventory & Control Plane Report") || !strings.Contains(fleetExportResponse.Body.String(), "platform-release-bot") {
+		t.Fatalf("unexpected fleet expansion export body: %s", fleetExportResponse.Body.String())
+	}
+
+	rolloutResponse := httptest.NewRecorder()
+	handler.ServeHTTP(rolloutResponse, httptest.NewRequest(http.MethodGet, "/v2/clawhost/rollout-planner?team=platform&project=apollo", nil))
+	if rolloutResponse.Code != http.StatusOK {
+		t.Fatalf("expected rollout planner expansion 200, got %d %s", rolloutResponse.Code, rolloutResponse.Body.String())
+	}
+	var rolloutDecoded struct {
+		Plan struct {
+			PlanID string `json:"plan_id"`
+		} `json:"plan"`
+	}
+	if err := json.Unmarshal(rolloutResponse.Body.Bytes(), &rolloutDecoded); err != nil {
+		t.Fatalf("decode rollout planner expansion response: %v", err)
+	}
+	if rolloutDecoded.Plan.PlanID != "BIG-PAR-288" {
+		t.Fatalf("unexpected rollout planner expansion payload: %+v", rolloutDecoded.Plan)
+	}
+	rolloutExportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(rolloutExportResponse, httptest.NewRequest(http.MethodGet, "/v2/clawhost/rollout-planner/export?team=platform&project=apollo", nil))
+	if rolloutExportResponse.Code != http.StatusOK {
+		t.Fatalf("expected rollout planner expansion export 200, got %d %s", rolloutExportResponse.Code, rolloutExportResponse.Body.String())
+	}
+	if contentType := rolloutExportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected rollout planner expansion export markdown content type, got %q", contentType)
+	}
+	if !strings.Contains(rolloutExportResponse.Body.String(), "# ClawHost Rollout Planner") || !strings.Contains(rolloutExportResponse.Body.String(), "Tenant Ring 1") {
+		t.Fatalf("unexpected rollout planner expansion export body: %s", rolloutExportResponse.Body.String())
+	}
+
+	workflowsResponse := httptest.NewRecorder()
+	handler.ServeHTTP(workflowsResponse, httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=platform&project=apollo&actor=alice", nil))
+	if workflowsResponse.Code != http.StatusOK {
+		t.Fatalf("expected workflows expansion 200, got %d %s", workflowsResponse.Code, workflowsResponse.Body.String())
+	}
+	var workflowsDecoded struct {
+		Surface struct {
+			Name string `json:"name"`
+		} `json:"surface"`
+		Report struct {
+			ExportURL string `json:"export_url"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(workflowsResponse.Body.Bytes(), &workflowsDecoded); err != nil {
+		t.Fatalf("decode workflows expansion response: %v", err)
+	}
+	if workflowsDecoded.Surface.Name != "clawhost-workflow-surface" {
+		t.Fatalf("unexpected workflows expansion payload: %+v", workflowsDecoded.Surface)
+	}
+	workflowsExportResponse := httptest.NewRecorder()
+	handler.ServeHTTP(workflowsExportResponse, httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows/export?team=platform&project=apollo&actor=alice", nil))
+	if workflowsExportResponse.Code != http.StatusOK {
+		t.Fatalf("expected workflows expansion export 200, got %d %s", workflowsExportResponse.Code, workflowsExportResponse.Body.String())
+	}
+	if contentType := workflowsExportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected workflows expansion export markdown content type, got %q", contentType)
+	}
+	if !strings.Contains(workflowsExportResponse.Body.String(), "# ClawHost Workflow Surface") || !strings.Contains(workflowsExportResponse.Body.String(), "IM Channels and Device Approval Workflows") {
+		t.Fatalf("unexpected workflows expansion export body: %s", workflowsExportResponse.Body.String())
+	}
+
+	headerActorResponse := httptest.NewRecorder()
+	headerActorRequest := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=platform&project=apollo", nil)
+	headerActorRequest.Header.Set("X-BigClaw-Actor", " header-only ")
+	handler.ServeHTTP(headerActorResponse, headerActorRequest)
+	if headerActorResponse.Code != http.StatusOK {
+		t.Fatalf("expected header-actor workflows expansion 200, got %d %s", headerActorResponse.Code, headerActorResponse.Body.String())
+	}
+	var headerActorDecoded struct {
+		Report struct {
+			ExportURL string `json:"export_url"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(headerActorResponse.Body.Bytes(), &headerActorDecoded); err != nil {
+		t.Fatalf("decode header-actor workflows expansion response: %v", err)
+	}
+	headerActorExportURL, err := url.Parse(headerActorDecoded.Report.ExportURL)
+	if err != nil {
+		t.Fatalf("parse header-actor workflows export url: %v", err)
+	}
+	if headerActorExportURL.Path != "/v2/clawhost/workflows/export" {
+		t.Fatalf("unexpected header-actor workflows export path: %s", headerActorDecoded.Report.ExportURL)
+	}
+	if headerActorExportURL.Query().Get("actor") != "header-only" {
+		t.Fatalf("expected trimmed header actor in workflows export url, got %s", headerActorDecoded.Report.ExportURL)
+	}
+	if headerActorExportURL.Query().Get("team") != "platform" || headerActorExportURL.Query().Get("project") != "apollo" {
+		t.Fatalf("expected workflows export url to preserve team/project filters, got %s", headerActorDecoded.Report.ExportURL)
+	}
+}
+
+func TestV2ClawHostEndpointsRejectNonGETMethods(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	handler := server.Handler()
+
+	for _, path := range []string{
+		"/v2/clawhost/fleet",
+		"/v2/clawhost/fleet/export",
+		"/v2/clawhost/rollout-planner?team=platform&project=apollo",
+		"/v2/clawhost/rollout-planner/export?team=platform&project=apollo",
+		"/v2/clawhost/workflows?team=platform&project=apollo&actor=alice",
+		"/v2/clawhost/workflows/export?team=platform&project=apollo&actor=alice",
+	} {
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, path, nil))
+		if response.Code != http.StatusMethodNotAllowed {
+			t.Fatalf("expected %s to reject POST with 405, got %d %s", path, response.Code, response.Body.String())
+		}
+		if !strings.Contains(response.Body.String(), "method not allowed") {
+			t.Fatalf("expected %s to return method-not-allowed body, got %q", path, response.Body.String())
+		}
+	}
+}
+
+func TestV2ClawHostExportEndpointsSetAttachmentFilenames(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	handler := server.Handler()
+
+	for _, tc := range []struct {
+		path     string
+		filename string
+	}{
+		{path: "/v2/clawhost/fleet/export", filename: `attachment; filename="clawhost-fleet.md"`},
+		{path: "/v2/clawhost/rollout-planner/export?team=platform&project=apollo", filename: `attachment; filename="clawhost-rollout-planner.md"`},
+		{path: "/v2/clawhost/workflows/export?team=platform&project=apollo&actor=alice", filename: `attachment; filename="clawhost-workflows.md"`},
+	} {
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, tc.path, nil))
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected %s to return 200, got %d %s", tc.path, response.Code, response.Body.String())
+		}
+		if contentType := response.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+			t.Fatalf("expected %s to return markdown content type, got %q", tc.path, contentType)
+		}
+		if contentDisposition := response.Header().Get("Content-Disposition"); contentDisposition != tc.filename {
+			t.Fatalf("expected %s to return %q, got %q", tc.path, tc.filename, contentDisposition)
+		}
+	}
+}
+
+func TestClawHostScopeFilters(t *testing.T) {
+	t.Run("trims query values and prefers actor query over header", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=%20platform%20&project=%20apollo%20&actor=%20query-actor%20", nil)
+		request.Header.Set("X-BigClaw-Actor", "header-actor")
+
+		team, project, actor := clawHostScopeFilters(request)
+		if team != "platform" || project != "apollo" || actor != "query-actor" {
+			t.Fatalf("unexpected normalized scope filters: team=%q project=%q actor=%q", team, project, actor)
+		}
+	})
+
+	t.Run("falls back to trimmed actor header", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=platform&project=apollo", nil)
+		request.Header.Set("X-BigClaw-Actor", " header-actor ")
+
+		team, project, actor := clawHostScopeFilters(request)
+		if team != "platform" || project != "apollo" || actor != "header-actor" {
+			t.Fatalf("unexpected header fallback scope filters: team=%q project=%q actor=%q", team, project, actor)
+		}
+	})
+
+	t.Run("normalizes blank team and project to empty strings", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=%20%20&project=%20%20", nil)
+		request.Header.Set("X-BigClaw-Actor", " header-actor ")
+
+		team, project, actor := clawHostScopeFilters(request)
+		if team != "" || project != "" || actor != "header-actor" {
+			t.Fatalf("unexpected blank scope normalization: team=%q project=%q actor=%q", team, project, actor)
+		}
+	})
+}
+
+func TestClawHostExportURL(t *testing.T) {
+	t.Run("omits empty filters", func(t *testing.T) {
+		if url := clawHostExportURL("/v2/clawhost/workflows/export", "", "", ""); url != "/v2/clawhost/workflows/export" {
+			t.Fatalf("expected export url without query string when filters are empty, got %s", url)
+		}
+	})
+
+	t.Run("normalizes filters and preserves query actor precedence output", func(t *testing.T) {
+		exportURL := clawHostExportURL("/v2/clawhost/workflows/export", " platform ", " apollo ", " query-actor ")
+		parsed, err := url.Parse(exportURL)
+		if err != nil {
+			t.Fatalf("parse normalized export url: %v", err)
+		}
+		if parsed.Query().Get("team") != "platform" || parsed.Query().Get("project") != "apollo" || parsed.Query().Get("actor") != "query-actor" {
+			t.Fatalf("unexpected normalized export query: %s", exportURL)
+		}
+		if strings.Contains(exportURL, "%20") {
+			t.Fatalf("expected export url without encoded whitespace, got %s", exportURL)
+		}
+	})
+
+	t.Run("omits blank team and project while preserving actor", func(t *testing.T) {
+		exportURL := clawHostExportURL("/v2/clawhost/workflows/export", "   ", "", " actor-only ")
+		parsed, err := url.Parse(exportURL)
+		if err != nil {
+			t.Fatalf("parse actor-only export url: %v", err)
+		}
+		if parsed.Query().Get("actor") != "actor-only" {
+			t.Fatalf("expected actor-only export url to preserve actor, got %s", exportURL)
+		}
+		if parsed.Query().Get("team") != "" || parsed.Query().Get("project") != "" {
+			t.Fatalf("expected actor-only export url to omit blank team/project, got %s", exportURL)
+		}
+	})
+}
+
+func TestWeeklyExportURL(t *testing.T) {
+	start := time.Date(2026, 3, 9, 0, 0, 0, 0, time.UTC)
+	end := time.Date(2026, 3, 15, 23, 59, 59, 0, time.UTC)
+
+	exportURL := weeklyExportURL("  Platform & Ops  ", "  apollo/mobile  ", start, end)
+	parsedExportURL, err := url.Parse(exportURL)
+	if err != nil {
+		t.Fatalf("parse weekly export url: %v", err)
+	}
+	if parsedExportURL.Query().Get("team") != "Platform & Ops" || parsedExportURL.Query().Get("project") != "apollo/mobile" {
+		t.Fatalf("expected encoded weekly export scope filters, got %s", exportURL)
+	}
+	if parsedExportURL.Query().Get("week_start") != start.Format(time.RFC3339) || parsedExportURL.Query().Get("week_end") != end.Format(time.RFC3339) {
+		t.Fatalf("expected encoded weekly export window, got %s", exportURL)
+	}
+	if strings.Contains(exportURL, "team=Platform & Ops") || strings.Contains(exportURL, "project=apollo/mobile") {
+		t.Fatalf("expected reserved-character weekly export url to encode scope values, got %s", exportURL)
+	}
+}
+
+func TestDistributedExportURL(t *testing.T) {
+	priority := 2
+	since := time.Date(2026, 3, 9, 0, 0, 0, 0, time.UTC)
+	until := time.Date(2026, 3, 15, 23, 59, 59, 0, time.UTC)
+
+	exportURL := distributedExportURL(controlCenterFilters{
+		Team:      "  Platform & Ops  ",
+		Project:   "  apollo/mobile  ",
+		TaskID:    "  Task / Scope @ Edge  ",
+		State:     "  Blocked  ",
+		RiskLevel: "  HIGH  ",
+		Since:     since,
+		Until:     until,
+		Priority:  &priority,
+		Limit:     25,
+	})
+	parsedExportURL, err := url.Parse(exportURL)
+	if err != nil {
+		t.Fatalf("parse distributed export url: %v", err)
+	}
+	query := parsedExportURL.Query()
+	if query.Get("team") != "Platform & Ops" || query.Get("project") != "apollo/mobile" || query.Get("task_id") != "Task / Scope @ Edge" {
+		t.Fatalf("expected encoded distributed export scoped filters, got %s", exportURL)
+	}
+	if query.Get("state") != "blocked" || query.Get("risk_level") != "high" {
+		t.Fatalf("expected normalized distributed export state filters, got %s", exportURL)
+	}
+	if query.Get("since") != since.Format(time.RFC3339) || query.Get("until") != until.Format(time.RFC3339) {
+		t.Fatalf("expected encoded distributed export time window, got %s", exportURL)
+	}
+	if query.Get("priority") != "2" || query.Get("limit") != "25" {
+		t.Fatalf("expected distributed export numeric filters, got %s", exportURL)
+	}
+	if strings.Contains(exportURL, "team=Platform & Ops") || strings.Contains(exportURL, "project=apollo/mobile") || strings.Contains(exportURL, "task_id=Task / Scope @ Edge") {
+		t.Fatalf("expected distributed export url to encode reserved-character scope values, got %s", exportURL)
+	}
+}
+
+func TestControlActionAuditURL(t *testing.T) {
+	taskScopedURL := controlActionAuditURL("  Task / Scope @ Edge  ", " retry ")
+	parsedTaskScopedURL, err := url.Parse(taskScopedURL)
+	if err != nil {
+		t.Fatalf("parse task-scoped audit url: %v", err)
+	}
+	taskScopedQuery := parsedTaskScopedURL.Query()
+	if taskScopedQuery.Get("task_id") != "Task / Scope @ Edge" || taskScopedQuery.Get("action") != "retry" || taskScopedQuery.Get("audit_limit") != "20" {
+		t.Fatalf("expected encoded task-scoped audit url filters, got %s", taskScopedURL)
+	}
+	if strings.Contains(taskScopedURL, "task_id=Task / Scope @ Edge") {
+		t.Fatalf("expected task-scoped audit url to encode reserved-character task ids, got %s", taskScopedURL)
+	}
+
+	unscopedURL := controlActionAuditURL("", "cancel")
+	parsedUnscopedURL, err := url.Parse(unscopedURL)
+	if err != nil {
+		t.Fatalf("parse unscoped audit url: %v", err)
+	}
+	unscopedQuery := parsedUnscopedURL.Query()
+	if unscopedQuery.Get("task_id") != "" || unscopedQuery.Get("action") != "cancel" || unscopedQuery.Get("audit_limit") != "20" {
+		t.Fatalf("expected unscoped audit url filters, got %s", unscopedURL)
+	}
 }

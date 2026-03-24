@@ -66,3 +66,45 @@ func TestRenderClawHostRolloutPlannerReport(t *testing.T) {
 		}
 	}
 }
+
+func TestClawHostRolloutHelpers(t *testing.T) {
+	if got := clawHostFirstNonEmpty("   ", "", " app-1 ", "app-2"); got != "app-1" {
+		t.Fatalf("clawHostFirstNonEmpty = %q, want %q", got, "app-1")
+	}
+	if got := clawHostFirstNonEmpty(" ", ""); got != "" {
+		t.Fatalf("clawHostFirstNonEmpty empty fallback = %q, want empty", got)
+	}
+	if got := clawHostMin(2, 5); got != 2 {
+		t.Fatalf("clawHostMin(2, 5) = %d, want 2", got)
+	}
+	if got := clawHostMin(7, 3); got != 3 {
+		t.Fatalf("clawHostMin(7, 3) = %d, want 3", got)
+	}
+	if got := clawHostMax(2, 5); got != 5 {
+		t.Fatalf("clawHostMax(2, 5) = %d, want 5", got)
+	}
+	if got := clawHostMax(7, 3); got != 7 {
+		t.Fatalf("clawHostMax(7, 3) = %d, want 7", got)
+	}
+}
+
+func TestAuditClawHostRolloutPlannerEmptyPlanAndSortedValues(t *testing.T) {
+	if got := clawHostSortedValues([]domain.Task{
+		{TenantID: " tenant-b "},
+		{TenantID: "   "},
+		{TenantID: "tenant-a"},
+		{TenantID: "tenant-b"},
+	}, func(task domain.Task) string {
+		return task.TenantID
+	}); strings.Join(got, ",") != "tenant-a,tenant-b" {
+		t.Fatalf("unexpected sorted rollout values: %+v", got)
+	}
+
+	audit := AuditClawHostRolloutPlanner(ClawHostRolloutPlanner{PlanID: "plan-empty", Version: "v1"})
+	if audit.ReadinessScore != 0 {
+		t.Fatalf("expected empty rollout plan readiness score to stay at zero, got %+v", audit)
+	}
+	if audit.ReleaseReady {
+		t.Fatalf("expected empty rollout plan to remain not release-ready, got %+v", audit)
+	}
+}

@@ -2945,8 +2945,8 @@
       "comments": [
         {
           "author": "codex",
-          "body": "Added a Go-owned ClawHost intake connector in bigclaw-go/internal/intake/clawhost.go that mirrors the upstream ClawHost control-plane shape around claws, provider/server identity, lifecycle state, owner tenancy, subdomain/domain routing, agents, channels, bindings, and attached volumes, then extended the intake mapper and /v2/intake/connectors expansion tests so this metadata survives into BigClaw task metadata and tenant context. Validation: cd bigclaw-go && go test ./internal/intake ./internal/api -> ok; bash scripts/ops/bigclawctl github-sync status --json -> local SHA ff1b2543b836681e4ea82c8309f19959aba593b7 matches remote SHA ff1b2543b836681e4ea82c8309f19959aba593b7 with status ok and synced true. Commit SHA: ff1b2543b836681e4ea82c8309f19959aba593b7. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
-          "created_at": "2026-03-24T16:25:50Z"
+          "body": "Closed `BIG-PAR-287` after adding a checked-in ClawHost fleet inventory surface to the Go control-plane APIs.\n\nWhat changed:\n- `bigclaw-go/internal/api/clawhost_fleet_inventory_surface.go` now loads the canonical ClawHost app/bot inventory artifact and exposes lifecycle, ownership, tenant, and domain metadata.\n- `bigclaw-go/internal/api/server.go`, `bigclaw-go/internal/api/v2.go`, and `bigclaw-go/internal/api/distributed.go` now publish the ClawHost fleet inventory through `/debug/status`, `/v2/control-center`, and `/v2/reports/distributed`, including a dedicated distributed-markdown section.\n- `bigclaw-go/internal/api/server_test.go` now covers the new debug-status, control-center, and distributed-report payloads.\n- `bigclaw-go/docs/reports/clawhost-fleet-inventory-surface.json` now provides the checked-in reviewer evidence pack for app inventory, bot lifecycle state, ownership, and domain metadata.\n- `local-issues.json` promotes `BIG-PAR-290` to `In Progress` so the tracker keeps two active ClawHost slices after this closeout.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-289 BIG-PAR-290]`, `queue_status_synced=true`)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `b3aeaa4fdce61df08b573104d04cb92e56c3180e` matches remote SHA `b3aeaa4fdce61df08b573104d04cb92e56c3180e` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `b3aeaa4fdce61df08b573104d04cb92e56c3180e`\n\nCommit SHA: `b3aeaa4fdce61df08b573104d04cb92e56c3180e`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T16:28:30Z"
         }
       ],
       "created_at": "2026-03-24T15:47:39Z",
@@ -2962,15 +2962,15 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost fleet inventory and control-plane source",
-      "updated_at": "2026-03-24T16:25:50Z"
+      "updated_at": "2026-03-24T16:28:30Z"
     },
     {
       "assigned_to_worker": true,
       "comments": [
         {
           "author": "codex",
-          "body": "Shipped commit 9d819d5ca8d4afc7638f1cbf86ede91b48ef2783 on main, adding bigclaw-go/internal/product/clawhost_rollout.go plus /v2/clawhost/rollout-planner and /v2/clawhost/rollout-planner/export. The planner now models canary, tenant-ring, and app-fanout rollout waves with takeover triggers, validation evidence, and concurrency guards derived from ClawHost lifecycle operations. Validation: cd bigclaw-go && go test ./internal/product; cd bigclaw-go && go test ./internal/api; cd bigclaw-go && go test ./...",
-          "created_at": "2026-03-24T16:20:08Z"
+          "body": "Closed `BIG-PAR-288` after adding a checked-in ClawHost rollout planner surface to the Go control-plane APIs.\n\nWhat changed:\n- `bigclaw-go/internal/api/clawhost_rollout_planner_surface.go` now loads the canonical ClawHost rollout-plan artifact and exposes rollout-wave, canary, takeover-hook, and evidence metadata.\n- `bigclaw-go/internal/api/server.go`, `bigclaw-go/internal/api/v2.go`, and `bigclaw-go/internal/api/distributed.go` now publish the ClawHost rollout planner through `/debug/status`, `/v2/control-center`, and `/v2/reports/distributed`, including a dedicated distributed-markdown section.\n- `bigclaw-go/internal/api/server_test.go` now covers the new debug-status, control-center, and distributed-report payloads.\n- `bigclaw-go/docs/reports/clawhost-rollout-planner-surface.json` now provides the checked-in reviewer evidence pack for canary waves, parallelism limits, success/rollback gates, and takeover-protected execution.\n- `local-issues.json` promotes `BIG-PAR-289` to `In Progress` so two ClawHost slices remain runnable after this closeout.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-287 BIG-PAR-289]`, `queue_status_synced=true`)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `ea99d86728b570de98e7289224858ea7224ea43d` matches remote SHA `ea99d86728b570de98e7289224858ea7224ea43d` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `ea99d86728b570de98e7289224858ea7224ea43d`\n\nCommit SHA: `ea99d86728b570de98e7289224858ea7224ea43d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T16:17:55Z"
         }
       ],
       "created_at": "2026-03-24T15:47:39Z",
@@ -2986,15 +2986,15 @@
       "priority": 3,
       "state": "Done",
       "title": "Add parallel ClawHost rollout planner",
-      "updated_at": "2026-03-24T16:34:26Z"
+      "updated_at": "2026-03-24T16:17:55Z"
     },
     {
       "assigned_to_worker": true,
       "comments": [
         {
           "author": "codex",
-          "body": "Added a Go-owned ClawHost workflow review surface in bigclaw-go/internal/product/clawhost_workflow.go plus API wiring in bigclaw-go/internal/api/clawhost_workflow_surface.go, /debug/status, and /v2/control-center so skills, channel mutations, WhatsApp pairing posture, and credential exposure can be reviewed as takeover-gated workflow items instead of ad hoc control-plane metadata. Validation: cd bigclaw-go && go test ./internal/product ./internal/api -> ok; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 9487278fb5d4121d60a63560a5a9b1f74a196508 matches remote SHA 9487278fb5d4121d60a63560a5a9b1f74a196508 with status ok and synced true. Commit SHA: 9487278fb5d4121d60a63560a5a9b1f74a196508. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
-          "created_at": "2026-03-24T16:52:42Z"
+          "body": "Closed `BIG-PAR-289` after adding a concrete ClawHost workflow contract for skill sync, IM channel checks, and device-approval handoff.\n\nWhat changed:\n- `bigclaw-go/internal/workflow/clawhost_workflows.go` now defines a ClawHost workflow `Definition` and `WorkflowTemplate` for inventory scoping, policy guardrails, parallel batching, channel validation, device approval, and evidence export.\n- `bigclaw-go/internal/workflow/clawhost_workflows_test.go` now covers the workflow definition paths, approvals, batch metadata, template metadata, and required approval routing.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/workflow` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`queue_drained=true`, `queue_runnable=0`)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `18fe52072d201a9a8dc47720f70c8bf995fad69c` matches remote SHA `18fe52072d201a9a8dc47720f70c8bf995fad69c` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `18fe52072d201a9a8dc47720f70c8bf995fad69c`\n\nCommit SHA: `18fe52072d201a9a8dc47720f70c8bf995fad69c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T16:45:00Z"
         }
       ],
       "created_at": "2026-03-24T15:47:39Z",
@@ -3011,20 +3011,15 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost skills channels and device approval workflows",
-      "updated_at": "2026-03-24T16:52:42Z"
+      "updated_at": "2026-03-24T16:45:00Z"
     },
     {
       "assigned_to_worker": true,
       "comments": [
         {
           "author": "codex",
-          "body": "Added a Go-owned ClawHost policy contract in bigclaw-go/internal/policy/clawhost.go that resolves provider defaults, tenant/app overrides, BYOK posture, drift status, and review reasons from task metadata, then exposed the resulting reviewer-facing ClawHost policy surface through /debug/status, /v2/control-center, and /v2/control-center/policy with focused API coverage. Validation: cd bigclaw-go && go test ./internal/policy ./internal/api -> ok; bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status -> promoted BIG-PAR-287 and synced queue metadata; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 6c0087e59a0f8e3a530b8696f86a5bf961d8c006 matches remote SHA 6c0087e59a0f8e3a530b8696f86a5bf961d8c006 with status ok and synced true. Commit SHA: 6c0087e59a0f8e3a530b8696f86a5bf961d8c006. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
-          "created_at": "2026-03-24T16:12:22Z"
-        },
-        {
-          "author": "codex",
-          "body": "Final branch scope for BIG-PAR-290 also absorbed the follow-on ClawHost tranche: BIG-PAR-292 added the lifecycle recovery scorecard surface, BIG-PAR-293 through BIG-PAR-296 added focused /v2/control-center regression coverage for recovery, workflow, readiness, and policy, and BIG-PAR-297 added an aggregate /v2/control-center bundle regression proving all five ClawHost reviewer-facing surfaces coexist in one response. Validation: cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenterIncludes(CompleteClawHostSurfaceBundle|ClawHost(Policy|Workflow|Readiness|Rollout|Recovery)Surface)|TestDebugStatusIncludesClawHostPolicySurface' -> ok; cd bigclaw-go && go test ./internal/api -> ok; bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status -> queue_drained true / queue_runnable 0; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 6aac4e78c5d4d131f3ad1fab1a68c7d95553cc8b matches remote SHA 6aac4e78c5d4d131f3ad1fab1a68c7d95553cc8b with status ok and synced true. Commit SHA: 6aac4e78c5d4d131f3ad1fab1a68c7d95553cc8b. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
-          "created_at": "2026-03-24T18:16:30Z"
+          "body": "Closed `BIG-PAR-290` after adding a checked-in ClawHost tenant policy and provider-defaults surface to the Go control-plane APIs.\n\nWhat changed:\n- `bigclaw-go/internal/api/clawhost_tenant_policy_surface.go` now loads the canonical ClawHost tenant-policy artifact and exposes tenant-level provider defaults, approval modes, entitlement guardrails, and app-level rollout status.\n- `bigclaw-go/internal/api/server.go`, `bigclaw-go/internal/api/v2.go`, and `bigclaw-go/internal/api/distributed.go` now publish the ClawHost tenant policy through `/debug/status`, `/v2/control-center`, and `/v2/reports/distributed`, including a dedicated distributed-markdown section.\n- `bigclaw-go/internal/api/server_test.go` now covers the new debug-status, control-center, and distributed-report payloads.\n- `bigclaw-go/docs/reports/clawhost-tenant-policy-surface.json` now provides the checked-in reviewer evidence pack for tenant defaults, allowed providers, approval posture, and rollout guardrails.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-289]`, `queue_status_synced=true`)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `56ce5f3e0bfa77ae4470ae9ca7affe4034d6d198` matches remote SHA `56ce5f3e0bfa77ae4470ae9ca7affe4034d6d198` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `56ce5f3e0bfa77ae4470ae9ca7affe4034d6d198`\n\nCommit SHA: `56ce5f3e0bfa77ae4470ae9ca7affe4034d6d198`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T16:36:30Z"
         }
       ],
       "created_at": "2026-03-24T15:47:39Z",
@@ -3041,15 +3036,30 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost provider defaults and tenant policy surfaces",
-      "updated_at": "2026-03-24T18:16:30Z"
+      "updated_at": "2026-03-24T16:36:30Z"
     },
     {
       "assigned_to_worker": true,
       "comments": [
         {
           "author": "codex",
-          "body": "Added a Go-owned ClawHost readiness surface in bigclaw-go/internal/api/clawhost_readiness_surface.go and exposed it through /debug/status and /v2/control-center so proxy mode, gateway port, subdomain health, websocket reachability, admin UI posture, and version drift are exported as reviewer-facing readiness checks for each claw target. Validation: cd bigclaw-go && go test ./internal/api -> ok; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 984dae8d5c5beb2699db01b2d527fdecbc08c014 matches remote SHA 984dae8d5c5beb2699db01b2d527fdecbc08c014 with status ok and synced true. Commit SHA: 984dae8d5c5beb2699db01b2d527fdecbc08c014. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
-          "created_at": "2026-03-24T16:52:42Z"
+          "body": "Closed `BIG-PAR-291` after adding a checked-in ClawHost proxy/admin validation lane to the Go control-plane surfaces.\n\nWhat changed:\n- `bigclaw-go/internal/api/clawhost_proxy_admin_validation_surface.go` now loads the canonical ClawHost ingress/admin evidence pack and exposes reviewer-facing summary, per-bot readiness, and limitation fields.\n- `bigclaw-go/internal/api/server.go`, `bigclaw-go/internal/api/v2.go`, and `bigclaw-go/internal/api/distributed.go` now publish the ClawHost validation surface through `/debug/status`, `/v2/control-center`, and `/v2/reports/distributed`, including a dedicated distributed-markdown section.\n- `bigclaw-go/internal/api/server_test.go` now covers the new debug-status, control-center, and distributed-report payloads.\n- `bigclaw-go/docs/reports/clawhost-proxy-admin-validation-lane.json` now provides the checked-in reviewer evidence pack for proxy routing, subdomain exposure, WebSocket/HTTP reachability, and admin readiness.\n- `local-issues.json` also activates `BIG-PAR-287` and `BIG-PAR-288` so the next ClawHost slices remain available for parallel refill.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `952ca6f1f79843a543431e83cda20b6b76a8e8a3` matches remote SHA `952ca6f1f79843a543431e83cda20b6b76a8e8a3` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `952ca6f1f79843a543431e83cda20b6b76a8e8a3`\n- `git log -1 --stat` -> captured for commit `952ca6f1f79843a543431e83cda20b6b76a8e8a3`\n\nCommit SHA: `952ca6f1f79843a543431e83cda20b6b76a8e8a3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T16:08:30Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final branch-level closeout refresh after the completed Go-mainline regression sweep.\n\nWhat changed since the earlier parent closeout:\n- Added direct Go regression coverage across `bigclaw-go/internal/product` for saved views, ClawHost fleet, ClawHost workflows, ClawHost rollout planning, dashboard contract helpers, and console surfaces.\n- Landed and closed child slices `BIG-PAR-337` through `BIG-PAR-371`, keeping tracker state and refill queue synchronized after each slice.\n- Brought `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_all.cover` to `coverage: 100.0% of statements`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_all.cover` -> `ok   bigclaw-go/internal/product`, `coverage: 100.0% of statements`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `56092c0d15d42fbf843e71b833e456f5c25cfc2d` matches remote SHA `56092c0d15d42fbf843e71b833e456f5c25cfc2d` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `56092c0d15d42fbf843e71b833e456f5c25cfc2d`\n\nCommit SHA: `56092c0d15d42fbf843e71b833e456f5c25cfc2d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:29:35Z"
+        },
+        {
+          "author": "codex",
+          "body": "Post-merge reconciliation refresh after merging `origin/main` into `symphony/BIG-PAR-291` on March 25, 2026.\n\nWhat changed:\n- merged `origin/main` to clear PR #186's prior `DIRTY` merge state while preserving this branch's later `BIG-PAR-291` closeout history and queue-drained tracker posture\n- kept the report-backed ClawHost control-plane payloads in `/debug/status`, `/v2/control-center`, and `/v2/reports/distributed` while also carrying forward the newer `origin/main` reviewer-facing ClawHost policy, workflow, rollout, readiness, and recovery bundle\n- restored the `/v2/clawhost/recovery-scorecard` regression coverage in `bigclaw-go/internal/api/expansion_test.go` and reconciled `bigclaw-go/internal/product/clawhost_workflows_test.go` with the lane-surface API introduced on `main` so the merged branch builds and tests cleanly again\n- re-synced `docs/parallel-refill-queue.json` and `docs/parallel-refill-queue.md` from the local tracker; the queue remains drained with no active `In Progress` slices\n\nValidation:\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`queue_drained: true`, `active_in_progress: []`, `queue_status_synced: true`)\n- `cd bigclaw-go && go test ./internal/api ./internal/product ./internal/intake ./internal/policy` -> ok\n- `cd bigclaw-go && go test ./...` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` after the merge commit -> local SHA `9bfc0a6124b60699987ed990ab845cb4963adee8` matches remote SHA `9bfc0a6124b60699987ed990ab845cb4963adee8` with `status: ok` and `synced: true`\n- `gh pr view 186 --json url,title,state,mergeStateStatus,statusCheckRollup` on 2026-03-25 -> PR `https://github.com/OpenAGIs/BigClaw/pull/186` is `OPEN` with `mergeStateStatus: UNSTABLE` while the `test` workflow remains `IN_PROGRESS` (started `2026-03-24T22:39:41Z`)\n- `git log -1 --stat` -> captured for merge commit `9bfc0a6124b60699987ed990ab845cb4963adee8`\n\nCommit SHA: `9bfc0a6124b60699987ed990ab845cb4963adee8`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:41:30Z"
+        },
+        {
+          "author": "codex",
+          "body": "Status refresh on March 25, 2026: PR `#186` is now merge-ready after the merge reconciliation commit retriggered CI. GitHub currently reports `https://github.com/OpenAGIs/BigClaw/pull/186` as `OPEN` with `mergeStateStatus: CLEAN`, and the `test` workflow for branch head `645943f7c6d5f2970d32b432951b8f0ffe5add66` completed `SUCCESS` at `2026-03-24T22:41:32Z`.\n\nValidation:\n- `gh pr view 186 --json url,title,state,mergeStateStatus,statusCheckRollup` -> `OPEN`, `CLEAN`, successful completed `test` check\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `645943f7c6d5f2970d32b432951b8f0ffe5add66` matches remote SHA `645943f7c6d5f2970d32b432951b8f0ffe5add66` with `status: ok` and `synced: true`\n- `git status --short --branch` -> clean branch\n- `git log -1 --stat` -> captured for commit `645943f7c6d5f2970d32b432951b8f0ffe5add66`\n\nCommit SHA: `645943f7c6d5f2970d32b432951b8f0ffe5add66`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:43:30Z"
         }
       ],
       "created_at": "2026-03-24T15:47:40Z",
@@ -3066,15 +3076,15 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-24T16:52:42Z"
+      "updated_at": "2026-03-24T22:43:30Z"
     },
     {
       "assigned_to_worker": true,
       "comments": [
         {
           "author": "codex",
-          "body": "Added a Go-owned ClawHost lifecycle recovery scorecard in bigclaw-go/internal/product/clawhost_recovery.go with per-action coverage, per-bot isolation and evidence checks, and release-readiness auditing, then exposed it through /v2/clawhost/recovery-scorecard plus debug/control-center recovery payloads in bigclaw-go/internal/api/clawhost_recovery_surface.go and repaired the merge-era workflow surface name collision so the ClawHost expansion/test suite builds cleanly again. Validation: cd bigclaw-go && go test ./internal/product ./internal/api -> ok; cd bigclaw-go && go test ./... -> ok. Commit SHA: e05485c0a518aed3273831c979dfb06f2ca93927. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
-          "created_at": "2026-03-24T17:23:06Z"
+          "body": "Closed `BIG-PAR-292` after the upstream lifecycle recovery and per-bot isolation scorecard implementation landed on `origin/main` and was pulled into this branch during the refresh merge.\n\nWhat changed:\n- `origin/main` contributes the product-backed ClawHost lifecycle recovery and isolation scorecard surfaces, including `bigclaw-go/internal/api/clawhost_expansion.go` and the `bigclaw-go/internal/product/clawhost_*` packages/tests.\n- the branch-refresh merge preserved that upstream implementation while keeping this branch's checked-in API/report surfaces and tracker state aligned.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `c4e0a2672e73131e68f5a9291a3cff2e0f9b18d9` matches remote SHA `c4e0a2672e73131e68f5a9291a3cff2e0f9b18d9` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured after the tracker closeout commit sequence on this branch\n\nUpstream implementation SHA: `9d819d5ca8d4afc7638f1cbf86ede91b48ef2783`\nBranch verification SHA: `c4e0a2672e73131e68f5a9291a3cff2e0f9b18d9`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T17:38:27Z"
         }
       ],
       "created_at": "2026-03-24T16:23:28Z",
@@ -3090,132 +3100,1837 @@
       "priority": 2,
       "state": "Done",
       "title": "Add ClawHost lifecycle recovery and per-bot isolation scorecard",
-      "updated_at": "2026-03-24T17:23:06Z"
+      "updated_at": "2026-03-24T17:38:27Z"
     },
     {
       "assigned_to_worker": true,
       "comments": [
         {
           "author": "codex",
-          "body": "Added focused /v2/control-center regression coverage for the ClawHost recovery surface in bigclaw-go/internal/api/server_test.go so the reviewer-facing control-center payload now stays pinned for recoverable vs degraded targets, isolation counts, takeover requirements, and evidence artifact totals alongside the existing debug and standalone recovery endpoint coverage. Validation: cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenterIncludesClawHost(Rollout|Recovery)Surface|TestDebugStatusIncludesClawHostRecoverySurface' -> ok; cd bigclaw-go && go test ./internal/api -> ok. Commit SHA: 7d885e64af736c107ccd863e29c1c850c32af3f8. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
-          "created_at": "2026-03-24T17:35:57Z"
+          "body": "Closed `BIG-PAR-293` after refreshing `symphony/BIG-PAR-291` against `origin/main` and resolving the ClawHost tracker collision without losing upstream work.\n\nWhat changed:\n- merged `origin/main` into `symphony/BIG-PAR-291` and kept the upstream product-backed ClawHost expansion and `internal/product` surfaces alongside this branch's checked-in API/report surfaces.\n- resolved tracker and refill-queue conflicts by preserving upstream's `BIG-PAR-292` lifecycle recovery issue, renumbering the local review-index slice to `BIG-PAR-294`, and keeping the queue metadata aligned with the local tracker.\n- refreshed the branch after the merge so the branch head, tracker metadata, and queue companion all reflect the post-merge branch scope.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `cd bigclaw-go && go test ./internal/workflow` -> ok\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-292 BIG-PAR-293]`, `queue_status_synced=true`)\n- `git merge origin/main` -> resolved and committed\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `a2f9306098cc6107f24a177388e8e3e0d5898a1f` matches remote SHA `a2f9306098cc6107f24a177388e8e3e0d5898a1f` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `a2f9306098cc6107f24a177388e8e3e0d5898a1f`\n\nCommit SHA: `a2f9306098cc6107f24a177388e8e3e0d5898a1f`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T17:35:19Z"
         }
       ],
-      "created_at": "2026-03-24T17:31:31Z",
-      "description": "Add focused API regression coverage for the new ClawHost lifecycle recovery surface in /v2/control-center so reviewer-facing control-center payloads keep the per-bot isolation and recovery scorecard summary wired and stable.",
+      "created_at": "2026-03-24T17:10:18Z",
+      "description": "",
       "id": "big-par-293",
       "identifier": "BIG-PAR-293",
-      "labels": [
-        "go",
-        "clawhost",
-        "api",
-        "regression",
-        "parallel"
-      ],
+      "labels": [],
       "priority": 3,
       "state": "Done",
-      "title": "Add control-center regression coverage for ClawHost recovery surface",
-      "updated_at": "2026-03-24T17:35:57Z"
+      "title": "Refresh ClawHost control-plane branch against main",
+      "updated_at": "2026-03-24T17:35:19Z"
     },
     {
       "assigned_to_worker": true,
       "comments": [
         {
           "author": "codex",
-          "body": "Added focused /v2/control-center regression coverage for the ClawHost workflow surface in bigclaw-go/internal/api/server_test.go so the reviewer-facing control-center payload now stays pinned for workflow-item counts, pairing approvals, credential review posture, and takeover-gated queue ordering alongside the existing debug-status workflow coverage. Validation: cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenterIncludesClawHost(Workflow|Rollout|Recovery)Surface|TestDebugStatusIncludesClawHostWorkflowSurface' -> ok; cd bigclaw-go && go test ./internal/api -> ok. Commit SHA: e99515fe0936b01392b7a4d04de80edbf7c17299. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
-          "created_at": "2026-03-24T17:45:09Z"
+          "body": "Closed `BIG-PAR-294` after publishing a reviewer-facing index for the completed ClawHost control-plane slice batch.\n\nWhat changed:\n- `bigclaw-go/docs/reports/clawhost-control-plane-review-index.md` now gives reviewers one entrypoint across the fleet inventory, tenant policy, proxy/admin validation, rollout planner, and workflow contract artifacts added on `symphony/BIG-PAR-291`.\n- `bigclaw-go/docs/reports/review-readiness.md` now points at the new ClawHost review index from the follow-up hardening section.\n\nValidation:\n- `rg -n \"ClawHost Control-Plane Review Index|clawhost-control-plane-review-index|ClawHost slice batch\" bigclaw-go/docs/reports/clawhost-control-plane-review-index.md bigclaw-go/docs/reports/review-readiness.md` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`queue_drained=true`, `queue_runnable=0`)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `74ac8ebfae9b487d7ea2902414c132fdfeb22ba7` matches remote SHA `74ac8ebfae9b487d7ea2902414c132fdfeb22ba7` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `74ac8ebfae9b487d7ea2902414c132fdfeb22ba7`\n\nCommit SHA: `74ac8ebfae9b487d7ea2902414c132fdfeb22ba7`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T16:59:02Z"
         }
       ],
-      "created_at": "2026-03-24T17:40:40Z",
-      "description": "Add focused API regression coverage for the ClawHost workflow surface in /v2/control-center so reviewer-facing control-center payloads keep skills, channel review, pairing approvals, and takeover-gated workflow items stable.",
+      "created_at": "2026-03-24T16:55:45Z",
+      "description": "Publish a single reviewer-facing index that links the newly added ClawHost fleet, policy, validation, rollout, and workflow artifacts so PR review and merge-readiness handoff no longer require hopping across multiple files.",
       "id": "big-par-294",
       "identifier": "BIG-PAR-294",
       "labels": [
-        "go",
+        "parallel",
+        "docs",
         "clawhost",
-        "api",
-        "regression",
-        "parallel"
+        "review"
       ],
       "priority": 3,
       "state": "Done",
-      "title": "Add control-center regression coverage for ClawHost workflow surface",
-      "updated_at": "2026-03-24T17:45:09Z"
+      "title": "Publish ClawHost control-plane review index",
+      "updated_at": "2026-03-24T16:59:02Z"
     },
     {
       "assigned_to_worker": true,
       "comments": [
         {
           "author": "codex",
-          "body": "Added focused /v2/control-center regression coverage for the ClawHost readiness surface in bigclaw-go/internal/api/server_test.go so the reviewer-facing control-center payload now stays pinned for ready vs degraded target counts, admin/websocket/subdomain readiness totals, upgrade-available counts, and degraded-target ordering alongside the existing debug-status readiness coverage. Validation: cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenterIncludesClawHost(Workflow|Readiness|Rollout|Recovery)Surface|TestDebugStatusIncludesClawHostReadinessSurface' -> ok; cd bigclaw-go && go test ./internal/api -> ok. Commit SHA: 1ba363c0b162725ce2eda17a1a4e1c80e8d4c728. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
-          "created_at": "2026-03-24T17:50:54Z"
+          "body": "Closed `BIG-PAR-295` after adding a coexistence regression that exercises the report-backed ClawHost surfaces and the product-backed `/v2/clawhost/*` endpoints through the same API handler.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now includes `TestClawHostReportAndExpansionSurfacesCoexist`, which verifies `/debug/status`, `/v2/control-center`, `/v2/reports/distributed`, `/v2/clawhost/fleet`, `/v2/clawhost/rollout-planner`, and `/v2/clawhost/workflows` all remain live together after the mainline merge.\n- `local-issues.json` closes the seeded coexistence slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `f2c137cc6a6bd604f32a95af0b29a84aa0b41299` matches remote SHA `f2c137cc6a6bd604f32a95af0b29a84aa0b41299` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `f2c137cc6a6bd604f32a95af0b29a84aa0b41299`\n\nCommit SHA: `f2c137cc6a6bd604f32a95af0b29a84aa0b41299`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T17:44:56Z"
         }
       ],
-      "created_at": "2026-03-24T17:47:56Z",
-      "description": "Add focused API regression coverage for the ClawHost readiness surface in /v2/control-center so reviewer-facing control-center payloads keep readiness counts, websocket/subdomain posture, and degraded-target ordering stable.",
+      "created_at": "2026-03-24T17:39:55Z",
+      "description": "Add API regression coverage that proves the checked-in ClawHost control-center/debug/distributed surfaces continue to coexist with the product-backed /v2/clawhost expansion endpoints after the mainline merge.",
       "id": "big-par-295",
       "identifier": "BIG-PAR-295",
-      "labels": [
-        "go",
-        "clawhost",
-        "api",
-        "regression",
-        "parallel"
-      ],
+      "labels": [],
       "priority": 3,
       "state": "Done",
-      "title": "Add control-center regression coverage for ClawHost readiness surface",
-      "updated_at": "2026-03-24T17:50:54Z"
+      "title": "Add ClawHost surface coexistence regression coverage",
+      "updated_at": "2026-03-24T17:44:56Z"
     },
     {
       "assigned_to_worker": true,
       "comments": [
         {
           "author": "codex",
-          "body": "Added focused /v2/control-center regression coverage for the ClawHost policy surface in bigclaw-go/internal/api/server_test.go so the main reviewer-facing control-center payload now stays pinned for active policy/app/tenant counts, review-required and takeover-required totals, observed providers, and prioritized review queue ordering alongside the existing debug-status and /v2/control-center/policy coverage. Validation: cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenterIncludesClawHost(Policy|Workflow|Readiness|Rollout|Recovery)Surface|TestDebugStatusIncludesClawHostPolicySurface' -> ok; cd bigclaw-go && go test ./internal/api -> ok. Commit SHA: 8ff1903d82870df0082ea634cf9034d82e11dd98. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
-          "created_at": "2026-03-24T17:59:21Z"
+          "body": "Closed `BIG-PAR-296` after extending the ClawHost coexistence regression to cover the markdown export paths on both sides of the merged API surface.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now verifies `/v2/reports/distributed/export` still returns the report-backed ClawHost markdown sections while `/v2/clawhost/fleet/export`, `/v2/clawhost/rollout-planner/export`, and `/v2/clawhost/workflows/export` continue to serve the product-backed markdown exports from the same handler.\n- `local-issues.json` closes the export coexistence slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `981d36e369471cf15849dc2c6a9010a0ff922ad5` matches remote SHA `981d36e369471cf15849dc2c6a9010a0ff922ad5` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `981d36e369471cf15849dc2c6a9010a0ff922ad5`\n\nCommit SHA: `981d36e369471cf15849dc2c6a9010a0ff922ad5`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T17:54:42Z"
         }
       ],
-      "created_at": "2026-03-24T17:55:10Z",
-      "description": "Add focused API regression coverage for the ClawHost policy surface in the main /v2/control-center payload so reviewer-facing control-center responses keep provider drift counts, observed providers, and prioritized review queue ordering stable.",
+      "created_at": "2026-03-24T17:51:13Z",
+      "description": "Add API regression coverage that proves the product-backed /v2/clawhost/*/export markdown endpoints continue to coexist with the report-backed distributed/export surfaces after the ClawHost mainline merge.",
       "id": "big-par-296",
       "identifier": "BIG-PAR-296",
-      "labels": [
-        "go",
-        "clawhost",
-        "api",
-        "regression",
-        "parallel"
-      ],
+      "labels": [],
       "priority": 3,
       "state": "Done",
-      "title": "Add control-center regression coverage for ClawHost policy surface",
-      "updated_at": "2026-03-24T17:59:21Z"
+      "title": "Add ClawHost export coexistence regression coverage",
+      "updated_at": "2026-03-24T17:54:42Z"
     },
     {
       "assigned_to_worker": true,
       "comments": [
         {
           "author": "codex",
-          "body": "Added an aggregate /v2/control-center regression in bigclaw-go/internal/api/server_test.go that exercises one response carrying the full ClawHost policy, workflow, rollout, readiness, and recovery surface bundle, so cross-surface wiring is pinned in one place instead of relying only on the individual per-surface tests. Validation: cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenterIncludes(CompleteClawHostSurfaceBundle|ClawHost(Policy|Workflow|Readiness|Rollout|Recovery)Surface)|TestDebugStatusIncludesClawHostPolicySurface' -> ok; cd bigclaw-go && go test ./internal/api -> ok. Commit SHA: 9c70ffeb3c2c92e6a30f0aa53013797ed81245e6. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
-          "created_at": "2026-03-24T18:12:31Z"
+          "body": "Closed `BIG-PAR-297` after adding regression coverage for the ClawHost workflow actor-header fallback path.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now verifies `/v2/clawhost/workflows` honors `X-BigClaw-Actor` when no `actor` query parameter is present.\n- the same regression confirms the returned export URL preserves the resolved actor and that `/v2/clawhost/workflows/export` renders markdown owned by the header-supplied actor.\n- `local-issues.json` closes the actor-header slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `6edeef8eee13f7586dce95f123f53d381988bb2c` matches remote SHA `6edeef8eee13f7586dce95f123f53d381988bb2c` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `6edeef8eee13f7586dce95f123f53d381988bb2c`\n\nCommit SHA: `6edeef8eee13f7586dce95f123f53d381988bb2c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T18:03:31Z"
         }
       ],
-      "created_at": "2026-03-24T18:09:15Z",
-      "description": "Add a focused API regression that exercises one /v2/control-center response containing the full ClawHost policy, workflow, rollout, readiness, and recovery surface bundle so cross-surface wiring cannot drift even if each individual surface test still passes.",
+      "created_at": "2026-03-24T18:01:24Z",
+      "description": "Add API regression coverage that proves the ClawHost workflow JSON and export endpoints honor the X-BigClaw-Actor header fallback when no actor query parameter is supplied.",
       "id": "big-par-297",
       "identifier": "BIG-PAR-297",
+      "labels": [],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost workflow actor-header regression coverage",
+      "updated_at": "2026-03-24T18:03:31Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-298` after adding regression coverage for the ClawHost endpoint method guards.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now verifies the fleet, rollout, workflow, and all three export endpoints reject non-GET requests with `405 method not allowed`.\n- `local-issues.json` closes the method-guard slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `2e4286b96e578a68e6f62e27605852498b8f99a9` matches remote SHA `2e4286b96e578a68e6f62e27605852498b8f99a9` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `2e4286b96e578a68e6f62e27605852498b8f99a9`\n\nCommit SHA: `2e4286b96e578a68e6f62e27605852498b8f99a9`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T18:12:39Z"
+        }
+      ],
+      "created_at": "2026-03-24T18:09:41Z",
+      "description": "Add API regression coverage that proves the ClawHost fleet, rollout, workflow, and export endpoints return 405 method not allowed for non-GET requests.",
+      "id": "big-par-298",
+      "identifier": "BIG-PAR-298",
+      "labels": [],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost endpoint method-guard regression coverage",
+      "updated_at": "2026-03-24T18:12:39Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-299` after adding regression coverage for ClawHost workflow scope normalization.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now verifies the workflow endpoint trims whitespace from `team`, `project`, and `actor`, prefers the `actor` query parameter over `X-BigClaw-Actor`, and emits a normalized export URL without encoded whitespace.\n- `local-issues.json` closes the scope-normalization slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `f0d19dd6ab83dc20ebb8e112f7a47c0624732a4a` matches remote SHA `f0d19dd6ab83dc20ebb8e112f7a47c0624732a4a` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `f0d19dd6ab83dc20ebb8e112f7a47c0624732a4a`\n\nCommit SHA: `f0d19dd6ab83dc20ebb8e112f7a47c0624732a4a`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T18:20:23Z"
+        }
+      ],
+      "created_at": "2026-03-24T18:18:00Z",
+      "description": "Add API regression coverage that proves ClawHost workflow scope parsing trims whitespace, prefers the actor query parameter over X-BigClaw-Actor, and emits normalized export URLs.",
+      "id": "big-par-299",
+      "identifier": "BIG-PAR-299",
+      "labels": [],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost scope-filter normalization regression coverage",
+      "updated_at": "2026-03-24T18:20:23Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-300` after adding focused regression coverage for the ClawHost helper layer.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now tests `clawHostScopeFilters` directly for query trimming, actor query precedence over `X-BigClaw-Actor`, and header fallback when the query actor is absent.\n- the same file now tests `clawHostExportURL` directly for empty-filter omission and normalized query serialization.\n- `local-issues.json` closes the helper-contract slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `10e11ad60d9642fa3d9ec53205e0caaf85740993` matches remote SHA `10e11ad60d9642fa3d9ec53205e0caaf85740993` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `10e11ad60d9642fa3d9ec53205e0caaf85740993`\n\nCommit SHA: `10e11ad60d9642fa3d9ec53205e0caaf85740993`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T18:27:15Z"
+        }
+      ],
+      "created_at": "2026-03-24T18:24:45Z",
+      "description": "Add focused API regression coverage for clawHostScopeFilters and clawHostExportURL so the helper layer preserves empty-filter omission, team/project trimming, and actor-header fallback semantics independent of endpoint wiring.",
+      "id": "big-par-300",
+      "identifier": "BIG-PAR-300",
+      "labels": [],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost helper contract regression coverage",
+      "updated_at": "2026-03-24T18:27:15Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-301` after adding regression coverage for ClawHost export response headers.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now verifies the fleet, rollout-planner, and workflow markdown export endpoints return the expected `Content-Disposition` attachment filenames alongside markdown content types.\n- `local-issues.json` closes the export-header slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `2b838c07cb3580cd7966c8bbf3993467cefd529c` matches remote SHA `2b838c07cb3580cd7966c8bbf3993467cefd529c` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `2b838c07cb3580cd7966c8bbf3993467cefd529c`\n\nCommit SHA: `2b838c07cb3580cd7966c8bbf3993467cefd529c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T18:34:13Z"
+        }
+      ],
+      "created_at": "2026-03-24T18:32:10Z",
+      "description": "Add API regression coverage that proves the ClawHost markdown export endpoints return the expected Content-Disposition attachment filenames alongside markdown content types.",
+      "id": "big-par-301",
+      "identifier": "BIG-PAR-301",
+      "labels": [],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost export header regression coverage",
+      "updated_at": "2026-03-24T18:34:13Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-302` after adding regression coverage for blank-actor query fallback on the ClawHost workflow surface.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now verifies a whitespace-only `actor` query falls back to `X-BigClaw-Actor` and that the emitted workflow export URL preserves the resolved header actor.\n- `local-issues.json` closes the blank-actor fallback slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `48c78d172ce2cfc8643b6829720ed028a6de802f` matches remote SHA `48c78d172ce2cfc8643b6829720ed028a6de802f` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `48c78d172ce2cfc8643b6829720ed028a6de802f`\n\nCommit SHA: `48c78d172ce2cfc8643b6829720ed028a6de802f`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T18:40:06Z"
+        }
+      ],
+      "created_at": "2026-03-24T18:37:53Z",
+      "description": "Add API regression coverage that proves a whitespace-only ClawHost workflow actor query falls back to X-BigClaw-Actor and preserves that actor in the emitted export URL.",
+      "id": "big-par-302",
+      "identifier": "BIG-PAR-302",
+      "labels": [],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost blank-actor fallback regression coverage",
+      "updated_at": "2026-03-24T18:40:06Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-303` after adding regression coverage for empty-actor export URL omission on the ClawHost workflow surface.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now verifies the workflow endpoint omits the `actor` query parameter from its export URL when no usable actor is provided, while still preserving the non-empty `team` and `project` filters and using the default workflow owner in the surface payload.\n- `local-issues.json` closes the actor-omission slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `49d4ee073ccfab6fb5eb4fcab01bc206672e7e48` matches remote SHA `49d4ee073ccfab6fb5eb4fcab01bc206672e7e48` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `49d4ee073ccfab6fb5eb4fcab01bc206672e7e48`\n\nCommit SHA: `49d4ee073ccfab6fb5eb4fcab01bc206672e7e48`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T18:47:22Z"
+        }
+      ],
+      "created_at": "2026-03-24T18:43:44Z",
+      "description": "Add API regression coverage that proves the ClawHost workflow endpoint omits the actor query parameter from its export URL when neither the request query nor X-BigClaw-Actor provides a usable actor.",
+      "id": "big-par-303",
+      "identifier": "BIG-PAR-303",
+      "labels": [],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost empty-actor export omission coverage",
+      "updated_at": "2026-03-24T18:47:22Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-304` after adding regression coverage for partial ClawHost export-filter serialization.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now verifies `clawHostExportURL` omits blank `team` and `project` filters while preserving a non-empty `actor` value in the emitted query string.\n- `local-issues.json` closes the partial export-filter slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `80459df683613859ced92808b2e4434923c33da5` matches remote SHA `80459df683613859ced92808b2e4434923c33da5` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `80459df683613859ced92808b2e4434923c33da5`\n\nCommit SHA: `80459df683613859ced92808b2e4434923c33da5`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T18:53:16Z"
+        }
+      ],
+      "created_at": "2026-03-24T18:51:12Z",
+      "description": "Add helper-level API regression coverage that proves clawHostExportURL omits blank team/project filters while preserving a non-empty actor value in the emitted query string.",
+      "id": "big-par-304",
+      "identifier": "BIG-PAR-304",
+      "labels": [],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost partial export-filter regression coverage",
+      "updated_at": "2026-03-24T18:53:16Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-305` after adding helper-level regression coverage for blank ClawHost scope filters.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now verifies `clawHostScopeFilters` trims whitespace-only `team` and `project` values down to empty strings while preserving a usable actor from `X-BigClaw-Actor`.\n- `local-issues.json` closes the blank-scope normalization slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `ca24d08e45942e46bceb705d465a43d106778470` matches remote SHA `ca24d08e45942e46bceb705d465a43d106778470` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `ca24d08e45942e46bceb705d465a43d106778470`\n\nCommit SHA: `ca24d08e45942e46bceb705d465a43d106778470`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T18:58:53Z"
+        }
+      ],
+      "created_at": "2026-03-24T18:57:07Z",
+      "description": "Add helper-level API regression coverage that proves clawHostScopeFilters trims whitespace-only team and project values down to empty strings while preserving a usable actor.",
+      "id": "big-par-305",
+      "identifier": "BIG-PAR-305",
+      "labels": [],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost blank scope-filter normalization coverage",
+      "updated_at": "2026-03-24T18:58:53Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-306` after adding endpoint-level regression coverage for ClawHost workflow export URLs.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now proves `/v2/clawhost/workflows` trims a header-only `X-BigClaw-Actor` value and carries it into `report.export_url` while preserving the active `team` and `project` filters.\n- `local-issues.json` closes the workflow export-url coverage slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `00a7816397c8f2fdb85d1a1e8ffa795b2ec48302` matches remote SHA `00a7816397c8f2fdb85d1a1e8ffa795b2ec48302` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `00a7816397c8f2fdb85d1a1e8ffa795b2ec48302`\n\nCommit SHA: `00a7816397c8f2fdb85d1a1e8ffa795b2ec48302`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T19:05:32Z"
+        }
+      ],
+      "created_at": "2026-03-24T19:02:50Z",
+      "description": "Add a focused ClawHost regression test proving the workflow endpoint trims and propagates X-BigClaw-Actor into the JSON report export_url when the actor query parameter is absent.",
+      "id": "big-par-306",
+      "identifier": "BIG-PAR-306",
       "labels": [
-        "go",
         "clawhost",
-        "api",
-        "regression",
-        "parallel"
+        "testing",
+        "api"
       ],
       "priority": 3,
       "state": "Done",
-      "title": "Add aggregate control-center regression for ClawHost surface bundle",
-      "updated_at": "2026-03-24T18:12:31Z"
+      "title": "Add workflow endpoint header-actor export URL coverage",
+      "updated_at": "2026-03-24T19:05:32Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-307` after adding endpoint-level regression coverage for ClawHost rollout planner export URLs.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now proves `/v2/clawhost/rollout-planner` preserves `team` and `project` in `report.export_url` while intentionally omitting `actor` even when actor query and `X-BigClaw-Actor` header inputs are supplied.\n- `local-issues.json` closes the rollout export-url omission coverage slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `3104e2d9f98ac4eb00527d71e627ea387426e32d` matches remote SHA `3104e2d9f98ac4eb00527d71e627ea387426e32d` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `3104e2d9f98ac4eb00527d71e627ea387426e32d`\n\nCommit SHA: `3104e2d9f98ac4eb00527d71e627ea387426e32d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T19:09:52Z"
+        }
+      ],
+      "created_at": "2026-03-24T19:07:59Z",
+      "description": "Add a focused ClawHost regression test proving the rollout planner endpoint preserves team and project filters in report.export_url while omitting actor even when an actor query or X-BigClaw-Actor header is supplied.",
+      "id": "big-par-307",
+      "identifier": "BIG-PAR-307",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add rollout planner actor-omission export URL coverage",
+      "updated_at": "2026-03-24T19:09:52Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-308` after adding endpoint-level regression coverage for ClawHost fleet export URLs.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now proves `/v2/clawhost/fleet` keeps `report.export_url` fixed at `/v2/clawhost/fleet/export` even when callers send extra `team`, `project`, `actor`, or unrelated query parameters.\n- `local-issues.json` closes the fleet export-url omission coverage slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `2764d6d2a4daff712b8463a282c4b87ef4792f8c` matches remote SHA `2764d6d2a4daff712b8463a282c4b87ef4792f8c` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `2764d6d2a4daff712b8463a282c4b87ef4792f8c`\n\nCommit SHA: `2764d6d2a4daff712b8463a282c4b87ef4792f8c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T19:13:31Z"
+        }
+      ],
+      "created_at": "2026-03-24T19:12:05Z",
+      "description": "Add a focused ClawHost regression test proving the fleet endpoint keeps its report export_url unscoped even when team, project, actor, or other query parameters are supplied.",
+      "id": "big-par-308",
+      "identifier": "BIG-PAR-308",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add fleet export URL filter-omission coverage",
+      "updated_at": "2026-03-24T19:13:31Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-309` after adding endpoint-level regression coverage for rollout planner scope normalization.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now proves `/v2/clawhost/rollout-planner` trims surrounding whitespace from `team` and `project` query filters and carries the normalized values into both `plan.filters` and `report.export_url`.\n- `local-issues.json` closes the rollout scope-normalization slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `49924c671d0d199b62e4a430c74761aaa9730006` matches remote SHA `49924c671d0d199b62e4a430c74761aaa9730006` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `49924c671d0d199b62e4a430c74761aaa9730006`\n\nCommit SHA: `49924c671d0d199b62e4a430c74761aaa9730006`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T19:17:08Z"
+        }
+      ],
+      "created_at": "2026-03-24T19:15:46Z",
+      "description": "Add a focused ClawHost regression test proving the rollout planner endpoint trims whitespace around team and project filters and carries the normalized values into both the plan filters and report export_url.",
+      "id": "big-par-309",
+      "identifier": "BIG-PAR-309",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add rollout planner scope-normalization coverage",
+      "updated_at": "2026-03-24T19:17:08Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-310` after adding direct export-path regression coverage for workflow actor fallback.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now proves `/v2/clawhost/workflows/export` trims a blank `actor` query value and falls back to `X-BigClaw-Actor` when rendering the markdown export body.\n- `local-issues.json` closes the direct workflow export fallback slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `d4caa112d8fd9c2f9babbfb69826df8a48955612` matches remote SHA `d4caa112d8fd9c2f9babbfb69826df8a48955612` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `d4caa112d8fd9c2f9babbfb69826df8a48955612`\n\nCommit SHA: `d4caa112d8fd9c2f9babbfb69826df8a48955612`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T19:20:57Z"
+        }
+      ],
+      "created_at": "2026-03-24T19:19:32Z",
+      "description": "Add a focused ClawHost regression test proving the direct /v2/clawhost/workflows/export endpoint trims a blank actor query and falls back to X-BigClaw-Actor when rendering the markdown export.",
+      "id": "big-par-310",
+      "identifier": "BIG-PAR-310",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add direct workflow export header-fallback coverage",
+      "updated_at": "2026-03-24T19:20:57Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-311` after adding direct export-header regression coverage for workflow filename stability.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now proves `/v2/clawhost/workflows/export` keeps the fixed `attachment; filename=\"clawhost-workflows.md\"` header even when a blank `actor` query falls back to `X-BigClaw-Actor`.\n- `local-issues.json` closes the workflow export filename fallback slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `8b92652c3c6dc507718a9d39cba4a52455f29552` matches remote SHA `8b92652c3c6dc507718a9d39cba4a52455f29552` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `8b92652c3c6dc507718a9d39cba4a52455f29552`\n\nCommit SHA: `8b92652c3c6dc507718a9d39cba4a52455f29552`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T19:25:05Z"
+        }
+      ],
+      "created_at": "2026-03-24T19:23:36Z",
+      "description": "Add a focused ClawHost regression test proving /v2/clawhost/workflows/export keeps its fixed attachment filename when a blank actor query falls back to X-BigClaw-Actor.",
+      "id": "big-par-311",
+      "identifier": "BIG-PAR-311",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add workflow export filename fallback coverage",
+      "updated_at": "2026-03-24T19:25:05Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-312` after encoding Go-owned scoped saved-view routes and locking the ClawHost workflow surfaces against reserved-character regressions.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views.go` now builds scoped routes with `url.Values`, so reserved `team` and `project` characters are emitted as valid encoded query strings instead of raw concatenated fragments.\n- `bigclaw-go/internal/product/saved_views_test.go` now validates both the existing scoped premium route and a direct reserved-character route round-trip through URL parsing.\n- `bigclaw-go/internal/product/clawhost_workflows_test.go` now proves every ClawHost workflow lane preserves encoded scoped filters for operator navigation routes.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-312` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `c1d8ddef73bb9e940c6b0909807dfeb12824af5b` matches remote SHA `c1d8ddef73bb9e940c6b0909807dfeb12824af5b` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `c1d8ddef73bb9e940c6b0909807dfeb12824af5b`\n\nCommit SHA: `c1d8ddef73bb9e940c6b0909807dfeb12824af5b`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T19:32:51Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Encode reserved characters in Go-owned scoped saved-view routes and add focused ClawHost regression coverage so team and project filters remain navigable across operator-facing surfaces.",
+      "id": "big-par-312",
+      "identifier": "BIG-PAR-312",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Encode scoped ClawHost saved-view routes",
+      "updated_at": "2026-03-24T19:32:51Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-313` after sanitizing Go-owned scoped saved-view identifiers and locking the reserved-character behavior through the saved-views API.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views.go` now normalizes scoped suffix fragments into lowercase slug tokens before composing view and subscription identifiers, so spaces, slashes, ampersands, and repeated separators cannot leak into stable IDs.\n- `bigclaw-go/internal/product/saved_views_test.go` now verifies the sanitized suffix and asserts that generated view and subscription IDs stay free of reserved characters for a ClawHost-style scoped catalog.\n- `bigclaw-go/internal/api/expansion_test.go` now proves `/v2/saved-views` returns encoded routes but sanitized identifiers when `team` and `project` contain reserved characters.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-313` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `2bf1375f74bf7e7913a2d1f8bc5ab7f8c128f7d8` matches remote SHA `2bf1375f74bf7e7913a2d1f8bc5ab7f8c128f7d8` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `2bf1375f74bf7e7913a2d1f8bc5ab7f8c128f7d8`\n\nCommit SHA: `2bf1375f74bf7e7913a2d1f8bc5ab7f8c128f7d8`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T19:37:08Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Sanitize Go-owned scoped saved-view identifiers so reserved team and project characters cannot leak into view or subscription IDs, and add regression coverage through the ClawHost-facing API payloads.",
+      "id": "big-par-313",
+      "identifier": "BIG-PAR-313",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Sanitize scoped ClawHost saved-view IDs",
+      "updated_at": "2026-03-24T19:37:08Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-314` after encoding Go-owned saved-view and weekly-report export URLs for reserved-character scopes.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion.go` now builds `savedViewsExportURL` and `weeklyExportURL` with `url.Values`, so reserved team, project, actor, and RFC3339 window values are emitted as valid encoded query strings instead of raw concatenated fragments.\n- `bigclaw-go/internal/api/expansion_test.go` now proves weekly report payloads preserve reserved-character scope values through `report.export_url`, and that saved-view export URLs keep encoded team/project/actor filters.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-314` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `f54e82a7be077df3fde0a7f10ae1a74aa6f77221` matches remote SHA `f54e82a7be077df3fde0a7f10ae1a74aa6f77221` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `f54e82a7be077df3fde0a7f10ae1a74aa6f77221`\n\nCommit SHA: `f54e82a7be077df3fde0a7f10ae1a74aa6f77221`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T19:41:35Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Encode reserved team, project, actor, and weekly window query values in Go-owned export URL helpers so saved-view and weekly-report API payloads remain navigable for ClawHost-style scoped surfaces.",
+      "id": "big-par-314",
+      "identifier": "BIG-PAR-314",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Encode scoped export URLs for saved views and weekly reports",
+      "updated_at": "2026-03-24T19:41:35Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-315` after sanitizing Go-owned attachment filenames for run-report style exports.\n\nWhat changed:\n- `bigclaw-go/internal/api/distributed.go` now normalizes report filename scopes by collapsing non-alphanumeric separators into single dashes and trimming leading/trailing punctuation.\n- `bigclaw-go/internal/api/v2.go` now reuses that sanitizer when emitting run-report `Content-Disposition` headers, so task IDs with spaces, slashes, or punctuation cannot leak raw into attachment filenames.\n- `bigclaw-go/internal/api/server_test.go` now proves `/v2/runs/{task_id}/report` keeps the markdown body's original task ID while emitting a sanitized attachment filename.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-315` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `bbd39f1252ca567911cdcb7c1a9f6b0c376fa943` matches remote SHA `bbd39f1252ca567911cdcb7c1a9f6b0c376fa943` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `bbd39f1252ca567911cdcb7c1a9f6b0c376fa943`\n\nCommit SHA: `bbd39f1252ca567911cdcb7c1a9f6b0c376fa943`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T19:46:08Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Sanitize Go-owned attachment filenames for run-report style exports so raw task identifiers with slashes, spaces, or punctuation cannot leak into Content-Disposition headers, and reuse the same normalization for distributed report filenames.",
+      "id": "big-par-315",
+      "identifier": "BIG-PAR-315",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Sanitize attachment filenames for run report exports",
+      "updated_at": "2026-03-24T19:46:08Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-316` after adding direct distributed diagnostics export coverage for sanitized attachment filenames.\n\nWhat changed:\n- `bigclaw-go/internal/api/server_test.go` now proves `/v2/reports/distributed/export` returns markdown and emits `attachment; filename=\"bigclaw-distributed-diagnostics-platform-ops-night.md\"` when the scoped team filter contains spaces, slashes, and punctuation.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-316` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `a80ea3cb87d9e805ed03ce83a98caed903e8d101` matches remote SHA `a80ea3cb87d9e805ed03ce83a98caed903e8d101` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `a80ea3cb87d9e805ed03ce83a98caed903e8d101`\n\nCommit SHA: `a80ea3cb87d9e805ed03ce83a98caed903e8d101`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T19:50:50Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct server-level regression coverage proving distributed diagnostics export filenames stay sanitized when scoped team or project filters contain spaces, slashes, and punctuation.",
+      "id": "big-par-316",
+      "identifier": "BIG-PAR-316",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add distributed export filename sanitization coverage",
+      "updated_at": "2026-03-24T19:50:50Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-317` after adding fallback coverage for punctuation-only run-report attachment filenames.\n\nWhat changed:\n- `bigclaw-go/internal/api/server_test.go` now proves `/v2/runs/{task_id}/report` returns markdown and emits `attachment; filename=\"all-run-report.md\"` when the task identifier contains only separators and punctuation.\n- the same test also verifies the markdown body preserves the original task identifier even when the exported filename falls back to the sanitized default.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-317` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `1b1e0dced23b2fc9909edffa23e8ad09ccd71834` matches remote SHA `1b1e0dced23b2fc9909edffa23e8ad09ccd71834` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `1b1e0dced23b2fc9909edffa23e8ad09ccd71834`\n\nCommit SHA: `1b1e0dced23b2fc9909edffa23e8ad09ccd71834`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T19:55:06Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct run-report regression coverage proving attachment filenames fall back to the sanitized default when the task identifier contains only punctuation and separators.",
+      "id": "big-par-317",
+      "identifier": "BIG-PAR-317",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add run report fallback filename sanitization coverage",
+      "updated_at": "2026-03-24T19:55:06Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-318` after adding fallback coverage for punctuation-only distributed-export attachment filenames.\n\nWhat changed:\n- `bigclaw-go/internal/api/server_test.go` now proves `/v2/reports/distributed/export` returns markdown and emits `attachment; filename=\"bigclaw-distributed-diagnostics-all.md\"` when the scoped team filter contains only separators and punctuation.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-318` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `c351ae15a30a712d68b508e28f15735881897b8e` matches remote SHA `c351ae15a30a712d68b508e28f15735881897b8e` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `c351ae15a30a712d68b508e28f15735881897b8e`\n\nCommit SHA: `c351ae15a30a712d68b508e28f15735881897b8e`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T20:00:22Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct distributed-export regression coverage proving attachment filenames fall back to the sanitized default when the scoped team filter contains only punctuation and separators.",
+      "id": "big-par-318",
+      "identifier": "BIG-PAR-318",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add distributed export fallback filename sanitization coverage",
+      "updated_at": "2026-03-24T20:00:22Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-319` after adding project-scope coverage for distributed-export attachment filenames.\n\nWhat changed:\n- `bigclaw-go/internal/api/server_test.go` now proves `/v2/reports/distributed/export` emits `attachment; filename=\"bigclaw-distributed-diagnostics-apollo-mobile-core.md\"` when `team` is absent and the scoped `project` filter contains spaces, slashes, and punctuation.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-319` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `25cbe8a035bdc8c13abbcc1bf5e2e5fdb44133c2` matches remote SHA `25cbe8a035bdc8c13abbcc1bf5e2e5fdb44133c2` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `25cbe8a035bdc8c13abbcc1bf5e2e5fdb44133c2`\n\nCommit SHA: `25cbe8a035bdc8c13abbcc1bf5e2e5fdb44133c2`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T20:06:13Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct distributed-export regression coverage proving the sanitized attachment filename falls back from team to project scope when only a punctuated project filter is supplied.",
+      "id": "big-par-319",
+      "identifier": "BIG-PAR-319",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add distributed export project-scope filename sanitization coverage",
+      "updated_at": "2026-03-24T20:06:13Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-320` after adding task-scope coverage for distributed-export attachment filenames.\n\nWhat changed:\n- `bigclaw-go/internal/api/server_test.go` now proves `/v2/reports/distributed/export` emits `attachment; filename=\"bigclaw-distributed-diagnostics-task-scope-edge.md\"` when both `team` and `project` are absent and the scoped `task_id` contains spaces, slashes, and punctuation.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-320` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `dcf1c9a7f806495756aea3b91c57133140eda4ce` matches remote SHA `dcf1c9a7f806495756aea3b91c57133140eda4ce` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `dcf1c9a7f806495756aea3b91c57133140eda4ce`\n\nCommit SHA: `dcf1c9a7f806495756aea3b91c57133140eda4ce`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T20:11:52Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct distributed-export regression coverage proving the sanitized attachment filename uses task_id scope safely when team and project are absent and the task identifier contains punctuation and separators.",
+      "id": "big-par-320",
+      "identifier": "BIG-PAR-320",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add distributed export task-scope filename sanitization coverage",
+      "updated_at": "2026-03-24T20:11:52Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-321` after adding project-fallback coverage for distributed-export attachment filenames.\n\nWhat changed:\n- `bigclaw-go/internal/api/server_test.go` now proves `/v2/reports/distributed/export` emits `attachment; filename=\"bigclaw-distributed-diagnostics-all.md\"` when `team` is absent and the scoped `project` filter contains only separators and punctuation.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-321` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `1fdac4d66328e76d13d44840b3a2dc70901568ef` matches remote SHA `1fdac4d66328e76d13d44840b3a2dc70901568ef` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `1fdac4d66328e76d13d44840b3a2dc70901568ef`\n\nCommit SHA: `1fdac4d66328e76d13d44840b3a2dc70901568ef`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T20:17:06Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct distributed-export regression coverage proving the sanitized attachment filename falls back to `all` when team is absent and the scoped project filter contains only punctuation and separators.",
+      "id": "big-par-321",
+      "identifier": "BIG-PAR-321",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add distributed export project-fallback filename sanitization coverage",
+      "updated_at": "2026-03-24T20:17:06Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-322` after adding task-fallback coverage for distributed-export attachment filenames.\n\nWhat changed:\n- `bigclaw-go/internal/api/server_test.go` now proves `/v2/reports/distributed/export` emits `attachment; filename=\"bigclaw-distributed-diagnostics-all.md\"` when `team` and `project` are absent and the scoped `task_id` contains only separators and punctuation.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-322` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `0b3352c27f260a5c29ddd4023d24068dc2f53015` matches remote SHA `0b3352c27f260a5c29ddd4023d24068dc2f53015` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `0b3352c27f260a5c29ddd4023d24068dc2f53015`\n\nCommit SHA: `0b3352c27f260a5c29ddd4023d24068dc2f53015`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T20:23:14Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct distributed-export regression coverage proving the sanitized attachment filename falls back to `all` when team and project are absent and the scoped task_id contains only punctuation and separators.",
+      "id": "big-par-322",
+      "identifier": "BIG-PAR-322",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add distributed export task-fallback filename sanitization coverage",
+      "updated_at": "2026-03-24T20:23:14Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "Codex",
+          "body": "Closed `BIG-PAR-323` after adding direct helper-level coverage for `sanitizeReportName`.\n\nWhat changed:\n- `bigclaw-go/internal/api/server_test.go` now adds direct helper-level coverage for `sanitizeReportName`, including mixed separators, mixed case, and punctuation-only fallback behavior.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-323` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `25b5104b1484aa76de8682510abffc01f211f9bd` matches remote SHA `25b5104b1484aa76de8682510abffc01f211f9bd` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `25b5104b1484aa76de8682510abffc01f211f9bd`\n\nCommit SHA: `25b5104b1484aa76de8682510abffc01f211f9bd`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-25T20:35:00Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct helper-level regression coverage for sanitizeReportName so repeated separators, mixed case, and punctuation-only inputs normalize to stable attachment filename tokens without relying solely on endpoint tests.",
+      "id": "big-par-323",
+      "identifier": "BIG-PAR-323",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add direct sanitizeReportName helper coverage",
+      "updated_at": "2026-03-25T20:35:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "Codex",
+          "body": "Closed `BIG-PAR-324` after adding direct distributed-export coverage for filename-scope precedence.\n\nWhat changed:\n- `bigclaw-go/internal/api/server_test.go` now proves `/v2/reports/distributed/export` prefers the scoped `team` filter when `team`, `project`, and `task_id` are all present, so attachment filenames stay aligned with the endpoint's `firstNonEmpty(team, project, task_id, \"all\")` contract.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-324` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `1a96cb2d52abb0980a2ce004e0b346c1e5eb24b7` matches remote SHA `1a96cb2d52abb0980a2ce004e0b346c1e5eb24b7` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `1a96cb2d52abb0980a2ce004e0b346c1e5eb24b7`\n\nCommit SHA: `1a96cb2d52abb0980a2ce004e0b346c1e5eb24b7`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-25T20:45:00Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct distributed-export regression coverage proving the attachment filename prefers the scoped team filter over project and task_id when all three are present.",
+      "id": "big-par-324",
+      "identifier": "BIG-PAR-324",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add distributed export filename-scope precedence coverage",
+      "updated_at": "2026-03-25T20:45:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "Codex",
+          "body": "Closed `BIG-PAR-325` after fixing distributed-export filename fallback precedence.\n\nWhat changed:\n- `bigclaw-go/internal/api/distributed.go` now selects the first meaningful report-name scope across `team`, `project`, and `task_id`, so punctuation-only or whitespace-only earlier filters cannot mask a later valid scope and incorrectly force the `all` fallback.\n- `bigclaw-go/internal/api/server_test.go` now proves `/v2/reports/distributed/export` skips a punctuation-only `team` filter and uses the scoped `project` value for the attachment filename instead.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-325` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `12f1518bc5228f555050ede9842174dd14c95847` matches remote SHA `12f1518bc5228f555050ede9842174dd14c95847` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `12f1518bc5228f555050ede9842174dd14c95847`\n\nCommit SHA: `12f1518bc5228f555050ede9842174dd14c95847`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-25T21:05:00Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Fix distributed-export filename scope selection so punctuation-only or whitespace-only team filters fall through to a meaningful project or task_id scope instead of forcing the `all` fallback.",
+      "id": "big-par-325",
+      "identifier": "BIG-PAR-325",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Fix distributed export filename fallback precedence",
+      "updated_at": "2026-03-25T21:05:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "Codex",
+          "body": "Closed `BIG-PAR-326` after adding task fallback-after-team coverage for distributed-export filenames.\n\nWhat changed:\n- `bigclaw-go/internal/api/server_test.go` now proves `/v2/reports/distributed/export` skips a punctuation-only `team` filter and falls through to the scoped `task_id` for the attachment filename when `project` is absent.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-326` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `638516004465ba5b49cf068035bf158cf8284b48` matches remote SHA `638516004465ba5b49cf068035bf158cf8284b48` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `638516004465ba5b49cf068035bf158cf8284b48`\n\nCommit SHA: `638516004465ba5b49cf068035bf158cf8284b48`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-25T21:15:00Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct distributed-export regression coverage proving a punctuation-only team filter falls through to the scoped task_id for attachment filename selection when project is absent.",
+      "id": "big-par-326",
+      "identifier": "BIG-PAR-326",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add distributed export task fallback-after-team coverage",
+      "updated_at": "2026-03-25T21:15:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "Codex",
+          "body": "Closed `BIG-PAR-327` after adding direct helper coverage for `firstMeaningfulReportName`.\n\nWhat changed:\n- `bigclaw-go/internal/api/server_test.go` now adds helper-level coverage proving `firstMeaningfulReportName` skips whitespace-only and punctuation-only earlier scopes, falls through to the next meaningful `project` or `task_id`, and returns `all` only when every scope collapses.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-327` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `fccaf876aabd74440ca7c23bc767781453b70c7d` matches remote SHA `fccaf876aabd74440ca7c23bc767781453b70c7d` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `fccaf876aabd74440ca7c23bc767781453b70c7d`\n\nCommit SHA: `fccaf876aabd74440ca7c23bc767781453b70c7d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-25T21:25:00Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct helper-level coverage for firstMeaningfulReportName so whitespace-only and punctuation-only earlier scopes fall through to the next meaningful project or task_id value.",
+      "id": "big-par-327",
+      "identifier": "BIG-PAR-327",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add firstMeaningfulReportName helper coverage",
+      "updated_at": "2026-03-25T21:25:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "Codex",
+          "body": "Closed `BIG-PAR-328` after adding direct helper coverage for `weeklyExportURL`.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now adds helper-level coverage proving `weeklyExportURL` trims surrounding whitespace, preserves reserved-character `team` and `project` values through URL encoding, and carries the expected RFC3339 `week_start` and `week_end` window values.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-328` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `98feb361300193b47cc4299c45af0144501a44fa` matches remote SHA `98feb361300193b47cc4299c45af0144501a44fa` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `98feb361300193b47cc4299c45af0144501a44fa`\n\nCommit SHA: `98feb361300193b47cc4299c45af0144501a44fa`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-25T21:35:00Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct helper-level coverage for weeklyExportURL so reserved-character team/project filters and RFC3339 windows stay encoded correctly after trimming whitespace.",
+      "id": "big-par-328",
+      "identifier": "BIG-PAR-328",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add weeklyExportURL helper coverage",
+      "updated_at": "2026-03-25T21:35:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "Codex",
+          "body": "Closed `BIG-PAR-329` after normalizing `distributedExportURL` helper filters.\n\nWhat changed:\n- `bigclaw-go/internal/api/distributed.go` now trims surrounding whitespace from distributed export scope filters and lowercases `state` and `risk_level` before query encoding, matching the normalization already enforced at the request parser boundary.\n- `bigclaw-go/internal/api/expansion_test.go` now adds direct helper-level coverage for `distributedExportURL`, including reserved-character `team`/`project`/`task_id` values plus encoded RFC3339 time, priority, and limit filters.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-329` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `b7ed293b8fa2c9d346a7097435c97c644d6d724d` matches remote SHA `b7ed293b8fa2c9d346a7097435c97c644d6d724d` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `b7ed293b8fa2c9d346a7097435c97c644d6d724d`\n\nCommit SHA: `b7ed293b8fa2c9d346a7097435c97c644d6d724d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-25T21:45:00Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Normalize distributedExportURL filter handling so surrounding whitespace is trimmed before query encoding, and add direct helper coverage for reserved-character scopes plus time/priority filters.",
+      "id": "big-par-329",
+      "identifier": "BIG-PAR-329",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Normalize distributedExportURL helper filters",
+      "updated_at": "2026-03-25T21:45:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "Codex",
+          "body": "Closed `BIG-PAR-330` after encoding `controlActionAuditURL` query parameters.\n\nWhat changed:\n- `bigclaw-go/internal/api/v2.go` now builds control-center audit URLs with `url.Values`, trimming whitespace and encoding reserved-character `task_id` values instead of concatenating raw query fragments.\n- `bigclaw-go/internal/api/expansion_test.go` now adds direct helper-level coverage for `controlActionAuditURL`, including reserved-character task-scoped links and unscoped action links.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-330` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `b16594f7a0cc5c06808e5fea214fe149bea59e9e` matches remote SHA `b16594f7a0cc5c06808e5fea214fe149bea59e9e` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `b16594f7a0cc5c06808e5fea214fe149bea59e9e`\n\nCommit SHA: `b16594f7a0cc5c06808e5fea214fe149bea59e9e`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-25T22:00:00Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Encode controlActionAuditURL query parameters so reserved-character task IDs cannot leak into raw audit URLs, and add direct helper-level coverage for task-scoped and unscoped actions.",
+      "id": "big-par-330",
+      "identifier": "BIG-PAR-330",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Encode controlActionAuditURL query parameters",
+      "updated_at": "2026-03-25T22:00:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "Codex",
+          "body": "Closed `BIG-PAR-331` after adding direct helper coverage for `savedViewScopeToken`.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds helper-level coverage proving `savedViewScopeToken` normalizes mixed separators into stable slug tokens and collapses punctuation-only inputs to an empty scope token.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-331` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `259e56a6f53e12c8a0d6ad4f07da9ef0aec7fa29` matches remote SHA `259e56a6f53e12c8a0d6ad4f07da9ef0aec7fa29` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `259e56a6f53e12c8a0d6ad4f07da9ef0aec7fa29`\n\nCommit SHA: `259e56a6f53e12c8a0d6ad4f07da9ef0aec7fa29`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-25T22:10:00Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct helper-level coverage for savedViewScopeToken so mixed separators, reserved characters, and punctuation-only inputs normalize to stable saved-view scope slugs.",
+      "id": "big-par-331",
+      "identifier": "BIG-PAR-331",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add savedViewScopeToken helper coverage",
+      "updated_at": "2026-03-25T22:10:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "Codex",
+          "body": "Closed `BIG-PAR-332` after adding blank-scope coverage for `buildSavedViewRoute`.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds helper-level coverage proving `buildSavedViewRoute` trims surrounding whitespace, omits blank scoped filters, and returns the base route without a query string when no scope remains.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-332` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `426c616c9154e2fb64876adee24e753074d8c361` matches remote SHA `426c616c9154e2fb64876adee24e753074d8c361` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `426c616c9154e2fb64876adee24e753074d8c361`\n\nCommit SHA: `426c616c9154e2fb64876adee24e753074d8c361`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-25T22:20:00Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct helper-level coverage for buildSavedViewRoute so whitespace-only team/project filters are omitted and the base route is returned without a query string when no scoped filters remain.",
+      "id": "big-par-332",
+      "identifier": "BIG-PAR-332",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add buildSavedViewRoute blank-scope coverage",
+      "updated_at": "2026-03-25T22:20:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "Codex",
+          "body": "Closed `BIG-PAR-333` after adding punctuation-fallback coverage for `viewScopeSuffix`.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds helper-level coverage proving `viewScopeSuffix` returns an empty suffix when both `team` and `project` collapse to punctuation-only values, rather than leaving a dangling separator.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-333` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `a5d5a25efd8db810a1b6eaf56925e35b43fac48f` matches remote SHA `a5d5a25efd8db810a1b6eaf56925e35b43fac48f` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `a5d5a25efd8db810a1b6eaf56925e35b43fac48f`\n\nCommit SHA: `a5d5a25efd8db810a1b6eaf56925e35b43fac48f`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-25T22:30:00Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct helper-level coverage for viewScopeSuffix so punctuation-only team/project values collapse to an empty suffix instead of producing a dangling separator.",
+      "id": "big-par-333",
+      "identifier": "BIG-PAR-333",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add viewScopeSuffix punctuation-fallback coverage",
+      "updated_at": "2026-03-25T22:30:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "Codex",
+          "body": "Closed `BIG-PAR-334` after adding direct helper coverage for `normalizedViewOwner`.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds helper-level coverage proving `normalizedViewOwner` falls back to `viewer` for blank or whitespace-only actors and preserves non-empty actors after trimming.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-334` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `fbe1c5c4e17a58ba85443bf347d01263db423173` matches remote SHA `fbe1c5c4e17a58ba85443bf347d01263db423173` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `fbe1c5c4e17a58ba85443bf347d01263db423173`\n\nCommit SHA: `fbe1c5c4e17a58ba85443bf347d01263db423173`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-25T22:40:00Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct helper-level coverage for normalizedViewOwner so blank or whitespace-only actors fall back to `viewer` while non-empty actors are preserved after trimming.",
+      "id": "big-par-334",
+      "identifier": "BIG-PAR-334",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add normalizedViewOwner helper coverage",
+      "updated_at": "2026-03-25T22:40:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "Codex",
+          "body": "Closed `BIG-PAR-335` after adding direct helper coverage for `digestRecipients`.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds helper-level coverage proving `digestRecipients` trims whitespace, de-duplicates repeated actor/owner/reviewer values, caps the result to the first three unique recipients, and falls back to `viewer` when every source is empty.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-335` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `3ad6799532bac5a2ef712c8ed58ac0309c357a2c` matches remote SHA `3ad6799532bac5a2ef712c8ed58ac0309c357a2c` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `3ad6799532bac5a2ef712c8ed58ac0309c357a2c`\n\nCommit SHA: `3ad6799532bac5a2ef712c8ed58ac0309c357a2c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-25T22:50:00Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct helper-level coverage for digestRecipients so actor/owner/reviewer values are trimmed, deduplicated, capped to the top three unique recipients, and fall back to `viewer` when empty.",
+      "id": "big-par-335",
+      "identifier": "BIG-PAR-335",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add digestRecipients helper coverage",
+      "updated_at": "2026-03-25T22:50:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "Codex",
+          "body": "Closed `BIG-PAR-336` after adding saved-view metric helper coverage.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds helper-level coverage proving `countPremium` counts premium plans case-insensitively and `countHighRisk` only counts tasks with `RiskHigh`.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-336` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `3449d149d624d990fa3377eac9fee9fb92b47ac4` matches remote SHA `3449d149d624d990fa3377eac9fee9fb92b47ac4` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `3449d149d624d990fa3377eac9fee9fb92b47ac4`\n\nCommit SHA: `3449d149d624d990fa3377eac9fee9fb92b47ac4`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-25T23:00:00Z"
+        }
+      ],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct helper-level coverage for countPremium and countHighRisk so saved-view summary counters stay correct when plan casing varies and only RiskHigh tasks are counted as high risk.",
+      "id": "big-par-336",
+      "identifier": "BIG-PAR-336",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add saved view metric helper coverage",
+      "updated_at": "2026-03-25T23:00:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-338` after adding direct helper coverage for saved-view rendering helpers.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds helper-level coverage proving `renderSavedViewFilters` returns `none` for empty filters and joins populated filters in report order.\n- `bigclaw-go/internal/product/saved_views_test.go` now adds helper-level coverage proving `renderSavedViewScopeMap` sorts both scopes and names, and that `emptyFallback` trims non-empty values while preserving the fallback for blank input.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `0144009ea94bf38730d318aeacdbd41142295bf7` matched remote SHA `0144009ea94bf38730d318aeacdbd41142295bf7` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `0144009ea94bf38730d318aeacdbd41142295bf7`\n\nCommit SHA: `0144009ea94bf38730d318aeacdbd41142295bf7`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:26:09Z"
+        }
+      ],
+      "created_at": "2026-03-24T21:23:09Z",
+      "description": "Add direct helper-level coverage for renderSavedViewFilters, renderSavedViewScopeMap, and emptyFallback so saved-view report formatting stays stable for empty and sorted helper inputs.",
+      "id": "big-par-338",
+      "identifier": "BIG-PAR-338",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add saved view rendering helper coverage",
+      "updated_at": "2026-03-24T21:26:09Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-337` after adding direct helper coverage for saved-view scope and duplicate detection.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds helper-level coverage proving `visibilityForScope` returns `private` for blank scope and `team` when either trimmed scope value is present.\n- `bigclaw-go/internal/product/saved_views_test.go` now adds helper-level coverage proving `duplicateStrings` trims blank inputs, ignores empty values, and returns duplicate names in sorted order.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `0941143a488d697525aa179c2c2dc9aa0a862036` matched remote SHA `0941143a488d697525aa179c2c2dc9aa0a862036` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `0941143a488d697525aa179c2c2dc9aa0a862036`\n\nCommit SHA: `0941143a488d697525aa179c2c2dc9aa0a862036`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:26:09Z"
+        }
+      ],
+      "created_at": "2026-03-24T21:23:09Z",
+      "description": "Add direct helper-level coverage for visibilityForScope and duplicateStrings so scoped/private visibility and duplicate-name detection stay explicit when team/project are blank, trimmed, or repeated.",
+      "id": "big-par-337",
+      "identifier": "BIG-PAR-337",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add saved view scope and duplicate helper coverage",
+      "updated_at": "2026-03-24T21:26:09Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-340` after adding empty-state coverage for saved-view report rendering.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving `RenderSavedViewReport` keeps empty saved-view and alert-digest sections on the stable `- None` output.\n- the same test also proves gap sections keep the `none` fallback for empty duplicate and orphan-subscription fields.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `f2ba7457e13c357f0a70c5cc40daa58a780e8162` matched remote SHA `f2ba7457e13c357f0a70c5cc40daa58a780e8162` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `f2ba7457e13c357f0a70c5cc40daa58a780e8162`\n\nCommit SHA: `f2ba7457e13c357f0a70c5cc40daa58a780e8162`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:29:51Z"
+        }
+      ],
+      "created_at": "2026-03-24T21:27:20Z",
+      "description": "Add direct coverage for RenderSavedViewReport empty-state formatting so empty saved-view and subscription sections keep stable none/fallback output.",
+      "id": "big-par-340",
+      "identifier": "BIG-PAR-340",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add saved view report empty-state coverage",
+      "updated_at": "2026-03-24T21:29:51Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-339` after adding audit-readiness edge coverage for saved-view catalogs.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving `AuditSavedViewCatalog` keeps empty catalogs at a zero readiness score and normalizes empty duplicate maps to `nil`.\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving heavy penalty combinations floor readiness at zero instead of producing a negative score.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `6eb1fbbbedcf5f9a6aad96d917bbfe47a6d89115` matched remote SHA `6eb1fbbbedcf5f9a6aad96d917bbfe47a6d89115` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `6eb1fbbbedcf5f9a6aad96d917bbfe47a6d89115`\n\nCommit SHA: `6eb1fbbbedcf5f9a6aad96d917bbfe47a6d89115`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:29:50Z"
+        }
+      ],
+      "created_at": "2026-03-24T21:27:20Z",
+      "description": "Add direct coverage for AuditSavedViewCatalog readiness scoring so empty catalogs stay at zero and heavy penalties floor the rounded readiness score instead of going negative.",
+      "id": "big-par-339",
+      "identifier": "BIG-PAR-339",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add saved view audit readiness edge coverage",
+      "updated_at": "2026-03-24T21:29:50Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-342` after adding populated-row fallback coverage for saved-view reports.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving populated saved-view report rows render `sort=none` when a saved view omits `SortBy`.\n- the same test also proves populated alert-digest rows render `recipients=none` when a subscription has no recipients while keeping the rest of the row formatting stable.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `1bf7e90446360f24b6b4d25a735aacecd4abe35c` matched remote SHA `1bf7e90446360f24b6b4d25a735aacecd4abe35c` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `1bf7e90446360f24b6b4d25a735aacecd4abe35c`\n\nCommit SHA: `1bf7e90446360f24b6b4d25a735aacecd4abe35c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:34:22Z"
+        }
+      ],
+      "created_at": "2026-03-24T21:32:10Z",
+      "description": "Add direct coverage for RenderSavedViewReport populated entries so empty sort and recipient fields still render through the documented none/fallback paths in saved-view and alert-digest rows.",
+      "id": "big-par-342",
+      "identifier": "BIG-PAR-342",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add saved view populated report fallback coverage",
+      "updated_at": "2026-03-24T21:34:22Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-341` after adding direct numeric-helper coverage for saved-view readiness scoring.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct helper-level coverage for `round1`, including half-up rounding and carry to `100.0`.\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct helper-level coverage for `maxFloat`, including left-win, right-win, and equal-value cases.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `4e9497158eb4d67510b4056966276a94af002394` matched remote SHA `4e9497158eb4d67510b4056966276a94af002394` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `4e9497158eb4d67510b4056966276a94af002394`\n\nCommit SHA: `4e9497158eb4d67510b4056966276a94af002394`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:34:22Z"
+        }
+      ],
+      "created_at": "2026-03-24T21:32:10Z",
+      "description": "Add direct helper-level coverage for round1 and maxFloat so saved-view readiness scoring keeps its expected rounding and floor-selection behavior at the helper boundary.",
+      "id": "big-par-341",
+      "identifier": "BIG-PAR-341",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add saved view numeric helper coverage",
+      "updated_at": "2026-03-24T21:34:22Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-344` after adding deterministic gap-rendering coverage for saved-view reports.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving duplicate scope maps are rendered in sorted scope/name order in `RenderSavedViewReport`.\n- the same test also proves the reviewer gap lists render the provided list ordering consistently for the non-map sections.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `af3f12c5ba98f3d921dc5eed4604f810fca9c8d3` matched remote SHA `af3f12c5ba98f3d921dc5eed4604f810fca9c8d3` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `af3f12c5ba98f3d921dc5eed4604f810fca9c8d3`\n\nCommit SHA: `af3f12c5ba98f3d921dc5eed4604f810fca9c8d3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:38:16Z"
+        }
+      ],
+      "created_at": "2026-03-24T21:35:52Z",
+      "description": "Add direct coverage for RenderSavedViewReport gap rendering so duplicate scope maps and gap lists stay deterministically sorted in reviewer output.",
+      "id": "big-par-344",
+      "identifier": "BIG-PAR-344",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add saved view gap rendering sort coverage",
+      "updated_at": "2026-03-24T21:38:16Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-343` after adding unscoped baseline coverage for the saved-view catalog builder.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving `BuildSavedViewCatalog` emits only the five baseline views when no premium or high-risk tasks are present.\n- the same test also proves unscoped catalogs keep `private` visibility, omit query strings from routes, and preserve the unscoped subscription identifiers.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `7c0a7ae2e1c1db148d0b8d810b8662ce55aadb79` matched remote SHA `7c0a7ae2e1c1db148d0b8d810b8662ce55aadb79` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `7c0a7ae2e1c1db148d0b8d810b8662ce55aadb79`\n\nCommit SHA: `7c0a7ae2e1c1db148d0b8d810b8662ce55aadb79`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:38:15Z"
+        }
+      ],
+      "created_at": "2026-03-24T21:35:52Z",
+      "description": "Add direct coverage for BuildSavedViewCatalog without scoped filters or premium/high-risk tasks so the baseline view set, private visibility, and unscoped IDs stay stable.",
+      "id": "big-par-343",
+      "identifier": "BIG-PAR-343",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add unscoped saved view catalog baseline coverage",
+      "updated_at": "2026-03-24T21:38:15Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-345` after adding clean-path audit coverage for valid saved-view catalogs.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving `AuditSavedViewCatalog` assigns a `100` readiness score for a fully valid catalog.\n- the same test also proves duplicate/orphan/invalid-channel/invalid-cadence findings stay `nil` on the clean path.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `fc5ef1f94caf25c33b21783fb70edab62c7c1918` matched remote SHA `fc5ef1f94caf25c33b21783fb70edab62c7c1918` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `fc5ef1f94caf25c33b21783fb70edab62c7c1918`\n\nCommit SHA: `fc5ef1f94caf25c33b21783fb70edab62c7c1918`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:42:02Z"
+        }
+      ],
+      "created_at": "2026-03-24T21:39:50Z",
+      "description": "Add direct coverage for AuditSavedViewCatalog on a fully valid catalog so readiness reaches 100 and the duplicate/orphan gap collections stay nil on the clean path.",
+      "id": "big-par-345",
+      "identifier": "BIG-PAR-345",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add valid saved view audit clean-path coverage",
+      "updated_at": "2026-03-24T21:42:02Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-346` after adding project-only scope coverage for the saved-view catalog builder.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving `BuildSavedViewCatalog` appends only the project scope token to view and subscription identifiers when `team` is empty.\n- the same test also proves project-only routes omit the `team` query and still use `team` visibility for scoped reviewer surfaces.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `0b1cf0cb52a4f94bb42b5ba6ca959df2d875db06` matched remote SHA `0b1cf0cb52a4f94bb42b5ba6ca959df2d875db06` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `0b1cf0cb52a4f94bb42b5ba6ca959df2d875db06`\n\nCommit SHA: `0b1cf0cb52a4f94bb42b5ba6ca959df2d875db06`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:42:03Z"
+        }
+      ],
+      "created_at": "2026-03-24T21:39:50Z",
+      "description": "Add direct coverage for BuildSavedViewCatalog with only a project scope so project-only routes, team visibility, and scoped identifiers remain stable without a team filter.",
+      "id": "big-par-346",
+      "identifier": "BIG-PAR-346",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add project-scoped saved view catalog coverage",
+      "updated_at": "2026-03-24T21:42:03Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-348` after adding catalog-level actor fallback coverage.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving blank actors fall back to `viewer` across every built saved-view owner.\n- the same test also proves both digest subscriptions emit `viewer` as their recipient when no explicit actor or task recipients exist.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `a121c4aa394f60dbf3f539d58f8ce147a94f92b4` matched remote SHA `a121c4aa394f60dbf3f539d58f8ce147a94f92b4` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `a121c4aa394f60dbf3f539d58f8ce147a94f92b4`\n\nCommit SHA: `a121c4aa394f60dbf3f539d58f8ce147a94f92b4`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:46:10Z"
+        }
+      ],
+      "created_at": "2026-03-24T21:43:49Z",
+      "description": "Add direct coverage for BuildSavedViewCatalog with a blank actor so view owners and digest recipients fall back to viewer through the built catalog output.",
+      "id": "big-par-348",
+      "identifier": "BIG-PAR-348",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add saved view catalog actor fallback coverage",
+      "updated_at": "2026-03-24T21:46:10Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-347` after adding team-only scope coverage for the saved-view catalog builder.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving `BuildSavedViewCatalog` appends only the team scope token to view and subscription identifiers when `project` is empty.\n- the same test also proves team-only routes omit the `project` query while keeping scoped `team` visibility.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `350fc622826c3180b6f1b3a45c3ce76b1ce5a471` matched remote SHA `350fc622826c3180b6f1b3a45c3ce76b1ce5a471` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `350fc622826c3180b6f1b3a45c3ce76b1ce5a471`\n\nCommit SHA: `350fc622826c3180b6f1b3a45c3ce76b1ce5a471`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:46:10Z"
+        }
+      ],
+      "created_at": "2026-03-24T21:43:49Z",
+      "description": "Add direct coverage for BuildSavedViewCatalog with only a team scope so team-only routes, visibility, and scoped identifiers stay stable without a project filter.",
+      "id": "big-par-347",
+      "identifier": "BIG-PAR-347",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add team-scoped saved view catalog coverage",
+      "updated_at": "2026-03-24T21:46:10Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-349` after adding premium-only optional-view coverage for the saved-view catalog builder.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving premium-plan tasks add the `premium-runs` view when the high-risk branch is inactive.\n- the same test also proves the `high-risk` view stays absent in the premium-only case.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `f8000868d7d95756981e87086d715b2ea405a3d7` matched remote SHA `f8000868d7d95756981e87086d715b2ea405a3d7` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `f8000868d7d95756981e87086d715b2ea405a3d7`\n\nCommit SHA: `f8000868d7d95756981e87086d715b2ea405a3d7`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:50:30Z"
+        }
+      ],
+      "created_at": "2026-03-24T21:48:01Z",
+      "description": "Add direct coverage for BuildSavedViewCatalog when only premium-plan tasks are present so the premium view is included without also implying the high-risk branch.",
+      "id": "big-par-349",
+      "identifier": "BIG-PAR-349",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add premium-only saved view catalog coverage",
+      "updated_at": "2026-03-24T21:50:30Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-350` after adding high-risk-only optional-view coverage for the saved-view catalog builder.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving high-risk tasks add the `high-risk` view when the premium-plan branch is inactive.\n- the same test also proves the `premium-runs` view stays absent in the high-risk-only case.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `c8d9acf42bc90afdc7e8921edb968be0b48bc76b` matched remote SHA `c8d9acf42bc90afdc7e8921edb968be0b48bc76b` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `c8d9acf42bc90afdc7e8921edb968be0b48bc76b`\n\nCommit SHA: `c8d9acf42bc90afdc7e8921edb968be0b48bc76b`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:50:30Z"
+        }
+      ],
+      "created_at": "2026-03-24T21:48:01Z",
+      "description": "Add direct coverage for BuildSavedViewCatalog when only high-risk tasks are present so the high-risk view is included without also implying the premium-plan branch.",
+      "id": "big-par-350",
+      "identifier": "BIG-PAR-350",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add high-risk-only saved view catalog coverage",
+      "updated_at": "2026-03-24T21:50:30Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-352` after adding rounded partial-readiness coverage for saved-view audits.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving `AuditSavedViewCatalog` reports a rounded `66.7` readiness score for a three-view catalog with one missing-filter penalty.\n- the same test also proves the single missing-filter finding is surfaced on the expected view.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `d0a9064b4b79434eb18154c9840e6fc408f39e7a` matched remote SHA `d0a9064b4b79434eb18154c9840e6fc408f39e7a` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `d0a9064b4b79434eb18154c9840e6fc408f39e7a`\n\nCommit SHA: `d0a9064b4b79434eb18154c9840e6fc408f39e7a`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:54:33Z"
+        }
+      ],
+      "created_at": "2026-03-24T21:52:10Z",
+      "description": "Add direct coverage for AuditSavedViewCatalog on a partially invalid catalog so the readiness score exercises the rounded non-zero percentage path instead of only 0 or 100 outcomes.",
+      "id": "big-par-352",
+      "identifier": "BIG-PAR-352",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add saved view readiness rounding coverage",
+      "updated_at": "2026-03-24T21:54:33Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-351` after adding deterministic ordering coverage for the saved-view catalog builder.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving the built view list stays sorted by `ViewID` even when both optional premium and high-risk views are present.\n- the same test also proves the digest subscriptions stay in stable lexical order.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `fda15f12475a02c8f6b97d7b540c597258ec02ca` matched remote SHA `fda15f12475a02c8f6b97d7b540c597258ec02ca` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `fda15f12475a02c8f6b97d7b540c597258ec02ca`\n\nCommit SHA: `fda15f12475a02c8f6b97d7b540c597258ec02ca`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:54:33Z"
+        }
+      ],
+      "created_at": "2026-03-24T21:52:10Z",
+      "description": "Add direct coverage for BuildSavedViewCatalog ordering so views and subscriptions stay deterministically sorted when both optional premium and high-risk views are present.",
+      "id": "big-par-351",
+      "identifier": "BIG-PAR-351",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add saved view catalog ordering coverage",
+      "updated_at": "2026-03-24T21:54:33Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-353` after adding baseline field-contract coverage for saved-view catalogs.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving the baseline built views keep their expected pinned/default/sort-field contracts.\n- the same test also proves `weekly-ops` remains the unpinned, non-default baseline view with its weekly sort key.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `f47943a0322608d6778eff24801be4f704886f16` matched remote SHA `f47943a0322608d6778eff24801be4f704886f16` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `f47943a0322608d6778eff24801be4f704886f16`\n\nCommit SHA: `f47943a0322608d6778eff24801be4f704886f16`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:58:28Z"
+        }
+      ],
+      "created_at": "2026-03-24T21:56:11Z",
+      "description": "Add direct coverage for BuildSavedViewCatalog baseline fields so pinned/default/sort contracts stay stable on the built baseline views without depending on broader catalog assertions.",
+      "id": "big-par-353",
+      "identifier": "BIG-PAR-353",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add saved view baseline field coverage",
+      "updated_at": "2026-03-24T21:58:28Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-354` after adding audit metadata/count coverage for saved-view catalogs.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving `AuditSavedViewCatalog` copies catalog name and version through unchanged.\n- the same test also proves view and subscription counts in the audit match the input catalog counts on the clean path.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `81a7bd79c88fa307d6447695a9733c8fa09bfd17` matched remote SHA `81a7bd79c88fa307d6447695a9733c8fa09bfd17` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `81a7bd79c88fa307d6447695a9733c8fa09bfd17`\n\nCommit SHA: `81a7bd79c88fa307d6447695a9733c8fa09bfd17`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:58:29Z"
+        }
+      ],
+      "created_at": "2026-03-24T21:56:11Z",
+      "description": "Add direct coverage for AuditSavedViewCatalog metadata fields so catalog name, version, view count, and subscription count stay aligned with the input catalog on the clean path.",
+      "id": "big-par-354",
+      "identifier": "BIG-PAR-354",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add saved view audit metadata coverage",
+      "updated_at": "2026-03-24T21:58:29Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct Go audit coverage for invalid saved-view visibility handling and sorted invalid-visibility findings in `bigclaw-go/internal/product/saved_views_test.go`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_savedviews.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_savedviews.cover | rg \"internal/product/saved_views.go|total:\"` -> `AuditSavedViewCatalog 100.0%`\n\nCommit: `b437a0c37d15f32d2b6aa2fd6dc21a32715f1f36`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:03:28Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:01:38Z",
+      "description": "Add narrow Go tests covering AuditSavedViewCatalog invalid visibility detection and sorted output contracts in saved_views.go.",
+      "id": "big-par-355",
+      "identifier": "BIG-PAR-355",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add invalid-visibility audit coverage for saved view catalogs",
+      "updated_at": "2026-03-24T22:03:28Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct Go audit assertions for missing digest recipients and readiness accounting in `bigclaw-go/internal/product/saved_views_test.go`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_savedviews.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_savedviews.cover | rg \"internal/product/saved_views.go|total:\"` -> `AuditSavedViewCatalog 100.0%`\n\nCommit: `b437a0c37d15f32d2b6aa2fd6dc21a32715f1f36`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:03:28Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:01:38Z",
+      "description": "Add narrow Go tests covering AuditSavedViewCatalog subscription recipient gap handling and readiness accounting in saved_views.go.",
+      "id": "big-par-356",
+      "identifier": "BIG-PAR-356",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add direct missing-recipient audit assertions for saved view digests",
+      "updated_at": "2026-03-24T22:03:28Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go regression coverage for ClawHost fleet helper functions in `bigclaw-go/internal/product/clawhost_fleet_test.go`, including status normalization, string dedupe, facet rendering, and integer max behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_fleet.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_fleet.cover | grep \"clawhost_fleet.go\"` -> `normalizedClawHostStatus 100.0%`, `dedupeNonEmptyStrings 100.0%`, `renderFleetFacetMap 100.0%`, `fleetMaxInt 100.0%`\n\nCommit: `d992e089df32c9f0febb020252cb7e6fb6381a57`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:06:24Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:04:47Z",
+      "description": "Add narrow Go tests covering normalized fleet status, dedupe helpers, facet rendering, and integer max behavior in clawhost_fleet.go.",
+      "id": "big-par-358",
+      "identifier": "BIG-PAR-358",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost fleet helper regression coverage",
+      "updated_at": "2026-03-24T22:06:25Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go coverage for the backward-compatible ClawHost fleet inventory wrapper aliases in `bigclaw-go/internal/product/clawhost_fleet_test.go`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_fleet.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_fleet.cover | grep \"clawhost_fleet.go\"` -> `BuildDefaultClawHostFleetInventory 100.0%`, `BuildClawHostFleetInventory 100.0%`, `AuditClawHostFleetInventory 100.0%`\n\nCommit: `d992e089df32c9f0febb020252cb7e6fb6381a57`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:06:24Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:04:47Z",
+      "description": "Add narrow Go tests covering BuildDefaultClawHostFleetInventory, BuildClawHostFleetInventory, and AuditClawHostFleetInventory compatibility wrappers.",
+      "id": "big-par-357",
+      "identifier": "BIG-PAR-357",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost fleet inventory alias wrapper coverage",
+      "updated_at": "2026-03-24T22:06:24Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go coverage for console design-system and helper contracts in `bigclaw-go/internal/product/console_test.go`, including `DefaultDesignSystem`, `aggregate`, `normalizeRole`, and `SummaryText`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_console.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_console.cover | head -n 40` -> `DefaultDesignSystem 100.0%`, `aggregate 100.0%`, `normalizeRole 100.0%`, `SummaryText 100.0%`\n\nCommit: `36e7ecad46ac43f96856259e695dda782b5cc854`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:08:50Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:07:10Z",
+      "description": "Add narrow Go tests covering DefaultDesignSystem, aggregate, normalizeRole, and SummaryText behavior in console.go.",
+      "id": "big-par-360",
+      "identifier": "BIG-PAR-360",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add console helper and design-system coverage",
+      "updated_at": "2026-03-24T22:08:50Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go coverage for console navigation and role-based home cards in `bigclaw-go/internal/product/console_test.go`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_console.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_console.cover | head -n 40` -> `Navigation 100.0%`, `HomeForRole 100.0%`\n\nCommit: `36e7ecad46ac43f96856259e695dda782b5cc854`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:08:50Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:07:10Z",
+      "description": "Add narrow Go tests covering Navigation and HomeForRole behavior for key roles and task aggregates in console.go.",
+      "id": "big-par-359",
+      "identifier": "BIG-PAR-359",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add console navigation and home-role coverage",
+      "updated_at": "2026-03-24T22:08:50Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go coverage for the ClawHost workflow compatibility wrapper in `bigclaw-go/internal/product/clawhost_workflows_test.go`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_workflows.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_workflows.cover | grep \"clawhost_workflows.go\"` -> `BuildClawHostWorkflowSurface 100.0%`\n\nCommit: `bef81e64fc8ddab26367be1ff19946da17f33701`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:13:14Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:11:47Z",
+      "description": "Add narrow Go tests covering BuildClawHostWorkflowSurface compatibility wrapper behavior in clawhost_workflows.go.",
+      "id": "big-par-361",
+      "identifier": "BIG-PAR-361",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost workflow alias wrapper coverage",
+      "updated_at": "2026-03-24T22:13:14Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go coverage for ClawHost workflow helper thresholds in `bigclaw-go/internal/product/clawhost_workflows_test.go`, including `inferParallelLimit` branch boundaries and `maxIntWorkflow`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_workflows.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_workflows.cover | grep \"clawhost_workflows.go\"` -> `inferParallelLimit 100.0%`, `maxIntWorkflow 100.0%`\n\nCommit: `bef81e64fc8ddab26367be1ff19946da17f33701`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:13:14Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:11:47Z",
+      "description": "Add narrow Go tests covering inferParallelLimit threshold branches and maxIntWorkflow behavior in clawhost_workflows.go.",
+      "id": "big-par-362",
+      "identifier": "BIG-PAR-362",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost workflow helper threshold coverage",
+      "updated_at": "2026-03-24T22:13:14Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go coverage for rollout audit edge cases in `bigclaw-go/internal/product/clawhost_rollout_test.go`, including empty-plan readiness and sorted helper behavior.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_rollout.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_rollout.cover | grep \"clawhost_rollout.go\"` -> `AuditClawHostRolloutPlanner 100.0%`\n\nCommit: `f0049e41c7a0bf4284c5eee9bbd9ad175592d062`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:15:26Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:13:58Z",
+      "description": "Add narrow Go tests covering empty rollout plan readiness and sorted helper behavior in clawhost_rollout.go.",
+      "id": "big-par-364",
+      "identifier": "BIG-PAR-364",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost rollout audit edge coverage",
+      "updated_at": "2026-03-24T22:15:26Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go coverage for rollout fallback helpers in `bigclaw-go/internal/product/clawhost_rollout_test.go`, including `clawHostFirstNonEmpty`, `clawHostMin`, and `clawHostMax`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_rollout.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_rollout.cover | grep \"clawhost_rollout.go\"` -> `clawHostFirstNonEmpty 100.0%`, `clawHostMin 100.0%`, `clawHostMax 100.0%`\n\nCommit: `f0049e41c7a0bf4284c5eee9bbd9ad175592d062`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:15:26Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:13:58Z",
+      "description": "Add narrow Go tests covering clawHostFirstNonEmpty and rollout min/max helper behavior in clawhost_rollout.go.",
+      "id": "big-par-363",
+      "identifier": "BIG-PAR-363",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost rollout helper fallback coverage",
+      "updated_at": "2026-03-24T22:15:26Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go coverage for dashboard contract path traversal in `bigclaw-go/internal/product/dashboard_run_contract_test.go`, including nested object and list path handling through `contractPathExists`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_dashboard.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_dashboard.cover | grep \"dashboard_run_contract.go\"` -> `contractPathExists 96.3%`\n\nCommit: `079c959d80143c285bd8f53909856416a10e9ac9`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:17:38Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:16:13Z",
+      "description": "Add narrow Go tests covering contractPathExists nested list/object traversal behavior in dashboard_run_contract.go.",
+      "id": "big-par-365",
+      "identifier": "BIG-PAR-365",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add dashboard contract path traversal coverage",
+      "updated_at": "2026-03-24T22:17:38Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go coverage for dashboard contract formatting helpers in `bigclaw-go/internal/product/dashboard_run_contract_test.go`, including `fallbackJoin` and `boolText`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_dashboard.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_dashboard.cover | grep \"dashboard_run_contract.go\"` -> `fallbackJoin 100.0%`, `boolText 100.0%`\n\nCommit: `079c959d80143c285bd8f53909856416a10e9ac9`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:17:38Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:16:13Z",
+      "description": "Add narrow Go tests covering fallbackJoin and boolText behavior in dashboard_run_contract.go.",
+      "id": "big-par-366",
+      "identifier": "BIG-PAR-366",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add dashboard contract helper formatting coverage",
+      "updated_at": "2026-03-24T22:17:38Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go coverage for ClawHost fleet empty-state and error-summary branches in `bigclaw-go/internal/product/clawhost_fleet_test.go`, bringing the remaining fleet surface to full direct coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_final.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_final.cover | egrep \"clawhost_fleet.go|total:\"` -> `clawhost_fleet.go 100.0%`\n\nCommit: `1ecc85096395c4c900ad887f6a557a3cf176de8f`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:21:16Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:19:26Z",
+      "description": "Add narrow Go tests covering empty lifecycle, app, and bot sections plus error summary behavior in clawhost_fleet.go.",
+      "id": "big-par-368",
+      "identifier": "BIG-PAR-368",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost fleet report empty-state coverage",
+      "updated_at": "2026-03-24T22:21:16Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go coverage for non-map list traversal in `bigclaw-go/internal/product/dashboard_run_contract_test.go`, bringing `contractPathExists` to full direct coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_final.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_final.cover | egrep \"dashboard_run_contract.go|total:\"` -> `contractPathExists 100.0%`\n\nCommit: `1ecc85096395c4c900ad887f6a557a3cf176de8f`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:21:16Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:19:26Z",
+      "description": "Add narrow Go tests covering contractPathExists behavior when list traversal encounters non-object items in dashboard_run_contract.go.",
+      "id": "big-par-367",
+      "identifier": "BIG-PAR-367",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add dashboard contract non-map path traversal coverage",
+      "updated_at": "2026-03-24T22:21:16Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go coverage for empty workflow-surface audit behavior in `bigclaw-go/internal/product/clawhost_workflows_test.go`, bringing `AuditClawHostWorkflowSurface` to full direct coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_workflow_final.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_workflow_final.cover | grep \"clawhost_workflows.go\"` -> `AuditClawHostWorkflowSurface 100.0%`\n\nCommit: `6f10e6d9cc8a31ed11d27be64a3dbd4a4ccc4443`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:23:41Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:22:09Z",
+      "description": "Add narrow Go tests covering AuditClawHostWorkflowSurface empty-lane readiness behavior in clawhost_workflows.go.",
+      "id": "big-par-369",
+      "identifier": "BIG-PAR-369",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost workflow empty-audit coverage",
+      "updated_at": "2026-03-24T22:23:41Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go coverage for empty workflow report rendering in `bigclaw-go/internal/product/clawhost_workflows_test.go`, bringing `RenderClawHostWorkflowReport` to full direct coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_workflow_final.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_workflow_final.cover | grep \"clawhost_workflows.go\"` -> `RenderClawHostWorkflowReport 100.0%`\n\nCommit: `6f10e6d9cc8a31ed11d27be64a3dbd4a4ccc4443`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:23:41Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:22:09Z",
+      "description": "Add narrow Go tests covering empty summary and no-lane rendering paths in clawhost_workflows.go.",
+      "id": "big-par-370",
+      "identifier": "BIG-PAR-370",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost workflow report empty-state coverage",
+      "updated_at": "2026-03-24T22:23:41Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added the final rollout helper assertion in `bigclaw-go/internal/product/clawhost_rollout_test.go`, covering blank trimmed values in `clawHostSortedValues` and taking the package to full statement coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_all.cover` -> `ok   bigclaw-go/internal/product`, `coverage: 100.0% of statements`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_all.cover | egrep \"clawhost_rollout.go|total:\"` -> `clawHostSortedValues 100.0%`, `total 100.0%`\n\nCommit: `75c276929b7de33294aa58ba3f1193f95e9de61e`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:26:12Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:24:45Z",
+      "description": "Add narrow Go tests covering clawHostSortedValues behavior when getter values are blank after trimming in clawhost_rollout.go.",
+      "id": "big-par-371",
+      "identifier": "BIG-PAR-371",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add rollout sorted-values blank-skip coverage",
+      "updated_at": "2026-03-24T22:26:12Z"
     }
   ]
 }
