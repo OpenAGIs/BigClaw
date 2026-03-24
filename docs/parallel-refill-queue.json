@@ -97,11 +97,10 @@
       "BIG-PAR-296",
       "BIG-PAR-297",
       "BIG-PAR-298",
-      "BIG-PAR-299"
-    ],
-    "active": [
+      "BIG-PAR-299",
       "BIG-PAR-300"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -702,7 +701,7 @@
       "identifier": "BIG-PAR-300",
       "title": "Add ClawHost helper contract regression coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
