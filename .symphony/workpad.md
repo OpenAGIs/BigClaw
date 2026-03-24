@@ -6,7 +6,7 @@
 - [x] Implement scheduling decision path, queue latency, backoff statistics, and capacity recommendations in `bigclaw-go/internal/api/distributed.go`.
 - [x] Thread `since`/`until` filters through the distributed diagnostics response, export URL, and relevant filter helpers.
 - [x] Extend focused API tests for the new scheduling diagnostics and filter behavior.
-- [ ] Run targeted Go tests, then commit and push the branch.
+- [x] Run targeted Go tests, then commit and push the branch.
 
 ### Acceptance Criteria
 
@@ -19,6 +19,7 @@
 
 - [x] `cd bigclaw-go && go test ./internal/api -run 'TestV2DistributedReport'` -> `ok  	bigclaw-go/internal/api	2.180s`
 - [x] `cd bigclaw-go && go test ./internal/api` -> `ok  	bigclaw-go/internal/api	4.420s`
+- [x] `cd bigclaw-go && go test ./internal/api -run 'TestV2DistributedReport(BuildsCapacityViewAndMarkdownExport|AppliesTeamAndTimeWindowFilters|IncludesRetentionExpirySurface|IncludesProviderLiveHandoffIsolationSurface|IncludesBrokerBootstrapSurface|IncludesBrokerReviewBundle)'` -> `ok  	bigclaw-go/internal/api	3.387s`
 
 ### Notes
 
@@ -27,4 +28,4 @@
 - Initial inspection shows the issue is already partially implemented in the worktree; remaining work is verification and any targeted fixes uncovered by tests.
 - Validation-adjusted assertions: `recovery.retried_runs=1` and `scheduling.queue_latency.waiting_tasks=1` for the retry fixture, matching the current event semantics.
 - Local commit created: `34924f21d8945dcc974b4532440ab59ae71070d1` (`Implement distributed scheduling diagnostics report`).
-- Push blocker: `GIT_TERMINAL_PROMPT=0 git push --set-upstream origin BIGCLAW-174` failed with `fatal: could not read Username for 'https://github.com': terminal prompts disabled`; SSH fallback also failed with `Permission denied (publickey)`.
+- Branch pushed successfully: `git push --set-upstream origin BIGCLAW-174`.
