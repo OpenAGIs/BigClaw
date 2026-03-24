@@ -111,6 +111,11 @@ type runListSummary struct {
 	StateDistribution map[string]int `json:"state_distribution"`
 }
 
+type runListResult struct {
+	Summary runListSummary
+	Runs    []dashboardTaskOverview
+}
+
 type triageSummary struct {
 	FlaggedRuns    int            `json:"flagged_runs"`
 	InboxSize      int            `json:"inbox_size"`
@@ -383,6 +388,12 @@ type runDetailResponse struct {
 	Closeout      runCloseoutSummary          `json:"closeout"`
 	RepoTriage    *runRepoTriageSummary       `json:"repo_triage,omitempty"`
 	Workpad       string                      `json:"workpad,omitempty"`
+}
+
+type runDetailContext struct {
+	Events       []domain.Event
+	Trace        *observability.TraceSummary
+	AuditEntries []controlActionAuditEntry
 }
 
 type controlActionOperation struct {
@@ -861,56 +872,77 @@ func (s *Server) handleV2Runs(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
+	result := s.buildRunListResult(filters, authorization)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"authorization": authorization,
+		"filters":       runListResponseFilters(filters, authorization),
+		"summary":       result.Summary,
+		"runs":          result.Runs,
+	})
+}
+
+func (s *Server) buildRunListResult(filters runListFilters, authorization ControlAuthorization) runListResult {
 	tasks := s.filteredTasks(filters.Team, filters.Project, filters.TenantID, time.Time{}, time.Time{})
-	summary := runListSummary{StateDistribution: make(map[string]int)}
-	runs := make([]dashboardTaskOverview, 0, len(tasks))
+	result := runListResult{
+		Summary: runListSummary{StateDistribution: make(map[string]int)},
+		Runs:    make([]dashboardTaskOverview, 0, len(tasks)),
+	}
 	for _, task := range tasks {
-		if filters.State != "" && !strings.EqualFold(strings.TrimSpace(string(task.State)), filters.State) {
+		if !runListIncludesTask(filters, task) {
 			continue
 		}
 		if err := s.authorizeTaskAccess(authorization, task); err != nil {
 			continue
 		}
 		policySummary := policy.Resolve(task)
-		summary.TotalRuns++
-		summary.BudgetCentsTotal += task.BudgetCents
-		summary.StateDistribution[string(task.State)]++
-		if domain.IsActiveTaskState(task.State) {
-			summary.ActiveRuns++
-		}
-		if task.State == domain.TaskBlocked || strings.EqualFold(strings.TrimSpace(task.Metadata["blocked"]), "true") {
-			summary.BlockedRuns++
-		}
-		if task.State == domain.TaskDeadLetter {
-			summary.DeadLetters++
-		}
-		if policySummary.Plan == "premium" {
-			summary.PremiumRuns++
-		}
-		runs = append(runs, s.dashboardTaskOverview(task, policySummary))
+		accumulateRunListSummary(&result.Summary, task, policySummary)
+		result.Runs = append(result.Runs, s.dashboardTaskOverview(task, policySummary))
 	}
+	sortRunOverviews(result.Runs)
+	result.Runs = limitDashboardTasks(result.Runs, filters.Limit)
+	return result
+}
+
+func runListIncludesTask(filters runListFilters, task domain.Task) bool {
+	return filters.State == "" || strings.EqualFold(strings.TrimSpace(string(task.State)), filters.State)
+}
+
+func accumulateRunListSummary(summary *runListSummary, task domain.Task, policySummary policy.Summary) {
+	summary.TotalRuns++
+	summary.BudgetCentsTotal += task.BudgetCents
+	summary.StateDistribution[string(task.State)]++
+	if domain.IsActiveTaskState(task.State) {
+		summary.ActiveRuns++
+	}
+	if task.State == domain.TaskBlocked || strings.EqualFold(strings.TrimSpace(task.Metadata["blocked"]), "true") {
+		summary.BlockedRuns++
+	}
+	if task.State == domain.TaskDeadLetter {
+		summary.DeadLetters++
+	}
+	if policySummary.Plan == "premium" {
+		summary.PremiumRuns++
+	}
+}
+
+func sortRunOverviews(runs []dashboardTaskOverview) {
 	sort.SliceStable(runs, func(i, j int) bool {
 		if runs[i].Task.UpdatedAt.Equal(runs[j].Task.UpdatedAt) {
 			return runs[i].Task.ID < runs[j].Task.ID
 		}
 		return runs[i].Task.UpdatedAt.After(runs[j].Task.UpdatedAt)
 	})
-	if filters.Limit > 0 && len(runs) > filters.Limit {
-		runs = runs[:filters.Limit]
+}
+
+func runListResponseFilters(filters runListFilters, authorization ControlAuthorization) map[string]any {
+	return map[string]any{
+		"team":        filters.Team,
+		"project":     filters.Project,
+		"tenant_id":   filters.TenantID,
+		"state":       filters.State,
+		"viewer_team": authorization.ViewerTeam,
+		"limit":       filters.Limit,
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
-		"authorization": authorization,
-		"filters": map[string]any{
-			"team":        filters.Team,
-			"project":     filters.Project,
-			"tenant_id":   filters.TenantID,
-			"state":       filters.State,
-			"viewer_team": authorization.ViewerTeam,
-			"limit":       filters.Limit,
-		},
-		"summary": summary,
-		"runs":    runs,
-	})
 }
 
 func parseRunListFilters(r *http.Request) (runListFilters, error) {
@@ -1780,59 +1812,87 @@ func (s *Server) handleV2RunReport(w http.ResponseWriter, r *http.Request, taskI
 }
 
 func (s *Server) buildRunDetailResponse(task domain.Task, limit int, authorization ControlAuthorization) runDetailResponse {
-	events := s.Recorder.EventsByTask(task.ID, limit)
-	var traceSummary *observability.TraceSummary
-	if task.TraceID != "" {
-		if summary, ok := s.Recorder.TraceSummary(task.TraceID); ok {
-			traceSummary = &summary
-		}
+	context := s.buildRunDetailContext(task, limit, authorization)
+	response := runDetailResponse{
+		Task:          task,
+		State:         string(task.State),
+		Policy:        policy.Resolve(task),
+		Risk:          s.riskScore(task),
+		Trace:         context.Trace,
+		FailureReason: runFailureReason(task, context.Events),
+		Events:        context.Events,
+		Timeline:      context.Events,
+		Validation:    buildRunValidation(task),
+		Artifacts:     buildRunArtifacts(task, limit),
+		ArtifactRefs:  collectRunArtifactRefs(task, context.Events),
+		ToolTraces:    collectRunToolTraces(task, context.Events),
+		AuditSummary:  summarizeControlAudit(context.AuditEntries),
+		RecentActions: context.AuditEntries,
+		NotesTimeline: auditNotesTimeline(context.AuditEntries, limit),
+		Closeout:      buildRunCloseout(task),
+		RepoTriage:    buildRunRepoTriage(task),
+		Reports:       buildRunReports(task, limit),
+		Workpad:       task.Metadata["workpad"],
 	}
-	auditEntries := s.recentControlActionsForTask(task.ID, limit, authorization)
+	response.Collaboration = s.runDetailCollaboration(task.ID)
+	return response
+}
+
+func (s *Server) buildRunDetailContext(task domain.Task, limit int, authorization ControlAuthorization) runDetailContext {
+	return runDetailContext{
+		Events:       s.Recorder.EventsByTask(task.ID, limit),
+		Trace:        s.runDetailTraceSummary(task.TraceID),
+		AuditEntries: s.recentControlActionsForTask(task.ID, limit, authorization),
+	}
+}
+
+func (s *Server) runDetailTraceSummary(traceID string) *observability.TraceSummary {
+	if strings.TrimSpace(traceID) == "" {
+		return nil
+	}
+	summary, ok := s.Recorder.TraceSummary(traceID)
+	if !ok {
+		return nil
+	}
+	copy := summary
+	return &copy
+}
+
+func buildRunArtifacts(task domain.Task, limit int) map[string]string {
 	artifacts := map[string]string{
 		"replay": fmt.Sprintf("/replay/%s", task.ID),
 		"events": fmt.Sprintf("/events?task_id=%s&limit=%d", task.ID, limit),
 		"audit":  fmt.Sprintf("/v2/runs/%s/audit?limit=%d", task.ID, limit),
 		"report": fmt.Sprintf("/v2/runs/%s/report?limit=%d", task.ID, limit),
 	}
-	if task.TraceID != "" {
+	if strings.TrimSpace(task.TraceID) != "" {
 		artifacts["trace"] = fmt.Sprintf("/debug/traces/%s?limit=%d", task.TraceID, limit)
 	}
 	if workpad := strings.TrimSpace(task.Metadata["workpad"]); workpad != "" {
 		artifacts["workpad"] = workpad
 	}
-	response := runDetailResponse{
-		Task:          task,
-		State:         string(task.State),
-		Policy:        policy.Resolve(task),
-		Risk:          s.riskScore(task),
-		Trace:         traceSummary,
-		FailureReason: runFailureReason(task, events),
-		Events:        events,
-		Timeline:      events,
-		Validation:    buildRunValidation(task),
-		Artifacts:     artifacts,
-		ArtifactRefs:  collectRunArtifactRefs(task, events),
-		ToolTraces:    collectRunToolTraces(task, events),
-		AuditSummary:  summarizeControlAudit(auditEntries),
-		RecentActions: auditEntries,
-		NotesTimeline: auditNotesTimeline(auditEntries, limit),
-		Closeout:      buildRunCloseout(task),
-		RepoTriage:    buildRunRepoTriage(task),
-		Reports: []runReportLink{{
-			Name:     "run_report",
-			URL:      fmt.Sprintf("/v2/runs/%s/report?limit=%d", task.ID, limit),
-			Format:   "markdown",
-			Download: true,
-		}},
-		Workpad: task.Metadata["workpad"],
+	return artifacts
+}
+
+func buildRunReports(task domain.Task, limit int) []runReportLink {
+	return []runReportLink{{
+		Name:     "run_report",
+		URL:      fmt.Sprintf("/v2/runs/%s/report?limit=%d", task.ID, limit),
+		Format:   "markdown",
+		Download: true,
+	}}
+}
+
+func (s *Server) runDetailCollaboration(taskID string) *control.Takeover {
+	if s.Control == nil {
+		return nil
 	}
-	if s.Control != nil {
-		if takeover, ok := s.Control.TakeoverStatus(task.ID); ok {
-			copy := takeover
-			response.Collaboration = &copy
-		}
+	takeover, ok := s.Control.TakeoverStatus(taskID)
+	if !ok {
+		return nil
 	}
-	return response
+	copy := takeover
+	return &copy
 }
 
 func buildRunValidation(task domain.Task) runValidationSummary {

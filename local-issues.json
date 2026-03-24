@@ -2959,20 +2959,19 @@
     },
     {
       "assigned_to_worker": true,
-      "created_at": "2026-03-24T15:47:39Z",
-      "description": "Add a BigClaw orchestration slice for ClawHost bot lifecycle actions so start/stop/restart/upgrade waves can be planned and executed with concurrency limits, canaries, takeover hooks, and evidence capture across many bots in parallel. This aligns with ClawHost's lifecycle operations and Kubernetes-native isolated bot runtime.",
+      "created_at": "2026-03-24T15:48:03Z",
+      "description": "Refactor bigclaw-go/internal/api/v2.go by extracting the /v2/runs listing and run-detail response assembly into smaller helpers while preserving authorization, filtering, payload shape, and report rendering behavior.",
       "id": "big-par-288",
       "identifier": "BIG-PAR-288",
       "labels": [
         "go",
-        "integration",
-        "clawhost",
-        "parallel"
+        "refactor",
+        "api"
       ],
       "priority": 3,
-      "state": "Todo",
-      "title": "Add parallel ClawHost rollout planner",
-      "updated_at": "2026-03-24T15:47:39Z"
+      "state": "In Progress",
+      "title": "Refactor run list and detail response assembly",
+      "updated_at": "2026-03-24T16:04:00Z"
     },
     {
       "assigned_to_worker": true,
@@ -3027,6 +3026,23 @@
       "state": "Todo",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
       "updated_at": "2026-03-24T15:47:40Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T15:47:39Z",
+      "description": "Add a BigClaw orchestration slice for ClawHost bot lifecycle actions so start/stop/restart/upgrade waves can be planned and executed with concurrency limits, canaries, takeover hooks, and evidence capture across many bots in parallel. This aligns with ClawHost's lifecycle operations and Kubernetes-native isolated bot runtime.",
+      "id": "big-par-292",
+      "identifier": "BIG-PAR-292",
+      "labels": [
+        "go",
+        "integration",
+        "clawhost",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "Todo",
+      "title": "Add parallel ClawHost rollout planner",
+      "updated_at": "2026-03-24T15:47:39Z"
     }
   ]
 }

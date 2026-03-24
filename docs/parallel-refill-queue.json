@@ -86,13 +86,15 @@
       "BIG-PAR-285",
       "BIG-PAR-286"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-288"
+    ],
     "standby": [
       "BIG-PAR-287",
-      "BIG-PAR-288",
       "BIG-PAR-289",
       "BIG-PAR-290",
-      "BIG-PAR-291"
+      "BIG-PAR-291",
+      "BIG-PAR-292"
     ]
   },
   "issue_order": [
@@ -167,7 +169,8 @@
     "BIG-PAR-288",
     "BIG-PAR-289",
     "BIG-PAR-290",
-    "BIG-PAR-291"
+    "BIG-PAR-291",
+    "BIG-PAR-292"
   ],
   "issues": [
     {
@@ -610,9 +613,9 @@
     },
     {
       "identifier": "BIG-PAR-288",
-      "title": "Add parallel ClawHost rollout planner",
+      "title": "Refactor run list and detail response assembly",
       "track": "Go Mainline Follow-ups",
-      "status": "Todo"
+      "status": "In Progress"
     },
     {
       "identifier": "BIG-PAR-289",
@@ -629,6 +632,12 @@
     {
       "identifier": "BIG-PAR-291",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
+      "track": "Go Mainline Follow-ups",
+      "status": "Todo"
+    },
+    {
+      "identifier": "BIG-PAR-292",
+      "title": "Add parallel ClawHost rollout planner",
       "track": "Go Mainline Follow-ups",
       "status": "Todo"
     }
