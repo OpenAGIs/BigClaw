@@ -4799,6 +4799,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go coverage for ClawHost fleet empty-state and error-summary branches in `bigclaw-go/internal/product/clawhost_fleet_test.go`, bringing the remaining fleet surface to full direct coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_final.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_final.cover | egrep \"clawhost_fleet.go|total:\"` -> `clawhost_fleet.go 100.0%`\n\nCommit: `1ecc85096395c4c900ad887f6a557a3cf176de8f`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:21:16Z"
+        }
+      ],
       "created_at": "2026-03-24T22:19:26Z",
       "description": "Add narrow Go tests covering empty lifecycle, app, and bot sections plus error summary behavior in clawhost_fleet.go.",
       "id": "big-par-368",
@@ -4810,12 +4817,19 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add ClawHost fleet report empty-state coverage",
-      "updated_at": "2026-03-24T22:19:26Z"
+      "updated_at": "2026-03-24T22:21:16Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added Go coverage for non-map list traversal in `bigclaw-go/internal/product/dashboard_run_contract_test.go`, bringing `contractPathExists` to full direct coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_final.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_final.cover | egrep \"dashboard_run_contract.go|total:\"` -> `contractPathExists 100.0%`\n\nCommit: `1ecc85096395c4c900ad887f6a557a3cf176de8f`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:21:16Z"
+        }
+      ],
       "created_at": "2026-03-24T22:19:26Z",
       "description": "Add narrow Go tests covering contractPathExists behavior when list traversal encounters non-object items in dashboard_run_contract.go.",
       "id": "big-par-367",
@@ -4827,9 +4841,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add dashboard contract non-map path traversal coverage",
-      "updated_at": "2026-03-24T22:19:26Z"
+      "updated_at": "2026-03-24T22:21:16Z"
     }
   ]
 }
