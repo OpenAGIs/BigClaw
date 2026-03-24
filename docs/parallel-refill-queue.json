@@ -118,11 +118,10 @@
       "BIG-PAR-317",
       "BIG-PAR-318",
       "BIG-PAR-319",
-      "BIG-PAR-320"
-    ],
-    "active": [
+      "BIG-PAR-320",
       "BIG-PAR-321"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -870,7 +869,7 @@
       "identifier": "BIG-PAR-321",
       "title": "Add product regression coverage for default ClawHost fleet compatibility alias",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
