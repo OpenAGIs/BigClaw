@@ -3844,15 +3844,28 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct product regression coverage for the default ClawHost workflow pairing path so the public workflow builder now pins missing pairing-status fallback to `waiting`, the resulting approval/takeover semantics, and credential-path trimming.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -run 'TestBuildClawHostWorkflowSurface|TestBuildClawHostWorkflowSurfaceIgnoresNonClawHostTasksAndUsesFallbackReason|TestBuildClawHostWorkflowSurfaceOrdersReviewQueue|TestBuildClawHostWorkflowSurfaceIdleDefaults|TestBuildClawHostWorkflowSurfaceNormalizesParsingDefaults|TestBuildClawHostWorkflowSurfaceDefaultsPairingAndTrimsCredentialPath' -count=1` -> ok\n- `cd bigclaw-go && go test ./internal/api ./internal/product -count=1` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `325033cf1cd9a90a7b375b11e60e649ae116abb6` matches remote SHA `325033cf1cd9a90a7b375b11e60e649ae116abb6` with `status: ok` and `synced: true`\n- `git log -1 --stat --oneline` -> `325033c test(product): cover workflow pairing defaults` with `bigclaw-go/internal/product/clawhost_workflow_test.go`, `docs/parallel-refill-queue.json`, `docs/parallel-refill-queue.md`, and `local-issues.json`\n\nCommit SHA: `325033cf1cd9a90a7b375b11e60e649ae116abb6`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-24T20:34:02Z"
+        }
+      ],
       "created_at": "2026-03-24T20:32:04Z",
-      "description": "",
+      "description": "Add direct unit coverage for the default ClawHost workflow pairing path so the public workflow builder pins pairing fallback semantics and trimmed credential-path handling without changing product logic.",
       "id": "big-par-323",
       "identifier": "BIG-PAR-323",
-      "labels": [],
+      "labels": [
+        "go",
+        "clawhost",
+        "product",
+        "tests",
+        "parallel"
+      ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add product regression coverage for ClawHost workflow pairing defaults",
-      "updated_at": "2026-03-24T20:32:04Z"
+      "updated_at": "2026-03-24T20:34:02Z"
     }
   ]
 }
