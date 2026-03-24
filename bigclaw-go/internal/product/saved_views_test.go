@@ -91,3 +91,38 @@ func TestSavedViewCatalogJSONRoundTrip(t *testing.T) {
 		t.Fatalf("unexpected round trip: restored=%+v want=%+v", restored, catalog)
 	}
 }
+
+func TestSavedViewHelperFunctions(t *testing.T) {
+	if got := normalizedViewOwner("  alice "); got != "alice" {
+		t.Fatalf("expected trimmed owner alice, got %q", got)
+	}
+	if got := normalizedViewOwner(" "); got != "viewer" {
+		t.Fatalf("expected blank owner to fall back to viewer, got %q", got)
+	}
+
+	if got := strings.Join(duplicateStrings([]string{"alpha", " beta ", "alpha", "beta", "", "  "}), ","); got != "alpha,beta" {
+		t.Fatalf("expected duplicate strings alpha,beta, got %q", got)
+	}
+
+	filters := []SavedViewFilter{
+		{Field: "severity", Operator: "=", Value: "high"},
+		{Field: "state", Operator: "!=", Value: "done"},
+	}
+	if got := renderSavedViewFilters(filters); got != "severity=high, state!=done" {
+		t.Fatalf("unexpected saved-view filter rendering: %q", got)
+	}
+	if got := renderSavedViewFilters(nil); got != "none" {
+		t.Fatalf("expected empty filters to render as none, got %q", got)
+	}
+
+	scopeMap := map[string][]string{
+		"team":    {"platform", "apollo"},
+		"private": {"alice"},
+	}
+	if got := renderSavedViewScopeMap(scopeMap); got != "private=alice; team=apollo, platform" {
+		t.Fatalf("unexpected saved-view scope map rendering: %q", got)
+	}
+	if got := renderSavedViewScopeMap(nil); got != "none" {
+		t.Fatalf("expected empty scope map to render as none, got %q", got)
+	}
+}
