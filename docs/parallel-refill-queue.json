@@ -803,7 +803,7 @@
       "identifier": "BIG-PAR-313",
       "title": "Sanitize scoped ClawHost saved-view IDs",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
