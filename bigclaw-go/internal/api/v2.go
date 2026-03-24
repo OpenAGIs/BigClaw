@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -1678,10 +1679,15 @@ func controlActionScope(action string) string {
 }
 
 func controlActionAuditURL(taskID string, action string) string {
-	if taskID != "" {
-		return fmt.Sprintf("/v2/control-center/audit?task_id=%s&action=%s&audit_limit=20", taskID, action)
+	values := url.Values{}
+	if taskID = strings.TrimSpace(taskID); taskID != "" {
+		values.Set("task_id", taskID)
 	}
-	return fmt.Sprintf("/v2/control-center/audit?action=%s&audit_limit=20", action)
+	if action = strings.TrimSpace(action); action != "" {
+		values.Set("action", action)
+	}
+	values.Set("audit_limit", "20")
+	return "/v2/control-center/audit?" + values.Encode()
 }
 
 func takeoverRef(takeover control.Takeover, ok bool) *control.Takeover {

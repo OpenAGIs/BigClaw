@@ -1781,3 +1781,28 @@ func TestDistributedExportURL(t *testing.T) {
 		t.Fatalf("expected distributed export url to encode reserved-character scope values, got %s", exportURL)
 	}
 }
+
+func TestControlActionAuditURL(t *testing.T) {
+	taskScopedURL := controlActionAuditURL("  Task / Scope @ Edge  ", " retry ")
+	parsedTaskScopedURL, err := url.Parse(taskScopedURL)
+	if err != nil {
+		t.Fatalf("parse task-scoped audit url: %v", err)
+	}
+	taskScopedQuery := parsedTaskScopedURL.Query()
+	if taskScopedQuery.Get("task_id") != "Task / Scope @ Edge" || taskScopedQuery.Get("action") != "retry" || taskScopedQuery.Get("audit_limit") != "20" {
+		t.Fatalf("expected encoded task-scoped audit url filters, got %s", taskScopedURL)
+	}
+	if strings.Contains(taskScopedURL, "task_id=Task / Scope @ Edge") {
+		t.Fatalf("expected task-scoped audit url to encode reserved-character task ids, got %s", taskScopedURL)
+	}
+
+	unscopedURL := controlActionAuditURL("", "cancel")
+	parsedUnscopedURL, err := url.Parse(unscopedURL)
+	if err != nil {
+		t.Fatalf("parse unscoped audit url: %v", err)
+	}
+	unscopedQuery := parsedUnscopedURL.Query()
+	if unscopedQuery.Get("task_id") != "" || unscopedQuery.Get("action") != "cancel" || unscopedQuery.Get("audit_limit") != "20" {
+		t.Fatalf("expected unscoped audit url filters, got %s", unscopedURL)
+	}
+}
