@@ -3869,15 +3869,28 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct product regression coverage for ClawHost workflow metadata precedence so the public workflow builder now pins `TenantID` task precedence over metadata fallbacks while `claw_id` and `claw_name` metadata continue to override task `ID` and `Title`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -run 'TestBuildClawHostWorkflowSurface|TestBuildClawHostWorkflowSurfaceIgnoresNonClawHostTasksAndUsesFallbackReason|TestBuildClawHostWorkflowSurfaceOrdersReviewQueue|TestBuildClawHostWorkflowSurfaceIdleDefaults|TestBuildClawHostWorkflowSurfaceNormalizesParsingDefaults|TestBuildClawHostWorkflowSurfaceDefaultsPairingAndTrimsCredentialPath|TestBuildClawHostWorkflowSurfacePrefersMetadataIdentifiers' -count=1` -> ok\n- `cd bigclaw-go && go test ./internal/api ./internal/product -count=1` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `da8a8d6490a658286036748da2a1d5c8c8c3fdd2` matches remote SHA `da8a8d6490a658286036748da2a1d5c8c8c3fdd2` with `status: ok` and `synced: true`\n- `git log -1 --stat --oneline` -> `da8a8d6 test(product): cover workflow metadata precedence` with `bigclaw-go/internal/product/clawhost_workflow_test.go`, `docs/parallel-refill-queue.json`, `docs/parallel-refill-queue.md`, and `local-issues.json`\n\nCommit SHA: `da8a8d6490a658286036748da2a1d5c8c8c3fdd2`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-24T20:37:57Z"
+        }
+      ],
       "created_at": "2026-03-24T20:36:05Z",
-      "description": "",
+      "description": "Add direct unit coverage for ClawHost workflow metadata precedence so the public workflow builder pins task-vs-metadata identifier fallback order without changing product logic.",
       "id": "big-par-324",
       "identifier": "BIG-PAR-324",
-      "labels": [],
+      "labels": [
+        "go",
+        "clawhost",
+        "product",
+        "tests",
+        "parallel"
+      ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add product regression coverage for ClawHost workflow metadata precedence",
-      "updated_at": "2026-03-24T20:36:05Z"
+      "updated_at": "2026-03-24T20:37:57Z"
     }
   ]
 }

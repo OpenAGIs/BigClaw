@@ -121,11 +121,10 @@
       "BIG-PAR-320",
       "BIG-PAR-321",
       "BIG-PAR-322",
-      "BIG-PAR-323"
-    ],
-    "active": [
+      "BIG-PAR-323",
       "BIG-PAR-324"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -894,7 +893,7 @@
       "identifier": "BIG-PAR-324",
       "title": "Add product regression coverage for ClawHost workflow metadata precedence",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
