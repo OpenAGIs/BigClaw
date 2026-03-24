@@ -83,6 +83,7 @@ type ClawHostFleetInventory struct {
 	SurfaceID        string                  `json:"surface_id"`
 	Version          string                  `json:"version"`
 	SourceRepository string                  `json:"source_repository"`
+	Filters          map[string]string       `json:"filters,omitempty"`
 	ControlPlane     ClawHostControlPlane    `json:"control_plane"`
 	LifecycleActions []string                `json:"lifecycle_actions,omitempty"`
 	Apps             []ClawHostAppInventory  `json:"apps,omitempty"`
@@ -265,6 +266,10 @@ func FilterClawHostFleetSurface(inventory ClawHostFleetInventory, team, project 
 	team = strings.TrimSpace(team)
 	project = strings.TrimSpace(project)
 	if team == "" && project == "" {
+		inventory.Filters = map[string]string{
+			"team":    team,
+			"project": project,
+		}
 		return inventory
 	}
 	filteredApps := make([]ClawHostAppInventory, 0, len(inventory.Apps))
@@ -285,7 +290,12 @@ func FilterClawHostFleetSurface(inventory ClawHostFleetInventory, team, project 
 			filteredBots = append(filteredBots, bot)
 		}
 	}
-	return BuildClawHostFleetSurface(filteredApps, filteredBots)
+	filtered := BuildClawHostFleetSurface(filteredApps, filteredBots)
+	filtered.Filters = map[string]string{
+		"team":    team,
+		"project": project,
+	}
+	return filtered
 }
 
 func AuditClawHostFleetSurface(inventory ClawHostFleetInventory) ClawHostFleetAudit {
@@ -381,6 +391,23 @@ func RenderClawHostFleetReport(inventory ClawHostFleetInventory, audit ClawHostF
 		fmt.Sprintf("- Readiness Score: %.1f", audit.ReadinessScore),
 		fmt.Sprintf("- Control Plane Ready: %t", audit.ControlPlaneReady),
 		"",
+		"## Filters",
+		"",
+	}
+	filterKeys := make([]string, 0, len(inventory.Filters))
+	for key := range inventory.Filters {
+		filterKeys = append(filterKeys, key)
+	}
+	sort.Strings(filterKeys)
+	if len(filterKeys) == 0 {
+		lines = append(lines, "- none")
+	} else {
+		for _, key := range filterKeys {
+			lines = append(lines, fmt.Sprintf("- %s: %s", key, emptyFallback(inventory.Filters[key], "none")))
+		}
+	}
+	lines = append(lines,
+		"",
 		"## Control Plane",
 		"",
 		fmt.Sprintf("- Name: %s", inventory.ControlPlane.Name),
@@ -395,7 +422,7 @@ func RenderClawHostFleetReport(inventory ClawHostFleetInventory, audit ClawHostF
 		"",
 		"## Lifecycle Actions",
 		"",
-	}
+	)
 	if len(inventory.LifecycleActions) == 0 {
 		lines = append(lines, "- none")
 	} else {

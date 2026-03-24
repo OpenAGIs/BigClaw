@@ -98,6 +98,9 @@ func TestFilterClawHostFleetSurface(t *testing.T) {
 
 	t.Run("team and project", func(t *testing.T) {
 		filtered := FilterClawHostFleetSurface(inventory, "platform", "apollo")
+		if filtered.Filters["team"] != "platform" || filtered.Filters["project"] != "apollo" {
+			t.Fatalf("expected scoped fleet filters, got %+v", filtered.Filters)
+		}
 		if filtered.Summary.AppCount != 1 || filtered.Summary.BotCount != 1 || filtered.Summary.RunningBots != 1 {
 			t.Fatalf("unexpected scoped summary: %+v", filtered.Summary)
 		}
@@ -139,6 +142,8 @@ func TestRenderClawHostFleetReport(t *testing.T) {
 	report := RenderClawHostFleetReport(inventory, audit)
 	for _, want := range []string{
 		"# ClawHost Fleet Inventory & Control Plane Report",
+		"## Filters",
+		"- none",
 		"Source Repository: https://github.com/fastclaw-ai/clawhost",
 		"Per-bot Ingress Needed: false",
 		"platform-release-bot",
@@ -158,6 +163,9 @@ func TestRenderClawHostFleetReportHandlesEmptyInventory(t *testing.T) {
 
 	for _, want := range []string{
 		"# ClawHost Fleet Inventory & Control Plane Report",
+		"## Filters",
+		"- project: phoenix",
+		"- team: support",
 		"App Count: 0",
 		"Bot Count: 0",
 		"Running Bots: 0",

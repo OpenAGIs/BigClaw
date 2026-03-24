@@ -888,6 +888,7 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		var decoded struct {
 			Inventory struct {
 				SurfaceID string `json:"surface_id"`
+				Filters   map[string]string `json:"filters"`
 				Summary   struct {
 					AppCount    int `json:"app_count"`
 					BotCount    int `json:"bot_count"`
@@ -918,6 +919,9 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		if decoded.Inventory.SurfaceID != "BIG-PAR-287" || decoded.Inventory.Summary.AppCount != 1 || decoded.Inventory.Summary.BotCount != 1 || decoded.Inventory.Summary.RunningBots != 1 {
 			t.Fatalf("unexpected fleet inventory payload: %+v", decoded.Inventory)
 		}
+		if decoded.Inventory.Filters["team"] != "platform" || decoded.Inventory.Filters["project"] != "apollo" {
+			t.Fatalf("expected scoped fleet filters, got %+v", decoded.Inventory.Filters)
+		}
 		if len(decoded.Inventory.Apps) != 1 || decoded.Inventory.Apps[0].AppID != "app-platform" || decoded.Inventory.Apps[0].Team != "platform" || decoded.Inventory.Apps[0].Project != "apollo" {
 			t.Fatalf("expected scoped app inventory, got %+v", decoded.Inventory.Apps)
 		}
@@ -927,7 +931,11 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		if !decoded.Audit.ControlPlaneReady {
 			t.Fatalf("expected fleet audit to be ready, got %+v", decoded.Audit)
 		}
-		if decoded.Report.ExportURL != "/v2/clawhost/fleet/export?project=apollo&team=platform" || !strings.Contains(decoded.Report.Markdown, "# ClawHost Fleet Inventory & Control Plane Report") {
+		if decoded.Report.ExportURL != "/v2/clawhost/fleet/export?project=apollo&team=platform" ||
+			!strings.Contains(decoded.Report.Markdown, "# ClawHost Fleet Inventory & Control Plane Report") ||
+			!strings.Contains(decoded.Report.Markdown, "## Filters") ||
+			!strings.Contains(decoded.Report.Markdown, "- project: apollo") ||
+			!strings.Contains(decoded.Report.Markdown, "- team: platform") {
 			t.Fatalf("unexpected fleet report payload: %+v", decoded.Report)
 		}
 
@@ -939,7 +947,14 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 			t.Fatalf("expected fleet export markdown content type, got %q", contentType)
 		}
-		if !strings.Contains(exportResponse.Body.String(), "Control Plane Ready: true") || !strings.Contains(exportResponse.Body.String(), "platform-release-bot") || !strings.Contains(exportResponse.Body.String(), "team=platform") || !strings.Contains(exportResponse.Body.String(), "project=apollo") || strings.Contains(exportResponse.Body.String(), "growth-campaign-bot") {
+		if !strings.Contains(exportResponse.Body.String(), "Control Plane Ready: true") ||
+			!strings.Contains(exportResponse.Body.String(), "## Filters") ||
+			!strings.Contains(exportResponse.Body.String(), "- team: platform") ||
+			!strings.Contains(exportResponse.Body.String(), "- project: apollo") ||
+			!strings.Contains(exportResponse.Body.String(), "platform-release-bot") ||
+			!strings.Contains(exportResponse.Body.String(), "team=platform") ||
+			!strings.Contains(exportResponse.Body.String(), "project=apollo") ||
+			strings.Contains(exportResponse.Body.String(), "growth-campaign-bot") {
 			t.Fatalf("unexpected fleet export body: %s", exportResponse.Body.String())
 		}
 	})
