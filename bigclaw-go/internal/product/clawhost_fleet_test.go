@@ -103,3 +103,23 @@ func TestRenderClawHostFleetReport(t *testing.T) {
 		}
 	}
 }
+
+func TestRenderClawHostFleetReportHandlesEmptyInventory(t *testing.T) {
+	inventory := FilterClawHostFleetSurface(BuildDefaultClawHostFleetSurface(), "support", "phoenix")
+	audit := AuditClawHostFleetSurface(inventory)
+	report := RenderClawHostFleetReport(inventory, audit)
+
+	for _, want := range []string{
+		"# ClawHost Fleet Inventory & Control Plane Report",
+		"App Count: 0",
+		"Bot Count: 0",
+		"Running Bots: 0",
+		"## App Inventory",
+		"## Bot Inventory",
+		"- none",
+	} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in empty fleet report, got %s", want, report)
+		}
+	}
+}

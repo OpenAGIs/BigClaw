@@ -113,7 +113,9 @@
       "BIG-PAR-312",
       "BIG-PAR-313"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-314"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -210,7 +212,8 @@
     "BIG-PAR-310",
     "BIG-PAR-311",
     "BIG-PAR-312",
-    "BIG-PAR-313"
+    "BIG-PAR-313",
+    "BIG-PAR-314"
   ],
   "issues": [
     {
@@ -806,6 +809,12 @@
       "title": "Add product regression coverage for idle ClawHost workflow lane signals",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-314",
+      "title": "Add product regression coverage for empty ClawHost fleet reports",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
