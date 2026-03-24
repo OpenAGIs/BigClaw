@@ -4488,6 +4488,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added API regression coverage for the ClawHost expansion and export handlers so all eight endpoints now reject non-GET requests with the expected 405 and method-not-allowed body. Validation: cd bigclaw-go && go test ./internal/api -run TestV2ClawHostExpansionEndpointsRejectNonGET -count=1 -> ok; cd bigclaw-go && go test ./internal/api ./internal/product -count=1 -> ok. Commit SHA: 5554833a803823f54de840a93e32cbd2598e1b15. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T00:31:30Z"
+        }
+      ],
       "created_at": "2026-03-24T22:19:39Z",
       "description": "Add focused API regression coverage that the ClawHost expansion and export endpoints reject non-GET methods with HTTP 405 and the existing method-not-allowed body, keeping the handler guard rails pinned independently of the success-path tests.",
       "id": "big-par-349",
@@ -4502,14 +4509,25 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost expansion method guard coverage",
-      "updated_at": "2026-03-25T00:31:30Z",
-      "comments": [
-        {
-          "author": "codex",
-          "body": "Added API regression coverage for the ClawHost expansion and export handlers so all eight endpoints now reject non-GET requests with the expected 405 and method-not-allowed body. Validation: cd bigclaw-go && go test ./internal/api -run TestV2ClawHostExpansionEndpointsRejectNonGET -count=1 -> ok; cd bigclaw-go && go test ./internal/api ./internal/product -count=1 -> ok. Commit SHA: 5554833a803823f54de840a93e32cbd2598e1b15. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
-          "created_at": "2026-03-25T00:31:30Z"
-        }
-      ]
+      "updated_at": "2026-03-25T00:31:30Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T22:23:23Z",
+      "description": "Add direct API-unit coverage for clawHostReadinessSurfacePayload and clawHostReadinessTargetFromTask so empty/default surfaces, task normalization, summary counts, and degraded warning paths stay pinned without relying on full debug/control-center handlers.",
+      "id": "big-par-350",
+      "identifier": "BIG-PAR-350",
+      "labels": [
+        "go",
+        "clawhost",
+        "api",
+        "parallel",
+        "test"
+      ],
+      "priority": 3,
+      "state": "In",
+      "title": "Add ClawHost readiness surface unit coverage",
+      "updated_at": "2026-03-24T22:23:23Z"
     }
   ]
 }
