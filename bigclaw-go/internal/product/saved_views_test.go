@@ -354,6 +354,41 @@ func TestAuditSavedViewCatalogReadinessFloorsAtZero(t *testing.T) {
 	}
 }
 
+func TestAuditSavedViewCatalogValidCatalogScoresPerfectReadiness(t *testing.T) {
+	catalog := SavedViewCatalog{
+		Name:    "catalog",
+		Version: "v1",
+		Views: []SavedView{
+			{
+				ViewID:     "ops-view",
+				Name:       "Ops View",
+				Route:      "/v2/control-center?project=apollo",
+				Owner:      "alice",
+				Visibility: "organization",
+				Filters:    []SavedViewFilter{{Field: "state", Operator: "eq", Value: "running"}},
+				IsDefault:  true,
+			},
+		},
+		Subscriptions: []AlertDigestSubscription{
+			{
+				SubscriptionID: "ops-digest",
+				SavedViewID:    "ops-view",
+				Channel:        "webhook",
+				Cadence:        "hourly",
+				Recipients:     []string{"alice"},
+			},
+		},
+	}
+
+	audit := AuditSavedViewCatalog(catalog)
+	if audit.ReadinessScore != 100 {
+		t.Fatalf("expected perfect readiness for valid catalog, got %+v", audit)
+	}
+	if audit.DuplicateViewNames != nil || audit.DuplicateDefaultViews != nil || audit.OrphanSubscriptions != nil || audit.SubscriptionsWithInvalidChannel != nil || audit.SubscriptionsWithInvalidCadence != nil {
+		t.Fatalf("expected clean-path audit findings to stay nil, got %+v", audit)
+	}
+}
+
 func TestRenderSavedViewReportEmptyState(t *testing.T) {
 	report := RenderSavedViewReport(
 		SavedViewCatalog{Name: "empty", Version: "v1"},

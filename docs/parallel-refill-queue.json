@@ -142,7 +142,10 @@
       "BIG-PAR-342",
       "BIG-PAR-343"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-345",
+      "BIG-PAR-346"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -268,7 +271,9 @@
     "BIG-PAR-340",
     "BIG-PAR-339",
     "BIG-PAR-342",
-    "BIG-PAR-343"
+    "BIG-PAR-343",
+    "BIG-PAR-345",
+    "BIG-PAR-346"
   ],
   "issues": [
     {
@@ -1038,6 +1043,18 @@
       "title": "Add unscoped saved view catalog baseline coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-345",
+      "title": "Add valid saved view audit clean-path coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-346",
+      "title": "Add project-scoped saved view catalog coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
