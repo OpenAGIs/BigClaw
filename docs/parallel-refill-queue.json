@@ -94,11 +94,10 @@
       "BIG-PAR-293",
       "BIG-PAR-294",
       "BIG-PAR-295",
-      "BIG-PAR-296"
-    ],
-    "active": [
+      "BIG-PAR-296",
       "BIG-PAR-297"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -678,7 +677,7 @@
       "identifier": "BIG-PAR-297",
       "title": "Add aggregate control-center regression for ClawHost surface bundle",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
