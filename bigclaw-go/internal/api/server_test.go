@@ -2615,6 +2615,39 @@ func TestV2RunDetailCloseoutSummaryFromMetadata(t *testing.T) {
 	}
 }
 
+func TestV2RunReportSanitizesAttachmentFilename(t *testing.T) {
+	recorder := observability.NewRecorder()
+	task := domain.Task{
+		ID:        "Ops / Alert @ Night",
+		TraceID:   "trace-run-report-special",
+		Title:     "Investigate overnight alert storm",
+		State:     domain.TaskBlocked,
+		CreatedAt: time.Date(2026, 3, 25, 1, 0, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 3, 25, 1, 30, 0, 0, time.UTC),
+	}
+	recorder.StoreTask(task)
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/runs/Ops%20%2F%20Alert%20@%20Night/report?limit=20", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected sanitized run report 200, got %d %s", response.Code, response.Body.String())
+	}
+	if disposition := response.Header().Get("Content-Disposition"); disposition != `attachment; filename="ops-alert-night-run-report.md"` {
+		t.Fatalf("expected sanitized attachment filename, got %q", disposition)
+	}
+	if !strings.Contains(response.Body.String(), "Task ID: Ops / Alert @ Night") {
+		t.Fatalf("expected markdown to preserve original task id, got %s", response.Body.String())
+	}
+}
+
 func TestV2RunDetailIncludesRepoTriagePacket(t *testing.T) {
 	recorder := observability.NewRecorder()
 	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Control: control.New(), Now: func() time.Time { return time.Unix(1700006100, 0) }}

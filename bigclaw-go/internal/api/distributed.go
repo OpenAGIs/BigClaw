@@ -1622,7 +1622,24 @@ func (s *Server) sharedQueueCoordinationDiagnostics() sharedQueueCoordinationDia
 
 func sanitizeReportName(value string) string {
 	value = strings.ToLower(strings.TrimSpace(value))
-	value = strings.ReplaceAll(value, " ", "-")
+	if value == "" {
+		return "all"
+	}
+	var b strings.Builder
+	b.Grow(len(value))
+	lastDash := false
+	for _, r := range value {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			b.WriteRune(r)
+			lastDash = false
+			continue
+		}
+		if !lastDash {
+			b.WriteByte('-')
+			lastDash = true
+		}
+	}
+	value = strings.Trim(b.String(), "-")
 	if value == "" {
 		return "all"
 	}

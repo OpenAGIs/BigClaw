@@ -209,7 +209,8 @@
     "BIG-PAR-311",
     "BIG-PAR-312",
     "BIG-PAR-313",
-    "BIG-PAR-314"
+    "BIG-PAR-314",
+    "BIG-PAR-315"
   ],
   "issues": [
     {
@@ -811,6 +812,12 @@
       "title": "Encode scoped export URLs for saved views and weekly reports",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-315",
+      "title": "Sanitize attachment filenames for run report exports",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

@@ -1778,7 +1778,7 @@ func (s *Server) handleV2RunReport(w http.ResponseWriter, r *http.Request, taskI
 	}
 	response := s.buildRunDetailResponse(task, limit, authorization)
 	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", taskID+"-run-report.md"))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", sanitizeReportName(taskID)+"-run-report.md"))
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(renderRunDetailMarkdown(response)))
 }
