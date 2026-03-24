@@ -227,6 +227,53 @@ func TestSchedulerEnforcesTenantIsolationAndOwnerMatch(t *testing.T) {
 	}
 }
 
+func TestSchedulerTaskPolicyTightensIsolationAgainstSharedDefaults(t *testing.T) {
+	s := New()
+	accepted := s.Decide(domain.Task{
+		ID:       "policy-isol-accepted",
+		TenantID: "tenant-a",
+		Metadata: map[string]string{
+			"policy_tenant_isolation_mode": "tenant",
+			"policy_require_owner_match":   "true",
+			"policy_owner_metadata_keys":   "created_by",
+			"created_by":                   "alice",
+		},
+	}, QuotaSnapshot{TenantID: "tenant-a", OwnerID: "alice"})
+	if !accepted.Accepted || accepted.Isolation.Violation {
+		t.Fatalf("expected accepted task policy isolation decision, got %+v", accepted)
+	}
+	if accepted.Isolation.TenantMode != "tenant" || !accepted.Isolation.RequireOwnerMatch || len(accepted.Isolation.OwnerMetadataKeys) != 2 || accepted.Isolation.OwnerMetadataKeys[1] != "created_by" {
+		t.Fatalf("expected effective task policy isolation details, got %+v", accepted.Isolation)
+	}
+
+	crossTenant := s.Decide(domain.Task{
+		ID:       "policy-isol-cross-tenant",
+		TenantID: "tenant-b",
+		Metadata: map[string]string{
+			"policy_tenant_isolation_mode": "tenant",
+		},
+	}, QuotaSnapshot{TenantID: "tenant-a"})
+	if crossTenant.Accepted || !crossTenant.Isolation.Violation || crossTenant.Isolation.Boundary != "tenant" {
+		t.Fatalf("expected task policy cross-tenant rejection, got %+v", crossTenant)
+	}
+
+	crossOwner := s.Decide(domain.Task{
+		ID:       "policy-isol-cross-owner",
+		TenantID: "tenant-a",
+		Metadata: map[string]string{
+			"policy_require_owner_match": "true",
+			"policy_owner_metadata_keys": "created_by",
+			"created_by":                 "bob",
+		},
+	}, QuotaSnapshot{TenantID: "tenant-a", OwnerID: "alice"})
+	if crossOwner.Accepted || !crossOwner.Isolation.Violation || crossOwner.Isolation.Boundary != "owner" {
+		t.Fatalf("expected task policy cross-owner rejection, got %+v", crossOwner)
+	}
+	if !strings.Contains(crossOwner.Reason, "ownership boundary") {
+		t.Fatalf("expected ownership rejection reason, got %+v", crossOwner)
+	}
+}
+
 func TestSchedulerPolicyStoreRejectsInvalidExecutor(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "scheduler-policy.json")

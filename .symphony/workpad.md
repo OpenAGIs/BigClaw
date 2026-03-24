@@ -1,27 +1,25 @@
 # BIGCLAW-178
 
 ## Plan
-
-1. Expose tenant and ownership isolation intent in `bigclaw-go/internal/policy` so task policy output can express tenant-scoped scheduling and owner matching.
-2. Tighten distributed diagnostics in `bigclaw-go/internal/api/distributed.go` so reports show explicit cross-tenant and cross-owner boundary pairs in addition to violation counts.
-3. Add focused tests in `bigclaw-go/internal/policy` and `bigclaw-go/internal/api` covering policy expression, blocked cross-tenant placement visibility, and markdown/report output.
-4. Run the narrowest relevant Go test targets for the touched packages, then record exact commands and outcomes below.
-5. Commit and push the scoped issue branch changes.
+- Inspect existing distributed policy, scheduler isolation, and reporting surfaces.
+- Extend policy/runtime types to express tenant isolation and ownership constraints.
+- Surface cross-tenant boundary details in scheduler reports/events.
+- Add targeted tests to block invalid cross-tenant allocations and verify reporting.
+- Run targeted test commands, record exact results, then commit and push.
 
 ## Acceptance
-
-1. Policy output can express tenant isolation mode and owner-matching requirements.
-2. Distributed diagnostics and markdown report show cross-tenant boundary details, not just aggregate counts.
-3. Tests prove invalid cross-tenant or ownership-breaking assignments are rejected and surfaced in diagnostics.
+- Policy can express tenant isolation.
+- Scheduling report shows cross-tenant boundary details.
+- Tests prove violating allocations are blocked.
 
 ## Validation
+- go test targeted scheduler/worker/reporting packages covering isolation policy and report output.
+- Review git diff to keep scope limited to BIGCLAW-178.
 
-- Run only the narrowest Go test targets that exercise the touched packages:
-  - `go test ./internal/policy ./internal/api`
-- Record exact commands and pass/fail outcomes in this file after execution.
-
-## Test Log
-
-- `cd /Users/openagi/code/bigclaw-workspaces/BIGCLAW-178/bigclaw-go && go test ./internal/policy ./internal/api`
-  - `ok  	bigclaw-go/internal/policy	(cached)`
-  - `ok  	bigclaw-go/internal/api	4.822s`
+## Results
+- `go test ./internal/scheduler -run 'TestScheduler(EnforcesTenantIsolationAndOwnerMatch|TaskPolicyTightensIsolationAgainstSharedDefaults)' -count=1`
+  - `ok  	bigclaw-go/internal/scheduler	1.350s`
+- `go test ./internal/worker -run 'TestRuntime(PublishesRejectedDecisionHandoffBeforeRetry|PublishesTaskPolicyIsolationOnBlockedEvent)' -count=1`
+  - `ok  	bigclaw-go/internal/worker	2.336s`
+- `go test ./internal/api -run 'TestV2ControlCenterDistributedDiagnosticsShowIsolationBoundaries' -count=1`
+  - `ok  	bigclaw-go/internal/api	2.926s`

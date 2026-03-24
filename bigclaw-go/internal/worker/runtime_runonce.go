@@ -291,13 +291,16 @@ func runtimeRoutedPayload(assessment scheduler.Assessment, quota scheduler.Quota
 			"required_approvals": assessment.OrchestrationPlan.RequiredApprovals(),
 		},
 		"policy": map[string]any{
-			"tier":                assessment.OrchestrationPolicy.Tier,
-			"upgrade_required":    assessment.OrchestrationPolicy.UpgradeRequired,
-			"reason":              assessment.OrchestrationPolicy.Reason,
-			"blocked_departments": assessment.OrchestrationPolicy.BlockedDepartments,
-			"entitlement_status":  assessment.OrchestrationPolicy.EntitlementStatus,
-			"billing_model":       assessment.OrchestrationPolicy.BillingModel,
-			"estimated_cost_usd":  assessment.OrchestrationPolicy.EstimatedCostUSD,
+			"tier":                    assessment.OrchestrationPolicy.Tier,
+			"upgrade_required":        assessment.OrchestrationPolicy.UpgradeRequired,
+			"reason":                  assessment.OrchestrationPolicy.Reason,
+			"blocked_departments":     assessment.OrchestrationPolicy.BlockedDepartments,
+			"entitlement_status":      assessment.OrchestrationPolicy.EntitlementStatus,
+			"billing_model":           assessment.OrchestrationPolicy.BillingModel,
+			"estimated_cost_usd":      assessment.OrchestrationPolicy.EstimatedCostUSD,
+			"tenant_isolation_mode":   decision.Isolation.TenantMode,
+			"owner_matching_required": decision.Isolation.RequireOwnerMatch,
+			"owner_metadata_keys":     decision.Isolation.OwnerMetadataKeys,
 		},
 	}
 	if decision.Isolation.TenantMode != "" || decision.Isolation.RequireOwnerMatch || decision.Isolation.TaskTenantID != "" || decision.Isolation.QuotaTenantID != "" || decision.Isolation.TaskOwner != "" || decision.Isolation.QuotaOwnerID != "" || decision.Isolation.Violation {

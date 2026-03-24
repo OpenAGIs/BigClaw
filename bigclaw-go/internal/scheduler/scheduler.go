@@ -8,6 +8,7 @@ import (
 
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/executor"
+	"bigclaw-go/internal/policy"
 	"bigclaw-go/internal/risk"
 	"bigclaw-go/internal/workflow"
 )
@@ -37,15 +38,19 @@ type Decision struct {
 }
 
 type IsolationDecision struct {
-	TenantMode        string `json:"tenant_mode,omitempty"`
-	RequireOwnerMatch bool   `json:"require_owner_match,omitempty"`
-	TaskTenantID      string `json:"task_tenant_id,omitempty"`
-	QuotaTenantID     string `json:"quota_tenant_id,omitempty"`
-	TaskOwner         string `json:"task_owner,omitempty"`
-	QuotaOwnerID      string `json:"quota_owner_id,omitempty"`
-	Boundary          string `json:"boundary,omitempty"`
-	Violation         bool   `json:"violation,omitempty"`
-	Reason            string `json:"reason,omitempty"`
+	TenantMode         string   `json:"tenant_mode,omitempty"`
+	TenantSource       string   `json:"tenant_source,omitempty"`
+	TenantMetadataKeys []string `json:"tenant_metadata_keys,omitempty"`
+	RequireOwnerMatch  bool     `json:"require_owner_match,omitempty"`
+	OwnerMetadataKeys  []string `json:"owner_metadata_keys,omitempty"`
+	TaskTenantID       string   `json:"task_tenant_id,omitempty"`
+	QuotaTenantID      string   `json:"quota_tenant_id,omitempty"`
+	TaskOwner          string   `json:"task_owner,omitempty"`
+	OwnerSource        string   `json:"owner_source,omitempty"`
+	QuotaOwnerID       string   `json:"quota_owner_id,omitempty"`
+	Boundary           string   `json:"boundary,omitempty"`
+	Violation          bool     `json:"violation,omitempty"`
+	Reason             string   `json:"reason,omitempty"`
 }
 
 type Assessment struct {
@@ -275,19 +280,21 @@ func buildHandoffRequest(decision Decision, plan workflow.OrchestrationPlan, pol
 }
 
 func evaluateIsolation(task domain.Task, quota QuotaSnapshot, rules RoutingRules) IsolationDecision {
+	effective := effectiveIsolationRules(task, rules)
 	taskTenantID := strings.TrimSpace(task.TenantID)
 	quotaTenantID := strings.TrimSpace(quota.TenantID)
-	taskOwner := taskOwner(task, rules.Isolation.OwnerMetadataKeys)
+	taskOwner := taskOwner(task, effective.OwnerMetadataKeys)
 	quotaOwnerID := strings.TrimSpace(quota.OwnerID)
 	isolation := IsolationDecision{
-		TenantMode:        rules.Isolation.TenantMode,
-		RequireOwnerMatch: rules.Isolation.RequireOwnerMatch,
+		TenantMode:        effective.TenantMode,
+		RequireOwnerMatch: effective.RequireOwnerMatch,
+		OwnerMetadataKeys: append([]string(nil), effective.OwnerMetadataKeys...),
 		TaskTenantID:      taskTenantID,
 		QuotaTenantID:     quotaTenantID,
 		TaskOwner:         taskOwner,
 		QuotaOwnerID:      quotaOwnerID,
 	}
-	if rules.Isolation.TenantMode == "tenant" {
+	if effective.TenantMode == "tenant" {
 		isolation.Boundary = "tenant"
 		switch {
 		case quotaTenantID != "" && taskTenantID == "":
@@ -300,7 +307,7 @@ func evaluateIsolation(task domain.Task, quota QuotaSnapshot, rules RoutingRules
 			return isolation
 		}
 	}
-	if rules.Isolation.RequireOwnerMatch && quotaOwnerID != "" {
+	if effective.RequireOwnerMatch && quotaOwnerID != "" {
 		isolation.Boundary = "owner"
 		switch {
 		case taskOwner == "":
@@ -314,6 +321,42 @@ func evaluateIsolation(task domain.Task, quota QuotaSnapshot, rules RoutingRules
 		}
 	}
 	return isolation
+}
+
+func effectiveIsolationRules(task domain.Task, rules RoutingRules) IsolationRules {
+	effective := cloneIsolationRules(rules.Isolation)
+	taskPolicy := policy.Resolve(task)
+	if taskPolicy.TenantIsolationMode == "tenant" {
+		effective.TenantMode = "tenant"
+	}
+	if taskPolicy.OwnerMatchingRequired {
+		effective.RequireOwnerMatch = true
+	}
+	effective.OwnerMetadataKeys = mergeMetadataKeys(effective.OwnerMetadataKeys, taskPolicy.OwnerMetadataKeys)
+	return effective
+}
+
+func cloneIsolationRules(rules IsolationRules) IsolationRules {
+	out := rules
+	out.OwnerMetadataKeys = append([]string(nil), rules.OwnerMetadataKeys...)
+	return out
+}
+
+func mergeMetadataKeys(base []string, extra []string) []string {
+	seen := make(map[string]struct{}, len(base)+len(extra))
+	merged := make([]string, 0, len(base)+len(extra))
+	for _, key := range append(append([]string(nil), base...), extra...) {
+		key = strings.TrimSpace(key)
+		if key == "" {
+			continue
+		}
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		merged = append(merged, key)
+	}
+	return merged
 }
 
 func taskOwner(task domain.Task, metadataKeys []string) string {

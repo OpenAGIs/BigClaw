@@ -417,6 +417,67 @@ func TestRuntimePublishesRejectedDecisionHandoffBeforeRetry(t *testing.T) {
 	}
 }
 
+func TestRuntimePublishesTaskPolicyIsolationOnBlockedEvent(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	task := domain.Task{
+		ID:       "task-policy-isolation",
+		TraceID:  "trace-policy-isolation",
+		TenantID: "tenant-b",
+		Metadata: map[string]string{
+			"policy_tenant_isolation_mode": "tenant",
+			"policy_require_owner_match":   "true",
+			"policy_owner_metadata_keys":   "created_by",
+			"created_by":                   "bob",
+		},
+		CreatedAt: time.Now(),
+	}
+	if err := q.Enqueue(context.Background(), task); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	bus, recorder := newRuntimeRecorder()
+	runtime := Runtime{
+		WorkerID:    "worker-1",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorLocal, result: executor.Result{Success: true, Message: "ok"}}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    200 * time.Millisecond,
+		TaskTimeout: time.Second,
+	}
+
+	processed := runtime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 10, BudgetRemaining: 1000, TenantID: "tenant-a", OwnerID: "alice"})
+	if !processed {
+		t.Fatalf("expected task to be processed")
+	}
+	events := recorder.EventsByTask("task-policy-isolation", 10)
+	if len(events) != 4 {
+		t.Fatalf("expected leased, blocked, handoff, retry events, got %+v", events)
+	}
+	blocked := events[1]
+	if blocked.Type != domain.EventSchedulerBlocked {
+		t.Fatalf("expected blocked scheduling event, got %+v", blocked)
+	}
+	policyPayload, ok := blocked.Payload["policy"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected policy payload on blocked event, got %+v", blocked.Payload)
+	}
+	if policyPayload["tenant_isolation_mode"] != "tenant" || policyPayload["owner_matching_required"] != true {
+		t.Fatalf("expected isolation policy payload, got %+v", policyPayload)
+	}
+	keys, ok := policyPayload["owner_metadata_keys"].([]string)
+	if !ok || len(keys) != 2 || keys[1] != "created_by" {
+		t.Fatalf("expected owner metadata keys in policy payload, got %#v", policyPayload["owner_metadata_keys"])
+	}
+	isolation, ok := blocked.Payload["isolation"].(scheduler.IsolationDecision)
+	if !ok {
+		t.Fatalf("expected isolation payload on blocked event, got %+v", blocked.Payload)
+	}
+	if !isolation.Violation || isolation.Boundary != "tenant" || isolation.TaskTenantID != "tenant-b" || isolation.QuotaTenantID != "tenant-a" {
+		t.Fatalf("expected tenant isolation violation, got %+v", isolation)
+	}
+}
+
 func TestRuntimeWritesWorkpadJournalAndStoresArtifactPath(t *testing.T) {
 	q := queue.NewMemoryQueue()
 	task := domain.Task{
