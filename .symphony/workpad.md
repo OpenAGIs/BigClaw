@@ -1,27 +1,20 @@
-## Codex Workpad
+# BIGCLAW-184 Workpad
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## Plan
+- Inspect existing distributed diagnostics and evidence-bundle surfaces in `bigclaw-go/internal/api` to match current API and report conventions.
+- Add a repo-native parallel diagnostics evidence-bundle index payload plus a search payload that can filter bundle artifacts by query, status, lane, and evidence path matches.
+- Expose the new payloads from the active Go API surface and cover them with targeted API tests.
+- Run focused Go tests, record the exact commands and results, then commit and push the branch for `BIGCLAW-184`.
 
-### Plan
+## Acceptance
+- The Go API exposes a deterministic parallel diagnostics evidence-bundle index surface sourced from checked-in repo artifacts.
+- The Go API exposes a deterministic search surface for the same evidence bundle corpus with stable filtering semantics.
+- The implementation stays scoped to the distributed diagnostics / evidence bundle surface and includes targeted regression coverage.
+- Validation commands and results are captured before closeout.
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+## Validation
+- `cd bigclaw-go && go test ./internal/api`
 
-### Acceptance Criteria
-
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
-
-### Validation
-
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
-
-### Notes
-
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+## Results
+- `cd bigclaw-go && go test ./internal/api -run 'TestV2DistributedEvidenceBundlesIndex|TestV2DistributedEvidenceBundleSearch|TestV2DistributedEvidenceBundleSearchRejectsInvalidLimit'` -> `ok  	bigclaw-go/internal/api	0.350s`
+- `cd bigclaw-go && go test ./internal/api` -> `ok  	bigclaw-go/internal/api	3.363s`

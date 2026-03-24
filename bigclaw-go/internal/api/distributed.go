@@ -287,6 +287,33 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 	})
 }
 
+func (s *Server) handleV2DistributedEvidenceBundles(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	writeJSON(w, http.StatusOK, parallelDiagnosticsEvidenceBundleIndexPayload())
+}
+
+func (s *Server) handleV2DistributedEvidenceBundleSearch(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	limit, err := parsePositiveIntQuery(r.URL.Query().Get("limit"), 20)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	writeJSON(w, http.StatusOK, parallelDiagnosticsEvidenceSearchPayload(
+		r.URL.Query().Get("q"),
+		r.URL.Query().Get("status"),
+		r.URL.Query().Get("lane"),
+		r.URL.Query().Get("path"),
+		limit,
+	))
+}
+
 func (s *Server) handleV2DistributedReportExport(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)

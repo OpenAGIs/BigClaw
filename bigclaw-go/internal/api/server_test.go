@@ -5601,3 +5601,128 @@ func TestV2DistributedReportIncludesBrokerReviewBundle(t *testing.T) {
 		t.Fatalf("expected broker review bundle markdown section, got %s", decoded.Report.Markdown)
 	}
 }
+
+func TestV2DistributedEvidenceBundlesIndex(t *testing.T) {
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed/evidence-bundles", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Summary struct {
+			TotalBundles   int      `json:"total_bundles"`
+			TotalArtifacts int      `json:"total_artifacts"`
+			BundleKinds    []string `json:"bundle_kinds"`
+			Statuses       []string `json:"statuses"`
+			Lanes          []string `json:"lanes"`
+		} `json:"summary"`
+		Bundles []struct {
+			ID            string   `json:"id"`
+			Kind          string   `json:"kind"`
+			Status        string   `json:"status"`
+			BundlePath    string   `json:"bundle_path"`
+			SummaryPath   string   `json:"summary_path"`
+			Severity      string   `json:"severity"`
+			Lanes         []string `json:"lanes"`
+			ArtifactPaths []string `json:"artifact_paths"`
+		} `json:"bundles"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed evidence bundle index: %v", err)
+	}
+	if decoded.Summary.TotalBundles < 6 || decoded.Summary.TotalArtifacts == 0 {
+		t.Fatalf("unexpected evidence bundle summary: %+v", decoded.Summary)
+	}
+	if !containsString(decoded.Summary.BundleKinds, "parallel_validation_bundle") || !containsString(decoded.Summary.BundleKinds, "parallel_shadow_bundle") {
+		t.Fatalf("expected validation and shadow bundle kinds, got %+v", decoded.Summary.BundleKinds)
+	}
+	if !containsString(decoded.Summary.Lanes, "local") || !containsString(decoded.Summary.Lanes, "broker") || !containsString(decoded.Summary.Lanes, "migration") {
+		t.Fatalf("expected representative lanes in summary, got %+v", decoded.Summary.Lanes)
+	}
+
+	foundValidation := false
+	foundShadow := false
+	for _, bundle := range decoded.Bundles {
+		switch bundle.ID {
+		case "live-validation":
+			foundValidation = true
+			if bundle.Kind != "parallel_validation_bundle" || bundle.Status != "succeeded" || bundle.BundlePath != "docs/reports/live-validation-runs/20260316T140138Z" || bundle.SummaryPath != "docs/reports/live-validation-runs/20260316T140138Z/summary.json" {
+				t.Fatalf("unexpected live validation evidence bundle: %+v", bundle)
+			}
+			if !containsString(bundle.Lanes, "local") || !containsString(bundle.Lanes, "kubernetes") || !containsString(bundle.Lanes, "ray") || !containsString(bundle.ArtifactPaths, "docs/reports/live-validation-index.json") {
+				t.Fatalf("expected live validation lanes and index artifact, got %+v", bundle)
+			}
+		case "live-shadow":
+			foundShadow = true
+			if bundle.Kind != "parallel_shadow_bundle" || bundle.Status != "parity-ok" || bundle.Severity != "none" || bundle.BundlePath != "docs/reports/live-shadow-runs/20260313T085655Z" {
+				t.Fatalf("unexpected live shadow evidence bundle: %+v", bundle)
+			}
+			if !containsString(bundle.ArtifactPaths, "docs/reports/live-shadow-index.json") || !containsString(bundle.ArtifactPaths, "docs/reports/live-shadow-runs/20260313T085655Z/shadow-compare-report.json") {
+				t.Fatalf("expected live shadow artifacts, got %+v", bundle)
+			}
+		}
+	}
+	if !foundValidation || !foundShadow {
+		t.Fatalf("expected validation and shadow bundles, got %+v", decoded.Bundles)
+	}
+}
+
+func TestV2DistributedEvidenceBundleSearch(t *testing.T) {
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed/evidence-bundles/search?q=broker&lane=broker&limit=10", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Query   string `json:"query"`
+		Lane    string `json:"lane"`
+		Limit   int    `json:"limit"`
+		Summary struct {
+			IndexedBundles  int `json:"indexed_bundles"`
+			MatchedBundles  int `json:"matched_bundles"`
+			ReturnedBundles int `json:"returned_bundles"`
+		} `json:"summary"`
+		Results []struct {
+			Bundle struct {
+				ID string `json:"id"`
+			} `json:"bundle"`
+			MatchedFields []string `json:"matched_fields"`
+		} `json:"results"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed evidence bundle search: %v", err)
+	}
+	if decoded.Query != "broker" || decoded.Lane != "broker" || decoded.Limit != 10 {
+		t.Fatalf("unexpected search echo payload: %+v", decoded)
+	}
+	if decoded.Summary.IndexedBundles < 6 || decoded.Summary.MatchedBundles < 2 || decoded.Summary.ReturnedBundles < 2 {
+		t.Fatalf("unexpected search summary: %+v", decoded.Summary)
+	}
+	resultIDs := make([]string, 0, len(decoded.Results))
+	for _, result := range decoded.Results {
+		resultIDs = append(resultIDs, result.Bundle.ID)
+		if len(result.MatchedFields) == 0 {
+			t.Fatalf("expected matched fields for search result: %+v", result)
+		}
+	}
+	if !containsString(resultIDs, "broker-review") || !containsString(resultIDs, "broker-fanout-isolation") {
+		t.Fatalf("expected broker search results, got %+v", resultIDs)
+	}
+}
+
+func TestV2DistributedEvidenceBundleSearchRejectsInvalidLimit(t *testing.T) {
+	server := &Server{Recorder: observability.NewRecorder(), Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: time.Now}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed/evidence-bundles/search?limit=0", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d %s", response.Code, response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), "expected positive integer") {
+		t.Fatalf("unexpected invalid limit error: %s", response.Body.String())
+	}
+}
