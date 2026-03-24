@@ -114,11 +114,10 @@
       "BIG-PAR-313",
       "BIG-PAR-314",
       "BIG-PAR-315",
-      "BIG-PAR-316"
-    ],
-    "active": [
+      "BIG-PAR-316",
       "BIG-PAR-317"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -838,7 +837,7 @@
       "identifier": "BIG-PAR-317",
       "title": "Add product regression coverage for empty ClawHost workflow lane reports",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
