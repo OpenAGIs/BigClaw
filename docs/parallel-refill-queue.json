@@ -95,7 +95,9 @@
       "BIG-PAR-294",
       "BIG-PAR-295"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-296"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -174,7 +176,8 @@
     "BIG-PAR-292",
     "BIG-PAR-293",
     "BIG-PAR-294",
-    "BIG-PAR-295"
+    "BIG-PAR-295",
+    "BIG-PAR-296"
   ],
   "issues": [
     {
@@ -662,6 +665,12 @@
       "title": "Add control-center regression coverage for ClawHost readiness surface",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-296",
+      "title": "Add control-center regression coverage for ClawHost policy surface",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

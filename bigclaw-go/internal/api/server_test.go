@@ -4777,6 +4777,89 @@ func TestV2ControlCenterIncludesClawHostReadinessSurface(t *testing.T) {
 	}
 }
 
+func TestV2ControlCenterIncludesClawHostPolicySurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010422, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-policy-center-1",
+			Source:   "clawhost",
+			Title:    "review tenant provider defaults",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"clawhost_app_id":             "sales-app",
+				"clawhost_default_provider":   "openai",
+				"clawhost_provider_mode":      "app_default",
+				"clawhost_provider_allowlist": "anthropic,openai",
+				"clawhost_review_required":    "true",
+				"clawhost_drift_status":       "out_of_policy",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-policy-center-2",
+			Source:   "clawhost",
+			Title:    "review support tenant override",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"clawhost_app_id":             "support-app",
+				"clawhost_default_provider":   "anthropic",
+				"clawhost_provider_mode":      "tenant_override",
+				"clawhost_provider_allowlist": "openai,google",
+				"clawhost_takeover_required":  "true",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue control center policy task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center", nil)
+	request.Header.Set("X-BigClaw-Role", "platform_admin")
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ClawHostPolicy struct {
+			Status  string `json:"status"`
+			Summary struct {
+				ActivePolicies      int `json:"active_policies"`
+				ActiveTenants       int `json:"active_tenants"`
+				ActiveApps          int `json:"active_apps"`
+				ReviewRequired      int `json:"review_required"`
+				TakeoverRequired    int `json:"takeover_required"`
+				OutOfPolicyDefaults int `json:"out_of_policy_defaults"`
+			} `json:"summary"`
+			ObservedProviders []string `json:"observed_providers"`
+			ReviewQueue       []struct {
+				TaskID      string `json:"task_id"`
+				DriftStatus string `json:"drift_status"`
+			} `json:"review_queue"`
+		} `json:"clawhost_policy_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center policy response: %v", err)
+	}
+	if decoded.ClawHostPolicy.Status != "active" || decoded.ClawHostPolicy.Summary.ActivePolicies != 2 || decoded.ClawHostPolicy.Summary.ActiveTenants != 2 || decoded.ClawHostPolicy.Summary.ActiveApps != 2 || decoded.ClawHostPolicy.Summary.ReviewRequired != 2 || decoded.ClawHostPolicy.Summary.TakeoverRequired != 1 || decoded.ClawHostPolicy.Summary.OutOfPolicyDefaults != 1 {
+		t.Fatalf("unexpected ClawHost policy control center surface: %+v", decoded.ClawHostPolicy)
+	}
+	if len(decoded.ClawHostPolicy.ReviewQueue) != 2 || decoded.ClawHostPolicy.ReviewQueue[0].TaskID != "clawhost-policy-center-2" || decoded.ClawHostPolicy.ReviewQueue[0].DriftStatus != "out_of_policy" || decoded.ClawHostPolicy.ReviewQueue[1].TaskID != "clawhost-policy-center-1" || decoded.ClawHostPolicy.ReviewQueue[1].DriftStatus != "review_required" {
+		t.Fatalf("expected prioritized ClawHost policy review queue, got %+v", decoded.ClawHostPolicy.ReviewQueue)
+	}
+	for _, want := range []string{"anthropic", "openai"} {
+		if !containsString(decoded.ClawHostPolicy.ObservedProviders, want) {
+			t.Fatalf("expected ClawHost observed provider %q, got %+v", want, decoded.ClawHostPolicy.ObservedProviders)
+		}
+	}
+}
+
 func mustJSON(value any) []byte {
 	body, err := json.Marshal(value)
 	if err != nil {
