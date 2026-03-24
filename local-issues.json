@@ -4625,9 +4625,16 @@
         "test"
       ],
       "priority": 3,
-      "state": "In",
+      "state": "Done",
       "title": "Add ClawHost parsing helper unit coverage",
-      "updated_at": "2026-03-24T22:38:32Z"
+      "updated_at": "2026-03-25T01:08:00Z",
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct API-unit coverage for parseBoolClawHost, parseIntClawHost, and splitCSVClawHostRecovery so boolean/int fallback behavior, whitespace trimming, and sorted CSV normalization are pinned outside the readiness and recovery target tests. Validation: cd bigclaw-go && go test ./internal/api -run 'Test(ParseBoolClawHost|ParseIntClawHost|SplitCSVClawHostRecovery)' -count=1 -> ok; cd bigclaw-go && go test ./internal/api ./internal/product -count=1 -> ok. Commit SHA: 1e462b3e877df207f1ea692d69923e3f498a8672. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T01:08:00Z"
+        }
+      ]
     }
   ]
 }
