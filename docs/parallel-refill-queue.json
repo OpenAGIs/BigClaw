@@ -90,12 +90,13 @@
       "BIG-PAR-289",
       "BIG-PAR-290",
       "BIG-PAR-291",
-      "BIG-PAR-292"
+      "BIG-PAR-294"
     ],
-    "active": [],
-    "standby": [
+    "active": [
+      "BIG-PAR-292",
       "BIG-PAR-293"
-    ]
+    ],
+    "standby": []
   },
   "issue_order": [
     "BIG-GOM-301",
@@ -171,7 +172,8 @@
     "BIG-PAR-290",
     "BIG-PAR-291",
     "BIG-PAR-292",
-    "BIG-PAR-293"
+    "BIG-PAR-293",
+    "BIG-PAR-294"
   ],
   "issues": [
     {
@@ -638,15 +640,21 @@
     },
     {
       "identifier": "BIG-PAR-292",
-      "title": "Publish ClawHost control-plane review index",
+      "title": "Add ClawHost lifecycle recovery and per-bot isolation scorecard",
       "track": "Go Mainline Follow-ups",
-      "status": "Done"
+      "status": "In Progress"
     },
     {
       "identifier": "BIG-PAR-293",
       "title": "Refresh ClawHost control-plane branch against main",
       "track": "Go Mainline Follow-ups",
-      "status": "Todo"
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-294",
+      "title": "Publish ClawHost control-plane review index",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
     }
   ]
 }

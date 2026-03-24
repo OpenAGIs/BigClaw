@@ -3065,27 +3065,20 @@
     },
     {
       "assigned_to_worker": true,
-      "comments": [
-        {
-          "author": "codex",
-          "body": "Closed `BIG-PAR-292` after publishing a reviewer-facing index for the completed ClawHost control-plane slice batch.\n\nWhat changed:\n- `bigclaw-go/docs/reports/clawhost-control-plane-review-index.md` now gives reviewers one entrypoint across the fleet inventory, tenant policy, proxy/admin validation, rollout planner, and workflow contract artifacts added on `symphony/BIG-PAR-291`.\n- `bigclaw-go/docs/reports/review-readiness.md` now points at the new ClawHost review index from the follow-up hardening section.\n\nValidation:\n- `rg -n \"ClawHost Control-Plane Review Index|clawhost-control-plane-review-index|ClawHost slice batch\" bigclaw-go/docs/reports/clawhost-control-plane-review-index.md bigclaw-go/docs/reports/review-readiness.md` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`queue_drained=true`, `queue_runnable=0`)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `74ac8ebfae9b487d7ea2902414c132fdfeb22ba7` matches remote SHA `74ac8ebfae9b487d7ea2902414c132fdfeb22ba7` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `74ac8ebfae9b487d7ea2902414c132fdfeb22ba7`\n\nCommit SHA: `74ac8ebfae9b487d7ea2902414c132fdfeb22ba7`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
-          "created_at": "2026-03-24T16:59:02Z"
-        }
-      ],
-      "created_at": "2026-03-24T16:55:45Z",
-      "description": "Publish a single reviewer-facing index that links the newly added ClawHost fleet, policy, validation, rollout, and workflow artifacts so PR review and merge-readiness handoff no longer require hopping across multiple files.",
+      "created_at": "2026-03-24T16:23:28Z",
+      "description": "Capture ClawHost create/start/stop/restart/upgrade/delete posture together with per-bot pod and service isolation, takeover triggers, and recovery evidence so BigClaw Go surfaces can present a release-grade lifecycle recovery scorecard for tenant operators.",
       "id": "big-par-292",
       "identifier": "BIG-PAR-292",
       "labels": [
         "parallel",
-        "docs",
         "clawhost",
-        "review"
+        "go-mainline",
+        "product"
       ],
-      "priority": 3,
-      "state": "Done",
-      "title": "Publish ClawHost control-plane review index",
-      "updated_at": "2026-03-24T16:59:02Z"
+      "priority": 2,
+      "state": "In Progress",
+      "title": "Add ClawHost lifecycle recovery and per-bot isolation scorecard",
+      "updated_at": "2026-03-24T16:23:28Z"
     },
     {
       "assigned_to_worker": true,
@@ -3098,6 +3091,30 @@
       "state": "In Progress",
       "title": "Refresh ClawHost control-plane branch against main",
       "updated_at": "2026-03-24T17:10:49Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-294` after publishing a reviewer-facing index for the completed ClawHost control-plane slice batch.\n\nWhat changed:\n- `bigclaw-go/docs/reports/clawhost-control-plane-review-index.md` now gives reviewers one entrypoint across the fleet inventory, tenant policy, proxy/admin validation, rollout planner, and workflow contract artifacts added on `symphony/BIG-PAR-291`.\n- `bigclaw-go/docs/reports/review-readiness.md` now points at the new ClawHost review index from the follow-up hardening section.\n\nValidation:\n- `rg -n \"ClawHost Control-Plane Review Index|clawhost-control-plane-review-index|ClawHost slice batch\" bigclaw-go/docs/reports/clawhost-control-plane-review-index.md bigclaw-go/docs/reports/review-readiness.md` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`queue_drained=true`, `queue_runnable=0`)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `74ac8ebfae9b487d7ea2902414c132fdfeb22ba7` matches remote SHA `74ac8ebfae9b487d7ea2902414c132fdfeb22ba7` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `74ac8ebfae9b487d7ea2902414c132fdfeb22ba7`\n\nCommit SHA: `74ac8ebfae9b487d7ea2902414c132fdfeb22ba7`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T16:59:02Z"
+        }
+      ],
+      "created_at": "2026-03-24T16:55:45Z",
+      "description": "Publish a single reviewer-facing index that links the newly added ClawHost fleet, policy, validation, rollout, and workflow artifacts so PR review and merge-readiness handoff no longer require hopping across multiple files.",
+      "id": "big-par-294",
+      "identifier": "BIG-PAR-294",
+      "labels": [
+        "parallel",
+        "docs",
+        "clawhost",
+        "review"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Publish ClawHost control-plane review index",
+      "updated_at": "2026-03-24T16:59:02Z"
     }
   ]
 }
