@@ -126,6 +126,195 @@ func TestPoolProcessesMultipleTasksAcrossWorkers(t *testing.T) {
 	}
 }
 
+func TestPoolRespectsRemainingConcurrencyCapacity(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	for _, taskID := range []string{"task-1", "task-2"} {
+		if err := q.Enqueue(context.Background(), domain.Task{ID: taskID, TraceID: taskID, Priority: 1, CreatedAt: time.Now()}); err != nil {
+			t.Fatalf("enqueue %s: %v", taskID, err)
+		}
+	}
+
+	started := make(chan string, 2)
+	release := make(chan struct{})
+	bus := events.NewBus()
+	recorder := observability.NewRecorder()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	registry := executor.NewRegistry(coordinatingRunner{started: started, release: release})
+
+	pool := NewPool(
+		&Runtime{
+			WorkerID:    "worker-1",
+			Queue:       q,
+			Scheduler:   scheduler.New(),
+			Registry:    registry,
+			Bus:         bus,
+			Recorder:    recorder,
+			LeaseTTL:    time.Second,
+			TaskTimeout: time.Second,
+		},
+		&Runtime{
+			WorkerID:    "worker-2",
+			Queue:       q,
+			Scheduler:   scheduler.New(),
+			Registry:    registry,
+			Bus:         bus,
+			Recorder:    recorder,
+			LeaseTTL:    time.Second,
+			TaskTimeout: time.Second,
+		},
+	)
+
+	done := make(chan bool, 1)
+	go func() {
+		done <- pool.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 2, CurrentRunning: 1, BudgetRemaining: 1000})
+	}()
+
+	select {
+	case <-started:
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("expected one worker to start within remaining concurrency")
+	}
+
+	select {
+	case taskID := <-started:
+		t.Fatalf("expected only one worker to start, but saw extra task %s", taskID)
+	case <-time.After(150 * time.Millisecond):
+	}
+
+	close(release)
+
+	select {
+	case processed := <-done:
+		if !processed {
+			t.Fatal("expected pool tick to process one task")
+		}
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("expected pool tick to complete after release")
+	}
+
+	if got := q.Size(context.Background()); got != 1 {
+		t.Fatalf("expected one task to remain queued after capacity-protected tick, got %d", got)
+	}
+}
+
+func TestPoolLimitsPreemptibleOverflowAcrossWorkers(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	base := time.Now()
+	if err := q.Enqueue(context.Background(), domain.Task{ID: "task-low", TraceID: "task-low", Priority: 5, CreatedAt: base}); err != nil {
+		t.Fatalf("enqueue low-priority task: %v", err)
+	}
+
+	bus := events.NewBus()
+	recorder := observability.NewRecorder()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+
+	lowRuntime := Runtime{
+		WorkerID:    "worker-low",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    executor.NewRegistry(fakeRunner{kind: domain.ExecutorLocal, blockUntilContext: true}),
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    80 * time.Millisecond,
+		TaskTimeout: 2 * time.Second,
+	}
+	lowDone := make(chan bool, 1)
+	go func() {
+		lowDone <- lowRuntime.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 1, BudgetRemaining: 1000})
+	}()
+
+	deadline := time.Now().Add(time.Second)
+	for {
+		if state := lowRuntime.Snapshot().State; state == "running" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("expected low-priority runtime to start running before overflow test")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	for _, taskID := range []string{"task-urgent-1", "task-urgent-2"} {
+		base = base.Add(time.Second)
+		if err := q.Enqueue(context.Background(), domain.Task{ID: taskID, TraceID: taskID, Priority: 1, CreatedAt: base}); err != nil {
+			t.Fatalf("enqueue %s: %v", taskID, err)
+		}
+	}
+
+	started := make(chan string, 2)
+	release := make(chan struct{})
+	registry := executor.NewRegistry(coordinatingRunner{started: started, release: release})
+
+	pool := NewPool(
+		&Runtime{
+			WorkerID:    "worker-1",
+			Queue:       q,
+			Scheduler:   scheduler.New(),
+			Registry:    registry,
+			Bus:         bus,
+			Recorder:    recorder,
+			LeaseTTL:    time.Second,
+			TaskTimeout: time.Second,
+		},
+		&Runtime{
+			WorkerID:    "worker-2",
+			Queue:       q,
+			Scheduler:   scheduler.New(),
+			Registry:    registry,
+			Bus:         bus,
+			Recorder:    recorder,
+			LeaseTTL:    time.Second,
+			TaskTimeout: time.Second,
+		},
+	)
+
+	done := make(chan bool, 1)
+	go func() {
+		done <- pool.RunOnce(context.Background(), scheduler.QuotaSnapshot{
+			ConcurrentLimit:       1,
+			CurrentRunning:        1,
+			BudgetRemaining:       1000,
+			PreemptibleExecutions: 1,
+		})
+	}()
+
+	select {
+	case <-started:
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("expected one urgent worker to start using preemptible overflow")
+	}
+
+	select {
+	case taskID := <-started:
+		t.Fatalf("expected only one preemptible overflow worker to start, but saw extra task %s", taskID)
+	case <-time.After(150 * time.Millisecond):
+	}
+
+	close(release)
+
+	select {
+	case processed := <-done:
+		if !processed {
+			t.Fatal("expected pool tick to process urgent overflow task")
+		}
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("expected pool tick to complete after release")
+	}
+
+	select {
+	case processed := <-lowDone:
+		if !processed {
+			t.Fatal("expected low-priority runtime to finish after being preempted")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("expected low-priority runtime to stop after urgent overflow preemption")
+	}
+
+	if got := q.Size(context.Background()); got != 1 {
+		t.Fatalf("expected one urgent task to remain queued after capped overflow tick, got %d", got)
+	}
+}
+
 func TestPoolSnapshotSummarizesWorkerState(t *testing.T) {
 	workerA := &Runtime{WorkerID: "worker-a"}
 	workerA.updateStatus(func(status *Status) {

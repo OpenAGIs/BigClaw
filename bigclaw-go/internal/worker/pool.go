@@ -28,13 +28,32 @@ func (p *Pool) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bool 
 
 	results := make(chan bool, len(p.workers))
 	var group sync.WaitGroup
-	group.Add(len(p.workers))
+	remainingNormal := availableConcurrency(quota)
+	remainingPreemptible := availablePreemptible(quota)
+	dispatched := 0
 
 	for _, runtime := range p.workers {
+		if !canDispatchWorker(quota, remainingNormal, remainingPreemptible) {
+			break
+		}
+		assignedQuota := quotaForWorker(quota, remainingNormal, remainingPreemptible)
+		dispatched++
+		group.Add(1)
 		go func(runtime *Runtime) {
 			defer group.Done()
-			results <- runtime.RunOnce(ctx, quota)
+			results <- runtime.RunOnce(ctx, assignedQuota)
 		}(runtime)
+		if quota.ConcurrentLimit > 0 {
+			if remainingNormal > 0 {
+				remainingNormal--
+			} else if remainingPreemptible > 0 {
+				remainingPreemptible--
+			}
+		}
+	}
+
+	if dispatched == 0 {
+		return false
 	}
 
 	group.Wait()
@@ -48,6 +67,49 @@ func (p *Pool) RunOnce(ctx context.Context, quota scheduler.QuotaSnapshot) bool 
 	}
 
 	return processed
+}
+
+func availableConcurrency(quota scheduler.QuotaSnapshot) int {
+	if quota.ConcurrentLimit <= 0 {
+		return -1
+	}
+	remaining := quota.ConcurrentLimit - quota.CurrentRunning
+	if remaining < 0 {
+		return 0
+	}
+	return remaining
+}
+
+func availablePreemptible(quota scheduler.QuotaSnapshot) int {
+	if quota.PreemptibleExecutions < 0 {
+		return 0
+	}
+	return quota.PreemptibleExecutions
+}
+
+func canDispatchWorker(quota scheduler.QuotaSnapshot, remainingNormal, remainingPreemptible int) bool {
+	if quota.ConcurrentLimit <= 0 {
+		return true
+	}
+	return remainingNormal > 0 || remainingPreemptible > 0
+}
+
+func quotaForWorker(quota scheduler.QuotaSnapshot, remainingNormal, remainingPreemptible int) scheduler.QuotaSnapshot {
+	assigned := quota
+	if quota.ConcurrentLimit <= 0 {
+		return assigned
+	}
+
+	consumedNormal := quota.ConcurrentLimit - quota.CurrentRunning - remainingNormal
+	if consumedNormal < 0 {
+		consumedNormal = 0
+	}
+	assigned.CurrentRunning = quota.CurrentRunning + consumedNormal
+	if assigned.CurrentRunning > quota.ConcurrentLimit {
+		assigned.CurrentRunning = quota.ConcurrentLimit
+	}
+	assigned.PreemptibleExecutions = remainingPreemptible
+	return assigned
 }
 
 func (p *Pool) Snapshot() Status {
