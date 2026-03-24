@@ -43,3 +43,35 @@ func TestRenderDashboardRunContractReport(t *testing.T) {
 		}
 	}
 }
+
+func TestContractPathExistsHandlesNestedObjectsAndLists(t *testing.T) {
+	payload := map[string]any{
+		"closeout": map[string]any{
+			"git_push_status": "ok",
+			"artifacts": []map[string]any{
+				{"path": "/tmp/one"},
+			},
+			"events": []any{
+				map[string]any{"id": "evt-1", "status": "ok"},
+			},
+		},
+	}
+
+	for _, tc := range []struct {
+		path   string
+		expect bool
+	}{
+		{path: "closeout.git_push_status", expect: true},
+		{path: "closeout.artifacts[].path", expect: true},
+		{path: "closeout.events[].status", expect: true},
+		{path: "closeout.events[].missing", expect: false},
+		{path: "closeout.unknown", expect: false},
+		{path: "closeout.git_push_status.value", expect: false},
+	} {
+		t.Run(tc.path, func(t *testing.T) {
+			if got := contractPathExists(payload, tc.path); got != tc.expect {
+				t.Fatalf("expected contractPathExists(%q)=%t, got %t", tc.path, tc.expect, got)
+			}
+		})
+	}
+}

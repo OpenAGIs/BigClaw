@@ -166,7 +166,9 @@
       "BIG-PAR-365",
       "BIG-PAR-366"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-367"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -316,7 +318,8 @@
     "BIG-PAR-363",
     "BIG-PAR-364",
     "BIG-PAR-365",
-    "BIG-PAR-366"
+    "BIG-PAR-366",
+    "BIG-PAR-367"
   ],
   "issues": [
     {
@@ -1230,6 +1233,12 @@
       "title": "Add saved-view helper unit coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-367",
+      "title": "Add dashboard run contract path helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
