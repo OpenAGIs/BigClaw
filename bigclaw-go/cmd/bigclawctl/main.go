@@ -1111,12 +1111,6 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		if apply {
 			recentBatchesUpdated = queue.RefreshRecentBatchesFromStates(liveStateMap)
 		}
-		if apply && trim(markdownPath) != "" {
-			markdownWritten, err = queue.MarkdownNeedsWrite(markdownPath, markdownGeneratedAt)
-			if err != nil {
-				return err
-			}
-		}
 	}
 	if apply && (queueStatusUpdates > 0 || recentBatchesUpdated) {
 		if err := queue.Save(); err != nil {
@@ -1136,6 +1130,25 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		}
 	}
 	candidates := queue.SelectCandidates(active, stateMap, targetOverride)
+	if client.backend() == "local" && apply && trim(markdownPath) != "" {
+		previewQueue, err := queue.Clone()
+		if err != nil {
+			return err
+		}
+		projectedStates := map[string]string{}
+		for identifier, state := range liveStateMap {
+			projectedStates[identifier] = state
+		}
+		for _, identifier := range candidates {
+			projectedStates[identifier] = queue.ActivateStateName()
+		}
+		previewQueue.SyncStatusFromStates(projectedStates)
+		previewQueue.RefreshRecentBatchesFromStates(projectedStates)
+		markdownWritten, err = previewQueue.MarkdownNeedsWrite(markdownPath, markdownGeneratedAt)
+		if err != nil {
+			return err
+		}
+	}
 	target := queue.TargetInProgress()
 	if targetOverride != nil {
 		target = *targetOverride

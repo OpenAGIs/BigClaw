@@ -82,6 +82,21 @@ func LoadQueue(path string) (*ParallelIssueQueue, error) {
 	return &ParallelIssueQueue{queuePath: absolute, payload: payload}, nil
 }
 
+func (q *ParallelIssueQueue) Clone() (*ParallelIssueQueue, error) {
+	body, err := json.Marshal(q.payload)
+	if err != nil {
+		return nil, err
+	}
+	payload := QueuePayload{}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, err
+	}
+	return &ParallelIssueQueue{
+		queuePath: q.queuePath,
+		payload:   payload,
+	}, nil
+}
+
 func (q *ParallelIssueQueue) Save() error {
 	var buf bytes.Buffer
 	encoder := json.NewEncoder(&buf)

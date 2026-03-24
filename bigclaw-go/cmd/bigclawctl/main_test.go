@@ -229,6 +229,9 @@ func TestRunRefillOncePromotesUsingLocalIssueStore(t *testing.T) {
 	if !bytes.Contains(output, []byte(`"local_issues_path":`)) || !bytes.Contains(output, []byte(storePath)) {
 		t.Fatalf("expected refill output to include local_issues_path, got %s", string(output))
 	}
+	if !bytes.Contains(output, []byte(`"markdown_written": true`)) {
+		t.Fatalf("expected refill output to preview markdown write after promotion, got %s", string(output))
+	}
 
 	body, err := os.ReadFile(storePath)
 	if err != nil {
