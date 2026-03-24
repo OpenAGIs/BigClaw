@@ -162,7 +162,9 @@
       "BIG-PAR-361",
       "BIG-PAR-362"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-363"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -308,7 +310,8 @@
     "BIG-PAR-359",
     "BIG-PAR-360",
     "BIG-PAR-361",
-    "BIG-PAR-362"
+    "BIG-PAR-362",
+    "BIG-PAR-363"
   ],
   "issues": [
     {
@@ -1198,6 +1201,12 @@
       "title": "Add ClawHost workflow report edge-case coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-363",
+      "title": "Add ClawHost rollout report edge-case coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

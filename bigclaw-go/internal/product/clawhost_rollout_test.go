@@ -147,6 +147,52 @@ func TestRenderClawHostRolloutPlannerReportHandlesFallbackPlanner(t *testing.T) 
 	}
 }
 
+func TestRenderClawHostRolloutPlannerReportHandlesEmptyFiltersAndSparseWaves(t *testing.T) {
+	plan := ClawHostRolloutPlanner{
+		PlanID:             "BIG-PAR-363",
+		Version:            "go-v1",
+		Source:             "ClawHost lifecycle orchestration surface",
+		Filters:            nil,
+		ConcurrencyGuards:  nil,
+		ValidationEvidence: nil,
+		Waves: []ClawHostRolloutWave{
+			{
+				WaveID:           "wave-a",
+				Name:             "Sparse Wave",
+				Strategy:         "manual",
+				MaxParallelBots:  0,
+				RequiresApproval: false,
+			},
+		},
+	}
+	audit := ClawHostRolloutPlannerAudit{
+		PlanID:         plan.PlanID,
+		Version:        plan.Version,
+		ReadinessScore: 100,
+		ReleaseReady:   true,
+	}
+
+	report := RenderClawHostRolloutPlannerReport(plan, audit)
+	for _, want := range []string{
+		"## Filters",
+		"- none",
+		"## Concurrency Guards",
+		"## Waves",
+		"Sparse Wave: strategy=manual tenants=none apps=none max_parallel_bots=0 requires_approval=false actions=none",
+		"health_checks=none",
+		"takeover_triggers=none",
+		"promotion_criteria=none",
+		"rollback_actions=none",
+		"## Validation Evidence",
+		"## Gaps",
+		"Duplicate wave IDs: none",
+	} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected rollout edge-case report to contain %q, got %s", want, report)
+		}
+	}
+}
+
 func TestClawHostRolloutHelperFunctions(t *testing.T) {
 	t.Run("sorted values dedupe and trim", func(t *testing.T) {
 		tasks := []domain.Task{
