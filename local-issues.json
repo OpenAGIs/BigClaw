@@ -3433,6 +3433,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-310` after adding direct export-path regression coverage for workflow actor fallback.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now proves `/v2/clawhost/workflows/export` trims a blank `actor` query value and falls back to `X-BigClaw-Actor` when rendering the markdown export body.\n- `local-issues.json` closes the direct workflow export fallback slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `d4caa112d8fd9c2f9babbfb69826df8a48955612` matches remote SHA `d4caa112d8fd9c2f9babbfb69826df8a48955612` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `d4caa112d8fd9c2f9babbfb69826df8a48955612`\n\nCommit SHA: `d4caa112d8fd9c2f9babbfb69826df8a48955612`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T19:20:57Z"
+        }
+      ],
       "created_at": "2026-03-24T19:19:32Z",
       "description": "Add a focused ClawHost regression test proving the direct /v2/clawhost/workflows/export endpoint trims a blank actor query and falls back to X-BigClaw-Actor when rendering the markdown export.",
       "id": "big-par-310",
@@ -3443,9 +3450,9 @@
         "api"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add direct workflow export header-fallback coverage",
-      "updated_at": "2026-03-24T19:19:32Z"
+      "updated_at": "2026-03-24T19:20:57Z"
     }
   ]
 }
