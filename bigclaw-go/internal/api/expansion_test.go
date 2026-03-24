@@ -1017,6 +1017,49 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 			t.Fatalf("unexpected workflow export body: %s", exportResponse.Body.String())
 		}
 	})
+
+	t.Run("workflows actor header fallback", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=platform&project=apollo", nil)
+		request.Header.Set("X-BigClaw-Actor", "header-actor")
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected workflows endpoint 200 with actor header fallback, got %d %s", response.Code, response.Body.String())
+		}
+
+		var decoded struct {
+			Surface struct {
+				Filters map[string]string `json:"filters"`
+			} `json:"surface"`
+			Report struct {
+				ExportURL string `json:"export_url"`
+			} `json:"report"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("decode workflow header fallback response: %v", err)
+		}
+		if decoded.Surface.Filters["actor"] != "header-actor" {
+			t.Fatalf("expected header actor fallback in workflow filters, got %+v", decoded.Surface.Filters)
+		}
+
+		workflowExportURL, err := url.Parse(decoded.Report.ExportURL)
+		if err != nil {
+			t.Fatalf("parse workflow header fallback export url: %v", err)
+		}
+		if workflowExportURL.Query().Get("actor") != "header-actor" {
+			t.Fatalf("expected workflow export url to preserve header actor fallback, got %s", decoded.Report.ExportURL)
+		}
+
+		exportRequest := httptest.NewRequest(http.MethodGet, decoded.Report.ExportURL, nil)
+		exportResponse := httptest.NewRecorder()
+		handler.ServeHTTP(exportResponse, exportRequest)
+		if exportResponse.Code != http.StatusOK {
+			t.Fatalf("expected workflow export 200 with header actor fallback, got %d %s", exportResponse.Code, exportResponse.Body.String())
+		}
+		if !strings.Contains(exportResponse.Body.String(), "owner=header-actor") {
+			t.Fatalf("expected workflow export body to include header actor fallback owner, got %s", exportResponse.Body.String())
+		}
+	})
 }
 
 func TestClawHostReportAndExpansionSurfacesCoexist(t *testing.T) {

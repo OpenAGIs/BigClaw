@@ -3167,6 +3167,18 @@
       "state": "Done",
       "title": "Add ClawHost export coexistence regression coverage",
       "updated_at": "2026-03-24T17:54:42Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T18:01:24Z",
+      "description": "Add API regression coverage that proves the ClawHost workflow JSON and export endpoints honor the X-BigClaw-Actor header fallback when no actor query parameter is supplied.",
+      "id": "big-par-297",
+      "identifier": "BIG-PAR-297",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add ClawHost workflow actor-header regression coverage",
+      "updated_at": "2026-03-24T18:01:35Z"
     }
   ]
 }
