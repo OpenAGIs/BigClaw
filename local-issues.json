@@ -2959,6 +2959,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Refactored `bigclaw-go/internal/api/v2.go` so `/v2/runs` now builds its filtered run list, summary accumulation, response filter payload, and sort/limit flow through smaller helpers, and run-detail assembly now uses dedicated context, trace, artifact, report, and collaboration helpers while preserving the existing payload contract and markdown report behavior. Validation: `cd bigclaw-go && go test ./internal/api` -> ok; `cd bigclaw-go && go test ./...` -> ok; `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> active_in_progress `[\"BIG-PAR-288\"]`, queue_status_synced true, queue_runnable 1 before closeout; `bash scripts/ops/bigclawctl github-sync status --json` at code-commit time -> local SHA `32c44f5b7ce21a05593fa7b4b0d88fe53a9ee50d` matched remote SHA `32c44f5b7ce21a05593fa7b4b0d88fe53a9ee50d` with status ok and synced true. Commit SHA: `32c44f5b7ce21a05593fa7b4b0d88fe53a9ee50d`. PR URL: https://github.com/OpenAGIs/BigClaw/pull/184.",
+          "created_at": "2026-03-24T16:22:00Z"
+        }
+      ],
       "created_at": "2026-03-24T15:48:03Z",
       "description": "Refactor bigclaw-go/internal/api/v2.go by extracting the /v2/runs listing and run-detail response assembly into smaller helpers while preserving authorization, filtering, payload shape, and report rendering behavior.",
       "id": "big-par-288",
@@ -2969,9 +2976,9 @@
         "api"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Refactor run list and detail response assembly",
-      "updated_at": "2026-03-24T16:04:00Z"
+      "updated_at": "2026-03-24T16:22:00Z"
     },
     {
       "assigned_to_worker": true,
