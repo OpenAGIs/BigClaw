@@ -3566,6 +3566,24 @@
       "state": "Done",
       "title": "Add product regression coverage for idle ClawHost workflow surfaces",
       "updated_at": "2026-03-24T19:42:49Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T19:45:03Z",
+      "description": "Add direct unit coverage for BuildDefaultClawHostWorkflowLaneSurface so the rollout-control lane proves task-volume-based max concurrency inference instead of relying only on broad surface assertions.",
+      "id": "big-par-312",
+      "identifier": "BIG-PAR-312",
+      "labels": [
+        "go",
+        "clawhost",
+        "product",
+        "tests",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add product regression coverage for ClawHost workflow lane concurrency",
+      "updated_at": "2026-03-24T19:45:03Z"
     }
   ]
 }

@@ -101,6 +101,38 @@ func TestBuildClawHostWorkflowLaneSurfaceScopesRoutesAndDefaultsActor(t *testing
 	})
 }
 
+func TestBuildClawHostWorkflowLaneSurfaceInfersRolloutConcurrency(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		taskCount int
+		want     int
+	}{
+		{name: "small batch", taskCount: 7, want: 6},
+		{name: "medium batch", taskCount: 10, want: 8},
+		{name: "large batch", taskCount: 30, want: 10},
+		{name: "xlarge batch", taskCount: 60, want: 12},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			tasks := make([]domain.Task, 0, tc.taskCount)
+			for i := 0; i < tc.taskCount; i++ {
+				tasks = append(tasks, domain.Task{ID: "task"})
+			}
+
+			surface := BuildDefaultClawHostWorkflowLaneSurface(tasks, "alice", "platform", "apollo")
+			for _, lane := range surface.Lanes {
+				if lane.LaneID != "clawhost-parallel-rollout-control" {
+					continue
+				}
+				if lane.ParallelBatch.MaxConcurrency != tc.want {
+					t.Fatalf("expected rollout-control concurrency=%d for %d tasks, got %+v", tc.want, tc.taskCount, lane.ParallelBatch)
+				}
+				return
+			}
+			t.Fatalf("expected rollout-control lane in workflow surface, got %+v", surface.Lanes)
+		})
+	}
+}
+
 func TestAuditClawHostWorkflowLaneSurfaceFlagsWorkflowGaps(t *testing.T) {
 	surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "", "", "")
 	if len(surface.Lanes) == 0 {
