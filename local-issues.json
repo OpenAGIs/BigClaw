@@ -3045,6 +3045,11 @@
           "author": "codex",
           "body": "Closed `BIG-PAR-291` after adding a checked-in ClawHost proxy/admin validation lane to the Go control-plane surfaces.\n\nWhat changed:\n- `bigclaw-go/internal/api/clawhost_proxy_admin_validation_surface.go` now loads the canonical ClawHost ingress/admin evidence pack and exposes reviewer-facing summary, per-bot readiness, and limitation fields.\n- `bigclaw-go/internal/api/server.go`, `bigclaw-go/internal/api/v2.go`, and `bigclaw-go/internal/api/distributed.go` now publish the ClawHost validation surface through `/debug/status`, `/v2/control-center`, and `/v2/reports/distributed`, including a dedicated distributed-markdown section.\n- `bigclaw-go/internal/api/server_test.go` now covers the new debug-status, control-center, and distributed-report payloads.\n- `bigclaw-go/docs/reports/clawhost-proxy-admin-validation-lane.json` now provides the checked-in reviewer evidence pack for proxy routing, subdomain exposure, WebSocket/HTTP reachability, and admin readiness.\n- `local-issues.json` also activates `BIG-PAR-287` and `BIG-PAR-288` so the next ClawHost slices remain available for parallel refill.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `952ca6f1f79843a543431e83cda20b6b76a8e8a3` matches remote SHA `952ca6f1f79843a543431e83cda20b6b76a8e8a3` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `952ca6f1f79843a543431e83cda20b6b76a8e8a3`\n- `git log -1 --stat` -> captured for commit `952ca6f1f79843a543431e83cda20b6b76a8e8a3`\n\nCommit SHA: `952ca6f1f79843a543431e83cda20b6b76a8e8a3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
           "created_at": "2026-03-24T16:08:30Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final branch-level closeout refresh after the completed Go-mainline regression sweep.\n\nWhat changed since the earlier parent closeout:\n- Added direct Go regression coverage across `bigclaw-go/internal/product` for saved views, ClawHost fleet, ClawHost workflows, ClawHost rollout planning, dashboard contract helpers, and console surfaces.\n- Landed and closed child slices `BIG-PAR-337` through `BIG-PAR-371`, keeping tracker state and refill queue synchronized after each slice.\n- Brought `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_all.cover` to `coverage: 100.0% of statements`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_all.cover` -> `ok   bigclaw-go/internal/product`, `coverage: 100.0% of statements`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `56092c0d15d42fbf843e71b833e456f5c25cfc2d` matches remote SHA `56092c0d15d42fbf843e71b833e456f5c25cfc2d` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `56092c0d15d42fbf843e71b833e456f5c25cfc2d`\n\nCommit SHA: `56092c0d15d42fbf843e71b833e456f5c25cfc2d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:29:35Z"
         }
       ],
       "created_at": "2026-03-24T15:47:40Z",
@@ -3061,7 +3066,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-24T16:08:30Z"
+      "updated_at": "2026-03-24T22:29:35Z"
     },
     {
       "assigned_to_worker": true,
