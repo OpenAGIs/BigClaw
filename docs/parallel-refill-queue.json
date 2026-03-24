@@ -292,7 +292,8 @@
     "BIG-PAR-351",
     "BIG-PAR-352",
     "BIG-PAR-353",
-    "BIG-PAR-354"
+    "BIG-PAR-354",
+    "BIG-PAR-355"
   ],
   "issues": [
     {
@@ -1134,6 +1135,12 @@
       "title": "Add ClawHost parsing helper unit coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-355",
+      "title": "Add ClawHost policy helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In"
     }
   ]
 }

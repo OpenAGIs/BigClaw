@@ -1,6 +1,7 @@
 package api
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -76,4 +77,51 @@ func TestRenderClawHostPolicySurfaceReportHandlesEmptyFilters(t *testing.T) {
 			t.Fatalf("expected %q in policy report, got %s", want, report)
 		}
 	}
+}
+
+func TestFilterClawHostPolicyTasks(t *testing.T) {
+	tasks := []domain.Task{
+		{ID: "task-a", Metadata: map[string]string{"team": "platform", "project": "apollo"}},
+		{ID: "task-b", Metadata: map[string]string{"team": "platform", "project": "beta"}},
+		{ID: "task-c", Metadata: map[string]string{"team": "growth", "project": "apollo"}},
+	}
+
+	t.Run("team and project", func(t *testing.T) {
+		filtered := filterClawHostPolicyTasks(tasks, "platform", "apollo")
+		if len(filtered) != 1 || filtered[0].ID != "task-a" {
+			t.Fatalf("expected only scoped policy task, got %+v", filtered)
+		}
+	})
+
+	t.Run("project only", func(t *testing.T) {
+		filtered := filterClawHostPolicyTasks(tasks, "", "apollo")
+		if len(filtered) != 2 || filtered[0].ID != "task-a" || filtered[1].ID != "task-c" {
+			t.Fatalf("expected project-only policy filter to preserve matching tasks, got %+v", filtered)
+		}
+	})
+}
+
+func TestClawHostPolicyHelpers(t *testing.T) {
+	t.Run("drift rank", func(t *testing.T) {
+		if clawHostDriftRank("blocked") != 0 || clawHostDriftRank("out_of_policy") != 1 || clawHostDriftRank("review_required") != 2 || clawHostDriftRank("aligned") != 3 {
+			t.Fatalf("unexpected policy drift ranking")
+		}
+	})
+
+	t.Run("sorted keys", func(t *testing.T) {
+		got := sortedKeys(map[string]struct{}{"openai": {}, "anthropic": {}, "minimax": {}})
+		want := []string{"anthropic", "minimax", "openai"}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("expected sorted provider keys %v, got %v", want, got)
+		}
+	})
+
+	t.Run("fallback", func(t *testing.T) {
+		if got := clawHostPolicyFallback("", "none"); got != "none" {
+			t.Fatalf("expected empty policy fallback to use default, got %q", got)
+		}
+		if got := clawHostPolicyFallback("openai", "none"); got != "openai" {
+			t.Fatalf("expected non-empty policy fallback to preserve value, got %q", got)
+		}
+	})
 }
