@@ -48,10 +48,10 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 24, 2026:
-  - active slices: `BIG-PAR-358` — Add ClawHost fleet helper regression coverage; `BIG-PAR-357` — Add ClawHost fleet inventory alias wrapper coverage
+  - active slices: `BIG-PAR-360` — Add console helper and design-system coverage
   - standby slices: none
-  - recently completed slices: `BIG-PAR-348` — Add saved view catalog actor fallback coverage; `BIG-PAR-347` — Add team-scoped saved view catalog coverage; `BIG-PAR-349` — Add premium-only saved view catalog coverage; `BIG-PAR-352` — Add saved view readiness rounding coverage; `BIG-PAR-351` — Add saved view catalog ordering coverage; `BIG-PAR-353` — Add saved view baseline field coverage; `BIG-PAR-355` — Add invalid-visibility audit coverage for saved view catalogs; `BIG-PAR-356` — Add direct missing-recipient audit assertions for saved view digests
-  - queue status: `queue_runnable=2`, `target_in_progress=2`
+  - recently completed slices: `BIG-PAR-349` — Add premium-only saved view catalog coverage; `BIG-PAR-352` — Add saved view readiness rounding coverage; `BIG-PAR-351` — Add saved view catalog ordering coverage; `BIG-PAR-353` — Add saved view baseline field coverage; `BIG-PAR-355` — Add invalid-visibility audit coverage for saved view catalogs; `BIG-PAR-356` — Add direct missing-recipient audit assertions for saved view digests; `BIG-PAR-358` — Add ClawHost fleet helper regression coverage; `BIG-PAR-357` — Add ClawHost fleet inventory alias wrapper coverage
+  - queue status: `queue_runnable=1`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -191,6 +191,8 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-353` — Add saved view baseline field coverage
   - `BIG-PAR-355` — Add invalid-visibility audit coverage for saved view catalogs
   - `BIG-PAR-356` — Add direct missing-recipient audit assertions for saved view digests
+  - `BIG-PAR-358` — Add ClawHost fleet helper regression coverage
+  - `BIG-PAR-357` — Add ClawHost fleet inventory alias wrapper coverage
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -334,3 +336,4 @@ longer waits on Linear to keep issue execution moving.
 133. `BIG-PAR-356`
 134. `BIG-PAR-358`
 135. `BIG-PAR-357`
+136. `BIG-PAR-360`
