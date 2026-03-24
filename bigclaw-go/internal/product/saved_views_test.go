@@ -52,6 +52,26 @@ func TestBuildSavedViewCatalogAddsScopedViewsAndDigests(t *testing.T) {
 	}
 }
 
+func TestBuildSavedViewCatalogPremiumOnlyAddsPremiumView(t *testing.T) {
+	tasks := []domain.Task{
+		{ID: "task-1", State: domain.TaskRunning, RiskLevel: domain.RiskLow, Metadata: map[string]string{"plan": "premium", "owner": "alice"}},
+	}
+
+	catalog := BuildSavedViewCatalog(tasks, "alice", "", "")
+	var premiumFound, highRiskFound bool
+	for _, view := range catalog.Views {
+		if view.ViewID == "premium-runs" {
+			premiumFound = true
+		}
+		if view.ViewID == "high-risk" {
+			highRiskFound = true
+		}
+	}
+	if !premiumFound || highRiskFound {
+		t.Fatalf("expected only premium optional view branch, got %+v", catalog.Views)
+	}
+}
+
 func TestBuildSavedViewCatalogUnscopedBaseline(t *testing.T) {
 	tasks := []domain.Task{
 		{ID: "task-1", State: domain.TaskRunning, Metadata: map[string]string{"owner": "alice"}},

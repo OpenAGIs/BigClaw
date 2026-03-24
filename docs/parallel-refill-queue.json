@@ -146,7 +146,9 @@
       "BIG-PAR-348",
       "BIG-PAR-347"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-349"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -276,7 +278,8 @@
     "BIG-PAR-345",
     "BIG-PAR-346",
     "BIG-PAR-348",
-    "BIG-PAR-347"
+    "BIG-PAR-347",
+    "BIG-PAR-349"
   ],
   "issues": [
     {
@@ -1070,6 +1073,12 @@
       "title": "Add team-scoped saved view catalog coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-349",
+      "title": "Add premium-only saved view catalog coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
