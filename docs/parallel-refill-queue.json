@@ -223,7 +223,8 @@
     "BIG-PAR-325",
     "BIG-PAR-326",
     "BIG-PAR-327",
-    "BIG-PAR-328"
+    "BIG-PAR-328",
+    "BIG-PAR-329"
   ],
   "issues": [
     {
@@ -909,6 +910,12 @@
       "title": "Add weeklyExportURL helper coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-329",
+      "title": "Normalize distributedExportURL helper filters",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

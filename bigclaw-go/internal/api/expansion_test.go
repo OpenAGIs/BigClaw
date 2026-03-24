@@ -1743,3 +1743,41 @@ func TestWeeklyExportURL(t *testing.T) {
 		t.Fatalf("expected reserved-character weekly export url to encode scope values, got %s", exportURL)
 	}
 }
+
+func TestDistributedExportURL(t *testing.T) {
+	priority := 2
+	since := time.Date(2026, 3, 9, 0, 0, 0, 0, time.UTC)
+	until := time.Date(2026, 3, 15, 23, 59, 59, 0, time.UTC)
+
+	exportURL := distributedExportURL(controlCenterFilters{
+		Team:      "  Platform & Ops  ",
+		Project:   "  apollo/mobile  ",
+		TaskID:    "  Task / Scope @ Edge  ",
+		State:     "  Blocked  ",
+		RiskLevel: "  HIGH  ",
+		Since:     since,
+		Until:     until,
+		Priority:  &priority,
+		Limit:     25,
+	})
+	parsedExportURL, err := url.Parse(exportURL)
+	if err != nil {
+		t.Fatalf("parse distributed export url: %v", err)
+	}
+	query := parsedExportURL.Query()
+	if query.Get("team") != "Platform & Ops" || query.Get("project") != "apollo/mobile" || query.Get("task_id") != "Task / Scope @ Edge" {
+		t.Fatalf("expected encoded distributed export scoped filters, got %s", exportURL)
+	}
+	if query.Get("state") != "blocked" || query.Get("risk_level") != "high" {
+		t.Fatalf("expected normalized distributed export state filters, got %s", exportURL)
+	}
+	if query.Get("since") != since.Format(time.RFC3339) || query.Get("until") != until.Format(time.RFC3339) {
+		t.Fatalf("expected encoded distributed export time window, got %s", exportURL)
+	}
+	if query.Get("priority") != "2" || query.Get("limit") != "25" {
+		t.Fatalf("expected distributed export numeric filters, got %s", exportURL)
+	}
+	if strings.Contains(exportURL, "team=Platform & Ops") || strings.Contains(exportURL, "project=apollo/mobile") || strings.Contains(exportURL, "task_id=Task / Scope @ Edge") {
+		t.Fatalf("expected distributed export url to encode reserved-character scope values, got %s", exportURL)
+	}
+}

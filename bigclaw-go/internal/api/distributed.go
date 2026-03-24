@@ -905,20 +905,20 @@ func taskRequiresTool(task domain.Task, tool string) bool {
 
 func distributedExportURL(filters controlCenterFilters) string {
 	values := url.Values{}
-	if filters.Team != "" {
-		values.Set("team", filters.Team)
+	if team := strings.TrimSpace(filters.Team); team != "" {
+		values.Set("team", team)
 	}
-	if filters.Project != "" {
-		values.Set("project", filters.Project)
+	if project := strings.TrimSpace(filters.Project); project != "" {
+		values.Set("project", project)
 	}
-	if filters.TaskID != "" {
-		values.Set("task_id", filters.TaskID)
+	if taskID := strings.TrimSpace(filters.TaskID); taskID != "" {
+		values.Set("task_id", taskID)
 	}
-	if filters.State != "" {
-		values.Set("state", filters.State)
+	if state := strings.ToLower(strings.TrimSpace(filters.State)); state != "" {
+		values.Set("state", state)
 	}
-	if filters.RiskLevel != "" {
-		values.Set("risk_level", filters.RiskLevel)
+	if riskLevel := strings.ToLower(strings.TrimSpace(filters.RiskLevel)); riskLevel != "" {
+		values.Set("risk_level", riskLevel)
 	}
 	if !filters.Since.IsZero() {
 		values.Set("since", filters.Since.UTC().Format(time.RFC3339))

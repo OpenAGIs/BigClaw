@@ -3884,6 +3884,23 @@
       "state": "Done",
       "title": "Add weeklyExportURL helper coverage",
       "updated_at": "2026-03-25T21:35:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Normalize distributedExportURL filter handling so surrounding whitespace is trimmed before query encoding, and add direct helper coverage for reserved-character scopes plus time/priority filters.",
+      "id": "big-par-329",
+      "identifier": "BIG-PAR-329",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Normalize distributedExportURL helper filters"
     }
   ]
 }
