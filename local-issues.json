@@ -3170,15 +3170,22 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-297` after adding regression coverage for the ClawHost workflow actor-header fallback path.\n\nWhat changed:\n- `bigclaw-go/internal/api/expansion_test.go` now verifies `/v2/clawhost/workflows` honors `X-BigClaw-Actor` when no `actor` query parameter is present.\n- the same regression confirms the returned export URL preserves the resolved actor and that `/v2/clawhost/workflows/export` renders markdown owned by the header-supplied actor.\n- `local-issues.json` closes the actor-header slice after the regression landed.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `6edeef8eee13f7586dce95f123f53d381988bb2c` matches remote SHA `6edeef8eee13f7586dce95f123f53d381988bb2c` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `6edeef8eee13f7586dce95f123f53d381988bb2c`\n\nCommit SHA: `6edeef8eee13f7586dce95f123f53d381988bb2c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T18:03:31Z"
+        }
+      ],
       "created_at": "2026-03-24T18:01:24Z",
       "description": "Add API regression coverage that proves the ClawHost workflow JSON and export endpoints honor the X-BigClaw-Actor header fallback when no actor query parameter is supplied.",
       "id": "big-par-297",
       "identifier": "BIG-PAR-297",
       "labels": [],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add ClawHost workflow actor-header regression coverage",
-      "updated_at": "2026-03-24T18:01:35Z"
+      "updated_at": "2026-03-24T18:03:31Z"
     }
   ]
 }
