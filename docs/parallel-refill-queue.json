@@ -152,11 +152,10 @@
       "BIG-PAR-355",
       "BIG-PAR-356",
       "BIG-PAR-358",
-      "BIG-PAR-357"
-    ],
-    "active": [
+      "BIG-PAR-357",
       "BIG-PAR-360"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1142,7 +1141,7 @@
       "identifier": "BIG-PAR-360",
       "title": "Add console helper and design-system coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
