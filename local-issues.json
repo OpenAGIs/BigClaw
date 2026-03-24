@@ -4310,6 +4310,24 @@
       "state": "Done",
       "title": "Add scoped debug policy filter assertion",
       "updated_at": "2026-03-24T21:52:22Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T21:54:39Z",
+      "description": "Extend the rollout, recovery, and workflow product regressions to assert idle and fallback filter-map behavior so default team/project/actor handling stays stable.",
+      "id": "big-par-342",
+      "identifier": "BIG-PAR-342",
+      "labels": [
+        "go",
+        "clawhost",
+        "product",
+        "parallel",
+        "test"
+      ],
+      "priority": 3,
+      "state": "In",
+      "title": "Pin default ClawHost product filter maps in regressions",
+      "updated_at": "2026-03-24T21:54:39Z"
     }
   ]
 }

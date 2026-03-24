@@ -163,6 +163,9 @@ func TestBuildClawHostWorkflowSurfaceIdleDefaults(t *testing.T) {
 	if surface.Status != "idle" || surface.Summary.WorkflowItems != 0 || surface.Summary.Tenants != 0 {
 		t.Fatalf("expected idle workflow surface, got %+v", surface)
 	}
+	if surface.Filters["actor"] != "workflow-operator" || surface.Filters["team"] != "" || surface.Filters["project"] != "" {
+		t.Fatalf("expected idle workflow filters to preserve default scope, got %+v", surface.Filters)
+	}
 	if len(surface.ReviewQueue) != 0 {
 		t.Fatalf("expected empty review queue for idle surface, got %+v", surface.ReviewQueue)
 	}

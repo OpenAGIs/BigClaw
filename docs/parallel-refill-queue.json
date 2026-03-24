@@ -266,7 +266,8 @@
     "BIG-PAR-338",
     "BIG-PAR-339",
     "BIG-PAR-340",
-    "BIG-PAR-341"
+    "BIG-PAR-341",
+    "BIG-PAR-342"
   ],
   "issues": [
     {
@@ -1030,6 +1031,12 @@
       "title": "Add scoped debug policy filter assertion",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-342",
+      "title": "Pin default ClawHost product filter maps in regressions",
+      "track": "Go Mainline Follow-ups",
+      "status": "In"
     }
   ]
 }

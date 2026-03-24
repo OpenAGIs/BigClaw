@@ -39,6 +39,9 @@ func TestBuildDefaultClawHostLifecycleRecoveryScorecardScopesInventory(t *testin
 	t.Run("no matches", func(t *testing.T) {
 		scorecard := BuildDefaultClawHostLifecycleRecoveryScorecard("support", "phoenix")
 		audit := AuditClawHostLifecycleRecoveryScorecard(scorecard)
+		if scorecard.Filters["team"] != "support" || scorecard.Filters["project"] != "phoenix" {
+			t.Fatalf("expected no-match recovery scope to persist filters, got %+v", scorecard.Filters)
+		}
 		if scorecard.Summary.BotCount != 0 || scorecard.Summary.RecoverableBots != 0 || scorecard.Summary.IsolatedBots != 0 || scorecard.Summary.DegradedBots != 0 {
 			t.Fatalf("expected empty recovery summary, got %+v", scorecard.Summary)
 		}

@@ -47,6 +47,9 @@ func TestBuildDefaultClawHostRolloutPlannerFallsBackToProjectAndDefaults(t *test
 
 	t.Run("empty project fallback", func(t *testing.T) {
 		plan := BuildDefaultClawHostRolloutPlanner(nil, "", "")
+		if plan.Filters["team"] != "" || plan.Filters["project"] != "" {
+			t.Fatalf("expected empty rollout filters to stay empty, got %+v", plan.Filters)
+		}
 		if len(plan.Waves) != 3 || len(plan.Waves[0].TargetApps) != 1 || plan.Waves[0].TargetApps[0] != "clawhost-app" {
 			t.Fatalf("expected default app fallback in rollout waves, got %+v", plan.Waves)
 		}
@@ -84,6 +87,9 @@ func TestAuditClawHostRolloutPlannerHandlesEmptyPlan(t *testing.T) {
 	audit := AuditClawHostRolloutPlanner(plan)
 	if audit.PlanID != plan.PlanID || audit.Version != plan.Version {
 		t.Fatalf("expected audit metadata to mirror empty plan, got %+v", audit)
+	}
+	if plan.Filters["team"] != "" || plan.Filters["project"] != "" {
+		t.Fatalf("expected empty rollout plan filters to stay empty, got %+v", plan.Filters)
 	}
 	if audit.ReadinessScore != 0 {
 		t.Fatalf("expected empty rollout plan readiness score to be zero, got %+v", audit)
