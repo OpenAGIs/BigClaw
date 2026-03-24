@@ -4018,6 +4018,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added top-level `filters` to the scoped ClawHost fleet surface and rendered a `Filters` section in the fleet markdown report/export so reviewer-facing fleet reports preserve the active `team` and `project` context used to build the inventory. Added focused product and expansion-endpoint regression coverage for the new scoped fleet payload and markdown content.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultClawHostFleetInventoryIsControlPlaneReady|TestBuildDefaultClawHostFleetInventoryCompatibilityAlias|TestClawHostFleetInventoryCompatibilityAliases|TestAuditClawHostFleetInventoryDetectsCoverageGaps|TestFilterClawHostFleetSurface|TestRenderClawHostFleetReport|TestRenderClawHostFleetReportHandlesEmptyInventory' -count=1` -> ok\n- `cd bigclaw-go && go test ./internal/api -run TestV2ClawHostExpansionEndpoints -count=1` -> ok\n- `cd bigclaw-go && go test ./internal/api ./internal/product -count=1` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `ca40022864e30fe3b83c18f42fc092f4f6bc89fb` matches remote SHA `ca40022864e30fe3b83c18f42fc092f4f6bc89fb` with `status: ok` and `synced: true`\n- `git log -1 --stat --oneline` -> `ca40022 feat(product): expose fleet report filters` with `bigclaw-go/internal/product/clawhost_fleet.go`, `bigclaw-go/internal/product/clawhost_fleet_test.go`, `bigclaw-go/internal/api/expansion_test.go`, `docs/parallel-refill-queue.json`, and `local-issues.json`\n\nCommit SHA: `ca40022864e30fe3b83c18f42fc092f4f6bc89fb`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-24T21:10:50Z"
+        }
+      ],
       "created_at": "2026-03-24T21:06:56Z",
       "description": "Render active scope filters in the ClawHost fleet markdown report/export and surface them in the scoped fleet payload so reviewer-facing fleet reports preserve the same team/project context used to build the inventory.",
       "id": "big-par-330",
@@ -4030,9 +4037,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Expose ClawHost fleet report filters",
-      "updated_at": "2026-03-24T21:06:56Z"
+      "updated_at": "2026-03-24T21:10:50Z"
     }
   ]
 }
