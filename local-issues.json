@@ -3695,7 +3695,13 @@
     },
     {
       "assigned_to_worker": true,
-      "comments": [],
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-321` after adding project-fallback coverage for distributed-export attachment filenames.\n\nWhat changed:\n- `bigclaw-go/internal/api/server_test.go` now proves `/v2/reports/distributed/export` emits `attachment; filename=\"bigclaw-distributed-diagnostics-all.md\"` when `team` is absent and the scoped `project` filter contains only separators and punctuation.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-321` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `1fdac4d66328e76d13d44840b3a2dc70901568ef` matches remote SHA `1fdac4d66328e76d13d44840b3a2dc70901568ef` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `1fdac4d66328e76d13d44840b3a2dc70901568ef`\n\nCommit SHA: `1fdac4d66328e76d13d44840b3a2dc70901568ef`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T20:17:06Z"
+        }
+      ],
       "created_at": "2026-03-25T00:00:00Z",
       "description": "Add direct distributed-export regression coverage proving the sanitized attachment filename falls back to `all` when team is absent and the scoped project filter contains only punctuation and separators.",
       "id": "big-par-321",
@@ -3707,8 +3713,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
-      "title": "Add distributed export project-fallback filename sanitization coverage"
+      "state": "Done",
+      "title": "Add distributed export project-fallback filename sanitization coverage",
+      "updated_at": "2026-03-24T20:17:06Z"
     }
   ]
 }
