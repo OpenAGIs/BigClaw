@@ -5268,19 +5268,22 @@ func TestV2ControlCenterIncludesCompleteClawHostSurfaceBundle(t *testing.T) {
 			} `json:"summary"`
 		} `json:"clawhost_workflow_surface"`
 		Rollout struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				ActivePlans int `json:"active_plans"`
 			} `json:"summary"`
 		} `json:"clawhost_rollout_surface"`
 		Readiness struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				Targets int `json:"targets"`
 			} `json:"summary"`
 		} `json:"clawhost_readiness_surface"`
 		Recovery struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				Targets int `json:"targets"`
 			} `json:"summary"`
@@ -5301,11 +5304,20 @@ func TestV2ControlCenterIncludesCompleteClawHostSurfaceBundle(t *testing.T) {
 	if decoded.Rollout.Status != "active" || decoded.Rollout.Summary.ActivePlans != 1 {
 		t.Fatalf("expected active ClawHost rollout surface in bundle, got %+v", decoded.Rollout)
 	}
+	if decoded.Rollout.Filters["team"] != "" || decoded.Rollout.Filters["project"] != "" {
+		t.Fatalf("expected unscoped ClawHost rollout filters in bundle, got %+v", decoded.Rollout.Filters)
+	}
 	if decoded.Readiness.Status != "active" || decoded.Readiness.Summary.Targets != 1 {
 		t.Fatalf("expected active ClawHost readiness surface in bundle, got %+v", decoded.Readiness)
 	}
+	if decoded.Readiness.Filters["team"] != "" || decoded.Readiness.Filters["project"] != "" {
+		t.Fatalf("expected unscoped ClawHost readiness filters in bundle, got %+v", decoded.Readiness.Filters)
+	}
 	if decoded.Recovery.Status != "active" || decoded.Recovery.Summary.Targets != 1 {
 		t.Fatalf("expected active ClawHost recovery surface in bundle, got %+v", decoded.Recovery)
+	}
+	if decoded.Recovery.Filters["team"] != "" || decoded.Recovery.Filters["project"] != "" {
+		t.Fatalf("expected unscoped ClawHost recovery filters in bundle, got %+v", decoded.Recovery.Filters)
 	}
 }
 
