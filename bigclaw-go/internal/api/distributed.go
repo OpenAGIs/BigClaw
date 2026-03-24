@@ -106,6 +106,8 @@ type isolationDiagnostics struct {
 	OwnerMatchingRequired bool              `json:"owner_matching_required"`
 	TenantBoundaries      []auditFacetCount `json:"tenant_boundaries,omitempty"`
 	OwnerBoundaries       []auditFacetCount `json:"owner_boundaries,omitempty"`
+	CrossTenantBoundaries []auditFacetCount `json:"cross_tenant_boundaries,omitempty"`
+	CrossOwnerBoundaries  []auditFacetCount `json:"cross_owner_boundaries,omitempty"`
 	CrossTenantViolations int               `json:"cross_tenant_violations"`
 	CrossOwnerViolations  int               `json:"cross_owner_violations"`
 	ViolationReasons      []string          `json:"violation_reasons,omitempty"`
@@ -460,6 +462,8 @@ func (s *Server) distributedEventRollup(assignmentByTask map[string]distributedT
 	countersByExecutor := make(map[domain.ExecutorKind]*executorDiagnosticsCounters)
 	routingIndex := make(map[string]*routingReasonSummary)
 	violationReasonSet := make(map[string]struct{})
+	crossTenantBoundaryCounts := make(map[string]int)
+	crossOwnerBoundaryCounts := make(map[string]int)
 	tenantViolations := 0
 	ownerViolations := 0
 	tenantMode := ""
@@ -515,8 +519,10 @@ func (s *Server) distributedEventRollup(assignmentByTask map[string]distributedT
 					switch isolation.Boundary {
 					case "tenant":
 						tenantViolations++
+						crossTenantBoundaryCounts[formatIsolationBoundary(isolation.TaskTenantID, isolation.QuotaTenantID)]++
 					case "owner":
 						ownerViolations++
+						crossOwnerBoundaryCounts[formatIsolationBoundary(isolation.TaskOwner, isolation.QuotaOwnerID)]++
 					}
 					if reason := strings.TrimSpace(isolation.Reason); reason != "" {
 						violationReasonSet[reason] = struct{}{}
@@ -558,6 +564,8 @@ func (s *Server) distributedEventRollup(assignmentByTask map[string]distributedT
 		Isolation: isolationDiagnostics{
 			TenantIsolationMode:   tenantMode,
 			OwnerMatchingRequired: ownerMatchingRequired,
+			CrossTenantBoundaries: sortFacetCounts(crossTenantBoundaryCounts),
+			CrossOwnerBoundaries:  sortFacetCounts(crossOwnerBoundaryCounts),
 			CrossTenantViolations: tenantViolations,
 			CrossOwnerViolations:  ownerViolations,
 			ViolationReasons:      violationReasons,
@@ -861,6 +869,10 @@ func buildIsolationDiagnostics(assignments []distributedTaskAssignment, base iso
 	}
 	diagnostics.Notes = append(notes, diagnostics.Notes...)
 	return diagnostics
+}
+
+func formatIsolationBoundary(from, to string) string {
+	return fmt.Sprintf("%s -> %s", firstNonEmpty(strings.TrimSpace(from), "unassigned"), firstNonEmpty(strings.TrimSpace(to), "unassigned"))
 }
 
 func countActiveAssignments(assignments []distributedTaskAssignment) int {
@@ -1251,6 +1263,12 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.Isolation.OwnerBoundaries) > 0 {
 		lines = append(lines, "- Owner boundaries: "+formatFacetCounts(diagnostics.Isolation.OwnerBoundaries))
+	}
+	if len(diagnostics.Isolation.CrossTenantBoundaries) > 0 {
+		lines = append(lines, "- Cross-tenant boundary pairs: "+formatFacetCounts(diagnostics.Isolation.CrossTenantBoundaries))
+	}
+	if len(diagnostics.Isolation.CrossOwnerBoundaries) > 0 {
+		lines = append(lines, "- Cross-owner boundary pairs: "+formatFacetCounts(diagnostics.Isolation.CrossOwnerBoundaries))
 	}
 	if len(diagnostics.Isolation.ViolationReasons) > 0 {
 		lines = append(lines, "- Violation reasons: "+strings.Join(diagnostics.Isolation.ViolationReasons, "; "))

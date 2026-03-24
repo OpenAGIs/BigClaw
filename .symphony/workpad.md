@@ -2,28 +2,26 @@
 
 ## Plan
 
-1. Extend `bigclaw-go/internal/scheduler/policy_store.go` so distributed routing policy can express tenant isolation mode plus ownership requirements.
-2. Enforce those rules in `bigclaw-go/internal/scheduler/scheduler.go` using task tenant/owner metadata and quota tenant context, with explicit rejection reasons for cross-tenant or owner-boundary violations.
-3. Add distributed diagnostics fields and markdown rendering in `bigclaw-go/internal/api/distributed.go` so reports show tenant isolation boundaries and violations.
-4. Add focused Go tests in scheduler/policy/api packages for policy parsing, accepted same-tenant ownership routing, blocked cross-tenant placement, and report visibility.
-5. Run the narrowest relevant Go test targets, record exact commands and results below, then commit and push the branch.
+1. Expose tenant and ownership isolation intent in `bigclaw-go/internal/policy` so task policy output can express tenant-scoped scheduling and owner matching.
+2. Tighten distributed diagnostics in `bigclaw-go/internal/api/distributed.go` so reports show explicit cross-tenant and cross-owner boundary pairs in addition to violation counts.
+3. Add focused tests in `bigclaw-go/internal/policy` and `bigclaw-go/internal/api` covering policy expression, blocked cross-tenant placement visibility, and markdown/report output.
+4. Run the narrowest relevant Go test targets for the touched packages, then record exact commands and outcomes below.
+5. Commit and push the scoped issue branch changes.
 
 ## Acceptance
 
-1. Scheduler policy definitions can express tenant isolation and ownership constraints.
-2. Distributed diagnostics/report output indicates tenant-boundary enforcement or violations.
-3. Tests prove invalid cross-tenant or ownership-breaking assignments are rejected.
+1. Policy output can express tenant isolation mode and owner-matching requirements.
+2. Distributed diagnostics and markdown report show cross-tenant boundary details, not just aggregate counts.
+3. Tests prove invalid cross-tenant or ownership-breaking assignments are rejected and surfaced in diagnostics.
 
 ## Validation
 
-- Run only the narrowest Go test targets that exercise scheduler policy parsing/enforcement and distributed diagnostics output:
-  - `go test ./internal/scheduler`
-  - `go test ./internal/api`
+- Run only the narrowest Go test targets that exercise the touched packages:
+  - `go test ./internal/policy ./internal/api`
 - Record exact commands and pass/fail outcomes in this file after execution.
 
 ## Test Log
 
-- `cd /Users/openagi/code/bigclaw-workspaces/BIGCLAW-178/bigclaw-go && go test ./internal/scheduler ./internal/api ./internal/worker`
-  - `ok  	bigclaw-go/internal/scheduler	2.276s`
-  - `ok  	bigclaw-go/internal/api	6.866s`
-  - `ok  	bigclaw-go/internal/worker	5.692s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIGCLAW-178/bigclaw-go && go test ./internal/policy ./internal/api`
+  - `ok  	bigclaw-go/internal/policy	(cached)`
+  - `ok  	bigclaw-go/internal/api	4.822s`

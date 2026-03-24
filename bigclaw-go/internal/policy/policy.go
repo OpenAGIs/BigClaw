@@ -19,20 +19,23 @@ type Quota struct {
 }
 
 type Summary struct {
-	Plan                 string `json:"plan"`
-	DedicatedQueue       string `json:"dedicated_queue"`
-	ConcurrencyProfile   string `json:"concurrency_profile"`
-	AdvancedApproval     bool   `json:"advanced_approval"`
-	MultiAgentGraph      bool   `json:"multi_agent_graph"`
-	DedicatedBrowserPool bool   `json:"dedicated_browser_pool"`
-	DedicatedVMPool      bool   `json:"dedicated_vm_pool"`
-	BrowserPoolAccess    bool   `json:"browser_pool_access"`
-	VMPoolAccess         bool   `json:"vm_pool_access"`
-	Isolation            string `json:"isolation"`
-	ApprovalFlow         string `json:"approval_flow"`
-	ResourcePool         string `json:"resource_pool"`
-	Reason               string `json:"reason"`
-	Quota                Quota  `json:"quota"`
+	Plan                  string   `json:"plan"`
+	DedicatedQueue        string   `json:"dedicated_queue"`
+	ConcurrencyProfile    string   `json:"concurrency_profile"`
+	AdvancedApproval      bool     `json:"advanced_approval"`
+	MultiAgentGraph       bool     `json:"multi_agent_graph"`
+	DedicatedBrowserPool  bool     `json:"dedicated_browser_pool"`
+	DedicatedVMPool       bool     `json:"dedicated_vm_pool"`
+	BrowserPoolAccess     bool     `json:"browser_pool_access"`
+	VMPoolAccess          bool     `json:"vm_pool_access"`
+	Isolation             string   `json:"isolation"`
+	TenantIsolationMode   string   `json:"tenant_isolation_mode"`
+	OwnerMatchingRequired bool     `json:"owner_matching_required"`
+	OwnerMetadataKeys     []string `json:"owner_metadata_keys,omitempty"`
+	ApprovalFlow          string   `json:"approval_flow"`
+	ResourcePool          string   `json:"resource_pool"`
+	Reason                string   `json:"reason"`
+	Quota                 Quota    `json:"quota"`
 }
 
 func Resolve(task domain.Task) Summary {
@@ -49,6 +52,7 @@ func Resolve(task domain.Task) Summary {
 	}
 
 	if premium {
+		isolation := firstNonEmpty(metadataString(task, "policy_isolation"), "dedicated")
 		browserAccess := true
 		vmAccess := true
 		approvalFlowDefault := "advanced"
@@ -56,19 +60,22 @@ func Resolve(task domain.Task) Summary {
 			approvalFlowDefault = "risk-reviewed"
 		}
 		return Summary{
-			Plan:                 "premium",
-			DedicatedQueue:       queueName(task, "premium"),
-			ConcurrencyProfile:   firstNonEmpty(metadataString(task, "policy_concurrency_profile"), "elevated"),
-			AdvancedApproval:     metadataBool(task, true, "policy_advanced_approval"),
-			MultiAgentGraph:      metadataBool(task, true, "policy_multi_agent_graph"),
-			DedicatedBrowserPool: browserAccess && requiresTool(task, "browser"),
-			DedicatedVMPool:      vmAccess && (requiresTool(task, "vm") || task.RequiredExecutor == domain.ExecutorKubernetes || task.RequiredExecutor == domain.ExecutorRay),
-			BrowserPoolAccess:    browserAccess,
-			VMPoolAccess:         vmAccess,
-			Isolation:            firstNonEmpty(metadataString(task, "policy_isolation"), "dedicated"),
-			ApprovalFlow:         firstNonEmpty(metadataString(task, "policy_approval_flow"), approvalFlowDefault),
-			ResourcePool:         firstNonEmpty(metadataString(task, "policy_resource_pool"), queueName(task, "premium")),
-			Reason:               reason,
+			Plan:                  "premium",
+			DedicatedQueue:        queueName(task, "premium"),
+			ConcurrencyProfile:    firstNonEmpty(metadataString(task, "policy_concurrency_profile"), "elevated"),
+			AdvancedApproval:      metadataBool(task, true, "policy_advanced_approval"),
+			MultiAgentGraph:       metadataBool(task, true, "policy_multi_agent_graph"),
+			DedicatedBrowserPool:  browserAccess && requiresTool(task, "browser"),
+			DedicatedVMPool:       vmAccess && (requiresTool(task, "vm") || task.RequiredExecutor == domain.ExecutorKubernetes || task.RequiredExecutor == domain.ExecutorRay),
+			BrowserPoolAccess:     browserAccess,
+			VMPoolAccess:          vmAccess,
+			Isolation:             isolation,
+			TenantIsolationMode:   resolveTenantIsolationMode(task, isolation),
+			OwnerMatchingRequired: metadataBool(task, false, "policy_require_owner_match", "policy_owner_match"),
+			OwnerMetadataKeys:     resolveOwnerMetadataKeys(task),
+			ApprovalFlow:          firstNonEmpty(metadataString(task, "policy_approval_flow"), approvalFlowDefault),
+			ResourcePool:          firstNonEmpty(metadataString(task, "policy_resource_pool"), queueName(task, "premium")),
+			Reason:                reason,
 			Quota: quotaForPlan(task, planDefaults{
 				ConcurrentLimit:     32,
 				QueueDepthLimit:     256,
@@ -85,20 +92,24 @@ func Resolve(task domain.Task) Summary {
 		approvalFlowDefault = "risk-reviewed"
 		reason = firstNonEmpty(reason, "default shared orchestration") + "; risk score requires approval"
 	}
+	isolation := firstNonEmpty(metadataString(task, "policy_isolation"), "shared")
 	return Summary{
-		Plan:                 "standard",
-		DedicatedQueue:       queueName(task, "shared"),
-		ConcurrencyProfile:   firstNonEmpty(metadataString(task, "policy_concurrency_profile"), "shared"),
-		AdvancedApproval:     metadataBool(task, riskScore.RequiresApproval, "policy_advanced_approval"),
-		MultiAgentGraph:      metadataBool(task, false, "policy_multi_agent_graph"),
-		DedicatedBrowserPool: false,
-		DedicatedVMPool:      false,
-		BrowserPoolAccess:    false,
-		VMPoolAccess:         false,
-		Isolation:            firstNonEmpty(metadataString(task, "policy_isolation"), "shared"),
-		ApprovalFlow:         firstNonEmpty(metadataString(task, "policy_approval_flow"), approvalFlowDefault),
-		ResourcePool:         firstNonEmpty(metadataString(task, "policy_resource_pool"), queueName(task, "shared")),
-		Reason:               reason,
+		Plan:                  "standard",
+		DedicatedQueue:        queueName(task, "shared"),
+		ConcurrencyProfile:    firstNonEmpty(metadataString(task, "policy_concurrency_profile"), "shared"),
+		AdvancedApproval:      metadataBool(task, riskScore.RequiresApproval, "policy_advanced_approval"),
+		MultiAgentGraph:       metadataBool(task, false, "policy_multi_agent_graph"),
+		DedicatedBrowserPool:  false,
+		DedicatedVMPool:       false,
+		BrowserPoolAccess:     false,
+		VMPoolAccess:          false,
+		Isolation:             isolation,
+		TenantIsolationMode:   resolveTenantIsolationMode(task, isolation),
+		OwnerMatchingRequired: metadataBool(task, false, "policy_require_owner_match", "policy_owner_match"),
+		OwnerMetadataKeys:     resolveOwnerMetadataKeys(task),
+		ApprovalFlow:          firstNonEmpty(metadataString(task, "policy_approval_flow"), approvalFlowDefault),
+		ResourcePool:          firstNonEmpty(metadataString(task, "policy_resource_pool"), queueName(task, "shared")),
+		Reason:                reason,
 		Quota: quotaForPlan(task, planDefaults{
 			ConcurrentLimit:     8,
 			QueueDepthLimit:     64,
@@ -212,4 +223,42 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
+}
+
+func resolveTenantIsolationMode(task domain.Task, isolation string) string {
+	switch strings.ToLower(strings.TrimSpace(metadataString(task, "policy_tenant_isolation_mode", "policy_tenant_mode"))) {
+	case "tenant", "strict":
+		return "tenant"
+	case "shared":
+		return "shared"
+	}
+	if strings.EqualFold(strings.TrimSpace(isolation), "dedicated") {
+		return "tenant"
+	}
+	return "shared"
+}
+
+func resolveOwnerMetadataKeys(task domain.Task) []string {
+	raw := strings.TrimSpace(metadataString(task, "policy_owner_metadata_keys"))
+	if raw == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	seen := make(map[string]struct{}, len(parts))
+	keys := make([]string, 0, len(parts))
+	for _, part := range parts {
+		key := strings.TrimSpace(part)
+		if key == "" {
+			continue
+		}
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		keys = append(keys, key)
+	}
+	if len(keys) == 0 {
+		return nil
+	}
+	return keys
 }

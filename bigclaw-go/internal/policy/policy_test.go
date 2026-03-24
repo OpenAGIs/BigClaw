@@ -31,6 +31,9 @@ func TestResolveStandardPolicyDefaults(t *testing.T) {
 	if summary.Plan != "standard" || summary.AdvancedApproval || summary.MultiAgentGraph {
 		t.Fatalf("expected standard policy, got %+v", summary)
 	}
+	if summary.TenantIsolationMode != "shared" || summary.OwnerMatchingRequired || len(summary.OwnerMetadataKeys) != 0 {
+		t.Fatalf("expected shared default isolation expression, got %+v", summary)
+	}
 	if summary.DedicatedQueue != "shared/growth" || summary.ApprovalFlow != "standard" || summary.ResourcePool != "shared/growth" {
 		t.Fatalf("expected standard shared routing, got %+v", summary)
 	}
@@ -69,6 +72,9 @@ func TestResolvePolicyOverridesQuotaBoundaries(t *testing.T) {
 			"policy_approval_flow":         "manual-gated",
 			"policy_resource_pool":         "premium/gold",
 			"policy_multi_agent_graph":     "false",
+			"policy_tenant_isolation_mode": "shared",
+			"policy_require_owner_match":   "true",
+			"policy_owner_metadata_keys":   "owner, created_by, owner",
 		},
 	})
 	if summary.Quota.ConcurrentLimit != 64 || summary.Quota.QueueDepthLimit != 512 || summary.Quota.BudgetCapCents != 250000 || summary.Quota.MaxAgents != 12 {
@@ -79,5 +85,8 @@ func TestResolvePolicyOverridesQuotaBoundaries(t *testing.T) {
 	}
 	if summary.ApprovalFlow != "manual-gated" || summary.ResourcePool != "premium/gold" || summary.MultiAgentGraph {
 		t.Fatalf("expected configurable capability boundaries, got %+v", summary)
+	}
+	if summary.TenantIsolationMode != "shared" || !summary.OwnerMatchingRequired || len(summary.OwnerMetadataKeys) != 2 || summary.OwnerMetadataKeys[1] != "created_by" {
+		t.Fatalf("expected isolation overrides, got %+v", summary)
 	}
 }

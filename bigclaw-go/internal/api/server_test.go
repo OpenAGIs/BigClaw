@@ -4296,6 +4296,14 @@ func TestV2ControlCenterDistributedDiagnosticsShowIsolationBoundaries(t *testing
 					Key   string `json:"key"`
 					Count int    `json:"count"`
 				} `json:"owner_boundaries"`
+				CrossTenantBoundaries []struct {
+					Key   string `json:"key"`
+					Count int    `json:"count"`
+				} `json:"cross_tenant_boundaries"`
+				CrossOwnerBoundaries []struct {
+					Key   string `json:"key"`
+					Count int    `json:"count"`
+				} `json:"cross_owner_boundaries"`
 				ViolationReasons []string `json:"violation_reasons"`
 			} `json:"isolation"`
 			RolloutReport struct {
@@ -4322,6 +4330,14 @@ func TestV2ControlCenterDistributedDiagnosticsShowIsolationBoundaries(t *testing
 		decoded.DistributedDiagnostics.Isolation.OwnerBoundaries[0].Count != 2 {
 		t.Fatalf("unexpected owner boundary breakdown: %+v", decoded.DistributedDiagnostics.Isolation.OwnerBoundaries)
 	}
+	if len(decoded.DistributedDiagnostics.Isolation.CrossTenantBoundaries) != 1 ||
+		decoded.DistributedDiagnostics.Isolation.CrossTenantBoundaries[0].Key != "tenant-b -> tenant-a" {
+		t.Fatalf("unexpected cross-tenant boundary breakdown: %+v", decoded.DistributedDiagnostics.Isolation.CrossTenantBoundaries)
+	}
+	if len(decoded.DistributedDiagnostics.Isolation.CrossOwnerBoundaries) != 1 ||
+		decoded.DistributedDiagnostics.Isolation.CrossOwnerBoundaries[0].Key != "bob -> alice" {
+		t.Fatalf("unexpected cross-owner boundary breakdown: %+v", decoded.DistributedDiagnostics.Isolation.CrossOwnerBoundaries)
+	}
 	if len(decoded.DistributedDiagnostics.Isolation.ViolationReasons) != 2 {
 		t.Fatalf("expected two violation reasons, got %+v", decoded.DistributedDiagnostics.Isolation.ViolationReasons)
 	}
@@ -4329,6 +4345,7 @@ func TestV2ControlCenterDistributedDiagnosticsShowIsolationBoundaries(t *testing
 	if !strings.Contains(markdown, "## Isolation") ||
 		!strings.Contains(markdown, "Tenant isolation mode: tenant") ||
 		!strings.Contains(markdown, "Cross-tenant violations: 1") ||
+		!strings.Contains(markdown, "Cross-tenant boundary pairs: tenant-b -> tenant-a=1") ||
 		!strings.Contains(markdown, "ownership boundary: task owner bob cannot use owner alice capacity") {
 		t.Fatalf("unexpected isolation markdown: %s", markdown)
 	}
