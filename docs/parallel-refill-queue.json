@@ -873,7 +873,7 @@
       "identifier": "BIG-PAR-323",
       "title": "Add direct sanitizeReportName helper coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
