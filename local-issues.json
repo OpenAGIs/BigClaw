@@ -4939,6 +4939,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct product-package coverage for contractPathExists in bigclaw-go/internal/product/dashboard_run_contract_test.go, covering nested object traversal, []map[string]any handling, generic []any handling, and missing-path fallthrough so the dashboard/run contract path helper stays pinned outside the broader contract report tests. Validation: cd bigclaw-go && go test ./internal/product -> ok; cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/clawhost-product.cover && go tool cover -func=/tmp/clawhost-product.cover | rg 'dashboard_run_contract.go:339|total:' -> contractPathExists 100.0%, total 98.4%; bash scripts/ops/bigclawctl github-sync status --json -> local SHA bfbbd2db273a3b956b2eeb570a695a913d58af26 matches remote SHA bfbbd2db273a3b956b2eeb570a695a913d58af26 with status ok and synced true; git log -1 --stat -> captured for commit bfbbd2db273a3b956b2eeb570a695a913d58af26 with dashboard contract test and tracker files in the stat output. Commit SHA: bfbbd2db273a3b956b2eeb570a695a913d58af26. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-24T23:26:04Z"
+        }
+      ],
       "created_at": "2026-03-24T23:24:25Z",
       "description": "Add focused product-package coverage for contractPathExists so list traversal and missing-path handling in the dashboard/run contract helper stay pinned outside the broader contract report tests.",
       "id": "big-par-367",
@@ -4951,9 +4958,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add dashboard run contract path helper coverage",
-      "updated_at": "2026-03-24T23:24:25Z"
+      "updated_at": "2026-03-24T23:26:04Z"
     }
   ]
 }
