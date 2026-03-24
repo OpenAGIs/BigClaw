@@ -161,11 +161,10 @@
       "BIG-PAR-360",
       "BIG-PAR-361",
       "BIG-PAR-362",
-      "BIG-PAR-363"
-    ],
-    "active": [
+      "BIG-PAR-363",
       "BIG-PAR-364"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1214,7 +1213,7 @@
       "identifier": "BIG-PAR-364",
       "title": "Add ClawHost fleet report edge-case coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
