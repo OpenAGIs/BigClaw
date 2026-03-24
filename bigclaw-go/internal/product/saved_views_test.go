@@ -208,3 +208,19 @@ func TestDigestRecipientsFallsBackToViewerWhenEmpty(t *testing.T) {
 		t.Fatalf("digestRecipients fallback = %v, want %v", got, want)
 	}
 }
+
+func TestCountPremiumAndHighRisk(t *testing.T) {
+	tasks := []domain.Task{
+		{RiskLevel: domain.RiskHigh, Metadata: map[string]string{"plan": "premium"}},
+		{RiskLevel: domain.RiskMedium, Metadata: map[string]string{"plan": " PREMIUM "}},
+		{RiskLevel: domain.RiskLow, Metadata: map[string]string{"plan": "standard"}},
+		{RiskLevel: domain.RiskHigh, Metadata: map[string]string{"plan": ""}},
+	}
+
+	if got := countPremium(tasks); got != 2 {
+		t.Fatalf("countPremium = %d, want 2", got)
+	}
+	if got := countHighRisk(tasks); got != 2 {
+		t.Fatalf("countHighRisk = %d, want 2", got)
+	}
+}

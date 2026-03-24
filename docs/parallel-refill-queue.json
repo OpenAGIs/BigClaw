@@ -230,7 +230,8 @@
     "BIG-PAR-332",
     "BIG-PAR-333",
     "BIG-PAR-334",
-    "BIG-PAR-335"
+    "BIG-PAR-335",
+    "BIG-PAR-336"
   ],
   "issues": [
     {
@@ -958,6 +959,12 @@
       "title": "Add digestRecipients helper coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-336",
+      "title": "Add saved view metric helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
