@@ -23,3 +23,5 @@
   Result: `ok  	bigclaw-go/internal/api	5.307s`
 - [x] `cd bigclaw-go && go test ./internal/api -run 'TestV2DistributedReport(IncludesRetentionExpirySurface|IncludesProviderLiveHandoffIsolationSurface|IncludesBrokerBootstrapSurface|IncludesBrokerReviewBundle)'`
   Result: `ok  	bigclaw-go/internal/api	5.594s`
+- [x] `cd bigclaw-go && go test ./internal/api -run 'TestV2DistributedReport'`
+  Result: `ok  	bigclaw-go/internal/api	3.382s`
