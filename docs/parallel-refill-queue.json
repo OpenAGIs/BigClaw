@@ -119,11 +119,10 @@
       "BIG-PAR-318",
       "BIG-PAR-319",
       "BIG-PAR-320",
-      "BIG-PAR-321"
-    ],
-    "active": [
+      "BIG-PAR-321",
       "BIG-PAR-322"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -878,7 +877,7 @@
       "identifier": "BIG-PAR-322",
       "title": "Add product regression coverage for ClawHost workflow parsing defaults",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

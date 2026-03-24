@@ -3819,15 +3819,28 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct product regression coverage for ClawHost workflow parsing/default behavior so the public workflow builder now pins tenant/title/id fallbacks, invalid bool/int metadata fallback semantics, and the current trimmed-and-sorted channel handling contract.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -run 'TestBuildClawHostWorkflowSurface|TestBuildClawHostWorkflowSurfaceIgnoresNonClawHostTasksAndUsesFallbackReason|TestBuildClawHostWorkflowSurfaceOrdersReviewQueue|TestBuildClawHostWorkflowSurfaceIdleDefaults|TestBuildClawHostWorkflowSurfaceNormalizesParsingDefaults' -count=1` -> ok\n- `cd bigclaw-go && go test ./internal/api ./internal/product -count=1` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `1d0cefc47db121e8562c2c16e5840b0ed6d39887` matches remote SHA `1d0cefc47db121e8562c2c16e5840b0ed6d39887` with `status: ok` and `synced: true`\n- `git log -1 --stat --oneline` -> `1d0cefc test(product): cover workflow parsing defaults` with `bigclaw-go/internal/product/clawhost_workflow_test.go`, `docs/parallel-refill-queue.json`, `docs/parallel-refill-queue.md`, and `local-issues.json`\n\nCommit SHA: `1d0cefc47db121e8562c2c16e5840b0ed6d39887`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-24T20:30:16Z"
+        }
+      ],
       "created_at": "2026-03-24T20:28:08Z",
-      "description": "",
+      "description": "Add direct unit coverage for ClawHost workflow parsing/default behavior so the public workflow builder pins metadata fallback semantics and normalization details without changing product logic.",
       "id": "big-par-322",
       "identifier": "BIG-PAR-322",
-      "labels": [],
+      "labels": [
+        "go",
+        "clawhost",
+        "product",
+        "tests",
+        "parallel"
+      ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add product regression coverage for ClawHost workflow parsing defaults",
-      "updated_at": "2026-03-24T20:28:08Z"
+      "updated_at": "2026-03-24T20:30:16Z"
     }
   ]
 }
