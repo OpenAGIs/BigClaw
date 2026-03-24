@@ -1009,6 +1009,41 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		}
 	})
 
+	t.Run("rollout planner scope normalization", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/rollout-planner?team=%20platform%20&project=%20apollo%20", nil)
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected rollout planner 200 with normalized scope filters, got %d %s", response.Code, response.Body.String())
+		}
+
+		var decoded struct {
+			Plan struct {
+				Filters map[string]string `json:"filters"`
+			} `json:"plan"`
+			Report struct {
+				ExportURL string `json:"export_url"`
+			} `json:"report"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("decode normalized rollout planner response: %v", err)
+		}
+		if decoded.Plan.Filters["team"] != "platform" || decoded.Plan.Filters["project"] != "apollo" {
+			t.Fatalf("expected normalized rollout planner filters, got %+v", decoded.Plan.Filters)
+		}
+
+		exportURL, err := url.Parse(decoded.Report.ExportURL)
+		if err != nil {
+			t.Fatalf("parse normalized rollout planner export url: %v", err)
+		}
+		if exportURL.Query().Get("team") != "platform" || exportURL.Query().Get("project") != "apollo" {
+			t.Fatalf("expected normalized rollout planner export url, got %s", decoded.Report.ExportURL)
+		}
+		if strings.Contains(decoded.Report.ExportURL, "%20") {
+			t.Fatalf("expected normalized rollout planner export url without encoded whitespace, got %s", decoded.Report.ExportURL)
+		}
+	})
+
 	t.Run("workflows", func(t *testing.T) {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=platform&project=apollo&actor=alice", nil))
