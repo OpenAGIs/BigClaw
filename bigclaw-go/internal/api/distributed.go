@@ -176,6 +176,7 @@ type distributedDiagnostics struct {
 	BrokerFanoutIsolation brokerStubFanoutIsolationEvidencePack    `json:"broker_stub_fanout_isolation"`
 	ProviderLiveHandoff   providerLiveHandoffIsolationEvidencePack `json:"provider_live_handoff_isolation"`
 	ClawHostProxyAdmin    clawHostProxyAdminValidationLane         `json:"clawhost_proxy_admin_validation"`
+	ClawHostFleet         clawHostFleetInventorySurface            `json:"clawhost_fleet_inventory"`
 	ClawHostRolloutPlan   clawHostRolloutPlannerSurface            `json:"clawhost_rollout_planner"`
 	BrokerBootstrap       brokerBootstrapSurface                   `json:"broker_bootstrap_surface"`
 	DeliveryAckReadiness  deliveryAckReadinessSurface              `json:"delivery_ack_readiness"`
@@ -278,6 +279,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"broker_stub_fanout_isolation":    diagnostics.BrokerFanoutIsolation,
 		"provider_live_handoff_isolation": diagnostics.ProviderLiveHandoff,
 		"clawhost_proxy_admin_validation": diagnostics.ClawHostProxyAdmin,
+		"clawhost_fleet_inventory":        diagnostics.ClawHostFleet,
 		"clawhost_rollout_planner":        diagnostics.ClawHostRolloutPlan,
 		"broker_bootstrap_surface":        diagnostics.BrokerBootstrap,
 		"trace_export_bundle":             diagnostics.TraceBundle,
@@ -369,6 +371,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		BrokerFanoutIsolation: brokerStubFanoutIsolationPayload(),
 		ProviderLiveHandoff:   providerLiveHandoffIsolationPayload(),
 		ClawHostProxyAdmin:    clawHostProxyAdminValidationLanePayload(),
+		ClawHostFleet:         clawHostFleetInventorySurfacePayload(),
 		ClawHostRolloutPlan:   clawHostRolloutPlannerSurfacePayload(),
 		BrokerBootstrap:       brokerBootstrapSurfacePayload(),
 		DeliveryAckReadiness:  deliveryAckReadinessPayload(),
@@ -1427,6 +1430,38 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.ClawHostProxyAdmin.ReviewerLinks) > 0 {
 		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.ClawHostProxyAdmin.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## ClawHost Fleet Inventory",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.ClawHostFleet.ReportPath),
+		fmt.Sprintf("- Provider: %s", firstNonEmpty(diagnostics.ClawHostFleet.Provider, "unknown")),
+		fmt.Sprintf("- Source kind: %s", firstNonEmpty(diagnostics.ClawHostFleet.SourceKind, "unknown")),
+		fmt.Sprintf("- App count: %d", diagnostics.ClawHostFleet.Summary.AppCount),
+		fmt.Sprintf("- Bot count: %d", diagnostics.ClawHostFleet.Summary.BotCount),
+		fmt.Sprintf("- Active bots: %d", diagnostics.ClawHostFleet.Summary.ActiveBots),
+		fmt.Sprintf("- Suspended bots: %d", diagnostics.ClawHostFleet.Summary.SuspendedBots),
+		fmt.Sprintf("- Degraded bots: %d", diagnostics.ClawHostFleet.Summary.DegradedBots),
+		fmt.Sprintf("- Tenant count: %d", diagnostics.ClawHostFleet.Summary.TenantCount),
+		fmt.Sprintf("- Domain count: %d", diagnostics.ClawHostFleet.Summary.DomainCount),
+	)
+	for _, app := range diagnostics.ClawHostFleet.Apps {
+		lines = append(lines, fmt.Sprintf("- app %s: tenant=%s owner=%s bots=%d policy=%s", firstNonEmpty(app.AppID, "unknown-app"), firstNonEmpty(app.Tenant, "unknown"), firstNonEmpty(app.Owner, "unknown"), app.BotCount, firstNonEmpty(app.ProviderPolicy, "unknown")))
+		if app.DefaultDomain != "" {
+			lines = append(lines, "  - default domain: "+app.DefaultDomain)
+		}
+		if app.DefaultSubdomain != "" {
+			lines = append(lines, "  - default subdomain: "+app.DefaultSubdomain)
+		}
+	}
+	for _, bot := range diagnostics.ClawHostFleet.Bots {
+		lines = append(lines, fmt.Sprintf("- bot %s: app=%s lifecycle=%s region=%s domain=%s", firstNonEmpty(bot.BotID, "unknown-bot"), firstNonEmpty(bot.AppID, "unknown-app"), firstNonEmpty(bot.LifecycleState, "unknown"), firstNonEmpty(bot.RuntimeRegion, "unknown"), firstNonEmpty(bot.Domain, "unknown")))
+	}
+	if len(diagnostics.ClawHostFleet.Limitations) > 0 {
+		lines = append(lines, "- Limitations: "+strings.Join(diagnostics.ClawHostFleet.Limitations, "; "))
+	}
+	if len(diagnostics.ClawHostFleet.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.ClawHostFleet.ReviewerLinks, ", "))
 	}
 	lines = append(lines,
 		"",

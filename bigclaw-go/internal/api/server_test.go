@@ -5361,6 +5361,139 @@ func TestV2DistributedReportIncludesClawHostProxyAdminValidationLane(t *testing.
 	}
 }
 
+func TestDebugStatusIncludesClawHostFleetInventorySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		Fleet struct {
+			ReportPath string `json:"report_path"`
+			Ticket     string `json:"ticket"`
+			Provider   string `json:"provider"`
+			SourceKind string `json:"source_kind"`
+			Summary    struct {
+				AppCount          int `json:"app_count"`
+				BotCount          int `json:"bot_count"`
+				ActiveBots        int `json:"active_bots"`
+				SuspendedBots     int `json:"suspended_bots"`
+				DegradedBots      int `json:"degraded_bots"`
+				TenantCount       int `json:"tenant_count"`
+				DomainCount       int `json:"domain_count"`
+				OwnershipTeams    int `json:"ownership_teams"`
+				ReviewerReadyApps int `json:"reviewer_ready_apps"`
+			} `json:"summary"`
+			Apps []struct {
+				AppID    string `json:"app_id"`
+				BotCount int    `json:"bot_count"`
+			} `json:"apps"`
+			Bots []struct {
+				BotID          string `json:"bot_id"`
+				LifecycleState string `json:"lifecycle_state"`
+			} `json:"bots"`
+		} `json:"clawhost_fleet_inventory"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode clawhost fleet payload: %v", err)
+	}
+	if decoded.Fleet.ReportPath != clawHostFleetInventorySurfacePath || decoded.Fleet.Ticket != "BIG-PAR-287" || decoded.Fleet.Provider != "clawhost" || decoded.Fleet.SourceKind != "app_bot_control_plane_inventory" {
+		t.Fatalf("unexpected clawhost fleet metadata: %+v", decoded.Fleet)
+	}
+	if decoded.Fleet.Summary.AppCount != 2 || decoded.Fleet.Summary.BotCount != 5 || decoded.Fleet.Summary.ActiveBots != 3 || decoded.Fleet.Summary.SuspendedBots != 1 || decoded.Fleet.Summary.DegradedBots != 1 || decoded.Fleet.Summary.TenantCount != 2 || decoded.Fleet.Summary.DomainCount != 5 || decoded.Fleet.Summary.OwnershipTeams != 3 || decoded.Fleet.Summary.ReviewerReadyApps != 2 {
+		t.Fatalf("unexpected clawhost fleet summary: %+v", decoded.Fleet.Summary)
+	}
+	if len(decoded.Fleet.Apps) != 2 || decoded.Fleet.Apps[0].AppID != "clawhost-sales" || len(decoded.Fleet.Bots) != 5 || decoded.Fleet.Bots[2].LifecycleState != "degraded" {
+		t.Fatalf("unexpected clawhost fleet entries: %+v %+v", decoded.Fleet.Apps, decoded.Fleet.Bots)
+	}
+}
+
+func TestV2ControlCenterIncludesClawHostFleetInventorySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5&audit_limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Fleet struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				BotCount     int `json:"bot_count"`
+				ActiveBots   int `json:"active_bots"`
+				DegradedBots int `json:"degraded_bots"`
+				TenantCount  int `json:"tenant_count"`
+				DomainCount  int `json:"domain_count"`
+			} `json:"summary"`
+		} `json:"clawhost_fleet_inventory"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center clawhost fleet payload: %v", err)
+	}
+	if decoded.Fleet.ReportPath != clawHostFleetInventorySurfacePath || decoded.Fleet.Summary.BotCount != 5 || decoded.Fleet.Summary.ActiveBots != 3 || decoded.Fleet.Summary.DegradedBots != 1 || decoded.Fleet.Summary.TenantCount != 2 || decoded.Fleet.Summary.DomainCount != 5 {
+		t.Fatalf("unexpected control center clawhost fleet payload: %+v", decoded.Fleet)
+	}
+}
+
+func TestV2DistributedReportIncludesClawHostFleetInventorySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Fleet struct {
+			ReportPath string `json:"report_path"`
+			Provider   string `json:"provider"`
+			SourceKind string `json:"source_kind"`
+			Summary    struct {
+				BotCount      int `json:"bot_count"`
+				ActiveBots    int `json:"active_bots"`
+				SuspendedBots int `json:"suspended_bots"`
+				DegradedBots  int `json:"degraded_bots"`
+				DomainCount   int `json:"domain_count"`
+			} `json:"summary"`
+		} `json:"clawhost_fleet_inventory"`
+		Report struct {
+			Markdown string `json:"markdown"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed clawhost fleet payload: %v", err)
+	}
+	if decoded.Fleet.ReportPath != clawHostFleetInventorySurfacePath || decoded.Fleet.Provider != "clawhost" || decoded.Fleet.SourceKind != "app_bot_control_plane_inventory" || decoded.Fleet.Summary.BotCount != 5 || decoded.Fleet.Summary.ActiveBots != 3 || decoded.Fleet.Summary.SuspendedBots != 1 || decoded.Fleet.Summary.DegradedBots != 1 || decoded.Fleet.Summary.DomainCount != 5 {
+		t.Fatalf("unexpected distributed clawhost fleet payload: %+v", decoded.Fleet)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "## ClawHost Fleet Inventory") || !strings.Contains(decoded.Report.Markdown, "Source kind: app_bot_control_plane_inventory") || !strings.Contains(decoded.Report.Markdown, "bot bot-sales-c: app=clawhost-sales lifecycle=degraded") {
+		t.Fatalf("expected clawhost fleet markdown section, got %s", decoded.Report.Markdown)
+	}
+}
+
 func TestDebugStatusIncludesClawHostRolloutPlannerSurface(t *testing.T) {
 	server := &Server{
 		Recorder: observability.NewRecorder(),
