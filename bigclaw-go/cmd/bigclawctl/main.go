@@ -1057,6 +1057,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 	queueStatusUpdates := 0
 	queueRecentBatchUpdates := 0
 	queueStatusWritten := false
+	queueStatusSynced := false
 	recentBatchesUpdated := false
 	recentBatchesWritten := false
 	var allIssues []refill.TrackedIssue
@@ -1067,15 +1068,20 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 			return err
 		}
 	}
-	if syncQueueStatus && client.backend() == "local" {
+	if client.backend() == "local" {
 		issueStates := refill.IssueStateMap(allIssues)
-		queueStatusUpdates = queue.SyncStatusFromStates(issueStates)
-		queueRecentBatchUpdates = queue.SyncRecentBatchesFromStates(issueStates)
-		if apply && (queueStatusUpdates > 0 || queueRecentBatchUpdates > 0) {
-			if err := queue.Save(); err != nil {
-				return err
+		queueStatusUpdates = queue.StatusSyncUpdatesForStates(issueStates)
+		queueRecentBatchUpdates = queue.RecentBatchSyncUpdatesForStates(issueStates)
+		queueStatusSynced = queueStatusUpdates == 0
+		if syncQueueStatus {
+			queueStatusUpdates = queue.SyncStatusFromStates(issueStates)
+			queueRecentBatchUpdates = queue.SyncRecentBatchesFromStates(issueStates)
+			if apply && (queueStatusUpdates > 0 || queueRecentBatchUpdates > 0) {
+				if err := queue.Save(); err != nil {
+					return err
+				}
+				queueStatusWritten = true
 			}
-			queueStatusWritten = true
 		}
 	}
 
@@ -1130,7 +1136,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		"recent_batches_synced":      client.backend() == "local",
 		"recent_batches_updated":     recentBatchesUpdated,
 		"recent_batches_written":     recentBatchesWritten,
-		"queue_status_synced":        syncQueueStatus && client.backend() == "local",
+		"queue_status_synced":        queueStatusSynced,
 		"queue_status_updates":       queueStatusUpdates,
 		"queue_recent_batch_updates": queueRecentBatchUpdates,
 		"queue_status_written":       queueStatusWritten,
