@@ -100,11 +100,10 @@
       "BIG-PAR-299",
       "BIG-PAR-300",
       "BIG-PAR-301",
-      "BIG-PAR-302"
-    ],
-    "active": [
+      "BIG-PAR-302",
       "BIG-PAR-303"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -726,7 +725,7 @@
       "identifier": "BIG-PAR-303",
       "title": "Add ClawHost empty-actor export omission coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
