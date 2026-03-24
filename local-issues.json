@@ -3644,6 +3644,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct product regression coverage for RenderClawHostLifecycleRecoveryReport so the zero-bot filtered scorecard path now proves the markdown keeps empty-state recovery summaries and gap sections without depending on expansion endpoint tests.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -run 'TestBuildDefaultClawHostLifecycleRecoveryScorecard|TestBuildDefaultClawHostLifecycleRecoveryScorecardScopesInventory|TestAuditClawHostLifecycleRecoveryScorecardDetectsGaps|TestRenderClawHostLifecycleRecoveryReport|TestRenderClawHostLifecycleRecoveryReportHandlesEmptyBots' -count=1` -> ok\n- `cd bigclaw-go && go test ./internal/api ./internal/product -count=1` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `2fa8f33c6a95ad06e748679e0027f8354fbc29c0` matches remote SHA `2fa8f33c6a95ad06e748679e0027f8354fbc29c0` with `status: ok` and `synced: true`\n\nCommit SHA: `2fa8f33c6a95ad06e748679e0027f8354fbc29c0`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-24T19:57:34Z"
+        }
+      ],
       "created_at": "2026-03-24T19:56:00Z",
       "description": "Add direct unit coverage for RenderClawHostLifecycleRecoveryReport so the zero-bot scoped scorecard path proves the markdown preserves empty-state summary and gap sections without depending on expansion endpoint tests.",
       "id": "big-par-315",
@@ -3656,9 +3663,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add product regression coverage for empty ClawHost recovery reports",
-      "updated_at": "2026-03-24T19:56:00Z"
+      "updated_at": "2026-03-24T19:57:34Z"
     }
   ]
 }
