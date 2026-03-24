@@ -957,6 +957,36 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		}
 	})
 
+	t.Run("rollout planner omits actor from export url", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/rollout-planner?team=platform&project=apollo&actor=query-actor", nil)
+		request.Header.Set("X-BigClaw-Actor", "header-actor")
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected rollout planner 200 with actor inputs, got %d %s", response.Code, response.Body.String())
+		}
+
+		var decoded struct {
+			Report struct {
+				ExportURL string `json:"export_url"`
+			} `json:"report"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("decode rollout actor omission response: %v", err)
+		}
+
+		exportURL, err := url.Parse(decoded.Report.ExportURL)
+		if err != nil {
+			t.Fatalf("parse rollout actor omission export url: %v", err)
+		}
+		if exportURL.Query().Get("actor") != "" {
+			t.Fatalf("expected rollout export url to omit actor, got %s", decoded.Report.ExportURL)
+		}
+		if exportURL.Query().Get("team") != "platform" || exportURL.Query().Get("project") != "apollo" {
+			t.Fatalf("expected rollout export url to preserve team/project filters, got %s", decoded.Report.ExportURL)
+		}
+	})
+
 	t.Run("workflows", func(t *testing.T) {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=platform&project=apollo&actor=alice", nil))
