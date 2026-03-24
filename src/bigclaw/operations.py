@@ -154,6 +154,32 @@ class QueueControlCenter:
     blocked_tasks: List[str] = field(default_factory=list)
     queued_tasks: List[str] = field(default_factory=list)
     actions: Dict[str, List] = field(default_factory=dict)
+    task_heat_ranking: List["TaskHeatRankEntry"] = field(default_factory=list)
+    congestion_locations: List["CongestionLocation"] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class TaskHeatRankEntry:
+    task_id: str
+    heat_score: int
+    queued: bool
+    run_count: int
+    actionable_runs: int
+    latest_status: str
+    priority: str
+    risk_level: str
+    dominant_medium: str
+
+
+@dataclass(frozen=True)
+class CongestionLocation:
+    location: str
+    affected_tasks: int
+    queued_tasks: int
+    actionable_runs: int
+    average_cycle_minutes: float
+    dominant_reason: str
+    dominant_tasks: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -830,6 +856,8 @@ class OperationsAnalytics:
                 )
                 for task in queued_tasks
             },
+            task_heat_ranking=self._build_task_heat_ranking(queued_tasks, runs),
+            congestion_locations=self._build_congestion_locations(queued_tasks, runs),
         )
 
     def build_policy_prompt_version_center(
@@ -1185,6 +1213,120 @@ class OperationsAnalytics:
             )
         return activities
 
+    def _build_task_heat_ranking(
+        self,
+        queued_tasks: Sequence[Task],
+        runs: Sequence[dict],
+        limit: int = 5,
+    ) -> List[TaskHeatRankEntry]:
+        queue_index = {task.task_id: task for task in queued_tasks}
+        task_ids = set(queue_index)
+        for run in runs:
+            task_id = str(run.get("task_id", "")).strip()
+            if task_id:
+                task_ids.add(task_id)
+
+        entries: List[TaskHeatRankEntry] = []
+        for task_id in sorted(task_ids):
+            related_runs = [run for run in runs if str(run.get("task_id", "")).strip() == task_id]
+            actionable_runs = sum(1 for run in related_runs if str(run.get("status", "unknown")) in STATUS_ACTIONABLE)
+            latest_run = max(
+                related_runs,
+                key=lambda run: self._parse_ts(str(run.get("ended_at", "")))
+                or self._parse_ts(str(run.get("started_at", "")))
+                or datetime.min.replace(tzinfo=timezone.utc),
+                default=None,
+            )
+            dominant_medium = self._dominant_value(
+                [self._resolve_location_for_run(run) for run in related_runs],
+                fallback="queue",
+            )
+            queued_task = queue_index.get(task_id)
+            queued = queued_task is not None
+            priority = f"P{int(queued_task.priority)}" if queued_task is not None else "untracked"
+            risk_level = queued_task.risk_level.value if queued_task is not None else "unknown"
+            heat_score = (
+                len(related_runs) * 3
+                + actionable_runs * 4
+                + (2 if queued else 0)
+                + self._priority_weight(priority)
+                + self._risk_weight(risk_level)
+            )
+            entries.append(
+                TaskHeatRankEntry(
+                    task_id=task_id,
+                    heat_score=heat_score,
+                    queued=queued,
+                    run_count=len(related_runs),
+                    actionable_runs=actionable_runs,
+                    latest_status=str(latest_run.get("status", "queued")) if latest_run is not None else "queued",
+                    priority=priority,
+                    risk_level=risk_level,
+                    dominant_medium=dominant_medium,
+                )
+            )
+
+        return sorted(
+            entries,
+            key=lambda entry: (-entry.heat_score, -entry.actionable_runs, -entry.run_count, entry.task_id),
+        )[:limit]
+
+    def _build_congestion_locations(
+        self,
+        queued_tasks: Sequence[Task],
+        runs: Sequence[dict],
+        limit: int = 5,
+    ) -> List[CongestionLocation]:
+        grouped_runs: Dict[str, List[dict]] = {}
+        for run in runs:
+            location = self._resolve_location_for_run(run)
+            grouped_runs.setdefault(location, []).append(run)
+
+        queue_task_ids = [task.task_id for task in queued_tasks]
+        locations: List[CongestionLocation] = []
+        if queue_task_ids:
+            locations.append(
+                CongestionLocation(
+                    location="queue",
+                    affected_tasks=len(queue_task_ids),
+                    queued_tasks=len(queue_task_ids),
+                    actionable_runs=0,
+                    average_cycle_minutes=0.0,
+                    dominant_reason="queued tasks awaiting execution",
+                    dominant_tasks=queue_task_ids[:3],
+                )
+            )
+
+        for location, location_runs in grouped_runs.items():
+            cycle_minutes = [minutes for minutes in (self._cycle_minutes(run) for run in location_runs) if minutes is not None]
+            actionable_runs = sum(
+                1 for run in location_runs if str(run.get("status", "unknown")) in STATUS_ACTIONABLE
+            )
+            task_ids = sorted(
+                {
+                    str(run.get("task_id", "")).strip()
+                    for run in location_runs
+                    if str(run.get("task_id", "")).strip()
+                }
+            )
+            reasons = [self._primary_reason(run) for run in location_runs]
+            locations.append(
+                CongestionLocation(
+                    location=location,
+                    affected_tasks=len(task_ids),
+                    queued_tasks=sum(1 for task in queued_tasks if task.task_id in task_ids),
+                    actionable_runs=actionable_runs,
+                    average_cycle_minutes=round(sum(cycle_minutes) / len(cycle_minutes), 1) if cycle_minutes else 0.0,
+                    dominant_reason=self._dominant_value(reasons, fallback="unknown"),
+                    dominant_tasks=task_ids[:3],
+                )
+            )
+
+        return sorted(
+            locations,
+            key=lambda entry: (-entry.actionable_runs, -entry.queued_tasks, -entry.affected_tasks, entry.location),
+        )[:limit]
+
     def _permissions_for_role(self, viewer_role: str) -> EngineeringOverviewPermission:
         role = viewer_role.strip().lower() or "contributor"
         modules_by_role = {
@@ -1210,6 +1352,35 @@ class OperationsAnalytics:
         if cluster.occurrences >= 3 or "failed" in cluster.statuses:
             return "high"
         return "medium"
+
+    @staticmethod
+    def _priority_weight(priority: str) -> int:
+        return {"P0": 3, "P1": 2, "P2": 1}.get(priority, 0)
+
+    @staticmethod
+    def _risk_weight(risk_level: str) -> int:
+        return {"high": 3, "medium": 2, "low": 1}.get(risk_level, 0)
+
+    def _resolve_location_for_run(self, run: dict) -> str:
+        medium = str(run.get("medium", "")).strip()
+        if medium:
+            return medium
+        status = str(run.get("status", "")).strip()
+        if status == "needs-approval":
+            return "approval-gate"
+        return "unknown"
+
+    @staticmethod
+    def _dominant_value(values: Sequence[str], fallback: str) -> str:
+        counts: Dict[str, int] = {}
+        for value in values:
+            normalized = str(value).strip()
+            if not normalized:
+                continue
+            counts[normalized] = counts.get(normalized, 0) + 1
+        if not counts:
+            return fallback
+        return sorted(counts.items(), key=lambda item: (-item[1], item[0]))[0][0]
 
     @staticmethod
     def _placements_overlap(left: DashboardWidgetPlacement, right: DashboardWidgetPlacement) -> bool:
@@ -1366,6 +1537,29 @@ def render_queue_control_center(
     if center.blocked_tasks:
         for task_id in center.blocked_tasks:
             lines.append(f"- {task_id}")
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Multi-Task Heat Ranking", ""])
+    if center.task_heat_ranking:
+        for entry in center.task_heat_ranking:
+            lines.append(
+                f"- {entry.task_id}: heat={entry.heat_score} queued={entry.queued} runs={entry.run_count} "
+                f"actionable={entry.actionable_runs} latest={entry.latest_status} priority={entry.priority} "
+                f"risk={entry.risk_level} location={entry.dominant_medium}"
+            )
+    else:
+        lines.append("- None")
+
+    lines.extend(["", "## Congestion Localization", ""])
+    if center.congestion_locations:
+        for location in center.congestion_locations:
+            dominant_tasks = ", ".join(location.dominant_tasks) if location.dominant_tasks else "none"
+            lines.append(
+                f"- {location.location}: tasks={location.affected_tasks} queued={location.queued_tasks} "
+                f"actionable={location.actionable_runs} avg_cycle={location.average_cycle_minutes:.1f}m "
+                f"reason={location.dominant_reason} hottest_tasks={dominant_tasks}"
+            )
     else:
         lines.append("- None")
 

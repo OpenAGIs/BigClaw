@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List, Optional
 
+from bigclaw.models import Priority, RiskLevel, Task
 from bigclaw.evaluation import (
     BenchmarkResult,
     BenchmarkSuiteResult,
@@ -8,7 +9,6 @@ from bigclaw.evaluation import (
     ReplayOutcome,
     ReplayRecord,
 )
-from bigclaw.models import Task
 from bigclaw.observability import TaskRun
 from bigclaw.operations import (
     DashboardBuilder,
@@ -23,12 +23,14 @@ from bigclaw.operations import (
     render_engineering_overview,
     render_operations_dashboard,
     render_policy_prompt_version_center,
+    render_queue_control_center,
     render_regression_center,
     render_weekly_operations_report,
     write_dashboard_builder_bundle,
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
+from bigclaw.queue import PersistentTaskQueue
 from bigclaw.reports import SharedViewContext, SharedViewFilter
 from bigclaw.scheduler import ExecutionRecord, SchedulerDecision
 
@@ -118,6 +120,22 @@ def make_versioned_artifact(
         summary=summary,
         content=content,
         change_ticket=change_ticket,
+    )
+
+
+def make_task(
+    task_id: str,
+    *,
+    priority: int = 2,
+    risk_level: str = "low",
+) -> Task:
+    return Task(
+        task_id=task_id,
+        source="linear",
+        title=task_id,
+        description="",
+        priority=Priority(priority),
+        risk_level=RiskLevel(risk_level),
     )
 
 
@@ -699,6 +717,85 @@ def test_render_policy_prompt_version_center_supports_shared_view_context() -> N
     assert "Rollback simulation still running." in report
 
 
+def test_queue_control_center_surfaces_heat_ranking_and_congestion(tmp_path: Path) -> None:
+    analytics = OperationsAnalytics()
+    queue = PersistentTaskQueue(str(tmp_path / "queue.json"))
+    queue.enqueue(make_task("BIG-179-A", priority=0, risk_level="high"))
+    queue.enqueue(make_task("BIG-179-B", priority=1, risk_level="medium"))
+    queue.enqueue(make_task("BIG-179-C", priority=2, risk_level="low"))
+    runs = [
+        {
+            **make_run(
+                "run-1",
+                "BIG-179-A",
+                "needs-approval",
+                "2026-03-10T09:00:00Z",
+                "2026-03-10T09:45:00Z",
+                "approval hold",
+                "requires approval for prod deploy",
+            ),
+            "medium": "docker",
+        },
+        {
+            **make_run(
+                "run-2",
+                "BIG-179-A",
+                "failed",
+                "2026-03-10T10:00:00Z",
+                "2026-03-10T10:35:00Z",
+                "tool error",
+                "security scan failed",
+            ),
+            "medium": "docker",
+        },
+        {
+            **make_run(
+                "run-3",
+                "BIG-179-B",
+                "approved",
+                "2026-03-10T11:00:00Z",
+                "2026-03-10T11:20:00Z",
+                "merged",
+                "default low risk path",
+            ),
+            "medium": "browser",
+        },
+        {
+            **make_run(
+                "run-4",
+                "BIG-179-D",
+                "failed",
+                "2026-03-10T12:00:00Z",
+                "2026-03-10T13:10:00Z",
+                "stalled",
+                "browser automation task",
+            ),
+            "medium": "browser",
+        },
+    ]
+
+    center = analytics.build_queue_control_center(queue, runs)
+    report = render_queue_control_center(center)
+
+    assert center.queue_depth == 3
+    assert center.task_heat_ranking[0].task_id == "BIG-179-A"
+    assert center.task_heat_ranking[0].heat_score == 22
+    assert center.task_heat_ranking[0].actionable_runs == 2
+    assert center.task_heat_ranking[0].priority == "P0"
+    assert center.task_heat_ranking[0].risk_level == "high"
+    assert center.task_heat_ranking[0].dominant_medium == "docker"
+    assert center.congestion_locations[0].location == "docker"
+    assert center.congestion_locations[0].average_cycle_minutes == 40.0
+    assert center.congestion_locations[0].dominant_reason == "requires approval for prod deploy"
+    assert center.congestion_locations[0].dominant_tasks == ["BIG-179-A"]
+    assert center.congestion_locations[1].location == "browser"
+    assert center.congestion_locations[1].queued_tasks == 1
+    assert "## Multi-Task Heat Ranking" in report
+    assert "BIG-179-A: heat=22 queued=True runs=2 actionable=2 latest=failed priority=P0 risk=high location=docker" in report
+    assert "## Congestion Localization" in report
+    assert "browser: tasks=2 queued=1 actionable=1 avg_cycle=45.0m reason=browser automation task hottest_tasks=BIG-179-B, BIG-179-D" in report
+
+
 def test_write_weekly_operations_bundle_emits_expected_reports(tmp_path: Path) -> None:
     analytics = OperationsAnalytics()
     runs = [
@@ -736,10 +833,14 @@ def test_write_weekly_operations_bundle_emits_expected_reports(tmp_path: Path) -
             ),
         ]
     )
+    queue = PersistentTaskQueue(str(tmp_path / "weekly" / "queue.json"))
+    queue.enqueue(make_task("BIG-905-2", priority=0, risk_level="high"))
+    queue_control_center = analytics.build_queue_control_center(queue, runs)
     artifacts = write_weekly_operations_bundle(
         str(tmp_path / "weekly"),
         weekly_report,
         regression_center=regression_center,
+        queue_control_center=queue_control_center,
         version_center=version_center,
     )
 
@@ -747,11 +848,14 @@ def test_write_weekly_operations_bundle_emits_expected_reports(tmp_path: Path) -
     assert Path(artifacts.dashboard_path).exists()
     assert artifacts.regression_center_path is not None
     assert Path(artifacts.regression_center_path).exists()
+    assert artifacts.queue_control_path is not None
+    assert Path(artifacts.queue_control_path).exists()
     assert artifacts.version_center_path is not None
     assert Path(artifacts.version_center_path).exists()
     assert "# Weekly Operations Report" in Path(artifacts.weekly_report_path).read_text()
     assert "# Operations Dashboard" in Path(artifacts.dashboard_path).read_text()
     assert "# Regression Analysis Center" in Path(artifacts.regression_center_path).read_text()
+    assert "## Multi-Task Heat Ranking" in Path(artifacts.queue_control_path).read_text()
     assert "# Policy/Prompt Version Center" in Path(artifacts.version_center_path).read_text()
 
 
