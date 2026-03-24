@@ -1173,3 +1173,182 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 		}
 	})
 }
+
+func TestV2ClawHostExpansionEndpointsHandleDefaultUnscopedReports(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+	}
+	handler := server.Handler()
+
+	type surfaceExpectation struct {
+		responseField       string
+		reportNeedles       []string
+		exportNeedles       []string
+		expectedBareExport  string
+		expectedActorFilter string
+	}
+
+	for _, tc := range []struct {
+		name         string
+		path         string
+		exportPath   string
+		surfaceField string
+		expectation  surfaceExpectation
+	}{
+		{
+			name:         "fleet",
+			path:         "/v2/clawhost/fleet",
+			exportPath:   "/v2/clawhost/fleet/export",
+			surfaceField: "inventory",
+			expectation: surfaceExpectation{
+				responseField:      "inventory",
+				expectedBareExport: "/v2/clawhost/fleet/export",
+				reportNeedles: []string{
+					"# ClawHost Fleet Inventory & Control Plane Report",
+					"## Filters",
+					"- project: none",
+					"- team: none",
+				},
+				exportNeedles: []string{
+					"platform-release-bot",
+					"Control Plane Ready: true",
+					"## Filters",
+					"- project: none",
+					"- team: none",
+				},
+			},
+		},
+		{
+			name:         "rollout planner",
+			path:         "/v2/clawhost/rollout-planner",
+			exportPath:   "/v2/clawhost/rollout-planner/export",
+			surfaceField: "plan",
+			expectation: surfaceExpectation{
+				responseField:      "plan",
+				expectedBareExport: "/v2/clawhost/rollout-planner/export",
+				reportNeedles: []string{
+					"# ClawHost Rollout Planner",
+					"## Filters",
+					"- project: none",
+					"- team: none",
+				},
+				exportNeedles: []string{
+					"apps=clawhost-app",
+					"Tenant Ring 1",
+					"- project: none",
+					"- team: none",
+				},
+			},
+		},
+		{
+			name:         "workflows",
+			path:         "/v2/clawhost/workflows",
+			exportPath:   "/v2/clawhost/workflows/export",
+			surfaceField: "surface",
+			expectation: surfaceExpectation{
+				responseField:       "surface",
+				expectedBareExport:  "/v2/clawhost/workflows/export",
+				expectedActorFilter: "workflow-operator",
+				reportNeedles: []string{
+					"# ClawHost Workflow Surface",
+					"## Filters",
+					"- actor: workflow-operator",
+					"- project: none",
+					"- team: none",
+				},
+				exportNeedles: []string{
+					"owner=workflow-operator",
+					"## Operational Signals",
+					"- actor: workflow-operator",
+					"- provider_tagged_tasks: 0",
+				},
+			},
+		},
+		{
+			name:         "recovery scorecard",
+			path:         "/v2/clawhost/recovery-scorecard",
+			exportPath:   "/v2/clawhost/recovery-scorecard/export",
+			surfaceField: "scorecard",
+			expectation: surfaceExpectation{
+				responseField:      "scorecard",
+				expectedBareExport: "/v2/clawhost/recovery-scorecard/export",
+				reportNeedles: []string{
+					"# ClawHost Lifecycle Recovery Scorecard",
+					"## Filters",
+					"- project: none",
+					"- team: none",
+				},
+				exportNeedles: []string{
+					"Recoverable Bots: 2/2",
+					"platform-release-bot",
+					"- project: none",
+					"- team: none",
+				},
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, tc.path, nil))
+			if response.Code != http.StatusOK {
+				t.Fatalf("expected %s endpoint 200, got %d %s", tc.name, response.Code, response.Body.String())
+			}
+
+			var decoded map[string]any
+			if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+				t.Fatalf("decode %s response: %v", tc.name, err)
+			}
+
+			surface, ok := decoded[tc.surfaceField].(map[string]any)
+			if !ok {
+				t.Fatalf("expected %s payload in response, got %+v", tc.surfaceField, decoded)
+			}
+			filters, ok := surface["filters"].(map[string]any)
+			if !ok {
+				t.Fatalf("expected %s filters in response, got %+v", tc.surfaceField, surface)
+			}
+			if got := strings.TrimSpace(fmt.Sprint(filters["team"])); got != "" {
+				t.Fatalf("expected empty default team filter for %s, got %+v", tc.name, filters)
+			}
+			if got := strings.TrimSpace(fmt.Sprint(filters["project"])); got != "" {
+				t.Fatalf("expected empty default project filter for %s, got %+v", tc.name, filters)
+			}
+			if tc.expectation.expectedActorFilter != "" && strings.TrimSpace(fmt.Sprint(filters["actor"])) != tc.expectation.expectedActorFilter {
+				t.Fatalf("expected default actor filter %q for %s, got %+v", tc.expectation.expectedActorFilter, tc.name, filters)
+			}
+
+			report, ok := decoded["report"].(map[string]any)
+			if !ok {
+				t.Fatalf("expected report in %s response, got %+v", tc.name, decoded)
+			}
+			exportURL := strings.TrimSpace(fmt.Sprint(report["export_url"]))
+			if exportURL != tc.expectation.expectedBareExport {
+				t.Fatalf("expected bare export URL %q for %s, got %q", tc.expectation.expectedBareExport, tc.name, exportURL)
+			}
+			markdown := fmt.Sprint(report["markdown"])
+			for _, want := range tc.expectation.reportNeedles {
+				if !strings.Contains(markdown, want) {
+					t.Fatalf("expected %s report markdown to contain %q, got %s", tc.name, want, markdown)
+				}
+			}
+
+			exportResponse := httptest.NewRecorder()
+			handler.ServeHTTP(exportResponse, httptest.NewRequest(http.MethodGet, tc.exportPath, nil))
+			if exportResponse.Code != http.StatusOK {
+				t.Fatalf("expected %s export 200, got %d %s", tc.name, exportResponse.Code, exportResponse.Body.String())
+			}
+			if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+				t.Fatalf("expected markdown export content type for %s, got %q", tc.name, contentType)
+			}
+			exportBody := exportResponse.Body.String()
+			for _, want := range tc.expectation.exportNeedles {
+				if !strings.Contains(exportBody, want) {
+					t.Fatalf("expected %s export to contain %q, got %s", tc.name, want, exportBody)
+				}
+			}
+		})
+	}
+}

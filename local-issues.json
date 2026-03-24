@@ -4435,6 +4435,24 @@
       "state": "Done",
       "title": "Add policy surface empty-state unit coverage",
       "updated_at": "2026-03-24T22:07:38Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T22:10:36Z",
+      "description": "Add a focused API regression test covering the unscoped/default ClawHost expansion endpoints so response filters remain empty, export URLs stay bare, and rendered markdown keeps the default none-filter fallback without leaking scoped query params.",
+      "id": "big-par-347",
+      "identifier": "BIG-PAR-347",
+      "labels": [
+        "go",
+        "clawhost",
+        "api",
+        "parallel",
+        "test"
+      ],
+      "priority": 3,
+      "state": "In",
+      "title": "ClawHost expansion endpoints preserve default unscoped reports",
+      "updated_at": "2026-03-24T22:10:36Z"
     }
   ]
 }
