@@ -140,6 +140,30 @@ func TestBuildSavedViewCatalogUnscopedBaseline(t *testing.T) {
 	}
 }
 
+func TestBuildSavedViewCatalogBaselineFieldContracts(t *testing.T) {
+	catalog := BuildSavedViewCatalog(nil, "alice", "", "")
+	index := map[string]SavedView{}
+	for _, view := range catalog.Views {
+		index[view.ViewID] = view
+	}
+
+	if !index["active-runs"].Pinned || !index["active-runs"].IsDefault || index["active-runs"].SortBy != "priority:asc,updated_at:desc" {
+		t.Fatalf("unexpected active-runs baseline contract: %+v", index["active-runs"])
+	}
+	if !index["blocked-runs"].Pinned || index["blocked-runs"].SortBy != "updated_at:desc" {
+		t.Fatalf("unexpected blocked-runs baseline contract: %+v", index["blocked-runs"])
+	}
+	if !index["triage-inbox"].Pinned || index["triage-inbox"].SortBy != "severity:desc,updated_at:desc" {
+		t.Fatalf("unexpected triage-inbox baseline contract: %+v", index["triage-inbox"])
+	}
+	if !index["regressions"].Pinned || index["regressions"].SortBy != "severity:desc,updated_at:desc" {
+		t.Fatalf("unexpected regressions baseline contract: %+v", index["regressions"])
+	}
+	if index["weekly-ops"].Pinned || index["weekly-ops"].IsDefault || index["weekly-ops"].SortBy != "week_end:desc" {
+		t.Fatalf("unexpected weekly-ops baseline contract: %+v", index["weekly-ops"])
+	}
+}
+
 func TestBuildSavedViewCatalogProjectScoped(t *testing.T) {
 	tasks := []domain.Task{
 		{ID: "task-1", State: domain.TaskRunning, Metadata: map[string]string{"owner": "alice"}},

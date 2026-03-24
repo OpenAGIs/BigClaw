@@ -149,7 +149,9 @@
       "BIG-PAR-352",
       "BIG-PAR-351"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-353"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -282,7 +284,8 @@
     "BIG-PAR-347",
     "BIG-PAR-349",
     "BIG-PAR-352",
-    "BIG-PAR-351"
+    "BIG-PAR-351",
+    "BIG-PAR-353"
   ],
   "issues": [
     {
@@ -1094,6 +1097,12 @@
       "title": "Add saved view catalog ordering coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-353",
+      "title": "Add saved view baseline field coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
