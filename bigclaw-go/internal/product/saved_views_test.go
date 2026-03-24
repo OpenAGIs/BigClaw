@@ -114,6 +114,21 @@ func TestBuildSavedViewRouteEncodesScopedFilters(t *testing.T) {
 	}
 }
 
+func TestBuildSavedViewRouteOmitsBlankScopedFilters(t *testing.T) {
+	if route := buildSavedViewRoute("/v2/control-center", "   ", ""); route != "/v2/control-center" {
+		t.Fatalf("expected base route when scoped filters are blank, got %s", route)
+	}
+
+	route := buildSavedViewRoute("/v2/control-center", "  platform  ", "   ")
+	parsed, err := url.Parse(route)
+	if err != nil {
+		t.Fatalf("parse trimmed saved view route: %v", err)
+	}
+	if parsed.Path != "/v2/control-center" || parsed.Query().Get("team") != "platform" || parsed.Query().Get("project") != "" {
+		t.Fatalf("expected trimmed team-only route, got %s", route)
+	}
+}
+
 func TestViewScopeSuffixSanitizesReservedCharacters(t *testing.T) {
 	suffix := viewScopeSuffix("Platform & Ops", "apollo/mobile")
 	if suffix != "-platform-ops-apollo-mobile" {

@@ -226,7 +226,8 @@
     "BIG-PAR-328",
     "BIG-PAR-329",
     "BIG-PAR-330",
-    "BIG-PAR-331"
+    "BIG-PAR-331",
+    "BIG-PAR-332"
   ],
   "issues": [
     {
@@ -930,6 +931,12 @@
       "title": "Add savedViewScopeToken helper coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-332",
+      "title": "Add buildSavedViewRoute blank-scope coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

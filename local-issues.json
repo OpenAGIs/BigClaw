@@ -3956,6 +3956,23 @@
       "state": "Done",
       "title": "Add savedViewScopeToken helper coverage",
       "updated_at": "2026-03-25T22:10:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct helper-level coverage for buildSavedViewRoute so whitespace-only team/project filters are omitted and the base route is returned without a query string when no scoped filters remain.",
+      "id": "big-par-332",
+      "identifier": "BIG-PAR-332",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add buildSavedViewRoute blank-scope coverage"
     }
   ]
 }
