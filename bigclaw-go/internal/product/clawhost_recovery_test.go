@@ -87,3 +87,22 @@ func TestRenderClawHostLifecycleRecoveryReport(t *testing.T) {
 		}
 	}
 }
+
+func TestRenderClawHostLifecycleRecoveryReportHandlesEmptyBots(t *testing.T) {
+	scorecard := BuildDefaultClawHostLifecycleRecoveryScorecard("support", "phoenix")
+	audit := AuditClawHostLifecycleRecoveryScorecard(scorecard)
+	report := RenderClawHostLifecycleRecoveryReport(scorecard, audit)
+
+	for _, want := range []string{
+		"# ClawHost Lifecycle Recovery Scorecard",
+		"Recoverable Bots: 0/0",
+		"## Per-Bot Isolation",
+		"Missing lifecycle coverage: none",
+		"Bots missing isolation: none",
+		"Degraded bots: none",
+	} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in empty recovery report, got %s", want, report)
+		}
+	}
+}
