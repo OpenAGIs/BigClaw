@@ -49,8 +49,8 @@ longer waits on Linear to keep issue execution moving.
 
 - Current repo tranche status as of March 24, 2026:
   - active slices: none
-  - standby slices: `BIG-PAR-287` — Add ClawHost fleet inventory and control-plane source; `BIG-PAR-288` — Add parallel ClawHost rollout planner; `BIG-PAR-289` — Add ClawHost skills channels and device approval workflows; `BIG-PAR-290` — Add ClawHost provider defaults and tenant policy surfaces; `BIG-PAR-291` — Add ClawHost proxy subdomain and admin validation lane
-  - recently completed slices: `BIG-PAR-278` — Add production corpus coverage regression surface; `BIG-PAR-279` — Add subscriber takeover proof regression surface; `BIG-PAR-280` — Add durability rollout review bundle regression surface; `BIG-PAR-283` — Add provider live handoff isolation regression coverage; `BIG-PAR-282` — Add sequence and retention surface regression coverage; `BIG-PAR-284` — Refactor control center response assembly; `BIG-PAR-285` — Refactor distributed diagnostics builders; `BIG-PAR-286` — Refactor worker runtime RunOnce flow
+  - standby slices: `BIG-PAR-287` — Add ClawHost fleet inventory and control-plane source; `BIG-PAR-289` — Add ClawHost skills channels and device approval workflows; `BIG-PAR-290` — Add ClawHost provider defaults and tenant policy surfaces; `BIG-PAR-291` — Add ClawHost proxy subdomain and admin validation lane; `BIG-PAR-292` — Add parallel ClawHost rollout planner
+  - recently completed slices: `BIG-PAR-279` — Add subscriber takeover proof regression surface; `BIG-PAR-280` — Add durability rollout review bundle regression surface; `BIG-PAR-283` — Add provider live handoff isolation regression coverage; `BIG-PAR-282` — Add sequence and retention surface regression coverage; `BIG-PAR-284` — Refactor control center response assembly; `BIG-PAR-285` — Refactor distributed diagnostics builders; `BIG-PAR-286` — Refactor worker runtime RunOnce flow; `BIG-PAR-288` — Refactor run list and detail response assembly
   - queue status: `queue_runnable=5`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
@@ -125,6 +125,7 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-284` — Refactor control center response assembly
   - `BIG-PAR-285` — Refactor distributed diagnostics builders
   - `BIG-PAR-286` — Refactor worker runtime RunOnce flow
+  - `BIG-PAR-288` — Refactor run list and detail response assembly
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -205,3 +206,4 @@ longer waits on Linear to keep issue execution moving.
 70. `BIG-PAR-289`
 71. `BIG-PAR-290`
 72. `BIG-PAR-291`
+73. `BIG-PAR-292`
