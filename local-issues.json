@@ -3216,6 +3216,24 @@
       "state": "Done",
       "title": "Add aggregate control-center regression for ClawHost surface bundle",
       "updated_at": "2026-03-24T18:12:31Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T18:28:41Z",
+      "description": "Add a reviewer-facing markdown report and export lane for the ClawHost policy surface so tenant/app provider defaults, drift posture, and prioritized review items can be exported alongside the existing JSON control-center policy payload.",
+      "id": "big-par-298",
+      "identifier": "BIG-PAR-298",
+      "labels": [
+        "go",
+        "clawhost",
+        "api",
+        "reporting",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add ClawHost policy report and export surface",
+      "updated_at": "2026-03-24T18:28:41Z"
     }
   ]
 }

@@ -31,21 +31,7 @@ func (s *Server) handleV2ControlCenterPolicy(w http.ResponseWriter, r *http.Requ
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
-	store := s.schedulerPolicyStore()
-	writeJSON(w, http.StatusOK, map[string]any{
-		"authorization":     authorization,
-		"policy":            store.Snapshot(),
-		"fairness":          s.schedulerRuntime().FairnessSnapshot(),
-		"clawhost":          clawHostPolicySurfacePayload(s.clawHostPolicyTasks(r.Context())),
-		"backend":           store.Backend(),
-		"shared":            store.Shared(),
-		"source_path":       store.SourcePath(),
-		"shared_path":       store.SharedPath(),
-		"updated_at":        store.UpdatedAt(),
-		"reload_supported":  store.HasSource(),
-		"reload_authorized": canReloadSchedulerPolicy(authorization.Role),
-		"reload_url":        "/v2/control-center/policy/reload",
-	})
+	writeJSON(w, http.StatusOK, s.controlCenterPolicyPayload(r, authorization, false))
 }
 
 func (s *Server) handleV2ControlCenterPolicyReload(w http.ResponseWriter, r *http.Request) {
@@ -71,18 +57,51 @@ func (s *Server) handleV2ControlCenterPolicyReload(w http.ResponseWriter, r *htt
 		http.Error(w, fmt.Sprintf("reload scheduler policy: %v", err), http.StatusInternalServerError)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
-		"authorization": authorization,
-		"reloaded":      true,
-		"policy":        store.Snapshot(),
-		"fairness":      s.schedulerRuntime().FairnessSnapshot(),
-		"clawhost":      clawHostPolicySurfacePayload(s.clawHostPolicyTasks(r.Context())),
-		"backend":       store.Backend(),
-		"shared":        store.Shared(),
-		"source_path":   store.SourcePath(),
-		"shared_path":   store.SharedPath(),
-		"updated_at":    store.UpdatedAt(),
-	})
+	writeJSON(w, http.StatusOK, s.controlCenterPolicyPayload(r, authorization, true))
+}
+
+func (s *Server) handleV2ControlCenterPolicyExport(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	authorization := parseControlAuthorization(r, "", "", "")
+	if err := authorization.validateScope(); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+	surface := clawHostPolicySurfacePayload(s.clawHostPolicyTasks(r.Context()))
+	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+	w.Header().Set("Content-Disposition", `attachment; filename="clawhost-policy-surface.md"`)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(renderClawHostPolicySurfaceReport(surface)))
+}
+
+func (s *Server) controlCenterPolicyPayload(r *http.Request, authorization ControlAuthorization, reloaded bool) map[string]any {
+	store := s.schedulerPolicyStore()
+	surface := clawHostPolicySurfacePayload(s.clawHostPolicyTasks(r.Context()))
+	payload := map[string]any{
+		"authorization":     authorization,
+		"policy":            store.Snapshot(),
+		"fairness":          s.schedulerRuntime().FairnessSnapshot(),
+		"clawhost":          surface,
+		"backend":           store.Backend(),
+		"shared":            store.Shared(),
+		"source_path":       store.SourcePath(),
+		"shared_path":       store.SharedPath(),
+		"updated_at":        store.UpdatedAt(),
+		"reload_supported":  store.HasSource(),
+		"reload_authorized": canReloadSchedulerPolicy(authorization.Role),
+		"reload_url":        "/v2/control-center/policy/reload",
+		"report": map[string]any{
+			"markdown":   renderClawHostPolicySurfaceReport(surface),
+			"export_url": "/v2/control-center/policy/export",
+		},
+	}
+	if reloaded {
+		payload["reloaded"] = true
+	}
+	return payload
 }
 
 func canReloadSchedulerPolicy(role ControlRole) bool {

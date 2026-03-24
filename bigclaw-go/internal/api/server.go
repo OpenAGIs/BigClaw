@@ -258,6 +258,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/v2/control-center/audit", s.handleV2ControlCenterAudit)
 	mux.HandleFunc("/v2/control-center/actions", s.handleV2ControlCenterAction)
 	mux.HandleFunc("/v2/control-center/policy", s.handleV2ControlCenterPolicy)
+	mux.HandleFunc("/v2/control-center/policy/export", s.handleV2ControlCenterPolicyExport)
 	mux.HandleFunc("/v2/control-center/policy/reload", s.handleV2ControlCenterPolicyReload)
 	mux.Handle("/internal/scheduler/fairness/", http.StripPrefix("/internal/scheduler/fairness", s.schedulerRuntime().FairnessServiceHandler()))
 	mux.HandleFunc("/v2/reports/weekly", s.handleV2WeeklyReport)

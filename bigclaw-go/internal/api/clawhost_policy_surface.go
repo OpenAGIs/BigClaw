@@ -2,7 +2,9 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"sort"
+	"strings"
 
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/policy"
@@ -129,4 +131,32 @@ func sortedKeys(values map[string]struct{}) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+func renderClawHostPolicySurfaceReport(surface clawHostPolicySurface) string {
+	var out strings.Builder
+	out.WriteString("# ClawHost Policy Surface\n\n")
+	out.WriteString(fmt.Sprintf("- Status: `%s`\n", surface.Status))
+	out.WriteString(fmt.Sprintf("- Active policies: `%d`\n", surface.Summary.ActivePolicies))
+	out.WriteString(fmt.Sprintf("- Active tenants: `%d`\n", surface.Summary.ActiveTenants))
+	out.WriteString(fmt.Sprintf("- Active apps: `%d`\n", surface.Summary.ActiveApps))
+	out.WriteString(fmt.Sprintf("- Review required: `%d`\n", surface.Summary.ReviewRequired))
+	out.WriteString(fmt.Sprintf("- Takeover required: `%d`\n", surface.Summary.TakeoverRequired))
+	out.WriteString(fmt.Sprintf("- Out-of-policy defaults: `%d`\n", surface.Summary.OutOfPolicyDefaults))
+	out.WriteString(fmt.Sprintf("- Blocked defaults: `%d`\n", surface.Summary.BlockedDefaults))
+	if len(surface.ObservedProviders) > 0 {
+		out.WriteString(fmt.Sprintf("- Observed providers: `%s`\n", strings.Join(surface.ObservedProviders, "`, `")))
+	}
+	out.WriteString("\n## Review Queue\n\n")
+	if len(surface.ReviewQueue) == 0 {
+		out.WriteString("No active ClawHost tenant policy reviews.\n")
+		return out.String()
+	}
+	for _, item := range surface.ReviewQueue {
+		out.WriteString(fmt.Sprintf("- `%s` tenant `%s` app `%s` provider `%s` drift `%s`\n", item.TaskID, item.TenantID, item.AppID, item.ProviderDefault, item.DriftStatus))
+		if item.Reason != "" {
+			out.WriteString(fmt.Sprintf("  - Reason: %s\n", item.Reason))
+		}
+	}
+	return out.String()
 }
