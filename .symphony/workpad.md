@@ -28,3 +28,4 @@
 - `git push origin symphony/BIGCLAW-176` -> pushed `symphony/BIGCLAW-176` to `origin`
 - `python3 -m pytest tests/test_audit_events.py -k canonical` -> `2 passed, 3 deselected in 0.06s`
 - `python3 -m pytest tests/test_audit_events.py` -> `5 passed in 0.06s`
+- `python3 -m pytest tests/test_orchestration.py tests/test_reports.py tests/test_audit_events.py` -> `45 passed in 0.09s`
