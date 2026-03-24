@@ -3671,7 +3671,13 @@
     },
     {
       "assigned_to_worker": true,
-      "comments": [],
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-320` after adding task-scope coverage for distributed-export attachment filenames.\n\nWhat changed:\n- `bigclaw-go/internal/api/server_test.go` now proves `/v2/reports/distributed/export` emits `attachment; filename=\"bigclaw-distributed-diagnostics-task-scope-edge.md\"` when both `team` and `project` are absent and the scoped `task_id` contains spaces, slashes, and punctuation.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-320` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `dcf1c9a7f806495756aea3b91c57133140eda4ce` matches remote SHA `dcf1c9a7f806495756aea3b91c57133140eda4ce` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `dcf1c9a7f806495756aea3b91c57133140eda4ce`\n\nCommit SHA: `dcf1c9a7f806495756aea3b91c57133140eda4ce`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T20:11:52Z"
+        }
+      ],
       "created_at": "2026-03-25T00:00:00Z",
       "description": "Add direct distributed-export regression coverage proving the sanitized attachment filename uses task_id scope safely when team and project are absent and the task identifier contains punctuation and separators.",
       "id": "big-par-320",
@@ -3683,8 +3689,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
-      "title": "Add distributed export task-scope filename sanitization coverage"
+      "state": "Done",
+      "title": "Add distributed export task-scope filename sanitization coverage",
+      "updated_at": "2026-03-24T20:11:52Z"
     }
   ]
 }

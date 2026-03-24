@@ -852,7 +852,7 @@
       "identifier": "BIG-PAR-320",
       "title": "Add distributed export task-scope filename sanitization coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
