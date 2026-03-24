@@ -71,6 +71,30 @@ func TestAuditClawHostLifecycleRecoveryScorecardDetectsGaps(t *testing.T) {
 	}
 }
 
+func TestAuditClawHostLifecycleRecoveryScorecardHandlesEmptyScorecard(t *testing.T) {
+	scorecard := BuildDefaultClawHostLifecycleRecoveryScorecard("", "")
+	scorecard.Lifecycle = nil
+	scorecard.Bots = nil
+	scorecard.Summary = ClawHostLifecycleRecoverySummary{}
+
+	audit := AuditClawHostLifecycleRecoveryScorecard(scorecard)
+	if audit.ScorecardID != scorecard.ScorecardID || audit.Version != scorecard.Version {
+		t.Fatalf("expected audit metadata to mirror empty scorecard, got %+v", audit)
+	}
+	if audit.ReadinessScore != 0 {
+		t.Fatalf("expected empty recovery scorecard readiness score to stay zero, got %+v", audit)
+	}
+	if audit.ReleaseReady {
+		t.Fatalf("expected empty recovery scorecard to stay not release ready, got %+v", audit)
+	}
+	if got := strings.Join(audit.MissingLifecycleActions, ","); got != "create,delete,restart,start,stop,upgrade" {
+		t.Fatalf("expected empty recovery scorecard to report all missing lifecycle actions, got %+v", audit)
+	}
+	if len(audit.BotsMissingIsolation) != 0 || len(audit.BotsMissingTakeover) != 0 || len(audit.BotsMissingEvidence) != 0 || len(audit.DegradedBots) != 0 {
+		t.Fatalf("expected empty recovery scorecard to have no bot-specific gaps, got %+v", audit)
+	}
+}
+
 func TestRenderClawHostLifecycleRecoveryReport(t *testing.T) {
 	scorecard := BuildDefaultClawHostLifecycleRecoveryScorecard("platform", "apollo")
 	audit := AuditClawHostLifecycleRecoveryScorecard(scorecard)
