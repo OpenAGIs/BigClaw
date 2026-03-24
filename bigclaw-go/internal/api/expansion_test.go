@@ -1483,4 +1483,18 @@ func TestClawHostExportURL(t *testing.T) {
 			t.Fatalf("expected export url without encoded whitespace, got %s", exportURL)
 		}
 	})
+
+	t.Run("omits blank team and project while preserving actor", func(t *testing.T) {
+		exportURL := clawHostExportURL("/v2/clawhost/workflows/export", "   ", "", " actor-only ")
+		parsed, err := url.Parse(exportURL)
+		if err != nil {
+			t.Fatalf("parse actor-only export url: %v", err)
+		}
+		if parsed.Query().Get("actor") != "actor-only" {
+			t.Fatalf("expected actor-only export url to preserve actor, got %s", exportURL)
+		}
+		if parsed.Query().Get("team") != "" || parsed.Query().Get("project") != "" {
+			t.Fatalf("expected actor-only export url to omit blank team/project, got %s", exportURL)
+		}
+	})
 }
