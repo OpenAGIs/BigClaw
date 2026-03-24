@@ -136,7 +136,8 @@
       "BIG-PAR-335",
       "BIG-PAR-336",
       "BIG-PAR-337",
-      "BIG-PAR-338"
+      "BIG-PAR-338",
+      "BIG-PAR-339"
     ],
     "active": [],
     "standby": []
@@ -1012,7 +1013,7 @@
       "identifier": "BIG-PAR-339",
       "title": "Add policy filter assertions to bundle regressions",
       "track": "Go Mainline Follow-ups",
-      "status": "In"
+      "status": "Done"
     }
   ]
 }
