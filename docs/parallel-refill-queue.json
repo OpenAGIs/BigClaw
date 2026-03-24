@@ -147,7 +147,8 @@
       "BIG-PAR-346",
       "BIG-PAR-347",
       "BIG-PAR-348",
-      "BIG-PAR-349"
+      "BIG-PAR-349",
+      "BIG-PAR-350"
     ],
     "active": [],
     "standby": []
@@ -1100,7 +1101,7 @@
       "identifier": "BIG-PAR-350",
       "title": "Add ClawHost readiness surface unit coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In"
+      "status": "Done"
     }
   ]
 }
