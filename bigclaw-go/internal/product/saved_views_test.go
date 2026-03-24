@@ -113,3 +113,25 @@ func TestBuildSavedViewRouteEncodesScopedFilters(t *testing.T) {
 		t.Fatalf("expected reserved characters to be URL encoded, got %s", route)
 	}
 }
+
+func TestViewScopeSuffixSanitizesReservedCharacters(t *testing.T) {
+	suffix := viewScopeSuffix("Platform & Ops", "apollo/mobile")
+	if suffix != "-platform-ops-apollo-mobile" {
+		t.Fatalf("unexpected sanitized scope suffix: %s", suffix)
+	}
+
+	catalog := BuildSavedViewCatalog(nil, "alice", "Platform & Ops", "apollo/mobile")
+	if len(catalog.Views) == 0 || len(catalog.Subscriptions) == 0 {
+		t.Fatalf("expected views and subscriptions in catalog: %+v", catalog)
+	}
+	for _, view := range catalog.Views {
+		if strings.Contains(view.ViewID, " ") || strings.Contains(view.ViewID, "/") || strings.Contains(view.ViewID, "&") {
+			t.Fatalf("expected sanitized view id, got %s", view.ViewID)
+		}
+	}
+	for _, subscription := range catalog.Subscriptions {
+		if strings.Contains(subscription.SubscriptionID, " ") || strings.Contains(subscription.SubscriptionID, "/") || strings.Contains(subscription.SubscriptionID, "&") {
+			t.Fatalf("expected sanitized subscription id, got %s", subscription.SubscriptionID)
+		}
+	}
+}

@@ -3500,6 +3500,23 @@
       "state": "Done",
       "title": "Encode scoped ClawHost saved-view routes",
       "updated_at": "2026-03-24T19:32:51Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Sanitize Go-owned scoped saved-view identifiers so reserved team and project characters cannot leak into view or subscription IDs, and add regression coverage through the ClawHost-facing API payloads.",
+      "id": "big-par-313",
+      "identifier": "BIG-PAR-313",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Sanitize scoped ClawHost saved-view IDs"
     }
   ]
 }

@@ -289,6 +289,47 @@ func TestV2ProductizationAndBillingEndpoints(t *testing.T) {
 		t.Fatalf("expected digest subscriptions, got %+v", savedViewsDecoded.Catalog.Subscriptions)
 	}
 
+	specialScopeSavedViewsResponse := httptest.NewRecorder()
+	specialScopeSavedViewsRequest := httptest.NewRequest(http.MethodGet, "/v2/saved-views?team=Platform%20%26%20Ops&project=apollo%2Fmobile&actor=alice", nil)
+	handler.ServeHTTP(specialScopeSavedViewsResponse, specialScopeSavedViewsRequest)
+	if specialScopeSavedViewsResponse.Code != http.StatusOK {
+		t.Fatalf("expected saved views 200 for reserved-character scope, got %d %s", specialScopeSavedViewsResponse.Code, specialScopeSavedViewsResponse.Body.String())
+	}
+	var specialScopeSavedViewsDecoded struct {
+		Catalog struct {
+			Views []struct {
+				ViewID string `json:"view_id"`
+				Route  string `json:"route"`
+			} `json:"views"`
+			Subscriptions []struct {
+				SubscriptionID string `json:"subscription_id"`
+				SavedViewID    string `json:"saved_view_id"`
+			} `json:"subscriptions"`
+		} `json:"catalog"`
+	}
+	if err := json.Unmarshal(specialScopeSavedViewsResponse.Body.Bytes(), &specialScopeSavedViewsDecoded); err != nil {
+		t.Fatalf("decode reserved-character saved views: %v", err)
+	}
+	if len(specialScopeSavedViewsDecoded.Catalog.Views) == 0 || len(specialScopeSavedViewsDecoded.Catalog.Subscriptions) == 0 {
+		t.Fatalf("expected reserved-character scope catalog entries, got %+v", specialScopeSavedViewsDecoded.Catalog)
+	}
+	for _, view := range specialScopeSavedViewsDecoded.Catalog.Views {
+		if strings.Contains(view.ViewID, " ") || strings.Contains(view.ViewID, "/") || strings.Contains(view.ViewID, "&") {
+			t.Fatalf("expected sanitized reserved-character view id, got %s", view.ViewID)
+		}
+		if !strings.Contains(view.Route, "Platform+%26+Ops") || !strings.Contains(view.Route, "apollo%2Fmobile") {
+			t.Fatalf("expected reserved-character route encoding to survive API payload, got %s", view.Route)
+		}
+	}
+	for _, subscription := range specialScopeSavedViewsDecoded.Catalog.Subscriptions {
+		if strings.Contains(subscription.SubscriptionID, " ") || strings.Contains(subscription.SubscriptionID, "/") || strings.Contains(subscription.SubscriptionID, "&") {
+			t.Fatalf("expected sanitized reserved-character subscription id, got %s", subscription.SubscriptionID)
+		}
+		if subscription.SavedViewID == "" {
+			t.Fatalf("expected saved view reference for reserved-character scope subscription, got %+v", subscription)
+		}
+	}
+
 	savedViewsExportResponse := httptest.NewRecorder()
 	handler.ServeHTTP(savedViewsExportResponse, httptest.NewRequest(http.MethodGet, savedViewsDecoded.Report.ExportURL, nil))
 	if savedViewsExportResponse.Code != http.StatusOK {
