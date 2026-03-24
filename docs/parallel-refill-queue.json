@@ -93,7 +93,9 @@
       "BIG-PAR-292"
     ],
     "active": [],
-    "standby": []
+    "standby": [
+      "BIG-PAR-293"
+    ]
   },
   "issue_order": [
     "BIG-GOM-301",
@@ -168,7 +170,8 @@
     "BIG-PAR-289",
     "BIG-PAR-290",
     "BIG-PAR-291",
-    "BIG-PAR-292"
+    "BIG-PAR-292",
+    "BIG-PAR-293"
   ],
   "issues": [
     {
@@ -638,6 +641,12 @@
       "title": "Publish ClawHost control-plane review index",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-293",
+      "title": "Refresh ClawHost control-plane branch against main",
+      "track": "Go Mainline Follow-ups",
+      "status": "Todo"
     }
   ]
 }
