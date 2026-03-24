@@ -1,27 +1,21 @@
-## Codex Workpad
+# BIGCLAW-183
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## Plan
+- Inspect the control-center distributed diagnostics payload and tests to identify the narrowest extension point for cross-node execution visibility.
+- Add a node-aware execution heatmap and anomaly clustering surface to the existing control-center distributed diagnostics response.
+- Cover the new response shape with targeted API tests and keep markdown/export output aligned if the new diagnostics are rendered there.
+- Run targeted Go tests for the touched API package, record exact commands and results, then commit and push the issue branch.
 
-### Plan
+## Acceptance
+- `GET /v2/control-center` returns a cross-node execution heatmap in the distributed diagnostics payload.
+- The new diagnostics expose anomaly clusters derived from node/executor execution patterns and coordination signals.
+- Existing control-center/distributed diagnostics behavior remains intact for current fields.
+- Targeted tests cover the new payload and pass locally.
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+## Validation
+- `cd /Users/openagi/code/bigclaw-workspaces/BIGCLAW-183/bigclaw-go && go test ./internal/api -run 'TestV2ControlCenter(AppliesTimeWindowAndReturnsNodeAwareWorkerPoolSummary|IncludesDistributedDiagnostics)'`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIGCLAW-183/bigclaw-go && go test ./internal/api`
 
-### Acceptance Criteria
-
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
-
-### Validation
-
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
-
-### Notes
-
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+## Results
+- `2026-03-24`: `cd /Users/openagi/code/bigclaw-workspaces/BIGCLAW-183/bigclaw-go && go test -count=1 ./internal/api -run 'TestV2ControlCenter(AppliesTimeWindowAndReturnsNodeAwareWorkerPoolSummary|IncludesDistributedDiagnostics)'` -> `ok  	bigclaw-go/internal/api	3.371s`
+- `2026-03-24`: `cd /Users/openagi/code/bigclaw-workspaces/BIGCLAW-183/bigclaw-go && go test -count=1 ./internal/api` -> `ok  	bigclaw-go/internal/api	5.079s`

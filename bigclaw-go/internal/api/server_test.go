@@ -60,8 +60,8 @@ func (f fakeNodeAwareWorkerPoolStatus) Snapshots() []worker.Status {
 		base = time.Unix(1700003600, 0)
 	}
 	return []worker.Status{
-		{WorkerID: "worker-node-a", NodeID: "node-a", State: "running", CurrentExecutor: domain.ExecutorLocal, LastHeartbeatAt: base.Add(-2 * time.Minute), SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"},
-		{WorkerID: "worker-node-b", NodeID: "node-b", State: "leased", CurrentExecutor: domain.ExecutorKubernetes, LastHeartbeatAt: base.Add(-9 * time.Minute), SuccessfulRuns: 3, LeaseRenewals: 2, LeaseRenewalFailures: 1, LeaseLostRuns: 1, LastResult: "warming"},
+		{WorkerID: "worker-node-a", NodeID: "node-a", State: "running", CurrentTaskID: "task-window-current", CurrentExecutor: domain.ExecutorLocal, LastHeartbeatAt: base.Add(-2 * time.Minute), SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"},
+		{WorkerID: "worker-node-b", NodeID: "node-b", State: "leased", CurrentTaskID: "task-window-current", CurrentExecutor: domain.ExecutorKubernetes, LastHeartbeatAt: base.Add(-9 * time.Minute), SuccessfulRuns: 3, LeaseRenewals: 2, LeaseRenewalFailures: 1, LeaseLostRuns: 1, LastResult: "warming"},
 		{WorkerID: "worker-node-c", NodeID: "node-c", State: "idle", CurrentExecutor: domain.ExecutorRay, LastHeartbeatAt: base.Add(-time.Minute), SuccessfulRuns: 8, LeaseRenewals: 0, LastResult: "idle"},
 	}
 }
@@ -2913,6 +2913,15 @@ func TestV2ControlCenterAppliesTimeWindowAndReturnsNodeAwareWorkerPoolSummary(t 
 			Summary struct {
 				TotalTasks int `json:"total_tasks"`
 			} `json:"summary"`
+			CrossNodeExecutionHeatmap struct {
+				Nodes []string `json:"nodes"`
+				Cells []struct {
+					NodeID      string   `json:"node_id"`
+					Executor    string   `json:"executor"`
+					ActiveTasks int      `json:"active_tasks"`
+					SampleTasks []string `json:"sample_task_ids"`
+				} `json:"cells"`
+			} `json:"cross_node_execution_heatmap"`
 			RolloutReport struct {
 				ExportURL string `json:"export_url"`
 			} `json:"rollout_report"`
@@ -2970,6 +2979,18 @@ func TestV2ControlCenterAppliesTimeWindowAndReturnsNodeAwareWorkerPoolSummary(t 
 	if decoded.DistributedDiagnostics.Summary.TotalTasks != 1 {
 		t.Fatalf("expected distributed diagnostics to honor the same time window, got %+v", decoded.DistributedDiagnostics.Summary)
 	}
+	if len(decoded.DistributedDiagnostics.CrossNodeExecutionHeatmap.Nodes) != 3 {
+		t.Fatalf("expected node-aware heatmap to include all worker nodes, got %+v", decoded.DistributedDiagnostics.CrossNodeExecutionHeatmap)
+	}
+	foundActiveCell := false
+	for _, cell := range decoded.DistributedDiagnostics.CrossNodeExecutionHeatmap.Cells {
+		if cell.NodeID == "node-a" && cell.Executor == "local" {
+			foundActiveCell = cell.ActiveTasks == 1 && len(cell.SampleTasks) == 1 && cell.SampleTasks[0] == "task-window-current"
+		}
+	}
+	if !foundActiveCell {
+		t.Fatalf("expected node-a/local heatmap cell to include the active task, got %+v", decoded.DistributedDiagnostics.CrossNodeExecutionHeatmap.Cells)
+	}
 	if !strings.Contains(decoded.DistributedDiagnostics.RolloutReport.ExportURL, "since=2026-03-23T09%3A30%3A00Z") || !strings.Contains(decoded.DistributedDiagnostics.RolloutReport.ExportURL, "until=2026-03-23T10%3A00%3A00Z") {
 		t.Fatalf("expected distributed export url to retain the time window, got %s", decoded.DistributedDiagnostics.RolloutReport.ExportURL)
 	}
@@ -2992,7 +3013,7 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 			CheckpointInterval: 10 * time.Second,
 		}),
 		Control: controller,
-		Worker:  fakeWorkerPoolStatus{},
+		Worker:  fakeNodeAwareWorkerPoolStatus{now: time.Unix(1700007200, 0)},
 		Now:     func() time.Time { return time.Unix(1700007200, 0) },
 	}
 	handler := server.Handler()
@@ -3016,11 +3037,11 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		{ID: "evt-replayed", Type: domain.EventTaskQueued, TaskID: "diag-local", TraceID: "trace-local", Timestamp: base.Add(8 * time.Second), Payload: map[string]any{"replayed": true}},
 		{ID: "evt-dead-untracked", Type: domain.EventTaskDeadLetter, TaskID: "diag-untracked", TraceID: "trace-untracked", Timestamp: base.Add(9 * time.Second), Payload: map[string]any{"message": "manual dead letter"}},
 		{ID: "evt-lease-acquired", Type: domain.EventSubscriberLeaseAcquired, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(10 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a", "consumer_id": "node-a"}},
-		{ID: "evt-lease-rejected", Type: domain.EventSubscriberLeaseRejected, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(11 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a", "reason": "lease held"}},
-		{ID: "evt-lease-expired", Type: domain.EventSubscriberLeaseExpired, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(12 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a"}},
-		{ID: "evt-takeover-succeeded", Type: domain.EventSubscriberTakeoverSucceeded, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(13 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a"}},
-		{ID: "evt-checkpoint-committed", Type: domain.EventSubscriberCheckpointCommitted, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(14 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a"}},
-		{ID: "evt-checkpoint-rejected", Type: domain.EventSubscriberCheckpointRejected, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(15 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a", "reason": "subscriber checkpoint lease fenced"}},
+		{ID: "evt-lease-rejected", Type: domain.EventSubscriberLeaseRejected, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(11 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a", "consumer_id": "node-b", "attempted_consumer_id": "node-a", "reason": "lease held"}},
+		{ID: "evt-lease-expired", Type: domain.EventSubscriberLeaseExpired, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(12 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a", "expired_consumer_id": "node-b", "takeover_consumer_id": "node-a"}},
+		{ID: "evt-takeover-succeeded", Type: domain.EventSubscriberTakeoverSucceeded, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(13 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a", "consumer_id": "node-a", "previous_consumer_id": "node-b"}},
+		{ID: "evt-checkpoint-committed", Type: domain.EventSubscriberCheckpointCommitted, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(14 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a", "consumer_id": "node-a"}},
+		{ID: "evt-checkpoint-rejected", Type: domain.EventSubscriberCheckpointRejected, TaskID: "diag-k8s", TraceID: "trace-k8s", Timestamp: base.Add(15 * time.Second), Payload: map[string]any{"group_id": "live-g1", "subscriber_id": "sub-a", "consumer_id": "node-a", "attempted_consumer_id": "node-b", "reason": "subscriber checkpoint lease fenced"}},
 	} {
 		recorder.Record(event)
 	}
@@ -3077,6 +3098,28 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 					Count int    `json:"count"`
 				} `json:"takeover_owners"`
 			} `json:"cluster_health"`
+			CrossNodeExecutionHeatmap struct {
+				Nodes       []string `json:"nodes"`
+				Executors   []string `json:"executors"`
+				Transitions []struct {
+					SourceNode  string   `json:"source_node"`
+					TargetNode  string   `json:"target_node"`
+					Interaction string   `json:"interaction"`
+					Executor    string   `json:"executor"`
+					Reason      string   `json:"reason"`
+					Count       int      `json:"count"`
+					TaskIDs     []string `json:"task_ids"`
+				} `json:"transitions"`
+				Notes []string `json:"notes"`
+			} `json:"cross_node_execution_heatmap"`
+			AnomalyClusters []struct {
+				Kind        string   `json:"kind"`
+				Severity    string   `json:"severity"`
+				Summary     string   `json:"summary"`
+				Nodes       []string `json:"nodes"`
+				TaskIDs     []string `json:"task_ids"`
+				Occurrences int      `json:"occurrences"`
+			} `json:"anomaly_clusters"`
 			CoordinationLeader struct {
 				Endpoint      string `json:"endpoint"`
 				ElectionModel string `json:"election_model"`
@@ -3296,6 +3339,48 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	}
 	if len(decoded.Diagnostics.ClusterHealth.TakeoverOwners) == 0 || decoded.Diagnostics.ClusterHealth.TakeoverOwners[0].Key != "alice" {
 		t.Fatalf("expected takeover owner rollup, got %+v", decoded.Diagnostics.ClusterHealth)
+	}
+	if len(decoded.Diagnostics.CrossNodeExecutionHeatmap.Nodes) != 3 || len(decoded.Diagnostics.CrossNodeExecutionHeatmap.Executors) != 3 {
+		t.Fatalf("expected populated cross-node heatmap dimensions, got %+v", decoded.Diagnostics.CrossNodeExecutionHeatmap)
+	}
+	if len(decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions) != 4 {
+		t.Fatalf("expected four cross-node coordination transitions, got %+v", decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions)
+	}
+	if decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[0].SourceNode != "node-a" ||
+		decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[0].TargetNode != "node-b" ||
+		decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[0].Interaction != "lease_rejected" ||
+		decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[0].Executor != "kubernetes" ||
+		decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[0].Count != 1 ||
+		len(decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[0].TaskIDs) != 1 ||
+		decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[0].TaskIDs[0] != "diag-k8s" {
+		t.Fatalf("unexpected first cross-node transition: %+v", decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[0])
+	}
+	if decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[1].SourceNode != "node-b" ||
+		decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[1].TargetNode != "node-a" ||
+		decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[1].Interaction != "checkpoint_rejected" ||
+		decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[1].Count != 1 {
+		t.Fatalf("unexpected second cross-node transition: %+v", decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[1])
+	}
+	if decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[2].SourceNode != "node-b" ||
+		decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[2].TargetNode != "node-a" ||
+		decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[2].Interaction != "lease_expired" ||
+		decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[2].Count != 1 {
+		t.Fatalf("unexpected third cross-node transition: %+v", decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[2])
+	}
+	if decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[3].SourceNode != "node-b" ||
+		decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[3].TargetNode != "node-a" ||
+		decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[3].Interaction != "takeover_succeeded" ||
+		decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[3].Count != 1 {
+		t.Fatalf("unexpected fourth cross-node transition: %+v", decoded.Diagnostics.CrossNodeExecutionHeatmap.Transitions[3])
+	}
+	if len(decoded.Diagnostics.CrossNodeExecutionHeatmap.Notes) == 0 {
+		t.Fatalf("expected heatmap notes, got %+v", decoded.Diagnostics.CrossNodeExecutionHeatmap)
+	}
+	if len(decoded.Diagnostics.AnomalyClusters) < 5 {
+		t.Fatalf("expected node and coordination anomaly clusters, got %+v", decoded.Diagnostics.AnomalyClusters)
+	}
+	if decoded.Diagnostics.AnomalyClusters[0].Severity != "high" {
+		t.Fatalf("expected high severity anomaly ordering, got %+v", decoded.Diagnostics.AnomalyClusters)
 	}
 	if decoded.Diagnostics.CoordinationLeader.Endpoint != coordinationLeaderEndpoint ||
 		decoded.Diagnostics.CoordinationLeader.ElectionModel != "subscriber_lease" ||

@@ -72,6 +72,51 @@ type clusterHealthRollup struct {
 	Notes              []string          `json:"notes"`
 }
 
+type crossNodeExecutionHeatmap struct {
+	Nodes             []string                        `json:"nodes,omitempty"`
+	Executors         []string                        `json:"executors,omitempty"`
+	Cells             []crossNodeExecutionHeatmapCell `json:"cells,omitempty"`
+	Transitions       []crossNodeExecutionTransition  `json:"transitions,omitempty"`
+	TotalInteractions int                             `json:"total_interactions"`
+	Notes             []string                        `json:"notes,omitempty"`
+}
+
+type crossNodeExecutionHeatmapCell struct {
+	NodeID                     string   `json:"node_id"`
+	Executor                   string   `json:"executor"`
+	Health                     string   `json:"health"`
+	TotalWorkers               int      `json:"total_workers"`
+	ActiveWorkers              int      `json:"active_workers"`
+	IdleWorkers                int      `json:"idle_workers"`
+	StaleWorkers               int      `json:"stale_workers"`
+	MissingHeartbeatWorkers    int      `json:"missing_heartbeat_workers"`
+	ActiveTasks                int      `json:"active_tasks"`
+	CapacityUtilizationPercent float64  `json:"capacity_utilization_percent"`
+	SampleTaskIDs              []string `json:"sample_task_ids,omitempty"`
+}
+
+type crossNodeExecutionTransition struct {
+	SourceNode  string   `json:"source_node"`
+	TargetNode  string   `json:"target_node"`
+	Interaction string   `json:"interaction"`
+	Executor    string   `json:"executor,omitempty"`
+	Reason      string   `json:"reason,omitempty"`
+	Count       int      `json:"count"`
+	TaskIDs     []string `json:"task_ids,omitempty"`
+}
+
+type nodeAnomalyCluster struct {
+	ClusterID   string   `json:"cluster_id"`
+	Kind        string   `json:"kind"`
+	Severity    string   `json:"severity"`
+	Summary     string   `json:"summary"`
+	Nodes       []string `json:"nodes,omitempty"`
+	Executors   []string `json:"executors,omitempty"`
+	TaskIDs     []string `json:"task_ids,omitempty"`
+	Signals     []string `json:"signals,omitempty"`
+	Occurrences int      `json:"occurrences"`
+}
+
 type recoveryDiagnostics struct {
 	ActiveTakeovers          int `json:"active_takeovers"`
 	TakeoverEvents           int `json:"takeover_events"`
@@ -165,6 +210,8 @@ type distributedDiagnostics struct {
 	RoutingReasons        []routingReasonSummary                   `json:"routing_reasons"`
 	ExecutorCapacity      []executorCapacityView                   `json:"executor_capacity"`
 	ClusterHealth         clusterHealthRollup                      `json:"cluster_health"`
+	CrossNodeExecution    crossNodeExecutionHeatmap                `json:"cross_node_execution_heatmap"`
+	AnomalyClusters       []nodeAnomalyCluster                     `json:"anomaly_clusters,omitempty"`
 	Recovery              recoveryDiagnostics                      `json:"recovery"`
 	Fairness              fairnessDiagnostics                      `json:"fairness"`
 	CoordinationLeader    any                                      `json:"coordination_leader_election,omitempty"`
@@ -266,6 +313,8 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"routing_reasons":                 diagnostics.RoutingReasons,
 		"executor_capacity":               diagnostics.ExecutorCapacity,
 		"cluster_health":                  diagnostics.ClusterHealth,
+		"cross_node_execution_heatmap":    diagnostics.CrossNodeExecution,
+		"anomaly_clusters":                diagnostics.AnomalyClusters,
 		"recovery":                        diagnostics.Recovery,
 		"fairness":                        diagnostics.Fairness,
 		"coordination_leader_election":    diagnostics.CoordinationLeader,
@@ -348,12 +397,15 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		SaturatedExecutors: capacity.Saturated,
 		Notes:              diagnosticsNotes(summary, capacity.ExecutorCapacity, s.Control.Snapshot()),
 	}
+	crossNodeExecution := s.buildCrossNodeExecutionHeatmap(taskRollup.AssignmentByTask)
 	fairness := buildFairnessDiagnostics(capabilities, eventRollup.CountersByExecutor, eventRollup.TotalRouted)
 	diagnostics := distributedDiagnostics{
 		Summary:               summary,
 		RoutingReasons:        eventRollup.RoutingReasons,
 		ExecutorCapacity:      capacity.ExecutorCapacity,
 		ClusterHealth:         clusterHealth,
+		CrossNodeExecution:    crossNodeExecution,
+		AnomalyClusters:       buildNodeAnomalyClusters(crossNodeExecution),
 		Recovery:              eventRollup.Recovery,
 		Fairness:              fairness,
 		CoordinationLeader:    s.coordinationLeaderElectionPayload(),
@@ -377,6 +429,269 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		ExportURL: distributedExportURL(filters),
 	}
 	return diagnostics
+}
+
+func (s *Server) buildCrossNodeExecutionHeatmap(assignmentByTask map[string]distributedTaskAssignment) crossNodeExecutionHeatmap {
+	heatmap := crossNodeExecutionHeatmap{}
+	now := time.Now()
+	if s.Now != nil {
+		now = s.Now()
+	}
+	pool := s.workerPoolSummary()
+	if pool != nil {
+		heatmap.Nodes = make([]string, 0, len(pool.Nodes))
+		executorSet := make(map[string]struct{})
+		type cellKey struct {
+			nodeID   string
+			executor string
+		}
+		cellIndex := make(map[cellKey]*crossNodeExecutionHeatmapCell)
+		for _, node := range pool.Nodes {
+			heatmap.Nodes = append(heatmap.Nodes, node.NodeID)
+		}
+		for _, status := range pool.Workers {
+			nodeID := firstNonEmpty(strings.TrimSpace(status.NodeID), "unassigned")
+			executorName := firstNonEmpty(string(status.CurrentExecutor), "unassigned")
+			executorSet[executorName] = struct{}{}
+			key := cellKey{nodeID: nodeID, executor: executorName}
+			cell := cellIndex[key]
+			if cell == nil {
+				cell = &crossNodeExecutionHeatmapCell{
+					NodeID:   nodeID,
+					Executor: executorName,
+				}
+				cellIndex[key] = cell
+			}
+			cell.TotalWorkers++
+			switch strings.TrimSpace(status.State) {
+			case "leased", "running":
+				cell.ActiveWorkers++
+			default:
+				cell.IdleWorkers++
+			}
+			if status.LastHeartbeatAt.IsZero() {
+				cell.MissingHeartbeatWorkers++
+			} else if workerHeartbeatAge(now, status) >= workerPoolStaleAfterDuration() {
+				cell.StaleWorkers++
+			}
+			if status.CurrentTaskID != "" {
+				cell.ActiveTasks++
+				if !containsStringValue(cell.SampleTaskIDs, status.CurrentTaskID) {
+					cell.SampleTaskIDs = append(cell.SampleTaskIDs, status.CurrentTaskID)
+				}
+			}
+		}
+		for _, node := range pool.Nodes {
+			for _, item := range node.ExecutorDistribution {
+				executorSet[item.Key] = struct{}{}
+				key := cellKey{nodeID: node.NodeID, executor: item.Key}
+				cell := cellIndex[key]
+				if cell == nil {
+					cell = &crossNodeExecutionHeatmapCell{
+						NodeID:   node.NodeID,
+						Executor: item.Key,
+					}
+					cellIndex[key] = cell
+				}
+				cell.Health = node.Health
+				cell.CapacityUtilizationPercent = node.CapacityUtilizationPercent
+			}
+		}
+		heatmap.Executors = make([]string, 0, len(executorSet))
+		for executorName := range executorSet {
+			heatmap.Executors = append(heatmap.Executors, executorName)
+		}
+		sort.Strings(heatmap.Nodes)
+		sort.Strings(heatmap.Executors)
+		for _, nodeID := range heatmap.Nodes {
+			for _, executorName := range heatmap.Executors {
+				if cell := cellIndex[cellKey{nodeID: nodeID, executor: executorName}]; cell != nil {
+					sort.Strings(cell.SampleTaskIDs)
+					heatmap.Cells = append(heatmap.Cells, *cell)
+				}
+			}
+		}
+	}
+
+	type transitionKey struct {
+		source      string
+		target      string
+		interaction string
+		executor    string
+		reason      string
+	}
+	transitionIndex := make(map[transitionKey]*crossNodeExecutionTransition)
+	for _, event := range s.Recorder.EventsByTask("", 0) {
+		sourceNode, targetNode, interaction, reason := crossNodeTransitionParts(event)
+		if sourceNode == "" || targetNode == "" || sourceNode == targetNode || interaction == "" {
+			continue
+		}
+		executorName := "unassigned"
+		if assignment, ok := assignmentByTask[event.TaskID]; ok && assignment.Executor != "" {
+			executorName = string(assignment.Executor)
+		}
+		key := transitionKey{
+			source:      sourceNode,
+			target:      targetNode,
+			interaction: interaction,
+			executor:    executorName,
+			reason:      reason,
+		}
+		entry := transitionIndex[key]
+		if entry == nil {
+			entry = &crossNodeExecutionTransition{
+				SourceNode:  sourceNode,
+				TargetNode:  targetNode,
+				Interaction: interaction,
+				Executor:    executorName,
+				Reason:      reason,
+			}
+			transitionIndex[key] = entry
+		}
+		entry.Count++
+		heatmap.TotalInteractions++
+		if event.TaskID != "" && !containsStringValue(entry.TaskIDs, event.TaskID) {
+			entry.TaskIDs = append(entry.TaskIDs, event.TaskID)
+		}
+	}
+	for _, item := range transitionIndex {
+		sort.Strings(item.TaskIDs)
+		heatmap.Transitions = append(heatmap.Transitions, *item)
+	}
+	sort.SliceStable(heatmap.Transitions, func(i, j int) bool {
+		if heatmap.Transitions[i].Count == heatmap.Transitions[j].Count {
+			if heatmap.Transitions[i].SourceNode == heatmap.Transitions[j].SourceNode {
+				if heatmap.Transitions[i].TargetNode == heatmap.Transitions[j].TargetNode {
+					return heatmap.Transitions[i].Interaction < heatmap.Transitions[j].Interaction
+				}
+				return heatmap.Transitions[i].TargetNode < heatmap.Transitions[j].TargetNode
+			}
+			return heatmap.Transitions[i].SourceNode < heatmap.Transitions[j].SourceNode
+		}
+		return heatmap.Transitions[i].Count > heatmap.Transitions[j].Count
+	})
+	if len(heatmap.Transitions) == 0 {
+		heatmap.Notes = append(heatmap.Notes, "no cross-node coordination transitions captured for the current slice")
+	} else {
+		busiest := heatmap.Transitions[0]
+		heatmap.Notes = append(heatmap.Notes, fmt.Sprintf("busiest node edge %s -> %s (%s) observed %d time(s)", busiest.SourceNode, busiest.TargetNode, busiest.Interaction, busiest.Count))
+	}
+	if len(heatmap.Cells) == 0 {
+		heatmap.Notes = append(heatmap.Notes, "no node-aware worker capacity data available")
+	}
+	return heatmap
+}
+
+func containsStringValue(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
+}
+
+func crossNodeTransitionParts(event domain.Event) (string, string, string, string) {
+	switch event.Type {
+	case domain.EventSubscriberLeaseRejected:
+		return strings.TrimSpace(eventStringValue(event.Payload, "attempted_consumer_id")), strings.TrimSpace(eventStringValue(event.Payload, "consumer_id")), "lease_rejected", strings.TrimSpace(eventStringValue(event.Payload, "reason"))
+	case domain.EventSubscriberLeaseExpired:
+		return strings.TrimSpace(eventStringValue(event.Payload, "expired_consumer_id")), strings.TrimSpace(eventStringValue(event.Payload, "takeover_consumer_id")), "lease_expired", strings.TrimSpace(eventStringValue(event.Payload, "reason"))
+	case domain.EventSubscriberTakeoverSucceeded:
+		return strings.TrimSpace(eventStringValue(event.Payload, "previous_consumer_id")), strings.TrimSpace(eventStringValue(event.Payload, "consumer_id")), "takeover_succeeded", strings.TrimSpace(eventStringValue(event.Payload, "reason"))
+	case domain.EventSubscriberCheckpointRejected:
+		return strings.TrimSpace(eventStringValue(event.Payload, "attempted_consumer_id")), strings.TrimSpace(eventStringValue(event.Payload, "consumer_id")), "checkpoint_rejected", strings.TrimSpace(eventStringValue(event.Payload, "reason"))
+	default:
+		return "", "", "", ""
+	}
+}
+
+func buildNodeAnomalyClusters(heatmap crossNodeExecutionHeatmap) []nodeAnomalyCluster {
+	clusters := make([]nodeAnomalyCluster, 0)
+	for _, cell := range heatmap.Cells {
+		signals := make([]string, 0, 3)
+		severity := ""
+		if cell.MissingHeartbeatWorkers > 0 || cell.StaleWorkers > 0 {
+			severity = "high"
+			if cell.MissingHeartbeatWorkers > 0 {
+				signals = append(signals, fmt.Sprintf("%d workers missing heartbeat", cell.MissingHeartbeatWorkers))
+			}
+			if cell.StaleWorkers > 0 {
+				signals = append(signals, fmt.Sprintf("%d stale workers", cell.StaleWorkers))
+			}
+		} else if cell.TotalWorkers > 0 && cell.CapacityUtilizationPercent >= 80 {
+			severity = "medium"
+			signals = append(signals, fmt.Sprintf("capacity utilization %.1f%%", cell.CapacityUtilizationPercent))
+		}
+		if severity == "" {
+			continue
+		}
+		occurrences := cell.ActiveWorkers + cell.StaleWorkers + cell.MissingHeartbeatWorkers
+		if occurrences == 0 {
+			occurrences = cell.TotalWorkers
+		}
+		clusters = append(clusters, nodeAnomalyCluster{
+			ClusterID:   fmt.Sprintf("node-%s-%s", cell.NodeID, cell.Executor),
+			Kind:        "node_execution_hotspot",
+			Severity:    severity,
+			Summary:     fmt.Sprintf("%s/%s shows %s pressure", cell.NodeID, cell.Executor, severity),
+			Nodes:       []string{cell.NodeID},
+			Executors:   []string{cell.Executor},
+			TaskIDs:     append([]string(nil), cell.SampleTaskIDs...),
+			Signals:     signals,
+			Occurrences: occurrences,
+		})
+	}
+	for _, transition := range heatmap.Transitions {
+		severity := "medium"
+		kind := "cross_node_coordination"
+		signals := []string{fmt.Sprintf("%s -> %s", transition.SourceNode, transition.TargetNode)}
+		if transition.Reason != "" {
+			signals = append(signals, transition.Reason)
+		}
+		switch transition.Interaction {
+		case "checkpoint_rejected", "lease_rejected":
+			severity = "high"
+			kind = "cross_node_contention"
+		case "lease_expired", "takeover_succeeded":
+			severity = "medium"
+			kind = "cross_node_takeover"
+		}
+		clusters = append(clusters, nodeAnomalyCluster{
+			ClusterID:   fmt.Sprintf("%s-%s-%s", transition.SourceNode, transition.TargetNode, transition.Interaction),
+			Kind:        kind,
+			Severity:    severity,
+			Summary:     fmt.Sprintf("%s between %s and %s", transition.Interaction, transition.SourceNode, transition.TargetNode),
+			Nodes:       []string{transition.SourceNode, transition.TargetNode},
+			Executors:   []string{transition.Executor},
+			TaskIDs:     append([]string(nil), transition.TaskIDs...),
+			Signals:     signals,
+			Occurrences: transition.Count,
+		})
+	}
+	sort.SliceStable(clusters, func(i, j int) bool {
+		leftSeverity := anomalySeverityRank(clusters[i].Severity)
+		rightSeverity := anomalySeverityRank(clusters[j].Severity)
+		if leftSeverity == rightSeverity {
+			if clusters[i].Occurrences == clusters[j].Occurrences {
+				return clusters[i].ClusterID < clusters[j].ClusterID
+			}
+			return clusters[i].Occurrences > clusters[j].Occurrences
+		}
+		return leftSeverity < rightSeverity
+	})
+	return clusters
+}
+
+func anomalySeverityRank(severity string) int {
+	switch severity {
+	case "high":
+		return 0
+	case "medium":
+		return 1
+	default:
+		return 2
+	}
 }
 
 func (s *Server) distributedWorkerRollup() distributedWorkerRollup {
@@ -1018,6 +1333,48 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	if len(diagnostics.ClusterHealth.TakeoverOwners) > 0 {
 		lines = append(lines, "- Takeover owners: "+formatFacetCounts(diagnostics.ClusterHealth.TakeoverOwners))
+	}
+	lines = append(lines, "", "## Cross-Node Execution Heatmap")
+	if len(diagnostics.CrossNodeExecution.Cells) == 0 {
+		lines = append(lines, "- No node-aware execution cells captured")
+	} else {
+		for _, cell := range diagnostics.CrossNodeExecution.Cells {
+			lines = append(lines, fmt.Sprintf("- %s/%s: health=%s total_workers=%d active_workers=%d idle_workers=%d stale_workers=%d missing_heartbeat_workers=%d active_tasks=%d capacity=%.1f%%", cell.NodeID, cell.Executor, firstNonEmpty(cell.Health, "unknown"), cell.TotalWorkers, cell.ActiveWorkers, cell.IdleWorkers, cell.StaleWorkers, cell.MissingHeartbeatWorkers, cell.ActiveTasks, cell.CapacityUtilizationPercent))
+			if len(cell.SampleTaskIDs) > 0 {
+				lines = append(lines, "  - sample tasks: "+strings.Join(cell.SampleTaskIDs, ", "))
+			}
+		}
+	}
+	if len(diagnostics.CrossNodeExecution.Transitions) == 0 {
+		lines = append(lines, "- No cross-node transitions captured")
+	} else {
+		for _, transition := range diagnostics.CrossNodeExecution.Transitions {
+			line := fmt.Sprintf("- %s -> %s: interaction=%s executor=%s count=%d", transition.SourceNode, transition.TargetNode, transition.Interaction, firstNonEmpty(transition.Executor, "unknown"), transition.Count)
+			if transition.Reason != "" {
+				line += " reason=" + transition.Reason
+			}
+			lines = append(lines, line)
+			if len(transition.TaskIDs) > 0 {
+				lines = append(lines, "  - tasks: "+strings.Join(transition.TaskIDs, ", "))
+			}
+		}
+	}
+	if len(diagnostics.CrossNodeExecution.Notes) > 0 {
+		lines = append(lines, "- Notes: "+strings.Join(diagnostics.CrossNodeExecution.Notes, "; "))
+	}
+	lines = append(lines, "", "## Node Anomaly Clusters")
+	if len(diagnostics.AnomalyClusters) == 0 {
+		lines = append(lines, "- No anomaly clusters detected")
+	} else {
+		for _, cluster := range diagnostics.AnomalyClusters {
+			lines = append(lines, fmt.Sprintf("- %s: severity=%s occurrences=%d summary=%s", cluster.Kind, cluster.Severity, cluster.Occurrences, cluster.Summary))
+			if len(cluster.Signals) > 0 {
+				lines = append(lines, "  - signals: "+strings.Join(cluster.Signals, "; "))
+			}
+			if len(cluster.TaskIDs) > 0 {
+				lines = append(lines, "  - tasks: "+strings.Join(cluster.TaskIDs, ", "))
+			}
+		}
 	}
 	if leader, ok := diagnostics.CoordinationLeader.(coordinationLeaderElectionSurface); ok {
 		lines = append(lines,
