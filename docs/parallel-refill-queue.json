@@ -274,7 +274,8 @@
     "BIG-PAR-342",
     "BIG-PAR-343",
     "BIG-PAR-344",
-    "BIG-PAR-345"
+    "BIG-PAR-345",
+    "BIG-PAR-346"
   ],
   "issues": [
     {
@@ -1062,6 +1063,12 @@
       "title": "Pin workflow-lane idle filter maps in regressions",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-346",
+      "title": "Add policy surface empty-state unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In"
     }
   ]
 }

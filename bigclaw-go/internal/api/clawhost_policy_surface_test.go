@@ -4,8 +4,34 @@ import (
 	"strings"
 	"testing"
 
+	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/policy"
 )
+
+func TestClawHostPolicySurfacePayloadHandlesEmptyScope(t *testing.T) {
+	surface := clawHostPolicySurfacePayload([]domain.Task{
+		{
+			ID:     "non-clawhost-task",
+			Source: "github",
+		},
+	}, "", "")
+
+	if surface.Status != "catalog_only" {
+		t.Fatalf("expected catalog-only empty surface, got %+v", surface)
+	}
+	if surface.Filters["team"] != "" || surface.Filters["project"] != "" {
+		t.Fatalf("expected empty policy surface filters, got %+v", surface.Filters)
+	}
+	if surface.Summary.ActivePolicies != 0 || surface.Summary.ActiveTenants != 0 || surface.Summary.ActiveApps != 0 || surface.Summary.ReviewRequired != 0 || surface.Summary.TakeoverRequired != 0 || surface.Summary.OutOfPolicyDefaults != 0 || surface.Summary.BlockedDefaults != 0 {
+		t.Fatalf("expected zeroed policy summary, got %+v", surface.Summary)
+	}
+	if len(surface.ReviewQueue) != 0 || len(surface.ObservedProviders) != 0 {
+		t.Fatalf("expected no policy findings in empty surface, got %+v", surface)
+	}
+	if surface.Catalog.Integration != "clawhost" || !surface.Catalog.ParallelSafe {
+		t.Fatalf("expected catalog metadata to persist in empty surface, got %+v", surface.Catalog)
+	}
+}
 
 func TestRenderClawHostPolicySurfaceReportHandlesEmptyFilters(t *testing.T) {
 	report := renderClawHostPolicySurfaceReport(clawHostPolicySurface{
