@@ -1,6 +1,9 @@
 package intake
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Connector interface {
 	Name() string
@@ -64,10 +67,85 @@ func (JiraConnector) FetchIssues(project string, states []string) ([]SourceIssue
 	}, nil
 }
 
+type ClawHostConnector struct{}
+
+func (ClawHostConnector) Name() string { return "clawhost" }
+
+func (ClawHostConnector) FetchIssues(project string, states []string) ([]SourceIssue, error) {
+	inventory := []SourceIssue{
+		{
+			Source:      "clawhost",
+			SourceID:    fmt.Sprintf("%s/apps/openagi-control/bots/support-router", project),
+			Title:       "support-router bot inventory",
+			Description: "ClawHost control-plane inventory for the support-router bot, including lifecycle, owner, and route metadata.",
+			Labels:      []string{"inventory", "bot", "control-plane", "production"},
+			Priority:    "P1",
+			State:       "Running",
+			Metadata: map[string]string{
+				"provider":           "clawhost",
+				"tenant_id":          project,
+				"app_id":             "app-openagi-control",
+				"app_name":           "openagi-control",
+				"bot_id":             "bot-support-router",
+				"bot_name":           "support-router",
+				"owner":              "platform-ops",
+				"domain":             "support.openagi.example",
+				"lifecycle_state":    "running",
+				"pod_namespace":      "clawhost-openagi",
+				"service_name":       "support-router",
+				"control_plane_kind": "bot",
+			},
+			Links: map[string]string{
+				"issue":         fmt.Sprintf("https://clawhost.example/%s/apps/openagi-control/bots/support-router", project),
+				"control_plane": fmt.Sprintf("https://clawhost.example/%s/apps/openagi-control", project),
+			},
+		},
+		{
+			Source:      "clawhost",
+			SourceID:    fmt.Sprintf("%s/apps/tenant-admin/bots/release-approver", project),
+			Title:       "release-approver bot inventory",
+			Description: "ClawHost control-plane inventory for the release-approver bot, including approval-gated lifecycle and tenant route metadata.",
+			Labels:      []string{"inventory", "bot", "approval"},
+			Priority:    "P2",
+			State:       "Pending Approval",
+			Metadata: map[string]string{
+				"provider":           "clawhost",
+				"tenant_id":          project,
+				"app_id":             "app-tenant-admin",
+				"app_name":           "tenant-admin",
+				"bot_id":             "bot-release-approver",
+				"bot_name":           "release-approver",
+				"owner":              "release-eng",
+				"domain":             "release.openagi.example",
+				"lifecycle_state":    "pending_approval",
+				"pod_namespace":      "clawhost-openagi",
+				"service_name":       "release-approver",
+				"control_plane_kind": "bot",
+			},
+			Links: map[string]string{
+				"issue":         fmt.Sprintf("https://clawhost.example/%s/apps/tenant-admin/bots/release-approver", project),
+				"control_plane": fmt.Sprintf("https://clawhost.example/%s/apps/tenant-admin", project),
+			},
+		},
+	}
+	if len(states) == 0 {
+		return inventory, nil
+	}
+	filtered := make([]SourceIssue, 0, len(inventory))
+	for _, issue := range inventory {
+		if sourceStateMatches(issue.State, states) {
+			filtered = append(filtered, issue)
+		}
+	}
+	return filtered, nil
+}
+
 func ConnectorByName(name string) (Connector, bool) {
 	switch normalizeConnectorName(name) {
 	case "github":
 		return GitHubConnector{}, true
+	case "clawhost":
+		return ClawHostConnector{}, true
 	case "linear":
 		return LinearConnector{}, true
 	case "jira":
@@ -91,4 +169,18 @@ func firstState(states []string) string {
 		}
 	}
 	return string(SourceStatusTodo)
+}
+
+func sourceStateMatches(issueState string, states []string) bool {
+	normalizedIssueState := normalizeSourceStatus(issueState)
+	for _, candidate := range states {
+		normalizedCandidate := normalizeSourceStatus(candidate)
+		if normalizedCandidate == "" {
+			continue
+		}
+		if normalizedIssueState == normalizedCandidate || strings.Contains(normalizedIssueState, normalizedCandidate) || strings.Contains(normalizedCandidate, normalizedIssueState) {
+			return true
+		}
+	}
+	return false
 }

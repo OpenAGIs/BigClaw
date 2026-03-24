@@ -408,6 +408,39 @@ func TestV2IntakeConnectorsMappingAndWorkflowDefinitionRender(t *testing.T) {
 		t.Fatalf("unexpected mapped issue payload: %+v", connectorDecoded)
 	}
 
+	clawhostResponse := httptest.NewRecorder()
+	handler.ServeHTTP(clawhostResponse, httptest.NewRequest(http.MethodGet, "/v2/intake/connectors/clawhost/issues?project=openagi&states=Running", nil))
+	if clawhostResponse.Code != http.StatusOK {
+		t.Fatalf("expected clawhost intake connector 200, got %d %s", clawhostResponse.Code, clawhostResponse.Body.String())
+	}
+	var clawhostDecoded struct {
+		Connector string `json:"connector"`
+		Issues    []struct {
+			Source   string            `json:"source"`
+			State    string            `json:"state"`
+			Metadata map[string]string `json:"metadata"`
+		} `json:"issues"`
+		MappedTasks []struct {
+			Source        string            `json:"source"`
+			State         string            `json:"state"`
+			TenantID      string            `json:"tenant_id"`
+			RequiredTools []string          `json:"required_tools"`
+			Metadata      map[string]string `json:"metadata"`
+		} `json:"mapped_tasks"`
+	}
+	if err := json.Unmarshal(clawhostResponse.Body.Bytes(), &clawhostDecoded); err != nil {
+		t.Fatalf("decode clawhost connector response: %v", err)
+	}
+	if clawhostDecoded.Connector != "clawhost" || len(clawhostDecoded.Issues) != 1 || len(clawhostDecoded.MappedTasks) != 1 {
+		t.Fatalf("unexpected clawhost connector payload: %+v", clawhostDecoded)
+	}
+	if clawhostDecoded.Issues[0].Source != "clawhost" || clawhostDecoded.Issues[0].Metadata["domain"] == "" || clawhostDecoded.MappedTasks[0].State != "running" || clawhostDecoded.MappedTasks[0].TenantID != "openagi" {
+		t.Fatalf("unexpected clawhost mapped issue payload: %+v", clawhostDecoded)
+	}
+	if len(clawhostDecoded.MappedTasks[0].RequiredTools) != 1 || clawhostDecoded.MappedTasks[0].RequiredTools[0] != "clawhost" {
+		t.Fatalf("unexpected clawhost required tools: %+v", clawhostDecoded.MappedTasks[0].RequiredTools)
+	}
+
 	mapBody, _ := json.Marshal(map[string]any{
 		"source":      "linear",
 		"source_id":   "BIG-102",
