@@ -4043,6 +4043,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added scoped `filters` to the nested ClawHost policy surface so the control-center policy JSON now preserves the same team/project context as the other scoped ClawHost surfaces and the policy markdown export. Updated the policy runtime/report path to render from the surface-owned filter context and added focused policy endpoint regression coverage for the new JSON shape.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api -run TestV2ControlCenterPolicyEndpoints -count=1` -> ok\n- `cd bigclaw-go && go test ./internal/api ./internal/product -count=1` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `87edce797a644d59baf109444ee9713e30490afe` matches remote SHA `87edce797a644d59baf109444ee9713e30490afe` with `status: ok` and `synced: true`\n- `git log -1 --stat --oneline` -> `87edce7 feat(api): add filters to policy surface` with `bigclaw-go/internal/api/clawhost_policy_surface.go`, `bigclaw-go/internal/api/policy_runtime.go`, `bigclaw-go/internal/api/server.go`, `bigclaw-go/internal/api/v2.go`, `bigclaw-go/internal/api/server_test.go`, `docs/parallel-refill-queue.json`, and `local-issues.json`\n\nCommit SHA: `87edce797a644d59baf109444ee9713e30490afe`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-24T21:15:48Z"
+        }
+      ],
       "created_at": "2026-03-24T21:12:48Z",
       "description": "Add scoped team/project filters to the nested ClawHost policy surface so the control-center policy JSON stays consistent with the other scoped ClawHost surfaces and the markdown export context.",
       "id": "big-par-331",
@@ -4054,9 +4061,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add filters to ClawHost policy surface payload",
-      "updated_at": "2026-03-24T21:12:48Z"
+      "updated_at": "2026-03-24T21:15:48Z"
     }
   ]
 }
