@@ -98,7 +98,9 @@
       "BIG-PAR-297",
       "BIG-PAR-298"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-299"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -180,7 +182,8 @@
     "BIG-PAR-295",
     "BIG-PAR-296",
     "BIG-PAR-297",
-    "BIG-PAR-298"
+    "BIG-PAR-298",
+    "BIG-PAR-299"
   ],
   "issues": [
     {
@@ -686,6 +689,12 @@
       "title": "Add ClawHost endpoint method-guard regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-299",
+      "title": "Add ClawHost scope-filter normalization regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

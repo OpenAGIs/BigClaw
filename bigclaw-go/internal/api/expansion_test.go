@@ -1060,6 +1060,42 @@ func TestV2ClawHostExpansionEndpoints(t *testing.T) {
 			t.Fatalf("expected workflow export body to include header actor fallback owner, got %s", exportResponse.Body.String())
 		}
 	})
+
+	t.Run("workflows scope normalization", func(t *testing.T) {
+		request := httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=%20platform%20&project=%20apollo%20&actor=%20query-actor%20", nil)
+		request.Header.Set("X-BigClaw-Actor", "header-actor")
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected workflows endpoint 200 with normalized scope filters, got %d %s", response.Code, response.Body.String())
+		}
+
+		var decoded struct {
+			Surface struct {
+				Filters map[string]string `json:"filters"`
+			} `json:"surface"`
+			Report struct {
+				ExportURL string `json:"export_url"`
+			} `json:"report"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("decode normalized workflow scope response: %v", err)
+		}
+		if decoded.Surface.Filters["team"] != "platform" || decoded.Surface.Filters["project"] != "apollo" || decoded.Surface.Filters["actor"] != "query-actor" {
+			t.Fatalf("expected normalized workflow filters with query actor precedence, got %+v", decoded.Surface.Filters)
+		}
+
+		workflowExportURL, err := url.Parse(decoded.Report.ExportURL)
+		if err != nil {
+			t.Fatalf("parse normalized workflow export url: %v", err)
+		}
+		if workflowExportURL.Query().Get("team") != "platform" || workflowExportURL.Query().Get("project") != "apollo" || workflowExportURL.Query().Get("actor") != "query-actor" {
+			t.Fatalf("expected normalized export url with query actor precedence, got %s", decoded.Report.ExportURL)
+		}
+		if strings.Contains(decoded.Report.ExportURL, "%20") {
+			t.Fatalf("expected normalized export url without encoded whitespace, got %s", decoded.Report.ExportURL)
+		}
+	})
 }
 
 func TestClawHostReportAndExpansionSurfacesCoexist(t *testing.T) {

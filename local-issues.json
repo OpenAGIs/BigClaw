@@ -3205,6 +3205,18 @@
       "state": "Done",
       "title": "Add ClawHost endpoint method-guard regression coverage",
       "updated_at": "2026-03-24T18:12:39Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T18:18:00Z",
+      "description": "Add API regression coverage that proves ClawHost workflow scope parsing trims whitespace, prefers the actor query parameter over X-BigClaw-Actor, and emits normalized export URLs.",
+      "id": "big-par-299",
+      "identifier": "BIG-PAR-299",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add ClawHost scope-filter normalization regression coverage",
+      "updated_at": "2026-03-24T18:18:23Z"
     }
   ]
 }
