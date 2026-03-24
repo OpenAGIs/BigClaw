@@ -43,3 +43,44 @@ func TestRenderDashboardRunContractReport(t *testing.T) {
 		}
 	}
 }
+
+func TestContractPathExistsTraversesNestedObjectsAndLists(t *testing.T) {
+	payload := map[string]any{
+		"closeout": map[string]any{
+			"commits": []map[string]any{
+				{"sha": "abc123", "files": []any{"a.go", "b.go"}},
+			},
+			"checks": []any{
+				map[string]any{"name": "unit", "status": "ok"},
+			},
+		},
+	}
+
+	if !contractPathExists(payload, "closeout.commits[].sha") {
+		t.Fatal("expected path through []map[string]any to exist")
+	}
+	if !contractPathExists(payload, "closeout.checks[].status") {
+		t.Fatal("expected path through []any list to exist")
+	}
+	if contractPathExists(payload, "closeout.commits[].author") {
+		t.Fatal("expected missing nested key to report false")
+	}
+	if contractPathExists(payload, "closeout.missing[].status") {
+		t.Fatal("expected missing list key to report false")
+	}
+}
+
+func TestDashboardContractFormattingHelpers(t *testing.T) {
+	if got := fallbackJoin(nil); got != "none" {
+		t.Fatalf("fallbackJoin(nil) = %q, want %q", got, "none")
+	}
+	if got := fallbackJoin([]string{"zulu", "alpha", "alpha"}); got != "alpha, alpha, zulu" {
+		t.Fatalf("fallbackJoin sorts values = %q, want %q", got, "alpha, alpha, zulu")
+	}
+	if got := boolText(true); got != "true" {
+		t.Fatalf("boolText(true) = %q, want %q", got, "true")
+	}
+	if got := boolText(false); got != "false" {
+		t.Fatalf("boolText(false) = %q, want %q", got, "false")
+	}
+}
