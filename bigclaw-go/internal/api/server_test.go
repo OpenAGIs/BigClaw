@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -73,6 +74,10 @@ func containsString(values []string, want string) bool {
 		}
 	}
 	return false
+}
+
+func nearlyEqual(got, want float64) bool {
+	return math.Abs(got-want) < 1e-9
 }
 
 type blockingEventLog struct {
@@ -3576,9 +3581,15 @@ func TestV2ControlCenterIncludesAdmissionPolicySummary(t *testing.T) {
 	}
 	var decoded struct {
 		AdmissionPolicy struct {
-			PolicyMode       string   `json:"policy_mode"`
-			Enforced         bool     `json:"enforced"`
-			EvidenceSources  []string `json:"evidence_sources"`
+			PolicyMode           string   `json:"policy_mode"`
+			Enforced             bool     `json:"enforced"`
+			EvidenceSources      []string `json:"evidence_sources"`
+			CrossBatchComparison struct {
+				Basis                 string `json:"basis"`
+				DefaultLane           string `json:"default_lane"`
+				HighestThroughputLane string `json:"highest_throughput_lane"`
+				LowestCostLane        string `json:"lowest_cost_lane"`
+			} `json:"cross_batch_comparison"`
 			RecommendedLanes []struct {
 				Name                  string  `json:"name"`
 				MaxQueuedTasks        int     `json:"max_queued_tasks"`
@@ -3603,6 +3614,79 @@ func TestV2ControlCenterIncludesAdmissionPolicySummary(t *testing.T) {
 	}
 	if decoded.AdmissionPolicy.RecommendedLanes[0].Name != "recommended-local-sustained" || decoded.AdmissionPolicy.RecommendedLanes[0].MaxQueuedTasks != 1000 || decoded.AdmissionPolicy.RecommendedLanes[0].SubmitWorkers != 24 || decoded.AdmissionPolicy.RecommendedLanes[0].ObservedThroughputTPS != 9.607 {
 		t.Fatalf("unexpected sustained admission lane in control center payload: %+v", decoded.AdmissionPolicy.RecommendedLanes[0])
+	}
+	if decoded.AdmissionPolicy.CrossBatchComparison.Basis != "worker_seconds_cost_proxy" || decoded.AdmissionPolicy.CrossBatchComparison.DefaultLane != "1000x24" {
+		t.Fatalf("unexpected cross-batch comparison summary: %+v", decoded.AdmissionPolicy.CrossBatchComparison)
+	}
+	if decoded.AdmissionPolicy.CrossBatchComparison.HighestThroughputLane != "100x12" || decoded.AdmissionPolicy.CrossBatchComparison.LowestCostLane != "100x12" {
+		t.Fatalf("unexpected cross-batch comparison ranking summary: %+v", decoded.AdmissionPolicy.CrossBatchComparison)
+	}
+}
+
+func TestV2ControlCenterIncludesCrossBatchThroughputAndCostComparison(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		AdmissionPolicy struct {
+			CrossBatchComparison struct {
+				Basis                 string   `json:"basis"`
+				DefaultLane           string   `json:"default_lane"`
+				CeilingLane           string   `json:"ceiling_lane"`
+				HighestThroughputLane string   `json:"highest_throughput_lane"`
+				LowestCostLane        string   `json:"lowest_cost_lane"`
+				Notes                 []string `json:"notes"`
+				Lanes                 []struct {
+					Lane                        string  `json:"lane"`
+					OperatingEnvelope           string  `json:"operating_envelope"`
+					MaxQueuedTasks              int     `json:"max_queued_tasks"`
+					SubmitWorkers               int     `json:"submit_workers"`
+					Succeeded                   int     `json:"succeeded"`
+					ElapsedSeconds              float64 `json:"elapsed_seconds"`
+					ThroughputTasksPerSec       float64 `json:"throughput_tasks_per_sec"`
+					TotalWorkerSecondsCost      float64 `json:"total_worker_seconds_cost"`
+					WorkerSecondsCostPerTask    float64 `json:"worker_seconds_cost_per_task"`
+					ThroughputDeltaPctVsDefault float64 `json:"throughput_delta_pct_vs_default"`
+					CostDeltaPctVsDefault       float64 `json:"cost_delta_pct_vs_default"`
+				} `json:"lanes"`
+			} `json:"cross_batch_comparison"`
+		} `json:"admission_policy_summary"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center cross-batch payload: %v", err)
+	}
+	comparison := decoded.AdmissionPolicy.CrossBatchComparison
+	if comparison.Basis != "worker_seconds_cost_proxy" || comparison.DefaultLane != "1000x24" || comparison.CeilingLane != "2000x24" {
+		t.Fatalf("unexpected cross-batch comparison envelope metadata: %+v", comparison)
+	}
+	if comparison.HighestThroughputLane != "100x12" || comparison.LowestCostLane != "100x12" {
+		t.Fatalf("unexpected cross-batch comparison rankings: %+v", comparison)
+	}
+	if len(comparison.Notes) != 2 {
+		t.Fatalf("expected cross-batch comparison notes, got %+v", comparison.Notes)
+	}
+	if len(comparison.Lanes) != 4 {
+		t.Fatalf("expected 4 cross-batch lanes, got %+v", comparison.Lanes)
+	}
+	if comparison.Lanes[0].Lane != "50x8" || !nearlyEqual(comparison.Lanes[0].TotalWorkerSecondsCost, 65.856) || !nearlyEqual(comparison.Lanes[0].WorkerSecondsCostPerTask, 1.31712) {
+		t.Fatalf("unexpected bootstrap batch comparison lane: %+v", comparison.Lanes[0])
+	}
+	if comparison.Lanes[2].Lane != "1000x24" || !nearlyEqual(comparison.Lanes[2].ThroughputDeltaPctVsDefault, 0) || !nearlyEqual(comparison.Lanes[2].CostDeltaPctVsDefault, 0) {
+		t.Fatalf("unexpected default batch comparison lane: %+v", comparison.Lanes[2])
+	}
+	if comparison.Lanes[3].Lane != "2000x24" || !nearlyEqual(comparison.Lanes[3].TotalWorkerSecondsCost, 5260.008) || !nearlyEqual(comparison.Lanes[3].WorkerSecondsCostPerTask, 2.630004) || !nearlyEqual(comparison.Lanes[3].CostDeltaPctVsDefault, 5.276632946172111) {
+		t.Fatalf("unexpected ceiling batch comparison lane: %+v", comparison.Lanes[3])
 	}
 }
 

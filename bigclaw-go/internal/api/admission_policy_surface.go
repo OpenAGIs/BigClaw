@@ -14,21 +14,22 @@ const (
 )
 
 type admissionPolicySurface struct {
-	ReportPath         string                    `json:"report_path"`
-	MatrixPath         string                    `json:"matrix_path"`
-	GeneratedAt        string                    `json:"generated_at,omitempty"`
-	Ticket             string                    `json:"ticket,omitempty"`
-	Title              string                    `json:"title,omitempty"`
-	Status             string                    `json:"status,omitempty"`
-	PolicyMode         string                    `json:"policy_mode"`
-	Enforced           bool                      `json:"enforced"`
-	EvidenceSources    []string                  `json:"evidence_sources,omitempty"`
-	Summary            admissionPolicySummary    `json:"summary"`
-	RecommendedLanes   []admissionPolicyLane     `json:"recommended_lanes,omitempty"`
-	SupportingEvidence []admissionPolicyEvidence `json:"supporting_evidence,omitempty"`
-	Saturation         admissionPolicySaturation `json:"saturation"`
-	Limitations        []string                  `json:"limitations,omitempty"`
-	Error              string                    `json:"error,omitempty"`
+	ReportPath           string                              `json:"report_path"`
+	MatrixPath           string                              `json:"matrix_path"`
+	GeneratedAt          string                              `json:"generated_at,omitempty"`
+	Ticket               string                              `json:"ticket,omitempty"`
+	Title                string                              `json:"title,omitempty"`
+	Status               string                              `json:"status,omitempty"`
+	PolicyMode           string                              `json:"policy_mode"`
+	Enforced             bool                                `json:"enforced"`
+	EvidenceSources      []string                            `json:"evidence_sources,omitempty"`
+	Summary              admissionPolicySummary              `json:"summary"`
+	RecommendedLanes     []admissionPolicyLane               `json:"recommended_lanes,omitempty"`
+	CrossBatchComparison admissionPolicyCrossBatchComparison `json:"cross_batch_comparison"`
+	SupportingEvidence   []admissionPolicyEvidence           `json:"supporting_evidence,omitempty"`
+	Saturation           admissionPolicySaturation           `json:"saturation"`
+	Limitations          []string                            `json:"limitations,omitempty"`
+	Error                string                              `json:"error,omitempty"`
 }
 
 type admissionPolicySummary struct {
@@ -57,6 +58,31 @@ type admissionPolicyEvidence struct {
 	Status        string   `json:"status,omitempty"`
 	Detail        string   `json:"detail,omitempty"`
 	EvidenceLanes []string `json:"evidence_lanes,omitempty"`
+}
+
+type admissionPolicyCrossBatchComparison struct {
+	Basis                 string                           `json:"basis,omitempty"`
+	DefaultLane           string                           `json:"default_lane,omitempty"`
+	CeilingLane           string                           `json:"ceiling_lane,omitempty"`
+	HighestThroughputLane string                           `json:"highest_throughput_lane,omitempty"`
+	LowestCostLane        string                           `json:"lowest_cost_lane,omitempty"`
+	Lanes                 []admissionPolicyBatchComparison `json:"lanes,omitempty"`
+	Notes                 []string                         `json:"notes,omitempty"`
+}
+
+type admissionPolicyBatchComparison struct {
+	Lane                        string  `json:"lane"`
+	OperatingEnvelope           string  `json:"operating_envelope,omitempty"`
+	Status                      string  `json:"status,omitempty"`
+	MaxQueuedTasks              int     `json:"max_queued_tasks,omitempty"`
+	SubmitWorkers               int     `json:"submit_workers,omitempty"`
+	Succeeded                   int     `json:"succeeded,omitempty"`
+	ElapsedSeconds              float64 `json:"elapsed_seconds,omitempty"`
+	ThroughputTasksPerSec       float64 `json:"throughput_tasks_per_sec,omitempty"`
+	TotalWorkerSecondsCost      float64 `json:"total_worker_seconds_cost,omitempty"`
+	WorkerSecondsCostPerTask    float64 `json:"worker_seconds_cost_per_task,omitempty"`
+	ThroughputDeltaPctVsDefault float64 `json:"throughput_delta_pct_vs_default,omitempty"`
+	CostDeltaPctVsDefault       float64 `json:"cost_delta_pct_vs_default,omitempty"`
 }
 
 type admissionPolicySaturation struct {
@@ -95,7 +121,10 @@ type capacityCertificationDocument struct {
 			Workers int `json:"workers"`
 		} `json:"scenario"`
 		Observed struct {
+			ElapsedSeconds        float64 `json:"elapsed_seconds"`
 			ThroughputTasksPerSec float64 `json:"throughput_tasks_per_sec"`
+			Succeeded             int     `json:"succeeded"`
+			Failed                int     `json:"failed"`
 		} `json:"observed"`
 		OperatingEnvelope string `json:"operating_envelope"`
 		Status            string `json:"status"`
@@ -156,6 +185,7 @@ func admissionPolicySummaryPayload() admissionPolicySurface {
 		AdvisoryNote:                 admissionPolicyAdvisoryNote(document.Limits),
 	}
 	surface.RecommendedLanes = admissionPolicyRecommendedLanes(document)
+	surface.CrossBatchComparison = admissionPolicyCrossBatchComparisonPayload(document)
 	surface.SupportingEvidence = admissionPolicySupportingEvidence(document)
 	surface.Saturation = document.SaturationIndicator
 	return surface
@@ -247,4 +277,94 @@ func admissionPolicySupportingEvidence(document capacityCertificationDocument) [
 		})
 	}
 	return supporting
+}
+
+func admissionPolicyCrossBatchComparisonPayload(document capacityCertificationDocument) admissionPolicyCrossBatchComparison {
+	comparison := admissionPolicyCrossBatchComparison{
+		Basis: "worker_seconds_cost_proxy",
+		Notes: []string{
+			"Cost is expressed as worker-seconds consumed by each checked-in soak lane.",
+			"Worker-second cost is a deterministic proxy for cross-batch efficiency, not a billing-rate estimate.",
+		},
+	}
+
+	defaultLane := ""
+	for _, envelope := range document.OperatingEnvelopes {
+		if envelope.Name == "recommended-local-sustained" && len(envelope.EvidenceLanes) > 0 {
+			defaultLane = strings.TrimSpace(envelope.EvidenceLanes[0])
+			break
+		}
+	}
+	if defaultLane == "" {
+		for _, soakLane := range document.SoakMatrix {
+			if soakLane.OperatingEnvelope == "recommended-local-sustained" {
+				defaultLane = strings.TrimSpace(soakLane.Lane)
+				break
+			}
+		}
+	}
+	comparison.DefaultLane = defaultLane
+	comparison.CeilingLane = strings.TrimSpace(document.SaturationIndicator.CeilingLane)
+
+	defaultThroughput := 0.0
+	defaultCostPerTask := 0.0
+	for _, soakLane := range document.SoakMatrix {
+		if strings.TrimSpace(soakLane.Lane) != defaultLane {
+			continue
+		}
+		defaultThroughput = soakLane.Observed.ThroughputTasksPerSec
+		if soakLane.Observed.Succeeded > 0 {
+			defaultCostPerTask = (soakLane.Observed.ElapsedSeconds * float64(soakLane.Scenario.Workers)) / float64(soakLane.Observed.Succeeded)
+		}
+		break
+	}
+
+	bestThroughput := -1.0
+	bestThroughputLane := ""
+	lowestCost := -1.0
+	lowestCostLane := ""
+	comparison.Lanes = make([]admissionPolicyBatchComparison, 0, len(document.SoakMatrix))
+	for _, soakLane := range document.SoakMatrix {
+		totalWorkerSeconds := soakLane.Observed.ElapsedSeconds * float64(soakLane.Scenario.Workers)
+		costPerTask := 0.0
+		if soakLane.Observed.Succeeded > 0 {
+			costPerTask = totalWorkerSeconds / float64(soakLane.Observed.Succeeded)
+		}
+		lane := admissionPolicyBatchComparison{
+			Lane:                     soakLane.Lane,
+			OperatingEnvelope:        soakLane.OperatingEnvelope,
+			Status:                   soakLane.Status,
+			MaxQueuedTasks:           soakLane.Scenario.Count,
+			SubmitWorkers:            soakLane.Scenario.Workers,
+			Succeeded:                soakLane.Observed.Succeeded,
+			ElapsedSeconds:           soakLane.Observed.ElapsedSeconds,
+			ThroughputTasksPerSec:    soakLane.Observed.ThroughputTasksPerSec,
+			TotalWorkerSecondsCost:   totalWorkerSeconds,
+			WorkerSecondsCostPerTask: costPerTask,
+		}
+		if defaultThroughput > 0 {
+			lane.ThroughputDeltaPctVsDefault = ((lane.ThroughputTasksPerSec - defaultThroughput) / defaultThroughput) * 100
+		}
+		if defaultCostPerTask > 0 {
+			lane.CostDeltaPctVsDefault = ((lane.WorkerSecondsCostPerTask - defaultCostPerTask) / defaultCostPerTask) * 100
+		}
+		comparison.Lanes = append(comparison.Lanes, lane)
+		if lane.ThroughputTasksPerSec > bestThroughput {
+			bestThroughput = lane.ThroughputTasksPerSec
+			bestThroughputLane = lane.Lane
+		}
+		if lowestCost < 0 || lane.WorkerSecondsCostPerTask < lowestCost {
+			lowestCost = lane.WorkerSecondsCostPerTask
+			lowestCostLane = lane.Lane
+		}
+	}
+	sort.Slice(comparison.Lanes, func(i, j int) bool {
+		if comparison.Lanes[i].MaxQueuedTasks == comparison.Lanes[j].MaxQueuedTasks {
+			return comparison.Lanes[i].SubmitWorkers < comparison.Lanes[j].SubmitWorkers
+		}
+		return comparison.Lanes[i].MaxQueuedTasks < comparison.Lanes[j].MaxQueuedTasks
+	})
+	comparison.HighestThroughputLane = bestThroughputLane
+	comparison.LowestCostLane = lowestCostLane
+	return comparison
 }
