@@ -3519,6 +3519,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct product regression coverage for BuildClawHostWorkflowSurface so the shared workflow review builder now proves review-queue ordering across takeover priority, pairing state, and claw-name tiebreaks instead of relying only on higher-level endpoint tests.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -run 'TestBuildClawHostWorkflowSurface|TestBuildClawHostWorkflowSurfaceIgnoresNonClawHostTasksAndUsesFallbackReason|TestBuildClawHostWorkflowSurfaceOrdersReviewQueue' -count=1` -> ok\n- `cd bigclaw-go && go test ./internal/api ./internal/product -count=1` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `38c720c53e83cf11feae25db0b790e17981bf98e` matches remote SHA `38c720c53e83cf11feae25db0b790e17981bf98e` with `status: ok` and `synced: true`\n\nCommit SHA: `38c720c53e83cf11feae25db0b790e17981bf98e`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-24T19:39:32Z"
+        }
+      ],
       "created_at": "2026-03-24T19:37:58Z",
       "description": "Add direct unit coverage for BuildClawHostWorkflowSurface so the review queue ordering across takeover priority, pairing state, and claw-name tiebreaks is locked down independently of higher-level endpoint tests.",
       "id": "big-par-310",
@@ -3531,9 +3538,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add product regression coverage for ClawHost workflow review ordering",
-      "updated_at": "2026-03-24T19:37:58Z"
+      "updated_at": "2026-03-24T19:39:32Z"
     }
   ]
 }
