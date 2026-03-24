@@ -1723,3 +1723,23 @@ func TestClawHostExportURL(t *testing.T) {
 		}
 	})
 }
+
+func TestWeeklyExportURL(t *testing.T) {
+	start := time.Date(2026, 3, 9, 0, 0, 0, 0, time.UTC)
+	end := time.Date(2026, 3, 15, 23, 59, 59, 0, time.UTC)
+
+	exportURL := weeklyExportURL("  Platform & Ops  ", "  apollo/mobile  ", start, end)
+	parsedExportURL, err := url.Parse(exportURL)
+	if err != nil {
+		t.Fatalf("parse weekly export url: %v", err)
+	}
+	if parsedExportURL.Query().Get("team") != "Platform & Ops" || parsedExportURL.Query().Get("project") != "apollo/mobile" {
+		t.Fatalf("expected encoded weekly export scope filters, got %s", exportURL)
+	}
+	if parsedExportURL.Query().Get("week_start") != start.Format(time.RFC3339) || parsedExportURL.Query().Get("week_end") != end.Format(time.RFC3339) {
+		t.Fatalf("expected encoded weekly export window, got %s", exportURL)
+	}
+	if strings.Contains(exportURL, "team=Platform & Ops") || strings.Contains(exportURL, "project=apollo/mobile") {
+		t.Fatalf("expected reserved-character weekly export url to encode scope values, got %s", exportURL)
+	}
+}
