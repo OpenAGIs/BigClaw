@@ -1275,3 +1275,32 @@ func TestClawHostReportAndExpansionSurfacesCoexist(t *testing.T) {
 		t.Fatalf("unexpected workflows expansion export body: %s", workflowsExportResponse.Body.String())
 	}
 }
+
+func TestV2ClawHostEndpointsRejectNonGETMethods(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	handler := server.Handler()
+
+	for _, path := range []string{
+		"/v2/clawhost/fleet",
+		"/v2/clawhost/fleet/export",
+		"/v2/clawhost/rollout-planner?team=platform&project=apollo",
+		"/v2/clawhost/rollout-planner/export?team=platform&project=apollo",
+		"/v2/clawhost/workflows?team=platform&project=apollo&actor=alice",
+		"/v2/clawhost/workflows/export?team=platform&project=apollo&actor=alice",
+	} {
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, path, nil))
+		if response.Code != http.StatusMethodNotAllowed {
+			t.Fatalf("expected %s to reject POST with 405, got %d %s", path, response.Code, response.Body.String())
+		}
+		if !strings.Contains(response.Body.String(), "method not allowed") {
+			t.Fatalf("expected %s to return method-not-allowed body, got %q", path, response.Body.String())
+		}
+	}
+}

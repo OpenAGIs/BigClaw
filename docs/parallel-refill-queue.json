@@ -97,7 +97,9 @@
       "BIG-PAR-296",
       "BIG-PAR-297"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-298"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -178,7 +180,8 @@
     "BIG-PAR-294",
     "BIG-PAR-295",
     "BIG-PAR-296",
-    "BIG-PAR-297"
+    "BIG-PAR-297",
+    "BIG-PAR-298"
   ],
   "issues": [
     {
@@ -678,6 +681,12 @@
       "title": "Add ClawHost workflow actor-header regression coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-298",
+      "title": "Add ClawHost endpoint method-guard regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
