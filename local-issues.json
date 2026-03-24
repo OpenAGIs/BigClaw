@@ -3269,6 +3269,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Scoped the ClawHost policy, workflow, rollout, readiness, and recovery surfaces in the main `/v2/control-center` payload to the active `team` and `project` filters by reusing one filtered ClawHost task set across the bundle, and added a focused regression proving the filtered control-center response excludes out-of-scope ClawHost tasks across all five surfaces.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenter(IncludesCompleteClawHostSurfaceBundle|ScopesClawHostSurfaceBundleByFilters|IncludesClawHostPolicySurface|IncludesClawHostWorkflowSurface|IncludesClawHostReadinessSurface|IncludesClawHostRolloutSurface|IncludesClawHostRecoverySurface)' -count=1` -> ok\n- `cd bigclaw-go && go test ./internal/api -count=1` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> `active_in_progress=[\"BIG-PAR-300\"]`, `queue_runnable=1`, `queue_status_synced=true`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `f6b36468c9d69ac10bff67e702b1296f4fff4cd7` matches remote SHA `f6b36468c9d69ac10bff67e702b1296f4fff4cd7` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `f6b36468c9d69ac10bff67e702b1296f4fff4cd7`\n\nCommit SHA: `f6b36468c9d69ac10bff67e702b1296f4fff4cd7`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-24T18:50:13Z"
+        }
+      ],
       "created_at": "2026-03-24T18:45:20Z",
       "description": "Scope the ClawHost policy, workflow, rollout, readiness, and recovery surfaces in the main `/v2/control-center` response by the active `team` and `project` filters so the dashboard bundle matches the same filtered task set as the dedicated ClawHost endpoints.",
       "id": "big-par-300",
@@ -3281,9 +3288,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Scope ClawHost control-center surfaces by active filters",
-      "updated_at": "2026-03-24T18:45:20Z"
+      "updated_at": "2026-03-24T18:50:13Z"
     }
   ]
 }
