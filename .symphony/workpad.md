@@ -1,27 +1,20 @@
-## Codex Workpad
+# BIGCLAW-175 Workpad
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## Plan
+1. Inspect the existing Go worker/control and Python queue control-center paths to find the narrowest extension points for host-profile and node-capacity baseline data.
+2. Add scoped baseline structures for host / node / pool capacity on the ClawHost side, using existing runtime node IDs and executor capabilities to aggregate parallel limits.
+3. Surface the aggregated host-profile parallel capacity through the control-facing snapshot/reporting path and extend the BigClaw queue control center so each host type shows supported parallel capacity.
+4. Add focused Go and Python tests proving capacity aggregation and rendered control-center output.
+5. Run targeted validation, then commit and push the issue-scoped branch changes.
 
-### Plan
+## Acceptance
+- Add structures that can describe host, node, and pool capacity.
+- Control center displays the parallel capacity for each host type.
+- Tests prove the parallel capacity aggregation works.
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
-
-### Acceptance Criteria
-
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
-
-### Validation
-
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
-
-### Notes
-
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+## Validation
+- Run targeted Go and Python tests for the new capacity model and control center surface.
+- Planned commands:
+  - `cd bigclaw-go && go test ./internal/worker ./internal/api ./cmd/bigclawd`
+- Record exact commands and results in the final report.
+- Verify the issue branch is committed and pushed to `origin`.

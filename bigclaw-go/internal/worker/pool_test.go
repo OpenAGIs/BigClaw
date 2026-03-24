@@ -176,3 +176,38 @@ func TestPoolSnapshotSummarizesWorkerState(t *testing.T) {
 		t.Fatalf("expected 2 snapshots in pool")
 	}
 }
+
+func TestPoolCapacityBaselineAggregatesHostProfilesPoolsAndNodes(t *testing.T) {
+	workerA := &Runtime{WorkerID: "worker-a", NodeID: "node-a", HostProfile: "clawhost-cpu", PoolID: "shared"}
+	workerA.updateStatus(func(status *Status) {
+		status.State = "running"
+		status.ParallelSlots = 2
+	})
+
+	workerB := &Runtime{WorkerID: "worker-b", NodeID: "node-b", HostProfile: "clawhost-browser", PoolID: "burst"}
+	workerB.updateStatus(func(status *Status) {
+		status.State = "leased"
+		status.ParallelSlots = 3
+	})
+
+	workerC := &Runtime{WorkerID: "worker-c", NodeID: "node-c", HostProfile: "clawhost-browser", PoolID: "burst"}
+	workerC.updateStatus(func(status *Status) {
+		status.State = "idle"
+		status.ParallelSlots = 1
+	})
+
+	baseline := NewPool(workerA, workerB, workerC).CapacityBaseline()
+
+	if baseline.TotalParallelSlots != 6 || baseline.ActiveParallelSlots != 5 || baseline.AvailableParallelSlots != 1 {
+		t.Fatalf("unexpected aggregate capacity baseline: %+v", baseline)
+	}
+	if len(baseline.HostProfiles) != 2 || baseline.HostProfiles[0].HostProfile != "clawhost-browser" || baseline.HostProfiles[0].ParallelSlots != 4 || baseline.HostProfiles[0].AvailableParallelSlots != 1 || baseline.HostProfiles[1].HostProfile != "clawhost-cpu" || baseline.HostProfiles[1].ParallelSlots != 2 {
+		t.Fatalf("unexpected host-profile capacity rollup: %+v", baseline.HostProfiles)
+	}
+	if len(baseline.Pools) != 2 || baseline.Pools[0].PoolID != "burst" || baseline.Pools[0].ParallelSlots != 4 || baseline.Pools[0].HostProfileCount != 1 || baseline.Pools[1].PoolID != "shared" || baseline.Pools[1].ParallelSlots != 2 {
+		t.Fatalf("unexpected pool capacity rollup: %+v", baseline.Pools)
+	}
+	if len(baseline.Nodes) != 3 || baseline.Nodes[0].NodeID != "node-a" || baseline.Nodes[0].ParallelSlots != 2 || baseline.Nodes[1].NodeID != "node-b" || baseline.Nodes[1].ActiveParallelSlots != 3 || baseline.Nodes[2].NodeID != "node-c" || baseline.Nodes[2].AvailableParallelSlots != 1 {
+		t.Fatalf("unexpected node capacity rollup: %+v", baseline.Nodes)
+	}
+}

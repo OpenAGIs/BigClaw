@@ -51,6 +51,8 @@ func TestBuildEventLogRejectsUnimplementedBrokerDriver(t *testing.T) {
 func TestBuildWorkerPoolUsesMaxConcurrentRuns(t *testing.T) {
 	cfg := config.Default()
 	cfg.MaxConcurrentRuns = 3
+	cfg.HostProfile = "clawhost-cpu"
+	cfg.CapacityPool = "shared"
 
 	pool := buildWorkerPool(
 		cfg,
@@ -70,6 +72,9 @@ func TestBuildWorkerPoolUsesMaxConcurrentRuns(t *testing.T) {
 		expectedID := fmt.Sprintf("worker-%d", index+1)
 		if snapshot.WorkerID != expectedID {
 			t.Fatalf("expected worker id %s, got %+v", expectedID, snapshot)
+		}
+		if snapshot.HostProfile != "clawhost-cpu" || snapshot.PoolID != "shared" || snapshot.ParallelSlots != 1 {
+			t.Fatalf("expected host-profile capacity defaults on %s, got %+v", expectedID, snapshot)
 		}
 	}
 }

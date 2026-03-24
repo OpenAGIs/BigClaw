@@ -198,26 +198,32 @@ type controlCenterSummary struct {
 }
 
 type workerPoolSummary struct {
-	TotalWorkers               int                  `json:"total_workers"`
-	ActiveWorkers              int                  `json:"active_workers"`
-	IdleWorkers                int                  `json:"idle_workers"`
-	TotalNodes                 int                  `json:"total_nodes"`
-	ActiveNodes                int                  `json:"active_nodes"`
-	IdleNodes                  int                  `json:"idle_nodes"`
-	DegradedNodes              int                  `json:"degraded_nodes"`
-	CapacityUtilizationPercent float64              `json:"capacity_utilization_percent"`
-	ExecutorDistribution       []auditFacetCount    `json:"executor_distribution,omitempty"`
-	Nodes                      []workerPoolNodeView `json:"nodes,omitempty"`
-	Workers                    []worker.Status      `json:"workers"`
+	TotalWorkers               int                     `json:"total_workers"`
+	ActiveWorkers              int                     `json:"active_workers"`
+	IdleWorkers                int                     `json:"idle_workers"`
+	TotalNodes                 int                     `json:"total_nodes"`
+	ActiveNodes                int                     `json:"active_nodes"`
+	IdleNodes                  int                     `json:"idle_nodes"`
+	DegradedNodes              int                     `json:"degraded_nodes"`
+	CapacityUtilizationPercent float64                 `json:"capacity_utilization_percent"`
+	Capacity                   worker.CapacityBaseline `json:"capacity"`
+	ExecutorDistribution       []auditFacetCount       `json:"executor_distribution,omitempty"`
+	Nodes                      []workerPoolNodeView    `json:"nodes,omitempty"`
+	Workers                    []worker.Status         `json:"workers"`
 }
 
 type workerPoolNodeView struct {
 	NodeID                     string            `json:"node_id"`
+	HostProfile                string            `json:"host_profile,omitempty"`
+	PoolID                     string            `json:"pool_id,omitempty"`
 	TotalWorkers               int               `json:"total_workers"`
 	ActiveWorkers              int               `json:"active_workers"`
 	IdleWorkers                int               `json:"idle_workers"`
 	MissingHeartbeatWorkers    int               `json:"missing_heartbeat_workers"`
 	StaleWorkers               int               `json:"stale_workers"`
+	ParallelSlots              int               `json:"parallel_slots"`
+	ActiveParallelSlots        int               `json:"active_parallel_slots"`
+	AvailableParallelSlots     int               `json:"available_parallel_slots"`
 	CapacityUtilizationPercent float64           `json:"capacity_utilization_percent"`
 	Health                     string            `json:"health"`
 	ExecutorDistribution       []auditFacetCount `json:"executor_distribution,omitempty"`
@@ -2910,6 +2916,11 @@ func (s *Server) workerPoolSummary() *workerPoolSummary {
 	active := 0
 	nodeIndex := make(map[string]*workerPoolNodeView)
 	executorCounts := make(map[string]int)
+	capacity := worker.SummarizeCapacity(snapshots)
+	capacityNodes := make(map[string]worker.NodeCapacity, len(capacity.Nodes))
+	for _, node := range capacity.Nodes {
+		capacityNodes[node.NodeID] = node
+	}
 	now := time.Now()
 	if s.Now != nil {
 		now = s.Now()
@@ -2932,6 +2943,13 @@ func (s *Server) workerPoolSummary() *workerPoolSummary {
 				NodeID:               nodeID,
 				ExecutorDistribution: []auditFacetCount{},
 				WorkerStates:         make(map[string]int),
+			}
+			if capacityNode, ok := capacityNodes[nodeID]; ok {
+				node.HostProfile = capacityNode.HostProfile
+				node.PoolID = capacityNode.PoolID
+				node.ParallelSlots = capacityNode.ParallelSlots
+				node.ActiveParallelSlots = capacityNode.ActiveParallelSlots
+				node.AvailableParallelSlots = capacityNode.AvailableParallelSlots
 			}
 			nodeIndex[nodeID] = node
 		}
@@ -2995,6 +3013,7 @@ func (s *Server) workerPoolSummary() *workerPoolSummary {
 		IdleNodes:                  idleNodes,
 		DegradedNodes:              degradedNodes,
 		CapacityUtilizationPercent: capacityUtilizationPercent,
+		Capacity:                   capacity,
 		ExecutorDistribution:       sortFacetCounts(executorCounts),
 		Nodes:                      nodes,
 		Workers:                    snapshots,

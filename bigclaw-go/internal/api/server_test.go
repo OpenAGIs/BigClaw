@@ -60,9 +60,9 @@ func (f fakeNodeAwareWorkerPoolStatus) Snapshots() []worker.Status {
 		base = time.Unix(1700003600, 0)
 	}
 	return []worker.Status{
-		{WorkerID: "worker-node-a", NodeID: "node-a", State: "running", CurrentExecutor: domain.ExecutorLocal, LastHeartbeatAt: base.Add(-2 * time.Minute), SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"},
-		{WorkerID: "worker-node-b", NodeID: "node-b", State: "leased", CurrentExecutor: domain.ExecutorKubernetes, LastHeartbeatAt: base.Add(-9 * time.Minute), SuccessfulRuns: 3, LeaseRenewals: 2, LeaseRenewalFailures: 1, LeaseLostRuns: 1, LastResult: "warming"},
-		{WorkerID: "worker-node-c", NodeID: "node-c", State: "idle", CurrentExecutor: domain.ExecutorRay, LastHeartbeatAt: base.Add(-time.Minute), SuccessfulRuns: 8, LeaseRenewals: 0, LastResult: "idle"},
+		{WorkerID: "worker-node-a", NodeID: "node-a", HostProfile: "clawhost-cpu", PoolID: "shared", ParallelSlots: 2, State: "running", CurrentExecutor: domain.ExecutorLocal, LastHeartbeatAt: base.Add(-2 * time.Minute), SuccessfulRuns: 5, LeaseRenewals: 7, LastResult: "ok"},
+		{WorkerID: "worker-node-b", NodeID: "node-b", HostProfile: "clawhost-browser", PoolID: "burst", ParallelSlots: 3, State: "leased", CurrentExecutor: domain.ExecutorKubernetes, LastHeartbeatAt: base.Add(-9 * time.Minute), SuccessfulRuns: 3, LeaseRenewals: 2, LeaseRenewalFailures: 1, LeaseLostRuns: 1, LastResult: "warming"},
+		{WorkerID: "worker-node-c", NodeID: "node-c", HostProfile: "clawhost-browser", PoolID: "burst", ParallelSlots: 1, State: "idle", CurrentExecutor: domain.ExecutorRay, LastHeartbeatAt: base.Add(-time.Minute), SuccessfulRuns: 8, LeaseRenewals: 0, LastResult: "idle"},
 	}
 }
 
@@ -2895,12 +2895,38 @@ func TestV2ControlCenterAppliesTimeWindowAndReturnsNodeAwareWorkerPoolSummary(t 
 			IdleNodes                  int     `json:"idle_nodes"`
 			DegradedNodes              int     `json:"degraded_nodes"`
 			CapacityUtilizationPercent float64 `json:"capacity_utilization_percent"`
-			Nodes                      []struct {
+			Capacity                   struct {
+				TotalParallelSlots     int `json:"total_parallel_slots"`
+				ActiveParallelSlots    int `json:"active_parallel_slots"`
+				AvailableParallelSlots int `json:"available_parallel_slots"`
+				HostProfiles           []struct {
+					HostProfile            string `json:"host_profile"`
+					NodeCount              int    `json:"node_count"`
+					PoolCount              int    `json:"pool_count"`
+					ParallelSlots          int    `json:"parallel_slots"`
+					ActiveParallelSlots    int    `json:"active_parallel_slots"`
+					AvailableParallelSlots int    `json:"available_parallel_slots"`
+				} `json:"host_profiles"`
+				Pools []struct {
+					PoolID                 string `json:"pool_id"`
+					HostProfileCount       int    `json:"host_profile_count"`
+					NodeCount              int    `json:"node_count"`
+					ParallelSlots          int    `json:"parallel_slots"`
+					ActiveParallelSlots    int    `json:"active_parallel_slots"`
+					AvailableParallelSlots int    `json:"available_parallel_slots"`
+				} `json:"pools"`
+			} `json:"capacity"`
+			Nodes []struct {
 				NodeID                     string         `json:"node_id"`
+				HostProfile                string         `json:"host_profile"`
+				PoolID                     string         `json:"pool_id"`
 				Health                     string         `json:"health"`
 				ActiveWorkers              int            `json:"active_workers"`
 				IdleWorkers                int            `json:"idle_workers"`
 				StaleWorkers               int            `json:"stale_workers"`
+				ParallelSlots              int            `json:"parallel_slots"`
+				ActiveParallelSlots        int            `json:"active_parallel_slots"`
+				AvailableParallelSlots     int            `json:"available_parallel_slots"`
 				CapacityUtilizationPercent float64        `json:"capacity_utilization_percent"`
 				WorkerStates               map[string]int `json:"worker_states"`
 			} `json:"nodes"`
@@ -2930,41 +2956,65 @@ func TestV2ControlCenterAppliesTimeWindowAndReturnsNodeAwareWorkerPoolSummary(t 
 	if decoded.WorkerPool.TotalNodes != 3 || decoded.WorkerPool.ActiveNodes != 1 || decoded.WorkerPool.IdleNodes != 1 || decoded.WorkerPool.DegradedNodes != 1 {
 		t.Fatalf("unexpected node-aware worker pool summary: %+v", decoded.WorkerPool)
 	}
+	if decoded.WorkerPool.Capacity.TotalParallelSlots != 6 || decoded.WorkerPool.Capacity.ActiveParallelSlots != 5 || decoded.WorkerPool.Capacity.AvailableParallelSlots != 1 {
+		t.Fatalf("unexpected worker pool capacity baseline: %+v", decoded.WorkerPool.Capacity)
+	}
+	if len(decoded.WorkerPool.Capacity.HostProfiles) != 2 || decoded.WorkerPool.Capacity.HostProfiles[0].HostProfile != "clawhost-browser" || decoded.WorkerPool.Capacity.HostProfiles[0].ParallelSlots != 4 || decoded.WorkerPool.Capacity.HostProfiles[1].HostProfile != "clawhost-cpu" || decoded.WorkerPool.Capacity.HostProfiles[1].ParallelSlots != 2 {
+		t.Fatalf("unexpected host-profile capacity baseline: %+v", decoded.WorkerPool.Capacity.HostProfiles)
+	}
+	if len(decoded.WorkerPool.Capacity.Pools) != 2 || decoded.WorkerPool.Capacity.Pools[0].PoolID != "burst" || decoded.WorkerPool.Capacity.Pools[0].ParallelSlots != 4 || decoded.WorkerPool.Capacity.Pools[1].PoolID != "shared" || decoded.WorkerPool.Capacity.Pools[1].ParallelSlots != 2 {
+		t.Fatalf("unexpected pool capacity baseline: %+v", decoded.WorkerPool.Capacity.Pools)
+	}
 	if len(decoded.WorkerPool.ExecutorDistribution) != 3 {
 		t.Fatalf("expected executor distribution across worker nodes, got %+v", decoded.WorkerPool.ExecutorDistribution)
 	}
 	nodesByID := make(map[string]struct {
+		HostProfile                string
+		PoolID                     string
 		Health                     string
 		ActiveWorkers              int
 		IdleWorkers                int
 		StaleWorkers               int
+		ParallelSlots              int
+		ActiveParallelSlots        int
+		AvailableParallelSlots     int
 		CapacityUtilizationPercent float64
 		WorkerStates               map[string]int
 	}, len(decoded.WorkerPool.Nodes))
 	for _, node := range decoded.WorkerPool.Nodes {
 		nodesByID[node.NodeID] = struct {
+			HostProfile                string
+			PoolID                     string
 			Health                     string
 			ActiveWorkers              int
 			IdleWorkers                int
 			StaleWorkers               int
+			ParallelSlots              int
+			ActiveParallelSlots        int
+			AvailableParallelSlots     int
 			CapacityUtilizationPercent float64
 			WorkerStates               map[string]int
 		}{
+			HostProfile:                node.HostProfile,
+			PoolID:                     node.PoolID,
 			Health:                     node.Health,
 			ActiveWorkers:              node.ActiveWorkers,
 			IdleWorkers:                node.IdleWorkers,
 			StaleWorkers:               node.StaleWorkers,
+			ParallelSlots:              node.ParallelSlots,
+			ActiveParallelSlots:        node.ActiveParallelSlots,
+			AvailableParallelSlots:     node.AvailableParallelSlots,
 			CapacityUtilizationPercent: node.CapacityUtilizationPercent,
 			WorkerStates:               node.WorkerStates,
 		}
 	}
-	if node, ok := nodesByID["node-a"]; !ok || node.Health != "active" || node.ActiveWorkers != 1 || node.StaleWorkers != 0 || node.WorkerStates["running"] != 1 {
+	if node, ok := nodesByID["node-a"]; !ok || node.HostProfile != "clawhost-cpu" || node.PoolID != "shared" || node.Health != "active" || node.ActiveWorkers != 1 || node.StaleWorkers != 0 || node.ParallelSlots != 2 || node.ActiveParallelSlots != 2 || node.AvailableParallelSlots != 0 || node.WorkerStates["running"] != 1 {
 		t.Fatalf("unexpected node-a summary: %+v", node)
 	}
-	if node, ok := nodesByID["node-b"]; !ok || node.Health != "degraded" || node.ActiveWorkers != 1 || node.StaleWorkers != 1 || node.WorkerStates["leased"] != 1 {
+	if node, ok := nodesByID["node-b"]; !ok || node.HostProfile != "clawhost-browser" || node.PoolID != "burst" || node.Health != "degraded" || node.ActiveWorkers != 1 || node.StaleWorkers != 1 || node.ParallelSlots != 3 || node.ActiveParallelSlots != 3 || node.AvailableParallelSlots != 0 || node.WorkerStates["leased"] != 1 {
 		t.Fatalf("unexpected node-b summary: %+v", node)
 	}
-	if node, ok := nodesByID["node-c"]; !ok || node.Health != "idle" || node.IdleWorkers != 1 || node.CapacityUtilizationPercent != 0 || node.WorkerStates["idle"] != 1 {
+	if node, ok := nodesByID["node-c"]; !ok || node.HostProfile != "clawhost-browser" || node.PoolID != "burst" || node.Health != "idle" || node.IdleWorkers != 1 || node.ParallelSlots != 1 || node.ActiveParallelSlots != 0 || node.AvailableParallelSlots != 1 || node.CapacityUtilizationPercent != 0 || node.WorkerStates["idle"] != 1 {
 		t.Fatalf("unexpected node-c summary: %+v", node)
 	}
 	if decoded.DistributedDiagnostics.Summary.TotalTasks != 1 {

@@ -274,6 +274,8 @@ func buildWorkerPool(
 		runtimes = append(runtimes, &worker.Runtime{
 			WorkerID:    fmt.Sprintf("worker-%d", index+1),
 			NodeID:      cfg.NodeID,
+			HostProfile: cfg.HostProfile,
+			PoolID:      cfg.CapacityPool,
 			Queue:       q,
 			Scheduler:   schedulerRuntime,
 			Registry:    registry,

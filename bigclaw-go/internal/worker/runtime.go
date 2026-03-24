@@ -24,6 +24,8 @@ import (
 type Runtime struct {
 	WorkerID    string
 	NodeID      string
+	HostProfile string
+	PoolID      string
 	Queue       queue.Queue
 	Scheduler   *scheduler.Scheduler
 	Registry    *executor.Registry
@@ -41,6 +43,9 @@ type Runtime struct {
 type Status struct {
 	WorkerID                  string              `json:"worker_id"`
 	NodeID                    string              `json:"node_id,omitempty"`
+	HostProfile               string              `json:"host_profile,omitempty"`
+	PoolID                    string              `json:"pool_id,omitempty"`
+	ParallelSlots             int                 `json:"parallel_slots,omitempty"`
 	State                     string              `json:"state"`
 	CurrentTaskID             string              `json:"current_task_id,omitempty"`
 	CurrentTraceID            string              `json:"current_trace_id,omitempty"`
@@ -82,6 +87,15 @@ func (r *Runtime) Snapshot() Status {
 	}
 	if snapshot.NodeID == "" {
 		snapshot.NodeID = r.NodeID
+	}
+	if snapshot.HostProfile == "" {
+		snapshot.HostProfile = r.HostProfile
+	}
+	if snapshot.PoolID == "" {
+		snapshot.PoolID = r.PoolID
+	}
+	if snapshot.ParallelSlots <= 0 {
+		snapshot.ParallelSlots = 1
 	}
 	if snapshot.State == "" {
 		snapshot.State = "idle"

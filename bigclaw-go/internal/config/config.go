@@ -10,6 +10,8 @@ import (
 type Config struct {
 	QueueBackend                  string
 	NodeID                        string
+	HostProfile                   string
+	CapacityPool                  string
 	EventLogBackend               string
 	EventLogTargetBackend         string
 	EventLogReplicationFactor     int
@@ -70,6 +72,8 @@ func Default() Config {
 	return Config{
 		QueueBackend:                  "file",
 		NodeID:                        "",
+		HostProfile:                   "clawhost",
+		CapacityPool:                  "default",
 		EventLogBackend:               "memory",
 		EventLogTargetBackend:         "broker_replicated",
 		EventLogReplicationFactor:     3,
@@ -120,6 +124,8 @@ func LoadFromEnv() Config {
 	cfg := Default()
 	cfg.QueueBackend = getString("BIGCLAW_QUEUE_BACKEND", cfg.QueueBackend)
 	cfg.NodeID = getString("BIGCLAW_NODE_ID", getString("HOSTNAME", cfg.NodeID))
+	cfg.HostProfile = getString("BIGCLAW_HOST_PROFILE", cfg.HostProfile)
+	cfg.CapacityPool = getString("BIGCLAW_CAPACITY_POOL", cfg.CapacityPool)
 	cfg.EventLogBackend = getString("BIGCLAW_EVENT_LOG_BACKEND", cfg.EventLogBackend)
 	cfg.EventLogTargetBackend = getString("BIGCLAW_EVENT_LOG_TARGET_BACKEND", cfg.EventLogTargetBackend)
 	cfg.EventLogReplicationFactor = getInt("BIGCLAW_EVENT_LOG_REPLICATION_FACTOR", cfg.EventLogReplicationFactor)
