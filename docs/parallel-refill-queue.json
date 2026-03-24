@@ -880,7 +880,7 @@
       "identifier": "BIG-PAR-324",
       "title": "Add distributed export filename-scope precedence coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
