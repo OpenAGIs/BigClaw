@@ -49,3 +49,41 @@ func TestBuildClawHostWorkflowSurface(t *testing.T) {
 		t.Fatalf("expected takeover-required item first, got %+v", surface.ReviewQueue)
 	}
 }
+
+func TestBuildClawHostWorkflowSurfaceIgnoresNonClawHostTasksAndUsesFallbackReason(t *testing.T) {
+	surface := BuildClawHostWorkflowSurface([]domain.Task{
+		{
+			ID:       "claw-fallback",
+			Source:   "clawhost",
+			TenantID: "tenant-fallback",
+			Metadata: map[string]string{
+				"control_plane":              "clawhost",
+				"claw_name":                  "fallback-bot",
+				"whatsapp_pairing_status":    "paired",
+				"clawhost_takeover_required": "true",
+			},
+		},
+		{
+			ID:       "other-task",
+			Source:   "github",
+			TenantID: "tenant-other",
+			Metadata: map[string]string{
+				"control_plane": "github",
+				"channel_types": "slack",
+			},
+		},
+	})
+
+	if surface.Status != "active" || surface.Summary.WorkflowItems != 1 || surface.Summary.Tenants != 1 {
+		t.Fatalf("expected only clawhost workflow item to count, got %+v", surface)
+	}
+	if surface.Summary.PairingApprovals != 0 || surface.Summary.CredentialReviews != 0 || surface.Summary.TakeoverRequired != 1 {
+		t.Fatalf("unexpected workflow summary counts: %+v", surface.Summary)
+	}
+	if len(surface.ReviewQueue) != 1 {
+		t.Fatalf("expected non-clawhost task to be filtered out, got %+v", surface.ReviewQueue)
+	}
+	if surface.ReviewQueue[0].TaskID != "claw-fallback" || surface.ReviewQueue[0].ReviewReason != "workflow requires explicit human takeover before mutating bot config" {
+		t.Fatalf("expected fallback clawhost item and reason, got %+v", surface.ReviewQueue[0])
+	}
+}

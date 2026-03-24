@@ -108,7 +108,9 @@
       "BIG-PAR-307",
       "BIG-PAR-308"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-309"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -200,7 +202,8 @@
     "BIG-PAR-305",
     "BIG-PAR-306",
     "BIG-PAR-307",
-    "BIG-PAR-308"
+    "BIG-PAR-308",
+    "BIG-PAR-309"
   ],
   "issues": [
     {
@@ -766,6 +769,12 @@
       "title": "Add product regression coverage for scoped ClawHost rollout planners",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-309",
+      "title": "Add product regression coverage for ClawHost workflow review reasons",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
