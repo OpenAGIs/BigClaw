@@ -258,3 +258,42 @@ func TestDuplicateStringsTrimsIgnoresBlankAndSorts(t *testing.T) {
 		t.Fatalf("duplicateStrings = %v, want %v", got, want)
 	}
 }
+
+func TestRenderSavedViewFilters(t *testing.T) {
+	if got := renderSavedViewFilters(nil); got != "none" {
+		t.Fatalf("renderSavedViewFilters(nil) = %q, want %q", got, "none")
+	}
+
+	got := renderSavedViewFilters([]SavedViewFilter{
+		{Field: "state", Operator: "eq", Value: "blocked"},
+		{Field: "risk_level", Operator: "eq", Value: "high"},
+	})
+	want := "stateeqblocked, risk_leveleqhigh"
+	if got != want {
+		t.Fatalf("renderSavedViewFilters(...) = %q, want %q", got, want)
+	}
+}
+
+func TestRenderSavedViewScopeMapSortsScopesAndNames(t *testing.T) {
+	if got := renderSavedViewScopeMap(nil); got != "none" {
+		t.Fatalf("renderSavedViewScopeMap(nil) = %q, want %q", got, "none")
+	}
+
+	got := renderSavedViewScopeMap(map[string][]string{
+		"/v2/control-center:bob": {"Weekly Ops", "Active Runs"},
+		"/v2/triage/center:alice": {"Regression Follow-up", "Blocked Runs"},
+	})
+	want := "/v2/control-center:bob=Active Runs, Weekly Ops; /v2/triage/center:alice=Blocked Runs, Regression Follow-up"
+	if got != want {
+		t.Fatalf("renderSavedViewScopeMap(...) = %q, want %q", got, want)
+	}
+}
+
+func TestEmptyFallbackTrimsWhitespace(t *testing.T) {
+	if got := emptyFallback("  weekly  ", "none"); got != "weekly" {
+		t.Fatalf("emptyFallback trims non-empty values = %q, want %q", got, "weekly")
+	}
+	if got := emptyFallback("   ", "none"); got != "none" {
+		t.Fatalf("emptyFallback blank fallback = %q, want %q", got, "none")
+	}
+}
