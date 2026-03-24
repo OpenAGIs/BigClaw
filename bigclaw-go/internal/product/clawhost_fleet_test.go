@@ -184,3 +184,38 @@ func TestRenderClawHostFleetReportHandlesEmptyInventory(t *testing.T) {
 		}
 	}
 }
+
+func TestNormalizedClawHostStatusFallbacks(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		input  string
+		expect string
+	}{
+		{name: "trims and lowers", input: " Running ", expect: "running"},
+		{name: "empty becomes unknown", input: "", expect: "unknown"},
+		{name: "whitespace becomes unknown", input: "   ", expect: "unknown"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := normalizedClawHostStatus(tc.input); got != tc.expect {
+				t.Fatalf("expected normalized status %q, got %q", tc.expect, got)
+			}
+		})
+	}
+}
+
+func TestDedupeNonEmptyStringsNormalizesAndSorts(t *testing.T) {
+	got := dedupeNonEmptyStrings([]string{
+		" OpenAI ",
+		"",
+		"anthropic",
+		"OPENAI",
+		"  ",
+		"Anthropic ",
+		"minimax",
+	})
+
+	want := []string{"anthropic", "minimax", "openai"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("expected deduped values %+v, got %+v", want, got)
+	}
+}
