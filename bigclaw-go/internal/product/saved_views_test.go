@@ -172,3 +172,18 @@ func TestSavedViewScopeTokenNormalizesMixedSeparators(t *testing.T) {
 		}
 	}
 }
+
+func TestNormalizedViewOwnerFallsBackToViewer(t *testing.T) {
+	for _, tc := range []struct {
+		input string
+		want  string
+	}{
+		{input: "", want: "viewer"},
+		{input: "   ", want: "viewer"},
+		{input: " alice ", want: "alice"},
+	} {
+		if got := normalizedViewOwner(tc.input); got != tc.want {
+			t.Fatalf("normalizedViewOwner(%q) = %q, want %q", tc.input, got, tc.want)
+		}
+	}
+}

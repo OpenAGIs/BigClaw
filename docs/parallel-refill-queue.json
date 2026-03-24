@@ -228,7 +228,8 @@
     "BIG-PAR-330",
     "BIG-PAR-331",
     "BIG-PAR-332",
-    "BIG-PAR-333"
+    "BIG-PAR-333",
+    "BIG-PAR-334"
   ],
   "issues": [
     {
@@ -944,6 +945,12 @@
       "title": "Add viewScopeSuffix punctuation-fallback coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-334",
+      "title": "Add normalizedViewOwner helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

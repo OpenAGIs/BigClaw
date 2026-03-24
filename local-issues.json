@@ -4004,6 +4004,23 @@
       "state": "Done",
       "title": "Add viewScopeSuffix punctuation-fallback coverage",
       "updated_at": "2026-03-25T22:30:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct helper-level coverage for normalizedViewOwner so blank or whitespace-only actors fall back to `viewer` while non-empty actors are preserved after trimming.",
+      "id": "big-par-334",
+      "identifier": "BIG-PAR-334",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add normalizedViewOwner helper coverage"
     }
   ]
 }
