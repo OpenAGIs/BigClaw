@@ -950,7 +950,7 @@
       "identifier": "BIG-PAR-334",
       "title": "Add normalizedViewOwner helper coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

@@ -4007,7 +4007,13 @@
     },
     {
       "assigned_to_worker": true,
-      "comments": [],
+      "comments": [
+        {
+          "author": "Codex",
+          "body": "Closed `BIG-PAR-334` after adding direct helper coverage for `normalizedViewOwner`.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds helper-level coverage proving `normalizedViewOwner` falls back to `viewer` for blank or whitespace-only actors and preserves non-empty actors after trimming.\n- `docs/parallel-refill-queue.json` and `local-issues.json` record the `BIG-PAR-334` slice lifecycle.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `fbe1c5c4e17a58ba85443bf347d01263db423173` matches remote SHA `fbe1c5c4e17a58ba85443bf347d01263db423173` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `fbe1c5c4e17a58ba85443bf347d01263db423173`\n\nCommit SHA: `fbe1c5c4e17a58ba85443bf347d01263db423173`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-25T22:40:00Z"
+        }
+      ],
       "created_at": "2026-03-25T00:00:00Z",
       "description": "Add direct helper-level coverage for normalizedViewOwner so blank or whitespace-only actors fall back to `viewer` while non-empty actors are preserved after trimming.",
       "id": "big-par-334",
@@ -4019,8 +4025,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
-      "title": "Add normalizedViewOwner helper coverage"
+      "state": "Done",
+      "title": "Add normalizedViewOwner helper coverage",
+      "updated_at": "2026-03-25T22:40:00Z"
     }
   ]
 }
