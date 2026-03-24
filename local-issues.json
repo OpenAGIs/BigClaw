@@ -4511,6 +4511,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct Go audit coverage for invalid saved-view visibility handling and sorted invalid-visibility findings in `bigclaw-go/internal/product/saved_views_test.go`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_savedviews.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_savedviews.cover | rg \"internal/product/saved_views.go|total:\"` -> `AuditSavedViewCatalog 100.0%`\n\nCommit: `b437a0c37d15f32d2b6aa2fd6dc21a32715f1f36`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:03:28Z"
+        }
+      ],
       "created_at": "2026-03-24T22:01:38Z",
       "description": "Add narrow Go tests covering AuditSavedViewCatalog invalid visibility detection and sorted output contracts in saved_views.go.",
       "id": "big-par-355",
@@ -4522,12 +4529,19 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add invalid-visibility audit coverage for saved view catalogs",
-      "updated_at": "2026-03-24T22:01:38Z"
+      "updated_at": "2026-03-24T22:03:28Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct Go audit assertions for missing digest recipients and readiness accounting in `bigclaw-go/internal/product/saved_views_test.go`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/bigpar291_savedviews.cover` -> `ok   bigclaw-go/internal/product`\n- `cd bigclaw-go && go tool cover -func=/tmp/bigpar291_savedviews.cover | rg \"internal/product/saved_views.go|total:\"` -> `AuditSavedViewCatalog 100.0%`\n\nCommit: `b437a0c37d15f32d2b6aa2fd6dc21a32715f1f36`\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:03:28Z"
+        }
+      ],
       "created_at": "2026-03-24T22:01:38Z",
       "description": "Add narrow Go tests covering AuditSavedViewCatalog subscription recipient gap handling and readiness accounting in saved_views.go.",
       "id": "big-par-356",
@@ -4539,9 +4553,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add direct missing-recipient audit assertions for saved view digests",
-      "updated_at": "2026-03-24T22:01:38Z"
+      "updated_at": "2026-03-24T22:03:28Z"
     }
   ]
 }
