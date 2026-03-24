@@ -325,3 +325,19 @@ func TestAuditSavedViewCatalogReadinessFloorsAtZero(t *testing.T) {
 		t.Fatalf("expected readiness score to floor at zero, got %+v", audit)
 	}
 }
+
+func TestRenderSavedViewReportEmptyState(t *testing.T) {
+	report := RenderSavedViewReport(
+		SavedViewCatalog{Name: "empty", Version: "v1"},
+		SavedViewCatalogAudit{CatalogName: "empty", Version: "v1"},
+	)
+	if !strings.Contains(report, "## Saved Views\n\n- None") {
+		t.Fatalf("expected empty saved views section, got %s", report)
+	}
+	if !strings.Contains(report, "## Alert Digests\n\n- None") {
+		t.Fatalf("expected empty alert digests section, got %s", report)
+	}
+	if !strings.Contains(report, "- Duplicate view names: none") || !strings.Contains(report, "- Orphan subscriptions: none") {
+		t.Fatalf("expected empty-state gap fallbacks, got %s", report)
+	}
+}
