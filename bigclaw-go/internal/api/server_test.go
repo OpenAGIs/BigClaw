@@ -1261,7 +1261,8 @@ func TestDebugStatusIncludesClawHostRolloutSurface(t *testing.T) {
 	}
 	var decoded struct {
 		ClawHostRollout struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				ActivePlans      int `json:"active_plans"`
 				TotalTargets     int `json:"total_targets"`
@@ -1282,6 +1283,9 @@ func TestDebugStatusIncludesClawHostRolloutSurface(t *testing.T) {
 	}
 	if decoded.ClawHostRollout.Status != "active" || decoded.ClawHostRollout.Summary.ActivePlans != 1 || decoded.ClawHostRollout.Summary.TotalTargets != 2 || decoded.ClawHostRollout.Summary.CanaryTargets != 1 || decoded.ClawHostRollout.Summary.TakeoverRequired != 1 {
 		t.Fatalf("unexpected ClawHost rollout surface: %+v", decoded.ClawHostRollout)
+	}
+	if decoded.ClawHostRollout.Filters["team"] != "" || decoded.ClawHostRollout.Filters["project"] != "" {
+		t.Fatalf("expected unscoped rollout surface filters, got %+v", decoded.ClawHostRollout.Filters)
 	}
 	if len(decoded.ClawHostRollout.Plans) != 1 || decoded.ClawHostRollout.Plans[0].Action != "restart" || decoded.ClawHostRollout.Plans[0].Concurrency != 2 || decoded.ClawHostRollout.Plans[0].TakeoverHook != "required" || decoded.ClawHostRollout.Plans[0].WaveCount != 2 || decoded.ClawHostRollout.Plans[0].CanaryCount != 1 {
 		t.Fatalf("unexpected ClawHost rollout plan payload: %+v", decoded.ClawHostRollout.Plans)
@@ -4783,7 +4787,8 @@ func TestV2ControlCenterIncludesClawHostRolloutSurface(t *testing.T) {
 	}
 	var decoded struct {
 		ClawHostRollout struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				ActivePlans      int `json:"active_plans"`
 				TotalTargets     int `json:"total_targets"`
@@ -4801,6 +4806,9 @@ func TestV2ControlCenterIncludesClawHostRolloutSurface(t *testing.T) {
 	}
 	if decoded.ClawHostRollout.Status != "active" || decoded.ClawHostRollout.Summary.ActivePlans != 2 || decoded.ClawHostRollout.Summary.TotalTargets != 2 || decoded.ClawHostRollout.Summary.TakeoverRequired != 1 {
 		t.Fatalf("unexpected ClawHost rollout control center surface: %+v", decoded.ClawHostRollout)
+	}
+	if decoded.ClawHostRollout.Filters["team"] != "" || decoded.ClawHostRollout.Filters["project"] != "" {
+		t.Fatalf("expected unscoped rollout surface filters in control-center bundle, got %+v", decoded.ClawHostRollout.Filters)
 	}
 	if len(decoded.ClawHostRollout.Plans) != 2 || decoded.ClawHostRollout.Plans[0].Action != "upgrade" {
 		t.Fatalf("expected upgrade rollout plans, got %+v", decoded.ClawHostRollout.Plans)
@@ -5383,6 +5391,7 @@ func TestV2ControlCenterScopesClawHostSurfaceBundleByFilters(t *testing.T) {
 			} `json:"review_queue"`
 		} `json:"clawhost_workflow_surface"`
 		Rollout struct {
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				ActivePlans int `json:"active_plans"`
 			} `json:"summary"`
@@ -5425,6 +5434,9 @@ func TestV2ControlCenterScopesClawHostSurfaceBundleByFilters(t *testing.T) {
 	}
 	if decoded.Rollout.Summary.ActivePlans != 1 || len(decoded.Rollout.Plans) != 1 || len(decoded.Rollout.Plans[0].Waves) != 1 || len(decoded.Rollout.Plans[0].Waves[0].Targets) != 1 || decoded.Rollout.Plans[0].Waves[0].Targets[0].TaskID != "clawhost-filtered-1" {
 		t.Fatalf("expected scoped rollout surface, got %+v", decoded.Rollout)
+	}
+	if decoded.Rollout.Filters["team"] != "platform" || decoded.Rollout.Filters["project"] != "sales" {
+		t.Fatalf("expected scoped rollout filters, got %+v", decoded.Rollout.Filters)
 	}
 	if decoded.Readiness.Summary.Targets != 1 || len(decoded.Readiness.Targets) != 1 || decoded.Readiness.Targets[0].TaskID != "clawhost-filtered-1" {
 		t.Fatalf("expected scoped readiness surface, got %+v", decoded.Readiness)

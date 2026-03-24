@@ -131,7 +131,9 @@
       "BIG-PAR-330",
       "BIG-PAR-331"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-332"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -246,7 +248,8 @@
     "BIG-PAR-328",
     "BIG-PAR-329",
     "BIG-PAR-330",
-    "BIG-PAR-331"
+    "BIG-PAR-331",
+    "BIG-PAR-332"
   ],
   "issues": [
     {
@@ -950,6 +953,12 @@
       "title": "Add filters to ClawHost policy surface payload",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-332",
+      "title": "Add filters to ClawHost rollout surface payload",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
