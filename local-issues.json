@@ -4385,6 +4385,24 @@
       "state": "Done",
       "title": "Add policy report fallback filter regression",
       "updated_at": "2026-03-24T22:01:40Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T22:03:07Z",
+      "description": "Extend the ClawHost workflow-lane product regressions to assert the idle/default actor/team/project filter map so the lane surface stays aligned with the other ClawHost product defaults.",
+      "id": "big-par-345",
+      "identifier": "BIG-PAR-345",
+      "labels": [
+        "go",
+        "clawhost",
+        "product",
+        "parallel",
+        "test"
+      ],
+      "priority": 3,
+      "state": "In",
+      "title": "Pin workflow-lane idle filter maps in regressions",
+      "updated_at": "2026-03-24T22:03:07Z"
     }
   ]
 }

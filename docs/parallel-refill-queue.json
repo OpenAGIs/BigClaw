@@ -272,7 +272,8 @@
     "BIG-PAR-341",
     "BIG-PAR-342",
     "BIG-PAR-343",
-    "BIG-PAR-344"
+    "BIG-PAR-344",
+    "BIG-PAR-345"
   ],
   "issues": [
     {
@@ -1054,6 +1055,12 @@
       "title": "Add policy report fallback filter regression",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-345",
+      "title": "Pin workflow-lane idle filter maps in regressions",
+      "track": "Go Mainline Follow-ups",
+      "status": "In"
     }
   ]
 }

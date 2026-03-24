@@ -172,6 +172,9 @@ func TestBuildClawHostWorkflowLaneSurfaceInfersRolloutConcurrency(t *testing.T) 
 
 func TestBuildClawHostWorkflowLaneSurfaceIdleSignals(t *testing.T) {
 	surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "", "platform", "apollo")
+	if surface.Filters["actor"] != "workflow-operator" || surface.Filters["team"] != "platform" || surface.Filters["project"] != "apollo" {
+		t.Fatalf("expected idle workflow-lane filters to preserve scope, got %+v", surface.Filters)
+	}
 	for _, key := range []string{
 		"total_tasks",
 		"blocked_tasks",
