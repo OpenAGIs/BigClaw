@@ -7,7 +7,7 @@
 - [x] Add a cross-task comparison section that compares tasks within the filtered slice on executor, state, risk, priority, timing, and event counts.
 - [x] Extend markdown export coverage so snapshot and comparison data are included in `GET /v2/reports/distributed/export`.
 - [x] Add targeted regression tests for JSON payloads and markdown export, then run only the relevant Go tests.
-- [ ] Commit and push the issue branch `symphony/BIGCLAW-180`.
+- [x] Commit and push the issue branch `symphony/BIGCLAW-180`.
 
 ### Acceptance
 
