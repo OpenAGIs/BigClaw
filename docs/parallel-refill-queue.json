@@ -167,7 +167,8 @@
       "BIG-PAR-375",
       "BIG-PAR-376",
       "BIG-PAR-377",
-      "BIG-PAR-378"
+      "BIG-PAR-378",
+      "BIG-PAR-379"
     ],
     "active": [],
     "standby": []
@@ -322,7 +323,8 @@
     "BIG-PAR-375",
     "BIG-PAR-376",
     "BIG-PAR-377",
-    "BIG-PAR-378"
+    "BIG-PAR-378",
+    "BIG-PAR-379"
   ],
   "issues": [
     {
@@ -1252,6 +1254,12 @@
     {
       "identifier": "BIG-PAR-378",
       "title": "Fix refill dry-run recent batch update mutation",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-379",
+      "title": "Report refill markdown companion writes",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }
