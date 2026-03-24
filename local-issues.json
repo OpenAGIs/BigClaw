@@ -3572,6 +3572,23 @@
       "state": "Done",
       "title": "Sanitize attachment filenames for run report exports",
       "updated_at": "2026-03-24T19:46:08Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct server-level regression coverage proving distributed diagnostics export filenames stay sanitized when scoped team or project filters contain spaces, slashes, and punctuation.",
+      "id": "big-par-316",
+      "identifier": "BIG-PAR-316",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add distributed export filename sanitization coverage"
     }
   ]
 }

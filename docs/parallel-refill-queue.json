@@ -210,7 +210,8 @@
     "BIG-PAR-312",
     "BIG-PAR-313",
     "BIG-PAR-314",
-    "BIG-PAR-315"
+    "BIG-PAR-315",
+    "BIG-PAR-316"
   ],
   "issues": [
     {
@@ -818,6 +819,12 @@
       "title": "Sanitize attachment filenames for run report exports",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-316",
+      "title": "Add distributed export filename sanitization coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
