@@ -1173,7 +1173,8 @@ func TestDebugStatusIncludesClawHostPolicySurface(t *testing.T) {
 	}
 	var decoded struct {
 		ClawHost struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				ActivePolicies      int `json:"active_policies"`
 				ReviewRequired      int `json:"review_required"`
@@ -1191,6 +1192,9 @@ func TestDebugStatusIncludesClawHostPolicySurface(t *testing.T) {
 	}
 	if decoded.ClawHost.Status != "active" || decoded.ClawHost.Summary.ActivePolicies != 2 || decoded.ClawHost.Summary.ReviewRequired != 1 || decoded.ClawHost.Summary.OutOfPolicyDefaults != 1 {
 		t.Fatalf("unexpected ClawHost debug surface: %+v", decoded.ClawHost)
+	}
+	if decoded.ClawHost.Filters["team"] != "" || decoded.ClawHost.Filters["project"] != "" {
+		t.Fatalf("expected unscoped ClawHost policy filters, got %+v", decoded.ClawHost.Filters)
 	}
 	if len(decoded.ClawHost.ReviewQueue) != 2 || decoded.ClawHost.ReviewQueue[0].DriftStatus != "out_of_policy" {
 		t.Fatalf("expected prioritized ClawHost review queue, got %+v", decoded.ClawHost.ReviewQueue)
@@ -5163,7 +5167,8 @@ func TestV2ControlCenterIncludesClawHostPolicySurface(t *testing.T) {
 	}
 	var decoded struct {
 		ClawHostPolicy struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				ActivePolicies      int `json:"active_policies"`
 				ActiveTenants       int `json:"active_tenants"`
@@ -5184,6 +5189,9 @@ func TestV2ControlCenterIncludesClawHostPolicySurface(t *testing.T) {
 	}
 	if decoded.ClawHostPolicy.Status != "active" || decoded.ClawHostPolicy.Summary.ActivePolicies != 2 || decoded.ClawHostPolicy.Summary.ActiveTenants != 2 || decoded.ClawHostPolicy.Summary.ActiveApps != 2 || decoded.ClawHostPolicy.Summary.ReviewRequired != 2 || decoded.ClawHostPolicy.Summary.TakeoverRequired != 1 || decoded.ClawHostPolicy.Summary.OutOfPolicyDefaults != 1 {
 		t.Fatalf("unexpected ClawHost policy control center surface: %+v", decoded.ClawHostPolicy)
+	}
+	if decoded.ClawHostPolicy.Filters["team"] != "" || decoded.ClawHostPolicy.Filters["project"] != "" {
+		t.Fatalf("expected unscoped ClawHost policy filters, got %+v", decoded.ClawHostPolicy.Filters)
 	}
 	if len(decoded.ClawHostPolicy.ReviewQueue) != 2 || decoded.ClawHostPolicy.ReviewQueue[0].TaskID != "clawhost-policy-center-2" || decoded.ClawHostPolicy.ReviewQueue[0].DriftStatus != "out_of_policy" || decoded.ClawHostPolicy.ReviewQueue[1].TaskID != "clawhost-policy-center-1" || decoded.ClawHostPolicy.ReviewQueue[1].DriftStatus != "review_required" {
 		t.Fatalf("expected prioritized ClawHost policy review queue, got %+v", decoded.ClawHostPolicy.ReviewQueue)

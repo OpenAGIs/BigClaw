@@ -262,7 +262,8 @@
     "BIG-PAR-336",
     "BIG-PAR-337",
     "BIG-PAR-338",
-    "BIG-PAR-339"
+    "BIG-PAR-339",
+    "BIG-PAR-340"
   ],
   "issues": [
     {
@@ -1014,6 +1015,12 @@
       "title": "Add policy filter assertions to bundle regressions",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-340",
+      "title": "Add policy filter assertions to standalone API regressions",
+      "track": "Go Mainline Follow-ups",
+      "status": "In"
     }
   ]
 }
