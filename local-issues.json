@@ -3812,6 +3812,23 @@
       "state": "Done",
       "title": "Fix distributed export filename fallback precedence",
       "updated_at": "2026-03-25T21:05:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [],
+      "created_at": "2026-03-25T00:00:00Z",
+      "description": "Add direct distributed-export regression coverage proving a punctuation-only team filter falls through to the scoped task_id for attachment filename selection when project is absent.",
+      "id": "big-par-326",
+      "identifier": "BIG-PAR-326",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add distributed export task fallback-after-team coverage"
     }
   ]
 }

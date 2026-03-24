@@ -2960,6 +2960,40 @@ func TestV2DistributedExportSkipsPunctuationOnlyTeamForFilenameScope(t *testing.
 	}
 }
 
+func TestV2DistributedExportSkipsPunctuationOnlyTeamAndUsesTaskIDForFilenameScope(t *testing.T) {
+	recorder := observability.NewRecorder()
+	task := domain.Task{
+		ID:        "Task / Scope @ Edge",
+		TraceID:   "trace-dist-export-task-fallback-after-team",
+		Title:     "Distributed task filename fallback after punctuation-only team",
+		State:     domain.TaskSucceeded,
+		Metadata:  map[string]string{"team": " / @ "},
+		CreatedAt: time.Date(2026, 3, 25, 7, 0, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 3, 25, 7, 15, 0, 0, time.UTC),
+	}
+	recorder.StoreTask(task)
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed/export?team=%20%2F%20%40%20&task_id=Task%20%2F%20Scope%20%40%20Edge", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected punctuation-team/task-scope distributed export 200, got %d %s", response.Code, response.Body.String())
+	}
+	if disposition := response.Header().Get("Content-Disposition"); disposition != `attachment; filename="bigclaw-distributed-diagnostics-task-scope-edge.md"` {
+		t.Fatalf("expected task-scoped distributed attachment filename after punctuation-only team, got %q", disposition)
+	}
+	if !strings.Contains(response.Body.String(), "# BigClaw Distributed Diagnostics") {
+		t.Fatalf("expected distributed diagnostics markdown body, got %s", response.Body.String())
+	}
+}
+
 func TestSanitizeReportNameNormalizesMixedSeparatorInputs(t *testing.T) {
 	for _, tc := range []struct {
 		input string
