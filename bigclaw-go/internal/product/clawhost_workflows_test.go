@@ -133,6 +133,27 @@ func TestBuildClawHostWorkflowLaneSurfaceInfersRolloutConcurrency(t *testing.T) 
 	}
 }
 
+func TestBuildClawHostWorkflowLaneSurfaceIdleSignals(t *testing.T) {
+	surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "", "platform", "apollo")
+	for _, key := range []string{
+		"total_tasks",
+		"blocked_tasks",
+		"high_risk_tasks",
+		"channel_tagged_tasks",
+		"device_tagged_tasks",
+		"provider_tagged_tasks",
+	} {
+		if surface.OperationalSignals[key] != 0 {
+			t.Fatalf("expected zeroed operational signals for idle lane surface, got %+v", surface.OperationalSignals)
+		}
+	}
+	for _, lane := range surface.Lanes {
+		if lane.LaneID == "clawhost-parallel-rollout-control" && lane.ParallelBatch.MaxConcurrency != 4 {
+			t.Fatalf("expected idle rollout-control lane to keep baseline concurrency, got %+v", lane.ParallelBatch)
+		}
+	}
+}
+
 func TestAuditClawHostWorkflowLaneSurfaceFlagsWorkflowGaps(t *testing.T) {
 	surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "", "", "")
 	if len(surface.Lanes) == 0 {

@@ -3591,6 +3591,24 @@
       "state": "Done",
       "title": "Add product regression coverage for ClawHost workflow lane concurrency",
       "updated_at": "2026-03-24T19:47:03Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T19:48:18Z",
+      "description": "Add direct unit coverage for BuildDefaultClawHostWorkflowLaneSurface so the zero-task operational signals and baseline rollout-control concurrency are locked down without depending on endpoint tests.",
+      "id": "big-par-313",
+      "identifier": "BIG-PAR-313",
+      "labels": [
+        "go",
+        "clawhost",
+        "product",
+        "tests",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add product regression coverage for idle ClawHost workflow lane signals",
+      "updated_at": "2026-03-24T19:48:18Z"
     }
   ]
 }
