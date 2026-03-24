@@ -569,6 +569,25 @@ func TestAuditSavedViewCatalogValidCatalogScoresPerfectReadiness(t *testing.T) {
 	}
 }
 
+func TestAuditSavedViewCatalogCopiesCatalogMetadataAndCounts(t *testing.T) {
+	catalog := SavedViewCatalog{
+		Name:    "ops-catalog",
+		Version: "v2",
+		Views: []SavedView{
+			{ViewID: "view-1", Name: "Inbox", Route: "/v2/control-center", Owner: "alice", Visibility: "private", Filters: []SavedViewFilter{{Field: "state", Operator: "eq", Value: "running"}}},
+			{ViewID: "view-2", Name: "Blocked", Route: "/v2/control-center", Owner: "alice", Visibility: "team", Filters: []SavedViewFilter{{Field: "state", Operator: "eq", Value: "blocked"}}},
+		},
+		Subscriptions: []AlertDigestSubscription{
+			{SubscriptionID: "sub-1", SavedViewID: "view-1", Channel: "email", Cadence: "daily", Recipients: []string{"alice"}},
+		},
+	}
+
+	audit := AuditSavedViewCatalog(catalog)
+	if audit.CatalogName != "ops-catalog" || audit.Version != "v2" || audit.ViewCount != 2 || audit.SubscriptionCount != 1 {
+		t.Fatalf("expected audit metadata/counts to match catalog input, got %+v", audit)
+	}
+}
+
 func TestRenderSavedViewReportEmptyState(t *testing.T) {
 	report := RenderSavedViewReport(
 		SavedViewCatalog{Name: "empty", Version: "v1"},
