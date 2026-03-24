@@ -373,3 +373,43 @@ func TestMaxFloat(t *testing.T) {
 		}
 	}
 }
+
+func TestRenderSavedViewReportPopulatedRowsUseFallbacks(t *testing.T) {
+	catalog := SavedViewCatalog{
+		Name:    "catalog",
+		Version: "v1",
+		Views: []SavedView{
+			{
+				ViewID:     "weekly-ops",
+				Name:       "Weekly Ops",
+				Route:      "/v2/reports/weekly",
+				Owner:      "alice",
+				Visibility: "team",
+				Filters:    []SavedViewFilter{{Field: "window", Operator: "eq", Value: "7d"}},
+			},
+		},
+		Subscriptions: []AlertDigestSubscription{
+			{
+				SubscriptionID: "saved-view-weekly-ops",
+				SavedViewID:    "weekly-ops",
+				Channel:        "email",
+				Cadence:        "weekly",
+			},
+		},
+	}
+	audit := SavedViewCatalogAudit{
+		CatalogName:       "catalog",
+		Version:           "v1",
+		ViewCount:         1,
+		SubscriptionCount: 1,
+		ReadinessScore:    100,
+	}
+
+	report := RenderSavedViewReport(catalog, audit)
+	if !strings.Contains(report, "Weekly Ops: route=/v2/reports/weekly owner=alice visibility=team filters=windoweq7d sort=none") {
+		t.Fatalf("expected populated saved view row with sort fallback, got %s", report)
+	}
+	if !strings.Contains(report, "saved-view-weekly-ops: view=weekly-ops channel=email cadence=weekly recipients=none include_empty=false muted=false") {
+		t.Fatalf("expected populated subscription row with recipients fallback, got %s", report)
+	}
+}
