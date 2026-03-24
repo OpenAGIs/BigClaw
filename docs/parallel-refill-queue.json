@@ -139,11 +139,10 @@
       "BIG-PAR-337",
       "BIG-PAR-340",
       "BIG-PAR-339",
-      "BIG-PAR-342"
-    ],
-    "active": [
+      "BIG-PAR-342",
       "BIG-PAR-343"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1038,7 +1037,7 @@
       "identifier": "BIG-PAR-343",
       "title": "Add unscoped saved view catalog baseline coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

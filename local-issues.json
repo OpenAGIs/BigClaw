@@ -4223,6 +4223,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-344` after adding deterministic gap-rendering coverage for saved-view reports.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving duplicate scope maps are rendered in sorted scope/name order in `RenderSavedViewReport`.\n- the same test also proves the reviewer gap lists render the provided list ordering consistently for the non-map sections.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `af3f12c5ba98f3d921dc5eed4604f810fca9c8d3` matched remote SHA `af3f12c5ba98f3d921dc5eed4604f810fca9c8d3` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `af3f12c5ba98f3d921dc5eed4604f810fca9c8d3`\n\nCommit SHA: `af3f12c5ba98f3d921dc5eed4604f810fca9c8d3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:38:16Z"
+        }
+      ],
       "created_at": "2026-03-24T21:35:52Z",
       "description": "Add direct coverage for RenderSavedViewReport gap rendering so duplicate scope maps and gap lists stay deterministically sorted in reviewer output.",
       "id": "big-par-344",
@@ -4234,12 +4241,19 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add saved view gap rendering sort coverage",
-      "updated_at": "2026-03-24T21:35:52Z"
+      "updated_at": "2026-03-24T21:38:16Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-343` after adding unscoped baseline coverage for the saved-view catalog builder.\n\nWhat changed:\n- `bigclaw-go/internal/product/saved_views_test.go` now adds direct coverage proving `BuildSavedViewCatalog` emits only the five baseline views when no premium or high-risk tasks are present.\n- the same test also proves unscoped catalogs keep `private` visibility, omit query strings from routes, and preserve the unscoped subscription identifiers.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `7c0a7ae2e1c1db148d0b8d810b8662ce55aadb79` matched remote SHA `7c0a7ae2e1c1db148d0b8d810b8662ce55aadb79` with `status: ok` and `synced: true` at code-commit time\n- `git log -1 --stat` -> captured for commit `7c0a7ae2e1c1db148d0b8d810b8662ce55aadb79`\n\nCommit SHA: `7c0a7ae2e1c1db148d0b8d810b8662ce55aadb79`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T21:38:15Z"
+        }
+      ],
       "created_at": "2026-03-24T21:35:52Z",
       "description": "Add direct coverage for BuildSavedViewCatalog without scoped filters or premium/high-risk tasks so the baseline view set, private visibility, and unscoped IDs stay stable.",
       "id": "big-par-343",
@@ -4251,9 +4265,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add unscoped saved view catalog baseline coverage",
-      "updated_at": "2026-03-24T21:35:52Z"
+      "updated_at": "2026-03-24T21:38:15Z"
     }
   ]
 }
