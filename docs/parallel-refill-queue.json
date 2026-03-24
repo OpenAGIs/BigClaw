@@ -284,7 +284,8 @@
     "BIG-PAR-347",
     "BIG-PAR-348",
     "BIG-PAR-349",
-    "BIG-PAR-350"
+    "BIG-PAR-350",
+    "BIG-PAR-351"
   ],
   "issues": [
     {
@@ -1102,6 +1103,12 @@
       "title": "Add ClawHost readiness surface unit coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-351",
+      "title": "Add ClawHost recovery surface unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In"
     }
   ]
 }
