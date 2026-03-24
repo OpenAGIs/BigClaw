@@ -957,7 +957,7 @@
       "identifier": "BIG-PAR-335",
       "title": "Add digestRecipients helper coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
