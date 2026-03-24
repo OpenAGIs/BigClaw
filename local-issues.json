@@ -3065,6 +3065,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added a Go-owned ClawHost lifecycle recovery scorecard in bigclaw-go/internal/product/clawhost_recovery.go with per-action coverage, per-bot isolation and evidence checks, and release-readiness auditing, then exposed it through /v2/clawhost/recovery-scorecard plus debug/control-center recovery payloads in bigclaw-go/internal/api/clawhost_recovery_surface.go and repaired the merge-era workflow surface name collision so the ClawHost expansion/test suite builds cleanly again. Validation: cd bigclaw-go && go test ./internal/product ./internal/api -> ok; cd bigclaw-go && go test ./... -> ok. Commit SHA: e05485c0a518aed3273831c979dfb06f2ca93927. PR URL: https://github.com/OpenAGIs/BigClaw/pull/187.",
+          "created_at": "2026-03-24T17:23:06Z"
+        }
+      ],
       "created_at": "2026-03-24T16:23:28Z",
       "description": "Capture ClawHost create/start/stop/restart/upgrade/delete posture together with per-bot pod and service isolation, takeover triggers, and recovery evidence so BigClaw Go surfaces can present a release-grade lifecycle recovery scorecard for tenant operators.",
       "id": "big-par-292",
@@ -3076,9 +3083,9 @@
         "product"
       ],
       "priority": 2,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add ClawHost lifecycle recovery and per-bot isolation scorecard",
-      "updated_at": "2026-03-24T16:23:28Z"
+      "updated_at": "2026-03-24T17:23:06Z"
     }
   ]
 }

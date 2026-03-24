@@ -89,11 +89,10 @@
       "BIG-PAR-288",
       "BIG-PAR-289",
       "BIG-PAR-290",
-      "BIG-PAR-291"
-    ],
-    "active": [
+      "BIG-PAR-291",
       "BIG-PAR-292"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -638,7 +637,7 @@
       "identifier": "BIG-PAR-292",
       "title": "Add ClawHost lifecycle recovery and per-bot isolation scorecard",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
