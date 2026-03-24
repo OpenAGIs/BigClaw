@@ -3111,6 +3111,24 @@
       "state": "Done",
       "title": "Add control-center regression coverage for ClawHost recovery surface",
       "updated_at": "2026-03-24T17:35:57Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T17:40:40Z",
+      "description": "Add focused API regression coverage for the ClawHost workflow surface in /v2/control-center so reviewer-facing control-center payloads keep skills, channel review, pairing approvals, and takeover-gated workflow items stable.",
+      "id": "big-par-294",
+      "identifier": "BIG-PAR-294",
+      "labels": [
+        "go",
+        "clawhost",
+        "api",
+        "regression",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add control-center regression coverage for ClawHost workflow surface",
+      "updated_at": "2026-03-24T17:40:40Z"
     }
   ]
 }

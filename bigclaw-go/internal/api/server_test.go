@@ -4602,6 +4602,89 @@ func TestV2ControlCenterIncludesClawHostRecoverySurface(t *testing.T) {
 	}
 }
 
+func TestV2ControlCenterIncludesClawHostWorkflowSurface(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010415, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-workflow-center-1",
+			Source:   "clawhost",
+			Title:    "review channels",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":             "clawhost",
+				"claw_id":                   "claw-a",
+				"claw_name":                 "sales-west",
+				"skill_count":               "3",
+				"agent_skill_count":         "4",
+				"channel_types":             "telegram,discord,whatsapp",
+				"whatsapp_pairing_status":   "waiting",
+				"admin_credentials_exposed": "true",
+				"admin_surface_path":        "/credentials",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-workflow-center-2",
+			Source:   "clawhost",
+			Title:    "review skills",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":           "clawhost",
+				"claw_id":                 "claw-b",
+				"claw_name":               "support-east",
+				"skill_count":             "2",
+				"agent_skill_count":       "2",
+				"channel_types":           "telegram",
+				"whatsapp_pairing_status": "paired",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue control center workflow task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center", nil)
+	request.Header.Set("X-BigClaw-Role", "platform_admin")
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ClawHostWorkflow struct {
+			Status  string `json:"status"`
+			Summary struct {
+				WorkflowItems     int `json:"workflow_items"`
+				PairingApprovals  int `json:"pairing_approvals"`
+				CredentialReviews int `json:"credential_reviews"`
+				TakeoverRequired  int `json:"takeover_required"`
+			} `json:"summary"`
+			ReviewQueue []struct {
+				ClawName           string   `json:"claw_name"`
+				WhatsAppPairing    string   `json:"whatsapp_pairing"`
+				CredentialsExposed bool     `json:"credentials_exposed"`
+				TakeoverRequired   bool     `json:"takeover_required"`
+				Channels           []string `json:"channels"`
+			} `json:"review_queue"`
+		} `json:"clawhost_workflow_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center workflow response: %v", err)
+	}
+	if decoded.ClawHostWorkflow.Status != "active" || decoded.ClawHostWorkflow.Summary.WorkflowItems != 2 || decoded.ClawHostWorkflow.Summary.PairingApprovals != 1 || decoded.ClawHostWorkflow.Summary.CredentialReviews != 1 || decoded.ClawHostWorkflow.Summary.TakeoverRequired != 1 {
+		t.Fatalf("unexpected ClawHost workflow control center surface: %+v", decoded.ClawHostWorkflow)
+	}
+	if len(decoded.ClawHostWorkflow.ReviewQueue) != 2 || !decoded.ClawHostWorkflow.ReviewQueue[0].TakeoverRequired || decoded.ClawHostWorkflow.ReviewQueue[0].ClawName != "sales-west" {
+		t.Fatalf("expected takeover-required ClawHost workflow item first, got %+v", decoded.ClawHostWorkflow.ReviewQueue)
+	}
+}
+
 func mustJSON(value any) []byte {
 	body, err := json.Marshal(value)
 	if err != nil {

@@ -93,7 +93,9 @@
       "BIG-PAR-292",
       "BIG-PAR-293"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-294"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -170,7 +172,8 @@
     "BIG-PAR-290",
     "BIG-PAR-291",
     "BIG-PAR-292",
-    "BIG-PAR-293"
+    "BIG-PAR-293",
+    "BIG-PAR-294"
   ],
   "issues": [
     {
@@ -646,6 +649,12 @@
       "title": "Add control-center regression coverage for ClawHost recovery surface",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-294",
+      "title": "Add control-center regression coverage for ClawHost workflow surface",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
