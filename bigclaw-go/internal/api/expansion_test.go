@@ -776,3 +776,245 @@ func TestV2DistributedReportAppliesTimeWindowFiltersToResponseAndExport(t *testi
 		t.Fatalf("expected exported markdown to exclude out-of-window routing evidence, got %s", exportResponse.Body.String())
 	}
 }
+
+func TestV2ClawHostExpansionEndpoints(t *testing.T) {
+	base := time.Date(2026, 3, 24, 9, 0, 0, 0, time.UTC)
+	recorder := observability.NewRecorder()
+	for _, task := range []domain.Task{
+		{
+			ID:        "clawhost-task-1",
+			TraceID:   "trace-clawhost-1",
+			Title:     "Upgrade platform tenant wave",
+			State:     domain.TaskBlocked,
+			RiskLevel: domain.RiskHigh,
+			TenantID:  "tenant-a",
+			Metadata: map[string]string{
+				"team":     "platform",
+				"project":  "apollo",
+				"app":      "alpha-app",
+				"provider": "openai",
+				"channel":  "slack",
+				"device":   "ios",
+			},
+			CreatedAt: base.Add(-2 * time.Hour),
+			UpdatedAt: base.Add(-30 * time.Minute),
+		},
+		{
+			ID:       "clawhost-task-2",
+			TraceID:  "trace-clawhost-2",
+			Title:    "Restart growth bot ring",
+			State:    domain.TaskRunning,
+			TenantID: "tenant-b",
+			Metadata: map[string]string{
+				"team":     "platform",
+				"project":  "apollo",
+				"app":      "beta-app",
+				"provider": "anthropic",
+				"channel":  "telegram",
+				"device":   "android",
+			},
+			CreatedAt: base.Add(-90 * time.Minute),
+			UpdatedAt: base.Add(-10 * time.Minute),
+		},
+		{
+			ID:       "clawhost-task-3",
+			TraceID:  "trace-clawhost-3",
+			Title:    "Out-of-scope tenant",
+			State:    domain.TaskSucceeded,
+			TenantID: "tenant-c",
+			Metadata: map[string]string{
+				"team":     "growth",
+				"project":  "beta",
+				"app":      "gamma-app",
+				"provider": "minimax",
+				"channel":  "discord",
+				"device":   "desktop",
+			},
+			CreatedAt: base.Add(-3 * time.Hour),
+			UpdatedAt: base.Add(-5 * time.Minute),
+		},
+	} {
+		recorder.StoreTask(task)
+	}
+
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      func() time.Time { return base },
+	}
+	handler := server.Handler()
+
+	t.Run("fleet", func(t *testing.T) {
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v2/clawhost/fleet", nil))
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected fleet endpoint 200, got %d %s", response.Code, response.Body.String())
+		}
+
+		var decoded struct {
+			Inventory struct {
+				SurfaceID string `json:"surface_id"`
+				Summary   struct {
+					AppCount    int `json:"app_count"`
+					BotCount    int `json:"bot_count"`
+					RunningBots int `json:"running_bots"`
+				} `json:"summary"`
+			} `json:"inventory"`
+			Audit struct {
+				ControlPlaneReady bool `json:"control_plane_ready"`
+			} `json:"audit"`
+			Report struct {
+				Markdown  string `json:"markdown"`
+				ExportURL string `json:"export_url"`
+			} `json:"report"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("decode fleet response: %v", err)
+		}
+		if decoded.Inventory.SurfaceID != "BIG-PAR-287" || decoded.Inventory.Summary.AppCount != 2 || decoded.Inventory.Summary.BotCount != 2 || decoded.Inventory.Summary.RunningBots != 1 {
+			t.Fatalf("unexpected fleet inventory payload: %+v", decoded.Inventory)
+		}
+		if !decoded.Audit.ControlPlaneReady {
+			t.Fatalf("expected fleet audit to be ready, got %+v", decoded.Audit)
+		}
+		if decoded.Report.ExportURL != "/v2/clawhost/fleet/export" || !strings.Contains(decoded.Report.Markdown, "# ClawHost Fleet Inventory & Control Plane Report") {
+			t.Fatalf("unexpected fleet report payload: %+v", decoded.Report)
+		}
+
+		exportResponse := httptest.NewRecorder()
+		handler.ServeHTTP(exportResponse, httptest.NewRequest(http.MethodGet, decoded.Report.ExportURL, nil))
+		if exportResponse.Code != http.StatusOK {
+			t.Fatalf("expected fleet export 200, got %d %s", exportResponse.Code, exportResponse.Body.String())
+		}
+		if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+			t.Fatalf("expected fleet export markdown content type, got %q", contentType)
+		}
+		if !strings.Contains(exportResponse.Body.String(), "Control Plane Ready: true") || !strings.Contains(exportResponse.Body.String(), "platform-release-bot") {
+			t.Fatalf("unexpected fleet export body: %s", exportResponse.Body.String())
+		}
+	})
+
+	t.Run("rollout planner", func(t *testing.T) {
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v2/clawhost/rollout-planner?team=platform&project=apollo", nil))
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected rollout planner 200, got %d %s", response.Code, response.Body.String())
+		}
+
+		var decoded struct {
+			Plan struct {
+				PlanID  string            `json:"plan_id"`
+				Filters map[string]string `json:"filters"`
+				Summary struct {
+					WaveCount   int `json:"wave_count"`
+					TenantCount int `json:"tenant_count"`
+					AppCount    int `json:"app_count"`
+				} `json:"summary"`
+			} `json:"plan"`
+			Audit struct {
+				ReleaseReady bool `json:"release_ready"`
+			} `json:"audit"`
+			Report struct {
+				Markdown  string `json:"markdown"`
+				ExportURL string `json:"export_url"`
+			} `json:"report"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("decode rollout planner response: %v", err)
+		}
+		if decoded.Plan.PlanID != "BIG-PAR-288" || decoded.Plan.Summary.WaveCount != 3 || decoded.Plan.Summary.TenantCount != 2 || decoded.Plan.Summary.AppCount != 2 {
+			t.Fatalf("unexpected rollout planner payload: %+v", decoded.Plan)
+		}
+		if decoded.Plan.Filters["team"] != "platform" || decoded.Plan.Filters["project"] != "apollo" {
+			t.Fatalf("expected rollout filters to persist, got %+v", decoded.Plan.Filters)
+		}
+		if !decoded.Audit.ReleaseReady {
+			t.Fatalf("expected rollout planner audit to be ready, got %+v", decoded.Audit)
+		}
+		exportURL, err := url.Parse(decoded.Report.ExportURL)
+		if err != nil {
+			t.Fatalf("parse rollout export url: %v", err)
+		}
+		if exportURL.Path != "/v2/clawhost/rollout-planner/export" || exportURL.Query().Get("team") != "platform" || exportURL.Query().Get("project") != "apollo" {
+			t.Fatalf("unexpected rollout export url: %s", decoded.Report.ExportURL)
+		}
+		if !strings.Contains(decoded.Report.Markdown, "# ClawHost Rollout Planner") || !strings.Contains(decoded.Report.Markdown, "Tenant Ring 1") {
+			t.Fatalf("unexpected rollout markdown: %s", decoded.Report.Markdown)
+		}
+
+		exportResponse := httptest.NewRecorder()
+		handler.ServeHTTP(exportResponse, httptest.NewRequest(http.MethodGet, decoded.Report.ExportURL, nil))
+		if exportResponse.Code != http.StatusOK {
+			t.Fatalf("expected rollout export 200, got %d %s", exportResponse.Code, exportResponse.Body.String())
+		}
+		if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+			t.Fatalf("expected rollout export markdown content type, got %q", contentType)
+		}
+		if !strings.Contains(exportResponse.Body.String(), "alpha-app") || !strings.Contains(exportResponse.Body.String(), "tenant-a") {
+			t.Fatalf("unexpected rollout export body: %s", exportResponse.Body.String())
+		}
+	})
+
+	t.Run("workflows", func(t *testing.T) {
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v2/clawhost/workflows?team=platform&project=apollo&actor=alice", nil))
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected workflows endpoint 200, got %d %s", response.Code, response.Body.String())
+		}
+
+		var decoded struct {
+			Surface struct {
+				Name               string            `json:"name"`
+				Filters            map[string]string `json:"filters"`
+				OperationalSignals map[string]int    `json:"operational_signals"`
+				Summary            struct {
+					LaneCount              int `json:"lane_count"`
+					TokenSessionGatedLanes int `json:"token_session_gated_lanes"`
+				} `json:"summary"`
+			} `json:"surface"`
+			Audit struct {
+				LaneCount int `json:"lane_count"`
+			} `json:"audit"`
+			Report struct {
+				Markdown  string `json:"markdown"`
+				ExportURL string `json:"export_url"`
+			} `json:"report"`
+		}
+		if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+			t.Fatalf("decode workflows response: %v", err)
+		}
+		if decoded.Surface.Name != "clawhost-workflow-surface" || decoded.Surface.Filters["team"] != "platform" || decoded.Surface.Filters["project"] != "apollo" || decoded.Surface.Filters["actor"] != "alice" {
+			t.Fatalf("unexpected workflow surface identity or filters: %+v", decoded.Surface)
+		}
+		if decoded.Surface.Summary.LaneCount != 5 || decoded.Surface.Summary.TokenSessionGatedLanes == 0 || decoded.Audit.LaneCount != 5 {
+			t.Fatalf("unexpected workflow summary or audit: surface=%+v audit=%+v", decoded.Surface.Summary, decoded.Audit)
+		}
+		if decoded.Surface.OperationalSignals["total_tasks"] != 2 || decoded.Surface.OperationalSignals["blocked_tasks"] != 1 || decoded.Surface.OperationalSignals["provider_tagged_tasks"] != 2 {
+			t.Fatalf("unexpected workflow operational signals: %+v", decoded.Surface.OperationalSignals)
+		}
+		workflowExportURL, err := url.Parse(decoded.Report.ExportURL)
+		if err != nil {
+			t.Fatalf("parse workflow export url: %v", err)
+		}
+		if workflowExportURL.Path != "/v2/clawhost/workflows/export" || workflowExportURL.Query().Get("team") != "platform" || workflowExportURL.Query().Get("project") != "apollo" || workflowExportURL.Query().Get("actor") != "alice" {
+			t.Fatalf("unexpected workflow export url: %s", decoded.Report.ExportURL)
+		}
+		if !strings.Contains(decoded.Report.Markdown, "# ClawHost Workflow Surface") || !strings.Contains(decoded.Report.Markdown, "clawhost-parallel-rollout-control") {
+			t.Fatalf("unexpected workflow markdown: %s", decoded.Report.Markdown)
+		}
+
+		exportResponse := httptest.NewRecorder()
+		handler.ServeHTTP(exportResponse, httptest.NewRequest(http.MethodGet, decoded.Report.ExportURL, nil))
+		if exportResponse.Code != http.StatusOK {
+			t.Fatalf("expected workflow export 200, got %d %s", exportResponse.Code, exportResponse.Body.String())
+		}
+		if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+			t.Fatalf("expected workflow export markdown content type, got %q", contentType)
+		}
+		if !strings.Contains(exportResponse.Body.String(), "token_session=true") || !strings.Contains(exportResponse.Body.String(), "IM Channels and Device Approval Workflows") {
+			t.Fatalf("unexpected workflow export body: %s", exportResponse.Body.String())
+		}
+	})
+}
