@@ -18,3 +18,11 @@
 - If needed while iterating, run file-scoped subsets such as `pytest tests/test_orchestration.py -k lifecycle` and `pytest tests/test_reports.py -k takeover`.
 - Record the exact test commands and their results in the final report.
 - Run `git status --short`, `git log -1 --stat`, and `git push origin symphony/BIGCLAW-176` before closeout.
+
+## Validation Results
+- `python3 -m pytest tests/test_orchestration.py -k lifecycle` -> `1 passed, 5 deselected in 0.13s`
+- `python3 -m pytest tests/test_reports.py -k takeover` -> `3 passed, 31 deselected in 0.13s`
+- `python3 -m pytest tests/test_orchestration.py tests/test_reports.py` -> `40 passed in 0.08s`
+- `python3 -m pytest tests/test_audit_events.py` -> `5 passed in 0.07s`
+- `python3 -m pytest tests/test_reports.py -k orchestration_portfolio` -> `3 passed, 31 deselected in 0.07s`
+- `git push origin symphony/BIGCLAW-176` -> pushed `symphony/BIGCLAW-176` to `origin`
