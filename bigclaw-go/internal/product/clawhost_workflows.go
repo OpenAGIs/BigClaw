@@ -49,7 +49,7 @@ type ClawHostWorkflowLane struct {
 	Notes                 []string              `json:"notes,omitempty"`
 }
 
-type ClawHostWorkflowSurface struct {
+type ClawHostWorkflowLaneSurface struct {
 	Name               string                 `json:"name"`
 	Version            string                 `json:"version"`
 	SourceRepo         string                 `json:"source_repo"`
@@ -60,7 +60,7 @@ type ClawHostWorkflowSurface struct {
 	Lanes              []ClawHostWorkflowLane `json:"lanes,omitempty"`
 }
 
-type ClawHostWorkflowSurfaceAudit struct {
+type ClawHostWorkflowLaneSurfaceAudit struct {
 	Name                             string   `json:"name"`
 	Version                          string   `json:"version"`
 	LaneCount                        int      `json:"lane_count"`
@@ -74,7 +74,7 @@ type ClawHostWorkflowSurfaceAudit struct {
 	ReadinessScore                   float64  `json:"readiness_score"`
 }
 
-func BuildDefaultClawHostWorkflowSurface(tasks []domain.Task, actor, team, project string) ClawHostWorkflowSurface {
+func BuildDefaultClawHostWorkflowLaneSurface(tasks []domain.Task, actor, team, project string) ClawHostWorkflowLaneSurface {
 	owner := normalizedWorkflowOwner(actor)
 	lanes := []ClawHostWorkflowLane{
 		{
@@ -197,7 +197,7 @@ func BuildDefaultClawHostWorkflowSurface(tasks []domain.Task, actor, team, proje
 	}
 	sort.SliceStable(lanes, func(i, j int) bool { return lanes[i].LaneID < lanes[j].LaneID })
 
-	surface := ClawHostWorkflowSurface{
+	surface := ClawHostWorkflowLaneSurface{
 		Name:              "clawhost-workflow-surface",
 		Version:           "go-v1",
 		SourceRepo:        "https://github.com/fastclaw-ai/clawhost",
@@ -222,12 +222,12 @@ func BuildDefaultClawHostWorkflowSurface(tasks []domain.Task, actor, team, proje
 	return surface
 }
 
-func BuildClawHostWorkflowSurface(tasks []domain.Task, actor, team, project string) ClawHostWorkflowSurface {
-	return BuildDefaultClawHostWorkflowSurface(tasks, actor, team, project)
+func BuildClawHostWorkflowLaneSurface(tasks []domain.Task, actor, team, project string) ClawHostWorkflowLaneSurface {
+	return BuildDefaultClawHostWorkflowLaneSurface(tasks, actor, team, project)
 }
 
-func AuditClawHostWorkflowSurface(surface ClawHostWorkflowSurface) ClawHostWorkflowSurfaceAudit {
-	audit := ClawHostWorkflowSurfaceAudit{
+func AuditClawHostWorkflowLaneSurface(surface ClawHostWorkflowLaneSurface) ClawHostWorkflowLaneSurfaceAudit {
+	audit := ClawHostWorkflowLaneSurfaceAudit{
 		Name:      surface.Name,
 		Version:   surface.Version,
 		LaneCount: len(surface.Lanes),
@@ -278,7 +278,7 @@ func AuditClawHostWorkflowSurface(surface ClawHostWorkflowSurface) ClawHostWorkf
 	return audit
 }
 
-func RenderClawHostWorkflowReport(surface ClawHostWorkflowSurface, audit ClawHostWorkflowSurfaceAudit) string {
+func RenderClawHostWorkflowLaneReport(surface ClawHostWorkflowLaneSurface, audit ClawHostWorkflowLaneSurfaceAudit) string {
 	lines := []string{
 		"# ClawHost Workflow Surface",
 		"",

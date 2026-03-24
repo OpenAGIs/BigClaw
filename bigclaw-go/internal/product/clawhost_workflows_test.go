@@ -10,7 +10,7 @@ import (
 	"bigclaw-go/internal/domain"
 )
 
-func TestBuildClawHostWorkflowSurfaceIncludesParallelLanesAndSignals(t *testing.T) {
+func TestBuildClawHostWorkflowLaneSurfaceIncludesParallelLanesAndSignals(t *testing.T) {
 	tasks := []domain.Task{
 		{
 			ID:        "task-1",
@@ -33,7 +33,7 @@ func TestBuildClawHostWorkflowSurfaceIncludesParallelLanesAndSignals(t *testing.
 		},
 	}
 
-	surface := BuildDefaultClawHostWorkflowSurface(tasks, "alice", "platform", "apollo")
+	surface := BuildDefaultClawHostWorkflowLaneSurface(tasks, "alice", "platform", "apollo")
 	if surface.Name != "clawhost-workflow-surface" || surface.Version != "go-v1" {
 		t.Fatalf("unexpected workflow surface identity: %+v", surface)
 	}
@@ -77,8 +77,8 @@ func TestBuildClawHostWorkflowSurfaceIncludesParallelLanesAndSignals(t *testing.
 	}
 }
 
-func TestAuditClawHostWorkflowSurfaceFlagsWorkflowGaps(t *testing.T) {
-	surface := BuildDefaultClawHostWorkflowSurface(nil, "", "", "")
+func TestAuditClawHostWorkflowLaneSurfaceFlagsWorkflowGaps(t *testing.T) {
+	surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "", "", "")
 	if len(surface.Lanes) == 0 {
 		t.Fatal("expected base lanes from builder")
 	}
@@ -91,7 +91,7 @@ func TestAuditClawHostWorkflowSurfaceFlagsWorkflowGaps(t *testing.T) {
 	surface.Lanes[0].Stage = "unknown"
 	surface.Lanes[0].AutomationBoundary = "manual-only"
 
-	audit := AuditClawHostWorkflowSurface(surface)
+	audit := AuditClawHostWorkflowLaneSurface(surface)
 	if audit.LaneCount != len(surface.Lanes) {
 		t.Fatalf("unexpected lane count in audit: %+v", audit)
 	}
@@ -115,11 +115,11 @@ func TestAuditClawHostWorkflowSurfaceFlagsWorkflowGaps(t *testing.T) {
 	}
 }
 
-func TestRenderClawHostWorkflowReportIncludesKeySections(t *testing.T) {
-	surface := BuildDefaultClawHostWorkflowSurface(nil, "ops-bot", "platform", "apollo")
-	audit := AuditClawHostWorkflowSurface(surface)
+func TestRenderClawHostWorkflowLaneReportIncludesKeySections(t *testing.T) {
+	surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "ops-bot", "platform", "apollo")
+	audit := AuditClawHostWorkflowLaneSurface(surface)
 
-	report := RenderClawHostWorkflowReport(surface, audit)
+	report := RenderClawHostWorkflowLaneReport(surface, audit)
 	for _, want := range []string{
 		"# ClawHost Workflow Surface",
 		"## Summary",
@@ -138,8 +138,8 @@ func TestRenderClawHostWorkflowReportIncludesKeySections(t *testing.T) {
 	}
 }
 
-func TestBuildClawHostWorkflowSurfaceEncodesScopedLaneRoutes(t *testing.T) {
-	surface := BuildDefaultClawHostWorkflowSurface(nil, "alice", "platform & ops", "apollo/mobile")
+func TestBuildClawHostWorkflowLaneSurfaceEncodesScopedLaneRoutes(t *testing.T) {
+	surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "alice", "platform & ops", "apollo/mobile")
 	if len(surface.Lanes) == 0 {
 		t.Fatal("expected workflow lanes from builder")
 	}
@@ -157,14 +157,14 @@ func TestBuildClawHostWorkflowSurfaceEncodesScopedLaneRoutes(t *testing.T) {
 	}
 }
 
-func TestBuildClawHostWorkflowSurfaceAliasMatchesDefaultBuilder(t *testing.T) {
+func TestBuildClawHostWorkflowLaneSurfaceAliasMatchesDefaultBuilder(t *testing.T) {
 	tasks := []domain.Task{
 		{ID: "task-1", State: domain.TaskBlocked, RiskLevel: domain.RiskHigh, Metadata: map[string]string{"channel": "slack", "provider": "openai"}},
 		{ID: "task-2", State: domain.TaskRunning, Metadata: map[string]string{"device": "wechat"}},
 	}
 
-	got := BuildClawHostWorkflowSurface(tasks, "alice", "platform", "apollo")
-	want := BuildDefaultClawHostWorkflowSurface(tasks, "alice", "platform", "apollo")
+	got := BuildClawHostWorkflowLaneSurface(tasks, "alice", "platform", "apollo")
+	want := BuildDefaultClawHostWorkflowLaneSurface(tasks, "alice", "platform", "apollo")
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("workflow alias mismatch: got %+v want %+v", got, want)
 	}
@@ -200,8 +200,8 @@ func TestWorkflowParallelLimitHelpers(t *testing.T) {
 	}
 }
 
-func TestAuditClawHostWorkflowSurfaceEmptySurfaceReadiness(t *testing.T) {
-	audit := AuditClawHostWorkflowSurface(ClawHostWorkflowSurface{Name: "empty", Version: "v1"})
+func TestAuditClawHostWorkflowLaneSurfaceEmptySurfaceReadiness(t *testing.T) {
+	audit := AuditClawHostWorkflowLaneSurface(ClawHostWorkflowLaneSurface{Name: "empty", Version: "v1"})
 	if audit.Name != "empty" || audit.Version != "v1" || audit.LaneCount != 0 {
 		t.Fatalf("unexpected empty-surface audit metadata: %+v", audit)
 	}
@@ -210,14 +210,14 @@ func TestAuditClawHostWorkflowSurfaceEmptySurfaceReadiness(t *testing.T) {
 	}
 }
 
-func TestRenderClawHostWorkflowReportEmptyState(t *testing.T) {
-	surface := ClawHostWorkflowSurface{
+func TestRenderClawHostWorkflowLaneReportEmptyState(t *testing.T) {
+	surface := ClawHostWorkflowLaneSurface{
 		Name:              "empty-surface",
 		Version:           "v1",
 		SourceRepo:        "https://github.com/fastclaw-ai/clawhost",
 		ReferenceRevision: "deadbeef",
 	}
-	report := RenderClawHostWorkflowReport(surface, ClawHostWorkflowSurfaceAudit{Name: "empty-surface", Version: "v1"})
+	report := RenderClawHostWorkflowLaneReport(surface, ClawHostWorkflowLaneSurfaceAudit{Name: "empty-surface", Version: "v1"})
 
 	for _, want := range []string{
 		"## Summary",
