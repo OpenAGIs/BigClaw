@@ -126,3 +126,57 @@ func TestSavedViewHelperFunctions(t *testing.T) {
 		t.Fatalf("expected empty scope map to render as none, got %q", got)
 	}
 }
+
+func TestAuditSavedViewCatalogHandlesEmptyCatalogAndMissingRecipients(t *testing.T) {
+	t.Run("empty catalog", func(t *testing.T) {
+		audit := AuditSavedViewCatalog(SavedViewCatalog{Name: "empty", Version: "v1"})
+		if audit.ReadinessScore != 0 || audit.DuplicateViewNames != nil || audit.DuplicateDefaultViews != nil {
+			t.Fatalf("expected empty saved-view audit to stay zeroed without duplicate maps, got %+v", audit)
+		}
+	})
+
+	t.Run("missing recipients", func(t *testing.T) {
+		catalog := SavedViewCatalog{
+			Name:    "catalog",
+			Version: "v1",
+			Views: []SavedView{
+				{ViewID: "view-1", Name: "Inbox", Route: "/v2/triage/center", Owner: "alice", Visibility: "private", Filters: []SavedViewFilter{{Field: "severity", Operator: "eq", Value: "high"}}},
+			},
+			Subscriptions: []AlertDigestSubscription{
+				{SubscriptionID: "sub-1", SavedViewID: "view-1", Channel: "email", Cadence: "daily"},
+			},
+		}
+		audit := AuditSavedViewCatalog(catalog)
+		if len(audit.SubscriptionsMissingRecipients) != 1 || audit.SubscriptionsMissingRecipients[0] != "sub-1" {
+			t.Fatalf("expected missing-recipient finding, got %+v", audit)
+		}
+		if audit.ReadinessScore != 0 {
+			t.Fatalf("expected one-view catalog with one penalty to score 0, got %+v", audit)
+		}
+	})
+}
+
+func TestRenderSavedViewReportHandlesEmptyCatalogAndRecipientFallback(t *testing.T) {
+	emptyReport := RenderSavedViewReport(SavedViewCatalog{Name: "empty", Version: "v1"}, SavedViewCatalogAudit{CatalogName: "empty", Version: "v1"})
+	for _, want := range []string{"# Saved Views & Alert Digests Report", "## Saved Views", "- None", "## Alert Digests", "- None", "Duplicate view names: none"} {
+		if !strings.Contains(emptyReport, want) {
+			t.Fatalf("expected empty saved-view report to contain %q, got %s", want, emptyReport)
+		}
+	}
+
+	catalog := SavedViewCatalog{
+		Name:    "catalog",
+		Version: "v1",
+		Views: []SavedView{
+			{ViewID: "view-1", Name: "Inbox", Route: "/v2/triage/center", Owner: "alice", Visibility: "private", Filters: []SavedViewFilter{{Field: "severity", Operator: "eq", Value: "high"}}},
+		},
+		Subscriptions: []AlertDigestSubscription{
+			{SubscriptionID: "sub-1", SavedViewID: "view-1", Channel: "email", Cadence: "daily"},
+		},
+	}
+	audit := AuditSavedViewCatalog(catalog)
+	report := RenderSavedViewReport(catalog, audit)
+	if !strings.Contains(report, "recipients=none") || !strings.Contains(report, "Subscriptions missing recipients: sub-1") {
+		t.Fatalf("expected recipient fallback and gap in saved-view report, got %s", report)
+	}
+}

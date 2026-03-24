@@ -168,7 +168,9 @@
       "BIG-PAR-367",
       "BIG-PAR-368"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-369"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -320,7 +322,8 @@
     "BIG-PAR-365",
     "BIG-PAR-366",
     "BIG-PAR-367",
-    "BIG-PAR-368"
+    "BIG-PAR-368",
+    "BIG-PAR-369"
   ],
   "issues": [
     {
@@ -1246,6 +1249,12 @@
       "title": "Broaden direct recovery builder coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-369",
+      "title": "Add saved-view audit and report edge coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
