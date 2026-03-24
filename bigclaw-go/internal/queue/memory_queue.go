@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,12 +21,16 @@ type item struct {
 }
 
 type MemoryQueue struct {
-	mu    sync.Mutex
-	items map[string]*item
+	mu                   sync.Mutex
+	items                map[string]*item
+	tenantLastDispatched map[string]time.Time
 }
 
 func NewMemoryQueue() *MemoryQueue {
-	return &MemoryQueue{items: make(map[string]*item)}
+	return &MemoryQueue{
+		items:                make(map[string]*item),
+		tenantLastDispatched: make(map[string]time.Time),
+	}
 }
 
 func (q *MemoryQueue) Enqueue(_ context.Context, task domain.Task) error {
@@ -70,12 +75,27 @@ func (q *MemoryQueue) LeaseNext(_ context.Context, workerID string, ttl time.Dur
 
 	sort.SliceStable(ordered, func(i, j int) bool {
 		if ordered[i].Task.Priority == ordered[j].Task.Priority {
+			tenantI := normalizeTenantID(ordered[i].Task.TenantID)
+			tenantJ := normalizeTenantID(ordered[j].Task.TenantID)
+			if tenantI != "" && tenantJ != "" && tenantI != tenantJ {
+				lastI, okI := q.tenantLastDispatched[tenantI]
+				lastJ, okJ := q.tenantLastDispatched[tenantJ]
+				if okI != okJ {
+					return !okI
+				}
+				if okI && !lastI.Equal(lastJ) {
+					return lastI.Before(lastJ)
+				}
+			}
 			return ordered[i].Task.CreatedAt.Before(ordered[j].Task.CreatedAt)
 		}
 		return ordered[i].Task.Priority < ordered[j].Task.Priority
 	})
 
 	picked := ordered[0]
+	if tenantID := normalizeTenantID(picked.Task.TenantID); tenantID != "" {
+		q.tenantLastDispatched[tenantID] = now
+	}
 	picked.Leased = true
 	picked.LeaseWorker = workerID
 	picked.LeaseExpires = now.Add(ttl)
@@ -199,6 +219,10 @@ func (q *MemoryQueue) ListDeadLetters(_ context.Context, limit int) ([]domain.Ta
 		out = append(out, current.Task)
 	}
 	return out, nil
+}
+
+func normalizeTenantID(tenantID string) string {
+	return strings.TrimSpace(tenantID)
 }
 
 func (q *MemoryQueue) ReplayDeadLetter(_ context.Context, taskID string) error {

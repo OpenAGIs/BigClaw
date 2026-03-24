@@ -1,27 +1,32 @@
-## Codex Workpad
+# BIGCLAW-190 Workpad
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## Context
+- Issue: `BIGCLAW-190`
+- Focus: regressions around multi-tenant parallel fairness and queue starvation
+- Constraint: keep changes scoped to this issue
+- Environment issue encountered: workspace arrived empty, and initial remote retrieval attempts have been unstable
 
-### Plan
+## Plan
+1. Rebuild the local git metadata for this workspace and fetch a minimal `main` baseline.
+2. Locate scheduler / queue / tenant fairness code paths and existing tests covering parallel execution.
+3. Reproduce the regression with targeted tests or by adding a focused failing test.
+4. Implement the smallest fix that restores fairness and prevents starvation without broad refactors.
+5. Run targeted validation, capture exact commands and results, then commit and push.
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+## Acceptance Criteria
+- Multi-tenant queued work no longer allows one tenant to starve others under parallel execution.
+- Fair scheduling behavior is covered by targeted automated tests.
+- Existing adjacent behavior remains intact for the touched scheduler / queue code paths.
+- All changes remain scoped to code and tests directly relevant to `BIGCLAW-190`.
 
-### Acceptance Criteria
+## Validation Plan
+- Inspect existing queue / scheduler tests and run the most relevant subset first.
+- Add or update focused tests for fairness / starvation scenarios.
+- Run the smallest command set that proves the fix, and record exact commands plus pass/fail results here after execution.
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
-
-### Validation
-
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
-
-### Notes
-
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+## Validation Results
+- `gofmt -w bigclaw-go/internal/queue/memory_queue.go bigclaw-go/internal/queue/sqlite_queue.go bigclaw-go/internal/queue/memory_queue_test.go bigclaw-go/internal/queue/sqlite_queue_test.go bigclaw-go/internal/worker/pool_test.go`
+  - Result: passed
+- `cd bigclaw-go && go test ./internal/queue ./internal/worker`
+  - Result: passed
+  - Notes: `ok  	bigclaw-go/internal/queue	111.800s`, `ok  	bigclaw-go/internal/worker	(cached)`

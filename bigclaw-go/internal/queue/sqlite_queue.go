@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"bigclaw-go/internal/domain"
@@ -18,6 +19,17 @@ import (
 type SQLiteQueue struct {
 	db   *sql.DB
 	path string
+}
+
+type sqliteLeaseCandidate struct {
+	taskID            string
+	payload           []byte
+	attempt           int
+	tenantID          string
+	priority          int
+	createdAt         time.Time
+	lastDispatched    time.Time
+	hasLastDispatched bool
 }
 
 func NewSQLiteQueue(path string) (*SQLiteQueue, error) {
@@ -45,6 +57,7 @@ func (q *SQLiteQueue) init() error {
 		`CREATE TABLE IF NOT EXISTS tasks (
 			task_id TEXT PRIMARY KEY,
 			payload BLOB NOT NULL,
+			tenant_id TEXT NOT NULL DEFAULT '',
 			priority INTEGER NOT NULL,
 			created_at_ns INTEGER NOT NULL,
 			state TEXT NOT NULL,
@@ -54,10 +67,18 @@ func (q *SQLiteQueue) init() error {
 			lease_worker TEXT NOT NULL,
 			lease_expires_ns INTEGER NOT NULL
 		);`,
-		`CREATE INDEX IF NOT EXISTS idx_tasks_available ON tasks(leased, available_at_ns, priority, created_at_ns);`,
+		`ALTER TABLE tasks ADD COLUMN tenant_id TEXT NOT NULL DEFAULT '';`,
+		`CREATE INDEX IF NOT EXISTS idx_tasks_available ON tasks(leased, available_at_ns, priority, tenant_id, created_at_ns);`,
+		`CREATE TABLE IF NOT EXISTS tenant_dispatch_state (
+			tenant_id TEXT PRIMARY KEY,
+			last_dispatched_ns INTEGER NOT NULL
+		);`,
 	}
 	for _, stmt := range stmts {
 		if _, err := q.db.Exec(stmt); err != nil {
+			if strings.Contains(stmt, "ADD COLUMN tenant_id") && strings.Contains(strings.ToLower(err.Error()), "duplicate column name") {
+				continue
+			}
 			return err
 		}
 	}
@@ -75,10 +96,11 @@ func (q *SQLiteQueue) Enqueue(_ context.Context, task domain.Task) error {
 	if err != nil {
 		return err
 	}
-	_, err = q.db.Exec(`INSERT INTO tasks(task_id, payload, priority, created_at_ns, state, available_at_ns, attempt, leased, lease_worker, lease_expires_ns)
-		VALUES(?, ?, ?, ?, ?, ?, 0, 0, '', 0)
-		ON CONFLICT(task_id) DO UPDATE SET payload=excluded.payload, priority=excluded.priority, created_at_ns=excluded.created_at_ns, state=excluded.state, available_at_ns=excluded.available_at_ns, leased=0, lease_worker='', lease_expires_ns=0`,
-		task.ID, payload, task.Priority, task.CreatedAt.UnixNano(), string(task.State), now.UnixNano())
+	tenantID := normalizeTenantID(task.TenantID)
+	_, err = q.db.Exec(`INSERT INTO tasks(task_id, payload, tenant_id, priority, created_at_ns, state, available_at_ns, attempt, leased, lease_worker, lease_expires_ns)
+		VALUES(?, ?, ?, ?, ?, ?, ?, 0, 0, '', 0)
+		ON CONFLICT(task_id) DO UPDATE SET payload=excluded.payload, tenant_id=excluded.tenant_id, priority=excluded.priority, created_at_ns=excluded.created_at_ns, state=excluded.state, available_at_ns=excluded.available_at_ns, leased=0, lease_worker='', lease_expires_ns=0`,
+		task.ID, payload, tenantID, task.Priority, task.CreatedAt.UnixNano(), string(task.State), now.UnixNano())
 	return err
 }
 
@@ -116,49 +138,79 @@ func (q *SQLiteQueue) LeaseNext(ctx context.Context, workerID string, ttl time.D
 	}()
 
 	now := time.Now()
-	row := conn.QueryRowContext(ctx, `SELECT task_id, payload, attempt FROM tasks
+	rows, err := conn.QueryContext(ctx, `SELECT task_id, payload, attempt, tenant_id, priority, created_at_ns,
+		COALESCE((SELECT last_dispatched_ns FROM tenant_dispatch_state WHERE tenant_dispatch_state.tenant_id = tasks.tenant_id), 0) AS last_dispatched_ns
+		FROM tasks
 		WHERE available_at_ns <= ?
 		AND state NOT IN (?, ?)
 		AND (leased = 0 OR lease_expires_ns <= ?)
-		ORDER BY priority ASC, created_at_ns ASC
-		LIMIT 1`, now.UnixNano(), string(domain.TaskDeadLetter), string(domain.TaskCancelled), now.UnixNano())
-
-	var taskID string
-	var payload []byte
-	var attempt int
-	if err := row.Scan(&taskID, &payload, &attempt); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			_, _ = conn.ExecContext(context.Background(), `ROLLBACK`)
-			committed = true
-			return nil, nil, nil
-		}
+		ORDER BY priority ASC, created_at_ns ASC`, now.UnixNano(), string(domain.TaskDeadLetter), string(domain.TaskCancelled), now.UnixNano())
+	if err != nil {
 		return nil, nil, err
+	}
+	defer rows.Close()
+
+	var picked *sqliteLeaseCandidate
+	for rows.Next() {
+		var candidate sqliteLeaseCandidate
+		var priority int
+		var createdAtNS int64
+		var lastDispatchedNS int64
+		if err := rows.Scan(&candidate.taskID, &candidate.payload, &candidate.attempt, &candidate.tenantID, &priority, &createdAtNS, &lastDispatchedNS); err != nil {
+			return nil, nil, err
+		}
+		candidate.tenantID = normalizeTenantID(candidate.tenantID)
+		candidate.priority = priority
+		candidate.createdAt = time.Unix(0, createdAtNS)
+		if candidate.tenantID != "" && lastDispatchedNS > 0 {
+			candidate.lastDispatched = time.Unix(0, lastDispatchedNS)
+			candidate.hasLastDispatched = true
+		}
+		if picked == nil || sqliteLeaseCandidateLess(candidate, *picked) {
+			copyCandidate := candidate
+			picked = &copyCandidate
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+	if picked == nil {
+		_, _ = conn.ExecContext(context.Background(), `ROLLBACK`)
+		committed = true
+		return nil, nil, nil
 	}
 
 	var task domain.Task
-	if err := json.Unmarshal(payload, &task); err != nil {
+	if err := json.Unmarshal(picked.payload, &task); err != nil {
 		return nil, nil, err
 	}
 	task.State = domain.TaskLeased
 	task.UpdatedAt = now
-	attempt++
+	attempt := picked.attempt + 1
 	leaseExpires := now.Add(ttl)
 	updatedPayload, err := json.Marshal(task)
 	if err != nil {
 		return nil, nil, err
 	}
-	result, err := conn.ExecContext(ctx, `UPDATE tasks SET payload=?, state=?, leased=1, lease_worker=?, lease_expires_ns=?, attempt=? WHERE task_id=?`, updatedPayload, string(task.State), workerID, leaseExpires.UnixNano(), attempt, taskID)
+	result, err := conn.ExecContext(ctx, `UPDATE tasks SET payload=?, tenant_id=?, state=?, leased=1, lease_worker=?, lease_expires_ns=?, attempt=? WHERE task_id=?`, updatedPayload, normalizeTenantID(task.TenantID), string(task.State), workerID, leaseExpires.UnixNano(), attempt, picked.taskID)
 	if err != nil {
 		return nil, nil, err
 	}
 	if rows, _ := result.RowsAffected(); rows != 1 {
 		return nil, nil, fmt.Errorf("unexpected rows affected during lease: %d", rows)
 	}
+	if tenantID := normalizeTenantID(task.TenantID); tenantID != "" {
+		if _, err := conn.ExecContext(ctx, `INSERT INTO tenant_dispatch_state(tenant_id, last_dispatched_ns)
+			VALUES(?, ?)
+			ON CONFLICT(tenant_id) DO UPDATE SET last_dispatched_ns=excluded.last_dispatched_ns`, tenantID, now.UnixNano()); err != nil {
+			return nil, nil, err
+		}
+	}
 	if _, err := conn.ExecContext(ctx, `COMMIT`); err != nil {
 		return nil, nil, err
 	}
 	committed = true
-	return &task, &Lease{TaskID: taskID, WorkerID: workerID, ExpiresAt: leaseExpires, Attempt: attempt, AcquiredAt: now}, nil
+	return &task, &Lease{TaskID: picked.taskID, WorkerID: workerID, ExpiresAt: leaseExpires, Attempt: attempt, AcquiredAt: now}, nil
 }
 
 func (q *SQLiteQueue) RenewLease(_ context.Context, lease *Lease, ttl time.Duration) error {
@@ -266,6 +318,24 @@ func (q *SQLiteQueue) ReplayDeadLetter(_ context.Context, taskID string) error {
 	}
 	_, err = q.db.Exec(`UPDATE tasks SET payload=?, state=?, available_at_ns=?, leased=0, lease_worker='', lease_expires_ns=0, attempt=? WHERE task_id=?`, updatedPayload, string(domain.TaskQueued), now.UnixNano(), attempt, taskID)
 	return err
+}
+
+func sqliteLeaseCandidateLess(current, best sqliteLeaseCandidate) bool {
+	if current.priority != best.priority {
+		return current.priority < best.priority
+	}
+	if current.tenantID != "" && best.tenantID != "" && current.tenantID != best.tenantID {
+		if current.hasLastDispatched != best.hasLastDispatched {
+			return !current.hasLastDispatched
+		}
+		if current.hasLastDispatched && !current.lastDispatched.Equal(best.lastDispatched) {
+			return current.lastDispatched.Before(best.lastDispatched)
+		}
+	}
+	if !current.createdAt.Equal(best.createdAt) {
+		return current.createdAt.Before(best.createdAt)
+	}
+	return current.taskID < best.taskID
 }
 
 func (q *SQLiteQueue) GetTask(_ context.Context, taskID string) (TaskSnapshot, error) {

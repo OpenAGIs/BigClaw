@@ -30,6 +30,41 @@ func TestMemoryQueueLeasesByPriority(t *testing.T) {
 	}
 }
 
+func TestMemoryQueueRotatesAcrossTenantsBeforeLeasingSecondSameTenantTask(t *testing.T) {
+	q := NewMemoryQueue()
+	ctx := context.Background()
+	base := time.Now()
+
+	for _, task := range []domain.Task{
+		{ID: "tenant-a-1", TenantID: "tenant-a", Priority: 2, CreatedAt: base},
+		{ID: "tenant-a-2", TenantID: "tenant-a", Priority: 2, CreatedAt: base.Add(time.Second)},
+		{ID: "tenant-b-1", TenantID: "tenant-b", Priority: 2, CreatedAt: base.Add(2 * time.Second)},
+	} {
+		if err := q.Enqueue(ctx, task); err != nil {
+			t.Fatalf("enqueue %s: %v", task.ID, err)
+		}
+	}
+
+	firstTask, firstLease, err := q.LeaseNext(ctx, "worker-a", time.Minute)
+	if err != nil || firstTask == nil || firstLease == nil {
+		t.Fatalf("first lease: %v task=%v lease=%v", err, firstTask, firstLease)
+	}
+	if firstTask.ID != "tenant-a-1" {
+		t.Fatalf("expected oldest tenant-a task first, got %s", firstTask.ID)
+	}
+	if err := q.Ack(ctx, firstLease); err != nil {
+		t.Fatalf("ack first lease: %v", err)
+	}
+
+	secondTask, _, err := q.LeaseNext(ctx, "worker-b", time.Minute)
+	if err != nil || secondTask == nil {
+		t.Fatalf("second lease: %v task=%v", err, secondTask)
+	}
+	if secondTask.ID != "tenant-b-1" {
+		t.Fatalf("expected queue fairness to rotate to tenant-b before tenant-a-2, got %s", secondTask.ID)
+	}
+}
+
 func TestMemoryQueueDeadLetterAndReplay(t *testing.T) {
 	q := NewMemoryQueue()
 	ctx := context.Background()

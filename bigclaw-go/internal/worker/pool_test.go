@@ -126,6 +126,79 @@ func TestPoolProcessesMultipleTasksAcrossWorkers(t *testing.T) {
 	}
 }
 
+func TestPoolDistributesParallelLeasesAcrossTenants(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	base := time.Now()
+	for _, task := range []domain.Task{
+		{ID: "tenant-a-1", TenantID: "tenant-a", TraceID: "tenant-a-1", Priority: 1, CreatedAt: base},
+		{ID: "tenant-a-2", TenantID: "tenant-a", TraceID: "tenant-a-2", Priority: 1, CreatedAt: base.Add(time.Second)},
+		{ID: "tenant-b-1", TenantID: "tenant-b", TraceID: "tenant-b-1", Priority: 1, CreatedAt: base.Add(2 * time.Second)},
+	} {
+		if err := q.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue %s: %v", task.ID, err)
+		}
+	}
+
+	started := make(chan string, 2)
+	release := make(chan struct{})
+	bus := events.NewBus()
+	recorder := observability.NewRecorder()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	registry := executor.NewRegistry(coordinatingRunner{started: started, release: release})
+
+	pool := NewPool(
+		&Runtime{
+			WorkerID:    "worker-1",
+			Queue:       q,
+			Scheduler:   scheduler.New(),
+			Registry:    registry,
+			Bus:         bus,
+			Recorder:    recorder,
+			LeaseTTL:    time.Second,
+			TaskTimeout: time.Second,
+		},
+		&Runtime{
+			WorkerID:    "worker-2",
+			Queue:       q,
+			Scheduler:   scheduler.New(),
+			Registry:    registry,
+			Bus:         bus,
+			Recorder:    recorder,
+			LeaseTTL:    time.Second,
+			TaskTimeout: time.Second,
+		},
+	)
+
+	done := make(chan bool, 1)
+	go func() {
+		done <- pool.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 2, BudgetRemaining: 1000})
+	}()
+
+	seen := map[string]bool{}
+	for index := 0; index < 2; index++ {
+		select {
+		case taskID := <-started:
+			seen[taskID] = true
+		case <-time.After(500 * time.Millisecond):
+			t.Fatal("expected both workers to start tasks before release")
+		}
+	}
+	if !seen["tenant-a-1"] || !seen["tenant-b-1"] {
+		t.Fatalf("expected first pool tick to distribute work across tenants, got %#v", seen)
+	}
+
+	close(release)
+
+	select {
+	case processed := <-done:
+		if !processed {
+			t.Fatal("expected pool tick to process tasks")
+		}
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("expected pool tick to complete after releasing runners")
+	}
+}
+
 func TestPoolSnapshotSummarizesWorkerState(t *testing.T) {
 	workerA := &Runtime{WorkerID: "worker-a"}
 	workerA.updateStatus(func(status *Status) {
