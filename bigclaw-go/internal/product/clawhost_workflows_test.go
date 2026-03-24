@@ -214,3 +214,36 @@ func TestRenderClawHostWorkflowLaneReportIncludesKeySections(t *testing.T) {
 		t.Fatalf("expected markdown report to end with newline, got %q", report)
 	}
 }
+
+func TestRenderClawHostWorkflowLaneReportHandlesEmptyLanes(t *testing.T) {
+	surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "", "platform", "apollo")
+	surface.Lanes = nil
+	surface.Summary["lane_count"] = 0
+	surface.Summary["supports_parallel_batches"] = 0
+	surface.Summary["token_session_gated_lanes"] = 0
+	surface.Summary["device_auto_approval_lanes"] = 0
+	surface.Summary["human_takeover_enabled_lanes"] = 0
+	surface.Summary["provider_aware_lanes"] = 0
+	surface.Summary["skills_and_channel_aware_lanes"] = 0
+
+	audit := AuditClawHostWorkflowLaneSurface(surface)
+	report := RenderClawHostWorkflowLaneReport(surface, audit)
+
+	for _, want := range []string{
+		"## Lanes",
+		"- none",
+		"- Lane Count: 0",
+		"- Readiness Score: 0.0",
+		"- Missing route lanes: none",
+		"- Missing owner lanes: none",
+		"- Lanes without human takeover: none",
+		"- Lanes without token/session gating: none",
+		"- Lanes without required approvals: none",
+		"- Lanes with invalid stage: none",
+		"- Lanes with invalid automation policy: none",
+	} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected empty-lane report to contain %q, got %s", want, report)
+		}
+	}
+}
