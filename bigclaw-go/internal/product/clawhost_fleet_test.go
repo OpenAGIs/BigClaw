@@ -23,6 +23,20 @@ func TestBuildDefaultClawHostFleetInventoryIsControlPlaneReady(t *testing.T) {
 	}
 }
 
+func TestBuildDefaultClawHostFleetInventoryCompatibilityAlias(t *testing.T) {
+	aliasedInventory := BuildDefaultClawHostFleetInventory()
+	surfaceInventory := BuildDefaultClawHostFleetSurface()
+	if !reflect.DeepEqual(aliasedInventory, surfaceInventory) {
+		t.Fatalf("expected default fleet alias builder to match surface builder, got alias=%+v surface=%+v", aliasedInventory, surfaceInventory)
+	}
+
+	aliasedAudit := AuditClawHostFleetSurface(aliasedInventory)
+	surfaceAudit := AuditClawHostFleetSurface(surfaceInventory)
+	if !reflect.DeepEqual(aliasedAudit, surfaceAudit) {
+		t.Fatalf("expected default fleet alias audit to match surface audit, got alias=%+v surface=%+v", aliasedAudit, surfaceAudit)
+	}
+}
+
 func TestClawHostFleetInventoryCompatibilityAliases(t *testing.T) {
 	apps := []ClawHostAppInventory{
 		{AppID: "app-zeta", Name: "zeta", TenantID: "tenant-z", Team: "platform", Project: "apollo"},
