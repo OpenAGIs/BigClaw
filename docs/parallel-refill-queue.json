@@ -157,11 +157,12 @@
       "BIG-PAR-362",
       "BIG-PAR-364",
       "BIG-PAR-365",
-      "BIG-PAR-367"
-    ],
-    "active": [
+      "BIG-PAR-367",
       "BIG-PAR-369",
       "BIG-PAR-370"
+    ],
+    "active": [
+      "BIG-PAR-371"
     ],
     "standby": []
   },
@@ -307,7 +308,8 @@
     "BIG-PAR-365",
     "BIG-PAR-367",
     "BIG-PAR-369",
-    "BIG-PAR-370"
+    "BIG-PAR-370",
+    "BIG-PAR-371"
   ],
   "issues": [
     {
@@ -1184,11 +1186,17 @@
       "identifier": "BIG-PAR-369",
       "title": "Add ClawHost workflow empty-audit coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-370",
       "title": "Add ClawHost workflow report empty-state coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-371",
+      "title": "Add rollout sorted-values blank-skip coverage",
       "track": "Go Mainline Follow-ups",
       "status": "In Progress"
     }

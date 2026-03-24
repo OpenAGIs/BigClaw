@@ -91,6 +91,7 @@ func TestClawHostRolloutHelpers(t *testing.T) {
 func TestAuditClawHostRolloutPlannerEmptyPlanAndSortedValues(t *testing.T) {
 	if got := clawHostSortedValues([]domain.Task{
 		{TenantID: " tenant-b "},
+		{TenantID: "   "},
 		{TenantID: "tenant-a"},
 		{TenantID: "tenant-b"},
 	}, func(task domain.Task) string {

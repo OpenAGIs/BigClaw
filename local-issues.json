@@ -4892,6 +4892,23 @@
       "state": "Done",
       "title": "Add ClawHost workflow report empty-state coverage",
       "updated_at": "2026-03-24T22:23:41Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-24T22:24:45Z",
+      "description": "Add narrow Go tests covering clawHostSortedValues behavior when getter values are blank after trimming in clawhost_rollout.go.",
+      "id": "big-par-371",
+      "identifier": "BIG-PAR-371",
+      "labels": [
+        "clawhost",
+        "testing",
+        "api",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add rollout sorted-values blank-skip coverage",
+      "updated_at": "2026-03-24T22:24:45Z"
     }
   ]
 }
