@@ -141,7 +141,9 @@
       "BIG-PAR-339",
       "BIG-PAR-342"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-343"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -266,7 +268,8 @@
     "BIG-PAR-337",
     "BIG-PAR-340",
     "BIG-PAR-339",
-    "BIG-PAR-342"
+    "BIG-PAR-342",
+    "BIG-PAR-343"
   ],
   "issues": [
     {
@@ -1030,6 +1033,12 @@
       "title": "Add saved view populated report fallback coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-343",
+      "title": "Add unscoped saved view catalog baseline coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

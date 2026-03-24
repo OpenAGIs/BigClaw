@@ -52,6 +52,34 @@ func TestBuildSavedViewCatalogAddsScopedViewsAndDigests(t *testing.T) {
 	}
 }
 
+func TestBuildSavedViewCatalogUnscopedBaseline(t *testing.T) {
+	tasks := []domain.Task{
+		{ID: "task-1", State: domain.TaskRunning, Metadata: map[string]string{"owner": "alice"}},
+	}
+
+	catalog := BuildSavedViewCatalog(tasks, " alice ", "   ", "")
+	if len(catalog.Views) != 5 {
+		t.Fatalf("expected only baseline saved views without premium/high-risk extras, got %+v", catalog.Views)
+	}
+	if len(catalog.Subscriptions) != 2 {
+		t.Fatalf("expected baseline subscriptions, got %+v", catalog.Subscriptions)
+	}
+	for _, view := range catalog.Views {
+		if strings.Contains(view.ViewID, "-") && (strings.HasSuffix(view.ViewID, "-") || strings.Contains(view.ViewID, "--")) {
+			t.Fatalf("unexpected unscoped view id formatting: %s", view.ViewID)
+		}
+		if view.Visibility != "private" {
+			t.Fatalf("expected private visibility for unscoped catalog, got %+v", view)
+		}
+		if strings.Contains(view.Route, "?") {
+			t.Fatalf("expected unscoped route without query string, got %s", view.Route)
+		}
+	}
+	if catalog.Subscriptions[0].SubscriptionID != "saved-view-daily-triage" || catalog.Subscriptions[1].SubscriptionID != "saved-view-weekly-ops" {
+		t.Fatalf("unexpected unscoped subscription ids: %+v", catalog.Subscriptions)
+	}
+}
+
 func TestAuditSavedViewCatalogAndRenderReport(t *testing.T) {
 	catalog := SavedViewCatalog{
 		Name:    "catalog",
