@@ -104,6 +104,15 @@ func TestRepoRegistryFallsBackWithoutSpaceAndReusesCachedAgent(t *testing.T) {
 	}
 }
 
+func TestRepoSlugNormalizesPunctuationAndFallbacks(t *testing.T) {
+	if got := slug("BIG-401 / review closeout"); got != "big-401-review-closeout" {
+		t.Fatalf("unexpected normalized slug: %q", got)
+	}
+	if got := slug(" !!! "); got != "agent" {
+		t.Fatalf("expected empty slug fallback, got %q", got)
+	}
+}
+
 func TestRepoDiscussionBoardCreateReplyAndFilter(t *testing.T) {
 	board := RepoDiscussionBoard{Now: func() time.Time { return time.Date(2026, 3, 20, 10, 0, 0, 0, time.UTC) }}
 	post := board.CreatePost("alpha-release", "alice", "Need reviewer eyes", "task", "BIG-401", map[string]any{"resolved": false})
