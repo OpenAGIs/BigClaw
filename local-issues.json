@@ -5930,6 +5930,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- added focused refill queue tests for LoadQueue path normalization and invalid payload handling, Save nested-directory and HTML-escape behavior, UpsertIssue validation/default/order-repair branches, and SetRecentBatch batch-move and clear behavior in bigclaw-go/internal/refill/queue.go.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill`\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill.cover && go tool cover -func=/tmp/refill.cover | rg \"queue.go:69|queue.go:85|queue.go:119|queue.go:123|queue.go:235|queue.go:288|total\"`\n- result: pass; LoadQueue 90.0%, Save 66.7%, ProjectSlug 100.0%, ActivateStateID 100.0%, UpsertIssue 93.9%, SetRecentBatch 85.2%, package total 89.3%.\n\nCommit SHA:\n- `e8a37a4ce9a6c9fc292f6567e5ee72681cc5b121`\n\nPR URL:\n- https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T18:40:30Z"
+        }
+      ],
       "created_at": "2026-03-25T18:29:52Z",
       "description": "Add focused refill queue tests covering LoadQueue, Save, and remaining queue helper edge paths in bigclaw-go/internal/refill/queue.go.",
       "id": "big-par-408",
@@ -5941,9 +5948,9 @@
         "coverage"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add refill queue load/save helper coverage",
-      "updated_at": "2026-03-25T18:29:52Z"
+      "updated_at": "2026-03-25T18:40:30Z"
     }
   ]
 }

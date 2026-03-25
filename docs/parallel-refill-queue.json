@@ -205,11 +205,10 @@
       "BIG-PAR-404",
       "BIG-PAR-405",
       "BIG-PAR-406",
-      "BIG-PAR-407"
-    ],
-    "active": [
+      "BIG-PAR-407",
       "BIG-PAR-408"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1566,7 +1565,7 @@
       "identifier": "BIG-PAR-408",
       "title": "Add refill queue load/save helper coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
