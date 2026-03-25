@@ -5570,6 +5570,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added governance audit field coverage in bigclaw-go/internal/repo/governance_test.go, pinning RequiredAuditFields for repo action, board action, and default branches. Validation: cd bigclaw-go && go test ./internal/repo -> ok; cd bigclaw-go && go test ./internal/repo -coverprofile=/tmp/bigpar393-repo.cover && go tool cover -func=/tmp/bigpar393-repo.cover | rg \"governance.go:61|total:\" -> RequiredAuditFields 100.0%, total 99.3%; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 57590e9b6e5309967cb1e29101119f6319e1574c matches remote SHA 57590e9b6e5309967cb1e29101119f6319e1574c with status ok and synced true; git log -1 --stat -> captured after the governance audit field commit. Commit SHA: 57590e9b6e5309967cb1e29101119f6319e1574c. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T17:53:37Z"
+        }
+      ],
       "created_at": "2026-03-25T17:48:53Z",
       "description": "Add focused unit coverage for bigclaw-go/internal/repo/governance.go so RequiredAuditFields action branches are pinned without changing permission behavior.",
       "id": "big-par-393",
@@ -5581,12 +5588,19 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add governance audit field coverage",
-      "updated_at": "2026-03-25T17:49:15Z"
+      "updated_at": "2026-03-25T17:53:37Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added task state helper coverage in bigclaw-go/internal/domain/task_test.go, pinning marshalRiskLevel defaults and the remaining normalizeTaskState direct/alias branches without changing API behavior. Validation: cd bigclaw-go && go test ./internal/domain -> ok; cd bigclaw-go && go test ./internal/domain -coverprofile=/tmp/bigpar394-domain.cover && go tool cover -func=/tmp/bigpar394-domain.cover | rg \"task.go:(267|281)|total:\" -> marshalRiskLevel 100.0%, normalizeTaskState 100.0%, total 89.8%; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 3f38a4a85959878269d7e70b16257b8bd588ad7e matches remote SHA 3f38a4a85959878269d7e70b16257b8bd588ad7e with status ok and synced true; git log -1 --stat -> captured after the task state helper commit. Commit SHA: 3f38a4a85959878269d7e70b16257b8bd588ad7e. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T17:53:37Z"
+        }
+      ],
       "created_at": "2026-03-25T17:48:53Z",
       "description": "Add focused unit coverage for bigclaw-go/internal/domain/task.go so marshalRiskLevel and the remaining normalizeTaskState branches are pinned without touching API behavior.",
       "id": "big-par-394",
@@ -5598,9 +5612,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add task state normalization helper coverage",
-      "updated_at": "2026-03-25T17:49:15Z"
+      "updated_at": "2026-03-25T17:53:37Z"
     }
   ]
 }
