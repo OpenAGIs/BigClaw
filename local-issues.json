@@ -5234,6 +5234,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added focused bootstrap helper coverage in bigclaw-go/internal/bootstrap/bootstrap_test.go, pinning joinLines alongside the existing join helper checks so the newline-joining contract no longer depends on higher-level bootstrap report flows. Validation: cd bigclaw-go && go test ./internal/bootstrap -> ok; cd bigclaw-go && go test ./internal/bootstrap -coverprofile=/tmp/bigpar379-bootstrap.cover && go tool cover -func=/tmp/bigpar379-bootstrap.cover | rg \"bootstrap.go:776|bootstrap.go:787|total:\" -> join 100.0%, joinLines 100.0%, total 58.2%; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 602971e68ba70e2585dd02beb42496bb3a82d9e7 matches remote SHA 602971e68ba70e2585dd02beb42496bb3a82d9e7 with status ok and synced true; git log -1 --stat -> captured for commit 602971e68ba70e2585dd02beb42496bb3a82d9e7 with bootstrap tests and tracker files in the stat output. Commit SHA: 602971e68ba70e2585dd02beb42496bb3a82d9e7. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T16:54:57Z"
+        }
+      ],
       "created_at": "2026-03-25T16:53:16Z",
       "description": "Add focused unit coverage for bigclaw-go/internal/bootstrap so joinLines is pinned without depending on validation report integration flows.",
       "id": "big-par-379",
@@ -5245,9 +5252,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add bootstrap joinLines helper coverage",
-      "updated_at": "2026-03-25T16:53:27Z"
+      "updated_at": "2026-03-25T16:54:57Z"
     }
   ]
 }
