@@ -5474,6 +5474,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Finished the remaining repo board filter branch coverage in bigclaw-go/internal/repo/repo_surfaces_test.go by pinning target-id mismatch handling in ListPosts. Validation: cd bigclaw-go && go test ./internal/repo -> ok; cd bigclaw-go && go test ./internal/repo -coverprofile=/tmp/bigpar389-repo.cover && go tool cover -func=/tmp/bigpar389-repo.cover | rg \"board.go:61|total:\" -> ListPosts 100.0%, total 93.0%; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 2c04b0fb5ad00821f04a6ff79b90300d5ac77185 matches remote SHA 2c04b0fb5ad00821f04a6ff79b90300d5ac77185 with status ok and synced true; git log -1 --stat -> captured after the repo board filter coverage commit. Commit SHA: 2c04b0fb5ad00821f04a6ff79b90300d5ac77185. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T17:37:28Z"
+        }
+      ],
       "created_at": "2026-03-25T17:34:03Z",
       "description": "Add focused unit coverage for bigclaw-go/internal/repo/board.go so the remaining ListPosts filter branch is pinned without changing broader repo discussion behavior.",
       "id": "big-par-389",
@@ -5485,12 +5492,19 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Finish repo board filter branch coverage",
-      "updated_at": "2026-03-25T17:34:15Z"
+      "updated_at": "2026-03-25T17:37:28Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added repo gateway decode error coverage in bigclaw-go/internal/repo/repo_surfaces_test.go, pinning NormalizeCommit, NormalizeLineage, NormalizeDiff, and decodeMap failure paths for invalid payloads. Validation: cd bigclaw-go && go test ./internal/repo -> ok; cd bigclaw-go && go test ./internal/repo -coverprofile=/tmp/bigpar390-repo.cover && go tool cover -func=/tmp/bigpar390-repo.cover | rg \"gateway.go:(37|45|53|71)|total:\" -> NormalizeCommit 100.0%, NormalizeLineage 100.0%, NormalizeDiff 100.0%, decodeMap 100.0%, total 95.8%; bash scripts/ops/bigclawctl github-sync status --json -> local SHA f57cee3e3936ed0107b34360ec0db5f8f7855003 matches remote SHA f57cee3e3936ed0107b34360ec0db5f8f7855003 with status ok and synced true; git log -1 --stat -> captured after the repo gateway decode error commit. Commit SHA: f57cee3e3936ed0107b34360ec0db5f8f7855003. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T17:37:28Z"
+        }
+      ],
       "created_at": "2026-03-25T17:34:03Z",
       "description": "Add focused unit coverage for bigclaw-go/internal/repo/gateway.go so NormalizeCommit, NormalizeLineage, NormalizeDiff, and decodeMap error paths are pinned for invalid payloads.",
       "id": "big-par-390",
@@ -5502,9 +5516,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add repo gateway decode error coverage",
-      "updated_at": "2026-03-25T17:34:15Z"
+      "updated_at": "2026-03-25T17:37:28Z"
     }
   ]
 }
