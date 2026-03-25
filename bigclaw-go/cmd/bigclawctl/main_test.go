@@ -1553,6 +1553,46 @@ func TestRunLocalIssuesSetStateUpdatesStore(t *testing.T) {
 	}
 }
 
+func TestRunLocalIssuesSetStateIgnoresEquivalentStateSpellings(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-398",
+      "identifier": "BIG-PAR-398",
+      "title": "Ignore equivalent state spellings in local-issues set-state",
+      "state": "in progress.",
+      "updated_at": "2026-03-25T18:10:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	if err := runLocalIssues([]string{
+		"set-state",
+		"--local-issues", storePath,
+		"--issue", "BIG-PAR-398",
+		"--state", "In Progress",
+		"--created-at", "2026-03-25T18:12:00Z",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run local-issues set-state equivalent spelling: %v", err)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"state": "in progress."`)) {
+		t.Fatalf("expected equivalent state spelling to remain unchanged, got %s", string(body))
+	}
+	if !bytes.Contains(body, []byte(`"updated_at": "2026-03-25T18:10:00Z"`)) {
+		t.Fatalf("expected unchanged timestamp for equivalent state spelling, got %s", string(body))
+	}
+}
+
 func TestRunLocalIssuesCommentAppendsComment(t *testing.T) {
 	tempDir := t.TempDir()
 	storePath := filepath.Join(tempDir, "local-issues.json")

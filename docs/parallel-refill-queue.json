@@ -184,7 +184,8 @@
       "BIG-PAR-394",
       "BIG-PAR-395",
       "BIG-PAR-396",
-      "BIG-PAR-397"
+      "BIG-PAR-397",
+      "BIG-PAR-398"
     ],
     "active": [],
     "standby": []
@@ -356,7 +357,8 @@
     "BIG-PAR-394",
     "BIG-PAR-395",
     "BIG-PAR-396",
-    "BIG-PAR-397"
+    "BIG-PAR-397",
+    "BIG-PAR-398"
   ],
   "issues": [
     {
@@ -1388,6 +1390,12 @@
     {
       "identifier": "BIG-PAR-397",
       "title": "Update existing local issue metadata during refill seed",
+      "track": "Automation",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-398",
+      "title": "Ignore equivalent state spellings in local-issues set-state",
       "track": "Automation",
       "status": "Done"
     }
