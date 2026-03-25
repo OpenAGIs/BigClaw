@@ -188,12 +188,11 @@
       "BIG-PAR-387",
       "BIG-PAR-388",
       "BIG-PAR-389",
-      "BIG-PAR-390"
-    ],
-    "active": [
+      "BIG-PAR-390",
       "BIG-PAR-391",
       "BIG-PAR-392"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1432,13 +1431,13 @@
       "identifier": "BIG-PAR-391",
       "title": "Add repo registry fallback coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-392",
       "title": "Add domain fallback helper coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
