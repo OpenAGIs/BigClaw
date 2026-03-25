@@ -305,6 +305,7 @@ func runWorkspace(args []string) error {
 		}
 		if *asJSON {
 			encoder := json.NewEncoder(os.Stdout)
+			encoder.SetEscapeHTML(false)
 			encoder.SetIndent("", "  ")
 			return encoder.Encode(report)
 		}
@@ -632,6 +633,7 @@ func runLocalIssues(args []string) error {
 		}
 		if *asJSON {
 			encoder := json.NewEncoder(os.Stdout)
+			encoder.SetEscapeHTML(false)
 			encoder.SetIndent("", "  ")
 			return encoder.Encode(map[string]any{
 				"status":       "ok",
@@ -1246,6 +1248,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		}
 	}
 	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetEscapeHTML(false)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(payload); err != nil {
 		return err

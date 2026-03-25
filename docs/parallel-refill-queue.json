@@ -189,7 +189,8 @@
       "BIG-PAR-399",
       "BIG-PAR-400",
       "BIG-PAR-401",
-      "BIG-PAR-402"
+      "BIG-PAR-402",
+      "BIG-PAR-403"
     ],
     "active": [],
     "standby": []
@@ -366,7 +367,8 @@
     "BIG-PAR-399",
     "BIG-PAR-400",
     "BIG-PAR-401",
-    "BIG-PAR-402"
+    "BIG-PAR-402",
+    "BIG-PAR-403"
   ],
   "issues": [
     {
@@ -1428,6 +1430,12 @@
     {
       "identifier": "BIG-PAR-402",
       "title": "Disable HTML escaping in bigclawctl JSON output",
+      "track": "Automation",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-403",
+      "title": "Disable HTML escaping in direct bigclawctl JSON encoders",
       "track": "Automation",
       "status": "Done"
     }

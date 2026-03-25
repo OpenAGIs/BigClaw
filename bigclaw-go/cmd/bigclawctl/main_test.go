@@ -1893,11 +1893,11 @@ func TestRunLocalIssuesListNormalizesStateFilters(t *testing.T) {
 	tempDir := t.TempDir()
 	storePath := filepath.Join(tempDir, "local-issues.json")
 	if err := os.WriteFile(storePath, []byte(`{
-  "issues": [
+ "issues": [
     {
       "id": "big-par-385",
       "identifier": "BIG-PAR-385",
-      "title": "Normalize local tracker state filters for refill commands",
+      "title": "Normalize local tracker state filters -> refill commands",
       "state": "in progress."
     },
     {
@@ -1940,6 +1940,12 @@ func TestRunLocalIssuesListNormalizesStateFilters(t *testing.T) {
 	output, _ := io.ReadAll(reader)
 	if !bytes.Contains(output, []byte(`"BIG-PAR-385"`)) || !bytes.Contains(output, []byte(`"BIG-PAR-386"`)) {
 		t.Fatalf("expected normalized state matches in output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`Normalize local tracker state filters -> refill commands`)) {
+		t.Fatalf("expected raw arrow token in list JSON output, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`\u003e`)) {
+		t.Fatalf("expected no HTML escaping in list JSON output, got %s", string(output))
 	}
 	if bytes.Contains(output, []byte(`"BIG-PAR-387"`)) {
 		t.Fatalf("expected done issue to be filtered out, got %s", string(output))
