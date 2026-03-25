@@ -1579,6 +1579,67 @@ func TestRunLocalIssuesEnsureUpdatesExistingStateCaseInsensitive(t *testing.T) {
 	}
 }
 
+func TestRunLocalIssuesEnsureUpdatesExplicitExistingMetadata(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-396",
+      "identifier": "BIG-PAR-396",
+      "title": "BIG-PAR-396",
+      "description": "",
+      "state": "In Progress",
+      "priority": 3,
+      "labels": [],
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T17:51:30Z",
+      "updated_at": "2026-03-25T17:51:30Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	if err := runLocalIssues([]string{
+		"ensure",
+		"--local-issues", storePath,
+		"--identifier", "BIG-PAR-396",
+		"--title", "Update existing local issue metadata during ensure",
+		"--description", "reconcile placeholder issue metadata",
+		"--labels", "parallel,tooling,refill,go-mainline",
+		"--priority", "2",
+		"--assigned-to-worker=false",
+		"--created-at", "2026-03-25T17:54:00Z",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run local-issues ensure metadata update: %v", err)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"title": "Update existing local issue metadata during ensure"`)) {
+		t.Fatalf("expected updated title, got %s", string(body))
+	}
+	if !bytes.Contains(body, []byte(`"description": "reconcile placeholder issue metadata"`)) {
+		t.Fatalf("expected updated description, got %s", string(body))
+	}
+	if !bytes.Contains(body, []byte(`"priority": 2`)) {
+		t.Fatalf("expected updated priority, got %s", string(body))
+	}
+	if !bytes.Contains(body, []byte(`"assigned_to_worker": false`)) {
+		t.Fatalf("expected updated assigned-to-worker flag, got %s", string(body))
+	}
+	if !bytes.Contains(body, []byte(`"labels": [`)) || !bytes.Contains(body, []byte(`"go-mainline"`)) {
+		t.Fatalf("expected updated labels, got %s", string(body))
+	}
+	if !bytes.Contains(body, []byte(`"updated_at": "2026-03-25T17:54:00Z"`)) {
+		t.Fatalf("expected updated timestamp, got %s", string(body))
+	}
+}
+
 func TestRunLocalIssuesEnsureIgnoresEquivalentStateSpellings(t *testing.T) {
 	tempDir := t.TempDir()
 	storePath := filepath.Join(tempDir, "local-issues.json")

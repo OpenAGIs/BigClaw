@@ -700,6 +700,10 @@ func runLocalIssues(args []string) error {
 			}
 			return err
 		}
+		visitedFlags := map[string]bool{}
+		flags.Visit(func(flag *flag.Flag) {
+			visitedFlags[flag.Name] = true
+		})
 		trimmedIdentifier := trim(*identifier)
 		if trimmedIdentifier == "" {
 			return errors.New("identifier is required")
@@ -728,6 +732,20 @@ func runLocalIssues(args []string) error {
 		}
 		if found {
 			action = "exists"
+			updatedIssue, metadataChanged, err := store.UpdateIssue(trimmedIdentifier, refill.LocalIssueUpdateParams{
+				Title:            stringPointerIfVisited(*title, visitedFlags["title"]),
+				Description:      stringPointerIfVisited(*description, visitedFlags["description"]),
+				Priority:         intPointerIfVisited(*priority, visitedFlags["priority"]),
+				Labels:           stringSlicePointerIfVisited(labels, visitedFlags["labels"]),
+				AssignedToWorker: boolPointerIfVisited(*assigned, visitedFlags["assigned-to-worker"]),
+			}, when)
+			if err != nil {
+				return err
+			}
+			if metadataChanged {
+				existing = updatedIssue
+				action = "updated"
+			}
 			if *setStateIfExists && refill.NormalizeStateName(existing.State) != refill.NormalizeStateName(state) {
 				if when.IsZero() {
 					when = time.Now()
@@ -1394,4 +1412,33 @@ func atoiPointer(value string) *int {
 		return nil
 	}
 	return &number
+}
+
+func stringPointerIfVisited(value string, visited bool) *string {
+	if !visited {
+		return nil
+	}
+	return &value
+}
+
+func intPointerIfVisited(value int, visited bool) *int {
+	if !visited {
+		return nil
+	}
+	return &value
+}
+
+func boolPointerIfVisited(value bool, visited bool) *bool {
+	if !visited {
+		return nil
+	}
+	return &value
+}
+
+func stringSlicePointerIfVisited(value []string, visited bool) *[]string {
+	if !visited {
+		return nil
+	}
+	copyValue := append([]string{}, value...)
+	return &copyValue
 }

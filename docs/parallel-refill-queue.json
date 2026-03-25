@@ -184,7 +184,9 @@
       "BIG-PAR-394",
       "BIG-PAR-395"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-396"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -352,7 +354,8 @@
     "BIG-PAR-391",
     "BIG-PAR-393",
     "BIG-PAR-394",
-    "BIG-PAR-395"
+    "BIG-PAR-395",
+    "BIG-PAR-396"
   ],
   "issues": [
     {
@@ -1374,6 +1377,12 @@
       "title": "Report final synced refill queue state after apply",
       "track": "Automation",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-396",
+      "title": "Update existing local issue metadata during ensure",
+      "track": "Automation",
+      "status": "In Progress"
     }
   ]
 }

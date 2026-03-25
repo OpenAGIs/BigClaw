@@ -5575,6 +5575,23 @@
       "state": "Done",
       "title": "Report final synced refill queue state after apply",
       "updated_at": "2026-03-25T17:48:15Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T17:51:30Z",
+      "description": "Make bigclawctl local-issues ensure apply explicitly provided title, description, labels, priority, and assigned-to-worker fields when the target issue already exists so seeded placeholder records can be reconciled without manual JSON edits.",
+      "id": "big-par-396",
+      "identifier": "BIG-PAR-396",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Update existing local issue metadata during ensure",
+      "updated_at": "2026-03-25T17:53:39Z"
     }
   ]
 }
