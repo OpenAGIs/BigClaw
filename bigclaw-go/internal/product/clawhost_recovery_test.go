@@ -99,6 +99,45 @@ func TestBuildClawHostLifecycleRecoveryScorecardFromInventoryCapturesDegradedBot
 	}
 }
 
+func TestBuildClawHostLifecycleRecoveryScorecardDegradesWhenOnlyServiceIsolationIsMissing(t *testing.T) {
+	inventory := BuildClawHostFleetSurface(
+		[]ClawHostAppInventory{
+			{AppID: "app-a", TenantID: "tenant-a", Name: "app-a"},
+		},
+		[]ClawHostBotInventory{
+			{
+				BotID:            "bot-a",
+				AppID:            "app-a",
+				Name:             "bot-a",
+				Status:           "running",
+				PodIsolation:     true,
+				ServiceIsolation: false,
+			},
+		},
+	)
+
+	scorecard := buildClawHostLifecycleRecoveryScorecard(inventory, "", "")
+	if len(scorecard.Bots) != 1 {
+		t.Fatalf("expected one recovery bot score, got %+v", scorecard.Bots)
+	}
+	bot := scorecard.Bots[0]
+	if bot.RecoveryReadiness != "degraded" {
+		t.Fatalf("expected service-isolation gap to degrade readiness, got %+v", bot)
+	}
+	if len(bot.Warnings) != 1 || bot.Warnings[0] != "bot is missing dedicated pod or service isolation" {
+		t.Fatalf("expected service-isolation warning to be recorded, got %+v", bot)
+	}
+	if bot.PodIsolation != true || bot.ServiceIsolation != false {
+		t.Fatalf("expected original isolation flags to be preserved, got %+v", bot)
+	}
+	if scorecard.Summary.BotCount != 1 || scorecard.Summary.DegradedBots != 1 || scorecard.Summary.IsolatedBots != 0 {
+		t.Fatalf("unexpected recovery summary for service-isolation gap, got %+v", scorecard.Summary)
+	}
+	if scorecard.Summary.TakeoverCoveredBots != 1 || scorecard.Summary.EvidenceArtifactRefs != 21 {
+		t.Fatalf("expected lifecycle/action evidence counters to stay stable, got %+v", scorecard.Summary)
+	}
+}
+
 func TestBuildClawHostLifecycleRecoveryScorecardFromInventoryOrdersBotsAndHandlesMissingTenantMapping(t *testing.T) {
 	inventory := BuildClawHostFleetSurface(
 		[]ClawHostAppInventory{

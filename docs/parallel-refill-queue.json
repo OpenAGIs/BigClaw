@@ -172,7 +172,9 @@
       "BIG-PAR-371",
       "BIG-PAR-372"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-373"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -328,7 +330,8 @@
     "BIG-PAR-369",
     "BIG-PAR-370",
     "BIG-PAR-371",
-    "BIG-PAR-372"
+    "BIG-PAR-372",
+    "BIG-PAR-373"
   ],
   "issues": [
     {
@@ -1278,6 +1281,12 @@
       "title": "Add saved-view audit visibility and ordering coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-373",
+      "title": "Broaden direct recovery builder branch coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

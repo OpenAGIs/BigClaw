@@ -5086,6 +5086,24 @@
       "state": "Done",
       "title": "Add saved-view audit visibility and ordering coverage",
       "updated_at": "2026-03-25T16:17:42Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T16:19:58Z",
+      "description": "Add focused product-package coverage for buildClawHostLifecycleRecoveryScorecard so direct inventory-backed recovery scorecards pin degraded readiness when service isolation is missing and keep lifecycle/action evidence counts stable across mixed bot states.",
+      "id": "big-par-373",
+      "identifier": "BIG-PAR-373",
+      "labels": [
+        "go",
+        "product",
+        "clawhost",
+        "test",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Broaden direct recovery builder branch coverage",
+      "updated_at": "2026-03-25T16:20:15Z"
     }
   ]
 }

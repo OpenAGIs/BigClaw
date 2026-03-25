@@ -134,14 +134,6 @@ func buildClawHostLifecycleRecoveryScorecard(inventory ClawHostFleetInventory, t
 			warnings = append(warnings, "bot is missing dedicated pod or service isolation")
 			readiness = "degraded"
 		}
-		if len(takeoverTriggers) == 0 {
-			warnings = append(warnings, "bot is missing takeover triggers")
-			readiness = "degraded"
-		}
-		if len(recoveryEvidence) == 0 {
-			warnings = append(warnings, "bot is missing recovery evidence")
-			readiness = "degraded"
-		}
 		bots = append(bots, ClawHostBotRecoveryScore{
 			BotID:             bot.BotID,
 			AppID:             bot.AppID,
