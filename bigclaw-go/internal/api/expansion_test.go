@@ -1673,6 +1673,8 @@ func TestV2ClawHostEndpointsRejectNonGETMethods(t *testing.T) {
 		"/v2/clawhost/rollout-planner/export?team=platform&project=apollo",
 		"/v2/clawhost/workflows?team=platform&project=apollo&actor=alice",
 		"/v2/clawhost/workflows/export?team=platform&project=apollo&actor=alice",
+		"/v2/clawhost/recovery-scorecard?team=platform&project=apollo",
+		"/v2/clawhost/recovery-scorecard/export?team=platform&project=apollo",
 	} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, path, nil))
@@ -1702,6 +1704,7 @@ func TestV2ClawHostExportEndpointsSetAttachmentFilenames(t *testing.T) {
 		{path: "/v2/clawhost/fleet/export", filename: `attachment; filename="clawhost-fleet.md"`},
 		{path: "/v2/clawhost/rollout-planner/export?team=platform&project=apollo", filename: `attachment; filename="clawhost-rollout-planner.md"`},
 		{path: "/v2/clawhost/workflows/export?team=platform&project=apollo&actor=alice", filename: `attachment; filename="clawhost-workflows.md"`},
+		{path: "/v2/clawhost/recovery-scorecard/export?team=platform&project=apollo", filename: `attachment; filename="clawhost-recovery-scorecard.md"`},
 	} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, tc.path, nil))
