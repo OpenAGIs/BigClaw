@@ -322,7 +322,7 @@ func (q *ParallelIssueQueue) UpsertIssue(record IssueRecord) (string, bool, erro
 			q.payload.Issues[idx].Track = track
 			action = "updated"
 		}
-		if strings.TrimSpace(q.payload.Issues[idx].Status) != status {
+		if NormalizeStateName(q.payload.Issues[idx].Status) != NormalizeStateName(status) {
 			q.payload.Issues[idx].Status = status
 			action = "updated"
 		}

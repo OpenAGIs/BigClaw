@@ -1199,6 +1199,82 @@ func TestRunRefillSeedCreatesQueueAndLocalIssue(t *testing.T) {
 	}
 }
 
+func TestRunRefillSeedSetStateIfExistsIgnoresEquivalentSpellings(t *testing.T) {
+	tempDir := t.TempDir()
+	queuePath := filepath.Join(tempDir, "queue.json")
+	markdownPath := filepath.Join(tempDir, "queue.md")
+	if err := os.WriteFile(queuePath, []byte(`{
+  "project": {"slug_id": "project-slug"},
+  "policy": {
+    "target_in_progress": 2,
+    "activate_state_name": "In Progress",
+    "activate_state_id": "state-in-progress",
+    "refill_states": ["Todo", "Backlog"]
+  },
+  "recent_batches": {
+    "completed": [],
+    "active": ["BIG-PAR-388"],
+    "standby": []
+  },
+  "issue_order": ["BIG-PAR-388"],
+  "issues": [
+    {"identifier": "BIG-PAR-388", "title": "Normalize seed and ensure state equivalence", "track": "Automation", "status": "todo."}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write queue file: %v", err)
+	}
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-388",
+      "identifier": "BIG-PAR-388",
+      "title": "Normalize seed and ensure state equivalence",
+      "state": "todo.",
+      "updated_at": "2026-03-26T00:45:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	if err := runRefillSeed([]string{
+		"--repo", tempDir,
+		"--queue", queuePath,
+		"--markdown", markdownPath,
+		"--local-issues", storePath,
+		"--identifier", "BIG-PAR-388",
+		"--title", "Normalize seed and ensure state equivalence",
+		"--track", "Automation",
+		"--state", "Todo",
+		"--recent-batch", "active",
+		"--set-state-if-exists",
+		"--created-at", "2026-03-26T00:50:00Z",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run refill seed: %v", err)
+	}
+
+	queueBody, err := os.ReadFile(queuePath)
+	if err != nil {
+		t.Fatalf("read queue file: %v", err)
+	}
+	if !bytes.Contains(queueBody, []byte(`"status": "todo."`)) {
+		t.Fatalf("expected equivalent queue status to remain unchanged, got %s", string(queueBody))
+	}
+
+	storeBody, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(storeBody, []byte(`"state": "todo."`)) {
+		t.Fatalf("expected equivalent local issue state to remain unchanged, got %s", string(storeBody))
+	}
+	if !bytes.Contains(storeBody, []byte(`"updated_at": "2026-03-26T00:45:00Z"`)) {
+		t.Fatalf("expected unchanged timestamp for equivalent local issue state, got %s", string(storeBody))
+	}
+}
+
 func TestRunLocalIssuesSetStateUpdatesStore(t *testing.T) {
 	tempDir := t.TempDir()
 	storePath := filepath.Join(tempDir, "local-issues.json")
@@ -1350,6 +1426,47 @@ func TestRunLocalIssuesEnsureUpdatesExistingStateCaseInsensitive(t *testing.T) {
 	}
 	if !bytes.Contains(body, []byte(`"updated_at": "2026-03-22T10:45:00Z"`)) {
 		t.Fatalf("expected updated timestamp, got %s", string(body))
+	}
+}
+
+func TestRunLocalIssuesEnsureIgnoresEquivalentStateSpellings(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-388",
+      "identifier": "BIG-PAR-388",
+      "title": "Normalize seed and ensure state equivalence",
+      "state": "in progress.",
+      "updated_at": "2026-03-26T00:55:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	if err := runLocalIssues([]string{
+		"ensure",
+		"--local-issues", storePath,
+		"--identifier", "BIG-PAR-388",
+		"--state", "In Progress",
+		"--set-state-if-exists",
+		"--created-at", "2026-03-26T01:00:00Z",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run local-issues ensure equivalent state: %v", err)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"state": "in progress."`)) {
+		t.Fatalf("expected equivalent state spelling to remain unchanged, got %s", string(body))
+	}
+	if !bytes.Contains(body, []byte(`"updated_at": "2026-03-26T00:55:00Z"`)) {
+		t.Fatalf("expected unchanged timestamp for equivalent state spelling, got %s", string(body))
 	}
 }
 

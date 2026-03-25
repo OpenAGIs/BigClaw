@@ -176,6 +176,36 @@ func TestParallelIssueQueueStatusSyncIgnoresEquivalentStateSpellings(t *testing.
 	}
 }
 
+func TestParallelIssueQueueUpsertIssueIgnoresEquivalentStatusSpellings(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-388"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-388", Title: "Normalize seed and ensure state equivalence", Track: "Automation", Status: "todo."},
+			},
+		},
+	}
+
+	action, orderAdded, err := queue.UpsertIssue(IssueRecord{
+		Identifier: "BIG-PAR-388",
+		Title:      "Normalize seed and ensure state equivalence",
+		Track:      "Automation",
+		Status:     "Todo",
+	})
+	if err != nil {
+		t.Fatalf("upsert existing equivalent state: %v", err)
+	}
+	if action != "exists" {
+		t.Fatalf("expected equivalent status to keep exists action, got %s", action)
+	}
+	if orderAdded {
+		t.Fatalf("expected no order change for equivalent status")
+	}
+	if queue.payload.Issues[0].Status != "todo." {
+		t.Fatalf("expected equivalent status spelling to remain untouched, got %+v", queue.payload.Issues[0])
+	}
+}
+
 func TestParallelIssueQueueSavePreservesBlockedReasonAndRecentBatches(t *testing.T) {
 	queuePath := filepath.Join(t.TempDir(), "queue.json")
 	queue := &ParallelIssueQueue{

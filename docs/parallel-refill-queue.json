@@ -178,7 +178,9 @@
       "BIG-PAR-385",
       "BIG-PAR-387"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-388"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -340,7 +342,8 @@
     "BIG-PAR-384",
     "BIG-PAR-386",
     "BIG-PAR-385",
-    "BIG-PAR-387"
+    "BIG-PAR-387",
+    "BIG-PAR-388"
   ],
   "issues": [
     {
@@ -1326,6 +1329,12 @@
       "title": "Normalize queue status sync equivalence",
       "track": "Automation",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-388",
+      "title": "Normalize seed and ensure state equivalence",
+      "track": "Automation",
+      "status": "In Progress"
     }
   ]
 }
