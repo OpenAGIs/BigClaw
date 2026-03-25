@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"testing"
 	"time"
@@ -127,6 +128,53 @@ func TestBrokerStubEventLogBackendCloseAndCloneHelpers(t *testing.T) {
 	withoutPayload := domain.Event{ID: "evt-no-payload"}
 	if cloned := cloneEvent(withoutPayload); cloned.Payload != nil {
 		t.Fatalf("expected nil payload to stay nil, got %+v", cloned.Payload)
+	}
+}
+
+func TestBrokerStubCheckpointAndWatermarkEdgeCases(t *testing.T) {
+	log := NewBrokerStubEventLog()
+	event := domain.Event{
+		ID:        "evt-edge-1",
+		Type:      domain.EventTaskQueued,
+		TaskID:    "task-edge",
+		TraceID:   "trace-edge",
+		Timestamp: time.Unix(1_700_000_200, 0).UTC(),
+	}
+	if err := log.Write(context.Background(), event); err != nil {
+		t.Fatalf("write edge event: %v", err)
+	}
+
+	if _, err := log.Acknowledge(" ", "evt-missing", time.Time{}); err != sql.ErrNoRows {
+		t.Fatalf("expected blank subscriber acknowledge to miss rows, got %v", err)
+	}
+	if _, err := log.Acknowledge("subscriber-a", "evt-missing", time.Time{}); err != sql.ErrNoRows {
+		t.Fatalf("expected unknown event acknowledge to miss rows, got %v", err)
+	}
+	checkpoint, err := log.Acknowledge("subscriber-a", event.ID, time.Time{})
+	if err != nil {
+		t.Fatalf("expected zero-time acknowledge to succeed, got %v", err)
+	}
+	if checkpoint.EventSequence != 1 || checkpoint.UpdatedAt.IsZero() {
+		t.Fatalf("expected sequence and generated timestamp, got %+v", checkpoint)
+	}
+	if _, err := log.Checkpoint("subscriber-missing"); err != sql.ErrNoRows {
+		t.Fatalf("expected missing checkpoint to miss rows, got %v", err)
+	}
+
+	other := NewBrokerStubEventLog()
+	if _, err := other.Checkpoint("subscriber-a"); err != sql.ErrNoRows {
+		t.Fatalf("expected missing checkpoint on empty log to miss rows, got %v", err)
+	}
+
+	watermark, err := other.RetentionWatermark()
+	if err != nil {
+		t.Fatalf("retention watermark: %v", err)
+	}
+	if watermark.Backend != "broker_stub" || watermark.Policy != "process_memory_stub" || watermark.EventCount != 0 {
+		t.Fatalf("unexpected empty watermark header: %+v", watermark)
+	}
+	if watermark.OldestEventID != "" || watermark.NewestEventID != "" || watermark.OldestSequence != 0 || watermark.NewestSequence != 0 {
+		t.Fatalf("expected zero-value empty watermark boundaries, got %+v", watermark)
 	}
 }
 
