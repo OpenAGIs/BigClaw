@@ -177,7 +177,9 @@
       "BIG-PAR-376",
       "BIG-PAR-377"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-378"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -338,7 +340,8 @@
     "BIG-PAR-374",
     "BIG-PAR-375",
     "BIG-PAR-376",
-    "BIG-PAR-377"
+    "BIG-PAR-377",
+    "BIG-PAR-378"
   ],
   "issues": [
     {
@@ -1318,6 +1321,12 @@
       "title": "Add checkpoint error helper coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-378",
+      "title": "Add bootstrap helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

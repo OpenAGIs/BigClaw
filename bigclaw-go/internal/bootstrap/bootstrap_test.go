@@ -240,3 +240,28 @@ func TestWithCacheLockSerializesAcrossProcesses(t *testing.T) {
 		t.Fatalf("expected cache lock acquisition to wait for holder")
 	}
 }
+
+func TestBootstrapHelpersUniqueJoinAndPathExists(t *testing.T) {
+	if got := uniqueStrings([]string{"alpha", "beta", "alpha", "", "beta", "gamma"}); strings.Join(got, ",") != "alpha,beta,,gamma" {
+		t.Fatalf("expected uniqueStrings to preserve first-seen order, got %q", strings.Join(got, ","))
+	}
+
+	if got := join(nil); got != "" {
+		t.Fatalf("expected empty join result, got %q", got)
+	}
+	if got := join([]string{"git", "status", "--short"}); got != "git status --short" {
+		t.Fatalf("unexpected join result %q", got)
+	}
+
+	root := t.TempDir()
+	existing := filepath.Join(root, "exists.txt")
+	if err := os.WriteFile(existing, []byte("ok"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if !pathExists(existing) {
+		t.Fatalf("expected existing path to be detected")
+	}
+	if pathExists(filepath.Join(root, "missing.txt")) {
+		t.Fatalf("expected missing path to stay false")
+	}
+}

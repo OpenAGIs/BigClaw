@@ -5207,6 +5207,23 @@
       "state": "Done",
       "title": "Add checkpoint error helper coverage",
       "updated_at": "2026-03-25T16:44:22Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T16:47:53Z",
+      "description": "Add focused unit coverage for bigclaw-go/internal/bootstrap so uniqueStrings and join are pinned without depending on mirror/bootstrap integration flows.",
+      "id": "big-par-378",
+      "identifier": "BIG-PAR-378",
+      "labels": [
+        "go",
+        "bootstrap",
+        "test",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add bootstrap helper unit coverage",
+      "updated_at": "2026-03-25T16:48:01Z"
     }
   ]
 }
