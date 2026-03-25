@@ -177,11 +177,10 @@
       "BIG-PAR-376",
       "BIG-PAR-377",
       "BIG-PAR-378",
-      "BIG-PAR-379"
-    ],
-    "active": [
+      "BIG-PAR-379",
       "BIG-PAR-380"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1342,7 +1341,7 @@
       "identifier": "BIG-PAR-380",
       "title": "Add domain task state helper coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
