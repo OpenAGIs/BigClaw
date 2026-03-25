@@ -50,7 +50,7 @@ longer waits on Linear to keep issue execution moving.
 - Current repo tranche status as of March 25, 2026:
   - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-401` — Canonicalize equivalent queue state spellings during refill seed; `BIG-PAR-402` — Disable HTML escaping in bigclawctl JSON output; `BIG-PAR-403` — Disable HTML escaping in direct bigclawctl JSON encoders; `BIG-PAR-404` — Add workspace validate JSON no-escape regression; `BIG-PAR-405` — Add refill JSON no-escape regression; `BIG-PAR-406` — Add workspace bootstrap JSON no-escape regression; `BIG-PAR-407` — Add workspace cleanup JSON no-escape regression; `BIG-PAR-408` — Add legacy-python JSON no-escape regression
+  - recently completed slices: `BIG-PAR-402` — Disable HTML escaping in bigclawctl JSON output; `BIG-PAR-403` — Disable HTML escaping in direct bigclawctl JSON encoders; `BIG-PAR-404` — Add workspace validate JSON no-escape regression; `BIG-PAR-405` — Add refill JSON no-escape regression; `BIG-PAR-406` — Add workspace bootstrap JSON no-escape regression; `BIG-PAR-407` — Add workspace cleanup JSON no-escape regression; `BIG-PAR-408` — Add legacy-python JSON no-escape regression; `BIG-PAR-409` — Add github-sync install JSON no-escape regression
   - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
@@ -236,6 +236,7 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-406` — Add workspace bootstrap JSON no-escape regression
   - `BIG-PAR-407` — Add workspace cleanup JSON no-escape regression
   - `BIG-PAR-408` — Add legacy-python JSON no-escape regression
+  - `BIG-PAR-409` — Add github-sync install JSON no-escape regression
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -422,3 +423,4 @@ longer waits on Linear to keep issue execution moving.
 176. `BIG-PAR-406`
 177. `BIG-PAR-407`
 178. `BIG-PAR-408`
+179. `BIG-PAR-409`
