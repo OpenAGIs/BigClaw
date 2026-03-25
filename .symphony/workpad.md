@@ -24,5 +24,5 @@
 
 ### Notes
 
-- [ ] Keep the change scoped to `BIGCLAW-195`; avoid unrelated runtime, scheduler, or queue semantics changes.
-- [ ] Record the exact validation commands and results after implementation.
+- [x] Keep the change scoped to `BIGCLAW-195`; avoid unrelated runtime, scheduler, or queue semantics changes.
+- [x] Record the exact validation commands and results after implementation.
