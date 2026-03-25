@@ -46,3 +46,28 @@ func TestControllerPauseAndTakeoverLifecycle(t *testing.T) {
 		t.Fatalf("expected resumed snapshot, got %+v", snapshot)
 	}
 }
+
+func TestControllerSnapshotAndTakeoverStatusHelpers(t *testing.T) {
+	controller := New()
+	now := time.Date(2026, 3, 25, 10, 0, 0, 0, time.UTC)
+
+	if takeover, ok := controller.TakeoverStatus("missing"); ok || takeover.TaskID != "" || takeover.Active || len(takeover.Notes) != 0 {
+		t.Fatalf("expected missing takeover lookup to fail, got %+v ok=%v", takeover, ok)
+	}
+
+	controller.Pause("ops", "incident", now)
+	controller.Takeover("task-1", "alice", "bob", "investigating", now.Add(time.Second))
+
+	snapshot := controller.Snapshot()
+	if !snapshot.Paused || snapshot.PauseActor != "ops" || snapshot.PauseReason != "incident" || snapshot.ActiveTakeovers != 1 {
+		t.Fatalf("unexpected controller snapshot: %+v", snapshot)
+	}
+	if snapshot.PausedAt != now {
+		t.Fatalf("expected snapshot pause timestamp to be preserved, got %+v", snapshot)
+	}
+
+	takeover, ok := controller.TakeoverStatus("task-1")
+	if !ok || !takeover.Active || takeover.TaskID != "task-1" || takeover.Owner != "alice" || takeover.Reviewer != "bob" {
+		t.Fatalf("unexpected takeover status lookup: %+v ok=%v", takeover, ok)
+	}
+}
