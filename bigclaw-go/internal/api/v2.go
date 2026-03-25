@@ -1242,6 +1242,7 @@ func (s *Server) buildControlCenterResponse(
 	overviews []taskOverview,
 	auditEntries []controlActionAuditEntry,
 ) map[string]any {
+	clawHostTasks := filterClawHostPolicyTasks(s.clawHostPolicyTasks(ctx), filters.Team, filters.Project)
 	response := map[string]any{
 		"authorization":                   authorization,
 		"filters":                         controlCenterFiltersPayload(filters),
@@ -1259,11 +1260,11 @@ func (s *Server) buildControlCenterResponse(
 		"clawhost_fleet_inventory":        clawHostFleetInventorySurfacePayload(),
 		"clawhost_rollout_planner":        clawHostRolloutPlannerSurfacePayload(),
 		"clawhost_tenant_policy":          clawHostTenantPolicySurfacePayload(),
-		"clawhost_policy_surface":         clawHostPolicySurfacePayload(s.clawHostPolicyTasks(ctx)),
-		"clawhost_workflow_surface":       clawHostWorkflowSurfacePayload(s.clawHostPolicyTasks(ctx)),
-		"clawhost_rollout_surface":        clawHostRolloutSurfacePayload(s.clawHostPolicyTasks(ctx)),
-		"clawhost_readiness_surface":      clawHostReadinessSurfacePayload(s.clawHostPolicyTasks(ctx)),
-		"clawhost_recovery_surface":       clawHostRecoverySurfacePayload(s.clawHostPolicyTasks(ctx)),
+		"clawhost_policy_surface":         clawHostPolicySurfacePayload(clawHostTasks, filters.Team, filters.Project),
+		"clawhost_workflow_surface":       clawHostWorkflowSurfacePayload(clawHostTasks, authorization.Actor, filters.Team, filters.Project),
+		"clawhost_rollout_surface":        clawHostRolloutSurfacePayload(clawHostTasks, filters.Team, filters.Project),
+		"clawhost_readiness_surface":      clawHostReadinessSurfacePayload(clawHostTasks, filters.Team, filters.Project),
+		"clawhost_recovery_surface":       clawHostRecoverySurfacePayload(clawHostTasks, filters.Team, filters.Project),
 		"broker_bootstrap_surface":        brokerBootstrapSurfacePayload(),
 		"broker_review_bundle":            brokerReviewBundleSurfacePayload(),
 		"summary":                         summarizeControlCenter(queueTasks, filteredDeadLetters),

@@ -14,14 +14,15 @@ func (s *Server) handleV2ClawHostFleet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	inventory := product.BuildDefaultClawHostFleetSurface()
+	team, project, _ := clawHostScopeFilters(r)
+	inventory := product.FilterClawHostFleetSurface(product.BuildDefaultClawHostFleetSurface(), team, project)
 	audit := product.AuditClawHostFleetSurface(inventory)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"inventory": inventory,
 		"audit":     audit,
 		"report": map[string]any{
 			"markdown":   product.RenderClawHostFleetReport(inventory, audit),
-			"export_url": "/v2/clawhost/fleet/export",
+			"export_url": clawHostExportURL("/v2/clawhost/fleet/export", team, project, ""),
 		},
 	})
 }
@@ -31,7 +32,8 @@ func (s *Server) handleV2ClawHostFleetExport(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	inventory := product.BuildDefaultClawHostFleetSurface()
+	team, project, _ := clawHostScopeFilters(r)
+	inventory := product.FilterClawHostFleetSurface(product.BuildDefaultClawHostFleetSurface(), team, project)
 	audit := product.AuditClawHostFleetSurface(inventory)
 	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 	w.Header().Set("Content-Disposition", `attachment; filename="clawhost-fleet.md"`)

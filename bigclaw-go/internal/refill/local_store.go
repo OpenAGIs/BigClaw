@@ -18,6 +18,29 @@ const (
 	localIssueLockRetryDelay = 25 * time.Millisecond
 )
 
+type localStoreTemp interface {
+	Name() string
+	Chmod(mode os.FileMode) error
+	Write([]byte) (int, error)
+	Close() error
+}
+
+var (
+	localStoreAbsPath = filepath.Abs
+	localStoreOpenFile = os.OpenFile
+	localStoreMkdirAll = os.MkdirAll
+	localStoreEncodePayload = func(buf *bytes.Buffer, payload map[string]any) error {
+		encoder := json.NewEncoder(buf)
+		encoder.SetEscapeHTML(false)
+		encoder.SetIndent("", "  ")
+		return encoder.Encode(payload)
+	}
+	localStoreCreateTemp = func(dir, pattern string) (localStoreTemp, error) {
+		return os.CreateTemp(dir, pattern)
+	}
+	localStoreRename = os.Rename
+)
+
 type LocalIssueStore struct {
 	path     string
 	issueMap []map[string]any
@@ -63,7 +86,7 @@ type LocalIssueUpdateParams struct {
 }
 
 func LoadLocalIssueStore(path string) (*LocalIssueStore, error) {
-	absolute, err := filepath.Abs(path)
+	absolute, err := localStoreAbsPath(path)
 	if err != nil {
 		return nil, err
 	}
@@ -438,7 +461,7 @@ func (s *LocalIssueStore) withFileLock(fn func() error) error {
 	var lockFile *os.File
 	var err error
 	for attempt := 0; attempt < localIssueLockRetryCount; attempt++ {
-		lockFile, err = os.OpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+		lockFile, err = localStoreOpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
 		if err == nil {
 			break
 		}
@@ -466,19 +489,16 @@ func (s *LocalIssueStore) saveUnlocked() error {
 	}
 	payload := map[string]any{"issues": issues}
 	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
-	encoder.SetEscapeHTML(false)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(payload); err != nil {
+	if err := localStoreEncodePayload(&buf, payload); err != nil {
 		return err
 	}
 	dir := filepath.Dir(s.path)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := localStoreMkdirAll(dir, 0o755); err != nil {
 		return err
 	}
 
 	// Write via temp+rename to avoid partial tracker files under overlapping writes.
-	tmp, err := os.CreateTemp(dir, ".local-issues.*.tmp")
+	tmp, err := localStoreCreateTemp(dir, ".local-issues.*.tmp")
 	if err != nil {
 		return err
 	}
@@ -498,7 +518,7 @@ func (s *LocalIssueStore) saveUnlocked() error {
 	if err := tmp.Close(); err != nil {
 		return err
 	}
-	if err := os.Rename(tmpName, s.path); err != nil {
+	if err := localStoreRename(tmpName, s.path); err != nil {
 		return err
 	}
 	return nil

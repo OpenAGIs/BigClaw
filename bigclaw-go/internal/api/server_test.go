@@ -75,6 +75,85 @@ func containsString(values []string, want string) bool {
 	return false
 }
 
+func TestQueryMemoryEventsAndEventStateHelpers(t *testing.T) {
+	t.Run("nil recorder", func(t *testing.T) {
+		server := &Server{}
+		if got := server.queryMemoryEvents("", "", "", 5); got != nil {
+			t.Fatalf("expected nil recorder to return nil events, got %+v", got)
+		}
+	})
+
+	t.Run("memory event filtering", func(t *testing.T) {
+		recorder := observability.NewRecorder()
+		server := &Server{Recorder: recorder}
+		base := time.Date(2026, 3, 25, 9, 0, 0, 0, time.UTC)
+		for _, event := range []domain.Event{
+			{ID: "evt-1", TaskID: "task-a", TraceID: "trace-a", Type: domain.EventTaskQueued, Timestamp: base},
+			{ID: "evt-2", TaskID: "task-b", TraceID: "trace-b", Type: domain.EventTaskStarted, Timestamp: base.Add(time.Minute)},
+			{ID: "evt-3", TaskID: "task-a", TraceID: "trace-a", Type: domain.EventTaskCompleted, Timestamp: base.Add(2 * time.Minute)},
+		} {
+			recorder.Record(event)
+		}
+
+		latestTwo := server.queryMemoryEvents("", "", "", 2)
+		if len(latestTwo) != 2 || latestTwo[0].ID != "evt-2" || latestTwo[1].ID != "evt-3" {
+			t.Fatalf("expected no-after query to keep the latest matching events, got %+v", latestTwo)
+		}
+
+		taskOnly := server.queryMemoryEvents("task-a", "", "", 0)
+		if len(taskOnly) != 2 || taskOnly[0].ID != "evt-1" || taskOnly[1].ID != "evt-3" {
+			t.Fatalf("expected task-only query to skip non-matching memory events, got %+v", taskOnly)
+		}
+
+		taskAfter := server.queryMemoryEvents("task-a", "", "evt-1", 5)
+		if len(taskAfter) != 1 || taskAfter[0].ID != "evt-3" {
+			t.Fatalf("expected after filter to return later task events only, got %+v", taskAfter)
+		}
+
+		traceLimited := server.queryMemoryEvents("", "trace-a", "evt-1", 1)
+		if len(traceLimited) != 1 || traceLimited[0].ID != "evt-3" {
+			t.Fatalf("expected trace filter with limit to stop at first matching event, got %+v", traceLimited)
+		}
+	})
+
+	t.Run("event state", func(t *testing.T) {
+		if got := eventState(domain.EventTaskCompleted); got != string(domain.TaskSucceeded) {
+			t.Fatalf("expected succeeded event to map to task state, got %q", got)
+		}
+		if got := eventState(domain.EventType("custom.unknown")); got != "unknown" {
+			t.Fatalf("expected unknown event type to fall back to unknown, got %q", got)
+		}
+	})
+}
+
+func TestCheckpointExpiredErrorString(t *testing.T) {
+	err := checkpointExpiredError{
+		Diagnostics: checkpointDiagnostics{
+			SubscriberID:    "worker-a",
+			Status:          "expired",
+			SuggestedAction: "reset the checkpoint and replay retained events",
+		},
+	}
+
+	if got := err.Error(); got != "checkpoint for subscriber worker-a expired: reset the checkpoint and replay retained events" {
+		t.Fatalf("unexpected checkpoint expired error string: %q", got)
+	}
+}
+
+type countingInspectorQueue struct {
+	*queue.MemoryQueue
+	listCalls int
+}
+
+func (q *countingInspectorQueue) GetTask(ctx context.Context, taskID string) (queue.TaskSnapshot, error) {
+	return q.MemoryQueue.GetTask(ctx, taskID)
+}
+
+func (q *countingInspectorQueue) ListTasks(ctx context.Context, limit int) ([]queue.TaskSnapshot, error) {
+	q.listCalls++
+	return q.MemoryQueue.ListTasks(ctx, limit)
+}
+
 type blockingEventLog struct {
 	history       []domain.Event
 	replayStarted chan struct{}
@@ -1159,7 +1238,8 @@ func TestDebugStatusIncludesClawHostPolicySurface(t *testing.T) {
 	}
 	var decoded struct {
 		ClawHost struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				ActivePolicies      int `json:"active_policies"`
 				ReviewRequired      int `json:"review_required"`
@@ -1177,6 +1257,9 @@ func TestDebugStatusIncludesClawHostPolicySurface(t *testing.T) {
 	}
 	if decoded.ClawHost.Status != "active" || decoded.ClawHost.Summary.ActivePolicies != 2 || decoded.ClawHost.Summary.ReviewRequired != 1 || decoded.ClawHost.Summary.OutOfPolicyDefaults != 1 {
 		t.Fatalf("unexpected ClawHost debug surface: %+v", decoded.ClawHost)
+	}
+	if decoded.ClawHost.Filters["team"] != "" || decoded.ClawHost.Filters["project"] != "" {
+		t.Fatalf("expected unscoped ClawHost policy filters, got %+v", decoded.ClawHost.Filters)
 	}
 	if len(decoded.ClawHost.ReviewQueue) != 2 || decoded.ClawHost.ReviewQueue[0].DriftStatus != "out_of_policy" {
 		t.Fatalf("expected prioritized ClawHost review queue, got %+v", decoded.ClawHost.ReviewQueue)
@@ -1247,7 +1330,8 @@ func TestDebugStatusIncludesClawHostRolloutSurface(t *testing.T) {
 	}
 	var decoded struct {
 		ClawHostRollout struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				ActivePlans      int `json:"active_plans"`
 				TotalTargets     int `json:"total_targets"`
@@ -1268,6 +1352,9 @@ func TestDebugStatusIncludesClawHostRolloutSurface(t *testing.T) {
 	}
 	if decoded.ClawHostRollout.Status != "active" || decoded.ClawHostRollout.Summary.ActivePlans != 1 || decoded.ClawHostRollout.Summary.TotalTargets != 2 || decoded.ClawHostRollout.Summary.CanaryTargets != 1 || decoded.ClawHostRollout.Summary.TakeoverRequired != 1 {
 		t.Fatalf("unexpected ClawHost rollout surface: %+v", decoded.ClawHostRollout)
+	}
+	if decoded.ClawHostRollout.Filters["team"] != "" || decoded.ClawHostRollout.Filters["project"] != "" {
+		t.Fatalf("expected unscoped rollout surface filters, got %+v", decoded.ClawHostRollout.Filters)
 	}
 	if len(decoded.ClawHostRollout.Plans) != 1 || decoded.ClawHostRollout.Plans[0].Action != "restart" || decoded.ClawHostRollout.Plans[0].Concurrency != 2 || decoded.ClawHostRollout.Plans[0].TakeoverHook != "required" || decoded.ClawHostRollout.Plans[0].WaveCount != 2 || decoded.ClawHostRollout.Plans[0].CanaryCount != 1 {
 		t.Fatalf("unexpected ClawHost rollout plan payload: %+v", decoded.ClawHostRollout.Plans)
@@ -1329,7 +1416,8 @@ func TestDebugStatusIncludesClawHostWorkflowSurface(t *testing.T) {
 	}
 	var decoded struct {
 		Workflow struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				WorkflowItems     int `json:"workflow_items"`
 				PairingApprovals  int `json:"pairing_approvals"`
@@ -1350,6 +1438,9 @@ func TestDebugStatusIncludesClawHostWorkflowSurface(t *testing.T) {
 	}
 	if decoded.Workflow.Status != "active" || decoded.Workflow.Summary.WorkflowItems != 2 || decoded.Workflow.Summary.PairingApprovals != 1 || decoded.Workflow.Summary.CredentialReviews != 1 || decoded.Workflow.Summary.TakeoverRequired != 1 {
 		t.Fatalf("unexpected workflow surface: %+v", decoded.Workflow)
+	}
+	if decoded.Workflow.Filters["team"] != "" || decoded.Workflow.Filters["project"] != "" || decoded.Workflow.Filters["actor"] != "workflow-operator" {
+		t.Fatalf("expected unscoped workflow filters, got %+v", decoded.Workflow.Filters)
 	}
 	if len(decoded.Workflow.ReviewQueue) != 2 || !decoded.Workflow.ReviewQueue[0].TakeoverRequired {
 		t.Fatalf("expected takeover-required item first, got %+v", decoded.Workflow.ReviewQueue)
@@ -1419,7 +1510,8 @@ func TestDebugStatusIncludesClawHostReadinessSurface(t *testing.T) {
 	}
 	var decoded struct {
 		Readiness struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				Targets                 int `json:"targets"`
 				ReadyTargets            int `json:"ready_targets"`
@@ -1441,6 +1533,9 @@ func TestDebugStatusIncludesClawHostReadinessSurface(t *testing.T) {
 	}
 	if decoded.Readiness.Status != "active" || decoded.Readiness.Summary.Targets != 2 || decoded.Readiness.Summary.ReadyTargets != 1 || decoded.Readiness.Summary.DegradedTargets != 1 || decoded.Readiness.Summary.AdminReadyTargets != 1 || decoded.Readiness.Summary.WebSocketReadyTargets != 1 || decoded.Readiness.Summary.SubdomainReadyTargets != 1 || decoded.Readiness.Summary.UpgradeAvailableTargets != 1 {
 		t.Fatalf("unexpected readiness summary: %+v", decoded.Readiness)
+	}
+	if decoded.Readiness.Filters["team"] != "" || decoded.Readiness.Filters["project"] != "" {
+		t.Fatalf("expected unscoped readiness filters, got %+v", decoded.Readiness.Filters)
 	}
 	if len(decoded.Readiness.Targets) != 2 || decoded.Readiness.Targets[0].ReviewStatus != "degraded" {
 		t.Fatalf("expected degraded target sorted first, got %+v", decoded.Readiness.Targets)
@@ -1499,7 +1594,8 @@ func TestDebugStatusIncludesClawHostRecoverySurface(t *testing.T) {
 	}
 	var decoded struct {
 		Recovery struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				Targets            int `json:"targets"`
 				RecoverableTargets int `json:"recoverable_targets"`
@@ -1521,8 +1617,242 @@ func TestDebugStatusIncludesClawHostRecoverySurface(t *testing.T) {
 	if decoded.Recovery.Status != "active" || decoded.Recovery.Summary.Targets != 2 || decoded.Recovery.Summary.RecoverableTargets != 1 || decoded.Recovery.Summary.DegradedTargets != 1 || decoded.Recovery.Summary.IsolatedTargets != 1 || decoded.Recovery.Summary.TakeoverRequired != 1 || decoded.Recovery.Summary.EvidenceArtifacts != 2 {
 		t.Fatalf("unexpected recovery summary: %+v", decoded.Recovery)
 	}
+	if decoded.Recovery.Filters["team"] != "" || decoded.Recovery.Filters["project"] != "" {
+		t.Fatalf("expected unscoped recovery filters, got %+v", decoded.Recovery.Filters)
+	}
 	if len(decoded.Recovery.Targets) != 2 || decoded.Recovery.Targets[0].RecoveryStatus != "degraded" {
 		t.Fatalf("expected degraded recovery target sorted first, got %+v", decoded.Recovery.Targets)
+	}
+}
+
+func TestDebugStatusReusesSingleClawHostTaskSnapshot(t *testing.T) {
+	now := time.Unix(1700010365, 0)
+	taskQueue := &countingInspectorQueue{MemoryQueue: queue.NewMemoryQueue()}
+	task := domain.Task{
+		ID:       "clawhost-debug-shared-1",
+		Source:   "clawhost",
+		TenantID: "tenant-a",
+		State:    domain.TaskQueued,
+		Metadata: map[string]string{
+			"control_plane":               "clawhost",
+			"inventory_kind":              "claw",
+			"claw_id":                     "claw-a",
+			"claw_name":                   "sales-west",
+			"provider":                    "openai",
+			"provider_status":             "running",
+			"clawhost_app_id":             "sales-app",
+			"clawhost_default_provider":   "openai",
+			"clawhost_provider_mode":      "app_default",
+			"clawhost_provider_allowlist": "anthropic,openai",
+			"skill_count":                 "3",
+			"agent_skill_count":           "4",
+			"channel_types":               "discord,telegram",
+			"whatsapp_pairing_status":     "waiting",
+			"domain":                      "sales-west.clawhost.cloud",
+			"proxy_mode":                  "http_ws_gateway",
+			"gateway_port":                "18789",
+			"reachable":                   "true",
+			"admin_ui_enabled":            "true",
+			"websocket_reachable":         "true",
+			"subdomain_ready":             "true",
+			"version_status":              "current",
+			"version_current":             "0.0.31",
+			"version_latest":              "0.0.31",
+			"clawhost_update_available":   "true",
+			"clawhost_takeover_required":  "true",
+			"clawhost_lifecycle_actions":  "start,restart,upgrade",
+			"clawhost_pod_isolation":      "true",
+			"clawhost_service_isolation":  "true",
+			"clawhost_takeover_triggers":  "proxy health regresses,session restore fails",
+			"clawhost_recovery_evidence":  "GET /status,/v2/reports/distributed",
+		},
+		UpdatedAt: now,
+	}
+	if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+		t.Fatalf("enqueue task: %v", err)
+	}
+	server := &Server{Recorder: observability.NewRecorder(), Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d %s", response.Code, response.Body.String())
+	}
+	if taskQueue.listCalls != 1 {
+		t.Fatalf("expected a single ClawHost task snapshot, got %d list calls", taskQueue.listCalls)
+	}
+}
+
+func TestDebugStatusScopesClawHostSurfacesByFilters(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010367, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-debug-filtered-1",
+			Source:   "clawhost",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":               "clawhost",
+				"team":                        "platform",
+				"project":                     "sales",
+				"inventory_kind":              "claw",
+				"claw_id":                     "claw-a",
+				"claw_name":                   "sales-west",
+				"provider":                    "openai",
+				"provider_status":             "running",
+				"clawhost_app_id":             "sales-app",
+				"clawhost_default_provider":   "openai",
+				"clawhost_provider_mode":      "app_default",
+				"clawhost_provider_allowlist": "anthropic,openai",
+				"skill_count":                 "3",
+				"agent_skill_count":           "4",
+				"channel_types":               "discord,telegram",
+				"whatsapp_pairing_status":     "waiting",
+				"domain":                      "sales-west.clawhost.cloud",
+				"proxy_mode":                  "http_ws_gateway",
+				"gateway_port":                "18789",
+				"reachable":                   "true",
+				"admin_ui_enabled":            "true",
+				"websocket_reachable":         "true",
+				"subdomain_ready":             "true",
+				"version_status":              "current",
+				"version_current":             "0.0.31",
+				"version_latest":              "0.0.31",
+				"clawhost_update_available":   "true",
+				"clawhost_takeover_required":  "true",
+				"clawhost_lifecycle_actions":  "start,restart,upgrade",
+				"clawhost_pod_isolation":      "true",
+				"clawhost_service_isolation":  "true",
+				"clawhost_takeover_triggers":  "proxy health regresses,session restore fails",
+				"clawhost_recovery_evidence":  "GET /status,/v2/reports/distributed",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-debug-filtered-2",
+			Source:   "clawhost",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":               "clawhost",
+				"team":                        "support",
+				"project":                     "care",
+				"inventory_kind":              "claw",
+				"claw_id":                     "claw-b",
+				"claw_name":                   "support-east",
+				"provider":                    "anthropic",
+				"provider_status":             "running",
+				"clawhost_app_id":             "support-app",
+				"clawhost_default_provider":   "anthropic",
+				"clawhost_provider_mode":      "tenant_override",
+				"clawhost_provider_allowlist": "openai,google",
+				"skill_count":                 "2",
+				"agent_skill_count":           "2",
+				"channel_types":               "telegram",
+				"whatsapp_pairing_status":     "paired",
+				"domain":                      "support-east.clawhost.cloud",
+				"proxy_mode":                  "http_ws_gateway",
+				"gateway_port":                "18790",
+				"reachable":                   "true",
+				"admin_ui_enabled":            "true",
+				"websocket_reachable":         "true",
+				"subdomain_ready":             "true",
+				"version_status":              "current",
+				"version_current":             "0.0.31",
+				"version_latest":              "0.0.31",
+				"clawhost_update_available":   "false",
+				"clawhost_takeover_required":  "false",
+				"clawhost_lifecycle_actions":  "restart",
+				"clawhost_pod_isolation":      "true",
+				"clawhost_service_isolation":  "true",
+				"clawhost_takeover_triggers":  "session restore fails",
+				"clawhost_recovery_evidence":  "GET /status",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status?team=platform&project=sales", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected debug status 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Filters struct {
+			Team    string `json:"team"`
+			Project string `json:"project"`
+		} `json:"filters"`
+		Policy struct {
+			Filters map[string]string `json:"filters"`
+			Summary struct {
+				ActivePolicies int `json:"active_policies"`
+			} `json:"summary"`
+			ObservedProviders []string `json:"observed_providers"`
+			ReviewQueue       []struct {
+				TaskID string `json:"task_id"`
+			} `json:"review_queue"`
+		} `json:"clawhost_policy_surface"`
+		Workflow struct {
+			Filters map[string]string `json:"filters"`
+			Summary struct {
+				WorkflowItems int `json:"workflow_items"`
+			} `json:"summary"`
+		} `json:"clawhost_workflow_surface"`
+		Rollout struct {
+			Filters map[string]string `json:"filters"`
+			Summary struct {
+				ActivePlans int `json:"active_plans"`
+			} `json:"summary"`
+		} `json:"clawhost_rollout_surface"`
+		Readiness struct {
+			Filters map[string]string `json:"filters"`
+			Summary struct {
+				Targets int `json:"targets"`
+			} `json:"summary"`
+		} `json:"clawhost_readiness_surface"`
+		Recovery struct {
+			Filters map[string]string `json:"filters"`
+			Summary struct {
+				Targets int `json:"targets"`
+			} `json:"summary"`
+		} `json:"clawhost_recovery_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode filtered debug payload: %v", err)
+	}
+	if decoded.Filters.Team != "platform" || decoded.Filters.Project != "sales" {
+		t.Fatalf("expected debug filters to echo request scope, got %+v", decoded.Filters)
+	}
+	if decoded.Policy.Summary.ActivePolicies != 1 || len(decoded.Policy.ReviewQueue) != 1 || decoded.Policy.ReviewQueue[0].TaskID != "clawhost-debug-filtered-1" {
+		t.Fatalf("expected scoped debug policy surface, got %+v", decoded.Policy)
+	}
+	if decoded.Policy.Filters["team"] != "platform" || decoded.Policy.Filters["project"] != "sales" {
+		t.Fatalf("expected scoped debug policy filters, got %+v", decoded.Policy.Filters)
+	}
+	if containsString(decoded.Policy.ObservedProviders, "anthropic") || !containsString(decoded.Policy.ObservedProviders, "openai") {
+		t.Fatalf("expected scoped debug policy providers, got %+v", decoded.Policy.ObservedProviders)
+	}
+	if decoded.Workflow.Filters["team"] != "platform" || decoded.Workflow.Filters["project"] != "sales" || decoded.Workflow.Filters["actor"] != "workflow-operator" {
+		t.Fatalf("expected scoped debug workflow filters, got %+v", decoded.Workflow.Filters)
+	}
+	if decoded.Rollout.Filters["team"] != "platform" || decoded.Rollout.Filters["project"] != "sales" {
+		t.Fatalf("expected scoped debug rollout filters, got %+v", decoded.Rollout.Filters)
+	}
+	if decoded.Readiness.Filters["team"] != "platform" || decoded.Readiness.Filters["project"] != "sales" {
+		t.Fatalf("expected scoped debug readiness filters, got %+v", decoded.Readiness.Filters)
+	}
+	if decoded.Recovery.Filters["team"] != "platform" || decoded.Recovery.Filters["project"] != "sales" {
+		t.Fatalf("expected scoped debug recovery filters, got %+v", decoded.Recovery.Filters)
+	}
+	if decoded.Workflow.Summary.WorkflowItems != 1 || decoded.Rollout.Summary.ActivePlans != 1 || decoded.Readiness.Summary.Targets != 1 || decoded.Recovery.Summary.Targets != 1 {
+		t.Fatalf("expected scoped debug ClawHost surfaces, got workflow=%+v rollout=%+v readiness=%+v recovery=%+v", decoded.Workflow, decoded.Rollout, decoded.Readiness, decoded.Recovery)
 	}
 }
 
@@ -4740,6 +5070,8 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 				"clawhost_app_id":           "sales-app",
 				"clawhost_default_provider": "openai",
 				"clawhost_approval_flow":    "standard",
+				"team":                      "platform",
+				"project":                   "sales",
 			},
 		},
 		{
@@ -4754,6 +5086,8 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 				"clawhost_provider_mode":      "tenant_override",
 				"clawhost_provider_allowlist": "openai,google",
 				"clawhost_takeover_required":  "true",
+				"team":                        "support",
+				"project":                     "care",
 			},
 		},
 	} {
@@ -4765,7 +5099,7 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	handler := server.Handler()
 
 	policyResponse := httptest.NewRecorder()
-	policyRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center/policy", nil)
+	policyRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center/policy?team=platform&project=sales", nil)
 	policyRequest.Header.Set("X-BigClaw-Role", "platform_admin")
 	handler.ServeHTTP(policyResponse, policyRequest)
 	if policyResponse.Code != http.StatusOK {
@@ -4778,7 +5112,11 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 		SharedPath       string `json:"shared_path"`
 		ReloadSupported  bool   `json:"reload_supported"`
 		ReloadAuthorized bool   `json:"reload_authorized"`
-		Policy           struct {
+		Filters          struct {
+			Team    string `json:"team"`
+			Project string `json:"project"`
+		} `json:"filters"`
+		Policy struct {
 			DefaultExecutor         string            `json:"default_executor"`
 			UrgentPriorityThreshold int               `json:"urgent_priority_threshold"`
 			ToolExecutors           map[string]string `json:"tool_executors"`
@@ -4800,7 +5138,8 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 			} `json:"tenants"`
 		} `json:"fairness"`
 		ClawHost struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				ActivePolicies      int `json:"active_policies"`
 				ActiveTenants       int `json:"active_tenants"`
@@ -4815,6 +5154,10 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 				DriftStatus string `json:"drift_status"`
 			} `json:"review_queue"`
 		} `json:"clawhost"`
+		Report struct {
+			Markdown  string `json:"markdown"`
+			ExportURL string `json:"export_url"`
+		} `json:"report"`
 	}
 	if err := json.Unmarshal(policyResponse.Body.Bytes(), &policyDecoded); err != nil {
 		t.Fatalf("decode scheduler policy response: %v", err)
@@ -4825,16 +5168,56 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	if !policyDecoded.Fairness.Enabled || !policyDecoded.Fairness.Shared || policyDecoded.Fairness.Backend != "sqlite" || policyDecoded.Fairness.ActiveTenants != 2 || len(policyDecoded.Fairness.Tenants) != 2 {
 		t.Fatalf("unexpected fairness runtime payload: %+v", policyDecoded.Fairness)
 	}
-	if policyDecoded.ClawHost.Status != "active" || policyDecoded.ClawHost.Summary.ActivePolicies != 2 || policyDecoded.ClawHost.Summary.ActiveTenants != 2 || policyDecoded.ClawHost.Summary.ActiveApps != 2 || policyDecoded.ClawHost.Summary.ReviewRequired != 1 || policyDecoded.ClawHost.Summary.TakeoverRequired != 1 || policyDecoded.ClawHost.Summary.OutOfPolicyDefaults != 1 {
+	if policyDecoded.Filters.Team != "platform" || policyDecoded.Filters.Project != "sales" {
+		t.Fatalf("expected scoped filters in policy response, got %+v", policyDecoded.Filters)
+	}
+	if policyDecoded.ClawHost.Status != "active" || policyDecoded.ClawHost.Summary.ActivePolicies != 1 || policyDecoded.ClawHost.Summary.ActiveTenants != 1 || policyDecoded.ClawHost.Summary.ActiveApps != 1 || policyDecoded.ClawHost.Summary.ReviewRequired != 0 || policyDecoded.ClawHost.Summary.TakeoverRequired != 0 || policyDecoded.ClawHost.Summary.OutOfPolicyDefaults != 0 {
 		t.Fatalf("unexpected ClawHost policy payload: %+v", policyDecoded.ClawHost)
 	}
-	if len(policyDecoded.ClawHost.ReviewQueue) != 2 || policyDecoded.ClawHost.ReviewQueue[0].DriftStatus != "out_of_policy" {
-		t.Fatalf("expected prioritized ClawHost review queue, got %+v", policyDecoded.ClawHost.ReviewQueue)
+	if policyDecoded.ClawHost.Filters["team"] != "platform" || policyDecoded.ClawHost.Filters["project"] != "sales" {
+		t.Fatalf("expected scoped ClawHost surface filters, got %+v", policyDecoded.ClawHost.Filters)
 	}
-	for _, want := range []string{"anthropic", "openai"} {
+	if len(policyDecoded.ClawHost.ReviewQueue) != 1 || policyDecoded.ClawHost.ReviewQueue[0].TaskID != "clawhost-policy-endpoint-1" || policyDecoded.ClawHost.ReviewQueue[0].DriftStatus != "aligned" {
+		t.Fatalf("expected scoped ClawHost review queue, got %+v", policyDecoded.ClawHost.ReviewQueue)
+	}
+	for _, want := range []string{"openai"} {
 		if !containsString(policyDecoded.ClawHost.ObservedProviders, want) {
 			t.Fatalf("expected ClawHost observed provider %q, got %+v", want, policyDecoded.ClawHost.ObservedProviders)
 		}
+	}
+	if containsString(policyDecoded.ClawHost.ObservedProviders, "anthropic") {
+		t.Fatalf("did not expect unscoped provider in scoped response, got %+v", policyDecoded.ClawHost.ObservedProviders)
+	}
+	if policyDecoded.Report.ExportURL != "/v2/control-center/policy/export?project=sales&team=platform" ||
+		!strings.Contains(policyDecoded.Report.Markdown, "# ClawHost Policy Surface") ||
+		!strings.Contains(policyDecoded.Report.Markdown, "## Filters") ||
+		!strings.Contains(policyDecoded.Report.Markdown, "- Team: `platform`") ||
+		!strings.Contains(policyDecoded.Report.Markdown, "- Project: `sales`") ||
+		!strings.Contains(policyDecoded.Report.Markdown, "clawhost-policy-endpoint-1") ||
+		strings.Contains(policyDecoded.Report.Markdown, "clawhost-policy-endpoint-2") {
+		t.Fatalf("expected policy report metadata in response, got %+v", policyDecoded.Report)
+	}
+
+	exportResponse := httptest.NewRecorder()
+	exportRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center/policy/export?team=platform&project=sales", nil)
+	exportRequest.Header.Set("X-BigClaw-Role", "platform_admin")
+	handler.ServeHTTP(exportResponse, exportRequest)
+	if exportResponse.Code != http.StatusOK {
+		t.Fatalf("expected policy export 200, got %d %s", exportResponse.Code, exportResponse.Body.String())
+	}
+	if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected markdown content type, got %q", contentType)
+	}
+	if disposition := exportResponse.Header().Get("Content-Disposition"); !strings.Contains(disposition, "clawhost-policy-surface.md") {
+		t.Fatalf("expected attachment filename, got %q", disposition)
+	}
+	for _, want := range []string{"# ClawHost Policy Surface", "## Filters", "- Team: `platform`", "- Project: `sales`", "tenant `tenant-a`", "provider `openai`", "Reason: provider default remains aligned with the shared app policy"} {
+		if !strings.Contains(exportResponse.Body.String(), want) {
+			t.Fatalf("expected %q in policy export, got %s", want, exportResponse.Body.String())
+		}
+	}
+	if strings.Contains(exportResponse.Body.String(), "tenant `tenant-b`") {
+		t.Fatalf("did not expect unscoped tenant in policy export, got %s", exportResponse.Body.String())
 	}
 
 	if err := os.WriteFile(policyPath, []byte(`{"default_executor":"kubernetes","high_risk_executor":"ray","fairness":{"window_seconds":10,"max_recent_decisions_per_tenant":2}}`), 0o644); err != nil {
@@ -4861,6 +5244,15 @@ func TestV2ControlCenterPolicyEndpoints(t *testing.T) {
 	handler.ServeHTTP(forbiddenResponse, forbiddenRequest)
 	if forbiddenResponse.Code != http.StatusForbidden {
 		t.Fatalf("expected forbidden reload for eng lead, got %d %s", forbiddenResponse.Code, forbiddenResponse.Body.String())
+	}
+
+	scopedForbidden := httptest.NewRecorder()
+	scopedForbiddenRequest := httptest.NewRequest(http.MethodGet, "/v2/control-center/policy?team=support", nil)
+	scopedForbiddenRequest.Header.Set("X-BigClaw-Role", "eng_lead")
+	scopedForbiddenRequest.Header.Set("X-BigClaw-Team", "platform")
+	handler.ServeHTTP(scopedForbidden, scopedForbiddenRequest)
+	if scopedForbidden.Code != http.StatusForbidden {
+		t.Fatalf("expected forbidden policy scope for eng lead, got %d %s", scopedForbidden.Code, scopedForbidden.Body.String())
 	}
 }
 
@@ -4919,7 +5311,8 @@ func TestV2ControlCenterIncludesClawHostRolloutSurface(t *testing.T) {
 	}
 	var decoded struct {
 		ClawHostRollout struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				ActivePlans      int `json:"active_plans"`
 				TotalTargets     int `json:"total_targets"`
@@ -4937,6 +5330,9 @@ func TestV2ControlCenterIncludesClawHostRolloutSurface(t *testing.T) {
 	}
 	if decoded.ClawHostRollout.Status != "active" || decoded.ClawHostRollout.Summary.ActivePlans != 2 || decoded.ClawHostRollout.Summary.TotalTargets != 2 || decoded.ClawHostRollout.Summary.TakeoverRequired != 1 {
 		t.Fatalf("unexpected ClawHost rollout control center surface: %+v", decoded.ClawHostRollout)
+	}
+	if decoded.ClawHostRollout.Filters["team"] != "" || decoded.ClawHostRollout.Filters["project"] != "" {
+		t.Fatalf("expected unscoped rollout surface filters in control-center bundle, got %+v", decoded.ClawHostRollout.Filters)
 	}
 	if len(decoded.ClawHostRollout.Plans) != 2 || decoded.ClawHostRollout.Plans[0].Action != "upgrade" {
 		t.Fatalf("expected upgrade rollout plans, got %+v", decoded.ClawHostRollout.Plans)
@@ -4998,7 +5394,8 @@ func TestV2ControlCenterIncludesClawHostRecoverySurface(t *testing.T) {
 	}
 	var decoded struct {
 		ClawHostRecovery struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				Targets            int `json:"targets"`
 				RecoverableTargets int `json:"recoverable_targets"`
@@ -5019,6 +5416,9 @@ func TestV2ControlCenterIncludesClawHostRecoverySurface(t *testing.T) {
 	}
 	if decoded.ClawHostRecovery.Status != "active" || decoded.ClawHostRecovery.Summary.Targets != 2 || decoded.ClawHostRecovery.Summary.RecoverableTargets != 1 || decoded.ClawHostRecovery.Summary.DegradedTargets != 1 || decoded.ClawHostRecovery.Summary.IsolatedTargets != 1 || decoded.ClawHostRecovery.Summary.TakeoverRequired != 1 || decoded.ClawHostRecovery.Summary.EvidenceArtifacts != 2 {
 		t.Fatalf("unexpected ClawHost recovery control center surface: %+v", decoded.ClawHostRecovery)
+	}
+	if decoded.ClawHostRecovery.Filters["team"] != "" || decoded.ClawHostRecovery.Filters["project"] != "" {
+		t.Fatalf("expected unscoped ClawHost recovery filters, got %+v", decoded.ClawHostRecovery.Filters)
 	}
 	if len(decoded.ClawHostRecovery.Targets) != 2 || decoded.ClawHostRecovery.Targets[0].RecoveryStatus != "degraded" || decoded.ClawHostRecovery.Targets[0].ClawName != "support-east" {
 		t.Fatalf("expected degraded ClawHost recovery target first, got %+v", decoded.ClawHostRecovery.Targets)
@@ -5081,7 +5481,8 @@ func TestV2ControlCenterIncludesClawHostWorkflowSurface(t *testing.T) {
 	}
 	var decoded struct {
 		ClawHostWorkflow struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				WorkflowItems     int `json:"workflow_items"`
 				PairingApprovals  int `json:"pairing_approvals"`
@@ -5102,6 +5503,9 @@ func TestV2ControlCenterIncludesClawHostWorkflowSurface(t *testing.T) {
 	}
 	if decoded.ClawHostWorkflow.Status != "active" || decoded.ClawHostWorkflow.Summary.WorkflowItems != 2 || decoded.ClawHostWorkflow.Summary.PairingApprovals != 1 || decoded.ClawHostWorkflow.Summary.CredentialReviews != 1 || decoded.ClawHostWorkflow.Summary.TakeoverRequired != 1 {
 		t.Fatalf("unexpected ClawHost workflow control center surface: %+v", decoded.ClawHostWorkflow)
+	}
+	if decoded.ClawHostWorkflow.Filters["team"] != "" || decoded.ClawHostWorkflow.Filters["project"] != "" || decoded.ClawHostWorkflow.Filters["actor"] != "workflow-operator" {
+		t.Fatalf("expected unscoped ClawHost workflow filters, got %+v", decoded.ClawHostWorkflow.Filters)
 	}
 	if len(decoded.ClawHostWorkflow.ReviewQueue) != 2 || !decoded.ClawHostWorkflow.ReviewQueue[0].TakeoverRequired || decoded.ClawHostWorkflow.ReviewQueue[0].ClawName != "sales-west" {
 		t.Fatalf("expected takeover-required ClawHost workflow item first, got %+v", decoded.ClawHostWorkflow.ReviewQueue)
@@ -5172,7 +5576,8 @@ func TestV2ControlCenterIncludesClawHostReadinessSurface(t *testing.T) {
 	}
 	var decoded struct {
 		ClawHostReadiness struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				Targets                 int `json:"targets"`
 				ReadyTargets            int `json:"ready_targets"`
@@ -5194,6 +5599,9 @@ func TestV2ControlCenterIncludesClawHostReadinessSurface(t *testing.T) {
 	}
 	if decoded.ClawHostReadiness.Status != "active" || decoded.ClawHostReadiness.Summary.Targets != 2 || decoded.ClawHostReadiness.Summary.ReadyTargets != 1 || decoded.ClawHostReadiness.Summary.DegradedTargets != 1 || decoded.ClawHostReadiness.Summary.AdminReadyTargets != 1 || decoded.ClawHostReadiness.Summary.WebSocketReadyTargets != 1 || decoded.ClawHostReadiness.Summary.SubdomainReadyTargets != 1 || decoded.ClawHostReadiness.Summary.UpgradeAvailableTargets != 1 {
 		t.Fatalf("unexpected ClawHost readiness control center surface: %+v", decoded.ClawHostReadiness)
+	}
+	if decoded.ClawHostReadiness.Filters["team"] != "" || decoded.ClawHostReadiness.Filters["project"] != "" {
+		t.Fatalf("expected unscoped ClawHost readiness filters, got %+v", decoded.ClawHostReadiness.Filters)
 	}
 	if len(decoded.ClawHostReadiness.Targets) != 2 || decoded.ClawHostReadiness.Targets[0].ReviewStatus != "degraded" || decoded.ClawHostReadiness.Targets[0].ClawName != "support-east" {
 		t.Fatalf("expected degraded ClawHost readiness target first, got %+v", decoded.ClawHostReadiness.Targets)
@@ -5251,7 +5659,8 @@ func TestV2ControlCenterIncludesClawHostPolicySurface(t *testing.T) {
 	}
 	var decoded struct {
 		ClawHostPolicy struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				ActivePolicies      int `json:"active_policies"`
 				ActiveTenants       int `json:"active_tenants"`
@@ -5272,6 +5681,9 @@ func TestV2ControlCenterIncludesClawHostPolicySurface(t *testing.T) {
 	}
 	if decoded.ClawHostPolicy.Status != "active" || decoded.ClawHostPolicy.Summary.ActivePolicies != 2 || decoded.ClawHostPolicy.Summary.ActiveTenants != 2 || decoded.ClawHostPolicy.Summary.ActiveApps != 2 || decoded.ClawHostPolicy.Summary.ReviewRequired != 2 || decoded.ClawHostPolicy.Summary.TakeoverRequired != 1 || decoded.ClawHostPolicy.Summary.OutOfPolicyDefaults != 1 {
 		t.Fatalf("unexpected ClawHost policy control center surface: %+v", decoded.ClawHostPolicy)
+	}
+	if decoded.ClawHostPolicy.Filters["team"] != "" || decoded.ClawHostPolicy.Filters["project"] != "" {
+		t.Fatalf("expected unscoped ClawHost policy filters, got %+v", decoded.ClawHostPolicy.Filters)
 	}
 	if len(decoded.ClawHostPolicy.ReviewQueue) != 2 || decoded.ClawHostPolicy.ReviewQueue[0].TaskID != "clawhost-policy-center-2" || decoded.ClawHostPolicy.ReviewQueue[0].DriftStatus != "out_of_policy" || decoded.ClawHostPolicy.ReviewQueue[1].TaskID != "clawhost-policy-center-1" || decoded.ClawHostPolicy.ReviewQueue[1].DriftStatus != "review_required" {
 		t.Fatalf("expected prioritized ClawHost policy review queue, got %+v", decoded.ClawHostPolicy.ReviewQueue)
@@ -5343,31 +5755,36 @@ func TestV2ControlCenterIncludesCompleteClawHostSurfaceBundle(t *testing.T) {
 	}
 	var decoded struct {
 		Policy struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				ActivePolicies int `json:"active_policies"`
 			} `json:"summary"`
 		} `json:"clawhost_policy_surface"`
 		Workflow struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				WorkflowItems int `json:"workflow_items"`
 			} `json:"summary"`
 		} `json:"clawhost_workflow_surface"`
 		Rollout struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				ActivePlans int `json:"active_plans"`
 			} `json:"summary"`
 		} `json:"clawhost_rollout_surface"`
 		Readiness struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				Targets int `json:"targets"`
 			} `json:"summary"`
 		} `json:"clawhost_readiness_surface"`
 		Recovery struct {
-			Status  string `json:"status"`
+			Status  string            `json:"status"`
+			Filters map[string]string `json:"filters"`
 			Summary struct {
 				Targets int `json:"targets"`
 			} `json:"summary"`
@@ -5379,17 +5796,229 @@ func TestV2ControlCenterIncludesCompleteClawHostSurfaceBundle(t *testing.T) {
 	if decoded.Policy.Status != "active" || decoded.Policy.Summary.ActivePolicies != 1 {
 		t.Fatalf("expected active ClawHost policy surface in bundle, got %+v", decoded.Policy)
 	}
+	if decoded.Policy.Filters["team"] != "" || decoded.Policy.Filters["project"] != "" {
+		t.Fatalf("expected unscoped ClawHost policy filters in bundle, got %+v", decoded.Policy.Filters)
+	}
 	if decoded.Workflow.Status != "active" || decoded.Workflow.Summary.WorkflowItems != 1 {
 		t.Fatalf("expected active ClawHost workflow surface in bundle, got %+v", decoded.Workflow)
+	}
+	if decoded.Workflow.Filters["team"] != "" || decoded.Workflow.Filters["project"] != "" || decoded.Workflow.Filters["actor"] != "workflow-operator" {
+		t.Fatalf("expected unscoped ClawHost workflow filters in bundle, got %+v", decoded.Workflow.Filters)
 	}
 	if decoded.Rollout.Status != "active" || decoded.Rollout.Summary.ActivePlans != 1 {
 		t.Fatalf("expected active ClawHost rollout surface in bundle, got %+v", decoded.Rollout)
 	}
+	if decoded.Rollout.Filters["team"] != "" || decoded.Rollout.Filters["project"] != "" {
+		t.Fatalf("expected unscoped ClawHost rollout filters in bundle, got %+v", decoded.Rollout.Filters)
+	}
 	if decoded.Readiness.Status != "active" || decoded.Readiness.Summary.Targets != 1 {
 		t.Fatalf("expected active ClawHost readiness surface in bundle, got %+v", decoded.Readiness)
 	}
+	if decoded.Readiness.Filters["team"] != "" || decoded.Readiness.Filters["project"] != "" {
+		t.Fatalf("expected unscoped ClawHost readiness filters in bundle, got %+v", decoded.Readiness.Filters)
+	}
 	if decoded.Recovery.Status != "active" || decoded.Recovery.Summary.Targets != 1 {
 		t.Fatalf("expected active ClawHost recovery surface in bundle, got %+v", decoded.Recovery)
+	}
+	if decoded.Recovery.Filters["team"] != "" || decoded.Recovery.Filters["project"] != "" {
+		t.Fatalf("expected unscoped ClawHost recovery filters in bundle, got %+v", decoded.Recovery.Filters)
+	}
+}
+
+func TestV2ControlCenterScopesClawHostSurfaceBundleByFilters(t *testing.T) {
+	recorder := observability.NewRecorder()
+	taskQueue := queue.NewMemoryQueue()
+	now := time.Unix(1700010440, 0)
+	for _, task := range []domain.Task{
+		{
+			ID:       "clawhost-filtered-1",
+			Source:   "clawhost",
+			Title:    "platform sales bundle target",
+			TenantID: "tenant-a",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":               "clawhost",
+				"team":                        "platform",
+				"project":                     "sales",
+				"inventory_kind":              "claw",
+				"claw_id":                     "claw-sales-west",
+				"claw_name":                   "sales-west",
+				"provider":                    "openai",
+				"provider_status":             "running",
+				"clawhost_app_id":             "sales-app",
+				"clawhost_default_provider":   "openai",
+				"clawhost_provider_mode":      "app_default",
+				"clawhost_provider_allowlist": "anthropic,openai",
+				"skill_count":                 "3",
+				"agent_skill_count":           "4",
+				"channel_types":               "discord,telegram",
+				"whatsapp_pairing_status":     "waiting",
+				"admin_credentials_exposed":   "true",
+				"admin_surface_path":          "/credentials",
+				"domain":                      "sales-west.clawhost.cloud",
+				"proxy_mode":                  "http_ws_gateway",
+				"gateway_port":                "18789",
+				"reachable":                   "true",
+				"admin_ui_enabled":            "true",
+				"websocket_reachable":         "true",
+				"subdomain_ready":             "true",
+				"version_status":              "current",
+				"version_current":             "0.0.31",
+				"version_latest":              "0.0.31",
+				"clawhost_update_available":   "true",
+				"clawhost_takeover_required":  "true",
+				"clawhost_lifecycle_actions":  "start,restart,upgrade",
+				"clawhost_pod_isolation":      "true",
+				"clawhost_service_isolation":  "true",
+				"clawhost_takeover_triggers":  "proxy health regresses,session restore fails",
+				"clawhost_recovery_evidence":  "GET /status,/v2/reports/distributed",
+			},
+			UpdatedAt: now,
+		},
+		{
+			ID:       "clawhost-filtered-2",
+			Source:   "clawhost",
+			Title:    "support care bundle target",
+			TenantID: "tenant-b",
+			State:    domain.TaskQueued,
+			Metadata: map[string]string{
+				"control_plane":               "clawhost",
+				"team":                        "support",
+				"project":                     "care",
+				"inventory_kind":              "claw",
+				"claw_id":                     "claw-support-east",
+				"claw_name":                   "support-east",
+				"provider":                    "anthropic",
+				"provider_status":             "running",
+				"clawhost_app_id":             "support-app",
+				"clawhost_default_provider":   "anthropic",
+				"clawhost_provider_mode":      "tenant_override",
+				"clawhost_provider_allowlist": "openai,google",
+				"skill_count":                 "5",
+				"agent_skill_count":           "6",
+				"channel_types":               "slack,whatsapp",
+				"whatsapp_pairing_status":     "approved",
+				"admin_credentials_exposed":   "false",
+				"domain":                      "support-east.clawhost.cloud",
+				"proxy_mode":                  "http_ws_gateway",
+				"gateway_port":                "18790",
+				"reachable":                   "true",
+				"admin_ui_enabled":            "true",
+				"websocket_reachable":         "true",
+				"subdomain_ready":             "true",
+				"version_status":              "current",
+				"version_current":             "0.0.31",
+				"version_latest":              "0.0.31",
+				"clawhost_update_available":   "false",
+				"clawhost_takeover_required":  "false",
+				"clawhost_lifecycle_actions":  "start,restart",
+				"clawhost_pod_isolation":      "true",
+				"clawhost_service_isolation":  "true",
+				"clawhost_takeover_triggers":  "session restore fails",
+				"clawhost_recovery_evidence":  "GET /status",
+			},
+			UpdatedAt: now.Add(time.Second),
+		},
+	} {
+		if err := taskQueue.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue filtered control center task %s: %v", task.ID, err)
+		}
+	}
+	server := &Server{Recorder: recorder, Queue: taskQueue, Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return now }}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?team=platform&project=sales", nil)
+	request.Header.Set("X-BigClaw-Role", "platform_admin")
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected scoped control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Policy struct {
+			Filters map[string]string `json:"filters"`
+			Summary struct {
+				ActivePolicies int `json:"active_policies"`
+			} `json:"summary"`
+			ObservedProviders []string `json:"observed_providers"`
+			ReviewQueue       []struct {
+				TaskID string `json:"task_id"`
+			} `json:"review_queue"`
+		} `json:"clawhost_policy_surface"`
+		Workflow struct {
+			Filters map[string]string `json:"filters"`
+			Summary struct {
+				WorkflowItems int `json:"workflow_items"`
+			} `json:"summary"`
+			ReviewQueue []struct {
+				TaskID string `json:"task_id"`
+			} `json:"review_queue"`
+		} `json:"clawhost_workflow_surface"`
+		Rollout struct {
+			Filters map[string]string `json:"filters"`
+			Summary struct {
+				ActivePlans int `json:"active_plans"`
+			} `json:"summary"`
+			Plans []struct {
+				Waves []struct {
+					Targets []struct {
+						TaskID string `json:"task_id"`
+					} `json:"targets"`
+				} `json:"waves"`
+			} `json:"plans"`
+		} `json:"clawhost_rollout_surface"`
+		Readiness struct {
+			Filters map[string]string `json:"filters"`
+			Summary struct {
+				Targets int `json:"targets"`
+			} `json:"summary"`
+			Targets []struct {
+				TaskID string `json:"task_id"`
+			} `json:"targets"`
+		} `json:"clawhost_readiness_surface"`
+		Recovery struct {
+			Filters map[string]string `json:"filters"`
+			Summary struct {
+				Targets int `json:"targets"`
+			} `json:"summary"`
+			Targets []struct {
+				TaskID string `json:"task_id"`
+			} `json:"targets"`
+		} `json:"clawhost_recovery_surface"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode scoped control center response: %v", err)
+	}
+	if decoded.Policy.Summary.ActivePolicies != 1 || len(decoded.Policy.ReviewQueue) != 1 || decoded.Policy.ReviewQueue[0].TaskID != "clawhost-filtered-1" {
+		t.Fatalf("expected scoped policy surface, got %+v", decoded.Policy)
+	}
+	if decoded.Policy.Filters["team"] != "platform" || decoded.Policy.Filters["project"] != "sales" {
+		t.Fatalf("expected scoped policy filters, got %+v", decoded.Policy.Filters)
+	}
+	if containsString(decoded.Policy.ObservedProviders, "anthropic") || !containsString(decoded.Policy.ObservedProviders, "openai") {
+		t.Fatalf("expected scoped policy providers, got %+v", decoded.Policy.ObservedProviders)
+	}
+	if decoded.Workflow.Summary.WorkflowItems != 1 || len(decoded.Workflow.ReviewQueue) != 1 || decoded.Workflow.ReviewQueue[0].TaskID != "clawhost-filtered-1" {
+		t.Fatalf("expected scoped workflow surface, got %+v", decoded.Workflow)
+	}
+	if decoded.Workflow.Filters["team"] != "platform" || decoded.Workflow.Filters["project"] != "sales" || decoded.Workflow.Filters["actor"] != "workflow-operator" {
+		t.Fatalf("expected scoped workflow filters, got %+v", decoded.Workflow.Filters)
+	}
+	if decoded.Rollout.Summary.ActivePlans != 1 || len(decoded.Rollout.Plans) != 1 || len(decoded.Rollout.Plans[0].Waves) != 1 || len(decoded.Rollout.Plans[0].Waves[0].Targets) != 1 || decoded.Rollout.Plans[0].Waves[0].Targets[0].TaskID != "clawhost-filtered-1" {
+		t.Fatalf("expected scoped rollout surface, got %+v", decoded.Rollout)
+	}
+	if decoded.Rollout.Filters["team"] != "platform" || decoded.Rollout.Filters["project"] != "sales" {
+		t.Fatalf("expected scoped rollout filters, got %+v", decoded.Rollout.Filters)
+	}
+	if decoded.Readiness.Summary.Targets != 1 || len(decoded.Readiness.Targets) != 1 || decoded.Readiness.Targets[0].TaskID != "clawhost-filtered-1" {
+		t.Fatalf("expected scoped readiness surface, got %+v", decoded.Readiness)
+	}
+	if decoded.Readiness.Filters["team"] != "platform" || decoded.Readiness.Filters["project"] != "sales" {
+		t.Fatalf("expected scoped readiness filters, got %+v", decoded.Readiness.Filters)
+	}
+	if decoded.Recovery.Summary.Targets != 1 || len(decoded.Recovery.Targets) != 1 || decoded.Recovery.Targets[0].TaskID != "clawhost-filtered-1" {
+		t.Fatalf("expected scoped recovery surface, got %+v", decoded.Recovery)
+	}
+	if decoded.Recovery.Filters["team"] != "platform" || decoded.Recovery.Filters["project"] != "sales" {
+		t.Fatalf("expected scoped recovery filters, got %+v", decoded.Recovery.Filters)
 	}
 }
 

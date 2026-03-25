@@ -2,7 +2,9 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"sort"
+	"strings"
 
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/policy"
@@ -12,6 +14,7 @@ import (
 type clawHostPolicySurface struct {
 	Integration       string                        `json:"integration"`
 	Status            string                        `json:"status"`
+	Filters           map[string]string             `json:"filters,omitempty"`
 	Catalog           policy.ClawHostCatalog        `json:"catalog"`
 	Summary           clawHostPolicySurfaceSummary  `json:"summary"`
 	ObservedProviders []string                      `json:"observed_providers,omitempty"`
@@ -55,10 +58,31 @@ func (s *Server) clawHostPolicyTasks(ctx context.Context) []domain.Task {
 	return tasks
 }
 
-func clawHostPolicySurfacePayload(tasks []domain.Task) clawHostPolicySurface {
+func filterClawHostPolicyTasks(tasks []domain.Task, team, project string) []domain.Task {
+	if team == "" && project == "" {
+		return tasks
+	}
+	filtered := make([]domain.Task, 0, len(tasks))
+	for _, task := range tasks {
+		if team != "" && !strings.EqualFold(strings.TrimSpace(task.Metadata["team"]), team) {
+			continue
+		}
+		if project != "" && !strings.EqualFold(strings.TrimSpace(task.Metadata["project"]), project) {
+			continue
+		}
+		filtered = append(filtered, task)
+	}
+	return filtered
+}
+
+func clawHostPolicySurfacePayload(tasks []domain.Task, team, project string) clawHostPolicySurface {
 	surface := clawHostPolicySurface{
 		Integration: "clawhost",
 		Status:      "catalog_only",
+		Filters: map[string]string{
+			"team":    strings.TrimSpace(team),
+			"project": strings.TrimSpace(project),
+		},
 		Catalog:     policy.ClawHostCatalogInfo(),
 	}
 	reviewQueue := make([]policy.ClawHostTenantPolicy, 0, len(tasks))
@@ -129,4 +153,42 @@ func sortedKeys(values map[string]struct{}) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+func renderClawHostPolicySurfaceReport(surface clawHostPolicySurface) string {
+	var out strings.Builder
+	out.WriteString("# ClawHost Policy Surface\n\n")
+	out.WriteString(fmt.Sprintf("- Status: `%s`\n", surface.Status))
+	out.WriteString(fmt.Sprintf("- Active policies: `%d`\n", surface.Summary.ActivePolicies))
+	out.WriteString(fmt.Sprintf("- Active tenants: `%d`\n", surface.Summary.ActiveTenants))
+	out.WriteString(fmt.Sprintf("- Active apps: `%d`\n", surface.Summary.ActiveApps))
+	out.WriteString(fmt.Sprintf("- Review required: `%d`\n", surface.Summary.ReviewRequired))
+	out.WriteString(fmt.Sprintf("- Takeover required: `%d`\n", surface.Summary.TakeoverRequired))
+	out.WriteString(fmt.Sprintf("- Out-of-policy defaults: `%d`\n", surface.Summary.OutOfPolicyDefaults))
+	out.WriteString(fmt.Sprintf("- Blocked defaults: `%d`\n", surface.Summary.BlockedDefaults))
+	if len(surface.ObservedProviders) > 0 {
+		out.WriteString(fmt.Sprintf("- Observed providers: `%s`\n", strings.Join(surface.ObservedProviders, "`, `")))
+	}
+	out.WriteString("\n## Filters\n\n")
+	out.WriteString(fmt.Sprintf("- Team: `%s`\n", clawHostPolicyFallback(strings.TrimSpace(surface.Filters["team"]), "none")))
+	out.WriteString(fmt.Sprintf("- Project: `%s`\n", clawHostPolicyFallback(strings.TrimSpace(surface.Filters["project"]), "none")))
+	out.WriteString("\n## Review Queue\n\n")
+	if len(surface.ReviewQueue) == 0 {
+		out.WriteString("No active ClawHost tenant policy reviews.\n")
+		return out.String()
+	}
+	for _, item := range surface.ReviewQueue {
+		out.WriteString(fmt.Sprintf("- `%s` tenant `%s` app `%s` provider `%s` drift `%s`\n", item.TaskID, item.TenantID, item.AppID, item.ProviderDefault, item.DriftStatus))
+		if item.Reason != "" {
+			out.WriteString(fmt.Sprintf("  - Reason: %s\n", item.Reason))
+		}
+	}
+	return out.String()
+}
+
+func clawHostPolicyFallback(value, fallback string) string {
+	if value == "" {
+		return fallback
+	}
+	return value
 }

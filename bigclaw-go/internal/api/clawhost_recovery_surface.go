@@ -10,6 +10,7 @@ import (
 type clawHostRecoverySurface struct {
 	Integration      string                   `json:"integration"`
 	Status           string                   `json:"status"`
+	Filters          map[string]string        `json:"filters,omitempty"`
 	SupportedActions []string                 `json:"supported_actions"`
 	Summary          clawHostRecoverySummary  `json:"summary"`
 	Targets          []clawHostRecoveryTarget `json:"targets,omitempty"`
@@ -39,10 +40,14 @@ type clawHostRecoveryTarget struct {
 	Warnings         []string `json:"warnings,omitempty"`
 }
 
-func clawHostRecoverySurfacePayload(tasks []domain.Task) clawHostRecoverySurface {
+func clawHostRecoverySurfacePayload(tasks []domain.Task, team, project string) clawHostRecoverySurface {
 	surface := clawHostRecoverySurface{
 		Integration:      "clawhost",
 		Status:           "idle",
+		Filters: map[string]string{
+			"team":    team,
+			"project": project,
+		},
 		SupportedActions: []string{"create", "start", "stop", "restart", "upgrade", "delete"},
 	}
 	targets := make([]clawHostRecoveryTarget, 0, len(tasks))

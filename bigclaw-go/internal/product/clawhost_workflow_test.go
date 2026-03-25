@@ -1,6 +1,7 @@
 package product
 
 import (
+	"slices"
 	"testing"
 
 	"bigclaw-go/internal/domain"
@@ -38,14 +39,273 @@ func TestBuildClawHostWorkflowSurface(t *testing.T) {
 				"whatsapp_pairing_status": "paired",
 			},
 		},
-	})
+	}, "alice", "platform", "apollo")
 	if surface.Status != "active" || surface.Summary.WorkflowItems != 2 || surface.Summary.Tenants != 2 {
 		t.Fatalf("unexpected workflow surface summary: %+v", surface)
+	}
+	if surface.Filters["actor"] != "alice" || surface.Filters["team"] != "platform" || surface.Filters["project"] != "apollo" {
+		t.Fatalf("unexpected workflow filters: %+v", surface.Filters)
 	}
 	if surface.Summary.PairingApprovals != 1 || surface.Summary.CredentialReviews != 1 || surface.Summary.TakeoverRequired != 1 {
 		t.Fatalf("unexpected workflow approval counts: %+v", surface.Summary)
 	}
 	if len(surface.ReviewQueue) != 2 || !surface.ReviewQueue[0].TakeoverRequired {
 		t.Fatalf("expected takeover-required item first, got %+v", surface.ReviewQueue)
+	}
+}
+
+func TestBuildClawHostWorkflowSurfaceIgnoresNonClawHostTasksAndUsesFallbackReason(t *testing.T) {
+	surface := BuildClawHostWorkflowSurface([]domain.Task{
+		{
+			ID:       "claw-fallback",
+			Source:   "clawhost",
+			TenantID: "tenant-fallback",
+			Metadata: map[string]string{
+				"control_plane":              "clawhost",
+				"claw_name":                  "fallback-bot",
+				"whatsapp_pairing_status":    "paired",
+				"clawhost_takeover_required": "true",
+			},
+		},
+		{
+			ID:       "other-task",
+			Source:   "github",
+			TenantID: "tenant-other",
+			Metadata: map[string]string{
+				"control_plane": "github",
+				"channel_types": "slack",
+			},
+		},
+	}, "", "", "")
+
+	if surface.Status != "active" || surface.Summary.WorkflowItems != 1 || surface.Summary.Tenants != 1 {
+		t.Fatalf("expected only clawhost workflow item to count, got %+v", surface)
+	}
+	if surface.Summary.PairingApprovals != 0 || surface.Summary.CredentialReviews != 0 || surface.Summary.TakeoverRequired != 1 {
+		t.Fatalf("unexpected workflow summary counts: %+v", surface.Summary)
+	}
+	if len(surface.ReviewQueue) != 1 {
+		t.Fatalf("expected non-clawhost task to be filtered out, got %+v", surface.ReviewQueue)
+	}
+	if surface.ReviewQueue[0].TaskID != "claw-fallback" || surface.ReviewQueue[0].ReviewReason != "workflow requires explicit human takeover before mutating bot config" {
+		t.Fatalf("expected fallback clawhost item and reason, got %+v", surface.ReviewQueue[0])
+	}
+}
+
+func TestBuildClawHostWorkflowSurfaceOrdersReviewQueue(t *testing.T) {
+	surface := BuildClawHostWorkflowSurface([]domain.Task{
+		{
+			ID:       "paired-zeta",
+			Source:   "clawhost",
+			TenantID: "tenant-z",
+			Metadata: map[string]string{
+				"control_plane":           "clawhost",
+				"claw_name":               "zeta",
+				"whatsapp_pairing_status": "paired",
+			},
+		},
+		{
+			ID:       "takeover-beta",
+			Source:   "clawhost",
+			TenantID: "tenant-b",
+			Metadata: map[string]string{
+				"control_plane":              "clawhost",
+				"claw_name":                  "beta",
+				"whatsapp_pairing_status":    "paired",
+				"clawhost_takeover_required": "true",
+			},
+		},
+		{
+			ID:       "paired-alpha",
+			Source:   "clawhost",
+			TenantID: "tenant-a",
+			Metadata: map[string]string{
+				"control_plane":           "clawhost",
+				"claw_name":               "alpha",
+				"whatsapp_pairing_status": "paired",
+			},
+		},
+		{
+			ID:       "waiting-gamma",
+			Source:   "clawhost",
+			TenantID: "tenant-g",
+			Metadata: map[string]string{
+				"control_plane":           "clawhost",
+				"claw_name":               "gamma",
+				"whatsapp_pairing_status": "waiting",
+			},
+		},
+	}, "", "", "")
+
+	got := make([]string, 0, len(surface.ReviewQueue))
+	for _, item := range surface.ReviewQueue {
+		got = append(got, item.TaskID)
+	}
+	want := []string{"takeover-beta", "waiting-gamma", "paired-alpha", "paired-zeta"}
+	if !slices.Equal(got, want) {
+		t.Fatalf("unexpected workflow review queue ordering: got=%v want=%v queue=%+v", got, want, surface.ReviewQueue)
+	}
+}
+
+func TestBuildClawHostWorkflowSurfaceIdleDefaults(t *testing.T) {
+	surface := BuildClawHostWorkflowSurface([]domain.Task{
+		{
+			ID:       "other-task",
+			Source:   "github",
+			TenantID: "tenant-other",
+			Metadata: map[string]string{
+				"control_plane": "github",
+				"channel_types": "slack",
+			},
+		},
+	}, "", "", "")
+
+	if surface.Status != "idle" || surface.Summary.WorkflowItems != 0 || surface.Summary.Tenants != 0 {
+		t.Fatalf("expected idle workflow surface, got %+v", surface)
+	}
+	if surface.Filters["actor"] != "workflow-operator" || surface.Filters["team"] != "" || surface.Filters["project"] != "" {
+		t.Fatalf("expected idle workflow filters to preserve default scope, got %+v", surface.Filters)
+	}
+	if len(surface.ReviewQueue) != 0 {
+		t.Fatalf("expected empty review queue for idle surface, got %+v", surface.ReviewQueue)
+	}
+	wantChannels := []string{"whatsapp", "telegram", "discord", "slack", "signal"}
+	if !slices.Equal(surface.SupportedChannels, wantChannels) {
+		t.Fatalf("unexpected supported channels: got=%v want=%v", surface.SupportedChannels, wantChannels)
+	}
+}
+
+func TestBuildClawHostWorkflowSurfaceNormalizesParsingDefaults(t *testing.T) {
+	surface := BuildClawHostWorkflowSurface([]domain.Task{
+		{
+			ID:       "claw-parsing",
+			Source:   "clawhost",
+			TenantID: "",
+			Title:    "parsing-bot",
+			Metadata: map[string]string{
+				"control_plane":             "clawhost",
+				"owner_user_id":             "owner-42",
+				"channel_types":             " telegram, ,discord,telegram ",
+				"whatsapp_pairing_status":   "paired",
+				"admin_credentials_exposed": "not-a-bool",
+				"clawhost_takeover_required": "not-a-bool",
+				"skill_count":               "NaN",
+				"agent_skill_count":         "oops",
+			},
+		},
+	}, "", "", "")
+
+	if surface.Status != "active" || surface.Summary.WorkflowItems != 1 || surface.Summary.Tenants != 1 {
+		t.Fatalf("expected normalized workflow surface to stay active with one tenant, got %+v", surface)
+	}
+	if surface.Summary.ChannelMutations != 1 || surface.Summary.SkillMutations != 0 || surface.Summary.CredentialReviews != 0 || surface.Summary.TakeoverRequired != 0 {
+		t.Fatalf("unexpected normalized workflow summary counts: %+v", surface.Summary)
+	}
+	if len(surface.ReviewQueue) != 1 {
+		t.Fatalf("expected one normalized workflow item, got %+v", surface.ReviewQueue)
+	}
+
+	item := surface.ReviewQueue[0]
+	if item.TenantID != "owner-42" {
+		t.Fatalf("expected tenant fallback from owner_user_id, got %+v", item)
+	}
+	if item.ClawID != "claw-parsing" || item.ClawName != "parsing-bot" {
+		t.Fatalf("expected task id/title fallbacks, got %+v", item)
+	}
+	if !slices.Equal(item.Channels, []string{"discord", "telegram", "telegram"}) {
+		t.Fatalf("expected normalized sorted channels, got %+v", item.Channels)
+	}
+	if item.SkillsEnabled != 0 || item.AgentSkillCount != 0 {
+		t.Fatalf("expected invalid integer metadata to fall back to zero, got %+v", item)
+	}
+	if item.CredentialsExposed || item.TakeoverRequired {
+		t.Fatalf("expected invalid bool metadata to stay false, got %+v", item)
+	}
+	if item.ReviewReason != "channel config requires review across active IM integrations" {
+		t.Fatalf("expected channel-only review reason, got %+v", item)
+	}
+}
+
+func TestBuildClawHostWorkflowSurfaceDefaultsPairingAndTrimsCredentialPath(t *testing.T) {
+	surface := BuildClawHostWorkflowSurface([]domain.Task{
+		{
+			ID:       "claw-default-pairing",
+			Source:   "clawhost",
+			TenantID: "tenant-default",
+			Title:    "default-pairing-bot",
+			Metadata: map[string]string{
+				"control_plane":      "clawhost",
+				"claw_id":            "claw-default",
+				"claw_name":          "default-pairing-bot",
+				"admin_surface_path": "  /credentials/default  ",
+			},
+		},
+	}, "", "", "")
+
+	if surface.Status != "active" || surface.Summary.WorkflowItems != 1 || surface.Summary.PairingApprovals != 1 || surface.Summary.TakeoverRequired != 1 {
+		t.Fatalf("expected default pairing workflow item to require approval/takeover, got %+v", surface)
+	}
+	if len(surface.ReviewQueue) != 1 {
+		t.Fatalf("expected one workflow item, got %+v", surface.ReviewQueue)
+	}
+
+	item := surface.ReviewQueue[0]
+	if item.WhatsAppPairing != "waiting" {
+		t.Fatalf("expected missing pairing status to fall back to waiting, got %+v", item)
+	}
+	if item.CredentialsPath != "/credentials/default" {
+		t.Fatalf("expected admin surface path to be trimmed, got %+v", item)
+	}
+	if !item.TakeoverRequired {
+		t.Fatalf("expected default waiting pairing to require takeover, got %+v", item)
+	}
+	if item.ReviewReason != "WhatsApp pairing still needs human completion" {
+		t.Fatalf("expected default waiting pairing reason, got %+v", item)
+	}
+}
+
+func TestFirstNonEmptyWorkflowTrimsWhitespaceAndFallsBack(t *testing.T) {
+	if got := firstNonEmptyWorkflow("", "  ", " tenant-a ", "tenant-b"); got != "tenant-a" {
+		t.Fatalf("expected trimmed first non-empty workflow value tenant-a, got %q", got)
+	}
+	if got := firstNonEmptyWorkflow("", "   "); got != "" {
+		t.Fatalf("expected empty workflow fallback when all values are blank, got %q", got)
+	}
+}
+
+func TestBuildClawHostWorkflowSurfacePrefersMetadataIdentifiers(t *testing.T) {
+	surface := BuildClawHostWorkflowSurface([]domain.Task{
+		{
+			ID:       "task-id-fallback",
+			Source:   "clawhost",
+			TenantID: "tenant-from-task",
+			Title:    "title-fallback",
+			Metadata: map[string]string{
+				"control_plane":         "clawhost",
+				"tenant_id":             "tenant-from-metadata",
+				"owner_user_id":         "owner-ignored",
+				"claw_id":               "claw-from-metadata",
+				"claw_name":             "metadata-name",
+				"whatsapp_pairing_status": "paired",
+			},
+		},
+	}, "", "", "")
+
+	if surface.Status != "active" || len(surface.ReviewQueue) != 1 {
+		t.Fatalf("expected one active workflow item, got %+v", surface)
+	}
+
+	item := surface.ReviewQueue[0]
+	if item.TenantID != "tenant-from-task" {
+		t.Fatalf("expected task tenant to take precedence over metadata fallbacks, got %+v", item)
+	}
+	if item.ClawID != "claw-from-metadata" {
+		t.Fatalf("expected metadata claw_id to take precedence over task id, got %+v", item)
+	}
+	if item.ClawName != "metadata-name" {
+		t.Fatalf("expected metadata claw_name to take precedence over task title, got %+v", item)
+	}
+	if item.ReviewReason != "skills and channel posture are aligned" {
+		t.Fatalf("expected paired metadata-only workflow item to use aligned fallback reason, got %+v", item)
 	}
 }

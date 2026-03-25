@@ -63,7 +63,11 @@ type ClawHostLifecycleRecoveryAudit struct {
 }
 
 func BuildDefaultClawHostLifecycleRecoveryScorecard(team, project string) ClawHostLifecycleRecoveryScorecard {
-	inventory := BuildDefaultClawHostFleetSurface()
+	inventory := FilterClawHostFleetSurface(BuildDefaultClawHostFleetSurface(), team, project)
+	return buildClawHostLifecycleRecoveryScorecard(inventory, team, project)
+}
+
+func buildClawHostLifecycleRecoveryScorecard(inventory ClawHostFleetInventory, team, project string) ClawHostLifecycleRecoveryScorecard {
 	appTenant := map[string]string{}
 	for _, app := range inventory.Apps {
 		appTenant[app.AppID] = app.TenantID
@@ -130,14 +134,6 @@ func BuildDefaultClawHostLifecycleRecoveryScorecard(team, project string) ClawHo
 			warnings = append(warnings, "bot is missing dedicated pod or service isolation")
 			readiness = "degraded"
 		}
-		if len(takeoverTriggers) == 0 {
-			warnings = append(warnings, "bot is missing takeover triggers")
-			readiness = "degraded"
-		}
-		if len(recoveryEvidence) == 0 {
-			warnings = append(warnings, "bot is missing recovery evidence")
-			readiness = "degraded"
-		}
 		bots = append(bots, ClawHostBotRecoveryScore{
 			BotID:             bot.BotID,
 			AppID:             bot.AppID,
@@ -155,6 +151,10 @@ func BuildDefaultClawHostLifecycleRecoveryScorecard(team, project string) ClawHo
 	}
 	sort.SliceStable(bots, func(i, j int) bool { return bots[i].BotID < bots[j].BotID })
 
+	return buildClawHostLifecycleRecoveryScorecardWithLifecycle(inventory, lifecycle, bots, team, project)
+}
+
+func buildClawHostLifecycleRecoveryScorecardWithLifecycle(inventory ClawHostFleetInventory, lifecycle []ClawHostRecoveryLifecycleAction, bots []ClawHostBotRecoveryScore, team, project string) ClawHostLifecycleRecoveryScorecard {
 	scorecard := ClawHostLifecycleRecoveryScorecard{
 		ScorecardID:      "BIG-PAR-292",
 		Version:          "go-v1",
@@ -249,9 +249,26 @@ func RenderClawHostLifecycleRecoveryReport(scorecard ClawHostLifecycleRecoverySc
 		fmt.Sprintf("- Recoverable Bots: %d/%d", scorecard.Summary.RecoverableBots, scorecard.Summary.BotCount),
 		fmt.Sprintf("- Isolated Bots: %d/%d", scorecard.Summary.IsolatedBots, scorecard.Summary.BotCount),
 		"",
-		"## Lifecycle Coverage",
+		"## Filters",
 		"",
 	}
+	filterKeys := make([]string, 0, len(scorecard.Filters))
+	for key := range scorecard.Filters {
+		filterKeys = append(filterKeys, key)
+	}
+	sort.Strings(filterKeys)
+	if len(filterKeys) == 0 {
+		lines = append(lines, "- none")
+	} else {
+		for _, key := range filterKeys {
+			lines = append(lines, fmt.Sprintf("- %s: %s", key, emptyFallback(scorecard.Filters[key], "none")))
+		}
+	}
+	lines = append(lines,
+		"",
+		"## Lifecycle Coverage",
+		"",
+	)
 	for _, action := range scorecard.Lifecycle {
 		lines = append(lines, fmt.Sprintf("- %s: supported=%t recovery_check=%s evidence=%s takeover_triggers=%s",
 			action.Action,

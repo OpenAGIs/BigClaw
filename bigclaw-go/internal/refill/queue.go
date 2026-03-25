@@ -9,6 +9,28 @@ import (
 	"strings"
 )
 
+type tempFile interface {
+	Name() string
+	Chmod(mode os.FileMode) error
+	Write([]byte) (int, error)
+	Close() error
+}
+
+var (
+	queueAbsPath = filepath.Abs
+	queueMkdirAll = os.MkdirAll
+	queueEncodePayload = func(buf *bytes.Buffer, payload QueuePayload) error {
+		encoder := json.NewEncoder(buf)
+		encoder.SetEscapeHTML(false)
+		encoder.SetIndent("", "  ")
+		return encoder.Encode(payload)
+	}
+	queueCreateTemp = func(dir string, pattern string) (tempFile, error) {
+		return os.CreateTemp(dir, pattern)
+	}
+	queueRename = os.Rename
+)
+
 type QueuePayload struct {
 	Project struct {
 		Name    string `json:"name"`
@@ -67,7 +89,7 @@ var terminalStateSet = map[string]struct{}{
 }
 
 func LoadQueue(path string) (*ParallelIssueQueue, error) {
-	absolute, err := filepath.Abs(path)
+	absolute, err := queueAbsPath(path)
 	if err != nil {
 		return nil, err
 	}
@@ -99,17 +121,14 @@ func (q *ParallelIssueQueue) Clone() (*ParallelIssueQueue, error) {
 
 func (q *ParallelIssueQueue) Save() error {
 	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
-	encoder.SetEscapeHTML(false)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(q.payload); err != nil {
+	if err := queueEncodePayload(&buf, q.payload); err != nil {
 		return err
 	}
 	dir := filepath.Dir(q.queuePath)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := queueMkdirAll(dir, 0o755); err != nil {
 		return err
 	}
-	tmp, err := os.CreateTemp(dir, ".parallel-refill-queue.*.tmp")
+	tmp, err := queueCreateTemp(dir, ".parallel-refill-queue.*.tmp")
 	if err != nil {
 		return err
 	}
@@ -128,7 +147,7 @@ func (q *ParallelIssueQueue) Save() error {
 	if err := tmp.Close(); err != nil {
 		return err
 	}
-	return os.Rename(tmpName, q.queuePath)
+	return queueRename(tmpName, q.queuePath)
 }
 
 func (q *ParallelIssueQueue) ProjectSlug() string {

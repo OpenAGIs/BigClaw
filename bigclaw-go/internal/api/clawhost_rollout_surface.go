@@ -8,6 +8,7 @@ import (
 type clawHostRolloutSurface struct {
 	Integration      string                        `json:"integration"`
 	Status           string                        `json:"status"`
+	Filters          map[string]string             `json:"filters,omitempty"`
 	SupportedActions []string                      `json:"supported_actions"`
 	Summary          clawHostRolloutSummary        `json:"summary"`
 	Plans            []control.ClawHostRolloutPlan `json:"plans,omitempty"`
@@ -21,11 +22,15 @@ type clawHostRolloutSummary struct {
 	EvidenceArtifacts int `json:"evidence_artifacts"`
 }
 
-func clawHostRolloutSurfacePayload(tasks []domain.Task) clawHostRolloutSurface {
+func clawHostRolloutSurfacePayload(tasks []domain.Task, team, project string) clawHostRolloutSurface {
 	plans := control.BuildClawHostRolloutPlans(tasks)
 	surface := clawHostRolloutSurface{
 		Integration:      "clawhost",
 		Status:           "idle",
+		Filters: map[string]string{
+			"team":    team,
+			"project": project,
+		},
 		SupportedActions: []string{"start", "stop", "restart", "upgrade", "repair"},
 		Plans:            plans,
 	}

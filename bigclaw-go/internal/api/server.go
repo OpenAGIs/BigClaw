@@ -194,6 +194,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc(coordinationLeaderEndpoint, s.handleCoordinationLeader)
 	mux.HandleFunc("/debug/status", func(w http.ResponseWriter, r *http.Request) {
 		rolloutScorecard := s.EventPlan.RolloutScorecard
+		team := strings.TrimSpace(r.URL.Query().Get("team"))
+		project := strings.TrimSpace(r.URL.Query().Get("project"))
+		clawHostTasks := filterClawHostPolicyTasks(s.clawHostPolicyTasks(r.Context()), team, project)
 		payload := map[string]any{
 			"queue_size":                      s.Queue.Size(context.Background()),
 			"audit_events":                    len(s.Recorder.Logs()),
@@ -213,15 +216,19 @@ func (s *Server) Handler() http.Handler {
 			"rollback_trigger_surface":        rollbackTriggerSurfacePayload(),
 			"broker_stub_fanout_isolation":    brokerStubFanoutIsolationPayload(),
 			"provider_live_handoff_isolation": providerLiveHandoffIsolationPayload(),
+			"filters": map[string]any{
+				"team":    team,
+				"project": project,
+			},
 			"clawhost_proxy_admin_validation": clawHostProxyAdminValidationLanePayload(),
 			"clawhost_fleet_inventory":        clawHostFleetInventorySurfacePayload(),
 			"clawhost_rollout_planner":        clawHostRolloutPlannerSurfacePayload(),
 			"clawhost_tenant_policy":          clawHostTenantPolicySurfacePayload(),
-			"clawhost_policy_surface":         clawHostPolicySurfacePayload(s.clawHostPolicyTasks(r.Context())),
-			"clawhost_workflow_surface":       clawHostWorkflowSurfacePayload(s.clawHostPolicyTasks(r.Context())),
-			"clawhost_rollout_surface":        clawHostRolloutSurfacePayload(s.clawHostPolicyTasks(r.Context())),
-			"clawhost_readiness_surface":      clawHostReadinessSurfacePayload(s.clawHostPolicyTasks(r.Context())),
-			"clawhost_recovery_surface":       clawHostRecoverySurfacePayload(s.clawHostPolicyTasks(r.Context())),
+			"clawhost_policy_surface":         clawHostPolicySurfacePayload(clawHostTasks, team, project),
+			"clawhost_workflow_surface":       clawHostWorkflowSurfacePayload(clawHostTasks, "", team, project),
+			"clawhost_rollout_surface":        clawHostRolloutSurfacePayload(clawHostTasks, team, project),
+			"clawhost_readiness_surface":      clawHostReadinessSurfacePayload(clawHostTasks, team, project),
+			"clawhost_recovery_surface":       clawHostRecoverySurfacePayload(clawHostTasks, team, project),
 			"broker_bootstrap_surface":        brokerBootstrapSurfacePayload(),
 			"broker_review_bundle":            brokerReviewBundleSurfacePayload(),
 			"validation_bundle_continuation":  validationBundleContinuationGatePayload(),
@@ -262,6 +269,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/v2/control-center/audit", s.handleV2ControlCenterAudit)
 	mux.HandleFunc("/v2/control-center/actions", s.handleV2ControlCenterAction)
 	mux.HandleFunc("/v2/control-center/policy", s.handleV2ControlCenterPolicy)
+	mux.HandleFunc("/v2/control-center/policy/export", s.handleV2ControlCenterPolicyExport)
 	mux.HandleFunc("/v2/control-center/policy/reload", s.handleV2ControlCenterPolicyReload)
 	mux.Handle("/internal/scheduler/fairness/", http.StripPrefix("/internal/scheduler/fairness", s.schedulerRuntime().FairnessServiceHandler()))
 	mux.HandleFunc("/v2/reports/weekly", s.handleV2WeeklyReport)

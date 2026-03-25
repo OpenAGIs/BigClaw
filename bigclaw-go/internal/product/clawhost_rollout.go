@@ -202,9 +202,26 @@ func RenderClawHostRolloutPlannerReport(plan ClawHostRolloutPlanner, audit ClawH
 		fmt.Sprintf("- Apps: %d", plan.Summary.AppCount),
 		fmt.Sprintf("- Max Parallel Bots: %d", plan.Summary.MaxParallelBots),
 		"",
-		"## Concurrency Guards",
+		"## Filters",
 		"",
 	}
+	filterKeys := make([]string, 0, len(plan.Filters))
+	for key := range plan.Filters {
+		filterKeys = append(filterKeys, key)
+	}
+	sort.Strings(filterKeys)
+	if len(filterKeys) == 0 {
+		lines = append(lines, "- none")
+	} else {
+		for _, key := range filterKeys {
+			lines = append(lines, fmt.Sprintf("- %s: %s", key, emptyFallback(plan.Filters[key], "none")))
+		}
+	}
+	lines = append(lines,
+		"",
+		"## Concurrency Guards",
+		"",
+	)
 	for _, item := range plan.ConcurrencyGuards {
 		lines = append(lines, "- "+item)
 	}

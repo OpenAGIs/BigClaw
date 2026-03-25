@@ -11,6 +11,7 @@ import (
 type clawHostReadinessSurface struct {
 	Integration     string                    `json:"integration"`
 	Status          string                    `json:"status"`
+	Filters         map[string]string         `json:"filters,omitempty"`
 	SupportedChecks []string                  `json:"supported_checks"`
 	Summary         clawHostReadinessSummary  `json:"summary"`
 	Targets         []clawHostReadinessTarget `json:"targets,omitempty"`
@@ -45,10 +46,14 @@ type clawHostReadinessTarget struct {
 	Warnings           []string `json:"warnings,omitempty"`
 }
 
-func clawHostReadinessSurfacePayload(tasks []domain.Task) clawHostReadinessSurface {
+func clawHostReadinessSurfacePayload(tasks []domain.Task, team, project string) clawHostReadinessSurface {
 	surface := clawHostReadinessSurface{
 		Integration:     "clawhost",
 		Status:          "idle",
+		Filters: map[string]string{
+			"team":    team,
+			"project": project,
+		},
 		SupportedChecks: []string{"gateway_port", "subdomain_ready", "websocket_reachable", "admin_ui_enabled", "version_status"},
 	}
 	targets := make([]clawHostReadinessTarget, 0, len(tasks))

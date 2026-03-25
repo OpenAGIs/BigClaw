@@ -300,6 +300,32 @@ func RenderClawHostWorkflowLaneReport(surface ClawHostWorkflowLaneSurface, audit
 	for _, key := range summaryKeys {
 		lines = append(lines, fmt.Sprintf("- %s: %v", key, surface.Summary[key]))
 	}
+	lines = append(lines, "", "## Filters", "")
+	filterKeys := make([]string, 0, len(surface.Filters))
+	for key := range surface.Filters {
+		filterKeys = append(filterKeys, key)
+	}
+	sort.Strings(filterKeys)
+	if len(filterKeys) == 0 {
+		lines = append(lines, "- none")
+	} else {
+		for _, key := range filterKeys {
+			lines = append(lines, fmt.Sprintf("- %s: %s", key, emptyFallback(surface.Filters[key], "none")))
+		}
+	}
+	lines = append(lines, "", "## Operational Signals", "")
+	signalKeys := make([]string, 0, len(surface.OperationalSignals))
+	for key := range surface.OperationalSignals {
+		signalKeys = append(signalKeys, key)
+	}
+	sort.Strings(signalKeys)
+	if len(signalKeys) == 0 {
+		lines = append(lines, "- none")
+	} else {
+		for _, key := range signalKeys {
+			lines = append(lines, fmt.Sprintf("- %s: %d", key, surface.OperationalSignals[key]))
+		}
+	}
 	lines = append(lines, "", "## Lanes", "")
 	if len(surface.Lanes) == 0 {
 		lines = append(lines, "- none")
