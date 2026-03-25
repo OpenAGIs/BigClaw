@@ -512,6 +512,26 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 			RegisteredExecutors  int `json:"registered_executors"`
 			TotalRoutedDecisions int `json:"total_routed_decisions"`
 		} `json:"summary"`
+		Entrypoints struct {
+			Summary struct {
+				TotalEntrypoints       int `json:"total_entrypoints"`
+				RoutingEntrypoints     int `json:"routing_entrypoints"`
+				DiagnosticsEntrypoints int `json:"diagnostics_entrypoints"`
+				ReviewerEntrypoints    int `json:"reviewer_entrypoints"`
+			} `json:"summary"`
+			Routing []struct {
+				Name string `json:"name"`
+				Path string `json:"path"`
+			} `json:"routing"`
+			Diagnostics []struct {
+				Name string `json:"name"`
+				Path string `json:"path"`
+			} `json:"diagnostics"`
+			ReviewerNavigation []struct {
+				Surface string `json:"surface"`
+				Path    string `json:"path"`
+			} `json:"reviewer_navigation"`
+		} `json:"entrypoints"`
 		TraceBundle struct {
 			TotalTraces             int `json:"total_traces"`
 			TracesWithTerminalState int `json:"traces_with_terminal_state"`
@@ -619,6 +639,18 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if decoded.Summary.RegisteredExecutors != 3 || decoded.Summary.TotalRoutedDecisions != 3 {
 		t.Fatalf("unexpected distributed report summary: %+v", decoded.Summary)
 	}
+	if decoded.Entrypoints.Summary.RoutingEntrypoints != 3 || decoded.Entrypoints.Summary.DiagnosticsEntrypoints != 3 || decoded.Entrypoints.Summary.ReviewerEntrypoints == 0 {
+		t.Fatalf("unexpected distributed entrypoint summary: %+v", decoded.Entrypoints.Summary)
+	}
+	if len(decoded.Entrypoints.Routing) != 3 || decoded.Entrypoints.Routing[0].Path == "" || !strings.Contains(decoded.Entrypoints.Routing[0].Path, "team=platform") {
+		t.Fatalf("expected scoped routing entrypoints, got %+v", decoded.Entrypoints.Routing)
+	}
+	if len(decoded.Entrypoints.Diagnostics) != 3 || decoded.Entrypoints.Diagnostics[0].Path == "" {
+		t.Fatalf("expected diagnostic entrypoints, got %+v", decoded.Entrypoints.Diagnostics)
+	}
+	if len(decoded.Entrypoints.ReviewerNavigation) == 0 || decoded.Entrypoints.ReviewerNavigation[0].Path == "" {
+		t.Fatalf("expected reviewer entrypoints, got %+v", decoded.Entrypoints.ReviewerNavigation)
+	}
 	if len(decoded.RoutingReasons) != 3 || len(decoded.ExecutorCapacity) != 3 {
 		t.Fatalf("unexpected distributed report payload: %+v", decoded)
 	}
@@ -661,7 +693,7 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if decoded.SequenceBridge.ReportPath != sequenceBridgeSurfacePath || decoded.SequenceBridge.Summary.BackendCount != 5 || decoded.SequenceBridge.Summary.LiveProvenBackends != 3 || decoded.SequenceBridge.Summary.HarnessProvenBackends != 1 || decoded.SequenceBridge.Summary.ContractOnlyBackends != 1 || decoded.SequenceBridge.Summary.OneToOneMappings != 2 || decoded.SequenceBridge.Summary.ProviderEpochBridgedBackends != 3 {
 		t.Fatalf("expected sequence bridge surface, got %+v", decoded.SequenceBridge)
 	}
-	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Recovery Signals") || !strings.Contains(decoded.Report.Markdown, "## Fairness") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") || !strings.Contains(decoded.Report.Markdown, "## Durable Sequence Bridge") {
+	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "## Entrypoints") || !strings.Contains(decoded.Report.Markdown, "Routing control_center: /v2/control-center?") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Recovery Signals") || !strings.Contains(decoded.Report.Markdown, "## Fairness") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") || !strings.Contains(decoded.Report.Markdown, "## Durable Sequence Bridge") {
 		t.Fatalf("unexpected distributed markdown: %s", decoded.Report.Markdown)
 	}
 	if !strings.Contains(decoded.Report.Markdown, "## Shared Queue Coordination") || !strings.Contains(decoded.Report.Markdown, "Dead-letter backlog:") {

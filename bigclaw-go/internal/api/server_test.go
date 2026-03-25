@@ -3043,6 +3043,26 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 				ActiveWorkers        int `json:"active_workers"`
 				ActiveTakeovers      int `json:"active_takeovers"`
 			} `json:"summary"`
+			Entrypoints struct {
+				Summary struct {
+					TotalEntrypoints       int `json:"total_entrypoints"`
+					RoutingEntrypoints     int `json:"routing_entrypoints"`
+					DiagnosticsEntrypoints int `json:"diagnostics_entrypoints"`
+					ReviewerEntrypoints    int `json:"reviewer_entrypoints"`
+				} `json:"summary"`
+				Routing []struct {
+					Name string `json:"name"`
+					Path string `json:"path"`
+				} `json:"routing"`
+				Diagnostics []struct {
+					Name string `json:"name"`
+					Path string `json:"path"`
+				} `json:"diagnostics"`
+				ReviewerNavigation []struct {
+					Surface string `json:"surface"`
+					Path    string `json:"path"`
+				} `json:"reviewer_navigation"`
+			} `json:"entrypoints"`
 			RoutingReasons []struct {
 				Executor string `json:"executor"`
 				Reason   string `json:"reason"`
@@ -3276,6 +3296,24 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 	if decoded.Diagnostics.Summary.ActiveWorkers != 2 || decoded.Diagnostics.Summary.ActiveTakeovers != 1 {
 		t.Fatalf("unexpected worker/takeover summary: %+v", decoded.Diagnostics.Summary)
 	}
+	if decoded.Diagnostics.Entrypoints.Summary.RoutingEntrypoints != 3 ||
+		decoded.Diagnostics.Entrypoints.Summary.DiagnosticsEntrypoints != 3 ||
+		decoded.Diagnostics.Entrypoints.Summary.ReviewerEntrypoints == 0 {
+		t.Fatalf("unexpected diagnostics entrypoint summary: %+v", decoded.Diagnostics.Entrypoints.Summary)
+	}
+	if len(decoded.Diagnostics.Entrypoints.Routing) != 3 ||
+		decoded.Diagnostics.Entrypoints.Routing[0].Name != "control_center" ||
+		!strings.Contains(decoded.Diagnostics.Entrypoints.Routing[0].Path, "/v2/control-center?") {
+		t.Fatalf("unexpected routing entrypoints: %+v", decoded.Diagnostics.Entrypoints.Routing)
+	}
+	if len(decoded.Diagnostics.Entrypoints.Diagnostics) != 3 ||
+		decoded.Diagnostics.Entrypoints.Diagnostics[0].Path == "" {
+		t.Fatalf("unexpected diagnostics entrypoints: %+v", decoded.Diagnostics.Entrypoints.Diagnostics)
+	}
+	if len(decoded.Diagnostics.Entrypoints.ReviewerNavigation) == 0 ||
+		decoded.Diagnostics.Entrypoints.ReviewerNavigation[0].Path == "" {
+		t.Fatalf("unexpected reviewer entrypoints: %+v", decoded.Diagnostics.Entrypoints.ReviewerNavigation)
+	}
 	if len(decoded.Diagnostics.RoutingReasons) != 3 {
 		t.Fatalf("expected 3 routing reasons, got %+v", decoded.Diagnostics.RoutingReasons)
 	}
@@ -3468,6 +3506,8 @@ func TestV2ControlCenterIncludesDistributedDiagnostics(t *testing.T) {
 		t.Fatalf("expected merged continuation next actions, got %+v", decoded.Diagnostics.ValidationBundleContinuation.NextActions)
 	}
 	if !strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "# BigClaw Distributed Diagnostics Report") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Entrypoints") ||
+		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Routing control_center: /v2/control-center?") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "Takeover owners") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Coordination Leader Election") ||
 		!strings.Contains(decoded.Diagnostics.RolloutReport.Markdown, "## Shared Queue Coordination") ||

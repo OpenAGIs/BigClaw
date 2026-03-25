@@ -105,6 +105,27 @@ type distributedDiagnosticsReport struct {
 	ExportURL string `json:"export_url"`
 }
 
+type distributedDiagnosticsEntrypoint struct {
+	Name        string `json:"name"`
+	Path        string `json:"path"`
+	Surface     string `json:"surface"`
+	Description string `json:"description,omitempty"`
+}
+
+type distributedDiagnosticsEntrypointSummary struct {
+	TotalEntrypoints       int `json:"total_entrypoints"`
+	RoutingEntrypoints     int `json:"routing_entrypoints"`
+	DiagnosticsEntrypoints int `json:"diagnostics_entrypoints"`
+	ReviewerEntrypoints    int `json:"reviewer_entrypoints"`
+}
+
+type distributedDiagnosticsEntrypoints struct {
+	Summary            distributedDiagnosticsEntrypointSummary `json:"summary"`
+	Routing            []distributedDiagnosticsEntrypoint      `json:"routing"`
+	Diagnostics        []distributedDiagnosticsEntrypoint      `json:"diagnostics"`
+	ReviewerNavigation []distributedDiagnosticsEntrypoint      `json:"reviewer_navigation"`
+}
+
 type sharedQueueCoordinationDiagnostics struct {
 	DeadLetterBacklog           int   `json:"dead_letter_backlog"`
 	DeadLetterEvents            int   `json:"dead_letter_events"`
@@ -162,6 +183,7 @@ type traceExportBundleTrace struct {
 
 type distributedDiagnostics struct {
 	Summary               distributedDiagnosticsSummary            `json:"summary"`
+	Entrypoints           distributedDiagnosticsEntrypoints        `json:"entrypoints"`
 	RoutingReasons        []routingReasonSummary                   `json:"routing_reasons"`
 	ExecutorCapacity      []executorCapacityView                   `json:"executor_capacity"`
 	ClusterHealth         clusterHealthRollup                      `json:"cluster_health"`
@@ -263,6 +285,7 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		},
 		"event_durability":                s.EventPlan,
 		"summary":                         diagnostics.Summary,
+		"entrypoints":                     diagnostics.Entrypoints,
 		"routing_reasons":                 diagnostics.RoutingReasons,
 		"executor_capacity":               diagnostics.ExecutorCapacity,
 		"cluster_health":                  diagnostics.ClusterHealth,
@@ -372,6 +395,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		ContinuationGate:      validationBundleContinuationGatePayload(),
 		TraceBundle:           buildTraceExportBundle(taskRollup.Assignments, s.Recorder.TraceSummaries(5)),
 	}
+	diagnostics.Entrypoints = buildDistributedDiagnosticsEntrypoints(filters, diagnostics)
 	diagnostics.RolloutReport = distributedDiagnosticsReport{
 		Markdown:  renderDistributedDiagnosticsMarkdown(diagnostics, filters),
 		ExportURL: distributedExportURL(filters),
@@ -892,6 +916,30 @@ func taskRequiresTool(task domain.Task, tool string) bool {
 }
 
 func distributedExportURL(filters controlCenterFilters) string {
+	encoded := distributedFilterQuery(filters)
+	if encoded == "" {
+		return "/v2/reports/distributed/export"
+	}
+	return "/v2/reports/distributed/export?" + encoded
+}
+
+func distributedReportURL(filters controlCenterFilters) string {
+	encoded := distributedFilterQuery(filters)
+	if encoded == "" {
+		return "/v2/reports/distributed"
+	}
+	return "/v2/reports/distributed?" + encoded
+}
+
+func distributedControlCenterURL(filters controlCenterFilters) string {
+	encoded := distributedFilterQuery(filters)
+	if encoded == "" {
+		return "/v2/control-center"
+	}
+	return "/v2/control-center?" + encoded
+}
+
+func distributedFilterQuery(filters controlCenterFilters) string {
 	values := url.Values{}
 	if filters.Team != "" {
 		values.Set("team", filters.Team)
@@ -920,11 +968,110 @@ func distributedExportURL(filters controlCenterFilters) string {
 	if filters.Limit > 0 {
 		values.Set("limit", fmt.Sprintf("%d", filters.Limit))
 	}
-	encoded := values.Encode()
-	if encoded == "" {
-		return "/v2/reports/distributed/export"
+	return values.Encode()
+}
+
+func buildDistributedDiagnosticsEntrypoints(filters controlCenterFilters, diagnostics distributedDiagnostics) distributedDiagnosticsEntrypoints {
+	routing := []distributedDiagnosticsEntrypoint{
+		{
+			Name:        "control_center",
+			Path:        distributedControlCenterURL(filters),
+			Surface:     "routing_overview",
+			Description: "Scoped control-center view for active parallel-agent routing, worker health, and takeover coverage.",
+		},
+		{
+			Name:        "distributed_report",
+			Path:        distributedReportURL(filters),
+			Surface:     "routing_evidence",
+			Description: "JSON diagnostics surface that aggregates routed decisions, executor capacity, fairness, and reviewer-facing evidence.",
+		},
+		{
+			Name:        "distributed_report_export",
+			Path:        distributedExportURL(filters),
+			Surface:     "routing_export",
+			Description: "Markdown export of the same scoped distributed diagnostics slice for async review.",
+		},
 	}
-	return "/v2/reports/distributed/export?" + encoded
+	diagnosticLinks := []distributedDiagnosticsEntrypoint{
+		{
+			Name:        "coordination_leader",
+			Path:        coordinationLeaderEndpoint,
+			Surface:     "distributed_diagnostics",
+			Description: "Coordination leader election status and lease visibility for distributed execution.",
+		},
+		{
+			Name:        "worker_debug_status",
+			Path:        "/debug/status",
+			Surface:     "distributed_diagnostics",
+			Description: "Debug snapshot of worker/runtime diagnostics and checked-in capability surfaces.",
+		},
+		{
+			Name:        "trace_debug_bundle",
+			Path:        "/debug/traces",
+			Surface:     "trace_diagnostics",
+			Description: "Recent trace summaries for the routed tasks captured in this slice.",
+		},
+	}
+	reviewerNavigation := make([]distributedDiagnosticsEntrypoint, 0)
+	seenReviewer := make(map[string]struct{})
+	appendReviewer := func(name string, path string, surface string, description string) {
+		path = strings.TrimSpace(path)
+		if path == "" {
+			return
+		}
+		if _, ok := seenReviewer[path]; ok {
+			return
+		}
+		seenReviewer[path] = struct{}{}
+		reviewerNavigation = append(reviewerNavigation, distributedDiagnosticsEntrypoint{
+			Name:        name,
+			Path:        path,
+			Surface:     surface,
+			Description: description,
+		})
+	}
+	for _, path := range diagnostics.TraceBundle.ReviewerNavigation {
+		appendReviewer("trace_bundle_navigation", path, "trace_export_bundle", "Trace bundle reviewer jump target.")
+	}
+	for _, path := range diagnostics.LiveShadowMirror.ReviewerLinks {
+		appendReviewer("live_shadow_review", path, "live_shadow_mirror_scorecard", "Live-shadow parity review evidence.")
+	}
+	for _, path := range diagnostics.BrokerReviewPack.ReviewerLinks {
+		appendReviewer("broker_review_pack", path, "broker_review_pack", "Broker failover stub review evidence.")
+	}
+	for _, path := range diagnostics.BrokerReviewBundle.ReviewerLinks {
+		appendReviewer("broker_review_bundle", path, "broker_review_bundle", "Canonical broker review bundle evidence.")
+	}
+	for _, path := range diagnostics.MigrationReviewPack.ReviewerLinks {
+		appendReviewer("migration_review_pack", path, "migration_review_pack", "Migration readiness review evidence.")
+	}
+	for _, path := range diagnostics.DeliveryAckReadiness.ReviewerLinks {
+		appendReviewer("delivery_ack_readiness", path, "delivery_ack_readiness", "Delivery acknowledgement readiness evidence.")
+	}
+	for _, path := range diagnostics.PublishAckOutcomes.ReviewerLinks {
+		appendReviewer("publish_ack_outcomes", path, "publish_ack_outcomes", "Publish acknowledgement proof evidence.")
+	}
+	for _, path := range diagnostics.RetentionExpiry.ReviewerLinks {
+		appendReviewer("retention_expiry", path, "retention_expiry_surface", "Retention watermark and expiry evidence.")
+	}
+	for _, path := range diagnostics.ProviderLiveHandoff.ReviewerLinks {
+		appendReviewer("provider_live_handoff", path, "provider_live_handoff_isolation", "Provider-backed live handoff validation evidence.")
+	}
+	for _, path := range diagnostics.ContinuationGate.ReviewerLinks {
+		appendReviewer("validation_bundle_continuation", path, "validation_bundle_continuation", "Continuation gate reviewer evidence.")
+	}
+	sort.SliceStable(reviewerNavigation, func(i, j int) bool { return reviewerNavigation[i].Path < reviewerNavigation[j].Path })
+	return distributedDiagnosticsEntrypoints{
+		Summary: distributedDiagnosticsEntrypointSummary{
+			TotalEntrypoints:       len(routing) + len(diagnosticLinks) + len(reviewerNavigation),
+			RoutingEntrypoints:     len(routing),
+			DiagnosticsEntrypoints: len(diagnosticLinks),
+			ReviewerEntrypoints:    len(reviewerNavigation),
+		},
+		Routing:            routing,
+		Diagnostics:        diagnosticLinks,
+		ReviewerNavigation: reviewerNavigation,
+	}
 }
 
 func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, filters controlCenterFilters) string {
@@ -956,8 +1103,25 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 		fmt.Sprintf("- Saturated executors: %d", diagnostics.Summary.SaturatedExecutors),
 		fmt.Sprintf("- Active takeovers: %d", diagnostics.Summary.ActiveTakeovers),
 		"",
-		"## Routing Reasons",
+		"## Entrypoints",
+		fmt.Sprintf("- Total entrypoints: %d", diagnostics.Entrypoints.Summary.TotalEntrypoints),
+		fmt.Sprintf("- Routing entrypoints: %d", diagnostics.Entrypoints.Summary.RoutingEntrypoints),
+		fmt.Sprintf("- Diagnostics entrypoints: %d", diagnostics.Entrypoints.Summary.DiagnosticsEntrypoints),
+		fmt.Sprintf("- Reviewer entrypoints: %d", diagnostics.Entrypoints.Summary.ReviewerEntrypoints),
 	}
+	for _, item := range diagnostics.Entrypoints.Routing {
+		lines = append(lines, fmt.Sprintf("- Routing %s: %s", item.Name, item.Path))
+	}
+	for _, item := range diagnostics.Entrypoints.Diagnostics {
+		lines = append(lines, fmt.Sprintf("- Diagnostics %s: %s", item.Name, item.Path))
+	}
+	for _, item := range diagnostics.Entrypoints.ReviewerNavigation {
+		lines = append(lines, fmt.Sprintf("- Reviewer %s: %s", item.Surface, item.Path))
+	}
+	lines = append(lines,
+		"",
+		"## Routing Reasons",
+	)
 	if len(diagnostics.RoutingReasons) == 0 {
 		lines = append(lines, "- No routing decisions captured")
 	} else {
