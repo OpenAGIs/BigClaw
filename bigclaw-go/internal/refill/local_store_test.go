@@ -152,6 +152,19 @@ func TestWithFileLockFailsWhenLockPathParentIsMissing(t *testing.T) {
 	}
 }
 
+func TestWithFileLockFailsWhenLockRemainsHeld(t *testing.T) {
+	store := &LocalIssueStore{path: filepath.Join(t.TempDir(), "local-issues.json")}
+	lockPath := store.path + ".lock"
+	if err := os.WriteFile(lockPath, []byte("held"), 0o644); err != nil {
+		t.Fatalf("seed persistent lock file: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Remove(lockPath) })
+
+	if err := store.withFileLock(func() error { return nil }); err == nil || !strings.Contains(err.Error(), "file exists") {
+		t.Fatalf("expected persistent lock to fail after retries, got %v", err)
+	}
+}
+
 func TestNormalizeLocalIssueMapsSkipsNonMapEntries(t *testing.T) {
 	items := []any{
 		map[string]any{"identifier": "BIG-PAR-399"},

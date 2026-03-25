@@ -315,3 +315,33 @@ func TestParallelIssueQueueSaveMarkdownPropagatesCloseFailure(t *testing.T) {
 		t.Fatalf("expected close failure with written=false, got written=%v err=%v", written, err)
 	}
 }
+
+func TestParallelIssueQueueSaveMarkdownPropagatesCreateTempFailure(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-431"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-431", Title: "Add refill final save branch coverage", Status: "In Progress"},
+			},
+		},
+	}
+
+	originalCreateTemp := queueMarkdownCreateTemp
+	originalRename := queueMarkdownRename
+	t.Cleanup(func() {
+		queueMarkdownCreateTemp = originalCreateTemp
+		queueMarkdownRename = originalRename
+	})
+
+	createErr := errors.New("create temp markdown file")
+	queueMarkdownCreateTemp = func(dir string, pattern string) (tempFile, error) {
+		return nil, createErr
+	}
+	queueMarkdownRename = func(oldPath string, newPath string) error {
+		t.Fatal("did not expect rename after create temp failure")
+		return nil
+	}
+	if written, err := queue.SaveMarkdown(filepath.Join(t.TempDir(), "queue-create.md"), time.Date(2026, 3, 25, 20, 6, 0, 0, time.UTC)); !errors.Is(err, createErr) || written {
+		t.Fatalf("expected create temp failure with written=false, got written=%v err=%v", written, err)
+	}
+}
