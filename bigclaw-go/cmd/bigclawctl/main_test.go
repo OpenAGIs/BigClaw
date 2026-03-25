@@ -408,6 +408,37 @@ func TestRunGitHubSyncInstallJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	}
 }
 
+func TestRunGitHubSyncStatusErrorJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
+	repoPath := filepath.Join(t.TempDir(), "missing-repo->")
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	err = runGitHubSync([]string{
+		"status",
+		"--repo", repoPath,
+		"--json",
+	})
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if err == nil {
+		t.Fatalf("expected github-sync status to fail for missing repo")
+	}
+	if !bytes.Contains(output, []byte(repoPath)) {
+		t.Fatalf("expected raw arrow token in github-sync error repo path, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`\u003e`)) {
+		t.Fatalf("expected no HTML escaping in github-sync error JSON output, got %s", string(output))
+	}
+}
+
 func TestRunRefillOnceLinearBackendUsesConfiguredActivateStateName(t *testing.T) {
 	queuePath := filepath.Join(t.TempDir(), "queue.json")
 	markdownPath := filepath.Join(t.TempDir(), "queue.md")
