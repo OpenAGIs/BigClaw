@@ -171,6 +171,32 @@ func TestNormalizeGatewayPayloadsAndErrors(t *testing.T) {
 	}
 }
 
+func TestNormalizeGatewayPayloadsReturnDecodeErrors(t *testing.T) {
+	if _, err := NormalizeCommit(map[string]any{"commit_hash": make(chan int)}); err == nil {
+		t.Fatal("expected normalize commit to fail for unmarshalable payload")
+	}
+
+	if _, err := NormalizeLineage(map[string]any{
+		"root_hash": "abc123",
+		"lineage":   "not-a-slice",
+	}); err == nil {
+		t.Fatal("expected normalize lineage to fail for invalid lineage shape")
+	}
+
+	if _, err := NormalizeDiff(map[string]any{
+		"left_hash":     "abc123",
+		"right_hash":    "def456",
+		"files_changed": "three",
+	}); err == nil {
+		t.Fatal("expected normalize diff to fail for invalid files_changed type")
+	}
+
+	var commit RepoCommit
+	if err := decodeMap(map[string]any{"title": make(chan int)}, &commit); err == nil {
+		t.Fatal("expected decodeMap to fail for unmarshalable payload")
+	}
+}
+
 func TestRepoAuditPayloadIsDeterministic(t *testing.T) {
 	payload := RepoAuditPayload("alice", "repo.diff", "ok", "abc123", "space-1")
 	if !reflect.DeepEqual(payload, map[string]any{
