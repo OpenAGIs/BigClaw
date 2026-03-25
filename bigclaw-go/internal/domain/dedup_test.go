@@ -37,6 +37,32 @@ func TestNewConsumerDedupKeyProducesStableStorageKeyAndFingerprint(t *testing.T)
 	}
 }
 
+func TestConsumerDedupKeyValidateRequiresConsumerAndEventID(t *testing.T) {
+	if err := (ConsumerDedupKey{}).Validate(); err == nil || err.Error() != "consumer dedup key requires consumer_id" {
+		t.Fatalf("expected consumer_id validation error, got %v", err)
+	}
+
+	if err := (ConsumerDedupKey{ConsumerID: "consumer-a"}).Validate(); err == nil || err.Error() != "consumer dedup key requires event_id" {
+		t.Fatalf("expected event_id validation error, got %v", err)
+	}
+
+	key := ConsumerDedupKey{
+		Version:    " ",
+		ConsumerID: " consumer-a ",
+		EventID:    " evt-42 ",
+		EventType:  EventTaskCompleted,
+		TaskID:     " task-1 ",
+		TraceID:    " trace-1 ",
+		RunID:      " run-1 ",
+	}
+	if err := key.Validate(); err != nil {
+		t.Fatalf("expected normalized key to validate, got %v", err)
+	}
+	if got, want := key.Normalize().StorageKey(), "v1/consumer-a/evt-42"; got != want {
+		t.Fatalf("expected normalized storage key %q, got %q", want, got)
+	}
+}
+
 func TestConsumerDedupResultStableFingerprintIgnoresMetadataOrder(t *testing.T) {
 	first := ConsumerDedupResult{
 		Handler:           "audit-sink",
