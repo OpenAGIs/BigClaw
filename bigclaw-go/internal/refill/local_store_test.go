@@ -2,6 +2,7 @@ package refill
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -179,18 +180,18 @@ func TestIssueCommentListNormalizesCommentCollections(t *testing.T) {
 
 func TestLocalIssueScalarHelpersNormalizeTypes(t *testing.T) {
 	issue := map[string]any{
-		"title_string":         "  hello  ",
-		"title_number":         42,
-		"title_nil":            nil,
-		"priority_float":       float64(3),
-		"priority_int":         4,
-		"priority_bad":         "high",
-		"assigned_true":        true,
-		"assigned_bad":         "yes",
-		"labels_any":           []any{" ops ", "", 12},
-		"labels_strings":       []string{" one ", "", "two"},
-		"labels_bad":           99,
-		"labels_nil_explicit":  nil,
+		"title_string":        "  hello  ",
+		"title_number":        42,
+		"title_nil":           nil,
+		"priority_float":      float64(3),
+		"priority_int":        4,
+		"priority_bad":        "high",
+		"assigned_true":       true,
+		"assigned_bad":        "yes",
+		"labels_any":          []any{" ops ", "", 12},
+		"labels_strings":      []string{" one ", "", "two"},
+		"labels_bad":          99,
+		"labels_nil_explicit": nil,
 	}
 
 	if got := mapInt(issue, "priority_float"); got != 3 {
@@ -1025,5 +1026,62 @@ func TestLocalIssueStoreAddCommentFailsWhenLockRemainsHeld(t *testing.T) {
 		CreatedAt: time.Date(2026, 3, 25, 19, 7, 0, 0, time.UTC),
 	}); err == nil || !strings.Contains(err.Error(), "file exists") {
 		t.Fatalf("expected lock acquisition failure, got %v", err)
+	}
+}
+
+func TestLocalIssueStoreSaveFailsWhenCreateTempFails(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	store := &LocalIssueStore{
+		path: storePath,
+		issueMap: []map[string]any{
+			{"identifier": "BIG-PAR-425", "title": "create temp passthrough"},
+		},
+	}
+
+	localStoreCreateTemp = func(dir, pattern string) (*os.File, error) {
+		return nil, fmt.Errorf("create temp failure")
+	}
+	t.Cleanup(func() {
+		localStoreCreateTemp = os.CreateTemp
+	})
+
+	if err := store.saveUnlocked(); err == nil || !strings.Contains(err.Error(), "create temp failure") {
+		t.Fatalf("expected create temp failure, got %v", err)
+	}
+}
+
+func TestLocalIssueStoreSaveRemovesTempOnRenameFailure(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	store := &LocalIssueStore{
+		path: storePath,
+		issueMap: []map[string]any{
+			{"identifier": "BIG-PAR-426", "title": "rename cleanup"},
+		},
+	}
+
+	var tmpName string
+	localStoreCreateTemp = func(dir, pattern string) (*os.File, error) {
+		tmp, err := os.CreateTemp(dir, pattern)
+		if err == nil {
+			tmpName = tmp.Name()
+		}
+		return tmp, err
+	}
+	localStoreRename = func(oldpath, newpath string) error {
+		return errors.New("rename failure")
+	}
+	t.Cleanup(func() {
+		localStoreCreateTemp = os.CreateTemp
+		localStoreRename = os.Rename
+	})
+
+	if err := store.saveUnlocked(); err == nil || !strings.Contains(err.Error(), "rename failure") {
+		t.Fatalf("expected rename failure, got %v", err)
+	}
+	if tmpName == "" {
+		t.Fatal("expected temp file path captured")
+	}
+	if _, statErr := os.Stat(tmpName); !os.IsNotExist(statErr) {
+		t.Fatalf("expected temp to be removed, got %v", statErr)
 	}
 }

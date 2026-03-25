@@ -18,6 +18,12 @@ const (
 	localIssueLockRetryDelay = 25 * time.Millisecond
 )
 
+var (
+	localStoreMkdirAll   = os.MkdirAll
+	localStoreCreateTemp = os.CreateTemp
+	localStoreRename     = os.Rename
+)
+
 type LocalIssueStore struct {
 	path     string
 	issueMap []map[string]any
@@ -385,12 +391,12 @@ func (s *LocalIssueStore) saveUnlocked() error {
 		return err
 	}
 	dir := filepath.Dir(s.path)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := localStoreMkdirAll(dir, 0o755); err != nil {
 		return err
 	}
 
 	// Write via temp+rename to avoid partial tracker files under overlapping writes.
-	tmp, err := os.CreateTemp(dir, ".local-issues.*.tmp")
+	tmp, err := localStoreCreateTemp(dir, ".local-issues.*.tmp")
 	if err != nil {
 		return err
 	}
@@ -410,7 +416,7 @@ func (s *LocalIssueStore) saveUnlocked() error {
 	if err := tmp.Close(); err != nil {
 		return err
 	}
-	if err := os.Rename(tmpName, s.path); err != nil {
+	if err := localStoreRename(tmpName, s.path); err != nil {
 		return err
 	}
 	return nil
