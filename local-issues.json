@@ -5643,6 +5643,23 @@
       "state": "Done",
       "title": "Update existing local issue metadata during refill seed",
       "updated_at": "2026-03-25T18:06:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T18:14:06Z",
+      "description": "Make bigclawctl local-issues set-state treat normalized-equivalent state names as a no-op so direct tracker state commands do not churn timestamps or rewrite spellings unnecessarily.",
+      "id": "big-par-398",
+      "identifier": "BIG-PAR-398",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Ignore equivalent state spellings in local-issues set-state",
+      "updated_at": "2026-03-25T18:15:07Z"
     }
   ]
 }

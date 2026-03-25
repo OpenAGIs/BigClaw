@@ -846,6 +846,20 @@ func runLocalIssues(args []string) error {
 		if err != nil {
 			return err
 		}
+		existing, found := store.FindIssue(*issueRef)
+		if !found {
+			return refill.ErrLocalIssueNotFound
+		}
+		if refill.NormalizeStateName(existing.State) == refill.NormalizeStateName(*stateName) {
+			return emit(map[string]any{
+				"status":       "ok",
+				"backend":      "local",
+				"action":       "exists",
+				"issue":        existing.Identifier,
+				"state":        existing.State,
+				"local_issues": absPath(resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedStorePath)),
+			}, *asJSON, 0)
+		}
 		updatedState, err := store.UpdateIssueState(*issueRef, *stateName, when)
 		if err != nil {
 			return err
