@@ -159,3 +159,34 @@ func TestTaskStateHelpers(t *testing.T) {
 		}
 	}
 }
+
+func TestTaskMarshalRiskAndNormalizeStateHelpers(t *testing.T) {
+	if got := marshalRiskLevel(""); got != string(RiskLow) {
+		t.Fatalf("expected empty risk level to default low, got %q", got)
+	}
+	if got := marshalRiskLevel(RiskHigh); got != string(RiskHigh) {
+		t.Fatalf("expected explicit risk level to round-trip, got %q", got)
+	}
+
+	tests := map[TaskState]TaskState{
+		"":               TaskQueued,
+		TaskLeased:       TaskLeased,
+		TaskRunning:      TaskRunning,
+		TaskBlocked:      TaskBlocked,
+		TaskRetrying:     TaskRetrying,
+		TaskSucceeded:    TaskSucceeded,
+		TaskFailed:       TaskFailed,
+		TaskDeadLetter:   TaskDeadLetter,
+		" canceled ":     TaskCancelled,
+		"Closed - done":  TaskSucceeded,
+		"Resolved":       TaskSucceeded,
+		"failing hard":   TaskFailed,
+		"Blocked on QA":  TaskBlocked,
+		"custom-status":  TaskState("custom-status"),
+	}
+	for input, want := range tests {
+		if got := normalizeTaskState(input); got != want {
+			t.Fatalf("expected normalized state %q for %q, got %q", want, input, got)
+		}
+	}
+}
