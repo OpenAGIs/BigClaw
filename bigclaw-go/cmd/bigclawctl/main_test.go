@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"bigclaw-go/internal/bootstrap"
 	"bigclaw-go/internal/refill"
 )
 
@@ -266,6 +267,50 @@ func TestRunWorkspaceBootstrapJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	}
 	if bytes.Contains(output, []byte(`\u003e`)) {
 		t.Fatalf("expected no HTML escaping in workspace bootstrap JSON output, got %s", string(output))
+	}
+}
+
+func TestRunWorkspaceCleanupJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
+	root := t.TempDir()
+	remote := initWorkspaceValidateRemote(t, root)
+	workspacePath := filepath.Join(root, "workspaces->", "BIG-PAR-407")
+	cacheBase := filepath.Join(root, "repos->")
+
+	if _, err := bootstrap.BootstrapWorkspace(workspacePath, "BIG-PAR-407", remote, "main", "", cacheBase, ""); err != nil {
+		t.Fatalf("bootstrap workspace for cleanup test: %v", err)
+	}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runWorkspace([]string{
+		"cleanup",
+		"--workspace", workspacePath,
+		"--issue", "BIG-PAR-407",
+		"--repo-url", remote,
+		"--cache-base", cacheBase,
+		"--json",
+	}); err != nil {
+		t.Fatalf("run workspace cleanup: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte(workspacePath)) {
+		t.Fatalf("expected raw arrow token in workspace cleanup workspace path, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(cacheBase)) {
+		t.Fatalf("expected raw arrow token in workspace cleanup cache path, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`\u003e`)) {
+		t.Fatalf("expected no HTML escaping in workspace cleanup JSON output, got %s", string(output))
 	}
 }
 
