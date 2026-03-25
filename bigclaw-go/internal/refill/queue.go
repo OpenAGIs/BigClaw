@@ -17,6 +17,7 @@ type tempFile interface {
 }
 
 var (
+	queueAbsPath = filepath.Abs
 	queueCreateTemp = func(dir string, pattern string) (tempFile, error) {
 		return os.CreateTemp(dir, pattern)
 	}
@@ -81,7 +82,7 @@ var terminalStateSet = map[string]struct{}{
 }
 
 func LoadQueue(path string) (*ParallelIssueQueue, error) {
-	absolute, err := filepath.Abs(path)
+	absolute, err := queueAbsPath(path)
 	if err != nil {
 		return nil, err
 	}

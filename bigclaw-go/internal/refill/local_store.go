@@ -26,6 +26,7 @@ type localStoreTemp interface {
 }
 
 var (
+	localStoreAbsPath = filepath.Abs
 	localStoreMkdirAll = os.MkdirAll
 	localStoreCreateTemp = func(dir, pattern string) (localStoreTemp, error) {
 		return os.CreateTemp(dir, pattern)
@@ -70,7 +71,7 @@ type LocalIssueCreateParams struct {
 }
 
 func LoadLocalIssueStore(path string) (*LocalIssueStore, error) {
-	absolute, err := filepath.Abs(path)
+	absolute, err := localStoreAbsPath(path)
 	if err != nil {
 		return nil, err
 	}

@@ -77,6 +77,22 @@ func TestLoadLocalIssueStoreAndReloadPropagateDecodeFailures(t *testing.T) {
 	}
 }
 
+func TestLoadLocalIssueStoreFailsWhenWorkingDirectoryIsMissing(t *testing.T) {
+	originalAbsPath := localStoreAbsPath
+	t.Cleanup(func() {
+		localStoreAbsPath = originalAbsPath
+	})
+
+	absErr := errors.New("local store abs failure")
+	localStoreAbsPath = func(path string) (string, error) {
+		return "", absErr
+	}
+
+	if _, err := LoadLocalIssueStore("local-issues.json"); !errors.Is(err, absErr) {
+		t.Fatalf("expected load local issue store to propagate absolute-path failure, got %v", err)
+	}
+}
+
 func TestReadLocalIssueMapsErrorsForDirectoryTarget(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "store-dir")
 	if err := os.Mkdir(dir, 0o755); err != nil {

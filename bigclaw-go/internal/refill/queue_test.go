@@ -92,6 +92,22 @@ func TestLoadQueueMissingAndInvalidPayloads(t *testing.T) {
 	}
 }
 
+func TestLoadQueueFailsWhenWorkingDirectoryIsMissing(t *testing.T) {
+	originalAbsPath := queueAbsPath
+	t.Cleanup(func() {
+		queueAbsPath = originalAbsPath
+	})
+
+	absErr := errors.New("queue abs failure")
+	queueAbsPath = func(path string) (string, error) {
+		return "", absErr
+	}
+
+	if _, err := LoadQueue("queue.json"); !errors.Is(err, absErr) {
+		t.Fatalf("expected load queue to propagate absolute-path failure, got %v", err)
+	}
+}
+
 func TestIssueStateMapRecordsIdentifiers(t *testing.T) {
 	issues := []TrackedIssue{
 		{Identifier: "BIG-GOM-301", StateName: "Todo"},
