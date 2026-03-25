@@ -252,6 +252,12 @@ func TestBootstrapHelpersUniqueJoinAndPathExists(t *testing.T) {
 	if got := join([]string{"git", "status", "--short"}); got != "git status --short" {
 		t.Fatalf("unexpected join result %q", got)
 	}
+	if got := joinLines(nil); got != "" {
+		t.Fatalf("expected empty joinLines result, got %q", got)
+	}
+	if got := joinLines([]string{"alpha", "beta", "gamma"}); got != "alpha\nbeta\ngamma" {
+		t.Fatalf("unexpected joinLines result %q", got)
+	}
 
 	root := t.TempDir()
 	existing := filepath.Join(root, "exists.txt")
