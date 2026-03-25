@@ -187,7 +187,8 @@
       "BIG-PAR-397",
       "BIG-PAR-398",
       "BIG-PAR-399",
-      "BIG-PAR-400"
+      "BIG-PAR-400",
+      "BIG-PAR-401"
     ],
     "active": [],
     "standby": []
@@ -362,7 +363,8 @@
     "BIG-PAR-397",
     "BIG-PAR-398",
     "BIG-PAR-399",
-    "BIG-PAR-400"
+    "BIG-PAR-400",
+    "BIG-PAR-401"
   ],
   "issues": [
     {
@@ -1412,6 +1414,12 @@
     {
       "identifier": "BIG-PAR-400",
       "title": "Canonicalize equivalent state spellings when creating local issues",
+      "track": "Automation",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-401",
+      "title": "Canonicalize equivalent queue state spellings during refill seed",
       "track": "Automation",
       "status": "Done"
     }

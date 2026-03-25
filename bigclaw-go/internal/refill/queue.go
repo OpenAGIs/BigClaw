@@ -334,7 +334,7 @@ func (q *ParallelIssueQueue) UpsertIssue(record IssueRecord) (string, bool, erro
 	identifier := strings.TrimSpace(record.Identifier)
 	title := strings.TrimSpace(record.Title)
 	track := strings.TrimSpace(record.Track)
-	status := strings.TrimSpace(record.Status)
+	status := canonicalQueueIssueStatus(record.Status)
 	if identifier == "" {
 		return "", false, os.ErrInvalid
 	}
@@ -344,10 +344,6 @@ func (q *ParallelIssueQueue) UpsertIssue(record IssueRecord) (string, bool, erro
 	if track == "" {
 		return "", false, os.ErrInvalid
 	}
-	if status == "" {
-		status = "Todo"
-	}
-
 	for idx := range q.payload.Issues {
 		existingIdentifier := strings.TrimSpace(q.payload.Issues[idx].Identifier)
 		if !strings.EqualFold(existingIdentifier, identifier) {
@@ -381,6 +377,14 @@ func (q *ParallelIssueQueue) UpsertIssue(record IssueRecord) (string, bool, erro
 	})
 	orderAdded := appendIdentifierOnce(&q.payload.IssueOrder, identifier)
 	return "created", orderAdded, nil
+}
+
+func canonicalQueueIssueStatus(status string) string {
+	trimmed := strings.TrimSpace(status)
+	if trimmed == "" {
+		return "Todo"
+	}
+	return canonicalFetchStateName(NormalizeStateName(trimmed), trimmed)
 }
 
 func (q *ParallelIssueQueue) SetRecentBatch(batchName string, identifier string) (bool, error) {

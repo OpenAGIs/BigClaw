@@ -1349,6 +1349,61 @@ func TestRunRefillSeedCreatesQueueAndLocalIssue(t *testing.T) {
 	}
 }
 
+func TestRunRefillSeedCreateCanonicalizesEquivalentQueueAndLocalStates(t *testing.T) {
+	tempDir := t.TempDir()
+	queuePath := filepath.Join(tempDir, "queue.json")
+	markdownPath := filepath.Join(tempDir, "queue.md")
+	if err := os.WriteFile(queuePath, []byte(`{
+  "project": {"slug_id": "project-slug"},
+  "policy": {
+    "target_in_progress": 2,
+    "activate_state_name": "In Progress",
+    "activate_state_id": "state-in-progress",
+    "refill_states": ["Todo", "Backlog"]
+  },
+  "recent_batches": {
+    "completed": [],
+    "active": [],
+    "standby": []
+  },
+  "issue_order": [],
+  "issues": []
+}`), 0o644); err != nil {
+		t.Fatalf("write queue file: %v", err)
+	}
+	storePath := filepath.Join(tempDir, "local-issues.json")
+
+	if err := runRefillSeed([]string{
+		"--repo", tempDir,
+		"--queue", queuePath,
+		"--markdown", markdownPath,
+		"--local-issues", storePath,
+		"--identifier", "BIG-PAR-401",
+		"--title", "Canonicalize equivalent queue state spellings during refill seed",
+		"--state", "todo.",
+		"--created-at", "2026-03-25T18:48:00Z",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run refill seed canonical create: %v", err)
+	}
+
+	queueBody, err := os.ReadFile(queuePath)
+	if err != nil {
+		t.Fatalf("read queue file: %v", err)
+	}
+	if !bytes.Contains(queueBody, []byte(`"status": "Todo"`)) {
+		t.Fatalf("expected canonical Todo queue status, got %s", string(queueBody))
+	}
+
+	storeBody, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(storeBody, []byte(`"state": "Todo"`)) {
+		t.Fatalf("expected canonical Todo local issue state, got %s", string(storeBody))
+	}
+}
+
 func TestRunRefillSeedSetStateIfExistsIgnoresEquivalentSpellings(t *testing.T) {
 	tempDir := t.TempDir()
 	queuePath := filepath.Join(tempDir, "queue.json")

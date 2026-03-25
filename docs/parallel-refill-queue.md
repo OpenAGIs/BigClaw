@@ -50,7 +50,7 @@ longer waits on Linear to keep issue execution moving.
 - Current repo tranche status as of March 25, 2026:
   - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-393` — Stabilize normalized refill fetch state lists; `BIG-PAR-394` — Canonicalize built-in refill fetch state names; `BIG-PAR-395` — Report final synced refill queue state after apply; `BIG-PAR-396` — Update existing local issue metadata during ensure; `BIG-PAR-397` — Update existing local issue metadata during refill seed; `BIG-PAR-398` — Ignore equivalent state spellings in local-issues set-state; `BIG-PAR-399` — Ignore equivalent state spellings in local issue store updates; `BIG-PAR-400` — Canonicalize equivalent state spellings when creating local issues
+  - recently completed slices: `BIG-PAR-394` — Canonicalize built-in refill fetch state names; `BIG-PAR-395` — Report final synced refill queue state after apply; `BIG-PAR-396` — Update existing local issue metadata during ensure; `BIG-PAR-397` — Update existing local issue metadata during refill seed; `BIG-PAR-398` — Ignore equivalent state spellings in local-issues set-state; `BIG-PAR-399` — Ignore equivalent state spellings in local issue store updates; `BIG-PAR-400` — Canonicalize equivalent state spellings when creating local issues; `BIG-PAR-401` — Canonicalize equivalent queue state spellings during refill seed
   - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
@@ -228,6 +228,7 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-398` — Ignore equivalent state spellings in local-issues set-state
   - `BIG-PAR-399` — Ignore equivalent state spellings in local issue store updates
   - `BIG-PAR-400` — Canonicalize equivalent state spellings when creating local issues
+  - `BIG-PAR-401` — Canonicalize equivalent queue state spellings during refill seed
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -406,3 +407,4 @@ longer waits on Linear to keep issue execution moving.
 168. `BIG-PAR-398`
 169. `BIG-PAR-399`
 170. `BIG-PAR-400`
+171. `BIG-PAR-401`
