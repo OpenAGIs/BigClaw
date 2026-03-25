@@ -3070,6 +3070,11 @@
           "author": "codex",
           "body": "External blocker only on 2026-03-26: all repo-side work for BIG-PAR-290 is complete and merged. The local tracker issue is Done, PR #188 is MERGED with successful ci/test, the refill queue is drained, and branch symphony/BIG-PAR-290 is clean/synced; the only remaining mismatch is the outer orchestration system still showing this run as active, which cannot be cleared from this workspace because no Symphony CLI/control surface is available locally. Validation: gh pr view 188 --json state,mergedAt,mergeCommit,statusCheckRollup,url -> MERGED with successful completed ci/test; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 6ac24c253348e6c1aa2a6bee6492862907e4b6ea matches remote SHA 6ac24c253348e6c1aa2a6bee6492862907e4b6ea with status ok and synced true; bash scripts/ops/bigclawctl refill --apply --repo . --local-issues local-issues.json --queue docs/parallel-refill-queue.json --markdown docs/parallel-refill-queue.md --sync-queue-status -> queue_drained true / queue_runnable 0 / active_in_progress []; git status --short --branch -> clean branch before this tracker note. Commit SHA: pending tracker-note commit. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
           "created_at": "2026-03-25T21:15:48Z"
+        },
+        {
+          "author": "codex",
+          "body": "External blocker refresh on 2026-03-26: there are still no runnable child slices in `local-issues.json`, the refill queue remains drained, `symphony/BIG-PAR-290` is clean and synced at `0dd8758b7e15490742030c3c62a4ea8d72195f30`, and there are no open PRs left for this branch. The latest merged review surface remains PR `#188` (`https://github.com/OpenAGIs/BigClaw/pull/188`); if BIG-PAR-290 is still shown as active outside this workspace, that status is external to the repo-local tracker, queue, code, and GitHub state.\n\nValidation:\n- `gh pr list --head symphony/BIG-PAR-290 --repo OpenAGIs/BigClaw --json number,url,title,state,isDraft` -> `[]`\n- `gh pr list --state merged --head symphony/BIG-PAR-290 --repo OpenAGIs/BigClaw --json number,url,title,mergedAt --limit 5` -> latest merged PR is `#188` at `2026-03-25T21:09:33Z`\n- `bash scripts/ops/bigclawctl refill --apply --repo . --local-issues local-issues.json --queue docs/parallel-refill-queue.json --markdown docs/parallel-refill-queue.md --sync-queue-status` -> `queue_drained: true`, `queue_runnable: 0`, `active_in_progress: []`, `queue_status_synced: true`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `0dd8758b7e15490742030c3c62a4ea8d72195f30` matches remote SHA `0dd8758b7e15490742030c3c62a4ea8d72195f30` with `status: ok` and `synced: true`\n- `git log -1 --stat` before this tracker note -> captured for commit `0dd8758b7e15490742030c3c62a4ea8d72195f30`\n\nCommit SHA: pending tracker-note commit.\nLatest merged PR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-26T00:00:00Z"
         }
       ],
       "created_at": "2026-03-24T15:47:39Z",
@@ -3086,7 +3091,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost provider defaults and tenant policy surfaces",
-      "updated_at": "2026-03-25T21:15:48Z"
+      "updated_at": "2026-03-26T00:00:00Z"
     },
     {
       "assigned_to_worker": true,
