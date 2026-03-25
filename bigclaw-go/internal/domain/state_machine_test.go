@@ -1,6 +1,9 @@
 package domain
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestValidateTransition(t *testing.T) {
 	tests := []struct {
@@ -25,5 +28,31 @@ func TestValidateTransition(t *testing.T) {
 				t.Fatalf("expected nil error, got %v", err)
 			}
 		})
+	}
+}
+
+func TestCanTransitionAndTimestampFallbackHelpers(t *testing.T) {
+	if !CanTransition(TaskQueued, TaskLeased) {
+		t.Fatal("expected queued -> leased to be allowed")
+	}
+	if CanTransition(TaskSucceeded, TaskRunning) {
+		t.Fatal("expected succeeded -> running to stay disallowed")
+	}
+
+	if err := ValidateTransition(TaskSucceeded, TaskRunning); err == nil {
+		t.Fatal("expected invalid terminal transition to return an error")
+	}
+	if err := ValidateTransition(TaskRunning, TaskRunning); err != nil {
+		t.Fatalf("expected same-state validation to succeed, got %v", err)
+	}
+
+	fallback := time.Unix(1_700_000_300, 0).UTC()
+	if got := timestampOrFallback(time.Time{}, fallback); !got.Equal(fallback) {
+		t.Fatalf("expected zero timestamp to fall back, got %s", got)
+	}
+
+	value := fallback.Add(5 * time.Minute)
+	if got := timestampOrFallback(value, fallback); !got.Equal(value) {
+		t.Fatalf("expected non-zero timestamp to win, got %s", got)
 	}
 }
