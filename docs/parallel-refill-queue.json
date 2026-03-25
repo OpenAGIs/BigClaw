@@ -210,7 +210,10 @@
       "BIG-PAR-409",
       "BIG-PAR-410"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-412",
+      "BIG-PAR-411"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -404,7 +407,9 @@
     "BIG-PAR-407",
     "BIG-PAR-408",
     "BIG-PAR-409",
-    "BIG-PAR-410"
+    "BIG-PAR-410",
+    "BIG-PAR-412",
+    "BIG-PAR-411"
   ],
   "issues": [
     {
@@ -1582,6 +1587,18 @@
       "title": "Add refill markdown helper coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-412",
+      "title": "Add refill runnable-count edge coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-411",
+      "title": "Add local tracker state-update edge coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
