@@ -62,6 +62,49 @@ func TestBrokerStubEventLogSupportsReplayAndCheckpoints(t *testing.T) {
 	}
 }
 
+func TestBrokerStubEventLogTaskAndTraceHelpers(t *testing.T) {
+	log := NewBrokerStubEventLog()
+	base := time.Unix(1_700_000_050, 0).UTC()
+	for _, event := range []domain.Event{
+		{ID: "evt-broker-helper-1", Type: domain.EventTaskQueued, TaskID: "task-helper-a", TraceID: "trace-helper-a", Timestamp: base},
+		{ID: "evt-broker-helper-2", Type: domain.EventTaskStarted, TaskID: "task-helper-b", TraceID: "trace-helper-a", Timestamp: base.Add(time.Second)},
+		{ID: "evt-broker-helper-3", Type: domain.EventTaskCompleted, TaskID: "task-helper-a", TraceID: "trace-helper-b", Timestamp: base.Add(2 * time.Second)},
+		{ID: "evt-broker-helper-4", Type: domain.EventTaskQueued, TaskID: "task-helper-b", TraceID: "trace-helper-a", Timestamp: base.Add(3 * time.Second)},
+	} {
+		if err := log.Write(context.Background(), event); err != nil {
+			t.Fatalf("write %s: %v", event.ID, err)
+		}
+	}
+
+	byTaskAfter, err := log.EventsByTaskAfter(" task-helper-a ", " evt-broker-helper-1 ", 10)
+	if err != nil {
+		t.Fatalf("events by task after: %v", err)
+	}
+	if got := brokerStubEventIDs(byTaskAfter); len(got) != 1 || got[0] != "evt-broker-helper-3" {
+		t.Fatalf("unexpected task-after events: %+v", got)
+	}
+
+	byTrace, err := log.EventsByTrace(" trace-helper-a ", 2)
+	if err != nil {
+		t.Fatalf("events by trace: %v", err)
+	}
+	if got := brokerStubEventIDs(byTrace); len(got) != 2 || got[0] != "evt-broker-helper-2" || got[1] != "evt-broker-helper-4" {
+		t.Fatalf("unexpected trace events: %+v", got)
+	}
+
+	byTraceAfter, err := log.EventsByTraceAfter("trace-helper-a", "evt-broker-helper-1", 10)
+	if err != nil {
+		t.Fatalf("events by trace after: %v", err)
+	}
+	if got := brokerStubEventIDs(byTraceAfter); len(got) != 2 || got[0] != "evt-broker-helper-2" || got[1] != "evt-broker-helper-4" {
+		t.Fatalf("unexpected trace-after events: %+v", got)
+	}
+
+	if path := log.Path(); path != "" {
+		t.Fatalf("expected empty stub path, got %q", path)
+	}
+}
+
 func TestBrokerStubLiveFanoutStaysIsolatedFromReplayCatchUp(t *testing.T) {
 	log := NewBrokerStubEventLog()
 	bus := NewBus()
@@ -163,4 +206,12 @@ func TestBrokerStubEventLogCapabilitiesAdvertiseStubMode(t *testing.T) {
 	if capability.Retention.Mode != "process_memory_stub" {
 		t.Fatalf("expected stub retention mode, got %+v", capability.Retention)
 	}
+}
+
+func brokerStubEventIDs(events []domain.Event) []string {
+	ids := make([]string, 0, len(events))
+	for _, event := range events {
+		ids = append(ids, event.ID)
+	}
+	return ids
 }
