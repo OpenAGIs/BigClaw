@@ -5672,6 +5672,23 @@
       "state": "Done",
       "title": "Ignore equivalent state spellings in local-issues set-state",
       "updated_at": "2026-03-25T18:19:21Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T18:21:48Z",
+      "description": "Make the Go local issue store treat normalized-equivalent state updates as a no-op so all callers preserve original state spellings and timestamps unless the effective state actually changes.",
+      "id": "big-par-399",
+      "identifier": "BIG-PAR-399",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Ignore equivalent state spellings in local issue store updates",
+      "updated_at": "2026-03-25T18:23:01Z"
     }
   ]
 }

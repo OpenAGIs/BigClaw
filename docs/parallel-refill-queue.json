@@ -187,7 +187,9 @@
       "BIG-PAR-397",
       "BIG-PAR-398"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-399"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -358,7 +360,8 @@
     "BIG-PAR-395",
     "BIG-PAR-396",
     "BIG-PAR-397",
-    "BIG-PAR-398"
+    "BIG-PAR-398",
+    "BIG-PAR-399"
   ],
   "issues": [
     {
@@ -1398,6 +1401,12 @@
       "title": "Ignore equivalent state spellings in local-issues set-state",
       "track": "Automation",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-399",
+      "title": "Ignore equivalent state spellings in local issue store updates",
+      "track": "Automation",
+      "status": "In Progress"
     }
   ]
 }
