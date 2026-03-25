@@ -728,6 +728,77 @@ func TestRunRefillOnceLocalBackendNormalizesActiveStatePayloads(t *testing.T) {
 	}
 }
 
+func TestRunRefillOnceLocalDryRunIgnoresEquivalentQueueStatusSpellings(t *testing.T) {
+	tempDir := t.TempDir()
+	queuePath := filepath.Join(tempDir, "queue.json")
+	if err := os.WriteFile(queuePath, []byte(`{
+  "project": {"slug_id": "project-slug"},
+  "policy": {
+    "target_in_progress": 2,
+    "activate_state_name": "In Progress",
+    "activate_state_id": "state-in-progress",
+    "refill_states": ["Todo", "Backlog"]
+  },
+  "recent_batches": {
+    "completed": ["BIG-PAR-388"],
+    "active": [],
+    "standby": ["BIG-PAR-387"]
+  },
+  "issue_order": ["BIG-PAR-387", "BIG-PAR-388"],
+  "issues": [
+    {"identifier": "BIG-PAR-387", "title": "Normalize queue status sync equivalence", "track": "Automation", "status": "todo."},
+    {"identifier": "BIG-PAR-388", "title": "Terminal state normalization companion", "track": "Automation", "status": "DONE"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write queue file: %v", err)
+	}
+	queue, err := refill.LoadQueue(queuePath)
+	if err != nil {
+		t.Fatalf("load queue: %v", err)
+	}
+
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {"id": "big-par-387", "identifier": "BIG-PAR-387", "state": "Todo"},
+    {"id": "big-par-388", "identifier": "BIG-PAR-388", "state": "done."}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+	store, err := refill.LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	client := &localIssueClient{store: store}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runRefillOnce(queue, client, false, "", nil, false, queuePath, filepath.Join(tempDir, "queue.md"), storePath)
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("run refill once: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"queue_status_synced": true`)) {
+		t.Fatalf("expected equivalent status spellings to avoid drift, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"queue_status_updates": 0`)) {
+		t.Fatalf("expected zero queue status updates for equivalent spellings, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"recent_batches_synced": true`)) {
+		t.Fatalf("expected recent batches to stay synced, got %s", string(output))
+	}
+}
+
 func TestRunRefillOnceLocalBackendReportsRecentBatchWriteWithoutStatusWrite(t *testing.T) {
 	tempDir := t.TempDir()
 	queuePath := filepath.Join(tempDir, "queue.json")

@@ -150,6 +150,32 @@ func TestSortedActiveNormalizesEquivalentStateNames(t *testing.T) {
 	}
 }
 
+func TestParallelIssueQueueStatusSyncIgnoresEquivalentStateSpellings(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-387", Status: "todo."},
+				{Identifier: "BIG-PAR-388", Status: "DONE"},
+			},
+		},
+	}
+
+	liveStates := map[string]string{
+		"BIG-PAR-387": "Todo",
+		"BIG-PAR-388": "done.",
+	}
+
+	if got := queue.StatusSyncUpdatesForStates(liveStates); got != 0 {
+		t.Fatalf("expected no status drift for equivalent spellings, got %d", got)
+	}
+	if got := queue.SyncStatusFromStates(liveStates); got != 0 {
+		t.Fatalf("expected no status write for equivalent spellings, got %d", got)
+	}
+	if queue.payload.Issues[0].Status != "todo." || queue.payload.Issues[1].Status != "DONE" {
+		t.Fatalf("expected equivalent queue statuses to remain untouched, got %+v", queue.payload.Issues)
+	}
+}
+
 func TestParallelIssueQueueSavePreservesBlockedReasonAndRecentBatches(t *testing.T) {
 	queuePath := filepath.Join(t.TempDir(), "queue.json")
 	queue := &ParallelIssueQueue{

@@ -47,11 +47,11 @@ longer waits on Linear to keep issue execution moving.
 
 ## Current batch
 
-- Current repo tranche status as of March 25, 2026:
-  - active slices: none
+- Current repo tranche status as of March 26, 2026:
+  - active slices: `BIG-PAR-387` — Normalize queue status sync equivalence
   - standby slices: none
-  - recently completed slices: `BIG-PAR-377` — Fix refill apply write flags for queue metadata sync; `BIG-PAR-378` — Fix refill dry-run recent batch update mutation; `BIG-PAR-379` — Report refill markdown companion writes; `BIG-PAR-380` — Document refill markdown_written payload; `BIG-PAR-381` — Preview refill markdown writes across promotions; `BIG-PAR-382` — Normalize refill payload paths to absolute; `BIG-PAR-383` — Add markdown preview helper regression coverage; `BIG-PAR-384` — Add queue clone isolation regression
-  - queue status: `queue_runnable=0`, `target_in_progress=2`
+  - recently completed slices: `BIG-PAR-379` — Report refill markdown companion writes; `BIG-PAR-380` — Document refill markdown_written payload; `BIG-PAR-381` — Preview refill markdown writes across promotions; `BIG-PAR-382` — Normalize refill payload paths to absolute; `BIG-PAR-383` — Add markdown preview helper regression coverage; `BIG-PAR-384` — Add queue clone isolation regression; `BIG-PAR-386` — Normalize refill active and recent-batch state detection; `BIG-PAR-385` — Normalize local tracker state filters for refill commands
+  - queue status: `queue_runnable=1`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -214,6 +214,8 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-382` — Normalize refill payload paths to absolute
   - `BIG-PAR-383` — Add markdown preview helper regression coverage
   - `BIG-PAR-384` — Add queue clone isolation regression
+  - `BIG-PAR-386` — Normalize refill active and recent-batch state detection
+  - `BIG-PAR-385` — Normalize local tracker state filters for refill commands
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -378,3 +380,6 @@ longer waits on Linear to keep issue execution moving.
 154. `BIG-PAR-382`
 155. `BIG-PAR-383`
 156. `BIG-PAR-384`
+157. `BIG-PAR-386`
+158. `BIG-PAR-385`
+159. `BIG-PAR-387`
