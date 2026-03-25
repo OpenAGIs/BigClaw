@@ -224,11 +224,10 @@
       "BIG-PAR-423",
       "BIG-PAR-424",
       "BIG-PAR-425",
-      "BIG-PAR-426"
-    ],
-    "active": [
+      "BIG-PAR-426",
       "BIG-PAR-427"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1718,7 +1717,7 @@
       "identifier": "BIG-PAR-427",
       "title": "Add refill temp-save branch coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
