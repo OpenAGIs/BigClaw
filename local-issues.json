@@ -5978,6 +5978,23 @@
       "state": "Done",
       "title": "Add workspace cleanup JSON no-escape regression",
       "updated_at": "2026-03-25T19:51:36Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T19:54:31Z",
+      "description": "Add command-level coverage proving legacy-python compile-check JSON output preserves raw arrow tokens in emitted repo and file path fields so the shared emitter remains protected on the legacy shim path as well.",
+      "id": "big-par-408",
+      "identifier": "BIG-PAR-408",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add legacy-python JSON no-escape regression",
+      "updated_at": "2026-03-25T19:54:31Z"
     }
   ]
 }
