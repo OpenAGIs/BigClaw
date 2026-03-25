@@ -119,3 +119,43 @@ func TestTaskJSONNormalizesLegacyTaskStates(t *testing.T) {
 		})
 	}
 }
+
+func TestTaskStateHelpers(t *testing.T) {
+	mapped := map[EventType]TaskState{
+		EventTaskQueued:      TaskQueued,
+		EventTaskLeased:      TaskLeased,
+		EventSchedulerRouted: TaskLeased,
+		EventTaskStarted:     TaskRunning,
+		EventTaskRetried:     TaskRetrying,
+		EventTaskCompleted:   TaskSucceeded,
+		EventTaskPreempted:   TaskCancelled,
+		EventTaskCancelled:   TaskCancelled,
+		EventTaskDeadLetter:  TaskDeadLetter,
+	}
+	for eventType, want := range mapped {
+		if got, ok := TaskStateFromEventType(eventType); !ok || got != want {
+			t.Fatalf("expected event %q to map to %q, got %q ok=%v", eventType, want, got, ok)
+		}
+	}
+	if got, ok := TaskStateFromEventType(EventRunAnnotated); ok || got != "" {
+		t.Fatalf("expected unmapped event type to fail lookup, got %q ok=%v", got, ok)
+	}
+
+	active := map[TaskState]bool{
+		TaskQueued:    true,
+		TaskLeased:    true,
+		TaskRunning:   true,
+		TaskBlocked:   true,
+		TaskRetrying:  true,
+		TaskSucceeded: false,
+		TaskCancelled: false,
+		TaskDeadLetter:false,
+		TaskFailed:    false,
+		"":            false,
+	}
+	for state, want := range active {
+		if got := IsActiveTaskState(state); got != want {
+			t.Fatalf("expected state %q active=%v, got %v", state, want, got)
+		}
+	}
+}
