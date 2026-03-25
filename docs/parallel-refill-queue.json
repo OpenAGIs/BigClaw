@@ -174,7 +174,9 @@
       "BIG-PAR-373",
       "BIG-PAR-374"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-375"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -332,7 +334,8 @@
     "BIG-PAR-371",
     "BIG-PAR-372",
     "BIG-PAR-373",
-    "BIG-PAR-374"
+    "BIG-PAR-374",
+    "BIG-PAR-375"
   ],
   "issues": [
     {
@@ -1294,6 +1297,12 @@
       "title": "Add billing usage unit coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-375",
+      "title": "Add expansion helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

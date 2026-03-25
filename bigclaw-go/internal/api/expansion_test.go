@@ -2,8 +2,10 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -17,6 +19,49 @@ import (
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/queue"
 )
+
+func TestRenderJSONBodyAndCollectFlowTasksHelpers(t *testing.T) {
+	t.Run("render json body", func(t *testing.T) {
+		body := renderJSONBody(map[string]any{
+			"title": "Launch",
+			"count": 2,
+			"flags": []string{"alpha", "beta"},
+		})
+
+		payload, err := io.ReadAll(body)
+		if err != nil {
+			t.Fatalf("read rendered body: %v", err)
+		}
+		var decoded map[string]any
+		if err := json.Unmarshal(payload, &decoded); err != nil {
+			t.Fatalf("decode rendered body: %v", err)
+		}
+		if decoded["title"] != "Launch" || decoded["count"] != float64(2) {
+			t.Fatalf("unexpected rendered body payload: %+v", decoded)
+		}
+		flags, _ := decoded["flags"].([]any)
+		if len(flags) != 2 || flags[0] != "alpha" || flags[1] != "beta" {
+			t.Fatalf("unexpected rendered body flags: %+v", decoded)
+		}
+	})
+
+	t.Run("collect flow tasks", func(t *testing.T) {
+		base := time.Date(2026, 3, 25, 8, 0, 0, 0, time.UTC)
+		input := []domain.Task{
+			{ID: "task-b", UpdatedAt: base},
+			{ID: "task-c", UpdatedAt: base.Add(2 * time.Minute)},
+			{ID: "task-a", UpdatedAt: base},
+		}
+
+		got := collectFlowTasks(context.Background(), input)
+		if got[0].ID != "task-c" || got[1].ID != "task-a" || got[2].ID != "task-b" {
+			t.Fatalf("expected tasks sorted by updated_at desc then id asc, got %+v", got)
+		}
+		if input[0].ID != "task-b" || input[1].ID != "task-c" || input[2].ID != "task-a" {
+			t.Fatalf("expected helper to preserve input order, got %+v", input)
+		}
+	})
+}
 
 func TestV2WeeklyReportBuildsSummaryActionsAndMarkdownExport(t *testing.T) {
 	recorder := observability.NewRecorder()
