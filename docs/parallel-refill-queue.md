@@ -47,10 +47,10 @@ longer waits on Linear to keep issue execution moving.
 
 ## Current batch
 
-- Current repo tranche status as of March 24, 2026:
-  - active slices: `BIG-PAR-370` — Broaden saved-view audit duplicate coverage
+- Current repo tranche status as of March 25, 2026:
+  - active slices: `BIG-PAR-371` — Add saved-view digest recipient helper coverage
   - standby slices: none
-  - recently completed slices: `BIG-PAR-362` — Add ClawHost workflow report edge-case coverage; `BIG-PAR-363` — Add ClawHost rollout report edge-case coverage; `BIG-PAR-364` — Add ClawHost fleet report edge-case coverage; `BIG-PAR-365` — Add product console unit coverage; `BIG-PAR-366` — Add saved-view helper unit coverage; `BIG-PAR-367` — Add dashboard run contract path helper coverage; `BIG-PAR-368` — Broaden direct recovery builder coverage; `BIG-PAR-369` — Add saved-view audit and report edge coverage
+  - recently completed slices: `BIG-PAR-363` — Add ClawHost rollout report edge-case coverage; `BIG-PAR-364` — Add ClawHost fleet report edge-case coverage; `BIG-PAR-365` — Add product console unit coverage; `BIG-PAR-366` — Add saved-view helper unit coverage; `BIG-PAR-367` — Add dashboard run contract path helper coverage; `BIG-PAR-368` — Broaden direct recovery builder coverage; `BIG-PAR-369` — Add saved-view audit and report edge coverage; `BIG-PAR-370` — Broaden saved-view audit duplicate coverage
   - queue status: `queue_runnable=1`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
@@ -208,6 +208,7 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-367` — Add dashboard run contract path helper coverage
   - `BIG-PAR-368` — Broaden direct recovery builder coverage
   - `BIG-PAR-369` — Add saved-view audit and report edge coverage
+  - `BIG-PAR-370` — Broaden saved-view audit duplicate coverage
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -367,3 +368,4 @@ longer waits on Linear to keep issue execution moving.
 149. `BIG-PAR-368`
 150. `BIG-PAR-369`
 151. `BIG-PAR-370`
+152. `BIG-PAR-371`

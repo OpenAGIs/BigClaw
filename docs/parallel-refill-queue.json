@@ -167,10 +167,11 @@
       "BIG-PAR-366",
       "BIG-PAR-367",
       "BIG-PAR-368",
-      "BIG-PAR-369"
+      "BIG-PAR-369",
+      "BIG-PAR-370"
     ],
     "active": [
-      "BIG-PAR-370"
+      "BIG-PAR-371"
     ],
     "standby": []
   },
@@ -325,7 +326,8 @@
     "BIG-PAR-367",
     "BIG-PAR-368",
     "BIG-PAR-369",
-    "BIG-PAR-370"
+    "BIG-PAR-370",
+    "BIG-PAR-371"
   ],
   "issues": [
     {
@@ -1261,6 +1263,12 @@
     {
       "identifier": "BIG-PAR-370",
       "title": "Broaden saved-view audit duplicate coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-371",
+      "title": "Add saved-view digest recipient helper coverage",
       "track": "Go Mainline Follow-ups",
       "status": "In Progress"
     }

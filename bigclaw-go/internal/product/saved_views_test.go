@@ -127,6 +127,32 @@ func TestSavedViewHelperFunctions(t *testing.T) {
 	}
 }
 
+func TestDigestRecipientsHandlesDedupeLimitAndViewerFallback(t *testing.T) {
+	t.Run("dedupe and cap", func(t *testing.T) {
+		tasks := []domain.Task{
+			{Metadata: map[string]string{"owner": "alice", "reviewer": "bob", "created_by": "alice"}},
+			{Metadata: map[string]string{"owner": "carol", "reviewer": "dora", "created_by": "erin"}},
+			{Metadata: map[string]string{"owner": "frank", "reviewer": "grace", "created_by": "heidi"}},
+		}
+
+		got := strings.Join(digestRecipients(tasks, "  alice "), ",")
+		if got != "alice,bob,carol,dora,erin" {
+			t.Fatalf("expected deduped recipients from the first two tasks only, got %q", got)
+		}
+	})
+
+	t.Run("viewer fallback", func(t *testing.T) {
+		tasks := []domain.Task{
+			{Metadata: map[string]string{"owner": " ", "reviewer": "", "created_by": "  "}},
+		}
+
+		got := strings.Join(digestRecipients(tasks, " "), ",")
+		if got != "viewer" {
+			t.Fatalf("expected empty recipients to fall back to viewer, got %q", got)
+		}
+	})
+}
+
 func TestAuditSavedViewCatalogHandlesEmptyCatalogAndMissingRecipients(t *testing.T) {
 	t.Run("empty catalog", func(t *testing.T) {
 		audit := AuditSavedViewCatalog(SavedViewCatalog{Name: "empty", Version: "v1"})

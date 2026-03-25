@@ -5014,6 +5014,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added direct duplicate-map and mixed-penalty coverage in bigclaw-go/internal/product/saved_views_test.go, pinning duplicate name/default map population together with the readiness-score branch where one missing-filter penalty is applied to an otherwise valid catalog. Validation: cd bigclaw-go && go test ./internal/product -> ok; cd bigclaw-go && go test ./internal/product -coverprofile=/tmp/clawhost-product.cover && go tool cover -func=/tmp/clawhost-product.cover | rg \"saved_views.go:201|saved_views.go:360|total:\" -> AuditSavedViewCatalog 97.8%, digestRecipients 95.2%, total 99.3%; bash scripts/ops/bigclawctl github-sync status --json -> local SHA d53ed2b341efbbb984fd0b06db980a2bc2e2611c matches remote SHA d53ed2b341efbbb984fd0b06db980a2bc2e2611c with status ok and synced true; git log -1 --stat -> captured for commit d53ed2b341efbbb984fd0b06db980a2bc2e2611c with saved-view tests and tracker files in the stat output. Commit SHA: d53ed2b341efbbb984fd0b06db980a2bc2e2611c. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T16:08:50Z"
+        }
+      ],
       "created_at": "2026-03-24T23:35:07Z",
       "description": "Add focused product-package coverage for saved-view audit duplicate-map population and mixed-penalty scoring so remaining duplicate/default branches are pinned outside the existing saved-view tests.",
       "id": "big-par-370",
@@ -5026,9 +5033,27 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Broaden saved-view audit duplicate coverage",
-      "updated_at": "2026-03-24T23:35:07Z"
+      "updated_at": "2026-03-25T16:08:50Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T16:08:50Z",
+      "description": "Add focused product-package coverage for saved_views.digestRecipients so dedupe, actor fallback, created_by/reviewer limits, and viewer fallback branches stay pinned outside the broader saved-view catalog tests.",
+      "id": "big-par-371",
+      "identifier": "BIG-PAR-371",
+      "labels": [
+        "go",
+        "product",
+        "saved-views",
+        "test",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add saved-view digest recipient helper coverage",
+      "updated_at": "2026-03-25T16:08:58Z"
     }
   ]
 }
