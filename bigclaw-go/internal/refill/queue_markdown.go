@@ -9,6 +9,13 @@ import (
 	"time"
 )
 
+var (
+	queueMarkdownCreateTemp = func(dir string, pattern string) (tempFile, error) {
+		return os.CreateTemp(dir, pattern)
+	}
+	queueMarkdownRename = os.Rename
+)
+
 func (q *ParallelIssueQueue) SaveMarkdown(path string, generatedAt time.Time) (bool, error) {
 	absolute, err := filepath.Abs(path)
 	if err != nil {
@@ -27,7 +34,7 @@ func (q *ParallelIssueQueue) SaveMarkdown(path string, generatedAt time.Time) (b
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return false, err
 	}
-	tmp, err := os.CreateTemp(dir, ".parallel-refill-queue-md.*.tmp")
+	tmp, err := queueMarkdownCreateTemp(dir, ".parallel-refill-queue-md.*.tmp")
 	if err != nil {
 		return false, err
 	}
@@ -46,7 +53,7 @@ func (q *ParallelIssueQueue) SaveMarkdown(path string, generatedAt time.Time) (b
 	if err := tmp.Close(); err != nil {
 		return false, err
 	}
-	if err := os.Rename(tmpName, absolute); err != nil {
+	if err := queueMarkdownRename(tmpName, absolute); err != nil {
 		return false, err
 	}
 	return true, nil

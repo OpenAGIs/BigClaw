@@ -9,6 +9,20 @@ import (
 	"strings"
 )
 
+type tempFile interface {
+	Name() string
+	Chmod(mode os.FileMode) error
+	Write([]byte) (int, error)
+	Close() error
+}
+
+var (
+	queueCreateTemp = func(dir string, pattern string) (tempFile, error) {
+		return os.CreateTemp(dir, pattern)
+	}
+	queueRename = os.Rename
+)
+
 type QueuePayload struct {
 	Project struct {
 		Name    string `json:"name"`
@@ -94,7 +108,7 @@ func (q *ParallelIssueQueue) Save() error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
-	tmp, err := os.CreateTemp(dir, ".parallel-refill-queue.*.tmp")
+	tmp, err := queueCreateTemp(dir, ".parallel-refill-queue.*.tmp")
 	if err != nil {
 		return err
 	}
@@ -113,7 +127,7 @@ func (q *ParallelIssueQueue) Save() error {
 	if err := tmp.Close(); err != nil {
 		return err
 	}
-	return os.Rename(tmpName, q.queuePath)
+	return queueRename(tmpName, q.queuePath)
 }
 
 func (q *ParallelIssueQueue) ProjectSlug() string {

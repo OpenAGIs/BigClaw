@@ -1,12 +1,39 @@
 package refill
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 )
+
+type stubTempFile struct {
+	name      string
+	chmodErr  error
+	writeErr  error
+	closeErr  error
+	writes    [][]byte
+	closed    bool
+}
+
+func (f *stubTempFile) Name() string { return f.name }
+
+func (f *stubTempFile) Chmod(mode os.FileMode) error { return f.chmodErr }
+
+func (f *stubTempFile) Write(body []byte) (int, error) {
+	f.writes = append(f.writes, append([]byte{}, body...))
+	if f.writeErr != nil {
+		return 0, f.writeErr
+	}
+	return len(body), nil
+}
+
+func (f *stubTempFile) Close() error {
+	f.closed = true
+	return f.closeErr
+}
 
 func TestLoadQueueNormalizesAbsolutePathAndAccessors(t *testing.T) {
 	queuePath := filepath.Join(t.TempDir(), "queue.json")
@@ -633,6 +660,51 @@ func TestParallelIssueQueueSaveFailsWhenTargetPathIsDirectory(t *testing.T) {
 
 	if err := queue.Save(); err == nil {
 		t.Fatal("expected queue save to fail when target path is a directory")
+	}
+}
+
+func TestParallelIssueQueueSavePropagatesCloseAndRenameFailures(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		queuePath: filepath.Join(t.TempDir(), "queue.json"),
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-425"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-425", Title: "Make refill queue save failures testable", Track: "Go Mainline Follow-ups", Status: "In Progress"},
+			},
+		},
+	}
+
+	originalCreateTemp := queueCreateTemp
+	originalRename := queueRename
+	t.Cleanup(func() {
+		queueCreateTemp = originalCreateTemp
+		queueRename = originalRename
+	})
+
+	closeErr := errors.New("close temp queue file")
+	queueCreateTemp = func(dir string, pattern string) (tempFile, error) {
+		return &stubTempFile{name: filepath.Join(dir, "queue-close.tmp"), closeErr: closeErr}, nil
+	}
+	queueRename = func(oldPath string, newPath string) error {
+		t.Fatal("did not expect rename after close failure")
+		return nil
+	}
+	if err := queue.Save(); !errors.Is(err, closeErr) {
+		t.Fatalf("expected close failure to propagate, got %v", err)
+	}
+
+	renameErr := errors.New("rename queue file")
+	queueCreateTemp = func(dir string, pattern string) (tempFile, error) {
+		return &stubTempFile{name: filepath.Join(dir, "queue-rename.tmp")}, nil
+	}
+	queueRename = func(oldPath string, newPath string) error {
+		if oldPath != filepath.Join(filepath.Dir(queue.queuePath), "queue-rename.tmp") || newPath != queue.queuePath {
+			t.Fatalf("unexpected rename paths old=%q new=%q", oldPath, newPath)
+		}
+		return renameErr
+	}
+	if err := queue.Save(); !errors.Is(err, renameErr) {
+		t.Fatalf("expected rename failure to propagate, got %v", err)
 	}
 }
 

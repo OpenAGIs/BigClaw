@@ -1,6 +1,7 @@
 package refill
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -206,5 +207,50 @@ func TestParallelIssueQueueSaveMarkdownFailsWhenParentPathIsAFile(t *testing.T) 
 	}
 	if written {
 		t.Fatal("expected failed markdown save to report written=false")
+	}
+}
+
+func TestParallelIssueQueueSaveMarkdownPropagatesWriteAndRenameFailures(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-425"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-425", Title: "Make refill queue save failures testable", Status: "In Progress"},
+			},
+		},
+	}
+
+	originalCreateTemp := queueMarkdownCreateTemp
+	originalRename := queueMarkdownRename
+	t.Cleanup(func() {
+		queueMarkdownCreateTemp = originalCreateTemp
+		queueMarkdownRename = originalRename
+	})
+
+	writeErr := errors.New("write markdown temp file")
+	queueMarkdownCreateTemp = func(dir string, pattern string) (tempFile, error) {
+		return &stubTempFile{name: filepath.Join(dir, "queue-md-write.tmp"), writeErr: writeErr}, nil
+	}
+	queueMarkdownRename = func(oldPath string, newPath string) error {
+		t.Fatal("did not expect rename after write failure")
+		return nil
+	}
+	if written, err := queue.SaveMarkdown(filepath.Join(t.TempDir(), "queue.md"), time.Date(2026, 3, 25, 20, 0, 0, 0, time.UTC)); !errors.Is(err, writeErr) || written {
+		t.Fatalf("expected write failure with written=false, got written=%v err=%v", written, err)
+	}
+
+	renameErr := errors.New("rename markdown file")
+	targetPath := filepath.Join(t.TempDir(), "queue-rename.md")
+	queueMarkdownCreateTemp = func(dir string, pattern string) (tempFile, error) {
+		return &stubTempFile{name: filepath.Join(dir, "queue-md-rename.tmp")}, nil
+	}
+	queueMarkdownRename = func(oldPath string, newPath string) error {
+		if oldPath != filepath.Join(filepath.Dir(targetPath), "queue-md-rename.tmp") || newPath != targetPath {
+			t.Fatalf("unexpected rename paths old=%q new=%q", oldPath, newPath)
+		}
+		return renameErr
+	}
+	if written, err := queue.SaveMarkdown(targetPath, time.Date(2026, 3, 25, 20, 1, 0, 0, time.UTC)); !errors.Is(err, renameErr) || written {
+		t.Fatalf("expected rename failure with written=false, got written=%v err=%v", written, err)
 	}
 }
