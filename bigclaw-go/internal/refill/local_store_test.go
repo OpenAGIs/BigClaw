@@ -56,6 +56,70 @@ func TestLocalIssueStoreUpdateIssueStatePreservesExtraFields(t *testing.T) {
 	}
 }
 
+func TestLocalIssueStoreUpdateIssueStateTrimsState(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-391",
+      "identifier": "BIG-PAR-391",
+      "title": "Trim state test",
+      "state": "Todo"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	if _, err := store.UpdateIssueState("BIG-PAR-391", "  Backlog  ", time.Date(2026, 3, 25, 12, 0, 0, 0, time.UTC)); err != nil {
+		t.Fatalf("update issue state: %v", err)
+	}
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !strings.Contains(string(body), `"state": "Backlog"`) {
+		t.Fatalf("expected trimmed state, got %s", string(body))
+	}
+}
+
+func TestLocalIssueStoreUpdateIssueStateDefaultsBlank(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-392",
+      "identifier": "BIG-PAR-392",
+      "title": "Blank state test",
+      "state": "Done"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	if _, err := store.UpdateIssueState("BIG-PAR-392", "   ", time.Date(2026, 3, 25, 12, 0, 0, 0, time.UTC)); err != nil {
+		t.Fatalf("update issue state: %v", err)
+	}
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !strings.Contains(string(body), `"state": "Todo"`) {
+		t.Fatalf("expected defaulted state to Todo, got %s", string(body))
+	}
+}
+
 func TestLocalIssueStoreIssueStatesFiltersRequestedStates(t *testing.T) {
 	storePath := filepath.Join(t.TempDir(), "local-issues.json")
 	if err := os.WriteFile(storePath, []byte(`{

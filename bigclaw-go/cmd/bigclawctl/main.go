@@ -1089,11 +1089,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		}
 	}
 
-	refillStates := make([]string, 0, len(queue.RefillStates()))
-	for state := range queue.RefillStates() {
-		refillStates = append(refillStates, state)
-	}
-	statesToFetch := append([]string{"In Progress"}, refillStates...)
+	statesToFetch := queue.FetchStateNames()
 	issues := []refill.TrackedIssue{}
 	if client.backend() == "local" {
 		issues = allIssues
@@ -1154,7 +1150,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		target = *targetOverride
 	}
 	payload := map[string]any{
-		"active_in_progress":         refill.SortedActive(issues),
+		"active_in_progress":         refill.SortedActive(issues, queue.ActivateStateName()),
 		"backend":                    client.backend(),
 		"target_in_progress":         target,
 		"candidates":                 candidates,

@@ -3078,8 +3078,33 @@
         },
         {
           "author": "codex",
-          "body": "Status refresh on March 25, 2026: follow-up PR `#190` is now merge-ready. GitHub reports https://github.com/OpenAGIs/BigClaw/pull/190 as `OPEN` with `mergeStateStatus: CLEAN`, and the `test` workflow for branch head `af3ae67931b4e02c9cd91c06ff7fafb48ae72a9d` completed `SUCCESS` at `2026-03-25T16:45:58Z`.\n\nValidation:\n- `gh pr view 190 --json url,title,state,mergeStateStatus,statusCheckRollup` -> `OPEN`, `CLEAN`, successful completed `test` check\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `af3ae67931b4e02c9cd91c06ff7fafb48ae72a9d` matches remote SHA `af3ae67931b4e02c9cd91c06ff7fafb48ae72a9d` with `status: ok` and `synced: true`\n- `git status --short --branch` -> clean branch\n\nCommit SHA: pending tracker-note commit\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/190",
+          "body": "Status refresh on March 25, 2026: follow-up PR `#190` is now merge-ready. GitHub reports https://github.com/OpenAGIs/BigClaw/pull/190 as `OPEN` with `mergeStateStatus: CLEAN`, and the `test` workflow for branch head `af3ae67931b4e02c9cd91c06ff7fafb48ae72a9d` completed `SUCCESS` at `2026-03-25T16:45:58Z`.\n\nValidation:\n- `gh pr view 190 --json url,title,state,mergeStateStatus,statusCheckRollup` -> `OPEN`, `CLEAN`, successful completed `test` check\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `af3ae67931b4e02c9cd91c06ff7fafb48ae72a9d` matches remote SHA `af3ae67931b4e02c9cd91c06ff7fafb48ae72a9d` with `status: ok` and `synced: true`\n- `git status --short --branch` -> clean branch\n\nCommit SHA: `5185546d3a6894699a91a50f54f845abd2088d85`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/190",
           "created_at": "2026-03-25T16:47:22Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout on March 25, 2026: PR `#190` (`BIG-PAR-388: normalize refill state-equivalence updates`) merged into `main` at `2026-03-25T16:49:32Z` with merge commit `7f3b11786e1ed65ae29e474809eff89c30b57826`. No runnable refill candidates remain for this workspace tranche.\n\nValidation:\n- `gh pr view 190 --json url,title,state,mergedAt,mergeCommit` -> `MERGED` with merge commit `7f3b11786e1ed65ae29e474809eff89c30b57826`\n- `git push origin HEAD` -> `Everything up-to-date`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `5185546d3a6894699a91a50f54f845abd2088d85` matches remote SHA `5185546d3a6894699a91a50f54f845abd2088d85` with `status: ok` and `synced: true`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n\nCommit SHA: `d76bd0ee3b599cf864d65a2123718bbd1f2566d4`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/190",
+          "created_at": "2026-03-25T16:50:21Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final tracker reconciliation on March 25, 2026: the post-merge tracker-note commit is now the true terminal branch head for this completed issue. PR `#190` remains merged, and the synced branch head is `d76bd0ee3b599cf864d65a2123718bbd1f2566d4`.\n\nValidation:\n- `gh pr view 190 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` at `2026-03-25T16:49:32Z` with merge commit `7f3b11786e1ed65ae29e474809eff89c30b57826` and successful completed `test` check\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `d76bd0ee3b599cf864d65a2123718bbd1f2566d4`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `d76bd0ee3b599cf864d65a2123718bbd1f2566d4` matches remote SHA `d76bd0ee3b599cf864d65a2123718bbd1f2566d4` with `status: ok` and `synced: true`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n\nCommit SHA: `b97657b120a53823000d47d99dd9ed00cf6e6590`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/190",
+          "created_at": "2026-03-25T16:52:46Z"
+        },
+        {
+          "author": "codex",
+          "body": "Stable closeout note on March 25, 2026: `BIG-PAR-291` is complete. PR `#190` is merged, CI succeeded, and the refill queue is drained. Any later tracker-only sync commits on `symphony/BIG-PAR-291` do not represent new implementation work for this issue; they only preserve tracker evidence.\n\nValidation:\n- `gh pr view 190 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` at `2026-03-25T16:49:32Z` with merge commit `7f3b11786e1ed65ae29e474809eff89c30b57826` and successful completed `test` check\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `0fb6fc94a5a453c017e11939cbbae63a3d49541c` matches remote SHA `0fb6fc94a5a453c017e11939cbbae63a3d49541c` with `status: ok` and `synced: true`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- later tracker-only commits may advance the branch head without changing the completed implementation outcome\n\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/190",
+          "created_at": "2026-03-25T16:58:15Z"
+        },
+        {
+          "author": "codex",
+          "body": "Status refresh on March 26, 2026: the current refill-hardening branch head is `472a6ded0c73adfebd759a5180ce5fd66c079986`, PR `#191` is the active review surface for this workspace, and the local refill queue is drained again after closing `BIG-PAR-389` through `BIG-PAR-394`. This supersedes older BIG-PAR-291 tracker notes that referenced merged PR `#190` as the terminal review surface for the branch.\n\nValidation:\n- `gh pr view 191 --json url,title,state,mergeStateStatus,statusCheckRollup` -> PR `https://github.com/OpenAGIs/BigClaw/pull/191` is `OPEN` with `mergeStateStatus: CLEAN` and a successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> `queue_drained: true`, `active_in_progress: []`, `queue_status_synced: true`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `472a6ded0c73adfebd759a5180ce5fd66c079986` matches remote SHA `472a6ded0c73adfebd759a5180ce5fd66c079986` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `472a6ded0c73adfebd759a5180ce5fd66c079986`\n- `git log -1 --stat` -> captured for commit `472a6ded0c73adfebd759a5180ce5fd66c079986`\n\nCommit SHA: `472a6ded0c73adfebd759a5180ce5fd66c079986`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
+          "created_at": "2026-03-25T17:26:14Z"
+        },
+        {
+          "author": "codex",
+          "body": "Status refresh on March 26, 2026 after the tracker-note sync commit: PR `#191` is merge-ready again. GitHub now reports `https://github.com/OpenAGIs/BigClaw/pull/191` as `OPEN` with `mergeStateStatus: CLEAN`, and the `test` workflow for commit `bb2fb257200ec610cdc23d54f356ed1e0e01abc1` completed successfully at `2026-03-25T17:27:08Z`. The refill queue remains drained with no active slices.\n\nValidation:\n- `gh pr view 191 --json url,title,state,mergeStateStatus,statusCheckRollup` -> `OPEN`, `CLEAN`, successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> `queue_drained: true`, `active_in_progress: []`, `queue_status_synced: true`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `bb2fb257200ec610cdc23d54f356ed1e0e01abc1` matches remote SHA `bb2fb257200ec610cdc23d54f356ed1e0e01abc1` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `bb2fb257200ec610cdc23d54f356ed1e0e01abc1`\n\nCommit SHA: `bb2fb257200ec610cdc23d54f356ed1e0e01abc1`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
+          "created_at": "2026-03-25T17:27:29Z"
         }
       ],
       "created_at": "2026-03-24T15:47:40Z",
@@ -3096,7 +3121,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-25T16:47:22Z"
+      "updated_at": "2026-03-25T17:27:29Z"
     },
     {
       "assigned_to_worker": true,
@@ -5362,6 +5387,150 @@
       "state": "Done",
       "title": "Normalize seed and ensure state equivalence",
       "updated_at": "2026-03-25T16:43:34Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/cmd/bigclawctl/main.go` now uses the queue policy `activate_state_name` when fetching remote issue states and when emitting the `active_in_progress` payload, instead of assuming `In Progress`.\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now covers a Linear-backed queue whose active state is `Queued for Review`, proving both the GraphQL state filter and the reported active slice list honor the configured state.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-389 BIG-PAR-390]`, `queue_status_synced=true`)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `1f12f4ff7fe38680ce0f8480b261f59af47d506b` matches remote SHA `1f12f4ff7fe38680ce0f8480b261f59af47d506b` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `1f12f4ff7fe38680ce0f8480b261f59af47d506b`\n- `git log -1 --stat` -> captured for commit `1f12f4ff7fe38680ce0f8480b261f59af47d506b`\n\nCommit SHA: `1f12f4ff7fe38680ce0f8480b261f59af47d506b`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
+          "created_at": "2026-03-25T17:11:42Z"
+        }
+      ],
+      "created_at": "2026-03-25T17:05:51Z",
+      "description": "Make remote refill runs use the queue policy activate_state_name instead of a hardcoded In Progress fetch filter so nonstandard active-state names are promoted and reported correctly.",
+      "id": "big-par-389",
+      "identifier": "BIG-PAR-389",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Honor configured activate state in refill fetches",
+      "updated_at": "2026-03-25T17:11:53Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/internal/refill/local_store.go` now trims incoming state names in `LocalIssueStore.UpdateIssueState`, defaults blank or whitespace-only input to `Todo`, and preserves the existing timestamp refresh behavior.\n- `bigclaw-go/internal/refill/local_store_test.go` now covers both trimmed state writes and blank-state fallback through the persisted local tracker JSON.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill` -> ok\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `1f12f4ff7fe38680ce0f8480b261f59af47d506b` matches remote SHA `1f12f4ff7fe38680ce0f8480b261f59af47d506b` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> branch head captured after follow-on BIG-PAR-389 commit `1f12f4ff7fe38680ce0f8480b261f59af47d506b`; implementation slice commit is `e64febf11df0164323c3aed6d5a606668ed157ad`\n\nCommit SHA: `e64febf11df0164323c3aed6d5a606668ed157ad`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
+          "created_at": "2026-03-25T17:11:42Z"
+        }
+      ],
+      "created_at": "2026-03-25T17:05:51Z",
+      "description": "Make LocalIssueStore.UpdateIssueState trim and default incoming state names so direct local tracker writes stay consistent with CLI normalization and do not persist blank or whitespace-only states.",
+      "id": "big-par-390",
+      "identifier": "BIG-PAR-390",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Normalize local store state updates",
+      "updated_at": "2026-03-25T17:11:53Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/internal/refill/queue_markdown.go` now renders `queue.ActivateStateName()` in the CLI promotion example and policy bullets instead of hardcoded `In Progress` text.\n- `bigclaw-go/internal/refill/queue_test.go` now renders markdown for a queue whose active state is `Queued for Review` and asserts that the output uses that custom state name in both the CLI example and the policy guidance.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill` -> ok\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `19edbe2b13280ed5fd79f9a02a4e54d00065c8a2` matches remote SHA `19edbe2b13280ed5fd79f9a02a4e54d00065c8a2` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> branch head captured after follow-on BIG-PAR-391 commit `19edbe2b13280ed5fd79f9a02a4e54d00065c8a2`; implementation slice commit is `93fd7d3349ad5d17b8f99fff81752800db8e5ca3`\n\nCommit SHA: `93fd7d3349ad5d17b8f99fff81752800db8e5ca3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
+          "created_at": "2026-03-25T17:16:56Z"
+        }
+      ],
+      "created_at": "2026-03-25T17:12:44Z",
+      "description": "Make refill markdown guidance and status prose render the configured activate_state_name instead of hardcoded In Progress text so nonstandard active states are documented accurately.",
+      "id": "big-par-392",
+      "identifier": "BIG-PAR-392",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Render queue markdown with configured active state",
+      "updated_at": "2026-03-25T17:17:03Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/internal/refill/queue.go` now parameterizes `SortedActive` with the configured active-state name instead of hardcoding `In Progress`.\n- `bigclaw-go/cmd/bigclawctl/main.go` now reuses that shared helper so the CLI and refill package classify active slices through the same configured-state path.\n- `bigclaw-go/internal/refill/queue_test.go` now covers a custom active state name (`Queued for Review`) for the shared helper.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-391 BIG-PAR-392]`, `queue_status_synced=true`)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `19edbe2b13280ed5fd79f9a02a4e54d00065c8a2` matches remote SHA `19edbe2b13280ed5fd79f9a02a4e54d00065c8a2` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `19edbe2b13280ed5fd79f9a02a4e54d00065c8a2`\n\nCommit SHA: `19edbe2b13280ed5fd79f9a02a4e54d00065c8a2`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
+          "created_at": "2026-03-25T17:16:56Z"
+        }
+      ],
+      "created_at": "2026-03-25T17:12:44Z",
+      "description": "Remove the remaining hardcoded In Progress assumption from refill active-state helper logic so shared package consumers can honor queue-specific activate_state_name values.",
+      "id": "big-par-391",
+      "identifier": "BIG-PAR-391",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Parameterize refill active-state helpers",
+      "updated_at": "2026-03-25T17:17:03Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/internal/refill/queue.go` now provides `FetchStateNames()`, which returns the activate state plus refill states in stable policy order while trimming whitespace and collapsing normalized duplicates.\n- `bigclaw-go/cmd/bigclawctl/main.go` now uses that queue helper for remote refill polling instead of building an unstable map-backed state list inline.\n- `bigclaw-go/internal/refill/queue_test.go` and `bigclaw-go/cmd/bigclawctl/main_test.go` now cover duplicate/equivalent state spellings and assert the GraphQL request uses the deduplicated ordered list.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-393]`, `queue_status_synced=true`)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `f25de3287deb8060323f50e2db4aaed0ccb29fe6` matches remote SHA `f25de3287deb8060323f50e2db4aaed0ccb29fe6` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `f25de3287deb8060323f50e2db4aaed0ccb29fe6`\n\nCommit SHA: `f25de3287deb8060323f50e2db4aaed0ccb29fe6`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
+          "created_at": "2026-03-25T17:20:46Z"
+        }
+      ],
+      "created_at": "2026-03-25T17:17:57Z",
+      "description": "Build remote refill state-name fetch lists from normalized, de-duplicated queue policy values in a stable order so equivalent spellings do not produce duplicate or non-deterministic remote filters.",
+      "id": "big-par-393",
+      "identifier": "BIG-PAR-393",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Stabilize normalized refill fetch state lists",
+      "updated_at": "2026-03-25T17:20:46Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/internal/refill/queue.go` now canonicalizes normalized built-in fetch states to exact remote spellings (`Todo`, `Backlog`, `In Progress`, `Done`) while still preserving custom active-state names.\n- `bigclaw-go/internal/refill/queue_test.go` and `bigclaw-go/cmd/bigclawctl/main_test.go` now prove malformed built-in spellings such as `todo.` and `backlog.` collapse to canonical remote fetch filters.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-394]`, `queue_status_synced=false`, `recent_batches_written=true` before the commit that synced tracker state)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `fd67a71ee83b03b847a87992fc0c097d4f798122` matches remote SHA `fd67a71ee83b03b847a87992fc0c097d4f798122` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `fd67a71ee83b03b847a87992fc0c097d4f798122`\n\nCommit SHA: `fd67a71ee83b03b847a87992fc0c097d4f798122`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
+          "created_at": "2026-03-25T17:22:44Z"
+        }
+      ],
+      "created_at": "2026-03-25T17:20:58Z",
+      "description": "Canonicalize normalized built-in refill state names such as Todo, Backlog, In Progress, and Done when building remote fetch filters so tracker drift like todo. still maps back to the exact Linear state names.",
+      "id": "big-par-394",
+      "identifier": "BIG-PAR-394",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Canonicalize built-in refill fetch state names",
+      "updated_at": "2026-03-25T17:22:44Z"
     }
   ]
 }

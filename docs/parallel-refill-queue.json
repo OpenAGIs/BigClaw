@@ -177,7 +177,11 @@
       "BIG-PAR-386",
       "BIG-PAR-385",
       "BIG-PAR-387",
-      "BIG-PAR-388"
+      "BIG-PAR-388",
+      "BIG-PAR-390",
+      "BIG-PAR-391",
+      "BIG-PAR-393",
+      "BIG-PAR-394"
     ],
     "active": [],
     "standby": []
@@ -342,7 +346,11 @@
     "BIG-PAR-386",
     "BIG-PAR-385",
     "BIG-PAR-387",
-    "BIG-PAR-388"
+    "BIG-PAR-388",
+    "BIG-PAR-390",
+    "BIG-PAR-391",
+    "BIG-PAR-393",
+    "BIG-PAR-394"
   ],
   "issues": [
     {
@@ -1332,6 +1340,30 @@
     {
       "identifier": "BIG-PAR-388",
       "title": "Normalize seed and ensure state equivalence",
+      "track": "Automation",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-390",
+      "title": "Normalize local store state updates",
+      "track": "Automation",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-391",
+      "title": "Parameterize refill active-state helpers",
+      "track": "Automation",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-393",
+      "title": "Stabilize normalized refill fetch state lists",
+      "track": "Automation",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-394",
+      "title": "Canonicalize built-in refill fetch state names",
       "track": "Automation",
       "status": "Done"
     }

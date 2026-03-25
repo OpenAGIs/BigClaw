@@ -75,6 +75,7 @@ func (q *ParallelIssueQueue) RenderMarkdown(generatedAt time.Time) string {
 	if generatedAt.IsZero() {
 		generatedAt = time.Now().UTC()
 	}
+	activeStateName := q.ActivateStateName()
 	records := q.IssueRecords()
 	recordByIdentifier := map[string]IssueRecord{}
 	states := issueRecordStateMap(records)
@@ -107,14 +108,14 @@ func (q *ParallelIssueQueue) RenderMarkdown(generatedAt time.Time) string {
 	out.WriteString("  - `bash scripts/ops/bigclawctl refill --apply --watch --local-issues local-issues.json --refresh-url http://127.0.0.1:4000/api/v1/refresh`\n")
 	out.WriteString("- Local issue CLI:\n")
 	out.WriteString("  - `bash scripts/ops/bigclaw-issue list`\n")
-	out.WriteString("  - `bash scripts/ops/bigclaw-issue state BIG-GOM-303 \"In Progress\"`\n")
+	out.WriteString(fmt.Sprintf("  - `bash scripts/ops/bigclaw-issue state BIG-GOM-303 %q`\n", activeStateName))
 	out.WriteString("- Local dashboard/orchestrator:\n")
 	out.WriteString("  - `bash scripts/ops/bigclaw-symphony`\n")
 	out.WriteString("  - `bash scripts/ops/bigclaw-panel`\n\n")
 
 	out.WriteString("## Policy\n\n")
-	out.WriteString("- Target: keep `2` issues in `In Progress` when issue capacity is available again.\n")
-	out.WriteString("- Target: keep `2` issues in `In Progress` in the local tracker unless a higher\n")
+	out.WriteString(fmt.Sprintf("- Target: keep `2` issues in `%s` when issue capacity is available again.\n", activeStateName))
+	out.WriteString(fmt.Sprintf("- Target: keep `2` issues in `%s` in the local tracker unless a higher\n", activeStateName))
 	out.WriteString("  parallelism cap is explicitly chosen for a branch-safe batch.\n")
 	out.WriteString("- Promote only issues currently in `Backlog` or `Todo`.\n")
 	out.WriteString("- Use the queue order below as the single source of truth for refill priority.\n")

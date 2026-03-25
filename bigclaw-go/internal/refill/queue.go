@@ -158,6 +158,46 @@ func (q *ParallelIssueQueue) RefillStates() map[string]struct{} {
 	return result
 }
 
+func (q *ParallelIssueQueue) FetchStateNames() []string {
+	states := make([]string, 0, len(q.payload.Policy.RefillStates)+1)
+	seen := map[string]struct{}{}
+	appendState := func(state string) {
+		state = strings.TrimSpace(state)
+		if state == "" {
+			return
+		}
+		normalized := NormalizeStateName(state)
+		if normalized == "" {
+			return
+		}
+		if _, ok := seen[normalized]; ok {
+			return
+		}
+		seen[normalized] = struct{}{}
+		states = append(states, canonicalFetchStateName(normalized, state))
+	}
+	appendState(q.ActivateStateName())
+	for _, state := range q.payload.Policy.RefillStates {
+		appendState(state)
+	}
+	return states
+}
+
+func canonicalFetchStateName(normalized string, fallback string) string {
+	switch normalized {
+	case "backlog":
+		return "Backlog"
+	case "todo":
+		return "Todo"
+	case "in progress":
+		return "In Progress"
+	case "done":
+		return "Done"
+	default:
+		return fallback
+	}
+}
+
 func (q *ParallelIssueQueue) IssueOrder() []string {
 	return append([]string{}, q.payload.IssueOrder...)
 }
@@ -511,10 +551,10 @@ func IssueStateMap(issues []TrackedIssue) map[string]string {
 	return result
 }
 
-func SortedActive(issues []TrackedIssue) []string {
+func SortedActive(issues []TrackedIssue, activeStateName string) []string {
 	active := []string{}
 	for _, issue := range issues {
-		if NormalizeStateName(issue.StateName) == NormalizeStateName("In Progress") {
+		if NormalizeStateName(issue.StateName) == NormalizeStateName(activeStateName) {
 			active = append(active, issue.Identifier)
 		}
 	}
