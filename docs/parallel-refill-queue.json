@@ -194,12 +194,11 @@
       "BIG-PAR-404",
       "BIG-PAR-405",
       "BIG-PAR-406",
-      "BIG-PAR-407"
+      "BIG-PAR-407",
+      "BIG-PAR-408"
     ],
     "active": [],
-    "standby": [
-      "BIG-PAR-408"
-    ]
+    "standby": []
   },
   "issue_order": [
     "BIG-GOM-301",
@@ -1478,7 +1477,7 @@
       "identifier": "BIG-PAR-408",
       "title": "Add legacy-python JSON no-escape regression",
       "track": "Automation",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

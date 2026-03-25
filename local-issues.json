@@ -5981,6 +5981,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now adds a focused `legacy-python compile-check --json` regression proving the command preserves raw `->` tokens in emitted repo and frozen file-path fields.\n- The regression uses an arrow-bearing temporary repo root and real shim file layout so it exercises the actual legacy compile-check command path instead of only the shared emitter helper.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `58e21f29d094d982247c8c76aeafa70e1e4113fd` matches remote SHA `58e21f29d094d982247c8c76aeafa70e1e4113fd` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `58e21f29d094d982247c8c76aeafa70e1e4113fd`\n- `git log -1 --stat` -> captured for commit `58e21f29d094d982247c8c76aeafa70e1e4113fd`\n\nCommit SHA: `58e21f29d094d982247c8c76aeafa70e1e4113fd`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/205",
+          "created_at": "2026-03-25T19:57:25Z"
+        }
+      ],
       "created_at": "2026-03-25T19:54:31Z",
       "description": "Add command-level coverage proving legacy-python compile-check JSON output preserves raw arrow tokens in emitted repo and file path fields so the shared emitter remains protected on the legacy shim path as well.",
       "id": "big-par-408",
@@ -5992,9 +5999,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add legacy-python JSON no-escape regression",
-      "updated_at": "2026-03-25T19:54:31Z"
+      "updated_at": "2026-03-25T19:57:25Z"
     }
   ]
 }
