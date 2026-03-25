@@ -181,11 +181,10 @@
       "BIG-PAR-390",
       "BIG-PAR-391",
       "BIG-PAR-393",
-      "BIG-PAR-394"
-    ],
-    "active": [
+      "BIG-PAR-394",
       "BIG-PAR-395"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1374,7 +1373,7 @@
       "identifier": "BIG-PAR-395",
       "title": "Report final synced refill queue state after apply",
       "track": "Automation",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
