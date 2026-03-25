@@ -3606,6 +3606,110 @@ func TestV2ControlCenterIncludesAdmissionPolicySummary(t *testing.T) {
 	}
 }
 
+func TestV2ControlCenterIncludesTaskLifecycleOrchestrationOverview(t *testing.T) {
+	now := time.Unix(1700000000, 0)
+	recorder := observability.NewRecorder()
+	bus := events.NewBus()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	controller := control.New()
+	controller.Pause("ops", "maintenance window", now)
+	controller.Takeover("task-lifecycle-1", "alice", "bob", "investigating", now.Add(time.Second))
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      bus,
+		Control:  controller,
+		Now:      func() time.Time { return now.Add(2 * time.Second) },
+	}
+	handler := server.Handler()
+	body, _ := json.Marshal(map[string]any{
+		"id":       "task-lifecycle-1",
+		"title":    "Lifecycle target",
+		"priority": 1,
+		"metadata": map[string]any{"team": "platform", "project": "alpha"},
+	})
+	createResponse := httptest.NewRecorder()
+	handler.ServeHTTP(createResponse, httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewReader(body)))
+	if createResponse.Code != http.StatusAccepted {
+		t.Fatalf("expected task create 202, got %d %s", createResponse.Code, createResponse.Body.String())
+	}
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5", nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected control center 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Lifecycle struct {
+			Title   string `json:"title"`
+			Summary struct {
+				ControllerState     string `json:"controller_state"`
+				ControllerPaused    bool   `json:"controller_paused"`
+				ActiveTakeovers     int    `json:"active_takeovers"`
+				QueueCancelEnabled  bool   `json:"queue_cancel_enabled"`
+				DefaultDispatchMode string `json:"default_dispatch_mode"`
+				BatchStartAction    string `json:"batch_start_action"`
+				BatchStopAction     string `json:"batch_stop_action"`
+			} `json:"summary"`
+			Model struct {
+				States               []string `json:"states"`
+				InterventionRules    []string `json:"intervention_rules"`
+				TerminalStates       []string `json:"terminal_states"`
+				AutomaticTransitions []struct {
+					From   []string `json:"from"`
+					Action string   `json:"action"`
+					To     string   `json:"to"`
+				} `json:"automatic_transitions"`
+				OperatorTransitions []struct {
+					From   []string `json:"from"`
+					Action string   `json:"action"`
+					To     string   `json:"to"`
+				} `json:"operator_transitions"`
+			} `json:"lifecycle"`
+			BatchStart struct {
+				TriggerAction string   `json:"trigger_action"`
+				Sequence      []string `json:"sequence"`
+				Guardrails    []string `json:"guardrails"`
+			} `json:"batch_start_strategy"`
+			BatchStop struct {
+				TriggerAction string   `json:"trigger_action"`
+				Sequence      []string `json:"sequence"`
+				Guardrails    []string `json:"guardrails"`
+			} `json:"batch_stop_strategy"`
+		} `json:"task_lifecycle_orchestration"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center lifecycle payload: %v", err)
+	}
+	if decoded.Lifecycle.Title != "Task Lifecycle Orchestration Overview" {
+		t.Fatalf("unexpected lifecycle title: %+v", decoded.Lifecycle)
+	}
+	if decoded.Lifecycle.Summary.ControllerState != "paused" || !decoded.Lifecycle.Summary.ControllerPaused || decoded.Lifecycle.Summary.ActiveTakeovers != 1 {
+		t.Fatalf("unexpected lifecycle summary: %+v", decoded.Lifecycle.Summary)
+	}
+	if !decoded.Lifecycle.Summary.QueueCancelEnabled || decoded.Lifecycle.Summary.DefaultDispatchMode != "scheduler_driven_fifo_with_takeover_override" {
+		t.Fatalf("unexpected lifecycle dispatch summary: %+v", decoded.Lifecycle.Summary)
+	}
+	if decoded.Lifecycle.Summary.BatchStartAction != "resume" || decoded.Lifecycle.Summary.BatchStopAction != "pause" {
+		t.Fatalf("unexpected lifecycle batch actions: %+v", decoded.Lifecycle.Summary)
+	}
+	if len(decoded.Lifecycle.Model.States) != 9 || !containsString(decoded.Lifecycle.Model.States, "blocked") || !containsString(decoded.Lifecycle.Model.TerminalStates, "dead_letter") {
+		t.Fatalf("unexpected lifecycle states: %+v", decoded.Lifecycle.Model)
+	}
+	if len(decoded.Lifecycle.Model.AutomaticTransitions) < 5 || len(decoded.Lifecycle.Model.OperatorTransitions) < 5 {
+		t.Fatalf("expected lifecycle transition coverage, got %+v", decoded.Lifecycle.Model)
+	}
+	if !containsString(decoded.Lifecycle.Model.InterventionRules, "Pause stops new batch dispatch without mutating queued task state.") {
+		t.Fatalf("expected pause intervention rule, got %+v", decoded.Lifecycle.Model.InterventionRules)
+	}
+	if decoded.Lifecycle.BatchStart.TriggerAction != "resume" || len(decoded.Lifecycle.BatchStart.Sequence) != 3 || len(decoded.Lifecycle.BatchStart.Guardrails) != 2 {
+		t.Fatalf("unexpected batch start strategy: %+v", decoded.Lifecycle.BatchStart)
+	}
+	if decoded.Lifecycle.BatchStop.TriggerAction != "pause" || len(decoded.Lifecycle.BatchStop.Sequence) != 3 || len(decoded.Lifecycle.BatchStop.Guardrails) != 2 {
+		t.Fatalf("unexpected batch stop strategy: %+v", decoded.Lifecycle.BatchStop)
+	}
+}
+
 func TestV2ControlCenterIncludesCoordinationLeaderElectionSurface(t *testing.T) {
 	now := time.Unix(1700000000, 0)
 	coordinator := events.NewSubscriberLeaseCoordinator()

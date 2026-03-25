@@ -1,27 +1,34 @@
-## Codex Workpad
+# BIGCLAW-194 Workpad
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## Plan
 
-### Plan
+1. Inspect the active Go mainline surfaces for task lifecycle orchestration, control-plane reporting, and batch operation handling to identify the narrowest implementation slice that fits BIG-vNext-024.
+2. Implement the issue-scoped change in the relevant module(s), keeping the change set limited to lifecycle orchestration overview and batch start/stop strategy output.
+3. Add or update targeted tests that lock the new behavior.
+4. Run targeted validation commands, capture exact commands and outcomes, then commit and push the branch.
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+## Acceptance
 
-### Acceptance Criteria
+- The codebase exposes a concrete task lifecycle orchestration overview that includes batch start/stop strategy details in the relevant reporting or control-plane surface.
+- The implementation is scoped to this issue and does not broaden into unrelated scheduler or runtime refactors.
+- Targeted automated tests cover the new behavior and pass locally.
+- The final branch contains a commit for BIGCLAW-194 and is pushed to the configured remote.
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
+## Validation
 
-### Validation
+- Inspect the changed surface with focused unit tests in `bigclaw-go/internal/...` or `tests/...`, depending on the implementation target.
+- Record the exact test commands run and whether they passed or failed.
+- Verify git state before closeout with `git status --short`, `git log -1 --stat`, and `git push`.
 
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
+## Execution Notes
 
-### Notes
+- Added a new `task_lifecycle_orchestration` control-center payload surface in `bigclaw-go/internal/api/task_lifecycle_orchestration_surface.go`.
+- Wired the surface into the `/v2/control-center` response in `bigclaw-go/internal/api/v2.go`.
+- Added a focused API contract test in `bigclaw-go/internal/api/server_test.go`.
 
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+## Validation Results
+
+- `go test ./bigclaw-go/internal/api -run 'TestV2ControlCenterIncludesTaskLifecycleOrchestrationOverview|TestV2ControlCenterIncludesAdmissionPolicySummary|TestV2ControlCenterActionsAndRunDetail'`
+  - Failed from repo root: `go: cannot find main module, but found .git/config in /Users/openagi/code/bigclaw-workspaces/BIGCLAW-194`
+- `cd bigclaw-go && go test ./internal/api -run 'TestV2ControlCenterIncludesTaskLifecycleOrchestrationOverview|TestV2ControlCenterIncludesAdmissionPolicySummary|TestV2ControlCenterActionsAndRunDetail'`
+  - Passed: `ok  	bigclaw-go/internal/api	2.917s`

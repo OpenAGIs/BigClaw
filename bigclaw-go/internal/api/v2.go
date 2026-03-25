@@ -1245,6 +1245,7 @@ func (s *Server) buildControlCenterResponse(
 		"authorization":                   authorization,
 		"filters":                         controlCenterFiltersPayload(filters),
 		"control":                         s.Control.Snapshot(),
+		"task_lifecycle_orchestration":    taskLifecycleOrchestrationSurfacePayload(s.Control.Snapshot(), supportsQueueCancel(s.Queue)),
 		"event_durability":                s.EventPlan,
 		"event_log":                       s.eventLogCapabilities(ctx),
 		"admission_policy_summary":        admissionPolicySummaryPayload(),
