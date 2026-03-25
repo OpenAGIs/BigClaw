@@ -91,6 +91,19 @@ func TestParallelIssueQueueRunnableCountTreatsFullyDoneQueueAsDrained(t *testing
 	}
 }
 
+func TestParallelIssueQueueRunnableCountReturnsZeroWhenOrderMissing(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-414", Status: "Todo"},
+			},
+		},
+	}
+	if got := queue.RunnableCount(); got != 0 {
+		t.Fatalf("expected zero runnable count when issue order is empty, got %d", got)
+	}
+}
+
 func TestParallelIssueQueueRunnableCountDoesNotDrainWhenMetadataMissing(t *testing.T) {
 	queue := &ParallelIssueQueue{
 		payload: QueuePayload{
@@ -488,6 +501,27 @@ func TestParallelIssueQueueSaveCreatesParentDirectoryAndDoesNotEscapeHTML(t *tes
 	}
 	if strings.Contains(text, `\u003e`) {
 		t.Fatalf("expected html escaping to stay disabled, got %s", text)
+	}
+}
+
+func TestParallelIssueQueueSaveFailsWhenTargetPathIsDirectory(t *testing.T) {
+	queueDir := filepath.Join(t.TempDir(), "queue-dir")
+	if err := os.MkdirAll(queueDir, 0o755); err != nil {
+		t.Fatalf("mkdir queue dir fixture: %v", err)
+	}
+
+	queue := &ParallelIssueQueue{
+		queuePath: queueDir,
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-414"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-414", Title: "save edge coverage", Track: "Go Mainline Follow-ups", Status: "Todo"},
+			},
+		},
+	}
+
+	if err := queue.Save(); err == nil {
+		t.Fatal("expected queue save to fail when target path is a directory")
 	}
 }
 
