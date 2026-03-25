@@ -144,9 +144,21 @@ func TestSortedActiveNormalizesEquivalentStateNames(t *testing.T) {
 		{Identifier: "BIG-PAR-385", StateName: "In Progress"},
 		{Identifier: "BIG-PAR-387", StateName: "Done"},
 	}
-	active := SortedActive(issues)
+	active := SortedActive(issues, "In Progress")
 	if !equalStringSlices(active, []string{"BIG-PAR-385", "BIG-PAR-386"}) {
 		t.Fatalf("unexpected normalized active issues: %v", active)
+	}
+}
+
+func TestSortedActiveUsesConfiguredActiveStateName(t *testing.T) {
+	issues := []TrackedIssue{
+		{Identifier: "BIG-PAR-391", StateName: "queued for review."},
+		{Identifier: "BIG-PAR-392", StateName: "Queued for Review"},
+		{Identifier: "BIG-PAR-393", StateName: "Todo"},
+	}
+	active := SortedActive(issues, "Queued for Review")
+	if !equalStringSlices(active, []string{"BIG-PAR-391", "BIG-PAR-392"}) {
+		t.Fatalf("unexpected configured active issues: %v", active)
 	}
 }
 
@@ -388,6 +400,36 @@ func TestParallelIssueQueueSaveMarkdownRendersCurrentBatchAndOrder(t *testing.T)
 	}
 	if !strings.Contains(text, "4. `BIG-PAR-248`") {
 		t.Fatalf("expected numbered canonical order, got %s", text)
+	}
+}
+
+func TestParallelIssueQueueMarkdownUsesConfiguredActiveStateName(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			Policy: struct {
+				TargetInProgress  int      `json:"target_in_progress"`
+				ActivateStateID   string   `json:"activate_state_id"`
+				ActivateStateName string   `json:"activate_state_name"`
+				RefillStates      []string `json:"refill_states"`
+				BlockedReason     string   `json:"blocked_reason,omitempty"`
+			}{
+				TargetInProgress:  2,
+				ActivateStateName: "Queued for Review",
+				RefillStates:      []string{"Todo", "Backlog"},
+			},
+			IssueOrder: []string{"BIG-PAR-391"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-391", Status: "Queued for Review"},
+			},
+		},
+	}
+
+	text := queue.RenderMarkdown(time.Date(2026, 3, 26, 8, 0, 0, 0, time.UTC))
+	if !strings.Contains(text, "state BIG-GOM-303 \"Queued for Review\"") {
+		t.Fatalf("expected CLI example to mention configured active state, got %s", text)
+	}
+	if !strings.Contains(text, "keep `2` issues in `Queued for Review`") {
+		t.Fatalf("expected policy guidance to reference the configured active state, got %s", text)
 	}
 }
 
