@@ -172,6 +172,34 @@ func TestParallelIssueQueueRefreshRecentBatchesFromStatesEmptyOrPunctuatedStates
 	}
 }
 
+func TestQueueIdentifierHelpersNormalizeRemovalUniquenessAndOrder(t *testing.T) {
+	items, removed := withoutIdentifier([]string{" BIG-PAR-402 ", "BIG-PAR-401", "big-par-402"}, "big-par-402")
+	if !removed {
+		t.Fatal("expected identifier removal to report true")
+	}
+	if !equalStringSlices(items, []string{"BIG-PAR-401"}) {
+		t.Fatalf("unexpected items after identifier removal: %+v", items)
+	}
+
+	unchanged, removed := withoutIdentifier([]string{"BIG-PAR-401"}, "BIG-PAR-999")
+	if removed {
+		t.Fatal("expected missing identifier removal to report false")
+	}
+	if !equalStringSlices(unchanged, []string{"BIG-PAR-401"}) {
+		t.Fatalf("expected unmatched removal to preserve items, got %+v", unchanged)
+	}
+
+	unique := uniqueIdentifiers([]string{" BIG-PAR-402 ", "", "big-par-402", "BIG-PAR-401", "big-par-401", "BIG-PAR-403"})
+	if !equalStringSlices(unique, []string{"BIG-PAR-402", "BIG-PAR-401", "BIG-PAR-403"}) {
+		t.Fatalf("unexpected unique identifiers: %+v", unique)
+	}
+
+	ordered := orderByIssueOrder([]string{"BIG-PAR-403", "BIG-PAR-405", "big-par-401", "BIG-PAR-404"}, []string{"BIG-PAR-401", "BIG-PAR-403"})
+	if !equalStringSlices(ordered, []string{"big-par-401", "BIG-PAR-403", "BIG-PAR-404", "BIG-PAR-405"}) {
+		t.Fatalf("unexpected identifier order: %+v", ordered)
+	}
+}
+
 func TestParallelIssueQueueSavePreservesBlockedReasonAndRecentBatches(t *testing.T) {
 	queuePath := filepath.Join(t.TempDir(), "queue.json")
 	queue := &ParallelIssueQueue{
