@@ -159,10 +159,7 @@ func (s *LocalIssueStore) CreateIssue(params LocalIssueCreateParams) (LocalIssue
 	createdAt = createdAt.UTC().Truncate(time.Second)
 	createdAtString := createdAt.Format(time.RFC3339)
 
-	stateName := strings.TrimSpace(params.State)
-	if stateName == "" {
-		stateName = "Todo"
-	}
+	stateName := canonicalCreateIssueState(params.State)
 
 	created := LocalIssue{}
 	err := s.withWriteLock(func() error {
@@ -289,6 +286,14 @@ func normalizeIssueState(state string) string {
 		return "Todo"
 	}
 	return trimmed
+}
+
+func canonicalCreateIssueState(state string) string {
+	trimmed := strings.TrimSpace(state)
+	if trimmed == "" {
+		return "Todo"
+	}
+	return canonicalFetchStateName(NormalizeStateName(trimmed), trimmed)
 }
 
 func (s *LocalIssueStore) UpdateIssueState(ref string, stateName string, now time.Time) (string, error) {

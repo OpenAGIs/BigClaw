@@ -161,6 +161,35 @@ func TestLocalIssueStoreUpdateIssueStateIgnoresEquivalentSpellings(t *testing.T)
 	}
 }
 
+func TestLocalIssueStoreCreateIssueCanonicalizesEquivalentBuiltInStates(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	created, err := store.CreateIssue(LocalIssueCreateParams{
+		Identifier: "BIG-PAR-400",
+		Title:      "Canonicalize create state",
+		State:      "todo.",
+		CreatedAt:  time.Date(2026, 3, 25, 18, 35, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatalf("create issue: %v", err)
+	}
+	if created.State != "Todo" {
+		t.Fatalf("expected canonical Todo state, got %q", created.State)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !strings.Contains(string(body), `"state": "Todo"`) {
+		t.Fatalf("expected persisted canonical Todo state, got %s", string(body))
+	}
+}
+
 func TestLocalIssueStoreIssueStatesFiltersRequestedStates(t *testing.T) {
 	storePath := filepath.Join(t.TempDir(), "local-issues.json")
 	if err := os.WriteFile(storePath, []byte(`{
