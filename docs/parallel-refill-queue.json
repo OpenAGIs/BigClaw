@@ -171,7 +171,9 @@
       "BIG-PAR-370",
       "BIG-PAR-371"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-372"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -326,7 +328,8 @@
     "BIG-PAR-368",
     "BIG-PAR-369",
     "BIG-PAR-370",
-    "BIG-PAR-371"
+    "BIG-PAR-371",
+    "BIG-PAR-372"
   ],
   "issues": [
     {
@@ -1270,6 +1273,12 @@
       "title": "Add saved-view digest recipient helper coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-372",
+      "title": "Add saved-view audit visibility and ordering coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

@@ -5061,6 +5061,24 @@
       "state": "Done",
       "title": "Add saved-view digest recipient helper coverage",
       "updated_at": "2026-03-25T16:13:40Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T16:14:53Z",
+      "description": "Add focused product-package coverage for AuditSavedViewCatalog invalid-visibility handling, orphan subscription ordering, and readiness-score floor behavior so the remaining saved-view audit branches stay pinned outside the broader catalog tests.",
+      "id": "big-par-372",
+      "identifier": "BIG-PAR-372",
+      "labels": [
+        "go",
+        "product",
+        "saved-views",
+        "test",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add saved-view audit visibility and ordering coverage",
+      "updated_at": "2026-03-25T16:15:17Z"
     }
   ]
 }

@@ -236,3 +236,44 @@ func TestAuditSavedViewCatalogPopulatesDuplicateMapsAndMixedPenaltyScore(t *test
 		t.Fatalf("expected mixed-penalty readiness score of 75, got %+v", audit)
 	}
 }
+
+func TestAuditSavedViewCatalogHandlesInvalidVisibilityAndPenaltyFloor(t *testing.T) {
+	catalog := SavedViewCatalog{
+		Name:    "catalog",
+		Version: "v1",
+		Views: []SavedView{
+			{
+				ViewID:     "view-1",
+				Name:       "Inbox",
+				Route:      "/v2/triage/center",
+				Owner:      "alice",
+				Visibility: "custom",
+				Filters:    []SavedViewFilter{{Field: "severity", Operator: "eq", Value: "high"}},
+			},
+		},
+		Subscriptions: []AlertDigestSubscription{
+			{SubscriptionID: "sub-2", SavedViewID: "missing-b", Channel: "sms", Cadence: "monthly"},
+			{SubscriptionID: "sub-1", SavedViewID: "missing-a", Channel: "pager", Cadence: "hourly"},
+		},
+	}
+
+	audit := AuditSavedViewCatalog(catalog)
+	if got := strings.Join(audit.InvalidVisibilityViews, ","); got != "Inbox" {
+		t.Fatalf("expected invalid visibility finding, got %+v", audit.InvalidVisibilityViews)
+	}
+	if got := strings.Join(audit.OrphanSubscriptions, ","); got != "sub-1,sub-2" {
+		t.Fatalf("expected orphan subscriptions to sort, got %+v", audit.OrphanSubscriptions)
+	}
+	if got := strings.Join(audit.SubscriptionsMissingRecipients, ","); got != "sub-1,sub-2" {
+		t.Fatalf("expected missing-recipient subscriptions to sort, got %+v", audit.SubscriptionsMissingRecipients)
+	}
+	if got := strings.Join(audit.SubscriptionsWithInvalidChannel, ","); got != "sub-1,sub-2" {
+		t.Fatalf("expected invalid-channel subscriptions to sort, got %+v", audit.SubscriptionsWithInvalidChannel)
+	}
+	if got := strings.Join(audit.SubscriptionsWithInvalidCadence, ","); got != "sub-2" {
+		t.Fatalf("expected invalid-cadence subscriptions to sort, got %+v", audit.SubscriptionsWithInvalidCadence)
+	}
+	if audit.ReadinessScore != 0 {
+		t.Fatalf("expected readiness score to floor at zero under heavy penalties, got %+v", audit)
+	}
+}
