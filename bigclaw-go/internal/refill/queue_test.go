@@ -101,6 +101,55 @@ func TestParallelIssueQueueRefreshRecentBatchesFromStates(t *testing.T) {
 	}
 }
 
+func TestParallelIssueQueueRefreshRecentBatchesNormalizesActiveStateName(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			Policy: struct {
+				TargetInProgress  int      `json:"target_in_progress"`
+				ActivateStateID   string   `json:"activate_state_id"`
+				ActivateStateName string   `json:"activate_state_name"`
+				RefillStates      []string `json:"refill_states"`
+				BlockedReason     string   `json:"blocked_reason,omitempty"`
+			}{
+				TargetInProgress:  2,
+				ActivateStateName: "In Progress",
+				RefillStates:      []string{"Todo", "Backlog"},
+			},
+			IssueOrder: []string{"BIG-PAR-385", "BIG-PAR-386", "BIG-PAR-387"},
+		},
+	}
+
+	updated := queue.RefreshRecentBatchesFromStates(map[string]string{
+		"BIG-PAR-385": "in progress.",
+		"BIG-PAR-386": "DONE",
+		"BIG-PAR-387": "todo.",
+	})
+	if !updated {
+		t.Fatalf("expected normalized recent batch refresh to report a change")
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Active, []string{"BIG-PAR-385"}) {
+		t.Fatalf("unexpected normalized active batches: %v", queue.payload.RecentBatches.Active)
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Completed, []string{"BIG-PAR-386"}) {
+		t.Fatalf("unexpected normalized completed batches: %v", queue.payload.RecentBatches.Completed)
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Standby, []string{"BIG-PAR-387"}) {
+		t.Fatalf("unexpected normalized standby batches: %v", queue.payload.RecentBatches.Standby)
+	}
+}
+
+func TestSortedActiveNormalizesEquivalentStateNames(t *testing.T) {
+	issues := []TrackedIssue{
+		{Identifier: "BIG-PAR-386", StateName: "in progress."},
+		{Identifier: "BIG-PAR-385", StateName: "In Progress"},
+		{Identifier: "BIG-PAR-387", StateName: "Done"},
+	}
+	active := SortedActive(issues)
+	if !equalStringSlices(active, []string{"BIG-PAR-385", "BIG-PAR-386"}) {
+		t.Fatalf("unexpected normalized active issues: %v", active)
+	}
+}
+
 func TestParallelIssueQueueSavePreservesBlockedReasonAndRecentBatches(t *testing.T) {
 	queuePath := filepath.Join(t.TempDir(), "queue.json")
 	queue := &ParallelIssueQueue{

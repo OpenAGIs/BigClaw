@@ -1125,7 +1125,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		if issue.Identifier != "" && issue.ID != "" {
 			issueIDs[issue.Identifier] = issue.ID
 		}
-		if issue.StateName == "In Progress" {
+		if refill.NormalizeStateName(issue.StateName) == refill.NormalizeStateName(queue.ActivateStateName()) {
 			active[issue.Identifier] = struct{}{}
 		}
 	}

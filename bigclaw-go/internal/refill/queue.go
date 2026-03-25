@@ -267,10 +267,11 @@ func (q *ParallelIssueQueue) desiredRecentBatches(issueStates map[string]string)
 	standby := []string{}
 	for _, identifier := range q.payload.IssueOrder {
 		state := strings.TrimSpace(merged[identifier])
+		normalizedState := statusNormalize(state)
 		switch {
 		case isTerminalState(state):
 			completed = append(completed, identifier)
-		case state == q.ActivateStateName():
+		case normalizedState == statusNormalize(q.ActivateStateName()):
 			active = append(active, identifier)
 		case state == "" || stateInSet(refillStates, state):
 			if len(standby) < standbyLimit {
@@ -513,7 +514,7 @@ func IssueStateMap(issues []TrackedIssue) map[string]string {
 func SortedActive(issues []TrackedIssue) []string {
 	active := []string{}
 	for _, issue := range issues {
-		if issue.StateName == "In Progress" {
+		if NormalizeStateName(issue.StateName) == NormalizeStateName("In Progress") {
 			active = append(active, issue.Identifier)
 		}
 	}
