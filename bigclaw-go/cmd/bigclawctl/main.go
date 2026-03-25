@@ -1307,6 +1307,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 func emit(payload map[string]any, asJSON bool, exitCode int) error {
 	if asJSON {
 		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetEscapeHTML(false)
 		encoder.SetIndent("", "  ")
 		if err := encoder.Encode(payload); err != nil {
 			return err

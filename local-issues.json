@@ -3140,6 +3140,11 @@
           "author": "codex",
           "body": "Parent branch status refresh on March 26, 2026: follow-on refill/tooling slice `BIG-PAR-400` has now landed and merged from this workspace branch. The latest merged review surface is PR `#197`, the current synced branch head is `592ab9acbde0c9c0a970b76bb783d20c36558633`, and the local refill queue is drained again with no runnable child slices remaining.\n\nValidation:\n- `gh pr view 197 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` at `2026-03-25T18:42:46Z` with merge commit `f5ac826f0c0f5076275ee36b4e41306dcdf62fdf` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `592ab9acbde0c9c0a970b76bb783d20c36558633` matches remote SHA `592ab9acbde0c9c0a970b76bb783d20c36558633` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `592ab9acbde0c9c0a970b76bb783d20c36558633`\n\nCommit SHA: `592ab9acbde0c9c0a970b76bb783d20c36558633`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/197",
           "created_at": "2026-03-25T18:43:34Z"
+        },
+        {
+          "author": "codex",
+          "body": "Parent branch status refresh on March 26, 2026: follow-on refill/tooling slice `BIG-PAR-401` has now landed and merged from this workspace branch. The latest merged review surface is PR `#198`, the current synced branch head is `266811fd1fdc2a938c22aa83fb1bdc234cc39342`, and the local refill queue is drained again with no runnable child slices remaining.\n\nValidation:\n- `gh pr view 198 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` at `2026-03-25T18:53:02Z` with merge commit `2ef6b8151ac1bf5488e2ecd0e48191b8ad901025` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `266811fd1fdc2a938c22aa83fb1bdc234cc39342` matches remote SHA `266811fd1fdc2a938c22aa83fb1bdc234cc39342` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `266811fd1fdc2a938c22aa83fb1bdc234cc39342`\n\nCommit SHA: `266811fd1fdc2a938c22aa83fb1bdc234cc39342`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/198",
+          "created_at": "2026-03-25T18:53:57Z"
         }
       ],
       "created_at": "2026-03-24T15:47:40Z",
@@ -3156,7 +3161,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-25T18:43:34Z"
+      "updated_at": "2026-03-25T18:53:57Z"
     },
     {
       "assigned_to_worker": true,
@@ -5748,6 +5753,11 @@
           "author": "codex",
           "body": "What changed:\n- `bigclaw-go/internal/refill/queue.go` now canonicalizes normalized-equivalent built-in queue statuses during issue upsert, so refill seed persists `Todo`, `In Progress`, `Backlog`, and `Done` on create instead of raw spellings like `todo.`.\n- `bigclaw-go/internal/refill/queue_test.go` now covers queue-record canonicalization on create while preserving existing equivalent-spelling no-op behavior.\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now covers canonical queue and local issue state persistence through the `refill seed` create path.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `12e9611d78d2058d24dc02436b67cbf0de710ee6` matches remote SHA `12e9611d78d2058d24dc02436b67cbf0de710ee6` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `12e9611d78d2058d24dc02436b67cbf0de710ee6`\n- `git log -1 --stat` -> captured for commit `12e9611d78d2058d24dc02436b67cbf0de710ee6`\n\nCommit SHA: `12e9611d78d2058d24dc02436b67cbf0de710ee6`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/198",
           "created_at": "2026-03-25T18:51:03Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout on March 26, 2026: PR `#198` (`BIG-PAR-401: canonicalize queue issue state spellings`) merged into `main` at `2026-03-25T18:53:02Z` with merge commit `2ef6b8151ac1bf5488e2ecd0e48191b8ad901025`. The local refill queue remains drained after closing this slice.\n\nValidation:\n- `gh pr view 198 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` with merge commit `2ef6b8151ac1bf5488e2ecd0e48191b8ad901025` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `266811fd1fdc2a938c22aa83fb1bdc234cc39342` matches remote SHA `266811fd1fdc2a938c22aa83fb1bdc234cc39342` with `status: ok` and `synced: true`\n\nCommit SHA: `266811fd1fdc2a938c22aa83fb1bdc234cc39342`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/198",
+          "created_at": "2026-03-25T18:53:57Z"
         }
       ],
       "created_at": "2026-03-25T18:46:05Z",
@@ -5763,7 +5773,31 @@
       "priority": 3,
       "state": "Done",
       "title": "Canonicalize equivalent queue state spellings during refill seed",
-      "updated_at": "2026-03-25T18:51:03Z"
+      "updated_at": "2026-03-25T18:53:57Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/cmd/bigclawctl/main.go` now disables HTML escaping in the shared JSON emitter so CLI output preserves plain text tokens like `->` instead of returning `>`.\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now covers unescaped arrow tokens in JSON stdout for the `local-issues comment` command.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `b84b338d452653d1bc5454abb45c366409e781ea` matches remote SHA `b84b338d452653d1bc5454abb45c366409e781ea` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `b84b338d452653d1bc5454abb45c366409e781ea`\n- `git log -1 --stat` -> captured for commit `b84b338d452653d1bc5454abb45c366409e781ea`\n\nCommit SHA: `b84b338d452653d1bc5454abb45c366409e781ea`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/199",
+          "created_at": "2026-03-25T19:01:27Z"
+        }
+      ],
+      "created_at": "2026-03-25T18:57:20Z",
+      "description": "Make the shared bigclawctl JSON emitter disable HTML escaping so command output preserves plain text tokens like -> and embedded markdown/code content instead of returning \\u003c and \\u003e escapes.",
+      "id": "big-par-402",
+      "identifier": "BIG-PAR-402",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Disable HTML escaping in bigclawctl JSON output",
+      "updated_at": "2026-03-25T19:01:27Z"
     }
   ]
 }

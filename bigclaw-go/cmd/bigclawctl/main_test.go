@@ -1945,3 +1945,49 @@ func TestRunLocalIssuesListNormalizesStateFilters(t *testing.T) {
 		t.Fatalf("expected done issue to be filtered out, got %s", string(output))
 	}
 }
+
+func TestRunLocalIssuesCommentJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-402",
+      "identifier": "BIG-PAR-402",
+      "title": "Disable HTML escaping in bigclawctl JSON output",
+      "state": "In Progress"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runLocalIssues([]string{
+		"comment",
+		"--local-issues", storePath,
+		"--issue", "BIG-PAR-402",
+		"--body", "validation -> ok",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run local-issues comment: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte(`validation -> ok`)) {
+		t.Fatalf("expected raw arrow token in JSON output, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`\u003e`)) {
+		t.Fatalf("expected no HTML escaping in JSON output, got %s", string(output))
+	}
+}
