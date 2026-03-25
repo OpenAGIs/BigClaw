@@ -212,12 +212,11 @@
       "BIG-PAR-412",
       "BIG-PAR-411",
       "BIG-PAR-413",
-      "BIG-PAR-414"
-    ],
-    "active": [
+      "BIG-PAR-414",
       "BIG-PAR-415",
       "BIG-PAR-416"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1624,13 +1623,13 @@
       "identifier": "BIG-PAR-415",
       "title": "Add local tracker helper edge coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-416",
       "title": "Add refill markdown edge coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
