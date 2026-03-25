@@ -708,6 +708,37 @@ func TestParallelIssueQueueSavePropagatesCloseAndRenameFailures(t *testing.T) {
 	}
 }
 
+func TestParallelIssueQueueSavePropagatesChmodFailure(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		queuePath: filepath.Join(t.TempDir(), "queue.json"),
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-427"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-427", Title: "Add refill temp-save branch coverage", Track: "Go Mainline Follow-ups", Status: "In Progress"},
+			},
+		},
+	}
+
+	originalCreateTemp := queueCreateTemp
+	originalRename := queueRename
+	t.Cleanup(func() {
+		queueCreateTemp = originalCreateTemp
+		queueRename = originalRename
+	})
+
+	chmodErr := errors.New("chmod temp queue file")
+	queueCreateTemp = func(dir string, pattern string) (tempFile, error) {
+		return &stubTempFile{name: filepath.Join(dir, "queue-chmod.tmp"), chmodErr: chmodErr}, nil
+	}
+	queueRename = func(oldPath string, newPath string) error {
+		t.Fatal("did not expect rename after chmod failure")
+		return nil
+	}
+	if err := queue.Save(); !errors.Is(err, chmodErr) {
+		t.Fatalf("expected chmod failure to propagate, got %v", err)
+	}
+}
+
 func TestParallelIssueQueueUpsertIssueCreatesAndUpdatesQueueRecord(t *testing.T) {
 	queue := &ParallelIssueQueue{
 		payload: QueuePayload{
