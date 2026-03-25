@@ -30,6 +30,17 @@ func TestBindRunCommitsRejectsUnsupportedRoles(t *testing.T) {
 	}
 }
 
+func TestValidateRunCommitRolesSortsDistinctInvalidRoles(t *testing.T) {
+	err := ValidateRunCommitRoles([]RunCommitLink{
+		{RunID: "run-1", CommitHash: "abc123", Role: "merge", RepoSpaceID: "space-1"},
+		{RunID: "run-1", CommitHash: "def456", Role: "archive", RepoSpaceID: "space-1"},
+		{RunID: "run-1", CommitHash: "ghi789", Role: "merge", RepoSpaceID: "space-1"},
+	})
+	if err == nil || err.Error() != "unsupported run commit roles: archive, merge" {
+		t.Fatalf("expected sorted invalid role error, got %v", err)
+	}
+}
+
 func TestRepoRegistryResolvesSpaceChannelAndAgent(t *testing.T) {
 	registry := RepoRegistry{}
 	registry.RegisterSpace(RepoSpace{SpaceID: "space-1", ProjectKey: "ALPHA", Repo: "OpenAGIs/BigClaw", SidecarEnabled: true})
