@@ -444,7 +444,7 @@
       "assigned_to_worker": true,
       "comments": [
         {
-          "body": "Closed `BIG-PAR-203` after teaching the continuation policy gate to surface the correct shared-queue refresh path for the current evidence source.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` now distinguishes `bundled-companion` vs `standalone-proof` shared-queue evidence, includes that mode-specific context in the `shared_queue_companion_available` policy-check detail, and emits the correct next action for each source.\n- `tests/test_validation_bundle_continuation_policy_gate.py` now covers the standalone-proof path, the bundled-companion hold path, and the unchanged repeated-lane hold path.\n- `bigclaw-go/docs/e2e-validation.md` and `bigclaw-go/docs/reports/validation-bundle-continuation-digest.md` now document that the gate\u2019s next-action guidance follows the current shared-queue evidence source rather than one hard-coded rerun command.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` -> passed\n- `python3 - <<\"PY\" ... direct execution of test_validation_bundle_continuation_policy_gate.py test functions ...` -> passed (`policy gate direct tests passed`)\n- `python3 - <<\"PY\" ... synthetic bundled-companion gate harness ...` -> passed (next action includes `BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1`, policy-check detail includes `mode=bundled-companion`)\n- `git rev-parse HEAD` -> `ef7a1c19108e41602794d775774cc11706c6a724`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `ef7a1c19108e41602794d775774cc11706c6a724` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `ef7a1c19108e41602794d775774cc11706c6a724` (matches local)\n- `git log -1 --stat` -> `Clarify shared-queue refresh guidance in policy gate`\n\nCommit: `ef7a1c19108e41602794d775774cc11706c6a724`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "body": "Closed `BIG-PAR-203` after teaching the continuation policy gate to surface the correct shared-queue refresh path for the current evidence source.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` now distinguishes `bundled-companion` vs `standalone-proof` shared-queue evidence, includes that mode-specific context in the `shared_queue_companion_available` policy-check detail, and emits the correct next action for each source.\n- `tests/test_validation_bundle_continuation_policy_gate.py` now covers the standalone-proof path, the bundled-companion hold path, and the unchanged repeated-lane hold path.\n- `bigclaw-go/docs/e2e-validation.md` and `bigclaw-go/docs/reports/validation-bundle-continuation-digest.md` now document that the gate’s next-action guidance follows the current shared-queue evidence source rather than one hard-coded rerun command.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` -> passed\n- `python3 - <<\"PY\" ... direct execution of test_validation_bundle_continuation_policy_gate.py test functions ...` -> passed (`policy gate direct tests passed`)\n- `python3 - <<\"PY\" ... synthetic bundled-companion gate harness ...` -> passed (next action includes `BIGCLAW_E2E_REFRESH_SHARED_QUEUE=1`, policy-check detail includes `mode=bundled-companion`)\n- `git rev-parse HEAD` -> `ef7a1c19108e41602794d775774cc11706c6a724`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `ef7a1c19108e41602794d775774cc11706c6a724` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `ef7a1c19108e41602794d775774cc11706c6a724` (matches local)\n- `git log -1 --stat` -> `Clarify shared-queue refresh guidance in policy gate`\n\nCommit: `ef7a1c19108e41602794d775774cc11706c6a724`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T19:06:38Z"
         }
       ],
@@ -651,7 +651,7 @@
       "assigned_to_worker": true,
       "comments": [
         {
-          "body": "Closed `BIG-PAR-212` after aligning the machine-readable validation manifest with the final post-continuation summary.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now writes an initial manifest before continuation refresh so the scorecard input still exists, then rewrites the manifest after the continuation-enriched summary is persisted.\n- `build_recent_runs()` now carries a compact `continuation` subset for each recent run, so `live-validation-index.json` exposes the current run\u2019s continuation gate state instead of dropping it from `recent_runs`.\n- `tests/test_parallel_validation_bundle.py` now asserts that both `manifest.latest` and the first `recent_runs` entry include the continuation policy-gate data after export.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded test_export_validation_bundle_generates_latest_reports_and_index harness ...` -> passed (`parallel validation bundle manifest-refresh test passed`)\n- `git rev-parse HEAD` -> `225310f124fa6024af1b03e6f680e7ad04894bc3`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `225310f124fa6024af1b03e6f680e7ad04894bc3` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `225310f124fa6024af1b03e6f680e7ad04894bc3` (matches local)\n- `git log -1 --stat` -> `Refresh validation manifest after continuation`\n\nCommit: `225310f124fa6024af1b03e6f680e7ad04894bc3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
+          "body": "Closed `BIG-PAR-212` after aligning the machine-readable validation manifest with the final post-continuation summary.\n\nWhat changed:\n- `bigclaw-go/scripts/e2e/export_validation_bundle.py` now writes an initial manifest before continuation refresh so the scorecard input still exists, then rewrites the manifest after the continuation-enriched summary is persisted.\n- `build_recent_runs()` now carries a compact `continuation` subset for each recent run, so `live-validation-index.json` exposes the current run’s continuation gate state instead of dropping it from `recent_runs`.\n- `tests/test_parallel_validation_bundle.py` now asserts that both `manifest.latest` and the first `recent_runs` entry include the continuation policy-gate data after export.\n\nValidation:\n- `python3 -m py_compile bigclaw-go/scripts/e2e/export_validation_bundle.py` -> passed\n- `python3 - <<\"PY\" ... direct importlib-loaded test_export_validation_bundle_generates_latest_reports_and_index harness ...` -> passed (`parallel validation bundle manifest-refresh test passed`)\n- `git rev-parse HEAD` -> `225310f124fa6024af1b03e6f680e7ad04894bc3`\n- `git rev-parse origin/symphony/BIG-GOM-302` -> `225310f124fa6024af1b03e6f680e7ad04894bc3` (matches local)\n- `git ls-remote --heads github symphony/BIG-GOM-302` -> `225310f124fa6024af1b03e6f680e7ad04894bc3` (matches local)\n- `git log -1 --stat` -> `Refresh validation manifest after continuation`\n\nCommit: `225310f124fa6024af1b03e6f680e7ad04894bc3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/138",
           "created_at": "2026-03-20T20:04:00Z"
         }
       ],
@@ -1004,7 +1004,7 @@
       "comments": [
         {
           "author": "codex",
-          "body": "Closed `BIG-PAR-106` after making the `github-sync status` payload report a stable `pushed` boolean for synced branches.\n\nWhat changed:\n- `bigclaw-go/internal/githubsync/InspectRepoSync` now sets `Pushed=true` when the remote branch exists and the remote SHA matches local HEAD.\n- This makes `bash scripts/ops/bigclawctl github-sync status --json` stop reporting `pushed:false` on already-synced branches, improving the workflow\u2019s push/sync verification signal.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/githubsync` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> `pushed: true` when `synced: true` and the remote branch exists\n\nCommit: `0e95bc670e3f6098dd74c117a1f6fdf53260656f`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/146.",
+          "body": "Closed `BIG-PAR-106` after making the `github-sync status` payload report a stable `pushed` boolean for synced branches.\n\nWhat changed:\n- `bigclaw-go/internal/githubsync/InspectRepoSync` now sets `Pushed=true` when the remote branch exists and the remote SHA matches local HEAD.\n- This makes `bash scripts/ops/bigclawctl github-sync status --json` stop reporting `pushed:false` on already-synced branches, improving the workflow’s push/sync verification signal.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/githubsync` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> `pushed: true` when `synced: true` and the remote branch exists\n\nCommit: `0e95bc670e3f6098dd74c117a1f6fdf53260656f`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/146.",
           "created_at": "2026-03-22T00:00:00Z"
         }
       ],
@@ -1173,7 +1173,7 @@
         }
       ],
       "created_at": "2026-03-22T01:38:59Z",
-      "description": "Clear the repo workpad\u2019s stale unchecked validation item so the BIG-PAR-102 workspace no longer appears active after all local tracker slices are complete.",
+      "description": "Clear the repo workpad’s stale unchecked validation item so the BIG-PAR-102 workspace no longer appears active after all local tracker slices are complete.",
       "id": "big-par-112",
       "identifier": "BIG-PAR-112",
       "labels": [
@@ -2541,12 +2541,12 @@
       "comments": [
         {
           "author": "codex",
-          "body": "\u5df2\u8865\u9f50\u5206\u5e03\u5f0f\u8bca\u65ad\u65f6\u95f4\u7a97\u53e3\u94fe\u8def\uff1a\u63a7\u5236\u4e2d\u5fc3\u4e0e `/v2/reports/distributed` \u73b0\u5728\u4f1a\u4fdd\u7559 since/until \u8fc7\u6ee4\u3001\u5bfc\u51fa\u94fe\u63a5\u548c markdown \u8fc7\u6ee4\u5934\uff0c\u5e76\u589e\u52a0\u6309\u65f6\u95f4\u7a97\u53e3\u7b5b\u9009\u7684\u56de\u5f52\u6d4b\u8bd5\u3002\\n\\n\u9a8c\u8bc1\uff1a`go test ./internal/api`\u3002",
+          "body": "已补齐分布式诊断时间窗口链路：控制中心与 `/v2/reports/distributed` 现在会保留 since/until 过滤、导出链接和 markdown 过滤头，并增加按时间窗口筛选的回归测试。\\n\\n验证：`go test ./internal/api`。",
           "created_at": "2026-03-23T14:45:04Z"
         }
       ],
       "created_at": "2026-03-23T13:31:58Z",
-      "description": "GitHub #174. \u4ea7\u51fa\u8c03\u5ea6\u51b3\u7b56\u8def\u5f84\u3001\u6392\u961f\u65f6\u5ef6\u3001\u9000\u907f\u7edf\u8ba1\u4e0e\u5bb9\u91cf\u5efa\u8bae\uff0c\u5e76\u652f\u6301\u6309\u65f6\u95f4\u7a97\u53e3\u548c\u56e2\u961f\u7b5b\u9009\u3002",
+      "description": "GitHub #174. 产出调度决策路径、排队时延、退避统计与容量建议，并支持按时间窗口和团队筛选。",
       "id": "big-vnext-004",
       "identifier": "BIG-vNext-004",
       "labels": [
@@ -2556,7 +2556,7 @@
       ],
       "priority": 2,
       "state": "Done",
-      "title": "BIG-vNext-004 \u5206\u5e03\u5f0f\u8c03\u5ea6\u8bca\u65ad\u4e0e\u5bb9\u91cf\u62a5\u544a",
+      "title": "BIG-vNext-004 分布式调度诊断与容量报告",
       "updated_at": "2026-03-23T14:50:12Z"
     },
     {
@@ -2564,12 +2564,12 @@
       "comments": [
         {
           "author": "codex",
-          "body": "\u5df2\u589e\u5f3a validation bundle \u5bfc\u51fa\uff1a\u8865\u5145 local/k8s/ray \u9a8c\u8bc1\u77e9\u9635\u3001\u5931\u8d25\u6839\u56e0\u5b9a\u4f4d\u5b57\u6bb5\u3001routing reason \u4e0e\u6700\u65b0\u4e8b\u4ef6\u6458\u8981\uff0c\u5e76\u589e\u52a0 Python \u5355\u6d4b\u8986\u76d6\u3002\\n\\n\u9a8c\u8bc1\uff1a`python3 scripts/e2e/export_validation_bundle_test.py`\u3002",
+          "body": "已增强 validation bundle 导出：补充 local/k8s/ray 验证矩阵、失败根因定位字段、routing reason 与最新事件摘要，并增加 Python 单测覆盖。\\n\\n验证：`python3 scripts/e2e/export_validation_bundle_test.py`。",
           "created_at": "2026-03-23T14:45:04Z"
         }
       ],
       "created_at": "2026-03-23T13:31:58Z",
-      "description": "GitHub #173. \u652f\u6301 local/k8s/ray \u4e09\u7c7b\u6267\u884c\u5668\u9a8c\u8bc1\u77e9\u9635\uff0c\u8f93\u51fa\u7edf\u4e00 evidence bundle\uff08json + markdown\uff09\uff0c\u5e76\u5728\u62a5\u544a\u4e2d\u5305\u542b\u5931\u8d25\u6839\u56e0\u5b9a\u4f4d\u5b57\u6bb5\u3002",
+      "description": "GitHub #173. 支持 local/k8s/ray 三类执行器验证矩阵，输出统一 evidence bundle（json + markdown），并在报告中包含失败根因定位字段。",
       "id": "big-vnext-003",
       "identifier": "BIG-vNext-003",
       "labels": [
@@ -2579,7 +2579,7 @@
       ],
       "priority": 1,
       "state": "Done",
-      "title": "BIG-vNext-003 \u5e76\u884c\u5b9e\u65f6\u9a8c\u8bc1\u77e9\u9635\u4e0e\u8bc1\u636e\u5305\u5bfc\u51fa",
+      "title": "BIG-vNext-003 并行实时验证矩阵与证据包导出",
       "updated_at": "2026-03-23T14:50:12Z"
     },
     {
@@ -2587,12 +2587,12 @@
       "comments": [
         {
           "author": "codex",
-          "body": "\u5df2\u8865\u9f50\u63a7\u5236\u4e2d\u5fc3 node-aware worker pool \u6c47\u603b\uff1a\u65b0\u589e total/active/idle/degraded node \u7edf\u8ba1\u3001executor \u5206\u5e03\u4e0e\u8282\u70b9\u5065\u5eb7\u89c6\u56fe\uff0c\u5e76\u589e\u52a0\u65f6\u95f4\u7a97\u53e3\u63a7\u5236\u4e2d\u5fc3\u8fc7\u6ee4\u4e0e API \u56de\u5f52\u6d4b\u8bd5\u3002\\n\\n\u9a8c\u8bc1\uff1a`go test ./internal/api`\u3002",
+          "body": "已补齐控制中心 node-aware worker pool 汇总：新增 total/active/idle/degraded node 统计、executor 分布与节点健康视图，并增加时间窗口控制中心过滤与 API 回归测试。\\n\\n验证：`go test ./internal/api`。",
           "created_at": "2026-03-23T14:45:03Z"
         }
       ],
       "created_at": "2026-03-23T13:31:58Z",
-      "description": "GitHub #171. \u63a7\u5236\u4e2d\u5fc3\u5c55\u793a worker pool \u6458\u8981\u4e0e node \u7ef4\u5ea6\u7edf\u8ba1\uff0cpayload \u5305\u542b executor \u5206\u5e03\u3001\u8282\u70b9\u5065\u5eb7\u3001\u5bb9\u91cf\u5229\u7528\uff0c\u5e76\u8865\u9f50\u6458\u8981\u8ba1\u7b97\u4e0e\u62a5\u544a\u6e32\u67d3\u6d4b\u8bd5\u3002",
+      "description": "GitHub #171. 控制中心展示 worker pool 摘要与 node 维度统计，payload 包含 executor 分布、节点健康、容量利用，并补齐摘要计算与报告渲染测试。",
       "id": "big-vnext-001",
       "identifier": "BIG-vNext-001",
       "labels": [
@@ -2602,7 +2602,7 @@
       ],
       "priority": 1,
       "state": "Done",
-      "title": "BIG-vNext-001 \u591a worker \u6c60\u72b6\u6001\u6c47\u603b\u4e0e\u8282\u70b9\u611f\u77e5\u63a7\u5236\u4e2d\u5fc3",
+      "title": "BIG-vNext-001 多 worker 池状态汇总与节点感知控制中心",
       "updated_at": "2026-03-23T14:50:12Z"
     },
     {
@@ -2610,12 +2610,12 @@
       "comments": [
         {
           "author": "codex",
-          "body": "\u5df2\u8865\u9f50 lease \u751f\u547d\u5468\u671f\u6a21\u578b\u4e0e\u5e76\u53d1\u56de\u5f52\u8986\u76d6\uff1a\u65b0\u589e acquire/renew/commit/release/expire/takeover/fence \u6a21\u578b\u8bf4\u660e\uff0c\u5e76\u589e\u52a0 lease \u7eed\u7ea6\u91ca\u653e\u4e0e\u5185\u5b58\u961f\u5217\u53cc\u9886\u53d6\u9632\u56de\u5f52\u6d4b\u8bd5\u3002\\n\\n\u9a8c\u8bc1\uff1a`go test ./internal/events ./internal/queue`\u3002",
+          "body": "已补齐 lease 生命周期模型与并发回归覆盖：新增 acquire/renew/commit/release/expire/takeover/fence 模型说明，并增加 lease 续约释放与内存队列双领取防回归测试。\\n\\n验证：`go test ./internal/events ./internal/queue`。",
           "created_at": "2026-03-23T14:45:03Z"
         }
       ],
       "created_at": "2026-03-23T13:31:58Z",
-      "description": "GitHub #172. \u660e\u786e lease \u83b7\u53d6/\u7eed\u7ea6/\u91ca\u653e\u72b6\u6001\u673a\uff0c\u786e\u4fdd\u91cd\u590d\u6d88\u8d39\u4e0e\u7f51\u7edc\u6296\u52a8\u4e0b\u4e0d\u51fa\u73b0\u53cc\u6267\u884c\uff0c\u5e76\u589e\u52a0 local + distributed \u573a\u666f\u56de\u5f52\u6d4b\u8bd5\u3002",
+      "description": "GitHub #172. 明确 lease 获取/续约/释放状态机，确保重复消费与网络抖动下不出现双执行，并增加 local + distributed 场景回归测试。",
       "id": "big-vnext-002",
       "identifier": "BIG-vNext-002",
       "labels": [
@@ -2625,7 +2625,7 @@
       ],
       "priority": 1,
       "state": "Done",
-      "title": "BIG-vNext-002 \u5171\u4eab\u961f\u5217\u534f\u8c03\u4e0e lease \u5b89\u5168\u56de\u5f52",
+      "title": "BIG-vNext-002 共享队列协调与 lease 安全回归",
       "updated_at": "2026-03-23T14:50:12Z"
     },
     {
@@ -3090,6 +3090,11 @@
           "author": "codex",
           "body": "Final tracker reconciliation on March 25, 2026: the post-merge tracker-note commit is now the true terminal branch head for this completed issue. PR `#190` remains merged, and the synced branch head is `d76bd0ee3b599cf864d65a2123718bbd1f2566d4`.\n\nValidation:\n- `gh pr view 190 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` at `2026-03-25T16:49:32Z` with merge commit `7f3b11786e1ed65ae29e474809eff89c30b57826` and successful completed `test` check\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `d76bd0ee3b599cf864d65a2123718bbd1f2566d4`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `d76bd0ee3b599cf864d65a2123718bbd1f2566d4` matches remote SHA `d76bd0ee3b599cf864d65a2123718bbd1f2566d4` with `status: ok` and `synced: true`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n\nCommit SHA: `b97657b120a53823000d47d99dd9ed00cf6e6590`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/190",
           "created_at": "2026-03-25T16:52:46Z"
+        },
+        {
+          "author": "codex",
+          "body": "Stable closeout note on March 25, 2026: `BIG-PAR-291` is complete. PR `#190` is merged, CI succeeded, and the refill queue is drained. Any later tracker-only sync commits on `symphony/BIG-PAR-291` do not represent new implementation work for this issue; they only preserve tracker evidence.\n\nValidation:\n- `gh pr view 190 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` at `2026-03-25T16:49:32Z` with merge commit `7f3b11786e1ed65ae29e474809eff89c30b57826` and successful completed `test` check\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `0fb6fc94a5a453c017e11939cbbae63a3d49541c` matches remote SHA `0fb6fc94a5a453c017e11939cbbae63a3d49541c` with `status: ok` and `synced: true`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n\nCommit SHA: pending tracker-note commit\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/190",
+          "created_at": "2026-03-25T16:58:15Z"
         }
       ],
       "created_at": "2026-03-24T15:47:40Z",
@@ -3106,7 +3111,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-25T16:52:46Z"
+      "updated_at": "2026-03-25T16:58:15Z"
     },
     {
       "assigned_to_worker": true,
