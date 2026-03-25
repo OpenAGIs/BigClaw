@@ -218,12 +218,11 @@
       "BIG-PAR-417",
       "BIG-PAR-418",
       "BIG-PAR-420",
-      "BIG-PAR-419"
-    ],
-    "active": [
+      "BIG-PAR-419",
       "BIG-PAR-422",
       "BIG-PAR-421"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1672,13 +1671,13 @@
       "identifier": "BIG-PAR-422",
       "title": "Add refill markdown rendering coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-421",
       "title": "Add refill queue upsert coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

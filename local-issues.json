@@ -6232,27 +6232,41 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- added focused refill queue tests covering UpsertIssue create-time trimming/defaulting and case-insensitive in-place track updates without duplicate queue-order entries in bigclaw-go/internal/refill/queue_test.go.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill -run 'TestParallelIssueQueueUpsertIssueCreatesAndUpdatesQueueRecord|TestParallelIssueQueueUpsertIssueValidationDefaultStatusAndOrderRepair|TestParallelIssueQueueUpsertIssueTrimsCreateFieldsAndUpdatesTrackInPlace'`\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill-421.cover && go tool cover -func=/tmp/refill-421.cover | rg 'queue.go:235|total'`\n- result: pass; UpsertIssue 100.0%, package total 95.4%.\n\nCommit SHA:\n- `1d9a5a3`\n\nPR URL:\n- https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T19:42:22Z"
+        }
+      ],
       "created_at": "2026-03-25T19:38:54Z",
       "description": "Add focused refill queue tests covering UpsertIssue validation, defaulting, and update/order behaviors in bigclaw-go/internal/refill/queue.go.",
       "id": "big-par-421",
       "identifier": "BIG-PAR-421",
       "labels": [],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add refill queue upsert coverage",
-      "updated_at": "2026-03-25T19:39:05Z"
+      "updated_at": "2026-03-25T19:42:22Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- added focused RenderMarkdown tests covering explicit recent-batch bucket rendering and completed-history filtering for terminal vs non-terminal statuses in bigclaw-go/internal/refill/queue_markdown_test.go.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill -run 'TestParallelIssueQueueRenderMarkdownUsesExplicitRecentBatches|TestParallelIssueQueueRenderMarkdownCompletedHistoryHighlightsTerminalStatuses'`\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill-422.cover && go tool cover -func=/tmp/refill-422.cover | rg 'queue_markdown.go:12|queue_markdown.go:110|total'`\n- result: pass; package total 95.4%.\n\nCommit SHA:\n- `602f4cd7e453e297352c0de2fe41028669b8dd8b`\n\nPR URL:\n- https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T19:42:22Z"
+        }
+      ],
       "created_at": "2026-03-25T19:38:54Z",
       "description": "Add focused refill markdown tests covering RenderMarkdown explicit recent-batch and completed/history output in bigclaw-go/internal/refill/queue_markdown.go.",
       "id": "big-par-422",
       "identifier": "BIG-PAR-422",
       "labels": [],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add refill markdown rendering coverage",
-      "updated_at": "2026-03-25T19:39:05Z"
+      "updated_at": "2026-03-25T19:42:22Z"
     }
   ]
 }
