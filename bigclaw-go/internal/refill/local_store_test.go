@@ -516,6 +516,72 @@ func TestLocalIssueStoreSaveDoesNotEscapeArrowTokens(t *testing.T) {
 	}
 }
 
+func TestLocalIssueStoreSaveWritesEmptyIssuesPayload(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	store := &LocalIssueStore{path: storePath}
+
+	if err := store.Save(); err != nil {
+		t.Fatalf("save empty local issue store: %v", err)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read saved local issue store: %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"issues": []`) {
+		t.Fatalf("expected empty issues payload after save, got %s", text)
+	}
+}
+
+func TestLocalIssueStoreSaveUnlockedCreatesNestedDirectory(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "nested", "tracker", "local-issues.json")
+	store := &LocalIssueStore{path: storePath}
+
+	if err := store.saveUnlocked(); err != nil {
+		t.Fatalf("save unlocked local issue store: %v", err)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read saved local issue store: %v", err)
+	}
+	if !strings.Contains(string(body), `"issues": []`) {
+		t.Fatalf("expected empty issues payload after saveUnlocked, got %s", string(body))
+	}
+}
+
+func TestLocalIssueStoreSavePersistsMutatedIssueMapWithoutEscapingHTML(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	store := &LocalIssueStore{
+		path: storePath,
+		issueMap: []map[string]any{
+			{
+				"id":         "big-par-409",
+				"identifier": "BIG-PAR-409",
+				"title":      "save path coverage -> literal",
+				"state":      "In Progress",
+			},
+		},
+	}
+
+	if err := store.Save(); err != nil {
+		t.Fatalf("save mutated local issue store: %v", err)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read mutated local issue store: %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, "save path coverage -> literal") {
+		t.Fatalf("expected title to persist without alteration, got %s", text)
+	}
+	if strings.Contains(text, `\u003e`) {
+		t.Fatalf("expected html escaping to stay disabled, got %s", text)
+	}
+}
+
 func TestLocalIssueStoreReloadRefreshesInMemorySnapshot(t *testing.T) {
 	storePath := filepath.Join(t.TempDir(), "local-issues.json")
 	if err := os.WriteFile(storePath, []byte(`{
@@ -600,6 +666,48 @@ func TestLocalIssueStoreAddCommentReloadsLatestStateBeforeSaving(t *testing.T) {
 	text := string(body)
 	if !strings.Contains(text, `"body": "first writer"`) || !strings.Contains(text, `"body": "second writer"`) {
 		t.Fatalf("expected both comments to persist after stale reload protection, got %s", text)
+	}
+}
+
+func TestLocalIssueStoreCreateIssueReloadsLatestStateBeforeSaving(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{"issues":[]}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	storeA, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store A: %v", err)
+	}
+	storeB, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store B: %v", err)
+	}
+
+	if _, err := storeA.CreateIssue(LocalIssueCreateParams{
+		Identifier: "BIG-PAR-409",
+		Title:      "first writer",
+		CreatedAt:  time.Date(2026, 3, 25, 18, 45, 0, 0, time.UTC),
+	}); err != nil {
+		t.Fatalf("create issue with store A: %v", err)
+	}
+	if _, err := storeB.CreateIssue(LocalIssueCreateParams{
+		Identifier: "BIG-PAR-410",
+		Title:      "second writer",
+		CreatedAt:  time.Date(2026, 3, 25, 18, 45, 1, 0, time.UTC),
+	}); err != nil {
+		t.Fatalf("create issue with store B: %v", err)
+	}
+
+	reloaded, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("reload local issue store: %v", err)
+	}
+	if _, ok := reloaded.FindIssue("BIG-PAR-409"); !ok {
+		t.Fatal("expected first created issue to persist after stale write protection")
+	}
+	if _, ok := reloaded.FindIssue("BIG-PAR-410"); !ok {
+		t.Fatal("expected second created issue to persist after stale write protection")
 	}
 }
 
