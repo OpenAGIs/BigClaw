@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -67,6 +68,45 @@ func TestResolvePathAgainstRepoRootJoinsRelativePaths(t *testing.T) {
 	if got := resolvePathAgainstRepoRoot("", "reports/bootstrap-cache-validation.json"); got != "reports/bootstrap-cache-validation.json" {
 		t.Fatalf("expected repoRoot empty passthrough, got %q", got)
 	}
+}
+
+func initWorkspaceValidateRemote(t *testing.T, root string) string {
+	t.Helper()
+	remote := filepath.Join(root, "remote.git")
+	if output, err := exec.Command("git", "init", "--bare", "--initial-branch=main", remote).CombinedOutput(); err != nil {
+		t.Fatalf("git init --bare failed: %v (%s)", err, string(output))
+	}
+	source := filepath.Join(root, "source")
+	if err := os.MkdirAll(source, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{
+		{"init", "-b", "main"},
+		{"config", "user.email", "test@example.com"},
+		{"config", "user.name", "Test User"},
+		{"remote", "add", "origin", remote},
+	} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = source
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v failed: %v (%s)", args, err, string(output))
+		}
+	}
+	if err := os.WriteFile(filepath.Join(source, "README.md"), []byte("hello\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{
+		{"add", "README.md"},
+		{"commit", "-m", "initial"},
+		{"push", "-u", "origin", "main"},
+	} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = source
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v failed: %v (%s)", args, err, string(output))
+		}
+	}
+	return remote
 }
 
 func TestRunRefillOncePromotesUsingLinearIssueID(t *testing.T) {
@@ -148,6 +188,44 @@ func TestRunRefillOncePromotesUsingLinearIssueID(t *testing.T) {
 	}
 	if !bytes.Contains(output, []byte(`"BIG-GOM-301"`)) {
 		t.Fatalf("expected refill output to include candidate payload, got %s", string(output))
+	}
+}
+
+func TestRunWorkspaceValidateJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
+	root := t.TempDir()
+	remote := initWorkspaceValidateRemote(t, root)
+	workspaceRoot := filepath.Join(root, "workspaces")
+	cacheBase := filepath.Join(root, "repos")
+	issueID := "BIG->404"
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runWorkspace([]string{
+		"validate",
+		"--workspace-root", workspaceRoot,
+		"--repo-url", remote,
+		"--cache-base", cacheBase,
+		"--issues", issueID,
+		"--json",
+	}); err != nil {
+		t.Fatalf("run workspace validate: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte(issueID)) {
+		t.Fatalf("expected raw arrow token in workspace validate JSON output, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`\u003e`)) {
+		t.Fatalf("expected no HTML escaping in workspace validate JSON output, got %s", string(output))
 	}
 }
 

@@ -190,7 +190,8 @@
       "BIG-PAR-400",
       "BIG-PAR-401",
       "BIG-PAR-402",
-      "BIG-PAR-403"
+      "BIG-PAR-403",
+      "BIG-PAR-404"
     ],
     "active": [],
     "standby": []
@@ -368,7 +369,8 @@
     "BIG-PAR-400",
     "BIG-PAR-401",
     "BIG-PAR-402",
-    "BIG-PAR-403"
+    "BIG-PAR-403",
+    "BIG-PAR-404"
   ],
   "issues": [
     {
@@ -1436,6 +1438,12 @@
     {
       "identifier": "BIG-PAR-403",
       "title": "Disable HTML escaping in direct bigclawctl JSON encoders",
+      "track": "Automation",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-404",
+      "title": "Add workspace validate JSON no-escape regression",
       "track": "Automation",
       "status": "Done"
     }

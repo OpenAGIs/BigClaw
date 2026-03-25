@@ -3150,6 +3150,11 @@
           "author": "codex",
           "body": "Parent branch status refresh on March 26, 2026: follow-on refill/tooling slice `BIG-PAR-402` has now landed and merged from this workspace branch. The latest merged review surface is PR `#199`, the current synced branch head is `1cce9b9424d90340d986bce5b4adec343367f250`, and the local refill queue is drained again with no runnable child slices remaining.\n\nValidation:\n- `gh pr view 199 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` at `2026-03-25T19:03:01Z` with merge commit `7765ba10b9f493a1950e07381aaff33d963a1751` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `1cce9b9424d90340d986bce5b4adec343367f250` matches remote SHA `1cce9b9424d90340d986bce5b4adec343367f250` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `1cce9b9424d90340d986bce5b4adec343367f250`\n\nCommit SHA: `1cce9b9424d90340d986bce5b4adec343367f250`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/199",
           "created_at": "2026-03-25T19:04:18Z"
+        },
+        {
+          "author": "codex",
+          "body": "Parent branch status refresh on March 26, 2026: follow-on refill/tooling slice `BIG-PAR-403` has now landed and merged from this workspace branch. The latest merged review surface is PR `#200`, the current synced branch head is `59d6ad301afd342331297dc436e76f00e9d5d8a6`, and the local refill queue is drained again with no runnable child slices remaining.\n\nValidation:\n- `gh pr view 200 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` at `2026-03-25T19:12:59Z` with merge commit `853d5f7439d24ffff6af3786d69b2923d968da98` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `59d6ad301afd342331297dc436e76f00e9d5d8a6` matches remote SHA `59d6ad301afd342331297dc436e76f00e9d5d8a6` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `59d6ad301afd342331297dc436e76f00e9d5d8a6`\n\nCommit SHA: `59d6ad301afd342331297dc436e76f00e9d5d8a6`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/200",
+          "created_at": "2026-03-25T19:14:02Z"
         }
       ],
       "created_at": "2026-03-24T15:47:40Z",
@@ -3166,7 +3171,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-25T19:04:18Z"
+      "updated_at": "2026-03-25T19:14:02Z"
     },
     {
       "assigned_to_worker": true,
@@ -5816,6 +5821,11 @@
           "author": "codex",
           "body": "What changed:\n- `bigclaw-go/cmd/bigclawctl/main.go` now disables HTML escaping in the direct JSON encoders used by `workspace validate`, `local-issues list`, and `refill`, aligning them with the shared emitter and checked-in JSON writers.\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now covers unescaped arrow tokens in direct `local-issues list` JSON output.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `f5fbb84efc64666a070c08d89ef960f8135a2987` matches remote SHA `f5fbb84efc64666a070c08d89ef960f8135a2987` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `f5fbb84efc64666a070c08d89ef960f8135a2987`\n- `git log -1 --stat` -> captured for commit `f5fbb84efc64666a070c08d89ef960f8135a2987`\n\nCommit SHA: `f5fbb84efc64666a070c08d89ef960f8135a2987`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/200",
           "created_at": "2026-03-25T19:11:18Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout on March 26, 2026: PR `#200` (`BIG-PAR-403: disable HTML escaping in direct bigclawctl JSON encoders`) merged into `main` at `2026-03-25T19:12:59Z` with merge commit `853d5f7439d24ffff6af3786d69b2923d968da98`. The local refill queue remains drained after closing this slice.\n\nValidation:\n- `gh pr view 200 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` with merge commit `853d5f7439d24ffff6af3786d69b2923d968da98` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `59d6ad301afd342331297dc436e76f00e9d5d8a6` matches remote SHA `59d6ad301afd342331297dc436e76f00e9d5d8a6` with `status: ok` and `synced: true`\n\nCommit SHA: `59d6ad301afd342331297dc436e76f00e9d5d8a6`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/200",
+          "created_at": "2026-03-25T19:14:02Z"
         }
       ],
       "created_at": "2026-03-25T19:07:04Z",
@@ -5831,7 +5841,31 @@
       "priority": 3,
       "state": "Done",
       "title": "Disable HTML escaping in direct bigclawctl JSON encoders",
-      "updated_at": "2026-03-25T19:11:18Z"
+      "updated_at": "2026-03-25T19:14:02Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now adds a focused `workspace validate --json` regression proving the direct encoder preserves raw `->` tokens in `issue_identifiers` output.\n- The regression uses a tiny local bare Git remote so the test exercises the real validation path without depending on external services.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `9f13c2a85d9604dee0dc609f014d1629c6436f5d` matches remote SHA `9f13c2a85d9604dee0dc609f014d1629c6436f5d` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `9f13c2a85d9604dee0dc609f014d1629c6436f5d`\n- `git log -1 --stat` -> captured for commit `9f13c2a85d9604dee0dc609f014d1629c6436f5d`\n\nCommit SHA: `9f13c2a85d9604dee0dc609f014d1629c6436f5d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/201",
+          "created_at": "2026-03-25T19:20:14Z"
+        }
+      ],
+      "created_at": "2026-03-25T19:16:24Z",
+      "description": "Add command-level coverage proving workspace validate JSON output disables HTML escaping so the direct encoder fix stays protected alongside local-issues list and refill.",
+      "id": "big-par-404",
+      "identifier": "BIG-PAR-404",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add workspace validate JSON no-escape regression",
+      "updated_at": "2026-03-25T19:20:14Z"
     }
   ]
 }
