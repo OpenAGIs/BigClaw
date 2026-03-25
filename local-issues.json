@@ -6305,6 +6305,30 @@
       "state": "Done",
       "title": "Add refill live-state merge coverage",
       "updated_at": "2026-03-25T19:46:50Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T19:50:53Z",
+      "description": "Add small injectable seams and focused tests for ParallelIssueQueue Save and SaveMarkdown failure paths in bigclaw-go/internal/refill/queue.go and queue_markdown.go.",
+      "id": "big-par-425",
+      "identifier": "BIG-PAR-425",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Make refill queue save failures testable",
+      "updated_at": "2026-03-25T19:51:05Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T19:50:53Z",
+      "description": "Add small injectable seams and focused tests for local-store save failure paths in bigclaw-go/internal/refill/local_store.go.",
+      "id": "big-par-426",
+      "identifier": "BIG-PAR-426",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Make local tracker save failures testable",
+      "updated_at": "2026-03-25T19:51:05Z"
     }
   ]
 }
