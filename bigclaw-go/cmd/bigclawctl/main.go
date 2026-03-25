@@ -593,14 +593,14 @@ func runLocalIssues(args []string) error {
 		issues := store.Issues()
 		stateFilter := map[string]struct{}{}
 		for _, state := range splitCSV(*statesCSV) {
-			if trimmed := trim(state); trimmed != "" {
-				stateFilter[trimmed] = struct{}{}
+			if normalized := refill.NormalizeStateName(state); normalized != "" {
+				stateFilter[normalized] = struct{}{}
 			}
 		}
 		filtered := make([]refill.LocalIssue, 0, len(issues))
 		for _, issue := range issues {
 			if len(stateFilter) != 0 {
-				if _, ok := stateFilter[issue.State]; !ok {
+				if _, ok := stateFilter[refill.NormalizeStateName(issue.State)]; !ok {
 					continue
 				}
 			}

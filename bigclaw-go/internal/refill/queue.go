@@ -448,6 +448,10 @@ func statusNormalize(value string) string {
 	return strings.ToLower(value)
 }
 
+func NormalizeStateName(value string) string {
+	return statusNormalize(value)
+}
+
 func isTerminalStatus(status string) bool {
 	if normalized := statusNormalize(status); normalized != "" {
 		_, ok := terminalStateSet[normalized]

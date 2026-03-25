@@ -175,7 +175,10 @@
       "BIG-PAR-383",
       "BIG-PAR-384"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-386",
+      "BIG-PAR-385"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -334,7 +337,9 @@
     "BIG-PAR-381",
     "BIG-PAR-382",
     "BIG-PAR-383",
-    "BIG-PAR-384"
+    "BIG-PAR-384",
+    "BIG-PAR-386",
+    "BIG-PAR-385"
   ],
   "issues": [
     {
@@ -1302,6 +1307,18 @@
       "title": "Add queue clone isolation regression",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-386",
+      "title": "Normalize refill active and recent-batch state detection",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-385",
+      "title": "Normalize local tracker state filters for refill commands",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

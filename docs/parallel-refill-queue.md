@@ -47,7 +47,7 @@ longer waits on Linear to keep issue execution moving.
 
 ## Current batch
 
-- Current repo tranche status as of March 24, 2026:
+- Current repo tranche status as of March 25, 2026:
   - active slices: none
   - standby slices: none
   - recently completed slices: `BIG-PAR-377` — Fix refill apply write flags for queue metadata sync; `BIG-PAR-378` — Fix refill dry-run recent batch update mutation; `BIG-PAR-379` — Report refill markdown companion writes; `BIG-PAR-380` — Document refill markdown_written payload; `BIG-PAR-381` — Preview refill markdown writes across promotions; `BIG-PAR-382` — Normalize refill payload paths to absolute; `BIG-PAR-383` — Add markdown preview helper regression coverage; `BIG-PAR-384` — Add queue clone isolation regression

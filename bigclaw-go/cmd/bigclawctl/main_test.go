@@ -1210,3 +1210,60 @@ func TestRunLocalIssuesEnsureUpdatesExistingStateCaseInsensitive(t *testing.T) {
 		t.Fatalf("expected updated timestamp, got %s", string(body))
 	}
 }
+
+func TestRunLocalIssuesListNormalizesStateFilters(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-385",
+      "identifier": "BIG-PAR-385",
+      "title": "Normalize local tracker state filters for refill commands",
+      "state": "in progress."
+    },
+    {
+      "id": "big-par-386",
+      "identifier": "BIG-PAR-386",
+      "title": "Normalize refill active and recent-batch state detection",
+      "state": "TODO"
+    },
+    {
+      "id": "big-par-387",
+      "identifier": "BIG-PAR-387",
+      "title": "Unrelated done issue",
+      "state": "Done"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runLocalIssues([]string{
+		"list",
+		"--local-issues", storePath,
+		"--states", "In Progress,todo.",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run local-issues list: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte(`"BIG-PAR-385"`)) || !bytes.Contains(output, []byte(`"BIG-PAR-386"`)) {
+		t.Fatalf("expected normalized state matches in output, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`"BIG-PAR-387"`)) {
+		t.Fatalf("expected done issue to be filtered out, got %s", string(output))
+	}
+}

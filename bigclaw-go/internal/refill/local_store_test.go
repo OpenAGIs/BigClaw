@@ -82,6 +82,31 @@ func TestLocalIssueStoreIssueStatesFiltersRequestedStates(t *testing.T) {
 	}
 }
 
+func TestLocalIssueStoreIssueStatesNormalizesStateNames(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {"id": "big-par-385", "identifier": "BIG-PAR-385", "state": "in progress."},
+    {"id": "big-par-386", "identifier": "BIG-PAR-386", "state": "TODO"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	issues := store.IssueStates([]string{"In Progress", "todo."})
+	if len(issues) != 2 {
+		t.Fatalf("expected normalized state match, got %+v", issues)
+	}
+	if issues[0].Identifier != "BIG-PAR-385" || issues[1].Identifier != "BIG-PAR-386" {
+		t.Fatalf("unexpected filtered issues after normalization: %+v", issues)
+	}
+}
+
 func TestLocalIssueStoreAddCommentAppendsAndUpdatesTimestamp(t *testing.T) {
 	storePath := filepath.Join(t.TempDir(), "local-issues.json")
 	if err := os.WriteFile(storePath, []byte(`{
