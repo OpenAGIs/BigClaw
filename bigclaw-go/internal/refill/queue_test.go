@@ -128,6 +128,23 @@ func TestParallelIssueQueueRunnableCountForStatesPrefersLiveStateMap(t *testing.
 	}
 }
 
+func TestParallelIssueQueueRunnableCountForStatesDoesNotDrainWhenMetadataMissing(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-411", "BIG-PAR-412"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-411", Status: "Done"},
+			},
+		},
+	}
+	liveStates := map[string]string{
+		"BIG-PAR-411": "Done",
+	}
+	if got := queue.RunnableCountForStates(liveStates); got == 0 {
+		t.Fatalf("expected missing queue metadata to keep runnable count non-zero, got %d", got)
+	}
+}
+
 func TestParallelIssueQueueRefreshRecentBatchesFromStates(t *testing.T) {
 	queue := &ParallelIssueQueue{
 		payload: QueuePayload{
@@ -254,6 +271,22 @@ func TestQueueIdentifierHelpersNormalizeRemovalUniquenessAndOrder(t *testing.T) 
 	ordered := orderByIssueOrder([]string{"BIG-PAR-403", "BIG-PAR-405", "big-par-401", "BIG-PAR-404"}, []string{"BIG-PAR-401", "BIG-PAR-403"})
 	if !equalStringSlices(ordered, []string{"big-par-401", "BIG-PAR-403", "BIG-PAR-404", "BIG-PAR-405"}) {
 		t.Fatalf("unexpected identifier order: %+v", ordered)
+	}
+}
+
+func TestAppendIdentifierOnceRejectsBlankAndDuplicateIdentifiers(t *testing.T) {
+	items := []string{"BIG-PAR-411"}
+	if appendIdentifierOnce(&items, "   ") {
+		t.Fatal("expected blank identifier append to report false")
+	}
+	if appendIdentifierOnce(&items, " big-par-411 ") {
+		t.Fatal("expected case-insensitive duplicate append to report false")
+	}
+	if !appendIdentifierOnce(&items, "BIG-PAR-412") {
+		t.Fatal("expected unique identifier append to report true")
+	}
+	if !equalStringSlices(items, []string{"BIG-PAR-411", "BIG-PAR-412"}) {
+		t.Fatalf("unexpected appended identifiers: %+v", items)
 	}
 }
 
