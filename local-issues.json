@@ -6095,6 +6095,40 @@
       "state": "Done",
       "title": "Add local tracker comment-path edge coverage",
       "updated_at": "2026-03-25T19:09:12Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T19:16:26Z",
+      "description": "Add focused refill local-store tests covering remaining saveUnlocked, withWriteLock, and mapString helper edge paths in bigclaw-go/internal/refill/local_store.go.",
+      "id": "big-par-415",
+      "identifier": "BIG-PAR-415",
+      "labels": [
+        "go-mainline",
+        "parallel",
+        "refill",
+        "coverage"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add local tracker helper edge coverage",
+      "updated_at": "2026-03-25T19:16:38Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T19:16:26Z",
+      "description": "Add focused refill markdown tests covering remaining SaveMarkdown and RenderMarkdown fallback branches in bigclaw-go/internal/refill/queue_markdown.go.",
+      "id": "big-par-416",
+      "identifier": "BIG-PAR-416",
+      "labels": [
+        "go-mainline",
+        "parallel",
+        "refill",
+        "coverage"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add refill markdown edge coverage",
+      "updated_at": "2026-03-25T19:16:38Z"
     }
   ]
 }
