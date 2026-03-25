@@ -104,6 +104,24 @@ func TestParallelIssueQueueRunnableCountReturnsZeroWhenOrderMissing(t *testing.T
 	}
 }
 
+func TestParallelIssueQueueRunnableCountForStatesReturnsZeroWhenOrderMissing(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-424", Status: "Todo"},
+			},
+		},
+	}
+
+	liveStates := map[string]string{
+		"BIG-PAR-424": "Done",
+		"BIG-PAR-999": "In Progress",
+	}
+	if got := queue.RunnableCountForStates(liveStates); got != 0 {
+		t.Fatalf("expected zero runnable count when issue order is empty, got %d", got)
+	}
+}
+
 func TestParallelIssueQueueRunnableCountDoesNotDrainWhenMetadataMissing(t *testing.T) {
 	queue := &ParallelIssueQueue{
 		payload: QueuePayload{
