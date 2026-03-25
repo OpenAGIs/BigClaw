@@ -97,6 +97,39 @@ func TestRepoDiscussionBoardCreateReplyAndFilter(t *testing.T) {
 	}
 }
 
+func TestRepoDiscussionBoardReplyErrorNowFallbackAndEmptyMetadata(t *testing.T) {
+	board := RepoDiscussionBoard{}
+
+	post := board.CreatePost("alpha-release", "alice", "Empty metadata is fine", "", "", nil)
+	if post.Metadata != nil {
+		t.Fatalf("expected nil metadata copy, got %+v", post.Metadata)
+	}
+	if _, err := time.Parse(time.RFC3339, post.CreatedAt); err != nil {
+		t.Fatalf("expected RFC3339 timestamp, got %q (%v)", post.CreatedAt, err)
+	}
+
+	if _, err := board.Reply("missing-post", "bob", "where is this"); err == nil || err.Error() != "unknown parent post: missing-post" {
+		t.Fatalf("expected unknown parent error, got %v", err)
+	}
+
+	second := board.CreatePost("beta-release", "carol", "second post", "task", "BIG-402", map[string]any{"priority": "high"})
+	if got := len(board.ListPosts("", "", "")); got != 2 {
+		t.Fatalf("expected both posts when no filters are set, got %d", got)
+	}
+	if got := board.ListPosts("beta-release", "", ""); len(got) != 1 || got[0].PostID != second.PostID {
+		t.Fatalf("expected beta channel filter to isolate second post, got %+v", got)
+	}
+	if got := board.ListPosts("gamma-release", "", ""); len(got) != 0 {
+		t.Fatalf("expected channel mismatch to filter all posts, got %+v", got)
+	}
+	if got := board.ListPosts("", "incident", ""); len(got) != 0 {
+		t.Fatalf("expected target-surface mismatch to filter all posts, got %+v", got)
+	}
+	if got := board.ListPosts("", "task", "BIG-402"); len(got) != 1 || got[0].PostID != second.PostID {
+		t.Fatalf("expected combined surface/id filter to isolate second post, got %+v", got)
+	}
+}
+
 func TestNormalizeGatewayPayloadsAndErrors(t *testing.T) {
 	commit, err := NormalizeCommit(map[string]any{"commit_hash": "abc123", "title": "Ship cutover", "author": "alice"})
 	if err != nil {
