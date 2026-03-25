@@ -149,3 +149,38 @@ func TestFileQueuePurgesCancelledLeaseAfterExpiry(t *testing.T) {
 		t.Fatalf("expected task to be purged after reload, got %v", err)
 	}
 }
+
+func TestFileQueueReassignTaskPersistsAcrossReload(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.json")
+	q, err := NewFileQueue(path)
+	if err != nil {
+		t.Fatalf("new queue: %v", err)
+	}
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-reassign", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	_, lease, err := q.LeaseNext(ctx, "worker-a", time.Minute)
+	if err != nil || lease == nil {
+		t.Fatalf("lease: %v lease=%v", err, lease)
+	}
+	availableAt := time.Now().Add(25 * time.Millisecond)
+	if _, err := q.ReassignTask(ctx, "task-reassign", "worker-a", availableAt, "node-a degraded"); err != nil {
+		t.Fatalf("reassign: %v", err)
+	}
+
+	reloaded, err := NewFileQueue(path)
+	if err != nil {
+		t.Fatalf("reload queue: %v", err)
+	}
+	snapshot, err := reloaded.GetTask(ctx, "task-reassign")
+	if err != nil {
+		t.Fatalf("get reassigned task: %v", err)
+	}
+	if snapshot.Leased || snapshot.Task.State != domain.TaskQueued {
+		t.Fatalf("expected queued unleased snapshot after reload, got %+v", snapshot)
+	}
+	if snapshot.Task.Metadata["reassign_reason"] != "node-a degraded" || snapshot.Task.Metadata["reassign_from_worker"] != "worker-a" {
+		t.Fatalf("expected reassignment metadata after reload, got %+v", snapshot)
+	}
+}

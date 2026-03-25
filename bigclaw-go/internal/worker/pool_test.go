@@ -239,3 +239,43 @@ func TestPoolReassignsLeasedTaskFromDegradedNode(t *testing.T) {
 		t.Fatalf("expected reassigned task to complete on healthy node, got %+v", events)
 	}
 }
+
+func TestPoolDoesNotQuarantineIdleWorkerWithoutNodeHeartbeat(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	if err := q.Enqueue(context.Background(), domain.Task{ID: "task-idle-node", TraceID: "trace-idle-node", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue task-idle-node: %v", err)
+	}
+
+	bus := events.NewBus()
+	recorder := observability.NewRecorder()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	registry := executor.NewRegistry(fakeRunner{kind: domain.ExecutorLocal, result: executor.Result{Success: true, Message: "ok"}})
+
+	worker := &Runtime{
+		WorkerID:    "worker-idle",
+		NodeID:      "node-idle",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    registry,
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    time.Second,
+		TaskTimeout: time.Second,
+	}
+	worker.updateStatus(func(status *Status) {
+		status.WorkerID = "worker-idle"
+		status.NodeID = "node-idle"
+		status.State = "idle"
+	})
+
+	pool := NewPool(worker)
+	if !pool.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 1, BudgetRemaining: 1000}) {
+		t.Fatal("expected idle worker without prior heartbeat to remain runnable")
+	}
+	if got := q.Size(context.Background()); got != 0 {
+		t.Fatalf("expected task to be processed, got queue size %d", got)
+	}
+	if snapshot := worker.Snapshot(); snapshot.SuccessfulRuns != 1 {
+		t.Fatalf("expected worker to execute task, got %+v", snapshot)
+	}
+}

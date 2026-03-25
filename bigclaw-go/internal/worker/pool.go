@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -128,7 +129,8 @@ func (p *Pool) runnableWorkers() []*Runtime {
 		if runtime == nil {
 			continue
 		}
-		if _, degraded := degradedNodes[runtime.NodeID]; degraded {
+		nodeID := normalizedNodeID(runtime.NodeID)
+		if _, degraded := degradedNodes[nodeID]; degraded {
 			runtime.updateStatus(func(status *Status) {
 				status.WorkerID = runtime.WorkerID
 				status.NodeID = runtime.NodeID
@@ -159,7 +161,8 @@ func (p *Pool) reassignTasksFromDegradedNodes(ctx context.Context) bool {
 		if snapshot.WorkerID == "" {
 			continue
 		}
-		if _, degraded := degradedNodes[snapshot.NodeID]; degraded {
+		nodeID := normalizedNodeID(snapshot.NodeID)
+		if _, degraded := degradedNodes[nodeID]; degraded {
 			degradedWorkers[snapshot.WorkerID] = snapshot
 		}
 	}
@@ -207,12 +210,12 @@ func poolQueueCapabilities(workers []*Runtime) (queue.TaskInspector, queue.TaskR
 func degradedNodeIDs(now time.Time, snapshots []Status) map[string]struct{} {
 	degraded := make(map[string]struct{})
 	for _, snapshot := range snapshots {
-		nodeID := snapshot.NodeID
+		nodeID := normalizedNodeID(snapshot.NodeID)
 		if nodeID == "" {
-			nodeID = "unassigned"
+			continue
 		}
 		switch {
-		case snapshot.LastHeartbeatAt.IsZero():
+		case snapshot.LastHeartbeatAt.IsZero() && (snapshot.State == "leased" || snapshot.State == "running"):
 			degraded[nodeID] = struct{}{}
 		case workerHeartbeatAge(now, snapshot) >= workerPoolStaleAfterDuration():
 			degraded[nodeID] = struct{}{}
@@ -222,15 +225,16 @@ func degradedNodeIDs(now time.Time, snapshots []Status) map[string]struct{} {
 }
 
 func degradedNodeReassignReason(status Status) string {
-	nodeID := status.NodeID
-	if nodeID == "" {
-		nodeID = "unassigned"
-	}
+	nodeID := normalizedNodeID(status.NodeID)
 	if status.LastHeartbeatAt.IsZero() {
 		return fmt.Sprintf("node %s degraded: worker %s is missing heartbeat", nodeID, status.WorkerID)
 	}
 	age := workerHeartbeatAge(time.Now(), status).Round(time.Second)
 	return fmt.Sprintf("node %s degraded: worker %s heartbeat stale for %s", nodeID, status.WorkerID, age)
+}
+
+func normalizedNodeID(nodeID string) string {
+	return strings.TrimSpace(nodeID)
 }
 
 func workerPoolStaleAfterDuration() time.Duration {

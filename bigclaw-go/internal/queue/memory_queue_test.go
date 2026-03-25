@@ -203,3 +203,30 @@ func TestMemoryQueuePurgesCancelledLeaseAfterExpiry(t *testing.T) {
 		t.Fatalf("expected task to be purged, got %v", err)
 	}
 }
+
+func TestMemoryQueueReassignTask(t *testing.T) {
+	q := NewMemoryQueue()
+	ctx := context.Background()
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-reassign", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	_, lease, err := q.LeaseNext(ctx, "worker-a", time.Minute)
+	if err != nil || lease == nil {
+		t.Fatalf("lease: %v lease=%v", err, lease)
+	}
+	availableAt := time.Now().Add(25 * time.Millisecond)
+	snapshot, err := q.ReassignTask(ctx, "task-reassign", "worker-a", availableAt, "node-a degraded")
+	if err != nil {
+		t.Fatalf("reassign: %v", err)
+	}
+	if snapshot.Leased || snapshot.Task.State != domain.TaskQueued {
+		t.Fatalf("expected queued unleased snapshot after reassignment, got %+v", snapshot)
+	}
+	stored, err := q.GetTask(ctx, "task-reassign")
+	if err != nil {
+		t.Fatalf("get reassigned task: %v", err)
+	}
+	if stored.Leased || stored.Task.Metadata["reassign_reason"] != "node-a degraded" || stored.Task.Metadata["reassign_from_worker"] != "worker-a" {
+		t.Fatalf("expected reassignment metadata on stored task, got %+v", stored)
+	}
+}

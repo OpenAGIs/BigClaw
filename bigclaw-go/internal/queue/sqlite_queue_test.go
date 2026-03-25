@@ -283,6 +283,39 @@ func TestSQLiteQueueProcessesTaskScaleWithoutDuplicateLease(t *testing.T) {
 	}
 }
 
+func TestSQLiteQueueReassignTask(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "queue.db")
+	q, err := NewSQLiteQueue(path)
+	if err != nil {
+		t.Fatalf("new sqlite queue: %v", err)
+	}
+	defer q.Close()
+
+	if err := q.Enqueue(ctx, domain.Task{ID: "task-reassign", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	_, lease, err := q.LeaseNext(ctx, "worker-a", time.Minute)
+	if err != nil || lease == nil {
+		t.Fatalf("lease: %v lease=%v", err, lease)
+	}
+	availableAt := time.Now().Add(25 * time.Millisecond)
+	snapshot, err := q.ReassignTask(ctx, "task-reassign", "worker-a", availableAt, "node-a degraded")
+	if err != nil {
+		t.Fatalf("reassign: %v", err)
+	}
+	if snapshot.Leased || snapshot.Task.State != domain.TaskQueued {
+		t.Fatalf("expected queued unleased snapshot after reassignment, got %+v", snapshot)
+	}
+	stored, err := q.GetTask(ctx, "task-reassign")
+	if err != nil {
+		t.Fatalf("get reassigned task: %v", err)
+	}
+	if stored.Leased || stored.Task.Metadata["reassign_reason"] != "node-a degraded" || stored.Task.Metadata["reassign_from_worker"] != "worker-a" {
+		t.Fatalf("expected reassignment metadata in sqlite queue, got %+v", stored)
+	}
+}
+
 func TestSQLiteQueueCancelAndInspect(t *testing.T) {
 	ctx := context.Background()
 	path := filepath.Join(t.TempDir(), "queue.db")
