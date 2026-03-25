@@ -1425,6 +1425,94 @@ func TestRunRefillSeedSetStateIfExistsIgnoresEquivalentSpellings(t *testing.T) {
 	}
 }
 
+func TestRunRefillSeedUpdatesExplicitExistingLocalIssueMetadata(t *testing.T) {
+	tempDir := t.TempDir()
+	queuePath := filepath.Join(tempDir, "queue.json")
+	markdownPath := filepath.Join(tempDir, "queue.md")
+	if err := os.WriteFile(queuePath, []byte(`{
+  "project": {"slug_id": "project-slug"},
+  "policy": {
+    "target_in_progress": 2,
+    "activate_state_name": "In Progress",
+    "activate_state_id": "state-in-progress",
+    "refill_states": ["Todo", "Backlog"]
+  },
+  "recent_batches": {
+    "completed": [],
+    "active": [],
+    "standby": []
+  },
+  "issue_order": ["BIG-PAR-397"],
+  "issues": [
+    {"identifier": "BIG-PAR-397", "title": "BIG-PAR-397", "track": "Automation", "status": "In Progress"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write queue file: %v", err)
+	}
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-397",
+      "identifier": "BIG-PAR-397",
+      "title": "BIG-PAR-397",
+      "description": "",
+      "state": "In Progress",
+      "priority": 3,
+      "labels": [],
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T17:59:00Z",
+      "updated_at": "2026-03-25T17:59:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	if err := runRefillSeed([]string{
+		"--repo", tempDir,
+		"--queue", queuePath,
+		"--markdown", markdownPath,
+		"--local-issues", storePath,
+		"--identifier", "BIG-PAR-397",
+		"--title", "Update existing local issue metadata during refill seed",
+		"--track", "Automation",
+		"--description", "reconcile placeholder seed metadata",
+		"--labels", "parallel,tooling,refill,go-mainline",
+		"--priority", "2",
+		"--assigned-to-worker=false",
+		"--state", "In Progress",
+		"--recent-batch", "active",
+		"--created-at", "2026-03-25T18:00:00Z",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run refill seed metadata update: %v", err)
+	}
+
+	storeBody, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(storeBody, []byte(`"title": "Update existing local issue metadata during refill seed"`)) {
+		t.Fatalf("expected updated local issue title, got %s", string(storeBody))
+	}
+	if !bytes.Contains(storeBody, []byte(`"description": "reconcile placeholder seed metadata"`)) {
+		t.Fatalf("expected updated local issue description, got %s", string(storeBody))
+	}
+	if !bytes.Contains(storeBody, []byte(`"priority": 2`)) {
+		t.Fatalf("expected updated local issue priority, got %s", string(storeBody))
+	}
+	if !bytes.Contains(storeBody, []byte(`"assigned_to_worker": false`)) {
+		t.Fatalf("expected updated local issue assignment flag, got %s", string(storeBody))
+	}
+	if !bytes.Contains(storeBody, []byte(`"labels": [`)) || !bytes.Contains(storeBody, []byte(`"go-mainline"`)) {
+		t.Fatalf("expected updated local issue labels, got %s", string(storeBody))
+	}
+	if !bytes.Contains(storeBody, []byte(`"updated_at": "2026-03-25T18:00:00Z"`)) {
+		t.Fatalf("expected updated local issue timestamp, got %s", string(storeBody))
+	}
+}
+
 func TestRunLocalIssuesSetStateUpdatesStore(t *testing.T) {
 	tempDir := t.TempDir()
 	storePath := filepath.Join(tempDir, "local-issues.json")

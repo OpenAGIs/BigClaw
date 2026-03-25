@@ -5604,6 +5604,23 @@
       "state": "Done",
       "title": "Update existing local issue metadata during ensure",
       "updated_at": "2026-03-25T17:57:59Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T18:00:40Z",
+      "description": "Make bigclawctl refill seed apply explicitly provided local issue metadata when the target local issue already exists so queue seeding can reconcile placeholder tracker records without manual edits.",
+      "id": "big-par-397",
+      "identifier": "BIG-PAR-397",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Update existing local issue metadata during refill seed",
+      "updated_at": "2026-03-25T18:01:53Z"
     }
   ]
 }

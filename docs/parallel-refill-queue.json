@@ -185,7 +185,9 @@
       "BIG-PAR-395",
       "BIG-PAR-396"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-397"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -354,7 +356,8 @@
     "BIG-PAR-393",
     "BIG-PAR-394",
     "BIG-PAR-395",
-    "BIG-PAR-396"
+    "BIG-PAR-396",
+    "BIG-PAR-397"
   ],
   "issues": [
     {
@@ -1382,6 +1385,12 @@
       "title": "Update existing local issue metadata during ensure",
       "track": "Automation",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-397",
+      "title": "Update existing local issue metadata during refill seed",
+      "track": "Automation",
+      "status": "In Progress"
     }
   ]
 }
