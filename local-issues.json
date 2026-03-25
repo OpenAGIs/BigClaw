@@ -3039,7 +3039,7 @@
       "updated_at": "2026-03-24T16:36:30Z"
     },
     {
-      "assigned_to_worker": true,
+      "assigned_to_worker": false,
       "comments": [
         {
           "author": "codex",
@@ -3236,7 +3236,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-25T20:58:44Z"
+      "updated_at": "2026-03-25T21:06:00Z"
     },
     {
       "assigned_to_worker": true,
