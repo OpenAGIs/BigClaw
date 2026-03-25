@@ -194,7 +194,10 @@
       "BIG-PAR-393",
       "BIG-PAR-394"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-395",
+      "BIG-PAR-396"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -372,7 +375,9 @@
     "BIG-PAR-391",
     "BIG-PAR-392",
     "BIG-PAR-393",
-    "BIG-PAR-394"
+    "BIG-PAR-394",
+    "BIG-PAR-395",
+    "BIG-PAR-396"
   ],
   "issues": [
     {
@@ -1454,6 +1459,18 @@
       "title": "Add task state normalization helper coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-395",
+      "title": "Add repo slug fallback coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-396",
+      "title": "Add consumer dedup result fallback coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

@@ -5615,6 +5615,40 @@
       "state": "Done",
       "title": "Add task state normalization helper coverage",
       "updated_at": "2026-03-25T17:53:37Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T17:56:30Z",
+      "description": "Add focused unit coverage for bigclaw-go/internal/domain/consumer_dedup.go so WithResult fallback behavior is pinned when attempts or completion timestamps are omitted.",
+      "id": "big-par-396",
+      "identifier": "BIG-PAR-396",
+      "labels": [
+        "go",
+        "domain",
+        "test",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add consumer dedup result fallback coverage",
+      "updated_at": "2026-03-25T17:56:43Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T17:56:30Z",
+      "description": "Add focused unit coverage for bigclaw-go/internal/repo/plane.go so slug fallback and punctuation normalization are pinned without changing channel behavior.",
+      "id": "big-par-395",
+      "identifier": "BIG-PAR-395",
+      "labels": [
+        "go",
+        "repo",
+        "test",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add repo slug fallback coverage",
+      "updated_at": "2026-03-25T17:56:43Z"
     }
   ]
 }
