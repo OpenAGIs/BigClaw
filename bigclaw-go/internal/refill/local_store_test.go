@@ -75,6 +75,31 @@ func TestLoadLocalIssueStoreAndReloadPropagateDecodeFailures(t *testing.T) {
 	}
 }
 
+func TestReadLocalIssueMapsErrorsForDirectoryTarget(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "store-dir")
+	if err := os.Mkdir(dir, 0o755); err != nil {
+		t.Fatalf("create store directory fixture: %v", err)
+	}
+	if _, err := readLocalIssueMaps(dir); err == nil || !strings.Contains(err.Error(), "is a directory") {
+		t.Fatalf("expected read error when path is a directory, got %v", err)
+	}
+}
+
+func TestLoadLocalIssueStoreHandlesWhitespaceFile(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte("   \n"), 0o644); err != nil {
+		t.Fatalf("write whitespace local issue store fixture: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load whitespace local issue store: %v", err)
+	}
+	if got := store.Issues(); len(got) != 0 {
+		t.Fatalf("expected whitespace store to load with no issues, got %+v", got)
+	}
+}
+
 func TestNormalizeLocalIssueMapsSkipsNonMapEntries(t *testing.T) {
 	items := []any{
 		map[string]any{"identifier": "BIG-PAR-399"},
