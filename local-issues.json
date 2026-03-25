@@ -6146,6 +6146,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- added focused refill local-store tests covering saveUnlocked failure when the parent path is a file and withWriteLock reload failure when the tracker file becomes unreadable in bigclaw-go/internal/refill/local_store_test.go.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill`\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill.cover && go tool cover -func=/tmp/refill.cover | rg \"local_store.go:339|local_store.go:374|total\"`\n- result: pass; withWriteLock 100.0%, saveUnlocked 76.7%, package total 94.2%.\n\nCommit SHA:\n- `bc1b21c6b367c39a69a3474122eb26a830e6ca00`\n\nPR URL:\n- https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T19:27:35Z"
+        }
+      ],
       "created_at": "2026-03-25T19:24:46Z",
       "description": "Add focused refill local-store tests covering saveUnlocked and withWriteLock failure paths when parent directories are invalid or reload state is unreadable in bigclaw-go/internal/refill/local_store.go.",
       "id": "big-par-417",
@@ -6157,9 +6164,9 @@
         "coverage"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add local tracker directory-failure coverage",
-      "updated_at": "2026-03-25T19:24:58Z"
+      "updated_at": "2026-03-25T19:27:35Z"
     },
     {
       "assigned_to_worker": true,

@@ -214,10 +214,10 @@
       "BIG-PAR-413",
       "BIG-PAR-414",
       "BIG-PAR-415",
-      "BIG-PAR-416"
+      "BIG-PAR-416",
+      "BIG-PAR-417"
     ],
     "active": [
-      "BIG-PAR-417",
       "BIG-PAR-418"
     ],
     "standby": []
@@ -1640,7 +1640,7 @@
       "identifier": "BIG-PAR-417",
       "title": "Add local tracker directory-failure coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-418",
