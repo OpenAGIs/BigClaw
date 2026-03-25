@@ -5500,6 +5500,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/internal/refill/queue.go` now canonicalizes normalized built-in fetch states to exact remote spellings (`Todo`, `Backlog`, `In Progress`, `Done`) while still preserving custom active-state names.\n- `bigclaw-go/internal/refill/queue_test.go` and `bigclaw-go/cmd/bigclawctl/main_test.go` now prove malformed built-in spellings such as `todo.` and `backlog.` collapse to canonical remote fetch filters.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-394]`, `queue_status_synced=false`, `recent_batches_written=true` before the commit that synced tracker state)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `fd67a71ee83b03b847a87992fc0c097d4f798122` matches remote SHA `fd67a71ee83b03b847a87992fc0c097d4f798122` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `fd67a71ee83b03b847a87992fc0c097d4f798122`\n\nCommit SHA: `fd67a71ee83b03b847a87992fc0c097d4f798122`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
+          "created_at": "2026-03-25T17:22:44Z"
+        }
+      ],
       "created_at": "2026-03-25T17:20:58Z",
       "description": "Canonicalize normalized built-in refill state names such as Todo, Backlog, In Progress, and Done when building remote fetch filters so tracker drift like todo. still maps back to the exact Linear state names.",
       "id": "big-par-394",
@@ -5511,9 +5518,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Canonicalize built-in refill fetch state names",
-      "updated_at": "2026-03-25T17:20:58Z"
+      "updated_at": "2026-03-25T17:22:44Z"
     }
   ]
 }
