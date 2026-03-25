@@ -5426,6 +5426,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added focused repo discussion board edge coverage in bigclaw-go/internal/repo/repo_surfaces_test.go, pinning unknown-parent replies, default now() fallback, empty metadata copying, and broader filter behavior without changing repo governance behavior. Validation: cd bigclaw-go && go test ./internal/repo -> ok; cd bigclaw-go && go test ./internal/repo -coverprofile=/tmp/bigpar387-repo.cover && go tool cover -func=/tmp/bigpar387-repo.cover | rg \"board.go:(40|61|78|85)|total:\" -> Reply 100.0%, ListPosts 90.0%, now 100.0%, copyMap 100.0%, total 92.3%; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 42a5fc717aea4035b871a86aec107de0f34ee5cb matches remote SHA 42a5fc717aea4035b871a86aec107de0f34ee5cb with status ok and synced true; git log -1 --stat -> captured after the repo discussion board helper commit. Commit SHA: 42a5fc717aea4035b871a86aec107de0f34ee5cb. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T17:30:12Z"
+        }
+      ],
       "created_at": "2026-03-25T17:24:09Z",
       "description": "Add focused unit coverage for bigclaw-go/internal/repo/board.go so unknown-parent replies, default time fallback, and metadata copy/filter edge cases are pinned without changing repo governance behavior.",
       "id": "big-par-387",
@@ -5437,12 +5444,19 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add repo discussion board edge coverage",
-      "updated_at": "2026-03-25T17:24:21Z"
+      "updated_at": "2026-03-25T17:30:12Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added focused broker stub checkpoint edge coverage in bigclaw-go/internal/events/broker_stub_log_test.go, pinning invalid acknowledge inputs, missing checkpoints, generated acknowledge timestamps, and empty-history retention watermark behavior. Validation: cd bigclaw-go && go test ./internal/events -> ok; cd bigclaw-go && go test ./internal/events -coverprofile=/tmp/bigpar388-events.cover && go tool cover -func=/tmp/bigpar388-events.cover | rg \"broker_stub_log.go:(113|145|156)|total:\" -> Acknowledge 100.0%, Checkpoint 100.0%, RetentionWatermark 100.0%, total 75.5%; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 062a1db46bccb240f1afbc00e8c3231a0d8d6010 matches remote SHA 062a1db46bccb240f1afbc00e8c3231a0d8d6010 with status ok and synced true; git log -1 --stat -> captured after the broker stub checkpoint edge commit. Commit SHA: 062a1db46bccb240f1afbc00e8c3231a0d8d6010. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T17:30:12Z"
+        }
+      ],
       "created_at": "2026-03-25T17:24:10Z",
       "description": "Add focused unit coverage for bigclaw-go/internal/events/broker_stub_log.go so Acknowledge, Checkpoint, and RetentionWatermark edge paths are pinned for invalid inputs and empty history behavior.",
       "id": "big-par-388",
@@ -5454,9 +5468,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add broker stub checkpoint edge coverage",
-      "updated_at": "2026-03-25T17:24:21Z"
+      "updated_at": "2026-03-25T17:30:12Z"
     }
   ]
 }
