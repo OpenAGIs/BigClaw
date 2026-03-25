@@ -192,7 +192,8 @@
       "BIG-PAR-402",
       "BIG-PAR-403",
       "BIG-PAR-404",
-      "BIG-PAR-405"
+      "BIG-PAR-405",
+      "BIG-PAR-406"
     ],
     "active": [],
     "standby": []
@@ -372,7 +373,8 @@
     "BIG-PAR-402",
     "BIG-PAR-403",
     "BIG-PAR-404",
-    "BIG-PAR-405"
+    "BIG-PAR-405",
+    "BIG-PAR-406"
   ],
   "issues": [
     {
@@ -1452,6 +1454,12 @@
     {
       "identifier": "BIG-PAR-405",
       "title": "Add refill JSON no-escape regression",
+      "track": "Automation",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-406",
+      "title": "Add workspace bootstrap JSON no-escape regression",
       "track": "Automation",
       "status": "Done"
     }
