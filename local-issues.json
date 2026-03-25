@@ -5906,6 +5906,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- added focused refill local-store tests for missing-file loads, relative-path normalization, and decode error propagation in LoadLocalIssueStore, readLocalIssueMaps, and Reload.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill`\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill.cover && go tool cover -func=/tmp/refill.cover | rg \"local_store.go:57|local_store.go:69|local_store.go:124|total\"`\n- result: pass; LoadLocalIssueStore 85.7%, readLocalIssueMaps 88.9%, Reload 100.0%, package total 83.3%.\n\nCommit SHA:\n- `1a3ec1bccc72cd7d3660908d0a383cfca93ab48b`\n\nPR URL:\n- https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T18:33:50Z"
+        }
+      ],
       "created_at": "2026-03-25T18:29:51Z",
       "description": "Add focused refill local-store tests covering LoadLocalIssueStore, readLocalIssueMaps, and load-time error paths in bigclaw-go/internal/refill/local_store.go.",
       "id": "big-par-407",
@@ -5917,9 +5924,9 @@
         "coverage"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add local tracker read/load coverage",
-      "updated_at": "2026-03-25T18:29:51Z"
+      "updated_at": "2026-03-25T18:33:50Z"
     },
     {
       "assigned_to_worker": true,
