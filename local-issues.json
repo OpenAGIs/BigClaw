@@ -3205,6 +3205,11 @@
           "author": "codex",
           "body": "Terminal workspace audit on March 26, 2026: this workspace is now attached to a fresh branch cut from merged `origin/main` commit `140ac09f0424e0c632352646073704d2d4ef7245` because the original issue branch has already been merged and removed. `BIG-PAR-291` remains complete in the repo-native tracker, the refill queue remains drained, and any remaining active-state signal is external to the local tracker and repo state rather than pending implementation work.\n\nValidation:\n- `gh pr view 209 --repo OpenAGIs/BigClaw --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` at `2026-03-25T20:38:18Z` with merge commit `140ac09f0424e0c632352646073704d2d4ef7245` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`, `candidates: []`\n- `git ls-remote --heads origin symphony/BIG-PAR-291` -> no matching remote head, consistent with the merged-and-pruned issue branch\n- `git rev-parse HEAD && git rev-parse origin/main` -> both resolve to `140ac09f0424e0c632352646073704d2d4ef7245` before this tracker-note commit\n\nCommit SHA: pending tracker-note commit\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/209",
           "created_at": "2026-03-25T20:46:40Z"
+        },
+        {
+          "author": "codex",
+          "body": "Terminal audit branch published on March 26, 2026: tracker note commit `38fcdedd1f0afe9cf2b3c920b095b516b0583b90` is now under review in PR `#210` so the final stale-active-state evidence is present in both the repo-native tracker and GitHub. `BIG-PAR-291` remains `Done`, the refill queue remains drained, and there is still no runnable local slice left for this issue.\n\nWhat changed:\n- opened PR `#210` from `symphony/BIG-PAR-291-terminal-main-audit` to `main` for the tracker-only terminal workspace audit note\n- preserved the repo-native closeout record for the merged-and-pruned original issue branch\n\nValidation:\n- `gh pr view 210 --repo OpenAGIs/BigClaw --json url,title,state,headRefName,baseRefName` -> `OPEN` on `symphony/BIG-PAR-291-terminal-main-audit` targeting `main`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `38fcdedd1f0afe9cf2b3c920b095b516b0583b90` matches remote SHA `38fcdedd1f0afe9cf2b3c920b095b516b0583b90` with `status: ok` and `synced: true`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`, `candidates: []`\n- `git log -1 --stat` -> captured for commit `38fcdedd1f0afe9cf2b3c920b095b516b0583b90`\n\nCommit SHA: `38fcdedd1f0afe9cf2b3c920b095b516b0583b90`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/210",
+          "created_at": "2026-03-25T20:48:52Z"
         }
       ],
       "created_at": "2026-03-24T15:47:40Z",
@@ -3221,7 +3226,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-25T20:46:40Z"
+      "updated_at": "2026-03-25T20:48:52Z"
     },
     {
       "assigned_to_worker": true,
