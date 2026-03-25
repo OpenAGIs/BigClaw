@@ -5336,6 +5336,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Changed:\n- normalized queue upsert status comparisons in `bigclaw-go/internal/refill/queue.go` so equivalent state spellings do not rewrite existing queue records\n- normalized `refill seed --set-state-if-exists` and `local-issues ensure --set-state-if-exists` decisions in `bigclaw-go/cmd/bigclawctl/main.go` so equivalent tracker spellings no longer force timestamp churn\n- added refill and CLI regressions proving equivalent case and trailing-period spellings stay non-mutating across queue and local issue updates\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> pass\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `d8ba17a8b61928ddec646f47d3e66c55518b9a43` matches remote SHA `d8ba17a8b61928ddec646f47d3e66c55518b9a43` with `status: ok` and `synced: true`\n\nCommit SHA: `d8ba17a8b61928ddec646f47d3e66c55518b9a43`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/190",
+          "created_at": "2026-03-25T16:43:34Z"
+        }
+      ],
       "created_at": "2026-03-25T16:41:09Z",
       "description": "Make refill seed and local-issues ensure treat equivalent state spellings consistently so existing queue and tracker entries do not get rewritten when only case or trailing punctuation differs.",
       "id": "big-par-388",
@@ -5347,9 +5354,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Normalize seed and ensure state equivalence",
-      "updated_at": "2026-03-25T16:41:09Z"
+      "updated_at": "2026-03-25T16:43:34Z"
     }
   ]
 }

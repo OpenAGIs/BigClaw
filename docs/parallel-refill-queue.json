@@ -176,11 +176,10 @@
       "BIG-PAR-384",
       "BIG-PAR-386",
       "BIG-PAR-385",
-      "BIG-PAR-387"
-    ],
-    "active": [
+      "BIG-PAR-387",
       "BIG-PAR-388"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1334,7 +1333,7 @@
       "identifier": "BIG-PAR-388",
       "title": "Normalize seed and ensure state equivalence",
       "track": "Automation",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
