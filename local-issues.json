@@ -3155,6 +3155,11 @@
           "author": "codex",
           "body": "Parent branch status refresh on March 26, 2026: follow-on refill/tooling slice `BIG-PAR-403` has now landed and merged from this workspace branch. The latest merged review surface is PR `#200`, the current synced branch head is `59d6ad301afd342331297dc436e76f00e9d5d8a6`, and the local refill queue is drained again with no runnable child slices remaining.\n\nValidation:\n- `gh pr view 200 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` at `2026-03-25T19:12:59Z` with merge commit `853d5f7439d24ffff6af3786d69b2923d968da98` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `59d6ad301afd342331297dc436e76f00e9d5d8a6` matches remote SHA `59d6ad301afd342331297dc436e76f00e9d5d8a6` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `59d6ad301afd342331297dc436e76f00e9d5d8a6`\n\nCommit SHA: `59d6ad301afd342331297dc436e76f00e9d5d8a6`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/200",
           "created_at": "2026-03-25T19:14:02Z"
+        },
+        {
+          "author": "codex",
+          "body": "Parent branch status refresh on March 26, 2026: follow-on refill/tooling slice `BIG-PAR-404` has now landed and merged from this workspace branch. The latest merged review surface is PR `#201`, the current synced branch head is `091d72bc56fabcfa67d46d32b526ed352bdfbc7e`, and the local refill queue is drained again with no runnable child slices remaining.\n\nValidation:\n- `gh pr view 201 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` at `2026-03-25T19:21:46Z` with merge commit `a148a9d3f62b9be1e38fb657bb86e861122f8521` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `091d72bc56fabcfa67d46d32b526ed352bdfbc7e` matches remote SHA `091d72bc56fabcfa67d46d32b526ed352bdfbc7e` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `091d72bc56fabcfa67d46d32b526ed352bdfbc7e`\n\nCommit SHA: `091d72bc56fabcfa67d46d32b526ed352bdfbc7e`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/201",
+          "created_at": "2026-03-25T19:22:42Z"
         }
       ],
       "created_at": "2026-03-24T15:47:40Z",
@@ -3171,7 +3176,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-25T19:14:02Z"
+      "updated_at": "2026-03-25T19:22:42Z"
     },
     {
       "assigned_to_worker": true,
@@ -5850,6 +5855,11 @@
           "author": "codex",
           "body": "What changed:\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now adds a focused `workspace validate --json` regression proving the direct encoder preserves raw `->` tokens in `issue_identifiers` output.\n- The regression uses a tiny local bare Git remote so the test exercises the real validation path without depending on external services.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `9f13c2a85d9604dee0dc609f014d1629c6436f5d` matches remote SHA `9f13c2a85d9604dee0dc609f014d1629c6436f5d` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `9f13c2a85d9604dee0dc609f014d1629c6436f5d`\n- `git log -1 --stat` -> captured for commit `9f13c2a85d9604dee0dc609f014d1629c6436f5d`\n\nCommit SHA: `9f13c2a85d9604dee0dc609f014d1629c6436f5d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/201",
           "created_at": "2026-03-25T19:20:14Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout on March 26, 2026: PR `#201` (`BIG-PAR-404: add workspace validate JSON no-escape regression`) merged into `main` at `2026-03-25T19:21:46Z` with merge commit `a148a9d3f62b9be1e38fb657bb86e861122f8521`. The local refill queue remains drained after closing this slice.\n\nValidation:\n- `gh pr view 201 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` with merge commit `a148a9d3f62b9be1e38fb657bb86e861122f8521` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `091d72bc56fabcfa67d46d32b526ed352bdfbc7e` matches remote SHA `091d72bc56fabcfa67d46d32b526ed352bdfbc7e` with `status: ok` and `synced: true`\n\nCommit SHA: `091d72bc56fabcfa67d46d32b526ed352bdfbc7e`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/201",
+          "created_at": "2026-03-25T19:22:42Z"
         }
       ],
       "created_at": "2026-03-25T19:16:24Z",
@@ -5865,7 +5875,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add workspace validate JSON no-escape regression",
-      "updated_at": "2026-03-25T19:20:14Z"
+      "updated_at": "2026-03-25T19:22:42Z"
     }
   ]
 }
