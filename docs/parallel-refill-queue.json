@@ -192,7 +192,10 @@
       "BIG-PAR-391",
       "BIG-PAR-392"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-393",
+      "BIG-PAR-394"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -368,7 +371,9 @@
     "BIG-PAR-389",
     "BIG-PAR-390",
     "BIG-PAR-391",
-    "BIG-PAR-392"
+    "BIG-PAR-392",
+    "BIG-PAR-393",
+    "BIG-PAR-394"
   ],
   "issues": [
     {
@@ -1438,6 +1443,18 @@
       "title": "Add domain fallback helper coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-393",
+      "title": "Add governance audit field coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-394",
+      "title": "Add task state normalization helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

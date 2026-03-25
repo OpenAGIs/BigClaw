@@ -5567,6 +5567,40 @@
       "state": "Done",
       "title": "Add domain fallback helper coverage",
       "updated_at": "2026-03-25T17:45:59Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T17:48:53Z",
+      "description": "Add focused unit coverage for bigclaw-go/internal/repo/governance.go so RequiredAuditFields action branches are pinned without changing permission behavior.",
+      "id": "big-par-393",
+      "identifier": "BIG-PAR-393",
+      "labels": [
+        "go",
+        "repo",
+        "test",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add governance audit field coverage",
+      "updated_at": "2026-03-25T17:49:15Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T17:48:53Z",
+      "description": "Add focused unit coverage for bigclaw-go/internal/domain/task.go so marshalRiskLevel and the remaining normalizeTaskState branches are pinned without touching API behavior.",
+      "id": "big-par-394",
+      "identifier": "BIG-PAR-394",
+      "labels": [
+        "go",
+        "domain",
+        "test",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add task state normalization helper coverage",
+      "updated_at": "2026-03-25T17:49:15Z"
     }
   ]
 }
