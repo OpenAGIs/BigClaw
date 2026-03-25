@@ -191,11 +191,10 @@
       "BIG-PAR-401",
       "BIG-PAR-402",
       "BIG-PAR-403",
-      "BIG-PAR-404"
-    ],
-    "active": [
+      "BIG-PAR-404",
       "BIG-PAR-405"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1454,7 +1453,7 @@
       "identifier": "BIG-PAR-405",
       "title": "Add refill JSON no-escape regression",
       "track": "Automation",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
