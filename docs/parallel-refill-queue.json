@@ -186,12 +186,11 @@
       "BIG-PAR-385",
       "BIG-PAR-386",
       "BIG-PAR-387",
-      "BIG-PAR-388"
-    ],
-    "active": [
+      "BIG-PAR-388",
       "BIG-PAR-389",
       "BIG-PAR-390"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1416,13 +1415,13 @@
       "identifier": "BIG-PAR-389",
       "title": "Finish repo board filter branch coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-390",
       "title": "Add repo gateway decode error coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
