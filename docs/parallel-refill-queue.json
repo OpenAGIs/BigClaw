@@ -231,7 +231,13 @@
       "BIG-PAR-431",
       "BIG-PAR-432",
       "BIG-PAR-434",
-      "BIG-PAR-433"
+      "BIG-PAR-433",
+      "BIG-PAR-435",
+      "BIG-PAR-436",
+      "BIG-PAR-437",
+      "BIG-PAR-438",
+      "BIG-PAR-439",
+      "BIG-PAR-440"
     ],
     "active": [],
     "standby": []
@@ -450,7 +456,13 @@
     "BIG-PAR-431",
     "BIG-PAR-432",
     "BIG-PAR-434",
-    "BIG-PAR-433"
+    "BIG-PAR-433",
+    "BIG-PAR-435",
+    "BIG-PAR-436",
+    "BIG-PAR-437",
+    "BIG-PAR-438",
+    "BIG-PAR-439",
+    "BIG-PAR-440"
   ],
   "issues": [
     {
@@ -1764,6 +1776,42 @@
     {
       "identifier": "BIG-PAR-433",
       "title": "Add refill final load-path coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-435",
+      "title": "Add refill remaining save-path coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-436",
+      "title": "Add local tracker remaining save-path coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-437",
+      "title": "Add markdown queue remaining save coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-438",
+      "title": "Add refill recent-batch helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-439",
+      "title": "Add local tracker final lock fallback coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-440",
+      "title": "Reconcile final refill queue history",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }

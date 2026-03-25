@@ -50,7 +50,7 @@ longer waits on Linear to keep issue execution moving.
 - Current repo tranche status as of March 25, 2026:
   - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-426` — Make local tracker save failures testable; `BIG-PAR-427` — Add refill temp-save branch coverage; `BIG-PAR-429` — Add refill remaining save branch coverage; `BIG-PAR-430` — Add local tracker lock-open failure coverage; `BIG-PAR-431` — Add refill final save branch coverage; `BIG-PAR-432` — Add local tracker final lock branch coverage; `BIG-PAR-434` — Add local tracker final load-path coverage; `BIG-PAR-433` — Add refill final load-path coverage
+  - recently completed slices: `BIG-PAR-434` — Add local tracker final load-path coverage; `BIG-PAR-433` — Add refill final load-path coverage; `BIG-PAR-435` — Add refill remaining save-path coverage; `BIG-PAR-436` — Add local tracker remaining save-path coverage; `BIG-PAR-437` — Add markdown queue remaining save coverage; `BIG-PAR-438` — Add refill recent-batch helper coverage; `BIG-PAR-439` — Add local tracker final lock fallback coverage; `BIG-PAR-440` — Reconcile final refill queue history
   - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
@@ -272,6 +272,12 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-432` — Add local tracker final lock branch coverage
   - `BIG-PAR-434` — Add local tracker final load-path coverage
   - `BIG-PAR-433` — Add refill final load-path coverage
+  - `BIG-PAR-435` — Add refill remaining save-path coverage
+  - `BIG-PAR-436` — Add local tracker remaining save-path coverage
+  - `BIG-PAR-437` — Add markdown queue remaining save coverage
+  - `BIG-PAR-438` — Add refill recent-batch helper coverage
+  - `BIG-PAR-439` — Add local tracker final lock fallback coverage
+  - `BIG-PAR-440` — Reconcile final refill queue history
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -494,3 +500,9 @@ longer waits on Linear to keep issue execution moving.
 212. `BIG-PAR-432`
 213. `BIG-PAR-434`
 214. `BIG-PAR-433`
+215. `BIG-PAR-435`
+216. `BIG-PAR-436`
+217. `BIG-PAR-437`
+218. `BIG-PAR-438`
+219. `BIG-PAR-439`
+220. `BIG-PAR-440`
