@@ -113,6 +113,9 @@ func TestIssueCommentListNormalizesCommentCollections(t *testing.T) {
 
 func TestLocalIssueScalarHelpersNormalizeTypes(t *testing.T) {
 	issue := map[string]any{
+		"title_string":         "  hello  ",
+		"title_number":         42,
+		"title_nil":            nil,
 		"priority_float":       float64(3),
 		"priority_int":         4,
 		"priority_bad":         "high",
@@ -135,6 +138,19 @@ func TestLocalIssueScalarHelpersNormalizeTypes(t *testing.T) {
 	}
 	if got := mapInt(issue, "missing_priority"); got != 0 {
 		t.Fatalf("expected missing priority to return zero, got %d", got)
+	}
+
+	if got := mapString(issue, "title_string"); got != "hello" {
+		t.Fatalf("expected string helper to trim strings, got %q", got)
+	}
+	if got := mapString(issue, "title_number"); got != "42" {
+		t.Fatalf("expected string helper to coerce non-strings, got %q", got)
+	}
+	if got := mapString(issue, "title_nil"); got != "" {
+		t.Fatalf("expected nil string helper value to return empty string, got %q", got)
+	}
+	if got := mapString(issue, "missing_title"); got != "" {
+		t.Fatalf("expected missing string helper value to return empty string, got %q", got)
 	}
 
 	if !mapBool(issue, "assigned_true") {
@@ -647,6 +663,21 @@ func TestLocalIssueStoreSaveUnlockedCreatesNestedDirectory(t *testing.T) {
 	}
 }
 
+func TestLocalIssueStoreSaveUnlockedFailsWhenTargetPathIsDirectory(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "tracker-dir")
+	if err := os.MkdirAll(storePath, 0o755); err != nil {
+		t.Fatalf("mkdir tracker dir fixture: %v", err)
+	}
+	store := &LocalIssueStore{
+		path:     storePath,
+		issueMap: []map[string]any{{"identifier": "BIG-PAR-415"}},
+	}
+
+	if err := store.saveUnlocked(); err == nil {
+		t.Fatal("expected saveUnlocked to fail when tracker path is a directory")
+	}
+}
+
 func TestLocalIssueStoreSavePersistsMutatedIssueMapWithoutEscapingHTML(t *testing.T) {
 	storePath := filepath.Join(t.TempDir(), "local-issues.json")
 	store := &LocalIssueStore{
@@ -762,6 +793,23 @@ func TestLocalIssueStoreAddCommentReloadsLatestStateBeforeSaving(t *testing.T) {
 	text := string(body)
 	if !strings.Contains(text, `"body": "first writer"`) || !strings.Contains(text, `"body": "second writer"`) {
 		t.Fatalf("expected both comments to persist after stale reload protection, got %s", text)
+	}
+}
+
+func TestLocalIssueStoreWithWriteLockPropagatesCallbackError(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{"issues":[]}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	expectedErr := ErrLocalIssueNotFound
+	if err := store.withWriteLock(func() error { return expectedErr }); err != expectedErr {
+		t.Fatalf("expected callback error to propagate, got %v", err)
 	}
 }
 
