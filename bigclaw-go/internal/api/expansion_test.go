@@ -16,6 +16,7 @@ import (
 	"bigclaw-go/internal/events"
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/queue"
+	"bigclaw-go/internal/scheduler"
 )
 
 func TestV2WeeklyReportBuildsSummaryActionsAndMarkdownExport(t *testing.T) {
@@ -483,19 +484,18 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 		Now:       func() time.Time { return base.Add(6 * time.Hour) },
 	}
 	for _, task := range []domain.Task{
-		{ID: "report-local", TraceID: "trace-report-local", Title: "Local", State: domain.TaskSucceeded, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(time.Minute)},
-		{ID: "report-k8s", TraceID: "trace-report-k8s", Title: "K8s", State: domain.TaskSucceeded, RequiredTools: []string{"browser"}, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(2 * time.Minute)},
-		{ID: "report-ray", TraceID: "trace-report-ray", Title: "Ray", State: domain.TaskSucceeded, RequiredTools: []string{"gpu"}, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(3 * time.Minute)},
+		{ID: "report-local", TraceID: "trace-report-local", TenantID: "tenant-a", Title: "Local", State: domain.TaskRunning, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(time.Minute)},
+		{ID: "report-k8s", TraceID: "trace-report-k8s", TenantID: "tenant-b", Title: "K8s", State: domain.TaskSucceeded, RequiredTools: []string{"browser"}, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(2 * time.Minute)},
+		{ID: "report-ray", TraceID: "trace-report-ray", TenantID: "tenant-a", Title: "Ray", State: domain.TaskQueued, RequiredTools: []string{"gpu"}, Metadata: map[string]string{"team": "platform", "project": "apollo"}, UpdatedAt: base.Add(3 * time.Minute)},
 	} {
 		recorder.StoreTask(task)
 	}
 	for _, event := range []domain.Event{
-		{ID: "report-local-routed", Type: domain.EventSchedulerRouted, TaskID: "report-local", TraceID: "trace-report-local", Timestamp: base.Add(time.Second), Payload: map[string]any{"executor": domain.ExecutorLocal, "reason": "default local executor for low/medium risk"}},
+		{ID: "report-local-routed", Type: domain.EventSchedulerRouted, TaskID: "report-local", TraceID: "trace-report-local", Timestamp: base.Add(time.Second), Payload: map[string]any{"executor": domain.ExecutorLocal, "reason": "default local executor for low/medium risk", "quota": scheduler.QuotaSnapshot{TenantID: "tenant-a", ConcurrentLimit: 2, CurrentRunning: 1, QueueDepth: 0, MaxQueueDepth: 4, BudgetRemaining: 900}}},
 		{ID: "report-local-completed", Type: domain.EventTaskCompleted, TaskID: "report-local", TraceID: "trace-report-local", Timestamp: base.Add(2 * time.Second), Payload: map[string]any{"executor": domain.ExecutorLocal}},
-		{ID: "report-k8s-routed", Type: domain.EventSchedulerRouted, TaskID: "report-k8s", TraceID: "trace-report-k8s", Timestamp: base.Add(3 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "reason": "browser workloads default to kubernetes executor"}},
+		{ID: "report-k8s-routed", Type: domain.EventSchedulerRouted, TaskID: "report-k8s", TraceID: "trace-report-k8s", Timestamp: base.Add(3 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes, "reason": "browser workloads default to kubernetes executor", "quota": scheduler.QuotaSnapshot{TenantID: "tenant-b", ConcurrentLimit: 1, CurrentRunning: 1, QueueDepth: 1, MaxQueueDepth: 2, BudgetRemaining: 400}}},
 		{ID: "report-k8s-started", Type: domain.EventTaskStarted, TaskID: "report-k8s", TraceID: "trace-report-k8s", Timestamp: base.Add(4 * time.Second), Payload: map[string]any{"executor": domain.ExecutorKubernetes}},
-		{ID: "report-ray-routed", Type: domain.EventSchedulerRouted, TaskID: "report-ray", TraceID: "trace-report-ray", Timestamp: base.Add(5 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay, "reason": "gpu workloads default to ray executor"}},
-		{ID: "report-ray-completed", Type: domain.EventTaskCompleted, TaskID: "report-ray", TraceID: "trace-report-ray", Timestamp: base.Add(6 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay}},
+		{ID: "report-ray-routed", Type: domain.EventSchedulerRouted, TaskID: "report-ray", TraceID: "trace-report-ray", Timestamp: base.Add(5 * time.Second), Payload: map[string]any{"executor": domain.ExecutorRay, "reason": "gpu workloads default to ray executor", "quota": scheduler.QuotaSnapshot{TenantID: "tenant-a", ConcurrentLimit: 2, CurrentRunning: 1, QueueDepth: 0, MaxQueueDepth: 4, BudgetRemaining: 850}}},
 	} {
 		recorder.Record(event)
 	}
@@ -597,8 +597,10 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 			CheckpointRejectedEvents int `json:"checkpoint_rejected_events"`
 		} `json:"recovery"`
 		Fairness struct {
-			TotalRoutedDecisions int `json:"total_routed_decisions"`
-			CapacityWeightTotal  int `json:"capacity_weight_total"`
+			TotalRoutedDecisions int     `json:"total_routed_decisions"`
+			CapacityWeightTotal  int     `json:"capacity_weight_total"`
+			ActiveTenants        int     `json:"active_tenants"`
+			WorkerPoolImbalance  float64 `json:"worker_pool_imbalance_score"`
 			ExecutorShares       []struct {
 				Executor        string  `json:"executor"`
 				RoutedDecisions int     `json:"routed_decisions"`
@@ -607,6 +609,18 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 				ShareDelta      float64 `json:"share_delta"`
 				Status          string  `json:"status"`
 			} `json:"executor_shares"`
+			TenantShares []struct {
+				TenantID           string  `json:"tenant_id"`
+				ParallelSlotsInUse int     `json:"parallel_slots_in_use"`
+				ActiveRuns         int     `json:"active_runs"`
+				QueuedTasks        int     `json:"queued_tasks"`
+				RoutedDecisions    int     `json:"routed_decisions"`
+				CurrentRunning     int     `json:"current_running"`
+				ConcurrentLimit    int     `json:"concurrent_limit"`
+				ParallelShare      float64 `json:"parallel_share"`
+				RoutedShare        float64 `json:"routed_share"`
+				Status             string  `json:"status"`
+			} `json:"tenant_shares"`
 		} `json:"fairness"`
 		Report struct {
 			Markdown  string `json:"markdown"`
@@ -634,13 +648,41 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if decoded.Recovery.ActiveTakeovers != 1 || decoded.Recovery.RetriedRuns != 0 || decoded.Recovery.DeadLetterRuns != 0 || decoded.Recovery.UnreleasedTakeovers != 0 {
 		t.Fatalf("unexpected recovery diagnostics payload: %+v", decoded.Recovery)
 	}
-	if decoded.Fairness.TotalRoutedDecisions != 3 || decoded.Fairness.CapacityWeightTotal <= 0 || len(decoded.Fairness.ExecutorShares) != 3 {
+	if decoded.Fairness.TotalRoutedDecisions != 3 || decoded.Fairness.CapacityWeightTotal <= 0 || decoded.Fairness.ActiveTenants != 2 || len(decoded.Fairness.ExecutorShares) != 3 || len(decoded.Fairness.TenantShares) != 2 {
 		t.Fatalf("unexpected fairness diagnostics payload: %+v", decoded.Fairness)
 	}
 	if decoded.Fairness.ExecutorShares[0].Executor != "kubernetes" || decoded.Fairness.ExecutorShares[0].RoutedDecisions != 1 {
 		t.Fatalf("unexpected fairness executor share payload: %+v", decoded.Fairness.ExecutorShares[0])
 	}
-	if decoded.TraceBundle.TotalTraces != 3 || decoded.TraceBundle.TracesWithTerminalState != 2 || len(decoded.TraceBundle.RecentTraces) != 3 {
+	tenantSharesByID := map[string]struct {
+		ParallelSlotsInUse int
+		RoutedDecisions    int
+		CurrentRunning     int
+		ConcurrentLimit    int
+		Status             string
+	}{}
+	for _, item := range decoded.Fairness.TenantShares {
+		tenantSharesByID[item.TenantID] = struct {
+			ParallelSlotsInUse int
+			RoutedDecisions    int
+			CurrentRunning     int
+			ConcurrentLimit    int
+			Status             string
+		}{
+			ParallelSlotsInUse: item.ParallelSlotsInUse,
+			RoutedDecisions:    item.RoutedDecisions,
+			CurrentRunning:     item.CurrentRunning,
+			ConcurrentLimit:    item.ConcurrentLimit,
+			Status:             item.Status,
+		}
+	}
+	if tenantA := tenantSharesByID["tenant-a"]; tenantA.ParallelSlotsInUse != 1 || tenantA.RoutedDecisions != 2 || tenantA.Status != "balanced" {
+		t.Fatalf("unexpected tenant-a fairness payload: %+v", tenantA)
+	}
+	if tenantB := tenantSharesByID["tenant-b"]; tenantB.ParallelSlotsInUse != 1 || tenantB.CurrentRunning != 1 || tenantB.ConcurrentLimit != 1 || tenantB.Status != "concurrency-capped" {
+		t.Fatalf("unexpected tenant-b fairness payload: %+v", tenantB)
+	}
+	if decoded.TraceBundle.TotalTraces != 3 || decoded.TraceBundle.TracesWithTerminalState != 1 || len(decoded.TraceBundle.RecentTraces) != 3 {
 		t.Fatalf("unexpected trace export bundle summary: %+v", decoded.TraceBundle)
 	}
 	if decoded.TraceBundle.RecentTraces[0].TraceURL == "" || decoded.TraceBundle.RecentTraces[0].EventURL == "" {
@@ -661,7 +703,7 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if decoded.SequenceBridge.ReportPath != sequenceBridgeSurfacePath || decoded.SequenceBridge.Summary.BackendCount != 5 || decoded.SequenceBridge.Summary.LiveProvenBackends != 3 || decoded.SequenceBridge.Summary.HarnessProvenBackends != 1 || decoded.SequenceBridge.Summary.ContractOnlyBackends != 1 || decoded.SequenceBridge.Summary.OneToOneMappings != 2 || decoded.SequenceBridge.Summary.ProviderEpochBridgedBackends != 3 {
 		t.Fatalf("expected sequence bridge surface, got %+v", decoded.SequenceBridge)
 	}
-	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Recovery Signals") || !strings.Contains(decoded.Report.Markdown, "## Fairness") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") || !strings.Contains(decoded.Report.Markdown, "## Durable Sequence Bridge") {
+	if !strings.Contains(decoded.Report.Markdown, "# BigClaw Distributed Diagnostics Report") || !strings.Contains(decoded.Report.Markdown, "gpu workloads default to ray executor") || !strings.Contains(decoded.Report.Markdown, "Team breakdown") || !strings.Contains(decoded.Report.Markdown, "## Recovery Signals") || !strings.Contains(decoded.Report.Markdown, "## Fairness") || !strings.Contains(decoded.Report.Markdown, "Active tenants: 2") || !strings.Contains(decoded.Report.Markdown, "Worker-pool imbalance score: 0.000") || !strings.Contains(decoded.Report.Markdown, "tenant tenant-a:") || !strings.Contains(decoded.Report.Markdown, "tenant tenant-b:") || !strings.Contains(decoded.Report.Markdown, "## Trace Export Bundle") || !strings.Contains(decoded.Report.Markdown, "## Durable Sequence Bridge") {
 		t.Fatalf("unexpected distributed markdown: %s", decoded.Report.Markdown)
 	}
 	if !strings.Contains(decoded.Report.Markdown, "## Shared Queue Coordination") || !strings.Contains(decoded.Report.Markdown, "Dead-letter backlog:") {
@@ -679,7 +721,7 @@ func TestV2DistributedReportBuildsCapacityViewAndMarkdownExport(t *testing.T) {
 	if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
 		t.Fatalf("expected markdown export content type, got %q", contentType)
 	}
-	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") || !strings.Contains(exportResponse.Body.String(), "## Recovery Signals") || !strings.Contains(exportResponse.Body.String(), "## Fairness") || !strings.Contains(exportResponse.Body.String(), "Validation artifacts: docs/reports/live-validation-index.md") || !strings.Contains(exportResponse.Body.String(), "Ambiguous publish proof: docs/reports/ambiguous-publish-outcome-proof-summary.json (BF-05: committed, rejected, unknown_commit)") || !strings.Contains(exportResponse.Body.String(), "Backend limitations: no external tracing backend") {
+	if !strings.Contains(exportResponse.Body.String(), "Executor Capacity") || !strings.Contains(exportResponse.Body.String(), "ray: gpu workloads default to ray executor") || !strings.Contains(exportResponse.Body.String(), "Takeover owners") || !strings.Contains(exportResponse.Body.String(), "## Recovery Signals") || !strings.Contains(exportResponse.Body.String(), "## Fairness") || !strings.Contains(exportResponse.Body.String(), "tenant tenant-b:") || !strings.Contains(exportResponse.Body.String(), "status=concurrency-capped") || !strings.Contains(exportResponse.Body.String(), "Validation artifacts: docs/reports/live-validation-index.md") || !strings.Contains(exportResponse.Body.String(), "Ambiguous publish proof: docs/reports/ambiguous-publish-outcome-proof-summary.json (BF-05: committed, rejected, unknown_commit)") || !strings.Contains(exportResponse.Body.String(), "Backend limitations: no external tracing backend") {
 		t.Fatalf("unexpected distributed export markdown: %s", exportResponse.Body.String())
 	}
 	if !strings.Contains(exportResponse.Body.String(), "## Shared Queue Coordination") {

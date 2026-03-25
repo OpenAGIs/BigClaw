@@ -15,6 +15,7 @@ import (
 	"bigclaw-go/internal/executor"
 	"bigclaw-go/internal/observability"
 	"bigclaw-go/internal/risk"
+	"bigclaw-go/internal/scheduler"
 )
 
 type distributedDiagnosticsSummary struct {
@@ -96,8 +97,29 @@ type fairnessDiagnostics struct {
 	TotalRoutedDecisions int                     `json:"total_routed_decisions"`
 	CapacityWeightTotal  int                     `json:"capacity_weight_total"`
 	ImbalanceScore       float64                 `json:"imbalance_score"`
+	ActiveTenants        int                     `json:"active_tenants"`
+	WorkerPoolImbalance  float64                 `json:"worker_pool_imbalance_score"`
 	ExecutorShares       []fairnessExecutorShare `json:"executor_shares"`
+	TenantShares         []fairnessTenantShare   `json:"tenant_shares,omitempty"`
 	Notes                []string                `json:"notes,omitempty"`
+}
+
+type fairnessTenantShare struct {
+	TenantID            string  `json:"tenant_id"`
+	ParallelSlotsInUse  int     `json:"parallel_slots_in_use"`
+	ActiveRuns          int     `json:"active_runs"`
+	QueuedTasks         int     `json:"queued_tasks"`
+	RoutedDecisions     int     `json:"routed_decisions"`
+	RecentAcceptedCount int     `json:"recent_accepted_count"`
+	ConcurrentLimit     int     `json:"concurrent_limit,omitempty"`
+	CurrentRunning      int     `json:"current_running,omitempty"`
+	MaxQueueDepth       int     `json:"max_queue_depth,omitempty"`
+	QueueDepth          int     `json:"queue_depth,omitempty"`
+	BudgetRemaining     int64   `json:"budget_remaining,omitempty"`
+	ParallelShare       float64 `json:"parallel_share"`
+	RoutedShare         float64 `json:"routed_share"`
+	ShareDelta          float64 `json:"share_delta"`
+	Status              string  `json:"status"`
 }
 
 type distributedDiagnosticsReport struct {
@@ -220,6 +242,8 @@ type distributedEventRollup struct {
 	CountersByExecutor map[domain.ExecutorKind]*executorDiagnosticsCounters
 	RoutingReasons     []routingReasonSummary
 	TotalRouted        int
+	TenantRouted       map[string]int
+	TenantQuota        map[string]scheduler.QuotaSnapshot
 	Recovery           recoveryDiagnostics
 }
 
@@ -348,7 +372,7 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		SaturatedExecutors: capacity.Saturated,
 		Notes:              diagnosticsNotes(summary, capacity.ExecutorCapacity, s.Control.Snapshot()),
 	}
-	fairness := buildFairnessDiagnostics(capabilities, eventRollup.CountersByExecutor, eventRollup.TotalRouted)
+	fairness := buildFairnessDiagnostics(capabilities, taskRollup.Assignments, eventRollup, s.schedulerRuntime().FairnessSnapshot())
 	diagnostics := distributedDiagnostics{
 		Summary:               summary,
 		RoutingReasons:        eventRollup.RoutingReasons,
@@ -441,6 +465,9 @@ func (s *Server) distributedTaskRollup(filters controlCenterFilters) distributed
 func (s *Server) distributedEventRollup(assignmentByTask map[string]distributedTaskAssignment, base recoveryDiagnostics) distributedEventRollup {
 	countersByExecutor := make(map[domain.ExecutorKind]*executorDiagnosticsCounters)
 	routingIndex := make(map[string]*routingReasonSummary)
+	tenantRouted := make(map[string]int)
+	tenantQuota := make(map[string]scheduler.QuotaSnapshot)
+	tenantQuotaSeenAt := make(map[string]time.Time)
 	totalRouted := 0
 	recovery := base
 	for _, event := range s.Recorder.EventsByTask("", 0) {
@@ -464,6 +491,16 @@ func (s *Server) distributedEventRollup(assignmentByTask map[string]distributedT
 		case domain.EventSchedulerRouted:
 			entry.Routed++
 			totalRouted++
+			tenantID := strings.TrimSpace(assignment.Task.TenantID)
+			if tenantID != "" {
+				tenantRouted[tenantID]++
+				if quota, ok := quotaSnapshotFromPayload(event.Payload); ok {
+					if seenAt, exists := tenantQuotaSeenAt[tenantID]; !exists || event.Timestamp.After(seenAt) {
+						tenantQuota[tenantID] = quota
+						tenantQuotaSeenAt[tenantID] = event.Timestamp
+					}
+				}
+			}
 			reason := firstNonEmpty(strings.TrimSpace(eventStringValue(event.Payload, "reason")), "unknown")
 			key := string(executorKind) + "\n" + reason
 			item := routingIndex[key]
@@ -498,6 +535,8 @@ func (s *Server) distributedEventRollup(assignmentByTask map[string]distributedT
 		CountersByExecutor: countersByExecutor,
 		RoutingReasons:     sortedRoutingReasons(routingIndex),
 		TotalRouted:        totalRouted,
+		TenantRouted:       tenantRouted,
+		TenantQuota:        tenantQuota,
 		Recovery:           recovery,
 	}
 }
@@ -690,7 +729,7 @@ func executorHealthSummary(view executorCapacityView) []string {
 	return summary
 }
 
-func buildFairnessDiagnostics(capabilities []executor.Capability, countersByExecutor map[domain.ExecutorKind]*executorDiagnosticsCounters, totalRouted int) fairnessDiagnostics {
+func buildFairnessDiagnostics(capabilities []executor.Capability, assignments []distributedTaskAssignment, eventRollup distributedEventRollup, fairnessSnapshot scheduler.FairnessSnapshot) fairnessDiagnostics {
 	shares := make([]fairnessExecutorShare, 0, len(capabilities))
 	weightTotal := 0
 	for _, capability := range capabilities {
@@ -715,12 +754,12 @@ func buildFairnessDiagnostics(capabilities []executor.Capability, countersByExec
 		}
 		expectedShare := float64(weight) / float64(weightTotal)
 		routed := 0
-		if counters := countersByExecutor[capability.Kind]; counters != nil {
+		if counters := eventRollup.CountersByExecutor[capability.Kind]; counters != nil {
 			routed = counters.Routed
 		}
 		actualShare := 0.0
-		if totalRouted > 0 {
-			actualShare = float64(routed) / float64(totalRouted)
+		if eventRollup.TotalRouted > 0 {
+			actualShare = float64(routed) / float64(eventRollup.TotalRouted)
 		}
 		delta := actualShare - expectedShare
 		absDelta := math.Abs(delta)
@@ -729,7 +768,7 @@ func buildFairnessDiagnostics(capabilities []executor.Capability, countersByExec
 		}
 		status := "balanced"
 		switch {
-		case totalRouted == 0:
+		case eventRollup.TotalRouted == 0:
 			status = "no-traffic"
 		case absDelta <= 0.15:
 			status = "balanced"
@@ -749,21 +788,238 @@ func buildFairnessDiagnostics(capabilities []executor.Capability, countersByExec
 	}
 	sort.SliceStable(shares, func(i, j int) bool { return shares[i].Executor < shares[j].Executor })
 
+	tenantShares, workerPoolImbalance := buildTenantFairnessShares(assignments, eventRollup.TenantRouted, eventRollup.TenantQuota, fairnessSnapshot)
 	notes := make([]string, 0, 2)
-	if totalRouted == 0 {
+	if eventRollup.TotalRouted == 0 {
 		notes = append(notes, "no routed decisions available for fairness analysis")
 	} else if maxDelta > 0.15 {
 		notes = append(notes, "routing distribution is imbalanced relative to executor capacity weights")
 	} else {
 		notes = append(notes, "routing distribution is within fairness tolerance")
 	}
+	if len(tenantShares) == 0 {
+		notes = append(notes, "tenant fairness view has no tenant-tagged tasks in the current slice")
+	} else if workerPoolImbalance > 0.2 {
+		notes = append(notes, "worker-pool parallelism is concentrated in a subset of tenants")
+	} else {
+		notes = append(notes, "worker-pool parallelism is within tenant fairness tolerance")
+	}
 
 	return fairnessDiagnostics{
-		TotalRoutedDecisions: totalRouted,
+		TotalRoutedDecisions: eventRollup.TotalRouted,
 		CapacityWeightTotal:  weightTotal,
 		ImbalanceScore:       maxDelta,
+		ActiveTenants:        len(tenantShares),
+		WorkerPoolImbalance:  workerPoolImbalance,
 		ExecutorShares:       shares,
+		TenantShares:         tenantShares,
 		Notes:                notes,
+	}
+}
+
+func buildTenantFairnessShares(assignments []distributedTaskAssignment, tenantRouted map[string]int, tenantQuota map[string]scheduler.QuotaSnapshot, fairnessSnapshot scheduler.FairnessSnapshot) ([]fairnessTenantShare, float64) {
+	type tenantActivity struct {
+		activeRuns    int
+		queuedTasks   int
+		parallelSlots int
+	}
+	activityByTenant := make(map[string]*tenantActivity)
+	tenantIDs := make(map[string]struct{})
+	for _, assignment := range assignments {
+		tenantID := strings.TrimSpace(assignment.Task.TenantID)
+		if tenantID == "" {
+			continue
+		}
+		tenantIDs[tenantID] = struct{}{}
+		activity := activityByTenant[tenantID]
+		if activity == nil {
+			activity = &tenantActivity{}
+			activityByTenant[tenantID] = activity
+		}
+		if domain.IsActiveTaskState(assignment.EffectiveState) {
+			activity.activeRuns++
+			activity.parallelSlots++
+		}
+		if assignment.EffectiveState == domain.TaskQueued || assignment.EffectiveState == domain.TaskRetrying {
+			activity.queuedTasks++
+		}
+	}
+	for tenantID := range tenantRouted {
+		tenantIDs[tenantID] = struct{}{}
+	}
+	for tenantID := range tenantQuota {
+		tenantIDs[tenantID] = struct{}{}
+	}
+	recentAccepted := make(map[string]int, len(fairnessSnapshot.Tenants))
+	for _, tenant := range fairnessSnapshot.Tenants {
+		tenantID := strings.TrimSpace(tenant.TenantID)
+		if tenantID == "" {
+			continue
+		}
+		recentAccepted[tenantID] = tenant.RecentAcceptedCount
+		tenantIDs[tenantID] = struct{}{}
+	}
+	if len(tenantIDs) == 0 {
+		return nil, 0
+	}
+	totalParallel := 0
+	totalRouted := 0
+	for tenantID := range tenantIDs {
+		if activity := activityByTenant[tenantID]; activity != nil {
+			totalParallel += activity.parallelSlots
+		}
+		totalRouted += tenantRouted[tenantID]
+	}
+	expectedShare := 1.0 / float64(len(tenantIDs))
+	out := make([]fairnessTenantShare, 0, len(tenantIDs))
+	maxDelta := 0.0
+	for tenantID := range tenantIDs {
+		activity := activityByTenant[tenantID]
+		share := fairnessTenantShare{
+			TenantID:            tenantID,
+			RoutedDecisions:     tenantRouted[tenantID],
+			RecentAcceptedCount: recentAccepted[tenantID],
+			Status:              "balanced",
+		}
+		if activity != nil {
+			share.ParallelSlotsInUse = activity.parallelSlots
+			share.ActiveRuns = activity.activeRuns
+			share.QueuedTasks = activity.queuedTasks
+		}
+		if quota, ok := tenantQuota[tenantID]; ok {
+			share.ConcurrentLimit = quota.ConcurrentLimit
+			share.CurrentRunning = quota.CurrentRunning
+			share.MaxQueueDepth = quota.MaxQueueDepth
+			share.QueueDepth = quota.QueueDepth
+			share.BudgetRemaining = quota.BudgetRemaining
+		}
+		if totalParallel > 0 {
+			share.ParallelShare = float64(share.ParallelSlotsInUse) / float64(totalParallel)
+		}
+		if totalRouted > 0 {
+			share.RoutedShare = float64(share.RoutedDecisions) / float64(totalRouted)
+		}
+		observedShare := share.ParallelShare
+		if totalParallel == 0 {
+			observedShare = share.RoutedShare
+		}
+		share.ShareDelta = observedShare - expectedShare
+		if absDelta := math.Abs(share.ShareDelta); absDelta > maxDelta {
+			maxDelta = absDelta
+		}
+		switch {
+		case share.ConcurrentLimit > 0 && share.CurrentRunning >= share.ConcurrentLimit:
+			share.Status = "concurrency-capped"
+		case share.MaxQueueDepth > 0 && share.QueueDepth >= share.MaxQueueDepth:
+			share.Status = "queue-capped"
+		case totalParallel == 0 && totalRouted == 0:
+			share.Status = "idle"
+		case math.Abs(share.ShareDelta) <= 0.2:
+			share.Status = "balanced"
+		case share.ShareDelta > 0:
+			share.Status = "dominant"
+		default:
+			share.Status = "waiting"
+		}
+		out = append(out, share)
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if out[i].ParallelSlotsInUse == out[j].ParallelSlotsInUse {
+			if out[i].RoutedDecisions == out[j].RoutedDecisions {
+				return out[i].TenantID < out[j].TenantID
+			}
+			return out[i].RoutedDecisions > out[j].RoutedDecisions
+		}
+		return out[i].ParallelSlotsInUse > out[j].ParallelSlotsInUse
+	})
+	return out, maxDelta
+}
+
+func quotaSnapshotFromPayload(payload map[string]any) (scheduler.QuotaSnapshot, bool) {
+	if payload == nil {
+		return scheduler.QuotaSnapshot{}, false
+	}
+	value, ok := payload["quota"]
+	if !ok || value == nil {
+		return scheduler.QuotaSnapshot{}, false
+	}
+	switch typed := value.(type) {
+	case scheduler.QuotaSnapshot:
+		return typed, true
+	case map[string]any:
+		return scheduler.QuotaSnapshot{
+			TenantID:              stringValue(typed["TenantID"]),
+			ConcurrentLimit:       intValue(typed["ConcurrentLimit"]),
+			CurrentRunning:        intValue(typed["CurrentRunning"]),
+			BudgetRemaining:       int64Value(typed["BudgetRemaining"]),
+			QueueDepth:            intValue(typed["QueueDepth"]),
+			MaxQueueDepth:         intValue(typed["MaxQueueDepth"]),
+			PreemptibleExecutions: intValue(typed["PreemptibleExecutions"]),
+		}, true
+	default:
+		return scheduler.QuotaSnapshot{}, false
+	}
+}
+
+func intValue(value any) int {
+	switch typed := value.(type) {
+	case int:
+		return typed
+	case int8:
+		return int(typed)
+	case int16:
+		return int(typed)
+	case int32:
+		return int(typed)
+	case int64:
+		return int(typed)
+	case uint:
+		return int(typed)
+	case uint8:
+		return int(typed)
+	case uint16:
+		return int(typed)
+	case uint32:
+		return int(typed)
+	case uint64:
+		return int(typed)
+	case float32:
+		return int(typed)
+	case float64:
+		return int(typed)
+	default:
+		return 0
+	}
+}
+
+func int64Value(value any) int64 {
+	switch typed := value.(type) {
+	case int:
+		return int64(typed)
+	case int8:
+		return int64(typed)
+	case int16:
+		return int64(typed)
+	case int32:
+		return int64(typed)
+	case int64:
+		return typed
+	case uint:
+		return int64(typed)
+	case uint8:
+		return int64(typed)
+	case uint16:
+		return int64(typed)
+	case uint32:
+		return int64(typed)
+	case uint64:
+		return int64(typed)
+	case float32:
+		return int64(typed)
+	case float64:
+		return int64(typed)
+	default:
+		return 0
 	}
 }
 
@@ -1076,9 +1332,14 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 		fmt.Sprintf("- Total routed decisions: %d", diagnostics.Fairness.TotalRoutedDecisions),
 		fmt.Sprintf("- Capacity weight total: %d", diagnostics.Fairness.CapacityWeightTotal),
 		fmt.Sprintf("- Imbalance score: %.3f", diagnostics.Fairness.ImbalanceScore),
+		fmt.Sprintf("- Active tenants: %d", diagnostics.Fairness.ActiveTenants),
+		fmt.Sprintf("- Worker-pool imbalance score: %.3f", diagnostics.Fairness.WorkerPoolImbalance),
 	)
 	for _, item := range diagnostics.Fairness.ExecutorShares {
 		lines = append(lines, fmt.Sprintf("- %s: routed=%d expected_share=%.3f actual_share=%.3f delta=%.3f status=%s", item.Executor, item.RoutedDecisions, item.ExpectedShare, item.ActualShare, item.ShareDelta, item.Status))
+	}
+	for _, item := range diagnostics.Fairness.TenantShares {
+		lines = append(lines, fmt.Sprintf("- tenant %s: parallel_slots=%d active_runs=%d queued=%d routed=%d recent_accepted=%d concurrency=%d/%d queue_depth=%d/%d budget_remaining=%d parallel_share=%.3f routed_share=%.3f delta=%.3f status=%s", item.TenantID, item.ParallelSlotsInUse, item.ActiveRuns, item.QueuedTasks, item.RoutedDecisions, item.RecentAcceptedCount, item.CurrentRunning, item.ConcurrentLimit, item.QueueDepth, item.MaxQueueDepth, item.BudgetRemaining, item.ParallelShare, item.RoutedShare, item.ShareDelta, item.Status))
 	}
 	if len(diagnostics.Fairness.Notes) > 0 {
 		lines = append(lines, "- Notes: "+strings.Join(diagnostics.Fairness.Notes, "; "))
