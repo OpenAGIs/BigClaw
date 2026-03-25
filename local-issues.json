@@ -5740,6 +5740,23 @@
       "state": "Done",
       "title": "Canonicalize equivalent state spellings when creating local issues",
       "updated_at": "2026-03-25T18:43:34Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T18:46:05Z",
+      "description": "Make queue issue records canonicalize normalized-equivalent built-in state names on create and update so refill seed does not persist raw queue status spellings like todo. after local issue creation paths were normalized.",
+      "id": "big-par-401",
+      "identifier": "BIG-PAR-401",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Canonicalize equivalent queue state spellings during refill seed",
+      "updated_at": "2026-03-25T18:46:05Z"
     }
   ]
 }
