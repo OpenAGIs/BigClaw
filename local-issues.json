@@ -5651,6 +5651,11 @@
           "author": "codex",
           "body": "What changed:\n- `bigclaw-go/cmd/bigclawctl/main.go` now treats normalized-equivalent `local-issues set-state` requests as a no-op and returns the existing issue state instead of rewriting tracker state spelling or `updated_at`.\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now covers the direct `local-issues set-state` equivalent-spelling case and asserts the stored state and timestamp remain unchanged.\n- `local-issues.json`, `docs/parallel-refill-queue.json`, and `docs/parallel-refill-queue.md` now record and surface `BIG-PAR-398` as the active automation slice.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl local-issues ensure --repo bigclaw-go --local-issues ../local-issues.json --identifier BIG-PAR-398 --title \"Ignore equivalent state spellings in local-issues set-state\" --description \"Make bigclawctl local-issues set-state treat normalized-equivalent state names as a no-op so direct tracker state commands do not churn timestamps or rewrite spellings unnecessarily.\" --labels \"parallel,tooling,refill,go-mainline\" --priority 3 --assigned-to-worker=true --state \"In Progress\" --set-state-if-exists --json` -> ok (`action=updated`)\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-398]`, `queue_status_synced=true`, `recent_batches_synced=true` before closeout)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `4f2a7851720b5a8df4a378fe74c13789db11d69a` matches remote SHA `4f2a7851720b5a8df4a378fe74c13789db11d69a` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `4f2a7851720b5a8df4a378fe74c13789db11d69a`\n- `git log -1 --stat` -> captured for commit `4f2a7851720b5a8df4a378fe74c13789db11d69a`\n\nCommit SHA: `4f2a7851720b5a8df4a378fe74c13789db11d69a`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/195",
           "created_at": "2026-03-25T18:17:05Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout on March 26, 2026: PR `#195` (`BIG-PAR-398: ignore equivalent local issue state updates`) merged into `main` at `2026-03-25T18:19:12Z` with merge commit `9899d39b5c738e46adf7120f72edb7a850780106`. The local refill queue remains drained after closing this slice.\n\nValidation:\n- `gh pr view 195 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` with merge commit `9899d39b5c738e46adf7120f72edb7a850780106` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `4bc48c645951403697edce80da9e79566f065a59` matches remote SHA `4bc48c645951403697edce80da9e79566f065a59` with `status: ok` and `synced: true`\n\nCommit SHA: `4bc48c645951403697edce80da9e79566f065a59`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/195",
+          "created_at": "2026-03-25T18:19:21Z"
         }
       ],
       "created_at": "2026-03-25T18:14:06Z",
@@ -5666,7 +5671,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Ignore equivalent state spellings in local-issues set-state",
-      "updated_at": "2026-03-25T18:17:05Z"
+      "updated_at": "2026-03-25T18:19:21Z"
     }
   ]
 }
