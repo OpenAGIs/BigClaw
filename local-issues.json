@@ -3060,6 +3060,11 @@
           "author": "codex",
           "body": "Post-merge reconciliation on 2026-03-26: merged origin/main into symphony/BIG-PAR-290 to clear PR #188's prior CONFLICTING state while preserving the branch's scoped ClawHost control-center/debug surfaces, the newer reviewer-facing ClawHost payloads from main, and the final refill/tracker history through BIG-PAR-440. Validation: cd bigclaw-go && go test ./internal/api ./internal/product ./internal/refill -count=1 -> ok; cd bigclaw-go && go test ./... -> ok; python3 -m json.tool local-issues.json >/dev/null -> ok; python3 -m json.tool docs/parallel-refill-queue.json >/dev/null -> ok; bash scripts/ops/bigclawctl refill --apply --repo . --local-issues local-issues.json --queue docs/parallel-refill-queue.json --markdown docs/parallel-refill-queue.md --sync-queue-status -> queue_drained true / queue_runnable 0 / queue_status_synced true; bash scripts/ops/bigclawctl github-sync status --json -> local SHA d3642ca19a1598e5a2ebfb9a8008a4e5707553b5 matches remote SHA d3642ca19a1598e5a2ebfb9a8008a4e5707553b5 with status ok and synced true; gh pr view 188 --json url,title,state,mergeStateStatus,statusCheckRollup -> PR https://github.com/OpenAGIs/BigClaw/pull/188 is OPEN with mergeStateStatus UNSTABLE because the test workflow is still IN_PROGRESS after the merge push, so reviewer approval/CI completion remains the only active blocker; git log -1 --stat -> captured for merge commit d3642ca19a1598e5a2ebfb9a8008a4e5707553b5. Commit SHA: d3642ca19a1598e5a2ebfb9a8008a4e5707553b5. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
           "created_at": "2026-03-25T21:07:36Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout on 2026-03-26: PR #188 (BIG-PAR-298/BIG-PAR-355/BIG-PAR-407-BIG-PAR-440: ClawHost surfaces and refill completion) merged into main at 2026-03-25T21:09:33Z with merge commit 5b8ecb29461002b9f4fe5c292c9f65440b8641d8. Validation: gh pr view 188 --json url,title,state,mergedAt,mergeCommit,mergeStateStatus,statusCheckRollup -> MERGED with successful completed ci/test check; git push origin HEAD -> Everything up-to-date; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 2778dcc51c7f37d142253045aae54fa2fa234193 matches remote SHA 2778dcc51c7f37d142253045aae54fa2fa234193 with status ok and synced true; bash scripts/ops/bigclawctl refill --apply --repo . --local-issues local-issues.json --queue docs/parallel-refill-queue.json --markdown docs/parallel-refill-queue.md --sync-queue-status -> queue_drained true / queue_runnable 0 / queue_status_synced true; git log -1 --stat -> captured for commit 2778dcc51c7f37d142253045aae54fa2fa234193. Commit SHA: pending tracker-note commit. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T21:10:11Z"
         }
       ],
       "created_at": "2026-03-24T15:47:39Z",
@@ -3076,7 +3081,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost provider defaults and tenant policy surfaces",
-      "updated_at": "2026-03-25T21:07:36Z"
+      "updated_at": "2026-03-25T21:10:11Z"
     },
     {
       "assigned_to_worker": true,
