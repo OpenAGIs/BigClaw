@@ -6229,6 +6229,30 @@
       "state": "Done",
       "title": "Add local tracker load-path edge coverage",
       "updated_at": "2026-03-25T19:35:53Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T19:38:54Z",
+      "description": "Add focused refill queue tests covering UpsertIssue validation, defaulting, and update/order behaviors in bigclaw-go/internal/refill/queue.go.",
+      "id": "big-par-421",
+      "identifier": "BIG-PAR-421",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add refill queue upsert coverage",
+      "updated_at": "2026-03-25T19:39:05Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T19:38:54Z",
+      "description": "Add focused refill markdown tests covering RenderMarkdown explicit recent-batch and completed/history output in bigclaw-go/internal/refill/queue_markdown.go.",
+      "id": "big-par-422",
+      "identifier": "BIG-PAR-422",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add refill markdown rendering coverage",
+      "updated_at": "2026-03-25T19:39:05Z"
     }
   ]
 }

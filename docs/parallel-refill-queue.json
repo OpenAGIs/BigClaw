@@ -220,7 +220,10 @@
       "BIG-PAR-420",
       "BIG-PAR-419"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-422",
+      "BIG-PAR-421"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -424,7 +427,9 @@
     "BIG-PAR-417",
     "BIG-PAR-418",
     "BIG-PAR-420",
-    "BIG-PAR-419"
+    "BIG-PAR-419",
+    "BIG-PAR-422",
+    "BIG-PAR-421"
   ],
   "issues": [
     {
@@ -1662,6 +1667,18 @@
       "title": "Add refill recent-batch mutation coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-422",
+      "title": "Add refill markdown rendering coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-421",
+      "title": "Add refill queue upsert coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

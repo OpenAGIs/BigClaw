@@ -48,10 +48,10 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 25, 2026:
-  - active slices: none
+  - active slices: `BIG-PAR-422` — Add refill markdown rendering coverage
   - standby slices: none
   - recently completed slices: `BIG-PAR-413` — Add local tracker comment-path edge coverage; `BIG-PAR-414` — Add refill save and runnable-count edge coverage; `BIG-PAR-415` — Add local tracker helper edge coverage; `BIG-PAR-416` — Add refill markdown edge coverage; `BIG-PAR-417` — Add local tracker directory-failure coverage; `BIG-PAR-418` — Add refill save-parent failure coverage; `BIG-PAR-420` — Add local tracker load-path edge coverage; `BIG-PAR-419` — Add refill recent-batch mutation coverage
-  - queue status: `queue_runnable=0`, `target_in_progress=2`
+  - queue status: `queue_runnable=1`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -468,3 +468,4 @@ longer waits on Linear to keep issue execution moving.
 199. `BIG-PAR-418`
 200. `BIG-PAR-420`
 201. `BIG-PAR-419`
+202. `BIG-PAR-422`
