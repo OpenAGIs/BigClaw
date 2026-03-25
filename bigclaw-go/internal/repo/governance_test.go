@@ -31,3 +31,15 @@ func TestAuditFieldContractIsDeterministic(t *testing.T) {
 		t.Fatalf("unexpected missing audit fields: %+v", missing)
 	}
 }
+
+func TestRequiredAuditFieldsByAction(t *testing.T) {
+	if got := RequiredAuditFields("repo.push"); !reflect.DeepEqual(got, []string{"task_id", "run_id", "repo_space_id", "actor", "commit_hash", "outcome"}) {
+		t.Fatalf("unexpected repo.push audit fields: %+v", got)
+	}
+	if got := RequiredAuditFields("repo.reply"); !reflect.DeepEqual(got, []string{"task_id", "run_id", "repo_space_id", "actor", "channel", "post_id", "outcome"}) {
+		t.Fatalf("unexpected repo.reply audit fields: %+v", got)
+	}
+	if got := RequiredAuditFields("repo.unknown"); !reflect.DeepEqual(got, []string{"task_id", "run_id", "repo_space_id", "actor"}) {
+		t.Fatalf("unexpected default audit fields: %+v", got)
+	}
+}
