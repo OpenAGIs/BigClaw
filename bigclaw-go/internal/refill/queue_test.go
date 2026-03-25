@@ -8,6 +8,63 @@ import (
 	"time"
 )
 
+func TestLoadQueueNormalizesAbsolutePathAndAccessors(t *testing.T) {
+	queuePath := filepath.Join(t.TempDir(), "queue.json")
+	if err := os.WriteFile(queuePath, []byte(`{
+  "project": {
+    "slug_id": "project-slug"
+  },
+  "policy": {
+    "activate_state_id": "state-123"
+  },
+  "issue_order": [
+    "BIG-PAR-408"
+  ],
+  "issues": [
+    {
+      "identifier": "BIG-PAR-408",
+      "title": "Add refill queue load/save helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Todo"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write queue fixture: %v", err)
+	}
+
+	queue, err := LoadQueue(queuePath)
+	if err != nil {
+		t.Fatalf("load queue: %v", err)
+	}
+	if queue.queuePath != queuePath {
+		t.Fatalf("expected absolute queue path to persist, got %q", queue.queuePath)
+	}
+	if got := queue.ProjectSlug(); got != "project-slug" {
+		t.Fatalf("expected project slug accessor, got %q", got)
+	}
+	if got := queue.ActivateStateID(); got != "state-123" {
+		t.Fatalf("expected activate state id accessor, got %q", got)
+	}
+	if got := queue.ActivateStateName(); got != "In Progress" {
+		t.Fatalf("expected activate state name fallback, got %q", got)
+	}
+}
+
+func TestLoadQueueMissingAndInvalidPayloads(t *testing.T) {
+	missingPath := filepath.Join(t.TempDir(), "missing-queue.json")
+	if _, err := LoadQueue(missingPath); err == nil {
+		t.Fatal("expected missing queue file to fail")
+	}
+
+	invalidPath := filepath.Join(t.TempDir(), "invalid-queue.json")
+	if err := os.WriteFile(invalidPath, []byte(`{"issues":`), 0o644); err != nil {
+		t.Fatalf("write invalid queue fixture: %v", err)
+	}
+	if _, err := LoadQueue(invalidPath); err == nil || !strings.Contains(err.Error(), "unexpected end of JSON input") {
+		t.Fatalf("expected invalid queue payload to fail, got %v", err)
+	}
+}
+
 func TestIssueStateMapRecordsIdentifiers(t *testing.T) {
 	issues := []TrackedIssue{
 		{Identifier: "BIG-GOM-301", StateName: "Todo"},
@@ -372,6 +429,35 @@ func TestParallelIssueQueueSavePreservesBlockedReasonAndRecentBatches(t *testing
 	}
 }
 
+func TestParallelIssueQueueSaveCreatesParentDirectoryAndDoesNotEscapeHTML(t *testing.T) {
+	queuePath := filepath.Join(t.TempDir(), "nested", "queue.json")
+	queue := &ParallelIssueQueue{
+		queuePath: queuePath,
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-408"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-408", Title: "arrow -> literal", Track: "Go Mainline Follow-ups", Status: "Todo"},
+			},
+		},
+	}
+
+	if err := queue.Save(); err != nil {
+		t.Fatalf("save queue in nested directory: %v", err)
+	}
+
+	body, err := os.ReadFile(queuePath)
+	if err != nil {
+		t.Fatalf("read saved queue: %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, "arrow -> literal") {
+		t.Fatalf("expected raw arrow token to persist, got %s", text)
+	}
+	if strings.Contains(text, `\u003e`) {
+		t.Fatalf("expected html escaping to stay disabled, got %s", text)
+	}
+}
+
 func TestParallelIssueQueueUpsertIssueCreatesAndUpdatesQueueRecord(t *testing.T) {
 	queue := &ParallelIssueQueue{
 		payload: QueuePayload{
@@ -412,6 +498,116 @@ func TestParallelIssueQueueUpsertIssueCreatesAndUpdatesQueueRecord(t *testing.T)
 	}
 	if queue.payload.Issues[1].Status != "In Progress" || queue.payload.Issues[1].Title != "sync recent_batches metadata from local tracker" {
 		t.Fatalf("expected queue record update, got %+v", queue.payload.Issues[1])
+	}
+}
+
+func TestParallelIssueQueueUpsertIssueValidationDefaultStatusAndOrderRepair(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-408", Title: "Add refill queue load/save helper coverage", Track: "Go Mainline Follow-ups", Status: "Todo"},
+			},
+		},
+	}
+
+	if _, _, err := queue.UpsertIssue(IssueRecord{Identifier: " ", Title: "missing", Track: "track"}); err == nil {
+		t.Fatal("expected blank identifier to fail")
+	}
+	if _, _, err := queue.UpsertIssue(IssueRecord{Identifier: "BIG-PAR-409", Title: " ", Track: "track"}); err == nil {
+		t.Fatal("expected blank title to fail")
+	}
+	if _, _, err := queue.UpsertIssue(IssueRecord{Identifier: "BIG-PAR-409", Title: "title", Track: " "}); err == nil {
+		t.Fatal("expected blank track to fail")
+	}
+
+	action, orderAdded, err := queue.UpsertIssue(IssueRecord{
+		Identifier: " big-par-408 ",
+		Title:      "Add refill queue load/save helper coverage",
+		Track:      "Go Mainline Follow-ups",
+		Status:     " ",
+	})
+	if err != nil {
+		t.Fatalf("upsert existing queue entry: %v", err)
+	}
+	if action != "updated" || !orderAdded {
+		t.Fatalf("expected order repair to report updated with order add, got action=%s orderAdded=%v", action, orderAdded)
+	}
+	if !equalStringSlices(queue.payload.IssueOrder, []string{"BIG-PAR-408"}) {
+		t.Fatalf("expected repaired issue order, got %+v", queue.payload.IssueOrder)
+	}
+	if queue.payload.Issues[0].Status != "Todo" {
+		t.Fatalf("expected blank status to default to Todo, got %+v", queue.payload.Issues[0])
+	}
+
+	action, orderAdded, err = queue.UpsertIssue(IssueRecord{
+		Identifier: "BIG-PAR-408",
+		Title:      "Add refill queue load/save helper coverage",
+		Track:      "Go Mainline Follow-ups",
+		Status:     "Todo",
+	})
+	if err != nil {
+		t.Fatalf("upsert unchanged queue entry: %v", err)
+	}
+	if action != "exists" || orderAdded {
+		t.Fatalf("expected unchanged upsert to report exists without order add, got action=%s orderAdded=%v", action, orderAdded)
+	}
+}
+
+func TestParallelIssueQueueSetRecentBatchMovesIdentifiersBetweenBuckets(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-406", "BIG-PAR-407", "BIG-PAR-408", "BIG-PAR-409"},
+			RecentBatches: struct {
+				Completed []string `json:"completed"`
+				Active    []string `json:"active"`
+				Standby   []string `json:"standby"`
+			}{
+				Completed: []string{"BIG-PAR-406"},
+				Active:    []string{"BIG-PAR-407"},
+				Standby:   []string{"BIG-PAR-408"},
+			},
+		},
+	}
+
+	if _, err := queue.SetRecentBatch("active", "   "); err == nil {
+		t.Fatal("expected blank identifier to fail")
+	}
+	if _, err := queue.SetRecentBatch("unknown", "BIG-PAR-409"); err == nil {
+		t.Fatal("expected unknown batch name to fail")
+	}
+
+	changed, err := queue.SetRecentBatch("completed", "BIG-PAR-408")
+	if err != nil {
+		t.Fatalf("move identifier to completed batch: %v", err)
+	}
+	if !changed {
+		t.Fatal("expected moving identifier between batches to report change")
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Completed, []string{"BIG-PAR-406", "BIG-PAR-408"}) {
+		t.Fatalf("unexpected completed batch ordering: %+v", queue.payload.RecentBatches.Completed)
+	}
+	if len(queue.payload.RecentBatches.Standby) != 0 {
+		t.Fatalf("expected standby batch removal after move, got %+v", queue.payload.RecentBatches.Standby)
+	}
+
+	changed, err = queue.SetRecentBatch("none", "BIG-PAR-407")
+	if err != nil {
+		t.Fatalf("remove identifier from all recent batches: %v", err)
+	}
+	if !changed {
+		t.Fatal("expected removing identifier from active batch to report change")
+	}
+	if len(queue.payload.RecentBatches.Active) != 0 {
+		t.Fatalf("expected active batch removal, got %+v", queue.payload.RecentBatches.Active)
+	}
+
+	changed, err = queue.SetRecentBatch("", "BIG-PAR-409")
+	if err != nil {
+		t.Fatalf("clear batch for untouched identifier: %v", err)
+	}
+	if changed {
+		t.Fatalf("expected no-op clear for untouched identifier, got changed=%v", changed)
 	}
 }
 
