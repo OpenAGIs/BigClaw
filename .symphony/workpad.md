@@ -1,27 +1,35 @@
 ## Codex Workpad
 
 ```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
+BIG-PAR-290
+Workspace: /Users/jxrt/code/symphony-workspaces/BIG-PAR-290
+Branch: symphony/BIG-PAR-290
 ```
 
-### Plan
+### Current State
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+- [x] `BIG-PAR-290` is `Done` in `local-issues.json`.
+- [x] `docs/parallel-refill-queue.json` is drained with no runnable `Todo` or `In Progress` slices.
+- [x] Branch `symphony/BIG-PAR-290` is clean and synced to origin.
+- [x] The latest merged review surface is PR `#188`.
+- [x] There is no open PR for `symphony/BIG-PAR-290`.
 
-### Acceptance Criteria
+### Blocker
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
+- [x] The outer orchestration layer still appears to show this run as active.
+- [x] This workspace has no usable Symphony control binary to clear that state directly.
+- [x] `scripts/ops/bigclaw-symphony`, `scripts/ops/bigclaw-issue`, and `scripts/ops/bigclaw-panel` all require either `../elixir/bin/symphony` or `symphony` on `PATH`, and neither exists here.
 
 ### Validation
 
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
+- [x] `bash scripts/ops/bigclawctl refill --apply --repo . --local-issues local-issues.json --queue docs/parallel-refill-queue.json --markdown docs/parallel-refill-queue.md --sync-queue-status`
+- [x] `bash scripts/ops/bigclawctl github-sync status --json`
+- [x] `gh pr list --head symphony/BIG-PAR-290 --repo OpenAGIs/BigClaw --json number,url,title,state,isDraft`
+- [x] `gh pr list --state merged --head symphony/BIG-PAR-290 --repo OpenAGIs/BigClaw --json number,url,title,mergedAt --limit 5`
+- [x] `command -v symphony || true`
+- [x] `ls -l ../elixir/bin/symphony 2>/dev/null || true`
 
 ### Notes
 
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+- 2026-03-26: Repo-local completion is final; the remaining active-state mismatch is external to the local tracker, queue, code, PR, and branch sync state.
+- 2026-03-26: Parent workspace file `../.symphony/orchestrator_queue.json` contains only unrelated `MT-*` retry metadata and nothing for `BIG-PAR-290`.
