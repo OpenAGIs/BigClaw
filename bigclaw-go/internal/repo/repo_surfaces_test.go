@@ -81,6 +81,29 @@ func TestRepoRegistryResolvesSpaceChannelAndAgent(t *testing.T) {
 	}
 }
 
+func TestRepoRegistryFallsBackWithoutSpaceAndReusesCachedAgent(t *testing.T) {
+	registry := RepoRegistry{
+		AgentsByActor: map[string]RepoAgent{
+			"bob@example.com": {
+				Actor:       "bob@example.com",
+				RepoAgentID: "agent-existing",
+				DisplayName: "Bob",
+				Roles:       []string{"reviewer"},
+			},
+		},
+	}
+
+	channel := registry.ResolveDefaultChannel("BETA", domain.Task{ID: "BIG-402 / fallback check"})
+	if channel != "BETA-big-402-fallback-check" {
+		t.Fatalf("unexpected fallback channel: %q", channel)
+	}
+
+	agent := registry.ResolveAgent("bob@example.com", "executor")
+	if agent.RepoAgentID != "agent-existing" || !reflect.DeepEqual(agent.Roles, []string{"reviewer"}) {
+		t.Fatalf("expected cached agent to be reused, got %+v", agent)
+	}
+}
+
 func TestRepoDiscussionBoardCreateReplyAndFilter(t *testing.T) {
 	board := RepoDiscussionBoard{Now: func() time.Time { return time.Date(2026, 3, 20, 10, 0, 0, 0, time.UTC) }}
 	post := board.CreatePost("alpha-release", "alice", "Need reviewer eyes", "task", "BIG-401", map[string]any{"resolved": false})
