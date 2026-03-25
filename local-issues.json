@@ -3065,6 +3065,11 @@
           "author": "codex",
           "body": "Final merge closeout on 2026-03-26: PR #188 (BIG-PAR-298/BIG-PAR-355/BIG-PAR-407-BIG-PAR-440: ClawHost surfaces and refill completion) merged into main at 2026-03-25T21:09:33Z with merge commit 5b8ecb29461002b9f4fe5c292c9f65440b8641d8. Validation: gh pr view 188 --json url,title,state,mergedAt,mergeCommit,mergeStateStatus,statusCheckRollup -> MERGED with successful completed ci/test check; git push origin HEAD -> Everything up-to-date; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 2778dcc51c7f37d142253045aae54fa2fa234193 matches remote SHA 2778dcc51c7f37d142253045aae54fa2fa234193 with status ok and synced true; bash scripts/ops/bigclawctl refill --apply --repo . --local-issues local-issues.json --queue docs/parallel-refill-queue.json --markdown docs/parallel-refill-queue.md --sync-queue-status -> queue_drained true / queue_runnable 0 / queue_status_synced true; git log -1 --stat -> captured for commit 2778dcc51c7f37d142253045aae54fa2fa234193. Commit SHA: pending tracker-note commit. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
           "created_at": "2026-03-25T21:10:11Z"
+        },
+        {
+          "author": "codex",
+          "body": "External blocker only on 2026-03-26: all repo-side work for BIG-PAR-290 is complete and merged. The local tracker issue is Done, PR #188 is MERGED with successful ci/test, the refill queue is drained, and branch symphony/BIG-PAR-290 is clean/synced; the only remaining mismatch is the outer orchestration system still showing this run as active, which cannot be cleared from this workspace because no Symphony CLI/control surface is available locally. Validation: gh pr view 188 --json state,mergedAt,mergeCommit,statusCheckRollup,url -> MERGED with successful completed ci/test; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 6ac24c253348e6c1aa2a6bee6492862907e4b6ea matches remote SHA 6ac24c253348e6c1aa2a6bee6492862907e4b6ea with status ok and synced true; bash scripts/ops/bigclawctl refill --apply --repo . --local-issues local-issues.json --queue docs/parallel-refill-queue.json --markdown docs/parallel-refill-queue.md --sync-queue-status -> queue_drained true / queue_runnable 0 / active_in_progress []; git status --short --branch -> clean branch before this tracker note. Commit SHA: pending tracker-note commit. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T21:15:48Z"
         }
       ],
       "created_at": "2026-03-24T15:47:39Z",
@@ -3081,7 +3086,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost provider defaults and tenant policy surfaces",
-      "updated_at": "2026-03-25T21:10:11Z"
+      "updated_at": "2026-03-25T21:15:48Z"
     },
     {
       "assigned_to_worker": true,
