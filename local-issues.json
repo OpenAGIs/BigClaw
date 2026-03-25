@@ -6012,6 +6012,23 @@
       "state": "Done",
       "title": "Add legacy-python JSON no-escape regression",
       "updated_at": "2026-03-25T19:59:46Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T20:01:35Z",
+      "description": "Add command-level coverage proving github-sync install JSON output preserves raw arrow tokens in emitted repo and hooks path fields so the shared emitter remains protected on the GitHub sync path as well.",
+      "id": "big-par-409",
+      "identifier": "BIG-PAR-409",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add github-sync install JSON no-escape regression",
+      "updated_at": "2026-03-25T20:01:35Z"
     }
   ]
 }
