@@ -227,7 +227,10 @@
       "BIG-PAR-426",
       "BIG-PAR-427"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-429",
+      "BIG-PAR-430"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -438,7 +441,9 @@
     "BIG-PAR-424",
     "BIG-PAR-425",
     "BIG-PAR-426",
-    "BIG-PAR-427"
+    "BIG-PAR-427",
+    "BIG-PAR-429",
+    "BIG-PAR-430"
   ],
   "issues": [
     {
@@ -1718,6 +1723,18 @@
       "title": "Add refill temp-save branch coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-429",
+      "title": "Add refill remaining save branch coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-430",
+      "title": "Add local tracker lock-open failure coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
