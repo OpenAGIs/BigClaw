@@ -5114,6 +5114,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added focused billing unit coverage in bigclaw-go/internal/billing/billing_test.go, pinning usage aggregation, seat accounting, alert generation, equal-budget team sorting, tier entitlements, and helper fallbacks so the billing summary contract no longer relies on indirect integration coverage. Validation: cd bigclaw-go && go test ./internal/billing -> ok; cd bigclaw-go && go test ./internal/billing -coverprofile=/tmp/bigpar374-billing.cover && go tool cover -func=/tmp/bigpar374-billing.cover | rg \"billing.go:|total:\" -> BuildUsage 100.0%, EntitlementsForTier 100.0%, collectUsers 100.0%, buildAlerts 100.0%, normalizeTier 100.0%, firstNonEmpty 100.0%, total 100.0%; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 9b7bbfc346f78acf3537e76b0be6bf93faa94688 matches remote SHA 9b7bbfc346f78acf3537e76b0be6bf93faa94688 with status ok and synced true; git log -1 --stat -> captured for commit 9b7bbfc346f78acf3537e76b0be6bf93faa94688 with billing tests and tracker files in the stat output. Commit SHA: 9b7bbfc346f78acf3537e76b0be6bf93faa94688. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T16:27:25Z"
+        }
+      ],
       "created_at": "2026-03-25T16:23:56Z",
       "description": "Add focused unit coverage for bigclaw-go/internal/billing so tier entitlements, usage summaries, alert generation, and normalization helpers are pinned without depending on CLI or API integration tests.",
       "id": "big-par-374",
@@ -5125,9 +5132,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add billing usage unit coverage",
-      "updated_at": "2026-03-25T16:23:56Z"
+      "updated_at": "2026-03-25T16:27:25Z"
     }
   ]
 }
