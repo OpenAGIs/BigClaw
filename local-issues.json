@@ -6194,27 +6194,41 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- added focused refill queue tests covering RunnableCountForStates live-state trimming/blank override behavior and SetRecentBatch move, clear, and invalid-input paths in bigclaw-go/internal/refill/queue_test.go.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill -run 'TestParallelIssueQueueRunnableCountForStatesTrimsOverridesAndIgnoresBlanks|TestParallelIssueQueueSetRecentBatchMovesClearsAndValidatesIdentifiers'`\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill-419.cover && go tool cover -func=/tmp/refill-419.cover | rg 'queue.go:(288|347)|total'`\n- result: pass; SetRecentBatch 96.3%, RunnableCountForStates 87.5%, package total 95.1%.\n\nCommit SHA:\n- `8183e25806c2e80308be5967f7308c63cd59939b`\n\nPR URL:\n- https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T19:35:53Z"
+        }
+      ],
       "created_at": "2026-03-25T19:33:14Z",
       "description": "Add focused refill queue tests covering SetRecentBatch and RunnableCountForStates edge cases in bigclaw-go/internal/refill/queue.go.",
       "id": "big-par-419",
       "identifier": "BIG-PAR-419",
       "labels": [],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add refill recent-batch mutation coverage",
-      "updated_at": "2026-03-25T19:33:27Z"
+      "updated_at": "2026-03-25T19:35:53Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- added focused refill local-store tests covering readLocalIssueMaps directory-target failure and LoadLocalIssueStore handling of a whitespace-only store file in bigclaw-go/internal/refill/local_store_test.go.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill -run 'TestReadLocalIssueMapsErrorsForDirectoryTarget|TestLoadLocalIssueStoreHandlesWhitespaceFile'`\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill-420.cover && go tool cover -func=/tmp/refill-420.cover | rg 'local_store.go:(57|69)|total'`\n- result: pass; LoadLocalIssueStore 85.7%, readLocalIssueMaps 100.0%, package total 95.1%.\n\nCommit SHA:\n- `00eed49`\n\nPR URL:\n- https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T19:35:53Z"
+        }
+      ],
       "created_at": "2026-03-25T19:33:14Z",
       "description": "Add focused refill local-store tests covering LoadLocalIssueStore and readLocalIssueMaps edge cases in bigclaw-go/internal/refill/local_store.go.",
       "id": "big-par-420",
       "identifier": "BIG-PAR-420",
       "labels": [],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add local tracker load-path edge coverage",
-      "updated_at": "2026-03-25T19:33:27Z"
+      "updated_at": "2026-03-25T19:35:53Z"
     }
   ]
 }

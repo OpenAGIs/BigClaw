@@ -216,12 +216,11 @@
       "BIG-PAR-415",
       "BIG-PAR-416",
       "BIG-PAR-417",
-      "BIG-PAR-418"
-    ],
-    "active": [
+      "BIG-PAR-418",
       "BIG-PAR-420",
       "BIG-PAR-419"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1656,13 +1655,13 @@
       "identifier": "BIG-PAR-420",
       "title": "Add local tracker load-path edge coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-419",
       "title": "Add refill recent-batch mutation coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
