@@ -169,7 +169,7 @@ func TestParallelIssueQueueFetchStateNamesDeduplicatesEquivalentSpellings(t *tes
 	queue.payload.Policy.ActivateStateName = "Queued for Review"
 	queue.payload.Policy.RefillStates = []string{" todo. ", "Backlog", "Todo", "backlog."}
 
-	if got := queue.FetchStateNames(); !equalStringSlices(got, []string{"Queued for Review", "todo.", "Backlog"}) {
+	if got := queue.FetchStateNames(); !equalStringSlices(got, []string{"Queued for Review", "Todo", "Backlog"}) {
 		t.Fatalf("unexpected fetch state names: %v", got)
 	}
 }

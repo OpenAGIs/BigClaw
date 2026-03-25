@@ -290,7 +290,7 @@ func TestRunRefillOnceLinearBackendDeduplicatesEquivalentFetchStates(t *testing.
 	if err := runRefillOnce(queue, client, false, "", nil, false, queuePath, markdownPath, ""); err != nil {
 		t.Fatalf("run refill once: %v", err)
 	}
-	if !reflect.DeepEqual(requestedStateNames, []string{"Queued for Review", "todo.", "Backlog"}) {
+	if !reflect.DeepEqual(requestedStateNames, []string{"Queued for Review", "Todo", "Backlog"}) {
 		t.Fatalf("expected deduplicated fetch states, got %#v", requestedStateNames)
 	}
 }

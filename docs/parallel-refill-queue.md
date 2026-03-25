@@ -48,9 +48,9 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 25, 2026:
-  - active slices: `BIG-PAR-393` — Stabilize normalized refill fetch state lists
+  - active slices: `BIG-PAR-394` — Canonicalize built-in refill fetch state names
   - standby slices: none
-  - recently completed slices: `BIG-PAR-383` — Add markdown preview helper regression coverage; `BIG-PAR-384` — Add queue clone isolation regression; `BIG-PAR-386` — Normalize refill active and recent-batch state detection; `BIG-PAR-385` — Normalize local tracker state filters for refill commands; `BIG-PAR-387` — Normalize queue status sync equivalence; `BIG-PAR-388` — Normalize seed and ensure state equivalence; `BIG-PAR-390` — Normalize local store state updates; `BIG-PAR-391` — Parameterize refill active-state helpers
+  - recently completed slices: `BIG-PAR-384` — Add queue clone isolation regression; `BIG-PAR-386` — Normalize refill active and recent-batch state detection; `BIG-PAR-385` — Normalize local tracker state filters for refill commands; `BIG-PAR-387` — Normalize queue status sync equivalence; `BIG-PAR-388` — Normalize seed and ensure state equivalence; `BIG-PAR-390` — Normalize local store state updates; `BIG-PAR-391` — Parameterize refill active-state helpers; `BIG-PAR-393` — Stabilize normalized refill fetch state lists
   - queue status: `queue_runnable=1`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
@@ -220,6 +220,7 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-388` — Normalize seed and ensure state equivalence
   - `BIG-PAR-390` — Normalize local store state updates
   - `BIG-PAR-391` — Parameterize refill active-state helpers
+  - `BIG-PAR-393` — Stabilize normalized refill fetch state lists
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -391,3 +392,4 @@ longer waits on Linear to keep issue execution moving.
 161. `BIG-PAR-390`
 162. `BIG-PAR-391`
 163. `BIG-PAR-393`
+164. `BIG-PAR-394`

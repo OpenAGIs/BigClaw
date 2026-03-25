@@ -174,13 +174,28 @@ func (q *ParallelIssueQueue) FetchStateNames() []string {
 			return
 		}
 		seen[normalized] = struct{}{}
-		states = append(states, state)
+		states = append(states, canonicalFetchStateName(normalized, state))
 	}
 	appendState(q.ActivateStateName())
 	for _, state := range q.payload.Policy.RefillStates {
 		appendState(state)
 	}
 	return states
+}
+
+func canonicalFetchStateName(normalized string, fallback string) string {
+	switch normalized {
+	case "backlog":
+		return "Backlog"
+	case "todo":
+		return "Todo"
+	case "in progress":
+		return "In Progress"
+	case "done":
+		return "Done"
+	default:
+		return fallback
+	}
 }
 
 func (q *ParallelIssueQueue) IssueOrder() []string {

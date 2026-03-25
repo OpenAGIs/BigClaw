@@ -5476,6 +5476,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/internal/refill/queue.go` now provides `FetchStateNames()`, which returns the activate state plus refill states in stable policy order while trimming whitespace and collapsing normalized duplicates.\n- `bigclaw-go/cmd/bigclawctl/main.go` now uses that queue helper for remote refill polling instead of building an unstable map-backed state list inline.\n- `bigclaw-go/internal/refill/queue_test.go` and `bigclaw-go/cmd/bigclawctl/main_test.go` now cover duplicate/equivalent state spellings and assert the GraphQL request uses the deduplicated ordered list.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-393]`, `queue_status_synced=true`)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `f25de3287deb8060323f50e2db4aaed0ccb29fe6` matches remote SHA `f25de3287deb8060323f50e2db4aaed0ccb29fe6` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `f25de3287deb8060323f50e2db4aaed0ccb29fe6`\n\nCommit SHA: `f25de3287deb8060323f50e2db4aaed0ccb29fe6`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
+          "created_at": "2026-03-25T17:20:46Z"
+        }
+      ],
       "created_at": "2026-03-25T17:17:57Z",
       "description": "Build remote refill state-name fetch lists from normalized, de-duplicated queue policy values in a stable order so equivalent spellings do not produce duplicate or non-deterministic remote filters.",
       "id": "big-par-393",
@@ -5487,9 +5494,26 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Stabilize normalized refill fetch state lists",
-      "updated_at": "2026-03-25T17:17:57Z"
+      "updated_at": "2026-03-25T17:20:46Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T17:20:58Z",
+      "description": "Canonicalize normalized built-in refill state names such as Todo, Backlog, In Progress, and Done when building remote fetch filters so tracker drift like todo. still maps back to the exact Linear state names.",
+      "id": "big-par-394",
+      "identifier": "BIG-PAR-394",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Canonicalize built-in refill fetch state names",
+      "updated_at": "2026-03-25T17:20:58Z"
     }
   ]
 }
