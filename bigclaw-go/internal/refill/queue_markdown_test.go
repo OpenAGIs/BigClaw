@@ -255,6 +255,37 @@ func TestParallelIssueQueueSaveMarkdownPropagatesWriteAndRenameFailures(t *testi
 	}
 }
 
+func TestParallelIssueQueueSaveMarkdownPropagatesChmodFailure(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-427"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-427", Title: "Add refill temp-save branch coverage", Status: "In Progress"},
+			},
+		},
+	}
+
+	origCreate := queueMarkdownCreateTemp
+	origRename := queueMarkdownRename
+	defer func() {
+		queueMarkdownCreateTemp = origCreate
+		queueMarkdownRename = origRename
+	}()
+
+	chmodErr := errors.New("markdown chmod failure")
+	queueMarkdownCreateTemp = func(dir string, pattern string) (tempFile, error) {
+		return &stubTempFile{name: filepath.Join(dir, "queue-md-chmod.tmp"), chmodErr: chmodErr}, nil
+	}
+	queueMarkdownRename = func(oldPath string, newPath string) error {
+		t.Fatalf("did not expect rename after chmod failure")
+		return nil
+	}
+
+	if written, err := queue.SaveMarkdown(filepath.Join(t.TempDir(), "queue.md"), time.Date(2026, 3, 25, 20, 5, 0, 0, time.UTC)); !errors.Is(err, chmodErr) || written {
+		t.Fatalf("expected chmod failure with written=false, got written=%v err=%v", written, err)
+	}
+}
+
 func TestParallelIssueQueueSaveMarkdownPropagatesCloseFailure(t *testing.T) {
 	queue := &ParallelIssueQueue{
 		payload: QueuePayload{
