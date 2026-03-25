@@ -6270,27 +6270,41 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- added targeted refill local-store tests covering withFileLock retrying until a stale lock is released and cleaning up the lock file when the guarded function returns an error in bigclaw-go/internal/refill/local_store_test.go.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill -run 'TestWithFileLockRetriesUntilLockReleased|TestWithFileLockCleansUpOnFunctionError'`\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill-423b.cover && go tool cover -func=/tmp/refill-423b.cover | rg 'local_store.go:348|total'`\n- result: pass; withFileLock 93.3%, package total 95.6%.\n\nCommit SHA:\n- `9f28a324427225f447ab3257d1c229b4e8937d77`\n\nPR URL:\n- https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T19:46:50Z"
+        }
+      ],
       "created_at": "2026-03-25T19:44:38Z",
       "description": "Add focused refill local-store tests covering withFileLock retry and cleanup behavior in bigclaw-go/internal/refill/local_store.go.",
       "id": "big-par-423",
       "identifier": "BIG-PAR-423",
       "labels": [],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add local tracker lock retry coverage",
-      "updated_at": "2026-03-25T19:44:48Z"
+      "updated_at": "2026-03-25T19:46:50Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- added a focused refill queue test covering RunnableCountForStates returning zero when issue order is empty in bigclaw-go/internal/refill/queue_test.go.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill -run 'TestParallelIssueQueueRunnableCountForStatesReturnsZeroWhenOrderMissing|TestParallelIssueQueueRunnableCountForStatesPrefersLiveStateMap|TestParallelIssueQueueRunnableCountForStatesDoesNotDrainWhenMetadataMissing|TestParallelIssueQueueRunnableCountForStatesTrimsOverridesAndIgnoresBlanks'`\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill-424.cover && go tool cover -func=/tmp/refill-424.cover | rg 'queue.go:347|total'`\n- result: pass; RunnableCountForStates 100.0%, package total 95.6%.\n\nCommit SHA:\n- `4e329eab79161f400f69a3b410c85ca0d585b8f5`\n\nPR URL:\n- https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T19:46:50Z"
+        }
+      ],
       "created_at": "2026-03-25T19:44:38Z",
       "description": "Add focused refill queue tests covering RunnableCountForStates edge cases in bigclaw-go/internal/refill/queue.go.",
       "id": "big-par-424",
       "identifier": "BIG-PAR-424",
       "labels": [],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add refill live-state merge coverage",
-      "updated_at": "2026-03-25T19:44:48Z"
+      "updated_at": "2026-03-25T19:46:50Z"
     }
   ]
 }

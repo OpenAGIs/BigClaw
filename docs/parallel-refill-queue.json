@@ -220,12 +220,11 @@
       "BIG-PAR-420",
       "BIG-PAR-419",
       "BIG-PAR-422",
-      "BIG-PAR-421"
-    ],
-    "active": [
+      "BIG-PAR-421",
       "BIG-PAR-423",
       "BIG-PAR-424"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1688,13 +1687,13 @@
       "identifier": "BIG-PAR-423",
       "title": "Add local tracker lock retry coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-424",
       "title": "Add refill live-state merge coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
