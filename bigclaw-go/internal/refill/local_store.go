@@ -27,6 +27,7 @@ type localStoreTemp interface {
 
 var (
 	localStoreAbsPath = filepath.Abs
+	localStoreOpenFile = os.OpenFile
 	localStoreMkdirAll = os.MkdirAll
 	localStoreEncodePayload = func(buf *bytes.Buffer, payload map[string]any) error {
 		encoder := json.NewEncoder(buf)
@@ -372,7 +373,7 @@ func (s *LocalIssueStore) withFileLock(fn func() error) error {
 	var lockFile *os.File
 	var err error
 	for attempt := 0; attempt < localIssueLockRetryCount; attempt++ {
-		lockFile, err = os.OpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+		lockFile, err = localStoreOpenFile(lockPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
 		if err == nil {
 			break
 		}

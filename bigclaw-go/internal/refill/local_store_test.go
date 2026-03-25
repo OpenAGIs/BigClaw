@@ -182,6 +182,23 @@ func TestWithFileLockFailsWhenLockRemainsHeld(t *testing.T) {
 	}
 }
 
+func TestWithFileLockFailsWhenOpenFileReturnsNilLock(t *testing.T) {
+	store := &LocalIssueStore{path: filepath.Join(t.TempDir(), "local-issues.json")}
+
+	originalOpenFile := localStoreOpenFile
+	t.Cleanup(func() {
+		localStoreOpenFile = originalOpenFile
+	})
+
+	localStoreOpenFile = func(name string, flag int, perm os.FileMode) (*os.File, error) {
+		return nil, nil
+	}
+
+	if err := store.withFileLock(func() error { return nil }); err == nil || !strings.Contains(err.Error(), "failed to acquire local issue lock") {
+		t.Fatalf("expected nil lock-file fallback to fail, got %v", err)
+	}
+}
+
 func TestNormalizeLocalIssueMapsSkipsNonMapEntries(t *testing.T) {
 	items := []any{
 		map[string]any{"identifier": "BIG-PAR-399"},
