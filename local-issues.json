@@ -3105,6 +3105,21 @@
           "author": "codex",
           "body": "Status refresh on March 26, 2026 after the tracker-note sync commit: PR `#191` is merge-ready again. GitHub now reports `https://github.com/OpenAGIs/BigClaw/pull/191` as `OPEN` with `mergeStateStatus: CLEAN`, and the `test` workflow for commit `bb2fb257200ec610cdc23d54f356ed1e0e01abc1` completed successfully at `2026-03-25T17:27:08Z`. The refill queue remains drained with no active slices.\n\nValidation:\n- `gh pr view 191 --json url,title,state,mergeStateStatus,statusCheckRollup` -> `OPEN`, `CLEAN`, successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> `queue_drained: true`, `active_in_progress: []`, `queue_status_synced: true`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `bb2fb257200ec610cdc23d54f356ed1e0e01abc1` matches remote SHA `bb2fb257200ec610cdc23d54f356ed1e0e01abc1` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `bb2fb257200ec610cdc23d54f356ed1e0e01abc1`\n\nCommit SHA: `bb2fb257200ec610cdc23d54f356ed1e0e01abc1`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
           "created_at": "2026-03-25T17:27:29Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout on March 26, 2026: PR `#191` (`BIG-PAR-291: harden refill state handling`) merged into `main` at `2026-03-25T17:29:42Z` with merge commit `53d49f332136a4f8452be8adf955f5d100730734`. The refill queue remains drained after closing `BIG-PAR-389` through `BIG-PAR-394`.\n\nValidation:\n- `gh pr view 191 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` with merge commit `53d49f332136a4f8452be8adf955f5d100730734` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> `queue_drained: true`, `active_in_progress: []`, `queue_status_synced: true`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `64e25b19cebc8cd135edf1d6e846276142070a83` matches remote SHA `64e25b19cebc8cd135edf1d6e846276142070a83` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `64e25b19cebc8cd135edf1d6e846276142070a83`\n\nCommit SHA: `64e25b19cebc8cd135edf1d6e846276142070a83`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
+          "created_at": "2026-03-25T17:30:47Z"
+        },
+        {
+          "author": "codex",
+          "body": "Stable post-merge reconciliation on March 26, 2026: BIG-PAR-291 is complete, PR `#191` is merged, the refill queue is drained, and the current synced branch head is `ad3b25036e2a1fedc7a4f6b45a4820e96e55c64f`. Any later tracker-only sync commits on `symphony/BIG-PAR-291` do not represent new implementation work; they only preserve local tracker evidence after merge.\n\nValidation:\n- `gh pr view 191 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` with merge commit `53d49f332136a4f8452be8adf955f5d100730734` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> `queue_drained: true`, `active_in_progress: []`, `queue_status_synced: true`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `ad3b25036e2a1fedc7a4f6b45a4820e96e55c64f` matches remote SHA `ad3b25036e2a1fedc7a4f6b45a4820e96e55c64f` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `ad3b25036e2a1fedc7a4f6b45a4820e96e55c64f`\n\nCommit SHA: `ad3b25036e2a1fedc7a4f6b45a4820e96e55c64f`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
+          "created_at": "2026-03-25T17:32:40Z"
+        },
+        {
+          "author": "codex",
+          "body": "External blocker only on March 26, 2026: all repo-local work for BIG-PAR-291 is complete, PR `#191` is merged, the branch is clean and synced, and the local refill queue is drained. If this issue still appears active in the controlling system, that activity is external to this workspace rather than a pending local code, tracker, or GitHub task.\n\nValidation:\n- `gh pr view 191 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` with merge commit `53d49f332136a4f8452be8adf955f5d100730734` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`, `queue_status_synced: true`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `6a47b781ac3b275a6094cd98258117d679c1af27` matches remote SHA `6a47b781ac3b275a6094cd98258117d679c1af27` with `status: ok` and `synced: true`\n\nCommit SHA: `6a47b781ac3b275a6094cd98258117d679c1af27`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
+          "created_at": "2026-03-25T17:35:13Z"
         }
       ],
       "created_at": "2026-03-24T15:47:40Z",
@@ -3121,7 +3136,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-25T17:27:29Z"
+      "updated_at": "2026-03-25T17:35:13Z"
     },
     {
       "assigned_to_worker": true,
@@ -5531,6 +5546,30 @@
       "state": "Done",
       "title": "Canonicalize built-in refill fetch state names",
       "updated_at": "2026-03-25T17:22:44Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/cmd/bigclawctl/main.go` now reports `queue_status_synced` and `recent_batches_synced` from the final in-memory queue state after local `--apply --sync-queue-status` runs instead of leaving those flags stale after the queue has already been updated.\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now asserts that an apply run which writes queue metadata also reports both sync flags as `true` in the emitted JSON payload.\n- `docs/parallel-refill-queue.json` and `docs/parallel-refill-queue.md` now include `BIG-PAR-395` and reflect the synced queue state for this slice.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-395]`, `queue_status_synced=true`, `recent_batches_synced=true` before closeout)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `aae85243782ba786486b1c6628de9cfe710b4b86` matches remote SHA `aae85243782ba786486b1c6628de9cfe710b4b86` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `aae85243782ba786486b1c6628de9cfe710b4b86`\n- `git log -1 --stat` -> captured for commit `aae85243782ba786486b1c6628de9cfe710b4b86`\n\nCommit SHA: `aae85243782ba786486b1c6628de9cfe710b4b86`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/192",
+          "created_at": "2026-03-25T17:45:34Z"
+        }
+      ],
+      "created_at": "2026-03-25T17:41:38Z",
+      "description": "Make bigclawctl refill report queue_status_synced and recent_batches_synced from the final post-apply queue state so --apply --sync-queue-status output reflects the queue that was just written.",
+      "id": "big-par-395",
+      "identifier": "BIG-PAR-395",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Report final synced refill queue state after apply",
+      "updated_at": "2026-03-25T17:45:34Z"
     }
   ]
 }
