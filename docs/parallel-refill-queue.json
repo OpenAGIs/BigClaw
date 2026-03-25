@@ -199,7 +199,9 @@
       "BIG-PAR-409",
       "BIG-PAR-410"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-411"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -382,7 +384,8 @@
     "BIG-PAR-407",
     "BIG-PAR-408",
     "BIG-PAR-409",
-    "BIG-PAR-410"
+    "BIG-PAR-410",
+    "BIG-PAR-411"
   ],
   "issues": [
     {
@@ -1494,6 +1497,12 @@
       "title": "Add github-sync status JSON no-escape regression",
       "track": "Automation",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-411",
+      "title": "Add refill seed JSON no-escape regression",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

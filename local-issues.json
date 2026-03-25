@@ -6080,6 +6080,18 @@
       "state": "Done",
       "title": "Add github-sync status JSON no-escape regression",
       "updated_at": "2026-03-25T20:18:47Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T20:23:07Z",
+      "description": "Add command-level coverage proving bigclawctl refill seed --json preserves raw arrow tokens in emitted identifier and path fields so the shared JSON emitter remains protected on the queue seeding path.",
+      "id": "big-par-411",
+      "identifier": "BIG-PAR-411",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add refill seed JSON no-escape regression",
+      "updated_at": "2026-03-25T20:23:07Z"
     }
   ]
 }
