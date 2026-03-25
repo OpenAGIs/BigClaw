@@ -184,12 +184,11 @@
       "BIG-PAR-383",
       "BIG-PAR-384",
       "BIG-PAR-385",
-      "BIG-PAR-386"
-    ],
-    "active": [
+      "BIG-PAR-386",
       "BIG-PAR-387",
       "BIG-PAR-388"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1400,13 +1399,13 @@
       "identifier": "BIG-PAR-387",
       "title": "Add repo discussion board edge coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-388",
       "title": "Add broker stub checkpoint edge coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

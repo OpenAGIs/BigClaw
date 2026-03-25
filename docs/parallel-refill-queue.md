@@ -48,10 +48,10 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 25, 2026:
-  - active slices: `BIG-PAR-387` — Add repo discussion board edge coverage; `BIG-PAR-388` — Add broker stub checkpoint edge coverage
+  - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-379` — Add bootstrap joinLines helper coverage; `BIG-PAR-380` — Add domain task state helper coverage; `BIG-PAR-381` — Add control snapshot helper coverage; `BIG-PAR-382` — Add broker stub trace/task helper coverage; `BIG-PAR-383` — Add consumer dedup key validation coverage; `BIG-PAR-384` — Add run commit role validation coverage; `BIG-PAR-385` — Add broker stub backend and clone coverage; `BIG-PAR-386` — Add run commit helper edge coverage
-  - queue status: `queue_runnable=2`, `target_in_progress=2`
+  - recently completed slices: `BIG-PAR-381` — Add control snapshot helper coverage; `BIG-PAR-382` — Add broker stub trace/task helper coverage; `BIG-PAR-383` — Add consumer dedup key validation coverage; `BIG-PAR-384` — Add run commit role validation coverage; `BIG-PAR-385` — Add broker stub backend and clone coverage; `BIG-PAR-386` — Add run commit helper edge coverage; `BIG-PAR-387` — Add repo discussion board edge coverage; `BIG-PAR-388` — Add broker stub checkpoint edge coverage
+  - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -225,6 +225,8 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-384` — Add run commit role validation coverage
   - `BIG-PAR-385` — Add broker stub backend and clone coverage
   - `BIG-PAR-386` — Add run commit helper edge coverage
+  - `BIG-PAR-387` — Add repo discussion board edge coverage
+  - `BIG-PAR-388` — Add broker stub checkpoint edge coverage
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
