@@ -75,6 +75,57 @@ func containsString(values []string, want string) bool {
 	return false
 }
 
+func TestQueryMemoryEventsAndEventStateHelpers(t *testing.T) {
+	t.Run("nil recorder", func(t *testing.T) {
+		server := &Server{}
+		if got := server.queryMemoryEvents("", "", "", 5); got != nil {
+			t.Fatalf("expected nil recorder to return nil events, got %+v", got)
+		}
+	})
+
+	t.Run("memory event filtering", func(t *testing.T) {
+		recorder := observability.NewRecorder()
+		server := &Server{Recorder: recorder}
+		base := time.Date(2026, 3, 25, 9, 0, 0, 0, time.UTC)
+		for _, event := range []domain.Event{
+			{ID: "evt-1", TaskID: "task-a", TraceID: "trace-a", Type: domain.EventTaskQueued, Timestamp: base},
+			{ID: "evt-2", TaskID: "task-b", TraceID: "trace-b", Type: domain.EventTaskStarted, Timestamp: base.Add(time.Minute)},
+			{ID: "evt-3", TaskID: "task-a", TraceID: "trace-a", Type: domain.EventTaskCompleted, Timestamp: base.Add(2 * time.Minute)},
+		} {
+			recorder.Record(event)
+		}
+
+		latestTwo := server.queryMemoryEvents("", "", "", 2)
+		if len(latestTwo) != 2 || latestTwo[0].ID != "evt-2" || latestTwo[1].ID != "evt-3" {
+			t.Fatalf("expected no-after query to keep the latest matching events, got %+v", latestTwo)
+		}
+
+		taskOnly := server.queryMemoryEvents("task-a", "", "", 0)
+		if len(taskOnly) != 2 || taskOnly[0].ID != "evt-1" || taskOnly[1].ID != "evt-3" {
+			t.Fatalf("expected task-only query to skip non-matching memory events, got %+v", taskOnly)
+		}
+
+		taskAfter := server.queryMemoryEvents("task-a", "", "evt-1", 5)
+		if len(taskAfter) != 1 || taskAfter[0].ID != "evt-3" {
+			t.Fatalf("expected after filter to return later task events only, got %+v", taskAfter)
+		}
+
+		traceLimited := server.queryMemoryEvents("", "trace-a", "evt-1", 1)
+		if len(traceLimited) != 1 || traceLimited[0].ID != "evt-3" {
+			t.Fatalf("expected trace filter with limit to stop at first matching event, got %+v", traceLimited)
+		}
+	})
+
+	t.Run("event state", func(t *testing.T) {
+		if got := eventState(domain.EventTaskCompleted); got != string(domain.TaskSucceeded) {
+			t.Fatalf("expected succeeded event to map to task state, got %q", got)
+		}
+		if got := eventState(domain.EventType("custom.unknown")); got != "unknown" {
+			t.Fatalf("expected unknown event type to fall back to unknown, got %q", got)
+		}
+	})
+}
+
 type countingInspectorQueue struct {
 	*queue.MemoryQueue
 	listCalls int

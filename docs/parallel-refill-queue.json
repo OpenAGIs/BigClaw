@@ -172,10 +172,11 @@
       "BIG-PAR-371",
       "BIG-PAR-372",
       "BIG-PAR-373",
-      "BIG-PAR-374"
+      "BIG-PAR-374",
+      "BIG-PAR-375"
     ],
     "active": [
-      "BIG-PAR-375"
+      "BIG-PAR-376"
     ],
     "standby": []
   },
@@ -335,7 +336,8 @@
     "BIG-PAR-372",
     "BIG-PAR-373",
     "BIG-PAR-374",
-    "BIG-PAR-375"
+    "BIG-PAR-375",
+    "BIG-PAR-376"
   ],
   "issues": [
     {
@@ -1301,6 +1303,12 @@
     {
       "identifier": "BIG-PAR-375",
       "title": "Add expansion helper unit coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-376",
+      "title": "Add event stream helper unit coverage",
       "track": "Go Mainline Follow-ups",
       "status": "In Progress"
     }
