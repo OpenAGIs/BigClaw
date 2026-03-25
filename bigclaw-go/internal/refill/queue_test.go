@@ -309,6 +309,28 @@ func TestParallelIssueQueueUpsertIssueCreatesAndUpdatesQueueRecord(t *testing.T)
 	}
 }
 
+func TestParallelIssueQueueUpsertIssueCanonicalizesBuiltInStatusOnCreate(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{},
+	}
+
+	action, orderAdded, err := queue.UpsertIssue(IssueRecord{
+		Identifier: "BIG-PAR-401",
+		Title:      "Canonicalize equivalent queue state spellings during refill seed",
+		Track:      "Automation",
+		Status:     "todo.",
+	})
+	if err != nil {
+		t.Fatalf("upsert create canonical status: %v", err)
+	}
+	if action != "created" || !orderAdded {
+		t.Fatalf("expected created action with order add, got action=%s orderAdded=%v", action, orderAdded)
+	}
+	if queue.payload.Issues[0].Status != "Todo" {
+		t.Fatalf("expected canonical Todo queue status, got %+v", queue.payload.Issues[0])
+	}
+}
+
 func TestParallelIssueQueueSyncRecentBatchesFromStates(t *testing.T) {
 	queue := &ParallelIssueQueue{
 		payload: QueuePayload{
