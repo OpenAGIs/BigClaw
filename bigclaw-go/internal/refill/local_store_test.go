@@ -142,6 +142,16 @@ func TestWithFileLockCleansUpOnFunctionError(t *testing.T) {
 	}
 }
 
+func TestWithFileLockFailsWhenLockPathParentIsMissing(t *testing.T) {
+	store := &LocalIssueStore{
+		path: filepath.Join(t.TempDir(), "missing", "local-issues.json"),
+	}
+
+	if err := store.withFileLock(func() error { return nil }); err == nil || !strings.Contains(err.Error(), "no such file or directory") {
+		t.Fatalf("expected lock creation failure for missing parent path, got %v", err)
+	}
+}
+
 func TestNormalizeLocalIssueMapsSkipsNonMapEntries(t *testing.T) {
 	items := []any{
 		map[string]any{"identifier": "BIG-PAR-399"},
