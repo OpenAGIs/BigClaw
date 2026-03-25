@@ -105,6 +105,31 @@ func TestBrokerStubEventLogTaskAndTraceHelpers(t *testing.T) {
 	}
 }
 
+func TestBrokerStubEventLogBackendCloseAndCloneHelpers(t *testing.T) {
+	log := NewBrokerStubEventLog()
+	if backend := log.Backend(); backend != "broker_stub" {
+		t.Fatalf("expected broker stub backend, got %q", backend)
+	}
+	if err := log.Close(); err != nil {
+		t.Fatalf("close: %v", err)
+	}
+
+	withPayload := domain.Event{
+		ID:      "evt-clone",
+		Payload: map[string]any{"status": "queued"},
+	}
+	cloned := cloneEvent(withPayload)
+	cloned.Payload["status"] = "started"
+	if withPayload.Payload["status"] != "queued" {
+		t.Fatalf("expected cloneEvent to copy payload map, got %+v", withPayload.Payload)
+	}
+
+	withoutPayload := domain.Event{ID: "evt-no-payload"}
+	if cloned := cloneEvent(withoutPayload); cloned.Payload != nil {
+		t.Fatalf("expected nil payload to stay nil, got %+v", cloned.Payload)
+	}
+}
+
 func TestBrokerStubLiveFanoutStaysIsolatedFromReplayCatchUp(t *testing.T) {
 	log := NewBrokerStubEventLog()
 	bus := NewBus()
