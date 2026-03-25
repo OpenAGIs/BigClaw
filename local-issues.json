@@ -3190,6 +3190,16 @@
           "author": "codex",
           "body": "Status refresh on March 25, 2026: PR `#207` is now merged for the github-sync status JSON hardening slice on this branch, and the local refill queue is drained again with no active child slices. Current synced branch head: `48eebe70302eeec5a01c556e01df7b4f6c1b79c3`.\n\nValidation:\n- `gh pr view 207 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` at `2026-03-25T20:17:52Z` with merge commit `6f430a7e2e4d1b55b97145f446e574aa467bef0d` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `48eebe70302eeec5a01c556e01df7b4f6c1b79c3` matches remote SHA `48eebe70302eeec5a01c556e01df7b4f6c1b79c3` with `status: ok` and `synced: true`",
           "created_at": "2026-03-25T20:18:47Z"
+        },
+        {
+          "author": "codex",
+          "body": "Status refresh on March 26, 2026: the current synced branch head for `symphony/BIG-PAR-291` is `3a93f18340c539d50c31d0b9ee3f94c7a3422ef8`, PR `#208` is the latest merged review surface for this workspace, and the local refill queue remains drained. This supersedes older BIG-PAR-291 tracker notes that referenced PR `#191` as the terminal review surface for the branch.\n\nValidation:\n- `gh pr view 208 --repo OpenAGIs/BigClaw --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> PR `https://github.com/OpenAGIs/BigClaw/pull/208` is `MERGED` at `2026-03-25T20:29:10Z` with merge commit `c4032da281163a06053b6aa220d02a5029100926` and a successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`, `candidates: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `3a93f18340c539d50c31d0b9ee3f94c7a3422ef8` matches remote SHA `3a93f18340c539d50c31d0b9ee3f94c7a3422ef8` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `3a93f18340c539d50c31d0b9ee3f94c7a3422ef8`\n- `git log -1 --stat` -> captured for commit `3a93f18340c539d50c31d0b9ee3f94c7a3422ef8`\n\nCommit SHA: `3a93f18340c539d50c31d0b9ee3f94c7a3422ef8`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/208",
+          "created_at": "2026-03-25T20:31:53Z"
+        },
+        {
+          "author": "codex",
+          "body": "External blocker only on March 26, 2026: all repo-local work for BIG-PAR-291 is complete, PR `#208` is merged, the branch is clean and synced, and the local refill queue is drained. If this issue still appears active in the controlling system, that activity is external to this workspace rather than a pending local code, tracker, or GitHub task.\n\nValidation:\n- `gh pr view 208 --repo OpenAGIs/BigClaw --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` with merge commit `c4032da281163a06053b6aa220d02a5029100926` and successful completed `test` check\n- `gh pr list --repo OpenAGIs/BigClaw --head symphony/BIG-PAR-291 --json number,url,title,state,isDraft` -> `[]`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`, `candidates: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `39b85ffd378f304f8488264fd6c2df03347e2392` matches remote SHA `39b85ffd378f304f8488264fd6c2df03347e2392` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `39b85ffd378f304f8488264fd6c2df03347e2392`\n- `git ls-remote --heads origin symphony/BIG-PAR-291` -> remote issue branch still exists at `39b85ffd378f304f8488264fd6c2df03347e2392`\n\nCommit SHA: `39b85ffd378f304f8488264fd6c2df03347e2392`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/208",
+          "created_at": "2026-03-25T20:34:02Z"
         }
       ],
       "created_at": "2026-03-24T15:47:40Z",
@@ -3206,7 +3216,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-25T20:18:47Z"
+      "updated_at": "2026-03-25T20:34:02Z"
     },
     {
       "assigned_to_worker": true,
@@ -6088,6 +6098,11 @@
           "author": "codex",
           "body": "What changed:\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now adds a focused `refill seed --json` regression proving the command preserves raw `->` tokens in emitted identifier, queue path, markdown path, and local issue path fields.\n- The regression uses arrow-bearing temporary file paths and identifier values so it exercises the real queue-seeding command path instead of only the shared emitter helper.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `61b55710e657b57266983073c690d5cc0cb1b1b8` matches remote SHA `61b55710e657b57266983073c690d5cc0cb1b1b8` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `61b55710e657b57266983073c690d5cc0cb1b1b8`\n- `git log -1 --stat` -> captured for commit `61b55710e657b57266983073c690d5cc0cb1b1b8`\n\nCommit SHA: `61b55710e657b57266983073c690d5cc0cb1b1b8`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/208",
           "created_at": "2026-03-25T20:26:03Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout on March 26, 2026:\n- PR `#208` (`https://github.com/OpenAGIs/BigClaw/pull/208`) is `MERGED` at `2026-03-25T20:29:10Z` with merge commit `c4032da281163a06053b6aa220d02a5029100926`.\n- The synced workspace branch head remains `7c2a9656754e22e431afc07f06a48cfd97db81a0`; later branch commits were not needed after merge.\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` reports `queue_drained: true` and `active_in_progress: []`.\n\nValidation:\n- `gh pr view 208 --repo OpenAGIs/BigClaw --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> merged with successful completed `test` check\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `7c2a9656754e22e431afc07f06a48cfd97db81a0` matches remote SHA `7c2a9656754e22e431afc07f06a48cfd97db81a0` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `7c2a9656754e22e431afc07f06a48cfd97db81a0`\n- `git log -1 --stat` -> captured for commit `7c2a9656754e22e431afc07f06a48cfd97db81a0`\n\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/208",
+          "created_at": "2026-03-25T20:30:20Z"
         }
       ],
       "created_at": "2026-03-25T20:23:07Z",
@@ -6098,7 +6113,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add refill seed JSON no-escape regression",
-      "updated_at": "2026-03-25T20:26:12Z"
+      "updated_at": "2026-03-25T20:30:20Z"
     }
   ]
 }
