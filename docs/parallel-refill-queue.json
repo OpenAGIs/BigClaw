@@ -194,7 +194,8 @@
       "BIG-PAR-404",
       "BIG-PAR-405",
       "BIG-PAR-406",
-      "BIG-PAR-407"
+      "BIG-PAR-407",
+      "BIG-PAR-408"
     ],
     "active": [],
     "standby": []
@@ -376,7 +377,8 @@
     "BIG-PAR-404",
     "BIG-PAR-405",
     "BIG-PAR-406",
-    "BIG-PAR-407"
+    "BIG-PAR-407",
+    "BIG-PAR-408"
   ],
   "issues": [
     {
@@ -1468,6 +1470,12 @@
     {
       "identifier": "BIG-PAR-407",
       "title": "Add workspace cleanup JSON no-escape regression",
+      "track": "Automation",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-408",
+      "title": "Add legacy-python JSON no-escape regression",
       "track": "Automation",
       "status": "Done"
     }

@@ -3170,6 +3170,11 @@
           "author": "codex",
           "body": "Status refresh on March 25, 2026: PR `#203` is now merged for the workspace bootstrap JSON hardening slice on this branch, and the local refill queue is drained again with no active child slices. Current synced branch head: `b17bf6f1da4614c0e99628e69e9c2380f8c0b40d`.\n\nValidation:\n- `gh pr view 203 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` at `2026-03-25T19:42:57Z` with merge commit `d7e832fd65191be4925716921f91d7bc172a8c7e` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `b17bf6f1da4614c0e99628e69e9c2380f8c0b40d` matches remote SHA `b17bf6f1da4614c0e99628e69e9c2380f8c0b40d` with `status: ok` and `synced: true`",
           "created_at": "2026-03-25T19:43:47Z"
+        },
+        {
+          "author": "codex",
+          "body": "Status refresh on March 25, 2026: PR `#204` is now merged for the workspace cleanup JSON hardening slice on this branch, and the local refill queue is drained again with no active child slices. Current synced branch head: `39a327fe4ad65a3e12de390902d3949e02bfe1b1`.\n\nValidation:\n- `gh pr view 204 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` at `2026-03-25T19:51:05Z` with merge commit `7058cf9623ec28b76475b3bd2fb7cf28e4b4022d` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `39a327fe4ad65a3e12de390902d3949e02bfe1b1` matches remote SHA `39a327fe4ad65a3e12de390902d3949e02bfe1b1` with `status: ok` and `synced: true`",
+          "created_at": "2026-03-25T19:51:36Z"
         }
       ],
       "created_at": "2026-03-24T15:47:40Z",
@@ -3186,7 +3191,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-25T19:43:47Z"
+      "updated_at": "2026-03-25T19:51:36Z"
     },
     {
       "assigned_to_worker": true,
@@ -5952,6 +5957,11 @@
           "author": "codex",
           "body": "What changed:\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now adds a focused `workspace cleanup --json` regression proving the cleanup command preserves raw `->` tokens in emitted `workspace` and cache path fields.\n- The regression bootstraps an arrow-bearing temporary workspace first, then exercises the real cleanup command path instead of only the shared emitter helper.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `3541387427c9f00cacc9cc05237d06064eb0b0d8` matches remote SHA `3541387427c9f00cacc9cc05237d06064eb0b0d8` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `3541387427c9f00cacc9cc05237d06064eb0b0d8`\n- `git log -1 --stat` -> captured for commit `3541387427c9f00cacc9cc05237d06064eb0b0d8`\n\nCommit SHA: `3541387427c9f00cacc9cc05237d06064eb0b0d8`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/204",
           "created_at": "2026-03-25T19:49:18Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout on March 25, 2026:\n- PR `#204` (`https://github.com/OpenAGIs/BigClaw/pull/204`) is `MERGED` at `2026-03-25T19:51:05Z` with merge commit `7058cf9623ec28b76475b3bd2fb7cf28e4b4022d`.\n- The synced workspace branch head remains `39a327fe4ad65a3e12de390902d3949e02bfe1b1`; later branch commits were not needed after merge.\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` reports `queue_drained: true` and `active_in_progress: []`.\n\nValidation:\n- `gh pr view 204 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> merged with successful `test` check\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `39a327fe4ad65a3e12de390902d3949e02bfe1b1` matches remote SHA `39a327fe4ad65a3e12de390902d3949e02bfe1b1` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `39a327fe4ad65a3e12de390902d3949e02bfe1b1`\n- `git log -1 --stat` -> captured for commit `39a327fe4ad65a3e12de390902d3949e02bfe1b1`",
+          "created_at": "2026-03-25T19:51:36Z"
         }
       ],
       "created_at": "2026-03-25T19:45:39Z",
@@ -5967,7 +5977,31 @@
       "priority": 3,
       "state": "Done",
       "title": "Add workspace cleanup JSON no-escape regression",
-      "updated_at": "2026-03-25T19:49:18Z"
+      "updated_at": "2026-03-25T19:51:36Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now adds a focused `legacy-python compile-check --json` regression proving the command preserves raw `->` tokens in emitted repo and frozen file-path fields.\n- The regression uses an arrow-bearing temporary repo root and real shim file layout so it exercises the actual legacy compile-check command path instead of only the shared emitter helper.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `58e21f29d094d982247c8c76aeafa70e1e4113fd` matches remote SHA `58e21f29d094d982247c8c76aeafa70e1e4113fd` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `58e21f29d094d982247c8c76aeafa70e1e4113fd`\n- `git log -1 --stat` -> captured for commit `58e21f29d094d982247c8c76aeafa70e1e4113fd`\n\nCommit SHA: `58e21f29d094d982247c8c76aeafa70e1e4113fd`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/205",
+          "created_at": "2026-03-25T19:57:25Z"
+        }
+      ],
+      "created_at": "2026-03-25T19:54:31Z",
+      "description": "Add command-level coverage proving legacy-python compile-check JSON output preserves raw arrow tokens in emitted repo and file path fields so the shared emitter remains protected on the legacy shim path as well.",
+      "id": "big-par-408",
+      "identifier": "BIG-PAR-408",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add legacy-python JSON no-escape regression",
+      "updated_at": "2026-03-25T19:57:25Z"
     }
   ]
 }
