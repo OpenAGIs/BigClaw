@@ -6419,6 +6419,30 @@
       "state": "Done",
       "title": "Add local tracker lock-open failure coverage",
       "updated_at": "2026-03-25T20:13:43Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T20:15:29Z",
+      "description": "Add focused refill queue and markdown tests covering the last remaining Save and SaveMarkdown branch gaps in bigclaw-go/internal/refill/queue.go and queue_markdown.go.",
+      "id": "big-par-431",
+      "identifier": "BIG-PAR-431",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add refill final save branch coverage",
+      "updated_at": "2026-03-25T20:15:44Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T20:15:30Z",
+      "description": "Add focused refill local-store tests covering the remaining withFileLock branch gap in bigclaw-go/internal/refill/local_store.go.",
+      "id": "big-par-432",
+      "identifier": "BIG-PAR-432",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add local tracker final lock branch coverage",
+      "updated_at": "2026-03-25T20:15:44Z"
     }
   ]
 }
