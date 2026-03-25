@@ -5810,6 +5810,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added focused refill local-store accessor coverage in `bigclaw-go/internal/refill/local_store_test.go` for `Issues`, `FindIssue`, and `CreateIssue`, including normalized accessors, case-insensitive lookup, duplicate rejection, default-state generation, auto timestamp population, explicit custom IDs, and required identifier/title validation.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill -run 'TestLocalIssueStoreAccessorsAndCreateIssue|TestLocalIssueStoreCreateIssueRequiresIdentifierAndTitle'` -> ok\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill-403-404.cover && go tool cover -func=/tmp/refill-403-404.cover | rg 'internal/refill/(local_store\\.go:(84|103|133)|queue\\.go:(331|416|452))|total:'` -> `local_store.go:84 Issues 100.0%`, `local_store.go:103 FindIssue 100.0%`, `local_store.go:133 CreateIssue 100.0%`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `630fe0507da5290ce35acf55936ced168b42c0b2` matches remote SHA `630fe0507da5290ce35acf55936ced168b42c0b2` with status `ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `630fe0507da5290ce35acf55936ced168b42c0b2`\n\nCommit SHA: `630fe0507da5290ce35acf55936ced168b42c0b2`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T18:25:06Z"
+        }
+      ],
       "created_at": "2026-03-25T18:20:22Z",
       "description": "Add focused refill local-store tests covering Issues, FindIssue, and CreateIssue behavior in bigclaw-go/internal/refill/local_store.go.",
       "id": "big-par-403",
@@ -5821,12 +5828,19 @@
         "coverage"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add local tracker accessor coverage",
-      "updated_at": "2026-03-25T18:20:22Z"
+      "updated_at": "2026-03-25T18:25:06Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added focused refill queue selection/accessor coverage in `bigclaw-go/internal/refill/queue_test.go` for `IssueIdentifiers`, `SelectCandidates`, and `SortedActive`, including refill-state normalization, target override behavior, active-identifier skipping, already-satisfied target no-op behavior, and deterministic active sorting.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill -run TestQueueSelectionAndAccessorHelpers` -> ok\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill-403-404.cover && go tool cover -func=/tmp/refill-403-404.cover | rg 'internal/refill/(local_store\\.go:(84|103|133)|queue\\.go:(331|416|452))|total:'` -> `queue.go:331 IssueIdentifiers 100.0%`, `queue.go:416 SelectCandidates 100.0%`, `queue.go:452 SortedActive 100.0%`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `630fe0507da5290ce35acf55936ced168b42c0b2` matches remote SHA `630fe0507da5290ce35acf55936ced168b42c0b2` with status `ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `630fe0507da5290ce35acf55936ced168b42c0b2`\n\nCommit SHA: `630fe0507da5290ce35acf55936ced168b42c0b2`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T18:25:06Z"
+        }
+      ],
       "created_at": "2026-03-25T18:20:22Z",
       "description": "Add focused refill queue tests covering SelectCandidates, SortedActive, and IssueIdentifiers behavior in bigclaw-go/internal/refill/queue.go.",
       "id": "big-par-404",
@@ -5838,9 +5852,43 @@
         "coverage"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add refill queue selection helper coverage",
-      "updated_at": "2026-03-25T18:20:22Z"
+      "updated_at": "2026-03-25T18:25:06Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T18:25:07Z",
+      "description": "Add focused refill local-store tests covering decodeLocalIssueMaps edge paths in bigclaw-go/internal/refill/local_store.go.",
+      "id": "big-par-405",
+      "identifier": "BIG-PAR-405",
+      "labels": [
+        "go-mainline",
+        "parallel",
+        "refill",
+        "coverage"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add local tracker decode helper coverage",
+      "updated_at": "2026-03-25T18:25:07Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T18:25:07Z",
+      "description": "Add focused refill queue tests covering SyncStatusFromStates and related state-normalization edges in bigclaw-go/internal/refill/queue.go.",
+      "id": "big-par-406",
+      "identifier": "BIG-PAR-406",
+      "labels": [
+        "go-mainline",
+        "parallel",
+        "refill",
+        "coverage"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add refill queue status sync coverage",
+      "updated_at": "2026-03-25T18:25:07Z"
     }
   ]
 }

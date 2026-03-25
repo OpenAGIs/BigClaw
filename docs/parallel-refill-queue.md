@@ -48,9 +48,9 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 25, 2026:
-  - active slices: `BIG-PAR-403` — Add local tracker accessor coverage; `BIG-PAR-404` — Add refill queue selection helper coverage
+  - active slices: `BIG-PAR-405` — Add local tracker decode helper coverage; `BIG-PAR-406` — Add refill queue status sync coverage
   - standby slices: none
-  - recently completed slices: `BIG-PAR-395` — Add repo slug fallback coverage; `BIG-PAR-396` — Add consumer dedup result fallback coverage; `BIG-PAR-398` — Add task JSON unmarshal edge-path coverage; `BIG-PAR-397` — Add task JSON marshal optional-field coverage; `BIG-PAR-399` — Add local tracker normalization helper coverage; `BIG-PAR-400` — Add refill queue batch-helper coverage; `BIG-PAR-401` — Add local tracker scalar helper coverage; `BIG-PAR-402` — Add refill queue identifier helper coverage
+  - recently completed slices: `BIG-PAR-398` — Add task JSON unmarshal edge-path coverage; `BIG-PAR-397` — Add task JSON marshal optional-field coverage; `BIG-PAR-399` — Add local tracker normalization helper coverage; `BIG-PAR-400` — Add refill queue batch-helper coverage; `BIG-PAR-401` — Add local tracker scalar helper coverage; `BIG-PAR-402` — Add refill queue identifier helper coverage; `BIG-PAR-403` — Add local tracker accessor coverage; `BIG-PAR-404` — Add refill queue selection helper coverage
   - queue status: `queue_runnable=2`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
@@ -241,6 +241,8 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-400` — Add refill queue batch-helper coverage
   - `BIG-PAR-401` — Add local tracker scalar helper coverage
   - `BIG-PAR-402` — Add refill queue identifier helper coverage
+  - `BIG-PAR-403` — Add local tracker accessor coverage
+  - `BIG-PAR-404` — Add refill queue selection helper coverage
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -434,3 +436,5 @@ longer waits on Linear to keep issue execution moving.
 183. `BIG-PAR-402`
 184. `BIG-PAR-403`
 185. `BIG-PAR-404`
+186. `BIG-PAR-405`
+187. `BIG-PAR-406`
