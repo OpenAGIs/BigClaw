@@ -196,11 +196,13 @@
       "BIG-PAR-395",
       "BIG-PAR-396",
       "BIG-PAR-398",
-      "BIG-PAR-397"
-    ],
-    "active": [
+      "BIG-PAR-397",
       "BIG-PAR-399",
       "BIG-PAR-400"
+    ],
+    "active": [
+      "BIG-PAR-401",
+      "BIG-PAR-402"
     ],
     "standby": []
   },
@@ -385,7 +387,9 @@
     "BIG-PAR-398",
     "BIG-PAR-397",
     "BIG-PAR-399",
-    "BIG-PAR-400"
+    "BIG-PAR-400",
+    "BIG-PAR-401",
+    "BIG-PAR-402"
   ],
   "issues": [
     {
@@ -1496,11 +1500,23 @@
       "identifier": "BIG-PAR-399",
       "title": "Add local tracker normalization helper coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-400",
       "title": "Add refill queue batch-helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-401",
+      "title": "Add local tracker scalar helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-402",
+      "title": "Add refill queue identifier helper coverage",
       "track": "Go Mainline Follow-ups",
       "status": "In Progress"
     }
