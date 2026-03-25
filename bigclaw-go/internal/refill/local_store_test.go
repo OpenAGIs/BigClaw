@@ -1,6 +1,7 @@
 package refill
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -1071,12 +1072,18 @@ func TestLocalIssueStoreAddCommentFailsWhenLockRemainsHeld(t *testing.T) {
 type stubLocalStoreTemp struct {
 	path     string
 	chmodErr error
+	writeErr error
 	closeErr error
 }
 
 func (s *stubLocalStoreTemp) Name() string                            { return s.path }
 func (s *stubLocalStoreTemp) Chmod(mode os.FileMode) error            { return s.chmodErr }
-func (s *stubLocalStoreTemp) Write(body []byte) (int, error)          { return len(body), nil }
+func (s *stubLocalStoreTemp) Write(body []byte) (int, error) {
+	if s.writeErr != nil {
+		return 0, s.writeErr
+	}
+	return len(body), nil
+}
 func (s *stubLocalStoreTemp) Close() error                            { return s.closeErr }
 
 func TestLocalIssueStoreSaveFailsWhenCreateTempFails(t *testing.T) {
@@ -1098,6 +1105,62 @@ func TestLocalIssueStoreSaveFailsWhenCreateTempFails(t *testing.T) {
 
 	if err := store.saveUnlocked(); err == nil || !strings.Contains(err.Error(), "create temp failure") {
 		t.Fatalf("expected create temp failure, got %v", err)
+	}
+}
+
+func TestLocalIssueStoreSaveFailsWhenMkdirAllFails(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "nested", "local-issues.json")
+	store := &LocalIssueStore{
+		path: storePath,
+		issueMap: []map[string]any{
+			{"identifier": "BIG-PAR-436", "title": "mkdir failure"},
+		},
+	}
+
+	origMkdirAll := localStoreMkdirAll
+	origCreate := localStoreCreateTemp
+	localStoreMkdirAll = func(path string, perm os.FileMode) error {
+		return errors.New("mkdir failure")
+	}
+	localStoreCreateTemp = func(dir, pattern string) (localStoreTemp, error) {
+		t.Fatal("did not expect temp file creation after mkdir failure")
+		return nil, nil
+	}
+	t.Cleanup(func() {
+		localStoreMkdirAll = origMkdirAll
+		localStoreCreateTemp = origCreate
+	})
+
+	if err := store.saveUnlocked(); err == nil || !strings.Contains(err.Error(), "mkdir failure") {
+		t.Fatalf("expected mkdir failure, got %v", err)
+	}
+}
+
+func TestLocalIssueStoreSaveFailsWhenEncodeFails(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	store := &LocalIssueStore{
+		path: storePath,
+		issueMap: []map[string]any{
+			{"identifier": "BIG-PAR-436", "title": "encode failure"},
+		},
+	}
+
+	origEncode := localStoreEncodePayload
+	origMkdirAll := localStoreMkdirAll
+	localStoreEncodePayload = func(buf *bytes.Buffer, payload map[string]any) error {
+		return errors.New("encode failure")
+	}
+	localStoreMkdirAll = func(path string, perm os.FileMode) error {
+		t.Fatal("did not expect mkdir after encode failure")
+		return nil
+	}
+	t.Cleanup(func() {
+		localStoreEncodePayload = origEncode
+		localStoreMkdirAll = origMkdirAll
+	})
+
+	if err := store.saveUnlocked(); err == nil || !strings.Contains(err.Error(), "encode failure") {
+		t.Fatalf("expected encode failure, got %v", err)
 	}
 }
 
@@ -1168,6 +1231,38 @@ func TestLocalIssueStoreSaveFailsWhenChmodFails(t *testing.T) {
 	}
 	if _, statErr := os.Stat(tempFile); !os.IsNotExist(statErr) {
 		t.Fatalf("expected temp removal after chmod failure, got %v", statErr)
+	}
+}
+
+func TestLocalIssueStoreSaveFailsWhenWriteFails(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	store := &LocalIssueStore{
+		path: storePath,
+		issueMap: []map[string]any{
+			{"identifier": "BIG-PAR-436", "title": "write failure"},
+		},
+	}
+
+	tempFile := filepath.Join(filepath.Dir(storePath), "write.tmp")
+	if _, err := os.Create(tempFile); err != nil {
+		t.Fatalf("create temp fixture: %v", err)
+	}
+	defer os.Remove(tempFile)
+
+	writeErr := errors.New("write failure")
+	origCreate := localStoreCreateTemp
+	localStoreCreateTemp = func(dir, pattern string) (localStoreTemp, error) {
+		return &stubLocalStoreTemp{path: tempFile, writeErr: writeErr}, nil
+	}
+	t.Cleanup(func() {
+		localStoreCreateTemp = origCreate
+	})
+
+	if err := store.saveUnlocked(); err == nil || !errors.Is(err, writeErr) {
+		t.Fatalf("expected write failure, got %v", err)
+	}
+	if _, statErr := os.Stat(tempFile); !os.IsNotExist(statErr) {
+		t.Fatalf("expected temp removal after write failure, got %v", statErr)
 	}
 }
 

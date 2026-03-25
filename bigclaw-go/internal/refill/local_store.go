@@ -28,6 +28,12 @@ type localStoreTemp interface {
 var (
 	localStoreAbsPath = filepath.Abs
 	localStoreMkdirAll = os.MkdirAll
+	localStoreEncodePayload = func(buf *bytes.Buffer, payload map[string]any) error {
+		encoder := json.NewEncoder(buf)
+		encoder.SetEscapeHTML(false)
+		encoder.SetIndent("", "  ")
+		return encoder.Encode(payload)
+	}
 	localStoreCreateTemp = func(dir, pattern string) (localStoreTemp, error) {
 		return os.CreateTemp(dir, pattern)
 	}
@@ -394,10 +400,7 @@ func (s *LocalIssueStore) saveUnlocked() error {
 	}
 	payload := map[string]any{"issues": issues}
 	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
-	encoder.SetEscapeHTML(false)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(payload); err != nil {
+	if err := localStoreEncodePayload(&buf, payload); err != nil {
 		return err
 	}
 	dir := filepath.Dir(s.path)

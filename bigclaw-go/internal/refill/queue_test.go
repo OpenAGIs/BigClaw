@@ -1,6 +1,7 @@
 package refill
 
 import (
+	"bytes"
 	"errors"
 	"os"
 	"path/filepath"
@@ -783,6 +784,96 @@ func TestParallelIssueQueueSavePropagatesCreateTempFailure(t *testing.T) {
 	}
 	if err := queue.Save(); !errors.Is(err, createErr) {
 		t.Fatalf("expected create temp failure to propagate, got %v", err)
+	}
+}
+
+func TestParallelIssueQueueSavePropagatesMkdirAllFailure(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		queuePath: filepath.Join(t.TempDir(), "nested", "queue.json"),
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-435"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-435", Title: "Add refill remaining save-path coverage", Track: "Go Mainline Follow-ups", Status: "In Progress"},
+			},
+		},
+	}
+
+	originalMkdirAll := queueMkdirAll
+	originalCreateTemp := queueCreateTemp
+	t.Cleanup(func() {
+		queueMkdirAll = originalMkdirAll
+		queueCreateTemp = originalCreateTemp
+	})
+
+	mkdirErr := errors.New("mkdir queue dir")
+	queueMkdirAll = func(path string, perm os.FileMode) error {
+		return mkdirErr
+	}
+	queueCreateTemp = func(dir string, pattern string) (tempFile, error) {
+		t.Fatal("did not expect temp file creation after mkdir failure")
+		return nil, nil
+	}
+
+	if err := queue.Save(); !errors.Is(err, mkdirErr) {
+		t.Fatalf("expected mkdir failure to propagate, got %v", err)
+	}
+}
+
+func TestParallelIssueQueueSavePropagatesEncodeFailure(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		queuePath: filepath.Join(t.TempDir(), "queue.json"),
+	}
+
+	originalEncodePayload := queueEncodePayload
+	originalMkdirAll := queueMkdirAll
+	t.Cleanup(func() {
+		queueEncodePayload = originalEncodePayload
+		queueMkdirAll = originalMkdirAll
+	})
+
+	encodeErr := errors.New("encode queue payload")
+	queueEncodePayload = func(buf *bytes.Buffer, payload QueuePayload) error {
+		return encodeErr
+	}
+	queueMkdirAll = func(path string, perm os.FileMode) error {
+		t.Fatal("did not expect mkdir after encode failure")
+		return nil
+	}
+
+	if err := queue.Save(); !errors.Is(err, encodeErr) {
+		t.Fatalf("expected encode failure to propagate, got %v", err)
+	}
+}
+
+func TestParallelIssueQueueSavePropagatesWriteFailure(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		queuePath: filepath.Join(t.TempDir(), "queue.json"),
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-435"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-435", Title: "Add refill remaining save-path coverage", Track: "Go Mainline Follow-ups", Status: "In Progress"},
+			},
+		},
+	}
+
+	originalCreateTemp := queueCreateTemp
+	originalRename := queueRename
+	t.Cleanup(func() {
+		queueCreateTemp = originalCreateTemp
+		queueRename = originalRename
+	})
+
+	writeErr := errors.New("write temp queue file")
+	queueCreateTemp = func(dir string, pattern string) (tempFile, error) {
+		return &stubTempFile{name: filepath.Join(dir, "queue-write.tmp"), writeErr: writeErr}, nil
+	}
+	queueRename = func(oldPath string, newPath string) error {
+		t.Fatal("did not expect rename after write failure")
+		return nil
+	}
+
+	if err := queue.Save(); !errors.Is(err, writeErr) {
+		t.Fatalf("expected write failure to propagate, got %v", err)
 	}
 }
 
