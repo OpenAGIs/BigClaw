@@ -158,6 +158,29 @@ func TestParallelIssueQueueRunnableCountForStatesDoesNotDrainWhenMetadataMissing
 	}
 }
 
+func TestParallelIssueQueueRunnableCountForStatesTrimsOverridesAndIgnoresBlanks(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-419", "BIG-PAR-420", "BIG-PAR-421"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-419", Status: "Done"},
+				{Identifier: "BIG-PAR-420", Status: "Backlog"},
+				{Identifier: "BIG-PAR-421", Status: "Done"},
+			},
+		},
+	}
+
+	liveStates := map[string]string{
+		"":            "Done",
+		"BIG-PAR-419": "   ",
+		"BIG-PAR-420": " Done. ",
+		"BIG-PAR-421": " In Progress ",
+	}
+	if got := queue.RunnableCountForStates(liveStates); got != 1 {
+		t.Fatalf("expected trimmed live state overrides to leave one runnable issue, got %d", got)
+	}
+}
+
 func TestParallelIssueQueueRefreshRecentBatchesFromStates(t *testing.T) {
 	queue := &ParallelIssueQueue{
 		payload: QueuePayload{
@@ -277,6 +300,55 @@ func TestParallelIssueQueueSaveFailsWhenParentPathIsAFile(t *testing.T) {
 
 	if err := queue.Save(); err == nil {
 		t.Fatal("expected save to fail when parent path is a file")
+	}
+}
+
+func TestParallelIssueQueueSetRecentBatchMovesClearsAndValidatesIdentifiers(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-419", "BIG-PAR-420", "BIG-PAR-421"},
+			RecentBatches: struct {
+				Completed []string `json:"completed"`
+				Active    []string `json:"active"`
+				Standby   []string `json:"standby"`
+			}{
+				Completed: []string{"BIG-PAR-420"},
+				Active:    []string{"BIG-PAR-419"},
+				Standby:   []string{"BIG-PAR-421"},
+			},
+		},
+	}
+
+	changed, err := queue.SetRecentBatch("active", "BIG-PAR-420")
+	if err != nil {
+		t.Fatalf("move issue to active batch: %v", err)
+	}
+	if !changed {
+		t.Fatal("expected moving issue between recent batches to report a change")
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Completed, []string{}) {
+		t.Fatalf("expected completed recent batch to be cleared, got %+v", queue.payload.RecentBatches.Completed)
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Active, []string{"BIG-PAR-419", "BIG-PAR-420"}) {
+		t.Fatalf("expected active recent batch to preserve queue order, got %+v", queue.payload.RecentBatches.Active)
+	}
+
+	changed, err = queue.SetRecentBatch("none", "BIG-PAR-420")
+	if err != nil {
+		t.Fatalf("clear issue recent batch: %v", err)
+	}
+	if !changed {
+		t.Fatal("expected clearing issue from recent batches to report a change")
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Active, []string{"BIG-PAR-419"}) {
+		t.Fatalf("expected active recent batch to remove cleared identifier, got %+v", queue.payload.RecentBatches.Active)
+	}
+
+	if changed, err := queue.SetRecentBatch("invalid", "BIG-PAR-420"); err == nil || changed {
+		t.Fatalf("expected invalid batch name to fail, got changed=%v err=%v", changed, err)
+	}
+	if changed, err := queue.SetRecentBatch("standby", "   "); err == nil || changed {
+		t.Fatalf("expected blank identifier to fail, got changed=%v err=%v", changed, err)
 	}
 }
 
