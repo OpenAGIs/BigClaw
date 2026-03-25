@@ -190,12 +190,11 @@
       "BIG-PAR-389",
       "BIG-PAR-390",
       "BIG-PAR-391",
-      "BIG-PAR-392"
-    ],
-    "active": [
+      "BIG-PAR-392",
       "BIG-PAR-393",
       "BIG-PAR-394"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1448,13 +1447,13 @@
       "identifier": "BIG-PAR-393",
       "title": "Add governance audit field coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-394",
       "title": "Add task state normalization helper coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
