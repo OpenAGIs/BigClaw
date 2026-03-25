@@ -299,6 +299,10 @@ func (s *LocalIssueStore) UpdateIssueState(ref string, stateName string, now tim
 			if !issueMatchesRef(issue, ref) {
 				continue
 			}
+			if NormalizeStateName(mapString(issue, "state")) == NormalizeStateName(normalized) {
+				updated = mapString(issue, "state")
+				return nil
+			}
 			issue["state"] = normalized
 			issue["updated_at"] = now.UTC().Truncate(time.Second).Format(time.RFC3339)
 			updated = mapString(issue, "state")
