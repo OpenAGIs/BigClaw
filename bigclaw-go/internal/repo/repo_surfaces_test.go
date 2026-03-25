@@ -122,6 +122,9 @@ func TestRepoDiscussionBoardReplyErrorNowFallbackAndEmptyMetadata(t *testing.T) 
 	if got := board.ListPosts("gamma-release", "", ""); len(got) != 0 {
 		t.Fatalf("expected channel mismatch to filter all posts, got %+v", got)
 	}
+	if got := board.ListPosts("", "", "BIG-999"); len(got) != 0 {
+		t.Fatalf("expected target-id mismatch to filter all posts, got %+v", got)
+	}
 	if got := board.ListPosts("", "incident", ""); len(got) != 0 {
 		t.Fatalf("expected target-surface mismatch to filter all posts, got %+v", got)
 	}
