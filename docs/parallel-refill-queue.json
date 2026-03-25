@@ -174,11 +174,10 @@
       "BIG-PAR-382",
       "BIG-PAR-383",
       "BIG-PAR-384",
+      "BIG-PAR-386",
       "BIG-PAR-385"
     ],
-    "active": [
-      "BIG-PAR-386"
-    ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1312,7 +1311,7 @@
       "identifier": "BIG-PAR-386",
       "title": "Normalize refill active and recent-batch state detection",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-385",

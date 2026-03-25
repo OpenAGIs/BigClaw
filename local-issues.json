@@ -5278,6 +5278,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Changed:\n- normalized refill active detection in `bigclaw-go/cmd/bigclawctl/main.go` so local active slice selection now respects equivalent `In Progress` spellings\n- normalized active and recent-batch classification in `bigclaw-go/internal/refill/queue.go` for queue sync and payload generation\n- added regressions for normalized `active_in_progress`, sorted active slices, and recent-batch classification\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> pass\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `1d8e4dcf145091a50a215c019fac0498faa86ada` matches remote SHA `1d8e4dcf145091a50a215c019fac0498faa86ada` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `1d8e4dcf145091a50a215c019fac0498faa86ada`\n- `git log -1 --stat` -> captured for commit `1d8e4dcf145091a50a215c019fac0498faa86ada`\n\nCommit SHA: `1d8e4dcf145091a50a215c019fac0498faa86ada`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/189",
+          "created_at": "2026-03-25T16:20:54Z"
+        }
+      ],
       "created_at": "2026-03-25T16:10:29Z",
       "description": "Make refill active detection, active_in_progress payloads, and recent-batch classification treat equivalent state spellings consistently so local queue projections remain correct under mixed-case or punctuated tracker states.",
       "id": "big-par-386",
@@ -5289,9 +5296,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Normalize refill active and recent-batch state detection",
-      "updated_at": "2026-03-25T16:10:29Z"
+      "updated_at": "2026-03-25T16:20:54Z"
     }
   ]
 }
