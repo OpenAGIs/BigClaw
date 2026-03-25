@@ -225,12 +225,11 @@
       "BIG-PAR-424",
       "BIG-PAR-425",
       "BIG-PAR-426",
-      "BIG-PAR-427"
-    ],
-    "active": [
+      "BIG-PAR-427",
       "BIG-PAR-429",
       "BIG-PAR-430"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1728,13 +1727,13 @@
       "identifier": "BIG-PAR-429",
       "title": "Add refill remaining save branch coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-430",
       "title": "Add local tracker lock-open failure coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

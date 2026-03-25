@@ -6384,27 +6384,41 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- added focused refill queue and markdown save-branch tests covering queue Save chmod failure plus SaveMarkdown chmod and close failures in bigclaw-go/internal/refill/queue_test.go and queue_markdown_test.go.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill -run 'TestParallelIssueQueueSavePropagatesChmodFailure|TestParallelIssueQueueSaveMarkdownPropagatesCloseFailure|TestParallelIssueQueueSaveMarkdownPropagatesChmodFailure'`\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill-resume.cover >/tmp/refill-resume.out && go tool cover -func=/tmp/refill-resume.cover | rg 'internal/refill/(queue\\.go|queue_markdown\\.go)|total'`\n- result: pass; Save 83.3%, SaveMarkdown 89.7%, package total 97.5%.\n\nCommit SHA:\n- `bfe0979`\n\nPR URL:\n- https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T20:13:43Z"
+        }
+      ],
       "created_at": "2026-03-25T20:09:04Z",
       "description": "Add focused refill queue and markdown tests covering the remaining Save and SaveMarkdown temp-file branches in bigclaw-go/internal/refill/queue.go and queue_markdown.go.",
       "id": "big-par-429",
       "identifier": "BIG-PAR-429",
       "labels": [],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add refill remaining save branch coverage",
-      "updated_at": "2026-03-25T20:09:19Z"
+      "updated_at": "2026-03-25T20:13:43Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- added a focused local-store test covering withFileLock failure when the lock file path parent directory does not exist in bigclaw-go/internal/refill/local_store_test.go.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill -run 'TestWithFileLockRetriesUntilLockReleased|TestWithFileLockCleansUpOnFunctionError|TestWithFileLockFailsWhenLockPathParentIsMissing'`\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill-430.cover && go tool cover -func=/tmp/refill-430.cover | rg 'internal/refill/local_store\\.go|total'`\n- result: pass; withFileLock 93.3%, package total 97.5%.\n\nCommit SHA:\n- `a3d1e683db317e431418296c1d5f94d5597d3f3b`\n\nPR URL:\n- https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T20:13:43Z"
+        }
+      ],
       "created_at": "2026-03-25T20:09:04Z",
       "description": "Add focused refill local-store tests covering withFileLock or Save failure when the lock file path cannot be created in bigclaw-go/internal/refill/local_store.go.",
       "id": "big-par-430",
       "identifier": "BIG-PAR-430",
       "labels": [],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add local tracker lock-open failure coverage",
-      "updated_at": "2026-03-25T20:09:19Z"
+      "updated_at": "2026-03-25T20:13:43Z"
     }
   ]
 }
