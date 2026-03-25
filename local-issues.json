@@ -5774,6 +5774,23 @@
       "state": "Done",
       "title": "Canonicalize equivalent queue state spellings during refill seed",
       "updated_at": "2026-03-25T18:53:57Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T18:57:20Z",
+      "description": "Make the shared bigclawctl JSON emitter disable HTML escaping so command output preserves plain text tokens like -> and embedded markdown/code content instead of returning \\u003c and \\u003e escapes.",
+      "id": "big-par-402",
+      "identifier": "BIG-PAR-402",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Disable HTML escaping in bigclawctl JSON output",
+      "updated_at": "2026-03-25T18:57:20Z"
     }
   ]
 }
