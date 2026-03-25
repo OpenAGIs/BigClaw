@@ -6002,6 +6002,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- added focused refill queue tests covering RunnableCountForStates with missing queue metadata and direct appendIdentifierOnce blank/duplicate/unique behavior in bigclaw-go/internal/refill/queue_test.go.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill`\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill.cover && go tool cover -func=/tmp/refill.cover | rg \"queue.go:347|queue.go:522|total\"`\n- result: pass; RunnableCountForStates 75.0%, appendIdentifierOnce 100.0%, package total 92.3%.\n\nCommit SHA:\n- `1c58d50815743fe1cb63f7a7c5811b66199f5245`\n\nPR URL:\n- https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T19:01:16Z"
+        }
+      ],
       "created_at": "2026-03-25T18:55:02Z",
       "description": "Add focused refill queue tests covering RunnableCountForStates metadata-missing cases and appendIdentifierOnce edge behavior in bigclaw-go/internal/refill/queue.go.",
       "id": "big-par-412",
@@ -6013,12 +6020,19 @@
         "coverage"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add refill runnable-count edge coverage",
-      "updated_at": "2026-03-25T18:55:34Z"
+      "updated_at": "2026-03-25T19:01:16Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- added focused refill local-store tests covering UpdateIssueState not-found handling and stale-reload protection across concurrent state updates in bigclaw-go/internal/refill/local_store_test.go.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill`\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill.cover && go tool cover -func=/tmp/refill.cover | rg \"local_store.go:279|local_store.go:339|total\"`\n- result: pass; UpdateIssueState 100.0%, withWriteLock 75.0%, package total 92.2%.\n\nCommit SHA:\n- `f2345f7e61393552549a8736e999cd162e3ac20a`\n\nPR URL:\n- https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T18:58:36Z"
+        }
+      ],
       "created_at": "2026-03-25T18:55:02Z",
       "description": "Add focused refill local-store tests covering UpdateIssueState miss/error branches and additional write-lock state-update behavior in bigclaw-go/internal/refill/local_store.go.",
       "id": "big-par-411",
@@ -6030,9 +6044,9 @@
         "coverage"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add local tracker state-update edge coverage",
-      "updated_at": "2026-03-25T18:55:34Z"
+      "updated_at": "2026-03-25T18:58:36Z"
     }
   ]
 }
