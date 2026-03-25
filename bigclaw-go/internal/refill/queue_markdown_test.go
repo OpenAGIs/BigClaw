@@ -119,3 +119,27 @@ func TestParallelIssueQueueRenderMarkdownInfersRecentBatchesAndZeroTime(t *testi
 		t.Fatalf("expected runnable count in markdown, got %s", text)
 	}
 }
+
+func TestParallelIssueQueueSaveMarkdownFailsWhenParentPathIsAFile(t *testing.T) {
+	parentFile := filepath.Join(t.TempDir(), "markdown-parent")
+	if err := os.WriteFile(parentFile, []byte("not-a-directory"), 0o644); err != nil {
+		t.Fatalf("write markdown parent fixture: %v", err)
+	}
+
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-418"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-418", Title: "Add refill save-parent failure coverage", Status: "In Progress"},
+			},
+		},
+	}
+
+	written, err := queue.SaveMarkdown(filepath.Join(parentFile, "queue.md"), time.Date(2026, 3, 25, 19, 35, 0, 0, time.UTC))
+	if err == nil {
+		t.Fatal("expected save markdown to fail when parent path is a file")
+	}
+	if written {
+		t.Fatal("expected failed markdown save to report written=false")
+	}
+}

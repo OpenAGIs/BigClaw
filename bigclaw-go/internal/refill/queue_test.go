@@ -259,6 +259,27 @@ func TestParallelIssueQueueRefreshRecentBatchesFromStatesEmptyOrPunctuatedStates
 	}
 }
 
+func TestParallelIssueQueueSaveFailsWhenParentPathIsAFile(t *testing.T) {
+	parentFile := filepath.Join(t.TempDir(), "queue-parent")
+	if err := os.WriteFile(parentFile, []byte("not-a-directory"), 0o644); err != nil {
+		t.Fatalf("write parent file fixture: %v", err)
+	}
+
+	queue := &ParallelIssueQueue{
+		queuePath: filepath.Join(parentFile, "queue.json"),
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-418"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-418", Title: "Add refill save-parent failure coverage", Status: "In Progress"},
+			},
+		},
+	}
+
+	if err := queue.Save(); err == nil {
+		t.Fatal("expected save to fail when parent path is a file")
+	}
+}
+
 func TestQueueIdentifierHelpersNormalizeRemovalUniquenessAndOrder(t *testing.T) {
 	items, removed := withoutIdentifier([]string{" BIG-PAR-402 ", "BIG-PAR-401", "big-par-402"}, "big-par-402")
 	if !removed {
