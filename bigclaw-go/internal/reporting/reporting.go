@@ -86,6 +86,37 @@ type WeeklyArtifacts struct {
 	VersionCenterPath    string `json:"version_center_path,omitempty"`
 }
 
+type ParallelTenantReconciliationSummary struct {
+	TotalTenants           int     `json:"total_tenants"`
+	TotalRuns              int     `json:"total_runs"`
+	SucceededRuns          int     `json:"succeeded_runs"`
+	BudgetCentsTotal       int64   `json:"budget_cents_total"`
+	TotalCostUSD           float64 `json:"total_cost_usd"`
+	ThroughputTasksPerHour float64 `json:"throughput_tasks_per_hour"`
+	SuccessRate            float64 `json:"success_rate"`
+	TenantTotalsReconciled bool    `json:"tenant_totals_reconciled"`
+}
+
+type ParallelTenantReconciliationTenant struct {
+	TenantID               string  `json:"tenant_id"`
+	TotalRuns              int     `json:"total_runs"`
+	SucceededRuns          int     `json:"succeeded_runs"`
+	BudgetCentsTotal       int64   `json:"budget_cents_total"`
+	CostUSD                float64 `json:"cost_usd"`
+	ThroughputTasksPerHour float64 `json:"throughput_tasks_per_hour"`
+	SuccessRate            float64 `json:"success_rate"`
+}
+
+type ParallelTenantReconciliationReport struct {
+	Name        string                               `json:"name"`
+	PeriodStart time.Time                            `json:"period_start"`
+	PeriodEnd   time.Time                            `json:"period_end"`
+	WindowHours float64                              `json:"window_hours"`
+	Summary     ParallelTenantReconciliationSummary  `json:"summary"`
+	Tenants     []ParallelTenantReconciliationTenant `json:"tenants,omitempty"`
+	Markdown    string                               `json:"markdown"`
+}
+
 type ConsoleAction struct {
 	ActionID string `json:"action_id"`
 	Label    string `json:"label"`
@@ -605,6 +636,122 @@ func WriteWeeklyOperationsBundleWithCenters(rootDir string, weekly Weekly, metri
 	return artifacts, nil
 }
 
+func BuildParallelTenantReconciliationReport(tasks []domain.Task, periodStart, periodEnd time.Time) ParallelTenantReconciliationReport {
+	report := ParallelTenantReconciliationReport{
+		Name:        "Parallel Tenant Reconciliation Report",
+		PeriodStart: periodStart.UTC(),
+		PeriodEnd:   periodEnd.UTC(),
+	}
+	windowHours := periodEnd.Sub(periodStart).Hours()
+	if windowHours <= 0 {
+		windowHours = 1
+	}
+	report.WindowHours = roundTenth(windowHours)
+
+	byTenant := make(map[string]*ParallelTenantReconciliationTenant)
+	for _, task := range tasks {
+		tenantID := strings.TrimSpace(task.TenantID)
+		if tenantID == "" {
+			continue
+		}
+		entry := byTenant[tenantID]
+		if entry == nil {
+			entry = &ParallelTenantReconciliationTenant{TenantID: tenantID}
+			byTenant[tenantID] = entry
+		}
+		entry.TotalRuns++
+		entry.BudgetCentsTotal += task.BudgetCents
+		if task.State == domain.TaskSucceeded {
+			entry.SucceededRuns++
+		}
+	}
+
+	report.Tenants = make([]ParallelTenantReconciliationTenant, 0, len(byTenant))
+	for _, entry := range byTenant {
+		entry.CostUSD = roundHundredth(float64(entry.BudgetCentsTotal) / 100.0)
+		entry.ThroughputTasksPerHour = roundTenth(float64(entry.TotalRuns) / windowHours)
+		if entry.TotalRuns > 0 {
+			entry.SuccessRate = roundTenth((float64(entry.SucceededRuns) / float64(entry.TotalRuns)) * 100)
+		}
+		report.Tenants = append(report.Tenants, *entry)
+	}
+	sort.SliceStable(report.Tenants, func(i, j int) bool {
+		if report.Tenants[i].TotalRuns == report.Tenants[j].TotalRuns {
+			return report.Tenants[i].TenantID < report.Tenants[j].TenantID
+		}
+		return report.Tenants[i].TotalRuns > report.Tenants[j].TotalRuns
+	})
+
+	tenantRuns := 0
+	tenantSucceeded := 0
+	tenantBudget := int64(0)
+	for _, tenant := range report.Tenants {
+		tenantRuns += tenant.TotalRuns
+		tenantSucceeded += tenant.SucceededRuns
+		tenantBudget += tenant.BudgetCentsTotal
+	}
+	report.Summary = ParallelTenantReconciliationSummary{
+		TotalTenants:           len(report.Tenants),
+		TotalRuns:              tenantRuns,
+		SucceededRuns:          tenantSucceeded,
+		BudgetCentsTotal:       tenantBudget,
+		TotalCostUSD:           roundHundredth(float64(tenantBudget) / 100.0),
+		ThroughputTasksPerHour: roundTenth(float64(tenantRuns) / windowHours),
+		SuccessRate:            0,
+		TenantTotalsReconciled: true,
+	}
+	if report.Summary.TotalRuns > 0 {
+		report.Summary.SuccessRate = roundTenth((float64(report.Summary.SucceededRuns) / float64(report.Summary.TotalRuns)) * 100)
+	}
+	report.Summary.TenantTotalsReconciled =
+		report.Summary.TotalRuns == tenantRuns &&
+			report.Summary.SucceededRuns == tenantSucceeded &&
+			report.Summary.BudgetCentsTotal == tenantBudget
+	report.Markdown = RenderParallelTenantReconciliationReport(report)
+	return report
+}
+
+func RenderParallelTenantReconciliationReport(report ParallelTenantReconciliationReport) string {
+	builder := strings.Builder{}
+	builder.WriteString("# Parallel Tenant Reconciliation Report\n\n")
+	builder.WriteString(fmt.Sprintf("- Name: %s\n", strings.TrimSpace(report.Name)))
+	builder.WriteString(fmt.Sprintf("- Period Start: %s\n", report.PeriodStart.UTC().Format(time.RFC3339)))
+	builder.WriteString(fmt.Sprintf("- Period End: %s\n", report.PeriodEnd.UTC().Format(time.RFC3339)))
+	builder.WriteString(fmt.Sprintf("- Window Hours: %.1f\n", report.WindowHours))
+	builder.WriteString(fmt.Sprintf("- Total Tenants: %d\n", report.Summary.TotalTenants))
+	builder.WriteString(fmt.Sprintf("- Total Runs: %d\n", report.Summary.TotalRuns))
+	builder.WriteString(fmt.Sprintf("- Succeeded Runs: %d\n", report.Summary.SucceededRuns))
+	builder.WriteString(fmt.Sprintf("- Success Rate: %.1f%%\n", report.Summary.SuccessRate))
+	builder.WriteString(fmt.Sprintf("- Throughput: %.1f tasks/hour\n", report.Summary.ThroughputTasksPerHour))
+	builder.WriteString(fmt.Sprintf("- Total Cost (USD): $%.2f\n", report.Summary.TotalCostUSD))
+	builder.WriteString(fmt.Sprintf("- Tenant Totals Reconciled: %t\n\n", report.Summary.TenantTotalsReconciled))
+	builder.WriteString("## Tenant Breakdown\n")
+	if len(report.Tenants) == 0 {
+		builder.WriteString("- None\n")
+		return builder.String()
+	}
+	for _, tenant := range report.Tenants {
+		builder.WriteString(
+			fmt.Sprintf(
+				"- %s: total_runs=%d succeeded_runs=%d success_rate=%.1f%% throughput_tasks_per_hour=%.1f cost_usd=$%.2f budget_cents=%d\n",
+				tenant.TenantID,
+				tenant.TotalRuns,
+				tenant.SucceededRuns,
+				tenant.SuccessRate,
+				tenant.ThroughputTasksPerHour,
+				tenant.CostUSD,
+				tenant.BudgetCentsTotal,
+			),
+		)
+	}
+	return builder.String()
+}
+
+func WriteParallelTenantReconciliationBundle(rootDir string, report ParallelTenantReconciliationReport) (string, error) {
+	path := filepath.Join(rootDir, "parallel-tenant-reconciliation.md")
+	return path, os.WriteFile(path, []byte(RenderParallelTenantReconciliationReport(report)), 0o644)
+}
+
 func AuditDashboardBuilder(dashboard DashboardBuilder) DashboardBuilderAudit {
 	widgetIndex := dashboard.WidgetIndex()
 	placementCounts := make(map[string]int)
@@ -855,6 +1002,10 @@ func RenderEngineeringOverview(overview EngineeringOverview) string {
 	}
 
 	return builder.String()
+}
+
+func roundHundredth(value float64) float64 {
+	return math.Round(value*100) / 100
 }
 
 func WriteEngineeringOverviewBundle(rootDir string, overview EngineeringOverview) (string, error) {

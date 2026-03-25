@@ -200,6 +200,56 @@ func TestWriteWeeklyOperationsBundle(t *testing.T) {
 	}
 }
 
+func TestBuildRenderAndWriteParallelTenantReconciliationReport(t *testing.T) {
+	start := time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC)
+	end := start.Add(8 * time.Hour)
+	report := BuildParallelTenantReconciliationReport([]domain.Task{
+		{ID: "tenant-a-1", TenantID: "tenant-a", State: domain.TaskSucceeded, BudgetCents: 1200},
+		{ID: "tenant-a-2", TenantID: "tenant-a", State: domain.TaskBlocked, BudgetCents: 300},
+		{ID: "tenant-b-1", TenantID: "tenant-b", State: domain.TaskSucceeded, BudgetCents: 900},
+		{ID: "unassigned", State: domain.TaskSucceeded, BudgetCents: 700},
+	}, start, end)
+	if report.Name != "Parallel Tenant Reconciliation Report" || report.WindowHours != 8.0 {
+		t.Fatalf("unexpected report header: %+v", report)
+	}
+	if report.Summary.TotalTenants != 2 || report.Summary.TotalRuns != 3 || report.Summary.SucceededRuns != 2 || report.Summary.BudgetCentsTotal != 2400 {
+		t.Fatalf("unexpected report summary: %+v", report.Summary)
+	}
+	if report.Summary.TotalCostUSD != 24.00 || report.Summary.ThroughputTasksPerHour != 0.4 || report.Summary.SuccessRate != 66.7 || !report.Summary.TenantTotalsReconciled {
+		t.Fatalf("unexpected reconciliation metrics: %+v", report.Summary)
+	}
+	if len(report.Tenants) != 2 || report.Tenants[0].TenantID != "tenant-a" || report.Tenants[0].TotalRuns != 2 || report.Tenants[0].SuccessRate != 50.0 || report.Tenants[0].CostUSD != 15.00 {
+		t.Fatalf("unexpected tenant breakdown: %+v", report.Tenants)
+	}
+	rendered := RenderParallelTenantReconciliationReport(report)
+	for _, fragment := range []string{
+		"# Parallel Tenant Reconciliation Report",
+		"- Total Tenants: 2",
+		"- Success Rate: 66.7%",
+		"- Tenant Totals Reconciled: true",
+		"- tenant-a: total_runs=2 succeeded_runs=1 success_rate=50.0% throughput_tasks_per_hour=0.3 cost_usd=$15.00 budget_cents=1500",
+	} {
+		if !strings.Contains(rendered, fragment) {
+			t.Fatalf("expected %q in rendered report, got %s", fragment, rendered)
+		}
+	}
+	outputDir := t.TempDir()
+	path, err := WriteParallelTenantReconciliationBundle(outputDir, report)
+	if err != nil {
+		t.Fatalf("write parallel tenant reconciliation bundle: %v", err)
+	}
+	if path != filepath.Join(outputDir, "parallel-tenant-reconciliation.md") {
+		t.Fatalf("unexpected reconciliation path: %s", path)
+	}
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read reconciliation bundle: %v", err)
+	}
+	if !strings.Contains(string(body), "tenant-b") || !strings.Contains(string(body), "Total Cost (USD): $24.00") {
+		t.Fatalf("unexpected reconciliation bundle content: %s", string(body))
+	}
+}
+
 func TestAuditDashboardBuilderFlagsGovernanceGaps(t *testing.T) {
 	dashboard := DashboardBuilder{
 		Name:   "Ops Console",

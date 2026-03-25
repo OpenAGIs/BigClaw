@@ -96,6 +96,81 @@ func TestV2WeeklyReportBuildsSummaryActionsAndMarkdownExport(t *testing.T) {
 	}
 }
 
+func TestV2ParallelTenantReconciliationReportBuildsTenantCostThroughputAndSuccessMetrics(t *testing.T) {
+	recorder := observability.NewRecorder()
+	base := time.Date(2026, 3, 17, 0, 0, 0, 0, time.UTC)
+	tasks := []domain.Task{
+		{ID: "tenant-report-1", TraceID: "trace-report-1", Title: "Parallel rollout A", TenantID: "tenant-a", State: domain.TaskSucceeded, BudgetCents: 1200, Metadata: map[string]string{"team": "platform", "project": "alpha"}, CreatedAt: base, UpdatedAt: base.Add(2 * time.Hour)},
+		{ID: "tenant-report-2", TraceID: "trace-report-2", Title: "Parallel rollout B", TenantID: "tenant-a", State: domain.TaskBlocked, BudgetCents: 300, Metadata: map[string]string{"team": "platform", "project": "alpha"}, CreatedAt: base.Add(30 * time.Minute), UpdatedAt: base.Add(4 * time.Hour)},
+		{ID: "tenant-report-3", TraceID: "trace-report-3", Title: "Parallel rollout C", TenantID: "tenant-b", State: domain.TaskSucceeded, BudgetCents: 900, Metadata: map[string]string{"team": "platform", "project": "alpha"}, CreatedAt: base.Add(time.Hour), UpdatedAt: base.Add(6 * time.Hour)},
+		{ID: "tenant-report-4", TraceID: "trace-report-4", Title: "Other slice", TenantID: "tenant-c", State: domain.TaskSucceeded, BudgetCents: 700, Metadata: map[string]string{"team": "growth", "project": "beta"}, CreatedAt: base, UpdatedAt: base.Add(3 * time.Hour)},
+	}
+	for _, task := range tasks {
+		recorder.StoreTask(task)
+	}
+	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Bus: events.NewBus(), Control: control.New(), Now: func() time.Time { return base.Add(8 * time.Hour) }}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/parallel/tenant-reconciliation?team=platform&project=alpha&week_start=2026-03-17T00:00:00Z&week_end=2026-03-17T08:00:00Z", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected tenant reconciliation report 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Name        string  `json:"name"`
+		WindowHours float64 `json:"window_hours"`
+		Summary     struct {
+			TotalTenants           int     `json:"total_tenants"`
+			TotalRuns              int     `json:"total_runs"`
+			SucceededRuns          int     `json:"succeeded_runs"`
+			BudgetCentsTotal       int64   `json:"budget_cents_total"`
+			TotalCostUSD           float64 `json:"total_cost_usd"`
+			ThroughputTasksPerHour float64 `json:"throughput_tasks_per_hour"`
+			SuccessRate            float64 `json:"success_rate"`
+			TotalsReconciled       bool    `json:"tenant_totals_reconciled"`
+		} `json:"summary"`
+		Tenants []struct {
+			TenantID               string  `json:"tenant_id"`
+			TotalRuns              int     `json:"total_runs"`
+			SucceededRuns          int     `json:"succeeded_runs"`
+			CostUSD                float64 `json:"cost_usd"`
+			ThroughputTasksPerHour float64 `json:"throughput_tasks_per_hour"`
+			SuccessRate            float64 `json:"success_rate"`
+		} `json:"tenants"`
+		Report struct {
+			Markdown  string `json:"markdown"`
+			ExportURL string `json:"export_url"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode tenant reconciliation report: %v", err)
+	}
+	if decoded.Name != "Parallel Tenant Reconciliation Report" || decoded.WindowHours != 8.0 {
+		t.Fatalf("unexpected report header: %+v", decoded)
+	}
+	if decoded.Summary.TotalTenants != 2 || decoded.Summary.TotalRuns != 3 || decoded.Summary.SucceededRuns != 2 || decoded.Summary.BudgetCentsTotal != 2400 || decoded.Summary.TotalCostUSD != 24.0 || decoded.Summary.ThroughputTasksPerHour != 0.4 || decoded.Summary.SuccessRate != 66.7 || !decoded.Summary.TotalsReconciled {
+		t.Fatalf("unexpected summary: %+v", decoded.Summary)
+	}
+	if len(decoded.Tenants) != 2 || decoded.Tenants[0].TenantID != "tenant-a" || decoded.Tenants[0].TotalRuns != 2 || decoded.Tenants[0].SucceededRuns != 1 || decoded.Tenants[0].CostUSD != 15.0 || decoded.Tenants[0].ThroughputTasksPerHour != 0.3 || decoded.Tenants[0].SuccessRate != 50.0 {
+		t.Fatalf("unexpected tenant metrics: %+v", decoded.Tenants)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "# Parallel Tenant Reconciliation Report") || !strings.Contains(decoded.Report.ExportURL, "/v2/reports/parallel/tenant-reconciliation/export") {
+		t.Fatalf("unexpected report payload: %+v", decoded.Report)
+	}
+
+	exportResponse := httptest.NewRecorder()
+	server.Handler().ServeHTTP(exportResponse, httptest.NewRequest(http.MethodGet, decoded.Report.ExportURL, nil))
+	if exportResponse.Code != http.StatusOK {
+		t.Fatalf("expected reconciliation export 200, got %d %s", exportResponse.Code, exportResponse.Body.String())
+	}
+	if contentType := exportResponse.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected markdown export, got %q", contentType)
+	}
+	if !strings.Contains(exportResponse.Body.String(), "Tenant Totals Reconciled: true") || !strings.Contains(exportResponse.Body.String(), "tenant-b") {
+		t.Fatalf("unexpected reconciliation export body: %s", exportResponse.Body.String())
+	}
+}
+
 func TestV2FlowTemplateLifecyclePRDIntakeChecklistAndSupportHandoff(t *testing.T) {
 	recorder := observability.NewRecorder()
 	bus := events.NewBus()

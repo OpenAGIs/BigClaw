@@ -89,6 +89,56 @@ func (s *Server) handleV2WeeklyReportExport(w http.ResponseWriter, r *http.Reque
 	_, _ = w.Write([]byte(report.Markdown))
 }
 
+func (s *Server) handleV2ParallelTenantReconciliation(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	team, project, start, end, err := parseWeeklyFilters(r, s.Now())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	tasks := s.filteredTasks(team, project, "", start, end)
+	report := reporting.BuildParallelTenantReconciliationReport(tasks, start, end)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"filters": map[string]any{
+			"team":       team,
+			"project":    project,
+			"week_start": start,
+			"week_end":   end,
+		},
+		"name":         report.Name,
+		"period_start": report.PeriodStart,
+		"period_end":   report.PeriodEnd,
+		"window_hours": report.WindowHours,
+		"summary":      report.Summary,
+		"tenants":      report.Tenants,
+		"report": map[string]any{
+			"markdown":   report.Markdown,
+			"export_url": parallelTenantReconciliationExportURL(team, project, start, end),
+		},
+	})
+}
+
+func (s *Server) handleV2ParallelTenantReconciliationExport(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	team, project, start, end, err := parseWeeklyFilters(r, s.Now())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	tasks := s.filteredTasks(team, project, "", start, end)
+	report := reporting.BuildParallelTenantReconciliationReport(tasks, start, end)
+	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", fmt.Sprintf("parallel-tenant-reconciliation-%s.md", start.Format("2006-01-02"))))
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(report.Markdown))
+}
+
 func (s *Server) handleV2FlowTemplates(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -484,6 +534,19 @@ func weeklyExportURL(team string, project string, start time.Time, end time.Time
 	parts = append(parts, "week_start="+start.Format(time.RFC3339))
 	parts = append(parts, "week_end="+end.Format(time.RFC3339))
 	return "/v2/reports/weekly/export?" + strings.Join(parts, "&")
+}
+
+func parallelTenantReconciliationExportURL(team string, project string, start time.Time, end time.Time) string {
+	parts := make([]string, 0)
+	if team != "" {
+		parts = append(parts, "team="+team)
+	}
+	if project != "" {
+		parts = append(parts, "project="+project)
+	}
+	parts = append(parts, "week_start="+start.Format(time.RFC3339))
+	parts = append(parts, "week_end="+end.Format(time.RFC3339))
+	return "/v2/reports/parallel/tenant-reconciliation/export?" + strings.Join(parts, "&")
 }
 
 func normalizeHomeRole(r *http.Request) string {
