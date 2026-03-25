@@ -183,7 +183,9 @@
       "BIG-PAR-393",
       "BIG-PAR-394"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-395"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -350,7 +352,8 @@
     "BIG-PAR-390",
     "BIG-PAR-391",
     "BIG-PAR-393",
-    "BIG-PAR-394"
+    "BIG-PAR-394",
+    "BIG-PAR-395"
   ],
   "issues": [
     {
@@ -1366,6 +1369,12 @@
       "title": "Canonicalize built-in refill fetch state names",
       "track": "Automation",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-395",
+      "title": "Report final synced refill queue state after apply",
+      "track": "Automation",
+      "status": "In Progress"
     }
   ]
 }

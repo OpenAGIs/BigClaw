@@ -790,6 +790,12 @@ func TestRunRefillOnceLocalBackendSyncsQueueStatusFromLocalIssues(t *testing.T) 
 	if !bytes.Contains(output, []byte(`"queue_recent_batch_updates": 3`)) {
 		t.Fatalf("expected refill output to include recent batch updates, got %s", string(output))
 	}
+	if !bytes.Contains(output, []byte(`"queue_status_synced": true`)) {
+		t.Fatalf("expected refill output to report queue status synced after apply, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"recent_batches_synced": true`)) {
+		t.Fatalf("expected refill output to report recent batches synced after apply, got %s", string(output))
+	}
 	if !bytes.Contains(output, []byte(`"queue_status_written": true`)) {
 		t.Fatalf("expected refill output to confirm write, got %s", string(output))
 	}

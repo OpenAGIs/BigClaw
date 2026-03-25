@@ -48,10 +48,10 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 25, 2026:
-  - active slices: none
+  - active slices: `BIG-PAR-395` — Report final synced refill queue state after apply
   - standby slices: none
   - recently completed slices: `BIG-PAR-386` — Normalize refill active and recent-batch state detection; `BIG-PAR-385` — Normalize local tracker state filters for refill commands; `BIG-PAR-387` — Normalize queue status sync equivalence; `BIG-PAR-388` — Normalize seed and ensure state equivalence; `BIG-PAR-390` — Normalize local store state updates; `BIG-PAR-391` — Parameterize refill active-state helpers; `BIG-PAR-393` — Stabilize normalized refill fetch state lists; `BIG-PAR-394` — Canonicalize built-in refill fetch state names
-  - queue status: `queue_runnable=0`, `target_in_progress=2`
+  - queue status: `queue_runnable=1`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -394,3 +394,4 @@ longer waits on Linear to keep issue execution moving.
 162. `BIG-PAR-391`
 163. `BIG-PAR-393`
 164. `BIG-PAR-394`
+165. `BIG-PAR-395`

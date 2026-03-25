@@ -1079,6 +1079,10 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		if syncQueueStatus {
 			queueStatusUpdates = queue.SyncStatusFromStates(issueStates)
 			queueRecentBatchUpdates = queue.SyncRecentBatchesFromStates(issueStates)
+			if apply {
+				queueStatusSynced = true
+				recentBatchesSynced = true
+			}
 			if apply && (queueStatusUpdates > 0 || queueRecentBatchUpdates > 0) {
 				if err := queue.Save(); err != nil {
 					return err
@@ -1106,6 +1110,9 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		liveStateMap = refill.IssueStateMap(allIssues)
 		if apply {
 			recentBatchesUpdated = queue.RefreshRecentBatchesFromStates(liveStateMap)
+			if recentBatchesUpdated {
+				recentBatchesSynced = true
+			}
 		}
 	}
 	if apply && (queueStatusUpdates > 0 || recentBatchesUpdated) {

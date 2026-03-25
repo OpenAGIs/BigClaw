@@ -5546,6 +5546,23 @@
       "state": "Done",
       "title": "Canonicalize built-in refill fetch state names",
       "updated_at": "2026-03-25T17:22:44Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T17:41:38Z",
+      "description": "Make bigclawctl refill report queue_status_synced and recent_batches_synced from the final post-apply queue state so --apply --sync-queue-status output reflects the queue that was just written.",
+      "id": "big-par-395",
+      "identifier": "BIG-PAR-395",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Report final synced refill queue state after apply",
+      "updated_at": "2026-03-25T17:41:38Z"
     }
   ]
 }
