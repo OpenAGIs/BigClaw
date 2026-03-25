@@ -193,12 +193,11 @@
       "BIG-PAR-403",
       "BIG-PAR-404",
       "BIG-PAR-405",
-      "BIG-PAR-406"
+      "BIG-PAR-406",
+      "BIG-PAR-407"
     ],
     "active": [],
-    "standby": [
-      "BIG-PAR-407"
-    ]
+    "standby": []
   },
   "issue_order": [
     "BIG-GOM-301",
@@ -1470,7 +1469,7 @@
       "identifier": "BIG-PAR-407",
       "title": "Add workspace cleanup JSON no-escape regression",
       "track": "Automation",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

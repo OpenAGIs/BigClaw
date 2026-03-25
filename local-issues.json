@@ -5947,6 +5947,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now adds a focused `workspace cleanup --json` regression proving the cleanup command preserves raw `->` tokens in emitted `workspace` and cache path fields.\n- The regression bootstraps an arrow-bearing temporary workspace first, then exercises the real cleanup command path instead of only the shared emitter helper.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `3541387427c9f00cacc9cc05237d06064eb0b0d8` matches remote SHA `3541387427c9f00cacc9cc05237d06064eb0b0d8` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `3541387427c9f00cacc9cc05237d06064eb0b0d8`\n- `git log -1 --stat` -> captured for commit `3541387427c9f00cacc9cc05237d06064eb0b0d8`\n\nCommit SHA: `3541387427c9f00cacc9cc05237d06064eb0b0d8`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/204",
+          "created_at": "2026-03-25T19:49:18Z"
+        }
+      ],
       "created_at": "2026-03-25T19:45:39Z",
       "description": "Add command-level coverage proving workspace cleanup JSON output preserves raw arrow tokens in emitted path fields so the shared emitter remains protected on the cleanup path as well.",
       "id": "big-par-407",
@@ -5958,9 +5965,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add workspace cleanup JSON no-escape regression",
-      "updated_at": "2026-03-25T19:45:39Z"
+      "updated_at": "2026-03-25T19:49:18Z"
     }
   ]
 }
