@@ -120,6 +120,71 @@ func TestParallelIssueQueueRenderMarkdownInfersRecentBatchesAndZeroTime(t *testi
 	}
 }
 
+func TestParallelIssueQueueRenderMarkdownUsesExplicitRecentBatches(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			Policy: struct {
+				TargetInProgress  int      `json:"target_in_progress"`
+				ActivateStateID   string   `json:"activate_state_id"`
+				ActivateStateName string   `json:"activate_state_name"`
+				RefillStates      []string `json:"refill_states"`
+				BlockedReason     string   `json:"blocked_reason,omitempty"`
+			}{
+				TargetInProgress:  2,
+				ActivateStateName: "In Progress",
+				RefillStates:      []string{"Todo", "Backlog"},
+			},
+			IssueOrder: []string{"BIG-PAR-425", "BIG-PAR-426", "BIG-PAR-427", "BIG-PAR-428"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-425", Title: "Active primer", Status: "Todo"},
+				{Identifier: "BIG-PAR-426", Title: "Active sequel", Status: "Todo"},
+				{Identifier: "BIG-PAR-427", Title: "Standby future", Status: "Todo"},
+				{Identifier: "BIG-PAR-428", Title: "Completed legacy", Status: "Todo"},
+			},
+			RecentBatches: struct {
+				Completed []string `json:"completed"`
+				Active    []string `json:"active"`
+				Standby   []string `json:"standby"`
+			}{
+				Completed: []string{"BIG-PAR-428"},
+				Active:    []string{"BIG-PAR-425", "BIG-PAR-426"},
+				Standby:   []string{"BIG-PAR-427"},
+			},
+		},
+	}
+
+	text := queue.RenderMarkdown(time.Date(2026, 3, 26, 0, 0, 0, 0, time.UTC))
+	if !strings.Contains(text, "  - active slices: `BIG-PAR-425` — Active primer; `BIG-PAR-426` — Active sequel") {
+		t.Fatalf("expected explicit active slices bucket, got %s", text)
+	}
+	if !strings.Contains(text, "  - standby slices: `BIG-PAR-427` — Standby future") {
+		t.Fatalf("expected explicit standby slices bucket, got %s", text)
+	}
+	if !strings.Contains(text, "  - recently completed slices: `BIG-PAR-428` — Completed legacy") {
+		t.Fatalf("expected explicit recently completed bucket, got %s", text)
+	}
+}
+
+func TestParallelIssueQueueRenderMarkdownCompletedHistoryHighlightsTerminalStatuses(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-429", "BIG-PAR-430"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-429", Title: "Terminal history", Status: "Done"},
+				{Identifier: "BIG-PAR-430", Title: "Mutable next", Status: "In Progress"},
+			},
+		},
+	}
+
+	text := queue.RenderMarkdown(time.Time{})
+	if !strings.Contains(text, "- Completed slices:\n  - `BIG-PAR-429` — Terminal history\n") {
+		t.Fatalf("expected completed history entry, got %s", text)
+	}
+	if strings.Contains(text, "- Completed slices:\n  - `BIG-PAR-430`") {
+		t.Fatalf("did not expect non-terminal identifier in completed history, got %s", text)
+	}
+}
+
 func TestParallelIssueQueueSaveMarkdownFailsWhenParentPathIsAFile(t *testing.T) {
 	parentFile := filepath.Join(t.TempDir(), "markdown-parent")
 	if err := os.WriteFile(parentFile, []byte("not-a-directory"), 0o644); err != nil {
