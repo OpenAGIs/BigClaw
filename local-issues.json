@@ -5375,6 +5375,40 @@
       "state": "Done",
       "title": "Add run commit role validation coverage",
       "updated_at": "2026-03-25T17:16:28Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T17:19:54Z",
+      "description": "Add focused unit coverage for bigclaw-go/internal/events/broker_stub_log.go so Backend, Close, and cloneEvent payload-copy behavior are pinned without expanding into durable backend flows.",
+      "id": "big-par-385",
+      "identifier": "BIG-PAR-385",
+      "labels": [
+        "go",
+        "events",
+        "test",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add broker stub backend and clone coverage",
+      "updated_at": "2026-03-25T17:20:04Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T17:19:54Z",
+      "description": "Add focused unit coverage for bigclaw-go/internal/repo/links.go so AcceptedCommitHash empty-path and joinCSV edge cases are pinned without changing broader repo governance behavior.",
+      "id": "big-par-386",
+      "identifier": "BIG-PAR-386",
+      "labels": [
+        "go",
+        "repo",
+        "test",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add run commit helper edge coverage",
+      "updated_at": "2026-03-25T17:20:04Z"
     }
   ]
 }

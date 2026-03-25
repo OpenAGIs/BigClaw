@@ -184,7 +184,10 @@
       "BIG-PAR-383",
       "BIG-PAR-384"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-385",
+      "BIG-PAR-386"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -352,7 +355,9 @@
     "BIG-PAR-381",
     "BIG-PAR-382",
     "BIG-PAR-383",
-    "BIG-PAR-384"
+    "BIG-PAR-384",
+    "BIG-PAR-385",
+    "BIG-PAR-386"
   ],
   "issues": [
     {
@@ -1374,6 +1379,18 @@
       "title": "Add run commit role validation coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-385",
+      "title": "Add broker stub backend and clone coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-386",
+      "title": "Add run commit helper edge coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
