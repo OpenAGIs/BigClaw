@@ -1666,6 +1666,31 @@ func TestRunLocalIssuesEnsureCreatesMissingIssue(t *testing.T) {
 	}
 }
 
+func TestRunLocalIssuesEnsureCreateCanonicalizesEquivalentStateSpellings(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+
+	if err := runLocalIssues([]string{
+		"ensure",
+		"--local-issues", storePath,
+		"--identifier", "BIG-PAR-400",
+		"--title", "Canonicalize equivalent state spellings when creating local issues",
+		"--state", "todo.",
+		"--created-at", "2026-03-25T18:35:00Z",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run local-issues ensure create canonical state: %v", err)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"state": "Todo"`)) {
+		t.Fatalf("expected canonical Todo state, got %s", string(body))
+	}
+}
+
 func TestRunLocalIssuesEnsureUpdatesExistingStateCaseInsensitive(t *testing.T) {
 	tempDir := t.TempDir()
 	storePath := filepath.Join(tempDir, "local-issues.json")
