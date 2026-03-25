@@ -229,6 +229,46 @@ func TestRunWorkspaceValidateJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	}
 }
 
+func TestRunWorkspaceBootstrapJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
+	root := t.TempDir()
+	remote := initWorkspaceValidateRemote(t, root)
+	workspacePath := filepath.Join(root, "workspaces->", "BIG-PAR-406")
+	cacheBase := filepath.Join(root, "repos->")
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runWorkspace([]string{
+		"bootstrap",
+		"--workspace", workspacePath,
+		"--issue", "BIG-PAR-406",
+		"--repo-url", remote,
+		"--cache-base", cacheBase,
+		"--json",
+	}); err != nil {
+		t.Fatalf("run workspace bootstrap: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte(workspacePath)) {
+		t.Fatalf("expected raw arrow token in workspace bootstrap workspace path, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(cacheBase)) {
+		t.Fatalf("expected raw arrow token in workspace bootstrap cache path, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`\u003e`)) {
+		t.Fatalf("expected no HTML escaping in workspace bootstrap JSON output, got %s", string(output))
+	}
+}
+
 func TestRunRefillOnceLinearBackendUsesConfiguredActivateStateName(t *testing.T) {
 	queuePath := filepath.Join(t.TempDir(), "queue.json")
 	markdownPath := filepath.Join(t.TempDir(), "queue.md")
