@@ -6498,27 +6498,65 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- added deterministic queue save seams for `MkdirAll` and payload encoding in `bigclaw-go/internal/refill/queue.go`.\n- added focused queue save tests covering encode, mkdir, and write failures in `bigclaw-go/internal/refill/queue_test.go`, bringing `Save` to 100.0% coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill -run 'TestParallelIssueQueueSavePropagatesEncodeFailure|TestParallelIssueQueueSavePropagatesMkdirAllFailure|TestParallelIssueQueueSavePropagatesWriteFailure|TestLocalIssueStoreSaveFailsWhenEncodeFails|TestLocalIssueStoreSaveFailsWhenMkdirAllFails|TestLocalIssueStoreSaveFailsWhenWriteFails'`\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill-435-436b.cover >/tmp/refill-435-436b.out && go tool cover -func=/tmp/refill-435-436b.cover | sort -k3,3n | head -n 12`\n- result: pass; `Save` 100.0%, package total 99.1%.\n\nCommit SHA:\n- `f97afcf20c706227c8a641f8677560111dcec049`\n\nPR URL:\n- https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T20:35:41Z"
+        }
+      ],
       "created_at": "2026-03-25T20:28:52Z",
       "description": "Add focused refill queue tests covering the remaining Save branches in bigclaw-go/internal/refill/queue.go.",
       "id": "big-par-435",
       "identifier": "BIG-PAR-435",
       "labels": [],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add refill remaining save-path coverage",
-      "updated_at": "2026-03-25T20:28:52Z"
+      "updated_at": "2026-03-25T20:35:41Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- added a deterministic local-store save encode seam in `bigclaw-go/internal/refill/local_store.go`.\n- extended the local temp-file test stub to surface write failures and added focused `saveUnlocked` tests covering encode, mkdir, and write failures in `bigclaw-go/internal/refill/local_store_test.go`, bringing `saveUnlocked` to 100.0% coverage.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill -run 'TestParallelIssueQueueSavePropagatesEncodeFailure|TestParallelIssueQueueSavePropagatesMkdirAllFailure|TestParallelIssueQueueSavePropagatesWriteFailure|TestLocalIssueStoreSaveFailsWhenEncodeFails|TestLocalIssueStoreSaveFailsWhenMkdirAllFails|TestLocalIssueStoreSaveFailsWhenWriteFails'`\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill-435-436b.cover >/tmp/refill-435-436b.out && go tool cover -func=/tmp/refill-435-436b.cover | sort -k3,3n | head -n 12`\n- result: pass; `saveUnlocked` 100.0%, package total 99.1%.\n\nCommit SHA:\n- `f97afcf20c706227c8a641f8677560111dcec049`\n\nPR URL:\n- https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T20:35:41Z"
+        }
+      ],
       "created_at": "2026-03-25T20:28:52Z",
       "description": "Add focused local-store tests covering the remaining saveUnlocked branches in bigclaw-go/internal/refill/local_store.go.",
       "id": "big-par-436",
       "identifier": "BIG-PAR-436",
       "labels": [],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add local tracker remaining save-path coverage",
-      "updated_at": "2026-03-25T20:28:52Z"
+      "updated_at": "2026-03-25T20:35:41Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T20:35:41Z",
+      "description": "Add focused markdown queue tests covering the remaining SaveMarkdown branches in bigclaw-go/internal/refill/queue_markdown.go.",
+      "id": "big-par-437",
+      "identifier": "BIG-PAR-437",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add markdown queue remaining save coverage",
+      "updated_at": "2026-03-25T20:35:41Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T20:35:41Z",
+      "description": "Add focused refill recent-batch tests covering the remaining SyncRecentBatchesFromStates and SetRecentBatch branches in bigclaw-go/internal/refill/queue.go.",
+      "id": "big-par-438",
+      "identifier": "BIG-PAR-438",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add refill recent-batch helper coverage",
+      "updated_at": "2026-03-25T20:35:41Z"
     }
   ]
 }
