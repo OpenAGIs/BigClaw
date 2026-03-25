@@ -196,7 +196,10 @@
       "BIG-PAR-395",
       "BIG-PAR-396"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-398",
+      "BIG-PAR-397"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -376,7 +379,9 @@
     "BIG-PAR-393",
     "BIG-PAR-394",
     "BIG-PAR-395",
-    "BIG-PAR-396"
+    "BIG-PAR-396",
+    "BIG-PAR-398",
+    "BIG-PAR-397"
   ],
   "issues": [
     {
@@ -1470,6 +1475,18 @@
       "title": "Add consumer dedup result fallback coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-398",
+      "title": "Add task JSON unmarshal edge-path coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-397",
+      "title": "Add task JSON marshal optional-field coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

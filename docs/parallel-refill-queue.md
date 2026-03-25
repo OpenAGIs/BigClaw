@@ -48,10 +48,10 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 25, 2026:
-  - active slices: none
+  - active slices: `BIG-PAR-398` — Add task JSON unmarshal edge-path coverage
   - standby slices: none
   - recently completed slices: `BIG-PAR-389` — Finish repo board filter branch coverage; `BIG-PAR-390` — Add repo gateway decode error coverage; `BIG-PAR-391` — Add repo registry fallback coverage; `BIG-PAR-392` — Add domain fallback helper coverage; `BIG-PAR-393` — Add governance audit field coverage; `BIG-PAR-394` — Add task state normalization helper coverage; `BIG-PAR-395` — Add repo slug fallback coverage; `BIG-PAR-396` — Add consumer dedup result fallback coverage
-  - queue status: `queue_runnable=0`, `target_in_progress=2`
+  - queue status: `queue_runnable=1`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -420,3 +420,4 @@ longer waits on Linear to keep issue execution moving.
 175. `BIG-PAR-394`
 176. `BIG-PAR-395`
 177. `BIG-PAR-396`
+178. `BIG-PAR-398`
