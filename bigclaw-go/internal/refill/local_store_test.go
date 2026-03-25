@@ -405,6 +405,23 @@ func TestLocalIssueStoreUpdateIssueStatePreservesExtraFields(t *testing.T) {
 	}
 }
 
+func TestLocalIssueStoreUpdateIssueStateReturnsNotFound(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{"issues":[]}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	updatedState, err := store.UpdateIssueState("BIG-PAR-999", "Done", time.Date(2026, 3, 25, 18, 56, 0, 0, time.UTC))
+	if err == nil || err != ErrLocalIssueNotFound {
+		t.Fatalf("expected ErrLocalIssueNotFound, got updatedState=%q err=%v", updatedState, err)
+	}
+}
+
 func TestLocalIssueStoreIssueStatesFiltersRequestedStates(t *testing.T) {
 	storePath := filepath.Join(t.TempDir(), "local-issues.json")
 	if err := os.WriteFile(storePath, []byte(`{
@@ -474,6 +491,57 @@ func TestLocalIssueStoreAddCommentAppendsAndUpdatesTimestamp(t *testing.T) {
 	}
 	if !strings.Contains(text, `"updated_at": "2026-03-20T10:45:00Z"`) {
 		t.Fatalf("expected updated_at refresh, got %s", text)
+	}
+}
+
+func TestLocalIssueStoreUpdateIssueStateReloadsLatestStateBeforeSaving(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-411",
+      "identifier": "BIG-PAR-411",
+      "title": "state update coverage",
+      "state": "Todo"
+    },
+    {
+      "id": "big-par-412",
+      "identifier": "BIG-PAR-412",
+      "title": "second writer state update coverage",
+      "state": "Todo"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	storeA, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store A: %v", err)
+	}
+	storeB, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store B: %v", err)
+	}
+
+	if _, err := storeA.UpdateIssueState("BIG-PAR-411", "In Progress", time.Date(2026, 3, 25, 18, 56, 1, 0, time.UTC)); err != nil {
+		t.Fatalf("update issue state with store A: %v", err)
+	}
+	if _, err := storeB.UpdateIssueState("BIG-PAR-412", "Done", time.Date(2026, 3, 25, 18, 56, 2, 0, time.UTC)); err != nil {
+		t.Fatalf("update issue state with store B: %v", err)
+	}
+
+	reloaded, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("reload local issue store: %v", err)
+	}
+	first, ok := reloaded.FindIssue("BIG-PAR-411")
+	if !ok || first.State != "In Progress" {
+		t.Fatalf("expected first state update to persist, got %+v found=%v", first, ok)
+	}
+	second, ok := reloaded.FindIssue("BIG-PAR-412")
+	if !ok || second.State != "Done" {
+		t.Fatalf("expected second state update to persist, got %+v found=%v", second, ok)
 	}
 }
 
