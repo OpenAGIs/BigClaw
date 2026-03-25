@@ -190,7 +190,10 @@
       "BIG-PAR-389",
       "BIG-PAR-390"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-391",
+      "BIG-PAR-392"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -364,7 +367,9 @@
     "BIG-PAR-387",
     "BIG-PAR-388",
     "BIG-PAR-389",
-    "BIG-PAR-390"
+    "BIG-PAR-390",
+    "BIG-PAR-391",
+    "BIG-PAR-392"
   ],
   "issues": [
     {
@@ -1422,6 +1427,18 @@
       "title": "Add repo gateway decode error coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-391",
+      "title": "Add repo registry fallback coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-392",
+      "title": "Add domain fallback helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
