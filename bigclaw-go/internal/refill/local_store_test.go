@@ -227,6 +227,69 @@ func TestLocalIssueStoreCreateIssueRequiresIdentifierAndTitle(t *testing.T) {
 	}
 }
 
+func TestDecodeLocalIssueMapsCoversArrayObjectAndErrorPaths(t *testing.T) {
+	tests := []struct {
+		name    string
+		body    string
+		wantLen int
+		wantErr string
+	}{
+		{
+			name:    "empty body",
+			body:    "   ",
+			wantLen: 0,
+		},
+		{
+			name:    "top level array",
+			body:    `[{"identifier":"BIG-PAR-405"},"skip",{"identifier":"BIG-PAR-406"}]`,
+			wantLen: 2,
+		},
+		{
+			name:    "issues object",
+			body:    `{"issues":[{"identifier":"BIG-PAR-405"},"skip"]}`,
+			wantLen: 1,
+		},
+		{
+			name:    "missing issues key",
+			body:    `{"unexpected":[]}`,
+			wantErr: "invalid local issue store payload",
+		},
+		{
+			name:    "invalid issues list",
+			body:    `{"issues":"bad"}`,
+			wantErr: "invalid local issue list",
+		},
+		{
+			name:    "invalid root type",
+			body:    `42`,
+			wantErr: "invalid local issue store payload",
+		},
+		{
+			name:    "invalid json",
+			body:    `{"issues":`,
+			wantErr: "unexpected end of JSON input",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			issues, err := decodeLocalIssueMaps([]byte(test.body))
+			if test.wantErr != "" {
+				if err == nil || err.Error() != test.wantErr {
+					t.Fatalf("expected error %q, got issues=%+v err=%v", test.wantErr, issues, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("decode local issue maps: %v", err)
+			}
+			if len(issues) != test.wantLen {
+				t.Fatalf("expected %d issues, got %+v", test.wantLen, issues)
+			}
+		})
+	}
+}
+
 func TestLocalIssueStoreUpdateIssueStatePreservesExtraFields(t *testing.T) {
 	storePath := filepath.Join(t.TempDir(), "local-issues.json")
 	if err := os.WriteFile(storePath, []byte(`{

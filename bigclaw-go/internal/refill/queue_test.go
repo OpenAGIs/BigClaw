@@ -286,6 +286,56 @@ func TestQueueSelectionAndAccessorHelpers(t *testing.T) {
 	}
 }
 
+func TestQueueStatusSyncAndNormalizationHelpers(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			Issues: []IssueRecord{
+				{Identifier: "", Status: "Todo"},
+				{Identifier: "BIG-PAR-405", Status: "Todo"},
+				{Identifier: "BIG-PAR-406", Status: "Done"},
+			},
+		},
+	}
+
+	updated := queue.SyncStatusFromStates(map[string]string{
+		"":            "In Progress",
+		"BIG-PAR-405": " In Progress ",
+		"BIG-PAR-406": "   ",
+		"BIG-PAR-999": "Todo",
+	})
+	if updated != 1 {
+		t.Fatalf("expected one synced status update, got %d", updated)
+	}
+	if queue.payload.Issues[1].Status != "In Progress" {
+		t.Fatalf("expected synced status trim, got %+v", queue.payload.Issues)
+	}
+	if queue.payload.Issues[2].Status != "Done" {
+		t.Fatalf("expected blank incoming status to be ignored, got %+v", queue.payload.Issues)
+	}
+	if queue.SyncStatusFromStates(map[string]string{"BIG-PAR-405": "In Progress"}) != 0 {
+		t.Fatal("expected identical status sync to be a no-op")
+	}
+
+	if got := statusNormalize(" Done. "); got != "done" {
+		t.Fatalf("expected status normalization to trim and lowercase, got %q", got)
+	}
+	if got := statusNormalize("   "); got != "" {
+		t.Fatalf("expected blank status normalization to return empty string, got %q", got)
+	}
+	if !isTerminalStatus("Done.") {
+		t.Fatal("expected done status to be terminal")
+	}
+	if isTerminalStatus("   ") {
+		t.Fatal("expected blank status to be non-terminal")
+	}
+	if isTerminalStatus("In Progress") {
+		t.Fatal("expected in-progress status to be non-terminal")
+	}
+	if isTerminalState("done") != true {
+		t.Fatal("expected isTerminalState to proxy terminal statuses")
+	}
+}
+
 func TestParallelIssueQueueSavePreservesBlockedReasonAndRecentBatches(t *testing.T) {
 	queuePath := filepath.Join(t.TempDir(), "queue.json")
 	queue := &ParallelIssueQueue{
