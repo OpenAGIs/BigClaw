@@ -126,6 +126,20 @@ func TestQueryMemoryEventsAndEventStateHelpers(t *testing.T) {
 	})
 }
 
+func TestCheckpointExpiredErrorString(t *testing.T) {
+	err := checkpointExpiredError{
+		Diagnostics: checkpointDiagnostics{
+			SubscriberID:    "worker-a",
+			Status:          "expired",
+			SuggestedAction: "reset the checkpoint and replay retained events",
+		},
+	}
+
+	if got := err.Error(); got != "checkpoint for subscriber worker-a expired: reset the checkpoint and replay retained events" {
+		t.Fatalf("unexpected checkpoint expired error string: %q", got)
+	}
+}
+
 type countingInspectorQueue struct {
 	*queue.MemoryQueue
 	listCalls int

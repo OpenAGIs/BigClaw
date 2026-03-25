@@ -5183,6 +5183,23 @@
       "state": "Done",
       "title": "Add event stream helper unit coverage",
       "updated_at": "2026-03-25T16:39:36Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T16:42:42Z",
+      "description": "Add focused API helper coverage for bigclaw-go/internal/api/server.go so checkpointExpiredError.Error is pinned without depending on the broader checkpoint reset endpoint flow.",
+      "id": "big-par-377",
+      "identifier": "BIG-PAR-377",
+      "labels": [
+        "go",
+        "api",
+        "test",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add checkpoint error helper coverage",
+      "updated_at": "2026-03-25T16:42:52Z"
     }
   ]
 }

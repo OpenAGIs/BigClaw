@@ -176,7 +176,9 @@
       "BIG-PAR-375",
       "BIG-PAR-376"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-377"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -336,7 +338,8 @@
     "BIG-PAR-373",
     "BIG-PAR-374",
     "BIG-PAR-375",
-    "BIG-PAR-376"
+    "BIG-PAR-376",
+    "BIG-PAR-377"
   ],
   "issues": [
     {
@@ -1310,6 +1313,12 @@
       "title": "Add event stream helper unit coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-377",
+      "title": "Add checkpoint error helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
