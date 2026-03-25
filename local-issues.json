@@ -5978,6 +5978,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- added focused refill markdown tests covering SaveMarkdown repeat-save no-op and read-error paths plus direct helper coverage for writeIssueBucket, tailIdentifiers, and headIdentifiers in bigclaw-go/internal/refill/queue_markdown_test.go.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill`\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill.cover && go tool cover -func=/tmp/refill.cover | rg \"queue_markdown.go:12|queue_markdown.go:148|queue_markdown.go:166|queue_markdown.go:173|total\"`\n- result: pass; SaveMarkdown 69.0%, writeIssueBucket 100.0%, tailIdentifiers 100.0%, headIdentifiers 100.0%, package total 91.6%.\n\nCommit SHA:\n- `f7d8a6fdbb3ce78c95356a6425f0c2d01f697a55`\n\nPR URL:\n- https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T18:51:46Z"
+        }
+      ],
       "created_at": "2026-03-25T18:44:43Z",
       "description": "Add focused refill markdown tests covering SaveMarkdown no-op/error branches plus writeIssueBucket, headIdentifiers, and tailIdentifiers behavior in bigclaw-go/internal/refill/queue_markdown.go.",
       "id": "big-par-410",
@@ -5989,9 +5996,9 @@
         "coverage"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add refill markdown helper coverage",
-      "updated_at": "2026-03-25T18:44:56Z"
+      "updated_at": "2026-03-25T18:51:46Z"
     }
   ]
 }
