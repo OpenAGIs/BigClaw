@@ -275,14 +275,23 @@ func (s *LocalIssueStore) IssueStates(stateNames []string) []TrackedIssue {
 	return issues
 }
 
+func normalizeIssueState(state string) string {
+	trimmed := strings.TrimSpace(state)
+	if trimmed == "" {
+		return "Todo"
+	}
+	return trimmed
+}
+
 func (s *LocalIssueStore) UpdateIssueState(ref string, stateName string, now time.Time) (string, error) {
+	normalized := normalizeIssueState(stateName)
 	updated := ""
 	err := s.withWriteLock(func() error {
 		for _, issue := range s.issueMap {
 			if !issueMatchesRef(issue, ref) {
 				continue
 			}
-			issue["state"] = stateName
+			issue["state"] = normalized
 			issue["updated_at"] = now.UTC().Truncate(time.Second).Format(time.RFC3339)
 			updated = mapString(issue, "state")
 			return s.saveUnlocked()
