@@ -198,7 +198,10 @@
       "BIG-PAR-398",
       "BIG-PAR-397"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-399",
+      "BIG-PAR-400"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -380,7 +383,9 @@
     "BIG-PAR-395",
     "BIG-PAR-396",
     "BIG-PAR-398",
-    "BIG-PAR-397"
+    "BIG-PAR-397",
+    "BIG-PAR-399",
+    "BIG-PAR-400"
   ],
   "issues": [
     {
@@ -1486,6 +1491,18 @@
       "title": "Add task JSON marshal optional-field coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-399",
+      "title": "Add local tracker normalization helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-400",
+      "title": "Add refill queue batch-helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }

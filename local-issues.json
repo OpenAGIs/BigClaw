@@ -5711,6 +5711,40 @@
       "state": "Done",
       "title": "Add task JSON unmarshal edge-path coverage",
       "updated_at": "2026-03-25T18:11:28Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T18:13:10Z",
+      "description": "Add focused refill local-store tests covering normalizeLocalIssueMaps and issueCommentList helper edge cases in bigclaw-go/internal/refill/local_store.go.",
+      "id": "big-par-399",
+      "identifier": "BIG-PAR-399",
+      "labels": [
+        "go-mainline",
+        "parallel",
+        "refill",
+        "coverage"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add local tracker normalization helper coverage",
+      "updated_at": "2026-03-25T18:13:10Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T18:13:10Z",
+      "description": "Add focused refill queue tests covering issueRecordStateMap, equalStringSlices, and recent-batch helper edge paths in bigclaw-go/internal/refill/queue.go.",
+      "id": "big-par-400",
+      "identifier": "BIG-PAR-400",
+      "labels": [
+        "go-mainline",
+        "parallel",
+        "refill",
+        "coverage"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add refill queue batch-helper coverage",
+      "updated_at": "2026-03-25T18:13:10Z"
     }
   ]
 }
