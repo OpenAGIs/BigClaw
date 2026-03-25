@@ -175,6 +175,10 @@ type distributedDiagnostics struct {
 	MigrationReviewPack   migrationReviewPack                      `json:"migration_review_pack"`
 	BrokerFanoutIsolation brokerStubFanoutIsolationEvidencePack    `json:"broker_stub_fanout_isolation"`
 	ProviderLiveHandoff   providerLiveHandoffIsolationEvidencePack `json:"provider_live_handoff_isolation"`
+	ClawHostProxyAdmin    clawHostProxyAdminValidationLane         `json:"clawhost_proxy_admin_validation"`
+	ClawHostFleet         clawHostFleetInventorySurface            `json:"clawhost_fleet_inventory"`
+	ClawHostRolloutPlan   clawHostRolloutPlannerSurface            `json:"clawhost_rollout_planner"`
+	ClawHostTenantPolicy  clawHostTenantPolicySurface              `json:"clawhost_tenant_policy"`
 	BrokerBootstrap       brokerBootstrapSurface                   `json:"broker_bootstrap_surface"`
 	DeliveryAckReadiness  deliveryAckReadinessSurface              `json:"delivery_ack_readiness"`
 	PublishAckOutcomes    publishAckOutcomeSurface                 `json:"publish_ack_outcomes"`
@@ -275,6 +279,10 @@ func (s *Server) handleV2DistributedReport(w http.ResponseWriter, r *http.Reques
 		"broker_review_bundle":            diagnostics.BrokerReviewBundle,
 		"broker_stub_fanout_isolation":    diagnostics.BrokerFanoutIsolation,
 		"provider_live_handoff_isolation": diagnostics.ProviderLiveHandoff,
+		"clawhost_proxy_admin_validation": diagnostics.ClawHostProxyAdmin,
+		"clawhost_fleet_inventory":        diagnostics.ClawHostFleet,
+		"clawhost_rollout_planner":        diagnostics.ClawHostRolloutPlan,
+		"clawhost_tenant_policy":          diagnostics.ClawHostTenantPolicy,
 		"broker_bootstrap_surface":        diagnostics.BrokerBootstrap,
 		"trace_export_bundle":             diagnostics.TraceBundle,
 		"migration_review_pack":           diagnostics.MigrationReviewPack,
@@ -303,7 +311,7 @@ func (s *Server) handleV2DistributedReportExport(w http.ResponseWriter, r *http.
 		return
 	}
 	diagnostics := s.buildDistributedDiagnostics(filters)
-	filenameScope := firstNonEmpty(filters.Team, filters.Project, filters.TaskID, "all")
+	filenameScope := firstMeaningfulReportName(filters.Team, filters.Project, filters.TaskID)
 	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 	w.Header().Set(
 		"Content-Disposition",
@@ -364,6 +372,10 @@ func (s *Server) buildDistributedDiagnostics(filters controlCenterFilters) distr
 		MigrationReviewPack:   buildMigrationReviewPack(),
 		BrokerFanoutIsolation: brokerStubFanoutIsolationPayload(),
 		ProviderLiveHandoff:   providerLiveHandoffIsolationPayload(),
+		ClawHostProxyAdmin:    clawHostProxyAdminValidationLanePayload(),
+		ClawHostFleet:         clawHostFleetInventorySurfacePayload(),
+		ClawHostRolloutPlan:   clawHostRolloutPlannerSurfacePayload(),
+		ClawHostTenantPolicy:  clawHostTenantPolicySurfacePayload(),
 		BrokerBootstrap:       brokerBootstrapSurfacePayload(),
 		DeliveryAckReadiness:  deliveryAckReadinessPayload(),
 		PublishAckOutcomes:    publishAckOutcomeSurfacePayload(),
@@ -893,20 +905,20 @@ func taskRequiresTool(task domain.Task, tool string) bool {
 
 func distributedExportURL(filters controlCenterFilters) string {
 	values := url.Values{}
-	if filters.Team != "" {
-		values.Set("team", filters.Team)
+	if team := strings.TrimSpace(filters.Team); team != "" {
+		values.Set("team", team)
 	}
-	if filters.Project != "" {
-		values.Set("project", filters.Project)
+	if project := strings.TrimSpace(filters.Project); project != "" {
+		values.Set("project", project)
 	}
-	if filters.TaskID != "" {
-		values.Set("task_id", filters.TaskID)
+	if taskID := strings.TrimSpace(filters.TaskID); taskID != "" {
+		values.Set("task_id", taskID)
 	}
-	if filters.State != "" {
-		values.Set("state", filters.State)
+	if state := strings.ToLower(strings.TrimSpace(filters.State)); state != "" {
+		values.Set("state", state)
 	}
-	if filters.RiskLevel != "" {
-		values.Set("risk_level", filters.RiskLevel)
+	if riskLevel := strings.ToLower(strings.TrimSpace(filters.RiskLevel)); riskLevel != "" {
+		values.Set("risk_level", riskLevel)
 	}
 	if !filters.Since.IsZero() {
 		values.Set("since", filters.Since.UTC().Format(time.RFC3339))
@@ -1394,6 +1406,131 @@ func renderDistributedDiagnosticsMarkdown(diagnostics distributedDiagnostics, fi
 	}
 	lines = append(lines,
 		"",
+		"## ClawHost Proxy and Admin Validation",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.ClawHostProxyAdmin.ReportPath),
+		fmt.Sprintf("- Provider: %s", firstNonEmpty(diagnostics.ClawHostProxyAdmin.Provider, "unknown")),
+		fmt.Sprintf("- Validation lane: %s", firstNonEmpty(diagnostics.ClawHostProxyAdmin.ValidationLane, "unknown")),
+		fmt.Sprintf("- App count: %d", diagnostics.ClawHostProxyAdmin.Summary.AppCount),
+		fmt.Sprintf("- Bot count: %d", diagnostics.ClawHostProxyAdmin.Summary.BotCount),
+		fmt.Sprintf("- HTTP reachable bots: %d", diagnostics.ClawHostProxyAdmin.Summary.HTTPReachableBots),
+		fmt.Sprintf("- WebSocket reachable bots: %d", diagnostics.ClawHostProxyAdmin.Summary.WebsocketReachableBots),
+		fmt.Sprintf("- Subdomain ready bots: %d", diagnostics.ClawHostProxyAdmin.Summary.SubdomainReadyBots),
+		fmt.Sprintf("- Admin ready bots: %d", diagnostics.ClawHostProxyAdmin.Summary.AdminReadyBots),
+		fmt.Sprintf("- Degraded bots: %d", diagnostics.ClawHostProxyAdmin.Summary.DegradedBots),
+		fmt.Sprintf("- Parallel probe width: %d", diagnostics.ClawHostProxyAdmin.Summary.ParallelProbeWidth),
+	)
+	for _, bot := range diagnostics.ClawHostProxyAdmin.Bots {
+		lines = append(lines, fmt.Sprintf("- %s/%s: validation=%s http=%s websocket=%s admin=%s", firstNonEmpty(bot.AppID, "unknown-app"), firstNonEmpty(bot.BotID, "unknown-bot"), firstNonEmpty(bot.ValidationStatus, "unknown"), firstNonEmpty(bot.HTTPStatus, "unknown"), firstNonEmpty(bot.WebsocketStatus, "unknown"), firstNonEmpty(bot.AdminStatus, "unknown")))
+		if bot.Subdomain != "" {
+			lines = append(lines, "  - subdomain: "+bot.Subdomain)
+		}
+		if bot.ProxyRoute != "" {
+			lines = append(lines, "  - proxy route: "+bot.ProxyRoute)
+		}
+	}
+	if len(diagnostics.ClawHostProxyAdmin.Limitations) > 0 {
+		lines = append(lines, "- Limitations: "+strings.Join(diagnostics.ClawHostProxyAdmin.Limitations, "; "))
+	}
+	if len(diagnostics.ClawHostProxyAdmin.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.ClawHostProxyAdmin.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## ClawHost Fleet Inventory",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.ClawHostFleet.ReportPath),
+		fmt.Sprintf("- Provider: %s", firstNonEmpty(diagnostics.ClawHostFleet.Provider, "unknown")),
+		fmt.Sprintf("- Source kind: %s", firstNonEmpty(diagnostics.ClawHostFleet.SourceKind, "unknown")),
+		fmt.Sprintf("- App count: %d", diagnostics.ClawHostFleet.Summary.AppCount),
+		fmt.Sprintf("- Bot count: %d", diagnostics.ClawHostFleet.Summary.BotCount),
+		fmt.Sprintf("- Active bots: %d", diagnostics.ClawHostFleet.Summary.ActiveBots),
+		fmt.Sprintf("- Suspended bots: %d", diagnostics.ClawHostFleet.Summary.SuspendedBots),
+		fmt.Sprintf("- Degraded bots: %d", diagnostics.ClawHostFleet.Summary.DegradedBots),
+		fmt.Sprintf("- Tenant count: %d", diagnostics.ClawHostFleet.Summary.TenantCount),
+		fmt.Sprintf("- Domain count: %d", diagnostics.ClawHostFleet.Summary.DomainCount),
+	)
+	for _, app := range diagnostics.ClawHostFleet.Apps {
+		lines = append(lines, fmt.Sprintf("- app %s: tenant=%s owner=%s bots=%d policy=%s", firstNonEmpty(app.AppID, "unknown-app"), firstNonEmpty(app.Tenant, "unknown"), firstNonEmpty(app.Owner, "unknown"), app.BotCount, firstNonEmpty(app.ProviderPolicy, "unknown")))
+		if app.DefaultDomain != "" {
+			lines = append(lines, "  - default domain: "+app.DefaultDomain)
+		}
+		if app.DefaultSubdomain != "" {
+			lines = append(lines, "  - default subdomain: "+app.DefaultSubdomain)
+		}
+	}
+	for _, bot := range diagnostics.ClawHostFleet.Bots {
+		lines = append(lines, fmt.Sprintf("- bot %s: app=%s lifecycle=%s region=%s domain=%s", firstNonEmpty(bot.BotID, "unknown-bot"), firstNonEmpty(bot.AppID, "unknown-app"), firstNonEmpty(bot.LifecycleState, "unknown"), firstNonEmpty(bot.RuntimeRegion, "unknown"), firstNonEmpty(bot.Domain, "unknown")))
+	}
+	if len(diagnostics.ClawHostFleet.Limitations) > 0 {
+		lines = append(lines, "- Limitations: "+strings.Join(diagnostics.ClawHostFleet.Limitations, "; "))
+	}
+	if len(diagnostics.ClawHostFleet.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.ClawHostFleet.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## ClawHost Rollout Planner",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.ClawHostRolloutPlan.ReportPath),
+		fmt.Sprintf("- Provider: %s", firstNonEmpty(diagnostics.ClawHostRolloutPlan.Provider, "unknown")),
+		fmt.Sprintf("- Planner mode: %s", firstNonEmpty(diagnostics.ClawHostRolloutPlan.PlannerMode, "unknown")),
+		fmt.Sprintf("- App count: %d", diagnostics.ClawHostRolloutPlan.Summary.AppCount),
+		fmt.Sprintf("- Bot count: %d", diagnostics.ClawHostRolloutPlan.Summary.BotCount),
+		fmt.Sprintf("- Total waves: %d", diagnostics.ClawHostRolloutPlan.Summary.TotalWaves),
+		fmt.Sprintf("- Canary waves: %d", diagnostics.ClawHostRolloutPlan.Summary.CanaryWaves),
+		fmt.Sprintf("- Max parallelism: %d", diagnostics.ClawHostRolloutPlan.Summary.MaxParallelism),
+		fmt.Sprintf("- Takeover-protected waves: %d", diagnostics.ClawHostRolloutPlan.Summary.TakeoverProtected),
+		fmt.Sprintf("- Evidence-ready waves: %d", diagnostics.ClawHostRolloutPlan.Summary.EvidenceReadyWaves),
+		fmt.Sprintf("- Blocked waves: %d", diagnostics.ClawHostRolloutPlan.Summary.BlockedWaves),
+	)
+	for _, wave := range diagnostics.ClawHostRolloutPlan.Waves {
+		lines = append(lines, fmt.Sprintf("- %s: action=%s validation=%s canary=%t takeover_required=%t parallelism=%d", firstNonEmpty(wave.WaveID, "unknown-wave"), firstNonEmpty(wave.Action, "unknown"), firstNonEmpty(wave.ValidationStatus, "unknown"), wave.Canary, wave.TakeoverRequired, wave.MaxParallelism))
+		if wave.Scope != "" {
+			lines = append(lines, "  - scope: "+wave.Scope)
+		}
+		if wave.SuccessGate != "" {
+			lines = append(lines, "  - success gate: "+wave.SuccessGate)
+		}
+		if wave.RollbackGate != "" {
+			lines = append(lines, "  - rollback gate: "+wave.RollbackGate)
+		}
+	}
+	if len(diagnostics.ClawHostRolloutPlan.Limitations) > 0 {
+		lines = append(lines, "- Limitations: "+strings.Join(diagnostics.ClawHostRolloutPlan.Limitations, "; "))
+	}
+	if len(diagnostics.ClawHostRolloutPlan.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.ClawHostRolloutPlan.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
+		"## ClawHost Tenant Policy",
+		fmt.Sprintf("- Canonical report: %s", diagnostics.ClawHostTenantPolicy.ReportPath),
+		fmt.Sprintf("- Provider: %s", firstNonEmpty(diagnostics.ClawHostTenantPolicy.Provider, "unknown")),
+		fmt.Sprintf("- Policy mode: %s", firstNonEmpty(diagnostics.ClawHostTenantPolicy.PolicyMode, "unknown")),
+		fmt.Sprintf("- Tenant count: %d", diagnostics.ClawHostTenantPolicy.Summary.TenantCount),
+		fmt.Sprintf("- App defaults: %d", diagnostics.ClawHostTenantPolicy.Summary.AppDefaultCount),
+		fmt.Sprintf("- Multi-provider tenants: %d", diagnostics.ClawHostTenantPolicy.Summary.MultiProviderTenants),
+		fmt.Sprintf("- Entitlement guardrails: %d", diagnostics.ClawHostTenantPolicy.Summary.EntitlementGuardrails),
+		fmt.Sprintf("- Rollout-blocked defaults: %d", diagnostics.ClawHostTenantPolicy.Summary.RolloutBlockedDefaults),
+	)
+	for _, tenant := range diagnostics.ClawHostTenantPolicy.Tenants {
+		lines = append(lines, fmt.Sprintf("- tenant %s: default_provider=%s approval_mode=%s blocked_changes=%d", firstNonEmpty(tenant.Tenant, "unknown-tenant"), firstNonEmpty(tenant.DefaultProvider, "unknown"), firstNonEmpty(tenant.ApprovalMode, "unknown"), tenant.BlockedDefaultChanges))
+		if tenant.EntitlementPolicy != "" {
+			lines = append(lines, "  - entitlement policy: "+tenant.EntitlementPolicy)
+		}
+		if tenant.RolloutGuardrail != "" {
+			lines = append(lines, "  - rollout guardrail: "+tenant.RolloutGuardrail)
+		}
+	}
+	for _, app := range diagnostics.ClawHostTenantPolicy.AppDefaults {
+		lines = append(lines, fmt.Sprintf("- app %s: tenant=%s provider=%s model=%s rollout=%s approval_required=%t", firstNonEmpty(app.AppID, "unknown-app"), firstNonEmpty(app.Tenant, "unknown"), firstNonEmpty(app.Provider, "unknown"), firstNonEmpty(app.Model, "unknown"), firstNonEmpty(app.RolloutStatus, "unknown"), app.ApprovalRequired))
+	}
+	if len(diagnostics.ClawHostTenantPolicy.Limitations) > 0 {
+		lines = append(lines, "- Limitations: "+strings.Join(diagnostics.ClawHostTenantPolicy.Limitations, "; "))
+	}
+	if len(diagnostics.ClawHostTenantPolicy.ReviewerLinks) > 0 {
+		lines = append(lines, "- Reviewer links: "+strings.Join(diagnostics.ClawHostTenantPolicy.ReviewerLinks, ", "))
+	}
+	lines = append(lines,
+		"",
 		"## Validation Bundle Continuation Gate",
 		fmt.Sprintf("- Canonical report: %s", diagnostics.ContinuationGate.ReportPath),
 		fmt.Sprintf("- Scorecard: %s", diagnostics.ContinuationGate.ScorecardPath),
@@ -1483,9 +1620,35 @@ func (s *Server) sharedQueueCoordinationDiagnostics() sharedQueueCoordinationDia
 	return diagnostics
 }
 
+func firstMeaningfulReportName(values ...string) string {
+	for _, value := range values {
+		if sanitizeReportName(value) != "all" {
+			return value
+		}
+	}
+	return "all"
+}
+
 func sanitizeReportName(value string) string {
 	value = strings.ToLower(strings.TrimSpace(value))
-	value = strings.ReplaceAll(value, " ", "-")
+	if value == "" {
+		return "all"
+	}
+	var b strings.Builder
+	b.Grow(len(value))
+	lastDash := false
+	for _, r := range value {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			b.WriteRune(r)
+			lastDash = false
+			continue
+		}
+		if !lastDash {
+			b.WriteByte('-')
+			lastDash = true
+		}
+	}
+	value = strings.Trim(b.String(), "-")
 	if value == "" {
 		return "all"
 	}

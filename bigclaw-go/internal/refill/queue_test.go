@@ -489,7 +489,7 @@ func TestQueueSelectionAndAccessorHelpers(t *testing.T) {
 		{Identifier: "BIG-PAR-405", StateName: "Blocked"},
 		{Identifier: "BIG-PAR-404", StateName: "In Progress"},
 		{Identifier: "BIG-PAR-403", StateName: "In Progress"},
-	})
+	}, "In Progress")
 	if !equalStringSlices(active, []string{"BIG-PAR-403", "BIG-PAR-404"}) {
 		t.Fatalf("unexpected SortedActive result: %+v", active)
 	}
@@ -591,6 +591,133 @@ func TestQueueStatusSyncAndNormalizationHelpers(t *testing.T) {
 	}
 	if isTerminalState("done") != true {
 		t.Fatal("expected isTerminalState to proxy terminal statuses")
+	}
+}
+
+func TestParallelIssueQueueRefreshRecentBatchesNormalizesActiveStateName(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			Policy: struct {
+				TargetInProgress  int      `json:"target_in_progress"`
+				ActivateStateID   string   `json:"activate_state_id"`
+				ActivateStateName string   `json:"activate_state_name"`
+				RefillStates      []string `json:"refill_states"`
+				BlockedReason     string   `json:"blocked_reason,omitempty"`
+			}{
+				TargetInProgress:  2,
+				ActivateStateName: "In Progress",
+				RefillStates:      []string{"Todo", "Backlog"},
+			},
+			IssueOrder: []string{"BIG-PAR-385", "BIG-PAR-386", "BIG-PAR-387"},
+		},
+	}
+
+	updated := queue.RefreshRecentBatchesFromStates(map[string]string{
+		"BIG-PAR-385": "in progress.",
+		"BIG-PAR-386": "DONE",
+		"BIG-PAR-387": "todo.",
+	})
+	if !updated {
+		t.Fatalf("expected normalized recent batch refresh to report a change")
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Active, []string{"BIG-PAR-385"}) {
+		t.Fatalf("unexpected normalized active batches: %v", queue.payload.RecentBatches.Active)
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Completed, []string{"BIG-PAR-386"}) {
+		t.Fatalf("unexpected normalized completed batches: %v", queue.payload.RecentBatches.Completed)
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Standby, []string{"BIG-PAR-387"}) {
+		t.Fatalf("unexpected normalized standby batches: %v", queue.payload.RecentBatches.Standby)
+	}
+}
+
+func TestSortedActiveNormalizesEquivalentStateNames(t *testing.T) {
+	issues := []TrackedIssue{
+		{Identifier: "BIG-PAR-386", StateName: "in progress."},
+		{Identifier: "BIG-PAR-385", StateName: "In Progress"},
+		{Identifier: "BIG-PAR-387", StateName: "Done"},
+	}
+	active := SortedActive(issues, "In Progress")
+	if !equalStringSlices(active, []string{"BIG-PAR-385", "BIG-PAR-386"}) {
+		t.Fatalf("unexpected normalized active issues: %v", active)
+	}
+}
+
+func TestSortedActiveUsesConfiguredActiveStateName(t *testing.T) {
+	issues := []TrackedIssue{
+		{Identifier: "BIG-PAR-391", StateName: "queued for review."},
+		{Identifier: "BIG-PAR-392", StateName: "Queued for Review"},
+		{Identifier: "BIG-PAR-393", StateName: "Todo"},
+	}
+	active := SortedActive(issues, "Queued for Review")
+	if !equalStringSlices(active, []string{"BIG-PAR-391", "BIG-PAR-392"}) {
+		t.Fatalf("unexpected configured active issues: %v", active)
+	}
+}
+
+func TestParallelIssueQueueFetchStateNamesDeduplicatesEquivalentSpellings(t *testing.T) {
+	queue := &ParallelIssueQueue{}
+	queue.payload.Policy.ActivateStateName = "Queued for Review"
+	queue.payload.Policy.RefillStates = []string{" todo. ", "Backlog", "Todo", "backlog."}
+
+	if got := queue.FetchStateNames(); !equalStringSlices(got, []string{"Queued for Review", "Todo", "Backlog"}) {
+		t.Fatalf("unexpected fetch state names: %v", got)
+	}
+}
+
+func TestParallelIssueQueueStatusSyncIgnoresEquivalentStateSpellings(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-387", Status: "todo."},
+				{Identifier: "BIG-PAR-388", Status: "DONE"},
+			},
+		},
+	}
+
+	liveStates := map[string]string{
+		"BIG-PAR-387": "Todo",
+		"BIG-PAR-388": "done.",
+	}
+
+	if got := queue.StatusSyncUpdatesForStates(liveStates); got != 0 {
+		t.Fatalf("expected no status drift for equivalent spellings, got %d", got)
+	}
+	if got := queue.SyncStatusFromStates(liveStates); got != 0 {
+		t.Fatalf("expected no status write for equivalent spellings, got %d", got)
+	}
+	if queue.payload.Issues[0].Status != "todo." || queue.payload.Issues[1].Status != "DONE" {
+		t.Fatalf("expected equivalent queue statuses to remain untouched, got %+v", queue.payload.Issues)
+	}
+}
+
+func TestParallelIssueQueueUpsertIssueIgnoresEquivalentStatusSpellings(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-388"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-388", Title: "Normalize seed and ensure state equivalence", Track: "Automation", Status: "todo."},
+			},
+		},
+	}
+
+	action, orderAdded, err := queue.UpsertIssue(IssueRecord{
+		Identifier: "BIG-PAR-388",
+		Title:      "Normalize seed and ensure state equivalence",
+		Track:      "Automation",
+		Status:     "Todo",
+	})
+	if err != nil {
+		t.Fatalf("upsert existing equivalent state: %v", err)
+	}
+	if action != "exists" {
+		t.Fatalf("expected equivalent status to keep exists action, got %s", action)
+	}
+	if orderAdded {
+		t.Fatalf("expected no order change for equivalent status")
+	}
+	if queue.payload.Issues[0].Status != "todo." {
+		t.Fatalf("expected equivalent status spelling to remain untouched, got %+v", queue.payload.Issues[0])
 	}
 }
 

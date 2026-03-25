@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -1255,6 +1256,10 @@ func (s *Server) buildControlCenterResponse(
 		"sequence_bridge_surface":         sequenceBridgeSurfacePayload(),
 		"retention_expiry_surface":        retentionExpirySurfacePayload(),
 		"provider_live_handoff_isolation": providerLiveHandoffIsolationPayload(),
+		"clawhost_proxy_admin_validation": clawHostProxyAdminValidationLanePayload(),
+		"clawhost_fleet_inventory":        clawHostFleetInventorySurfacePayload(),
+		"clawhost_rollout_planner":        clawHostRolloutPlannerSurfacePayload(),
+		"clawhost_tenant_policy":          clawHostTenantPolicySurfacePayload(),
 		"clawhost_policy_surface":         clawHostPolicySurfacePayload(clawHostTasks, filters.Team, filters.Project),
 		"clawhost_workflow_surface":       clawHostWorkflowSurfacePayload(clawHostTasks, authorization.Actor, filters.Team, filters.Project),
 		"clawhost_rollout_surface":        clawHostRolloutSurfacePayload(clawHostTasks, filters.Team, filters.Project),
@@ -1680,10 +1685,15 @@ func controlActionScope(action string) string {
 }
 
 func controlActionAuditURL(taskID string, action string) string {
-	if taskID != "" {
-		return fmt.Sprintf("/v2/control-center/audit?task_id=%s&action=%s&audit_limit=20", taskID, action)
+	values := url.Values{}
+	if taskID = strings.TrimSpace(taskID); taskID != "" {
+		values.Set("task_id", taskID)
 	}
-	return fmt.Sprintf("/v2/control-center/audit?action=%s&audit_limit=20", action)
+	if action = strings.TrimSpace(action); action != "" {
+		values.Set("action", action)
+	}
+	values.Set("audit_limit", "20")
+	return "/v2/control-center/audit?" + values.Encode()
 }
 
 func takeoverRef(takeover control.Takeover, ok bool) *control.Takeover {
@@ -1780,7 +1790,7 @@ func (s *Server) handleV2RunReport(w http.ResponseWriter, r *http.Request, taskI
 	}
 	response := s.buildRunDetailResponse(task, limit, authorization)
 	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", taskID+"-run-report.md"))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", sanitizeReportName(taskID)+"-run-report.md"))
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(renderRunDetailMarkdown(response)))
 }

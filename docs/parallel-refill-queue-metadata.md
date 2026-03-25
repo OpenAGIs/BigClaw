@@ -59,8 +59,9 @@ Notes:
 - the sync updates embedded metadata only; it does not reorder `issue_order` or
   create missing issue records.
 - current command payloads also report `recent_batches_synced`,
-  `recent_batches_updated`, and `recent_batches_written` so callers can see when
-  the summary metadata was refreshed.
+  `recent_batches_updated`, `recent_batches_written`, and `markdown_written` so
+  callers can see when the queue companion summaries were refreshed or when the
+  markdown companion file was rewritten.
 
 ## When To Use It
 

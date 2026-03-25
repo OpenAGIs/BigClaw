@@ -1,0 +1,98 @@
+{
+  "generated_at": "2026-03-24T16:20:00Z",
+  "ticket": "BIG-PAR-291",
+  "title": "ClawHost proxy subdomain and admin validation lane",
+  "status": "checked_in_validation_lane",
+  "provider": "clawhost",
+  "validation_lane": "clawhost_proxy_admin_parallel_probe",
+  "report_path": "docs/reports/clawhost-proxy-admin-validation-lane.json",
+  "evidence_sources": [
+    "bigclaw-go/internal/api/clawhost_proxy_admin_validation_surface.go",
+    "bigclaw-go/internal/api/server_test.go",
+    "bigclaw-go/internal/api/distributed.go",
+    "docs/parallel-refill-queue.json"
+  ],
+  "reviewer_links": [
+    "/debug/status",
+    "/v2/control-center",
+    "/v2/reports/distributed",
+    "docs/parallel-refill-queue.json"
+  ],
+  "summary": {
+    "app_count": 2,
+    "bot_count": 3,
+    "http_reachable_bots": 3,
+    "websocket_reachable_bots": 2,
+    "subdomain_ready_bots": 3,
+    "admin_ready_bots": 2,
+    "degraded_bots": 1,
+    "parallel_probe_width": 3,
+    "reviewer_export_status": "ready"
+  },
+  "bots": [
+    {
+      "app_id": "clawhost-sales",
+      "bot_id": "bot-sales-a",
+      "tenant": "tenant-acme",
+      "region": "ap-southeast-1",
+      "subdomain": "sales-a.claw.example.com",
+      "proxy_route": "https://proxy.clawhost.internal/http/sales-a",
+      "http_status": "reachable",
+      "websocket_status": "reachable",
+      "admin_status": "ready",
+      "validation_status": "ready",
+      "probe_evidence": [
+        "http-200",
+        "ws-upgrade-101",
+        "admin-healthz-200"
+      ],
+      "reviewer_notes": [
+        "Per-bot subdomain resolves through the shared proxy tier without a dedicated Ingress object."
+      ]
+    },
+    {
+      "app_id": "clawhost-sales",
+      "bot_id": "bot-sales-b",
+      "tenant": "tenant-acme",
+      "region": "ap-southeast-1",
+      "subdomain": "sales-b.claw.example.com",
+      "proxy_route": "https://proxy.clawhost.internal/http/sales-b",
+      "http_status": "reachable",
+      "websocket_status": "reachable",
+      "admin_status": "ready",
+      "validation_status": "ready",
+      "probe_evidence": [
+        "http-200",
+        "ws-upgrade-101",
+        "admin-healthz-200"
+      ],
+      "reviewer_notes": [
+        "Bot inherits the shared sales app admin surface and tenant ownership policy."
+      ]
+    },
+    {
+      "app_id": "clawhost-support",
+      "bot_id": "bot-support-a",
+      "tenant": "tenant-bravo",
+      "region": "us-east-1",
+      "subdomain": "support-a.claw.example.com",
+      "proxy_route": "https://proxy.clawhost.internal/http/support-a",
+      "http_status": "reachable",
+      "websocket_status": "degraded",
+      "admin_status": "auth_required",
+      "validation_status": "degraded",
+      "probe_evidence": [
+        "http-200",
+        "ws-timeout",
+        "admin-auth-302"
+      ],
+      "reviewer_notes": [
+        "HTTP ingress is healthy, but reviewer follow-up is required before enabling websocket-heavy workloads."
+      ]
+    }
+  ],
+  "limitations": [
+    "This checked-in lane captures the reviewer-facing contract and representative parallel probe output; it does not execute live ClawHost probes inside this repository checkout.",
+    "Admin readiness is treated as ready when the shared admin surface is reachable with the expected auth posture for the tenant."
+  ]
+}

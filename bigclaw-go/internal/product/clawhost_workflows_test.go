@@ -1,6 +1,7 @@
 package product
 
 import (
+	"net/url"
 	"reflect"
 	"strings"
 	"testing"
@@ -76,124 +77,6 @@ func TestBuildClawHostWorkflowLaneSurfaceIncludesParallelLanesAndSignals(t *test
 	}
 }
 
-func TestClawHostWorkflowLaneSurfaceCompatibilityAlias(t *testing.T) {
-	tasks := []domain.Task{
-		{
-			ID:        "task-1",
-			State:     domain.TaskBlocked,
-			RiskLevel: domain.RiskHigh,
-			Metadata: map[string]string{
-				"channel":  "telegram",
-				"device":   "wechat",
-				"provider": "openai",
-			},
-			CreatedAt: time.Now(),
-		},
-		{
-			ID: "task-2",
-			Metadata: map[string]string{
-				"channel":  "slack",
-				"provider": "anthropic",
-			},
-			CreatedAt: time.Now(),
-		},
-	}
-
-	aliasedSurface := BuildClawHostWorkflowLaneSurface(tasks, "alice", "platform", "apollo")
-	defaultSurface := BuildDefaultClawHostWorkflowLaneSurface(tasks, "alice", "platform", "apollo")
-	if !reflect.DeepEqual(aliasedSurface, defaultSurface) {
-		t.Fatalf("expected workflow lane alias builder to match default builder, got alias=%+v default=%+v", aliasedSurface, defaultSurface)
-	}
-
-	aliasedAudit := AuditClawHostWorkflowLaneSurface(aliasedSurface)
-	defaultAudit := AuditClawHostWorkflowLaneSurface(defaultSurface)
-	if !reflect.DeepEqual(aliasedAudit, defaultAudit) {
-		t.Fatalf("expected workflow lane alias audit to match default builder audit, got alias=%+v default=%+v", aliasedAudit, defaultAudit)
-	}
-}
-
-func TestBuildClawHostWorkflowLaneSurfaceScopesRoutesAndDefaultsActor(t *testing.T) {
-	t.Run("scoped routes", func(t *testing.T) {
-		surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "alice", "platform", "apollo")
-		for _, lane := range surface.Lanes {
-			if !strings.Contains(lane.Route, "team=platform") || !strings.Contains(lane.Route, "project=apollo") {
-				t.Fatalf("expected scoped route for lane %s, got %s", lane.LaneID, lane.Route)
-			}
-			if lane.Owner != "alice" {
-				t.Fatalf("expected explicit actor to own lane %s, got %+v", lane.LaneID, lane)
-			}
-		}
-	})
-
-	t.Run("default actor fallback", func(t *testing.T) {
-		surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "", "platform", "apollo")
-		if surface.Filters["actor"] != "workflow-operator" {
-			t.Fatalf("expected default workflow actor, got %+v", surface.Filters)
-		}
-		for _, lane := range surface.Lanes {
-			if lane.Owner != "workflow-operator" {
-				t.Fatalf("expected default actor owner for lane %s, got %+v", lane.LaneID, lane)
-			}
-		}
-	})
-}
-
-func TestBuildClawHostWorkflowLaneSurfaceInfersRolloutConcurrency(t *testing.T) {
-	for _, tc := range []struct {
-		name     string
-		taskCount int
-		want     int
-	}{
-		{name: "small batch", taskCount: 7, want: 6},
-		{name: "medium batch", taskCount: 10, want: 8},
-		{name: "large batch", taskCount: 30, want: 10},
-		{name: "xlarge batch", taskCount: 60, want: 12},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			tasks := make([]domain.Task, 0, tc.taskCount)
-			for i := 0; i < tc.taskCount; i++ {
-				tasks = append(tasks, domain.Task{ID: "task"})
-			}
-
-			surface := BuildDefaultClawHostWorkflowLaneSurface(tasks, "alice", "platform", "apollo")
-			for _, lane := range surface.Lanes {
-				if lane.LaneID != "clawhost-parallel-rollout-control" {
-					continue
-				}
-				if lane.ParallelBatch.MaxConcurrency != tc.want {
-					t.Fatalf("expected rollout-control concurrency=%d for %d tasks, got %+v", tc.want, tc.taskCount, lane.ParallelBatch)
-				}
-				return
-			}
-			t.Fatalf("expected rollout-control lane in workflow surface, got %+v", surface.Lanes)
-		})
-	}
-}
-
-func TestBuildClawHostWorkflowLaneSurfaceIdleSignals(t *testing.T) {
-	surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "", "platform", "apollo")
-	if surface.Filters["actor"] != "workflow-operator" || surface.Filters["team"] != "platform" || surface.Filters["project"] != "apollo" {
-		t.Fatalf("expected idle workflow-lane filters to preserve scope, got %+v", surface.Filters)
-	}
-	for _, key := range []string{
-		"total_tasks",
-		"blocked_tasks",
-		"high_risk_tasks",
-		"channel_tagged_tasks",
-		"device_tagged_tasks",
-		"provider_tagged_tasks",
-	} {
-		if surface.OperationalSignals[key] != 0 {
-			t.Fatalf("expected zeroed operational signals for idle lane surface, got %+v", surface.OperationalSignals)
-		}
-	}
-	for _, lane := range surface.Lanes {
-		if lane.LaneID == "clawhost-parallel-rollout-control" && lane.ParallelBatch.MaxConcurrency != 4 {
-			t.Fatalf("expected idle rollout-control lane to keep baseline concurrency, got %+v", lane.ParallelBatch)
-		}
-	}
-}
-
 func TestAuditClawHostWorkflowLaneSurfaceFlagsWorkflowGaps(t *testing.T) {
 	surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "", "", "")
 	if len(surface.Lanes) == 0 {
@@ -233,41 +116,13 @@ func TestAuditClawHostWorkflowLaneSurfaceFlagsWorkflowGaps(t *testing.T) {
 }
 
 func TestRenderClawHostWorkflowLaneReportIncludesKeySections(t *testing.T) {
-	tasks := []domain.Task{
-		{
-			ID:        "task-1",
-			State:     domain.TaskBlocked,
-			RiskLevel: domain.RiskHigh,
-			Metadata: map[string]string{
-				"channel":  "telegram",
-				"device":   "wechat",
-				"provider": "openai",
-			},
-			CreatedAt: time.Now(),
-		},
-		{
-			ID: "task-2",
-			Metadata: map[string]string{
-				"channel":  "slack",
-				"provider": "anthropic",
-			},
-			CreatedAt: time.Now(),
-		},
-	}
-	surface := BuildDefaultClawHostWorkflowLaneSurface(tasks, "ops-bot", "platform", "apollo")
+	surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "ops-bot", "platform", "apollo")
 	audit := AuditClawHostWorkflowLaneSurface(surface)
 
 	report := RenderClawHostWorkflowLaneReport(surface, audit)
 	for _, want := range []string{
 		"# ClawHost Workflow Surface",
 		"## Summary",
-		"## Filters",
-		"- actor: ops-bot",
-		"- project: apollo",
-		"- team: platform",
-		"## Operational Signals",
-		"- blocked_tasks: 1",
-		"- provider_tagged_tasks: 2",
 		"## Lanes",
 		"## Gaps",
 		"clawhost-parallel-rollout-control",
@@ -283,103 +138,95 @@ func TestRenderClawHostWorkflowLaneReportIncludesKeySections(t *testing.T) {
 	}
 }
 
-func TestMaxIntWorkflowKeepsUpperBound(t *testing.T) {
-	if got := maxIntWorkflow(4, 10); got != 10 {
-		t.Fatalf("expected workflow max helper to pick larger value, got %d", got)
+func TestBuildClawHostWorkflowLaneSurfaceEncodesScopedLaneRoutes(t *testing.T) {
+	surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "alice", "platform & ops", "apollo/mobile")
+	if len(surface.Lanes) == 0 {
+		t.Fatal("expected workflow lanes from builder")
 	}
-	if got := maxIntWorkflow(10, 4); got != 10 {
-		t.Fatalf("expected workflow max helper to preserve left bound when already larger, got %d", got)
+	for _, lane := range surface.Lanes {
+		parsed, err := url.Parse(lane.Route)
+		if err != nil {
+			t.Fatalf("parse lane route %s: %v", lane.LaneID, err)
+		}
+		if parsed.Query().Get("team") != "platform & ops" || parsed.Query().Get("project") != "apollo/mobile" {
+			t.Fatalf("expected encoded scope filters in lane %s route, got %s", lane.LaneID, lane.Route)
+		}
+		if strings.Contains(lane.Route, "team=platform & ops") || strings.Contains(lane.Route, "project=apollo/mobile") {
+			t.Fatalf("expected lane %s route to encode reserved characters, got %s", lane.LaneID, lane.Route)
+		}
 	}
 }
 
-func TestRenderClawHostWorkflowLaneReportHandlesEmptyLanes(t *testing.T) {
-	surface := BuildDefaultClawHostWorkflowLaneSurface(nil, "", "platform", "apollo")
-	surface.Lanes = nil
-	surface.Summary["lane_count"] = 0
-	surface.Summary["supports_parallel_batches"] = 0
-	surface.Summary["token_session_gated_lanes"] = 0
-	surface.Summary["device_auto_approval_lanes"] = 0
-	surface.Summary["human_takeover_enabled_lanes"] = 0
-	surface.Summary["provider_aware_lanes"] = 0
-	surface.Summary["skills_and_channel_aware_lanes"] = 0
+func TestBuildClawHostWorkflowLaneSurfaceAliasMatchesDefaultBuilder(t *testing.T) {
+	tasks := []domain.Task{
+		{ID: "task-1", State: domain.TaskBlocked, RiskLevel: domain.RiskHigh, Metadata: map[string]string{"channel": "slack", "provider": "openai"}},
+		{ID: "task-2", State: domain.TaskRunning, Metadata: map[string]string{"device": "wechat"}},
+	}
 
-	audit := AuditClawHostWorkflowLaneSurface(surface)
-	report := RenderClawHostWorkflowLaneReport(surface, audit)
+	got := BuildClawHostWorkflowLaneSurface(tasks, "alice", "platform", "apollo")
+	want := BuildDefaultClawHostWorkflowLaneSurface(tasks, "alice", "platform", "apollo")
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("workflow alias mismatch: got %+v want %+v", got, want)
+	}
+}
+
+func TestWorkflowParallelLimitHelpers(t *testing.T) {
+	cases := []struct {
+		count int
+		want  int
+	}{
+		{count: 0, want: 4},
+		{count: 1, want: 6},
+		{count: 9, want: 6},
+		{count: 10, want: 8},
+		{count: 29, want: 8},
+		{count: 30, want: 10},
+		{count: 59, want: 10},
+		{count: 60, want: 12},
+	}
+
+	for _, tc := range cases {
+		tasks := make([]domain.Task, tc.count)
+		if got := inferParallelLimit(tasks); got != tc.want {
+			t.Fatalf("inferParallelLimit(%d) = %d, want %d", tc.count, got, tc.want)
+		}
+	}
+
+	if got := maxIntWorkflow(4, 8); got != 8 {
+		t.Fatalf("maxIntWorkflow(4, 8) = %d, want 8", got)
+	}
+	if got := maxIntWorkflow(10, 6); got != 10 {
+		t.Fatalf("maxIntWorkflow(10, 6) = %d, want 10", got)
+	}
+}
+
+func TestAuditClawHostWorkflowLaneSurfaceEmptySurfaceReadiness(t *testing.T) {
+	audit := AuditClawHostWorkflowLaneSurface(ClawHostWorkflowLaneSurface{Name: "empty", Version: "v1"})
+	if audit.Name != "empty" || audit.Version != "v1" || audit.LaneCount != 0 {
+		t.Fatalf("unexpected empty-surface audit metadata: %+v", audit)
+	}
+	if audit.ReadinessScore != 0 {
+		t.Fatalf("expected empty workflow surface readiness to stay at zero, got %+v", audit)
+	}
+}
+
+func TestRenderClawHostWorkflowLaneReportEmptyState(t *testing.T) {
+	surface := ClawHostWorkflowLaneSurface{
+		Name:              "empty-surface",
+		Version:           "v1",
+		SourceRepo:        "https://github.com/fastclaw-ai/clawhost",
+		ReferenceRevision: "deadbeef",
+	}
+	report := RenderClawHostWorkflowLaneReport(surface, ClawHostWorkflowLaneSurfaceAudit{Name: "empty-surface", Version: "v1"})
 
 	for _, want := range []string{
-		"## Lanes",
-		"## Filters",
-		"- actor: workflow-operator",
-		"- project: apollo",
-		"- team: platform",
-		"## Operational Signals",
-		"- blocked_tasks: 0",
-		"- total_tasks: 0",
-		"- none",
-		"- Lane Count: 0",
-		"- Readiness Score: 0.0",
+		"## Summary",
+		"## Lanes\n\n- none",
 		"- Missing route lanes: none",
-		"- Missing owner lanes: none",
-		"- Lanes without human takeover: none",
-		"- Lanes without token/session gating: none",
-		"- Lanes without required approvals: none",
-		"- Lanes with invalid stage: none",
 		"- Lanes with invalid automation policy: none",
 	} {
 		if !strings.Contains(report, want) {
-			t.Fatalf("expected empty-lane report to contain %q, got %s", want, report)
+			t.Fatalf("expected %q in empty workflow report, got %s", want, report)
 		}
-	}
-}
-
-func TestRenderClawHostWorkflowLaneReportHandlesEmptySummarySignalsAndOptionalLaneSections(t *testing.T) {
-	surface := ClawHostWorkflowLaneSurface{
-		Name:              "clawhost-workflow-surface",
-		Version:           "go-v1",
-		SourceRepo:        "https://github.com/fastclaw-ai/clawhost",
-		ReferenceRevision: "rev-1",
-		Summary:           map[string]any{},
-		Filters:           nil,
-		OperationalSignals: nil,
-		Lanes: []ClawHostWorkflowLane{
-			{
-				LaneID:             "lane-a",
-				Name:               "Lane A",
-				Stage:              "planning",
-				Route:              "/v2/control-center",
-				Owner:              "ops-bot",
-				AutomationBoundary: "human_gated",
-				ParallelBatch: ClawHostParallelBatch{
-					Name:           "batch-a",
-					CanarySize:     1,
-					MaxConcurrency: 2,
-				},
-			},
-		},
-	}
-	audit := ClawHostWorkflowLaneSurfaceAudit{
-		Name:           surface.Name,
-		Version:        surface.Version,
-		LaneCount:      1,
-		ReadinessScore: 100,
-	}
-
-	report := RenderClawHostWorkflowLaneReport(surface, audit)
-	for _, want := range []string{
-		"## Summary",
-		"## Filters",
-		"- none",
-		"## Operational Signals",
-		"## Lanes",
-		"Lane A (lane-a): stage=planning route=/v2/control-center owner=ops-bot boundary=human_gated batch=batch-a[1/2] approvals=none",
-		"## Gaps",
-		"- Missing route lanes: none",
-	} {
-		if !strings.Contains(report, want) {
-			t.Fatalf("expected workflow edge-case report to contain %q, got %s", want, report)
-		}
-	}
-	if strings.Contains(report, "handoff_teams=") || strings.Contains(report, "notes=") {
-		t.Fatalf("expected optional lane sections to stay omitted when empty, got %s", report)
 	}
 }

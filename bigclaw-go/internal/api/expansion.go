@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -457,33 +458,33 @@ func parseWeeklyFilters(r *http.Request, now time.Time) (string, string, time.Ti
 
 func savedViewsExportURL(team, project, actor string) string {
 	base := "/v2/saved-views/export"
-	query := make([]string, 0, 3)
+	values := url.Values{}
 	if team = strings.TrimSpace(team); team != "" {
-		query = append(query, "team="+team)
+		values.Set("team", team)
 	}
 	if project = strings.TrimSpace(project); project != "" {
-		query = append(query, "project="+project)
+		values.Set("project", project)
 	}
 	if actor = strings.TrimSpace(actor); actor != "" {
-		query = append(query, "actor="+actor)
+		values.Set("actor", actor)
 	}
-	if len(query) == 0 {
+	if len(values) == 0 {
 		return base
 	}
-	return base + "?" + strings.Join(query, "&")
+	return base + "?" + values.Encode()
 }
 
 func weeklyExportURL(team string, project string, start time.Time, end time.Time) string {
-	parts := make([]string, 0)
-	if team != "" {
-		parts = append(parts, "team="+team)
+	values := url.Values{}
+	if team = strings.TrimSpace(team); team != "" {
+		values.Set("team", team)
 	}
-	if project != "" {
-		parts = append(parts, "project="+project)
+	if project = strings.TrimSpace(project); project != "" {
+		values.Set("project", project)
 	}
-	parts = append(parts, "week_start="+start.Format(time.RFC3339))
-	parts = append(parts, "week_end="+end.Format(time.RFC3339))
-	return "/v2/reports/weekly/export?" + strings.Join(parts, "&")
+	values.Set("week_start", start.Format(time.RFC3339))
+	values.Set("week_end", end.Format(time.RFC3339))
+	return "/v2/reports/weekly/export?" + values.Encode()
 }
 
 func normalizeHomeRole(r *http.Request) string {

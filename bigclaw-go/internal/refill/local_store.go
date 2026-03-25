@@ -77,6 +77,14 @@ type LocalIssueCreateParams struct {
 	CreatedAt        time.Time
 }
 
+type LocalIssueUpdateParams struct {
+	Title            *string
+	Description      *string
+	Priority         *int
+	Labels           *[]string
+	AssignedToWorker *bool
+}
+
 func LoadLocalIssueStore(path string) (*LocalIssueStore, error) {
 	absolute, err := localStoreAbsPath(path)
 	if err != nil {
@@ -174,10 +182,7 @@ func (s *LocalIssueStore) CreateIssue(params LocalIssueCreateParams) (LocalIssue
 	createdAt = createdAt.UTC().Truncate(time.Second)
 	createdAtString := createdAt.Format(time.RFC3339)
 
-	stateName := strings.TrimSpace(params.State)
-	if stateName == "" {
-		stateName = "Todo"
-	}
+	stateName := canonicalCreateIssueState(params.State)
 
 	created := LocalIssue{}
 	err := s.withWriteLock(func() error {
@@ -277,16 +282,15 @@ func issueCommentList(value any) []map[string]any {
 func (s *LocalIssueStore) IssueStates(stateNames []string) []TrackedIssue {
 	wanted := map[string]struct{}{}
 	for _, stateName := range stateNames {
-		trimmed := strings.TrimSpace(stateName)
-		if trimmed != "" {
-			wanted[trimmed] = struct{}{}
+		if normalized := NormalizeStateName(stateName); normalized != "" {
+			wanted[normalized] = struct{}{}
 		}
 	}
 	issues := make([]TrackedIssue, 0, len(s.issueMap))
 	for _, issue := range s.issueMap {
 		stateName := mapString(issue, "state")
 		if len(wanted) != 0 {
-			if _, ok := wanted[stateName]; !ok {
+			if _, ok := wanted[NormalizeStateName(stateName)]; !ok {
 				continue
 			}
 		}
@@ -299,14 +303,35 @@ func (s *LocalIssueStore) IssueStates(stateNames []string) []TrackedIssue {
 	return issues
 }
 
+func normalizeIssueState(state string) string {
+	trimmed := strings.TrimSpace(state)
+	if trimmed == "" {
+		return "Todo"
+	}
+	return trimmed
+}
+
+func canonicalCreateIssueState(state string) string {
+	trimmed := strings.TrimSpace(state)
+	if trimmed == "" {
+		return "Todo"
+	}
+	return canonicalFetchStateName(NormalizeStateName(trimmed), trimmed)
+}
+
 func (s *LocalIssueStore) UpdateIssueState(ref string, stateName string, now time.Time) (string, error) {
+	normalized := normalizeIssueState(stateName)
 	updated := ""
 	err := s.withWriteLock(func() error {
 		for _, issue := range s.issueMap {
 			if !issueMatchesRef(issue, ref) {
 				continue
 			}
-			issue["state"] = stateName
+			if NormalizeStateName(mapString(issue, "state")) == NormalizeStateName(normalized) {
+				updated = mapString(issue, "state")
+				return nil
+			}
+			issue["state"] = normalized
 			issue["updated_at"] = now.UTC().Truncate(time.Second).Format(time.RFC3339)
 			updated = mapString(issue, "state")
 			return s.saveUnlocked()
@@ -317,6 +342,69 @@ func (s *LocalIssueStore) UpdateIssueState(ref string, stateName string, now tim
 		return "", err
 	}
 	return updated, nil
+}
+
+func (s *LocalIssueStore) UpdateIssue(ref string, params LocalIssueUpdateParams, now time.Time) (LocalIssue, bool, error) {
+	updated := LocalIssue{}
+	changed := false
+	timestamp := now.UTC().Truncate(time.Second).Format(time.RFC3339)
+	err := s.withWriteLock(func() error {
+		for _, issue := range s.issueMap {
+			if !issueMatchesRef(issue, ref) {
+				continue
+			}
+			if params.Title != nil {
+				title := strings.TrimSpace(*params.Title)
+				if title != "" && mapString(issue, "title") != title {
+					issue["title"] = title
+					changed = true
+				}
+			}
+			if params.Description != nil {
+				description := strings.TrimSpace(*params.Description)
+				if mapString(issue, "description") != description {
+					issue["description"] = description
+					changed = true
+				}
+			}
+			if params.Priority != nil && mapInt(issue, "priority") != *params.Priority {
+				issue["priority"] = *params.Priority
+				changed = true
+			}
+			if params.Labels != nil && !equalStringSlice(mapStringSlice(issue, "labels"), *params.Labels) {
+				issue["labels"] = *params.Labels
+				changed = true
+			}
+			if params.AssignedToWorker != nil && mapBool(issue, "assigned_to_worker") != *params.AssignedToWorker {
+				issue["assigned_to_worker"] = *params.AssignedToWorker
+				changed = true
+			}
+			if changed {
+				issue["updated_at"] = timestamp
+				if err := s.saveUnlocked(); err != nil {
+					return err
+				}
+			}
+			updated = LocalIssue{
+				ID:               mapString(issue, "id"),
+				Identifier:       mapString(issue, "identifier"),
+				Title:            mapString(issue, "title"),
+				Description:      mapString(issue, "description"),
+				State:            mapString(issue, "state"),
+				Priority:         mapInt(issue, "priority"),
+				Labels:           mapStringSlice(issue, "labels"),
+				AssignedToWorker: mapBool(issue, "assigned_to_worker"),
+				CreatedAt:        mapString(issue, "created_at"),
+				UpdatedAt:        mapString(issue, "updated_at"),
+			}
+			return nil
+		}
+		return ErrLocalIssueNotFound
+	})
+	if err != nil {
+		return LocalIssue{}, false, err
+	}
+	return updated, changed, nil
 }
 
 func (s *LocalIssueStore) AddComment(ref string, comment LocalIssueComment) error {
@@ -438,6 +526,18 @@ func (s *LocalIssueStore) saveUnlocked() error {
 
 func issueMatchesRef(issue map[string]any, ref string) bool {
 	return strings.EqualFold(mapString(issue, "id"), ref) || strings.EqualFold(mapString(issue, "identifier"), ref)
+}
+
+func equalStringSlice(left []string, right []string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for idx := range left {
+		if left[idx] != right[idx] {
+			return false
+		}
+	}
+	return true
 }
 
 func mapString(issue map[string]any, key string) string {

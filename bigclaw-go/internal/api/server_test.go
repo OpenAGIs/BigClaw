@@ -3358,6 +3358,429 @@ func TestV2RunDetailCloseoutSummaryFromMetadata(t *testing.T) {
 	}
 }
 
+func TestV2RunReportSanitizesAttachmentFilename(t *testing.T) {
+	recorder := observability.NewRecorder()
+	task := domain.Task{
+		ID:        "Ops / Alert @ Night",
+		TraceID:   "trace-run-report-special",
+		Title:     "Investigate overnight alert storm",
+		State:     domain.TaskBlocked,
+		CreatedAt: time.Date(2026, 3, 25, 1, 0, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 3, 25, 1, 30, 0, 0, time.UTC),
+	}
+	recorder.StoreTask(task)
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/runs/Ops%20%2F%20Alert%20@%20Night/report?limit=20", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected sanitized run report 200, got %d %s", response.Code, response.Body.String())
+	}
+	if disposition := response.Header().Get("Content-Disposition"); disposition != `attachment; filename="ops-alert-night-run-report.md"` {
+		t.Fatalf("expected sanitized attachment filename, got %q", disposition)
+	}
+	if !strings.Contains(response.Body.String(), "Task ID: Ops / Alert @ Night") {
+		t.Fatalf("expected markdown to preserve original task id, got %s", response.Body.String())
+	}
+}
+
+func TestV2DistributedExportSanitizesAttachmentFilename(t *testing.T) {
+	recorder := observability.NewRecorder()
+	task := domain.Task{
+		ID:        "dist-export-1",
+		TraceID:   "trace-dist-export-1",
+		Title:     "Distributed export coverage",
+		State:     domain.TaskSucceeded,
+		Metadata:  map[string]string{"team": "Platform / Ops @ Night", "project": "apollo/mobile"},
+		CreatedAt: time.Date(2026, 3, 25, 2, 0, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 3, 25, 2, 30, 0, 0, time.UTC),
+	}
+	recorder.StoreTask(task)
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed/export?team=Platform%20%2F%20Ops%20%40%20Night", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected distributed export 200, got %d %s", response.Code, response.Body.String())
+	}
+	if contentType := response.Header().Get("Content-Type"); !strings.Contains(contentType, "text/markdown") {
+		t.Fatalf("expected distributed export markdown content type, got %q", contentType)
+	}
+	if disposition := response.Header().Get("Content-Disposition"); disposition != `attachment; filename="bigclaw-distributed-diagnostics-platform-ops-night.md"` {
+		t.Fatalf("expected sanitized distributed attachment filename, got %q", disposition)
+	}
+	if !strings.Contains(response.Body.String(), "# BigClaw Distributed Diagnostics") {
+		t.Fatalf("expected distributed diagnostics markdown body, got %s", response.Body.String())
+	}
+}
+
+func TestV2RunReportSanitizationFallsBackForPunctuationOnlyTaskID(t *testing.T) {
+	recorder := observability.NewRecorder()
+	task := domain.Task{
+		ID:        " / @ ",
+		TraceID:   "trace-run-report-fallback",
+		Title:     "Fallback filename coverage",
+		State:     domain.TaskBlocked,
+		CreatedAt: time.Date(2026, 3, 25, 3, 0, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 3, 25, 3, 15, 0, 0, time.UTC),
+	}
+	recorder.StoreTask(task)
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/runs/%20%2F%20%40%20/report?limit=20", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected fallback-sanitized run report 200, got %d %s", response.Code, response.Body.String())
+	}
+	if disposition := response.Header().Get("Content-Disposition"); disposition != `attachment; filename="all-run-report.md"` {
+		t.Fatalf("expected fallback attachment filename, got %q", disposition)
+	}
+	if !strings.Contains(response.Body.String(), "Task ID:  / @ ") {
+		t.Fatalf("expected markdown to preserve original punctuation-only task id, got %s", response.Body.String())
+	}
+}
+
+func TestV2DistributedExportSanitizationFallsBackForPunctuationOnlyTeam(t *testing.T) {
+	recorder := observability.NewRecorder()
+	task := domain.Task{
+		ID:        "dist-export-fallback",
+		TraceID:   "trace-dist-export-fallback",
+		Title:     "Distributed fallback filename coverage",
+		State:     domain.TaskSucceeded,
+		Metadata:  map[string]string{"team": " / @ ", "project": "apollo/mobile"},
+		CreatedAt: time.Date(2026, 3, 25, 4, 0, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 3, 25, 4, 15, 0, 0, time.UTC),
+	}
+	recorder.StoreTask(task)
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed/export?team=%20%2F%20%40%20", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected fallback-sanitized distributed export 200, got %d %s", response.Code, response.Body.String())
+	}
+	if disposition := response.Header().Get("Content-Disposition"); disposition != `attachment; filename="bigclaw-distributed-diagnostics-all.md"` {
+		t.Fatalf("expected fallback distributed attachment filename, got %q", disposition)
+	}
+	if !strings.Contains(response.Body.String(), "# BigClaw Distributed Diagnostics") {
+		t.Fatalf("expected distributed diagnostics markdown body, got %s", response.Body.String())
+	}
+}
+
+func TestV2DistributedExportSanitizesProjectScopedAttachmentFilename(t *testing.T) {
+	recorder := observability.NewRecorder()
+	task := domain.Task{
+		ID:        "dist-export-project-scope",
+		TraceID:   "trace-dist-export-project-scope",
+		Title:     "Distributed project-scope filename coverage",
+		State:     domain.TaskSucceeded,
+		Metadata:  map[string]string{"project": "Apollo / Mobile @ Core"},
+		CreatedAt: time.Date(2026, 3, 25, 4, 30, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 3, 25, 4, 45, 0, 0, time.UTC),
+	}
+	recorder.StoreTask(task)
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed/export?project=Apollo%20%2F%20Mobile%20%40%20Core", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected project-scoped distributed export 200, got %d %s", response.Code, response.Body.String())
+	}
+	if disposition := response.Header().Get("Content-Disposition"); disposition != `attachment; filename="bigclaw-distributed-diagnostics-apollo-mobile-core.md"` {
+		t.Fatalf("expected sanitized project-scoped attachment filename, got %q", disposition)
+	}
+	if !strings.Contains(response.Body.String(), "# BigClaw Distributed Diagnostics") {
+		t.Fatalf("expected distributed diagnostics markdown body, got %s", response.Body.String())
+	}
+}
+
+func TestV2DistributedExportSanitizesTaskScopedAttachmentFilename(t *testing.T) {
+	recorder := observability.NewRecorder()
+	task := domain.Task{
+		ID:        "Task / Scope @ Edge",
+		TraceID:   "trace-dist-export-task-scope",
+		Title:     "Distributed task-scope filename coverage",
+		State:     domain.TaskSucceeded,
+		CreatedAt: time.Date(2026, 3, 25, 5, 0, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 3, 25, 5, 15, 0, 0, time.UTC),
+	}
+	recorder.StoreTask(task)
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed/export?task_id=Task%20%2F%20Scope%20%40%20Edge", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected task-scoped distributed export 200, got %d %s", response.Code, response.Body.String())
+	}
+	if disposition := response.Header().Get("Content-Disposition"); disposition != `attachment; filename="bigclaw-distributed-diagnostics-task-scope-edge.md"` {
+		t.Fatalf("expected sanitized task-scoped attachment filename, got %q", disposition)
+	}
+	if !strings.Contains(response.Body.String(), "# BigClaw Distributed Diagnostics") {
+		t.Fatalf("expected distributed diagnostics markdown body, got %s", response.Body.String())
+	}
+}
+
+func TestV2DistributedExportFilenamePrefersTeamScopeWhenMultipleFiltersExist(t *testing.T) {
+	recorder := observability.NewRecorder()
+	task := domain.Task{
+		ID:      "Task / Scope @ Edge",
+		TraceID: "trace-dist-export-scope-precedence",
+		Title:   "Distributed scope precedence filename coverage",
+		State:   domain.TaskSucceeded,
+		Metadata: map[string]string{
+			"team":    "Platform / Ops @ Night",
+			"project": "Apollo / Mobile @ Core",
+		},
+		CreatedAt: time.Date(2026, 3, 25, 5, 20, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 3, 25, 5, 35, 0, 0, time.UTC),
+	}
+	recorder.StoreTask(task)
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed/export?team=Platform%20%2F%20Ops%20%40%20Night&project=Apollo%20%2F%20Mobile%20%40%20Core&task_id=Task%20%2F%20Scope%20%40%20Edge", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected multi-scope distributed export 200, got %d %s", response.Code, response.Body.String())
+	}
+	if disposition := response.Header().Get("Content-Disposition"); disposition != `attachment; filename="bigclaw-distributed-diagnostics-platform-ops-night.md"` {
+		t.Fatalf("expected team-scoped distributed attachment filename, got %q", disposition)
+	}
+	if !strings.Contains(response.Body.String(), "# BigClaw Distributed Diagnostics") {
+		t.Fatalf("expected distributed diagnostics markdown body, got %s", response.Body.String())
+	}
+}
+
+func TestV2DistributedExportProjectFallbacksToAllFilename(t *testing.T) {
+	recorder := observability.NewRecorder()
+	task := domain.Task{
+		ID:        "dist-export-project-fallback",
+		TraceID:   "trace-dist-export-project-fallback",
+		Title:     "Distributed project fallback filename coverage",
+		State:     domain.TaskSucceeded,
+		Metadata:  map[string]string{"project": " / @ "},
+		CreatedAt: time.Date(2026, 3, 25, 5, 30, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 3, 25, 5, 45, 0, 0, time.UTC),
+	}
+	recorder.StoreTask(task)
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed/export?project=%20%2F%20%40%20", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected project-fallback distributed export 200, got %d %s", response.Code, response.Body.String())
+	}
+	if disposition := response.Header().Get("Content-Disposition"); disposition != `attachment; filename="bigclaw-distributed-diagnostics-all.md"` {
+		t.Fatalf("expected project-fallback distributed attachment filename, got %q", disposition)
+	}
+	if !strings.Contains(response.Body.String(), "# BigClaw Distributed Diagnostics") {
+		t.Fatalf("expected distributed diagnostics markdown body, got %s", response.Body.String())
+	}
+}
+
+func TestV2DistributedExportTaskFallbacksToAllFilename(t *testing.T) {
+	recorder := observability.NewRecorder()
+	task := domain.Task{
+		ID:        "dist-export-task-fallback",
+		TraceID:   "trace-dist-export-task-fallback",
+		Title:     "Distributed task fallback filename coverage",
+		State:     domain.TaskSucceeded,
+		CreatedAt: time.Date(2026, 3, 25, 6, 0, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 3, 25, 6, 15, 0, 0, time.UTC),
+	}
+	recorder.StoreTask(task)
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed/export?task_id=%20%2F%20%40%20", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected task-fallback distributed export 200, got %d %s", response.Code, response.Body.String())
+	}
+	if disposition := response.Header().Get("Content-Disposition"); disposition != `attachment; filename="bigclaw-distributed-diagnostics-all.md"` {
+		t.Fatalf("expected task-fallback distributed attachment filename, got %q", disposition)
+	}
+	if !strings.Contains(response.Body.String(), "# BigClaw Distributed Diagnostics") {
+		t.Fatalf("expected distributed diagnostics markdown body, got %s", response.Body.String())
+	}
+}
+
+func TestV2DistributedExportSkipsPunctuationOnlyTeamForFilenameScope(t *testing.T) {
+	recorder := observability.NewRecorder()
+	task := domain.Task{
+		ID:      "dist-export-scope-fallback",
+		TraceID: "trace-dist-export-scope-fallback",
+		Title:   "Distributed filename scope fallback coverage",
+		State:   domain.TaskSucceeded,
+		Metadata: map[string]string{
+			"team":    " / @ ",
+			"project": "Apollo / Mobile @ Core",
+		},
+		CreatedAt: time.Date(2026, 3, 25, 6, 30, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 3, 25, 6, 45, 0, 0, time.UTC),
+	}
+	recorder.StoreTask(task)
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed/export?team=%20%2F%20%40%20&project=Apollo%20%2F%20Mobile%20%40%20Core", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected punctuation-team distributed export 200, got %d %s", response.Code, response.Body.String())
+	}
+	if disposition := response.Header().Get("Content-Disposition"); disposition != `attachment; filename="bigclaw-distributed-diagnostics-apollo-mobile-core.md"` {
+		t.Fatalf("expected project-scoped distributed attachment filename after punctuation-only team, got %q", disposition)
+	}
+	if !strings.Contains(response.Body.String(), "# BigClaw Distributed Diagnostics") {
+		t.Fatalf("expected distributed diagnostics markdown body, got %s", response.Body.String())
+	}
+}
+
+func TestV2DistributedExportSkipsPunctuationOnlyTeamAndUsesTaskIDForFilenameScope(t *testing.T) {
+	recorder := observability.NewRecorder()
+	task := domain.Task{
+		ID:        "Task / Scope @ Edge",
+		TraceID:   "trace-dist-export-task-fallback-after-team",
+		Title:     "Distributed task filename fallback after punctuation-only team",
+		State:     domain.TaskSucceeded,
+		Metadata:  map[string]string{"team": " / @ "},
+		CreatedAt: time.Date(2026, 3, 25, 7, 0, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2026, 3, 25, 7, 15, 0, 0, time.UTC),
+	}
+	recorder.StoreTask(task)
+	server := &Server{
+		Recorder: recorder,
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed/export?team=%20%2F%20%40%20&task_id=Task%20%2F%20Scope%20%40%20Edge", nil)
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected punctuation-team/task-scope distributed export 200, got %d %s", response.Code, response.Body.String())
+	}
+	if disposition := response.Header().Get("Content-Disposition"); disposition != `attachment; filename="bigclaw-distributed-diagnostics-task-scope-edge.md"` {
+		t.Fatalf("expected task-scoped distributed attachment filename after punctuation-only team, got %q", disposition)
+	}
+	if !strings.Contains(response.Body.String(), "# BigClaw Distributed Diagnostics") {
+		t.Fatalf("expected distributed diagnostics markdown body, got %s", response.Body.String())
+	}
+}
+
+func TestSanitizeReportNameNormalizesMixedSeparatorInputs(t *testing.T) {
+	for _, tc := range []struct {
+		input string
+		want  string
+	}{
+		{input: "Platform / Ops @ Night", want: "platform-ops-night"},
+		{input: "  Apollo___Mobile---Core  ", want: "apollo-mobile-core"},
+		{input: " / @ ", want: "all"},
+		{input: "", want: "all"},
+	} {
+		if got := sanitizeReportName(tc.input); got != tc.want {
+			t.Fatalf("sanitizeReportName(%q) = %q, want %q", tc.input, got, tc.want)
+		}
+	}
+}
+
+func TestFirstMeaningfulReportNameSkipsEmptyAndPunctuationOnlyScopes(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		inputs []string
+		want   string
+	}{
+		{
+			name:   "project after punctuation-only team",
+			inputs: []string{" / @ ", "Apollo / Mobile @ Core", "Task / Scope @ Edge"},
+			want:   "Apollo / Mobile @ Core",
+		},
+		{
+			name:   "task after whitespace team and project",
+			inputs: []string{"   ", " / @ ", "Task / Scope @ Edge"},
+			want:   "Task / Scope @ Edge",
+		},
+		{
+			name:   "all when every scope collapses",
+			inputs: []string{"   ", " / @ ", ""},
+			want:   "all",
+		},
+	} {
+		if got := firstMeaningfulReportName(tc.inputs...); got != tc.want {
+			t.Fatalf("%s: firstMeaningfulReportName(%q) = %q, want %q", tc.name, tc.inputs, got, tc.want)
+		}
+	}
+}
+
 func TestV2RunDetailIncludesRepoTriagePacket(t *testing.T) {
 	recorder := observability.NewRecorder()
 	server := &Server{Recorder: recorder, Queue: queue.NewMemoryQueue(), Control: control.New(), Now: func() time.Time { return time.Unix(1700006100, 0) }}
@@ -6861,6 +7284,523 @@ func TestV2DistributedReportIncludesProviderLiveHandoffIsolationSurface(t *testi
 	}
 	if !strings.Contains(decoded.Report.Markdown, "## Provider-backed Live Handoff Isolation") || !strings.Contains(decoded.Report.Markdown, "Backend: http_remote_service") {
 		t.Fatalf("expected provider handoff markdown section, got %s", decoded.Report.Markdown)
+	}
+}
+
+func TestDebugStatusIncludesClawHostProxyAdminValidationLane(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		ClawHost struct {
+			ReportPath     string `json:"report_path"`
+			Ticket         string `json:"ticket"`
+			Provider       string `json:"provider"`
+			ValidationLane string `json:"validation_lane"`
+			Summary        struct {
+				AppCount               int    `json:"app_count"`
+				BotCount               int    `json:"bot_count"`
+				HTTPReachableBots      int    `json:"http_reachable_bots"`
+				WebsocketReachableBots int    `json:"websocket_reachable_bots"`
+				SubdomainReadyBots     int    `json:"subdomain_ready_bots"`
+				AdminReadyBots         int    `json:"admin_ready_bots"`
+				DegradedBots           int    `json:"degraded_bots"`
+				ParallelProbeWidth     int    `json:"parallel_probe_width"`
+				ReviewerExportStatus   string `json:"reviewer_export_status"`
+			} `json:"summary"`
+			Bots []struct {
+				AppID            string `json:"app_id"`
+				BotID            string `json:"bot_id"`
+				WebsocketStatus  string `json:"websocket_status"`
+				ValidationStatus string `json:"validation_status"`
+			} `json:"bots"`
+		} `json:"clawhost_proxy_admin_validation"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode clawhost validation payload: %v", err)
+	}
+	if decoded.ClawHost.ReportPath != clawHostProxyAdminValidationLanePath || decoded.ClawHost.Ticket != "BIG-PAR-291" || decoded.ClawHost.Provider != "clawhost" || decoded.ClawHost.ValidationLane != "clawhost_proxy_admin_parallel_probe" {
+		t.Fatalf("unexpected clawhost validation metadata: %+v", decoded.ClawHost)
+	}
+	if decoded.ClawHost.Summary.AppCount != 2 || decoded.ClawHost.Summary.BotCount != 3 || decoded.ClawHost.Summary.HTTPReachableBots != 3 || decoded.ClawHost.Summary.WebsocketReachableBots != 2 || decoded.ClawHost.Summary.SubdomainReadyBots != 3 || decoded.ClawHost.Summary.AdminReadyBots != 2 || decoded.ClawHost.Summary.DegradedBots != 1 || decoded.ClawHost.Summary.ParallelProbeWidth != 3 || decoded.ClawHost.Summary.ReviewerExportStatus != "ready" {
+		t.Fatalf("unexpected clawhost validation summary: %+v", decoded.ClawHost.Summary)
+	}
+	if len(decoded.ClawHost.Bots) != 3 || decoded.ClawHost.Bots[2].BotID != "bot-support-a" || decoded.ClawHost.Bots[2].WebsocketStatus != "degraded" || decoded.ClawHost.Bots[2].ValidationStatus != "degraded" {
+		t.Fatalf("unexpected clawhost validation bots: %+v", decoded.ClawHost.Bots)
+	}
+}
+
+func TestV2ControlCenterIncludesClawHostProxyAdminValidationLane(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5&audit_limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ClawHost struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				BotCount           int `json:"bot_count"`
+				AdminReadyBots     int `json:"admin_ready_bots"`
+				SubdomainReadyBots int `json:"subdomain_ready_bots"`
+			} `json:"summary"`
+		} `json:"clawhost_proxy_admin_validation"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center clawhost payload: %v", err)
+	}
+	if decoded.ClawHost.ReportPath != clawHostProxyAdminValidationLanePath || decoded.ClawHost.Summary.BotCount != 3 || decoded.ClawHost.Summary.AdminReadyBots != 2 || decoded.ClawHost.Summary.SubdomainReadyBots != 3 {
+		t.Fatalf("unexpected control center clawhost payload: %+v", decoded.ClawHost)
+	}
+}
+
+func TestV2DistributedReportIncludesClawHostProxyAdminValidationLane(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		ClawHost struct {
+			ReportPath     string `json:"report_path"`
+			Provider       string `json:"provider"`
+			ValidationLane string `json:"validation_lane"`
+			Summary        struct {
+				BotCount               int `json:"bot_count"`
+				HTTPReachableBots      int `json:"http_reachable_bots"`
+				WebsocketReachableBots int `json:"websocket_reachable_bots"`
+				DegradedBots           int `json:"degraded_bots"`
+			} `json:"summary"`
+		} `json:"clawhost_proxy_admin_validation"`
+		Report struct {
+			Markdown string `json:"markdown"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed clawhost payload: %v", err)
+	}
+	if decoded.ClawHost.ReportPath != clawHostProxyAdminValidationLanePath || decoded.ClawHost.Provider != "clawhost" || decoded.ClawHost.ValidationLane != "clawhost_proxy_admin_parallel_probe" || decoded.ClawHost.Summary.BotCount != 3 || decoded.ClawHost.Summary.HTTPReachableBots != 3 || decoded.ClawHost.Summary.WebsocketReachableBots != 2 || decoded.ClawHost.Summary.DegradedBots != 1 {
+		t.Fatalf("unexpected distributed clawhost payload: %+v", decoded.ClawHost)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "## ClawHost Proxy and Admin Validation") || !strings.Contains(decoded.Report.Markdown, "Provider: clawhost") || !strings.Contains(decoded.Report.Markdown, "bot-support-a: validation=degraded") {
+		t.Fatalf("expected clawhost markdown section, got %s", decoded.Report.Markdown)
+	}
+}
+
+func TestDebugStatusIncludesClawHostFleetInventorySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		Fleet struct {
+			ReportPath string `json:"report_path"`
+			Ticket     string `json:"ticket"`
+			Provider   string `json:"provider"`
+			SourceKind string `json:"source_kind"`
+			Summary    struct {
+				AppCount          int `json:"app_count"`
+				BotCount          int `json:"bot_count"`
+				ActiveBots        int `json:"active_bots"`
+				SuspendedBots     int `json:"suspended_bots"`
+				DegradedBots      int `json:"degraded_bots"`
+				TenantCount       int `json:"tenant_count"`
+				DomainCount       int `json:"domain_count"`
+				OwnershipTeams    int `json:"ownership_teams"`
+				ReviewerReadyApps int `json:"reviewer_ready_apps"`
+			} `json:"summary"`
+			Apps []struct {
+				AppID    string `json:"app_id"`
+				BotCount int    `json:"bot_count"`
+			} `json:"apps"`
+			Bots []struct {
+				BotID          string `json:"bot_id"`
+				LifecycleState string `json:"lifecycle_state"`
+			} `json:"bots"`
+		} `json:"clawhost_fleet_inventory"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode clawhost fleet payload: %v", err)
+	}
+	if decoded.Fleet.ReportPath != clawHostFleetInventorySurfacePath || decoded.Fleet.Ticket != "BIG-PAR-287" || decoded.Fleet.Provider != "clawhost" || decoded.Fleet.SourceKind != "app_bot_control_plane_inventory" {
+		t.Fatalf("unexpected clawhost fleet metadata: %+v", decoded.Fleet)
+	}
+	if decoded.Fleet.Summary.AppCount != 2 || decoded.Fleet.Summary.BotCount != 5 || decoded.Fleet.Summary.ActiveBots != 3 || decoded.Fleet.Summary.SuspendedBots != 1 || decoded.Fleet.Summary.DegradedBots != 1 || decoded.Fleet.Summary.TenantCount != 2 || decoded.Fleet.Summary.DomainCount != 5 || decoded.Fleet.Summary.OwnershipTeams != 3 || decoded.Fleet.Summary.ReviewerReadyApps != 2 {
+		t.Fatalf("unexpected clawhost fleet summary: %+v", decoded.Fleet.Summary)
+	}
+	if len(decoded.Fleet.Apps) != 2 || decoded.Fleet.Apps[0].AppID != "clawhost-sales" || len(decoded.Fleet.Bots) != 5 || decoded.Fleet.Bots[2].LifecycleState != "degraded" {
+		t.Fatalf("unexpected clawhost fleet entries: %+v %+v", decoded.Fleet.Apps, decoded.Fleet.Bots)
+	}
+}
+
+func TestV2ControlCenterIncludesClawHostFleetInventorySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5&audit_limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Fleet struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				BotCount     int `json:"bot_count"`
+				ActiveBots   int `json:"active_bots"`
+				DegradedBots int `json:"degraded_bots"`
+				TenantCount  int `json:"tenant_count"`
+				DomainCount  int `json:"domain_count"`
+			} `json:"summary"`
+		} `json:"clawhost_fleet_inventory"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center clawhost fleet payload: %v", err)
+	}
+	if decoded.Fleet.ReportPath != clawHostFleetInventorySurfacePath || decoded.Fleet.Summary.BotCount != 5 || decoded.Fleet.Summary.ActiveBots != 3 || decoded.Fleet.Summary.DegradedBots != 1 || decoded.Fleet.Summary.TenantCount != 2 || decoded.Fleet.Summary.DomainCount != 5 {
+		t.Fatalf("unexpected control center clawhost fleet payload: %+v", decoded.Fleet)
+	}
+}
+
+func TestV2DistributedReportIncludesClawHostFleetInventorySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Fleet struct {
+			ReportPath string `json:"report_path"`
+			Provider   string `json:"provider"`
+			SourceKind string `json:"source_kind"`
+			Summary    struct {
+				BotCount      int `json:"bot_count"`
+				ActiveBots    int `json:"active_bots"`
+				SuspendedBots int `json:"suspended_bots"`
+				DegradedBots  int `json:"degraded_bots"`
+				DomainCount   int `json:"domain_count"`
+			} `json:"summary"`
+		} `json:"clawhost_fleet_inventory"`
+		Report struct {
+			Markdown string `json:"markdown"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed clawhost fleet payload: %v", err)
+	}
+	if decoded.Fleet.ReportPath != clawHostFleetInventorySurfacePath || decoded.Fleet.Provider != "clawhost" || decoded.Fleet.SourceKind != "app_bot_control_plane_inventory" || decoded.Fleet.Summary.BotCount != 5 || decoded.Fleet.Summary.ActiveBots != 3 || decoded.Fleet.Summary.SuspendedBots != 1 || decoded.Fleet.Summary.DegradedBots != 1 || decoded.Fleet.Summary.DomainCount != 5 {
+		t.Fatalf("unexpected distributed clawhost fleet payload: %+v", decoded.Fleet)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "## ClawHost Fleet Inventory") || !strings.Contains(decoded.Report.Markdown, "Source kind: app_bot_control_plane_inventory") || !strings.Contains(decoded.Report.Markdown, "bot bot-sales-c: app=clawhost-sales lifecycle=degraded") {
+		t.Fatalf("expected clawhost fleet markdown section, got %s", decoded.Report.Markdown)
+	}
+}
+
+func TestDebugStatusIncludesClawHostRolloutPlannerSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		Rollout struct {
+			ReportPath  string `json:"report_path"`
+			Ticket      string `json:"ticket"`
+			Provider    string `json:"provider"`
+			PlannerMode string `json:"planner_mode"`
+			Summary     struct {
+				AppCount           int    `json:"app_count"`
+				BotCount           int    `json:"bot_count"`
+				TotalWaves         int    `json:"total_waves"`
+				CanaryWaves        int    `json:"canary_waves"`
+				MaxParallelism     int    `json:"max_parallelism"`
+				TakeoverProtected  int    `json:"takeover_protected_waves"`
+				EvidenceReadyWaves int    `json:"evidence_ready_waves"`
+				BlockedWaves       int    `json:"blocked_waves"`
+				ExecutionReadiness string `json:"execution_readiness"`
+			} `json:"summary"`
+			Waves []struct {
+				WaveID           string `json:"wave_id"`
+				Action           string `json:"action"`
+				ValidationStatus string `json:"validation_status"`
+				TakeoverRequired bool   `json:"takeover_required"`
+			} `json:"waves"`
+		} `json:"clawhost_rollout_planner"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode clawhost rollout payload: %v", err)
+	}
+	if decoded.Rollout.ReportPath != clawHostRolloutPlannerSurfacePath || decoded.Rollout.Ticket != "BIG-PAR-288" || decoded.Rollout.Provider != "clawhost" || decoded.Rollout.PlannerMode != "wave_canary_takeover_guarded" {
+		t.Fatalf("unexpected clawhost rollout metadata: %+v", decoded.Rollout)
+	}
+	if decoded.Rollout.Summary.AppCount != 2 || decoded.Rollout.Summary.BotCount != 5 || decoded.Rollout.Summary.TotalWaves != 3 || decoded.Rollout.Summary.CanaryWaves != 1 || decoded.Rollout.Summary.MaxParallelism != 2 || decoded.Rollout.Summary.TakeoverProtected != 2 || decoded.Rollout.Summary.EvidenceReadyWaves != 2 || decoded.Rollout.Summary.BlockedWaves != 1 || decoded.Rollout.Summary.ExecutionReadiness != "guarded_ready" {
+		t.Fatalf("unexpected clawhost rollout summary: %+v", decoded.Rollout.Summary)
+	}
+	if len(decoded.Rollout.Waves) != 3 || decoded.Rollout.Waves[0].WaveID != "wave-canary-restart-sales" || !decoded.Rollout.Waves[0].TakeoverRequired || decoded.Rollout.Waves[2].ValidationStatus != "blocked" {
+		t.Fatalf("unexpected clawhost rollout waves: %+v", decoded.Rollout.Waves)
+	}
+}
+
+func TestV2ControlCenterIncludesClawHostRolloutPlannerSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5&audit_limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Rollout struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				TotalWaves         int `json:"total_waves"`
+				CanaryWaves        int `json:"canary_waves"`
+				TakeoverProtected  int `json:"takeover_protected_waves"`
+				EvidenceReadyWaves int `json:"evidence_ready_waves"`
+			} `json:"summary"`
+		} `json:"clawhost_rollout_planner"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center clawhost rollout payload: %v", err)
+	}
+	if decoded.Rollout.ReportPath != clawHostRolloutPlannerSurfacePath || decoded.Rollout.Summary.TotalWaves != 3 || decoded.Rollout.Summary.CanaryWaves != 1 || decoded.Rollout.Summary.TakeoverProtected != 2 || decoded.Rollout.Summary.EvidenceReadyWaves != 2 {
+		t.Fatalf("unexpected control center clawhost rollout payload: %+v", decoded.Rollout)
+	}
+}
+
+func TestV2DistributedReportIncludesClawHostRolloutPlannerSurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Rollout struct {
+			ReportPath  string `json:"report_path"`
+			Provider    string `json:"provider"`
+			PlannerMode string `json:"planner_mode"`
+			Summary     struct {
+				BotCount          int `json:"bot_count"`
+				TotalWaves        int `json:"total_waves"`
+				CanaryWaves       int `json:"canary_waves"`
+				MaxParallelism    int `json:"max_parallelism"`
+				TakeoverProtected int `json:"takeover_protected_waves"`
+				BlockedWaves      int `json:"blocked_waves"`
+			} `json:"summary"`
+		} `json:"clawhost_rollout_planner"`
+		Report struct {
+			Markdown string `json:"markdown"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed clawhost rollout payload: %v", err)
+	}
+	if decoded.Rollout.ReportPath != clawHostRolloutPlannerSurfacePath || decoded.Rollout.Provider != "clawhost" || decoded.Rollout.PlannerMode != "wave_canary_takeover_guarded" || decoded.Rollout.Summary.BotCount != 5 || decoded.Rollout.Summary.TotalWaves != 3 || decoded.Rollout.Summary.CanaryWaves != 1 || decoded.Rollout.Summary.MaxParallelism != 2 || decoded.Rollout.Summary.TakeoverProtected != 2 || decoded.Rollout.Summary.BlockedWaves != 1 {
+		t.Fatalf("unexpected distributed clawhost rollout payload: %+v", decoded.Rollout)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "## ClawHost Rollout Planner") || !strings.Contains(decoded.Report.Markdown, "Planner mode: wave_canary_takeover_guarded") || !strings.Contains(decoded.Report.Markdown, "wave-support-websocket-unblock: action=restart validation=blocked") {
+		t.Fatalf("expected clawhost rollout markdown section, got %s", decoded.Report.Markdown)
+	}
+}
+
+func TestDebugStatusIncludesClawHostTenantPolicySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/debug/status", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", response.Code)
+	}
+	var decoded struct {
+		Policy struct {
+			ReportPath string `json:"report_path"`
+			Ticket     string `json:"ticket"`
+			Provider   string `json:"provider"`
+			PolicyMode string `json:"policy_mode"`
+			Summary    struct {
+				TenantCount            int `json:"tenant_count"`
+				AppDefaultCount        int `json:"app_default_count"`
+				MultiProviderTenants   int `json:"multi_provider_tenants"`
+				EntitlementGuardrails  int `json:"entitlement_guardrails"`
+				RolloutBlockedDefaults int `json:"rollout_blocked_defaults"`
+				ReviewerReadyTenants   int `json:"reviewer_ready_tenants"`
+			} `json:"summary"`
+			Tenants []struct {
+				Tenant                string `json:"tenant"`
+				DefaultProvider       string `json:"default_provider"`
+				BlockedDefaultChanges int    `json:"blocked_default_changes"`
+			} `json:"tenants"`
+		} `json:"clawhost_tenant_policy"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode clawhost tenant policy payload: %v", err)
+	}
+	if decoded.Policy.ReportPath != clawHostTenantPolicySurfacePath || decoded.Policy.Ticket != "BIG-PAR-290" || decoded.Policy.Provider != "clawhost" || decoded.Policy.PolicyMode != "tenant_guarded_provider_defaults" {
+		t.Fatalf("unexpected clawhost tenant policy metadata: %+v", decoded.Policy)
+	}
+	if decoded.Policy.Summary.TenantCount != 2 || decoded.Policy.Summary.AppDefaultCount != 3 || decoded.Policy.Summary.MultiProviderTenants != 2 || decoded.Policy.Summary.EntitlementGuardrails != 2 || decoded.Policy.Summary.RolloutBlockedDefaults != 1 || decoded.Policy.Summary.ReviewerReadyTenants != 2 {
+		t.Fatalf("unexpected clawhost tenant policy summary: %+v", decoded.Policy.Summary)
+	}
+	if len(decoded.Policy.Tenants) != 2 || decoded.Policy.Tenants[0].Tenant != "tenant-acme" || decoded.Policy.Tenants[0].BlockedDefaultChanges != 1 {
+		t.Fatalf("unexpected clawhost tenant policy tenants: %+v", decoded.Policy.Tenants)
+	}
+}
+
+func TestV2ControlCenterIncludesClawHostTenantPolicySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/control-center?limit=5&audit_limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Policy struct {
+			ReportPath string `json:"report_path"`
+			Summary    struct {
+				TenantCount            int `json:"tenant_count"`
+				AppDefaultCount        int `json:"app_default_count"`
+				RolloutBlockedDefaults int `json:"rollout_blocked_defaults"`
+			} `json:"summary"`
+		} `json:"clawhost_tenant_policy"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode control center clawhost tenant policy payload: %v", err)
+	}
+	if decoded.Policy.ReportPath != clawHostTenantPolicySurfacePath || decoded.Policy.Summary.TenantCount != 2 || decoded.Policy.Summary.AppDefaultCount != 3 || decoded.Policy.Summary.RolloutBlockedDefaults != 1 {
+		t.Fatalf("unexpected control center clawhost tenant policy payload: %+v", decoded.Policy)
+	}
+}
+
+func TestV2DistributedReportIncludesClawHostTenantPolicySurface(t *testing.T) {
+	server := &Server{
+		Recorder: observability.NewRecorder(),
+		Queue:    queue.NewMemoryQueue(),
+		Bus:      events.NewBus(),
+		Control:  control.New(),
+		Now:      time.Now,
+	}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v2/reports/distributed?limit=5", nil)
+
+	server.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d %s", response.Code, response.Body.String())
+	}
+	var decoded struct {
+		Policy struct {
+			ReportPath string `json:"report_path"`
+			Provider   string `json:"provider"`
+			PolicyMode string `json:"policy_mode"`
+			Summary    struct {
+				TenantCount            int `json:"tenant_count"`
+				AppDefaultCount        int `json:"app_default_count"`
+				MultiProviderTenants   int `json:"multi_provider_tenants"`
+				EntitlementGuardrails  int `json:"entitlement_guardrails"`
+				RolloutBlockedDefaults int `json:"rollout_blocked_defaults"`
+			} `json:"summary"`
+		} `json:"clawhost_tenant_policy"`
+		Report struct {
+			Markdown string `json:"markdown"`
+		} `json:"report"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode distributed clawhost tenant policy payload: %v", err)
+	}
+	if decoded.Policy.ReportPath != clawHostTenantPolicySurfacePath || decoded.Policy.Provider != "clawhost" || decoded.Policy.PolicyMode != "tenant_guarded_provider_defaults" || decoded.Policy.Summary.TenantCount != 2 || decoded.Policy.Summary.AppDefaultCount != 3 || decoded.Policy.Summary.MultiProviderTenants != 2 || decoded.Policy.Summary.EntitlementGuardrails != 2 || decoded.Policy.Summary.RolloutBlockedDefaults != 1 {
+		t.Fatalf("unexpected distributed clawhost tenant policy payload: %+v", decoded.Policy)
+	}
+	if !strings.Contains(decoded.Report.Markdown, "## ClawHost Tenant Policy") || !strings.Contains(decoded.Report.Markdown, "Policy mode: tenant_guarded_provider_defaults") || !strings.Contains(decoded.Report.Markdown, "tenant tenant-acme: default_provider=openai") {
+		t.Fatalf("expected clawhost tenant policy markdown section, got %s", decoded.Report.Markdown)
 	}
 }
 

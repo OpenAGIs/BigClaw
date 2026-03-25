@@ -305,6 +305,7 @@ func runWorkspace(args []string) error {
 		}
 		if *asJSON {
 			encoder := json.NewEncoder(os.Stdout)
+			encoder.SetEscapeHTML(false)
 			encoder.SetIndent("", "  ")
 			return encoder.Encode(report)
 		}
@@ -446,6 +447,10 @@ func runRefillSeed(args []string) error {
 		}
 		return err
 	}
+	visitedFlags := map[string]bool{}
+	flags.Visit(func(flag *flag.Flag) {
+		visitedFlags[flag.Name] = true
+	})
 
 	identifier := trim(*options.identifier)
 	if identifier == "" {
@@ -510,7 +515,27 @@ func runRefillSeed(args []string) error {
 		if existing, found := store.FindIssue(identifier); found {
 			localAction = "exists"
 			localState = existing.State
-			if *options.setStateIfExists && existing.State != stateName {
+			labels := []string{}
+			for _, label := range splitCSV(*options.labelsCSV) {
+				if trimmed := trim(label); trimmed != "" {
+					labels = append(labels, trimmed)
+				}
+			}
+			updatedIssue, metadataChanged, err := store.UpdateIssue(identifier, refill.LocalIssueUpdateParams{
+				Title:            stringPointerIfVisited(title, visitedFlags["title"]),
+				Description:      stringPointerIfVisited(*options.description, visitedFlags["description"]),
+				Priority:         intPointerIfVisited(*options.priority, visitedFlags["priority"]),
+				Labels:           stringSlicePointerIfVisited(labels, visitedFlags["labels"]),
+				AssignedToWorker: boolPointerIfVisited(*options.assigned, visitedFlags["assigned-to-worker"]),
+			}, when)
+			if err != nil {
+				return err
+			}
+			if metadataChanged {
+				existing = updatedIssue
+				localAction = "updated"
+			}
+			if *options.setStateIfExists && refill.NormalizeStateName(existing.State) != refill.NormalizeStateName(stateName) {
 				localState, err = store.UpdateIssueState(identifier, stateName, when)
 				if err != nil {
 					return err
@@ -593,14 +618,14 @@ func runLocalIssues(args []string) error {
 		issues := store.Issues()
 		stateFilter := map[string]struct{}{}
 		for _, state := range splitCSV(*statesCSV) {
-			if trimmed := trim(state); trimmed != "" {
-				stateFilter[trimmed] = struct{}{}
+			if normalized := refill.NormalizeStateName(state); normalized != "" {
+				stateFilter[normalized] = struct{}{}
 			}
 		}
 		filtered := make([]refill.LocalIssue, 0, len(issues))
 		for _, issue := range issues {
 			if len(stateFilter) != 0 {
-				if _, ok := stateFilter[issue.State]; !ok {
+				if _, ok := stateFilter[refill.NormalizeStateName(issue.State)]; !ok {
 					continue
 				}
 			}
@@ -608,6 +633,7 @@ func runLocalIssues(args []string) error {
 		}
 		if *asJSON {
 			encoder := json.NewEncoder(os.Stdout)
+			encoder.SetEscapeHTML(false)
 			encoder.SetIndent("", "  ")
 			return encoder.Encode(map[string]any{
 				"status":       "ok",
@@ -700,6 +726,10 @@ func runLocalIssues(args []string) error {
 			}
 			return err
 		}
+		visitedFlags := map[string]bool{}
+		flags.Visit(func(flag *flag.Flag) {
+			visitedFlags[flag.Name] = true
+		})
 		trimmedIdentifier := trim(*identifier)
 		if trimmedIdentifier == "" {
 			return errors.New("identifier is required")
@@ -728,7 +758,21 @@ func runLocalIssues(args []string) error {
 		}
 		if found {
 			action = "exists"
-			if *setStateIfExists && existing.State != state {
+			updatedIssue, metadataChanged, err := store.UpdateIssue(trimmedIdentifier, refill.LocalIssueUpdateParams{
+				Title:            stringPointerIfVisited(*title, visitedFlags["title"]),
+				Description:      stringPointerIfVisited(*description, visitedFlags["description"]),
+				Priority:         intPointerIfVisited(*priority, visitedFlags["priority"]),
+				Labels:           stringSlicePointerIfVisited(labels, visitedFlags["labels"]),
+				AssignedToWorker: boolPointerIfVisited(*assigned, visitedFlags["assigned-to-worker"]),
+			}, when)
+			if err != nil {
+				return err
+			}
+			if metadataChanged {
+				existing = updatedIssue
+				action = "updated"
+			}
+			if *setStateIfExists && refill.NormalizeStateName(existing.State) != refill.NormalizeStateName(state) {
 				if when.IsZero() {
 					when = time.Now()
 				}
@@ -803,6 +847,20 @@ func runLocalIssues(args []string) error {
 		store, err := refill.LoadLocalIssueStore(resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedStorePath))
 		if err != nil {
 			return err
+		}
+		existing, found := store.FindIssue(*issueRef)
+		if !found {
+			return refill.ErrLocalIssueNotFound
+		}
+		if refill.NormalizeStateName(existing.State) == refill.NormalizeStateName(*stateName) {
+			return emit(map[string]any{
+				"status":       "ok",
+				"backend":      "local",
+				"action":       "exists",
+				"issue":        existing.Identifier,
+				"state":        existing.State,
+				"local_issues": absPath(resolvedLocalIssueStorePath(resolvedRepoRoot, resolvedStorePath)),
+			}, *asJSON, 0)
 		}
 		updatedState, err := store.UpdateIssueState(*issueRef, *stateName, when)
 		if err != nil {
@@ -1057,8 +1115,11 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 	queueStatusUpdates := 0
 	queueRecentBatchUpdates := 0
 	queueStatusWritten := false
+	queueStatusSynced := false
+	recentBatchesSynced := false
 	recentBatchesUpdated := false
 	recentBatchesWritten := false
+	markdownWritten := false
 	var allIssues []refill.TrackedIssue
 	var err error
 	if client.backend() == "local" {
@@ -1067,23 +1128,30 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 			return err
 		}
 	}
-	if syncQueueStatus && client.backend() == "local" {
+	if client.backend() == "local" {
 		issueStates := refill.IssueStateMap(allIssues)
-		queueStatusUpdates = queue.SyncStatusFromStates(issueStates)
-		queueRecentBatchUpdates = queue.SyncRecentBatchesFromStates(issueStates)
-		if apply && (queueStatusUpdates > 0 || queueRecentBatchUpdates > 0) {
-			if err := queue.Save(); err != nil {
-				return err
+		queueStatusUpdates = queue.StatusSyncUpdatesForStates(issueStates)
+		queueRecentBatchUpdates = queue.RecentBatchSyncUpdatesForStates(issueStates)
+		queueStatusSynced = queueStatusUpdates == 0
+		recentBatchesSynced = queueRecentBatchUpdates == 0
+		if syncQueueStatus {
+			queueStatusUpdates = queue.SyncStatusFromStates(issueStates)
+			queueRecentBatchUpdates = queue.SyncRecentBatchesFromStates(issueStates)
+			if apply {
+				queueStatusSynced = true
+				recentBatchesSynced = true
 			}
-			queueStatusWritten = true
+			if apply && (queueStatusUpdates > 0 || queueRecentBatchUpdates > 0) {
+				if err := queue.Save(); err != nil {
+					return err
+				}
+				queueStatusWritten = queueStatusUpdates > 0
+				recentBatchesWritten = queueRecentBatchUpdates > 0
+			}
 		}
 	}
 
-	refillStates := make([]string, 0, len(queue.RefillStates()))
-	for state := range queue.RefillStates() {
-		refillStates = append(refillStates, state)
-	}
-	statesToFetch := append([]string{"In Progress"}, refillStates...)
+	statesToFetch := queue.FetchStateNames()
 	issues := []refill.TrackedIssue{}
 	if client.backend() == "local" {
 		issues = allIssues
@@ -1095,16 +1163,22 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 	}
 	stateMap := refill.IssueStateMap(issues)
 	liveStateMap := stateMap
+	markdownGeneratedAt := time.Now().UTC()
 	if client.backend() == "local" {
 		liveStateMap = refill.IssueStateMap(allIssues)
-		recentBatchesUpdated = queue.RefreshRecentBatchesFromStates(liveStateMap)
+		if apply {
+			recentBatchesUpdated = queue.RefreshRecentBatchesFromStates(liveStateMap)
+			if recentBatchesUpdated {
+				recentBatchesSynced = true
+			}
+		}
 	}
 	if apply && (queueStatusUpdates > 0 || recentBatchesUpdated) {
 		if err := queue.Save(); err != nil {
 			return err
 		}
-		queueStatusWritten = queueStatusUpdates > 0
-		recentBatchesWritten = recentBatchesUpdated
+		queueStatusWritten = queueStatusWritten || queueStatusUpdates > 0
+		recentBatchesWritten = recentBatchesWritten || recentBatchesUpdated
 	}
 	active := map[string]struct{}{}
 	issueIDs := map[string]string{}
@@ -1112,33 +1186,53 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		if issue.Identifier != "" && issue.ID != "" {
 			issueIDs[issue.Identifier] = issue.ID
 		}
-		if issue.StateName == "In Progress" {
+		if refill.NormalizeStateName(issue.StateName) == refill.NormalizeStateName(queue.ActivateStateName()) {
 			active[issue.Identifier] = struct{}{}
 		}
 	}
 	candidates := queue.SelectCandidates(active, stateMap, targetOverride)
+	if client.backend() == "local" && apply && trim(markdownPath) != "" {
+		previewQueue, err := queue.Clone()
+		if err != nil {
+			return err
+		}
+		projectedStates := map[string]string{}
+		for identifier, state := range liveStateMap {
+			projectedStates[identifier] = state
+		}
+		for _, identifier := range candidates {
+			projectedStates[identifier] = queue.ActivateStateName()
+		}
+		previewQueue.SyncStatusFromStates(projectedStates)
+		previewQueue.RefreshRecentBatchesFromStates(projectedStates)
+		markdownWritten, err = previewQueue.MarkdownNeedsWrite(markdownPath, markdownGeneratedAt)
+		if err != nil {
+			return err
+		}
+	}
 	target := queue.TargetInProgress()
 	if targetOverride != nil {
 		target = *targetOverride
 	}
 	payload := map[string]any{
-		"active_in_progress":         refill.SortedActive(issues),
+		"active_in_progress":         refill.SortedActive(issues, queue.ActivateStateName()),
 		"backend":                    client.backend(),
 		"target_in_progress":         target,
 		"candidates":                 candidates,
 		"mode":                       map[bool]string{true: "apply", false: "dry-run"}[apply],
-		"recent_batches_synced":      client.backend() == "local",
+		"recent_batches_synced":      recentBatchesSynced,
 		"recent_batches_updated":     recentBatchesUpdated,
 		"recent_batches_written":     recentBatchesWritten,
-		"queue_status_synced":        syncQueueStatus && client.backend() == "local",
+		"queue_status_synced":        queueStatusSynced,
 		"queue_status_updates":       queueStatusUpdates,
 		"queue_recent_batch_updates": queueRecentBatchUpdates,
 		"queue_status_written":       queueStatusWritten,
-		"queue_path":                 queuePath,
-		"markdown_path":              markdownPath,
+		"queue_path":                 absPath(queuePath),
+		"markdown_path":              absPath(markdownPath),
+		"markdown_written":           markdownWritten,
 	}
 	if trim(localIssuesPath) != "" {
-		payload["local_issues_path"] = localIssuesPath
+		payload["local_issues_path"] = absPath(localIssuesPath)
 	}
 	queueRunnable := queue.RunnableCount()
 	if client.backend() == "local" {
@@ -1154,6 +1248,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		}
 	}
 	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetEscapeHTML(false)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(payload); err != nil {
 		return err
@@ -1204,7 +1299,8 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 				return err
 			}
 		}
-		if _, err := queue.SaveMarkdown(markdownPath, time.Now().UTC()); err != nil {
+		markdownWritten, err = queue.SaveMarkdown(markdownPath, markdownGeneratedAt)
+		if err != nil {
 			return err
 		}
 	}
@@ -1214,6 +1310,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 func emit(payload map[string]any, asJSON bool, exitCode int) error {
 	if asJSON {
 		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetEscapeHTML(false)
 		encoder.SetIndent("", "  ")
 		if err := encoder.Encode(payload); err != nil {
 			return err
@@ -1357,4 +1454,33 @@ func atoiPointer(value string) *int {
 		return nil
 	}
 	return &number
+}
+
+func stringPointerIfVisited(value string, visited bool) *string {
+	if !visited {
+		return nil
+	}
+	return &value
+}
+
+func intPointerIfVisited(value int, visited bool) *int {
+	if !visited {
+		return nil
+	}
+	return &value
+}
+
+func boolPointerIfVisited(value bool, visited bool) *bool {
+	if !visited {
+		return nil
+	}
+	return &value
+}
+
+func stringSlicePointerIfVisited(value []string, visited bool) *[]string {
+	if !visited {
+		return nil
+	}
+	copyValue := append([]string{}, value...)
+	return &copyValue
 }

@@ -1,0 +1,95 @@
+{
+  "generated_at": "2026-03-25T01:00:00Z",
+  "ticket": "BIG-PAR-290",
+  "title": "ClawHost tenant policy and provider defaults surface",
+  "status": "checked_in_policy_surface",
+  "provider": "clawhost",
+  "policy_mode": "tenant_guarded_provider_defaults",
+  "report_path": "docs/reports/clawhost-tenant-policy-surface.json",
+  "evidence_sources": [
+    "bigclaw-go/internal/api/clawhost_tenant_policy_surface.go",
+    "bigclaw-go/internal/api/distributed.go",
+    "bigclaw-go/internal/api/server_test.go",
+    "bigclaw-go/docs/reports/clawhost-fleet-inventory-surface.json"
+  ],
+  "reviewer_links": [
+    "/debug/status",
+    "/v2/control-center",
+    "/v2/reports/distributed",
+    "docs/reports/clawhost-fleet-inventory-surface.json"
+  ],
+  "summary": {
+    "tenant_count": 2,
+    "app_default_count": 3,
+    "multi_provider_tenants": 2,
+    "entitlement_guardrails": 2,
+    "rollout_blocked_defaults": 1,
+    "reviewer_ready_tenants": 2
+  },
+  "tenants": [
+    {
+      "tenant": "tenant-acme",
+      "default_provider": "openai",
+      "allowed_providers": [
+        "openai",
+        "anthropic"
+      ],
+      "entitlement_policy": "premium-approved",
+      "approval_mode": "ops-review",
+      "rollout_guardrail": "block default changes while sales canary rollout is active",
+      "blocked_default_changes": 1
+    },
+    {
+      "tenant": "tenant-bravo",
+      "default_provider": "anthropic",
+      "allowed_providers": [
+        "anthropic",
+        "openai"
+      ],
+      "entitlement_policy": "support-standard",
+      "approval_mode": "tenant-owner-review",
+      "rollout_guardrail": "allow changes only after websocket remediation lane is green",
+      "blocked_default_changes": 0
+    }
+  ],
+  "app_defaults": [
+    {
+      "app_id": "clawhost-sales",
+      "tenant": "tenant-acme",
+      "provider": "openai",
+      "model": "gpt-5.4-mini",
+      "fallback_providers": [
+        "anthropic"
+      ],
+      "approval_required": true,
+      "rollout_status": "blocked_by_canary"
+    },
+    {
+      "app_id": "clawhost-support",
+      "tenant": "tenant-bravo",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4.5",
+      "fallback_providers": [
+        "openai"
+      ],
+      "approval_required": true,
+      "rollout_status": "ready"
+    },
+    {
+      "app_id": "clawhost-experiments",
+      "tenant": "tenant-acme",
+      "provider": "openai",
+      "model": "gpt-5.4",
+      "fallback_providers": [
+        "anthropic",
+        "openrouter"
+      ],
+      "approval_required": false,
+      "rollout_status": "ready"
+    }
+  ],
+  "limitations": [
+    "This checked-in surface captures the reviewer contract for tenant policy and provider defaults, not a live provider entitlement handshake.",
+    "Model and fallback values should be refreshed before using this surface as a live rollout authorization source."
+  ]
+}

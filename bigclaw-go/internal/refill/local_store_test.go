@@ -562,6 +562,140 @@ func TestLocalIssueStoreUpdateIssueStateReturnsNotFound(t *testing.T) {
 	}
 }
 
+func TestLocalIssueStoreUpdateIssueStateTrimsState(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-391",
+      "identifier": "BIG-PAR-391",
+      "title": "Trim state test",
+      "state": "Todo"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	if _, err := store.UpdateIssueState("BIG-PAR-391", "  Backlog  ", time.Date(2026, 3, 25, 12, 0, 0, 0, time.UTC)); err != nil {
+		t.Fatalf("update issue state: %v", err)
+	}
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !strings.Contains(string(body), `"state": "Backlog"`) {
+		t.Fatalf("expected trimmed state, got %s", string(body))
+	}
+}
+
+func TestLocalIssueStoreUpdateIssueStateDefaultsBlank(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-392",
+      "identifier": "BIG-PAR-392",
+      "title": "Blank state test",
+      "state": "Done"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	if _, err := store.UpdateIssueState("BIG-PAR-392", "   ", time.Date(2026, 3, 25, 12, 0, 0, 0, time.UTC)); err != nil {
+		t.Fatalf("update issue state: %v", err)
+	}
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !strings.Contains(string(body), `"state": "Todo"`) {
+		t.Fatalf("expected defaulted state to Todo, got %s", string(body))
+	}
+}
+
+func TestLocalIssueStoreUpdateIssueStateIgnoresEquivalentSpellings(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-399",
+      "identifier": "BIG-PAR-399",
+      "title": "Equivalent state test",
+      "state": "in progress.",
+      "updated_at": "2026-03-25T18:20:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	updatedState, err := store.UpdateIssueState("BIG-PAR-399", "In Progress", time.Date(2026, 3, 25, 18, 22, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("update issue state: %v", err)
+	}
+	if updatedState != "in progress." {
+		t.Fatalf("expected original equivalent spelling to be preserved, got %q", updatedState)
+	}
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	text := string(body)
+	if !strings.Contains(text, `"state": "in progress."`) {
+		t.Fatalf("expected equivalent spelling to remain unchanged, got %s", text)
+	}
+	if !strings.Contains(text, `"updated_at": "2026-03-25T18:20:00Z"`) {
+		t.Fatalf("expected unchanged updated_at for equivalent spelling, got %s", text)
+	}
+}
+
+func TestLocalIssueStoreCreateIssueCanonicalizesEquivalentBuiltInStates(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	created, err := store.CreateIssue(LocalIssueCreateParams{
+		Identifier: "BIG-PAR-400",
+		Title:      "Canonicalize create state",
+		State:      "todo.",
+		CreatedAt:  time.Date(2026, 3, 25, 18, 35, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatalf("create issue: %v", err)
+	}
+	if created.State != "Todo" {
+		t.Fatalf("expected canonical Todo state, got %q", created.State)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !strings.Contains(string(body), `"state": "Todo"`) {
+		t.Fatalf("expected persisted canonical Todo state, got %s", string(body))
+	}
+}
+
 func TestLocalIssueStoreIssueStatesFiltersRequestedStates(t *testing.T) {
 	storePath := filepath.Join(t.TempDir(), "local-issues.json")
 	if err := os.WriteFile(storePath, []byte(`{

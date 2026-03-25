@@ -104,6 +104,21 @@ func LoadQueue(path string) (*ParallelIssueQueue, error) {
 	return &ParallelIssueQueue{queuePath: absolute, payload: payload}, nil
 }
 
+func (q *ParallelIssueQueue) Clone() (*ParallelIssueQueue, error) {
+	body, err := json.Marshal(q.payload)
+	if err != nil {
+		return nil, err
+	}
+	payload := QueuePayload{}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, err
+	}
+	return &ParallelIssueQueue{
+		queuePath: q.queuePath,
+		payload:   payload,
+	}, nil
+}
+
 func (q *ParallelIssueQueue) Save() error {
 	var buf bytes.Buffer
 	if err := queueEncodePayload(&buf, q.payload); err != nil {
@@ -162,6 +177,46 @@ func (q *ParallelIssueQueue) RefillStates() map[string]struct{} {
 	return result
 }
 
+func (q *ParallelIssueQueue) FetchStateNames() []string {
+	states := make([]string, 0, len(q.payload.Policy.RefillStates)+1)
+	seen := map[string]struct{}{}
+	appendState := func(state string) {
+		state = strings.TrimSpace(state)
+		if state == "" {
+			return
+		}
+		normalized := NormalizeStateName(state)
+		if normalized == "" {
+			return
+		}
+		if _, ok := seen[normalized]; ok {
+			return
+		}
+		seen[normalized] = struct{}{}
+		states = append(states, canonicalFetchStateName(normalized, state))
+	}
+	appendState(q.ActivateStateName())
+	for _, state := range q.payload.Policy.RefillStates {
+		appendState(state)
+	}
+	return states
+}
+
+func canonicalFetchStateName(normalized string, fallback string) string {
+	switch normalized {
+	case "backlog":
+		return "Backlog"
+	case "todo":
+		return "Todo"
+	case "in progress":
+		return "In Progress"
+	case "done":
+		return "Done"
+	default:
+		return fallback
+	}
+}
+
 func (q *ParallelIssueQueue) IssueOrder() []string {
 	return append([]string{}, q.payload.IssueOrder...)
 }
@@ -185,7 +240,7 @@ func (q *ParallelIssueQueue) SyncStatusFromStates(issueStates map[string]string)
 		if state == "" {
 			continue
 		}
-		if strings.TrimSpace(q.payload.Issues[idx].Status) == state {
+		if NormalizeStateName(q.payload.Issues[idx].Status) == NormalizeStateName(state) {
 			continue
 		}
 		q.payload.Issues[idx].Status = state
@@ -194,7 +249,63 @@ func (q *ParallelIssueQueue) SyncStatusFromStates(issueStates map[string]string)
 	return updated
 }
 
+func (q *ParallelIssueQueue) StatusSyncUpdatesForStates(issueStates map[string]string) int {
+	updated := 0
+	for _, record := range q.payload.Issues {
+		identifier := strings.TrimSpace(record.Identifier)
+		if identifier == "" {
+			continue
+		}
+		state, ok := issueStates[identifier]
+		if !ok {
+			continue
+		}
+		state = strings.TrimSpace(state)
+		if state == "" {
+			continue
+		}
+		if NormalizeStateName(record.Status) == NormalizeStateName(state) {
+			continue
+		}
+		updated++
+	}
+	return updated
+}
+
 func (q *ParallelIssueQueue) SyncRecentBatchesFromStates(issueStates map[string]string) int {
+	completed, active, standby := q.desiredRecentBatches(issueStates)
+	updated := 0
+	if !stringSlicesEqual(q.payload.RecentBatches.Completed, completed) {
+		q.payload.RecentBatches.Completed = completed
+		updated++
+	}
+	if !stringSlicesEqual(q.payload.RecentBatches.Active, active) {
+		q.payload.RecentBatches.Active = active
+		updated++
+	}
+	if !stringSlicesEqual(q.payload.RecentBatches.Standby, standby) {
+		q.payload.RecentBatches.Standby = standby
+		updated++
+	}
+	return updated
+}
+
+func (q *ParallelIssueQueue) RecentBatchSyncUpdatesForStates(issueStates map[string]string) int {
+	completed, active, standby := q.desiredRecentBatches(issueStates)
+	updated := 0
+	if !stringSlicesEqual(q.payload.RecentBatches.Completed, completed) {
+		updated++
+	}
+	if !stringSlicesEqual(q.payload.RecentBatches.Active, active) {
+		updated++
+	}
+	if !stringSlicesEqual(q.payload.RecentBatches.Standby, standby) {
+		updated++
+	}
+	return updated
+}
+
+func (q *ParallelIssueQueue) desiredRecentBatches(issueStates map[string]string) ([]string, []string, []string) {
 	merged := issueRecordStateMap(q.IssueRecords())
 	for identifier, state := range issueStates {
 		identifier = strings.TrimSpace(identifier)
@@ -215,10 +326,11 @@ func (q *ParallelIssueQueue) SyncRecentBatchesFromStates(issueStates map[string]
 	standby := []string{}
 	for _, identifier := range q.payload.IssueOrder {
 		state := strings.TrimSpace(merged[identifier])
+		normalizedState := statusNormalize(state)
 		switch {
 		case isTerminalState(state):
 			completed = append(completed, identifier)
-		case state == q.ActivateStateName():
+		case normalizedState == statusNormalize(q.ActivateStateName()):
 			active = append(active, identifier)
 		case state == "" || stateInSet(refillStates, state):
 			if len(standby) < standbyLimit {
@@ -226,21 +338,7 @@ func (q *ParallelIssueQueue) SyncRecentBatchesFromStates(issueStates map[string]
 			}
 		}
 	}
-
-	updated := 0
-	if !stringSlicesEqual(q.payload.RecentBatches.Completed, completed) {
-		q.payload.RecentBatches.Completed = completed
-		updated++
-	}
-	if !stringSlicesEqual(q.payload.RecentBatches.Active, active) {
-		q.payload.RecentBatches.Active = active
-		updated++
-	}
-	if !stringSlicesEqual(q.payload.RecentBatches.Standby, standby) {
-		q.payload.RecentBatches.Standby = standby
-		updated++
-	}
-	return updated
+	return completed, active, standby
 }
 
 func (q *ParallelIssueQueue) RecentBatchesSnapshot() RecentBatchesSnapshot {
@@ -255,7 +353,7 @@ func (q *ParallelIssueQueue) UpsertIssue(record IssueRecord) (string, bool, erro
 	identifier := strings.TrimSpace(record.Identifier)
 	title := strings.TrimSpace(record.Title)
 	track := strings.TrimSpace(record.Track)
-	status := strings.TrimSpace(record.Status)
+	status := canonicalQueueIssueStatus(record.Status)
 	if identifier == "" {
 		return "", false, os.ErrInvalid
 	}
@@ -265,10 +363,6 @@ func (q *ParallelIssueQueue) UpsertIssue(record IssueRecord) (string, bool, erro
 	if track == "" {
 		return "", false, os.ErrInvalid
 	}
-	if status == "" {
-		status = "Todo"
-	}
-
 	for idx := range q.payload.Issues {
 		existingIdentifier := strings.TrimSpace(q.payload.Issues[idx].Identifier)
 		if !strings.EqualFold(existingIdentifier, identifier) {
@@ -283,7 +377,7 @@ func (q *ParallelIssueQueue) UpsertIssue(record IssueRecord) (string, bool, erro
 			q.payload.Issues[idx].Track = track
 			action = "updated"
 		}
-		if strings.TrimSpace(q.payload.Issues[idx].Status) != status {
+		if NormalizeStateName(q.payload.Issues[idx].Status) != NormalizeStateName(status) {
 			q.payload.Issues[idx].Status = status
 			action = "updated"
 		}
@@ -302,6 +396,14 @@ func (q *ParallelIssueQueue) UpsertIssue(record IssueRecord) (string, bool, erro
 	})
 	orderAdded := appendIdentifierOnce(&q.payload.IssueOrder, identifier)
 	return "created", orderAdded, nil
+}
+
+func canonicalQueueIssueStatus(status string) string {
+	trimmed := strings.TrimSpace(status)
+	if trimmed == "" {
+		return "Todo"
+	}
+	return canonicalFetchStateName(NormalizeStateName(trimmed), trimmed)
 }
 
 func (q *ParallelIssueQueue) SetRecentBatch(batchName string, identifier string) (bool, error) {
@@ -410,6 +512,10 @@ func statusNormalize(value string) string {
 	return strings.ToLower(value)
 }
 
+func NormalizeStateName(value string) string {
+	return statusNormalize(value)
+}
+
 func isTerminalStatus(status string) bool {
 	if normalized := statusNormalize(status); normalized != "" {
 		_, ok := terminalStateSet[normalized]
@@ -468,10 +574,10 @@ func IssueStateMap(issues []TrackedIssue) map[string]string {
 	return result
 }
 
-func SortedActive(issues []TrackedIssue) []string {
+func SortedActive(issues []TrackedIssue, activeStateName string) []string {
 	active := []string{}
 	for _, issue := range issues {
-		if issue.StateName == "In Progress" {
+		if NormalizeStateName(issue.StateName) == NormalizeStateName(activeStateName) {
 			active = append(active, issue.Identifier)
 		}
 	}

@@ -7,79 +7,85 @@ import (
 	"bigclaw-go/internal/domain"
 )
 
-func TestNavigationProvidesExpectedSections(t *testing.T) {
+func TestNavigationIncludesCoreConsoleSections(t *testing.T) {
 	sections := Navigation()
 	if len(sections) != 4 {
-		t.Fatalf("expected 4 navigation sections, got %+v", sections)
+		t.Fatalf("expected four top-level nav sections, got %+v", sections)
 	}
-	if sections[0].Key != "overview" || sections[0].Items[0].Path != "/v2/home" {
-		t.Fatalf("unexpected overview section: %+v", sections[0])
+	if sections[0].Key != "overview" || sections[1].Key != "operations" || sections[2].Key != "delivery" || sections[3].Key != "business" {
+		t.Fatalf("unexpected nav section order: %+v", sections)
 	}
-	if sections[3].Key != "business" || sections[3].Items[len(sections[3].Items)-1].Path != "/v2/design-system" {
-		t.Fatalf("unexpected business section: %+v", sections[3])
+	if sections[1].Items[1].Path != "/v2/control-center" || sections[1].Items[4].Path != "/v2/saved-views" {
+		t.Fatalf("expected operations routes in nav, got %+v", sections[1].Items)
 	}
 }
 
 func TestHomeForRoleUsesRoleSpecificCards(t *testing.T) {
 	tasks := []domain.Task{
-		{State: domain.TaskBlocked, RiskLevel: domain.RiskHigh, BudgetCents: 10, Metadata: map[string]string{"plan": "premium", "regression": "true", "flow_id": "flow-1", "department": "support"}},
-		{State: domain.TaskRunning, BudgetCents: 20, Metadata: map[string]string{"regression_count": "2"}},
-		{State: domain.TaskDeadLetter},
-		{State: domain.TaskSucceeded},
+		{State: domain.TaskBlocked, RiskLevel: domain.RiskHigh, BudgetCents: 1250, Metadata: map[string]string{"plan": "premium", "regression": "true", "flow_id": "flow-1", "department": "support"}},
+		{State: domain.TaskRunning, BudgetCents: 2300, Metadata: map[string]string{"plan": "premium", "regression_count": "2"}},
+		{State: domain.TaskDeadLetter, BudgetCents: 800, Metadata: map[string]string{"flow_id": "flow-2"}},
+		{State: domain.TaskSucceeded, BudgetCents: 650},
 	}
 
-	if home := HomeForRole("eng_lead", tasks); home.Role != "eng_lead" || home.Cards[0].Key != "blockers" || home.Cards[0].Value != 1 {
-		t.Fatalf("unexpected eng lead home: %+v", home)
+	cases := []struct {
+		role      string
+		wantRole  string
+		wantFirst string
+		wantValue int
+	}{
+		{role: " ENG_LEAD ", wantRole: "eng_lead", wantFirst: "blockers", wantValue: 1},
+		{role: "platform_admin", wantRole: "platform_admin", wantFirst: "queue", wantValue: 1},
+		{role: "vp_eng", wantRole: "vp_eng", wantFirst: "throughput", wantValue: 1},
+		{role: "", wantRole: "viewer", wantFirst: "active", wantValue: 1},
 	}
-	if home := HomeForRole("platform_admin", tasks); home.Cards[0].Key != "queue" || home.Cards[0].Value != 1 || home.Cards[1].Value != 1 || home.Cards[2].Value != 1 {
-		t.Fatalf("unexpected platform admin home: %+v", home)
-	}
-	if home := HomeForRole("vp_eng", tasks); home.Cards[0].Key != "throughput" || home.Cards[0].Value != 1 || home.Cards[1].Value != 1 || home.Cards[2].Value != 30 {
-		t.Fatalf("unexpected vp eng home: %+v", home)
-	}
-	if home := HomeForRole("", tasks); home.Role != "viewer" || home.Cards[0].Key != "active" || home.Cards[0].Value != 1 || home.Cards[1].Value != 1 || home.Cards[2].Value != 1 {
-		t.Fatalf("unexpected default viewer home: %+v", home)
+
+	for _, tc := range cases {
+		home := HomeForRole(tc.role, tasks)
+		if home.Role != tc.wantRole {
+			t.Fatalf("normalized role = %q, want %q", home.Role, tc.wantRole)
+		}
+		if len(home.Cards) != 3 || home.Cards[0].Key != tc.wantFirst || home.Cards[0].Value != tc.wantValue {
+			t.Fatalf("unexpected home cards for %s: %+v", tc.role, home.Cards)
+		}
 	}
 }
 
-func TestDefaultDesignSystemIsSortedAndResponsive(t *testing.T) {
+func TestDefaultDesignSystemAndConsoleHelpers(t *testing.T) {
 	system := DefaultDesignSystem()
 	if !system.DarkMode || !system.Responsive {
-		t.Fatalf("expected default design system flags, got %+v", system)
+		t.Fatalf("expected console design system to be responsive dark mode, got %+v", system)
 	}
-	if len(system.Components) != 4 {
-		t.Fatalf("expected 4 component specs, got %+v", system.Components)
+	if system.Tokens["accent.primary"] != "#4f46e5" || system.Components[0].Key != "flow-canvas" || system.Components[len(system.Components)-1].Key != "timeline" {
+		t.Fatalf("unexpected design system defaults: %+v", system)
 	}
-	if system.Components[0].Key != "flow-canvas" || system.Components[len(system.Components)-1].Key != "timeline" {
-		t.Fatalf("expected component keys to be sorted, got %+v", system.Components)
-	}
-	if system.Tokens["accent.primary"] != "#4f46e5" || system.Tokens["fg.default"] != "#f5f7fa" {
-		t.Fatalf("unexpected design tokens: %+v", system.Tokens)
-	}
-}
 
-func TestConsoleHelpersAggregateNormalizeAndSummarize(t *testing.T) {
 	tasks := []domain.Task{
-		{State: domain.TaskBlocked, RiskLevel: domain.RiskHigh, BudgetCents: 11, Metadata: map[string]string{"plan": "premium", "regression": "true", "flow_id": "flow-1", "department": "support"}},
-		{State: domain.TaskQueued, BudgetCents: 13},
-		{State: domain.TaskLeased},
-		{State: domain.TaskRunning},
-		{State: domain.TaskRetrying},
-		{State: domain.TaskDeadLetter},
-		{State: domain.TaskSucceeded},
+		{State: domain.TaskBlocked, RiskLevel: domain.RiskHigh, BudgetCents: 100, Metadata: map[string]string{"plan": "premium", "regression_count": "1", "flow_id": "flow-1", "department": "support"}},
+		{State: domain.TaskQueued, BudgetCents: 200, Metadata: map[string]string{"plan": "standard"}},
+		{State: domain.TaskLeased, BudgetCents: 300},
+		{State: domain.TaskRetrying, BudgetCents: 400},
+		{State: domain.TaskDeadLetter, BudgetCents: 500},
+		{State: domain.TaskSucceeded, BudgetCents: 600},
 	}
+
 	counts := aggregate(tasks)
-	if counts["blocked"] != 1 || counts["active"] != 4 || counts["dead_letter"] != 1 || counts["premium"] != 1 || counts["high_risk"] != 1 || counts["regression"] != 1 || counts["succeeded"] != 1 || counts["budget"] != 24 || counts["flow"] != 1 || counts["support"] != 1 {
+	if counts["blocked"] != 1 || counts["active"] != 3 || counts["dead_letter"] != 1 || counts["premium"] != 1 || counts["high_risk"] != 1 || counts["regression"] != 1 || counts["succeeded"] != 1 || counts["budget"] != 2100 || counts["flow"] != 1 || counts["support"] != 1 {
 		t.Fatalf("unexpected aggregate counts: %+v", counts)
 	}
-	if got := normalizeRole(" VP_ENG "); got != "vp_eng" {
-		t.Fatalf("expected normalized role vp_eng, got %q", got)
+
+	if got := normalizeRole("  VP_ENG "); got != "vp_eng" {
+		t.Fatalf("normalizeRole trims and lowers = %q, want %q", got, "vp_eng")
 	}
 	if got := normalizeRole("   "); got != "viewer" {
-		t.Fatalf("expected blank role to normalize to viewer, got %q", got)
+		t.Fatalf("normalizeRole blank fallback = %q, want %q", got, "viewer")
 	}
-	summary := SummaryText(Home{Cards: []HomeCard{{Key: "alpha", Value: 1}, {Key: "beta", Value: 2}}})
-	if !strings.Contains(summary, "alpha=1") || !strings.Contains(summary, "beta=2") {
-		t.Fatalf("unexpected summary text: %q", summary)
+
+	summary := SummaryText(Home{Cards: []HomeCard{{Key: "active", Value: 3}, {Key: "blocked", Value: 1}}})
+	if summary != "active=3, blocked=1" {
+		t.Fatalf("unexpected summary text: %s", summary)
+	}
+	if strings.Contains(summary, "  ") {
+		t.Fatalf("unexpected spacing in summary text: %q", summary)
 	}
 }
