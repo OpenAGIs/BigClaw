@@ -184,11 +184,10 @@
       "BIG-PAR-394",
       "BIG-PAR-395",
       "BIG-PAR-396",
-      "BIG-PAR-397"
-    ],
-    "active": [
+      "BIG-PAR-397",
       "BIG-PAR-398"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1398,7 +1397,7 @@
       "identifier": "BIG-PAR-398",
       "title": "Ignore equivalent state spellings in local-issues set-state",
       "track": "Automation",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
