@@ -476,7 +476,7 @@ func TestRunRefillOncePromotesUsingLocalIssueStore(t *testing.T) {
 
 func TestRunRefillOnceLocalIssueStoreDetectsQueueDrainedWhenMetadataStale(t *testing.T) {
 	tempDir := t.TempDir()
-	queuePath := filepath.Join(tempDir, "queue.json")
+	queuePath := filepath.Join(tempDir, "queue->.json")
 	if err := os.WriteFile(queuePath, []byte(`{
   "project": {"slug_id": "project-slug"},
   "policy": {
@@ -497,7 +497,7 @@ func TestRunRefillOnceLocalIssueStoreDetectsQueueDrainedWhenMetadataStale(t *tes
 		t.Fatalf("load queue: %v", err)
 	}
 
-	storePath := filepath.Join(tempDir, "local-issues.json")
+	storePath := filepath.Join(tempDir, "local-issues->.json")
 	if err := os.WriteFile(storePath, []byte(`{
   "issues": [
     {
@@ -547,6 +547,15 @@ func TestRunRefillOnceLocalIssueStoreDetectsQueueDrainedWhenMetadataStale(t *tes
 	}
 	if !bytes.Contains(output, []byte(`refill seed`)) {
 		t.Fatalf("expected refill seed hint, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(filepath.Join(tempDir, "queue->.json"))) {
+		t.Fatalf("expected raw arrow token in refill JSON queue path, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(filepath.Join(tempDir, "local-issues->.json"))) {
+		t.Fatalf("expected raw arrow token in refill JSON local issues path, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`\u003e`)) {
+		t.Fatalf("expected no HTML escaping in refill JSON output, got %s", string(output))
 	}
 }
 
