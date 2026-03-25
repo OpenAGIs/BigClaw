@@ -41,6 +41,28 @@ func TestValidateRunCommitRolesSortsDistinctInvalidRoles(t *testing.T) {
 	}
 }
 
+func TestAcceptedCommitHashWithoutAcceptedRoleAndJoinCSVEdges(t *testing.T) {
+	binding := RunCommitBinding{
+		Links: []RunCommitLink{
+			{RunID: "run-1", CommitHash: "abc123", Role: "source", RepoSpaceID: "space-1"},
+			{RunID: "run-1", CommitHash: "def456", Role: "candidate", RepoSpaceID: "space-1"},
+		},
+	}
+	if got := binding.AcceptedCommitHash(); got != "" {
+		t.Fatalf("expected empty accepted hash, got %q", got)
+	}
+
+	if got := joinCSV(nil); got != "" {
+		t.Fatalf("expected empty csv for nil slice, got %q", got)
+	}
+	if got := joinCSV([]string{"archive"}); got != "archive" {
+		t.Fatalf("expected single-value csv, got %q", got)
+	}
+	if got := joinCSV([]string{"archive", "merge", "sync"}); got != "archive, merge, sync" {
+		t.Fatalf("expected multi-value csv, got %q", got)
+	}
+}
+
 func TestRepoRegistryResolvesSpaceChannelAndAgent(t *testing.T) {
 	registry := RepoRegistry{}
 	registry.RegisterSpace(RepoSpace{SpaceID: "space-1", ProjectKey: "ALPHA", Repo: "OpenAGIs/BigClaw", SidecarEnabled: true})
