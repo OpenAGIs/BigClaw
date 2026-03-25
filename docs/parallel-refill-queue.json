@@ -173,11 +173,10 @@
       "BIG-PAR-372",
       "BIG-PAR-373",
       "BIG-PAR-374",
-      "BIG-PAR-375"
-    ],
-    "active": [
+      "BIG-PAR-375",
       "BIG-PAR-376"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1310,7 +1309,7 @@
       "identifier": "BIG-PAR-376",
       "title": "Add event stream helper unit coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
