@@ -1029,6 +1029,17 @@ func TestLocalIssueStoreAddCommentFailsWhenLockRemainsHeld(t *testing.T) {
 	}
 }
 
+type stubLocalStoreTemp struct {
+	path     string
+	chmodErr error
+	closeErr error
+}
+
+func (s *stubLocalStoreTemp) Name() string                            { return s.path }
+func (s *stubLocalStoreTemp) Chmod(mode os.FileMode) error            { return s.chmodErr }
+func (s *stubLocalStoreTemp) Write(body []byte) (int, error)          { return len(body), nil }
+func (s *stubLocalStoreTemp) Close() error                            { return s.closeErr }
+
 func TestLocalIssueStoreSaveFailsWhenCreateTempFails(t *testing.T) {
 	storePath := filepath.Join(t.TempDir(), "local-issues.json")
 	store := &LocalIssueStore{
@@ -1038,11 +1049,12 @@ func TestLocalIssueStoreSaveFailsWhenCreateTempFails(t *testing.T) {
 		},
 	}
 
-	localStoreCreateTemp = func(dir, pattern string) (*os.File, error) {
+	origCreate := localStoreCreateTemp
+	localStoreCreateTemp = func(dir, pattern string) (localStoreTemp, error) {
 		return nil, fmt.Errorf("create temp failure")
 	}
 	t.Cleanup(func() {
-		localStoreCreateTemp = os.CreateTemp
+		localStoreCreateTemp = origCreate
 	})
 
 	if err := store.saveUnlocked(); err == nil || !strings.Contains(err.Error(), "create temp failure") {
@@ -1060,7 +1072,8 @@ func TestLocalIssueStoreSaveRemovesTempOnRenameFailure(t *testing.T) {
 	}
 
 	var tmpName string
-	localStoreCreateTemp = func(dir, pattern string) (*os.File, error) {
+	origCreate := localStoreCreateTemp
+	localStoreCreateTemp = func(dir, pattern string) (localStoreTemp, error) {
 		tmp, err := os.CreateTemp(dir, pattern)
 		if err == nil {
 			tmpName = tmp.Name()
@@ -1071,7 +1084,7 @@ func TestLocalIssueStoreSaveRemovesTempOnRenameFailure(t *testing.T) {
 		return errors.New("rename failure")
 	}
 	t.Cleanup(func() {
-		localStoreCreateTemp = os.CreateTemp
+		localStoreCreateTemp = origCreate
 		localStoreRename = os.Rename
 	})
 
@@ -1083,5 +1096,70 @@ func TestLocalIssueStoreSaveRemovesTempOnRenameFailure(t *testing.T) {
 	}
 	if _, statErr := os.Stat(tmpName); !os.IsNotExist(statErr) {
 		t.Fatalf("expected temp to be removed, got %v", statErr)
+	}
+}
+
+func TestLocalIssueStoreSaveFailsWhenChmodFails(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	store := &LocalIssueStore{
+		path: storePath,
+		issueMap: []map[string]any{
+			{"identifier": "BIG-PAR-427", "title": "chmod failure"},
+		},
+	}
+
+	tempFile := filepath.Join(filepath.Dir(storePath), "chmod.tmp")
+	if _, err := os.Create(tempFile); err != nil {
+		t.Fatalf("create temp fixture: %v", err)
+	}
+	defer os.Remove(tempFile)
+
+	origCreate := localStoreCreateTemp
+	origRename := localStoreRename
+	localStoreCreateTemp = func(dir, pattern string) (localStoreTemp, error) {
+		return &stubLocalStoreTemp{path: tempFile, chmodErr: errors.New("chmod failure")}, nil
+	}
+	t.Cleanup(func() {
+		localStoreCreateTemp = origCreate
+		localStoreRename = origRename
+	})
+
+	if err := store.saveUnlocked(); err == nil || !strings.Contains(err.Error(), "chmod failure") {
+		t.Fatalf("expected chmod failure, got %v", err)
+	}
+	if _, statErr := os.Stat(tempFile); !os.IsNotExist(statErr) {
+		t.Fatalf("expected temp removal after chmod failure, got %v", statErr)
+	}
+}
+
+func TestLocalIssueStoreSaveFailsWhenCloseFails(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	store := &LocalIssueStore{
+		path: storePath,
+		issueMap: []map[string]any{
+			{"identifier": "BIG-PAR-428", "title": "close failure"},
+		},
+	}
+
+	tempFile := filepath.Join(filepath.Dir(storePath), "close.tmp")
+	if _, err := os.Create(tempFile); err != nil {
+		t.Fatalf("create temp fixture: %v", err)
+	}
+	defer os.Remove(tempFile)
+
+	closeErr := errors.New("close failure")
+	origCreate := localStoreCreateTemp
+	localStoreCreateTemp = func(dir, pattern string) (localStoreTemp, error) {
+		return &stubLocalStoreTemp{path: tempFile, closeErr: closeErr}, nil
+	}
+	t.Cleanup(func() {
+		localStoreCreateTemp = origCreate
+	})
+
+	if err := store.saveUnlocked(); err == nil || !errors.Is(err, closeErr) {
+		t.Fatalf("expected close failure, got %v", err)
+	}
+	if _, statErr := os.Stat(tempFile); !os.IsNotExist(statErr) {
+		t.Fatalf("expected temp removal after close failure, got %v", statErr)
 	}
 }

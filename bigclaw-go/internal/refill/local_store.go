@@ -18,10 +18,19 @@ const (
 	localIssueLockRetryDelay = 25 * time.Millisecond
 )
 
+type localStoreTemp interface {
+	Name() string
+	Chmod(mode os.FileMode) error
+	Write([]byte) (int, error)
+	Close() error
+}
+
 var (
-	localStoreMkdirAll   = os.MkdirAll
-	localStoreCreateTemp = os.CreateTemp
-	localStoreRename     = os.Rename
+	localStoreMkdirAll = os.MkdirAll
+	localStoreCreateTemp = func(dir, pattern string) (localStoreTemp, error) {
+		return os.CreateTemp(dir, pattern)
+	}
+	localStoreRename = os.Rename
 )
 
 type LocalIssueStore struct {
