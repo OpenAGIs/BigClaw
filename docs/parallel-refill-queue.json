@@ -225,7 +225,8 @@
       "BIG-PAR-424"
     ],
     "active": [
-      "BIG-PAR-425"
+      "BIG-PAR-425",
+      "BIG-PAR-426"
     ],
     "standby": []
   },
@@ -435,7 +436,8 @@
     "BIG-PAR-421",
     "BIG-PAR-423",
     "BIG-PAR-424",
-    "BIG-PAR-425"
+    "BIG-PAR-425",
+    "BIG-PAR-426"
   ],
   "issues": [
     {
@@ -1701,6 +1703,12 @@
     {
       "identifier": "BIG-PAR-425",
       "title": "Make refill queue save failures testable",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-426",
+      "title": "Make local tracker save failures testable",
       "track": "Go Mainline Follow-ups",
       "status": "In Progress"
     }
