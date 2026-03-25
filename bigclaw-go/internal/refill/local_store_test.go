@@ -1,6 +1,7 @@
 package refill
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -97,6 +98,46 @@ func TestLoadLocalIssueStoreHandlesWhitespaceFile(t *testing.T) {
 	}
 	if got := store.Issues(); len(got) != 0 {
 		t.Fatalf("expected whitespace store to load with no issues, got %+v", got)
+	}
+}
+
+func TestWithFileLockRetriesUntilLockReleased(t *testing.T) {
+	store := &LocalIssueStore{path: filepath.Join(t.TempDir(), "local-issues.json")}
+	lockPath := store.path + ".lock"
+	if err := os.WriteFile(lockPath, []byte("stale"), 0o644); err != nil {
+		t.Fatalf("seed lock file: %v", err)
+	}
+
+	go func() {
+		time.Sleep(localIssueLockRetryDelay * 2)
+		_ = os.Remove(lockPath)
+	}()
+
+	called := false
+	if err := store.withFileLock(func() error {
+		called = true
+		return nil
+	}); err != nil {
+		t.Fatalf("withFileLock retry: %v", err)
+	}
+	if !called {
+		t.Fatal("expected protected function to run")
+	}
+	if _, err := os.Stat(lockPath); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("expected lock file removed, got %v", err)
+	}
+}
+
+func TestWithFileLockCleansUpOnFunctionError(t *testing.T) {
+	store := &LocalIssueStore{path: filepath.Join(t.TempDir(), "local-issues.json")}
+	lockPath := store.path + ".lock"
+	if err := store.withFileLock(func() error {
+		return errors.New("boom")
+	}); err == nil || err.Error() != "boom" {
+		t.Fatalf("expected function error to surface, got %v", err)
+	}
+	if _, err := os.Stat(lockPath); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("expected lock file removed after error, got %v", err)
 	}
 }
 
