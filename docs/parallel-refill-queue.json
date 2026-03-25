@@ -216,7 +216,10 @@
       "BIG-PAR-415",
       "BIG-PAR-416"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-417",
+      "BIG-PAR-418"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -416,7 +419,9 @@
     "BIG-PAR-413",
     "BIG-PAR-414",
     "BIG-PAR-415",
-    "BIG-PAR-416"
+    "BIG-PAR-416",
+    "BIG-PAR-417",
+    "BIG-PAR-418"
   ],
   "issues": [
     {
@@ -1630,6 +1635,18 @@
       "title": "Add refill markdown edge coverage",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-417",
+      "title": "Add local tracker directory-failure coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-418",
+      "title": "Add refill save-parent failure coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
     }
   ]
 }
