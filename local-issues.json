@@ -5138,6 +5138,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added focused helper coverage in bigclaw-go/internal/api/expansion_test.go, pinning renderJSONBody serialization and collectFlowTasks sorting/copy semantics without relying on the larger expansion endpoint suite. Validation: cd bigclaw-go && go test ./internal/api -> ok; cd bigclaw-go && go test ./internal/api -coverprofile=/tmp/bigpar375-api.cover && go tool cover -func=/tmp/bigpar375-api.cover | rg \"expansion.go:497|expansion.go:502|total:\" -> renderJSONBody 100.0%, collectFlowTasks 100.0%, total 78.5%; bash scripts/ops/bigclawctl github-sync status --json -> local SHA fe8844bb9a3ca3e23e461c7327b7fda5c183dbe2 matches remote SHA fe8844bb9a3ca3e23e461c7327b7fda5c183dbe2 with status ok and synced true; git log -1 --stat -> captured for commit fe8844bb9a3ca3e23e461c7327b7fda5c183dbe2 with expansion tests and tracker files in the stat output. Commit SHA: fe8844bb9a3ca3e23e461c7327b7fda5c183dbe2. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T16:33:41Z"
+        }
+      ],
       "created_at": "2026-03-25T16:31:30Z",
       "description": "Add focused API helper coverage for bigclaw-go/internal/api/expansion.go so renderJSONBody and collectFlowTasks are pinned without depending on the full expansion endpoint suite.",
       "id": "big-par-375",
@@ -5149,9 +5156,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add expansion helper unit coverage",
-      "updated_at": "2026-03-25T16:31:42Z"
+      "updated_at": "2026-03-25T16:33:41Z"
     }
   ]
 }
