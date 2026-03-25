@@ -3085,6 +3085,11 @@
           "author": "codex",
           "body": "Closed `BIG-PAR-292` after the upstream lifecycle recovery and per-bot isolation scorecard implementation landed on `origin/main` and was pulled into this branch during the refresh merge.\n\nWhat changed:\n- `origin/main` contributes the product-backed ClawHost lifecycle recovery and isolation scorecard surfaces, including `bigclaw-go/internal/api/clawhost_expansion.go` and the `bigclaw-go/internal/product/clawhost_*` packages/tests.\n- the branch-refresh merge preserved that upstream implementation while keeping this branch's checked-in API/report surfaces and tracker state aligned.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `c4e0a2672e73131e68f5a9291a3cff2e0f9b18d9` matches remote SHA `c4e0a2672e73131e68f5a9291a3cff2e0f9b18d9` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured after the tracker closeout commit sequence on this branch\n\nUpstream implementation SHA: `9d819d5ca8d4afc7638f1cbf86ede91b48ef2783`\nBranch verification SHA: `c4e0a2672e73131e68f5a9291a3cff2e0f9b18d9`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
           "created_at": "2026-03-24T17:38:27Z"
+        },
+        {
+          "author": "codex",
+          "body": "Repaired a tracker-state regression for `BIG-PAR-292` after confirming the lifecycle recovery and per-bot isolation scorecard implementation is already present on this branch and on `main`.\n\nWhat changed:\n- restored `BIG-PAR-292` to `Done` in `local-issues.json` so the local tracker matches the recorded closeout comment and current branch contents.\n- re-verified the Go-owned recovery scorecard surfaces in `bigclaw-go/internal/product/clawhost_recovery.go`, `bigclaw-go/internal/product/clawhost_recovery_test.go`, and `bigclaw-go/internal/api/clawhost_expansion.go`.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/product` -> ok\n- `cd bigclaw-go && go test ./internal/api` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA matched remote SHA with `status: ok` and `synced: true` before the tracker repair commit\n- `git log -1 --stat` -> to be captured after committing this tracker repair\n\nCommit SHA: pending\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-25T21:16:09Z"
         }
       ],
       "created_at": "2026-03-24T16:23:28Z",
@@ -3100,7 +3105,7 @@
       "priority": 2,
       "state": "Done",
       "title": "Add ClawHost lifecycle recovery and per-bot isolation scorecard",
-      "updated_at": "2026-03-24T17:38:27Z"
+      "updated_at": "2026-03-25T21:16:09Z"
     },
     {
       "assigned_to_worker": true,
