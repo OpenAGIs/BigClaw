@@ -48,9 +48,9 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 25, 2026:
-  - active slices: `BIG-PAR-383` — Add consumer dedup key validation coverage
+  - active slices: `BIG-PAR-384` — Add run commit role validation coverage
   - standby slices: none
-  - recently completed slices: `BIG-PAR-375` — Add expansion helper unit coverage; `BIG-PAR-376` — Add event stream helper unit coverage; `BIG-PAR-377` — Add checkpoint error helper coverage; `BIG-PAR-378` — Add bootstrap helper unit coverage; `BIG-PAR-379` — Add bootstrap joinLines helper coverage; `BIG-PAR-380` — Add domain task state helper coverage; `BIG-PAR-381` — Add control snapshot helper coverage; `BIG-PAR-382` — Add broker stub trace/task helper coverage
+  - recently completed slices: `BIG-PAR-376` — Add event stream helper unit coverage; `BIG-PAR-377` — Add checkpoint error helper coverage; `BIG-PAR-378` — Add bootstrap helper unit coverage; `BIG-PAR-379` — Add bootstrap joinLines helper coverage; `BIG-PAR-380` — Add domain task state helper coverage; `BIG-PAR-381` — Add control snapshot helper coverage; `BIG-PAR-382` — Add broker stub trace/task helper coverage; `BIG-PAR-383` — Add consumer dedup key validation coverage
   - queue status: `queue_runnable=1`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
@@ -221,6 +221,7 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-380` — Add domain task state helper coverage
   - `BIG-PAR-381` — Add control snapshot helper coverage
   - `BIG-PAR-382` — Add broker stub trace/task helper coverage
+  - `BIG-PAR-383` — Add consumer dedup key validation coverage
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -393,3 +394,4 @@ longer waits on Linear to keep issue execution moving.
 162. `BIG-PAR-381`
 163. `BIG-PAR-382`
 164. `BIG-PAR-383`
+165. `BIG-PAR-384`

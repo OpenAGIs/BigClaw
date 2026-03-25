@@ -180,10 +180,11 @@
       "BIG-PAR-379",
       "BIG-PAR-380",
       "BIG-PAR-381",
-      "BIG-PAR-382"
+      "BIG-PAR-382",
+      "BIG-PAR-383"
     ],
     "active": [
-      "BIG-PAR-383"
+      "BIG-PAR-384"
     ],
     "standby": []
   },
@@ -351,7 +352,8 @@
     "BIG-PAR-380",
     "BIG-PAR-381",
     "BIG-PAR-382",
-    "BIG-PAR-383"
+    "BIG-PAR-383",
+    "BIG-PAR-384"
   ],
   "issues": [
     {
@@ -1365,6 +1367,12 @@
     {
       "identifier": "BIG-PAR-383",
       "title": "Add consumer dedup key validation coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-384",
+      "title": "Add run commit role validation coverage",
       "track": "Go Mainline Follow-ups",
       "status": "In Progress"
     }
