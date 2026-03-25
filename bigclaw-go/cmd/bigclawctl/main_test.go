@@ -314,6 +314,54 @@ func TestRunWorkspaceCleanupJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	}
 }
 
+func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
+	repoRoot := filepath.Join(t.TempDir(), "repo->")
+	for _, relativePath := range []string{
+		"src/bigclaw/service.py",
+		"src/bigclaw/__main__.py",
+		"src/bigclaw/legacy_shim.py",
+	} {
+		path := filepath.Join(repoRoot, relativePath)
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatalf("mkdir %s: %v", path, err)
+		}
+		if err := os.WriteFile(path, []byte("x = 1\n"), 0o644); err != nil {
+			t.Fatalf("write %s: %v", path, err)
+		}
+	}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runLegacyPython([]string{
+		"compile-check",
+		"--repo", repoRoot,
+		"--python", "python3",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run legacy-python compile-check: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte(repoRoot)) {
+		t.Fatalf("expected raw arrow token in legacy-python repo path, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(filepath.Join(repoRoot, "src/bigclaw/service.py"))) {
+		t.Fatalf("expected raw arrow token in legacy-python file list, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`\u003e`)) {
+		t.Fatalf("expected no HTML escaping in legacy-python JSON output, got %s", string(output))
+	}
+}
+
 func TestRunRefillOnceLinearBackendUsesConfiguredActivateStateName(t *testing.T) {
 	queuePath := filepath.Join(t.TempDir(), "queue.json")
 	markdownPath := filepath.Join(t.TempDir(), "queue.md")
