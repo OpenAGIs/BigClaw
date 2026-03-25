@@ -6574,15 +6574,22 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- added a deterministic `localStoreOpenFile` seam in `bigclaw-go/internal/refill/local_store.go`.\n- added `TestWithFileLockFailsWhenOpenFileReturnsNilLock` in `bigclaw-go/internal/refill/local_store_test.go` to cover the final defensive `withFileLock` fallback where lock acquisition returns a nil file without an error.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill -run 'TestWithFileLockFailsWhenOpenFileReturnsNilLock'`\n- `cd bigclaw-go && go test ./internal/refill -coverprofile=/tmp/refill-439.cover >/tmp/refill-439.out && go tool cover -func=/tmp/refill-439.cover | sort -k3,3n | head -n 12`\n- result: pass; `internal/refill` package coverage 100.0%.\n\nCommit SHA:\n- `1c027ce11ed0a94ab8771f96c9c2882027b9b0f3`\n\nPR URL:\n- https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T20:44:13Z"
+        }
+      ],
       "created_at": "2026-03-25T20:40:35Z",
       "description": "Add focused local-store tests covering the final defensive withFileLock fallback branch in bigclaw-go/internal/refill/local_store.go.",
       "id": "big-par-439",
       "identifier": "BIG-PAR-439",
       "labels": [],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add local tracker final lock fallback coverage",
-      "updated_at": "2026-03-25T20:40:35Z"
+      "updated_at": "2026-03-25T20:44:13Z"
     }
   ]
 }
