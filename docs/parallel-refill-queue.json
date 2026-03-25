@@ -195,12 +195,11 @@
       "BIG-PAR-405",
       "BIG-PAR-406",
       "BIG-PAR-407",
-      "BIG-PAR-408"
+      "BIG-PAR-408",
+      "BIG-PAR-409"
     ],
     "active": [],
-    "standby": [
-      "BIG-PAR-409"
-    ]
+    "standby": []
   },
   "issue_order": [
     "BIG-GOM-301",
@@ -1486,7 +1485,7 @@
       "identifier": "BIG-PAR-409",
       "title": "Add github-sync install JSON no-escape regression",
       "track": "Automation",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

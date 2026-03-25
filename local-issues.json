@@ -6015,6 +6015,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now adds a focused `github-sync install --json` regression proving the command preserves raw `->` tokens in emitted repo and hooks-path fields.\n- The regression uses an arrow-bearing temporary repo and hooks directory, exercising the real install command path instead of only the shared emitter helper.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `dd979f950f8dada380d4158487cd745c3a932b4f` matches remote SHA `dd979f950f8dada380d4158487cd745c3a932b4f` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `dd979f950f8dada380d4158487cd745c3a932b4f`\n- `git log -1 --stat` -> captured for commit `dd979f950f8dada380d4158487cd745c3a932b4f`\n\nCommit SHA: `dd979f950f8dada380d4158487cd745c3a932b4f`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/206",
+          "created_at": "2026-03-25T20:04:25Z"
+        }
+      ],
       "created_at": "2026-03-25T20:01:35Z",
       "description": "Add command-level coverage proving github-sync install JSON output preserves raw arrow tokens in emitted repo and hooks path fields so the shared emitter remains protected on the GitHub sync path as well.",
       "id": "big-par-409",
@@ -6026,9 +6033,9 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add github-sync install JSON no-escape regression",
-      "updated_at": "2026-03-25T20:01:35Z"
+      "updated_at": "2026-03-25T20:04:25Z"
     }
   ]
 }
