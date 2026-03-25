@@ -6046,6 +6046,23 @@
       "state": "Done",
       "title": "Add github-sync install JSON no-escape regression",
       "updated_at": "2026-03-25T20:07:12Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T20:09:46Z",
+      "description": "Add command-level coverage proving github-sync status JSON output preserves raw arrow tokens in emitted repo path fields on the error path so the shared emitter remains protected beyond install.",
+      "id": "big-par-410",
+      "identifier": "BIG-PAR-410",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add github-sync status JSON no-escape regression",
+      "updated_at": "2026-03-25T20:09:46Z"
     }
   ]
 }
