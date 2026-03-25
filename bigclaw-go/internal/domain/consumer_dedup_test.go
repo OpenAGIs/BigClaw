@@ -130,3 +130,29 @@ func TestConsumerDedupLedgerEntryRepresentsDuplicateDelivery(t *testing.T) {
 		t.Fatalf("expected duplicate timestamp to be persisted")
 	}
 }
+
+func TestConsumerDedupLedgerEntryWithResultFallsBackWhenAttemptOrCompletedAtAreMissing(t *testing.T) {
+	seenAt := time.Date(2026, 3, 15, 12, 0, 0, 0, time.UTC)
+	entry := NewConsumerDedupLedgerEntry("projection", "applySummary", Event{
+		ID:   "evt-5",
+		Type: EventTaskCompleted,
+	}, seenAt)
+	entry.Attempt = 0
+
+	updated := entry.WithResult(ConsumerHandleResult{
+		State:   ConsumerLedgerStateApplied,
+		Outcome: "applied without explicit completion timestamp",
+	})
+	if updated.Attempt != 1 {
+		t.Fatalf("expected missing attempt to fall back to 1, got %d", updated.Attempt)
+	}
+	if updated.LastSeenAt != seenAt {
+		t.Fatalf("expected zero completed_at to preserve prior last seen, got %s", updated.LastSeenAt)
+	}
+	if !updated.CompletedAt.IsZero() {
+		t.Fatalf("expected completed time to remain zero, got %s", updated.CompletedAt)
+	}
+	if updated.State != ConsumerLedgerStateApplied || updated.Outcome != "applied without explicit completion timestamp" {
+		t.Fatalf("unexpected updated result: %+v", updated)
+	}
+}
