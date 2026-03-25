@@ -210,12 +210,11 @@
       "BIG-PAR-409",
       "BIG-PAR-410",
       "BIG-PAR-412",
-      "BIG-PAR-411"
-    ],
-    "active": [
+      "BIG-PAR-411",
       "BIG-PAR-413",
       "BIG-PAR-414"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1608,13 +1607,13 @@
       "identifier": "BIG-PAR-413",
       "title": "Add local tracker comment-path edge coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-414",
       "title": "Add refill save and runnable-count edge coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
