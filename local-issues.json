@@ -3110,6 +3110,11 @@
           "author": "codex",
           "body": "Final merge closeout on March 26, 2026: PR `#191` (`BIG-PAR-291: harden refill state handling`) merged into `main` at `2026-03-25T17:29:42Z` with merge commit `53d49f332136a4f8452be8adf955f5d100730734`. The refill queue remains drained after closing `BIG-PAR-389` through `BIG-PAR-394`.\n\nValidation:\n- `gh pr view 191 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` with merge commit `53d49f332136a4f8452be8adf955f5d100730734` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> `queue_drained: true`, `active_in_progress: []`, `queue_status_synced: true`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `64e25b19cebc8cd135edf1d6e846276142070a83` matches remote SHA `64e25b19cebc8cd135edf1d6e846276142070a83` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `64e25b19cebc8cd135edf1d6e846276142070a83`\n\nCommit SHA: `64e25b19cebc8cd135edf1d6e846276142070a83`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
           "created_at": "2026-03-25T17:30:47Z"
+        },
+        {
+          "author": "codex",
+          "body": "Stable post-merge reconciliation on March 26, 2026: BIG-PAR-291 is complete, PR `#191` is merged, the refill queue is drained, and the current synced branch head is `ad3b25036e2a1fedc7a4f6b45a4820e96e55c64f`. Any later tracker-only sync commits on `symphony/BIG-PAR-291` do not represent new implementation work; they only preserve local tracker evidence after merge.\n\nValidation:\n- `gh pr view 191 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` with merge commit `53d49f332136a4f8452be8adf955f5d100730734` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> `queue_drained: true`, `active_in_progress: []`, `queue_status_synced: true`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `ad3b25036e2a1fedc7a4f6b45a4820e96e55c64f` matches remote SHA `ad3b25036e2a1fedc7a4f6b45a4820e96e55c64f` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `ad3b25036e2a1fedc7a4f6b45a4820e96e55c64f`\n\nCommit SHA: `ad3b25036e2a1fedc7a4f6b45a4820e96e55c64f`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
+          "created_at": "2026-03-25T17:32:40Z"
         }
       ],
       "created_at": "2026-03-24T15:47:40Z",
@@ -3126,7 +3131,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-25T17:30:47Z"
+      "updated_at": "2026-03-25T17:32:40Z"
     },
     {
       "assigned_to_worker": true,
