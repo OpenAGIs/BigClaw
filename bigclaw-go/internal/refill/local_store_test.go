@@ -8,6 +8,73 @@ import (
 	"time"
 )
 
+func TestReadLocalIssueMapsMissingAndInvalidPayloads(t *testing.T) {
+	tempDir := t.TempDir()
+
+	missingPath := filepath.Join(tempDir, "missing-local-issues.json")
+	issues, err := readLocalIssueMaps(missingPath)
+	if err != nil {
+		t.Fatalf("read missing local issue store: %v", err)
+	}
+	if issues != nil {
+		t.Fatalf("expected missing local issue store to return nil issues, got %+v", issues)
+	}
+
+	invalidPath := filepath.Join(tempDir, "invalid-local-issues.json")
+	if err := os.WriteFile(invalidPath, []byte(`{"issues":`), 0o644); err != nil {
+		t.Fatalf("write invalid local issue store: %v", err)
+	}
+	if _, err := readLocalIssueMaps(invalidPath); err == nil || !strings.Contains(err.Error(), "unexpected end of JSON input") {
+		t.Fatalf("expected invalid JSON read to fail, got %v", err)
+	}
+}
+
+func TestLoadLocalIssueStoreNormalizesAbsolutePathAndMissingIssues(t *testing.T) {
+	tempDir := t.TempDir()
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("get working directory: %v", err)
+	}
+	relativePath, err := filepath.Rel(cwd, filepath.Join(tempDir, "missing-local-issues.json"))
+	if err != nil {
+		t.Fatalf("derive relative path: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(relativePath)
+	if err != nil {
+		t.Fatalf("load local issue store from relative path: %v", err)
+	}
+	if store.path != filepath.Join(tempDir, "missing-local-issues.json") {
+		t.Fatalf("expected absolute store path, got %q", store.path)
+	}
+	if issues := store.Issues(); len(issues) != 0 {
+		t.Fatalf("expected missing store to load with no issues, got %+v", issues)
+	}
+}
+
+func TestLoadLocalIssueStoreAndReloadPropagateDecodeFailures(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{"issues":[{"identifier":"BIG-PAR-407"}]}`), 0o644); err != nil {
+		t.Fatalf("write initial local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load initial local issue store: %v", err)
+	}
+
+	if err := os.WriteFile(storePath, []byte(`{"issues":`), 0o644); err != nil {
+		t.Fatalf("corrupt local issue store: %v", err)
+	}
+	if err := store.Reload(); err == nil || !strings.Contains(err.Error(), "unexpected end of JSON input") {
+		t.Fatalf("expected reload to surface decode error, got %v", err)
+	}
+
+	if _, err := LoadLocalIssueStore(storePath); err == nil || !strings.Contains(err.Error(), "unexpected end of JSON input") {
+		t.Fatalf("expected load to surface decode error, got %v", err)
+	}
+}
+
 func TestNormalizeLocalIssueMapsSkipsNonMapEntries(t *testing.T) {
 	items := []any{
 		map[string]any{"identifier": "BIG-PAR-399"},
