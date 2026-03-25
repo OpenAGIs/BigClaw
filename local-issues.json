@@ -6267,6 +6267,30 @@
       "state": "Done",
       "title": "Add refill markdown rendering coverage",
       "updated_at": "2026-03-25T19:42:22Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T19:44:38Z",
+      "description": "Add focused refill local-store tests covering withFileLock retry and cleanup behavior in bigclaw-go/internal/refill/local_store.go.",
+      "id": "big-par-423",
+      "identifier": "BIG-PAR-423",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add local tracker lock retry coverage",
+      "updated_at": "2026-03-25T19:44:48Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T19:44:38Z",
+      "description": "Add focused refill queue tests covering RunnableCountForStates edge cases in bigclaw-go/internal/refill/queue.go.",
+      "id": "big-par-424",
+      "identifier": "BIG-PAR-424",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add refill live-state merge coverage",
+      "updated_at": "2026-03-25T19:44:48Z"
     }
   ]
 }
