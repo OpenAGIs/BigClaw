@@ -202,11 +202,13 @@
       "BIG-PAR-401",
       "BIG-PAR-402",
       "BIG-PAR-403",
-      "BIG-PAR-404"
-    ],
-    "active": [
+      "BIG-PAR-404",
       "BIG-PAR-405",
       "BIG-PAR-406"
+    ],
+    "active": [
+      "BIG-PAR-407",
+      "BIG-PAR-408"
     ],
     "standby": []
   },
@@ -397,7 +399,9 @@
     "BIG-PAR-403",
     "BIG-PAR-404",
     "BIG-PAR-405",
-    "BIG-PAR-406"
+    "BIG-PAR-406",
+    "BIG-PAR-407",
+    "BIG-PAR-408"
   ],
   "issues": [
     {
@@ -1544,11 +1548,23 @@
       "identifier": "BIG-PAR-405",
       "title": "Add local tracker decode helper coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-406",
       "title": "Add refill queue status sync coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-407",
+      "title": "Add local tracker read/load coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "In Progress"
+    },
+    {
+      "identifier": "BIG-PAR-408",
+      "title": "Add refill queue load/save helper coverage",
       "track": "Go Mainline Follow-ups",
       "status": "In Progress"
     }
