@@ -44,6 +44,61 @@ func TestIssueCommentListNormalizesCommentCollections(t *testing.T) {
 	}
 }
 
+func TestLocalIssueScalarHelpersNormalizeTypes(t *testing.T) {
+	issue := map[string]any{
+		"priority_float":       float64(3),
+		"priority_int":         4,
+		"priority_bad":         "high",
+		"assigned_true":        true,
+		"assigned_bad":         "yes",
+		"labels_any":           []any{" ops ", "", 12},
+		"labels_strings":       []string{" one ", "", "two"},
+		"labels_bad":           99,
+		"labels_nil_explicit":  nil,
+	}
+
+	if got := mapInt(issue, "priority_float"); got != 3 {
+		t.Fatalf("expected float priority to coerce to 3, got %d", got)
+	}
+	if got := mapInt(issue, "priority_int"); got != 4 {
+		t.Fatalf("expected int priority to round-trip, got %d", got)
+	}
+	if got := mapInt(issue, "priority_bad"); got != 0 {
+		t.Fatalf("expected invalid priority to return zero, got %d", got)
+	}
+	if got := mapInt(issue, "missing_priority"); got != 0 {
+		t.Fatalf("expected missing priority to return zero, got %d", got)
+	}
+
+	if !mapBool(issue, "assigned_true") {
+		t.Fatal("expected bool helper to preserve true")
+	}
+	if mapBool(issue, "assigned_bad") {
+		t.Fatal("expected non-bool value to return false")
+	}
+	if mapBool(issue, "missing_assigned") {
+		t.Fatal("expected missing bool value to return false")
+	}
+
+	labelsAny := mapStringSlice(issue, "labels_any")
+	if len(labelsAny) != 2 || labelsAny[0] != "ops" || labelsAny[1] != "12" {
+		t.Fatalf("expected []any labels to normalize, got %+v", labelsAny)
+	}
+	labelsStrings := mapStringSlice(issue, "labels_strings")
+	if len(labelsStrings) != 2 || labelsStrings[0] != "one" || labelsStrings[1] != "two" {
+		t.Fatalf("expected []string labels to normalize, got %+v", labelsStrings)
+	}
+	if got := mapStringSlice(issue, "labels_bad"); got != nil {
+		t.Fatalf("expected invalid label type to return nil, got %+v", got)
+	}
+	if got := mapStringSlice(issue, "labels_nil_explicit"); got != nil {
+		t.Fatalf("expected explicit nil label value to return nil, got %+v", got)
+	}
+	if got := mapStringSlice(issue, "missing_labels"); got != nil {
+		t.Fatalf("expected missing labels to return nil, got %+v", got)
+	}
+}
+
 func TestLocalIssueStoreUpdateIssueStatePreservesExtraFields(t *testing.T) {
 	storePath := filepath.Join(t.TempDir(), "local-issues.json")
 	if err := os.WriteFile(storePath, []byte(`{
