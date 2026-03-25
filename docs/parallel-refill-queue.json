@@ -179,7 +179,9 @@
       "BIG-PAR-387",
       "BIG-PAR-388"
     ],
-    "active": [],
+    "active": [
+      "BIG-PAR-390"
+    ],
     "standby": []
   },
   "issue_order": [
@@ -342,7 +344,8 @@
     "BIG-PAR-386",
     "BIG-PAR-385",
     "BIG-PAR-387",
-    "BIG-PAR-388"
+    "BIG-PAR-388",
+    "BIG-PAR-390"
   ],
   "issues": [
     {
@@ -1334,6 +1337,12 @@
       "title": "Normalize seed and ensure state equivalence",
       "track": "Automation",
       "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-390",
+      "title": "Normalize local store state updates",
+      "track": "Automation",
+      "status": "In Progress"
     }
   ]
 }

@@ -5377,6 +5377,40 @@
       "state": "Done",
       "title": "Normalize seed and ensure state equivalence",
       "updated_at": "2026-03-25T16:43:34Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T17:05:51Z",
+      "description": "Make remote refill runs use the queue policy activate_state_name instead of a hardcoded In Progress fetch filter so nonstandard active-state names are promoted and reported correctly.",
+      "id": "big-par-389",
+      "identifier": "BIG-PAR-389",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Honor configured activate state in refill fetches",
+      "updated_at": "2026-03-25T17:05:51Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T17:05:51Z",
+      "description": "Make LocalIssueStore.UpdateIssueState trim and default incoming state names so direct local tracker writes stay consistent with CLI normalization and do not persist blank or whitespace-only states.",
+      "id": "big-par-390",
+      "identifier": "BIG-PAR-390",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Normalize local store state updates",
+      "updated_at": "2026-03-25T17:05:51Z"
     }
   ]
 }

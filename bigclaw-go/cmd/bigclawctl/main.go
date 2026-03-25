@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"time"
 
@@ -1093,7 +1094,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 	for state := range queue.RefillStates() {
 		refillStates = append(refillStates, state)
 	}
-	statesToFetch := append([]string{"In Progress"}, refillStates...)
+	statesToFetch := append([]string{queue.ActivateStateName()}, refillStates...)
 	issues := []refill.TrackedIssue{}
 	if client.backend() == "local" {
 		issues = allIssues
@@ -1154,7 +1155,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		target = *targetOverride
 	}
 	payload := map[string]any{
-		"active_in_progress":         refill.SortedActive(issues),
+		"active_in_progress":         sortedActiveIssuesForState(issues, queue.ActivateStateName()),
 		"backend":                    client.backend(),
 		"target_in_progress":         target,
 		"candidates":                 candidates,
@@ -1243,6 +1244,17 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		}
 	}
 	return nil
+}
+
+func sortedActiveIssuesForState(issues []refill.TrackedIssue, activeStateName string) []string {
+	active := make([]string, 0, len(issues))
+	for _, issue := range issues {
+		if refill.NormalizeStateName(issue.StateName) == refill.NormalizeStateName(activeStateName) {
+			active = append(active, issue.Identifier)
+		}
+	}
+	sort.Strings(active)
+	return active
 }
 
 func emit(payload map[string]any, asJSON bool, exitCode int) error {

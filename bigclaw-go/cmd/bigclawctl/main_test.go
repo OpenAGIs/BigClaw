@@ -151,6 +151,95 @@ func TestRunRefillOncePromotesUsingLinearIssueID(t *testing.T) {
 	}
 }
 
+func TestRunRefillOnceLinearBackendUsesConfiguredActivateStateName(t *testing.T) {
+	queuePath := filepath.Join(t.TempDir(), "queue.json")
+	markdownPath := filepath.Join(t.TempDir(), "queue.md")
+	if err := os.WriteFile(queuePath, []byte(`{
+  "project": {"slug_id": "project-slug"},
+  "policy": {
+    "target_in_progress": 1,
+    "activate_state_name": "Queued for Review",
+    "activate_state_id": "state-review",
+    "refill_states": ["Todo", "Backlog"]
+  },
+  "issue_order": ["BIG-PAR-389", "BIG-PAR-390"],
+  "issues": [
+    {"identifier": "BIG-PAR-389", "title": "Honor configured activate state in refill fetches", "track": "Automation", "status": "Queued for Review"},
+    {"identifier": "BIG-PAR-390", "title": "Normalize local store state updates", "track": "Automation", "status": "Todo"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write queue file: %v", err)
+	}
+	queue, err := refill.LoadQueue(queuePath)
+	if err != nil {
+		t.Fatalf("load queue: %v", err)
+	}
+
+	var requestedStateNames []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var request graphqlRequest
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+		if !strings.Contains(request.Query, "query RefillIssues") {
+			t.Fatalf("unexpected query: %s", request.Query)
+		}
+		rawStateNames, ok := request.Variables["stateNames"].([]any)
+		if !ok {
+			t.Fatalf("expected stateNames variable, got %#v", request.Variables["stateNames"])
+		}
+		for _, stateName := range rawStateNames {
+			requestedStateNames = append(requestedStateNames, stateName.(string))
+		}
+		response := refillResponse{}
+		response.Data.Issues.Nodes = []linearIssueNode{
+			{
+				ID:         "issue-linear-389",
+				Identifier: "BIG-PAR-389",
+				Title:      "Honor configured activate state in refill fetches",
+				State: struct {
+					Name string `json:"name"`
+				}{Name: "queued for review."},
+			},
+			{
+				ID:         "issue-linear-390",
+				Identifier: "BIG-PAR-390",
+				Title:      "Normalize local store state updates",
+				State: struct {
+					Name string `json:"name"`
+				}{Name: "Todo"},
+			},
+		}
+		_ = json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	client := &linearClient{apiKey: "test-token", endpoint: server.URL, httpClient: server.Client()}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runRefillOnce(queue, client, false, "", nil, false, queuePath, markdownPath, "")
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("run refill once: %v (stdout=%s)", runErr, string(output))
+	}
+	if !reflect.DeepEqual(requestedStateNames, []string{"Queued for Review", "Todo", "Backlog"}) {
+		t.Fatalf("expected configured activate state fetch list, got %#v", requestedStateNames)
+	}
+	if !bytes.Contains(output, []byte(`"active_in_progress": [`)) || !bytes.Contains(output, []byte(`"BIG-PAR-389"`)) {
+		t.Fatalf("expected custom active state issue in payload, got %s", string(output))
+	}
+}
+
 func TestRunRefillOncePromotesUsingLocalIssueStore(t *testing.T) {
 	tempDir := t.TempDir()
 	queuePath := filepath.Join(tempDir, "queue.json")
