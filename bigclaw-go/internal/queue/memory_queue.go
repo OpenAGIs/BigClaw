@@ -282,6 +282,36 @@ func (q *MemoryQueue) CancelTask(_ context.Context, taskID string, reason string
 	return snapshotFromItem(current), nil
 }
 
+func (q *MemoryQueue) ReassignTask(_ context.Context, taskID string, workerID string, availableAt time.Time, reason string) (TaskSnapshot, error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	current, ok := q.items[taskID]
+	if !ok {
+		return TaskSnapshot{}, ErrTaskNotFound
+	}
+	if !current.Leased || current.LeaseWorker != workerID {
+		return TaskSnapshot{}, ErrLeaseNotOwned
+	}
+	if current.Task.State == domain.TaskCancelled || current.Task.State == domain.TaskDeadLetter {
+		return TaskSnapshot{}, ErrLeaseNotOwned
+	}
+	now := time.Now()
+	current.Leased = false
+	current.LeaseWorker = ""
+	current.LeaseExpires = time.Time{}
+	current.AvailableAt = availableAt
+	current.Task.State = domain.TaskQueued
+	current.Task.UpdatedAt = now
+	if current.Task.Metadata == nil {
+		current.Task.Metadata = make(map[string]string)
+	}
+	current.Task.Metadata["reassign_reason"] = reason
+	current.Task.Metadata["reassign_from_worker"] = workerID
+	current.Task.Metadata["reassign_requested_at"] = now.UTC().Format(time.RFC3339Nano)
+	return snapshotFromItem(current), nil
+}
+
 func (q *MemoryQueue) Size(_ context.Context) int {
 	q.mu.Lock()
 	defer q.mu.Unlock()

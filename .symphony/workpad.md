@@ -1,27 +1,21 @@
-## Codex Workpad
+# BIGCLAW-196 Workpad
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## Plan
 
-### Plan
+1. Fetch and check out the repository content for this worktree, then locate the active Go implementation for node health monitoring, degradation handling, and task assignment/reassignment.
+2. Implement the minimum scoped changes needed to close the node-health degradation to task-reallocation loop in the Go mainline.
+3. Add or update targeted automated tests covering degradation detection and reassignment behavior.
+4. Run targeted validation, capture exact commands and outcomes, then commit and push the issue branch.
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+## Acceptance
 
-### Acceptance Criteria
+- A node entering a degraded health state is represented in the active Go mainline.
+- Scheduling or dispatch logic reacts to degraded node state by avoiding or reassigning affected work.
+- Targeted tests cover the degradation and reassignment path.
+- The branch contains a committed, pushed implementation for BIGCLAW-196.
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
+## Validation
 
-### Validation
-
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
-
-### Notes
-
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+- Identify focused Go test packages for the touched scheduling/worker/control-plane surfaces.
+- Run exact test commands after implementation and record pass/fail results in the final report.
+- Verify the final commit SHA is pushed and matches the remote branch SHA.

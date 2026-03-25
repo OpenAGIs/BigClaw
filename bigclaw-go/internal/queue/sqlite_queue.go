@@ -334,6 +334,55 @@ func (q *SQLiteQueue) CancelTask(_ context.Context, taskID string, reason string
 	return snapshot, nil
 }
 
+func (q *SQLiteQueue) ReassignTask(_ context.Context, taskID string, workerID string, availableAt time.Time, reason string) (TaskSnapshot, error) {
+	row := q.db.QueryRow(`SELECT payload, available_at_ns, attempt, leased, lease_worker, lease_expires_ns FROM tasks WHERE task_id=?`, taskID)
+	snapshot, err := scanSnapshotRow(row)
+	if err != nil {
+		return TaskSnapshot{}, err
+	}
+	if !snapshot.Leased || snapshot.LeaseWorker != workerID {
+		return TaskSnapshot{}, ErrLeaseNotOwned
+	}
+	if snapshot.Task.State == domain.TaskCancelled || snapshot.Task.State == domain.TaskDeadLetter {
+		return TaskSnapshot{}, ErrLeaseNotOwned
+	}
+	now := time.Now()
+	snapshot.Task.State = domain.TaskQueued
+	snapshot.Task.UpdatedAt = now
+	if snapshot.Task.Metadata == nil {
+		snapshot.Task.Metadata = make(map[string]string)
+	}
+	snapshot.Task.Metadata["reassign_reason"] = reason
+	snapshot.Task.Metadata["reassign_from_worker"] = workerID
+	snapshot.Task.Metadata["reassign_requested_at"] = now.UTC().Format(time.RFC3339Nano)
+	payload, err := json.Marshal(snapshot.Task)
+	if err != nil {
+		return TaskSnapshot{}, err
+	}
+	result, err := q.db.Exec(`UPDATE tasks SET payload=?, state=?, available_at_ns=?, leased=0, lease_worker='', lease_expires_ns=0
+		WHERE task_id=? AND leased=1 AND lease_worker=? AND state NOT IN (?, ?)`,
+		payload,
+		string(domain.TaskQueued),
+		availableAt.UnixNano(),
+		taskID,
+		workerID,
+		string(domain.TaskCancelled),
+		string(domain.TaskDeadLetter),
+	)
+	if err != nil {
+		return TaskSnapshot{}, err
+	}
+	rows, _ := result.RowsAffected()
+	if rows != 1 {
+		return TaskSnapshot{}, ErrLeaseNotOwned
+	}
+	snapshot.Leased = false
+	snapshot.LeaseWorker = ""
+	snapshot.LeaseExpires = time.Time{}
+	snapshot.AvailableAt = availableAt
+	return snapshot, nil
+}
+
 func (q *SQLiteQueue) updateStateAfterLease(lease *Lease, state domain.TaskState, availableAt time.Time, reason string) error {
 	row := q.db.QueryRow(`SELECT payload FROM tasks WHERE task_id=?`, lease.TaskID)
 	var payload []byte

@@ -176,3 +176,66 @@ func TestPoolSnapshotSummarizesWorkerState(t *testing.T) {
 		t.Fatalf("expected 2 snapshots in pool")
 	}
 }
+
+func TestPoolReassignsLeasedTaskFromDegradedNode(t *testing.T) {
+	q := queue.NewMemoryQueue()
+	if err := q.Enqueue(context.Background(), domain.Task{ID: "task-stuck", TraceID: "trace-stuck", Priority: 1, CreatedAt: time.Now()}); err != nil {
+		t.Fatalf("enqueue task-stuck: %v", err)
+	}
+	task, lease, err := q.LeaseNext(context.Background(), "worker-a", time.Minute)
+	if err != nil || task == nil || lease == nil {
+		t.Fatalf("lease task-stuck: %v task=%v lease=%v", err, task, lease)
+	}
+
+	bus := events.NewBus()
+	recorder := observability.NewRecorder()
+	bus.AddSink(events.RecorderSink{Recorder: recorder})
+	registry := executor.NewRegistry(fakeRunner{kind: domain.ExecutorLocal, result: executor.Result{Success: true, Message: "ok"}})
+
+	workerA := &Runtime{
+		WorkerID: "worker-a",
+		NodeID:   "node-a",
+		Queue:    q,
+	}
+	workerA.updateStatus(func(status *Status) {
+		status.WorkerID = "worker-a"
+		status.NodeID = "node-a"
+		status.State = "running"
+		status.CurrentTaskID = "task-stuck"
+		status.LastHeartbeatAt = time.Now().Add(-10 * time.Minute)
+	})
+
+	workerB := &Runtime{
+		WorkerID:    "worker-b",
+		NodeID:      "node-b",
+		Queue:       q,
+		Scheduler:   scheduler.New(),
+		Registry:    registry,
+		Bus:         bus,
+		Recorder:    recorder,
+		LeaseTTL:    time.Second,
+		TaskTimeout: time.Second,
+	}
+	workerB.updateStatus(func(status *Status) {
+		status.WorkerID = "worker-b"
+		status.NodeID = "node-b"
+		status.State = "idle"
+		status.LastHeartbeatAt = time.Now()
+	})
+
+	pool := NewPool(workerA, workerB)
+	processed := pool.RunOnce(context.Background(), scheduler.QuotaSnapshot{ConcurrentLimit: 1, BudgetRemaining: 1000})
+	if !processed {
+		t.Fatal("expected pool to reassign and process task from degraded node")
+	}
+	if got := q.Size(context.Background()); got != 0 {
+		t.Fatalf("expected queue size 0 after healthy worker completed reassigned task, got %d", got)
+	}
+	if snapshot := workerA.Snapshot(); snapshot.SuccessfulRuns != 0 || snapshot.LastTransition != "node.degraded" {
+		t.Fatalf("expected degraded worker to be quarantined without executing task, got %+v", snapshot)
+	}
+	events := recorder.EventsByTask("task-stuck", 10)
+	if len(events) == 0 || events[len(events)-1].Type != domain.EventTaskCompleted {
+		t.Fatalf("expected reassigned task to complete on healthy node, got %+v", events)
+	}
+}

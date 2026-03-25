@@ -49,3 +49,7 @@ type TaskInspector interface {
 type TaskController interface {
 	CancelTask(context.Context, string, string) (TaskSnapshot, error)
 }
+
+type TaskReallocator interface {
+	ReassignTask(context.Context, string, string, time.Time, string) (TaskSnapshot, error)
+}
