@@ -446,6 +446,10 @@ func runRefillSeed(args []string) error {
 		}
 		return err
 	}
+	visitedFlags := map[string]bool{}
+	flags.Visit(func(flag *flag.Flag) {
+		visitedFlags[flag.Name] = true
+	})
 
 	identifier := trim(*options.identifier)
 	if identifier == "" {
@@ -510,6 +514,26 @@ func runRefillSeed(args []string) error {
 		if existing, found := store.FindIssue(identifier); found {
 			localAction = "exists"
 			localState = existing.State
+			labels := []string{}
+			for _, label := range splitCSV(*options.labelsCSV) {
+				if trimmed := trim(label); trimmed != "" {
+					labels = append(labels, trimmed)
+				}
+			}
+			updatedIssue, metadataChanged, err := store.UpdateIssue(identifier, refill.LocalIssueUpdateParams{
+				Title:            stringPointerIfVisited(title, visitedFlags["title"]),
+				Description:      stringPointerIfVisited(*options.description, visitedFlags["description"]),
+				Priority:         intPointerIfVisited(*options.priority, visitedFlags["priority"]),
+				Labels:           stringSlicePointerIfVisited(labels, visitedFlags["labels"]),
+				AssignedToWorker: boolPointerIfVisited(*options.assigned, visitedFlags["assigned-to-worker"]),
+			}, when)
+			if err != nil {
+				return err
+			}
+			if metadataChanged {
+				existing = updatedIssue
+				localAction = "updated"
+			}
 			if *options.setStateIfExists && refill.NormalizeStateName(existing.State) != refill.NormalizeStateName(stateName) {
 				localState, err = store.UpdateIssueState(identifier, stateName, when)
 				if err != nil {
