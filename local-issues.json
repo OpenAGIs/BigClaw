@@ -3185,6 +3185,11 @@
           "author": "codex",
           "body": "Status refresh on March 25, 2026: PR `#206` is now merged for the github-sync JSON hardening slice on this branch, and the local refill queue is drained again with no active child slices. Current synced branch head: `1c9499402f9f4b1d84be3bb66e8ff4c9861cb636`.\n\nValidation:\n- `gh pr view 206 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` at `2026-03-25T20:06:31Z` with merge commit `70a4e9658533d15b2d8b19c4e2fd172c7b6f9dcc` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `1c9499402f9f4b1d84be3bb66e8ff4c9861cb636` matches remote SHA `1c9499402f9f4b1d84be3bb66e8ff4c9861cb636` with `status: ok` and `synced: true`",
           "created_at": "2026-03-25T20:07:12Z"
+        },
+        {
+          "author": "codex",
+          "body": "Status refresh on March 25, 2026: PR `#207` is now merged for the github-sync status JSON hardening slice on this branch, and the local refill queue is drained again with no active child slices. Current synced branch head: `48eebe70302eeec5a01c556e01df7b4f6c1b79c3`.\n\nValidation:\n- `gh pr view 207 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` at `2026-03-25T20:17:52Z` with merge commit `6f430a7e2e4d1b55b97145f446e574aa467bef0d` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `48eebe70302eeec5a01c556e01df7b4f6c1b79c3` matches remote SHA `48eebe70302eeec5a01c556e01df7b4f6c1b79c3` with `status: ok` and `synced: true`",
+          "created_at": "2026-03-25T20:18:47Z"
         }
       ],
       "created_at": "2026-03-24T15:47:40Z",
@@ -3201,7 +3206,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-25T20:07:12Z"
+      "updated_at": "2026-03-25T20:18:47Z"
     },
     {
       "assigned_to_worker": true,
@@ -6054,6 +6059,11 @@
           "author": "codex",
           "body": "What changed:\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now adds a focused `github-sync status --json` regression proving the error payload preserves raw `->` tokens in the emitted repo path field.\n- The regression uses an arrow-bearing missing repo path so it exercises the real command error path through the shared JSON emitter, not just the install success path.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `0b7a3abea0d31db673cc16ab1e5ee0c93fcc108b` matches remote SHA `0b7a3abea0d31db673cc16ab1e5ee0c93fcc108b` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `0b7a3abea0d31db673cc16ab1e5ee0c93fcc108b`\n- `git log -1 --stat` -> captured for commit `0b7a3abea0d31db673cc16ab1e5ee0c93fcc108b`\n\nCommit SHA: `0b7a3abea0d31db673cc16ab1e5ee0c93fcc108b`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/207",
           "created_at": "2026-03-25T20:15:45Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout on March 25, 2026:\n- PR `#207` (`https://github.com/OpenAGIs/BigClaw/pull/207`) is `MERGED` at `2026-03-25T20:17:52Z` with merge commit `6f430a7e2e4d1b55b97145f446e574aa467bef0d`.\n- The synced workspace branch head remains `48eebe70302eeec5a01c556e01df7b4f6c1b79c3`; later branch commits were not needed after merge.\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` reports `queue_drained: true` and `active_in_progress: []`.\n\nValidation:\n- `gh pr view 207 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> merged with successful `test` check\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `48eebe70302eeec5a01c556e01df7b4f6c1b79c3` matches remote SHA `48eebe70302eeec5a01c556e01df7b4f6c1b79c3` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `48eebe70302eeec5a01c556e01df7b4f6c1b79c3`\n- `git log -1 --stat` -> captured for commit `48eebe70302eeec5a01c556e01df7b4f6c1b79c3`",
+          "created_at": "2026-03-25T20:18:47Z"
         }
       ],
       "created_at": "2026-03-25T20:09:46Z",
@@ -6069,7 +6079,26 @@
       "priority": 3,
       "state": "Done",
       "title": "Add github-sync status JSON no-escape regression",
-      "updated_at": "2026-03-25T20:15:45Z"
+      "updated_at": "2026-03-25T20:18:47Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now adds a focused `refill seed --json` regression proving the command preserves raw `->` tokens in emitted identifier, queue path, markdown path, and local issue path fields.\n- The regression uses arrow-bearing temporary file paths and identifier values so it exercises the real queue-seeding command path instead of only the shared emitter helper.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `61b55710e657b57266983073c690d5cc0cb1b1b8` matches remote SHA `61b55710e657b57266983073c690d5cc0cb1b1b8` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `61b55710e657b57266983073c690d5cc0cb1b1b8`\n- `git log -1 --stat` -> captured for commit `61b55710e657b57266983073c690d5cc0cb1b1b8`\n\nCommit SHA: `61b55710e657b57266983073c690d5cc0cb1b1b8`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/208",
+          "created_at": "2026-03-25T20:26:03Z"
+        }
+      ],
+      "created_at": "2026-03-25T20:23:07Z",
+      "description": "Add command-level coverage proving bigclawctl refill seed --json preserves raw arrow tokens in emitted identifier and path fields so the shared JSON emitter remains protected on the queue seeding path.",
+      "id": "big-par-411",
+      "identifier": "BIG-PAR-411",
+      "labels": [],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add refill seed JSON no-escape regression",
+      "updated_at": "2026-03-25T20:26:12Z"
     }
   ]
 }

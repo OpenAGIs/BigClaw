@@ -1646,6 +1646,73 @@ func TestRunRefillSeedCreatesQueueAndLocalIssue(t *testing.T) {
 	}
 }
 
+func TestRunRefillSeedJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
+	tempDir := t.TempDir()
+	queuePath := filepath.Join(tempDir, "queue->.json")
+	markdownPath := filepath.Join(tempDir, "queue->.md")
+	if err := os.WriteFile(queuePath, []byte(`{
+  "project": {"slug_id": "project-slug"},
+  "policy": {
+    "target_in_progress": 2,
+    "activate_state_name": "In Progress",
+    "activate_state_id": "state-in-progress",
+    "refill_states": ["Todo", "Backlog"]
+  },
+  "recent_batches": {
+    "completed": [],
+    "active": [],
+    "standby": []
+  },
+  "issue_order": [],
+  "issues": []
+}`), 0o644); err != nil {
+		t.Fatalf("write queue file: %v", err)
+	}
+	storePath := filepath.Join(tempDir, "local-issues->.json")
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runRefillSeed([]string{
+		"--repo", tempDir,
+		"--queue", queuePath,
+		"--markdown", markdownPath,
+		"--local-issues", storePath,
+		"--identifier", "BIG-PAR->411",
+		"--title", "Protect refill seed JSON arrow tokens",
+		"--state", "In Progress",
+		"--recent-batch", "active",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run refill seed: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte("BIG-PAR->411")) {
+		t.Fatalf("expected raw arrow token in refill seed identifier, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(queuePath)) {
+		t.Fatalf("expected raw arrow token in refill seed queue path, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(markdownPath)) {
+		t.Fatalf("expected raw arrow token in refill seed markdown path, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(storePath)) {
+		t.Fatalf("expected raw arrow token in refill seed local issue path, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`\u003e`)) {
+		t.Fatalf("expected no HTML escaping in refill seed JSON output, got %s", string(output))
+	}
+}
+
 func TestRunRefillSeedCreateCanonicalizesEquivalentQueueAndLocalStates(t *testing.T) {
 	tempDir := t.TempDir()
 	queuePath := filepath.Join(tempDir, "queue.json")
