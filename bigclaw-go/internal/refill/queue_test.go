@@ -714,6 +714,52 @@ func TestParallelIssueQueueUpsertIssueValidationDefaultStatusAndOrderRepair(t *t
 	}
 }
 
+func TestParallelIssueQueueUpsertIssueTrimsCreateFieldsAndUpdatesTrackInPlace(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-420"},
+			Issues: []IssueRecord{
+				{Identifier: " BIG-PAR-420 ", Title: "Existing title", Track: "Legacy Track", Status: "Todo"},
+			},
+		},
+	}
+
+	action, orderAdded, err := queue.UpsertIssue(IssueRecord{
+		Identifier: " BIG-PAR-421 ",
+		Title:      "  Trimmed title  ",
+		Track:      " Go Mainline Follow-ups ",
+		Status:     " ",
+	})
+	if err != nil {
+		t.Fatalf("create trimmed queue entry: %v", err)
+	}
+	if action != "created" || !orderAdded {
+		t.Fatalf("expected trimmed create to report created with order add, got action=%s orderAdded=%v", action, orderAdded)
+	}
+	if got := queue.payload.Issues[1]; got.Identifier != "BIG-PAR-421" || got.Title != "Trimmed title" || got.Track != "Go Mainline Follow-ups" || got.Status != "Todo" {
+		t.Fatalf("expected created queue entry to store trimmed values and default status, got %+v", got)
+	}
+
+	action, orderAdded, err = queue.UpsertIssue(IssueRecord{
+		Identifier: "big-par-420",
+		Title:      "Existing title",
+		Track:      "Go Mainline Follow-ups",
+		Status:     "Todo",
+	})
+	if err != nil {
+		t.Fatalf("update existing queue track: %v", err)
+	}
+	if action != "updated" || orderAdded {
+		t.Fatalf("expected case-insensitive upsert to update in place without order add, got action=%s orderAdded=%v", action, orderAdded)
+	}
+	if got := queue.payload.Issues[0].Track; got != "Go Mainline Follow-ups" {
+		t.Fatalf("expected existing queue entry track update, got %q", got)
+	}
+	if !equalStringSlices(queue.payload.IssueOrder, []string{"BIG-PAR-420", "BIG-PAR-421"}) {
+		t.Fatalf("expected queue order to avoid duplicate identifiers, got %+v", queue.payload.IssueOrder)
+	}
+}
+
 func TestParallelIssueQueueSetRecentBatchMovesIdentifiersBetweenBuckets(t *testing.T) {
 	queue := &ParallelIssueQueue{
 		payload: QueuePayload{
