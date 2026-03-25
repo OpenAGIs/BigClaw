@@ -190,11 +190,10 @@
       "BIG-PAR-400",
       "BIG-PAR-401",
       "BIG-PAR-402",
-      "BIG-PAR-403"
-    ],
-    "active": [
+      "BIG-PAR-403",
       "BIG-PAR-404"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1446,7 +1445,7 @@
       "identifier": "BIG-PAR-404",
       "title": "Add workspace validate JSON no-escape regression",
       "track": "Automation",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
