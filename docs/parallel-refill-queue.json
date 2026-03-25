@@ -229,12 +229,11 @@
       "BIG-PAR-429",
       "BIG-PAR-430",
       "BIG-PAR-431",
-      "BIG-PAR-432"
-    ],
-    "active": [
+      "BIG-PAR-432",
       "BIG-PAR-434",
       "BIG-PAR-433"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1760,13 +1759,13 @@
       "identifier": "BIG-PAR-434",
       "title": "Add local tracker final load-path coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-433",
       "title": "Add refill final load-path coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }

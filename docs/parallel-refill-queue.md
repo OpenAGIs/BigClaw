@@ -48,10 +48,10 @@ longer waits on Linear to keep issue execution moving.
 ## Current batch
 
 - Current repo tranche status as of March 25, 2026:
-  - active slices: `BIG-PAR-434` — Add local tracker final load-path coverage; `BIG-PAR-433` — Add refill final load-path coverage
+  - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-424` — Add refill live-state merge coverage; `BIG-PAR-425` — Make refill queue save failures testable; `BIG-PAR-426` — Make local tracker save failures testable; `BIG-PAR-427` — Add refill temp-save branch coverage; `BIG-PAR-429` — Add refill remaining save branch coverage; `BIG-PAR-430` — Add local tracker lock-open failure coverage; `BIG-PAR-431` — Add refill final save branch coverage; `BIG-PAR-432` — Add local tracker final lock branch coverage
-  - queue status: `queue_runnable=2`, `target_in_progress=2`
+  - recently completed slices: `BIG-PAR-426` — Make local tracker save failures testable; `BIG-PAR-427` — Add refill temp-save branch coverage; `BIG-PAR-429` — Add refill remaining save branch coverage; `BIG-PAR-430` — Add local tracker lock-open failure coverage; `BIG-PAR-431` — Add refill final save branch coverage; `BIG-PAR-432` — Add local tracker final lock branch coverage; `BIG-PAR-434` — Add local tracker final load-path coverage; `BIG-PAR-433` — Add refill final load-path coverage
+  - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -270,6 +270,8 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-430` — Add local tracker lock-open failure coverage
   - `BIG-PAR-431` — Add refill final save branch coverage
   - `BIG-PAR-432` — Add local tracker final lock branch coverage
+  - `BIG-PAR-434` — Add local tracker final load-path coverage
+  - `BIG-PAR-433` — Add refill final load-path coverage
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
