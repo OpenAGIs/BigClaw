@@ -5666,6 +5666,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added focused `Task.MarshalJSON` coverage in `bigclaw-go/internal/domain/task_test.go` for optional execution/runtime fields including `trace_id`, `required_executor`, `idempotency_key`, `tenant_id`, container image/entrypoint, command and args, environment/runtime env maps, metadata, working directory, timeout, and created/updated timestamps.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/domain -run TestTaskJSONMarshalIncludesOptionalExecutionFields` -> ok\n- `cd bigclaw-go && go test ./internal/domain -coverprofile=/tmp/domain397.cover && go tool cover -func=/tmp/domain397.cover | rg 'internal/domain/task.go:(166|234)|total:'` -> `task.go:166 MarshalJSON 100.0%`, `task.go:234 UnmarshalJSON 93.8%`, `total 98.9%`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `196c157b9c36daa8371b1c2ba7e4e934d0476409` matches remote SHA `196c157b9c36daa8371b1c2ba7e4e934d0476409` with status `ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `196c157b9c36daa8371b1c2ba7e4e934d0476409`\n\nCommit SHA: `196c157b9c36daa8371b1c2ba7e4e934d0476409`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T18:11:27Z"
+        }
+      ],
       "created_at": "2026-03-25T18:05:37Z",
       "description": "Add focused domain tests covering Task.MarshalJSON optional-field emission paths in bigclaw-go/internal/domain/task.go.",
       "id": "big-par-397",
@@ -5677,12 +5684,19 @@
         "coverage"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add task JSON marshal optional-field coverage",
-      "updated_at": "2026-03-25T18:05:37Z"
+      "updated_at": "2026-03-25T18:11:27Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added focused `Task.UnmarshalJSON` coverage in `bigclaw-go/internal/domain/task_test.go` for the remaining edge paths: inner decode error propagation, canonical `id` precedence over `task_id`, `budget_cents` precedence over legacy `budget`, and normalization of nil collection fields to empty slices.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/domain -run 'TestTaskJSONUnmarshalRejectsInvalidJSON|TestTaskJSONUnmarshalPrefersCanonicalFieldsAndNormalizesCollections'` -> ok\n- `cd bigclaw-go && go test ./internal/domain -coverprofile=/tmp/domain398.cover && go tool cover -func=/tmp/domain398.cover | rg 'internal/domain/task.go:(166|234)|total:'` -> `task.go:166 MarshalJSON 100.0%`, `task.go:234 UnmarshalJSON 100.0%`, `total 99.4%`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `e17f22299503d77aad6b58737979d3a255ae4044` matches remote SHA `e17f22299503d77aad6b58737979d3a255ae4044` with status `ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `e17f22299503d77aad6b58737979d3a255ae4044`\n\nCommit SHA: `e17f22299503d77aad6b58737979d3a255ae4044`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/188",
+          "created_at": "2026-03-25T18:11:28Z"
+        }
+      ],
       "created_at": "2026-03-25T18:05:37Z",
       "description": "Add focused domain tests covering Task.UnmarshalJSON fallback and normalization branches in bigclaw-go/internal/domain/task.go.",
       "id": "big-par-398",
@@ -5694,9 +5708,9 @@
         "coverage"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add task JSON unmarshal edge-path coverage",
-      "updated_at": "2026-03-25T18:05:37Z"
+      "updated_at": "2026-03-25T18:11:28Z"
     }
   ]
 }
