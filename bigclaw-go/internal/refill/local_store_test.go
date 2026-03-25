@@ -494,6 +494,34 @@ func TestLocalIssueStoreAddCommentAppendsAndUpdatesTimestamp(t *testing.T) {
 	}
 }
 
+func TestLocalIssueStoreAddCommentRequiresBodyAndExistingIssue(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-413",
+      "identifier": "BIG-PAR-413",
+      "title": "comment path coverage",
+      "state": "In Progress"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	if err := store.AddComment("BIG-PAR-413", LocalIssueComment{Body: "   "}); err == nil {
+		t.Fatal("expected blank comment body to fail")
+	}
+	if err := store.AddComment("BIG-PAR-999", LocalIssueComment{Body: "missing issue"}); err == nil || err != ErrLocalIssueNotFound {
+		t.Fatalf("expected ErrLocalIssueNotFound for missing issue, got %v", err)
+	}
+}
+
 func TestLocalIssueStoreUpdateIssueStateReloadsLatestStateBeforeSaving(t *testing.T) {
 	storePath := filepath.Join(t.TempDir(), "local-issues.json")
 	if err := os.WriteFile(storePath, []byte(`{
@@ -814,5 +842,40 @@ func TestLocalIssueStoreAddCommentRetriesTransientLockFile(t *testing.T) {
 		CreatedAt: time.Date(2026, 3, 23, 2, 46, 0, 0, time.UTC),
 	}); err != nil {
 		t.Fatalf("expected transient lock retry to succeed, got %v", err)
+	}
+}
+
+func TestLocalIssueStoreAddCommentFailsWhenLockRemainsHeld(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-413",
+      "identifier": "BIG-PAR-413",
+      "title": "comment path coverage",
+      "state": "In Progress"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	lockPath := storePath + ".lock"
+	if err := os.WriteFile(lockPath, []byte("held"), 0o644); err != nil {
+		t.Fatalf("write lock file: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Remove(lockPath) })
+
+	if err := store.AddComment("BIG-PAR-413", LocalIssueComment{
+		Author:    "codex",
+		Body:      "lock never released",
+		CreatedAt: time.Date(2026, 3, 25, 19, 7, 0, 0, time.UTC),
+	}); err == nil || !strings.Contains(err.Error(), "file exists") {
+		t.Fatalf("expected lock acquisition failure, got %v", err)
 	}
 }
