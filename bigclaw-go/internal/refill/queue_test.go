@@ -1074,6 +1074,17 @@ func TestParallelIssueQueueSetRecentBatchMovesIdentifiersBetweenBuckets(t *testi
 	if changed {
 		t.Fatalf("expected no-op clear for untouched identifier, got changed=%v", changed)
 	}
+
+	changed, err = queue.SetRecentBatch("standby", "BIG-PAR-409")
+	if err != nil {
+		t.Fatalf("move identifier to standby batch: %v", err)
+	}
+	if !changed {
+		t.Fatal("expected moving identifier into standby to report change")
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Standby, []string{"BIG-PAR-409"}) {
+		t.Fatalf("unexpected standby batch ordering: %+v", queue.payload.RecentBatches.Standby)
+	}
 }
 
 func TestParallelIssueQueueSyncRecentBatchesFromStates(t *testing.T) {
@@ -1119,6 +1130,50 @@ func TestParallelIssueQueueSyncRecentBatchesFromStates(t *testing.T) {
 	}
 	if !stringSlicesEqual(snapshot.Standby, []string{"BIG-PAR-240"}) {
 		t.Fatalf("unexpected standby snapshot: %+v", snapshot)
+	}
+}
+
+func TestParallelIssueQueueSyncRecentBatchesFromStatesSkipsBlankOverridesAndDefaultsStandbyLimit(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			Policy: struct {
+				TargetInProgress  int      `json:"target_in_progress"`
+				ActivateStateID   string   `json:"activate_state_id"`
+				ActivateStateName string   `json:"activate_state_name"`
+				RefillStates      []string `json:"refill_states"`
+				BlockedReason     string   `json:"blocked_reason,omitempty"`
+			}{
+				TargetInProgress:  0,
+				ActivateStateName: "In Progress",
+				RefillStates:      []string{"Todo", "Backlog"},
+			},
+			IssueOrder: []string{"BIG-PAR-438", "BIG-PAR-439", "BIG-PAR-440"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-438", Status: "Todo"},
+				{Identifier: "BIG-PAR-439", Status: "Backlog"},
+				{Identifier: "BIG-PAR-440", Status: "Todo"},
+			},
+		},
+	}
+
+	updates := queue.SyncRecentBatchesFromStates(map[string]string{
+		"":            "Done",
+		"BIG-PAR-438": "   ",
+		"BIG-PAR-439": "Done",
+	})
+	if updates != 2 {
+		t.Fatalf("expected completed and standby recent-batch updates, got %d", updates)
+	}
+
+	snapshot := queue.RecentBatchesSnapshot()
+	if !stringSlicesEqual(snapshot.Completed, []string{"BIG-PAR-439"}) {
+		t.Fatalf("unexpected completed snapshot: %+v", snapshot)
+	}
+	if len(snapshot.Active) != 0 {
+		t.Fatalf("expected no active snapshot entries, got %+v", snapshot)
+	}
+	if !stringSlicesEqual(snapshot.Standby, []string{"BIG-PAR-438"}) {
+		t.Fatalf("expected standby limit fallback to keep one identifier, got %+v", snapshot)
 	}
 }
 

@@ -210,6 +210,59 @@ func TestParallelIssueQueueSaveMarkdownFailsWhenParentPathIsAFile(t *testing.T) 
 	}
 }
 
+func TestParallelIssueQueueSaveMarkdownPropagatesAbsPathFailure(t *testing.T) {
+	queue := &ParallelIssueQueue{}
+
+	originalAbsPath := queueMarkdownAbsPath
+	originalMkdirAll := queueMarkdownMkdirAll
+	t.Cleanup(func() {
+		queueMarkdownAbsPath = originalAbsPath
+		queueMarkdownMkdirAll = originalMkdirAll
+	})
+
+	absErr := errors.New("markdown abs failure")
+	queueMarkdownAbsPath = func(path string) (string, error) {
+		return "", absErr
+	}
+	queueMarkdownMkdirAll = func(path string, perm os.FileMode) error {
+		t.Fatal("did not expect mkdir after abs-path failure")
+		return nil
+	}
+
+	if written, err := queue.SaveMarkdown("queue.md", time.Date(2026, 3, 25, 19, 50, 0, 0, time.UTC)); !errors.Is(err, absErr) || written {
+		t.Fatalf("expected abs-path failure, got written=%v err=%v", written, err)
+	}
+}
+
+func TestParallelIssueQueueSaveMarkdownPropagatesMkdirAllFailure(t *testing.T) {
+	queue := &ParallelIssueQueue{}
+
+	originalAbsPath := queueMarkdownAbsPath
+	originalMkdirAll := queueMarkdownMkdirAll
+	originalCreateTemp := queueMarkdownCreateTemp
+	t.Cleanup(func() {
+		queueMarkdownAbsPath = originalAbsPath
+		queueMarkdownMkdirAll = originalMkdirAll
+		queueMarkdownCreateTemp = originalCreateTemp
+	})
+
+	mkdirErr := errors.New("markdown mkdir failure")
+	queueMarkdownAbsPath = func(path string) (string, error) {
+		return filepath.Join(t.TempDir(), "nested", "queue.md"), nil
+	}
+	queueMarkdownMkdirAll = func(path string, perm os.FileMode) error {
+		return mkdirErr
+	}
+	queueMarkdownCreateTemp = func(dir string, pattern string) (tempFile, error) {
+		t.Fatal("did not expect temp file creation after mkdir failure")
+		return nil, nil
+	}
+
+	if written, err := queue.SaveMarkdown("queue.md", time.Date(2026, 3, 25, 19, 51, 0, 0, time.UTC)); !errors.Is(err, mkdirErr) || written {
+		t.Fatalf("expected mkdir failure, got written=%v err=%v", written, err)
+	}
+}
+
 func TestParallelIssueQueueSaveMarkdownPropagatesWriteAndRenameFailures(t *testing.T) {
 	queue := &ParallelIssueQueue{
 		payload: QueuePayload{
