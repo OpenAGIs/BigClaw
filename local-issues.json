@@ -3075,6 +3075,11 @@
           "author": "codex",
           "body": "Final tracker-audit refresh on March 25, 2026: the post-merge tracker sync commit is now the true branch head for this completed issue.\n\nValidation:\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `88d103e0d1f1f7fed52a4598e0337ccec2893ae9`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `88d103e0d1f1f7fed52a4598e0337ccec2893ae9` matches remote SHA `88d103e0d1f1f7fed52a4598e0337ccec2893ae9` with `status: ok` and `synced: true`\n- `gh pr view 189 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` at `2026-03-25T16:23:41Z` with merge commit `a0c93a687204cb70d649b250a63d3a0a11af939f` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `git log -1 --stat` -> captured for commit `88d103e0d1f1f7fed52a4598e0337ccec2893ae9`\n\nCommit SHA: `88d103e0d1f1f7fed52a4598e0337ccec2893ae9`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/189",
           "created_at": "2026-03-25T16:28:08Z"
+        },
+        {
+          "author": "codex",
+          "body": "Status refresh on March 25, 2026: follow-up PR `#190` is now merge-ready. GitHub reports https://github.com/OpenAGIs/BigClaw/pull/190 as `OPEN` with `mergeStateStatus: CLEAN`, and the `test` workflow for branch head `af3ae67931b4e02c9cd91c06ff7fafb48ae72a9d` completed `SUCCESS` at `2026-03-25T16:45:58Z`.\n\nValidation:\n- `gh pr view 190 --json url,title,state,mergeStateStatus,statusCheckRollup` -> `OPEN`, `CLEAN`, successful completed `test` check\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `af3ae67931b4e02c9cd91c06ff7fafb48ae72a9d` matches remote SHA `af3ae67931b4e02c9cd91c06ff7fafb48ae72a9d` with `status: ok` and `synced: true`\n- `git status --short --branch` -> clean branch\n\nCommit SHA: pending tracker-note commit\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/190",
+          "created_at": "2026-03-25T16:47:22Z"
         }
       ],
       "created_at": "2026-03-24T15:47:40Z",
@@ -3091,7 +3096,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-25T16:28:08Z"
+      "updated_at": "2026-03-25T16:47:22Z"
     },
     {
       "assigned_to_worker": true,
