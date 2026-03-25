@@ -678,6 +678,21 @@ func TestLocalIssueStoreSaveUnlockedFailsWhenTargetPathIsDirectory(t *testing.T)
 	}
 }
 
+func TestLocalIssueStoreSaveUnlockedFailsWhenParentIsFile(t *testing.T) {
+	parentFile := filepath.Join(t.TempDir(), "parent-file")
+	if err := os.WriteFile(parentFile, []byte("not-a-directory"), 0o644); err != nil {
+		t.Fatalf("write parent file fixture: %v", err)
+	}
+	store := &LocalIssueStore{
+		path:     filepath.Join(parentFile, "local-issues.json"),
+		issueMap: []map[string]any{{"identifier": "BIG-PAR-417"}},
+	}
+
+	if err := store.saveUnlocked(); err == nil {
+		t.Fatal("expected saveUnlocked to fail when parent path is a file")
+	}
+}
+
 func TestLocalIssueStoreSavePersistsMutatedIssueMapWithoutEscapingHTML(t *testing.T) {
 	storePath := filepath.Join(t.TempDir(), "local-issues.json")
 	store := &LocalIssueStore{
@@ -810,6 +825,25 @@ func TestLocalIssueStoreWithWriteLockPropagatesCallbackError(t *testing.T) {
 	expectedErr := ErrLocalIssueNotFound
 	if err := store.withWriteLock(func() error { return expectedErr }); err != expectedErr {
 		t.Fatalf("expected callback error to propagate, got %v", err)
+	}
+}
+
+func TestLocalIssueStoreWithWriteLockFailsWhenReloadIsUnreadable(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{"issues":[]}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	if err := os.WriteFile(storePath, []byte(`{"issues":`), 0o644); err != nil {
+		t.Fatalf("corrupt local issue store: %v", err)
+	}
+
+	if err := store.withWriteLock(func() error { return nil }); err == nil || !strings.Contains(err.Error(), "unexpected end of JSON input") {
+		t.Fatalf("expected reload failure from withWriteLock, got %v", err)
 	}
 }
 
