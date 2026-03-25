@@ -8,6 +8,42 @@ import (
 	"time"
 )
 
+func TestNormalizeLocalIssueMapsSkipsNonMapEntries(t *testing.T) {
+	items := []any{
+		map[string]any{"identifier": "BIG-PAR-399"},
+		"skip-me",
+		42,
+		map[string]any{"identifier": "BIG-PAR-400"},
+	}
+
+	issues := normalizeLocalIssueMaps(items)
+	if len(issues) != 2 {
+		t.Fatalf("expected only map entries to survive, got %+v", issues)
+	}
+	if issues[0]["identifier"] != "BIG-PAR-399" || issues[1]["identifier"] != "BIG-PAR-400" {
+		t.Fatalf("unexpected normalized issues: %+v", issues)
+	}
+}
+
+func TestIssueCommentListNormalizesCommentCollections(t *testing.T) {
+	comments := issueCommentList([]any{
+		map[string]any{"body": "kept"},
+		"skip-me",
+		map[string]any{"body": "also kept"},
+	})
+	if len(comments) != 2 {
+		t.Fatalf("expected only map comments, got %+v", comments)
+	}
+	if comments[0]["body"] != "kept" || comments[1]["body"] != "also kept" {
+		t.Fatalf("unexpected normalized comments: %+v", comments)
+	}
+
+	empty := issueCommentList("not-a-list")
+	if empty == nil || len(empty) != 0 {
+		t.Fatalf("expected non-list comments to normalize to empty slice, got %+v", empty)
+	}
+}
+
 func TestLocalIssueStoreUpdateIssueStatePreservesExtraFields(t *testing.T) {
 	storePath := filepath.Join(t.TempDir(), "local-issues.json")
 	if err := os.WriteFile(storePath, []byte(`{

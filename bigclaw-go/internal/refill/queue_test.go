@@ -101,6 +101,77 @@ func TestParallelIssueQueueRefreshRecentBatchesFromStates(t *testing.T) {
 	}
 }
 
+func TestIssueRecordStateMapTrimsStatusesAndSkipsBlankIdentifiers(t *testing.T) {
+	states := issueRecordStateMap([]IssueRecord{
+		{Identifier: "", Status: "Done"},
+		{Identifier: "BIG-PAR-399", Status: " In Progress "},
+		{Identifier: "BIG-PAR-400", Status: "Done. "},
+	})
+
+	if len(states) != 2 {
+		t.Fatalf("expected only non-blank identifiers, got %+v", states)
+	}
+	if states["BIG-PAR-399"] != "In Progress" {
+		t.Fatalf("expected trimmed in-progress status, got %+v", states)
+	}
+	if states["BIG-PAR-400"] != "Done." {
+		t.Fatalf("expected status trimming to preserve content, got %+v", states)
+	}
+}
+
+func TestEqualStringSlicesDetectsLengthAndOrderChanges(t *testing.T) {
+	if !equalStringSlices([]string{"BIG-PAR-399", "BIG-PAR-400"}, []string{"BIG-PAR-399", "BIG-PAR-400"}) {
+		t.Fatal("expected identical slices to compare equal")
+	}
+	if equalStringSlices([]string{"BIG-PAR-399"}, []string{"BIG-PAR-399", "BIG-PAR-400"}) {
+		t.Fatal("expected length mismatch to compare false")
+	}
+	if equalStringSlices([]string{"BIG-PAR-399", "BIG-PAR-400"}, []string{"BIG-PAR-400", "BIG-PAR-399"}) {
+		t.Fatal("expected order mismatch to compare false")
+	}
+}
+
+func TestParallelIssueQueueRefreshRecentBatchesFromStatesEmptyOrPunctuatedStates(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			Policy: struct {
+				TargetInProgress  int      `json:"target_in_progress"`
+				ActivateStateID   string   `json:"activate_state_id"`
+				ActivateStateName string   `json:"activate_state_name"`
+				RefillStates      []string `json:"refill_states"`
+				BlockedReason     string   `json:"blocked_reason,omitempty"`
+			}{
+				ActivateStateName: "In Progress",
+				RefillStates:      []string{"Todo", "Backlog"},
+			},
+			IssueOrder: []string{"BIG-PAR-399", "BIG-PAR-400", "BIG-PAR-401", "BIG-PAR-402"},
+		},
+	}
+
+	if queue.RefreshRecentBatchesFromStates(nil) {
+		t.Fatal("expected empty state map to report no refresh")
+	}
+
+	updated := queue.RefreshRecentBatchesFromStates(map[string]string{
+		"BIG-PAR-399": "In Progress",
+		"BIG-PAR-400": "Done.",
+		"BIG-PAR-401": " Backlog ",
+		"BIG-PAR-402": "",
+	})
+	if !updated {
+		t.Fatal("expected punctuated states to refresh recent batches")
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Active, []string{"BIG-PAR-399"}) {
+		t.Fatalf("unexpected active batch set: %+v", queue.payload.RecentBatches.Active)
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Completed, []string{"BIG-PAR-400"}) {
+		t.Fatalf("unexpected completed batch set: %+v", queue.payload.RecentBatches.Completed)
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Standby, []string{"BIG-PAR-401"}) {
+		t.Fatalf("unexpected standby batch set: %+v", queue.payload.RecentBatches.Standby)
+	}
+}
+
 func TestParallelIssueQueueSavePreservesBlockedReasonAndRecentBatches(t *testing.T) {
 	queuePath := filepath.Join(t.TempDir(), "queue.json")
 	queue := &ParallelIssueQueue{
