@@ -5210,6 +5210,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added focused bootstrap helper coverage in bigclaw-go/internal/bootstrap/bootstrap_test.go, pinning uniqueStrings, join, and a small pathExists sanity check so these shared helper contracts no longer depend on the heavier mirror/bootstrap integration tests. Validation: cd bigclaw-go && go test ./internal/bootstrap -> ok; cd bigclaw-go && go test ./internal/bootstrap -coverprofile=/tmp/bigpar378-bootstrap.cover && go tool cover -func=/tmp/bigpar378-bootstrap.cover | rg \"bootstrap.go:733|bootstrap.go:776|total:\" -> uniqueStrings 100.0%, join 100.0%, total 56.7%; bash scripts/ops/bigclawctl github-sync status --json -> local SHA fc90fa4383962e1ba3f4ca600fbafdf0424557c5 matches remote SHA fc90fa4383962e1ba3f4ca600fbafdf0424557c5 with status ok and synced true; git log -1 --stat -> captured for commit fc90fa4383962e1ba3f4ca600fbafdf0424557c5 with bootstrap tests and tracker files in the stat output. Commit SHA: fc90fa4383962e1ba3f4ca600fbafdf0424557c5. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T16:50:19Z"
+        }
+      ],
       "created_at": "2026-03-25T16:47:53Z",
       "description": "Add focused unit coverage for bigclaw-go/internal/bootstrap so uniqueStrings and join are pinned without depending on mirror/bootstrap integration flows.",
       "id": "big-par-378",
@@ -5221,9 +5228,9 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add bootstrap helper unit coverage",
-      "updated_at": "2026-03-25T16:48:01Z"
+      "updated_at": "2026-03-25T16:50:19Z"
     }
   ]
 }
