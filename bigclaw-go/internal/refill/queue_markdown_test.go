@@ -78,3 +78,44 @@ func TestQueueMarkdownHelperFunctions(t *testing.T) {
 		t.Fatalf("expected zero-limit head to return full slice copy, got %+v", got)
 	}
 }
+
+func TestParallelIssueQueueRenderMarkdownInfersRecentBatchesAndZeroTime(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			Policy: struct {
+				TargetInProgress  int      `json:"target_in_progress"`
+				ActivateStateID   string   `json:"activate_state_id"`
+				ActivateStateName string   `json:"activate_state_name"`
+				RefillStates      []string `json:"refill_states"`
+				BlockedReason     string   `json:"blocked_reason,omitempty"`
+			}{
+				TargetInProgress:  2,
+				ActivateStateName: "In Progress",
+				RefillStates:      []string{"Todo", "Backlog"},
+			},
+			IssueOrder: []string{"BIG-PAR-414", "BIG-PAR-415", "BIG-PAR-416"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-414", Title: "queue edge coverage", Status: "Done"},
+				{Identifier: "BIG-PAR-415", Title: "local tracker helper edge coverage", Status: "In Progress"},
+				{Identifier: "BIG-PAR-416", Status: "Todo"},
+			},
+		},
+	}
+
+	text := queue.RenderMarkdown(time.Time{})
+	if !strings.Contains(text, "Current repo tranche status as of ") {
+		t.Fatalf("expected generated date header in markdown, got %s", text)
+	}
+	if !strings.Contains(text, "`BIG-PAR-415` — local tracker helper edge coverage") {
+		t.Fatalf("expected inferred active slice in markdown, got %s", text)
+	}
+	if !strings.Contains(text, "`BIG-PAR-416`") {
+		t.Fatalf("expected inferred standby slice in markdown, got %s", text)
+	}
+	if !strings.Contains(text, "`BIG-PAR-414` — queue edge coverage") {
+		t.Fatalf("expected inferred completed slice in markdown, got %s", text)
+	}
+	if !strings.Contains(text, "`queue_runnable=2`") {
+		t.Fatalf("expected runnable count in markdown, got %s", text)
+	}
+}
