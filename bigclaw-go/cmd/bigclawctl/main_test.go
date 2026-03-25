@@ -362,6 +362,52 @@ func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testin
 	}
 }
 
+func TestRunGitHubSyncInstallJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
+	repoPath := filepath.Join(t.TempDir(), "repo->")
+	hooksPath := ".githooks->"
+	if err := os.MkdirAll(filepath.Join(repoPath, hooksPath), 0o755); err != nil {
+		t.Fatalf("mkdir hooks dir: %v", err)
+	}
+	if output, err := exec.Command("git", "init", "-b", "main", repoPath).CombinedOutput(); err != nil {
+		t.Fatalf("git init failed: %v (%s)", err, string(output))
+	}
+	hookFile := filepath.Join(repoPath, hooksPath, "post-commit")
+	if err := os.WriteFile(hookFile, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+		t.Fatalf("write hook file: %v", err)
+	}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runGitHubSync([]string{
+		"install",
+		"--repo", repoPath,
+		"--hooks-path", hooksPath,
+		"--json",
+	}); err != nil {
+		t.Fatalf("run github-sync install: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte(repoPath)) {
+		t.Fatalf("expected raw arrow token in github-sync repo path, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(filepath.Join(repoPath, hooksPath))) {
+		t.Fatalf("expected raw arrow token in github-sync hooks path, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`\u003e`)) {
+		t.Fatalf("expected no HTML escaping in github-sync JSON output, got %s", string(output))
+	}
+}
+
 func TestRunRefillOnceLinearBackendUsesConfiguredActivateStateName(t *testing.T) {
 	queuePath := filepath.Join(t.TempDir(), "queue.json")
 	markdownPath := filepath.Join(t.TempDir(), "queue.md")
