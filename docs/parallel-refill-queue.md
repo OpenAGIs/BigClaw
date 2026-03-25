@@ -47,11 +47,11 @@ longer waits on Linear to keep issue execution moving.
 
 ## Current batch
 
-- Current repo tranche status as of March 25, 2026:
-  - active slices: none
+- Current repo tranche status as of March 26, 2026:
+  - active slices: `BIG-PAR-404` — Add workspace validate JSON no-escape regression
   - standby slices: none
   - recently completed slices: `BIG-PAR-396` — Update existing local issue metadata during ensure; `BIG-PAR-397` — Update existing local issue metadata during refill seed; `BIG-PAR-398` — Ignore equivalent state spellings in local-issues set-state; `BIG-PAR-399` — Ignore equivalent state spellings in local issue store updates; `BIG-PAR-400` — Canonicalize equivalent state spellings when creating local issues; `BIG-PAR-401` — Canonicalize equivalent queue state spellings during refill seed; `BIG-PAR-402` — Disable HTML escaping in bigclawctl JSON output; `BIG-PAR-403` — Disable HTML escaping in direct bigclawctl JSON encoders
-  - queue status: `queue_runnable=0`, `target_in_progress=2`
+  - queue status: `queue_runnable=1`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
   - if `bigclawctl refill` reports `queue_drained: true`, the queue has no runnable identifiers left in `docs/parallel-refill-queue.json`
@@ -412,3 +412,4 @@ longer waits on Linear to keep issue execution moving.
 171. `BIG-PAR-401`
 172. `BIG-PAR-402`
 173. `BIG-PAR-403`
+174. `BIG-PAR-404`
