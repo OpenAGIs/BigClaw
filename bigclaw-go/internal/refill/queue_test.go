@@ -200,6 +200,92 @@ func TestQueueIdentifierHelpersNormalizeRemovalUniquenessAndOrder(t *testing.T) 
 	}
 }
 
+func TestQueueSelectionAndAccessorHelpers(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			Policy: struct {
+				TargetInProgress  int      `json:"target_in_progress"`
+				ActivateStateID   string   `json:"activate_state_id"`
+				ActivateStateName string   `json:"activate_state_name"`
+				RefillStates      []string `json:"refill_states"`
+				BlockedReason     string   `json:"blocked_reason,omitempty"`
+			}{
+				TargetInProgress:  2,
+				ActivateStateName: "In Progress",
+				RefillStates:      []string{"Todo", "Backlog"},
+			},
+			IssueOrder: []string{"BIG-PAR-403", "BIG-PAR-404", "BIG-PAR-405"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-403", Status: "Todo"},
+				{Identifier: "BIG-PAR-404", Status: "Backlog"},
+				{Identifier: "BIG-PAR-405", Status: "Done"},
+			},
+		},
+	}
+
+	if got := queue.IssueIdentifiers(); !equalStringSlices(got, []string{"BIG-PAR-403", "BIG-PAR-404", "BIG-PAR-405"}) {
+		t.Fatalf("unexpected IssueIdentifiers result: %+v", got)
+	}
+
+	active := SortedActive([]TrackedIssue{
+		{Identifier: "BIG-PAR-405", StateName: "Blocked"},
+		{Identifier: "BIG-PAR-404", StateName: "In Progress"},
+		{Identifier: "BIG-PAR-403", StateName: "In Progress"},
+	})
+	if !equalStringSlices(active, []string{"BIG-PAR-403", "BIG-PAR-404"}) {
+		t.Fatalf("unexpected SortedActive result: %+v", active)
+	}
+
+	candidates := queue.SelectCandidates(
+		map[string]struct{}{"BIG-PAR-404": {}},
+		map[string]string{
+			"BIG-PAR-403": " Todo ",
+			"BIG-PAR-404": "Backlog",
+			"BIG-PAR-405": "Done",
+		},
+		nil,
+	)
+	if !equalStringSlices(candidates, []string{"BIG-PAR-403"}) {
+		t.Fatalf("expected only remaining runnable candidate, got %+v", candidates)
+	}
+
+	candidates = queue.SelectCandidates(
+		map[string]struct{}{"BIG-PAR-403": {}},
+		map[string]string{
+			"BIG-PAR-403": "Todo",
+			"BIG-PAR-404": "Backlog",
+			"BIG-PAR-405": "Done",
+		},
+		nil,
+	)
+	if !equalStringSlices(candidates, []string{"BIG-PAR-404"}) {
+		t.Fatalf("expected active identifiers to be skipped from candidates, got %+v", candidates)
+	}
+
+	target := 3
+	candidates = queue.SelectCandidates(
+		map[string]struct{}{},
+		map[string]string{
+			"BIG-PAR-403": "Todo",
+			"BIG-PAR-404": "Backlog",
+			"BIG-PAR-405": "Done",
+		},
+		&target,
+	)
+	if !equalStringSlices(candidates, []string{"BIG-PAR-403", "BIG-PAR-404"}) {
+		t.Fatalf("expected override target to return two refill candidates, got %+v", candidates)
+	}
+
+	noneNeeded := queue.SelectCandidates(
+		map[string]struct{}{"BIG-PAR-403": {}, "BIG-PAR-404": {}},
+		map[string]string{"BIG-PAR-403": "Todo", "BIG-PAR-404": "Backlog"},
+		nil,
+	)
+	if len(noneNeeded) != 0 {
+		t.Fatalf("expected no candidates when target already met, got %+v", noneNeeded)
+	}
+}
+
 func TestParallelIssueQueueSavePreservesBlockedReasonAndRecentBatches(t *testing.T) {
 	queuePath := filepath.Join(t.TempDir(), "queue.json")
 	queue := &ParallelIssueQueue{

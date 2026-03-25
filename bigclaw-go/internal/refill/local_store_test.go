@@ -99,6 +99,134 @@ func TestLocalIssueScalarHelpersNormalizeTypes(t *testing.T) {
 	}
 }
 
+func TestLocalIssueStoreAccessorsAndCreateIssue(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-403",
+      "identifier": "BIG-PAR-403",
+      "title": "Accessor coverage",
+      "description": "  detail preserved  ",
+      "state": "In Progress",
+      "priority": 2,
+      "labels": [" refill ", "coverage"],
+      "assigned_to_worker": true,
+      "created_at": "2026-03-26T10:00:00Z",
+      "updated_at": "2026-03-26T10:10:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	issues := store.Issues()
+	if len(issues) != 1 {
+		t.Fatalf("expected one issue from Issues accessor, got %+v", issues)
+	}
+	if issues[0].Identifier != "BIG-PAR-403" || issues[0].Priority != 2 || !issues[0].AssignedToWorker {
+		t.Fatalf("unexpected Issues accessor payload: %+v", issues[0])
+	}
+	if len(issues[0].Labels) != 2 || issues[0].Labels[0] != "refill" || issues[0].Labels[1] != "coverage" {
+		t.Fatalf("expected normalized labels from Issues accessor, got %+v", issues[0].Labels)
+	}
+
+	found, ok := store.FindIssue("big-par-403")
+	if !ok {
+		t.Fatal("expected FindIssue to resolve identifier case-insensitively")
+	}
+	if found.ID != "big-par-403" || found.Title != "Accessor coverage" {
+		t.Fatalf("unexpected FindIssue result: %+v", found)
+	}
+	if _, ok := store.FindIssue("BIG-PAR-999"); ok {
+		t.Fatal("expected FindIssue miss for unknown reference")
+	}
+
+	createdAt := time.Date(2026, 3, 26, 11, 30, 45, 500_000_000, time.UTC)
+	created, err := store.CreateIssue(LocalIssueCreateParams{
+		Identifier:       "BIG-PAR-404",
+		Title:            "Create issue coverage",
+		Description:      "added by test",
+		State:            "",
+		Priority:         3,
+		Labels:           []string{"refill", "helpers"},
+		AssignedToWorker: true,
+		CreatedAt:        createdAt,
+	})
+	if err != nil {
+		t.Fatalf("create issue: %v", err)
+	}
+	if created.ID != "big-par-404" {
+		t.Fatalf("expected generated id from identifier, got %+v", created)
+	}
+	if created.State != "Todo" {
+		t.Fatalf("expected default Todo state, got %+v", created)
+	}
+	if created.CreatedAt != "2026-03-26T11:30:45Z" || created.UpdatedAt != "2026-03-26T11:30:45Z" {
+		t.Fatalf("expected truncated timestamps, got %+v", created)
+	}
+
+	reloaded, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("reload local issue store: %v", err)
+	}
+	createdFound, ok := reloaded.FindIssue("BIG-PAR-404")
+	if !ok {
+		t.Fatal("expected created issue to persist to store")
+	}
+	if createdFound.State != "Todo" || len(createdFound.Labels) != 2 || !createdFound.AssignedToWorker {
+		t.Fatalf("unexpected persisted created issue: %+v", createdFound)
+	}
+
+	if _, err := reloaded.CreateIssue(LocalIssueCreateParams{
+		Identifier: "BIG-PAR-404",
+		Title:      "Duplicate issue",
+	}); err == nil {
+		t.Fatal("expected duplicate identifier create to fail")
+	}
+
+	autoCreated, err := reloaded.CreateIssue(LocalIssueCreateParams{
+		ID:               "custom-big-par-405",
+		Identifier:       "BIG-PAR-405",
+		Title:            "Auto timestamp issue",
+		State:            "In Progress",
+		AssignedToWorker: false,
+	})
+	if err != nil {
+		t.Fatalf("create issue with auto timestamp: %v", err)
+	}
+	if autoCreated.ID != "custom-big-par-405" || autoCreated.State != "In Progress" {
+		t.Fatalf("expected explicit id and state to persist, got %+v", autoCreated)
+	}
+	if autoCreated.CreatedAt == "" || autoCreated.UpdatedAt == "" {
+		t.Fatalf("expected zero-time create to auto-populate timestamps, got %+v", autoCreated)
+	}
+}
+
+func TestLocalIssueStoreCreateIssueRequiresIdentifierAndTitle(t *testing.T) {
+	storePath := filepath.Join(t.TempDir(), "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{"issues":[]}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	store, err := LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+
+	if _, err := store.CreateIssue(LocalIssueCreateParams{Identifier: "   ", Title: "missing identifier"}); err == nil {
+		t.Fatal("expected missing identifier to fail")
+	}
+	if _, err := store.CreateIssue(LocalIssueCreateParams{Identifier: "BIG-PAR-406", Title: "   "}); err == nil {
+		t.Fatal("expected missing title to fail")
+	}
+}
+
 func TestLocalIssueStoreUpdateIssueStatePreservesExtraFields(t *testing.T) {
 	storePath := filepath.Join(t.TempDir(), "local-issues.json")
 	if err := os.WriteFile(storePath, []byte(`{
