@@ -1474,12 +1474,21 @@ func TestClawHostReportAndExpansionSurfacesCoexist(t *testing.T) {
 		Proxy struct {
 			ValidationLane string `json:"validation_lane"`
 		} `json:"clawhost_proxy_admin_validation"`
+		Recovery struct {
+			Status  string `json:"status"`
+			Summary struct {
+				Targets int `json:"targets"`
+			} `json:"summary"`
+		} `json:"clawhost_recovery_surface"`
 	}
 	if err := json.Unmarshal(debugResponse.Body.Bytes(), &debugDecoded); err != nil {
 		t.Fatalf("decode debug clawhost payloads: %v", err)
 	}
 	if debugDecoded.Fleet.ReportPath != clawHostFleetInventorySurfacePath || debugDecoded.Proxy.ValidationLane != "clawhost_proxy_admin_parallel_probe" {
 		t.Fatalf("unexpected debug clawhost payloads: %+v %+v", debugDecoded.Fleet, debugDecoded.Proxy)
+	}
+	if debugDecoded.Recovery.Status != "idle" || debugDecoded.Recovery.Summary.Targets != 0 {
+		t.Fatalf("expected idle debug clawhost recovery payload, got %+v", debugDecoded.Recovery)
 	}
 
 	centerResponse := httptest.NewRecorder()
@@ -1494,12 +1503,21 @@ func TestClawHostReportAndExpansionSurfacesCoexist(t *testing.T) {
 		Proxy struct {
 			ReportPath string `json:"report_path"`
 		} `json:"clawhost_proxy_admin_validation"`
+		Recovery struct {
+			Status  string `json:"status"`
+			Summary struct {
+				Targets int `json:"targets"`
+			} `json:"summary"`
+		} `json:"clawhost_recovery_surface"`
 	}
 	if err := json.Unmarshal(centerResponse.Body.Bytes(), &centerDecoded); err != nil {
 		t.Fatalf("decode control center clawhost payloads: %v", err)
 	}
 	if centerDecoded.Fleet.ReportPath != clawHostFleetInventorySurfacePath || centerDecoded.Proxy.ReportPath != clawHostProxyAdminValidationLanePath {
 		t.Fatalf("unexpected control center clawhost payloads: %+v %+v", centerDecoded.Fleet, centerDecoded.Proxy)
+	}
+	if centerDecoded.Recovery.Status != "idle" || centerDecoded.Recovery.Summary.Targets != 0 {
+		t.Fatalf("expected idle control center clawhost recovery payload, got %+v", centerDecoded.Recovery)
 	}
 
 	distributedResponse := httptest.NewRecorder()

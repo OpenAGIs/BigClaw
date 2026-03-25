@@ -4955,6 +4955,18 @@
       "state": "Done",
       "title": "Add ClawHost recovery endpoint contract regression coverage",
       "updated_at": "2026-03-25T21:25:13Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T21:28:17Z",
+      "description": "",
+      "id": "big-par-373",
+      "identifier": "BIG-PAR-373",
+      "labels": [],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add ClawHost recovery coexistence regression coverage",
+      "updated_at": "2026-03-25T21:28:30Z"
     }
   ]
 }
