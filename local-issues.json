@@ -5554,6 +5554,11 @@
           "author": "codex",
           "body": "What changed:\n- `bigclaw-go/cmd/bigclawctl/main.go` now reports `queue_status_synced` and `recent_batches_synced` from the final in-memory queue state after local `--apply --sync-queue-status` runs instead of leaving those flags stale after the queue has already been updated.\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now asserts that an apply run which writes queue metadata also reports both sync flags as `true` in the emitted JSON payload.\n- `docs/parallel-refill-queue.json` and `docs/parallel-refill-queue.md` now include `BIG-PAR-395` and reflect the synced queue state for this slice.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-395]`, `queue_status_synced=true`, `recent_batches_synced=true` before closeout)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `aae85243782ba786486b1c6628de9cfe710b4b86` matches remote SHA `aae85243782ba786486b1c6628de9cfe710b4b86` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `aae85243782ba786486b1c6628de9cfe710b4b86`\n- `git log -1 --stat` -> captured for commit `aae85243782ba786486b1c6628de9cfe710b4b86`\n\nCommit SHA: `aae85243782ba786486b1c6628de9cfe710b4b86`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/192",
           "created_at": "2026-03-25T17:45:34Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout on March 26, 2026: PR `#192` (`BIG-PAR-395: report final synced refill queue state after apply`) merged into `main` at `2026-03-25T17:47:51Z` with merge commit `f86f3543cc49173a461724baa9374b9e54a1ab62`. The local refill queue remains drained after closing this slice.\n\nValidation:\n- `gh pr view 192 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` with merge commit `f86f3543cc49173a461724baa9374b9e54a1ab62` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `6984df2fd4214ee2c4c898f5a99b9363030281fc` matches remote SHA `6984df2fd4214ee2c4c898f5a99b9363030281fc` with `status: ok` and `synced: true`\n\nCommit SHA: `6984df2fd4214ee2c4c898f5a99b9363030281fc`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/192",
+          "created_at": "2026-03-25T17:48:15Z"
         }
       ],
       "created_at": "2026-03-25T17:41:38Z",
@@ -5569,7 +5574,31 @@
       "priority": 3,
       "state": "Done",
       "title": "Report final synced refill queue state after apply",
-      "updated_at": "2026-03-25T17:45:34Z"
+      "updated_at": "2026-03-25T17:48:15Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/internal/refill/local_store.go` now supports explicit in-place metadata updates for existing local issues, including title, description, priority, labels, and `assigned_to_worker`, while preserving unchanged fields.\n- `bigclaw-go/cmd/bigclawctl/main.go` now uses `flags.Visit` in `local-issues ensure` so only explicitly provided metadata flags are applied to existing issues before optional state transitions.\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now covers updating an existing placeholder issue record with explicit metadata flags.\n- `local-issues.json`, `docs/parallel-refill-queue.json`, and `docs/parallel-refill-queue.md` now record and surface `BIG-PAR-396` as the active automation slice.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl local-issues ensure --repo bigclaw-go --local-issues ../local-issues.json --identifier BIG-PAR-396 --title \"Update existing local issue metadata during ensure\" --description \"Make bigclawctl local-issues ensure apply explicitly provided title, description, labels, priority, and assigned-to-worker fields when the target issue already exists so seeded placeholder records can be reconciled without manual JSON edits.\" --labels \"parallel,tooling,refill,go-mainline\" --priority 3 --assigned-to-worker=true --state \"In Progress\" --set-state-if-exists --json` -> ok (`action=updated`)\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-396]`, `queue_status_synced=true`, `recent_batches_synced=true` before closeout)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `bfe97b997472ac630ca108188aa7d837124448c9` matches remote SHA `bfe97b997472ac630ca108188aa7d837124448c9` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `bfe97b997472ac630ca108188aa7d837124448c9`\n- `git log -1 --stat` -> captured for commit `bfe97b997472ac630ca108188aa7d837124448c9`\n\nCommit SHA: `bfe97b997472ac630ca108188aa7d837124448c9`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/193",
+          "created_at": "2026-03-25T17:55:24Z"
+        }
+      ],
+      "created_at": "2026-03-25T17:51:30Z",
+      "description": "Make bigclawctl local-issues ensure apply explicitly provided title, description, labels, priority, and assigned-to-worker fields when the target issue already exists so seeded placeholder records can be reconciled without manual JSON edits.",
+      "id": "big-par-396",
+      "identifier": "BIG-PAR-396",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Update existing local issue metadata during ensure",
+      "updated_at": "2026-03-25T17:55:24Z"
     }
   ]
 }
