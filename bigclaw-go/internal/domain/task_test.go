@@ -162,6 +162,51 @@ func TestTaskJSONMarshalIncludesOptionalExecutionFields(t *testing.T) {
 	}
 }
 
+func TestTaskJSONUnmarshalRejectsInvalidJSON(t *testing.T) {
+	var task Task
+	if err := json.Unmarshal([]byte(`{"task_id":"BIG-ERR","title":"Bad budget","budget":"oops"}`), &task); err == nil {
+		t.Fatal("expected invalid task payload to fail")
+	}
+}
+
+func TestTaskJSONUnmarshalPrefersCanonicalFieldsAndNormalizesCollections(t *testing.T) {
+	payload := []byte(`{
+		"id":"BIG-406",
+		"task_id":"LEGACY-406",
+		"source":"tracker",
+		"title":"Canonical task id",
+		"budget_cents":4321,
+		"budget":99.99,
+		"labels":null,
+		"required_tools":null,
+		"acceptance_criteria":null,
+		"validation_plan":null
+	}`)
+
+	var task Task
+	if err := json.Unmarshal(payload, &task); err != nil {
+		t.Fatalf("unmarshal task: %v", err)
+	}
+	if task.ID != "BIG-406" {
+		t.Fatalf("expected canonical id to win over task_id, got %+v", task)
+	}
+	if task.BudgetCents != 4321 {
+		t.Fatalf("expected budget_cents to win over legacy budget, got %+v", task)
+	}
+	if task.Labels == nil || len(task.Labels) != 0 {
+		t.Fatalf("expected labels normalized to empty slice, got %#v", task.Labels)
+	}
+	if task.RequiredTools == nil || len(task.RequiredTools) != 0 {
+		t.Fatalf("expected required_tools normalized to empty slice, got %#v", task.RequiredTools)
+	}
+	if task.AcceptanceCriteria == nil || len(task.AcceptanceCriteria) != 0 {
+		t.Fatalf("expected acceptance_criteria normalized to empty slice, got %#v", task.AcceptanceCriteria)
+	}
+	if task.ValidationPlan == nil || len(task.ValidationPlan) != 0 {
+		t.Fatalf("expected validation_plan normalized to empty slice, got %#v", task.ValidationPlan)
+	}
+}
+
 func TestTaskJSONNormalizesLegacyTaskStates(t *testing.T) {
 	tests := map[string]TaskState{
 		"Todo":        TaskQueued,
