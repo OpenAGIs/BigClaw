@@ -177,10 +177,11 @@
       "BIG-PAR-386",
       "BIG-PAR-385",
       "BIG-PAR-387",
-      "BIG-PAR-388"
+      "BIG-PAR-388",
+      "BIG-PAR-390"
     ],
     "active": [
-      "BIG-PAR-390"
+      "BIG-PAR-391"
     ],
     "standby": []
   },
@@ -345,7 +346,8 @@
     "BIG-PAR-385",
     "BIG-PAR-387",
     "BIG-PAR-388",
-    "BIG-PAR-390"
+    "BIG-PAR-390",
+    "BIG-PAR-391"
   ],
   "issues": [
     {
@@ -1341,6 +1343,12 @@
     {
       "identifier": "BIG-PAR-390",
       "title": "Normalize local store state updates",
+      "track": "Automation",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-391",
+      "title": "Parameterize refill active-state helpers",
       "track": "Automation",
       "status": "In Progress"
     }

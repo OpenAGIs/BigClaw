@@ -5380,6 +5380,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/cmd/bigclawctl/main.go` now uses the queue policy `activate_state_name` when fetching remote issue states and when emitting the `active_in_progress` payload, instead of assuming `In Progress`.\n- `bigclaw-go/cmd/bigclawctl/main_test.go` now covers a Linear-backed queue whose active state is `Queued for Review`, proving both the GraphQL state filter and the reported active slice list honor the configured state.\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-389 BIG-PAR-390]`, `queue_status_synced=true`)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `1f12f4ff7fe38680ce0f8480b261f59af47d506b` matches remote SHA `1f12f4ff7fe38680ce0f8480b261f59af47d506b` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `1f12f4ff7fe38680ce0f8480b261f59af47d506b`\n- `git log -1 --stat` -> captured for commit `1f12f4ff7fe38680ce0f8480b261f59af47d506b`\n\nCommit SHA: `1f12f4ff7fe38680ce0f8480b261f59af47d506b`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
+          "created_at": "2026-03-25T17:11:42Z"
+        }
+      ],
       "created_at": "2026-03-25T17:05:51Z",
       "description": "Make remote refill runs use the queue policy activate_state_name instead of a hardcoded In Progress fetch filter so nonstandard active-state names are promoted and reported correctly.",
       "id": "big-par-389",
@@ -5391,12 +5398,19 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Honor configured activate state in refill fetches",
-      "updated_at": "2026-03-25T17:05:51Z"
+      "updated_at": "2026-03-25T17:11:53Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/internal/refill/local_store.go` now trims incoming state names in `LocalIssueStore.UpdateIssueState`, defaults blank or whitespace-only input to `Todo`, and preserves the existing timestamp refresh behavior.\n- `bigclaw-go/internal/refill/local_store_test.go` now covers both trimmed state writes and blank-state fallback through the persisted local tracker JSON.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill` -> ok\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `1f12f4ff7fe38680ce0f8480b261f59af47d506b` matches remote SHA `1f12f4ff7fe38680ce0f8480b261f59af47d506b` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> branch head captured after follow-on BIG-PAR-389 commit `1f12f4ff7fe38680ce0f8480b261f59af47d506b`; implementation slice commit is `e64febf11df0164323c3aed6d5a606668ed157ad`\n\nCommit SHA: `e64febf11df0164323c3aed6d5a606668ed157ad`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
+          "created_at": "2026-03-25T17:11:42Z"
+        }
+      ],
       "created_at": "2026-03-25T17:05:51Z",
       "description": "Make LocalIssueStore.UpdateIssueState trim and default incoming state names so direct local tracker writes stay consistent with CLI normalization and do not persist blank or whitespace-only states.",
       "id": "big-par-390",
@@ -5408,9 +5422,43 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Normalize local store state updates",
-      "updated_at": "2026-03-25T17:05:51Z"
+      "updated_at": "2026-03-25T17:11:53Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T17:12:44Z",
+      "description": "Make refill markdown guidance and status prose render the configured activate_state_name instead of hardcoded In Progress text so nonstandard active states are documented accurately.",
+      "id": "big-par-392",
+      "identifier": "BIG-PAR-392",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Render queue markdown with configured active state",
+      "updated_at": "2026-03-25T17:12:44Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T17:12:44Z",
+      "description": "Remove the remaining hardcoded In Progress assumption from refill active-state helper logic so shared package consumers can honor queue-specific activate_state_name values.",
+      "id": "big-par-391",
+      "identifier": "BIG-PAR-391",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Parameterize refill active-state helpers",
+      "updated_at": "2026-03-25T17:12:44Z"
     }
   ]
 }

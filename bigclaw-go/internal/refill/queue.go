@@ -511,10 +511,10 @@ func IssueStateMap(issues []TrackedIssue) map[string]string {
 	return result
 }
 
-func SortedActive(issues []TrackedIssue) []string {
+func SortedActive(issues []TrackedIssue, activeStateName string) []string {
 	active := []string{}
 	for _, issue := range issues {
-		if NormalizeStateName(issue.StateName) == NormalizeStateName("In Progress") {
+		if NormalizeStateName(issue.StateName) == NormalizeStateName(activeStateName) {
 			active = append(active, issue.Identifier)
 		}
 	}
