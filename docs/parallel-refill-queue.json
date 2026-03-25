@@ -176,11 +176,10 @@
       "BIG-PAR-375",
       "BIG-PAR-376",
       "BIG-PAR-377",
-      "BIG-PAR-378"
-    ],
-    "active": [
+      "BIG-PAR-378",
       "BIG-PAR-379"
     ],
+    "active": [],
     "standby": []
   },
   "issue_order": [
@@ -1334,7 +1333,7 @@
       "identifier": "BIG-PAR-379",
       "title": "Add bootstrap joinLines helper coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     }
   ]
 }
