@@ -27,6 +27,26 @@ class CacheBootstrapState:
 
 
 @dataclass
+class SharedBootstrapSnapshot:
+    repo_url: str
+    repo_locator: str
+    default_branch: str
+    cache_root: str
+    cache_key: str
+    mirror_path: str
+    seed_path: str
+    mirror_created: bool = False
+    seed_created: bool = False
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "SharedBootstrapSnapshot":
+        return cls(**payload)
+
+
+@dataclass
 class WorkspaceBootstrapStatus:
     workspace: str
     branch: str
@@ -40,6 +60,7 @@ class WorkspaceBootstrapStatus:
     mirror_created: bool = False
     seed_created: bool = False
     workspace_mode: str = "worktree_created"
+    snapshot_reused: bool = False
     removed: bool = False
 
     def to_dict(self) -> dict[str, Any]:
@@ -51,6 +72,24 @@ class CommandResult:
     stdout: str
     stderr: str
     returncode: int
+
+
+@dataclass
+class WorkspacePrewarmStatus:
+    snapshot: SharedBootstrapSnapshot
+    workspaces: list[WorkspaceBootstrapStatus]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "snapshot": self.snapshot.to_dict(),
+            "workspaces": [workspace.to_dict() for workspace in self.workspaces],
+            "summary": {
+                "workspace_count": len(self.workspaces),
+                "snapshot_reused_for_all": all(workspace.snapshot_reused for workspace in self.workspaces),
+                "cache_reused_after_first": all(workspace.cache_reused for workspace in self.workspaces[1:]),
+                "clone_suppressed_after_first": all(workspace.clone_suppressed for workspace in self.workspaces[1:]),
+            },
+        }
 
 
 CACHE_REMOTE = "cache"
@@ -171,6 +210,52 @@ def _cache_state(
     )
 
 
+def _snapshot_from_cache_state(
+    repo_url: str,
+    default_branch: str,
+    cache_state: CacheBootstrapState,
+) -> SharedBootstrapSnapshot:
+    return SharedBootstrapSnapshot(
+        repo_url=repo_url,
+        repo_locator=normalize_repo_locator(repo_url),
+        default_branch=default_branch,
+        cache_root=cache_state.cache_root,
+        cache_key=cache_state.cache_key,
+        mirror_path=cache_state.mirror_path,
+        seed_path=cache_state.seed_path,
+        mirror_created=cache_state.mirror_created,
+        seed_created=cache_state.seed_created,
+    )
+
+
+def _cache_state_from_snapshot(
+    snapshot: SharedBootstrapSnapshot,
+    *,
+    mirror_created: bool = False,
+    seed_created: bool = False,
+) -> CacheBootstrapState:
+    return CacheBootstrapState(
+        cache_root=snapshot.cache_root,
+        cache_key=snapshot.cache_key,
+        mirror_path=snapshot.mirror_path,
+        seed_path=snapshot.seed_path,
+        mirror_created=mirror_created,
+        seed_created=seed_created,
+    )
+
+
+def _coerce_snapshot(shared_snapshot: SharedBootstrapSnapshot | dict[str, Any]) -> SharedBootstrapSnapshot:
+    if isinstance(shared_snapshot, SharedBootstrapSnapshot):
+        return shared_snapshot
+    return SharedBootstrapSnapshot.from_dict(shared_snapshot)
+
+
+def _snapshot_ready(snapshot: SharedBootstrapSnapshot) -> bool:
+    mirror_path = Path(snapshot.mirror_path)
+    seed_path = Path(snapshot.seed_path)
+    return (mirror_path / "HEAD").exists() and (seed_path / ".git").exists()
+
+
 def ensure_mirror(
     repo_url: str,
     cache_root: str | Path | None = None,
@@ -245,6 +330,23 @@ def ensure_seed(
     )
 
 
+def prepare_shared_snapshot(
+    repo_url: str,
+    default_branch: str = "main",
+    cache_root: str | Path | None = None,
+    cache_base: str | Path | None = None,
+    cache_key: str | None = None,
+) -> SharedBootstrapSnapshot:
+    cache_state = ensure_seed(
+        repo_url,
+        default_branch,
+        cache_root=cache_root,
+        cache_base=cache_base,
+        cache_key=cache_key,
+    )
+    return _snapshot_from_cache_state(repo_url, default_branch, cache_state)
+
+
 def configure_seed_remotes(seed_path: Path, repo_url: str, mirror_path: Path) -> None:
     remotes = set(_require_git(seed_path, "remote").splitlines())
 
@@ -276,15 +378,36 @@ def bootstrap_workspace(
     cache_root: str | Path | None = None,
     cache_base: str | Path | None = None,
     cache_key: str | None = None,
+    shared_snapshot: SharedBootstrapSnapshot | dict[str, Any] | None = None,
 ) -> WorkspaceBootstrapStatus:
     workspace_path = Path(workspace).expanduser().resolve()
-    cache_state = ensure_seed(
-        repo_url,
-        default_branch,
-        cache_root=cache_root,
-        cache_base=cache_base,
-        cache_key=cache_key,
-    )
+    snapshot_reused = shared_snapshot is not None
+    if shared_snapshot is None:
+        cache_state = ensure_seed(
+            repo_url,
+            default_branch,
+            cache_root=cache_root,
+            cache_base=cache_base,
+            cache_key=cache_key,
+        )
+    else:
+        snapshot = _coerce_snapshot(shared_snapshot)
+        if not _snapshot_ready(snapshot):
+            snapshot = prepare_shared_snapshot(
+                snapshot.repo_url,
+                default_branch=snapshot.default_branch,
+                cache_root=snapshot.cache_root,
+                cache_key=snapshot.cache_key,
+            )
+            cache_state = _cache_state_from_snapshot(
+                snapshot,
+                mirror_created=snapshot.mirror_created,
+                seed_created=snapshot.seed_created,
+            )
+        else:
+            cache_state = _cache_state_from_snapshot(snapshot)
+        repo_url = snapshot.repo_url
+        default_branch = snapshot.default_branch
     seed_path = Path(cache_state.seed_path)
     branch = bootstrap_branch_name(issue_identifier or workspace_path.name)
     cache_reused = not cache_state.mirror_created and not cache_state.seed_created
@@ -306,6 +429,7 @@ def bootstrap_workspace(
             mirror_created=cache_state.mirror_created,
             seed_created=cache_state.seed_created,
             workspace_mode="workspace_reused",
+            snapshot_reused=snapshot_reused,
         )
 
     parent = workspace_path.parent
@@ -329,7 +453,49 @@ def bootstrap_workspace(
         mirror_created=cache_state.mirror_created,
         seed_created=cache_state.seed_created,
         workspace_mode="worktree_created",
+        snapshot_reused=snapshot_reused,
     )
+
+
+def prewarm_workspaces(
+    workspaces: Sequence[tuple[str | Path, str | None]],
+    repo_url: str,
+    default_branch: str = "main",
+    cache_root: str | Path | None = None,
+    cache_base: str | Path | None = None,
+    cache_key: str | None = None,
+    shared_snapshot: SharedBootstrapSnapshot | dict[str, Any] | None = None,
+) -> WorkspacePrewarmStatus:
+    snapshot = (
+        _coerce_snapshot(shared_snapshot)
+        if shared_snapshot is not None
+        else prepare_shared_snapshot(
+            repo_url,
+            default_branch=default_branch,
+            cache_root=cache_root,
+            cache_base=cache_base,
+            cache_key=cache_key,
+        )
+    )
+    if not _snapshot_ready(snapshot):
+        snapshot = prepare_shared_snapshot(
+            snapshot.repo_url,
+            default_branch=snapshot.default_branch,
+            cache_root=snapshot.cache_root,
+            cache_key=snapshot.cache_key,
+        )
+
+    results = [
+        bootstrap_workspace(
+            workspace=workspace,
+            issue_identifier=issue_identifier,
+            repo_url=snapshot.repo_url,
+            default_branch=snapshot.default_branch,
+            shared_snapshot=snapshot,
+        )
+        for workspace, issue_identifier in workspaces
+    ]
+    return WorkspacePrewarmStatus(snapshot=snapshot, workspaces=results)
 
 
 def cleanup_workspace(

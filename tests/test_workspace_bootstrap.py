@@ -5,6 +5,8 @@ from bigclaw.workspace_bootstrap import (
     bootstrap_workspace,
     cache_root_for_repo,
     cleanup_workspace,
+    prewarm_workspaces,
+    prepare_shared_snapshot,
     repo_cache_key,
 )
 from bigclaw.workspace_bootstrap_validation import build_validation_report
@@ -109,6 +111,19 @@ def test_second_workspace_reuses_warm_cache_without_full_clone(tmp_path: Path) -
     assert second.workspace_mode == "worktree_created"
 
 
+def test_prepare_shared_snapshot_serializes_reusable_cache_configuration(tmp_path: Path) -> None:
+    remote = init_remote_with_main(tmp_path)
+    snapshot = prepare_shared_snapshot(str(remote), cache_base=tmp_path / "repos")
+    restored = type(snapshot).from_dict(snapshot.to_dict())
+
+    assert restored.repo_url == str(remote)
+    assert restored.repo_locator.endswith("remote")
+    assert restored.default_branch == "main"
+    assert Path(restored.cache_root) == cache_root_for_repo(str(remote), cache_base=tmp_path / "repos")
+    assert Path(restored.mirror_path).joinpath("HEAD").exists()
+    assert Path(restored.seed_path).joinpath(".git").exists()
+
+
 def test_bootstrap_workspace_reuses_existing_issue_worktree(tmp_path: Path) -> None:
     remote = init_remote_with_main(tmp_path)
     cache_base = tmp_path / "repos"
@@ -123,6 +138,33 @@ def test_bootstrap_workspace_reuses_existing_issue_worktree(tmp_path: Path) -> N
     assert second.cache_reused is True
     assert second.clone_suppressed is True
     assert second.branch == "symphony/OPE-324"
+
+
+def test_bootstrap_workspace_can_reuse_prepared_snapshot(tmp_path: Path) -> None:
+    remote = init_remote_with_main(tmp_path)
+    snapshot = prepare_shared_snapshot(str(remote), cache_base=tmp_path / "repos")
+
+    first = bootstrap_workspace(
+        tmp_path / "workspaces" / "OPE-324A",
+        "OPE-324A",
+        str(remote),
+        shared_snapshot=snapshot.to_dict(),
+    )
+    second = bootstrap_workspace(
+        tmp_path / "workspaces" / "OPE-324B",
+        "OPE-324B",
+        str(remote),
+        shared_snapshot=snapshot,
+    )
+
+    assert first.snapshot_reused is True
+    assert second.snapshot_reused is True
+    assert first.mirror_created is False
+    assert first.seed_created is False
+    assert first.cache_reused is True
+    assert first.clone_suppressed is True
+    assert second.cache_reused is True
+    assert second.clone_suppressed is True
 
 
 def test_cleanup_workspace_preserves_shared_cache_for_future_reuse(tmp_path: Path) -> None:
@@ -168,6 +210,27 @@ def test_bootstrap_recovers_from_stale_seed_directory_without_remote_reclone(tmp
     assert (cache_root / "seed" / ".git").exists()
 
 
+def test_prewarm_workspaces_prepares_multiple_worktrees_from_one_snapshot(tmp_path: Path) -> None:
+    remote = init_remote_with_main(tmp_path)
+    workspaces = [
+        (tmp_path / "workspaces" / "OPE-401", "OPE-401"),
+        (tmp_path / "workspaces" / "OPE-402", "OPE-402"),
+        (tmp_path / "workspaces" / "OPE-403", "OPE-403"),
+    ]
+
+    prewarm = prewarm_workspaces(workspaces, str(remote), cache_base=tmp_path / "repos")
+
+    assert prewarm.snapshot.mirror_created is True
+    assert prewarm.snapshot.seed_created is True
+    assert prewarm.to_dict()["summary"]["snapshot_reused_for_all"] is True
+    assert len(prewarm.workspaces) == 3
+    assert all(status.snapshot_reused for status in prewarm.workspaces)
+    assert all(status.workspace_mode == "worktree_created" for status in prewarm.workspaces)
+    assert all(status.cache_root == prewarm.workspaces[0].cache_root for status in prewarm.workspaces)
+    assert prewarm.workspaces[1].cache_reused is True
+    assert prewarm.workspaces[2].clone_suppressed is True
+
+
 def test_cleanup_workspace_prunes_worktree_and_bootstrap_branch(tmp_path: Path) -> None:
     remote = init_remote_with_main(tmp_path)
     cache_base = tmp_path / "repos"
@@ -199,6 +262,8 @@ def test_validation_report_covers_three_workspaces_with_one_cache(tmp_path: Path
     assert report["summary"]["single_seed_reused"] is True
     assert report["summary"]["mirror_creations"] == 1
     assert report["summary"]["seed_creations"] == 1
+    assert report["summary"]["shared_snapshot_reused_for_all"] is True
     assert report["summary"]["clone_suppressed_after_first"] is True
     assert report["summary"]["cache_reused_after_first"] is True
     assert report["summary"]["cleanup_preserved_cache"] is True
+    assert report["shared_snapshot"]["default_branch"] == "main"

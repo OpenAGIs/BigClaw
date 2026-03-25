@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any, Sequence
 
-from bigclaw.workspace_bootstrap import bootstrap_workspace, cleanup_workspace
+from bigclaw.workspace_bootstrap import cleanup_workspace, prewarm_workspaces
 
 
 def build_validation_report(
@@ -21,19 +21,18 @@ def build_validation_report(
     workspace_root_path = Path(workspace_root).expanduser().resolve()
     workspace_root_path.mkdir(parents=True, exist_ok=True)
 
-    bootstrap_results = []
-    for issue_identifier in issue_identifiers:
-        workspace_path = workspace_root_path / issue_identifier
-        status = bootstrap_workspace(
-            workspace=workspace_path,
-            issue_identifier=issue_identifier,
-            repo_url=repo_url,
-            default_branch=default_branch,
-            cache_root=cache_root,
-            cache_base=cache_base,
-            cache_key=cache_key,
-        )
-        bootstrap_results.append(status.to_dict())
+    prewarm = prewarm_workspaces(
+        [
+            (workspace_root_path / issue_identifier, issue_identifier)
+            for issue_identifier in issue_identifiers
+        ],
+        repo_url=repo_url,
+        default_branch=default_branch,
+        cache_root=cache_root,
+        cache_base=cache_base,
+        cache_key=cache_key,
+    )
+    bootstrap_results = [status.to_dict() for status in prewarm.workspaces]
 
     cache_roots = sorted({result["cache_root"] for result in bootstrap_results})
     mirror_paths = sorted({result["mirror_path"] for result in bootstrap_results})
@@ -59,6 +58,7 @@ def build_validation_report(
         "default_branch": default_branch,
         "workspace_root": str(workspace_root_path),
         "issue_identifiers": list(issue_identifiers),
+        "shared_snapshot": prewarm.snapshot.to_dict(),
         "bootstrap_results": bootstrap_results,
         "cleanup_results": cleanup_results,
         "summary": {
@@ -69,8 +69,11 @@ def build_validation_report(
             "single_cache_root_reused": len(cache_roots) == 1,
             "single_mirror_reused": len(mirror_paths) == 1,
             "single_seed_reused": len(seed_paths) == 1,
-            "mirror_creations": sum(1 for result in bootstrap_results if result["mirror_created"]),
-            "seed_creations": sum(1 for result in bootstrap_results if result["seed_created"]),
+            "mirror_creations": int(prewarm.snapshot.mirror_created)
+            + sum(1 for result in bootstrap_results if result["mirror_created"]),
+            "seed_creations": int(prewarm.snapshot.seed_created)
+            + sum(1 for result in bootstrap_results if result["seed_created"]),
+            "shared_snapshot_reused_for_all": all(result["snapshot_reused"] for result in bootstrap_results),
             "clone_suppressed_after_first": all(result["clone_suppressed"] for result in bootstrap_results[1:]),
             "cache_reused_after_first": all(result["cache_reused"] for result in bootstrap_results[1:]),
             "all_workspaces_created_via_worktree": all(
@@ -94,6 +97,7 @@ def render_validation_markdown(report: dict[str, Any]) -> str:
         f"- Workspace root: `{report['workspace_root']}`",
         f"- Workspaces: `{summary['workspace_count']}`",
         f"- Single cache root reused: `{summary['single_cache_root_reused']}`",
+        f"- Shared snapshot reused for all: `{summary['shared_snapshot_reused_for_all']}`",
         f"- Mirror creations: `{summary['mirror_creations']}`",
         f"- Seed creations: `{summary['seed_creations']}`",
         f"- Clone suppressed after first workspace: `{summary['clone_suppressed_after_first']}`",
@@ -110,6 +114,7 @@ def render_validation_markdown(report: dict[str, Any]) -> str:
                 f"  - `cache_root={result['cache_root']}`",
                 f"  - `cache_key={result['cache_key']}`",
                 f"  - `workspace_mode={result['workspace_mode']}`",
+                f"  - `snapshot_reused={result['snapshot_reused']}`",
                 f"  - `cache_reused={result['cache_reused']}`",
                 f"  - `clone_suppressed={result['clone_suppressed']}`",
                 f"  - `mirror_created={result['mirror_created']}`",
