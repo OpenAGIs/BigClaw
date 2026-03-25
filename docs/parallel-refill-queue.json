@@ -178,10 +178,11 @@
       "BIG-PAR-377",
       "BIG-PAR-378",
       "BIG-PAR-379",
-      "BIG-PAR-380"
+      "BIG-PAR-380",
+      "BIG-PAR-381"
     ],
     "active": [
-      "BIG-PAR-381"
+      "BIG-PAR-382"
     ],
     "standby": []
   },
@@ -347,7 +348,8 @@
     "BIG-PAR-378",
     "BIG-PAR-379",
     "BIG-PAR-380",
-    "BIG-PAR-381"
+    "BIG-PAR-381",
+    "BIG-PAR-382"
   ],
   "issues": [
     {
@@ -1349,6 +1351,12 @@
     {
       "identifier": "BIG-PAR-381",
       "title": "Add control snapshot helper coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-382",
+      "title": "Add broker stub trace/task helper coverage",
       "track": "Go Mainline Follow-ups",
       "status": "In Progress"
     }

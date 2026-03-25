@@ -5282,6 +5282,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Added focused control helper coverage in bigclaw-go/internal/control/controller_test.go, pinning Snapshot and TakeoverStatus without expanding into higher-level API or worker flows. Validation: cd bigclaw-go && go test ./internal/control -> ok; cd bigclaw-go && go test ./internal/control -coverprofile=/tmp/bigpar381-control.cover && go tool cover -func=/tmp/bigpar381-control.cover | rg \"controller.go:79|controller.go:178|total:\" -> Snapshot 100.0%, TakeoverStatus 100.0%, total 87.6%; bash scripts/ops/bigclawctl github-sync status --json -> local SHA 2d7e719e94a6d80e1cc910fbccc1018cf518e82f matches remote SHA 2d7e719e94a6d80e1cc910fbccc1018cf518e82f with status ok and synced true; git log -1 --stat -> captured for commit 2d7e719e94a6d80e1cc910fbccc1018cf518e82f with control tests and tracker files in the stat output. Commit SHA: 2d7e719e94a6d80e1cc910fbccc1018cf518e82f. PR URL: https://github.com/OpenAGIs/BigClaw/pull/188.",
+          "created_at": "2026-03-25T17:06:08Z"
+        }
+      ],
       "created_at": "2026-03-25T17:03:41Z",
       "description": "Add focused unit coverage for bigclaw-go/internal/control/controller.go so Snapshot and TakeoverStatus are pinned without depending on higher-level API or worker flows.",
       "id": "big-par-381",
@@ -5293,9 +5300,26 @@
         "parallel"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Add control snapshot helper coverage",
-      "updated_at": "2026-03-25T17:03:54Z"
+      "updated_at": "2026-03-25T17:06:08Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T17:08:06Z",
+      "description": "Add focused unit coverage for bigclaw-go/internal/events/broker_stub_log.go so task-after, trace, trace-after, and path helpers are pinned without pulling in HTTP or durable backend flows.",
+      "id": "big-par-382",
+      "identifier": "BIG-PAR-382",
+      "labels": [
+        "go",
+        "events",
+        "test",
+        "parallel"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Add broker stub trace/task helper coverage",
+      "updated_at": "2026-03-25T17:08:26Z"
     }
   ]
 }
