@@ -206,10 +206,10 @@
       "BIG-PAR-405",
       "BIG-PAR-406",
       "BIG-PAR-407",
-      "BIG-PAR-408"
+      "BIG-PAR-408",
+      "BIG-PAR-409"
     ],
     "active": [
-      "BIG-PAR-409",
       "BIG-PAR-410"
     ],
     "standby": []
@@ -1576,7 +1576,7 @@
       "identifier": "BIG-PAR-409",
       "title": "Add local tracker save/write-path coverage",
       "track": "Go Mainline Follow-ups",
-      "status": "In Progress"
+      "status": "Done"
     },
     {
       "identifier": "BIG-PAR-410",
