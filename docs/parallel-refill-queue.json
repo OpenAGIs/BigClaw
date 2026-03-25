@@ -160,7 +160,22 @@
       "BIG-PAR-367",
       "BIG-PAR-369",
       "BIG-PAR-370",
-      "BIG-PAR-371"
+      "BIG-PAR-371",
+      "BIG-PAR-372",
+      "BIG-PAR-373",
+      "BIG-PAR-374",
+      "BIG-PAR-375",
+      "BIG-PAR-376",
+      "BIG-PAR-377",
+      "BIG-PAR-378",
+      "BIG-PAR-379",
+      "BIG-PAR-380",
+      "BIG-PAR-381",
+      "BIG-PAR-382",
+      "BIG-PAR-383",
+      "BIG-PAR-384",
+      "BIG-PAR-386",
+      "BIG-PAR-385"
     ],
     "active": [],
     "standby": []
@@ -308,7 +323,22 @@
     "BIG-PAR-367",
     "BIG-PAR-369",
     "BIG-PAR-370",
-    "BIG-PAR-371"
+    "BIG-PAR-371",
+    "BIG-PAR-372",
+    "BIG-PAR-373",
+    "BIG-PAR-374",
+    "BIG-PAR-375",
+    "BIG-PAR-376",
+    "BIG-PAR-377",
+    "BIG-PAR-378",
+    "BIG-PAR-379",
+    "BIG-PAR-380",
+    "BIG-PAR-381",
+    "BIG-PAR-382",
+    "BIG-PAR-383",
+    "BIG-PAR-384",
+    "BIG-PAR-386",
+    "BIG-PAR-385"
   ],
   "issues": [
     {
@@ -1196,6 +1226,96 @@
     {
       "identifier": "BIG-PAR-371",
       "title": "Add rollout sorted-values blank-skip coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-372",
+      "title": "Refresh ClawHost review index for merged control-plane surfaces",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-373",
+      "title": "Add ClawHost merged review-doc regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-374",
+      "title": "Fix refill dry-run queue_status_synced drift",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-375",
+      "title": "Add refill dry-run drift preview regression",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-376",
+      "title": "Fix refill dry-run recent_batches_synced drift",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-377",
+      "title": "Fix refill apply write flags for queue metadata sync",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-378",
+      "title": "Fix refill dry-run recent batch update mutation",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-379",
+      "title": "Report refill markdown companion writes",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-380",
+      "title": "Document refill markdown_written payload",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-381",
+      "title": "Preview refill markdown writes across promotions",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-382",
+      "title": "Normalize refill payload paths to absolute",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-383",
+      "title": "Add markdown preview helper regression coverage",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-384",
+      "title": "Add queue clone isolation regression",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-386",
+      "title": "Normalize refill active and recent-batch state detection",
+      "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-385",
+      "title": "Normalize local tracker state filters for refill commands",
       "track": "Go Mainline Follow-ups",
       "status": "Done"
     }

@@ -3060,6 +3060,11 @@
           "author": "codex",
           "body": "Status refresh on March 25, 2026: PR `#186` is now merge-ready after the merge reconciliation commit retriggered CI. GitHub currently reports `https://github.com/OpenAGIs/BigClaw/pull/186` as `OPEN` with `mergeStateStatus: CLEAN`, and the `test` workflow for branch head `645943f7c6d5f2970d32b432951b8f0ffe5add66` completed `SUCCESS` at `2026-03-24T22:41:32Z`.\n\nValidation:\n- `gh pr view 186 --json url,title,state,mergeStateStatus,statusCheckRollup` -> `OPEN`, `CLEAN`, successful completed `test` check\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `645943f7c6d5f2970d32b432951b8f0ffe5add66` matches remote SHA `645943f7c6d5f2970d32b432951b8f0ffe5add66` with `status: ok` and `synced: true`\n- `git status --short --branch` -> clean branch\n- `git log -1 --stat` -> captured for commit `645943f7c6d5f2970d32b432951b8f0ffe5add66`\n\nCommit SHA: `645943f7c6d5f2970d32b432951b8f0ffe5add66`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
           "created_at": "2026-03-24T22:43:30Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final merge closeout on March 25, 2026: PR `#186` (`Add ClawHost Go control-plane surfaces and saved-view helper regressions`) merged into `main` at `2026-03-24T22:44:16Z` with merge commit `bd854cd1f53808d529d7ae7413f01320eeeef337`. The branch remains locally clean and synced after merge, and no runnable refill candidates remain for this tranche.\n\nValidation:\n- `gh pr view 186 --json url,title,state,mergedAt,mergeCommit,mergeStateStatus` -> `MERGED` with merge commit `bd854cd1f53808d529d7ae7413f01320eeeef337`\n- `git push origin HEAD` -> `Everything up-to-date`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `4381b18f1a095ad98fd8faafef526c2b643c0c4c` matches remote SHA `4381b18f1a095ad98fd8faafef526c2b643c0c4c` with `status: ok` and `synced: true`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> queue remains drained with no active `In Progress` slices and no promotion candidates\n- `git log -1 --stat` -> captured for commit `4381b18f1a095ad98fd8faafef526c2b643c0c4c`\n\nCommit SHA: `4381b18f1a095ad98fd8faafef526c2b643c0c4c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:46:30Z"
         }
       ],
       "created_at": "2026-03-24T15:47:40Z",
@@ -3076,7 +3081,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-24T22:43:30Z"
+      "updated_at": "2026-03-24T22:46:30Z"
     },
     {
       "assigned_to_worker": true,
@@ -4931,6 +4936,369 @@
       "state": "Done",
       "title": "Add rollout sorted-values blank-skip coverage",
       "updated_at": "2026-03-24T22:26:12Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-372` after refreshing the reviewer handoff docs for the merged ClawHost control-plane tranche.\n\nWhat changed:\n- `bigclaw-go/docs/reports/clawhost-control-plane-review-index.md` now reflects the merged PR `#186` scope instead of the pre-merge five-slice snapshot, adding the recovery scorecard and focused/aggregate `/v2/control-center` regressions, correcting the workflow/review surface paths, and recording the final merged PR state and merge commit\n- `bigclaw-go/docs/reports/review-readiness.md` now points reviewers at the merged fleet, tenant-policy, validation, rollout, workflow, readiness, and recovery bundle instead of only the original artifact set\n- `docs/parallel-refill-queue.json`, `docs/parallel-refill-queue.md`, and `local-issues.json` record the `BIG-PAR-372` slice lifecycle\n\nValidation:\n- `rg -n \"BIG-PAR-292|BIG-PAR-293 through \\`BIG-PAR-297\\`|MERGED|recovery scorecard|readiness surface|aggregate \\`/v2/control-center\\`\" bigclaw-go/docs/reports/clawhost-control-plane-review-index.md bigclaw-go/docs/reports/review-readiness.md` -> ok\n- `gh pr view 186 --json url,title,state,mergedAt,mergeCommit` -> `MERGED` at `2026-03-24T22:44:16Z` with merge commit `bd854cd1f53808d529d7ae7413f01320eeeef337`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `e0dcfc54a20e5a6b9fddddd793d4aeb3d597134d` matches remote SHA `e0dcfc54a20e5a6b9fddddd793d4aeb3d597134d` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `e0dcfc54a20e5a6b9fddddd793d4aeb3d597134d`\n\nCommit SHA: `e0dcfc54a20e5a6b9fddddd793d4aeb3d597134d`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:50:30Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:47:56Z",
+      "description": "Update the ClawHost reviewer handoff docs after PR #186 so the review index and readiness matrix describe the merged policy/workflow/readiness/recovery surfaces, the correct artifact paths, and the final merged branch/PR state instead of the pre-merge five-slice snapshot.",
+      "id": "big-par-372",
+      "identifier": "BIG-PAR-372",
+      "labels": [
+        "parallel",
+        "docs",
+        "clawhost",
+        "review"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Refresh ClawHost review index for merged control-plane surfaces",
+      "updated_at": "2026-03-24T22:50:30Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Closed `BIG-PAR-373` after adding regression coverage for the merged ClawHost reviewer docs.\n\nWhat changed:\n- added `bigclaw-go/internal/regression/clawhost_review_docs_test.go` to keep the ClawHost control-plane review index and review-readiness summary aligned with the merged PR `#186` bundle, including the recovery/readiness surfaces and merged-state metadata\n- `docs/parallel-refill-queue.json`, `docs/parallel-refill-queue.md`, and `local-issues.json` record the `BIG-PAR-373` slice lifecycle\n\nValidation:\n- `cd bigclaw-go && go test ./internal/regression -run TestClawHostReviewDocsStayAligned` -> ok\n- `cd bigclaw-go && go test ./internal/regression` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `386183a7560e1eb8aeafe7f60c91421979f1746b` matches remote SHA `386183a7560e1eb8aeafe7f60c91421979f1746b` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `386183a7560e1eb8aeafe7f60c91421979f1746b`\n\nCommit SHA: `386183a7560e1eb8aeafe7f60c91421979f1746b`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T22:55:00Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:52:54Z",
+      "description": "Add repo-native regression coverage that keeps the ClawHost control-plane review index and review-readiness summary aligned with the merged PR #186 surface bundle, including workflow/readiness/recovery references and merged-state metadata.",
+      "id": "big-par-373",
+      "identifier": "BIG-PAR-373",
+      "labels": [
+        "parallel",
+        "testing",
+        "docs",
+        "clawhost",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add ClawHost merged review-doc regression coverage",
+      "updated_at": "2026-03-24T22:55:00Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Changed: bigclawctl refill now computes non-mutating local queue status/recent-batch drift counts in dry-run mode, reports real queue_status_synced state without requiring --sync-queue-status, and adds a regression covering the aligned dry-run case.\nValidation: go test ./cmd/bigclawctl ./internal/refill (pass); go test ./... (pass); bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status then bash scripts/ops/bigclawctl refill --local-issues local-issues.json (dry-run now reports queue_status_synced=true, queue_status_updates=0, queue_recent_batch_updates=0).\nCommit: 8d706d19ccee5314d50f9241625865c5fa3bdc4d\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T23:02:42Z"
+        }
+      ],
+      "created_at": "2026-03-24T22:56:15Z",
+      "description": "Make bigclawctl refill report queue_status_synced consistently so a dry-run immediately after a successful --apply --sync-queue-status pass does not still claim the queue companion is stale when no files differ.",
+      "id": "big-par-374",
+      "identifier": "BIG-PAR-374",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Fix refill dry-run queue_status_synced drift",
+      "updated_at": "2026-03-24T23:02:42Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Changed: added a CLI regression proving local dry-run refill surfaces non-zero queue_status_updates and queue_recent_batch_updates when the queue is stale, while leaving the queue JSON unchanged.\nValidation: go test ./cmd/bigclawctl ./internal/refill (pass).\nCommit: 1ffe50657ccb9201bc0d0bb2ad18a3c1a2e71610\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T23:04:47Z"
+        }
+      ],
+      "created_at": "2026-03-24T23:02:42Z",
+      "description": "Add a CLI regression that proves local dry-run refill surfaces non-zero queue status/recent-batch drift counts without mutating queue files when tracker metadata is stale.",
+      "id": "big-par-375",
+      "identifier": "BIG-PAR-375",
+      "labels": [
+        "parallel",
+        "testing",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add refill dry-run drift preview regression",
+      "updated_at": "2026-03-24T23:04:47Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Changed: bigclawctl refill now reports recent_batches_synced from actual local recent-batch drift counts instead of hard-coding true for every local backend dry-run. The dry-run regression expectations now cover both synced and stale recent-batch metadata.\nValidation: go test ./cmd/bigclawctl ./internal/refill (pass).\nCommit: 6e404de35c80999d05c7b637e39d31f5df5354ba\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T23:07:58Z"
+        }
+      ],
+      "created_at": "2026-03-24T23:06:21Z",
+      "description": "Make bigclawctl refill report recent_batches_synced from actual local queue alignment so dry-run output does not claim recent batch metadata is synced when queue_recent_batch_updates is non-zero.",
+      "id": "big-par-376",
+      "identifier": "BIG-PAR-376",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Fix refill dry-run recent_batches_synced drift",
+      "updated_at": "2026-03-24T23:07:58Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Changed: bigclawctl refill now reports queue_status_written and recent_batches_written from the specific metadata written during --apply --sync-queue-status, including the recent-batches-only case. Added regression coverage for both the combined write path and the recent-batches-only write path.\nValidation: go test ./cmd/bigclawctl ./internal/refill (pass).\nCommit: 57b37dd8e3bc674507487e1d77f1b6fe4e589fec\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T23:11:26Z"
+        }
+      ],
+      "created_at": "2026-03-24T23:09:47Z",
+      "description": "Make bigclawctl refill report queue_status_written and recent_batches_written from the actual metadata writes performed during --apply --sync-queue-status, including cases where only one side changes.",
+      "id": "big-par-377",
+      "identifier": "BIG-PAR-377",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Fix refill apply write flags for queue metadata sync",
+      "updated_at": "2026-03-24T23:11:26Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Changed: bigclawctl refill no longer mutates recent-batch metadata in memory during local dry-run runs, so recent_batches_updated and recent_batches_written stay false unless an apply path actually refreshes queue metadata. Added regression coverage for the dry-run drift case.\nValidation: go test ./cmd/bigclawctl ./internal/refill (pass).\nCommit: 730b7b4e1ff8f92c15eaef1ad27d65dbf4d512a9\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T23:15:06Z"
+        }
+      ],
+      "created_at": "2026-03-24T23:13:42Z",
+      "description": "Prevent local dry-run refill from mutating queue recent-batch metadata in memory and reporting recent_batches_updated when no queue metadata was written.",
+      "id": "big-par-378",
+      "identifier": "BIG-PAR-378",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Fix refill dry-run recent batch update mutation",
+      "updated_at": "2026-03-24T23:15:06Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Changed: bigclawctl refill now exposes markdown_written in its payload using a non-mutating preview against the markdown companion, and reuses the same rendered body check for the later SaveMarkdown path. Added regression coverage for the local apply sync path.\nValidation: go test ./cmd/bigclawctl ./internal/refill (pass).\nCommit: c168206785222400c7542fd63bb84b58915bd9b9\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T23:19:28Z"
+        }
+      ],
+      "created_at": "2026-03-24T23:17:06Z",
+      "description": "Expose markdown_written in bigclawctl refill output so local apply runs report whether docs/parallel-refill-queue.md was rewritten alongside queue metadata.",
+      "id": "big-par-379",
+      "identifier": "BIG-PAR-379",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Report refill markdown companion writes",
+      "updated_at": "2026-03-24T23:19:28Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Changed: documented markdown_written in docs/parallel-refill-queue-metadata.md and extended the dry-run refill regression so markdown_written is explicitly false when no markdown companion rewrite is needed.\nValidation: go test ./cmd/bigclawctl ./internal/refill (pass).\nCommit: ce0f0ddf17c2285c10698b10480fd7e50c859cfd\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T23:22:40Z"
+        }
+      ],
+      "created_at": "2026-03-24T23:21:10Z",
+      "description": "Update refill metadata docs and regression coverage so markdown_written is described alongside the other queue companion write flags and dry-run output explicitly proves it remains false.",
+      "id": "big-par-380",
+      "identifier": "BIG-PAR-380",
+      "labels": [
+        "parallel",
+        "docs",
+        "testing",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Document refill markdown_written payload",
+      "updated_at": "2026-03-24T23:22:40Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Changed: bigclawctl refill now previews markdown_written against a cloned projected queue state that includes candidate promotions, so local apply runs no longer under-report markdown companion rewrites after promotion. Added regression coverage to the local promotion path.\nValidation: go test ./cmd/bigclawctl ./internal/refill (pass).\nCommit: 42a543cdd5d1bae86fbe925b48873f84a84cf6bc\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T23:26:48Z"
+        }
+      ],
+      "created_at": "2026-03-24T23:24:47Z",
+      "description": "Make bigclawctl refill compute markdown_written against the post-promotion local queue state so apply runs that promote candidates do not under-report markdown companion rewrites.",
+      "id": "big-par-381",
+      "identifier": "BIG-PAR-381",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Preview refill markdown writes across promotions",
+      "updated_at": "2026-03-24T23:26:48Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Changed: bigclawctl refill now emits absolute queue_path, markdown_path, and local_issues_path values for consistency with the other refill subcommands and easier downstream parsing. Added regression coverage for relative input paths.\nValidation: go test ./cmd/bigclawctl ./internal/refill (pass).\nCommit: fcd0ba96c2c979a3233b84edd907d43be3c931f4\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T23:29:59Z"
+        }
+      ],
+      "created_at": "2026-03-24T23:28:35Z",
+      "description": "Make bigclawctl refill emit absolute queue_path, markdown_path, and local_issues_path values for consistency with the other refill subcommands and easier downstream consumers.",
+      "id": "big-par-382",
+      "identifier": "BIG-PAR-382",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Normalize refill payload paths to absolute",
+      "updated_at": "2026-03-24T23:29:59Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Changed: added direct internal/refill coverage for MarkdownNeedsWrite so the markdown companion preview path is tested independently of CLI orchestration. The regression proves initial writes, identical renders, and rendered-content drift.\nValidation: go test ./cmd/bigclawctl ./internal/refill (pass).\nCommit: 72478ecca8b15108d6dadd37fb987cb118467cd7\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T23:33:28Z"
+        }
+      ],
+      "created_at": "2026-03-24T23:31:54Z",
+      "description": "Add direct unit coverage for refill MarkdownNeedsWrite so the markdown companion preview path is locked down independently of the CLI tests.",
+      "id": "big-par-383",
+      "identifier": "BIG-PAR-383",
+      "labels": [
+        "parallel",
+        "testing",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add markdown preview helper regression coverage",
+      "updated_at": "2026-03-24T23:33:28Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Changed: added direct internal/refill coverage proving ParallelIssueQueue.Clone deep-copies issue order, recent batch slices, and issue records, so markdown preview projections cannot leak mutations into the live queue state.\nValidation: go test ./cmd/bigclawctl ./internal/refill (pass).\nCommit: 64289eef1e7d4d1013f4da09b585f3c8eedb4ef9\nPR: https://github.com/OpenAGIs/BigClaw/pull/186",
+          "created_at": "2026-03-24T23:36:44Z"
+        }
+      ],
+      "created_at": "2026-03-24T23:35:32Z",
+      "description": "Add direct unit coverage proving refill queue Clone() deep-copies payload slices so markdown preview mutations cannot leak back into the live queue state.",
+      "id": "big-par-384",
+      "identifier": "BIG-PAR-384",
+      "labels": [
+        "parallel",
+        "testing",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Add queue clone isolation regression",
+      "updated_at": "2026-03-24T23:36:44Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Changed:\n- normalized local tracker state matching in `bigclaw-go/internal/refill` so requested filters now tolerate casing and a trailing period\n- updated `bigclawctl local-issues list` to use the same normalized state matching\n- added regressions for normalized local store filtering and CLI list output\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> pass\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `29cfa4485443767eeb26e118b6e8554394e9f643` matches remote SHA `29cfa4485443767eeb26e118b6e8554394e9f643` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `29cfa4485443767eeb26e118b6e8554394e9f643`\n- `git log -1 --stat` -> captured for commit `29cfa4485443767eeb26e118b6e8554394e9f643`\n\nCommit SHA: `29cfa4485443767eeb26e118b6e8554394e9f643`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/189",
+          "created_at": "2026-03-25T16:16:30Z"
+        }
+      ],
+      "created_at": "2026-03-25T16:10:29Z",
+      "description": "Make LocalIssueStore state filtering and bigclawctl local-issues list treat tracker state names case-insensitively and tolerate punctuation so local refill flows do not silently miss runnable work when state text drifts from exact casing.",
+      "id": "big-par-385",
+      "identifier": "BIG-PAR-385",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Normalize local tracker state filters for refill commands",
+      "updated_at": "2026-03-25T16:16:30Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Changed:\n- normalized refill active detection in `bigclaw-go/cmd/bigclawctl/main.go` so local active slice selection now respects equivalent `In Progress` spellings\n- normalized active and recent-batch classification in `bigclaw-go/internal/refill/queue.go` for queue sync and payload generation\n- added regressions for normalized `active_in_progress`, sorted active slices, and recent-batch classification\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> pass\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `1d8e4dcf145091a50a215c019fac0498faa86ada` matches remote SHA `1d8e4dcf145091a50a215c019fac0498faa86ada` with `status: ok` and `synced: true`\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `1d8e4dcf145091a50a215c019fac0498faa86ada`\n- `git log -1 --stat` -> captured for commit `1d8e4dcf145091a50a215c019fac0498faa86ada`\n\nCommit SHA: `1d8e4dcf145091a50a215c019fac0498faa86ada`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/189",
+          "created_at": "2026-03-25T16:20:54Z"
+        }
+      ],
+      "created_at": "2026-03-25T16:10:29Z",
+      "description": "Make refill active detection, active_in_progress payloads, and recent-batch classification treat equivalent state spellings consistently so local queue projections remain correct under mixed-case or punctuated tracker states.",
+      "id": "big-par-386",
+      "identifier": "BIG-PAR-386",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Normalize refill active and recent-batch state detection",
+      "updated_at": "2026-03-25T16:20:54Z"
     }
   ]
 }

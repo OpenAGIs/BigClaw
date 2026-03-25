@@ -229,6 +229,9 @@ func TestRunRefillOncePromotesUsingLocalIssueStore(t *testing.T) {
 	if !bytes.Contains(output, []byte(`"local_issues_path":`)) || !bytes.Contains(output, []byte(storePath)) {
 		t.Fatalf("expected refill output to include local_issues_path, got %s", string(output))
 	}
+	if !bytes.Contains(output, []byte(`"markdown_written": true`)) {
+		t.Fatalf("expected refill output to preview markdown write after promotion, got %s", string(output))
+	}
 
 	body, err := os.ReadFile(storePath)
 	if err != nil {
@@ -322,6 +325,86 @@ func TestRunRefillOnceLocalIssueStoreDetectsQueueDrainedWhenMetadataStale(t *tes
 	}
 	if !bytes.Contains(output, []byte(`refill seed`)) {
 		t.Fatalf("expected refill seed hint, got %s", string(output))
+	}
+}
+
+func TestRunRefillOnceReportsAbsolutePathsForRelativeInputs(t *testing.T) {
+	tempDir := t.TempDir()
+	originalWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	if err := os.Chdir(tempDir); err != nil {
+		t.Fatalf("chdir tempdir: %v", err)
+	}
+	defer func() {
+		_ = os.Chdir(originalWD)
+	}()
+
+	queuePath := "queue.json"
+	markdownPath := "queue.md"
+	storePath := "local-issues.json"
+	if err := os.WriteFile(queuePath, []byte(`{
+  "project": {"slug_id": "project-slug"},
+  "policy": {
+    "target_in_progress": 1,
+    "activate_state_name": "In Progress",
+    "activate_state_id": "state-in-progress",
+    "refill_states": ["Todo", "Backlog"]
+  },
+  "issue_order": ["BIG-GOM-303"],
+  "issues": [
+    {"identifier": "BIG-GOM-303", "title": "Workflow loop parity", "track": "Control/Workflow", "status": "Done"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write queue file: %v", err)
+	}
+	queue, err := refill.LoadQueue(queuePath)
+	if err != nil {
+		t.Fatalf("load queue: %v", err)
+	}
+
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {"id": "big-gom-303", "identifier": "BIG-GOM-303", "state": "Done"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+	store, err := refill.LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	client := &localIssueClient{store: store}
+
+	absoluteQueuePath := filepath.Join(tempDir, queuePath)
+	absoluteMarkdownPath := filepath.Join(tempDir, markdownPath)
+	absoluteStorePath := filepath.Join(tempDir, storePath)
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runRefillOnce(queue, client, false, "", nil, false, queuePath, markdownPath, storePath)
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("run refill once: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"queue_path":`)) || !bytes.Contains(output, []byte(absoluteQueuePath)) {
+		t.Fatalf("expected absolute queue_path, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"markdown_path":`)) || !bytes.Contains(output, []byte(absoluteMarkdownPath)) {
+		t.Fatalf("expected absolute markdown_path, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"local_issues_path":`)) || !bytes.Contains(output, []byte(absoluteStorePath)) {
+		t.Fatalf("expected absolute local_issues_path, got %s", string(output))
 	}
 }
 
@@ -565,6 +648,323 @@ func TestRunRefillOnceLocalBackendSyncsQueueStatusFromLocalIssues(t *testing.T) 
 	}
 	if !bytes.Contains(output, []byte(`"queue_status_written": true`)) {
 		t.Fatalf("expected refill output to confirm write, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"recent_batches_written": true`)) {
+		t.Fatalf("expected refill output to confirm recent batch write, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"markdown_written": true`)) {
+		t.Fatalf("expected refill output to confirm markdown write, got %s", string(output))
+	}
+}
+
+func TestRunRefillOnceLocalBackendNormalizesActiveStatePayloads(t *testing.T) {
+	tempDir := t.TempDir()
+	queuePath := filepath.Join(tempDir, "queue.json")
+	if err := os.WriteFile(queuePath, []byte(`{
+  "project": {"slug_id": "project-slug"},
+  "policy": {
+    "target_in_progress": 2,
+    "activate_state_name": "In Progress",
+    "activate_state_id": "state-in-progress",
+    "refill_states": ["Todo", "Backlog"]
+  },
+  "recent_batches": {
+    "completed": [],
+    "active": [],
+    "standby": []
+  },
+  "issue_order": ["BIG-PAR-385", "BIG-PAR-386"],
+  "issues": [
+    {"identifier": "BIG-PAR-385", "title": "Normalize local tracker state filters", "track": "Automation", "status": "Todo"},
+    {"identifier": "BIG-PAR-386", "title": "Normalize active detection", "track": "Automation", "status": "Todo"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write queue file: %v", err)
+	}
+	queue, err := refill.LoadQueue(queuePath)
+	if err != nil {
+		t.Fatalf("load queue: %v", err)
+	}
+
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {"id": "big-par-385", "identifier": "BIG-PAR-385", "state": "in progress."},
+    {"id": "big-par-386", "identifier": "BIG-PAR-386", "state": "TODO"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+	store, err := refill.LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	client := &localIssueClient{store: store}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runRefillOnce(queue, client, false, "", nil, true, queuePath, filepath.Join(tempDir, "queue.md"), storePath)
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("run refill once: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"active_in_progress": [`)) || !bytes.Contains(output, []byte(`"BIG-PAR-385"`)) {
+		t.Fatalf("expected normalized active issue in payload, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"queue_status_synced": false`)) {
+		t.Fatalf("expected queue status drift detection before sync, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"recent_batches_synced": false`)) {
+		t.Fatalf("expected recent batch drift detection before sync, got %s", string(output))
+	}
+}
+
+func TestRunRefillOnceLocalBackendReportsRecentBatchWriteWithoutStatusWrite(t *testing.T) {
+	tempDir := t.TempDir()
+	queuePath := filepath.Join(tempDir, "queue.json")
+	if err := os.WriteFile(queuePath, []byte(`{
+  "project": {"slug_id": "project-slug"},
+  "policy": {
+    "target_in_progress": 2,
+    "activate_state_name": "In Progress",
+    "activate_state_id": "state-in-progress",
+    "refill_states": ["Todo", "Backlog"]
+  },
+  "recent_batches": {
+    "completed": [],
+    "active": [],
+    "standby": []
+  },
+  "issue_order": ["BIG-GOM-501", "BIG-GOM-502"],
+  "issues": [
+    {"identifier": "BIG-GOM-501", "title": "Queue metadata drift", "track": "Automation", "status": "Done"},
+    {"identifier": "BIG-GOM-502", "title": "Standby seed", "track": "Automation", "status": "Todo"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write queue file: %v", err)
+	}
+	queue, err := refill.LoadQueue(queuePath)
+	if err != nil {
+		t.Fatalf("load queue: %v", err)
+	}
+
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {"id": "big-gom-501", "identifier": "BIG-GOM-501", "state": "Done"},
+    {"id": "big-gom-502", "identifier": "BIG-GOM-502", "state": "Todo"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+	store, err := refill.LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	client := &localIssueClient{store: store}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runRefillOnce(queue, client, true, "", nil, true, queuePath, filepath.Join(tempDir, "queue.md"), storePath)
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("run refill once: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"queue_status_updates": 0`)) {
+		t.Fatalf("expected zero status updates, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"queue_recent_batch_updates": 2`)) {
+		t.Fatalf("expected two recent batch updates, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"queue_status_written": false`)) {
+		t.Fatalf("expected queue status write to remain false, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"recent_batches_written": true`)) {
+		t.Fatalf("expected recent batch write to be true, got %s", string(output))
+	}
+}
+
+func TestRunRefillOnceLocalDryRunReportsQueueStatusSyncedWithoutSyncFlag(t *testing.T) {
+	tempDir := t.TempDir()
+	queuePath := filepath.Join(tempDir, "queue.json")
+	if err := os.WriteFile(queuePath, []byte(`{
+  "project": {"slug_id": "project-slug"},
+  "policy": {
+    "target_in_progress": 2,
+    "activate_state_name": "In Progress",
+    "activate_state_id": "state-in-progress",
+    "refill_states": ["Todo", "Backlog"]
+  },
+  "recent_batches": {
+    "completed": ["BIG-GOM-501"],
+    "active": [],
+    "standby": ["BIG-GOM-502"]
+  },
+  "issue_order": ["BIG-GOM-501", "BIG-GOM-502"],
+  "issues": [
+    {"identifier": "BIG-GOM-501", "title": "Queue metadata drift", "track": "Automation", "status": "Done"},
+    {"identifier": "BIG-GOM-502", "title": "Standby seed", "track": "Automation", "status": "Todo"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write queue file: %v", err)
+	}
+	queue, err := refill.LoadQueue(queuePath)
+	if err != nil {
+		t.Fatalf("load queue: %v", err)
+	}
+
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {"id": "big-gom-501", "identifier": "BIG-GOM-501", "state": "Done"},
+    {"id": "big-gom-502", "identifier": "BIG-GOM-502", "state": "Todo"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+	store, err := refill.LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	client := &localIssueClient{store: store}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runRefillOnce(queue, client, false, "", nil, false, queuePath, filepath.Join(tempDir, "queue.md"), storePath)
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("run refill once: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"queue_status_synced": true`)) {
+		t.Fatalf("expected queue status to report synced in dry-run output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"recent_batches_synced": true`)) {
+		t.Fatalf("expected recent batches to report synced in dry-run output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"queue_status_updates": 0`)) {
+		t.Fatalf("expected zero queue status updates in dry-run output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"queue_recent_batch_updates": 0`)) {
+		t.Fatalf("expected zero queue recent batch updates in dry-run output, got %s", string(output))
+	}
+}
+
+func TestRunRefillOnceLocalDryRunReportsQueueDriftWithoutMutatingQueue(t *testing.T) {
+	tempDir := t.TempDir()
+	queuePath := filepath.Join(tempDir, "queue.json")
+	originalQueue := []byte(`{
+  "project": {"slug_id": "project-slug"},
+  "policy": {
+    "target_in_progress": 2,
+    "activate_state_name": "In Progress",
+    "activate_state_id": "state-in-progress",
+    "refill_states": ["Todo", "Backlog"]
+  },
+  "recent_batches": {
+    "completed": [],
+    "active": ["BIG-GOM-501"],
+    "standby": []
+  },
+  "issue_order": ["BIG-GOM-501", "BIG-GOM-502"],
+  "issues": [
+    {"identifier": "BIG-GOM-501", "title": "Queue metadata drift", "track": "Automation", "status": "Todo"},
+    {"identifier": "BIG-GOM-502", "title": "Standby seed", "track": "Automation", "status": "Todo"}
+  ]
+}`)
+	if err := os.WriteFile(queuePath, originalQueue, 0o644); err != nil {
+		t.Fatalf("write queue file: %v", err)
+	}
+	queue, err := refill.LoadQueue(queuePath)
+	if err != nil {
+		t.Fatalf("load queue: %v", err)
+	}
+
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {"id": "big-gom-501", "identifier": "BIG-GOM-501", "state": "Done"},
+    {"id": "big-gom-502", "identifier": "BIG-GOM-502", "state": "Todo"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+	store, err := refill.LoadLocalIssueStore(storePath)
+	if err != nil {
+		t.Fatalf("load local issue store: %v", err)
+	}
+	client := &localIssueClient{store: store}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	runErr := runRefillOnce(queue, client, false, "", nil, false, queuePath, filepath.Join(tempDir, "queue.md"), storePath)
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if runErr != nil {
+		t.Fatalf("run refill once: %v (stdout=%s)", runErr, string(output))
+	}
+	if !bytes.Contains(output, []byte(`"queue_status_synced": false`)) {
+		t.Fatalf("expected queue status to report drift in dry-run output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"recent_batches_synced": false`)) {
+		t.Fatalf("expected recent batches to report drift in dry-run output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"queue_status_updates": 1`)) {
+		t.Fatalf("expected one queue status update in dry-run output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"queue_recent_batch_updates": 3`)) {
+		t.Fatalf("expected three recent batch updates in dry-run output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"recent_batches_updated": false`)) {
+		t.Fatalf("expected dry-run recent batch update flag to remain false, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"recent_batches_written": false`)) {
+		t.Fatalf("expected dry-run recent batch write flag to remain false, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"markdown_written": false`)) {
+		t.Fatalf("expected dry-run markdown write flag to remain false, got %s", string(output))
+	}
+
+	body, err := os.ReadFile(queuePath)
+	if err != nil {
+		t.Fatalf("read queue file: %v", err)
+	}
+	if !bytes.Equal(body, originalQueue) {
+		t.Fatalf("expected dry-run to leave queue file unchanged, got %s", string(body))
 	}
 }
 
@@ -879,5 +1279,62 @@ func TestRunLocalIssuesEnsureUpdatesExistingStateCaseInsensitive(t *testing.T) {
 	}
 	if !bytes.Contains(body, []byte(`"updated_at": "2026-03-22T10:45:00Z"`)) {
 		t.Fatalf("expected updated timestamp, got %s", string(body))
+	}
+}
+
+func TestRunLocalIssuesListNormalizesStateFilters(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-par-385",
+      "identifier": "BIG-PAR-385",
+      "title": "Normalize local tracker state filters for refill commands",
+      "state": "in progress."
+    },
+    {
+      "id": "big-par-386",
+      "identifier": "BIG-PAR-386",
+      "title": "Normalize refill active and recent-batch state detection",
+      "state": "TODO"
+    },
+    {
+      "id": "big-par-387",
+      "identifier": "BIG-PAR-387",
+      "title": "Unrelated done issue",
+      "state": "Done"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runLocalIssues([]string{
+		"list",
+		"--local-issues", storePath,
+		"--states", "In Progress,todo.",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run local-issues list: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte(`"BIG-PAR-385"`)) || !bytes.Contains(output, []byte(`"BIG-PAR-386"`)) {
+		t.Fatalf("expected normalized state matches in output, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`"BIG-PAR-387"`)) {
+		t.Fatalf("expected done issue to be filtered out, got %s", string(output))
 	}
 }

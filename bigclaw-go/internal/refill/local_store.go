@@ -254,16 +254,15 @@ func issueCommentList(value any) []map[string]any {
 func (s *LocalIssueStore) IssueStates(stateNames []string) []TrackedIssue {
 	wanted := map[string]struct{}{}
 	for _, stateName := range stateNames {
-		trimmed := strings.TrimSpace(stateName)
-		if trimmed != "" {
-			wanted[trimmed] = struct{}{}
+		if normalized := NormalizeStateName(stateName); normalized != "" {
+			wanted[normalized] = struct{}{}
 		}
 	}
 	issues := make([]TrackedIssue, 0, len(s.issueMap))
 	for _, issue := range s.issueMap {
 		stateName := mapString(issue, "state")
 		if len(wanted) != 0 {
-			if _, ok := wanted[stateName]; !ok {
+			if _, ok := wanted[NormalizeStateName(stateName)]; !ok {
 				continue
 			}
 		}

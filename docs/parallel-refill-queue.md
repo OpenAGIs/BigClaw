@@ -47,10 +47,10 @@ longer waits on Linear to keep issue execution moving.
 
 ## Current batch
 
-- Current repo tranche status as of March 24, 2026:
+- Current repo tranche status as of March 25, 2026:
   - active slices: none
   - standby slices: none
-  - recently completed slices: `BIG-PAR-360` — Add console helper and design-system coverage; `BIG-PAR-362` — Add ClawHost workflow helper threshold coverage; `BIG-PAR-364` — Add ClawHost rollout audit edge coverage; `BIG-PAR-365` — Add dashboard contract path traversal coverage; `BIG-PAR-367` — Add dashboard contract non-map path traversal coverage; `BIG-PAR-369` — Add ClawHost workflow empty-audit coverage; `BIG-PAR-370` — Add ClawHost workflow report empty-state coverage; `BIG-PAR-371` — Add rollout sorted-values blank-skip coverage
+  - recently completed slices: `BIG-PAR-377` — Fix refill apply write flags for queue metadata sync; `BIG-PAR-378` — Fix refill dry-run recent batch update mutation; `BIG-PAR-379` — Report refill markdown companion writes; `BIG-PAR-380` — Document refill markdown_written payload; `BIG-PAR-381` — Preview refill markdown writes across promotions; `BIG-PAR-382` — Normalize refill payload paths to absolute; `BIG-PAR-383` — Add markdown preview helper regression coverage; `BIG-PAR-384` — Add queue clone isolation regression
   - queue status: `queue_runnable=0`, `target_in_progress=2`
   - run `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` to keep queue status, recent batches, and this markdown companion aligned after tracker changes
 - Queue drained recovery:
@@ -201,6 +201,19 @@ longer waits on Linear to keep issue execution moving.
   - `BIG-PAR-369` — Add ClawHost workflow empty-audit coverage
   - `BIG-PAR-370` — Add ClawHost workflow report empty-state coverage
   - `BIG-PAR-371` — Add rollout sorted-values blank-skip coverage
+  - `BIG-PAR-372` — Refresh ClawHost review index for merged control-plane surfaces
+  - `BIG-PAR-373` — Add ClawHost merged review-doc regression coverage
+  - `BIG-PAR-374` — Fix refill dry-run queue_status_synced drift
+  - `BIG-PAR-375` — Add refill dry-run drift preview regression
+  - `BIG-PAR-376` — Fix refill dry-run recent_batches_synced drift
+  - `BIG-PAR-377` — Fix refill apply write flags for queue metadata sync
+  - `BIG-PAR-378` — Fix refill dry-run recent batch update mutation
+  - `BIG-PAR-379` — Report refill markdown companion writes
+  - `BIG-PAR-380` — Document refill markdown_written payload
+  - `BIG-PAR-381` — Preview refill markdown writes across promotions
+  - `BIG-PAR-382` — Normalize refill payload paths to absolute
+  - `BIG-PAR-383` — Add markdown preview helper regression coverage
+  - `BIG-PAR-384` — Add queue clone isolation regression
 - Historical first runnable batch once issue creation was available:
   - `BIG-GOM-301` — Unified domain model and intake contract migration
   - `BIG-GOM-302` — Risk, policy, and approval semantics migration
@@ -352,3 +365,16 @@ longer waits on Linear to keep issue execution moving.
 141. `BIG-PAR-369`
 142. `BIG-PAR-370`
 143. `BIG-PAR-371`
+144. `BIG-PAR-372`
+145. `BIG-PAR-373`
+146. `BIG-PAR-374`
+147. `BIG-PAR-375`
+148. `BIG-PAR-376`
+149. `BIG-PAR-377`
+150. `BIG-PAR-378`
+151. `BIG-PAR-379`
+152. `BIG-PAR-380`
+153. `BIG-PAR-381`
+154. `BIG-PAR-382`
+155. `BIG-PAR-383`
+156. `BIG-PAR-384`

@@ -101,6 +101,55 @@ func TestParallelIssueQueueRefreshRecentBatchesFromStates(t *testing.T) {
 	}
 }
 
+func TestParallelIssueQueueRefreshRecentBatchesNormalizesActiveStateName(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{
+			Policy: struct {
+				TargetInProgress  int      `json:"target_in_progress"`
+				ActivateStateID   string   `json:"activate_state_id"`
+				ActivateStateName string   `json:"activate_state_name"`
+				RefillStates      []string `json:"refill_states"`
+				BlockedReason     string   `json:"blocked_reason,omitempty"`
+			}{
+				TargetInProgress:  2,
+				ActivateStateName: "In Progress",
+				RefillStates:      []string{"Todo", "Backlog"},
+			},
+			IssueOrder: []string{"BIG-PAR-385", "BIG-PAR-386", "BIG-PAR-387"},
+		},
+	}
+
+	updated := queue.RefreshRecentBatchesFromStates(map[string]string{
+		"BIG-PAR-385": "in progress.",
+		"BIG-PAR-386": "DONE",
+		"BIG-PAR-387": "todo.",
+	})
+	if !updated {
+		t.Fatalf("expected normalized recent batch refresh to report a change")
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Active, []string{"BIG-PAR-385"}) {
+		t.Fatalf("unexpected normalized active batches: %v", queue.payload.RecentBatches.Active)
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Completed, []string{"BIG-PAR-386"}) {
+		t.Fatalf("unexpected normalized completed batches: %v", queue.payload.RecentBatches.Completed)
+	}
+	if !equalStringSlices(queue.payload.RecentBatches.Standby, []string{"BIG-PAR-387"}) {
+		t.Fatalf("unexpected normalized standby batches: %v", queue.payload.RecentBatches.Standby)
+	}
+}
+
+func TestSortedActiveNormalizesEquivalentStateNames(t *testing.T) {
+	issues := []TrackedIssue{
+		{Identifier: "BIG-PAR-386", StateName: "in progress."},
+		{Identifier: "BIG-PAR-385", StateName: "In Progress"},
+		{Identifier: "BIG-PAR-387", StateName: "Done"},
+	}
+	active := SortedActive(issues)
+	if !equalStringSlices(active, []string{"BIG-PAR-385", "BIG-PAR-386"}) {
+		t.Fatalf("unexpected normalized active issues: %v", active)
+	}
+}
+
 func TestParallelIssueQueueSavePreservesBlockedReasonAndRecentBatches(t *testing.T) {
 	queuePath := filepath.Join(t.TempDir(), "queue.json")
 	queue := &ParallelIssueQueue{
@@ -283,5 +332,130 @@ func TestParallelIssueQueueSaveMarkdownRendersCurrentBatchAndOrder(t *testing.T)
 	}
 	if !strings.Contains(text, "4. `BIG-PAR-248`") {
 		t.Fatalf("expected numbered canonical order, got %s", text)
+	}
+}
+
+func TestParallelIssueQueueMarkdownNeedsWriteTracksRenderedChanges(t *testing.T) {
+	queuePath := filepath.Join(t.TempDir(), "queue.json")
+	markdownPath := filepath.Join(t.TempDir(), "queue.md")
+	generatedAt := time.Date(2026, 3, 23, 3, 45, 0, 0, time.UTC)
+	queue := &ParallelIssueQueue{
+		queuePath: queuePath,
+		payload: QueuePayload{
+			Policy: struct {
+				TargetInProgress  int      `json:"target_in_progress"`
+				ActivateStateID   string   `json:"activate_state_id"`
+				ActivateStateName string   `json:"activate_state_name"`
+				RefillStates      []string `json:"refill_states"`
+				BlockedReason     string   `json:"blocked_reason,omitempty"`
+			}{
+				TargetInProgress:  2,
+				ActivateStateName: "In Progress",
+				RefillStates:      []string{"Todo", "Backlog"},
+			},
+			RecentBatches: struct {
+				Completed []string `json:"completed"`
+				Active    []string `json:"active"`
+				Standby   []string `json:"standby"`
+			}{
+				Completed: []string{"BIG-PAR-244"},
+				Active:    []string{"BIG-PAR-247"},
+				Standby:   []string{"BIG-PAR-248"},
+			},
+			IssueOrder: []string{"BIG-PAR-244", "BIG-PAR-247", "BIG-PAR-248"},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-244", Title: "refresh queue docs", Status: "Done"},
+				{Identifier: "BIG-PAR-247", Title: "sync queue markdown", Status: "In Progress"},
+				{Identifier: "BIG-PAR-248", Title: "follow-on refill slice", Status: "Todo"},
+			},
+		},
+	}
+
+	needsWrite, err := queue.MarkdownNeedsWrite(markdownPath, generatedAt)
+	if err != nil {
+		t.Fatalf("markdown needs write before save: %v", err)
+	}
+	if !needsWrite {
+		t.Fatalf("expected markdown preview to require initial write")
+	}
+
+	written, err := queue.SaveMarkdown(markdownPath, generatedAt)
+	if err != nil {
+		t.Fatalf("save markdown: %v", err)
+	}
+	if !written {
+		t.Fatalf("expected initial markdown write")
+	}
+
+	needsWrite, err = queue.MarkdownNeedsWrite(markdownPath, generatedAt)
+	if err != nil {
+		t.Fatalf("markdown needs write after save: %v", err)
+	}
+	if needsWrite {
+		t.Fatalf("expected identical markdown preview to report no write needed")
+	}
+
+	queue.payload.Issues[1].Status = "Done"
+	queue.payload.RecentBatches.Active = []string{}
+	queue.payload.RecentBatches.Completed = []string{"BIG-PAR-244", "BIG-PAR-247"}
+
+	needsWrite, err = queue.MarkdownNeedsWrite(markdownPath, generatedAt)
+	if err != nil {
+		t.Fatalf("markdown needs write after queue change: %v", err)
+	}
+	if !needsWrite {
+		t.Fatalf("expected markdown preview to detect rendered content drift")
+	}
+}
+
+func TestParallelIssueQueueCloneDeepCopiesPayloadSlices(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		queuePath: "/tmp/queue.json",
+		payload: QueuePayload{
+			IssueOrder: []string{"BIG-PAR-244", "BIG-PAR-247", "BIG-PAR-248"},
+			RecentBatches: struct {
+				Completed []string `json:"completed"`
+				Active    []string `json:"active"`
+				Standby   []string `json:"standby"`
+			}{
+				Completed: []string{"BIG-PAR-244"},
+				Active:    []string{"BIG-PAR-247"},
+				Standby:   []string{"BIG-PAR-248"},
+			},
+			Issues: []IssueRecord{
+				{Identifier: "BIG-PAR-244", Title: "refresh queue docs", Status: "Done"},
+				{Identifier: "BIG-PAR-247", Title: "sync queue markdown", Status: "In Progress"},
+				{Identifier: "BIG-PAR-248", Title: "follow-on refill slice", Status: "Todo"},
+			},
+		},
+	}
+
+	clone, err := queue.Clone()
+	if err != nil {
+		t.Fatalf("clone queue: %v", err)
+	}
+
+	clone.payload.IssueOrder[0] = "BIG-PAR-999"
+	clone.payload.RecentBatches.Completed[0] = "BIG-PAR-998"
+	clone.payload.RecentBatches.Active[0] = "BIG-PAR-997"
+	clone.payload.RecentBatches.Standby[0] = "BIG-PAR-996"
+	clone.payload.Issues[0].Identifier = "BIG-PAR-995"
+	clone.payload.Issues[0].Title = "mutated clone record"
+	clone.payload.Issues[0].Status = "Canceled"
+
+	if queue.payload.IssueOrder[0] != "BIG-PAR-244" {
+		t.Fatalf("expected original issue order to remain unchanged, got %v", queue.payload.IssueOrder)
+	}
+	if queue.payload.RecentBatches.Completed[0] != "BIG-PAR-244" {
+		t.Fatalf("expected original completed batch to remain unchanged, got %v", queue.payload.RecentBatches.Completed)
+	}
+	if queue.payload.RecentBatches.Active[0] != "BIG-PAR-247" {
+		t.Fatalf("expected original active batch to remain unchanged, got %v", queue.payload.RecentBatches.Active)
+	}
+	if queue.payload.RecentBatches.Standby[0] != "BIG-PAR-248" {
+		t.Fatalf("expected original standby batch to remain unchanged, got %v", queue.payload.RecentBatches.Standby)
+	}
+	if queue.payload.Issues[0].Identifier != "BIG-PAR-244" || queue.payload.Issues[0].Title != "refresh queue docs" || queue.payload.Issues[0].Status != "Done" {
+		t.Fatalf("expected original issue record to remain unchanged, got %+v", queue.payload.Issues[0])
 	}
 }
