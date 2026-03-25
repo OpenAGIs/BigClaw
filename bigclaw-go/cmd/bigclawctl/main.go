@@ -510,7 +510,7 @@ func runRefillSeed(args []string) error {
 		if existing, found := store.FindIssue(identifier); found {
 			localAction = "exists"
 			localState = existing.State
-			if *options.setStateIfExists && existing.State != stateName {
+			if *options.setStateIfExists && refill.NormalizeStateName(existing.State) != refill.NormalizeStateName(stateName) {
 				localState, err = store.UpdateIssueState(identifier, stateName, when)
 				if err != nil {
 					return err
@@ -728,7 +728,7 @@ func runLocalIssues(args []string) error {
 		}
 		if found {
 			action = "exists"
-			if *setStateIfExists && existing.State != state {
+			if *setStateIfExists && refill.NormalizeStateName(existing.State) != refill.NormalizeStateName(state) {
 				if when.IsZero() {
 					when = time.Now()
 				}

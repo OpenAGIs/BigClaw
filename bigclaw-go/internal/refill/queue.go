@@ -181,7 +181,7 @@ func (q *ParallelIssueQueue) SyncStatusFromStates(issueStates map[string]string)
 		if state == "" {
 			continue
 		}
-		if strings.TrimSpace(q.payload.Issues[idx].Status) == state {
+		if NormalizeStateName(q.payload.Issues[idx].Status) == NormalizeStateName(state) {
 			continue
 		}
 		q.payload.Issues[idx].Status = state
@@ -205,7 +205,7 @@ func (q *ParallelIssueQueue) StatusSyncUpdatesForStates(issueStates map[string]s
 		if state == "" {
 			continue
 		}
-		if strings.TrimSpace(record.Status) == state {
+		if NormalizeStateName(record.Status) == NormalizeStateName(state) {
 			continue
 		}
 		updated++
@@ -322,7 +322,7 @@ func (q *ParallelIssueQueue) UpsertIssue(record IssueRecord) (string, bool, erro
 			q.payload.Issues[idx].Track = track
 			action = "updated"
 		}
-		if strings.TrimSpace(q.payload.Issues[idx].Status) != status {
+		if NormalizeStateName(q.payload.Issues[idx].Status) != NormalizeStateName(status) {
 			q.payload.Issues[idx].Status = status
 			action = "updated"
 		}

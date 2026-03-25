@@ -3065,6 +3065,21 @@
           "author": "codex",
           "body": "Final merge closeout on March 25, 2026: PR `#186` (`Add ClawHost Go control-plane surfaces and saved-view helper regressions`) merged into `main` at `2026-03-24T22:44:16Z` with merge commit `bd854cd1f53808d529d7ae7413f01320eeeef337`. The branch remains locally clean and synced after merge, and no runnable refill candidates remain for this tranche.\n\nValidation:\n- `gh pr view 186 --json url,title,state,mergedAt,mergeCommit,mergeStateStatus` -> `MERGED` with merge commit `bd854cd1f53808d529d7ae7413f01320eeeef337`\n- `git push origin HEAD` -> `Everything up-to-date`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `4381b18f1a095ad98fd8faafef526c2b643c0c4c` matches remote SHA `4381b18f1a095ad98fd8faafef526c2b643c0c4c` with `status: ok` and `synced: true`\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> queue remains drained with no active `In Progress` slices and no promotion candidates\n- `git log -1 --stat` -> captured for commit `4381b18f1a095ad98fd8faafef526c2b643c0c4c`\n\nCommit SHA: `4381b18f1a095ad98fd8faafef526c2b643c0c4c`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/186",
           "created_at": "2026-03-24T22:46:30Z"
+        },
+        {
+          "author": "codex",
+          "body": "Merge closeout on March 25, 2026: PR `#189` (`Normalize refill tracker and active state handling`) merged into `main` at `2026-03-25T16:23:41Z` with merge commit `a0c93a687204cb70d649b250a63d3a0a11af939f`.\n\nWhat changed since the prior branch closeout:\n- landed and closed follow-up refill/tooling slices `BIG-PAR-385` and `BIG-PAR-386`\n- normalized local tracker state filtering, refill active detection, `active_in_progress` payload generation, and recent-batch classification in the Go refill path\n- re-synced `local-issues.json`, `docs/parallel-refill-queue.json`, and `docs/parallel-refill-queue.md`; the queue remains drained with no runnable child slices\n\nValidation:\n- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill` -> pass\n- `gh pr view 189 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` with merge commit `a0c93a687204cb70d649b250a63d3a0a11af939f` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `fc833063311b3dfd9921832d80abecd9cd047fc5` matches remote SHA `fc833063311b3dfd9921832d80abecd9cd047fc5` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `fc833063311b3dfd9921832d80abecd9cd047fc5`\n\nCommit SHA: `fc833063311b3dfd9921832d80abecd9cd047fc5`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/189",
+          "created_at": "2026-03-25T16:24:14Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final tracker-audit refresh on March 25, 2026: the post-merge tracker sync commit is now the true branch head for this completed issue.\n\nValidation:\n- `git rev-parse HEAD && git rev-parse origin/symphony/BIG-PAR-291` -> both resolved to `88d103e0d1f1f7fed52a4598e0337ccec2893ae9`\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `88d103e0d1f1f7fed52a4598e0337ccec2893ae9` matches remote SHA `88d103e0d1f1f7fed52a4598e0337ccec2893ae9` with `status: ok` and `synced: true`\n- `gh pr view 189 --json url,title,state,mergedAt,mergeCommit,statusCheckRollup` -> `MERGED` at `2026-03-25T16:23:41Z` with merge commit `a0c93a687204cb70d649b250a63d3a0a11af939f` and successful completed `test` check\n- `bash scripts/ops/bigclawctl refill --local-issues local-issues.json` -> `queue_drained: true`, `active_in_progress: []`\n- `git log -1 --stat` -> captured for commit `88d103e0d1f1f7fed52a4598e0337ccec2893ae9`\n\nCommit SHA: `88d103e0d1f1f7fed52a4598e0337ccec2893ae9`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/189",
+          "created_at": "2026-03-25T16:28:08Z"
+        },
+        {
+          "author": "codex",
+          "body": "Status refresh on March 25, 2026: follow-up PR `#190` is now merge-ready. GitHub reports https://github.com/OpenAGIs/BigClaw/pull/190 as `OPEN` with `mergeStateStatus: CLEAN`, and the `test` workflow for branch head `af3ae67931b4e02c9cd91c06ff7fafb48ae72a9d` completed `SUCCESS` at `2026-03-25T16:45:58Z`.\n\nValidation:\n- `gh pr view 190 --json url,title,state,mergeStateStatus,statusCheckRollup` -> `OPEN`, `CLEAN`, successful completed `test` check\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `af3ae67931b4e02c9cd91c06ff7fafb48ae72a9d` matches remote SHA `af3ae67931b4e02c9cd91c06ff7fafb48ae72a9d` with `status: ok` and `synced: true`\n- `git status --short --branch` -> clean branch\n\nCommit SHA: pending tracker-note commit\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/190",
+          "created_at": "2026-03-25T16:47:22Z"
         }
       ],
       "created_at": "2026-03-24T15:47:40Z",
@@ -3081,7 +3096,7 @@
       "priority": 3,
       "state": "Done",
       "title": "Add ClawHost proxy subdomain and admin validation lane",
-      "updated_at": "2026-03-24T22:46:30Z"
+      "updated_at": "2026-03-25T16:47:22Z"
     },
     {
       "assigned_to_worker": true,
@@ -5299,6 +5314,54 @@
       "state": "Done",
       "title": "Normalize refill active and recent-batch state detection",
       "updated_at": "2026-03-25T16:20:54Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Changed:\n- normalized refill queue status drift detection in `bigclaw-go/internal/refill/queue.go` so equivalent state spellings no longer count as queue-status updates\n- added refill regression coverage proving `StatusSyncUpdatesForStates` and `SyncStatusFromStates` ignore case-only and trailing-period differences\n- added CLI regression coverage proving `bigclawctl refill` dry-run payloads stay queue-status synced for equivalent local tracker spellings\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> pass\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `b4213abe4f5bad02e8914c1989f12f563204af8b` matches remote SHA `b4213abe4f5bad02e8914c1989f12f563204af8b` with `status: ok` and `synced: true`\n\nCommit SHA: `b4213abe4f5bad02e8914c1989f12f563204af8b`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/190",
+          "created_at": "2026-03-25T16:38:26Z"
+        }
+      ],
+      "created_at": "2026-03-25T16:35:18Z",
+      "description": "Make refill queue status sync and drift detection treat equivalent tracker state spellings consistently so local queue metadata does not report or write false status drift for case-only or trailing-punctuation differences.",
+      "id": "big-par-387",
+      "identifier": "BIG-PAR-387",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Normalize queue status sync equivalence",
+      "updated_at": "2026-03-25T16:38:26Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Changed:\n- normalized queue upsert status comparisons in `bigclaw-go/internal/refill/queue.go` so equivalent state spellings do not rewrite existing queue records\n- normalized `refill seed --set-state-if-exists` and `local-issues ensure --set-state-if-exists` decisions in `bigclaw-go/cmd/bigclawctl/main.go` so equivalent tracker spellings no longer force timestamp churn\n- added refill and CLI regressions proving equivalent case and trailing-period spellings stay non-mutating across queue and local issue updates\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> pass\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `d8ba17a8b61928ddec646f47d3e66c55518b9a43` matches remote SHA `d8ba17a8b61928ddec646f47d3e66c55518b9a43` with `status: ok` and `synced: true`\n\nCommit SHA: `d8ba17a8b61928ddec646f47d3e66c55518b9a43`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/190",
+          "created_at": "2026-03-25T16:43:34Z"
+        }
+      ],
+      "created_at": "2026-03-25T16:41:09Z",
+      "description": "Make refill seed and local-issues ensure treat equivalent state spellings consistently so existing queue and tracker entries do not get rewritten when only case or trailing punctuation differs.",
+      "id": "big-par-388",
+      "identifier": "BIG-PAR-388",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "Done",
+      "title": "Normalize seed and ensure state equivalence",
+      "updated_at": "2026-03-25T16:43:34Z"
     }
   ]
 }

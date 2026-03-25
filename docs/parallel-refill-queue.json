@@ -175,7 +175,9 @@
       "BIG-PAR-383",
       "BIG-PAR-384",
       "BIG-PAR-386",
-      "BIG-PAR-385"
+      "BIG-PAR-385",
+      "BIG-PAR-387",
+      "BIG-PAR-388"
     ],
     "active": [],
     "standby": []
@@ -338,7 +340,9 @@
     "BIG-PAR-383",
     "BIG-PAR-384",
     "BIG-PAR-386",
-    "BIG-PAR-385"
+    "BIG-PAR-385",
+    "BIG-PAR-387",
+    "BIG-PAR-388"
   ],
   "issues": [
     {
@@ -1317,6 +1321,18 @@
       "identifier": "BIG-PAR-385",
       "title": "Normalize local tracker state filters for refill commands",
       "track": "Go Mainline Follow-ups",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-387",
+      "title": "Normalize queue status sync equivalence",
+      "track": "Automation",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-388",
+      "title": "Normalize seed and ensure state equivalence",
+      "track": "Automation",
       "status": "Done"
     }
   ]
