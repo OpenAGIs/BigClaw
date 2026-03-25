@@ -162,6 +162,18 @@ func TestSortedActiveUsesConfiguredActiveStateName(t *testing.T) {
 	}
 }
 
+func TestParallelIssueQueueFetchStateNamesDeduplicatesEquivalentSpellings(t *testing.T) {
+	queue := &ParallelIssueQueue{
+		payload: QueuePayload{},
+	}
+	queue.payload.Policy.ActivateStateName = "Queued for Review"
+	queue.payload.Policy.RefillStates = []string{" todo. ", "Backlog", "Todo", "backlog."}
+
+	if got := queue.FetchStateNames(); !equalStringSlices(got, []string{"Queued for Review", "todo.", "Backlog"}) {
+		t.Fatalf("unexpected fetch state names: %v", got)
+	}
+}
+
 func TestParallelIssueQueueStatusSyncIgnoresEquivalentStateSpellings(t *testing.T) {
 	queue := &ParallelIssueQueue{
 		payload: QueuePayload{

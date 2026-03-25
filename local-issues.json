@@ -5428,6 +5428,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/internal/refill/queue_markdown.go` now renders `queue.ActivateStateName()` in the CLI promotion example and policy bullets instead of hardcoded `In Progress` text.\n- `bigclaw-go/internal/refill/queue_test.go` now renders markdown for a queue whose active state is `Queued for Review` and asserts that the output uses that custom state name in both the CLI example and the policy guidance.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill` -> ok\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> ok\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `19edbe2b13280ed5fd79f9a02a4e54d00065c8a2` matches remote SHA `19edbe2b13280ed5fd79f9a02a4e54d00065c8a2` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> branch head captured after follow-on BIG-PAR-391 commit `19edbe2b13280ed5fd79f9a02a4e54d00065c8a2`; implementation slice commit is `93fd7d3349ad5d17b8f99fff81752800db8e5ca3`\n\nCommit SHA: `93fd7d3349ad5d17b8f99fff81752800db8e5ca3`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
+          "created_at": "2026-03-25T17:16:56Z"
+        }
+      ],
       "created_at": "2026-03-25T17:12:44Z",
       "description": "Make refill markdown guidance and status prose render the configured activate_state_name instead of hardcoded In Progress text so nonstandard active states are documented accurately.",
       "id": "big-par-392",
@@ -5439,12 +5446,19 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Render queue markdown with configured active state",
-      "updated_at": "2026-03-25T17:12:44Z"
+      "updated_at": "2026-03-25T17:17:03Z"
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "What changed:\n- `bigclaw-go/internal/refill/queue.go` now parameterizes `SortedActive` with the configured active-state name instead of hardcoding `In Progress`.\n- `bigclaw-go/cmd/bigclawctl/main.go` now reuses that shared helper so the CLI and refill package classify active slices through the same configured-state path.\n- `bigclaw-go/internal/refill/queue_test.go` now covers a custom active state name (`Queued for Review`) for the shared helper.\n\nValidation:\n- `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl` -> ok\n- `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> ok (`active_in_progress=[BIG-PAR-391 BIG-PAR-392]`, `queue_status_synced=true`)\n- `bash scripts/ops/bigclawctl github-sync status --json` -> local SHA `19edbe2b13280ed5fd79f9a02a4e54d00065c8a2` matches remote SHA `19edbe2b13280ed5fd79f9a02a4e54d00065c8a2` with `status: ok` and `synced: true`\n- `git log -1 --stat` -> captured for commit `19edbe2b13280ed5fd79f9a02a4e54d00065c8a2`\n\nCommit SHA: `19edbe2b13280ed5fd79f9a02a4e54d00065c8a2`\nPR URL: https://github.com/OpenAGIs/BigClaw/pull/191",
+          "created_at": "2026-03-25T17:16:56Z"
+        }
+      ],
       "created_at": "2026-03-25T17:12:44Z",
       "description": "Remove the remaining hardcoded In Progress assumption from refill active-state helper logic so shared package consumers can honor queue-specific activate_state_name values.",
       "id": "big-par-391",
@@ -5456,9 +5470,26 @@
         "go-mainline"
       ],
       "priority": 3,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Parameterize refill active-state helpers",
-      "updated_at": "2026-03-25T17:12:44Z"
+      "updated_at": "2026-03-25T17:17:03Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-25T17:17:57Z",
+      "description": "Build remote refill state-name fetch lists from normalized, de-duplicated queue policy values in a stable order so equivalent spellings do not produce duplicate or non-deterministic remote filters.",
+      "id": "big-par-393",
+      "identifier": "BIG-PAR-393",
+      "labels": [
+        "parallel",
+        "tooling",
+        "refill",
+        "go-mainline"
+      ],
+      "priority": 3,
+      "state": "In Progress",
+      "title": "Stabilize normalized refill fetch state lists",
+      "updated_at": "2026-03-25T17:17:57Z"
     }
   ]
 }

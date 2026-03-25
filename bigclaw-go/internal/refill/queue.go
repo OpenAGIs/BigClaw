@@ -158,6 +158,31 @@ func (q *ParallelIssueQueue) RefillStates() map[string]struct{} {
 	return result
 }
 
+func (q *ParallelIssueQueue) FetchStateNames() []string {
+	states := make([]string, 0, len(q.payload.Policy.RefillStates)+1)
+	seen := map[string]struct{}{}
+	appendState := func(state string) {
+		state = strings.TrimSpace(state)
+		if state == "" {
+			return
+		}
+		normalized := NormalizeStateName(state)
+		if normalized == "" {
+			return
+		}
+		if _, ok := seen[normalized]; ok {
+			return
+		}
+		seen[normalized] = struct{}{}
+		states = append(states, state)
+	}
+	appendState(q.ActivateStateName())
+	for _, state := range q.payload.Policy.RefillStates {
+		appendState(state)
+	}
+	return states
+}
+
 func (q *ParallelIssueQueue) IssueOrder() []string {
 	return append([]string{}, q.payload.IssueOrder...)
 }

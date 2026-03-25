@@ -178,10 +178,11 @@
       "BIG-PAR-385",
       "BIG-PAR-387",
       "BIG-PAR-388",
-      "BIG-PAR-390"
+      "BIG-PAR-390",
+      "BIG-PAR-391"
     ],
     "active": [
-      "BIG-PAR-391"
+      "BIG-PAR-393"
     ],
     "standby": []
   },
@@ -347,7 +348,8 @@
     "BIG-PAR-387",
     "BIG-PAR-388",
     "BIG-PAR-390",
-    "BIG-PAR-391"
+    "BIG-PAR-391",
+    "BIG-PAR-393"
   ],
   "issues": [
     {
@@ -1349,6 +1351,12 @@
     {
       "identifier": "BIG-PAR-391",
       "title": "Parameterize refill active-state helpers",
+      "track": "Automation",
+      "status": "Done"
+    },
+    {
+      "identifier": "BIG-PAR-393",
+      "title": "Stabilize normalized refill fetch state lists",
       "track": "Automation",
       "status": "In Progress"
     }

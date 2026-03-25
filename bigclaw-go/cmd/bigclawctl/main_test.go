@@ -240,6 +240,61 @@ func TestRunRefillOnceLinearBackendUsesConfiguredActivateStateName(t *testing.T)
 	}
 }
 
+func TestRunRefillOnceLinearBackendDeduplicatesEquivalentFetchStates(t *testing.T) {
+	queuePath := filepath.Join(t.TempDir(), "queue.json")
+	markdownPath := filepath.Join(t.TempDir(), "queue.md")
+	if err := os.WriteFile(queuePath, []byte(`{
+  "project": {"slug_id": "project-slug"},
+  "policy": {
+    "target_in_progress": 1,
+    "activate_state_name": "Queued for Review",
+    "activate_state_id": "state-review",
+    "refill_states": [" todo. ", "Backlog", "Todo", "backlog."]
+  },
+  "issue_order": ["BIG-PAR-393"],
+  "issues": [
+    {"identifier": "BIG-PAR-393", "title": "Stabilize normalized refill fetch state lists", "track": "Automation", "status": "Todo"}
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write queue file: %v", err)
+	}
+	queue, err := refill.LoadQueue(queuePath)
+	if err != nil {
+		t.Fatalf("load queue: %v", err)
+	}
+
+	var requestedStateNames []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var request graphqlRequest
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+		if !strings.Contains(request.Query, "query RefillIssues") {
+			t.Fatalf("unexpected query: %s", request.Query)
+		}
+		rawStateNames, ok := request.Variables["stateNames"].([]any)
+		if !ok {
+			t.Fatalf("expected stateNames variable, got %#v", request.Variables["stateNames"])
+		}
+		for _, stateName := range rawStateNames {
+			requestedStateNames = append(requestedStateNames, stateName.(string))
+		}
+		response := refillResponse{}
+		response.Data.Issues.Nodes = []linearIssueNode{}
+		_ = json.NewEncoder(w).Encode(response)
+	}))
+	defer server.Close()
+
+	client := &linearClient{apiKey: "test-token", endpoint: server.URL, httpClient: server.Client()}
+
+	if err := runRefillOnce(queue, client, false, "", nil, false, queuePath, markdownPath, ""); err != nil {
+		t.Fatalf("run refill once: %v", err)
+	}
+	if !reflect.DeepEqual(requestedStateNames, []string{"Queued for Review", "todo.", "Backlog"}) {
+		t.Fatalf("expected deduplicated fetch states, got %#v", requestedStateNames)
+	}
+}
+
 func TestRunRefillOncePromotesUsingLocalIssueStore(t *testing.T) {
 	tempDir := t.TempDir()
 	queuePath := filepath.Join(tempDir, "queue.json")

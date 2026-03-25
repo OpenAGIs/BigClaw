@@ -1089,11 +1089,7 @@ func runRefillOnce(queue *refill.ParallelIssueQueue, client refillClient, apply 
 		}
 	}
 
-	refillStates := make([]string, 0, len(queue.RefillStates()))
-	for state := range queue.RefillStates() {
-		refillStates = append(refillStates, state)
-	}
-	statesToFetch := append([]string{queue.ActivateStateName()}, refillStates...)
+	statesToFetch := queue.FetchStateNames()
 	issues := []refill.TrackedIssue{}
 	if client.backend() == "local" {
 		issues = allIssues
