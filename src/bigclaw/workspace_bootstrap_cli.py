@@ -6,9 +6,12 @@ from pathlib import Path
 from typing import Sequence
 
 from bigclaw.workspace_bootstrap import (
+    SharedBootstrapSnapshot,
     WorkspaceBootstrapError,
     bootstrap_workspace,
     cleanup_workspace,
+    prepare_shared_snapshot,
+    prewarm_workspaces,
 )
 
 
@@ -24,9 +27,20 @@ def build_parser(
     default_cache_key: str | None,
 ) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("command", choices=["bootstrap", "cleanup"])
+    parser.add_argument("command", choices=["bootstrap", "cleanup", "prepare-snapshot", "prewarm"])
     parser.add_argument("--workspace", default=".", help="Workspace path managed by Symphony.")
+    parser.add_argument(
+        "--workspace-root",
+        default=".",
+        help="Root directory used when prewarming multiple issue workspaces.",
+    )
     parser.add_argument("--issue", default="", help="Linear issue identifier used for the bootstrap branch.")
+    parser.add_argument(
+        "--issues",
+        nargs="*",
+        default=[],
+        help="Issue identifiers used for prewarm. Each issue maps to <workspace-root>/<issue>.",
+    )
     parser.add_argument("--repo-url", default=default_repo_url, help="Canonical remote repository URL.")
     parser.add_argument("--default-branch", default=default_branch, help="Default branch used as the bootstrap base.")
     parser.add_argument(
@@ -44,6 +58,11 @@ def build_parser(
         default=default_cache_key,
         help="Optional stable key for the per-repo cache directory.",
     )
+    parser.add_argument(
+        "--snapshot-file",
+        default="",
+        help="Optional JSON file used to read or persist a shared bootstrap snapshot.",
+    )
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON output.")
     return parser
 
@@ -54,6 +73,24 @@ def emit(payload: dict, as_json: bool) -> None:
         return
     for key, value in payload.items():
         print(f"{key}={value}")
+
+
+def read_snapshot(path: str | Path | None) -> SharedBootstrapSnapshot | None:
+    if not path:
+        return None
+    snapshot_path = Path(path).expanduser().resolve()
+    if not snapshot_path.exists():
+        return None
+    return SharedBootstrapSnapshot.from_dict(json.loads(snapshot_path.read_text()))
+
+
+def write_snapshot(path: str | Path | None, snapshot: SharedBootstrapSnapshot) -> Path | None:
+    if not path:
+        return None
+    snapshot_path = Path(path).expanduser().resolve()
+    snapshot_path.parent.mkdir(parents=True, exist_ok=True)
+    snapshot_path.write_text(json.dumps(snapshot.to_dict(), ensure_ascii=False, indent=2))
+    return snapshot_path
 
 
 def main(
@@ -76,8 +113,52 @@ def main(
     )
     args = parser.parse_args(argv)
     workspace = Path(args.workspace).expanduser().resolve()
+    workspace_root = Path(args.workspace_root).expanduser().resolve()
+    snapshot = read_snapshot(args.snapshot_file)
 
     try:
+        if args.command == "prepare-snapshot":
+            snapshot = prepare_shared_snapshot(
+                args.repo_url,
+                default_branch=args.default_branch,
+                cache_root=args.cache_root,
+                cache_base=args.cache_base,
+                cache_key=args.cache_key,
+            )
+            snapshot_path = write_snapshot(args.snapshot_file, snapshot)
+            emit(
+                {
+                    "status": "ok",
+                    "snapshot_file": str(snapshot_path) if snapshot_path is not None else "",
+                    "snapshot": snapshot.to_dict(),
+                },
+                args.json,
+            )
+            return 0
+
+        if args.command == "prewarm":
+            prewarm = prewarm_workspaces(
+                [(workspace_root / issue_identifier, issue_identifier) for issue_identifier in args.issues],
+                repo_url=args.repo_url,
+                default_branch=args.default_branch,
+                cache_root=args.cache_root,
+                cache_base=args.cache_base,
+                cache_key=args.cache_key,
+                shared_snapshot=snapshot,
+            )
+            snapshot_path = write_snapshot(args.snapshot_file, prewarm.snapshot)
+            emit(
+                {
+                    "status": "ok",
+                    "workspace_root": str(workspace_root),
+                    "issues": list(args.issues),
+                    "snapshot_file": str(snapshot_path) if snapshot_path is not None else "",
+                    **prewarm.to_dict(),
+                },
+                args.json,
+            )
+            return 0
+
         payload = dict(
             workspace=workspace,
             issue_identifier=args.issue,
@@ -88,7 +169,7 @@ def main(
             cache_key=args.cache_key,
         )
         if args.command == "bootstrap":
-            status = bootstrap_workspace(**payload)
+            status = bootstrap_workspace(**payload, shared_snapshot=snapshot)
         else:
             status = cleanup_workspace(**payload)
         emit({"status": "ok", **status.to_dict()}, args.json)

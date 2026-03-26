@@ -1,3 +1,4 @@
+import json
 import subprocess
 from pathlib import Path
 
@@ -9,6 +10,7 @@ from bigclaw.workspace_bootstrap import (
     prepare_shared_snapshot,
     repo_cache_key,
 )
+from bigclaw.workspace_bootstrap_cli import main as workspace_bootstrap_cli_main
 from bigclaw.workspace_bootstrap_validation import build_validation_report
 
 
@@ -267,3 +269,91 @@ def test_validation_report_covers_three_workspaces_with_one_cache(tmp_path: Path
     assert report["summary"]["cache_reused_after_first"] is True
     assert report["summary"]["cleanup_preserved_cache"] is True
     assert report["shared_snapshot"]["default_branch"] == "main"
+
+
+def test_cli_prepare_snapshot_writes_snapshot_file(tmp_path: Path, capsys) -> None:
+    remote = init_remote_with_main(tmp_path)
+    snapshot_path = tmp_path / "snapshot.json"
+
+    exit_code = workspace_bootstrap_cli_main(
+        [
+            "prepare-snapshot",
+            "--repo-url",
+            str(remote),
+            "--cache-base",
+            str(tmp_path / "repos"),
+            "--snapshot-file",
+            str(snapshot_path),
+            "--json",
+        ]
+    )
+
+    captured = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert captured["status"] == "ok"
+    assert captured["snapshot_file"] == str(snapshot_path.resolve())
+    assert captured["snapshot"]["repo_url"] == str(remote)
+    assert json.loads(snapshot_path.read_text())["repo_url"] == str(remote)
+
+
+def test_cli_bootstrap_uses_snapshot_file(tmp_path: Path, capsys) -> None:
+    remote = init_remote_with_main(tmp_path)
+    snapshot_path = tmp_path / "snapshot.json"
+    snapshot = prepare_shared_snapshot(str(remote), cache_base=tmp_path / "repos")
+    snapshot_path.write_text(json.dumps(snapshot.to_dict(), ensure_ascii=False, indent=2))
+
+    workspace = tmp_path / "workspaces" / "BIG-197-A"
+    exit_code = workspace_bootstrap_cli_main(
+        [
+            "bootstrap",
+            "--workspace",
+            str(workspace),
+            "--issue",
+            "BIG-197-A",
+            "--repo-url",
+            str(remote),
+            "--snapshot-file",
+            str(snapshot_path),
+            "--json",
+        ]
+    )
+
+    captured = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert captured["status"] == "ok"
+    assert captured["snapshot_reused"] is True
+    assert captured["cache_reused"] is True
+    assert workspace.exists()
+
+
+def test_cli_prewarm_creates_multiple_workspaces_from_one_snapshot(tmp_path: Path, capsys) -> None:
+    remote = init_remote_with_main(tmp_path)
+    snapshot_path = tmp_path / "snapshot.json"
+
+    exit_code = workspace_bootstrap_cli_main(
+        [
+            "prewarm",
+            "--workspace-root",
+            str(tmp_path / "workspaces"),
+            "--issues",
+            "BIG-197-1",
+            "BIG-197-2",
+            "BIG-197-3",
+            "--repo-url",
+            str(remote),
+            "--cache-base",
+            str(tmp_path / "repos"),
+            "--snapshot-file",
+            str(snapshot_path),
+            "--json",
+        ]
+    )
+
+    captured = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert captured["status"] == "ok"
+    assert captured["summary"]["workspace_count"] == 3
+    assert captured["summary"]["snapshot_reused_for_all"] is True
+    assert Path(captured["snapshot"]["mirror_path"]).joinpath("HEAD").exists()
+    assert all(Path(workspace["workspace"]).exists() for workspace in captured["workspaces"])
+    assert json.loads(snapshot_path.read_text())["cache_root"] == captured["snapshot"]["cache_root"]
