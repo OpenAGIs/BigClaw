@@ -59,6 +59,31 @@ Bootstrap JSON output includes `cache_root`, `cache_key`, `cache_reused`, `clone
 `mirror_created`, `seed_created`, and `workspace_mode` so operators can tell whether a run warmed
 the cache or reused it.
 
+## Snapshot and prewarm workflow
+
+For unattended parallel issue bursts, operators can materialize one reusable snapshot and then
+prewarm several worktrees from it:
+
+```bash
+bash scripts/ops/bigclawctl workspace prepare-snapshot \
+  --repo-url "${SYMPHONY_BOOTSTRAP_REPO_URL}" \
+  --default-branch "${SYMPHONY_BOOTSTRAP_DEFAULT_BRANCH:-main}" \
+  --cache-base "${SYMPHONY_BOOTSTRAP_CACHE_BASE:-$HOME/.cache/symphony/repos}" \
+  --cache-key "${SYMPHONY_BOOTSTRAP_CACHE_KEY:-}" \
+  --snapshot-file .symphony/bootstrap-snapshot.json \
+  --json
+
+bash scripts/ops/bigclawctl workspace prewarm \
+  --workspace-root ./tmp/prewarmed-workspaces \
+  --issues BIG-101 BIG-102 BIG-103 \
+  --repo-url "${SYMPHONY_BOOTSTRAP_REPO_URL}" \
+  --snapshot-file .symphony/bootstrap-snapshot.json \
+  --json
+```
+
+Later single-workspace bootstrap calls can reuse the same snapshot file with `--snapshot-file` to
+avoid recomputing the shared cache configuration.
+
 ## Validation workflow
 
 Use `bash scripts/ops/bigclawctl workspace validate` plus a 3-issue sample to confirm a repo warms one

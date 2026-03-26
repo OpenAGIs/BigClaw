@@ -19,3 +19,5 @@
 ## Validation Results
 - `2026-03-26`: `python3 -m pytest tests/test_workspace_bootstrap.py` -> `15 passed in 4.51s`
 - `2026-03-26`: `python3 -m py_compile src/bigclaw/workspace_bootstrap.py src/bigclaw/workspace_bootstrap_cli.py src/bigclaw/workspace_bootstrap_validation.py tests/test_workspace_bootstrap.py` -> `ok`
+- `2026-03-26`: `python3 -m pytest tests/test_workspace_bootstrap.py` -> `15 passed in 4.47s`
+- `2026-03-26`: `python3 -m py_compile src/bigclaw/workspace_bootstrap.py src/bigclaw/workspace_bootstrap_cli.py src/bigclaw/workspace_bootstrap_validation.py tests/test_workspace_bootstrap.py` -> `ok`
