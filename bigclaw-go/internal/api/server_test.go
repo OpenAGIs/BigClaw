@@ -2850,10 +2850,11 @@ func TestV2ControlCenterIncludesMultiWorkerPoolSummary(t *testing.T) {
 
 func TestV2ControlCenterAppliesTimeWindowAndReturnsNodeAwareWorkerPoolSummary(t *testing.T) {
 	base := time.Date(2026, 3, 23, 10, 0, 0, 0, time.UTC)
+	q := queue.NewMemoryQueue()
 	recorder := observability.NewRecorder()
 	server := &Server{
 		Recorder: recorder,
-		Queue:    queue.NewMemoryQueue(),
+		Queue:    q,
 		Bus:      events.NewBus(),
 		Worker:   fakeNodeAwareWorkerPoolStatus{now: base},
 		Control:  control.New(),
@@ -2865,6 +2866,24 @@ func TestV2ControlCenterAppliesTimeWindowAndReturnsNodeAwareWorkerPoolSummary(t 
 		{ID: "task-window-other-team", TraceID: "trace-window-other-team", Title: "Other team", State: domain.TaskRunning, Metadata: map[string]string{"team": "growth", "project": "alpha"}, UpdatedAt: base.Add(-10 * time.Minute)},
 	} {
 		recorder.StoreTask(task)
+	}
+	for _, task := range []domain.Task{
+		{ID: "task-degraded-leased", TraceID: "trace-degraded-leased", Title: "Leased on degraded node", Priority: 1, CreatedAt: base.Add(-20 * time.Minute)},
+		{ID: "task-degraded-reassigned", TraceID: "trace-degraded-reassigned", Title: "Reassigned from degraded node", Priority: 1, CreatedAt: base.Add(-19 * time.Minute)},
+	} {
+		if err := q.Enqueue(context.Background(), task); err != nil {
+			t.Fatalf("enqueue %s: %v", task.ID, err)
+		}
+	}
+	if task, lease, err := q.LeaseNext(context.Background(), "worker-node-b", time.Minute); err != nil || task == nil || lease == nil || task.ID != "task-degraded-leased" {
+		t.Fatalf("lease degraded task: err=%v task=%+v lease=%+v", err, task, lease)
+	}
+	leasedTask, leasedLease, err := q.LeaseNext(context.Background(), "worker-node-b", time.Minute)
+	if err != nil || leasedTask == nil || leasedLease == nil || leasedTask.ID != "task-degraded-reassigned" {
+		t.Fatalf("lease reassignable task: err=%v task=%+v lease=%+v", err, leasedTask, leasedLease)
+	}
+	if _, err := q.ReassignTask(context.Background(), "task-degraded-reassigned", "worker-node-b", base.Add(-5*time.Minute), "node node-b degraded: worker worker-node-b heartbeat stale"); err != nil {
+		t.Fatalf("reassign task-degraded-reassigned: %v", err)
 	}
 
 	since := base.Add(-30 * time.Minute)
@@ -2901,14 +2920,24 @@ func TestV2ControlCenterAppliesTimeWindowAndReturnsNodeAwareWorkerPoolSummary(t 
 				ActiveWorkers              int            `json:"active_workers"`
 				IdleWorkers                int            `json:"idle_workers"`
 				StaleWorkers               int            `json:"stale_workers"`
+				LeasedTasks                int            `json:"leased_tasks"`
+				ReassignedTasks            int            `json:"reassigned_tasks"`
 				CapacityUtilizationPercent float64        `json:"capacity_utilization_percent"`
 				WorkerStates               map[string]int `json:"worker_states"`
+				LeasedTaskIDs              []string       `json:"leased_task_ids"`
+				ReassignedTaskIDs          []string       `json:"reassigned_task_ids"`
 			} `json:"nodes"`
 			ExecutorDistribution []struct {
 				Key   string `json:"key"`
 				Count int    `json:"count"`
 			} `json:"executor_distribution"`
 		} `json:"worker_pool"`
+		WorkerPoolHealth struct {
+			LeasedTasksOnDegradedNodes int      `json:"leased_tasks_on_degraded_nodes"`
+			ReassignedTasks            int      `json:"reassigned_tasks"`
+			DegradedNodeTaskIDs        []string `json:"degraded_node_task_ids"`
+			ReassignedTaskIDs          []string `json:"reassigned_task_ids"`
+		} `json:"worker_pool_health"`
 		DistributedDiagnostics struct {
 			Summary struct {
 				TotalTasks int `json:"total_tasks"`
@@ -2938,8 +2967,12 @@ func TestV2ControlCenterAppliesTimeWindowAndReturnsNodeAwareWorkerPoolSummary(t 
 		ActiveWorkers              int
 		IdleWorkers                int
 		StaleWorkers               int
+		LeasedTasks                int
+		ReassignedTasks            int
 		CapacityUtilizationPercent float64
 		WorkerStates               map[string]int
+		LeasedTaskIDs              []string
+		ReassignedTaskIDs          []string
 	}, len(decoded.WorkerPool.Nodes))
 	for _, node := range decoded.WorkerPool.Nodes {
 		nodesByID[node.NodeID] = struct {
@@ -2947,25 +2980,36 @@ func TestV2ControlCenterAppliesTimeWindowAndReturnsNodeAwareWorkerPoolSummary(t 
 			ActiveWorkers              int
 			IdleWorkers                int
 			StaleWorkers               int
+			LeasedTasks                int
+			ReassignedTasks            int
 			CapacityUtilizationPercent float64
 			WorkerStates               map[string]int
+			LeasedTaskIDs              []string
+			ReassignedTaskIDs          []string
 		}{
 			Health:                     node.Health,
 			ActiveWorkers:              node.ActiveWorkers,
 			IdleWorkers:                node.IdleWorkers,
 			StaleWorkers:               node.StaleWorkers,
+			LeasedTasks:                node.LeasedTasks,
+			ReassignedTasks:            node.ReassignedTasks,
 			CapacityUtilizationPercent: node.CapacityUtilizationPercent,
 			WorkerStates:               node.WorkerStates,
+			LeasedTaskIDs:              node.LeasedTaskIDs,
+			ReassignedTaskIDs:          node.ReassignedTaskIDs,
 		}
 	}
 	if node, ok := nodesByID["node-a"]; !ok || node.Health != "active" || node.ActiveWorkers != 1 || node.StaleWorkers != 0 || node.WorkerStates["running"] != 1 {
 		t.Fatalf("unexpected node-a summary: %+v", node)
 	}
-	if node, ok := nodesByID["node-b"]; !ok || node.Health != "degraded" || node.ActiveWorkers != 1 || node.StaleWorkers != 1 || node.WorkerStates["leased"] != 1 {
+	if node, ok := nodesByID["node-b"]; !ok || node.Health != "degraded" || node.ActiveWorkers != 1 || node.StaleWorkers != 1 || node.WorkerStates["leased"] != 1 || node.LeasedTasks != 1 || node.ReassignedTasks != 1 || !containsString(node.LeasedTaskIDs, "task-degraded-leased") || !containsString(node.ReassignedTaskIDs, "task-degraded-reassigned") {
 		t.Fatalf("unexpected node-b summary: %+v", node)
 	}
 	if node, ok := nodesByID["node-c"]; !ok || node.Health != "idle" || node.IdleWorkers != 1 || node.CapacityUtilizationPercent != 0 || node.WorkerStates["idle"] != 1 {
 		t.Fatalf("unexpected node-c summary: %+v", node)
+	}
+	if decoded.WorkerPoolHealth.LeasedTasksOnDegradedNodes != 1 || decoded.WorkerPoolHealth.ReassignedTasks != 1 || !containsString(decoded.WorkerPoolHealth.DegradedNodeTaskIDs, "task-degraded-leased") || !containsString(decoded.WorkerPoolHealth.ReassignedTaskIDs, "task-degraded-reassigned") {
+		t.Fatalf("unexpected worker pool health closure summary: %+v", decoded.WorkerPoolHealth)
 	}
 	if decoded.DistributedDiagnostics.Summary.TotalTasks != 1 {
 		t.Fatalf("expected distributed diagnostics to honor the same time window, got %+v", decoded.DistributedDiagnostics.Summary)

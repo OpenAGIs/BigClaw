@@ -218,21 +218,29 @@ type workerPoolNodeView struct {
 	IdleWorkers                int               `json:"idle_workers"`
 	MissingHeartbeatWorkers    int               `json:"missing_heartbeat_workers"`
 	StaleWorkers               int               `json:"stale_workers"`
+	LeasedTasks                int               `json:"leased_tasks"`
+	ReassignedTasks            int               `json:"reassigned_tasks"`
 	CapacityUtilizationPercent float64           `json:"capacity_utilization_percent"`
 	Health                     string            `json:"health"`
 	ExecutorDistribution       []auditFacetCount `json:"executor_distribution,omitempty"`
 	WorkerStates               map[string]int    `json:"worker_states,omitempty"`
+	LeasedTaskIDs              []string          `json:"leased_task_ids,omitempty"`
+	ReassignedTaskIDs          []string          `json:"reassigned_task_ids,omitempty"`
 }
 
 type workerPoolHealthSummary struct {
-	StaleAfterSeconds         int64    `json:"stale_after_seconds"`
-	WorkersWithHeartbeat      int      `json:"workers_with_heartbeat"`
-	WorkersMissingHeartbeat   int      `json:"workers_missing_heartbeat"`
-	StaleWorkers              int      `json:"stale_workers"`
-	StaleWorkerIDs            []string `json:"stale_worker_ids,omitempty"`
-	MissingHeartbeatWorkerIDs []string `json:"missing_heartbeat_worker_ids,omitempty"`
-	OldestHeartbeatAgeSeconds *int64   `json:"oldest_heartbeat_age_seconds,omitempty"`
-	NewestHeartbeatAgeSeconds *int64   `json:"newest_heartbeat_age_seconds,omitempty"`
+	StaleAfterSeconds          int64    `json:"stale_after_seconds"`
+	WorkersWithHeartbeat       int      `json:"workers_with_heartbeat"`
+	WorkersMissingHeartbeat    int      `json:"workers_missing_heartbeat"`
+	StaleWorkers               int      `json:"stale_workers"`
+	LeasedTasksOnDegradedNodes int      `json:"leased_tasks_on_degraded_nodes"`
+	ReassignedTasks            int      `json:"reassigned_tasks"`
+	StaleWorkerIDs             []string `json:"stale_worker_ids,omitempty"`
+	MissingHeartbeatWorkerIDs  []string `json:"missing_heartbeat_worker_ids,omitempty"`
+	DegradedNodeTaskIDs        []string `json:"degraded_node_task_ids,omitempty"`
+	ReassignedTaskIDs          []string `json:"reassigned_task_ids,omitempty"`
+	OldestHeartbeatAgeSeconds  *int64   `json:"oldest_heartbeat_age_seconds,omitempty"`
+	NewestHeartbeatAgeSeconds  *int64   `json:"newest_heartbeat_age_seconds,omitempty"`
 }
 
 type controlActionAuditEntry struct {
@@ -2981,6 +2989,7 @@ func (s *Server) workerPoolSummary() *workerPoolSummary {
 		}
 		nodes = append(nodes, *node)
 	}
+	s.populateWorkerPoolTaskClosure(nodes, snapshots)
 	sort.SliceStable(nodes, func(i, j int) bool { return nodes[i].NodeID < nodes[j].NodeID })
 	capacityUtilizationPercent := 0.0
 	if len(snapshots) > 0 {
@@ -3001,6 +3010,56 @@ func (s *Server) workerPoolSummary() *workerPoolSummary {
 	}
 }
 
+func (s *Server) populateWorkerPoolTaskClosure(nodes []workerPoolNodeView, snapshots []worker.Status) {
+	inspector, ok := s.Queue.(queue.TaskInspector)
+	if !ok {
+		return
+	}
+	tasks, err := inspector.ListTasks(context.Background(), 0)
+	if err != nil || len(tasks) == 0 || len(nodes) == 0 {
+		return
+	}
+
+	workerNodeIDs := make(map[string]string, len(snapshots))
+	for _, snapshot := range snapshots {
+		workerID := strings.TrimSpace(snapshot.WorkerID)
+		nodeID := firstNonEmpty(strings.TrimSpace(snapshot.NodeID), "unassigned")
+		if workerID != "" {
+			workerNodeIDs[workerID] = nodeID
+		}
+	}
+
+	nodeIndex := make(map[string]*workerPoolNodeView, len(nodes))
+	for index := range nodes {
+		nodeIndex[nodes[index].NodeID] = &nodes[index]
+	}
+
+	for _, snapshot := range tasks {
+		if snapshot.Leased {
+			nodeID := firstNonEmpty(workerNodeIDs[strings.TrimSpace(snapshot.LeaseWorker)], "unassigned")
+			if node := nodeIndex[nodeID]; node != nil {
+				node.LeasedTasks++
+				node.LeasedTaskIDs = append(node.LeasedTaskIDs, snapshot.Task.ID)
+			}
+		}
+
+		fromWorker := strings.TrimSpace(snapshot.Task.Metadata["reassign_from_worker"])
+		if fromWorker == "" {
+			continue
+		}
+		nodeID := firstNonEmpty(workerNodeIDs[fromWorker], "unassigned")
+		if node := nodeIndex[nodeID]; node != nil {
+			node.ReassignedTasks++
+			node.ReassignedTaskIDs = append(node.ReassignedTaskIDs, snapshot.Task.ID)
+		}
+	}
+
+	for index := range nodes {
+		sort.Strings(nodes[index].LeasedTaskIDs)
+		sort.Strings(nodes[index].ReassignedTaskIDs)
+	}
+}
+
 func workerPoolHealth(now time.Time, pool *workerPoolSummary) *workerPoolHealthSummary {
 	if pool == nil {
 		return nil
@@ -3010,6 +3069,8 @@ func workerPoolHealth(now time.Time, pool *workerPoolSummary) *workerPoolHealthS
 	withHeartbeat := 0
 	missingIDs := make([]string, 0)
 	staleIDs := make([]string, 0)
+	degradedTaskIDs := make([]string, 0)
+	reassignedTaskIDs := make([]string, 0)
 	var oldestSeconds *int64
 	var newestSeconds *int64
 
@@ -3039,16 +3100,29 @@ func workerPoolHealth(now time.Time, pool *workerPoolSummary) *workerPoolHealthS
 
 	sort.Strings(staleIDs)
 	sort.Strings(missingIDs)
+	for _, node := range pool.Nodes {
+		if node.Health != "degraded" {
+			continue
+		}
+		degradedTaskIDs = append(degradedTaskIDs, node.LeasedTaskIDs...)
+		reassignedTaskIDs = append(reassignedTaskIDs, node.ReassignedTaskIDs...)
+	}
+	sort.Strings(degradedTaskIDs)
+	sort.Strings(reassignedTaskIDs)
 
 	return &workerPoolHealthSummary{
-		StaleAfterSeconds:         int64(staleAfter.Seconds()),
-		WorkersWithHeartbeat:      withHeartbeat,
-		WorkersMissingHeartbeat:   len(missingIDs),
-		StaleWorkers:              len(staleIDs),
-		StaleWorkerIDs:            staleIDs,
-		MissingHeartbeatWorkerIDs: missingIDs,
-		OldestHeartbeatAgeSeconds: oldestSeconds,
-		NewestHeartbeatAgeSeconds: newestSeconds,
+		StaleAfterSeconds:          int64(staleAfter.Seconds()),
+		WorkersWithHeartbeat:       withHeartbeat,
+		WorkersMissingHeartbeat:    len(missingIDs),
+		StaleWorkers:               len(staleIDs),
+		LeasedTasksOnDegradedNodes: len(degradedTaskIDs),
+		ReassignedTasks:            len(reassignedTaskIDs),
+		StaleWorkerIDs:             staleIDs,
+		MissingHeartbeatWorkerIDs:  missingIDs,
+		DegradedNodeTaskIDs:        degradedTaskIDs,
+		ReassignedTaskIDs:          reassignedTaskIDs,
+		OldestHeartbeatAgeSeconds:  oldestSeconds,
+		NewestHeartbeatAgeSeconds:  newestSeconds,
 	}
 }
 
