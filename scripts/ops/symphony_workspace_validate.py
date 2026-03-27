@@ -1,40 +1,24 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env python3
+"""Legacy compatibility shim for the Go workspace validate command."""
 
-script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+from __future__ import annotations
 
-translated=()
-issues=()
-while [ "$#" -gt 0 ]; do
-  case "$1" in
-    --issues)
-      shift
-      while [ "$#" -gt 0 ] && [[ "$1" != --* ]]; do
-        issues+=("$1")
-        shift
-      done
-      continue
-      ;;
-    --report-file)
-      translated+=(--report "$2")
-      shift 2
-      continue
-      ;;
-    --no-cleanup)
-      translated+=(--cleanup=false)
-      shift
-      continue
-      ;;
-    *)
-      translated+=("$1")
-      shift
-      ;;
-  esac
-done
+import subprocess
+import sys
+from pathlib import Path
 
-if [ "${#issues[@]}" -gt 0 ]; then
-  issue_csv=$(IFS=,; printf '%s' "${issues[*]}")
-  translated+=(--issues "$issue_csv")
-fi
+repo_root = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(repo_root / "src"))
 
-exec bash "$script_dir/bigclawctl" workspace validate "${translated[@]}"
+from bigclaw.legacy_shim import repo_root_from_script, translate_workspace_validate_args
+
+
+def main() -> int:
+    repo_root = repo_root_from_script(__file__)
+    translated = translate_workspace_validate_args(sys.argv[1:])
+    command = ["bash", str(repo_root / "scripts/ops/bigclawctl"), "workspace", "validate", *translated]
+    return subprocess.call(command, cwd=repo_root)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

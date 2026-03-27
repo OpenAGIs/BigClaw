@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	queueMarkdownAbsPath = filepath.Abs
-	queueMarkdownMkdirAll = os.MkdirAll
+	queueMarkdownAbsPath    = filepath.Abs
+	queueMarkdownMkdirAll   = os.MkdirAll
 	queueMarkdownCreateTemp = func(dir string, pattern string) (tempFile, error) {
 		return os.CreateTemp(dir, pattern)
 	}
@@ -116,9 +116,13 @@ func (q *ParallelIssueQueue) RenderMarkdown(generatedAt time.Time) string {
 	out.WriteString("- Optional dashboard refresh after promotion:\n")
 	out.WriteString("  - `bash scripts/ops/bigclawctl refill --apply --watch --local-issues local-issues.json --refresh-url http://127.0.0.1:4000/api/v1/refresh`\n")
 	out.WriteString("- Local issue CLI:\n")
-	out.WriteString("  - `bash scripts/ops/bigclaw-issue list`\n")
-	out.WriteString(fmt.Sprintf("  - `bash scripts/ops/bigclaw-issue state BIG-GOM-303 %q`\n", activeStateName))
+	out.WriteString("  - `bash scripts/ops/bigclawctl issue list`\n")
+	out.WriteString(fmt.Sprintf("  - `bash scripts/ops/bigclawctl issue state BIG-GOM-303 %q`\n", activeStateName))
 	out.WriteString("- Local dashboard/orchestrator:\n")
+	out.WriteString("  - `bash scripts/ops/bigclawctl symphony`\n")
+	out.WriteString("  - `bash scripts/ops/bigclawctl panel`\n")
+	out.WriteString("- Compatibility wrappers retained during cutover:\n")
+	out.WriteString("  - `bash scripts/ops/bigclaw-issue ...`\n")
 	out.WriteString("  - `bash scripts/ops/bigclaw-symphony`\n")
 	out.WriteString("  - `bash scripts/ops/bigclaw-panel`\n\n")
 

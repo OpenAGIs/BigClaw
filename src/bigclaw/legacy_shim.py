@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 from typing import Iterable, List, Sequence
 
@@ -18,6 +19,16 @@ def append_missing_flag(args: Sequence[str], flag: str, value: str) -> List[str]
 
 def build_bigclawctl_exec_args(repo_root: Path, command: Iterable[str], forwarded: Sequence[str]) -> List[str]:
     return ["bash", str(repo_root / "scripts/ops/bigclawctl"), *command, *forwarded]
+
+
+def repo_root_from_script(script_path: str) -> Path:
+    return Path(script_path).resolve().parents[2]
+
+
+def run_bigclawctl_shim(script_path: str, command: Iterable[str], forwarded: Sequence[str]) -> int:
+    repo_root = repo_root_from_script(script_path)
+    argv = build_bigclawctl_exec_args(repo_root, command, forwarded)
+    return subprocess.call(argv, cwd=repo_root)
 
 
 def build_workspace_bootstrap_args(repo_root: Path, forwarded: Sequence[str]) -> List[str]:
@@ -67,3 +78,7 @@ def build_github_sync_args(repo_root: Path, forwarded: Sequence[str]) -> List[st
 
 def build_refill_args(repo_root: Path, forwarded: Sequence[str]) -> List[str]:
     return build_bigclawctl_exec_args(repo_root, ["refill"], list(forwarded))
+
+
+def build_workspace_runtime_bootstrap_args(repo_root: Path, forwarded: Sequence[str]) -> List[str]:
+    return build_bigclawctl_exec_args(repo_root, ["workspace"], list(forwarded))

@@ -7509,6 +7509,187 @@
       "state": "Done",
       "title": "Reconcile final refill queue history",
       "updated_at": "2026-03-25T20:49:24Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Implemented the first Go CLI migration batch for the root script layer by adding `create-issues`, `dev-smoke`, `symphony`, `issue`, and `panel` to `bigclaw-go/cmd/bigclawctl`, then converting the legacy Python/Bash entrypoints into compatibility shims that dispatch into the Go CLI. Added targeted tests for the new commands and shim routing, documented the migration plan/backlog/validation/risk in `docs/go-cli-script-migration-plan.md`, and updated the repo README plus workpad. Validation: `cd bigclaw-go && go test ./cmd/bigclawctl` -> ok; `bash scripts/ops/bigclawctl dev-smoke` -> `smoke_ok local`; `PYTHONPATH=src python3 scripts/dev_smoke.py` -> `smoke_ok local` with expected deprecation warning; `python3 scripts/create_issues.py --help` -> usage for `bigclawctl create-issues`; `bash scripts/ops/bigclawctl issue --help` / `panel --help` / `symphony --help` -> ok; `bash scripts/ops/bigclaw-issue list` -> exit 0. Branch: `feat/BIG-GO-902-go-cli-script-migration`. PR seed URL: `https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-902-go-cli-script-migration`. Risk summary: root shim migration is complete for this first batch, but `scripts/dev_bootstrap.sh`, the `scripts/ops/bigclawctl` go-run wrapper, and `bigclaw-go/scripts/*` remain deferred.",
+          "created_at": "2026-03-27T15:27:30Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added issue-scoped evidence pack `reports/BIG-GO-902-validation.md` summarizing delivered Go CLI migration scope, exact validation commands/results, branch `feat/BIG-GO-902-go-cli-script-migration`, PR seed URL, and deferred risks. This complements the tracker closeout note with a stable reviewer-facing report artifact in-repo.",
+          "created_at": "2026-03-27T15:32:26Z"
+        },
+        {
+          "author": "codex",
+          "body": "Follow-up docs pass completed: README and the generated refill queue companion now prefer direct `scripts/ops/bigclawctl issue|symphony|panel` commands, while the old wrapper names remain documented only as compatibility shims. Validation: `cd bigclaw-go && go test ./internal/refill` -> ok; `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> exit 0 with `markdown_written: true` and regenerated `docs/parallel-refill-queue.md` using the new command examples.",
+          "created_at": "2026-03-27T15:34:53Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added `reports/BIG-GO-902-pr.md` with a ready-to-paste PR title/body, validation block, and deferred-risk section so the branch can be opened via the deterministic PR seed URL even though this workspace has no GitHub CLI/token configured.",
+          "created_at": "2026-03-27T15:37:14Z"
+        },
+        {
+          "author": "codex",
+          "body": "External status check on 2026-03-27: public GitHub search did not return a PR for `feat/BIG-GO-902-go-cli-script-migration` or the suggested BIG-GO-902 PR title, and opening the deterministic PR seed URL still redirected to GitHub sign-in. The remaining blocker is external GitHub authentication, not missing repo artifacts; the branch, PR draft, validation report, and seed URL are all in place.",
+          "created_at": "2026-03-27T15:41:15Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added the direct compare URL `https://github.com/OpenAGIs/BigClaw/compare/main...feat/BIG-GO-902-go-cli-script-migration?expand=1` to the PR draft and validation report so reviewers can inspect the branch diff even before a PR is opened.",
+          "created_at": "2026-03-27T15:42:31Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added `reports/BIG-GO-902-closeout.md` as a single-file handoff index containing the branch, compare URL, PR seed URL, validation commands, repo artifacts, and the remaining external GitHub-auth blocker.",
+          "created_at": "2026-03-27T15:44:21Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final repo scan on 2026-03-27 found no additional root-script migration gaps beyond the deferred backlog already documented. Closeout artifacts now pin the latest pushed commit as `f4b5c1b` so reviewers can verify the exact branch tip without local git access.",
+          "created_at": "2026-03-27T15:48:59Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added `reports/BIG-GO-902-status.json` as a machine-readable closeout artifact containing the branch name, latest pushed SHA, reviewer links, in-repo artifacts, validation commands, and the remaining external GitHub-auth blocker.",
+          "created_at": "2026-03-27T15:50:35Z"
+        },
+        {
+          "author": "codex",
+          "body": "Corrected the closeout SHA references so the validation report, closeout index, and machine-readable status all point at the current pushed branch tip `a6d1758` instead of older intermediate commits.",
+          "created_at": "2026-03-27T15:52:23Z"
+        },
+        {
+          "author": "codex",
+          "body": "Synced the closeout SHA references again after the latest push so the validation report, closeout index, and machine-readable status now point at branch tip `77ba309`.",
+          "created_at": "2026-03-27T15:53:49Z"
+        },
+        {
+          "author": "codex",
+          "body": "Synced BIG-GO-902 closeout artifacts on 2026-03-28 after the shim-layer follow-up commit. Reports reports/BIG-GO-902-validation.md, reports/BIG-GO-902-pr.md, reports/BIG-GO-902-closeout.md, and reports/BIG-GO-902-status.json now reflect branch tip a5be444737244821914b1e38fb86142ee4a49d90 and the expanded shim coverage for github-sync, refill, and workspace compatibility entrypoints. Validation rerun succeeded for Go tests, Python shim tests, py_compile, dev-smoke, create-issues help, issue help, refill shim help, workspace validate shim help, and github-sync status JSON. Remaining blocker is unchanged: this workspace can push the branch but cannot create the GitHub PR directly because no gh auth or GitHub token is configured.",
+          "created_at": "2026-03-27T16:13:33Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 external verification update: public GitHub search still shows no PR result for feat/BIG-GO-902-go-cli-script-migration or the suggested BIG-GO-902 PR title. The compare URL remains publicly reachable and shows GitHub's Open a pull request flow, but the web diff does not fully render and reports that the comparison is taking too long to generate. Blocker remains external PR authentication/creation only.",
+          "created_at": "2026-03-27T16:19:58Z"
+        },
+        {
+          "author": "codex",
+          "body": "Removed the remaining PYTHONPATH dependency from the Python compatibility shims by having scripts/dev_smoke.py and the scripts/ops/*.py wrappers prepend repo-root src/ before importing legacy helpers. Added direct-execution coverage in tests/test_legacy_shim.py and refreshed README, migration plan, workpad, validation report, PR draft, closeout index, and machine-readable status so the documented validation commands now use plain python3 invocations. Validation: python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py -> 12 passed; python3 scripts/dev_smoke.py -> smoke_ok local with expected deprecation warning; python3 scripts/ops/bigclaw_refill_queue.py --help -> ok; python3 scripts/ops/symphony_workspace_validate.py --help -> ok; python3 scripts/ops/bigclaw_github_sync.py status --json -> status ok/synced true; python3 scripts/create_issues.py --help -> ok; python3 scripts/ops/symphony_workspace_bootstrap.py --help -> ok; python3 -m py_compile changed shim files -> ok.",
+          "created_at": "2026-03-27T16:26:02Z"
+        },
+        {
+          "author": "codex",
+          "body": "Expanded direct-execution regression coverage for the self-bootstrapping Python shims so the legacy create-issues, github-sync, and workspace bootstrap wrappers are now also explicitly tested without PYTHONPATH. Refreshed BIG-GO-902 closeout artifacts to point at validated implementation commit 63c8e6c554a32513d4a71b4efe1d98b08a07cc1f and to include the newly checked shim commands. Validation rerun: python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py -> 15 passed; python3 scripts/create_issues.py --help -> ok; python3 scripts/ops/bigclaw_github_sync.py --help -> ok; python3 scripts/ops/bigclaw_workspace_bootstrap.py --help -> ok.",
+          "created_at": "2026-03-27T16:29:49Z"
+        },
+        {
+          "author": "codex",
+          "body": "Completed direct-execution regression coverage for the remaining Symphony workspace compatibility wrappers. tests/test_legacy_shim.py now also executes scripts/ops/symphony_workspace_bootstrap.py and scripts/ops/symphony_workspace_validate.py without PYTHONPATH, bringing the Python shim coverage set to 17 passing tests. Updated BIG-GO-902 validation/closeout artifacts so the documented command list now includes the Symphony workspace bootstrap shim help check as well.",
+          "created_at": "2026-03-27T16:35:02Z"
+        },
+        {
+          "author": "codex",
+          "body": "Final metadata sync: BIG-GO-902 closeout artifacts now point at the latest validated pushed state b4880c3976c79b35b4e310371372ebc7c5030da3, which includes the full 17-test Python shim direct-execution coverage set and the final report updates. No additional in-repo migration gaps remain; only external PR creation/authentication is pending.",
+          "created_at": "2026-03-27T16:38:01Z"
+        },
+        {
+          "author": "codex",
+          "body": "External verification follow-up on 2026-03-28: GitHub public search still shows no PR result, and although the compare URL remains reachable, the rendered public compare content appears stale. It still shows only the older 14-commit history rather than the latest pushed follow-up commits, while also reporting that diff generation is taking too long. Updated BIG-GO-902 validation, closeout, and status artifacts to capture this GitHub-side reviewer-view issue alongside the existing external-auth blocker.",
+          "created_at": "2026-03-27T16:40:11Z"
+        },
+        {
+          "author": "codex",
+          "body": "Auth environment check on 2026-03-28 confirms the blocker is fully external: gh is not installed in this workspace, and both GITHUB_TOKEN and GH_TOKEN are unset. Updated reports/BIG-GO-902-status.json to record this explicitly alongside the stale GitHub compare-view note.",
+          "created_at": "2026-03-27T16:42:29Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 follow-up: migrated the first bigclaw-go/scripts automation batch into Go-owned bigclawctl automation subcommands (e2e run-task-smoke, benchmark soak-local, migration shadow-compare), converted the three legacy Python entrypoints into compatibility shims, added targeted Go tests in bigclaw-go/cmd/bigclawctl/automation_commands_test.go, and refreshed docs/reports/go-cli migration artifacts to current pushed tip 3fe203ebcd99f0f054911c84cf6929a42af18f64. Validation: cd bigclaw-go && go test ./cmd/bigclawctl/... -> ok; go run ./cmd/bigclawctl automation --help -> ok; go run ./cmd/bigclawctl automation e2e run-task-smoke --help -> ok; go run ./cmd/bigclawctl automation benchmark soak-local --help -> ok; go run ./cmd/bigclawctl automation migration shadow-compare --help -> ok.",
+          "created_at": "2026-03-27T17:24:18Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 external verification refresh: latest pushed tip is 989b0064f22b04e566fb0d0036ea38c0184ba07b. Public GitHub verification still shows no BIG-GO-902 PR; the public repository PR list currently exposes only #185, #184, and #183. The compare URL remains reachable but the rendered view is stale and still reports only 14 commits / 26 files changed, plus repeated Uh oh load failures. Refreshed BIG-GO-902 validation, PR draft, closeout, and status artifacts to capture this current external state.",
+          "created_at": "2026-03-27T17:27:41Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 metadata sync: refreshed BIG-GO-902 validation, closeout, and machine-readable status artifacts so they now point at latest pushed tip 8feba6dc24109874f23919bc970f05ddf99f30e1 after the external-verification sync commit. Public GitHub state remains unchanged: no visible BIG-GO-902 PR and compare view still stale/erroring.",
+          "created_at": "2026-03-27T17:29:14Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 PR creation resolved the last blocker: authenticated GitHub API creation succeeded and opened PR #215 at https://github.com/OpenAGIs/BigClaw/pull/215. Closeout artifacts now use stable commit semantics (`latest_code_migration_commit=3fe203ebcd99f0f054911c84cf6929a42af18f64`) instead of chasing every report-sync HEAD update, while preserving the compare-rendering risk note.",
+          "created_at": "2026-03-27T17:34:31Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 PR status verification: confirmed PR #215 is open on base main with head ref feat/BIG-GO-902-go-cli-script-migration at head SHA 5174f5ed55a81f4cd5de048a8dcb567aeaa0f468. Added this PR-state metadata to reports/BIG-GO-902-status.json for machine-readable auditing.",
+          "created_at": "2026-03-27T17:36:50Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 PR body sync: updated PR #215 body via authenticated GitHub API so the live reviewer-facing description now matches the repo closeout artifacts, including reviewer artifact links, stable latest_code_migration_commit semantics, validation commands, and deferred-risk notes. PR remains open at https://github.com/OpenAGIs/BigClaw/pull/215.",
+          "created_at": "2026-03-27T17:38:47Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 reviewer-readiness verification: PR #215 is open, not draft, mergeable=true, mergeable_state=clean, review_comments=0, commits=37. Synced these fields into reports/BIG-GO-902-status.json so the closeout record now includes live PR readiness metadata.",
+          "created_at": "2026-03-27T17:42:29Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 checks/reviews verification: PR #215 head advanced to 1dc3628d70a137daa3121423fb78b4e0ad31d3bf. Live GitHub status currently shows combined_state=pending, check_runs_total=1 with check `test` in_progress, and reviews_total=0. Synced these reviewer-signal fields into reports/BIG-GO-902-status.json.",
+          "created_at": "2026-03-27T17:44:39Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 checks/reviews refresh: PR #215 head advanced again to aa81616f7acc7f88bc992a11e02f3439e0b5e5bd. Live GitHub status now reports mergeable=true with mergeable_state=unstable while the single `test` check remains in_progress and combined_state=pending; reviews_total is still 0. Refreshed reports/BIG-GO-902-status.json to match this latest reviewer-facing state.",
+          "created_at": "2026-03-27T17:46:23Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 live PR head refresh: PR #215 head advanced to e13b3e75de605f1f2d92a74ca1aea22883ecf984. Current GitHub state is otherwise unchanged from the previous snapshot: mergeable=true, mergeable_state=unstable, combined_state=pending, one `test` check still in_progress, and reviews_total=0. Synced reports/BIG-GO-902-status.json to this latest head SHA.",
+          "created_at": "2026-03-27T17:48:08Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 status semantics fix: stopped treating PR #215 head SHA as a perpetually current field in reports/BIG-GO-902-status.json. Report-sync commits were themselves moving the branch head and invalidating each fresh snapshot, so the status file now records last_observed_head_sha=ca077ca5ed3d0d1f18b68616ceba0f0ebf586acb with an explicit observation note instead of chasing every metadata-only push.",
+          "created_at": "2026-03-27T17:50:05Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 checks completion refresh: live GitHub check-runs for PR #215 now show the single `test` run completed successfully on observed head e7bf6b88bc5d368d65e96b0a5980c1e8c745d75d, and mergeable_state has returned to clean. The combined commit status API still reports pending, so reports/BIG-GO-902-status.json now carries an explicit status_observation_note describing that aggregate-status lag.",
+          "created_at": "2026-03-27T17:52:55Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 final blocker classification: no additional in-repo BIG-GO-902 implementation work remains. The remaining blocker is external PR lifecycle only: PR #215 is still open, reviews_total=0, requested_reviewers=[], requested_teams=[], auto_merge=None, and GitHub still reports mergeable_state=unstable while aggregate status catches up. Updated reports/BIG-GO-902-status.json blocker.type to external_review_and_ci.",
+          "created_at": "2026-03-27T17:55:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 reviewer availability check: authenticated collaborator listing for OpenAGIs/BigClaw returned exactly one collaborator, `OpenAGIs`. Because PR #215 is already owned by that same account, there is no separate reviewer identity available for unattended review-request automation. Updated reports/BIG-GO-902-status.json blocker summary with this evidence.",
+          "created_at": "2026-03-27T17:57:06Z"
+        }
+      ],
+      "created_at": "2026-03-27T15:27:30Z",
+      "description": "P0\\n\\n背景: BIG-vNext-Go-001 的并行子任务。\\n\\n目标:\\n将 scripts/*.py 与常用自动化入口迁移为 Go CLI/子命令，并保留兼容层计划。\\n\\n验收:\\n- 形成可执行迁移方案与首批实现/改造清单\\n- 明确验证命令与回归面\\n- 输出分支/PR建议与风险",
+      "id": "big-go-902",
+      "identifier": "BIG-GO-902",
+      "labels": [
+        "bigclawgo-migrationparallelp0subtask"
+      ],
+      "priority": 1,
+      "state": "Done",
+      "title": "脚本层迁移到 Go CLI",
+      "updated_at": "2026-03-27T17:57:06Z"
     }
   ]
 }

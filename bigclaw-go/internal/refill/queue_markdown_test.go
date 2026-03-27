@@ -110,6 +110,15 @@ func TestParallelIssueQueueRenderMarkdownInfersRecentBatchesAndZeroTime(t *testi
 	if !strings.Contains(text, "`BIG-PAR-415` — local tracker helper edge coverage") {
 		t.Fatalf("expected inferred active slice in markdown, got %s", text)
 	}
+	if !strings.Contains(text, "`bash scripts/ops/bigclawctl issue list`") {
+		t.Fatalf("expected direct bigclawctl issue command in markdown, got %s", text)
+	}
+	if !strings.Contains(text, "`bash scripts/ops/bigclawctl symphony`") {
+		t.Fatalf("expected direct bigclawctl symphony command in markdown, got %s", text)
+	}
+	if !strings.Contains(text, "`bash scripts/ops/bigclaw-issue ...`") {
+		t.Fatalf("expected compatibility wrapper note in markdown, got %s", text)
+	}
 	if !strings.Contains(text, "`BIG-PAR-416`") {
 		t.Fatalf("expected inferred standby slice in markdown, got %s", text)
 	}
