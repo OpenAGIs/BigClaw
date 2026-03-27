@@ -102,3 +102,7 @@
   - Result: passed
 - `cd bigclaw-go && tmpdir=$(mktemp -d) && go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --go-root . --report-path "$tmpdir/shared.json" --takeover-report-path "$tmpdir/takeover.json" --takeover-artifact-dir "$tmpdir/artifacts" --count 6 --submit-workers 2 --timeout-seconds 30 --takeover-ttl 1s && test -f "$tmpdir/shared.json" && test -f "$tmpdir/takeover.json"`
   - Result: passed
+- `cd bigclaw-go && tmpdir=$(mktemp -d) && go run ./cmd/bigclawctl automation e2e external-store-validation --go-root . --report-path "$tmpdir/external.json" && jq -r '.summary.task_succeeded, .backend_matrix.summary.live_validated_lanes' "$tmpdir/external.json"`
+  - Result: passed
+- `cd bigclaw-go && tmpdir=$(mktemp -d) && go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --go-root . --report-path "$tmpdir/shared.json" --takeover-report-path "$tmpdir/takeover.json" --takeover-artifact-dir "$tmpdir/artifacts" --count 24 --submit-workers 4 --timeout-seconds 30 --takeover-ttl 1s >/dev/null && jq -r '.all_ok' "$tmpdir/shared.json" && jq -r '.summary.failing_scenarios' "$tmpdir/takeover.json"`
+  - Result: passed

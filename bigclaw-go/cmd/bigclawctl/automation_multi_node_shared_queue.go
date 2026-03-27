@@ -261,7 +261,7 @@ func startMultiNodeRuntimes(goRoot string, rootStateDir string) ([]multiNodeRunt
 
 func startHealthyMultiNodeRuntimes(goRoot string, rootStateDir string, client *http.Client, sleep func(time.Duration)) ([]multiNodeRuntime, error) {
 	var lastErr error
-	for attempt := 0; attempt < 3; attempt++ {
+	for attempt := 0; attempt < 8; attempt++ {
 		runtimes, err := startMultiNodeRuntimes(goRoot, rootStateDir)
 		if err != nil {
 			lastErr = err
