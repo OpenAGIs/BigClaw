@@ -15,6 +15,7 @@
 - [x] Commit and push the issue branch to `origin`.
 - [x] Advance the first executable migration batch by folding legacy workspace wrapper semantics into the Go CLI and shrinking the shell compatibility layer.
 - [x] Start `BIG-VNEXT-GO-107` by replacing the legacy Python dev smoke helper with a Go-native `bigclawctl` command and updated docs.
+- [x] Replace `scripts/create_issues.py` with a Go-native `bigclawctl issue-bootstrap sync` flow and leave the Python path as a compatibility shim.
 
 ### Acceptance Criteria
 
@@ -40,6 +41,8 @@
 - [x] `cd bigclaw-go && go run ./cmd/bigclawctl --help`
 - [x] `cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestRunDevSmokeJSON|TestPrintRootUsageIncludesGoMigration'`
 - [x] `bash scripts/ops/bigclawctl dev-smoke --json`
+- [x] `cd bigclaw-go && go test ./internal/issuebootstrap ./cmd/bigclawctl`
+- [x] `bash scripts/create_issues.py v1 --dry-run --json`
 
 ### Notes
 
@@ -53,3 +56,5 @@
 - Latest CLI visibility fix: the `bigclawctl` root help now exposes `go-migration`, and repo metadata/docs now describe the remaining Python-named ops wrappers as compatibility shims over the Go CLI rather than active Python tooling.
 - New continuation focus: begin `BIG-VNEXT-GO-107` by moving the minimal `scripts/dev_smoke.py` scheduler smoke assertion into a Go-native `bigclawctl dev-smoke` entrypoint.
 - Latest `BIG-VNEXT-GO-107` progress: `bigclawctl dev-smoke` now provides a Go-native scheduler smoke check, README recommends that command in the Go smoke path, and `scripts/dev_smoke.py` now points legacy users at the Go command instead of the old manual service boot sequence.
+- New continuation focus: migrate `scripts/create_issues.py` into Go so the remaining developer bootstrap helpers stop depending on Python for GitHub issue seeding.
+- Latest `BIG-VNEXT-GO-107` progress: `bigclawctl issue-bootstrap sync` now owns the built-in PRD issue-plan seeding logic, supports dry-run preview, and `scripts/create_issues.py` has been reduced to a shell shim over the Go command.

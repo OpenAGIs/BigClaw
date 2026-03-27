@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -17,6 +18,7 @@ import (
 	"bigclaw-go/internal/bootstrap"
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/githubsync"
+	"bigclaw-go/internal/issuebootstrap"
 	"bigclaw-go/internal/legacyshim"
 	"bigclaw-go/internal/migration"
 	"bigclaw-go/internal/refill"
@@ -128,6 +130,8 @@ func run(args []string) int {
 		err = runGoMigration(args[1:])
 	case "dev-smoke":
 		err = runDevSmoke(args[1:])
+	case "issue-bootstrap":
+		err = runIssueBootstrap(args[1:])
 	default:
 		err = fmt.Errorf("unknown command: %s", args[0])
 	}
@@ -136,6 +140,61 @@ func run(args []string) int {
 		return 1
 	}
 	return 0
+}
+
+func runIssueBootstrap(args []string) error {
+	if len(args) == 0 || isHelpToken(args[0]) {
+		_, _ = os.Stdout.WriteString("usage: bigclawctl issue-bootstrap <sync> [plan] [flags]\n")
+		return nil
+	}
+	command := args[0]
+	switch command {
+	case "sync":
+		flags := flag.NewFlagSet("issue-bootstrap "+command, flag.ContinueOnError)
+		_ = flags.String("repo", "..", "repo root")
+		owner := flags.String("owner", "OpenAGIs", "github owner")
+		repo := flags.String("github-repo", "BigClaw", "github repo")
+		planName := flags.String("plan", "", "plan name")
+		apiBase := flags.String("api-base", "https://api.github.com", "github api base")
+		token := flags.String("token", os.Getenv("GITHUB_TOKEN"), "github token")
+		dryRun := flags.Bool("dry-run", false, "preview missing issues without creating them")
+		asJSON := flags.Bool("json", false, "json")
+		normalizedArgs := args[1:]
+		if len(normalizedArgs) > 0 && !strings.HasPrefix(normalizedArgs[0], "-") {
+			normalizedArgs = append([]string{"--plan", normalizedArgs[0]}, normalizedArgs[1:]...)
+		}
+		if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl issue-bootstrap sync [plan] [flags]", normalizedArgs); err != nil {
+			if errors.Is(err, flag.ErrHelp) {
+				_, _ = os.Stdout.WriteString(helpText)
+				return nil
+			}
+			return err
+		}
+		selectedPlan := trim(*planName)
+		if selectedPlan == "" {
+			selectedPlan = trim(os.Getenv("BIGCLAW_PLAN"))
+			if selectedPlan == "" {
+				selectedPlan = "v1"
+			}
+		}
+		report, err := issuebootstrap.Sync(context.Background(), issuebootstrap.SyncOptions{
+			Owner:      *owner,
+			Repo:       *repo,
+			PlanName:   selectedPlan,
+			APIBaseURL: *apiBase,
+			Token:      *token,
+			DryRun:     *dryRun,
+		})
+		if err != nil {
+			return err
+		}
+		return emit(map[string]any{
+			"status": "ok",
+			"report": report,
+		}, *asJSON, 0)
+	default:
+		return fmt.Errorf("unknown issue-bootstrap subcommand: %s", command)
+	}
 }
 
 func runDevSmoke(args []string) error {
@@ -1658,7 +1717,7 @@ func printRefillUsage(w io.Writer) {
 }
 
 func printRootUsage(w io.Writer) {
-	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|refill|local-issues|legacy-python|go-migration|dev-smoke> ...")
+	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|refill|local-issues|legacy-python|go-migration|dev-smoke|issue-bootstrap> ...")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "commands:")
 	fmt.Fprintln(w, "  github-sync     install/sync/status hooks and branch sync state")
@@ -1668,6 +1727,7 @@ func printRootUsage(w io.Writer) {
 	fmt.Fprintln(w, "  legacy-python   validate frozen Python compatibility shims")
 	fmt.Fprintln(w, "  go-migration    generate the Go-only migration plan and inventory artifacts")
 	fmt.Fprintln(w, "  dev-smoke       run the Go-native development smoke check")
+	fmt.Fprintln(w, "  issue-bootstrap preview or sync the built-in PRD issue plans to GitHub")
 }
 
 func absPath(path string) string {

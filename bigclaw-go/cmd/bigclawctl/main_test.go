@@ -152,6 +152,41 @@ func TestRunDevSmokeJSON(t *testing.T) {
 	}
 }
 
+func TestRunIssueBootstrapSyncDryRun(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("unexpected method: %s", r.Method)
+		}
+		_ = json.NewEncoder(w).Encode([]map[string]any{
+			{"number": 1, "title": "[EPIC] BIG-EPIC-1 任务接入与连接器"},
+		})
+	}))
+	defer server.Close()
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runIssueBootstrap([]string{"sync", "v1", "--api-base", server.URL, "--dry-run", "--json"}); err != nil {
+		t.Fatalf("run issue-bootstrap sync: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte(`"dry_run": true`)) {
+		t.Fatalf("expected dry_run in output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"created_count":`)) {
+		t.Fatalf("expected created_count in output, got %s", string(output))
+	}
+}
+
 func initWorkspaceValidateRemote(t *testing.T, root string) string {
 	t.Helper()
 	remote := filepath.Join(root, "remote.git")

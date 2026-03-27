@@ -7657,6 +7657,16 @@
           "author": "codex",
           "body": "Added a Go-native dev smoke entrypoint in bigclawctl. The new `bash scripts/ops/bigclawctl dev-smoke --json` command exercises the scheduler assessment path with a minimal browser-task fixture, returns a stable accepted/executor payload, and is now the recommended Go smoke helper in README. The legacy scripts/dev_smoke.py warning now points to the Go command rather than the old manual service boot sequence. Validation: cd bigclaw-go && go test ./cmd/bigclawctl -run \"TestRunDevSmokeJSON|TestPrintRootUsageIncludesGoMigration\" -> ok; bash scripts/ops/bigclawctl dev-smoke --json -> ok with accepted=true and executor=kubernetes.",
           "created_at": "2026-03-27T15:40:54Z"
+        },
+        {
+          "author": "codex",
+          "body": "Continuing BIG-VNEXT-GO-107 by replacing scripts/create_issues.py with a Go-native bigclawctl issue bootstrap flow. Planned scope: port the built-in v1/v2-ops issue plans into Go, add a sync/preview command against GitHub's issues API, and reduce the Python script to a compatibility shim over the Go entrypoint.",
+          "created_at": "2026-03-27T15:43:04Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added a Go-native issue bootstrap flow. bigclawctl issue-bootstrap sync now owns the built-in v1/v2-ops issue plan definitions and can preview or sync issues to GitHub, while scripts/create_issues.py has been reduced to a shell shim over the Go command. Dry-run mode is local-only and does not require network or a GitHub token, which keeps the developer bootstrap path usable in unattended workspaces. Validation: cd bigclaw-go && go test ./internal/issuebootstrap ./cmd/bigclawctl -> ok; bash scripts/create_issues.py v1 --dry-run --json -> ok with plan=v1, repo=BigClaw, created_count=24.",
+          "created_at": "2026-03-27T15:55:19Z"
         }
       ],
       "created_at": "2026-03-27T15:13:31Z",
@@ -7671,7 +7681,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Migrate dev smoke and bootstrap helpers to Go",
-      "updated_at": "2026-03-27T15:40:54Z"
+      "updated_at": "2026-03-27T15:55:19Z"
     },
     {
       "assigned_to_worker": true,
