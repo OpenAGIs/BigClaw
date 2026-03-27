@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -132,6 +133,8 @@ func run(args []string) int {
 		err = runDevSmoke(args[1:])
 	case "issue-bootstrap":
 		err = runIssueBootstrap(args[1:])
+	case "dev-bootstrap":
+		err = runDevBootstrap(args[1:])
 	default:
 		err = fmt.Errorf("unknown command: %s", args[0])
 	}
@@ -140,6 +143,82 @@ func run(args []string) int {
 		return 1
 	}
 	return 0
+}
+
+type devBootstrapStep struct {
+	Name    string `json:"name"`
+	Command string `json:"command"`
+}
+
+type devBootstrapReport struct {
+	Repo                string             `json:"repo"`
+	IncludeLegacyPython bool               `json:"include_legacy_python"`
+	Steps               []devBootstrapStep `json:"steps"`
+}
+
+var devBootstrapExec = func(command []string, dir string) error {
+	cmd := exec.Command(command[0], command[1:]...)
+	cmd.Dir = dir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func runDevBootstrap(args []string) error {
+	flags := flag.NewFlagSet("dev-bootstrap", flag.ContinueOnError)
+	repoRoot := flags.String("repo", "..", "repo root")
+	includeLegacy := flags.Bool("include-legacy-python", os.Getenv("BIGCLAW_ENABLE_LEGACY_PYTHON") == "1", "bootstrap the legacy Python migration surface too")
+	asJSON := flags.Bool("json", false, "json")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl dev-bootstrap [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	resolvedRepoRoot := absPath(*repoRoot)
+	report := devBootstrapReport{
+		Repo:                resolvedRepoRoot,
+		IncludeLegacyPython: *includeLegacy,
+		Steps: []devBootstrapStep{
+			{Name: "go-test", Command: "go test ./..."},
+		},
+	}
+	goRoot := filepath.Join(resolvedRepoRoot, "bigclaw-go")
+	if err := devBootstrapExec([]string{"go", "test", "./..."}, goRoot); err != nil {
+		return err
+	}
+	if *includeLegacy {
+		venvPython := filepath.Join(resolvedRepoRoot, ".venv", "bin", "python")
+		report.Steps = append(report.Steps,
+			devBootstrapStep{Name: "python-venv", Command: fmt.Sprintf("python3 -m venv %s", filepath.Join(resolvedRepoRoot, ".venv"))},
+			devBootstrapStep{Name: "pip-upgrade", Command: venvPython + " -m pip install -U pip"},
+			devBootstrapStep{Name: "pip-install", Command: venvPython + " -m pip install -e " + resolvedRepoRoot + "[dev]"},
+			devBootstrapStep{Name: "pytest", Command: venvPython + " -m pytest"},
+		)
+		if err := devBootstrapExec([]string{"python3", "-m", "venv", filepath.Join(resolvedRepoRoot, ".venv")}, resolvedRepoRoot); err != nil {
+			return err
+		}
+		if err := devBootstrapExec([]string{venvPython, "-m", "pip", "install", "-U", "pip"}, resolvedRepoRoot); err != nil {
+			return err
+		}
+		if err := devBootstrapExec([]string{venvPython, "-m", "pip", "install", "-e", resolvedRepoRoot + "[dev]"}, resolvedRepoRoot); err != nil {
+			return err
+		}
+		if err := devBootstrapExec([]string{venvPython, "-m", "pytest"}, resolvedRepoRoot); err != nil {
+			return err
+		}
+	}
+	if *asJSON {
+		return emit(map[string]any{"status": "ok", "report": report}, true, 0)
+	}
+	if *includeLegacy {
+		_, _ = os.Stdout.WriteString("BigClaw Go and legacy Python migration environments are ready.\n")
+		return nil
+	}
+	_, _ = os.Stdout.WriteString("BigClaw Go development environment is ready.\n")
+	_, _ = os.Stdout.WriteString("Set BIGCLAW_ENABLE_LEGACY_PYTHON=1 or pass --include-legacy-python to bootstrap the legacy Python migration surface too.\n")
+	return nil
 }
 
 func runIssueBootstrap(args []string) error {
@@ -1717,7 +1796,7 @@ func printRefillUsage(w io.Writer) {
 }
 
 func printRootUsage(w io.Writer) {
-	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|refill|local-issues|legacy-python|go-migration|dev-smoke|issue-bootstrap> ...")
+	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|refill|local-issues|legacy-python|go-migration|dev-smoke|issue-bootstrap|dev-bootstrap> ...")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "commands:")
 	fmt.Fprintln(w, "  github-sync     install/sync/status hooks and branch sync state")
@@ -1728,6 +1807,7 @@ func printRootUsage(w io.Writer) {
 	fmt.Fprintln(w, "  go-migration    generate the Go-only migration plan and inventory artifacts")
 	fmt.Fprintln(w, "  dev-smoke       run the Go-native development smoke check")
 	fmt.Fprintln(w, "  issue-bootstrap preview or sync the built-in PRD issue plans to GitHub")
+	fmt.Fprintln(w, "  dev-bootstrap   bootstrap the Go development environment and optional legacy migration env")
 }
 
 func absPath(path string) string {

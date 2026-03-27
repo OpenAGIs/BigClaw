@@ -122,6 +122,9 @@ func TestPrintRootUsageIncludesGoMigration(t *testing.T) {
 	if !strings.Contains(body, "dev-smoke") {
 		t.Fatalf("expected root usage to include dev-smoke, got %s", body)
 	}
+	if !strings.Contains(body, "dev-bootstrap") {
+		t.Fatalf("expected root usage to include dev-bootstrap, got %s", body)
+	}
 }
 
 func TestRunDevSmokeJSON(t *testing.T) {
@@ -184,6 +187,44 @@ func TestRunIssueBootstrapSyncDryRun(t *testing.T) {
 	}
 	if !bytes.Contains(output, []byte(`"created_count":`)) {
 		t.Fatalf("expected created_count in output, got %s", string(output))
+	}
+}
+
+func TestRunDevBootstrapJSON(t *testing.T) {
+	originalExec := devBootstrapExec
+	t.Cleanup(func() { devBootstrapExec = originalExec })
+
+	var calls []string
+	devBootstrapExec = func(command []string, dir string) error {
+		calls = append(calls, dir+": "+strings.Join(command, " "))
+		return nil
+	}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	repoRoot := t.TempDir()
+	if err := runDevBootstrap([]string{"--repo", repoRoot, "--include-legacy-python", "--json"}); err != nil {
+		t.Fatalf("run dev-bootstrap: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if len(calls) != 5 {
+		t.Fatalf("expected 5 bootstrap commands, got %d (%v)", len(calls), calls)
+	}
+	if !bytes.Contains(output, []byte(`"include_legacy_python": true`)) {
+		t.Fatalf("expected include_legacy_python in output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"name": "pytest"`)) {
+		t.Fatalf("expected pytest step in output, got %s", string(output))
 	}
 }
 

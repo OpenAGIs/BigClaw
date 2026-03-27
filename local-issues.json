@@ -7667,6 +7667,11 @@
           "author": "codex",
           "body": "Added a Go-native issue bootstrap flow. bigclawctl issue-bootstrap sync now owns the built-in v1/v2-ops issue plan definitions and can preview or sync issues to GitHub, while scripts/create_issues.py has been reduced to a shell shim over the Go command. Dry-run mode is local-only and does not require network or a GitHub token, which keeps the developer bootstrap path usable in unattended workspaces. Validation: cd bigclaw-go && go test ./internal/issuebootstrap ./cmd/bigclawctl -> ok; bash scripts/create_issues.py v1 --dry-run --json -> ok with plan=v1, repo=BigClaw, created_count=24.",
           "created_at": "2026-03-27T15:55:19Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added a Go-native dev bootstrap flow. bigclawctl dev-bootstrap now runs the Go test bootstrap step and can optionally provision the legacy Python migration environment, while scripts/dev_bootstrap.sh has been reduced to a shell shim over the Go command. Validation: cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestRunDevBootstrapJSON|TestRunDevSmokeJSON|TestPrintRootUsageIncludesGoMigration' -> ok; bash scripts/dev_bootstrap.sh --help -> ok and now shows bigclawctl dev-bootstrap usage.",
+          "created_at": "2026-03-27T15:59:33Z"
         }
       ],
       "created_at": "2026-03-27T15:13:31Z",
@@ -7681,7 +7686,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Migrate dev smoke and bootstrap helpers to Go",
-      "updated_at": "2026-03-27T15:55:19Z"
+      "updated_at": "2026-03-27T15:59:33Z"
     },
     {
       "assigned_to_worker": true,
