@@ -1,0 +1,211 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-901",
+    "title": "Go迁移盘点与目标架构"
+  },
+  "inventory_summary": {
+    "total_assets": 76,
+    "python_modules": 49,
+    "python_scripts": 23,
+    "shell_wrappers": 4,
+    "priorities": {
+      "P0": 22,
+      "P1": 44,
+      "P2": 10
+    }
+  },
+  "target_architecture": {
+    "operator_entrypoints": [
+      "cmd/bigclawd",
+      "cmd/bigclawctl"
+    ],
+    "core_domain": [
+      "internal/domain",
+      "internal/contract",
+      "internal/flow"
+    ],
+    "control_plane": [
+      "internal/queue",
+      "internal/scheduler",
+      "internal/worker",
+      "internal/executor",
+      "internal/events"
+    ],
+    "control_and_policy": [
+      "internal/workflow",
+      "internal/orchestrator",
+      "internal/policy",
+      "internal/governance",
+      "internal/risk",
+      "internal/billing"
+    ],
+    "intake_and_repo": [
+      "internal/intake",
+      "internal/githubsync",
+      "internal/repo",
+      "internal/refill",
+      "internal/bootstrap"
+    ],
+    "product_and_reporting": [
+      "internal/product",
+      "internal/reporting",
+      "internal/api",
+      "internal/regression",
+      "internal/prd"
+    ],
+    "compatibility": [
+      "internal/legacyshim"
+    ]
+  },
+  "waves": [
+    {
+      "name": "wave-0-guardrails",
+      "goal": "Freeze the inventory, enforce coverage checks, and block new Python control-plane logic.",
+      "deliverables": [
+        "docs/go-migration-inventory.md",
+        "docs/reports/go-migration-ledger.json",
+        "internal/regression/go_migration_inventory_docs_test.go"
+      ]
+    },
+    {
+      "name": "wave-1-critical-cutover",
+      "goal": "Retire Python operator entrypoints and migrate shadow or validation critical paths to Go-owned commands.",
+      "priority": "P0",
+      "focus_areas": [
+        "legacy entrypoints and compatibility shims",
+        "core contract and observability authority",
+        "queue, scheduler, worker, workflow runtime",
+        "migration shadow CLI",
+        "run-all, validation bundle, and shared-queue validation entrypoints"
+      ]
+    },
+    {
+      "name": "wave-2-control-surface",
+      "goal": "Move remaining intake, repo, governance, risk, refill, and bootstrap Python modules under existing Go packages.",
+      "priority": "P1"
+    },
+    {
+      "name": "wave-3-product-and-reporting",
+      "goal": "Move remaining product, review, design-system, roadmap, archive, and reporting helpers after control-plane parity stabilizes.",
+      "priority": "P2"
+    }
+  ],
+  "first_wave_lanes": [
+    {
+      "name": "lane/core-cutover",
+      "branch": "codex/big-go-901-core-cutover",
+      "assets": [
+        "src/bigclaw/__main__.py",
+        "src/bigclaw/service.py",
+        "src/bigclaw/deprecation.py",
+        "src/bigclaw/legacy_shim.py"
+      ]
+    },
+    {
+      "name": "lane/contracts-runtime",
+      "branch": "codex/big-go-901-contracts-runtime",
+      "assets": [
+        "src/bigclaw/models.py",
+        "src/bigclaw/execution_contract.py",
+        "src/bigclaw/observability.py",
+        "src/bigclaw/queue.py",
+        "src/bigclaw/scheduler.py",
+        "src/bigclaw/runtime.py",
+        "src/bigclaw/workflow.py",
+        "src/bigclaw/orchestration.py"
+      ]
+    },
+    {
+      "name": "lane/migration-cli",
+      "branch": "codex/big-go-901-migration-cli",
+      "assets": [
+        "bigclaw-go/scripts/migration/shadow_compare.py",
+        "bigclaw-go/scripts/migration/shadow_matrix.py",
+        "bigclaw-go/scripts/migration/live_shadow_scorecard.py",
+        "bigclaw-go/scripts/migration/export_live_shadow_bundle.py"
+      ]
+    },
+    {
+      "name": "lane/validation-cli",
+      "branch": "codex/big-go-901-validation-cli",
+      "assets": [
+        "bigclaw-go/scripts/e2e/run_all.sh",
+        "bigclaw-go/scripts/e2e/export_validation_bundle.py",
+        "bigclaw-go/scripts/e2e/multi_node_shared_queue.py"
+      ]
+    },
+    {
+      "name": "lane/control-surface",
+      "branch": "codex/big-go-901-control-surface",
+      "assets": [
+        "src/bigclaw/connectors.py",
+        "src/bigclaw/workspace_bootstrap.py",
+        "src/bigclaw/workspace_bootstrap_cli.py",
+        "src/bigclaw/workspace_bootstrap_validation.py",
+        "src/bigclaw/governance.py",
+        "src/bigclaw/cost_control.py",
+        "src/bigclaw/risk.py",
+        "src/bigclaw/validation_policy.py",
+        "src/bigclaw/repo_board.py",
+        "src/bigclaw/repo_commits.py",
+        "src/bigclaw/repo_gateway.py",
+        "src/bigclaw/repo_governance.py",
+        "src/bigclaw/repo_links.py",
+        "src/bigclaw/repo_plane.py",
+        "src/bigclaw/repo_registry.py",
+        "src/bigclaw/repo_triage.py",
+        "src/bigclaw/github_sync.py",
+        "src/bigclaw/parallel_refill.py",
+        "src/bigclaw/operations.py"
+      ]
+    }
+  ],
+  "validation_suites": [
+    {
+      "name": "entrypoints-and-http-surface",
+      "command": "cd bigclaw-go && go test ./cmd/bigclawd ./cmd/bigclawctl ./internal/api"
+    },
+    {
+      "name": "core-domain-contracts",
+      "command": "cd bigclaw-go && go test ./internal/domain ./internal/contract ./internal/flow"
+    },
+    {
+      "name": "control-plane-kernel",
+      "command": "cd bigclaw-go && go test ./internal/queue ./internal/scheduler ./internal/worker ./internal/executor ./internal/events"
+    },
+    {
+      "name": "workflow-policy-governance",
+      "command": "cd bigclaw-go && go test ./internal/workflow ./internal/orchestrator ./internal/policy ./internal/governance ./internal/risk ./internal/billing"
+    },
+    {
+      "name": "intake-repo-refill-bootstrap",
+      "command": "cd bigclaw-go && go test ./internal/intake ./internal/repo ./internal/refill ./internal/bootstrap ./internal/githubsync ./internal/triage"
+    },
+    {
+      "name": "reporting-product-regression",
+      "command": "cd bigclaw-go && go test ./internal/reporting ./internal/product ./internal/regression ./internal/prd"
+    }
+  ],
+  "major_risks": [
+    {
+      "risk": "Python scripts keep generating canonical reports while Go only emits parallel outputs.",
+      "mitigation": "Prioritize migration/*.py, export_validation_bundle.py, and run_all.sh into bigclawctl."
+    },
+    {
+      "risk": "Frozen Python modules remain operator or documentation entrypoints during cutover.",
+      "mitigation": "Unify CLI entrypoints and legacy shims before deleting Python paths."
+    },
+    {
+      "risk": "Schema drift appears while Python and Go both define task or report contracts.",
+      "mitigation": "Treat contract assets as P0 and make Go the single schema authority."
+    },
+    {
+      "risk": "P2 product surfaces create oversized PRs and slow the cutover.",
+      "mitigation": "Preserve payload parity first, then decide whether to port internal implementations fully."
+    },
+    {
+      "risk": "Shell wrappers survive after Go command parity, leaving local workflows inconsistent.",
+      "mitigation": "Collapse every wrapper into bigclawctl subcommands."
+    }
+  ]
+}

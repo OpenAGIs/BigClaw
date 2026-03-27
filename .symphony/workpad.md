@@ -21,6 +21,7 @@
 - [x] `python3 - <<'PY' ... migration ledger completeness check ... PY`
 - [x] `cd bigclaw-go && go test ./internal/regression -run 'TestGoMigration(LedgerCoversCurrentNonGoAssets|InventoryDocKeepsRequiredSections)$'`
 - [x] `cd bigclaw-go && go test ./internal/regression -run 'Test(GoMigration(LedgerCoversCurrentNonGoAssets|InventoryDocKeepsRequiredSections)|IssueCoverageReferencesGoMigrationInventory)$'`
+- [x] `cd bigclaw-go && go test ./internal/regression -run 'Test(GoMigrationInventoryDocKeepsRequiredSections|IssueCoverageReferencesGoMigrationInventory|GoMigrationPlanSummaryStaysAligned|GoMigrationLedgerCoversCurrentNonGoAssets)$'`
 - [x] `cd bigclaw-go && go test ./internal/regression`
 
 ### Notes
@@ -33,3 +34,5 @@
 - Validation result: `ok  	bigclaw-go/internal/regression	3.214s`
 - Validation result: `ok  	bigclaw-go/internal/regression	0.160s`
 - Validation result: `ok  	bigclaw-go/internal/regression	0.256s`
+- Validation result: `ok  	bigclaw-go/internal/regression	1.708s`
+- Validation result: `ok  	bigclaw-go/internal/regression	1.893s`

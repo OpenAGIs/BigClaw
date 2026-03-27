@@ -6,6 +6,7 @@
 - 纳入口径: `src/bigclaw/*.py` 中的 Python 模块，`bigclaw-go/scripts/**/*.py` 中的 Python 脚本，以及 `bigclaw-go/scripts/**/*.sh` 中的 shell 包装器。
 - 排除项: `src/bigclaw/__init__.py` 这类包标记文件、Markdown/JSON 报告、示例数据和纯证据产物；这些不是迁移阻塞代码面。
 - 全量账本: 见 `bigclaw-go/docs/reports/go-migration-ledger.json`，共 76 个资产，覆盖率目标为 100%。
+- 机器可读计划摘要: 见 `bigclaw-go/docs/reports/go-migration-plan-summary.json`，用于消费 Wave、lane、验证命令和风险。
 
 ## 当前资产总览
 
@@ -174,5 +175,6 @@
 ## 全量账本说明
 
 - `bigclaw-go/docs/reports/go-migration-ledger.json` 是 100% 迁移总表。
+- `bigclaw-go/docs/reports/go-migration-plan-summary.json` 是面向自动化和 reviewer 的计划摘要，收敛了目标架构、Wave、首批 lane、验证命令与主要风险。
 - 每个条目都包含 `asset`、`kind`、`priority`、`target`、`action`、`validation`、`regression`。
 - 后续如新增或删除非 Go 可执行资产，必须先更新该账本，再合并实现 PR。

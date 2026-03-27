@@ -105,6 +105,7 @@ func TestGoMigrationInventoryDocKeepsRequiredSections(t *testing.T) {
 		"22",
 		"44",
 		"10",
+		"docs/reports/go-migration-plan-summary.json",
 	}
 	for _, count := range requiredCounts {
 		if !strings.Contains(doc, count) {
@@ -125,11 +126,103 @@ func TestIssueCoverageReferencesGoMigrationInventory(t *testing.T) {
 		"`OPE-185` / `BIG-GO-010`",
 		"docs/go-migration-inventory.md",
 		"docs/reports/go-migration-ledger.json",
+		"docs/reports/go-migration-plan-summary.json",
 		"`BIG-GO-901` adds the 100% non-Go executable asset inventory",
 	}
 	for _, needle := range requiredSubstrings {
 		if !strings.Contains(contents, needle) {
 			t.Fatalf("docs/reports/issue-coverage.md missing substring %q", needle)
+		}
+	}
+}
+
+func TestGoMigrationPlanSummaryStaysAligned(t *testing.T) {
+	repoRoot := repoRoot(t)
+	ledger := readGoMigrationLedger(t, repoRoot)
+
+	var summary struct {
+		Issue struct {
+			Identifier string `json:"identifier"`
+			Title      string `json:"title"`
+		} `json:"issue"`
+		InventorySummary struct {
+			TotalAssets   int            `json:"total_assets"`
+			PythonModules int            `json:"python_modules"`
+			PythonScripts int            `json:"python_scripts"`
+			ShellWrappers int            `json:"shell_wrappers"`
+			Priorities    map[string]int `json:"priorities"`
+		} `json:"inventory_summary"`
+		Waves          []map[string]any `json:"waves"`
+		FirstWaveLanes []struct {
+			Name   string   `json:"name"`
+			Branch string   `json:"branch"`
+			Assets []string `json:"assets"`
+		} `json:"first_wave_lanes"`
+		ValidationSuites []struct {
+			Name    string `json:"name"`
+			Command string `json:"command"`
+		} `json:"validation_suites"`
+		MajorRisks []struct {
+			Risk       string `json:"risk"`
+			Mitigation string `json:"mitigation"`
+		} `json:"major_risks"`
+	}
+
+	body := readRepoFile(t, repoRoot, "docs/reports/go-migration-plan-summary.json")
+	if err := json.Unmarshal([]byte(body), &summary); err != nil {
+		t.Fatalf("unmarshal go migration plan summary: %v", err)
+	}
+
+	if summary.Issue.Identifier != "BIG-GO-901" || summary.Issue.Title != "Go迁移盘点与目标架构" {
+		t.Fatalf("unexpected issue metadata: %+v", summary.Issue)
+	}
+	if summary.InventorySummary.TotalAssets != ledger.Summary.TotalAssets ||
+		summary.InventorySummary.PythonModules != ledger.Summary.PythonModules ||
+		summary.InventorySummary.PythonScripts != ledger.Summary.PythonScripts ||
+		summary.InventorySummary.ShellWrappers != ledger.Summary.ShellWrappers {
+		t.Fatalf("plan summary inventory drifted from ledger: %+v vs %+v", summary.InventorySummary, ledger.Summary)
+	}
+	if len(summary.Waves) != 4 {
+		t.Fatalf("expected 4 migration waves, got %d", len(summary.Waves))
+	}
+	if len(summary.FirstWaveLanes) != 5 {
+		t.Fatalf("expected 5 first-wave lanes, got %d", len(summary.FirstWaveLanes))
+	}
+	if len(summary.ValidationSuites) != 6 {
+		t.Fatalf("expected 6 validation suites, got %d", len(summary.ValidationSuites))
+	}
+	if len(summary.MajorRisks) != 5 {
+		t.Fatalf("expected 5 major risks, got %d", len(summary.MajorRisks))
+	}
+
+	expectedLanes := map[string]string{
+		"lane/core-cutover":      "codex/big-go-901-core-cutover",
+		"lane/contracts-runtime": "codex/big-go-901-contracts-runtime",
+		"lane/migration-cli":     "codex/big-go-901-migration-cli",
+		"lane/validation-cli":    "codex/big-go-901-validation-cli",
+		"lane/control-surface":   "codex/big-go-901-control-surface",
+	}
+	for _, lane := range summary.FirstWaveLanes {
+		expectedBranch, ok := expectedLanes[lane.Name]
+		if !ok {
+			t.Fatalf("unexpected lane %q", lane.Name)
+		}
+		if lane.Branch != expectedBranch {
+			t.Fatalf("lane %q branch mismatch: got %q want %q", lane.Name, lane.Branch, expectedBranch)
+		}
+		if len(lane.Assets) == 0 {
+			t.Fatalf("lane %q must list assets", lane.Name)
+		}
+	}
+
+	for _, suite := range summary.ValidationSuites {
+		if !strings.Contains(suite.Command, "go test") {
+			t.Fatalf("validation suite %q missing go test command: %q", suite.Name, suite.Command)
+		}
+	}
+	for _, risk := range summary.MajorRisks {
+		if strings.TrimSpace(risk.Risk) == "" || strings.TrimSpace(risk.Mitigation) == "" {
+			t.Fatalf("risk entry missing content: %+v", risk)
 		}
 	}
 }
