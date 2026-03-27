@@ -68,8 +68,8 @@ python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py
 Result:
 
 ```text
-...............                                                          [100%]
-15 passed in 1.48s
+.................                                                        [100%]
+17 passed in 1.89s
 ```
 
 ### Python syntax check
@@ -124,6 +124,14 @@ Command:
 
 ```bash
 python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw_workspace_bootstrap.py --help
+```
+
+Result: usage for `bigclawctl workspace <bootstrap|cleanup|validate>`
+
+Command:
+
+```bash
+python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/symphony_workspace_bootstrap.py --help
 ```
 
 Result: usage for `bigclawctl workspace <bootstrap|cleanup|validate>`

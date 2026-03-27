@@ -61,6 +61,7 @@ python3 scripts/create_issues.py --help
 bash scripts/ops/bigclawctl issue --help
 python3 scripts/ops/bigclaw_github_sync.py --help
 python3 scripts/ops/bigclaw_workspace_bootstrap.py --help
+python3 scripts/ops/symphony_workspace_bootstrap.py --help
 python3 scripts/ops/bigclaw_refill_queue.py --help
 python3 scripts/ops/symphony_workspace_validate.py --help
 python3 scripts/ops/bigclaw_github_sync.py status --json

@@ -144,3 +144,33 @@ def test_workspace_bootstrap_shim_help_runs_without_pythonpath():
         check=True,
     )
     assert 'usage: bigclawctl workspace <bootstrap|cleanup|validate> [flags]' in result.stdout
+
+
+def test_symphony_workspace_bootstrap_shim_help_runs_without_pythonpath():
+    repo_root = Path(__file__).resolve().parents[1]
+    env = dict(os.environ)
+    env.pop('PYTHONPATH', None)
+    result = subprocess.run(
+        [sys.executable, 'scripts/ops/symphony_workspace_bootstrap.py', '--help'],
+        cwd=repo_root,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    assert 'usage: bigclawctl workspace <bootstrap|cleanup|validate> [flags]' in result.stdout
+
+
+def test_symphony_workspace_validate_shim_help_runs_without_pythonpath():
+    repo_root = Path(__file__).resolve().parents[1]
+    env = dict(os.environ)
+    env.pop('PYTHONPATH', None)
+    result = subprocess.run(
+        [sys.executable, 'scripts/ops/symphony_workspace_validate.py', '--help'],
+        cwd=repo_root,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    assert 'usage: bigclawctl workspace validate [flags]' in result.stdout

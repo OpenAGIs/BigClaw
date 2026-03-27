@@ -7587,6 +7587,11 @@
           "author": "codex",
           "body": "Expanded direct-execution regression coverage for the self-bootstrapping Python shims so the legacy create-issues, github-sync, and workspace bootstrap wrappers are now also explicitly tested without PYTHONPATH. Refreshed BIG-GO-902 closeout artifacts to point at validated implementation commit 63c8e6c554a32513d4a71b4efe1d98b08a07cc1f and to include the newly checked shim commands. Validation rerun: python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py -> 15 passed; python3 scripts/create_issues.py --help -> ok; python3 scripts/ops/bigclaw_github_sync.py --help -> ok; python3 scripts/ops/bigclaw_workspace_bootstrap.py --help -> ok.",
           "created_at": "2026-03-27T16:29:49Z"
+        },
+        {
+          "author": "codex",
+          "body": "Completed direct-execution regression coverage for the remaining Symphony workspace compatibility wrappers. tests/test_legacy_shim.py now also executes scripts/ops/symphony_workspace_bootstrap.py and scripts/ops/symphony_workspace_validate.py without PYTHONPATH, bringing the Python shim coverage set to 17 passing tests. Updated BIG-GO-902 validation/closeout artifacts so the documented command list now includes the Symphony workspace bootstrap shim help check as well.",
+          "created_at": "2026-03-27T16:35:02Z"
         }
       ],
       "created_at": "2026-03-27T15:27:30Z",
@@ -7599,7 +7604,7 @@
       "priority": 1,
       "state": "Done",
       "title": "脚本层迁移到 Go CLI",
-      "updated_at": "2026-03-27T16:29:49Z"
+      "updated_at": "2026-03-27T16:35:02Z"
     }
   ]
 }
