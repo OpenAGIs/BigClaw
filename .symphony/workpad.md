@@ -19,6 +19,8 @@
 
 - [x] `python3 - <<'PY' ... inventory consistency check ... PY`
 - [x] `python3 - <<'PY' ... migration ledger completeness check ... PY`
+- [x] `cd bigclaw-go && go test ./internal/regression -run 'TestGoMigration(LedgerCoversCurrentNonGoAssets|InventoryDocKeepsRequiredSections)$'`
+- [x] `cd bigclaw-go && go test ./internal/regression`
 
 ### Notes
 
@@ -26,3 +28,5 @@
 - Keep edits limited to planning artifacts needed by `BIG-GO-901`.
 - Validation result: `ledger-ok total=76 modules=49 scripts=23 wrappers=4`
 - Validation result: `doc-ok required-sections=7 summary-counts-present=1`
+- Validation result: `ok  	bigclaw-go/internal/regression	3.324s`
+- Validation result: `ok  	bigclaw-go/internal/regression	3.214s`
