@@ -265,7 +265,7 @@ feat/BIG-GO-902-go-cli-script-migration
 Current pushed branch tip:
 
 ```text
-989b0064f22b04e566fb0d0036ea38c0184ba07b
+8feba6dc24109874f23919bc970f05ddf99f30e1
 ```
 
 Last root-shim branch head verified via `github-sync status`:
