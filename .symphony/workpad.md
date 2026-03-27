@@ -2,20 +2,31 @@
 
 ## Plan
 
-1. Inspect existing `scripts/*.py` automation entrypoints and current `bigclaw-go` CLI commands to identify the smallest migration slice that delivers a real Go CLI path and a repeatable migration template.
-2. Implement first-batch Go CLI subcommands for the selected high-frequency script layer entrypoints, keeping changes scoped to command wiring, shared helpers, and migration documentation.
-3. Preserve a compatibility-layer plan by documenting legacy Python entrypoints, their Go replacements, validation commands, and remaining follow-up items.
-4. Run targeted tests for the touched Go CLI packages and record exact commands plus results in the final report.
-5. Commit the scoped changes and push the branch to the configured remote.
+1. Inventory existing Python automation scripts and current Go CLI coverage.
+2. Identify the smallest issue-scoped migration slice that produces a concrete executable plan plus first implementation changes.
+3. Extend `bigclawctl` with missing Go CLI entry points and compatibility-oriented command structure.
+4. Document the migration/compatibility plan, validation commands, regression surface, branch/PR guidance, and risks.
+5. Run targeted tests for modified Go CLI areas and record exact commands and results.
+6. Commit changes and push the issue branch to remote.
 
 ## Acceptance
 
-- Produce an executable migration plan for moving Python script entrypoints to Go CLI subcommands.
-- Land a first batch of Go CLI implementations or adaptations for selected automation entrypoints.
-- Document validation commands, regression surface, branch/PR recommendation, and migration risks.
+- Produce an executable migration plan for moving script-layer automation to Go CLI subcommands.
+- Deliver first-batch implementation and/or adaptation list with concrete command mappings.
+- Define exact validation commands and regression surface.
+- Provide branch / PR recommendation and note key risks.
 
 ## Validation
 
-- `go test ./cmd/bigclawctl/...`
-- Additional targeted `go test` commands for any new shared package touched by the implementation.
-- Manual CLI smoke checks with `go run ./cmd/bigclawctl --help` and targeted subcommand help where relevant.
+- Run targeted Go tests covering modified CLI command registration and behavior.
+- If docs or mapping files are added, verify paths and command references against repository layout.
+- Record exact commands and whether they passed or failed.
+
+## Validation Results
+
+- `cd bigclaw-go && go test ./cmd/bigclawctl/... ./internal/legacyshim/...`
+  - Result: passed
+- `cd bigclaw-go && go run ./cmd/bigclawctl legacy-python inventory --json`
+  - Result: passed
+- `cd bigclaw-go && go run ./cmd/bigclawctl legacy-python inventory --json | rg 'multi_node_shared_queue|subscriber_takeover_fault_matrix|export_validation_bundle'`
+  - Result: passed

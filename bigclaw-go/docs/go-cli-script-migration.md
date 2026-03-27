@@ -2,6 +2,17 @@
 
 Issue: `BIG-GO-902`
 
+## Executable Migration Inventory
+
+```bash
+cd bigclaw-go
+go run ./cmd/bigclawctl legacy-python inventory --json
+```
+
+The command above is the source of truth for the current script migration inventory,
+including migrated shims, pending Python-native scripts, recommended wave ordering,
+validation commands, compatibility policy, and branch / PR suggestions.
+
 ## Implemented In This Slice
 
 | Legacy script | Go CLI replacement | Status |
@@ -10,28 +21,61 @@ Issue: `BIG-GO-902`
 | `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated with Python compatibility shim |
 
-## Remaining Python Script Backlog
+## First-Batch Migration / Adaptation Queue
+
+### Wave 1: validation bundle exporters and gates
 
 - `bigclaw-go/scripts/e2e/export_validation_bundle.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
+
+Why first:
+
+- They share the same `docs/reports/` artifact tree and feed multiple downstream reports.
+- Once migrated, the remaining live validation wrappers can forward to Go without
+  duplicating bundle/index logic.
+
+### Wave 2: benchmark orchestration
+
+- `bigclaw-go/scripts/benchmark/run_matrix.py`
+- `bigclaw-go/scripts/benchmark/capacity_certification.py`
+
+Why second:
+
+- They already depend on the migrated `soak-local` execution path.
+- Their main risk is aggregation/report shape, not task execution semantics.
+
+### Wave 3: migration scorecards and bundle exporters
+
+- `bigclaw-go/scripts/migration/shadow_matrix.py`
+- `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
+- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
+
+Why third:
+
+- These scripts are report-heavy and can reuse the Wave 1 exporter patterns.
+- They affect migration evidence rather than core operator flows.
+
+### Deferred longer-tail e2e matrices
+
 - `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
 - `bigclaw-go/scripts/e2e/mixed_workload_matrix.py`
 - `bigclaw-go/scripts/e2e/external_store_validation.py`
 - `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
 - `bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py`
 - `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
-- `bigclaw-go/scripts/benchmark/capacity_certification.py`
-- `bigclaw-go/scripts/benchmark/run_matrix.py`
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
-- `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
-- `bigclaw-go/scripts/migration/shadow_matrix.py`
+
+Why deferred:
+
+- They are scenario-heavy harnesses rather than common operator entrypoints.
+- They likely need shared Go helper packages before a clean CLI migration is worth doing.
 
 ## Validation Commands
 
 ```bash
 cd bigclaw-go
 go test ./cmd/bigclawctl/...
+go run ./cmd/bigclawctl legacy-python inventory --json
 go run ./cmd/bigclawctl automation --help
 go run ./cmd/bigclawctl automation e2e run-task-smoke --help
 go run ./cmd/bigclawctl automation benchmark soak-local --help
@@ -59,7 +103,7 @@ go run ./cmd/bigclawctl automation migration shadow-compare --help
 ## Branch And PR Suggestion
 
 - Branch: `feat/BIG-GO-902-go-cli-script-migration`
-- PR title: `feat: migrate first Python automation scripts to bigclawctl`
+- PR title: `feat: migrate script-layer automation to bigclawctl`
 
 ## Risks
 

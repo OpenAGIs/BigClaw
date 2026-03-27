@@ -270,6 +270,42 @@ func TestRunWorkspaceBootstrapJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	}
 }
 
+func TestRunLegacyPythonInventoryJSONOutput(t *testing.T) {
+	output, err := captureStdout(t, func() error {
+		return runLegacyPython([]string{"inventory", "--json"})
+	})
+	if err != nil {
+		t.Fatalf("run legacy-python inventory: %v", err)
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(output, &payload); err != nil {
+		t.Fatalf("decode output: %v (%s)", err, string(output))
+	}
+	if payload["issue"] != "BIG-GO-902" {
+		t.Fatalf("unexpected issue payload: %+v", payload)
+	}
+	entries, ok := payload["entries"].([]any)
+	if !ok || len(entries) < 10 {
+		t.Fatalf("expected migration entries, got %+v", payload["entries"])
+	}
+	found := false
+	for _, raw := range entries {
+		entry, _ := raw.(map[string]any)
+		if entry["script_path"] == "bigclaw-go/scripts/e2e/export_validation_bundle.py" {
+			found = true
+			if entry["status"] != "pending-native-python" {
+				t.Fatalf("unexpected export_validation_bundle status: %+v", entry)
+			}
+			if entry["wave"] != "wave-1" {
+				t.Fatalf("unexpected export_validation_bundle wave: %+v", entry)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected export_validation_bundle entry, got %+v", entries)
+	}
+}
+
 func TestRunWorkspaceCleanupJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	root := t.TempDir()
 	remote := initWorkspaceValidateRemote(t, root)

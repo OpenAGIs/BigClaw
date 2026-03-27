@@ -73,6 +73,8 @@ Notes:
   `python3 bigclaw-go/scripts/migration/shadow_compare.py` now forward into
   `bigclawctl automation ...`; the migration matrix lives in
   [`bigclaw-go/docs/go-cli-script-migration.md`](./bigclaw-go/docs/go-cli-script-migration.md).
+- `cd bigclaw-go && go run ./cmd/bigclawctl legacy-python inventory --json` prints the
+  current script migration inventory, planned waves, compatibility policy, and branch / PR guidance.
 - `scripts/ops/bigclaw-issue`, `scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel` are
   retained as compatibility wrappers, but the preferred operator path is now `scripts/ops/bigclawctl`.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next

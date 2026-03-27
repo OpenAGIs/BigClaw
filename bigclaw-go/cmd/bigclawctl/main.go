@@ -144,11 +144,11 @@ func run(args []string) int {
 
 func runLegacyPython(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl legacy-python <compile-check> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl legacy-python <compile-check|inventory> [flags]\n")
 		return nil
 	}
 	if len(args) == 0 {
-		return errors.New("usage: bigclawctl legacy-python <compile-check> [flags]")
+		return errors.New("usage: bigclawctl legacy-python <compile-check|inventory> [flags]")
 	}
 	command := args[0]
 	flags := flag.NewFlagSet("legacy-python "+command, flag.ContinueOnError)
@@ -186,6 +186,17 @@ func runLegacyPython(args []string) error {
 		}
 		if result.Output != "" {
 			payload["output"] = result.Output
+		}
+		return emit(payload, *asJSON, 0)
+	case "inventory":
+		inventory := legacyshim.MigrationInventory()
+		payload := map[string]any{
+			"status":               "ok",
+			"issue":                inventory.Issue,
+			"branch_suggestion":    inventory.BranchSuggestion,
+			"pr_title_suggestion":  inventory.PRTitleSuggestion,
+			"compatibility_policy": inventory.CompatibilityPolicy,
+			"entries":              inventory.Entries,
 		}
 		return emit(payload, *asJSON, 0)
 	default:
@@ -1445,7 +1456,7 @@ func printRootUsage(w io.Writer) {
 	fmt.Fprintln(w, "  symphony        launch Symphony against this repo workflow")
 	fmt.Fprintln(w, "  issue           open local tracker flows or proxy symphony issue")
 	fmt.Fprintln(w, "  panel           proxy symphony panel against this repo workflow")
-	fmt.Fprintln(w, "  legacy-python   validate frozen Python compatibility shims")
+	fmt.Fprintln(w, "  legacy-python   validate frozen Python compatibility shims and print migration inventory")
 }
 
 func absPath(path string) string {
