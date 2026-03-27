@@ -107,6 +107,12 @@ func TestParallelIssueQueueRenderMarkdownInfersRecentBatchesAndZeroTime(t *testi
 	if !strings.Contains(text, "Current repo tranche status as of ") {
 		t.Fatalf("expected generated date header in markdown, got %s", text)
 	}
+	if !strings.Contains(text, "bash scripts/ops/bigclawctl local-issues list") {
+		t.Fatalf("expected markdown to prefer bigclawctl local-issues list, got %s", text)
+	}
+	if !strings.Contains(text, "bash scripts/ops/bigclawctl local-issues set-state --issue BIG-GOM-303 --state \"In Progress\"") {
+		t.Fatalf("expected markdown to prefer bigclawctl local-issues set-state, got %s", text)
+	}
 	if !strings.Contains(text, "`BIG-PAR-415` — local tracker helper edge coverage") {
 		t.Fatalf("expected inferred active slice in markdown, got %s", text)
 	}

@@ -49,7 +49,7 @@ Use these entrypoints to keep the remaining Go-mainline migration slices moving 
 Linear issue capacity:
 
 ```bash
-bash scripts/ops/bigclaw-issue list
+bash scripts/ops/bigclawctl local-issues list
 bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json
 bash scripts/ops/bigclaw-symphony
 bash scripts/ops/bigclaw-panel
@@ -60,8 +60,9 @@ Notes:
 - `bash scripts/ops/bigclaw-symphony` starts Symphony against [`workflow.md`](./workflow.md) and
   serves the local issue dashboard at `http://127.0.0.1:4000/`.
 - `bash scripts/ops/bigclaw-panel` prints the configured dashboard URL for the current workflow.
-- `bash scripts/ops/bigclaw-issue ...` wraps `symphony issue ... --workflow workflow.md` so local
-  issue creation and state changes stay pinned to this repository's tracker file.
+- `bash scripts/ops/bigclawctl local-issues ...` is the preferred repo-native tracker entrypoint.
+- `bash scripts/ops/bigclaw-issue ...` remains available as a compatibility alias while migration
+  away from wrapper-specific entrypoints finishes.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
 
