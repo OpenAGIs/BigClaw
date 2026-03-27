@@ -12,7 +12,8 @@
 - [x] Generate repo-native migration outputs that include acceptance scope, runtime/script/test/toolchain inventory, at least 10 parallel Symphony slices, and branch/PR/validation strategy.
 - [x] Seed the first migration batch in the local tracker so the parallel plan is executable instead of documentation-only.
 - [x] Run targeted validation and record the exact commands/results for closeout.
-- [ ] Commit and push the issue branch to `origin`.
+- [x] Commit and push the issue branch to `origin`.
+- [x] Advance the first executable migration batch by folding legacy workspace wrapper semantics into the Go CLI and shrinking the shell compatibility layer.
 
 ### Acceptance Criteria
 
@@ -27,8 +28,12 @@
 - [x] `cd bigclaw-go && go test ./internal/migration ./cmd/bigclawctl`
 - [x] `cd bigclaw-go && go run ./cmd/bigclawctl go-migration plan --repo .. --json-out ../docs/reports/go-only-migration-inventory.json --md-out ../docs/go-only-migration-plan.md`
 - [x] `cd bigclaw-go && go test ./internal/regression`
+- [x] `cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestRunWorkspace(Bootstrap|Validate)'`
+- [x] `cd bigclaw-go && go test ./cmd/bigclawctl`
 
 ### Notes
 
 - The repo already merged the earlier Go-mainline cutover, but root-level Python code and non-Go operators remain as migration-only or still-active surfaces. This issue is therefore focused on the next-stage retirement/execution plan rather than redoing the completed cutover.
 - Keep changes scoped to migration planning, inventory, tracker seeding, and the first executable Go-owned planning slice.
+- Continuation focus: `BIG-VNEXT-GO-104` first-batch progress by migrating `scripts/ops/*workspace*` wrapper behavior into `bigclaw-go/cmd/bigclawctl`.
+- Current first-batch progress: `bigclawctl workspace bootstrap` now applies the historical repo/cache-key defaults directly in Go, `workspace validate` now accepts the legacy wrapper flag forms (`--issues` list, `--report-file`, `--no-cleanup`), and `scripts/ops/symphony_workspace_validate.py` no longer carries local argument-translation logic.

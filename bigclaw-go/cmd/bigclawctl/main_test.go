@@ -308,6 +308,42 @@ func TestRunWorkspaceBootstrapJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	}
 }
 
+func TestRunWorkspaceBootstrapUsesLegacyEnvDefaults(t *testing.T) {
+	root := t.TempDir()
+	remote := initWorkspaceValidateRemote(t, root)
+	workspacePath := filepath.Join(root, "workspaces", "BIG-PAR-legacy")
+	cacheBase := filepath.Join(root, "repos")
+
+	t.Setenv("BIGCLAW_BOOTSTRAP_REPO_URL", remote)
+	t.Setenv("BIGCLAW_BOOTSTRAP_CACHE_KEY", "legacy-cache-key")
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runWorkspace([]string{
+		"bootstrap",
+		"--workspace", workspacePath,
+		"--issue", "BIG-PAR-legacy",
+		"--cache-base", cacheBase,
+		"--json",
+	}); err != nil {
+		t.Fatalf("run workspace bootstrap with env defaults: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte(`"cache_key": "legacy-cache-key"`)) {
+		t.Fatalf("expected bootstrap to use legacy cache key env default, got %s", string(output))
+	}
+}
+
 func TestRunWorkspaceCleanupJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	root := t.TempDir()
 	remote := initWorkspaceValidateRemote(t, root)
@@ -349,6 +385,53 @@ func TestRunWorkspaceCleanupJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	}
 	if bytes.Contains(output, []byte(`\u003e`)) {
 		t.Fatalf("expected no HTML escaping in workspace cleanup JSON output, got %s", string(output))
+	}
+}
+
+func TestRunWorkspaceValidateSupportsLegacyWrapperFlags(t *testing.T) {
+	root := t.TempDir()
+	remote := initWorkspaceValidateRemote(t, root)
+	workspaceRoot := filepath.Join(root, "workspaces")
+	cacheBase := filepath.Join(root, "repos")
+	reportPath := filepath.Join(root, "validation-report.md")
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runWorkspace([]string{
+		"validate",
+		"--workspace-root", workspaceRoot,
+		"--repo-url", remote,
+		"--cache-base", cacheBase,
+		"--issues", "BIG-101", "BIG-102",
+		"--report-file", reportPath,
+		"--no-cleanup",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run workspace validate with legacy wrapper flags: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte(`"issue_identifiers": [`)) || !bytes.Contains(output, []byte(`"BIG-101"`)) || !bytes.Contains(output, []byte(`"BIG-102"`)) {
+		t.Fatalf("expected validate output to preserve split issue identifiers, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"cleanup_results": []`)) {
+		t.Fatalf("expected --no-cleanup to disable cleanup results, got %s", string(output))
+	}
+	reportBody, err := os.ReadFile(reportPath)
+	if err != nil {
+		t.Fatalf("read report file: %v", err)
+	}
+	if !bytes.Contains(reportBody, []byte("BIG-101")) || !bytes.Contains(reportBody, []byte("BIG-102")) {
+		t.Fatalf("expected report file to be written from --report-file, got %s", string(reportBody))
 	}
 }
 

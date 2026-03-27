@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"bigclaw-go/internal/bootstrap"
@@ -320,6 +321,7 @@ func runWorkspace(args []string) error {
 		return errors.New("usage: bigclawctl workspace <bootstrap|cleanup|validate> [flags]")
 	}
 	command := args[0]
+	normalizedArgs := normalizeWorkspaceArgs(command, args[1:])
 	flags := flag.NewFlagSet("workspace "+command, flag.ContinueOnError)
 	repoRoot := flags.String("repo", "..", "repo root")
 	workspace := flags.String("workspace", ".", "workspace")
@@ -334,12 +336,26 @@ func runWorkspace(args []string) error {
 	issuesCSV := flags.String("issues", "", "comma-separated issues")
 	reportPath := flags.String("report", "", "report path")
 	cleanup := flags.Bool("cleanup", true, "cleanup")
-	if helpText, err := parseFlagsWithHelp(flags, fmt.Sprintf("usage: bigclawctl workspace %s [flags]", command), args[1:]); err != nil {
+	if helpText, err := parseFlagsWithHelp(flags, fmt.Sprintf("usage: bigclawctl workspace %s [flags]", command), normalizedArgs); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			_, _ = os.Stdout.WriteString(helpText)
 			return nil
 		}
 		return err
+	}
+	if command == "bootstrap" {
+		if trim(*repoURL) == "" {
+			*repoURL = trim(os.Getenv("BIGCLAW_BOOTSTRAP_REPO_URL"))
+			if trim(*repoURL) == "" {
+				*repoURL = "git@github.com:OpenAGIs/BigClaw.git"
+			}
+		}
+		if trim(*cacheKey) == "" {
+			*cacheKey = trim(os.Getenv("BIGCLAW_BOOTSTRAP_CACHE_KEY"))
+			if trim(*cacheKey) == "" {
+				*cacheKey = "openagis-bigclaw"
+			}
+		}
 	}
 	resolvedRepoRoot := absPath(*repoRoot)
 	resolvedWorkspace := resolvePathAgainstRepoRoot(resolvedRepoRoot, *workspace)
@@ -380,6 +396,40 @@ func runWorkspace(args []string) error {
 	default:
 		return fmt.Errorf("unknown workspace subcommand: %s", command)
 	}
+}
+
+func normalizeWorkspaceArgs(command string, args []string) []string {
+	if command != "validate" {
+		return args
+	}
+	translated := make([]string, 0, len(args))
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch {
+		case arg == "--issues":
+			issues := []string{}
+			for i+1 < len(args) && !strings.HasPrefix(args[i+1], "--") {
+				i++
+				issues = append(issues, args[i])
+			}
+			translated = append(translated, "--issues", strings.Join(issues, ","))
+		case strings.HasPrefix(arg, "--issues="):
+			translated = append(translated, arg)
+		case arg == "--report-file":
+			translated = append(translated, "--report")
+			if i+1 < len(args) {
+				i++
+				translated = append(translated, args[i])
+			}
+		case strings.HasPrefix(arg, "--report-file="):
+			translated = append(translated, "--report="+strings.TrimPrefix(arg, "--report-file="))
+		case arg == "--no-cleanup":
+			translated = append(translated, "--cleanup=false")
+		default:
+			translated = append(translated, arg)
+		}
+	}
+	return translated
 }
 
 type refillFlags struct {
