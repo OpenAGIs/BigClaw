@@ -117,6 +117,23 @@ func TestGoMigrationInventoryDocKeepsRequiredSections(t *testing.T) {
 	}
 }
 
+func TestIssueCoverageReferencesGoMigrationInventory(t *testing.T) {
+	repoRoot := repoRoot(t)
+	contents := readRepoFile(t, repoRoot, "docs/reports/issue-coverage.md")
+
+	requiredSubstrings := []string{
+		"`OPE-185` / `BIG-GO-010`",
+		"docs/go-migration-inventory.md",
+		"docs/reports/go-migration-ledger.json",
+		"`BIG-GO-901` adds the 100% non-Go executable asset inventory",
+	}
+	for _, needle := range requiredSubstrings {
+		if !strings.Contains(contents, needle) {
+			t.Fatalf("docs/reports/issue-coverage.md missing substring %q", needle)
+		}
+	}
+}
+
 func readGoMigrationLedger(t *testing.T, repoRoot string) goMigrationLedger {
 	t.Helper()
 	body := readRepoFile(t, repoRoot, "docs/reports/go-migration-ledger.json")

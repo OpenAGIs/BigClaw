@@ -20,6 +20,7 @@
 - [x] `python3 - <<'PY' ... inventory consistency check ... PY`
 - [x] `python3 - <<'PY' ... migration ledger completeness check ... PY`
 - [x] `cd bigclaw-go && go test ./internal/regression -run 'TestGoMigration(LedgerCoversCurrentNonGoAssets|InventoryDocKeepsRequiredSections)$'`
+- [x] `cd bigclaw-go && go test ./internal/regression -run 'Test(GoMigration(LedgerCoversCurrentNonGoAssets|InventoryDocKeepsRequiredSections)|IssueCoverageReferencesGoMigrationInventory)$'`
 - [x] `cd bigclaw-go && go test ./internal/regression`
 
 ### Notes
@@ -30,3 +31,5 @@
 - Validation result: `doc-ok required-sections=7 summary-counts-present=1`
 - Validation result: `ok  	bigclaw-go/internal/regression	3.324s`
 - Validation result: `ok  	bigclaw-go/internal/regression	3.214s`
+- Validation result: `ok  	bigclaw-go/internal/regression	0.160s`
+- Validation result: `ok  	bigclaw-go/internal/regression	0.256s`
