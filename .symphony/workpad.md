@@ -85,6 +85,10 @@
 - [x] `cd bigclaw-go && go test ./internal/shadowmatrix`
 - [x] `cd bigclaw-go && go run ./scripts/migration/shadow_matrix.go --help`
 - [x] `bash bigclaw-go/scripts/migration/shadow_matrix.py --help`
+- [x] `cd bigclaw-go && go test ./internal/runtasksmoke`
+- [x] `cd bigclaw-go && go run ./scripts/e2e/run_task_smoke.go --help`
+- [x] `bash bigclaw-go/scripts/e2e/run_task_smoke.py --help`
+- [x] `cd bigclaw-go && BIGCLAW_QUEUE_BACKEND=sqlite go run ./scripts/e2e/run_task_smoke.go --autostart --go-root . --executor local --title "SQLite smoke" --entrypoint "echo hello from sqlite"`
 
 ### Notes
 
@@ -118,3 +122,4 @@
 - Latest `BIG-VNEXT-GO-105` progress: `scripts/migration/export_live_shadow_bundle.py` now routes to a Go-native live shadow bundle exporter backed by `bigclaw-go/internal/liveshadowbundle`, with deterministic regeneration support for the checked-in summary/index/rollup surfaces and Go-first closeout commands in the exported bundle metadata.
 - Latest `BIG-VNEXT-GO-105` progress: `scripts/migration/shadow_compare.py` now routes to a Go-native live shadow compare runner backed by `bigclaw-go/internal/shadowcompare`, with HTTP fixture-server coverage for the end-to-end compare flow and Go-first operator docs for the direct compare path.
 - Latest `BIG-VNEXT-GO-105` progress: `scripts/migration/shadow_matrix.py` now routes to a Go-native matrix builder backed by `bigclaw-go/internal/shadowmatrix`, with a canonical-artifact test covering the checked-in matrix report and Go-first CLI parity for the matrix command surface.
+- Latest `BIG-VNEXT-GO-105` progress: `scripts/e2e/run_task_smoke.py` now routes to a Go-native smoke runner backed by `bigclaw-go/internal/runtasksmoke`, and the local/Kubernetes/Ray E2E shell flows now invoke the Go smoke entrypoint directly instead of Python for the mainline live validation path.

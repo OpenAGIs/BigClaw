@@ -51,7 +51,7 @@ pids=()
 if [[ "$RUN_LOCAL" == "1" ]]; then
   (
     BIGCLAW_QUEUE_BACKEND=sqlite \
-      python3 "$ROOT/scripts/e2e/run_task_smoke.py" \
+      go run "$ROOT/scripts/e2e/run_task_smoke.go" \
         --autostart \
         --go-root "$ROOT" \
         --executor local \

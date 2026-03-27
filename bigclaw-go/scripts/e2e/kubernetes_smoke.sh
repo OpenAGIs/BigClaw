@@ -4,7 +4,7 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 IMAGE="${BIGCLAW_KUBERNETES_SMOKE_IMAGE:-${BIGCLAW_KUBERNETES_IMAGE:-alpine:3.20}}"
 ENTRYPOINT="${BIGCLAW_KUBERNETES_SMOKE_ENTRYPOINT:-echo hello from kubernetes}"
 REPORT_PATH="${BIGCLAW_KUBERNETES_SMOKE_REPORT_PATH:-docs/reports/kubernetes-live-smoke-report.json}"
-python3 "$ROOT/scripts/e2e/run_task_smoke.py" \
+go run "$ROOT/scripts/e2e/run_task_smoke.go" \
   --autostart \
   --go-root "$ROOT" \
   --executor kubernetes \
