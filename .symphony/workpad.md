@@ -30,6 +30,6 @@
 - Scope is limited to the merge-planning handoff for the completed Go-mainline cutover slices and the minimum regression needed to keep that handoff from drifting.
 - The repo-visible first nine prerequisite slices are treated as `BIG-GOM-301` through `BIG-GOM-309`, with `BIG-GOM-310` acting as the closeout handoff slice.
 - Validation results:
-  - `cd bigclaw-go && go test ./internal/regression -run TestGoMainlineMergePlanDoc -count=1` -> `ok  	bigclaw-go/internal/regression	0.647s`
-  - `cd bigclaw-go && go test ./internal/regression -count=1` -> `ok  	bigclaw-go/internal/regression	0.398s`
-  - `bash scripts/ops/bigclawctl github-sync status --json` -> `status: ok`, `branch: symphony/BIG-GO-910`, `synced: true`, `local_sha=remote_sha=a63894abcc590c1c6518cafb661dc50ef489243c`
+  - `cd bigclaw-go && go test ./internal/regression -run TestGoMainlineMergePlanDoc -count=1` -> `ok  	bigclaw-go/internal/regression	0.484s`
+  - `cd bigclaw-go && go test ./internal/regression -count=1` -> `ok  	bigclaw-go/internal/regression	0.285s`
+  - `bash scripts/ops/bigclawctl github-sync status --json` -> `status: ok`, `branch: symphony/BIG-GO-910`, `synced: true`, `dirty: false`, `local_sha=remote_sha=af0a38726e7a0853dce1ae61937e92a393c1ec61`
