@@ -37,6 +37,8 @@ CLI migration behavior.
   generate.
 - The public compare page content also appeared stale and still showed only the older 14-commit
   history instead of the latest pushed follow-up commits.
+- The compare page also emitted repeated `Uh oh!` load failures during rendering, so the stale
+  reviewer view appears to be a GitHub-side page failure rather than a repo publication problem.
 
 ## In-Repo Artifacts
 

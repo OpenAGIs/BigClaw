@@ -259,6 +259,9 @@ Public GitHub verification on 2026-03-28:
 - As of the latest public fetch on 2026-03-28, the compare page content still listed only the
   earlier 14-commit history and did not surface the most recent pushed follow-up commits, so even
   the public reviewer view appears stale on GitHub's side.
+- The same public compare view also emitted repeated `Uh oh!` load failures while rendering, which
+  further confirms the remaining reviewer-facing problem is on GitHub's side rather than in the
+  branch contents.
 
 ## Regression Surface
 
