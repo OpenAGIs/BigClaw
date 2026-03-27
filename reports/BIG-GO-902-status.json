@@ -82,7 +82,7 @@
     "public_open_prs_seen": ["215", "185", "184", "183"],
     "compare_url_reachable": true,
     "compare_page_state": "merged",
-    "notes": "Authenticated GitHub API creation succeeded for PR #215, and the PR was subsequently merged as squash commit 56c8efbda59344f850890bfe2e8d835016ff1b3d."
+    "notes": "Authenticated GitHub API creation succeeded for PR #215, and the PR was subsequently merged as squash commit 56c8efbda59344f850890bfe2e8d835016ff1b3d. GitHub compare API now reports 56c8efbda59344f850890bfe2e8d835016ff1b3d...main as identical, confirming the landed commit is on main."
   },
   "auth_environment": {
     "date": "2026-03-28",

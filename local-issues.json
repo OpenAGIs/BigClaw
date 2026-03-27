@@ -7687,6 +7687,11 @@
           "author": "codex",
           "body": "2026-03-28 markdown closeout sync: updated reports/BIG-GO-902-validation.md, reports/BIG-GO-902-closeout.md, and reports/BIG-GO-902-pr.md so the reviewer-facing markdown now reflects the final merged state of PR #215, including merged_at 2026-03-27T17:59:20Z and merge commit 56c8efbda59344f850890bfe2e8d835016ff1b3d.",
           "created_at": "2026-03-27T18:02:58Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 landed-on-main verification: GitHub compare API reports 56c8efbda59344f850890bfe2e8d835016ff1b3d...main as identical (ahead_by=0, behind_by=0), confirming the BIG-GO-902 squash merge commit is now present on main. Added this evidence to reports/BIG-GO-902-status.json.",
+          "created_at": "2026-03-27T18:05:08Z"
         }
       ],
       "created_at": "2026-03-27T15:27:30Z",
@@ -7699,7 +7704,7 @@
       "priority": 1,
       "state": "Done",
       "title": "脚本层迁移到 Go CLI",
-      "updated_at": "2026-03-27T18:02:58Z"
+      "updated_at": "2026-03-27T18:05:08Z"
     }
   ]
 }
