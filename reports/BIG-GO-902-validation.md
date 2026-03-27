@@ -209,7 +209,7 @@ Validated implementation commit:
 45ef102c384262fe8a35f8d7bfae79e8d139fefe
 ```
 
-Current branch head for metadata/report syncs:
+Last verified branch head from `github-sync status`:
 
 ```text
 834f6441cd06fff89bb6b9305b27fa3ca0ddd21f
