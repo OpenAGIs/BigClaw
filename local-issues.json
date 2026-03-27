@@ -7627,6 +7627,11 @@
           "author": "codex",
           "body": "2026-03-28 PR creation resolved the last blocker: authenticated GitHub API creation succeeded and opened PR #215 at https://github.com/OpenAGIs/BigClaw/pull/215. Closeout artifacts now use stable commit semantics (`latest_code_migration_commit=3fe203ebcd99f0f054911c84cf6929a42af18f64`) instead of chasing every report-sync HEAD update, while preserving the compare-rendering risk note.",
           "created_at": "2026-03-27T17:34:31Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 PR status verification: confirmed PR #215 is open on base main with head ref feat/BIG-GO-902-go-cli-script-migration at head SHA 5174f5ed55a81f4cd5de048a8dcb567aeaa0f468. Added this PR-state metadata to reports/BIG-GO-902-status.json for machine-readable auditing.",
+          "created_at": "2026-03-27T17:36:50Z"
         }
       ],
       "created_at": "2026-03-27T15:27:30Z",
@@ -7639,7 +7644,7 @@
       "priority": 1,
       "state": "Done",
       "title": "脚本层迁移到 Go CLI",
-      "updated_at": "2026-03-27T17:34:31Z"
+      "updated_at": "2026-03-27T17:36:50Z"
     }
   ]
 }

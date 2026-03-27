@@ -22,6 +22,13 @@
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...feat/BIG-GO-902-go-cli-script-migration?expand=1",
     "pr_seed_url": "https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-902-go-cli-script-migration"
   },
+  "pull_request": {
+    "number": 215,
+    "state": "open",
+    "head_ref": "feat/BIG-GO-902-go-cli-script-migration",
+    "head_sha": "5174f5ed55a81f4cd5de048a8dcb567aeaa0f468",
+    "base_ref": "main"
+  },
   "validation": {
     "commands": [
       "cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill",
