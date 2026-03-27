@@ -53,7 +53,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/bigclaw-go && go test ./cmd
 Result:
 
 ```text
-ok  	bigclaw-go/cmd/bigclawctl	3.241s
+ok  	bigclaw-go/cmd/bigclawctl	2.651s
 ok  	bigclaw-go/internal/refill	(cached)
 ```
 
@@ -69,7 +69,7 @@ Result:
 
 ```text
 .................                                                        [100%]
-17 passed in 1.89s
+17 passed in 1.76s
 ```
 
 ### Python syntax check
@@ -77,7 +77,7 @@ Result:
 Command:
 
 ```bash
-python3 -m py_compile src/bigclaw/legacy_shim.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py
+python3 -m py_compile src/bigclaw/legacy_shim.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/create_issues.py scripts/dev_smoke.py
 ```
 
 Result: exit code `0`
@@ -93,6 +93,20 @@ bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclawctl de
 Result:
 
 ```text
+smoke_ok local
+```
+
+Command:
+
+```bash
+python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/dev_smoke.py
+```
+
+Result:
+
+```text
+/Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/dev_smoke.py:17: DeprecationWarning: scripts/dev_smoke.py is frozen for migration-only use. bigclaw-go is the sole implementation mainline for active development; the legacy Python runtime surface remains migration-only. Use bash scripts/ops/bigclawctl dev-smoke instead.
+  warn_legacy_runtime_surface("scripts/dev_smoke.py", "bash scripts/ops/bigclawctl dev-smoke")
 smoke_ok local
 ```
 
@@ -168,11 +182,11 @@ Result:
   "detached": false,
   "dirty": true,
   "diverged": false,
-  "local_sha": "1fb6fa2f9a29795aaf2d47d85b5b0184ac6fe219",
+  "local_sha": "4e0d85b617c2d45a8d1dcb5af3846766cdee44f9",
   "pushed": true,
   "relation_known": true,
   "remote_exists": true,
-  "remote_sha": "1fb6fa2f9a29795aaf2d47d85b5b0184ac6fe219",
+  "remote_sha": "4e0d85b617c2d45a8d1dcb5af3846766cdee44f9",
   "status": "ok",
   "synced": true
 }
@@ -192,7 +206,7 @@ feat/BIG-GO-902-go-cli-script-migration
 Validated implementation commit:
 
 ```text
-b4880c3976c79b35b4e310371372ebc7c5030da3
+4e0d85b617c2d45a8d1dcb5af3846766cdee44f9
 ```
 
 PR seed URL:

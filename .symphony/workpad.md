@@ -1,26 +1,40 @@
-# BIG-GO-902 Workpad
+# BIG-GO-902
 
 ## Plan
-
-1. Audit the remaining repo-root `scripts/*.py` and `scripts/ops/*` automation entrypoints against the existing `bigclaw-go/cmd/bigclawctl` command surface.
-2. Implement the smallest missing migration slice so common automation entrypoints resolve through Go-owned CLI behavior while keeping file-name compatibility shims intact.
-3. Update the migration plan and operator docs so the first implemented batch, deferred backlog, validation commands, regression surface, branch/PR suggestion, and risks are explicit.
-4. Run targeted Go/Python/script validation, record exact commands/results, then commit and push the branch.
+- Audit repo-root `scripts/*.py`, `scripts/ops/*`, and `bigclaw-go/cmd/bigclawctl` to confirm the migrated surface and identify any remaining repo-root gaps.
+- Re-validate the delivered Go CLI migration slice with focused Go tests, Python regression tests, syntax checks, and command-level shim invocations.
+- Refresh issue artifacts so the migration plan, validated commit, command results, branch guidance, and risk notes all match the current branch head.
+- Commit the report-sync delta and push `feat/BIG-GO-902-go-cli-script-migration`.
 
 ## Acceptance
-
-- Executable migration plan exists for repo-level script entrypoints and compatibility shims.
-- First-batch implementation / retrofit list is explicit and consistent with the actual CLI surface.
-- Validation commands and regression surface are documented.
-- Branch / PR suggestion and risk notes are included.
+- Repo-root automation entrypoints remain owned by `bigclawctl` subcommands, with legacy Python/Bash names preserved only as compatibility shims.
+- The repo contains an executable migration plan plus a first-batch entrypoint list, validation commands, regression surface, branch/PR suggestion, and risks.
+- Validation artifacts reference the current branch head and the exact commands/results from this execution pass.
 
 ## Validation
-
-- `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill`
-- `python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py`
-- `bash scripts/ops/bigclawctl dev-smoke`
-- `python3 scripts/dev_smoke.py`
-- `python3 scripts/create_issues.py --help`
-- `bash scripts/ops/bigclawctl issue --help`
-- `python3 scripts/ops/bigclaw_refill_queue.py --help`
-- `bash scripts/ops/bigclawctl workspace validate --help`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/bigclaw-go && go test ./cmd/bigclawctl ./internal/refill`
+  - Result: `ok  	bigclaw-go/cmd/bigclawctl	2.651s`; `ok  	bigclaw-go/internal/refill	(cached)`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902 && python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py`
+  - Result: `17 passed in 1.76s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902 && python3 -m py_compile src/bigclaw/legacy_shim.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/create_issues.py scripts/dev_smoke.py`
+  - Result: exit code `0`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902 && bash scripts/ops/bigclawctl dev-smoke`
+  - Result: `smoke_ok local`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902 && python3 scripts/dev_smoke.py`
+  - Result: deprecation warning emitted, then `smoke_ok local`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902 && python3 scripts/create_issues.py --help`
+  - Result: usage for `bigclawctl create-issues`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902 && bash scripts/ops/bigclawctl issue --help`
+  - Result: usage for `bigclawctl issue`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902 && python3 scripts/ops/bigclaw_github_sync.py --help`
+  - Result: usage for `bigclawctl github-sync`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902 && python3 scripts/ops/bigclaw_workspace_bootstrap.py --help`
+  - Result: usage for `bigclawctl workspace <bootstrap|cleanup|validate>`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902 && python3 scripts/ops/symphony_workspace_bootstrap.py --help`
+  - Result: usage for `bigclawctl workspace <bootstrap|cleanup|validate>`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902 && python3 scripts/ops/bigclaw_refill_queue.py --help`
+  - Result: usage for `bigclawctl refill`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902 && python3 scripts/ops/symphony_workspace_validate.py --help`
+  - Result: usage for `bigclawctl workspace validate`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902 && python3 scripts/ops/bigclaw_github_sync.py status --json`
+  - Result: branch `feat/BIG-GO-902-go-cli-script-migration`, `synced=true`, `dirty=true`, `local_sha=4e0d85b617c2d45a8d1dcb5af3846766cdee44f9`

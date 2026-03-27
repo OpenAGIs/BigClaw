@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "feat/BIG-GO-902-go-cli-script-migration",
-    "validated_implementation_commit": "b4880c3976c79b35b4e310371372ebc7c5030da3"
+    "validated_implementation_commit": "4e0d85b617c2d45a8d1dcb5af3846766cdee44f9"
   },
   "artifacts": {
     "closeout_index": "reports/BIG-GO-902-closeout.md",
@@ -23,7 +23,7 @@
     "commands": [
       "cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill",
       "python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py",
-      "python3 -m py_compile src/bigclaw/legacy_shim.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py",
+      "python3 -m py_compile src/bigclaw/legacy_shim.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/create_issues.py scripts/dev_smoke.py",
       "bash scripts/ops/bigclawctl dev-smoke",
       "python3 scripts/dev_smoke.py",
       "python3 scripts/create_issues.py --help",

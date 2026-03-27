@@ -48,7 +48,7 @@
 ```bash
 cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill
 python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py
-python3 -m py_compile src/bigclaw/legacy_shim.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py
+python3 -m py_compile src/bigclaw/legacy_shim.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py scripts/create_issues.py scripts/dev_smoke.py
 bash scripts/ops/bigclawctl dev-smoke
 python3 scripts/dev_smoke.py
 python3 scripts/create_issues.py --help
