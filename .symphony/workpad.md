@@ -69,6 +69,9 @@
 - [x] `cd bigclaw-go && go test ./internal/continuationscorecard`
 - [x] `cd bigclaw-go && go run ./scripts/e2e/validation_bundle_continuation_scorecard.go --repo-root .. --output bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json --pretty`
 - [x] `bash bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py --output bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json`
+- [x] `cd bigclaw-go && go test ./internal/capacitycert`
+- [x] `cd bigclaw-go && go run ./scripts/benchmark/capacity_certification.go --repo-root ..`
+- [x] `bash bigclaw-go/scripts/benchmark/capacity_certification.py --help`
 
 ### Notes
 
@@ -97,3 +100,4 @@
 - Latest `BIG-VNEXT-GO-105` progress: `scripts/benchmark/run_matrix.py` now routes to a Go-native benchmark-matrix runner backed by `bigclaw-go/internal/benchmarkmatrix`, so another Python harness entrypoint has been collapsed to a shim while preserving the existing command shape.
 - Latest `BIG-VNEXT-GO-105` progress: `scripts/benchmark/soak_local.py` now routes to a Go-native soak runner backed by `bigclaw-go/internal/soaklocal`, and the benchmark matrix no longer shells out to Python for its soak scenarios.
 - Latest `BIG-VNEXT-GO-105` progress: the validation-bundle continuation scorecard now has a Go-native implementation under `bigclaw-go/internal/continuationscorecard`, `run_all.sh` now invokes the Go scorecard directly, and the legacy `.py` scorecard path has been reduced to a shim over the Go command.
+- Latest `BIG-VNEXT-GO-105` progress: `scripts/benchmark/capacity_certification.py` now routes to a Go-native capacity certification generator backed by `bigclaw-go/internal/capacitycert`, with a matching Go test and refreshed checked-in capacity certification artifacts.

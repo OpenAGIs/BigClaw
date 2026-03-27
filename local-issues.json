@@ -7635,6 +7635,11 @@
           "author": "codex",
           "body": "Continued `BIG-VNEXT-GO-105` by replacing `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` with a Go-native implementation. Added `bigclaw-go/internal/continuationscorecard` plus `scripts/e2e/validation_bundle_continuation_scorecard.go`, updated `scripts/e2e/run_all.sh` to invoke the Go scorecard directly, and reduced the legacy `.py` scorecard path to a shell shim over the Go command. Validation: `cd bigclaw-go && go test ./internal/continuationscorecard` -> ok; `cd bigclaw-go && go run ./scripts/e2e/validation_bundle_continuation_scorecard.go --repo-root .. --output bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json --pretty` -> ok; `bash bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py --output bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json` -> ok; `bash -n bigclaw-go/scripts/e2e/run_all.sh` -> ok.",
           "created_at": "2026-03-28T02:30:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Continued `BIG-VNEXT-GO-105` by replacing `bigclaw-go/scripts/benchmark/capacity_certification.py` with a Go-native capacity certification generator. Added `bigclaw-go/internal/capacitycert` plus `scripts/benchmark/capacity_certification.go`, reduced the legacy `.py` path to a shell shim over the Go command, and refreshed the checked-in capacity certification JSON/markdown artifacts. Validation: `cd bigclaw-go && go test ./internal/capacitycert` -> ok; `cd bigclaw-go && go run ./scripts/benchmark/capacity_certification.go --repo-root ..` -> ok; `bash bigclaw-go/scripts/benchmark/capacity_certification.py --help` -> ok.",
+          "created_at": "2026-03-28T02:45:00Z"
         }
       ],
       "created_at": "2026-03-27T15:13:31Z",
@@ -7649,7 +7654,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Convert Go-side validation harness scripts to Go",
-      "updated_at": "2026-03-28T01:45:00Z"
+      "updated_at": "2026-03-28T02:45:00Z"
     },
     {
       "assigned_to_worker": true,
