@@ -6,7 +6,7 @@
 - [x] Produce a 100% Go migration ledger with ownership, priority, target Go landing zone, validation command, and regression scope.
 - [x] Define the target architecture, first-wave implementation list, branch and PR strategy, and key migration risks.
 - [x] Run targeted validation for any generated artifacts and capture exact commands and results.
-- [ ] Commit the scoped changes and push the branch for review.
+- [x] Commit the scoped changes and push the branch for review.
 
 ### Acceptance
 
