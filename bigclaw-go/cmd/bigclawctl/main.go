@@ -16,6 +16,7 @@ import (
 	"bigclaw-go/internal/bootstrap"
 	"bigclaw-go/internal/githubsync"
 	"bigclaw-go/internal/legacyshim"
+	"bigclaw-go/internal/migration"
 	"bigclaw-go/internal/refill"
 )
 
@@ -118,6 +119,8 @@ func run(args []string) int {
 		err = runRefill(args[1:])
 	case "local-issues":
 		err = runLocalIssues(args[1:])
+	case "migration":
+		err = runMigration(args[1:])
 	case "legacy-python":
 		err = runLegacyPython(args[1:])
 	default:
@@ -128,6 +131,63 @@ func run(args []string) int {
 		return 1
 	}
 	return 0
+}
+
+func runMigration(args []string) error {
+	if len(args) == 0 || isHelpToken(args[0]) {
+		_, _ = os.Stdout.WriteString("usage: bigclawctl migration <live-shadow-scorecard> [flags]\n")
+		return nil
+	}
+	command := args[0]
+	flags := flag.NewFlagSet("migration "+command, flag.ContinueOnError)
+	repoRoot := flags.String("repo", ".", "repo root")
+	comparePath := flags.String("shadow-compare-report", "docs/reports/shadow-compare-report.json", "shadow compare report path")
+	matrixPath := flags.String("shadow-matrix-report", "docs/reports/shadow-matrix-report.json", "shadow matrix report path")
+	outputPath := flags.String("output", "docs/reports/live-shadow-mirror-scorecard.json", "output path")
+	asJSON := flags.Bool("json", false, "json")
+	if helpText, err := parseFlagsWithHelp(flags, fmt.Sprintf("usage: bigclawctl migration %s [flags]", command), args[1:]); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	switch command {
+	case "live-shadow-scorecard":
+		resolvedRepoRoot := absPath(*repoRoot)
+		report, err := migration.BuildLiveShadowScorecard(resolvedRepoRoot, *comparePath, *matrixPath, time.Now())
+		if err != nil {
+			return emit(map[string]any{
+				"status":                "error",
+				"repo":                  resolvedRepoRoot,
+				"shadow_compare_report": resolvePathAgainstRepoRoot(resolvedRepoRoot, *comparePath),
+				"shadow_matrix_report":  resolvePathAgainstRepoRoot(resolvedRepoRoot, *matrixPath),
+				"output":                resolvePathAgainstRepoRoot(resolvedRepoRoot, *outputPath),
+				"error":                 err.Error(),
+			}, *asJSON, 1)
+		}
+		resolvedOutput := resolvePathAgainstRepoRoot(resolvedRepoRoot, *outputPath)
+		if err := migration.WriteLiveShadowScorecard(resolvedOutput, report); err != nil {
+			return emit(map[string]any{
+				"status": "error",
+				"repo":   resolvedRepoRoot,
+				"output": resolvedOutput,
+				"error":  err.Error(),
+			}, *asJSON, 1)
+		}
+		return emit(map[string]any{
+			"status":                "ok",
+			"repo":                  resolvedRepoRoot,
+			"shadow_compare_report": resolvePathAgainstRepoRoot(resolvedRepoRoot, *comparePath),
+			"shadow_matrix_report":  resolvePathAgainstRepoRoot(resolvedRepoRoot, *matrixPath),
+			"output":                resolvedOutput,
+			"generated_at":          report.GeneratedAt,
+			"total_evidence_runs":   report.Summary.TotalEvidenceRuns,
+			"drift_detected_count":  report.Summary.DriftDetectedCount,
+		}, *asJSON, 0)
+	default:
+		return fmt.Errorf("unknown migration subcommand: %s", command)
+	}
 }
 
 func runLegacyPython(args []string) error {
@@ -1420,13 +1480,14 @@ func printRefillUsage(w io.Writer) {
 }
 
 func printRootUsage(w io.Writer) {
-	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|refill|local-issues|legacy-python> ...")
+	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|refill|local-issues|migration|legacy-python> ...")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "commands:")
 	fmt.Fprintln(w, "  github-sync     install/sync/status hooks and branch sync state")
 	fmt.Fprintln(w, "  workspace       bootstrap/cleanup/validate workspaces using the shared mirror")
 	fmt.Fprintln(w, "  refill          promote issues to maintain target in-progress count")
 	fmt.Fprintln(w, "  local-issues    manage the repo-native issue store in local-issues.json")
+	fmt.Fprintln(w, "  migration       generate repo-native migration evidence artifacts")
 	fmt.Fprintln(w, "  legacy-python   validate frozen Python compatibility shims")
 }
 

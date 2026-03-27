@@ -362,6 +362,82 @@ func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testin
 	}
 }
 
+func TestRunMigrationLiveShadowScorecardJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
+	repoRoot := filepath.Join(t.TempDir(), "repo->")
+	reportsDir := filepath.Join(repoRoot, "docs", "reports")
+	if err := os.MkdirAll(reportsDir, 0o755); err != nil {
+		t.Fatalf("mkdir reports dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(reportsDir, "shadow-compare-report.json"), []byte(`{
+  "trace_id": "compare-trace",
+  "primary": {"task_id": "primary-1", "events": [{"timestamp": "2026-03-13T15:53:21.403765+08:00"}]},
+  "shadow": {"task_id": "shadow-1", "events": [{"timestamp": "2026-03-13T15:53:21.404001+08:00"}]},
+  "diff": {
+    "state_equal": true,
+    "event_types_equal": true,
+    "event_count_delta": 0,
+    "primary_timeline_seconds": 1.25,
+    "shadow_timeline_seconds": 1.251236
+  }
+}`), 0o644); err != nil {
+		t.Fatalf("write compare report: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(reportsDir, "shadow-matrix-report.json"), []byte(`{
+  "total": 1,
+  "matched": 1,
+  "mismatched": 0,
+  "results": [
+    {
+      "trace_id": "matrix-trace",
+      "source_file": "./examples/shadow-task.json",
+      "primary": {"task_id": "primary-2", "events": [{"timestamp": "2026-03-13T16:56:55.415367+08:00"}]},
+      "shadow": {"task_id": "shadow-2", "events": [{"timestamp": "2026-03-13T16:56:55.415367+08:00"}]},
+      "diff": {
+        "state_equal": true,
+        "event_types_equal": true,
+        "event_count_delta": 0,
+        "primary_timeline_seconds": 2.0,
+        "shadow_timeline_seconds": 2.1
+      }
+    }
+  ],
+  "corpus_coverage": {"corpus_slice_count": 3, "uncovered_corpus_slice_count": 1}
+}`), 0o644); err != nil {
+		t.Fatalf("write matrix report: %v", err)
+	}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runMigration([]string{
+		"live-shadow-scorecard",
+		"--repo", repoRoot,
+		"--output", "docs/reports/live-shadow->mirror-scorecard.json",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run migration live-shadow-scorecard: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte(repoRoot)) {
+		t.Fatalf("expected raw arrow token in migration repo path, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(filepath.Join(repoRoot, "docs/reports/live-shadow->mirror-scorecard.json"))) {
+		t.Fatalf("expected raw arrow token in migration output path, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`\u003e`)) {
+		t.Fatalf("expected no HTML escaping in migration JSON output, got %s", string(output))
+	}
+}
+
 func TestRunGitHubSyncInstallJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	repoPath := filepath.Join(t.TempDir(), "repo->")
 	hooksPath := ".githooks->"

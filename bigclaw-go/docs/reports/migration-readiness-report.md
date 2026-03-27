@@ -8,7 +8,7 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 
 - Shadow comparison for one task via `scripts/migration/shadow_compare.py`
 - Shadow comparison matrix across multiple task fixtures via `scripts/migration/shadow_matrix.py`
-- Repo-native live shadow mirror scorecard via `scripts/migration/live_shadow_scorecard.py`
+- Repo-native live shadow mirror scorecard via `go run ./cmd/bigclawctl migration live-shadow-scorecard`
 - Repo-native live shadow bundle/index via `scripts/migration/export_live_shadow_bundle.py`
 - An anonymized corpus-manifest scorecard path via `examples/shadow-corpus-manifest.json`
 - Shared `trace_id` correlation across primary/shadow runs
@@ -20,7 +20,7 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 - `docs/migration-shadow.md`
 - `scripts/migration/shadow_compare.py`
 - `scripts/migration/shadow_matrix.py`
-- `scripts/migration/live_shadow_scorecard.py`
+- `cmd/bigclawctl migration live-shadow-scorecard`
 - `scripts/migration/export_live_shadow_bundle.py`
 - `docs/reports/rollback-trigger-surface.json`
 - `docs/reports/shadow-compare-report.json`

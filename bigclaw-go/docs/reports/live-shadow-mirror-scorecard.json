@@ -4,9 +4,9 @@
   "title": "Live shadow mirror parity drift scorecard",
   "status": "repo-native-live-shadow-scorecard",
   "evidence_inputs": {
-    "shadow_compare_report_path": "bigclaw-go/docs/reports/shadow-compare-report.json",
-    "shadow_matrix_report_path": "bigclaw-go/docs/reports/shadow-matrix-report.json",
-    "generator_script": "bigclaw-go/scripts/migration/live_shadow_scorecard.py"
+    "shadow_compare_report_path": "docs/reports/shadow-compare-report.json",
+    "shadow_matrix_report_path": "docs/reports/shadow-matrix-report.json",
+    "generator_script": "go run ./cmd/bigclawctl migration live-shadow-scorecard"
   },
   "summary": {
     "total_evidence_runs": 4,
@@ -24,7 +24,7 @@
   "freshness": [
     {
       "name": "shadow-compare-report",
-      "report_path": "bigclaw-go/docs/reports/shadow-compare-report.json",
+      "report_path": "docs/reports/shadow-compare-report.json",
       "latest_evidence_timestamp": "2026-03-13T15:53:21.403765+08:00",
       "age_hours": 80.08,
       "freshness_slo_hours": 168,
@@ -32,7 +32,7 @@
     },
     {
       "name": "shadow-matrix-report",
-      "report_path": "bigclaw-go/docs/reports/shadow-matrix-report.json",
+      "report_path": "docs/reports/shadow-matrix-report.json",
       "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",
       "age_hours": 79.02,
       "freshness_slo_hours": 168,
@@ -61,8 +61,6 @@
       "trace_id": "shadow-compare-sample-m1",
       "source_file": "./examples/shadow-task.json",
       "source_kind": null,
-      "task_shape": null,
-      "corpus_slice": null,
       "parity": {
         "status": "parity-ok",
         "timeline_delta_seconds": 0.001956,
@@ -78,8 +76,6 @@
       "trace_id": "shadow-budget-sample-m2",
       "source_file": "./examples/shadow-task-budget.json",
       "source_kind": null,
-      "task_shape": null,
-      "corpus_slice": null,
       "parity": {
         "status": "parity-ok",
         "timeline_delta_seconds": 0.001883,
@@ -95,8 +91,6 @@
       "trace_id": "shadow-validation-sample-m3",
       "source_file": "./examples/shadow-task-validation.json",
       "source_kind": null,
-      "task_shape": null,
-      "corpus_slice": null,
       "parity": {
         "status": "parity-ok",
         "timeline_delta_seconds": 0.002995,
@@ -126,7 +120,7 @@
     {
       "name": "checked_in_evidence_is_fresh_enough_for_review",
       "passed": true,
-      "detail": "freshness_statuses=['fresh', 'fresh']"
+      "detail": "freshness_statuses=[fresh fresh]"
     },
     {
       "name": "matrix_includes_corpus_coverage_overlay",
