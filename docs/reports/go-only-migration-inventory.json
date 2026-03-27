@@ -8,7 +8,10 @@
     "python_toolchain_files": 2,
     "validation_harness_files": 27,
     "first_batch_slice_count": 4,
-    "parallel_slice_count": 10
+    "parallel_slice_count": 10,
+    "todo_slice_count": 3,
+    "in_progress_slice_count": 2,
+    "done_slice_count": 5
   },
   "inventory": [
     {
@@ -820,7 +823,7 @@
       "title": "Replace repo ops Python wrappers with Go commands",
       "phase": "Phase 1 / Tooling",
       "priority": "P0",
-      "status": "todo",
+      "status": "in_progress",
       "first_batch": true,
       "scope": "Collapse root `scripts/ops` Python and shell wrappers into `bigclawctl` or dedicated Go binaries.",
       "target_paths": [
@@ -843,7 +846,7 @@
       "title": "Convert Go-side validation harness scripts to Go",
       "phase": "Phase 2 / Validation",
       "priority": "P0",
-      "status": "todo",
+      "status": "in_progress",
       "first_batch": false,
       "scope": "Replace Python and shell harnesses under `bigclaw-go/scripts` with Go test helpers or Go commands so validation remains Go-only.",
       "target_paths": [
@@ -866,7 +869,7 @@
       "title": "Remove Python packaging and bootstrap assumptions",
       "phase": "Phase 2 / Toolchain",
       "priority": "P1",
-      "status": "todo",
+      "status": "done",
       "first_batch": false,
       "scope": "Delete Python packaging metadata once runtime, tests, and operators no longer depend on it.",
       "target_paths": [
@@ -890,7 +893,7 @@
       "title": "Migrate dev smoke and bootstrap helpers to Go",
       "phase": "Phase 2 / Developer Experience",
       "priority": "P1",
-      "status": "todo",
+      "status": "done",
       "first_batch": false,
       "scope": "Replace repo bootstrap and smoke helpers currently implemented as Python or shell scripts with Go-owned developer flows.",
       "target_paths": [
@@ -912,7 +915,7 @@
       "title": "Freeze or delete legacy Python source tree",
       "phase": "Phase 3 / Retirement",
       "priority": "P0",
-      "status": "todo",
+      "status": "done",
       "first_batch": false,
       "scope": "Once Go parity is proven, remove or hard-freeze the root Python source tree and leave only explicit compatibility stubs if absolutely required.",
       "target_paths": [
@@ -935,7 +938,7 @@
       "title": "Cut docs and contributor flows to Go-only",
       "phase": "Phase 3 / Docs",
       "priority": "P1",
-      "status": "todo",
+      "status": "done",
       "first_batch": false,
       "scope": "Update README and operator docs so contributor guidance no longer points at Python or mixed-language workflows.",
       "target_paths": [

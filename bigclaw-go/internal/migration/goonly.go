@@ -26,6 +26,9 @@ type Summary struct {
 	ValidationHarnessFiles int `json:"validation_harness_files"`
 	FirstBatchSliceCount   int `json:"first_batch_slice_count"`
 	ParallelSliceCount     int `json:"parallel_slice_count"`
+	TodoSliceCount         int `json:"todo_slice_count"`
+	InProgressSliceCount   int `json:"in_progress_slice_count"`
+	DoneSliceCount         int `json:"done_slice_count"`
 }
 
 type Slice struct {
@@ -63,6 +66,9 @@ func BuildReport(repoRoot string) (Report, error) {
 		return Report{}, err
 	}
 	slices := defaultSlices()
+	if err := overlaySliceStatuses(repoRoot, slices); err != nil {
+		return Report{}, err
+	}
 	report := Report{
 		Inventory: inventory,
 		Slices:    slices,
@@ -95,6 +101,16 @@ func RenderMarkdown(report Report) string {
 	b.WriteString(fmt.Sprintf("- Validation-harness Python/shell files under `bigclaw-go/scripts/`: `%d`\n\n", report.Summary.ValidationHarnessFiles))
 
 	b.WriteString("Canonical machine-readable inventory: `docs/reports/go-only-migration-inventory.json`\n\n")
+	b.WriteString("## Execution Snapshot\n\n")
+	b.WriteString(fmt.Sprintf("- Parallel slices tracked: `%d`\n", report.Summary.ParallelSliceCount))
+	b.WriteString(fmt.Sprintf("- Slice status counts: `todo=%d`, `in_progress=%d`, `done=%d`\n", report.Summary.TodoSliceCount, report.Summary.InProgressSliceCount, report.Summary.DoneSliceCount))
+	b.WriteString("- First-batch tracker status:\n")
+	for _, slice := range report.Slices {
+		if slice.FirstBatch {
+			b.WriteString(fmt.Sprintf("  - `%s`: `%s`\n", slice.Identifier, normalizeSliceStatus(slice.Status)))
+		}
+	}
+	b.WriteString("\n")
 
 	b.WriteString("## Parallel Slice Plan\n\n")
 	for _, slice := range report.Slices {
@@ -105,6 +121,7 @@ func RenderMarkdown(report Report) string {
 		b.WriteString(fmt.Sprintf("### %s %s\n\n", slice.Identifier, slice.Title))
 		b.WriteString(fmt.Sprintf("- Phase: `%s`\n", slice.Phase))
 		b.WriteString(fmt.Sprintf("- Priority: `%s`\n", slice.Priority))
+		b.WriteString(fmt.Sprintf("- Tracker status: `%s`\n", normalizeSliceStatus(slice.Status)))
 		b.WriteString(fmt.Sprintf("- First batch: `%s`\n", firstBatch))
 		b.WriteString(fmt.Sprintf("- Scope: %s\n", slice.Scope))
 		b.WriteString("- Target paths:\n")
@@ -247,8 +264,67 @@ func buildSummary(inventory []FileRecord, slices []Slice) Summary {
 		if slice.FirstBatch {
 			summary.FirstBatchSliceCount++
 		}
+		switch normalizeSliceStatus(slice.Status) {
+		case "done":
+			summary.DoneSliceCount++
+		case "in_progress":
+			summary.InProgressSliceCount++
+		default:
+			summary.TodoSliceCount++
+		}
 	}
 	return summary
+}
+
+type localIssueStore struct {
+	Issues []localIssue `json:"issues"`
+}
+
+type localIssue struct {
+	Identifier string `json:"identifier"`
+	State      string `json:"state"`
+}
+
+func overlaySliceStatuses(repoRoot string, slices []Slice) error {
+	body, err := os.ReadFile(filepath.Join(repoRoot, "local-issues.json"))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	var store localIssueStore
+	if err := json.Unmarshal(body, &store); err != nil {
+		return err
+	}
+	states := map[string]string{}
+	for _, issue := range store.Issues {
+		identifier := strings.TrimSpace(issue.Identifier)
+		if identifier == "" {
+			continue
+		}
+		states[identifier] = normalizeSliceStatus(issue.State)
+	}
+	for i := range slices {
+		if state, ok := states[slices[i].Identifier]; ok {
+			slices[i].Status = state
+		}
+	}
+	return nil
+}
+
+func normalizeSliceStatus(value string) string {
+	normalized := strings.ToLower(strings.TrimSpace(value))
+	normalized = strings.ReplaceAll(normalized, "-", "_")
+	normalized = strings.ReplaceAll(normalized, " ", "_")
+	switch normalized {
+	case "done":
+		return "done"
+	case "in_progress", "inprogress":
+		return "in_progress"
+	default:
+		return "todo"
+	}
 }
 
 func defaultSlices() []Slice {

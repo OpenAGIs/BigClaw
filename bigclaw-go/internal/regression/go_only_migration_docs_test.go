@@ -10,6 +10,9 @@ func TestGoOnlyMigrationPlanDocsStayAligned(t *testing.T) {
 	plan := readRepoFile(t, root, "../docs/go-only-migration-plan.md")
 	for _, needle := range []string{
 		"docs/reports/go-only-migration-inventory.json",
+		"## Execution Snapshot",
+		"Slice status counts:",
+		"Tracker status: `in_progress`",
 		"BIG-VNEXT-GO-101",
 		"BIG-VNEXT-GO-110",
 		"## Branch And PR Strategy",
@@ -23,6 +26,7 @@ func TestGoOnlyMigrationPlanDocsStayAligned(t *testing.T) {
 	inventory := readRepoFile(t, root, "../docs/reports/go-only-migration-inventory.json")
 	for _, needle := range []string{
 		"\"parallel_slice_count\": 10",
+		"\"in_progress_slice_count\": 2",
 		"\"identifier\": \"BIG-VNEXT-GO-101\"",
 		"\"identifier\": \"BIG-VNEXT-GO-110\"",
 		"\"branch_prefix\": \"symphony/\"",

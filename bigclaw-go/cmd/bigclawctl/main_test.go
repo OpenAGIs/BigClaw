@@ -78,6 +78,7 @@ func TestRunGoMigrationPlanWritesArtifacts(t *testing.T) {
 		"tests/test_runtime.py":                  "def test_runtime():\n    pass\n",
 		"scripts/dev_bootstrap.sh":               "#!/usr/bin/env bash\nexit 0\n",
 		"bigclaw-go/scripts/e2e/run_all_test.py": "def test_run_all():\n    pass\n",
+		"local-issues.json":                      "{\n  \"issues\": [\n    {\"identifier\": \"BIG-VNEXT-GO-104\", \"state\": \"In Progress\"}\n  ]\n}\n",
 	}
 	for relative, body := range files {
 		absolute := filepath.Join(repoRoot, relative)
@@ -100,12 +101,18 @@ func TestRunGoMigrationPlanWritesArtifacts(t *testing.T) {
 	if !bytes.Contains(jsonBody, []byte(`"parallel_slice_count": 10`)) {
 		t.Fatalf("expected json output to include slice count, got %s", string(jsonBody))
 	}
+	if !bytes.Contains(jsonBody, []byte(`"in_progress_slice_count": 1`)) {
+		t.Fatalf("expected json output to include tracker status counts, got %s", string(jsonBody))
+	}
 	mdBody, err := os.ReadFile(mdOut)
 	if err != nil {
 		t.Fatalf("read markdown output: %v", err)
 	}
 	if !bytes.Contains(mdBody, []byte("BIG-VNEXT-GO-101")) || !bytes.Contains(mdBody, []byte("## Branch And PR Strategy")) {
 		t.Fatalf("expected markdown output to include plan details, got %s", string(mdBody))
+	}
+	if !bytes.Contains(mdBody, []byte("Tracker status: `in_progress`")) || !bytes.Contains(mdBody, []byte("## Execution Snapshot")) {
+		t.Fatalf("expected markdown output to include tracker status snapshot, got %s", string(mdBody))
 	}
 }
 
