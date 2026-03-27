@@ -22,27 +22,19 @@ validation commands, compatibility policy, and branch / PR suggestions.
 | `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` | `go run ./cmd/bigclawctl automation e2e validation-bundle-scorecard ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` | `go run ./cmd/bigclawctl automation e2e validation-bundle-policy-gate ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/benchmark/run_matrix.py` | `go run ./cmd/bigclawctl automation benchmark run-matrix ...` | migrated with Python compatibility shim |
+| `bigclaw-go/scripts/benchmark/capacity_certification.py` | `go run ./cmd/bigclawctl automation benchmark capacity-certification ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated with Python compatibility shim |
 
 ## First-Batch Migration / Adaptation Queue
 
-### Wave 1: remaining benchmark reporting
-
-- `bigclaw-go/scripts/benchmark/capacity_certification.py`
-
-Why first remaining wave:
-
-- They already depend on the migrated `soak-local` execution path.
-- Their main risk is aggregation/report shape, not task execution semantics.
-
-### Wave 2: migration scorecards and bundle exporters
+### Wave 1: migration scorecards and bundle exporters
 
 - `bigclaw-go/scripts/migration/shadow_matrix.py`
 - `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
 - `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
 
-Why second:
+Why first remaining wave:
 
 - These scripts are report-heavy and can reuse the Wave 1 exporter patterns.
 - They affect migration evidence rather than core operator flows.
@@ -73,6 +65,7 @@ go run ./cmd/bigclawctl automation e2e export-validation-bundle --help
 go run ./cmd/bigclawctl automation e2e validation-bundle-scorecard --help
 go run ./cmd/bigclawctl automation e2e validation-bundle-policy-gate --help
 go run ./cmd/bigclawctl automation benchmark run-matrix --help
+go run ./cmd/bigclawctl automation benchmark capacity-certification --help
 go run ./cmd/bigclawctl automation benchmark soak-local --help
 go run ./cmd/bigclawctl automation migration shadow-compare --help
 ```

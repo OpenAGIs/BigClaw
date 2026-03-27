@@ -274,11 +274,11 @@ func MigrationInventory() Inventory {
 			},
 			{
 				ScriptPath:          "bigclaw-go/scripts/benchmark/capacity_certification.py",
-				Status:              "pending-native-python",
+				Status:              "migrated-shim",
 				Category:            "benchmark",
-				Wave:                "wave-2",
-				ReplacementCommand:  "go run ./cmd/bigclawctl automation benchmark capacity-certification ...",
-				CompatibilityLayer:  "planned python shim after Go certifier lands",
+				Wave:                "wave-0",
+				ReplacementCommand:  "go run ./cmd/bigclawctl automation benchmark capacity-certification --help",
+				CompatibilityLayer:  "python shim -> bigclawctl automation benchmark capacity-certification",
 				VerificationCommand: "cd bigclaw-go && python3 scripts/benchmark/capacity_certification.py --help",
 				RegressionSurface: []string{
 					"Capacity threshold policy",

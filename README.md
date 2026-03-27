@@ -73,6 +73,7 @@ Notes:
   `python3 bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`,
   `python3 bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`,
   `python3 bigclaw-go/scripts/benchmark/run_matrix.py`,
+  `python3 bigclaw-go/scripts/benchmark/capacity_certification.py`,
   `python3 bigclaw-go/scripts/benchmark/soak_local.py`, and
   `python3 bigclaw-go/scripts/migration/shadow_compare.py` now forward into
   `bigclawctl automation ...`; the migration matrix lives in

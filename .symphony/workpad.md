@@ -46,3 +46,7 @@
   - Result: passed
 - `cd bigclaw-go && python3 scripts/benchmark/run_matrix.py --help`
   - Result: passed
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark capacity-certification --help`
+  - Result: passed
+- `cd bigclaw-go && python3 scripts/benchmark/capacity_certification.py --help`
+  - Result: passed

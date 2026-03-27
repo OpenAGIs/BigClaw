@@ -462,3 +462,86 @@ func TestAutomationBenchmarkMatrixParsesBenchAndWritesReport(t *testing.T) {
 		t.Fatalf("unexpected report body: %s", string(body))
 	}
 }
+
+func TestAutomationCapacityCertificationBuildsMatrixAndMarkdown(t *testing.T) {
+	repoRoot := t.TempDir()
+	reportsDir := filepath.Join(repoRoot, "bigclaw-go", "docs", "reports")
+	if err := os.MkdirAll(reportsDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	benchmarkReport := `{
+  "benchmark": {
+    "parsed": {
+      "BenchmarkMemoryQueueEnqueueLease-8": {"ns_per_op": 90000},
+      "BenchmarkFileQueueEnqueueLease-8": {"ns_per_op": 12000000},
+      "BenchmarkSQLiteQueueEnqueueLease-8": {"ns_per_op": 11000000},
+      "BenchmarkSchedulerDecide-8": {"ns_per_op": 800}
+    }
+  },
+  "soak_matrix": [
+    {"report_path":"docs/reports/soak-local-50x8.json","result":{"count":50,"workers":8,"elapsed_seconds":8.1,"throughput_tasks_per_sec":6.2,"succeeded":50,"failed":0,"generated_at":"2026-03-13T09:01:00.000001Z"}},
+    {"report_path":"docs/reports/soak-local-100x12.json","result":{"count":100,"workers":12,"elapsed_seconds":10.0,"throughput_tasks_per_sec":9.1,"succeeded":100,"failed":0,"generated_at":"2026-03-13T09:02:00.000001Z"}}
+  ],
+  "generated_at":"2026-03-13T09:02:00.000001Z"
+}`
+	mixedWorkloadReport := `{
+  "all_ok": true,
+  "generated_at":"2026-03-13T09:30:00.000001Z",
+  "tasks": [
+    {"name":"local","ok":true,"expected_executor":"local","routed_executor":"local","final_state":"succeeded"},
+    {"name":"k8s","ok":true,"expected_executor":"kubernetes","routed_executor":"kubernetes","final_state":"succeeded"},
+    {"name":"ray","ok":true,"expected_executor":"ray","routed_executor":"ray","final_state":"succeeded"},
+    {"name":"browser","ok":true,"expected_executor":"kubernetes","routed_executor":"kubernetes","final_state":"succeeded"},
+    {"name":"python","ok":true,"expected_executor":"local","routed_executor":"local","final_state":"succeeded"}
+  ]
+}`
+	if err := os.WriteFile(filepath.Join(reportsDir, "benchmark-matrix-report.json"), []byte(benchmarkReport), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(reportsDir, "mixed-workload-matrix-report.json"), []byte(mixedWorkloadReport), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(reportsDir, "soak-local-1000x24.json"), []byte(`{"count":1000,"workers":24,"elapsed_seconds":100,"throughput_tasks_per_sec":9.5,"succeeded":1000,"failed":0,"generated_at":"2026-03-13T09:44:42.458392Z"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(reportsDir, "soak-local-2000x24.json"), []byte(`{"count":2000,"workers":24,"elapsed_seconds":215,"throughput_tasks_per_sec":9.1,"succeeded":2000,"failed":0,"generated_at":"2026-03-13T09:43:42.458392Z"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	report, _, err := automationCapacityCertification(automationCapacityCertificationOptions{
+		RepoRoot:                repoRoot,
+		BenchmarkReportPath:     "bigclaw-go/docs/reports/benchmark-matrix-report.json",
+		MixedWorkloadReportPath: "bigclaw-go/docs/reports/mixed-workload-matrix-report.json",
+		SupplementalSoakReports: []string{
+			"bigclaw-go/docs/reports/soak-local-1000x24.json",
+			"bigclaw-go/docs/reports/soak-local-2000x24.json",
+		},
+		OutputPath:         "bigclaw-go/docs/reports/capacity-certification-matrix.json",
+		MarkdownOutputPath: "bigclaw-go/docs/reports/capacity-certification-report.md",
+	})
+	if err != nil {
+		t.Fatalf("capacity certification: %v", err)
+	}
+	summary := report["summary"].(map[string]any)
+	if summary["overall_status"] != "pass" {
+		t.Fatalf("unexpected summary: %+v", summary)
+	}
+	saturation := report["saturation_indicator"].(map[string]any)
+	if saturation["status"] != "pass" {
+		t.Fatalf("unexpected saturation indicator: %+v", saturation)
+	}
+	mixed := report["mixed_workload"].(map[string]any)
+	if mixed["status"] != "pass" {
+		t.Fatalf("unexpected mixed workload lane: %+v", mixed)
+	}
+	if report["generated_at"] != "2026-03-13T09:44:42.458392Z" {
+		t.Fatalf("unexpected generated_at: %+v", report["generated_at"])
+	}
+	markdownBody, err := os.ReadFile(filepath.Join(reportsDir, "capacity-certification-report.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(markdownBody), "## Admission Policy Summary") || !strings.Contains(string(markdownBody), "Runtime enforcement: `none`") {
+		t.Fatalf("unexpected markdown body: %s", string(markdownBody))
+	}
+}
