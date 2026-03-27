@@ -856,3 +856,18 @@ func TestBuildExternalStoreBackendMatrix(t *testing.T) {
 		t.Fatalf("unexpected first lane: %+v", first)
 	}
 }
+
+func TestBuildSubscriberTakeoverFaultMatrixReport(t *testing.T) {
+	report, err := buildSubscriberTakeoverFaultMatrixReport()
+	if err != nil {
+		t.Fatalf("build report: %v", err)
+	}
+	summary := report["summary"].(map[string]any)
+	if summary["scenario_count"] != 3 || summary["passing_scenarios"] != 3 {
+		t.Fatalf("unexpected summary: %+v", summary)
+	}
+	scenarios := report["scenarios"].([]any)
+	if len(scenarios) != 3 {
+		t.Fatalf("unexpected scenarios: %+v", scenarios)
+	}
+}

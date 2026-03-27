@@ -250,15 +250,16 @@ func MigrationInventory() Inventory {
 			},
 			{
 				ScriptPath:          "bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py",
-				Status:              "pending-native-python",
+				Status:              "migrated-shim",
 				Category:            "e2e",
 				Wave:                "wave-4",
 				ReplacementCommand:  "go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix ...",
-				CompatibilityLayer:  "planned python shim after Go harness lands",
-				VerificationCommand: "cd bigclaw-go && python3 scripts/e2e/subscriber_takeover_fault_matrix.py --help",
+				CompatibilityLayer:  "python shim -> bigclawctl automation e2e subscriber-takeover-fault-matrix",
+				VerificationCommand: "cd bigclaw-go && go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix --help",
 				RegressionSurface: []string{
-					"Subscriber takeover fault timing",
-					"Takeover validation report compatibility",
+					"Deterministic takeover scenario generation and summary counts",
+					"Lease fencing, checkpoint roll-forward, and duplicate replay accounting",
+					"Python compatibility shim forwarding",
 				},
 			},
 			{
