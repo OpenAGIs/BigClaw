@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -269,5 +270,64 @@ func TestBootstrapHelpersUniqueJoinAndPathExists(t *testing.T) {
 	}
 	if pathExists(filepath.Join(root, "missing.txt")) {
 		t.Fatalf("expected missing path to stay false")
+	}
+}
+
+func TestBuildMigrationPlanIncludesWorkspaceLifecycleChecklist(t *testing.T) {
+	plan := BuildMigrationPlan()
+	if plan.Title == "" {
+		t.Fatal("expected migration plan title")
+	}
+	if len(plan.FirstBatchImplementation) < 3 {
+		t.Fatalf("expected first batch implementation checklist, got %+v", plan.FirstBatchImplementation)
+	}
+	if len(plan.ValidationCommands) == 0 {
+		t.Fatal("expected validation commands")
+	}
+	foundInitCommand := false
+	for _, command := range plan.ValidationCommands {
+		if strings.Contains(command.Command, "workspace init") {
+			foundInitCommand = true
+			break
+		}
+	}
+	if !foundInitCommand {
+		t.Fatalf("expected workspace init validation command, got %+v", plan.ValidationCommands)
+	}
+	if !strings.Contains(RenderMigrationPlanMarkdown(plan), "## Risks") {
+		t.Fatal("expected risks section in markdown render")
+	}
+}
+
+func TestWriteMigrationPlanWritesMarkdownAndJSON(t *testing.T) {
+	root := t.TempDir()
+	plan := BuildMigrationPlan()
+
+	markdownPath, err := WriteMigrationPlan(plan, filepath.Join(root, "workspace-bootstrap-migration-plan.md"))
+	if err != nil {
+		t.Fatalf("write markdown plan: %v", err)
+	}
+	body, err := os.ReadFile(markdownPath)
+	if err != nil {
+		t.Fatalf("read markdown plan: %v", err)
+	}
+	if !strings.Contains(string(body), "# Workspace bootstrap/cleanup/init migration plan") {
+		t.Fatalf("unexpected markdown plan body: %s", string(body))
+	}
+
+	jsonPath, err := WriteMigrationPlan(plan, filepath.Join(root, "workspace-bootstrap-migration-plan.json"))
+	if err != nil {
+		t.Fatalf("write json plan: %v", err)
+	}
+	body, err = os.ReadFile(jsonPath)
+	if err != nil {
+		t.Fatalf("read json plan: %v", err)
+	}
+	var decoded MigrationPlan
+	if err := json.Unmarshal(body, &decoded); err != nil {
+		t.Fatalf("decode json plan: %v", err)
+	}
+	if decoded.BranchRecommendation == "" || decoded.PRRecommendation == "" {
+		t.Fatalf("expected branch and PR recommendation, got %+v", decoded)
 	}
 }

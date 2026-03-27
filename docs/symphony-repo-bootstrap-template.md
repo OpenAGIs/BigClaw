@@ -9,10 +9,10 @@ issue.
 Copy these files into the target repository:
 
 - `scripts/ops/bigclawctl`
-- `src/<your_package>/workspace_bootstrap.py`
-- `src/<your_package>/workspace_bootstrap_cli.py`
+- `bigclaw-go/cmd/bigclawctl`
+- `bigclaw-go/internal/bootstrap`
 
-The shell entrypoint is generic; only the Python compatibility package path is repo-specific while a repo is still mid-migration.
+The shell entrypoint is generic. Repos that still need Python compatibility can keep thin wrappers, but the workspace lifecycle implementation should live in the Go command and bootstrap package.
 
 ## Workflow hook template
 
@@ -63,6 +63,9 @@ the cache or reused it.
 
 Use `bash scripts/ops/bigclawctl workspace validate` plus a 3-issue sample to confirm a repo warms one
 mirror/seed cache and then suppresses repeated remote clones for later workspaces.
+
+Use `bash scripts/ops/bigclawctl workspace init --report bigclaw-go/docs/reports/workspace-bootstrap-migration-plan.md`
+to record the migration checklist, validation commands, regression surface, and branch/PR guidance for the repo.
 
 ## BigClaw example
 

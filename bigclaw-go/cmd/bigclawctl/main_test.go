@@ -270,6 +270,46 @@ func TestRunWorkspaceBootstrapJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	}
 }
 
+func TestRunWorkspaceInitJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runWorkspace([]string{"init", "--json"}); err != nil {
+		t.Fatalf("run workspace init: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte("workspace init")) {
+		t.Fatalf("expected workspace init command in output, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`\u003e`)) {
+		t.Fatalf("expected no HTML escaping in workspace init JSON output, got %s", string(output))
+	}
+}
+
+func TestRunWorkspaceInitWritesMigrationPlanReport(t *testing.T) {
+	root := t.TempDir()
+	reportPath := filepath.Join(root, "workspace-bootstrap-migration-plan.md")
+	if err := runWorkspace([]string{"init", "--report", reportPath}); err != nil {
+		t.Fatalf("run workspace init with report: %v", err)
+	}
+	body, err := os.ReadFile(reportPath)
+	if err != nil {
+		t.Fatalf("read workspace init report: %v", err)
+	}
+	if !bytes.Contains(body, []byte("## First Batch Implementation")) {
+		t.Fatalf("expected first batch implementation section, got %s", string(body))
+	}
+}
+
 func TestRunWorkspaceCleanupJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	root := t.TempDir()
 	remote := initWorkspaceValidateRemote(t, root)

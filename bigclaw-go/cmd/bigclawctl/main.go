@@ -247,11 +247,11 @@ func runGitHubSync(args []string) error {
 
 func runWorkspace(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl workspace <bootstrap|cleanup|validate> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl workspace <bootstrap|cleanup|validate|init> [flags]\n")
 		return nil
 	}
 	if len(args) == 0 {
-		return errors.New("usage: bigclawctl workspace <bootstrap|cleanup|validate> [flags]")
+		return errors.New("usage: bigclawctl workspace <bootstrap|cleanup|validate|init> [flags]")
 	}
 	command := args[0]
 	flags := flag.NewFlagSet("workspace "+command, flag.ContinueOnError)
@@ -310,6 +310,21 @@ func runWorkspace(args []string) error {
 			return encoder.Encode(report)
 		}
 		_, err = os.Stdout.WriteString(bootstrap.RenderValidationMarkdown(report))
+		return err
+	case "init":
+		plan := bootstrap.BuildMigrationPlan()
+		if resolvedReportPath != "" {
+			if _, err := bootstrap.WriteMigrationPlan(plan, resolvedReportPath); err != nil {
+				return err
+			}
+		}
+		if *asJSON {
+			encoder := json.NewEncoder(os.Stdout)
+			encoder.SetEscapeHTML(false)
+			encoder.SetIndent("", "  ")
+			return encoder.Encode(plan)
+		}
+		_, err := os.Stdout.WriteString(bootstrap.RenderMigrationPlanMarkdown(plan))
 		return err
 	default:
 		return fmt.Errorf("unknown workspace subcommand: %s", command)
@@ -1424,7 +1439,7 @@ func printRootUsage(w io.Writer) {
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "commands:")
 	fmt.Fprintln(w, "  github-sync     install/sync/status hooks and branch sync state")
-	fmt.Fprintln(w, "  workspace       bootstrap/cleanup/validate workspaces using the shared mirror")
+	fmt.Fprintln(w, "  workspace       bootstrap/cleanup/validate/init workspaces using the shared mirror")
 	fmt.Fprintln(w, "  refill          promote issues to maintain target in-progress count")
 	fmt.Fprintln(w, "  local-issues    manage the repo-native issue store in local-issues.json")
 	fmt.Fprintln(w, "  legacy-python   validate frozen Python compatibility shims")
