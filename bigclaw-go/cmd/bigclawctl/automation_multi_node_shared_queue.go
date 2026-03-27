@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"sync"
 	"time"
 )
@@ -82,21 +83,17 @@ func automationMultiNodeSharedQueue(opts automationMultiNodeSharedQueueOptions) 
 	if sleep == nil {
 		sleep = time.Sleep
 	}
+	opts.Sleep = sleep
 	rootStateDir, err := os.MkdirTemp("", "bigclawd-multinode-")
 	if err != nil {
 		return nil, 0, err
 	}
 	defer os.RemoveAll(rootStateDir)
-	runtimes, err := startMultiNodeRuntimes(opts.GoRoot, rootStateDir)
+	runtimes, err := startHealthyMultiNodeRuntimes(opts.GoRoot, rootStateDir, client, sleep)
 	if err != nil {
 		return nil, 0, err
 	}
 	defer stopMultiNodeRuntimes(runtimes)
-	for _, node := range runtimes {
-		if err := automationWaitForHealth(client, node.BaseURL, 60, time.Second, sleep); err != nil {
-			return nil, 0, err
-		}
-	}
 	submittedBy := map[string]string{}
 	timestamp := time.Now().Unix()
 	type submission struct {
@@ -260,6 +257,30 @@ func startMultiNodeRuntimes(goRoot string, rootStateDir string) ([]multiNodeRunt
 		runtimes = append(runtimes, multiNodeRuntime{Name: name, BaseURL: baseURL, AuditPath: auditPath, ServiceLog: logFile.Name(), Command: cmd})
 	}
 	return runtimes, nil
+}
+
+func startHealthyMultiNodeRuntimes(goRoot string, rootStateDir string, client *http.Client, sleep func(time.Duration)) ([]multiNodeRuntime, error) {
+	var lastErr error
+	for attempt := 0; attempt < 3; attempt++ {
+		runtimes, err := startMultiNodeRuntimes(goRoot, rootStateDir)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		healthy := true
+		for _, node := range runtimes {
+			if err := automationWaitForHealth(client, node.BaseURL, 20, 500*time.Millisecond, sleep); err != nil {
+				lastErr = err
+				healthy = false
+				break
+			}
+		}
+		if healthy {
+			return runtimes, nil
+		}
+		stopMultiNodeRuntimes(runtimes)
+	}
+	return nil, lastErr
 }
 
 func stopMultiNodeRuntimes(runtimes []multiNodeRuntime) {
@@ -590,6 +611,14 @@ func runtimeTakeoverEvents(runtimes []multiNodeRuntime, subscriberGroup string, 
 		}
 		perNode[node.Name] = filtered
 	}
+	sort.Slice(timeline, func(i, j int) bool {
+		leftTS := fmt.Sprint(timeline[i]["timestamp"])
+		rightTS := fmt.Sprint(timeline[j]["timestamp"])
+		if leftTS == rightTS {
+			return fmt.Sprint(timeline[i]["id"]) < fmt.Sprint(timeline[j]["id"])
+		}
+		return leftTS < rightTS
+	})
 	return timeline, perNode, nil
 }
 

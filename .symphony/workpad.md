@@ -94,3 +94,11 @@
   - Result: passed
 - `cd bigclaw-go && python3 scripts/e2e/multi_node_shared_queue.py --help`
   - Result: passed
+- `cd bigclaw-go && tmpdir=$(mktemp -d) && go run ./cmd/bigclawctl automation e2e subscriber-takeover-fault-matrix --go-root "$tmpdir" --output docs/reports/takeover.json && test -f "$tmpdir/docs/reports/takeover.json"`
+  - Result: passed
+- `cd bigclaw-go && tmpdir=$(mktemp -d) && go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --repo-root "$tmpdir" --output docs/reports/broker.json --artifact-root docs/reports/broker-artifacts --checkpoint-fencing-summary-output docs/reports/checkpoint.json --retention-boundary-summary-output docs/reports/retention.json && test -f "$tmpdir/docs/reports/broker.json" && test -f "$tmpdir/docs/reports/checkpoint.json" && test -f "$tmpdir/docs/reports/retention.json"`
+  - Result: passed
+- `cd bigclaw-go && tmpdir=$(mktemp -d) && mkdir -p "$tmpdir/docs/reports" && printf '%s\n' '{"count":2,"cross_node_completions":1,"duplicate_completed_tasks":[],"duplicate_started_tasks":[]}' > "$tmpdir/docs/reports/multi-node-shared-queue-report.json" && printf '%s\n' '{"summary":{"scenario_count":3,"passing_scenarios":3,"duplicate_delivery_count":1,"stale_write_rejections":1}}' > "$tmpdir/docs/reports/multi-subscriber-takeover-validation-report.json" && printf '%s\n' '{"summary":{"scenario_count":2,"passing_scenarios":2,"stale_write_rejections":1}}' > "$tmpdir/docs/reports/live-multi-node-subscriber-takeover-report.json" && go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface --repo-root "$tmpdir" --multi-node-report docs/reports/multi-node-shared-queue-report.json --takeover-report docs/reports/multi-subscriber-takeover-validation-report.json --live-takeover-report docs/reports/live-multi-node-subscriber-takeover-report.json --output docs/reports/cross.json && test -f "$tmpdir/docs/reports/cross.json"`
+  - Result: passed
+- `cd bigclaw-go && tmpdir=$(mktemp -d) && go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --go-root . --report-path "$tmpdir/shared.json" --takeover-report-path "$tmpdir/takeover.json" --takeover-artifact-dir "$tmpdir/artifacts" --count 6 --submit-workers 2 --timeout-seconds 30 --takeover-ttl 1s && test -f "$tmpdir/shared.json" && test -f "$tmpdir/takeover.json"`
+  - Result: passed
