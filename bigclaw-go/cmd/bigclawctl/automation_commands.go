@@ -171,7 +171,7 @@ func runAutomation(args []string) error {
 
 func runAutomationE2E(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|validation-bundle-scorecard|validation-bundle-policy-gate> [flags]\n")
 		return nil
 	}
 	switch args[0] {
@@ -179,6 +179,10 @@ func runAutomationE2E(args []string) error {
 		return runAutomationRunTaskSmokeCommand(args[1:])
 	case "export-validation-bundle":
 		return runAutomationExportValidationBundleCommand(args[1:])
+	case "validation-bundle-scorecard":
+		return runAutomationValidationBundleScorecardCommand(args[1:])
+	case "validation-bundle-policy-gate":
+		return runAutomationValidationBundlePolicyGateCommand(args[1:])
 	default:
 		return fmt.Errorf("unknown automation e2e subcommand: %s", args[0])
 	}

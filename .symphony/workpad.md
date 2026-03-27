@@ -34,3 +34,11 @@
   - Result: passed
 - `cd bigclaw-go && python3 scripts/e2e/export_validation_bundle.py --help`
   - Result: passed
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e validation-bundle-scorecard --help`
+  - Result: passed
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e validation-bundle-policy-gate --help`
+  - Result: passed
+- `cd bigclaw-go && python3 scripts/e2e/validation_bundle_continuation_scorecard.py --help`
+  - Result: passed
+- `cd bigclaw-go && python3 scripts/e2e/validation_bundle_continuation_policy_gate.py --help`
+  - Result: passed

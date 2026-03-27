@@ -156,11 +156,11 @@ func MigrationInventory() Inventory {
 			},
 			{
 				ScriptPath:          "bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py",
-				Status:              "pending-native-python",
+				Status:              "migrated-shim",
 				Category:            "e2e",
-				Wave:                "wave-1",
-				ReplacementCommand:  "go run ./cmd/bigclawctl automation e2e validation-bundle-scorecard ...",
-				CompatibilityLayer:  "planned python shim after Go scorecard lands",
+				Wave:                "wave-0",
+				ReplacementCommand:  "go run ./cmd/bigclawctl automation e2e validation-bundle-scorecard --help",
+				CompatibilityLayer:  "python shim -> bigclawctl automation e2e validation-bundle-scorecard",
 				VerificationCommand: "cd bigclaw-go && python3 scripts/e2e/validation_bundle_continuation_scorecard.py --help",
 				RegressionSurface: []string{
 					"Score aggregation across recent bundle runs",
@@ -169,11 +169,11 @@ func MigrationInventory() Inventory {
 			},
 			{
 				ScriptPath:          "bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py",
-				Status:              "pending-native-python",
+				Status:              "migrated-shim",
 				Category:            "e2e",
-				Wave:                "wave-1",
-				ReplacementCommand:  "go run ./cmd/bigclawctl automation e2e validation-bundle-policy-gate ...",
-				CompatibilityLayer:  "planned python shim after Go policy gate lands",
+				Wave:                "wave-0",
+				ReplacementCommand:  "go run ./cmd/bigclawctl automation e2e validation-bundle-policy-gate --help",
+				CompatibilityLayer:  "python shim -> bigclawctl automation e2e validation-bundle-policy-gate",
 				VerificationCommand: "cd bigclaw-go && python3 scripts/e2e/validation_bundle_continuation_policy_gate.py --help",
 				RegressionSurface: []string{
 					"Gate recommendation policy",

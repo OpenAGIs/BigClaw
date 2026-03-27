@@ -306,3 +306,111 @@ func TestAutomationExportValidationBundleWritesBundleArtifacts(t *testing.T) {
 		t.Fatalf("expected canonical local report copy: %v", err)
 	}
 }
+
+func TestAutomationValidationBundleScorecardBuildsReport(t *testing.T) {
+	repoRoot := t.TempDir()
+	goRoot := filepath.Join(repoRoot, "bigclaw-go")
+	reportsDir := filepath.Join(goRoot, "docs", "reports")
+	runDir := filepath.Join(reportsDir, "live-validation-runs", "run-1")
+	if err := os.MkdirAll(runDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	latestSummary := `{
+  "run_id": "run-1",
+  "generated_at": "2026-03-28T01:00:00Z",
+  "status": "succeeded",
+  "local": {"enabled": true, "status": "succeeded"},
+  "kubernetes": {"enabled": true, "status": "succeeded"},
+  "ray": {"enabled": true, "status": "succeeded"},
+  "shared_queue_companion": {
+    "available": true,
+    "canonical_report_path": "docs/reports/multi-node-shared-queue-report.json",
+    "canonical_summary_path": "docs/reports/shared-queue-companion-summary.json",
+    "bundle_report_path": "docs/reports/live-validation-runs/run-1/multi-node-shared-queue-report.json",
+    "bundle_summary_path": "docs/reports/live-validation-runs/run-1/shared-queue-companion-summary.json",
+    "cross_node_completions": 5,
+    "duplicate_completed_tasks": 0,
+    "duplicate_started_tasks": 0
+  }
+}`
+	if err := os.WriteFile(filepath.Join(runDir, "summary.json"), []byte(latestSummary), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(reportsDir, "live-validation-summary.json"), []byte(latestSummary), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(reportsDir, "live-validation-index.json"), []byte(`{"latest":{"run_id":"run-1","generated_at":"2026-03-28T01:00:00Z","status":"succeeded"},"recent_runs":[{"summary_path":"bigclaw-go/docs/reports/live-validation-runs/run-1/summary.json"},{"summary_path":"bigclaw-go/docs/reports/live-validation-runs/run-1/summary.json"}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(reportsDir, "multi-node-shared-queue-report.json"), []byte(`{"all_ok":true,"cross_node_completions":5,"duplicate_completed_tasks":[],"duplicate_started_tasks":[]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	report, _, err := automationValidationBundleScorecard(automationValidationBundleScorecardOptions{
+		RepoRoot:              repoRoot,
+		IndexManifestPath:     "bigclaw-go/docs/reports/live-validation-index.json",
+		BundleRootPath:        "bigclaw-go/docs/reports/live-validation-runs",
+		SummaryPath:           "bigclaw-go/docs/reports/live-validation-summary.json",
+		SharedQueueReportPath: "bigclaw-go/docs/reports/multi-node-shared-queue-report.json",
+		OutputPath:            "bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json",
+		Now:                   func() time.Time { return time.Date(2026, 3, 28, 3, 0, 0, 0, time.UTC) },
+	})
+	if err != nil {
+		t.Fatalf("build scorecard: %v", err)
+	}
+	summary := report["summary"].(map[string]any)
+	if summary["recent_bundle_count"] != 2 || summary["latest_all_executor_tracks_succeeded"] != true {
+		t.Fatalf("unexpected scorecard summary: %+v", summary)
+	}
+	lanes := report["executor_lanes"].([]any)
+	if len(lanes) != 3 {
+		t.Fatalf("expected 3 lane scorecards, got %+v", lanes)
+	}
+}
+
+func TestAutomationValidationBundlePolicyGateRespectsLegacyEnforce(t *testing.T) {
+	repoRoot := t.TempDir()
+	scorecardPath := filepath.Join(repoRoot, "bigclaw-go", "docs", "reports", "validation-bundle-continuation-scorecard.json")
+	if err := os.MkdirAll(filepath.Dir(scorecardPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(scorecardPath, []byte(`{
+  "summary": {
+    "latest_run_id": "run-1",
+    "latest_bundle_age_hours": 96.0,
+    "recent_bundle_count": 1,
+    "latest_all_executor_tracks_succeeded": false,
+    "recent_bundle_chain_has_no_failures": false,
+    "all_executor_tracks_have_repeated_recent_coverage": false
+  },
+  "shared_queue_companion": {
+    "available": false,
+    "cross_node_completions": 0
+  }
+}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	report, exitCode, err := automationValidationBundlePolicyGate(automationValidationBundlePolicyGateOptions{
+		RepoRoot:                    repoRoot,
+		ScorecardPath:               "bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json",
+		OutputPath:                  "bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json",
+		MaxLatestAgeHours:           72,
+		MinRecentBundles:            2,
+		RequireRepeatedLaneCoverage: true,
+		LegacyEnforce:               true,
+		Now:                         func() time.Time { return time.Date(2026, 3, 28, 3, 0, 0, 0, time.UTC) },
+	})
+	if err != nil {
+		t.Fatalf("build policy gate: %v", err)
+	}
+	enforcement := report["enforcement"].(map[string]any)
+	if enforcement["mode"] != "fail" || exitCode != 1 {
+		t.Fatalf("unexpected enforcement: exit=%d report=%+v", exitCode, enforcement)
+	}
+	failingChecks := report["failing_checks"].([]any)
+	if len(failingChecks) == 0 {
+		t.Fatalf("expected failing checks, got %+v", report)
+	}
+}
