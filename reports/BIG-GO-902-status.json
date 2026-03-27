@@ -71,7 +71,7 @@
   },
   "blocker": {
     "type": "external_review_and_ci",
-    "summary": "No additional in-repo implementation work remains. PR #215 is still open with no reviews recorded, no requested reviewers configured, and GitHub currently reports an unstable/pending aggregate reviewability state while CI metadata catches up."
+    "summary": "No additional in-repo implementation work remains. PR #215 is still open with no reviews recorded, no requested reviewers configured, and GitHub currently reports an unstable/pending aggregate reviewability state while CI metadata catches up. The repository collaborator list currently exposes only the owner account `OpenAGIs`, so there is no separate reviewer that can be auto-requested from this workspace."
   },
   "external_verification": {
     "date": "2026-03-28",
