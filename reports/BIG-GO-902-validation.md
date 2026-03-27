@@ -233,6 +233,9 @@ Public GitHub verification on 2026-03-28:
   `main...feat/BIG-GO-902-go-cli-script-migration`.
 - GitHub did not fully render the diff in-browser and instead reported that the comparison was
   taking too long to generate.
+- As of the latest public fetch on 2026-03-28, the compare page content still listed only the
+  earlier 14-commit history and did not surface the most recent pushed follow-up commits, so even
+  the public reviewer view appears stale on GitHub's side.
 
 ## Regression Surface
 

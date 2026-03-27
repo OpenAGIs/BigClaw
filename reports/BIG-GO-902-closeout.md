@@ -28,6 +28,8 @@ Date: `2026-03-28`
   `main...feat/BIG-GO-902-go-cli-script-migration`.
 - GitHub's web diff did not fully render and reported that the comparison was taking too long to
   generate.
+- The public compare page content also appeared stale and still showed only the older 14-commit
+  history instead of the latest pushed follow-up commits.
 
 ## In-Repo Artifacts
 
@@ -70,7 +72,8 @@ python3 scripts/ops/bigclaw_github_sync.py status --json
 ## Remaining Blocker
 
 This workspace can push the branch but still cannot create the GitHub PR directly from the terminal
-because no GitHub CLI authentication or API token is configured here.
+because no GitHub CLI authentication or API token is configured here, and GitHub's public compare
+view is currently stale/erroring for the latest branch state.
 
 ## Final Repo Check
 

@@ -38,13 +38,13 @@
   },
   "blocker": {
     "type": "external_auth",
-    "summary": "Workspace can push the branch but cannot create the GitHub PR directly from the terminal because no gh CLI authentication or GitHub API token is configured."
+    "summary": "Workspace can push the branch but cannot create the GitHub PR directly from the terminal because no gh CLI authentication or GitHub API token is configured; GitHub's public compare view is also stale/erroring for the latest branch state."
   },
   "external_verification": {
     "date": "2026-03-28",
     "public_pr_found": false,
     "compare_url_reachable": true,
     "compare_page_state": "Open a pull request",
-    "notes": "Public GitHub search found no PR result for the branch/title; compare page was reachable but diff generation was incomplete in-browser."
+    "notes": "Public GitHub search found no PR result for the branch/title; compare page was reachable but diff generation was incomplete in-browser and the rendered commit list appeared stale, still showing only the earlier 14-commit history."
   }
 }
