@@ -66,3 +66,9 @@
   - Result: passed
 - `cd bigclaw-go && python3 scripts/e2e/cross_process_coordination_surface.py --help`
   - Result: passed
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e mixed-workload-matrix --help`
+  - Result: passed
+- `cd bigclaw-go && python3 scripts/e2e/mixed_workload_matrix.py --help`
+  - Result: passed
+- `cd bigclaw-go && go run ./cmd/bigclawctl legacy-python inventory --json | jq -r '.entries[] | select(.script_path=="bigclaw-go/scripts/e2e/mixed_workload_matrix.py") | [.script_path,.status,.compatibility_layer] | @tsv'`
+  - Result: passed

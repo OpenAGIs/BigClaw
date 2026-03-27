@@ -753,3 +753,90 @@ func TestAutomationCrossProcessCoordinationSurfaceBuildsReport(t *testing.T) {
 		t.Fatalf("expected capability rows, got %+v", capabilities)
 	}
 }
+
+func TestAutomationMixedWorkloadMatrixWritesReport(t *testing.T) {
+	var mu sync.Mutex
+	routed := map[string]string{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/healthz":
+			_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
+		case r.Method == http.MethodPost && r.URL.Path == "/tasks":
+			var task map[string]any
+			if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
+				t.Fatalf("decode task: %v", err)
+			}
+			taskID, _ := task["id"].(string)
+			executor := "local"
+			switch {
+			case strings.Contains(taskID, "browser"), strings.Contains(taskID, "risk"):
+				executor = "kubernetes"
+			case strings.Contains(taskID, "gpu"), strings.Contains(taskID, "required-ray"):
+				executor = "ray"
+			}
+			mu.Lock()
+			routed[taskID] = executor
+			mu.Unlock()
+			w.WriteHeader(http.StatusAccepted)
+			_ = json.NewEncoder(w).Encode(map[string]any{"task": task})
+		case r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/tasks/"):
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id":    strings.TrimPrefix(r.URL.Path, "/tasks/"),
+				"state": "succeeded",
+				"latest_event": map[string]any{
+					"type": "task.completed",
+				},
+			})
+		case r.Method == http.MethodGet && r.URL.Path == "/events":
+			taskID := r.URL.Query().Get("task_id")
+			mu.Lock()
+			executor := routed[taskID]
+			mu.Unlock()
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"events": []map[string]any{
+					{
+						"type":      "scheduler.routed",
+						"timestamp": "2026-03-28T00:00:00Z",
+						"payload": map[string]any{
+							"executor": executor,
+							"reason":   "test route",
+						},
+					},
+					{
+						"type":      "task.completed",
+						"timestamp": "2026-03-28T00:00:01Z",
+					},
+				},
+			})
+		default:
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.String())
+		}
+	}))
+	defer server.Close()
+
+	root := t.TempDir()
+	reportPath := "docs/reports/mixed-workload-matrix-report.json"
+	report, exitCode, err := automationMixedWorkloadMatrix(automationMixedWorkloadMatrixOptions{
+		BaseURL:        server.URL,
+		GoRoot:         root,
+		ReportPath:     reportPath,
+		TimeoutSeconds: 1,
+		Autostart:      false,
+		HTTPClient:     server.Client(),
+		Now:            func() time.Time { return time.Unix(1711584000, 0).UTC() },
+		Sleep:          func(time.Duration) {},
+	})
+	if err != nil {
+		t.Fatalf("run mixed workload matrix: %v", err)
+	}
+	if exitCode != 0 || !report.AllOK || len(report.Tasks) != 5 {
+		t.Fatalf("unexpected report: exit=%d report=%+v", exitCode, report)
+	}
+	body, err := os.ReadFile(filepath.Join(root, reportPath))
+	if err != nil {
+		t.Fatalf("read report: %v", err)
+	}
+	if !strings.Contains(string(body), "\"all_ok\": true") {
+		t.Fatalf("unexpected report body: %s", string(body))
+	}
+}

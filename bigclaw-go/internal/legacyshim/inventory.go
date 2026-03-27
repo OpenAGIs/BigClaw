@@ -196,15 +196,16 @@ func MigrationInventory() Inventory {
 			},
 			{
 				ScriptPath:          "bigclaw-go/scripts/e2e/mixed_workload_matrix.py",
-				Status:              "pending-native-python",
+				Status:              "migrated-shim",
 				Category:            "e2e",
 				Wave:                "wave-4",
 				ReplacementCommand:  "go run ./cmd/bigclawctl automation e2e mixed-workload-matrix ...",
-				CompatibilityLayer:  "planned python shim after Go harness lands",
-				VerificationCommand: "cd bigclaw-go && python3 scripts/e2e/mixed_workload_matrix.py --help",
+				CompatibilityLayer:  "python shim -> bigclawctl automation e2e mixed-workload-matrix",
+				VerificationCommand: "cd bigclaw-go && go run ./cmd/bigclawctl automation e2e mixed-workload-matrix --help",
 				RegressionSurface: []string{
-					"Scenario matrix expansion",
-					"Mixed workload aggregation and markdown outputs",
+					"Mixed executor routing decisions for local, kubernetes, and ray workloads",
+					"Task submission, status polling, and routed-event extraction",
+					"Python compatibility shim forwarding",
 				},
 			},
 			{
