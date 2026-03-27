@@ -32,6 +32,7 @@
 - [x] Validation report written to `/Users/openagi/code/bigclaw-workspaces/BIG-GO-902/reports/BIG-GO-902-validation.md`
 - [x] `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/bigclaw-go && go test ./internal/refill`
 - [x] `bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> exit 0 and rewrote `docs/parallel-refill-queue.md`
+- [x] PR draft written to `/Users/openagi/code/bigclaw-workspaces/BIG-GO-902/reports/BIG-GO-902-pr.md`
 
 ### Notes
 
@@ -42,3 +43,4 @@
 - 2026-03-27: No GitHub CLI/token is configured in this workspace, so the branch was pushed and the PR creation path was left at the deterministic seed URL instead of opening the PR via API.
 - 2026-03-27: Added `reports/BIG-GO-902-validation.md` so reviewers have a single issue-scoped evidence pack covering delivered scope, exact commands, results, branch, PR seed URL, and deferred risks.
 - 2026-03-27: Follow-up docs pass switched the preferred operator examples from wrapper entrypoints (`bigclaw-issue`, `bigclaw-symphony`, `bigclaw-panel`) to direct `scripts/ops/bigclawctl` commands while keeping the wrappers documented as compatibility shims.
+- 2026-03-27: Added `reports/BIG-GO-902-pr.md` with a ready-to-paste PR title/body because this workspace can push branches but cannot authenticate to create the GitHub PR directly.

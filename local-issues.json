@@ -7527,6 +7527,11 @@
           "author": "codex",
           "body": "Follow-up docs pass completed: README and the generated refill queue companion now prefer direct `scripts/ops/bigclawctl issue|symphony|panel` commands, while the old wrapper names remain documented only as compatibility shims. Validation: `cd bigclaw-go && go test ./internal/refill` -> ok; `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> exit 0 with `markdown_written: true` and regenerated `docs/parallel-refill-queue.md` using the new command examples.",
           "created_at": "2026-03-27T15:34:53Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added `reports/BIG-GO-902-pr.md` with a ready-to-paste PR title/body, validation block, and deferred-risk section so the branch can be opened via the deterministic PR seed URL even though this workspace has no GitHub CLI/token configured.",
+          "created_at": "2026-03-27T15:37:14Z"
         }
       ],
       "created_at": "2026-03-27T15:27:30Z",
@@ -7539,7 +7544,7 @@
       "priority": 1,
       "state": "Done",
       "title": "脚本层迁移到 Go CLI",
-      "updated_at": "2026-03-27T15:34:53Z"
+      "updated_at": "2026-03-27T15:37:14Z"
     }
   ]
 }

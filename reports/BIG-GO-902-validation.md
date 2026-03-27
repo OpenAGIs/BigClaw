@@ -168,6 +168,12 @@ PR seed URL:
 https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-902-go-cli-script-migration
 ```
 
+PR draft:
+
+```text
+reports/BIG-GO-902-pr.md
+```
+
 ## Risks and Deferred Follow-ups
 
 - `scripts/dev_bootstrap.sh` remains a shell-owned path and was intentionally left out of this migration slice.
