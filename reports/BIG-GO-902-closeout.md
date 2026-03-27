@@ -12,7 +12,10 @@ Date: `2026-03-28`
 
 ## Validated Implementation Commit
 
-`8a7410de4461a83afbd8c6536ab49b3fa58683d8`
+`45ef102c384262fe8a35f8d7bfae79e8d139fefe`
+
+Later branch commits only synchronized BIG-GO-902 report metadata and did not alter the validated Go
+CLI migration behavior.
 
 ## Reviewer Links
 

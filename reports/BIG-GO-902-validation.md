@@ -182,17 +182,18 @@ Result:
   "detached": false,
   "dirty": false,
   "diverged": false,
-  "local_sha": "8a7410de4461a83afbd8c6536ab49b3fa58683d8",
+  "local_sha": "7bf0f59f3c8649328cabaca1e619136fbf114a30",
   "pushed": true,
   "relation_known": true,
   "remote_exists": true,
-  "remote_sha": "8a7410de4461a83afbd8c6536ab49b3fa58683d8",
+  "remote_sha": "7bf0f59f3c8649328cabaca1e619136fbf114a30",
   "status": "ok",
   "synced": true
 }
 ```
 
-Note: this check now reflects the current clean pushed branch state after the latest report sync.
+Note: this check reflects the clean pushed branch state at the time of the last `github-sync status`
+verification. Subsequent commits in this lane are metadata-only report syncs unless explicitly noted.
 
 ## Branch and PR
 
@@ -205,8 +206,11 @@ feat/BIG-GO-902-go-cli-script-migration
 Validated implementation commit:
 
 ```text
-8a7410de4461a83afbd8c6536ab49b3fa58683d8
+45ef102c384262fe8a35f8d7bfae79e8d139fefe
 ```
+
+Note: later commits in this branch only synchronized BIG-GO-902 tracking/report metadata and did not
+change the migrated Go CLI or compatibility-shim behavior validated above.
 
 PR seed URL:
 
