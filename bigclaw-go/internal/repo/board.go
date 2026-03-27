@@ -2,6 +2,7 @@ package repo
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -17,9 +18,67 @@ type RepoPost struct {
 	Metadata      map[string]any `json:"metadata,omitempty"`
 }
 
+type CollaborationComment struct {
+	CommentID string   `json:"comment_id"`
+	Author    string   `json:"author"`
+	Body      string   `json:"body"`
+	CreatedAt string   `json:"created_at"`
+	Mentions  []string `json:"mentions,omitempty"`
+	Anchor    string   `json:"anchor,omitempty"`
+	Status    string   `json:"status"`
+}
+
 type RepoDiscussionBoard struct {
 	Posts []RepoPost `json:"posts,omitempty"`
 	Now   func() time.Time
+}
+
+func RepoPostFromMap(payload map[string]any) RepoPost {
+	post := RepoPost{
+		PostID:        stringValue(payload["post_id"]),
+		Channel:       stringValue(payload["channel"]),
+		Author:        stringValue(payload["author"]),
+		Body:          stringValue(payload["body"]),
+		TargetSurface: firstNonEmptyString(stringValue(payload["target_surface"]), "task"),
+		TargetID:      stringValue(payload["target_id"]),
+		ParentPostID:  stringValue(payload["parent_post_id"]),
+		CreatedAt:     stringValue(payload["created_at"]),
+		Metadata:      copyMap(mapValue(payload["metadata"])),
+	}
+	if post.CreatedAt == "" {
+		post.CreatedAt = time.Now().UTC().Format(time.RFC3339)
+	}
+	return post
+}
+
+func (p RepoPost) ToMap() map[string]any {
+	return map[string]any{
+		"post_id":        p.PostID,
+		"channel":        p.Channel,
+		"author":         p.Author,
+		"body":           p.Body,
+		"target_surface": firstNonEmptyString(p.TargetSurface, "task"),
+		"target_id":      p.TargetID,
+		"parent_post_id": p.ParentPostID,
+		"created_at":     p.CreatedAt,
+		"metadata":       copyMap(p.Metadata),
+	}
+}
+
+func (p RepoPost) ToCollaborationComment() CollaborationComment {
+	status := "open"
+	if resolved, ok := p.Metadata["resolved"].(bool); ok && resolved {
+		status = "resolved"
+	}
+	targetSurface := firstNonEmptyString(p.TargetSurface, "task")
+	return CollaborationComment{
+		CommentID: "repo-" + strings.TrimSpace(p.PostID),
+		Author:    p.Author,
+		Body:      p.Body,
+		CreatedAt: p.CreatedAt,
+		Anchor:    targetSurface + ":" + p.TargetID,
+		Status:    status,
+	}
 }
 
 func (b *RepoDiscussionBoard) CreatePost(channel, author, body, targetSurface, targetID string, metadata map[string]any) RepoPost {
@@ -28,7 +87,7 @@ func (b *RepoDiscussionBoard) CreatePost(channel, author, body, targetSurface, t
 		Channel:       channel,
 		Author:        author,
 		Body:          body,
-		TargetSurface: targetSurface,
+		TargetSurface: firstNonEmptyString(targetSurface, "task"),
 		TargetID:      targetID,
 		CreatedAt:     b.now().UTC().Format(time.RFC3339),
 		Metadata:      copyMap(metadata),
@@ -91,4 +150,28 @@ func copyMap(input map[string]any) map[string]any {
 		out[key] = value
 	}
 	return out
+}
+
+func stringValue(value any) string {
+	if text, ok := value.(string); ok {
+		return text
+	}
+	return ""
+}
+
+func mapValue(value any) map[string]any {
+	if value == nil {
+		return nil
+	}
+	if typed, ok := value.(map[string]any); ok {
+		return typed
+	}
+	return nil
+}
+
+func firstNonEmptyString(value string, fallback string) string {
+	if strings.TrimSpace(value) == "" {
+		return fallback
+	}
+	return value
 }

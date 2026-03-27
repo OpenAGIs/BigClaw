@@ -43,3 +43,22 @@ func TestRequiredAuditFieldsByAction(t *testing.T) {
 		t.Fatalf("unexpected default audit fields: %+v", got)
 	}
 }
+
+func TestActionPermissionsAndRolePoliciesExposeClonedContracts(t *testing.T) {
+	permissions := ActionPermissions()
+	roles := RolePolicies()
+	if len(permissions) != 7 || len(roles) != 4 {
+		t.Fatalf("unexpected contract sizes: permissions=%d roles=%d", len(permissions), len(roles))
+	}
+	permissions[0].Name = "mutated"
+	roles[0].GrantedPermissions[0] = "mutated"
+
+	freshPermissions := ActionPermissions()
+	freshRoles := RolePolicies()
+	if freshPermissions[0].Name != "repo.push" {
+		t.Fatalf("expected cloned permissions, got %+v", freshPermissions[0])
+	}
+	if freshRoles[0].GrantedPermissions[0] != "repo.push" {
+		t.Fatalf("expected cloned roles, got %+v", freshRoles[0])
+	}
+}

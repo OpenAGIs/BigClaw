@@ -72,6 +72,33 @@ func RequiredAuditFields(action string) []string {
 	}
 }
 
+func ActionPermissions() []contract.ExecutionPermission {
+	permissions := make([]contract.ExecutionPermission, 0, len(actionPermissions))
+	for _, permission := range actionPermissions {
+		permissions = append(permissions, contract.ExecutionPermission{
+			Name:     permission.Name,
+			Resource: permission.Resource,
+			Actions:  append([]string(nil), permission.Actions...),
+			Scopes:   append([]string(nil), permission.Scopes...),
+		})
+	}
+	return permissions
+}
+
+func RolePolicies() []contract.ExecutionRole {
+	roles := make([]contract.ExecutionRole, 0, len(rolePolicies))
+	for _, role := range rolePolicies {
+		roles = append(roles, contract.ExecutionRole{
+			Name:               role.Name,
+			Personas:           append([]string(nil), role.Personas...),
+			GrantedPermissions: append([]string(nil), role.GrantedPermissions...),
+			ScopeBindings:      append([]string(nil), role.ScopeBindings...),
+			EscalationTarget:   role.EscalationTarget,
+		})
+	}
+	return roles
+}
+
 func MissingAuditFields(action string, payload map[string]any) []string {
 	required := RequiredAuditFields(action)
 	missing := make([]string, 0)
