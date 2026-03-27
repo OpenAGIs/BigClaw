@@ -14,6 +14,7 @@
 - [x] Run targeted validation and record the exact commands/results for closeout.
 - [x] Commit and push the issue branch to `origin`.
 - [x] Advance the first executable migration batch by folding legacy workspace wrapper semantics into the Go CLI and shrinking the shell compatibility layer.
+- [x] Start `BIG-VNEXT-GO-107` by replacing the legacy Python dev smoke helper with a Go-native `bigclawctl` command and updated docs.
 
 ### Acceptance Criteria
 
@@ -37,6 +38,8 @@
 - [x] `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl`
 - [x] `rg -n "bigclaw-issue|bigclawctl local-issues" README.md docs/parallel-refill-queue.md bigclaw-go/internal/refill/queue_markdown.go`
 - [x] `cd bigclaw-go && go run ./cmd/bigclawctl --help`
+- [x] `cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestRunDevSmokeJSON|TestPrintRootUsageIncludesGoMigration'`
+- [x] `bash scripts/ops/bigclawctl dev-smoke --json`
 
 ### Notes
 
@@ -48,3 +51,5 @@
 - Latest wrapper alignment: `scripts/ops/symphony_workspace_bootstrap.py` now matches `scripts/ops/bigclaw_workspace_bootstrap.py` by forwarding directly to `workspace bootstrap`, eliminating the last workspace-wrapper command-shape mismatch.
 - Latest operator-surface shift: README, the refill queue markdown, and the queue markdown generator now recommend `bash scripts/ops/bigclawctl local-issues ...` as the primary tracker CLI, with `bigclaw-issue` reduced to a compatibility alias instead of the default operator entrypoint.
 - Latest CLI visibility fix: the `bigclawctl` root help now exposes `go-migration`, and repo metadata/docs now describe the remaining Python-named ops wrappers as compatibility shims over the Go CLI rather than active Python tooling.
+- New continuation focus: begin `BIG-VNEXT-GO-107` by moving the minimal `scripts/dev_smoke.py` scheduler smoke assertion into a Go-native `bigclawctl dev-smoke` entrypoint.
+- Latest `BIG-VNEXT-GO-107` progress: `bigclawctl dev-smoke` now provides a Go-native scheduler smoke check, README recommends that command in the Go smoke path, and `scripts/dev_smoke.py` now points legacy users at the Go command instead of the old manual service boot sequence.

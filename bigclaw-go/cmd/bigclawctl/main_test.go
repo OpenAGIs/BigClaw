@@ -119,6 +119,37 @@ func TestPrintRootUsageIncludesGoMigration(t *testing.T) {
 	if !strings.Contains(body, "generate the Go-only migration plan and inventory artifacts") {
 		t.Fatalf("expected root usage to describe go-migration, got %s", body)
 	}
+	if !strings.Contains(body, "dev-smoke") {
+		t.Fatalf("expected root usage to include dev-smoke, got %s", body)
+	}
+}
+
+func TestRunDevSmokeJSON(t *testing.T) {
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runDevSmoke([]string{"--json"}); err != nil {
+		t.Fatalf("run dev-smoke: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte(`"status": "ok"`)) {
+		t.Fatalf("expected ok status, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"accepted": true`)) {
+		t.Fatalf("expected accepted=true, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte(`"executor": "kubernetes"`)) {
+		t.Fatalf("expected kubernetes executor for browser smoke task, got %s", string(output))
+	}
 }
 
 func initWorkspaceValidateRemote(t *testing.T, root string) string {

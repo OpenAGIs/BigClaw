@@ -101,9 +101,7 @@ PYTHONPATH=src python3 -m pytest
 ```bash
 cd BigClaw/bigclaw-go
 go test ./...
-go run ./cmd/bigclawd &
-curl localhost:8080/healthz
-bash ../scripts/ops/bigclawctl github-sync status --json
+bash ../scripts/ops/bigclawctl dev-smoke --json
 ```
 
 ## Legacy Python smoke verify

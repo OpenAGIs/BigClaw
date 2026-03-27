@@ -6,7 +6,7 @@ from bigclaw.scheduler import Scheduler
 
 
 def main() -> None:
-    warn_legacy_runtime_surface("scripts/dev_smoke.py", "cd bigclaw-go && go test ./... && go run ./cmd/bigclawd")
+    warn_legacy_runtime_surface("scripts/dev_smoke.py", "bash scripts/ops/bigclawctl dev-smoke --json")
     task = Task(task_id="SMOKE-1", source="local", title="smoke", description="smoke test")
     scheduler = Scheduler()
     decision = scheduler.decide(task)

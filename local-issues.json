@@ -7647,6 +7647,18 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Starting the first concrete BIG-VNEXT-GO-107 replacement slice by moving the legacy scripts/dev_smoke.py behavior into bigclawctl. Planned scope: add a Go-native dev-smoke command that exercises the scheduler decision path and update docs to recommend the Go smoke helper instead of the Python script.",
+          "created_at": "2026-03-27T15:37:56Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added a Go-native dev smoke entrypoint in bigclawctl. The new `bash scripts/ops/bigclawctl dev-smoke --json` command exercises the scheduler assessment path with a minimal browser-task fixture, returns a stable accepted/executor payload, and is now the recommended Go smoke helper in README. The legacy scripts/dev_smoke.py warning now points to the Go command rather than the old manual service boot sequence. Validation: cd bigclaw-go && go test ./cmd/bigclawctl -run \"TestRunDevSmokeJSON|TestPrintRootUsageIncludesGoMigration\" -> ok; bash scripts/ops/bigclawctl dev-smoke --json -> ok with accepted=true and executor=kubernetes.",
+          "created_at": "2026-03-27T15:40:54Z"
+        }
+      ],
       "created_at": "2026-03-27T15:13:31Z",
       "description": "",
       "id": "big-vnext-go-107",
@@ -7657,9 +7669,9 @@
         "dx"
       ],
       "priority": 1,
-      "state": "Todo",
+      "state": "In Progress",
       "title": "Migrate dev smoke and bootstrap helpers to Go",
-      "updated_at": "2026-03-27T15:13:31Z"
+      "updated_at": "2026-03-27T15:40:54Z"
     },
     {
       "assigned_to_worker": true,

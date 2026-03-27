@@ -15,10 +15,12 @@ import (
 	"time"
 
 	"bigclaw-go/internal/bootstrap"
+	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/githubsync"
 	"bigclaw-go/internal/legacyshim"
 	"bigclaw-go/internal/migration"
 	"bigclaw-go/internal/refill"
+	"bigclaw-go/internal/scheduler"
 )
 
 const (
@@ -124,6 +126,8 @@ func run(args []string) int {
 		err = runLegacyPython(args[1:])
 	case "go-migration":
 		err = runGoMigration(args[1:])
+	case "dev-smoke":
+		err = runDevSmoke(args[1:])
 	default:
 		err = fmt.Errorf("unknown command: %s", args[0])
 	}
@@ -132,6 +136,53 @@ func run(args []string) int {
 		return 1
 	}
 	return 0
+}
+
+func runDevSmoke(args []string) error {
+	flags := flag.NewFlagSet("dev-smoke", flag.ContinueOnError)
+	_ = flags.String("repo", "..", "repo root")
+	asJSON := flags.Bool("json", false, "json")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl dev-smoke [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	task := domain.Task{
+		ID:            "SMOKE-1",
+		Source:        "local",
+		Title:         "smoke",
+		Description:   "go dev smoke",
+		RequiredTools: []string{"browser"},
+	}
+	assessment := scheduler.New().Assess(task, scheduler.QuotaSnapshot{BudgetRemaining: 100})
+	if !assessment.Decision.Accepted {
+		return emit(map[string]any{
+			"status": "error",
+			"task":   task.ID,
+			"error":  assessment.Decision.Reason,
+		}, *asJSON, 1)
+	}
+	if assessment.Decision.Assignment.Executor == "" {
+		return emit(map[string]any{
+			"status": "error",
+			"task":   task.ID,
+			"error":  "empty executor assignment",
+		}, *asJSON, 1)
+	}
+	payload := map[string]any{
+		"status":   "ok",
+		"task":     task.ID,
+		"accepted": assessment.Decision.Accepted,
+		"executor": assessment.Decision.Assignment.Executor,
+		"reason":   assessment.Decision.Reason,
+	}
+	if *asJSON {
+		return emit(payload, true, 0)
+	}
+	_, err := fmt.Fprintf(os.Stdout, "smoke_ok %s\n", assessment.Decision.Assignment.Executor)
+	return err
 }
 
 func runGoMigration(args []string) error {
@@ -1607,7 +1658,7 @@ func printRefillUsage(w io.Writer) {
 }
 
 func printRootUsage(w io.Writer) {
-	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|refill|local-issues|legacy-python|go-migration> ...")
+	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|refill|local-issues|legacy-python|go-migration|dev-smoke> ...")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "commands:")
 	fmt.Fprintln(w, "  github-sync     install/sync/status hooks and branch sync state")
@@ -1616,6 +1667,7 @@ func printRootUsage(w io.Writer) {
 	fmt.Fprintln(w, "  local-issues    manage the repo-native issue store in local-issues.json")
 	fmt.Fprintln(w, "  legacy-python   validate frozen Python compatibility shims")
 	fmt.Fprintln(w, "  go-migration    generate the Go-only migration plan and inventory artifacts")
+	fmt.Fprintln(w, "  dev-smoke       run the Go-native development smoke check")
 }
 
 func absPath(path string) string {
