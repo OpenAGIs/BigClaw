@@ -12,7 +12,7 @@ Date: `2026-03-28`
 
 ## Current Pushed Branch Tip
 
-`3fe203ebcd99f0f054911c84cf6929a42af18f64`
+`989b0064f22b04e566fb0d0036ea38c0184ba07b`
 
 ## Last Root-Shim Branch Head Verified Via `github-sync status`
 
@@ -31,12 +31,14 @@ and its corresponding Go CLI validation.
 ## Public GitHub Verification
 
 - 2026-03-28 web search found no public PR result for this branch or suggested PR title.
+- 2026-03-28 public repository PR list showed only `#185`, `#184`, and `#183` as open PRs, with
+  no public BIG-GO-902 PR present.
 - The compare URL is publicly reachable and shows GitHub's `Open a pull request` page for
   `main...feat/BIG-GO-902-go-cli-script-migration`.
 - GitHub's web diff did not fully render and reported that the comparison was taking too long to
   generate.
 - The public compare page content also appeared stale and still showed only the older 14-commit
-  history instead of the latest pushed follow-up commits.
+  history and `26 files changed` instead of the latest pushed follow-up commits.
 - The compare page also emitted repeated `Uh oh!` load failures during rendering, so the stale
   reviewer view appears to be a GitHub-side page failure rather than a repo publication problem.
 

@@ -265,7 +265,7 @@ feat/BIG-GO-902-go-cli-script-migration
 Current pushed branch tip:
 
 ```text
-3fe203ebcd99f0f054911c84cf6929a42af18f64
+989b0064f22b04e566fb0d0036ea38c0184ba07b
 ```
 
 Last root-shim branch head verified via `github-sync status`:
@@ -275,7 +275,7 @@ Last root-shim branch head verified via `github-sync status`:
 ```
 
 Note: the current pushed tip includes the additional `bigclaw-go/scripts/*` automation migration
-batch beyond the earlier root-shim verification point.
+batch plus the refreshed closeout artifacts beyond the earlier root-shim verification point.
 
 PR seed URL:
 
@@ -309,15 +309,15 @@ reports/BIG-GO-902-status.json
 
 Public GitHub verification on 2026-03-28:
 
-- Web search returned no public PR result for branch `feat/BIG-GO-902-go-cli-script-migration`
-  or title `BIG-GO-902: migrate repo script entrypoints to Go CLI`.
+- The public repository PR list showed only `#185`, `#184`, and `#183` as open PRs; no public
+  BIG-GO-902 PR was present.
 - The compare page was publicly reachable and showed `Open a pull request` for
   `main...feat/BIG-GO-902-go-cli-script-migration`.
 - GitHub did not fully render the diff in-browser and instead reported that the comparison was
   taking too long to generate.
-- As of the latest public fetch on 2026-03-28, the compare page content still listed only the
-  earlier 14-commit history and did not surface the most recent pushed follow-up commits, so even
-  the public reviewer view appears stale on GitHub's side.
+- As of the latest public fetch on 2026-03-28, the compare page content still listed only
+  `14 commits` and `26 files changed`, which does not match the latest pushed follow-up commits,
+  so the public reviewer view remains stale on GitHub's side.
 - The same public compare view also emitted repeated `Uh oh!` load failures while rendering, which
   further confirms the remaining reviewer-facing problem is on GitHub's side rather than in the
   branch contents.
@@ -340,7 +340,7 @@ Public GitHub verification on 2026-03-28:
   this migration slice.
 - `scripts/ops/bigclawctl` still shells into `go run`, so local Go toolchain availability and
   startup latency remain operator dependencies.
-- `bigclaw-go/scripts/*` helper scripts were not migrated in this issue; the accepted scope stayed
-  at repo-root scripts and common automation entrypoints.
+- The remaining `bigclaw-go/scripts/*` backlog listed in `bigclaw-go/docs/go-cli-script-migration.md`
+  is still deferred to later migration batches.
 - This workspace can push the branch but cannot create the GitHub PR directly from the terminal
   because no `gh` CLI authentication or GitHub API token is configured here.

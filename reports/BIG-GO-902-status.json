@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "feat/BIG-GO-902-go-cli-script-migration",
-    "current_pushed_tip": "3fe203ebcd99f0f054911c84cf6929a42af18f64",
+    "current_pushed_tip": "989b0064f22b04e566fb0d0036ea38c0184ba07b",
     "last_root_shim_verified_head": "834f6441cd06fff89bb6b9305b27fa3ca0ddd21f"
   },
   "artifacts": {
@@ -50,9 +50,10 @@
   "external_verification": {
     "date": "2026-03-28",
     "public_pr_found": false,
+    "public_open_prs_seen": ["185", "184", "183"],
     "compare_url_reachable": true,
     "compare_page_state": "Open a pull request",
-    "notes": "Public GitHub search found no PR result for the branch/title; compare page was reachable but diff generation was incomplete in-browser, emitted repeated 'Uh oh!' load failures, and the rendered commit list appeared stale, still showing only the earlier 14-commit history."
+    "notes": "Public repository PR list showed only #185, #184, and #183 as open PRs; compare page was reachable but diff generation was incomplete in-browser, emitted repeated 'Uh oh!' load failures, and the rendered compare summary appeared stale, still showing only 14 commits and 26 files changed instead of the latest branch tip."
   },
   "auth_environment": {
     "date": "2026-03-28",
