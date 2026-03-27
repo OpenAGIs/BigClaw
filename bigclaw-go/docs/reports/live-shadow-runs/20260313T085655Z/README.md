@@ -27,7 +27,7 @@
 - Stale inputs: `0`
 - Rollback trigger surface status: `manual-review-required`
 - Rollback automation boundary: `manual_only`
-- Rollback trigger distinctions: `{'blockers': 3, 'warnings': 1, 'manual_only_paths': 2}`
+- Rollback trigger distinctions: `{'blockers': <nil>, 'warnings': <nil>, 'manual_only_paths': <nil>}`
 
 ## Parity drift rollup
 
@@ -39,8 +39,8 @@
 
 ## Workflow closeout commands
 
-- `cd bigclaw-go && python3 scripts/migration/live_shadow_scorecard.py --pretty`
-- `cd bigclaw-go && python3 scripts/migration/export_live_shadow_bundle.py`
+- `cd bigclaw-go && go run ./scripts/migration/live_shadow_scorecard.go --repo-root .. --pretty`
+- `cd bigclaw-go && go run ./scripts/migration/export_live_shadow_bundle.go --go-root .`
 - `cd bigclaw-go && go test ./internal/regression -run TestRollbackDocsStayAligned`
 - `git push origin <branch> && git log -1 --stat`
 
@@ -65,3 +65,4 @@
   `docs/reports/live-shadow-comparison-follow-up-digest.md` and
   `OPE-254` / `BIG-PAR-088` in
   `docs/reports/rollback-safeguard-follow-up-digest.md`.
+

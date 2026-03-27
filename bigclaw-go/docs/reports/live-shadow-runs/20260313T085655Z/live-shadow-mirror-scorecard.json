@@ -1,147 +1,147 @@
 {
-  "generated_at": "2026-03-16T15:58:21.282621Z",
-  "ticket": "BIG-PAR-092",
-  "title": "Live shadow mirror parity drift scorecard",
-  "status": "repo-native-live-shadow-scorecard",
+  "cutover_checkpoints": [
+    {
+      "detail": "trace_id=shadow-compare-sample",
+      "name": "single_compare_matches_terminal_state_and_event_sequence",
+      "passed": true
+    },
+    {
+      "detail": "matched=3 mismatched=0",
+      "name": "matrix_reports_no_state_or_event_sequence_mismatches",
+      "passed": true
+    },
+    {
+      "detail": "parity_ok=4 drift_detected=0",
+      "name": "scorecard_detects_no_parity_drift",
+      "passed": true
+    },
+    {
+      "detail": "freshness_statuses=['fresh', 'fresh']",
+      "name": "checked_in_evidence_is_fresh_enough_for_review",
+      "passed": true
+    },
+    {
+      "detail": "corpus_slice_count=4",
+      "name": "matrix_includes_corpus_coverage_overlay",
+      "passed": true
+    }
+  ],
   "evidence_inputs": {
+    "generator_script": "bigclaw-go/scripts/migration/live_shadow_scorecard.py",
     "shadow_compare_report_path": "bigclaw-go/docs/reports/shadow-compare-report.json",
-    "shadow_matrix_report_path": "bigclaw-go/docs/reports/shadow-matrix-report.json",
-    "generator_script": "bigclaw-go/scripts/migration/live_shadow_scorecard.py"
-  },
-  "summary": {
-    "total_evidence_runs": 4,
-    "parity_ok_count": 4,
-    "drift_detected_count": 0,
-    "matrix_total": 3,
-    "matrix_matched": 3,
-    "matrix_mismatched": 0,
-    "corpus_coverage_present": true,
-    "corpus_uncovered_slice_count": 1,
-    "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",
-    "fresh_inputs": 2,
-    "stale_inputs": 0
+    "shadow_matrix_report_path": "bigclaw-go/docs/reports/shadow-matrix-report.json"
   },
   "freshness": [
     {
-      "name": "shadow-compare-report",
-      "report_path": "bigclaw-go/docs/reports/shadow-compare-report.json",
-      "latest_evidence_timestamp": "2026-03-13T15:53:21.403765+08:00",
       "age_hours": 80.08,
       "freshness_slo_hours": 168,
+      "latest_evidence_timestamp": "2026-03-13T15:53:21.403765+08:00",
+      "name": "shadow-compare-report",
+      "report_path": "bigclaw-go/docs/reports/shadow-compare-report.json",
       "status": "fresh"
     },
     {
-      "name": "shadow-matrix-report",
-      "report_path": "bigclaw-go/docs/reports/shadow-matrix-report.json",
-      "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",
       "age_hours": 79.02,
       "freshness_slo_hours": 168,
+      "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",
+      "name": "shadow-matrix-report",
+      "report_path": "bigclaw-go/docs/reports/shadow-matrix-report.json",
       "status": "fresh"
     }
-  ],
-  "parity_entries": [
-    {
-      "entry_type": "single-compare",
-      "label": "single fixture compare",
-      "trace_id": "shadow-compare-sample",
-      "source_file": null,
-      "source_kind": "fixture",
-      "parity": {
-        "status": "parity-ok",
-        "timeline_delta_seconds": 0.001236,
-        "timeline_drift_tolerance_seconds": 0.25,
-        "reasons": []
-      },
-      "primary_task_id": "shadow-compare-sample-primary",
-      "shadow_task_id": "shadow-compare-sample-shadow"
-    },
-    {
-      "entry_type": "matrix-row",
-      "label": "./examples/shadow-task.json",
-      "trace_id": "shadow-compare-sample-m1",
-      "source_file": "./examples/shadow-task.json",
-      "source_kind": null,
-      "task_shape": null,
-      "corpus_slice": null,
-      "parity": {
-        "status": "parity-ok",
-        "timeline_delta_seconds": 0.001956,
-        "timeline_drift_tolerance_seconds": 0.25,
-        "reasons": []
-      },
-      "primary_task_id": "shadow-compare-sample-m1-primary",
-      "shadow_task_id": "shadow-compare-sample-m1-shadow"
-    },
-    {
-      "entry_type": "matrix-row",
-      "label": "./examples/shadow-task-budget.json",
-      "trace_id": "shadow-budget-sample-m2",
-      "source_file": "./examples/shadow-task-budget.json",
-      "source_kind": null,
-      "task_shape": null,
-      "corpus_slice": null,
-      "parity": {
-        "status": "parity-ok",
-        "timeline_delta_seconds": 0.001883,
-        "timeline_drift_tolerance_seconds": 0.25,
-        "reasons": []
-      },
-      "primary_task_id": "shadow-budget-sample-m2-primary",
-      "shadow_task_id": "shadow-budget-sample-m2-shadow"
-    },
-    {
-      "entry_type": "matrix-row",
-      "label": "./examples/shadow-task-validation.json",
-      "trace_id": "shadow-validation-sample-m3",
-      "source_file": "./examples/shadow-task-validation.json",
-      "source_kind": null,
-      "task_shape": null,
-      "corpus_slice": null,
-      "parity": {
-        "status": "parity-ok",
-        "timeline_delta_seconds": 0.002995,
-        "timeline_drift_tolerance_seconds": 0.25,
-        "reasons": []
-      },
-      "primary_task_id": "shadow-validation-sample-m3-primary",
-      "shadow_task_id": "shadow-validation-sample-m3-shadow"
-    }
-  ],
-  "cutover_checkpoints": [
-    {
-      "name": "single_compare_matches_terminal_state_and_event_sequence",
-      "passed": true,
-      "detail": "trace_id=shadow-compare-sample"
-    },
-    {
-      "name": "matrix_reports_no_state_or_event_sequence_mismatches",
-      "passed": true,
-      "detail": "matched=3 mismatched=0"
-    },
-    {
-      "name": "scorecard_detects_no_parity_drift",
-      "passed": true,
-      "detail": "parity_ok=4 drift_detected=0"
-    },
-    {
-      "name": "checked_in_evidence_is_fresh_enough_for_review",
-      "passed": true,
-      "detail": "freshness_statuses=['fresh', 'fresh']"
-    },
-    {
-      "name": "matrix_includes_corpus_coverage_overlay",
-      "passed": true,
-      "detail": "corpus_slice_count=4"
-    }
-  ],
-  "limitations": [
-    "repo-native only: this scorecard summarizes checked-in shadow artifacts rather than an always-on production traffic mirror",
-    "parity drift is measured from fixture-backed compare/matrix runs and optional corpus slices, not mirrored tenant traffic",
-    "freshness is derived from the latest artifact event timestamps and should be treated as evidence recency, not live service health"
   ],
   "future_work": [
     "replace offline fixture submission with a real ingress mirror or tenant-scoped shadow routing control before treating this as cutover-proof traffic parity",
     "promote parity drift review from checked-in artifacts into a continuously refreshed operational surface",
     "pair this scorecard with rollback automation only after tenant-scoped rollback guardrails exist"
-  ]
+  ],
+  "generated_at": "2026-03-16T15:58:21.282621Z",
+  "limitations": [
+    "repo-native only: this scorecard summarizes checked-in shadow artifacts rather than an always-on production traffic mirror",
+    "parity drift is measured from fixture-backed compare/matrix runs and optional corpus slices, not mirrored tenant traffic",
+    "freshness is derived from the latest artifact event timestamps and should be treated as evidence recency, not live service health"
+  ],
+  "parity_entries": [
+    {
+      "entry_type": "single-compare",
+      "label": "single fixture compare",
+      "parity": {
+        "reasons": [],
+        "status": "parity-ok",
+        "timeline_delta_seconds": 0.001236,
+        "timeline_drift_tolerance_seconds": 0.25
+      },
+      "primary_task_id": "shadow-compare-sample-primary",
+      "shadow_task_id": "shadow-compare-sample-shadow",
+      "source_file": null,
+      "source_kind": "fixture",
+      "trace_id": "shadow-compare-sample"
+    },
+    {
+      "corpus_slice": null,
+      "entry_type": "matrix-row",
+      "label": "./examples/shadow-task.json",
+      "parity": {
+        "reasons": [],
+        "status": "parity-ok",
+        "timeline_delta_seconds": 0.001956,
+        "timeline_drift_tolerance_seconds": 0.25
+      },
+      "primary_task_id": "shadow-compare-sample-m1-primary",
+      "shadow_task_id": "shadow-compare-sample-m1-shadow",
+      "source_file": "./examples/shadow-task.json",
+      "source_kind": null,
+      "task_shape": null,
+      "trace_id": "shadow-compare-sample-m1"
+    },
+    {
+      "corpus_slice": null,
+      "entry_type": "matrix-row",
+      "label": "./examples/shadow-task-budget.json",
+      "parity": {
+        "reasons": [],
+        "status": "parity-ok",
+        "timeline_delta_seconds": 0.001883,
+        "timeline_drift_tolerance_seconds": 0.25
+      },
+      "primary_task_id": "shadow-budget-sample-m2-primary",
+      "shadow_task_id": "shadow-budget-sample-m2-shadow",
+      "source_file": "./examples/shadow-task-budget.json",
+      "source_kind": null,
+      "task_shape": null,
+      "trace_id": "shadow-budget-sample-m2"
+    },
+    {
+      "corpus_slice": null,
+      "entry_type": "matrix-row",
+      "label": "./examples/shadow-task-validation.json",
+      "parity": {
+        "reasons": [],
+        "status": "parity-ok",
+        "timeline_delta_seconds": 0.002995,
+        "timeline_drift_tolerance_seconds": 0.25
+      },
+      "primary_task_id": "shadow-validation-sample-m3-primary",
+      "shadow_task_id": "shadow-validation-sample-m3-shadow",
+      "source_file": "./examples/shadow-task-validation.json",
+      "source_kind": null,
+      "task_shape": null,
+      "trace_id": "shadow-validation-sample-m3"
+    }
+  ],
+  "status": "repo-native-live-shadow-scorecard",
+  "summary": {
+    "corpus_coverage_present": true,
+    "corpus_uncovered_slice_count": 1,
+    "drift_detected_count": 0,
+    "fresh_inputs": 2,
+    "latest_evidence_timestamp": "2026-03-13T16:56:55.415367+08:00",
+    "matrix_matched": 3,
+    "matrix_mismatched": 0,
+    "matrix_total": 3,
+    "parity_ok_count": 4,
+    "stale_inputs": 0,
+    "total_evidence_runs": 4
+  },
+  "ticket": "BIG-PAR-092",
+  "title": "Live shadow mirror parity drift scorecard"
 }

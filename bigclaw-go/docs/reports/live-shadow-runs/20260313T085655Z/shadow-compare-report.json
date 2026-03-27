@@ -1,271 +1,5 @@
 {
-  "trace_id": "shadow-compare-sample",
-  "primary": {
-    "task_id": "shadow-compare-sample-primary",
-    "status": {
-      "events": [
-        {
-          "id": "shadow-compare-sample-primary-queued",
-          "type": "task.queued",
-          "task_id": "shadow-compare-sample-primary",
-          "trace_id": "shadow-compare-sample",
-          "timestamp": "2026-03-13T15:53:21.384193+08:00",
-          "payload": {
-            "executor": "local",
-            "title": "Shadow compare sample task"
-          }
-        },
-        {
-          "id": "shadow-compare-sample-primary-leased",
-          "type": "task.leased",
-          "task_id": "shadow-compare-sample-primary",
-          "trace_id": "shadow-compare-sample",
-          "timestamp": "2026-03-13T15:53:21.391943+08:00"
-        },
-        {
-          "id": "shadow-compare-sample-primary-routed",
-          "type": "scheduler.routed",
-          "task_id": "shadow-compare-sample-primary",
-          "trace_id": "shadow-compare-sample",
-          "timestamp": "2026-03-13T15:53:21.39202+08:00",
-          "payload": {
-            "executor": "local",
-            "quota": {
-              "TenantID": "",
-              "ConcurrentLimit": 32,
-              "CurrentRunning": 0,
-              "BudgetRemaining": 1000
-            },
-            "reason": "required executor=local"
-          }
-        },
-        {
-          "id": "shadow-compare-sample-primary-started",
-          "type": "task.started",
-          "task_id": "shadow-compare-sample-primary",
-          "trace_id": "shadow-compare-sample",
-          "timestamp": "2026-03-13T15:53:21.392062+08:00",
-          "payload": {
-            "executor": "local"
-          }
-        },
-        {
-          "id": "shadow-compare-sample-primary-completed",
-          "type": "task.completed",
-          "task_id": "shadow-compare-sample-primary",
-          "trace_id": "shadow-compare-sample",
-          "timestamp": "2026-03-13T15:53:21.403334+08:00",
-          "payload": {
-            "message": "local execution completed"
-          }
-        }
-      ],
-      "latest_event": {
-        "id": "shadow-compare-sample-primary-completed",
-        "type": "task.completed",
-        "task_id": "shadow-compare-sample-primary",
-        "trace_id": "shadow-compare-sample",
-        "timestamp": "2026-03-13T15:53:21.403334+08:00",
-        "payload": {
-          "message": "local execution completed"
-        }
-      },
-      "state": "succeeded",
-      "task_id": "shadow-compare-sample-primary",
-      "trace_id": "shadow-compare-sample"
-    },
-    "events": [
-      {
-        "id": "shadow-compare-sample-primary-queued",
-        "type": "task.queued",
-        "task_id": "shadow-compare-sample-primary",
-        "trace_id": "shadow-compare-sample",
-        "timestamp": "2026-03-13T15:53:21.384193+08:00",
-        "payload": {
-          "executor": "local",
-          "title": "Shadow compare sample task"
-        }
-      },
-      {
-        "id": "shadow-compare-sample-primary-leased",
-        "type": "task.leased",
-        "task_id": "shadow-compare-sample-primary",
-        "trace_id": "shadow-compare-sample",
-        "timestamp": "2026-03-13T15:53:21.391943+08:00"
-      },
-      {
-        "id": "shadow-compare-sample-primary-routed",
-        "type": "scheduler.routed",
-        "task_id": "shadow-compare-sample-primary",
-        "trace_id": "shadow-compare-sample",
-        "timestamp": "2026-03-13T15:53:21.39202+08:00",
-        "payload": {
-          "executor": "local",
-          "quota": {
-            "TenantID": "",
-            "ConcurrentLimit": 32,
-            "CurrentRunning": 0,
-            "BudgetRemaining": 1000
-          },
-          "reason": "required executor=local"
-        }
-      },
-      {
-        "id": "shadow-compare-sample-primary-started",
-        "type": "task.started",
-        "task_id": "shadow-compare-sample-primary",
-        "trace_id": "shadow-compare-sample",
-        "timestamp": "2026-03-13T15:53:21.392062+08:00",
-        "payload": {
-          "executor": "local"
-        }
-      },
-      {
-        "id": "shadow-compare-sample-primary-completed",
-        "type": "task.completed",
-        "task_id": "shadow-compare-sample-primary",
-        "trace_id": "shadow-compare-sample",
-        "timestamp": "2026-03-13T15:53:21.403334+08:00",
-        "payload": {
-          "message": "local execution completed"
-        }
-      }
-    ]
-  },
-  "shadow": {
-    "task_id": "shadow-compare-sample-shadow",
-    "status": {
-      "events": [
-        {
-          "id": "shadow-compare-sample-shadow-queued",
-          "type": "task.queued",
-          "task_id": "shadow-compare-sample-shadow",
-          "trace_id": "shadow-compare-sample",
-          "timestamp": "2026-03-13T15:53:21.38586+08:00",
-          "payload": {
-            "executor": "local",
-            "title": "Shadow compare sample task"
-          }
-        },
-        {
-          "id": "shadow-compare-sample-shadow-leased",
-          "type": "task.leased",
-          "task_id": "shadow-compare-sample-shadow",
-          "trace_id": "shadow-compare-sample",
-          "timestamp": "2026-03-13T15:53:21.392426+08:00"
-        },
-        {
-          "id": "shadow-compare-sample-shadow-routed",
-          "type": "scheduler.routed",
-          "task_id": "shadow-compare-sample-shadow",
-          "trace_id": "shadow-compare-sample",
-          "timestamp": "2026-03-13T15:53:21.39249+08:00",
-          "payload": {
-            "executor": "local",
-            "quota": {
-              "TenantID": "",
-              "ConcurrentLimit": 32,
-              "CurrentRunning": 0,
-              "BudgetRemaining": 1000
-            },
-            "reason": "required executor=local"
-          }
-        },
-        {
-          "id": "shadow-compare-sample-shadow-started",
-          "type": "task.started",
-          "task_id": "shadow-compare-sample-shadow",
-          "trace_id": "shadow-compare-sample",
-          "timestamp": "2026-03-13T15:53:21.392536+08:00",
-          "payload": {
-            "executor": "local"
-          }
-        },
-        {
-          "id": "shadow-compare-sample-shadow-completed",
-          "type": "task.completed",
-          "task_id": "shadow-compare-sample-shadow",
-          "trace_id": "shadow-compare-sample",
-          "timestamp": "2026-03-13T15:53:21.403765+08:00",
-          "payload": {
-            "message": "local execution completed"
-          }
-        }
-      ],
-      "latest_event": {
-        "id": "shadow-compare-sample-shadow-completed",
-        "type": "task.completed",
-        "task_id": "shadow-compare-sample-shadow",
-        "trace_id": "shadow-compare-sample",
-        "timestamp": "2026-03-13T15:53:21.403765+08:00",
-        "payload": {
-          "message": "local execution completed"
-        }
-      },
-      "state": "succeeded",
-      "task_id": "shadow-compare-sample-shadow",
-      "trace_id": "shadow-compare-sample"
-    },
-    "events": [
-      {
-        "id": "shadow-compare-sample-shadow-queued",
-        "type": "task.queued",
-        "task_id": "shadow-compare-sample-shadow",
-        "trace_id": "shadow-compare-sample",
-        "timestamp": "2026-03-13T15:53:21.38586+08:00",
-        "payload": {
-          "executor": "local",
-          "title": "Shadow compare sample task"
-        }
-      },
-      {
-        "id": "shadow-compare-sample-shadow-leased",
-        "type": "task.leased",
-        "task_id": "shadow-compare-sample-shadow",
-        "trace_id": "shadow-compare-sample",
-        "timestamp": "2026-03-13T15:53:21.392426+08:00"
-      },
-      {
-        "id": "shadow-compare-sample-shadow-routed",
-        "type": "scheduler.routed",
-        "task_id": "shadow-compare-sample-shadow",
-        "trace_id": "shadow-compare-sample",
-        "timestamp": "2026-03-13T15:53:21.39249+08:00",
-        "payload": {
-          "executor": "local",
-          "quota": {
-            "TenantID": "",
-            "ConcurrentLimit": 32,
-            "CurrentRunning": 0,
-            "BudgetRemaining": 1000
-          },
-          "reason": "required executor=local"
-        }
-      },
-      {
-        "id": "shadow-compare-sample-shadow-started",
-        "type": "task.started",
-        "task_id": "shadow-compare-sample-shadow",
-        "trace_id": "shadow-compare-sample",
-        "timestamp": "2026-03-13T15:53:21.392536+08:00",
-        "payload": {
-          "executor": "local"
-        }
-      },
-      {
-        "id": "shadow-compare-sample-shadow-completed",
-        "type": "task.completed",
-        "task_id": "shadow-compare-sample-shadow",
-        "trace_id": "shadow-compare-sample",
-        "timestamp": "2026-03-13T15:53:21.403765+08:00",
-        "payload": {
-          "message": "local execution completed"
-        }
-      }
-    ]
-  },
   "diff": {
-    "state_equal": true,
     "event_count_delta": 0,
     "event_types_equal": true,
     "primary_event_types": [
@@ -275,6 +9,7 @@
       "task.started",
       "task.completed"
     ],
+    "primary_timeline_seconds": 0.019141,
     "shadow_event_types": [
       "task.queued",
       "task.leased",
@@ -282,7 +17,272 @@
       "task.started",
       "task.completed"
     ],
-    "primary_timeline_seconds": 0.019141,
-    "shadow_timeline_seconds": 0.017905
-  }
+    "shadow_timeline_seconds": 0.017905,
+    "state_equal": true
+  },
+  "primary": {
+    "events": [
+      {
+        "id": "shadow-compare-sample-primary-queued",
+        "payload": {
+          "executor": "local",
+          "title": "Shadow compare sample task"
+        },
+        "task_id": "shadow-compare-sample-primary",
+        "timestamp": "2026-03-13T15:53:21.384193+08:00",
+        "trace_id": "shadow-compare-sample",
+        "type": "task.queued"
+      },
+      {
+        "id": "shadow-compare-sample-primary-leased",
+        "task_id": "shadow-compare-sample-primary",
+        "timestamp": "2026-03-13T15:53:21.391943+08:00",
+        "trace_id": "shadow-compare-sample",
+        "type": "task.leased"
+      },
+      {
+        "id": "shadow-compare-sample-primary-routed",
+        "payload": {
+          "executor": "local",
+          "quota": {
+            "BudgetRemaining": 1000,
+            "ConcurrentLimit": 32,
+            "CurrentRunning": 0,
+            "TenantID": ""
+          },
+          "reason": "required executor=local"
+        },
+        "task_id": "shadow-compare-sample-primary",
+        "timestamp": "2026-03-13T15:53:21.39202+08:00",
+        "trace_id": "shadow-compare-sample",
+        "type": "scheduler.routed"
+      },
+      {
+        "id": "shadow-compare-sample-primary-started",
+        "payload": {
+          "executor": "local"
+        },
+        "task_id": "shadow-compare-sample-primary",
+        "timestamp": "2026-03-13T15:53:21.392062+08:00",
+        "trace_id": "shadow-compare-sample",
+        "type": "task.started"
+      },
+      {
+        "id": "shadow-compare-sample-primary-completed",
+        "payload": {
+          "message": "local execution completed"
+        },
+        "task_id": "shadow-compare-sample-primary",
+        "timestamp": "2026-03-13T15:53:21.403334+08:00",
+        "trace_id": "shadow-compare-sample",
+        "type": "task.completed"
+      }
+    ],
+    "status": {
+      "events": [
+        {
+          "id": "shadow-compare-sample-primary-queued",
+          "payload": {
+            "executor": "local",
+            "title": "Shadow compare sample task"
+          },
+          "task_id": "shadow-compare-sample-primary",
+          "timestamp": "2026-03-13T15:53:21.384193+08:00",
+          "trace_id": "shadow-compare-sample",
+          "type": "task.queued"
+        },
+        {
+          "id": "shadow-compare-sample-primary-leased",
+          "task_id": "shadow-compare-sample-primary",
+          "timestamp": "2026-03-13T15:53:21.391943+08:00",
+          "trace_id": "shadow-compare-sample",
+          "type": "task.leased"
+        },
+        {
+          "id": "shadow-compare-sample-primary-routed",
+          "payload": {
+            "executor": "local",
+            "quota": {
+              "BudgetRemaining": 1000,
+              "ConcurrentLimit": 32,
+              "CurrentRunning": 0,
+              "TenantID": ""
+            },
+            "reason": "required executor=local"
+          },
+          "task_id": "shadow-compare-sample-primary",
+          "timestamp": "2026-03-13T15:53:21.39202+08:00",
+          "trace_id": "shadow-compare-sample",
+          "type": "scheduler.routed"
+        },
+        {
+          "id": "shadow-compare-sample-primary-started",
+          "payload": {
+            "executor": "local"
+          },
+          "task_id": "shadow-compare-sample-primary",
+          "timestamp": "2026-03-13T15:53:21.392062+08:00",
+          "trace_id": "shadow-compare-sample",
+          "type": "task.started"
+        },
+        {
+          "id": "shadow-compare-sample-primary-completed",
+          "payload": {
+            "message": "local execution completed"
+          },
+          "task_id": "shadow-compare-sample-primary",
+          "timestamp": "2026-03-13T15:53:21.403334+08:00",
+          "trace_id": "shadow-compare-sample",
+          "type": "task.completed"
+        }
+      ],
+      "latest_event": {
+        "id": "shadow-compare-sample-primary-completed",
+        "payload": {
+          "message": "local execution completed"
+        },
+        "task_id": "shadow-compare-sample-primary",
+        "timestamp": "2026-03-13T15:53:21.403334+08:00",
+        "trace_id": "shadow-compare-sample",
+        "type": "task.completed"
+      },
+      "state": "succeeded",
+      "task_id": "shadow-compare-sample-primary",
+      "trace_id": "shadow-compare-sample"
+    },
+    "task_id": "shadow-compare-sample-primary"
+  },
+  "shadow": {
+    "events": [
+      {
+        "id": "shadow-compare-sample-shadow-queued",
+        "payload": {
+          "executor": "local",
+          "title": "Shadow compare sample task"
+        },
+        "task_id": "shadow-compare-sample-shadow",
+        "timestamp": "2026-03-13T15:53:21.38586+08:00",
+        "trace_id": "shadow-compare-sample",
+        "type": "task.queued"
+      },
+      {
+        "id": "shadow-compare-sample-shadow-leased",
+        "task_id": "shadow-compare-sample-shadow",
+        "timestamp": "2026-03-13T15:53:21.392426+08:00",
+        "trace_id": "shadow-compare-sample",
+        "type": "task.leased"
+      },
+      {
+        "id": "shadow-compare-sample-shadow-routed",
+        "payload": {
+          "executor": "local",
+          "quota": {
+            "BudgetRemaining": 1000,
+            "ConcurrentLimit": 32,
+            "CurrentRunning": 0,
+            "TenantID": ""
+          },
+          "reason": "required executor=local"
+        },
+        "task_id": "shadow-compare-sample-shadow",
+        "timestamp": "2026-03-13T15:53:21.39249+08:00",
+        "trace_id": "shadow-compare-sample",
+        "type": "scheduler.routed"
+      },
+      {
+        "id": "shadow-compare-sample-shadow-started",
+        "payload": {
+          "executor": "local"
+        },
+        "task_id": "shadow-compare-sample-shadow",
+        "timestamp": "2026-03-13T15:53:21.392536+08:00",
+        "trace_id": "shadow-compare-sample",
+        "type": "task.started"
+      },
+      {
+        "id": "shadow-compare-sample-shadow-completed",
+        "payload": {
+          "message": "local execution completed"
+        },
+        "task_id": "shadow-compare-sample-shadow",
+        "timestamp": "2026-03-13T15:53:21.403765+08:00",
+        "trace_id": "shadow-compare-sample",
+        "type": "task.completed"
+      }
+    ],
+    "status": {
+      "events": [
+        {
+          "id": "shadow-compare-sample-shadow-queued",
+          "payload": {
+            "executor": "local",
+            "title": "Shadow compare sample task"
+          },
+          "task_id": "shadow-compare-sample-shadow",
+          "timestamp": "2026-03-13T15:53:21.38586+08:00",
+          "trace_id": "shadow-compare-sample",
+          "type": "task.queued"
+        },
+        {
+          "id": "shadow-compare-sample-shadow-leased",
+          "task_id": "shadow-compare-sample-shadow",
+          "timestamp": "2026-03-13T15:53:21.392426+08:00",
+          "trace_id": "shadow-compare-sample",
+          "type": "task.leased"
+        },
+        {
+          "id": "shadow-compare-sample-shadow-routed",
+          "payload": {
+            "executor": "local",
+            "quota": {
+              "BudgetRemaining": 1000,
+              "ConcurrentLimit": 32,
+              "CurrentRunning": 0,
+              "TenantID": ""
+            },
+            "reason": "required executor=local"
+          },
+          "task_id": "shadow-compare-sample-shadow",
+          "timestamp": "2026-03-13T15:53:21.39249+08:00",
+          "trace_id": "shadow-compare-sample",
+          "type": "scheduler.routed"
+        },
+        {
+          "id": "shadow-compare-sample-shadow-started",
+          "payload": {
+            "executor": "local"
+          },
+          "task_id": "shadow-compare-sample-shadow",
+          "timestamp": "2026-03-13T15:53:21.392536+08:00",
+          "trace_id": "shadow-compare-sample",
+          "type": "task.started"
+        },
+        {
+          "id": "shadow-compare-sample-shadow-completed",
+          "payload": {
+            "message": "local execution completed"
+          },
+          "task_id": "shadow-compare-sample-shadow",
+          "timestamp": "2026-03-13T15:53:21.403765+08:00",
+          "trace_id": "shadow-compare-sample",
+          "type": "task.completed"
+        }
+      ],
+      "latest_event": {
+        "id": "shadow-compare-sample-shadow-completed",
+        "payload": {
+          "message": "local execution completed"
+        },
+        "task_id": "shadow-compare-sample-shadow",
+        "timestamp": "2026-03-13T15:53:21.403765+08:00",
+        "trace_id": "shadow-compare-sample",
+        "type": "task.completed"
+      },
+      "state": "succeeded",
+      "task_id": "shadow-compare-sample-shadow",
+      "trace_id": "shadow-compare-sample"
+    },
+    "task_id": "shadow-compare-sample-shadow"
+  },
+  "trace_id": "shadow-compare-sample"
 }
