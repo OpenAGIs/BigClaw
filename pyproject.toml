@@ -1,4 +1,6 @@
 [build-system]
+# Compatibility-only Python packaging metadata retained while the frozen legacy
+# tree still exists in-repo.
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 

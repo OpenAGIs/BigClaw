@@ -6,26 +6,26 @@ on:
   pull_request:
 
 jobs:
-  test:
+  go-mainline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: bigclaw-go/go.mod
+      - name: Go test
+        run: cd bigclaw-go && go test ./...
+      - name: Go smoke
+        run: bash scripts/ops/bigclawctl dev-smoke --json
+
+  legacy-compatibility:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .[dev]
-          pip install pytest-cov
-      - name: Lint
-        run: ruff check src tests scripts
-      - name: Test
-        run: pytest --cov=bigclaw --cov-report=term-missing --cov-report=xml
-      - name: Build package
-        run: python -m build
-      - name: Upload coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-xml
-          path: coverage.xml
+      - name: Frozen tree audit
+        run: bash scripts/ops/bigclawctl legacy-python freeze-audit --json
+      - name: Frozen shim compile check
+        run: bash scripts/ops/bigclawctl legacy-python compile-check --json

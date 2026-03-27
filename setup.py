@@ -1,3 +1,5 @@
+"""Compatibility-only packaging shim for the frozen legacy Python tree."""
+
 from setuptools import find_packages, setup
 
 

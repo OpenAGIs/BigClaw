@@ -54,6 +54,8 @@
 - [x] `bash scripts/ops/bigclawctl legacy-python freeze-audit --json`
 - [x] `bash scripts/ops/bigclawctl legacy-python compile-check --json`
 - [x] `rg --files src/bigclaw tests scripts | head -n 20`
+- [x] `cd bigclaw-go && go test ./...`
+- [x] `bash scripts/ops/bigclawctl dev-smoke --json`
 
 ### Notes
 
@@ -75,3 +77,5 @@
 - Latest `BIG-VNEXT-GO-109` progress: README, `bigclaw-go/README.md`, `docs/go-mainline-cutover-handoff.md`, and `docs/BigClaw-AgentHub-Integration-Alignment.md` now present Go-first contributor flows and validation commands only, while generated migration artifacts continue to retain the historical compatibility inventory outside the contributor quick-start path.
 - New continuation focus: advance `BIG-VNEXT-GO-108` by turning the legacy-python helper into an actual frozen-tree audit instead of a shim-only compile smoke check.
 - Latest `BIG-VNEXT-GO-108` progress: `src/bigclaw` now carries an explicit frozen-tree README plus top-level freeze markers on the remaining legacy entrypoints, and `bigclawctl legacy-python freeze-audit` now inventories the root compatibility tree, verifies the frozen README, and checks the key entrypoints for migration-only markers from the Go CLI.
+- New continuation focus: advance `BIG-VNEXT-GO-106` by removing Python-package bootstrap assumptions from CI and treating the root packaging metadata as compatibility-only.
+- Latest `BIG-VNEXT-GO-106` progress: `.github/workflows/ci.yml` now runs Go mainline tests and Go smoke by default, with a separate explicit legacy-compatibility audit job for `freeze-audit` and `compile-check`, so CI no longer installs or builds the root Python package as the canonical mainline.
