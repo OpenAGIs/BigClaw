@@ -6,7 +6,7 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 
 ## Implemented surfaces
 
-- Shadow comparison for one task via `scripts/migration/shadow_compare.py`
+- Shadow comparison for one task via `go run ./scripts/migration/shadow_compare.go`
 - Shadow comparison matrix across multiple task fixtures via `scripts/migration/shadow_matrix.py`
 - Repo-native live shadow mirror scorecard via `go run ./scripts/migration/live_shadow_scorecard.go --repo-root ..`
 - Repo-native live shadow bundle/index via `go run ./scripts/migration/export_live_shadow_bundle.go --go-root .`
@@ -18,7 +18,7 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 
 - `docs/migration.md`
 - `docs/migration-shadow.md`
-- `scripts/migration/shadow_compare.py`
+- `scripts/migration/shadow_compare.go`
 - `scripts/migration/shadow_matrix.py`
 - `scripts/migration/live_shadow_scorecard.go`
 - `scripts/migration/export_live_shadow_bundle.go`

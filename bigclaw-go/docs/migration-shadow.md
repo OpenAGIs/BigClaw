@@ -6,7 +6,7 @@ Use this helper to compare two BigClaw control-plane endpoints with the same tas
 
 ```bash
 cd bigclaw-go
-python3 scripts/migration/shadow_compare.py \
+go run ./scripts/migration/shadow_compare.go \
   --primary http://127.0.0.1:8080 \
   --shadow http://127.0.0.1:8081 \
   --task-file ./examples/shadow-task.json \

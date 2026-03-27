@@ -79,6 +79,9 @@
 - [x] `cd bigclaw-go && go test ./internal/regression -run 'TestLiveShadow(ScorecardBundleStaysAligned|BundleSummaryAndIndexStayAligned)'`
 - [x] `cd bigclaw-go && go run ./scripts/migration/export_live_shadow_bundle.go --go-root . --run-id 20260313T085655Z --generated-at 2026-03-17T02:35:33.529497Z --rollup-generated-at 2026-03-17T02:35:33.537339Z`
 - [x] `bash bigclaw-go/scripts/migration/export_live_shadow_bundle.py --help`
+- [x] `cd bigclaw-go && go test ./internal/shadowcompare`
+- [x] `bash bigclaw-go/scripts/migration/shadow_compare.py --help`
+- [x] `python3 - <<'PY' ... go run ./scripts/migration/shadow_compare.go --primary <temp> --shadow <temp> --task-file <temp> ... PY`
 
 ### Notes
 
@@ -110,3 +113,4 @@
 - Latest `BIG-VNEXT-GO-105` progress: `scripts/benchmark/capacity_certification.py` now routes to a Go-native capacity certification generator backed by `bigclaw-go/internal/capacitycert`, with a matching Go test and refreshed checked-in capacity certification artifacts.
 - Latest `BIG-VNEXT-GO-105` progress: `scripts/migration/live_shadow_scorecard.py` now routes to a Go-native live shadow scorecard generator backed by `bigclaw-go/internal/liveshadowscorecard`, with a deterministic canonical-artifact test and reproducible `--generated-at` regeneration support for the checked-in scorecard snapshot.
 - Latest `BIG-VNEXT-GO-105` progress: `scripts/migration/export_live_shadow_bundle.py` now routes to a Go-native live shadow bundle exporter backed by `bigclaw-go/internal/liveshadowbundle`, with deterministic regeneration support for the checked-in summary/index/rollup surfaces and Go-first closeout commands in the exported bundle metadata.
+- Latest `BIG-VNEXT-GO-105` progress: `scripts/migration/shadow_compare.py` now routes to a Go-native live shadow compare runner backed by `bigclaw-go/internal/shadowcompare`, with HTTP fixture-server coverage for the end-to-end compare flow and Go-first operator docs for the direct compare path.

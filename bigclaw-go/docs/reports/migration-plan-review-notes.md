@@ -7,7 +7,7 @@ This note captures the review outcome for the Go rewrite boundary and migration 
 - `docs/adr/0001-go-rewrite-control-plane.md`
 - `docs/migration.md`
 - `docs/migration-shadow.md`
-- `scripts/migration/shadow_compare.py`
+- `scripts/migration/shadow_compare.go`
 
 ## Boundary Decisions
 
@@ -18,7 +18,7 @@ This note captures the review outcome for the Go rewrite boundary and migration 
 ## Migration Path
 
 1. Stand up the Go control plane alongside the incumbent implementation.
-2. Run shadow comparison and timeline diffing using `scripts/migration/shadow_compare.py`.
+2. Run shadow comparison and timeline diffing using `scripts/migration/shadow_compare.go`.
 3. Validate queue, scheduler, worker, Kubernetes, and Ray paths through local and live smoke reports.
 4. Roll traffic gradually by tenant, task type, or environment.
 5. Use rollback by redirecting submission back to the incumbent control plane and preserving Go reports for postmortem review.
