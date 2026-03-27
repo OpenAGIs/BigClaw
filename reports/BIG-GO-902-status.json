@@ -29,10 +29,21 @@
     "mergeable": true,
     "mergeable_state": "clean",
     "head_ref": "feat/BIG-GO-902-go-cli-script-migration",
-    "head_sha": "5174f5ed55a81f4cd5de048a8dcb567aeaa0f468",
+    "head_sha": "1dc3628d70a137daa3121423fb78b4e0ad31d3bf",
     "base_ref": "main",
     "review_comments": 0,
-    "commits": 37
+    "commits": 37,
+    "reviews_total": 0,
+    "latest_review_states": {},
+    "combined_status_state": "pending",
+    "check_runs_total": 1,
+    "check_runs": [
+      {
+        "name": "test",
+        "status": "in_progress",
+        "conclusion": null
+      }
+    ]
   },
   "validation": {
     "commands": [

@@ -7642,6 +7642,11 @@
           "author": "codex",
           "body": "2026-03-28 reviewer-readiness verification: PR #215 is open, not draft, mergeable=true, mergeable_state=clean, review_comments=0, commits=37. Synced these fields into reports/BIG-GO-902-status.json so the closeout record now includes live PR readiness metadata.",
           "created_at": "2026-03-27T17:42:29Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 checks/reviews verification: PR #215 head advanced to 1dc3628d70a137daa3121423fb78b4e0ad31d3bf. Live GitHub status currently shows combined_state=pending, check_runs_total=1 with check `test` in_progress, and reviews_total=0. Synced these reviewer-signal fields into reports/BIG-GO-902-status.json.",
+          "created_at": "2026-03-27T17:44:39Z"
         }
       ],
       "created_at": "2026-03-27T15:27:30Z",
@@ -7654,7 +7659,7 @@
       "priority": 1,
       "state": "Done",
       "title": "脚本层迁移到 Go CLI",
-      "updated_at": "2026-03-27T17:42:29Z"
+      "updated_at": "2026-03-27T17:44:39Z"
     }
   ]
 }
