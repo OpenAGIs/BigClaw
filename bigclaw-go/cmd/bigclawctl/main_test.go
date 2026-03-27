@@ -869,7 +869,7 @@ func TestRunHelpAtRootPrintsUsageAndExitsZero(t *testing.T) {
 	if !strings.Contains(string(output), "usage: bigclawctl") {
 		t.Fatalf("expected usage in help output, got %s", string(output))
 	}
-	if !strings.Contains(string(output), "github-sync") || !strings.Contains(string(output), "refill") {
+	if !strings.Contains(string(output), "github-sync") || !strings.Contains(string(output), "refill") || !strings.Contains(string(output), "automation") {
 		t.Fatalf("expected command list in help output, got %s", string(output))
 	}
 }
