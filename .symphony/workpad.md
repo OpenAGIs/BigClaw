@@ -17,7 +17,7 @@
 - [x] Common automation entrypoints migrated in this slice execute through `bigclaw-go/cmd/bigclawctl` subcommands instead of Python/Bash-only logic.
 - [x] Validation commands and regression surface are explicitly documented for this migration slice.
 - [x] Targeted tests covering the new Go CLI behavior pass.
-- [ ] Changes are committed and pushed to a remote issue branch.
+- [x] Changes are committed and pushed to a remote issue branch.
 
 ### Validation
 
@@ -34,3 +34,4 @@
 
 - 2026-03-27: Scope is limited to `BIG-GO-902` script/automation entrypoint migration into the existing Go CLI, with compatibility shims preserved where that minimizes operator churn.
 - 2026-03-27: First batch migrated `create-issues`, `dev-smoke`, `symphony`, `issue`, and `panel` into `bigclaw-go/cmd/bigclawctl`, and documented the deferred backlog separately in `docs/go-cli-script-migration-plan.md`.
+- 2026-03-27: Committed as `99bb530` and pushed to `origin/feat/BIG-GO-902-go-cli-script-migration`; PR seed URL is `https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-902-go-cli-script-migration`.
