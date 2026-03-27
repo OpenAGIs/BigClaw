@@ -72,3 +72,9 @@
   - Result: passed
 - `cd bigclaw-go && go run ./cmd/bigclawctl legacy-python inventory --json | jq -r '.entries[] | select(.script_path=="bigclaw-go/scripts/e2e/mixed_workload_matrix.py") | [.script_path,.status,.compatibility_layer] | @tsv'`
   - Result: passed
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e external-store-validation --help`
+  - Result: passed
+- `cd bigclaw-go && python3 scripts/e2e/external_store_validation.py --help`
+  - Result: passed
+- `cd bigclaw-go && go run ./cmd/bigclawctl legacy-python inventory --json | jq -r '.entries[] | select(.script_path=="bigclaw-go/scripts/e2e/external_store_validation.py") | [.script_path,.status,.compatibility_layer] | @tsv'`
+  - Result: passed

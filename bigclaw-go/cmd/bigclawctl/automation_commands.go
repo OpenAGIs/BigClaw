@@ -171,7 +171,7 @@ func runAutomation(args []string) error {
 
 func runAutomationE2E(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|validation-bundle-scorecard|validation-bundle-policy-gate|mixed-workload-matrix|cross-process-coordination-surface> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl automation e2e <run-task-smoke|export-validation-bundle|validation-bundle-scorecard|validation-bundle-policy-gate|mixed-workload-matrix|external-store-validation|cross-process-coordination-surface> [flags]\n")
 		return nil
 	}
 	switch args[0] {
@@ -185,6 +185,8 @@ func runAutomationE2E(args []string) error {
 		return runAutomationValidationBundlePolicyGateCommand(args[1:])
 	case "mixed-workload-matrix":
 		return runAutomationMixedWorkloadMatrixCommand(args[1:])
+	case "external-store-validation":
+		return runAutomationExternalStoreValidationCommand(args[1:])
 	case "cross-process-coordination-surface":
 		return runAutomationCrossProcessCoordinationSurfaceCommand(args[1:])
 	default:

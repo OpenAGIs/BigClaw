@@ -840,3 +840,19 @@ func TestAutomationMixedWorkloadMatrixWritesReport(t *testing.T) {
 		t.Fatalf("unexpected report body: %s", string(body))
 	}
 }
+
+func TestBuildExternalStoreBackendMatrix(t *testing.T) {
+	report := buildExternalStoreBackendMatrix("http", true)
+	summary := report["summary"].(map[string]any)
+	if summary["live_validated_lanes"] != 1 || summary["not_configured_lanes"] != 1 || summary["contract_only_lanes"] != 1 {
+		t.Fatalf("unexpected summary: %+v", summary)
+	}
+	lanes := report["lanes"].([]any)
+	if len(lanes) != 3 {
+		t.Fatalf("unexpected lanes: %+v", lanes)
+	}
+	first := lanes[0].(map[string]any)
+	if first["backend"] != "http_remote_service" || first["replay_backend"] != "http" || first["retention_boundary_visible"] != true {
+		t.Fatalf("unexpected first lane: %+v", first)
+	}
+}

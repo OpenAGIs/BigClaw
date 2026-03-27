@@ -73,6 +73,7 @@ Notes:
   `python3 bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`,
   `python3 bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`,
   `python3 bigclaw-go/scripts/e2e/mixed_workload_matrix.py`,
+  `python3 bigclaw-go/scripts/e2e/external_store_validation.py`,
   `python3 bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`,
   `python3 bigclaw-go/scripts/benchmark/run_matrix.py`,
   `python3 bigclaw-go/scripts/benchmark/capacity_certification.py`,

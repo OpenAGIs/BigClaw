@@ -210,15 +210,16 @@ func MigrationInventory() Inventory {
 			},
 			{
 				ScriptPath:          "bigclaw-go/scripts/e2e/external_store_validation.py",
-				Status:              "pending-native-python",
+				Status:              "migrated-shim",
 				Category:            "e2e",
 				Wave:                "wave-4",
 				ReplacementCommand:  "go run ./cmd/bigclawctl automation e2e external-store-validation ...",
-				CompatibilityLayer:  "planned python shim after Go harness lands",
-				VerificationCommand: "cd bigclaw-go && python3 scripts/e2e/external_store_validation.py --help",
+				CompatibilityLayer:  "python shim -> bigclawctl automation e2e external-store-validation",
+				VerificationCommand: "cd bigclaw-go && go run ./cmd/bigclawctl automation e2e external-store-validation --help",
 				RegressionSurface: []string{
-					"External store contract coverage",
-					"Validation report schema stability",
+					"Remote event-log replay, checkpoint, and retention semantics",
+					"Shared lease takeover and stale-writer fencing",
+					"Python compatibility shim forwarding",
 				},
 			},
 			{
