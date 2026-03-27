@@ -40,6 +40,7 @@ go test ./...
 go run ./cmd/bigclawd
 curl localhost:8080/healthz
 bash ../scripts/ops/bigclawctl github-sync status --json
+bash ../scripts/ops/bigclawctl dev-smoke
 ```
 
 ## Local orchestration quick start
@@ -62,6 +63,8 @@ Notes:
 - `bash scripts/ops/bigclaw-panel` prints the configured dashboard URL for the current workflow.
 - `bash scripts/ops/bigclaw-issue ...` wraps `symphony issue ... --workflow workflow.md` so local
   issue creation and state changes stay pinned to this repository's tracker file.
+- `python3 scripts/create_issues.py` and `PYTHONPATH=src python3 scripts/dev_smoke.py` are now
+  compatibility shims that dispatch into `bigclawctl` Go subcommands.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
 
@@ -110,6 +113,7 @@ bash ../scripts/ops/bigclawctl github-sync status --json
 Use this only when validating a frozen migration-reference path:
 
 ```bash
+bash scripts/ops/bigclawctl dev-smoke
 PYTHONPATH=src python3 scripts/dev_smoke.py
 ```
 

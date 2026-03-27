@@ -1,27 +1,36 @@
 ## Codex Workpad
 
 ```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
+/Users/openagi/code/bigclaw-workspaces/BIG-GO-902
 ```
 
 ### Plan
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+- [x] Audit `scripts/*.py` and common `scripts/ops/*` automation entrypoints against the current Go CLI surface.
+- [x] Implement the first Go CLI migration batch for the remaining high-frequency script entrypoints and switch compatibility shims to the Go subcommands.
+- [x] Add a scoped migration plan documenting the remaining backlog, validation commands, regression surface, branch/PR guidance, and risks.
+- [x] Run targeted tests for the migrated Go CLI commands, record exact commands/results, then commit and push the issue branch.
 
 ### Acceptance Criteria
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
+- [x] A concrete migration plan exists for moving the script layer to Go CLI, including the first implementation batch and remaining compatibility-layer plan.
+- [x] Common automation entrypoints migrated in this slice execute through `bigclaw-go/cmd/bigclawctl` subcommands instead of Python/Bash-only logic.
+- [x] Validation commands and regression surface are explicitly documented for this migration slice.
+- [x] Targeted tests covering the new Go CLI behavior pass.
+- [ ] Changes are committed and pushed to a remote issue branch.
 
 ### Validation
 
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
+- [x] `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/bigclaw-go && go test ./cmd/bigclawctl`
+- [x] `bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclawctl dev-smoke` -> `smoke_ok local`
+- [x] `PYTHONPATH=src python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/dev_smoke.py` -> `smoke_ok local` with expected deprecation warning
+- [x] `python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/create_issues.py --help` -> usage for `bigclawctl create-issues`
+- [x] `bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclawctl issue --help` -> usage for `bigclawctl issue`
+- [x] `bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw-panel --help` -> usage for `bigclawctl panel`
+- [x] `bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw-symphony --help` -> usage for `bigclawctl symphony`
+- [x] `bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw-issue list` -> exits 0 against repo-local tracker
 
 ### Notes
 
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+- 2026-03-27: Scope is limited to `BIG-GO-902` script/automation entrypoint migration into the existing Go CLI, with compatibility shims preserved where that minimizes operator churn.
+- 2026-03-27: First batch migrated `create-issues`, `dev-smoke`, `symphony`, `issue`, and `panel` into `bigclaw-go/cmd/bigclawctl`, and documented the deferred backlog separately in `docs/go-cli-script-migration-plan.md`.

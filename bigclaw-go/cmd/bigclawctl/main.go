@@ -118,6 +118,16 @@ func run(args []string) int {
 		err = runRefill(args[1:])
 	case "local-issues":
 		err = runLocalIssues(args[1:])
+	case "create-issues":
+		err = runCreateIssues(args[1:])
+	case "dev-smoke":
+		err = runDevSmoke(args[1:])
+	case "symphony":
+		err = runSymphony(args[1:])
+	case "issue":
+		err = runIssue(args[1:])
+	case "panel":
+		err = runPanel(args[1:])
 	case "legacy-python":
 		err = runLegacyPython(args[1:])
 	default:
@@ -1420,13 +1430,18 @@ func printRefillUsage(w io.Writer) {
 }
 
 func printRootUsage(w io.Writer) {
-	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|refill|local-issues|legacy-python> ...")
+	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|refill|local-issues|create-issues|dev-smoke|symphony|issue|panel|legacy-python> ...")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "commands:")
 	fmt.Fprintln(w, "  github-sync     install/sync/status hooks and branch sync state")
 	fmt.Fprintln(w, "  workspace       bootstrap/cleanup/validate workspaces using the shared mirror")
 	fmt.Fprintln(w, "  refill          promote issues to maintain target in-progress count")
 	fmt.Fprintln(w, "  local-issues    manage the repo-native issue store in local-issues.json")
+	fmt.Fprintln(w, "  create-issues   seed the GitHub repo with the canned issue plans")
+	fmt.Fprintln(w, "  dev-smoke       run the Go control-plane smoke decision check")
+	fmt.Fprintln(w, "  symphony        launch Symphony against this repo workflow")
+	fmt.Fprintln(w, "  issue           open local tracker flows or proxy symphony issue")
+	fmt.Fprintln(w, "  panel           proxy symphony panel against this repo workflow")
 	fmt.Fprintln(w, "  legacy-python   validate frozen Python compatibility shims")
 }
 
