@@ -11,7 +11,7 @@
 - [x] Regenerate the migration plan and inventory artifacts with explicit parallel-slice status, first-batch progress, and current validation/branch strategy.
 - [x] Record `LOCAL-1` closeout notes with exact validation commands and outcomes.
 - [x] Update the local tracker state/comments for `LOCAL-1` so Symphony can treat this planning lane as actively progressing.
-- [ ] Commit and push the scoped `LOCAL-1` changes to `origin/symphony/LOCAL-1`.
+- [x] Commit and push the scoped `LOCAL-1` changes to `origin/symphony/LOCAL-1`.
 
 ### Acceptance Criteria
 
@@ -19,7 +19,7 @@
 - [x] The repo contains a current Go-only migration plan plus machine-readable inventory for the remaining Python/non-Go surface.
 - [x] The plan exposes at least 10 parallel slices and shows which slices are `Todo`, `In Progress`, or `Done`.
 - [x] The first migration batch is shown as already started, with an explicit execution/validation strategy that keeps `main` evolvable.
-- [ ] `LOCAL-1` closeout records exact commands and results, and the branch is pushed after validation.
+- [x] `LOCAL-1` closeout records exact commands and results, and the branch is pushed after validation.
 
 ### Validation
 
