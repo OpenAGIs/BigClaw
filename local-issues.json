@@ -7655,6 +7655,11 @@
           "author": "codex",
           "body": "Continued `BIG-VNEXT-GO-105` by replacing `bigclaw-go/scripts/migration/shadow_compare.py` with a Go-native live shadow compare runner. Added `bigclaw-go/internal/shadowcompare` plus `scripts/migration/shadow_compare.go`, reduced the legacy `.py` path to a shell shim over the Go command, and updated the direct migration docs to recommend the Go compare entrypoint. Validation: `cd bigclaw-go && go test ./internal/shadowcompare` -> ok; `bash bigclaw-go/scripts/migration/shadow_compare.py --help` -> ok; `python3 - <<'PY' ... go run ./scripts/migration/shadow_compare.go --primary <temp> --shadow <temp> --task-file <temp> ... PY` -> ok with exit=0 and matching terminal-state/event-sequence diff output.",
           "created_at": "2026-03-28T03:50:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Continued `BIG-VNEXT-GO-105` by replacing `bigclaw-go/scripts/migration/shadow_matrix.py` with a Go-native shadow matrix runner. Added `bigclaw-go/internal/shadowmatrix` plus `scripts/migration/shadow_matrix.go`, reduced the legacy `.py` path to a shell shim over the Go command, and aligned the builder output with the checked-in canonical matrix artifact by preserving fixture result paths while normalizing corpus-coverage paths. Validation: `cd bigclaw-go && go test ./internal/shadowmatrix` -> ok; `cd bigclaw-go && go run ./scripts/migration/shadow_matrix.go --help` -> ok; `bash bigclaw-go/scripts/migration/shadow_matrix.py --help` -> ok.",
+          "created_at": "2026-03-28T04:05:00Z"
         }
       ],
       "created_at": "2026-03-27T15:13:31Z",
@@ -7669,7 +7674,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Convert Go-side validation harness scripts to Go",
-      "updated_at": "2026-03-28T03:50:00Z"
+      "updated_at": "2026-03-28T04:05:00Z"
     },
     {
       "assigned_to_worker": true,
