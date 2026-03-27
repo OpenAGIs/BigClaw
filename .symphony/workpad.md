@@ -36,6 +36,7 @@
 - [x] `bash scripts/ops/bigclaw_workspace_bootstrap.py --help`
 - [x] `cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl`
 - [x] `rg -n "bigclaw-issue|bigclawctl local-issues" README.md docs/parallel-refill-queue.md bigclaw-go/internal/refill/queue_markdown.go`
+- [x] `cd bigclaw-go && go run ./cmd/bigclawctl --help`
 
 ### Notes
 
@@ -46,3 +47,4 @@
 - Latest continuation progress: `bigclawctl local-issues` now accepts the historical `state` alias plus positional `state/comment` arguments, allowing `scripts/ops/bigclaw-issue` to drop its local tracker argument-rewrite logic and forward directly to the Go CLI.
 - Latest wrapper alignment: `scripts/ops/symphony_workspace_bootstrap.py` now matches `scripts/ops/bigclaw_workspace_bootstrap.py` by forwarding directly to `workspace bootstrap`, eliminating the last workspace-wrapper command-shape mismatch.
 - Latest operator-surface shift: README, the refill queue markdown, and the queue markdown generator now recommend `bash scripts/ops/bigclawctl local-issues ...` as the primary tracker CLI, with `bigclaw-issue` reduced to a compatibility alias instead of the default operator entrypoint.
+- Latest CLI visibility fix: the `bigclawctl` root help now exposes `go-migration`, and repo metadata/docs now describe the remaining Python-named ops wrappers as compatibility shims over the Go CLI rather than active Python tooling.

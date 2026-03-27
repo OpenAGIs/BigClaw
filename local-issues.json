@@ -7592,6 +7592,11 @@
           "author": "codex",
           "body": "Shifted the documented operator path from bigclaw-issue to bigclawctl local-issues. Updated README, docs/parallel-refill-queue.md, and the Go queue markdown generator/tests so generated guidance now prefers `bash scripts/ops/bigclawctl local-issues list` and `... set-state ...`, while keeping bigclaw-issue only as a compatibility alias. Validation: cd bigclaw-go && go test ./internal/refill ./cmd/bigclawctl -> ok; rg -n \"bigclaw-issue|bigclawctl local-issues\" README.md docs/parallel-refill-queue.md bigclaw-go/internal/refill/queue_markdown.go -> README/docs/generator now prefer bigclawctl local-issues, with README retaining one explicit compatibility-alias note.",
           "created_at": "2026-03-27T15:33:36Z"
+        },
+        {
+          "author": "codex",
+          "body": "Improved Go-first toolchain visibility and wrapper metadata. The bigclawctl root help now lists go-migration, so the repo-native migration planner is discoverable from the CLI entrypoint, and pyproject/go-mainline-cutover docs now describe the remaining Python-named ops wrappers as compatibility shims over scripts/ops/bigclawctl rather than active Python tooling. Validation: cd bigclaw-go && go test ./cmd/bigclawctl -> ok; cd bigclaw-go && go run ./cmd/bigclawctl --help -> root usage now includes go-migration; rg -n \"not Python sources|go-migration|compatibility shims over\" pyproject.toml docs/go-mainline-cutover-issue-pack.md bigclaw-go/cmd/bigclawctl/main.go -> ok.",
+          "created_at": "2026-03-27T15:36:28Z"
         }
       ],
       "created_at": "2026-03-27T15:13:31Z",
@@ -7606,7 +7611,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Replace repo ops Python wrappers with Go commands",
-      "updated_at": "2026-03-27T15:33:36Z"
+      "updated_at": "2026-03-27T15:36:28Z"
     },
     {
       "assigned_to_worker": true,

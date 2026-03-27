@@ -109,6 +109,18 @@ func TestRunGoMigrationPlanWritesArtifacts(t *testing.T) {
 	}
 }
 
+func TestPrintRootUsageIncludesGoMigration(t *testing.T) {
+	var out bytes.Buffer
+	printRootUsage(&out)
+	body := out.String()
+	if !strings.Contains(body, "go-migration") {
+		t.Fatalf("expected root usage to include go-migration, got %s", body)
+	}
+	if !strings.Contains(body, "generate the Go-only migration plan and inventory artifacts") {
+		t.Fatalf("expected root usage to describe go-migration, got %s", body)
+	}
+}
+
 func initWorkspaceValidateRemote(t *testing.T, root string) string {
 	t.Helper()
 	remote := filepath.Join(root, "remote.git")

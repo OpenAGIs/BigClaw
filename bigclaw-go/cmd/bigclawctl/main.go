@@ -1607,7 +1607,7 @@ func printRefillUsage(w io.Writer) {
 }
 
 func printRootUsage(w io.Writer) {
-	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|refill|local-issues|legacy-python> ...")
+	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|refill|local-issues|legacy-python|go-migration> ...")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "commands:")
 	fmt.Fprintln(w, "  github-sync     install/sync/status hooks and branch sync state")
@@ -1615,6 +1615,7 @@ func printRootUsage(w io.Writer) {
 	fmt.Fprintln(w, "  refill          promote issues to maintain target in-progress count")
 	fmt.Fprintln(w, "  local-issues    manage the repo-native issue store in local-issues.json")
 	fmt.Fprintln(w, "  legacy-python   validate frozen Python compatibility shims")
+	fmt.Fprintln(w, "  go-migration    generate the Go-only migration plan and inventory artifacts")
 }
 
 func absPath(path string) string {
