@@ -29,6 +29,7 @@
 - [x] `bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw-panel --help` -> usage for `bigclawctl panel`
 - [x] `bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw-symphony --help` -> usage for `bigclawctl symphony`
 - [x] `bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw-issue list` -> exits 0 against repo-local tracker
+- [x] Validation report written to `/Users/openagi/code/bigclaw-workspaces/BIG-GO-902/reports/BIG-GO-902-validation.md`
 
 ### Notes
 
@@ -37,3 +38,4 @@
 - 2026-03-27: Committed as `99bb530` and pushed to `origin/feat/BIG-GO-902-go-cli-script-migration`; PR seed URL is `https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-902-go-cli-script-migration`.
 - 2026-03-27: Added repo-local tracker closeout for `BIG-GO-902` in `local-issues.json` with a completion comment, branch pointer, validation summary, and deferred-risk note.
 - 2026-03-27: No GitHub CLI/token is configured in this workspace, so the branch was pushed and the PR creation path was left at the deterministic seed URL instead of opening the PR via API.
+- 2026-03-27: Added `reports/BIG-GO-902-validation.md` so reviewers have a single issue-scoped evidence pack covering delivered scope, exact commands, results, branch, PR seed URL, and deferred risks.
