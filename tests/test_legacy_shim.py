@@ -99,3 +99,48 @@ def test_refill_shim_help_runs_without_pythonpath():
         check=True,
     )
     assert 'usage: bigclawctl refill [flags]' in result.stdout
+
+
+def test_create_issues_shim_help_runs_without_pythonpath():
+    repo_root = Path(__file__).resolve().parents[1]
+    env = dict(os.environ)
+    env.pop('PYTHONPATH', None)
+    result = subprocess.run(
+        [sys.executable, 'scripts/create_issues.py', '--help'],
+        cwd=repo_root,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    assert 'usage: bigclawctl create-issues [flags]' in result.stdout
+
+
+def test_github_sync_shim_help_runs_without_pythonpath():
+    repo_root = Path(__file__).resolve().parents[1]
+    env = dict(os.environ)
+    env.pop('PYTHONPATH', None)
+    result = subprocess.run(
+        [sys.executable, 'scripts/ops/bigclaw_github_sync.py', '--help'],
+        cwd=repo_root,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    assert 'usage: bigclawctl github-sync <install|status|sync> [flags]' in result.stdout
+
+
+def test_workspace_bootstrap_shim_help_runs_without_pythonpath():
+    repo_root = Path(__file__).resolve().parents[1]
+    env = dict(os.environ)
+    env.pop('PYTHONPATH', None)
+    result = subprocess.run(
+        [sys.executable, 'scripts/ops/bigclaw_workspace_bootstrap.py', '--help'],
+        cwd=repo_root,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    assert 'usage: bigclawctl workspace <bootstrap|cleanup|validate> [flags]' in result.stdout

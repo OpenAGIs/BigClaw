@@ -68,8 +68,8 @@ python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py
 Result:
 
 ```text
-............                                                             [100%]
-12 passed in 0.78s
+...............                                                          [100%]
+15 passed in 1.48s
 ```
 
 ### Python syntax check
@@ -111,6 +111,22 @@ bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclawctl is
 ```
 
 Result: usage for `bigclawctl issue`
+
+Command:
+
+```bash
+python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw_github_sync.py --help
+```
+
+Result: usage for `bigclawctl github-sync`
+
+Command:
+
+```bash
+python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw_workspace_bootstrap.py --help
+```
+
+Result: usage for `bigclawctl workspace <bootstrap|cleanup|validate>`
 
 Command:
 
@@ -168,7 +184,7 @@ feat/BIG-GO-902-go-cli-script-migration
 Validated implementation commit:
 
 ```text
-a5be444737244821914b1e38fb86142ee4a49d90
+63c8e6c554a32513d4a71b4efe1d98b08a07cc1f
 ```
 
 PR seed URL:

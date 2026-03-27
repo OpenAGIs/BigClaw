@@ -12,7 +12,7 @@ Date: `2026-03-28`
 
 ## Validated Implementation Commit
 
-`a5be444737244821914b1e38fb86142ee4a49d90`
+`63c8e6c554a32513d4a71b4efe1d98b08a07cc1f`
 
 ## Reviewer Links
 
@@ -59,6 +59,8 @@ bash scripts/ops/bigclawctl dev-smoke
 python3 scripts/dev_smoke.py
 python3 scripts/create_issues.py --help
 bash scripts/ops/bigclawctl issue --help
+python3 scripts/ops/bigclaw_github_sync.py --help
+python3 scripts/ops/bigclaw_workspace_bootstrap.py --help
 python3 scripts/ops/bigclaw_refill_queue.py --help
 python3 scripts/ops/symphony_workspace_validate.py --help
 python3 scripts/ops/bigclaw_github_sync.py status --json
