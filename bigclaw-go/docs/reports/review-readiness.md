@@ -33,6 +33,7 @@
 - `OPE-185`
   - Migration evidence includes a shadow matrix across multiple sample tasks with matched terminal states, matched event sequences, an anonymized corpus coverage scorecard, and a repo-native live shadow mirror scorecard that summarizes parity drift and evidence freshness across the checked-in compare and matrix artifacts.
   - Supporting report: `docs/reports/migration-readiness-report.md`.
+  - Harness migration planning for the remaining pytest-to-Go split is captured in `docs/reports/test-harness-migration-plan.md`, including first-batch retrofit targets and validation commands.
   - Runtime-facing mirror and rollback reviewer surfaces are available through `GET /debug/status` and `GET /v2/control-center` under `distributed_diagnostics.live_shadow_mirror_scorecard` and `distributed_diagnostics.migration_review_pack.rollback_trigger_surface`.
   - Follow-up digests capture the remaining `OPE-266` / `BIG-PAR-092` live shadow comparison, `OPE-254` / `BIG-PAR-088` rollback safeguard trigger surface, and `OPE-268` / `BIG-PAR-079` production corpus coverage caveats in `docs/reports/live-shadow-comparison-follow-up-digest.md`, `docs/reports/rollback-safeguard-follow-up-digest.md`, `docs/reports/rollback-trigger-surface.json`, and `docs/reports/production-corpus-migration-coverage-digest.md`.
 - `OPE-186`

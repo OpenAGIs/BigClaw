@@ -37,6 +37,10 @@ The matrix below is grounded in checked-in evidence under
 These artifacts remain the companion proofs for shared-queue takeover safety,
 cross-process boundary expectations, and validation-bundle continuation policy.
 
+For the pytest-to-Go test migration split behind these evidence lanes, use
+`docs/reports/test-harness-migration-plan.md` as the canonical unit/golden/integration
+harness plan and first-batch retrofit checklist.
+
 ## Canonical follow-up routing
 
 - `docs/reports/parallel-follow-up-index.md` is the canonical index for the

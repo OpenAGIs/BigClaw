@@ -186,6 +186,8 @@ This refreshes `docs/reports/cross-process-coordination-capability-surface.json`
 - `docs/reports/parallel-validation-matrix.md` is the canonical index for the
   checked-in local, Kubernetes, and Ray validation lanes plus the companion
   shared-queue proof surfaces that back this guide.
+- `docs/reports/test-harness-migration-plan.md` is the canonical plan for how
+  these executable harnesses fit into the broader pytest-to-Go migration split.
 - `docs/reports/parallel-follow-up-index.md` is the canonical index for the
   remaining continuation, coordination, takeover, and broker-durability
   follow-up digests behind these validation entrypoints.

@@ -1,27 +1,25 @@
-## Codex Workpad
+# BIG-GO-903 Workpad
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## Plan
 
-### Plan
+1. Inspect the existing Python `tests/` surface, Go `bigclaw-go/internal/...` test surfaces, and migration/readiness docs to identify the current harness split and repo-native documentation patterns.
+2. Add a repo-native harness migration plan artifact that breaks the current pytest-heavy surface into Go unit/regression tests, golden/doc alignment coverage, and integration harness lanes, including first-batch implementation targets, validation commands, regression coverage, risks, and branch/PR guidance.
+3. Link the new artifact from the relevant migration/readiness/index docs and add regression tests that keep the plan discoverable and structurally aligned.
+4. Run targeted validation commands covering the new/updated tests, record exact commands and outcomes, then commit and push the scoped change set to a remote issue branch.
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+## Acceptance
 
-### Acceptance Criteria
+- Produce an executable migration plan for the primary pytest surface split into Go test, golden, and integration harness lanes.
+- Include a first-batch implementation or retrofit checklist with concrete repo paths.
+- Document exact validation commands, regression surface, branch/PR recommendation, and risk framing.
+- Keep the changes scoped to this issue and enforce them with repo-native tests.
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
+## Validation
 
-### Validation
+- `python3 -m pytest tests/test_followup_digests.py`
+- `cd bigclaw-go && go test ./internal/regression`
 
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
+## Results
 
-### Notes
-
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+- `python3 -m pytest tests/test_harness_migration_plan.py tests/test_followup_digests.py` -> `4 passed in 0.02s`
+- `cd bigclaw-go && go test ./internal/regression` -> `ok  	bigclaw-go/internal/regression	0.912s`

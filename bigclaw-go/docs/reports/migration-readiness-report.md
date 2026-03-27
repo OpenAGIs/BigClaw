@@ -18,6 +18,7 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 
 - `docs/migration.md`
 - `docs/migration-shadow.md`
+- `docs/reports/test-harness-migration-plan.md`
 - `scripts/migration/shadow_compare.py`
 - `scripts/migration/shadow_matrix.py`
 - `scripts/migration/live_shadow_scorecard.py`
@@ -54,3 +55,6 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 - Use `docs/reports/parallel-validation-matrix.md` first when the migration
   review needs the executor-lane validation evidence that sits alongside these
   follow-up tracks.
+- Use `docs/reports/test-harness-migration-plan.md` when the migration review
+  needs the pytest-to-Go harness split, first-batch retrofit list, and
+  validation/PR guidance for the test migration track.

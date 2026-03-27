@@ -31,3 +31,6 @@
   remaining migration, rollback, and parallel-hardening follow-up digests.
 - For executor-lane validation evidence, start with
   `docs/reports/parallel-validation-matrix.md`.
+- For the pytest-to-Go harness split, use
+  `docs/reports/test-harness-migration-plan.md` as the canonical migration
+  plan for unit, golden, and integration lanes.

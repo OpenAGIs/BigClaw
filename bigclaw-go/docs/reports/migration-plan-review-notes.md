@@ -7,6 +7,7 @@ This note captures the review outcome for the Go rewrite boundary and migration 
 - `docs/adr/0001-go-rewrite-control-plane.md`
 - `docs/migration.md`
 - `docs/migration-shadow.md`
+- `docs/reports/test-harness-migration-plan.md`
 - `scripts/migration/shadow_compare.py`
 
 ## Boundary Decisions
@@ -44,6 +45,8 @@ This note captures the review outcome for the Go rewrite boundary and migration 
   remaining migration-shadow, rollback, and corpus-coverage follow-up digests.
 - Use `docs/reports/parallel-validation-matrix.md` first when the review needs
   the checked-in local/Kubernetes/Ray validation evidence.
+- Use `docs/reports/test-harness-migration-plan.md` when the review needs the
+  executable pytest-to-Go harness split and first-batch retrofit plan.
 - The two migration caveat tracks that this review note explicitly calls out are
   `OPE-266` / `BIG-PAR-092` in
   `docs/reports/live-shadow-comparison-follow-up-digest.md` and
