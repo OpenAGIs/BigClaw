@@ -25,6 +25,9 @@ cutover set.
 - `cd bigclaw-go && go test ./internal/domain ./internal/intake ./internal/workflow ./internal/risk ./internal/triage ./internal/billing`
 - `bash scripts/ops/bigclawctl legacy-python compile-check --json`
 - `PYTHONPATH=src python3 - <<"... legacy shim assertions ..."`
+- `docs/go-mainline-merge-plan.md` records the forward-only compatibility
+  landing path and the first-batch validation sequence for any follow-up work
+  from current `main`.
 
 ## Completed scope
 

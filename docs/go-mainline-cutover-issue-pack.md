@@ -47,6 +47,9 @@ candidates remaining.
 - `BigClaw/src/bigclaw` should only be touched to migrate required surfaces to Go or to mark legacy Python paths as frozen/deprecated.
 - Do not port historical Python helpers blindly; only migrate the surfaces required for active workflow, operator, reporting, and release paths.
 - Keep `2-4` slices runnable in parallel once issue creation is available again.
+- Use `docs/go-mainline-merge-plan.md` as the current executable compatibility
+  landing plan when follow-up work must validate the already-merged cutover from
+  current `main`.
 
 ## Milestones
 
