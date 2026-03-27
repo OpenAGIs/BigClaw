@@ -174,6 +174,12 @@ PR draft:
 reports/BIG-GO-902-pr.md
 ```
 
+Compare URL:
+
+```text
+https://github.com/OpenAGIs/BigClaw/compare/main...feat/BIG-GO-902-go-cli-script-migration?expand=1
+```
+
 Public PR discovery check on 2026-03-27:
 
 - GitHub web search returned no public results for the branch or suggested PR title.

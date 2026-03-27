@@ -34,6 +34,7 @@
 - [x] `bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> exit 0 and rewrote `docs/parallel-refill-queue.md`
 - [x] PR draft written to `/Users/openagi/code/bigclaw-workspaces/BIG-GO-902/reports/BIG-GO-902-pr.md`
 - [x] 2026-03-27 web check found no public PR result for the branch and the PR seed URL redirected to GitHub sign-in
+- [x] Compare URL recorded for reviewer diff access without needing local git setup
 
 ### Notes
 
@@ -46,3 +47,4 @@
 - 2026-03-27: Follow-up docs pass switched the preferred operator examples from wrapper entrypoints (`bigclaw-issue`, `bigclaw-symphony`, `bigclaw-panel`) to direct `scripts/ops/bigclawctl` commands while keeping the wrappers documented as compatibility shims.
 - 2026-03-27: Added `reports/BIG-GO-902-pr.md` with a ready-to-paste PR title/body because this workspace can push branches but cannot authenticate to create the GitHub PR directly.
 - 2026-03-27: Browser verification found no public PR search hit for this branch/title, and the deterministic PR seed URL redirected to GitHub sign-in, so the remaining blocker is still external GitHub authentication rather than missing repo artifacts.
+- 2026-03-27: Added the direct GitHub compare URL so reviewers can inspect the branch diff even before a PR is opened.

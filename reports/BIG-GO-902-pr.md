@@ -57,3 +57,7 @@ bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sy
 ## Open PR URL
 
 `https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-902-go-cli-script-migration`
+
+## Compare URL
+
+`https://github.com/OpenAGIs/BigClaw/compare/main...feat/BIG-GO-902-go-cli-script-migration?expand=1`
