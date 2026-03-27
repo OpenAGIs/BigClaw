@@ -159,7 +159,7 @@ feat/BIG-GO-902-go-cli-script-migration
 Latest pushed commit:
 
 ```text
-c76348b
+f4b5c1b
 ```
 
 PR seed URL:
