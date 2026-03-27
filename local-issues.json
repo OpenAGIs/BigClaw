@@ -7542,6 +7542,11 @@
           "author": "codex",
           "body": "Added the direct compare URL `https://github.com/OpenAGIs/BigClaw/compare/main...feat/BIG-GO-902-go-cli-script-migration?expand=1` to the PR draft and validation report so reviewers can inspect the branch diff even before a PR is opened.",
           "created_at": "2026-03-27T15:42:31Z"
+        },
+        {
+          "author": "codex",
+          "body": "Added `reports/BIG-GO-902-closeout.md` as a single-file handoff index containing the branch, compare URL, PR seed URL, validation commands, repo artifacts, and the remaining external GitHub-auth blocker.",
+          "created_at": "2026-03-27T15:44:21Z"
         }
       ],
       "created_at": "2026-03-27T15:27:30Z",
@@ -7554,7 +7559,7 @@
       "priority": 1,
       "state": "Done",
       "title": "脚本层迁移到 Go CLI",
-      "updated_at": "2026-03-27T15:42:31Z"
+      "updated_at": "2026-03-27T15:44:21Z"
     }
   ]
 }
