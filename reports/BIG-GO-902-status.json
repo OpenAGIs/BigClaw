@@ -24,7 +24,10 @@
   },
   "pull_request": {
     "number": 215,
-    "state": "open",
+    "state": "closed",
+    "merged": true,
+    "merged_at": "2026-03-27T17:59:20Z",
+    "merge_commit_sha": "56c8efbda59344f850890bfe2e8d835016ff1b3d",
     "draft": false,
     "mergeable": true,
     "mergeable_state": "clean",
@@ -70,16 +73,16 @@
     ]
   },
   "blocker": {
-    "type": "external_review_and_ci",
-    "summary": "No additional in-repo implementation work remains. PR #215 is still open with no reviews recorded, no requested reviewers configured, and GitHub currently reports an unstable/pending aggregate reviewability state while CI metadata catches up. The repository collaborator list currently exposes only the owner account `OpenAGIs`, so there is no separate reviewer that can be auto-requested from this workspace."
+    "type": "none",
+    "summary": "BIG-GO-902 is fully landed. PR #215 was merged into main as squash commit 56c8efbda59344f850890bfe2e8d835016ff1b3d."
   },
   "external_verification": {
     "date": "2026-03-28",
     "public_pr_found": true,
     "public_open_prs_seen": ["215", "185", "184", "183"],
     "compare_url_reachable": true,
-    "compare_page_state": "stale compare rendering",
-    "notes": "Authenticated GitHub API creation succeeded for PR #215. The compare page remains reachable but diff generation is still incomplete in-browser, emits repeated 'Uh oh!' load failures, and the rendered compare summary still appears stale, showing only 14 commits and 26 files changed instead of the latest branch tip."
+    "compare_page_state": "merged",
+    "notes": "Authenticated GitHub API creation succeeded for PR #215, and the PR was subsequently merged as squash commit 56c8efbda59344f850890bfe2e8d835016ff1b3d."
   },
   "auth_environment": {
     "date": "2026-03-28",
