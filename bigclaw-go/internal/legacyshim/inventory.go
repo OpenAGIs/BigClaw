@@ -261,11 +261,11 @@ func MigrationInventory() Inventory {
 			},
 			{
 				ScriptPath:          "bigclaw-go/scripts/benchmark/run_matrix.py",
-				Status:              "pending-native-python",
+				Status:              "migrated-shim",
 				Category:            "benchmark",
-				Wave:                "wave-2",
-				ReplacementCommand:  "go run ./cmd/bigclawctl automation benchmark run-matrix ...",
-				CompatibilityLayer:  "planned python shim after Go matrix runner lands",
+				Wave:                "wave-0",
+				ReplacementCommand:  "go run ./cmd/bigclawctl automation benchmark run-matrix --help",
+				CompatibilityLayer:  "python shim -> bigclawctl automation benchmark run-matrix",
 				VerificationCommand: "cd bigclaw-go && python3 scripts/benchmark/run_matrix.py --help",
 				RegressionSurface: []string{
 					"Matrix orchestration over soak-local",

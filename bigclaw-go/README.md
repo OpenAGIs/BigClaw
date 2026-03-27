@@ -84,6 +84,7 @@ This bootstrap now covers an MVP slice for all current Go rewrite planning ticke
 - `scripts/e2e/run_task_smoke.py` is the generic submit/poll helper used by all wrappers
 - `scripts/e2e/export_validation_bundle.py` is a compatibility shim over `bigclawctl automation e2e export-validation-bundle`, which exports repo-native evidence bundles, latest report copies, and the validation index
 - `scripts/e2e/validation_bundle_continuation_scorecard.py` and `scripts/e2e/validation_bundle_continuation_policy_gate.py` are compatibility shims over the corresponding `bigclawctl automation e2e` continuation commands
+- `scripts/benchmark/run_matrix.py` is a compatibility shim over `bigclawctl automation benchmark run-matrix`
 - `scripts/migration/shadow_compare.py` compares primary vs shadow BigClaw endpoints
 - `go run ./cmd/bigclawctl legacy-python inventory --json` prints the current Go CLI migration inventory for script-layer automation
 - `scripts/benchmark/run_suite.sh` regenerates benchmark evidence

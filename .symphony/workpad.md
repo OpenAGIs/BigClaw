@@ -42,3 +42,7 @@
   - Result: passed
 - `cd bigclaw-go && python3 scripts/e2e/validation_bundle_continuation_policy_gate.py --help`
   - Result: passed
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark run-matrix --help`
+  - Result: passed
+- `cd bigclaw-go && python3 scripts/benchmark/run_matrix.py --help`
+  - Result: passed

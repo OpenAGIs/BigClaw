@@ -414,3 +414,51 @@ func TestAutomationValidationBundlePolicyGateRespectsLegacyEnforce(t *testing.T)
 		t.Fatalf("expected failing checks, got %+v", report)
 	}
 }
+
+func TestAutomationBenchmarkMatrixParsesBenchAndWritesReport(t *testing.T) {
+	goRoot := t.TempDir()
+	report, exitCode, err := automationBenchmarkMatrix(automationBenchmarkMatrixOptions{
+		GoRoot:         goRoot,
+		ReportPath:     "docs/reports/benchmark-matrix-report.json",
+		TimeoutSeconds: 180,
+		Scenarios:      []string{"50:8", "100:12"},
+		RunCommand: func(name string, args []string, dir string) ([]byte, error) {
+			if name != "go" {
+				t.Fatalf("unexpected command: %s", name)
+			}
+			return []byte("BenchmarkSchedulerDecide-8  1000  800 ns/op\nBenchmarkFileQueueEnqueueLease-8  10  12000000 ns/op\n"), nil
+		},
+		RunSoak: func(count int, workers int, timeoutSeconds int, reportPath string) (map[string]any, error) {
+			return map[string]any{
+				"count":                    count,
+				"workers":                  workers,
+				"elapsed_seconds":          10.0,
+				"throughput_tasks_per_sec": 9.5,
+				"succeeded":                count,
+				"failed":                   0,
+			}, nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("run matrix: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("unexpected exit code: %d", exitCode)
+	}
+	benchmark := report["benchmark"].(map[string]any)
+	parsed := benchmark["parsed"].(map[string]any)
+	if parsed["BenchmarkSchedulerDecide-8"].(map[string]any)["ns_per_op"] != 800.0 {
+		t.Fatalf("unexpected parsed benchmark payload: %+v", parsed)
+	}
+	soakMatrix := report["soak_matrix"].([]any)
+	if len(soakMatrix) != 2 {
+		t.Fatalf("expected 2 soak scenarios, got %+v", soakMatrix)
+	}
+	body, err := os.ReadFile(filepath.Join(goRoot, "docs/reports/benchmark-matrix-report.json"))
+	if err != nil {
+		t.Fatalf("read report: %v", err)
+	}
+	if !strings.Contains(string(body), "\"throughput_tasks_per_sec\": 9.5") {
+		t.Fatalf("unexpected report body: %s", string(body))
+	}
+}
