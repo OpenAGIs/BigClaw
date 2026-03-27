@@ -180,6 +180,12 @@ Closeout index:
 reports/BIG-GO-902-closeout.md
 ```
 
+Machine-readable status:
+
+```text
+reports/BIG-GO-902-status.json
+```
+
 Compare URL:
 
 ```text

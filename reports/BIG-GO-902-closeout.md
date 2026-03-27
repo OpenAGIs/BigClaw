@@ -27,6 +27,8 @@ Date: `2026-03-27`
   - `reports/BIG-GO-902-validation.md`
 - PR draft:
   - `reports/BIG-GO-902-pr.md`
+- Machine-readable status:
+  - `reports/BIG-GO-902-status.json`
 - Migration plan:
   - `docs/go-cli-script-migration-plan.md`
 

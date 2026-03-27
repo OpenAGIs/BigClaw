@@ -37,6 +37,7 @@
 - [x] Compare URL recorded for reviewer diff access without needing local git setup
 - [x] Closeout index written to `/Users/openagi/code/bigclaw-workspaces/BIG-GO-902/reports/BIG-GO-902-closeout.md`
 - [x] Closeout index and validation report include the latest pushed commit SHA and final repo-gap check
+- [x] Machine-readable status file written to `/Users/openagi/code/bigclaw-workspaces/BIG-GO-902/reports/BIG-GO-902-status.json`
 
 ### Notes
 
@@ -52,3 +53,4 @@
 - 2026-03-27: Added the direct GitHub compare URL so reviewers can inspect the branch diff even before a PR is opened.
 - 2026-03-27: Added `reports/BIG-GO-902-closeout.md` as a single-file handoff index for branch, links, validation, artifacts, and the remaining external blocker.
 - 2026-03-27: Final repo scan found no further root-script migration gaps beyond the deferred backlog already documented; closeout artifacts now pin the latest pushed SHA `f4b5c1b`.
+- 2026-03-27: Added `reports/BIG-GO-902-status.json` so automation can consume the final issue status, links, artifacts, validation commands, and external blocker without parsing markdown.

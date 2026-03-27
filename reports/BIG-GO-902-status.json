@@ -1,0 +1,39 @@
+{
+  "issue": {
+    "identifier": "BIG-GO-902",
+    "title": "脚本层迁移到 Go CLI",
+    "state": "Done"
+  },
+  "branch": {
+    "name": "feat/BIG-GO-902-go-cli-script-migration",
+    "latest_pushed_commit": "0209649"
+  },
+  "artifacts": {
+    "closeout_index": "reports/BIG-GO-902-closeout.md",
+    "validation_report": "reports/BIG-GO-902-validation.md",
+    "pr_draft": "reports/BIG-GO-902-pr.md",
+    "migration_plan": "docs/go-cli-script-migration-plan.md"
+  },
+  "links": {
+    "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...feat/BIG-GO-902-go-cli-script-migration?expand=1",
+    "pr_seed_url": "https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-902-go-cli-script-migration"
+  },
+  "validation": {
+    "commands": [
+      "cd bigclaw-go && go test ./cmd/bigclawctl",
+      "cd bigclaw-go && go test ./internal/refill",
+      "bash scripts/ops/bigclawctl dev-smoke",
+      "PYTHONPATH=src python3 scripts/dev_smoke.py",
+      "python3 scripts/create_issues.py --help",
+      "bash scripts/ops/bigclawctl issue --help",
+      "bash scripts/ops/bigclawctl panel --help",
+      "bash scripts/ops/bigclawctl symphony --help",
+      "bash scripts/ops/bigclaw-issue list",
+      "bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status"
+    ]
+  },
+  "blocker": {
+    "type": "external_auth",
+    "summary": "Workspace can push branch but cannot create or verify the GitHub PR directly because no gh CLI or GitHub API token is configured."
+  }
+}
