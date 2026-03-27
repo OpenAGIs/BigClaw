@@ -8,8 +8,9 @@ operator cutover window.
 
 ## This Slice
 
-The implemented migration batches in this issue move the following repo-root entrypoints behind the
-Go CLI:
+The implemented migration batches in this issue move these entrypoints behind the Go CLI.
+
+### Repo-root entrypoints
 
 - `scripts/create_issues.py` -> `bigclawctl create-issues`
 - `scripts/dev_smoke.py` -> `bigclawctl dev-smoke`
@@ -21,6 +22,12 @@ Go CLI:
 - `scripts/ops/bigclaw_workspace_bootstrap.py` -> `bigclawctl workspace ...`
 - `scripts/ops/symphony_workspace_bootstrap.py` -> `bigclawctl workspace ...`
 - `scripts/ops/symphony_workspace_validate.py` -> `bigclawctl workspace validate`
+
+### `bigclaw-go/scripts/*` first automation batch
+
+- `bigclaw-go/scripts/e2e/run_task_smoke.py` -> `bigclawctl automation e2e run-task-smoke`
+- `bigclaw-go/scripts/benchmark/soak_local.py` -> `bigclawctl automation benchmark soak-local`
+- `bigclaw-go/scripts/migration/shadow_compare.py` -> `bigclawctl automation migration shadow-compare`
 
 The compatibility layer is intentionally thin:
 
@@ -70,8 +77,9 @@ invoke `bash scripts/ops/bigclawctl ...` directly.
   a shell-only environment bootstrapper.
 - Collapse `scripts/ops/bigclawctl` itself from `go run` wrapper into a compiled release binary
   path for production/operator use.
-- Audit `bigclaw-go/scripts/*` migration helpers and E2E utilities separately. They are out of
-  scope for this repo-root script migration slice.
+- Continue the remaining `bigclaw-go/scripts/*` migration helpers and E2E utilities after this
+  first automation batch. The remaining backlog is tracked in
+  `bigclaw-go/docs/go-cli-script-migration.md`.
 - Update repo docs that still present Python entrypoints as a primary path instead of a shim path.
 
 ## Validation Commands
@@ -87,6 +95,11 @@ invoke `bash scripts/ops/bigclawctl ...` directly.
 - `bash scripts/ops/bigclawctl issue --help`
 - `bash scripts/ops/bigclawctl panel --help`
 - `bash scripts/ops/bigclawctl symphony --help`
+- `cd bigclaw-go && go test ./cmd/bigclawctl/...`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark soak-local --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help`
 
 ## Regression Surface
 
@@ -100,6 +113,9 @@ invoke `bash scripts/ops/bigclawctl ...` directly.
 - Direct shim execution:
   Python compatibility entrypoints should stay runnable without requiring explicit `PYTHONPATH`
   bootstrapping from operators or CI jobs.
+- BigClaw automation helpers:
+  `/healthz`, `/tasks/:id`, and `/events` polling plus report serialization must remain compatible
+  for the migrated `bigclaw-go/scripts/*` automation callers.
 - Symphony invocation:
   CLI discovery order and workflow binding must still prefer the repo-adjacent checkout before
   falling back to `PATH`.
@@ -121,5 +137,7 @@ invoke `bash scripts/ops/bigclawctl ...` directly.
   changes frequently, the next step should move plan data into versioned JSON/YAML fixtures.
 - `scripts/ops/bigclawctl` still uses `go run`, so first-run latency and local Go toolchain
   availability remain operator dependencies.
+- `run-task-smoke --autostart` and `soak-local --autostart` still depend on ephemeral port
+  reservation before `bigclawd` binds, so local port races remain possible.
 - `symphony`/`issue`/`panel` are now implemented in Go but still depend on an external Symphony
   binary; this issue does not change that external dependency boundary.

@@ -7607,6 +7607,11 @@
           "author": "codex",
           "body": "Auth environment check on 2026-03-28 confirms the blocker is fully external: gh is not installed in this workspace, and both GITHUB_TOKEN and GH_TOKEN are unset. Updated reports/BIG-GO-902-status.json to record this explicitly alongside the stale GitHub compare-view note.",
           "created_at": "2026-03-27T16:42:29Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 follow-up: migrated the first bigclaw-go/scripts automation batch into Go-owned bigclawctl automation subcommands (e2e run-task-smoke, benchmark soak-local, migration shadow-compare), converted the three legacy Python entrypoints into compatibility shims, added targeted Go tests in bigclaw-go/cmd/bigclawctl/automation_commands_test.go, and refreshed docs/reports/go-cli migration artifacts to current pushed tip 3fe203ebcd99f0f054911c84cf6929a42af18f64. Validation: cd bigclaw-go && go test ./cmd/bigclawctl/... -> ok; go run ./cmd/bigclawctl automation --help -> ok; go run ./cmd/bigclawctl automation e2e run-task-smoke --help -> ok; go run ./cmd/bigclawctl automation benchmark soak-local --help -> ok; go run ./cmd/bigclawctl automation migration shadow-compare --help -> ok.",
+          "created_at": "2026-03-27T17:24:18Z"
         }
       ],
       "created_at": "2026-03-27T15:27:30Z",
@@ -7619,7 +7624,7 @@
       "priority": 1,
       "state": "Done",
       "title": "脚本层迁移到 Go CLI",
-      "updated_at": "2026-03-27T16:42:29Z"
+      "updated_at": "2026-03-27T17:24:18Z"
     }
   ]
 }

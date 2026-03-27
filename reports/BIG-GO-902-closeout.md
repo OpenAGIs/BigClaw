@@ -10,16 +10,16 @@ Date: `2026-03-28`
 
 `feat/BIG-GO-902-go-cli-script-migration`
 
-## Validated Implementation Commit
+## Current Pushed Branch Tip
 
-`45ef102c384262fe8a35f8d7bfae79e8d139fefe`
+`3fe203ebcd99f0f054911c84cf6929a42af18f64`
 
-## Last Verified Branch Head
+## Last Root-Shim Branch Head Verified Via `github-sync status`
 
 `834f6441cd06fff89bb6b9305b27fa3ca0ddd21f`
 
-Later branch commits only synchronized BIG-GO-902 report metadata and did not alter the validated Go
-CLI migration behavior.
+The current pushed tip also includes the follow-up `bigclaw-go/scripts/*` automation migration batch
+and its corresponding Go CLI validation.
 
 ## Reviewer Links
 
@@ -50,15 +50,19 @@ CLI migration behavior.
   - `reports/BIG-GO-902-status.json`
 - Migration plan:
   - `docs/go-cli-script-migration-plan.md`
+- Automation migration matrix:
+  - `bigclaw-go/docs/go-cli-script-migration.md`
 - Workpad:
   - `.symphony/workpad.md`
 
 ## Outcome
 
 - Repo-root automation entrypoints now resolve through Go-owned `bigclawctl` behavior.
+- The first `bigclaw-go/scripts/*` automation batch now resolves through Go-owned
+  `bigclawctl automation ...` behavior.
 - Legacy Python and Bash entrypoint names remain available as compatibility shims.
 - The migration plan now distinguishes delivered scope from deferred follow-ups.
-- Reviewer artifacts were refreshed against the current validated implementation commit.
+- Reviewer artifacts were refreshed against the current pushed branch tip.
 
 ## Validation Commands
 
@@ -76,6 +80,11 @@ python3 scripts/ops/symphony_workspace_bootstrap.py --help
 python3 scripts/ops/bigclaw_refill_queue.py --help
 python3 scripts/ops/symphony_workspace_validate.py --help
 python3 scripts/ops/bigclaw_github_sync.py status --json
+cd bigclaw-go && go test ./cmd/bigclawctl/...
+cd bigclaw-go && go run ./cmd/bigclawctl automation --help
+cd bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help
+cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark soak-local --help
+cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help
 ```
 
 ## Remaining Blocker
@@ -88,5 +97,4 @@ view is currently stale/erroring for the latest branch state.
 
 - `git status --short --branch` is clean against `origin/feat/BIG-GO-902-go-cli-script-migration`
   after the latest push.
-- Current repo scan found no additional repo-root script migration gaps beyond the documented
-  deferred items.
+- Current repo scan found no additional in-repo migration gaps beyond the documented deferred items.

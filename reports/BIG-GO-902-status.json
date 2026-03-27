@@ -6,14 +6,15 @@
   },
   "branch": {
     "name": "feat/BIG-GO-902-go-cli-script-migration",
-    "validated_implementation_commit": "45ef102c384262fe8a35f8d7bfae79e8d139fefe",
-    "last_verified_branch_head": "834f6441cd06fff89bb6b9305b27fa3ca0ddd21f"
+    "current_pushed_tip": "3fe203ebcd99f0f054911c84cf6929a42af18f64",
+    "last_root_shim_verified_head": "834f6441cd06fff89bb6b9305b27fa3ca0ddd21f"
   },
   "artifacts": {
     "closeout_index": "reports/BIG-GO-902-closeout.md",
     "validation_report": "reports/BIG-GO-902-validation.md",
     "pr_draft": "reports/BIG-GO-902-pr.md",
     "migration_plan": "docs/go-cli-script-migration-plan.md",
+    "automation_migration_matrix": "bigclaw-go/docs/go-cli-script-migration.md",
     "workpad": ".symphony/workpad.md"
   },
   "links": {
@@ -34,7 +35,12 @@
       "python3 scripts/ops/symphony_workspace_bootstrap.py --help",
       "python3 scripts/ops/bigclaw_refill_queue.py --help",
       "python3 scripts/ops/symphony_workspace_validate.py --help",
-      "python3 scripts/ops/bigclaw_github_sync.py status --json"
+      "python3 scripts/ops/bigclaw_github_sync.py status --json",
+      "cd bigclaw-go && go test ./cmd/bigclawctl/...",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark soak-local --help",
+      "cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help"
     ]
   },
   "blocker": {

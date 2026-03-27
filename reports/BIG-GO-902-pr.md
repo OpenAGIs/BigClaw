@@ -2,13 +2,14 @@
 
 ## Suggested Title
 
-`BIG-GO-902: migrate repo script entrypoints to Go CLI`
+`BIG-GO-902: migrate script entrypoints to Go CLI`
 
 ## Suggested Description
 
 ### Summary
 
 - move the remaining repo-root script compatibility layer behind Go-owned `bigclawctl` commands
+- migrate the first `bigclaw-go/scripts/*` automation batch into `bigclawctl automation ...`
 - keep the old script file names as thin shims so automation call sites do not break during cutover
 - refresh the migration plan, validation report, closeout index, and status artifact for reviewers
 
@@ -35,9 +36,18 @@
   - `scripts/ops/bigclaw-issue`
   - `scripts/ops/bigclaw-panel`
 - centralized common shim behavior in `src/bigclaw/legacy_shim.py`
+- added Go-owned automation commands for:
+  - `bigclawctl automation e2e run-task-smoke`
+  - `bigclawctl automation benchmark soak-local`
+  - `bigclawctl automation migration shadow-compare`
+- converted these `bigclaw-go/scripts/*` entrypoints into compatibility shims:
+  - `bigclaw-go/scripts/e2e/run_task_smoke.py`
+  - `bigclaw-go/scripts/benchmark/soak_local.py`
+  - `bigclaw-go/scripts/migration/shadow_compare.py`
 - updated reviewer/operator docs:
   - `README.md`
   - `docs/go-cli-script-migration-plan.md`
+  - `bigclaw-go/docs/go-cli-script-migration.md`
   - `reports/BIG-GO-902-validation.md`
   - `reports/BIG-GO-902-closeout.md`
   - `reports/BIG-GO-902-status.json`
@@ -59,13 +69,18 @@ python3 scripts/ops/symphony_workspace_bootstrap.py --help
 python3 scripts/ops/bigclaw_refill_queue.py --help
 python3 scripts/ops/symphony_workspace_validate.py --help
 python3 scripts/ops/bigclaw_github_sync.py status --json
+cd bigclaw-go && go test ./cmd/bigclawctl/...
+cd bigclaw-go && go run ./cmd/bigclawctl automation --help
+cd bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help
+cd bigclaw-go && go run ./cmd/bigclawctl automation benchmark soak-local --help
+cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help
 ```
 
 ### Risks / Deferred Follow-ups
 
 - `scripts/dev_bootstrap.sh` remains shell-owned and was not migrated in this slice
 - `scripts/ops/bigclawctl` still shells into `go run`, so local Go toolchain availability remains required
-- `bigclaw-go/scripts/*` helper scripts remain outside this root-level script migration scope
+- remaining `bigclaw-go/scripts/*` helpers beyond the first migrated batch are still deferred
 
 ## Open PR URL
 

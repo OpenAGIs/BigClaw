@@ -8,8 +8,12 @@ Issue: `BIG-GO-902`
 
 Title: `脚本层迁移到 Go CLI`
 
-This slice closes the repo-root script migration lane by keeping behavior in the Go CLI while
-retaining the old script file names as compatibility shims.
+This issue now covers two delivered migration batches:
+
+- the repo-root script migration lane, which keeps behavior in the Go CLI while retaining the old
+  script file names as compatibility shims
+- the first `bigclaw-go/scripts/*` automation migration batch, which moves selected e2e,
+  benchmark, and migration helpers into `bigclawctl automation ...`
 
 ## Delivered
 
@@ -35,8 +39,17 @@ retaining the old script file names as compatibility shims.
   - `scripts/ops/bigclaw-panel`
 - Shared shim behavior and path resolution are centralized in:
   - `src/bigclaw/legacy_shim.py`
+- Go CLI now also owns the first `bigclaw-go/scripts/*` automation batch:
+  - `automation e2e run-task-smoke`
+  - `automation benchmark soak-local`
+  - `automation migration shadow-compare`
+- Compatibility shims now dispatch directly into those Go automation commands for:
+  - `bigclaw-go/scripts/e2e/run_task_smoke.py`
+  - `bigclaw-go/scripts/benchmark/soak_local.py`
+  - `bigclaw-go/scripts/migration/shadow_compare.py`
 - Migration docs and operator guidance were refreshed in:
   - `docs/go-cli-script-migration-plan.md`
+  - `bigclaw-go/docs/go-cli-script-migration.md`
   - `README.md`
   - `.symphony/workpad.md`
 
@@ -195,6 +208,52 @@ Result:
 Note: this check reflects the clean pushed branch state at the time of the last `github-sync status`
 verification. Subsequent commits in this lane are metadata-only report syncs unless explicitly noted.
 
+### Automation command checks
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/bigclaw-go && go test ./cmd/bigclawctl/...
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/cmd/bigclawctl	4.026s
+```
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/bigclaw-go && go run ./cmd/bigclawctl automation --help
+```
+
+Result: exited `0`, printed automation category help for `e2e`, `benchmark`, and `migration`.
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/bigclaw-go && go run ./cmd/bigclawctl automation e2e run-task-smoke --help
+```
+
+Result: exited `0`, printed `run-task-smoke` flag help.
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/bigclaw-go && go run ./cmd/bigclawctl automation benchmark soak-local --help
+```
+
+Result: exited `0`, printed `soak-local` flag help.
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --help
+```
+
+Result: exited `0`, printed `shadow-compare` flag help.
+
 ## Branch and PR
 
 Branch:
@@ -203,20 +262,20 @@ Branch:
 feat/BIG-GO-902-go-cli-script-migration
 ```
 
-Validated implementation commit:
+Current pushed branch tip:
 
 ```text
-45ef102c384262fe8a35f8d7bfae79e8d139fefe
+3fe203ebcd99f0f054911c84cf6929a42af18f64
 ```
 
-Last verified branch head from `github-sync status`:
+Last root-shim branch head verified via `github-sync status`:
 
 ```text
 834f6441cd06fff89bb6b9305b27fa3ca0ddd21f
 ```
 
-Note: later commits in this branch only synchronized BIG-GO-902 tracking/report metadata and did not
-change the migrated Go CLI or compatibility-shim behavior validated above.
+Note: the current pushed tip includes the additional `bigclaw-go/scripts/*` automation migration
+batch beyond the earlier root-shim verification point.
 
 PR seed URL:
 
