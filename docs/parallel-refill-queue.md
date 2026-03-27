@@ -16,9 +16,13 @@ longer waits on Linear to keep issue execution moving.
 - Optional dashboard refresh after promotion:
   - `bash scripts/ops/bigclawctl refill --apply --watch --local-issues local-issues.json --refresh-url http://127.0.0.1:4000/api/v1/refresh`
 - Local issue CLI:
-  - `bash scripts/ops/bigclaw-issue list`
-  - `bash scripts/ops/bigclaw-issue state BIG-GOM-303 "In Progress"`
+  - `bash scripts/ops/bigclawctl issue list`
+  - `bash scripts/ops/bigclawctl issue state BIG-GOM-303 "In Progress"`
 - Local dashboard/orchestrator:
+  - `bash scripts/ops/bigclawctl symphony`
+  - `bash scripts/ops/bigclawctl panel`
+- Compatibility wrappers retained during cutover:
+  - `bash scripts/ops/bigclaw-issue ...`
   - `bash scripts/ops/bigclaw-symphony`
   - `bash scripts/ops/bigclaw-panel`
 
@@ -47,7 +51,7 @@ longer waits on Linear to keep issue execution moving.
 
 ## Current batch
 
-- Current repo tranche status as of March 25, 2026:
+- Current repo tranche status as of March 27, 2026:
   - active slices: none
   - standby slices: none
   - recently completed slices: `BIG-PAR-434` — Add local tracker final load-path coverage; `BIG-PAR-433` — Add refill final load-path coverage; `BIG-PAR-435` — Add refill remaining save-path coverage; `BIG-PAR-436` — Add local tracker remaining save-path coverage; `BIG-PAR-437` — Add markdown queue remaining save coverage; `BIG-PAR-438` — Add refill recent-batch helper coverage; `BIG-PAR-439` — Add local tracker final lock fallback coverage; `BIG-PAR-440` — Reconcile final refill queue history

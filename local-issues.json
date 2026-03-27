@@ -7522,6 +7522,11 @@
           "author": "codex",
           "body": "Added issue-scoped evidence pack `reports/BIG-GO-902-validation.md` summarizing delivered Go CLI migration scope, exact validation commands/results, branch `feat/BIG-GO-902-go-cli-script-migration`, PR seed URL, and deferred risks. This complements the tracker closeout note with a stable reviewer-facing report artifact in-repo.",
           "created_at": "2026-03-27T15:32:26Z"
+        },
+        {
+          "author": "codex",
+          "body": "Follow-up docs pass completed: README and the generated refill queue companion now prefer direct `scripts/ops/bigclawctl issue|symphony|panel` commands, while the old wrapper names remain documented only as compatibility shims. Validation: `cd bigclaw-go && go test ./internal/refill` -> ok; `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status` -> exit 0 with `markdown_written: true` and regenerated `docs/parallel-refill-queue.md` using the new command examples.",
+          "created_at": "2026-03-27T15:34:53Z"
         }
       ],
       "created_at": "2026-03-27T15:27:30Z",
@@ -7534,7 +7539,7 @@
       "priority": 1,
       "state": "Done",
       "title": "脚本层迁移到 Go CLI",
-      "updated_at": "2026-03-27T15:32:26Z"
+      "updated_at": "2026-03-27T15:34:53Z"
     }
   ]
 }

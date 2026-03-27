@@ -28,6 +28,11 @@ This slice migrated the first batch of root-level script automation entrypoints 
 - Added migration tests under `bigclaw-go/cmd/bigclawctl/migration_commands_test.go`
 - Added migration plan and deferred-backlog doc:
   - `docs/go-cli-script-migration-plan.md`
+- Shifted operator-facing docs to prefer direct `scripts/ops/bigclawctl` entrypoints over the
+  retained wrapper names in:
+  - `README.md`
+  - `docs/parallel-refill-queue.md`
+  - `bigclaw-go/internal/refill/queue_markdown.go`
 
 ## Validation
 
@@ -112,6 +117,26 @@ bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw-issue
 ```
 
 Result: exit code `0`
+
+Command:
+
+```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/bigclaw-go && go test ./internal/refill
+```
+
+Result:
+
+```text
+ok  	bigclaw-go/internal/refill
+```
+
+Command:
+
+```bash
+bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status
+```
+
+Result: exit code `0`, `markdown_written: true`, `queue_drained: true`
 
 ### Tracker closeout
 

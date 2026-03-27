@@ -50,21 +50,23 @@ Use these entrypoints to keep the remaining Go-mainline migration slices moving 
 Linear issue capacity:
 
 ```bash
-bash scripts/ops/bigclaw-issue list
+bash scripts/ops/bigclawctl issue list
 bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json
-bash scripts/ops/bigclaw-symphony
-bash scripts/ops/bigclaw-panel
+bash scripts/ops/bigclawctl symphony
+bash scripts/ops/bigclawctl panel
 ```
 
 Notes:
 
-- `bash scripts/ops/bigclaw-symphony` starts Symphony against [`workflow.md`](./workflow.md) and
+- `bash scripts/ops/bigclawctl symphony` starts Symphony against [`workflow.md`](./workflow.md) and
   serves the local issue dashboard at `http://127.0.0.1:4000/`.
-- `bash scripts/ops/bigclaw-panel` prints the configured dashboard URL for the current workflow.
-- `bash scripts/ops/bigclaw-issue ...` wraps `symphony issue ... --workflow workflow.md` so local
+- `bash scripts/ops/bigclawctl panel` prints the configured dashboard URL for the current workflow.
+- `bash scripts/ops/bigclawctl issue ...` wraps `symphony issue ... --workflow workflow.md` so local
   issue creation and state changes stay pinned to this repository's tracker file.
 - `python3 scripts/create_issues.py` and `PYTHONPATH=src python3 scripts/dev_smoke.py` are now
   compatibility shims that dispatch into `bigclawctl` Go subcommands.
+- `scripts/ops/bigclaw-issue`, `scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel` are
+  retained as compatibility wrappers, but the preferred operator path is now `scripts/ops/bigclawctl`.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
 
