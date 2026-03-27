@@ -48,16 +48,19 @@ These are the follow-up branches visible from `origin` while preparing
 
 | Branch | Visible head | Scope signal | Recommended merge posture |
 | --- | --- | --- | --- |
-| `origin/BIG-GO-903` | `365b6ca167b3bd50c76198d924c979a8d1d3f115` | test harness migration plan and doc/regression guardrails | merge first so later migration slices inherit the harness contract |
-| `origin/big-go-905` | `0f3b0394a6bac69a15ecda803e5f2dc82da9c02b` | repo governance and board capability migration | merge after harness guardrails; keep scoped to `internal/repo` |
-| `origin/codex/BIG-GO-906-runtime-scheduler-orchestration-migration` | `f6cb4b6325fe9167798b71f47d507b8f9c230410` | runtime/scheduler/orchestration migration plan | merge early because later surface migrations depend on the runtime ownership story |
-| `origin/symphony/BIG-GO-908` | `54aaffaec53d26d1d81e192df8794699075c140b` | workspace bootstrap lifecycle migration to Go CLI | can merge in parallel with `BIG-GO-906`; low overlap outside bootstrap docs/CLI |
-| `origin/symphony/BIG-GO-909` | `d38ce57494ef7c689476aedef7ba1c72980a2d83` | repo collaboration and GitHub-sync follow-up | merge after `BIG-GO-905` because both touch `bigclaw-go/internal/repo/board.go` |
+| `origin/codex/big-go-901-migration-inventory` | `c7fc2049e0e03909017fddb3da7b257abf65bab4` | migration inventory and ownership baseline | merge first so later slices inherit the same source-of-truth inventory |
+| `origin/feat/BIG-GO-902-go-cli-script-migration` | `70cddf84fdb07bdf31d12c52c91e167a4ab8ab28` | Go CLI and script migration surface | merge after the inventory baseline and before operator/bootstrap follow-ups |
+| `origin/BIG-GO-903` | `365b6ca167b3bd50c76198d924c979a8d1d3f115` | test harness migration plan and doc/regression guardrails | merge before runtime and closeout slices so the Go validation gate is shared |
+| `origin/codex/BIG-GO-904-control-plane-go-only-slice` | `da40cb7c169576145fb9d77050dfe12fd6385439` | control-plane Go-only migration slice | merge before orchestration/tooling follow-ups because it changes the mainline ownership boundary |
+| `origin/big-go-905` | `0f3b0394a6bac69a15ecda803e5f2dc82da9c02b` | repo governance and board capability migration | merge after the core control-plane/runtime story is stable |
+| `origin/codex/BIG-GO-906-runtime-scheduler-orchestration-migration` | `f6cb4b6325fe9167798b71f47d507b8f9c230410` | runtime/scheduler/orchestration migration plan | merge early because later operator/reporting surfaces depend on the runtime ownership story |
+| `origin/symphony/BIG-GO-908` | `54aaffaec53d26d1d81e192df8794699075c140b` | workspace bootstrap lifecycle migration to Go CLI | merge after the CLI/control-plane slices; low overlap outside bootstrap docs and tooling |
+| `origin/symphony/BIG-GO-909` | `d38ce57494ef7c689476aedef7ba1c72980a2d83` | repo collaboration and GitHub-sync follow-up | merge after `BIG-GO-905` and `BIG-GO-908` so repo metadata and sync tooling converge once |
+| `origin/symphony/BIG-GO-910` | `a63894abcc590c1c6518cafb661dc50ef489243c` | parallel closeout and main merge plan | keep last; it should close over the validated outputs of the earlier slices |
 
-Branches for `BIG-GO-901`, `BIG-GO-902`, `BIG-GO-904`, and `BIG-GO-907` were
-not visible from `origin` in this workspace on March 27, 2026. Treat that as a
-required resync check before claiming that all expected parallel inputs are
-ready for an umbrella closeout.
+`BIG-GO-907` was not visible from `origin` in this workspace on March 27, 2026.
+Treat that as a required resync or branch-restoration check before claiming
+that all expected parallel inputs are ready for an umbrella closeout.
 
 ## Executable landing path
 
@@ -157,12 +160,15 @@ The merge path must keep these surfaces aligned:
   - `docs/reports/parallel-validation-matrix.md`
   - `docs/reports/parallel-follow-up-index.md`
 - Recommended sequencing for the currently visible follow-up branches:
-  1. `BIG-GO-903`
-  2. `BIG-GO-906`
-  3. `BIG-GO-908`
-  4. `BIG-GO-905`
-  5. `BIG-GO-909`
-  6. `BIG-GO-910`
+  1. `BIG-GO-901`
+  2. `BIG-GO-902`
+  3. `BIG-GO-903`
+  4. `BIG-GO-904`
+  5. `BIG-GO-906`
+  6. `BIG-GO-905`
+  7. `BIG-GO-908`
+  8. `BIG-GO-909`
+  9. `BIG-GO-910`
 - PR strategy:
   - keep one bounded PR per active `BIG-GO-*` branch
   - use `BIG-GO-910` only for the merge-plan, compatibility gate, and final
