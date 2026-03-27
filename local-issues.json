@@ -7625,6 +7625,11 @@
           "author": "codex",
           "body": "Continued `BIG-VNEXT-GO-105` by replacing `bigclaw-go/scripts/benchmark/run_matrix.py` with a Go-native benchmark matrix runner. Added `bigclaw-go/internal/benchmarkmatrix` plus `scripts/benchmark/run_matrix.go`, and reduced the legacy `.py` path to a shell shim over the Go command while preserving the existing CLI flags. Validation: `cd bigclaw-go && go test ./internal/benchmarkmatrix` -> ok; `bash bigclaw-go/scripts/benchmark/run_matrix.py --help` -> ok; `cd bigclaw-go && go run ./scripts/benchmark/run_matrix.go --help` -> ok.",
           "created_at": "2026-03-28T02:00:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Continued `BIG-VNEXT-GO-105` by replacing `bigclaw-go/scripts/benchmark/soak_local.py` with a Go-native soak runner. Added `bigclaw-go/internal/soaklocal` plus `scripts/benchmark/soak_local.go`, updated the benchmark matrix package to invoke the Go soak runner directly, and reduced the legacy `.py` path to a shell shim over the Go command. Validation: `cd bigclaw-go && go test ./internal/soaklocal ./internal/benchmarkmatrix` -> ok; `bash bigclaw-go/scripts/benchmark/soak_local.py --help` -> ok; `cd bigclaw-go && go run ./scripts/benchmark/soak_local.go --help` -> ok.",
+          "created_at": "2026-03-28T02:15:00Z"
         }
       ],
       "created_at": "2026-03-27T15:13:31Z",

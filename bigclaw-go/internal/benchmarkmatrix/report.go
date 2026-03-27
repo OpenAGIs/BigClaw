@@ -89,8 +89,9 @@ func RunBenchmarks(goRoot string, runner Runner) (map[string]any, error) {
 
 func RunSoak(goRoot string, scenario Scenario, timeoutSeconds int, reportPath string, runner Runner) (map[string]any, error) {
 	cmd := exec.Command(
-		"python3", "scripts/benchmark/soak_local.py",
+		"go", "run", "./scripts/benchmark/soak_local.go",
 		"--autostart",
+		"--go-root", goRoot,
 		"--count", strconv.Itoa(scenario.Count),
 		"--workers", strconv.Itoa(scenario.Workers),
 		"--timeout-seconds", strconv.Itoa(timeoutSeconds),
@@ -99,7 +100,7 @@ func RunSoak(goRoot string, scenario Scenario, timeoutSeconds int, reportPath st
 	cmd.Dir = goRoot
 	output, err := runner.Run(cmd)
 	if err != nil {
-		return nil, fmt.Errorf("run soak_local.py: %w (%s)", err, strings.TrimSpace(string(output)))
+		return nil, fmt.Errorf("run soak_local.go: %w (%s)", err, strings.TrimSpace(string(output)))
 	}
 	body, err := os.ReadFile(filepath.Join(goRoot, reportPath))
 	if err != nil {

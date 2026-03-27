@@ -40,7 +40,7 @@ func TestBuildReport(t *testing.T) {
 	}
 	runner := StubRunner{Outputs: map[string][]byte{
 		"go test -bench . ./internal/queue ./internal/scheduler": []byte("BenchmarkQueuePush-8 123 456.7 ns/op\n"),
-		"python3 scripts/benchmark/soak_local.py --autostart --count 50 --workers 8 --timeout-seconds 180 --report-path docs/reports/soak-local-50x8.json": []byte(""),
+		"go run ./scripts/benchmark/soak_local.go --autostart --go-root " + goRoot + " --count 50 --workers 8 --timeout-seconds 180 --report-path docs/reports/soak-local-50x8.json": []byte(""),
 	}}
 	report, err := BuildReport(goRoot, []string{"50:8"}, 180, runner)
 	if err != nil {
