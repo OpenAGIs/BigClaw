@@ -7,6 +7,11 @@
 
 ### Plan
 
+- [x] Update the generated migration planning surfaces and workpad notes for the next executable `BIG-VNEXT-GO-105` slice.
+- [x] Replace `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py` with a Go-native report generator and retain the `.py` path only as a compatibility shim.
+- [x] Add Go package coverage for the coordination surface generator and refresh the checked-in report/docs references.
+- [x] Run targeted validation for the new Go package, script entrypoint, compatibility shim, and regression/docs surfaces.
+- [ ] Commit and push the branch closeout for this continuation slice.
 - [x] Audit the repo state and existing Go-mainline cutover artifacts to identify the remaining Python and non-Go runtime surface.
 - [x] Add a Go-owned migration inventory/planning surface under `bigclaw-go` so the repo can generate a deterministic Go-only migration plan and inventory artifact.
 - [x] Generate repo-native migration outputs that include acceptance scope, runtime/script/test/toolchain inventory, at least 10 parallel Symphony slices, and branch/PR/validation strategy.
@@ -28,6 +33,11 @@
 
 ### Validation
 
+- [x] `cd bigclaw-go && go test ./internal/crossprocesscoordination`
+- [x] `cd bigclaw-go && go run ./scripts/e2e/cross_process_coordination_surface.go --pretty`
+- [x] `python3 bigclaw-go/scripts/e2e/cross_process_coordination_surface.py --pretty`
+- [x] `cd bigclaw-go && go test ./internal/regression -run 'Test(CoordinationCapabilitySurfaceEvidenceAndSummaryStayAligned|CoordinationContractOnlyTargetsStayAligned|CrossProcessCoordinationReadinessDocsStayAligned|E2EValidationDocsStayAligned)'`
+- [x] `python3 -m pytest tests/test_cross_process_coordination_surface.py tests/test_followup_digests.py -q`
 - [x] `cd bigclaw-go && go test ./internal/migration ./cmd/bigclawctl`
 - [x] `cd bigclaw-go && go run ./cmd/bigclawctl go-migration plan --repo .. --json-out ../docs/reports/go-only-migration-inventory.json --md-out ../docs/go-only-migration-plan.md`
 - [x] `cd bigclaw-go && go test ./internal/regression`
@@ -92,6 +102,7 @@
 
 ### Notes
 
+- Current continuation focus: advance `BIG-VNEXT-GO-105` again by replacing `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py` with a Go-native report generator plus Go-first docs, leaving the `.py` filename as a compatibility shim only.
 - The repo already merged the earlier Go-mainline cutover, but root-level Python code and non-Go operators remain as migration-only or still-active surfaces. This issue is therefore focused on the next-stage retirement/execution plan rather than redoing the completed cutover.
 - Keep changes scoped to migration planning, inventory, tracker seeding, and the first executable Go-owned planning slice.
 - Continuation focus: `BIG-VNEXT-GO-104` first-batch progress by migrating `scripts/ops/*workspace*` wrapper behavior into `bigclaw-go/cmd/bigclawctl`.
