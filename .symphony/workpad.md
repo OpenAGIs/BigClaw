@@ -1,27 +1,28 @@
-## Codex Workpad
-
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## BIG-GO-901 Workpad
 
 ### Plan
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+- [x] Inventory the repository's Python and non-Go assets, including active `src/bigclaw` modules and non-Go scripts under `bigclaw-go`.
+- [x] Produce a 100% Go migration ledger with ownership, priority, target Go landing zone, validation command, and regression scope.
+- [x] Define the target architecture, first-wave implementation list, branch and PR strategy, and key migration risks.
+- [x] Run targeted validation for any generated artifacts and capture exact commands and results.
+- [ ] Commit the scoped changes and push the branch for review.
 
-### Acceptance Criteria
+### Acceptance
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
+- [x] A migration document exists in-repo and covers all current Python and other non-Go assets that block or influence the Go end state.
+- [x] The document provides an executable migration sequence with first-batch implementation work items and explicit validation commands.
+- [x] The document states regression surface, branch or PR recommendations, and major risks for the migration program.
+- [x] Validation commands for this issue are executed and their exact results are recorded.
 
 ### Validation
 
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
+- [x] `python3 - <<'PY' ... inventory consistency check ... PY`
+- [x] `python3 - <<'PY' ... migration ledger completeness check ... PY`
 
 ### Notes
 
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+- Scope is documentation and migration planning for `BIG-vNext-Go-001` parallelization, not broad code conversion.
+- Keep edits limited to planning artifacts needed by `BIG-GO-901`.
+- Validation result: `ledger-ok total=76 modules=49 scripts=23 wrappers=4`
+- Validation result: `doc-ok required-sections=7 summary-counts-present=1`
