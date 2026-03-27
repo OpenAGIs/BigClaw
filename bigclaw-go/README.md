@@ -86,6 +86,7 @@ This bootstrap now covers an MVP slice for all current Go rewrite planning ticke
 - `scripts/e2e/validation_bundle_continuation_scorecard.py` and `scripts/e2e/validation_bundle_continuation_policy_gate.py` are compatibility shims over the corresponding `bigclawctl automation e2e` continuation commands
 - `scripts/benchmark/run_matrix.py` is a compatibility shim over `bigclawctl automation benchmark run-matrix`
 - `scripts/benchmark/capacity_certification.py` is a compatibility shim over `bigclawctl automation benchmark capacity-certification`
+- `scripts/migration/shadow_matrix.py` is a compatibility shim over `bigclawctl automation migration shadow-matrix`
 - `scripts/migration/live_shadow_scorecard.py` and `scripts/migration/export_live_shadow_bundle.py` are compatibility shims over the corresponding `bigclawctl automation migration` commands
 - `scripts/migration/shadow_compare.py` compares primary vs shadow BigClaw endpoints
 - `go run ./cmd/bigclawctl legacy-python inventory --json` prints the current Go CLI migration inventory for script-layer automation

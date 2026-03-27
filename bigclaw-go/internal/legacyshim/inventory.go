@@ -287,11 +287,11 @@ func MigrationInventory() Inventory {
 			},
 			{
 				ScriptPath:          "bigclaw-go/scripts/migration/shadow_matrix.py",
-				Status:              "pending-native-python",
+				Status:              "migrated-shim",
 				Category:            "migration",
-				Wave:                "wave-3",
-				ReplacementCommand:  "go run ./cmd/bigclawctl automation migration shadow-matrix ...",
-				CompatibilityLayer:  "planned python shim after Go matrix runner lands",
+				Wave:                "wave-0",
+				ReplacementCommand:  "go run ./cmd/bigclawctl automation migration shadow-matrix --help",
+				CompatibilityLayer:  "python shim -> bigclawctl automation migration shadow-matrix",
 				VerificationCommand: "cd bigclaw-go && python3 scripts/migration/shadow_matrix.py --help",
 				RegressionSurface: []string{
 					"Manifest-driven corpus expansion",

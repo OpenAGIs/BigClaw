@@ -76,6 +76,7 @@ Notes:
   `python3 bigclaw-go/scripts/benchmark/capacity_certification.py`,
   `python3 bigclaw-go/scripts/benchmark/soak_local.py`, and
   `python3 bigclaw-go/scripts/migration/shadow_compare.py`,
+  `python3 bigclaw-go/scripts/migration/shadow_matrix.py`,
   `python3 bigclaw-go/scripts/migration/live_shadow_scorecard.py`, and
   `python3 bigclaw-go/scripts/migration/export_live_shadow_bundle.py` now forward into
   `bigclawctl automation ...`; the migration matrix lives in

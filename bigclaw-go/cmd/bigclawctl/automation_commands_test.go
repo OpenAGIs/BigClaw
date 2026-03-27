@@ -652,3 +652,68 @@ func TestAutomationExportLiveShadowBundleWritesManifest(t *testing.T) {
 		t.Fatalf("expected bundle README: %v", err)
 	}
 }
+
+func TestAutomationShadowMatrixBuildsCoverageReport(t *testing.T) {
+	primary := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/healthz":
+			_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
+		case r.Method == http.MethodPost && r.URL.Path == "/tasks":
+			w.WriteHeader(http.StatusAccepted)
+		case r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/tasks/"):
+			_ = json.NewEncoder(w).Encode(map[string]any{"state": "succeeded"})
+		case r.Method == http.MethodGet && r.URL.Path == "/events":
+			_ = json.NewEncoder(w).Encode(map[string]any{"events": []map[string]any{{"type": "queued", "timestamp": "2026-03-28T00:00:00Z"}, {"type": "succeeded", "timestamp": "2026-03-28T00:00:01Z"}}})
+		default:
+			t.Fatalf("unexpected primary request: %s %s", r.Method, r.URL.String())
+		}
+	}))
+	defer primary.Close()
+	shadow := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/healthz":
+			_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
+		case r.Method == http.MethodPost && r.URL.Path == "/tasks":
+			w.WriteHeader(http.StatusAccepted)
+		case r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/tasks/"):
+			_ = json.NewEncoder(w).Encode(map[string]any{"state": "succeeded"})
+		case r.Method == http.MethodGet && r.URL.Path == "/events":
+			_ = json.NewEncoder(w).Encode(map[string]any{"events": []map[string]any{{"type": "queued", "timestamp": "2026-03-28T00:00:00Z"}, {"type": "succeeded", "timestamp": "2026-03-28T00:00:01Z"}}})
+		default:
+			t.Fatalf("unexpected shadow request: %s %s", r.Method, r.URL.String())
+		}
+	}))
+	defer shadow.Close()
+
+	root := t.TempDir()
+	taskFile := filepath.Join(root, "task.json")
+	if err := os.WriteFile(taskFile, []byte(`{"id":"matrix","title":"matrix","entrypoint":"echo hi","execution_timeout_seconds":1,"required_executor":"local"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	manifestPath := filepath.Join(root, "manifest.json")
+	if err := os.WriteFile(manifestPath, []byte(`{"name":"shadow-corpus","slices":[{"slice_id":"slice-1","title":"Slice 1","weight":2,"task":{"id":"corpus","title":"corpus","entrypoint":"echo hi","execution_timeout_seconds":1,"required_executor":"local"},"task_shape":"executor:local"}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	reportPath := filepath.Join(root, "shadow-matrix-report.json")
+
+	report, exitCode, err := automationShadowMatrix(automationShadowMatrixOptions{
+		PrimaryBaseURL:       primary.URL,
+		ShadowBaseURL:        shadow.URL,
+		TaskFiles:            []string{taskFile},
+		CorpusManifest:       manifestPath,
+		ReplayCorpusSlices:   true,
+		TimeoutSeconds:       1,
+		HealthTimeoutSeconds: 1,
+		ReportPath:           reportPath,
+	})
+	if err != nil {
+		t.Fatalf("shadow matrix: %v", err)
+	}
+	if exitCode != 0 || report["matched"] != 2 {
+		t.Fatalf("unexpected matrix report: exit=%d report=%+v", exitCode, report)
+	}
+	coverage := report["corpus_coverage"].(map[string]any)
+	if coverage["corpus_slice_count"] != 1 || coverage["covered_corpus_slice_count"] != 1 {
+		t.Fatalf("unexpected corpus coverage: %+v", coverage)
+	}
+}

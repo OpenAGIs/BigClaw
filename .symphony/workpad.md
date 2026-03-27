@@ -58,3 +58,7 @@
   - Result: passed
 - `cd bigclaw-go && python3 scripts/migration/export_live_shadow_bundle.py --help`
   - Result: passed
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-matrix --help`
+  - Result: passed
+- `cd bigclaw-go && python3 scripts/migration/shadow_matrix.py --help`
+  - Result: passed
