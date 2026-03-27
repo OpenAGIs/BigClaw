@@ -77,13 +77,13 @@ invoke `bash scripts/ops/bigclawctl ...` directly.
 ## Validation Commands
 
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
-- `PYTHONPATH=src python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py`
+- `python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py`
 - `bash scripts/ops/bigclawctl dev-smoke`
-- `PYTHONPATH=src python3 scripts/dev_smoke.py`
+- `python3 scripts/dev_smoke.py`
 - `python3 scripts/create_issues.py --help`
-- `PYTHONPATH=src python3 scripts/ops/bigclaw_github_sync.py status --json`
-- `PYTHONPATH=src python3 scripts/ops/bigclaw_refill_queue.py --help`
-- `PYTHONPATH=src python3 scripts/ops/symphony_workspace_validate.py --help`
+- `python3 scripts/ops/bigclaw_github_sync.py status --json`
+- `python3 scripts/ops/bigclaw_refill_queue.py --help`
+- `python3 scripts/ops/symphony_workspace_validate.py --help`
 - `bash scripts/ops/bigclawctl issue --help`
 - `bash scripts/ops/bigclawctl panel --help`
 - `bash scripts/ops/bigclawctl symphony --help`
@@ -97,6 +97,9 @@ invoke `bash scripts/ops/bigclawctl ...` directly.
 - Legacy workspace wrappers:
   `--issues`, `--report-file`, and `--no-cleanup` still need to translate to the Go workspace
   validation flags without changing existing automation call sites.
+- Direct shim execution:
+  Python compatibility entrypoints should stay runnable without requiring explicit `PYTHONPATH`
+  bootstrapping from operators or CI jobs.
 - Symphony invocation:
   CLI discovery order and workflow binding must still prefer the repo-adjacent checkout before
   falling back to `PATH`.
@@ -116,9 +119,6 @@ invoke `bash scripts/ops/bigclawctl ...` directly.
 
 - `create-issues` still relies on a static in-repo issue plan map. If the canonical issue list
   changes frequently, the next step should move plan data into versioned JSON/YAML fixtures.
-- Some compatibility wrappers still require `PYTHONPATH=src` when run directly. The preferred
-  operator path remains `bash scripts/ops/bigclawctl ...` until packaging or console-script
-  installation is standardized.
 - `scripts/ops/bigclawctl` still uses `go run`, so first-run latency and local Go toolchain
   availability remain operator dependencies.
 - `symphony`/`issue`/`panel` are now implemented in Go but still depend on an external Symphony

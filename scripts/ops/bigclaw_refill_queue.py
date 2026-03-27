@@ -4,6 +4,10 @@
 from __future__ import annotations
 
 import sys
+from pathlib import Path
+
+repo_root = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(repo_root / "src"))
 
 from bigclaw.legacy_shim import run_bigclawctl_shim
 

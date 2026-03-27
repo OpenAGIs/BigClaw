@@ -1,3 +1,6 @@
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 from bigclaw.legacy_shim import (
@@ -66,3 +69,33 @@ def test_workspace_runtime_wrapper_targets_go_shim():
 
 def test_repo_root_from_script_climbs_to_repository_root():
     assert repo_root_from_script('/repo/scripts/ops/bigclaw_refill_queue.py') == REPO_ROOT
+
+
+def test_dev_smoke_shim_runs_without_pythonpath():
+    repo_root = Path(__file__).resolve().parents[1]
+    env = dict(os.environ)
+    env.pop('PYTHONPATH', None)
+    result = subprocess.run(
+        [sys.executable, 'scripts/dev_smoke.py'],
+        cwd=repo_root,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    assert 'smoke_ok local' in result.stdout
+
+
+def test_refill_shim_help_runs_without_pythonpath():
+    repo_root = Path(__file__).resolve().parents[1]
+    env = dict(os.environ)
+    env.pop('PYTHONPATH', None)
+    result = subprocess.run(
+        [sys.executable, 'scripts/ops/bigclaw_refill_queue.py', '--help'],
+        cwd=repo_root,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    assert 'usage: bigclawctl refill [flags]' in result.stdout

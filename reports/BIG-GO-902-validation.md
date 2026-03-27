@@ -62,14 +62,14 @@ ok  	bigclaw-go/internal/refill	(cached)
 Command:
 
 ```bash
-PYTHONPATH=src python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py
+python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py
 ```
 
 Result:
 
 ```text
-..........                                                               [100%]
-10 passed in 0.10s
+............                                                             [100%]
+12 passed in 0.78s
 ```
 
 ### Python syntax check
@@ -115,7 +115,7 @@ Result: usage for `bigclawctl issue`
 Command:
 
 ```bash
-PYTHONPATH=src python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw_refill_queue.py --help
+python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw_refill_queue.py --help
 ```
 
 Result: usage for `bigclawctl refill`
@@ -123,7 +123,7 @@ Result: usage for `bigclawctl refill`
 Command:
 
 ```bash
-PYTHONPATH=src python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/symphony_workspace_validate.py --help
+python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/symphony_workspace_validate.py --help
 ```
 
 Result: usage for `bigclawctl workspace validate`
@@ -131,7 +131,7 @@ Result: usage for `bigclawctl workspace validate`
 Command:
 
 ```bash
-PYTHONPATH=src python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw_github_sync.py status --json
+python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw_github_sync.py status --json
 ```
 
 Result:
@@ -144,11 +144,11 @@ Result:
   "detached": false,
   "dirty": true,
   "diverged": false,
-  "local_sha": "ec79798cb199d5878471906a271820106c042f7e",
+  "local_sha": "1fb6fa2f9a29795aaf2d47d85b5b0184ac6fe219",
   "pushed": true,
   "relation_known": true,
   "remote_exists": true,
-  "remote_sha": "ec79798cb199d5878471906a271820106c042f7e",
+  "remote_sha": "1fb6fa2f9a29795aaf2d47d85b5b0184ac6fe219",
   "status": "ok",
   "synced": true
 }
@@ -216,7 +216,8 @@ Public GitHub verification on 2026-03-28:
   `--issues`, `--report-file`, and `--no-cleanup` still need to map cleanly onto Go workspace
   validation flags.
 - Root-level Python shim execution:
-  direct Python entrypoints still need `PYTHONPATH=src` unless a packaging/install layer is added.
+  direct Python entrypoints now self-bootstrap `src`, so regression checks need to keep that
+  behavior intact without relying on environment variables.
 - Operator invocation path:
   `scripts/ops/bigclawctl` is still the preferred human/operator entrypoint while the compatibility
   files remain in place.

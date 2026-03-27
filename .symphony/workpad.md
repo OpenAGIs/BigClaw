@@ -17,8 +17,10 @@
 ## Validation
 
 - `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill`
-- `PYTHONPATH=src python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py`
+- `python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py`
 - `bash scripts/ops/bigclawctl dev-smoke`
+- `python3 scripts/dev_smoke.py`
 - `python3 scripts/create_issues.py --help`
 - `bash scripts/ops/bigclawctl issue --help`
+- `python3 scripts/ops/bigclaw_refill_queue.py --help`
 - `bash scripts/ops/bigclawctl workspace validate --help`

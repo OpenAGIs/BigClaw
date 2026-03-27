@@ -7,11 +7,13 @@ import subprocess
 import sys
 from pathlib import Path
 
+repo_root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(repo_root / "src"))
+
 from bigclaw.deprecation import warn_legacy_runtime_surface
 
 
 def main() -> int:
-    repo_root = Path(__file__).resolve().parents[1]
     warn_legacy_runtime_surface("scripts/dev_smoke.py", "bash scripts/ops/bigclawctl dev-smoke")
     command = ["bash", str(repo_root / "scripts/ops/bigclawctl"), "dev-smoke", *sys.argv[1:]]
     return subprocess.call(command, cwd=repo_root)
