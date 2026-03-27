@@ -4,15 +4,15 @@ Issue: `BIG-GO-902`
 
 Title: `脚本层迁移到 Go CLI`
 
-Date: `2026-03-27`
+Date: `2026-03-28`
 
 ## Branch
 
 `feat/BIG-GO-902-go-cli-script-migration`
 
-## Latest Pushed Commit
+## Validated Implementation Commit
 
-`77ba309`
+`a5be444737244821914b1e38fb86142ee4a49d90`
 
 ## Reviewer Links
 
@@ -31,40 +31,38 @@ Date: `2026-03-27`
   - `reports/BIG-GO-902-status.json`
 - Migration plan:
   - `docs/go-cli-script-migration-plan.md`
+- Workpad:
+  - `.symphony/workpad.md`
 
 ## Outcome
 
-- Root-level script entrypoints migrated to Go CLI subcommands for the first batch:
-  - `create-issues`
-  - `dev-smoke`
-  - `symphony`
-  - `issue`
-  - `panel`
-- Legacy Python/Bash entrypoint files retained as compatibility shims.
-- Operator-facing docs shifted to prefer direct `scripts/ops/bigclawctl` commands.
+- Repo-root automation entrypoints now resolve through Go-owned `bigclawctl` behavior.
+- Legacy Python and Bash entrypoint names remain available as compatibility shims.
+- The migration plan now distinguishes delivered scope from deferred follow-ups.
+- Reviewer artifacts were refreshed against the current validated implementation commit.
 
 ## Validation Commands
 
 ```bash
-cd bigclaw-go && go test ./cmd/bigclawctl
-cd bigclaw-go && go test ./internal/refill
+cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill
+PYTHONPATH=src python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py
+python3 -m py_compile src/bigclaw/legacy_shim.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py
 bash scripts/ops/bigclawctl dev-smoke
-PYTHONPATH=src python3 scripts/dev_smoke.py
 python3 scripts/create_issues.py --help
 bash scripts/ops/bigclawctl issue --help
-bash scripts/ops/bigclawctl panel --help
-bash scripts/ops/bigclawctl symphony --help
-bash scripts/ops/bigclaw-issue list
-bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status
+PYTHONPATH=src python3 scripts/ops/bigclaw_refill_queue.py --help
+PYTHONPATH=src python3 scripts/ops/symphony_workspace_validate.py --help
+PYTHONPATH=src python3 scripts/ops/bigclaw_github_sync.py status --json
 ```
 
 ## Remaining Blocker
 
-This workspace can push the branch but cannot create or verify the GitHub PR directly because no
-GitHub CLI or API token is configured. The missing step is external authentication, not missing
-repo content.
+This workspace can push the branch but still cannot create the GitHub PR directly from the terminal
+because no GitHub CLI authentication or API token is configured here.
 
 ## Final Repo Check
 
-- Current repo scan found no additional root-script migration gaps beyond the already-documented
+- `git status --short --branch` is clean against `origin/feat/BIG-GO-902-go-cli-script-migration`
+  after the latest push.
+- Current repo scan found no additional repo-root script migration gaps beyond the documented
   deferred items.

@@ -8,51 +8,61 @@
 
 ### Summary
 
-- migrate the first batch of root-level script automation entrypoints into `bigclaw-go/cmd/bigclawctl`
-- keep legacy Python/Bash entrypoint files as compatibility shims that now dispatch into the Go CLI
-- update operator-facing docs and generated refill queue guidance to prefer direct `scripts/ops/bigclawctl` usage
-- add issue-scoped migration/validation evidence and repo-local tracker closeout for `BIG-GO-902`
+- move the remaining repo-root script compatibility layer behind Go-owned `bigclawctl` commands
+- keep the old script file names as thin shims so automation call sites do not break during cutover
+- refresh the migration plan, validation report, closeout index, and status artifact for reviewers
 
 ### Delivered
 
-- added Go CLI subcommands:
+- Go CLI continues to own the behavior for:
   - `create-issues`
   - `dev-smoke`
+  - `github-sync`
+  - `refill`
+  - `workspace`
   - `symphony`
   - `issue`
   - `panel`
-- converted these entrypoints into thin shims:
+- converted or retained these entrypoints as compatibility shims:
   - `scripts/create_issues.py`
   - `scripts/dev_smoke.py`
+  - `scripts/ops/bigclaw_github_sync.py`
+  - `scripts/ops/bigclaw_refill_queue.py`
+  - `scripts/ops/bigclaw_workspace_bootstrap.py`
+  - `scripts/ops/symphony_workspace_bootstrap.py`
+  - `scripts/ops/symphony_workspace_validate.py`
   - `scripts/ops/bigclaw-symphony`
   - `scripts/ops/bigclaw-issue`
   - `scripts/ops/bigclaw-panel`
-- updated docs:
+- centralized common shim behavior in `src/bigclaw/legacy_shim.py`
+- updated reviewer/operator docs:
   - `README.md`
   - `docs/go-cli-script-migration-plan.md`
-  - `docs/parallel-refill-queue.md`
   - `reports/BIG-GO-902-validation.md`
+  - `reports/BIG-GO-902-closeout.md`
+  - `reports/BIG-GO-902-status.json`
+  - `local-issues.json`
 
 ### Validation
 
 ```bash
-cd bigclaw-go && go test ./cmd/bigclawctl
-cd bigclaw-go && go test ./internal/refill
+cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill
+PYTHONPATH=src python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py
+python3 -m py_compile src/bigclaw/legacy_shim.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py
 bash scripts/ops/bigclawctl dev-smoke
-PYTHONPATH=src python3 scripts/dev_smoke.py
 python3 scripts/create_issues.py --help
 bash scripts/ops/bigclawctl issue --help
-bash scripts/ops/bigclawctl panel --help
-bash scripts/ops/bigclawctl symphony --help
-bash scripts/ops/bigclaw-issue list
-bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status
+PYTHONPATH=src python3 scripts/ops/bigclaw_refill_queue.py --help
+PYTHONPATH=src python3 scripts/ops/symphony_workspace_validate.py --help
+PYTHONPATH=src python3 scripts/ops/bigclaw_github_sync.py status --json
 ```
 
 ### Risks / Deferred Follow-ups
 
 - `scripts/dev_bootstrap.sh` remains shell-owned and was not migrated in this slice
 - `scripts/ops/bigclawctl` still shells into `go run`, so local Go toolchain availability remains required
-- `bigclaw-go/scripts/*` helper scripts were intentionally left out of this root-level script migration
+- `bigclaw-go/scripts/*` helper scripts remain outside this root-level script migration scope
+- direct Python shim invocation still depends on `PYTHONPATH=src` until packaging/install is standardized
 
 ## Open PR URL
 

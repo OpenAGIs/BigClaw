@@ -1,6 +1,6 @@
 # BIG-GO-902 Validation Report
 
-Date: 2026-03-27
+Date: 2026-03-28
 
 ## Scope
 
@@ -8,31 +8,37 @@ Issue: `BIG-GO-902`
 
 Title: `脚本层迁移到 Go CLI`
 
-This slice migrated the first batch of root-level script automation entrypoints onto
-`bigclaw-go/cmd/bigclawctl` while preserving the existing file names as compatibility shims.
+This slice closes the repo-root script migration lane by keeping behavior in the Go CLI while
+retaining the old script file names as compatibility shims.
 
 ## Delivered
 
-- Added Go CLI subcommands:
+- Go CLI remains the implementation owner for these migrated entrypoints:
   - `create-issues`
   - `dev-smoke`
+  - `github-sync`
+  - `refill`
+  - `workspace`
   - `symphony`
   - `issue`
   - `panel`
-- Switched legacy entrypoints to thin compatibility shims:
+- Compatibility shims now dispatch into `scripts/ops/bigclawctl` for:
   - `scripts/create_issues.py`
   - `scripts/dev_smoke.py`
+  - `scripts/ops/bigclaw_github_sync.py`
+  - `scripts/ops/bigclaw_refill_queue.py`
+  - `scripts/ops/bigclaw_workspace_bootstrap.py`
+  - `scripts/ops/symphony_workspace_bootstrap.py`
+  - `scripts/ops/symphony_workspace_validate.py`
   - `scripts/ops/bigclaw-symphony`
   - `scripts/ops/bigclaw-issue`
   - `scripts/ops/bigclaw-panel`
-- Added migration tests under `bigclaw-go/cmd/bigclawctl/migration_commands_test.go`
-- Added migration plan and deferred-backlog doc:
+- Shared shim behavior and path resolution are centralized in:
+  - `src/bigclaw/legacy_shim.py`
+- Migration docs and operator guidance were refreshed in:
   - `docs/go-cli-script-migration-plan.md`
-- Shifted operator-facing docs to prefer direct `scripts/ops/bigclawctl` entrypoints over the
-  retained wrapper names in:
   - `README.md`
-  - `docs/parallel-refill-queue.md`
-  - `bigclaw-go/internal/refill/queue_markdown.go`
+  - `.symphony/workpad.md`
 
 ## Validation
 
@@ -41,14 +47,40 @@ This slice migrated the first batch of root-level script automation entrypoints 
 Command:
 
 ```bash
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/bigclaw-go && go test ./cmd/bigclawctl
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/bigclaw-go && go test ./cmd/bigclawctl ./internal/refill
 ```
 
 Result:
 
 ```text
-ok  	bigclaw-go/cmd/bigclawctl
+ok  	bigclaw-go/cmd/bigclawctl	3.241s
+ok  	bigclaw-go/internal/refill	(cached)
 ```
+
+### Targeted Python tests
+
+Command:
+
+```bash
+PYTHONPATH=src python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py
+```
+
+Result:
+
+```text
+..........                                                               [100%]
+10 passed in 0.10s
+```
+
+### Python syntax check
+
+Command:
+
+```bash
+python3 -m py_compile src/bigclaw/legacy_shim.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py
+```
+
+Result: exit code `0`
 
 ### Command-level checks
 
@@ -63,20 +95,6 @@ Result:
 ```text
 smoke_ok local
 ```
-
-Command:
-
-```bash
-PYTHONPATH=src python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/dev_smoke.py
-```
-
-Result:
-
-```text
-smoke_ok local
-```
-
-Note: the shim emitted the expected deprecation warning.
 
 Command:
 
@@ -97,56 +115,47 @@ Result: usage for `bigclawctl issue`
 Command:
 
 ```bash
-bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw-panel --help
+PYTHONPATH=src python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw_refill_queue.py --help
 ```
 
-Result: usage for `bigclawctl panel`
+Result: usage for `bigclawctl refill`
 
 Command:
 
 ```bash
-bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw-symphony --help
+PYTHONPATH=src python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/symphony_workspace_validate.py --help
 ```
 
-Result: usage for `bigclawctl symphony`
+Result: usage for `bigclawctl workspace validate`
 
 Command:
 
 ```bash
-bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw-issue list
-```
-
-Result: exit code `0`
-
-Command:
-
-```bash
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/bigclaw-go && go test ./internal/refill
+PYTHONPATH=src python3 /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclaw_github_sync.py status --json
 ```
 
 Result:
 
-```text
-ok  	bigclaw-go/internal/refill
+```json
+{
+  "ahead": 0,
+  "behind": 0,
+  "branch": "feat/BIG-GO-902-go-cli-script-migration",
+  "detached": false,
+  "dirty": true,
+  "diverged": false,
+  "local_sha": "ec79798cb199d5878471906a271820106c042f7e",
+  "pushed": true,
+  "relation_known": true,
+  "remote_exists": true,
+  "remote_sha": "ec79798cb199d5878471906a271820106c042f7e",
+  "status": "ok",
+  "synced": true
+}
 ```
 
-Command:
-
-```bash
-bash /Users/openagi/code/bigclaw-workspaces/BIG-GO-902/scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status
-```
-
-Result: exit code `0`, `markdown_written: true`, `queue_drained: true`
-
-### Tracker closeout
-
-Repo-local tracker entry recorded in `local-issues.json`.
-
-Verification:
-
-```text
-BIG-GO-902 -> state Done, comments 1
-```
+Note: this check was executed before the final report-sync commit, so the repository was expectedly
+dirty at that moment.
 
 ## Branch and PR
 
@@ -156,16 +165,22 @@ Branch:
 feat/BIG-GO-902-go-cli-script-migration
 ```
 
-Latest pushed commit:
+Validated implementation commit:
 
 ```text
-77ba309
+a5be444737244821914b1e38fb86142ee4a49d90
 ```
 
 PR seed URL:
 
 ```text
 https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-902-go-cli-script-migration
+```
+
+Compare URL:
+
+```text
+https://github.com/OpenAGIs/BigClaw/compare/main...feat/BIG-GO-902-go-cli-script-migration?expand=1
 ```
 
 PR draft:
@@ -186,21 +201,24 @@ Machine-readable status:
 reports/BIG-GO-902-status.json
 ```
 
-Compare URL:
+## Regression Surface
 
-```text
-https://github.com/OpenAGIs/BigClaw/compare/main...feat/BIG-GO-902-go-cli-script-migration?expand=1
-```
-
-Public PR discovery check on 2026-03-27:
-
-- GitHub web search returned no public results for the branch or suggested PR title.
-- Opening the PR seed URL redirected to GitHub sign-in, so this workspace still cannot verify or create
-  the PR through authenticated GitHub UI/API access.
+- Legacy workspace wrapper flag translation:
+  `--issues`, `--report-file`, and `--no-cleanup` still need to map cleanly onto Go workspace
+  validation flags.
+- Root-level Python shim execution:
+  direct Python entrypoints still need `PYTHONPATH=src` unless a packaging/install layer is added.
+- Operator invocation path:
+  `scripts/ops/bigclawctl` is still the preferred human/operator entrypoint while the compatibility
+  files remain in place.
 
 ## Risks and Deferred Follow-ups
 
-- `scripts/dev_bootstrap.sh` remains a shell-owned path and was intentionally left out of this migration slice.
-- `scripts/ops/bigclawctl` still shells into `go run`, so local Go toolchain availability and startup latency remain operator dependencies.
-- `bigclaw-go/scripts/*` helper scripts were not migrated in this issue; the current slice only covered root-level scripts and common automation entrypoints.
-- This workspace had no configured `gh` CLI or GitHub API token, so the branch was pushed but the PR could not be opened automatically from the terminal.
+- `scripts/dev_bootstrap.sh` remains a shell-owned bootstrap path and was intentionally left out of
+  this migration slice.
+- `scripts/ops/bigclawctl` still shells into `go run`, so local Go toolchain availability and
+  startup latency remain operator dependencies.
+- `bigclaw-go/scripts/*` helper scripts were not migrated in this issue; the accepted scope stayed
+  at repo-root scripts and common automation entrypoints.
+- This workspace can push the branch but cannot create the GitHub PR directly from the terminal
+  because no `gh` CLI authentication or GitHub API token is configured here.

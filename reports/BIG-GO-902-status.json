@@ -6,13 +6,14 @@
   },
   "branch": {
     "name": "feat/BIG-GO-902-go-cli-script-migration",
-    "latest_pushed_commit": "77ba309"
+    "validated_implementation_commit": "a5be444737244821914b1e38fb86142ee4a49d90"
   },
   "artifacts": {
     "closeout_index": "reports/BIG-GO-902-closeout.md",
     "validation_report": "reports/BIG-GO-902-validation.md",
     "pr_draft": "reports/BIG-GO-902-pr.md",
-    "migration_plan": "docs/go-cli-script-migration-plan.md"
+    "migration_plan": "docs/go-cli-script-migration-plan.md",
+    "workpad": ".symphony/workpad.md"
   },
   "links": {
     "compare_url": "https://github.com/OpenAGIs/BigClaw/compare/main...feat/BIG-GO-902-go-cli-script-migration?expand=1",
@@ -20,20 +21,19 @@
   },
   "validation": {
     "commands": [
-      "cd bigclaw-go && go test ./cmd/bigclawctl",
-      "cd bigclaw-go && go test ./internal/refill",
+      "cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill",
+      "PYTHONPATH=src python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py",
+      "python3 -m py_compile src/bigclaw/legacy_shim.py scripts/ops/bigclaw_github_sync.py scripts/ops/bigclaw_refill_queue.py scripts/ops/bigclaw_workspace_bootstrap.py scripts/ops/symphony_workspace_bootstrap.py scripts/ops/symphony_workspace_validate.py",
       "bash scripts/ops/bigclawctl dev-smoke",
-      "PYTHONPATH=src python3 scripts/dev_smoke.py",
       "python3 scripts/create_issues.py --help",
       "bash scripts/ops/bigclawctl issue --help",
-      "bash scripts/ops/bigclawctl panel --help",
-      "bash scripts/ops/bigclawctl symphony --help",
-      "bash scripts/ops/bigclaw-issue list",
-      "bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json --sync-queue-status"
+      "PYTHONPATH=src python3 scripts/ops/bigclaw_refill_queue.py --help",
+      "PYTHONPATH=src python3 scripts/ops/symphony_workspace_validate.py --help",
+      "PYTHONPATH=src python3 scripts/ops/bigclaw_github_sync.py status --json"
     ]
   },
   "blocker": {
     "type": "external_auth",
-    "summary": "Workspace can push branch but cannot create or verify the GitHub PR directly because no gh CLI or GitHub API token is configured."
+    "summary": "Workspace can push the branch but cannot create the GitHub PR directly from the terminal because no gh CLI authentication or GitHub API token is configured."
   }
 }
