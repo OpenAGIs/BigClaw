@@ -1,6 +1,16 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env python3
+"""Legacy compatibility shim for the Go workspace command."""
 
-script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+from __future__ import annotations
 
-exec bash "$script_dir/bigclawctl" workspace "$@"
+import sys
+
+from bigclaw.legacy_shim import run_bigclawctl_shim
+
+
+def main() -> int:
+    return run_bigclawctl_shim(__file__, ["workspace"], sys.argv[1:])
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

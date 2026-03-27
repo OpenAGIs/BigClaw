@@ -8,7 +8,7 @@ operator cutover window.
 
 ## This Slice
 
-The first migration batch implemented in this issue moves the following entrypoints behind the
+The implemented migration batches in this issue move the following repo-root entrypoints behind the
 Go CLI:
 
 - `scripts/create_issues.py` -> `bigclawctl create-issues`
@@ -16,11 +16,17 @@ Go CLI:
 - `scripts/ops/bigclaw-symphony` -> `bigclawctl symphony`
 - `scripts/ops/bigclaw-issue` -> `bigclawctl issue`
 - `scripts/ops/bigclaw-panel` -> `bigclawctl panel`
+- `scripts/ops/bigclaw_github_sync.py` -> `bigclawctl github-sync`
+- `scripts/ops/bigclaw_refill_queue.py` -> `bigclawctl refill`
+- `scripts/ops/bigclaw_workspace_bootstrap.py` -> `bigclawctl workspace ...`
+- `scripts/ops/symphony_workspace_bootstrap.py` -> `bigclawctl workspace ...`
+- `scripts/ops/symphony_workspace_validate.py` -> `bigclawctl workspace validate`
 
 The compatibility layer is intentionally thin:
 
 - Python root shims only proxy into `scripts/ops/bigclawctl`.
-- Bash ops shims only proxy into `scripts/ops/bigclawctl`.
+- Python `scripts/ops/*_*.py` shims only translate legacy flags/defaults before dispatching into `scripts/ops/bigclawctl`.
+- Bash ops aliases only proxy into `scripts/ops/bigclawctl`.
 - Behavioral ownership now lives in Go under `bigclaw-go/cmd/bigclawctl`.
 
 ## First-Batch Change List
@@ -46,6 +52,11 @@ The compatibility layer is intentionally thin:
 
 - `scripts/create_issues.py`
 - `scripts/dev_smoke.py`
+- `scripts/ops/bigclaw_github_sync.py`
+- `scripts/ops/bigclaw_refill_queue.py`
+- `scripts/ops/bigclaw_workspace_bootstrap.py`
+- `scripts/ops/symphony_workspace_bootstrap.py`
+- `scripts/ops/symphony_workspace_validate.py`
 - `scripts/ops/bigclaw-symphony`
 - `scripts/ops/bigclaw-issue`
 - `scripts/ops/bigclaw-panel`
@@ -66,9 +77,13 @@ invoke `bash scripts/ops/bigclawctl ...` directly.
 ## Validation Commands
 
 - `cd bigclaw-go && go test ./cmd/bigclawctl`
+- `PYTHONPATH=src python3 -m pytest tests/test_legacy_shim.py tests/test_deprecation.py`
 - `bash scripts/ops/bigclawctl dev-smoke`
 - `PYTHONPATH=src python3 scripts/dev_smoke.py`
 - `python3 scripts/create_issues.py --help`
+- `PYTHONPATH=src python3 scripts/ops/bigclaw_github_sync.py status --json`
+- `PYTHONPATH=src python3 scripts/ops/bigclaw_refill_queue.py --help`
+- `PYTHONPATH=src python3 scripts/ops/symphony_workspace_validate.py --help`
 - `bash scripts/ops/bigclawctl issue --help`
 - `bash scripts/ops/bigclawctl panel --help`
 - `bash scripts/ops/bigclawctl symphony --help`
@@ -79,6 +94,9 @@ invoke `bash scripts/ops/bigclawctl ...` directly.
   `create-issues` must preserve title/body/label parity and skip already-created issues.
 - Local tracker shortcuts:
   `issue state/comment` positional shortcuts must still map onto the same local-issues behaviors.
+- Legacy workspace wrappers:
+  `--issues`, `--report-file`, and `--no-cleanup` still need to translate to the Go workspace
+  validation flags without changing existing automation call sites.
 - Symphony invocation:
   CLI discovery order and workflow binding must still prefer the repo-adjacent checkout before
   falling back to `PATH`.
@@ -98,6 +116,9 @@ invoke `bash scripts/ops/bigclawctl ...` directly.
 
 - `create-issues` still relies on a static in-repo issue plan map. If the canonical issue list
   changes frequently, the next step should move plan data into versioned JSON/YAML fixtures.
+- Some compatibility wrappers still require `PYTHONPATH=src` when run directly. The preferred
+  operator path remains `bash scripts/ops/bigclawctl ...` until packaging or console-script
+  installation is standardized.
 - `scripts/ops/bigclawctl` still uses `go run`, so first-run latency and local Go toolchain
   availability remain operator dependencies.
 - `symphony`/`issue`/`panel` are now implemented in Go but still depend on an external Symphony

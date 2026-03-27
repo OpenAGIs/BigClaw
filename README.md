@@ -65,6 +65,9 @@ Notes:
   issue creation and state changes stay pinned to this repository's tracker file.
 - `python3 scripts/create_issues.py` and `PYTHONPATH=src python3 scripts/dev_smoke.py` are now
   compatibility shims that dispatch into `bigclawctl` Go subcommands.
+- `PYTHONPATH=src python3 scripts/ops/bigclaw_github_sync.py ...`,
+  `PYTHONPATH=src python3 scripts/ops/bigclaw_refill_queue.py ...`, and the legacy
+  `scripts/ops/*workspace*.py` helpers are also compatibility shims over the same Go CLI.
 - `scripts/ops/bigclaw-issue`, `scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel` are
   retained as compatibility wrappers, but the preferred operator path is now `scripts/ops/bigclawctl`.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
