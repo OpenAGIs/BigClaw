@@ -192,7 +192,7 @@ feat/BIG-GO-902-go-cli-script-migration
 Validated implementation commit:
 
 ```text
-63c8e6c554a32513d4a71b4efe1d98b08a07cc1f
+b4880c3976c79b35b4e310371372ebc7c5030da3
 ```
 
 PR seed URL:
