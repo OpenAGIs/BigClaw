@@ -16,6 +16,7 @@ import (
 	"bigclaw-go/internal/bootstrap"
 	"bigclaw-go/internal/githubsync"
 	"bigclaw-go/internal/legacyshim"
+	"bigclaw-go/internal/migration"
 	"bigclaw-go/internal/refill"
 )
 
@@ -120,6 +121,8 @@ func run(args []string) int {
 		err = runLocalIssues(args[1:])
 	case "legacy-python":
 		err = runLegacyPython(args[1:])
+	case "migration":
+		err = runMigration(args[1:])
 	default:
 		err = fmt.Errorf("unknown command: %s", args[0])
 	}
@@ -128,6 +131,106 @@ func run(args []string) int {
 		return 1
 	}
 	return 0
+}
+
+func runMigration(args []string) error {
+	if len(args) == 0 || isHelpToken(args[0]) {
+		_, _ = os.Stdout.WriteString("usage: bigclawctl migration <validation-continuation-scorecard|validation-continuation-policy-gate> [flags]\n")
+		return nil
+	}
+	command := args[0]
+	switch command {
+	case "validation-continuation-scorecard":
+		flags := flag.NewFlagSet("migration "+command, flag.ContinueOnError)
+		repoRoot := flags.String("repo", "..", "repo root")
+		goRoot := flags.String("go-root", ".", "bigclaw-go root")
+		indexPath := flags.String("index-manifest", migration.DefaultValidationIndexPath, "validation index path")
+		bundleRoot := flags.String("bundle-root", migration.DefaultValidationBundleRootPath, "validation bundle root")
+		summaryPath := flags.String("summary", migration.DefaultValidationSummaryPath, "latest validation summary path")
+		sharedQueuePath := flags.String("shared-queue-report", migration.DefaultSharedQueueReportPath, "shared queue report path")
+		outputPath := flags.String("output", migration.DefaultValidationContinuationScorecard, "output path")
+		pretty := flags.Bool("pretty", false, "print generated json")
+		if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl migration validation-continuation-scorecard [flags]", args[1:]); err != nil {
+			if errors.Is(err, flag.ErrHelp) {
+				_, _ = os.Stdout.WriteString(helpText)
+				return nil
+			}
+			return err
+		}
+		document, err := migration.BuildValidationContinuationScorecard(migration.ValidationContinuationScorecardConfig{
+			RepoRoot:              *repoRoot,
+			GoRoot:                *goRoot,
+			IndexManifestPath:     *indexPath,
+			BundleRootPath:        *bundleRoot,
+			SummaryPath:           *summaryPath,
+			SharedQueueReportPath: *sharedQueuePath,
+		})
+		if err != nil {
+			return err
+		}
+		resolvedOutput := resolvePathAgainstRepoRoot(absPath(*goRoot), *outputPath)
+		if err := migration.WriteJSON(resolvedOutput, document); err != nil {
+			return err
+		}
+		if *pretty {
+			encoder := json.NewEncoder(os.Stdout)
+			encoder.SetEscapeHTML(false)
+			encoder.SetIndent("", "  ")
+			return encoder.Encode(document)
+		}
+		return nil
+	case "validation-continuation-policy-gate":
+		flags := flag.NewFlagSet("migration "+command, flag.ContinueOnError)
+		repoRoot := flags.String("repo", "..", "repo root")
+		goRoot := flags.String("go-root", ".", "bigclaw-go root")
+		scorecardPath := flags.String("scorecard", migration.DefaultValidationContinuationScorecard, "continuation scorecard path")
+		outputPath := flags.String("output", migration.DefaultValidationContinuationPolicyGate, "output path")
+		maxLatestAgeHours := flags.Float64("max-latest-age-hours", 72.0, "maximum latest bundle age in hours")
+		minRecentBundles := flags.Int("min-recent-bundles", 2, "minimum recent bundles in window")
+		requireRepeatedLaneCoverage := flags.Bool("require-repeated-lane-coverage", true, "require repeated lane coverage")
+		allowPartialLaneHistory := flags.Bool("allow-partial-lane-history", false, "allow partial lane history")
+		enforcementMode := flags.String("enforcement-mode", "", "review|hold|fail")
+		enforce := flags.Bool("enforce", false, "legacy alias for enforcement-mode=fail")
+		pretty := flags.Bool("pretty", false, "print generated json")
+		if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl migration validation-continuation-policy-gate [flags]", args[1:]); err != nil {
+			if errors.Is(err, flag.ErrHelp) {
+				_, _ = os.Stdout.WriteString(helpText)
+				return nil
+			}
+			return err
+		}
+		document, exitCode, err := migration.BuildValidationContinuationPolicyGate(migration.ValidationContinuationPolicyGateConfig{
+			RepoRoot:                    *repoRoot,
+			GoRoot:                      *goRoot,
+			ScorecardPath:               *scorecardPath,
+			MaxLatestAgeHours:           *maxLatestAgeHours,
+			MinRecentBundles:            *minRecentBundles,
+			RequireRepeatedLaneCoverage: *requireRepeatedLaneCoverage && !*allowPartialLaneHistory,
+			EnforcementMode:             *enforcementMode,
+			LegacyEnforce:               *enforce,
+		})
+		if err != nil {
+			return err
+		}
+		resolvedOutput := resolvePathAgainstRepoRoot(absPath(*goRoot), *outputPath)
+		if err := migration.WriteJSON(resolvedOutput, document); err != nil {
+			return err
+		}
+		if *pretty {
+			encoder := json.NewEncoder(os.Stdout)
+			encoder.SetEscapeHTML(false)
+			encoder.SetIndent("", "  ")
+			if err := encoder.Encode(document); err != nil {
+				return err
+			}
+		}
+		if exitCode != 0 {
+			return exitError(exitCode)
+		}
+		return nil
+	default:
+		return fmt.Errorf("unknown migration subcommand: %s", command)
+	}
 }
 
 func runLegacyPython(args []string) error {
@@ -1420,7 +1523,7 @@ func printRefillUsage(w io.Writer) {
 }
 
 func printRootUsage(w io.Writer) {
-	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|refill|local-issues|legacy-python> ...")
+	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|refill|local-issues|legacy-python|migration> ...")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "commands:")
 	fmt.Fprintln(w, "  github-sync     install/sync/status hooks and branch sync state")
@@ -1428,6 +1531,7 @@ func printRootUsage(w io.Writer) {
 	fmt.Fprintln(w, "  refill          promote issues to maintain target in-progress count")
 	fmt.Fprintln(w, "  local-issues    manage the repo-native issue store in local-issues.json")
 	fmt.Fprintln(w, "  legacy-python   validate frozen Python compatibility shims")
+	fmt.Fprintln(w, "  migration       run repo-native validation/report migration utilities")
 }
 
 func absPath(path string) string {

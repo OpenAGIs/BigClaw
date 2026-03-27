@@ -270,6 +270,113 @@ func TestRunWorkspaceBootstrapJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	}
 }
 
+func TestRunMigrationValidationContinuationCommands(t *testing.T) {
+	repoRoot := t.TempDir()
+	goRoot := filepath.Join(repoRoot, "bigclaw-go")
+	reportsRoot := filepath.Join(goRoot, "docs", "reports")
+	for _, dir := range []string{
+		filepath.Join(reportsRoot, "live-validation-runs", "run-1"),
+		filepath.Join(reportsRoot, "live-validation-runs", "run-2"),
+	} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writeCLIJSONFixture(t, filepath.Join(reportsRoot, "live-validation-index.json"), map[string]any{
+		"latest": map[string]any{
+			"run_id":       "run-1",
+			"generated_at": "2026-03-16T14:01:38Z",
+			"status":       "succeeded",
+		},
+		"recent_runs": []map[string]any{
+			{"run_id": "run-1", "generated_at": "2026-03-16T14:01:38Z", "status": "succeeded", "summary_path": "docs/reports/live-validation-runs/run-1/summary.json"},
+			{"run_id": "run-2", "generated_at": "2026-03-14T16:46:57Z", "status": "succeeded", "summary_path": "docs/reports/live-validation-runs/run-2/summary.json"},
+		},
+	})
+	writeCLIJSONFixture(t, filepath.Join(reportsRoot, "live-validation-summary.json"), map[string]any{
+		"generated_at": "2026-03-16T14:01:38Z",
+		"status":       "succeeded",
+		"local":        map[string]any{"enabled": true, "status": "succeeded"},
+		"kubernetes":   map[string]any{"enabled": true, "status": "succeeded"},
+		"ray":          map[string]any{"enabled": true, "status": "succeeded"},
+		"shared_queue_companion": map[string]any{
+			"available":                 true,
+			"canonical_report_path":     "docs/reports/multi-node-shared-queue-report.json",
+			"canonical_summary_path":    "docs/reports/shared-queue-companion-summary.json",
+			"bundle_report_path":        "docs/reports/live-validation-runs/run-1/multi-node-shared-queue-report.json",
+			"bundle_summary_path":       "docs/reports/live-validation-runs/run-1/shared-queue-companion-summary.json",
+			"cross_node_completions":    99,
+			"duplicate_started_tasks":   []any{},
+			"duplicate_completed_tasks": []any{},
+		},
+	})
+	for _, runID := range []string{"run-1", "run-2"} {
+		writeCLIJSONFixture(t, filepath.Join(reportsRoot, "live-validation-runs", runID, "summary.json"), map[string]any{
+			"generated_at": "2026-03-16T14:01:38Z",
+			"status":       "succeeded",
+			"local":        map[string]any{"enabled": true, "status": "succeeded"},
+			"kubernetes":   map[string]any{"enabled": true, "status": "succeeded"},
+			"ray":          map[string]any{"enabled": true, "status": "succeeded"},
+		})
+	}
+	writeCLIJSONFixture(t, filepath.Join(reportsRoot, "multi-node-shared-queue-report.json"), map[string]any{
+		"all_ok":                    true,
+		"cross_node_completions":    99,
+		"duplicate_started_tasks":   []any{},
+		"duplicate_completed_tasks": []any{},
+	})
+
+	scorecardOutput := filepath.Join(reportsRoot, "validation-bundle-continuation-scorecard.json")
+	if code := run([]string{
+		"migration", "validation-continuation-scorecard",
+		"--repo", repoRoot,
+		"--go-root", goRoot,
+		"--output", scorecardOutput,
+	}); code != 0 {
+		t.Fatalf("expected scorecard command to succeed, got exit code %d", code)
+	}
+	body, err := os.ReadFile(scorecardOutput)
+	if err != nil {
+		t.Fatalf("read scorecard output: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"ticket": "BIG-GO-907"`)) {
+		t.Fatalf("expected migrated scorecard output, got %s", string(body))
+	}
+
+	gateOutput := filepath.Join(reportsRoot, "validation-bundle-continuation-policy-gate.json")
+	if code := run([]string{
+		"migration", "validation-continuation-policy-gate",
+		"--repo", repoRoot,
+		"--go-root", goRoot,
+		"--scorecard", scorecardOutput,
+		"--max-latest-age-hours", "9999",
+		"--output", gateOutput,
+	}); code != 0 {
+		t.Fatalf("expected policy gate command to succeed, got exit code %d", code)
+	}
+	gateBody, err := os.ReadFile(gateOutput)
+	if err != nil {
+		t.Fatalf("read policy gate output: %v", err)
+	}
+	if !bytes.Contains(gateBody, []byte(`"recommendation": "go"`)) {
+		t.Fatalf("expected go recommendation in policy gate output, got %s", string(gateBody))
+	}
+}
+
+func writeCLIJSONFixture(t *testing.T, path string, payload any) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, append(body, '\n'), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRunWorkspaceCleanupJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	root := t.TempDir()
 	remote := initWorkspaceValidateRemote(t, root)

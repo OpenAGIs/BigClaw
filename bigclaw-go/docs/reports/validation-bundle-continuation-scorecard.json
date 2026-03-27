@@ -1,34 +1,34 @@
 {
-  "generated_at": "2026-03-16T15:54:25.278091Z",
-  "ticket": "BIG-PAR-086-local-prework",
+  "generated_at": "2026-03-27T15:25:38Z",
+  "ticket": "BIG-GO-907",
   "title": "Validation bundle continuation scorecard",
-  "status": "local-continuation-scorecard",
+  "status": "go-validation-continuation-scorecard",
   "evidence_inputs": {
-    "manifest_path": "bigclaw-go/docs/reports/live-validation-index.json",
-    "latest_summary_path": "bigclaw-go/docs/reports/live-validation-summary.json",
-    "bundle_root": "bigclaw-go/docs/reports/live-validation-runs",
+    "bundle_root": "docs/reports/live-validation-runs",
+    "generator": "go run ./cmd/bigclawctl migration validation-continuation-scorecard",
+    "latest_summary_path": "docs/reports/live-validation-summary.json",
+    "manifest_path": "docs/reports/live-validation-index.json",
     "recent_run_summaries": [
-      "bigclaw-go/docs/reports/live-validation-runs/20260316T140138Z/summary.json",
-      "bigclaw-go/docs/reports/live-validation-runs/20260314T164647Z/summary.json",
-      "bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/summary.json"
+      "docs/reports/live-validation-runs/20260316T140138Z/summary.json",
+      "docs/reports/live-validation-runs/20260314T164647Z/summary.json",
+      "docs/reports/live-validation-runs/20260314T163430Z/summary.json"
     ],
-    "shared_queue_report_path": "bigclaw-go/docs/reports/multi-node-shared-queue-report.json",
-    "generator_script": "bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py"
+    "shared_queue_report_path": "docs/reports/multi-node-shared-queue-report.json"
   },
   "summary": {
-    "recent_bundle_count": 3,
+    "all_executor_tracks_have_repeated_recent_coverage": true,
+    "bundle_gap_minutes": 3585.26,
+    "bundle_root_exists": true,
+    "latest_all_executor_tracks_succeeded": true,
+    "latest_bundle_age_hours": 250.89,
     "latest_run_id": "20260316T140138Z",
     "latest_status": "succeeded",
-    "latest_bundle_age_hours": 0.01,
-    "latest_all_executor_tracks_succeeded": true,
     "recent_bundle_chain_has_no_failures": true,
-    "all_executor_tracks_have_repeated_recent_coverage": true,
-    "bundle_gap_minutes": 2826.67,
-    "bundle_root_exists": true
+    "recent_bundle_count": 3
   },
   "executor_lanes": [
     {
-      "lane": "local",
+      "lane": "kubernetes",
       "latest_enabled": true,
       "latest_status": "succeeded",
       "recent_statuses": [
@@ -42,7 +42,7 @@
       "all_recent_runs_succeeded": true
     },
     {
-      "lane": "kubernetes",
+      "lane": "local",
       "latest_enabled": true,
       "latest_status": "succeeded",
       "recent_statuses": [
@@ -85,7 +85,7 @@
     {
       "name": "latest_bundle_all_executor_tracks_succeeded",
       "passed": true,
-      "detail": "latest lane statuses={'local': 'succeeded', 'kubernetes': 'succeeded', 'ray': 'succeeded'}"
+      "detail": "latest lane statuses=map[kubernetes:succeeded local:succeeded ray:succeeded]"
     },
     {
       "name": "recent_bundle_chain_has_multiple_runs",
@@ -95,12 +95,12 @@
     {
       "name": "recent_bundle_chain_has_no_failures",
       "passed": true,
-      "detail": "recent bundle statuses=['succeeded', 'succeeded', 'succeeded']"
+      "detail": "recent bundle statuses=[succeeded succeeded succeeded]"
     },
     {
       "name": "all_executor_tracks_have_repeated_recent_coverage",
       "passed": true,
-      "detail": "enabled_runs_by_lane={'local': 3, 'kubernetes': 3, 'ray': 2}"
+      "detail": "enabled_runs_by_lane=map[kubernetes:3 local:3 ray:2]"
     },
     {
       "name": "shared_queue_companion_proof_available",

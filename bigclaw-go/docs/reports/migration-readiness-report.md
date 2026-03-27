@@ -4,12 +4,16 @@
 
 This report summarizes the current migration-readiness evidence for `OPE-185` / `BIG-GO-010`.
 
+`BIG-GO-907` adds the first validation/reporting migration slice on top of that baseline: the validation bundle continuation scorecard and continuation policy gate now have a Go entrypoint via `go run ./cmd/bigclawctl migration ...`.
+
 ## Implemented surfaces
 
 - Shadow comparison for one task via `scripts/migration/shadow_compare.py`
 - Shadow comparison matrix across multiple task fixtures via `scripts/migration/shadow_matrix.py`
 - Repo-native live shadow mirror scorecard via `scripts/migration/live_shadow_scorecard.py`
 - Repo-native live shadow bundle/index via `scripts/migration/export_live_shadow_bundle.py`
+- Validation bundle continuation scorecard via `go run ./cmd/bigclawctl migration validation-continuation-scorecard`
+- Validation bundle continuation policy gate via `go run ./cmd/bigclawctl migration validation-continuation-policy-gate`
 - An anonymized corpus-manifest scorecard path via `examples/shadow-corpus-manifest.json`
 - Shared `trace_id` correlation across primary/shadow runs
 - JSON reports for single-run and matrix outcomes
@@ -26,6 +30,7 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 - `docs/reports/shadow-compare-report.json`
 - `docs/reports/shadow-matrix-report.json`
 - `docs/reports/live-shadow-mirror-scorecard.json`
+- `docs/reports/validation-reporting-go-migration-plan.md`
 - `docs/reports/live-shadow-index.md`
 - `docs/reports/live-shadow-index.json`
 - `docs/reports/live-shadow-drift-rollup.json`
@@ -42,6 +47,7 @@ This report summarizes the current migration-readiness evidence for `OPE-185` / 
 
 ## Remaining gaps
 
+- The continuation scorecard/gate path now has a Go entrypoint, but bundle export, live-shadow export, external-store validation, and evaluation-heavy migration helpers still rely on Python scripts and remain in the next migration batches described in `docs/reports/validation-reporting-go-migration-plan.md`.
 - Still no live legacy-vs-Go production traffic comparison; see `OPE-266` / `BIG-PAR-092` in `docs/reports/live-shadow-comparison-follow-up-digest.md`.
 - The live shadow mirror scorecard and bundle index are repo-native and offline; freshness comes from checked-in artifact timestamps rather than continuous mirrored traffic. Reviewers can inspect the checked-in runtime-facing mirror surface through `GET /debug/status` under `live_shadow_mirror_scorecard` and through `GET /v2/control-center` under `distributed_diagnostics.live_shadow_mirror_scorecard`.
 - No tenant-scoped automated rollback trigger yet; the current trigger surface and manual rollback guardrails for `OPE-254` / `BIG-PAR-088` are documented in `docs/reports/rollback-safeguard-follow-up-digest.md` and summarized machine-readably in `docs/reports/rollback-trigger-surface.json`. Reviewers can inspect the same runtime-facing trigger payload through `GET /debug/status` under `rollback_trigger_surface` and through `GET /v2/control-center` under `distributed_diagnostics.migration_review_pack.rollback_trigger_surface`.

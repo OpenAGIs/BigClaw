@@ -1,27 +1,34 @@
-## Codex Workpad
-
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
+## BIG-GO-907 Workpad
 
 ### Plan
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+- [x] Audit the remaining non-Go validation/reporting tooling and lock the first migration slice to the validation bundle continuation scorecard and continuation policy gate.
+- [x] Implement repo-native Go generation for the continuation scorecard and continuation policy gate.
+- [x] Update repo docs and migration reporting so the first-batch implementation list, validation commands, regression surface, branch/PR guidance, and risks are recorded in-repo.
+- [x] Run targeted validation commands and capture exact outcomes.
+- [ ] Commit and push the scoped branch.
 
-### Acceptance Criteria
+### Acceptance
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
+- [x] An executable migration plan exists in-repo and identifies the first implementation batch.
+- [x] The validation bundle continuation scorecard and continuation policy gate run through Go tooling.
+- [x] Validation commands and regression surface are explicit in repo docs.
+- [x] Branch/PR recommendation and concrete risks are documented in-repo.
 
 ### Validation
 
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
+- [x] `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-907/bigclaw-go && go test ./internal/migration ./cmd/bigclawctl`
+  Result: passed
+- [x] `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-907 && python3 -m pytest bigclaw-go/scripts/e2e/run_all_test.py -q`
+  Result: passed
+- [x] `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-907/bigclaw-go && go test ./internal/regression -run TestE2EValidationDocsStayAligned`
+  Result: passed
+- [x] `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-907/bigclaw-go && go run ./cmd/bigclawctl migration validation-continuation-scorecard --output docs/reports/validation-bundle-continuation-scorecard.json`
+  Result: passed
+- [x] `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-907/bigclaw-go && go run ./cmd/bigclawctl migration validation-continuation-policy-gate --scorecard docs/reports/validation-bundle-continuation-scorecard.json --output docs/reports/validation-bundle-continuation-policy-gate.json --max-latest-age-hours 9999`
+  Result: passed
 
 ### Notes
 
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+- Scope is intentionally limited to the continuation scorecard/gate path and migration planning/reporting updates needed by `BIG-GO-907`.
+- Remaining Python migration backlog for bundle export, live-shadow export, and evaluation-heavy helpers is recorded in `bigclaw-go/docs/reports/validation-reporting-go-migration-plan.md`.

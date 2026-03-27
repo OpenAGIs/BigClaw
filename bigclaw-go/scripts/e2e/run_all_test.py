@@ -18,6 +18,8 @@ class RunAllTest(unittest.TestCase):
         self.tmpdir = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmpdir.cleanup)
         self.root = Path(self.tmpdir.name)
+        self.bin_dir = self.root / 'bin'
+        self.bin_dir.mkdir(parents=True, exist_ok=True)
         scripts_dir = self.root / 'scripts' / 'e2e'
         scripts_dir.mkdir(parents=True, exist_ok=True)
         run_all_path = scripts_dir / 'run_all.sh'
@@ -33,6 +35,37 @@ class RunAllTest(unittest.TestCase):
 
     def install_stubs(self) -> None:
         self.write_file(
+            'bin/go',
+            """\
+            #!/usr/bin/env python3
+            import json
+            import pathlib
+            import sys
+
+            args = sys.argv[1:]
+            if args[:1] == ['run'] and args[1].endswith('broker_bootstrap_summary.go'):
+                output = pathlib.Path(args[args.index('--output') + 1])
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text('{"ready":false,"runtime_posture":"contract_only","live_adapter_implemented":false}\\n', encoding='utf-8')
+                raise SystemExit(0)
+            if args[:1] == ['run'] and args[1].endswith('cmd/bigclawctl'):
+                command = args[2:4]
+                output = pathlib.Path(args[args.index('--output') + 1])
+                output.parent.mkdir(parents=True, exist_ok=True)
+                if command == ['migration', 'validation-continuation-scorecard']:
+                    output.write_text(json.dumps({'summary': {}, 'shared_queue_companion': {'available': True}}), encoding='utf-8')
+                    raise SystemExit(0)
+                if command == ['migration', 'validation-continuation-policy-gate']:
+                    scorecard = pathlib.Path(args[args.index('--scorecard') + 1])
+                    mode = args[args.index('--enforcement-mode') + 1]
+                    payload = {'status': 'policy-go', 'recommendation': 'go', 'enforcement': {'mode': mode, 'outcome': 'pass', 'exit_code': 0}, 'scorecard_seen': scorecard.exists()}
+                    output.write_text(json.dumps(payload), encoding='utf-8')
+                    raise SystemExit(0)
+            raise SystemExit(f'unexpected go invocation: {args!r}')
+            """,
+            executable=True,
+        )
+        self.write_file(
             'scripts/e2e/run_task_smoke.py',
             """\
             #!/usr/bin/env python3
@@ -46,25 +79,6 @@ class RunAllTest(unittest.TestCase):
             report_path.write_text(json.dumps({'status': 'succeeded', 'all_ok': True}), encoding='utf-8')
             """,
             executable=True,
-        )
-        self.write_file(
-            'scripts/e2e/broker_bootstrap_summary.go',
-            """\
-            package main
-
-            import (
-                "flag"
-                "os"
-            )
-
-            func main() {
-                output := flag.String("output", "", "output")
-                flag.Parse()
-                if err := os.WriteFile(*output, []byte("{\\"ready\\":false,\\"runtime_posture\\":\\"contract_only\\",\\"live_adapter_implemented\\":false}\\n"), 0o644); err != nil {
-                    panic(err)
-                }
-            }
-            """,
         )
         self.write_file(
             'scripts/e2e/export_validation_bundle.py',
@@ -92,37 +106,6 @@ class RunAllTest(unittest.TestCase):
             """,
             executable=True,
         )
-        self.write_file(
-            'scripts/e2e/validation_bundle_continuation_scorecard.py',
-            """\
-            #!/usr/bin/env python3
-            import json
-            import pathlib
-            import sys
-
-            args = sys.argv[1:]
-            output = pathlib.Path(args[args.index('--output') + 1])
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps({'summary': {}, 'shared_queue_companion': {'available': True}}), encoding='utf-8')
-            """,
-            executable=True,
-        )
-        self.write_file(
-            'scripts/e2e/validation_bundle_continuation_policy_gate.py',
-            """\
-            #!/usr/bin/env python3
-            import json
-            import pathlib
-            import sys
-
-            args = sys.argv[1:]
-            mode = args[args.index('--enforcement-mode') + 1]
-            output = pathlib.Path(args[args.index('--output') + 1])
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps({'status': 'policy-go', 'recommendation': 'go', 'enforcement': {'mode': mode, 'outcome': 'pass', 'exit_code': 0}}), encoding='utf-8')
-            """,
-            executable=True,
-        )
 
     def test_run_all_rerenders_bundle_after_gate_refresh(self) -> None:
         self.install_stubs()
@@ -135,6 +118,7 @@ class RunAllTest(unittest.TestCase):
                 'BIGCLAW_E2E_RUN_BROKER': '1',
                 'BIGCLAW_E2E_BROKER_BACKEND': 'stub',
                 'BIGCLAW_E2E_BROKER_REPORT_PATH': 'docs/reports/broker-failover-stub-report.json',
+                'PATH': f"{self.bin_dir}:{env['PATH']}",
             }
         )
 
@@ -164,7 +148,7 @@ class RunAllTest(unittest.TestCase):
     def test_run_all_defaults_to_hold_mode(self) -> None:
         self.install_stubs()
         self.write_file(
-            'scripts/e2e/validation_bundle_continuation_policy_gate.py',
+            'bin/go',
             """\
             #!/usr/bin/env python3
             import json
@@ -172,10 +156,21 @@ class RunAllTest(unittest.TestCase):
             import sys
 
             args = sys.argv[1:]
-            mode = args[args.index('--enforcement-mode') + 1]
-            output = pathlib.Path(args[args.index('--output') + 1])
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
+            if args[:1] == ['run'] and args[1].endswith('broker_bootstrap_summary.go'):
+                output = pathlib.Path(args[args.index('--output') + 1])
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text('{"ready":false}\\n', encoding='utf-8')
+                raise SystemExit(0)
+            if args[:1] == ['run'] and args[1].endswith('cmd/bigclawctl'):
+                output = pathlib.Path(args[args.index('--output') + 1])
+                output.parent.mkdir(parents=True, exist_ok=True)
+                if args[2:4] == ['migration', 'validation-continuation-scorecard']:
+                    output.write_text(json.dumps({'summary': {}, 'shared_queue_companion': {'available': True}}), encoding='utf-8')
+                    raise SystemExit(0)
+                mode = args[args.index('--enforcement-mode') + 1]
+                output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
+                raise SystemExit(0)
+            raise SystemExit(f'unexpected go invocation: {args!r}')
             """,
             executable=True,
         )
@@ -186,6 +181,7 @@ class RunAllTest(unittest.TestCase):
                 'BIGCLAW_E2E_RUN_KUBERNETES': '0',
                 'BIGCLAW_E2E_RUN_RAY': '0',
                 'BIGCLAW_E2E_RUN_LOCAL': '1',
+                'PATH': f"{self.bin_dir}:{env['PATH']}",
             }
         )
 
@@ -209,7 +205,7 @@ class RunAllTest(unittest.TestCase):
     def test_legacy_enforce_alias_still_maps_to_fail_mode(self) -> None:
         self.install_stubs()
         self.write_file(
-            'scripts/e2e/validation_bundle_continuation_policy_gate.py',
+            'bin/go',
             """\
             #!/usr/bin/env python3
             import json
@@ -217,10 +213,21 @@ class RunAllTest(unittest.TestCase):
             import sys
 
             args = sys.argv[1:]
-            mode = args[args.index('--enforcement-mode') + 1]
-            output = pathlib.Path(args[args.index('--output') + 1])
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
+            if args[:1] == ['run'] and args[1].endswith('broker_bootstrap_summary.go'):
+                output = pathlib.Path(args[args.index('--output') + 1])
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text('{"ready":false}\\n', encoding='utf-8')
+                raise SystemExit(0)
+            if args[:1] == ['run'] and args[1].endswith('cmd/bigclawctl'):
+                output = pathlib.Path(args[args.index('--output') + 1])
+                output.parent.mkdir(parents=True, exist_ok=True)
+                if args[2:4] == ['migration', 'validation-continuation-scorecard']:
+                    output.write_text(json.dumps({'summary': {}, 'shared_queue_companion': {'available': True}}), encoding='utf-8')
+                    raise SystemExit(0)
+                mode = args[args.index('--enforcement-mode') + 1]
+                output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
+                raise SystemExit(0)
+            raise SystemExit(f'unexpected go invocation: {args!r}')
             """,
             executable=True,
         )
@@ -232,6 +239,7 @@ class RunAllTest(unittest.TestCase):
                 'BIGCLAW_E2E_RUN_RAY': '0',
                 'BIGCLAW_E2E_RUN_LOCAL': '1',
                 'BIGCLAW_E2E_ENFORCE_CONTINUATION_GATE': '1',
+                'PATH': f"{self.bin_dir}:{env['PATH']}",
             }
         )
 

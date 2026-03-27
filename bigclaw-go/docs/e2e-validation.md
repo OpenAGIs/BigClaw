@@ -59,20 +59,25 @@ export BIGCLAW_QUEUE_BACKEND=sqlite
 
 The script writes a consolidated summary to `docs/reports/live-validation-summary.json`, refreshes the canonical component reports for local, Kubernetes, and Ray validation, exports a machine-readable shared-queue companion summary to `docs/reports/shared-queue-companion-summary.json`, writes a broker-lane summary to `docs/reports/broker-validation-summary.json`, and creates a timestamped bundle plus index under `docs/reports/live-validation-runs/` and `docs/reports/live-validation-index.md`.
 
-You can then refresh the rolling continuation overlay from the checked-in bundle evidence:
+You can then refresh the rolling continuation overlay from the checked-in bundle evidence through the Go toolchain:
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/validation_bundle_continuation_scorecard.py --pretty
+go run ./cmd/bigclawctl migration validation-continuation-scorecard \
+  --output docs/reports/validation-bundle-continuation-scorecard.json \
+  --pretty
 ```
 
-This writes `docs/reports/validation-bundle-continuation-scorecard.json`, summarizing the recent bundle lineage plus the current shared-queue companion proof exported with the live validation bundle. `run_all.sh` refreshes the scorecard automatically during closeout.
+This writes `docs/reports/validation-bundle-continuation-scorecard.json`, summarizing the recent bundle lineage plus the current shared-queue companion proof exported with the live validation bundle. `run_all.sh` now refreshes the scorecard through the same Go entrypoint during closeout, and the legacy Python helper remains only as a compatibility fallback while the remaining validation/reporting slice is migrated.
 
 You can evaluate the checked-in continuation policy gate as a follow-up:
 
 ```bash
 cd bigclaw-go
-python3 scripts/e2e/validation_bundle_continuation_policy_gate.py --pretty
+go run ./cmd/bigclawctl migration validation-continuation-policy-gate \
+  --scorecard docs/reports/validation-bundle-continuation-scorecard.json \
+  --output docs/reports/validation-bundle-continuation-policy-gate.json \
+  --pretty
 ```
 
 This writes `docs/reports/validation-bundle-continuation-policy-gate.json` and currently returns `go` for the checked-in evidence window because the latest indexed bundles now include repeated `ray` coverage across multiple runs. `run_all.sh` refreshes the gate automatically during closeout and now defaults unattended runs to `BIGCLAW_E2E_CONTINUATION_GATE_MODE=hold`, so stale or incomplete evidence exits with code `2`.
