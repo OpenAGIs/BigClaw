@@ -1,0 +1,1010 @@
+{
+  "summary": {
+    "non_go_files": 148,
+    "legacy_runtime_files": 50,
+    "legacy_test_files": 57,
+    "python_script_files": 30,
+    "shell_script_files": 9,
+    "python_toolchain_files": 2,
+    "validation_harness_files": 27,
+    "first_batch_slice_count": 4,
+    "parallel_slice_count": 10
+  },
+  "inventory": [
+    {
+      "path": "src/bigclaw/__init__.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/__main__.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/audit_events.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/collaboration.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/connectors.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/console_ia.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/cost_control.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/dashboard_run_contract.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/deprecation.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/design_system.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/dsl.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/evaluation.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/event_bus.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/execution_contract.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/github_sync.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/governance.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/issue_archive.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/legacy_shim.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/mapping.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/memory.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/models.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/observability.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/operations.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/orchestration.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/parallel_refill.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/pilot.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/planning.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/queue.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/repo_board.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/repo_commits.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/repo_gateway.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/repo_governance.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/repo_links.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/repo_plane.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/repo_registry.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/repo_triage.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/reports.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/risk.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/roadmap.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/run_detail.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/runtime.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/saved_views.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/scheduler.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/service.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/ui_review.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/validation_policy.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/workflow.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/workspace_bootstrap.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/workspace_bootstrap_cli.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "src/bigclaw/workspace_bootstrap_validation.py",
+      "category": "legacy-runtime",
+      "language": "python"
+    },
+    {
+      "path": "tests/conftest.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_audit_events.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_connectors.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_console_ia.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_control_center.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_cost_control.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_cross_process_coordination_surface.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_dashboard_run_contract.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_deprecation.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_design_system.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_dsl.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_evaluation.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_event_bus.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_execution_contract.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_execution_flow.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_followup_digests.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_github_sync.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_governance.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_issue_archive.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_legacy_shim.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_live_shadow_bundle.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_live_shadow_scorecard.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_mapping.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_memory.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_models.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_observability.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_operations.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_orchestration.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_parallel_refill.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_parallel_validation_bundle.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_pilot.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_planning.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_queue.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_repo_board.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_repo_collaboration.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_repo_gateway.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_repo_governance.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_repo_links.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_repo_registry.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_repo_rollout.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_repo_triage.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_reports.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_risk.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_roadmap.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_runtime.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_runtime_matrix.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_saved_views.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_scheduler.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_service.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_shadow_matrix_corpus.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_subscriber_takeover_harness.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_ui_review.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_validation_bundle_continuation_policy_gate.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_validation_bundle_continuation_scorecard.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_validation_policy.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_workflow.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "tests/test_workspace_bootstrap.py",
+      "category": "legacy-tests",
+      "language": "python"
+    },
+    {
+      "path": "pyproject.toml",
+      "category": "python-toolchain",
+      "language": "python"
+    },
+    {
+      "path": "setup.py",
+      "category": "python-toolchain",
+      "language": "python"
+    },
+    {
+      "path": "scripts/create_issues.py",
+      "category": "repo-script",
+      "language": "python"
+    },
+    {
+      "path": "scripts/dev_bootstrap.sh",
+      "category": "repo-script",
+      "language": "shell"
+    },
+    {
+      "path": "scripts/dev_smoke.py",
+      "category": "repo-script",
+      "language": "python"
+    },
+    {
+      "path": "scripts/ops/bigclaw-issue",
+      "category": "repo-script",
+      "language": "shell"
+    },
+    {
+      "path": "scripts/ops/bigclaw-panel",
+      "category": "repo-script",
+      "language": "shell"
+    },
+    {
+      "path": "scripts/ops/bigclaw-symphony",
+      "category": "repo-script",
+      "language": "shell"
+    },
+    {
+      "path": "scripts/ops/bigclaw_github_sync.py",
+      "category": "repo-script",
+      "language": "python"
+    },
+    {
+      "path": "scripts/ops/bigclaw_refill_queue.py",
+      "category": "repo-script",
+      "language": "python"
+    },
+    {
+      "path": "scripts/ops/bigclaw_workspace_bootstrap.py",
+      "category": "repo-script",
+      "language": "python"
+    },
+    {
+      "path": "scripts/ops/bigclawctl",
+      "category": "repo-script",
+      "language": "shell"
+    },
+    {
+      "path": "scripts/ops/symphony_workspace_bootstrap.py",
+      "category": "repo-script",
+      "language": "python"
+    },
+    {
+      "path": "scripts/ops/symphony_workspace_validate.py",
+      "category": "repo-script",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/benchmark/capacity_certification.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/benchmark/capacity_certification_test.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/benchmark/run_matrix.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/benchmark/run_suite.sh",
+      "category": "validation-harness",
+      "language": "shell"
+    },
+    {
+      "path": "bigclaw-go/scripts/benchmark/soak_local.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/e2e/broker_failover_stub_matrix_test.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/e2e/cross_process_coordination_surface.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/e2e/export_validation_bundle.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/e2e/export_validation_bundle_test.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/e2e/external_store_validation.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/e2e/kubernetes_smoke.sh",
+      "category": "validation-harness",
+      "language": "shell"
+    },
+    {
+      "path": "bigclaw-go/scripts/e2e/mixed_workload_matrix.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/e2e/multi_node_shared_queue.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/e2e/multi_node_shared_queue_test.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/e2e/ray_smoke.sh",
+      "category": "validation-harness",
+      "language": "shell"
+    },
+    {
+      "path": "bigclaw-go/scripts/e2e/run_all.sh",
+      "category": "validation-harness",
+      "language": "shell"
+    },
+    {
+      "path": "bigclaw-go/scripts/e2e/run_all_test.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/e2e/run_task_smoke.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/migration/export_live_shadow_bundle.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/migration/live_shadow_scorecard.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/migration/shadow_compare.py",
+      "category": "validation-harness",
+      "language": "python"
+    },
+    {
+      "path": "bigclaw-go/scripts/migration/shadow_matrix.py",
+      "category": "validation-harness",
+      "language": "python"
+    }
+  ],
+  "slices": [
+    {
+      "identifier": "BIG-VNEXT-GO-101",
+      "title": "Go migration inventory and tracker control plane",
+      "phase": "Phase 0 / Planning",
+      "priority": "P0",
+      "status": "done",
+      "first_batch": true,
+      "scope": "Generate the canonical inventory, slice plan, and tracker seed so all later migration work is queued from Go-owned control surfaces.",
+      "target_paths": [
+        "bigclaw-go/internal/migration",
+        "bigclaw-go/cmd/bigclawctl",
+        "docs/go-only-migration-plan.md",
+        "docs/reports/go-only-migration-inventory.json",
+        "local-issues.json"
+      ],
+      "validation": [
+        "cd bigclaw-go \u0026\u0026 go test ./internal/migration ./cmd/bigclawctl",
+        "cd bigclaw-go \u0026\u0026 go run ./cmd/bigclawctl go-migration plan --repo .. --json-out ../docs/reports/go-only-migration-inventory.json --md-out ../docs/go-only-migration-plan.md"
+      ]
+    },
+    {
+      "identifier": "BIG-VNEXT-GO-102",
+      "title": "Retire root Python runtime entrypoints",
+      "phase": "Phase 1 / Runtime",
+      "priority": "P0",
+      "status": "todo",
+      "first_batch": true,
+      "scope": "Replace `src/bigclaw` runtime entrypoints and module-level operators with Go-owned equivalents or explicit frozen shims.",
+      "target_paths": [
+        "src/bigclaw",
+        "bigclaw-go/internal",
+        "bigclaw-go/cmd"
+      ],
+      "dependencies": [
+        "BIG-VNEXT-GO-101"
+      ],
+      "validation": [
+        "cd bigclaw-go \u0026\u0026 go test ./...",
+        "bash scripts/ops/bigclawctl legacy-python compile-check --json"
+      ]
+    },
+    {
+      "identifier": "BIG-VNEXT-GO-103",
+      "title": "Migrate root Python test suite to Go coverage",
+      "phase": "Phase 1 / Tests",
+      "priority": "P0",
+      "status": "todo",
+      "first_batch": true,
+      "scope": "Move behavioral coverage from `tests/*.py` into Go package and regression tests so the root pytest harness can be retired.",
+      "target_paths": [
+        "tests",
+        "bigclaw-go/internal",
+        "bigclaw-go/cmd"
+      ],
+      "dependencies": [
+        "BIG-VNEXT-GO-101"
+      ],
+      "validation": [
+        "cd bigclaw-go \u0026\u0026 go test ./...",
+        "rg --files tests"
+      ]
+    },
+    {
+      "identifier": "BIG-VNEXT-GO-104",
+      "title": "Replace repo ops Python wrappers with Go commands",
+      "phase": "Phase 1 / Tooling",
+      "priority": "P0",
+      "status": "todo",
+      "first_batch": true,
+      "scope": "Collapse root `scripts/ops` Python and shell wrappers into `bigclawctl` or dedicated Go binaries.",
+      "target_paths": [
+        "scripts/ops",
+        "bigclaw-go/cmd/bigclawctl",
+        "bigclaw-go/internal/bootstrap",
+        "bigclaw-go/internal/githubsync",
+        "bigclaw-go/internal/refill"
+      ],
+      "dependencies": [
+        "BIG-VNEXT-GO-101"
+      ],
+      "validation": [
+        "cd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl ./internal/bootstrap ./internal/githubsync ./internal/refill/...",
+        "rg --files scripts/ops"
+      ]
+    },
+    {
+      "identifier": "BIG-VNEXT-GO-105",
+      "title": "Convert Go-side validation harness scripts to Go",
+      "phase": "Phase 2 / Validation",
+      "priority": "P0",
+      "status": "todo",
+      "first_batch": false,
+      "scope": "Replace Python and shell harnesses under `bigclaw-go/scripts` with Go test helpers or Go commands so validation remains Go-only.",
+      "target_paths": [
+        "bigclaw-go/scripts/e2e",
+        "bigclaw-go/scripts/benchmark",
+        "bigclaw-go/scripts/migration",
+        "bigclaw-go/internal/regression"
+      ],
+      "dependencies": [
+        "BIG-VNEXT-GO-101",
+        "BIG-VNEXT-GO-103"
+      ],
+      "validation": [
+        "cd bigclaw-go \u0026\u0026 go test ./internal/regression ./internal/events ./internal/api",
+        "rg --files bigclaw-go/scripts"
+      ]
+    },
+    {
+      "identifier": "BIG-VNEXT-GO-106",
+      "title": "Remove Python packaging and bootstrap assumptions",
+      "phase": "Phase 2 / Toolchain",
+      "priority": "P1",
+      "status": "todo",
+      "first_batch": false,
+      "scope": "Delete Python packaging metadata once runtime, tests, and operators no longer depend on it.",
+      "target_paths": [
+        "setup.py",
+        "pyproject.toml",
+        "README.md",
+        "bigclaw-go/go.mod"
+      ],
+      "dependencies": [
+        "BIG-VNEXT-GO-102",
+        "BIG-VNEXT-GO-103",
+        "BIG-VNEXT-GO-104"
+      ],
+      "validation": [
+        "cd bigclaw-go \u0026\u0026 go test ./...",
+        "rg -n \"pytest|python3|PYTHONPATH|setup.py|pyproject.toml\" README.md docs scripts bigclaw-go"
+      ]
+    },
+    {
+      "identifier": "BIG-VNEXT-GO-107",
+      "title": "Migrate dev smoke and bootstrap helpers to Go",
+      "phase": "Phase 2 / Developer Experience",
+      "priority": "P1",
+      "status": "todo",
+      "first_batch": false,
+      "scope": "Replace repo bootstrap and smoke helpers currently implemented as Python or shell scripts with Go-owned developer flows.",
+      "target_paths": [
+        "scripts/dev_bootstrap.sh",
+        "scripts/dev_smoke.py",
+        "scripts/create_issues.py",
+        "bigclaw-go/cmd/bigclawctl"
+      ],
+      "dependencies": [
+        "BIG-VNEXT-GO-104"
+      ],
+      "validation": [
+        "cd bigclaw-go \u0026\u0026 go test ./cmd/bigclawctl",
+        "rg --files scripts | sort"
+      ]
+    },
+    {
+      "identifier": "BIG-VNEXT-GO-108",
+      "title": "Freeze or delete legacy Python source tree",
+      "phase": "Phase 3 / Retirement",
+      "priority": "P0",
+      "status": "todo",
+      "first_batch": false,
+      "scope": "Once Go parity is proven, remove or hard-freeze the root Python source tree and leave only explicit compatibility stubs if absolutely required.",
+      "target_paths": [
+        "src/bigclaw",
+        "README.md",
+        "docs"
+      ],
+      "dependencies": [
+        "BIG-VNEXT-GO-102",
+        "BIG-VNEXT-GO-103",
+        "BIG-VNEXT-GO-104"
+      ],
+      "validation": [
+        "bash scripts/ops/bigclawctl legacy-python compile-check --json",
+        "rg --files src/bigclaw tests scripts | head"
+      ]
+    },
+    {
+      "identifier": "BIG-VNEXT-GO-109",
+      "title": "Cut docs and contributor flows to Go-only",
+      "phase": "Phase 3 / Docs",
+      "priority": "P1",
+      "status": "todo",
+      "first_batch": false,
+      "scope": "Update README and operator docs so contributor guidance no longer points at Python or mixed-language workflows.",
+      "target_paths": [
+        "README.md",
+        "docs",
+        "workflow.md",
+        "bigclaw-go/README.md"
+      ],
+      "dependencies": [
+        "BIG-VNEXT-GO-104",
+        "BIG-VNEXT-GO-106"
+      ],
+      "validation": [
+        "rg -n \"python|pytest|PYTHONPATH|setup.py\" README.md docs workflow.md bigclaw-go/README.md",
+        "cd bigclaw-go \u0026\u0026 go test ./internal/regression"
+      ]
+    },
+    {
+      "identifier": "BIG-VNEXT-GO-110",
+      "title": "Run final Go-only cutover gate",
+      "phase": "Phase 4 / Cutover",
+      "priority": "P0",
+      "status": "todo",
+      "first_batch": false,
+      "scope": "Execute the final repository-wide gate proving active development, validation, and operator workflows are Go-only.",
+      "target_paths": [
+        "bigclaw-go",
+        "README.md",
+        "docs",
+        "scripts",
+        "src/bigclaw",
+        "tests"
+      ],
+      "dependencies": [
+        "BIG-VNEXT-GO-105",
+        "BIG-VNEXT-GO-106",
+        "BIG-VNEXT-GO-107",
+        "BIG-VNEXT-GO-108",
+        "BIG-VNEXT-GO-109"
+      ],
+      "validation": [
+        "cd bigclaw-go \u0026\u0026 go test ./...",
+        "rg --files -g'*.py' -g'*.sh' src tests scripts bigclaw-go/scripts",
+        "git grep -n \"python3\\|pytest\\|PYTHONPATH\""
+      ]
+    }
+  ],
+  "strategy": {
+    "branch_prefix": "symphony/",
+    "pr_title_template": "BIG-VNEXT-GO-xxx: \u003cslice title\u003e",
+    "execution_policy": [
+      "Keep slices branch-local and small enough to merge independently into `main`.",
+      "Do not mix runtime migration, test migration, and toolchain retirement in one PR unless a later slice depends on the previous merge.",
+      "Use the generated slice identifiers as the stable Symphony branch and tracker references."
+    ],
+    "validation_policy": [
+      "Every slice must run targeted `go test` commands for the touched Go packages.",
+      "Tracker closeout must record exact commands and pass/fail results, not generic statements.",
+      "Cutover-facing slices must also rerun `go test ./...` from `bigclaw-go` before merge."
+    ],
+    "cutover_policy": [
+      "Do not delete Python or shell surfaces until an equivalent Go-owned runtime or validation path exists.",
+      "Prefer staged retirement: generate parity evidence, merge the Go replacement, then freeze and remove the legacy path.",
+      "Treat `main` as the only evolving branch; all migration branches rebase on current `main` before merge."
+    ],
+    "first_batch_execution": [
+      "Start `BIG-VNEXT-GO-102`, `BIG-VNEXT-GO-103`, and `BIG-VNEXT-GO-104` in parallel after this planning slice lands.",
+      "Keep `BIG-VNEXT-GO-105` blocked until the root test and ops wrapper replacements have converged enough to avoid duplicating harness work.",
+      "Use `BIG-VNEXT-GO-101` as the source of truth for remaining non-Go inventory and next-batch prioritization."
+    ]
+  }
+}

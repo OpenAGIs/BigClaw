@@ -71,6 +71,44 @@ func TestResolvePathAgainstRepoRootJoinsRelativePaths(t *testing.T) {
 	}
 }
 
+func TestRunGoMigrationPlanWritesArtifacts(t *testing.T) {
+	repoRoot := t.TempDir()
+	files := map[string]string{
+		"src/bigclaw/runtime.py":                 "print('runtime')\n",
+		"tests/test_runtime.py":                  "def test_runtime():\n    pass\n",
+		"scripts/dev_bootstrap.sh":               "#!/usr/bin/env bash\nexit 0\n",
+		"bigclaw-go/scripts/e2e/run_all_test.py": "def test_run_all():\n    pass\n",
+	}
+	for relative, body := range files {
+		absolute := filepath.Join(repoRoot, relative)
+		if err := os.MkdirAll(filepath.Dir(absolute), 0o755); err != nil {
+			t.Fatalf("mkdir %s: %v", relative, err)
+		}
+		if err := os.WriteFile(absolute, []byte(body), 0o644); err != nil {
+			t.Fatalf("write %s: %v", relative, err)
+		}
+	}
+	jsonOut := filepath.Join(repoRoot, "docs", "reports", "go-only-migration-inventory.json")
+	mdOut := filepath.Join(repoRoot, "docs", "go-only-migration-plan.md")
+	if err := runGoMigration([]string{"plan", "--repo", repoRoot, "--json-out", jsonOut, "--md-out", mdOut}); err != nil {
+		t.Fatalf("run go-migration plan: %v", err)
+	}
+	jsonBody, err := os.ReadFile(jsonOut)
+	if err != nil {
+		t.Fatalf("read json output: %v", err)
+	}
+	if !bytes.Contains(jsonBody, []byte(`"parallel_slice_count": 10`)) {
+		t.Fatalf("expected json output to include slice count, got %s", string(jsonBody))
+	}
+	mdBody, err := os.ReadFile(mdOut)
+	if err != nil {
+		t.Fatalf("read markdown output: %v", err)
+	}
+	if !bytes.Contains(mdBody, []byte("BIG-VNEXT-GO-101")) || !bytes.Contains(mdBody, []byte("## Branch And PR Strategy")) {
+		t.Fatalf("expected markdown output to include plan details, got %s", string(mdBody))
+	}
+}
+
 func initWorkspaceValidateRemote(t *testing.T, root string) string {
 	t.Helper()
 	remote := filepath.Join(root, "remote.git")

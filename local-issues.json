@@ -7509,6 +7509,173 @@
       "state": "Done",
       "title": "Reconcile final refill queue history",
       "updated_at": "2026-03-25T20:49:24Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Implemented the Go-owned migration planner in bigclaw-go/internal/migration and bigclaw-go/cmd/bigclawctl, generated docs/go-only-migration-plan.md plus docs/reports/go-only-migration-inventory.json, and seeded BIG-VNEXT-GO-102 through BIG-VNEXT-GO-110 for parallel execution. Validation: cd bigclaw-go && go test ./internal/migration ./cmd/bigclawctl -> ok; cd bigclaw-go && go run ./cmd/bigclawctl go-migration plan --repo .. --json-out ../docs/reports/go-only-migration-inventory.json --md-out ../docs/go-only-migration-plan.md -> ok (inventory_count=148, parallel_slices=10, first_batch_slices=4); cd bigclaw-go && go test ./internal/regression -> ok.",
+          "created_at": "2026-03-27T15:13:32Z"
+        }
+      ],
+      "created_at": "2026-03-27T15:13:31Z",
+      "description": "",
+      "id": "big-vnext-go-101",
+      "identifier": "BIG-VNEXT-GO-101",
+      "labels": [
+        "go-only-migration",
+        "parallel",
+        "planning"
+      ],
+      "priority": 1,
+      "state": "Done",
+      "title": "Go migration inventory and tracker control plane",
+      "updated_at": "2026-03-27T15:13:32Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-27T15:13:31Z",
+      "description": "",
+      "id": "big-vnext-go-102",
+      "identifier": "BIG-VNEXT-GO-102",
+      "labels": [
+        "go-only-migration",
+        "parallel",
+        "runtime"
+      ],
+      "priority": 1,
+      "state": "Todo",
+      "title": "Retire root Python runtime entrypoints",
+      "updated_at": "2026-03-27T15:13:31Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-27T15:13:31Z",
+      "description": "",
+      "id": "big-vnext-go-103",
+      "identifier": "BIG-VNEXT-GO-103",
+      "labels": [
+        "go-only-migration",
+        "parallel",
+        "tests"
+      ],
+      "priority": 1,
+      "state": "Todo",
+      "title": "Migrate root Python test suite to Go coverage",
+      "updated_at": "2026-03-27T15:13:31Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-27T15:13:31Z",
+      "description": "",
+      "id": "big-vnext-go-104",
+      "identifier": "BIG-VNEXT-GO-104",
+      "labels": [
+        "go-only-migration",
+        "parallel",
+        "tooling"
+      ],
+      "priority": 1,
+      "state": "Todo",
+      "title": "Replace repo ops Python wrappers with Go commands",
+      "updated_at": "2026-03-27T15:13:31Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-27T15:13:31Z",
+      "description": "",
+      "id": "big-vnext-go-105",
+      "identifier": "BIG-VNEXT-GO-105",
+      "labels": [
+        "go-only-migration",
+        "parallel",
+        "validation"
+      ],
+      "priority": 1,
+      "state": "Todo",
+      "title": "Convert Go-side validation harness scripts to Go",
+      "updated_at": "2026-03-27T15:13:31Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-27T15:13:31Z",
+      "description": "",
+      "id": "big-vnext-go-106",
+      "identifier": "BIG-VNEXT-GO-106",
+      "labels": [
+        "go-only-migration",
+        "parallel",
+        "toolchain"
+      ],
+      "priority": 1,
+      "state": "Todo",
+      "title": "Remove Python packaging and bootstrap assumptions",
+      "updated_at": "2026-03-27T15:13:31Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-27T15:13:31Z",
+      "description": "",
+      "id": "big-vnext-go-107",
+      "identifier": "BIG-VNEXT-GO-107",
+      "labels": [
+        "go-only-migration",
+        "parallel",
+        "dx"
+      ],
+      "priority": 1,
+      "state": "Todo",
+      "title": "Migrate dev smoke and bootstrap helpers to Go",
+      "updated_at": "2026-03-27T15:13:31Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-27T15:13:31Z",
+      "description": "",
+      "id": "big-vnext-go-108",
+      "identifier": "BIG-VNEXT-GO-108",
+      "labels": [
+        "go-only-migration",
+        "parallel",
+        "retirement"
+      ],
+      "priority": 1,
+      "state": "Todo",
+      "title": "Freeze or delete legacy Python source tree",
+      "updated_at": "2026-03-27T15:13:31Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-27T15:13:32Z",
+      "description": "",
+      "id": "big-vnext-go-109",
+      "identifier": "BIG-VNEXT-GO-109",
+      "labels": [
+        "go-only-migration",
+        "parallel",
+        "docs"
+      ],
+      "priority": 1,
+      "state": "Todo",
+      "title": "Cut docs and contributor flows to Go-only",
+      "updated_at": "2026-03-27T15:13:32Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "created_at": "2026-03-27T15:13:32Z",
+      "description": "",
+      "id": "big-vnext-go-110",
+      "identifier": "BIG-VNEXT-GO-110",
+      "labels": [
+        "go-only-migration",
+        "parallel",
+        "cutover"
+      ],
+      "priority": 1,
+      "state": "Todo",
+      "title": "Run final Go-only cutover gate",
+      "updated_at": "2026-03-27T15:13:32Z"
     }
   ]
 }

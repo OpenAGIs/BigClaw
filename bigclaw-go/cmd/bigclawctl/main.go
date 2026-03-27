@@ -16,6 +16,7 @@ import (
 	"bigclaw-go/internal/bootstrap"
 	"bigclaw-go/internal/githubsync"
 	"bigclaw-go/internal/legacyshim"
+	"bigclaw-go/internal/migration"
 	"bigclaw-go/internal/refill"
 )
 
@@ -120,6 +121,8 @@ func run(args []string) int {
 		err = runLocalIssues(args[1:])
 	case "legacy-python":
 		err = runLegacyPython(args[1:])
+	case "go-migration":
+		err = runGoMigration(args[1:])
 	default:
 		err = fmt.Errorf("unknown command: %s", args[0])
 	}
@@ -128,6 +131,69 @@ func run(args []string) int {
 		return 1
 	}
 	return 0
+}
+
+func runGoMigration(args []string) error {
+	if len(args) == 0 || isHelpToken(args[0]) {
+		_, _ = os.Stdout.WriteString("usage: bigclawctl go-migration <plan> [flags]\n")
+		return nil
+	}
+	command := args[0]
+	switch command {
+	case "plan":
+		flags := flag.NewFlagSet("go-migration "+command, flag.ContinueOnError)
+		repoRoot := flags.String("repo", "..", "repo root")
+		jsonOut := flags.String("json-out", "", "write JSON report to path")
+		mdOut := flags.String("md-out", "", "write markdown plan to path")
+		asJSON := flags.Bool("json", false, "emit JSON to stdout")
+		if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl go-migration plan [flags]", args[1:]); err != nil {
+			if errors.Is(err, flag.ErrHelp) {
+				_, _ = os.Stdout.WriteString(helpText)
+				return nil
+			}
+			return err
+		}
+		report, err := migration.BuildReport(absPath(*repoRoot))
+		if err != nil {
+			return err
+		}
+		if trim(*jsonOut) != "" {
+			body, err := migration.MarshalReport(report)
+			if err != nil {
+				return err
+			}
+			if err := os.MkdirAll(filepath.Dir(*jsonOut), 0o755); err != nil {
+				return err
+			}
+			if err := os.WriteFile(*jsonOut, body, 0o644); err != nil {
+				return err
+			}
+		}
+		if trim(*mdOut) != "" {
+			if err := os.MkdirAll(filepath.Dir(*mdOut), 0o755); err != nil {
+				return err
+			}
+			if err := os.WriteFile(*mdOut, []byte(migration.RenderMarkdown(report)), 0o644); err != nil {
+				return err
+			}
+		}
+		payload := map[string]any{
+			"status":             "ok",
+			"repo":               absPath(*repoRoot),
+			"inventory_count":    report.Summary.NonGoFiles,
+			"parallel_slices":    report.Summary.ParallelSliceCount,
+			"first_batch_slices": report.Summary.FirstBatchSliceCount,
+			"json_out":           *jsonOut,
+			"md_out":             *mdOut,
+		}
+		if *asJSON {
+			payload["report"] = report
+			return emit(payload, true, 0)
+		}
+		return emit(payload, false, 0)
+	default:
+		return fmt.Errorf("unknown go-migration subcommand: %s", command)
+	}
 }
 
 func runLegacyPython(args []string) error {
