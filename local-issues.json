@@ -7630,6 +7630,11 @@
           "author": "codex",
           "body": "Continued `BIG-VNEXT-GO-105` by replacing `bigclaw-go/scripts/benchmark/soak_local.py` with a Go-native soak runner. Added `bigclaw-go/internal/soaklocal` plus `scripts/benchmark/soak_local.go`, updated the benchmark matrix package to invoke the Go soak runner directly, and reduced the legacy `.py` path to a shell shim over the Go command. Validation: `cd bigclaw-go && go test ./internal/soaklocal ./internal/benchmarkmatrix` -> ok; `bash bigclaw-go/scripts/benchmark/soak_local.py --help` -> ok; `cd bigclaw-go && go run ./scripts/benchmark/soak_local.go --help` -> ok.",
           "created_at": "2026-03-28T02:15:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Continued `BIG-VNEXT-GO-105` by replacing `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` with a Go-native implementation. Added `bigclaw-go/internal/continuationscorecard` plus `scripts/e2e/validation_bundle_continuation_scorecard.go`, updated `scripts/e2e/run_all.sh` to invoke the Go scorecard directly, and reduced the legacy `.py` scorecard path to a shell shim over the Go command. Validation: `cd bigclaw-go && go test ./internal/continuationscorecard` -> ok; `cd bigclaw-go && go run ./scripts/e2e/validation_bundle_continuation_scorecard.go --repo-root .. --output bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json --pretty` -> ok; `bash bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py --output bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json` -> ok; `bash -n bigclaw-go/scripts/e2e/run_all.sh` -> ok.",
+          "created_at": "2026-03-28T02:30:00Z"
         }
       ],
       "created_at": "2026-03-27T15:13:31Z",

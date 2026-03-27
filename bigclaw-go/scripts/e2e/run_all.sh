@@ -117,8 +117,12 @@ if ! export_bundle; then
 fi
 
 if [[ "$REFRESH_CONTINUATION" == "1" ]]; then
-  python3 "$ROOT/scripts/e2e/validation_bundle_continuation_scorecard.py" \
-    --output "$CONTINUATION_SCORECARD_PATH"
+  (
+    cd "$ROOT"
+    go run ./scripts/e2e/validation_bundle_continuation_scorecard.go \
+      --repo-root "$ROOT/.." \
+      --output "$CONTINUATION_SCORECARD_PATH"
+  )
 
   gate_status=0
   if ! (
