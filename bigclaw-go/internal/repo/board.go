@@ -22,6 +22,21 @@ type RepoDiscussionBoard struct {
 	Now   func() time.Time
 }
 
+func (p RepoPost) ToCollaborationComment() CollaborationComment {
+	status := "open"
+	if resolved, ok := p.Metadata["resolved"].(bool); ok && resolved {
+		status = "resolved"
+	}
+	return CollaborationComment{
+		CommentID: "repo-" + p.PostID,
+		Author:    p.Author,
+		Body:      p.Body,
+		CreatedAt: p.CreatedAt,
+		Anchor:    fmt.Sprintf("%s:%s", p.TargetSurface, p.TargetID),
+		Status:    status,
+	}
+}
+
 func (b *RepoDiscussionBoard) CreatePost(channel, author, body, targetSurface, targetID string, metadata map[string]any) RepoPost {
 	post := RepoPost{
 		PostID:        fmt.Sprintf("post-%d", len(b.Posts)+1),

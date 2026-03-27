@@ -165,6 +165,115 @@ func TestRepoDiscussionBoardReplyErrorNowFallbackAndEmptyMetadata(t *testing.T) 
 	}
 }
 
+func TestRepoPostToCollaborationComment(t *testing.T) {
+	post := RepoPost{
+		PostID:        "post-7",
+		Author:        "repo-agent",
+		Body:          "repo board context",
+		TargetSurface: "run",
+		TargetID:      "run-165",
+		CreatedAt:     "2026-03-20T10:00:00Z",
+		Metadata:      map[string]any{"resolved": true},
+	}
+
+	comment := post.ToCollaborationComment()
+	if comment.CommentID != "repo-post-7" || comment.Anchor != "run:run-165" || comment.Status != "resolved" {
+		t.Fatalf("unexpected collaboration comment: %+v", comment)
+	}
+}
+
+func TestMergeCollaborationThreadsCombinesNativeAndRepoSurfaces(t *testing.T) {
+	native := BuildCollaborationThread(
+		"run",
+		"run-165",
+		[]CollaborationComment{{CommentID: "c1", Author: "ops", Body: "native note", CreatedAt: "2026-03-12T10:00:00Z"}},
+		[]DecisionNote{{DecisionID: "d1", Author: "lead", Outcome: "approved", Summary: "native decision", RecordedAt: "2026-03-12T10:05:00Z"}},
+	)
+
+	board := RepoDiscussionBoard{}
+	repoPost := board.CreatePost("bigclaw-ope-165", "repo-agent", "repo board context", "run", "run-165", nil)
+	repoThread := BuildCollaborationThread("repo-board", "run-165", []CollaborationComment{repoPost.ToCollaborationComment()}, nil)
+
+	merged := MergeCollaborationThreads("run-165", &native, &repoThread)
+	if merged == nil {
+		t.Fatal("expected merged collaboration thread")
+	}
+	if merged.Surface != "merged" || len(merged.Comments) != 2 || len(merged.Decisions) != 1 {
+		t.Fatalf("unexpected merged thread: %+v", merged)
+	}
+	if merged.Comments[1].Body != "repo board context" {
+		t.Fatalf("expected repo board comment in merged thread, got %+v", merged.Comments)
+	}
+}
+
+func TestBuildCollaborationThreadFromAuditsAndRenderLines(t *testing.T) {
+	thread := BuildCollaborationThreadFromAudits([]map[string]any{
+		{
+			"action":    "collaboration.comment",
+			"actor":     "ops",
+			"timestamp": "2026-03-12T10:00:00Z",
+			"details": map[string]any{
+				"surface":    "run",
+				"comment_id": "c1",
+				"body":       "Need reviewer eyes",
+				"mentions":   []any{"@eng"},
+				"anchor":     "run:run-165",
+				"status":     "open",
+			},
+		},
+		{
+			"action":    "collaboration.decision",
+			"actor":     "lead",
+			"outcome":   "approved",
+			"timestamp": "2026-03-12T10:05:00Z",
+			"details": map[string]any{
+				"surface":             "run",
+				"decision_id":         "d1",
+				"summary":             "Ship it",
+				"mentions":            []string{"@ops"},
+				"related_comment_ids": []any{"c1"},
+				"follow_up":           "none",
+			},
+		},
+		{
+			"action": "collaboration.comment",
+			"actor":  "other",
+			"details": map[string]any{
+				"surface":    "task",
+				"comment_id": "skip-me",
+			},
+		},
+	}, "run", "run-165")
+
+	if thread == nil {
+		t.Fatal("expected collaboration thread")
+	}
+	if thread.ParticipantCount() != 2 || thread.MentionCount() != 2 || thread.OpenCommentCount() != 1 {
+		t.Fatalf("unexpected collaboration metrics: %+v", thread)
+	}
+	if thread.Recommendation() != "share-latest-decision" {
+		t.Fatalf("unexpected recommendation: %s", thread.Recommendation())
+	}
+	lines := RenderCollaborationLines(thread)
+	if len(lines) == 0 || !containsLine(lines, "- Recommendation: share-latest-decision") || !containsLine(lines, "- c1: author=ops status=open anchor=run:run-165 mentions=@eng body=Need reviewer eyes") {
+		t.Fatalf("unexpected rendered lines: %+v", lines)
+	}
+}
+
+func TestBuildCollaborationThreadFromAuditsReturnsNilWhenSurfaceMissing(t *testing.T) {
+	thread := BuildCollaborationThreadFromAudits([]map[string]any{
+		{
+			"action": "collaboration.comment",
+			"details": map[string]any{
+				"surface": "task",
+			},
+		},
+	}, "run", "run-165")
+	if thread != nil {
+		t.Fatalf("expected nil thread, got %+v", thread)
+	}
+}
+
 func TestNormalizeGatewayPayloadsAndErrors(t *testing.T) {
 	commit, err := NormalizeCommit(map[string]any{"commit_hash": "abc123", "title": "Ship cutover", "author": "alice"})
 	if err != nil {
@@ -201,6 +310,15 @@ func TestNormalizeGatewayPayloadsAndErrors(t *testing.T) {
 	if timeout.Code != "timeout" || !timeout.Retryable || notFound.Code != "not_found" || other.Code != "gateway_error" {
 		t.Fatalf("unexpected normalized errors: timeout=%+v notfound=%+v other=%+v", timeout, notFound, other)
 	}
+}
+
+func containsLine(lines []string, want string) bool {
+	for _, line := range lines {
+		if line == want {
+			return true
+		}
+	}
+	return false
 }
 
 func TestNormalizeGatewayPayloadsReturnDecodeErrors(t *testing.T) {
