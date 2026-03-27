@@ -180,20 +180,19 @@ Result:
   "behind": 0,
   "branch": "feat/BIG-GO-902-go-cli-script-migration",
   "detached": false,
-  "dirty": true,
+  "dirty": false,
   "diverged": false,
-  "local_sha": "4e0d85b617c2d45a8d1dcb5af3846766cdee44f9",
+  "local_sha": "45ef102c384262fe8a35f8d7bfae79e8d139fefe",
   "pushed": true,
   "relation_known": true,
   "remote_exists": true,
-  "remote_sha": "4e0d85b617c2d45a8d1dcb5af3846766cdee44f9",
+  "remote_sha": "45ef102c384262fe8a35f8d7bfae79e8d139fefe",
   "status": "ok",
   "synced": true
 }
 ```
 
-Note: this check was executed before the final report-sync commit, so the repository was expectedly
-dirty at that moment.
+Note: this check now reflects the current clean pushed branch state after the latest report sync.
 
 ## Branch and PR
 
@@ -206,7 +205,7 @@ feat/BIG-GO-902-go-cli-script-migration
 Validated implementation commit:
 
 ```text
-4e0d85b617c2d45a8d1dcb5af3846766cdee44f9
+45ef102c384262fe8a35f8d7bfae79e8d139fefe
 ```
 
 PR seed URL:
