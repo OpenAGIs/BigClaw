@@ -201,6 +201,15 @@ Machine-readable status:
 reports/BIG-GO-902-status.json
 ```
 
+Public GitHub verification on 2026-03-28:
+
+- Web search returned no public PR result for branch `feat/BIG-GO-902-go-cli-script-migration`
+  or title `BIG-GO-902: migrate repo script entrypoints to Go CLI`.
+- The compare page was publicly reachable and showed `Open a pull request` for
+  `main...feat/BIG-GO-902-go-cli-script-migration`.
+- GitHub did not fully render the diff in-browser and instead reported that the comparison was
+  taking too long to generate.
+
 ## Regression Surface
 
 - Legacy workspace wrapper flag translation:

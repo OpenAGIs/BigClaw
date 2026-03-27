@@ -71,3 +71,9 @@ PYTHONPATH=src python3 scripts/ops/bigclaw_github_sync.py status --json
 ## Compare URL
 
 `https://github.com/OpenAGIs/BigClaw/compare/main...feat/BIG-GO-902-go-cli-script-migration?expand=1`
+
+## Public Verification Note
+
+As of 2026-03-28, public GitHub search still showed no PR result for this branch/title, while the
+compare URL remained reachable and displayed GitHub's `Open a pull request` flow. The remaining
+gap is PR creation/authentication, not branch publication.

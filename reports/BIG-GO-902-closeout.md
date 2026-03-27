@@ -21,6 +21,14 @@ Date: `2026-03-28`
 - PR seed URL:
   - `https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-902-go-cli-script-migration`
 
+## Public GitHub Verification
+
+- 2026-03-28 web search found no public PR result for this branch or suggested PR title.
+- The compare URL is publicly reachable and shows GitHub's `Open a pull request` page for
+  `main...feat/BIG-GO-902-go-cli-script-migration`.
+- GitHub's web diff did not fully render and reported that the comparison was taking too long to
+  generate.
+
 ## In-Repo Artifacts
 
 - Validation report:
