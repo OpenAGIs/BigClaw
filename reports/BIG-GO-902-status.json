@@ -27,9 +27,9 @@
     "state": "open",
     "draft": false,
     "mergeable": true,
-    "mergeable_state": "unstable",
+    "mergeable_state": "clean",
     "head_ref": "feat/BIG-GO-902-go-cli-script-migration",
-    "last_observed_head_sha": "ca077ca5ed3d0d1f18b68616ceba0f0ebf586acb",
+    "last_observed_head_sha": "e7bf6b88bc5d368d65e96b0a5980c1e8c745d75d",
     "observation_note": "PR head advances whenever BIG-GO-902 tracker/report metadata commits are pushed. This field records the last observed live GitHub PR head instead of chasing every subsequent report-only commit.",
     "base_ref": "main",
     "review_comments": 0,
@@ -41,10 +41,11 @@
     "check_runs": [
       {
         "name": "test",
-        "status": "in_progress",
-        "conclusion": null
+        "status": "completed",
+        "conclusion": "success"
       }
-    ]
+    ],
+    "status_observation_note": "GitHub check-runs show the single `test` run completed successfully, but the combined commit status API still reports `pending`, so the aggregate status appears temporarily stale."
   },
   "validation": {
     "commands": [
