@@ -62,3 +62,7 @@
   - Result: passed
 - `cd bigclaw-go && python3 scripts/migration/shadow_matrix.py --help`
   - Result: passed
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface --help`
+  - Result: passed
+- `cd bigclaw-go && python3 scripts/e2e/cross_process_coordination_surface.py --help`
+  - Result: passed

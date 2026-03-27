@@ -222,11 +222,11 @@ func MigrationInventory() Inventory {
 			},
 			{
 				ScriptPath:          "bigclaw-go/scripts/e2e/cross_process_coordination_surface.py",
-				Status:              "pending-native-python",
+				Status:              "migrated-shim",
 				Category:            "e2e",
-				Wave:                "wave-4",
-				ReplacementCommand:  "go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface ...",
-				CompatibilityLayer:  "planned python shim after Go harness lands",
+				Wave:                "wave-0",
+				ReplacementCommand:  "go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface --help",
+				CompatibilityLayer:  "python shim -> bigclawctl automation e2e cross-process-coordination-surface",
 				VerificationCommand: "cd bigclaw-go && python3 scripts/e2e/cross_process_coordination_surface.py --help",
 				RegressionSurface: []string{
 					"Cross-process coordination timing assertions",

@@ -21,6 +21,7 @@ validation commands, compatibility policy, and branch / PR suggestions.
 | `bigclaw-go/scripts/e2e/export_validation_bundle.py` | `go run ./cmd/bigclawctl automation e2e export-validation-bundle ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` | `go run ./cmd/bigclawctl automation e2e validation-bundle-scorecard ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` | `go run ./cmd/bigclawctl automation e2e validation-bundle-policy-gate ...` | migrated with Python compatibility shim |
+| `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py` | `go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/benchmark/run_matrix.py` | `go run ./cmd/bigclawctl automation benchmark run-matrix ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/benchmark/capacity_certification.py` | `go run ./cmd/bigclawctl automation benchmark capacity-certification ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated with Python compatibility shim |
@@ -54,6 +55,7 @@ go run ./cmd/bigclawctl automation e2e run-task-smoke --help
 go run ./cmd/bigclawctl automation e2e export-validation-bundle --help
 go run ./cmd/bigclawctl automation e2e validation-bundle-scorecard --help
 go run ./cmd/bigclawctl automation e2e validation-bundle-policy-gate --help
+go run ./cmd/bigclawctl automation e2e cross-process-coordination-surface --help
 go run ./cmd/bigclawctl automation benchmark run-matrix --help
 go run ./cmd/bigclawctl automation benchmark capacity-certification --help
 go run ./cmd/bigclawctl automation benchmark soak-local --help

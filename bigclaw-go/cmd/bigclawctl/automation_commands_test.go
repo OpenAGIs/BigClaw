@@ -717,3 +717,39 @@ func TestAutomationShadowMatrixBuildsCoverageReport(t *testing.T) {
 		t.Fatalf("unexpected corpus coverage: %+v", coverage)
 	}
 }
+
+func TestAutomationCrossProcessCoordinationSurfaceBuildsReport(t *testing.T) {
+	repoRoot := t.TempDir()
+	reportsDir := filepath.Join(repoRoot, "bigclaw-go", "docs", "reports")
+	if err := os.MkdirAll(reportsDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(reportsDir, "multi-node-shared-queue-report.json"), []byte(`{"count":200,"cross_node_completions":40,"duplicate_completed_tasks":[],"duplicate_started_tasks":[]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(reportsDir, "multi-subscriber-takeover-validation-report.json"), []byte(`{"summary":{"scenario_count":4,"passing_scenarios":4,"duplicate_delivery_count":0,"stale_write_rejections":2}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(reportsDir, "live-multi-node-subscriber-takeover-report.json"), []byte(`{"summary":{"scenario_count":2,"passing_scenarios":2,"stale_write_rejections":1}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	report, _, err := automationCrossProcessCoordinationSurface(automationCrossProcessCoordinationSurfaceOptions{
+		RepoRoot:               repoRoot,
+		MultiNodeReportPath:    "bigclaw-go/docs/reports/multi-node-shared-queue-report.json",
+		TakeoverReportPath:     "bigclaw-go/docs/reports/multi-subscriber-takeover-validation-report.json",
+		LiveTakeoverReportPath: "bigclaw-go/docs/reports/live-multi-node-subscriber-takeover-report.json",
+		OutputPath:             "bigclaw-go/docs/reports/cross-process-coordination-capability-surface.json",
+	})
+	if err != nil {
+		t.Fatalf("coordination surface: %v", err)
+	}
+	summary := report["summary"].(map[string]any)
+	if summary["shared_queue_total_tasks"] != 200 || summary["takeover_passing_scenarios"] != 4 {
+		t.Fatalf("unexpected summary: %+v", summary)
+	}
+	capabilities := report["capabilities"].([]any)
+	if len(capabilities) < 6 {
+		t.Fatalf("expected capability rows, got %+v", capabilities)
+	}
+}
