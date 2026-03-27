@@ -90,3 +90,7 @@
   - Result: passed
 - `cd bigclaw-go && go run ./cmd/bigclawctl legacy-python inventory --json | jq -r '.entries[] | select(.script_path=="bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py") | [.script_path,.status,.compatibility_layer] | @tsv'`
   - Result: passed
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --help`
+  - Result: passed
+- `cd bigclaw-go && python3 scripts/e2e/multi_node_shared_queue.py --help`
+  - Result: passed

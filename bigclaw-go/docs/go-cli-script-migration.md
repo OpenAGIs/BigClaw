@@ -18,6 +18,7 @@ validation commands, compatibility policy, and branch / PR suggestions.
 | Legacy script | Go CLI replacement | Status |
 | --- | --- | --- |
 | `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | migrated with Python compatibility shim |
+| `bigclaw-go/scripts/e2e/multi_node_shared_queue.py` | `go run ./cmd/bigclawctl automation e2e multi-node-shared-queue ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/e2e/export_validation_bundle.py` | `go run ./cmd/bigclawctl automation e2e export-validation-bundle ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py` | `go run ./cmd/bigclawctl automation e2e validation-bundle-scorecard ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` | `go run ./cmd/bigclawctl automation e2e validation-bundle-policy-gate ...` | migrated with Python compatibility shim |
@@ -34,14 +35,9 @@ validation commands, compatibility policy, and branch / PR suggestions.
 | `bigclaw-go/scripts/migration/live_shadow_scorecard.py` | `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/migration/export_live_shadow_bundle.py` | `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle ...` | migrated with Python compatibility shim |
 
-### Deferred longer-tail e2e matrices
+### Remaining longer-tail e2e matrix
 
-- `bigclaw-go/scripts/e2e/multi_node_shared_queue.py`
-
-Why deferred:
-
-- They are scenario-heavy harnesses rather than common operator entrypoints.
-- They likely need shared Go helper packages before a clean CLI migration is worth doing.
+- No remaining Python-native e2e scripts are left in the current migration inventory.
 
 ## Validation Commands
 
@@ -51,6 +47,7 @@ go test ./cmd/bigclawctl/...
 go run ./cmd/bigclawctl legacy-python inventory --json
 go run ./cmd/bigclawctl automation --help
 go run ./cmd/bigclawctl automation e2e run-task-smoke --help
+go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --help
 go run ./cmd/bigclawctl automation e2e export-validation-bundle --help
 go run ./cmd/bigclawctl automation e2e validation-bundle-scorecard --help
 go run ./cmd/bigclawctl automation e2e validation-bundle-policy-gate --help

@@ -69,6 +69,7 @@ Notes:
   `python3 scripts/ops/bigclaw_refill_queue.py ...`, and the legacy
   `scripts/ops/*workspace*.py` helpers are also compatibility shims over the same Go CLI.
 - `python3 bigclaw-go/scripts/e2e/run_task_smoke.py`,
+  `python3 bigclaw-go/scripts/e2e/multi_node_shared_queue.py`,
   `python3 bigclaw-go/scripts/e2e/export_validation_bundle.py`,
   `python3 bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`,
   `python3 bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`,

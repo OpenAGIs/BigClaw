@@ -886,3 +886,15 @@ func TestBuildBrokerFailoverStubReport(t *testing.T) {
 		t.Fatalf("unexpected proof artifacts: %+v", proof)
 	}
 }
+
+func TestRunAutomationMultiNodeSharedQueueHelp(t *testing.T) {
+	output, err := captureStdout(t, func() error {
+		return runAutomation([]string{"e2e", "multi-node-shared-queue", "--help"})
+	})
+	if err != nil {
+		t.Fatalf("run help: %v", err)
+	}
+	if !strings.Contains(string(output), "usage: bigclawctl automation e2e multi-node-shared-queue") {
+		t.Fatalf("unexpected help output: %s", string(output))
+	}
+}

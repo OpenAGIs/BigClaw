@@ -183,15 +183,16 @@ func MigrationInventory() Inventory {
 			},
 			{
 				ScriptPath:          "bigclaw-go/scripts/e2e/multi_node_shared_queue.py",
-				Status:              "pending-native-python",
+				Status:              "migrated-shim",
 				Category:            "e2e",
 				Wave:                "wave-4",
 				ReplacementCommand:  "go run ./cmd/bigclawctl automation e2e multi-node-shared-queue ...",
-				CompatibilityLayer:  "planned python shim after Go harness lands",
-				VerificationCommand: "cd bigclaw-go && python3 scripts/e2e/multi_node_shared_queue.py --help",
+				CompatibilityLayer:  "python shim -> bigclawctl automation e2e multi-node-shared-queue",
+				VerificationCommand: "cd bigclaw-go && go run ./cmd/bigclawctl automation e2e multi-node-shared-queue --help",
 				RegressionSurface: []string{
-					"Multi-node queue fairness and takeover timing",
-					"Companion report JSON compatibility",
+					"Two-node shared queue completion distribution and duplicate detection",
+					"Live takeover report generation and artifact export",
+					"Python compatibility shim forwarding",
 				},
 			},
 			{
