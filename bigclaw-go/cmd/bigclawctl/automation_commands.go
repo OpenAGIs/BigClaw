@@ -207,12 +207,16 @@ func runAutomationBenchmark(args []string) error {
 
 func runAutomationMigration(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl automation migration <shadow-compare> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl automation migration <shadow-compare|live-shadow-scorecard|export-live-shadow-bundle> [flags]\n")
 		return nil
 	}
 	switch args[0] {
 	case "shadow-compare":
 		return runAutomationShadowCompareCommand(args[1:])
+	case "live-shadow-scorecard":
+		return runAutomationLiveShadowScorecardCommand(args[1:])
+	case "export-live-shadow-bundle":
+		return runAutomationExportLiveShadowBundleCommand(args[1:])
 	default:
 		return fmt.Errorf("unknown automation migration subcommand: %s", args[0])
 	}

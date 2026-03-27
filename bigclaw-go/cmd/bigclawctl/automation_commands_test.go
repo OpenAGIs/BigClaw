@@ -545,3 +545,110 @@ func TestAutomationCapacityCertificationBuildsMatrixAndMarkdown(t *testing.T) {
 		t.Fatalf("unexpected markdown body: %s", string(markdownBody))
 	}
 }
+
+func TestAutomationLiveShadowScorecardBuildsReport(t *testing.T) {
+	repoRoot := t.TempDir()
+	reportsDir := filepath.Join(repoRoot, "bigclaw-go", "docs", "reports")
+	if err := os.MkdirAll(reportsDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	compare := `{
+  "trace_id":"trace-1",
+  "primary":{"task_id":"primary-1","events":[{"timestamp":"2026-03-13T09:40:00Z"},{"timestamp":"2026-03-13T09:41:00Z"}]},
+  "shadow":{"task_id":"shadow-1","events":[{"timestamp":"2026-03-13T09:40:02Z"},{"timestamp":"2026-03-13T09:41:00Z"}]},
+  "diff":{"state_equal":true,"event_types_equal":true,"event_count_delta":0,"primary_timeline_seconds":1.0,"shadow_timeline_seconds":1.1}
+}`
+	matrix := `{
+  "total":1,
+  "matched":1,
+  "mismatched":0,
+  "corpus_coverage":{"corpus_slice_count":2,"uncovered_corpus_slice_count":0},
+  "results":[
+    {
+      "trace_id":"trace-2",
+      "source_file":"fixture.json",
+      "source_kind":"fixture",
+      "task_shape":"executor:local",
+      "primary":{"task_id":"primary-2","events":[{"timestamp":"2026-03-13T09:42:00Z"}]},
+      "shadow":{"task_id":"shadow-2","events":[{"timestamp":"2026-03-13T09:42:00Z"}]},
+      "diff":{"state_equal":true,"event_types_equal":true,"event_count_delta":0,"primary_timeline_seconds":1.0,"shadow_timeline_seconds":1.0}
+    }
+  ]
+}`
+	if err := os.WriteFile(filepath.Join(reportsDir, "shadow-compare-report.json"), []byte(compare), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(reportsDir, "shadow-matrix-report.json"), []byte(matrix), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	report, _, err := automationLiveShadowScorecard(automationLiveShadowScorecardOptions{
+		RepoRoot:            repoRoot,
+		ShadowCompareReport: "bigclaw-go/docs/reports/shadow-compare-report.json",
+		ShadowMatrixReport:  "bigclaw-go/docs/reports/shadow-matrix-report.json",
+		OutputPath:          "bigclaw-go/docs/reports/live-shadow-mirror-scorecard.json",
+		Now:                 func() time.Time { return time.Date(2026, 3, 13, 10, 0, 0, 0, time.UTC) },
+	})
+	if err != nil {
+		t.Fatalf("live shadow scorecard: %v", err)
+	}
+	summary := report["summary"].(map[string]any)
+	if summary["parity_ok_count"] != 2 || summary["drift_detected_count"] != 0 {
+		t.Fatalf("unexpected summary: %+v", summary)
+	}
+	if summary["fresh_inputs"] != 2 {
+		t.Fatalf("unexpected freshness summary: %+v", summary)
+	}
+}
+
+func TestAutomationExportLiveShadowBundleWritesManifest(t *testing.T) {
+	root := t.TempDir()
+	reportsDir := filepath.Join(root, "docs", "reports")
+	if err := os.MkdirAll(filepath.Join(reportsDir, "live-shadow-runs"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(reportsDir, "shadow-compare-report.json"), []byte(`{"trace_id":"trace-1","primary":{"events":[{"timestamp":"2026-03-13T09:40:00Z"}]},"shadow":{"events":[{"timestamp":"2026-03-13T09:40:01Z"}]},"diff":{"state_equal":true,"event_types_equal":true}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(reportsDir, "shadow-matrix-report.json"), []byte(`{"results":[{"trace_id":"trace-2"}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(reportsDir, "live-shadow-mirror-scorecard.json"), []byte(`{
+  "summary":{"latest_evidence_timestamp":"2026-03-13T08:56:55Z","total_evidence_runs":2,"parity_ok_count":2,"drift_detected_count":0,"matrix_total":1,"matrix_mismatched":0,"stale_inputs":0,"fresh_inputs":2},
+  "freshness":[],
+  "cutover_checkpoints":[{"name":"ok","passed":true}]
+}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(reportsDir, "rollback-trigger-surface.json"), []byte(`{"summary":{"status":"ok","automation_boundary":"manual-only","automated_rollback_trigger":false,"distinctions":{"cutover":"manual"}}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	report, _, err := automationExportLiveShadowBundle(automationExportLiveShadowBundleOptions{
+		GoRoot:              root,
+		ShadowCompareReport: "docs/reports/shadow-compare-report.json",
+		ShadowMatrixReport:  "docs/reports/shadow-matrix-report.json",
+		ScorecardReport:     "docs/reports/live-shadow-mirror-scorecard.json",
+		BundleRoot:          "docs/reports/live-shadow-runs",
+		SummaryPath:         "docs/reports/live-shadow-summary.json",
+		IndexPath:           "docs/reports/live-shadow-index.md",
+		ManifestPath:        "docs/reports/live-shadow-index.json",
+		RollupPath:          "docs/reports/live-shadow-drift-rollup.json",
+		Now:                 func() time.Time { return time.Date(2026, 3, 13, 10, 0, 0, 0, time.UTC) },
+	})
+	if err != nil {
+		t.Fatalf("export live shadow bundle: %v", err)
+	}
+	latest := report["latest"].(map[string]any)
+	if latest["run_id"] != "20260313T085655Z" {
+		t.Fatalf("unexpected run id: %+v", latest)
+	}
+	indexBody, err := os.ReadFile(filepath.Join(reportsDir, "live-shadow-index.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(indexBody), "## Latest bundle artifacts") {
+		t.Fatalf("unexpected index body: %s", string(indexBody))
+	}
+	if _, err := os.Stat(filepath.Join(reportsDir, "live-shadow-runs", "20260313T085655Z", "README.md")); err != nil {
+		t.Fatalf("expected bundle README: %v", err)
+	}
+}

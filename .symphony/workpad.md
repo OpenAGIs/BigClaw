@@ -50,3 +50,11 @@
   - Result: passed
 - `cd bigclaw-go && python3 scripts/benchmark/capacity_certification.py --help`
   - Result: passed
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration live-shadow-scorecard --help`
+  - Result: passed
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help`
+  - Result: passed
+- `cd bigclaw-go && python3 scripts/migration/live_shadow_scorecard.py --help`
+  - Result: passed
+- `cd bigclaw-go && python3 scripts/migration/export_live_shadow_bundle.py --help`
+  - Result: passed

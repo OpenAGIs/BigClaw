@@ -25,14 +25,14 @@ validation commands, compatibility policy, and branch / PR suggestions.
 | `bigclaw-go/scripts/benchmark/capacity_certification.py` | `go run ./cmd/bigclawctl automation benchmark capacity-certification ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated with Python compatibility shim |
+| `bigclaw-go/scripts/migration/live_shadow_scorecard.py` | `go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...` | migrated with Python compatibility shim |
+| `bigclaw-go/scripts/migration/export_live_shadow_bundle.py` | `go run ./cmd/bigclawctl automation migration export-live-shadow-bundle ...` | migrated with Python compatibility shim |
 
 ## First-Batch Migration / Adaptation Queue
 
 ### Wave 1: migration scorecards and bundle exporters
 
 - `bigclaw-go/scripts/migration/shadow_matrix.py`
-- `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
-- `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
 
 Why first remaining wave:
 
@@ -68,6 +68,8 @@ go run ./cmd/bigclawctl automation benchmark run-matrix --help
 go run ./cmd/bigclawctl automation benchmark capacity-certification --help
 go run ./cmd/bigclawctl automation benchmark soak-local --help
 go run ./cmd/bigclawctl automation migration shadow-compare --help
+go run ./cmd/bigclawctl automation migration live-shadow-scorecard --help
+go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help
 ```
 
 ## Regression Surface

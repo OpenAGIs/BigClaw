@@ -300,11 +300,11 @@ func MigrationInventory() Inventory {
 			},
 			{
 				ScriptPath:          "bigclaw-go/scripts/migration/live_shadow_scorecard.py",
-				Status:              "pending-native-python",
+				Status:              "migrated-shim",
 				Category:            "migration",
-				Wave:                "wave-3",
-				ReplacementCommand:  "go run ./cmd/bigclawctl automation migration live-shadow-scorecard ...",
-				CompatibilityLayer:  "planned python shim after Go scorecard lands",
+				Wave:                "wave-0",
+				ReplacementCommand:  "go run ./cmd/bigclawctl automation migration live-shadow-scorecard --help",
+				CompatibilityLayer:  "python shim -> bigclawctl automation migration live-shadow-scorecard",
 				VerificationCommand: "cd bigclaw-go && python3 scripts/migration/live_shadow_scorecard.py --help",
 				RegressionSurface: []string{
 					"Historical run scanning under docs/reports/live-shadow-runs/",
@@ -313,11 +313,11 @@ func MigrationInventory() Inventory {
 			},
 			{
 				ScriptPath:          "bigclaw-go/scripts/migration/export_live_shadow_bundle.py",
-				Status:              "pending-native-python",
+				Status:              "migrated-shim",
 				Category:            "migration",
-				Wave:                "wave-3",
-				ReplacementCommand:  "go run ./cmd/bigclawctl automation migration export-live-shadow-bundle ...",
-				CompatibilityLayer:  "planned python shim after Go exporter lands",
+				Wave:                "wave-0",
+				ReplacementCommand:  "go run ./cmd/bigclawctl automation migration export-live-shadow-bundle --help",
+				CompatibilityLayer:  "python shim -> bigclawctl automation migration export-live-shadow-bundle",
 				VerificationCommand: "cd bigclaw-go && python3 scripts/migration/export_live_shadow_bundle.py --help",
 				RegressionSurface: []string{
 					"Bundle export semantics and latest pointer refresh",
