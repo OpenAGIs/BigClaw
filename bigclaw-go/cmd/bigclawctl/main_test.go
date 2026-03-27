@@ -2093,6 +2093,46 @@ func TestRunLocalIssuesSetStateUpdatesStore(t *testing.T) {
 	}
 }
 
+func TestRunLocalIssuesStateAliasSupportsPositionalArguments(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-308",
+      "identifier": "BIG-GOM-308",
+      "title": "State alias compatibility",
+      "state": "Todo",
+      "updated_at": "2026-03-18T09:00:00Z"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	if err := runLocalIssues([]string{
+		"state",
+		"--local-issues", storePath,
+		"BIG-GOM-308",
+		"In Progress",
+		"--created-at", "2026-03-20T11:10:00Z",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run local-issues state alias: %v", err)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"state": "In Progress"`)) {
+		t.Fatalf("expected updated state via alias, got %s", string(body))
+	}
+	if !bytes.Contains(body, []byte(`"updated_at": "2026-03-20T11:10:00Z"`)) {
+		t.Fatalf("expected updated timestamp via alias, got %s", string(body))
+	}
+}
+
 func TestRunLocalIssuesSetStateIgnoresEquivalentStateSpellings(t *testing.T) {
 	tempDir := t.TempDir()
 	storePath := filepath.Join(tempDir, "local-issues.json")
@@ -2173,6 +2213,45 @@ func TestRunLocalIssuesCommentAppendsComment(t *testing.T) {
 	}
 	if !bytes.Contains(body, []byte(`"updated_at": "2026-03-20T11:05:00Z"`)) {
 		t.Fatalf("expected updated timestamp, got %s", string(body))
+	}
+}
+
+func TestRunLocalIssuesCommentSupportsPositionalArguments(t *testing.T) {
+	tempDir := t.TempDir()
+	storePath := filepath.Join(tempDir, "local-issues.json")
+	if err := os.WriteFile(storePath, []byte(`{
+  "issues": [
+    {
+      "id": "big-gom-309",
+      "identifier": "BIG-GOM-309",
+      "title": "Comment positional compatibility",
+      "state": "In Progress"
+    }
+  ]
+}`), 0o644); err != nil {
+		t.Fatalf("write local issue store: %v", err)
+	}
+
+	if err := runLocalIssues([]string{
+		"comment",
+		"--local-issues", storePath,
+		"BIG-GOM-309",
+		"legacy positional comment",
+		"--created-at", "2026-03-20T11:15:00Z",
+		"--json",
+	}); err != nil {
+		t.Fatalf("run local-issues positional comment: %v", err)
+	}
+
+	body, err := os.ReadFile(storePath)
+	if err != nil {
+		t.Fatalf("read local issue store: %v", err)
+	}
+	if !bytes.Contains(body, []byte(`"body": "legacy positional comment"`)) {
+		t.Fatalf("expected positional comment body, got %s", string(body))
+	}
+	if !bytes.Contains(body, []byte(`"updated_at": "2026-03-20T11:15:00Z"`)) {
+		t.Fatalf("expected updated timestamp for positional comment, got %s", string(body))
 	}
 }
 

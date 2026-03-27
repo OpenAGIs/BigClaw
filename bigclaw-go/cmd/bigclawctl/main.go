@@ -707,10 +707,14 @@ func runRefillSeed(args []string) error {
 
 func runLocalIssues(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl local-issues <list|create|ensure|set-state|comment> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl local-issues <list|create|ensure|set-state|state|comment> [flags]\n")
 		return nil
 	}
 	command := args[0]
+	if command == "state" {
+		command = "set-state"
+	}
+	normalizedArgs := normalizeLocalIssuesArgs(command, args[1:])
 	switch command {
 	case "list":
 		flags := flag.NewFlagSet("local-issues "+command, flag.ContinueOnError)
@@ -941,7 +945,7 @@ func runLocalIssues(args []string) error {
 		stateName := flags.String("state", "", "state name")
 		createdAt := flags.String("created-at", "", "RFC3339 timestamp")
 		asJSON := flags.Bool("json", false, "json")
-		if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl local-issues set-state [flags]", args[1:]); err != nil {
+		if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl local-issues set-state [flags]", normalizedArgs); err != nil {
 			if errors.Is(err, flag.ErrHelp) {
 				_, _ = os.Stdout.WriteString(helpText)
 				return nil
@@ -998,7 +1002,7 @@ func runLocalIssues(args []string) error {
 		body := flags.String("body", "", "comment body")
 		createdAt := flags.String("created-at", "", "RFC3339 timestamp")
 		asJSON := flags.Bool("json", false, "json")
-		if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl local-issues comment [flags]", args[1:]); err != nil {
+		if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl local-issues comment [flags]", normalizedArgs); err != nil {
 			if errors.Is(err, flag.ErrHelp) {
 				_, _ = os.Stdout.WriteString(helpText)
 				return nil
@@ -1032,6 +1036,73 @@ func runLocalIssues(args []string) error {
 	default:
 		return fmt.Errorf("unknown local-issues subcommand: %s", command)
 	}
+}
+
+func normalizeLocalIssuesArgs(command string, args []string) []string {
+	if len(args) == 0 {
+		return args
+	}
+	hasFlag := func(prefixes ...string) bool {
+		for _, arg := range args {
+			for _, prefix := range prefixes {
+				if arg == prefix || strings.HasPrefix(arg, prefix+"=") {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	switch command {
+	case "set-state":
+		if !hasFlag("--issue") && !hasFlag("--state") {
+			remaining, positionals := extractLocalIssuePositionals(args, map[string]bool{
+				"--repo":         true,
+				"--local-issues": true,
+				"--created-at":   true,
+			})
+			if len(positionals) >= 2 {
+				return append([]string{"--issue", positionals[0], "--state", positionals[1]}, remaining...)
+			}
+		}
+	case "comment":
+		if !hasFlag("--issue") && !hasFlag("--body", "--body-file") {
+			remaining, positionals := extractLocalIssuePositionals(args, map[string]bool{
+				"--repo":         true,
+				"--local-issues": true,
+				"--author":       true,
+				"--created-at":   true,
+			})
+			if len(positionals) >= 2 {
+				return append([]string{"--issue", positionals[0], "--body", positionals[1]}, remaining...)
+			}
+		}
+	}
+	return args
+}
+
+func extractLocalIssuePositionals(args []string, valuedFlags map[string]bool) ([]string, []string) {
+	remaining := make([]string, 0, len(args))
+	positionals := []string{}
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if strings.HasPrefix(arg, "--") {
+			remaining = append(remaining, arg)
+			if strings.Contains(arg, "=") {
+				continue
+			}
+			if valuedFlags[arg] && i+1 < len(args) {
+				i++
+				remaining = append(remaining, args[i])
+			}
+			continue
+		}
+		if len(positionals) < 2 {
+			positionals = append(positionals, arg)
+			continue
+		}
+		remaining = append(remaining, arg)
+	}
+	return remaining, positionals
 }
 
 type linearClient struct {

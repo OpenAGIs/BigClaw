@@ -30,6 +30,8 @@
 - [x] `cd bigclaw-go && go test ./internal/regression`
 - [x] `cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestRunWorkspace(Bootstrap|Validate)'`
 - [x] `cd bigclaw-go && go test ./cmd/bigclawctl`
+- [x] `cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestRunLocalIssues(StateAliasSupportsPositionalArguments|SetState|Comment)'`
+- [x] `bash scripts/ops/bigclaw-issue state --help`
 
 ### Notes
 
@@ -37,3 +39,4 @@
 - Keep changes scoped to migration planning, inventory, tracker seeding, and the first executable Go-owned planning slice.
 - Continuation focus: `BIG-VNEXT-GO-104` first-batch progress by migrating `scripts/ops/*workspace*` wrapper behavior into `bigclaw-go/cmd/bigclawctl`.
 - Current first-batch progress: `bigclawctl workspace bootstrap` now applies the historical repo/cache-key defaults directly in Go, `workspace validate` now accepts the legacy wrapper flag forms (`--issues` list, `--report-file`, `--no-cleanup`), and `scripts/ops/symphony_workspace_validate.py` no longer carries local argument-translation logic.
+- Latest continuation progress: `bigclawctl local-issues` now accepts the historical `state` alias plus positional `state/comment` arguments, allowing `scripts/ops/bigclaw-issue` to drop its local tracker argument-rewrite logic and forward directly to the Go CLI.

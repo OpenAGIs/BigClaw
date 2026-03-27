@@ -7577,6 +7577,11 @@
           "author": "codex",
           "body": "Moved legacy workspace wrapper behavior into the Go CLI: bigclawctl workspace bootstrap now applies BIGCLAW_BOOTSTRAP_REPO_URL/BIGCLAW_BOOTSTRAP_CACHE_KEY defaults directly, and workspace validate now accepts the historical wrapper flag shapes for --issues <a> <b>, --report-file, and --no-cleanup. Simplified scripts/ops/symphony_workspace_validate.py to a pure passthrough wrapper and reduced scripts/ops/bigclaw_workspace_bootstrap.py to direct workspace bootstrap forwarding. Validation: cd bigclaw-go && go test ./cmd/bigclawctl -run \"TestRunWorkspace(Bootstrap|Validate)\" -> ok; cd bigclaw-go && go test ./cmd/bigclawctl -> ok; bash scripts/ops/symphony_workspace_validate.py --help -> ok.",
           "created_at": "2026-03-27T15:20:44Z"
+        },
+        {
+          "author": "codex",
+          "body": "Further reduced scripts/ops compatibility logic by moving bigclaw-issue local tracker semantics into the Go CLI. bigclawctl local-issues now accepts the historical state alias and positional state/comment argument forms, so scripts/ops/bigclaw-issue can forward directly without rewriting arguments or injecting local-issues.json itself. Validation: cd bigclaw-go && go test ./cmd/bigclawctl -run \"TestRunLocalIssues(StateAliasSupportsPositionalArguments|SetState|Comment)\" -> ok; cd bigclaw-go && go test ./cmd/bigclawctl -> ok; bash scripts/ops/bigclaw-issue state --help -> ok.",
+          "created_at": "2026-03-27T15:25:02Z"
         }
       ],
       "created_at": "2026-03-27T15:13:31Z",
@@ -7591,7 +7596,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Replace repo ops Python wrappers with Go commands",
-      "updated_at": "2026-03-27T15:20:44Z"
+      "updated_at": "2026-03-27T15:25:02Z"
     },
     {
       "assigned_to_worker": true,
