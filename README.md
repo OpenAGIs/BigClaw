@@ -3,8 +3,8 @@
 BigClaw is a Symphony/Codex workflow project scaffolded from `workflow.md`.
 
 `bigclaw-go` is the current implementation mainline for new development. The
-root Python package is retained only for staged migration and legacy surfaces
-that have not been cut over yet.
+root compatibility tree is retained only for staged migration reference while
+the active contributor workflow stays on the Go path.
 
 ## What is included
 
@@ -15,7 +15,7 @@ that have not been cut over yet.
   - `docs/*`: Go control-plane validation and migration evidence
 - `docs/symphony-repo-bootstrap-template.md`: repo-agnostic shared mirror + worktree bootstrap template
 - `docs/issue-plan.md`: Epic/Issue decomposition from BigClaw PRD v1.0
-- `src/bigclaw`: legacy Python foundation modules pending staged migration to Go
+- `src/bigclaw`: frozen legacy foundation modules retained only for staged migration reference
   - engineering operations analytics for dashboards, triage, regressions, and weekly reports
   - `BIG-1606` Policy/Prompt Version Center with workflow/prompt/policy history, diffs, rollback targets, and bundle rendering
   - unified task model
@@ -66,35 +66,13 @@ Notes:
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
   queued local issues to `In Progress` using the canonical order in `docs/parallel-refill-queue.json`.
 
-## Legacy Python quick start (migration-only)
+## Compatibility surfaces
 
-> Do not use this path for new mainline development. Use it only when migrating
-> a required legacy surface to Go or validating an existing Python-only path.
-
-> Do not use system Python directly for editable install. Use a virtualenv.
-
-```bash
-cd BigClaw
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -U pip
-pip install -e .[dev]
-python -m pytest
-```
-
-Or use the Go-first bootstrap helper to provision the legacy migration surface too:
-
-```bash
-bash scripts/ops/bigclawctl dev-bootstrap --include-legacy-python
-```
-
-## Legacy Python local test (without editable install)
-
-If your environment has restrictive system-packages permissions, run tests with `PYTHONPATH`:
-
-```bash
-PYTHONPATH=src python3 -m pytest
-```
+Compatibility shims and frozen reference modules remain in the repo for staged
+migration tracking, but they are not part of the default contributor workflow.
+Use the generated migration artifacts in `docs/go-only-migration-plan.md` and
+`docs/reports/go-only-migration-inventory.json` when auditing or retiring those
+surfaces.
 
 ## Go smoke verify
 
@@ -102,14 +80,6 @@ PYTHONPATH=src python3 -m pytest
 cd BigClaw/bigclaw-go
 go test ./...
 bash ../scripts/ops/bigclawctl dev-smoke --json
-```
-
-## Legacy Python smoke verify
-
-Use this only when validating a frozen migration-reference path:
-
-```bash
-PYTHONPATH=src python3 scripts/dev_smoke.py
 ```
 
 ## Quality gates
@@ -130,17 +100,8 @@ bash scripts/ops/bigclawctl dev-bootstrap
 Compatibility shims:
 
 ```bash
-BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
+bash scripts/dev_bootstrap.sh
 bash scripts/create_issues.py v1 --dry-run --json
-```
-
-Legacy Python migration surface:
-
-```bash
-ruff check src tests scripts
-python -m pytest
-python -m build
-pre-commit run --all-files
 ```
 
 ## Quick verify
@@ -157,13 +118,13 @@ Repository: https://github.com/OpenAGIs/BigClaw
 
 Use `docs/symphony-repo-bootstrap-template.md` when you want another Symphony-managed repo to
 reuse the same local mirror + `git worktree` pattern without inheriting BigClaw-specific names.
-The Go-first BigClaw entrypoint is `scripts/ops/bigclawctl`; legacy Python
+The Go-first BigClaw entrypoint is `scripts/ops/bigclawctl`; legacy root
 bootstrap wrappers remain only as compatibility shims during migration.
 
-The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
+The legacy execution-kernel modules in `src/bigclaw/runtime.py`,
 `src/bigclaw/scheduler.py`, `src/bigclaw/workflow.py`,
 `src/bigclaw/orchestration.py`, and `src/bigclaw/queue.py` are now frozen for
-migration-only reference use. The legacy `python -m bigclaw serve` /
-`src/bigclaw/service.py` path is also frozen; use `go run ./bigclaw-go/cmd/bigclawd`
+migration-only reference use. The legacy root service path in
+`src/bigclaw/service.py` is also frozen; use `go run ./bigclaw-go/cmd/bigclawd`
 for the active local server path. Active runtime development belongs in
 `bigclaw-go/internal/*`.

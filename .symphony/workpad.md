@@ -48,6 +48,8 @@
 - [x] `bash scripts/dev_bootstrap.sh --help`
 - [x] `bash scripts/ops/bigclawctl dev-bootstrap --help`
 - [x] `bash scripts/ops/bigclawctl issue-bootstrap sync v1 --dry-run --json`
+- [x] `rg -n "python|Python|pytest|PYTHONPATH|ruff|pre-commit|build" README.md workflow.md bigclaw-go/README.md docs/BigClaw-AgentHub-Integration-Alignment.md docs/go-mainline-cutover-handoff.md`
+- [x] `cd bigclaw-go && go test ./internal/regression ./internal/api ./internal/repo ./internal/reporting ./internal/product`
 
 ### Notes
 
@@ -65,3 +67,5 @@
 - Latest `BIG-VNEXT-GO-107` progress: `bigclawctl issue-bootstrap sync` now owns the built-in PRD issue-plan seeding logic, supports dry-run preview, and `scripts/create_issues.py` has been reduced to a shell shim over the Go command.
 - Latest `BIG-VNEXT-GO-107` progress: `bigclawctl dev-bootstrap` now owns the developer bootstrap flow, including optional legacy Python setup, and `scripts/dev_bootstrap.sh` has been reduced to a shell shim over the Go command.
 - Latest `BIG-VNEXT-GO-107` alignment: README now presents `bash scripts/ops/bigclawctl dev-bootstrap` and `bigclawctl issue-bootstrap sync` as the primary developer entrypoints, with the shell and `.py` shim names retained only in an explicit compatibility section.
+- New continuation focus: advance `BIG-VNEXT-GO-109` by cutting contributor-facing docs over to the Go-only workflow and removing active mixed-language validation/setup guidance from human-facing entrypoints.
+- Latest `BIG-VNEXT-GO-109` progress: README, `bigclaw-go/README.md`, `docs/go-mainline-cutover-handoff.md`, and `docs/BigClaw-AgentHub-Integration-Alignment.md` now present Go-first contributor flows and validation commands only, while generated migration artifacts continue to retain the historical compatibility inventory outside the contributor quick-start path.

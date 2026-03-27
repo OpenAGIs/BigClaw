@@ -81,10 +81,9 @@ This bootstrap now covers an MVP slice for all current Go rewrite planning ticke
 - `scripts/e2e/run_all.sh` runs local SQLite, Kubernetes, and Ray validation concurrently, writes a timestamped bundle under `docs/reports/live-validation-runs/`, and refreshes `docs/reports/live-validation-summary.json` plus `docs/reports/live-validation-index.md`
 - `scripts/e2e/kubernetes_smoke.sh` runs a real Kubernetes smoke task through BigClaw
 - `scripts/e2e/ray_smoke.sh` runs a real Ray Jobs API smoke task through BigClaw
-- `scripts/e2e/run_task_smoke.py` is the generic submit/poll helper used by all wrappers
-- `scripts/e2e/export_validation_bundle.py` exports repo-native evidence bundles, latest report copies, and the validation index
 - `scripts/migration/shadow_compare.py` compares primary vs shadow BigClaw endpoints
 - `scripts/benchmark/run_suite.sh` regenerates benchmark evidence
+- Additional compatibility helpers remain under `scripts/e2e` and `scripts/migration`, but the primary contributor entrypoints are the shell wrappers above plus `go test ./...`
 - Full instructions live in `docs/e2e-validation.md` and `docs/migration-shadow.md`
 
 ## Run

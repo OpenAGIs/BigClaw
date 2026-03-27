@@ -7711,6 +7711,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Completed the contributor-doc cutover to Go-first guidance. README now removes active mixed-language setup/test instructions from the default workflow, bigclaw-go/README.md now points contributors at Go and shell entrypoints instead of helper internals, and the human-authored cutover/handoff docs now use Go validation baselines instead of root-suite commands. Validation: rg -n \"python|Python|pytest|PYTHONPATH|ruff|pre-commit|build\" README.md workflow.md bigclaw-go/README.md docs/BigClaw-AgentHub-Integration-Alignment.md docs/go-mainline-cutover-handoff.md -> no matches; cd bigclaw-go && go test ./internal/regression ./internal/api ./internal/repo ./internal/reporting ./internal/product -> ok.",
+          "created_at": "2026-03-28T00:45:00Z"
+        }
+      ],
       "created_at": "2026-03-27T15:13:32Z",
       "description": "",
       "id": "big-vnext-go-109",
@@ -7721,9 +7728,9 @@
         "docs"
       ],
       "priority": 1,
-      "state": "Todo",
+      "state": "Done",
       "title": "Cut docs and contributor flows to Go-only",
-      "updated_at": "2026-03-27T15:13:32Z"
+      "updated_at": "2026-03-28T00:45:00Z"
     },
     {
       "assigned_to_worker": true,

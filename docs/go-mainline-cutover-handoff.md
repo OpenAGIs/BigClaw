@@ -23,8 +23,7 @@ cutover set.
 
 - `cd bigclaw-go && go test ./...`
 - `cd bigclaw-go && go test ./internal/domain ./internal/intake ./internal/workflow ./internal/risk ./internal/triage ./internal/billing`
-- `bash scripts/ops/bigclawctl legacy-python compile-check --json`
-- `PYTHONPATH=src python3 - <<"... legacy shim assertions ..."`
+- Historical compatibility compile and shim checks were captured in the merged cutover PR evidence.
 
 ## Completed scope
 
@@ -32,12 +31,12 @@ cutover set.
   `src/bigclaw/connectors.py`, `src/bigclaw/mapping.py`, and `src/bigclaw/dsl.py`
   contract surfaces required by the cutover plan.
 - Risk, policy, orchestration, reporting, control-center, repo collaboration,
-  tooling, and Python-retirement slices are closed in the local tracker.
+  tooling, and legacy-retirement slices are closed in the local tracker.
 - The repo-native cutover PR is merged on `main`; later `BIG-PAR-*` slices now
   represent follow-up hardening and tracker hygiene rather than missing
   Go-mainline ownership work.
-- The default mainline posture is Go-first, with remaining Python entrypoints
-  marked as migration-only compatibility shims.
+- The default mainline posture is Go-first, with remaining compatibility
+  entrypoints marked as migration-only shims.
 
 ## Remaining non-blocking caveats
 
