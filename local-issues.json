@@ -7557,6 +7557,11 @@
           "author": "codex",
           "body": "Added `reports/BIG-GO-902-status.json` as a machine-readable closeout artifact containing the branch name, latest pushed SHA, reviewer links, in-repo artifacts, validation commands, and the remaining external GitHub-auth blocker.",
           "created_at": "2026-03-27T15:50:35Z"
+        },
+        {
+          "author": "codex",
+          "body": "Corrected the closeout SHA references so the validation report, closeout index, and machine-readable status all point at the current pushed branch tip `a6d1758` instead of older intermediate commits.",
+          "created_at": "2026-03-27T15:52:23Z"
         }
       ],
       "created_at": "2026-03-27T15:27:30Z",
@@ -7569,7 +7574,7 @@
       "priority": 1,
       "state": "Done",
       "title": "脚本层迁移到 Go CLI",
-      "updated_at": "2026-03-27T15:50:35Z"
+      "updated_at": "2026-03-27T15:52:23Z"
     }
   ]
 }

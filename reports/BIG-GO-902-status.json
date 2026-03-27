@@ -6,7 +6,7 @@
   },
   "branch": {
     "name": "feat/BIG-GO-902-go-cli-script-migration",
-    "latest_pushed_commit": "0209649"
+    "latest_pushed_commit": "a6d1758"
   },
   "artifacts": {
     "closeout_index": "reports/BIG-GO-902-closeout.md",

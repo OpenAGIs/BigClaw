@@ -52,5 +52,5 @@
 - 2026-03-27: Browser verification found no public PR search hit for this branch/title, and the deterministic PR seed URL redirected to GitHub sign-in, so the remaining blocker is still external GitHub authentication rather than missing repo artifacts.
 - 2026-03-27: Added the direct GitHub compare URL so reviewers can inspect the branch diff even before a PR is opened.
 - 2026-03-27: Added `reports/BIG-GO-902-closeout.md` as a single-file handoff index for branch, links, validation, artifacts, and the remaining external blocker.
-- 2026-03-27: Final repo scan found no further root-script migration gaps beyond the deferred backlog already documented; closeout artifacts now pin the latest pushed SHA `f4b5c1b`.
+- 2026-03-27: Final repo scan found no further root-script migration gaps beyond the deferred backlog already documented; closeout artifacts now pin the latest pushed SHA `a6d1758`.
 - 2026-03-27: Added `reports/BIG-GO-902-status.json` so automation can consume the final issue status, links, artifacts, validation commands, and external blocker without parsing markdown.
