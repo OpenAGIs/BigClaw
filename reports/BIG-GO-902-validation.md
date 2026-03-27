@@ -262,10 +262,10 @@ Branch:
 feat/BIG-GO-902-go-cli-script-migration
 ```
 
-Current pushed branch tip:
+Latest code migration commit:
 
 ```text
-8feba6dc24109874f23919bc970f05ddf99f30e1
+3fe203ebcd99f0f054911c84cf6929a42af18f64
 ```
 
 Last root-shim branch head verified via `github-sync status`:
@@ -274,13 +274,19 @@ Last root-shim branch head verified via `github-sync status`:
 834f6441cd06fff89bb6b9305b27fa3ca0ddd21f
 ```
 
-Note: the current pushed tip includes the additional `bigclaw-go/scripts/*` automation migration
-batch plus the refreshed closeout artifacts beyond the earlier root-shim verification point.
+Note: later branch commits after `3fe203e...` only refreshed BIG-GO-902 tracker/report metadata and
+opened PR `#215`; they did not change the migrated Go CLI behavior validated above.
 
 PR seed URL:
 
 ```text
 https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-902-go-cli-script-migration
+```
+
+PR URL:
+
+```text
+https://github.com/OpenAGIs/BigClaw/pull/215
 ```
 
 Compare URL:
@@ -309,10 +315,10 @@ reports/BIG-GO-902-status.json
 
 Public GitHub verification on 2026-03-28:
 
-- The public repository PR list showed only `#185`, `#184`, and `#183` as open PRs; no public
-  BIG-GO-902 PR was present.
-- The compare page was publicly reachable and showed `Open a pull request` for
-  `main...feat/BIG-GO-902-go-cli-script-migration`.
+- Authenticated GitHub API creation succeeded with PR `#215`:
+  `https://github.com/OpenAGIs/BigClaw/pull/215`.
+- Earlier public repository PR checks had shown only `#185`, `#184`, and `#183`; that stale public
+  state is now superseded by the successfully created PR.
 - GitHub did not fully render the diff in-browser and instead reported that the comparison was
   taking too long to generate.
 - As of the latest public fetch on 2026-03-28, the compare page content still listed only
@@ -342,5 +348,5 @@ Public GitHub verification on 2026-03-28:
   startup latency remain operator dependencies.
 - The remaining `bigclaw-go/scripts/*` backlog listed in `bigclaw-go/docs/go-cli-script-migration.md`
   is still deferred to later migration batches.
-- This workspace can push the branch but cannot create the GitHub PR directly from the terminal
-  because no `gh` CLI authentication or GitHub API token is configured here.
+- No in-repo blocker remains for BIG-GO-902. The remaining risk is only that GitHub's compare page
+  rendering is stale for this branch even though the PR itself now exists.

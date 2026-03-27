@@ -84,7 +84,7 @@ cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --h
 
 ## Open PR URL
 
-`https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-902-go-cli-script-migration`
+`https://github.com/OpenAGIs/BigClaw/pull/215`
 
 ## Compare URL
 
@@ -92,9 +92,7 @@ cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --h
 
 ## Public Verification Note
 
-As of 2026-03-28, the public repository PR list still showed only `#185`, `#184`, and `#183`, so
-there is still no public BIG-GO-902 PR for this branch/title. The compare URL remained reachable
-and displayed GitHub's `Open a pull request` flow, but the rendered compare view was stale and
-still reported only `14 commits` / `26 files changed` plus repeated `Uh oh!` load failures. The
-remaining gap is PR creation/authentication and GitHub-side compare rendering, not branch
-publication.
+As of 2026-03-28, authenticated GitHub API creation succeeded and opened PR `#215` for this
+branch. The compare URL still appears stale and continues to report only `14 commits` /
+`26 files changed` plus repeated `Uh oh!` load failures, so the remaining concern is GitHub-side
+compare rendering rather than PR creation or branch publication.
