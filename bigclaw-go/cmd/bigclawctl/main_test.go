@@ -602,6 +602,78 @@ func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testin
 	}
 }
 
+func TestRunLegacyPythonFreezeAuditJSONOutput(t *testing.T) {
+	repoRoot := filepath.Join(t.TempDir(), "repo->")
+	rootDir := filepath.Join(repoRoot, "src/bigclaw")
+	if err := os.MkdirAll(rootDir, 0o755); err != nil {
+		t.Fatalf("mkdir root dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(rootDir, "README.md"), []byte("frozen tree"), 0o644); err != nil {
+		t.Fatalf("write readme: %v", err)
+	}
+	for _, relativePath := range []string{
+		"src/bigclaw/__init__.py",
+		"src/bigclaw/__main__.py",
+		"src/bigclaw/service.py",
+		"src/bigclaw/legacy_shim.py",
+		"src/bigclaw/runtime.py",
+		"src/bigclaw/scheduler.py",
+		"src/bigclaw/workflow.py",
+		"src/bigclaw/queue.py",
+		"src/bigclaw/orchestration.py",
+		"src/bigclaw/models.py",
+	} {
+		path := filepath.Join(repoRoot, relativePath)
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatalf("mkdir %s: %v", path, err)
+		}
+		body := []byte(`"""frozen compatibility"""`)
+		if strings.HasSuffix(path, "models.py") {
+			body = []byte("class Model: pass\n")
+		}
+		if err := os.WriteFile(path, body, 0o644); err != nil {
+			t.Fatalf("write %s: %v", path, err)
+		}
+	}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runLegacyPython([]string{
+		"freeze-audit",
+		"--repo", repoRoot,
+		"--json",
+	}); err != nil {
+		t.Fatalf("run legacy-python freeze-audit: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte(repoRoot)) {
+		t.Fatalf("expected raw repo path in legacy-python freeze-audit output, got %s", string(output))
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(output, &payload); err != nil {
+		t.Fatalf("decode legacy-python freeze-audit output: %v", err)
+	}
+	if got := payload["inventory_count"]; got != float64(10) {
+		t.Fatalf("unexpected inventory count: %v", got)
+	}
+	if !bytes.Contains(output, []byte(filepath.Join(repoRoot, "src/bigclaw/README.md"))) {
+		t.Fatalf("expected readme path in legacy-python freeze-audit output, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`\u003e`)) {
+		t.Fatalf("expected no HTML escaping in legacy-python freeze-audit JSON output, got %s", string(output))
+	}
+}
+
 func TestRunGitHubSyncInstallJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	repoPath := filepath.Join(t.TempDir(), "repo->")
 	hooksPath := ".githooks->"

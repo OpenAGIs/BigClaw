@@ -1,3 +1,5 @@
+"""Legacy compatibility package frozen after the Go mainline cutover."""
+
 from .models import (
     BillingInterval,
     BillingRate,

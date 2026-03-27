@@ -50,6 +50,10 @@
 - [x] `bash scripts/ops/bigclawctl issue-bootstrap sync v1 --dry-run --json`
 - [x] `rg -n "python|Python|pytest|PYTHONPATH|ruff|pre-commit|build" README.md workflow.md bigclaw-go/README.md docs/BigClaw-AgentHub-Integration-Alignment.md docs/go-mainline-cutover-handoff.md`
 - [x] `cd bigclaw-go && go test ./internal/regression ./internal/api ./internal/repo ./internal/reporting ./internal/product`
+- [x] `cd bigclaw-go && go test ./internal/legacyshim ./cmd/bigclawctl -run 'Test(Frozen|Compile|Freeze|RunLegacyPython)'`
+- [x] `bash scripts/ops/bigclawctl legacy-python freeze-audit --json`
+- [x] `bash scripts/ops/bigclawctl legacy-python compile-check --json`
+- [x] `rg --files src/bigclaw tests scripts | head -n 20`
 
 ### Notes
 
@@ -69,3 +73,5 @@
 - Latest `BIG-VNEXT-GO-107` alignment: README now presents `bash scripts/ops/bigclawctl dev-bootstrap` and `bigclawctl issue-bootstrap sync` as the primary developer entrypoints, with the shell and `.py` shim names retained only in an explicit compatibility section.
 - New continuation focus: advance `BIG-VNEXT-GO-109` by cutting contributor-facing docs over to the Go-only workflow and removing active mixed-language validation/setup guidance from human-facing entrypoints.
 - Latest `BIG-VNEXT-GO-109` progress: README, `bigclaw-go/README.md`, `docs/go-mainline-cutover-handoff.md`, and `docs/BigClaw-AgentHub-Integration-Alignment.md` now present Go-first contributor flows and validation commands only, while generated migration artifacts continue to retain the historical compatibility inventory outside the contributor quick-start path.
+- New continuation focus: advance `BIG-VNEXT-GO-108` by turning the legacy-python helper into an actual frozen-tree audit instead of a shim-only compile smoke check.
+- Latest `BIG-VNEXT-GO-108` progress: `src/bigclaw` now carries an explicit frozen-tree README plus top-level freeze markers on the remaining legacy entrypoints, and `bigclawctl legacy-python freeze-audit` now inventories the root compatibility tree, verifies the frozen README, and checks the key entrypoints for migration-only markers from the Go CLI.

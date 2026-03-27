@@ -1,3 +1,5 @@
+"""Legacy compatibility service frozen after the Go mainline cutover."""
+
 from __future__ import annotations
 
 import json

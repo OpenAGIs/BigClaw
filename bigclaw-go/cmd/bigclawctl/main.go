@@ -388,11 +388,11 @@ func runGoMigration(args []string) error {
 
 func runLegacyPython(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl legacy-python <compile-check> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl legacy-python <compile-check|freeze-audit> [flags]\n")
 		return nil
 	}
 	if len(args) == 0 {
-		return errors.New("usage: bigclawctl legacy-python <compile-check> [flags]")
+		return errors.New("usage: bigclawctl legacy-python <compile-check|freeze-audit> [flags]")
 	}
 	command := args[0]
 	flags := flag.NewFlagSet("legacy-python "+command, flag.ContinueOnError)
@@ -430,6 +430,28 @@ func runLegacyPython(args []string) error {
 		}
 		if result.Output != "" {
 			payload["output"] = result.Output
+		}
+		return emit(payload, *asJSON, 0)
+	case "freeze-audit":
+		result, err := legacyshim.FreezeAudit(absPath(*repoRoot))
+		if err != nil {
+			payload := map[string]any{
+				"status": "error",
+				"repo":   absPath(*repoRoot),
+				"error":  err.Error(),
+			}
+			return emit(payload, *asJSON, 1)
+		}
+		payload := map[string]any{
+			"status":              "ok",
+			"repo":                absPath(*repoRoot),
+			"root_dir":            result.RootDir,
+			"readme":              result.Readme,
+			"inventory_count":     len(result.Files),
+			"checked_entrypoints": result.CheckedEntrypoints,
+			"files":               result.Files,
+			"missing_markers":     result.MissingMarkers,
+			"missing_files":       result.MissingFiles,
 		}
 		return emit(payload, *asJSON, 0)
 	default:

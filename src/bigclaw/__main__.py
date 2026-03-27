@@ -1,3 +1,5 @@
+"""Legacy compatibility CLI frozen after the Go mainline cutover."""
+
 import argparse
 import json
 from pathlib import Path
