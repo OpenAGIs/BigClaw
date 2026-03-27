@@ -5,7 +5,7 @@
 - [x] Audit the existing Python workspace bootstrap wrappers and the current Go CLI layout to identify the smallest migration slice for `bootstrap`, `cleanup`, and operator-facing `init` coverage.
 - [x] Implement Go commands in `bigclaw-go` for the migrated workspace lifecycle path, and repoint the existing ops wrappers to the Go entrypoint without expanding scope beyond workspace/bootstrap handling.
 - [x] Add targeted Go tests for the new command surface and update migration documentation with the implementation/validation checklist, regression surface, branch/PR guidance, and risks.
-- [ ] Run targeted validation, capture exact commands/results, then commit and push the issue branch.
+- [x] Run targeted validation, capture exact commands/results, then commit and push the issue branch.
 
 ### Acceptance
 
