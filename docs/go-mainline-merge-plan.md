@@ -41,6 +41,24 @@ closeout slice that records final merge readiness and post-merge documentation.
   `BIG-GOM-*` slice branches after March 21, 2026. Any compatibility or
   documentation follow-up should branch from current `main`.
 
+## Current parallel branch inventory as of March 27, 2026
+
+These are the follow-up branches visible from `origin` while preparing
+`BIG-GO-910`:
+
+| Branch | Visible head | Scope signal | Recommended merge posture |
+| --- | --- | --- | --- |
+| `origin/BIG-GO-903` | `365b6ca167b3bd50c76198d924c979a8d1d3f115` | test harness migration plan and doc/regression guardrails | merge first so later migration slices inherit the harness contract |
+| `origin/big-go-905` | `0f3b0394a6bac69a15ecda803e5f2dc82da9c02b` | repo governance and board capability migration | merge after harness guardrails; keep scoped to `internal/repo` |
+| `origin/codex/BIG-GO-906-runtime-scheduler-orchestration-migration` | `f6cb4b6325fe9167798b71f47d507b8f9c230410` | runtime/scheduler/orchestration migration plan | merge early because later surface migrations depend on the runtime ownership story |
+| `origin/symphony/BIG-GO-908` | `54aaffaec53d26d1d81e192df8794699075c140b` | workspace bootstrap lifecycle migration to Go CLI | can merge in parallel with `BIG-GO-906`; low overlap outside bootstrap docs/CLI |
+| `origin/symphony/BIG-GO-909` | `d38ce57494ef7c689476aedef7ba1c72980a2d83` | repo collaboration and GitHub-sync follow-up | merge after `BIG-GO-905` because both touch `bigclaw-go/internal/repo/board.go` |
+
+Branches for `BIG-GO-901`, `BIG-GO-902`, `BIG-GO-904`, and `BIG-GO-907` were
+not visible from `origin` in this workspace on March 27, 2026. Treat that as a
+required resync check before claiming that all expected parallel inputs are
+ready for an umbrella closeout.
+
 ## Executable landing path
 
 1. Start from current `main`, not from an archived `BIG-GOM-*` branch.
@@ -138,6 +156,20 @@ The merge path must keep these surfaces aligned:
   - `docs/go-mainline-cutover-issue-pack.md`
   - `docs/reports/parallel-validation-matrix.md`
   - `docs/reports/parallel-follow-up-index.md`
+- Recommended sequencing for the currently visible follow-up branches:
+  1. `BIG-GO-903`
+  2. `BIG-GO-906`
+  3. `BIG-GO-908`
+  4. `BIG-GO-905`
+  5. `BIG-GO-909`
+  6. `BIG-GO-910`
+- PR strategy:
+  - keep one bounded PR per active `BIG-GO-*` branch
+  - use `BIG-GO-910` only for the merge-plan, compatibility gate, and final
+    closeout guidance
+  - only open an umbrella execution PR after the visible branch heads above are
+    rebased onto current `main` and their targeted validation commands are
+    recorded in-branch
 
 ## Main risks and controls
 
@@ -155,3 +187,7 @@ The merge path must keep these surfaces aligned:
   - Control: update `local-issues.json`, `docs/parallel-refill-queue.json`, and
     `docs/parallel-refill-queue.md` together whenever a future closeout slice
     changes the canonical status story.
+- Risk: `.github/workflows/ci.yml` currently runs Python lint/test/build only,
+  so Go migration branches can look green without exercising the Go merge gate.
+  - Control: record targeted `go test` commands in every `BIG-GO-*` PR and
+    treat them as required reviewer evidence until CI adds Go-native coverage.
