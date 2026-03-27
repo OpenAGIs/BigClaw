@@ -35,3 +35,5 @@
 - 2026-03-27: Scope is limited to `BIG-GO-902` script/automation entrypoint migration into the existing Go CLI, with compatibility shims preserved where that minimizes operator churn.
 - 2026-03-27: First batch migrated `create-issues`, `dev-smoke`, `symphony`, `issue`, and `panel` into `bigclaw-go/cmd/bigclawctl`, and documented the deferred backlog separately in `docs/go-cli-script-migration-plan.md`.
 - 2026-03-27: Committed as `99bb530` and pushed to `origin/feat/BIG-GO-902-go-cli-script-migration`; PR seed URL is `https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-902-go-cli-script-migration`.
+- 2026-03-27: Added repo-local tracker closeout for `BIG-GO-902` in `local-issues.json` with a completion comment, branch pointer, validation summary, and deferred-risk note.
+- 2026-03-27: No GitHub CLI/token is configured in this workspace, so the branch was pushed and the PR creation path was left at the deterministic seed URL instead of opening the PR via API.

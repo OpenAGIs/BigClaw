@@ -7509,6 +7509,27 @@
       "state": "Done",
       "title": "Reconcile final refill queue history",
       "updated_at": "2026-03-25T20:49:24Z"
+    },
+    {
+      "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Implemented the first Go CLI migration batch for the root script layer by adding `create-issues`, `dev-smoke`, `symphony`, `issue`, and `panel` to `bigclaw-go/cmd/bigclawctl`, then converting the legacy Python/Bash entrypoints into compatibility shims that dispatch into the Go CLI. Added targeted tests for the new commands and shim routing, documented the migration plan/backlog/validation/risk in `docs/go-cli-script-migration-plan.md`, and updated the repo README plus workpad. Validation: `cd bigclaw-go && go test ./cmd/bigclawctl` -> ok; `bash scripts/ops/bigclawctl dev-smoke` -> `smoke_ok local`; `PYTHONPATH=src python3 scripts/dev_smoke.py` -> `smoke_ok local` with expected deprecation warning; `python3 scripts/create_issues.py --help` -> usage for `bigclawctl create-issues`; `bash scripts/ops/bigclawctl issue --help` / `panel --help` / `symphony --help` -> ok; `bash scripts/ops/bigclaw-issue list` -> exit 0. Branch: `feat/BIG-GO-902-go-cli-script-migration`. PR seed URL: `https://github.com/OpenAGIs/BigClaw/pull/new/feat/BIG-GO-902-go-cli-script-migration`. Risk summary: root shim migration is complete for this first batch, but `scripts/dev_bootstrap.sh`, the `scripts/ops/bigclawctl` go-run wrapper, and `bigclaw-go/scripts/*` remain deferred.",
+          "created_at": "2026-03-27T15:27:30Z"
+        }
+      ],
+      "created_at": "2026-03-27T15:27:30Z",
+      "description": "P0\\n\\n背景: BIG-vNext-Go-001 的并行子任务。\\n\\n目标:\\n将 scripts/*.py 与常用自动化入口迁移为 Go CLI/子命令，并保留兼容层计划。\\n\\n验收:\\n- 形成可执行迁移方案与首批实现/改造清单\\n- 明确验证命令与回归面\\n- 输出分支/PR建议与风险",
+      "id": "big-go-902",
+      "identifier": "BIG-GO-902",
+      "labels": [
+        "bigclawgo-migrationparallelp0subtask"
+      ],
+      "priority": 1,
+      "state": "Done",
+      "title": "脚本层迁移到 Go CLI",
+      "updated_at": "2026-03-27T15:27:30Z"
     }
   ]
 }
