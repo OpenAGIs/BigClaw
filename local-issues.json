@@ -7640,6 +7640,11 @@
           "author": "codex",
           "body": "Continued `BIG-VNEXT-GO-105` by replacing `bigclaw-go/scripts/benchmark/capacity_certification.py` with a Go-native capacity certification generator. Added `bigclaw-go/internal/capacitycert` plus `scripts/benchmark/capacity_certification.go`, reduced the legacy `.py` path to a shell shim over the Go command, and refreshed the checked-in capacity certification JSON/markdown artifacts. Validation: `cd bigclaw-go && go test ./internal/capacitycert` -> ok; `cd bigclaw-go && go run ./scripts/benchmark/capacity_certification.go --repo-root ..` -> ok; `bash bigclaw-go/scripts/benchmark/capacity_certification.py --help` -> ok.",
           "created_at": "2026-03-28T02:45:00Z"
+        },
+        {
+          "author": "codex",
+          "body": "Continued `BIG-VNEXT-GO-105` by replacing `bigclaw-go/scripts/migration/live_shadow_scorecard.py` with a Go-native live shadow scorecard generator. Added `bigclaw-go/internal/liveshadowscorecard` plus `scripts/migration/live_shadow_scorecard.go`, reduced the legacy `.py` path to a shell shim over the Go command, and re-emitted the canonical live shadow scorecard artifact from the Go generator with a fixed `--generated-at` timestamp so the checked-in review snapshot stays deterministic. Validation: `cd bigclaw-go && go test ./internal/liveshadowscorecard` -> ok; `cd bigclaw-go && go run ./scripts/migration/live_shadow_scorecard.go --repo-root .. --generated-at 2026-03-16T15:58:21.282621Z` -> ok; `bash bigclaw-go/scripts/migration/live_shadow_scorecard.py --help` -> ok.",
+          "created_at": "2026-03-28T03:10:00Z"
         }
       ],
       "created_at": "2026-03-27T15:13:31Z",
@@ -7654,7 +7659,7 @@
       "priority": 1,
       "state": "In Progress",
       "title": "Convert Go-side validation harness scripts to Go",
-      "updated_at": "2026-03-28T02:45:00Z"
+      "updated_at": "2026-03-28T03:10:00Z"
     },
     {
       "assigned_to_worker": true,
