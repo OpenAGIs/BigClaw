@@ -46,5 +46,11 @@
     "compare_url_reachable": true,
     "compare_page_state": "Open a pull request",
     "notes": "Public GitHub search found no PR result for the branch/title; compare page was reachable but diff generation was incomplete in-browser and the rendered commit list appeared stale, still showing only the earlier 14-commit history."
+  },
+  "auth_environment": {
+    "date": "2026-03-28",
+    "gh_installed": false,
+    "github_token_present": false,
+    "gh_token_present": false
   }
 }

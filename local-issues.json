@@ -7602,6 +7602,11 @@
           "author": "codex",
           "body": "External verification follow-up on 2026-03-28: GitHub public search still shows no PR result, and although the compare URL remains reachable, the rendered public compare content appears stale. It still shows only the older 14-commit history rather than the latest pushed follow-up commits, while also reporting that diff generation is taking too long. Updated BIG-GO-902 validation, closeout, and status artifacts to capture this GitHub-side reviewer-view issue alongside the existing external-auth blocker.",
           "created_at": "2026-03-27T16:40:11Z"
+        },
+        {
+          "author": "codex",
+          "body": "Auth environment check on 2026-03-28 confirms the blocker is fully external: gh is not installed in this workspace, and both GITHUB_TOKEN and GH_TOKEN are unset. Updated reports/BIG-GO-902-status.json to record this explicitly alongside the stale GitHub compare-view note.",
+          "created_at": "2026-03-27T16:42:29Z"
         }
       ],
       "created_at": "2026-03-27T15:27:30Z",
@@ -7614,7 +7619,7 @@
       "priority": 1,
       "state": "Done",
       "title": "脚本层迁移到 Go CLI",
-      "updated_at": "2026-03-27T16:40:11Z"
+      "updated_at": "2026-03-27T16:42:29Z"
     }
   ]
 }
