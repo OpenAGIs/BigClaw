@@ -7647,6 +7647,11 @@
           "author": "codex",
           "body": "2026-03-28 checks/reviews verification: PR #215 head advanced to 1dc3628d70a137daa3121423fb78b4e0ad31d3bf. Live GitHub status currently shows combined_state=pending, check_runs_total=1 with check `test` in_progress, and reviews_total=0. Synced these reviewer-signal fields into reports/BIG-GO-902-status.json.",
           "created_at": "2026-03-27T17:44:39Z"
+        },
+        {
+          "author": "codex",
+          "body": "2026-03-28 checks/reviews refresh: PR #215 head advanced again to aa81616f7acc7f88bc992a11e02f3439e0b5e5bd. Live GitHub status now reports mergeable=true with mergeable_state=unstable while the single `test` check remains in_progress and combined_state=pending; reviews_total is still 0. Refreshed reports/BIG-GO-902-status.json to match this latest reviewer-facing state.",
+          "created_at": "2026-03-27T17:46:23Z"
         }
       ],
       "created_at": "2026-03-27T15:27:30Z",
@@ -7659,7 +7664,7 @@
       "priority": 1,
       "state": "Done",
       "title": "脚本层迁移到 Go CLI",
-      "updated_at": "2026-03-27T17:44:39Z"
+      "updated_at": "2026-03-27T17:46:23Z"
     }
   ]
 }
