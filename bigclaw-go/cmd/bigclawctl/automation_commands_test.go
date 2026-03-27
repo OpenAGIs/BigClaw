@@ -871,3 +871,18 @@ func TestBuildSubscriberTakeoverFaultMatrixReport(t *testing.T) {
 		t.Fatalf("unexpected scenarios: %+v", scenarios)
 	}
 }
+
+func TestBuildBrokerFailoverStubReport(t *testing.T) {
+	report, raw, err := buildBrokerFailoverStubReport()
+	if err != nil {
+		t.Fatalf("build report: %v", err)
+	}
+	summary := report["summary"].(map[string]any)
+	if summary["scenario_count"] != 8 || len(raw) != 8 {
+		t.Fatalf("unexpected summary/raw: %+v %+v", summary, raw)
+	}
+	proof := report["proof_artifacts"].(map[string]any)
+	if proof["checkpoint_fencing_summary"] == "" || proof["retention_boundary_summary"] == "" {
+		t.Fatalf("unexpected proof artifacts: %+v", proof)
+	}
+}

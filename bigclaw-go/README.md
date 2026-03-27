@@ -86,6 +86,7 @@ This bootstrap now covers an MVP slice for all current Go rewrite planning ticke
 - `scripts/e2e/validation_bundle_continuation_scorecard.py` and `scripts/e2e/validation_bundle_continuation_policy_gate.py` are compatibility shims over the corresponding `bigclawctl automation e2e` continuation commands
 - `scripts/e2e/mixed_workload_matrix.py` is a compatibility shim over `bigclawctl automation e2e mixed-workload-matrix`
 - `scripts/e2e/external_store_validation.py` is a compatibility shim over `bigclawctl automation e2e external-store-validation`
+- `scripts/e2e/broker_failover_stub_matrix.py` is a compatibility shim over `bigclawctl automation e2e broker-failover-stub-matrix`
 - `scripts/e2e/subscriber_takeover_fault_matrix.py` is a compatibility shim over `bigclawctl automation e2e subscriber-takeover-fault-matrix`
 - `scripts/e2e/cross_process_coordination_surface.py` is a compatibility shim over `bigclawctl automation e2e cross-process-coordination-surface`
 - `scripts/benchmark/run_matrix.py` is a compatibility shim over `bigclawctl automation benchmark run-matrix`

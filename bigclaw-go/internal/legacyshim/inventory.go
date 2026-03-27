@@ -237,15 +237,16 @@ func MigrationInventory() Inventory {
 			},
 			{
 				ScriptPath:          "bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py",
-				Status:              "pending-native-python",
+				Status:              "migrated-shim",
 				Category:            "e2e",
 				Wave:                "wave-4",
 				ReplacementCommand:  "go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix ...",
-				CompatibilityLayer:  "planned python shim after Go harness lands",
-				VerificationCommand: "cd bigclaw-go && python3 scripts/e2e/broker_failover_stub_matrix.py --help",
+				CompatibilityLayer:  "python shim -> bigclawctl automation e2e broker-failover-stub-matrix",
+				VerificationCommand: "cd bigclaw-go && go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --help",
 				RegressionSurface: []string{
-					"Broker failover scenario matrix behavior",
-					"Stub matrix report JSON compatibility",
+					"Deterministic broker failover scenario generation and proof summaries",
+					"Artifact bundle path and JSON schema compatibility",
+					"Python compatibility shim forwarding",
 				},
 			},
 			{

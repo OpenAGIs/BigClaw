@@ -84,3 +84,9 @@
   - Result: passed
 - `cd bigclaw-go && go run ./cmd/bigclawctl legacy-python inventory --json | jq -r '.entries[] | select(.script_path=="bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py") | [.script_path,.status,.compatibility_layer] | @tsv'`
   - Result: passed
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e broker-failover-stub-matrix --help`
+  - Result: passed
+- `cd bigclaw-go && python3 scripts/e2e/broker_failover_stub_matrix.py --help`
+  - Result: passed
+- `cd bigclaw-go && go run ./cmd/bigclawctl legacy-python inventory --json | jq -r '.entries[] | select(.script_path=="bigclaw-go/scripts/e2e/broker_failover_stub_matrix.py") | [.script_path,.status,.compatibility_layer] | @tsv'`
+  - Result: passed
