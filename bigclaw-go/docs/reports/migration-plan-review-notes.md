@@ -22,6 +22,9 @@ This note captures the review outcome for the Go rewrite boundary and migration 
 3. Validate queue, scheduler, worker, Kubernetes, and Ray paths through local and live smoke reports.
 4. Roll traffic gradually by tenant, task type, or environment.
 5. Use rollback by redirecting submission back to the incumbent control plane and preserving Go reports for postmortem review.
+6. Retire the remaining Python `runtime` / `scheduler` / `orchestration` /
+   `workflow` tests and script helpers according to
+   `docs/reports/runtime-scheduler-orchestration-migration-plan.md`.
 
 ## Rollback Notes
 
@@ -44,6 +47,9 @@ This note captures the review outcome for the Go rewrite boundary and migration 
   remaining migration-shadow, rollback, and corpus-coverage follow-up digests.
 - Use `docs/reports/parallel-validation-matrix.md` first when the review needs
   the checked-in local/Kubernetes/Ray validation evidence.
+- Use `docs/reports/runtime-scheduler-orchestration-migration-plan.md` when the
+  review needs the concrete test-port, script-port, branch, and risk plan for
+  the legacy Python execution surfaces.
 - The two migration caveat tracks that this review note explicitly calls out are
   `OPE-266` / `BIG-PAR-092` in
   `docs/reports/live-shadow-comparison-follow-up-digest.md` and

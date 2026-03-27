@@ -1,27 +1,31 @@
 ## Codex Workpad
 
-```text
-jxrt:/Users/jxrt/Desktop/symphony-main/BigClaw@feat/bigclaw-go-local-mainline
-```
-
 ### Plan
 
-- [x] Audit the remaining local tracker refill surface for Linear-specific type names in the Go mainline.
-- [x] Rename the refill issue model to tracker-neutral naming in `bigclaw-go/internal/refill/*` and `cmd/bigclawctl`.
-- [x] Validate the renamed refill surface with targeted Go tests.
+- [x] Inventory the Python `runtime` / `scheduler` / `orchestration` / `workflow` tests and scripts that still act as migration references.
+- [x] Add a repo-native migration plan for `BIG-GO-906` with phased implementation steps, first-batch conversion targets, validation commands, regression surface, branch strategy, PR slicing, and risks.
+- [x] Link the new migration plan from the existing migration/readiness docs so reviewers can find it from the canonical migration path.
+- [x] Add regression coverage that pins the new migration-plan doc and its key commands/risk statements.
+- [x] Run targeted validation and record the exact commands and results in this workpad.
+- [ ] Commit the scoped changes and push the issue branch to the remote.
 
 ### Acceptance Criteria
 
-- [x] The Go refill/local issue store packages no longer expose `LinearIssue` as their core issue type.
-- [x] `bigclawctl refill` still works with both local and Linear-backed issue sources after the rename.
-- [x] `go test ./cmd/bigclawctl ./internal/refill/...` passes.
+- [x] The repo contains an executable migration plan covering Python runtime/scheduler/orchestration/workflow tests and script migration steps into Go ownership.
+- [x] The plan names the first implementation/retrofit batch and maps Python sources/tests to Go packages or scripts.
+- [x] Validation commands and the regression blast radius are explicit and reviewer-usable.
+- [x] Branch/PR suggestions and migration risks are documented.
+- [x] Targeted regression tests for the new documentation pass.
 
 ### Validation
 
-- [x] `cd bigclaw-go && go test ./cmd/bigclawctl ./internal/refill/...`
+- [x] `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-906/bigclaw-go && go test ./internal/regression -run 'Test(RuntimeSchedulerOrchestrationMigrationPlanDocs|MigrationFollowUpIndexDocsStayAligned|PlanningFollowUpIndexDocsStayAligned)' -count=1`
+
+### Results
+
+- `2026-03-27`: `go test ./internal/regression -run 'Test(RuntimeSchedulerOrchestrationMigrationPlanDocs|MigrationFollowUpIndexDocsStayAligned|PlanningFollowUpIndexDocsStayAligned)' -count=1` -> `ok  	bigclaw-go/internal/regression	1.164s`
 
 ### Notes
 
-- 2026-03-19: This slice is a bounded `BIG-GOM-307` follow-up aimed at removing Linear-only operator vocabulary from the active Go refill path before tackling larger workflow/runtime migrations.
-- 2026-03-19: Targeted refill tests passed after renaming the shared issue model to `TrackedIssue`.
-- 2026-03-22: Cleared stale unchecked plan item after confirming the recorded validation had already passed.
+- Scope is intentionally limited to `BIG-GO-906`: migration planning, doc integration, and regression coverage for runtime/scheduler/orchestration migration.
+- Python runtime surfaces in `src/bigclaw/*.py` are already marked legacy/frozen; this slice documents how remaining tests and scripts retire cleanly behind the Go mainline.

@@ -31,3 +31,6 @@
   remaining migration, rollback, and parallel-hardening follow-up digests.
 - For executor-lane validation evidence, start with
   `docs/reports/parallel-validation-matrix.md`.
+- For the concrete Python `runtime` / `scheduler` / `orchestration` /
+  `workflow` retirement sequence, use
+  `docs/reports/runtime-scheduler-orchestration-migration-plan.md`.
