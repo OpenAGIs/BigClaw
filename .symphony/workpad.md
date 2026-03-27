@@ -56,6 +56,10 @@
 - [x] `rg --files src/bigclaw tests scripts | head -n 20`
 - [x] `cd bigclaw-go && go test ./...`
 - [x] `bash scripts/ops/bigclawctl dev-smoke --json`
+- [x] `cd bigclaw-go && go test ./internal/continuationgate ./cmd/bigclawctl`
+- [x] `cd bigclaw-go && go run ./scripts/e2e/validation_bundle_continuation_policy_gate.go --repo-root .. --scorecard bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json --output bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json --pretty`
+- [x] `bash bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py --scorecard bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json --output bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json`
+- [x] `bash -n bigclaw-go/scripts/e2e/run_all.sh`
 
 ### Notes
 
@@ -79,3 +83,5 @@
 - Latest `BIG-VNEXT-GO-108` progress: `src/bigclaw` now carries an explicit frozen-tree README plus top-level freeze markers on the remaining legacy entrypoints, and `bigclawctl legacy-python freeze-audit` now inventories the root compatibility tree, verifies the frozen README, and checks the key entrypoints for migration-only markers from the Go CLI.
 - New continuation focus: advance `BIG-VNEXT-GO-106` by removing Python-package bootstrap assumptions from CI and treating the root packaging metadata as compatibility-only.
 - Latest `BIG-VNEXT-GO-106` progress: `.github/workflows/ci.yml` now runs Go mainline tests and Go smoke by default, with a separate explicit legacy-compatibility audit job for `freeze-audit` and `compile-check`, so CI no longer installs or builds the root Python package as the canonical mainline.
+- New continuation focus: start `BIG-VNEXT-GO-105` by replacing individual Python validation harnesses under `bigclaw-go/scripts/e2e` with Go-owned implementations instead of treating the whole harness tree as one migration cliff.
+- Latest `BIG-VNEXT-GO-105` progress: the validation-bundle continuation policy gate now has a Go-native implementation under `bigclaw-go/internal/continuationgate` plus a Go script entrypoint, `run_all.sh` now invokes the Go gate directly, and the legacy `.py` path has been reduced to a shim over the Go command.

@@ -7615,6 +7615,13 @@
     },
     {
       "assigned_to_worker": true,
+      "comments": [
+        {
+          "author": "codex",
+          "body": "Started the validation-harness migration by replacing `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py` with a Go-owned implementation. Added `bigclaw-go/internal/continuationgate` plus a Go script entrypoint, updated `bigclaw-go/scripts/e2e/run_all.sh` to invoke the Go gate directly, and reduced the legacy `.py` path to a shell shim over the Go command. Validation: `cd bigclaw-go && go test ./internal/continuationgate ./cmd/bigclawctl` -> ok; `cd bigclaw-go && go run ./scripts/e2e/validation_bundle_continuation_policy_gate.go --repo-root .. --scorecard bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json --output bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json --pretty` -> ok; `bash bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py --scorecard bigclaw-go/docs/reports/validation-bundle-continuation-scorecard.json --output bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json` -> ok; `bash -n bigclaw-go/scripts/e2e/run_all.sh` -> ok.",
+          "created_at": "2026-03-28T01:45:00Z"
+        }
+      ],
       "created_at": "2026-03-27T15:13:31Z",
       "description": "",
       "id": "big-vnext-go-105",
@@ -7625,9 +7632,9 @@
         "validation"
       ],
       "priority": 1,
-      "state": "Todo",
+      "state": "In Progress",
       "title": "Convert Go-side validation harness scripts to Go",
-      "updated_at": "2026-03-27T15:13:31Z"
+      "updated_at": "2026-03-28T01:45:00Z"
     },
     {
       "assigned_to_worker": true,
