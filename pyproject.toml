@@ -33,6 +33,7 @@ line-length = 100
 target-version = "py39"
 extend-exclude = [
   # These shell-named migration shims forward into the Go CLI and are not Python sources.
+  "scripts/create_issues.py",
   "scripts/ops/bigclaw_github_sync.py",
   "scripts/ops/bigclaw_refill_queue.py",
   "scripts/ops/bigclaw_workspace_bootstrap.py",

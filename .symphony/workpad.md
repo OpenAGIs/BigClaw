@@ -46,6 +46,8 @@
 - [x] `bash scripts/create_issues.py v1 --dry-run --json`
 - [x] `cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestRunDevBootstrapJSON|TestRunDevSmokeJSON|TestPrintRootUsageIncludesGoMigration'`
 - [x] `bash scripts/dev_bootstrap.sh --help`
+- [x] `bash scripts/ops/bigclawctl dev-bootstrap --help`
+- [x] `bash scripts/ops/bigclawctl issue-bootstrap sync v1 --dry-run --json`
 
 ### Notes
 
@@ -62,3 +64,4 @@
 - New continuation focus: migrate `scripts/create_issues.py` into Go so the remaining developer bootstrap helpers stop depending on Python for GitHub issue seeding.
 - Latest `BIG-VNEXT-GO-107` progress: `bigclawctl issue-bootstrap sync` now owns the built-in PRD issue-plan seeding logic, supports dry-run preview, and `scripts/create_issues.py` has been reduced to a shell shim over the Go command.
 - Latest `BIG-VNEXT-GO-107` progress: `bigclawctl dev-bootstrap` now owns the developer bootstrap flow, including optional legacy Python setup, and `scripts/dev_bootstrap.sh` has been reduced to a shell shim over the Go command.
+- Latest `BIG-VNEXT-GO-107` alignment: README now presents `bash scripts/ops/bigclawctl dev-bootstrap` and `bigclawctl issue-bootstrap sync` as the primary developer entrypoints, with the shell and `.py` shim names retained only in an explicit compatibility section.

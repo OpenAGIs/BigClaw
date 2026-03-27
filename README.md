@@ -82,10 +82,10 @@ pip install -e .[dev]
 python -m pytest
 ```
 
-Or use the legacy bootstrap helper:
+Or use the Go-first bootstrap helper to provision the legacy migration surface too:
 
 ```bash
-BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
+bash scripts/ops/bigclawctl dev-bootstrap --include-legacy-python
 ```
 
 ## Legacy Python local test (without editable install)
@@ -124,7 +124,14 @@ go test ./...
 Go-first bootstrap helper:
 
 ```bash
-bash scripts/dev_bootstrap.sh
+bash scripts/ops/bigclawctl dev-bootstrap
+```
+
+Compatibility shims:
+
+```bash
+BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
+bash scripts/create_issues.py v1 --dry-run --json
 ```
 
 Legacy Python migration surface:

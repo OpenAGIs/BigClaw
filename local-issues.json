@@ -7672,6 +7672,11 @@
           "author": "codex",
           "body": "Added a Go-native dev bootstrap flow. bigclawctl dev-bootstrap now runs the Go test bootstrap step and can optionally provision the legacy Python migration environment, while scripts/dev_bootstrap.sh has been reduced to a shell shim over the Go command. Validation: cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestRunDevBootstrapJSON|TestRunDevSmokeJSON|TestPrintRootUsageIncludesGoMigration' -> ok; bash scripts/dev_bootstrap.sh --help -> ok and now shows bigclawctl dev-bootstrap usage.",
           "created_at": "2026-03-27T15:59:33Z"
+        },
+        {
+          "author": "codex",
+          "body": "Completed the Go-first documentation and metadata alignment for the migrated developer helpers. README now presents `bash scripts/ops/bigclawctl dev-bootstrap` and `bash scripts/ops/bigclawctl issue-bootstrap sync ...` as the primary entrypoints, with `scripts/dev_bootstrap.sh` and `scripts/create_issues.py` retained only as compatibility shims, and pyproject.toml now excludes the `.py` shim from Ruff Python-source linting. Validation: bash scripts/ops/bigclawctl dev-bootstrap --help -> ok with bigclawctl dev-bootstrap usage; bash scripts/ops/bigclawctl issue-bootstrap sync v1 --dry-run --json -> ok with created_count=24; cd bigclaw-go && go test ./cmd/bigclawctl -run 'TestRunDevBootstrapJSON|TestRunIssueBootstrapSyncDryRunJSON|TestPrintRootUsageIncludesGoMigration' -> ok.",
+          "created_at": "2026-03-28T00:30:00Z"
         }
       ],
       "created_at": "2026-03-27T15:13:31Z",
@@ -7684,9 +7689,9 @@
         "dx"
       ],
       "priority": 1,
-      "state": "In Progress",
+      "state": "Done",
       "title": "Migrate dev smoke and bootstrap helpers to Go",
-      "updated_at": "2026-03-27T15:59:33Z"
+      "updated_at": "2026-03-28T00:30:00Z"
     },
     {
       "assigned_to_worker": true,
