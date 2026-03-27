@@ -18,21 +18,21 @@ validation commands, compatibility policy, and branch / PR suggestions.
 | Legacy script | Go CLI replacement | Status |
 | --- | --- | --- |
 | `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | migrated with Python compatibility shim |
+| `bigclaw-go/scripts/e2e/export_validation_bundle.py` | `go run ./cmd/bigclawctl automation e2e export-validation-bundle ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated with Python compatibility shim |
 | `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated with Python compatibility shim |
 
 ## First-Batch Migration / Adaptation Queue
 
-### Wave 1: validation bundle exporters and gates
+### Wave 1: continuation scorecards and gates
 
-- `bigclaw-go/scripts/e2e/export_validation_bundle.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
 - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
 
 Why first:
 
 - They share the same `docs/reports/` artifact tree and feed multiple downstream reports.
-- Once migrated, the remaining live validation wrappers can forward to Go without
+- Once migrated, the remaining live validation continuation wrappers can forward to Go without
   duplicating bundle/index logic.
 
 ### Wave 2: benchmark orchestration
@@ -78,6 +78,7 @@ go test ./cmd/bigclawctl/...
 go run ./cmd/bigclawctl legacy-python inventory --json
 go run ./cmd/bigclawctl automation --help
 go run ./cmd/bigclawctl automation e2e run-task-smoke --help
+go run ./cmd/bigclawctl automation e2e export-validation-bundle --help
 go run ./cmd/bigclawctl automation benchmark soak-local --help
 go run ./cmd/bigclawctl automation migration shadow-compare --help
 ```
@@ -87,6 +88,7 @@ go run ./cmd/bigclawctl automation migration shadow-compare --help
 - CLI parsing and root help for `bigclawctl`
 - HTTP polling against `/healthz`, `/tasks/:id`, and `/events`
 - Temporary `bigclawd` autostart state wiring for smoke and soak commands
+- Validation bundle export semantics under `docs/reports/live-validation-runs/`
 - Report serialization compatibility for JSON consumers that previously read the Python script output
 - Python shim forwarding for operators still calling the legacy script paths
 
@@ -109,4 +111,5 @@ go run ./cmd/bigclawctl automation migration shadow-compare --help
 
 - `soak-local` now uses Go worker concurrency; very large counts may stress a single local HTTP backend differently than the old Python thread pool.
 - `run-task-smoke --autostart` and `soak-local --autostart` still rely on ephemeral port reservation before `bigclawd` binds, so local port races remain possible.
+- `export-validation-bundle` preserves the repo-native JSON and markdown shape, but downstream tooling may still have hidden assumptions about field ordering or omitted keys.
 - Remaining Python report generators still exist, so automation ownership is split until later migration batches land.

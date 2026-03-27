@@ -194,3 +194,115 @@ func TestAutomationShadowCompareDetectsMismatch(t *testing.T) {
 		t.Fatalf("expected mismatch diff, got %+v", report.Diff)
 	}
 }
+
+func TestAutomationExportValidationBundleWritesBundleArtifacts(t *testing.T) {
+	root := t.TempDir()
+	bundleDir := filepath.Join("docs", "reports", "live-validation-runs", "run-1")
+
+	localReport := filepath.Join(root, "tmp", "local-report.json")
+	k8sReport := filepath.Join(root, "tmp", "k8s-report.json")
+	rayReport := filepath.Join(root, "tmp", "ray-report.json")
+	localStdout := filepath.Join(root, "tmp", "local.stdout.log")
+	localStderr := filepath.Join(root, "tmp", "local.stderr.log")
+	k8sStdout := filepath.Join(root, "tmp", "k8s.stdout.log")
+	k8sStderr := filepath.Join(root, "tmp", "k8s.stderr.log")
+	rayStdout := filepath.Join(root, "tmp", "ray.stdout.log")
+	rayStderr := filepath.Join(root, "tmp", "ray.stderr.log")
+
+	for _, path := range []string{localReport, k8sReport, rayReport, localStdout, localStderr, k8sStdout, k8sStderr, rayStdout, rayStderr} {
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := os.WriteFile(localReport, []byte(`{"task":{"id":"local-1","required_executor":"local"},"status":{"state":"succeeded","latest_event":{"type":"task.completed","timestamp":"2026-03-28T00:00:02Z"}}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(k8sReport, []byte(`{"task":{"id":"k8s-1","required_executor":"kubernetes"},"status":{"state":"dead_letter","latest_event":{"id":"evt-dead","type":"task.dead_letter","timestamp":"2026-03-28T00:00:03Z","payload":{"message":"lease lost"}}},"events":[{"id":"evt-routed","type":"scheduler.routed","timestamp":"2026-03-28T00:00:01Z","payload":{"reason":"browser workloads default to kubernetes executor"}},{"id":"evt-dead","type":"task.dead_letter","timestamp":"2026-03-28T00:00:03Z","payload":{"message":"lease lost"}}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(rayReport, []byte(`{"task":{"id":"ray-1","required_executor":"ray"},"status":{"state":"succeeded","latest_event":{"type":"task.completed","timestamp":"2026-03-28T00:00:04Z"}}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for path, body := range map[string]string{
+		localStdout: "local ok\n",
+		localStderr: "",
+		k8sStdout:   "k8s start\n",
+		k8sStderr:   "lease lost\n",
+		rayStdout:   "ray ok\n",
+		rayStderr:   "",
+	} {
+		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := os.MkdirAll(filepath.Join(root, "docs", "reports"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "docs", "reports", "multi-node-shared-queue-report.json"), []byte(`{"all_ok":true,"cross_node_completions":3,"duplicate_started_tasks":[],"duplicate_completed_tasks":[],"missing_completed_tasks":[],"nodes":[{"name":"node-a"},{"name":"node-b"}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "docs", "reports", "validation-bundle-continuation-policy-gate.json"), []byte(`{"status":"policy-hold","recommendation":"hold","summary":{"latest_run_id":"run-1","failing_check_count":2,"workflow_exit_code":2},"enforcement":{"mode":"hold","outcome":"hold"},"reviewer_path":{"digest_path":"docs/reports/validation-bundle-continuation-digest.md"},"next_actions":["rerun run_all"]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "docs", "reports", "validation-bundle-continuation-scorecard.json"), []byte(`{"status":"warn"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "docs", "reports", "validation-bundle-continuation-digest.md"), []byte("digest\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "docs", "reports", "broker-bootstrap-source.json"), []byte(`{"ready":false,"runtime_posture":"contract_only","live_adapter_implemented":false,"proof_boundary":"contract surface","config_completeness":{"driver":false,"urls":false,"topic":false,"consumer_group":false},"validation_errors":["missing broker config"]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	report, exitCode, err := automationExportValidationBundle(automationExportValidationBundleOptions{
+		GoRoot:                     root,
+		RunID:                      "run-1",
+		BundleDir:                  bundleDir,
+		SummaryPath:                "docs/reports/live-validation-summary.json",
+		IndexPath:                  "docs/reports/live-validation-index.md",
+		ManifestPath:               "docs/reports/live-validation-index.json",
+		RunLocal:                   true,
+		RunKubernetes:              true,
+		RunRay:                     true,
+		ValidationStatus:           1,
+		RunBroker:                  false,
+		BrokerBootstrapSummaryPath: "docs/reports/broker-bootstrap-source.json",
+		LocalReportPath:            "tmp/local-report.json",
+		LocalStdoutPath:            localStdout,
+		LocalStderrPath:            localStderr,
+		KubernetesReportPath:       "tmp/k8s-report.json",
+		KubernetesStdoutPath:       k8sStdout,
+		KubernetesStderrPath:       k8sStderr,
+		RayReportPath:              "tmp/ray-report.json",
+		RayStdoutPath:              rayStdout,
+		RayStderrPath:              rayStderr,
+		Now:                        func() time.Time { return time.Date(2026, 3, 28, 1, 2, 3, 0, time.UTC) },
+	})
+	if err != nil {
+		t.Fatalf("export validation bundle: %v", err)
+	}
+	if exitCode != 1 || report["status"] != "failed" {
+		t.Fatalf("unexpected report status: exit=%d report=%+v", exitCode, report)
+	}
+	k8sSection := report["kubernetes"].(map[string]any)
+	rootCause := k8sSection["failure_root_cause"].(map[string]any)
+	if rootCause["event_type"] != "task.dead_letter" || rootCause["message"] != "lease lost" {
+		t.Fatalf("unexpected k8s root cause: %+v", rootCause)
+	}
+	indexBody, err := os.ReadFile(filepath.Join(root, "docs", "reports", "live-validation-index.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	indexText := string(indexBody)
+	if !strings.Contains(indexText, "## Validation matrix") || !strings.Contains(indexText, "- Workflow mode: `hold`") {
+		t.Fatalf("unexpected index body: %s", indexText)
+	}
+	if _, err := os.Stat(filepath.Join(root, bundleDir, "README.md")); err != nil {
+		t.Fatalf("expected bundle README: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "docs", "reports", "sqlite-smoke-report.json")); err != nil {
+		t.Fatalf("expected canonical local report copy: %v", err)
+	}
+}

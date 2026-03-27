@@ -293,10 +293,10 @@ func TestRunLegacyPythonInventoryJSONOutput(t *testing.T) {
 		entry, _ := raw.(map[string]any)
 		if entry["script_path"] == "bigclaw-go/scripts/e2e/export_validation_bundle.py" {
 			found = true
-			if entry["status"] != "pending-native-python" {
+			if entry["status"] != "migrated-shim" {
 				t.Fatalf("unexpected export_validation_bundle status: %+v", entry)
 			}
-			if entry["wave"] != "wave-1" {
+			if entry["wave"] != "wave-0" {
 				t.Fatalf("unexpected export_validation_bundle wave: %+v", entry)
 			}
 		}

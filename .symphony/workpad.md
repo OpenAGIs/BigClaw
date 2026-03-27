@@ -30,3 +30,7 @@
   - Result: passed
 - `cd bigclaw-go && go run ./cmd/bigclawctl legacy-python inventory --json | rg 'multi_node_shared_queue|subscriber_takeover_fault_matrix|export_validation_bundle'`
   - Result: passed
+- `cd bigclaw-go && go run ./cmd/bigclawctl automation e2e export-validation-bundle --help`
+  - Result: passed
+- `cd bigclaw-go && python3 scripts/e2e/export_validation_bundle.py --help`
+  - Result: passed
