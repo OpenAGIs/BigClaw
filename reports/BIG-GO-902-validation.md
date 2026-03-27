@@ -182,11 +182,11 @@ Result:
   "detached": false,
   "dirty": false,
   "diverged": false,
-  "local_sha": "45ef102c384262fe8a35f8d7bfae79e8d139fefe",
+  "local_sha": "8a7410de4461a83afbd8c6536ab49b3fa58683d8",
   "pushed": true,
   "relation_known": true,
   "remote_exists": true,
-  "remote_sha": "45ef102c384262fe8a35f8d7bfae79e8d139fefe",
+  "remote_sha": "8a7410de4461a83afbd8c6536ab49b3fa58683d8",
   "status": "ok",
   "synced": true
 }
@@ -205,7 +205,7 @@ feat/BIG-GO-902-go-cli-script-migration
 Validated implementation commit:
 
 ```text
-45ef102c384262fe8a35f8d7bfae79e8d139fefe
+8a7410de4461a83afbd8c6536ab49b3fa58683d8
 ```
 
 PR seed URL:
