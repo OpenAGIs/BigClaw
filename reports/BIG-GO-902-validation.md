@@ -274,8 +274,9 @@ Last root-shim branch head verified via `github-sync status`:
 834f6441cd06fff89bb6b9305b27fa3ca0ddd21f
 ```
 
-Note: later branch commits after `3fe203e...` only refreshed BIG-GO-902 tracker/report metadata and
-opened PR `#215`; they did not change the migrated Go CLI behavior validated above.
+Note: later branch commits after `3fe203e...` only refreshed BIG-GO-902 tracker/report metadata,
+opened PR `#215`, and recorded the final merge closeout; they did not change the migrated Go CLI
+behavior validated above.
 
 PR seed URL:
 
@@ -317,16 +318,10 @@ Public GitHub verification on 2026-03-28:
 
 - Authenticated GitHub API creation succeeded with PR `#215`:
   `https://github.com/OpenAGIs/BigClaw/pull/215`.
-- Earlier public repository PR checks had shown only `#185`, `#184`, and `#183`; that stale public
-  state is now superseded by the successfully created PR.
-- GitHub did not fully render the diff in-browser and instead reported that the comparison was
-  taking too long to generate.
-- As of the latest public fetch on 2026-03-28, the compare page content still listed only
-  `14 commits` and `26 files changed`, which does not match the latest pushed follow-up commits,
-  so the public reviewer view remains stale on GitHub's side.
-- The same public compare view also emitted repeated `Uh oh!` load failures while rendering, which
-  further confirms the remaining reviewer-facing problem is on GitHub's side rather than in the
-  branch contents.
+- PR `#215` was later merged into `main` at `2026-03-27T17:59:20Z` as squash commit
+  `56c8efbda59344f850890bfe2e8d835016ff1b3d`.
+- The compare page had previously been stale and reported only `14 commits` / `26 files changed`;
+  that rendering issue is no longer a delivery blocker because the merge completed successfully.
 
 ## Regression Surface
 
@@ -348,5 +343,4 @@ Public GitHub verification on 2026-03-28:
   startup latency remain operator dependencies.
 - The remaining `bigclaw-go/scripts/*` backlog listed in `bigclaw-go/docs/go-cli-script-migration.md`
   is still deferred to later migration batches.
-- No in-repo blocker remains for BIG-GO-902. The remaining risk is only that GitHub's compare page
-  rendering is stale for this branch even though the PR itself now exists.
+- No blocker remains for BIG-GO-902. The implementation is merged.

@@ -18,8 +18,9 @@ Date: `2026-03-28`
 
 `834f6441cd06fff89bb6b9305b27fa3ca0ddd21f`
 
-Later branch commits after `3fe203e...` only refreshed BIG-GO-902 metadata/report artifacts and
-opened PR `#215`; they did not change the migrated Go CLI behavior summarized here.
+Later branch commits after `3fe203e...` only refreshed BIG-GO-902 metadata/report artifacts,
+opened PR `#215`, and recorded the final merge closeout; they did not change the migrated Go CLI
+behavior summarized here.
 
 ## Reviewer Links
 
@@ -34,14 +35,10 @@ opened PR `#215`; they did not change the migrated Go CLI behavior summarized he
 
 - 2026-03-28 authenticated GitHub API creation succeeded for PR `#215`:
   `https://github.com/OpenAGIs/BigClaw/pull/215`.
-- Earlier public repository checks had shown only `#185`, `#184`, and `#183` as open PRs; that
-  stale public state is now superseded by the created PR.
-- GitHub's web diff did not fully render and reported that the comparison was taking too long to
-  generate.
-- The public compare page content also appeared stale and still showed only the older 14-commit
-  history and `26 files changed` instead of the latest pushed follow-up commits.
-- The compare page also emitted repeated `Uh oh!` load failures during rendering, so the stale
-  reviewer view appears to be a GitHub-side page failure rather than a repo publication problem.
+- PR `#215` was merged into `main` at `2026-03-27T17:59:20Z`.
+- Merge commit: `56c8efbda59344f850890bfe2e8d835016ff1b3d`.
+- The compare page had previously rendered stale branch information, but that no longer blocks
+  delivery because the merge is complete.
 
 ## In-Repo Artifacts
 
@@ -65,7 +62,7 @@ opened PR `#215`; they did not change the migrated Go CLI behavior summarized he
   `bigclawctl automation ...` behavior.
 - Legacy Python and Bash entrypoint names remain available as compatibility shims.
 - The migration plan now distinguishes delivered scope from deferred follow-ups.
-- Reviewer artifacts were refreshed against the current pushed branch tip.
+- Reviewer artifacts were refreshed against the final merged state.
 
 ## Validation Commands
 
@@ -92,8 +89,8 @@ cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --h
 
 ## Remaining Risk
 
-No blocking repo action remains. The only unresolved reviewer-facing risk is that GitHub's compare
-view is still stale/erroring for the latest branch state even though PR `#215` now exists.
+No blocking repo or PR action remains. Only the deferred follow-up migration backlog in
+`bigclaw-go/docs/go-cli-script-migration.md` remains for later issues.
 
 ## Final Repo Check
 

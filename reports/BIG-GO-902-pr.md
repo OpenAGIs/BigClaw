@@ -82,7 +82,7 @@ cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --h
 - `scripts/ops/bigclawctl` still shells into `go run`, so local Go toolchain availability remains required
 - remaining `bigclaw-go/scripts/*` helpers beyond the first migrated batch are still deferred
 
-## Open PR URL
+## Final PR URL
 
 `https://github.com/OpenAGIs/BigClaw/pull/215`
 
@@ -92,7 +92,7 @@ cd bigclaw-go && go run ./cmd/bigclawctl automation migration shadow-compare --h
 
 ## Public Verification Note
 
-As of 2026-03-28, authenticated GitHub API creation succeeded and opened PR `#215` for this
-branch. The compare URL still appears stale and continues to report only `14 commits` /
-`26 files changed` plus repeated `Uh oh!` load failures, so the remaining concern is GitHub-side
-compare rendering rather than PR creation or branch publication.
+As of 2026-03-28, authenticated GitHub API creation succeeded for PR `#215`, and the PR was later
+merged into `main` at `2026-03-27T17:59:20Z` as squash commit
+`56c8efbda59344f850890bfe2e8d835016ff1b3d`. Earlier compare-page rendering staleness no longer
+blocks delivery because the merge completed successfully.
