@@ -209,6 +209,12 @@ Validated implementation commit:
 45ef102c384262fe8a35f8d7bfae79e8d139fefe
 ```
 
+Current branch head for metadata/report syncs:
+
+```text
+834f6441cd06fff89bb6b9305b27fa3ca0ddd21f
+```
+
 Note: later commits in this branch only synchronized BIG-GO-902 tracking/report metadata and did not
 change the migrated Go CLI or compatibility-shim behavior validated above.
 
