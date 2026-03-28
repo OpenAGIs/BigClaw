@@ -15,6 +15,7 @@
 - At least one adjacent Go test slice adopts the shared harness instead of bespoke cwd/path bootstrap.
 - The migration report states when `tests/conftest.py` can be deleted and which regression commands gate that removal.
 - The current `tests/conftest.py` deletion blockers are machine-checked from Go rather than only described in prose.
+- The current `tests/conftest.py` delete-readiness summary is available as one stable line from Go-owned harness code.
 - The final result includes the exact validation commands executed and whether they passed.
 
 ## Validation

@@ -298,6 +298,10 @@ Current machine-checked blockers in this issue are:
 - `47 legacy pytest modules still import bigclaw from src/`
 - `3 legacy pytest modules still import pytest directly`
 
+Current machine-checked single-line summary is:
+
+- `conftest_delete_ready=false blockers=56 legacy pytest modules remain under tests/; 47 legacy pytest modules still import bigclaw from src/; 3 legacy pytest modules still import pytest directly`
+
 Until then, `tests/conftest.py` remains a compatibility shim and should not grow new behavior.
 
 ## Regression commands
