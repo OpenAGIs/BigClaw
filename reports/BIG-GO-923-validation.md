@@ -21,6 +21,8 @@
 17. `git status --short`
 18. `cd bigclaw-go && go test ./internal/repo`
 19. `git status --short`
+20. `cd bigclaw-go && go test ./internal/intake ./internal/risk ./internal/scheduler`
+21. `git status --short`
 
 ## Results
 
@@ -62,3 +64,7 @@
    Result: `ok  	bigclaw-go/internal/repo	3.163s`
 19. `git status --short`
    Result: `M bigclaw-go/docs/reports/pytest-harness-migration.md`, `M bigclaw-go/internal/repo/board.go`, `M bigclaw-go/internal/repo/repo_surfaces_test.go`, `M reports/BIG-GO-923-validation.md`
+20. `cd bigclaw-go && go test ./internal/intake ./internal/risk ./internal/scheduler`
+   Result: `ok  	bigclaw-go/internal/intake	(cached)`, `ok  	bigclaw-go/internal/risk	(cached)`, `ok  	bigclaw-go/internal/scheduler	(cached)`
+21. `git status --short`
+   Result: `M bigclaw-go/docs/reports/pytest-harness-migration.md`, `M reports/BIG-GO-923-validation.md`

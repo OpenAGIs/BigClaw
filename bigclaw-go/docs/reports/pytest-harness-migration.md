@@ -133,6 +133,15 @@ First migrated Python test slice now covered explicitly in Go:
   - `test_lineage_aware_recommendations`
   - `test_approval_evidence_packet_includes_candidate_and_accepted_hash`
   - covered by `bigclaw-go/internal/repo/repo_surfaces_test.go`
+- `tests/test_mapping.py`
+  - `test_map_priority`
+  - `test_map_source_issue_to_task`
+  - covered by `bigclaw-go/internal/intake/mapping_test.go`
+- `tests/test_risk.py`
+  - `test_risk_scorer_keeps_simple_low_risk_work_low`
+  - `test_risk_scorer_elevates_prod_browser_work`
+  - `test_scheduler_uses_risk_score_to_require_approval`
+  - covered by `bigclaw-go/internal/risk/risk_test.go` and `bigclaw-go/internal/scheduler/scheduler_test.go`
 - `tests/test_parallel_validation_bundle.py`
   - `test_export_validation_bundle_generates_latest_reports_and_index`
   - checked-in report/index contract covered by
@@ -187,6 +196,7 @@ Recommended next migration slices:
 - `tests/test_saved_views.py` into `bigclaw-go/internal/product`
 - `tests/test_legacy_shim.py` into `bigclaw-go/internal/legacyshim` and `cmd/bigclawctl`
 - `tests/test_workspace_bootstrap.py` into `bigclaw-go/internal/bootstrap`
+- broader runtime/ledger-backed workflow and queue surfaces that still depend on Python-owned persistence models
 
 ## Deletion gate for legacy Python harness
 
