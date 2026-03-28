@@ -26,3 +26,6 @@
   - Result: passed
 - `2026-03-28`: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-927/bigclaw-go && go test ./...`
   - Result: passed
+
+## Follow-up Cleanup
+- Updated `docs/BigClaw-AgentHub-Integration-Alignment.md` to remove references to deleted Python tests and point incremental/full validation at the Go replacements for repo sync/link/registry/collaboration coverage.
