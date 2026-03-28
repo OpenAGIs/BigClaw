@@ -52,14 +52,16 @@
   Result: passed (`ok  	bigclaw-go/internal/product	3.175s`; `ok  	bigclaw-go/internal/testharness	(cached)`; `ok  	bigclaw-go/cmd/bigclawctl	(cached)`)
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/product ./internal/testharness ./internal/regression ./cmd/bigclawctl`
   Result: passed (`ok  	bigclaw-go/internal/product	(cached)`; `ok  	bigclaw-go/internal/testharness	0.777s`; `ok  	bigclaw-go/internal/regression	0.831s`; `ok  	bigclaw-go/cmd/bigclawctl	2.478s`)
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/scheduler ./internal/testharness ./cmd/bigclawctl`
+  Result: scheduler package passed before harness snapshot assertions drifted (`ok  	bigclaw-go/internal/scheduler	1.399s`; `ok  	bigclaw-go/internal/testharness	(cached)`), then `cmd/bigclawctl` failed only because `pytest-harness` expectations still referenced the pre-removal count
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --json`
-  Result: passed (`status=ok`; `inventory_summary=tests=24 bigclaw_imports=24 pytest_imports=0 pytest_command_refs=0`; `pyproject_exists=true`; `pyproject_declares_pytest=false`; `pyproject_has_pytest_config=false`; `conftest_exists=false`; `conftest_uses_pytest_plugins=false`; `conftest_delete_status.can_delete=true`; `legacy_pytest_delete_status.can_delete=false`)
+  Result: passed (`status=ok`; `inventory_summary=tests=23 bigclaw_imports=23 pytest_imports=0 pytest_command_refs=0`; `pyproject_exists=true`; `pyproject_declares_pytest=false`; `pyproject_has_pytest_config=false`; `conftest_exists=false`; `conftest_uses_pytest_plugins=false`; `conftest_delete_status.can_delete=true`; `legacy_pytest_delete_status.can_delete=false`)
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
-  Result: passed and refreshed `bigclaw-go/docs/reports/pytest-harness-status.json`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/regression ./cmd/bigclawctl`
-  Result: passed (`ok  	bigclaw-go/internal/testharness	(cached)`; `ok  	bigclaw-go/internal/regression	0.877s`; `ok  	bigclaw-go/cmd/bigclawctl	(cached)`)
+  Result: passed and refreshed `bigclaw-go/docs/reports/pytest-harness-status.json` (`status=ok`; `inventory_summary=tests=23 bigclaw_imports=23 pytest_imports=0 pytest_command_refs=0`; `conftest_delete_status.summary=conftest_delete_ready=true blockers=none`; `legacy_pytest_delete_status.summary=legacy_pytest_delete_ready=false blockers=23 legacy pytest modules remain under tests/; 23 legacy pytest modules still import bigclaw from src/`)
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/scheduler ./internal/testharness ./internal/regression ./cmd/bigclawctl`
+  Result: passed (`ok  	bigclaw-go/internal/scheduler	(cached)`; `ok  	bigclaw-go/internal/testharness	1.666s`; `ok  	bigclaw-go/internal/regression	2.024s`; `ok  	bigclaw-go/cmd/bigclawctl	3.426s`)
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./...`
-  Result: passed
+  Result: passed (`ok  	bigclaw-go/cmd/bigclawctl	4.096s`; `ok  	bigclaw-go/cmd/bigclawd	2.475s`; `ok  	bigclaw-go/internal/api	2.294s`; `ok  	bigclaw-go/internal/orchestrator	1.041s`; `ok  	bigclaw-go/internal/regression	1.775s`; `ok  	bigclaw-go/internal/scheduler	(cached)`; `ok  	bigclaw-go/internal/testharness	(cached)`; `ok  	bigclaw-go/internal/worker	2.000s`; remaining packages passed cached or had no test files)
 
 ## Notes
 
