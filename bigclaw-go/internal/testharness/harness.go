@@ -186,25 +186,25 @@ type LegacyPytestRetirementStatus struct {
 }
 
 type PytestHarnessStatusReport struct {
-	Status                   string                 `json:"status"`
-	ProjectRoot              string                 `json:"project_root"`
-	InventorySummary         string                 `json:"inventory_summary"`
-	TestModules              []string               `json:"test_modules"`
-	BigclawImports           []string               `json:"bigclaw_imports"`
-	PytestImports            []string               `json:"pytest_imports"`
-	PyprojectPath            string                 `json:"pyproject_path"`
-	PyprojectExists          bool                   `json:"pyproject_exists"`
-	PyprojectDeclaresPytest  bool                   `json:"pyproject_declares_pytest"`
-	PyprojectHasPytestConfig bool                   `json:"pyproject_has_pytest_config"`
-	PytestCommandRefFiles    []string               `json:"pytest_command_ref_files"`
-	ConftestExists           bool                   `json:"conftest_exists"`
-	ConftestPath             string                 `json:"conftest_path"`
-	ConftestPrependsSrc      bool                   `json:"conftest_prepends_src"`
-	ConftestImportsPytest    bool                   `json:"conftest_imports_pytest"`
-	ConftestDefinesFixture   bool                   `json:"conftest_defines_fixture"`
-	ConftestDefinesHook      bool                   `json:"conftest_defines_hook"`
-	ConftestUsesPlugins      bool                   `json:"conftest_uses_pytest_plugins"`
-	ConftestDeleteStatus     ConftestDeletionStatus `json:"conftest_delete_status"`
+	Status                   string                       `json:"status"`
+	ProjectRoot              string                       `json:"project_root"`
+	InventorySummary         string                       `json:"inventory_summary"`
+	TestModules              []string                     `json:"test_modules"`
+	BigclawImports           []string                     `json:"bigclaw_imports"`
+	PytestImports            []string                     `json:"pytest_imports"`
+	PyprojectPath            string                       `json:"pyproject_path"`
+	PyprojectExists          bool                         `json:"pyproject_exists"`
+	PyprojectDeclaresPytest  bool                         `json:"pyproject_declares_pytest"`
+	PyprojectHasPytestConfig bool                         `json:"pyproject_has_pytest_config"`
+	PytestCommandRefFiles    []string                     `json:"pytest_command_ref_files"`
+	ConftestExists           bool                         `json:"conftest_exists"`
+	ConftestPath             string                       `json:"conftest_path"`
+	ConftestPrependsSrc      bool                         `json:"conftest_prepends_src"`
+	ConftestImportsPytest    bool                         `json:"conftest_imports_pytest"`
+	ConftestDefinesFixture   bool                         `json:"conftest_defines_fixture"`
+	ConftestDefinesHook      bool                         `json:"conftest_defines_hook"`
+	ConftestUsesPlugins      bool                         `json:"conftest_uses_pytest_plugins"`
+	ConftestDeleteStatus     ConftestDeletionStatus       `json:"conftest_delete_status"`
 	LegacyPytestDeleteStatus LegacyPytestRetirementStatus `json:"legacy_pytest_delete_status"`
 }
 
