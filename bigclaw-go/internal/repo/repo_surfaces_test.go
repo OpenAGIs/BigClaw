@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"encoding/json"
 	"errors"
 	"reflect"
 	"strings"
@@ -101,6 +102,31 @@ func TestRepoRegistryFallsBackWithoutSpaceAndReusesCachedAgent(t *testing.T) {
 	agent := registry.ResolveAgent("bob@example.com", "executor")
 	if agent.RepoAgentID != "agent-existing" || !reflect.DeepEqual(agent.Roles, []string{"reviewer"}) {
 		t.Fatalf("expected cached agent to be reused, got %+v", agent)
+	}
+}
+
+func TestRepoRegistryJSONRoundTrip(t *testing.T) {
+	registry := RepoRegistry{}
+	registry.RegisterSpace(RepoSpace{SpaceID: "s-1", ProjectKey: "BIGCLAW", Repo: "OpenAGIs/BigClaw"})
+	originalAgent := registry.ResolveAgent("native cloud", "reviewer")
+
+	encoded, err := json.Marshal(registry)
+	if err != nil {
+		t.Fatalf("marshal registry: %v", err)
+	}
+
+	var restored RepoRegistry
+	if err := json.Unmarshal(encoded, &restored); err != nil {
+		t.Fatalf("unmarshal registry: %v", err)
+	}
+
+	space, ok := restored.ResolveSpace("BIGCLAW")
+	if !ok || space.Repo != "OpenAGIs/BigClaw" {
+		t.Fatalf("expected restored registry space, got %+v %t", space, ok)
+	}
+	agent := restored.ResolveAgent("native cloud", "reviewer")
+	if agent.RepoAgentID != originalAgent.RepoAgentID || !reflect.DeepEqual(agent.Roles, []string{"reviewer"}) {
+		t.Fatalf("expected restored agent to stay aligned, got %+v", agent)
 	}
 }
 

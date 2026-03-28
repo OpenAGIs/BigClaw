@@ -114,6 +114,22 @@ First migrated Python test slice now covered explicitly in Go:
   - `test_big602_validation_policy_blocks_issue_close_without_required_reports`
   - `test_big602_validation_policy_allows_issue_close_when_reports_complete`
   - covered by `bigclaw-go/internal/policy/validation_report_policy_test.go`
+- `tests/test_repo_governance.py`
+  - `test_repo_permission_matrix_resolves_roles`
+  - `test_repo_audit_field_contract_is_deterministic`
+  - covered by `bigclaw-go/internal/repo/governance_test.go`
+- `tests/test_repo_registry.py`
+  - `test_repo_registry_resolves_space_channel_and_agent_deterministically`
+  - `test_repo_registry_round_trip`
+  - covered by `bigclaw-go/internal/repo/repo_surfaces_test.go`
+- `tests/test_repo_gateway.py`
+  - `test_repo_gateway_normalization_and_audit_payload`
+  - `test_repo_gateway_error_normalization_is_deterministic`
+  - covered by `bigclaw-go/internal/repo/repo_surfaces_test.go`
+- `tests/test_repo_triage.py`
+  - `test_lineage_aware_recommendations`
+  - `test_approval_evidence_packet_includes_candidate_and_accepted_hash`
+  - covered by `bigclaw-go/internal/repo/repo_surfaces_test.go`
 - `tests/test_parallel_validation_bundle.py`
   - `test_export_validation_bundle_generates_latest_reports_and_index`
   - checked-in report/index contract covered by
@@ -161,7 +177,6 @@ Recommended next migration slices:
 
 - `tests/test_dashboard_run_contract.py` into `bigclaw-go/internal/product`
 - `tests/test_saved_views.py` into `bigclaw-go/internal/product`
-- `tests/test_repo_governance.py` into `bigclaw-go/internal/repo`
 - `tests/test_legacy_shim.py` into `bigclaw-go/internal/legacyshim` and `cmd/bigclawctl`
 - `tests/test_workspace_bootstrap.py` into `bigclaw-go/internal/bootstrap`
 

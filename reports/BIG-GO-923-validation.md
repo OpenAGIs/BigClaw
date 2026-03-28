@@ -17,6 +17,8 @@
 13. `cd bigclaw-go && go test ./internal/regression`
 14. `cd bigclaw-go && go test ./internal/policy ./internal/regression`
 15. `git status --short`
+16. `cd bigclaw-go && go test ./internal/repo`
+17. `git status --short`
 
 ## Results
 
@@ -50,3 +52,7 @@
    Result: `ok  	bigclaw-go/internal/policy	(cached)`, `ok  	bigclaw-go/internal/regression	0.725s`
 15. `git status --short`
    Result: `M bigclaw-go/docs/reports/pytest-harness-migration.md`, `M reports/BIG-GO-923-validation.md`, `?? bigclaw-go/internal/policy/validation_report_policy.go`, `?? bigclaw-go/internal/policy/validation_report_policy_test.go`, `?? bigclaw-go/internal/regression/live_validation_index_markdown_test.go`
+16. `cd bigclaw-go && go test ./internal/repo`
+   Result: `ok  	bigclaw-go/internal/repo	1.389s`
+17. `git status --short`
+   Result: `M bigclaw-go/docs/reports/pytest-harness-migration.md`, `M bigclaw-go/internal/repo/repo_surfaces_test.go`, `M reports/BIG-GO-923-validation.md`
