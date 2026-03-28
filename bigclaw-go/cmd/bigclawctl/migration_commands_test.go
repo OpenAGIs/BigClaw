@@ -139,6 +139,15 @@ func TestRunPytestHarnessJSONOutput(t *testing.T) {
 	if payload["project_root"] != "." {
 		t.Fatalf("unexpected project_root: %+v", payload)
 	}
+	if payload["pyproject_path"] != "pyproject.toml" {
+		t.Fatalf("unexpected pyproject_path: %+v", payload)
+	}
+	if payload["pyproject_exists"] != true {
+		t.Fatalf("expected pyproject_exists=true, got %+v", payload)
+	}
+	if payload["pyproject_declares_pytest"] != true || payload["pyproject_has_pytest_config"] != true {
+		t.Fatalf("expected pyproject pytest flags to remain true, got %+v", payload)
+	}
 	if payload["conftest_exists"] != true {
 		t.Fatalf("expected conftest_exists=true, got %+v", payload)
 	}
@@ -157,6 +166,9 @@ func TestRunPytestHarnessJSONOutput(t *testing.T) {
 	}
 	if deleteStatus["legacy_test_modules"] != float64(28) || deleteStatus["bigclaw_import_modules"] != float64(28) || deleteStatus["pytest_import_modules"] != float64(2) {
 		t.Fatalf("unexpected delete status counts: %+v", deleteStatus)
+	}
+	if deleteStatus["summary"] != "conftest_delete_ready=false blockers=pyproject.toml still declares pytest as a Python test dependency; pyproject.toml still defines [tool.pytest.ini_options]; 28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly" {
+		t.Fatalf("unexpected delete status summary: %+v", deleteStatus)
 	}
 	if payload["conftest_uses_pytest_plugins"] != false {
 		t.Fatalf("expected conftest_uses_pytest_plugins=false, got %+v", payload)
@@ -186,7 +198,7 @@ func TestRunPytestHarnessWritesReportFile(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected conftest_delete_status object, got %+v", payload["conftest_delete_status"])
 	}
-	if deleteStatus["summary"] != "conftest_delete_ready=false blockers=28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly" {
+	if deleteStatus["summary"] != "conftest_delete_ready=false blockers=pyproject.toml still declares pytest as a Python test dependency; pyproject.toml still defines [tool.pytest.ini_options]; 28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly" {
 		t.Fatalf("unexpected delete status summary in report file: %+v", deleteStatus)
 	}
 }

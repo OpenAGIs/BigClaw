@@ -134,16 +134,20 @@ func Chdir(tb testing.TB, dir string) {
 }
 
 type PytestAssetInventory struct {
-	ConftestExists         bool
-	TestModules            []string
-	BigclawImportModules   []string
-	PytestImportModules    []string
-	ConftestPath           string
-	ConftestPrependsSrc    bool
-	ConftestImportsPytest  bool
-	ConftestDefinesFixture bool
-	ConftestDefinesHook    bool
-	ConftestUsesPlugins    bool
+	ConftestExists           bool
+	PyprojectPath            string
+	PyprojectExists          bool
+	PyprojectDeclaresPytest  bool
+	PyprojectHasPytestConfig bool
+	TestModules              []string
+	BigclawImportModules     []string
+	PytestImportModules      []string
+	ConftestPath             string
+	ConftestPrependsSrc      bool
+	ConftestImportsPytest    bool
+	ConftestDefinesFixture   bool
+	ConftestDefinesHook      bool
+	ConftestUsesPlugins      bool
 }
 
 type ConftestDeletionStatus struct {
@@ -156,20 +160,24 @@ type ConftestDeletionStatus struct {
 }
 
 type PytestHarnessStatusReport struct {
-	Status                 string                 `json:"status"`
-	ProjectRoot            string                 `json:"project_root"`
-	InventorySummary       string                 `json:"inventory_summary"`
-	TestModules            []string               `json:"test_modules"`
-	BigclawImports         []string               `json:"bigclaw_imports"`
-	PytestImports          []string               `json:"pytest_imports"`
-	ConftestExists         bool                   `json:"conftest_exists"`
-	ConftestPath           string                 `json:"conftest_path"`
-	ConftestPrependsSrc    bool                   `json:"conftest_prepends_src"`
-	ConftestImportsPytest  bool                   `json:"conftest_imports_pytest"`
-	ConftestDefinesFixture bool                   `json:"conftest_defines_fixture"`
-	ConftestDefinesHook    bool                   `json:"conftest_defines_hook"`
-	ConftestUsesPlugins    bool                   `json:"conftest_uses_pytest_plugins"`
-	ConftestDeleteStatus   ConftestDeletionStatus `json:"conftest_delete_status"`
+	Status                   string                 `json:"status"`
+	ProjectRoot              string                 `json:"project_root"`
+	InventorySummary         string                 `json:"inventory_summary"`
+	TestModules              []string               `json:"test_modules"`
+	BigclawImports           []string               `json:"bigclaw_imports"`
+	PytestImports            []string               `json:"pytest_imports"`
+	PyprojectPath            string                 `json:"pyproject_path"`
+	PyprojectExists          bool                   `json:"pyproject_exists"`
+	PyprojectDeclaresPytest  bool                   `json:"pyproject_declares_pytest"`
+	PyprojectHasPytestConfig bool                   `json:"pyproject_has_pytest_config"`
+	ConftestExists           bool                   `json:"conftest_exists"`
+	ConftestPath             string                 `json:"conftest_path"`
+	ConftestPrependsSrc      bool                   `json:"conftest_prepends_src"`
+	ConftestImportsPytest    bool                   `json:"conftest_imports_pytest"`
+	ConftestDefinesFixture   bool                   `json:"conftest_defines_fixture"`
+	ConftestDefinesHook      bool                   `json:"conftest_defines_hook"`
+	ConftestUsesPlugins      bool                   `json:"conftest_uses_pytest_plugins"`
+	ConftestDeleteStatus     ConftestDeletionStatus `json:"conftest_delete_status"`
 }
 
 func InventoryPytestAssets(tb testing.TB) PytestAssetInventory {
@@ -189,7 +197,19 @@ func InventoryPytestAssetsAt(projectRoot string) (PytestAssetInventory, error) {
 	}
 
 	inventory := PytestAssetInventory{
-		ConftestPath: filepath.Join(testsDir, "conftest.py"),
+		PyprojectPath: filepath.Join(projectRoot, "pyproject.toml"),
+		ConftestPath:  filepath.Join(testsDir, "conftest.py"),
+	}
+	if _, err := os.Stat(inventory.PyprojectPath); err == nil {
+		inventory.PyprojectExists = true
+		if inventory.PyprojectDeclaresPytest, err = fileContainsAt(inventory.PyprojectPath, `"pytest`); err != nil {
+			return PytestAssetInventory{}, err
+		}
+		if inventory.PyprojectHasPytestConfig, err = fileContainsAt(inventory.PyprojectPath, "[tool.pytest.ini_options]"); err != nil {
+			return PytestAssetInventory{}, err
+		}
+	} else if !os.IsNotExist(err) {
+		return PytestAssetInventory{}, err
 	}
 	for _, entry := range entries {
 		if entry.Name() == "conftest.py" {
@@ -277,22 +297,27 @@ func BuildPytestHarnessStatusReport(projectRoot string) (PytestHarnessStatusRepo
 		return PytestHarnessStatusReport{}, err
 	}
 	normalizedProjectRoot := "."
+	normalizedPyprojectPath := normalizeProjectRelativePath(projectRoot, inventory.PyprojectPath)
 	normalizedConftestPath := normalizeProjectRelativePath(projectRoot, inventory.ConftestPath)
 	return PytestHarnessStatusReport{
-		Status:                 "ok",
-		ProjectRoot:            normalizedProjectRoot,
-		InventorySummary:       inventory.Summary(),
-		TestModules:            append([]string(nil), inventory.TestModules...),
-		BigclawImports:         append([]string(nil), inventory.BigclawImportModules...),
-		PytestImports:          append([]string(nil), inventory.PytestImportModules...),
-		ConftestExists:         inventory.ConftestExists,
-		ConftestPath:           normalizedConftestPath,
-		ConftestPrependsSrc:    inventory.ConftestPrependsSrc,
-		ConftestImportsPytest:  inventory.ConftestImportsPytest,
-		ConftestDefinesFixture: inventory.ConftestDefinesFixture,
-		ConftestDefinesHook:    inventory.ConftestDefinesHook,
-		ConftestUsesPlugins:    inventory.ConftestUsesPlugins,
-		ConftestDeleteStatus:   inventory.ConftestDeletionStatus(),
+		Status:                   "ok",
+		ProjectRoot:              normalizedProjectRoot,
+		InventorySummary:         inventory.Summary(),
+		TestModules:              append([]string(nil), inventory.TestModules...),
+		BigclawImports:           append([]string(nil), inventory.BigclawImportModules...),
+		PytestImports:            append([]string(nil), inventory.PytestImportModules...),
+		PyprojectPath:            normalizedPyprojectPath,
+		PyprojectExists:          inventory.PyprojectExists,
+		PyprojectDeclaresPytest:  inventory.PyprojectDeclaresPytest,
+		PyprojectHasPytestConfig: inventory.PyprojectHasPytestConfig,
+		ConftestExists:           inventory.ConftestExists,
+		ConftestPath:             normalizedConftestPath,
+		ConftestPrependsSrc:      inventory.ConftestPrependsSrc,
+		ConftestImportsPytest:    inventory.ConftestImportsPytest,
+		ConftestDefinesFixture:   inventory.ConftestDefinesFixture,
+		ConftestDefinesHook:      inventory.ConftestDefinesHook,
+		ConftestUsesPlugins:      inventory.ConftestUsesPlugins,
+		ConftestDeleteStatus:     inventory.ConftestDeletionStatus(),
 	}, nil
 }
 
@@ -369,6 +394,12 @@ func (i PytestAssetInventory) Summary() string {
 
 func (i PytestAssetInventory) ConftestDeletionBlockers() []string {
 	var blockers []string
+	if i.PyprojectDeclaresPytest {
+		blockers = append(blockers, "pyproject.toml still declares pytest as a Python test dependency")
+	}
+	if i.PyprojectHasPytestConfig {
+		blockers = append(blockers, "pyproject.toml still defines [tool.pytest.ini_options]")
+	}
 	if i.ConftestImportsPytest {
 		blockers = append(blockers, "tests/conftest.py still imports pytest directly")
 	}

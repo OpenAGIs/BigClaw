@@ -8,6 +8,7 @@ The Python-side harness surface in scope today is intentionally small:
 
 - `tests/conftest.py`
 - `tests/test_*.py` under the repository root
+- `pyproject.toml` pytest dependency/config stanzas that still define the legacy pytest lane
 
 ## Current Python and non-Go asset inventory
 
@@ -22,6 +23,8 @@ Observed inventory at the current branch state:
 - `28` Python test modules under `tests/`
 - `28` modules directly importing `bigclaw...`
 - `2` modules importing `pytest`: `test_audit_events.py`, `test_planning.py`
+- `pyproject.toml` still declares `pytest>=8.0` in `[project.optional-dependencies].dev`
+- `pyproject.toml` still defines `[tool.pytest.ini_options]` with `testpaths = ["tests"]` and `addopts = "-q"`
 - no shared pytest fixtures in `tests/` and no fixture definitions in `tests/conftest.py`
 - `tests/conftest.py` does not import `pytest` and does not define pytest hooks; it is a plain import-path shim
 
@@ -48,6 +51,7 @@ It provides:
 - `InventoryPytestAssets(tb)` to machine-check the remaining pytest surface (`28` test modules, `28` `bigclaw` importers, `2` `pytest` importers) instead of leaving that inventory only in prose
 - `InventoryPytestAssets(tb)` now walks `tests/` recursively, so legacy pytest files moved into nested subdirectories cannot silently escape the Go-owned inventory gate
 - `InventoryPytestAssets(tb)` now detects pytest usage via `import pytest`, `from pytest import ...`, and `pytest.` call sites so the `tests/conftest.py` deletion gate does not miss direct import forms
+- `InventoryPytestAssets(tb)` now also machine-checks whether `pyproject.toml` still declares pytest as a dev dependency and still defines `[tool.pytest.ini_options]`, so the remaining non-Go pytest infrastructure is tracked in the same report as `tests/conftest.py`
 - `PytestAssetInventory.ConftestDeletionBlockers()` to keep the current `tests/conftest.py` removal blockers machine-checked from Go rather than only documented in markdown
 - `PytestAssetInventory.CanDeleteConftest()` to expose the current deletion gate as a single Go-owned boolean for future migration slices
 - `PytestAssetInventory.ConftestDeletionSummary()` to provide one stable, report-ready line for the current delete-readiness state
@@ -305,6 +309,7 @@ Recommended next migration slices:
 `tests/conftest.py` is safe to delete only when all of the following are true:
 
 - no remaining validation lane depends on `python3 -m pytest`
+- `pyproject.toml` no longer declares pytest as a supported Python test dependency and no longer defines `[tool.pytest.ini_options]`
 - no remaining test module imports `bigclaw...` from `src/`
 - `tests/conftest.py` no longer imports `pytest`, defines fixtures/hooks, or declares `pytest_plugins`
 - Go replacements cover the active regression surface for the remaining Python tests
@@ -312,6 +317,8 @@ Recommended next migration slices:
 
 Current machine-checked blockers in this issue are:
 
+- `pyproject.toml still declares pytest as a Python test dependency`
+- `pyproject.toml still defines [tool.pytest.ini_options]`
 - `28 legacy pytest modules remain under tests/`
 - `28 legacy pytest modules still import bigclaw from src/`
 - `2 legacy pytest modules still import pytest directly`
@@ -324,7 +331,7 @@ The `pytest` blocker count is computed from Go-owned inventory code and now cove
 
 Current machine-checked single-line summary is:
 
-- `conftest_delete_ready=false blockers=28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly`
+- `conftest_delete_ready=false blockers=pyproject.toml still declares pytest as a Python test dependency; pyproject.toml still defines [tool.pytest.ini_options]; 28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly`
 
 Current Go-owned command surface for this state:
 
@@ -341,6 +348,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/
 That command emits:
 
 - the current inventory summary/counts
+- the current `pyproject.toml` pytest dependency/config flags
 - the remaining `tests/test_*.py` modules, `bigclaw` importers, and `pytest` importers
 - the current `tests/conftest.py` behavior flags
 - the structured `conftest` deletion gate used by the migration report and tests
@@ -368,7 +376,7 @@ Observed results for this issue:
 
 - `PYTHONPATH=src python3 -c "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0"` passed on the latest issue branch state, confirming the remaining legacy `src/bigclaw` import surface still works without relying on a checked-in pytest module.
 - `go test ./internal/testharness ./internal/regression` passed on the latest issue branch state, covering the Go-owned script-runtime replacement for `tests/test_validation_bundle_continuation_policy_gate.py` together with the harness/report regression gates.
-- `go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json` passed on the latest issue branch state, regenerated the checked-in snapshot, and confirmed `inventory_summary=tests=28 bigclaw_imports=28 pytest_imports=2` with `conftest_delete_status.can_delete=false`.
+- `go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json` passed on the latest issue branch state, regenerated the checked-in snapshot, and confirmed `inventory_summary=tests=28 bigclaw_imports=28 pytest_imports=2`, `pyproject_declares_pytest=true`, `pyproject_has_pytest_config=true`, and `conftest_delete_status.can_delete=false`.
 
 Deletion-readiness validation for the legacy Python harness, once migration is further along:
 

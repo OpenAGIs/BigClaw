@@ -54,6 +54,18 @@ func TestInventoryPytestAssets(t *testing.T) {
 	if !inventory.ConftestExists {
 		t.Fatal("expected tests/conftest.py to exist in the current repo inventory")
 	}
+	if inventory.PyprojectPath != filepath.Join(ProjectRoot(t), "pyproject.toml") {
+		t.Fatalf("unexpected pyproject path: %q", inventory.PyprojectPath)
+	}
+	if !inventory.PyprojectExists {
+		t.Fatal("expected pyproject.toml to exist in the current repo inventory")
+	}
+	if !inventory.PyprojectDeclaresPytest {
+		t.Fatal("expected pyproject.toml to declare pytest while legacy pytest remains active")
+	}
+	if !inventory.PyprojectHasPytestConfig {
+		t.Fatal("expected pyproject.toml to define tool.pytest.ini_options")
+	}
 	if inventory.ConftestPath != filepath.Join(ProjectRoot(t), "tests", "conftest.py") {
 		t.Fatalf("unexpected conftest path: %q", inventory.ConftestPath)
 	}
@@ -85,6 +97,8 @@ func TestInventoryPytestAssets(t *testing.T) {
 	}
 
 	wantBlockers := []string{
+		"pyproject.toml still declares pytest as a Python test dependency",
+		"pyproject.toml still defines [tool.pytest.ini_options]",
 		"28 legacy pytest modules remain under tests/",
 		"28 legacy pytest modules still import bigclaw from src/",
 		"2 legacy pytest modules still import pytest directly",
@@ -92,7 +106,7 @@ func TestInventoryPytestAssets(t *testing.T) {
 	if got := inventory.ConftestDeletionBlockers(); !reflect.DeepEqual(got, wantBlockers) {
 		t.Fatalf("unexpected conftest deletion blockers: got=%v want=%v", got, wantBlockers)
 	}
-	wantSummary := "conftest_delete_ready=false blockers=28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
+	wantSummary := "conftest_delete_ready=false blockers=pyproject.toml still declares pytest as a Python test dependency; pyproject.toml still defines [tool.pytest.ini_options]; 28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
 	if got := inventory.ConftestDeletionSummary(); got != wantSummary {
 		t.Fatalf("unexpected conftest deletion summary: got=%q want=%q", got, wantSummary)
 	}
@@ -130,6 +144,12 @@ func TestBuildPytestHarnessStatusReportNormalizesPaths(t *testing.T) {
 	}
 	if report.ProjectRoot != "." {
 		t.Fatalf("expected portable project_root '.', got %q", report.ProjectRoot)
+	}
+	if report.PyprojectPath != "pyproject.toml" {
+		t.Fatalf("expected portable pyproject_path, got %q", report.PyprojectPath)
+	}
+	if !report.PyprojectExists || !report.PyprojectDeclaresPytest || !report.PyprojectHasPytestConfig {
+		t.Fatalf("expected report to include active pyproject pytest infrastructure flags, got %+v", report)
 	}
 	if !report.ConftestExists {
 		t.Fatal("expected report to note top-level conftest presence")
@@ -204,12 +224,16 @@ func TestEmptyInventoryAllowsConftestDeletion(t *testing.T) {
 
 func TestConftestDeletionBlockersIncludeConftestRuntimeFeatures(t *testing.T) {
 	inventory := PytestAssetInventory{
-		ConftestImportsPytest:  true,
-		ConftestDefinesFixture: true,
-		ConftestDefinesHook:    true,
-		ConftestUsesPlugins:    true,
+		PyprojectDeclaresPytest:  true,
+		PyprojectHasPytestConfig: true,
+		ConftestImportsPytest:    true,
+		ConftestDefinesFixture:   true,
+		ConftestDefinesHook:      true,
+		ConftestUsesPlugins:      true,
 	}
 	want := []string{
+		"pyproject.toml still declares pytest as a Python test dependency",
+		"pyproject.toml still defines [tool.pytest.ini_options]",
 		"tests/conftest.py still imports pytest directly",
 		"tests/conftest.py still defines pytest fixtures",
 		"tests/conftest.py still defines pytest hooks",
@@ -229,6 +253,10 @@ func TestInventoryPytestAssetsAtRecursesIntoNestedTests(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(testsRoot, "nested"), 0o755); err != nil {
 		t.Fatalf("mkdir nested tests: %v", err)
 	}
+	pyprojectBody := "[project.optional-dependencies]\ndev = [\n  \"pytest>=8.0\",\n]\n\n[tool.pytest.ini_options]\naddopts = \"-q\"\n"
+	if err := os.WriteFile(filepath.Join(projectRoot, "pyproject.toml"), []byte(pyprojectBody), 0o644); err != nil {
+		t.Fatalf("write pyproject: %v", err)
+	}
 	conftestBody := "import sys\nfrom pathlib import Path\nROOT = Path(__file__).resolve().parents[1]\nSRC = ROOT / 'src'\nsys.path.insert(0, str(SRC))\n"
 	if err := os.WriteFile(filepath.Join(testsRoot, "conftest.py"), []byte(conftestBody), 0o644); err != nil {
 		t.Fatalf("write conftest: %v", err)
@@ -247,6 +275,9 @@ func TestInventoryPytestAssetsAtRecursesIntoNestedTests(t *testing.T) {
 	}
 	if !inventory.ConftestExists {
 		t.Fatal("expected top-level conftest to be detected")
+	}
+	if !inventory.PyprojectExists || !inventory.PyprojectDeclaresPytest || !inventory.PyprojectHasPytestConfig {
+		t.Fatalf("expected pyproject pytest infrastructure to be detected, got %+v", inventory)
 	}
 	if !inventory.ConftestPrependsSrc {
 		t.Fatal("expected conftest src bootstrap to be detected")
