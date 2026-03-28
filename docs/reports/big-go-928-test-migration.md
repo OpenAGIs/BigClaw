@@ -33,3 +33,8 @@
 ## Regression Commands
 
 - `go test ./internal/bootstrap ./internal/intake ./internal/planning ./internal/governance`
+
+## Reference Audit
+
+- No active CI workflow, script, or non-historical execution doc still invokes `tests/test_mapping.py`, `tests/test_workspace_bootstrap.py`, or `tests/test_planning.py`.
+- Remaining references are limited to historical validation reports under `reports/` and migration tracking documents that intentionally preserve prior-state context.

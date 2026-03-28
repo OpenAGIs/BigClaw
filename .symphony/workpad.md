@@ -39,3 +39,6 @@
   - `ok  	bigclaw-go/internal/planning`
   - `ok  	bigclaw-go/internal/queue	30.056s`
   - `ok  	bigclaw-go/internal/workflow	3.830s`
+- `rg -n "test_(mapping|planning|workspace_bootstrap)\.py" . --glob '!.git/**' --glob '!reports/**'`
+  - PASS
+  - only migration-tracking docs reference the removed test files; no active executable path remains
