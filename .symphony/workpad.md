@@ -50,4 +50,8 @@
   - result: `ok  	bigclaw-go/internal/regression	0.812s`
 - `python3 -m pytest bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py -q`
   - result: `4 passed`
+- `python3 -m pytest tests/test_operations.py -q`
+  - result: `20 passed`
+- `python3 -m pytest tests/test_workflow.py -q`
+  - result: `8 passed`
 - `git status --short`
