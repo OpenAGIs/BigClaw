@@ -19,6 +19,8 @@
   - `tests/test_validation_policy.py`
   - `tests/test_validation_bundle_continuation_policy_gate.py`
   - `tests/test_validation_bundle_continuation_scorecard.py`
+- Deleted isolated Python source now superseded by Go:
+  - `src/bigclaw/validation_policy.py`
 - New Go replacement coverage:
   - `bigclaw-go/internal/reporting/migration_suite.go`
   - `bigclaw-go/internal/reporting/migration_suite_test.go`
@@ -26,7 +28,6 @@
 - Remaining Python / non-Go assets still in scope:
   - `src/bigclaw/reports.py`
   - `src/bigclaw/evaluation.py`
-  - `src/bigclaw/validation_policy.py`
   - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
   - `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
   - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
@@ -37,7 +38,6 @@
 - continuation script wrapper coverage is migrated into Go regression tests under `bigclaw-go/internal/regression`, while the Python scripts themselves still remain as runtime assets.
 - Safe deletion conditions for remaining Python assets:
   - delete `src/bigclaw/reports.py` and `src/bigclaw/evaluation.py` only after their remaining importers under `tests/` are migrated or removed;
-  - delete `src/bigclaw/validation_policy.py` only after package references are removed and the Go replacement is the sole execution path;
   - delete `bigclaw-go/scripts/e2e/*.py` and the retained sibling Python test only after the scripts themselves are replaced by Go executables/tests and docs/runbooks stop invoking Python.
 
 ## Validation
