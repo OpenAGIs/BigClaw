@@ -87,7 +87,7 @@ func TestInventoryPytestAssets(t *testing.T) {
 	if len(inventory.PytestCommandRefFiles) != 0 {
 		t.Fatalf("expected no active pytest command ref files, got=%v", inventory.PytestCommandRefFiles)
 	}
-	if got := inventory.Summary(); got != "tests=19 bigclaw_imports=19 pytest_imports=0 pytest_command_refs=0" {
+	if got := inventory.Summary(); got != "tests=18 bigclaw_imports=18 pytest_imports=0 pytest_command_refs=0" {
 		t.Fatalf("unexpected inventory summary: %s", got)
 	}
 
@@ -109,14 +109,14 @@ func TestInventoryPytestAssets(t *testing.T) {
 		CanDelete:            true,
 		Summary:              wantSummary,
 		Blockers:             []string{},
-		LegacyTestModules:    19,
-		BigclawImportModules: 19,
+		LegacyTestModules:    18,
+		BigclawImportModules: 18,
 		PytestImportModules:  0,
 	}
 	if got := inventory.ConftestDeletionStatus(); !reflect.DeepEqual(got, wantStatus) {
 		t.Fatalf("unexpected conftest deletion status: got=%+v want=%+v", got, wantStatus)
 	}
-	wantLegacySummary := "legacy_pytest_delete_ready=false blockers=19 legacy pytest modules remain under tests/; 19 legacy pytest modules still import bigclaw from src/"
+	wantLegacySummary := "legacy_pytest_delete_ready=false blockers=18 legacy pytest modules remain under tests/; 18 legacy pytest modules still import bigclaw from src/"
 	if got := inventory.LegacyPytestRetirementSummary(); got != wantLegacySummary {
 		t.Fatalf("unexpected legacy pytest deletion summary: got=%q want=%q", got, wantLegacySummary)
 	}
@@ -126,9 +126,9 @@ func TestInventoryPytestAssets(t *testing.T) {
 	wantLegacyStatus := LegacyPytestRetirementStatus{
 		CanDelete:            false,
 		Summary:              wantLegacySummary,
-		Blockers:             []string{"19 legacy pytest modules remain under tests/", "19 legacy pytest modules still import bigclaw from src/"},
-		LegacyTestModules:    19,
-		BigclawImportModules: 19,
+		Blockers:             []string{"18 legacy pytest modules remain under tests/", "18 legacy pytest modules still import bigclaw from src/"},
+		LegacyTestModules:    18,
+		BigclawImportModules: 18,
 		PytestImportModules:  0,
 		PytestCommandRefs:    0,
 	}
