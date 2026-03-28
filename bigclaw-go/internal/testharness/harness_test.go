@@ -102,7 +102,7 @@ func TestBootstrapLegacyPythonPathSupportsBigclawImports(t *testing.T) {
 }
 
 func TestPythonCommandUsesProjectRootAndLegacyPythonPath(t *testing.T) {
-	RequireExecutable(t, "python3")
+	pythonPath := RequireExecutable(t, "python3")
 	cmd := PythonCommand(t, "-c", "import os, pathlib; print(pathlib.Path.cwd().name); print(os.environ['PYTHONPATH'])")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -118,6 +118,13 @@ func TestPythonCommandUsesProjectRootAndLegacyPythonPath(t *testing.T) {
 	}
 	if !strings.HasPrefix(lines[1], LegacySrcRoot(t)) {
 		t.Fatalf("expected PYTHONPATH to start with %q, got %q", LegacySrcRoot(t), lines[1])
+	}
+	if cmd.Path != pythonPath {
+		t.Fatalf("unexpected python executable path: got=%q want=%q", cmd.Path, pythonPath)
+	}
+	wantArgs := []string{pythonPath, "-c", "import os, pathlib; print(pathlib.Path.cwd().name); print(os.environ['PYTHONPATH'])"}
+	if !reflect.DeepEqual(cmd.Args, wantArgs) {
+		t.Fatalf("unexpected python command args: got=%v want=%v", cmd.Args, wantArgs)
 	}
 }
 
