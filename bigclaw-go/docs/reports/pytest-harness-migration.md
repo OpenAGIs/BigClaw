@@ -55,6 +55,7 @@ First-batch adoption landed here:
 - `internal/regression/*_test.go` now uses the shared repo-root baseline instead of ad hoc `../..` resolution and `runtime.Caller` plumbing
 - `cmd/bigclawctl/migration_commands_test.go` now uses the shared cwd and `PATH` bootstrap helpers
 - `cmd/bigclawctl/main_test.go` and `internal/refill/local_store_test.go` now use `testharness.Chdir(...)` instead of bespoke cwd save/restore code
+- `cmd/bigclawctl/main_test.go` now also resolves the Python runtime via `testharness.RequireExecutable(...)` instead of hard-coding `python3`
 
 First migrated Python test slice now covered explicitly in Go:
 
@@ -300,7 +301,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./int
 Observed results for this issue:
 
 - `python3 -m pytest tests/test_mapping.py -q` passed (`.. [100%]`), confirming the current `tests/conftest.py` import bootstrap still supports legacy `src/bigclaw` imports.
-- `go test ./internal/testharness ./internal/refill ./internal/legacyshim ./cmd/bigclawctl` passed, including the Go-side Python import smoke for `bigclaw.mapping`, confirming the replacement helpers and adjacent migrated test slices are stable.
+- `go test ./internal/testharness ./internal/refill ./internal/legacyshim ./cmd/bigclawctl` passed, including the Go-side Python import smoke for `bigclaw.mapping`, the Go-launched legacy pytest smoke, the checked-in shim `py_compile` pass, and the `cmd/bigclawctl` runtime-probe adoption, confirming the replacement helpers and adjacent migrated test slices are stable.
 
 Deletion-readiness validation for the legacy Python harness, once migration is further along:
 

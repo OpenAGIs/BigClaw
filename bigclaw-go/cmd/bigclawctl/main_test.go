@@ -344,7 +344,7 @@ func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testin
 	if err := runLegacyPython([]string{
 		"compile-check",
 		"--repo", repoRoot,
-		"--python", "python3",
+		"--python", testharness.RequireExecutable(t, "python3"),
 		"--json",
 	}); err != nil {
 		t.Fatalf("run legacy-python compile-check: %v", err)
