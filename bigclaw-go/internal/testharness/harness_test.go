@@ -84,15 +84,10 @@ func TestInventoryPytestAssets(t *testing.T) {
 	if inventory.ConftestUsesPlugins {
 		t.Fatal("expected conftest to avoid declaring pytest_plugins")
 	}
-	wantPytestCommandRefs := []string{
-		"src/bigclaw/dashboard_run_contract.py",
-		"src/bigclaw/planning.py",
-		"tests/test_planning.py",
+	if len(inventory.PytestCommandRefFiles) != 0 {
+		t.Fatalf("expected no active pytest command ref files, got=%v", inventory.PytestCommandRefFiles)
 	}
-	if !reflect.DeepEqual(inventory.PytestCommandRefFiles, wantPytestCommandRefs) {
-		t.Fatalf("unexpected pytest command ref files: got=%v want=%v", inventory.PytestCommandRefFiles, wantPytestCommandRefs)
-	}
-	if got := inventory.Summary(); got != "tests=28 bigclaw_imports=28 pytest_imports=2 pytest_command_refs=3" {
+	if got := inventory.Summary(); got != "tests=28 bigclaw_imports=28 pytest_imports=2 pytest_command_refs=0" {
 		t.Fatalf("unexpected inventory summary: %s", got)
 	}
 
@@ -105,7 +100,6 @@ func TestInventoryPytestAssets(t *testing.T) {
 	}
 
 	wantBlockers := []string{
-		"3 active src/tests files still embed pytest validation commands",
 		"pyproject.toml still declares pytest as a Python test dependency",
 		"pyproject.toml still defines [tool.pytest.ini_options]",
 		"28 legacy pytest modules remain under tests/",
@@ -115,7 +109,7 @@ func TestInventoryPytestAssets(t *testing.T) {
 	if got := inventory.ConftestDeletionBlockers(); !reflect.DeepEqual(got, wantBlockers) {
 		t.Fatalf("unexpected conftest deletion blockers: got=%v want=%v", got, wantBlockers)
 	}
-	wantSummary := "conftest_delete_ready=false blockers=3 active src/tests files still embed pytest validation commands; pyproject.toml still declares pytest as a Python test dependency; pyproject.toml still defines [tool.pytest.ini_options]; 28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
+	wantSummary := "conftest_delete_ready=false blockers=pyproject.toml still declares pytest as a Python test dependency; pyproject.toml still defines [tool.pytest.ini_options]; 28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
 	if got := inventory.ConftestDeletionSummary(); got != wantSummary {
 		t.Fatalf("unexpected conftest deletion summary: got=%q want=%q", got, wantSummary)
 	}
@@ -160,13 +154,8 @@ func TestBuildPytestHarnessStatusReportNormalizesPaths(t *testing.T) {
 	if !report.PyprojectExists || !report.PyprojectDeclaresPytest || !report.PyprojectHasPytestConfig {
 		t.Fatalf("expected report to include active pyproject pytest infrastructure flags, got %+v", report)
 	}
-	wantPytestCommandRefs := []string{
-		"src/bigclaw/dashboard_run_contract.py",
-		"src/bigclaw/planning.py",
-		"tests/test_planning.py",
-	}
-	if !reflect.DeepEqual(report.PytestCommandRefFiles, wantPytestCommandRefs) {
-		t.Fatalf("unexpected report pytest command ref files: got=%v want=%v", report.PytestCommandRefFiles, wantPytestCommandRefs)
+	if len(report.PytestCommandRefFiles) != 0 {
+		t.Fatalf("expected report pytest command ref files to be empty, got=%v", report.PytestCommandRefFiles)
 	}
 	if !report.ConftestExists {
 		t.Fatal("expected report to note top-level conftest presence")

@@ -315,7 +315,7 @@ func BuildPytestHarnessStatusReport(projectRoot string) (PytestHarnessStatusRepo
 		PyprojectExists:          inventory.PyprojectExists,
 		PyprojectDeclaresPytest:  inventory.PyprojectDeclaresPytest,
 		PyprojectHasPytestConfig: inventory.PyprojectHasPytestConfig,
-		PytestCommandRefFiles:    append([]string(nil), inventory.PytestCommandRefFiles...),
+		PytestCommandRefFiles:    append([]string{}, inventory.PytestCommandRefFiles...),
 		ConftestExists:           inventory.ConftestExists,
 		ConftestPath:             normalizedConftestPath,
 		ConftestPrependsSrc:      inventory.ConftestPrependsSrc,

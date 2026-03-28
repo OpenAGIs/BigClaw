@@ -340,8 +340,8 @@ class DashboardRunContractLibrary:
                     ],
                     "closeout": {
                         "validation_evidence": [
-                            "python3 -m pytest tests/test_security.py -> 7 passed",
-                            "python3 -m pytest -> 126 passed",
+                            "cd bigclaw-go && go test ./internal/testharness ./internal/regression -> ok",
+                            "cd bigclaw-go && go test ./... -> ok",
                         ],
                         "git_push_succeeded": True,
                         "git_push_output": "To github.com:OpenAGIs/BigClaw.git\\n   abc123..def456  main -> main",
