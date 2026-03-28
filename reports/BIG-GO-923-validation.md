@@ -10,6 +10,7 @@
 6. `cd bigclaw-go && go test ./cmd/bigclawctl`
 7. `cd bigclaw-go && go test ./internal/governance`
 8. `cd bigclaw-go && go test ./internal/bootstrap`
+9. `cd bigclaw-go && go test ./internal/bootstrap`
 
 ## Results
 
@@ -29,3 +30,5 @@
    Result: `ok  	bigclaw-go/internal/governance	(cached)`
 8. `cd bigclaw-go && go test ./internal/bootstrap`
    Result: `ok  	bigclaw-go/internal/bootstrap	3.453s`
+9. `cd bigclaw-go && go test ./internal/bootstrap`
+   Result: `ok  	bigclaw-go/internal/bootstrap	4.031s`

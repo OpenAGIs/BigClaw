@@ -259,6 +259,124 @@ func TestBootstrapRecoversFromStaleSeedDirectoryWithoutRemoteReclone(t *testing.
 	}
 }
 
+func TestBuildValidationReportCoversThreeWorkspacesWithOneCache(t *testing.T) {
+	root := t.TempDir()
+	remote := initRemoteWithMain(t, root)
+
+	report, err := BuildValidationReport(
+		remote,
+		filepath.Join(root, "validation-workspaces"),
+		[]string{"OPE-272", "OPE-273", "OPE-274"},
+		"main",
+		"",
+		filepath.Join(root, "repos"),
+		"",
+		true,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if report.Summary.WorkspaceCount != 3 {
+		t.Fatalf("expected 3 workspaces, got %+v", report.Summary)
+	}
+	if !report.Summary.SingleCacheRootReused || !report.Summary.SingleMirrorReused || !report.Summary.SingleSeedReused {
+		t.Fatalf("expected single shared cache assets, got %+v", report.Summary)
+	}
+	if report.Summary.MirrorCreations != 1 || report.Summary.SeedCreations != 1 {
+		t.Fatalf("expected one mirror and one seed creation, got %+v", report.Summary)
+	}
+	if !report.Summary.CloneSuppressedAfterFirst || !report.Summary.CacheReusedAfterFirst {
+		t.Fatalf("expected warm cache after first bootstrap, got %+v", report.Summary)
+	}
+	if !report.Summary.CleanupPreservedCache {
+		t.Fatalf("expected cleanup to preserve cache, got %+v", report.Summary)
+	}
+	if len(report.BootstrapResults) != 3 || len(report.CleanupResults) != 3 {
+		t.Fatalf("unexpected bootstrap/cleanup result counts: boot=%d cleanup=%d", len(report.BootstrapResults), len(report.CleanupResults))
+	}
+}
+
+func TestRenderValidationMarkdownSummarizesBootstrapReport(t *testing.T) {
+	report := ValidationReport{
+		RepoURL:       "git@github.com:OpenAGIs/BigClaw.git",
+		WorkspaceRoot: "/tmp/workspaces",
+		Summary: ValidationSummary{
+			WorkspaceCount:            3,
+			SingleCacheRootReused:     true,
+			MirrorCreations:           1,
+			SeedCreations:             1,
+			CloneSuppressedAfterFirst: true,
+			CleanupPreservedCache:     true,
+		},
+		BootstrapResults: []WorkspaceBootstrapStatus{
+			{
+				Workspace:       "/tmp/workspaces/OPE-272",
+				CacheRoot:       "/tmp/repos/github.com-openagis-bigclaw",
+				CacheKey:        "github.com-openagis-bigclaw",
+				WorkspaceMode:   "worktree_created",
+				CacheReused:     false,
+				CloneSuppressed: false,
+				MirrorCreated:   true,
+				SeedCreated:     true,
+			},
+		},
+	}
+
+	body := RenderValidationMarkdown(report)
+	for _, want := range []string{
+		"# Symphony bootstrap cache validation",
+		"- Workspaces: `3`",
+		"- Single cache root reused: `true`",
+		"- Mirror creations: `1`",
+		"- `/tmp/workspaces/OPE-272`",
+		"`cache_key=github.com-openagis-bigclaw`",
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected %q in markdown, got %s", want, body)
+		}
+	}
+}
+
+func TestWriteValidationReportSupportsJSONAndMarkdown(t *testing.T) {
+	root := t.TempDir()
+	report := ValidationReport{
+		RepoURL:          "git@github.com:OpenAGIs/BigClaw.git",
+		DefaultBranch:    "main",
+		WorkspaceRoot:    filepath.Join(root, "workspaces"),
+		IssueIdentifiers: []string{"OPE-272"},
+		Summary: ValidationSummary{
+			WorkspaceCount:            1,
+			SingleCacheRootReused:     true,
+			CloneSuppressedAfterFirst: true,
+		},
+	}
+
+	jsonPath, err := WriteValidationReport(report, filepath.Join(root, "report.json"))
+	if err != nil {
+		t.Fatalf("write json report: %v", err)
+	}
+	jsonBody, err := os.ReadFile(jsonPath)
+	if err != nil {
+		t.Fatalf("read json report: %v", err)
+	}
+	if !strings.Contains(string(jsonBody), "\"workspace_count\": 1") {
+		t.Fatalf("expected workspace_count in json report, got %s", string(jsonBody))
+	}
+
+	markdownPath, err := WriteValidationReport(report, filepath.Join(root, "report.md"))
+	if err != nil {
+		t.Fatalf("write markdown report: %v", err)
+	}
+	markdownBody, err := os.ReadFile(markdownPath)
+	if err != nil {
+		t.Fatalf("read markdown report: %v", err)
+	}
+	if !strings.Contains(string(markdownBody), "# Symphony bootstrap cache validation") {
+		t.Fatalf("expected markdown heading, got %s", string(markdownBody))
+	}
+}
+
 func TestCleanupWorkspacePrunesWorktreeAndBootstrapBranch(t *testing.T) {
 	root := t.TempDir()
 	remote := initRemoteWithMain(t, root)
