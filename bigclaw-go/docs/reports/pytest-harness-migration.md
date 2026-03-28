@@ -66,6 +66,12 @@ First migrated Python test slice now covered explicitly in Go:
   - `test_symphony_workspace_validate_shim_help_runs_without_pythonpath`
   - `test_refill_shim_help_runs_without_pythonpath`
   - covered by `bigclaw-go/cmd/bigclawctl/migration_commands_test.go` and `bigclaw-go/cmd/bigclawctl/main_test.go`
+- `tests/test_governance.py`
+  - `test_scope_freeze_board_round_trip_preserves_manifest_shape`
+  - `test_scope_freeze_audit_flags_backlog_governance_and_closeout_gaps`
+  - `test_scope_freeze_audit_round_trip_and_ready_state`
+  - `test_render_scope_freeze_report_summarizes_board_and_run_closeout_requirements`
+  - covered by `bigclaw-go/internal/governance/freeze_test.go`
 
 Still legacy-only within `tests/test_legacy_shim.py`:
 
