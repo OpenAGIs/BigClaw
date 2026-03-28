@@ -139,6 +139,7 @@ type PytestAssetInventory struct {
 	PyprojectExists          bool
 	PyprojectDeclaresPytest  bool
 	PyprojectHasPytestConfig bool
+	PytestCommandRefFiles    []string
 	TestModules              []string
 	BigclawImportModules     []string
 	PytestImportModules      []string
@@ -170,6 +171,7 @@ type PytestHarnessStatusReport struct {
 	PyprojectExists          bool                   `json:"pyproject_exists"`
 	PyprojectDeclaresPytest  bool                   `json:"pyproject_declares_pytest"`
 	PyprojectHasPytestConfig bool                   `json:"pyproject_has_pytest_config"`
+	PytestCommandRefFiles    []string               `json:"pytest_command_ref_files"`
 	ConftestExists           bool                   `json:"conftest_exists"`
 	ConftestPath             string                 `json:"conftest_path"`
 	ConftestPrependsSrc      bool                   `json:"conftest_prepends_src"`
@@ -209,6 +211,9 @@ func InventoryPytestAssetsAt(projectRoot string) (PytestAssetInventory, error) {
 			return PytestAssetInventory{}, err
 		}
 	} else if !os.IsNotExist(err) {
+		return PytestAssetInventory{}, err
+	}
+	if inventory.PytestCommandRefFiles, err = collectPytestCommandRefFiles(projectRoot); err != nil {
 		return PytestAssetInventory{}, err
 	}
 	for _, entry := range entries {
@@ -310,6 +315,7 @@ func BuildPytestHarnessStatusReport(projectRoot string) (PytestHarnessStatusRepo
 		PyprojectExists:          inventory.PyprojectExists,
 		PyprojectDeclaresPytest:  inventory.PyprojectDeclaresPytest,
 		PyprojectHasPytestConfig: inventory.PyprojectHasPytestConfig,
+		PytestCommandRefFiles:    append([]string(nil), inventory.PytestCommandRefFiles...),
 		ConftestExists:           inventory.ConftestExists,
 		ConftestPath:             normalizedConftestPath,
 		ConftestPrependsSrc:      inventory.ConftestPrependsSrc,
@@ -386,14 +392,59 @@ func fileContainsPytestUsageAt(path string) (bool, error) {
 	return false, nil
 }
 
+func collectPytestCommandRefFiles(projectRoot string) ([]string, error) {
+	searchRoots := []string{
+		filepath.Join(projectRoot, "src"),
+		filepath.Join(projectRoot, "tests"),
+	}
+	var matches []string
+	for _, root := range searchRoots {
+		if _, err := os.Stat(root); err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return nil, err
+		}
+		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, walkErr error) error {
+			if walkErr != nil {
+				return walkErr
+			}
+			if d.IsDir() || filepath.Ext(d.Name()) != ".py" {
+				return nil
+			}
+			hasModulePytest, err := fileContainsAt(path, "python3 -m pytest")
+			if err != nil {
+				return err
+			}
+			hasBinaryPytest, err := fileContainsAt(path, ".venv/bin/pytest")
+			if err != nil {
+				return err
+			}
+			if hasModulePytest || hasBinaryPytest {
+				matches = append(matches, filepath.ToSlash(normalizeProjectRelativePath(projectRoot, path)))
+			}
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	slices.Sort(matches)
+	return matches, nil
+}
+
 func (i PytestAssetInventory) Summary() string {
 	return "tests=" + strconv.Itoa(len(i.TestModules)) +
 		" bigclaw_imports=" + strconv.Itoa(len(i.BigclawImportModules)) +
-		" pytest_imports=" + strconv.Itoa(len(i.PytestImportModules))
+		" pytest_imports=" + strconv.Itoa(len(i.PytestImportModules)) +
+		" pytest_command_refs=" + strconv.Itoa(len(i.PytestCommandRefFiles))
 }
 
 func (i PytestAssetInventory) ConftestDeletionBlockers() []string {
 	var blockers []string
+	if len(i.PytestCommandRefFiles) > 0 {
+		blockers = append(blockers, strconv.Itoa(len(i.PytestCommandRefFiles))+" active src/tests files still embed pytest validation commands")
+	}
 	if i.PyprojectDeclaresPytest {
 		blockers = append(blockers, "pyproject.toml still declares pytest as a Python test dependency")
 	}

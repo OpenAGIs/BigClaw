@@ -34,6 +34,7 @@
   "conftest_delete_status": {
     "bigclaw_import_modules": 28,
     "blockers": [
+      "3 active src/tests files still embed pytest validation commands",
       "pyproject.toml still declares pytest as a Python test dependency",
       "pyproject.toml still defines [tool.pytest.ini_options]",
       "28 legacy pytest modules remain under tests/",
@@ -43,19 +44,24 @@
     "can_delete": false,
     "legacy_test_modules": 28,
     "pytest_import_modules": 2,
-    "summary": "conftest_delete_ready=false blockers=pyproject.toml still declares pytest as a Python test dependency; pyproject.toml still defines [tool.pytest.ini_options]; 28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
+    "summary": "conftest_delete_ready=false blockers=3 active src/tests files still embed pytest validation commands; pyproject.toml still declares pytest as a Python test dependency; pyproject.toml still defines [tool.pytest.ini_options]; 28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
   },
   "conftest_exists": true,
   "conftest_imports_pytest": false,
   "conftest_path": "tests/conftest.py",
   "conftest_prepends_src": true,
   "conftest_uses_pytest_plugins": false,
-  "inventory_summary": "tests=28 bigclaw_imports=28 pytest_imports=2",
+  "inventory_summary": "tests=28 bigclaw_imports=28 pytest_imports=2 pytest_command_refs=3",
   "project_root": ".",
   "pyproject_declares_pytest": true,
   "pyproject_exists": true,
   "pyproject_has_pytest_config": true,
   "pyproject_path": "pyproject.toml",
+  "pytest_command_ref_files": [
+    "src/bigclaw/dashboard_run_contract.py",
+    "src/bigclaw/planning.py",
+    "tests/test_planning.py"
+  ],
   "pytest_imports": [
     "tests/test_audit_events.py",
     "tests/test_planning.py"

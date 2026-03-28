@@ -144,13 +144,14 @@ func runPytestHarness(args []string) error {
 
 	_, err = fmt.Fprintf(
 		os.Stdout,
-		"project_root=%s\ninventory=%s\npyproject_path=%s\npyproject_exists=%t\npyproject_declares_pytest=%t\npyproject_has_pytest_config=%t\nconftest_exists=%t\nconftest_path=%s\nconftest_prepends_src=%t\nconftest_imports_pytest=%t\nconftest_defines_fixture=%t\nconftest_defines_hook=%t\nconftest_uses_pytest_plugins=%t\nconftest_delete_ready=%t\nconftest_delete_summary=%s\n",
+		"project_root=%s\ninventory=%s\npyproject_path=%s\npyproject_exists=%t\npyproject_declares_pytest=%t\npyproject_has_pytest_config=%t\npytest_command_ref_files=%d\nconftest_exists=%t\nconftest_path=%s\nconftest_prepends_src=%t\nconftest_imports_pytest=%t\nconftest_defines_fixture=%t\nconftest_defines_hook=%t\nconftest_uses_pytest_plugins=%t\nconftest_delete_ready=%t\nconftest_delete_summary=%s\n",
 		report.ProjectRoot,
 		report.InventorySummary,
 		report.PyprojectPath,
 		report.PyprojectExists,
 		report.PyprojectDeclaresPytest,
 		report.PyprojectHasPytestConfig,
+		len(report.PytestCommandRefFiles),
 		report.ConftestExists,
 		report.ConftestPath,
 		report.ConftestPrependsSrc,

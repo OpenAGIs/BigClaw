@@ -148,13 +148,17 @@ func TestRunPytestHarnessJSONOutput(t *testing.T) {
 	if payload["pyproject_declares_pytest"] != true || payload["pyproject_has_pytest_config"] != true {
 		t.Fatalf("expected pyproject pytest flags to remain true, got %+v", payload)
 	}
+	commandRefs, ok := payload["pytest_command_ref_files"].([]any)
+	if !ok || len(commandRefs) != 3 {
+		t.Fatalf("expected 3 pytest command ref files, got %+v", payload["pytest_command_ref_files"])
+	}
 	if payload["conftest_exists"] != true {
 		t.Fatalf("expected conftest_exists=true, got %+v", payload)
 	}
 	if payload["conftest_path"] != "tests/conftest.py" {
 		t.Fatalf("unexpected conftest_path: %+v", payload)
 	}
-	if payload["inventory_summary"] != "tests=28 bigclaw_imports=28 pytest_imports=2" {
+	if payload["inventory_summary"] != "tests=28 bigclaw_imports=28 pytest_imports=2 pytest_command_refs=3" {
 		t.Fatalf("unexpected inventory summary: %+v", payload)
 	}
 	deleteStatus, ok := payload["conftest_delete_status"].(map[string]any)
@@ -167,7 +171,7 @@ func TestRunPytestHarnessJSONOutput(t *testing.T) {
 	if deleteStatus["legacy_test_modules"] != float64(28) || deleteStatus["bigclaw_import_modules"] != float64(28) || deleteStatus["pytest_import_modules"] != float64(2) {
 		t.Fatalf("unexpected delete status counts: %+v", deleteStatus)
 	}
-	if deleteStatus["summary"] != "conftest_delete_ready=false blockers=pyproject.toml still declares pytest as a Python test dependency; pyproject.toml still defines [tool.pytest.ini_options]; 28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly" {
+	if deleteStatus["summary"] != "conftest_delete_ready=false blockers=3 active src/tests files still embed pytest validation commands; pyproject.toml still declares pytest as a Python test dependency; pyproject.toml still defines [tool.pytest.ini_options]; 28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly" {
 		t.Fatalf("unexpected delete status summary: %+v", deleteStatus)
 	}
 	if payload["conftest_uses_pytest_plugins"] != false {
@@ -191,14 +195,14 @@ func TestRunPytestHarnessWritesReportFile(t *testing.T) {
 	if err := json.Unmarshal(body, &payload); err != nil {
 		t.Fatalf("decode report file: %v (%s)", err, string(body))
 	}
-	if payload["inventory_summary"] != "tests=28 bigclaw_imports=28 pytest_imports=2" {
+	if payload["inventory_summary"] != "tests=28 bigclaw_imports=28 pytest_imports=2 pytest_command_refs=3" {
 		t.Fatalf("unexpected inventory summary in report file: %+v", payload)
 	}
 	deleteStatus, ok := payload["conftest_delete_status"].(map[string]any)
 	if !ok {
 		t.Fatalf("expected conftest_delete_status object, got %+v", payload["conftest_delete_status"])
 	}
-	if deleteStatus["summary"] != "conftest_delete_ready=false blockers=pyproject.toml still declares pytest as a Python test dependency; pyproject.toml still defines [tool.pytest.ini_options]; 28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly" {
+	if deleteStatus["summary"] != "conftest_delete_ready=false blockers=3 active src/tests files still embed pytest validation commands; pyproject.toml still declares pytest as a Python test dependency; pyproject.toml still defines [tool.pytest.ini_options]; 28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly" {
 		t.Fatalf("unexpected delete status summary in report file: %+v", deleteStatus)
 	}
 }

@@ -84,7 +84,15 @@ func TestInventoryPytestAssets(t *testing.T) {
 	if inventory.ConftestUsesPlugins {
 		t.Fatal("expected conftest to avoid declaring pytest_plugins")
 	}
-	if got := inventory.Summary(); got != "tests=28 bigclaw_imports=28 pytest_imports=2" {
+	wantPytestCommandRefs := []string{
+		"src/bigclaw/dashboard_run_contract.py",
+		"src/bigclaw/planning.py",
+		"tests/test_planning.py",
+	}
+	if !reflect.DeepEqual(inventory.PytestCommandRefFiles, wantPytestCommandRefs) {
+		t.Fatalf("unexpected pytest command ref files: got=%v want=%v", inventory.PytestCommandRefFiles, wantPytestCommandRefs)
+	}
+	if got := inventory.Summary(); got != "tests=28 bigclaw_imports=28 pytest_imports=2 pytest_command_refs=3" {
 		t.Fatalf("unexpected inventory summary: %s", got)
 	}
 
@@ -97,6 +105,7 @@ func TestInventoryPytestAssets(t *testing.T) {
 	}
 
 	wantBlockers := []string{
+		"3 active src/tests files still embed pytest validation commands",
 		"pyproject.toml still declares pytest as a Python test dependency",
 		"pyproject.toml still defines [tool.pytest.ini_options]",
 		"28 legacy pytest modules remain under tests/",
@@ -106,7 +115,7 @@ func TestInventoryPytestAssets(t *testing.T) {
 	if got := inventory.ConftestDeletionBlockers(); !reflect.DeepEqual(got, wantBlockers) {
 		t.Fatalf("unexpected conftest deletion blockers: got=%v want=%v", got, wantBlockers)
 	}
-	wantSummary := "conftest_delete_ready=false blockers=pyproject.toml still declares pytest as a Python test dependency; pyproject.toml still defines [tool.pytest.ini_options]; 28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
+	wantSummary := "conftest_delete_ready=false blockers=3 active src/tests files still embed pytest validation commands; pyproject.toml still declares pytest as a Python test dependency; pyproject.toml still defines [tool.pytest.ini_options]; 28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
 	if got := inventory.ConftestDeletionSummary(); got != wantSummary {
 		t.Fatalf("unexpected conftest deletion summary: got=%q want=%q", got, wantSummary)
 	}
@@ -150,6 +159,14 @@ func TestBuildPytestHarnessStatusReportNormalizesPaths(t *testing.T) {
 	}
 	if !report.PyprojectExists || !report.PyprojectDeclaresPytest || !report.PyprojectHasPytestConfig {
 		t.Fatalf("expected report to include active pyproject pytest infrastructure flags, got %+v", report)
+	}
+	wantPytestCommandRefs := []string{
+		"src/bigclaw/dashboard_run_contract.py",
+		"src/bigclaw/planning.py",
+		"tests/test_planning.py",
+	}
+	if !reflect.DeepEqual(report.PytestCommandRefFiles, wantPytestCommandRefs) {
+		t.Fatalf("unexpected report pytest command ref files: got=%v want=%v", report.PytestCommandRefFiles, wantPytestCommandRefs)
 	}
 	if !report.ConftestExists {
 		t.Fatal("expected report to note top-level conftest presence")
@@ -224,6 +241,7 @@ func TestEmptyInventoryAllowsConftestDeletion(t *testing.T) {
 
 func TestConftestDeletionBlockersIncludeConftestRuntimeFeatures(t *testing.T) {
 	inventory := PytestAssetInventory{
+		PytestCommandRefFiles:    []string{"src/bigclaw/planning.py"},
 		PyprojectDeclaresPytest:  true,
 		PyprojectHasPytestConfig: true,
 		ConftestImportsPytest:    true,
@@ -232,6 +250,7 @@ func TestConftestDeletionBlockersIncludeConftestRuntimeFeatures(t *testing.T) {
 		ConftestUsesPlugins:      true,
 	}
 	want := []string{
+		"1 active src/tests files still embed pytest validation commands",
 		"pyproject.toml still declares pytest as a Python test dependency",
 		"pyproject.toml still defines [tool.pytest.ini_options]",
 		"tests/conftest.py still imports pytest directly",
@@ -265,6 +284,10 @@ func TestInventoryPytestAssetsAtRecursesIntoNestedTests(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(testsRoot, "nested", "test_nested.py"), []byte(nestedBody), 0o644); err != nil {
 		t.Fatalf("write nested test: %v", err)
 	}
+	commandRefBody := "VALIDATION = 'python3 -m pytest tests/nested/test_nested.py -q'\n"
+	if err := os.WriteFile(filepath.Join(testsRoot, "nested", "command_ref.py"), []byte(commandRefBody), 0o644); err != nil {
+		t.Fatalf("write nested command ref: %v", err)
+	}
 	if err := os.WriteFile(filepath.Join(testsRoot, "helper.py"), []byte("print('ignore')\n"), 0o644); err != nil {
 		t.Fatalf("write helper: %v", err)
 	}
@@ -278,6 +301,10 @@ func TestInventoryPytestAssetsAtRecursesIntoNestedTests(t *testing.T) {
 	}
 	if !inventory.PyprojectExists || !inventory.PyprojectDeclaresPytest || !inventory.PyprojectHasPytestConfig {
 		t.Fatalf("expected pyproject pytest infrastructure to be detected, got %+v", inventory)
+	}
+	wantCommandRefs := []string{"tests/nested/command_ref.py"}
+	if !reflect.DeepEqual(inventory.PytestCommandRefFiles, wantCommandRefs) {
+		t.Fatalf("unexpected nested pytest command ref files: got=%v want=%v", inventory.PytestCommandRefFiles, wantCommandRefs)
 	}
 	if !inventory.ConftestPrependsSrc {
 		t.Fatal("expected conftest src bootstrap to be detected")
