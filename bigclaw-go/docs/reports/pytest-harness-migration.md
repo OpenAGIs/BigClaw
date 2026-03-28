@@ -49,6 +49,7 @@ It provides:
 - `PytestAssetInventory.ConftestDeletionBlockers()` to keep the current `tests/conftest.py` removal blockers machine-checked from Go rather than only documented in markdown
 - `PytestAssetInventory.CanDeleteConftest()` to expose the current deletion gate as a single Go-owned boolean for future migration slices
 - `PytestAssetInventory.ConftestDeletionSummary()` to provide one stable, report-ready line for the current delete-readiness state
+- `PytestAssetInventory.ConftestDeletionStatus()` to provide a structured status object for future CLI/report surfaces that need both the boolean gate and the blocker/count breakdown
 - `internal/legacyshim` tests now also assert that the frozen Python compile-check asset list still matches the checked-in `src/bigclaw/*.py` shim files that remain in scope for migration
 - `internal/legacyshim` now runs a real checked-in `py_compile` pass against those shim files, so the remaining Python compatibility layer is regression-tested from Go without bespoke bootstrap code
 - `internal/testharness` now includes a Python import smoke test that boots `PYTHONPATH` via the Go harness and imports `bigclaw.mapping` directly, proving the replacement covers the old `conftest.py` core responsibility

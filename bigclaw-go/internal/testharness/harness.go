@@ -143,6 +143,15 @@ type PytestAssetInventory struct {
 	ConftestDefinesHook    bool
 }
 
+type ConftestDeletionStatus struct {
+	CanDelete            bool     `json:"can_delete"`
+	Summary              string   `json:"summary"`
+	Blockers             []string `json:"blockers"`
+	LegacyTestModules    int      `json:"legacy_test_modules"`
+	BigclawImportModules int      `json:"bigclaw_import_modules"`
+	PytestImportModules  int      `json:"pytest_import_modules"`
+}
+
 func InventoryPytestAssets(tb testing.TB) PytestAssetInventory {
 	tb.Helper()
 
@@ -233,4 +242,15 @@ func (i PytestAssetInventory) ConftestDeletionSummary() string {
 		return "conftest_delete_ready=true blockers=none"
 	}
 	return "conftest_delete_ready=false blockers=" + strings.Join(i.ConftestDeletionBlockers(), "; ")
+}
+
+func (i PytestAssetInventory) ConftestDeletionStatus() ConftestDeletionStatus {
+	return ConftestDeletionStatus{
+		CanDelete:            i.CanDeleteConftest(),
+		Summary:              i.ConftestDeletionSummary(),
+		Blockers:             append([]string(nil), i.ConftestDeletionBlockers()...),
+		LegacyTestModules:    len(i.TestModules),
+		BigclawImportModules: len(i.BigclawImportModules),
+		PytestImportModules:  len(i.PytestImportModules),
+	}
 }

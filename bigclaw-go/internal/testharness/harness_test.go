@@ -94,6 +94,17 @@ func TestInventoryPytestAssets(t *testing.T) {
 	if inventory.CanDeleteConftest() {
 		t.Fatal("expected conftest deletion gate to remain closed for the current inventory")
 	}
+	wantStatus := ConftestDeletionStatus{
+		CanDelete:            false,
+		Summary:              wantSummary,
+		Blockers:             wantBlockers,
+		LegacyTestModules:    56,
+		BigclawImportModules: 47,
+		PytestImportModules:  3,
+	}
+	if got := inventory.ConftestDeletionStatus(); !reflect.DeepEqual(got, wantStatus) {
+		t.Fatalf("unexpected conftest deletion status: got=%+v want=%+v", got, wantStatus)
+	}
 }
 
 func TestBootstrapLegacyPythonPathSupportsBigclawImports(t *testing.T) {
@@ -142,6 +153,17 @@ func TestEmptyInventoryAllowsConftestDeletion(t *testing.T) {
 	}
 	if got := inventory.ConftestDeletionSummary(); got != "conftest_delete_ready=true blockers=none" {
 		t.Fatalf("unexpected empty inventory summary: %q", got)
+	}
+	wantStatus := ConftestDeletionStatus{
+		CanDelete:            true,
+		Summary:              "conftest_delete_ready=true blockers=none",
+		Blockers:             nil,
+		LegacyTestModules:    0,
+		BigclawImportModules: 0,
+		PytestImportModules:  0,
+	}
+	if got := inventory.ConftestDeletionStatus(); !reflect.DeepEqual(got, wantStatus) {
+		t.Fatalf("unexpected empty inventory status: got=%+v want=%+v", got, wantStatus)
 	}
 }
 
