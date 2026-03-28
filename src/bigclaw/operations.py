@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Protocol, Sequence
 
 from .models import Task
 from .queue import PersistentTaskQueue
-from .reports import (
+from .reporting_common import (
     SharedViewContext,
     build_console_actions,
     render_console_actions,

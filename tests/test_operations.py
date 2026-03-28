@@ -23,7 +23,7 @@ from bigclaw.operations import (
     write_engineering_overview_bundle,
     write_weekly_operations_bundle,
 )
-from bigclaw.reports import SharedViewContext, SharedViewFilter
+from bigclaw.reporting_common import SharedViewContext, SharedViewFilter
 from bigclaw.scheduler import ExecutionRecord, SchedulerDecision
 
 

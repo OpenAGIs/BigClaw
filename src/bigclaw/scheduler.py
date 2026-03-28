@@ -20,7 +20,8 @@ from .orchestration import (
     OrchestrationPolicyDecision,
     PremiumOrchestrationPolicy,
 )
-from .reports import render_task_run_detail_page, render_task_run_report, write_report
+from .reporting_common import write_report
+from .reports import render_task_run_detail_page, render_task_run_report
 from .risk import RiskScore, RiskScorer
 from .runtime import ClawWorkerRuntime, ToolCallResult
 

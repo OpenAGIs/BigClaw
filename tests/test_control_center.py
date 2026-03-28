@@ -3,7 +3,7 @@ from pathlib import Path
 from bigclaw.models import Priority, RiskLevel, Task
 from bigclaw.operations import OperationsAnalytics, render_queue_control_center
 from bigclaw.queue import PersistentTaskQueue
-from bigclaw.reports import SharedViewContext, SharedViewFilter
+from bigclaw.reporting_common import SharedViewContext, SharedViewFilter
 
 
 

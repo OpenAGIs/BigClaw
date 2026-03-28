@@ -167,17 +167,23 @@ from .dashboard_run_contract import (
     SurfaceSchema,
     render_dashboard_run_contract_report,
 )
+from .reporting_common import (
+    ConsoleAction,
+    SharedViewContext,
+    SharedViewFilter,
+    build_console_actions,
+    render_console_actions,
+    render_shared_view_context,
+    write_report,
+)
 from .reports import (
     AutoTriageCenter,
-    ConsoleAction,
     BillingEntitlementsPage,
     BillingRunCharge,
     OrchestrationCanvas,
     OrchestrationPortfolio,
     PilotMetric,
     PilotScorecard,
-    SharedViewContext,
-    SharedViewFilter,
     TakeoverQueue,
     TakeoverRequest,
     TriageFeedbackRecord,
@@ -186,7 +192,6 @@ from .reports import (
     TriageSimilarityEvidence,
     TriageSuggestion,
     build_auto_triage_center,
-    build_console_actions,
     build_billing_entitlements_page,
     build_billing_entitlements_page_from_ledger,
     build_orchestration_canvas,
@@ -195,7 +200,6 @@ from .reports import (
     build_orchestration_portfolio_from_ledger,
     build_takeover_queue_from_ledger,
     render_auto_triage_center_report,
-    render_console_actions,
     render_billing_entitlements_page,
     render_billing_entitlements_report,
     render_orchestration_canvas,
@@ -206,7 +210,6 @@ from .reports import (
     render_repo_sync_audit_report,
     render_task_run_detail_page,
     render_task_run_report,
-    write_report,
 )
 from .workflow import AcceptanceDecision, AcceptanceGate, WorkflowEngine, WorkflowRunResult, WorkpadJournal
 from .operations import (

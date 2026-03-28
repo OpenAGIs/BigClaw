@@ -4,7 +4,8 @@ from pathlib import Path
 
 from .deprecation import warn_legacy_runtime_surface
 from .observability import RepoSyncAudit
-from .reports import render_repo_sync_audit_report, write_report
+from .reporting_common import write_report
+from .reports import render_repo_sync_audit_report
 from .service import run_server
 
 

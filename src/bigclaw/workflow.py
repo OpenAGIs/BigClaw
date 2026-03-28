@@ -11,13 +11,13 @@ from .dsl import WorkflowDefinition
 from .models import RiskLevel, Task
 from .observability import ObservabilityLedger, RepoSyncAudit, utc_now
 from .orchestration import render_orchestration_plan
+from .reporting_common import write_report
 from .reports import (
     build_orchestration_canvas,
     PilotScorecard,
     render_orchestration_canvas,
     render_pilot_scorecard,
     render_repo_sync_audit_report,
-    write_report,
 )
 from .scheduler import ExecutionRecord, Scheduler
 
