@@ -409,6 +409,12 @@ Still legacy-only for bundle export runtime semantics:
 `tests/test_event_bus.py` is now retired from the legacy pytest lane:
 
 - its pull-request comment, CI completion, and task failure event transitions plus JSON ledger persistence now live under `bigclaw-go/internal/eventbus/eventbus.go` and `bigclaw-go/internal/eventbus/eventbus_test.go`
+`tests/test_execution_flow.py` is now retired from the legacy pytest lane:
+
+- its file-backed queue, JSON ledger, legacy `Scheduler.execute(...)` record chain, and markdown/html report export coverage now live under `bigclaw-go/internal/legacyruntime/runtime.go` and `bigclaw-go/internal/legacyruntime/runtime_test.go`
+`tests/test_orchestration.py` is now retired from the legacy pytest lane:
+
+- its orchestration-plan rendering, premium-policy gating, scheduler-linked orchestration ledger traces/audits, and human handoff coverage now live under `bigclaw-go/internal/workflow/orchestration_test.go` and `bigclaw-go/internal/legacyruntime/runtime_test.go`
 
 Still partially migrated for workflow/event persistence semantics:
 
@@ -419,13 +425,11 @@ Still partially migrated for scheduler/runtime execution semantics:
 
 - `tests/test_scheduler.py` overlaps with Go routing and policy coverage in `bigclaw-go/internal/scheduler/scheduler_test.go`
 - `tests/test_runtime.py` overlaps with Go worker acceptance and execution-gate coverage in `bigclaw-go/internal/workflow/engine_test.go` and `bigclaw-go/internal/worker/runtime_test.go`
-- `tests/test_execution_flow.py` overlaps with Go scheduler and reporting coverage in `bigclaw-go/internal/scheduler/scheduler_test.go`, `bigclaw-go/internal/worker/runtime_test.go`, and `bigclaw-go/internal/reporting/reporting_test.go`
-- The remaining Python-owned pieces are the legacy `Scheduler.execute()` / `ObservabilityLedger` runtime path, Python sandbox-router/tool-runtime objects in `src/bigclaw/runtime.py`, and markdown/html task-run report export behavior in `src/bigclaw/reports.py`
+- The remaining Python-owned pieces are broader sandbox-router/tool-runtime objects in `src/bigclaw/runtime.py` that are outside the migrated legacy scheduler-execution compatibility slice landed in this issue
 
 Still partially migrated for orchestration commercialization semantics:
 
-- `tests/test_orchestration.py` overlaps with Go coverage in `bigclaw-go/internal/workflow/orchestration_test.go` and scheduler assessment coverage in `bigclaw-go/internal/scheduler/scheduler_test.go`
-- The remaining Python-owned pieces are orchestration-plan rendering into legacy run-ledger/report artifacts and commercialization-report surfaces still implemented in `src/bigclaw/orchestration.py`, `src/bigclaw/observability.py`, and `src/bigclaw/reports.py`
+- The remaining Python-owned pieces are broader commercialization/report surfaces outside the migrated plan-rendering and scheduler-ledger contract covered by `bigclaw-go/internal/workflow/orchestration_test.go` and `bigclaw-go/internal/legacyruntime/runtime_test.go`
 
 Still partially migrated for broader model-runtime semantics:
 
@@ -439,9 +443,8 @@ Still legacy-only for planning metadata surfaces:
 
 Still partially migrated for observability and event-bus runtime semantics:
 
-- `tests/test_event_bus.py` overlaps only at the Go event-stream primitive level in `bigclaw-go/internal/events/bus_test.go`
 - `tests/test_observability.py` overlaps only at the Go recorder/audit primitive level in `bigclaw-go/internal/observability/recorder_test.go`, `bigclaw-go/internal/observability/audit_test.go`, and `bigclaw-go/internal/observability/audit_spec_test.go`
-- The remaining Python-owned pieces are `TaskRun`, `ObservabilityLedger`, collaboration-thread synthesis, and run-detail/report rendering in `src/bigclaw/observability.py` and `src/bigclaw/reports.py`; these have no single Go-owned runtime replacement in this issue
+- The remaining Python-owned pieces are richer `TaskRun`, collaboration-thread synthesis, and report-studio surfaces in `src/bigclaw/observability.py` and `src/bigclaw/reports.py`; the issue now includes a scoped Go `legacyruntime` replacement for the scheduler/orchestration execution-record slice only
 
 Still partially migrated for broader reporting/studio semantics:
 
@@ -472,8 +475,8 @@ Recommended next migration slices:
 
 Current machine-checked blockers in this issue are:
 
-- `11 legacy pytest modules remain under tests/`
-- `11 legacy pytest modules still import bigclaw from src/`
+- `9 legacy pytest modules remain under tests/`
+- `9 legacy pytest modules still import bigclaw from src/`
 
 The `pytest` blocker count is computed from Go-owned inventory code and now covers all three currently supported detection forms:
 
@@ -484,7 +487,7 @@ The `pytest` blocker count is computed from Go-owned inventory code and now cove
 Current machine-checked single-line summary is:
 
 - `conftest_delete_ready=true blockers=none`
-- `legacy_pytest_delete_ready=false blockers=11 legacy pytest modules remain under tests/; 11 legacy pytest modules still import bigclaw from src/`
+- `legacy_pytest_delete_ready=false blockers=9 legacy pytest modules remain under tests/; 9 legacy pytest modules still import bigclaw from src/`
 
 Current Go-owned command surface for this state:
 
@@ -530,7 +533,7 @@ Observed results for this issue:
 
 - `PYTHONPATH=src python3 -c "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0"` passed on the latest issue branch state, confirming the remaining legacy `src/bigclaw` import surface still works without relying on a checked-in pytest module.
 - `go test ./internal/testharness ./internal/regression ./cmd/bigclawctl` passed on the latest issue branch state, covering the Go-owned script-runtime replacement for `tests/test_validation_bundle_continuation_policy_gate.py` together with the harness/report regression gates and the CLI exposure for the remaining legacy pytest asset blockers.
-- `go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json` passed on the latest issue branch state, regenerated the checked-in snapshot, and confirmed `inventory_summary=tests=11 bigclaw_imports=11 pytest_imports=0 pytest_command_refs=0`, `pyproject_declares_pytest=false`, `pyproject_has_pytest_config=false`, `conftest_exists=false`, `conftest_delete_status.can_delete=true`, and `legacy_pytest_delete_status.can_delete=false`.
+- `go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json` passed on the latest issue branch state, regenerated the checked-in snapshot, and confirmed `inventory_summary=tests=9 bigclaw_imports=9 pytest_imports=0 pytest_command_refs=0`, `pyproject_declares_pytest=false`, `pyproject_has_pytest_config=false`, `conftest_exists=false`, `conftest_delete_status.can_delete=true`, and `legacy_pytest_delete_status.can_delete=false`.
 
 Deletion-readiness validation for the legacy Python harness, once migration is further along:
 
