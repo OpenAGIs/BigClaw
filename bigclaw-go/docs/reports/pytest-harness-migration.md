@@ -44,6 +44,14 @@ First-batch adoption landed here:
 - `internal/regression/*_test.go` now uses the shared repo-root baseline instead of ad hoc `../..` resolution and `runtime.Caller` plumbing
 - `cmd/bigclawctl/migration_commands_test.go` now uses the shared cwd and `PATH` bootstrap helpers
 
+First migrated Python test slice now covered explicitly in Go:
+
+- `tests/test_dashboard_run_contract.py`
+  - `test_dashboard_run_contract_default_bundle_is_release_ready`
+  - `test_dashboard_run_contract_audit_detects_missing_field_definitions_and_samples`
+  - `test_dashboard_run_contract_round_trip_preserves_samples_and_audit`
+  - covered by `bigclaw-go/internal/product/dashboard_run_contract_test.go`
+
 ## Migration plan
 
 1. Treat `internal/testharness` as the only shared bootstrap layer for Go tests that need repository-relative assets or CLI environment setup.

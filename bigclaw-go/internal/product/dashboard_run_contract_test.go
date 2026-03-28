@@ -1,6 +1,8 @@
 package product
 
 import (
+	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -41,6 +43,54 @@ func TestRenderDashboardRunContractReport(t *testing.T) {
 		if !strings.Contains(report, want) {
 			t.Fatalf("expected %q in report, got %s", want, report)
 		}
+	}
+}
+
+func TestDashboardRunContractRoundTripPreservesSamplesAndAudit(t *testing.T) {
+	contract := BuildDefaultDashboardRunContract()
+
+	encodedContract, err := json.Marshal(contract)
+	if err != nil {
+		t.Fatalf("marshal contract: %v", err)
+	}
+	var restored DashboardRunContract
+	if err := json.Unmarshal(encodedContract, &restored); err != nil {
+		t.Fatalf("unmarshal contract: %v", err)
+	}
+	reEncodedContract, err := json.Marshal(restored)
+	if err != nil {
+		t.Fatalf("re-marshal restored contract: %v", err)
+	}
+	if !reflect.DeepEqual(reEncodedContract, encodedContract) {
+		t.Fatalf("restored contract drifted from source JSON: restored=%s source=%s", string(reEncodedContract), string(encodedContract))
+	}
+
+	audit := AuditDashboardRunContract(contract)
+	encodedAudit, err := json.Marshal(audit)
+	if err != nil {
+		t.Fatalf("marshal audit: %v", err)
+	}
+	var restoredAudit DashboardRunContractAudit
+	if err := json.Unmarshal(encodedAudit, &restoredAudit); err != nil {
+		t.Fatalf("unmarshal audit: %v", err)
+	}
+	reEncodedAudit, err := json.Marshal(restoredAudit)
+	if err != nil {
+		t.Fatalf("re-marshal restored audit: %v", err)
+	}
+	if !reflect.DeepEqual(reEncodedAudit, encodedAudit) {
+		t.Fatalf("restored audit drifted from source JSON: restored=%s source=%s", string(reEncodedAudit), string(encodedAudit))
+	}
+	if !restoredAudit.ReleaseReady {
+		t.Fatalf("expected restored audit to stay release-ready, got %+v", restoredAudit)
+	}
+	if !containsContractField(restored.DashboardSchema.Fields, ContractField{
+		Name:        "dashboard_id",
+		FieldType:   "string",
+		Required:    true,
+		Description: "Stable dashboard identifier.",
+	}) {
+		t.Fatalf("expected dashboard_id field to survive round trip, got %+v", restored.DashboardSchema.Fields)
 	}
 }
 
@@ -98,4 +148,13 @@ func TestDashboardContractFormattingHelpers(t *testing.T) {
 	if got := boolText(false); got != "false" {
 		t.Fatalf("boolText(false) = %q, want %q", got, "false")
 	}
+}
+
+func containsContractField(fields []ContractField, want ContractField) bool {
+	for _, field := range fields {
+		if reflect.DeepEqual(field, want) {
+			return true
+		}
+	}
+	return false
 }
