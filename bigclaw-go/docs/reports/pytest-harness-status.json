@@ -10,7 +10,6 @@
     "tests/test_execution_contract.py",
     "tests/test_execution_flow.py",
     "tests/test_issue_archive.py",
-    "tests/test_legacy_shim.py",
     "tests/test_models.py",
     "tests/test_observability.py",
     "tests/test_operations.py",
@@ -32,10 +31,10 @@
   "conftest_defines_fixture": false,
   "conftest_defines_hook": false,
   "conftest_delete_status": {
-    "bigclaw_import_modules": 28,
+    "bigclaw_import_modules": 27,
     "blockers": [],
     "can_delete": true,
-    "legacy_test_modules": 28,
+    "legacy_test_modules": 27,
     "pytest_import_modules": 0,
     "summary": "conftest_delete_ready=true blockers=none"
   },
@@ -44,18 +43,18 @@
   "conftest_path": "tests/conftest.py",
   "conftest_prepends_src": false,
   "conftest_uses_pytest_plugins": false,
-  "inventory_summary": "tests=28 bigclaw_imports=28 pytest_imports=0 pytest_command_refs=0",
+  "inventory_summary": "tests=27 bigclaw_imports=27 pytest_imports=0 pytest_command_refs=0",
   "legacy_pytest_delete_status": {
-    "bigclaw_import_modules": 28,
+    "bigclaw_import_modules": 27,
     "blockers": [
-      "28 legacy pytest modules remain under tests/",
-      "28 legacy pytest modules still import bigclaw from src/"
+      "27 legacy pytest modules remain under tests/",
+      "27 legacy pytest modules still import bigclaw from src/"
     ],
     "can_delete": false,
-    "legacy_test_modules": 28,
+    "legacy_test_modules": 27,
     "pytest_command_refs": 0,
     "pytest_import_modules": 0,
-    "summary": "legacy_pytest_delete_ready=false blockers=28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/"
+    "summary": "legacy_pytest_delete_ready=false blockers=27 legacy pytest modules remain under tests/; 27 legacy pytest modules still import bigclaw from src/"
   },
   "project_root": ".",
   "pyproject_declares_pytest": false,
@@ -76,7 +75,6 @@
     "tests/test_execution_contract.py",
     "tests/test_execution_flow.py",
     "tests/test_issue_archive.py",
-    "tests/test_legacy_shim.py",
     "tests/test_models.py",
     "tests/test_observability.py",
     "tests/test_operations.py",
