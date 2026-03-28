@@ -17,6 +17,30 @@ type RepoPost struct {
 	Metadata      map[string]any `json:"metadata,omitempty"`
 }
 
+type CollaborationComment struct {
+	CommentID string `json:"comment_id"`
+	Author    string `json:"author"`
+	Body      string `json:"body"`
+	CreatedAt string `json:"created_at"`
+	Anchor    string `json:"anchor"`
+	Status    string `json:"status"`
+}
+
+func (p RepoPost) ToCollaborationComment() CollaborationComment {
+	status := "open"
+	if resolved, ok := p.Metadata["resolved"].(bool); ok && resolved {
+		status = "resolved"
+	}
+	return CollaborationComment{
+		CommentID: fmt.Sprintf("repo-%s", p.PostID),
+		Author:    p.Author,
+		Body:      p.Body,
+		CreatedAt: p.CreatedAt,
+		Anchor:    fmt.Sprintf("%s:%s", p.TargetSurface, p.TargetID),
+		Status:    status,
+	}
+}
+
 type RepoDiscussionBoard struct {
 	Posts []RepoPost `json:"posts,omitempty"`
 	Now   func() time.Time
