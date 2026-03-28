@@ -87,3 +87,19 @@ func TestFrozenCompileCheckFilesMatchCheckedInLegacyShimAssets(t *testing.T) {
 		}
 	}
 }
+
+func TestCompileCheckPassesAgainstCheckedInLegacyShimAssets(t *testing.T) {
+	pythonBin := testharness.RequireExecutable(t, "python3")
+	projectRoot := testharness.ProjectRoot(t)
+
+	result, err := CompileCheck(projectRoot, pythonBin)
+	if err != nil {
+		t.Fatalf("compile check on checked-in shim assets failed: %v (%s)", err, result.Output)
+	}
+	if result.Python != pythonBin {
+		t.Fatalf("unexpected python binary: got=%q want=%q", result.Python, pythonBin)
+	}
+	if !reflect.DeepEqual(result.Files, FrozenCompileCheckFiles(projectRoot)) {
+		t.Fatalf("unexpected checked-in compile-check files: got=%v want=%v", result.Files, FrozenCompileCheckFiles(projectRoot))
+	}
+}
