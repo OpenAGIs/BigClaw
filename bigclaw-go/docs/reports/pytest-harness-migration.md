@@ -142,6 +142,12 @@ First migrated Python test slice now covered explicitly in Go:
   - `test_risk_scorer_elevates_prod_browser_work`
   - `test_scheduler_uses_risk_score_to_require_approval`
   - covered by `bigclaw-go/internal/risk/risk_test.go` and `bigclaw-go/internal/scheduler/scheduler_test.go`
+- `tests/test_queue.py`
+  - `test_queue_persistence_and_priority`
+  - `test_queue_creates_parent_directory_and_preserves_task_payload`
+  - `test_queue_dead_letter_and_retry_persist_across_reload`
+  - `test_queue_loads_legacy_list_storage`
+  - covered by `bigclaw-go/internal/queue/file_queue_test.go`
 - `tests/test_parallel_validation_bundle.py`
   - `test_export_validation_bundle_generates_latest_reports_and_index`
   - checked-in report/index contract covered by
@@ -183,6 +189,11 @@ Still partially migrated for repo run-link runtime semantics:
 
 - `tests/test_repo_links.py` now overlaps with Go coverage in `bigclaw-go/internal/repo/repo_surfaces_test.go`, `bigclaw-go/internal/triage/repo_test.go`, and `bigclaw-go/internal/api/server_test.go`
 - The remaining Python-owned piece is the legacy `TaskRun.record_closeout()` / `TaskRun.from_dict()` runtime path in `src/bigclaw/observability.py`, which has not been replaced by a single Go-owned run model in this issue
+
+Still partially migrated for workflow/event persistence semantics:
+
+- `tests/test_workflow.py` overlaps with Go coverage in `bigclaw-go/internal/workflow/model_test.go`, `bigclaw-go/internal/workflow/engine_test.go`, `bigclaw-go/internal/workflow/closeout_test.go`, and `bigclaw-go/internal/workflow/orchestration_test.go`
+- The remaining Python-owned pieces are ledger-backed workflow runtime/report paths such as repo-sync audit reporting and observability persistence, which do not yet map to one Go-owned runtime package in this issue
 
 ## Migration plan
 
