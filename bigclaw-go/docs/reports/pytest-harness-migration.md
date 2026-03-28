@@ -216,6 +216,11 @@ Still partially migrated for observability and event-bus runtime semantics:
 - `tests/test_observability.py` overlaps only at the Go recorder/audit primitive level in `bigclaw-go/internal/observability/recorder_test.go`, `bigclaw-go/internal/observability/audit_test.go`, and `bigclaw-go/internal/observability/audit_spec_test.go`
 - The remaining Python-owned pieces are `TaskRun`, `ObservabilityLedger`, collaboration-thread synthesis, and run-detail/report rendering in `src/bigclaw/observability.py` and `src/bigclaw/reports.py`; these have no single Go-owned runtime replacement in this issue
 
+Still partially migrated for broader reporting/studio semantics:
+
+- `tests/test_reports.py` overlaps with Go reporting coverage in `bigclaw-go/internal/reporting/reporting_test.go` for weekly operations bundles, queue control center rendering, engineering overview bundles, and dashboard/policy-center reporting
+- The remaining Python-owned pieces are report-studio narratives, pilot scorecards, launch/final-delivery checklists, billing-entitlements pages, orchestration canvases/portfolios, takeover queue synthesis, and task-run report/detail rendering in `src/bigclaw/reports.py`
+
 ## Migration plan
 
 1. Treat `internal/testharness` as the only shared bootstrap layer for Go tests that need repository-relative assets or CLI environment setup.
