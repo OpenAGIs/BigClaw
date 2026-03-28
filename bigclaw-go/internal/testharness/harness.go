@@ -246,20 +246,30 @@ func BuildPytestHarnessStatusReport(projectRoot string) (PytestHarnessStatusRepo
 	if err != nil {
 		return PytestHarnessStatusReport{}, err
 	}
+	normalizedProjectRoot := "."
+	normalizedConftestPath := normalizeProjectRelativePath(projectRoot, inventory.ConftestPath)
 	return PytestHarnessStatusReport{
 		Status:                 "ok",
-		ProjectRoot:            projectRoot,
+		ProjectRoot:            normalizedProjectRoot,
 		InventorySummary:       inventory.Summary(),
 		TestModules:            append([]string(nil), inventory.TestModules...),
 		BigclawImports:         append([]string(nil), inventory.BigclawImportModules...),
 		PytestImports:          append([]string(nil), inventory.PytestImportModules...),
-		ConftestPath:           inventory.ConftestPath,
+		ConftestPath:           normalizedConftestPath,
 		ConftestPrependsSrc:    inventory.ConftestPrependsSrc,
 		ConftestImportsPytest:  inventory.ConftestImportsPytest,
 		ConftestDefinesFixture: inventory.ConftestDefinesFixture,
 		ConftestDefinesHook:    inventory.ConftestDefinesHook,
 		ConftestDeleteStatus:   inventory.ConftestDeletionStatus(),
 	}, nil
+}
+
+func normalizeProjectRelativePath(projectRoot, target string) string {
+	relative, err := filepath.Rel(projectRoot, target)
+	if err != nil {
+		return filepath.ToSlash(target)
+	}
+	return filepath.ToSlash(filepath.Clean(relative))
 }
 
 func fileContains(tb testing.TB, path, needle string) bool {

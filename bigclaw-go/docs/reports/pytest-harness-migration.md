@@ -335,6 +335,8 @@ That command emits:
 
 The checked-in snapshot is not documentation-only: `go test ./internal/regression` now re-computes the live Go-owned report and fails if `docs/reports/pytest-harness-status.json` drifts from the current repository state.
 
+The snapshot intentionally stores repo-relative path fields (`project_root: "."`, `conftest_path: "tests/conftest.py"`) so it remains stable across clones and workspace directories.
+
 Until then, `tests/conftest.py` remains a compatibility shim and should not grow new behavior.
 
 ## Regression commands
@@ -355,7 +357,7 @@ Observed results for this issue:
 - `go test ./internal/testharness` passed on the latest issue branch state, including the Go-side Python import smoke for `bigclaw.mapping`, the Go-launched legacy pytest smoke, the machine-checked `conftest` deletion gate, and the direct-import detection coverage for `import pytest`, `from pytest import ...`, and `pytest.<member>`, confirming the replacement helpers and deletion-gate logic are stable.
 - `go test ./cmd/bigclawctl` passed on the latest issue branch state, including the new `pytest-harness` command surface that exposes the inventory summary and structured `conftest` deletion-gate status from Go-owned code.
 - `go test ./internal/regression` passed on the latest issue branch state, including the new snapshot-alignment test that compares `docs/reports/pytest-harness-status.json` against the live Go-owned inventory report.
-- `go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json` passed on the latest issue branch state, regenerated the checked-in JSON snapshot, and confirmed `inventory_summary=tests=56 bigclaw_imports=47 pytest_imports=3` with `conftest_delete_status.can_delete=false`.
+- `go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json` passed on the latest issue branch state, regenerated the checked-in JSON snapshot with portable repo-relative paths, and confirmed `inventory_summary=tests=56 bigclaw_imports=47 pytest_imports=3` with `conftest_delete_status.can_delete=false`.
 
 Deletion-readiness validation for the legacy Python harness, once migration is further along:
 

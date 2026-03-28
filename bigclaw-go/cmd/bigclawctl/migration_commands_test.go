@@ -136,8 +136,11 @@ func TestRunPytestHarnessJSONOutput(t *testing.T) {
 	if payload["status"] != "ok" {
 		t.Fatalf("expected ok status, got %+v", payload)
 	}
-	if payload["project_root"] != projectRoot {
+	if payload["project_root"] != "." {
 		t.Fatalf("unexpected project_root: %+v", payload)
+	}
+	if payload["conftest_path"] != "tests/conftest.py" {
+		t.Fatalf("unexpected conftest_path: %+v", payload)
 	}
 	if payload["inventory_summary"] != "tests=56 bigclaw_imports=47 pytest_imports=3" {
 		t.Fatalf("unexpected inventory summary: %+v", payload)

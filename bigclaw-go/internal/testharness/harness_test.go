@@ -118,6 +118,19 @@ func TestInventoryPytestAssetsAtMatchesTestingHelper(t *testing.T) {
 	}
 }
 
+func TestBuildPytestHarnessStatusReportNormalizesPaths(t *testing.T) {
+	report, err := BuildPytestHarnessStatusReport(ProjectRoot(t))
+	if err != nil {
+		t.Fatalf("build pytest harness status report: %v", err)
+	}
+	if report.ProjectRoot != "." {
+		t.Fatalf("expected portable project_root '.', got %q", report.ProjectRoot)
+	}
+	if report.ConftestPath != "tests/conftest.py" {
+		t.Fatalf("expected portable conftest_path, got %q", report.ConftestPath)
+	}
+}
+
 func TestBootstrapLegacyPythonPathSupportsBigclawImports(t *testing.T) {
 	PythonExecutable(t)
 	cmd := PythonCommand(t, "-c", "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0")
