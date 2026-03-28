@@ -1,0 +1,403 @@
+package planning
+
+import (
+	"encoding/json"
+	"reflect"
+	"sort"
+	"strings"
+	"testing"
+
+	"bigclaw-go/internal/governance"
+)
+
+func TestCandidateBacklogRoundTripPreservesManifestShape(t *testing.T) {
+	backlog := CandidateBacklog{
+		EpicID:  "BIG-EPIC-20",
+		Title:   "v4.0 v3候选与进入条件",
+		Version: "v4.0-v3",
+		Candidates: []CandidateEntry{
+			{
+				CandidateID:       "candidate-release-control",
+				Title:             "Release control center",
+				Theme:             "console-governance",
+				Priority:          "P0",
+				Owner:             "platform-ui",
+				Outcome:           "Unify console release gates and promotion evidence.",
+				ValidationCommand: "python3 -m pytest tests/test_design_system.py -q",
+				Capabilities:      []string{"release-gate", "reporting"},
+				Evidence:          []string{"acceptance-suite", "validation-report"},
+				EvidenceLinks: []EvidenceLink{
+					{
+						Label:      "ui-acceptance",
+						Target:     "tests/test_design_system.py",
+						Capability: "release-gate",
+						Note:       "role-permission and audit readiness coverage",
+					},
+				},
+			},
+		},
+	}
+
+	payload, err := json.Marshal(backlog)
+	if err != nil {
+		t.Fatalf("marshal backlog: %v", err)
+	}
+	var restored CandidateBacklog
+	if err := json.Unmarshal(payload, &restored); err != nil {
+		t.Fatalf("unmarshal backlog: %v", err)
+	}
+	if !reflect.DeepEqual(restored, backlog) {
+		t.Fatalf("restored backlog mismatch: got %+v want %+v", restored, backlog)
+	}
+}
+
+func TestCandidateBacklogRanksReadyItemsAheadOfBlockedWork(t *testing.T) {
+	backlog := CandidateBacklog{
+		Candidates: []CandidateEntry{
+			{
+				CandidateID:       "candidate-risky",
+				Title:             "Risky migration",
+				Theme:             "runtime",
+				Priority:          "P0",
+				Owner:             "runtime",
+				Outcome:           "Move execution runtime to the next rollout ring.",
+				ValidationCommand: "python3 -m pytest tests/test_runtime.py -q",
+				Capabilities:      []string{"runtime-hardening"},
+				Evidence:          []string{"benchmark"},
+				Blockers:          []string{"missing rollback plan"},
+			},
+			{
+				CandidateID:       "candidate-ready",
+				Title:             "Release control center",
+				Theme:             "console-governance",
+				Priority:          "P1",
+				Owner:             "platform-ui",
+				Outcome:           "Unify console release gates and promotion evidence.",
+				ValidationCommand: "python3 -m pytest tests/test_design_system.py -q",
+				Capabilities:      []string{"release-gate", "reporting"},
+				Evidence:          []string{"acceptance-suite", "validation-report"},
+			},
+		},
+	}
+
+	ranked := backlog.RankedCandidates()
+	if !reflect.DeepEqual([]string{ranked[0].CandidateID, ranked[1].CandidateID}, []string{"candidate-ready", "candidate-risky"}) {
+		t.Fatalf("unexpected ranked candidates: %+v", ranked)
+	}
+}
+
+func TestEntryGateEvaluationRequiresReadyCandidatesCapabilitiesAndEvidence(t *testing.T) {
+	backlog := CandidateBacklog{
+		Candidates: []CandidateEntry{
+			{CandidateID: "candidate-release-control", Title: "Release control center", Theme: "console-governance", Priority: "P0", Owner: "platform-ui", Outcome: "Unify console release gates and promotion evidence.", ValidationCommand: "python3 -m pytest tests/test_design_system.py -q", Capabilities: []string{"release-gate", "reporting"}, Evidence: []string{"acceptance-suite", "validation-report"}},
+			{CandidateID: "candidate-ops-hardening", Title: "Ops hardening", Theme: "ops-command-center", Priority: "P0", Owner: "ops-platform", Outcome: "Package the command-center rollout with weekly review evidence.", ValidationCommand: "python3 -m pytest tests/test_operations.py -q", Capabilities: []string{"ops-control"}, Evidence: []string{"weekly-review"}},
+			{CandidateID: "candidate-orchestration", Title: "Orchestration rollout", Theme: "agent-orchestration", Priority: "P1", Owner: "orchestration", Outcome: "Promote cross-team orchestration with commercialization visibility.", ValidationCommand: "python3 -m pytest tests/test_orchestration.py -q", Capabilities: []string{"commercialization", "handoff"}, Evidence: []string{"pilot-evidence"}},
+		},
+	}
+	gate := EntryGate{
+		GateID:                  "gate-v3-entry",
+		Name:                    "V3 Entry Gate",
+		MinReadyCandidates:      3,
+		RequiredCapabilities:    []string{"release-gate", "ops-control", "commercialization"},
+		RequiredEvidence:        []string{"acceptance-suite", "pilot-evidence", "validation-report"},
+		RequiredBaselineVersion: "v2.0",
+	}
+	baselineAudit := governance.ScopeFreezeAudit{BoardName: "BigClaw v2.0 Freeze", Version: "v2.0", TotalItems: 5}
+
+	decision := CandidatePlanner{}.EvaluateGate(backlog, gate, &baselineAudit)
+	if !decision.Passed {
+		t.Fatalf("expected gate to pass, got %+v", decision)
+	}
+	readyIDs := append([]string(nil), decision.ReadyCandidateIDs...)
+	sort.Strings(readyIDs)
+	if !reflect.DeepEqual(readyIDs, []string{"candidate-ops-hardening", "candidate-orchestration", "candidate-release-control"}) {
+		t.Fatalf("unexpected ready candidates: %+v", decision)
+	}
+	if len(decision.MissingCapabilities) > 0 || len(decision.MissingEvidence) > 0 || !decision.BaselineReady || len(decision.BaselineFindings) > 0 {
+		t.Fatalf("unexpected decision gaps: %+v", decision)
+	}
+}
+
+func TestEntryGateHoldsWhenV2BaselineIsMissingOrNotReady(t *testing.T) {
+	backlog := CandidateBacklog{
+		Candidates: []CandidateEntry{
+			{CandidateID: "candidate-release-control", Title: "Release control center", Theme: "console-governance", Priority: "P0", Owner: "platform-ui", Outcome: "Unify console release gates and promotion evidence.", ValidationCommand: "python3 -m pytest tests/test_design_system.py -q", Capabilities: []string{"release-gate"}, Evidence: []string{"acceptance-suite", "validation-report"}},
+			{CandidateID: "candidate-ops-hardening", Title: "Ops hardening", Theme: "ops-command-center", Priority: "P0", Owner: "ops-platform", Outcome: "Package the command-center rollout with weekly review evidence.", ValidationCommand: "python3 -m pytest tests/test_operations.py -q", Capabilities: []string{"ops-control"}, Evidence: []string{"weekly-review"}},
+			{CandidateID: "candidate-orchestration", Title: "Orchestration rollout", Theme: "agent-orchestration", Priority: "P1", Owner: "orchestration", Outcome: "Promote cross-team orchestration with commercialization visibility.", ValidationCommand: "python3 -m pytest tests/test_orchestration.py -q", Capabilities: []string{"commercialization"}, Evidence: []string{"pilot-evidence"}},
+		},
+	}
+	gate := EntryGate{
+		GateID:                  "gate-v3-entry",
+		Name:                    "V3 Entry Gate",
+		MinReadyCandidates:      3,
+		RequiredCapabilities:    []string{"release-gate", "ops-control", "commercialization"},
+		RequiredEvidence:        []string{"acceptance-suite", "pilot-evidence", "validation-report"},
+		RequiredBaselineVersion: "v2.0",
+	}
+
+	missingBaseline := CandidatePlanner{}.EvaluateGate(backlog, gate, nil)
+	failedBaseline := CandidatePlanner{}.EvaluateGate(backlog, gate, &governance.ScopeFreezeAudit{
+		BoardName:         "BigClaw v2.0 Freeze",
+		Version:           "v2.0",
+		TotalItems:        5,
+		MissingValidation: []string{"OPE-116"},
+	})
+
+	if missingBaseline.Passed || missingBaseline.BaselineReady || !reflect.DeepEqual(missingBaseline.BaselineFindings, []string{"missing baseline audit for v2.0"}) {
+		t.Fatalf("unexpected missing baseline decision: %+v", missingBaseline)
+	}
+	if failedBaseline.Passed || failedBaseline.BaselineReady || !reflect.DeepEqual(failedBaseline.BaselineFindings, []string{"baseline v2.0 is not release ready (87.5)"}) {
+		t.Fatalf("unexpected failed baseline decision: %+v", failedBaseline)
+	}
+}
+
+func TestEntryGateDecisionRoundTripPreservesFindings(t *testing.T) {
+	decision := EntryGateDecision{
+		GateID:              "gate-v3-entry",
+		Passed:              false,
+		ReadyCandidateIDs:   []string{"candidate-release-control"},
+		BlockedCandidateIDs: []string{"candidate-runtime"},
+		MissingCapabilities: []string{"commercialization"},
+		MissingEvidence:     []string{"pilot-evidence"},
+		BaselineReady:       false,
+		BaselineFindings:    []string{"baseline v2.0 is not release ready (87.5)"},
+		BlockerCount:        1,
+	}
+
+	payload, err := json.Marshal(decision)
+	if err != nil {
+		t.Fatalf("marshal decision: %v", err)
+	}
+	var restored EntryGateDecision
+	if err := json.Unmarshal(payload, &restored); err != nil {
+		t.Fatalf("unmarshal decision: %v", err)
+	}
+	if !reflect.DeepEqual(restored, decision) {
+		t.Fatalf("restored decision mismatch: got %+v want %+v", restored, decision)
+	}
+}
+
+func TestRenderCandidateBacklogReportSummarizesBacklogAndGateFindings(t *testing.T) {
+	backlog := CandidateBacklog{
+		EpicID:  "BIG-EPIC-20",
+		Title:   "v4.0 v3候选与进入条件",
+		Version: "v4.0-v3",
+		Candidates: []CandidateEntry{
+			{
+				CandidateID:       "candidate-release-control",
+				Title:             "Release control center",
+				Theme:             "console-governance",
+				Priority:          "P0",
+				Owner:             "platform-ui",
+				Outcome:           "Unify console release gates and promotion evidence.",
+				ValidationCommand: "python3 -m pytest tests/test_design_system.py -q",
+				Capabilities:      []string{"release-gate", "reporting"},
+				Evidence:          []string{"acceptance-suite", "validation-report"},
+				EvidenceLinks:     []EvidenceLink{{Label: "ui-acceptance", Target: "tests/test_design_system.py", Capability: "release-gate"}},
+			},
+		},
+	}
+	gate := EntryGate{GateID: "gate-v3-entry", Name: "V3 Entry Gate", MinReadyCandidates: 1, RequiredCapabilities: []string{"release-gate"}, RequiredEvidence: []string{"validation-report"}, RequiredBaselineVersion: "v2.0"}
+	decision := CandidatePlanner{}.EvaluateGate(backlog, gate, &governance.ScopeFreezeAudit{BoardName: "BigClaw v2.0 Freeze", Version: "v2.0", TotalItems: 5})
+
+	report := RenderCandidateBacklogReport(backlog, gate, decision)
+	for _, want := range []string{
+		"# V3 Candidate Backlog Report",
+		"- Epic: BIG-EPIC-20 v4.0 v3候选与进入条件",
+		"- Decision: PASS: ready=1 blocked=0 missing_capabilities=0 missing_evidence=0 baseline_findings=0",
+		"- candidate-release-control: Release control center priority=P0 owner=platform-ui score=100 ready=true",
+		"validation=python3 -m pytest tests/test_design_system.py -q",
+		"- ui-acceptance -> tests/test_design_system.py capability=release-gate",
+		"- Missing evidence: none",
+		"- Baseline ready: true",
+		"- Baseline findings: none",
+	} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected report to contain %q, got %s", want, report)
+		}
+	}
+}
+
+func TestCandidateEntryRoundTripPreservesEvidenceLinks(t *testing.T) {
+	candidate := CandidateEntry{
+		CandidateID:       "candidate-ops-hardening",
+		Title:             "Ops hardening",
+		Theme:             "ops-command-center",
+		Priority:          "P0",
+		Owner:             "ops-platform",
+		Outcome:           "Package command-center and approval surfaces with linked evidence.",
+		ValidationCommand: "python3 -m pytest tests/test_operations.py tests/test_saved_views.py -q",
+		Capabilities:      []string{"ops-control", "saved-views"},
+		Evidence:          []string{"weekly-review", "validation-report"},
+		EvidenceLinks: []EvidenceLink{
+			{Label: "queue-control-center", Target: "src/bigclaw/operations.py", Capability: "ops-control", Note: "queue and approval command center"},
+			{Label: "saved-view-report", Target: "src/bigclaw/saved_views.py", Capability: "saved-views", Note: "team saved views and digest evidence"},
+		},
+	}
+	payload, err := json.Marshal(candidate)
+	if err != nil {
+		t.Fatalf("marshal candidate: %v", err)
+	}
+	var restored CandidateEntry
+	if err := json.Unmarshal(payload, &restored); err != nil {
+		t.Fatalf("unmarshal candidate: %v", err)
+	}
+	if !reflect.DeepEqual(restored, candidate) {
+		t.Fatalf("restored candidate mismatch: got %+v want %+v", restored, candidate)
+	}
+}
+
+func TestFourWeekExecutionPlanRoundTripPreservesWeeksAndGoals(t *testing.T) {
+	plan := BuildBIG4701ExecutionPlan()
+	payload, err := json.Marshal(plan)
+	if err != nil {
+		t.Fatalf("marshal plan: %v", err)
+	}
+	var restored FourWeekExecutionPlan
+	if err := json.Unmarshal(payload, &restored); err != nil {
+		t.Fatalf("unmarshal plan: %v", err)
+	}
+	if !reflect.DeepEqual(restored, plan) {
+		t.Fatalf("restored plan mismatch: got %+v want %+v", restored, plan)
+	}
+}
+
+func TestFourWeekExecutionPlanRollsUpProgressAndAtRiskWeeks(t *testing.T) {
+	plan := BuildBIG4701ExecutionPlan()
+	if plan.TotalGoals() != 8 || plan.CompletedGoals() != 2 || plan.OverallProgressPercent() != 25 {
+		t.Fatalf("unexpected rollup: %+v", plan)
+	}
+	if !reflect.DeepEqual(plan.AtRiskWeeks(), []int{2}) {
+		t.Fatalf("unexpected at-risk weeks: %+v", plan.AtRiskWeeks())
+	}
+	wantCounts := map[string]int{"done": 2, "on-track": 1, "at-risk": 1, "not-started": 4}
+	if !reflect.DeepEqual(plan.GoalStatusCounts(), wantCounts) {
+		t.Fatalf("unexpected status counts: %+v", plan.GoalStatusCounts())
+	}
+}
+
+func TestFourWeekExecutionPlanValidateRejectsMissingOrUnorderedWeeks(t *testing.T) {
+	plan := FourWeekExecutionPlan{
+		PlanID: "BIG-4701",
+		Title:  "4周执行计划与周目标",
+		Owner:  "execution-office",
+		Weeks: []WeeklyExecutionPlan{
+			{WeekNumber: 1, Theme: "One", Objective: "One"},
+			{WeekNumber: 3, Theme: "Three", Objective: "Three"},
+			{WeekNumber: 2, Theme: "Two", Objective: "Two"},
+			{WeekNumber: 4, Theme: "Four", Objective: "Four"},
+		},
+	}
+	if err := plan.Validate(); err == nil || err.Error() != "Four-week execution plans must include weeks 1 through 4 in order" {
+		t.Fatalf("unexpected validate result: %v", err)
+	}
+}
+
+func TestRenderFourWeekExecutionReportSummarizesPlanStatus(t *testing.T) {
+	report, err := RenderFourWeekExecutionReport(BuildBIG4701ExecutionPlan())
+	if err != nil {
+		t.Fatalf("render report: %v", err)
+	}
+	for _, want := range []string{
+		"# Four-Week Execution Plan",
+		"- Plan: BIG-4701 4周执行计划与周目标",
+		"- Overall progress: 2/8 goals complete (25%)",
+		"- At-risk weeks: 2",
+		"- Week 2: Build and integration progress=0/2 (0%)",
+		"- w2-handoff-sync: Resolve orchestration and console handoff dependencies owner=orchestration-office status=at-risk",
+	} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected report to contain %q, got %s", want, report)
+		}
+	}
+}
+
+func TestWeeklyExecutionPlanFlagsAtRiskGoalIDs(t *testing.T) {
+	week := WeeklyExecutionPlan{
+		WeekNumber: 2,
+		Theme:      "Build and integration",
+		Objective:  "Land high-risk integration work.",
+		Goals: []WeeklyGoal{
+			{GoalID: "w2-green", Title: "Green goal", Owner: "eng", Status: "on-track", SuccessMetric: "merged PRs", TargetValue: "2"},
+			{GoalID: "w2-blocked", Title: "Blocked goal", Owner: "eng", Status: "blocked", SuccessMetric: "open blockers", TargetValue: "0"},
+		},
+	}
+	if !reflect.DeepEqual(week.AtRiskGoalIDs(), []string{"w2-blocked"}) {
+		t.Fatalf("unexpected at-risk goal ids: %+v", week.AtRiskGoalIDs())
+	}
+}
+
+func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
+	backlog := BuildV3CandidateBacklog()
+	if backlog.EpicID != "BIG-EPIC-20" || backlog.Title != "v4.0 v3候选与进入条件" {
+		t.Fatalf("unexpected backlog header: %+v", backlog)
+	}
+	ranked := backlog.RankedCandidates()
+	if !reflect.DeepEqual([]string{ranked[0].CandidateID, ranked[1].CandidateID, ranked[2].CandidateID}, []string{"candidate-ops-hardening", "candidate-orchestration-rollout", "candidate-release-control"}) {
+		t.Fatalf("unexpected ranked candidates: %+v", ranked)
+	}
+	for _, candidate := range backlog.Candidates {
+		if !candidate.Ready() {
+			t.Fatalf("expected candidate ready: %+v", candidate)
+		}
+	}
+
+	var opsCandidate CandidateEntry
+	for _, candidate := range backlog.Candidates {
+		if candidate.CandidateID == "candidate-ops-hardening" {
+			opsCandidate = candidate
+			break
+		}
+	}
+	targets := map[string]struct{}{}
+	for _, link := range opsCandidate.EvidenceLinks {
+		targets[link.Target] = struct{}{}
+	}
+	for _, want := range []string{
+		"src/bigclaw/operations.py",
+		"tests/test_control_center.py",
+		"tests/test_operations.py",
+		"src/bigclaw/execution_contract.py",
+		"src/bigclaw/workflow.py",
+		"tests/test_workflow.py",
+		"tests/test_execution_flow.py",
+		"src/bigclaw/saved_views.py",
+		"tests/test_saved_views.py",
+		"src/bigclaw/evaluation.py",
+		"tests/test_evaluation.py",
+	} {
+		if _, ok := targets[want]; !ok {
+			t.Fatalf("expected ops candidate target %q, got %+v", want, targets)
+		}
+	}
+}
+
+func TestBuildV3EntryGatePassesBuiltCandidateBacklogAgainstV2Baseline(t *testing.T) {
+	backlog := BuildV3CandidateBacklog()
+	gate := BuildV3EntryGate()
+	decision := CandidatePlanner{}.EvaluateGate(backlog, gate, &governance.ScopeFreezeAudit{
+		BoardName:  "BigClaw v2.0 Freeze",
+		Version:    "v2.0",
+		TotalItems: 25,
+	})
+	report := RenderCandidateBacklogReport(backlog, gate, decision)
+
+	if !decision.Passed {
+		t.Fatalf("expected built gate to pass: %+v", decision)
+	}
+	if !reflect.DeepEqual(decision.ReadyCandidateIDs, []string{"candidate-ops-hardening", "candidate-orchestration-rollout", "candidate-release-control"}) {
+		t.Fatalf("unexpected ready candidate ids: %+v", decision)
+	}
+	if len(decision.MissingCapabilities) > 0 || len(decision.MissingEvidence) > 0 {
+		t.Fatalf("unexpected built gate gaps: %+v", decision)
+	}
+	for _, want := range []string{
+		"candidate-ops-hardening: Operations command-center hardening",
+		"- command-center-src -> src/bigclaw/operations.py capability=ops-control",
+		"- report-studio-tests -> tests/test_reports.py capability=commercialization",
+	} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected report to contain %q, got %s", want, report)
+		}
+	}
+}

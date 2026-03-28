@@ -1,21 +1,32 @@
-# BIG-GO-902 Workpad
+# BIG-GO-928 Workpad
 
 ## Plan
 
-1. Inspect existing `scripts/*.py` automation entrypoints and current `bigclaw-go` CLI commands to identify the smallest migration slice that delivers a real Go CLI path and a repeatable migration template.
-2. Implement first-batch Go CLI subcommands for the selected high-frequency script layer entrypoints, keeping changes scoped to command wiring, shared helpers, and migration documentation.
-3. Preserve a compatibility-layer plan by documenting legacy Python entrypoints, their Go replacements, validation commands, and remaining follow-up items.
-4. Run targeted tests for the touched Go CLI packages and record exact commands plus results in the final report.
-5. Commit the scoped changes and push the branch to the configured remote.
+1. Inventory the current Python and non-Go assets behind `tests/test_workspace_bootstrap.py`, `tests/test_planning.py`, and `tests/test_mapping.py`, then map them to existing `bigclaw-go` coverage to identify the smallest missing migration slice.
+2. Land first-batch Go migration work scoped to this issue:
+   - add Go-side planning models, builders, gate evaluation, and reporting for the behaviors still only covered in Python;
+   - add missing Go bootstrap regression tests for cache reuse, stale-seed recovery, cleanup preservation, and validation reporting;
+   - confirm `mapping` is already covered and only document its remaining Python asset status.
+3. Remove or narrow the targeted Python tests only where an equivalent Go regression test now exists and the remaining Python module is no longer the source of truth for that behavior.
+4. Run targeted Go tests for touched packages, capture exact commands and results, then commit and push the issue branch.
 
 ## Acceptance
 
-- Produce an executable migration plan for moving Python script entrypoints to Go CLI subcommands.
-- Land a first batch of Go CLI implementations or adaptations for selected automation entrypoints.
-- Document validation commands, regression surface, branch/PR recommendation, and migration risks.
+- Produce a clear inventory of current Python/non-Go assets for workspace bootstrap, planning, and mapping.
+- Land Go replacements for the uncovered planning and bootstrap behaviors from the target Python tests.
+- State the conditions for deleting legacy Python assets and the exact regression commands that protect the migration.
 
 ## Validation
 
-- `go test ./cmd/bigclawctl/...`
-- Additional targeted `go test` commands for any new shared package touched by the implementation.
-- Manual CLI smoke checks with `go run ./cmd/bigclawctl --help` and targeted subcommand help where relevant.
+- `go test ./bigclaw-go/internal/bootstrap ./bigclaw-go/internal/intake ./bigclaw-go/internal/planning ./bigclaw-go/internal/governance`
+- `go test ./bigclaw-go/...` only if targeted coverage reveals package-coupling regressions worth expanding.
+- Record final exact commands and pass/fail status in the closeout.
+
+## Validation Results
+
+- `cd bigclaw-go && go test -count=1 ./internal/bootstrap ./internal/intake ./internal/planning ./internal/governance`
+  - PASS
+  - `ok  	bigclaw-go/internal/bootstrap	3.881s`
+  - `ok  	bigclaw-go/internal/intake	0.359s`
+  - `ok  	bigclaw-go/internal/planning	1.490s`
+  - `ok  	bigclaw-go/internal/governance	1.102s`
