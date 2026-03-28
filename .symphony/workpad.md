@@ -21,6 +21,8 @@
   - `tests/test_validation_bundle_continuation_scorecard.py`
 - Deleted isolated Python source now superseded by Go:
   - `src/bigclaw/validation_policy.py`
+- Deleted Python sibling test now superseded by Go regression coverage:
+  - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
 - New Go replacement coverage:
   - `bigclaw-go/internal/reporting/migration_suite.go`
   - `bigclaw-go/internal/reporting/migration_suite_test.go`
@@ -30,7 +32,6 @@
   - `src/bigclaw/evaluation.py`
   - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
   - `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
-  - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
   - checked-in report fixtures under `bigclaw-go/docs/reports/validation-bundle-continuation*.json` and dependent live-validation docs
 
 ## Remaining Migration Plan
@@ -41,15 +42,13 @@
   - `src/bigclaw/evaluation.py` is still imported by `src/bigclaw/operations.py`, `src/bigclaw/__init__.py`, and `tests/test_operations.py`.
 - Safe deletion conditions for remaining Python assets:
   - delete `src/bigclaw/reports.py` and `src/bigclaw/evaluation.py` only after their remaining importers under `tests/` are migrated or removed;
-  - delete `bigclaw-go/scripts/e2e/*.py` and the retained sibling Python test only after the scripts themselves are replaced by Go executables/tests and docs/runbooks stop invoking Python.
+  - delete `bigclaw-go/scripts/e2e/*.py` only after the scripts themselves are replaced by Go executables/tests and docs/runbooks stop invoking Python.
 
 ## Validation
 - `cd bigclaw-go && go test ./internal/reporting -count=1`
   - result: `ok  	bigclaw-go/internal/reporting	0.805s`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestValidationBundleContinuation(ScorecardCheckedInShape|ScorecardScriptBuildReport|PolicyGatePartialLaneHistoryHold|PolicyGateCanAllowPartialLaneHistory|PolicyGateCheckedInShape|PolicyGateCLIReturnsZeroForCheckedInGo)$' -count=1`
   - result: `ok  	bigclaw-go/internal/regression	0.812s`
-- `python3 -m pytest bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py -q`
-  - result: `4 passed`
 - `python3 -m pytest tests/test_operations.py -q`
   - result: `20 passed`
 - `python3 -m pytest tests/test_workflow.py -q`
