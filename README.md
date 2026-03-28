@@ -97,7 +97,8 @@ python -m pytest
 Or use the legacy bootstrap helper:
 
 ```bash
-BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
+cd BigClaw/bigclaw-go
+go run ./cmd/bigclawctl dev bootstrap --legacy-python
 ```
 
 ## Legacy Python local test (without editable install)
@@ -139,7 +140,8 @@ go test ./...
 Go-first bootstrap helper:
 
 ```bash
-bash scripts/dev_bootstrap.sh
+cd BigClaw/bigclaw-go
+go run ./cmd/bigclawctl dev bootstrap
 ```
 
 Legacy Python migration surface:

@@ -1,6 +1,11 @@
 # Go CLI Script Migration
 
-Issue: `BIG-GO-902`
+Issue: `BIG-GO-922`
+
+Repo-root script ownership has now moved into Go for the remaining behavior-bearing helpers:
+
+- `scripts/dev_bootstrap.sh` -> `go run ./cmd/bigclawctl dev bootstrap`
+- `scripts/ops/bigclawctl` -> `go run ./cmd/bigclawctl compat exec -- ...`
 
 ## Implemented In This Slice
 

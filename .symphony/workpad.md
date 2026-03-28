@@ -1,21 +1,25 @@
-# BIG-GO-902 Workpad
+# BIG-GO-922 Workpad
 
 ## Plan
 
-1. Inspect existing `scripts/*.py` automation entrypoints and current `bigclaw-go` CLI commands to identify the smallest migration slice that delivers a real Go CLI path and a repeatable migration template.
-2. Implement first-batch Go CLI subcommands for the selected high-frequency script layer entrypoints, keeping changes scoped to command wiring, shared helpers, and migration documentation.
-3. Preserve a compatibility-layer plan by documenting legacy Python entrypoints, their Go replacements, validation commands, and remaining follow-up items.
-4. Run targeted tests for the touched Go CLI packages and record exact commands plus results in the final report.
-5. Commit the scoped changes and push the branch to the configured remote.
+1. Inventory current `scripts/*.py`, `scripts/*.sh`, and `scripts/ops/*` assets and separate thin compatibility shims from scripts that still own behavior.
+2. Migrate the remaining behavior-bearing repo script surfaces into `bigclaw-go/cmd/bigclawctl`.
+3. Keep legacy script paths as compatibility shims where direct deletion would break operator entrypoints.
+4. Update migration docs with the current asset inventory, first-batch replacement map, removal conditions, and regression commands.
+5. Run targeted tests and CLI smoke checks, then commit and push the issue branch.
 
 ## Acceptance
 
-- Produce an executable migration plan for moving Python script entrypoints to Go CLI subcommands.
-- Land a first batch of Go CLI implementations or adaptations for selected automation entrypoints.
-- Document validation commands, regression surface, branch/PR recommendation, and migration risks.
+- Current Python/non-Go script inventory is documented with ownership status.
+- At least one additional repo-level script surface is implemented as a Go CLI/subcommand in this slice.
+- Legacy script deletion conditions are explicit.
+- Validation commands and exact results are recorded for this slice.
 
 ## Validation
 
-- `go test ./cmd/bigclawctl/...`
-- Additional targeted `go test` commands for any new shared package touched by the implementation.
-- Manual CLI smoke checks with `go run ./cmd/bigclawctl --help` and targeted subcommand help where relevant.
+- `cd bigclaw-go && go test ./cmd/bigclawctl`
+- `cd bigclaw-go && go test ./cmd/bigclawctl/...`
+- `cd bigclaw-go && go run ./cmd/bigclawctl dev bootstrap --help`
+- `cd bigclaw-go && go run ./cmd/bigclawctl compat exec --help`
+- `bash scripts/dev_bootstrap.sh --help`
+- `bash scripts/ops/bigclawctl --help`

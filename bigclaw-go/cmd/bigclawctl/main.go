@@ -108,38 +108,45 @@ func run(args []string) int {
 		printRootUsage(os.Stdout)
 		return 0
 	}
-	var err error
-	switch args[0] {
-	case "github-sync":
-		err = runGitHubSync(args[1:])
-	case "workspace":
-		err = runWorkspace(args[1:])
-	case "automation":
-		err = runAutomation(args[1:])
-	case "refill":
-		err = runRefill(args[1:])
-	case "local-issues":
-		err = runLocalIssues(args[1:])
-	case "create-issues":
-		err = runCreateIssues(args[1:])
-	case "dev-smoke":
-		err = runDevSmoke(args[1:])
-	case "symphony":
-		err = runSymphony(args[1:])
-	case "issue":
-		err = runIssue(args[1:])
-	case "panel":
-		err = runPanel(args[1:])
-	case "legacy-python":
-		err = runLegacyPython(args[1:])
-	default:
-		err = fmt.Errorf("unknown command: %s", args[0])
-	}
+	err := dispatchRoot(args)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
 	return 0
+}
+
+func dispatchRoot(args []string) error {
+	switch args[0] {
+	case "github-sync":
+		return runGitHubSync(args[1:])
+	case "workspace":
+		return runWorkspace(args[1:])
+	case "dev":
+		return runDev(args[1:])
+	case "automation":
+		return runAutomation(args[1:])
+	case "refill":
+		return runRefill(args[1:])
+	case "local-issues":
+		return runLocalIssues(args[1:])
+	case "create-issues":
+		return runCreateIssues(args[1:])
+	case "dev-smoke":
+		return runDevSmoke(args[1:])
+	case "symphony":
+		return runSymphony(args[1:])
+	case "issue":
+		return runIssue(args[1:])
+	case "panel":
+		return runPanel(args[1:])
+	case "compat":
+		return runCompat(args[1:])
+	case "legacy-python":
+		return runLegacyPython(args[1:])
+	default:
+		return fmt.Errorf("unknown command: %s", args[0])
+	}
 }
 
 func runLegacyPython(args []string) error {
@@ -1432,11 +1439,12 @@ func printRefillUsage(w io.Writer) {
 }
 
 func printRootUsage(w io.Writer) {
-	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|automation|refill|local-issues|create-issues|dev-smoke|symphony|issue|panel|legacy-python> ...")
+	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|dev|automation|refill|local-issues|create-issues|dev-smoke|symphony|issue|panel|compat|legacy-python> ...")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "commands:")
 	fmt.Fprintln(w, "  github-sync     install/sync/status hooks and branch sync state")
 	fmt.Fprintln(w, "  workspace       bootstrap/cleanup/validate workspaces using the shared mirror")
+	fmt.Fprintln(w, "  dev             run repo bootstrap helpers that used to live in scripts/")
 	fmt.Fprintln(w, "  automation      run migrated e2e/benchmark/migration automation entrypoints")
 	fmt.Fprintln(w, "  refill          promote issues to maintain target in-progress count")
 	fmt.Fprintln(w, "  local-issues    manage the repo-native issue store in local-issues.json")
@@ -1445,6 +1453,7 @@ func printRootUsage(w io.Writer) {
 	fmt.Fprintln(w, "  symphony        launch Symphony against this repo workflow")
 	fmt.Fprintln(w, "  issue           open local tracker flows or proxy symphony issue")
 	fmt.Fprintln(w, "  panel           proxy symphony panel against this repo workflow")
+	fmt.Fprintln(w, "  compat          run thin compatibility helpers used by legacy script entrypoints")
 	fmt.Fprintln(w, "  legacy-python   validate frozen Python compatibility shims")
 }
 

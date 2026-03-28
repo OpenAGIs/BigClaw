@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -18,6 +19,14 @@ import (
 type plannedIssue struct {
 	Title string
 	Body  string
+}
+
+type devBootstrapOptions struct {
+	RepoRoot     string
+	LegacyPython bool
+	Stdout       io.Writer
+	Stderr       io.Writer
+	RunCommand   func(*exec.Cmd) error
 }
 
 var createIssuePlans = map[string][]plannedIssue{
@@ -65,6 +74,178 @@ var createIssuePlans = map[string][]plannedIssue{
 var createIssueLabels = map[string][]string{
 	"v1":     {"bigclaw", "prd-v1"},
 	"v2-ops": {"bigclaw", "prd-v2", "ops"},
+}
+
+func runDev(args []string) error {
+	if len(args) == 0 || isHelpToken(args[0]) {
+		_, _ = os.Stdout.WriteString("usage: bigclawctl dev <bootstrap> [flags]\n")
+		return nil
+	}
+	switch args[0] {
+	case "bootstrap":
+		return runDevBootstrapCommand(args[1:])
+	default:
+		return fmt.Errorf("unknown dev subcommand: %s", args[0])
+	}
+}
+
+func runCompat(args []string) error {
+	if len(args) == 0 || isHelpToken(args[0]) {
+		_, _ = os.Stdout.WriteString("usage: bigclawctl compat <exec> [flags] -- [command args...]\n")
+		return nil
+	}
+	switch args[0] {
+	case "exec":
+		return runCompatExecCommand(args[1:])
+	default:
+		return fmt.Errorf("unknown compat subcommand: %s", args[0])
+	}
+}
+
+func runDevBootstrapCommand(args []string) error {
+	flags := flag.NewFlagSet("dev bootstrap", flag.ContinueOnError)
+	repoRoot := flags.String("repo-root", detectRepoRoot("."), "BigClaw repo root")
+	legacyPython := flags.Bool("legacy-python", envOrDefault("BIGCLAW_ENABLE_LEGACY_PYTHON", "0") == "1", "also bootstrap the frozen legacy Python migration surface")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl dev bootstrap [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	return runDevBootstrap(devBootstrapOptions{
+		RepoRoot:     absPath(*repoRoot),
+		LegacyPython: *legacyPython,
+		Stdout:       os.Stdout,
+		Stderr:       os.Stderr,
+		RunCommand: func(cmd *exec.Cmd) error {
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			return cmd.Run()
+		},
+	})
+}
+
+func runDevBootstrap(opts devBootstrapOptions) error {
+	repoRoot := absPath(opts.RepoRoot)
+	if opts.Stdout == nil {
+		opts.Stdout = io.Discard
+	}
+	if opts.Stderr == nil {
+		opts.Stderr = io.Discard
+	}
+	if opts.RunCommand == nil {
+		opts.RunCommand = func(cmd *exec.Cmd) error {
+			cmd.Stdout = opts.Stdout
+			cmd.Stderr = opts.Stderr
+			return cmd.Run()
+		}
+	}
+	goRoot := filepath.Join(repoRoot, "bigclaw-go")
+	if err := opts.RunCommand(execCommandInDir(goRoot, "go", "test", "./...")); err != nil {
+		return err
+	}
+	if !opts.LegacyPython {
+		_, _ = fmt.Fprintln(opts.Stdout, "BigClaw Go development environment is ready.")
+		_, _ = fmt.Fprintln(opts.Stdout, "Set BIGCLAW_ENABLE_LEGACY_PYTHON=1 or pass --legacy-python to bootstrap the legacy Python migration surface too.")
+		return nil
+	}
+	venvPython := filepath.Join(repoRoot, ".venv", "bin", "python")
+	steps := []*exec.Cmd{
+		execCommandInDir(repoRoot, "python3", "-m", "venv", filepath.Join(repoRoot, ".venv")),
+		execCommandInDir(repoRoot, venvPython, "-m", "pip", "install", "-U", "pip"),
+		execCommandInDir(repoRoot, venvPython, "-m", "pip", "install", "-e", repoRoot+"[dev]"),
+		execCommandInDir(repoRoot, venvPython, "-m", "pytest"),
+	}
+	for _, cmd := range steps {
+		if err := opts.RunCommand(cmd); err != nil {
+			return err
+		}
+	}
+	_, _ = fmt.Fprintln(opts.Stdout, "BigClaw Go and legacy Python migration environments are ready.")
+	return nil
+}
+
+func runCompatExecCommand(args []string) error {
+	flags := flag.NewFlagSet("compat exec", flag.ContinueOnError)
+	repoRoot := flags.String("repo-root", detectRepoRoot("."), "BigClaw repo root")
+	invocationDir := flags.String("invocation-dir", "", "directory the compatibility shim was invoked from")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl compat exec [flags] -- [command args...]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+	translated, err := translateCompatExecArgs(flags.Args(), absPath(*repoRoot), *invocationDir)
+	if err != nil {
+		return err
+	}
+	if len(translated) == 0 {
+		printRootUsage(os.Stdout)
+		return nil
+	}
+	if isHelpToken(translated[0]) {
+		printRootUsage(os.Stdout)
+		return nil
+	}
+	return dispatchRoot(translated)
+}
+
+func translateCompatExecArgs(args []string, repoRoot string, invocationDir string) ([]string, error) {
+	if len(args) == 0 {
+		return nil, nil
+	}
+	activeInvocationDir := absPath(invocationDir)
+	if trim(invocationDir) == "" {
+		activeInvocationDir = repoRoot
+	}
+	translated := make([]string, 0, len(args)+2)
+	hasRepo := false
+	consumeNextRepo := false
+	for _, arg := range args {
+		if consumeNextRepo {
+			consumeNextRepo = false
+			translated = append(translated, resolveCompatRepoArg(arg, activeInvocationDir))
+			continue
+		}
+		switch {
+		case arg == "--repo":
+			hasRepo = true
+			consumeNextRepo = true
+			translated = append(translated, arg)
+		case strings.HasPrefix(arg, "--repo="):
+			hasRepo = true
+			translated = append(translated, "--repo="+resolveCompatRepoArg(strings.TrimPrefix(arg, "--repo="), activeInvocationDir))
+		default:
+			translated = append(translated, arg)
+		}
+	}
+	if consumeNextRepo {
+		return nil, errors.New("missing value for --repo")
+	}
+	if !hasRepo {
+		translated = append(translated, "--repo", repoRoot)
+	}
+	return translated, nil
+}
+
+func resolveCompatRepoArg(value string, invocationDir string) string {
+	if trim(value) == "" || filepath.IsAbs(value) || strings.HasPrefix(value, "~") {
+		return value
+	}
+	resolved := filepath.Join(invocationDir, value)
+	info, err := os.Stat(resolved)
+	if err != nil || !info.IsDir() {
+		return value
+	}
+	return absPath(resolved)
+}
+
+func execCommandInDir(dir string, name string, args ...string) *exec.Cmd {
+	cmd := exec.Command(name, args...)
+	cmd.Dir = dir
+	return cmd
 }
 
 func runDevSmoke(args []string) error {
@@ -305,6 +486,20 @@ func defaultRepoRoot() string {
 	return wd
 }
 
+func detectRepoRoot(start string) string {
+	candidate := absPath(start)
+	if fileExists(filepath.Join(candidate, "bigclaw-go", "go.mod")) {
+		return candidate
+	}
+	if filepath.Base(candidate) == "bigclaw-go" && fileExists(filepath.Join(candidate, "go.mod")) {
+		parent := filepath.Dir(candidate)
+		if fileExists(filepath.Join(parent, "README.md")) {
+			return parent
+		}
+	}
+	return candidate
+}
+
 func containsFlag(args []string, name string) bool {
 	for _, arg := range args {
 		if arg == name || strings.HasPrefix(arg, name+"=") {
@@ -320,6 +515,11 @@ func envOrDefault(key string, fallback string) string {
 		return fallback
 	}
 	return value
+}
+
+func fileExists(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && !info.IsDir()
 }
 
 type githubIssueClient struct {

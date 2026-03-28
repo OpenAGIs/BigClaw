@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -171,5 +173,93 @@ func TestRunPanelUsesSymphonyFromPATH(t *testing.T) {
 	}
 	if !strings.Contains(string(logBody), "panel --workflow "+filepath.Join(repoRoot, "workflow.md")+" status") {
 		t.Fatalf("unexpected symphony invocation: %s", string(logBody))
+	}
+}
+
+func TestTranslateCompatExecArgsAddsRepoAndResolvesRelativeOverride(t *testing.T) {
+	repoRoot := t.TempDir()
+	invocationDir := filepath.Join(repoRoot, "nested")
+	overrideRepo := filepath.Join(invocationDir, "alt-repo")
+	if err := os.MkdirAll(overrideRepo, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	translated, err := translateCompatExecArgs([]string{"github-sync", "status", "--repo", "alt-repo"}, repoRoot, invocationDir)
+	if err != nil {
+		t.Fatalf("translate compat args: %v", err)
+	}
+	expected := []string{"github-sync", "status", "--repo", overrideRepo}
+	if !reflect.DeepEqual(translated, expected) {
+		t.Fatalf("unexpected translated args: got %v want %v", translated, expected)
+	}
+
+	translated, err = translateCompatExecArgs([]string{"refill", "--json"}, repoRoot, invocationDir)
+	if err != nil {
+		t.Fatalf("translate compat args without repo: %v", err)
+	}
+	expected = []string{"refill", "--json", "--repo", repoRoot}
+	if !reflect.DeepEqual(translated, expected) {
+		t.Fatalf("unexpected translated args without repo: got %v want %v", translated, expected)
+	}
+}
+
+func TestRunDevBootstrapSkipsLegacyPythonByDefault(t *testing.T) {
+	repoRoot := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(repoRoot, "bigclaw-go"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	var stdout bytes.Buffer
+	var commands [][]string
+	err := runDevBootstrap(devBootstrapOptions{
+		RepoRoot: repoRoot,
+		Stdout:   &stdout,
+		RunCommand: func(cmd *exec.Cmd) error {
+			commands = append(commands, append([]string{filepath.Base(cmd.Path)}, cmd.Args[1:]...))
+			return nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("run dev bootstrap: %v", err)
+	}
+	expected := [][]string{{"go", "test", "./..."}}
+	if !reflect.DeepEqual(commands, expected) {
+		t.Fatalf("unexpected command sequence: got %v want %v", commands, expected)
+	}
+	if !strings.Contains(stdout.String(), "BigClaw Go development environment is ready.") {
+		t.Fatalf("expected Go-ready message, got %s", stdout.String())
+	}
+}
+
+func TestRunDevBootstrapIncludesLegacyPythonSteps(t *testing.T) {
+	repoRoot := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(repoRoot, "bigclaw-go"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	var stdout bytes.Buffer
+	var commands [][]string
+	err := runDevBootstrap(devBootstrapOptions{
+		RepoRoot:     repoRoot,
+		LegacyPython: true,
+		Stdout:       &stdout,
+		RunCommand: func(cmd *exec.Cmd) error {
+			commands = append(commands, append([]string{filepath.Base(cmd.Path)}, cmd.Args[1:]...))
+			return nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("run dev bootstrap with legacy python: %v", err)
+	}
+	expected := [][]string{
+		{"go", "test", "./..."},
+		{"python3", "-m", "venv", filepath.Join(repoRoot, ".venv")},
+		{"python", "-m", "pip", "install", "-U", "pip"},
+		{"python", "-m", "pip", "install", "-e", repoRoot + "[dev]"},
+		{"python", "-m", "pytest"},
+	}
+	if !reflect.DeepEqual(commands, expected) {
+		t.Fatalf("unexpected legacy bootstrap sequence: got %v want %v", commands, expected)
+	}
+	if !strings.Contains(stdout.String(), "legacy Python migration environments are ready") {
+		t.Fatalf("expected legacy-ready message, got %s", stdout.String())
 	}
 }
