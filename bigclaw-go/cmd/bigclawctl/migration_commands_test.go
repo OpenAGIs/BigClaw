@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"bigclaw-go/internal/refill"
+	"bigclaw-go/internal/testharness"
 )
 
 func captureStdout(t *testing.T, fn func() error) ([]byte, error) {
@@ -125,14 +126,7 @@ func TestRunIssueRoutesStateShortcutToLocalIssues(t *testing.T) {
 		t.Fatalf("create issue: %v", err)
 	}
 
-	originalWD, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(repoRoot); err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = os.Chdir(originalWD) }()
+	testharness.Chdir(t, repoRoot)
 
 	output, err := captureStdout(t, func() error {
 		return runIssue([]string{"state", "BIG-GO-902", "In Progress", "--json"})
@@ -160,7 +154,7 @@ func TestRunPanelUsesSymphonyFromPATH(t *testing.T) {
 	if err := os.WriteFile(scriptPath, []byte(script), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("PATH", binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	testharness.PrependPathEnv(t, binDir)
 
 	if err := runPanel([]string{"--repo", repoRoot, "status"}); err != nil {
 		t.Fatalf("run panel: %v", err)

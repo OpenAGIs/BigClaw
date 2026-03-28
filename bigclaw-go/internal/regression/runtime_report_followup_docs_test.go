@@ -76,7 +76,7 @@ func TestRuntimeReportFollowUpDocsStayAligned(t *testing.T) {
 }
 
 func TestLiveValidationIndexContinuationMetadata(t *testing.T) {
-	repoRoot := filepath.Join("..", "..")
+	repoRoot := repoRoot(t)
 	contents, err := os.ReadFile(filepath.Join(repoRoot, "docs", "reports", "live-validation-index.json"))
 	if err != nil {
 		t.Fatalf("read live validation index json: %v", err)
@@ -114,7 +114,7 @@ func TestLiveValidationIndexContinuationMetadata(t *testing.T) {
 }
 
 func TestContinuationPolicyGateReviewerMetadata(t *testing.T) {
-	repoRoot := filepath.Join("..", "..")
+	repoRoot := repoRoot(t)
 	contents, err := os.ReadFile(filepath.Join(repoRoot, "docs", "reports", "validation-bundle-continuation-policy-gate.json"))
 	if err != nil {
 		t.Fatalf("read continuation policy gate json: %v", err)

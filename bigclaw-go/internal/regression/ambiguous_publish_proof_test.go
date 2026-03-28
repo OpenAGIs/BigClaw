@@ -37,7 +37,7 @@ type ambiguousPublishProofSummary struct {
 }
 
 func TestAmbiguousPublishOutcomeProofSummary(t *testing.T) {
-	repoRoot := filepath.Join("..", "..")
+	repoRoot := repoRoot(t)
 	reportPath := filepath.Join(repoRoot, "docs", "reports", "ambiguous-publish-outcome-proof-summary.json")
 	contents, err := os.ReadFile(reportPath)
 	if err != nil {

@@ -9,8 +9,8 @@ import (
 )
 
 type liveMultiNodeTakeoverProofReport struct {
-	Ticket           string `json:"ticket"`
-	Status           string `json:"status"`
+	Ticket            string `json:"ticket"`
+	Status            string `json:"status"`
 	CurrentPrimitives struct {
 		LeaseAwareCheckpoints []string `json:"lease_aware_checkpoints"`
 		SharedQueueEvidence   []string `json:"shared_queue_evidence"`
@@ -22,7 +22,7 @@ type liveMultiNodeTakeoverProofReport struct {
 }
 
 func TestLiveMultiNodeSubscriberTakeoverProofReport(t *testing.T) {
-	repoRoot := filepath.Join("..", "..")
+	repoRoot := repoRoot(t)
 	reportPath := filepath.Join(repoRoot, "docs", "reports", "live-multi-node-subscriber-takeover-report.json")
 	contents, err := os.ReadFile(reportPath)
 	if err != nil {
@@ -64,4 +64,3 @@ func TestLiveMultiNodeSubscriberTakeoverProofReport(t *testing.T) {
 		t.Fatalf("expected follow-up digest to reference the live takeover report")
 	}
 }
-

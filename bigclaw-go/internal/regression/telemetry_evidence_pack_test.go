@@ -41,7 +41,7 @@ type telemetryEvidencePack struct {
 }
 
 func TestTelemetrySamplingCardinalityEvidencePack(t *testing.T) {
-	repoRoot := filepath.Join("..", "..")
+	repoRoot := repoRoot(t)
 	reportPath := filepath.Join(repoRoot, "docs", "reports", "telemetry-sampling-cardinality-evidence-pack.json")
 	contents, err := os.ReadFile(reportPath)
 	if err != nil {
@@ -113,10 +113,6 @@ func TestTelemetrySamplingCardinalityEvidencePack(t *testing.T) {
 	if !strings.Contains(string(digestBody), "BIG-PAR-076") {
 		t.Fatalf("expected follow-up digest to use the current Linear track id, got %s", string(digestBody))
 	}
-}
-
-func resolveRepoPath(repoRoot, candidate string) string {
-	return filepath.Join(repoRoot, strings.TrimPrefix(candidate, "bigclaw-go/"))
 }
 
 func contains(values []string, needle string) bool {

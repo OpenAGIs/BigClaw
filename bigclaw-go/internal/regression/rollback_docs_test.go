@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 )
@@ -179,7 +178,7 @@ type liveShadowSummary struct {
 			ID   string `json:"id"`
 			Slug string `json:"slug"`
 		} `json:"issue"`
-		DigestPath string `json:"digest_path"`
+		DigestPath  string `json:"digest_path"`
 		SummaryPath string `json:"summary_path"`
 	} `json:"rollback_trigger_surface"`
 }
@@ -257,22 +256,4 @@ func assertLiveShadowRollbackSummary(t *testing.T, payload liveShadowSummary) {
 	if payload.RollbackTriggerSurface.SummaryPath != "docs/reports/rollback-trigger-surface.json" {
 		t.Fatalf("unexpected live-shadow rollback summary path: %s", payload.RollbackTriggerSurface.SummaryPath)
 	}
-}
-
-func repoRoot(t *testing.T) string {
-	t.Helper()
-	_, filename, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("failed to resolve caller")
-	}
-	return filepath.Clean(filepath.Join(filepath.Dir(filename), "..", ".."))
-}
-
-func readRepoFile(t *testing.T, root string, relative string) string {
-	t.Helper()
-	contents, err := os.ReadFile(filepath.Join(root, relative))
-	if err != nil {
-		t.Fatalf("read %s: %v", relative, err)
-	}
-	return string(contents)
 }
