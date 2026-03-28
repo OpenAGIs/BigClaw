@@ -13,7 +13,7 @@
       "bigclaw-go/docs/reports/live-validation-runs/20260314T163430Z/summary.json"
     ],
     "shared_queue_report_path": "bigclaw-go/docs/reports/multi-node-shared-queue-report.json",
-    "generator_script": "bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py"
+    "generator_script": "bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.go"
   },
   "summary": {
     "recent_bundle_count": 3,
@@ -72,14 +72,14 @@
   ],
   "shared_queue_companion": {
     "available": true,
-    "report_path": "docs/reports/multi-node-shared-queue-report.json",
-    "summary_path": "docs/reports/shared-queue-companion-summary.json",
     "bundle_report_path": "docs/reports/live-validation-runs/20260316T140138Z/multi-node-shared-queue-report.json",
     "bundle_summary_path": "docs/reports/live-validation-runs/20260316T140138Z/shared-queue-companion-summary.json",
     "cross_node_completions": 99,
     "duplicate_completed_tasks": 0,
     "duplicate_started_tasks": 0,
-    "mode": "bundle-companion-summary"
+    "mode": "bundle-companion-summary",
+    "report_path": "docs/reports/multi-node-shared-queue-report.json",
+    "summary_path": "docs/reports/shared-queue-companion-summary.json"
   },
   "continuation_checks": [
     {

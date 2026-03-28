@@ -5,6 +5,7 @@
 - Implement the first Go replacements in the smallest scoped packages that cover reporting, evaluation, and validation policy behavior needed by the migrated tests.
 - Add Go tests that preserve the relevant behavioral coverage from the Python suite, remove migrated Python tests/assets when safe, and keep any untouched legacy assets explicit in the inventory.
 - Run targeted regression commands for the new Go tests and any impacted existing tests, then commit and push the branch.
+- Final pass: replace the remaining `bigclaw-go/scripts/e2e/validation_bundle_continuation_{scorecard,policy_gate}.py` runtime scripts with Go equivalents and repoint `run_all.sh`, checked-in reports, and doc/test references.
 
 ## Acceptance
 - Current Python and non-Go assets in scope are explicitly listed in repo changes.
@@ -29,21 +30,26 @@
   - pilot portfolio helper
 - Deleted Python sibling test now superseded by Go regression coverage:
   - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
+- Deleted Python runtime scripts now superseded by Go:
+  - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
+  - `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
 - New Go replacement coverage:
   - `bigclaw-go/internal/reporting/migration_suite.go`
   - `bigclaw-go/internal/reporting/migration_suite_test.go`
   - `bigclaw-go/internal/regression/validation_bundle_continuation_migration_test.go`
+  - `bigclaw-go/internal/reporting/validation_bundle_continuation.go`
+  - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.go`
+  - `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.go`
 - New Python helper split landed to shrink the remaining legacy report surface:
   - `src/bigclaw/reporting_common.py`
 - Remaining Python / non-Go assets still in scope:
   - `src/bigclaw/reports.py`
-  - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
-  - `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
+  - `bigclaw-go/scripts/e2e/export_validation_bundle.py`
   - checked-in report fixtures under `bigclaw-go/docs/reports/validation-bundle-continuation*.json` and dependent live-validation docs
 
 ## Remaining Migration Plan
 - `reports` / `evaluation` / `validation_policy` root Python test coverage is migrated into `bigclaw-go/internal/reporting`.
-- continuation script wrapper coverage is migrated into Go regression tests under `bigclaw-go/internal/regression`, while the Python scripts themselves still remain as runtime assets.
+- continuation scorecard / policy-gate runtime generation is migrated into Go scripts under `bigclaw-go/scripts/e2e` plus Go regression coverage under `bigclaw-go/internal/regression`.
 - Current concrete blockers to deleting the remaining Python sources:
   - `src/bigclaw/reports.py` is still imported by `src/bigclaw/__main__.py`, `src/bigclaw/workflow.py`, `src/bigclaw/scheduler.py`, `src/bigclaw/__init__.py`, and Python tests including `tests/test_repo_rollout.py`, `tests/test_workflow.py`, `tests/test_audit_events.py`, and `tests/test_observability.py`.
   - `src/bigclaw/reporting_common.py` is still imported by `src/bigclaw/__main__.py`, `src/bigclaw/workflow.py`, `src/bigclaw/scheduler.py`, `src/bigclaw/operations.py`, `src/bigclaw/__init__.py`, and Python tests including `tests/test_control_center.py` and `tests/test_operations.py`.
@@ -65,7 +71,7 @@
 - Safe deletion conditions for remaining Python assets:
   - delete `src/bigclaw/reports.py` only after its remaining importers under `tests/` and `src/bigclaw/*` are migrated or removed;
   - delete `src/bigclaw/reporting_common.py` only after the remaining legacy Python runtime and tests stop importing shared view / report-writing helpers;
-  - delete `bigclaw-go/scripts/e2e/*.py` only after the scripts themselves are replaced by Go executables/tests and docs/runbooks stop invoking Python.
+  - delete the remaining `bigclaw-go/scripts/e2e/*.py` assets only after each script has a Go replacement and docs/runbooks stop invoking Python for that surface.
 
 ## Validation
 - `cd bigclaw-go && go test ./internal/reporting -count=1`
@@ -82,6 +88,10 @@
   - result: `38 passed`
 - `python3 -m pytest tests/test_repo_rollout.py tests/test_audit_events.py -q`
   - result: `7 passed`
+- `python3 bigclaw-go/scripts/e2e/run_all_test.py`
+  - result: `Ran 3 tests in 8.274s` / `OK`
+- `python3 -m pytest tests/test_followup_digests.py -q`
+  - result: `2 passed`
 - `python3 -c "import sys; sys.path.insert(0, 'src'); import bigclaw; print('ok')"`
   - result: `ok`
 - `git status --short`

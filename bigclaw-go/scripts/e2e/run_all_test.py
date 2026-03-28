@@ -93,35 +93,69 @@ class RunAllTest(unittest.TestCase):
             executable=True,
         )
         self.write_file(
-            'scripts/e2e/validation_bundle_continuation_scorecard.py',
+            'scripts/e2e/validation_bundle_continuation_scorecard.go',
             """\
-            #!/usr/bin/env python3
-            import json
-            import pathlib
-            import sys
+            package main
 
-            args = sys.argv[1:]
-            output = pathlib.Path(args[args.index('--output') + 1])
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps({'summary': {}, 'shared_queue_companion': {'available': True}}), encoding='utf-8')
+            import (
+                "os"
+                "path/filepath"
+            )
+
+            func main() {
+                args := os.Args[1:]
+                output := args[indexOf(args, "--output")+1]
+                if err := os.MkdirAll(filepath.Dir(output), 0o755); err != nil {
+                    panic(err)
+                }
+                if err := os.WriteFile(output, []byte("{\\"summary\\":{},\\"shared_queue_companion\\":{\\"available\\":true}}"), 0o644); err != nil {
+                    panic(err)
+                }
+            }
+
+            func indexOf(values []string, needle string) int {
+                for index, value := range values {
+                    if value == needle {
+                        return index
+                    }
+                }
+                panic("missing flag " + needle)
+            }
             """,
-            executable=True,
         )
         self.write_file(
-            'scripts/e2e/validation_bundle_continuation_policy_gate.py',
+            'scripts/e2e/validation_bundle_continuation_policy_gate.go',
             """\
-            #!/usr/bin/env python3
-            import json
-            import pathlib
-            import sys
+            package main
 
-            args = sys.argv[1:]
-            mode = args[args.index('--enforcement-mode') + 1]
-            output = pathlib.Path(args[args.index('--output') + 1])
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps({'status': 'policy-go', 'recommendation': 'go', 'enforcement': {'mode': mode, 'outcome': 'pass', 'exit_code': 0}}), encoding='utf-8')
+            import (
+                "fmt"
+                "os"
+                "path/filepath"
+            )
+
+            func main() {
+                args := os.Args[1:]
+                mode := args[indexOf(args, "--enforcement-mode")+1]
+                output := args[indexOf(args, "--output")+1]
+                if err := os.MkdirAll(filepath.Dir(output), 0o755); err != nil {
+                    panic(err)
+                }
+                body := fmt.Sprintf("{\\"status\\":\\"policy-go\\",\\"recommendation\\":\\"go\\",\\"enforcement\\":{\\"mode\\":\\"%s\\",\\"outcome\\":\\"pass\\",\\"exit_code\\":0}}", mode)
+                if err := os.WriteFile(output, []byte(body), 0o644); err != nil {
+                    panic(err)
+                }
+            }
+
+            func indexOf(values []string, needle string) int {
+                for index, value := range values {
+                    if value == needle {
+                        return index
+                    }
+                }
+                panic("missing flag " + needle)
+            }
             """,
-            executable=True,
         )
 
     def test_run_all_rerenders_bundle_after_gate_refresh(self) -> None:
@@ -164,20 +198,38 @@ class RunAllTest(unittest.TestCase):
     def test_run_all_defaults_to_hold_mode(self) -> None:
         self.install_stubs()
         self.write_file(
-            'scripts/e2e/validation_bundle_continuation_policy_gate.py',
+            'scripts/e2e/validation_bundle_continuation_policy_gate.go',
             """\
-            #!/usr/bin/env python3
-            import json
-            import pathlib
-            import sys
+            package main
 
-            args = sys.argv[1:]
-            mode = args[args.index('--enforcement-mode') + 1]
-            output = pathlib.Path(args[args.index('--output') + 1])
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
+            import (
+                "fmt"
+                "os"
+                "path/filepath"
+            )
+
+            func main() {
+                args := os.Args[1:]
+                mode := args[indexOf(args, "--enforcement-mode")+1]
+                output := args[indexOf(args, "--output")+1]
+                if err := os.MkdirAll(filepath.Dir(output), 0o755); err != nil {
+                    panic(err)
+                }
+                body := fmt.Sprintf("{\\"enforcement\\":{\\"mode\\":\\"%s\\"}}", mode)
+                if err := os.WriteFile(output, []byte(body), 0o644); err != nil {
+                    panic(err)
+                }
+            }
+
+            func indexOf(values []string, needle string) int {
+                for index, value := range values {
+                    if value == needle {
+                        return index
+                    }
+                }
+                panic("missing flag " + needle)
+            }
             """,
-            executable=True,
         )
 
         env = os.environ.copy()
@@ -209,20 +261,38 @@ class RunAllTest(unittest.TestCase):
     def test_legacy_enforce_alias_still_maps_to_fail_mode(self) -> None:
         self.install_stubs()
         self.write_file(
-            'scripts/e2e/validation_bundle_continuation_policy_gate.py',
+            'scripts/e2e/validation_bundle_continuation_policy_gate.go',
             """\
-            #!/usr/bin/env python3
-            import json
-            import pathlib
-            import sys
+            package main
 
-            args = sys.argv[1:]
-            mode = args[args.index('--enforcement-mode') + 1]
-            output = pathlib.Path(args[args.index('--output') + 1])
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(json.dumps({'enforcement': {'mode': mode}}), encoding='utf-8')
+            import (
+                "fmt"
+                "os"
+                "path/filepath"
+            )
+
+            func main() {
+                args := os.Args[1:]
+                mode := args[indexOf(args, "--enforcement-mode")+1]
+                output := args[indexOf(args, "--output")+1]
+                if err := os.MkdirAll(filepath.Dir(output), 0o755); err != nil {
+                    panic(err)
+                }
+                body := fmt.Sprintf("{\\"enforcement\\":{\\"mode\\":\\"%s\\"}}", mode)
+                if err := os.WriteFile(output, []byte(body), 0o644); err != nil {
+                    panic(err)
+                }
+            }
+
+            func indexOf(values []string, needle string) int {
+                for index, value := range values {
+                    if value == needle {
+                        return index
+                    }
+                }
+                panic("missing flag " + needle)
+            }
             """,
-            executable=True,
         )
 
         env = os.environ.copy()

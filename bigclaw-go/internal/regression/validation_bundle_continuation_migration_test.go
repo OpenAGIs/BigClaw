@@ -5,32 +5,18 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
-func runPythonModuleJSON(t *testing.T, scriptPath string, pythonCode string, args ...string) map[string]any {
+func runGoScript(t *testing.T, scriptPath string, args ...string) []byte {
 	t.Helper()
-	cmdArgs := append([]string{"-c", pythonCode, scriptPath}, args...)
-	cmd := exec.Command("python3", cmdArgs...)
+	cmdArgs := append([]string{"run", scriptPath}, args...)
+	cmd := exec.Command("go", cmdArgs...)
 	cmd.Dir = repoRoot(t)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Fatalf("python3 %v failed: %v\n%s", cmdArgs, err, string(output))
-	}
-	var payload map[string]any
-	if err := json.Unmarshal(output, &payload); err != nil {
-		t.Fatalf("decode python json output: %v\n%s", err, string(output))
-	}
-	return payload
-}
-
-func runPythonCommand(t *testing.T, args ...string) []byte {
-	t.Helper()
-	cmd := exec.Command("python3", args...)
-	cmd.Dir = repoRoot(t)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("python3 %v failed: %v\n%s", args, err, string(output))
+		t.Fatalf("go %v failed: %v\n%s", cmdArgs, err, string(output))
 	}
 	return output
 }
@@ -78,8 +64,8 @@ func TestValidationBundleContinuationScorecardCheckedInShape(t *testing.T) {
 func TestValidationBundleContinuationScorecardScriptBuildReport(t *testing.T) {
 	repoRoot := repoRoot(t)
 	outputPath := filepath.Join(t.TempDir(), "validation-bundle-continuation-scorecard.json")
-	runPythonCommand(t,
-		filepath.Join(repoRoot, "scripts", "e2e", "validation_bundle_continuation_scorecard.py"),
+	runGoScript(t,
+		filepath.Join(repoRoot, "scripts", "e2e", "validation_bundle_continuation_scorecard.go"),
 		"--output", outputPath,
 	)
 
@@ -191,25 +177,38 @@ func TestValidationBundleContinuationPolicyGatePartialLaneHistoryHold(t *testing
 	}
 
 	repoRoot := repoRoot(t)
-	scriptPath := filepath.Join(repoRoot, "scripts", "e2e", "validation_bundle_continuation_policy_gate.py")
-	report := runPythonModuleJSON(t, scriptPath, `
-import importlib.util, json, sys
-spec = importlib.util.spec_from_file_location("gate", sys.argv[1])
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
-print(json.dumps(module.build_report(scorecard_path=sys.argv[2])))
-`, scorecardPath)
+	outputPath := filepath.Join(t.TempDir(), "validation-bundle-continuation-policy-gate.json")
+	cmd := exec.Command(
+		"go",
+		"run",
+		filepath.Join(repoRoot, "scripts", "e2e", "validation_bundle_continuation_policy_gate.go"),
+		"--scorecard", scorecardPath,
+		"--output", outputPath,
+	)
+	cmd.Dir = repoRoot
+	output, err := cmd.CombinedOutput()
+	if err == nil || !strings.Contains(string(output), "exit status 2") {
+		t.Fatalf("expected hold exit code 2, err=%v\n%s", err, string(output))
+	}
 
-	if report["status"] != "policy-hold" || report["recommendation"] != "hold" {
+	var report struct {
+		Status         string   `json:"status"`
+		Recommendation string   `json:"recommendation"`
+		FailingChecks  []string `json:"failing_checks"`
+		Summary        struct {
+			FailingCheckCount int `json:"failing_check_count"`
+		} `json:"summary"`
+	}
+	readJSONFile(t, outputPath, &report)
+
+	if report.Status != "policy-hold" || report.Recommendation != "hold" {
 		t.Fatalf("unexpected hold report: %+v", report)
 	}
-	failingChecks, ok := report["failing_checks"].([]any)
-	if !ok || len(failingChecks) != 1 || failingChecks[0] != "repeated_lane_coverage_meets_policy" {
-		t.Fatalf("unexpected failing checks: %+v", report["failing_checks"])
+	if len(report.FailingChecks) != 1 || report.FailingChecks[0] != "repeated_lane_coverage_meets_policy" {
+		t.Fatalf("unexpected failing checks: %+v", report.FailingChecks)
 	}
-	summary := report["summary"].(map[string]any)
-	if summary["failing_check_count"] != float64(1) {
-		t.Fatalf("unexpected failing_check_count: %+v", summary)
+	if report.Summary.FailingCheckCount != 1 {
+		t.Fatalf("unexpected failing_check_count: %+v", report.Summary)
 	}
 }
 
@@ -242,21 +241,26 @@ func TestValidationBundleContinuationPolicyGateCanAllowPartialLaneHistory(t *tes
 	}
 
 	repoRoot := repoRoot(t)
-	scriptPath := filepath.Join(repoRoot, "scripts", "e2e", "validation_bundle_continuation_policy_gate.py")
-	report := runPythonModuleJSON(t, scriptPath, `
-import importlib.util, json, sys
-spec = importlib.util.spec_from_file_location("gate", sys.argv[1])
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
-print(json.dumps(module.build_report(scorecard_path=sys.argv[2], require_repeated_lane_coverage=False)))
-`, scorecardPath)
+	outputPath := filepath.Join(t.TempDir(), "validation-bundle-continuation-policy-gate.json")
+	runGoScript(t,
+		filepath.Join(repoRoot, "scripts", "e2e", "validation_bundle_continuation_policy_gate.go"),
+		"--scorecard", scorecardPath,
+		"--allow-partial-lane-history",
+		"--output", outputPath,
+	)
 
-	if report["status"] != "policy-go" || report["recommendation"] != "go" {
+	var report struct {
+		Status         string   `json:"status"`
+		Recommendation string   `json:"recommendation"`
+		FailingChecks  []string `json:"failing_checks"`
+	}
+	readJSONFile(t, outputPath, &report)
+
+	if report.Status != "policy-go" || report.Recommendation != "go" {
 		t.Fatalf("unexpected go report: %+v", report)
 	}
-	failingChecks, ok := report["failing_checks"].([]any)
-	if !ok || len(failingChecks) != 0 {
-		t.Fatalf("unexpected failing checks: %+v", report["failing_checks"])
+	if len(report.FailingChecks) != 0 {
+		t.Fatalf("unexpected failing checks: %+v", report.FailingChecks)
 	}
 }
 
@@ -281,8 +285,9 @@ func TestValidationBundleContinuationPolicyGateCLIReturnsZeroForCheckedInGo(t *t
 	repoRoot := repoRoot(t)
 	outputPath := filepath.Join(t.TempDir(), "validation-bundle-continuation-policy-gate.json")
 	cmd := exec.Command(
-		"python3",
-		filepath.Join(repoRoot, "scripts", "e2e", "validation_bundle_continuation_policy_gate.py"),
+		"go",
+		"run",
+		filepath.Join(repoRoot, "scripts", "e2e", "validation_bundle_continuation_policy_gate.go"),
 		"--output", outputPath,
 	)
 	cmd.Dir = repoRoot
