@@ -90,6 +90,20 @@ First migrated Python test slice now covered explicitly in Go:
   - covered by `bigclaw-go/internal/reporting/reporting_test.go` and `bigclaw-go/internal/api/server_test.go`
   - `test_queue_control_center_renders_shared_view_empty_state`
   - covered by `bigclaw-go/internal/reporting/reporting_test.go`
+- `tests/test_validation_bundle_continuation_policy_gate.py`
+  - `test_checked_in_policy_gate_matches_expected_shape`
+  - covered by `bigclaw-go/internal/regression/validation_bundle_continuation_test.go`
+- `tests/test_validation_bundle_continuation_scorecard.py`
+  - `test_checked_in_continuation_scorecard_matches_expected_shape`
+  - `test_continuation_scorecard_marks_lane_success_and_manual_boundary`
+  - `test_continuation_scorecard_summarizes_recent_bundle_chain`
+  - covered by `bigclaw-go/internal/regression/validation_bundle_continuation_test.go`
+
+Still legacy-only for continuation policy tooling:
+
+- Python script execution semantics in `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
+- Python script execution semantics in `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
+- The checked-in report shapes are now guarded by Go regression tests, but direct script-runtime parity remains on the Python side
 
 Still legacy-only within `tests/test_legacy_shim.py`:
 
