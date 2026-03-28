@@ -17,6 +17,15 @@ type RepoPost struct {
 	Metadata      map[string]any `json:"metadata,omitempty"`
 }
 
+type CollaborationComment struct {
+	CommentID string `json:"comment_id"`
+	Author    string `json:"author"`
+	Body      string `json:"body"`
+	CreatedAt string `json:"created_at"`
+	Anchor    string `json:"anchor"`
+	Status    string `json:"status"`
+}
+
 type RepoDiscussionBoard struct {
 	Posts []RepoPost `json:"posts,omitempty"`
 	Now   func() time.Time
@@ -56,6 +65,21 @@ func (b *RepoDiscussionBoard) Reply(parentPostID, author, body string) (RepoPost
 		return reply, nil
 	}
 	return RepoPost{}, fmt.Errorf("unknown parent post: %s", parentPostID)
+}
+
+func (p RepoPost) ToCollaborationComment() CollaborationComment {
+	status := "open"
+	if resolved, ok := p.Metadata["resolved"].(bool); ok && resolved {
+		status = "resolved"
+	}
+	return CollaborationComment{
+		CommentID: "repo-" + p.PostID,
+		Author:    p.Author,
+		Body:      p.Body,
+		CreatedAt: p.CreatedAt,
+		Anchor:    p.TargetSurface + ":" + p.TargetID,
+		Status:    status,
+	}
 }
 
 func (b RepoDiscussionBoard) ListPosts(channel, targetSurface, targetID string) []RepoPost {

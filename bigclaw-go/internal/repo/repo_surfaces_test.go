@@ -153,6 +153,10 @@ func TestRepoDiscussionBoardCreateReplyAndFilter(t *testing.T) {
 	if len(filtered) != 2 {
 		t.Fatalf("expected filtered posts, got %+v", filtered)
 	}
+	comment := filtered[0].ToCollaborationComment()
+	if comment.CommentID != "repo-"+post.PostID || comment.Anchor != "task:BIG-401" || comment.Status != "open" || !strings.HasPrefix(comment.Body, "Need reviewer") {
+		t.Fatalf("unexpected collaboration comment: %+v", comment)
+	}
 }
 
 func TestRepoDiscussionBoardReplyErrorNowFallbackAndEmptyMetadata(t *testing.T) {

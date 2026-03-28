@@ -122,6 +122,9 @@ First migrated Python test slice now covered explicitly in Go:
   - `test_repo_registry_resolves_space_channel_and_agent_deterministically`
   - `test_repo_registry_round_trip`
   - covered by `bigclaw-go/internal/repo/repo_surfaces_test.go`
+- `tests/test_repo_board.py`
+  - `test_repo_board_create_reply_and_target_filtering`
+  - covered by `bigclaw-go/internal/repo/repo_surfaces_test.go`
 - `tests/test_repo_gateway.py`
   - `test_repo_gateway_normalization_and_audit_payload`
   - `test_repo_gateway_error_normalization_is_deterministic`
@@ -166,6 +169,11 @@ Still legacy-only for bundle export runtime semantics:
 
 - Python script execution semantics in `bigclaw-go/scripts/e2e/export_validation_bundle.py`
 - Go now guards the checked-in live-validation summary/index, shared-queue companion pointers, and continuation-gate/index markdown surface, but direct script runtime parity remains on the Python side
+
+Still partially migrated for repo run-link runtime semantics:
+
+- `tests/test_repo_links.py` now overlaps with Go coverage in `bigclaw-go/internal/repo/repo_surfaces_test.go`, `bigclaw-go/internal/triage/repo_test.go`, and `bigclaw-go/internal/api/server_test.go`
+- The remaining Python-owned piece is the legacy `TaskRun.record_closeout()` / `TaskRun.from_dict()` runtime path in `src/bigclaw/observability.py`, which has not been replaced by a single Go-owned run model in this issue
 
 ## Migration plan
 

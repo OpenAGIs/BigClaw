@@ -19,6 +19,8 @@
 15. `git status --short`
 16. `cd bigclaw-go && go test ./internal/repo`
 17. `git status --short`
+18. `cd bigclaw-go && go test ./internal/repo`
+19. `git status --short`
 
 ## Results
 
@@ -56,3 +58,7 @@
    Result: `ok  	bigclaw-go/internal/repo	1.389s`
 17. `git status --short`
    Result: `M bigclaw-go/docs/reports/pytest-harness-migration.md`, `M bigclaw-go/internal/repo/repo_surfaces_test.go`, `M reports/BIG-GO-923-validation.md`
+18. `cd bigclaw-go && go test ./internal/repo`
+   Result: `ok  	bigclaw-go/internal/repo	3.163s`
+19. `git status --short`
+   Result: `M bigclaw-go/docs/reports/pytest-harness-migration.md`, `M bigclaw-go/internal/repo/board.go`, `M bigclaw-go/internal/repo/repo_surfaces_test.go`, `M reports/BIG-GO-923-validation.md`
