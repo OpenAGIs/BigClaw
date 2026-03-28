@@ -539,6 +539,26 @@ func TestBuildRenderAndWriteQueueControlCenterBundle(t *testing.T) {
 	}
 }
 
+func TestRenderQueueControlCenterEmptyState(t *testing.T) {
+	center := BuildQueueControlCenter(nil)
+
+	rendered := RenderQueueControlCenter(center)
+	for _, fragment := range []string{
+		"# Queue Control Center",
+		"- Queue Depth: 0",
+		"- Waiting Approval Runs: 0",
+		"- Queued Tasks: none",
+		"## Execution Media",
+		"- None",
+		"## Actions",
+		"- None",
+	} {
+		if !strings.Contains(rendered, fragment) {
+			t.Fatalf("expected %q in rendered empty queue center, got %s", fragment, rendered)
+		}
+	}
+}
+
 func TestBuildPolicyPromptVersionCenterSummarizesRevisionDiffs(t *testing.T) {
 	center := BuildPolicyPromptVersionCenter(
 		"Policy/Prompt Version Center",

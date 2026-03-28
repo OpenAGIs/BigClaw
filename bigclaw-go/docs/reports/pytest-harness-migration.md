@@ -83,6 +83,13 @@ First migrated Python test slice now covered explicitly in Go:
   - `test_cleanup_workspace_prunes_worktree_and_bootstrap_branch`
   - `test_validation_report_covers_three_workspaces_with_one_cache`
   - covered by `bigclaw-go/internal/bootstrap/bootstrap_test.go`
+- `tests/test_control_center.py`
+  - `test_queue_peek_tasks_returns_priority_order`
+  - covered by `bigclaw-go/internal/queue/memory_queue_test.go`
+  - `test_queue_control_center_summarizes_queue_and_execution_media`
+  - covered by `bigclaw-go/internal/reporting/reporting_test.go` and `bigclaw-go/internal/api/server_test.go`
+  - `test_queue_control_center_renders_shared_view_empty_state`
+  - covered by `bigclaw-go/internal/reporting/reporting_test.go`
 
 Still legacy-only within `tests/test_legacy_shim.py`:
 
