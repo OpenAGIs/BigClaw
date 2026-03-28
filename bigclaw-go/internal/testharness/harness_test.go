@@ -56,6 +56,15 @@ func TestInventoryPytestAssets(t *testing.T) {
 	if !inventory.ConftestPrependsSrc {
 		t.Fatal("expected conftest to prepend src to sys.path")
 	}
+	if inventory.ConftestImportsPytest {
+		t.Fatal("expected conftest to avoid importing pytest")
+	}
+	if inventory.ConftestDefinesFixture {
+		t.Fatal("expected conftest to avoid defining fixtures")
+	}
+	if inventory.ConftestDefinesHook {
+		t.Fatal("expected conftest to avoid defining pytest hooks")
+	}
 	if got := inventory.Summary(); got != "tests=56 bigclaw_imports=47 pytest_imports=3" {
 		t.Fatalf("unexpected inventory summary: %s", got)
 	}

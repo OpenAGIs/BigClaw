@@ -97,11 +97,14 @@ func Chdir(tb testing.TB, dir string) {
 }
 
 type PytestAssetInventory struct {
-	TestModules          []string
-	BigclawImportModules []string
-	PytestImportModules  []string
-	ConftestPath         string
-	ConftestPrependsSrc  bool
+	TestModules            []string
+	BigclawImportModules   []string
+	PytestImportModules    []string
+	ConftestPath           string
+	ConftestPrependsSrc    bool
+	ConftestImportsPytest  bool
+	ConftestDefinesFixture bool
+	ConftestDefinesHook    bool
 }
 
 func InventoryPytestAssets(tb testing.TB) PytestAssetInventory {
@@ -125,6 +128,9 @@ func InventoryPytestAssets(tb testing.TB) PytestAssetInventory {
 		relPath := filepath.ToSlash(filepath.Join("tests", name))
 		if name == "conftest.py" {
 			inventory.ConftestPrependsSrc = fileContains(tb, fullPath, `sys.path.insert(0, str(SRC))`)
+			inventory.ConftestImportsPytest = fileContains(tb, fullPath, "import pytest") || fileContains(tb, fullPath, "from pytest")
+			inventory.ConftestDefinesFixture = fileContains(tb, fullPath, "@pytest.fixture") || fileContains(tb, fullPath, "def fixture_")
+			inventory.ConftestDefinesHook = fileContains(tb, fullPath, "def pytest_")
 			continue
 		}
 		inventory.TestModules = append(inventory.TestModules, relPath)

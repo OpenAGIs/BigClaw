@@ -23,6 +23,7 @@ Observed inventory at the time of migration:
 - `47` modules directly importing `bigclaw...`
 - `3` modules importing `pytest`: `test_audit_events.py`, `test_planning.py`, `test_roadmap.py`
 - no shared pytest fixtures in `tests/` and no fixture definitions in `tests/conftest.py`
+- `tests/conftest.py` does not import `pytest` and does not define pytest hooks; it is a plain import-path shim
 
 This means the legacy pytest harness is an import bootstrap, not a fixture/runtime orchestration layer.
 
@@ -41,6 +42,7 @@ It provides:
 - `PrependPythonPathEnv(tb, dir)` and `BootstrapLegacyPythonPath(tb)` for Go-owned `PYTHONPATH` bootstrapping when tests still need Python runtime parity
 - `Chdir(tb, dir)` for temporary cwd changes with automatic cleanup
 - `InventoryPytestAssets(tb)` to machine-check the remaining pytest surface (`56` test modules, `47` `bigclaw` importers, `3` `pytest` importers) instead of leaving that inventory only in prose
+- `internal/legacyshim` tests now also assert that the frozen Python compile-check asset list still matches the checked-in `src/bigclaw/*.py` shim files that remain in scope for migration
 
 First-batch adoption landed here:
 
@@ -285,7 +287,7 @@ Until then, `tests/conftest.py` remains a compatibility shim and should not grow
 Primary validation for this issue:
 
 ```bash
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/refill ./cmd/bigclawctl
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/refill ./internal/legacyshim ./cmd/bigclawctl
 ```
 
 Deletion-readiness validation for the legacy Python harness, once migration is further along:
