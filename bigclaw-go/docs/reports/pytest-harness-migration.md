@@ -148,6 +148,16 @@ First migrated Python test slice now covered explicitly in Go:
   - `test_queue_dead_letter_and_retry_persist_across_reload`
   - `test_queue_loads_legacy_list_storage`
   - covered by `bigclaw-go/internal/queue/file_queue_test.go`
+- `tests/test_workflow.py`
+  - `test_workpad_journal_can_replay_and_reload`
+  - `test_acceptance_gate_rejects_missing_evidence`
+  - `test_acceptance_gate_rejects_hold_pilot_scorecard`
+  - covered by `bigclaw-go/internal/workflow/engine_test.go`
+- `tests/test_models.py`
+  - `test_flow_template_and_run_round_trip_preserve_steps_and_outputs`
+  - covered by `bigclaw-go/internal/workflow/model_test.go`
+  - `test_billing_summary_round_trip_preserves_rates_and_usage`
+  - covered by `bigclaw-go/internal/billing/statement_test.go`
 - `tests/test_parallel_validation_bundle.py`
   - `test_export_validation_bundle_generates_latest_reports_and_index`
   - checked-in report/index contract covered by
@@ -194,6 +204,11 @@ Still partially migrated for workflow/event persistence semantics:
 
 - `tests/test_workflow.py` overlaps with Go coverage in `bigclaw-go/internal/workflow/model_test.go`, `bigclaw-go/internal/workflow/engine_test.go`, `bigclaw-go/internal/workflow/closeout_test.go`, and `bigclaw-go/internal/workflow/orchestration_test.go`
 - The remaining Python-owned pieces are ledger-backed workflow runtime/report paths such as repo-sync audit reporting and observability persistence, which do not yet map to one Go-owned runtime package in this issue
+
+Still partially migrated for broader model-runtime semantics:
+
+- `tests/test_models.py` now overlaps with Go coverage in `bigclaw-go/internal/workflow/model_test.go` and `bigclaw-go/internal/billing/statement_test.go`
+- The remaining Python-owned pieces are richer risk-assessment and triage record model surfaces that do not have a single equivalent Go model package in this issue
 
 ## Migration plan
 
