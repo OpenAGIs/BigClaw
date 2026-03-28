@@ -348,7 +348,6 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 	for _, want := range []string{
 		"src/bigclaw/operations.py",
 		"tests/test_control_center.py",
-		"tests/test_operations.py",
 		"src/bigclaw/execution_contract.py",
 		"src/bigclaw/workflow.py",
 		"tests/test_workflow.py",

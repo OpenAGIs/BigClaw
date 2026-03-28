@@ -371,7 +371,6 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 				EvidenceLinks: []EvidenceLink{
 					{Label: "command-center-src", Target: "src/bigclaw/operations.py", Capability: "ops-control"},
 					{Label: "control-center-tests", Target: "tests/test_control_center.py", Capability: "ops-control"},
-					{Label: "operations-tests", Target: "tests/test_operations.py", Capability: "ops-control"},
 					{Label: "execution-contract-src", Target: "src/bigclaw/execution_contract.py", Capability: "ops-control"},
 					{Label: "workflow-src", Target: "src/bigclaw/workflow.py", Capability: "commercialization"},
 					{Label: "workflow-tests", Target: "tests/test_workflow.py", Capability: "commercialization"},
