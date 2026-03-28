@@ -115,3 +115,18 @@ func TestPythonCommandUsesProjectRootAndLegacyPythonPath(t *testing.T) {
 		t.Fatalf("expected PYTHONPATH to start with %q, got %q", LegacySrcRoot(t), lines[1])
 	}
 }
+
+func TestPytestCommandRunsLegacyPytestWithHarnessBootstrap(t *testing.T) {
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skipf("python3 not available: %v", err)
+	}
+
+	cmd := PytestCommand(t, "tests/test_mapping.py", "-q")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("pytest command failed: %v (%s)", err, string(output))
+	}
+	if !strings.Contains(string(output), "[100%]") {
+		t.Fatalf("expected pytest progress output, got %q", string(output))
+	}
+}

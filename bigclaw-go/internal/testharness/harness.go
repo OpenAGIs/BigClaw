@@ -84,6 +84,13 @@ func PythonCommand(tb testing.TB, args ...string) *exec.Cmd {
 	return cmd
 }
 
+// PytestCommand returns a python3 -m pytest command configured for the legacy test root.
+func PytestCommand(tb testing.TB, args ...string) *exec.Cmd {
+	tb.Helper()
+	pytestArgs := append([]string{"-m", "pytest"}, args...)
+	return PythonCommand(tb, pytestArgs...)
+}
+
 func prependEnv(tb testing.TB, key, dir string) {
 	tb.Helper()
 	current := os.Getenv(key)
