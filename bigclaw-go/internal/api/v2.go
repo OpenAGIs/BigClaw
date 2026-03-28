@@ -346,14 +346,16 @@ type runReportLink struct {
 }
 
 type runCloseoutSummary struct {
-	ValidationEvidence []string `json:"validation_evidence"`
-	GitPushSucceeded   bool     `json:"git_push_succeeded"`
-	GitPushOutput      string   `json:"git_push_output,omitempty"`
-	GitLogStatOutput   string   `json:"git_log_stat_output"`
-	RemoteSynced       bool     `json:"remote_synced"`
-	LocalSHA           string   `json:"local_sha,omitempty"`
-	RemoteSHA          string   `json:"remote_sha,omitempty"`
-	Complete           bool     `json:"complete"`
+	ValidationEvidence []string             `json:"validation_evidence"`
+	GitPushSucceeded   bool                 `json:"git_push_succeeded"`
+	GitPushOutput      string               `json:"git_push_output,omitempty"`
+	GitLogStatOutput   string               `json:"git_log_stat_output"`
+	RemoteSynced       bool                 `json:"remote_synced"`
+	LocalSHA           string               `json:"local_sha,omitempty"`
+	RemoteSHA          string               `json:"remote_sha,omitempty"`
+	AcceptedCommitHash string               `json:"accepted_commit_hash,omitempty"`
+	RunCommitLinks     []repo.RunCommitLink `json:"run_commit_links,omitempty"`
+	Complete           bool                 `json:"complete"`
 }
 
 type runRepoTriageSummary struct {
@@ -1861,14 +1863,17 @@ func buildRunValidation(task domain.Task) runValidationSummary {
 }
 
 func buildRunCloseout(task domain.Task) runCloseoutSummary {
+	base := repo.BuildRunCloseout(task)
 	closeout := runCloseoutSummary{
-		ValidationEvidence: metadataStringSlice(task, "validation_evidence"),
-		GitPushSucceeded:   metadataBoolValue(task, "git_push_succeeded"),
-		GitPushOutput:      strings.TrimSpace(task.Metadata["git_push_output"]),
-		GitLogStatOutput:   strings.TrimSpace(task.Metadata["git_log_stat_output"]),
-		RemoteSynced:       metadataBoolValue(task, "remote_synced"),
-		LocalSHA:           strings.TrimSpace(task.Metadata["local_sha"]),
-		RemoteSHA:          strings.TrimSpace(task.Metadata["remote_sha"]),
+		ValidationEvidence: base.ValidationEvidence,
+		GitPushSucceeded:   base.GitPushSucceeded,
+		GitPushOutput:      base.GitPushOutput,
+		GitLogStatOutput:   base.GitLogStatOutput,
+		RemoteSynced:       base.RemoteSynced,
+		LocalSHA:           base.LocalSHA,
+		RemoteSHA:          base.RemoteSHA,
+		AcceptedCommitHash: base.AcceptedCommitHash,
+		RunCommitLinks:     base.RunCommitLinks,
 	}
 	closeout.Complete = len(closeout.ValidationEvidence) > 0 && closeout.GitPushSucceeded && closeout.GitLogStatOutput != "" && closeout.RemoteSynced
 	return closeout
@@ -1876,7 +1881,7 @@ func buildRunCloseout(task domain.Task) runCloseoutSummary {
 
 func buildRunRepoTriage(task domain.Task) *runRepoTriageSummary {
 	status := firstNonEmpty(task.Metadata["repo_triage_status"], task.Metadata["review_status"], derivedRepoTriageStatus(task))
-	links := runCommitLinksFromMetadata(task)
+	links := repo.BuildRunCloseout(task).RunCommitLinks
 	evidence := repo.LineageEvidence{
 		CandidateCommit:     firstNonEmpty(task.Metadata["candidate_commit_hash"], commitHashForRole(links, "candidate")),
 		AcceptedAncestor:    firstNonEmpty(task.Metadata["accepted_ancestor"], task.Metadata["accepted_commit_hash"], commitHashForRole(links, "accepted")),
@@ -2103,46 +2108,6 @@ func metadataStringSlice(task domain.Task, key string) []string {
 		}
 	}
 	return values
-}
-
-func runCommitLinksFromMetadata(task domain.Task) []repo.RunCommitLink {
-	raw := strings.TrimSpace(task.Metadata["run_commit_links"])
-	if raw == "" {
-		return fallbackRunCommitLinks(task)
-	}
-	var links []repo.RunCommitLink
-	if err := json.Unmarshal([]byte(raw), &links); err != nil {
-		return fallbackRunCommitLinks(task)
-	}
-	for index := range links {
-		if strings.TrimSpace(links[index].RunID) == "" {
-			links[index].RunID = task.ID
-		}
-	}
-	return links
-}
-
-func fallbackRunCommitLinks(task domain.Task) []repo.RunCommitLink {
-	links := make([]repo.RunCommitLink, 0, 2)
-	appendLink := func(role string, hashes ...string) {
-		for _, hash := range hashes {
-			hash = strings.TrimSpace(hash)
-			if hash == "" {
-				continue
-			}
-			links = append(links, repo.RunCommitLink{
-				RunID:       task.ID,
-				CommitHash:  hash,
-				Role:        role,
-				RepoSpaceID: strings.TrimSpace(task.Metadata["repo_space_id"]),
-				Actor:       strings.TrimSpace(task.Metadata["repo_actor"]),
-			})
-			return
-		}
-	}
-	appendLink("candidate", task.Metadata["candidate_commit_hash"])
-	appendLink("accepted", task.Metadata["accepted_commit_hash"], task.Metadata["accepted_ancestor"])
-	return links
 }
 
 func commitHashForRole(links []repo.RunCommitLink, role string) string {

@@ -382,3 +382,35 @@ func TestBuildApprovalEvidencePacket(t *testing.T) {
 		t.Fatalf("unexpected approval packet: %+v", packet)
 	}
 }
+
+func TestBuildRunCloseoutCapturesAcceptedCommitAndRoundTripsJSON(t *testing.T) {
+	task := domain.Task{
+		ID: "run-143",
+		Metadata: map[string]string{
+			"validation_evidence": `["go test ./internal/repo"]`,
+			"git_push_succeeded":  "true",
+			"git_log_stat_output": "commit ccc333",
+			"run_commit_links":    `[{"run_id":"run-143","commit_hash":"aaa111","role":"source","repo_space_id":"space-1"},{"run_id":"run-143","commit_hash":"bbb222","role":"candidate","repo_space_id":"space-1"},{"run_id":"run-143","commit_hash":"ccc333","role":"accepted","repo_space_id":"space-1"}]`,
+		},
+	}
+
+	closeout := BuildRunCloseout(task)
+	if closeout.AcceptedCommitHash != "ccc333" {
+		t.Fatalf("unexpected accepted commit hash: %+v", closeout)
+	}
+	if len(closeout.RunCommitLinks) != 3 || closeout.RunCommitLinks[1].Role != "candidate" {
+		t.Fatalf("expected run commit links to preserve role ordering, got %+v", closeout.RunCommitLinks)
+	}
+
+	body, err := json.Marshal(closeout)
+	if err != nil {
+		t.Fatalf("marshal closeout: %v", err)
+	}
+	var restored RunCloseout
+	if err := json.Unmarshal(body, &restored); err != nil {
+		t.Fatalf("unmarshal closeout: %v", err)
+	}
+	if restored.AcceptedCommitHash != "ccc333" || len(restored.RunCommitLinks) != 3 || restored.RunCommitLinks[1].Role != "candidate" {
+		t.Fatalf("unexpected restored closeout: %+v", restored)
+	}
+}
