@@ -22,12 +22,12 @@ func TestUIReviewPackRoundTripPreservesManifestShape(t *testing.T) {
 			Dependencies:  []string{"BIG-1103", "BIG-1701"},
 		}},
 		Wireframes: []WireframeSurface{{
-			SurfaceID:    "wf-overview",
-			Name:         "Review overview board",
-			Device:       "desktop",
-			EntryPoint:   "Epic 11 review hub",
+			SurfaceID:     "wf-overview",
+			Name:          "Review overview board",
+			Device:        "desktop",
+			EntryPoint:    "Epic 11 review hub",
 			PrimaryBlocks: []string{"header", "objective strip", "wireframe rail", "decision log"},
-			ReviewNotes:  []string{"Highlight unresolved dependencies before approval."},
+			ReviewNotes:   []string{"Highlight unresolved dependencies before approval."},
 		}},
 		Interactions: []InteractionFlow{{
 			FlowID:         "flow-frame-switch",

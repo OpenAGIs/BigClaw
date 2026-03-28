@@ -17,21 +17,21 @@ type ReviewObjective struct {
 }
 
 type WireframeSurface struct {
-	SurfaceID    string   `json:"surface_id"`
-	Name         string   `json:"name"`
-	Device       string   `json:"device"`
-	EntryPoint   string   `json:"entry_point"`
+	SurfaceID     string   `json:"surface_id"`
+	Name          string   `json:"name"`
+	Device        string   `json:"device"`
+	EntryPoint    string   `json:"entry_point"`
 	PrimaryBlocks []string `json:"primary_blocks"`
-	ReviewNotes  []string `json:"review_notes"`
+	ReviewNotes   []string `json:"review_notes"`
 }
 
 type InteractionFlow struct {
-	FlowID          string   `json:"flow_id"`
-	Name            string   `json:"name"`
-	Trigger         string   `json:"trigger"`
-	SystemResponse  string   `json:"system_response"`
-	States          []string `json:"states"`
-	Exceptions      []string `json:"exceptions"`
+	FlowID         string   `json:"flow_id"`
+	Name           string   `json:"name"`
+	Trigger        string   `json:"trigger"`
+	SystemResponse string   `json:"system_response"`
+	States         []string `json:"states"`
+	Exceptions     []string `json:"exceptions"`
 }
 
 type OpenQuestion struct {
@@ -74,26 +74,26 @@ type ReviewRoleAssignment struct {
 }
 
 type ReviewSignoff struct {
-	SignoffID        string   `json:"signoff_id"`
-	AssignmentID     string   `json:"assignment_id"`
-	SurfaceID        string   `json:"surface_id"`
-	Role             string   `json:"role"`
-	Status           string   `json:"status"`
-	Required         bool     `json:"required"`
-	EvidenceLinks    []string `json:"evidence_links"`
-	Notes            string   `json:"notes"`
-	WaiverOwner      string   `json:"waiver_owner"`
-	WaiverReason     string   `json:"waiver_reason"`
-	RequestedAt      string   `json:"requested_at"`
-	DueAt            string   `json:"due_at"`
-	EscalationOwner  string   `json:"escalation_owner"`
-	SLAStatus        string   `json:"sla_status"`
-	ReminderOwner    string   `json:"reminder_owner"`
-	ReminderChannel  string   `json:"reminder_channel"`
-	LastReminderAt   string   `json:"last_reminder_at"`
-	NextReminderAt   string   `json:"next_reminder_at"`
-	ReminderCadence  string   `json:"reminder_cadence"`
-	ReminderStatus   string   `json:"reminder_status"`
+	SignoffID       string   `json:"signoff_id"`
+	AssignmentID    string   `json:"assignment_id"`
+	SurfaceID       string   `json:"surface_id"`
+	Role            string   `json:"role"`
+	Status          string   `json:"status"`
+	Required        bool     `json:"required"`
+	EvidenceLinks   []string `json:"evidence_links"`
+	Notes           string   `json:"notes"`
+	WaiverOwner     string   `json:"waiver_owner"`
+	WaiverReason    string   `json:"waiver_reason"`
+	RequestedAt     string   `json:"requested_at"`
+	DueAt           string   `json:"due_at"`
+	EscalationOwner string   `json:"escalation_owner"`
+	SLAStatus       string   `json:"sla_status"`
+	ReminderOwner   string   `json:"reminder_owner"`
+	ReminderChannel string   `json:"reminder_channel"`
+	LastReminderAt  string   `json:"last_reminder_at"`
+	NextReminderAt  string   `json:"next_reminder_at"`
+	ReminderCadence string   `json:"reminder_cadence"`
+	ReminderStatus  string   `json:"reminder_status"`
 }
 
 type ReviewBlocker struct {
@@ -135,25 +135,25 @@ type ReviewBlockerEvent struct {
 }
 
 type UIReviewPack struct {
-	IssueID                 string                 `json:"issue_id"`
-	Title                   string                 `json:"title"`
-	Version                 string                 `json:"version"`
-	Objectives              []ReviewObjective      `json:"objectives"`
-	Wireframes              []WireframeSurface     `json:"wireframes"`
-	Interactions            []InteractionFlow      `json:"interactions"`
-	OpenQuestions           []OpenQuestion         `json:"open_questions"`
-	ReviewerChecklist       []ReviewerChecklistItem `json:"reviewer_checklist"`
-	RequiresReviewerChecklist bool                 `json:"requires_reviewer_checklist"`
-	DecisionLog             []ReviewDecision       `json:"decision_log"`
-	RequiresDecisionLog     bool                   `json:"requires_decision_log"`
-	RoleMatrix              []ReviewRoleAssignment `json:"role_matrix"`
-	RequiresRoleMatrix      bool                   `json:"requires_role_matrix"`
-	SignoffLog              []ReviewSignoff        `json:"signoff_log"`
-	RequiresSignoffLog      bool                   `json:"requires_signoff_log"`
-	BlockerLog              []ReviewBlocker        `json:"blocker_log"`
-	RequiresBlockerLog      bool                   `json:"requires_blocker_log"`
-	BlockerTimeline         []ReviewBlockerEvent   `json:"blocker_timeline"`
-	RequiresBlockerTimeline bool                   `json:"requires_blocker_timeline"`
+	IssueID                   string                  `json:"issue_id"`
+	Title                     string                  `json:"title"`
+	Version                   string                  `json:"version"`
+	Objectives                []ReviewObjective       `json:"objectives"`
+	Wireframes                []WireframeSurface      `json:"wireframes"`
+	Interactions              []InteractionFlow       `json:"interactions"`
+	OpenQuestions             []OpenQuestion          `json:"open_questions"`
+	ReviewerChecklist         []ReviewerChecklistItem `json:"reviewer_checklist"`
+	RequiresReviewerChecklist bool                    `json:"requires_reviewer_checklist"`
+	DecisionLog               []ReviewDecision        `json:"decision_log"`
+	RequiresDecisionLog       bool                    `json:"requires_decision_log"`
+	RoleMatrix                []ReviewRoleAssignment  `json:"role_matrix"`
+	RequiresRoleMatrix        bool                    `json:"requires_role_matrix"`
+	SignoffLog                []ReviewSignoff         `json:"signoff_log"`
+	RequiresSignoffLog        bool                    `json:"requires_signoff_log"`
+	BlockerLog                []ReviewBlocker         `json:"blocker_log"`
+	RequiresBlockerLog        bool                    `json:"requires_blocker_log"`
+	BlockerTimeline           []ReviewBlockerEvent    `json:"blocker_timeline"`
+	RequiresBlockerTimeline   bool                    `json:"requires_blocker_timeline"`
 }
 
 func (p UIReviewPack) ensureDefaults() UIReviewPack {
@@ -213,66 +213,66 @@ func (p UIReviewPack) ensureDefaults() UIReviewPack {
 }
 
 type UIReviewPackAudit struct {
-	Ready                                   bool
-	ObjectiveCount                          int
-	WireframeCount                          int
-	InteractionCount                        int
-	OpenQuestionCount                       int
-	ChecklistCount                          int
-	DecisionCount                           int
-	RoleAssignmentCount                     int
-	SignoffCount                            int
-	BlockerCount                            int
-	BlockerTimelineCount                    int
-	MissingSections                         []string
-	ObjectivesMissingSignals                []string
-	WireframesMissingBlocks                 []string
-	InteractionsMissingStates               []string
-	UnresolvedQuestionIDs                   []string
-	WireframesMissingChecklists             []string
-	OrphanChecklistSurfaces                 []string
-	ChecklistItemsMissingEvidence           []string
-	ChecklistItemsMissingRoleLinks          []string
-	WireframesMissingDecisions              []string
-	OrphanDecisionSurfaces                  []string
-	UnresolvedDecisionIDs                   []string
-	UnresolvedDecisionsMissingFollowUps     []string
-	WireframesMissingRoleAssignments        []string
-	OrphanRoleAssignmentSurfaces            []string
-	RoleAssignmentsMissingResponsibilities  []string
-	RoleAssignmentsMissingChecklistLinks    []string
-	RoleAssignmentsMissingDecisionLinks     []string
-	DecisionsMissingRoleLinks               []string
-	WireframesMissingSignoffs               []string
-	OrphanSignoffSurfaces                   []string
-	SignoffsMissingAssignments              []string
-	SignoffsMissingEvidence                 []string
-	SignoffsMissingRequestedDates           []string
-	SignoffsMissingDueDates                 []string
-	SignoffsMissingEscalationOwners         []string
-	SignoffsMissingReminderOwners           []string
-	SignoffsMissingNextReminders            []string
-	SignoffsMissingReminderCadence          []string
-	SignoffsWithBreachedSLA                 []string
-	WaivedSignoffsMissingMetadata           []string
-	UnresolvedRequiredSignoffIDs            []string
-	BlockersMissingSignoffLinks             []string
-	BlockersMissingEscalationOwners         []string
-	BlockersMissingNextActions              []string
-	FreezeExceptionsMissingOwners           []string
-	FreezeExceptionsMissingUntil            []string
-	FreezeExceptionsMissingApprovers        []string
-	FreezeExceptionsMissingApprovalDates    []string
-	FreezeExceptionsMissingRenewalOwners    []string
-	FreezeExceptionsMissingRenewalDates     []string
-	BlockersMissingTimelineEvents           []string
-	ClosedBlockersMissingResolutionEvents   []string
-	OrphanBlockerSurfaces                   []string
-	OrphanBlockerTimelineBlockerIDs         []string
-	HandoffEventsMissingTargets             []string
-	HandoffEventsMissingArtifacts           []string
-	HandoffEventsMissingAckOwners           []string
-	HandoffEventsMissingAckDates            []string
+	Ready                                     bool
+	ObjectiveCount                            int
+	WireframeCount                            int
+	InteractionCount                          int
+	OpenQuestionCount                         int
+	ChecklistCount                            int
+	DecisionCount                             int
+	RoleAssignmentCount                       int
+	SignoffCount                              int
+	BlockerCount                              int
+	BlockerTimelineCount                      int
+	MissingSections                           []string
+	ObjectivesMissingSignals                  []string
+	WireframesMissingBlocks                   []string
+	InteractionsMissingStates                 []string
+	UnresolvedQuestionIDs                     []string
+	WireframesMissingChecklists               []string
+	OrphanChecklistSurfaces                   []string
+	ChecklistItemsMissingEvidence             []string
+	ChecklistItemsMissingRoleLinks            []string
+	WireframesMissingDecisions                []string
+	OrphanDecisionSurfaces                    []string
+	UnresolvedDecisionIDs                     []string
+	UnresolvedDecisionsMissingFollowUps       []string
+	WireframesMissingRoleAssignments          []string
+	OrphanRoleAssignmentSurfaces              []string
+	RoleAssignmentsMissingResponsibilities    []string
+	RoleAssignmentsMissingChecklistLinks      []string
+	RoleAssignmentsMissingDecisionLinks       []string
+	DecisionsMissingRoleLinks                 []string
+	WireframesMissingSignoffs                 []string
+	OrphanSignoffSurfaces                     []string
+	SignoffsMissingAssignments                []string
+	SignoffsMissingEvidence                   []string
+	SignoffsMissingRequestedDates             []string
+	SignoffsMissingDueDates                   []string
+	SignoffsMissingEscalationOwners           []string
+	SignoffsMissingReminderOwners             []string
+	SignoffsMissingNextReminders              []string
+	SignoffsMissingReminderCadence            []string
+	SignoffsWithBreachedSLA                   []string
+	WaivedSignoffsMissingMetadata             []string
+	UnresolvedRequiredSignoffIDs              []string
+	BlockersMissingSignoffLinks               []string
+	BlockersMissingEscalationOwners           []string
+	BlockersMissingNextActions                []string
+	FreezeExceptionsMissingOwners             []string
+	FreezeExceptionsMissingUntil              []string
+	FreezeExceptionsMissingApprovers          []string
+	FreezeExceptionsMissingApprovalDates      []string
+	FreezeExceptionsMissingRenewalOwners      []string
+	FreezeExceptionsMissingRenewalDates       []string
+	BlockersMissingTimelineEvents             []string
+	ClosedBlockersMissingResolutionEvents     []string
+	OrphanBlockerSurfaces                     []string
+	OrphanBlockerTimelineBlockerIDs           []string
+	HandoffEventsMissingTargets               []string
+	HandoffEventsMissingArtifacts             []string
+	HandoffEventsMissingAckOwners             []string
+	HandoffEventsMissingAckDates              []string
 	UnresolvedRequiredSignoffsWithoutBlockers []string
 }
 

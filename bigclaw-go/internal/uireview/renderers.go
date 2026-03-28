@@ -81,7 +81,7 @@ func RenderReviewSummaryBoard(pack UIReviewPack) string {
 
 type objectiveCoverageEntry struct {
 	ID, ObjectiveID, Persona, Priority, Coverage, Surfaces, DependencyIDs, Assignments, Checklist, Decisions, Signoffs, Blockers, Summary string
-	DependencyCount                                                                                                               int
+	DependencyCount                                                                                                                       int
 }
 
 func buildObjectiveCoverageEntries(pack UIReviewPack) []objectiveCoverageEntry {
@@ -192,7 +192,7 @@ func RenderObjectiveCoverageBoard(pack UIReviewPack) string {
 }
 
 type personaReadinessEntry struct {
-	ID, Persona, Readiness, ObjectiveIDs, Surfaces, QueueIDs, BlockerIDs string
+	ID, Persona, Readiness, ObjectiveIDs, Surfaces, QueueIDs, BlockerIDs                   string
 	ObjectiveCount, AssignmentCount, SignoffCount, QuestionCount, QueueCount, BlockerCount int
 }
 
@@ -323,7 +323,7 @@ func countWireframeReadiness(pack UIReviewPack, state string) int {
 }
 
 type wireframeReadinessEntry struct {
-	ID, SurfaceID, Device, Readiness, EntryPoint, Signoffs, Blockers, Summary string
+	ID, SurfaceID, Device, Readiness, EntryPoint, Signoffs, Blockers, Summary                                   string
 	OpenTotal, ChecklistOpen, DecisionsOpen, AssignmentsOpen, SignoffsOpen, BlockersOpen, BlockCount, NoteCount int
 }
 
@@ -370,22 +370,22 @@ func buildWireframeReadinessEntries(pack UIReviewPack) []wireframeReadinessEntry
 			readiness = "at-risk"
 		}
 		entries = append(entries, wireframeReadinessEntry{
-			ID:             "wire-" + wireframe.SurfaceID,
-			SurfaceID:      wireframe.SurfaceID,
-			Device:         wireframe.Device,
-			Readiness:      readiness,
-			EntryPoint:     wireframe.EntryPoint,
-			OpenTotal:      checklistOpen + decisionsOpen + assignmentsOpen + signoffsOpen + blockersOpen,
-			ChecklistOpen:  checklistOpen,
-			DecisionsOpen:  decisionsOpen,
+			ID:              "wire-" + wireframe.SurfaceID,
+			SurfaceID:       wireframe.SurfaceID,
+			Device:          wireframe.Device,
+			Readiness:       readiness,
+			EntryPoint:      wireframe.EntryPoint,
+			OpenTotal:       checklistOpen + decisionsOpen + assignmentsOpen + signoffsOpen + blockersOpen,
+			ChecklistOpen:   checklistOpen,
+			DecisionsOpen:   decisionsOpen,
 			AssignmentsOpen: assignmentsOpen,
-			SignoffsOpen:   signoffsOpen,
-			BlockersOpen:   blockersOpen,
-			Signoffs:       joinOrNone(sortStrings(signoffIDs)),
-			Blockers:       joinOrNone(sortStrings(blockerIDs)),
-			BlockCount:     len(wireframe.PrimaryBlocks),
-			NoteCount:      len(wireframe.ReviewNotes),
-			Summary:        wireframe.Name,
+			SignoffsOpen:    signoffsOpen,
+			BlockersOpen:    blockersOpen,
+			Signoffs:        joinOrNone(sortStrings(signoffIDs)),
+			Blockers:        joinOrNone(sortStrings(blockerIDs)),
+			BlockCount:      len(wireframe.PrimaryBlocks),
+			NoteCount:       len(wireframe.ReviewNotes),
+			Summary:         wireframe.Name,
 		})
 	}
 	sort.Slice(entries, func(i, j int) bool {
@@ -434,7 +434,7 @@ func RenderWireframeReadinessBoard(pack UIReviewPack) string {
 
 type interactionCoverageEntry struct {
 	ID, FlowID, Surfaces, Owners, Coverage, Checklist, OpenChecklist, Trigger string
-	StateCount, ExceptionCount int
+	StateCount, ExceptionCount                                                int
 }
 
 func buildInteractionCoverageEntries(pack UIReviewPack) []interactionCoverageEntry {
@@ -461,15 +461,15 @@ func buildInteractionCoverageEntries(pack UIReviewPack) []interactionCoverageEnt
 			}
 		}
 		entries = append(entries, interactionCoverageEntry{
-			ID:           "intcov-" + flow.FlowID,
-			FlowID:       flow.FlowID,
-			Surfaces:     joinOrNone(sortStrings(setKeys(surfaceSet))),
-			Owners:       joinOrNone(sortStrings(setKeys(ownerSet))),
-			Coverage:     "covered",
-			Checklist:    joinOrNone(sortStrings(checklistIDs)),
-			OpenChecklist: joinOrNone(sortStrings(openChecklistIDs)),
-			Trigger:      flow.Trigger,
-			StateCount:   len(flow.States),
+			ID:             "intcov-" + flow.FlowID,
+			FlowID:         flow.FlowID,
+			Surfaces:       joinOrNone(sortStrings(setKeys(surfaceSet))),
+			Owners:         joinOrNone(sortStrings(setKeys(ownerSet))),
+			Coverage:       "covered",
+			Checklist:      joinOrNone(sortStrings(checklistIDs)),
+			OpenChecklist:  joinOrNone(sortStrings(openChecklistIDs)),
+			Trigger:        flow.Trigger,
+			StateCount:     len(flow.States),
 			ExceptionCount: len(flow.Exceptions),
 		})
 	}
@@ -731,7 +731,7 @@ func RenderDecisionFollowupTracker(pack UIReviewPack) string {
 
 type roleCoverageEntry struct {
 	ID, AssignmentID, SurfaceID, Role, Status, SignoffID, SignoffStatus, Summary string
-	ResponsibilityCount, ChecklistCount, DecisionCount int
+	ResponsibilityCount, ChecklistCount, DecisionCount                           int
 }
 
 func buildRoleCoverageEntries(pack UIReviewPack) []roleCoverageEntry {
@@ -825,21 +825,21 @@ func buildSignoffDependencyEntries(pack UIReviewPack) []signoffDependencyEntry {
 			dependencyStatus = "blocked"
 		}
 		entries = append(entries, signoffDependencyEntry{
-			ID:               "dep-" + signoff.SignoffID,
-			SignoffID:        signoff.SignoffID,
-			SurfaceID:        signoff.SurfaceID,
-			Role:             signoff.Role,
-			Status:           signoff.Status,
-			DependencyStatus: dependencyStatus,
-			Blockers:         joinOrNone(sortStrings(blockerIDs)),
-			Assignment:       signoff.AssignmentID,
-			Checklist:        joinOrNone(assignment.ChecklistItemIDs),
-			Decisions:        joinOrNone(assignment.DecisionIDs),
+			ID:                 "dep-" + signoff.SignoffID,
+			SignoffID:          signoff.SignoffID,
+			SurfaceID:          signoff.SurfaceID,
+			Role:               signoff.Role,
+			Status:             signoff.Status,
+			DependencyStatus:   dependencyStatus,
+			Blockers:           joinOrNone(sortStrings(blockerIDs)),
+			Assignment:         signoff.AssignmentID,
+			Checklist:          joinOrNone(assignment.ChecklistItemIDs),
+			Decisions:          joinOrNone(assignment.DecisionIDs),
 			LatestBlockerEvent: latest,
-			SLA:              firstNonEmpty(signoff.SLAStatus, "on-track"),
-			DueAt:            firstNonEmpty(signoff.DueAt, "none"),
-			Cadence:          firstNonEmpty(signoff.ReminderCadence, "none"),
-			Summary:          signoff.Notes,
+			SLA:                firstNonEmpty(signoff.SLAStatus, "on-track"),
+			DueAt:              firstNonEmpty(signoff.DueAt, "none"),
+			Cadence:            firstNonEmpty(signoff.ReminderCadence, "none"),
+			Summary:            signoff.Notes,
 		})
 	}
 	sort.Slice(entries, func(i, j int) bool {
@@ -1534,17 +1534,17 @@ func buildExceptionRows(pack UIReviewPack) []exceptionRow {
 	for _, signoff := range pack.SignoffLog {
 		if strings.EqualFold(signoff.Status, "waived") {
 			rows = append(rows, exceptionRow{
-				ID:        "exc-" + signoff.SignoffID,
-				Category:  "signoff",
-				SourceID:  signoff.SignoffID,
-				SurfaceID: signoff.SurfaceID,
-				Owner:     signoff.WaiverOwner,
-				Status:    signoff.Status,
-				Severity:  "waiver",
-				Summary:   signoff.Notes,
-				Evidence:  firstNonEmpty(signoff.WaiverReason, "none"),
+				ID:          "exc-" + signoff.SignoffID,
+				Category:    "signoff",
+				SourceID:    signoff.SignoffID,
+				SurfaceID:   signoff.SurfaceID,
+				Owner:       signoff.WaiverOwner,
+				Status:      signoff.Status,
+				Severity:    "waiver",
+				Summary:     signoff.Notes,
+				Evidence:    firstNonEmpty(signoff.WaiverReason, "none"),
 				LatestEvent: "none",
-				NextAction: firstNonEmpty(signoff.WaiverReason, "none"),
+				NextAction:  firstNonEmpty(signoff.WaiverReason, "none"),
 			})
 		}
 	}
@@ -1606,7 +1606,7 @@ func RenderExceptionMatrix(pack UIReviewPack) string {
 
 func RenderAuditDensityBoard(pack UIReviewPack) string {
 	type entry struct {
-		ID, SurfaceID, Band string
+		ID, SurfaceID, Band                                                                                                                        string
 		ArtifactTotal, OpenTotal, ChecklistCount, DecisionCount, AssignmentCount, SignoffCount, BlockerCount, TimelineCount, BlockCount, NoteCount int
 	}
 	var entries []entry
