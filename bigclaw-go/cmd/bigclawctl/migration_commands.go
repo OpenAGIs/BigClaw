@@ -144,7 +144,7 @@ func runPytestHarness(args []string) error {
 
 	_, err = fmt.Fprintf(
 		os.Stdout,
-		"project_root=%s\ninventory=%s\npyproject_path=%s\npyproject_exists=%t\npyproject_declares_pytest=%t\npyproject_has_pytest_config=%t\npytest_command_ref_files=%d\nconftest_exists=%t\nconftest_path=%s\nconftest_prepends_src=%t\nconftest_imports_pytest=%t\nconftest_defines_fixture=%t\nconftest_defines_hook=%t\nconftest_uses_pytest_plugins=%t\nconftest_delete_ready=%t\nconftest_delete_summary=%s\n",
+		"project_root=%s\ninventory=%s\npyproject_path=%s\npyproject_exists=%t\npyproject_declares_pytest=%t\npyproject_has_pytest_config=%t\npytest_command_ref_files=%d\nconftest_exists=%t\nconftest_path=%s\nconftest_prepends_src=%t\nconftest_imports_pytest=%t\nconftest_defines_fixture=%t\nconftest_defines_hook=%t\nconftest_uses_pytest_plugins=%t\nconftest_delete_ready=%t\nconftest_delete_summary=%s\nlegacy_pytest_delete_ready=%t\nlegacy_pytest_delete_summary=%s\n",
 		report.ProjectRoot,
 		report.InventorySummary,
 		report.PyprojectPath,
@@ -161,12 +161,19 @@ func runPytestHarness(args []string) error {
 		report.ConftestUsesPlugins,
 		report.ConftestDeleteStatus.CanDelete,
 		report.ConftestDeleteStatus.Summary,
+		report.LegacyPytestDeleteStatus.CanDelete,
+		report.LegacyPytestDeleteStatus.Summary,
 	)
 	if err != nil {
 		return err
 	}
 	for _, blocker := range report.ConftestDeleteStatus.Blockers {
 		if _, err := fmt.Fprintf(os.Stdout, "blocker=%s\n", blocker); err != nil {
+			return err
+		}
+	}
+	for _, blocker := range report.LegacyPytestDeleteStatus.Blockers {
+		if _, err := fmt.Fprintf(os.Stdout, "legacy_blocker=%s\n", blocker); err != nil {
 			return err
 		}
 	}

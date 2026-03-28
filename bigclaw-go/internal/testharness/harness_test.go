@@ -116,6 +116,25 @@ func TestInventoryPytestAssets(t *testing.T) {
 	if got := inventory.ConftestDeletionStatus(); !reflect.DeepEqual(got, wantStatus) {
 		t.Fatalf("unexpected conftest deletion status: got=%+v want=%+v", got, wantStatus)
 	}
+	wantLegacySummary := "legacy_pytest_delete_ready=false blockers=28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/"
+	if got := inventory.LegacyPytestRetirementSummary(); got != wantLegacySummary {
+		t.Fatalf("unexpected legacy pytest deletion summary: got=%q want=%q", got, wantLegacySummary)
+	}
+	if inventory.CanDeleteLegacyPytestAssets() {
+		t.Fatal("expected current inventory to keep legacy pytest asset deletion gate closed")
+	}
+	wantLegacyStatus := LegacyPytestRetirementStatus{
+		CanDelete:            false,
+		Summary:              wantLegacySummary,
+		Blockers:             []string{"28 legacy pytest modules remain under tests/", "28 legacy pytest modules still import bigclaw from src/"},
+		LegacyTestModules:    28,
+		BigclawImportModules: 28,
+		PytestImportModules:  0,
+		PytestCommandRefs:    0,
+	}
+	if got := inventory.LegacyPytestRetirementStatus(); !reflect.DeepEqual(got, wantLegacyStatus) {
+		t.Fatalf("unexpected legacy pytest retirement status: got=%+v want=%+v", got, wantLegacyStatus)
+	}
 }
 
 func TestInventoryPytestAssetsAtMatchesTestingHelper(t *testing.T) {
@@ -154,6 +173,9 @@ func TestBuildPytestHarnessStatusReportNormalizesPaths(t *testing.T) {
 	}
 	if report.ConftestUsesPlugins {
 		t.Fatal("expected report to keep pytest_plugins flag false for current conftest")
+	}
+	if report.LegacyPytestDeleteStatus.CanDelete {
+		t.Fatalf("expected report to keep legacy pytest deletion gate closed, got %+v", report.LegacyPytestDeleteStatus)
 	}
 }
 
@@ -228,6 +250,27 @@ func TestEmptyInventoryAllowsConftestDeletion(t *testing.T) {
 	if got := inventory.ConftestDeletionStatus(); !reflect.DeepEqual(got, wantStatus) {
 		t.Fatalf("unexpected empty inventory status: got=%+v want=%+v", got, wantStatus)
 	}
+	if blockers := inventory.LegacyPytestRetirementBlockers(); len(blockers) != 0 {
+		t.Fatalf("expected no legacy pytest deletion blockers for empty inventory, got %v", blockers)
+	}
+	if !inventory.CanDeleteLegacyPytestAssets() {
+		t.Fatal("expected empty inventory to allow legacy pytest asset deletion")
+	}
+	if got := inventory.LegacyPytestRetirementSummary(); got != "legacy_pytest_delete_ready=true blockers=none" {
+		t.Fatalf("unexpected empty legacy pytest summary: %q", got)
+	}
+	wantLegacyStatus := LegacyPytestRetirementStatus{
+		CanDelete:            true,
+		Summary:              "legacy_pytest_delete_ready=true blockers=none",
+		Blockers:             []string{},
+		LegacyTestModules:    0,
+		BigclawImportModules: 0,
+		PytestImportModules:  0,
+		PytestCommandRefs:    0,
+	}
+	if got := inventory.LegacyPytestRetirementStatus(); !reflect.DeepEqual(got, wantLegacyStatus) {
+		t.Fatalf("unexpected empty legacy pytest status: got=%+v want=%+v", got, wantLegacyStatus)
+	}
 }
 
 func TestConftestDeletionBlockersIncludeConftestRuntimeFeatures(t *testing.T) {
@@ -253,6 +296,27 @@ func TestConftestDeletionBlockersIncludeConftestRuntimeFeatures(t *testing.T) {
 	}
 	if inventory.CanDeleteConftest() {
 		t.Fatal("expected conftest runtime features to block deletion")
+	}
+}
+
+func TestLegacyPytestRetirementBlockersIncludeRemainingSurface(t *testing.T) {
+	inventory := PytestAssetInventory{
+		TestModules:           []string{"tests/test_a.py", "tests/test_b.py"},
+		BigclawImportModules:  []string{"tests/test_a.py"},
+		PytestImportModules:   []string{"tests/test_b.py"},
+		PytestCommandRefFiles: []string{"src/bigclaw/planning.py"},
+	}
+	want := []string{
+		"2 legacy pytest modules remain under tests/",
+		"1 legacy pytest modules still import bigclaw from src/",
+		"1 legacy pytest modules still import pytest directly",
+		"1 active src/tests files still embed pytest command refs",
+	}
+	if got := inventory.LegacyPytestRetirementBlockers(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("unexpected legacy pytest blockers: got=%v want=%v", got, want)
+	}
+	if inventory.CanDeleteLegacyPytestAssets() {
+		t.Fatal("expected remaining legacy pytest surface to block deletion")
 	}
 }
 

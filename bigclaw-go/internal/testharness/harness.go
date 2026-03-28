@@ -175,6 +175,16 @@ type ConftestDeletionStatus struct {
 	PytestImportModules  int      `json:"pytest_import_modules"`
 }
 
+type LegacyPytestRetirementStatus struct {
+	CanDelete            bool     `json:"can_delete"`
+	Summary              string   `json:"summary"`
+	Blockers             []string `json:"blockers"`
+	LegacyTestModules    int      `json:"legacy_test_modules"`
+	BigclawImportModules int      `json:"bigclaw_import_modules"`
+	PytestImportModules  int      `json:"pytest_import_modules"`
+	PytestCommandRefs    int      `json:"pytest_command_refs"`
+}
+
 type PytestHarnessStatusReport struct {
 	Status                   string                 `json:"status"`
 	ProjectRoot              string                 `json:"project_root"`
@@ -195,6 +205,7 @@ type PytestHarnessStatusReport struct {
 	ConftestDefinesHook      bool                   `json:"conftest_defines_hook"`
 	ConftestUsesPlugins      bool                   `json:"conftest_uses_pytest_plugins"`
 	ConftestDeleteStatus     ConftestDeletionStatus `json:"conftest_delete_status"`
+	LegacyPytestDeleteStatus LegacyPytestRetirementStatus `json:"legacy_pytest_delete_status"`
 }
 
 func InventoryPytestAssets(tb testing.TB) PytestAssetInventory {
@@ -339,6 +350,7 @@ func BuildPytestHarnessStatusReport(projectRoot string) (PytestHarnessStatusRepo
 		ConftestDefinesHook:      inventory.ConftestDefinesHook,
 		ConftestUsesPlugins:      inventory.ConftestUsesPlugins,
 		ConftestDeleteStatus:     inventory.ConftestDeletionStatus(),
+		LegacyPytestDeleteStatus: inventory.LegacyPytestRetirementStatus(),
 	}, nil
 }
 
@@ -494,5 +506,45 @@ func (i PytestAssetInventory) ConftestDeletionStatus() ConftestDeletionStatus {
 		LegacyTestModules:    len(i.TestModules),
 		BigclawImportModules: len(i.BigclawImportModules),
 		PytestImportModules:  len(i.PytestImportModules),
+	}
+}
+
+func (i PytestAssetInventory) LegacyPytestRetirementBlockers() []string {
+	var blockers []string
+	if len(i.TestModules) != 0 {
+		blockers = append(blockers, strconv.Itoa(len(i.TestModules))+" legacy pytest modules remain under tests/")
+	}
+	if len(i.BigclawImportModules) != 0 {
+		blockers = append(blockers, strconv.Itoa(len(i.BigclawImportModules))+" legacy pytest modules still import bigclaw from src/")
+	}
+	if len(i.PytestImportModules) != 0 {
+		blockers = append(blockers, strconv.Itoa(len(i.PytestImportModules))+" legacy pytest modules still import pytest directly")
+	}
+	if len(i.PytestCommandRefFiles) != 0 {
+		blockers = append(blockers, strconv.Itoa(len(i.PytestCommandRefFiles))+" active src/tests files still embed pytest command refs")
+	}
+	return blockers
+}
+
+func (i PytestAssetInventory) CanDeleteLegacyPytestAssets() bool {
+	return len(i.LegacyPytestRetirementBlockers()) == 0
+}
+
+func (i PytestAssetInventory) LegacyPytestRetirementSummary() string {
+	if i.CanDeleteLegacyPytestAssets() {
+		return "legacy_pytest_delete_ready=true blockers=none"
+	}
+	return "legacy_pytest_delete_ready=false blockers=" + strings.Join(i.LegacyPytestRetirementBlockers(), "; ")
+}
+
+func (i PytestAssetInventory) LegacyPytestRetirementStatus() LegacyPytestRetirementStatus {
+	return LegacyPytestRetirementStatus{
+		CanDelete:            i.CanDeleteLegacyPytestAssets(),
+		Summary:              i.LegacyPytestRetirementSummary(),
+		Blockers:             append([]string{}, i.LegacyPytestRetirementBlockers()...),
+		LegacyTestModules:    len(i.TestModules),
+		BigclawImportModules: len(i.BigclawImportModules),
+		PytestImportModules:  len(i.PytestImportModules),
+		PytestCommandRefs:    len(i.PytestCommandRefFiles),
 	}
 }

@@ -174,6 +174,19 @@ func TestRunPytestHarnessJSONOutput(t *testing.T) {
 	if deleteStatus["summary"] != "conftest_delete_ready=true blockers=none" {
 		t.Fatalf("unexpected delete status summary: %+v", deleteStatus)
 	}
+	legacyDeleteStatus, ok := payload["legacy_pytest_delete_status"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected legacy_pytest_delete_status object, got %+v", payload["legacy_pytest_delete_status"])
+	}
+	if legacyDeleteStatus["can_delete"] != false {
+		t.Fatalf("expected legacy_pytest_delete_status.can_delete=false, got %+v", legacyDeleteStatus)
+	}
+	if legacyDeleteStatus["legacy_test_modules"] != float64(28) || legacyDeleteStatus["bigclaw_import_modules"] != float64(28) || legacyDeleteStatus["pytest_import_modules"] != float64(0) || legacyDeleteStatus["pytest_command_refs"] != float64(0) {
+		t.Fatalf("unexpected legacy delete status counts: %+v", legacyDeleteStatus)
+	}
+	if legacyDeleteStatus["summary"] != "legacy_pytest_delete_ready=false blockers=28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/" {
+		t.Fatalf("unexpected legacy delete status summary: %+v", legacyDeleteStatus)
+	}
 	if payload["conftest_uses_pytest_plugins"] != false {
 		t.Fatalf("expected conftest_uses_pytest_plugins=false, got %+v", payload)
 	}
@@ -204,6 +217,13 @@ func TestRunPytestHarnessWritesReportFile(t *testing.T) {
 	}
 	if deleteStatus["summary"] != "conftest_delete_ready=true blockers=none" {
 		t.Fatalf("unexpected delete status summary in report file: %+v", deleteStatus)
+	}
+	legacyDeleteStatus, ok := payload["legacy_pytest_delete_status"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected legacy_pytest_delete_status object, got %+v", payload["legacy_pytest_delete_status"])
+	}
+	if legacyDeleteStatus["summary"] != "legacy_pytest_delete_ready=false blockers=28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/" {
+		t.Fatalf("unexpected legacy delete status summary in report file: %+v", legacyDeleteStatus)
 	}
 }
 
