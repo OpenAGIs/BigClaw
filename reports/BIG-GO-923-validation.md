@@ -13,6 +13,7 @@
 9. `cd bigclaw-go && go test ./internal/bootstrap`
 10. `cd bigclaw-go && go test ./internal/reporting`
 11. `cd bigclaw-go && go test ./internal/regression`
+12. `cd bigclaw-go && go test ./internal/regression`
 
 ## Results
 
@@ -38,3 +39,5 @@
    Result: `ok  	bigclaw-go/internal/reporting	0.832s`
 11. `cd bigclaw-go && go test ./internal/regression`
    Result: `ok  	bigclaw-go/internal/regression	1.324s`
+12. `cd bigclaw-go && go test ./internal/regression`
+   Result: `ok  	bigclaw-go/internal/regression	(cached)`

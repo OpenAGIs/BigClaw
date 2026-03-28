@@ -98,12 +98,24 @@ First migrated Python test slice now covered explicitly in Go:
   - `test_continuation_scorecard_marks_lane_success_and_manual_boundary`
   - `test_continuation_scorecard_summarizes_recent_bundle_chain`
   - covered by `bigclaw-go/internal/regression/validation_bundle_continuation_test.go`
+- `tests/test_live_shadow_bundle.py`
+  - `test_checked_in_live_shadow_bundle_matches_expected_shape`
+  - covered by `bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go`
+- `tests/test_live_shadow_scorecard.py`
+  - `test_checked_in_live_shadow_scorecard_matches_expected_shape`
+  - covered by `bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go`
 
 Still legacy-only for continuation policy tooling:
 
 - Python script execution semantics in `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate.py`
 - Python script execution semantics in `bigclaw-go/scripts/e2e/validation_bundle_continuation_scorecard.py`
 - The checked-in report shapes are now guarded by Go regression tests, but direct script-runtime parity remains on the Python side
+
+Still legacy-only for live-shadow bundle tooling:
+
+- Python script execution semantics in `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
+- Python script execution semantics in `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
+- The checked-in bundle and scorecard report shapes are guarded by Go regression tests, but the script runtime paths remain Python-owned
 
 Still legacy-only within `tests/test_legacy_shim.py`:
 
