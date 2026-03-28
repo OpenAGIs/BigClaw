@@ -110,6 +110,18 @@ First migrated Python test slice now covered explicitly in Go:
 - `tests/test_subscriber_takeover_harness.py`
   - `test_checked_in_takeover_report_matches_local_harness_shape`
   - covered by `bigclaw-go/internal/regression/takeover_proof_surface_test.go`
+- `tests/test_validation_policy.py`
+  - `test_big602_validation_policy_blocks_issue_close_without_required_reports`
+  - `test_big602_validation_policy_allows_issue_close_when_reports_complete`
+  - covered by `bigclaw-go/internal/policy/validation_report_policy_test.go`
+- `tests/test_parallel_validation_bundle.py`
+  - `test_export_validation_bundle_generates_latest_reports_and_index`
+  - checked-in report/index contract covered by
+    `bigclaw-go/internal/regression/live_validation_index_test.go`,
+    `bigclaw-go/internal/regression/live_validation_index_summary_test.go`,
+    `bigclaw-go/internal/regression/live_validation_index_markdown_test.go`,
+    `bigclaw-go/internal/regression/runtime_report_followup_docs_test.go`,
+    and `bigclaw-go/internal/regression/shared_queue_companion_summary_test.go`
 
 Still legacy-only for continuation policy tooling:
 
@@ -133,6 +145,11 @@ Still legacy-only within `tests/test_legacy_shim.py`:
 
 - Python wrapper argument translation helpers in `src/bigclaw/legacy_shim.py`
 - These are compatibility shims rather than target Go mainline behavior and can be retired only when the Python wrappers themselves are removed from supported validation paths
+
+Still legacy-only for bundle export runtime semantics:
+
+- Python script execution semantics in `bigclaw-go/scripts/e2e/export_validation_bundle.py`
+- Go now guards the checked-in live-validation summary/index, shared-queue companion pointers, and continuation-gate/index markdown surface, but direct script runtime parity remains on the Python side
 
 ## Migration plan
 
