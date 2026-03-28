@@ -1,21 +1,18 @@
-# BIG-GO-902 Workpad
+# BIG-GO-921
 
 ## Plan
-
-1. Inspect existing `scripts/*.py` automation entrypoints and current `bigclaw-go` CLI commands to identify the smallest migration slice that delivers a real Go CLI path and a repeatable migration template.
-2. Implement first-batch Go CLI subcommands for the selected high-frequency script layer entrypoints, keeping changes scoped to command wiring, shared helpers, and migration documentation.
-3. Preserve a compatibility-layer plan by documenting legacy Python entrypoints, their Go replacements, validation commands, and remaining follow-up items.
-4. Run targeted tests for the touched Go CLI packages and record exact commands plus results in the final report.
-5. Commit the scoped changes and push the branch to the configured remote.
+1. Inventory all Python packaging/build assets and references (`pyproject.toml`, `setup.py`, setuptools-related docs/scripts/tests).
+2. Design a Go-only replacement surface that makes the migration state explicit and provides repo-visible inventory/removal criteria.
+3. Implement the first Go surface and update affected docs/tests to point at the Go path instead of Python packaging.
+4. Run targeted validation, capture exact commands/results, then commit and push the branch.
 
 ## Acceptance
-
-- Produce an executable migration plan for moving Python script entrypoints to Go CLI subcommands.
-- Land a first batch of Go CLI implementations or adaptations for selected automation entrypoints.
-- Document validation commands, regression surface, branch/PR recommendation, and migration risks.
+- Current Python/non-Go packaging assets are explicitly inventoried.
+- A Go replacement or migration path exists for the Python packaging/build surface.
+- Initial Go implementation lands in-repo with scoped updates.
+- Conditions for deleting old Python assets and regression validation commands are documented.
 
 ## Validation
-
-- `go test ./cmd/bigclawctl/...`
-- Additional targeted `go test` commands for any new shared package touched by the implementation.
-- Manual CLI smoke checks with `go run ./cmd/bigclawctl --help` and targeted subcommand help where relevant.
+- `go test` for the new/updated Go package(s).
+- `go test` for any impacted regression or repo-surface tests.
+- Manual inspection that old Python packaging files are no longer required by active repo guidance.

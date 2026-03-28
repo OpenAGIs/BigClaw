@@ -362,6 +362,34 @@ func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testin
 	}
 }
 
+func TestRunLegacyPythonBuildSurfaceJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runLegacyPython([]string{"build-surface", "--json"}); err != nil {
+		t.Fatalf("run legacy-python build-surface: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	if !bytes.Contains(output, []byte("pyproject.toml")) {
+		t.Fatalf("expected retired pyproject asset in output, got %s", string(output))
+	}
+	if !bytes.Contains(output, []byte("scripts/dev_bootstrap.sh")) {
+		t.Fatalf("expected bootstrap asset in output, got %s", string(output))
+	}
+	if bytes.Contains(output, []byte(`\u003e`)) {
+		t.Fatalf("expected no HTML escaping in legacy-python build-surface JSON output, got %s", string(output))
+	}
+}
+
 func TestRunGitHubSyncInstallJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	repoPath := filepath.Join(t.TempDir(), "repo->")
 	hooksPath := ".githooks->"

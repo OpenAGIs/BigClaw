@@ -3,8 +3,9 @@
 BigClaw is a Symphony/Codex workflow project scaffolded from `workflow.md`.
 
 `bigclaw-go` is the current implementation mainline for new development. The
-root Python package is retained only for staged migration and legacy surfaces
-that have not been cut over yet.
+remaining root-level Python code is retained only as a frozen migration
+reference surface; the repository no longer ships a Python packaging/build
+entrypoint.
 
 ## What is included
 
@@ -83,15 +84,15 @@ Notes:
 > Do not use this path for new mainline development. Use it only when migrating
 > a required legacy surface to Go or validating an existing Python-only path.
 
-> Do not use system Python directly for editable install. Use a virtualenv.
+> The setuptools/`pyproject.toml` packaging path has been removed. Use a virtualenv
+> only to run frozen migration tests and shims.
 
 ```bash
 cd BigClaw
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -U pip
-pip install -e .[dev]
-python -m pytest
+python -m pip install -U pip pytest ruff pre-commit
+PYTHONPATH=src python -m pytest
 ```
 
 Or use the legacy bootstrap helper:
@@ -145,10 +146,10 @@ bash scripts/dev_bootstrap.sh
 Legacy Python migration surface:
 
 ```bash
-ruff check src tests scripts
+python3 -m ruff check src tests scripts
 python -m pytest
-python -m build
 pre-commit run --all-files
+bash scripts/ops/bigclawctl legacy-python build-surface --json
 ```
 
 ## Quick verify
@@ -175,3 +176,7 @@ migration-only reference use. The legacy `python -m bigclaw serve` /
 `src/bigclaw/service.py` path is also frozen; use `go run ./bigclaw-go/cmd/bigclawd`
 for the active local server path. Active runtime development belongs in
 `bigclaw-go/internal/*`.
+
+For the retired setuptools/`pyproject.toml` build surface inventory, removal
+criteria, and regression commands, use
+`bash scripts/ops/bigclawctl legacy-python build-surface --json`.

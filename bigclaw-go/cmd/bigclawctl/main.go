@@ -144,13 +144,16 @@ func run(args []string) int {
 
 func runLegacyPython(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl legacy-python <compile-check> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl legacy-python <build-surface|compile-check> [flags]\n")
 		return nil
 	}
 	if len(args) == 0 {
-		return errors.New("usage: bigclawctl legacy-python <compile-check> [flags]")
+		return errors.New("usage: bigclawctl legacy-python <build-surface|compile-check> [flags]")
 	}
 	command := args[0]
+	if command == "build-surface" {
+		return runLegacyPythonBuildSurface(args[1:])
+	}
 	flags := flag.NewFlagSet("legacy-python "+command, flag.ContinueOnError)
 	repoRoot := flags.String("repo", "..", "repo root")
 	pythonBin := flags.String("python", "python3", "python executable")

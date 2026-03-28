@@ -12,11 +12,10 @@ if [ "${BIGCLAW_ENABLE_LEGACY_PYTHON:-0}" = "1" ]; then
   python3 -m venv "$repo_root/.venv"
   # shellcheck disable=SC1091
   source "$repo_root/.venv/bin/activate"
-  python -m pip install -U pip
-  pip install -e "$repo_root[dev]"
-  python -m pytest
-  echo "BigClaw Go and legacy Python migration environments are ready."
+  python -m pip install -U pip pytest ruff pre-commit
+  PYTHONPATH="$repo_root/src" python -m pytest
+  echo "BigClaw Go environment is ready, and the frozen Python migration surface passed pytest."
 else
   echo "BigClaw Go development environment is ready."
-  echo "Set BIGCLAW_ENABLE_LEGACY_PYTHON=1 to bootstrap the legacy Python migration surface too."
+  echo "Set BIGCLAW_ENABLE_LEGACY_PYTHON=1 to bootstrap pytest/ruff tools for the frozen Python migration surface too."
 fi
