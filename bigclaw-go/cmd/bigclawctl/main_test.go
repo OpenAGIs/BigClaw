@@ -16,6 +16,7 @@ import (
 
 	"bigclaw-go/internal/bootstrap"
 	"bigclaw-go/internal/refill"
+	"bigclaw-go/internal/testharness"
 )
 
 func TestLinearClientFetchIssueStatesPreservesTrackerIDs(t *testing.T) {
@@ -771,16 +772,7 @@ func TestRunRefillOnceLocalIssueStoreDetectsQueueDrainedWhenMetadataStale(t *tes
 
 func TestRunRefillOnceReportsAbsolutePathsForRelativeInputs(t *testing.T) {
 	tempDir := t.TempDir()
-	originalWD, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("getwd: %v", err)
-	}
-	if err := os.Chdir(tempDir); err != nil {
-		t.Fatalf("chdir tempdir: %v", err)
-	}
-	defer func() {
-		_ = os.Chdir(originalWD)
-	}()
+	testharness.Chdir(t, tempDir)
 
 	queuePath := "queue.json"
 	markdownPath := "queue.md"

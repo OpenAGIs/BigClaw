@@ -2,21 +2,22 @@
 
 ## Plan
 
-1. Inventory the current pytest harness surface, starting with `tests/conftest.py`, test import patterns, and any existing Go-side shared test bootstrap utilities.
-2. Implement a scoped Go replacement for the current Python harness responsibility: shared repo-root/bootstrap helpers that let Go tests locate legacy assets and assert migration parity without pytest path injection.
-3. Add first-batch Go regression coverage around the new harness so future migration work can move Python test modules into Go packages on top of a stable base.
-4. Document the Python/non-Go asset inventory, the Go replacement shape, deletion criteria for `tests/conftest.py`, and exact regression commands.
-5. Run targeted validation, then commit and push the scoped change set.
+1. Audit the current pytest bootstrap surface in `tests/conftest.py` and the remaining `tests/test_*.py` import patterns, then record the Python/non-Go inventory in the checked-in migration report.
+2. Extend `bigclaw-go/internal/testharness` so the Go harness covers the legacy bootstrap responsibilities directly: project/src path resolution, `PYTHONPATH` bootstrapping, and inventory helpers for the remaining pytest surface.
+3. Migrate nearby Go tests that still hand-roll cwd/path setup onto the shared harness helpers so the replacement is exercised immediately.
+4. Update the migration report with the landed Go replacement, remaining Python-owned runtime slices, deletion conditions for `tests/conftest.py`, and the exact regression commands used here.
+5. Run targeted Go validation for the touched packages, capture exact commands/results, then commit and push to the issue branch.
 
 ## Acceptance
 
-- The current Python/pytest harness asset list is explicit, including what `tests/conftest.py` does today.
-- A Go-side harness replacement or migration scaffold is checked in and covered by targeted Go tests.
-- The repo includes a migration note describing the first landed slice, remaining migration path, and the conditions required before deleting the legacy Python harness asset.
-- Exact validation commands and results are recorded for the touched scope.
+- The repository explicitly lists the current pytest harness assets and what `tests/conftest.py` still does.
+- `bigclaw-go/internal/testharness` contains the Go-native replacement helpers for repo/project/src bootstrap and these helpers are covered by Go tests.
+- At least one adjacent Go test slice adopts the shared harness instead of bespoke cwd/path bootstrap.
+- The migration report states when `tests/conftest.py` can be deleted and which regression commands gate that removal.
+- The final result includes the exact validation commands executed and whether they passed.
 
 ## Validation
 
-- `cd bigclaw-go && go test ./internal/testharness ./internal/regression`
-- `cd bigclaw-go && go test ./...`
-- `git status --short`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/refill ./cmd/bigclawctl`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && git status --short`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && git add . && git commit -m "..." && git push origin BIG-GO-923-go-test-harness`

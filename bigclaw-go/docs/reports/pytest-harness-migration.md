@@ -34,15 +34,19 @@ It provides:
 
 - `RepoRoot(tb)` to locate the `bigclaw-go` module root without relying on package cwd
 - `ProjectRoot(tb)` to reach the parent repository root that still contains legacy `src/` and `tests/`
+- `LegacySrcRoot(tb)` to resolve the legacy Python import root previously injected by `tests/conftest.py`
 - `JoinRepoRoot(tb, elems...)` and `JoinProjectRoot(tb, elems...)` for stable fixture/report path resolution
 - `ResolveProjectPath(tb, candidate)` for paths that may still be prefixed with `bigclaw-go/`
 - `PrependPathEnv(tb, dir)` for path-based CLI bootstrapping
+- `PrependPythonPathEnv(tb, dir)` and `BootstrapLegacyPythonPath(tb)` for Go-owned `PYTHONPATH` bootstrapping when tests still need Python runtime parity
 - `Chdir(tb, dir)` for temporary cwd changes with automatic cleanup
+- `InventoryPytestAssets(tb)` to machine-check the remaining pytest surface (`56` test modules, `47` `bigclaw` importers, `3` `pytest` importers) instead of leaving that inventory only in prose
 
 First-batch adoption landed here:
 
 - `internal/regression/*_test.go` now uses the shared repo-root baseline instead of ad hoc `../..` resolution and `runtime.Caller` plumbing
 - `cmd/bigclawctl/migration_commands_test.go` now uses the shared cwd and `PATH` bootstrap helpers
+- `cmd/bigclawctl/main_test.go` and `internal/refill/local_store_test.go` now use `testharness.Chdir(...)` instead of bespoke cwd save/restore code
 
 First migrated Python test slice now covered explicitly in Go:
 
@@ -281,13 +285,12 @@ Until then, `tests/conftest.py` remains a compatibility shim and should not grow
 Primary validation for this issue:
 
 ```bash
-cd bigclaw-go && go test ./internal/testharness ./internal/regression ./cmd/bigclawctl
-cd bigclaw-go && go test ./...
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/refill ./cmd/bigclawctl
 ```
 
 Deletion-readiness validation for the legacy Python harness, once migration is further along:
 
 ```bash
-python3 -m pytest tests
-cd bigclaw-go && go test ./...
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && python3 -m pytest tests
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./...
 ```

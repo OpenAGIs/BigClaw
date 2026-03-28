@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"bigclaw-go/internal/testharness"
 )
 
 func TestReadLocalIssueMapsMissingAndInvalidPayloads(t *testing.T) {
@@ -34,21 +36,18 @@ func TestReadLocalIssueMapsMissingAndInvalidPayloads(t *testing.T) {
 
 func TestLoadLocalIssueStoreNormalizesAbsolutePathAndMissingIssues(t *testing.T) {
 	tempDir := t.TempDir()
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("get working directory: %v", err)
-	}
-	relativePath, err := filepath.Rel(cwd, filepath.Join(tempDir, "missing-local-issues.json"))
-	if err != nil {
-		t.Fatalf("derive relative path: %v", err)
-	}
+	testharness.Chdir(t, tempDir)
 
-	store, err := LoadLocalIssueStore(relativePath)
+	store, err := LoadLocalIssueStore("missing-local-issues.json")
 	if err != nil {
 		t.Fatalf("load local issue store from relative path: %v", err)
 	}
-	if store.path != filepath.Join(tempDir, "missing-local-issues.json") {
-		t.Fatalf("expected absolute store path, got %q", store.path)
+	wantPath, err := filepath.Abs("missing-local-issues.json")
+	if err != nil {
+		t.Fatalf("resolve absolute store path: %v", err)
+	}
+	if store.path != wantPath {
+		t.Fatalf("expected absolute store path %q, got %q", wantPath, store.path)
 	}
 	if issues := store.Issues(); len(issues) != 0 {
 		t.Fatalf("expected missing store to load with no issues, got %+v", issues)
@@ -1227,15 +1226,15 @@ type stubLocalStoreTemp struct {
 	closeErr error
 }
 
-func (s *stubLocalStoreTemp) Name() string                            { return s.path }
-func (s *stubLocalStoreTemp) Chmod(mode os.FileMode) error            { return s.chmodErr }
+func (s *stubLocalStoreTemp) Name() string                 { return s.path }
+func (s *stubLocalStoreTemp) Chmod(mode os.FileMode) error { return s.chmodErr }
 func (s *stubLocalStoreTemp) Write(body []byte) (int, error) {
 	if s.writeErr != nil {
 		return 0, s.writeErr
 	}
 	return len(body), nil
 }
-func (s *stubLocalStoreTemp) Close() error                            { return s.closeErr }
+func (s *stubLocalStoreTemp) Close() error { return s.closeErr }
 
 func TestLocalIssueStoreSaveFailsWhenCreateTempFails(t *testing.T) {
 	storePath := filepath.Join(t.TempDir(), "local-issues.json")
