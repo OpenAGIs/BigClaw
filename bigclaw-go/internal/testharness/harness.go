@@ -227,3 +227,10 @@ func (i PytestAssetInventory) ConftestDeletionBlockers() []string {
 func (i PytestAssetInventory) CanDeleteConftest() bool {
 	return len(i.ConftestDeletionBlockers()) == 0
 }
+
+func (i PytestAssetInventory) ConftestDeletionSummary() string {
+	if i.CanDeleteConftest() {
+		return "conftest_delete_ready=true blockers=none"
+	}
+	return "conftest_delete_ready=false blockers=" + strings.Join(i.ConftestDeletionBlockers(), "; ")
+}
