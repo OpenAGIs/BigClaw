@@ -34,6 +34,33 @@ func TestCrossDepartmentOrchestratorPlansHandoffs(t *testing.T) {
 	}
 }
 
+func TestCrossDepartmentOrchestratorMatchesPythonMigrationCase(t *testing.T) {
+	orchestrator := CrossDepartmentOrchestrator{}
+	task := domain.Task{
+		ID:                 "OPE-66",
+		Source:             "linear",
+		Title:              "Coordinate customer analytics rollout approval",
+		Description:        "Need stakeholder sign-off for warehouse-backed browser workflow",
+		Labels:             []string{"data", "customer", "premium"},
+		Priority:           1,
+		RiskLevel:          domain.RiskHigh,
+		RequiredTools:      []string{"browser", "sql"},
+		AcceptanceCriteria: []string{"approval recorded"},
+		ValidationPlan:     []string{"customer signoff"},
+	}
+
+	plan := orchestrator.Plan(task)
+	if plan.CollaborationMode != "cross-functional" {
+		t.Fatalf("expected cross-functional collaboration, got %+v", plan)
+	}
+	if got := plan.Departments(); !reflect.DeepEqual(got, []string{"operations", "engineering", "security", "data", "customer-success"}) {
+		t.Fatalf("unexpected departments: %+v", got)
+	}
+	if got := plan.RequiredApprovals(); !reflect.DeepEqual(got, []string{"security-review"}) {
+		t.Fatalf("unexpected approvals: %+v", got)
+	}
+}
+
 func TestPremiumOrchestrationPolicyConstrainsStandardTier(t *testing.T) {
 	policy := PremiumOrchestrationPolicy{}
 	plan := OrchestrationPlan{

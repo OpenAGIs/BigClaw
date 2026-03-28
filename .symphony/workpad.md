@@ -28,6 +28,8 @@
 
 ## First-pass Go Migration
 - Added `RenderOrchestrationPlan` in `bigclaw-go/internal/workflow/orchestration.go` to replace the Python markdown rendering helper.
+- Added `bigclaw-go/docs/reports/runtime-scheduler-orchestration-migration-report.md` as the repo-local migration inventory and Python-to-Go mapping report.
+- Added `TestCrossDepartmentOrchestratorMatchesPythonMigrationCase` to preserve the original `tests/test_orchestration.py` planning scenario with Go inputs and outputs.
 - Added `TestPremiumOrchestrationPolicyMatchesPythonMigrationCase` to lock the standard-tier blocked-department/cost semantics from `tests/test_orchestration.py`.
 - Added `TestRenderOrchestrationPlanListsHandoffsAndPolicy` to lock the migrated markdown output from `tests/test_orchestration.py`.
 - Added `TestSchedulerAssessmentCarriesStandardIncludedPolicyForBrowserOpsTask` to lock the orchestration-aware scheduler assessment semantics that Python previously asserted through scheduler execution.
@@ -50,3 +52,7 @@
   Result: `ok  	bigclaw-go/internal/worker	2.075s`
 - `go test ./internal/worker ./internal/scheduler ./internal/workflow`
   Result: `ok  	bigclaw-go/internal/worker	(cached)`; `ok  	bigclaw-go/internal/scheduler	(cached)`; `ok  	bigclaw-go/internal/workflow	(cached)`
+- `go test ./internal/workflow`
+  Result: `ok  	bigclaw-go/internal/workflow	0.424s`
+- `go test ./internal/scheduler ./internal/worker`
+  Result: `ok  	bigclaw-go/internal/scheduler	(cached)`; `ok  	bigclaw-go/internal/worker	(cached)`
