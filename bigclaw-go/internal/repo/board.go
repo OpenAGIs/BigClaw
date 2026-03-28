@@ -3,6 +3,8 @@ package repo
 import (
 	"fmt"
 	"time"
+
+	"bigclaw-go/internal/collaboration"
 )
 
 type RepoPost struct {
@@ -17,21 +19,12 @@ type RepoPost struct {
 	Metadata      map[string]any `json:"metadata,omitempty"`
 }
 
-type CollaborationComment struct {
-	CommentID string `json:"comment_id"`
-	Author    string `json:"author"`
-	Body      string `json:"body"`
-	CreatedAt string `json:"created_at"`
-	Anchor    string `json:"anchor"`
-	Status    string `json:"status"`
-}
-
-func (p RepoPost) ToCollaborationComment() CollaborationComment {
+func (p RepoPost) ToCollaborationComment() collaboration.CollaborationComment {
 	status := "open"
 	if resolved, ok := p.Metadata["resolved"].(bool); ok && resolved {
 		status = "resolved"
 	}
-	return CollaborationComment{
+	return collaboration.CollaborationComment{
 		CommentID: fmt.Sprintf("repo-%s", p.PostID),
 		Author:    p.Author,
 		Body:      p.Body,

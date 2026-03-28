@@ -20,10 +20,12 @@
 ## Landed in this issue
 
 - Added Go parity coverage for the repo-board surface in `bigclaw-go/internal/repo/board_test.go`.
+- Added a minimal Go collaboration-thread replacement in `bigclaw-go/internal/collaboration/thread.go` and `thread_test.go` to cover repo-board/native thread merge behavior.
 - Deleted the migrated Python tests:
   - `tests/test_repo_governance.py`
   - `tests/test_governance.py`
   - `tests/test_repo_board.py`
+  - `tests/test_repo_collaboration.py`
 - Updated validation guidance in `docs/BigClaw-AgentHub-Integration-Alignment.md` to use the Go governance test command for this migrated slice.
 
 ## Go migration mapping
@@ -45,13 +47,12 @@
 ## Current blockers to deleting the Python assets
 
 - `tests/test_planning.py` still imports `ScopeFreezeAudit` from `src/bigclaw/governance.py`
-- `tests/test_repo_collaboration.py` still imports `RepoDiscussionBoard` from `src/bigclaw/repo_board.py`
 
 These remaining references make the deletion gate concrete: the targeted governance tests are now Go-owned, but the legacy Python implementation modules should stay until the remaining Python-side consumers migrate or are deleted in their own scoped tickets.
 
 ## Regression commands
 
-- `cd bigclaw-go && go test ./internal/repo ./internal/governance`
+- `cd bigclaw-go && go test ./internal/repo ./internal/governance ./internal/collaboration`
 - Optional focused reruns while deleting Python assets later:
   - `cd bigclaw-go && go test ./internal/repo -run 'TestRepo(Board|Permission|Audit)'`
   - `cd bigclaw-go && go test ./internal/governance -run 'TestScopeFreeze'`

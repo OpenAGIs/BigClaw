@@ -50,9 +50,9 @@ Supporting integration:
 ## Validation command baseline
 
 - Incremental:
-  - `cd bigclaw-go && go test ./internal/repo ./internal/governance`
+  - `cd bigclaw-go && go test ./internal/repo ./internal/governance ./internal/collaboration`
   - `PYTHONPATH=src python3 -m pytest tests/test_repo_registry.py tests/test_repo_gateway.py tests/test_repo_links.py`
-  - `PYTHONPATH=src python3 -m pytest tests/test_repo_collaboration.py tests/test_observability.py tests/test_reports.py`
+  - `PYTHONPATH=src python3 -m pytest tests/test_observability.py tests/test_reports.py`
   - `PYTHONPATH=src python3 -m pytest tests/test_repo_triage.py tests/test_service.py tests/test_operations.py tests/test_repo_rollout.py`
 - Full:
   - `PYTHONPATH=src python3 -m pytest -q`
