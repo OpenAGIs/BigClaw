@@ -355,7 +355,6 @@ func TestBuildV3CandidateBacklogMatchesIssuePlanTraceability(t *testing.T) {
 		"src/bigclaw/saved_views.py",
 		"tests/test_saved_views.py",
 		"src/bigclaw/evaluation.py",
-		"tests/test_evaluation.py",
 	} {
 		if !targets[want] {
 			t.Fatalf("missing evidence link target %q in %+v", want, opsCandidate.EvidenceLinks)

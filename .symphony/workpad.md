@@ -15,6 +15,7 @@
 11. Retire `tests/test_planning.py` with a Go-native planning package for candidate backlog ranking, entry-gate evaluation, four-week execution plans, and report rendering, then refresh harness inventory and docs again.
 12. Retire `tests/test_workflow.py` with Go-native workflow journal replay, acceptance gate, orchestration artifact, pilot scorecard, and repo sync audit coverage, then refresh harness inventory and docs again.
 13. Retire `tests/test_operations.py` by treating `bigclaw-go/internal/reporting` as the Go-owned replacement for operations analytics, metric specs, dashboard builder audits, regression center, engineering overview, and bundle rendering; then refresh harness inventory, planning evidence links, and docs again.
+14. Retire `tests/test_evaluation.py` with a Go-native `internal/evaluation` package for benchmark case execution, replay mismatch reporting, suite deltas, and run-detail/replay page rendering; then refresh harness inventory, planning evidence links, and docs again.
 
 ## Acceptance
 
@@ -36,6 +37,8 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/workflow ./internal/workflowexec ./internal/testharness ./internal/regression ./cmd/bigclawctl`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/reporting ./internal/planning ./internal/testharness ./internal/regression ./cmd/bigclawctl`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/evaluation ./internal/planning ./internal/testharness ./internal/regression ./cmd/bigclawctl`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
 
 ## Validation Results
@@ -175,6 +178,10 @@
   Result: passed (`ok  	bigclaw-go/internal/reporting	(cached)`; `ok  	bigclaw-go/internal/planning	1.497s`; `ok  	bigclaw-go/internal/testharness	2.378s`; `ok  	bigclaw-go/internal/regression	2.794s`; `ok  	bigclaw-go/cmd/bigclawctl	4.159s`)
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
   Result: passed and refreshed `bigclaw-go/docs/reports/pytest-harness-status.json` (`status=ok`; `inventory_summary=tests=4 bigclaw_imports=4 pytest_imports=0 pytest_command_refs=0`; `conftest_delete_status.summary=conftest_delete_ready=true blockers=none`; `legacy_pytest_delete_status.summary=legacy_pytest_delete_ready=false blockers=4 legacy pytest modules remain under tests/; 4 legacy pytest modules still import bigclaw from src/`)
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/evaluation ./internal/planning ./internal/testharness ./internal/regression ./cmd/bigclawctl`
+  Result: passed (`ok  	bigclaw-go/internal/evaluation	(cached)`; `ok  	bigclaw-go/internal/planning	3.170s`; `ok  	bigclaw-go/internal/testharness	3.731s`; `ok  	bigclaw-go/internal/regression	3.807s`; `ok  	bigclaw-go/cmd/bigclawctl	4.467s`)
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
+  Result: passed and refreshed `bigclaw-go/docs/reports/pytest-harness-status.json` (`status=ok`; `inventory_summary=tests=3 bigclaw_imports=3 pytest_imports=0 pytest_command_refs=0`; `conftest_delete_status.summary=conftest_delete_ready=true blockers=none`; `legacy_pytest_delete_status.summary=legacy_pytest_delete_ready=false blockers=3 legacy pytest modules remain under tests/; 3 legacy pytest modules still import bigclaw from src/`)
 
 ## Notes
 

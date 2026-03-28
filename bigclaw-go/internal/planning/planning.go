@@ -378,7 +378,6 @@ func BuildV3CandidateBacklog() CandidateBacklog {
 					{Label: "saved-views-src", Target: "src/bigclaw/saved_views.py", Capability: "saved-views"},
 					{Label: "saved-views-tests", Target: "tests/test_saved_views.py", Capability: "saved-views"},
 					{Label: "evaluation-src", Target: "src/bigclaw/evaluation.py", Capability: "ops-control"},
-					{Label: "evaluation-tests", Target: "tests/test_evaluation.py", Capability: "ops-control"},
 				},
 			},
 			{
