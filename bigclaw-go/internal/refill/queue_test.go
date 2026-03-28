@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"bigclaw-go/internal/testharness"
 )
 
 type stubTempFile struct {
@@ -75,6 +77,47 @@ func TestLoadQueueNormalizesAbsolutePathAndAccessors(t *testing.T) {
 	}
 	if got := queue.ActivateStateName(); got != "In Progress" {
 		t.Fatalf("expected activate state name fallback, got %q", got)
+	}
+}
+
+func TestCheckedInParallelRefillQueueMatchesLegacyPythonContract(t *testing.T) {
+	queue, err := LoadQueue(filepath.Join(testharness.ProjectRoot(t), "docs", "parallel-refill-queue.json"))
+	if err != nil {
+		t.Fatalf("load checked-in parallel refill queue: %v", err)
+	}
+
+	if got := queue.ProjectSlug(); got != "53e33900c67e" {
+		t.Fatalf("unexpected project slug: %q", got)
+	}
+	if got := queue.TargetInProgress(); got != 2 {
+		t.Fatalf("unexpected target_in_progress: %d", got)
+	}
+	identifiers := queue.IssueIdentifiers()
+	seen := map[string]struct{}{}
+	for _, identifier := range identifiers {
+		if _, ok := seen[identifier]; ok {
+			t.Fatalf("expected unique issue identifiers, duplicate found: %s", identifier)
+		}
+		seen[identifier] = struct{}{}
+	}
+	if got := queue.IssueOrder()[:4]; !equalStringSlices(got, []string{"BIG-GOM-301", "BIG-GOM-302", "BIG-GOM-303", "BIG-GOM-304"}) {
+		t.Fatalf("unexpected issue order prefix: %+v", got)
+	}
+
+	candidates := queue.SelectCandidates(
+		map[string]struct{}{},
+		map[string]string{
+			"BIG-GOM-301": "Todo",
+			"BIG-GOM-302": "Todo",
+			"BIG-GOM-303": "Todo",
+			"BIG-GOM-304": "Todo",
+			"BIG-GOM-305": "Backlog",
+			"BIG-GOM-306": "Backlog",
+		},
+		nil,
+	)
+	if !equalStringSlices(candidates, []string{"BIG-GOM-301", "BIG-GOM-302"}) {
+		t.Fatalf("unexpected checked-in refill candidates: %+v", candidates)
 	}
 }
 

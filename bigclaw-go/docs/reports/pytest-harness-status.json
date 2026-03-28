@@ -14,7 +14,6 @@
     "tests/test_observability.py",
     "tests/test_operations.py",
     "tests/test_orchestration.py",
-    "tests/test_parallel_refill.py",
     "tests/test_pilot.py",
     "tests/test_planning.py",
     "tests/test_repo_collaboration.py",
@@ -31,10 +30,10 @@
   "conftest_defines_fixture": false,
   "conftest_defines_hook": false,
   "conftest_delete_status": {
-    "bigclaw_import_modules": 27,
+    "bigclaw_import_modules": 26,
     "blockers": [],
     "can_delete": true,
-    "legacy_test_modules": 27,
+    "legacy_test_modules": 26,
     "pytest_import_modules": 0,
     "summary": "conftest_delete_ready=true blockers=none"
   },
@@ -43,18 +42,18 @@
   "conftest_path": "tests/conftest.py",
   "conftest_prepends_src": false,
   "conftest_uses_pytest_plugins": false,
-  "inventory_summary": "tests=27 bigclaw_imports=27 pytest_imports=0 pytest_command_refs=0",
+  "inventory_summary": "tests=26 bigclaw_imports=26 pytest_imports=0 pytest_command_refs=0",
   "legacy_pytest_delete_status": {
-    "bigclaw_import_modules": 27,
+    "bigclaw_import_modules": 26,
     "blockers": [
-      "27 legacy pytest modules remain under tests/",
-      "27 legacy pytest modules still import bigclaw from src/"
+      "26 legacy pytest modules remain under tests/",
+      "26 legacy pytest modules still import bigclaw from src/"
     ],
     "can_delete": false,
-    "legacy_test_modules": 27,
+    "legacy_test_modules": 26,
     "pytest_command_refs": 0,
     "pytest_import_modules": 0,
-    "summary": "legacy_pytest_delete_ready=false blockers=27 legacy pytest modules remain under tests/; 27 legacy pytest modules still import bigclaw from src/"
+    "summary": "legacy_pytest_delete_ready=false blockers=26 legacy pytest modules remain under tests/; 26 legacy pytest modules still import bigclaw from src/"
   },
   "project_root": ".",
   "pyproject_declares_pytest": false,
@@ -79,7 +78,6 @@
     "tests/test_observability.py",
     "tests/test_operations.py",
     "tests/test_orchestration.py",
-    "tests/test_parallel_refill.py",
     "tests/test_pilot.py",
     "tests/test_planning.py",
     "tests/test_repo_collaboration.py",
