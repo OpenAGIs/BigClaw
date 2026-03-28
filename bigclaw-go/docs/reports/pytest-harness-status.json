@@ -1,7 +1,6 @@
 {
   "bigclaw_imports": [
     "tests/test_audit_events.py",
-    "tests/test_connectors.py",
     "tests/test_console_ia.py",
     "tests/test_control_center.py",
     "tests/test_cost_control.py",
@@ -49,21 +48,21 @@
   "conftest_defines_fixture": false,
   "conftest_defines_hook": false,
   "conftest_delete_status": {
-    "bigclaw_import_modules": 45,
+    "bigclaw_import_modules": 44,
     "blockers": [
-      "54 legacy pytest modules remain under tests/",
-      "45 legacy pytest modules still import bigclaw from src/",
+      "53 legacy pytest modules remain under tests/",
+      "44 legacy pytest modules still import bigclaw from src/",
       "2 legacy pytest modules still import pytest directly"
     ],
     "can_delete": false,
-    "legacy_test_modules": 54,
+    "legacy_test_modules": 53,
     "pytest_import_modules": 2,
-    "summary": "conftest_delete_ready=false blockers=54 legacy pytest modules remain under tests/; 45 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
+    "summary": "conftest_delete_ready=false blockers=53 legacy pytest modules remain under tests/; 44 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
   },
   "conftest_imports_pytest": false,
   "conftest_path": "tests/conftest.py",
   "conftest_prepends_src": true,
-  "inventory_summary": "tests=54 bigclaw_imports=45 pytest_imports=2",
+  "inventory_summary": "tests=53 bigclaw_imports=44 pytest_imports=2",
   "project_root": ".",
   "pytest_imports": [
     "tests/test_audit_events.py",
@@ -72,7 +71,6 @@
   "status": "ok",
   "test_modules": [
     "tests/test_audit_events.py",
-    "tests/test_connectors.py",
     "tests/test_console_ia.py",
     "tests/test_control_center.py",
     "tests/test_cost_control.py",
