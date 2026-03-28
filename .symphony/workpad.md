@@ -22,6 +22,11 @@
 - Deleted isolated Python source now superseded by Go:
   - `src/bigclaw/validation_policy.py`
   - `src/bigclaw/evaluation.py`
+- Deleted unused legacy report helpers and exports from `src/bigclaw/reports.py` / `src/bigclaw/__init__.py`:
+  - issue validation / closure helpers
+  - report studio types and bundle writers
+  - launch/final delivery checklist types and renderers
+  - pilot portfolio helper
 - Deleted Python sibling test now superseded by Go regression coverage:
   - `bigclaw-go/scripts/e2e/validation_bundle_continuation_policy_gate_test.py`
 - New Go replacement coverage:
@@ -52,6 +57,8 @@
   - result: `20 passed`
 - `python3 -m pytest tests/test_workflow.py -q`
   - result: `8 passed`
+- `python3 -m pytest tests/test_workflow.py tests/test_operations.py tests/test_repo_rollout.py tests/test_control_center.py tests/test_audit_events.py tests/test_observability.py -q`
+  - result: `45 passed`
 - `python3 -c "import sys; sys.path.insert(0, 'src'); import bigclaw; print('ok')"`
   - result: `ok`
 - `git status --short`
