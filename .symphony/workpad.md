@@ -27,6 +27,6 @@
 ## Validation Results
 
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && python3 -m pytest tests/test_mapping.py -q`
-  Result: passed (`.. [100%]`; re-run after latest harness changes)
+  Result: passed (`.. [100%]`; re-run after latest harness and deletion-gate changes)
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/refill ./internal/legacyshim ./cmd/bigclawctl`
-  Result: passed (`ok` for `internal/testharness`, `internal/refill`, `internal/legacyshim`, `cmd/bigclawctl`; re-run after latest harness changes; includes Go-side `PYTHONPATH` import smoke for `bigclaw.mapping`, a Go-launched `pytest tests/test_mapping.py -q` smoke via shared harness, checked-in legacy shim `py_compile` coverage from Go, and `cmd/bigclawctl` adoption of shared executable probing)
+  Result: passed (`ok` for `internal/testharness`, `internal/refill`, `internal/legacyshim`, `cmd/bigclawctl`; re-run after latest harness and deletion-gate changes; includes Go-side `PYTHONPATH` import smoke for `bigclaw.mapping`, a Go-launched `pytest tests/test_mapping.py -q` smoke via shared harness, checked-in legacy shim `py_compile` coverage from Go, `cmd/bigclawctl` adoption of shared executable probing, and current `conftest` deletion-gate assertions)

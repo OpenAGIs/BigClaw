@@ -308,8 +308,8 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./int
 
 Observed results for this issue:
 
-- `python3 -m pytest tests/test_mapping.py -q` passed (`.. [100%]`) on the latest issue branch state, confirming the current `tests/conftest.py` import bootstrap still supports legacy `src/bigclaw` imports.
-- `go test ./internal/testharness ./internal/refill ./internal/legacyshim ./cmd/bigclawctl` passed on the latest issue branch state, including the Go-side Python import smoke for `bigclaw.mapping`, the Go-launched legacy pytest smoke, the checked-in shim `py_compile` pass, and the `cmd/bigclawctl` runtime-probe adoption, confirming the replacement helpers and adjacent migrated test slices are stable.
+- `python3 -m pytest tests/test_mapping.py -q` passed (`.. [100%]`) on the latest issue branch state, after the current `conftest` deletion-gate assertions landed, confirming the current `tests/conftest.py` import bootstrap still supports legacy `src/bigclaw` imports.
+- `go test ./internal/testharness ./internal/refill ./internal/legacyshim ./cmd/bigclawctl` passed on the latest issue branch state, including the Go-side Python import smoke for `bigclaw.mapping`, the Go-launched legacy pytest smoke, the checked-in shim `py_compile` pass, the `cmd/bigclawctl` runtime-probe adoption, and the machine-checked `conftest` deletion gate, confirming the replacement helpers and adjacent migrated test slices are stable.
 
 Deletion-readiness validation for the legacy Python harness, once migration is further along:
 
