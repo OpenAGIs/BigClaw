@@ -53,6 +53,7 @@ It provides:
 - `PytestAssetInventory.ConftestDeletionStatus()` to provide a structured status object for future CLI/report surfaces that need both the boolean gate and the blocker/count breakdown
 - `bigclawctl pytest-harness [--json]` as a stable Go-owned command surface that prints the current pytest asset inventory, `tests/conftest.py` behavior flags, and structured deletion-gate status without relying on pytest itself
 - `bigclaw-go/docs/reports/pytest-harness-status.json` as the checked-in machine-generated snapshot of the current pytest/conftest migration boundary
+- `internal/regression/pytest_harness_status_test.go` to fail Go regression if the checked-in snapshot drifts from the live repo inventory or deletion gate
 - `internal/legacyshim` tests now also assert that the frozen Python compile-check asset list still matches the checked-in `src/bigclaw/*.py` shim files that remain in scope for migration
 - `internal/legacyshim` now runs a real checked-in `py_compile` pass against those shim files, so the remaining Python compatibility layer is regression-tested from Go without bespoke bootstrap code
 - `internal/testharness` now includes a Python import smoke test that boots `PYTHONPATH` via the Go harness and imports `bigclaw.mapping` directly, proving the replacement covers the old `conftest.py` core responsibility
@@ -332,6 +333,8 @@ That command emits:
 - the structured `conftest` deletion gate used by the migration report and tests
 - the checked-in `docs/reports/pytest-harness-status.json` snapshot when `--report-path` is supplied
 
+The checked-in snapshot is not documentation-only: `go test ./internal/regression` now re-computes the live Go-owned report and fails if `docs/reports/pytest-harness-status.json` drifts from the current repository state.
+
 Until then, `tests/conftest.py` remains a compatibility shim and should not grow new behavior.
 
 ## Regression commands
@@ -342,6 +345,7 @@ Primary validation for this issue:
 cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && python3 -m pytest tests/test_mapping.py -q
 cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness
 cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./cmd/bigclawctl
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/regression
 cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json
 ```
 
@@ -350,6 +354,7 @@ Observed results for this issue:
 - `python3 -m pytest tests/test_mapping.py -q` passed (`.. [100%]`) on the latest issue branch state, after the current `conftest` deletion-gate assertions landed, confirming the current `tests/conftest.py` import bootstrap still supports legacy `src/bigclaw` imports.
 - `go test ./internal/testharness` passed on the latest issue branch state, including the Go-side Python import smoke for `bigclaw.mapping`, the Go-launched legacy pytest smoke, the machine-checked `conftest` deletion gate, and the direct-import detection coverage for `import pytest`, `from pytest import ...`, and `pytest.<member>`, confirming the replacement helpers and deletion-gate logic are stable.
 - `go test ./cmd/bigclawctl` passed on the latest issue branch state, including the new `pytest-harness` command surface that exposes the inventory summary and structured `conftest` deletion-gate status from Go-owned code.
+- `go test ./internal/regression` passed on the latest issue branch state, including the new snapshot-alignment test that compares `docs/reports/pytest-harness-status.json` against the live Go-owned inventory report.
 - `go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json` passed on the latest issue branch state, regenerated the checked-in JSON snapshot, and confirmed `inventory_summary=tests=56 bigclaw_imports=47 pytest_imports=3` with `conftest_delete_status.can_delete=false`.
 
 Deletion-readiness validation for the legacy Python harness, once migration is further along:

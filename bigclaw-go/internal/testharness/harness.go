@@ -152,6 +152,21 @@ type ConftestDeletionStatus struct {
 	PytestImportModules  int      `json:"pytest_import_modules"`
 }
 
+type PytestHarnessStatusReport struct {
+	Status                 string                 `json:"status"`
+	ProjectRoot            string                 `json:"project_root"`
+	InventorySummary       string                 `json:"inventory_summary"`
+	TestModules            []string               `json:"test_modules"`
+	BigclawImports         []string               `json:"bigclaw_imports"`
+	PytestImports          []string               `json:"pytest_imports"`
+	ConftestPath           string                 `json:"conftest_path"`
+	ConftestPrependsSrc    bool                   `json:"conftest_prepends_src"`
+	ConftestImportsPytest  bool                   `json:"conftest_imports_pytest"`
+	ConftestDefinesFixture bool                   `json:"conftest_defines_fixture"`
+	ConftestDefinesHook    bool                   `json:"conftest_defines_hook"`
+	ConftestDeleteStatus   ConftestDeletionStatus `json:"conftest_delete_status"`
+}
+
 func InventoryPytestAssets(tb testing.TB) PytestAssetInventory {
 	tb.Helper()
 	inventory, err := InventoryPytestAssetsAt(ProjectRoot(tb))
@@ -224,6 +239,27 @@ func InventoryPytestAssetsAt(projectRoot string) (PytestAssetInventory, error) {
 	slices.Sort(inventory.BigclawImportModules)
 	slices.Sort(inventory.PytestImportModules)
 	return inventory, nil
+}
+
+func BuildPytestHarnessStatusReport(projectRoot string) (PytestHarnessStatusReport, error) {
+	inventory, err := InventoryPytestAssetsAt(projectRoot)
+	if err != nil {
+		return PytestHarnessStatusReport{}, err
+	}
+	return PytestHarnessStatusReport{
+		Status:                 "ok",
+		ProjectRoot:            projectRoot,
+		InventorySummary:       inventory.Summary(),
+		TestModules:            append([]string(nil), inventory.TestModules...),
+		BigclawImports:         append([]string(nil), inventory.BigclawImportModules...),
+		PytestImports:          append([]string(nil), inventory.PytestImportModules...),
+		ConftestPath:           inventory.ConftestPath,
+		ConftestPrependsSrc:    inventory.ConftestPrependsSrc,
+		ConftestImportsPytest:  inventory.ConftestImportsPytest,
+		ConftestDefinesFixture: inventory.ConftestDefinesFixture,
+		ConftestDefinesHook:    inventory.ConftestDefinesHook,
+		ConftestDeleteStatus:   inventory.ConftestDeletionStatus(),
+	}, nil
 }
 
 func fileContains(tb testing.TB, path, needle string) bool {

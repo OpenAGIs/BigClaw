@@ -122,12 +122,11 @@ func runPytestHarness(args []string) error {
 	}
 
 	resolvedProjectRoot := absPath(*projectRoot)
-	inventory, err := testharness.InventoryPytestAssetsAt(resolvedProjectRoot)
+	report, err := testharness.BuildPytestHarnessStatusReport(resolvedProjectRoot)
 	if err != nil {
 		return fmt.Errorf("inventory pytest harness assets: %w", err)
 	}
-	deleteStatus := inventory.ConftestDeletionStatus()
-	payload := pytestHarnessPayload(resolvedProjectRoot, inventory, deleteStatus)
+	payload := structToMap(report)
 
 	if trim(*reportPath) != "" {
 		reportTarget := absPath(*reportPath)
@@ -146,42 +145,25 @@ func runPytestHarness(args []string) error {
 	_, err = fmt.Fprintf(
 		os.Stdout,
 		"project_root=%s\ninventory=%s\nconftest_path=%s\nconftest_prepends_src=%t\nconftest_imports_pytest=%t\nconftest_defines_fixture=%t\nconftest_defines_hook=%t\nconftest_delete_ready=%t\nconftest_delete_summary=%s\n",
-		resolvedProjectRoot,
-		inventory.Summary(),
-		inventory.ConftestPath,
-		inventory.ConftestPrependsSrc,
-		inventory.ConftestImportsPytest,
-		inventory.ConftestDefinesFixture,
-		inventory.ConftestDefinesHook,
-		deleteStatus.CanDelete,
-		deleteStatus.Summary,
+		report.ProjectRoot,
+		report.InventorySummary,
+		report.ConftestPath,
+		report.ConftestPrependsSrc,
+		report.ConftestImportsPytest,
+		report.ConftestDefinesFixture,
+		report.ConftestDefinesHook,
+		report.ConftestDeleteStatus.CanDelete,
+		report.ConftestDeleteStatus.Summary,
 	)
 	if err != nil {
 		return err
 	}
-	for _, blocker := range deleteStatus.Blockers {
+	for _, blocker := range report.ConftestDeleteStatus.Blockers {
 		if _, err := fmt.Fprintf(os.Stdout, "blocker=%s\n", blocker); err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func pytestHarnessPayload(projectRoot string, inventory testharness.PytestAssetInventory, deleteStatus testharness.ConftestDeletionStatus) map[string]any {
-	return map[string]any{
-		"status":                   "ok",
-		"project_root":             projectRoot,
-		"inventory_summary":        inventory.Summary(),
-		"test_modules":             inventory.TestModules,
-		"bigclaw_imports":          inventory.BigclawImportModules,
-		"pytest_imports":           inventory.PytestImportModules,
-		"conftest_path":            inventory.ConftestPath,
-		"conftest_prepends_src":    inventory.ConftestPrependsSrc,
-		"conftest_imports_pytest":  inventory.ConftestImportsPytest,
-		"conftest_defines_fixture": inventory.ConftestDefinesFixture,
-		"conftest_defines_hook":    inventory.ConftestDefinesHook,
-		"conftest_delete_status":   structToMap(deleteStatus),
-	}
 }
 
 func writeJSONReport(path string, payload map[string]any) error {
