@@ -43,6 +43,7 @@ It provides:
 - `PythonCommand(tb, args...)` for launching `python3` from the project root with legacy `src/` imports already bootstrapped
 - `PytestCommand(tb, args...)` for launching `python3 -m pytest` through the same Go-owned bootstrap path while legacy pytest slices still exist
 - `RequireExecutable(tb, name)` for shared skip-aware runtime probing when legacy Python tooling is still part of the migration boundary
+- `PythonExecutable(tb)` for the canonical resolved Python runtime path used by adjacent Go migration tests
 - `Chdir(tb, dir)` for temporary cwd changes with automatic cleanup
 - `InventoryPytestAssets(tb)` to machine-check the remaining pytest surface (`56` test modules, `47` `bigclaw` importers, `3` `pytest` importers) instead of leaving that inventory only in prose
 - `PytestAssetInventory.ConftestDeletionBlockers()` to keep the current `tests/conftest.py` removal blockers machine-checked from Go rather than only documented in markdown
@@ -58,6 +59,7 @@ First-batch adoption landed here:
 - `cmd/bigclawctl/migration_commands_test.go` now uses the shared cwd and `PATH` bootstrap helpers
 - `cmd/bigclawctl/main_test.go` and `internal/refill/local_store_test.go` now use `testharness.Chdir(...)` instead of bespoke cwd save/restore code
 - `cmd/bigclawctl/main_test.go` now also resolves the Python runtime via `testharness.RequireExecutable(...)` instead of hard-coding `python3`
+- `cmd/bigclawctl/main_test.go` and `internal/legacyshim/compilecheck_test.go` now use `testharness.PythonExecutable(...)` as the shared Python runtime entry point
 
 First migrated Python test slice now covered explicitly in Go:
 

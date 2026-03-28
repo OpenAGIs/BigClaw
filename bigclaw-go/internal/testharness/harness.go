@@ -32,6 +32,11 @@ func RequireExecutable(tb testing.TB, name string) string {
 	return path
 }
 
+func PythonExecutable(tb testing.TB) string {
+	tb.Helper()
+	return RequireExecutable(tb, "python3")
+}
+
 // ProjectRoot returns the parent repository root that contains both bigclaw-go and legacy assets like src/ and tests/.
 func ProjectRoot(tb testing.TB) string {
 	tb.Helper()
@@ -85,7 +90,7 @@ func BootstrapLegacyPythonPath(tb testing.TB) string {
 func PythonCommand(tb testing.TB, args ...string) *exec.Cmd {
 	tb.Helper()
 	srcRoot := BootstrapLegacyPythonPath(tb)
-	cmd := exec.Command(RequireExecutable(tb, "python3"), args...)
+	cmd := exec.Command(PythonExecutable(tb), args...)
 	cmd.Dir = ProjectRoot(tb)
 	cmd.Env = append(os.Environ(), "PYTHONPATH="+os.Getenv("PYTHONPATH"))
 	if srcRoot == "" {

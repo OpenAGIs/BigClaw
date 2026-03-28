@@ -89,7 +89,7 @@ func TestFrozenCompileCheckFilesMatchCheckedInLegacyShimAssets(t *testing.T) {
 }
 
 func TestCompileCheckPassesAgainstCheckedInLegacyShimAssets(t *testing.T) {
-	pythonBin := testharness.RequireExecutable(t, "python3")
+	pythonBin := testharness.PythonExecutable(t)
 	projectRoot := testharness.ProjectRoot(t)
 
 	result, err := CompileCheck(projectRoot, pythonBin)

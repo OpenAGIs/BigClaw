@@ -93,7 +93,7 @@ func TestInventoryPytestAssets(t *testing.T) {
 }
 
 func TestBootstrapLegacyPythonPathSupportsBigclawImports(t *testing.T) {
-	RequireExecutable(t, "python3")
+	PythonExecutable(t)
 	cmd := PythonCommand(t, "-c", "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -102,7 +102,7 @@ func TestBootstrapLegacyPythonPathSupportsBigclawImports(t *testing.T) {
 }
 
 func TestPythonCommandUsesProjectRootAndLegacyPythonPath(t *testing.T) {
-	pythonPath := RequireExecutable(t, "python3")
+	pythonPath := PythonExecutable(t)
 	cmd := PythonCommand(t, "-c", "import os, pathlib; print(pathlib.Path.cwd().name); print(os.environ['PYTHONPATH'])")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -139,7 +139,7 @@ func TestEmptyInventoryAllowsConftestDeletion(t *testing.T) {
 }
 
 func TestPytestCommandRunsLegacyPytestWithHarnessBootstrap(t *testing.T) {
-	RequireExecutable(t, "python3")
+	PythonExecutable(t)
 	cmd := PytestCommand(t, "tests/test_mapping.py", "-q")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -151,7 +151,7 @@ func TestPytestCommandRunsLegacyPytestWithHarnessBootstrap(t *testing.T) {
 }
 
 func TestPytestCommandUsesPythonModuleInvocation(t *testing.T) {
-	pythonPath := RequireExecutable(t, "python3")
+	pythonPath := PythonExecutable(t)
 	cmd := PytestCommand(t, "tests/test_mapping.py", "-q")
 
 	if cmd.Path != pythonPath {
@@ -164,7 +164,7 @@ func TestPytestCommandUsesPythonModuleInvocation(t *testing.T) {
 }
 
 func TestPytestCommandDoesNotRequirePreexistingPythonPath(t *testing.T) {
-	RequireExecutable(t, "python3")
+	PythonExecutable(t)
 	t.Setenv("PYTHONPATH", "")
 
 	cmd := PytestCommand(t, "tests/test_mapping.py", "-q")
