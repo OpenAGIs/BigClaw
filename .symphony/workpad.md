@@ -36,6 +36,9 @@
 ## Remaining Migration Plan
 - `reports` / `evaluation` / `validation_policy` root Python test coverage is migrated into `bigclaw-go/internal/reporting`.
 - continuation script wrapper coverage is migrated into Go regression tests under `bigclaw-go/internal/regression`, while the Python scripts themselves still remain as runtime assets.
+- Current concrete blockers to deleting the remaining Python sources:
+  - `src/bigclaw/reports.py` is still imported by `src/bigclaw/__main__.py`, `src/bigclaw/workflow.py`, `src/bigclaw/scheduler.py`, `src/bigclaw/operations.py`, `src/bigclaw/__init__.py`, and Python tests including `tests/test_repo_rollout.py`, `tests/test_workflow.py`, `tests/test_control_center.py`, `tests/test_audit_events.py`, `tests/test_observability.py`, and `tests/test_operations.py`.
+  - `src/bigclaw/evaluation.py` is still imported by `src/bigclaw/operations.py`, `src/bigclaw/__init__.py`, and `tests/test_operations.py`.
 - Safe deletion conditions for remaining Python assets:
   - delete `src/bigclaw/reports.py` and `src/bigclaw/evaluation.py` only after their remaining importers under `tests/` are migrated or removed;
   - delete `bigclaw-go/scripts/e2e/*.py` and the retained sibling Python test only after the scripts themselves are replaced by Go executables/tests and docs/runbooks stop invoking Python.
