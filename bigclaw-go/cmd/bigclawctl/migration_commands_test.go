@@ -158,7 +158,7 @@ func TestRunPytestHarnessJSONOutput(t *testing.T) {
 	if payload["conftest_path"] != "tests/conftest.py" {
 		t.Fatalf("unexpected conftest_path: %+v", payload)
 	}
-	if payload["inventory_summary"] != "tests=3 bigclaw_imports=3 pytest_imports=0 pytest_command_refs=0" {
+	if payload["inventory_summary"] != "tests=2 bigclaw_imports=2 pytest_imports=0 pytest_command_refs=0" {
 		t.Fatalf("unexpected inventory summary: %+v", payload)
 	}
 	deleteStatus, ok := payload["conftest_delete_status"].(map[string]any)
@@ -168,7 +168,7 @@ func TestRunPytestHarnessJSONOutput(t *testing.T) {
 	if deleteStatus["can_delete"] != true {
 		t.Fatalf("expected can_delete=true, got %+v", deleteStatus)
 	}
-	if deleteStatus["legacy_test_modules"] != float64(3) || deleteStatus["bigclaw_import_modules"] != float64(3) || deleteStatus["pytest_import_modules"] != float64(0) {
+	if deleteStatus["legacy_test_modules"] != float64(2) || deleteStatus["bigclaw_import_modules"] != float64(2) || deleteStatus["pytest_import_modules"] != float64(0) {
 		t.Fatalf("unexpected delete status counts: %+v", deleteStatus)
 	}
 	if deleteStatus["summary"] != "conftest_delete_ready=true blockers=none" {
@@ -181,10 +181,10 @@ func TestRunPytestHarnessJSONOutput(t *testing.T) {
 	if legacyDeleteStatus["can_delete"] != false {
 		t.Fatalf("expected legacy_pytest_delete_status.can_delete=false, got %+v", legacyDeleteStatus)
 	}
-	if legacyDeleteStatus["legacy_test_modules"] != float64(3) || legacyDeleteStatus["bigclaw_import_modules"] != float64(3) || legacyDeleteStatus["pytest_import_modules"] != float64(0) || legacyDeleteStatus["pytest_command_refs"] != float64(0) {
+	if legacyDeleteStatus["legacy_test_modules"] != float64(2) || legacyDeleteStatus["bigclaw_import_modules"] != float64(2) || legacyDeleteStatus["pytest_import_modules"] != float64(0) || legacyDeleteStatus["pytest_command_refs"] != float64(0) {
 		t.Fatalf("unexpected legacy delete status counts: %+v", legacyDeleteStatus)
 	}
-	if legacyDeleteStatus["summary"] != "legacy_pytest_delete_ready=false blockers=3 legacy pytest modules remain under tests/; 3 legacy pytest modules still import bigclaw from src/" {
+	if legacyDeleteStatus["summary"] != "legacy_pytest_delete_ready=false blockers=2 legacy pytest modules remain under tests/; 2 legacy pytest modules still import bigclaw from src/" {
 		t.Fatalf("unexpected legacy delete status summary: %+v", legacyDeleteStatus)
 	}
 	if payload["conftest_uses_pytest_plugins"] != false {
@@ -208,7 +208,7 @@ func TestRunPytestHarnessWritesReportFile(t *testing.T) {
 	if err := json.Unmarshal(body, &payload); err != nil {
 		t.Fatalf("decode report file: %v (%s)", err, string(body))
 	}
-	if payload["inventory_summary"] != "tests=3 bigclaw_imports=3 pytest_imports=0 pytest_command_refs=0" {
+	if payload["inventory_summary"] != "tests=2 bigclaw_imports=2 pytest_imports=0 pytest_command_refs=0" {
 		t.Fatalf("unexpected inventory summary in report file: %+v", payload)
 	}
 	deleteStatus, ok := payload["conftest_delete_status"].(map[string]any)
@@ -222,7 +222,7 @@ func TestRunPytestHarnessWritesReportFile(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected legacy_pytest_delete_status object, got %+v", payload["legacy_pytest_delete_status"])
 	}
-	if legacyDeleteStatus["summary"] != "legacy_pytest_delete_ready=false blockers=3 legacy pytest modules remain under tests/; 3 legacy pytest modules still import bigclaw from src/" {
+	if legacyDeleteStatus["summary"] != "legacy_pytest_delete_ready=false blockers=2 legacy pytest modules remain under tests/; 2 legacy pytest modules still import bigclaw from src/" {
 		t.Fatalf("unexpected legacy delete status summary in report file: %+v", legacyDeleteStatus)
 	}
 }

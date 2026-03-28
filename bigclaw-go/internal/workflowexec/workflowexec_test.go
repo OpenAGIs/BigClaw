@@ -1,7 +1,9 @@
 package workflowexec
 
 import (
+	"crypto/sha256"
 	"encoding/json"
+	"encoding/hex"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -9,6 +11,7 @@ import (
 	"testing"
 
 	"bigclaw-go/internal/domain"
+	"bigclaw-go/internal/repo"
 	"bigclaw-go/internal/workflow"
 )
 
@@ -395,6 +398,208 @@ func TestEngineWritesRepoSyncAuditReportAndRecordsFailureCategories(t *testing.T
 	sync := closeout["repo_sync_audit"].(map[string]any)["sync"].(map[string]any)
 	if sync["failure_category"] != "divergence" {
 		t.Fatalf("unexpected closeout repo sync audit: %+v", closeout)
+	}
+}
+
+func TestTaskRunCapturesArtifactsAuditsCloseoutAndLedgerRoundTrip(t *testing.T) {
+	dir := t.TempDir()
+	artifactPath := filepath.Join(dir, "validation.md")
+	if err := os.WriteFile(artifactPath, []byte("validation ok"), 0o644); err != nil {
+		t.Fatalf("write artifact: %v", err)
+	}
+	sum := sha256.Sum256([]byte("validation ok"))
+	expectedDigest := hex.EncodeToString(sum[:])
+
+	run := NewTaskRun(domain.Task{
+		ID:       "BIG-502",
+		Source:   "linear",
+		Title:    "Add observability",
+		Priority: int(domain.PriorityP0),
+	}, "run-1", "docker")
+	run.Log("info", "task accepted", map[string]any{"queue": "primary"})
+	run.Trace("scheduler.decide", "ok", map[string]any{"approved": true})
+	if err := run.RegisterArtifact("validation-report", "report", artifactPath, map[string]any{"environment": "sandbox"}); err != nil {
+		t.Fatalf("register artifact: %v", err)
+	}
+	run.Audit("scheduler.approved", "system", "success", map[string]any{"reason": "default low risk path"})
+	run.RecordCloseout([]string{"pytest", "validation-report"}, true, "Everything up-to-date", "commit abc123\n 1 file changed, 2 insertions(+)", nil)
+	run.Finalize("succeeded", "validation passed")
+
+	ledger := Ledger{Path: filepath.Join(dir, "observability.json")}
+	if err := ledger.Upsert(run); err != nil {
+		t.Fatalf("upsert ledger: %v", err)
+	}
+	entries, err := ledger.Load()
+	if err != nil {
+		t.Fatalf("load ledger: %v", err)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 ledger entry, got %+v", entries)
+	}
+	if entries[0]["status"] != "succeeded" {
+		t.Fatalf("unexpected status: %+v", entries[0])
+	}
+	if entries[0]["logs"].([]any)[0].(map[string]any)["context"].(map[string]any)["queue"] != "primary" {
+		t.Fatalf("unexpected logs: %+v", entries[0]["logs"])
+	}
+	if entries[0]["traces"].([]any)[0].(map[string]any)["attributes"].(map[string]any)["approved"] != true {
+		t.Fatalf("unexpected traces: %+v", entries[0]["traces"])
+	}
+	if entries[0]["artifacts"].([]any)[0].(map[string]any)["sha256"] != expectedDigest {
+		t.Fatalf("unexpected artifacts: %+v", entries[0]["artifacts"])
+	}
+	actions := []string{}
+	for _, item := range entries[0]["audits"].([]any) {
+		actions = append(actions, item.(map[string]any)["action"].(string))
+	}
+	for _, want := range []string{"artifact.registered", "closeout.recorded", "scheduler.approved"} {
+		if !contains(actions, want) {
+			t.Fatalf("missing audit action %q in %+v", want, actions)
+		}
+	}
+	if entries[0]["closeout"].(map[string]any)["complete"] != true {
+		t.Fatalf("unexpected closeout: %+v", entries[0]["closeout"])
+	}
+}
+
+func TestTaskRunCloseoutSerializesRepoSyncAudit(t *testing.T) {
+	dir := t.TempDir()
+	prNumber := 219
+	run := NewTaskRun(domain.Task{ID: "BIG-sync", Source: "linear", Title: "Repo sync closeout"}, "run-sync", "docker")
+	repoSyncAudit := &RepoSyncAudit{
+		Sync: GitSyncTelemetry{
+			Status:          "failed",
+			FailureCategory: "dirty",
+			Summary:         "worktree has local changes",
+			Branch:          "feature/OPE-219",
+			RemoteRef:       "origin/feature/OPE-219",
+			DirtyPaths:      []string{"src/bigclaw/workflow.py"},
+		},
+		PullRequest: PullRequestFreshness{
+			PRNumber:           &prNumber,
+			PRURL:              "https://github.com/OpenAGIs/BigClaw/pull/219",
+			BranchState:        "out-of-sync",
+			BodyState:          "drifted",
+			BranchHeadSHA:      "abc123",
+			PRHeadSHA:          "def456",
+			ExpectedBodyDigest: "body-expected",
+			ActualBodyDigest:   "body-actual",
+		},
+	}
+	run.RecordCloseout([]string{"pytest"}, false, "push rejected", "commit abc123\n 1 file changed, 2 insertions(+)", repoSyncAudit)
+
+	ledger := Ledger{Path: filepath.Join(dir, "observability.json")}
+	if err := ledger.Upsert(run); err != nil {
+		t.Fatalf("upsert ledger: %v", err)
+	}
+	loadedRuns, err := ledger.LoadRuns()
+	if err != nil {
+		t.Fatalf("load runs: %v", err)
+	}
+	if loadedRuns[0].Closeout.RepoSyncAudit == nil {
+		t.Fatalf("expected repo sync audit in closeout: %+v", loadedRuns[0].Closeout)
+	}
+	if loadedRuns[0].Closeout.RepoSyncAudit.Sync.FailureCategory != "dirty" || loadedRuns[0].Closeout.RepoSyncAudit.PullRequest.BodyState != "drifted" {
+		t.Fatalf("unexpected repo sync audit: %+v", loadedRuns[0].Closeout.RepoSyncAudit)
+	}
+}
+
+func TestRenderTaskRunReportAndDetailPage(t *testing.T) {
+	dir := t.TempDir()
+	artifactPath := filepath.Join(dir, "artifact.txt")
+	if err := os.WriteFile(artifactPath, []byte("audit trail"), 0o644); err != nil {
+		t.Fatalf("write artifact: %v", err)
+	}
+	run := NewTaskRun(domain.Task{ID: "BIG-502", Source: "linear", Title: "Observe execution"}, "run-3", "browser")
+	run.Log("info", "opened detail page", nil)
+	run.Trace("playback.render", "ok", nil)
+	if err := run.RegisterArtifact("approval-note", "note", artifactPath, nil); err != nil {
+		t.Fatalf("register artifact: %v", err)
+	}
+	run.Audit("playback.render", "reviewer", "success", nil)
+	run.AddComment("pm", "Loop in @design before we publish the replay.", []string{"design"}, "overview")
+	run.AddDecisionNote("design", "Replay copy approved for external review.", "approved", []string{"pm"}, nil, "")
+	run.RecordCloseout([]string{"pytest", "playback-smoke"}, true, "main -> origin/main", "commit fedcba\n 1 file changed, 1 insertion(+)", nil)
+	run.Closeout.RunCommitLinks = []repo.RunCommitLink{
+		{RunID: "run-3", CommitHash: "abc111", Role: "candidate", RepoSpaceID: "space-1"},
+		{RunID: "run-3", CommitHash: "fedcba", Role: "accepted", RepoSpaceID: "space-1"},
+	}
+	run.Finalize("approved", "detail page ready")
+
+	report := RenderTaskRunReport(run)
+	for _, fragment := range []string{
+		"Run ID: run-3",
+		"## Logs",
+		"## Trace",
+		"## Artifacts",
+		"## Audit",
+		"## Closeout",
+		"Git Push Succeeded: true",
+		"## Actions",
+		"Retry [retry] state=disabled target=run-3 reason=retry is available for failed or approval-blocked runs",
+		"## Collaboration",
+		"Loop in @design before we publish the replay.",
+		"Replay copy approved for external review.",
+	} {
+		if !strings.Contains(report, fragment) {
+			t.Fatalf("expected %q in report:\n%s", fragment, report)
+		}
+	}
+
+	page := RenderTaskRunDetailPage(run)
+	for _, fragment := range []string{
+		"<title>Task Run Detail",
+		"Timeline / Log Sync",
+		"data-detail=\"title\"",
+		"Reports",
+		"opened detail page",
+		"playback.render",
+		artifactPath,
+		"detail page ready",
+		"Closeout",
+		"complete",
+		"Repo Evidence",
+		"fedcba",
+		"Actions",
+		"Pause [pause] state=disabled target=run-3 reason=completed or failed runs cannot be paused",
+		"Collaboration",
+		"Loop in @design before we publish the replay.",
+		"Replay copy approved for external review.",
+	} {
+		if !strings.Contains(page, fragment) {
+			t.Fatalf("expected %q in detail page:\n%s", fragment, page)
+		}
+	}
+}
+
+func TestRenderTaskRunDetailPageEscapesScriptBreakoutAndSynthesizesCollaborationThread(t *testing.T) {
+	dir := t.TempDir()
+	ledger := Ledger{Path: filepath.Join(dir, "observability.json")}
+	run := NewTaskRun(domain.Task{ID: "BIG-502-roundtrip", Source: "linear", Title: "Round trip"}, "run-roundtrip", "docker")
+	run.Log("info", "contains </script> marker", nil)
+	run.Trace("scheduler.decide", "ok", nil)
+	run.Audit("scheduler.decision", "scheduler", "approved", map[string]any{"reason": "default low risk path"})
+	run.AddComment("ops", "Need @eng confirmation on the retry plan.", []string{"eng"}, "timeline")
+	run.Finalize("approved", "default low risk path")
+	if err := ledger.Upsert(run); err != nil {
+		t.Fatalf("upsert ledger: %v", err)
+	}
+
+	page := RenderTaskRunDetailPage(run)
+	if !strings.Contains(page, "contains &lt;\\/script&gt; marker") {
+		t.Fatalf("expected escaped script marker in page:\n%s", page)
+	}
+
+	loadedRuns, err := ledger.LoadRuns()
+	if err != nil {
+		t.Fatalf("load runs: %v", err)
+	}
+	thread := BuildCollaborationThreadFromAudits(loadedRuns[0].Audits, "run", loadedRuns[0].RunID)
+	if thread == nil || thread.MentionCount != 1 {
+		t.Fatalf("unexpected collaboration thread: %+v", thread)
+	}
+	if len(thread.Comments) != 1 || thread.Comments[0].Body != "Need @eng confirmation on the retry plan." {
+		t.Fatalf("unexpected collaboration comments: %+v", thread)
 	}
 }
 

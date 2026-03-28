@@ -483,10 +483,9 @@ Still partially migrated for broader model-runtime semantics:
 - `tests/test_models.py` now overlaps with Go coverage in `bigclaw-go/internal/workflow/model_test.go` and `bigclaw-go/internal/billing/statement_test.go`
 - The remaining Python-owned pieces are richer risk-assessment and triage record model surfaces that do not have a single equivalent Go model package in this issue
 
-Still partially migrated for observability and event-bus runtime semantics:
+`tests/test_observability.py` is now retired from the legacy pytest lane:
 
-- `tests/test_observability.py` overlaps only at the Go recorder/audit primitive level in `bigclaw-go/internal/observability/recorder_test.go`, `bigclaw-go/internal/observability/audit_test.go`, and `bigclaw-go/internal/observability/audit_spec_test.go`
-- The remaining Python-owned pieces are richer `TaskRun`, collaboration-thread synthesis, and report-studio surfaces in `src/bigclaw/observability.py` and `src/bigclaw/reports.py`; the issue now includes a scoped Go `legacyruntime` replacement for the scheduler/orchestration execution-record slice only
+- its task-run artifact/audit capture, typed ledger round-trip, repo-sync closeout serialization, audit-driven collaboration synthesis, and task-run report/detail rendering now live under `bigclaw-go/internal/workflowexec/workflowexec.go` and `bigclaw-go/internal/workflowexec/workflowexec_test.go`
 
 Still partially migrated for broader reporting/studio semantics:
 
@@ -517,8 +516,8 @@ Recommended next migration slices:
 
 Current machine-checked blockers in this issue are:
 
-- `3 legacy pytest modules remain under tests/`
-- `3 legacy pytest modules still import bigclaw from src/`
+- `2 legacy pytest modules remain under tests/`
+- `2 legacy pytest modules still import bigclaw from src/`
 
 The `pytest` blocker count is computed from Go-owned inventory code and now covers all three currently supported detection forms:
 
@@ -529,7 +528,7 @@ The `pytest` blocker count is computed from Go-owned inventory code and now cove
 Current machine-checked single-line summary is:
 
 - `conftest_delete_ready=true blockers=none`
-- `legacy_pytest_delete_ready=false blockers=3 legacy pytest modules remain under tests/; 3 legacy pytest modules still import bigclaw from src/`
+- `legacy_pytest_delete_ready=false blockers=2 legacy pytest modules remain under tests/; 2 legacy pytest modules still import bigclaw from src/`
 
 Current Go-owned command surface for this state:
 
@@ -574,7 +573,7 @@ Observed results for this issue:
 
 - `PYTHONPATH=src python3 -c "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0"` passed on the latest issue branch state, confirming the remaining legacy `src/bigclaw` import surface still works without relying on a checked-in pytest module.
 - `go test ./internal/planning ./internal/testharness ./internal/regression ./cmd/bigclawctl` passed on the latest issue branch state, covering the Go-owned replacement for `tests/test_planning.py` together with the harness/report regression gates and the CLI exposure for the remaining legacy pytest asset blockers.
-- `go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json` passed on the latest issue branch state, regenerated the checked-in snapshot, and confirmed `inventory_summary=tests=3 bigclaw_imports=3 pytest_imports=0 pytest_command_refs=0`, `pyproject_declares_pytest=false`, `pyproject_has_pytest_config=false`, `conftest_exists=false`, `conftest_delete_status.can_delete=true`, and `legacy_pytest_delete_status.can_delete=false`.
+- `go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json` passed on the latest issue branch state, regenerated the checked-in snapshot, and confirmed `inventory_summary=tests=2 bigclaw_imports=2 pytest_imports=0 pytest_command_refs=0`, `pyproject_declares_pytest=false`, `pyproject_has_pytest_config=false`, `conftest_exists=false`, `conftest_delete_status.can_delete=true`, and `legacy_pytest_delete_status.can_delete=false`.
 
 Deletion-readiness validation for the legacy Python harness, once migration is further along:
 

@@ -5,12 +5,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"html"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
 	"bigclaw-go/internal/domain"
+	"bigclaw-go/internal/repo"
 	"bigclaw-go/internal/workflow"
 )
 
@@ -138,6 +141,7 @@ type RunCloseout struct {
 	GitPushOutput      string         `json:"git_push_output,omitempty"`
 	GitLogStatOutput   string         `json:"git_log_stat_output,omitempty"`
 	RepoSyncAudit      *RepoSyncAudit `json:"repo_sync_audit,omitempty"`
+	RunCommitLinks     []repo.RunCommitLink `json:"run_commit_links,omitempty"`
 	Timestamp          string         `json:"timestamp"`
 	Complete           bool           `json:"complete"`
 }
@@ -180,6 +184,8 @@ type TaskRun struct {
 	Traces    []TraceEntry     `json:"traces,omitempty"`
 	Artifacts []ArtifactRecord `json:"artifacts,omitempty"`
 	Audits    []AuditEntry     `json:"audits,omitempty"`
+	Comments  []repo.CollaborationComment `json:"comments,omitempty"`
+	Decisions []repo.DecisionNote         `json:"decisions,omitempty"`
 	Closeout  RunCloseout      `json:"closeout"`
 }
 
@@ -257,6 +263,46 @@ func (r *TaskRun) RecordCloseout(validationEvidence []string, gitPushSucceeded b
 	})
 }
 
+func (r *TaskRun) AddComment(author, body string, mentions []string, anchor string) repo.CollaborationComment {
+	comment := repo.CollaborationComment{
+		CommentID: fmt.Sprintf("comment-%d", len(r.Comments)+1),
+		Author:    strings.TrimSpace(author),
+		Body:      strings.TrimSpace(body),
+		CreatedAt: nowUTC(),
+		Anchor:    strings.TrimSpace(anchor),
+		Status:    "open",
+	}
+	r.Comments = append(r.Comments, comment)
+	r.Audit("collaboration.comment", strings.TrimSpace(author), "recorded", map[string]any{
+		"comment_id": comment.CommentID,
+		"body":       comment.Body,
+		"mentions":   append([]string(nil), mentions...),
+		"anchor":     comment.Anchor,
+	})
+	return comment
+}
+
+func (r *TaskRun) AddDecisionNote(author, summary, outcome string, mentions []string, relatedCommentIDs []string, followUp string) repo.DecisionNote {
+	decision := repo.DecisionNote{
+		DecisionID: fmt.Sprintf("decision-%d", len(r.Decisions)+1),
+		Author:     strings.TrimSpace(author),
+		Outcome:    strings.TrimSpace(outcome),
+		Summary:    strings.TrimSpace(summary),
+		RecordedAt: nowUTC(),
+		Mentions:   append([]string(nil), mentions...),
+		FollowUp:   strings.TrimSpace(followUp),
+	}
+	r.Decisions = append(r.Decisions, decision)
+	r.Audit("collaboration.decision", strings.TrimSpace(author), strings.TrimSpace(outcome), map[string]any{
+		"decision_id":         decision.DecisionID,
+		"summary":             decision.Summary,
+		"mentions":            append([]string(nil), mentions...),
+		"related_comment_ids": append([]string(nil), relatedCommentIDs...),
+		"follow_up":           decision.FollowUp,
+	})
+	return decision
+}
+
 func (r *TaskRun) Finalize(status, summary string) {
 	r.Status = status
 	r.Summary = summary
@@ -280,6 +326,22 @@ func (l Ledger) Load() ([]map[string]any, error) {
 		return nil, err
 	}
 	return entries, nil
+}
+
+func (l Ledger) LoadRuns() ([]TaskRun, error) {
+	entries, err := l.Load()
+	if err != nil {
+		return nil, err
+	}
+	body, err := json.Marshal(entries)
+	if err != nil {
+		return nil, err
+	}
+	var runs []TaskRun
+	if err := json.Unmarshal(body, &runs); err != nil {
+		return nil, err
+	}
+	return runs, nil
 }
 
 func (l Ledger) Upsert(run TaskRun) error {
@@ -314,6 +376,14 @@ func (l Ledger) Upsert(run TaskRun) error {
 		return err
 	}
 	return os.WriteFile(l.Path, output, 0o644)
+}
+
+type CollaborationThread struct {
+	Surface      string                      `json:"surface"`
+	TargetID     string                      `json:"target_id"`
+	Comments     []repo.CollaborationComment `json:"comments,omitempty"`
+	Decisions    []repo.DecisionNote         `json:"decisions,omitempty"`
+	MentionCount int                         `json:"mention_count"`
 }
 
 type Decision struct {
@@ -559,6 +629,140 @@ func RenderRepoSyncAuditReport(audit RepoSyncAudit) string {
 	return strings.Join(lines, "\n") + "\n"
 }
 
+func BuildCollaborationThreadFromAudits(audits []AuditEntry, surface, targetID string) *CollaborationThread {
+	thread := &CollaborationThread{
+		Surface:  strings.TrimSpace(surface),
+		TargetID: strings.TrimSpace(targetID),
+	}
+	mentionSet := map[string]struct{}{}
+	for _, audit := range audits {
+		switch audit.Action {
+		case "collaboration.comment":
+			comment := repo.CollaborationComment{
+				CommentID: stringValue(audit.Details, "comment_id"),
+				Author:    audit.Actor,
+				Body:      stringValue(audit.Details, "body"),
+				CreatedAt: audit.Timestamp,
+				Anchor:    stringValue(audit.Details, "anchor"),
+				Status:    "open",
+			}
+			thread.Comments = append(thread.Comments, comment)
+			for _, mention := range stringSliceValue(audit.Details, "mentions") {
+				mentionSet[mention] = struct{}{}
+			}
+		case "collaboration.decision":
+			decision := repo.DecisionNote{
+				DecisionID: stringValue(audit.Details, "decision_id"),
+				Author:     audit.Actor,
+				Outcome:    audit.Outcome,
+				Summary:    stringValue(audit.Details, "summary"),
+				RecordedAt: audit.Timestamp,
+				Mentions:   stringSliceValue(audit.Details, "mentions"),
+				FollowUp:   stringValue(audit.Details, "follow_up"),
+			}
+			thread.Decisions = append(thread.Decisions, decision)
+			for _, mention := range decision.Mentions {
+				mentionSet[mention] = struct{}{}
+			}
+		}
+	}
+	sort.Slice(thread.Comments, func(i, j int) bool { return thread.Comments[i].CreatedAt < thread.Comments[j].CreatedAt })
+	sort.Slice(thread.Decisions, func(i, j int) bool { return thread.Decisions[i].RecordedAt < thread.Decisions[j].RecordedAt })
+	thread.MentionCount = len(mentionSet)
+	if len(thread.Comments) == 0 && len(thread.Decisions) == 0 {
+		return nil
+	}
+	return thread
+}
+
+func RenderTaskRunReport(run TaskRun) string {
+	lines := []string{
+		"# Task Run Report",
+		"",
+		fmt.Sprintf("Run ID: %s", run.RunID),
+		fmt.Sprintf("Task ID: %s", run.TaskID),
+		fmt.Sprintf("Medium: %s", run.Medium),
+		fmt.Sprintf("Status: %s", run.Status),
+		fmt.Sprintf("Summary: %s", run.Summary),
+		"",
+		"## Logs",
+	}
+	for _, item := range run.Logs {
+		lines = append(lines, fmt.Sprintf("- %s: %s", valueOr(anyString(item["level"]), "info"), anyString(item["message"])))
+	}
+	lines = append(lines, "", "## Trace")
+	for _, item := range run.Traces {
+		lines = append(lines, fmt.Sprintf("- %s status=%s", item.Span, item.Status))
+	}
+	lines = append(lines, "", "## Artifacts")
+	for _, item := range run.Artifacts {
+		lines = append(lines, fmt.Sprintf("- %s kind=%s path=%s", item.Name, item.Kind, item.Path))
+	}
+	lines = append(lines, "", "## Audit")
+	for _, item := range run.Audits {
+		lines = append(lines, fmt.Sprintf("- %s outcome=%s", item.Action, item.Outcome))
+	}
+	lines = append(lines,
+		"",
+		"## Closeout",
+		fmt.Sprintf("- Git Push Succeeded: %t", run.Closeout.GitPushSucceeded),
+		fmt.Sprintf("- Complete: %t", run.Closeout.Complete),
+		"",
+		"## Actions",
+		fmt.Sprintf("Retry [retry] state=%s target=%s reason=%s", actionState(run.Status, "retry"), run.RunID, retryReason(run.Status)),
+		fmt.Sprintf("Pause [pause] state=%s target=%s reason=%s", actionState(run.Status, "pause"), run.RunID, pauseReason(run.Status)),
+	)
+	thread := BuildCollaborationThreadFromAudits(run.Audits, "run", run.RunID)
+	if thread != nil {
+		lines = append(lines, "", "## Collaboration")
+		for _, comment := range thread.Comments {
+			lines = append(lines, "- "+comment.Body)
+		}
+		for _, decision := range thread.Decisions {
+			lines = append(lines, "- "+decision.Summary)
+		}
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func RenderTaskRunDetailPage(run TaskRun) string {
+	var b strings.Builder
+	b.WriteString("<html><head><title>Task Run Detail</title></head><body>\n")
+	b.WriteString("<h1 data-detail=\"title\">Task Run Detail</h1>\n")
+	b.WriteString("<h2>Timeline / Log Sync</h2>\n")
+	for _, item := range run.Logs {
+		b.WriteString("<p>" + html.EscapeString(escapeScript(anyString(item["message"]))) + "</p>\n")
+	}
+	for _, item := range run.Traces {
+		b.WriteString("<p>" + html.EscapeString(item.Span) + "</p>\n")
+	}
+	b.WriteString("<h2>Reports</h2>\n")
+	for _, item := range run.Artifacts {
+		b.WriteString("<p>" + html.EscapeString(item.Path) + "</p>\n")
+	}
+	b.WriteString("<h2>Closeout</h2>\n")
+	b.WriteString("<p>complete</p>\n")
+	b.WriteString("<h2>Repo Evidence</h2>\n")
+	for _, link := range run.Closeout.RunCommitLinks {
+		b.WriteString("<p>" + html.EscapeString(link.CommitHash) + "</p>\n")
+	}
+	b.WriteString("<h2>Actions</h2>\n")
+	b.WriteString("<p>Pause [pause] state=" + html.EscapeString(actionState(run.Status, "pause")) + " target=" + html.EscapeString(run.RunID) + " reason=" + html.EscapeString(pauseReason(run.Status)) + "</p>\n")
+	thread := BuildCollaborationThreadFromAudits(run.Audits, "run", run.RunID)
+	if thread != nil {
+		b.WriteString("<h2>Collaboration</h2>\n")
+		for _, comment := range thread.Comments {
+			b.WriteString("<p>" + html.EscapeString(comment.Body) + "</p>\n")
+		}
+		for _, decision := range thread.Decisions {
+			b.WriteString("<p>" + html.EscapeString(decision.Summary) + "</p>\n")
+		}
+	}
+	b.WriteString("<p>" + html.EscapeString(run.Summary) + "</p>\n")
+	b.WriteString("</body></html>\n")
+	return b.String()
+}
+
 func renderOrchestrationPlan(plan workflow.OrchestrationPlan, policy *workflow.OrchestrationPolicyDecision, handoff *workflow.HandoffRequest) string {
 	lines := []string{
 		"# Cross-Department Orchestration Plan",
@@ -644,6 +848,82 @@ func hasTool(tools []string, want string) bool {
 		}
 	}
 	return false
+}
+
+func anyString(value any) string {
+	switch typed := value.(type) {
+	case string:
+		return typed
+	default:
+		return ""
+	}
+}
+
+func stringValue(values map[string]any, key string) string {
+	if values == nil {
+		return ""
+	}
+	return anyString(values[key])
+}
+
+func stringSliceValue(values map[string]any, key string) []string {
+	if values == nil {
+		return nil
+	}
+	raw, ok := values[key]
+	if !ok {
+		return nil
+	}
+	switch typed := raw.(type) {
+	case []string:
+		return append([]string(nil), typed...)
+	case []any:
+		out := make([]string, 0, len(typed))
+		for _, item := range typed {
+			if value := anyString(item); value != "" {
+				out = append(out, value)
+			}
+		}
+		return out
+	default:
+		return nil
+	}
+}
+
+func actionState(status, action string) string {
+	status = strings.TrimSpace(status)
+	switch action {
+	case "retry":
+		if status == "failed" || status == "needs-approval" {
+			return "enabled"
+		}
+		return "disabled"
+	case "pause":
+		if status == "completed" || status == "failed" || status == "approved" || status == "succeeded" {
+			return "disabled"
+		}
+		return "enabled"
+	default:
+		return "disabled"
+	}
+}
+
+func retryReason(status string) string {
+	if actionState(status, "retry") == "enabled" {
+		return "retry available"
+	}
+	return "retry is available for failed or approval-blocked runs"
+}
+
+func pauseReason(status string) string {
+	if actionState(status, "pause") == "enabled" {
+		return "pause available"
+	}
+	return "completed or failed runs cannot be paused"
+}
+
+func escapeScript(value string) string {
+	return strings.ReplaceAll(value, "</script>", "<\\/script>")
 }
 
 func nowUTC() string {
