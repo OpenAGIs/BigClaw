@@ -31,3 +31,7 @@
   Result: passed (`.. [100%]`; re-run after latest harness and deletion-gate changes)
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/refill ./internal/legacyshim ./cmd/bigclawctl`
   Result: passed (`ok` for `internal/testharness`, `internal/refill`, `internal/legacyshim`, `cmd/bigclawctl`; re-run after latest harness and deletion-gate changes; includes Go-side `PYTHONPATH` import smoke for `bigclaw.mapping`, a Go-launched `pytest tests/test_mapping.py -q` smoke via shared harness, checked-in legacy shim `py_compile` coverage from Go, `cmd/bigclawctl` adoption of shared executable probing, and current `conftest` deletion-gate assertions)
+
+## Current Status
+
+- `tests/conftest.py` delete-readiness: `conftest_delete_ready=false blockers=56 legacy pytest modules remain under tests/; 47 legacy pytest modules still import bigclaw from src/; 3 legacy pytest modules still import pytest directly`
