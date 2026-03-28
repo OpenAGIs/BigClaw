@@ -218,10 +218,27 @@ Still partially migrated for workflow/event persistence semantics:
 - `tests/test_workflow.py` overlaps with Go coverage in `bigclaw-go/internal/workflow/model_test.go`, `bigclaw-go/internal/workflow/engine_test.go`, `bigclaw-go/internal/workflow/closeout_test.go`, and `bigclaw-go/internal/workflow/orchestration_test.go`
 - The remaining Python-owned pieces are ledger-backed workflow runtime/report paths such as repo-sync audit reporting and observability persistence, which do not yet map to one Go-owned runtime package in this issue
 
+Still partially migrated for scheduler/runtime execution semantics:
+
+- `tests/test_scheduler.py` overlaps with Go routing and policy coverage in `bigclaw-go/internal/scheduler/scheduler_test.go`
+- `tests/test_runtime.py` overlaps with Go worker acceptance and execution-gate coverage in `bigclaw-go/internal/workflow/engine_test.go` and `bigclaw-go/internal/worker/runtime_test.go`
+- `tests/test_execution_flow.py` overlaps with Go scheduler and reporting coverage in `bigclaw-go/internal/scheduler/scheduler_test.go`, `bigclaw-go/internal/worker/runtime_test.go`, and `bigclaw-go/internal/reporting/reporting_test.go`
+- The remaining Python-owned pieces are the legacy `Scheduler.execute()` / `ObservabilityLedger` runtime path, Python sandbox-router/tool-runtime objects in `src/bigclaw/runtime.py`, and markdown/html task-run report export behavior in `src/bigclaw/reports.py`
+
+Still partially migrated for orchestration commercialization semantics:
+
+- `tests/test_orchestration.py` overlaps with Go coverage in `bigclaw-go/internal/workflow/orchestration_test.go` and scheduler assessment coverage in `bigclaw-go/internal/scheduler/scheduler_test.go`
+- The remaining Python-owned pieces are orchestration-plan rendering into legacy run-ledger/report artifacts and commercialization-report surfaces still implemented in `src/bigclaw/orchestration.py`, `src/bigclaw/observability.py`, and `src/bigclaw/reports.py`
+
 Still partially migrated for broader model-runtime semantics:
 
 - `tests/test_models.py` now overlaps with Go coverage in `bigclaw-go/internal/workflow/model_test.go` and `bigclaw-go/internal/billing/statement_test.go`
 - The remaining Python-owned pieces are richer risk-assessment and triage record model surfaces that do not have a single equivalent Go model package in this issue
+
+Still legacy-only for planning, roadmap, and deprecation metadata surfaces:
+
+- `tests/test_planning.py`, `tests/test_roadmap.py`, and `tests/test_deprecation.py` still exercise Python-owned modules in `src/bigclaw/planning.py`, `src/bigclaw/roadmap.py`, and `src/bigclaw/deprecation.py`
+- These files mainly validate manifest/report rendering, baseline gating copy, and deprecation-warning metadata rather than shared pytest bootstrap behavior, so they remain outside this issue's Go harness replacement slice
 
 Still partially migrated for observability and event-bus runtime semantics:
 
