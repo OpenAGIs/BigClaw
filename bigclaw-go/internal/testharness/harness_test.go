@@ -128,6 +128,16 @@ func TestPythonCommandUsesProjectRootAndLegacyPythonPath(t *testing.T) {
 	}
 }
 
+func TestEmptyInventoryAllowsConftestDeletion(t *testing.T) {
+	var inventory PytestAssetInventory
+	if blockers := inventory.ConftestDeletionBlockers(); len(blockers) != 0 {
+		t.Fatalf("expected no deletion blockers for empty inventory, got %v", blockers)
+	}
+	if !inventory.CanDeleteConftest() {
+		t.Fatal("expected empty inventory to allow conftest deletion")
+	}
+}
+
 func TestPytestCommandRunsLegacyPytestWithHarnessBootstrap(t *testing.T) {
 	RequireExecutable(t, "python3")
 	cmd := PytestCommand(t, "tests/test_mapping.py", "-q")
