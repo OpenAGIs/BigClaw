@@ -14,7 +14,6 @@
     "tests/test_observability.py",
     "tests/test_operations.py",
     "tests/test_orchestration.py",
-    "tests/test_pilot.py",
     "tests/test_planning.py",
     "tests/test_repo_links.py",
     "tests/test_repo_rollout.py",
@@ -29,10 +28,10 @@
   "conftest_defines_fixture": false,
   "conftest_defines_hook": false,
   "conftest_delete_status": {
-    "bigclaw_import_modules": 25,
+    "bigclaw_import_modules": 24,
     "blockers": [],
     "can_delete": true,
-    "legacy_test_modules": 25,
+    "legacy_test_modules": 24,
     "pytest_import_modules": 0,
     "summary": "conftest_delete_ready=true blockers=none"
   },
@@ -41,18 +40,18 @@
   "conftest_path": "tests/conftest.py",
   "conftest_prepends_src": false,
   "conftest_uses_pytest_plugins": false,
-  "inventory_summary": "tests=25 bigclaw_imports=25 pytest_imports=0 pytest_command_refs=0",
+  "inventory_summary": "tests=24 bigclaw_imports=24 pytest_imports=0 pytest_command_refs=0",
   "legacy_pytest_delete_status": {
-    "bigclaw_import_modules": 25,
+    "bigclaw_import_modules": 24,
     "blockers": [
-      "25 legacy pytest modules remain under tests/",
-      "25 legacy pytest modules still import bigclaw from src/"
+      "24 legacy pytest modules remain under tests/",
+      "24 legacy pytest modules still import bigclaw from src/"
     ],
     "can_delete": false,
-    "legacy_test_modules": 25,
+    "legacy_test_modules": 24,
     "pytest_command_refs": 0,
     "pytest_import_modules": 0,
-    "summary": "legacy_pytest_delete_ready=false blockers=25 legacy pytest modules remain under tests/; 25 legacy pytest modules still import bigclaw from src/"
+    "summary": "legacy_pytest_delete_ready=false blockers=24 legacy pytest modules remain under tests/; 24 legacy pytest modules still import bigclaw from src/"
   },
   "project_root": ".",
   "pyproject_declares_pytest": false,
@@ -77,7 +76,6 @@
     "tests/test_observability.py",
     "tests/test_operations.py",
     "tests/test_orchestration.py",
-    "tests/test_pilot.py",
     "tests/test_planning.py",
     "tests/test_repo_links.py",
     "tests/test_repo_rollout.py",
