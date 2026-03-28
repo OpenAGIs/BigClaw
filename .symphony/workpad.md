@@ -44,6 +44,17 @@
 - continuation script wrapper coverage is migrated into Go regression tests under `bigclaw-go/internal/regression`, while the Python scripts themselves still remain as runtime assets.
 - Current concrete blockers to deleting the remaining Python sources:
   - `src/bigclaw/reports.py` is still imported by `src/bigclaw/__main__.py`, `src/bigclaw/workflow.py`, `src/bigclaw/scheduler.py`, `src/bigclaw/operations.py`, `src/bigclaw/__init__.py`, and Python tests including `tests/test_repo_rollout.py`, `tests/test_workflow.py`, `tests/test_control_center.py`, `tests/test_audit_events.py`, `tests/test_observability.py`, and `tests/test_operations.py`.
+- Remaining external `src/bigclaw/reports.py` symbol usage after this issue:
+  - `src/bigclaw/__main__.py`: `render_repo_sync_audit_report`, `write_report`
+  - `src/bigclaw/workflow.py`: `build_orchestration_canvas`, `PilotScorecard`, `render_orchestration_canvas`, `render_pilot_scorecard`, `render_repo_sync_audit_report`, `write_report`
+  - `src/bigclaw/scheduler.py`: `render_task_run_detail_page`, `render_task_run_report`, `write_report`
+  - `src/bigclaw/operations.py`: `SharedViewContext`, `build_console_actions`, `render_console_actions`, `render_shared_view_context`, `write_report`
+  - `tests/test_repo_rollout.py`: `render_repo_narrative_exports`, `render_weekly_repo_evidence_section`
+  - `tests/test_workflow.py`: `PilotMetric`, `PilotScorecard`
+  - `tests/test_control_center.py`: `SharedViewContext`, `SharedViewFilter`
+  - `tests/test_audit_events.py`: `build_orchestration_canvas_from_ledger_entry`, `build_takeover_queue_from_ledger`
+  - `tests/test_observability.py`: `render_repo_sync_audit_report`, `render_task_run_detail_page`, `render_task_run_report`
+  - `tests/test_operations.py`: `SharedViewContext`, `SharedViewFilter`
 - Safe deletion conditions for remaining Python assets:
   - delete `src/bigclaw/reports.py` only after its remaining importers under `tests/` and `src/bigclaw/*` are migrated or removed;
   - delete `bigclaw-go/scripts/e2e/*.py` only after the scripts themselves are replaced by Go executables/tests and docs/runbooks stop invoking Python.
