@@ -66,7 +66,7 @@ func TestInventoryPytestAssets(t *testing.T) {
 	if inventory.ConftestDefinesHook {
 		t.Fatal("expected conftest to avoid defining pytest hooks")
 	}
-	if got := inventory.Summary(); got != "tests=53 bigclaw_imports=44 pytest_imports=2" {
+	if got := inventory.Summary(); got != "tests=52 bigclaw_imports=43 pytest_imports=2" {
 		t.Fatalf("unexpected inventory summary: %s", got)
 	}
 
@@ -79,14 +79,14 @@ func TestInventoryPytestAssets(t *testing.T) {
 	}
 
 	wantBlockers := []string{
-		"53 legacy pytest modules remain under tests/",
-		"44 legacy pytest modules still import bigclaw from src/",
+		"52 legacy pytest modules remain under tests/",
+		"43 legacy pytest modules still import bigclaw from src/",
 		"2 legacy pytest modules still import pytest directly",
 	}
 	if got := inventory.ConftestDeletionBlockers(); !reflect.DeepEqual(got, wantBlockers) {
 		t.Fatalf("unexpected conftest deletion blockers: got=%v want=%v", got, wantBlockers)
 	}
-	wantSummary := "conftest_delete_ready=false blockers=53 legacy pytest modules remain under tests/; 44 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
+	wantSummary := "conftest_delete_ready=false blockers=52 legacy pytest modules remain under tests/; 43 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
 	if got := inventory.ConftestDeletionSummary(); got != wantSummary {
 		t.Fatalf("unexpected conftest deletion summary: got=%q want=%q", got, wantSummary)
 	}
@@ -97,8 +97,8 @@ func TestInventoryPytestAssets(t *testing.T) {
 		CanDelete:            false,
 		Summary:              wantSummary,
 		Blockers:             wantBlockers,
-		LegacyTestModules:    53,
-		BigclawImportModules: 44,
+		LegacyTestModules:    52,
+		BigclawImportModules: 43,
 		PytestImportModules:  2,
 	}
 	if got := inventory.ConftestDeletionStatus(); !reflect.DeepEqual(got, wantStatus) {
@@ -192,7 +192,8 @@ func TestEmptyInventoryAllowsConftestDeletion(t *testing.T) {
 
 func TestPytestCommandRunsLegacyPytestWithHarnessBootstrap(t *testing.T) {
 	PythonExecutable(t)
-	cmd := PytestCommand(t, "tests/test_mapping.py", "-q")
+	testFile := writePytestSmokeFile(t)
+	cmd := PytestCommand(t, testFile, "-q")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("pytest command failed: %v (%s)", err, string(output))
@@ -204,12 +205,13 @@ func TestPytestCommandRunsLegacyPytestWithHarnessBootstrap(t *testing.T) {
 
 func TestPytestCommandUsesPythonModuleInvocation(t *testing.T) {
 	pythonPath := PythonExecutable(t)
-	cmd := PytestCommand(t, "tests/test_mapping.py", "-q")
+	testFile := writePytestSmokeFile(t)
+	cmd := PytestCommand(t, testFile, "-q")
 
 	if cmd.Path != pythonPath {
 		t.Fatalf("unexpected pytest executable path: got=%q want=%q", cmd.Path, pythonPath)
 	}
-	wantArgs := []string{pythonPath, "-m", "pytest", "tests/test_mapping.py", "-q"}
+	wantArgs := []string{pythonPath, "-m", "pytest", testFile, "-q"}
 	if !reflect.DeepEqual(cmd.Args, wantArgs) {
 		t.Fatalf("unexpected pytest command args: got=%v want=%v", cmd.Args, wantArgs)
 	}
@@ -219,7 +221,8 @@ func TestPytestCommandDoesNotRequirePreexistingPythonPath(t *testing.T) {
 	PythonExecutable(t)
 	t.Setenv("PYTHONPATH", "")
 
-	cmd := PytestCommand(t, "tests/test_mapping.py", "-q")
+	testFile := writePytestSmokeFile(t)
+	cmd := PytestCommand(t, testFile, "-q")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("pytest command without preexisting PYTHONPATH failed: %v (%s)", err, string(output))
@@ -269,4 +272,14 @@ func TestFileContainsPytestUsageRecognizesImportForms(t *testing.T) {
 			t.Fatal("expected file without pytest usage to remain undetected")
 		}
 	})
+}
+
+func writePytestSmokeFile(t *testing.T) string {
+	t.Helper()
+	testFile := filepath.Join(t.TempDir(), "test_mapping_smoke.py")
+	body := "from bigclaw.mapping import map_priority\nfrom bigclaw.models import Priority\n\n\ndef test_map_priority_smoke():\n    assert map_priority('P0') == Priority.P0\n"
+	if err := os.WriteFile(testFile, []byte(body), 0o644); err != nil {
+		t.Fatalf("write pytest smoke file: %v", err)
+	}
+	return testFile
 }
