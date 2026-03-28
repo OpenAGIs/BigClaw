@@ -35,7 +35,6 @@
     "tests/test_risk.py",
     "tests/test_runtime.py",
     "tests/test_runtime_matrix.py",
-    "tests/test_saved_views.py",
     "tests/test_scheduler.py",
     "tests/test_service.py",
     "tests/test_ui_review.py",
@@ -45,21 +44,21 @@
   "conftest_defines_fixture": false,
   "conftest_defines_hook": false,
   "conftest_delete_status": {
-    "bigclaw_import_modules": 41,
+    "bigclaw_import_modules": 40,
     "blockers": [
-      "50 legacy pytest modules remain under tests/",
-      "41 legacy pytest modules still import bigclaw from src/",
+      "49 legacy pytest modules remain under tests/",
+      "40 legacy pytest modules still import bigclaw from src/",
       "2 legacy pytest modules still import pytest directly"
     ],
     "can_delete": false,
-    "legacy_test_modules": 50,
+    "legacy_test_modules": 49,
     "pytest_import_modules": 2,
-    "summary": "conftest_delete_ready=false blockers=50 legacy pytest modules remain under tests/; 41 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
+    "summary": "conftest_delete_ready=false blockers=49 legacy pytest modules remain under tests/; 40 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
   },
   "conftest_imports_pytest": false,
   "conftest_path": "tests/conftest.py",
   "conftest_prepends_src": true,
-  "inventory_summary": "tests=50 bigclaw_imports=41 pytest_imports=2",
+  "inventory_summary": "tests=49 bigclaw_imports=40 pytest_imports=2",
   "project_root": ".",
   "pytest_imports": [
     "tests/test_audit_events.py",
@@ -107,7 +106,6 @@
     "tests/test_risk.py",
     "tests/test_runtime.py",
     "tests/test_runtime_matrix.py",
-    "tests/test_saved_views.py",
     "tests/test_scheduler.py",
     "tests/test_service.py",
     "tests/test_shadow_matrix_corpus.py",

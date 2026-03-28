@@ -142,7 +142,7 @@ func TestRunPytestHarnessJSONOutput(t *testing.T) {
 	if payload["conftest_path"] != "tests/conftest.py" {
 		t.Fatalf("unexpected conftest_path: %+v", payload)
 	}
-	if payload["inventory_summary"] != "tests=50 bigclaw_imports=41 pytest_imports=2" {
+	if payload["inventory_summary"] != "tests=49 bigclaw_imports=40 pytest_imports=2" {
 		t.Fatalf("unexpected inventory summary: %+v", payload)
 	}
 	deleteStatus, ok := payload["conftest_delete_status"].(map[string]any)
@@ -152,7 +152,7 @@ func TestRunPytestHarnessJSONOutput(t *testing.T) {
 	if deleteStatus["can_delete"] != false {
 		t.Fatalf("expected can_delete=false, got %+v", deleteStatus)
 	}
-	if deleteStatus["legacy_test_modules"] != float64(50) || deleteStatus["bigclaw_import_modules"] != float64(41) || deleteStatus["pytest_import_modules"] != float64(2) {
+	if deleteStatus["legacy_test_modules"] != float64(49) || deleteStatus["bigclaw_import_modules"] != float64(40) || deleteStatus["pytest_import_modules"] != float64(2) {
 		t.Fatalf("unexpected delete status counts: %+v", deleteStatus)
 	}
 }
@@ -173,14 +173,14 @@ func TestRunPytestHarnessWritesReportFile(t *testing.T) {
 	if err := json.Unmarshal(body, &payload); err != nil {
 		t.Fatalf("decode report file: %v (%s)", err, string(body))
 	}
-	if payload["inventory_summary"] != "tests=50 bigclaw_imports=41 pytest_imports=2" {
+	if payload["inventory_summary"] != "tests=49 bigclaw_imports=40 pytest_imports=2" {
 		t.Fatalf("unexpected inventory summary in report file: %+v", payload)
 	}
 	deleteStatus, ok := payload["conftest_delete_status"].(map[string]any)
 	if !ok {
 		t.Fatalf("expected conftest_delete_status object, got %+v", payload["conftest_delete_status"])
 	}
-	if deleteStatus["summary"] != "conftest_delete_ready=false blockers=50 legacy pytest modules remain under tests/; 41 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly" {
+	if deleteStatus["summary"] != "conftest_delete_ready=false blockers=49 legacy pytest modules remain under tests/; 40 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly" {
 		t.Fatalf("unexpected delete status summary in report file: %+v", deleteStatus)
 	}
 }
