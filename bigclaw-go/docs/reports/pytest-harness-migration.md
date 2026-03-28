@@ -43,6 +43,7 @@ It provides:
 - `Chdir(tb, dir)` for temporary cwd changes with automatic cleanup
 - `InventoryPytestAssets(tb)` to machine-check the remaining pytest surface (`56` test modules, `47` `bigclaw` importers, `3` `pytest` importers) instead of leaving that inventory only in prose
 - `internal/legacyshim` tests now also assert that the frozen Python compile-check asset list still matches the checked-in `src/bigclaw/*.py` shim files that remain in scope for migration
+- `internal/testharness` now includes a Python import smoke test that boots `PYTHONPATH` via the Go harness and imports `bigclaw.mapping` directly, proving the replacement covers the old `conftest.py` core responsibility
 
 First-batch adoption landed here:
 
@@ -294,7 +295,7 @@ cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./int
 Observed results for this issue:
 
 - `python3 -m pytest tests/test_mapping.py -q` passed (`.. [100%]`), confirming the current `tests/conftest.py` import bootstrap still supports legacy `src/bigclaw` imports.
-- `go test ./internal/testharness ./internal/refill ./internal/legacyshim ./cmd/bigclawctl` passed, confirming the Go-owned replacement helpers and adjacent migrated test slices are stable.
+- `go test ./internal/testharness ./internal/refill ./internal/legacyshim ./cmd/bigclawctl` passed, including the Go-side Python import smoke for `bigclaw.mapping`, confirming the replacement helpers and adjacent migrated test slices are stable.
 
 Deletion-readiness validation for the legacy Python harness, once migration is further along:
 

@@ -2,6 +2,7 @@ package testharness
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -76,5 +77,19 @@ func TestInventoryPytestAssets(t *testing.T) {
 	}
 	if !reflect.DeepEqual(inventory.PytestImportModules, wantPytestModules) {
 		t.Fatalf("unexpected pytest import modules: got=%v want=%v", inventory.PytestImportModules, wantPytestModules)
+	}
+}
+
+func TestBootstrapLegacyPythonPathSupportsBigclawImports(t *testing.T) {
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skipf("python3 not available: %v", err)
+	}
+
+	srcRoot := BootstrapLegacyPythonPath(t)
+	cmd := exec.Command("python3", "-c", "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0")
+	cmd.Dir = ProjectRoot(t)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("python import smoke failed with PYTHONPATH=%q: %v (%s)", srcRoot, err, string(output))
 	}
 }

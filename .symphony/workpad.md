@@ -28,4 +28,4 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && python3 -m pytest tests/test_mapping.py -q`
   Result: passed (`.. [100%]`)
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/refill ./internal/legacyshim ./cmd/bigclawctl`
-  Result: passed (`ok` for `internal/testharness`, `internal/refill`, `internal/legacyshim`, `cmd/bigclawctl`)
+  Result: passed (`ok` for `internal/testharness`, `internal/refill`, `internal/legacyshim`, `cmd/bigclawctl`; includes Go-side `PYTHONPATH` import smoke for `bigclaw.mapping`)
