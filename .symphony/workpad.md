@@ -2,9 +2,9 @@
 
 ## Plan
 
-1. Replace `tests/test_followup_digests.py` with Go-owned regression coverage that exercises the same report/index behavior, then remove the pytest file.
+1. Replace `tests/test_parallel_validation_bundle.py` with Go-owned regression coverage that exercises the same script behavior, then remove the pytest file.
 2. Refresh pytest-harness inventory counts, snapshot artifact, and migration report so the `conftest` deletion gate reflects the reduced legacy surface again.
-3. Run targeted Python/Go validation for the followup-digest/harness/report gates, then commit and push.
+3. Run targeted Python/Go validation for the live-validation-bundle/harness/report gates, then commit and push.
 
 ## Acceptance
 
@@ -33,12 +33,12 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && PYTHONPATH=src python3 -c "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0"`
   Result: passed (exit 0)
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/regression`
-  Result: passed (`ok  	bigclaw-go/internal/testharness	1.225s`; `ok  	bigclaw-go/internal/regression	1.458s`)
+  Result: passed (`ok  	bigclaw-go/internal/testharness	1.747s`; `ok  	bigclaw-go/internal/regression	2.026s`)
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
-  Result: passed (`status=ok`; `inventory_summary=tests=29 bigclaw_imports=28 pytest_imports=2`; `conftest_delete_status.summary=conftest_delete_ready=false blockers=29 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly`)
+  Result: passed (`status=ok`; `inventory_summary=tests=28 bigclaw_imports=28 pytest_imports=2`; `conftest_delete_status.summary=conftest_delete_ready=false blockers=28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly`)
 
 ## Current Status
 
-- `tests/conftest.py` delete-readiness: `conftest_delete_ready=false blockers=29 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly`
+- `tests/conftest.py` delete-readiness: `conftest_delete_ready=false blockers=28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly`
 - Structured delete-readiness status:
-  `{"can_delete":false,"legacy_test_modules":29,"bigclaw_import_modules":28,"pytest_import_modules":2}`
+  `{"can_delete":false,"legacy_test_modules":28,"bigclaw_import_modules":28,"pytest_import_modules":2}`
