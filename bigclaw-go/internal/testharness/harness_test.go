@@ -107,6 +107,17 @@ func TestInventoryPytestAssets(t *testing.T) {
 	}
 }
 
+func TestInventoryPytestAssetsAtMatchesTestingHelper(t *testing.T) {
+	fromTB := InventoryPytestAssets(t)
+	fromPath, err := InventoryPytestAssetsAt(ProjectRoot(t))
+	if err != nil {
+		t.Fatalf("inventory at project root: %v", err)
+	}
+	if !reflect.DeepEqual(fromPath, fromTB) {
+		t.Fatalf("expected path-based inventory to match testing helper: got=%+v want=%+v", fromPath, fromTB)
+	}
+}
+
 func TestBootstrapLegacyPythonPathSupportsBigclawImports(t *testing.T) {
 	PythonExecutable(t)
 	cmd := PythonCommand(t, "-c", "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0")

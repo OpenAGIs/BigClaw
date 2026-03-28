@@ -99,6 +99,11 @@ func TestHelpCommandsCoverLegacyShimEntrypoints(t *testing.T) {
 			args: []string{"legacy-python", "--help"},
 			want: "usage: bigclawctl legacy-python <compile-check> [flags]",
 		},
+		{
+			name: "pytest-harness",
+			args: []string{"pytest-harness", "--help"},
+			want: "usage: bigclawctl pytest-harness [flags]",
+		},
 	}
 
 	for _, tc := range cases {
@@ -111,6 +116,41 @@ func TestHelpCommandsCoverLegacyShimEntrypoints(t *testing.T) {
 				t.Fatalf("expected %q in output, got %s", tc.want, string(output))
 			}
 		})
+	}
+}
+
+func TestRunPytestHarnessJSONOutput(t *testing.T) {
+	projectRoot := testharness.ProjectRoot(t)
+
+	output, err := captureStdout(t, func() error {
+		return runPytestHarness([]string{"--project-root", projectRoot, "--json"})
+	})
+	if err != nil {
+		t.Fatalf("run pytest-harness: %v", err)
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(output, &payload); err != nil {
+		t.Fatalf("decode output: %v (%s)", err, string(output))
+	}
+	if payload["status"] != "ok" {
+		t.Fatalf("expected ok status, got %+v", payload)
+	}
+	if payload["project_root"] != projectRoot {
+		t.Fatalf("unexpected project_root: %+v", payload)
+	}
+	if payload["inventory_summary"] != "tests=56 bigclaw_imports=47 pytest_imports=3" {
+		t.Fatalf("unexpected inventory summary: %+v", payload)
+	}
+	deleteStatus, ok := payload["conftest_delete_status"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected conftest_delete_status object, got %+v", payload["conftest_delete_status"])
+	}
+	if deleteStatus["can_delete"] != false {
+		t.Fatalf("expected can_delete=false, got %+v", deleteStatus)
+	}
+	if deleteStatus["legacy_test_modules"] != float64(56) || deleteStatus["bigclaw_import_modules"] != float64(47) || deleteStatus["pytest_import_modules"] != float64(3) {
+		t.Fatalf("unexpected delete status counts: %+v", deleteStatus)
 	}
 }
 

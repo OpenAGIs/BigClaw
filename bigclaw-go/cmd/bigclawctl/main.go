@@ -124,6 +124,8 @@ func run(args []string) int {
 		err = runCreateIssues(args[1:])
 	case "dev-smoke":
 		err = runDevSmoke(args[1:])
+	case "pytest-harness":
+		err = runPytestHarness(args[1:])
 	case "symphony":
 		err = runSymphony(args[1:])
 	case "issue":
@@ -1432,7 +1434,7 @@ func printRefillUsage(w io.Writer) {
 }
 
 func printRootUsage(w io.Writer) {
-	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|automation|refill|local-issues|create-issues|dev-smoke|symphony|issue|panel|legacy-python> ...")
+	fmt.Fprintln(w, "usage: bigclawctl <github-sync|workspace|automation|refill|local-issues|create-issues|dev-smoke|pytest-harness|symphony|issue|panel|legacy-python> ...")
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "commands:")
 	fmt.Fprintln(w, "  github-sync     install/sync/status hooks and branch sync state")
@@ -1442,6 +1444,7 @@ func printRootUsage(w io.Writer) {
 	fmt.Fprintln(w, "  local-issues    manage the repo-native issue store in local-issues.json")
 	fmt.Fprintln(w, "  create-issues   seed the GitHub repo with the canned issue plans")
 	fmt.Fprintln(w, "  dev-smoke       run the Go control-plane smoke decision check")
+	fmt.Fprintln(w, "  pytest-harness  report the remaining legacy pytest/conftest migration surface")
 	fmt.Fprintln(w, "  symphony        launch Symphony against this repo workflow")
 	fmt.Fprintln(w, "  issue           open local tracker flows or proxy symphony issue")
 	fmt.Fprintln(w, "  panel           proxy symphony panel against this repo workflow")

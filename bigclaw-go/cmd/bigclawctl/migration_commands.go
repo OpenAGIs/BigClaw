@@ -13,6 +13,7 @@ import (
 
 	"bigclaw-go/internal/domain"
 	"bigclaw-go/internal/scheduler"
+	"bigclaw-go/internal/testharness"
 )
 
 type plannedIssue struct {
@@ -105,6 +106,67 @@ func runDevSmoke(args []string) error {
 	}
 	_, err := fmt.Fprintf(os.Stdout, "smoke_ok %s\n", decision.Assignment.Executor)
 	return err
+}
+
+func runPytestHarness(args []string) error {
+	flags := flag.NewFlagSet("pytest-harness", flag.ContinueOnError)
+	projectRoot := flags.String("project-root", "..", "project root containing tests/ and src/")
+	asJSON := flags.Bool("json", false, "json")
+	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl pytest-harness [flags]", args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			_, _ = os.Stdout.WriteString(helpText)
+			return nil
+		}
+		return err
+	}
+
+	resolvedProjectRoot := absPath(*projectRoot)
+	inventory, err := testharness.InventoryPytestAssetsAt(resolvedProjectRoot)
+	if err != nil {
+		return fmt.Errorf("inventory pytest harness assets: %w", err)
+	}
+	deleteStatus := inventory.ConftestDeletionStatus()
+
+	if *asJSON {
+		payload := map[string]any{
+			"status":                   "ok",
+			"project_root":             resolvedProjectRoot,
+			"inventory_summary":        inventory.Summary(),
+			"test_modules":             inventory.TestModules,
+			"bigclaw_imports":          inventory.BigclawImportModules,
+			"pytest_imports":           inventory.PytestImportModules,
+			"conftest_path":            inventory.ConftestPath,
+			"conftest_prepends_src":    inventory.ConftestPrependsSrc,
+			"conftest_imports_pytest":  inventory.ConftestImportsPytest,
+			"conftest_defines_fixture": inventory.ConftestDefinesFixture,
+			"conftest_defines_hook":    inventory.ConftestDefinesHook,
+			"conftest_delete_status":   structToMap(deleteStatus),
+		}
+		return emit(payload, true, 0)
+	}
+
+	_, err = fmt.Fprintf(
+		os.Stdout,
+		"project_root=%s\ninventory=%s\nconftest_path=%s\nconftest_prepends_src=%t\nconftest_imports_pytest=%t\nconftest_defines_fixture=%t\nconftest_defines_hook=%t\nconftest_delete_ready=%t\nconftest_delete_summary=%s\n",
+		resolvedProjectRoot,
+		inventory.Summary(),
+		inventory.ConftestPath,
+		inventory.ConftestPrependsSrc,
+		inventory.ConftestImportsPytest,
+		inventory.ConftestDefinesFixture,
+		inventory.ConftestDefinesHook,
+		deleteStatus.CanDelete,
+		deleteStatus.Summary,
+	)
+	if err != nil {
+		return err
+	}
+	for _, blocker := range deleteStatus.Blockers {
+		if _, err := fmt.Fprintf(os.Stdout, "blocker=%s\n", blocker); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func runCreateIssues(args []string) error {

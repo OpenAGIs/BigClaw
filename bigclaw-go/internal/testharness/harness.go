@@ -154,11 +154,18 @@ type ConftestDeletionStatus struct {
 
 func InventoryPytestAssets(tb testing.TB) PytestAssetInventory {
 	tb.Helper()
+	inventory, err := InventoryPytestAssetsAt(ProjectRoot(tb))
+	if err != nil {
+		tb.Fatal(err)
+	}
+	return inventory
+}
 
-	testsDir := JoinProjectRoot(tb, "tests")
+func InventoryPytestAssetsAt(projectRoot string) (PytestAssetInventory, error) {
+	testsDir := filepath.Join(projectRoot, "tests")
 	entries, err := os.ReadDir(testsDir)
 	if err != nil {
-		tb.Fatalf("read pytest asset directory %s: %v", testsDir, err)
+		return PytestAssetInventory{}, err
 	}
 
 	inventory := PytestAssetInventory{
@@ -172,17 +179,43 @@ func InventoryPytestAssets(tb testing.TB) PytestAssetInventory {
 		fullPath := filepath.Join(testsDir, name)
 		relPath := filepath.ToSlash(filepath.Join("tests", name))
 		if name == "conftest.py" {
-			inventory.ConftestPrependsSrc = fileContains(tb, fullPath, `sys.path.insert(0, str(SRC))`)
-			inventory.ConftestImportsPytest = fileContainsPytestUsage(tb, fullPath)
-			inventory.ConftestDefinesFixture = fileContains(tb, fullPath, "@pytest.fixture") || fileContains(tb, fullPath, "def fixture_")
-			inventory.ConftestDefinesHook = fileContains(tb, fullPath, "def pytest_")
+			if inventory.ConftestPrependsSrc, err = fileContainsAt(fullPath, `sys.path.insert(0, str(SRC))`); err != nil {
+				return PytestAssetInventory{}, err
+			}
+			if inventory.ConftestImportsPytest, err = fileContainsPytestUsageAt(fullPath); err != nil {
+				return PytestAssetInventory{}, err
+			}
+			hasPytestFixture, err := fileContainsAt(fullPath, "@pytest.fixture")
+			if err != nil {
+				return PytestAssetInventory{}, err
+			}
+			hasFixturePrefix, err := fileContainsAt(fullPath, "def fixture_")
+			if err != nil {
+				return PytestAssetInventory{}, err
+			}
+			inventory.ConftestDefinesFixture = hasPytestFixture || hasFixturePrefix
+			if inventory.ConftestDefinesHook, err = fileContainsAt(fullPath, "def pytest_"); err != nil {
+				return PytestAssetInventory{}, err
+			}
 			continue
 		}
 		inventory.TestModules = append(inventory.TestModules, relPath)
-		if fileContains(tb, fullPath, "from bigclaw") || fileContains(tb, fullPath, "import bigclaw") {
+		hasFromBigclaw, err := fileContainsAt(fullPath, "from bigclaw")
+		if err != nil {
+			return PytestAssetInventory{}, err
+		}
+		hasImportBigclaw, err := fileContainsAt(fullPath, "import bigclaw")
+		if err != nil {
+			return PytestAssetInventory{}, err
+		}
+		if hasFromBigclaw || hasImportBigclaw {
 			inventory.BigclawImportModules = append(inventory.BigclawImportModules, relPath)
 		}
-		if fileContainsPytestUsage(tb, fullPath) {
+		hasPytestUsage, err := fileContainsPytestUsageAt(fullPath)
+		if err != nil {
+			return PytestAssetInventory{}, err
+		}
+		if hasPytestUsage {
 			inventory.PytestImportModules = append(inventory.PytestImportModules, relPath)
 		}
 	}
@@ -190,34 +223,50 @@ func InventoryPytestAssets(tb testing.TB) PytestAssetInventory {
 	slices.Sort(inventory.TestModules)
 	slices.Sort(inventory.BigclawImportModules)
 	slices.Sort(inventory.PytestImportModules)
-	return inventory
+	return inventory, nil
 }
 
 func fileContains(tb testing.TB, path, needle string) bool {
 	tb.Helper()
+	contains, err := fileContainsAt(path, needle)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	return contains
+}
+
+func fileContainsAt(path, needle string) (bool, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		tb.Fatalf("open %s: %v", path, err)
+		return false, err
 	}
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		if strings.Contains(scanner.Text(), needle) {
-			return true
+			return true, nil
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		tb.Fatalf("scan %s: %v", path, err)
+		return false, err
 	}
-	return false
+	return false, nil
 }
 
 func fileContainsPytestUsage(tb testing.TB, path string) bool {
 	tb.Helper()
+	contains, err := fileContainsPytestUsageAt(path)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	return contains
+}
+
+func fileContainsPytestUsageAt(path string) (bool, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		tb.Fatalf("open %s: %v", path, err)
+		return false, err
 	}
 	defer file.Close()
 
@@ -225,13 +274,13 @@ func fileContainsPytestUsage(tb testing.TB, path string) bool {
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.Contains(line, "import pytest") || strings.Contains(line, "from pytest import") || strings.Contains(line, "pytest.") {
-			return true
+			return true, nil
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		tb.Fatalf("scan %s: %v", path, err)
+		return false, err
 	}
-	return false
+	return false, nil
 }
 
 func (i PytestAssetInventory) Summary() string {
