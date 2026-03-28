@@ -46,6 +46,7 @@ It provides:
 - `PythonExecutable(tb)` for the canonical resolved Python runtime path used by adjacent Go migration tests
 - `Chdir(tb, dir)` for temporary cwd changes with automatic cleanup
 - `InventoryPytestAssets(tb)` to machine-check the remaining pytest surface (`56` test modules, `47` `bigclaw` importers, `3` `pytest` importers) instead of leaving that inventory only in prose
+- `InventoryPytestAssets(tb)` now detects pytest usage via `import pytest`, `from pytest import ...`, and `pytest.` call sites so the `tests/conftest.py` deletion gate does not miss direct import forms
 - `PytestAssetInventory.ConftestDeletionBlockers()` to keep the current `tests/conftest.py` removal blockers machine-checked from Go rather than only documented in markdown
 - `PytestAssetInventory.CanDeleteConftest()` to expose the current deletion gate as a single Go-owned boolean for future migration slices
 - `PytestAssetInventory.ConftestDeletionSummary()` to provide one stable, report-ready line for the current delete-readiness state
@@ -299,6 +300,12 @@ Current machine-checked blockers in this issue are:
 - `47 legacy pytest modules still import bigclaw from src/`
 - `3 legacy pytest modules still import pytest directly`
 
+The `pytest` blocker count is computed from Go-owned inventory code and now covers all three currently supported detection forms:
+
+- `import pytest`
+- `from pytest import ...`
+- `pytest.<member>`
+
 Current machine-checked single-line summary is:
 
 - `conftest_delete_ready=false blockers=56 legacy pytest modules remain under tests/; 47 legacy pytest modules still import bigclaw from src/; 3 legacy pytest modules still import pytest directly`
@@ -311,13 +318,13 @@ Primary validation for this issue:
 
 ```bash
 cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && python3 -m pytest tests/test_mapping.py -q
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/refill ./internal/legacyshim ./cmd/bigclawctl
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness
 ```
 
 Observed results for this issue:
 
 - `python3 -m pytest tests/test_mapping.py -q` passed (`.. [100%]`) on the latest issue branch state, after the current `conftest` deletion-gate assertions landed, confirming the current `tests/conftest.py` import bootstrap still supports legacy `src/bigclaw` imports.
-- `go test ./internal/testharness ./internal/refill ./internal/legacyshim ./cmd/bigclawctl` passed on the latest issue branch state, including the Go-side Python import smoke for `bigclaw.mapping`, the Go-launched legacy pytest smoke, the checked-in shim `py_compile` pass, the `cmd/bigclawctl` runtime-probe adoption, and the machine-checked `conftest` deletion gate, confirming the replacement helpers and adjacent migrated test slices are stable.
+- `go test ./internal/testharness` passed on the latest issue branch state, including the Go-side Python import smoke for `bigclaw.mapping`, the Go-launched legacy pytest smoke, the machine-checked `conftest` deletion gate, and the direct-import detection coverage for `import pytest`, `from pytest import ...`, and `pytest.<member>`, confirming the replacement helpers and deletion-gate logic are stable.
 
 Deletion-readiness validation for the legacy Python harness, once migration is further along:
 

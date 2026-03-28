@@ -173,7 +173,7 @@ func InventoryPytestAssets(tb testing.TB) PytestAssetInventory {
 		relPath := filepath.ToSlash(filepath.Join("tests", name))
 		if name == "conftest.py" {
 			inventory.ConftestPrependsSrc = fileContains(tb, fullPath, `sys.path.insert(0, str(SRC))`)
-			inventory.ConftestImportsPytest = fileContains(tb, fullPath, "import pytest") || fileContains(tb, fullPath, "from pytest")
+			inventory.ConftestImportsPytest = fileContainsPytestUsage(tb, fullPath)
 			inventory.ConftestDefinesFixture = fileContains(tb, fullPath, "@pytest.fixture") || fileContains(tb, fullPath, "def fixture_")
 			inventory.ConftestDefinesHook = fileContains(tb, fullPath, "def pytest_")
 			continue
@@ -182,7 +182,7 @@ func InventoryPytestAssets(tb testing.TB) PytestAssetInventory {
 		if fileContains(tb, fullPath, "from bigclaw") || fileContains(tb, fullPath, "import bigclaw") {
 			inventory.BigclawImportModules = append(inventory.BigclawImportModules, relPath)
 		}
-		if fileContains(tb, fullPath, "import pytest") || fileContains(tb, fullPath, "pytest.") {
+		if fileContainsPytestUsage(tb, fullPath) {
 			inventory.PytestImportModules = append(inventory.PytestImportModules, relPath)
 		}
 	}
@@ -204,6 +204,27 @@ func fileContains(tb testing.TB, path, needle string) bool {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		if strings.Contains(scanner.Text(), needle) {
+			return true
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		tb.Fatalf("scan %s: %v", path, err)
+	}
+	return false
+}
+
+func fileContainsPytestUsage(tb testing.TB, path string) bool {
+	tb.Helper()
+	file, err := os.Open(path)
+	if err != nil {
+		tb.Fatalf("open %s: %v", path, err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, "import pytest") || strings.Contains(line, "from pytest import") || strings.Contains(line, "pytest.") {
 			return true
 		}
 	}

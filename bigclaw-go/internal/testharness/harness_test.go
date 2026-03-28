@@ -205,3 +205,45 @@ func TestPytestCommandDoesNotRequirePreexistingPythonPath(t *testing.T) {
 		t.Fatalf("expected pytest progress output, got %q", string(output))
 	}
 }
+
+func TestFileContainsPytestUsageRecognizesImportForms(t *testing.T) {
+	t.Run("import pytest", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "import_pytest.py")
+		if err := os.WriteFile(path, []byte("import pytest\n"), 0o644); err != nil {
+			t.Fatalf("write fixture: %v", err)
+		}
+		if !fileContainsPytestUsage(t, path) {
+			t.Fatal("expected import pytest to be detected")
+		}
+	})
+
+	t.Run("from pytest import raises", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "from_pytest_import.py")
+		if err := os.WriteFile(path, []byte("from pytest import raises\n"), 0o644); err != nil {
+			t.Fatalf("write fixture: %v", err)
+		}
+		if !fileContainsPytestUsage(t, path) {
+			t.Fatal("expected from pytest import usage to be detected")
+		}
+	})
+
+	t.Run("pytest attribute", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "pytest_attribute.py")
+		if err := os.WriteFile(path, []byte("with pytest.raises(ValueError):\n    pass\n"), 0o644); err != nil {
+			t.Fatalf("write fixture: %v", err)
+		}
+		if !fileContainsPytestUsage(t, path) {
+			t.Fatal("expected pytest attribute usage to be detected")
+		}
+	})
+
+	t.Run("no pytest usage", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "no_pytest.py")
+		if err := os.WriteFile(path, []byte("print('hello')\n"), 0o644); err != nil {
+			t.Fatalf("write fixture: %v", err)
+		}
+		if fileContainsPytestUsage(t, path) {
+			t.Fatal("expected file without pytest usage to remain undetected")
+		}
+	})
+}
