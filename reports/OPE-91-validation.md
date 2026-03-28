@@ -10,8 +10,8 @@ Added explicit billing and entitlement metadata to orchestration policy decision
 
 ## Validation Evidence
 
-- `python3 -m pytest tests/test_orchestration.py tests/test_reports.py`
-  - Result: `22 passed in 0.07s`
+- `cd bigclaw-go && go test ./internal/workflow ./internal/scheduler ./internal/worker`
+  - Result: `ok  	bigclaw-go/internal/workflow`; `ok  	bigclaw-go/internal/scheduler`; `ok  	bigclaw-go/internal/worker`
 - `python3 -m pytest`
   - Result: `71 passed in 0.12s`
 

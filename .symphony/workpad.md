@@ -24,7 +24,7 @@
 - `tests/test_orchestration.py`
   Python coverage focuses on cross-department planning, premium policy constraints, markdown rendering, and scheduler execution traces for orchestration policy/handoffs.
   Go replacement surface is `bigclaw-go/internal/workflow/orchestration.go`, `bigclaw-go/internal/workflow/orchestration_test.go`, `bigclaw-go/internal/scheduler/scheduler_test.go`, and `bigclaw-go/internal/worker/runtime_test.go`.
-  Migration status: this change adds direct Go coverage for the Python premium-blocking case and markdown rendering output; existing Go runtime/scheduler tests already cover orchestration payloads and handoff events.
+  Migration status: migrated to Go and Python test asset removed in this issue after replacement coverage landed in Go.
 
 ## First-pass Go Migration
 - Added `RenderOrchestrationPlan` in `bigclaw-go/internal/workflow/orchestration.go` to replace the Python markdown rendering helper.
@@ -33,9 +33,11 @@
 - Added `TestPremiumOrchestrationPolicyMatchesPythonMigrationCase` to lock the standard-tier blocked-department/cost semantics from `tests/test_orchestration.py`.
 - Added `TestRenderOrchestrationPlanListsHandoffsAndPolicy` to lock the migrated markdown output from `tests/test_orchestration.py`.
 - Added `TestSchedulerAssessmentCarriesStandardIncludedPolicyForBrowserOpsTask` to lock the orchestration-aware scheduler assessment semantics that Python previously asserted through scheduler execution.
+- Removed `tests/test_orchestration.py` after the Go replacement coverage and validation commands were in place.
+- Updated `src/bigclaw/planning.py`, `tests/test_planning.py`, and `reports/OPE-91-validation.md` to point orchestration validation at Go packages instead of the removed Python test file.
 
 ## Python Asset Deletion Conditions
-- Delete `tests/test_orchestration.py` after the Go workflow/scheduler/runtime suites remain green for the migrated planning, policy, render, and handoff scenarios covered here.
+- `tests/test_orchestration.py` removed after the Go workflow/scheduler/runtime suites remained green for the migrated planning, policy, render, and handoff scenarios covered here.
 - Delete `tests/test_scheduler.py` after the remaining Python-only budget degradation semantics are either intentionally retired or re-expressed against Go scheduler rules; current Go scheduler uses executor routing and budget rejection rather than the Python medium downgrade model.
 - Delete `tests/test_runtime.py` only after the repository no longer relies on Python `SandboxRouter`/`ToolRuntime` runtime abstractions, or after any still-required policy semantics are restated against Go executor/runtime events.
 
@@ -56,3 +58,7 @@
   Result: `ok  	bigclaw-go/internal/workflow	0.424s`
 - `go test ./internal/scheduler ./internal/worker`
   Result: `ok  	bigclaw-go/internal/scheduler	(cached)`; `ok  	bigclaw-go/internal/worker	(cached)`
+- `go test ./internal/workflow ./internal/scheduler ./internal/worker`
+  Result: `ok  	bigclaw-go/internal/workflow	(cached)`; `ok  	bigclaw-go/internal/scheduler	(cached)`; `ok  	bigclaw-go/internal/worker	(cached)`
+- `PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
+  Result: `.............. [100%]`

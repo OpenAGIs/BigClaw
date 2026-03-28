@@ -6,7 +6,7 @@ This report tracks the Go-only migration status for the Python test assets:
 
 - `tests/test_runtime.py`
 - `tests/test_scheduler.py`
-- `tests/test_orchestration.py`
+- `tests/test_orchestration.py` (removed in this issue after Go migration)
 
 Issue: `BIG-GO-925`
 
@@ -40,7 +40,7 @@ Issue: `BIG-GO-925`
 
 ### Orchestration
 
-- Python asset: `tests/test_orchestration.py`
+- Python asset: `tests/test_orchestration.py` (removed)
 - Legacy Python surface:
   - cross-department planning
   - premium-policy gating
@@ -56,11 +56,11 @@ Issue: `BIG-GO-925`
 
 | Python test | Go replacement | Status |
 | --- | --- | --- |
-| `test_cross_department_orchestrator_routes_security_data_and_customer_work` | `TestCrossDepartmentOrchestratorMatchesPythonMigrationCase` and `TestCrossDepartmentOrchestratorPlansHandoffs` | migrated |
-| `test_standard_policy_limits_advanced_cross_department_routing` | `TestPremiumOrchestrationPolicyMatchesPythonMigrationCase` and `TestPremiumOrchestrationPolicyConstrainsStandardTier` | migrated |
-| `test_render_orchestration_plan_lists_handoffs_and_policy` | `RenderOrchestrationPlan` and `TestRenderOrchestrationPlanListsHandoffsAndPolicy` | migrated |
-| `test_scheduler_execution_records_orchestration_plan_and_policy` | `TestSchedulerAssessmentCarriesStandardIncludedPolicyForBrowserOpsTask` plus runtime event coverage in `TestRuntimePublishesOrchestrationAssessmentOnRoutedEvent` | migrated |
-| `test_scheduler_creates_handoff_for_policy_or_approval_blockers` | `TestSchedulerAssessmentBuildsUpgradeHandoffForStandardTier`, `TestSchedulerAssessmentBuildsSecurityHandoffForRejectedDecision`, `TestRuntimePublishesRejectedDecisionHandoffBeforeRetry` | migrated |
+| `test_cross_department_orchestrator_routes_security_data_and_customer_work` | `TestCrossDepartmentOrchestratorMatchesPythonMigrationCase` and `TestCrossDepartmentOrchestratorPlansHandoffs` | migrated, Python asset removed |
+| `test_standard_policy_limits_advanced_cross_department_routing` | `TestPremiumOrchestrationPolicyMatchesPythonMigrationCase` and `TestPremiumOrchestrationPolicyConstrainsStandardTier` | migrated, Python asset removed |
+| `test_render_orchestration_plan_lists_handoffs_and_policy` | `RenderOrchestrationPlan` and `TestRenderOrchestrationPlanListsHandoffsAndPolicy` | migrated, Python asset removed |
+| `test_scheduler_execution_records_orchestration_plan_and_policy` | `TestSchedulerAssessmentCarriesStandardIncludedPolicyForBrowserOpsTask` plus runtime event coverage in `TestRuntimePublishesOrchestrationAssessmentOnRoutedEvent` | migrated, Python asset removed |
+| `test_scheduler_creates_handoff_for_policy_or_approval_blockers` | `TestSchedulerAssessmentBuildsUpgradeHandoffForStandardTier`, `TestSchedulerAssessmentBuildsSecurityHandoffForRejectedDecision`, `TestRuntimePublishesRejectedDecisionHandoffBeforeRetry` | migrated, Python asset removed |
 | `test_scheduler_high_risk_requires_approval` | `TestSchedulerRoutesHighRiskToKubernetes` with Go risk/executor semantics | migrated with semantic adaptation |
 | `test_scheduler_browser_task_routes_browser` | `TestSchedulerRoutesBrowserToKubernetes` with Go executor routing semantics | migrated with semantic adaptation |
 | `test_scheduler_over_budget_degrades_browser_task_to_docker` | no 1:1 replacement; Go rejects on budget rather than degrading executor | intentional semantic divergence |
@@ -79,7 +79,7 @@ Issue: `BIG-GO-925`
 
 ## Deletion Conditions
 
-- Delete `tests/test_orchestration.py` after the Go workflow, scheduler, and worker suites remain green for the migrated plan/policy/render/handoff cases.
+- `tests/test_orchestration.py` has been removed because the Go workflow, scheduler, and worker suites cover the migrated plan, policy, render, and handoff cases.
 - Delete `tests/test_scheduler.py` after the team accepts the Go budget semantics as authoritative or adds a Go downgrade policy intentionally.
 - Delete `tests/test_runtime.py` after Python-only sandbox/tool-policy abstractions are fully retired from the repository surface.
 
