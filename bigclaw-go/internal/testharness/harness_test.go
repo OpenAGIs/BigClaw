@@ -133,6 +133,19 @@ func TestPytestCommandRunsLegacyPytestWithHarnessBootstrap(t *testing.T) {
 	}
 }
 
+func TestPytestCommandUsesPythonModuleInvocation(t *testing.T) {
+	pythonPath := RequireExecutable(t, "python3")
+	cmd := PytestCommand(t, "tests/test_mapping.py", "-q")
+
+	if cmd.Path != pythonPath {
+		t.Fatalf("unexpected pytest executable path: got=%q want=%q", cmd.Path, pythonPath)
+	}
+	wantArgs := []string{pythonPath, "-m", "pytest", "tests/test_mapping.py", "-q"}
+	if !reflect.DeepEqual(cmd.Args, wantArgs) {
+		t.Fatalf("unexpected pytest command args: got=%v want=%v", cmd.Args, wantArgs)
+	}
+}
+
 func TestPytestCommandDoesNotRequirePreexistingPythonPath(t *testing.T) {
 	RequireExecutable(t, "python3")
 	t.Setenv("PYTHONPATH", "")
