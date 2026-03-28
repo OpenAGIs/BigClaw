@@ -149,7 +149,7 @@ Current repo progress:
 - `bigclaw-go/internal/contract/execution.go` now owns the Go execution contract, permission matrix, and operations API contract migrated from `src/bigclaw/execution_contract.py`
 - `bigclaw-go/internal/observability/audit_spec.go` now owns the canonical P0 audit event spec registry migrated from `src/bigclaw/audit_events.py`
 - targeted Go tests for governance / contract / observability now pass, and `cd BigClaw/bigclaw-go && go test ./...` passed after this tranche
-- Python source files remain in place as migration references; BigClaw is still not 100% Go
+- `BIG-GO-924` removed the legacy Python governance implementation modules after the Go governance slice and remaining planning consumer were migrated off them
 
 Dependencies:
 - depends on `BIG-GOM-301`
@@ -273,7 +273,8 @@ Dependencies:
 
 Current repo progress:
 - `bigclaw-go/internal/repo/governance.go` now ports `src/bigclaw/repo_governance.py` into a Go-owned repo permission matrix and audit-field contract
-- the remaining repo-collaboration Python surfaces still need Go owners across repo board, registry, gateway, plane, links, commits, and triage packages
+- `BIG-GO-924` removed `src/bigclaw/repo_board.py` and `src/bigclaw/repo_governance.py` after landing Go replacements in `bigclaw-go/internal/repo/*` and `bigclaw-go/internal/collaboration/*`
+- the remaining repo-collaboration Python surfaces still need Go owners across registry, gateway, plane, links, commits, and triage packages
 
 Milestone:
 - `Governance/Reporting Surface Migration`
@@ -392,7 +393,7 @@ tracker work.
 
 Python source:
 - `src/bigclaw/risk.py`
-- remaining active consumers of `src/bigclaw/governance.py`
+- governance Python module removed; remaining parity work stays with `src/bigclaw/risk.py`, `src/bigclaw/execution_contract.py`, and `src/bigclaw/audit_events.py`
 - remaining active consumers of `src/bigclaw/execution_contract.py`
 - remaining active consumers of `src/bigclaw/audit_events.py`
 
@@ -450,10 +451,8 @@ Historical planned state:
 
 Python source:
 - `src/bigclaw/collaboration.py`
-- `src/bigclaw/repo_board.py`
 - `src/bigclaw/repo_commits.py`
 - `src/bigclaw/repo_gateway.py`
-- `src/bigclaw/repo_governance.py`
 - `src/bigclaw/repo_links.py`
 - `src/bigclaw/repo_plane.py`
 - `src/bigclaw/repo_registry.py`
