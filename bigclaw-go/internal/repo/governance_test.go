@@ -2,6 +2,7 @@ package repo
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -41,5 +42,34 @@ func TestRequiredAuditFieldsByAction(t *testing.T) {
 	}
 	if got := RequiredAuditFields("repo.unknown"); !reflect.DeepEqual(got, []string{"task_id", "run_id", "repo_space_id", "actor"}) {
 		t.Fatalf("unexpected default audit fields: %+v", got)
+	}
+}
+
+func TestGovernanceEnforcerBlocksQuotaAndSidecarFailures(t *testing.T) {
+	enforcer := NewGovernanceEnforcer(GovernancePolicy{
+		MaxBundleBytes:  10,
+		MaxPushPerHour:  1,
+		MaxDiffPerHour:  1,
+		SidecarRequired: true,
+	})
+
+	ok := enforcer.Evaluate("push", 8, true)
+	if !ok.Allowed {
+		t.Fatalf("expected first push to be allowed, got %+v", ok)
+	}
+
+	tooLarge := enforcer.Evaluate("push", 12, true)
+	if tooLarge.Allowed || tooLarge.Mode != "blocked" {
+		t.Fatalf("expected oversize push to be blocked, got %+v", tooLarge)
+	}
+
+	overQuota := enforcer.Evaluate("push", 8, true)
+	if overQuota.Allowed || overQuota.Mode != "blocked" || !strings.Contains(overQuota.Reason, "quota") {
+		t.Fatalf("expected push quota block, got %+v", overQuota)
+	}
+
+	degraded := enforcer.Evaluate("diff", 0, false)
+	if degraded.Allowed || degraded.Mode != "degraded" {
+		t.Fatalf("expected degraded decision when sidecar is unavailable, got %+v", degraded)
 	}
 }

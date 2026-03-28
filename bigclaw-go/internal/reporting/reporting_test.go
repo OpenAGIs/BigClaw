@@ -492,20 +492,23 @@ func TestBuildRenderAndWriteQueueControlCenterBundle(t *testing.T) {
 	if len(center.BlockedTasks) != 1 || center.BlockedTasks[0] != "task-blocked" {
 		t.Fatalf("unexpected blocked tasks: %+v", center.BlockedTasks)
 	}
-	if strings.Join(center.QueuedTasks, ",") != "task-queued,task-retrying" {
+	if strings.Join(center.QueuedTasks, ",") != "task-blocked,task-queued,task-retrying" {
 		t.Fatalf("unexpected queued tasks: %+v", center.QueuedTasks)
 	}
-	if center.QueuedByPriority["P0"] != 1 || center.QueuedByPriority["P2"] != 1 {
+	if center.QueuedByPriority["P0"] != 1 || center.QueuedByPriority["P1"] != 1 || center.QueuedByPriority["P2"] != 1 {
 		t.Fatalf("unexpected queued by priority: %+v", center.QueuedByPriority)
 	}
-	if center.QueuedByRisk["high"] != 1 || center.QueuedByRisk["low"] != 1 {
+	if center.QueuedByRisk["high"] != 1 || center.QueuedByRisk["medium"] != 1 || center.QueuedByRisk["low"] != 1 {
 		t.Fatalf("unexpected queued by risk: %+v", center.QueuedByRisk)
 	}
-	if center.ExecutionMedia["ray"] != 1 || center.ExecutionMedia["kubernetes"] != 1 {
+	if center.ExecutionMedia["local"] != 1 || center.ExecutionMedia["ray"] != 1 || center.ExecutionMedia["kubernetes"] != 1 {
 		t.Fatalf("unexpected execution media: %+v", center.ExecutionMedia)
 	}
-	if len(center.Actions["task-queued"]) == 0 || len(center.Actions["task-retrying"]) == 0 {
+	if len(center.Actions["task-queued"]) == 0 || len(center.Actions["task-retrying"]) == 0 || len(center.Actions["task-blocked"]) == 0 {
 		t.Fatalf("expected actions for queued tasks, got %+v", center.Actions)
+	}
+	if got := len(center.Actions["task-blocked"]); got != 8 {
+		t.Fatalf("expected 8 queue actions for blocked task, got %d", got)
 	}
 
 	rendered := RenderQueueControlCenter(center)
@@ -516,6 +519,7 @@ func TestBuildRenderAndWriteQueueControlCenterBundle(t *testing.T) {
 		"- ray: 1",
 		"- task-blocked",
 		"Retry [retry] state=disabled target=task-queued",
+		"Reassign [reassign] state=enabled target=task-blocked",
 	} {
 		if !strings.Contains(rendered, fragment) {
 			t.Fatalf("expected %q in rendered queue center, got %s", fragment, rendered)
@@ -536,6 +540,30 @@ func TestBuildRenderAndWriteQueueControlCenterBundle(t *testing.T) {
 	}
 	if !strings.Contains(string(body), "## Actions") || !strings.Contains(string(body), "task-retrying") {
 		t.Fatalf("unexpected queue control center content: %s", string(body))
+	}
+}
+
+func TestRenderQueueControlCenterSharedViewEmptyState(t *testing.T) {
+	resultCount := 0
+	rendered := RenderQueueControlCenter(QueueControlCenter{
+		QueuedByPriority: map[string]int{"P0": 0, "P1": 0, "P2": 0},
+		QueuedByRisk:     map[string]int{"low": 0, "medium": 0, "high": 0},
+	}, SharedViewContext{
+		ResultCount:  &resultCount,
+		EmptyMessage: "No queued work for the selected team.",
+		Filters: []SharedViewFilter{
+			{Label: "Team", Value: "operations"},
+		},
+	})
+	for _, fragment := range []string{
+		"## View State",
+		"- State: empty",
+		"- Summary: No queued work for the selected team.",
+		"- Team: operations",
+	} {
+		if !strings.Contains(rendered, fragment) {
+			t.Fatalf("expected %q in rendered view state, got %s", fragment, rendered)
+		}
 	}
 }
 

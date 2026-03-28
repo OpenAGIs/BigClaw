@@ -1,6 +1,11 @@
 package repo
 
-import "bigclaw-go/internal/contract"
+import (
+	"fmt"
+	"strings"
+
+	"bigclaw-go/internal/contract"
+)
 
 var actionPermissions = []contract.ExecutionPermission{
 	{Name: "repo.push", Resource: "repo", Actions: []string{"push"}, Scopes: []string{"project"}},
@@ -47,15 +52,68 @@ type PermissionContract struct {
 	matrix contract.ExecutionPermissionMatrix
 }
 
+type GovernancePolicy struct {
+	MaxBundleBytes  int64 `json:"max_bundle_bytes,omitempty"`
+	MaxPushPerHour  int   `json:"max_push_per_hour,omitempty"`
+	MaxDiffPerHour  int   `json:"max_diff_per_hour,omitempty"`
+	SidecarRequired bool  `json:"sidecar_required,omitempty"`
+}
+
+type GovernanceDecision struct {
+	Allowed bool   `json:"allowed"`
+	Mode    string `json:"mode,omitempty"`
+	Reason  string `json:"reason,omitempty"`
+}
+
+type GovernanceEnforcer struct {
+	policy GovernancePolicy
+	counts map[string]int
+}
+
 func NewPermissionContract() PermissionContract {
 	return PermissionContract{
 		matrix: contract.NewExecutionPermissionMatrix(actionPermissions, rolePolicies),
 	}
 }
 
+func NewGovernanceEnforcer(policy GovernancePolicy) *GovernanceEnforcer {
+	return &GovernanceEnforcer{
+		policy: policy,
+		counts: make(map[string]int),
+	}
+}
+
 func (c PermissionContract) Check(actionPermission string, actorRoles []string) bool {
 	result := c.matrix.EvaluateRoles([]string{actionPermission}, actorRoles)
 	return result.Allowed
+}
+
+func (e *GovernanceEnforcer) Evaluate(action string, bundleBytes int64, sidecarAvailable bool) GovernanceDecision {
+	action = strings.TrimSpace(strings.ToLower(action))
+	if e.policy.SidecarRequired && !sidecarAvailable {
+		return GovernanceDecision{
+			Allowed: false,
+			Mode:    "degraded",
+			Reason:  "repo governance sidecar is required but unavailable",
+		}
+	}
+	if e.policy.MaxBundleBytes > 0 && bundleBytes > e.policy.MaxBundleBytes {
+		return GovernanceDecision{
+			Allowed: false,
+			Mode:    "blocked",
+			Reason:  fmt.Sprintf("bundle exceeds max bundle bytes quota (%d>%d)", bundleBytes, e.policy.MaxBundleBytes),
+		}
+	}
+	limit := e.quotaForAction(action)
+	if limit > 0 && e.counts[action] >= limit {
+		return GovernanceDecision{
+			Allowed: false,
+			Mode:    "blocked",
+			Reason:  fmt.Sprintf("%s quota exceeded for the current hour", action),
+		}
+	}
+	e.counts[action]++
+	return GovernanceDecision{Allowed: true, Mode: "allowed"}
 }
 
 func RequiredAuditFields(action string) []string {
@@ -81,6 +139,17 @@ func MissingAuditFields(action string, payload map[string]any) []string {
 		}
 	}
 	return missing
+}
+
+func (e *GovernanceEnforcer) quotaForAction(action string) int {
+	switch action {
+	case "push":
+		return e.policy.MaxPushPerHour
+	case "diff":
+		return e.policy.MaxDiffPerHour
+	default:
+		return 0
+	}
 }
 
 func permissionNames(permissions []contract.ExecutionPermission) []string {
