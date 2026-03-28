@@ -2,9 +2,9 @@
 
 ## Plan
 
-1. Remove `tests/test_control_center.py`, which is already covered by Go queue/reporting tests.
+1. Replace `tests/test_validation_bundle_continuation_policy_gate.py` with Go-owned regression coverage that exercises the same script behavior, then remove the pytest file.
 2. Refresh pytest-harness inventory counts, snapshot artifact, and migration report so the `conftest` deletion gate reflects the reduced legacy surface again.
-3. Run targeted Python/Go validation for the control-center/harness/report gates, then commit and push.
+3. Run targeted Python/Go validation for the continuation-policy/harness/report gates, then commit and push.
 
 ## Acceptance
 
@@ -23,7 +23,7 @@
 ## Validation
 
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && PYTHONPATH=src python3 -c "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0"`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/bootstrap ./internal/testharness ./cmd/bigclawctl ./internal/regression`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/regression`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && git status --short`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && git add . && git commit -m "..." && git push origin BIG-GO-923-go-test-harness`
@@ -32,13 +32,13 @@
 
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && PYTHONPATH=src python3 -c "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0"`
   Result: passed (exit 0)
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/queue ./internal/reporting ./internal/api ./internal/testharness ./cmd/bigclawctl ./internal/regression`
-  Result: passed (`ok  	bigclaw-go/internal/queue	(cached)`; `ok  	bigclaw-go/internal/reporting	(cached)`; `ok  	bigclaw-go/internal/api	2.865s`; `ok  	bigclaw-go/internal/testharness	1.277s`; `ok  	bigclaw-go/cmd/bigclawctl	3.559s`; `ok  	bigclaw-go/internal/regression	2.628s`)
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/regression`
+  Result: passed (`ok  	bigclaw-go/internal/testharness	0.532s`; `ok  	bigclaw-go/internal/regression	0.278s`)
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
-  Result: passed (`status=ok`; snapshot uses portable repo-relative paths with `project_root=.` and `conftest_path=tests/conftest.py`; `inventory_summary=tests=37 bigclaw_imports=28 pytest_imports=2`; `conftest_delete_status.can_delete=false`)
+  Result: passed (`status=ok`; `inventory_summary=tests=36 bigclaw_imports=28 pytest_imports=2`; `conftest_delete_status.summary=conftest_delete_ready=false blockers=36 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly`)
 
 ## Current Status
 
-- `tests/conftest.py` delete-readiness: `conftest_delete_ready=false blockers=37 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly`
+- `tests/conftest.py` delete-readiness: `conftest_delete_ready=false blockers=36 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly`
 - Structured delete-readiness status:
-  `{"can_delete":false,"legacy_test_modules":37,"bigclaw_import_modules":28,"pytest_import_modules":2}`
+  `{"can_delete":false,"legacy_test_modules":36,"bigclaw_import_modules":28,"pytest_import_modules":2}`
