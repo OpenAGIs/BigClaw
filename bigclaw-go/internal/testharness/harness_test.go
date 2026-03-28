@@ -87,7 +87,7 @@ func TestInventoryPytestAssets(t *testing.T) {
 	if len(inventory.PytestCommandRefFiles) != 0 {
 		t.Fatalf("expected no active pytest command ref files, got=%v", inventory.PytestCommandRefFiles)
 	}
-	if got := inventory.Summary(); got != "tests=1 bigclaw_imports=1 pytest_imports=0 pytest_command_refs=0" {
+	if got := inventory.Summary(); got != "tests=0 bigclaw_imports=0 pytest_imports=0 pytest_command_refs=0" {
 		t.Fatalf("unexpected inventory summary: %s", got)
 	}
 
@@ -109,26 +109,26 @@ func TestInventoryPytestAssets(t *testing.T) {
 		CanDelete:            true,
 		Summary:              wantSummary,
 		Blockers:             []string{},
-		LegacyTestModules:    1,
-		BigclawImportModules: 1,
+		LegacyTestModules:    0,
+		BigclawImportModules: 0,
 		PytestImportModules:  0,
 	}
 	if got := inventory.ConftestDeletionStatus(); !reflect.DeepEqual(got, wantStatus) {
 		t.Fatalf("unexpected conftest deletion status: got=%+v want=%+v", got, wantStatus)
 	}
-	wantLegacySummary := "legacy_pytest_delete_ready=false blockers=1 legacy pytest modules remain under tests/; 1 legacy pytest modules still import bigclaw from src/"
+	wantLegacySummary := "legacy_pytest_delete_ready=true blockers=none"
 	if got := inventory.LegacyPytestRetirementSummary(); got != wantLegacySummary {
 		t.Fatalf("unexpected legacy pytest deletion summary: got=%q want=%q", got, wantLegacySummary)
 	}
-	if inventory.CanDeleteLegacyPytestAssets() {
-		t.Fatal("expected current inventory to keep legacy pytest asset deletion gate closed")
+	if !inventory.CanDeleteLegacyPytestAssets() {
+		t.Fatal("expected current inventory to allow legacy pytest asset deletion")
 	}
 	wantLegacyStatus := LegacyPytestRetirementStatus{
-		CanDelete:            false,
+		CanDelete:            true,
 		Summary:              wantLegacySummary,
-		Blockers:             []string{"1 legacy pytest modules remain under tests/", "1 legacy pytest modules still import bigclaw from src/"},
-		LegacyTestModules:    1,
-		BigclawImportModules: 1,
+		Blockers:             []string{},
+		LegacyTestModules:    0,
+		BigclawImportModules: 0,
 		PytestImportModules:  0,
 		PytestCommandRefs:    0,
 	}
@@ -174,8 +174,8 @@ func TestBuildPytestHarnessStatusReportNormalizesPaths(t *testing.T) {
 	if report.ConftestUsesPlugins {
 		t.Fatal("expected report to keep pytest_plugins flag false for current conftest")
 	}
-	if report.LegacyPytestDeleteStatus.CanDelete {
-		t.Fatalf("expected report to keep legacy pytest deletion gate closed, got %+v", report.LegacyPytestDeleteStatus)
+	if !report.LegacyPytestDeleteStatus.CanDelete {
+		t.Fatalf("expected report to open the legacy pytest deletion gate, got %+v", report.LegacyPytestDeleteStatus)
 	}
 }
 

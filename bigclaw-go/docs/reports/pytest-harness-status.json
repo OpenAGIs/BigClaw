@@ -1,14 +1,12 @@
 {
-  "bigclaw_imports": [
-    "tests/test_ui_review.py"
-  ],
+  "bigclaw_imports": null,
   "conftest_defines_fixture": false,
   "conftest_defines_hook": false,
   "conftest_delete_status": {
-    "bigclaw_import_modules": 1,
+    "bigclaw_import_modules": 0,
     "blockers": [],
     "can_delete": true,
-    "legacy_test_modules": 1,
+    "legacy_test_modules": 0,
     "pytest_import_modules": 0,
     "summary": "conftest_delete_ready=true blockers=none"
   },
@@ -17,18 +15,15 @@
   "conftest_path": "tests/conftest.py",
   "conftest_prepends_src": false,
   "conftest_uses_pytest_plugins": false,
-  "inventory_summary": "tests=1 bigclaw_imports=1 pytest_imports=0 pytest_command_refs=0",
+  "inventory_summary": "tests=0 bigclaw_imports=0 pytest_imports=0 pytest_command_refs=0",
   "legacy_pytest_delete_status": {
-    "bigclaw_import_modules": 1,
-    "blockers": [
-      "1 legacy pytest modules remain under tests/",
-      "1 legacy pytest modules still import bigclaw from src/"
-    ],
-    "can_delete": false,
-    "legacy_test_modules": 1,
+    "bigclaw_import_modules": 0,
+    "blockers": [],
+    "can_delete": true,
+    "legacy_test_modules": 0,
     "pytest_command_refs": 0,
     "pytest_import_modules": 0,
-    "summary": "legacy_pytest_delete_ready=false blockers=1 legacy pytest modules remain under tests/; 1 legacy pytest modules still import bigclaw from src/"
+    "summary": "legacy_pytest_delete_ready=true blockers=none"
   },
   "project_root": ".",
   "pyproject_declares_pytest": false,
@@ -38,7 +33,5 @@
   "pytest_command_ref_files": [],
   "pytest_imports": [],
   "status": "ok",
-  "test_modules": [
-    "tests/test_ui_review.py"
-  ]
+  "test_modules": null
 }

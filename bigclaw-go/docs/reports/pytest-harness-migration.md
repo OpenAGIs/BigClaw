@@ -20,8 +20,8 @@ The Python-side harness surface in scope today is intentionally small:
 
 Observed inventory at the current branch state:
 
-- `1` Python test module under `tests/`
-- `1` module directly importing `bigclaw...`
+- `0` Python test modules remain under `tests/`
+- `0` modules under `tests/` now import `bigclaw...`
 - `0` modules now import `pytest` directly within `tests/`
 - `pyproject.toml` no longer declares `pytest` in the default `dev` extra
 - `pyproject.toml` no longer defines `[tool.pytest.ini_options]`; legacy Python tests are now treated as migration-only manual lanes rather than the default repo test baseline
@@ -50,7 +50,7 @@ It provides:
 - `RequireExecutable(tb, name)` for shared skip-aware runtime probing when legacy Python tooling is still part of the migration boundary
 - `PythonExecutable(tb)` for the canonical resolved Python runtime path used by adjacent Go migration tests
 - `Chdir(tb, dir)` for temporary cwd changes with automatic cleanup
-- `InventoryPytestAssets(tb)` to machine-check the remaining pytest surface (`1` test module, `1` `bigclaw` importer, `0` direct `pytest` importers) instead of leaving that inventory only in prose
+- `InventoryPytestAssets(tb)` to machine-check the remaining pytest surface (`0` test modules, `0` `bigclaw` importers, `0` direct `pytest` importers) instead of leaving that inventory only in prose
 - `InventoryPytestAssets(tb)` now walks `tests/` recursively, so legacy pytest files moved into nested subdirectories cannot silently escape the Go-owned inventory gate
 - `InventoryPytestAssets(tb)` now detects pytest usage via `import pytest`, `from pytest import ...`, and `pytest.` call sites so the `tests/conftest.py` deletion gate does not miss direct import forms
 - `InventoryPytestAssets(tb)` now also machine-checks whether `pyproject.toml` still declares pytest as a dev dependency or still defines `[tool.pytest.ini_options]`, so the remaining non-Go pytest infrastructure is tracked in the same report as `tests/conftest.py`
@@ -75,6 +75,7 @@ First-batch adoption landed here:
 - `cmd/bigclawctl/main_test.go` and `internal/refill/local_store_test.go` now use `testharness.Chdir(...)` instead of bespoke cwd save/restore code
 - `cmd/bigclawctl/main_test.go` now also resolves the Python runtime via `testharness.RequireExecutable(...)` instead of hard-coding `python3`
 - `cmd/bigclawctl/main_test.go` and `internal/legacyshim/compilecheck_test.go` now use `testharness.PythonExecutable(...)` as the shared Python runtime entry point
+- `internal/uireview/python_surface_test.go` now runs the legacy `src/bigclaw/ui_review.py` surface through the Go-owned harness, replacing the last remaining top-level pytest module with Go-managed regression coverage
 
 First migrated Python test slice now covered explicitly in Go:
 
@@ -498,8 +499,7 @@ Still partially migrated for broader model-runtime semantics:
 3. Keep Python tests runnable only as long as there are remaining `src/bigclaw` behaviors without Go coverage.
 
 Recommended next migration slice:
-
-- `tests/test_ui_review.py` into a Go-owned UI review/report surface
+- remove residual Python runtime dependencies only after equivalent `src/bigclaw/*` behavior is either ported to Go or explicitly retained as migration-only runtime surface with Go-owned regression coverage
 
 ## Deletion gate for legacy Python harness
 
@@ -514,8 +514,7 @@ Recommended next migration slice:
 
 Current machine-checked blockers in this issue are:
 
-- `1 legacy pytest modules remain under tests/`
-- `1 legacy pytest modules still import bigclaw from src/`
+- none
 
 The `pytest` blocker count is computed from Go-owned inventory code and now covers all three currently supported detection forms:
 
@@ -526,7 +525,7 @@ The `pytest` blocker count is computed from Go-owned inventory code and now cove
 Current machine-checked single-line summary is:
 
 - `conftest_delete_ready=true blockers=none`
-- `legacy_pytest_delete_ready=false blockers=1 legacy pytest modules remain under tests/; 1 legacy pytest modules still import bigclaw from src/`
+- `legacy_pytest_delete_ready=true blockers=none`
 
 Current Go-owned command surface for this state:
 
