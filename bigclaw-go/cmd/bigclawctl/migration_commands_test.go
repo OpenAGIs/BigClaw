@@ -152,8 +152,8 @@ func TestRunPytestHarnessJSONOutput(t *testing.T) {
 	if !ok || len(commandRefs) != 0 {
 		t.Fatalf("expected 0 pytest command ref files, got %+v", payload["pytest_command_ref_files"])
 	}
-	if payload["conftest_exists"] != true {
-		t.Fatalf("expected conftest_exists=true, got %+v", payload)
+	if payload["conftest_exists"] != false {
+		t.Fatalf("expected conftest_exists=false, got %+v", payload)
 	}
 	if payload["conftest_path"] != "tests/conftest.py" {
 		t.Fatalf("unexpected conftest_path: %+v", payload)
@@ -165,13 +165,13 @@ func TestRunPytestHarnessJSONOutput(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected conftest_delete_status object, got %+v", payload["conftest_delete_status"])
 	}
-	if deleteStatus["can_delete"] != false {
-		t.Fatalf("expected can_delete=false, got %+v", deleteStatus)
+	if deleteStatus["can_delete"] != true {
+		t.Fatalf("expected can_delete=true, got %+v", deleteStatus)
 	}
 	if deleteStatus["legacy_test_modules"] != float64(28) || deleteStatus["bigclaw_import_modules"] != float64(28) || deleteStatus["pytest_import_modules"] != float64(0) {
 		t.Fatalf("unexpected delete status counts: %+v", deleteStatus)
 	}
-	if deleteStatus["summary"] != "conftest_delete_ready=false blockers=28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/" {
+	if deleteStatus["summary"] != "conftest_delete_ready=true blockers=none" {
 		t.Fatalf("unexpected delete status summary: %+v", deleteStatus)
 	}
 	if payload["conftest_uses_pytest_plugins"] != false {
@@ -202,7 +202,7 @@ func TestRunPytestHarnessWritesReportFile(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected conftest_delete_status object, got %+v", payload["conftest_delete_status"])
 	}
-	if deleteStatus["summary"] != "conftest_delete_ready=false blockers=28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/" {
+	if deleteStatus["summary"] != "conftest_delete_ready=true blockers=none" {
 		t.Fatalf("unexpected delete status summary in report file: %+v", deleteStatus)
 	}
 }

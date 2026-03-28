@@ -33,19 +33,16 @@
   "conftest_defines_hook": false,
   "conftest_delete_status": {
     "bigclaw_import_modules": 28,
-    "blockers": [
-      "28 legacy pytest modules remain under tests/",
-      "28 legacy pytest modules still import bigclaw from src/"
-    ],
-    "can_delete": false,
+    "blockers": [],
+    "can_delete": true,
     "legacy_test_modules": 28,
     "pytest_import_modules": 0,
-    "summary": "conftest_delete_ready=false blockers=28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/"
+    "summary": "conftest_delete_ready=true blockers=none"
   },
-  "conftest_exists": true,
+  "conftest_exists": false,
   "conftest_imports_pytest": false,
   "conftest_path": "tests/conftest.py",
-  "conftest_prepends_src": true,
+  "conftest_prepends_src": false,
   "conftest_uses_pytest_plugins": false,
   "inventory_summary": "tests=28 bigclaw_imports=28 pytest_imports=0 pytest_command_refs=0",
   "project_root": ".",

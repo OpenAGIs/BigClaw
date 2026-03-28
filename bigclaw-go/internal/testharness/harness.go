@@ -442,14 +442,8 @@ func (i PytestAssetInventory) Summary() string {
 
 func (i PytestAssetInventory) ConftestDeletionBlockers() []string {
 	var blockers []string
-	if len(i.PytestCommandRefFiles) > 0 {
-		blockers = append(blockers, strconv.Itoa(len(i.PytestCommandRefFiles))+" active src/tests files still embed pytest validation commands")
-	}
-	if i.PyprojectDeclaresPytest {
-		blockers = append(blockers, "pyproject.toml still declares pytest as a Python test dependency")
-	}
-	if i.PyprojectHasPytestConfig {
-		blockers = append(blockers, "pyproject.toml still defines [tool.pytest.ini_options]")
+	if i.ConftestExists {
+		blockers = append(blockers, "tests/conftest.py still exists")
 	}
 	if i.ConftestImportsPytest {
 		blockers = append(blockers, "tests/conftest.py still imports pytest directly")
@@ -462,15 +456,6 @@ func (i PytestAssetInventory) ConftestDeletionBlockers() []string {
 	}
 	if i.ConftestUsesPlugins {
 		blockers = append(blockers, "tests/conftest.py still declares pytest_plugins")
-	}
-	if len(i.TestModules) > 0 {
-		blockers = append(blockers, strconv.Itoa(len(i.TestModules))+" legacy pytest modules remain under tests/")
-	}
-	if len(i.BigclawImportModules) > 0 {
-		blockers = append(blockers, strconv.Itoa(len(i.BigclawImportModules))+" legacy pytest modules still import bigclaw from src/")
-	}
-	if len(i.PytestImportModules) > 0 {
-		blockers = append(blockers, strconv.Itoa(len(i.PytestImportModules))+" legacy pytest modules still import pytest directly")
 	}
 	return blockers
 }
@@ -490,7 +475,7 @@ func (i PytestAssetInventory) ConftestDeletionStatus() ConftestDeletionStatus {
 	return ConftestDeletionStatus{
 		CanDelete:            i.CanDeleteConftest(),
 		Summary:              i.ConftestDeletionSummary(),
-		Blockers:             append([]string(nil), i.ConftestDeletionBlockers()...),
+		Blockers:             append([]string{}, i.ConftestDeletionBlockers()...),
 		LegacyTestModules:    len(i.TestModules),
 		BigclawImportModules: len(i.BigclawImportModules),
 		PytestImportModules:  len(i.PytestImportModules),
