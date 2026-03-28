@@ -87,6 +87,9 @@ func TestInventoryPytestAssets(t *testing.T) {
 	if got := inventory.ConftestDeletionBlockers(); !reflect.DeepEqual(got, wantBlockers) {
 		t.Fatalf("unexpected conftest deletion blockers: got=%v want=%v", got, wantBlockers)
 	}
+	if inventory.CanDeleteConftest() {
+		t.Fatal("expected conftest deletion gate to remain closed for the current inventory")
+	}
 }
 
 func TestBootstrapLegacyPythonPathSupportsBigclawImports(t *testing.T) {
