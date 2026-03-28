@@ -132,3 +132,17 @@ func TestPytestCommandRunsLegacyPytestWithHarnessBootstrap(t *testing.T) {
 		t.Fatalf("expected pytest progress output, got %q", string(output))
 	}
 }
+
+func TestPytestCommandDoesNotRequirePreexistingPythonPath(t *testing.T) {
+	RequireExecutable(t, "python3")
+	t.Setenv("PYTHONPATH", "")
+
+	cmd := PytestCommand(t, "tests/test_mapping.py", "-q")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("pytest command without preexisting PYTHONPATH failed: %v (%s)", err, string(output))
+	}
+	if !strings.Contains(string(output), "[100%]") {
+		t.Fatalf("expected pytest progress output, got %q", string(output))
+	}
+}

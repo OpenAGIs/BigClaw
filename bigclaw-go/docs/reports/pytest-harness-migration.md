@@ -50,7 +50,7 @@ It provides:
 - `internal/legacyshim` tests now also assert that the frozen Python compile-check asset list still matches the checked-in `src/bigclaw/*.py` shim files that remain in scope for migration
 - `internal/legacyshim` now runs a real checked-in `py_compile` pass against those shim files, so the remaining Python compatibility layer is regression-tested from Go without bespoke bootstrap code
 - `internal/testharness` now includes a Python import smoke test that boots `PYTHONPATH` via the Go harness and imports `bigclaw.mapping` directly, proving the replacement covers the old `conftest.py` core responsibility
-- `internal/testharness` now also proves `PytestCommand(...)` can run `tests/test_mapping.py` end-to-end through the Go bootstrap path, which becomes the reusable bridge while the remaining pytest slices are still being retired
+- `internal/testharness` now also proves `PytestCommand(...)` can run `tests/test_mapping.py` end-to-end through the Go bootstrap path, including when no `PYTHONPATH` is preconfigured, which becomes the reusable bridge while the remaining pytest slices are still being retired
 
 First-batch adoption landed here:
 
