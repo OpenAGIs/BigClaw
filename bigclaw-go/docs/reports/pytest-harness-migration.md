@@ -104,6 +104,12 @@ First migrated Python test slice now covered explicitly in Go:
 - `tests/test_live_shadow_scorecard.py`
   - `test_checked_in_live_shadow_scorecard_matches_expected_shape`
   - covered by `bigclaw-go/internal/regression/live_shadow_bundle_surface_test.go`
+- `tests/test_cross_process_coordination_surface.py`
+  - `test_checked_in_coordination_surface_matches_expected_shape`
+  - covered by `bigclaw-go/internal/regression/coordination_contract_surface_test.go`
+- `tests/test_subscriber_takeover_harness.py`
+  - `test_checked_in_takeover_report_matches_local_harness_shape`
+  - covered by `bigclaw-go/internal/regression/takeover_proof_surface_test.go`
 
 Still legacy-only for continuation policy tooling:
 
@@ -116,6 +122,12 @@ Still legacy-only for live-shadow bundle tooling:
 - Python script execution semantics in `bigclaw-go/scripts/migration/export_live_shadow_bundle.py`
 - Python script execution semantics in `bigclaw-go/scripts/migration/live_shadow_scorecard.py`
 - The checked-in bundle and scorecard report shapes are guarded by Go regression tests, but the script runtime paths remain Python-owned
+
+Still legacy-only for coordination/takeover tooling:
+
+- Python script execution semantics in `bigclaw-go/scripts/e2e/cross_process_coordination_surface.py`
+- Python script execution semantics in `bigclaw-go/scripts/e2e/subscriber_takeover_fault_matrix.py`
+- The checked-in coordination and takeover report contracts are guarded by Go regression tests, but the script runtime paths remain Python-owned
 
 Still legacy-only within `tests/test_legacy_shim.py`:
 
