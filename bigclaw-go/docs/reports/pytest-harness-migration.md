@@ -210,6 +210,12 @@ Still partially migrated for broader model-runtime semantics:
 - `tests/test_models.py` now overlaps with Go coverage in `bigclaw-go/internal/workflow/model_test.go` and `bigclaw-go/internal/billing/statement_test.go`
 - The remaining Python-owned pieces are richer risk-assessment and triage record model surfaces that do not have a single equivalent Go model package in this issue
 
+Still partially migrated for observability and event-bus runtime semantics:
+
+- `tests/test_event_bus.py` overlaps only at the Go event-stream primitive level in `bigclaw-go/internal/events/bus_test.go`
+- `tests/test_observability.py` overlaps only at the Go recorder/audit primitive level in `bigclaw-go/internal/observability/recorder_test.go`, `bigclaw-go/internal/observability/audit_test.go`, and `bigclaw-go/internal/observability/audit_spec_test.go`
+- The remaining Python-owned pieces are `TaskRun`, `ObservabilityLedger`, collaboration-thread synthesis, and run-detail/report rendering in `src/bigclaw/observability.py` and `src/bigclaw/reports.py`; these have no single Go-owned runtime replacement in this issue
+
 ## Migration plan
 
 1. Treat `internal/testharness` as the only shared bootstrap layer for Go tests that need repository-relative assets or CLI environment setup.

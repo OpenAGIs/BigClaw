@@ -27,6 +27,8 @@
 23. `git status --short`
 24. `cd bigclaw-go && go test ./internal/workflow ./internal/billing`
 25. `git status --short`
+26. `cd bigclaw-go && go test ./internal/observability ./internal/events`
+27. `git status --short`
 
 ## Results
 
@@ -79,4 +81,8 @@
 24. `cd bigclaw-go && go test ./internal/workflow ./internal/billing`
    Result: `ok  	bigclaw-go/internal/workflow	(cached)`, `ok  	bigclaw-go/internal/billing	(cached)`
 25. `git status --short`
+   Result: `M bigclaw-go/docs/reports/pytest-harness-migration.md`, `M reports/BIG-GO-923-validation.md`
+26. `cd bigclaw-go && go test ./internal/observability ./internal/events`
+   Result: `ok  	bigclaw-go/internal/observability	(cached)`, `ok  	bigclaw-go/internal/events	(cached)`
+27. `git status --short`
    Result: `M bigclaw-go/docs/reports/pytest-harness-migration.md`, `M reports/BIG-GO-923-validation.md`
