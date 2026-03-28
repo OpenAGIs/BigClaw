@@ -1,6 +1,6 @@
 # BIG-GO-924 Governance Test Migration
 
-## Current Python and non-Go assets
+## Original targeted Python and non-Go assets
 
 - `tests/test_repo_governance.py`
   - Python coverage for repo permission checks and deterministic audit field requirements.
@@ -16,6 +16,15 @@
   - `src/bigclaw/repo_governance.py`
   - `src/bigclaw/governance.py`
   - `src/bigclaw/repo_board.py`
+
+## Landed in this issue
+
+- Added Go parity coverage for the repo-board surface in `bigclaw-go/internal/repo/board_test.go`.
+- Deleted the migrated Python tests:
+  - `tests/test_repo_governance.py`
+  - `tests/test_governance.py`
+  - `tests/test_repo_board.py`
+- Updated validation guidance in `docs/BigClaw-AgentHub-Integration-Alignment.md` to use the Go governance test command for this migrated slice.
 
 ## Go migration mapping
 
@@ -35,14 +44,10 @@
 
 ## Current blockers to deleting the Python assets
 
-- `tests/test_governance.py` still imports `src/bigclaw/governance.py`
-- `tests/test_repo_governance.py` still imports `src/bigclaw/repo_governance.py`
-- `tests/test_repo_board.py` still imports `src/bigclaw/repo_board.py`
 - `tests/test_planning.py` still imports `ScopeFreezeAudit` from `src/bigclaw/governance.py`
 - `tests/test_repo_collaboration.py` still imports `RepoDiscussionBoard` from `src/bigclaw/repo_board.py`
-- docs still reference the Python governance test commands, for example `docs/BigClaw-AgentHub-Integration-Alignment.md`
 
-These references make the deletion gate concrete: Go parity for the targeted governance tests now exists, but Python asset removal should wait for the remaining Python-side consumers to migrate or be deleted in their own scoped tickets.
+These remaining references make the deletion gate concrete: the targeted governance tests are now Go-owned, but the legacy Python implementation modules should stay until the remaining Python-side consumers migrate or are deleted in their own scoped tickets.
 
 ## Regression commands
 
