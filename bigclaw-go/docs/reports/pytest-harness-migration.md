@@ -165,6 +165,9 @@ First migrated Python test slice now covered explicitly in Go:
   - `test_ensure_repo_sync_fast_forwards_clean_branch_before_push`
   - `test_ensure_repo_sync_skips_pushing_clean_branch_at_origin_default_head`
   - covered by `bigclaw-go/internal/githubsync/sync_test.go`
+- `tests/test_memory.py`
+  - `test_big501_memory_store_reuses_history_and_injects_rules`
+  - covered by `bigclaw-go/internal/memory/store_test.go`
 - `tests/test_parallel_validation_bundle.py`
   - `test_export_validation_bundle_generates_latest_reports_and_index`
   - checked-in report/index contract covered by

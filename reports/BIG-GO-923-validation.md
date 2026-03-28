@@ -33,6 +33,8 @@
 29. `git status --short`
 30. `cd bigclaw-go && go test ./internal/githubsync`
 31. `git status --short`
+32. `cd bigclaw-go && go test ./internal/memory`
+33. `git status --short`
 
 ## Results
 
@@ -98,3 +100,7 @@
    Result: `ok  	bigclaw-go/internal/githubsync	(cached)`
 31. `git status --short`
    Result: `M bigclaw-go/docs/reports/pytest-harness-migration.md`, `M reports/BIG-GO-923-validation.md`
+32. `cd bigclaw-go && go test ./internal/memory`
+   Result: `ok  	bigclaw-go/internal/memory	0.431s`
+33. `git status --short`
+   Result: `M bigclaw-go/docs/reports/pytest-harness-migration.md`, `M reports/BIG-GO-923-validation.md`, `?? bigclaw-go/internal/memory/`
