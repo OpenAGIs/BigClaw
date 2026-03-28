@@ -158,6 +158,13 @@ First migrated Python test slice now covered explicitly in Go:
   - covered by `bigclaw-go/internal/workflow/model_test.go`
   - `test_billing_summary_round_trip_preserves_rates_and_usage`
   - covered by `bigclaw-go/internal/billing/statement_test.go`
+- `tests/test_github_sync.py`
+  - `test_install_git_hooks_configures_core_hooks_path`
+  - `test_ensure_repo_sync_pushes_head_to_origin`
+  - `test_inspect_repo_sync_marks_dirty_worktree`
+  - `test_ensure_repo_sync_fast_forwards_clean_branch_before_push`
+  - `test_ensure_repo_sync_skips_pushing_clean_branch_at_origin_default_head`
+  - covered by `bigclaw-go/internal/githubsync/sync_test.go`
 - `tests/test_parallel_validation_bundle.py`
   - `test_export_validation_bundle_generates_latest_reports_and_index`
   - checked-in report/index contract covered by
