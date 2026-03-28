@@ -37,7 +37,6 @@
     "tests/test_repo_triage.py",
     "tests/test_reports.py",
     "tests/test_risk.py",
-    "tests/test_roadmap.py",
     "tests/test_runtime.py",
     "tests/test_runtime_matrix.py",
     "tests/test_saved_views.py",
@@ -51,26 +50,25 @@
   "conftest_defines_fixture": false,
   "conftest_defines_hook": false,
   "conftest_delete_status": {
-    "bigclaw_import_modules": 47,
+    "bigclaw_import_modules": 46,
     "blockers": [
-      "56 legacy pytest modules remain under tests/",
-      "47 legacy pytest modules still import bigclaw from src/",
-      "3 legacy pytest modules still import pytest directly"
+      "55 legacy pytest modules remain under tests/",
+      "46 legacy pytest modules still import bigclaw from src/",
+      "2 legacy pytest modules still import pytest directly"
     ],
     "can_delete": false,
-    "legacy_test_modules": 56,
-    "pytest_import_modules": 3,
-    "summary": "conftest_delete_ready=false blockers=56 legacy pytest modules remain under tests/; 47 legacy pytest modules still import bigclaw from src/; 3 legacy pytest modules still import pytest directly"
+    "legacy_test_modules": 55,
+    "pytest_import_modules": 2,
+    "summary": "conftest_delete_ready=false blockers=55 legacy pytest modules remain under tests/; 46 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
   },
   "conftest_imports_pytest": false,
   "conftest_path": "tests/conftest.py",
   "conftest_prepends_src": true,
-  "inventory_summary": "tests=56 bigclaw_imports=47 pytest_imports=3",
+  "inventory_summary": "tests=55 bigclaw_imports=46 pytest_imports=2",
   "project_root": ".",
   "pytest_imports": [
     "tests/test_audit_events.py",
-    "tests/test_planning.py",
-    "tests/test_roadmap.py"
+    "tests/test_planning.py"
   ],
   "status": "ok",
   "test_modules": [
@@ -116,7 +114,6 @@
     "tests/test_repo_triage.py",
     "tests/test_reports.py",
     "tests/test_risk.py",
-    "tests/test_roadmap.py",
     "tests/test_runtime.py",
     "tests/test_runtime_matrix.py",
     "tests/test_saved_views.py",

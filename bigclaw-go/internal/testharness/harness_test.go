@@ -66,28 +66,27 @@ func TestInventoryPytestAssets(t *testing.T) {
 	if inventory.ConftestDefinesHook {
 		t.Fatal("expected conftest to avoid defining pytest hooks")
 	}
-	if got := inventory.Summary(); got != "tests=56 bigclaw_imports=47 pytest_imports=3" {
+	if got := inventory.Summary(); got != "tests=55 bigclaw_imports=46 pytest_imports=2" {
 		t.Fatalf("unexpected inventory summary: %s", got)
 	}
 
 	wantPytestModules := []string{
 		"tests/test_audit_events.py",
 		"tests/test_planning.py",
-		"tests/test_roadmap.py",
 	}
 	if !reflect.DeepEqual(inventory.PytestImportModules, wantPytestModules) {
 		t.Fatalf("unexpected pytest import modules: got=%v want=%v", inventory.PytestImportModules, wantPytestModules)
 	}
 
 	wantBlockers := []string{
-		"56 legacy pytest modules remain under tests/",
-		"47 legacy pytest modules still import bigclaw from src/",
-		"3 legacy pytest modules still import pytest directly",
+		"55 legacy pytest modules remain under tests/",
+		"46 legacy pytest modules still import bigclaw from src/",
+		"2 legacy pytest modules still import pytest directly",
 	}
 	if got := inventory.ConftestDeletionBlockers(); !reflect.DeepEqual(got, wantBlockers) {
 		t.Fatalf("unexpected conftest deletion blockers: got=%v want=%v", got, wantBlockers)
 	}
-	wantSummary := "conftest_delete_ready=false blockers=56 legacy pytest modules remain under tests/; 47 legacy pytest modules still import bigclaw from src/; 3 legacy pytest modules still import pytest directly"
+	wantSummary := "conftest_delete_ready=false blockers=55 legacy pytest modules remain under tests/; 46 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
 	if got := inventory.ConftestDeletionSummary(); got != wantSummary {
 		t.Fatalf("unexpected conftest deletion summary: got=%q want=%q", got, wantSummary)
 	}
@@ -98,9 +97,9 @@ func TestInventoryPytestAssets(t *testing.T) {
 		CanDelete:            false,
 		Summary:              wantSummary,
 		Blockers:             wantBlockers,
-		LegacyTestModules:    56,
-		BigclawImportModules: 47,
-		PytestImportModules:  3,
+		LegacyTestModules:    55,
+		BigclawImportModules: 46,
+		PytestImportModules:  2,
 	}
 	if got := inventory.ConftestDeletionStatus(); !reflect.DeepEqual(got, wantStatus) {
 		t.Fatalf("unexpected conftest deletion status: got=%+v want=%+v", got, wantStatus)
