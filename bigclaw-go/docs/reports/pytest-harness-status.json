@@ -5,7 +5,6 @@
     "tests/test_dsl.py",
     "tests/test_evaluation.py",
     "tests/test_event_bus.py",
-    "tests/test_execution_contract.py",
     "tests/test_execution_flow.py",
     "tests/test_observability.py",
     "tests/test_operations.py",
@@ -22,10 +21,10 @@
   "conftest_defines_fixture": false,
   "conftest_defines_hook": false,
   "conftest_delete_status": {
-    "bigclaw_import_modules": 18,
+    "bigclaw_import_modules": 17,
     "blockers": [],
     "can_delete": true,
-    "legacy_test_modules": 18,
+    "legacy_test_modules": 17,
     "pytest_import_modules": 0,
     "summary": "conftest_delete_ready=true blockers=none"
   },
@@ -34,18 +33,18 @@
   "conftest_path": "tests/conftest.py",
   "conftest_prepends_src": false,
   "conftest_uses_pytest_plugins": false,
-  "inventory_summary": "tests=18 bigclaw_imports=18 pytest_imports=0 pytest_command_refs=0",
+  "inventory_summary": "tests=17 bigclaw_imports=17 pytest_imports=0 pytest_command_refs=0",
   "legacy_pytest_delete_status": {
-    "bigclaw_import_modules": 18,
+    "bigclaw_import_modules": 17,
     "blockers": [
-      "18 legacy pytest modules remain under tests/",
-      "18 legacy pytest modules still import bigclaw from src/"
+      "17 legacy pytest modules remain under tests/",
+      "17 legacy pytest modules still import bigclaw from src/"
     ],
     "can_delete": false,
-    "legacy_test_modules": 18,
+    "legacy_test_modules": 17,
     "pytest_command_refs": 0,
     "pytest_import_modules": 0,
-    "summary": "legacy_pytest_delete_ready=false blockers=18 legacy pytest modules remain under tests/; 18 legacy pytest modules still import bigclaw from src/"
+    "summary": "legacy_pytest_delete_ready=false blockers=17 legacy pytest modules remain under tests/; 17 legacy pytest modules still import bigclaw from src/"
   },
   "project_root": ".",
   "pyproject_declares_pytest": false,
@@ -61,7 +60,6 @@
     "tests/test_dsl.py",
     "tests/test_evaluation.py",
     "tests/test_event_bus.py",
-    "tests/test_execution_contract.py",
     "tests/test_execution_flow.py",
     "tests/test_observability.py",
     "tests/test_operations.py",
