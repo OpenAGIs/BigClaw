@@ -137,6 +137,9 @@ First migrated Python test slice now covered explicitly in Go:
   - `test_map_priority`
   - `test_map_source_issue_to_task`
   - covered by `bigclaw-go/internal/intake/mapping_test.go`
+- `tests/test_connectors.py`
+  - `test_connectors_fetch_minimum_issue`
+  - covered by `bigclaw-go/internal/intake/connector_test.go`
 - `tests/test_risk.py`
   - `test_risk_scorer_keeps_simple_low_risk_work_low`
   - `test_risk_scorer_elevates_prod_browser_work`
