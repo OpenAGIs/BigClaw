@@ -3,9 +3,10 @@
 ## Plan
 
 1. Re-inventory the current Python/pytest harness surface under `tests/`, `pyproject.toml`, and `bigclaw-go/internal/testharness` against the live worktree state.
-2. Align the Go-owned harness assertions, CLI/report snapshot, and migration narrative with the current legacy pytest inventory and deletion-gate status.
-3. Keep the change set scoped to the pytest/conftest migration surface for this issue and avoid unrelated worktree files.
-4. Run targeted validation commands, record exact commands and outcomes, then commit and push the issue branch.
+2. Continue retiring remaining legacy pytest modules by landing Go-native replacements where the implementation surface is small and already well-bounded.
+3. For this continuation slice, migrate `tests/test_service.py` into a Go-owned package and update the harness inventory/reporting/docs to the new live counts.
+4. Keep the change set scoped to the pytest/conftest migration surface for this issue and avoid unrelated worktree files.
+5. Run targeted validation commands, record exact commands and outcomes, then commit and push the issue branch.
 
 ## Acceptance
 
@@ -18,6 +19,7 @@
 ## Validation
 
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/regression ./cmd/bigclawctl ./internal/workflow`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/service ./internal/testharness ./internal/regression ./cmd/bigclawctl`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./...`
 
@@ -29,6 +31,12 @@
   Result: passed and refreshed `bigclaw-go/docs/reports/pytest-harness-status.json` (`inventory_summary=tests=13 bigclaw_imports=13 pytest_imports=0 pytest_command_refs=0`; `conftest_delete_status.summary=conftest_delete_ready=true blockers=none`; `legacy_pytest_delete_status.summary=legacy_pytest_delete_ready=false blockers=13 legacy pytest modules remain under tests/; 13 legacy pytest modules still import bigclaw from src/`)
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./...`
   Result: passed (`ok  	bigclaw-go/internal/api	2.067s`; `ok  	bigclaw-go/internal/bootstrap	5.164s`; `ok  	bigclaw-go/internal/githubsync	5.418s`; `ok  	bigclaw-go/internal/legacyshim	5.630s`; `ok  	bigclaw-go/internal/regression	2.394s`; `ok  	bigclaw-go/internal/scheduler	2.272s`; `ok  	bigclaw-go/internal/worker	3.272s`; remaining packages passed cached or had no test files)
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/service ./internal/testharness ./internal/regression ./cmd/bigclawctl`
+  Result: passed (`ok  	bigclaw-go/internal/service	(cached)`; `ok  	bigclaw-go/internal/testharness	1.316s`; `ok  	bigclaw-go/internal/regression	1.615s`; `ok  	bigclaw-go/cmd/bigclawctl	3.079s`)
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
+  Result: passed and refreshed `bigclaw-go/docs/reports/pytest-harness-status.json` (`inventory_summary=tests=12 bigclaw_imports=12 pytest_imports=0 pytest_command_refs=0`; `conftest_delete_status.summary=conftest_delete_ready=true blockers=none`; `legacy_pytest_delete_status.summary=legacy_pytest_delete_ready=false blockers=12 legacy pytest modules remain under tests/; 12 legacy pytest modules still import bigclaw from src/`)
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./...`
+  Result: passed (`ok  	bigclaw-go/cmd/bigclawctl	3.472s`; `ok  	bigclaw-go/internal/api	3.709s`; `ok  	bigclaw-go/internal/regression	2.488s`; `ok  	bigclaw-go/internal/service	(cached)`; `ok  	bigclaw-go/internal/testharness	2.593s`; remaining packages passed cached or had no test files)
 
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
   Result: passed (`14 passed`)
