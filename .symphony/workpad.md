@@ -30,3 +30,12 @@
   - `ok  	bigclaw-go/internal/intake	0.359s`
   - `ok  	bigclaw-go/internal/planning	1.490s`
   - `ok  	bigclaw-go/internal/governance	1.102s`
+- `cd bigclaw-go && go test ./...`
+  - PASS
+  - representative package results:
+  - `ok  	bigclaw-go/cmd/bigclawctl	5.851s`
+  - `ok  	bigclaw-go/internal/bootstrap`
+  - `ok  	bigclaw-go/internal/contract	3.365s`
+  - `ok  	bigclaw-go/internal/planning`
+  - `ok  	bigclaw-go/internal/queue	30.056s`
+  - `ok  	bigclaw-go/internal/workflow	3.830s`
