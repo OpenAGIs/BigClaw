@@ -193,6 +193,19 @@ func TestPythonCommandUsesProjectRootAndLegacyPythonPath(t *testing.T) {
 	}
 }
 
+func TestPythonCommandAtUsesProvidedProjectRootAndPythonPath(t *testing.T) {
+	projectRoot := t.TempDir()
+	pythonPath := PythonExecutable(t)
+	cmd := PythonCommandAt(projectRoot, pythonPath, "-c", "import os; print(os.environ['PYTHONPATH'])")
+
+	if cmd.Dir != projectRoot {
+		t.Fatalf("unexpected command dir: got=%q want=%q", cmd.Dir, projectRoot)
+	}
+	if !strings.Contains(strings.Join(cmd.Env, "\n"), "PYTHONPATH="+filepath.Join(projectRoot, "src")) {
+		t.Fatalf("expected PYTHONPATH to include provided src root, got %v", cmd.Env)
+	}
+}
+
 func TestEmptyInventoryAllowsConftestDeletion(t *testing.T) {
 	var inventory PytestAssetInventory
 	if blockers := inventory.ConftestDeletionBlockers(); len(blockers) != 0 {
@@ -316,6 +329,20 @@ func TestPytestCommandUsesPythonModuleInvocation(t *testing.T) {
 		t.Fatalf("unexpected pytest executable path: got=%q want=%q", cmd.Path, pythonPath)
 	}
 	wantArgs := []string{pythonPath, "-m", "pytest", testFile, "-q"}
+	if !reflect.DeepEqual(cmd.Args, wantArgs) {
+		t.Fatalf("unexpected pytest command args: got=%v want=%v", cmd.Args, wantArgs)
+	}
+}
+
+func TestPytestCommandAtUsesPythonModuleInvocation(t *testing.T) {
+	projectRoot := t.TempDir()
+	pythonPath := PythonExecutable(t)
+	cmd := PytestCommandAt(projectRoot, pythonPath, "tests/test_smoke.py", "-q")
+
+	wantArgs := []string{pythonPath, "-m", "pytest", "tests/test_smoke.py", "-q"}
+	if cmd.Dir != projectRoot {
+		t.Fatalf("unexpected command dir: got=%q want=%q", cmd.Dir, projectRoot)
+	}
 	if !reflect.DeepEqual(cmd.Args, wantArgs) {
 		t.Fatalf("unexpected pytest command args: got=%v want=%v", cmd.Args, wantArgs)
 	}

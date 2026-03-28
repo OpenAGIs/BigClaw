@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -17,6 +18,7 @@ import (
 	"bigclaw-go/internal/githubsync"
 	"bigclaw-go/internal/legacyshim"
 	"bigclaw-go/internal/refill"
+	"bigclaw-go/internal/testharness"
 )
 
 const (
@@ -146,11 +148,11 @@ func run(args []string) int {
 
 func runLegacyPython(args []string) error {
 	if len(args) == 0 || isHelpToken(args[0]) {
-		_, _ = os.Stdout.WriteString("usage: bigclawctl legacy-python <compile-check> [flags]\n")
+		_, _ = os.Stdout.WriteString("usage: bigclawctl legacy-python <compile-check|pytest> [flags]\n")
 		return nil
 	}
 	if len(args) == 0 {
-		return errors.New("usage: bigclawctl legacy-python <compile-check> [flags]")
+		return errors.New("usage: bigclawctl legacy-python <compile-check|pytest> [flags]")
 	}
 	command := args[0]
 	flags := flag.NewFlagSet("legacy-python "+command, flag.ContinueOnError)
@@ -190,6 +192,43 @@ func runLegacyPython(args []string) error {
 			payload["output"] = result.Output
 		}
 		return emit(payload, *asJSON, 0)
+	case "pytest":
+		pytestArgs := flags.Args()
+		if len(pytestArgs) > 0 && pytestArgs[0] == "--" {
+			pytestArgs = pytestArgs[1:]
+		}
+		cmd := testharness.PytestCommandAt(absPath(*repoRoot), *pythonBin, pytestArgs...)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			if *asJSON {
+				payload := map[string]any{
+					"status": "error",
+					"repo":   absPath(*repoRoot),
+					"python": *pythonBin,
+					"args":   pytestArgs,
+					"error":  err.Error(),
+					"output": string(output),
+				}
+				var exitErr *exec.ExitError
+				if errors.As(err, &exitErr) {
+					payload["exit_code"] = exitErr.ExitCode()
+				}
+				return emit(payload, true, 1)
+			}
+			_, _ = os.Stdout.Write(output)
+			return err
+		}
+		if *asJSON {
+			return emit(map[string]any{
+				"status": "ok",
+				"repo":   absPath(*repoRoot),
+				"python": *pythonBin,
+				"args":   pytestArgs,
+				"output": string(output),
+			}, true, 0)
+		}
+		_, err = os.Stdout.Write(output)
+		return err
 	default:
 		return fmt.Errorf("unknown legacy-python subcommand: %s", command)
 	}
@@ -1448,7 +1487,7 @@ func printRootUsage(w io.Writer) {
 	fmt.Fprintln(w, "  symphony        launch Symphony against this repo workflow")
 	fmt.Fprintln(w, "  issue           open local tracker flows or proxy symphony issue")
 	fmt.Fprintln(w, "  panel           proxy symphony panel against this repo workflow")
-	fmt.Fprintln(w, "  legacy-python   validate frozen Python compatibility shims")
+	fmt.Fprintln(w, "  legacy-python   run migration-only Python validation helpers")
 }
 
 func absPath(path string) string {

@@ -46,6 +46,7 @@ It provides:
 - `PrependPythonPathEnv(tb, dir)` and `BootstrapLegacyPythonPath(tb)` for Go-owned `PYTHONPATH` bootstrapping when tests still need Python runtime parity
 - `PythonCommand(tb, args...)` for launching `python3` from the project root with legacy `src/` imports already bootstrapped
 - `PytestCommand(tb, args...)` for launching `python3 -m pytest` through the same Go-owned bootstrap path while legacy pytest slices still exist
+- `PythonCommandAt(projectRoot, pythonBin, args...)` and `PytestCommandAt(projectRoot, pythonBin, args...)` for non-test Go surfaces such as `bigclawctl` that still need to run migration-only Python checks without re-implementing legacy `PYTHONPATH` bootstrap rules
 - `RequireExecutable(tb, name)` for shared skip-aware runtime probing when legacy Python tooling is still part of the migration boundary
 - `PythonExecutable(tb)` for the canonical resolved Python runtime path used by adjacent Go migration tests
 - `Chdir(tb, dir)` for temporary cwd changes with automatic cleanup
@@ -59,6 +60,7 @@ It provides:
 - `PytestAssetInventory.ConftestDeletionSummary()` to provide one stable, report-ready line for the current delete-readiness state
 - `PytestAssetInventory.ConftestDeletionStatus()` to provide a structured status object for future CLI/report surfaces that need both the boolean gate and the blocker/count breakdown
 - `bigclawctl pytest-harness [--json]` as a stable Go-owned command surface that prints the current pytest asset inventory, `tests/conftest.py` presence/behavior flags, and structured deletion-gate status without relying on pytest itself
+- `bigclawctl legacy-python pytest --repo .. --python python3 -- -- <pytest-args...>` as the Go-owned runtime wrapper for the remaining migration-only Python test slices after deleting `tests/conftest.py` and removing pytest from the default repo baseline
 - `bigclaw-go/docs/reports/pytest-harness-status.json` as the checked-in machine-generated snapshot of the current pytest/conftest migration boundary
 - `internal/regression/pytest_harness_status_test.go` to fail Go regression if the checked-in snapshot drifts from the live repo inventory or deletion gate
 - `internal/legacyshim` tests now also assert that the frozen Python compile-check asset list still matches the checked-in `src/bigclaw/*.py` shim files that remain in scope for migration
@@ -366,6 +368,7 @@ Primary validation for this issue:
 
 ```bash
 cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && PYTHONPATH=src python3 -c "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0"
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl legacy-python pytest --repo .. --python python3 -- -- tests/test_planning.py tests/test_audit_events.py -q
 cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/regression
 cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json
 ```

@@ -363,6 +363,63 @@ func TestRunLegacyPythonCompileCheckJSONOutputDoesNotEscapeArrowTokens(t *testin
 	}
 }
 
+func TestRunLegacyPythonPytestJSONOutput(t *testing.T) {
+	projectRoot := t.TempDir()
+	srcDir := filepath.Join(projectRoot, "src", "samplepkg")
+	testsDir := filepath.Join(projectRoot, "tests")
+	if err := os.MkdirAll(srcDir, 0o755); err != nil {
+		t.Fatalf("mkdir src dir: %v", err)
+	}
+	if err := os.MkdirAll(testsDir, 0o755); err != nil {
+		t.Fatalf("mkdir tests dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(srcDir, "sample.py"), []byte("def add(a, b):\n    return a + b\n"), 0o644); err != nil {
+		t.Fatalf("write sample module: %v", err)
+	}
+	testBody := "from samplepkg.sample import add\n\n\ndef test_add():\n    assert add(1, 2) == 3\n"
+	if err := os.WriteFile(filepath.Join(testsDir, "test_sample.py"), []byte(testBody), 0o644); err != nil {
+		t.Fatalf("write sample test: %v", err)
+	}
+
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	if err := runLegacyPython([]string{
+		"pytest",
+		"--repo", projectRoot,
+		"--python", testharness.PythonExecutable(t),
+		"--json",
+		"--",
+		"tests/test_sample.py",
+		"-q",
+	}); err != nil {
+		t.Fatalf("run legacy-python pytest: %v", err)
+	}
+
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	var payload map[string]any
+	if err := json.Unmarshal(output, &payload); err != nil {
+		t.Fatalf("decode output: %v (%s)", err, string(output))
+	}
+	if payload["status"] != "ok" {
+		t.Fatalf("expected ok status, got %+v", payload)
+	}
+	if payload["repo"] != projectRoot {
+		t.Fatalf("unexpected repo: %+v", payload)
+	}
+	if !strings.Contains(payload["output"].(string), "1 passed") {
+		t.Fatalf("expected pytest success output, got %q", payload["output"])
+	}
+}
+
 func TestRunGitHubSyncInstallJSONOutputDoesNotEscapeArrowTokens(t *testing.T) {
 	repoPath := filepath.Join(t.TempDir(), "repo->")
 	hooksPath := ".githooks->"

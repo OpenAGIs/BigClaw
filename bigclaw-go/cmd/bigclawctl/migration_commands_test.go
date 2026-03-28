@@ -97,7 +97,7 @@ func TestHelpCommandsCoverLegacyShimEntrypoints(t *testing.T) {
 		{
 			name: "legacy-python",
 			args: []string{"legacy-python", "--help"},
-			want: "usage: bigclawctl legacy-python <compile-check> [flags]",
+			want: "usage: bigclawctl legacy-python <compile-check|pytest> [flags]",
 		},
 		{
 			name: "pytest-harness",

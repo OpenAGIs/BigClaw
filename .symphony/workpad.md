@@ -19,6 +19,7 @@
 ## Validation
 
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && PYTHONPATH=src python3 -m pytest tests/test_planning.py -q`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl legacy-python pytest --repo .. --python python3 -- -- tests/test_planning.py tests/test_audit_events.py -q`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/regression ./cmd/bigclawctl`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --json`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./...`
@@ -29,8 +30,12 @@
   Result: passed (`14 passed`)
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && PYTHONPATH=src python3 -m pytest tests/test_planning.py tests/test_audit_events.py -q`
   Result: passed (`19 passed in 0.08s`)
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl legacy-python pytest --repo .. --python python3 -- -- tests/test_planning.py tests/test_audit_events.py -q`
+  Result: passed (`19 passed in 0.06s`)
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/regression ./cmd/bigclawctl`
   Result: passed (`ok  	bigclaw-go/internal/testharness	1.399s`; `ok  	bigclaw-go/internal/regression	1.746s`; `ok  	bigclaw-go/cmd/bigclawctl	(cached)`)
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./cmd/bigclawctl`
+  Result: passed (`ok  	bigclaw-go/internal/testharness	(cached)`; `ok  	bigclaw-go/cmd/bigclawctl	(cached)`)
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --json`
   Result: passed (`status=ok`; `inventory_summary=tests=28 bigclaw_imports=28 pytest_imports=0 pytest_command_refs=0`; `pyproject_exists=true`; `pyproject_declares_pytest=false`; `pyproject_has_pytest_config=false`; `conftest_exists=false`; `conftest_uses_pytest_plugins=false`; `conftest_delete_status.can_delete=true`)
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`

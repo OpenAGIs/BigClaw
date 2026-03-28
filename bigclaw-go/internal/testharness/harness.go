@@ -90,13 +90,20 @@ func BootstrapLegacyPythonPath(tb testing.TB) string {
 // PythonCommand returns a python3 command preconfigured for legacy src/ imports from the project root.
 func PythonCommand(tb testing.TB, args ...string) *exec.Cmd {
 	tb.Helper()
-	srcRoot := BootstrapLegacyPythonPath(tb)
-	cmd := exec.Command(PythonExecutable(tb), args...)
-	cmd.Dir = ProjectRoot(tb)
-	cmd.Env = append(os.Environ(), "PYTHONPATH="+os.Getenv("PYTHONPATH"))
+	cmd := PythonCommandAt(ProjectRoot(tb), PythonExecutable(tb), args...)
+	srcRoot := LegacySrcRoot(tb)
 	if srcRoot == "" {
 		tb.Fatal("failed to configure legacy PYTHONPATH")
 	}
+	return cmd
+}
+
+// PythonCommandAt returns a python command preconfigured for legacy src/ imports from the given project root.
+func PythonCommandAt(projectRoot, pythonBin string, args ...string) *exec.Cmd {
+	srcRoot := filepath.Join(projectRoot, "src")
+	cmd := exec.Command(pythonBin, args...)
+	cmd.Dir = projectRoot
+	cmd.Env = append(os.Environ(), "PYTHONPATH="+prependEnvValue(os.Getenv("PYTHONPATH"), srcRoot))
 	return cmd
 }
 
@@ -107,14 +114,22 @@ func PytestCommand(tb testing.TB, args ...string) *exec.Cmd {
 	return PythonCommand(tb, pytestArgs...)
 }
 
+// PytestCommandAt returns a python -m pytest command configured for the legacy test root.
+func PytestCommandAt(projectRoot, pythonBin string, args ...string) *exec.Cmd {
+	pytestArgs := append([]string{"-m", "pytest"}, args...)
+	return PythonCommandAt(projectRoot, pythonBin, pytestArgs...)
+}
+
 func prependEnv(tb testing.TB, key, dir string) {
 	tb.Helper()
-	current := os.Getenv(key)
+	tb.Setenv(key, prependEnvValue(os.Getenv(key), dir))
+}
+
+func prependEnvValue(current, dir string) string {
 	if current == "" {
-		tb.Setenv(key, dir)
-		return
+		return dir
 	}
-	tb.Setenv(key, dir+string(os.PathListSeparator)+current)
+	return dir + string(os.PathListSeparator) + current
 }
 
 func Chdir(tb testing.TB, dir string) {
