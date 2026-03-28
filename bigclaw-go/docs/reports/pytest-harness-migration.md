@@ -72,6 +72,21 @@ First migrated Python test slice now covered explicitly in Go:
   - `test_scope_freeze_audit_round_trip_and_ready_state`
   - `test_render_scope_freeze_report_summarizes_board_and_run_closeout_requirements`
   - covered by `bigclaw-go/internal/governance/freeze_test.go`
+- `tests/test_workspace_bootstrap.py`
+  - `test_repo_cache_key_derives_from_repo_locator`
+  - `test_cache_root_for_repo_uses_repo_specific_directory`
+  - `test_bootstrap_workspace_creates_shared_worktree_from_local_seed`
+  - `test_second_workspace_reuses_warm_cache_without_full_clone`
+  - `test_bootstrap_workspace_reuses_existing_issue_worktree`
+  - `test_cleanup_workspace_preserves_shared_cache_for_future_reuse`
+  - `test_bootstrap_recovers_from_stale_seed_directory_without_remote_reclone`
+  - `test_cleanup_workspace_prunes_worktree_and_bootstrap_branch`
+  - covered by `bigclaw-go/internal/bootstrap/bootstrap_test.go`
+
+Still legacy-only within `tests/test_workspace_bootstrap.py`:
+
+- Python validation report aggregation via `build_validation_report`
+- JSON/reporting parity for the validation bundle still needs a direct Go equivalent before the full Python file can leave the active validation path
 
 Still legacy-only within `tests/test_legacy_shim.py`:
 
