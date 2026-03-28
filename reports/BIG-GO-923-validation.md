@@ -6,6 +6,7 @@
 2. `cd bigclaw-go && go test ./...`
 3. `git status --short`
 4. `cd bigclaw-go && go test ./internal/product ./internal/testharness ./internal/regression ./cmd/bigclawctl`
+5. `cd bigclaw-go && go test ./internal/product`
 
 ## Results
 
@@ -17,3 +18,5 @@
    Result after implementation and before commit: modified/new files only within `.symphony/`, `bigclaw-go/`, and `reports/BIG-GO-923-validation.md` for this issue scope
 4. `cd bigclaw-go && go test ./internal/product ./internal/testharness ./internal/regression ./cmd/bigclawctl`
    Result: `ok  	bigclaw-go/internal/product	0.430s`, `ok  	bigclaw-go/internal/testharness	(cached)`, `ok  	bigclaw-go/internal/regression	(cached)`, `ok  	bigclaw-go/cmd/bigclawctl	(cached)`
+5. `cd bigclaw-go && go test ./internal/product`
+   Result: `ok  	bigclaw-go/internal/product	0.890s`

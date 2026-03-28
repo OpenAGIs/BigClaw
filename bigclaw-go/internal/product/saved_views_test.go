@@ -3,6 +3,7 @@ package product
 import (
 	"encoding/json"
 	"net/url"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -282,6 +283,188 @@ func TestSavedViewCatalogJSONRoundTrip(t *testing.T) {
 	}
 	if restored.Name != catalog.Name || len(restored.Views) != len(catalog.Views) || restored.Subscriptions[0].SubscriptionID == "" {
 		t.Fatalf("unexpected round trip: restored=%+v want=%+v", restored, catalog)
+	}
+}
+
+func TestSavedViewCatalogRoundTripPreservesManifestShape(t *testing.T) {
+	catalog := SavedViewCatalog{
+		Name:    "BigClaw Views",
+		Version: "v3",
+		Views: []SavedView{
+			{
+				ViewID:     "view-ops-needs-approval",
+				Name:       "Needs Approval",
+				Route:      "/operations/overview",
+				Owner:      "ops",
+				Visibility: "team",
+				Filters: []SavedViewFilter{
+					{Field: "status", Operator: "=", Value: "needs-approval"},
+					{Field: "priority", Operator: "in", Value: "p0,p1"},
+				},
+				SortBy:    "-updated_at",
+				Pinned:    true,
+				IsDefault: true,
+			},
+		},
+		Subscriptions: []AlertDigestSubscription{
+			{
+				SubscriptionID: "digest-ops-daily",
+				SavedViewID:    "view-ops-needs-approval",
+				Channel:        "email",
+				Cadence:        "daily",
+				Recipients:     []string{"ops@bigclaw.dev"},
+			},
+		},
+	}
+
+	payload, err := json.Marshal(catalog)
+	if err != nil {
+		t.Fatalf("marshal catalog: %v", err)
+	}
+	var restored SavedViewCatalog
+	if err := json.Unmarshal(payload, &restored); err != nil {
+		t.Fatalf("unmarshal catalog: %v", err)
+	}
+	if !reflect.DeepEqual(restored, catalog) {
+		t.Fatalf("catalog round trip drifted: restored=%+v source=%+v", restored, catalog)
+	}
+}
+
+func TestSavedViewCatalogAuditSurfacesConfigurationGaps(t *testing.T) {
+	catalog := SavedViewCatalog{
+		Name:    "BigClaw Views",
+		Version: "v3",
+		Views: []SavedView{
+			{
+				ViewID:     "view-a",
+				Name:       "Needs Approval",
+				Route:      "/operations/overview",
+				Owner:      "ops",
+				Visibility: "team",
+				Filters:    []SavedViewFilter{{Field: "status", Operator: "=", Value: "needs-approval"}},
+				IsDefault:  true,
+			},
+			{
+				ViewID:     "view-b",
+				Name:       "Needs Approval",
+				Route:      "/operations/overview",
+				Owner:      "ops",
+				Visibility: "company",
+				IsDefault:  true,
+			},
+		},
+		Subscriptions: []AlertDigestSubscription{
+			{
+				SubscriptionID: "digest-missing-view",
+				SavedViewID:    "view-z",
+				Channel:        "pagerduty",
+				Cadence:        "monthly",
+			},
+		},
+	}
+
+	audit := AuditSavedViewCatalog(catalog)
+	if !reflect.DeepEqual(audit.DuplicateViewNames, map[string][]string{"/operations/overview:ops": {"Needs Approval"}}) {
+		t.Fatalf("unexpected duplicate view names: %+v", audit.DuplicateViewNames)
+	}
+	if got := strings.Join(audit.InvalidVisibilityViews, ","); got != "Needs Approval" {
+		t.Fatalf("unexpected invalid visibility findings: %+v", audit.InvalidVisibilityViews)
+	}
+	if got := strings.Join(audit.ViewsMissingFilters, ","); got != "Needs Approval" {
+		t.Fatalf("unexpected missing filter findings: %+v", audit.ViewsMissingFilters)
+	}
+	if !reflect.DeepEqual(audit.DuplicateDefaultViews, map[string][]string{"/operations/overview:ops": {"Needs Approval", "Needs Approval"}}) {
+		t.Fatalf("unexpected duplicate default views: %+v", audit.DuplicateDefaultViews)
+	}
+	if got := strings.Join(audit.OrphanSubscriptions, ","); got != "digest-missing-view" {
+		t.Fatalf("unexpected orphan subscriptions: %+v", audit.OrphanSubscriptions)
+	}
+	if got := strings.Join(audit.SubscriptionsMissingRecipients, ","); got != "digest-missing-view" {
+		t.Fatalf("unexpected subscriptions missing recipients: %+v", audit.SubscriptionsMissingRecipients)
+	}
+	if got := strings.Join(audit.SubscriptionsWithInvalidChannel, ","); got != "digest-missing-view" {
+		t.Fatalf("unexpected invalid channel findings: %+v", audit.SubscriptionsWithInvalidChannel)
+	}
+	if got := strings.Join(audit.SubscriptionsWithInvalidCadence, ","); got != "digest-missing-view" {
+		t.Fatalf("unexpected invalid cadence findings: %+v", audit.SubscriptionsWithInvalidCadence)
+	}
+	if audit.ReadinessScore != 0 {
+		t.Fatalf("expected readiness score 0, got %+v", audit)
+	}
+}
+
+func TestSavedViewCatalogAuditRoundTripPreservesFindings(t *testing.T) {
+	audit := SavedViewCatalogAudit{
+		CatalogName:                     "BigClaw Views",
+		Version:                         "v3",
+		ViewCount:                       2,
+		SubscriptionCount:               1,
+		DuplicateViewNames:              map[string][]string{"/operations/overview:ops": {"Needs Approval"}},
+		InvalidVisibilityViews:          []string{"Needs Approval"},
+		ViewsMissingFilters:             []string{"Needs Approval"},
+		DuplicateDefaultViews:           map[string][]string{"/operations/overview:ops": {"Needs Approval", "Needs Approval"}},
+		OrphanSubscriptions:             []string{"digest-missing-view"},
+		SubscriptionsMissingRecipients:  []string{"digest-missing-view"},
+		SubscriptionsWithInvalidChannel: []string{"digest-missing-view"},
+		SubscriptionsWithInvalidCadence: []string{"digest-missing-view"},
+	}
+
+	payload, err := json.Marshal(audit)
+	if err != nil {
+		t.Fatalf("marshal audit: %v", err)
+	}
+	var restored SavedViewCatalogAudit
+	if err := json.Unmarshal(payload, &restored); err != nil {
+		t.Fatalf("unmarshal audit: %v", err)
+	}
+	if !reflect.DeepEqual(restored, audit) {
+		t.Fatalf("audit round trip drifted: restored=%+v source=%+v", restored, audit)
+	}
+}
+
+func TestRenderSavedViewReportSummarizesViewsAndDigestCoverage(t *testing.T) {
+	catalog := SavedViewCatalog{
+		Name:    "BigClaw Views",
+		Version: "v3",
+		Views: []SavedView{
+			{
+				ViewID:     "view-ops-needs-approval",
+				Name:       "Needs Approval",
+				Route:      "/operations/overview",
+				Owner:      "ops",
+				Visibility: "team",
+				Filters: []SavedViewFilter{
+					{Field: "status", Operator: "=", Value: "needs-approval"},
+				},
+				SortBy:    "-updated_at",
+				Pinned:    true,
+				IsDefault: true,
+			},
+		},
+		Subscriptions: []AlertDigestSubscription{
+			{
+				SubscriptionID: "digest-ops-daily",
+				SavedViewID:    "view-ops-needs-approval",
+				Channel:        "email",
+				Cadence:        "daily",
+				Recipients:     []string{"ops@bigclaw.dev"},
+			},
+		},
+	}
+
+	audit := AuditSavedViewCatalog(catalog)
+	report := RenderSavedViewReport(catalog, audit)
+	for _, want := range []string{
+		"# Saved Views & Alert Digests Report",
+		"- Saved Views: 1",
+		"- Needs Approval: route=/operations/overview owner=ops visibility=team filters=status=needs-approval sort=-updated_at pinned=true default=true",
+		"- digest-ops-daily: view=view-ops-needs-approval channel=email cadence=daily recipients=ops@bigclaw.dev include_empty=false muted=false",
+		"- Duplicate view names: none",
+		"- Orphan subscriptions: none",
+	} {
+		if !strings.Contains(report, want) {
+			t.Fatalf("expected %q in report, got %s", want, report)
+		}
 	}
 }
 

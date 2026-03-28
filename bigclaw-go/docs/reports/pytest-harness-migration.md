@@ -51,6 +51,12 @@ First migrated Python test slice now covered explicitly in Go:
   - `test_dashboard_run_contract_audit_detects_missing_field_definitions_and_samples`
   - `test_dashboard_run_contract_round_trip_preserves_samples_and_audit`
   - covered by `bigclaw-go/internal/product/dashboard_run_contract_test.go`
+- `tests/test_saved_views.py`
+  - `test_saved_view_catalog_round_trip_preserves_manifest_shape`
+  - `test_saved_view_catalog_audit_surfaces_configuration_gaps`
+  - `test_saved_view_catalog_audit_round_trip_preserves_findings`
+  - `test_render_saved_view_report_summarizes_views_and_digest_coverage`
+  - covered by `bigclaw-go/internal/product/saved_views_test.go`
 
 ## Migration plan
 
