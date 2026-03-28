@@ -194,3 +194,18 @@
 
 - Keep scope constrained to the pytest/conftest harness migration surface for this issue.
 - Do not remove legacy Python assets unless the checked migration gate says they are delete-ready and the replacement coverage is in place.
+- Current continuation focus: retire `tests/test_reports.py` by replacing the remaining report-domain pytest contracts in `bigclaw-go/internal/reporting`, then refresh the harness inventory to the new live count.
+- After this slice lands, the only remaining legacy pytest module should be `tests/test_ui_review.py`.
+
+## Latest Slice
+
+- Added `bigclaw-go/internal/reporting/report_surfaces.go` for Go-native report studio bundles, pilot scorecards/portfolios, validation-closeout decisions, launch/final-delivery checklists, shared-view rendering, auto-triage/takeover reporting, orchestration canvases/portfolios, and billing-entitlements pages.
+- Added `bigclaw-go/internal/reporting/report_surfaces_test.go` to cover the retired `tests/test_reports.py` contracts in Go.
+- Deleted `tests/test_reports.py`.
+
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/reporting`
+  Result: passed (`ok  	bigclaw-go/internal/reporting	0.447s`)
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
+  Result: passed and refreshed `bigclaw-go/docs/reports/pytest-harness-status.json` (`inventory_summary=tests=1 bigclaw_imports=1 pytest_imports=0 pytest_command_refs=0`; `legacy_pytest_delete_status.summary=legacy_pytest_delete_ready=false blockers=1 legacy pytest modules remain under tests/; 1 legacy pytest modules still import bigclaw from src/`)
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/reporting ./internal/testharness ./internal/regression ./cmd/bigclawctl`
+  Result: passed (`ok  	bigclaw-go/internal/reporting	(cached)`; `ok  	bigclaw-go/internal/testharness	(cached)`; `ok  	bigclaw-go/internal/regression	0.721s`; `ok  	bigclaw-go/cmd/bigclawctl	(cached)`)
