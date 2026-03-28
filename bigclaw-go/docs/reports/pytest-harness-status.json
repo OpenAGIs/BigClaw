@@ -6,7 +6,6 @@
     "tests/test_control_center.py",
     "tests/test_cost_control.py",
     "tests/test_dashboard_run_contract.py",
-    "tests/test_deprecation.py",
     "tests/test_design_system.py",
     "tests/test_dsl.py",
     "tests/test_evaluation.py",
@@ -50,21 +49,21 @@
   "conftest_defines_fixture": false,
   "conftest_defines_hook": false,
   "conftest_delete_status": {
-    "bigclaw_import_modules": 46,
+    "bigclaw_import_modules": 45,
     "blockers": [
-      "55 legacy pytest modules remain under tests/",
-      "46 legacy pytest modules still import bigclaw from src/",
+      "54 legacy pytest modules remain under tests/",
+      "45 legacy pytest modules still import bigclaw from src/",
       "2 legacy pytest modules still import pytest directly"
     ],
     "can_delete": false,
-    "legacy_test_modules": 55,
+    "legacy_test_modules": 54,
     "pytest_import_modules": 2,
-    "summary": "conftest_delete_ready=false blockers=55 legacy pytest modules remain under tests/; 46 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
+    "summary": "conftest_delete_ready=false blockers=54 legacy pytest modules remain under tests/; 45 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
   },
   "conftest_imports_pytest": false,
   "conftest_path": "tests/conftest.py",
   "conftest_prepends_src": true,
-  "inventory_summary": "tests=55 bigclaw_imports=46 pytest_imports=2",
+  "inventory_summary": "tests=54 bigclaw_imports=45 pytest_imports=2",
   "project_root": ".",
   "pytest_imports": [
     "tests/test_audit_events.py",
@@ -79,7 +78,6 @@
     "tests/test_cost_control.py",
     "tests/test_cross_process_coordination_surface.py",
     "tests/test_dashboard_run_contract.py",
-    "tests/test_deprecation.py",
     "tests/test_design_system.py",
     "tests/test_dsl.py",
     "tests/test_evaluation.py",
