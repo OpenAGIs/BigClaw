@@ -46,6 +46,10 @@
 42. `cd bigclaw-go && go test ./internal/planning`
 43. `cd bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
 44. `cd bigclaw-go && go test ./internal/planning ./internal/testharness ./internal/regression ./cmd/bigclawctl`
+45. `cd bigclaw-go && go test ./internal/workflow ./internal/workflowexec`
+46. `cd bigclaw-go && go test ./internal/workflow ./internal/workflowexec ./internal/testharness ./internal/regression ./cmd/bigclawctl`
+47. `cd bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
+48. `cd bigclaw-go && go test ./internal/workflow ./internal/workflowexec ./internal/testharness ./internal/regression ./cmd/bigclawctl`
 
 ## Results
 
@@ -137,3 +141,11 @@
    Result: passed and refreshed `bigclaw-go/docs/reports/pytest-harness-status.json` with `inventory_summary=tests=6 bigclaw_imports=6 pytest_imports=0 pytest_command_refs=0`, `conftest_delete_status.summary=conftest_delete_ready=true blockers=none`, and `legacy_pytest_delete_status.summary=legacy_pytest_delete_ready=false blockers=6 legacy pytest modules remain under tests/; 6 legacy pytest modules still import bigclaw from src/`
 44. `cd bigclaw-go && go test ./internal/planning ./internal/testharness ./internal/regression ./cmd/bigclawctl`
    Result: `ok  	bigclaw-go/internal/planning	(cached)`, `ok  	bigclaw-go/internal/testharness	1.412s`, `ok  	bigclaw-go/internal/regression	1.834s`, `ok  	bigclaw-go/cmd/bigclawctl	3.090s`
+45. `cd bigclaw-go && go test ./internal/workflow ./internal/workflowexec`
+   Result: `ok  	bigclaw-go/internal/workflow	3.173s`, `ok  	bigclaw-go/internal/workflowexec	3.276s`
+46. `cd bigclaw-go && go test ./internal/workflow ./internal/workflowexec ./internal/testharness ./internal/regression ./cmd/bigclawctl`
+   Result: first run failed only on `internal/regression` because the checked-in `docs/reports/pytest-harness-status.json` snapshot still reflected `tests=6`; partial package results before refreshing the snapshot were `ok  	bigclaw-go/internal/workflow	(cached)`, `ok  	bigclaw-go/internal/workflowexec	(cached)`, `ok  	bigclaw-go/internal/testharness	1.914s`, `ok  	bigclaw-go/cmd/bigclawctl	4.258s`
+47. `cd bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
+   Result: refreshed snapshot to `inventory_summary=tests=5 bigclaw_imports=5 pytest_imports=0 pytest_command_refs=0`; `conftest_delete_status.summary=conftest_delete_ready=true blockers=none`; `legacy_pytest_delete_status.summary=legacy_pytest_delete_ready=false blockers=5 legacy pytest modules remain under tests/; 5 legacy pytest modules still import bigclaw from src/`
+48. `cd bigclaw-go && go test ./internal/workflow ./internal/workflowexec ./internal/testharness ./internal/regression ./cmd/bigclawctl`
+   Result: `ok  	bigclaw-go/internal/workflow	(cached)`, `ok  	bigclaw-go/internal/workflowexec	(cached)`, `ok  	bigclaw-go/internal/testharness	(cached)`, `ok  	bigclaw-go/internal/regression	0.894s`, `ok  	bigclaw-go/cmd/bigclawctl	(cached)`

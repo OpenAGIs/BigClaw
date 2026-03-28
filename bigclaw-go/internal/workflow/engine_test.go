@@ -39,6 +39,34 @@ func TestWorkpadJournalRecordAndWrite(t *testing.T) {
 	}
 }
 
+func TestWorkpadJournalReadAndReplay(t *testing.T) {
+	dir := t.TempDir()
+	journal := WorkpadJournal{
+		TaskID: "BIG-402-replay",
+		RunID:  "run-journal-1",
+		Now: func() time.Time {
+			return time.Date(2026, 3, 28, 8, 0, 0, 0, time.UTC)
+		},
+	}
+	journal.Record("intake", "recorded", map[string]any{"source": "local"})
+	journal.Record("execution", "approved", map[string]any{"medium": "docker"})
+
+	path, err := journal.Write(filepath.Join(dir, "journals", "run-journal-1.json"))
+	if err != nil {
+		t.Fatalf("write journal: %v", err)
+	}
+	loaded, err := ReadWorkpadJournal(path)
+	if err != nil {
+		t.Fatalf("read journal: %v", err)
+	}
+	if loaded.TaskID != "BIG-402-replay" || loaded.RunID != "run-journal-1" {
+		t.Fatalf("unexpected loaded journal: %+v", loaded)
+	}
+	if got := loaded.Replay(); !reflect.DeepEqual(got, []string{"intake:recorded", "execution:approved"}) {
+		t.Fatalf("unexpected replay: %#v", got)
+	}
+}
+
 func TestAcceptanceGateRequiresApprovalForHighRiskWithoutApprovals(t *testing.T) {
 	gate := AcceptanceGate{}
 	task := domain.Task{

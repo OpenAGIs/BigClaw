@@ -13,6 +13,7 @@
 9. For the next continuation slice, retire `tests/test_design_system.py` by landing a Go-native model/audit/report surface for the pure design-system contracts already adjacent to `internal/product/console.go`.
 10. Reuse the landed `internal/designsystem` primitives to retire `tests/test_console_ia.py` with a Go-native console IA / interaction-contract package, then refresh harness inventory and docs again.
 11. Retire `tests/test_planning.py` with a Go-native planning package for candidate backlog ranking, entry-gate evaluation, four-week execution plans, and report rendering, then refresh harness inventory and docs again.
+12. Retire `tests/test_workflow.py` with Go-native workflow journal replay, acceptance gate, orchestration artifact, pilot scorecard, and repo sync audit coverage, then refresh harness inventory and docs again.
 
 ## Acceptance
 
@@ -29,6 +30,10 @@
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/eventbus ./internal/testharness ./internal/regression ./cmd/bigclawctl`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./...`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/workflow ./internal/workflowexec`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/workflow ./internal/workflowexec ./internal/testharness ./internal/regression ./cmd/bigclawctl`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/workflow ./internal/workflowexec ./internal/testharness ./internal/regression ./cmd/bigclawctl`
 
 ## Validation Results
 
@@ -155,6 +160,14 @@
   Result: passed and refreshed `bigclaw-go/docs/reports/pytest-harness-status.json` (`status=ok`; `inventory_summary=tests=6 bigclaw_imports=6 pytest_imports=0 pytest_command_refs=0`; `conftest_delete_status.summary=conftest_delete_ready=true blockers=none`; `legacy_pytest_delete_status.summary=legacy_pytest_delete_ready=false blockers=6 legacy pytest modules remain under tests/; 6 legacy pytest modules still import bigclaw from src/`)
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/planning ./internal/testharness ./internal/regression ./cmd/bigclawctl`
   Result: passed (`ok  	bigclaw-go/internal/planning	(cached)`; `ok  	bigclaw-go/internal/testharness	1.412s`; `ok  	bigclaw-go/internal/regression	1.834s`; `ok  	bigclaw-go/cmd/bigclawctl	3.090s`)
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/workflow ./internal/workflowexec`
+  Result: passed (`ok  	bigclaw-go/internal/workflow	3.173s`; `ok  	bigclaw-go/internal/workflowexec	3.276s`)
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/workflow ./internal/workflowexec ./internal/testharness ./internal/regression ./cmd/bigclawctl`
+  Result: first run failed only on `internal/regression` snapshot drift because checked-in `docs/reports/pytest-harness-status.json` still reported `tests=6`; partial package results before refresh were `ok  	bigclaw-go/internal/workflow	(cached)`, `ok  	bigclaw-go/internal/workflowexec	(cached)`, `ok  	bigclaw-go/internal/testharness	1.914s`, `ok  	bigclaw-go/cmd/bigclawctl	4.258s`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
+  Result: passed and refreshed `bigclaw-go/docs/reports/pytest-harness-status.json` (`inventory_summary=tests=5 bigclaw_imports=5 pytest_imports=0 pytest_command_refs=0`; `conftest_delete_status.summary=conftest_delete_ready=true blockers=none`; `legacy_pytest_delete_status.summary=legacy_pytest_delete_ready=false blockers=5 legacy pytest modules remain under tests/; 5 legacy pytest modules still import bigclaw from src/`)
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/workflow ./internal/workflowexec ./internal/testharness ./internal/regression ./cmd/bigclawctl`
+  Result: passed (`ok  	bigclaw-go/internal/workflow	(cached)`; `ok  	bigclaw-go/internal/workflowexec	(cached)`; `ok  	bigclaw-go/internal/testharness	(cached)`; `ok  	bigclaw-go/internal/regression	0.894s`; `ok  	bigclaw-go/cmd/bigclawctl	(cached)`)
 
 ## Notes
 

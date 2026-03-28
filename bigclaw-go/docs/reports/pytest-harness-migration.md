@@ -20,8 +20,8 @@ The Python-side harness surface in scope today is intentionally small:
 
 Observed inventory at the current branch state:
 
-- `6` Python test modules under `tests/`
-- `6` modules directly importing `bigclaw...`
+- `5` Python test modules under `tests/`
+- `5` modules directly importing `bigclaw...`
 - `0` modules now import `pytest` directly within `tests/`
 - `pyproject.toml` no longer declares `pytest` in the default `dev` extra
 - `pyproject.toml` no longer defines `[tool.pytest.ini_options]`; legacy Python tests are now treated as migration-only manual lanes rather than the default repo test baseline
@@ -50,7 +50,7 @@ It provides:
 - `RequireExecutable(tb, name)` for shared skip-aware runtime probing when legacy Python tooling is still part of the migration boundary
 - `PythonExecutable(tb)` for the canonical resolved Python runtime path used by adjacent Go migration tests
 - `Chdir(tb, dir)` for temporary cwd changes with automatic cleanup
-- `InventoryPytestAssets(tb)` to machine-check the remaining pytest surface (`6` test modules, `6` `bigclaw` importers, `0` direct `pytest` importers) instead of leaving that inventory only in prose
+- `InventoryPytestAssets(tb)` to machine-check the remaining pytest surface (`5` test modules, `5` `bigclaw` importers, `0` direct `pytest` importers) instead of leaving that inventory only in prose
 - `InventoryPytestAssets(tb)` now walks `tests/` recursively, so legacy pytest files moved into nested subdirectories cannot silently escape the Go-owned inventory gate
 - `InventoryPytestAssets(tb)` now detects pytest usage via `import pytest`, `from pytest import ...`, and `pytest.` call sites so the `tests/conftest.py` deletion gate does not miss direct import forms
 - `InventoryPytestAssets(tb)` now also machine-checks whether `pyproject.toml` still declares pytest as a dev dependency or still defines `[tool.pytest.ini_options]`, so the remaining non-Go pytest infrastructure is tracked in the same report as `tests/conftest.py`
@@ -208,6 +208,16 @@ First migrated Python test slice now covered explicitly in Go:
   - `test_build_v3_candidate_backlog_matches_issue_plan_traceability`
   - `test_build_v3_entry_gate_passes_built_candidate_backlog_against_v2_baseline`
   - retired in this issue; coverage lives in `bigclaw-go/internal/planning/planning.go` and `bigclaw-go/internal/planning/planning_test.go`
+- `tests/test_workflow.py`
+  - `test_workpad_journal_can_replay_and_reload`
+  - `test_acceptance_gate_rejects_missing_evidence`
+  - `test_workflow_engine_records_journal_and_accepts_complete_evidence`
+  - `test_workflow_engine_keeps_high_risk_task_pending_manual_approval`
+  - `test_workflow_engine_writes_pilot_scorecard_and_accepts_positive_roi`
+  - `test_acceptance_gate_rejects_hold_pilot_scorecard`
+  - `test_workflow_engine_writes_orchestration_report_without_duplicating_ledger_entries`
+  - `test_workflow_engine_writes_repo_sync_audit_report_and_records_failure_categories`
+  - retired in this issue; coverage lives in `bigclaw-go/internal/workflow/engine.go`, `bigclaw-go/internal/workflow/engine_test.go`, `bigclaw-go/internal/workflowexec/workflowexec.go`, and `bigclaw-go/internal/workflowexec/workflowexec_test.go`
 - `tests/test_governance.py`
   - `test_scope_freeze_board_round_trip_preserves_manifest_shape`
   - `test_scope_freeze_audit_flags_backlog_governance_and_closeout_gaps`
