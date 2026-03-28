@@ -1,7 +1,17 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Protocol
 
-from .governance import ScopeFreezeAudit
+
+class BaselineAudit(Protocol):
+    version: str
+
+    @property
+    def release_ready(self) -> bool:
+        ...
+
+    @property
+    def readiness_score(self) -> float:
+        ...
 
 
 PRIORITY_WEIGHTS = {"P0": 4, "P1": 3, "P2": 2, "P3": 1}
@@ -222,7 +232,7 @@ class CandidatePlanner:
         self,
         backlog: CandidateBacklog,
         gate: EntryGate,
-        baseline_audit: Optional[ScopeFreezeAudit] = None,
+        baseline_audit: Optional[BaselineAudit] = None,
     ) -> EntryGateDecision:
         ready_candidates = [candidate for candidate in backlog.ranked_candidates if candidate.ready]
         blocked_candidates = [candidate for candidate in backlog.candidates if candidate.blockers]
@@ -260,7 +270,7 @@ class CandidatePlanner:
     def _baseline_findings(
         self,
         gate: EntryGate,
-        baseline_audit: Optional[ScopeFreezeAudit],
+        baseline_audit: Optional[BaselineAudit],
     ) -> List[str]:
         if not gate.required_baseline_version:
             return []

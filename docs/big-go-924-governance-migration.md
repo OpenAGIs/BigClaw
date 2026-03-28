@@ -12,7 +12,7 @@
   - Python coverage for repo discussion post creation, reply threading, target filtering, and collaboration comment anchoring.
   - Go replacement for the board model lives in `bigclaw-go/internal/repo/board.go`.
   - This issue adds Go parity coverage in `bigclaw-go/internal/repo/board_test.go`, including the collaboration-comment conversion that was previously only exercised on the Python side.
-- Legacy Python implementation assets still present for the same governance surfaces:
+- Legacy Python implementation assets originally present for the same governance surfaces:
   - `src/bigclaw/repo_governance.py`
   - `src/bigclaw/governance.py`
   - `src/bigclaw/repo_board.py`
@@ -26,6 +26,10 @@
   - `tests/test_governance.py`
   - `tests/test_repo_board.py`
   - `tests/test_repo_collaboration.py`
+- Deleted the legacy Python governance implementation modules:
+  - `src/bigclaw/repo_governance.py`
+  - `src/bigclaw/governance.py`
+  - `src/bigclaw/repo_board.py`
 - Updated validation guidance in `docs/BigClaw-AgentHub-Integration-Alignment.md` to use the Go governance test command for this migrated slice.
 
 ## Go migration mapping
@@ -44,11 +48,11 @@
   - the Go tests below remain green and are wired into the repo's normal regression lane
   - any consumer-facing documentation or compatibility shim references are updated to point at the Go surfaces instead of the Python modules
 
-## Current blockers to deleting the Python assets
+## Deletion gate outcome
 
-- `tests/test_planning.py` still imports `ScopeFreezeAudit` from `src/bigclaw/governance.py`
-
-These remaining references make the deletion gate concrete: the targeted governance tests are now Go-owned, but the legacy Python implementation modules should stay until the remaining Python-side consumers migrate or are deleted in their own scoped tickets.
+- `tests/test_planning.py` no longer imports `ScopeFreezeAudit`; it now uses a local baseline-audit stub because planning only needs the structural contract (`version`, `release_ready`, `readiness_score`) rather than the old governance module.
+- `src/bigclaw/planning.py` no longer imports the governance module and instead relies on a structural `BaselineAudit` protocol.
+- The targeted governance Python tests and implementation modules have been removed from the repo.
 
 ## Regression commands
 

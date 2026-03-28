@@ -1,3 +1,5 @@
+from dataclasses import dataclass, field
+
 import pytest
 
 from bigclaw.planning import (
@@ -16,7 +18,48 @@ from bigclaw.planning import (
     render_candidate_backlog_report,
     render_four_week_execution_report,
 )
-from bigclaw.governance import ScopeFreezeAudit
+
+
+@dataclass
+class BaselineAuditStub:
+    board_name: str
+    version: str
+    total_items: int
+    duplicate_issue_ids: list[str] = field(default_factory=list)
+    missing_owners: list[str] = field(default_factory=list)
+    missing_acceptance: list[str] = field(default_factory=list)
+    missing_validation: list[str] = field(default_factory=list)
+    missing_closeout_requirements: dict[str, list[str]] = field(default_factory=dict)
+    unauthorized_scope_changes: list[str] = field(default_factory=list)
+    invalid_scope_statuses: list[str] = field(default_factory=list)
+    unapproved_exceptions: list[str] = field(default_factory=list)
+
+    @property
+    def release_ready(self) -> bool:
+        return not (
+            self.duplicate_issue_ids
+            or self.missing_owners
+            or self.missing_acceptance
+            or self.missing_validation
+            or self.missing_closeout_requirements
+            or self.unauthorized_scope_changes
+            or self.invalid_scope_statuses
+            or self.unapproved_exceptions
+        )
+
+    @property
+    def readiness_score(self) -> float:
+        checks = [
+            not self.duplicate_issue_ids,
+            not self.missing_owners,
+            not self.missing_acceptance,
+            not self.missing_validation,
+            not self.missing_closeout_requirements,
+            not self.unauthorized_scope_changes,
+            not self.invalid_scope_statuses,
+            not self.unapproved_exceptions,
+        ]
+        return round((sum(1 for item in checks if item) / len(checks)) * 100, 1)
 
 
 def test_candidate_backlog_round_trip_preserves_manifest_shape() -> None:
@@ -138,7 +181,7 @@ def test_entry_gate_evaluation_requires_ready_candidates_capabilities_and_eviden
         required_evidence=["acceptance-suite", "pilot-evidence", "validation-report"],
         required_baseline_version="v2.0",
     )
-    baseline_audit = ScopeFreezeAudit(
+    baseline_audit = BaselineAuditStub(
         board_name="BigClaw v2.0 Freeze",
         version="v2.0",
         total_items=5,
@@ -212,7 +255,7 @@ def test_entry_gate_holds_when_v2_baseline_is_missing_or_not_ready() -> None:
     failed_baseline = CandidatePlanner().evaluate_gate(
         backlog,
         gate,
-        baseline_audit=ScopeFreezeAudit(
+        baseline_audit=BaselineAuditStub(
             board_name="BigClaw v2.0 Freeze",
             version="v2.0",
             total_items=5,
@@ -283,7 +326,7 @@ def test_render_candidate_backlog_report_summarizes_backlog_and_gate_findings() 
     decision = CandidatePlanner().evaluate_gate(
         backlog,
         gate,
-        baseline_audit=ScopeFreezeAudit(
+        baseline_audit=BaselineAuditStub(
             board_name="BigClaw v2.0 Freeze",
             version="v2.0",
             total_items=5,
@@ -460,7 +503,7 @@ def test_build_v3_entry_gate_passes_built_candidate_backlog_against_v2_baseline(
     decision = CandidatePlanner().evaluate_gate(
         backlog,
         gate,
-        baseline_audit=ScopeFreezeAudit(
+        baseline_audit=BaselineAuditStub(
             board_name="BigClaw v2.0 Freeze",
             version="v2.0",
             total_items=25,

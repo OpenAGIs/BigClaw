@@ -87,14 +87,6 @@ from .saved_views import (
     SavedViewLibrary,
     render_saved_view_report,
 )
-from .governance import (
-    FreezeException,
-    GovernanceBacklogItem,
-    ScopeFreezeAudit,
-    ScopeFreezeBoard,
-    ScopeFreezeGovernance,
-    render_scope_freeze_report,
-)
 from .issue_archive import (
     ArchivedIssue,
     IssuePriorityArchive,
@@ -431,12 +423,6 @@ __all__ = [
     "SavedViewFilter",
     "SavedViewLibrary",
     "render_saved_view_report",
-    "FreezeException",
-    "GovernanceBacklogItem",
-    "ScopeFreezeAudit",
-    "ScopeFreezeBoard",
-    "ScopeFreezeGovernance",
-    "render_scope_freeze_report",
     "RiskFactor",
     "RiskScore",
     "RiskScorer",
