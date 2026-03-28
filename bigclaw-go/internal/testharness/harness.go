@@ -2,6 +2,7 @@ package testharness
 
 import (
 	"bufio"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -133,6 +134,7 @@ func Chdir(tb testing.TB, dir string) {
 }
 
 type PytestAssetInventory struct {
+	ConftestExists         bool
 	TestModules            []string
 	BigclawImportModules   []string
 	PytestImportModules    []string
@@ -141,6 +143,7 @@ type PytestAssetInventory struct {
 	ConftestImportsPytest  bool
 	ConftestDefinesFixture bool
 	ConftestDefinesHook    bool
+	ConftestUsesPlugins    bool
 }
 
 type ConftestDeletionStatus struct {
@@ -159,11 +162,13 @@ type PytestHarnessStatusReport struct {
 	TestModules            []string               `json:"test_modules"`
 	BigclawImports         []string               `json:"bigclaw_imports"`
 	PytestImports          []string               `json:"pytest_imports"`
+	ConftestExists         bool                   `json:"conftest_exists"`
 	ConftestPath           string                 `json:"conftest_path"`
 	ConftestPrependsSrc    bool                   `json:"conftest_prepends_src"`
 	ConftestImportsPytest  bool                   `json:"conftest_imports_pytest"`
 	ConftestDefinesFixture bool                   `json:"conftest_defines_fixture"`
 	ConftestDefinesHook    bool                   `json:"conftest_defines_hook"`
+	ConftestUsesPlugins    bool                   `json:"conftest_uses_pytest_plugins"`
 	ConftestDeleteStatus   ConftestDeletionStatus `json:"conftest_delete_status"`
 }
 
@@ -187,52 +192,77 @@ func InventoryPytestAssetsAt(projectRoot string) (PytestAssetInventory, error) {
 		ConftestPath: filepath.Join(testsDir, "conftest.py"),
 	}
 	for _, entry := range entries {
-		name := entry.Name()
-		if entry.IsDir() || filepath.Ext(name) != ".py" {
-			continue
+		if entry.Name() == "conftest.py" {
+			inventory.ConftestExists = true
+			break
 		}
-		fullPath := filepath.Join(testsDir, name)
-		relPath := filepath.ToSlash(filepath.Join("tests", name))
-		if name == "conftest.py" {
-			if inventory.ConftestPrependsSrc, err = fileContainsAt(fullPath, `sys.path.insert(0, str(SRC))`); err != nil {
-				return PytestAssetInventory{}, err
+	}
+	err = filepath.WalkDir(testsDir, func(path string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if d.IsDir() {
+			return nil
+		}
+		if filepath.Ext(d.Name()) != ".py" {
+			return nil
+		}
+
+		relPath := filepath.ToSlash(normalizeProjectRelativePath(projectRoot, path))
+		if d.Name() == "conftest.py" {
+			if relPath != "tests/conftest.py" {
+				return nil
 			}
-			if inventory.ConftestImportsPytest, err = fileContainsPytestUsageAt(fullPath); err != nil {
-				return PytestAssetInventory{}, err
+			if inventory.ConftestPrependsSrc, err = fileContainsAt(path, `sys.path.insert(0, str(SRC))`); err != nil {
+				return err
 			}
-			hasPytestFixture, err := fileContainsAt(fullPath, "@pytest.fixture")
+			if inventory.ConftestImportsPytest, err = fileContainsPytestUsageAt(path); err != nil {
+				return err
+			}
+			hasPytestFixture, err := fileContainsAt(path, "@pytest.fixture")
 			if err != nil {
-				return PytestAssetInventory{}, err
+				return err
 			}
-			hasFixturePrefix, err := fileContainsAt(fullPath, "def fixture_")
+			hasFixturePrefix, err := fileContainsAt(path, "def fixture_")
 			if err != nil {
-				return PytestAssetInventory{}, err
+				return err
 			}
 			inventory.ConftestDefinesFixture = hasPytestFixture || hasFixturePrefix
-			if inventory.ConftestDefinesHook, err = fileContainsAt(fullPath, "def pytest_"); err != nil {
-				return PytestAssetInventory{}, err
+			if inventory.ConftestDefinesHook, err = fileContainsAt(path, "def pytest_"); err != nil {
+				return err
 			}
-			continue
+			if inventory.ConftestUsesPlugins, err = fileContainsAt(path, "pytest_plugins"); err != nil {
+				return err
+			}
+			return nil
 		}
+		if !strings.HasPrefix(d.Name(), "test_") {
+			return nil
+		}
+
 		inventory.TestModules = append(inventory.TestModules, relPath)
-		hasFromBigclaw, err := fileContainsAt(fullPath, "from bigclaw")
+		hasFromBigclaw, err := fileContainsAt(path, "from bigclaw")
 		if err != nil {
-			return PytestAssetInventory{}, err
+			return err
 		}
-		hasImportBigclaw, err := fileContainsAt(fullPath, "import bigclaw")
+		hasImportBigclaw, err := fileContainsAt(path, "import bigclaw")
 		if err != nil {
-			return PytestAssetInventory{}, err
+			return err
 		}
 		if hasFromBigclaw || hasImportBigclaw {
 			inventory.BigclawImportModules = append(inventory.BigclawImportModules, relPath)
 		}
-		hasPytestUsage, err := fileContainsPytestUsageAt(fullPath)
+		hasPytestUsage, err := fileContainsPytestUsageAt(path)
 		if err != nil {
-			return PytestAssetInventory{}, err
+			return err
 		}
 		if hasPytestUsage {
 			inventory.PytestImportModules = append(inventory.PytestImportModules, relPath)
 		}
+		return nil
+	})
+	if err != nil {
+		return PytestAssetInventory{}, err
 	}
 
 	slices.Sort(inventory.TestModules)
@@ -255,11 +285,13 @@ func BuildPytestHarnessStatusReport(projectRoot string) (PytestHarnessStatusRepo
 		TestModules:            append([]string(nil), inventory.TestModules...),
 		BigclawImports:         append([]string(nil), inventory.BigclawImportModules...),
 		PytestImports:          append([]string(nil), inventory.PytestImportModules...),
+		ConftestExists:         inventory.ConftestExists,
 		ConftestPath:           normalizedConftestPath,
 		ConftestPrependsSrc:    inventory.ConftestPrependsSrc,
 		ConftestImportsPytest:  inventory.ConftestImportsPytest,
 		ConftestDefinesFixture: inventory.ConftestDefinesFixture,
 		ConftestDefinesHook:    inventory.ConftestDefinesHook,
+		ConftestUsesPlugins:    inventory.ConftestUsesPlugins,
 		ConftestDeleteStatus:   inventory.ConftestDeletionStatus(),
 	}, nil
 }
@@ -337,6 +369,18 @@ func (i PytestAssetInventory) Summary() string {
 
 func (i PytestAssetInventory) ConftestDeletionBlockers() []string {
 	var blockers []string
+	if i.ConftestImportsPytest {
+		blockers = append(blockers, "tests/conftest.py still imports pytest directly")
+	}
+	if i.ConftestDefinesFixture {
+		blockers = append(blockers, "tests/conftest.py still defines pytest fixtures")
+	}
+	if i.ConftestDefinesHook {
+		blockers = append(blockers, "tests/conftest.py still defines pytest hooks")
+	}
+	if i.ConftestUsesPlugins {
+		blockers = append(blockers, "tests/conftest.py still declares pytest_plugins")
+	}
 	if len(i.TestModules) > 0 {
 		blockers = append(blockers, strconv.Itoa(len(i.TestModules))+" legacy pytest modules remain under tests/")
 	}

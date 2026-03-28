@@ -43,9 +43,11 @@
     "pytest_import_modules": 2,
     "summary": "conftest_delete_ready=false blockers=28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
   },
+  "conftest_exists": true,
   "conftest_imports_pytest": false,
   "conftest_path": "tests/conftest.py",
   "conftest_prepends_src": true,
+  "conftest_uses_pytest_plugins": false,
   "inventory_summary": "tests=28 bigclaw_imports=28 pytest_imports=2",
   "project_root": ".",
   "pytest_imports": [

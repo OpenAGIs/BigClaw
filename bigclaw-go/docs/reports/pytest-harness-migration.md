@@ -46,12 +46,13 @@ It provides:
 - `PythonExecutable(tb)` for the canonical resolved Python runtime path used by adjacent Go migration tests
 - `Chdir(tb, dir)` for temporary cwd changes with automatic cleanup
 - `InventoryPytestAssets(tb)` to machine-check the remaining pytest surface (`28` test modules, `28` `bigclaw` importers, `2` `pytest` importers) instead of leaving that inventory only in prose
+- `InventoryPytestAssets(tb)` now walks `tests/` recursively, so legacy pytest files moved into nested subdirectories cannot silently escape the Go-owned inventory gate
 - `InventoryPytestAssets(tb)` now detects pytest usage via `import pytest`, `from pytest import ...`, and `pytest.` call sites so the `tests/conftest.py` deletion gate does not miss direct import forms
 - `PytestAssetInventory.ConftestDeletionBlockers()` to keep the current `tests/conftest.py` removal blockers machine-checked from Go rather than only documented in markdown
 - `PytestAssetInventory.CanDeleteConftest()` to expose the current deletion gate as a single Go-owned boolean for future migration slices
 - `PytestAssetInventory.ConftestDeletionSummary()` to provide one stable, report-ready line for the current delete-readiness state
 - `PytestAssetInventory.ConftestDeletionStatus()` to provide a structured status object for future CLI/report surfaces that need both the boolean gate and the blocker/count breakdown
-- `bigclawctl pytest-harness [--json]` as a stable Go-owned command surface that prints the current pytest asset inventory, `tests/conftest.py` behavior flags, and structured deletion-gate status without relying on pytest itself
+- `bigclawctl pytest-harness [--json]` as a stable Go-owned command surface that prints the current pytest asset inventory, `tests/conftest.py` presence/behavior flags, and structured deletion-gate status without relying on pytest itself
 - `bigclaw-go/docs/reports/pytest-harness-status.json` as the checked-in machine-generated snapshot of the current pytest/conftest migration boundary
 - `internal/regression/pytest_harness_status_test.go` to fail Go regression if the checked-in snapshot drifts from the live repo inventory or deletion gate
 - `internal/legacyshim` tests now also assert that the frozen Python compile-check asset list still matches the checked-in `src/bigclaw/*.py` shim files that remain in scope for migration
@@ -305,6 +306,7 @@ Recommended next migration slices:
 
 - no remaining validation lane depends on `python3 -m pytest`
 - no remaining test module imports `bigclaw...` from `src/`
+- `tests/conftest.py` no longer imports `pytest`, defines fixtures/hooks, or declares `pytest_plugins`
 - Go replacements cover the active regression surface for the remaining Python tests
 - a repo-wide validation run succeeds without Python path injection
 
@@ -347,6 +349,8 @@ That command emits:
 The checked-in snapshot is not documentation-only: `go test ./internal/regression` now re-computes the live Go-owned report and fails if `docs/reports/pytest-harness-status.json` drifts from the current repository state.
 
 The snapshot intentionally stores repo-relative path fields (`project_root: "."`, `conftest_path: "tests/conftest.py"`) so it remains stable across clones and workspace directories.
+
+The snapshot also records whether the top-level `tests/conftest.py` still exists plus whether it imports `pytest`, defines fixtures/hooks, or declares `pytest_plugins`, so the delete gate cannot report readiness if that file grows beyond a plain import-path shim.
 
 Until then, `tests/conftest.py` remains a compatibility shim and should not grow new behavior.
 

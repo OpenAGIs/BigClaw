@@ -51,6 +51,9 @@ func TestLegacySrcAndPythonPathBootstrap(t *testing.T) {
 func TestInventoryPytestAssets(t *testing.T) {
 	inventory := InventoryPytestAssets(t)
 
+	if !inventory.ConftestExists {
+		t.Fatal("expected tests/conftest.py to exist in the current repo inventory")
+	}
 	if inventory.ConftestPath != filepath.Join(ProjectRoot(t), "tests", "conftest.py") {
 		t.Fatalf("unexpected conftest path: %q", inventory.ConftestPath)
 	}
@@ -65,6 +68,9 @@ func TestInventoryPytestAssets(t *testing.T) {
 	}
 	if inventory.ConftestDefinesHook {
 		t.Fatal("expected conftest to avoid defining pytest hooks")
+	}
+	if inventory.ConftestUsesPlugins {
+		t.Fatal("expected conftest to avoid declaring pytest_plugins")
 	}
 	if got := inventory.Summary(); got != "tests=28 bigclaw_imports=28 pytest_imports=2" {
 		t.Fatalf("unexpected inventory summary: %s", got)
@@ -125,8 +131,14 @@ func TestBuildPytestHarnessStatusReportNormalizesPaths(t *testing.T) {
 	if report.ProjectRoot != "." {
 		t.Fatalf("expected portable project_root '.', got %q", report.ProjectRoot)
 	}
+	if !report.ConftestExists {
+		t.Fatal("expected report to note top-level conftest presence")
+	}
 	if report.ConftestPath != "tests/conftest.py" {
 		t.Fatalf("expected portable conftest_path, got %q", report.ConftestPath)
+	}
+	if report.ConftestUsesPlugins {
+		t.Fatal("expected report to keep pytest_plugins flag false for current conftest")
 	}
 }
 
@@ -187,6 +199,67 @@ func TestEmptyInventoryAllowsConftestDeletion(t *testing.T) {
 	}
 	if got := inventory.ConftestDeletionStatus(); !reflect.DeepEqual(got, wantStatus) {
 		t.Fatalf("unexpected empty inventory status: got=%+v want=%+v", got, wantStatus)
+	}
+}
+
+func TestConftestDeletionBlockersIncludeConftestRuntimeFeatures(t *testing.T) {
+	inventory := PytestAssetInventory{
+		ConftestImportsPytest:  true,
+		ConftestDefinesFixture: true,
+		ConftestDefinesHook:    true,
+		ConftestUsesPlugins:    true,
+	}
+	want := []string{
+		"tests/conftest.py still imports pytest directly",
+		"tests/conftest.py still defines pytest fixtures",
+		"tests/conftest.py still defines pytest hooks",
+		"tests/conftest.py still declares pytest_plugins",
+	}
+	if got := inventory.ConftestDeletionBlockers(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("unexpected conftest-only blockers: got=%v want=%v", got, want)
+	}
+	if inventory.CanDeleteConftest() {
+		t.Fatal("expected conftest runtime features to block deletion")
+	}
+}
+
+func TestInventoryPytestAssetsAtRecursesIntoNestedTests(t *testing.T) {
+	projectRoot := t.TempDir()
+	testsRoot := filepath.Join(projectRoot, "tests")
+	if err := os.MkdirAll(filepath.Join(testsRoot, "nested"), 0o755); err != nil {
+		t.Fatalf("mkdir nested tests: %v", err)
+	}
+	conftestBody := "import sys\nfrom pathlib import Path\nROOT = Path(__file__).resolve().parents[1]\nSRC = ROOT / 'src'\nsys.path.insert(0, str(SRC))\n"
+	if err := os.WriteFile(filepath.Join(testsRoot, "conftest.py"), []byte(conftestBody), 0o644); err != nil {
+		t.Fatalf("write conftest: %v", err)
+	}
+	nestedBody := "import pytest\nfrom bigclaw.mapping import map_priority\n\ndef test_nested():\n    assert map_priority('P0')\n"
+	if err := os.WriteFile(filepath.Join(testsRoot, "nested", "test_nested.py"), []byte(nestedBody), 0o644); err != nil {
+		t.Fatalf("write nested test: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(testsRoot, "helper.py"), []byte("print('ignore')\n"), 0o644); err != nil {
+		t.Fatalf("write helper: %v", err)
+	}
+
+	inventory, err := InventoryPytestAssetsAt(projectRoot)
+	if err != nil {
+		t.Fatalf("inventory nested tests: %v", err)
+	}
+	if !inventory.ConftestExists {
+		t.Fatal("expected top-level conftest to be detected")
+	}
+	if !inventory.ConftestPrependsSrc {
+		t.Fatal("expected conftest src bootstrap to be detected")
+	}
+	wantTests := []string{"tests/nested/test_nested.py"}
+	if !reflect.DeepEqual(inventory.TestModules, wantTests) {
+		t.Fatalf("unexpected nested test modules: got=%v want=%v", inventory.TestModules, wantTests)
+	}
+	if !reflect.DeepEqual(inventory.BigclawImportModules, wantTests) {
+		t.Fatalf("unexpected nested bigclaw import modules: got=%v want=%v", inventory.BigclawImportModules, wantTests)
+	}
+	if !reflect.DeepEqual(inventory.PytestImportModules, wantTests) {
+		t.Fatalf("unexpected nested pytest import modules: got=%v want=%v", inventory.PytestImportModules, wantTests)
 	}
 }
 

@@ -139,6 +139,9 @@ func TestRunPytestHarnessJSONOutput(t *testing.T) {
 	if payload["project_root"] != "." {
 		t.Fatalf("unexpected project_root: %+v", payload)
 	}
+	if payload["conftest_exists"] != true {
+		t.Fatalf("expected conftest_exists=true, got %+v", payload)
+	}
 	if payload["conftest_path"] != "tests/conftest.py" {
 		t.Fatalf("unexpected conftest_path: %+v", payload)
 	}
@@ -154,6 +157,9 @@ func TestRunPytestHarnessJSONOutput(t *testing.T) {
 	}
 	if deleteStatus["legacy_test_modules"] != float64(28) || deleteStatus["bigclaw_import_modules"] != float64(28) || deleteStatus["pytest_import_modules"] != float64(2) {
 		t.Fatalf("unexpected delete status counts: %+v", deleteStatus)
+	}
+	if payload["conftest_uses_pytest_plugins"] != false {
+		t.Fatalf("expected conftest_uses_pytest_plugins=false, got %+v", payload)
 	}
 }
 

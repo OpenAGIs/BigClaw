@@ -1,44 +1,39 @@
-# BIG-GO-923 Workpad
+# BIG-GO-923
 
 ## Plan
 
-1. Replace `tests/test_parallel_validation_bundle.py` with Go-owned regression coverage that exercises the same script behavior, then remove the pytest file.
-2. Refresh pytest-harness inventory counts, snapshot artifact, and migration report so the `conftest` deletion gate reflects the reduced legacy surface again.
-3. Run targeted Python/Go validation for the live-validation-bundle/harness/report gates, then commit and push.
+1. Inventory the current Python/pytest harness surface centered on `tests/conftest.py`, `tests/`, and any existing Go migration helpers or reports.
+2. Identify the smallest missing Go-native harness/reporting pieces needed to satisfy the issue without broad unrelated migration.
+3. Implement the first batch of scoped Go changes for harness replacement or migration reporting.
+4. Refresh checked-in migration artifacts if code changes affect the current snapshot or migration narrative.
+5. Run targeted Go tests and any required generation commands, record exact commands and outcomes, then commit and push the branch.
 
 ## Acceptance
 
-- The repository explicitly lists the current pytest harness assets and what `tests/conftest.py` still does.
-- `bigclaw-go/internal/testharness` keeps the Go-native replacement helpers for repo/project/src bootstrap and machine-checks the remaining pytest surface without missing direct `pytest` imports.
-- `bigclawctl` exposes a stable Go-owned command that reports the pytest harness inventory and current `tests/conftest.py` deletion gate.
-- A checked-in report artifact captures the current pytest-harness inventory and delete-readiness status in machine-readable form.
-- Go regression coverage fails if the checked-in pytest-harness snapshot drifts from the current repository inventory.
-- The checked-in snapshot is clone-portable and avoids absolute path drift.
-- At least one additional legacy pytest module is retired from `tests/` and replaced by Go coverage in this issue.
-- The migration report states when `tests/conftest.py` can be deleted and which regression commands gate that removal.
-- The current `tests/conftest.py` deletion blockers remain machine-checked from Go rather than only described in prose.
-- The current `tests/conftest.py` delete-readiness summary is available as one stable line from Go-owned harness code.
-- The final result includes the exact validation commands executed and whether they passed.
+- Current Python and non-Go pytest harness assets are explicitly inventoried.
+- A Go-native replacement and/or concrete migration path exists for the current `tests/conftest.py` bootstrap behavior.
+- First-batch scoped Go implementation is landed in-repo.
+- Conditions for deleting legacy Python harness assets are documented and machine-checkable where practical.
+- Regression validation commands and their exact results are recorded for this issue.
 
 ## Validation
 
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && PYTHONPATH=src python3 -c "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0"`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/regression`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && git status --short`
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && git add . && git commit -m "..." && git push origin BIG-GO-923-go-test-harness`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/regression ./cmd/bigclawctl`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --json`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./...`
 
 ## Validation Results
 
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && PYTHONPATH=src python3 -c "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0"`
-  Result: passed (exit 0)
-- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/regression`
-  Result: passed (`ok  	bigclaw-go/internal/testharness	1.747s`; `ok  	bigclaw-go/internal/regression	2.026s`)
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/regression ./cmd/bigclawctl`
+  Result: passed (`ok  	bigclaw-go/internal/testharness	(cached)`; `ok  	bigclaw-go/internal/regression	0.685s`; `ok  	bigclaw-go/cmd/bigclawctl	(cached)`)
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --json`
+  Result: passed (`status=ok`; `inventory_summary=tests=28 bigclaw_imports=28 pytest_imports=2`; `conftest_exists=true`; `conftest_uses_pytest_plugins=false`; `conftest_delete_status.can_delete=false`)
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
-  Result: passed (`status=ok`; `inventory_summary=tests=28 bigclaw_imports=28 pytest_imports=2`; `conftest_delete_status.summary=conftest_delete_ready=false blockers=28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly`)
+  Result: passed and refreshed `bigclaw-go/docs/reports/pytest-harness-status.json`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./...`
+  Result: passed
 
-## Current Status
+## Notes
 
-- `tests/conftest.py` delete-readiness: `conftest_delete_ready=false blockers=28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly`
-- Structured delete-readiness status:
-  `{"can_delete":false,"legacy_test_modules":28,"bigclaw_import_modules":28,"pytest_import_modules":2}`
+- Keep scope constrained to the pytest/conftest harness migration surface for this issue.
+- Do not remove legacy Python assets unless the checked migration gate says they are delete-ready and the replacement coverage is in place.
