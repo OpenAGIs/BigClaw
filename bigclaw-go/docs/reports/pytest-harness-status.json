@@ -34,19 +34,19 @@
   "conftest_delete_status": {
     "bigclaw_import_modules": 28,
     "blockers": [
-      "31 legacy pytest modules remain under tests/",
+      "30 legacy pytest modules remain under tests/",
       "28 legacy pytest modules still import bigclaw from src/",
       "2 legacy pytest modules still import pytest directly"
     ],
     "can_delete": false,
-    "legacy_test_modules": 31,
+    "legacy_test_modules": 30,
     "pytest_import_modules": 2,
-    "summary": "conftest_delete_ready=false blockers=31 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
+    "summary": "conftest_delete_ready=false blockers=30 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
   },
   "conftest_imports_pytest": false,
   "conftest_path": "tests/conftest.py",
   "conftest_prepends_src": true,
-  "inventory_summary": "tests=31 bigclaw_imports=28 pytest_imports=2",
+  "inventory_summary": "tests=30 bigclaw_imports=28 pytest_imports=2",
   "project_root": ".",
   "pytest_imports": [
     "tests/test_audit_events.py",
@@ -82,7 +82,6 @@
     "tests/test_runtime_matrix.py",
     "tests/test_scheduler.py",
     "tests/test_service.py",
-    "tests/test_shadow_matrix_corpus.py",
     "tests/test_ui_review.py",
     "tests/test_workflow.py"
   ]
