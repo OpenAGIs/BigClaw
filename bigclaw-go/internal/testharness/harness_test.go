@@ -66,7 +66,7 @@ func TestInventoryPytestAssets(t *testing.T) {
 	if inventory.ConftestDefinesHook {
 		t.Fatal("expected conftest to avoid defining pytest hooks")
 	}
-	if got := inventory.Summary(); got != "tests=43 bigclaw_imports=34 pytest_imports=2" {
+	if got := inventory.Summary(); got != "tests=42 bigclaw_imports=33 pytest_imports=2" {
 		t.Fatalf("unexpected inventory summary: %s", got)
 	}
 
@@ -79,14 +79,14 @@ func TestInventoryPytestAssets(t *testing.T) {
 	}
 
 	wantBlockers := []string{
-		"43 legacy pytest modules remain under tests/",
-		"34 legacy pytest modules still import bigclaw from src/",
+		"42 legacy pytest modules remain under tests/",
+		"33 legacy pytest modules still import bigclaw from src/",
 		"2 legacy pytest modules still import pytest directly",
 	}
 	if got := inventory.ConftestDeletionBlockers(); !reflect.DeepEqual(got, wantBlockers) {
 		t.Fatalf("unexpected conftest deletion blockers: got=%v want=%v", got, wantBlockers)
 	}
-	wantSummary := "conftest_delete_ready=false blockers=43 legacy pytest modules remain under tests/; 34 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
+	wantSummary := "conftest_delete_ready=false blockers=42 legacy pytest modules remain under tests/; 33 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly"
 	if got := inventory.ConftestDeletionSummary(); got != wantSummary {
 		t.Fatalf("unexpected conftest deletion summary: got=%q want=%q", got, wantSummary)
 	}
@@ -97,8 +97,8 @@ func TestInventoryPytestAssets(t *testing.T) {
 		CanDelete:            false,
 		Summary:              wantSummary,
 		Blockers:             wantBlockers,
-		LegacyTestModules:    43,
-		BigclawImportModules: 34,
+		LegacyTestModules:    42,
+		BigclawImportModules: 33,
 		PytestImportModules:  2,
 	}
 	if got := inventory.ConftestDeletionStatus(); !reflect.DeepEqual(got, wantStatus) {
