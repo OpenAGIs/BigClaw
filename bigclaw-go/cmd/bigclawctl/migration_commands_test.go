@@ -154,6 +154,34 @@ func TestRunPytestHarnessJSONOutput(t *testing.T) {
 	}
 }
 
+func TestRunPytestHarnessWritesReportFile(t *testing.T) {
+	projectRoot := testharness.ProjectRoot(t)
+	reportPath := filepath.Join(t.TempDir(), "pytest-harness-status.json")
+
+	if err := runPytestHarness([]string{"--project-root", projectRoot, "--report-path", reportPath}); err != nil {
+		t.Fatalf("run pytest-harness with report path: %v", err)
+	}
+
+	body, err := os.ReadFile(reportPath)
+	if err != nil {
+		t.Fatalf("read report file: %v", err)
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(body, &payload); err != nil {
+		t.Fatalf("decode report file: %v (%s)", err, string(body))
+	}
+	if payload["inventory_summary"] != "tests=56 bigclaw_imports=47 pytest_imports=3" {
+		t.Fatalf("unexpected inventory summary in report file: %+v", payload)
+	}
+	deleteStatus, ok := payload["conftest_delete_status"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected conftest_delete_status object, got %+v", payload["conftest_delete_status"])
+	}
+	if deleteStatus["summary"] != "conftest_delete_ready=false blockers=56 legacy pytest modules remain under tests/; 47 legacy pytest modules still import bigclaw from src/; 3 legacy pytest modules still import pytest directly" {
+		t.Fatalf("unexpected delete status summary in report file: %+v", deleteStatus)
+	}
+}
+
 func TestRunCreateIssuesCreatesOnlyMissing(t *testing.T) {
 	requestCount := 0
 	createdPayloads := []map[string]any{}

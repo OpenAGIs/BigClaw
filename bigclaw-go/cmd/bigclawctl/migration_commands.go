@@ -111,6 +111,7 @@ func runDevSmoke(args []string) error {
 func runPytestHarness(args []string) error {
 	flags := flag.NewFlagSet("pytest-harness", flag.ContinueOnError)
 	projectRoot := flags.String("project-root", "..", "project root containing tests/ and src/")
+	reportPath := flags.String("report-path", "", "optional JSON report path relative to bigclaw-go/")
 	asJSON := flags.Bool("json", false, "json")
 	if helpText, err := parseFlagsWithHelp(flags, "usage: bigclawctl pytest-harness [flags]", args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -126,22 +127,19 @@ func runPytestHarness(args []string) error {
 		return fmt.Errorf("inventory pytest harness assets: %w", err)
 	}
 	deleteStatus := inventory.ConftestDeletionStatus()
+	payload := pytestHarnessPayload(resolvedProjectRoot, inventory, deleteStatus)
+
+	if trim(*reportPath) != "" {
+		reportTarget := absPath(*reportPath)
+		if !filepath.IsAbs(*reportPath) {
+			reportTarget = absPath(filepath.Join(".", *reportPath))
+		}
+		if err := writeJSONReport(reportTarget, payload); err != nil {
+			return fmt.Errorf("write pytest harness report: %w", err)
+		}
+	}
 
 	if *asJSON {
-		payload := map[string]any{
-			"status":                   "ok",
-			"project_root":             resolvedProjectRoot,
-			"inventory_summary":        inventory.Summary(),
-			"test_modules":             inventory.TestModules,
-			"bigclaw_imports":          inventory.BigclawImportModules,
-			"pytest_imports":           inventory.PytestImportModules,
-			"conftest_path":            inventory.ConftestPath,
-			"conftest_prepends_src":    inventory.ConftestPrependsSrc,
-			"conftest_imports_pytest":  inventory.ConftestImportsPytest,
-			"conftest_defines_fixture": inventory.ConftestDefinesFixture,
-			"conftest_defines_hook":    inventory.ConftestDefinesHook,
-			"conftest_delete_status":   structToMap(deleteStatus),
-		}
 		return emit(payload, true, 0)
 	}
 
@@ -167,6 +165,35 @@ func runPytestHarness(args []string) error {
 		}
 	}
 	return nil
+}
+
+func pytestHarnessPayload(projectRoot string, inventory testharness.PytestAssetInventory, deleteStatus testharness.ConftestDeletionStatus) map[string]any {
+	return map[string]any{
+		"status":                   "ok",
+		"project_root":             projectRoot,
+		"inventory_summary":        inventory.Summary(),
+		"test_modules":             inventory.TestModules,
+		"bigclaw_imports":          inventory.BigclawImportModules,
+		"pytest_imports":           inventory.PytestImportModules,
+		"conftest_path":            inventory.ConftestPath,
+		"conftest_prepends_src":    inventory.ConftestPrependsSrc,
+		"conftest_imports_pytest":  inventory.ConftestImportsPytest,
+		"conftest_defines_fixture": inventory.ConftestDefinesFixture,
+		"conftest_defines_hook":    inventory.ConftestDefinesHook,
+		"conftest_delete_status":   structToMap(deleteStatus),
+	}
+}
+
+func writeJSONReport(path string, payload map[string]any) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	body, err := json.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		return err
+	}
+	body = append(body, '\n')
+	return os.WriteFile(path, body, 0o644)
 }
 
 func runCreateIssues(args []string) error {
