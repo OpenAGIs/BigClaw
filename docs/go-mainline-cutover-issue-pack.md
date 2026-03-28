@@ -114,6 +114,7 @@ Acceptance focus:
 
 Current repo progress:
 - `bigclaw-go/internal/intake/*` now backs the active Go-first intake connector and source-issue mapping API surface
+- `BIG-GO-928` removed `tests/test_mapping.py` after confirming equivalent and broader Go coverage in `bigclaw-go/internal/intake/mapping_test.go`
 - `bigclaw-go/internal/workflow/definition.go` and `bigclaw-go/internal/workflow/model.go` now back the active Go workflow-definition and flow-contract surface
 - `bigclaw-go/internal/risk/assessment.go` and `bigclaw-go/internal/triage/record.go` now own the migrated Python assessment / triage contract surface
 - `bigclaw-go/internal/billing/statement.go` remains the canonical Go billing contract, with parity coverage expanded to preserve Python usage metadata during round trips
@@ -308,6 +309,7 @@ Dependencies:
 
 Current repo progress:
 - `scripts/ops/bigclawctl` now routes operators into the Go `cmd/bigclawctl` entrypoint instead of the legacy Python helpers
+- `BIG-GO-928` migrated the Python workspace bootstrap regression coverage into `bigclaw-go/internal/bootstrap/bootstrap_test.go`, including cache reuse, stale-seed recovery, cleanup preservation, and validation-report scenarios
 - `bigclaw-go/internal/bootstrap/*` now owns shared-mirror bootstrap, cleanup, and validation logic with Go tests
 - `bigclaw-go/internal/githubsync/*` now owns GitHub sync install / inspect / push guarantees with Go tests and hook integration
 - `bigclaw-go/internal/refill/*` now owns the draft refill queue selection logic with tracker-neutral `TrackedIssue` records, while `cmd/bigclawctl refill` handles backend-specific polling and promotion
@@ -442,6 +444,10 @@ Go ownership:
 - `bigclaw-go/internal/api/server.go`
 - `bigclaw-go/internal/triage/*`
 - `bigclaw-go/internal/billing/*`
+- `bigclaw-go/internal/planning/*`
+
+Current repo progress:
+- `BIG-GO-928` migrated `src/bigclaw/planning.py` test coverage into `bigclaw-go/internal/planning/planning.go` and `bigclaw-go/internal/planning/planning_test.go`
 
 Historical planned state:
 - `Todo`
@@ -504,6 +510,9 @@ Go ownership:
 - `bigclaw-go/cmd/bigclawctl`
 - `bigclaw-go/cmd/bigclawd`
 - `bigclaw-go/internal/bootstrap/*`
+
+Current repo progress:
+- `BIG-GO-928` removed `tests/test_workspace_bootstrap.py` after landing equivalent Go regression coverage in `bigclaw-go/internal/bootstrap/bootstrap_test.go`
 - `bigclaw-go/internal/githubsync/*`
 - `bigclaw-go/internal/refill/*`
 - `bigclaw-go/internal/api/server.go`
