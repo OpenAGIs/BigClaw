@@ -1,21 +1,28 @@
-# BIG-GO-902 Workpad
+# BIG-GO-927
 
 ## Plan
-
-1. Inspect existing `scripts/*.py` automation entrypoints and current `bigclaw-go` CLI commands to identify the smallest migration slice that delivers a real Go CLI path and a repeatable migration template.
-2. Implement first-batch Go CLI subcommands for the selected high-frequency script layer entrypoints, keeping changes scoped to command wiring, shared helpers, and migration documentation.
-3. Preserve a compatibility-layer plan by documenting legacy Python entrypoints, their Go replacements, validation commands, and remaining follow-up items.
-4. Run targeted tests for the touched Go CLI packages and record exact commands plus results in the final report.
-5. Commit the scoped changes and push the branch to the configured remote.
+- Inventory the current non-Go assets for `test_github_sync.py`, `test_repo_links.py`, `test_repo_registry.py`, and `test_repo_collaboration.py`.
+- Map each Python test to an existing Go package under `bigclaw-go/internal`, identify uncovered behavior, and implement the minimum missing Go surface.
+- Add or extend targeted Go tests for repo sync, repo links, repo registry, and collaboration/repo board behavior.
+- Remove the migrated Python tests once equivalent Go coverage is in place.
+- Run targeted validation commands, record exact commands and outcomes, then commit and push the issue branch.
 
 ## Acceptance
-
-- Produce an executable migration plan for moving Python script entrypoints to Go CLI subcommands.
-- Land a first batch of Go CLI implementations or adaptations for selected automation entrypoints.
-- Document validation commands, regression surface, branch/PR recommendation, and migration risks.
+- Current Python / non-Go assets for the four target areas are explicitly identified.
+- Go replacement coverage exists for repo sync, repo links, repo registry, and repo collaboration semantics.
+- First batch of Go implementation and tests lands directly in this issue branch.
+- Conditions for deleting the legacy Python assets are explicit:
+  - matching behavior is covered by targeted Go tests
+  - targeted Go tests pass locally
+  - no remaining production code path depends on the deleted Python test files
+- Regression validation commands are explicit and recorded with results.
 
 ## Validation
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-927/bigclaw-go && go test ./internal/githubsync ./internal/repo`
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-927/bigclaw-go && go test ./...`
 
-- `go test ./cmd/bigclawctl/...`
-- Additional targeted `go test` commands for any new shared package touched by the implementation.
-- Manual CLI smoke checks with `go run ./cmd/bigclawctl --help` and targeted subcommand help where relevant.
+## Validation Results
+- `2026-03-28`: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-927/bigclaw-go && go test ./internal/githubsync ./internal/repo`
+  - Result: passed
+- `2026-03-28`: `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-927/bigclaw-go && go test ./...`
+  - Result: passed

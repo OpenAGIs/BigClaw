@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"encoding/json"
 	"errors"
 	"reflect"
 	"strings"
@@ -104,6 +105,37 @@ func TestRepoRegistryFallsBackWithoutSpaceAndReusesCachedAgent(t *testing.T) {
 	}
 }
 
+func TestRepoRegistryRoundTrip(t *testing.T) {
+	registry := RepoRegistry{}
+	registry.RegisterSpace(RepoSpace{
+		SpaceID:     "s-1",
+		ProjectKey:  "BIGCLAW",
+		Repo:        "OpenAGIs/BigClaw",
+		SidecarURL:  "http://127.0.0.1:4041",
+		HealthState: "healthy",
+	})
+	registry.ResolveAgent("native cloud", "executor")
+
+	payload, err := json.Marshal(registry)
+	if err != nil {
+		t.Fatalf("marshal registry: %v", err)
+	}
+
+	var restored RepoRegistry
+	if err := json.Unmarshal(payload, &restored); err != nil {
+		t.Fatalf("unmarshal registry: %v", err)
+	}
+
+	space, ok := restored.ResolveSpace("BIGCLAW")
+	if !ok || space.Repo != "OpenAGIs/BigClaw" {
+		t.Fatalf("expected restored space, got %+v %t", space, ok)
+	}
+	agent := restored.ResolveAgent("native cloud", "reviewer")
+	if agent.RepoAgentID != "agent-native-cloud" {
+		t.Fatalf("expected restored agent, got %+v", agent)
+	}
+}
+
 func TestRepoSlugNormalizesPunctuationAndFallbacks(t *testing.T) {
 	if got := slug("BIG-401 / review closeout"); got != "big-401-review-closeout" {
 		t.Fatalf("unexpected normalized slug: %q", got)
@@ -162,6 +194,53 @@ func TestRepoDiscussionBoardReplyErrorNowFallbackAndEmptyMetadata(t *testing.T) 
 	}
 	if got := board.ListPosts("", "task", "BIG-402"); len(got) != 1 || got[0].PostID != second.PostID {
 		t.Fatalf("expected combined surface/id filter to isolate second post, got %+v", got)
+	}
+}
+
+func TestMergeCollaborationThreadsCombinesNativeAndRepoSurfaces(t *testing.T) {
+	native := BuildCollaborationThread(
+		"run",
+		"run-165",
+		[]CollaborationComment{
+			{
+				CommentID: "c1",
+				Author:    "ops",
+				Body:      "native note",
+				CreatedAt: "2026-03-12T10:00:00Z",
+			},
+		},
+		[]DecisionNote{
+			{
+				DecisionID: "d1",
+				Author:     "lead",
+				Outcome:    "approved",
+				Summary:    "native decision",
+				RecordedAt: "2026-03-12T10:05:00Z",
+			},
+		},
+	)
+
+	board := RepoDiscussionBoard{}
+	repoPost := board.CreatePost("bigclaw-ope-165", "repo-agent", "repo board context", "run", "run-165", nil)
+	repoThread := BuildCollaborationThread(
+		"repo-board",
+		"run-165",
+		[]CollaborationComment{repoPost.ToCollaborationComment()},
+		nil,
+	)
+
+	merged := MergeCollaborationThreads("run-165", &native, &repoThread)
+	if merged == nil {
+		t.Fatal("expected merged thread")
+	}
+	if merged.Surface != "merged" {
+		t.Fatalf("expected merged surface, got %+v", merged)
+	}
+	if len(merged.Comments) != 2 || len(merged.Decisions) != 1 {
+		t.Fatalf("unexpected merged thread: %+v", merged)
+	}
+	if merged.Comments[1].Body != "repo board context" {
+		t.Fatalf("expected repo comment to be preserved, got %+v", merged.Comments)
 	}
 }
 
