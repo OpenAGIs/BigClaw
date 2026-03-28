@@ -204,3 +204,17 @@ func (i PytestAssetInventory) Summary() string {
 		" bigclaw_imports=" + strconv.Itoa(len(i.BigclawImportModules)) +
 		" pytest_imports=" + strconv.Itoa(len(i.PytestImportModules))
 }
+
+func (i PytestAssetInventory) ConftestDeletionBlockers() []string {
+	var blockers []string
+	if len(i.TestModules) > 0 {
+		blockers = append(blockers, strconv.Itoa(len(i.TestModules))+" legacy pytest modules remain under tests/")
+	}
+	if len(i.BigclawImportModules) > 0 {
+		blockers = append(blockers, strconv.Itoa(len(i.BigclawImportModules))+" legacy pytest modules still import bigclaw from src/")
+	}
+	if len(i.PytestImportModules) > 0 {
+		blockers = append(blockers, strconv.Itoa(len(i.PytestImportModules))+" legacy pytest modules still import pytest directly")
+	}
+	return blockers
+}

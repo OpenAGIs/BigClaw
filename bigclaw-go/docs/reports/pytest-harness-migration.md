@@ -45,6 +45,7 @@ It provides:
 - `RequireExecutable(tb, name)` for shared skip-aware runtime probing when legacy Python tooling is still part of the migration boundary
 - `Chdir(tb, dir)` for temporary cwd changes with automatic cleanup
 - `InventoryPytestAssets(tb)` to machine-check the remaining pytest surface (`56` test modules, `47` `bigclaw` importers, `3` `pytest` importers) instead of leaving that inventory only in prose
+- `PytestAssetInventory.ConftestDeletionBlockers()` to keep the current `tests/conftest.py` removal blockers machine-checked from Go rather than only documented in markdown
 - `internal/legacyshim` tests now also assert that the frozen Python compile-check asset list still matches the checked-in `src/bigclaw/*.py` shim files that remain in scope for migration
 - `internal/legacyshim` now runs a real checked-in `py_compile` pass against those shim files, so the remaining Python compatibility layer is regression-tested from Go without bespoke bootstrap code
 - `internal/testharness` now includes a Python import smoke test that boots `PYTHONPATH` via the Go harness and imports `bigclaw.mapping` directly, proving the replacement covers the old `conftest.py` core responsibility
@@ -286,6 +287,12 @@ Recommended next migration slices:
 - no remaining test module imports `bigclaw...` from `src/`
 - Go replacements cover the active regression surface for the remaining Python tests
 - a repo-wide validation run succeeds without Python path injection
+
+Current machine-checked blockers in this issue are:
+
+- `56 legacy pytest modules remain under tests/`
+- `47 legacy pytest modules still import bigclaw from src/`
+- `3 legacy pytest modules still import pytest directly`
 
 Until then, `tests/conftest.py` remains a compatibility shim and should not grow new behavior.
 

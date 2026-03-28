@@ -78,6 +78,15 @@ func TestInventoryPytestAssets(t *testing.T) {
 	if !reflect.DeepEqual(inventory.PytestImportModules, wantPytestModules) {
 		t.Fatalf("unexpected pytest import modules: got=%v want=%v", inventory.PytestImportModules, wantPytestModules)
 	}
+
+	wantBlockers := []string{
+		"56 legacy pytest modules remain under tests/",
+		"47 legacy pytest modules still import bigclaw from src/",
+		"3 legacy pytest modules still import pytest directly",
+	}
+	if got := inventory.ConftestDeletionBlockers(); !reflect.DeepEqual(got, wantBlockers) {
+		t.Fatalf("unexpected conftest deletion blockers: got=%v want=%v", got, wantBlockers)
+	}
 }
 
 func TestBootstrapLegacyPythonPathSupportsBigclawImports(t *testing.T) {
