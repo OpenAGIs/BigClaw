@@ -33,6 +33,17 @@
   - the Go tests below remain green and are wired into the repo's normal regression lane
   - any consumer-facing documentation or compatibility shim references are updated to point at the Go surfaces instead of the Python modules
 
+## Current blockers to deleting the Python assets
+
+- `tests/test_governance.py` still imports `src/bigclaw/governance.py`
+- `tests/test_repo_governance.py` still imports `src/bigclaw/repo_governance.py`
+- `tests/test_repo_board.py` still imports `src/bigclaw/repo_board.py`
+- `tests/test_planning.py` still imports `ScopeFreezeAudit` from `src/bigclaw/governance.py`
+- `tests/test_repo_collaboration.py` still imports `RepoDiscussionBoard` from `src/bigclaw/repo_board.py`
+- docs still reference the Python governance test commands, for example `docs/BigClaw-AgentHub-Integration-Alignment.md`
+
+These references make the deletion gate concrete: Go parity for the targeted governance tests now exists, but Python asset removal should wait for the remaining Python-side consumers to migrate or be deleted in their own scoped tickets.
+
 ## Regression commands
 
 - `cd bigclaw-go && go test ./internal/repo ./internal/governance`
