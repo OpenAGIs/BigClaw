@@ -310,7 +310,7 @@ func BuildPytestHarnessStatusReport(projectRoot string) (PytestHarnessStatusRepo
 		InventorySummary:         inventory.Summary(),
 		TestModules:              append([]string(nil), inventory.TestModules...),
 		BigclawImports:           append([]string(nil), inventory.BigclawImportModules...),
-		PytestImports:            append([]string(nil), inventory.PytestImportModules...),
+		PytestImports:            append([]string{}, inventory.PytestImportModules...),
 		PyprojectPath:            normalizedPyprojectPath,
 		PyprojectExists:          inventory.PyprojectExists,
 		PyprojectDeclaresPytest:  inventory.PyprojectDeclaresPytest,

@@ -1,5 +1,3 @@
-import pytest
-
 from bigclaw.planning import (
     FourWeekExecutionPlan,
     CandidateBacklog,
@@ -374,11 +372,12 @@ def test_four_week_execution_plan_validate_rejects_missing_or_unordered_weeks() 
         ],
     )
 
-    with pytest.raises(
-        ValueError,
-        match="Four-week execution plans must include weeks 1 through 4 in order",
-    ):
+    try:
         plan.validate()
+    except ValueError as err:
+        assert "Four-week execution plans must include weeks 1 through 4 in order" in str(err)
+    else:
+        raise AssertionError("expected validate() to reject missing or unordered weeks")
 
 
 def test_render_four_week_execution_report_summarizes_plan_status() -> None:

@@ -1,7 +1,5 @@
 from pathlib import Path
 
-import pytest
-
 from bigclaw.audit_events import (
     APPROVAL_RECORDED_EVENT,
     BUDGET_OVERRIDE_EVENT,
@@ -45,7 +43,7 @@ def test_task_run_audit_spec_event_requires_required_fields() -> None:
         medium="docker",
     )
 
-    with pytest.raises(ValueError, match="missing required fields"):
+    try:
         run.audit_spec_event(
             MANUAL_TAKEOVER_EVENT,
             "scheduler",
@@ -54,6 +52,10 @@ def test_task_run_audit_spec_event_requires_required_fields() -> None:
             run_id="run-ope-134-spec",
             target_team="security",
         )
+    except ValueError as err:
+        assert "missing required fields" in str(err)
+    else:
+        raise AssertionError("expected audit_spec_event to reject missing required fields")
 
 
 def test_scheduler_emits_p0_operational_audit_events(tmp_path: Path) -> None:
