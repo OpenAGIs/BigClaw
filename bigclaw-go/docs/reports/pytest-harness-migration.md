@@ -19,8 +19,8 @@ The Python-side harness surface in scope today is intentionally small:
 
 Observed inventory at the current branch state:
 
-- `40` Python test modules under `tests/`
-- `31` modules directly importing `bigclaw...`
+- `39` Python test modules under `tests/`
+- `30` modules directly importing `bigclaw...`
 - `2` modules importing `pytest`: `test_audit_events.py`, `test_planning.py`
 - no shared pytest fixtures in `tests/` and no fixture definitions in `tests/conftest.py`
 - `tests/conftest.py` does not import `pytest` and does not define pytest hooks; it is a plain import-path shim
@@ -45,7 +45,7 @@ It provides:
 - `RequireExecutable(tb, name)` for shared skip-aware runtime probing when legacy Python tooling is still part of the migration boundary
 - `PythonExecutable(tb)` for the canonical resolved Python runtime path used by adjacent Go migration tests
 - `Chdir(tb, dir)` for temporary cwd changes with automatic cleanup
-- `InventoryPytestAssets(tb)` to machine-check the remaining pytest surface (`40` test modules, `31` `bigclaw` importers, `2` `pytest` importers) instead of leaving that inventory only in prose
+- `InventoryPytestAssets(tb)` to machine-check the remaining pytest surface (`39` test modules, `30` `bigclaw` importers, `2` `pytest` importers) instead of leaving that inventory only in prose
 - `InventoryPytestAssets(tb)` now detects pytest usage via `import pytest`, `from pytest import ...`, and `pytest.` call sites so the `tests/conftest.py` deletion gate does not miss direct import forms
 - `PytestAssetInventory.ConftestDeletionBlockers()` to keep the current `tests/conftest.py` removal blockers machine-checked from Go rather than only documented in markdown
 - `PytestAssetInventory.CanDeleteConftest()` to expose the current deletion gate as a single Go-owned boolean for future migration slices
@@ -196,7 +196,7 @@ First migrated Python test slice now covered explicitly in Go:
   - `test_inspect_repo_sync_marks_dirty_worktree`
   - `test_ensure_repo_sync_fast_forwards_clean_branch_before_push`
   - `test_ensure_repo_sync_skips_pushing_clean_branch_at_origin_default_head`
-  - covered by `bigclaw-go/internal/githubsync/sync_test.go`
+  - retired in this issue; coverage lives in `bigclaw-go/internal/githubsync/sync_test.go`
 - `tests/test_memory.py`
   - `test_big501_memory_store_reuses_history_and_injects_rules`
   - retired in this issue; coverage lives in `bigclaw-go/internal/memory/store_test.go`
@@ -303,8 +303,8 @@ Recommended next migration slices:
 
 Current machine-checked blockers in this issue are:
 
-- `40 legacy pytest modules remain under tests/`
-- `31 legacy pytest modules still import bigclaw from src/`
+- `39 legacy pytest modules remain under tests/`
+- `30 legacy pytest modules still import bigclaw from src/`
 - `2 legacy pytest modules still import pytest directly`
 
 The `pytest` blocker count is computed from Go-owned inventory code and now covers all three currently supported detection forms:
@@ -315,7 +315,7 @@ The `pytest` blocker count is computed from Go-owned inventory code and now cove
 
 Current machine-checked single-line summary is:
 
-- `conftest_delete_ready=false blockers=40 legacy pytest modules remain under tests/; 31 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly`
+- `conftest_delete_ready=false blockers=39 legacy pytest modules remain under tests/; 30 legacy pytest modules still import bigclaw from src/; 2 legacy pytest modules still import pytest directly`
 
 Current Go-owned command surface for this state:
 
@@ -349,15 +349,15 @@ Primary validation for this issue:
 
 ```bash
 cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && PYTHONPATH=src python3 -c "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0"
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/queue ./internal/testharness ./cmd/bigclawctl ./internal/regression
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/githubsync ./internal/testharness ./cmd/bigclawctl ./internal/regression
 cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json
 ```
 
 Observed results for this issue:
 
 - `PYTHONPATH=src python3 -c "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0"` passed on the latest issue branch state, confirming the remaining legacy `src/bigclaw` import surface still works without relying on a checked-in pytest module.
-- `go test ./internal/queue ./internal/testharness ./cmd/bigclawctl ./internal/regression` passed on the latest issue branch state, covering `bigclaw-go/internal/queue/file_queue_test.go`, the Go-owned harness smoke, the `pytest-harness` command surface, and the snapshot-alignment regression gate.
-- `go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json` passed on the latest issue branch state, regenerated the checked-in JSON snapshot with portable repo-relative paths, and confirmed `inventory_summary=tests=40 bigclaw_imports=31 pytest_imports=2` with `conftest_delete_status.can_delete=false`.
+- `go test ./internal/githubsync ./internal/testharness ./cmd/bigclawctl ./internal/regression` passed on the latest issue branch state, covering `bigclaw-go/internal/githubsync/sync_test.go`, the Go-owned harness smoke, the `pytest-harness` command surface, and the snapshot-alignment regression gate.
+- `go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json` passed on the latest issue branch state, regenerated the checked-in JSON snapshot with portable repo-relative paths, and confirmed `inventory_summary=tests=39 bigclaw_imports=30 pytest_imports=2` with `conftest_delete_status.can_delete=false`.
 
 Deletion-readiness validation for the legacy Python harness, once migration is further along:
 
