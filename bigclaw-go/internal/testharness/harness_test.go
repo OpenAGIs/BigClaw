@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -85,11 +86,32 @@ func TestBootstrapLegacyPythonPathSupportsBigclawImports(t *testing.T) {
 		t.Skipf("python3 not available: %v", err)
 	}
 
-	srcRoot := BootstrapLegacyPythonPath(t)
-	cmd := exec.Command("python3", "-c", "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0")
-	cmd.Dir = ProjectRoot(t)
+	cmd := PythonCommand(t, "-c", "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Fatalf("python import smoke failed with PYTHONPATH=%q: %v (%s)", srcRoot, err, string(output))
+		t.Fatalf("python import smoke failed: %v (%s)", err, string(output))
+	}
+}
+
+func TestPythonCommandUsesProjectRootAndLegacyPythonPath(t *testing.T) {
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skipf("python3 not available: %v", err)
+	}
+
+	cmd := PythonCommand(t, "-c", "import os, pathlib; print(pathlib.Path.cwd().name); print(os.environ['PYTHONPATH'])")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("python command failed: %v (%s)", err, string(output))
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 output lines, got %d (%q)", len(lines), string(output))
+	}
+	if lines[0] != filepath.Base(ProjectRoot(t)) {
+		t.Fatalf("unexpected python cwd: got=%q want=%q", lines[0], filepath.Base(ProjectRoot(t)))
+	}
+	if !strings.HasPrefix(lines[1], LegacySrcRoot(t)) {
+		t.Fatalf("expected PYTHONPATH to start with %q, got %q", LegacySrcRoot(t), lines[1])
 	}
 }

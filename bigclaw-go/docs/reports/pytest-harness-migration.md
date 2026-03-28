@@ -40,6 +40,7 @@ It provides:
 - `ResolveProjectPath(tb, candidate)` for paths that may still be prefixed with `bigclaw-go/`
 - `PrependPathEnv(tb, dir)` for path-based CLI bootstrapping
 - `PrependPythonPathEnv(tb, dir)` and `BootstrapLegacyPythonPath(tb)` for Go-owned `PYTHONPATH` bootstrapping when tests still need Python runtime parity
+- `PythonCommand(tb, args...)` for launching `python3` from the project root with legacy `src/` imports already bootstrapped
 - `Chdir(tb, dir)` for temporary cwd changes with automatic cleanup
 - `InventoryPytestAssets(tb)` to machine-check the remaining pytest surface (`56` test modules, `47` `bigclaw` importers, `3` `pytest` importers) instead of leaving that inventory only in prose
 - `internal/legacyshim` tests now also assert that the frozen Python compile-check asset list still matches the checked-in `src/bigclaw/*.py` shim files that remain in scope for migration

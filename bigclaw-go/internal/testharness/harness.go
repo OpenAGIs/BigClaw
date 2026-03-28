@@ -3,6 +3,7 @@ package testharness
 import (
 	"bufio"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"slices"
@@ -68,6 +69,19 @@ func BootstrapLegacyPythonPath(tb testing.TB) string {
 	srcRoot := LegacySrcRoot(tb)
 	PrependPythonPathEnv(tb, srcRoot)
 	return srcRoot
+}
+
+// PythonCommand returns a python3 command preconfigured for legacy src/ imports from the project root.
+func PythonCommand(tb testing.TB, args ...string) *exec.Cmd {
+	tb.Helper()
+	srcRoot := BootstrapLegacyPythonPath(tb)
+	cmd := exec.Command("python3", args...)
+	cmd.Dir = ProjectRoot(tb)
+	cmd.Env = append(os.Environ(), "PYTHONPATH="+os.Getenv("PYTHONPATH"))
+	if srcRoot == "" {
+		tb.Fatal("failed to configure legacy PYTHONPATH")
+	}
+	return cmd
 }
 
 func prependEnv(tb testing.TB, key, dir string) {
