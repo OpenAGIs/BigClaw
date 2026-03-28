@@ -3,8 +3,8 @@
 ## Goal
 
 Move the remaining repo-level script automation entrypoints onto `bigclaw-go/cmd/bigclawctl`
-subcommands, while preserving the existing file names as compatibility shims during the
-operator cutover window.
+subcommands, while shrinking compatibility shims as soon as the checked-in callers have
+moved to direct Go entrypoints.
 
 ## This Slice
 
@@ -28,6 +28,10 @@ The implemented migration batches in this issue move these entrypoints behind th
 - `bigclaw-go/scripts/e2e/run_task_smoke.py` -> `bigclawctl automation e2e run-task-smoke`
 - `bigclaw-go/scripts/benchmark/soak_local.py` -> `bigclawctl automation benchmark soak-local`
 - `bigclaw-go/scripts/migration/shadow_compare.py` -> `bigclawctl automation migration shadow-compare`
+
+The first batch has now completed its cutover window: the checked-in callers use the Go
+commands directly and the three Python shim files are removed. Repo-level inventory and
+main-merge conditions are tracked in `docs/go-only-repo-cutover.md`.
 
 The compatibility layer is intentionally thin:
 

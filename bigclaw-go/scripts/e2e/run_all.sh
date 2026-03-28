@@ -50,14 +50,15 @@ pids=()
 
 if [[ "$RUN_LOCAL" == "1" ]]; then
   (
+    cd "$ROOT"
     BIGCLAW_QUEUE_BACKEND=sqlite \
-      python3 "$ROOT/scripts/e2e/run_task_smoke.py" \
-        --autostart \
-        --go-root "$ROOT" \
-        --executor local \
-        --title "SQLite smoke" \
-        --entrypoint "echo hello from sqlite" \
-        --report-path "$LOCAL_REPORT_REL"
+      go run ./cmd/bigclawctl automation e2e run-task-smoke \
+      --autostart \
+      --go-root "$ROOT" \
+      --executor local \
+      --title "SQLite smoke" \
+      --entrypoint "echo hello from sqlite" \
+      --report-path "$LOCAL_REPORT_REL"
   ) >"$LOCAL_OUT" 2>"$LOCAL_ERR" &
   pids+=("$!")
 fi

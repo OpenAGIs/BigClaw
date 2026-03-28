@@ -6,9 +6,9 @@ Issue: `BIG-GO-902`
 
 | Legacy script | Go CLI replacement | Status |
 | --- | --- | --- |
-| `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | migrated with Python compatibility shim |
-| `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated with Python compatibility shim |
-| `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated with Python compatibility shim |
+| `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | shim removed; callers now invoke Go directly |
+| `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | shim removed; callers now invoke Go directly |
+| `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | shim removed; callers now invoke Go directly |
 
 ## Remaining Python Script Backlog
 
@@ -44,17 +44,16 @@ go run ./cmd/bigclawctl automation migration shadow-compare --help
 - HTTP polling against `/healthz`, `/tasks/:id`, and `/events`
 - Temporary `bigclawd` autostart state wiring for smoke and soak commands
 - Report serialization compatibility for JSON consumers that previously read the Python script output
-- Python shim forwarding for operators still calling the legacy script paths
+- Direct Go CLI invocations from the checked-in smoke and benchmark wrappers
 
 ## Compatibility Layer Plan
 
-- Keep the migrated Python entrypoints as thin shims that only forward to `bigclawctl`.
-- Do not add new behavior to the Python copies; all new logic belongs in Go.
+- Keep new behavior in Go only; do not reintroduce Python shims for migrated commands.
 - Migrate the remaining reporting/export scripts in follow-up batches grouped by shared payload shape:
   - validation bundle generators
   - benchmark matrices
   - migration scorecards/bundle exporters
-- Remove each Python shim only after the corresponding Go command is referenced by docs, CI, and operators for one full rollout cycle.
+- Remove each remaining Python helper only after the corresponding Go command is referenced by docs, CI, and operators for one full rollout cycle.
 
 ## Branch And PR Suggestion
 

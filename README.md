@@ -68,11 +68,10 @@ Notes:
 - `python3 scripts/ops/bigclaw_github_sync.py ...`,
   `python3 scripts/ops/bigclaw_refill_queue.py ...`, and the legacy
   `scripts/ops/*workspace*.py` helpers are also compatibility shims over the same Go CLI.
-- `python3 bigclaw-go/scripts/e2e/run_task_smoke.py`,
-  `python3 bigclaw-go/scripts/benchmark/soak_local.py`, and
-  `python3 bigclaw-go/scripts/migration/shadow_compare.py` now forward into
-  `bigclawctl automation ...`; the migration matrix lives in
-  [`bigclaw-go/docs/go-cli-script-migration.md`](./bigclaw-go/docs/go-cli-script-migration.md).
+- `bigclaw-go/scripts/e2e/run_all.sh`, `bigclaw-go/scripts/e2e/kubernetes_smoke.sh`,
+  `bigclaw-go/scripts/e2e/ray_smoke.sh`, and `bigclaw-go/scripts/benchmark/run_matrix.py`
+  now call `bigclawctl automation ...` directly; the repo cutover inventory and delete
+  conditions live in [`docs/go-only-repo-cutover.md`](./docs/go-only-repo-cutover.md).
 - `scripts/ops/bigclaw-issue`, `scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel` are
   retained as compatibility wrappers, but the preferred operator path is now `scripts/ops/bigclawctl`.
 - `bash scripts/ops/bigclawctl refill --apply --local-issues local-issues.json` promotes the next
@@ -174,4 +173,5 @@ The legacy Python execution-kernel modules in `src/bigclaw/runtime.py`,
 migration-only reference use. The legacy `python -m bigclaw serve` /
 `src/bigclaw/service.py` path is also frozen; use `go run ./bigclaw-go/cmd/bigclawd`
 for the active local server path. Active runtime development belongs in
-`bigclaw-go/internal/*`.
+`bigclaw-go/internal/*`. The repo-level Go-only cutover inventory, removed Python shims,
+and main-merge validation bar are tracked in [`docs/go-only-repo-cutover.md`](./docs/go-only-repo-cutover.md).

@@ -33,7 +33,7 @@ class RunAllTest(unittest.TestCase):
 
     def install_stubs(self) -> None:
         self.write_file(
-            'scripts/e2e/run_task_smoke.py',
+            'bin/go',
             """\
             #!/usr/bin/env python3
             import json
@@ -41,30 +41,26 @@ class RunAllTest(unittest.TestCase):
             import sys
 
             args = sys.argv[1:]
-            report_path = pathlib.Path(args[args.index('--report-path') + 1])
-            report_path.parent.mkdir(parents=True, exist_ok=True)
-            report_path.write_text(json.dumps({'status': 'succeeded', 'all_ok': True}), encoding='utf-8')
+            cwd = pathlib.Path.cwd()
+
+            if len(args) >= 2 and args[0] == 'run' and args[1] == './cmd/bigclawctl':
+                report_path = cwd / args[args.index('--report-path') + 1]
+                report_path.parent.mkdir(parents=True, exist_ok=True)
+                report_path.write_text(json.dumps({'status': 'succeeded', 'all_ok': True}), encoding='utf-8')
+                raise SystemExit(0)
+
+            if len(args) >= 2 and args[0] == 'run' and args[1].endswith('scripts/e2e/broker_bootstrap_summary.go'):
+                output_path = pathlib.Path(args[args.index('--output') + 1])
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                output_path.write_text(
+                    '{"ready":false,"runtime_posture":"contract_only","live_adapter_implemented":false}\\n',
+                    encoding='utf-8',
+                )
+                raise SystemExit(0)
+
+            raise SystemExit(f'unexpected go invocation: {args!r}')
             """,
             executable=True,
-        )
-        self.write_file(
-            'scripts/e2e/broker_bootstrap_summary.go',
-            """\
-            package main
-
-            import (
-                "flag"
-                "os"
-            )
-
-            func main() {
-                output := flag.String("output", "", "output")
-                flag.Parse()
-                if err := os.WriteFile(*output, []byte("{\\"ready\\":false,\\"runtime_posture\\":\\"contract_only\\",\\"live_adapter_implemented\\":false}\\n"), 0o644); err != nil {
-                    panic(err)
-                }
-            }
-            """,
         )
         self.write_file(
             'scripts/e2e/export_validation_bundle.py',
@@ -79,7 +75,7 @@ class RunAllTest(unittest.TestCase):
             bundle_dir = root / args[args.index('--bundle-dir') + 1]
             bundle_dir.mkdir(parents=True, exist_ok=True)
             calls_path = root / 'calls.jsonl'
-            gate_path = root / 'docs/reports/validation-bundle-continuation-policy-gate.json'
+            gate_path = root / 'bigclaw-go/docs/reports/validation-bundle-continuation-policy-gate.json'
             payload = {
                 'gate_exists': gate_path.exists(),
                 'run_broker': args[args.index('--run-broker') + 1],
@@ -124,9 +120,14 @@ class RunAllTest(unittest.TestCase):
             executable=True,
         )
 
+    def test_env(self) -> dict[str, str]:
+        env = os.environ.copy()
+        env['PATH'] = f"{self.root / 'bin'}:{env.get('PATH', '')}"
+        return env
+
     def test_run_all_rerenders_bundle_after_gate_refresh(self) -> None:
         self.install_stubs()
-        env = os.environ.copy()
+        env = self.test_env()
         env.update(
             {
                 'BIGCLAW_E2E_RUN_KUBERNETES': '0',
@@ -180,7 +181,7 @@ class RunAllTest(unittest.TestCase):
             executable=True,
         )
 
-        env = os.environ.copy()
+        env = self.test_env()
         env.update(
             {
                 'BIGCLAW_E2E_RUN_KUBERNETES': '0',
@@ -200,7 +201,7 @@ class RunAllTest(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         gate = json.loads(
-            (self.root / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json').read_text(
+            (self.root / 'bigclaw-go' / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json').read_text(
                 encoding='utf-8'
             )
         )
@@ -225,7 +226,7 @@ class RunAllTest(unittest.TestCase):
             executable=True,
         )
 
-        env = os.environ.copy()
+        env = self.test_env()
         env.update(
             {
                 'BIGCLAW_E2E_RUN_KUBERNETES': '0',
@@ -246,7 +247,7 @@ class RunAllTest(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         gate = json.loads(
-            (self.root / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json').read_text(
+            (self.root / 'bigclaw-go' / 'docs' / 'reports' / 'validation-bundle-continuation-policy-gate.json').read_text(
                 encoding='utf-8'
             )
         )
