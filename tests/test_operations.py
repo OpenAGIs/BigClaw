@@ -1,13 +1,7 @@
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
 
-from bigclaw.evaluation import (
-    BenchmarkResult,
-    BenchmarkSuiteResult,
-    EvaluationCriterion,
-    ReplayOutcome,
-    ReplayRecord,
-)
 from bigclaw.models import Task
 from bigclaw.observability import TaskRun
 from bigclaw.operations import (
@@ -31,6 +25,69 @@ from bigclaw.operations import (
 )
 from bigclaw.reports import SharedViewContext, SharedViewFilter
 from bigclaw.scheduler import ExecutionRecord, SchedulerDecision
+
+
+@dataclass
+class EvaluationCriterion:
+    name: str
+    weight: int
+    passed: bool
+    detail: str
+
+
+@dataclass
+class ReplayRecord:
+    task: Task
+    run_id: str
+    medium: str
+    approved: bool
+    status: str
+
+
+@dataclass
+class ReplayOutcome:
+    matched: bool
+    replay_record: ReplayRecord
+
+
+@dataclass
+class BenchmarkResult:
+    case_id: str
+    score: int
+    passed: bool
+    criteria: List[EvaluationCriterion] = field(default_factory=list)
+    record: Optional[ExecutionRecord] = None
+    replay: Optional[ReplayOutcome] = None
+
+
+@dataclass
+class BenchmarkComparison:
+    case_id: str
+    baseline_score: int
+    current_score: int
+    delta: int
+
+
+@dataclass
+class BenchmarkSuiteResult:
+    version: str
+    results: List[BenchmarkResult]
+
+    def compare(self, baseline: "BenchmarkSuiteResult") -> List[BenchmarkComparison]:
+        baseline_by_case = {result.case_id: result for result in baseline.results}
+        comparisons: List[BenchmarkComparison] = []
+        for result in self.results:
+            baseline_result = baseline_by_case.get(result.case_id)
+            baseline_score = baseline_result.score if baseline_result is not None else 0
+            comparisons.append(
+                BenchmarkComparison(
+                    case_id=result.case_id,
+                    baseline_score=baseline_score,
+                    current_score=result.score,
+                    delta=result.score - baseline_score,
+                )
+            )
+        return comparisons
 
 
 

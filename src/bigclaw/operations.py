@@ -2,12 +2,10 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from difflib import unified_diff
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Protocol, Sequence
 
 from .models import Task
 from .queue import PersistentTaskQueue
-
-from .evaluation import BenchmarkSuiteResult
 from .reports import (
     SharedViewContext,
     build_console_actions,
@@ -15,6 +13,27 @@ from .reports import (
     render_shared_view_context,
     write_report,
 )
+
+
+class BenchmarkResultLike(Protocol):
+    case_id: str
+    score: int
+    passed: bool
+
+
+class BenchmarkComparisonLike(Protocol):
+    case_id: str
+    baseline_score: int
+    current_score: int
+    delta: int
+
+
+class BenchmarkSuiteLike(Protocol):
+    version: str
+    results: Sequence[BenchmarkResultLike]
+
+    def compare(self, baseline: "BenchmarkSuiteLike") -> Sequence[BenchmarkComparisonLike]:
+        ...
 
 
 STATUS_COMPLETE = {"approved", "accepted", "completed", "succeeded"}
@@ -573,8 +592,8 @@ class OperationsAnalytics:
         timezone_name: str = "UTC",
         generated_at: Optional[str] = None,
         sla_target_minutes: int = 60,
-        current_suite: Optional[BenchmarkSuiteResult] = None,
-        baseline_suite: Optional[BenchmarkSuiteResult] = None,
+        current_suite: Optional[BenchmarkSuiteLike] = None,
+        baseline_suite: Optional[BenchmarkSuiteLike] = None,
     ) -> OperationsMetricSpec:
         period_start_dt = self._parse_ts(period_start)
         period_end_dt = self._parse_ts(period_end)
@@ -734,8 +753,8 @@ class OperationsAnalytics:
 
     def analyze_regressions(
         self,
-        current: BenchmarkSuiteResult,
-        baseline: Optional[BenchmarkSuiteResult] = None,
+        current: BenchmarkSuiteLike,
+        baseline: Optional[BenchmarkSuiteLike] = None,
     ) -> List[RegressionFinding]:
         if baseline is None:
             return []
@@ -769,8 +788,8 @@ class OperationsAnalytics:
 
     def build_regression_center(
         self,
-        current: BenchmarkSuiteResult,
-        baseline: BenchmarkSuiteResult,
+        current: BenchmarkSuiteLike,
+        baseline: BenchmarkSuiteLike,
         name: str = "Regression Analysis Center",
     ) -> RegressionCenter:
         regressions = self.analyze_regressions(current, baseline)
@@ -948,8 +967,8 @@ class OperationsAnalytics:
         name: str,
         period: str,
         runs: Sequence[dict],
-        current_suite: Optional[BenchmarkSuiteResult] = None,
-        baseline_suite: Optional[BenchmarkSuiteResult] = None,
+        current_suite: Optional[BenchmarkSuiteLike] = None,
+        baseline_suite: Optional[BenchmarkSuiteLike] = None,
         sla_target_minutes: int = 60,
     ) -> WeeklyOperationsReport:
         snapshot = self.summarize_runs(runs, sla_target_minutes=sla_target_minutes)
