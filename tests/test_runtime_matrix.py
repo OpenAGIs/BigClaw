@@ -1,6 +1,6 @@
 from bigclaw.models import RiskLevel, Task
-from bigclaw.observability import TaskRun
-from bigclaw.runtime import ClawWorkerRuntime, ToolPolicy, ToolRuntime
+from bigclaw.observability import ObservabilityLedger, TaskRun
+from bigclaw.runtime import ClawWorkerRuntime, SandboxRouter, ToolPolicy, ToolRuntime
 from bigclaw.scheduler import Scheduler
 
 
@@ -34,6 +34,15 @@ def test_big301_worker_lifecycle_is_stable_with_multiple_tools():
     assert run.audits[-1].outcome == "completed"
 
 
+def test_runtime_sandbox_router_profiles_are_stable():
+    router = SandboxRouter()
+
+    assert router.profile_for("docker").isolation == "container"
+    assert router.profile_for("browser").network_access == "enabled"
+    assert router.profile_for("vm").filesystem_access == "workspace-write"
+    assert router.profile_for("unknown").medium == "none"
+
+
 def test_big302_risk_routes_to_expected_sandbox_mediums():
     scheduler = Scheduler()
 
@@ -46,6 +55,45 @@ def test_big302_risk_routes_to_expected_sandbox_mediums():
     assert scheduler.decide(low).medium == "docker"
     assert scheduler.decide(high).medium == "vm"
     assert scheduler.decide(browser).medium in {"browser", "docker"}
+
+
+def test_big302_scheduler_execution_records_pending_and_budget_paused_states(tmp_path):
+    scheduler = Scheduler()
+
+    high_risk = Task(
+        task_id="high-risk",
+        source="jira",
+        title="prod sandbox",
+        description="needs approval",
+        risk_level=RiskLevel.HIGH,
+        required_tools=["browser"],
+    )
+    high_risk_record = scheduler.execute(
+        high_risk,
+        run_id="run-high-risk",
+        ledger=ObservabilityLedger(str(tmp_path / "high-risk-ledger.json")),
+    )
+    assert high_risk_record.decision.medium == "vm"
+    assert high_risk_record.run.status == "needs-approval"
+    assert high_risk_record.tool_results == []
+
+    budget_paused = Task(
+        task_id="budget-pause",
+        source="linear",
+        title="budget pause",
+        description="budget should stop execution",
+        budget=5.0,
+        required_tools=["github"],
+    )
+    budget_record = scheduler.execute(
+        budget_paused,
+        run_id="run-budget-pause",
+        ledger=ObservabilityLedger(str(tmp_path / "budget-ledger.json")),
+    )
+    assert budget_record.decision.medium == "none"
+    assert budget_record.decision.approved is False
+    assert budget_record.run.status == "paused"
+    assert budget_record.tool_results == []
 
 
 def test_big303_tool_runtime_policy_and_audit_chain():

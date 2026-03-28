@@ -67,6 +67,23 @@ func TestSchedulerRoutesBrowserToKubernetes(t *testing.T) {
 	}
 }
 
+func TestSchedulerRejectsBudgetBlockedBrowserTaskInsteadOfDowngrading(t *testing.T) {
+	s := New()
+	decision := s.Decide(
+		domain.Task{ID: "browser-budget-1", RequiredTools: []string{"browser"}, BudgetCents: 1500},
+		QuotaSnapshot{BudgetRemaining: 1000},
+	)
+	if decision.Accepted {
+		t.Fatalf("expected budget-blocked browser task to be rejected, got %+v", decision)
+	}
+	if decision.Assignment.Executor != "" {
+		t.Fatalf("expected no executor assignment for rejected browser task, got %+v", decision)
+	}
+	if decision.Reason != "budget exceeded" {
+		t.Fatalf("expected budget exceeded reason, got %+v", decision)
+	}
+}
+
 func TestSchedulerAssessmentBuildsSecurityHandoffForRejectedDecision(t *testing.T) {
 	s := New()
 	assessment := s.Assess(domain.Task{

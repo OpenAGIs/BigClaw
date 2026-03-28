@@ -65,7 +65,7 @@ def test_candidate_backlog_ranks_ready_items_ahead_of_blocked_work() -> None:
                 priority="P0",
                 owner="runtime",
                 outcome="Move execution runtime to the next rollout ring.",
-                validation_command="python3 -m pytest tests/test_runtime.py -q",
+                validation_command="cd bigclaw-go && go test ./internal/worker ./internal/scheduler",
                 capabilities=["runtime-hardening"],
                 evidence=["benchmark"],
                 blockers=["missing rollback plan"],

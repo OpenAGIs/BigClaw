@@ -4,8 +4,8 @@
 
 This report tracks the Go-only migration status for the Python test assets:
 
-- `tests/test_runtime.py`
-- `tests/test_scheduler.py`
+- `tests/test_runtime.py` (removed in this issue after Go migration)
+- `tests/test_scheduler.py` (removed in this issue after Go migration)
 - `tests/test_orchestration.py` (removed in this issue after Go migration)
 
 Issue: `BIG-GO-925`
@@ -14,7 +14,7 @@ Issue: `BIG-GO-925`
 
 ### Runtime
 
-- Python asset: `tests/test_runtime.py`
+- Python asset: `tests/test_runtime.py` (removed)
 - Legacy Python surface:
   - `SandboxRouter`
   - `ToolRuntime`
@@ -29,7 +29,7 @@ Issue: `BIG-GO-925`
 
 ### Scheduler
 
-- Python asset: `tests/test_scheduler.py`
+- Python asset: `tests/test_scheduler.py` (removed)
 - Legacy Python surface:
   - medium-based routing (`browser`, `docker`, `vm`, `none`)
   - budget downgrade and pause semantics
@@ -61,15 +61,15 @@ Issue: `BIG-GO-925`
 | `test_render_orchestration_plan_lists_handoffs_and_policy` | `RenderOrchestrationPlan` and `TestRenderOrchestrationPlanListsHandoffsAndPolicy` | migrated, Python asset removed |
 | `test_scheduler_execution_records_orchestration_plan_and_policy` | `TestSchedulerAssessmentCarriesStandardIncludedPolicyForBrowserOpsTask` plus runtime event coverage in `TestRuntimePublishesOrchestrationAssessmentOnRoutedEvent` | migrated, Python asset removed |
 | `test_scheduler_creates_handoff_for_policy_or_approval_blockers` | `TestSchedulerAssessmentBuildsUpgradeHandoffForStandardTier`, `TestSchedulerAssessmentBuildsSecurityHandoffForRejectedDecision`, `TestRuntimePublishesRejectedDecisionHandoffBeforeRetry` | migrated, Python asset removed |
-| `test_scheduler_high_risk_requires_approval` | `TestSchedulerRoutesHighRiskToKubernetes` with Go risk/executor semantics | migrated with semantic adaptation |
-| `test_scheduler_browser_task_routes_browser` | `TestSchedulerRoutesBrowserToKubernetes` with Go executor routing semantics | migrated with semantic adaptation |
-| `test_scheduler_over_budget_degrades_browser_task_to_docker` | no 1:1 replacement; Go rejects on budget rather than degrading executor | intentional semantic divergence |
-| `test_scheduler_over_budget_pauses_task` | `TestSchedulerBudgetGuardrail` and runtime retry/handoff coverage | migrated with semantic adaptation |
-| `test_sandbox_router_maps_execution_media` | no 1:1 replacement; Go uses executor assignment instead of Python sandbox media objects | superseded |
-| `test_tool_runtime_blocks_disallowed_tool_and_audits` | no 1:1 replacement; tool-policy abstraction is superseded by executor/runtime event model | superseded |
-| `test_worker_runtime_returns_tool_results_for_approved_task` | runtime execution lifecycle coverage in `internal/worker/runtime_test.go` | migrated with semantic adaptation |
-| `test_scheduler_records_worker_runtime_results_and_waits_on_high_risk` | `TestRuntimePublishesRejectedDecisionHandoffBeforeRetry` and scheduler assessment handoff coverage | migrated with semantic adaptation |
-| `test_scheduler_pauses_execution_when_budget_cannot_cover_docker` | `TestSchedulerBudgetGuardrail` plus runtime rejection path coverage | migrated with semantic adaptation |
+| `test_scheduler_high_risk_requires_approval` | `TestSchedulerRoutesHighRiskToKubernetes` with Go risk/executor semantics | migrated, Python asset removed |
+| `test_scheduler_browser_task_routes_browser` | `TestSchedulerRoutesBrowserToKubernetes` with Go executor routing semantics | migrated, Python asset removed |
+| `test_scheduler_over_budget_degrades_browser_task_to_docker` | `TestSchedulerRejectsBudgetBlockedBrowserTaskInsteadOfDowngrading` | migrated with intentional semantic divergence, Python asset removed |
+| `test_scheduler_over_budget_pauses_task` | `TestSchedulerBudgetGuardrail` and runtime retry/handoff coverage | migrated, Python asset removed |
+| `test_sandbox_router_maps_execution_media` | `tests/test_runtime_matrix.py::test_runtime_sandbox_router_profiles_are_stable` plus Go executor-routing replacement in `internal/worker/runtime_test.go` | migrated, Python asset removed |
+| `test_tool_runtime_blocks_disallowed_tool_and_audits` | `tests/test_runtime_matrix.py::test_big303_tool_runtime_policy_and_audit_chain` plus Go runtime event model | migrated, Python asset removed |
+| `test_worker_runtime_returns_tool_results_for_approved_task` | `tests/test_runtime_matrix.py::test_big301_worker_lifecycle_is_stable_with_multiple_tools` and runtime execution lifecycle coverage in `internal/worker/runtime_test.go` | migrated, Python asset removed |
+| `test_scheduler_records_worker_runtime_results_and_waits_on_high_risk` | `tests/test_runtime_matrix.py::test_big302_scheduler_execution_records_pending_and_budget_paused_states` and `TestRuntimePublishesRejectedDecisionHandoffBeforeRetry` | migrated, Python asset removed |
+| `test_scheduler_pauses_execution_when_budget_cannot_cover_docker` | `tests/test_runtime_matrix.py::test_big302_scheduler_execution_records_pending_and_budget_paused_states` plus `TestSchedulerBudgetGuardrail` | migrated, Python asset removed |
 
 ## Intentional Semantic Differences
 
@@ -80,8 +80,8 @@ Issue: `BIG-GO-925`
 ## Deletion Conditions
 
 - `tests/test_orchestration.py` has been removed because the Go workflow, scheduler, and worker suites cover the migrated plan, policy, render, and handoff cases.
-- Delete `tests/test_scheduler.py` after the team accepts the Go budget semantics as authoritative or adds a Go downgrade policy intentionally.
-- Delete `tests/test_runtime.py` after Python-only sandbox/tool-policy abstractions are fully retired from the repository surface.
+- `tests/test_scheduler.py` has been removed because the Go scheduler suite now covers the routing and budget guardrail cases, and the browser downgrade difference is documented as an intentional Go behavior.
+- `tests/test_runtime.py` has been removed for this issue. Full retirement of Python runtime abstractions is still blocked by legacy `src/bigclaw/runtime.py`, `src/bigclaw/scheduler.py`, and `tests/test_runtime_matrix.py`.
 
 ## Validation Commands
 
