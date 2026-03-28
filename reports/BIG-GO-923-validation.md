@@ -7,6 +7,7 @@
 3. `git status --short`
 4. `cd bigclaw-go && go test ./internal/product ./internal/testharness ./internal/regression ./cmd/bigclawctl`
 5. `cd bigclaw-go && go test ./internal/product`
+6. `cd bigclaw-go && go test ./cmd/bigclawctl`
 
 ## Results
 
@@ -20,3 +21,5 @@
    Result: `ok  	bigclaw-go/internal/product	0.430s`, `ok  	bigclaw-go/internal/testharness	(cached)`, `ok  	bigclaw-go/internal/regression	(cached)`, `ok  	bigclaw-go/cmd/bigclawctl	(cached)`
 5. `cd bigclaw-go && go test ./internal/product`
    Result: `ok  	bigclaw-go/internal/product	0.890s`
+6. `cd bigclaw-go && go test ./cmd/bigclawctl`
+   Result: `ok  	bigclaw-go/cmd/bigclawctl	4.474s`

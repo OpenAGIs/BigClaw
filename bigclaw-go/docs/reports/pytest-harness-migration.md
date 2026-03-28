@@ -57,6 +57,20 @@ First migrated Python test slice now covered explicitly in Go:
   - `test_saved_view_catalog_audit_round_trip_preserves_findings`
   - `test_render_saved_view_report_summarizes_views_and_digest_coverage`
   - covered by `bigclaw-go/internal/product/saved_views_test.go`
+- `tests/test_legacy_shim.py`
+  - `test_dev_smoke_shim_runs_without_pythonpath`
+  - `test_create_issues_shim_help_runs_without_pythonpath`
+  - `test_github_sync_shim_help_runs_without_pythonpath`
+  - `test_workspace_bootstrap_shim_help_runs_without_pythonpath`
+  - `test_symphony_workspace_bootstrap_shim_help_runs_without_pythonpath`
+  - `test_symphony_workspace_validate_shim_help_runs_without_pythonpath`
+  - `test_refill_shim_help_runs_without_pythonpath`
+  - covered by `bigclaw-go/cmd/bigclawctl/migration_commands_test.go` and `bigclaw-go/cmd/bigclawctl/main_test.go`
+
+Still legacy-only within `tests/test_legacy_shim.py`:
+
+- Python wrapper argument translation helpers in `src/bigclaw/legacy_shim.py`
+- These are compatibility shims rather than target Go mainline behavior and can be retired only when the Python wrappers themselves are removed from supported validation paths
 
 ## Migration plan
 

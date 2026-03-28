@@ -32,6 +32,23 @@ func captureStdout(t *testing.T, fn func() error) ([]byte, error) {
 	return output, runErr
 }
 
+func captureRunStdout(t *testing.T, args []string) ([]byte, int) {
+	t.Helper()
+	originalStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("create pipe: %v", err)
+	}
+	os.Stdout = writer
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+	code := run(args)
+	_ = writer.Close()
+	output, _ := io.ReadAll(reader)
+	return output, code
+}
+
 func TestRunDevSmokeJSONOutput(t *testing.T) {
 	output, err := captureStdout(t, func() error {
 		return runDevSmoke([]string{"--json"})
@@ -48,6 +65,52 @@ func TestRunDevSmokeJSONOutput(t *testing.T) {
 	}
 	if payload["accepted"] != true {
 		t.Fatalf("expected accepted=true, got %+v", payload)
+	}
+}
+
+func TestHelpCommandsCoverLegacyShimEntrypoints(t *testing.T) {
+	cases := []struct {
+		name string
+		args []string
+		want string
+	}{
+		{
+			name: "dev-smoke",
+			args: []string{"dev-smoke", "--help"},
+			want: "usage: bigclawctl dev-smoke [flags]",
+		},
+		{
+			name: "create-issues",
+			args: []string{"create-issues", "--help"},
+			want: "usage: bigclawctl create-issues [flags]",
+		},
+		{
+			name: "github-sync",
+			args: []string{"github-sync", "--help"},
+			want: "usage: bigclawctl github-sync <install|status|sync> [flags]",
+		},
+		{
+			name: "workspace",
+			args: []string{"workspace", "--help"},
+			want: "usage: bigclawctl workspace <bootstrap|cleanup|validate> [flags]",
+		},
+		{
+			name: "legacy-python",
+			args: []string{"legacy-python", "--help"},
+			want: "usage: bigclawctl legacy-python <compile-check> [flags]",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			output, code := captureRunStdout(t, tc.args)
+			if code != 0 {
+				t.Fatalf("expected exit 0, got %d (stdout=%s)", code, string(output))
+			}
+			if !strings.Contains(string(output), tc.want) {
+				t.Fatalf("expected %q in output, got %s", tc.want, string(output))
+			}
+		})
 	}
 }
 
