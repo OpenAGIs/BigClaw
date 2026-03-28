@@ -20,8 +20,8 @@ The Python-side harness surface in scope today is intentionally small:
 
 Observed inventory at the current branch state:
 
-- `7` Python test modules under `tests/`
-- `7` modules directly importing `bigclaw...`
+- `6` Python test modules under `tests/`
+- `6` modules directly importing `bigclaw...`
 - `0` modules now import `pytest` directly within `tests/`
 - `pyproject.toml` no longer declares `pytest` in the default `dev` extra
 - `pyproject.toml` no longer defines `[tool.pytest.ini_options]`; legacy Python tests are now treated as migration-only manual lanes rather than the default repo test baseline
@@ -50,7 +50,7 @@ It provides:
 - `RequireExecutable(tb, name)` for shared skip-aware runtime probing when legacy Python tooling is still part of the migration boundary
 - `PythonExecutable(tb)` for the canonical resolved Python runtime path used by adjacent Go migration tests
 - `Chdir(tb, dir)` for temporary cwd changes with automatic cleanup
-- `InventoryPytestAssets(tb)` to machine-check the remaining pytest surface (`7` test modules, `7` `bigclaw` importers, `0` direct `pytest` importers) instead of leaving that inventory only in prose
+- `InventoryPytestAssets(tb)` to machine-check the remaining pytest surface (`6` test modules, `6` `bigclaw` importers, `0` direct `pytest` importers) instead of leaving that inventory only in prose
 - `InventoryPytestAssets(tb)` now walks `tests/` recursively, so legacy pytest files moved into nested subdirectories cannot silently escape the Go-owned inventory gate
 - `InventoryPytestAssets(tb)` now detects pytest usage via `import pytest`, `from pytest import ...`, and `pytest.` call sites so the `tests/conftest.py` deletion gate does not miss direct import forms
 - `InventoryPytestAssets(tb)` now also machine-checks whether `pyproject.toml` still declares pytest as a dev dependency or still defines `[tool.pytest.ini_options]`, so the remaining non-Go pytest infrastructure is tracked in the same report as `tests/conftest.py`
@@ -192,6 +192,22 @@ First migrated Python test slice now covered explicitly in Go:
   - `test_console_interaction_audit_flags_uncovered_required_roles`
   - `test_console_interaction_audit_flags_missing_frame_contract_details`
   - retired in this issue; coverage lives in `bigclaw-go/internal/consoleia/consoleia.go` and `bigclaw-go/internal/consoleia/consoleia_test.go`
+- `tests/test_planning.py`
+  - `test_candidate_backlog_round_trip_preserves_manifest_shape`
+  - `test_candidate_backlog_ranks_ready_items_ahead_of_blocked_work`
+  - `test_entry_gate_evaluation_requires_ready_candidates_capabilities_and_evidence`
+  - `test_entry_gate_holds_when_v2_baseline_is_missing_or_not_ready`
+  - `test_entry_gate_decision_round_trip_preserves_findings`
+  - `test_render_candidate_backlog_report_summarizes_backlog_and_gate_findings`
+  - `test_candidate_entry_round_trip_preserves_evidence_links`
+  - `test_four_week_execution_plan_round_trip_preserves_weeks_and_goals`
+  - `test_four_week_execution_plan_rolls_up_progress_and_at_risk_weeks`
+  - `test_four_week_execution_plan_validate_rejects_missing_or_unordered_weeks`
+  - `test_render_four_week_execution_report_summarizes_plan_status`
+  - `test_weekly_execution_plan_flags_at_risk_goal_ids`
+  - `test_build_v3_candidate_backlog_matches_issue_plan_traceability`
+  - `test_build_v3_entry_gate_passes_built_candidate_backlog_against_v2_baseline`
+  - retired in this issue; coverage lives in `bigclaw-go/internal/planning/planning.go` and `bigclaw-go/internal/planning/planning_test.go`
 - `tests/test_governance.py`
   - `test_scope_freeze_board_round_trip_preserves_manifest_shape`
   - `test_scope_freeze_audit_flags_backlog_governance_and_closeout_gaps`
@@ -451,11 +467,6 @@ Still partially migrated for broader model-runtime semantics:
 - `tests/test_models.py` now overlaps with Go coverage in `bigclaw-go/internal/workflow/model_test.go` and `bigclaw-go/internal/billing/statement_test.go`
 - The remaining Python-owned pieces are richer risk-assessment and triage record model surfaces that do not have a single equivalent Go model package in this issue
 
-Still legacy-only for planning metadata surfaces:
-
-- `tests/test_planning.py` still exercises Python-owned modules in `src/bigclaw/planning.py`
-- This file mainly validates manifest/report rendering and baseline gating copy rather than shared pytest bootstrap behavior, so it remains outside this issue's Go harness replacement slice
-
 Still partially migrated for observability and event-bus runtime semantics:
 
 - `tests/test_observability.py` overlaps only at the Go recorder/audit primitive level in `bigclaw-go/internal/observability/recorder_test.go`, `bigclaw-go/internal/observability/audit_test.go`, and `bigclaw-go/internal/observability/audit_spec_test.go`
@@ -490,8 +501,8 @@ Recommended next migration slices:
 
 Current machine-checked blockers in this issue are:
 
-- `7 legacy pytest modules remain under tests/`
-- `7 legacy pytest modules still import bigclaw from src/`
+- `6 legacy pytest modules remain under tests/`
+- `6 legacy pytest modules still import bigclaw from src/`
 
 The `pytest` blocker count is computed from Go-owned inventory code and now covers all three currently supported detection forms:
 
@@ -502,7 +513,7 @@ The `pytest` blocker count is computed from Go-owned inventory code and now cove
 Current machine-checked single-line summary is:
 
 - `conftest_delete_ready=true blockers=none`
-- `legacy_pytest_delete_ready=false blockers=7 legacy pytest modules remain under tests/; 7 legacy pytest modules still import bigclaw from src/`
+- `legacy_pytest_delete_ready=false blockers=6 legacy pytest modules remain under tests/; 6 legacy pytest modules still import bigclaw from src/`
 
 Current Go-owned command surface for this state:
 
@@ -539,16 +550,15 @@ Primary validation for this issue:
 
 ```bash
 cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && PYTHONPATH=src python3 -c "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0"
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl legacy-python pytest --repo .. --python python3 -- -- tests/test_planning.py tests/test_audit_events.py -q
-cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/regression ./cmd/bigclawctl
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/planning ./internal/testharness ./internal/regression ./cmd/bigclawctl
 cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json
 ```
 
 Observed results for this issue:
 
 - `PYTHONPATH=src python3 -c "from bigclaw.mapping import map_priority; from bigclaw.models import Priority; assert map_priority('P0') == Priority.P0"` passed on the latest issue branch state, confirming the remaining legacy `src/bigclaw` import surface still works without relying on a checked-in pytest module.
-- `go test ./internal/testharness ./internal/regression ./cmd/bigclawctl` passed on the latest issue branch state, covering the Go-owned script-runtime replacement for `tests/test_validation_bundle_continuation_policy_gate.py` together with the harness/report regression gates and the CLI exposure for the remaining legacy pytest asset blockers.
-- `go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json` passed on the latest issue branch state, regenerated the checked-in snapshot, and confirmed `inventory_summary=tests=7 bigclaw_imports=7 pytest_imports=0 pytest_command_refs=0`, `pyproject_declares_pytest=false`, `pyproject_has_pytest_config=false`, `conftest_exists=false`, `conftest_delete_status.can_delete=true`, and `legacy_pytest_delete_status.can_delete=false`.
+- `go test ./internal/planning ./internal/testharness ./internal/regression ./cmd/bigclawctl` passed on the latest issue branch state, covering the Go-owned replacement for `tests/test_planning.py` together with the harness/report regression gates and the CLI exposure for the remaining legacy pytest asset blockers.
+- `go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json` passed on the latest issue branch state, regenerated the checked-in snapshot, and confirmed `inventory_summary=tests=6 bigclaw_imports=6 pytest_imports=0 pytest_command_refs=0`, `pyproject_declares_pytest=false`, `pyproject_has_pytest_config=false`, `conftest_exists=false`, `conftest_delete_status.can_delete=true`, and `legacy_pytest_delete_status.can_delete=false`.
 
 Deletion-readiness validation for the legacy Python harness, once migration is further along:
 

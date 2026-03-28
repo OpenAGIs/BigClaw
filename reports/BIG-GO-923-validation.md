@@ -43,6 +43,9 @@
 39. `cd bigclaw-go && go test ./internal/consoleia`
 40. `cd bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
 41. `cd bigclaw-go && go test ./internal/consoleia ./internal/testharness ./internal/regression ./cmd/bigclawctl`
+42. `cd bigclaw-go && go test ./internal/planning`
+43. `cd bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
+44. `cd bigclaw-go && go test ./internal/planning ./internal/testharness ./internal/regression ./cmd/bigclawctl`
 
 ## Results
 
@@ -128,3 +131,9 @@
    Result: passed and refreshed `bigclaw-go/docs/reports/pytest-harness-status.json` with `inventory_summary=tests=7 bigclaw_imports=7 pytest_imports=0 pytest_command_refs=0`, `conftest_delete_status.summary=conftest_delete_ready=true blockers=none`, and `legacy_pytest_delete_status.summary=legacy_pytest_delete_ready=false blockers=7 legacy pytest modules remain under tests/; 7 legacy pytest modules still import bigclaw from src/`
 41. `cd bigclaw-go && go test ./internal/consoleia ./internal/testharness ./internal/regression ./cmd/bigclawctl`
    Result: first run failed only because `internal/testharness` and `cmd/bigclawctl` still expected the pre-refresh inventory count (`tests=8`); after updating the checked assertions, rerun passed with `ok  	bigclaw-go/internal/consoleia	(cached)`, `ok  	bigclaw-go/internal/testharness	1.451s`, `ok  	bigclaw-go/internal/regression	1.782s`, and `ok  	bigclaw-go/cmd/bigclawctl	3.127s`
+42. `cd bigclaw-go && go test ./internal/planning`
+   Result: `ok  	bigclaw-go/internal/planning	0.854s`
+43. `cd bigclaw-go && go run ./cmd/bigclawctl pytest-harness --project-root .. --report-path docs/reports/pytest-harness-status.json --json`
+   Result: passed and refreshed `bigclaw-go/docs/reports/pytest-harness-status.json` with `inventory_summary=tests=6 bigclaw_imports=6 pytest_imports=0 pytest_command_refs=0`, `conftest_delete_status.summary=conftest_delete_ready=true blockers=none`, and `legacy_pytest_delete_status.summary=legacy_pytest_delete_ready=false blockers=6 legacy pytest modules remain under tests/; 6 legacy pytest modules still import bigclaw from src/`
+44. `cd bigclaw-go && go test ./internal/planning ./internal/testharness ./internal/regression ./cmd/bigclawctl`
+   Result: `ok  	bigclaw-go/internal/planning	(cached)`, `ok  	bigclaw-go/internal/testharness	1.412s`, `ok  	bigclaw-go/internal/regression	1.834s`, `ok  	bigclaw-go/cmd/bigclawctl	3.090s`
