@@ -18,6 +18,14 @@
 
 ## Validation
 
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && python3 -m pytest tests/test_mapping.py -q`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/refill ./internal/legacyshim ./cmd/bigclawctl`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && git status --short`
 - `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && git add . && git commit -m "..." && git push origin BIG-GO-923-go-test-harness`
+
+## Validation Results
+
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && python3 -m pytest tests/test_mapping.py -q`
+  Result: passed (`.. [100%]`)
+- `cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/refill ./internal/legacyshim ./cmd/bigclawctl`
+  Result: passed (`ok` for `internal/testharness`, `internal/refill`, `internal/legacyshim`, `cmd/bigclawctl`)

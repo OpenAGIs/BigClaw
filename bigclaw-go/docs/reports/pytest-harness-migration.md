@@ -287,8 +287,14 @@ Until then, `tests/conftest.py` remains a compatibility shim and should not grow
 Primary validation for this issue:
 
 ```bash
+cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923 && python3 -m pytest tests/test_mapping.py -q
 cd /Users/openagi/code/bigclaw-workspaces/BIG-GO-923/bigclaw-go && go test ./internal/testharness ./internal/refill ./internal/legacyshim ./cmd/bigclawctl
 ```
+
+Observed results for this issue:
+
+- `python3 -m pytest tests/test_mapping.py -q` passed (`.. [100%]`), confirming the current `tests/conftest.py` import bootstrap still supports legacy `src/bigclaw` imports.
+- `go test ./internal/testharness ./internal/refill ./internal/legacyshim ./cmd/bigclawctl` passed, confirming the Go-owned replacement helpers and adjacent migrated test slices are stable.
 
 Deletion-readiness validation for the legacy Python harness, once migration is further along:
 
