@@ -100,9 +100,9 @@ Or use the legacy bootstrap helper:
 BIGCLAW_ENABLE_LEGACY_PYTHON=1 bash scripts/dev_bootstrap.sh
 ```
 
-## Legacy Python local test (without editable install)
+## Legacy Python local test (migration-only)
 
-If your environment has restrictive system-packages permissions, run tests with `PYTHONPATH`:
+If you still need to run a remaining legacy Python test and your environment already has `pytest` available, use `PYTHONPATH` explicitly:
 
 ```bash
 PYTHONPATH=src python3 -m pytest

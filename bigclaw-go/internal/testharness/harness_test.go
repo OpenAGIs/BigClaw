@@ -60,11 +60,11 @@ func TestInventoryPytestAssets(t *testing.T) {
 	if !inventory.PyprojectExists {
 		t.Fatal("expected pyproject.toml to exist in the current repo inventory")
 	}
-	if !inventory.PyprojectDeclaresPytest {
-		t.Fatal("expected pyproject.toml to declare pytest while legacy pytest remains active")
+	if inventory.PyprojectDeclaresPytest {
+		t.Fatal("expected pyproject.toml to stop declaring pytest in the default dev baseline")
 	}
-	if !inventory.PyprojectHasPytestConfig {
-		t.Fatal("expected pyproject.toml to define tool.pytest.ini_options")
+	if inventory.PyprojectHasPytestConfig {
+		t.Fatal("expected pyproject.toml to stop defining tool.pytest.ini_options")
 	}
 	if inventory.ConftestPath != filepath.Join(ProjectRoot(t), "tests", "conftest.py") {
 		t.Fatalf("unexpected conftest path: %q", inventory.ConftestPath)
@@ -96,15 +96,13 @@ func TestInventoryPytestAssets(t *testing.T) {
 	}
 
 	wantBlockers := []string{
-		"pyproject.toml still declares pytest as a Python test dependency",
-		"pyproject.toml still defines [tool.pytest.ini_options]",
 		"28 legacy pytest modules remain under tests/",
 		"28 legacy pytest modules still import bigclaw from src/",
 	}
 	if got := inventory.ConftestDeletionBlockers(); !reflect.DeepEqual(got, wantBlockers) {
 		t.Fatalf("unexpected conftest deletion blockers: got=%v want=%v", got, wantBlockers)
 	}
-	wantSummary := "conftest_delete_ready=false blockers=pyproject.toml still declares pytest as a Python test dependency; pyproject.toml still defines [tool.pytest.ini_options]; 28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/"
+	wantSummary := "conftest_delete_ready=false blockers=28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/"
 	if got := inventory.ConftestDeletionSummary(); got != wantSummary {
 		t.Fatalf("unexpected conftest deletion summary: got=%q want=%q", got, wantSummary)
 	}
@@ -146,8 +144,8 @@ func TestBuildPytestHarnessStatusReportNormalizesPaths(t *testing.T) {
 	if report.PyprojectPath != "pyproject.toml" {
 		t.Fatalf("expected portable pyproject_path, got %q", report.PyprojectPath)
 	}
-	if !report.PyprojectExists || !report.PyprojectDeclaresPytest || !report.PyprojectHasPytestConfig {
-		t.Fatalf("expected report to include active pyproject pytest infrastructure flags, got %+v", report)
+	if !report.PyprojectExists || report.PyprojectDeclaresPytest || report.PyprojectHasPytestConfig {
+		t.Fatalf("expected report to show pyproject pytest infrastructure removed from the default baseline, got %+v", report)
 	}
 	if len(report.PytestCommandRefFiles) != 0 {
 		t.Fatalf("expected report pytest command ref files to be empty, got=%v", report.PytestCommandRefFiles)

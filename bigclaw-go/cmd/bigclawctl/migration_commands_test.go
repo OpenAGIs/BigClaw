@@ -145,8 +145,8 @@ func TestRunPytestHarnessJSONOutput(t *testing.T) {
 	if payload["pyproject_exists"] != true {
 		t.Fatalf("expected pyproject_exists=true, got %+v", payload)
 	}
-	if payload["pyproject_declares_pytest"] != true || payload["pyproject_has_pytest_config"] != true {
-		t.Fatalf("expected pyproject pytest flags to remain true, got %+v", payload)
+	if payload["pyproject_declares_pytest"] != false || payload["pyproject_has_pytest_config"] != false {
+		t.Fatalf("expected pyproject pytest flags to be false after baseline cleanup, got %+v", payload)
 	}
 	commandRefs, ok := payload["pytest_command_ref_files"].([]any)
 	if !ok || len(commandRefs) != 0 {
@@ -171,7 +171,7 @@ func TestRunPytestHarnessJSONOutput(t *testing.T) {
 	if deleteStatus["legacy_test_modules"] != float64(28) || deleteStatus["bigclaw_import_modules"] != float64(28) || deleteStatus["pytest_import_modules"] != float64(0) {
 		t.Fatalf("unexpected delete status counts: %+v", deleteStatus)
 	}
-	if deleteStatus["summary"] != "conftest_delete_ready=false blockers=pyproject.toml still declares pytest as a Python test dependency; pyproject.toml still defines [tool.pytest.ini_options]; 28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/" {
+	if deleteStatus["summary"] != "conftest_delete_ready=false blockers=28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/" {
 		t.Fatalf("unexpected delete status summary: %+v", deleteStatus)
 	}
 	if payload["conftest_uses_pytest_plugins"] != false {
@@ -202,7 +202,7 @@ func TestRunPytestHarnessWritesReportFile(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected conftest_delete_status object, got %+v", payload["conftest_delete_status"])
 	}
-	if deleteStatus["summary"] != "conftest_delete_ready=false blockers=pyproject.toml still declares pytest as a Python test dependency; pyproject.toml still defines [tool.pytest.ini_options]; 28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/" {
+	if deleteStatus["summary"] != "conftest_delete_ready=false blockers=28 legacy pytest modules remain under tests/; 28 legacy pytest modules still import bigclaw from src/" {
 		t.Fatalf("unexpected delete status summary in report file: %+v", deleteStatus)
 	}
 }
