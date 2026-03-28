@@ -4,6 +4,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -126,6 +127,32 @@ func TestSchedulerAssessmentOmitsHandoffWhenStandardPlanFits(t *testing.T) {
 	}
 	if assessment.OrchestrationPolicy.UpgradeRequired {
 		t.Fatalf("expected no upgrade requirement, got %+v", assessment.OrchestrationPolicy)
+	}
+	if assessment.HandoffRequest != nil {
+		t.Fatalf("expected no handoff request, got %+v", assessment.HandoffRequest)
+	}
+}
+
+func TestSchedulerAssessmentCarriesStandardIncludedPolicyForBrowserOpsTask(t *testing.T) {
+	s := New()
+	assessment := s.Assess(domain.Task{
+		ID:            "OPE-66-exec",
+		Source:        "linear",
+		Title:         "Cross-team browser change",
+		Description:   "Program-managed rollout",
+		Labels:        []string{"ops"},
+		Priority:      1,
+		RiskLevel:     domain.RiskMedium,
+		RequiredTools: []string{"browser"},
+	}, QuotaSnapshot{})
+	if !assessment.Decision.Accepted {
+		t.Fatalf("expected accepted decision, got %+v", assessment.Decision)
+	}
+	if !reflect.DeepEqual(assessment.OrchestrationPlan.Departments(), []string{"operations", "engineering"}) {
+		t.Fatalf("unexpected orchestration departments: %+v", assessment.OrchestrationPlan)
+	}
+	if assessment.OrchestrationPolicy.UpgradeRequired || assessment.OrchestrationPolicy.EntitlementStatus != "included" || assessment.OrchestrationPolicy.BillingModel != "standard-included" || assessment.OrchestrationPolicy.EstimatedCostUSD != 3.0 {
+		t.Fatalf("unexpected policy decision: %+v", assessment.OrchestrationPolicy)
 	}
 	if assessment.HandoffRequest != nil {
 		t.Fatalf("expected no handoff request, got %+v", assessment.HandoffRequest)

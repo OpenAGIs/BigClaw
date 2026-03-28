@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 
 	"bigclaw-go/internal/domain"
@@ -194,6 +195,29 @@ func BuildHandoffRequest(accepted bool, plan OrchestrationPlan, policyDecision O
 	}
 }
 
+func RenderOrchestrationPlan(plan OrchestrationPlan, policyDecision OrchestrationPolicyDecision) string {
+	lines := []string{
+		"# Cross-Department Orchestration Plan",
+		fmt.Sprintf("- Collaboration Mode: %s", plan.CollaborationMode),
+		fmt.Sprintf("- Departments: %s", joinOrNone(plan.Departments())),
+		fmt.Sprintf("- Required Approvals: %s", joinOrNone(plan.RequiredApprovals())),
+		fmt.Sprintf("- Tier: %s", valueOrNone(policyDecision.Tier)),
+		fmt.Sprintf("- Entitlement Status: %s", valueOrNone(policyDecision.EntitlementStatus)),
+		fmt.Sprintf("- Billing Model: %s", valueOrNone(policyDecision.BillingModel)),
+		fmt.Sprintf("- Estimated Cost (USD): %s", strconv.FormatFloat(policyDecision.EstimatedCostUSD, 'f', 2, 64)),
+		fmt.Sprintf("- Included Usage Units: %d", policyDecision.IncludedUsageUnits),
+		fmt.Sprintf("- Overage Usage Units: %d", policyDecision.OverageUsageUnits),
+		fmt.Sprintf("- Overage Cost (USD): %s", strconv.FormatFloat(policyDecision.OverageCostUSD, 'f', 2, 64)),
+		fmt.Sprintf("- Blocked Departments: %s", joinOrNone(policyDecision.BlockedDepartments)),
+	}
+	if !policyDecision.UpgradeRequired {
+		if request := BuildHandoffRequest(false, plan, policyDecision); request != nil {
+			lines = append(lines, fmt.Sprintf("- Human Handoff Team: %s", request.TargetTeam))
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
 func operationsReason(task domain.Task, labels []string, text string) string {
 	if hasAny(labels, "program", "ops", "release") || strings.Contains(text, "rollout") || matchesAny(strings.ToLower(task.Source), "linear", "jira") {
 		return "coordinates issue intake, handoffs, and completion tracking"
@@ -293,4 +317,19 @@ func estimateOverageCost(units int) float64 {
 		return 0
 	}
 	return float64(units) * 4.0
+}
+
+func joinOrNone(values []string) string {
+	if len(values) == 0 {
+		return "none"
+	}
+	return strings.Join(values, ", ")
+}
+
+func valueOrNone(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return "none"
+	}
+	return trimmed
 }
