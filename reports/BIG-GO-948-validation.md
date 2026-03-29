@@ -41,6 +41,7 @@ Deleted in this wave:
 - `tests/test_evaluation.py`
 - `tests/test_parallel_validation_bundle.py`
 - `tests/test_live_shadow_bundle.py`
+- `tests/test_planning.py`
 
 Deleted in earlier `BIG-GO-948` wave already present on `main`:
 - `tests/test_cross_process_coordination_surface.py`
@@ -97,6 +98,7 @@ Python files materially addressed by `BIG-GO-948` across both waves:
 - `tests/test_evaluation.py`
 - `tests/test_parallel_validation_bundle.py`
 - `tests/test_live_shadow_bundle.py`
+- `tests/test_planning.py`
 - `tests/test_cross_process_coordination_surface.py`
 - `tests/test_followup_digests.py`
 - `tests/test_live_shadow_scorecard.py`
@@ -115,9 +117,7 @@ Python files materially addressed by `BIG-GO-948` across both waves:
 Remaining Python tests after this wave:
 - `tests/test_console_ia.py`
 - `tests/test_design_system.py`
-- `tests/test_live_shadow_bundle.py`
 - `tests/test_operations.py`
-- `tests/test_planning.py`
 - `tests/test_reports.py`
 - `tests/test_ui_review.py`
 
@@ -263,6 +263,21 @@ This wave relies on the following Go-native coverage:
   - `TestLane8ExportLiveShadowBundleSupportsDocumentedBigclawGoCWD`
   - `TestLane8CheckedInLiveShadowBundleMatchesExpectedShape`
   - Uses Go regression coverage to exercise the existing `scripts/migration/export_live_shadow_bundle.py` contract with synthetic shadow fixtures and checked-in bundle surfaces.
+- `bigclaw-go/internal/planningparity/planningparity_test.go`
+  - `TestCandidateBacklogRoundTripPreservesManifestShape`
+  - `TestCandidateBacklogRanksReadyItemsAheadOfBlockedWork`
+  - `TestEntryGateEvaluationRequiresReadyCandidatesCapabilitiesAndEvidence`
+  - `TestEntryGateHoldsWhenV2BaselineIsMissingOrNotReady`
+  - `TestEntryGateDecisionRoundTripPreservesFindings`
+  - `TestRenderCandidateBacklogReportSummarizesBacklogAndGateFindings`
+  - `TestCandidateEntryRoundTripPreservesEvidenceLinks`
+  - `TestFourWeekExecutionPlanRoundTripPreservesWeeksAndGoals`
+  - `TestFourWeekExecutionPlanRollsUpProgressAndAtRiskWeeks`
+  - `TestFourWeekExecutionPlanValidateRejectsMissingOrUnorderedWeeks`
+  - `TestRenderFourWeekExecutionReportSummarizesPlanStatus`
+  - `TestWeeklyExecutionPlanFlagsAtRiskGoalIDs`
+  - `TestBuildV3CandidateBacklogMatchesIssuePlanTraceability`
+  - `TestBuildV3EntryGatePassesBuiltCandidateBacklogAgainstV2Baseline`
 
 Earlier `BIG-GO-948` wave already replaced the report-regression Python files with:
 - `bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go`
@@ -306,6 +321,7 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
 - `cd bigclaw-go && go test ./internal/evaluationparity`
 - `cd bigclaw-go && go test ./internal/regression -run TestLane8ExportValidationBundleGeneratesLatestReportsAndIndex`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestLane8ExportLiveShadowBundle|TestLane8CheckedInLiveShadowBundleMatchesExpectedShape'`
+- `cd bigclaw-go && go test ./internal/planningparity`
 - `git status --short`
 
 ## Latest Validation Result
@@ -366,10 +382,12 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
   - Result: `ok  	bigclaw-go/internal/regression	1.349s`
 - `cd bigclaw-go && go test ./internal/regression -run 'TestLane8ExportLiveShadowBundle|TestLane8CheckedInLiveShadowBundleMatchesExpectedShape'`
   - Result: `ok  	bigclaw-go/internal/regression	0.871s`
+- `cd bigclaw-go && go test ./internal/planningparity`
+  - Result: `ok  	bigclaw-go/internal/planningparity	0.445s`
 
 ## Residual Risks
 
-- The remaining Python files are intentionally left because they still exercise Python-owned script orchestration, report rendering, model contracts, or UI/design assets without a tight Go replacement boundary.
+- The remaining Python files are intentionally left because they still exercise Python-owned UI, design-system, operations, or report surfaces without a tight Go replacement boundary.
 - `tests/test_reports.py`, `tests/test_ui_review.py`, `tests/test_operations.py`, and `tests/test_design_system.py` remain high-surface-area Python report/UI suites and need separate migration slices rather than opportunistic deletion here.
 
 ## Remaining Delete Or Migration Plan
@@ -380,11 +398,7 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
   - Plan: migrate only after a Go-owned static design-system contract exists.
 - `tests/test_operations.py`
   - Plan: split by report surface and migrate only when each output has a Go-native contract owner.
-- `tests/test_planning.py`
-  - Plan: split planning follow-up doc assertions from any remaining Python-only planning logic.
 - `tests/test_reports.py`
   - Plan: requires staged migration because it still spans many Python-only report builders.
-- `tests/test_runtime.py`
-  - Plan: migrate remaining worker/runtime report assertions after Python wrappers are retired.
 - `tests/test_ui_review.py`
   - Plan: requires dedicated Go-native review/report surfaces rather than broad delete-by-analogy.
