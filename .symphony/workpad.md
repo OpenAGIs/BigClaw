@@ -1,82 +1,95 @@
-# BIG-GO-962 Workpad
+# BIG-GO-971 Workpad
 
 ## Scope
 
-Targeted legacy Python modules under `src/bigclaw` for this lane:
+Targeted legacy Python modules under `src/bigclaw` for this batch:
 
-- `src/bigclaw/runtime.py`
-- `src/bigclaw/service.py`
-- `src/bigclaw/scheduler.py`
-- `src/bigclaw/workflow.py`
-- `src/bigclaw/orchestration.py`
-- `src/bigclaw/queue.py`
+- `src/bigclaw/repo_board.py`
+- `src/bigclaw/repo_commits.py`
+- `src/bigclaw/repo_gateway.py`
+- `src/bigclaw/repo_governance.py`
+- `src/bigclaw/repo_links.py`
+- `src/bigclaw/repo_registry.py`
+- `src/bigclaw/repo_triage.py`
 
-Current repository Python file count before this lane: `50`
+Planned consolidation host:
+
+- `src/bigclaw/repo_plane.py`
+
+Current repository Python file count before this lane: `45`
 
 ## Plan
 
-1. Confirm the exact lane-owned Python files and their import/test dependencies.
-2. Consolidate the six targeted modules into fewer implementation files inside `src/bigclaw` while preserving the legacy import surface used by package code and tests.
-3. Delete the superseded module files once compatibility aliases are in place.
-4. Run targeted validation for the touched legacy runtime/service workflow surfaces and record exact commands and results here.
-5. Report the direct file list, deletion/replacement/retention rationale, and the net impact on total Python file count.
-6. Commit and push the scoped lane changes.
+1. Confirm the exact import and test dependency surface for the seven targeted repo modules.
+2. Consolidate the data models and helper functions from the targeted modules into `src/bigclaw/repo_plane.py`.
+3. Preserve the legacy import surface for `bigclaw.repo_board`, `bigclaw.repo_commits`, `bigclaw.repo_gateway`, `bigclaw.repo_governance`, `bigclaw.repo_links`, `bigclaw.repo_registry`, and `bigclaw.repo_triage` through package-level compatibility shims.
+4. Delete the superseded module files after the compatibility surface is in place.
+5. Run targeted validation for the touched repo-plane and observability surfaces and record exact commands and results here.
+6. Report the batch file list, delete/replace/retain rationale, and the before/after Python file counts.
+7. Commit and push the scoped lane changes.
 
 ## Acceptance
 
-- Produce the exact Python file list directly owned by `BIG-GO-962`.
-- Reduce the number of Python files in the targeted runtime/service/scheduler/workflow/orchestration/queue surface.
-- Preserve the import-compatible legacy API for `bigclaw.runtime`, `bigclaw.service`, `bigclaw.scheduler`, `bigclaw.workflow`, `bigclaw.orchestration`, and `bigclaw.queue`.
+- Produce the exact Python file list directly owned by `BIG-GO-971`.
+- Reduce the number of Python files in the targeted repo metadata / gateway surface.
+- Preserve import compatibility for `bigclaw.repo_board`, `bigclaw.repo_commits`, `bigclaw.repo_gateway`, `bigclaw.repo_governance`, `bigclaw.repo_links`, `bigclaw.repo_registry`, and `bigclaw.repo_triage`.
 - Record delete/replace/retain reasoning for each targeted legacy file.
-- Report before/after total Python file counts for the repository.
+- Report before/after total Python file counts for `src/bigclaw`.
 
 ## Validation
 
 - Import smoke checks for the legacy module names after consolidation.
-- Targeted test execution for affected legacy surfaces, using the project-supported Python test runner available in this checkout.
+- Targeted tests for repo-board, repo-gateway, repo-governance, repo-links, repo-registry, repo-triage, repo-collaboration, and observability closeout paths.
+- `python3 -m compileall src/bigclaw` for syntax coverage across the migrated package.
 - `git status --short` to confirm the change set stays scoped to this lane.
 
 ## Notes
 
-- The target scope in this checkout is six top-level modules, not nested directories.
-- `pytest` is not currently on `PATH`; validation must use the project’s available Python environment tooling.
+- This batch is intentionally limited to short, tightly related `repo_*` modules to keep the blast radius low while still removing multiple files.
+- `repo_plane.py` is already the shared domain home for repo-space and run-link entities, making it the least surprising consolidation target.
 
 ## Results
 
 ### File Disposition
 
-- `src/bigclaw/runtime.py`
+- `src/bigclaw/repo_plane.py`
   - Retained and expanded.
-  - Reason: became the single implementation home for runtime, service, queue, orchestration, scheduler, and workflow compatibility surfaces.
-- `src/bigclaw/service.py`
+  - Reason: became the consolidated implementation home for repo board state, repo commit models, repo gateway normalization helpers, repo governance policy, run commit binding helpers, repo registry state, and repo triage helpers.
+- `src/bigclaw/repo_board.py`
   - Deleted.
-  - Reason: implementation moved into `src/bigclaw/runtime.py`; `bigclaw.service` import compatibility is now provided from `src/bigclaw/__init__.py`, including the `python -m bigclaw serve` CLI path.
-- `src/bigclaw/queue.py`
+  - Reason: implementation moved into `src/bigclaw/repo_plane.py`; `bigclaw.repo_board` import compatibility is now provided from `src/bigclaw/__init__.py`.
+- `src/bigclaw/repo_commits.py`
   - Deleted.
-  - Reason: implementation moved into `src/bigclaw/runtime.py`; `bigclaw.queue` import compatibility is now provided from `src/bigclaw/__init__.py`.
-- `src/bigclaw/orchestration.py`
+  - Reason: implementation moved into `src/bigclaw/repo_plane.py`; `bigclaw.repo_commits` import compatibility is now provided from `src/bigclaw/__init__.py`.
+- `src/bigclaw/repo_gateway.py`
   - Deleted.
-  - Reason: implementation moved into `src/bigclaw/runtime.py`; `bigclaw.orchestration` import compatibility is now provided from `src/bigclaw/__init__.py`.
-- `src/bigclaw/scheduler.py`
+  - Reason: implementation moved into `src/bigclaw/repo_plane.py`; `bigclaw.repo_gateway` import compatibility is now provided from `src/bigclaw/__init__.py`.
+- `src/bigclaw/repo_governance.py`
   - Deleted.
-  - Reason: implementation moved into `src/bigclaw/runtime.py`; `bigclaw.scheduler` import compatibility is now provided from `src/bigclaw/__init__.py`.
-- `src/bigclaw/workflow.py`
+  - Reason: implementation moved into `src/bigclaw/repo_plane.py`; `bigclaw.repo_governance` import compatibility is now provided from `src/bigclaw/__init__.py`.
+- `src/bigclaw/repo_links.py`
   - Deleted.
-  - Reason: implementation moved into `src/bigclaw/runtime.py`; `bigclaw.workflow` import compatibility is now provided from `src/bigclaw/__init__.py`.
+  - Reason: implementation moved into `src/bigclaw/repo_plane.py`; `bigclaw.repo_links` import compatibility is now provided from `src/bigclaw/__init__.py`.
+- `src/bigclaw/repo_registry.py`
+  - Deleted.
+  - Reason: implementation moved into `src/bigclaw/repo_plane.py`; `bigclaw.repo_registry` import compatibility is now provided from `src/bigclaw/__init__.py`.
+- `src/bigclaw/repo_triage.py`
+  - Deleted.
+  - Reason: implementation moved into `src/bigclaw/repo_plane.py`; `bigclaw.repo_triage` import compatibility is now provided from `src/bigclaw/__init__.py`.
 
 ### Python File Count Impact
 
-- Repository `src/bigclaw` Python files before: `50`
-- Repository `src/bigclaw` Python files after: `45`
-- Net reduction: `5`
+- Repository `src/bigclaw` Python files before: `45`
+- Repository `src/bigclaw` Python files after: `38`
+- Net reduction: `7`
 
 ### Validation Record
 
 - `python3 -m compileall src/bigclaw`
   - Result: success
 - `PYTHONPATH=src python3 - <<'PY' ...`
-  - Result: success; verified `bigclaw.runtime`, `bigclaw.service`, `bigclaw.queue`, `bigclaw.orchestration`, `bigclaw.scheduler`, and `bigclaw.workflow` all import cleanly.
-- `PYTHONPATH=src python3 -m bigclaw --help`
-  - Result: success; verified the CLI still resolves `from .service import run_server` through the compatibility shim.
-- `PYTHONPATH=src python3 -m pytest tests/test_runtime.py tests/test_runtime_matrix.py tests/test_scheduler.py tests/test_orchestration.py tests/test_queue.py tests/test_workflow.py tests/test_control_center.py tests/test_execution_flow.py tests/test_dsl.py tests/test_evaluation.py tests/test_risk.py tests/test_audit_events.py tests/test_operations.py tests/test_reports.py`
-  - Result: `107 passed in 0.18s`
+  - Result: success; verified `bigclaw.repo_plane`, `bigclaw.repo_board`, `bigclaw.repo_governance`, `bigclaw.repo_triage`, `bigclaw.repo_commits`, `bigclaw.repo_gateway`, `bigclaw.repo_links`, and `bigclaw.repo_registry` all import cleanly through the consolidated implementation.
+- `PYTHONPATH=src python3 -m pytest tests/test_repo_gateway.py tests/test_repo_registry.py tests/test_repo_triage.py tests/test_repo_board.py tests/test_repo_governance.py tests/test_repo_links.py tests/test_repo_collaboration.py tests/test_observability.py`
+  - Result: `18 passed in 0.09s`
+- `git status --short`
+  - Result: scoped to `.symphony/workpad.md`, `src/bigclaw/__init__.py`, `src/bigclaw/repo_plane.py`, and deletion of the seven targeted legacy module files.
