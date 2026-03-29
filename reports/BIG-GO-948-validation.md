@@ -2,7 +2,7 @@
 
 ## Completed Work
 
-This lane now includes a fourteenth-wave reduction of Python tests under `tests/` by deleting files whose behavior already has a Go-native replacement in `bigclaw-go` or a small Go-native parity package.
+This lane now includes a fifteenth-wave reduction of Python tests under `tests/` by deleting files whose behavior already has a Go-native replacement in `bigclaw-go` or a Go regression test that locks the remaining contract around an existing script surface.
 
 Deleted in this wave:
 - `tests/test_connectors.py`
@@ -39,6 +39,7 @@ Deleted in this wave:
 - `tests/test_validation_bundle_continuation_policy_gate.py`
 - `tests/test_runtime.py`
 - `tests/test_evaluation.py`
+- `tests/test_parallel_validation_bundle.py`
 
 Deleted in earlier `BIG-GO-948` wave already present on `main`:
 - `tests/test_cross_process_coordination_surface.py`
@@ -93,6 +94,7 @@ Python files materially addressed by `BIG-GO-948` across both waves:
 - `tests/test_validation_bundle_continuation_policy_gate.py`
 - `tests/test_runtime.py`
 - `tests/test_evaluation.py`
+- `tests/test_parallel_validation_bundle.py`
 - `tests/test_cross_process_coordination_surface.py`
 - `tests/test_followup_digests.py`
 - `tests/test_live_shadow_scorecard.py`
@@ -113,7 +115,6 @@ Remaining Python tests after this wave:
 - `tests/test_design_system.py`
 - `tests/test_live_shadow_bundle.py`
 - `tests/test_operations.py`
-- `tests/test_parallel_validation_bundle.py`
 - `tests/test_planning.py`
 - `tests/test_reports.py`
 - `tests/test_ui_review.py`
@@ -252,6 +253,9 @@ This wave relies on the following Go-native coverage:
   - `TestRenderReplayDetailPageListsMismatches`
   - `TestRenderRunReplayIndexPageLinksOutputs`
   - `TestRenderRunReplayIndexPageWithoutReportPath`
+- `bigclaw-go/internal/regression/parallel_validation_bundle_test.go`
+  - `TestLane8ExportValidationBundleGeneratesLatestReportsAndIndex`
+  - Uses Go regression coverage to exercise the existing `scripts/e2e/export_validation_bundle.py` contract with a synthetic bundle fixture.
 
 Earlier `BIG-GO-948` wave already replaced the report-regression Python files with:
 - `bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go`
@@ -293,6 +297,7 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
 - `cd bigclaw-go && go test ./internal/policygateparity`
 - `cd bigclaw-go && go test ./internal/runtimeparity`
 - `cd bigclaw-go && go test ./internal/evaluationparity`
+- `cd bigclaw-go && go test ./internal/regression -run TestLane8ExportValidationBundleGeneratesLatestReportsAndIndex`
 - `git status --short`
 
 ## Latest Validation Result
@@ -349,6 +354,8 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
   - Result: `ok  	bigclaw-go/internal/runtimeparity	0.901s`
 - `cd bigclaw-go && go test ./internal/evaluationparity`
   - Result: `ok  	bigclaw-go/internal/evaluationparity	1.115s`
+- `cd bigclaw-go && go test ./internal/regression -run TestLane8ExportValidationBundleGeneratesLatestReportsAndIndex`
+  - Result: `ok  	bigclaw-go/internal/regression	1.349s`
 
 ## Residual Risks
 
