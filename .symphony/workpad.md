@@ -1,21 +1,20 @@
-# BIG-GO-902 Workpad
+## BIG-GO-950
 
-## Plan
+### Plan
+1. Inventory `bigclaw-go/scripts/e2e/**` and `bigclaw-go/scripts/migration/**`, using the current worktree as source of truth because `reports/go-migration-lanes-2026-03-29.md` is not present in this checkout.
+2. Replace Python entrypoints that are directly invoked by shell workflows with Go/native-command equivalents, keeping behavior and output paths stable where practical.
+3. Convert Python-only script tests that cover migrated entrypoints into Go tests.
+4. Add a lane-scoped migration inventory and deletion plan for remaining large Python assets that are not safely portable within this change.
+5. Run targeted verification, then commit and push the issue branch.
 
-1. Inspect existing `scripts/*.py` automation entrypoints and current `bigclaw-go` CLI commands to identify the smallest migration slice that delivers a real Go CLI path and a repeatable migration template.
-2. Implement first-batch Go CLI subcommands for the selected high-frequency script layer entrypoints, keeping changes scoped to command wiring, shared helpers, and migration documentation.
-3. Preserve a compatibility-layer plan by documenting legacy Python entrypoints, their Go replacements, validation commands, and remaining follow-up items.
-4. Run targeted tests for the touched Go CLI packages and record exact commands plus results in the final report.
-5. Commit the scoped changes and push the branch to the configured remote.
+### Acceptance
+- Lane file list is documented from the checked-out repository contents.
+- Migrated entrypoints have Go/native-command replacements, and remaining files have an explicit delete/follow-up plan.
+- Validation commands and exact results are recorded.
+- Residual risks are documented.
 
-## Acceptance
-
-- Produce an executable migration plan for moving Python script entrypoints to Go CLI subcommands.
-- Land a first batch of Go CLI implementations or adaptations for selected automation entrypoints.
-- Document validation commands, regression surface, branch/PR recommendation, and migration risks.
-
-## Validation
-
-- `go test ./cmd/bigclawctl/...`
-- Additional targeted `go test` commands for any new shared package touched by the implementation.
-- Manual CLI smoke checks with `go run ./cmd/bigclawctl --help` and targeted subcommand help where relevant.
+### Validation
+- `cd bigclaw-go && go test ./cmd/bigclawctl/...`
+- `cd bigclaw-go && go test ./internal/...`
+- `cd bigclaw-go && ./scripts/e2e/run_all.sh` with local lanes constrained as needed for targeted verification
+- `git status --short`

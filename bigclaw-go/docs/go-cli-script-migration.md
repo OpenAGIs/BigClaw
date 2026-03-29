@@ -1,14 +1,14 @@
 # Go CLI Script Migration
 
-Issue: `BIG-GO-902`
+Issues: `BIG-GO-902`, `BIG-GO-950`
 
 ## Implemented In This Slice
 
 | Legacy script | Go CLI replacement | Status |
 | --- | --- | --- |
-| `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | migrated with Python compatibility shim |
+| `bigclaw-go/scripts/e2e/run_task_smoke.py` | `go run ./cmd/bigclawctl automation e2e run-task-smoke ...` | migrated and Python wrapper removed |
 | `bigclaw-go/scripts/benchmark/soak_local.py` | `go run ./cmd/bigclawctl automation benchmark soak-local ...` | migrated with Python compatibility shim |
-| `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated with Python compatibility shim |
+| `bigclaw-go/scripts/migration/shadow_compare.py` | `go run ./cmd/bigclawctl automation migration shadow-compare ...` | migrated and Python wrapper removed |
 
 ## Remaining Python Script Backlog
 
@@ -48,18 +48,13 @@ go run ./cmd/bigclawctl automation migration shadow-compare --help
 
 ## Compatibility Layer Plan
 
-- Keep the migrated Python entrypoints as thin shims that only forward to `bigclawctl`.
-- Do not add new behavior to the Python copies; all new logic belongs in Go.
+- Keep any future compatibility shim temporary; this lane already removed the `run_task_smoke.py` and `shadow_compare.py` wrappers.
+- Do not add new behavior to Python copies; all new logic belongs in Go.
 - Migrate the remaining reporting/export scripts in follow-up batches grouped by shared payload shape:
   - validation bundle generators
   - benchmark matrices
   - migration scorecards/bundle exporters
-- Remove each Python shim only after the corresponding Go command is referenced by docs, CI, and operators for one full rollout cycle.
-
-## Branch And PR Suggestion
-
-- Branch: `feat/BIG-GO-902-go-cli-script-migration`
-- PR title: `feat: migrate first Python automation scripts to bigclawctl`
+- Remove each remaining Python shim only after the corresponding Go command is referenced by docs, CI, and operators.
 
 ## Risks
 

@@ -68,10 +68,11 @@ Notes:
 - `python3 scripts/ops/bigclaw_github_sync.py ...`,
   `python3 scripts/ops/bigclaw_refill_queue.py ...`, and the legacy
   `scripts/ops/*workspace*.py` helpers are also compatibility shims over the same Go CLI.
-- `python3 bigclaw-go/scripts/e2e/run_task_smoke.py`,
-  `python3 bigclaw-go/scripts/benchmark/soak_local.py`, and
-  `python3 bigclaw-go/scripts/migration/shadow_compare.py` now forward into
-  `bigclawctl automation ...`; the migration matrix lives in
+- `python3 bigclaw-go/scripts/benchmark/soak_local.py` remains a compatibility
+  shim into `bigclawctl automation ...`, while the deleted
+  `bigclaw-go/scripts/e2e/run_task_smoke.py` and
+  `bigclaw-go/scripts/migration/shadow_compare.py` entrypoints now map directly
+  to `go run ./bigclaw-go/cmd/bigclawctl automation ...`; the migration matrix lives in
   [`bigclaw-go/docs/go-cli-script-migration.md`](./bigclaw-go/docs/go-cli-script-migration.md).
 - `scripts/ops/bigclaw-issue`, `scripts/ops/bigclaw-symphony`, and `scripts/ops/bigclaw-panel` are
   retained as compatibility wrappers, but the preferred operator path is now `scripts/ops/bigclawctl`.
