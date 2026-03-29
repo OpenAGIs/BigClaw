@@ -2,7 +2,7 @@
 
 ## Completed Work
 
-This lane now includes a fifteenth-wave reduction of Python tests under `tests/` by deleting files whose behavior already has a Go-native replacement in `bigclaw-go` or a Go regression test that locks the remaining contract around an existing script surface.
+This lane now includes a sixteenth-wave reduction of Python tests under `tests/` by deleting files whose behavior already has a Go-native replacement in `bigclaw-go` or a Go regression test that locks the remaining contract around an existing script surface.
 
 Deleted in this wave:
 - `tests/test_connectors.py`
@@ -40,6 +40,7 @@ Deleted in this wave:
 - `tests/test_runtime.py`
 - `tests/test_evaluation.py`
 - `tests/test_parallel_validation_bundle.py`
+- `tests/test_live_shadow_bundle.py`
 
 Deleted in earlier `BIG-GO-948` wave already present on `main`:
 - `tests/test_cross_process_coordination_surface.py`
@@ -95,6 +96,7 @@ Python files materially addressed by `BIG-GO-948` across both waves:
 - `tests/test_runtime.py`
 - `tests/test_evaluation.py`
 - `tests/test_parallel_validation_bundle.py`
+- `tests/test_live_shadow_bundle.py`
 - `tests/test_cross_process_coordination_surface.py`
 - `tests/test_followup_digests.py`
 - `tests/test_live_shadow_scorecard.py`
@@ -256,6 +258,11 @@ This wave relies on the following Go-native coverage:
 - `bigclaw-go/internal/regression/parallel_validation_bundle_test.go`
   - `TestLane8ExportValidationBundleGeneratesLatestReportsAndIndex`
   - Uses Go regression coverage to exercise the existing `scripts/e2e/export_validation_bundle.py` contract with a synthetic bundle fixture.
+- `bigclaw-go/internal/regression/live_shadow_bundle_export_test.go`
+  - `TestLane8ExportLiveShadowBundleGeneratesIndexAndRollup`
+  - `TestLane8ExportLiveShadowBundleSupportsDocumentedBigclawGoCWD`
+  - `TestLane8CheckedInLiveShadowBundleMatchesExpectedShape`
+  - Uses Go regression coverage to exercise the existing `scripts/migration/export_live_shadow_bundle.py` contract with synthetic shadow fixtures and checked-in bundle surfaces.
 
 Earlier `BIG-GO-948` wave already replaced the report-regression Python files with:
 - `bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go`
@@ -298,6 +305,7 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
 - `cd bigclaw-go && go test ./internal/runtimeparity`
 - `cd bigclaw-go && go test ./internal/evaluationparity`
 - `cd bigclaw-go && go test ./internal/regression -run TestLane8ExportValidationBundleGeneratesLatestReportsAndIndex`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8ExportLiveShadowBundle|TestLane8CheckedInLiveShadowBundleMatchesExpectedShape'`
 - `git status --short`
 
 ## Latest Validation Result
@@ -356,11 +364,12 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
   - Result: `ok  	bigclaw-go/internal/evaluationparity	1.115s`
 - `cd bigclaw-go && go test ./internal/regression -run TestLane8ExportValidationBundleGeneratesLatestReportsAndIndex`
   - Result: `ok  	bigclaw-go/internal/regression	1.349s`
+- `cd bigclaw-go && go test ./internal/regression -run 'TestLane8ExportLiveShadowBundle|TestLane8CheckedInLiveShadowBundleMatchesExpectedShape'`
+  - Result: `ok  	bigclaw-go/internal/regression	0.871s`
 
 ## Residual Risks
 
 - The remaining Python files are intentionally left because they still exercise Python-owned script orchestration, report rendering, model contracts, or UI/design assets without a tight Go replacement boundary.
-- `tests/test_parallel_validation_bundle.py`, `tests/test_validation_bundle_continuation_policy_gate.py`, and `tests/test_live_shadow_bundle.py` still execute Python scripts; deleting them before a Go-native exporter or wrapper exists would reduce behavioral coverage.
 - `tests/test_reports.py`, `tests/test_ui_review.py`, `tests/test_operations.py`, and `tests/test_design_system.py` remain high-surface-area Python report/UI suites and need separate migration slices rather than opportunistic deletion here.
 
 ## Remaining Delete Or Migration Plan
@@ -369,14 +378,8 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
   - Plan: migrate after the console IA/export surface is owned by a Go-native product/report contract.
 - `tests/test_design_system.py`
   - Plan: migrate only after a Go-owned static design-system contract exists.
-- `tests/test_evaluation.py`
-  - Plan: requires a Go-native evaluation/report builder.
-- `tests/test_live_shadow_bundle.py`
-  - Plan: migrate after the live-shadow bundle exporter is Go-native or exposed through a stable Go wrapper.
 - `tests/test_operations.py`
   - Plan: split by report surface and migrate only when each output has a Go-native contract owner.
-- `tests/test_parallel_validation_bundle.py`
-  - Plan: migrate after the validation-bundle export path moves off Python script orchestration.
 - `tests/test_planning.py`
   - Plan: split planning follow-up doc assertions from any remaining Python-only planning logic.
 - `tests/test_reports.py`
