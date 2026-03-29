@@ -25,17 +25,17 @@
 
 ## Microbenchmark Thresholds
 
-- `BenchmarkMemoryQueueEnqueueLease-8`: `66075.00 ns/op` vs limit `100000` -> `pass`
 - `BenchmarkFileQueueEnqueueLease-8`: `31627767.00 ns/op` vs limit `40000000` -> `pass`
+- `BenchmarkMemoryQueueEnqueueLease-8`: `66075.00 ns/op` vs limit `100000` -> `pass`
 - `BenchmarkSQLiteQueueEnqueueLease-8`: `18057898.00 ns/op` vs limit `25000000` -> `pass`
 - `BenchmarkSchedulerDecide-8`: `73.98 ns/op` vs limit `1000` -> `pass`
 
 ## Soak Matrix
 
-- `50x8`: `6.074 tasks/s`, `0 failed`, envelope `bootstrap-burst` -> `pass`
-- `100x12`: `9.714 tasks/s`, `0 failed`, envelope `bootstrap-burst` -> `pass`
 - `1000x24`: `9.607 tasks/s`, `0 failed`, envelope `recommended-local-sustained` -> `pass`
+- `100x12`: `9.714 tasks/s`, `0 failed`, envelope `bootstrap-burst` -> `pass`
 - `2000x24`: `9.125 tasks/s`, `0 failed`, envelope `recommended-local-ceiling` -> `pass`
+- `50x8`: `6.074 tasks/s`, `0 failed`, envelope `bootstrap-burst` -> `pass`
 
 ## Workload Mix
 

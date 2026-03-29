@@ -194,3 +194,109 @@ func TestAutomationShadowCompareDetectsMismatch(t *testing.T) {
 		t.Fatalf("expected mismatch diff, got %+v", report.Diff)
 	}
 }
+
+func TestRunAutomationBenchmarkRunMatrixJSONOutput(t *testing.T) {
+	goRoot := t.TempDir()
+	output, err := captureStdout(t, func() error {
+		report, err := automationBenchmarkRunMatrix(automationBenchmarkRunMatrixOptions{
+			GoRoot:         goRoot,
+			ReportPath:     "docs/reports/benchmark-matrix-report.json",
+			TimeoutSeconds: 30,
+			Scenarios:      []string{"3:2"},
+			BenchmarkRunner: func(string) (benchmarkOutput, error) {
+				return benchmarkOutput{
+					Stdout: "BenchmarkSchedulerDecide-8\t100\t999 ns/op\n",
+					Parsed: map[string]benchmarkMetric{
+						"BenchmarkSchedulerDecide-8": {NSPerOp: 999},
+					},
+				}, nil
+			},
+			SoakRunner: func(string, int, int, int, string) (*automationSoakLocalReport, error) {
+				return &automationSoakLocalReport{
+					Count:                 3,
+					Workers:               2,
+					ElapsedSeconds:        1.5,
+					ThroughputTasksPerSec: 2.0,
+					Succeeded:             3,
+					Failed:                0,
+					BaseURL:               "http://127.0.0.1:8080",
+				}, nil
+			},
+		})
+		if err != nil {
+			return err
+		}
+		return emit(structToMap(report), true, 0)
+	})
+	if err != nil {
+		t.Fatalf("run benchmark matrix: %v", err)
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(output, &payload); err != nil {
+		t.Fatalf("decode output: %v (%s)", err, string(output))
+	}
+	benchmark, _ := payload["benchmark"].(map[string]any)
+	parsed, _ := benchmark["parsed"].(map[string]any)
+	if _, ok := parsed["BenchmarkSchedulerDecide-8"]; !ok {
+		t.Fatalf("expected parsed benchmark lane, got %+v", payload)
+	}
+	soakMatrix, _ := payload["soak_matrix"].([]any)
+	if len(soakMatrix) != 1 {
+		t.Fatalf("expected one soak result, got %+v", payload)
+	}
+	body, err := os.ReadFile(filepath.Join(goRoot, "docs/reports/benchmark-matrix-report.json"))
+	if err != nil {
+		t.Fatalf("read generated report: %v", err)
+	}
+	if !strings.Contains(string(body), "\"workers\": 2") {
+		t.Fatalf("expected written matrix report, got %s", string(body))
+	}
+}
+
+func TestBuildCapacityCertificationReportPassesCheckedInEvidence(t *testing.T) {
+	repoRoot := filepath.Clean(filepath.Join("..", "..", ".."))
+	report, markdown, err := buildCapacityCertificationReport(
+		repoRoot,
+		"bigclaw-go/docs/reports/benchmark-matrix-report.json",
+		"bigclaw-go/docs/reports/mixed-workload-matrix-report.json",
+		nil,
+	)
+	if err != nil {
+		t.Fatalf("build capacity certification report: %v", err)
+	}
+
+	summary, _ := report["summary"].(map[string]any)
+	if summary["overall_status"] != "pass" {
+		t.Fatalf("expected pass summary, got %+v", report)
+	}
+	failedLanes, _ := summary["failed_lanes"].([]any)
+	if len(failedLanes) != 0 {
+		t.Fatalf("expected no failed lanes, got %+v", failedLanes)
+	}
+	saturation, _ := report["saturation_indicator"].(map[string]any)
+	if saturation["status"] != "pass" {
+		t.Fatalf("expected pass saturation status, got %+v", saturation)
+	}
+	mixedWorkload, _ := report["mixed_workload"].(map[string]any)
+	if mixedWorkload["status"] != "pass" {
+		t.Fatalf("expected pass mixed workload status, got %+v", mixedWorkload)
+	}
+	soakMatrix := anySlice(report["soak_matrix"])
+	contains1000x24 := false
+	for _, rawLane := range soakMatrix {
+		lane, _ := rawLane.(map[string]any)
+		if lane["lane"] == "1000x24" {
+			contains1000x24 = true
+		}
+	}
+	if !contains1000x24 {
+		t.Fatalf("expected 1000x24 lane, got %+v", soakMatrix)
+	}
+	if report["generated_at"] != "2026-03-13T09:44:42.458392Z" {
+		t.Fatalf("unexpected generated_at: %+v", report["generated_at"])
+	}
+	if !strings.Contains(markdown, "## Admission Policy Summary") || !strings.Contains(markdown, "Runtime enforcement: `none`") {
+		t.Fatalf("unexpected markdown: %s", markdown)
+	}
+}

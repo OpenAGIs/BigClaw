@@ -30,7 +30,7 @@
 
 ```bash
 cd bigclaw-go
-python3 scripts/benchmark/run_matrix.py \
+go run ./cmd/bigclawctl automation benchmark run-matrix \
   --scenario 50:8 \
   --scenario 100:12 \
   --report-path docs/reports/benchmark-matrix-report.json
@@ -41,7 +41,7 @@ python3 scripts/benchmark/run_matrix.py \
 
 ```bash
 cd bigclaw-go
-python3 scripts/benchmark/soak_local.py \
+go run ./cmd/bigclawctl automation benchmark soak-local \
   --autostart \
   --count 2000 \
   --workers 24 \
@@ -53,9 +53,10 @@ python3 scripts/benchmark/soak_local.py \
 
 ```bash
 cd bigclaw-go
-python3 scripts/benchmark/capacity_certification.py \
-  --output docs/reports/capacity-certification-matrix.json \
-  --markdown-output docs/reports/capacity-certification-report.md
+go run ./cmd/bigclawctl automation benchmark capacity-certification \
+  --go-root .. \
+  --output bigclaw-go/docs/reports/capacity-certification-matrix.json \
+  --markdown-output bigclaw-go/docs/reports/capacity-certification-report.md
 ```
 
 This helper converts the checked-in benchmark, soak, and mixed-workload artifacts into
