@@ -13,6 +13,7 @@
 9. Current next slice: fold `queue.py` into `operations.py`, keep the legacy `bigclaw.queue` import path via aliasing, and validate queue plus operations control-center behavior.
 10. Follow-up slice: fold `run_detail.py` into `reports.py`, keep the legacy `bigclaw.run_detail` import path via aliasing, and validate the run-detail, evaluation, and reporting surfaces.
 11. Current continuation slice: fold `evaluation.py` into `operations.py`, keep the legacy `bigclaw.evaluation` import path via aliasing, and validate evaluation plus operations regression surfaces.
+12. Current next slice: fold `console_ia.py` into `design_system.py`, keep the legacy `bigclaw.console_ia` import path via aliasing, and validate console IA plus design-system regression surfaces.
 
 ## Acceptance
 
@@ -32,6 +33,7 @@
 - For the current next slice, validate `tests/test_queue.py`, `tests/test_control_center.py`, `tests/test_execution_flow.py`, and `tests/test_operations.py`, then re-check the top-level Python file count.
 - For the follow-up slice, validate `tests/test_evaluation.py`, `tests/test_reports.py`, and `tests/test_observability.py`, then re-check the top-level Python file count.
 - For the current continuation slice, validate `tests/test_evaluation.py` plus `tests/test_operations.py`, then re-check the top-level Python file count.
+- For the current next slice, validate `tests/test_console_ia.py` plus `tests/test_design_system.py`, then re-check the top-level Python file count.
 
 ## Results
 
@@ -43,6 +45,7 @@
   - `legacy_shim.py`
   - `connectors.py`
   - `collaboration.py`
+  - `console_ia.py`
   - `mapping.py`
   - `memory.py`
   - `parallel_refill.py`
@@ -79,6 +82,7 @@
   - `operations.py` now owns the queue persistence and parallel issue queue helpers.
   - `observability.py` now owns the canonical audit event and event bus helpers.
   - `observability.py` now owns the collaboration and repo discussion board helpers.
+  - `design_system.py` now owns the console information architecture and interaction-contract helpers.
   - `operations.py` now owns the task memory compatibility surface.
   - `planning.py` now owns the execution-pack roadmap dataclasses and builder.
   - `planning.py` now owns the scope-freeze governance helpers.
@@ -103,12 +107,13 @@
   - `scheduler.py`: retained as the execution host after absorbing risk and runtime helpers; orchestration moved into `reports.py` instead of broadening scheduler/report cyclic ownership.
   - `operations.py`: retained as the operations-policy host after absorbing budget control, queue, and memory helpers; broader merging beyond this would widen the issue.
   - `observability.py`: retained as the runtime evidence host after absorbing audit and event bus helpers; broader collapsing here would stop being low-risk.
+  - `design_system.py`: retained as the UI specification host after absorbing console IA and interaction-contract helpers; the merge removes an existing dependency edge from console IA into design system without widening into saved-view or UI review ownership.
   - `workspace_bootstrap.py`: retained as the bootstrap/cache host after absorbing validation helpers; further collapsing this area would couple CLI/runtime surfaces more tightly.
   - `__main__.py`: retained as the package execution entrypoint; deleting it would remove `python -m bigclaw` compatibility instead of just compressing internals.
 - Python file count impact under `src/bigclaw/*.py`:
   - Before: `49`
-  - After: `16`
-  - Delta: `-33`
+  - After: `15`
+  - Delta: `-34`
 - Exact validation commands and results:
   - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
     - Result: legacy imports resolved successfully:
@@ -228,3 +233,14 @@
     - Result: passed with no output
   - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
     - Result: `16`
+  - `PYTHONPATH=src python3 - <<'PY' ... importlib.import_module(...) ... PY`
+    - Result: legacy console IA import resolved successfully:
+      `bigclaw.console_ia -> bigclaw.design_system`
+      `bigclaw.design_system -> bigclaw.design_system`
+      `bigclaw -> bigclaw`
+  - `PYTHONPATH=src python3 -m pytest tests/test_console_ia.py tests/test_design_system.py`
+    - Result: `26 passed in 0.10s`
+  - `python3 -m py_compile src/bigclaw/*.py`
+    - Result: passed with no output
+  - `find src/bigclaw -maxdepth 1 -name '*.py' | wc -l`
+    - Result: `15`
