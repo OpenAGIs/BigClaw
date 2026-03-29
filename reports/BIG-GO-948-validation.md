@@ -2,7 +2,7 @@
 
 ## Completed Work
 
-This lane now includes a fourth-wave reduction of Python tests under `tests/` by deleting files whose behavior already has a Go-native replacement in `bigclaw-go` or a small Go-native parity package.
+This lane now includes a fifth-wave reduction of Python tests under `tests/` by deleting files whose behavior already has a Go-native replacement in `bigclaw-go` or a small Go-native parity package.
 
 Deleted in this wave:
 - `tests/test_connectors.py`
@@ -29,6 +29,7 @@ Deleted in this wave:
 - `tests/test_execution_contract.py`
 - `tests/test_github_sync.py`
 - `tests/test_validation_policy.py`
+- `tests/test_dsl.py`
 
 Deleted in earlier `BIG-GO-948` wave already present on `main`:
 - `tests/test_cross_process_coordination_surface.py`
@@ -73,6 +74,7 @@ Python files materially addressed by `BIG-GO-948` across both waves:
 - `tests/test_execution_contract.py`
 - `tests/test_github_sync.py`
 - `tests/test_validation_policy.py`
+- `tests/test_dsl.py`
 - `tests/test_cross_process_coordination_surface.py`
 - `tests/test_followup_digests.py`
 - `tests/test_live_shadow_scorecard.py`
@@ -92,7 +94,6 @@ Remaining Python tests after this wave:
 - `tests/test_console_ia.py`
 - `tests/test_control_center.py`
 - `tests/test_design_system.py`
-- `tests/test_dsl.py`
 - `tests/test_evaluation.py`
 - `tests/test_event_bus.py`
 - `tests/test_execution_flow.py`
@@ -198,6 +199,10 @@ This wave relies on the following Go-native coverage:
 - `bigclaw-go/internal/validationpolicy/validation_policy_test.go`
   - `TestValidationPolicyBlocksIssueCloseWithoutRequiredReports`
   - `TestValidationPolicyAllowsIssueCloseWhenReportsComplete`
+- `bigclaw-go/internal/workflow/definition_runner_test.go`
+  - `TestRunDefinitionEndToEndWritesReportAndJournal`
+  - `TestRunDefinitionRejectsUnknownStepKind`
+  - `TestRunDefinitionManualApprovalClosesHighRiskTask`
 
 Earlier `BIG-GO-948` wave already replaced the report-regression Python files with:
 - `bigclaw-go/internal/regression/python_lane8_remaining_tests_test.go`
@@ -227,6 +232,7 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
 - `cd bigclaw-go && go test ./internal/contract`
 - `cd bigclaw-go && go test ./internal/githubsync`
 - `cd bigclaw-go && go test ./internal/validationpolicy`
+- `cd bigclaw-go && go test ./internal/workflow`
 - `git status --short`
 
 ## Latest Validation Result
@@ -259,6 +265,8 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
   - Result: `ok  	bigclaw-go/internal/githubsync	2.702s`
 - `cd bigclaw-go && go test ./internal/validationpolicy`
   - Result: `ok  	bigclaw-go/internal/validationpolicy	3.166s`
+- `cd bigclaw-go && go test ./internal/workflow`
+  - Result: `ok  	bigclaw-go/internal/workflow	0.146s`
 
 ## Residual Risks
 
@@ -274,8 +282,6 @@ Earlier `BIG-GO-948` wave already replaced the report-regression Python files wi
   - Plan: migrate once the control-center payload contract is fully represented in `bigclaw-go/internal/api`.
 - `tests/test_design_system.py`
   - Plan: migrate only after a Go-owned static design-system contract exists.
-- `tests/test_dsl.py`
-  - Plan: requires a Go-native DSL parser/validator or an explicit retirement decision.
 - `tests/test_evaluation.py`
   - Plan: requires a Go-native evaluation/report builder.
 - `tests/test_event_bus.py`

@@ -2,29 +2,32 @@
 
 ## Scope
 
-Fourth-wave cleanup for a remaining Python-only contract test that can be replaced by a small Go-native package.
+Fifth-wave cleanup for the remaining Python DSL tests by adding a narrow Go-native workflow definition runner.
 
 Planned delete set for this continuation:
-- `tests/test_validation_policy.py`
+- `tests/test_dsl.py`
 
 Go coverage used for replacement:
-- new `bigclaw-go/internal/validationpolicy` package
-- new `bigclaw-go/internal/validationpolicy/validation_policy_test.go`
+- existing `bigclaw-go/internal/workflow/definition_test.go`
+- existing `bigclaw-go/internal/workflow/engine_test.go`
+- new `bigclaw-go/internal/workflow/definition_runner.go`
+- new `bigclaw-go/internal/workflow/definition_runner_test.go`
 
 ## Acceptance
 
-- Replace the Python validation policy logic with a Go-native equivalent and matching tests.
-- Delete `tests/test_validation_policy.py` only after Go parity exists.
-- Update `reports/BIG-GO-948-validation.md` with the new completed file, Go replacement, command, result, and remaining plan.
-- Run targeted Go validation for the new package.
+- Replace the Python DSL workflow-definition tests with Go-native coverage.
+- Keep the new Go runner narrow: path rendering, invalid-step validation, approval handling, and artifact creation only.
+- Delete `tests/test_dsl.py` only after Go parity exists.
+- Update `reports/BIG-GO-948-validation.md` with the new completed file, replacements, command, result, and remaining plan.
+- Run targeted Go validation for `bigclaw-go/internal/workflow`.
 - Commit and push the continuation changes.
 
 ## Validation
 
-- `cd bigclaw-go && go test ./internal/validationpolicy`
+- `cd bigclaw-go && go test ./internal/workflow`
 - `git status --short`
 
 ## Risks
 
-- This slice adds a new Go package rather than reusing an existing one, so package naming and scope need to stay narrow and contract-focused.
+- There is no existing Go runner for definition execution, so the new surface must stay deliberately small and only cover what the Python test asserted.
 - The larger remaining Python script and report suites are still intentionally out of scope because they are not simple contract-parity deletes.
