@@ -1,3 +1,5 @@
+import sys as _sys
+
 from .models import (
     BillingInterval,
     BillingRate,
@@ -159,6 +161,7 @@ from .execution_contract import (
     PermissionCheckResult,
     render_execution_contract_report,
 )
+from . import repo as _repo
 from .dashboard_run_contract import (
     DashboardRunContract,
     DashboardRunContractAudit,
@@ -683,3 +686,21 @@ __all__ = [
     "render_ui_review_pack_report",
     "write_ui_review_pack_bundle",
 ]
+
+repo_board = _repo
+repo_commits = _repo
+repo_gateway = _repo
+repo_governance = _repo
+repo_links = _repo
+repo_plane = _repo
+repo_registry = _repo
+repo_triage = _repo
+
+_sys.modules[__name__ + ".repo_board"] = _repo
+_sys.modules[__name__ + ".repo_commits"] = _repo
+_sys.modules[__name__ + ".repo_gateway"] = _repo
+_sys.modules[__name__ + ".repo_governance"] = _repo
+_sys.modules[__name__ + ".repo_links"] = _repo
+_sys.modules[__name__ + ".repo_plane"] = _repo
+_sys.modules[__name__ + ".repo_registry"] = _repo
+_sys.modules[__name__ + ".repo_triage"] = _repo
