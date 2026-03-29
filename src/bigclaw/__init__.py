@@ -5,6 +5,7 @@ from .models import (
     BillingInterval,
     BillingRate,
     BillingSummary,
+    Connector,
     FlowRun,
     FlowRunStatus,
     FlowStepRun,
@@ -12,24 +13,41 @@ from .models import (
     FlowTemplate,
     FlowTemplateStep,
     FlowTrigger,
+    GitHubConnector,
+    JiraConnector,
+    LinearConnector,
     Priority,
+    REQUIRED_REPORT_ARTIFACTS,
     RiskAssessment,
     RiskLevel,
     RiskSignal,
+    SourceIssue,
     Task,
     TaskState,
     TriageLabel,
     TriageRecord,
     TriageStatus,
     UsageRecord,
+    ValidationReportDecision,
+    enforce_validation_report_policy,
+    map_priority,
+    map_source_issue_to_task,
+    map_state,
 )
+from . import models as _legacy_models_surface
 from . import runtime as _legacy_runtime_surface
 
 
-def _install_legacy_surface_module(name: str, export_names: list[str], **extra_attrs: object) -> None:
+def _install_legacy_surface_module(
+    name: str,
+    export_names: list[str],
+    *,
+    source_module: object = _legacy_runtime_surface,
+    **extra_attrs: object,
+) -> None:
     module = types.ModuleType(f"{__name__}.{name}")
     for export_name in export_names:
-        module.__dict__[export_name] = getattr(_legacy_runtime_surface, export_name)
+        module.__dict__[export_name] = getattr(source_module, export_name)
     module.__dict__.update(extra_attrs)
     sys.modules[module.__name__] = module
     globals()[name] = module
@@ -84,6 +102,40 @@ _install_legacy_surface_module(
     ),
     GO_MAINLINE_REPLACEMENT="bigclaw-go/cmd/bigclawd/main.go",
 )
+_install_legacy_surface_module(
+    "connectors",
+    ["Connector", "GitHubConnector", "JiraConnector", "LinearConnector", "SourceIssue"],
+    source_module=_legacy_models_surface,
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "connectors.py remains migration-only compatibility scaffolding."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/source/connectors.go",
+)
+_install_legacy_surface_module(
+    "mapping",
+    ["map_priority", "map_source_issue_to_task", "map_state"],
+    source_module=_legacy_models_surface,
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "mapping.py remains migration-only compatibility scaffolding."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/source/mapping.go",
+)
+_install_legacy_surface_module(
+    "validation_policy",
+    [
+        "REQUIRED_REPORT_ARTIFACTS",
+        "ValidationReportDecision",
+        "enforce_validation_report_policy",
+    ],
+    source_module=_legacy_models_surface,
+    LEGACY_MAINLINE_STATUS=(
+        "bigclaw-go is the sole implementation mainline for active development; "
+        "validation_policy.py remains migration-only compatibility scaffolding."
+    ),
+    GO_MAINLINE_REPLACEMENT="bigclaw-go/internal/validation/policy.go",
+)
 
 from .runtime import (
     AcceptanceDecision,
@@ -119,7 +171,6 @@ from .runtime import (
     run_server,
     warn_legacy_service_surface,
 )
-from .connectors import SourceIssue, GitHubConnector, LinearConnector, JiraConnector
 from .design_system import (
     AuditRequirement,
     CommandAction,
@@ -201,7 +252,6 @@ from .issue_archive import (
 )
 from .risk import RiskFactor, RiskScore, RiskScorer
 from .dsl import WorkflowDefinition, WorkflowStep
-from .mapping import map_source_issue_to_task
 from .roadmap import EpicMilestone, ExecutionPackRoadmap, build_execution_pack_roadmap
 from .audit_events import (
     APPROVAL_RECORDED_EVENT,
@@ -450,6 +500,7 @@ __all__ = [
     "BillingRate",
     "UsageRecord",
     "BillingSummary",
+    "Connector",
     "PersistentTaskQueue",
     "Scheduler",
     "SchedulerDecision",
@@ -458,6 +509,11 @@ __all__ = [
     "GitHubConnector",
     "LinearConnector",
     "JiraConnector",
+    "map_priority",
+    "map_state",
+    "ValidationReportDecision",
+    "REQUIRED_REPORT_ARTIFACTS",
+    "enforce_validation_report_policy",
     "CommandAction",
     "AuditRequirement",
     "ComponentLibrary",
